@@ -229,7 +229,7 @@ export function GoalsMissions() {
         {selected ? (
           <>
             <div className="flex items-start justify-between gap-3 mb-1">
-              <h3 className="typo-section-title text-foreground">{selected.title.replace(/^Advance: /, '')}</h3>
+              <h3 className="typo-section-title">{selected.title.replace(/^Advance: /, '')}</h3>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {selected.goalId ? (
                   <GoalChip goalId={selected.goalId} />
@@ -361,7 +361,7 @@ function MissionRow({
       }`}
       data-testid="mission-row"
     >
-      <h4 className="typo-card-label text-foreground line-clamp-2">
+      <h4 className="typo-card-label line-clamp-2">
         {assignment.title.replace(/^Advance: /, '')}
       </h4>
       <div className="mt-1 flex items-center gap-1.5">

@@ -65,7 +65,7 @@ export function ContextMatrix({
               <span className="typo-caption">{DOMAIN_LABEL[g.domain]}</span>
               <span className="flex-1" />
               <TrafficTally kpis={groupKpis(g).map(ed)} size={6} />
-              <span className="typo-data tabular-nums ml-2 w-7 text-right" style={{ color: hc(gr.health) }}>{hv(gr.health)}</span>
+              <span className="typo-data ml-2 w-7 text-right" style={{ color: hc(gr.health) }}>{hv(gr.health)}</span>
             </button>
 
             {/* one row per context */}
@@ -75,11 +75,11 @@ export function ContextMatrix({
                 const cr = rollup(ck);
                 return (
                   <div key={c.id} className="grid items-stretch gap-2 px-3 py-1 hover:bg-secondary/10 transition-colors" style={{ gridTemplateColumns: COLS }}>
-                    <button type="button" onClick={() => openGroup(g.id, c.id)} className="typo-title truncate text-left hover:text-primary self-center">{c.name}</button>
+                    <button type="button" onClick={() => openGroup(g.id, c.id)} className="typo-title truncate text-left self-center">{c.name}</button>
                     {KPI_CATEGORIES.map((cat) => (
                       <MatrixCell key={cat} kpis={ck.filter((k) => k.category === cat)} cell={cell} onOpen={(kid) => openKpi(g.id, kid)} />
                     ))}
-                    <span className="typo-data tabular-nums text-right self-center" style={{ color: hc(cr.health) }}>{hv(cr.health)}</span>
+                    <span className="typo-data text-right self-center" style={{ color: hc(cr.health) }}>{hv(cr.health)}</span>
                   </div>
                 );
               })}
@@ -112,7 +112,7 @@ function CellKpi({ kpi, cell, onOpen }: { kpi: MockKpi; cell: MatrixCellStyle; o
         className="rounded px-1.5 py-1 min-w-[2.4rem] text-center transition-transform hover:scale-105"
         style={{ background: `color-mix(in srgb, ${color} 28%, transparent)`, border: `1px solid color-mix(in srgb, ${color} 55%, transparent)` }}
       >
-        <span className="typo-data tabular-nums" style={{ color, fontWeight: 400 }}>{kpi.current ?? '—'}</span>
+        <span className="typo-data" style={{ color, fontWeight: 400 }}>{kpi.current ?? '—'}</span>
       </button>
     );
   }

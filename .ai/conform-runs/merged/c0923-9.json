@@ -1,0 +1,201 @@
+{
+  "worker": "c0923-9",
+  "evaluatedAt": "2026-09-23",
+  "pairs": [
+    { "context": "de8b648f-7971-452b-88dc-773b215c5f09", "subject": "pipeline-dag", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/pipeline_executor.rs:162 `return true;` on malformed condition JSON (and :205 `true` for an unknown operator, rationalised at :144 as 'fail-open is the safe default') - a typo in a predicate runs the gated branch, side effects included, and the run completes green.",
+      "techniques": [
+        { "technique": "conditional-edges", "verdict": "deviation", "evidence": "src-tauri/src/engine/pipeline_executor.rs:162 malformed condition returns true (fail-open), :205 unknown operator returns true; the evaluator is bool-valued with no unevaluable outcome, the exact fail-open pole the technique names." },
+        { "technique": "graph-validation", "verdict": "deviation", "evidence": "src-tauri/src/commands/teams/teams.rs:172 create_team_connection forwards `condition` unparsed to the repo; no well-formedness check at the door, so a malformed predicate is first met mid-run." },
+        { "technique": "node-execution-model", "verdict": "conformant", "evidence": "src-tauri/src/engine/pipeline_executor.rs:74 persists node_statuses via update_pipeline_run before the PIPELINE_STATUS emit (persist-then-broadcast)." },
+        { "technique": "composite-condition-verdicts", "verdict": "not-applicable", "evidence": "src-tauri/src/engine/pipeline_executor.rs:135 ConditionSpec is a single leaf {field, op, value} with no all/any/none combinator, so there is no fold to carry a third value through." },
+        { "technique": "pause-and-gate-nodes", "verdict": "unread", "evidence": "" },
+        { "technique": "deterministic-vs-model-nodes", "verdict": "unread", "evidence": "" },
+        { "technique": "external-adapter-nodes", "verdict": "unread", "evidence": "" },
+        { "technique": "valid-but-degraded-plans", "verdict": "unread", "evidence": "" }
+      ]
+    },
+    { "context": "56a0fd55-279d-428b-b2f6-7c89154abd6f", "subject": "analytics-time-windows", "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/schedules/libs/calendarHelpers.ts:43 snaps day boundaries in the local zone and dayKey (:153) keys buckets with the same local getters; the UTC-key/local-label split recorded against ScheduleRowHistoryPanel.tsx went away with that file (deleted in 5447a03ef8) and no surviving file in the context repeats it.",
+      "techniques": [
+        { "technique": "half-open-interval-policy", "verdict": "conformant", "evidence": "src/features/schedules/libs/calendarHelpers.ts:64 week end = start + 7 days (exclusive end), iterated with cursor < end; the human label is derived from end - 1ms rather than a second stored bound." },
+        { "technique": "canonical-zone-single-source", "verdict": "conformant", "evidence": "src/features/schedules/libs/calendarHelpers.ts:153 dayKey buckets with local getFullYear/getMonth/getDate, matching the local setHours snap at :43 and the toLocale* labels - one zone for snapping, keying and labelling." },
+        { "technique": "calendar-arithmetic", "verdict": "conformant", "evidence": "src/features/schedules/libs/calendarHelpers.ts:49 addDays uses setDate (calendar days, DST-safe); no fixed 86400-second arithmetic for named periods." },
+        { "technique": "range-precedence-resolution", "verdict": "not-applicable", "evidence": "src/features/schedules/components/ScheduleCalendar.tsx:40 the range has one source (local anchor state, no stored preference or request param), the technique's single-source exemption." },
+        { "technique": "baseline-as-window-start", "verdict": "not-applicable", "evidence": "src/features/schedules/components/ScheduleCalendar.tsx:52 the range feeds only event placement; the calendar renders no delta or change-over-period figure." },
+        { "technique": "cohort-matched-comparison", "verdict": "not-applicable", "evidence": "src/features/schedules/components/ScheduleCalendar.tsx:52 no period-over-period movement is computed anywhere in the context; there is no population delta to cohort-match." }
+      ]
+    },
+    { "context": "56a0fd55-279d-428b-b2f6-7c89154abd6f", "subject": "scheduling", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/schedules/libs/calendarHelpers.ts:19 past-unknown collapses skipped/rate-limited/out-of-window/over-budget/app-closed into one state although the scheduler persists reasons (src-tauri/src/engine/background/scheduler.rs:649 schedule.skipped.overlap); the calendar's only read, list_recent_schedule_runs (src-tauri/src/commands/tools/triggers.rs:1544), returns real runs only, so 'why didn't this fire' still cannot be answered. The old unmounted-tooltip defect is fixed (EventBlock.tsx:56).",
+      "techniques": [
+        { "technique": "schedule-observability", "verdict": "deviation", "evidence": "src/features/schedules/libs/calendarHelpers.ts:19 one past-unknown bucket for every declined occurrence; the non-fire reasons recorded at src-tauri/src/engine/background/scheduler.rs:649 never cross the read contract. Fixed since last verdict: src/features/schedules/components/EventBlock.tsx:56 now mounts EventTooltipContent." },
+        { "technique": "next-run-computation", "verdict": "conformant", "evidence": "src/features/schedules/libs/useCronPreview.ts:123 fire times come from the engine's cron_fire_times_in_range IPC, so next-run math has one home." },
+        { "technique": "missed-run-semantics", "verdict": "unread", "evidence": "" },
+        { "technique": "overlap-and-reentrancy", "verdict": "unread", "evidence": "" },
+        { "technique": "trigger-matching", "verdict": "unread", "evidence": "" },
+        { "technique": "cooldown-and-debounce", "verdict": "unread", "evidence": "" }
+      ]
+    },
+    { "context": "68e3a26f-d83a-447b-a2d0-ad875004506f", "subject": "web-scraping", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/scraper/useScrapeForm.ts:13 RuleField still has no failure-semantics member (required/optional/defaulted), so no field can be required and extraction collapse cannot be told apart from a quiet day at the rule level; the old 'unpreviewed rule set saves armed' clause is fixed (:230).",
+      "techniques": [
+        { "technique": "extraction-rule-dsl", "verdict": "deviation", "evidence": "src/features/scraper/useScrapeForm.ts:13 RuleField declares locator params only, with no mandatory failure-semantics member." },
+        { "technique": "dry-run-preview", "verdict": "conformant", "evidence": "src/features/scraper/useScrapeForm.ts:230 canSave requires previewProven for an armed scrape; the proof is a signature over urls plus compiled rules, so an edit after preview re-blocks the save." },
+        { "technique": "shape-change-detection", "verdict": "deviation", "evidence": "src/features/scraper/useScraperData.ts:230 collapse = 0 new and 0 changed against a non-empty dataset, ignoring the unchanged count the engine emits, so a healthy re-scrape where every record matched unchanged is painted collapsed - an oversensitive detector that trains users to click past the real collapse." },
+        { "technique": "llm-assisted-rule-authoring", "verdict": "deviation", "evidence": "src/features/scraper/LlmRuleBuilder.tsx:39 picks merge vs replace automatically (merge whenever fields exist) with no human choice or collision view; the merge drops every proposed rule whose name already exists, so dead rules cannot be replaced through the builder." },
+        { "technique": "dedup-and-datasets", "verdict": "unread", "evidence": "" },
+        { "technique": "scrape-scheduling", "verdict": "unread", "evidence": "" },
+        { "technique": "negotiated-representation-probe", "verdict": "unread", "evidence": "" },
+        { "technique": "soak-mode-and-verdict-replay", "verdict": "unread", "evidence": "" }
+      ],
+      "registryProposal": "shape-change-detection could state that a harvest with zero new and zero changed records is collapse only when matched/unchanged is also zero - 'nothing new' is not 'nothing extracted'."
+    },
+    { "context": "7159d27d-86c2-43be-a83f-8b50c4c816be", "subject": "p2p-networking", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:128 creates every exposure with fields_exposed: [], and src-tauri/src/engine/bundle.rs:673 reads an empty list as 'expose all fields', so every field is shared by default and any column added later crosses to peers unreviewed; there is no per-peer grant either (the create input at src-tauri/core/src/models/exposure.rs:117 carries no peer identity).",
+      "techniques": [
+        { "technique": "exposure-controls", "verdict": "deviation", "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:128 fields_exposed: [] which src-tauri/src/engine/bundle.rs:673 treats as all fields - the default is 'everything crosses', not an allowlist, and the grant cannot name a peer." },
+        { "technique": "peer-state-honesty", "verdict": "deviation", "evidence": "src/features/settings/sub_network/components/PeerCard.tsx:36 turns any peer without a live session into 'Disconnected', so heard-but-unprobed and probe-failed read the same." },
+        { "technique": "discovery-advertisement", "verdict": "deviation", "evidence": "src/features/settings/sub_network/components/IdentitySettings.tsx:122 the network settings expose the broadcast display name but no discoverability on/off control exists in src/ or src-tauri/src, so being announced is not a consented setting." },
+        { "technique": "connection-lifecycle", "verdict": "unread", "evidence": "" },
+        { "technique": "manifest-negotiation", "verdict": "unread", "evidence": "" },
+        { "technique": "resilience-and-reconnection", "verdict": "unread", "evidence": "" }
+      ]
+    },
+    { "context": "dc471d31-ae30-4ac9-b015-d51969df458d", "subject": "app-shell", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:121 still casts an untyped sub-nav id with `id as TwinTab`; only the top level derives from the navigation registry (sidebarData.ts:33) while the sub-destination vocabularies stay hand-maintained string arrays, and sidebarData.ts:153 records that this exact cast shipped a blank-page bug.",
+      "techniques": [
+        { "technique": "navigation-model", "verdict": "deviation", "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:121 id as TwinTab - sub-destination arrays typed id: string are not governed by the registry, so an entry missing from its union compiles and renders blank." },
+        { "technique": "nav-hierarchy", "verdict": "deviation", "evidence": "src/features/shared/chrome/sidebar/sidebarData.ts:177 promotes Obsidian Brain's tabs to a sidebar L3, a third shell level the technique assigns to the page." },
+        { "technique": "entitlement-gating", "verdict": "conformant", "evidence": "src/features/shared/chrome/commandPaletteUtils.ts:24 the palette filters through the same passesGates the rail and router use." },
+        { "technique": "badge-and-attention", "verdict": "unread", "evidence": "" },
+        { "technique": "shell-hosted-services", "verdict": "unread", "evidence": "" },
+        { "technique": "lazy-section-loading", "verdict": "unread", "evidence": "" }
+      ]
+    },
+    { "context": "3c749d5b-3169-4ea8-8faa-98558f9b5df5", "subject": "form", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/shared/components/forms/DesignInput.tsx:177 renders the primary composition textarea with only a placeholder (:186) and no label, aria-label or FormField wiring, so it has no accessible name once typing starts; TableSelector.tsx's filter input is also placeholder-only. DirectoryPickerInput has been fixed since the last verdict.",
+      "techniques": [
+        { "technique": "field-composition", "verdict": "deviation", "evidence": "src/features/shared/components/forms/DesignInput.tsx:177 textarea has no label and no error wiring and does not take FormField's props, forking the field vocabulary inside the folder that owns FormField." },
+        { "technique": "error-aggregation-and-focus", "verdict": "conformant", "evidence": "src/features/shared/components/forms/FormErrorSummary.tsx:34 each summary entry focuses its field, inside a role=alert summary region." },
+        { "technique": "validation-timing", "verdict": "unread", "evidence": "" },
+        { "technique": "submit-lifecycle", "verdict": "unread", "evidence": "" },
+        { "technique": "server-error-mapping", "verdict": "unread", "evidence": "" }
+      ]
+    },
+    { "context": "937c9d47-b0ca-4e3b-90e3-25baefe04474", "subject": "sync-replication", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/core/memories.rs:1426 hard-deletes a synced memory and records nothing for the sync stream (tombstones exist only for personas, and the mirror is upsert-only), so a deleted memory stays in synced_memories forever. The old persona finding is fixed: the tombstone is now written inside the delete transaction (personas.rs:2072).",
+      "techniques": [
+        { "technique": "tombstone-propagation", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/core/memories.rs:1426 a flagless hard delete on a synced table with no tombstone, so the stream's deletes are not uniform; src-tauri/db/src/repos/core/persona_tombstones.rs:51 now has a writer (fixed) but no reaper names the tombstones' retention." },
+        { "technique": "change-tracking-and-cursors", "verdict": "conformant", "evidence": "src-tauri/src/cloud/sync/mod.rs:436 advances the tombstone cursor only after every cascade succeeded; a failure returns early without advancing (:425)." },
+        { "technique": "conflict-detection-and-policy", "verdict": "unread", "evidence": "" },
+        { "technique": "projection-security", "verdict": "unread", "evidence": "" },
+        { "technique": "sync-observability", "verdict": "unread", "evidence": "" },
+        { "technique": "topology-declaration", "verdict": "unread", "evidence": "" }
+      ]
+    },
+    { "context": "4be04ef0-88db-4f48-859c-92e6ba4d203f", "subject": "search", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_generated/gallery/search/filters/ComponentFilterDropdown.tsx:69 matches with raw label.toLowerCase().includes(q); the repo now has one folding matcher (src/lib/text/search.ts:33 matchesQuery, NFD plus locale lowercasing) but this context re-derives matching at three call sites, so accented or Turkish-I input fails in a 14-locale app.",
+      "techniques": [
+        { "technique": "query-parsing", "verdict": "deviation", "evidence": "src/features/templates/sub_generated/gallery/search/filters/ConnectorFilterDropdown.tsx:64 and src/features/templates/sub_generated/gallery/search/suggestions/SearchAutocomplete.tsx:33 also compare with inline toLowerCase().includes; none routes through src/lib/text/search.ts:33." },
+        { "technique": "faceting-and-filters", "verdict": "unread", "evidence": "" },
+        { "technique": "command-surface", "verdict": "not-applicable", "evidence": "src/features/templates/sub_generated/gallery/search/suggestions/useStructuredQuery.ts:26 this surface is a filter box with three field prefixes, not a keyboard-summoned navigate palette." }
+      ]
+    },
+    { "context": "5dc3cb6a-6612-4909-995d-86e92394ec94", "subject": "import-normalization", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_n8n/importLedger.ts:26 the new aggregate ledger (detected vs represented vs selected) deliberately does NOT report which nodes were dropped, so losses are counted but not itemized, graded or reasoned, and the IR (src/lib/types/designTypes.ts:70) still carries no provenance or grade.",
+      "techniques": [
+        { "technique": "lossy-conversion-disclosure", "verdict": "deviation", "evidence": "src/features/templates/sub_n8n/importLedger.ts:26 an aggregate reconciliation now exists (partial fix, commit 0f71c4475) but there is no per-entity conversion grade and no itemized reason." },
+        { "technique": "intermediate-representation", "verdict": "deviation", "evidence": "src/lib/types/designTypes.ts:70 AgentIR carries no provenance (source format or foreign id) and no loss ledger or grade, so the ledger cannot travel with the proposal into commit." },
+        { "technique": "format-detection", "verdict": "conformant", "evidence": "src/features/templates/sub_n8n/steps/upload/useFileUpload.ts:154 unrecognized input is refused with a message naming the supported formats." },
+        { "technique": "review-before-commit", "verdict": "unread", "evidence": "" }
+      ]
+    },
+    { "context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc", "subject": "codegen", "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "scripts/run-codegen.mjs:34 the TASKS registry lists 17 generators and none writes under src/features/triggers; the context only consumes a generated binding (src/features/triggers/sub_studio/libs/studioCommit.ts:22) and owns no derived artifact to register, gate or regenerate.",
+      "techniques": [
+        { "technique": "task-registry-design", "verdict": "not-applicable", "evidence": "scripts/run-codegen.mjs:34 TASKS has no entry that outputs into this context." },
+        { "technique": "generated-file-hygiene", "verdict": "not-applicable", "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:22 the only generated material touched is an imported binding type owned by the ipc-contract generator; every file in the context is hand-authored." }
+      ]
+    },
+    { "context": "77b8c703-0803-42bc-808a-f255725cc293", "subject": "canvas-graph", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:42 hover state lives in the canvas component and each unmemoized node gets a fresh closure (:145), so every hover re-renders every node and edge; node markup (:192) has no role, tabIndex or key handler.",
+      "techniques": [
+        { "technique": "render-budget", "verdict": "deviation", "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:145 onClick={() => onNodeClick(node.id)} is a new closure per node per render into an unmemoized component, so hover (:42) re-renders the whole graph." },
+        { "technique": "canvas-accessibility", "verdict": "deviation", "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:192 node markup (a motion.g with pointer handlers only) has no role, no tabIndex, no key handler and no list twin, so keyboard and screen-reader users cannot reach any credential node." },
+        { "technique": "graph-layout", "verdict": "conformant", "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:55 layout is a memoized, pure, deterministic derivation (computeGraphLayout) over nodes, edges and container size." },
+        { "technique": "direct-manipulation", "verdict": "not-applicable", "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:198 the only pointer interaction is click-to-select; there is no drag, connect or rewire." }
+      ]
+    },
+    { "context": "59918f8a-62ca-4e52-9435-1e5bf9a18bbd", "subject": "embedded-preview", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/webbuild/preview_agent.rs:53 the injected guest agent still dispatches on shape alone (no e.origin check) and replies to window.parent with \"*\" (:63, :82), so any document in the frame tree can drive the locate verb and the agent's reports go to whatever parent is loaded; the HOST half is now fixed (StudioPage.tsx:187 addresses the frame's own origin, :146 attributes replies by contentWindow identity).",
+      "techniques": [
+        { "technique": "origin-validation", "verdict": "deviation", "evidence": "src-tauri/src/webbuild/preview_agent.rs:53 agent-side inbound check is shape-only and :63 / :82 post with a \"*\" target; the technique requires the agent to apply both rules against a build-time-injected host origin. Host outbound fixed: src/features/studio/StudioPage.tsx:187 posts to previewTargetOrigin, never \"*\"." },
+        { "technique": "cross-frame-protocol", "verdict": "deviation", "evidence": "src/features/studio/StudioPage.tsx:186 reqId is the tab id, reused for every ping, and the reply handler (:149) never reads it; no pending table and no timeout outcome, only eight blind retries (:189), so a stale 'located' reply is applied to whatever question is current." },
+        { "technique": "injected-instrumentation-with-fallback", "verdict": "conformant", "evidence": "src-tauri/src/webbuild/preview_agent.rs:146 the agent is written into the guest source and rendered only under NODE_ENV === development, re-added idempotently on every dev start (:112); src/features/studio/StudioPage.tsx:342 the orb falls back to the coarse region when the agent returns no rect." },
+        { "technique": "dev-server-registry", "verdict": "deviation", "evidence": "src-tauri/src/webbuild/devserver.rs:78 the registry (keyed by project, pid+port recorded at spawn :90, tree kill :155, stop_all :163, HTTP readiness probe :193) discards the server's stderr, so a server that never becomes healthy cannot be surfaced with its own output." },
+        { "technique": "convention-discovery", "verdict": "conformant", "evidence": "src-tauri/src/webbuild/routes.rs:13 routes are derived by scanning the guest's app-router tree (dynamic segments kept, groups stripped), and src/features/studio/StudioPage.tsx:116 rescans when the tab goes live and on every reload nonce, including after a restore." },
+        { "technique": "preview-checkpoints", "verdict": "deviation", "evidence": "src-tauri/src/webbuild/versions.rs:30 the per-turn snapshot (called at src-tauri/src/companion/session/build_turn.rs:198) discards git commit's result, so a turn whose capture failed looks identical to a protected one." }
+      ]
+    },
+    { "context": "59918f8a-62ca-4e52-9435-1e5bf9a18bbd", "subject": "versioning-snapshots", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/webbuild/versions.rs:74 restore still runs `git checkout <sha> -- .` with no capture-before-restore, so uncommitted edits that exist in no version are overwritten, files created after <sha> stay in place (a chimera labelled as that version), and the restore itself is recorded nowhere until the next turn commits.",
+      "techniques": [
+        { "technique": "restore-semantics", "verdict": "deviation", "evidence": "src-tauri/src/webbuild/versions.rs:74 in-place overwrite with no pre-restore snapshot and no 'restored from' version breaks prohibitions 1 and 3." },
+        { "technique": "snapshot-scope", "verdict": "conformant", "evidence": "src-tauri/src/webbuild/versions.rs:28 each snapshot stages the whole project tree (git add -A), with exclusions declared by the project's own .gitignore." },
+        { "technique": "version-identity", "verdict": "unread", "evidence": "" },
+        { "technique": "lineage-and-variants", "verdict": "unread", "evidence": "" },
+        { "technique": "promotion-lifecycle", "verdict": "unread", "evidence": "" },
+        { "technique": "retention-and-pruning", "verdict": "unread", "evidence": "" }
+      ]
+    },
+    { "context": "767b2bb5-4662-4be1-ad24-c881ac334016", "subject": "webhook-ingestion", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/tools/triggers.rs:1745 replay still reads log_entry.body, which src-tauri/src/engine/webhook.rs:304 writes as the literal '[redacted: see encrypted persona_event payload]', so every replay re-signs and re-delivers the redaction marker and reports success instead of the bytes that exposed the bug.",
+      "techniques": [
+        { "technique": "delivery-logging-and-replay", "verdict": "deviation", "evidence": "src-tauri/src/commands/tools/triggers.rs:1745 replay consumes the redacted body field (the technique's 'replay that quietly replays the mask'); the curl export at :1830 emits the same placeholder, and headers are logged verbatim at src-tauri/src/engine/webhook.rs:279." },
+        { "technique": "sender-authentication", "verdict": "conformant", "evidence": "src-tauri/src/engine/webhook.rs:463 a trigger with no secret is rejected (fail closed, 403), and :608 verifies the HMAC with constant-time verify_slice over the raw body." },
+        { "technique": "payload-bounds", "verdict": "conformant", "evidence": "src-tauri/src/engine/webhook.rs:93 a 1 MiB DefaultBodyLimit is layered on the router, enforced before the handler parses anything." },
+        { "technique": "ingress-topology", "verdict": "unread", "evidence": "" },
+        { "technique": "duplicate-and-replay-dedup", "verdict": "unread", "evidence": "" },
+        { "technique": "listener-lifecycle", "verdict": "unread", "evidence": "" }
+      ]
+    },
+    { "context": "63edaec0-367e-4553-a6ee-bfd4144be305", "subject": "docs-sync", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:649 coupling is only ever looked up doc -> sources; nothing counts the source files that match no doc-map entry, so an unmapped share of a tree is invisible to the scan, and map coverage (not just membership) is the gate source-doc-mapping requires.",
+      "techniques": [
+        { "technique": "source-doc-mapping", "verdict": "deviation", "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:649 the map is consumed in the doc-to-source direction only; no coverage measure of unmapped source exists, and the repo's only map check (scripts/docs/check-doc-map-paths.mjs) still validates only that named paths resolve." },
+        { "technique": "doc-rot-detection", "verdict": "conformant", "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:669 a doc with no discoverable coupling is counted unverifiable rather than clean (doctrine at :16), and truncation is priority-ordered and stable (:39, flagged via docs_truncated at :126)." },
+        { "technique": "checked-vs-skipped-denominators", "verdict": "conformant", "evidence": "src-tauri/src/commands/infrastructure/doc_rot.rs:116 skipped projects carry reason classes (projects_skipped_fresh, projects_no_git at :118) beside unverifiable (:123), so a run that checked nothing is not reported like a clean one." },
+        { "technique": "same-change-enforcement", "verdict": "unread", "evidence": "" },
+        { "technique": "coupled-surface-inventory", "verdict": "unread", "evidence": "" },
+        { "technique": "dated-corrections", "verdict": "unread", "evidence": "" },
+        { "technique": "catch-up-markers", "verdict": "unread", "evidence": "" },
+        { "technique": "cross-repo-drift-detection", "verdict": "unread", "evidence": "" },
+        { "technique": "source-as-data-without-the-app", "verdict": "unread", "evidence": "" },
+        { "technique": "earned-verification-state", "verdict": "unread", "evidence": "" },
+        { "technique": "repair-rides-the-open-page", "verdict": "unread", "evidence": "" },
+        { "technique": "rendered-surface-coupling", "verdict": "unread", "evidence": "" },
+        { "technique": "negative-claims-are-pinned", "verdict": "unread", "evidence": "" },
+        { "technique": "prose-as-an-execution-surface", "verdict": "unread", "evidence": "" },
+        { "technique": "translations-drift-against-the-product", "verdict": "unread", "evidence": "" }
+      ]
+    }
+  ],
+  "declined": []
+}

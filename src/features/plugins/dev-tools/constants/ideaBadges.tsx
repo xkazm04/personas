@@ -15,7 +15,7 @@ import { levelColor, levelSeverity } from './ideaColors';
 
 export function LevelBadge({ label, value }: { label: string; value: number }) {
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption font-medium border ${levelColor(value)}`}>
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption border ${levelColor(value)}`}>
       {label}: {value}
       <span className="opacity-70">· {levelSeverity(value)}</span>
     </span>
@@ -45,7 +45,7 @@ export function ValueBadge({ idea }: { idea: { impact: number; effort: number; r
   return (
     <Tooltip content={d.idea_value_tip} placement="top">
       <span
-        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption font-medium border ${cfg.cls}`}
+        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption border ${cfg.cls}`}
       >
         <TrendingUp className="w-3 h-3" />
         {cfg.label}

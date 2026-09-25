@@ -258,7 +258,7 @@ export function ContextMapHealth({ projectId }: { projectId: string }) {
                 {plan.contextsTouched > 0 ? (
                   <Button
                     variant="accent"
-                    accentColor="amber"
+                    tone="warning"
                     size="xs"
                     icon={busy === 'apply' ? <LoadingSpinner size="sm" /> : <Wrench className="w-3 h-3" />}
                     disabled={busy !== null}

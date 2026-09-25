@@ -14,7 +14,6 @@ evidence:
   - src/i18n/tokenMaps.ts                                              # the token→label resolver (layer 3→4); its dev-only unknown path is the w3-i18n deviation
   - src/lib/design/statusTokens.ts                                     # semantic status color palette — the color half of the presentation table
   - src/lib/design/eventTokens.ts                                      # best-typed presentation table: Record<wire-union, …> for color AND icon, shape-not-color rule in-source
-  - src/features/overview/sub_certification/components/VerdictBadge.tsx # the only file doing the whole chain; its docstring is a drift post-mortem
   - src/features/shared/components/display/Numeric.tsx                  # the one number renderer — locale bound INSIDE it (the ~212-call-site fix, documented in its own prop docs)
   - src/features/shared/components/display/RelativeTime.tsx             # the elapsed-moment primitive on the one shared self-scaling ticker
   - src/lib/utils/formatters.ts                                         # activeLanguage()-in-the-formatter fix; formatCost/formatPercent/formatCount; EXECUTION_STATUS_MAP fallback discipline

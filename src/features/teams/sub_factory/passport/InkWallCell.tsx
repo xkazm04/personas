@@ -17,7 +17,7 @@ export function InkWallCell({ value }: { value: CellValue }) {
       // render a compact ink line if one ever appears.
       const label = value.kind === 'level' ? `${value.level} · ${AUTOMATION_LABEL[value.level]}` : PROD_BAND_LABEL[value.band];
       const hue = scoreInk(value.score);
-      return <span className="typo-caption font-semibold" style={{ color: hue }}>{label} · {value.score}</span>;
+      return <span className="typo-caption" style={{ color: hue }}>{label} · {value.score}</span>;
     }
     case 'ordinal': {
       const hue = value.pos >= 0.65 ? INK.emerald : value.pos >= 0.35 ? INK.amber : INK.red;
@@ -26,7 +26,7 @@ export function InkWallCell({ value }: { value: CellValue }) {
       return (
         <span className="block min-w-0 max-w-[210px]">
           <span className="flex items-baseline gap-1.5 min-w-0">
-            <span className="typo-caption font-medium truncate" style={{ color: hue }}>{value.label}</span>
+            <span className="typo-caption truncate" style={{ color: hue }}>{value.label}</span>
             {value.sub && <span className="text-[11px] text-foreground/45 truncate">{value.sub}</span>}
             {steps > 0 && <span className="text-[11px] tabular-nums text-foreground/40 shrink-0 ml-auto">{reached}/{steps}</span>}
           </span>
@@ -45,10 +45,10 @@ export function InkWallCell({ value }: { value: CellValue }) {
           {value.sub && <span className="typo-label text-foreground/45 truncate">{value.sub}</span>}
         </span>
       ) : (
-        <span className="typo-caption font-medium" style={{ color: INK.blue }}>{COPY.setUp}</span>
+        <span className="typo-caption" style={{ color: INK.blue }}>{COPY.setUp}</span>
       );
     case 'chips': {
-      if (value.items.length === 0) return <span className="typo-caption font-medium" style={{ color: INK.blue }}>{COPY.add}</span>;
+      if (value.items.length === 0) return <span className="typo-caption" style={{ color: INK.blue }}>{COPY.add}</span>;
       return (
         <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
           {value.items.slice(0, MAX_CHIPS).map((c) => <TechInk key={c} label={c} muted />)}
@@ -62,13 +62,13 @@ export function InkWallCell({ value }: { value: CellValue }) {
       return <BoolMark on={value.on} />;
     case 'counts': {
       const total = value.items.reduce((a, i) => a + i.count, 0);
-      if (total === 0) return <span className="typo-caption font-medium" style={{ color: INK.blue }}>{COPY.add}</span>;
+      if (total === 0) return <span className="typo-caption" style={{ color: INK.blue }}>{COPY.add}</span>;
       return (
         <span className="inline-flex items-center gap-x-2.5 min-w-0">
           {value.items.map((i) => (
             <span key={i.label} className="inline-flex items-baseline gap-1">
               <span
-                className={`typo-caption font-semibold tabular-nums ${i.warn && i.count > 0 ? '' : i.count > 0 ? 'text-foreground/90' : 'text-foreground/35'}`}
+                className={`typo-caption tabular-nums ${i.warn && i.count > 0 ? '' : i.count > 0 ? 'text-foreground/90' : 'text-foreground/35'}`}
                 style={i.warn && i.count > 0 ? { color: INK.amber } : undefined}
               >
                 {i.count}
@@ -91,7 +91,7 @@ export function InkWallCell({ value }: { value: CellValue }) {
               {s.label ? (
                 <span title={s.sub ? `${s.label}: ${s.sub}` : undefined} className="min-w-0"><TechInk label={s.label} /></span>
               ) : (
-                <span className="typo-caption text-foreground/25 leading-none" title={`${ENV_LABEL[s.env]}: no source or config known in the codebase`}>—</span>
+                <span className="typo-caption text-foreground/25" title={`${ENV_LABEL[s.env]}: no source or config known in the codebase`}>—</span>
               )}
             </span>
           ))}
@@ -102,7 +102,7 @@ export function InkWallCell({ value }: { value: CellValue }) {
       if (value.state === 'missing') {
         return (
           <span className="inline-flex flex-col gap-0.5 min-w-0" title={`No ${APP_COST_FILENAME} in the repo. The gear dispatches an agent to create it`} data-testid="app-cost-missing">
-            <span className="typo-caption font-medium text-foreground/45">NA</span>
+            <span className="typo-caption text-foreground/45">NA</span>
             <span className="typo-label text-foreground/35">no cost file</span>
           </span>
         );
@@ -110,7 +110,7 @@ export function InkWallCell({ value }: { value: CellValue }) {
       if (value.state === 'empty') {
         return (
           <span
-            className="typo-caption font-medium"
+            className="typo-caption"
             style={{ color: INK.blue }}
             title={value.invalid ? `${APP_COST_FILENAME} isn't valid JSON. Fix it by hand` : `${APP_COST_FILENAME} exists. Add your services and monthly costs by hand`}
           >
@@ -129,7 +129,7 @@ export function InkWallCell({ value }: { value: CellValue }) {
           title={services.map((s) => `${s.name}: ${s.monthly == null ? '?' : s.monthly}${s.note ? ` (${s.note})` : ''}`).join(' · ')}
           data-testid="app-cost-cell"
         >
-          <span className="typo-caption font-semibold text-foreground/90 tabular-nums">{amount}/mo</span>
+          <span className="typo-caption text-foreground/90 tabular-nums">{amount}/mo</span>
           <span className="typo-label text-foreground/45 truncate">
             {services.length} service{services.length === 1 ? '' : 's'}{unpriced > 0 ? ` · ${unpriced} unpriced` : ''}
           </span>

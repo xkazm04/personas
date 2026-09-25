@@ -62,8 +62,8 @@ export function HubEntryRow({ entry, feed, order, enter }: {
             <HubEntryActions entry={entry} feed={feed} />
           </span>
         </span>
-        {entry.title && <span className="block typo-card-label text-foreground mt-0.5">{entry.title}</span>}
-        <span className="block typo-body text-foreground leading-relaxed line-clamp-2">{entry.body}</span>
+        {entry.title && <span className="block typo-card-label mt-0.5">{entry.title}</span>}
+        <span className="block typo-body text-foreground line-clamp-2">{entry.body}</span>
         {entry.reviewerNotes && (
           <span className="block typo-caption text-status-error mt-0.5">
             {tx(t.entry.reasonLabel, { reason: entry.reviewerNotes })}

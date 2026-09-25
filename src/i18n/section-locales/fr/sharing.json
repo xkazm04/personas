@@ -287,5 +287,8 @@
   "verifying_bundle": "Vérification du bundle…",
   "verifying_enclave": "Vérification de l’enclave…",
   "view_details": "Voir les détails",
-  "your_identity": "Votre identité"
+  "your_identity": "Votre identité",
+  "job_kind_fleet_session": "Session Fleet",
+  "job_kind_instruction": "Consigne",
+  "job_receipt_title": "Travail renvoyé"
 }

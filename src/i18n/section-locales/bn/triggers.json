@@ -731,7 +731,15 @@
     "tab_compose": "কম্পোজ",
     "tab_routes": "রুট",
     "targets_subtitle": "কোন persona চলে",
-    "targets_title": "লক্ষ্য"
+    "targets_title": "লক্ষ্য",
+    "last_fired": "শেষ চালু হয়েছে",
+    "never_fired": "কখনো চালু হয়নি",
+    "pause_route": "রুট বিরতি দিন",
+    "proto_paused": "বিরতিতে",
+    "resume_dry_run_failed": "ড্রাই-রান ব্যর্থ, তাই রুট বিরতিতেই থাকবে। {error}",
+    "resume_route": "রুট আবার চালু করুন",
+    "route_paused": "বিরতিতে",
+    "route_toggle_failed": "এই রুট পরিবর্তন করা যায়নি"
   },
   "subscription_list": {
     "active": "সক্রিয়",

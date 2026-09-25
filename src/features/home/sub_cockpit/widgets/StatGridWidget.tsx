@@ -69,7 +69,7 @@ export function StatGridWidget({ config, title }: CockpitWidgetProps) {
                 {stat.label}
               </div>
               <div
-                className={`typo-data-lg tabular-nums mt-0.5 ${intentTextClass(stat.intent)}`}
+                className={`typo-data-lg mt-0.5 ${intentTextClass(stat.intent)}`}
               >
                 {stat.value === null || stat.value === undefined ? '—' : String(stat.value)}
                 {stat.unit ? (

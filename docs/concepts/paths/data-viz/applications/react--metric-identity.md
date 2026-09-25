@@ -82,7 +82,7 @@ The counter-example the golden path's frontmatter carries:
 sparkline scale (`Math.min(...data)` floor) instead of importing the declared
 projection, and `sub_kpis/kpiMath.ts:93` exports a second `sparklinePoints()`
 with the opposite scale doctrine from
-`sub_director/directorScore.ts:38`'s fixed-domain exemplar — two exported
+`companions/overseer/directorScore.ts:38`'s fixed-domain exemplar — two exported
 functions, same name, same purpose, contradictory semantics. That is the
 display-site-arithmetic smell from the technique: the derivation layer is
 centralized, but the *projection* layer forked because no shared helper took

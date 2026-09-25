@@ -23,7 +23,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { useForwardToAthena } from '@/features/plugins/companion/useForwardToAthena';
+import { useForwardToAthena } from '@/features/companions/athena/useForwardToAthena';
 import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
@@ -209,7 +209,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
               <Button
                 size="sm"
                 variant="accent"
-                accentColor="cyan"
+                tone="highlight"
                 icon={<FlaskConical className="w-3.5 h-3.5" />}
                 onClick={openLab}
               >
@@ -221,7 +221,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
             <Button
               size="sm"
               variant="accent"
-              accentColor="violet"
+              tone="agent"
               icon={<Sparkles className="w-3.5 h-3.5" />}
               onClick={askAthena}
             >

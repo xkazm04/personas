@@ -63,7 +63,7 @@ export function PowerRail({
           >
             {powered ? <Radio className="w-5 h-5" /> : <PowerOff className="w-5 h-5" />}
           </div>
-          <span className="typo-caption uppercase tracking-wider text-foreground font-semibold">
+          <span className="typo-caption uppercase tracking-wider text-foreground">
             Source
           </span>
         </div>
@@ -138,7 +138,7 @@ export function PowerRail({
             <span className="tabular-nums text-foreground font-semibold">{subscribedCount}</span>
             emitting
           </div>
-          <span className="typo-caption uppercase tracking-wider text-foreground font-semibold">
+          <span className="typo-caption uppercase tracking-wider text-foreground">
             events
           </span>
         </div>

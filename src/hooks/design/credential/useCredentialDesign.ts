@@ -47,6 +47,9 @@ export function useCredentialDesign() {
     completedPhase: 'preview',
     startFn: startCredentialDesign,
     cancelFn: cancelCredentialDesign,
+    // The backend job's id_field and timeout_secs, from credential_design.rs DESIGN_MESSAGES; artifactDeadlineParity.test.ts fails if they differ.
+    idField: 'design_id',
+    backendTimeoutSecs: 600,
     errorMessage: 'Credential design failed',
     traceOperation: 'credential_design',
   });

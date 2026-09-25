@@ -102,7 +102,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
             loading={triggering}
             onClick={handleTrigger}
             disabled={triggering}
-            accentColor="orange"
+            tone="warning"
           >
             {t.gitlab.trigger_pipeline}
           </Button>
@@ -142,7 +142,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <StatusIcon status={activePipeline.status} />
-                  <span className="typo-body font-medium text-foreground/90">
+                  <span className="typo-body text-foreground/90">
                     {t.gitlab.pipeline_hash}{activePipeline.id}
                   </span>
                   <span className={`typo-caption capitalize ${statusColor(activePipeline.status)}`}>

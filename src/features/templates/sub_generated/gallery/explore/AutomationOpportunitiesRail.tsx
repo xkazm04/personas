@@ -75,7 +75,7 @@ function OpportunityCard({
           <GroupIcon className="w-4 h-4 text-amber-300/80" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="typo-heading font-semibold text-foreground/85">{group.label}</h3>
+          <h3 className="typo-heading text-foreground/85">{group.label}</h3>
         </div>
         <button
           type="button"
@@ -88,7 +88,7 @@ function OpportunityCard({
       </div>
 
       {/* Business value */}
-      <p className="typo-body text-foreground mb-3 leading-relaxed">
+      <p className="typo-body text-foreground mb-3">
         {businessValue}
       </p>
 
@@ -97,7 +97,7 @@ function OpportunityCard({
         <div className="mb-2">
           <div className="flex items-center gap-1.5 mb-1.5">
             <Zap className="w-3 h-3 text-emerald-400/70" />
-            <span className="typo-body font-medium text-emerald-400/70">
+            <span className="typo-body text-emerald-400/70">
               {t.templates.opportunities.ready_now}
             </span>
             <span className="typo-body text-foreground">
@@ -117,7 +117,7 @@ function OpportunityCard({
         <div>
           <div className="flex items-center gap-1.5 mb-1.5">
             <Plus className="w-3 h-3 text-amber-400/60" />
-            <span className="typo-body font-medium text-amber-400/70">
+            <span className="typo-body text-amber-400/70">
               {t.templates.opportunities.add_connector}
             </span>
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded bg-amber-500/10 text-amber-300/80 border border-amber-500/15">
@@ -160,7 +160,7 @@ function TemplateRow({
         {template.test_case_name}
       </span>
       {template.adoption_count > 0 && (
-        <span className="inline-flex items-center gap-0.5 typo-data text-emerald-400/50 tabular-nums flex-shrink-0">
+        <span className="inline-flex items-center gap-0.5 typo-data text-emerald-400/50 flex-shrink-0">
           <Download className="w-2.5 h-2.5" />
           {template.adoption_count}
         </span>

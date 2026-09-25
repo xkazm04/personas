@@ -152,7 +152,7 @@
     },
     "src/features/home/sub_cockpit/widgets/ConnectedServicesWidget.tsx": {"count":1,"sections":[7],"lines":["110"],"contexts":["| `src/features/home/sub_cockpit/widgets/ConnectedServicesWidget.tsx:110` | cockpit `ok` state (emerald). |"]},
     "src/features/plugins/artist/hooks/useCreativeConnectors.ts": {"count":1,"sections":[7],"lines":["31"],"contexts":["| `src/features/plugins/artist/hooks/useCreativeConnectors.ts:31` | `healthy: true`. |"],"resolved":false},
-    "src/features/plugins/companion/inbox/hooks/useCockpitSummary.ts": {"count":1,"sections":[7],"lines":["89"],"contexts":["| `src/features/plugins/companion/inbox/hooks/useCockpitSummary.ts:89` | the `okCreds` count in the companion summary. |"]},
+    "src/features/plugins/companion/inbox/hooks/useCockpitSummary.ts": {"count":1,"sections":[7],"lines":["89"],"contexts":["| `src/features/plugins/companion/inbox/hooks/useCockpitSummary.ts:89` | the `okCreds` count in the companion summary. |"],"resolved":false},
     "src/features/templates/sub_generated/adoption/ucPicker/ucPicker.tsx": {"count":1,"sections":[7],"lines":["86"],"contexts":["| `src/features/templates/sub_generated/adoption/ucPicker/ucPicker.tsx:86` | filters the use-case picker. |"]},
     "src/features/templates/sub_generated/design-preview/ConnectorsSection.tsx": {"count":1,"sections":[7],"lines":["123"],"contexts":["| `src/features/templates/sub_generated/design-preview/ConnectorsSection.tsx:123` | `isHealthy` → `CheckCircle2` in the design recap. |"]},
     "src/features/vault/shared/hooks/health/useBulkHealthcheck.ts": {

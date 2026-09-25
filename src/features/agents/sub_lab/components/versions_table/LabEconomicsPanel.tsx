@@ -34,7 +34,7 @@ export function LabEconomicsPanel({ personaId }: { personaId: string }) {
   return (
     <section className="rounded-card border border-border/40 bg-secondary/30 p-4">
       <header className="mb-3">
-        <h3 className="typo-title text-primary">{t.agents.lab.eco_title}</h3>
+        <h3 className="typo-title">{t.agents.lab.eco_title}</h3>
         <p className="typo-caption text-foreground">{t.agents.lab.eco_subtitle}</p>
       </header>
 

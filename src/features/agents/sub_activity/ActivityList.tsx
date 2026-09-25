@@ -54,7 +54,7 @@ function useColumns(
               {annotation?.starred && (
                 <Star className="w-3 h-3 text-amber-400 shrink-0" fill="currentColor" />
               )}
-              <span className="typo-body font-medium text-foreground/85 truncate">{item.title}</span>
+              <span className="typo-body text-foreground/85 truncate">{item.title}</span>
             </div>
             {annotation && (annotation.tags.length > 0 || annotation.note) && (
               <div className="flex flex-wrap items-center gap-1 mt-0.5">
@@ -138,7 +138,7 @@ function useColumns(
         }
         if (item.type === 'review') {
           return (
-            <span className={`typo-body px-1.5 py-0.5 rounded font-medium ${
+            <span className={`typo-body px-1.5 py-0.5 rounded ${
               item.status === 'approved' ? 'bg-emerald-500/15 text-emerald-400' :
               item.status === 'rejected' ? 'bg-red-500/15 text-red-400' :
               'bg-amber-500/15 text-amber-400'

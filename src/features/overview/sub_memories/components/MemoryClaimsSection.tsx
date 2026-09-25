@@ -103,7 +103,7 @@ export function MemoryClaimsSection({ memoryId, onResolved }: {
   return (
     <div>
       <div className="flex items-center gap-2 mb-1.5">
-        <div className="typo-code font-mono text-foreground uppercase tracking-wider">{md.claims_label}</div>
+        <div className="typo-code text-foreground uppercase tracking-wider">{md.claims_label}</div>
         {open.length > 0 && (
           <span className="px-1.5 py-0.5 typo-label rounded border bg-red-500/10 text-red-300 border-red-500/25">
             {tx(md.claims_open_badge, { count: open.length })}

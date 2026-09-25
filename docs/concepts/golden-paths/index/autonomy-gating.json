@@ -351,7 +351,7 @@
     "src/companion/brain/sleep_cycle.rs": {"count":3,"sections":[3,6],"lines":["520","445-560"],"contexts":["`src/commands/infrastructure/overnight.rs`, `src/companion/brain/sleep_cycle.rs` and"],"resolved":false},
     "src/engine/background.rs": {"count":2,"sections":[6],"lines":["2407-2945"],"contexts":["`src/engine/background.rs`, `src/engine/subscription.rs`, `src/engine/system_ops.rs`,"],"resolved":false},
     "src/engine/subscription.rs": {"count":2,"sections":[3],"lines":["1502"],"contexts":["`src/engine/background.rs`, `src/engine/subscription.rs`, `src/engine/system_ops.rs`,"],"resolved":false},
-    "src/features/plugins/companion/chat/AthenaChatHeader.tsx": {
+    "src/features/companions/athena/chat/AthenaChatHeader.tsx": {
       "count": 2,
       "sections": [5,7],
       "lines": ["116"],

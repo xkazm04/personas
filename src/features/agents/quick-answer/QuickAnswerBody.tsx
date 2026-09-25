@@ -127,7 +127,7 @@ export function QuickAnswerBodyView({ interactions, onAfterBuilderNav }: {
     return (
       <div className="flex flex-col items-center justify-center gap-2.5 py-12 text-center">
         <CheckCircle2 className="w-9 h-9 text-emerald-400/80" />
-        <span className="typo-body-lg font-medium text-foreground">{t.monitor.quick_empty_title}</span>
+        <span className="typo-body-lg text-foreground">{t.monitor.quick_empty_title}</span>
         <span className="typo-body text-foreground max-w-[300px]">{t.monitor.quick_empty_body}</span>
       </div>
     );
@@ -146,7 +146,7 @@ export function QuickAnswerBodyView({ interactions, onAfterBuilderNav }: {
       ) : null}
       {questionGroups.length > 0 && (
         <section className="flex flex-col gap-2.5">
-          <span className="typo-label font-bold text-foreground">
+          <span className="typo-label text-foreground">
             {t.monitor.quick_questions_header}
           </span>
           {questionGroups.map((g) => (
@@ -162,7 +162,7 @@ export function QuickAnswerBodyView({ interactions, onAfterBuilderNav }: {
       )}
       {reviews.length > 0 && (
         <section className="flex flex-col gap-2.5">
-          <span className="typo-label font-bold text-foreground">
+          <span className="typo-label text-foreground">
             {t.monitor.quick_reviews_header}
           </span>
           {/* One decision at a time, full description + the suggested actions

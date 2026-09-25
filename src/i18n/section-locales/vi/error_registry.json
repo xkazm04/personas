@@ -164,5 +164,13 @@
   "zapier_message": "Không thể kết nối webhook Zapier.",
   "zapier_suggestion": "Xác minh URL webhook trong cài đặt tích hợp Zapier.",
   "oauth_account_mismatch_message": "Bạn đã đăng nhập bằng một tài khoản khác với tài khoản được gắn với thông tin xác thực này.",
-  "oauth_account_mismatch_suggestion": "Hãy đăng nhập bằng tài khoản hiển thị trên thông tin xác thực, hoặc thêm thông tin xác thực mới cho tài khoản kia."
+  "oauth_account_mismatch_suggestion": "Hãy đăng nhập bằng tài khoản hiển thị trên thông tin xác thực, hoặc thêm thông tin xác thực mới cho tài khoản kia.",
+  "project_not_found_message": "Dự án đó không có trên thiết bị kia.",
+  "project_not_found_suggestion": "Hãy clone hoặc đăng ký dự án trên thiết bị đó với cùng remote git, rồi gửi lại.",
+  "remote_command_refused_message": "Thiết bị kia đã từ chối lệnh đó.",
+  "remote_command_refused_suggestion": "Phiên làm việc có thể đã kết thúc ở đó. Hãy làm mới Monitor rồi thử lại.",
+  "remote_dispatch_failed_message": "Không thể gửi phiên làm việc đến thiết bị kia.",
+  "remote_dispatch_failed_suggestion": "Hãy kiểm tra xem thiết bị có còn được ghép nối không rồi thử lại, hoặc chạy trên máy này.",
+  "remote_peer_offline_message": "Hiện không thể kết nối tới thiết bị kia.",
+  "remote_peer_offline_suggestion": "Hãy mở Personas trên thiết bị đó và kiểm tra xem cả hai có cùng mạng không. Lệnh gửi sẽ chờ trong hộp gửi đến khi thiết bị đó thức dậy."
 }

@@ -148,7 +148,7 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
           <div className="min-w-0">
             <h2
               id="project-team-preview-title"
-              className="typo-heading font-semibold text-foreground/90 truncate"
+              className="typo-heading text-foreground/90 truncate"
             >
               {team.name}
             </h2>
@@ -240,7 +240,7 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
                     {isExpanded && persona && (
                       <div className="px-3 pb-3 pt-1 space-y-2 border-t border-primary/10">
                         {persona.description && (
-                          <p className="typo-caption text-foreground leading-relaxed">
+                          <p className="typo-caption text-foreground">
                             {persona.description}
                           </p>
                         )}
@@ -313,7 +313,7 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
                           <button
                             type="button"
                             onClick={() => handleOpenInEditor(persona.id)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-card border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 typo-caption font-medium transition-colors"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-card border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 typo-caption transition-colors"
                           >
                             <ExternalLink className="w-3 h-3" />
                             {t.plugins.dev_projects.team_preview_member_open}

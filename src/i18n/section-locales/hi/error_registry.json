@@ -164,5 +164,13 @@
   "zapier_message": "Zapier webhook तक नहीं पहुंचा जा सका।",
   "zapier_suggestion": "अपनी Zapier इंटीग्रेशन सेटिंग्स में webhook URL सत्यापित करें।",
   "oauth_account_mismatch_message": "आपने उस खाते से भिन्न खाते से साइन इन किया है जिससे यह क्रेडेंशियल जुड़ा है।",
-  "oauth_account_mismatch_suggestion": "क्रेडेंशियल पर दिखाए गए खाते से साइन इन करें, या दूसरे खाते के लिए नया क्रेडेंशियल जोड़ें।"
+  "oauth_account_mismatch_suggestion": "क्रेडेंशियल पर दिखाए गए खाते से साइन इन करें, या दूसरे खाते के लिए नया क्रेडेंशियल जोड़ें।",
+  "project_not_found_message": "वह प्रोजेक्ट दूसरे डिवाइस पर नहीं है।",
+  "project_not_found_suggestion": "उसी git रिमोट के साथ प्रोजेक्ट को वहां क्लोन या पंजीकृत करें, फिर इसे फिर से भेजें।",
+  "remote_command_refused_message": "दूसरे डिवाइस ने वह कमांड अस्वीकार कर दिया।",
+  "remote_command_refused_suggestion": "हो सकता है सेशन वहां समाप्त हो गया हो। मॉनिटर को रीफ़्रेश करके फिर से कोशिश करें।",
+  "remote_dispatch_failed_message": "सेशन दूसरे डिवाइस पर नहीं भेजा जा सका।",
+  "remote_dispatch_failed_suggestion": "जांचें कि डिवाइस अभी भी पेयर है और फिर से कोशिश करें, या इसे इस मशीन पर चलाएं।",
+  "remote_peer_offline_message": "दूसरा डिवाइस अभी पहुंच में नहीं है।",
+  "remote_peer_offline_suggestion": "उस डिवाइस पर Personas खोलें और जांचें कि दोनों एक ही नेटवर्क पर हैं। डिवाइस के जागने तक डिस्पैच आउटबॉक्स में प्रतीक्षा करता है।"
 }

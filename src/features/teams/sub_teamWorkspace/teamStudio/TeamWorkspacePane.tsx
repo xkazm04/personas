@@ -214,7 +214,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
           <span className="typo-label text-foreground/85 mb-1.5 block">{t.pipeline.color}</span>
           <TeamColorPicker value={color} onChange={setColor} size="sm" />
         </div>
-        <p className="typo-caption font-normal text-foreground">{ts.identity_hint}</p>
+        <p className="typo-caption text-foreground">{ts.identity_hint}</p>
       </div>
 
       {/* Shared instructions */}
@@ -272,7 +272,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
           type="button"
           disabled={saving || !dirty}
           onClick={() => void handleSave()}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/30 bg-primary/15 typo-body font-medium text-primary hover:bg-primary/25 disabled:opacity-50 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/30 bg-primary/15 typo-body text-primary hover:bg-primary/25 disabled:opacity-50 transition-colors"
         >
           {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
           {ts.workspace_save}
@@ -299,7 +299,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
           <Trash2 className="w-4 h-4 text-red-400/80" />
           <h3 className="typo-label text-red-300">{ts.disband_heading}</h3>
         </div>
-        <p className="typo-caption font-normal text-foreground">{ts.disband_hint}</p>
+        <p className="typo-caption text-foreground">{ts.disband_hint}</p>
         <div className="flex items-center gap-2 mt-1">
           {confirmDisband ? (
             <>
@@ -307,7 +307,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
                 type="button"
                 disabled={disbanding}
                 onClick={() => void handleDisband()}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-red-500/40 bg-red-500/15 typo-body font-medium text-red-300 hover:bg-red-500/25 disabled:opacity-50 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-red-500/40 bg-red-500/15 typo-body text-red-300 hover:bg-red-500/25 disabled:opacity-50 transition-colors"
               >
                 {disbanding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                 {ts.disband_confirm}
@@ -325,7 +325,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
             <button
               type="button"
               onClick={() => setConfirmDisband(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-red-500/30 typo-body font-medium text-red-300 hover:bg-red-500/15 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-red-500/30 typo-body text-red-300 hover:bg-red-500/15 transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
               {ts.disband}

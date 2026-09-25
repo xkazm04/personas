@@ -186,4 +186,15 @@ contestId: string | null,
  * unique only inside one project's arena, so the Monitor keys a column on
  * the pair and links the column back to its contest only when it is known.
  */
-contestProjectId: string | null, };
+contestProjectId: string | null, 
+/**
+ * Set only on the RUNNING device for a session a paired device dispatched
+ * here (`origin == "remote"`): the `remote_jobs` id that spawned it.
+ * `None` for every locally started session.
+ */
+remoteJobId: string | null, 
+/**
+ * Set only on the RUNNING device: the peer_id of the device that asked.
+ * The tile's "from <device>" chip reads it. `None` for local sessions.
+ */
+originPeerId: string | null, };

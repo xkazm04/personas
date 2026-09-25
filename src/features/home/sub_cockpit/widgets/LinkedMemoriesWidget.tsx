@@ -93,7 +93,7 @@ export function LinkedMemoriesWidget({ config, title }: CockpitWidgetProps) {
                   {m.tier}
                 </span>
               </div>
-              <p className="typo-body font-medium text-foreground/90 truncate">{m.title}</p>
+              <p className="typo-body text-foreground/90 truncate">{m.title}</p>
               <p className="typo-caption text-foreground line-clamp-2">{m.content}</p>
             </RevealItem>
           ))}

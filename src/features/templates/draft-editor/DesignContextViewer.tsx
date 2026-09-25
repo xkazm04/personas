@@ -46,7 +46,7 @@ export function DesignContextViewer({ value, onChange, disabled }: DesignContext
             onClick={() => setMode('structured')}
             className={`flex items-center gap-1 px-2 py-1 typo-body rounded-lg transition-colors ${
               mode === 'structured'
-                ? 'bg-primary/15 text-foreground font-medium'
+                ? 'bg-primary/15 text-foreground'
                 : 'text-foreground hover:text-muted-foreground'
             }`}
           >
@@ -58,7 +58,7 @@ export function DesignContextViewer({ value, onChange, disabled }: DesignContext
             onClick={() => setMode('raw')}
             className={`flex items-center gap-1 px-2 py-1 typo-body rounded-lg transition-colors ${
               mode === 'raw'
-                ? 'bg-primary/15 text-foreground font-medium'
+                ? 'bg-primary/15 text-foreground'
                 : 'text-foreground hover:text-muted-foreground'
             }`}
           >
@@ -83,10 +83,10 @@ export function DesignContextViewer({ value, onChange, disabled }: DesignContext
             {/* Summary */}
             {contextData.summary && (
               <div>
-                <p className="typo-heading text-foreground uppercase tracking-wider mb-2">
+                <p className="typo-heading text-foreground uppercase mb-2">
                   Summary
                 </p>
-                <p className="typo-body text-foreground leading-relaxed">
+                <p className="typo-body text-foreground">
                   {contextData.summary}
                 </p>
               </div>
@@ -104,7 +104,7 @@ export function DesignContextViewer({ value, onChange, disabled }: DesignContext
               <div>
                 <div className="flex items-center gap-2 mb-2 px-1">
                   <Link className="w-3.5 h-3.5 text-foreground" />
-                  <p className="typo-heading text-foreground uppercase tracking-wider">
+                  <p className="typo-heading text-foreground uppercase">
                     {t.shared.draft_editor.credential_links}
                   </p>
                 </div>

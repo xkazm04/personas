@@ -32,5 +32,9 @@
   "tool_count_other": "{count} alat",
   "trust": "Kepercayaan",
   "unpin_mini_player": "Lepas sematkan pemutar mini",
-  "waiting_for_output": "Menunggu keluaran…"
+  "waiting_for_output": "Menunggu keluaran…",
+  "bg_failed": "{count} gagal",
+  "bg_open": "Buka proses",
+  "bg_running": "{count} berjalan",
+  "bg_stop": "Hentikan proses"
 }

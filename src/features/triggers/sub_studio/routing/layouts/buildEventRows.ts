@@ -2,17 +2,18 @@
  * buildEventRows — pure derivation of the routing view's row model from the
  * raw backend data (triggers + recent events + subscriptions + persona map).
  *
- * Inference heuristic documented in UnifiedRoutingView.tsx's top-of-file
- * comment; maintain both in sync when you change the rules.
+ * Trigger-backed connections are NOT inferred here: they come from the route
+ * codec (../../libs/routeCodec), the tested inverse of what the Studio writes,
+ * so there is exactly one cable per committed route. This file keeps the
+ * event-row job: catalog rows, persona emitters, legacy subscriptions.
  */
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
 import { EVENT_SOURCE_CATEGORIES, findTemplateByEventType } from '@/features/triggers/lib/eventSourceTemplates';
-import { parseChainTrigger, type ChainTriggerView } from './routingHelpers';
-import type { EventRow, SourceClass } from './routingHelpers';
-import { silentCatch } from '@/lib/silentCatch';
+import { isListenerRoute, triggersToRoutes, type LiveRoute } from '../../libs/routeCodec';
+import type { Connection, EventRow, SourceClass } from './routingHelpers';
 
 
 export function buildEventRows(
@@ -60,29 +61,28 @@ export function buildEventRows(
     for (const tmpl of cat.templates) ensureRow(tmpl.eventType);
   }
 
-  // Step 2 — Chain triggers: deterministic (source persona, chained target) tuples.
-  const chainTriggers = allTriggers
-    .map(parseChainTrigger)
-    .filter((c): c is ChainTriggerView => c !== null);
+  function addRoute(row: EventRow, route: LiveRoute, kind: Connection['kind']): void {
+    row.connections.push({
+      kind,
+      subscriptionId: null,
+      triggerId: route.primaryTriggerId,
+      personaId: route.targetPersonaId,
+      persona: personaMap.get(route.targetPersonaId),
+      useCaseId: route.useCaseId,
+      route,
+    });
+  }
 
-  for (const c of chainTriggers) {
-    const row = ensureRow(c.eventType);
-    addSourcePersona(row, c.sourcePersonaId);
-    if (c.trigger.persona_id !== c.sourcePersonaId) {
-      // Dedup by (target, source) — not just target — so two distinct chains
-      // into the same persona (A→B and C→B) both survive as separate edges.
-      if (!row.connections.some(x => x.personaId === c.trigger.persona_id && x.kind === 'chain' && x.sourcePersonaId === c.sourcePersonaId)) {
-        row.connections.push({
-          kind: 'chain',
-          subscriptionId: null,
-          triggerId: c.trigger.id,
-          personaId: c.trigger.persona_id,
-          persona: personaMap.get(c.trigger.persona_id),
-          chainCondition: c.conditionType,
-          sourcePersonaId: c.sourcePersonaId,
-        });
-      }
-    }
+  const routes = triggersToRoutes(allTriggers);
+
+  // Step 2 — Chain routes: deterministic (source persona, target) tuples. One
+  // cable per chain trigger, so A→B and C→B (or two conditions on A→B) stay
+  // distinct; a self-chain is not drawn.
+  for (const route of routes) {
+    if (route.source.kind !== 'persona') continue;
+    const row = ensureRow(route.eventType);
+    addSourcePersona(row, route.source.personaId);
+    if (route.targetPersonaId !== route.source.personaId) addRoute(row, route, 'chain');
   }
 
   // Step 3 — Recent events: runtime ground truth for who has actually emitted what.
@@ -128,28 +128,12 @@ export function buildEventRows(
     }
   }
 
-  // Step 5 — event_listener triggers — explicit listening intent.
-  for (const t of allTriggers) {
-    if (t.trigger_type !== 'event_listener' || !t.config) continue;
-    try {
-      const cfg = JSON.parse(t.config) as { listen_event_type?: string };
-      const et = cfg.listen_event_type;
-      if (!et) continue;
-      const row = ensureRow(et);
-      if (row.sourcePersonas.some(s => s.personaId === t.persona_id)) continue;
-      // Phase C4: capability-scoped triggers are distinct connections even for
-      // the same persona, so a persona can listen to the same event with two
-      // different capabilities without the UI collapsing them.
-      if (row.connections.some(c => c.personaId === t.persona_id && (c.useCaseId ?? null) === (t.use_case_id ?? null))) continue;
-      row.connections.push({
-        kind: 'trigger-listener',
-        subscriptionId: null,
-        triggerId: t.id,
-        personaId: t.persona_id,
-        persona: personaMap.get(t.persona_id),
-        useCaseId: t.use_case_id,
-      });
-    } catch (err) { silentCatch("features/triggers/sub_studio/routing/layouts/buildEventRows:catch1")(err); }
+  // Step 5 — every other committed route: listeners (user listeners and
+  // Marketplace feeds) and signal sources. Auto-listeners were folded into their
+  // source trigger by the codec, so N schedules into one persona are N cables.
+  for (const route of routes) {
+    if (route.source.kind === 'persona') continue;
+    addRoute(ensureRow(route.eventType), route, isListenerRoute(route) ? 'trigger-listener' : 'signal');
   }
 
   // Final pass: drop dead-noise rows.

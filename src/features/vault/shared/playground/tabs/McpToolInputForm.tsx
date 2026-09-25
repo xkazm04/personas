@@ -45,7 +45,7 @@ export function ToolInputForm({
         return (
           <div key={key} className="space-y-1">
             <div className="flex items-center gap-2">
-              <label className="typo-code font-mono text-foreground">{key}</label>
+              <label className="typo-code text-foreground">{key}</label>
               {isRequired && <span className="typo-body text-amber-400/60">required</span>}
               <span className="typo-body text-violet-400/50">{propType}</span>
             </div>
@@ -58,7 +58,7 @@ export function ToolInputForm({
                 onChange={(e) => onChange({ ...values, [key]: e.target.value })}
                 placeholder={`Enter JSON ${propType}...`}
                 rows={3}
-                className="w-full px-2 py-1.5 rounded typo-code font-mono bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground resize-none focus-visible:outline-none focus-visible:border-primary/25"
+                className="w-full px-2 py-1.5 rounded typo-code bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground resize-none focus-visible:outline-none focus-visible:border-primary/25"
               />
             ) : propType === 'boolean' ? (
               <select
@@ -76,7 +76,7 @@ export function ToolInputForm({
                 value={values[key] || ''}
                 onChange={(e) => onChange({ ...values, [key]: e.target.value })}
                 placeholder={`Enter ${propType}...`}
-                className="w-full px-2 py-1.5 rounded typo-code font-mono bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
+                className="w-full px-2 py-1.5 rounded typo-code bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
               />
             )}
           </div>

@@ -13,6 +13,7 @@ use url::Url;
 
 use crate::cloud;
 use crate::cloud::client::CloudClient;
+use crate::cloud::persona_projection::{self, SyncCause, SyncOutcome};
 use crate::db::models::{
     CreateSmeeRelayInput, SmeeRelay, UpdateExecutionStatus, UpdateSmeeRelayInput,
 };
@@ -893,41 +894,9 @@ pub async fn cloud_deploy_persona(
     let persona = personas::get_by_id(&state.db, &persona_id)?;
 
     // First, sync the persona to the cloud orchestrator so it exists there.
-    // v1: living-agent sections not exported (responsibilities/episodes stay
-    // None — `## Core` still renders from the persona snapshot).
     let tools = tools::get_tools_for_persona(&state.db, &persona_id)?;
-    let prompt = engine::prompt::assemble_prompt(
-        &persona,
-        &tools,
-        None,
-        None,
-        None,
-        None,
-        #[cfg(feature = "desktop")]
-        None,
-    );
-
-    // Upsert the persona on the cloud side
-    let persona_body = serde_json::json!({
-        "id": persona.id,
-        "name": persona.name,
-        "description": persona.description,
-        "systemPrompt": prompt,
-        "structuredPrompt": persona.structured_prompt,
-        "icon": persona.icon,
-        "color": persona.color,
-        "enabled": persona.enabled,
-        "maxConcurrent": persona.max_concurrent,
-        "timeoutMs": persona.timeout_ms,
-        "modelProfile": persona.model_profile,
-        "maxBudgetUsd": persona.max_budget_usd,
-        "maxTurns": persona.max_turns,
-        "designContext": persona.design_context,
-        "homeTeamId": persona.home_team_id,
-        "coreProfile": persona.core_profile,
-    });
-
-    client.upsert_persona(&persona_body).await?;
+    let projection = persona_projection::project(&persona, &tools);
+    client.upsert_persona(&projection.body).await?;
 
     // Now create the deployment
     let deployment = client
@@ -942,23 +911,20 @@ pub async fn cloud_deploy_persona(
     );
 
     // Record the deploy in the unified deployment audit trail with the assembled
-    // prompt snapshot. Cloud deploys have no GitLab project, so `project_id` is a
-    // 0 sentinel and `target` = "cloud". Best-effort: a failed history write must
-    // NOT fail the deploy (the deployment already succeeded above). This is the
-    // substrate the deferred cloud-version-rollback will build on.
-    if let Err(e) = deployment_history::insert(
+    // prompt snapshot; the deployment id rides in `agent_id`, which reconcile
+    // reads to tell known deployments from orphans. Best-effort: a failed
+    // history write must NOT fail the deploy (the deployment already succeeded
+    // above). This is the substrate the deferred cloud-version-rollback will
+    // build on.
+    let cause = SyncCause::Deploy {
+        deployment_id: deployment.id.clone(),
+    };
+    if let Err(e) = persona_projection::record_sync(
         &state.db,
-        &persona.id,
-        &persona.name,
-        0,
-        "cloud",
-        0,
-        "success",
-        Some(&deployment.id),
-        None,
-        Some(&prompt),
-        None,
-        "cloud",
+        &persona,
+        &projection,
+        &SyncOutcome::Synced,
+        &cause,
     ) {
         tracing::warn!(
             persona_id = %persona_id,
@@ -982,66 +948,20 @@ pub async fn cloud_sync_persona(
 
     let persona = personas::get_by_id(&state.db, &persona_id)?;
     let tools_list = tools::get_tools_for_persona(&state.db, &persona_id)?;
-    // v1: living-agent sections not exported (responsibilities/episodes stay
-    // None — `## Core` still renders from the persona snapshot).
-    let prompt = engine::prompt::assemble_prompt(
-        &persona,
-        &tools_list,
-        None,
-        None,
-        None,
-        None,
-        #[cfg(feature = "desktop")]
-        None,
-    );
+    let projection = persona_projection::project(&persona, &tools_list);
 
-    let persona_body = serde_json::json!({
-        "id": persona.id,
-        "name": persona.name,
-        "description": persona.description,
-        "systemPrompt": prompt,
-        "structuredPrompt": persona.structured_prompt,
-        "icon": persona.icon,
-        "color": persona.color,
-        "enabled": persona.enabled,
-        "maxConcurrent": persona.max_concurrent,
-        "timeoutMs": persona.timeout_ms,
-        "modelProfile": persona.model_profile,
-        "maxBudgetUsd": persona.max_budget_usd,
-        "maxTurns": persona.max_turns,
-        "designContext": persona.design_context,
-        "homeTeamId": persona.home_team_id,
-        "coreProfile": persona.core_profile,
-    });
-
-    client.upsert_persona(&persona_body).await?;
-
-    tracing::info!(persona_id = %persona_id, "Persona synced to cloud");
-
-    // Record the sync in the unified deployment audit trail with the freshly
-    // assembled prompt snapshot, so cloud prompt updates are auditable alongside
-    // GitLab deploys. Best-effort — a failed history write must NOT fail the sync.
-    if let Err(e) = deployment_history::insert(
+    // Push and record the outcome (success or failure) in the unified
+    // deployment audit trail with the assembled prompt snapshot, so cloud
+    // prompt updates are auditable alongside GitLab deploys. The upsert's own
+    // error is returned unchanged.
+    persona_projection::push_projection(
+        client.as_ref(),
         &state.db,
-        &persona.id,
-        &persona.name,
-        0,
-        "cloud",
-        0,
-        "success",
-        None,
-        None,
-        Some(&prompt),
-        None,
-        "cloud",
-    ) {
-        tracing::warn!(
-            persona_id = %persona_id,
-            "Failed to record cloud sync in history: {e}"
-        );
-    }
-
-    Ok(())
+        &persona,
+        &projection,
+        &SyncCause::Sync,
+    )
+    .await
 }
 
 /// List all cloud deployments.

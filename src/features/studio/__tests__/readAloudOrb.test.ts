@@ -6,21 +6,21 @@ import { act, renderHook } from '@testing-library/react';
 
 let finish!: () => void;
 const pause = vi.fn();
-vi.mock('@/features/plugins/companion/voicePlayback', () => ({
+vi.mock('@/features/companions/athena/voicePlayback', () => ({
   synthesize: vi.fn(async () => 'blob:clip'),
   play: vi.fn(() => ({ audio: { pause } as unknown as HTMLAudioElement, done: new Promise<void>((r) => { finish = r; }) })),
 }));
-vi.mock('@/features/plugins/companion/useTtsVoiceSelection', () => ({
+vi.mock('@/features/companions/athena/useTtsVoiceSelection', () => ({
   useTtsVoiceSelection: () => ({ engine: 'kokoro', voiceId: 'v', credentialId: null, configured: true }),
 }));
-vi.mock('@/features/plugins/companion/useTtsSettings', () => ({ useTtsSettings: () => undefined }));
+vi.mock('@/features/companions/athena/useTtsSettings', () => ({ useTtsSettings: () => undefined }));
 
-const { useCompanionStore } = await import('@/features/plugins/companion/companionStore');
+const { useAthenaStore } = await import('@/features/companions/athena/athenaStore');
 const { useGuideReadAloud, READ_ALOUD_ORB_SOURCE } = await import('../guide/useGuideReadAloud');
-const speaking = () => !!useCompanionStore.getState().orbSpeakingSources[READ_ALOUD_ORB_SOURCE];
+const speaking = () => !!useAthenaStore.getState().orbSpeakingSources[READ_ALOUD_ORB_SOURCE];
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
-afterEach(() => useCompanionStore.setState({ orbSpeakingSources: {} }));
+afterEach(() => useAthenaStore.setState({ orbSpeakingSources: {} }));
 
 describe('read aloud on the orb', () => {
   it('lights while the clip plays and clears when it ends', async () => {

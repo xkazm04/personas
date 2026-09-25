@@ -13,6 +13,7 @@ import {
 import type { SystemStore } from "../../storeTypes";
 import type { SidebarSection, HomeTab, GoalsTab, KpisTab, TeamsTab, EditorTab, DesignSubTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ApprovalsMode } from "@/lib/types/types";
 import type { CompanionCockpitSpecBody } from "@/api/companion";
+import type { CompanionsPage } from "@/features/companions/types";
 
 /** Factory L2 tab ids — mirrors `L2Tab` in sub_factory/l2/FactoryProjectTabs
  *  (kept as a local union so the store does not import feature code). */
@@ -138,6 +139,14 @@ export interface UiSlice {
   connectorTestActive: boolean;
   templateGalleryTotal: number;
   pluginTab: PluginTab;
+  /**
+   * The ONE destination inside the Companions section: `landing`, or
+   * `<companion>:<page>` (see `COMPANIONS_PAGES`). One field rather than a
+   * per-companion tab each, so a deep link moves the section and the page
+   * together and the vocabulary has a single home. Persisted; `landing` is
+   * the default. Always write it through `navigateToCompanions`.
+   */
+  companionsPage: CompanionsPage;
   devToolsTab: DevToolsTab;
   eventBusTab: EventBusTab;
   adoptionDraft: AdoptionDraft | null;
@@ -302,6 +311,7 @@ export interface UiSlice {
   setTemplateGalleryTotal: (total: number) => void;
   setAdoptionDraft: (draft: AdoptionDraft | null) => void;
   setPluginTab: (tab: PluginTab) => void;
+  setCompanionsPage: (page: CompanionsPage) => void;
   setDevToolsTab: (tab: DevToolsTab) => void;
   setEventBusTab: (tab: EventBusTab) => void;
   setContextScanActive: (active: boolean) => void;
@@ -448,6 +458,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   connectorTestActive: false,
   templateGalleryTotal: 0,
   pluginTab: "browse" as PluginTab,
+  companionsPage: "landing" as CompanionsPage,
   // "projects" was retired from DevToolsTab when project management moved to
   // Teams; the cast hid the stale default (no branch matched → blank page).
   devToolsTab: "overview" as DevToolsTab,
@@ -570,6 +581,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setTemplateGalleryTotal: (total) => set({ templateGalleryTotal: total }),
   setAdoptionDraft: (draft) => set({ adoptionDraft: draft }),
   setPluginTab: (tab) => set({ pluginTab: tab }),
+  setCompanionsPage: (page) => set({ companionsPage: page }),
   setDevToolsTab: (tab) => set({ devToolsTab: tab }),
   setEventBusTab: (tab) => startTransition(() => set({ eventBusTab: tab })),
   setContextScanActive: (active) => set({ contextScanActive: active }),
@@ -584,7 +596,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setCanvasEdgeFocus: (focus) => set({ canvasEdgeFocus: focus }),
   setLiveStreamHighlightEventId: (id) => set({ liveStreamHighlightEventId: id }),
   enabledPlugins: new Set<PluginTab>([
-    'dev-tools', 'obsidian-brain', 'drive', 'twin', 'companion', 'scraper',
+    'dev-tools', 'obsidian-brain', 'drive', 'twin', 'scraper',
   ]),
   togglePlugin: (plugin) => set((state) => {
     const next = new Set(state.enabledPlugins);

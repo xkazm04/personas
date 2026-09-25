@@ -49,7 +49,7 @@ export function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPast
 
 export function TestRunCounters({ progress }: { progress: TestProgress }) {
   return (
-    <div className="flex items-center gap-2.5 shrink-0 typo-body font-medium">
+    <div className="flex items-center gap-2.5 shrink-0 typo-body">
       <span className="text-foreground">
         {progress.current}/{progress.total}
       </span>
@@ -104,7 +104,7 @@ export function RequestResponsePanel({ selectedEndpoint, response, sendError, is
       <div className={`grid gap-0 ${response || sendError ? 'grid-cols-[1fr_1px_1fr]' : 'grid-cols-1'}`}>
         <div className="space-y-4 min-w-0 pr-4">
           <div className="flex items-center gap-2">
-            <span className="typo-heading uppercase tracking-wider text-blue-400/70 font-semibold">
+            <span className="typo-heading uppercase text-blue-400/70">
               {sh.request_builder}
             </span>
             <div className="flex-1" />
@@ -130,11 +130,11 @@ export function RequestResponsePanel({ selectedEndpoint, response, sendError, is
 
         {(response || sendError) && (
           <div className="min-w-0 pl-4">
-            <span className="typo-heading uppercase tracking-wider text-emerald-400/70 font-semibold block mb-3">
+            <span className="typo-heading uppercase text-emerald-400/70 block mb-3">
               {sh.response}
             </span>
             {sendError && (
-              <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-code text-red-400 font-mono whitespace-pre-wrap">
+              <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-code text-red-400 whitespace-pre-wrap">
                 {sendError}
               </div>
             )}
@@ -154,7 +154,7 @@ export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClo
     <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-modal">
       <div className="w-full max-w-2xl mx-4 bg-background border border-primary/15 rounded-modal shadow-elevation-3 p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="typo-heading font-semibold text-foreground">{vt.paste_spec_title}</h3>
+          <h3 className="typo-heading text-foreground">{vt.paste_spec_title}</h3>
           <Button
             variant="ghost"
             size="icon-sm"
@@ -168,7 +168,7 @@ export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClo
           value={pasteContent}
           onChange={(e) => setPasteContent(e.target.value)}
           placeholder={vt.paste_placeholder}
-          className="w-full h-[300px] p-3 rounded-card typo-code font-mono bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground resize-none focus-visible:outline-none focus-visible:border-primary/25"
+          className="w-full h-[300px] p-3 rounded-card typo-code bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground resize-none focus-visible:outline-none focus-visible:border-primary/25"
         />
         <div className="flex justify-end gap-2">
           <Button

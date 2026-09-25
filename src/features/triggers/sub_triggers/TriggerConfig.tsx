@@ -78,7 +78,7 @@ export function TriggerConfig() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="typo-code font-mono text-foreground uppercase tracking-wider">{t.triggers.config.title}</h3>
+        <h3 className="typo-code text-foreground uppercase tracking-wider">{t.triggers.config.title}</h3>
         <Button
           variant="primary"
           size="sm"

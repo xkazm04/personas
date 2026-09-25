@@ -60,7 +60,7 @@ export function AppearanceStep() {
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <Languages className="w-4 h-4 text-foreground" />
-          <span className="typo-body font-medium text-foreground">{t.onboarding.language_label}</span>
+          <span className="typo-body text-foreground">{t.onboarding.language_label}</span>
         </div>
         <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))' }}>
           {ONBOARDING_LANGUAGES.map((lang) => {
@@ -78,7 +78,7 @@ export function AppearanceStep() {
                 aria-pressed={isActive}
                 className={`flex items-center gap-2 px-3 py-2 rounded-modal border transition-colors typo-body ${
                   isActive
-                    ? 'border-primary/30 bg-primary/5 text-foreground/90 font-medium'
+                    ? 'border-primary/30 bg-primary/5 text-foreground/90'
                     : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5 text-foreground'
                 }`}
               >
@@ -95,7 +95,7 @@ export function AppearanceStep() {
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <Type className="w-4 h-4 text-foreground" />
-          <span className="typo-body font-medium text-foreground">{t.onboarding.text_size_label}</span>
+          <span className="typo-body text-foreground">{t.onboarding.text_size_label}</span>
         </div>
         <TextScalePicker textScale={textScale} setTextScale={setTextScale} />
       </div>
@@ -104,7 +104,7 @@ export function AppearanceStep() {
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <Rows2 className="w-4 h-4 text-foreground" />
-          <span className="typo-body font-medium text-foreground">{t.onboarding.density_label}</span>
+          <span className="typo-body text-foreground">{t.onboarding.density_label}</span>
         </div>
         <DensityToggle density={density} onChange={setDensity} scopeId="onboarding" />
       </div>

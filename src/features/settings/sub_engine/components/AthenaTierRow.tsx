@@ -121,7 +121,7 @@ export function AthenaTierRow({ cls, tier, installed, grokModels, onChange }: At
       className="rounded-card border border-primary/10 bg-secondary/20 p-3 space-y-2"
     >
       <div>
-        <p className="typo-card-label text-foreground">{s[`${cls}_label`]}</p>
+        <p className="typo-card-label">{s[`${cls}_label`]}</p>
         <p className="typo-caption text-foreground">{s[`${cls}_description`]}</p>
       </div>
       <div className="flex flex-wrap items-start gap-3">

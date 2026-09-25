@@ -65,13 +65,13 @@ export const ComposerEventPersonaList = forwardRef<HTMLInputElement, ComposerEve
                   }`}
                 >
                   <div
-                    className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-semibold typo-caption"
+                    className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center typo-caption"
                     style={{ background: `${p.color}30`, color: p.color }}
                   >
                     {p.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="typo-body text-foreground font-medium truncate">{p.name}</div>
+                    <div className="typo-body text-foreground truncate">{p.name}</div>
                     {sCount > 0 && (
                       <div className="typo-caption text-primary">
                         {sCount} event{sCount === 1 ? "" : "s"} subscribed

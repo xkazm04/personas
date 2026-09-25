@@ -94,7 +94,7 @@ export default function IdentitySettings() {
     <div className="space-y-6 p-4 max-w-2xl">
       {/* Local Identity */}
       <section>
-        <h3 className="typo-heading font-semibold text-foreground mb-3 flex items-center gap-2">
+        <h3 className="typo-heading text-foreground mb-3 flex items-center gap-2">
           <Fingerprint className="w-4 h-4" />
           {st.your_identity}
         </h3>
@@ -104,7 +104,7 @@ export default function IdentitySettings() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="typo-caption text-foreground">{st.peer_id_label}</div>
-                  <div className="typo-code font-mono text-foreground">
+                  <div className="typo-code text-foreground">
                     {truncatePeerId(localIdentity.peer_id)}
                   </div>
                 </div>
@@ -176,7 +176,7 @@ export default function IdentitySettings() {
       {/* Trusted Peers */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="typo-heading font-semibold text-foreground">{st.trusted_peers}</h3>
+          <h3 className="typo-heading text-foreground">{st.trusted_peers}</h3>
           <button
             type="button"
             onClick={() => setShowImportForm(!showImportForm)}
@@ -194,7 +194,7 @@ export default function IdentitySettings() {
               value={importInput}
               onChange={(e) => setImportInput(e.target.value)}
               placeholder={st.paste_card_placeholder}
-              className="w-full px-3 py-2 typo-code rounded-card border border-border bg-background focus-ring font-mono resize-none"
+              className="w-full px-3 py-2 typo-code rounded-card border border-border bg-background focus-ring resize-none"
               rows={3}
             />
             <input
@@ -235,7 +235,7 @@ export default function IdentitySettings() {
                 className="rounded-modal border border-border bg-secondary/20 p-3 flex items-center justify-between"
               >
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5 typo-body font-medium text-foreground truncate">
+                  <div className="flex items-center gap-1.5 typo-body text-foreground truncate">
                     {peer.trust_level === 'verified' ? (
                       <TrustVerifiedIcon className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                     ) : peer.trust_level === 'revoked' ? (
@@ -245,7 +245,7 @@ export default function IdentitySettings() {
                     )}
                     <span className="truncate">{peer.display_name}</span>
                   </div>
-                  <div className="typo-code text-foreground font-mono">{truncatePeerId(peer.peer_id)}</div>
+                  <div className="typo-code text-foreground">{truncatePeerId(peer.peer_id)}</div>
                   {peer.notes && (
                     <div className="typo-caption text-foreground mt-0.5">{peer.notes}</div>
                   )}

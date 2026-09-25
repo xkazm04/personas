@@ -72,7 +72,7 @@ export default function ProfilesAtelier() {
           <h1 className="typo-heading-lg truncate">{twin.profiles.title}</h1>
           <p className="typo-caption">{twin.profiles.subtitle}</p>
         </div>
-        <Button onClick={() => openTwinExperience({ mode: 'create' })} variant="accent" accentColor="violet" className="shrink-0">
+        <Button onClick={() => openTwinExperience({ mode: 'create' })} variant="accent" tone="agent" className="shrink-0">
           <Plus className="w-4 h-4 mr-1.5" />
           {twin.profiles.newTwin}
         </Button>

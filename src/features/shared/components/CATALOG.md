@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**152 reusable components** live under `src/features/shared/components/`.
+**154 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -50,6 +50,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `Collapse` | Pure-CSS animated expand/collapse container. |
 | `ConfidenceArc` | Semi-circular arc gauge for displaying confidence metrics. |
 | `DataGrid` | Paginated table — page-size selector, row selection + bulk-action toolbar, row drag; caller-owned sort. Else use UnifiedTable. |
+| `DataGridPager` | _(add a `@catalog` tag)_ |
 | `DensityToggle` | Suffix added to layoutId to avoid collisions when multiple toggles render. |
 | `DesignConnectorGrid` | _(add a `@catalog` tag)_ |
 | `DragHandle` | Visual size of the grip icon. |
@@ -77,6 +78,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `Tooltip` | Hover/focus tooltip. Use instead of bare title= when you need styling/rich content. |
 | `TruncateWithTooltip` | Truncates overflowing text and shows the full value in a Tooltip. |
 | `UnifiedTable` | Standard data table (sorting/columns). Use instead of hand-built <table> grids. |
+| `UnifiedTableRow` | _(add a `@catalog` tag)_ |
 | `UuidLabel` | _(add a `@catalog` tag)_ |
 
 ## document
@@ -246,4 +248,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_152 components, 44 without a `@catalog` description._
+_154 components, 46 without a `@catalog` description._

@@ -30,7 +30,7 @@ export function ComposerScheduleRhythmCard({
         {icon}
       </div>
       <div>
-        <div className="typo-body text-foreground font-semibold">{title}</div>
+        <div className="typo-body text-foreground">{title}</div>
         <div className="typo-caption text-foreground mt-0.5">{caption}</div>
       </div>
       {active && (

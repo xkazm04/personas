@@ -47,6 +47,7 @@
       "resolved": false
     },
     "executions.rs": {"count":2,"sections":[7],"lines":["311","253"],"contexts":["deferring to the SQL `ORDER BY e.created_at DESC` (`executions.rs:311`). The day buckets are"],"resolved":false},
+    "features/plugins/companion/chat/athenaChatSend.ts": {"count":1,"sections":[9],"lines":["76"],"contexts":["| TP | `features/plugins/companion/chat/athenaChatSend.ts:76` | `createdAt` drives the transcript's day separators |"],"resolved":false},
     "hooks/realtime/useRealtimeEvents.ts": {
       "count": 2,
       "sections": [7,9],
@@ -136,6 +137,15 @@
       "verbatim": "PersonaOverviewFilters.tsx"
     },
     "src/features/agents/sub_activity/ActivityTab.tsx": {"count":2,"sections":[7],"lines":["47-53","108"],"contexts":["the largest is five (`ActivityTab.tsx:47-53`)."],"resolvedFrom":"basename","verbatim":"ActivityTab.tsx"},
+    "src/features/companions/athena/ActivityTray.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["26"],
+      "contexts": ["`credentialListTypes.ts:137`, `HealingTimeline.tsx:242` and `ActivityTray.tsx:26`. A"],
+      "resolvedFrom": "basename",
+      "verbatim": "ActivityTray.tsx"
+    },
+    "src/features/companions/athena/inbox/hooks/useUnifiedInbox.ts": {"count":1,"sections":[7],"lines":["97"],"contexts":["`useUnifiedInbox.ts:97` (four), `ManualReviewList.tsx:134` (local + cloud),"],"resolvedFrom":"basename","verbatim":"useUnifiedInbox.ts"},
     "src/features/fleet/monitor/channels/conversationModel.ts": {"count":2,"sections":[7],"lines":["39-41"],"contexts":["### E — `conversationModel.ts` buckets in UTC and labels in local time"],"resolvedFrom":"basename","verbatim":"conversationModel.ts"},
     "src/features/fleet/monitor/channels/mergedFeed.tsx": {"count":6,"sections":[0,7],"lines":["42"],"contexts":["`mergedFeed.tsx:42`, same directory, same `TaggedItem[]`, same `at`, does not:"],"resolvedFrom":"basename","verbatim":"mergedFeed.tsx"},
     "src/features/fleet/monitor/channels/useConversation.ts": {
@@ -192,23 +202,6 @@
       "resolvedFrom": "basename",
       "verbatim": "HealingTimeline.tsx"
     },
-    "src/features/plugins/companion/ActivityTray.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["26"],
-      "contexts": ["`credentialListTypes.ts:137`, `HealingTimeline.tsx:242` and `ActivityTray.tsx:26`. A"],
-      "resolvedFrom": "basename",
-      "verbatim": "ActivityTray.tsx"
-    },
-    "src/features/plugins/companion/chat/athenaChatSend.ts": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["76"],
-      "contexts": ["| TP | `features/plugins/companion/chat/athenaChatSend.ts:76` | `createdAt` drives the transcript's day separators |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "features/plugins/companion/chat/athenaChatSend.ts"
-    },
-    "src/features/plugins/companion/inbox/hooks/useUnifiedInbox.ts": {"count":1,"sections":[7],"lines":["97"],"contexts":["`useUnifiedInbox.ts:97` (four), `ManualReviewList.tsx:134` (local + cloud),"],"resolvedFrom":"basename","verbatim":"useUnifiedInbox.ts"},
     "src/features/plugins/dev-tools/sub_overview/overviewHelpers.ts": {
       "count": 1,
       "sections": [7],

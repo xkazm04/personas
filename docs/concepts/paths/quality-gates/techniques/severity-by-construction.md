@@ -120,7 +120,8 @@ hundreds. The sound sequence:
 1. **Advisory, editor rung** — a calibration window. Collect the finding
    population; measure precision against ground truth.
 2. **Blocking for new code** — escalate to blocking severity with the
-   legacy population held by a baseline ratchet (see ratchet-design), or
+   legacy population held by a baseline ratchet (see
+   [ratchet-design](../../metric-gates/techniques/ratchet-design.md)), or
    scoped to touched files with the full-scope backstop tracking the
    remainder.
 3. **Blocking everywhere** — when the ratchet hits zero, delete the

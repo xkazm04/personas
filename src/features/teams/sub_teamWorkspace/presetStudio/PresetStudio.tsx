@@ -58,7 +58,7 @@ export function PresetStudio() {
             <button
               type="button"
               onClick={() => setChosen(null)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body font-medium text-foreground hover:bg-secondary/50 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body text-foreground hover:bg-secondary/50 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               {t.pipeline.preset_back_to_gallery}
@@ -71,7 +71,7 @@ export function PresetStudio() {
           className="flex-shrink-0 px-6 py-3 border-b border-primary/10 bg-secondary/15 flex items-start gap-3"
           style={{ borderLeft: `3px solid ${colorWithAlpha(teamColor, 0.7)}` }}
         >
-          <p className="typo-body text-foreground leading-relaxed max-w-3xl">{chosen.description}</p>
+          <p className="typo-body text-foreground max-w-3xl">{chosen.description}</p>
         </div>
         <PresetProcessHost
           preset={chosen}
@@ -96,7 +96,7 @@ export function PresetStudio() {
           <button
             type="button"
             onClick={() => setPresetFlowOpen(false)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body font-medium text-foreground hover:bg-secondary/50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body text-foreground hover:bg-secondary/50 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             {t.pipeline.team_studio.teams_header_label}

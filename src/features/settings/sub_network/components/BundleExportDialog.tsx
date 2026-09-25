@@ -249,7 +249,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
     <BaseModal isOpen={isOpen} onClose={onClose} titleId="bundle-export-title" maxWidthClass="max-w-lg">
       <div className="p-5 space-y-4">
         <div>
-          <h2 id="bundle-export-title" className="typo-body-lg font-semibold text-foreground flex items-center gap-2">
+          <h2 id="bundle-export-title" className="typo-body-lg text-foreground flex items-center gap-2">
             {mode === 'enclave' ? (
               <Lock className="w-4 h-4 text-violet-400" />
             ) : (

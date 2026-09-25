@@ -46,11 +46,11 @@ function GlyphQuestionCard({ question, onAnswer }: GlyphQuestionCardProps) {
         <span className="w-6 h-6 rounded-input flex items-center justify-center" style={{ background: `${color}33`, boxShadow: `0 0 8px ${color}55` }}>
           <HelpCircle className="w-3.5 h-3.5" style={{ color: '#fff' }} />
         </span>
-        <span className="typo-label font-bold text-foreground">
+        <span className="typo-label text-foreground">
           {headingLabel}
         </span>
       </div>
-      <p className="typo-body-lg text-foreground leading-snug">{question.question}</p>
+      <p className="typo-body-lg text-foreground">{question.question}</p>
 
       {connectorCategory ? (
         /* scope=connector_category — route to the vault-aware picker.
@@ -126,7 +126,7 @@ export function GlyphQuestionPanel({ questions, onAnswer }: GlyphQuestionPanelPr
   if (questions.length === 0) return null;
   return (
     <div className="flex flex-col gap-2 mb-3">
-      <span className="typo-label font-bold text-foreground">
+      <span className="typo-label text-foreground">
         {t.templates.chronology.hub_phase_awaiting_input}
       </span>
       {questions.map((q) => (

@@ -48,7 +48,7 @@ export function StyleDraftPreview({ studio, currentTones }: StyleDraftPreviewPro
           isLoading={studio.phase === 'applying'}
           loadingText={ts.applying}
           variant="accent"
-          accentColor="violet"
+          tone="agent"
           size="sm"
           icon={<Check className="w-3.5 h-3.5" />}
           data-testid="style-accept"

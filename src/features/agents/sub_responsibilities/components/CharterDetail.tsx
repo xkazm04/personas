@@ -67,7 +67,7 @@ export function CharterDetail({
           >
             {t.common.back}
           </Button>
-          <h2 className="typo-heading font-semibold text-foreground truncate flex-1 min-w-0">
+          <h2 className="typo-heading text-foreground truncate flex-1 min-w-0">
             {charter.title}
           </h2>
           <StatusBadge size="sm" accent="slate">{charter.domain}</StatusBadge>

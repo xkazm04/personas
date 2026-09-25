@@ -92,7 +92,7 @@ export function AnnotationEditor({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="typo-heading text-foreground uppercase tracking-wider">
+        <span className="typo-heading text-foreground uppercase">
           {a.annotation_section_title}
         </span>
         <button

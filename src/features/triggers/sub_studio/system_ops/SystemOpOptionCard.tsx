@@ -29,7 +29,7 @@ export function SystemOpOptionCard({
         <div className="rounded-input flex items-center justify-center shrink-0 bg-secondary/60 w-7 h-7 text-violet-400">
           <Cog className="w-4 h-4" />
         </div>
-        <div className="typo-body font-medium text-foreground truncate min-w-0 flex-1">{kind.label}</div>
+        <div className="typo-body text-foreground truncate min-w-0 flex-1">{kind.label}</div>
       </button>
     </Tooltip>
   );

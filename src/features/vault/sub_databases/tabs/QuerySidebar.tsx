@@ -83,7 +83,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
               key="create-btn"
               type="button"
               onClick={() => setIsCreating(true)}
-              className="animate-fade-slide-in w-full flex items-center gap-1.5 px-2.5 py-2 rounded-modal typo-body font-medium text-primary/80 hover:bg-primary/8 border border-dashed border-primary/15 hover:border-primary/25 transition-all"
+              className="animate-fade-slide-in w-full flex items-center gap-1.5 px-2.5 py-2 rounded-modal typo-body text-primary/80 hover:bg-primary/8 border border-dashed border-primary/15 hover:border-primary/25 transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
               {db.new_query}

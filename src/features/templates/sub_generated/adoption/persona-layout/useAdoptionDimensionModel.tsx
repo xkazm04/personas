@@ -474,7 +474,7 @@ export function useAdoptionDimensionModel(props: PersonaLayoutAdoptionModelProps
     <button type="button" onClick={openFirstUnanswered}
       className="pointer-events-auto group flex flex-col items-center gap-1.5 px-5 py-3 rounded-modal bg-status-warning/10 hover:bg-status-warning/20 border border-status-warning/40 hover:border-status-warning/65 text-foreground cursor-pointer transition-all"
       title={t.templates.adopt_modal.persona_layout_center_open_questions_title}>
-      <span className="typo-data font-mono text-2xl text-status-warning tabular-nums leading-none">{globalRemaining}</span>
+      <span className="typo-data font-mono text-status-warning">{globalRemaining}</span>
       <span className="typo-label text-foreground/85">{globalRemaining === 1 ? t.templates.adopt_modal.persona_layout_center_questions_to_answer_one : t.templates.adopt_modal.persona_layout_center_questions_to_answer_other}</span>
       <span className="typo-caption text-foreground italic group-hover:text-foreground/80 transition-colors">{t.templates.adopt_modal.persona_layout_center_click_to_start}</span>
     </button>

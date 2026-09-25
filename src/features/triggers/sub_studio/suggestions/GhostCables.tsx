@@ -100,7 +100,7 @@ function GhostCableRow({ s, sug, personas }: {
         </div>
         <span className="flex items-center gap-2 min-w-0 shrink">
           <PersonaIcon icon={persona?.icon} color={persona?.color} display="framed" frameSize="sm" />
-          <span className="typo-body font-medium text-foreground truncate">
+          <span className="typo-body text-foreground truncate">
             {persona?.name ?? s.personaId.slice(0, 8)}
           </span>
         </span>

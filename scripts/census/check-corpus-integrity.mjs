@@ -29,6 +29,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { findPhantoms } from '../style/typo-allowlist.mjs';
 
 // Derived from this file's own location, NOT hardcoded.
 //
@@ -198,6 +199,13 @@ for (const r of rules) {
     fail(`census rule "${r.id}" cites goldenPath "${r.goldenPath}", which does not exist`);
   }
 }
+
+// ------------- 3.1 no typo-* class name that no stylesheet defines (zero tolerance)
+// The census rule phantom-typo-token held this as a ratchet until the style
+// foundation mapped every phantom (5e5cd9ca5); a census rule at zero reads as a
+// broken matcher, so the extinct condition is held here, with the allow-list
+// derived from the stylesheets at run time. scripts/style/typo-allowlist.mjs.
+for (const p of findPhantoms(ROOT).problems) fail(`phantom typo-* token: ${p}`);
 
 // --------------------- 3.5 subject hierarchy (docs/concepts/paths/) — GRAPH.md
 // Enforces the v2 layer contract, section by section of docs/concepts/paths/GRAPH.md

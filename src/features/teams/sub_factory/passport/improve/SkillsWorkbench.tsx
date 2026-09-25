@@ -97,7 +97,7 @@ export function SkillsWorkbench({ slug, initialMode, onClose }: {
                     <ArrowRight className="w-3 h-3" aria-hidden />
                   </button>
                 </div>
-                <p className="typo-caption text-foreground/60 leading-snug" style={{ fontWeight: 400 }}>
+                <p className="typo-caption text-foreground/60" style={{ fontWeight: 400 }}>
                   {d.skills_workbench_dispatch_body}
                 </p>
                 <div className="flex-1 min-h-0 overflow-y-auto mt-1">
@@ -119,7 +119,7 @@ export function SkillsWorkbench({ slug, initialMode, onClose }: {
                 {d.skills_title}
               </button>
               <span className="typo-caption text-foreground/30">/</span>
-              <span className="typo-caption font-medium text-foreground">
+              <span className="typo-caption text-foreground">
                 {mode === 'dispatch' ? d.skills_workbench_crumb_registry : d.skills_workbench_crumb_manage}
               </span>
               <span className="typo-label text-foreground/40 truncate">· {wb.projectName}</span>
@@ -178,7 +178,7 @@ function ChoiceCard({ icon: Icon, title, body, meta, onClick, testid }: {
         aria-hidden
       />
       <CardTitle icon={Icon} title={title} />
-      <span className="relative typo-caption text-foreground/60 leading-snug" style={{ fontWeight: 400 }}>{body}</span>
+      <span className="relative typo-caption text-foreground/60" style={{ fontWeight: 400 }}>{body}</span>
       <span className="relative typo-label text-foreground/40 mt-auto pt-1">{meta}</span>
     </button>
   );

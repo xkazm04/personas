@@ -217,7 +217,7 @@ function SignatureRow({
           <button
             type="button"
             onClick={onReveal}
-            className="typo-body typo-card-label truncate hover:text-cyan-200 text-left transition-colors focus-ring"
+            className="typo-body typo-card-label truncate text-left transition-colors focus-ring"
           >
             {sig.file_name}
           </button>
@@ -293,7 +293,7 @@ function VerifyChip({ result }: { result: VerifyDocumentResult }) {
       : t.plugins.doc_signing.invalid;
   return (
     <div
-      className={`mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-full typo-caption font-medium border ${
+      className={`mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-full typo-caption border ${
         valid
           ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-100"
           : "border-rose-500/35 bg-rose-500/10 text-rose-100"

@@ -52,7 +52,7 @@ export function RotationNewPolicy({
               data-testid="rotation-custom-days-input"
               onFocus={() => setCustomFocused(true)}
               onBlur={() => setCustomFocused(false)}
-              className="w-16 px-2 py-1 bg-transparent typo-code text-foreground text-center focus-visible:outline-none font-mono"
+              className="w-16 px-2 py-1 bg-transparent typo-code text-foreground text-center focus-visible:outline-none"
             />
           }
           customInputActive={customFocused}

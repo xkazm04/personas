@@ -119,11 +119,11 @@ export function ComposerPickerShell({
               )}
               <div className="flex-1 min-w-0">
                 {eyebrow && accentColor && (
-                  <span className="typo-label font-bold block truncate" style={{ color: accentColor }}>
+                  <span className="typo-label block truncate" style={{ color: accentColor }}>
                     {eyebrow}
                   </span>
                 )}
-                <h2 className="typo-heading-sm text-foreground font-semibold truncate">{title}</h2>
+                <h2 className="typo-heading text-foreground font-semibold truncate">{title}</h2>
                 {subtitle && (
                   <p className="typo-caption text-foreground mt-0.5 truncate">{subtitle}</p>
                 )}

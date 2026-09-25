@@ -1,7 +1,7 @@
 import { Compass, Rocket, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
 /**
@@ -23,7 +23,7 @@ export function PersonaCreationOfferWidget({ config }: CockpitWidgetProps) {
 
   const buildItForMe = () => {
     const sys = useSystemStore.getState();
-    sys.setCompanionPrefill({
+    sys.setAthenaPrefill({
       intent,
       name: null,
       autoLaunch: false,
@@ -34,7 +34,7 @@ export function PersonaCreationOfferWidget({ config }: CockpitWidgetProps) {
   };
 
   const showMeHow = () => {
-    useCompanionStore.getState().startGuidance('persona_creation');
+    useAthenaStore.getState().startGuidance('persona_creation');
   };
 
   return (
@@ -44,7 +44,7 @@ export function PersonaCreationOfferWidget({ config }: CockpitWidgetProps) {
     >
       <header className="flex items-baseline gap-2 typo-caption text-primary">
         <Sparkles className="w-3.5 h-3.5" />
-        <span className="font-medium">{t.plugins.companion.offer_intro}</span>
+        <span className="font-medium">{t.athena.offer_intro}</span>
         {intent && (
           <span className="text-foreground truncate" title={intent}>
             · {intent}
@@ -60,8 +60,8 @@ export function PersonaCreationOfferWidget({ config }: CockpitWidgetProps) {
         >
           <Rocket className="w-4 h-4 shrink-0" />
           <span className="flex flex-col">
-            <span className="typo-body font-medium">{t.plugins.companion.offer_build}</span>
-            <span className="typo-caption opacity-90">{t.plugins.companion.offer_build_hint}</span>
+            <span className="typo-body">{t.athena.offer_build}</span>
+            <span className="typo-caption opacity-90">{t.athena.offer_build_hint}</span>
           </span>
         </button>
         <button
@@ -72,8 +72,8 @@ export function PersonaCreationOfferWidget({ config }: CockpitWidgetProps) {
         >
           <Compass className="w-4 h-4 shrink-0 text-primary" />
           <span className="flex flex-col">
-            <span className="typo-body font-medium">{t.plugins.companion.offer_show}</span>
-            <span className="typo-caption text-foreground">{t.plugins.companion.offer_show_hint}</span>
+            <span className="typo-body">{t.athena.offer_show}</span>
+            <span className="typo-caption text-foreground">{t.athena.offer_show_hint}</span>
           </span>
         </button>
       </div>

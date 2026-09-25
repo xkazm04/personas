@@ -51,6 +51,21 @@ const BASE_SECTIONS: readonly TranslationSection[] = [
   // footer toggle is always mounted, so there is no route that does not reach
   // it. Same justification as consent/remote_approval above.
   'notepad',
+  // `athena` — her chat panel, orb, guide layer and decision bubble are
+  // OverlayIslands at the App root (App.tsx), and her footer icon is in the
+  // always-mounted footer, so there is no route that does not reach her.
+  // Measured 2026-09-22 when the section was carved out of `plugins`: of the
+  // 1,196 keys, the app-wide overlay closure reads 716 (39.3 KB) and only her
+  // five page tabs read the other 291 (19.0 KB) — and 190 keys (12.6 KB) are
+  // reachable only through computed lookups (BrainViewer indexes the section
+  // by a variable key, as does the Create Athena rail through
+  // `STEP_LABEL_KEYS`) that no static split can attribute. Splitting the
+  // section would therefore save ~19 KB per
+  // route while risking the exact defect this move fixes: until it was carved
+  // out, these keys lived in `plugins`, which loads on the `teams` and
+  // `plugins` routes only — so Athena's global overlays rendered English on
+  // every other route in all 13 non-English locales.
+  'athena',
   // `debt` is the auto-extracted hardcoded-string staging catalog read through
   // the debtText()/<DebtText/> channel (src/i18n/DebtText.tsx). 539 keys across
   // 113 files spanning agents, overview, plugins, templates, home, triggers,
@@ -72,8 +87,10 @@ const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
   // `ship` — the Factory L2 Ship tab (milestone convergence layer).
   // `mastermind` — the teams/sub_mastermind canvas.
   // `browser` — the Browser group (Whitelist / Webview) under teams.
-  // `council` — the teams/sub_council galaxy, bench and gate.
-  teams: ['plugins', 'pipeline', 'kpis', 'ship', 'mastermind', 'browser', 'council'],
+  // `features` — the teams/sub_features board: the map, the column and the
+  //   feature tab with its scenarios. It is a sibling of `council` in the same
+  //   Development group, so it loads on the same route.
+  teams: ['plugins', 'pipeline', 'kpis', 'ship', 'mastermind', 'browser', 'features'],
   // foundry: the Compose (Foundry) wizard was retired 2026-07-07; the section
   // is down to the composition x-ray badge on adopted templates, which renders
   // on this route. recipes_catalog: the recipe catalog's category labels,
@@ -92,8 +109,15 @@ const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
   'design-reviews': ['design', 'feedback_labels', 'templates', 'recipes', 'recipe_shared', 'explore'],
   // `twin` — plugins/twin (629 keys; also feeds the plugins sidebar nav).
   // `project_overview` — plugins/dev-tools project overview + LLM monitoring.
-  // `cockpit` — plugins/companion inbox helpers.
+  // `cockpit` — companions/athena inbox helpers.
   plugins: ['plugins', 'gitlab', 'pipeline', 'twin', 'project_overview', 'cockpit'],
+  // `companions` — the category's own strings (nav, states, blockers, the
+  //   three identities, the landing, the Setup pages).
+  // `director` — Overseer's reviews page, which moved here from Overview.
+  // `council` — Curator's council page, which moved here from Projects.
+  // Athena's 1,196 keys are NOT listed: her section rides in BASE_SECTIONS
+  // because her orb, chat panel and footer icon mount on every route.
+  companions: ['companions', 'director', 'council'],
   // `studio` — the Athena web-build Studio surface. StudioAttention is mounted
   // app-wide (DEV-only) and reads this section too, but it only renders once a
   // Studio project is mid-build, i.e. after the Studio route has already

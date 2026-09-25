@@ -137,7 +137,7 @@ export function TriggerList({ triggers }: { triggers: PersonaTrigger[] }) {
               <Zap className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
               <span className="typo-body text-foreground flex-1">{trigger.trigger_type}</span>
               <span className="typo-code text-foreground">{configLabel}</span>
-              <span className={`rounded-full px-2 py-0.5 typo-caption font-medium border ${
+              <span className={`rounded-full px-2 py-0.5 typo-caption border ${
                 trigger.enabled ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25'
                 : 'bg-red-500/15 text-red-400 border-red-500/25'
               }`}>

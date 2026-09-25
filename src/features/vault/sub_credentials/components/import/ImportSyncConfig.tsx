@@ -33,7 +33,7 @@ export function ImportSyncConfig({ sourceId, syncConfig, onSyncConfigChange }: I
           className="rounded border-cyan-500/30 text-cyan-500 focus-visible:ring-cyan-500/30"
         />
         <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
-        <span className="typo-body font-medium text-cyan-300">{ci.enable_sync}</span>
+        <span className="typo-body text-cyan-300">{ci.enable_sync}</span>
       </label>
       {showSync && syncConfig && (
         <div className="flex items-center gap-3 pl-6">

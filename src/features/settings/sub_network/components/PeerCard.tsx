@@ -65,7 +65,7 @@ export const PeerCard = memo(function PeerCard({
         className="min-w-0 flex-1 text-left hover:opacity-80 transition-opacity"
       >
         <div className="flex items-center gap-2">
-          <span className="typo-body font-medium text-foreground truncate">
+          <span className="typo-body text-foreground truncate">
             {peer.display_name}
           </span>
           {isTrusted ? (
@@ -75,7 +75,7 @@ export const PeerCard = memo(function PeerCard({
           )}
         </div>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="typo-code font-mono text-foreground">{truncatedId}</span>
+          <span className="typo-code text-foreground">{truncatedId}</span>
           {lastSeen && (
             <span className="text-[10px] text-foreground">{lastSeen}</span>
           )}

@@ -122,6 +122,57 @@ export function _resetQueueRefreshForTests(): void {
   queueRefreshPending = null;
 }
 
+/**
+ * Boot push of the persisted Fleet policy (auto-hibernate + state cutoffs).
+ *
+ * Why a push is needed at all: `fleet_set_auto_hibernate` and
+ * `fleet_set_state_cutoffs` only store into process-global atomics in
+ * `src-tauri/src/commands/fleet/stale.rs` (AUTO_HIBERNATE_ENABLED defaults to
+ * false, the cutoff overrides to 0 = built-in default). Nothing on the Rust
+ * side persists them, so the frontend's persisted values must reach a fresh
+ * backend process once.
+ *
+ * Why only once: `fleetRefresh` fires from many surfaces (bootstrap, registry
+ * events, Athena's fleet bridge, Mastermind, dispatch docks), and re-sending
+ * both settings on every refresh cost two IPC round trips per refresh while
+ * changing nothing. After the boot push, the setters are the only writers,
+ * and each pushes the new value itself.
+ *
+ * The latch is claimed synchronously, so concurrent boot refreshes push once.
+ * Any failed push (boot or setter) releases it, so the next refresh re-sends
+ * the current values: the self-heal the old push-on-every-refresh gave, paid
+ * only after a failure. An HMR reload of this module resets it, which costs
+ * one redundant push and nothing else.
+ */
+let fleetPolicyPushed = false;
+/** Send one policy command; a failure releases the latch, then is recorded. */
+async function pushPolicy(send: () => Promise<unknown>, tag: string): Promise<void> {
+  try {
+    await send();
+  } catch (err) {
+    fleetPolicyPushed = false;
+    silentCatch(`stores/slices/system/fleetSlice:${tag}`)(err);
+  }
+}
+function pushFleetPolicyOnce(s: Pick<FleetSlice,
+  'fleetAutoHibernate' | 'fleetAutoHibernateMinutes' | 'fleetStaleMinutes' | 'fleetFrozenMinutes'>): void {
+  if (fleetPolicyPushed) return;
+  fleetPolicyPushed = true;
+  void pushPolicy(
+    () => fleetApi.setAutoHibernate(s.fleetAutoHibernate, s.fleetAutoHibernateMinutes),
+    'bootSetAutoHibernate',
+  );
+  void pushPolicy(
+    () => fleetApi.setStateCutoffs(s.fleetStaleMinutes * 60, s.fleetFrozenMinutes * 60),
+    'bootSetStateCutoffs',
+  );
+}
+
+/** Test hatch: forget the boot push so the next refresh pushes again. */
+export function _resetFleetPolicyPushForTests(): void {
+  fleetPolicyPushed = false;
+}
+
 /** Terminal color theme — `auto` tracks the app's light/dark appearance. */
 export type FleetTerminalTheme = 'auto' | 'dark' | 'light';
 
@@ -161,7 +212,7 @@ export interface FleetSlice {
   /** Fire an OS notification when a session enters awaiting_input. Persisted. */
   fleetNotifyAwaiting: boolean;
   /** Auto-hibernate Idle/Stale sessions past the threshold (always-on Rust
-   *  ticker). Persisted; pushed to Rust on change + on refresh. */
+   *  ticker). Persisted; pushed to Rust once at boot and on every change. */
   fleetAutoHibernate: boolean;
   /** Inactivity minutes before auto-hibernate fires. Persisted; floored at 1. */
   fleetAutoHibernateMinutes: number;
@@ -177,7 +228,7 @@ export interface FleetSlice {
    *  by the backend and written through the generic settings door. */
   fleetQueue: FleetQueueSnapshot | null;
   /** Minutes of flat logs before a session flips Stale. Persisted; pushed to
-   *  the Rust ticker on change + on refresh (clamped server-side too). */
+   *  the Rust ticker once at boot and on every change (clamped server-side too). */
   fleetStaleMinutes: number;
   /** Minutes of total PTY silence before a Running session is flagged frozen.
    *  Persisted; pushed like the stale cutoff. */
@@ -258,11 +309,11 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
   fleetDebugLogPath: null,
 
   fleetRefresh: async () => {
-    // Sync the persisted auto-hibernate policy to the always-on Rust ticker.
-    // (Opening Fleet at least once per app session activates an enabled policy;
-    // a startup-side push is a tracked follow-up.)
-    fleetApi.setAutoHibernate(get().fleetAutoHibernate, get().fleetAutoHibernateMinutes).catch(silentCatch("stores/slices/system/fleetSlice:refreshSetAutoHibernate"));
-    fleetApi.setStateCutoffs(get().fleetStaleMinutes * 60, get().fleetFrozenMinutes * 60).catch(silentCatch("stores/slices/system/fleetSlice:refreshSetStateCutoffs"));
+    // The Rust ticker keeps the policy in process memory only, so a fresh app
+    // process starts at its defaults. The FIRST refresh of this process (the
+    // app-wide FleetBootstrap fires it at startup) pushes the persisted values
+    // once; after that only the setters push. See `pushFleetPolicyOnce`.
+    pushFleetPolicyOnce(get());
     set({ fleetSessionsLoading: true });
     try {
       const snapshot = await fleetApi.listSessions();
@@ -364,12 +415,12 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
 
   fleetSetAutoHibernate: (on) => {
     set({ fleetAutoHibernate: on });
-    fleetApi.setAutoHibernate(on, get().fleetAutoHibernateMinutes).catch(silentCatch("stores/slices/system/fleetSlice:setAutoHibernate"));
+    void pushPolicy(() => fleetApi.setAutoHibernate(on, get().fleetAutoHibernateMinutes), 'setAutoHibernate');
   },
   fleetSetAutoHibernateMinutes: (minutes) => {
     const m = Math.max(1, Math.round(minutes) || 1);
     set({ fleetAutoHibernateMinutes: m });
-    fleetApi.setAutoHibernate(get().fleetAutoHibernate, m).catch(silentCatch("stores/slices/system/fleetSlice:setAutoHibernateMinutes"));
+    void pushPolicy(() => fleetApi.setAutoHibernate(get().fleetAutoHibernate, m), 'setAutoHibernateMinutes');
   },
 
   fleetQueueRefresh: () =>
@@ -388,12 +439,12 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
   fleetSetStaleMinutes: (minutes) => {
     const m = Math.min(60, Math.max(1, Math.round(minutes) || 1));
     set({ fleetStaleMinutes: m });
-    fleetApi.setStateCutoffs(m * 60, get().fleetFrozenMinutes * 60).catch(silentCatch("stores/slices/system/fleetSlice:setStaleMinutes"));
+    void pushPolicy(() => fleetApi.setStateCutoffs(m * 60, get().fleetFrozenMinutes * 60), 'setStaleMinutes');
   },
   fleetSetFrozenMinutes: (minutes) => {
     const m = Math.min(60, Math.max(1, Math.round(minutes) || 1));
     set({ fleetFrozenMinutes: m });
-    fleetApi.setStateCutoffs(get().fleetStaleMinutes * 60, m * 60).catch(silentCatch("stores/slices/system/fleetSlice:setFrozenMinutes"));
+    void pushPolicy(() => fleetApi.setStateCutoffs(get().fleetStaleMinutes * 60, m * 60), 'setFrozenMinutes');
   },
 
   fleetSetTerminalFontSize: (px) => set({ fleetTerminalFontSize: clampFont(px) }),

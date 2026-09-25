@@ -18,6 +18,7 @@ import {
   type CompanionCanvasControlEvent,
 } from '@/api/companion';
 import { companionCanvasControlResult } from '@/api/companion/bridges';
+import { useAthenaEnabled } from '@/features/companions/status/useAthenaEnabled';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
@@ -63,9 +64,13 @@ function compactResult(result: CanvasActionResult): CanvasActionResult {
 
 /** Subscribe to Athena's canvas steering. Safe to mount once. */
 export function useCanvasControlBridge(): void {
+  // Athena's master switch. Guarded in the HANDLER for the same reason as the
+  // panel bridge: steering routes the user to the canvas and moves the camera.
+  const { enabled: athenaEnabled } = useAthenaEnabled();
   useTauriEvent<CompanionCanvasControlEvent>(
     COMPANION_CANVAS_CONTROL_EVENT,
     useCallback((event) => {
+      if (!athenaEnabled) return;
       const { sessionId, action } = event.payload ?? {};
       if (!sessionId || typeof action !== 'string') return;
       let parsed: CanvasActionRequest;
@@ -91,7 +96,7 @@ export function useCanvasControlBridge(): void {
           }),
         )
         .catch(silentCatch('mastermind canvas_control result report'));
-    }, []),
+    }, [athenaEnabled]),
     'companion_canvas_control_listen',
   );
 }

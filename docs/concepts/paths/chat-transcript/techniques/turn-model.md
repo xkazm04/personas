@@ -9,7 +9,7 @@ laws:
 shared_with: []
 evidence:
   - src/features/agents/components/ChatThread.tsx              # streamingMessageId: the streaming turn is a flagged list member with identity, one element through settlement
-  - src/features/plugins/companion/chat/AthenaChatTranscript.tsx  # rows keyed by message id, not index
+  - src/features/companions/athena/chat/AthenaChatTranscript.tsx  # rows keyed by message id, not index
 ---
 
 # The turn model

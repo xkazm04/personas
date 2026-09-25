@@ -40,7 +40,7 @@ Docs describe intent; these are the runnable harnesses.
 | `e2e/*` scenarios | Python MCP harnesses `tools/test-mcp/*.py` + Playwright specs `tests/playwright/` | `uvx --with httpx python tools/test-mcp/<file>.py` |
 | `connectors/connector-autoadd` | `tools/test-mcp/e2e_connectors_autoadd.py` | `uvx --with httpx python tools/test-mcp/e2e_connectors_autoadd.py` |
 | `e2e/template-adoption-*` | `tests/playwright/template-marathon-*` (driver + spec + fixtures) | `node tests/playwright/template-marathon-driver.mjs --golden` |
-| Athena guided walkthrough E2E ([feature doc](../features/companion/athena-guided-walkthroughs.md) §E2E) | `tests/playwright/athena-guided-walkthrough.spec.ts` | `npm run test:playwright:guidance` |
+| Athena guided walkthrough E2E ([feature doc](../features/companions/athena/athena-guided-walkthroughs.md) §E2E) | `tests/playwright/athena-guided-walkthrough.spec.ts` | `npm run test:playwright:guidance` |
 | `autonomy-eval/*` | Node autonomy harness `scripts/test/*.mjs` (run / gather / evaluate / health-lint / judge-packet) | per [`autonomy-eval/run-protocol.md`](autonomy-eval/run-protocol.md) |
 | `athena/*` | `tools/test-mcp/athena_quality_suite.py` (pass 1 driver + pass 2 aggregator) | see [`athena/README.md`](athena/README.md) |
 | bridge plumbing all of the above ride on | `src/test/automation/bridge.ts` ↔ `tools/test-mcp/server.py` | `npm run tauri:dev:test` (bridge on `:17320`) |

@@ -478,7 +478,7 @@ export default function ProjectManagerPage() {
             <>
               <Button
                 variant="accent"
-                accentColor="violet"
+                tone="agent"
                 size="sm"
                 icon={<Network className="w-3.5 h-3.5" />}
                 onClick={() => setShowCrossProjectMap(true)}
@@ -489,7 +489,7 @@ export default function ProjectManagerPage() {
               </Button>
               <Button
                 variant="accent"
-                accentColor="amber"
+                tone="warning"
                 size="sm"
                 icon={<Plus className="w-3.5 h-3.5" />}
                 onClick={() => { setEditingProject(null); setShowModal(true); }}
@@ -503,13 +503,13 @@ export default function ProjectManagerPage() {
 
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <h3 className="typo-label font-semibold text-primary">
+            <h3 className="typo-label text-primary">
               {t.plugins.dev_projects.all_projects}({projects.length})
             </h3>
             {/* Bulk-action bar — inline, only when a row is selected. */}
             {selectedIds.size > 0 && (
               <div className="flex items-center gap-2 ml-auto">
-                <span className="typo-caption text-amber-300 font-medium tabular-nums">
+                <span className="typo-caption text-amber-300 tabular-nums">
                   {selectedIds.size} {selectedIds.size === 1 ? t.plugins.dev_projects.bulk_selected_one : t.plugins.dev_projects.bulk_selected_many}
                 </span>
                 <MoveToWorkspaceButton
@@ -519,7 +519,7 @@ export default function ProjectManagerPage() {
                 />
                 <Button
                   variant="accent"
-                  accentColor="amber"
+                  tone="warning"
                   size="xs"
                   icon={<Archive className="w-3 h-3" />}
                   loading={archiving}
@@ -546,7 +546,7 @@ export default function ProjectManagerPage() {
               <p className="typo-body text-foreground mb-4">{t.plugins.dev_projects.no_projects_yet}</p>
               <Button
                 variant="accent"
-                accentColor="amber"
+                tone="warning"
                 size="sm"
                 icon={<Plus className="w-3.5 h-3.5" />}
                 onClick={() => { setEditingProject(null); setShowModal(true); }}

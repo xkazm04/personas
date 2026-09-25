@@ -95,7 +95,7 @@ export function ComposerEventPickerModal({
           <button
             type="button"
             onClick={() => onApply(draft)}
-            className="px-4 py-1.5 rounded-interactive bg-primary/30 hover:bg-primary/50 border border-primary/50 text-foreground typo-body font-medium transition-colors"
+            className="px-4 py-1.5 rounded-interactive bg-primary/30 hover:bg-primary/50 border border-primary/50 text-foreground typo-body transition-colors"
             style={{ boxShadow: "0 0 20px rgba(96,165,250,0.25)" }}
           >
             {draft.length === 0 ? "Done" : `Subscribe to ${draft.length}`}

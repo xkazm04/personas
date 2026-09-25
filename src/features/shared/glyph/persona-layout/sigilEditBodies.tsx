@@ -31,7 +31,7 @@ export function resolveSigilEditBody(dim: GlyphDimension, { uc, t }: SigilBodyAr
         <div className="flex flex-col gap-2">
           <span className="typo-body-lg text-foreground">{uc.title}</span>
           {uc.description && (
-            <p className="typo-body text-foreground leading-relaxed">
+            <p className="typo-body text-foreground">
               {uc.description}
             </p>
           )}
@@ -102,7 +102,7 @@ export function resolveSigilEditBody(dim: GlyphDimension, { uc, t }: SigilBodyAr
       };
       const copy = labels[dim];
       return (
-        <p className="typo-body text-foreground leading-relaxed">
+        <p className="typo-body text-foreground">
           {active ? copy.on : copy.off}
         </p>
       );

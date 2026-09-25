@@ -82,7 +82,7 @@ export function ConfigureStep({
             </label>
 
             {q.context && (
-              <p className="typo-body text-foreground mb-2 leading-relaxed">
+              <p className="typo-body text-foreground mb-2">
                 {q.context}
               </p>
             )}

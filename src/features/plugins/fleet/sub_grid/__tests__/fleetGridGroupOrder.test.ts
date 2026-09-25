@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { GROUP_ORDER } from '../FleetGridPage';
+import { GROUP_ORDER } from '../fleetGridGroups';
 import { FLEET_STATE_META } from '../../fleetStateMeta';
 
 // session-registry: every value of the closed lifecycle vocabulary must be

@@ -62,7 +62,7 @@ export const LlmSpendSection = memo(function LlmSpendSection() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-1">
                 <span className="typo-heading text-foreground truncate">{label(row.key)}</span>
-                <span className="typo-code font-mono text-emerald-400">{fmtCost(row.cost_usd)}</span>
+                <span className="typo-code text-emerald-400">{fmtCost(row.cost_usd)}</span>
               </div>
               <div className="h-1.5 bg-secondary/40 rounded-full overflow-hidden">
                 <div

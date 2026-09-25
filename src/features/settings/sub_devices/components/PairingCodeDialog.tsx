@@ -31,7 +31,7 @@ export function PairingCodeDialog({ request, busy, onCancel }: PairingCodeDialog
     >
       {request && (
         <div data-testid="pairing-code-dialog" className="p-6 space-y-4 text-center">
-          <h2 id="device-pairing-code-title" className="typo-title text-foreground">
+          <h2 id="device-pairing-code-title" className="typo-title">
             {st.pairing_code_title}
           </h2>
           <p className="typo-caption text-foreground">

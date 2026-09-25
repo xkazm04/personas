@@ -53,7 +53,7 @@ export function BundlePreviewContent({
             <ShieldOff className="w-4 h-4 text-red-400" />
           )}
           <div>
-            <div className="typo-body font-medium text-foreground">{preview.signer_display_name}</div>
+            <div className="typo-body text-foreground">{preview.signer_display_name}</div>
             <div className="text-[10px] text-foreground font-mono">
               {preview.signer_peer_id.slice(0, 8)}...{preview.signer_peer_id.slice(-8)}
             </div>
@@ -147,7 +147,7 @@ export function BundlePreviewContent({
       {/* Conflict options */}
       {hasConflicts && (
         <div className="rounded-card border border-amber-500/20 bg-amber-500/5 p-3 space-y-2">
-          <div className="typo-caption text-amber-400 font-medium">{st.naming_conflicts_detected}</div>
+          <div className="typo-caption text-amber-400">{st.naming_conflicts_detected}</div>
           <label className="flex items-center gap-2 typo-caption text-foreground cursor-pointer">
             <input
               type="checkbox"

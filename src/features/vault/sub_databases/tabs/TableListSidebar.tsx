@@ -204,15 +204,15 @@ export function TableListSidebar({
               onContextMenu={(e) => onContextMenu(e, table.table_name)}
             >
               <Icon className="w-3 h-3 text-foreground shrink-0" />
-              <span className={`flex-1 typo-code text-foreground truncate ${isApi ? '' : 'font-mono'}`}>
+              <span className={`flex-1 typo-code text-foreground truncate`}>
                 {displayName}
               </span>
               {isPinned && <Pin className="w-2.5 h-2.5 text-blue-400/50 shrink-0" />}
               {table.table_type === 'VIEW' && (
-                <span className="px-1 py-0.5 rounded typo-body font-medium bg-violet-500/10 text-violet-400/70 shrink-0">VIEW</span>
+                <span className="px-1 py-0.5 rounded typo-body bg-violet-500/10 text-violet-400/70 shrink-0">VIEW</span>
               )}
               {table.table_type === 'DATABASE' && (
-                <span className="px-1 py-0.5 rounded typo-body font-medium bg-blue-500/10 text-blue-400/70 shrink-0">DB</span>
+                <span className="px-1 py-0.5 rounded typo-body bg-blue-500/10 text-blue-400/70 shrink-0">DB</span>
               )}
             </div>
           );
@@ -244,7 +244,7 @@ export function TableListSidebar({
               onKeyDown={(e) => activateOnKey(e, () => onSelectKey(keyInfo.key))}
             >
               <Key className="w-3 h-3 text-foreground shrink-0" />
-              <span className="flex-1 typo-code font-mono text-foreground truncate">{keyInfo.key}</span>
+              <span className="flex-1 typo-code text-foreground truncate">{keyInfo.key}</span>
               <ChevronRight className="w-3 h-3 text-foreground shrink-0" />
             </div>
           );

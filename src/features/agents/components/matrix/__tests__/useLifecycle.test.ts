@@ -68,13 +68,23 @@ vi.mock("@/stores/systemStore", () => {
   return { useSystemStore };
 });
 
+// After promote, the receipt is derived from the promoted persona's own
+// runtime-verified `setup_status` / `setup_detail`, read back through getPersona.
+const mockGetPersona = vi.fn().mockResolvedValue({
+  id: "persona-1",
+  setup_status: "ready",
+  setup_detail: null,
+});
+
 vi.mock("@/api/agents/personas", () => ({
   updatePersona: (...args: unknown[]) => mockUpdatePersona(...args),
   buildUpdateInput: (...args: unknown[]) => mockBuildUpdateInput(...args),
+  getPersona: (...args: unknown[]) => mockGetPersona(...args),
 }));
 
+const mockSendAppNotification = vi.fn().mockResolvedValue(undefined);
 vi.mock("@/api/system/system", () => ({
-  sendAppNotification: vi.fn().mockResolvedValue(undefined),
+  sendAppNotification: (...args: unknown[]) => mockSendAppNotification(...args),
 }));
 
 // `getPersonaManifest` is the manifest SEEDER's only door: promote calls it
@@ -152,7 +162,7 @@ vi.mock("@/stores/agentStore", () => {
 // Import under test (AFTER mocks)
 // ---------------------------------------------------------------------------
 
-import { useLifecycle } from "../useLifecycle";
+import { useLifecycle, type PromoteResult } from "../useLifecycle";
 import type { PersonaCoreLaunchSnapshot } from "@/features/agents/sub_glyph/personaCore/composeCoreProfile";
 
 // ---------------------------------------------------------------------------
@@ -631,6 +641,134 @@ describe("useLifecycle", () => {
       expect(promoteResult!.success).toBe(false);
       expect(mockUpdatePersona).not.toHaveBeenCalled();
       expect(mockPromoteBuildDraft).not.toHaveBeenCalled();
+    });
+  });
+
+  // -- handlePromote: readiness receipt -----------------------------------
+  // Every promote outcome hands back a receipt the surface can act on. The
+  // needs-setup verdict comes from the promoted persona's runtime-verified
+  // setup_detail, never from the promote JSON's connectors_needing_setup.
+
+  describe("handlePromote receipt", () => {
+    function promotableState() {
+      setStoreState({
+        buildPhase: "test_complete",
+        buildTestPassed: true,
+        buildDraft: { system_prompt: "You are a bot", tools: [] },
+        buildSessionId: "session-123",
+      });
+    }
+
+    function setupDetail(blockers: Array<{ connector: string; kind: string; detail: string }>) {
+      return JSON.stringify({
+        blockers,
+        has_autonomous_trigger: false,
+        triggers: [],
+        preview: "",
+        notes: [],
+      });
+    }
+
+    it("case 1: a refused promote resolves a failed receipt carrying the backend's reason", async () => {
+      promotableState();
+      mockPromoteBuildDraft.mockRejectedValueOnce({
+        error: "Build session agent_ir parse error: x",
+        kind: "Validation",
+      });
+
+      const { result } = renderHook(() => useLifecycle({ personaId: "persona-1" }));
+
+      let promoteResult: PromoteResult | undefined;
+      await act(async () => {
+        promoteResult = await result.current.handlePromote();
+      });
+
+      expect(promoteResult!.success).toBe(false);
+      expect(promoteResult!.receipt).toEqual({
+        kind: "failed",
+        message: "Build session agent_ir parse error: x",
+      });
+      expect(mockHandleBuildSessionStatus).not.toHaveBeenCalled();
+    });
+
+    it("case 2: needs_setup lists the runtime-verified blockers, not the promote JSON's pre-filter", async () => {
+      promotableState();
+      mockPromoteBuildDraft.mockResolvedValueOnce({
+        persona: { id: "persona-1" },
+        triggers_created: 0,
+        tools_created: 1,
+        connectors_needing_setup: ["gmail", "slack"],
+      });
+      mockGetPersona.mockResolvedValueOnce({
+        id: "persona-1",
+        setup_status: "needs_credentials",
+        setup_detail: setupDetail([{ connector: "slack", kind: "vault_credential", detail: "slack" }]),
+      });
+
+      const { result } = renderHook(() => useLifecycle({ personaId: "persona-1" }));
+
+      let promoteResult: PromoteResult | undefined;
+      await act(async () => {
+        promoteResult = await result.current.handlePromote();
+      });
+
+      expect(mockGetPersona).toHaveBeenCalledWith("persona-1");
+      expect(promoteResult!.receipt).toMatchObject({ kind: "needs_setup", connectors: ["slack"] });
+    });
+
+    it("case 5: connectors the promote JSON flagged but the resolver verified ready do not hold the persona", async () => {
+      promotableState();
+      mockPromoteBuildDraft.mockResolvedValueOnce({
+        persona: { id: "persona-1" },
+        triggers_created: 0,
+        tools_created: 1,
+        connectors_needing_setup: ["gmail"],
+      });
+      mockGetPersona.mockResolvedValueOnce({
+        id: "persona-1",
+        setup_status: "ready",
+        setup_detail: setupDetail([]),
+      });
+
+      const { result } = renderHook(() => useLifecycle({ personaId: "persona-1" }));
+
+      let promoteResult: PromoteResult | undefined;
+      await act(async () => {
+        promoteResult = await result.current.handlePromote();
+      });
+
+      expect(promoteResult!.receipt).toEqual({ kind: "ready" });
+      expect(mockSendAppNotification).toHaveBeenCalledWith("Agent Promoted", expect.any(String));
+    });
+
+    it("case 4: a second promote in the same tick does not reach IPC and reads in_flight", async () => {
+      promotableState();
+
+      const { result } = renderHook(() => useLifecycle({ personaId: "persona-1" }));
+
+      let first: PromoteResult | undefined;
+      let second: PromoteResult | undefined;
+      await act(async () => {
+        const a = result.current.handlePromote();
+        const b = result.current.handlePromote();
+        [first, second] = await Promise.all([a, b]);
+      });
+
+      expect(mockPromoteBuildDraft).toHaveBeenCalledTimes(1);
+      expect(second!.receipt).toEqual({ kind: "in_flight" });
+      expect(first!.receipt).toEqual({ kind: "ready" });
+    });
+
+    it("[guard] a clean promote keeps the 'Agent Promoted' notification", async () => {
+      promotableState();
+
+      const { result } = renderHook(() => useLifecycle({ personaId: "persona-1" }));
+
+      await act(async () => {
+        await result.current.handlePromote();
+      });
+
+      expect(mockSendAppNotification).toHaveBeenCalledWith("Agent Promoted", expect.any(String));
     });
   });
 

@@ -26,6 +26,7 @@
     "companion/prompt.rs": {"count":5,"sections":[0,7],"lines":["1960-2020","1978","1980-1985","2014-2018"],"contexts":["and `companion/prompt.rs:1960-2020` (the pulse's only consumer). Frontend:"],"resolved":false},
     "engine/background.rs": {"count":1,"sections":[9],"lines":["216"],"contexts":["| `engine/background.rs:216` `set_active(active)` | **FALSE** — runtime activity state, not a stored answer |"],"resolved":false},
     "events.rs": {"count":1,"sections":[],"contexts":["(182), `events.rs` (109), `mod.rs` (102), `watchers/{git,ledger,obsidian}.rs`"],"resolved":false},
+    "features/plugins/companion/sub_setup/SetupPanel.tsx": {"count":1,"sections":[],"contexts":["`src/api/companion/projectTracking.ts`, `features/plugins/companion/sub_setup/SetupPanel.tsx`"],"resolved":false},
     "lib.rs": {"count":1,"sections":[7],"lines":["2996-3001"],"contexts":["All six Tauri commands are registered (`lib.rs:2996-3001`), all six are"],"resolved":false},
     "mod.rs": {"count":4,"sections":[0,7,9],"lines":["63","46-50","89"],"contexts":["(182), `events.rs` (109), `mod.rs` (102), `watchers/{git,ledger,obsidian}.rs`"],"resolved":false},
     "scheduler.rs": {"count":5,"sections":[0,7],"lines":["38","61","173-179","66-70"],"contexts":["`push.rs` (324), `scheduler.rs` (193), `subscription.rs` (236), `pulse.rs`"],"resolved":false},
@@ -80,13 +81,6 @@
       "contexts": ["`features/home/sub_welcome/lib/sinceLeftBriefing.ts` (158),"],
       "resolvedFrom": "suffix",
       "verbatim": "features/home/sub_welcome/lib/sinceLeftBriefing.ts"
-    },
-    "src/features/plugins/companion/sub_setup/SetupPanel.tsx": {
-      "count": 1,
-      "sections": [],
-      "contexts": ["`src/api/companion/projectTracking.ts`, `features/plugins/companion/sub_setup/SetupPanel.tsx`"],
-      "resolvedFrom": "suffix",
-      "verbatim": "features/plugins/companion/sub_setup/SetupPanel.tsx"
     },
     "src/stores/slices/overview/alertSlice.ts": {"count":1,"sections":[],"contexts":["`alertSlice.ts`."],"resolvedFrom":"basename","verbatim":"alertSlice.ts"},
     "src/stores/slices/overview/homeSpineSlice.ts": {

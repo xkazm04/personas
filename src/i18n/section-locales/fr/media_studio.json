@@ -168,7 +168,7 @@
   "voiceover_added": "Voix off ajoutée à la timeline",
   "voiceover_generate": "Générer la voix off",
   "voiceover_generating": "Synthèse en cours…",
-  "voiceover_not_installed": "Moteur vocal local non installé — configurez-le d’abord dans les paramètres vocaux du compagnon.",
+  "voiceover_not_installed": "Moteur vocal local non installé — configurez-le d’abord dans les paramètres vocaux d’Athena.",
   "voiceover_text": "Narration",
   "voiceover_text_placeholder": "Saisissez ce que le narrateur doit dire…",
   "voiceover_voice": "Voix",

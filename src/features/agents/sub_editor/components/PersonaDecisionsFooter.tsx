@@ -12,7 +12,7 @@ import {
   companionListDesignDecisions,
   type CompanionDesignDecision,
 } from '@/api/companion';
-import { useSystemStore } from '@/stores/systemStore';
+import { navigateToCompanions } from '@/features/companions/navigation';
 
 /**
  * Footer chip on the persona editor showing Athena's design decisions
@@ -61,10 +61,7 @@ export function PersonaDecisionsFooter({ personaId }: { personaId: string }) {
   const visible = open ? decisions : decisions.slice(0, 0);
 
   const handleOpenFullAudit = () => {
-    const sys = useSystemStore.getState();
-    sys.setSidebarSection('plugins');
-    sys.setPluginTab('companion');
-    sys.setCompanionPluginTab('decisions');
+    navigateToCompanions('athena:decisions');
   };
 
   return (

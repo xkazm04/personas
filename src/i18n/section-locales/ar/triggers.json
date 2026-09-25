@@ -731,7 +731,15 @@
     "tab_compose": "تأليف",
     "tab_routes": "المسارات",
     "targets_subtitle": "أي شخصية تعمل",
-    "targets_title": "الأهداف"
+    "targets_title": "الأهداف",
+    "last_fired": "آخر تشغيل",
+    "never_fired": "لم يعمل قط",
+    "pause_route": "إيقاف المسار مؤقتًا",
+    "proto_paused": "متوقف",
+    "resume_dry_run_failed": "فشل التشغيل التجريبي، لذا يبقى المسار متوقفًا. {error}",
+    "resume_route": "استئناف المسار",
+    "route_paused": "متوقف مؤقتًا",
+    "route_toggle_failed": "تعذّر تغيير هذا المسار"
   },
   "subscription_list": {
     "active": "نشط",

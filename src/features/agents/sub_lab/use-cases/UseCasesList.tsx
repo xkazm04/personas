@@ -220,7 +220,7 @@ export function UseCasesList({ designContext, emptyMessage, emptyHint }: UseCase
                       </span>
                     )}
                   </div>
-                  <p className="typo-body text-foreground mt-1 leading-relaxed">
+                  <p className="typo-body text-foreground mt-1">
                     {uc.description}
                   </p>
                 </div>
@@ -232,7 +232,7 @@ export function UseCasesList({ designContext, emptyMessage, emptyHint }: UseCase
 
       {contextData.summary && (
         <div className="px-1 mt-2">
-          <p className="typo-body text-foreground leading-relaxed">
+          <p className="typo-body text-foreground">
             {contextData.summary}
           </p>
         </div>

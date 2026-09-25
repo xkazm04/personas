@@ -95,6 +95,7 @@
     "markdown-vault": "integration",
     "mcp-tools": "llm-agent",
     "media-playback": "ui-surfaces",
+    "metric-gates": "engineering-process",
     "metrics-rollups": "backend-platform",
     "migrations": "backend-platform",
     "modal-stack": "ui-surfaces",

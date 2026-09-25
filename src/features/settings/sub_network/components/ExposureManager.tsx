@@ -52,7 +52,7 @@ function ResourceExposureCard({
     <div className="rounded-modal border border-border bg-secondary/20 p-3 flex items-center justify-between gap-3">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="typo-body font-medium text-foreground truncate">
+          <span className="typo-body text-foreground truncate">
             {resource.display_name || resource.resource_id}
           </span>
           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-secondary/40 text-foreground">
@@ -246,10 +246,10 @@ export default function ExposureManager() {
         <ContentBody centered>
           <div className="rounded-modal border border-dashed border-border p-8 text-center max-w-md mx-auto">
             <WifiOff className="w-8 h-8 text-foreground mx-auto mb-3" />
-            <h3 className="typo-body font-medium text-foreground mb-1">
+            <h3 className="typo-body text-foreground mb-1">
               <DebtText k="auto_p2p_networking_unavailable_47ff008f" />
             </h3>
-            <p className="typo-caption text-foreground leading-relaxed">
+            <p className="typo-caption text-foreground">
               <DebtText k="auto_this_build_was_compiled_without_the_18a8c54c" /> <code className="typo-code">p2p</code> <DebtText k="auto_feature_identity_peer_discovery_and_resour_fbab4d9e" />
               <code className="typo-code"> <DebtText k="auto_npm_run_tauri_dev_55d5802d" /></code> <DebtText k="auto_full_build_to_enable_them_4f77d810" />
             </p>

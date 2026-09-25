@@ -179,6 +179,7 @@
     "cancelled": "Отменено",
     "completed": "Завершено",
     "failed": "Ошибка",
+    "queued": "В очереди",
     "pending": "Ожидание",
     "refused": "Отклонено",
     "running": "Выполняется"

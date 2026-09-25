@@ -56,7 +56,7 @@ export function DevCloneAdoptionCard({
       </div>
 
       <div className="flex items-center gap-3">
-        <Button variant="accent" accentColor="violet" size="md"
+        <Button variant="accent" tone="agent" size="md"
           icon={<Sparkles className="w-4 h-4" />} loading={adopting}
           disabled={!activeProjectName}
           disabledReason={!activeProjectName ? t.plugins.dev_tools.select_project_first : undefined}

@@ -82,9 +82,9 @@ export function SlackBridgePickers({
           onValueChange={(v) => onChange({ personaId: v })}
           placeholder={ts.slack_bridge_persona_placeholder}
         />
-        <p className="typo-caption font-normal text-foreground">{ts.slack_bridge_persona_hint}</p>
+        <p className="typo-caption text-foreground">{ts.slack_bridge_persona_hint}</p>
         {selectedPersona && !selectedPersona.enabled && (
-          <p className="flex items-start gap-1.5 typo-caption font-normal text-amber-300">
+          <p className="flex items-start gap-1.5 typo-caption text-amber-300">
             <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
             {ts.slack_bridge_persona_disabled_warning}
           </p>
@@ -113,7 +113,7 @@ export function SlackBridgePickers({
           />
         )}
         {form.credentialId && !useChannelList && (
-          <p className="typo-caption font-normal text-foreground">
+          <p className="typo-caption text-foreground">
             {channelsLoading
               ? ts.slack_bridge_channel_loading
               : channelsFailed

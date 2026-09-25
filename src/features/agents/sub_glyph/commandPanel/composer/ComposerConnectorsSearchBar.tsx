@@ -55,7 +55,7 @@ export const ComposerConnectorsSearchBar = forwardRef<HTMLInputElement, Composer
               }`}
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span className="typo-caption font-medium">
+              <span className="typo-caption">
                 {category === "__all__" ? t.agents.glyph_apps_filter : humanizeCategory(category)}
               </span>
             </button>
@@ -68,7 +68,7 @@ export const ComposerConnectorsSearchBar = forwardRef<HTMLInputElement, Composer
               onClick={() => onCategoryChange("__all__")}
               className={`px-2.5 py-1 rounded-full typo-caption transition-colors ${
                 category === "__all__"
-                  ? "bg-primary/25 text-foreground border border-primary/50 font-medium"
+                  ? "bg-primary/25 text-foreground border border-primary/50"
                   : "bg-foreground/5 text-foreground border border-border/30 hover:border-primary/30"
               }`}
             >
@@ -83,7 +83,7 @@ export const ComposerConnectorsSearchBar = forwardRef<HTMLInputElement, Composer
                   onClick={() => onCategoryChange(cat)}
                   className={`px-2.5 py-1 rounded-full typo-caption transition-colors ${
                     active
-                      ? "bg-primary/25 text-foreground border border-primary/50 font-medium"
+                      ? "bg-primary/25 text-foreground border border-primary/50"
                       : "bg-foreground/5 text-foreground border border-border/30 hover:border-primary/30"
                   }`}
                 >

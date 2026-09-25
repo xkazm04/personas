@@ -47,12 +47,12 @@ export function GitLabConnectionForm({
         <div className={`p-4 ${DEPLOYMENT_TOKENS.cardRadius} ${DEPLOYMENT_TOKENS.connectedBg} border ${DEPLOYMENT_TOKENS.connectedBorder}`}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-card bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
-              <span className="typo-heading-lg font-bold text-emerald-400">
+              <span className="typo-heading-lg text-emerald-400">
                 {username.charAt(0).toUpperCase()}
               </span>
             </div>
             <div>
-              <p className="typo-body font-medium text-foreground/90">{tx(t.gitlab.connected_as, { username })}</p>
+              <p className="typo-body text-foreground/90">{tx(t.gitlab.connected_as, { username })}</p>
               <p className="typo-body text-foreground">{baseUrl.replace(/^https?:\/\//, '')}</p>
             </div>
           </div>
@@ -76,7 +76,7 @@ export function GitLabConnectionForm({
     <div className={DEPLOYMENT_TOKENS.panelSpacing}>
       {/* Vault credential status */}
       <div className={`p-4 ${DEPLOYMENT_TOKENS.cardRadius} bg-secondary/30 border border-primary/10`}>
-        <h3 className={`typo-body font-medium text-foreground/90 ${DEPLOYMENT_TOKENS.sectionHeadingGap}`}>
+        <h3 className={`typo-body text-foreground/90 ${DEPLOYMENT_TOKENS.sectionHeadingGap}`}>
           {t.gitlab.gitlab_credential}
         </h3>
 
@@ -90,7 +90,7 @@ export function GitLabConnectionForm({
             </div>
 
             <div className="mt-3">
-              <label htmlFor="gitlab-instance-url" className="flex items-center gap-1.5 typo-caption font-medium text-foreground mb-1.5">
+              <label htmlFor="gitlab-instance-url" className="flex items-center gap-1.5 typo-caption text-foreground mb-1.5">
                 <Globe className="w-3.5 h-3.5" />
                 {t.gitlab.instance_url}
               </label>
@@ -111,7 +111,7 @@ export function GitLabConnectionForm({
               type="button"
               onClick={() => onConnect(instanceUrl || undefined)}
               disabled={isConnecting}
-              className="mt-3 flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal bg-orange-500/15 border border-orange-500/25 text-orange-400 hover:bg-orange-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="mt-3 flex items-center gap-2 px-4 py-2 typo-body rounded-modal bg-orange-500/15 border border-orange-500/25 text-orange-400 hover:bg-orange-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isConnecting ? (
                 <span role="status" aria-live="polite" className="inline-flex items-center gap-2">

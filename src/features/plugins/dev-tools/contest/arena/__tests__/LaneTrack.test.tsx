@@ -19,8 +19,8 @@ describe('LaneMeter', () => {
   });
 
   it('the state word wraps instead of being truncated', () => {
-    render(<LaneMeter state="seat-limit" stateLabel="Out of fuel · seat limit" stateTone="warning" wallS={60} startedAtMs={null} ceilingS={3600} />);
-    const label = screen.getByText('Out of fuel · seat limit');
+    render(<LaneMeter state="seat-limit" stateLabel="Plan limit reached" stateTone="warning" wallS={60} startedAtMs={null} ceilingS={3600} />);
+    const label = screen.getByText('Plan limit reached');
     expect(label.className).not.toMatch(/\btruncate\b/);
   });
 

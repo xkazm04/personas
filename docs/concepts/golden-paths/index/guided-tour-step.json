@@ -23,6 +23,9 @@
   "citationCount": 65,
   "triggers": [],
   "citations": {
+    "companion/chat/athenaChatNavigation.ts": {"count":1,"sections":[7],"contexts":["`companion/guidance/walkthroughs.ts`, `companion/chat/athenaChatNavigation.ts`,"],"resolved":false},
+    "companion/guidance/anchorCatalog.ts": {"count":1,"sections":[7],"contexts":["`test/automation/bridge.ts`, `companion/guidance/anchorCatalog.ts`,"],"resolved":false},
+    "companion/guidance/walkthroughs.ts": {"count":1,"sections":[7],"contexts":["`companion/guidance/walkthroughs.ts`, `companion/chat/athenaChatNavigation.ts`,"],"resolved":false},
     "scripts/docs/check-doc-sync.mjs": {"count":2,"sections":[7],"contexts":["so `check-doc-sync.mjs`'s onboarding check can never name it. **This is the"],"resolvedFrom":"basename","verbatim":"check-doc-sync.mjs"},
     "scripts/docs/feature-doc-map.json": {"count":4,"sections":[2,7],"contexts":["`tourAnchorManifest.json` (945 testids), `feature-doc-map.json`,"],"resolvedFrom":"basename","verbatim":"feature-doc-map.json"},
     "scripts/docs/gen-tour-anchors.mjs": {"count":7,"sections":[0,7,12],"contexts":["`dynamicTours.ts`, `tourAnchors.test.ts`, `gen-tour-anchors.mjs`,"],"resolvedFrom":"basename","verbatim":"gen-tour-anchors.mjs"},
@@ -43,15 +46,6 @@
     "src/features/onboarding/components/TourLauncher.tsx": {"count":3,"sections":[7],"lines":["25"],"contexts":["(1,671 lines), `GuidedTour.tsx`, `TourSpotlight.tsx`, `TourLauncher.tsx`,"],"resolvedFrom":"basename","verbatim":"TourLauncher.tsx"},
     "src/features/onboarding/components/TourSpotlight.tsx": {"count":1,"sections":[],"contexts":["(1,671 lines), `GuidedTour.tsx`, `TourSpotlight.tsx`, `TourLauncher.tsx`,"],"resolvedFrom":"basename","verbatim":"TourSpotlight.tsx"},
     "src/features/onboarding/components/tourConstants.ts": {"count":1,"sections":[7],"contexts":["merely *name* anchors without rendering them: `tourConstants.ts`,"],"resolvedFrom":"basename","verbatim":"tourConstants.ts"},
-    "src/features/plugins/companion/chat/athenaChatNavigation.ts": {
-      "count": 1,
-      "sections": [7],
-      "contexts": ["`companion/guidance/walkthroughs.ts`, `companion/chat/athenaChatNavigation.ts`,"],
-      "resolvedFrom": "suffix",
-      "verbatim": "companion/chat/athenaChatNavigation.ts"
-    },
-    "src/features/plugins/companion/guidance/anchorCatalog.ts": {"count":1,"sections":[7],"contexts":["`test/automation/bridge.ts`, `companion/guidance/anchorCatalog.ts`,"],"resolvedFrom":"suffix","verbatim":"companion/guidance/anchorCatalog.ts"},
-    "src/features/plugins/companion/guidance/walkthroughs.ts": {"count":1,"sections":[7],"contexts":["`companion/guidance/walkthroughs.ts`, `companion/chat/athenaChatNavigation.ts`,"],"resolvedFrom":"suffix","verbatim":"companion/guidance/walkthroughs.ts"},
     "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx": {
       "count": 4,
       "sections": [0,7],

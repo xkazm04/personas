@@ -18,5 +18,6 @@
   "database": "Database error -- please restart the app",
   "internal": "An unexpected error occurred",
   "cloud_error": "Cloud service error: {detail}",
-  "gitlab_error": "GitLab error: {detail}"
+  "gitlab_error": "GitLab error: {detail}",
+  "run_superseded": "A new run of this task was started elsewhere in the app, so this one was stopped. Start it again here if you still need it."
 }

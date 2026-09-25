@@ -26,7 +26,7 @@ const TIER_TONE: Record<string, string> = {
 export function MemberTierChip({ tier }: { tier: string }) {
   return (
     <span
-      className={`inline-flex items-center px-1.5 py-0.5 rounded-full border typo-caption font-medium ${
+      className={`inline-flex items-center px-1.5 py-0.5 rounded-full border typo-caption ${
         TIER_TONE[tier] ?? TIER_TONE.Inherit
       }`}
     >
@@ -81,14 +81,14 @@ export function UseCaseToggleRow({ useCase, busy, onToggle, compact }: UseCaseTo
       </span>
       <span className="min-w-0 flex-1">
         <span
-          className={`block truncate typo-body font-medium ${
+          className={`block truncate typo-body ${
             enabled ? 'text-foreground' : 'text-foreground/45'
           }`}
         >
           {useCase.title}
         </span>
         {!compact && (useCase.capabilitySummary || useCase.description) && (
-          <span className="block typo-caption font-normal text-foreground/85">
+          <span className="block typo-caption text-foreground/85">
             {useCase.capabilitySummary || useCase.description}
           </span>
         )}
@@ -160,7 +160,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
         type="button"
         data-testid="team-add-member"
         onClick={() => setOpen((p) => !p)}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body font-medium text-foreground hover:bg-secondary/50 transition-colors"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body text-foreground hover:bg-secondary/50 transition-colors"
       >
         <Plus className="w-4 h-4" />
         {ts.add_persona}

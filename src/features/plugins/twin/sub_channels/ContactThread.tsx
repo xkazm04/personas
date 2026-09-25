@@ -77,7 +77,7 @@ export function ContactThread({
               >
                 <Icon className="w-3 h-3" />
               </span>
-              <span className="flex-1 min-w-0 typo-caption text-foreground leading-snug line-clamp-2">{c.content}</span>
+              <span className="flex-1 min-w-0 typo-caption text-foreground line-clamp-2">{c.content}</span>
               <RelativeTime timestamp={c.occurred_at} className="flex-shrink-0 text-[10px] text-foreground tabular-nums" />
               {replyable && (
                 <Reply className="flex-shrink-0 mt-0.5 w-3 h-3 text-violet-300 opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden />

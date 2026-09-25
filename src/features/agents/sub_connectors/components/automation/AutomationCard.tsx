@@ -62,11 +62,11 @@ export function AutomationCard({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="typo-body font-medium text-foreground truncate" title={automation.name}>{automation.name}</p>
+            <p className="typo-body text-foreground truncate" title={automation.name}>{automation.name}</p>
             <AutomationStatusBadge automationId={automation.id} status={automation.deploymentStatus} />
           </div>
           <div className="flex items-center gap-2 mt-0.5">
-            <span className={`inline-flex items-center px-1.5 py-0 typo-body font-medium rounded border ${platformConfig.bg} ${platformConfig.color}`}>{t.agents.connectors[platformConfig.labelKey]}</span>
+            <span className={`inline-flex items-center px-1.5 py-0 typo-body rounded border ${platformConfig.bg} ${platformConfig.color}`}>{t.agents.connectors[platformConfig.labelKey]}</span>
             {capabilityTitle && (
               <StatusBadge
                 accent="cyan"

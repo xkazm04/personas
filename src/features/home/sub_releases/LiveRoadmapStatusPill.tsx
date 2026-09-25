@@ -7,8 +7,12 @@
  * / "il y a 4 minutes" phrasing follows the user's current app language
  * without any extra translation keys.
  */
-import { RefreshCw } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { Package, RefreshCw } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
+import { StatusDot, type ConnectionState } from '@/features/shared/components/display/StatusDot';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { LiveRoadmapStatus } from './useLiveRoadmap';
 import type { ReleasesTranslation } from './i18n/useReleasesTranslation';
 
@@ -39,6 +43,15 @@ function formatRelative(iso: string | null, language: string): string {
   return fmt.format(Math.round(diffSec / bucket.div), bucket.unit);
 }
 
+/** Where the content came from, as a connection state with its own shape:
+ * fresh is live, a cache answer is paused, a rescue after a failed fetch is
+ * offline. The bundled snapshot has no connection at all and draws a package. */
+const SOURCE_STATE: Record<'fresh' | 'cached' | 'stale', ConnectionState> = {
+  fresh: 'live',
+  cached: 'paused',
+  stale: 'offline',
+};
+
 interface Props {
   status: LiveRoadmapStatus;
   fetchedAt: string | null;
@@ -61,8 +74,7 @@ export function LiveRoadmapStatusPill({
 
   if (status === 'loading') return null;
 
-  let dot = 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]';
-  let label: string;
+  let source: ReactNode;
 
   if (status === 'fresh' || status === 'cached' || status === 'stale') {
     const relative = formatRelative(fetchedAt, language);
@@ -72,36 +84,42 @@ export function LiveRoadmapStatusPill({
         : status === 'cached'
           ? t.live.sourceCache
           : t.live.updatedPrefix;
-    if (status === 'cached') dot = 'bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.55)]';
-    if (status === 'stale')  dot = 'bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.6)]';
-    label = relative ? `${prefix} · ${relative}` : prefix;
+    const label = relative ? `${prefix} · ${relative}` : prefix;
+    // StatusDot is role="img" named by `label`, so the visible line inside it is
+    // read once, as its name.
+    source = (
+      <StatusDot kind="connection" state={SOURCE_STATE[status]} label={label} pulse={false}>
+        <span className="typo-caption">{label}</span>
+      </StatusDot>
+    );
   } else {
-    // 'unavailable' — bundled snapshot, nothing to refresh against.
-    dot = 'bg-foreground/40';
-    label = t.live.sourceFallback;
+    // 'unavailable': bundled snapshot, nothing to refresh against.
+    source = (
+      <span className="flex items-center gap-2">
+        <Package aria-hidden className="h-3.5 w-3.5 text-foreground" />
+        <span className="typo-caption">{t.live.sourceFallback}</span>
+      </span>
+    );
   }
 
+  const canRefresh = !!onRefresh && status !== 'unavailable';
   return (
-    <div className="flex items-center gap-2 rounded-full border border-primary/8 bg-primary/[0.03] px-3 py-1">
-      <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
-      <span className="font-mono text-xs text-foreground">{label}</span>
-      {onRefresh && status !== 'unavailable' && (
-        <button
-          type="button"
-          onClick={onRefresh}
-          disabled={refreshing}
-          aria-busy={refreshing}
-          // 24x24 is the floor, not a preference: this is the only control on
-          // the surface and WCAG 2.2 SC 2.5.8 sets the minimum pointer target
-          // at 24x24 CSS px. `px-2 py-0.5` around a 12px icon measured ~26x16,
-          // failing it on the short axis and making the one affordance the
-          // live-roadmap design rests on the hardest thing here to hit.
-          className="ml-1 flex h-6 w-6 items-center justify-center rounded-full border border-primary/8 bg-primary/[0.04] text-foreground transition-colors hover:border-primary/16 hover:bg-primary/[0.07] disabled:opacity-50"
-          aria-label={refreshLabel}
-          title={refreshLabel}
-        >
-          <RefreshCw className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
-        </button>
+    <div className={`flex items-center gap-2 rounded-full border border-primary/10 bg-primary/5 py-0.5 pl-3 ${canRefresh ? 'pr-1' : 'pr-3'}`}>
+      {source}
+      {canRefresh && (
+        // The shared icon button is 28x28, above the 24x24 floor WCAG 2.2
+        // SC 2.5.8 sets for the only control on this surface; it renders the
+        // real spinner while a refresh is in flight.
+        <Tooltip content={refreshLabel}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            loading={refreshing}
+            onClick={onRefresh}
+            aria-label={refreshLabel}
+            icon={<RefreshCw className="h-3.5 w-3.5" />}
+          />
+        </Tooltip>
       )}
     </div>
   );

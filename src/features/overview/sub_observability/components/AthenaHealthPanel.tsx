@@ -3,7 +3,7 @@ import { Bot, Filter, Bell } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAthenaHealth } from '../libs/useAthenaHealth';
 import { AthenaSpendSection } from './AthenaSpendSection';
-import { ReplyShapePanel } from '@/features/plugins/companion/ReplyShapePanel';
+import { ReplyShapePanel } from '@/features/companions/athena/ReplyShapePanel';
 
 /**
  * Athena operational-health panel in the Observability tab (direction 6 / A4).

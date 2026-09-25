@@ -287,5 +287,8 @@
   "verifying_bundle": "বান্ডিল যাচাই হচ্ছে…",
   "verifying_enclave": "এনক্লেভ যাচাই হচ্ছে…",
   "view_details": "বিস্তারিত দেখুন",
-  "your_identity": "আপনার পরিচয়"
+  "your_identity": "আপনার পরিচয়",
+  "job_kind_fleet_session": "ফ্লিট সেশন",
+  "job_kind_instruction": "নির্দেশ",
+  "job_receipt_title": "ফেরত আসা কাজ"
 }

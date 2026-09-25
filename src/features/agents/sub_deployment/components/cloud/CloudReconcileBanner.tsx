@@ -58,7 +58,7 @@ export function CloudReconcileBanner() {
       <div className="flex items-start gap-3">
         <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
         <div className="flex-1 space-y-1">
-          <p className="typo-body font-medium text-foreground">{r.heading}</p>
+          <p className="typo-body text-foreground">{r.heading}</p>
           <p className="typo-body text-foreground">
             {tx(summary, { count: orphans.length })}
           </p>

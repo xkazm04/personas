@@ -20,10 +20,10 @@ vi.mock('@/api/webbuild', () => ({
   webbuildSessionSend: vi.fn(() => new Promise(() => {})),
   webbuildSketch: vi.fn(() => new Promise(() => {})),
 }));
-vi.mock('@/features/plugins/companion/useTtsVoiceSelection', () => ({
+vi.mock('@/features/companions/athena/useTtsVoiceSelection', () => ({
   useTtsVoiceSelection: () => ({ engine: 'kokoro', voiceId: null, credentialId: null, configured: false }),
 }));
-vi.mock('@/features/plugins/companion/useTtsSettings', () => ({ useTtsSettings: () => undefined }));
+vi.mock('@/features/companions/athena/useTtsSettings', () => ({ useTtsSettings: () => undefined }));
 vi.mock('../StudioChatInput', () => ({ default: () => <div data-testid="dock" /> }));
 vi.mock('../StudioVersions', () => ({ default: () => null }));
 vi.mock('../StudioVisionStart', () => ({ default: () => <div data-testid="vision" /> }));
@@ -287,10 +287,10 @@ describe('Guide layout', () => {
   });
 
   it('with the app-wide orb on screen, Studio shows a tools button, not a second Athena', async () => {
-    const { useCompanionStore } = await import('@/features/plugins/companion/companionStore');
+    const { useAthenaStore } = await import('@/features/companions/athena/athenaStore');
     const { useSystemStore } = await import('@/stores/systemStore');
-    useSystemStore.setState({ companionOrbEnabled: true } as never);
-    useCompanionStore.setState({ state: 'minimized' } as never);
+    useSystemStore.setState({ athenaOrbEnabled: true } as never);
+    useAthenaStore.setState({ state: 'minimized' } as never);
     try {
       seed({});
       mount();
@@ -298,16 +298,16 @@ describe('Guide layout', () => {
       fireEvent.click(screen.getByTestId('guide-tools-button'));
       expect(screen.getByRole('menu')).toBeTruthy();
     } finally {
-      useCompanionStore.setState({ state: 'dormant' } as never);
+      useAthenaStore.setState({ state: 'dormant' } as never);
     }
   });
 
   it('a build turn running in Studio shows on the app-wide orb, and clears when it ends', async () => {
-    const { useCompanionStore } = await import('@/features/plugins/companion/companionStore');
+    const { useAthenaStore } = await import('@/features/companions/athena/athenaStore');
     seed({ busy: true });
-    expect(useCompanionStore.getState().orbBusySources.studio).toBe(true);
+    expect(useAthenaStore.getState().orbBusySources.studio).toBe(true);
     seed({ busy: false });
-    expect(useCompanionStore.getState().orbBusySources.studio).toBeUndefined();
+    expect(useAthenaStore.getState().orbBusySources.studio).toBeUndefined();
   });
 });
 

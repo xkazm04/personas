@@ -18,22 +18,24 @@
 // editable, and NOTHING runs until the user confirms one method. Any feature
 // can mount this with a DispatchRequest — the Ship layer's goal actions are
 // the first consumer; more surfaces are expected to reuse it.
+//
+// RUN ON ANOTHER DEVICE. `RunOnSelect` above the cards picks this machine or a
+// paired device. On a device, only `fleet` (interactive) and `cli` (headless)
+// cross; the runner and the console are disabled with the reason on the card,
+// and Confirm sends the session through `dispatchToDevice` instead of spawning
+// here. A dispatch whose `prepare` writes files on THIS machine cannot cross
+// (the files would not be over there), so its devices are disabled too.
 import { useState } from 'react';
-import { Bot, Rocket, SquareTerminal, TerminalSquare, Zap } from 'lucide-react';
+import { Rocket } from 'lucide-react';
 
-import { createTask, executeTask } from '@/api/devTools/devTools';
-import {
-  listSessions,
-  renameSession,
-  spawnExternalConsole,
-  spawnHeadlessSession,
-  spawnSession,
-} from '@/api/fleet/fleet';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { BaseModal } from '@/features/shared/components/modals';
-import { getActiveTranslations } from '@/i18n/useTranslation';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
+import { DispatchMethodCards } from './DispatchMethodCards';
+import { runLocalDispatch } from './localDispatch';
+import { dispatchToDevice, isRemoteCapable, remoteModeFor, useProjectGitRemote } from './remoteDispatch';
+import { RunOnSelect } from './RunOnSelect';
 
 export type DispatchMethod = 'dev_runner' | 'fleet' | 'cli' | 'console';
 
@@ -61,20 +63,14 @@ export interface DispatchRequest {
   consoleSkipPermissions?: boolean;
 }
 
-const METHOD_ICON: Record<DispatchMethod, typeof Bot> = {
-  dev_runner: Bot,
-  fleet: SquareTerminal,
-  cli: Zap,
-  console: TerminalSquare,
-};
-
 const ALL_METHODS: DispatchMethod[] = ['dev_runner', 'fleet', 'cli'];
 
 export function DispatchChooserModal({ request, onClose, onDispatched }: {
   request: DispatchRequest;
   onClose: () => void;
   /** Fired after the chosen transport accepted the work. `ref` is the task id
-   *  (dev_runner) or session id (fleet/cli). */
+   *  (dev_runner), the session id (fleet/cli), or the remote job id when the
+   *  work went to a paired device. */
   onDispatched?: (method: DispatchMethod, ref: string) => void;
 }) {
   const { t, tx } = useTranslation();
@@ -88,37 +84,31 @@ export function DispatchChooserModal({ request, onClose, onDispatched }: {
   const [method, setMethod] = useState<DispatchMethod>(methods.includes('fleet') ? 'fleet' : methods[0] ?? 'fleet');
   const [prompt, setPrompt] = useState(request.prompt);
   const [busy, setBusy] = useState(false);
+  // `null` = this machine; otherwise the paired device's peer id.
+  const [runOn, setRunOn] = useState<string | null>(null);
+  const githubUrl = useProjectGitRemote(request.target.projectId);
+  const remote = runOn !== null;
+  const localOnly = (m: DispatchMethod) => (remote && !isRemoteCapable(m) ? t.common.dispatch_run_on_local_only : null);
+  const pickRunOn = (peerId: string | null) => {
+    setRunOn(peerId);
+    // A device cannot run the runner or a console: move to one that crosses.
+    if (peerId !== null && !isRemoteCapable(method)) setMethod(methods.find(isRemoteCapable) ?? method);
+  };
   const fleetKey = request.fleetKey ?? `dispatch:${request.target.projectId}:${request.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)}`;
 
   const dispatch = async () => {
     setBusy(true);
     try {
-      await request.prepare?.();
-      let ref: string;
-      if (method === 'dev_runner') {
-        const task = await createTask(request.title, request.target.projectId, prompt);
-        await executeTask(task.id);
-        ref = task.id;
-      } else if (method === 'fleet') {
-        const snap = await listSessions();
-        const running = snap.sessions.find((s) => s.name === fleetKey && s.state !== 'exited');
-        if (running) throw new Error(getActiveTranslations().common.dispatch_already_running);
-        ref = await spawnSession(request.target.rootPath, [prompt]);
-        await renameSession(ref, fleetKey);
-      } else if (method === 'console') {
-        // No dedup check: the app holds no handle on these windows, so it
-        // cannot know whether an earlier one is still open. The operator can
-        // see their own terminals.
-        const pid = await spawnExternalConsole({
-          cwd: request.target.rootPath,
-          prompt,
-          skipPermissions: request.consoleSkipPermissions,
-        });
-        ref = String(pid);
-      } else {
-        ref = await spawnHeadlessSession(request.target.rootPath, prompt);
-        await renameSession(ref, `${fleetKey}:cli`);
-      }
+      const ref = runOn !== null
+        ? (await dispatchToDevice({
+            peerId: runOn,
+            projectId: request.target.projectId,
+            projectName: request.target.projectName,
+            githubUrl: githubUrl ?? '',
+            prompt,
+            mode: remoteModeFor(method),
+          })).id
+        : await runLocalDispatch(method, request, prompt, fleetKey);
       onDispatched?.(method, ref);
       onClose();
     } catch (e) {
@@ -134,31 +124,25 @@ export function DispatchChooserModal({ request, onClose, onDispatched }: {
         <h2 id="dispatch-chooser-title" className="typo-title-lg mb-0.5">{request.title}</h2>
         <p className="typo-caption mb-3">{tx(t.common.dispatch_pick_method, { project: request.target.projectName })}</p>
 
-        {/* the three transports */}
-        <div className="grid gap-2 mb-3" style={{ gridTemplateColumns: `repeat(${methods.length}, minmax(0, 1fr))` }} role="radiogroup" aria-label={t.common.dispatch_method_aria}>
-          {methods.map((m) => {
-            const meta = methodMeta[m];
-            const Icon = METHOD_ICON[m];
-            const on = method === m;
-            return (
-              <button
-                key={m}
-                type="button"
-                role="radio"
-                aria-checked={on}
-                onClick={() => setMethod(m)}
-                className={`rounded-card border px-3 py-2.5 text-left transition-colors focus-ring ${on ? 'border-primary/50 bg-primary/[0.07]' : 'border-foreground/[0.1] hover:bg-foreground/[0.03]'}`}
-                data-testid={`dispatch-method-${m}`}
-              >
-                <span className="flex items-center gap-1.5 mb-1">
-                  <Icon className={`w-4 h-4 ${on ? 'text-primary' : 'text-foreground/55'}`} aria-hidden />
-                  <span className={`typo-caption font-semibold ${on ? 'text-foreground' : 'text-foreground/75'}`}>{meta.label}</span>
-                </span>
-                <span className="typo-caption block leading-snug text-foreground/55">{meta.desc}</span>
-              </button>
-            );
-          })}
-        </div>
+        {methods.some(isRemoteCapable) && (
+          <div className="mb-3">
+            <RunOnSelect
+              value={runOn}
+              onChange={pickRunOn}
+              githubUrl={githubUrl}
+              remoteBlockedReason={request.prepare ? t.common.dispatch_run_on_local_prep : null}
+            />
+          </div>
+        )}
+
+        <DispatchMethodCards
+          methods={methods}
+          value={method}
+          onChange={setMethod}
+          meta={methodMeta}
+          disabledReason={localOnly}
+          ariaLabel={t.common.dispatch_method_aria}
+        />
 
         <textarea
           value={prompt}
@@ -169,7 +153,7 @@ export function DispatchChooserModal({ request, onClose, onDispatched }: {
         />
 
         <div className="flex items-center justify-end gap-2 mt-3">
-          <button type="button" onClick={onClose} className="px-3 py-1.5 rounded-interactive typo-caption text-foreground/60 hover:text-foreground transition-colors focus-ring">
+          <button type="button" onClick={onClose} className="px-3 py-1.5 rounded-interactive typo-caption text-foreground hover:bg-secondary/40 transition-colors focus-ring">
             {t.common.cancel}
           </button>
           <AsyncButton

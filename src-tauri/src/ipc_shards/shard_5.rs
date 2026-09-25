@@ -184,6 +184,12 @@ pub(super) fn shard(
         commands::infrastructure::dev_workspaces::dev_tools_workspace_assign_project,
         commands::infrastructure::dev_workspaces::dev_tools_workspace_set_active,
         commands::infrastructure::dev_workspaces::dev_tools_workspace_import_local,
+        // Dev Tools -- Knowledge registries (the workspace's ai-registry link)
+        commands::infrastructure::dev_registries::dev_tools_registry_snapshot,
+        commands::infrastructure::dev_registries::dev_tools_registry_upsert,
+        commands::infrastructure::dev_registries::dev_tools_registry_link,
+        commands::infrastructure::dev_registries::dev_tools_registry_unlink,
+        commands::infrastructure::dev_registries::dev_tools_registry_import,
         // Dev Tools -- Goals
         commands::infrastructure::dev_tools::dev_tools_list_goals,
         commands::infrastructure::dev_tools::dev_tools_create_goal,

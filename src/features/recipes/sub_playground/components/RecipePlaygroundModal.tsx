@@ -45,7 +45,7 @@ export function RecipePlaygroundModal({ recipe, onClose }: RecipePlaygroundModal
           <BookOpen className="w-4 h-4 text-primary" />
         </div>
         <div className="min-w-0 flex-1">
-          <h2 id="recipe-playground-title" className="typo-heading font-semibold text-foreground truncate">{currentRecipe.name}</h2>
+          <h2 id="recipe-playground-title" className="typo-heading text-foreground truncate">{currentRecipe.name}</h2>
           {currentRecipe.description && (
             <p className="typo-body text-foreground truncate">{currentRecipe.description}</p>
           )}
@@ -70,7 +70,7 @@ export function RecipePlaygroundModal({ recipe, onClose }: RecipePlaygroundModal
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`relative flex items-center gap-1.5 px-3 py-2 typo-body font-medium transition-colors ${
+              className={`relative flex items-center gap-1.5 px-3 py-2 typo-body transition-colors ${
                 isActive ? 'text-foreground' : 'text-foreground hover:text-foreground/80'
               }`}
             >

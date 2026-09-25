@@ -47,7 +47,7 @@ export function buildComponents(onOpenUrl: (url: string) => void): Components {
         return (
           <div className="relative group my-2">
             <code
-              className={`block p-3 bg-background/60 border border-primary/10 rounded-card typo-code font-mono overflow-x-auto ${className || ''}`}
+              className={`block p-3 bg-background/60 border border-primary/10 rounded-card typo-code overflow-x-auto ${className || ''}`}
               {...props}
             >
               {children}
@@ -63,7 +63,7 @@ export function buildComponents(onOpenUrl: (url: string) => void): Components {
       return (
         <span className="inline-flex items-center gap-0.5">
           <code
-            className="px-1.5 py-0.5 bg-secondary/60 border border-primary/10 rounded typo-code font-mono text-amber-300"
+            className="px-1.5 py-0.5 bg-secondary/60 border border-primary/10 rounded typo-code text-amber-300"
             {...props}
           >
             {children}
@@ -98,7 +98,7 @@ export function buildComponents(onOpenUrl: (url: string) => void): Components {
       );
     },
     p: ({ children }) => (
-      <p className="typo-body text-foreground my-1 leading-relaxed">{children}</p>
+      <p className="typo-body text-foreground my-1">{children}</p>
     ),
     ul: ({ children }) => (
       <ul className="list-disc list-inside space-y-0.5 my-1 typo-body text-foreground">{children}</ul>
@@ -110,13 +110,13 @@ export function buildComponents(onOpenUrl: (url: string) => void): Components {
       <li className="text-foreground">{children}</li>
     ),
     h1: ({ children }) => (
-      <h1 className="typo-heading font-bold text-foreground mb-1.5 mt-2">{children}</h1>
+      <h1 className="typo-heading text-foreground mb-1.5 mt-2">{children}</h1>
     ),
     h2: ({ children }) => (
-      <h2 className="typo-heading font-semibold text-foreground/90 mb-1 mt-2">{children}</h2>
+      <h2 className="typo-heading text-foreground/90 mb-1 mt-2">{children}</h2>
     ),
     h3: ({ children }) => (
-      <h3 className="typo-heading font-semibold uppercase tracking-wider text-foreground mb-1 mt-1.5">{children}</h3>
+      <h3 className="typo-heading uppercase text-foreground mb-1 mt-1.5">{children}</h3>
     ),
     strong: ({ children }) => (
       <strong className="font-semibold text-foreground">{children}</strong>

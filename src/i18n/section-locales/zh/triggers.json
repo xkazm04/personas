@@ -731,7 +731,15 @@
     "tab_compose": "编排",
     "tab_routes": "路由",
     "targets_subtitle": "运行的角色",
-    "targets_title": "目标"
+    "targets_title": "目标",
+    "last_fired": "上次触发",
+    "never_fired": "从未触发",
+    "pause_route": "暂停路由",
+    "proto_paused": "已暂停",
+    "resume_dry_run_failed": "试运行失败，路由保持暂停。{error}",
+    "resume_route": "恢复路由",
+    "route_paused": "已暂停",
+    "route_toggle_failed": "无法更改此路由"
   },
   "subscription_list": {
     "active": "活跃",

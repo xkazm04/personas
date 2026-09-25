@@ -48,7 +48,7 @@ export function IncomingPairingPanel({
           >
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="typo-body font-medium text-foreground truncate">
+                <p className="typo-body text-foreground truncate">
                   {tx(st.incoming_from, { device: request.displayName })}
                 </p>
                 <UuidLabel value={request.peerId} />

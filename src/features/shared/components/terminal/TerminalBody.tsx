@@ -246,7 +246,7 @@ export function TerminalBody({
                   className="absolute left-0 right-0 px-4"
                   style={{ transform: `translateY(${virtualRow.start}px)` }}
                 >
-                  <div className={`typo-code leading-5 whitespace-pre-wrap break-words py-[1px] ${TERMINAL_STYLE_MAP[style]} transition-opacity ${isFiltering && !visible ? 'opacity-20' : ''}`}>
+                  <div className={`typo-code whitespace-pre-wrap break-words py-[1px] ${TERMINAL_STYLE_MAP[style]} transition-opacity ${isFiltering && !visible ? 'opacity-20' : ''}`}>
                     {line}
                   </div>
                 </div>

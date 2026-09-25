@@ -23,6 +23,7 @@
   "citationCount": 75,
   "triggers": [],
   "citations": {
+    "companionStore.ts": {"count":2,"sections":[2,3],"lines":["811-818"],"contexts":["repo has the careful version — `prependMessages` in `companionStore.ts:811-818` dedupes by id and"],"resolved":false},
     "mkB-private-rules.json": {"count":1,"sections":[9],"contexts":["Validated standalone in a private registry (`mkB-private-rules.json`, filename unique to this"],"resolved":false},
     "personas-web/src/stores/eventStore.ts": {"count":1,"sections":[12],"lines":["91-117"],"contexts":["result adjacent to this leaf — `personas-web/src/stores/eventStore.ts:91-117` **merges instead of"],"resolved":false},
     "registry.rs": {"count":4,"sections":[0,2,7,12],"lines":["36-40","1010-1019"],"contexts":["the ring unconditionally so the PTY never blocks (`registry.rs:36-40`), and `subscribed` only gates"],"resolved":false},
@@ -47,6 +48,25 @@
     "src/": {"count":2,"sections":[0],"contexts":["**Sweep size.** Every backend push-stream attachment in `src/` — **43 hook sites** plus the raw"],"resolved":false,"isDir":true},
     "src/api/templates/teamPresets.ts": {"count":1,"sections":[9],"lines":["62"],"contexts":["prose** — `src/api/templates/teamPresets.ts:62`, a JSDoc line telling the reader to"]},
     "src/features/agents/sub_executions/detail/inspector/useTraceData.ts": {"count":1,"sections":[7],"contexts":["`AbortController`: **0**. `let cancelled = false`: 3 (`useTraceData.ts`, `ContextMapPage.tsx`,"],"resolvedFrom":"basename","verbatim":"useTraceData.ts"},
+    "src/features/companions/athena/chat/athenaChatEvents.ts": {"count":1,"sections":[7],"contexts":["(`athenaChatEvents.ts` ×6 sites, `athenaChatNavigation.ts` ×6, `athenaChatShell.ts`,"],"resolvedFrom":"basename","verbatim":"athenaChatEvents.ts"},
+    "src/features/companions/athena/chat/athenaChatNavigation.ts": {"count":1,"sections":[7],"contexts":["(`athenaChatEvents.ts` ×6 sites, `athenaChatNavigation.ts` ×6, `athenaChatShell.ts`,"],"resolvedFrom":"basename","verbatim":"athenaChatNavigation.ts"},
+    "src/features/companions/athena/chat/athenaChatShell.ts": {"count":1,"sections":[7],"contexts":["(`athenaChatEvents.ts` ×6 sites, `athenaChatNavigation.ts` ×6, `athenaChatShell.ts`,"],"resolvedFrom":"basename","verbatim":"athenaChatShell.ts"},
+    "src/features/companions/athena/chat/athenaChatStream.ts": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["162"],
+      "contexts": ["`athenaChatStream.ts`). **Verified on use, not re-measured** — I confirmed the four files and their"],
+      "resolvedFrom": "basename",
+      "verbatim": "athenaChatStream.ts"
+    },
+    "src/features/companions/athena/useConversationRoster.ts": {
+      "count": 3,
+      "sections": [5,6],
+      "lines": ["36-52"],
+      "contexts": ["`useConversationRoster.ts`, `ProjectTeamPreviewModal.tsx` read in full or around every fetch and"],
+      "resolvedFrom": "basename",
+      "verbatim": "useConversationRoster.ts"
+    },
     "src/features/overview/sub_events/libs/useEventLog.ts": {
       "count": 3,
       "sections": [7,8],
@@ -55,33 +75,7 @@
       "resolvedFrom": "basename",
       "verbatim": "useEventLog.ts"
     },
-    "src/features/plugins/companion/chat/athenaChatEvents.ts": {"count":1,"sections":[7],"contexts":["(`athenaChatEvents.ts` ×6 sites, `athenaChatNavigation.ts` ×6, `athenaChatShell.ts`,"],"resolvedFrom":"basename","verbatim":"athenaChatEvents.ts"},
-    "src/features/plugins/companion/chat/athenaChatNavigation.ts": {"count":1,"sections":[7],"contexts":["(`athenaChatEvents.ts` ×6 sites, `athenaChatNavigation.ts` ×6, `athenaChatShell.ts`,"],"resolvedFrom":"basename","verbatim":"athenaChatNavigation.ts"},
-    "src/features/plugins/companion/chat/athenaChatShell.ts": {"count":1,"sections":[7],"contexts":["(`athenaChatEvents.ts` ×6 sites, `athenaChatNavigation.ts` ×6, `athenaChatShell.ts`,"],"resolvedFrom":"basename","verbatim":"athenaChatShell.ts"},
-    "src/features/plugins/companion/chat/athenaChatStream.ts": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["162"],
-      "contexts": ["`athenaChatStream.ts`). **Verified on use, not re-measured** — I confirmed the four files and their"],
-      "resolvedFrom": "basename",
-      "verbatim": "athenaChatStream.ts"
-    },
-    "src/features/plugins/companion/companionStore.ts": {
-      "count": 2,
-      "sections": [2,3],
-      "lines": ["811-818"],
-      "contexts": ["repo has the careful version — `prependMessages` in `companionStore.ts:811-818` dedupes by id and"],
-      "resolvedFrom": "basename",
-      "verbatim": "companionStore.ts"
-    },
-    "src/features/plugins/companion/useConversationRoster.ts": {
-      "count": 4,
-      "sections": [5,6,7],
-      "lines": ["36-52"],
-      "contexts": ["`useConversationRoster.ts`, `ProjectTeamPreviewModal.tsx` read in full or around every fetch and"],
-      "resolvedFrom": "basename",
-      "verbatim": "useConversationRoster.ts"
-    },
+    "src/features/plugins/companion/useConversationRoster.ts": {"count":1,"sections":[7],"lines":["36-52"],"contexts":["`src/features/plugins/companion/useConversationRoster.ts:36-52`, `:57-87`. `refresh()` reads the"],"resolved":false},
     "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx": {"count":1,"sections":[7],"contexts":["`AbortController`: **0**. `let cancelled = false`: 3 (`useTraceData.ts`, `ContextMapPage.tsx`,"],"resolvedFrom":"basename","verbatim":"ContextMapPage.tsx"},
     "src/features/plugins/dev-tools/sub_projects/ProjectTeamPreviewModal.tsx": {
       "count": 5,

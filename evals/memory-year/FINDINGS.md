@@ -240,6 +240,14 @@ each waited through its dreaming phase. Adapter and run kit under `arms/supermem
 That is the highest accuracy measured here, above retrieval filling its budget (0.89), and
 it costs the most to write by a wide margin.
 
+**Read "tops" as "ties at the top".** Paired probe by probe (2026-09-24,
+`py -m memory_year.checks.ladder_resolution`), every adjacent step from 0.86 to 0.92 is a
+tie under an exact sign test: 0.89 to 0.90 is +1 net of 27 discordant probes (p=1.0), 0.89
+to 0.92 is +6 of 22 (p=0.29), and even the 0.90 to 0.92 read-mode split, five probes all one
+way, is p=0.06. The top five arms are one band on 194 probes. The ranking below that band
+still holds, and none-versus-full-history, the check's own control, resolves at +40 of 64.
+Which of the top five is best needs more probes or repeated grading, not a second decimal.
+
 The result worth keeping is not the ranking. It is what the store did with supersedence:
 
 - **A superseded value reached the context in 92 of 92 reversal and expired probes**, under

@@ -6,7 +6,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import Button from '@/features/shared/components/buttons/Button';
+import Button, { type ButtonTone } from '@/features/shared/components/buttons/Button';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import AdoptionWizardModal from '@/features/templates/sub_generated/adoption/AdoptionWizardModal';
 import { AppearanceStep } from './AppearanceStep';
@@ -17,7 +17,7 @@ import { StepIndicator, useSteps } from './StepIndicator';
 import { useOnboardingState } from './useOnboardingState';
 import { useTranslation } from '@/i18n/useTranslation';
 
-type OnboardingButtonTone = 'violet' | 'emerald';
+type OnboardingButtonTone = Extract<ButtonTone, 'agent' | 'success'>;
 
 interface OnboardingActionButtonProps {
   onClick: () => void;
@@ -40,7 +40,7 @@ function OnboardingActionButton({
   title,
 }: OnboardingActionButtonProps) {
   return (
-    <Button variant="accent" accentColor={tone} size="md" onClick={onClick} disabled={disabled} title={title}>
+    <Button variant="accent" tone={tone} size="md" onClick={onClick} disabled={disabled} title={title}>
       {children}
     </Button>
   );
@@ -194,7 +194,7 @@ export default function OnboardingOverlay() {
 
         <div className="flex items-center gap-2">
           {onboardingStep === 'appearance' && (
-            <OnboardingActionButton onClick={handleNextFromAppearance} tone="violet">
+            <OnboardingActionButton onClick={handleNextFromAppearance} tone="agent">
               {t.onboarding.continue_button}
               <ArrowRight className="w-4 h-4" />
             </OnboardingActionButton>
@@ -203,7 +203,7 @@ export default function OnboardingOverlay() {
           {onboardingStep === 'discover' && (
             <OnboardingActionButton
               onClick={handleNextFromDiscover}
-              tone="violet"
+              tone="agent"
               disabled={isScanning}
               title={isScanning ? t.onboarding.scanning_tooltip : undefined}
             >
@@ -215,7 +215,7 @@ export default function OnboardingOverlay() {
           {onboardingStep === 'pick-template' && (
             <OnboardingActionButton
               onClick={handleNextFromPick}
-              tone="violet"
+              tone="agent"
               disabled={!onboardingSelectedReviewId || templates.length === 0 || isAdopting}
               title={!onboardingSelectedReviewId ? t.onboarding.select_template_tooltip : undefined}
             >
@@ -225,7 +225,7 @@ export default function OnboardingOverlay() {
           )}
 
           {onboardingStep === 'execute' && onboardingStepCompleted['execute'] && (
-            <OnboardingActionButton onClick={handleFinish} tone="emerald">
+            <OnboardingActionButton onClick={handleFinish} tone="success">
               <Check className="w-4 h-4" />
               {t.onboarding.done_button}
             </OnboardingActionButton>

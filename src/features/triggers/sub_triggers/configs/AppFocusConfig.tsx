@@ -35,7 +35,7 @@ export function AppFocusConfig({
                 setAppNames(updated);
               }}
               placeholder={t.triggers.app_focus_process_placeholder}
-              className="flex-1 px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono typo-code placeholder-muted-foreground/30 focus-ring transition-all"
+              className="flex-1 px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-code placeholder-muted-foreground/30 focus-ring transition-all"
             />
             {appNames.length > 1 && (
               <button type="button" onClick={() => setAppNames(appNames.filter((_, j) => j !== i))} className="p-1.5 text-foreground hover:text-red-400 transition-colors">
@@ -56,7 +56,7 @@ export function AppFocusConfig({
           value={titlePattern}
           onChange={(e) => setTitlePattern(e.target.value)}
           placeholder={t.triggers.app_focus_window_placeholder}
-          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono typo-code placeholder-muted-foreground/30 focus-ring transition-all"
+          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-code placeholder-muted-foreground/30 focus-ring transition-all"
         />
       </TriggerFieldGroup>
       <TriggerFieldGroup label={t.triggers.poll_interval_label}>

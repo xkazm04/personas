@@ -281,10 +281,10 @@ mod tests {
         let conn = pool.get().unwrap();
         conn.execute(
             "INSERT INTO dev_projects (id, name, root_path, description, status, tech_stack, \
-                 team_id, auto_pr_on_success, github_url, \
+                 team_id, github_url, \
                  main_branch, monitoring_credential_id, llm_tracking_credential_id, \
                  support_credential_id, pr_credential_id, monitoring_project_slug) \
-             VALUES (?1, ?2, ?3, 'a project', 'paused', 'rust+react', 'team-x', 1, \
+             VALUES (?1, ?2, ?3, 'a project', 'paused', 'rust+react', 'team-x', \
                  'https://github.com/x/y', 'main', \
                  'cred-mon', 'cred-llm', 'cred-sup', 'cred-pr', 'proj-slug')",
             rusqlite::params![id, format!("Project {id}"), root_path],
@@ -365,7 +365,6 @@ mod tests {
         assert_eq!(p.status, "paused");
         assert_eq!(p.tech_stack.as_deref(), Some("rust+react"));
         assert_eq!(p.team_id.as_deref(), Some("team-x"));
-        assert!(p.auto_pr_on_success);
         assert_eq!(p.goals.len(), 2);
         assert_eq!(p.goal_dependencies.len(), 1);
         assert_eq!(p.goal_items.len(), 1);
@@ -415,7 +414,6 @@ mod tests {
             Some("rust+react")
         );
         assert_eq!(reparsed.dev_projects[0].team_id.as_deref(), Some("team-x"));
-        assert!(reparsed.dev_projects[0].auto_pr_on_success);
         let legacy: PortabilityBundle = serde_json::from_str(
             r#"{"format_version":2,"exported_at":"x","app_version":"x","scope":"full",
                 "personas":[],"tool_definitions":[],"teams":[],"credentials":[]}"#,
@@ -486,7 +484,6 @@ mod tests {
             status: "active".into(),
             tech_stack: None,
             team_id: None,
-            auto_pr_on_success: false,
             github_url: None,
             main_branch: None,
             test_env_url: None,
@@ -2955,5 +2952,34 @@ mod tests {
             .iter()
             .any(|w| w.contains("fact_new") && w.contains("no readable body")));
         drop(home);
+    }
+
+    /// An export written before the auto-PR toggle was removed still carries
+    /// `auto_pr_on_success` on each dev project. It must parse (the field is
+    /// ignored, not refused) and import.
+    #[test]
+    fn an_old_export_with_the_auto_pr_toggle_still_imports(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let mut bundle = empty_bundle();
+        bundle.dev_projects = vec![minimal_dev_project("legacy-pr")];
+        let mut json = serde_json::to_value(&bundle).unwrap();
+        json["dev_projects"][0]["auto_pr_on_success"] = serde_json::Value::Bool(true);
+        let old: PortabilityBundle = serde_json::from_value(json).expect("old export parses");
+
+        let target = init_test_db().unwrap();
+        let result = import_bundle(&target, None, &old, &HashMap::new()).expect("import");
+        assert_eq!(
+            result.projects_imported, 1,
+            "warnings: {:?}",
+            result.warnings
+        );
+        let conn = target.get()?;
+        let name: String = conn.query_row(
+            "SELECT name FROM dev_projects WHERE id = 'legacy-pr'",
+            [],
+            |r| r.get("name"),
+        )?;
+        assert_eq!(name, "P legacy-pr");
+        Ok(())
     }
 }

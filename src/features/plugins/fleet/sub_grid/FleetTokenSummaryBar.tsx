@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Coins, Database, Gauge } from 'lucide-react';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { tokenSummary } from '@/api/fleet/fleet';
 import type { FleetTokenAggregate } from '@/lib/bindings/FleetTokenAggregate';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -62,37 +63,38 @@ export function FleetTokenSummaryBar({ claudeSessionIds }: Props) {
   const billable = input + output;
   const cacheDenom = input + cacheRead;
   const cacheHitPct = cacheDenom > 0 ? Math.round((cacheRead / cacheDenom) * 100) : 0;
+  // How the cache is doing is a status: a high hit rate is good, a middling one a warning.
   const cacheTone =
-    cacheHitPct >= 70 ? 'text-emerald-400' : cacheHitPct >= 40 ? 'text-amber-400' : 'text-foreground';
+    cacheHitPct >= 70 ? 'text-status-success' : cacheHitPct >= 40 ? 'text-status-warning' : 'text-foreground';
   const bloated = agg.bloatedCount;
 
   return (
     <div
       data-testid="fleet-token-summary-bar"
-      className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] text-foreground"
+      className="flex flex-wrap items-center gap-x-4 gap-y-1.5 typo-body text-foreground"
     >
-      <span className="inline-flex items-center gap-1.5 tabular-nums" title={f.fleet_total_tokens_hint}>
-        <Coins className="w-3.5 h-3.5 opacity-70" aria-hidden="true" />
-        <span className="opacity-70">{f.fleet_total_tokens}</span>
-        <Numeric value={billable} unit="count" />
-      </span>
+      <Tooltip content={f.fleet_total_tokens_hint}>
+        <span className="inline-flex items-center gap-1.5">
+          <Coins className="w-3.5 h-3.5 text-foreground" aria-hidden="true" />
+          <span className="typo-caption">{f.fleet_total_tokens}</span>
+          <span className="tabular-nums"><Numeric value={billable} unit="count" /></span>
+        </span>
+      </Tooltip>
 
-      <span
-        className={`inline-flex items-center gap-1.5 tabular-nums ${cacheTone}`}
-        title={f.fleet_cache_hit_hint}
-      >
-        <Database className="w-3.5 h-3.5" aria-hidden="true" />
-        <span>{tx(f.fleet_cache_hit, { percent: cacheHitPct })}</span>
-      </span>
+      <Tooltip content={f.fleet_cache_hit_hint}>
+        <span className={`inline-flex items-center gap-1.5 tabular-nums ${cacheTone}`}>
+          <Database className="w-3.5 h-3.5" aria-hidden="true" />
+          <span>{tx(f.fleet_cache_hit, { percent: cacheHitPct })}</span>
+        </span>
+      </Tooltip>
 
       {bloated > 0 && (
-        <span
-          className="inline-flex items-center gap-1.5 tabular-nums text-amber-400"
-          title={f.fleet_heavy_hint}
-        >
-          <Gauge className="w-3.5 h-3.5" aria-hidden="true" />
-          <span>{tx(f.fleet_heavy_sessions, { count: bloated })}</span>
-        </span>
+        <Tooltip content={f.fleet_heavy_hint}>
+          <span className="inline-flex items-center gap-1.5 tabular-nums text-status-warning">
+            <Gauge className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>{tx(f.fleet_heavy_sessions, { count: bloated })}</span>
+          </span>
+        </Tooltip>
       )}
     </div>
   );

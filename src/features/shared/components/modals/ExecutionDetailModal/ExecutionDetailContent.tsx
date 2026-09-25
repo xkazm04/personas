@@ -93,7 +93,7 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
     <div className="space-y-5">
       {/* Status bar */}
       <div className="flex flex-wrap items-center gap-3">
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg typo-heading font-semibold ${badgeClass(getStatusEntry(execution.status))}`}>
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg typo-heading ${badgeClass(getStatusEntry(execution.status))}`}>
           {getStatusEntry(execution.status).label}
         </span>
         {execution.retry_count > 0 && (
@@ -113,7 +113,7 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
             <Shield className="w-3 h-3" /> {showRaw ? 'Raw' : 'Masked'}
           </button>
           {isTerminalState(execution.status) && (
-            <button type="button" onClick={handleRerun} disabled={isRerunning} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg typo-heading font-medium transition-colors ${
+            <button type="button" onClick={handleRerun} disabled={isRerunning} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg typo-heading transition-colors ${
               rerunResult === 'success' ? 'bg-emerald-500/10 text-emerald-400' : rerunResult === 'error' ? 'bg-red-500/10 text-red-400' : 'bg-primary/10 text-primary hover:bg-primary/15'
             } disabled:opacity-50`}>
               {isRerunning ? <><Loader2 className="w-3 h-3 animate-spin" /> {t.shared.execution_detail.running}</> : rerunResult === 'success' ? <><Check className="w-3 h-3" /> Started</> : rerunResult === 'error' ? <><AlertTriangle className="w-3 h-3" /> Failed</> : <><RotateCw className="w-3 h-3" /> {t.shared.execution_detail.rerun}</>}
@@ -136,7 +136,7 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
                 return (
                   <button type="button" key={sec.id} onClick={() => setActiveSection(sec.id)} className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${isActive ? 'bg-primary/8 border-r-2 border-primary text-foreground/90' : 'text-foreground hover:bg-secondary/30'}`}>
                     <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? def?.color ?? '' : ''}`} />
-                    <span className="typo-body font-medium truncate">{sec.label}</span>
+                    <span className="typo-body truncate">{sec.label}</span>
                     {sec.count != null && <span className="ml-auto typo-body text-foreground">{sec.count}</span>}
                   </button>
                 );

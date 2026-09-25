@@ -63,7 +63,7 @@ export function FeedIcon({
       {isAsset ? (
         <ThemedConnectorIcon url={icon!} label={entry.name} color={color} size={iconSize} />
       ) : (
-        <span className="typo-caption leading-none" aria-hidden>{!isAsset && icon ? icon : '📡'}</span>
+        <span className="typo-caption" aria-hidden>{!isAsset && icon ? icon : '📡'}</span>
       )}
     </div>
   );
@@ -98,7 +98,7 @@ export function SeverityBadge({ severity, label }: { severity: string | undefine
   const s = severityStyle(severity);
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full typo-caption font-medium border ${s.bg} ${s.text} ${s.border}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full typo-caption border ${s.bg} ${s.text} ${s.border}`}
     >
       <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
       {label}

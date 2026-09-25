@@ -143,7 +143,7 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
           <Icon className="w-5 h-5 mt-0.5 shrink-0" style={{ color: INK.teal }} aria-hidden />
           <div className="min-w-0">
             <div className="text-[10px] uppercase tracking-[0.14em] text-foreground/40">{passport.identity.name}</div>
-            <h2 id="row-setup-title" className="typo-body font-semibold text-foreground">{rowLabel}</h2>
+            <h2 id="row-setup-title" className="typo-body text-foreground">{rowLabel}</h2>
             <p className="typo-caption text-foreground/55 mt-0.5">
               Currently at “{currentLabel}” — pick a direction; a Fleet terminal runs it in the project’s repo.
             </p>
@@ -169,7 +169,7 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
               >
                 <span className="flex items-center gap-2 min-w-0">
                   <MessagesSquare className="w-3.5 h-3.5 shrink-0" style={{ color: INK.violet }} aria-hidden />
-                  <span className="typo-caption font-semibold text-foreground truncate">Guided session</span>
+                  <span className="typo-caption text-foreground truncate">Guided session</span>
                   <span className="shrink-0 rounded-full px-1.5 py-[1px] text-[9px] font-medium tracking-wide" style={{ color: INK.violet, border: `1px solid ${INK.violet}55`, background: `${INK.violet}14` }}>
                     interactive
                   </span>
@@ -196,7 +196,7 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
               >
                 <span className="flex items-center gap-2 min-w-0">
                   <span className="w-2 h-2 rounded-full shrink-0" style={on ? { background: INK.teal, boxShadow: `0 0 5px ${INK.teal}88` } : { border: '1px solid rgba(148,163,184,.45)' }} />
-                  <span className="typo-caption font-semibold text-foreground truncate">{d.label}</span>
+                  <span className="typo-caption text-foreground truncate">{d.label}</span>
                   {d.fromScan && (
                     <span className="shrink-0 rounded-full px-1.5 py-[1px] text-[9px] font-medium tracking-wide" style={{ color: INK.violet, border: `1px solid ${INK.violet}55`, background: `${INK.violet}14` }}>
                       from scan
@@ -223,7 +223,7 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
           type="button"
           disabled={busy || !selected || !raw}
           onClick={deploy}
-          className="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-card px-3 py-2 typo-caption font-semibold transition-colors focus-ring hover:bg-foreground/[0.05] disabled:opacity-40"
+          className="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-card px-3 py-2 typo-caption transition-colors focus-ring hover:bg-foreground/[0.05] disabled:opacity-40"
           style={{ color: INK.teal, border: `1px solid ${INK.teal}55` }}
           data-testid="row-setup-deploy"
         >

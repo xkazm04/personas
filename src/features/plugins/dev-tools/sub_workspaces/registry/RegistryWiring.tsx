@@ -85,7 +85,7 @@ function LocalFolderLink({
               );
               return;
             }
-            const registry = linkLocalRegistry(workspaceId, path, probe);
+            const registry = await linkLocalRegistry(workspaceId, path, probe);
             addToast(tx(tr.local_linked, { name: registry.fullName }), 'success');
             onLinked?.(registry);
           }}
@@ -154,7 +154,7 @@ export function RegistryWiring({
       <div className="flex flex-col gap-3">
         <p className="typo-body text-foreground">{tr.no_credential}</p>
         <div className="border-t border-border pt-3">
-          <p className="typo-caption font-medium text-foreground mb-2">{tr.local_heading}</p>
+          <p className="typo-caption text-foreground mb-2">{tr.local_heading}</p>
           <LocalFolderLink workspaceId={workspaceId} onLinked={onLinked} />
         </div>
       </div>
@@ -216,7 +216,7 @@ export function RegistryWiring({
           icon={<RefreshCw className="w-3.5 h-3.5" />}
           onClick={async () => {
             if (!repo || !dispatchCwd) return;
-            const registry = linkRegistry(
+            const registry = await linkRegistry(
               workspaceId,
               { fullName: repo.fullName, defaultBranch: repo.defaultBranch },
               credentialId,
@@ -231,7 +231,7 @@ export function RegistryWiring({
       </div>
 
       <div className="border-t border-border pt-3">
-        <p className="typo-caption font-medium text-foreground mb-2">{tr.local_heading}</p>
+        <p className="typo-caption text-foreground mb-2">{tr.local_heading}</p>
         <LocalFolderLink workspaceId={workspaceId} onLinked={onLinked} />
       </div>
     </div>

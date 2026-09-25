@@ -62,7 +62,7 @@ export function PreviewBanners({ result, fields, requiredCount, optionalCount, o
           <Plug className="w-5 h-5" style={{ color: result.connector.color }} />
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-foreground typo-body">{result.connector.label}</h4>
+          <h4 className="text-foreground typo-body">{result.connector.label}</h4>
           <p className="typo-body text-foreground">{result.summary}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -79,7 +79,7 @@ export function PreviewBanners({ result, fields, requiredCount, optionalCount, o
             {optionalCount}
           </span>
         </div>
-        <span className="px-2 py-0.5 bg-primary/10 text-primary/70 typo-code rounded-card font-mono">
+        <span className="px-2 py-0.5 bg-primary/10 text-primary/70 typo-code rounded-card">
           {result.connector.category}
         </span>
       </div>

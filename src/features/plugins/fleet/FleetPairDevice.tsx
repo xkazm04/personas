@@ -143,7 +143,7 @@ export function FleetPairDevice() {
     >
       <div className="flex items-center gap-2 mb-1">
         <Smartphone className="w-4 h-4 text-primary" aria-hidden="true" />
-        <p className="typo-caption font-medium text-foreground">{t.plugins.fleet.pair_title}</p>
+        <p className="typo-caption text-foreground">{t.plugins.fleet.pair_title}</p>
         <span className="ml-1 rounded-interactive border border-emerald-400/30 bg-emerald-400/10 px-1.5 py-0.5 text-[12px] uppercase tracking-wider text-emerald-300">
           {t.plugins.fleet.pair_lan_badge}
         </span>

@@ -2570,6 +2570,12 @@ pub async fn run_execution(
     let mut assistant_text = String::new();
     let mut tool_use_lines: Vec<StreamLineType> = Vec::new();
     let mut tool_steps: Vec<ToolCallStep> = Vec::new();
+    // `tool_use_id` of each entry in `tool_steps`, index-aligned, so a result
+    // closes the step it answers rather than the newest open one.
+    let mut tool_step_ids: Vec<Option<String>> = Vec::new();
+    // `tool_use_id` -> the ToolCall trace span opened for that call.
+    let mut tool_span_by_use_id: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
     let mut step_counter: u32 = 0;
 
     /// Maximum total stdout bytes captured before truncation (10 MB).
@@ -2834,7 +2840,7 @@ pub async fn run_execution(
                                     execution_id: exec_id_for_stream.clone(),
                                     content: text.clone(),
                                 }),
-                                StreamLineType::AssistantToolUse { tool_name, input_preview } => Some(StructuredExecutionEvent::ToolUse {
+                                StreamLineType::AssistantToolUse { tool_name, input_preview, .. } => Some(StructuredExecutionEvent::ToolUse {
                                     execution_id: exec_id_for_stream.clone(),
                                     tool_name: tool_name.clone(),
                                     input_preview: input_preview.clone(),
@@ -2843,7 +2849,7 @@ pub async fn run_execution(
                                     execution_id: exec_id_for_stream.clone(),
                                     items: items.clone(),
                                 }),
-                                StreamLineType::ToolResult { content_preview } => Some(StructuredExecutionEvent::ToolResult {
+                                StreamLineType::ToolResult { content_preview, .. } => Some(StructuredExecutionEvent::ToolResult {
                                     execution_id: exec_id_for_stream.clone(),
                                     content_preview: content_preview.clone(),
                                 }),
@@ -2906,86 +2912,42 @@ pub async fn run_execution(
 
                             // Track tool usage and build tool steps for inspector
                             if let StreamLineType::AssistantToolUse {
+                                ref tool_use_id,
                                 ref tool_name,
                                 ref input_preview,
+                                ref file_path,
+                                ref protocol,
                             } = line_type
                             {
-                                // Protocol tool interception: if the LLM called one of our
-                                // virtual protocol tools, parse the input and dispatch as a
-                                // structured protocol message (more reliable than JSON lines).
-                                static PROTOCOL_TOOLS: &[&str] = &["emit_memory", "emit_message", "emit_event", "request_review", "raise_incident", "propose_backlog"];
-                                if PROTOCOL_TOOLS.contains(&tool_name.as_str()) {
-                                    if let Ok(input_val) = serde_json::from_str::<serde_json::Value>(input_preview) {
-                                        let protocol_msg = match tool_name.as_str() {
-                                            "emit_memory" => Some(ProtocolMessage::AgentMemory {
-                                                title: input_val.get("title").and_then(|v| v.as_str()).unwrap_or("Untitled").to_string(),
-                                                content: input_val.get("content").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-                                                category: input_val.get("category").and_then(|v| v.as_str()).map(String::from),
-                                                importance: input_val.get("importance").and_then(|v| v.as_i64()).map(|v| v as i32),
-                                                tags: input_val.get("tags").and_then(|v| serde_json::from_value(v.clone()).ok()),
-                                            }),
-                                            "emit_message" => Some(ProtocolMessage::UserMessage {
-                                                title: input_val.get("title").and_then(|v| v.as_str()).map(String::from),
-                                                content: input_val.get("content").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-                                                content_type: input_val.get("content_type").and_then(|v| v.as_str()).map(String::from),
-                                                priority: input_val.get("priority").and_then(|v| v.as_str()).map(String::from),
-                                                channel: input_val.get("channel").and_then(|v| v.as_str()).map(String::from),
-                                            }),
-                                            "emit_event" => Some(ProtocolMessage::EmitEvent {
-                                                event_type: input_val.get("event_type").and_then(|v| v.as_str()).unwrap_or("custom").to_string(),
-                                                data: input_val.get("data").cloned(),
-                                            }),
-                                            "request_review" => Some(ProtocolMessage::ManualReview {
-                                                title: input_val.get("title").and_then(|v| v.as_str()).unwrap_or("Review Required").to_string(),
-                                                description: input_val.get("description").and_then(|v| v.as_str()).map(String::from),
-                                                severity: input_val.get("severity").and_then(|v| v.as_str()).map(String::from),
-                                                context_data: input_val.get("context_data").and_then(|v| v.as_str()).map(String::from),
-                                                suggested_actions: input_val.get("suggested_actions").and_then(|v| serde_json::from_value(v.clone()).ok()),
-                                                decisions: input_val.get("decisions").and_then(|v| serde_json::from_value(v.clone()).ok()),
-                                            }),
-                                            "raise_incident" => Some(ProtocolMessage::RaiseIncident {
-                                                title: input_val.get("title").and_then(|v| v.as_str()).unwrap_or("Blocker").to_string(),
-                                                detail: input_val.get("detail").and_then(|v| v.as_str()).map(String::from),
-                                                severity: input_val.get("severity").and_then(|v| v.as_str()).map(String::from),
-                                                kind: input_val.get("kind").and_then(|v| v.as_str()).map(String::from),
-                                            }),
-                                            "propose_backlog" => Some(ProtocolMessage::ProposeBacklog {
-                                                title: input_val.get("title").and_then(|v| v.as_str()).unwrap_or("Backlog item").to_string(),
-                                                description: input_val.get("description").and_then(|v| v.as_str()).map(String::from),
-                                                category: input_val.get("category").and_then(|v| v.as_str()).map(String::from),
-                                                impact: input_val.get("impact").and_then(|v| v.as_i64()).map(|v| v as i32),
-                                                effort: input_val.get("effort").and_then(|v| v.as_i64()).map(|v| v as i32),
-                                                risk: input_val.get("risk").and_then(|v| v.as_i64()).map(|v| v as i32),
-                                                target: input_val.get("target").and_then(|v| v.as_str()).map(String::from),
-                                                goal: input_val.get("goal").or_else(|| input_val.get("goalId")).or_else(|| input_val.get("goal_id")).and_then(|v| v.as_str()).map(String::from),
-                                                // The same tolerant reader the JSON-line door uses, so
-                                                // the two cannot produce different rows from one payload.
-                                                plan: personas_engine::parser::parse_idea_plan(&input_val),
-                                            }),
-                                            _ => None,
-                                        };
-                                        if let Some(ref msg) = protocol_msg {
-                                            if matches!(msg, ProtocolMessage::UserMessage { .. }) {
-                                                messages_counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                                            }
-                                            let notif_ref = notif_channels_for_stream.as_deref();
-                                            let mut dispatch_ctx = super::dispatch::DispatchContext::new(
-                                                &*emitter,
-                                                &pool_for_stream,
-                                                &exec_id_for_stream,
-                                                &persona_id_for_stream,
-                                                &project_id_for_stream,
-                                                &persona_name_for_stream,
-                                                notif_ref,
-                                                &mut logger,
-                                                Some(gate_config.clone()),
-                                            );
-                                            dispatch_ctx.ops_mode = is_ops_for_stream;
-                                            dispatch_ctx.is_simulation = is_simulation_for_stream;
-                                            dispatch_ctx.use_case_id = use_case_id_for_stream.as_deref();
-                                            super::dispatch::dispatch(&mut dispatch_ctx, msg);
-                                        }
+                                // Protocol tool interception: the parser decoded the
+                                // virtual protocol tool (`propose_backlog`, `emit_memory`,
+                                // ...) from the FULL input through the same table the
+                                // JSON-line door uses (`parser::decode_protocol_tool`).
+                                // Never re-parse `input_preview`: it is cut at 500 chars
+                                // and invalid JSON for any real payload. A model that got
+                                // "No such tool" may re-file the same item as a JSON line;
+                                // `propose_backlog` dedups by dedup_key and near-duplicate
+                                // in dispatch.
+                                if let Some(msg) = protocol {
+                                    if matches!(msg, ProtocolMessage::UserMessage { .. }) {
+                                        messages_counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                                     }
+                                    let notif_ref = notif_channels_for_stream.as_deref();
+                                    let mut dispatch_ctx = super::dispatch::DispatchContext::new(
+                                        &*emitter,
+                                        &pool_for_stream,
+                                        &exec_id_for_stream,
+                                        &persona_id_for_stream,
+                                        &project_id_for_stream,
+                                        &persona_name_for_stream,
+                                        notif_ref,
+                                        &mut logger,
+                                        Some(gate_config.clone()),
+                                    );
+                                    dispatch_ctx.ops_mode = is_ops_for_stream;
+                                    dispatch_ctx.is_simulation = is_simulation_for_stream;
+                                    dispatch_ctx.use_case_id = use_case_id_for_stream.as_deref();
+                                    super::dispatch::dispatch(&mut dispatch_ctx, msg);
                                 }
 
                                 tool_use_lines.push(line_type.clone());
@@ -3009,6 +2971,9 @@ pub async fn run_execution(
                                         event_type: "start".to_string(),
                                     });
                                 }
+                                if let Some(id) = tool_use_id {
+                                    tool_span_by_use_id.insert(id.clone(), tool_span_id.clone());
+                                }
 
                                 tool_steps.push(ToolCallStep {
                                     step_index: step_counter,
@@ -3019,9 +2984,16 @@ pub async fn run_execution(
                                     ended_at_ms: None,
                                     duration_ms: None,
                                 });
+                                tool_step_ids.push(tool_use_id.clone());
 
-                                // Emit file change event if this is a file operation
-                                if let Some(file_change) = parser::extract_file_change(tool_name, input_preview) {
+                                // Emit file change event if this is a file operation.
+                                // The parser decoded `file_path` from the full input.
+                                if let Some(file_change) = file_path.as_ref().and_then(|path| {
+                                    parser::file_change_type(tool_name).map(|change_type| parser::FileChange {
+                                        path: path.clone(),
+                                        change_type,
+                                    })
+                                }) {
                                     emit_to(
                                         &*emitter,
                                         event_name::EXECUTION_FILE_CHANGE,
@@ -3045,18 +3017,44 @@ pub async fn run_execution(
 
                             // Fill last tool step with result output
                             if let StreamLineType::ToolResult {
+                                ref tool_use_id,
                                 ref content_preview,
                             } = line_type
                             {
                                 let now = start_time.elapsed().as_millis() as u64;
-                                close_newest_open_tool_step(&mut tool_steps, now, content_preview);
+                                close_tool_step_for_result(
+                                    &mut tool_steps,
+                                    &tool_step_ids,
+                                    tool_use_id.as_deref(),
+                                    now,
+                                    content_preview,
+                                );
 
-                                // End the most recent open ToolCall trace span
+                                // End the ToolCall span this result answers (by id). A
+                                // result with no id falls back to the most recent open
+                                // span; one whose id the stream never saw (TodoWrite, a
+                                // second tool_use in one message) may only take a span
+                                // that no id has claimed, same rule as the steps.
                                 let tool_span_to_close = {
                                     let store = trace.spans.lock().unwrap_or_else(|e| e.into_inner());
-                                    store.vec.iter().rev()
-                                        .find(|s| s.span_type == SpanType::ToolCall && s.end_ms.is_none())
-                                        .map(|s| s.span_id.clone())
+                                    match tool_use_id.as_ref().and_then(|id| tool_span_by_use_id.remove(id)) {
+                                        Some(span_id) => store
+                                            .vec
+                                            .iter()
+                                            .any(|s| s.span_id == span_id && s.end_ms.is_none())
+                                            .then_some(span_id),
+                                        None => {
+                                            let unmatched_id = tool_use_id.is_some();
+                                            store.vec.iter().rev()
+                                                .find(|s| {
+                                                    s.span_type == SpanType::ToolCall
+                                                        && s.end_ms.is_none()
+                                                        && !(unmatched_id
+                                                            && tool_span_by_use_id.values().any(|v| *v == s.span_id))
+                                                })
+                                                .map(|s| s.span_id.clone())
+                                        }
+                                    }
                                 };
                                 if let Some(span_id) = tool_span_to_close {
                                     trace.end_span_ok(&span_id);
@@ -3960,12 +3958,11 @@ pub async fn run_execution(
 /// backwards search for the newest OPEN span, were **0 of 48,732** unclosed —
 /// same stream, same events, the other predicate.
 ///
-/// NON-GOAL, and the real fix upstream: `StreamLineType::ToolResult` carries no
-/// `tool_use_id` (`personas_core::types`), and neither does `AssistantToolUse`,
-/// even though the parser has the id in hand when it builds them. With the id a
-/// result could close the step it actually belongs to. Newest-open is the same
-/// heuristic the spans already use, and is exact whenever tools complete in
-/// LIFO order or only one call is in flight.
+/// This is now the FALLBACK. The parser carries `tool_use_id` on both
+/// `AssistantToolUse` and `ToolResult`, and `close_tool_step_for_result` pairs
+/// by id first; newest-open serves only a result the CLI sent without an id.
+/// It is exact whenever tools complete in LIFO order or only one call is in
+/// flight.
 fn close_newest_open_tool_step(
     tool_steps: &mut [ToolCallStep],
     now_ms: u64,
@@ -3978,6 +3975,47 @@ fn close_newest_open_tool_step(
     else {
         return false;
     };
+    close_tool_step(step, now_ms, content_preview);
+    true
+}
+
+/// Close the step a tool result answers.
+///
+/// `step_ids` is index-aligned with `tool_steps` (the `tool_use_id` each call
+/// carried). With parallel tools (Bash + Read in one turn) results arrive out
+/// of order, and newest-open pairing wrote one call's output onto another's
+/// step. Rules:
+/// - the result's id names a step: close that step (never reopen a closed one);
+/// - no id on the result: newest open step (`close_newest_open_tool_step`);
+/// - an id no step carries (TodoWrite, a second tool_use in one message): only
+///   a step that has no id of its own may take it, newest first.
+fn close_tool_step_for_result(
+    tool_steps: &mut [ToolCallStep],
+    step_ids: &[Option<String>],
+    tool_use_id: Option<&str>,
+    now_ms: u64,
+    content_preview: &str,
+) -> bool {
+    let Some(id) = tool_use_id else {
+        return close_newest_open_tool_step(tool_steps, now_ms, content_preview);
+    };
+    let has_id = |i: usize| step_ids.get(i).is_some_and(Option::is_some);
+    let target = match step_ids.iter().position(|s| s.as_deref() == Some(id)) {
+        Some(i) => Some(i),
+        None => (0..tool_steps.len())
+            .rev()
+            .find(|&i| !has_id(i) && tool_steps[i].ended_at_ms.is_none()),
+    };
+    match target.and_then(|i| tool_steps.get_mut(i)) {
+        Some(step) if step.ended_at_ms.is_none() => {
+            close_tool_step(step, now_ms, content_preview);
+            true
+        }
+        _ => false,
+    }
+}
+
+fn close_tool_step(step: &mut ToolCallStep, now_ms: u64, content_preview: &str) {
     // Char-safe truncation: `&s[..500]` panics when byte 500 lands inside a
     // multi-byte UTF-8 char (≤, $, em-dash, currency symbols — common in real
     // tool output). That panic failed a persona execution and stalled an
@@ -3992,7 +4030,6 @@ fn close_newest_open_tool_step(
     };
     step.ended_at_ms = Some(now_ms);
     step.duration_ms = Some(now_ms.saturating_sub(step.started_at_ms));
-    true
 }
 
 /// Stamp every tool step still open at persist time with the run's end,
@@ -4020,8 +4057,8 @@ fn finalize_open_tool_steps(tool_steps: &mut [ToolCallStep], end_ms: u64) -> usi
 #[cfg(test)]
 mod tests {
     use super::{
-        close_newest_open_tool_step, finalize_open_tool_steps, ToolCallStep,
-        DEFAULT_EXECUTION_TIMEOUT_MS,
+        close_newest_open_tool_step, close_tool_step_for_result, finalize_open_tool_steps,
+        ToolCallStep, DEFAULT_EXECUTION_TIMEOUT_MS,
     };
 
     fn step(step_index: u32, tool_name: &str, started_at_ms: u64) -> ToolCallStep {
@@ -4082,6 +4119,68 @@ mod tests {
             403,
             "400 chars fit under the 500-CHAR take; the byte length is what tripped the cap"
         );
+    }
+
+    /// case 6: parallel tools, results out of order. With the ids the parser
+    /// now carries, A's result closes A even though B is the newest open step.
+    #[test]
+    fn a_result_closes_the_step_its_tool_use_id_names() {
+        let mut steps = vec![step(0, "Bash", 0), step(1, "Read", 10)];
+        let ids = vec![Some("a".to_string()), Some("b".to_string())];
+
+        assert!(close_tool_step_for_result(
+            &mut steps,
+            &ids,
+            Some("a"),
+            300,
+            "bash output"
+        ));
+        assert_eq!(
+            steps[0].ended_at_ms,
+            Some(300),
+            "A is closed by its own result"
+        );
+        assert_eq!(steps[0].output_preview, "bash output");
+        assert_eq!(steps[1].ended_at_ms, None, "B stays open");
+        assert_eq!(steps[1].output_preview, "");
+
+        assert!(close_tool_step_for_result(
+            &mut steps,
+            &ids,
+            Some("b"),
+            400,
+            "read output"
+        ));
+        assert_eq!(steps[1].ended_at_ms, Some(400));
+        assert_eq!(steps[1].output_preview, "read output");
+    }
+
+    /// [guard] a result with no id still closes the newest open step.
+    #[test]
+    fn a_result_without_an_id_falls_back_to_newest_open() {
+        let mut steps = vec![step(0, "Bash", 0), step(1, "Read", 10)];
+        let ids = vec![Some("a".to_string()), Some("b".to_string())];
+        assert!(close_tool_step_for_result(
+            &mut steps, &ids, None, 300, "out"
+        ));
+        assert_eq!(steps[1].ended_at_ms, Some(300));
+        assert_eq!(steps[0].ended_at_ms, None);
+    }
+
+    /// A result whose id names no tracked step (TodoWrite, a second tool_use
+    /// in one message) must not close a step that carries a different id.
+    #[test]
+    fn a_result_for_an_untracked_id_closes_no_tracked_step() {
+        let mut steps = vec![step(0, "Bash", 0)];
+        let ids = vec![Some("a".to_string())];
+        assert!(!close_tool_step_for_result(
+            &mut steps,
+            &ids,
+            Some("todo"),
+            300,
+            "x"
+        ));
+        assert_eq!(steps[0].ended_at_ms, None);
     }
 
     #[test]

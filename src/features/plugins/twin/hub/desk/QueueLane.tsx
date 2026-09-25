@@ -121,7 +121,7 @@ export function QueueLane({ feed }: HubDeskProps) {
             >
               <QueueEntryHeader entry={current} />
               <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-8 py-4">
-                <p className="typo-body-lg text-foreground whitespace-pre-wrap leading-relaxed max-w-3xl">
+                <p className="typo-body-lg text-foreground whitespace-pre-wrap max-w-3xl">
                   {current.body}
                 </p>
               </div>
@@ -135,13 +135,13 @@ export function QueueLane({ feed }: HubDeskProps) {
                   />
                 ) : (
                   <div className="flex items-center gap-2">
-                    <AsyncButton size="icon-md" variant="accent" accentColor="emerald" isLoading={busy}
+                    <AsyncButton size="icon-md" variant="accent" tone="success" isLoading={busy}
                       aria-label={t.entry.approve} icon={<Check className="w-4 h-4" />}
                       onClick={() => { setExitDir(1); return feed.approve(current); }} />
-                    <AsyncButton size="icon-md" variant="accent" accentColor="violet" isLoading={busy}
+                    <AsyncButton size="icon-md" variant="accent" tone="agent" isLoading={busy}
                       aria-label={t.entry.digDeeper} icon={<Wand2 className="w-4 h-4" />}
                       onClick={() => { setExitDir(1); return feed.digDeeper(current); }} />
-                    <AsyncButton size="icon-md" variant="accent" accentColor="rose" disabled={busy}
+                    <AsyncButton size="icon-md" variant="accent" tone="error" disabled={busy}
                       aria-label={t.entry.reject} icon={<X className="w-4 h-4" />}
                       onClick={() => { setRejecting(true); }} />
                     <span className="ml-auto typo-caption text-foreground tabular-nums">

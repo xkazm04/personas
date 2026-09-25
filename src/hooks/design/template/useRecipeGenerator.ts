@@ -18,6 +18,9 @@ export function useRecipeGenerator() {
     completedPhase: 'reviewing',
     startFn: startRecipeGeneration,
     cancelFn: cancelRecipeGeneration,
+    // The backend job's id_field and timeout_secs, from recipes/recipe_generation.rs RECIPE_GENERATION_MESSAGES; artifactDeadlineParity.test.ts fails if they differ.
+    idField: 'generation_id',
+    backendTimeoutSecs: 300,
     errorMessage: 'Failed to generate recipe',
     traceOperation: 'recipe_execution',
   });

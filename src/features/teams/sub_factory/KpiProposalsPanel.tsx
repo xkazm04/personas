@@ -155,7 +155,7 @@ function ProposalCard({
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="typo-body text-foreground font-medium">{kpi.name}</span>
+            <span className="typo-body text-foreground">{kpi.name}</span>
             <span className="typo-caption opacity-70">{CATEGORY_LABEL[cat]} · {describeMeasureConfig(kpi.measure_config)}</span>
           </div>
           {kpi.rationale && <p className="typo-caption opacity-80 mt-0.5">{kpi.rationale}</p>}

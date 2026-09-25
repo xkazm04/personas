@@ -35,10 +35,12 @@
     "artistSlice.ts": {"count":1,"sections":[9],"lines":["193"],"contexts":["`executionSink.ts:291,334`, `artistSlice.ts:193`, `devToolsTaskSlice.ts:220` drain an in-memory"],"resolved":false},
     "ascent/src/components/QuotaMeter.tsx": {"count":1,"sections":[6],"lines":["24"],"contexts":["(`useRenderPlan.ts:31-45`, `ascent/src/components/QuotaMeter.tsx:24`) are both on **reads**."],"resolved":false},
     "ascent/src/components/org/executive/BrandingSettings.tsx": {"count":1,"sections":[6],"lines":["42"],"contexts":["`ascent/src/components/org/executive/BrandingSettings.tsx:42` (4000 ms). A second save inside the"],"resolved":false},
+    "companionStore.ts": {"count":2,"sections":[6,7],"lines":["1379"],"contexts":["(`themeStore.ts:360`, `systemStore.ts:57`, `agentStore.ts:40`, `companionStore.ts:1379`)."],"resolved":false},
     "exportContextMap.ts": {"count":1,"sections":[6],"lines":["401-418"],"contexts":["`exportContextMap.ts:401-418` is cancel-only *by design* and says so."],"resolved":false},
     "index.ts": {"count":1,"sections":[6],"lines":["12"],"contexts":["re-exported from the barrel at `index.ts:12` with a usage `@example` in its docstring. Grepping"],"resolved":false},
     "kafka.ts": {"count":2,"sections":[6,7],"lines":["108-117","102-117,275"],"contexts":["(2 consumers, and unexported outside `sub_editor/libs`) and `kafka.ts:108-117` (a backend). No repo"],"resolved":false},
     "lib/pendingWrites.ts": {"count":1,"sections":[],"contexts":["`lib/pendingWrites.ts` — `schedule(key, flush, delay)` / `flushAll()` — module-scoped, one"],"resolved":false},
+    "main.tsx": {"count":2,"sections":[4,8],"lines":["120-141"],"contexts":["component is gone) and reaches only the global `unhandledrejection` handler at `main.tsx:120-141`."],"resolved":false},
     "package.json": {"count":1,"sections":[6],"contexts":["`usehooks-ts`, `ahooks`: **zero declared dependencies in all six `package.json` trees**, including the"]},
     "parameterEditing.tsx": {"count":1,"sections":[6],"lines":["73"],"contexts":["nothing: `useAppSetting.ts:77` (2000 ms), `parameterEditing.tsx:73` (1500 ms),"],"resolved":false},
     "personas-cloud/packages/orchestrator/src/kafka.ts": {"count":2,"sections":[6,9],"lines":["94"],"contexts":["`personas-cloud/packages/orchestrator/src/kafka.ts` is a headless Kafka outbox and it has the entire"],"resolved":false},
@@ -134,14 +136,6 @@
       "lines": ["31-45"],
       "contexts": ["| `src/features/plugins/artist/sub_media_studio/hooks/useRenderPlan.ts:31-45` | a monotonic sequence guard (`compileSeqRef`) — the ordering fix, correctly built, on a **read** |"],
       "resolved": false
-    },
-    "src/features/plugins/companion/companionStore.ts": {
-      "count": 2,
-      "sections": [6,7],
-      "lines": ["1379"],
-      "contexts": ["(`themeStore.ts:360`, `systemStore.ts:57`, `agentStore.ts:40`, `companionStore.ts:1379`)."],
-      "resolvedFrom": "basename",
-      "verbatim": "companionStore.ts"
     },
     "src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx": {
       "count": 1,
@@ -273,14 +267,6 @@
       "verbatim": "executionSink.ts"
     },
     "src/lib/throttledStorage.ts": {"count":7,"sections":[2,4,6,7,8],"lines":["42-43","25-44","25-44,81-89"],"contexts":["of a `pagehide`/`beforeunload` flush in the entire fleet (`src/lib/throttledStorage.ts:42-43`) and it"]},
-    "src/main.tsx": {
-      "count": 2,
-      "sections": [4,8],
-      "lines": ["120-141"],
-      "contexts": ["component is gone) and reaches only the global `unhandledrejection` handler at `main.tsx:120-141`."],
-      "resolvedFrom": "basename",
-      "verbatim": "main.tsx"
-    },
     "src/stores/agentStore.ts": {
       "count": 1,
       "sections": [6],

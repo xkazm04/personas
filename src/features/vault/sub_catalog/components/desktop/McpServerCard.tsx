@@ -20,8 +20,8 @@ export function McpServerCard({ server, imported, importing, onImport }: McpServ
         <Monitor className="w-4 h-4 text-cyan-400" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="typo-body font-medium text-foreground">{server.label}</p>
-        <p className="typo-code text-foreground truncate font-mono">{server.command}</p>
+        <p className="typo-body text-foreground">{server.label}</p>
+        <p className="typo-code text-foreground truncate">{server.command}</p>
         {envCount > 0 && (
           <p className="typo-caption text-foreground">
             {tx(envCount === 1 ? dd.env_var_one : dd.env_var_other, { count: envCount })}
@@ -38,7 +38,7 @@ export function McpServerCard({ server, imported, importing, onImport }: McpServ
           type="button"
           onClick={onImport}
           disabled={importing}
-          className="px-3 py-1.5 typo-caption font-medium text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-card hover:bg-cyan-500/20 transition-colors disabled:opacity-50"
+          className="px-3 py-1.5 typo-caption text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-card hover:bg-cyan-500/20 transition-colors disabled:opacity-50"
         >
           {importing ? (
             <LoadingSpinner size="sm" />

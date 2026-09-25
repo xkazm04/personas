@@ -151,7 +151,7 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
     const manualValid = !value.trim() || parseRepoUrl(value) !== null;
     return (
       <div>
-        <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+        <label className="typo-caption text-foreground mb-1.5 flex items-center gap-1.5">
           <Github className="w-3 h-3" />
           {t.plugins.dev_projects.github_url_label}
           <span className="text-[10px] text-foreground font-normal">{t.plugins.dev_projects.optional}</span>
@@ -213,7 +213,7 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
 
   return (
     <div className="relative">
-      <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+      <label className="typo-caption text-foreground mb-1.5 flex items-center gap-1.5">
         <Github className="w-3 h-3" />
         {t.plugins.dev_projects.github_repository}
         <span className="text-[10px] text-foreground font-normal">{t.plugins.dev_projects.optional}</span>
@@ -275,7 +275,7 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="typo-caption font-medium text-foreground truncate">{repo.full_name}</span>
+                        <span className="typo-caption text-foreground truncate">{repo.full_name}</span>
                         {repo.private && (
                           <StatusBadge variant="warning" size="sm" pill>{t.plugins.dev_projects.repo_private}</StatusBadge>
                         )}
@@ -297,7 +297,7 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
         <div className="mt-2 rounded-input border border-primary/10 bg-secondary/30 px-3 py-2">
           <div className="flex items-center gap-2">
             <Github className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
-            <span className="typo-caption font-medium text-foreground truncate flex-1">{previewName}</span>
+            <span className="typo-caption text-foreground truncate flex-1">{previewName}</span>
             {selectedRepo?.private && (
               <StatusBadge variant="warning" size="sm" pill icon={<Lock className="w-2.5 h-2.5" />}>
                 {t.plugins.dev_projects.repo_private}

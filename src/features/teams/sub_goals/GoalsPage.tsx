@@ -3,7 +3,7 @@ import { Target, Plus, Sparkles, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { IconGoals } from '@/features/shared/chrome/sidebar/SidebarIcons';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -99,8 +99,8 @@ export default function GoalsPage() {
 
   // Open Athena with a preset question to help the user set up project goals.
   const handleAskAthena = () => {
-    useCompanionStore.getState().setPendingPrompt({ text: dl.goal_ask_athena_prompt, autoSend: true });
-    useCompanionStore.getState().setState('open');
+    useAthenaStore.getState().setPendingPrompt({ text: dl.goal_ask_athena_prompt, autoSend: true });
+    useAthenaStore.getState().setState('open');
   };
 
   // Starter goals — one-click seeds for the empty state, so a non-technical
@@ -138,7 +138,7 @@ export default function GoalsPage() {
             <LifecycleProjectPicker allowNone />
             <Button
               variant="accent"
-              accentColor="violet"
+              tone="agent"
               size="sm"
               icon={<Plus className="w-3.5 h-3.5" />}
               disabled={!activeProjectId}
@@ -186,7 +186,7 @@ export default function GoalsPage() {
                 <IconGoals active className="w-full h-full" />
               </div>
             </div>
-            <h3 className="typo-section-title text-foreground">
+            <h3 className="typo-section-title">
               {t.plugins.dev_tools.goals_tab_no_goals}
             </h3>
             <p className="typo-body text-foreground mt-1 mb-5 max-w-md">
@@ -195,7 +195,7 @@ export default function GoalsPage() {
             <div className="flex items-center gap-2">
               <Button
                 variant="accent"
-                accentColor="violet"
+                tone="agent"
                 size="sm"
                 icon={<Plus className="w-3.5 h-3.5" />}
                 disabled={!activeProjectId}

@@ -46,7 +46,7 @@ export function TrainingInvite({ onStart }: { onStart: () => void }) {
       <GraduationCap className="w-7 h-7 mx-auto text-primary" aria-hidden />
       <h3 className="typo-heading-lg text-foreground">{tx.inviteTitle}</h3>
       <p className="typo-body-lg text-foreground max-w-lg mx-auto">{tx.inviteBody}</p>
-      <Button variant="accent" accentColor="violet" onClick={onStart} data-testid="twin-experience-invite-start">
+      <Button variant="accent" tone="agent" onClick={onStart} data-testid="twin-experience-invite-start">
         {tx.inviteStart}
       </Button>
     </div>
@@ -69,7 +69,7 @@ export function CompleteNotice({ name, onTrain, onClose }: { name: string; onTra
       <h3 className="typo-heading-lg text-foreground">{fmt(tx.completeTitle, { name })}</h3>
       <p className="typo-body-lg text-foreground max-w-lg mx-auto">{tx.completeBody}</p>
       <div className="flex justify-center gap-2 pt-1">
-        <Button variant="accent" accentColor="violet" onClick={onTrain} data-testid="twin-experience-complete-train">
+        <Button variant="accent" tone="agent" onClick={onTrain} data-testid="twin-experience-complete-train">
           {tx.completeTrain}
         </Button>
         <Button variant="ghost" onClick={onClose}>

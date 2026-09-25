@@ -181,7 +181,7 @@ export default function IpcPerformancePanel() {
             <Gauge className="w-4 h-4 text-indigo-400" />
           </div>
           <div className="text-left">
-            <h3 className="typo-heading text-foreground/90 uppercase tracking-widest">{t.overview.ipc_panel.title}</h3>
+            <h3 className="typo-heading text-foreground/90 uppercase">{t.overview.ipc_panel.title}</h3>
             <div className="flex items-center gap-3 mt-0.5 typo-body text-foreground">
               <span><Numeric value={summary.totalCalls} /> calls</span>
               <span className="text-primary/15">|</span>

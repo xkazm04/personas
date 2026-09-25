@@ -43,7 +43,7 @@ export function ExecutionsTab({ credentialId, createdAt }: ExecutionsTabProps) {
       </div>
 
       <div className="space-y-1.5">
-        <h3 className="typo-heading font-semibold text-foreground flex items-center gap-2">
+        <h3 className="typo-heading text-foreground flex items-center gap-2">
           <History className="w-3.5 h-3.5" />
           {sh.recent_activity}
         </h3>
@@ -63,7 +63,7 @@ export function ExecutionsTab({ credentialId, createdAt }: ExecutionsTabProps) {
                   key={entry.id}
                   className="flex items-center gap-3 px-3 py-2 bg-secondary/15 border border-primary/8 rounded-card"
                 >
-                  <span className={`typo-code font-mono px-1.5 py-0.5 rounded border shrink-0 ${opStyle}`}>
+                  <span className={`typo-code px-1.5 py-0.5 rounded border shrink-0 ${opStyle}`}>
                     {entry.operation}
                   </span>
                   <div className="flex-1 min-w-0 typo-body text-foreground truncate">

@@ -294,7 +294,7 @@ export function NoteDispatchBar({
               >
                 {t.notepad.ship}
                 {plan && plan.unmet > 0 && (
-                  <span className="ml-1 px-1.5 rounded-full typo-data tabular-nums bg-secondary/60 text-foreground/80">
+                  <span className="ml-1 px-1.5 rounded-full typo-data bg-secondary/60 text-foreground/80">
                     {plan.totalCriteria - plan.unmet}/{plan.totalCriteria}
                   </span>
                 )}

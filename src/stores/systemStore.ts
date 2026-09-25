@@ -11,12 +11,14 @@ import { persist } from "zustand/middleware";
 import { createCoreState, type SystemStore } from "./storeTypes";
 import type { DesignSubTab } from "@/lib/types/types";
 import { createDedupedJSONStorage } from "./util/dedupedStorage";
+import { ALL_SIDEBAR_SECTIONS } from "@/lib/navigation/registry";
+import { COMPANIONS_PAGES, type CompanionsPage } from "@/features/companions/types";
 
 import { createUiSlice } from "./slices/system/uiSlice";
 import { createCloudSlice } from "./slices/system/cloudSlice";
 import { createGitLabSlice } from "./slices/system/gitlabSlice";
 import { createOnboardingSlice, isOnboardingStep, ONBOARDING_STEPS } from "./slices/system/onboardingSlice";
-import { isCreateAthenaStepId } from "@/features/plugins/companion/sub_create/engine/createAthenaTypes";
+import { isCreateAthenaStepId } from "@/features/companions/athena/sub_create/engine/createAthenaTypes";
 import * as Sentry from "@sentry/react";
 import { createDevToolsSlice } from "./slices/system/devToolsSlice";
 import { createFleetSlice } from "./slices/system/fleetSlice";
@@ -24,11 +26,12 @@ import { createNotepadSlice } from "./slices/system/notepadSlice";
 import { createNetworkSlice } from "./slices/network/networkSlice";
 import { createDevicesSlice } from "./slices/network/devicesSlice";
 import { createRemoteJobsSlice } from "./slices/network/remoteJobsSlice";
+import { createRemoteSessionsSlice } from "./slices/network/remoteSessionsSlice";
 import { createSetupSlice } from "./slices/system/setupSlice";
 import { createAmbientContextSlice } from "./slices/system/ambientContextSlice";
 import { createObsidianBrainSlice } from "./slices/system/obsidianBrainSlice";
 import { createTwinSlice } from "./slices/system/twinSlice";
-import { createCompanionPluginSlice } from "./slices/system/companionPluginSlice";
+import { createAthenaSlice, remapLegacyAthenaFields } from "./slices/system/athenaSlice";
 import { createRadioSlice } from "./slices/system/radioSlice";
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -47,11 +50,12 @@ export const useSystemStore = create<SystemStore>()(
       ...createNetworkSlice(...a),
       ...createDevicesSlice(...a),
       ...createRemoteJobsSlice(...a),
+      ...createRemoteSessionsSlice(...a),
       ...createSetupSlice(...a),
       ...createAmbientContextSlice(...a),
       ...createObsidianBrainSlice(...a),
       ...createTwinSlice(...a),
-      ...createCompanionPluginSlice(...a),
+      ...createAthenaSlice(...a),
       ...createRadioSlice(...a),
     }),
     {
@@ -108,30 +112,32 @@ export const useSystemStore = create<SystemStore>()(
         // Plugins section after navigating away or restarting restores the
         // last-viewed plugin instead of snapping back to the Browse grid.
         pluginTab: state.pluginTab,
+        // The Companions destination (landing, or `<companion>:<page>`) — one
+        // field, persisted like every sibling sub-tab above.
+        companionsPage: state.companionsPage,
         obsidianBrainTab: state.obsidianBrainTab,
         obsidianVaultPath: state.obsidianVaultPath,
         twinTab: state.twinTab,
-        companionPluginTab: state.companionPluginTab,
-        companionFooterEnabled: state.companionFooterEnabled,
-        companionPanelCompact: state.companionPanelCompact,
-        companionSidePanelSlot: state.companionSidePanelSlot,
-        companionOrbEnabled: state.companionOrbEnabled,
-        companionOrbPos: state.companionOrbPos,
-        companionSttEngine: state.companionSttEngine,
-        companionSttModelId: state.companionSttModelId,
-        companionGlobalHotkeyEnabled: state.companionGlobalHotkeyEnabled,
-        companionSoundEnabled: state.companionSoundEnabled,
-        companionVoiceEnabled: state.companionVoiceEnabled,
-        companionVoiceEngine: state.companionVoiceEngine,
-        companionKokoroVoiceId: state.companionKokoroVoiceId,
-        companionPocketVoiceId: state.companionPocketVoiceId,
-        companionVoiceSpeed: state.companionVoiceSpeed,
-        companionVoiceVolume: state.companionVoiceVolume,
-        companionRecallSynthesisEnabled: state.companionRecallSynthesisEnabled,
-        companionAutonomousMode: state.companionAutonomousMode,
-        companionDevMode: state.companionDevMode,
-        companionHandsFreeDecisions: state.companionHandsFreeDecisions,
-        companionAlertsExpanded: state.companionAlertsExpanded,
+        athenaFooterEnabled: state.athenaFooterEnabled,
+        athenaPanelCompact: state.athenaPanelCompact,
+        athenaSidePanelSlot: state.athenaSidePanelSlot,
+        athenaOrbEnabled: state.athenaOrbEnabled,
+        athenaOrbPos: state.athenaOrbPos,
+        athenaSttEngine: state.athenaSttEngine,
+        athenaSttModelId: state.athenaSttModelId,
+        athenaGlobalHotkeyEnabled: state.athenaGlobalHotkeyEnabled,
+        athenaSoundEnabled: state.athenaSoundEnabled,
+        athenaVoiceEnabled: state.athenaVoiceEnabled,
+        athenaVoiceEngine: state.athenaVoiceEngine,
+        athenaKokoroVoiceId: state.athenaKokoroVoiceId,
+        athenaPocketVoiceId: state.athenaPocketVoiceId,
+        athenaVoiceSpeed: state.athenaVoiceSpeed,
+        athenaVoiceVolume: state.athenaVoiceVolume,
+        athenaRecallSynthesisEnabled: state.athenaRecallSynthesisEnabled,
+        athenaAutonomousMode: state.athenaAutonomousMode,
+        athenaDevMode: state.athenaDevMode,
+        athenaHandsFreeDecisions: state.athenaHandsFreeDecisions,
+        athenaAlertsExpanded: state.athenaAlertsExpanded,
         athenaOnboardingStep: state.athenaOnboardingStep,
         athenaOnboardingCompletedAt: state.athenaOnboardingCompletedAt,
         radioEnabled: state.radioEnabled,
@@ -142,6 +148,18 @@ export const useSystemStore = create<SystemStore>()(
         monitorCollapsedGroups: state.monitorCollapsedGroups,
         monitorLiveMode: state.monitorLiveMode,
         homeHiddenSections: state.homeHiddenSections,
+      }),
+      /**
+       * Zustand's default merge, plus the one rename this blob has to survive:
+       * Athena's settings were persisted under `companion*` names before the
+       * Companions rename. Doing it here rather than in `onRehydrateStorage`
+       * is deliberate — `merge` sees the stored blob itself, so the old value
+       * is on the new field before the store is ever `set`, and no consumer
+       * can read the default in between.
+       */
+      merge: (persisted, current) => ({
+        ...current,
+        ...remapLegacyAthenaFields(persisted),
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
@@ -167,6 +185,54 @@ export const useSystemStore = create<SystemStore>()(
         if ((state.sidebarSection as string) === 'goals') {
           state.sidebarSection = 'teams';
           state.teamsTab = 'goals';
+        }
+
+        // Athena stopped being a plugin on 2026-09-22 and became the first of
+        // three built-in companions. Two persisted values carried the old shape
+        // and both are REMAPPED, never discarded: a user parked on her surface
+        // must land on the same surface under its new address.
+        //
+        // INVARIANT for the casts below: these came back through JSON.parse from
+        // a blob an OLDER BUILD wrote, so their real type is `unknown` and the
+        // declared union constrains nothing. Read as strings, decide, then write
+        // a value from the CURRENT vocabulary.
+        const persisted = state as unknown as Record<string, unknown>;
+        const legacyAthenaTab = persisted.companionPluginTab;
+        if (typeof legacyAthenaTab === 'string') {
+          const migrated = `athena:${legacyAthenaTab}` as CompanionsPage;
+          if ((COMPANIONS_PAGES as readonly string[]).includes(migrated)) {
+            state.companionsPage = migrated;
+          }
+          // The field itself is gone from `partialize`, so the next write drops
+          // it; deleting it here keeps it from shadowing anything in between.
+          delete persisted.companionPluginTab;
+        }
+        if ((state.sidebarSection as string) === 'plugins' && (state.pluginTab as string) === 'companion') {
+          state.sidebarSection = 'companions';
+          // `companion` is no longer a PluginTab, so leaving it would strand the
+          // Plugins section on a tab nothing answers to the next time it opens.
+          state.pluginTab = 'browse';
+        }
+
+        // A `companionsPage` this build does not know (a page renamed, or a
+        // value a NEWER build wrote before a rollback) lands on the section's
+        // default rather than on a rail row that highlights nothing.
+        if (!(COMPANIONS_PAGES as readonly string[]).includes(state.companionsPage)) {
+          state.companionsPage = 'landing';
+        }
+
+        // MEMBERSHIP GUARD — run after every section remap above, so a value
+        // with a recorded successor is migrated rather than discarded.
+        //
+        // An id this build does not know (a section retired since the blob was
+        // written, a value a NEWER build wrote before a rollback, or a bad
+        // writer — `CompanionAssignmentCards` shipped `'pipeline'` for months)
+        // is not merely cosmetic: `navSection()` returns undefined for it and
+        // `isSectionGated` — the FIRST statement of `PersonasPage.renderContent`
+        // — throws reading `.gates`. `sidebarSection` is persisted, so the crash
+        // survived a restart with no way out but clearing localStorage.
+        if (!(ALL_SIDEBAR_SECTIONS as readonly string[]).includes(state.sidebarSection)) {
+          state.sidebarSection = 'home';
         }
 
         // Guard against onboarding schema drift: if a persisted step id no

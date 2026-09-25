@@ -1,11 +1,13 @@
 import { useEffect, useMemo } from 'react';
-import { Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Radio, Gauge, Inbox, Factory, FolderKanban, GitBranch, Trophy, Network, Scale, ShieldCheck, Globe } from 'lucide-react';
+import { Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Radio, Gauge, Inbox, Factory, FolderKanban, GitBranch, Trophy, Network, Layers, ShieldCheck, Globe, PenTool } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useImproveActivityStore, selectAnyImproveRunning } from '@/stores/improveActivityStore';
 import { isOngoing } from '@/features/teams/sub_goals/goalStatus';
+import { navSection, passesGates } from '@/lib/navigation/registry';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import type { TeamsTab, GoalsTab, KpisTab } from '@/lib/types/types';
 
 /**
@@ -21,7 +23,9 @@ import type { TeamsTab, GoalsTab, KpisTab } from '@/lib/types/types';
  * - **KPIs** — the outcome layer + its view submenu.
  * - **Development** — a label-only group holding the remaining project-engineering
  *   surfaces folded in from the retired Dev Tools tabs (Lifecycle / Factory /
- *   Contest / Mastermind). See DEV_ITEMS.
+ *   Contest / Mastermind), plus Studio, which is its own content section
+ *   (`sidebarSection: 'studio'`, nested under Projects in the nav registry)
+ *   rather than a Teams tab. See DEV_ITEMS.
  * - **Browser** — a label-only group for agent web-app control: the Whitelist of
  *   origins agents may drive, and the embedded Webview they drive them in. See
  *   BROWSER_ITEMS and docs/features/browser.md.
@@ -49,9 +53,9 @@ const KPI_VIEWS: Array<{ id: KpisTab; icon: typeof LayoutDashboard; labelKey: 'v
 // 'projects' (Manage) was promoted OUT of this group to the section's top
 // position — it is the landing page now, not a sub-surface.
 const DEV_ITEMS: Array<{
-  id: Extract<TeamsTab, 'lifecycle' | 'factory' | 'contest' | 'mastermind' | 'council'>;
+  id: Extract<TeamsTab, 'lifecycle' | 'factory' | 'contest' | 'mastermind' | 'features'>;
   icon: typeof LayoutDashboard;
-  labelKey: 'lifecycle' | 'factory' | 'contest' | 'mastermind' | 'council';
+  labelKey: 'lifecycle' | 'factory' | 'contest' | 'mastermind' | 'features';
   testId: string;
   /**
    * Experimental: rendered only in a development build, and marked with a
@@ -69,7 +73,7 @@ const DEV_ITEMS: Array<{
   { id: 'factory', icon: Factory, labelKey: 'factory', testId: 'teams-factory-nav' },
   { id: 'contest', icon: Trophy, labelKey: 'contest', testId: 'teams-contest-nav' },
   { id: 'mastermind', icon: Network, labelKey: 'mastermind', testId: 'teams-mastermind-nav' },
-  { id: 'council', icon: Scale, labelKey: 'council', testId: 'teams-council-nav' },
+  { id: 'features', icon: Layers, labelKey: 'features', testId: 'teams-features-nav' },
 ];
 
 // "Browser" group — agent web-app control (spark browser-control, 2026-09-15).
@@ -100,6 +104,12 @@ function prefetchMastermindIntent() {
 export function TeamsSidebarNav() {
   const { t } = useTranslation();
   const teamsTab = useSystemStore((s) => s.teamsTab);
+  const sidebarSection = useSystemStore((s) => s.sidebarSection);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  // Studio's visibility is the registry's gate, resolved by the one resolver
+  // the rail and the palette use, so all three agree on who can reach it.
+  const { isVisible } = useTier();
+  const showStudio = passesGates(navSection('studio').gates, { isDev: import.meta.env.DEV, isTierVisible: isVisible });
   const setTeamsTab = useSystemStore((s) => s.setTeamsTab);
   const goalsTab = useSystemStore((s) => s.goalsTab);
   const kpiProposalCount = useSystemStore((s) => s.kpis.filter((k) => k.status === 'proposed').length);
@@ -157,6 +167,36 @@ export function TeamsSidebarNav() {
     useSystemStore.getState().setIsCreatingPersona(false);
   };
 
+  // The Development rows: the Teams tabs, then Studio. Studio is a content
+  // section of its own rather than a Teams tab, so it switches `sidebarSection`
+  // instead of `teamsTab` (the registry nests it under Projects, which keeps
+  // Projects lit in the rail). It is experimental (registry `devOnly`), so it
+  // shares the rows' golden rail.
+  const devRows = [
+    ...DEV_ITEMS.filter((item) => !item.devOnly || import.meta.env.DEV).map((item) => ({
+      key: item.id as string,
+      icon: item.icon,
+      label: t.sidebar[item.labelKey],
+      testId: item.testId,
+      devOnly: item.devOnly === true,
+      active: teamsTab === item.id,
+      prefetch: PREFETCH_ON_INTENT.has(item.id),
+      onSelect: () => go(item.id),
+    })),
+    ...(showStudio
+      ? [{
+          key: 'studio',
+          icon: PenTool,
+          label: t.sidebar.studio,
+          testId: 'teams-studio-nav',
+          devOnly: true,
+          active: sidebarSection === 'studio',
+          prefetch: false,
+          onSelect: () => setSidebarSection('studio'),
+        }]
+      : []),
+  ];
+
   return (
     <nav className="space-y-1" aria-label={t.sidebar.teams}>
       {/* Manage — the section's landing page (project/workspace table).
@@ -171,8 +211,8 @@ export function TeamsSidebarNav() {
         aria-current={teamsTab === 'projects' ? 'page' : undefined}
         className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
           teamsTab === 'projects'
-            ? 'bg-primary/10 text-foreground font-semibold'
-            : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
+            ? 'bg-primary/10 text-foreground'
+            : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground'
         }`}
       >
         <FolderKanban className="w-4 h-4 flex-shrink-0" />
@@ -191,8 +231,8 @@ export function TeamsSidebarNav() {
           aria-current={teamsTab === 'goals' ? 'page' : undefined}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
             teamsTab === 'goals'
-              ? 'bg-primary/10 text-foreground font-semibold'
-              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
+              ? 'bg-primary/10 text-foreground'
+              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground'
           }`}
         >
           <Target className="w-4 h-4 flex-shrink-0" />
@@ -216,7 +256,7 @@ export function TeamsSidebarNav() {
                 aria-current={active ? 'page' : undefined}
                 className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md typo-body transition-colors ${
                   active
-                    ? 'bg-primary/10 text-foreground/90 font-medium'
+                    ? 'bg-primary/10 text-foreground/90'
                     : 'text-foreground/70 hover:bg-secondary/30 hover:text-foreground/90'
                 }`}
               >
@@ -238,8 +278,8 @@ export function TeamsSidebarNav() {
           aria-current={teamsTab === 'kpis' ? 'page' : undefined}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
             teamsTab === 'kpis'
-              ? 'bg-primary/10 text-foreground font-semibold'
-              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
+              ? 'bg-primary/10 text-foreground'
+              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground'
           }`}
         >
           <Gauge className="w-4 h-4 flex-shrink-0" />
@@ -261,7 +301,7 @@ export function TeamsSidebarNav() {
                 aria-current={active ? 'page' : undefined}
                 className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md typo-body transition-colors ${
                   active
-                    ? 'bg-primary/10 text-foreground/90 font-medium'
+                    ? 'bg-primary/10 text-foreground/90'
                     : 'text-foreground/70 hover:bg-secondary/30 hover:text-foreground/90'
                 }`}
               >
@@ -284,18 +324,18 @@ export function TeamsSidebarNav() {
           {t.sidebar.development}
         </div>
         <div className="ml-3 pl-2 border-l border-primary/10 space-y-0.5">
-          {DEV_ITEMS.filter((item) => !item.devOnly || import.meta.env.DEV).map((item) => {
+          {devRows.map((item) => {
             const Icon = item.icon;
-            const active = teamsTab === item.id;
+            const active = item.active;
             return (
               <button
                 type="button"
-                key={item.id}
+                key={item.key}
                 data-testid={item.testId}
                 data-experimental={item.devOnly ? 'true' : undefined}
-                onClick={() => go(item.id)}
-                onPointerEnter={PREFETCH_ON_INTENT.has(item.id) ? prefetchMastermindIntent : undefined}
-                onFocus={PREFETCH_ON_INTENT.has(item.id) ? prefetchMastermindIntent : undefined}
+                onClick={item.onSelect}
+                onPointerEnter={item.prefetch ? prefetchMastermindIntent : undefined}
+                onFocus={item.prefetch ? prefetchMastermindIntent : undefined}
                 aria-current={active ? 'page' : undefined}
                 // The golden rail is `border-l-2` ON THE ROW, drawn just inside
                 // the group's own grey rail, plus a squared left corner so the
@@ -307,18 +347,18 @@ export function TeamsSidebarNav() {
                     : 'rounded-md'
                 } ${
                   active
-                    ? 'bg-primary/10 text-foreground/90 font-medium'
+                    ? 'bg-primary/10 text-foreground/90'
                     : 'text-foreground/70 hover:bg-secondary/30 hover:text-foreground/90'
                 }`}
               >
                 <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${item.devOnly ? 'text-amber-400/80' : ''}`} />
-                <span className="truncate">{t.sidebar[item.labelKey]}</span>
+                <span className="truncate">{item.label}</span>
                 {/* The rail carries the meaning on screen and is `border`, so it
                     reaches no screen reader at all — this is the only thing
                     standing between the row and an experimental surface that
                     announces itself as a shipped one. */}
                 {item.devOnly && <span className="sr-only">{t.sidebar.experimental}</span>}
-                {item.id === 'factory' && factoryRunning && (
+                {item.key === 'factory' && factoryRunning && (
                   // Decorative pulse — the running state is announced by the
                   // 1st-level badge tooltip, so aria-hidden avoids double-reading.
                   <span className="ml-auto relative flex items-center justify-center w-2.5 h-2.5" aria-hidden>
@@ -351,7 +391,7 @@ export function TeamsSidebarNav() {
                 aria-current={active ? 'page' : undefined}
                 className={`w-full flex items-center gap-2 px-2.5 py-1.5 typo-body rounded-input transition-colors ${
                   active
-                    ? 'bg-primary/10 text-foreground/90 font-medium'
+                    ? 'bg-primary/10 text-foreground/90'
                     : 'text-foreground/70 hover:bg-secondary/30 hover:text-foreground/90'
                 }`}
               >

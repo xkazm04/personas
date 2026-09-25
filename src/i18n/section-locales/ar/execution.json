@@ -32,5 +32,9 @@
   "tool_count_other": "{count} أدوات",
   "trust": "الثقة",
   "unpin_mini_player": "إلغاء تثبيت المشغّل المصغّر",
-  "waiting_for_output": "في انتظار الناتج…"
+  "waiting_for_output": "في انتظار الناتج…",
+  "bg_failed": "{count} فشل",
+  "bg_open": "فتح التشغيل",
+  "bg_running": "{count} قيد التشغيل",
+  "bg_stop": "إيقاف التشغيل"
 }

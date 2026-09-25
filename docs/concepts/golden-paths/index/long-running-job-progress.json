@@ -379,13 +379,24 @@
       "isDir": true
     },
     "src/**/*.{ts,tsx}": {"count":1,"sections":[],"contexts":["read individually over 4,830 `src/**/*.{ts,tsx}` files. Corpus counts cite"],"resolved":false,"isDir":true},
+    "src/features/companions/athena/TaskTag.tsx": {
+      "count": 2,
+      "sections": [5,7],
+      "lines": ["24-25"],
+      "contexts": [
+        "- **Progress that rides only the event.** `progress_text` / `progress_current` / `progress_total` (`companion/jobs/mod.rs:107-119`) are event-only *by construction*: `map_row:530-532` always reads th…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "TaskTag.tsx"
+    },
     "src/features/plugins/companion/TaskTag.tsx": {
-      "count": 3,
-      "sections": [3,5,7],
-      "lines": ["24-32","24-25"],
+      "count": 1,
+      "sections": [3],
+      "lines": ["24-32"],
       "contexts": [
         "- **`src/features/plugins/companion/TaskTag.tsx:24-32`** — the only determinate progress bar in the app; renders `progressCurrent`/`progressTotal` when both are present, falls back to `progressText`."
-      ]
+      ],
+      "resolved": false
     },
     "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx": {
       "count": 3,

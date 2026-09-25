@@ -43,7 +43,7 @@ function StartControl({
       type="button"
       onClick={onClick}
       disabled={busy}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-secondary/40 hover:bg-secondary/60 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed${busy ? ' pointer-events-none' : ''}`}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card bg-secondary/40 hover:bg-secondary/60 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed${busy ? ' pointer-events-none' : ''}`}
     >
       {icon}
       {label}
@@ -71,7 +71,7 @@ export function DocToolbar({
 
   return (
     <div className="flex items-center gap-2 px-6 py-3 border-b border-primary/10 shrink-0">
-      <h3 className="typo-body font-medium text-foreground flex-1">
+      <h3 className="typo-body text-foreground flex-1">
         {/*
           English pluralization used to be baked into the JSX here, which no
           catalog could reach — and which is wrong anyway for the Slavic and

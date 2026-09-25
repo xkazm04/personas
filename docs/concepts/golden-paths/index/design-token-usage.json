@@ -18,10 +18,10 @@
     "7.H Elevation, motion, arbitrary values",
     "7.I Primitives repainted at the call site"
   ],
-  "ruleIds": ["hand-rolled-disabled-state","typo-token-overpainted"],
+  "ruleIds": ["bare-rounded","feature-css-type-literal","hand-rolled-disabled-state","opacity-dimmed-text","raw-arbitrary-text-size","raw-palette-text-colour","typo-token-overpainted"],
   "ruleIdsFrom": "section-9",
   "sections": [1,2,3,4,5,6,7,8,9],
-  "citationCount": 109,
+  "citationCount": 113,
   "triggers": [
     "\"make this card/panel/badge look right\", \"match the styling of that other row\"",
     "\"add a subtle border\", \"dim it when it's disabled\", \"make this label stand out\"",
@@ -84,8 +84,18 @@
       "resolved": false
     },
     "package.json": {"count":1,"sections":[8],"contexts":["`package.json`** — class strings are template-literal concatenations. So an override is"]},
+    "scripts/census/check-corpus-integrity.mjs": {
+      "count": 1,
+      "sections": [9],
+      "contexts": ["condition moved to `scripts/style/typo-allowlist.mjs`, run by `check-corpus-integrity.mjs`"],
+      "resolvedFrom": "basename",
+      "verbatim": "check-corpus-integrity.mjs"
+    },
+    "scripts/census/self-test.mjs": {"count":1,"sections":[9],"contexts":["token to use instead in `signal.fix`, and is seeded red in `scripts/census/self-test.mjs`."]},
+    "scripts/style/typo-allowlist.mjs": {"count":1,"sections":[9],"contexts":["condition moved to `scripts/style/typo-allowlist.mjs`, run by `check-corpus-integrity.mjs`"]},
     "shared/components/*.tsx": {"count":1,"sections":[8],"contexts":["**126 of 129** `shared/components/*.tsx` files reference `className`; **63** declare"],"resolved":false},
     "src/**": {"count":3,"sections":[7],"contexts":["Sweep: every file under `src/**` — **4,829 files (2,725 `.ts` + 2,104 `.tsx`)** — parsed for"],"resolved":false,"isDir":true},
+    "src/**/*.css": {"count":1,"sections":[9],"contexts":["selectors in `src/**/*.css` at run time and floors that fail a walk that saw nothing."],"resolved":false},
     "src/features/agents/quick-answer/triage/deck/DeckActionBar.tsx": {"count":1,"sections":[6],"lines":["48"],"contexts":["`src/features/agents/quick-answer/triage/deck/DeckActionBar.tsx:48` and `:75` —"]},
     "src/features/agents/quick-answer/triage/deck/DeckTopBar.tsx": {
       "count": 1,

@@ -68,6 +68,17 @@ impl ReactiveSubscription for DirectorStormSubscription {
 
     async fn tick(&self) {
         use crate::engine::autonomy::{self, Action};
+        // Overseer's master switch, re-read every tick (Companions > Overseer >
+        // Setup). "Active" is BOTH terms: switched on AND at least one starred
+        // agent. This coaching path is the one that spends LLM budget
+        // unattended, so it stands down whenever either term is missing. The
+        // App master probation path is deliberately NOT behind this gate — it
+        // raises its own review packets through
+        // `engine::director::create_probation_review` and never enters the
+        // coaching cycle.
+        if !crate::commands::companions::overseer_active(&self.pool) {
+            return;
+        }
         let enabled = autonomy::global_enabled(&self.pool, Action::DirectorStorm);
         if !enabled {
             return;
@@ -155,6 +166,13 @@ impl ReactiveSubscription for AthenaChannelReactionSubscription {
 
     async fn tick(&self) {
         use crate::engine::autonomy::{self, Action};
+        // Athena's master switch, re-read every tick (Companions > Athena >
+        // Setup). Both legs below — channel reactions and review resolution —
+        // are Athena acting unattended in a team channel, which must stop the
+        // moment she is switched off.
+        if !crate::commands::companions::athena_enabled(&self.pool) {
+            return;
+        }
         let enabled = autonomy::global_enabled(&self.pool, Action::AthenaReactions);
         if !enabled {
             return;

@@ -113,9 +113,9 @@ export function useCredentialColumns({
               )}
             </div>
           )}
-          <span className="typo-body font-medium text-foreground truncate">
+          <span className="typo-body text-foreground truncate">
             {row.credential.name}
-            {isPending && <span className="ml-2 typo-caption text-red-400/70 font-normal">{t.common.deleting}</span>}
+            {isPending && <span className="ml-2 typo-caption text-red-400/70">{t.common.deleting}</span>}
           </span>
           {/* Which account this credential is bound to — with several Google
               accounts in one vault the service type alone is ambiguous. */}

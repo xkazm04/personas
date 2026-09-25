@@ -12,6 +12,7 @@ import {
 } from '@/api/devTools/devTools';
 import { skillCommand } from '@/features/teams/sub_factory/passport/improve/skillsWorkbenchData';
 import { silentCatch } from '@/lib/silentCatch';
+import { dispatchToDevice } from '@/features/shared/dispatch/remoteDispatch';
 import {
   activeTypeaheadToken,
   dispatchIntentOf,
@@ -88,6 +89,10 @@ export function useQuickDispatchController(options?: QuickDispatchOptions) {
   const [model, setModel] = useState<string | null>(null);
   const [effort, setEffort] = useState<string | null>(null);
   const [headless, setHeadless] = useState(false);
+  // "Run on": `null` = this machine, else a paired device's peer id. A device
+  // runs the objective HEADLESS through the remote lane (the dispatch door and
+  // Athena's plan are this machine's), so the model/effort chips do not cross.
+  const [runOn, setRunOn] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   // Kept as-is; coerced only at the resolver boundary (error-message-resolution
   // golden path) so the producer's discriminant survives to the resolver.
@@ -111,6 +116,7 @@ export function useQuickDispatchController(options?: QuickDispatchOptions) {
     setModel(null);
     setEffort(null);
     setHeadless(false);
+    setRunOn(null);
     setSending(false);
     setRawError(null);
     setJustDispatched(false);
@@ -317,6 +323,12 @@ export function useQuickDispatchController(options?: QuickDispatchOptions) {
     ],
   );
 
+  // A project without a git remote cannot return remote work: back to here.
+  const projectRemote = projectChip?.github_url?.trim() || null;
+  useEffect(() => {
+    if (!projectRemote) setRunOn(null);
+  }, [projectRemote]);
+
   const requirement = value.trim();
   const canSend = !!projectChip && requirement.length > 0 && !sending && !token;
 
@@ -327,7 +339,16 @@ export function useQuickDispatchController(options?: QuickDispatchOptions) {
     setRawError(null);
     setJustDispatched(false);
     try {
-      if (headless) {
+      if (runOn !== null) {
+        await dispatchToDevice({
+          peerId: runOn,
+          projectId: projectChip.id,
+          projectName: projectChip.name,
+          githubUrl: projectRemote ?? '',
+          prompt: skillChip ? skillCommand(skillChip.name, objective) : objective,
+          mode: 'headless',
+        });
+      } else if (headless) {
         // AGREED COMPROMISE: the dispatch door is PTY-interactive only, so
         // background dispatches fall back to the fleet headless lane. These
         // sessions SKIP the Athena-owned operation / notify lane — the caption
@@ -376,7 +397,7 @@ export function useQuickDispatchController(options?: QuickDispatchOptions) {
     } finally {
       setSending(false);
     }
-  }, [projectChip, requirement, sending, token, headless, skillChip, model, effort, fleetRefresh]);
+  }, [projectChip, requirement, sending, token, headless, skillChip, model, effort, fleetRefresh, runOn, projectRemote]);
 
   const openFleetPage = useCallback(() => {
     // Same deep-link the fleet footer icon uses.
@@ -442,6 +463,9 @@ export function useQuickDispatchController(options?: QuickDispatchOptions) {
     cycleEffort,
     headless,
     toggleHeadless,
+    runOn,
+    setRunOn,
+    projectRemote,
     sending,
     canSend,
     handleSubmit,

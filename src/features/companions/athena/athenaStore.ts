@@ -1,0 +1,1505 @@
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { createDedupedJSONStorage } from '@/stores/util/dedupedStorage';
+import type { AthenaPanelState } from './types';
+import type { StreamPhase } from './extractStreamPhase';
+import type { TodoStep } from './operationalSteps';
+import type { NarrationEntry, StoredNarration } from './narrationTimeline';
+import {
+  appendNarrationEntry as appendNarrationEntryPure,
+  completeNarrationTool as completeNarrationToolPure,
+  isTrailWorthKeeping,
+} from './narrationTimeline';
+// Type-only (erased at build): `turnSidecars` imports `StoredTurnSummary`
+// back from here, so a value import would be a real cycle.
+import type { HydratedSidecars } from './turnSidecars';
+import type { GuidanceWalkthrough } from './guidance/types';
+import type { PendingDecision } from './decision/types';
+import { ADHOC_TOPIC } from './guidance/walkthroughs';
+import type {
+  BackgroundJob,
+  BrainKind,
+  ChatCard,
+  CompanionConnector,
+  CompanionMessage,
+  CompanionRecallPreview,
+  CompanionTurnSummaryEvent,
+  PendingApproval,
+  PluginToggle,
+  ProactiveMessage,
+} from '@/api/companion';
+import type { ConversationRow } from '@/lib/bindings/ConversationRow';
+
+/**
+ * Stored per-turn dispatcher rollup, keyed by assistant episode id. Same
+ * shape as `CompanionTurnSummaryEvent` minus the session/turn correlator
+ * fields the chip doesn't need.
+ */
+export type StoredTurnSummary = Omit<
+  CompanionTurnSummaryEvent,
+  'sessionId' | 'turnId' | 'assistantEpisodeId'
+>;
+
+export type { CompanionMessage };
+
+/**
+ * The migrated default ("General") conversation. Matches the backend's
+ * `DEFAULT_SESSION_ID` / `DEFAULT_CONVERSATION_ID` so pre-multiconv history
+ * belongs to it, and any call that omits a conversation id targets it.
+ */
+export const DEFAULT_CONVERSATION_ID = 'default';
+
+/**
+ * Chat-card kinds that are ACTIONABLE — a proposal that WRITES on confirm
+ * (spawns CLI sessions, creates a milestone, creates goals). Mirrors
+ * `ACTIONABLE_KINDS` in
+ * `src-tauri/src/commands/companion/chat_cards.rs`; only these get a durable
+ * row, survive a send/refresh, and carry a `card.id`.
+ */
+export const ACTIONABLE_CHAT_CARD_KINDS = [
+  'fleet_plan',
+  'ship_milestone',
+  'ship_goals',
+  // Not a one-click confirm: its rows are answered one at a time over minutes,
+  // and the durable row is what keeps the un-answered ones alive across the
+  // send that would otherwise wipe them.
+  'note_suggestions',
+] as const;
+
+/** True when a card is an unresolved actionable proposal worth preserving. */
+export function isActionableChatCard(card: Pick<ChatCard, 'kind' | 'id'>): boolean {
+  return (
+    Boolean(card.id) &&
+    (ACTIONABLE_CHAT_CARD_KINDS as readonly string[]).includes(card.kind)
+  );
+}
+
+/**
+ * The system "Athena / Notices" thread. Mirrors the backend
+ * `NOTICES_CONVERSATION_ID` — ownerless proactive nudges land here, and the
+ * proactive footer-notice path owns its popover, so the roster's background
+ * "replied in <thread>" cue skips it to avoid a double notice.
+ */
+export const NOTICES_CONVERSATION_ID = 'athena-notices';
+
+/**
+ * Brain Viewer mode: hidden when null, otherwise a 3-step wizard:
+ *   types → list → detail
+ * The current cursor = (kind, id?). When `kind` is set but `id` is null,
+ * we're on the list view for that kind. When both are set, we're on
+ * detail. When kind is null, we're on the type picker.
+ */
+export interface BrainViewState {
+  open: boolean;
+  kind: BrainKind | null;
+  id: string | null;
+}
+
+/**
+ * Latest spoken-summary stashed for playback. Cleared as soon as the user
+ * plays it (or hits Reset). Lives in the store rather than as component
+ * state because the footer Play button (DesktopFooter) and the chat
+ * panel both need to see it — and to coordinate so we don't double-play
+ * when the panel is open and the footer button is clicked.
+ *
+ * `audioUrl` is set lazily on first play (the Blob URL for the decoded
+ * MP3 bytes). Subsequent plays reuse the same URL so we don't re-hit
+ * ElevenLabs every replay.
+ */
+export interface PendingPlayback {
+  episodeId: string;
+  ttsText: string;
+  played: boolean;
+  audioUrl: string | null;
+}
+
+/**
+ * Live-turn scratch state for ONE conversation — everything that only
+ * matters while (or right after) a turn streams in that thread. Keyed by
+ * conversation id in `liveTurns`; the flat fields on the store mirror the
+ * ACTIVE conversation's slice (see the mirror invariant at `liveTurns`).
+ */
+export type LiveTurn = {
+  turnId: string | null;
+  streaming: boolean;
+  streamingText: string;
+  streamingPhase: StreamPhase | null;
+  streamingBeat: string | null;
+};
+
+/** One message the user sent while that conversation's turn was streaming. */
+export type QueuedMessage = {
+  id: string;
+  text: string;
+  mode: 'queue' | 'interrupt';
+  /** The send-time idempotency nonce (see sendNonceLedger.ts) — carried
+   *  through the queue so the eventual drained dispatch dedupes on the same
+   *  key the user's original send intent was minted with. */
+  nonce: string;
+};
+
+/**
+ * One thing Athena did on the user's behalf without asking (autonomous /
+ * hands-free fleet auto-decisions). CHAT is the full-information dimension,
+ * so these accumulate into a durable in-session ledger the chat panel renders;
+ * the ORB only carries the quick "she just acted" reaction. Deliberately NOT a
+ * transient popup — the previous toast disappeared after 10s and left no trace.
+ */
+/** How many autonomous actions the in-session ledger keeps. */
+const ATHENA_ACTION_CAP = 50;
+
+export interface AthenaAction {
+  id: string;
+  /** Fleet session the instruction went to. */
+  sessionId: string;
+  /** Human project label (may be empty when the registry has no meta). */
+  projectLabel: string;
+  /** What Athena actually sent. */
+  text: string;
+  createdAt: number;
+}
+
+interface AthenaStore {
+  // UI state
+  state: AthenaPanelState;
+  // Init
+  brainPath: string | null;
+  initError: string | null;
+  initialized: boolean;
+  // Chat
+  messages: CompanionMessage[];
+  streaming: boolean;
+  /** Live-accumulated assistant text for the current turn. */
+  streamingText: string;
+  /**
+   * Live progress hint while a turn is streaming — what Athena is
+   * currently doing (thinking, using a tool, etc.). Surfaces under the
+   * streaming bubble so the user sees activity instead of a dead
+   * "thinking…" placeholder when text hasn't arrived yet.
+   *
+   * Populated from `extractStreamPhase` on each CLI line. Cleared when
+   * actual prose text starts arriving (the visible text IS the signal)
+   * and again when the turn finishes / errors / is interrupted.
+   */
+  streamingPhase: StreamPhase | null;
+  /**
+   * Latest model-authored progress beat (`PROGRESS:` line) for the current
+   * turn — Athena's own words narrating a long turn ("Reading the logs…").
+   * Shown in the streaming bubble in preference to the derived phase, and
+   * spoken aloud when voice is on (Variant B in
+   * docs/features/companion/conversation-orchestration.md). Cleared on turn
+   * start / finish.
+   */
+  streamingBeat: string | null;
+  sendError: string | null;
+
+  /**
+   * Replies that have arrived since the chat panel was last open — the orb's
+   * message badge.
+   *
+   * The orb already REACTS to a landing reply (a one-shot avatar clip + a
+   * border glow), but a one-shot is invisible to anyone who wasn't looking at
+   * that exact second, so Athena could answer, go quiet, and leave no trace
+   * that she had. This is the durable half of that signal: it survives until
+   * the user actually opens the chat, and it is cleared by nothing else — not
+   * by time, not by the reaction clip finishing.
+   */
+  unreadReplies: number;
+  /**
+   * The text of the newest unread reply, for the orb to actually SHOW rather
+   * than merely count. A badge tells you something happened; it does not tell
+   * you whether it can wait, which is the only question you have while looking
+   * away from the chat. Null whenever nothing is unread.
+   */
+  unreadPreview: string | null;
+  /**
+   * A reply landed, or Athena reached out unprompted. Deliberately a no-op
+   * while the panel is `open`: the message is already on screen, and badging
+   * it would make the user dismiss an indicator for something they just read.
+   *
+   * `preview` is the reply's own text where the caller has it. Callers that
+   * don't (a background thread's turn, which never refetches a transcript the
+   * user isn't looking at) omit it and the prior preview is KEPT — a count
+   * without words beats replacing real words with nothing.
+   */
+  noteIncomingReply: (preview?: string | null) => void;
+  /**
+   * Attach text to an ALREADY-COUNTED unread reply — used where the reply's
+   * words only arrive after the badge (a transcript refetch resolving a beat
+   * later). A no-op when nothing is unread, so a late refetch can never
+   * resurrect a preview for a message the user has since read.
+   */
+  setUnreadPreview: (preview: string) => void;
+  clearUnreadReplies: () => void;
+
+  setState: (state: AthenaPanelState) => void;
+  setBrainPath: (path: string | null) => void;
+  setInitError: (error: string | null) => void;
+  setInitialized: (value: boolean) => void;
+
+  setMessages: (msgs: CompanionMessage[]) => void;
+  appendMessage: (msg: CompanionMessage) => void;
+  /**
+   * Prepend an older page of transcript (scroll-to-top pagination).
+   * De-duplicates by id, so a page that overlaps what's already on screen
+   * — a re-scan across a filtered row, a double-fire — can never double
+   * a bubble.
+   */
+  prependMessages: (msgs: CompanionMessage[]) => void;
+  /**
+   * Legacy flat setters, kept as delegates onto the ACTIVE conversation's
+   * `liveTurns` slice (mirror invariant below) — so pre-partition call
+   * sites (test bridge, older effects) still route to the right thread.
+   */
+  setStreaming: (value: boolean) => void;
+  appendStreamingText: (chunk: string) => void;
+  resetStreamingText: () => void;
+  setStreamingPhase: (phase: StreamPhase | null) => void;
+  setStreamingBeat: (beat: string | null) => void;
+  setSendError: (err: string | null) => void;
+
+  /**
+   * ── Per-conversation live-turn state (multiconv P1) ──
+   *
+   * The backend runs turns CONCURRENTLY across conversations, so the live
+   * turn (streaming flag, accumulated text, phase, beat, turn id) is keyed
+   * by conversation id here.
+   *
+   * MIRROR INVARIANT: the flat `streaming` / `streamingText` /
+   * `streamingPhase` / `streamingBeat` fields above are a read-mirror of
+   * the ACTIVE conversation's slice. Every action below, when it targets
+   * the active conversation, also writes the flat fields in the SAME
+   * set() call; `setActiveConversationId` swaps the flat fields to the
+   * new conversation's snapshot atomically. Consumers that predate the
+   * partition (orb, footer icon, panel body, test bridge) therefore keep
+   * reading "the focused thread's turn" without knowing the map exists.
+   * Never write the flat fields directly — go through these actions or
+   * the delegating flat setters above.
+   */
+  liveTurns: Record<string, LiveTurn>;
+  /** Turn started: streaming on, text/phase/beat reset, turn id recorded. */
+  beginLiveTurn: (conversationId: string, turnId: string) => void;
+  patchLiveTurn: (conversationId: string, patch: Partial<LiveTurn>) => void;
+  appendLiveText: (conversationId: string, chunk: string) => void;
+  /** Turn over: streaming off, turn id cleared (text kept until the next begin). */
+  endLiveTurn: (conversationId: string) => void;
+
+  // ── Conversations (multi-conversation threads) ──
+  // The registry of threads + which one is active. The transcript above
+  // (`messages`) is the ACTIVE conversation's slice — switching
+  // `activeConversationId` reloads it; the brain/identity stay global.
+  // See docs/features/companion/athena-multiconversation.md.
+  conversations: ConversationRow[];
+  activeConversationId: string;
+  setConversations: (conversations: ConversationRow[]) => void;
+  setActiveConversationId: (id: string) => void;
+  /** Insert or replace one row after a create / rename / status change. */
+  upsertConversation: (row: ConversationRow) => void;
+
+  /**
+   * Typed-but-unsent composer draft, keyed by conversation id. Persisted
+   * (see the `persist` wrapper below) so closing and reopening the
+   * companion panel — or restarting the app — never silently drops what
+   * the user was mid-sentence writing. `Composer` reads its conversation's
+   * entry on mount and writes back on every keystroke; `setDraft(id, '')`
+   * (or omitting the key) clears it once the message is actually sent.
+   */
+  draftsByConversation: Record<string, string>;
+  setDraft: (conversationId: string, text: string) => void;
+  clearDraft: (conversationId: string) => void;
+
+  // Phase 3: approvals
+  approvals: PendingApproval[];
+  setApprovals: (a: PendingApproval[]) => void;
+  removeApproval: (id: string) => void;
+
+  // Quick-reply chips (Athena's offered presets for the current turn).
+  // One-shot — cleared when the user sends any message or resets.
+  quickReplies: string[];
+  setQuickReplies: (q: string[]) => void;
+
+  // Inline chat-cards emitted by `show_persona_overview` etc. One-shot, like
+  // quickReplies — cleared on next send / reset. Rendered in the chat body
+  // alongside ApprovalCards on the latest assistant turn.
+  chatCards: ChatCard[];
+  setChatCards: (cards: ChatCard[]) => void;
+  /** Merge `patch` into one chat-card's `config`, keyed by the card's durable
+   *  row id. Index keying was the old shape and it broke the moment hydration
+   *  could reorder the array — a card would write its dispatch outcome onto a
+   *  DIFFERENT card. Cards without an id (informational kinds) are untouched. */
+  patchChatCardConfig: (id: string, patch: Record<string, unknown>) => void;
+  /** Drop one card from the transcript, by id (Cancel on an actionable card). */
+  removeChatCard: (id: string) => void;
+  /** Clear the one-shot INFORMATIONAL cards at send time while leaving pending
+   *  actionable proposals (fleet_plan / ship_milestone / ship_goals) standing. Clearing
+   *  those was the data-loss bug: they are decisions the operator still owes an
+   *  answer to, not snippets that expire with the turn. */
+  clearTransientChatCards: () => void;
+  /** Merge durable pending cards read back from the DB. Live entries win on id
+   *  collision — a card already on screen holds fresher local edits than the
+   *  row it was created from. */
+  hydrateChatCards: (cards: ChatCard[]) => void;
+
+  // Brain Viewer state
+  brainView: BrainViewState;
+  setBrainView: (next: BrainViewState) => void;
+
+  /** Layered voice: the report open in the Current layout's reader overlay
+   *  (null = closed). The prototypes route reports through `useLayer` instead. */
+  reportViewId: string | null;
+  setReportViewId: (id: string | null) => void;
+
+  /** Activity tray fold state, lifted out of the tray so a `ref:job/…` link
+   *  can unfold it from anywhere in the transcript. */
+  activityTrayCollapsed: boolean;
+  setActivityTrayCollapsed: (collapsed: boolean) => void;
+
+  // Dev mode availability (debug build?) — fetched once from
+  // companion_beta_flags; gates the wrench toggle in the header.
+  devModeAvailable: boolean;
+  setDevModeAvailable: (v: boolean) => void;
+
+  // Phase E: proactive messages awaiting engagement (delivered or queued).
+  proactive: ProactiveMessage[];
+  setProactive: (msgs: ProactiveMessage[]) => void;
+  appendProactive: (msg: ProactiveMessage) => void;
+  removeProactive: (id: string) => void;
+
+  // Phase F: connectors pinned in the chat sidebar.
+  connectors: CompanionConnector[];
+  setConnectors: (c: CompanionConnector[]) => void;
+
+  // Phase F: plugin toggles (Dev Tools, future). Backend default is
+  // off; the toolbar shows the live state and writes through on click.
+  pluginToggles: PluginToggle[];
+  setPluginToggles: (toggles: PluginToggle[]) => void;
+
+  // Phase 4.5: voice playback
+  pendingPlayback: PendingPlayback | null;
+  setPendingPlayback: (p: PendingPlayback | null) => void;
+  /** Cache the synthesized audio URL onto the active playback record. */
+  setPlaybackAudioUrl: (audioUrl: string) => void;
+  /** Mark the active playback as already heard (footer Play hides itself). */
+  markPlaybackPlayed: () => void;
+
+  /**
+   * Session ledger of autonomous actions Athena took without asking. Newest
+   * first, bounded. Rendered in CHAT (`AthenaActionsStrip`); the orb reacts
+   * with a pulse only. See {@link AthenaAction}.
+   */
+  athenaActions: AthenaAction[];
+  recordAthenaAction: (action: AthenaAction) => void;
+  clearAthenaActions: () => void;
+
+  /**
+   * One-shot prompt injected into the composer by external surfaces
+   * (e.g. the message detail modal's "Play in chat" button). The
+   * composer subscribes and consumes on every fresh value.
+   *
+   * - `text` — composer content.
+   * - `autoSend` — if true, the composer fires `onSend` immediately
+   *   instead of filling the draft and waiting for the user to click.
+   *   Used by surfaces that have already shown the user the seed
+   *   context (e.g. the message modal closes; user lands on the live
+   *   reply) so a manual send-click would be redundant.
+   */
+  pendingPrompt: PendingPromptPayload | null;
+  setPendingPrompt: (p: PendingPromptPayload | null) => void;
+  consumePendingPrompt: () => PendingPromptPayload | null;
+
+  /**
+   * One-shot voice turn fired from outside the chat panel (the footer's
+   * hold-to-talk affordance). Distinct from `pendingPrompt` on purpose:
+   * `pendingPrompt` seeds the composer draft and is only consumed while
+   * the panel — and therefore the Composer — is mounted. `voiceTurnRequest`
+   * is consumed by an always-mounted effect in `AthenaChatPanel` so the
+   * user can speak to Athena and hear her reply (via the existing TTS +
+   * footer Play / notice pipeline) without ever opening the panel.
+   *
+   * Latest-wins; the consumer clears it before it calls `send()`.
+   */
+  voiceTurnRequest: AppPromptRequest | null;
+  setVoiceTurnRequest: (req: AppPromptRequest | string | null) => void;
+
+  /**
+   * True while a hold-to-talk capture/transcription session is in flight
+   * (set by `useHoldToTalk` from `start()` until the session fully ends).
+   * Lives in the store because the capture hooks (footer icon + orb) and the
+   * Voice settings panel live in different trees: `SttPanel` reads this to
+   * disable the STT-engine switch mid-capture. Switching engine while the mic
+   * is live swaps the active dictation hook (selected purely from
+   * `athenaSttEngine`) and would otherwise strand the running mic.
+   */
+  voiceCaptureActive: boolean;
+  setVoiceCaptureActive: (value: boolean) => void;
+
+  /**
+   * A starter message dropped into the chat from elsewhere in the app (e.g. the
+   * Add-KPI modal's "Ask Athena" action, the Ship control bar). The
+   * always-mounted panel opens itself and sends it, beginning a guided
+   * conversation. Latest-wins; the consumer clears it before calling `send()`.
+   *
+   * Carries its own provenance — see [`AppPromptRequest`]. A bare string is
+   * still accepted and is treated as "the user typed this".
+   */
+  pendingChatPrompt: AppPromptRequest | null;
+  setPendingChatPrompt: (req: AppPromptRequest | string | null) => void;
+
+  /**
+   * Monotonic nonce bumped each time a pre-composed message is forwarded to
+   * Athena from an outside surface (e.g. the dashboard "Ask Athena" button).
+   * The orb subscribes to it and fires a one-shot "message received" ack glow
+   * (yellow) so the user gets immediate visual confirmation while the (often
+   * long-running) turn spins up. Visual-only — the send itself rides
+   * `voiceTurnRequest`.
+   */
+  forwardAckPulse: number;
+  pulseForwardAck: () => void;
+
+  /**
+   * Monotonic nonce bumped when an external surface (e.g. the Studio web-build
+   * chat) wants the orb to play its one-shot "message" reaction — the same clip
+   * + theme-glow a finished companion reply triggers. Lets the orb react to a
+   * build reply even though that turn never touches `streaming`.
+   */
+  messageReactionPulse: number;
+  pulseMessageReaction: () => void;
+
+  /**
+   * Work and speech from other surfaces that should show on the one orb, keyed
+   * by source so each surface clears only its own (e.g. `studio` while a
+   * web-build turn runs, `studio-read` while Studio reads a reply aloud).
+   * Busy sources put her in the working posture with a task dot; speaking
+   * sources light the speaking glow while their clip plays.
+   */
+  orbBusySources: Record<string, true>;
+  orbSpeakingSources: Record<string, true>;
+  setOrbBusy: (source: string, on: boolean) => void;
+  setOrbSpeaking: (source: string, on: boolean) => void;
+
+  /**
+   * Screen-space center (viewport px) of the orb at the moment the user
+   * tapped it to open the chat. Lets `AthenaChatPanel` animate its entrance
+   * from the orb's position (and exit back toward it) for an orb→panel
+   * morph. Null when the panel was opened from somewhere other than the orb
+   * (e.g. the footer), in which case the panel uses its default entrance.
+   */
+  orbOpenOrigin: { x: number; y: number } | null;
+  setOrbOpenOrigin: (origin: { x: number; y: number } | null) => void;
+
+  /**
+   * Per-turn recall preview surfaced from the backend's `recall-preview`
+   * event. `streamingRecall` is the live, in-flight strip shown above the
+   * streaming bubble; on the `finished` stream event it's moved into
+   * `recallByEpisodeId` keyed by the assistant episode id so the strip
+   * persists above the just-completed bubble. Both cleared on conversation
+   * reset.
+   *
+   * Persistence is intentionally session-scoped: after an app restart,
+   * older bubbles drop their strip (the underlying recall is ephemeral
+   * working memory anyway). Stage 2 of this feature would persist + replay.
+   */
+  streamingRecall: CompanionRecallPreview | null;
+  recallByEpisodeId: Record<string, CompanionRecallPreview>;
+  setStreamingRecall: (preview: CompanionRecallPreview | null) => void;
+  /** Promote the in-flight strip to the named assistant episode id. */
+  attachRecallToEpisode: (episodeId: string) => void;
+  clearAllRecall: () => void;
+
+  /**
+   * Per-turn dispatcher rollup, keyed by assistant episode id. Populated
+   * from `companion://turn-summary` events; reset alongside the rest of
+   * the conversation state. Same persistence model as `recallByEpisodeId`
+   * — session-scoped, lost on app restart.
+   */
+  turnSummaryByEpisodeId: Record<string, StoredTurnSummary>;
+  setTurnSummary: (episodeId: string, summary: StoredTurnSummary) => void;
+  clearAllTurnSummaries: () => void;
+
+  /**
+   * Live state of every `connector_use` background job we've seen on the
+   * `companion://job` channel, keyed by job id. The card subscribes to a
+   * single job's status and re-renders as the worker transitions
+   * queued → running → completed/failed.
+   *
+   * `pendingConnectorJobIds` collects jobs queued in the current
+   * (streaming) turn before the assistant episode id is known; at
+   * `finished` time they're promoted into `connectorJobIdsByEpisodeId`
+   * so the cards pin under the right bubble.
+   */
+  jobsById: Record<string, BackgroundJob>;
+  pendingConnectorJobIds: string[];
+  connectorJobIdsByEpisodeId: Record<string, string[]>;
+  upsertJob: (job: BackgroundJob) => void;
+  attachPendingJobsToEpisode: (episodeId: string) => void;
+  clearAllConnectorJobs: () => void;
+
+  /**
+   * Async-UX phase 4b — long in-turn tool calls surfaced as tasks. When a
+   * tool_use block in Athena's CLI stream (WebFetch, Bash, a Task subagent,
+   * any MCP tool) stays pending past a threshold, AthenaChatPanel synthesizes
+   * a `BackgroundJob` here keyed by the tool_use id, so the slow call shows
+   * in the activity tray + as an orb dot rather than as a frozen, silent
+   * turn. These are NOT real `companion_background_job` rows (they live only
+   * here, never in `jobsById`) and never pin in-chat — the streaming-phase
+   * chip already covers the in-bubble view. Cleared at turn end.
+   */
+  inTurnToolJobs: Record<string, BackgroundJob>;
+  upsertInTurnToolJob: (job: BackgroundJob) => void;
+  completeInTurnToolJob: (id: string) => void;
+  clearInTurnToolJobs: () => void;
+
+  /**
+   * Async-UX phase 4 — non-blocking conversation. Messages the user sent
+   * while a turn was still streaming, keyed by conversation id (each
+   * thread drains its own queue when ITS turn completes). FIFO; drained
+   * one-per-turn-completion by AthenaChatPanel. `mode` records how the
+   * message was classified at send time: an `interrupt` also stopped the
+   * in-flight turn; a `queue` simply waits its turn. The composer is never
+   * disabled — this is where mid-turn input lands instead of being blocked.
+   *
+   * `queuedMessages` is the ACTIVE conversation's mirror — same invariant
+   * as `liveTurns`.
+   */
+  queuedByConversation: Record<string, QueuedMessage[]>;
+  queuedMessages: QueuedMessage[];
+  enqueueMessage: (
+    conversationId: string,
+    text: string,
+    mode: 'queue' | 'interrupt',
+    nonce: string,
+  ) => void;
+  shiftQueuedMessage: (conversationId: string) => QueuedMessage | null;
+  removeQueuedMessage: (conversationId: string, id: string) => void;
+  clearQueuedMessages: (conversationId: string) => void;
+
+  /**
+   * The "operational thread": Athena's live TodoWrite plan, parsed from
+   * TodoWrite tool calls in the stream. `streamingSteps` is the in-flight
+   * checklist (latest TodoWrite call wins — each call re-sends the full
+   * list); on `finished` it's promoted to `stepsByEpisodeId` keyed by the
+   * assistant episode id so the checklist persists inline under the
+   * completed bubble. Session-scoped, same model as recall/turn-summary.
+   */
+  streamingSteps: TodoStep[];
+  stepsByEpisodeId: Record<string, TodoStep[]>;
+  setStreamingSteps: (steps: TodoStep[]) => void;
+  attachStepsToEpisode: (episodeId: string) => void;
+  clearAllSteps: () => void;
+
+  /**
+   * Narration timeline (D2 in conversation-orchestration.md): the
+   * turn-scoped log of Athena's `PROGRESS:` beats + tool calls.
+   * `streamingNarration` accumulates while the turn runs (rendered as a
+   * dimmed live log under the streaming bubble); on `finished` it's
+   * promoted to `narrationByEpisodeId` so a collapsed "What I did" trail
+   * persists under the completed bubble. Trivial trails (one fast step,
+   * no beats) are dropped at attach time rather than pinned. Session-
+   * scoped, same model as recall/steps.
+   */
+  streamingNarration: NarrationEntry[];
+  streamingNarrationStartedAt: number | null;
+  narrationByEpisodeId: Record<string, StoredNarration>;
+  /** Reset the in-flight timeline at turn start. */
+  beginNarration: () => void;
+  appendNarrationEntry: (entry: NarrationEntry) => void;
+  completeNarrationTool: (id: string) => void;
+  /** Promote the in-flight timeline onto the persisted assistant episode. */
+  attachNarrationToEpisode: (episodeId: string) => void;
+  /** Drop the in-flight timeline without promoting (error/interrupt). */
+  resetStreamingNarration: () => void;
+  clearAllNarration: () => void;
+
+  /**
+   * Fill the four per-turn maps above from the persisted
+   * `companion_turn_sidecar` rows, so bubbles that predate this app
+   * session still show their trail / plan / summary / recall. Entries
+   * already in the store ALWAYS win — a live turn's in-memory channels
+   * are fresher than anything on disk, and a late-arriving hydration
+   * must never overwrite them. Called by `useTurnSidecarHydration`.
+   */
+  hydrateTurnSidecars: (hydrated: HydratedSidecars) => void;
+
+  // Phase C2 — Athena-dispatched team assignments. Cards display inline
+  // above the chat messages; each card is updated by the assignment
+  // progress listener. Bounded to the 6 most-recent so the chat doesn't
+  // get crowded by an old session's history.
+  athenaAssignments: AthenaAssignmentRef[];
+  upsertAthenaAssignment: (ref: AthenaAssignmentRef) => void;
+  dismissAthenaAssignment: (assignmentId: string) => void;
+
+  /**
+   * Athena guided-walkthrough state (ephemeral, session-scoped). A walkthrough
+   * is a registry-defined sequence of steps (see `guidance/walkthroughs.ts`);
+   * Athena triggers one by topic (`startGuidance`) and the runner
+   * (`guidance/useGuidanceRunner`) walks the steps, writing the per-step
+   * highlight + orb target that the glow overlay (`orb/TrackedGlowRing`) and the
+   * orb (`orb/AthenaOrb`) read.
+   *
+   *  - `activeWalkthrough` — topic id of the running walkthrough, or null.
+   *  - `guidanceStepIndex` — current 0-based step.
+   *  - `guidancePlaying` — false = paused (auto-advance suspended).
+   *  - `guidanceHighlightTestId` — element the glow overlay rings this step.
+   *  - `orbGuideTarget` — viewport-px top-left the orb glides to this step.
+   *
+   * The store is intentionally dumb: it holds raw state, the runner owns the
+   * registry + per-step derivation. Cleared by `stopGuidance`.
+   */
+  activeWalkthrough: string | null;
+  guidanceStepIndex: number;
+  guidancePlaying: boolean;
+  guidanceHighlightTestId: string | null;
+  orbGuideTarget: { left: number; top: number } | null;
+  /**
+   * Runtime-composed walkthrough (Athena's `point_at` single step or
+   * `compose_walkthrough` multi step), or null. Resolved by
+   * `resolveWalkthrough` when `activeWalkthrough === ADHOC_TOPIC` — the runner
+   * walks these steps exactly like a registry walkthrough.
+   */
+  adHocWalkthrough: GuidanceWalkthrough | null;
+  startGuidance: (topic: string) => void;
+  /** Start a runtime-composed walkthrough (sets `activeWalkthrough` to the ad-hoc sentinel). */
+  startAdHocGuidance: (walkthrough: GuidanceWalkthrough) => void;
+  setGuidanceStep: (index: number) => void;
+  advanceGuidance: () => void;
+  /** Step back one (clamped at 0). Pauses auto-advance — manual nav means the user has taken control. */
+  previousGuidance: () => void;
+  /** Jump to an arbitrary step (clamped ≥ 0). Pauses auto-advance, like `previousGuidance`. */
+  jumpToStep: (index: number) => void;
+  pauseGuidance: () => void;
+  resumeGuidance: () => void;
+  stopGuidance: () => void;
+  setGuidanceHighlightTestId: (testId: string | null) => void;
+  setOrbGuideTarget: (target: { left: number; top: number } | null) => void;
+  /**
+   * Proactive one-shot "look here" highlight — independent of walkthroughs.
+   * Rings an element briefly (auto-clears after `ms`) when Athena navigates or
+   * composes a surface, so the user's eye lands on what she just brought up. An
+   * optional `label` rides as a small chip on the ring ("Just composed"). No
+   * orb, no caption, fire-and-forget. Skipped while a walkthrough is active so
+   * it never fights the guidance ring.
+   */
+  flashHighlightTestId: string | null;
+  flashHighlightLabel: string | null;
+  flashHighlight: (testId: string, opts?: { ms?: number; label?: string }) => void;
+
+  /**
+   * Athena hands-free decision layer (P3, ephemeral — NOT persisted). A
+   * `pendingDecision` is the single numbered-choice the orb bubble
+   * (`orb/OrbDecisionBubble`) surfaces above Athena. The aggregator
+   * (`decision/useDecisionQueue`) feeds approvals / human-reviews / incidents
+   * in one-at-a-time when none is pending; the bubble renders the prompt +
+   * digit-pickable options. `decisionExplained` tracks whether the user picked
+   * `0` ("explain + recommend") so the bubble re-asks with the recommendation
+   * shown above the still-present options.
+   *
+   *  - `setPendingDecision(d)` — show a decision (resets `decisionExplained`).
+   *  - `clearPendingDecision()` — dismiss / resolved (also clears explained).
+   *  - `markDecisionExplained()` — `0` was picked; keep the decision, show the
+   *    recommendation. No-op when nothing is pending.
+   */
+  pendingDecision: PendingDecision | null;
+  decisionExplained: boolean;
+  /**
+   * How many decisions the last queue build found, INCLUDING the one showing.
+   * The bubble renders `queue[0]` only, so without this number a twelve-item
+   * backlog and a single question look identical - and the operator has no
+   * reason to reach for Skip. Written by the queue's pump; never persisted.
+   */
+  decisionQueueDepth: number;
+  setPendingDecision: (decision: PendingDecision) => void;
+  clearPendingDecision: () => void;
+  markDecisionExplained: () => void;
+  setDecisionQueueDepth: (depth: number) => void;
+
+  /**
+   * A decision the user answered whose action FAILED. The decision deliberately
+   * stays pending so they can retry — this token (`'run-failed'`) is what tells
+   * the surfaces they acted on (the orb bubble, the chat decision card) to say
+   * so *in place*. Reset whenever a new decision surfaces or the user retries.
+   */
+  decisionError: string | null;
+  setDecisionError: (v: string | null) => void;
+
+  /**
+   * Explain-in-Cockpit composing state. True from the moment `0` escalates
+   * into a `decision-explain` turn until either the `explain_in_cockpit`
+   * event lands (AthenaChatPanel listener clears it) or the turn finishes
+   * without emitting the op. Drives the orb's `composing` avatar clip and
+   * the bubble's processing row. `explainComposeError` is a short token
+   * (`'no-spec' | 'turn-failed'`) the bubble maps to a translated fallback
+   * line; reset on the next decision / next `0`.
+   */
+  explainComposing: boolean;
+  explainComposeError: string | null;
+  setExplainComposing: (v: boolean) => void;
+  setExplainComposeError: (v: string | null) => void;
+
+}
+
+/** Compact projection of an assignment + its current status, surfaced as
+ *  a chat-side card. Populated by `useAthenaAssignmentBridge`. */
+export interface AthenaAssignmentRef {
+  assignmentId: string;
+  teamId: string;
+  title: string;
+  goal: string;
+  status: string;
+  totalSteps: number;
+  doneSteps: number;
+  failedSteps: number;
+  updatedAt: number;
+}
+
+export interface PendingPromptPayload {
+  text: string;
+  autoSend?: boolean;
+}
+
+/**
+ * A prompt an APP SURFACE composed and handed to Athena — the Ship control
+ * bar's "Ask Athena", the Add-KPI modal's guided setup, and so on.
+ *
+ * `source` is the whole point. `companion_send_message` has taken a
+ * `system_source` since the paired-device work: when set, the backend files the
+ * turn as [`TurnOrigin::External`], persists it as a **System** episode instead
+ * of impersonating the operator, prepends
+ * `[Automated request from <source> — not the user]` to what the model actually
+ * reads on stdin, and leaves any running autonomous chain alone (a surface
+ * asking a question is not the operator interrupting). Until 2026-08-20 **no
+ * frontend call site passed it**, so every app-composed prompt reached Athena
+ * wearing the user's face and she had no way to tell a button from a person.
+ *
+ * Omit `source` only when the text really is the user's own words.
+ */
+export interface AppPromptRequest {
+  text: string;
+  /** Short provenance label, e.g. `'Ship'`. Becomes the `[Automated request
+   *  from …]` tag. Omitted → the turn is filed as ordinary user input. */
+  source?: string;
+}
+
+/** Auto-clear timer for the proactive `flashHighlight` ring (module-scoped so a
+ *  newer flash cancels the prior one's pending clear). */
+let flashTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Idle snapshot for a conversation with no live turn on record. */
+const IDLE_LIVE_TURN: LiveTurn = {
+  turnId: null,
+  streaming: false,
+  streamingText: '',
+  streamingPhase: null,
+  streamingBeat: null,
+};
+
+/**
+ * Build the set() patch that writes one conversation's live-turn slice while
+ * upholding the mirror invariant: when the write targets the active
+ * conversation, the flat mirror fields ride in the same patch.
+ */
+function withLiveTurn(
+  s: AthenaStore,
+  conversationId: string,
+  next: LiveTurn,
+): Partial<AthenaStore> {
+  const patch: Partial<AthenaStore> = {
+    liveTurns: { ...s.liveTurns, [conversationId]: next },
+  };
+  if (conversationId === s.activeConversationId) {
+    patch.streaming = next.streaming;
+    patch.streamingText = next.streamingText;
+    patch.streamingPhase = next.streamingPhase;
+    patch.streamingBeat = next.streamingBeat;
+  }
+  return patch;
+}
+
+/** Same mirror-upholding patch builder for the per-conversation queue. */
+function withQueue(
+  s: AthenaStore,
+  conversationId: string,
+  next: QueuedMessage[],
+): Partial<AthenaStore> {
+  const patch: Partial<AthenaStore> = {
+    queuedByConversation: { ...s.queuedByConversation, [conversationId]: next },
+  };
+  if (conversationId === s.activeConversationId) {
+    patch.queuedMessages = next;
+  }
+  return patch;
+}
+
+export const useAthenaStore = create<AthenaStore>()(
+  persist(
+    (set, get) => ({
+  state: 'collapsed',
+  brainPath: null,
+  initError: null,
+  initialized: false,
+  messages: [],
+  streaming: false,
+  streamingText: '',
+  streamingPhase: null,
+  streamingBeat: null,
+  sendError: null,
+
+  unreadReplies: 0,
+  unreadPreview: null,
+  noteIncomingReply: (preview) =>
+    set((s) => {
+      if (s.state === 'open') return {};
+      const trimmed = preview?.trim();
+      return {
+        unreadReplies: s.unreadReplies + 1,
+        unreadPreview: trimmed ? trimmed : s.unreadPreview,
+      };
+    }),
+  setUnreadPreview: (preview) =>
+    set((s) => {
+      const trimmed = preview.trim();
+      if (s.unreadReplies === 0 || !trimmed) return {};
+      return { unreadPreview: trimmed };
+    }),
+  clearUnreadReplies: () => set({ unreadReplies: 0, unreadPreview: null }),
+
+  // Opening the chat IS reading it, so the badge clears HERE — one place —
+  // rather than at each of the several points a reply can land.
+  setState: (state) =>
+    set(state === 'open' ? { state, unreadReplies: 0, unreadPreview: null } : { state }),
+  setBrainPath: (brainPath) => set({ brainPath }),
+  setInitError: (initError) => set({ initError }),
+  setInitialized: (initialized) => set({ initialized }),
+
+  setMessages: (messages) => set({ messages }),
+  appendMessage: (msg) =>
+    set((s) => ({ messages: [...s.messages, msg] })),
+  prependMessages: (msgs) =>
+    set((s) => {
+      if (msgs.length === 0) return {};
+      const known = new Set(s.messages.map((m) => m.id));
+      const fresh = msgs.filter((m) => !known.has(m.id));
+      if (fresh.length === 0) return {};
+      return { messages: [...fresh, ...s.messages] };
+    }),
+  // Legacy flat setters — delegate to the active conversation's slice so
+  // any caller we haven't migrated still routes to the focused thread.
+  setStreaming: (value) =>
+    get().patchLiveTurn(get().activeConversationId, { streaming: value }),
+  appendStreamingText: (chunk) =>
+    get().appendLiveText(get().activeConversationId, chunk),
+  resetStreamingText: () =>
+    get().patchLiveTurn(get().activeConversationId, { streamingText: '' }),
+  setStreamingPhase: (streamingPhase) =>
+    get().patchLiveTurn(get().activeConversationId, { streamingPhase }),
+  setStreamingBeat: (streamingBeat) =>
+    get().patchLiveTurn(get().activeConversationId, { streamingBeat }),
+  setSendError: (sendError) => set({ sendError }),
+
+  liveTurns: {},
+  beginLiveTurn: (conversationId, turnId) =>
+    set((s) =>
+      withLiveTurn(s, conversationId, {
+        turnId,
+        streaming: true,
+        streamingText: '',
+        streamingPhase: null,
+        streamingBeat: null,
+      }),
+    ),
+  patchLiveTurn: (conversationId, patch) =>
+    set((s) =>
+      withLiveTurn(s, conversationId, {
+        ...(s.liveTurns[conversationId] ?? IDLE_LIVE_TURN),
+        ...patch,
+      }),
+    ),
+  appendLiveText: (conversationId, chunk) =>
+    set((s) => {
+      const cur = s.liveTurns[conversationId] ?? IDLE_LIVE_TURN;
+      return withLiveTurn(s, conversationId, {
+        ...cur,
+        streamingText: cur.streamingText + chunk,
+      });
+    }),
+  endLiveTurn: (conversationId) =>
+    set((s) =>
+      withLiveTurn(s, conversationId, {
+        ...(s.liveTurns[conversationId] ?? IDLE_LIVE_TURN),
+        streaming: false,
+        turnId: null,
+      }),
+    ),
+
+  approvals: [],
+  setApprovals: (approvals) => set({ approvals }),
+  removeApproval: (id) =>
+    set((s) => ({ approvals: s.approvals.filter((a) => a.id !== id) })),
+
+  quickReplies: [],
+  setQuickReplies: (quickReplies) => set({ quickReplies }),
+
+  chatCards: [],
+  setChatCards: (chatCards) => set({ chatCards }),
+  patchChatCardConfig: (id, patch) =>
+    set((s) => ({
+      chatCards: s.chatCards.map((card) =>
+        card.id === id ? { ...card, config: { ...(card.config ?? {}), ...patch } } : card,
+      ),
+    })),
+  removeChatCard: (id) =>
+    set((s) => ({ chatCards: s.chatCards.filter((card) => card.id !== id) })),
+  clearTransientChatCards: () =>
+    set((s) => ({
+      chatCards: s.chatCards.filter((card) => isActionableChatCard(card)),
+    })),
+  hydrateChatCards: (cards) =>
+    set((s) => {
+      const live = new Set(s.chatCards.map((c) => c.id).filter(Boolean));
+      const restored = cards.filter((c) => c.id && !live.has(c.id));
+      if (restored.length === 0) return s;
+      // Restored cards lead: they are older proposals the operator still owes
+      // an answer to, and burying them under the current turn's cards is how
+      // they got missed in the first place.
+      return { chatCards: [...restored, ...s.chatCards] };
+    }),
+
+  conversations: [],
+  activeConversationId: DEFAULT_CONVERSATION_ID,
+  setConversations: (conversations) => set({ conversations }),
+  setActiveConversationId: (activeConversationId) =>
+    set((s) => {
+      // Mirror swap: switching threads atomically re-points the flat
+      // live-turn + queue mirrors at the new conversation's slices (idle /
+      // empty when it has none) so consumers never see a torn frame.
+      const live = s.liveTurns[activeConversationId] ?? IDLE_LIVE_TURN;
+      return {
+        activeConversationId,
+        streaming: live.streaming,
+        streamingText: live.streamingText,
+        streamingPhase: live.streamingPhase,
+        streamingBeat: live.streamingBeat,
+        queuedMessages: s.queuedByConversation[activeConversationId] ?? [],
+      };
+    }),
+  upsertConversation: (row) =>
+    set((s) => {
+      const idx = s.conversations.findIndex((c) => c.id === row.id);
+      if (idx === -1) return { conversations: [row, ...s.conversations] };
+      const next = s.conversations.slice();
+      next[idx] = row;
+      return { conversations: next };
+    }),
+
+  draftsByConversation: {},
+  setDraft: (conversationId, text) =>
+    set((s) => {
+      // Skip the write (and the persisted round-trip it triggers) when the
+      // draft is already blank and there's nothing to clear.
+      if (!text && !s.draftsByConversation[conversationId]) return s;
+      if (!text) {
+        const { [conversationId]: _removed, ...rest } = s.draftsByConversation;
+        return { draftsByConversation: rest };
+      }
+      return {
+        draftsByConversation: { ...s.draftsByConversation, [conversationId]: text },
+      };
+    }),
+  clearDraft: (conversationId) =>
+    set((s) => {
+      if (!(conversationId in s.draftsByConversation)) return s;
+      const { [conversationId]: _removed, ...rest } = s.draftsByConversation;
+      return { draftsByConversation: rest };
+    }),
+
+  athenaAssignments: [],
+  upsertAthenaAssignment: (ref) =>
+    set((s) => {
+      const next = s.athenaAssignments.filter((a) => a.assignmentId !== ref.assignmentId);
+      next.push(ref);
+      next.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+      return { athenaAssignments: next.slice(0, 6) };
+    }),
+  dismissAthenaAssignment: (assignmentId) =>
+    set((s) => ({
+      athenaAssignments: s.athenaAssignments.filter((a) => a.assignmentId !== assignmentId),
+    })),
+
+  brainView: { open: false, kind: null, id: null },
+  setBrainView: (brainView) => set({ brainView }),
+
+  reportViewId: null,
+  setReportViewId: (reportViewId) => set({ reportViewId }),
+
+  activityTrayCollapsed: false,
+  setActivityTrayCollapsed: (activityTrayCollapsed) => set({ activityTrayCollapsed }),
+
+  devModeAvailable: false,
+  setDevModeAvailable: (devModeAvailable) => set({ devModeAvailable }),
+
+  connectors: [],
+  setConnectors: (connectors) => set({ connectors }),
+
+  pluginToggles: [],
+  setPluginToggles: (pluginToggles) => set({ pluginToggles }),
+
+  proactive: [],
+  setProactive: (proactive) => set({ proactive }),
+  appendProactive: (msg) =>
+    set((s) => {
+      // Dedupe by id — the scheduler can re-fire if the user reopens
+      // the app while a message is already loaded from the listing.
+      if (s.proactive.some((m) => m.id === msg.id)) return s;
+      // Athena reaching out unprompted is the clearest case the orb badge
+      // exists for: she has something to say and nobody asked her to.
+      if (s.state === 'open') return { proactive: [msg, ...s.proactive] };
+      return {
+        proactive: [msg, ...s.proactive],
+        unreadReplies: s.unreadReplies + 1,
+        unreadPreview: msg.message?.trim() || s.unreadPreview,
+      };
+    }),
+  removeProactive: (id) =>
+    set((s) => ({ proactive: s.proactive.filter((m) => m.id !== id) })),
+
+  pendingPlayback: null,
+  setPendingPlayback: (pendingPlayback) =>
+    set((s) => {
+      // Revoke the prior blob URL on replacement / clear so long chat
+      // sessions don't accumulate ~50KB-per-reply of un-GC'able blob
+      // memory. Skip when the URL is unchanged (e.g. setPlaybackAudioUrl
+      // routes through this setter is not the case — that uses its own
+      // setter — but defensive equality check costs nothing).
+      const prior = s.pendingPlayback?.audioUrl;
+      const next = pendingPlayback?.audioUrl ?? null;
+      if (prior && prior !== next) {
+        URL.revokeObjectURL(prior);
+      }
+      return { pendingPlayback };
+    }),
+  setPlaybackAudioUrl: (audioUrl) =>
+    set((s) =>
+      s.pendingPlayback
+        ? { pendingPlayback: { ...s.pendingPlayback, audioUrl } }
+        : s,
+    ),
+  markPlaybackPlayed: () =>
+    set((s) =>
+      s.pendingPlayback
+        ? { pendingPlayback: { ...s.pendingPlayback, played: true } }
+        : s,
+    ),
+
+  athenaActions: [],
+  recordAthenaAction: (action) =>
+    set((s) =>
+      s.athenaActions.some((a) => a.id === action.id)
+        ? s
+        : { athenaActions: [action, ...s.athenaActions].slice(0, ATHENA_ACTION_CAP) },
+    ),
+  clearAthenaActions: () => set({ athenaActions: [] }),
+
+  pendingPrompt: null,
+  setPendingPrompt: (pendingPrompt: PendingPromptPayload | null) => set({ pendingPrompt }),
+  consumePendingPrompt: (): PendingPromptPayload | null => {
+    const prompt = get().pendingPrompt;
+    if (prompt !== null) set({ pendingPrompt: null });
+    return prompt;
+  },
+
+  voiceTurnRequest: null,
+  // A bare string is the user's own voice (hold-to-talk, the orb's quick input)
+  // and carries no provenance tag; an `AppPromptRequest` is a surface speaking
+  // on his behalf and must name itself. See `AppPromptRequest`.
+  setVoiceTurnRequest: (req) =>
+    set({ voiceTurnRequest: typeof req === 'string' ? { text: req } : req }),
+  voiceCaptureActive: false,
+  setVoiceCaptureActive: (voiceCaptureActive) => set({ voiceCaptureActive }),
+  pendingChatPrompt: null,
+  setPendingChatPrompt: (req) =>
+    set({ pendingChatPrompt: typeof req === 'string' ? { text: req } : req }),
+
+  forwardAckPulse: 0,
+  pulseForwardAck: () => set((s) => ({ forwardAckPulse: s.forwardAckPulse + 1 })),
+  messageReactionPulse: 0,
+  pulseMessageReaction: () =>
+    set((s) => ({ messageReactionPulse: s.messageReactionPulse + 1 })),
+
+  orbBusySources: {},
+  orbSpeakingSources: {},
+  setOrbBusy: (source, on) =>
+    set((s) => {
+      // Unchanged keeps the same object: the orb subscribes on every screen.
+      if (!!s.orbBusySources[source] === on) return s;
+      const next = { ...s.orbBusySources };
+      if (on) next[source] = true;
+      else delete next[source];
+      return { orbBusySources: next };
+    }),
+  setOrbSpeaking: (source, on) =>
+    set((s) => {
+      if (!!s.orbSpeakingSources[source] === on) return s;
+      const next = { ...s.orbSpeakingSources };
+      if (on) next[source] = true;
+      else delete next[source];
+      return { orbSpeakingSources: next };
+    }),
+
+  orbOpenOrigin: null,
+  setOrbOpenOrigin: (orbOpenOrigin) => set({ orbOpenOrigin }),
+
+  streamingRecall: null,
+  recallByEpisodeId: {},
+  setStreamingRecall: (streamingRecall) => set({ streamingRecall }),
+  attachRecallToEpisode: (episodeId) =>
+    set((s) => {
+      if (!s.streamingRecall || !episodeId) {
+        return { streamingRecall: null };
+      }
+      return {
+        streamingRecall: null,
+        recallByEpisodeId: {
+          ...s.recallByEpisodeId,
+          [episodeId]: s.streamingRecall,
+        },
+      };
+    }),
+  clearAllRecall: () =>
+    set({ streamingRecall: null, recallByEpisodeId: {} }),
+
+  turnSummaryByEpisodeId: {},
+  setTurnSummary: (episodeId, summary) =>
+    set((s) => ({
+      turnSummaryByEpisodeId: {
+        ...s.turnSummaryByEpisodeId,
+        [episodeId]: summary,
+      },
+    })),
+  clearAllTurnSummaries: () => set({ turnSummaryByEpisodeId: {} }),
+
+  jobsById: {},
+  pendingConnectorJobIds: [],
+  connectorJobIdsByEpisodeId: {},
+  upsertJob: (job) =>
+    set((s) => {
+      const next: Partial<AthenaStore> = {
+        jobsById: { ...s.jobsById, [job.id]: job },
+      };
+      // Pin tasks spawned by a turn under the spawning bubble (in-chat
+      // tags). `connector_use` is always pinned (it only auto-fires
+      // mid-turn) and renders as the rich ConnectorCallCard; any other
+      // kind enqueued while a turn is streaming (scan_codebase,
+      // memory_curation_run, …) is pinned too and renders as the compact
+      // TaskTag. Approval-click tasks fire while idle (streaming=false) →
+      // they stay out of the transcript and surface only in the tray.
+      // "Streaming" is judged against the job's OWN conversation when the
+      // backend stamped one (multiconv: a focused thread's idle state says
+      // nothing about the thread that spawned this job); legacy events
+      // without a conversation fall back to the active mirror.
+      const jobStreaming = job.conversationId
+        ? !!s.liveTurns[job.conversationId]?.streaming
+        : s.streaming;
+      const shouldPin = job.kind === 'connector_use' || jobStreaming;
+      const alreadyAttached = Object.values(s.connectorJobIdsByEpisodeId).some(
+        (ids) => ids.includes(job.id),
+      );
+      if (shouldPin && !s.pendingConnectorJobIds.includes(job.id) && !alreadyAttached) {
+        // Late-arrival attach: a `connector_use` job event can land AFTER
+        // the turn's `finished` event already ran `attachPendingJobsToEpisode`
+        // and cleared the pending list. In that case the job would sit
+        // orphaned in `pendingConnectorJobIds` forever (and its
+        // ConnectorCallCard would never render under the bubble that
+        // spawned it, or worse, attach to the NEXT turn). When we're not
+        // streaming and there's a most-recent assistant episode, pin the
+        // job straight onto it instead of staging it as pending.
+        const lastAssistant = [...s.messages]
+          .reverse()
+          .find((m) => m.role === 'assistant');
+        if (!jobStreaming && job.kind === 'connector_use' && lastAssistant) {
+          const existing = s.connectorJobIdsByEpisodeId[lastAssistant.id] ?? [];
+          next.connectorJobIdsByEpisodeId = {
+            ...s.connectorJobIdsByEpisodeId,
+            [lastAssistant.id]: [...existing, job.id],
+          };
+        } else {
+          next.pendingConnectorJobIds = [...s.pendingConnectorJobIds, job.id];
+        }
+      }
+      return next;
+    }),
+  attachPendingJobsToEpisode: (episodeId) =>
+    set((s) => {
+      if (!episodeId || s.pendingConnectorJobIds.length === 0) {
+        return { pendingConnectorJobIds: [] };
+      }
+      const existing = s.connectorJobIdsByEpisodeId[episodeId] ?? [];
+      return {
+        pendingConnectorJobIds: [],
+        connectorJobIdsByEpisodeId: {
+          ...s.connectorJobIdsByEpisodeId,
+          [episodeId]: [...existing, ...s.pendingConnectorJobIds],
+        },
+      };
+    }),
+  clearAllConnectorJobs: () =>
+    set({
+      jobsById: {},
+      pendingConnectorJobIds: [],
+      connectorJobIdsByEpisodeId: {},
+    }),
+
+  inTurnToolJobs: {},
+  upsertInTurnToolJob: (job) =>
+    set((s) => ({ inTurnToolJobs: { ...s.inTurnToolJobs, [job.id]: job } })),
+  completeInTurnToolJob: (id) =>
+    set((s) => {
+      const existing = s.inTurnToolJobs[id];
+      if (!existing) return {};
+      return {
+        inTurnToolJobs: {
+          ...s.inTurnToolJobs,
+          [id]: { ...existing, status: 'completed', completedAt: new Date().toISOString() },
+        },
+      };
+    }),
+  clearInTurnToolJobs: () => set({ inTurnToolJobs: {} }),
+
+  queuedByConversation: {},
+  queuedMessages: [],
+  enqueueMessage: (conversationId, text, mode, nonce) =>
+    set((s) =>
+      withQueue(s, conversationId, [
+        ...(s.queuedByConversation[conversationId] ?? []),
+        { id: `q_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, text, mode, nonce },
+      ]),
+    ),
+  shiftQueuedMessage: (conversationId) => {
+    const [first, ...rest] = get().queuedByConversation[conversationId] ?? [];
+    if (!first) return null;
+    set((s) => withQueue(s, conversationId, rest));
+    return first;
+  },
+  removeQueuedMessage: (conversationId, id) =>
+    set((s) =>
+      withQueue(
+        s,
+        conversationId,
+        (s.queuedByConversation[conversationId] ?? []).filter((m) => m.id !== id),
+      ),
+    ),
+  clearQueuedMessages: (conversationId) => set((s) => withQueue(s, conversationId, [])),
+
+  streamingSteps: [],
+  stepsByEpisodeId: {},
+  setStreamingSteps: (streamingSteps) => set({ streamingSteps }),
+  attachStepsToEpisode: (episodeId) =>
+    set((s) => {
+      if (s.streamingSteps.length === 0 || !episodeId) {
+        return { streamingSteps: [] };
+      }
+      return {
+        streamingSteps: [],
+        stepsByEpisodeId: {
+          ...s.stepsByEpisodeId,
+          [episodeId]: s.streamingSteps,
+        },
+      };
+    }),
+  clearAllSteps: () => set({ streamingSteps: [], stepsByEpisodeId: {} }),
+
+  streamingNarration: [],
+  streamingNarrationStartedAt: null,
+  narrationByEpisodeId: {},
+  beginNarration: () =>
+    set({ streamingNarration: [], streamingNarrationStartedAt: Date.now() }),
+  appendNarrationEntry: (entry) =>
+    set((s) => {
+      const next = appendNarrationEntryPure(s.streamingNarration, entry);
+      if (next === s.streamingNarration) return {};
+      return {
+        streamingNarration: next,
+        // Defensive: an entry arriving without a prior beginNarration
+        // (e.g. a backend-initiated turn racing the `started` handler)
+        // still gets a usable start anchor.
+        streamingNarrationStartedAt: s.streamingNarrationStartedAt ?? Date.now(),
+      };
+    }),
+  completeNarrationTool: (id) =>
+    set((s) => {
+      const next = completeNarrationToolPure(s.streamingNarration, id, Date.now());
+      return next === s.streamingNarration ? {} : { streamingNarration: next };
+    }),
+  attachNarrationToEpisode: (episodeId) =>
+    set((s) => {
+      const cleared = {
+        streamingNarration: [] as NarrationEntry[],
+        streamingNarrationStartedAt: null,
+      };
+      if (
+        !episodeId ||
+        s.streamingNarrationStartedAt == null ||
+        !isTrailWorthKeeping(s.streamingNarration)
+      ) {
+        return cleared;
+      }
+      return {
+        ...cleared,
+        narrationByEpisodeId: {
+          ...s.narrationByEpisodeId,
+          [episodeId]: {
+            startedAt: s.streamingNarrationStartedAt,
+            endedAt: Date.now(),
+            entries: s.streamingNarration,
+          },
+        },
+      };
+    }),
+  resetStreamingNarration: () =>
+    set({ streamingNarration: [], streamingNarrationStartedAt: null }),
+  clearAllNarration: () =>
+    set({
+      streamingNarration: [],
+      streamingNarrationStartedAt: null,
+      narrationByEpisodeId: {},
+    }),
+
+  hydrateTurnSidecars: (hydrated) =>
+    set((s) => ({
+      // Spread hydrated FIRST so the existing (live) entries overwrite it.
+      narrationByEpisodeId: { ...hydrated.narrationByEpisodeId, ...s.narrationByEpisodeId },
+      stepsByEpisodeId: { ...hydrated.stepsByEpisodeId, ...s.stepsByEpisodeId },
+      turnSummaryByEpisodeId: {
+        ...hydrated.turnSummaryByEpisodeId,
+        ...s.turnSummaryByEpisodeId,
+      },
+      recallByEpisodeId: { ...hydrated.recallByEpisodeId, ...s.recallByEpisodeId },
+    })),
+
+  activeWalkthrough: null,
+  guidanceStepIndex: 0,
+  guidancePlaying: false,
+  guidanceHighlightTestId: null,
+  orbGuideTarget: null,
+  adHocWalkthrough: null,
+  startGuidance: (topic) =>
+    set({
+      activeWalkthrough: topic,
+      adHocWalkthrough: null,
+      guidanceStepIndex: 0,
+      guidancePlaying: true,
+      guidanceHighlightTestId: null,
+      orbGuideTarget: null,
+      flashHighlightTestId: null,
+      flashHighlightLabel: null,
+    }),
+  startAdHocGuidance: (walkthrough) =>
+    set({
+      activeWalkthrough: ADHOC_TOPIC,
+      adHocWalkthrough: walkthrough,
+      guidanceStepIndex: 0,
+      guidancePlaying: true,
+      guidanceHighlightTestId: null,
+      orbGuideTarget: null,
+      flashHighlightTestId: null,
+      flashHighlightLabel: null,
+    }),
+  setGuidanceStep: (guidanceStepIndex) => set({ guidanceStepIndex }),
+  advanceGuidance: () =>
+    set((s) => ({ guidanceStepIndex: s.guidanceStepIndex + 1 })),
+  previousGuidance: () =>
+    set((s) => ({
+      guidanceStepIndex: Math.max(0, s.guidanceStepIndex - 1),
+      guidancePlaying: false,
+    })),
+  jumpToStep: (index) =>
+    set({ guidanceStepIndex: Math.max(0, index), guidancePlaying: false }),
+  pauseGuidance: () => set({ guidancePlaying: false }),
+  resumeGuidance: () => set({ guidancePlaying: true }),
+  stopGuidance: () =>
+    set({
+      activeWalkthrough: null,
+      adHocWalkthrough: null,
+      guidanceStepIndex: 0,
+      guidancePlaying: false,
+      guidanceHighlightTestId: null,
+      orbGuideTarget: null,
+    }),
+  setGuidanceHighlightTestId: (guidanceHighlightTestId) =>
+    set({ guidanceHighlightTestId }),
+  setOrbGuideTarget: (orbGuideTarget) => set({ orbGuideTarget }),
+  flashHighlightTestId: null,
+  flashHighlightLabel: null,
+  flashHighlight: (testId, opts) => {
+    // A walkthrough owns the ring while it runs — don't fight it.
+    if (get().activeWalkthrough) return;
+    if (flashTimer) clearTimeout(flashTimer);
+    set({ flashHighlightTestId: testId, flashHighlightLabel: opts?.label ?? null });
+    flashTimer = setTimeout(() => {
+      flashTimer = null;
+      // Only clear if this flash is still the active one (a newer flash wins).
+      if (get().flashHighlightTestId === testId) {
+        set({ flashHighlightTestId: null, flashHighlightLabel: null });
+      }
+    }, opts?.ms ?? 2400);
+  },
+
+  pendingDecision: null,
+  decisionQueueDepth: 0,
+  decisionExplained: false,
+  setPendingDecision: (decision) =>
+    set({
+      pendingDecision: decision,
+      decisionExplained: false,
+      explainComposeError: null,
+      decisionError: null,
+    }),
+  clearPendingDecision: () =>
+    set({
+      pendingDecision: null,
+      decisionExplained: false,
+      explainComposeError: null,
+      decisionError: null,
+    }),
+  markDecisionExplained: () =>
+    set((s) => (s.pendingDecision ? { decisionExplained: true } : s)),
+  setDecisionQueueDepth: (depth) => set({ decisionQueueDepth: Math.max(0, depth) }),
+
+  decisionError: null,
+  setDecisionError: (decisionError) => set({ decisionError }),
+
+  explainComposing: false,
+  explainComposeError: null,
+  setExplainComposing: (explainComposing) => set({ explainComposing }),
+  setExplainComposeError: (explainComposeError) => set({ explainComposeError }),
+
+    }),
+    {
+      name: 'companion-drafts',
+      storage: createDedupedJSONStorage(),
+      // Only the composer draft map is durable — everything else here is
+      // live session/UI state that resets fine on a fresh app launch.
+      partialize: (state) => ({ draftsByConversation: state.draftsByConversation }),
+    },
+  ),
+);
+
+/**
+ * The currently-focused conversation row (or `undefined` before the registry
+ * has loaded). Reactive — components re-render when the active thread or its
+ * row (title / unread / status) changes.
+ */
+export function useActiveConversation(): ConversationRow | undefined {
+  return useAthenaStore((s) =>
+    s.conversations.find((c) => c.id === s.activeConversationId),
+  );
+}
+
+// Dev-only: expose for the test-automation bridge (e.g. verifying the orb-fly
+// target during Studio orb-pointer runs). Absent from production builds.
+//
+// THE GLOBAL'S NAME IS WIRE, not a symbol: harness scripts and ad-hoc
+// `/bridge-exec` probes reach it as `window.__companionStore` from outside the
+// bundle, where nothing would fail to compile if it were renamed. It keeps the
+// old spelling for the same reason the bridge method names do.
+if (import.meta.env.DEV) {
+  (window as unknown as Record<string, unknown>).__companionStore = useAthenaStore;
+}

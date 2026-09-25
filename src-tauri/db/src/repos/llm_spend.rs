@@ -110,6 +110,38 @@ pub fn parse_result_line(ctx: &SpendCtx, line: &str) -> Option<LlmSpendInsert> {
     })
 }
 
+/// Total USD cost + row count for a single `source` **today**, on the
+/// database's own clock.
+///
+/// A calendar day rather than [`source_summary`]'s rolling window, because the
+/// caller is a DAILY cap: a budget that resets at midnight and a figure that
+/// covers the last twenty-four hours disagree for most of the day, and the one
+/// that would be wrong is the one on the screen beside the word "today".
+/// `date(created_at) = date('now')` is the shape `attention_ledger` already
+/// uses for the same question.
+pub fn source_today(pool: &DbPool, source: &str) -> Result<(f64, i64), AppError> {
+    // `timed_query!` where the rest of this module has none: the daily brake is
+    // read on every runtime poll, and an aggregate with no index behind it is
+    // exactly the shape that should be observable before it is slow. The older
+    // functions beside it are baselined debt, not a precedent.
+    timed_query!("dev_llm_spend", "llm_spend::source_today", {
+        let conn = pool.get()?;
+        // The two aggregates are ALIASED and read by name. They have no column
+        // of their own to be named after, which is the one case
+        // `positional-row-get` declares as its false-positive surface - so
+        // naming them costs a word and keeps the file off a list it does not
+        // belong on.
+        let row = conn.query_row(
+            "SELECT COALESCE(SUM(cost_usd), 0.0) AS cost_usd, COUNT(*) AS rows_today
+               FROM dev_llm_spend
+              WHERE source = ?1 AND date(created_at) = date('now')",
+            params![source],
+            |r| Ok((r.get("cost_usd")?, r.get("rows_today")?)),
+        )?;
+        Ok(row)
+    })
+}
+
 /// Total USD cost + row count for a single `source` over the last
 /// `window_days` (clamped 1..=365). A focused counterpart to `dashboard` for
 /// callers that just want one tier's running spend — e.g. the persona-icon

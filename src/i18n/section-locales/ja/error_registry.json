@@ -164,5 +164,13 @@
   "zapier_message": "Zapier webhookに接続できませんでした。",
   "zapier_suggestion": "Zapier統合設定でwebhookのURLを確認してください。",
   "oauth_account_mismatch_message": "この認証情報に紐づいているアカウントとは別のアカウントでサインインしました。",
-  "oauth_account_mismatch_suggestion": "認証情報に表示されているアカウントでサインインするか、別のアカウント用に新しい認証情報を追加してください。"
+  "oauth_account_mismatch_suggestion": "認証情報に表示されているアカウントでサインインするか、別のアカウント用に新しい認証情報を追加してください。",
+  "project_not_found_message": "そのプロジェクトはもう一方のデバイスにありません。",
+  "project_not_found_suggestion": "同じ git リモートを使ってそちらのデバイスでプロジェクトをクローンまたは登録してから、もう一度送信してください。",
+  "remote_command_refused_message": "もう一方のデバイスがそのコマンドを拒否しました。",
+  "remote_command_refused_suggestion": "セッションはそちらですでに終了している可能性があります。Monitor を更新してもう一度お試しください。",
+  "remote_dispatch_failed_message": "セッションをもう一方のデバイスに送信できませんでした。",
+  "remote_dispatch_failed_suggestion": "デバイスがまだペアリングされているか確認してもう一度試すか、このマシンで実行してください。",
+  "remote_peer_offline_message": "もう一方のデバイスに現在到達できません。",
+  "remote_peer_offline_suggestion": "そちらのデバイスで Personas を開き、両方のデバイスが同じネットワークにあるか確認してください。ディスパッチはデバイスが起動するまで送信トレイで待機します。"
 }

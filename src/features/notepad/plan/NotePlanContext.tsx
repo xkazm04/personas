@@ -15,7 +15,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 
 import { renameSession } from '@/api/fleet/fleet';
 import { recordNoteRunStart } from '@/api/notepad';
-import { useAskAthena } from '@/features/plugins/companion/useAskAthena';
+import { useAskAthena } from '@/features/companions/athena/useAskAthena';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { shipVerdict, type CritState, type ShipMilestoneVM } from '@/lib/milestone/shipModel';
 import { silentCatch } from '@/lib/silentCatch';

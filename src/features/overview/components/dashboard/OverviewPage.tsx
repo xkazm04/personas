@@ -25,9 +25,7 @@ const PatternsPanel = lazyRetry(() => import('@/features/overview/sub_patterns/P
 const MemoriesPageGraph = lazyRetry(() => import('@/features/overview/sub_memories/components/MemoriesPageGraph'));
 // The former Reliability (SLA), Health and Leaderboard tabs were consolidated
 // into Mission Control (2026-08-25) — their best sections render there now.
-const CertificationCommandCenter = lazyRetry(() => import('@/features/overview/sub_certification/CertificationCommandCenter'));
 const IncidentsInbox = lazyRetry(() => import('@/features/overview/sub_incidents'));
-const DirectorCoachingTab = lazyRetry(() => import('@/features/overview/sub_director'));
 
 /**
  * Suspense fallback while a tab's lazy chunk loads (hard refresh / first visit).
@@ -75,8 +73,6 @@ function OverviewContent() {
           overviewTab === 'memories' ? <MemoriesPage /> :
           overviewTab === 'patterns' ? <PatternsPanel /> :
           overviewTab === 'memory-graph' ? <MemoriesPageGraph /> :
-          overviewTab === 'director' ? <DirectorCoachingTab /> :
-          overviewTab === 'certification' ? <CertificationCommandCenter /> :
           <DashboardWithSubtabs />}
         </Suspense>
         </ErrorBoundary>

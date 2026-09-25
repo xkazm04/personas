@@ -126,7 +126,7 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
       <div className="animate-fade-slide-in absolute left-0 top-0 bottom-0 w-[340px] max-w-[85vw] flex flex-col bg-background border-r border-primary/10 shadow-elevation-4">
         <div className="flex items-center gap-2 px-3 py-2.5 border-b border-primary/10 shrink-0">
           <BookOpen className="w-4 h-4 text-primary" aria-hidden="true" />
-          <span className="typo-caption font-semibold text-foreground">{f.skills_drawer_title}</span>
+          <span className="typo-caption text-foreground">{f.skills_drawer_title}</span>
           <Button variant="ghost" size="icon-sm" className="ml-auto" onClick={onClose} aria-label={t.common.close}>
             <X className="w-4 h-4" />
           </Button>

@@ -11,7 +11,7 @@ import { Plus, Loader2, Sparkles, X, MessageSquare } from 'lucide-react';
 
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
-import { useAskAthena } from '@/features/plugins/companion/useAskAthena';
+import { useAskAthena } from '@/features/companions/athena/useAskAthena';
 
 import { type KpiCategory, type KpiTier } from './factoryModel';
 import { useAddKpi } from './useAddKpi';

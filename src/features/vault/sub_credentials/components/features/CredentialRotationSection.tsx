@@ -134,7 +134,7 @@ export function CredentialRotationSection({
         <>
           <div className="border-t border-primary/10" />
           <div className="space-y-1.5">
-            <p className="typo-heading text-foreground uppercase tracking-wider font-semibold">{t.vault.rotation_section.history}</p>
+            <p className="typo-heading text-foreground uppercase">{t.vault.rotation_section.history}</p>
             {isLoadingHistory ? (
               <RotationHistorySkeleton />
             ) : recentHistory.length === 0 ? (

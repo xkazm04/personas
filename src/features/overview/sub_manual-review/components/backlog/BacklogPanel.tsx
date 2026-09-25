@@ -43,6 +43,7 @@ import {
   type LevelRange,
 } from './backlogModel';
 import type { BacklogQueue, BacklogStatus } from './useBacklogQueue';
+import { arriveAtDevTools } from '@/features/plugins/pluginArrival';
 
 const STATUSES: BacklogStatus[] = ['pending', 'accepted', 'rejected', 'archived'];
 /** Mirrors `backlog_triage::MAX_BATCH_IDEAS` — the backend rejects more, so the
@@ -58,9 +59,6 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
   const categoryLabel = useCategoryLabel();
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const setPendingTaskFocusId = useSystemStore((s) => s.setPendingTaskFocusId);
-  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
-  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
-  const setPluginTab = useSystemStore((s) => s.setPluginTab);
   const addToast = useToastStore((s) => s.addToast);
 
   const [view, setView] = useState<BacklogView>('table');
@@ -196,9 +194,9 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
       queue.reload();
       const first = result.dispatched[0];
       if (first) setPendingTaskFocusId(first.taskId);
-      setSidebarSection('plugins');
-      setPluginTab('dev-tools');
-      setDevToolsTab('task-runner');
+      // Through the shared gated door: the dispatch still happened, but a
+      // person who has switched Dev Tools off is not dragged onto it.
+      arriveAtDevTools('task-runner');
     } catch (err) {
       toastCatch('BacklogPanel:executeAccepted')(err);
     } finally {
@@ -206,7 +204,7 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
     }
   }, [
     targetRows, addToast, tx, r.backlog_execute_none, r.backlog_execute_queued,
-    queue, setPendingTaskFocusId, setSidebarSection, setPluginTab, setDevToolsTab,
+    queue, setPendingTaskFocusId,
   ]);
 
   function closeDetail() {
@@ -294,7 +292,13 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
   );
 
   return (
-    <div className="flex flex-col min-h-0 h-full gap-3 px-4 pt-3 pb-4">
+    // Table view grows to its content (min-h-full) so ContentBody, the page's one
+    // scroller, scrolls the whole Backlog: rules, sensors and every row move as
+    // one surface (operator, Gate 3). shrink-0 matters: ContentBody's scroller is a
+    // flex column, and without it this panel was squeezed to the viewport, which
+    // collapsed the overflow-hidden rules and sensor cards to zero height. Focus
+    // view keeps a bounded height: its deck sizes itself to the panel.
+    <div className={`flex flex-col gap-3 px-4 pt-3 pb-4 ${view === 'table' ? 'min-h-full shrink-0' : 'min-h-0 h-full'}`}>
       <div className="flex items-center gap-2 flex-wrap">
         {STATUSES.map((s) => {
           const count = queue.counts?.[s] ?? 0;
@@ -373,7 +377,7 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
           sweep skipped one - the project id is what lets it tell whose sweep. */}
       <SensorScoreboard projectId={activeProjectId} />
 
-      <div className="flex-1 min-h-0">
+      <div className={view === 'table' ? 'flex-1' : 'flex-1 min-h-0'}>
         {queue.loading && queue.rows.length === 0 ? (
           <BacklogGhostRows />
         ) : view === 'focus' ? (

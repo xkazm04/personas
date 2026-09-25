@@ -45,7 +45,7 @@ export function ReadinessSeal({
         style={{ borderColor: `color-mix(in srgb, ${tint.hex} 40%, transparent)` }}
       >
         <span className={`${codeCls} font-bold tabular-nums leading-none ${tint.text}`}>{code}</span>
-        <span className={`typo-data tabular-nums leading-none ${tint.text} opacity-75`}>{score}</span>
+        <span className={`typo-data ${tint.text} opacity-75`}>{score}</span>
       </span>
     </Tooltip>
   );
@@ -80,8 +80,8 @@ export function ScoreBar({
         <span className="typo-label text-foreground/45">{label}</span>
         <Tooltip content={`${name}: ${score}/100`}>
           <span className="inline-flex items-baseline gap-1 cursor-default">
-            <span className={`typo-caption font-bold tabular-nums leading-none ${tint.text}`}>{code}</span>
-            <span className={`typo-caption tabular-nums leading-none ${tint.text} opacity-70`}>{score}</span>
+            <span className={`typo-caption tabular-nums ${tint.text}`}>{code}</span>
+            <span className={`typo-caption tabular-nums ${tint.text} opacity-70`}>{score}</span>
           </span>
         </Tooltip>
       </div>
@@ -189,11 +189,11 @@ export function RowInfoLabel({ label, info }: { label: string; info: string }) {
           style={{ top: pos.top, left: pos.left, width: INFO_TIP_WIDTH }}
           className="fixed z-[9996] rounded-modal border border-primary/15 bg-background shadow-elevation-4 px-3 py-2.5"
         >
-          <span className="flex items-center gap-1.5 typo-caption font-semibold text-foreground mb-1">
+          <span className="flex items-center gap-1.5 typo-caption text-foreground mb-1">
             <Info className="w-3.5 h-3.5 text-primary/70 flex-shrink-0" aria-hidden />
             {label}
           </span>
-          <p className="typo-caption text-foreground/65 leading-snug" style={{ fontWeight: 400 }}>{info}</p>
+          <p className="typo-caption text-foreground/65" style={{ fontWeight: 400 }}>{info}</p>
         </div>,
         document.body,
       )}
@@ -240,7 +240,7 @@ export function BlockersBadge({ blockers, clearLabel }: { blockers: string[]; cl
       data-testid="cover-blockers-badge"
     >
       <AlertTriangle className="w-5 h-5" style={{ color: INK.red }} aria-hidden />
-      <span className="typo-body-lg font-semibold tabular-nums" style={{ color: INK.red }}>{blockers.length}</span>
+      <span className="typo-body-lg tabular-nums" style={{ color: INK.red }}>{blockers.length}</span>
     </span>
   );
 }

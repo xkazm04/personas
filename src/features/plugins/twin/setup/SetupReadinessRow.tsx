@@ -76,7 +76,7 @@ export function SetupReadinessRow({ checklist, score, focus, onFocus }: SetupRea
           >
             <StatusGlyph status={item.status} />
             <span className="min-w-0 flex items-baseline gap-2">
-              <span className={`typo-caption font-medium truncate ${active ? 'text-foreground' : ''}`}>
+              <span className={`typo-caption truncate ${active ? 'text-foreground' : ''}`}>
                 {ts.checklist[item.labelKey]}
               </span>
               <span className={`typo-caption tabular-nums truncate ${entry.text}`}>{item.detail}</span>
@@ -110,7 +110,7 @@ export function SetupReadinessRow({ checklist, score, focus, onFocus }: SetupRea
             style={{ width: `${clamped}%` }}
           />
         </span>
-        <span className="typo-data tabular-nums text-foreground" data-testid="setup-readiness-score">
+        <span className="typo-data text-foreground" data-testid="setup-readiness-score">
           {clamped}
         </span>
       </div>

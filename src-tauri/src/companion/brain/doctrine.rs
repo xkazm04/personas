@@ -84,7 +84,7 @@ const INCLUDED_DOCS: &[&str] = &[
     // "what can you do?" question pulls a current, honest answer via
     // embedding retrieval instead of relying on the constitution's
     // op-grammar reference alone.
-    "features/companion/athena-usecases.md",
+    "features/companions/athena/athena-usecases.md",
 ];
 
 /// Compile-time embedded copies of every `INCLUDED_DOCS` entry. Used as a
@@ -187,8 +187,8 @@ const EMBEDDED_DOCS: &[(&str, &str)] = &[
         include_str!("../../../../docs/concepts/operational-data-views.md"),
     ),
     (
-        "features/companion/athena-usecases.md",
-        include_str!("../../../../docs/features/companion/athena-usecases.md"),
+        "features/companions/athena/athena-usecases.md",
+        include_str!("../../../../docs/features/companions/athena/athena-usecases.md"),
     ),
 ];
 

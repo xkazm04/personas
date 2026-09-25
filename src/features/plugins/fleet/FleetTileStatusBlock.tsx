@@ -51,7 +51,7 @@ export function FleetTileStatusBlock({ session: s }: { session: FleetSession }) 
       className="pointer-events-none flex h-full w-full flex-col items-center justify-center gap-1.5 bg-[#0a0a0c] px-3 py-3 text-center"
     >
       {Icon && <Icon className={`w-6 h-6 ${vis.accent}`} aria-hidden="true" />}
-      <span className={`typo-caption font-medium ${vis.accent}`}>{t.plugins.fleet[vis.labelKey]}</span>
+      <span className={`typo-caption ${vis.accent}`}>{t.plugins.fleet[vis.labelKey]}</span>
       <span className="typo-caption tabular-nums">
         {formatAgo(t, Number(s.lastActivityMs), now)}
       </span>

@@ -53,7 +53,7 @@ export function PendingTriggerApprovals({ personaId }: PendingTriggerApprovalsPr
     >
       <div className="flex items-center gap-2 flex-wrap">
         <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
-        <span className="typo-body font-medium text-amber-300">{p.title}</span>
+        <span className="typo-body text-amber-300">{p.title}</span>
         <span className="typo-caption text-foreground">
           {tx(pending.length === 1 ? p.subtitle_one : p.subtitle_other, { count: pending.length })}
         </span>

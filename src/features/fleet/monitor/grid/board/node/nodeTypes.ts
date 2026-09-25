@@ -84,6 +84,12 @@ export interface SessionNodeProps {
   queue?: QueueItem | null;
   /** A live row sitting past the cap after a Start now — warning frame. */
   overAdmitted?: boolean;
+  /**
+   * The paired device that sent this session here (`originPeerId`, resolved to
+   * its display name). The origin symbol then reads "From <device>" instead of
+   * the generic origin word — the node's "from" chip, in its own vocabulary.
+   */
+  originDevice?: string | null;
 }
 
 export type FleetNodeProps = FleetNodeShellProps & (PersonaNodeProps | SessionNodeProps);

@@ -323,7 +323,13 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                                     truncate_field(&input_preview, MAX_TOOL_INPUT_DISPLAY);
                                 let display = format!("> Using tool: {name}");
                                 if first_type.is_none() {
+                                    // Decode here, from the full value: the preview
+                                    // above is a display string and is invalid JSON
+                                    // once the cut appends `...`.
                                     first_type = Some(StreamLineType::AssistantToolUse {
+                                        tool_use_id: str_field(block, "id"),
+                                        file_path: decode_file_path(&name, &input_json),
+                                        protocol: decode_protocol_tool(&name, &input_json),
                                         tool_name: name,
                                         input_preview: input_preview_truncated,
                                     });
@@ -379,6 +385,7 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                         let display = format!("  Tool result: {truncated}");
                         return (
                             StreamLineType::ToolResult {
+                                tool_use_id: str_field(block, "tool_use_id"),
                                 content_preview: preview,
                             },
                             Some(display),
@@ -619,6 +626,35 @@ const PROTOCOL_KEYS: &[(&str, fn(&serde_json::Value) -> Option<ProtocolMessage>)
     ("propose_backlog", parse_propose_backlog),
 ];
 
+/// Virtual protocol TOOL names, each mapped to the `PROTOCOL_KEYS` entry that
+/// decodes its input. This is the second door into the same table: a model
+/// that calls `propose_backlog` as a tool and one that writes
+/// `{"propose_backlog": {...}}` as a line are decoded by the same function,
+/// with the same defaults, so the two doors cannot drift.
+const PROTOCOL_TOOL_ALIASES: &[(&str, &str)] = &[
+    ("emit_memory", "agent_memory"),
+    ("emit_message", "user_message"),
+    ("emit_event", "emit_event"),
+    ("request_review", "manual_review"),
+    ("raise_incident", "raise_incident"),
+    ("propose_backlog", "propose_backlog"),
+];
+
+/// Decode a virtual protocol-tool call from its FULL input value.
+///
+/// `None` when `tool_name` is not a protocol tool. Called by
+/// `parse_stream_line` while it still holds the whole `input`; the runner reads
+/// the result from `StreamLineType::AssistantToolUse::protocol` instead of
+/// re-parsing the 500-char display preview, which is invalid JSON for any
+/// payload over the cap.
+pub fn decode_protocol_tool(tool_name: &str, input: &serde_json::Value) -> Option<ProtocolMessage> {
+    let (_, key) = PROTOCOL_TOOL_ALIASES
+        .iter()
+        .find(|(tool, _)| *tool == tool_name)?;
+    let (_, parser_fn) = PROTOCOL_KEYS.iter().find(|(k, _)| k == key)?;
+    parser_fn(input)
+}
+
 fn parse_user_message(msg: &serde_json::Value) -> Option<ProtocolMessage> {
     Some(ProtocolMessage::UserMessage {
         title: str_field(msg, "title"),
@@ -641,7 +677,11 @@ fn parse_persona_action(msg: &serde_json::Value) -> Option<ProtocolMessage> {
 
 fn parse_emit_event(msg: &serde_json::Value) -> Option<ProtocolMessage> {
     Some(ProtocolMessage::EmitEvent {
-        event_type: str_field_or(msg, "type", ""),
+        // The line door documents `type`; the `emit_event` tool's input names
+        // it `event_type`. One decoder serves both, so it reads either.
+        event_type: str_field(msg, "event_type")
+            .or_else(|| str_field(msg, "type"))
+            .unwrap_or_default(),
         data: msg.get("data").cloned(),
     })
 }
@@ -710,9 +750,9 @@ fn parse_knowledge_annotation(msg: &serde_json::Value) -> Option<ProtocolMessage
 
 /// Parse a `propose_backlog` block. Field names and the 1–5 scales match the
 /// prompt's documented input shape verbatim
-/// (`prompt/assemble.rs`, "### propose_backlog"), and the defaults match the
-/// tool-use arm in `runner/mod.rs` so the two doors cannot drift into
-/// producing different rows from the same JSON.
+/// (`prompt/assemble.rs`, "### propose_backlog"). Both doors decode through
+/// this one function (the tool door via `decode_protocol_tool`), so they cannot
+/// drift into producing different rows from the same JSON.
 ///
 /// A block with no usable `title` still parses; the dispatcher drops it with an
 /// explicit `[BACKLOG] propose_backlog dropped — empty title` log
@@ -1328,28 +1368,41 @@ pub struct FileChange {
     pub change_type: FileChangeType,
 }
 
-/// Extract a file change from a tool use event, if the tool is a file operation.
-pub fn extract_file_change(tool_name: &str, input_preview: &str) -> Option<FileChange> {
-    let change_type = match tool_name {
-        "Read" | "read" | "read_file" => FileChangeType::Read,
-        "Write" | "write" | "write_file" | "create_file" => FileChangeType::Write,
-        "Edit" | "edit" | "edit_file" | "MultiEdit" | "multi_edit" => FileChangeType::Edit,
-        "NotebookEdit" | "notebook_edit" => FileChangeType::Edit,
-        _ => return None,
-    };
-
-    // Try to parse the input preview as JSON and extract a file path
-    let value: serde_json::Value = serde_json::from_str(input_preview).ok()?;
-    let path = value
-        .get("file_path")
-        .or_else(|| value.get("path"))
-        .and_then(|p| p.as_str())
-        .map(String::from)?;
-
-    if path.is_empty() {
-        return None;
+/// The kind of file change a tool makes, or `None` if it is not a file tool.
+pub fn file_change_type(tool_name: &str) -> Option<FileChangeType> {
+    match tool_name {
+        "Read" | "read" | "read_file" => Some(FileChangeType::Read),
+        "Write" | "write" | "write_file" | "create_file" => Some(FileChangeType::Write),
+        "Edit" | "edit" | "edit_file" | "MultiEdit" | "multi_edit" => Some(FileChangeType::Edit),
+        "NotebookEdit" | "notebook_edit" => Some(FileChangeType::Edit),
+        _ => None,
     }
+}
 
+/// The target path of a file tool, read from its FULL input value.
+///
+/// Called by `parse_stream_line` while it holds the whole `input`. The display
+/// preview cannot serve: keys serialize sorted, so a Write prints `content`
+/// before `file_path`, and the 500-char cut removes the path.
+fn decode_file_path(tool_name: &str, input: &serde_json::Value) -> Option<String> {
+    file_change_type(tool_name)?;
+    input
+        .get("file_path")
+        .or_else(|| input.get("path"))
+        .and_then(|p| p.as_str())
+        .filter(|p| !p.is_empty())
+        .map(String::from)
+}
+
+/// Extract a file change from a tool input serialized as JSON.
+///
+/// Only correct for a COMPLETE serialization. The stream pipeline no longer
+/// calls this with `input_preview`: it reads `AssistantToolUse::file_path`,
+/// decoded by the parser from the full value.
+pub fn extract_file_change(tool_name: &str, input_json: &str) -> Option<FileChange> {
+    let change_type = file_change_type(tool_name)?;
+    let value: serde_json::Value = serde_json::from_str(input_json).ok()?;
+    let path = decode_file_path(tool_name, &value)?;
     Some(FileChange { path, change_type })
 }
 
@@ -1494,6 +1547,7 @@ mod tests {
             StreamLineType::AssistantToolUse {
                 tool_name,
                 input_preview,
+                ..
             } => {
                 assert_eq!(tool_name, "read_file");
                 assert_eq!(input_preview, "{}");
@@ -1589,7 +1643,9 @@ mod tests {
         let (st, display) = parse_stream_line(line);
 
         match st {
-            StreamLineType::ToolResult { content_preview } => {
+            StreamLineType::ToolResult {
+                content_preview, ..
+            } => {
                 assert_eq!(content_preview, "File contents here: some data");
             }
             _ => panic!("Expected ToolResult, got {st:?}"),
@@ -2500,5 +2556,187 @@ mod sink_reversibility_tests {
                 "an unclipped line was marked clipped: {line}"
             );
         }
+    }
+}
+
+/// A tool call is decoded ONCE, here, from the full `input` value — never
+/// re-parsed downstream from `input_preview`, which is a display string cut at
+/// `MAX_TOOL_INPUT_DISPLAY` and therefore invalid JSON for every real Write,
+/// most Edits and every non-trivial protocol-tool payload.
+#[cfg(test)]
+mod tool_call_decode_tests {
+    use super::*;
+    use serde_json::json;
+
+    fn assistant_tool_use(id: &str, name: &str, input: serde_json::Value) -> String {
+        json!({
+            "type": "assistant",
+            "message": {"content": [{"type": "tool_use", "id": id, "name": name, "input": input}]}
+        })
+        .to_string()
+    }
+
+    fn tool_use_parts(
+        st: StreamLineType,
+    ) -> (
+        Option<String>,
+        String,
+        String,
+        Option<String>,
+        Option<ProtocolMessage>,
+    ) {
+        match st {
+            StreamLineType::AssistantToolUse {
+                tool_use_id,
+                tool_name,
+                input_preview,
+                file_path,
+                protocol,
+            } => (tool_use_id, tool_name, input_preview, file_path, protocol),
+            other => panic!("expected AssistantToolUse, got {other:?}"),
+        }
+    }
+
+    /// case 1: keys serialize sorted, so `content` prints before `file_path`
+    /// and the 500-char cut removes the path along with the JSON's validity.
+    #[test]
+    fn decode_write_over_the_preview_cap_keeps_its_file_path() {
+        let input = json!({"file_path": "/src/a.rs", "content": "x".repeat(2_000)});
+        let (_, _, preview, file_path, protocol) =
+            tool_use_parts(parse_stream_line(&assistant_tool_use("toolu_W", "Write", input)).0);
+        assert!(preview.ends_with("..."), "the display preview is still cut");
+        assert_eq!(file_path.as_deref(), Some("/src/a.rs"));
+        assert_eq!(protocol, None);
+    }
+
+    /// case 2: a 900-char Edit input.
+    #[test]
+    fn decode_edit_over_the_preview_cap_keeps_its_file_path() {
+        let input = json!({
+            "file_path": "/src/lib.rs",
+            "old_string": "o".repeat(420),
+            "new_string": "n".repeat(420),
+        });
+        assert!(input.to_string().len() >= 880);
+        let (_, _, _, file_path, _) =
+            tool_use_parts(parse_stream_line(&assistant_tool_use("toolu_E", "Edit", input)).0);
+        assert_eq!(file_path.as_deref(), Some("/src/lib.rs"));
+    }
+
+    /// case 3: the virtual protocol-tool door decodes from the full input.
+    #[test]
+    fn decode_propose_backlog_tool_over_the_preview_cap_carries_its_plan() {
+        let input = json!({
+            "title": "Harden the parser",
+            "description": "d".repeat(1_200),
+            "impact": 4,
+            "plan": [
+                {"action": "one", "files": ["a.rs"], "done_when": "a"},
+                {"action": "two", "files": ["b.rs"], "done_when": "b"},
+                {"action": "three", "files": ["c.rs"], "done_when": "c"},
+            ],
+        });
+        let (_, _, _, file_path, protocol) = tool_use_parts(
+            parse_stream_line(&assistant_tool_use("toolu_P", "propose_backlog", input)).0,
+        );
+        assert_eq!(file_path, None);
+        match protocol {
+            Some(ProtocolMessage::ProposeBacklog {
+                title,
+                plan: Some(plan),
+                description,
+                ..
+            }) => {
+                assert_eq!(title, "Harden the parser");
+                assert_eq!(plan.steps.len(), 3);
+                assert_eq!(description.map(|d| d.len()), Some(1_200));
+            }
+            other => panic!("expected ProposeBacklog with a 3-step plan, got {other:?}"),
+        }
+    }
+
+    /// case 4: one decoder, two doors — the tool door and the JSON-line door
+    /// produce the same message from the same payload, `"4"` included.
+    #[test]
+    fn decode_tool_door_and_json_line_door_agree() {
+        let payload = json!({"title": "t", "impact": "4", "effort": 2, "risk": 1});
+        let (_, _, _, _, via_tool) = tool_use_parts(
+            parse_stream_line(&assistant_tool_use(
+                "toolu_4",
+                "propose_backlog",
+                payload.clone(),
+            ))
+            .0,
+        );
+        let via_line = extract_protocol_message(&json!({"propose_backlog": payload}).to_string());
+        assert!(via_tool.is_some());
+        assert_eq!(via_tool, via_line);
+        match via_tool {
+            Some(ProtocolMessage::ProposeBacklog { impact, .. }) => assert_eq!(impact, Some(4)),
+            other => panic!("expected ProposeBacklog, got {other:?}"),
+        }
+    }
+
+    /// case 5: the tool_use id rides the call, and the result carries it back.
+    #[test]
+    fn decode_tool_use_id_pairs_call_and_result() {
+        let (id, _, _, _, _) = tool_use_parts(
+            parse_stream_line(&assistant_tool_use(
+                "toolu_A",
+                "Bash",
+                json!({"command": "ls"}),
+            ))
+            .0,
+        );
+        assert_eq!(id.as_deref(), Some("toolu_A"));
+
+        let result = json!({
+            "type": "user",
+            "message": {"content": [{"type": "tool_result", "tool_use_id": "toolu_A", "content": "ok"}]}
+        })
+        .to_string();
+        match parse_stream_line(&result).0 {
+            StreamLineType::ToolResult {
+                tool_use_id,
+                content_preview,
+            } => {
+                assert_eq!(tool_use_id.as_deref(), Some("toolu_A"));
+                assert_eq!(content_preview, "ok");
+            }
+            other => panic!("expected ToolResult, got {other:?}"),
+        }
+    }
+
+    /// [guard] the display preview keeps its cap, TodoWrite keeps its own
+    /// variant, and an ordinary tool decodes to neither a path nor a message.
+    #[test]
+    fn decode_guard_preview_cap_todowrite_and_plain_tools_unchanged() {
+        let input = json!({"file_path": "/src/a.rs", "content": "x".repeat(2_000)});
+        let (_, _, preview, _, _) =
+            tool_use_parts(parse_stream_line(&assistant_tool_use("t", "Write", input)).0);
+        assert_eq!(preview.chars().count(), MAX_TOOL_INPUT_DISPLAY + 3);
+        assert!(preview.ends_with("..."));
+
+        let todo = assistant_tool_use(
+            "t",
+            "TodoWrite",
+            json!({"todos": [{"content": "c", "status": "pending"}]}),
+        );
+        assert!(matches!(
+            parse_stream_line(&todo).0,
+            StreamLineType::AssistantTodoWrite { .. }
+        ));
+
+        let (_, name, _, file_path, protocol) = tool_use_parts(
+            parse_stream_line(&assistant_tool_use(
+                "t",
+                "Bash",
+                json!({"command": "cat /src/a.rs"}),
+            ))
+            .0,
+        );
+        assert_eq!(name, "Bash");
+        assert_eq!(file_path, None);
+        assert_eq!(protocol, None);
     }
 }

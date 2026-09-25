@@ -63,7 +63,7 @@ function SkillCell({ row, onOpenInfo }: { row: SkillRunRow; onOpenInfo: (skill: 
         </span>
       )}
       <span className="min-w-0">
-        <button type="button" onClick={() => onOpenInfo(row.skill)} className="typo-caption font-medium text-foreground truncate block text-left hover:text-primary transition-colors" data-testid={`skill-history-name-${row.skill}`}>{row.skill}</button>
+        <button type="button" onClick={() => onOpenInfo(row.skill)} className="typo-caption text-foreground truncate block text-left hover:text-primary transition-colors" data-testid={`skill-history-name-${row.skill}`}>{row.skill}</button>
         {row.args && <span className="typo-label text-foreground/45 truncate block">{row.args}</span>}
       </span>
     </span>
@@ -95,7 +95,7 @@ export function SkillHistoryTable({ runs, onRerun, onOpenInfo }: {
   return (
     <section className="rounded-card border border-primary/12 bg-secondary/[0.12]" data-testid="skill-history">
       <div className="flex items-baseline gap-2 px-3 py-2 bg-primary/[0.04] border-b border-primary/10 rounded-t-card">
-        <span className="typo-body font-semibold text-foreground">{d.skills_history_title}</span>
+        <span className="typo-body text-foreground">{d.skills_history_title}</span>
         <span className="typo-label text-foreground/40 tabular-nums">{runs.length}</span>
       </div>
       <div className={`${GRID} px-3 py-1.5 border-b border-primary/10`}>

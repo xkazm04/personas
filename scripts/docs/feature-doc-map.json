@@ -195,12 +195,12 @@
   },
   "entries": [
     {
-      "doc": "docs/features/director/README.md",
+      "doc": "docs/features/companions/overseer/README.md",
       "sourceGlobs": [
         "src-tauri/src/engine/director.rs",
         "src-tauri/src/engine/director_brain.rs",
         "src-tauri/src/commands/infrastructure/director.rs",
-        "src/features/overview/sub_director/**"
+        "src/features/companions/overseer/**"
       ],
       "marketingModule": "agents"
     },
@@ -337,11 +337,11 @@
       "marketingModule": "home"
     },
     {
-      "doc": "docs/features/companion/cockpit.md",
+      "doc": "docs/features/companions/athena/cockpit.md",
       "sourceGlobs": [
         "src/features/home/sub_cockpit/**",
-        "src/features/plugins/companion/inbox/**",
-        "src/features/plugins/companion/InlineChatCard.tsx",
+        "src/features/companions/athena/inbox/**",
+        "src/features/companions/athena/InlineChatCard.tsx",
         "src-tauri/src/companion/brain/cockpit.rs"
       ],
       "onboardingFlows": [
@@ -372,21 +372,6 @@
     {
       "doc": "docs/features/overview/README.md",
       "sourceGlobs": [
-        "src/features/overview/**",
-        "src/features/shared/chrome/SystemLoadFooterIcon.tsx",
-        "src/features/shared/components/layout/systemLoad.ts",
-        "src-tauri/src/commands/infrastructure/system_metrics.rs"
-      ],
-      "onboardingFlows": [
-        "overview-dashboard",
-        "execution-activity",
-        "health-monitoring"
-      ],
-      "marketingModule": "overview"
-    },
-    {
-      "doc": "docs/features/overview/README.md",
-      "sourceGlobs": [
         "src/features/agents/quick-answer/**",
         "src/features/fleet/monitor/useMonitorData.ts"
       ]
@@ -400,9 +385,9 @@
       ]
     },
     {
-      "doc": "docs/features/companion/README.md",
+      "doc": "docs/features/companions/athena/README.md",
       "sourceGlobs": [
-        "src/features/plugins/companion/**",
+        "src/features/companions/athena/**",
         "src-tauri/src/commands/companion/**",
         "src-tauri/src/companion/session/**",
         "src-tauri/src/companion/dispatcher/**",
@@ -454,7 +439,8 @@
         "src/features/plugins/fleet/**",
         "src-tauri/src/commands/fleet/**",
         "src/stores/slices/system/fleetSlice.ts",
-        "src/api/fleet/**"
+        "src/api/fleet/**",
+        "src/features/shared/dispatch/**"
       ]
     },
     {
@@ -522,7 +508,12 @@
         "src-tauri/src/commands/network/**",
         "src-tauri/src/engine/bundle.rs",
         "src-tauri/src/engine/share_link.rs",
-        "src-tauri/engine/src/p2p/**"
+        "src-tauri/engine/src/p2p/**",
+        "src-tauri/src/companion/remote_jobs.rs",
+        "src-tauri/src/companion/prompt/devices.rs",
+        "src/api/network/**",
+        "src/stores/slices/network/**",
+        "src/lib/network/**"
       ]
     },
     {
@@ -621,7 +612,7 @@
         "src-tauri/src/commands/infrastructure/dev_tools/note_suggestions.rs",
         "src-tauri/src/commands/infrastructure/notepad_ingest.rs",
         "src-tauri/src/companion/note_ops.rs",
-        "src/features/plugins/companion/notepad/**"
+        "src/features/companions/athena/notepad/**"
       ]
     },
     {
@@ -632,16 +623,43 @@
       ]
     },
     {
-      "doc": "docs/features/council.md",
+      "doc": "docs/features/features.md",
+      "sourceGlobs": [
+        "src/features/teams/sub_features/**",
+        "src/api/devTools/features.ts",
+        "src-tauri/src/commands/infrastructure/dev_tools/features.rs",
+        "src-tauri/core/src/models/feature_board.rs",
+        "src-tauri/db/src/repos/dev/feature_board.rs",
+        "src-tauri/db/src/repos/dev/scenarios.rs",
+        "docs/design/features-reference/**"
+      ]
+    },
+    {
+      "doc": "docs/features/companions/curator/council.md",
       "sourceGlobs": [
         "src/features/plugins/dev-tools/sub_context/council*",
         "src/features/plugins/dev-tools/sub_context/Feature*",
         "src/api/devTools/council.ts",
-        "src/features/teams/sub_council/**",
+        "src/features/companions/curator/council/**",
         "src/features/home/sub_cockpit/widgets/CouncilMediaWidget.tsx",
         "src-tauri/src/commands/infrastructure/dev_tools/council*.rs",
         "src-tauri/db/src/repos/dev/council.rs",
         "src-tauri/core/src/models/council.rs"
+      ]
+    },
+    {
+      "doc": "docs/features/companions/curator/process.md",
+      "sourceGlobs": [
+        "src/features/companions/curator/process/**",
+        "src/api/companions/curator.ts",
+        "src-tauri/src/commands/curator/process.rs"
+      ]
+    },
+    {
+      "doc": "docs/features/companions/curator/blueprint.md",
+      "sourceGlobs": [
+        "src/features/companions/curator/blueprint/**",
+        "src/api/curator.ts"
       ]
     }
   ]

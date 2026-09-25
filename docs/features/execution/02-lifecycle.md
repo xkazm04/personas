@@ -181,9 +181,13 @@ Two dispatch mechanisms coexist:
 
 - **Virtual-tool interception (primary).** The persona calls named tools
   `emit_memory` / `emit_message` / `emit_event` / `request_review` /
-  `raise_incident` / `propose_backlog`; the runner intercepts these tool calls
-  (`runner/mod.rs`) and routes them to the same DB writes below. This is the
-  reliable path ("more reliable than JSON lines").
+  `raise_incident` / `propose_backlog`. The parser decodes these from the
+  tool call's FULL input (`parser::decode_protocol_tool`, through the same
+  `PROTOCOL_KEYS` table as the JSON-line door, so both doors produce the same
+  message from the same payload) and carries the result on
+  `AssistantToolUse::protocol`; the runner (`runner/mod.rs`) dispatches it to
+  the same DB writes below. It never re-parses `input_preview`, which is a
+  500-char display string and invalid JSON for any payload over the cap.
 - **JSON-line protocol (legacy, still parsed).** Lines matching `PROTOCOL_KEYS`
   in `parser.rs` are extracted and dispatched. Both mechanisms end at
   `engine/dispatch.rs`.
@@ -307,10 +311,13 @@ emit.
    }
    ```
 
-   `tool_steps` are closed by the newest-*open* rule (a `ToolResult` closes
-   the most recent step without an `ended_at_ms`, mirroring the span closer,
-   so parallel tool calls each get their own result) and any step the stream
-   never closed is stamped with the run end by `finalize_open_tool_steps`
+   `tool_steps` and `tool_call` spans are paired with their result by
+   `tool_use_id`, which the parser carries on both `AssistantToolUse` and
+   `ToolResult`, so parallel tool calls whose results arrive out of order each
+   get their own output. A result with no id falls back to the newest-*open*
+   rule (the most recent step without an `ended_at_ms`). File-change events
+   read `AssistantToolUse::file_path`, decoded from the full input. Any step
+   the stream never closed is stamped with the run end by `finalize_open_tool_steps`
    immediately before this record is written (2026-09-02).
 
 4. **Emit final events**:

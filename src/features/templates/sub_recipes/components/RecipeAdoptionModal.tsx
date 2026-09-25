@@ -81,7 +81,7 @@ export function RecipeAdoptionModal({ recipe, onClose, onAdopted }: RecipeAdopti
             <Sparkles className="w-4 h-4 text-primary" />
           </span>
           <div className="flex-1 min-w-0">
-            <div id="recipe-adoption-title" className="typo-section-title text-foreground">
+            <div id="recipe-adoption-title" className="typo-section-title">
               {tx(t.recipes_catalog.modal_title, { name: recipe.name })}
             </div>
             <div className="typo-caption text-foreground mt-0.5">
@@ -158,7 +158,7 @@ export function RecipeAdoptionModal({ recipe, onClose, onAdopted }: RecipeAdopti
             type="button"
             onClick={handleAdopt}
             disabled={!canAdopt || pending}
-            className="px-4 py-1.5 rounded-interactive border border-primary/45 bg-primary/15 text-primary hover:bg-primary/25 typo-body font-medium cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+            className="px-4 py-1.5 rounded-interactive border border-primary/45 bg-primary/15 text-primary hover:bg-primary/25 typo-body cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
           >
             <Sparkles className="w-3.5 h-3.5" />
             {pending ? t.recipes_catalog.adopting_label : t.recipes_catalog.adopt_recipe_label}
@@ -215,7 +215,7 @@ function SetupRequiredCallout({ eligibility }: { eligibility: Eligibility & { st
                   style={{ borderColor: m.color + '55' }}
                 >
                   <ConnectorIcon meta={m} size="w-3.5 h-3.5" />
-                  <span className="typo-caption font-medium" style={{ color: m.color }}>
+                  <span className="typo-caption" style={{ color: m.color }}>
                     {m.label}
                   </span>
                 </span>
@@ -258,7 +258,7 @@ interface BindingFieldProps {
 function BindingField({ binding, value, onChange, error }: BindingFieldProps) {
   const labelEl = (
     <div className="flex items-baseline gap-1.5 mb-1">
-      <span className="typo-caption font-medium text-foreground">{binding.label}</span>
+      <span className="typo-caption text-foreground">{binding.label}</span>
       {binding.required && (
         <span className="typo-label text-status-warning/85">required</span>
       )}

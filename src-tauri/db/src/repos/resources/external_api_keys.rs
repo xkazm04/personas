@@ -197,6 +197,126 @@ pub fn revoke(pool: &DbPool, id: &str) -> Result<(), AppError> {
     })
 }
 
+/// Explicit column list for the reads [`grant_scope`] / [`revoke_scope`] make,
+/// in the shape `row_to_external_api_key` maps by name.
+const COLUMNS: &str = "id, name, key_hash, key_prefix, scopes, enabled, created_at, \
+                       last_used_at, revoked_at, expires_at, bound_origin, label";
+
+/// What [`grant_scope`] did to the key.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ScopeGrant {
+    /// The scope was appended to the key's scopes.
+    Granted,
+    /// The key already held exactly this scope; nothing was written.
+    AlreadyHeld,
+    /// The key exists but is revoked, disabled or expired. Nothing was written:
+    /// a grant on a key that can no longer authenticate is dead weight, and it
+    /// must not become live again if the row is ever re-enabled.
+    KeyInactive,
+    /// No key has this id (hard-deleted, or never existed).
+    KeyNotFound,
+}
+
+/// What [`revoke_scope`] did to the key.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ScopeRevoke {
+    /// The scope was removed from the key's scopes.
+    Removed,
+    /// The key did not hold the scope; nothing was written.
+    NotHeld,
+    /// No key has this id.
+    KeyNotFound,
+}
+
+/// Parse the stored scopes STRICTLY. `ExternalApiKey::parsed_scopes` fails
+/// closed to an empty list, which is right for authorizing and wrong for
+/// rewriting: writing `[scope]` over a corrupt column would silently turn a
+/// key that authorizes nothing into one that authorizes something.
+fn stored_scopes(key: &ExternalApiKey, op: &str) -> Result<Vec<String>, AppError> {
+    serde_json::from_str::<Vec<String>>(&key.scopes).map_err(|e| {
+        AppError::Internal(format!(
+            "{op}: key {} has a scopes column that is not a JSON string array ({e}); refusing to rewrite it",
+            key.id
+        ))
+    })
+}
+
+/// Add ONE exact scope to an active key. Idempotent.
+///
+/// Used to grant a least-privilege, resource-scoped right after the fact —
+/// e.g. `personas:execute:persona:<id>` to the key that asked for that persona
+/// to be hired. Refuses (without writing) on a revoked, disabled or expired
+/// key and reports it as [`ScopeGrant::KeyInactive`], so the caller can log
+/// why the grant was skipped instead of failing its own operation.
+///
+/// Read → edit → write of the `scopes` column runs under an IMMEDIATE
+/// transaction, so two grants landing on the same key cannot lose one another.
+pub fn grant_scope(pool: &DbPool, id: &str, scope: &str) -> Result<ScopeGrant, AppError> {
+    timed_query!("external_api_keys", "external_api_keys::grant_scope", {
+        personas_core::validation::require_non_empty("scope to grant", scope)?;
+        let scope = scope.trim();
+        let mut conn = pool.get()?;
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let key = tx
+            .query_row(
+                &format!("SELECT {COLUMNS} FROM external_api_keys WHERE id = ?1"),
+                params![id],
+                row_to_external_api_key,
+            )
+            .optional()?;
+        let Some(key) = key else {
+            return Ok(ScopeGrant::KeyNotFound);
+        };
+        if !key.enabled || key.revoked_at.is_some() || key.is_expired_at(chrono::Utc::now()) {
+            return Ok(ScopeGrant::KeyInactive);
+        }
+        let mut scopes = stored_scopes(&key, "external_api_keys::grant_scope")?;
+        if scopes.iter().any(|s| s == scope) {
+            return Ok(ScopeGrant::AlreadyHeld);
+        }
+        scopes.push(scope.to_string());
+        tx.execute(
+            "UPDATE external_api_keys SET scopes = ?1 WHERE id = ?2",
+            params![serde_json::to_string(&scopes)?, id],
+        )?;
+        tx.commit()?;
+        Ok(ScopeGrant::Granted)
+    })
+}
+
+/// Remove ONE exact scope from a key. Idempotent; never touches any other
+/// scope (a broad `personas:execute` is not a per-persona grant and is left
+/// alone). Applies to revoked keys too — tidying a dead row is harmless and
+/// keeps the audit view honest about what the key held at the end.
+pub fn revoke_scope(pool: &DbPool, id: &str, scope: &str) -> Result<ScopeRevoke, AppError> {
+    timed_query!("external_api_keys", "external_api_keys::revoke_scope", {
+        let scope = scope.trim();
+        let mut conn = pool.get()?;
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let key = tx
+            .query_row(
+                &format!("SELECT {COLUMNS} FROM external_api_keys WHERE id = ?1"),
+                params![id],
+                row_to_external_api_key,
+            )
+            .optional()?;
+        let Some(key) = key else {
+            return Ok(ScopeRevoke::KeyNotFound);
+        };
+        let scopes = stored_scopes(&key, "external_api_keys::revoke_scope")?;
+        if !scopes.iter().any(|s| s == scope) {
+            return Ok(ScopeRevoke::NotHeld);
+        }
+        let kept: Vec<String> = scopes.into_iter().filter(|s| s != scope).collect();
+        tx.execute(
+            "UPDATE external_api_keys SET scopes = ?1 WHERE id = ?2",
+            params![serde_json::to_string(&kept)?, id],
+        )?;
+        tx.commit()?;
+        Ok(ScopeRevoke::Removed)
+    })
+}
+
 /// Hard delete: remove the row entirely. Use sparingly — `revoke` is preferred.
 pub fn delete(pool: &DbPool, id: &str) -> Result<(), AppError> {
     timed_query!("external_api_keys", "external_api_keys::delete", {
@@ -461,5 +581,136 @@ mod tests {
 
         let origins = list_paired_origins(&pool).expect("list_paired_origins");
         assert_eq!(origins, vec!["https://a.example".to_string()]);
+    }
+
+    fn scopes_of(pool: &crate::DbPool, id: &str) -> Vec<String> {
+        list(pool)
+            .expect("list")
+            .into_iter()
+            .find(|k| k.id == id)
+            .expect("key row")
+            .parsed_scopes()
+    }
+
+    #[test]
+    fn grant_scope_appends_exactly_one_scope_and_is_idempotent() {
+        let pool = test_pool();
+        let resp = create(
+            &pool,
+            "kp",
+            vec!["personas:read".into(), "personas:build".into()],
+            None,
+            None,
+            None,
+        )
+        .expect("create");
+        let id = resp.record.id;
+
+        assert_eq!(
+            grant_scope(&pool, &id, "personas:execute:persona:p1").expect("grant"),
+            ScopeGrant::Granted
+        );
+        assert_eq!(
+            scopes_of(&pool, &id),
+            vec![
+                "personas:read".to_string(),
+                "personas:build".to_string(),
+                "personas:execute:persona:p1".to_string(),
+            ]
+        );
+        // Second grant of the same scope writes nothing.
+        assert_eq!(
+            grant_scope(&pool, &id, "personas:execute:persona:p1").expect("grant again"),
+            ScopeGrant::AlreadyHeld
+        );
+        assert_eq!(scopes_of(&pool, &id).len(), 3);
+    }
+
+    #[test]
+    fn grant_scope_refuses_revoked_expired_and_missing_keys_without_writing() {
+        let pool = test_pool();
+        let revoked = create(&pool, "gone", vec![], None, None, None).expect("create");
+        revoke(&pool, &revoked.record.id).expect("revoke");
+        assert_eq!(
+            grant_scope(&pool, &revoked.record.id, "personas:execute:persona:p1").expect("grant"),
+            ScopeGrant::KeyInactive
+        );
+        assert!(scopes_of(&pool, &revoked.record.id).is_empty());
+
+        let past = (chrono::Utc::now() - chrono::Duration::hours(1)).to_rfc3339();
+        let expired = create(&pool, "old", vec![], Some(past), None, None).expect("create");
+        assert_eq!(
+            grant_scope(&pool, &expired.record.id, "personas:execute:persona:p1").expect("grant"),
+            ScopeGrant::KeyInactive
+        );
+        assert!(scopes_of(&pool, &expired.record.id).is_empty());
+
+        assert_eq!(
+            grant_scope(&pool, "no-such-key", "personas:execute:persona:p1").expect("grant"),
+            ScopeGrant::KeyNotFound
+        );
+    }
+
+    #[test]
+    fn grant_scope_refuses_to_rewrite_a_corrupt_scopes_column() {
+        let pool = test_pool();
+        let resp = create(&pool, "corrupt", vec![], None, None, None).expect("create");
+        pool.get()
+            .expect("conn")
+            .execute(
+                "UPDATE external_api_keys SET scopes = 'not json' WHERE id = ?1",
+                params![resp.record.id],
+            )
+            .expect("corrupt the row");
+        assert!(grant_scope(&pool, &resp.record.id, "personas:execute:persona:p1").is_err());
+        let raw: String = pool
+            .get()
+            .expect("conn")
+            .query_row(
+                "SELECT scopes FROM external_api_keys WHERE id = ?1",
+                params![resp.record.id],
+                |r| r.get("scopes"),
+            )
+            .expect("read back");
+        assert_eq!(raw, "not json", "a corrupt column is left exactly as found");
+    }
+
+    #[test]
+    fn revoke_scope_removes_only_the_named_scope() {
+        let pool = test_pool();
+        let resp = create(
+            &pool,
+            "kp",
+            vec![
+                "personas:read".into(),
+                "personas:execute:persona:p1".into(),
+                "personas:execute:persona:p2".into(),
+            ],
+            None,
+            None,
+            None,
+        )
+        .expect("create");
+        let id = resp.record.id;
+
+        assert_eq!(
+            revoke_scope(&pool, &id, "personas:execute:persona:p1").expect("revoke"),
+            ScopeRevoke::Removed
+        );
+        assert_eq!(
+            scopes_of(&pool, &id),
+            vec![
+                "personas:read".to_string(),
+                "personas:execute:persona:p2".to_string()
+            ]
+        );
+        assert_eq!(
+            revoke_scope(&pool, &id, "personas:execute:persona:p1").expect("revoke again"),
+            ScopeRevoke::NotHeld
+        );
+        assert_eq!(
+            revoke_scope(&pool, "no-such-key", "personas:execute:persona:p1").expect("revoke"),
+            ScopeRevoke::KeyNotFound
+        );
     }
 }

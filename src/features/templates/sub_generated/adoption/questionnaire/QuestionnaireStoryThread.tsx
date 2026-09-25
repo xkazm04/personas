@@ -66,11 +66,11 @@ function ThreadItem({
       <div className="flex items-start gap-2.5">
         <StatusIcon className={`w-4 h-4 flex-shrink-0 mt-0.5 ${statusColor}`} />
         <div className="min-w-0 flex-1">
-          <div className="typo-body text-foreground leading-snug line-clamp-2">
+          <div className="typo-body text-foreground line-clamp-2">
             {question.question}
           </div>
           {effectiveState === 'answered' && answer ? (
-            <div className="typo-caption text-status-success/80 leading-tight mt-1 truncate italic">
+            <div className="typo-caption text-status-success/80 mt-1 truncate italic">
               {summarizeAnswer(answer, question.type, t)}
               {isAuto && (
                 <span className="ml-1.5 text-[10px] uppercase tracking-wider text-brand-purple/80 font-semibold not-italic">
@@ -84,11 +84,11 @@ function ThreadItem({
               )}
             </div>
           ) : state === 'current' ? (
-            <div className="typo-label text-primary/80 font-semibold mt-1">
+            <div className="typo-label text-primary/80 mt-1">
               {t.templates.adopt_modal.thread_current}
             </div>
           ) : state === 'blocked' ? (
-            <div className="typo-caption text-status-error/80 leading-tight mt-1">
+            <div className="typo-caption text-status-error/80 mt-1">
               <DebtText k="auto_credential_needed_9bb284d0" />
             </div>
           ) : null}
@@ -153,10 +153,10 @@ export function QuestionnaireStoryThread({
     >
       <div className="flex-shrink-0 px-4 py-3 border-b border-border flex items-center gap-2">
         <BookOpen className="w-4 h-4 text-primary/70" />
-        <span className="typo-label text-foreground font-semibold">
+        <span className="typo-label text-foreground">
           <DebtText k="auto_story_so_far_615368df" />
         </span>
-        <span className="ml-auto typo-data text-foreground tabular-nums">
+        <span className="ml-auto typo-data text-foreground">
           {answeredCount}/{totalCount}
         </span>
       </div>
@@ -181,7 +181,7 @@ export function QuestionnaireStoryThread({
               {showChapter && (
                 <div className="flex items-center gap-2 px-1 pt-3 pb-1.5">
                   <meta.Icon className={`w-3.5 h-3.5 ${meta.color}`} />
-                  <span className={`typo-label font-semibold ${meta.color}`}>
+                  <span className={`typo-label ${meta.color}`}>
                     {meta.label}
                   </span>
                   <div className="flex-1 h-px bg-border" />

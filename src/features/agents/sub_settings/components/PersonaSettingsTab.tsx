@@ -79,7 +79,7 @@ export function PersonaSettingsTab({
     <div className="max-w-3xl 3xl:max-w-4xl 4xl:max-w-5xl space-y-4">
       {/* Identity -- relative z-10 so color picker popup renders above cards below */}
       <div className="space-y-3 relative z-10">
-        <h4 className="flex items-center gap-2.5 typo-submodule-header tracking-wide">
+        <h4 className="flex items-center gap-2.5 typo-submodule-header">
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
           {t.agents.settings_status.identity}
         </h4>
@@ -97,7 +97,7 @@ export function PersonaSettingsTab({
             </div>
           )}
           <div className="relative">
-            <label htmlFor="persona-name" className="block typo-body font-medium text-foreground mb-1">{t.agents.settings_status.label_name}</label>
+            <label htmlFor="persona-name" className="block typo-body text-foreground mb-1">{t.agents.settings_status.label_name}</label>
             <input
               id="persona-name"
               type="text"
@@ -116,7 +116,7 @@ export function PersonaSettingsTab({
             )}
           </div>
           <div className="relative">
-            <label htmlFor="persona-description" className="block typo-body font-medium text-foreground mb-1">{t.agents.settings_status.label_description}</label>
+            <label htmlFor="persona-description" className="block typo-body text-foreground mb-1">{t.agents.settings_status.label_description}</label>
             <textarea
               id="persona-description"
               value={draft.description}
@@ -128,7 +128,7 @@ export function PersonaSettingsTab({
           </div>
           <div className="relative flex items-center gap-4">
             <div>
-              <label htmlFor="persona-icon-btn" className="block typo-body font-medium text-foreground mb-2">{t.agents.settings_status.label_icon}</label>
+              <label htmlFor="persona-icon-btn" className="block typo-body text-foreground mb-2">{t.agents.settings_status.label_icon}</label>
               <button
                 id="persona-icon-btn"
                 type="button"
@@ -145,7 +145,7 @@ export function PersonaSettingsTab({
               </button>
             </div>
             <div>
-              <label className="block typo-body font-medium text-foreground mb-2">{t.agents.settings_status.label_color}</label>
+              <label className="block typo-body text-foreground mb-2">{t.agents.settings_status.label_color}</label>
               <PopupColorPicker
                 value={draft.color}
                 onChange={(color) => patch({ color })}
@@ -167,7 +167,7 @@ export function PersonaSettingsTab({
 
       {/* Execution */}
       <div className="space-y-3">
-        <h4 className="flex items-center gap-2.5 typo-submodule-header tracking-wide">
+        <h4 className="flex items-center gap-2.5 typo-submodule-header">
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
           {t.agents.settings_status.execution}
         </h4>
@@ -175,7 +175,7 @@ export function PersonaSettingsTab({
           {!isSimple && (
             <div className="flex gap-3">
               <div className="flex-1">
-                <label className="block typo-body font-medium text-foreground mb-1">
+                <label className="block typo-body text-foreground mb-1">
                   {t.agents.settings_status.max_concurrent}
                   <FieldHint
                     text="Maximum parallel executions for this persona. Limits how many runs can happen at the same time to prevent API rate limits."
@@ -193,7 +193,7 @@ export function PersonaSettingsTab({
                 />
               </div>
               <div className="flex-1">
-                <label className="block typo-body font-medium text-foreground mb-1">
+                <label className="block typo-body text-foreground mb-1">
                   {t.agents.settings_status.timeout_sec}
                   <FieldHint
                     text={`How long a single execution can run before being cancelled. The engine hard ceiling is ${MAX_PERSONA_TIMEOUT_S} seconds (${Math.round(MAX_PERSONA_TIMEOUT_S / 60)} min) — values above this are rejected.`}
@@ -218,7 +218,7 @@ export function PersonaSettingsTab({
 
           {!isSimple && (
             <div className="flex-1">
-              <label className="block typo-body font-medium text-foreground mb-1">
+              <label className="block typo-body text-foreground mb-1">
                 {t.agents.settings_status.execution_retention}
                 <FieldHint
                   text="How long execution history is kept before automatic cleanup. Older executions are deleted to save disk space."
@@ -240,7 +240,7 @@ export function PersonaSettingsTab({
           )}
 
           <div className="flex items-center justify-between gap-3 py-1">
-            <span className="typo-body font-medium text-foreground">{t.agents.settings_status.persona_enabled}</span>
+            <span className="typo-body text-foreground">{t.agents.settings_status.persona_enabled}</span>
             <AccessibleToggle
               checked={draft.enabled}
               onChange={() => patch({ enabled: !draft.enabled })}
@@ -254,7 +254,7 @@ export function PersonaSettingsTab({
           {!isSimple && (
             <div className="flex items-center justify-between gap-3 py-1">
               <div>
-                <span className="typo-body font-medium text-foreground">{t.agents.settings_status.sensitive_preview}</span>
+                <span className="typo-body text-foreground">{t.agents.settings_status.sensitive_preview}</span>
                 <p className="typo-body text-foreground">{t.agents.settings_status.sensitive_preview_desc}</p>
               </div>
               <AccessibleToggle
@@ -270,7 +270,7 @@ export function PersonaSettingsTab({
           {!isSimple && (
             <div className="flex items-center justify-between gap-3 py-1">
               <div>
-                <span className="typo-body font-medium text-foreground">{t.agents.settings_status.cli_awareness}</span>
+                <span className="typo-body text-foreground">{t.agents.settings_status.cli_awareness}</span>
                 <p className="typo-body text-foreground">{t.agents.settings_status.cli_awareness_desc}</p>
               </div>
               <AccessibleToggle

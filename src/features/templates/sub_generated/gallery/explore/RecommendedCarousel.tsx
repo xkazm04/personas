@@ -38,7 +38,7 @@ export function RecommendedCarousel({
               onClick={() => onSelectTemplate(tmpl)}
               className="flex-shrink-0 w-[220px] p-3 rounded-modal bg-amber-500/5 border border-amber-500/12 hover:border-amber-500/50 hover:bg-amber-500/10 hover:-translate-y-px transition-all text-left group/rec outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              <div className="typo-body font-medium text-foreground group-hover/rec:text-amber-300 truncate">
+              <div className="typo-body text-foreground group-hover/rec:text-amber-300 truncate">
                 {tmpl.test_case_name}
               </div>
               <div className="typo-body text-foreground truncate mt-0.5">
@@ -62,7 +62,7 @@ export function RecommendedCarousel({
                   <span className="typo-body text-foreground">+{connectors.length - 3}</span>
                 )}
                 {tmpl.adoption_count > 0 && (
-                  <span className="ml-auto inline-flex items-center gap-1 typo-code font-mono text-emerald-400/60">
+                  <span className="ml-auto inline-flex items-center gap-1 typo-code text-emerald-400/60">
                     <Download className="w-2.5 h-2.5" />
                     {tmpl.adoption_count}
                   </span>

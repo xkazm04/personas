@@ -1,0 +1,471 @@
+{
+ "scope": "src/**/*.{ts,tsx} (d.ts excluded), one quoted string per unit",
+ "files": 6386,
+ "tokens": {
+  "typo-body": 3286,
+  "typo-caption": 4287,
+  "typo-code": 573,
+  "typo-label": 787,
+  "typo-heading-lg": 94,
+  "typo-heading": 529,
+  "typo-body-lg": 163,
+  "typo-hero": 13,
+  "typo-data": 119,
+  "typo-title": 135,
+  "typo-submodule-header": 8,
+  "typo-data-lg": 35,
+  "typo-section-title": 76,
+  "typo-title-lg": 38,
+  "typo-hero-shine": 1,
+  "typo-card-label": 44,
+  "typo-weight-light": 1
+ },
+ "tokenFiles": {
+  "typo-body": 1062,
+  "typo-caption": 1227,
+  "typo-code": 283,
+  "typo-label": 396,
+  "typo-heading-lg": 75,
+  "typo-heading": 320,
+  "typo-body-lg": 101,
+  "typo-hero": 12,
+  "typo-data": 92,
+  "typo-title": 111,
+  "typo-submodule-header": 7,
+  "typo-data-lg": 29,
+  "typo-section-title": 71,
+  "typo-title-lg": 30,
+  "typo-hero-shine": 1,
+  "typo-card-label": 39,
+  "typo-weight-light": 1
+ },
+ "arbitraryVariantTypo": 14,
+ "arbitraryVariantTypoSites": [
+  "src/features/home/sub_cockpit/widgets/PersonaWalkthroughWidget.tsx:50 [&_h1]:typo-h3",
+  "src/features/home/sub_cockpit/widgets/PersonaWalkthroughWidget.tsx:50 [&_h2]:typo-h4",
+  "src/features/home/sub_cockpit/widgets/PersonaWalkthroughWidget.tsx:50 [&_h3]:typo-h5",
+  "src/features/home/sub_cockpit/widgets/PersonaWalkthroughWidget.tsx:50 [&_code]:typo-caption",
+  "src/features/overview/sub_reports/components/ReportDetailSections.tsx:89 [&_p:first-of-type:first-letter]:typo-heading-lg",
+  "src/features/overview/sub_reports/components/ReportDetailSections.tsx:96 [&_h1]:typo-heading-lg",
+  "src/features/overview/sub_reports/components/ReportDetailSections.tsx:97 [&_h2]:typo-heading",
+  "src/features/plugins/obsidian-brain/sub_browse/BrowsePanel.tsx:356 [&_h1]:typo-heading-lg",
+  "src/features/plugins/obsidian-brain/sub_browse/BrowsePanel.tsx:356 [&_h2]:typo-heading",
+  "src/features/plugins/obsidian-brain/sub_browse/BrowsePanel.tsx:356 [&_h3]:typo-heading",
+  "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredConsent.tsx:97 [&_p]:typo-body",
+  "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredConsent.tsx:97 [&_ul]:typo-body",
+  "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredConsent.tsx:97 [&_ol]:typo-body",
+  "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredConsent.tsx:97 [&_code]:typo-body"
+ ],
+ "phantoms": {
+  "typo-body-sm": 45,
+  "typo-heading-sm": 15,
+  "typo-heading-md": 3,
+  "typo-overline": 23,
+  "typo-title-sm": 1,
+  "typo-heading-xs": 1,
+  "typo-body-strong": 6,
+  "typo-button": 3,
+  "typo-h3": 3,
+  "typo-display": 1,
+  "typo-data-md": 1
+ },
+ "phantomFiles": {
+  "typo-body-sm": 13,
+  "typo-heading-sm": 13,
+  "typo-heading-md": 3,
+  "typo-overline": 14,
+  "typo-title-sm": 1,
+  "typo-heading-xs": 1,
+  "typo-body-strong": 5,
+  "typo-button": 1,
+  "typo-h3": 3,
+  "typo-display": 1,
+  "typo-data-md": 1
+ },
+ "muting": {
+  "fgSlash": {
+   "15": 1,
+   "20": 1,
+   "25": 9,
+   "30": 22,
+   "35": 42,
+   "40": 141,
+   "45": 107,
+   "50": 87,
+   "55": 55,
+   "60": 152,
+   "65": 12,
+   "70": 178,
+   "75": 9,
+   "80": 126,
+   "85": 232,
+   "90": 515,
+   "95": 63,
+   "[0.06]": 1,
+   "[0.07]": 1,
+   "[0.12]": 1
+  },
+  "fgSlashTotal": 1755,
+  "fgOpacityUnits": 336,
+  "fgOpacityByN": {
+   "0": 36,
+   "30": 5,
+   "35": 9,
+   "40": 30,
+   "45": 24,
+   "50": 38,
+   "55": 18,
+   "60": 64,
+   "65": 2,
+   "70": 59,
+   "75": 5,
+   "80": 41,
+   "85": 3,
+   "90": 2
+  },
+  "mutedForeground": {
+   "(solid)": 159,
+   "/80": 25,
+   "/70": 24,
+   "/50": 6,
+   "/60": 7,
+   "/40": 3,
+   "/30": 1,
+   "/90": 6
+  },
+  "textMuted": 43,
+  "textMutedDark": 18,
+  "caption": 4287
+ },
+ "palette": {
+  "byPrefix": {
+   "bg": 3331,
+   "text": 4464,
+   "border": 2178,
+   "fill": 9,
+   "stroke": 11,
+   "from": 124,
+   "to": 92,
+   "shadow": 31,
+   "via": 25,
+   "ring": 136,
+   "decoration": 2,
+   "divide": 3,
+   "accent": 3
+  },
+  "byHue": {
+   "cyan": 547,
+   "emerald": 1878,
+   "red": 1764,
+   "blue": 754,
+   "orange": 257,
+   "purple": 136,
+   "violet": 1583,
+   "amber": 2139,
+   "zinc": 86,
+   "indigo": 278,
+   "rose": 352,
+   "teal": 100,
+   "sky": 239,
+   "gray": 20,
+   "slate": 53,
+   "fuchsia": 86,
+   "yellow": 36,
+   "pink": 54,
+   "lime": 17,
+   "green": 27,
+   "neutral": 3
+  },
+  "statusText": 735,
+  "statusAny": 1586,
+  "byStepTop": [
+   [
+    "text-amber-400",
+    738
+   ],
+   [
+    "text-red-400",
+    702
+   ],
+   [
+    "text-emerald-400",
+    687
+   ],
+   [
+    "bg-amber-500",
+    559
+   ],
+   [
+    "bg-emerald-500",
+    522
+   ],
+   [
+    "bg-red-500",
+    483
+   ],
+   [
+    "bg-violet-500",
+    443
+   ],
+   [
+    "border-amber-500",
+    417
+   ],
+   [
+    "text-violet-400",
+    383
+   ],
+   [
+    "border-violet-500",
+    345
+   ],
+   [
+    "border-emerald-500",
+    341
+   ],
+   [
+    "border-red-500",
+    324
+   ],
+   [
+    "text-blue-400",
+    270
+   ],
+   [
+    "bg-blue-500",
+    209
+   ],
+   [
+    "text-violet-300",
+    204
+   ],
+   [
+    "text-cyan-400",
+    189
+   ],
+   [
+    "text-amber-300",
+    176
+   ],
+   [
+    "bg-cyan-500",
+    146
+   ],
+   [
+    "border-blue-500",
+    137
+   ],
+   [
+    "text-emerald-300",
+    129
+   ],
+   [
+    "text-red-300",
+    110
+   ],
+   [
+    "bg-rose-500",
+    108
+   ],
+   [
+    "border-cyan-500",
+    107
+   ],
+   [
+    "text-rose-400",
+    105
+   ],
+   [
+    "bg-amber-400",
+    93
+   ],
+   [
+    "bg-emerald-400",
+    84
+   ],
+   [
+    "bg-red-400",
+    82
+   ],
+   [
+    "bg-orange-500",
+    81
+   ],
+   [
+    "bg-indigo-500",
+    81
+   ],
+   [
+    "text-orange-400",
+    78
+   ]
+  ],
+  "totals": {
+   "text": 4464,
+   "bg": 3331,
+   "border": 2178
+  }
+ },
+ "accentColor": {
+  "violet": 64,
+  "emerald": 28,
+  "rose": 13,
+  "amber": 24,
+  "indigo": 6,
+  "sky": 3,
+  "cyan": 3,
+  "orange": 1,
+  "blue": 4
+ },
+ "contentTone": {
+  "violet": 1,
+  "markdown default primary": 1,
+  "markdown default amber": 1,
+  "amber": 1,
+  "emerald": 1
+ },
+ "tierProps": {
+  "typo-body": {
+   "size": true,
+   "weight": true,
+   "leading": true,
+   "tracking": false,
+   "colour": false,
+   "family": false,
+   "numeric": false
+  },
+  "typo-body-lg": {
+   "size": true,
+   "weight": true,
+   "leading": true,
+   "tracking": false,
+   "colour": false,
+   "family": false,
+   "numeric": false
+  },
+  "typo-caption": {
+   "size": true,
+   "weight": true,
+   "leading": true,
+   "tracking": false,
+   "colour": false,
+   "family": false,
+   "numeric": false
+  },
+  "typo-card-label": {
+   "size": true,
+   "weight": true,
+   "leading": true,
+   "tracking": true,
+   "colour": true,
+   "family": false,
+   "numeric": false
+  },
+  "typo-code": {
+   "size": true,
+   "weight": true,
+   "leading": true,
+   "tracking": false,
+   "colour": false,
+   "family": true,
+   "numeric": false
+  },
+  "typo-data": {
+   "size": true,
+   "weight": true,
+   "leading": true,
+   "tracking": false,
+   "colour": false,
+   "family": false,
+   "numeric": true
+  },
+  "typo-data-lg": {
+   "size": true,
+   "weight": true,
+   "leading": true,
+   "tracking": false,
+   "colour": false,
+   "family": false,
+   "numeric": true
+  },
+  "typo-heading": {
+   "size": true,
+   "weight": true,
+   "leading": true,
+   "tracking": true,
+   "colour": false,
+   "family": false,
+   "numeric": false
+  },
+  "typo-heading-lg": {
+   "size": true,
+   "weight": true,
+   "leading": true,
+   "tracking": true,
+   "colour": false,
+   "family": false,
+   "numeric": false
+  },
+  "typo-hero": {
+   "size": true,
+   "weight": true,
+   "leading": true,
+   "tracking": true,
+   "colour": false,
+   "family": false,
+   "numeric": false
+  },
+  "typo-label": {
+   "size": true,
+   "weight": true,
+   "leading": true,
+   "tracking": true,
+   "colour": false,
+   "family": false,
+   "numeric": false
+  },
+  "typo-section-title": {
+   "size": true,
+   "weight": true,
+   "leading": true,
+   "tracking": true,
+   "colour": true,
+   "family": false,
+   "numeric": false
+  },
+  "typo-submodule-header": {
+   "size": true,
+   "weight": true,
+   "leading": true,
+   "tracking": true,
+   "colour": true,
+   "family": false,
+   "numeric": false
+  },
+  "typo-title": {
+   "size": true,
+   "weight": true,
+   "leading": true,
+   "tracking": true,
+   "colour": true,
+   "family": false,
+   "numeric": false
+  },
+  "typo-title-lg": {
+   "size": true,
+   "weight": true,
+   "leading": true,
+   "tracking": true,
+   "colour": true,
+   "family": false,
+   "numeric": false
+  }
+ },
+ "recolour": {
+  "typo-title": 88,
+  "typo-submodule-header": 8,
+  "typo-section-title": 48,
+  "typo-title-lg": 25,
+  "typo-card-label": 29
+ }
+}

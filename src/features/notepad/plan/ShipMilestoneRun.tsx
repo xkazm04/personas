@@ -49,7 +49,7 @@ export function ShipRunSummary({ summary, onDismiss }: {
 
       {summary.proposedAdditions.length > 0 && (
         <div className="mt-2.5">
-          <p className={`typo-caption font-medium ${PLAN_INK.athena}`}>
+          <p className={`typo-caption ${PLAN_INK.athena}`}>
             {tx(t.ship.run_proposed_title, { count: summary.proposedAdditions.length })}
           </p>
           <p className="typo-caption mb-1">{t.ship.run_proposed_hint}</p>
@@ -66,7 +66,7 @@ export function ShipRunSummary({ summary, onDismiss }: {
 
       {summary.questionsAsked.length > 0 && (
         <div className="mt-2.5">
-          <p className="typo-caption font-medium">{t.ship.run_asked_title}</p>
+          <p className="typo-caption">{t.ship.run_asked_title}</p>
           <ul className="flex flex-col gap-0.5">
             {summary.questionsAsked.map((q) => (
               <li key={q} className="typo-caption">{q}</li>

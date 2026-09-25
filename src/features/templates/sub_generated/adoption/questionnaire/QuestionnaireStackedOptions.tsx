@@ -69,11 +69,11 @@ export function QuestionnaireStackedOptions({
             }`}
           >
             <div className="flex-1 min-w-0">
-              <div className="typo-body-lg font-medium text-foreground leading-snug">
+              <div className="typo-body-lg text-foreground">
                 {opt.label}
               </div>
               {opt.sublabel && (
-                <div className="typo-body text-foreground leading-snug mt-1">
+                <div className="typo-body text-foreground mt-1">
                   {opt.sublabel}
                 </div>
               )}

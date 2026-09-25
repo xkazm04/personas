@@ -50,10 +50,10 @@ export function RunMarker({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <span className="typo-code font-medium text-foreground font-mono truncate">
+            <span className="typo-code text-foreground truncate">
               {shortRunId(group.runId)}
             </span>
-            <span className="typo-body text-violet-400/80 font-medium">
+            <span className="typo-body text-violet-400/80">
               {tx(group.memories.length === 1 ? t.pipeline.timeline_memories_one : t.pipeline.timeline_memories_other, { count: group.memories.length })}
             </span>
             {/* What this run changed vs its predecessor (full per-run sets, not the paged list) */}

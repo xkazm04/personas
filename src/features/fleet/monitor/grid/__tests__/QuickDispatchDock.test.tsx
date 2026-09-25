@@ -53,6 +53,11 @@ const storeState = {
   setPluginTab: vi.fn(),
   setDevToolsTab: vi.fn(),
   projects: [],
+  // "Run on": no paired device, so the picker renders nothing.
+  dispatchDevices: [],
+  p2pUnavailable: false,
+  remoteSessionsPinned: false,
+  loadRemoteSessions: vi.fn(async () => undefined),
 };
 
 vi.mock('@/stores/systemStore', () => ({

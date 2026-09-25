@@ -66,7 +66,7 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-1.5">
-        <span className={`typo-label font-semibold text-foreground ${compact ? 'mr-1' : 'mr-2'}`}>
+        <span className={`typo-label text-foreground ${compact ? 'mr-1' : 'mr-2'}`}>
           Rate
         </span>
         {RATING_OPTIONS.map((opt) => {
@@ -93,7 +93,7 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
           <button
             type="button"
             onClick={handleSave}
-            className="ml-1 flex items-center gap-1 px-2 py-1 rounded-card typo-caption font-medium bg-primary/15 text-primary border border-primary/20 hover:bg-primary/25 transition-colors"
+            className="ml-1 flex items-center gap-1 px-2 py-1 rounded-card typo-caption bg-primary/15 text-primary border border-primary/20 hover:bg-primary/25 transition-colors"
           >
             <Send className="w-3 h-3" />
             Save

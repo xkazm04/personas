@@ -23,7 +23,7 @@ export function AutoCredModeBanner({ mode }: AutoCredModeBannerProps) {
       {/* Active-mode chip */}
       <div className="flex items-center gap-2">
         <span
-          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-input typo-caption font-medium border ${
+          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-input typo-caption border ${
             isGuided
               ? 'bg-violet-500/15 text-violet-300 border-violet-500/25'
               : 'bg-cyan-500/15 text-cyan-300 border-cyan-500/25'
@@ -43,7 +43,7 @@ export function AutoCredModeBanner({ mode }: AutoCredModeBannerProps) {
               <span className="font-medium text-amber-400/90">{ace.guided_fallback_title}</span>{' '}
               {ace.guided_fallback_body}
             </p>
-            <p className="typo-code font-mono text-foreground">{ace.guided_fallback_hint}</p>
+            <p className="typo-code text-foreground">{ace.guided_fallback_hint}</p>
           </div>
         </div>
       )}

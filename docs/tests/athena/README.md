@@ -38,7 +38,7 @@ is at-or-above the last green run.
 ## Why this exists
 
 The capability surface in
-[`docs/features/companion/athena-usecases.md`](../../features/companion/athena-usecases.md)
+[`docs/features/companions/athena/athena-usecases.md`](../../features/companions/athena/athena-usecases.md)
 grew faster than the prompt that drives it. Concretely:
 
 - The constitution went **v7 → v18** while shipping 13 design-family ops,
@@ -324,7 +324,7 @@ should have one purpose stated in its first paragraph.
 
 ## See also
 
-- [`docs/features/companion/athena-usecases.md`](../../features/companion/athena-usecases.md) — the capability inventory this suite mirrors
-- [`docs/features/companion/README.md`](../../features/companion/README.md) — Athena architecture
+- [`docs/features/companions/athena/athena-usecases.md`](../../features/companions/athena/athena-usecases.md) — the capability inventory this suite mirrors
+- [`docs/features/companions/athena/README.md`](../../features/companions/athena/README.md) — Athena architecture
 - [`docs/development/test-automation.md`](../../development/test-automation.md) — the HTTP bridge the harness drives
 - [`docs/tests/strategy/coverage-strategy.md`](../strategy/coverage-strategy.md) — where this suite sits in the broader test pyramid

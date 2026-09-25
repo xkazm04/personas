@@ -56,7 +56,7 @@ export function CronScheduleConfig({
 
       {!editing && cronExpr ? (
         <div className="flex items-center gap-2">
-          <code className="px-2 py-0.5 bg-background/50 border border-border/30 rounded typo-code font-mono text-foreground">
+          <code className="px-2 py-0.5 bg-background/50 border border-border/30 rounded typo-code text-foreground">
             {cronExpr}
           </code>
           <button
@@ -91,13 +91,13 @@ export function CronScheduleConfig({
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder="0 0 * * *"
-              className="flex-1 px-2 py-1 bg-background/50 border border-border/30 rounded-card typo-code font-mono text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/30"
+              className="flex-1 px-2 py-1 bg-background/50 border border-border/30 rounded-card typo-code text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/30"
             />
             <button
               type="button"
               onClick={() => { onUpdate({ cronExpression: draft }); setEditing(false); }}
               disabled={!draft.trim()}
-              className="px-2 py-1 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/25 text-amber-400 rounded-card typo-body font-medium transition-colors disabled:opacity-50"
+              className="px-2 py-1 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/25 text-amber-400 rounded-card typo-body transition-colors disabled:opacity-50"
             >
               {t.common.save}
             </button>
@@ -138,7 +138,7 @@ export function ExpirationThresholdConfig({
               type="button"
               key={d}
               onClick={() => onUpdate({ thresholdDays: d })}
-              className={`px-2 py-0.5 rounded-card typo-code font-mono transition-colors ${
+              className={`px-2 py-0.5 rounded-card typo-code transition-colors ${
                 thresholdDays === d
                   ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
                   : 'bg-secondary/40 text-foreground border border-transparent hover:bg-secondary/60'

@@ -55,6 +55,7 @@
   "suggestions_title": "Заметки Athena",
   "tabs_label": "Заметки",
   "timeline_title": "Жизненный цикл",
+  "title": "Обзор целей",
   "to_goals": "Превратить в цели",
   "variant_split": "Разделённый холст",
   "variant_workbench": "Верстак",
@@ -220,6 +221,5 @@
   "desk_key_open_project": "Открыть проект",
   "desk_lane_brainstorm": "Дорожка мозгового штурма",
   "desk_lane_plan": "Дорожка плана",
-  "desk_room_back": "Стол",
-  "title": "Обзор целей"
+  "desk_room_back": "Стол"
 }

@@ -88,7 +88,7 @@ export default function FleetPage() {
   };
 
   return (
-    <div className="fleet-typescale h-full w-full flex flex-col" data-testid="fleet-page">
+    <div className="h-full w-full flex flex-col" data-testid="fleet-page">
       {/* Internal tab strip — lightweight band above the active sub-page;
           each sub-page renders its own ContentBox/Header underneath. Skills
           now live in the left drawer (opened from the grid), not a tab. */}
@@ -172,7 +172,7 @@ export function FleetPhaseBanner({ phase, summary }: { phase: string; summary: s
       />
       <ContentBody>
         <div className="border border-primary/20 rounded-modal bg-primary/5 px-4 py-3">
-          <p className="typo-caption font-medium text-primary mb-1">{phase}</p>
+          <p className="typo-caption text-primary mb-1">{phase}</p>
           <p className="text-[14px] text-foreground leading-relaxed">{summary}</p>
         </div>
       </ContentBody>

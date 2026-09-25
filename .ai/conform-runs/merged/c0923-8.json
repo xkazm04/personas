@@ -1,0 +1,260 @@
+{
+  "worker": "c0923-8",
+  "evaluatedAt": "2026-09-23",
+  "pairs": [
+    {
+      "context": "50f50f97-be0e-4a93-8f1c-c0b967cd45d0",
+      "subject": "codebase-scanning",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:102 a failed listStandards read is caught into [] yet :111 still marks standards_finding as probed, so verify.ts:111 judges every open standards finding 'cleared' on a read that never happened - a failed sensor scored as a fixed defect",
+      "techniques": [
+        { "technique": "sensor-pipeline", "verdict": "deviation", "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:102 tolerant catch returns the same [] a clean read returns and the skip never reaches the snapshot (:111 adds the origin to probedOrigins anyway); separately :178 still runs emitKpiFindings with no failure boundary, though passport emitters are now isolated (:109)" },
+        { "technique": "finding-lifecycle", "verdict": "deviation", "evidence": "src/features/plugins/dev-tools/sub_triage/findings/verify.ts:111 the 'cleared' exit depends only on probedOrigins, which sweep.ts:111 fills after a failed read, so a finding can clear without a real probe; dedup against every existing key incl. rejected (sweep.ts:277) and unprobed-means-pending (verify.ts:104) hold" },
+        { "technique": "causes-beside-the-finding-count", "verdict": "unread", "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:287 only the dropped count is reported; cause axis not assessed" }
+      ]
+    },
+    {
+      "context": "63edaec0-367e-4553-a6ee-bfd4144be305",
+      "subject": "codebase-scanning",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:564 unparseable tool stdout becomes Value::Null and parses to zero findings, and the child spawned at :113 never has its exit status read, so a crashed or misconfigured tool records 'complete' at :184 with 0 findings - a scan that could not run reads as a clean bill",
+      "techniques": [
+        { "technique": "sensor-pipeline", "verdict": "deviation", "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:184 the only terminal-status test is insert failures; a scan whose output never parsed (:564) reports 'complete', spelled like a clean scan; the log-and-continue insert discipline (:140) is still realized" },
+        { "technique": "llm-assisted-scanning", "verdict": "deviation", "evidence": "src-tauri/src/commands/infrastructure/standards_scan.rs:75 a protocol line that fails to deserialize is dropped by .ok() and never counted, and :368 errors only on timeout with zero rows, so a CLI that exits early returns Ok(0) marked complete; enum fields are clamped to allowed sets (:335)" },
+        { "technique": "finding-lifecycle", "verdict": "deviation", "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:146 dedup key is built from the title, which :615 composes with file:line, so any edit above a match refiles it as a new finding and leaves its predecessor as a phantom" },
+        { "technique": "verify-after-generate", "verdict": "conformant", "evidence": "src-tauri/src/commands/infrastructure/context_audit.rs:39 the advisory audit of the generated context map carries an unmapped-coverage floor; capped dangling findings still report the total (:24)" }
+      ]
+    },
+    {
+      "context": "0b0ee725-52a2-4656-9e13-07c5204de60e",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/cdc.rs:24 the data crate imports tauri's AppHandle/Emitter (declared at src-tauri/db/Cargo.toml:69) and emits straight to the UI at :409, so the layer everything trusts cannot build or test without the application shell above it - the upward import layering-rules replaces with an injected hook",
+      "techniques": [
+        { "technique": "layering-rules", "verdict": "deviation", "evidence": "src-tauri/db/src/cdc.rs:24 imports the UI framework into the data layer, where the same file's CdcHooks pattern already shows how to inject it instead" },
+        { "technique": "transactions-and-units-of-work", "verdict": "conformant", "evidence": "src-tauri/db/src/macros.rs:472 lab_crud update_run_status write carries the status CAS predicate, closing the read-then-write TOCTOU" },
+        { "technique": "query-construction", "verdict": "conformant", "evidence": "src-tauri/db/src/query_builder.rs:255 allowlisted ORDER BY, escape hoisted into the LIKE builder (:132)" },
+        { "technique": "row-mapping", "verdict": "conformant", "evidence": "src-tauri/db/src/macros.rs:100 row_mapper! is the single declared decode seam" }
+      ]
+    },
+    {
+      "context": "dc471d31-ae30-4ac9-b015-d51969df458d",
+      "subject": "long-form-reading-surface",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:170 the swap this effect handles is an L1 sidebar section change that replaces the whole content region - app-shell primary navigation, ground the golden path hands to app-shell (it governs chrome around one document; this context has no heading ids, contents panel, scroll spy or offset budget); the old deviation's substance was fixed in f4065579f0 (focus now moves on section change, :189, first mount guarded)",
+      "techniques": [
+        { "technique": "focus-transfer-on-in-place-navigation", "verdict": "not-applicable", "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:170 an L1 section change is route-level shell navigation, not an article swap inside a reading surface" },
+        { "technique": "anchor-id-single-assigner", "verdict": "not-applicable", "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:76 the context tracks the active product section (sidebarSection), not an address space of headings in a document" },
+        { "technique": "scroll-spy-reading-band", "verdict": "not-applicable", "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:76 no document with sections is tracked; the only position state is the active product section" },
+        { "technique": "fixed-chrome-offset-budget", "verdict": "not-applicable", "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:76 the context is the shell chrome itself; no anchored document is pinned against it here" },
+        { "technique": "server-parsed-once-reused", "verdict": "not-applicable", "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:76 no document structure is extracted or shipped in this context" }
+      ],
+      "registryProposal": "Re-pair this context to accessibility/keyboard-navigation-models and app-shell rather than long-form-reading-surface; the residual gap is real there - focus lands on the sidebar's own L2 heading (Sidebar.tsx:189), not the new content's heading, and that heading suppresses its focus indicator (Sidebar.tsx:257 focus:outline-none)."
+    },
+    {
+      "context": "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0",
+      "subject": "long-form-reading-surface",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/shared/components/layout/settings/useSectionScrollSpy.ts:35 the band top and jump clearance are a bare 12px literal that ignores the sticky jumplist pinned at the top of the same scroll container below md (SettingsScaffold.tsx:71), with scroll-mt-4 (SettingsScaffold.tsx:119) a third independent number - on narrow widths a jump lands its heading under the jumplist and the band counts hidden headings as current",
+      "techniques": [
+        { "technique": "scroll-spy-reading-band", "verdict": "deviation", "evidence": "src/features/shared/components/layout/settings/useSectionScrollSpy.ts:147 every heading's getBoundingClientRect is read on every scroll event (handler :156) - the per-heading geometry polling the technique replaces with intersection observation; the band itself is now realized (topmost-in-band :72, empty band keeps previous :91), fixing the recorded 28px-edge deviation (c0cc22b7f7)" },
+        { "technique": "fixed-chrome-offset-budget", "verdict": "deviation", "evidence": "src/features/shared/components/layout/settings/useSectionScrollSpy.ts:35 BAND_TOP_INSET=12 is shared by spy and jumpTo (:174) but omits the second pinned element, the sticky jumplist (SettingsScaffold.tsx:71); scroll-mt-4 (SettingsScaffold.tsx:119) is an independent third offset" },
+        { "technique": "anchor-id-single-assigner", "verdict": "not-applicable", "evidence": "src/features/shared/components/layout/settings/SettingsScaffold.tsx:119 section ids are author-declared (id={s.id}), not text-derived, so there is no assigner to share" },
+        { "technique": "focus-transfer-on-in-place-navigation", "verdict": "not-applicable", "evidence": "src/features/shared/components/layout/settings/SettingsScaffold.tsx:96 the rail jumps within one page (aria-current on the current entry); no document is swapped in place" },
+        { "technique": "server-parsed-once-reused", "verdict": "not-applicable", "evidence": "src/features/shared/components/layout/settings/SettingsScaffold.tsx:119 sections are client-composed React content with no preparation side that parses structure" }
+      ]
+    },
+    {
+      "context": "b88ef121-d028-4999-bf34-6e44aed99959",
+      "subject": "adoption-measurement",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/templates/sub_generated/adoption/persona-layout/personaLayoutAdoptionTypes.ts:1 prop contract of a template-instantiation wizard - 'adoption' here is one user configuring one persona from a template, not measuring a practice's spread across a population, the precondition of every technique; no uptake signal, population or ledger exists in this context",
+      "techniques": [
+        { "technique": "attribution-provenance-tiers", "verdict": "not-applicable", "evidence": "src/features/templates/sub_generated/adoption/persona-layout/personaLayoutAdoptionTypes.ts:1 wizard prop contract; no adoption signal is collected" },
+        { "technique": "adoption-distribution-bands", "verdict": "not-applicable", "evidence": "src/features/templates/sub_generated/adoption/persona-layout/personaLayoutAdoptionTypes.ts:1 no population whose uptake could be banded" },
+        { "technique": "dormancy-verdicts", "verdict": "not-applicable", "evidence": "src/features/templates/sub_generated/adoption/persona-layout/personaLayoutAdoptionTypes.ts:1 no adopter records over time" },
+        { "technique": "before-after-outcome-pairing", "verdict": "not-applicable", "evidence": "src/features/templates/sub_generated/adoption/persona-layout/personaLayoutAdoptionTypes.ts:1 no rollout outcome measured" },
+        { "technique": "mentor-learner-pairing", "verdict": "not-applicable", "evidence": "src/features/templates/sub_generated/adoption/persona-layout/personaLayoutAdoptionTypes.ts:1 single-user configuration surface" },
+        { "technique": "adoption-vs-outcome-separation", "verdict": "not-applicable", "evidence": "src/features/templates/sub_generated/adoption/persona-layout/personaLayoutAdoptionTypes.ts:1 no adoption ledger exists to separate" }
+      ],
+      "registryProposal": "The matcher pairs on the word 'adoption'; template-instantiation 'adoption' contexts should be excluded for this subject so the pair stops returning stale after every revision."
+    },
+    {
+      "context": "e76afaf6-ba3b-4341-b1ad-f444f08da8b8",
+      "subject": "adoption-measurement",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:10 summarizeAnswer formats one user's answers in a template-configuration questionnaire; nothing here measures a practice's uptake across a population, the subject's precondition",
+      "techniques": [
+        { "technique": "attribution-provenance-tiers", "verdict": "not-applicable", "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:10 answer formatting, not an adoption signal" },
+        { "technique": "adoption-distribution-bands", "verdict": "not-applicable", "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:10 no population to band" },
+        { "technique": "dormancy-verdicts", "verdict": "not-applicable", "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:10 no adopter history" },
+        { "technique": "before-after-outcome-pairing", "verdict": "not-applicable", "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:10 no rollout outcome" },
+        { "technique": "mentor-learner-pairing", "verdict": "not-applicable", "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:10 single-user interview UI" },
+        { "technique": "adoption-vs-outcome-separation", "verdict": "not-applicable", "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:10 no adoption ledger" }
+      ]
+    },
+    {
+      "context": "4560e824-e952-45a9-8aef-fe88d721952e",
+      "subject": "session-resume",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/home/sub_welcome/lib/sinceLeftBriefing.ts:35 only runs can be null - alerts are a bare array (alertHistory defaults to [] and a failed fetch leaves it [], alertSlice.ts:260) and approvals fall back to 0, so an alerts or approvals source that never loaded yields outcome 'quiet': failure-caused silence still reads as a peaceful week for 2 of 3 inputs",
+      "techniques": [
+        { "technique": "last-seen-anchors", "verdict": "conformant", "evidence": "src/features/home/sub_welcome/lib/sinceLeftBriefing.ts:145 heartbeat skips beats while document.hidden (fixed since the old verdict, 1b7f06b58d); anchor snapshotted in a lazy initializer before any beat (:185), acknowledgment advances it (:212), missing anchor reads as null/first-run (:68)" },
+        { "technique": "first-run-and-quiet-silence", "verdict": "deviation", "evidence": "src/features/home/sub_welcome/lib/sinceLeftBriefing.ts:104 the outcome is now discriminated (quiet vs not-derived, added since the old verdict) but only for runs; the alerts input (:35) cannot express 'not loaded', so not-derived cannot fire for it" },
+        { "technique": "delta-briefings", "verdict": "deviation", "evidence": "src/features/home/sub_welcome/lib/sinceLeftBriefing.ts:85 the run count comes from a 500-row sample (homeSpineSlice.ts:47 RUNS_SAMPLE_LIMIT) rendered as a plain '{count} runs' total (SinceYouLeftBriefing.tsx:35), so an away period with over 500 runs reads as exactly 500, not '500+'" }
+      ]
+    },
+    {
+      "context": "36783fec-01fa-40d5-8620-cf65ae691d27",
+      "subject": "async-ui-states",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/shared/emptyStatePrototype/types.ts:46 EmptyStateContent carries no cause input and variants are keyed by module motif (:19), not cause, so consumers branch on filtered counts - ManualReviewList.tsx:174 passes filteredReviews.length, and a filter that excludes every review shows the first-run hero with a 'create persona' action",
+      "techniques": [
+        { "technique": "empty-state-design", "verdict": "deviation", "evidence": "src/features/overview/shared/emptyStatePrototype/types.ts:46 the shared primitive is typed by scale and motif, not cause; the technique requires cause as an input, so no-match, drained-queue and first-run empties make the same first-run claim" }
+      ]
+    },
+    {
+      "context": "6c0d30e4-99b9-4580-ba02-9a526db1d639",
+      "subject": "health-checks",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_health/useHealthDigestScheduler.ts:107 the weekly notification's all-healthy branch keys on totalIssues === 0 and never reads digest.undeterminedCount (omitted from the :101 destructure), so a fleet whose sub-checks could not run is announced as all healthy - undetermined members laundered into green",
+      "techniques": [
+        { "technique": "three-state-outcomes", "verdict": "deviation", "evidence": "src/features/agents/sub_health/useHealthCheck.ts:403 the comment concedes a failed main probe becomes phase 'error' that the editor badge renders identically to never-checked; only the config-warning sub-check mints 'undetermined' (types.ts:38, useHealthCheck.ts:365), so the unverifiable state is invisible for the main probe" },
+        { "technique": "health-rollup", "verdict": "deviation", "evidence": "src/features/agents/sub_health/useHealthDigestScheduler.ts:107 the rollup summary drops the undetermined count the digest carries (types.ts:104); the only rendered summary, the notification, never shows it" },
+        { "technique": "check-scheduling", "verdict": "deviation", "evidence": "src/features/agents/sub_health/useHealthDigestScheduler.ts:94 the last-run stamp is written only after a successful digest, so a digest that crashes every time is due again on every launch - the weekly cadence collapses into retry-per-launch; corrupt-stamp heal is realized at :71 (parseLastRunMs)" },
+        { "technique": "probe-design", "verdict": "unread", "evidence": "src/features/agents/sub_health/useHealthCheck.ts:343 probe is a local DB feasibility match behind invokeWithTimeout's 90s default; proxy depth not judged" },
+        { "technique": "probe-caching", "verdict": "unread", "evidence": "src/features/agents/sub_health/useHealthCheck.ts:314 per-hook result only; whether a shared cache is warranted not judged" },
+        { "technique": "remediation-affordances", "verdict": "unread", "evidence": "src/features/agents/sub_health/types.ts:15 fix executor was deleted with the health-panel UI but proposals are still generated; not judged further" }
+      ]
+    },
+    {
+      "context": "e62cdb2d-a626-4a0b-afdf-ac3d7aada9f0",
+      "subject": "entity-lifecycle",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/core/personas.rs:2286 the blast-radius probe counts only running/queued executions while persona_executions is ON DELETE CASCADE (src-tauri/db/src/migrations/schema.rs:111), so the delete also takes every completed and failed run and the preview never names that history as a casualty",
+      "techniques": [
+        { "technique": "blast-radius-computation", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/core/personas.rs:2225 preview counts only active automations while persona_automations cascades every row (schema.rs:1059), same for executions at :2286, and the credential-link probe still swallows query errors into 0 (:2024 .unwrap_or(0)); the five main probes now propagate errors with ? and the receipt struct is realized (src-tauri/src/commands/core/personas.rs:677 DeletePersonaResult)" },
+        { "technique": "archive-restore-semantics", "verdict": "unread", "evidence": "src-tauri/src/commands/core/personas.rs:52 archive_persona exists (lifecycle move, no cascade); what archived personas still do was not enumerated" }
+      ]
+    },
+    {
+      "context": "9fff7e41-4fc5-4c31-846b-c04ca1c79757",
+      "subject": "self-healing",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/sub_incidents/components/IncidentsInbox.tsx:6 the inbox never groups and incidents are deduped per source row (src/lib/bindings/AuditIncident.ts:6 dedup_key = source_table:source_id), not per failure mode, so a hundred recurrences of one mode show as a hundred rows and nothing answers how many distinct things are wrong",
+      "techniques": [
+        { "technique": "incident-promotion", "verdict": "deviation", "evidence": "src/features/overview/sub_incidents/libs/groupIncidents.ts:5 group modes are agent|severity|source|none with no signature/kind dimension, and groupIncidents still has no caller; the loudness rule is now realized - unclassified severity takes the top rung (src/features/overview/sub_incidents/libs/incidentTaxonomy.ts:86 UNCLASSIFIED_RANK = 5)" },
+        { "technique": "failure-diagnosis", "verdict": "not-applicable", "evidence": "src/features/overview/sub_incidents/components/IncidentsInbox.tsx:1 this context is the read-side inbox of promoted incidents; diagnosis, strategy selection and rollback live in the healer, not here" }
+      ]
+    },
+    {
+      "context": "5e531c95-b6d9-46f5-a33d-d07001fee61e",
+      "subject": "data-viz",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/components/shared/KpiTile.tsx:176 shows a direction arrow for any non-zero delta and renders a measured 0% change as '--' (:250), the same mark as no comparison, fed raw percentages by computeSeriesTrendPct (src/features/overview/libs/computeTrends.ts:66) - a 0.3% sub-resolution wobble gets a red/green arrow while makeTrend in the same file (:94) calls it stable under STABLE_THRESHOLD_PCT (:20)",
+      "techniques": [
+        { "technique": "metric-identity", "verdict": "deviation", "evidence": "src/features/overview/libs/computeTrends.ts:94 the 1% stable band lives only in makeTrend; the KpiTile trend path (computeTrends.ts:66, KpiTile.tsx:176) classifies without it, forking trend direction along the resolution band; resolveMetricPercent now returns null for an empty denominator (src/features/overview/libs/metricIdentity.ts:70)" },
+        { "technique": "empty-and-degraded-chart-states", "verdict": "deviation", "evidence": "src/features/overview/components/shared/KpiTile.tsx:250 a measured 0% delta and an absent comparison render the same '--'" },
+        { "technique": "scale-and-axis-design", "verdict": "conformant", "evidence": "src/features/overview/sub_observability/components/ObservabilityDashboard.tsx:222 every sparkline caller declares its domain (percent {0,100}, others 'zero') - the recorded auto-floor defect is fixed at the callers; latent: KpiTile defaults sparkScale to 'auto' (KpiTile.tsx:173), flooring at the sample minimum (src/features/overview/libs/sparklineScale.ts:34), so an undeclared future caller inherits it" },
+        { "technique": "micro-visualizations", "verdict": "conformant", "evidence": "src/features/overview/libs/sparklineScale.ts:50 fewer than two points draws no sparkline instead of a fabricated slope" },
+        { "technique": "chart-loading-economics", "verdict": "not-applicable", "evidence": "src/features/overview/components/shared/KpiTile.tsx:116 the sparkline is hand-drawn inline SVG; there is no chart engine to lazy-load" }
+      ]
+    },
+    {
+      "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:158 instructs the fixer to drop the failing capability, and oneshot.rs:635 re-composes the test plan from that edited IR every pass, so the fixer can reach green by removing what the oracle would test (down to the zero-tools auto-pass at tool_tests.rs:275).",
+      "techniques": [
+        { "technique": "oracle-frozen-during-repair", "verdict": "deviation", "evidence": "src-tauri/src/engine/build_session/oneshot.rs:215 calls run_fix_pass inside the retry loop, then oneshot.rs:635 re-runs run_tool_tests, whose plan a fresh scratch CLI re-authors (tool_tests.rs:4) from the IR the fixer rewrote - the oracle is neither frozen nor committed red-first." },
+        { "technique": "unmeasurable-criteria", "verdict": "conformant", "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:64 STATUS_UNVERIFIED is a third outcome distinct from pass/fail; oneshot.rs:499 holds promotion when tools_unverified > 0 rather than reading it as compliance." },
+        { "technique": "self-reported-gate-inputs", "verdict": "conformant", "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:177 ClaimedCliNative - a model-authored cli_native boolean is counted unverified; only a code-owned allow-list may mint a no-call pass." }
+      ],
+      "registryProposal": "oracle-frozen-during-repair could name the case where the fixer does not touch the oracle's files but edits the input the oracle is derived from, shrinking the tested population by deleting capabilities."
+    },
+    {
+      "context": "3084d603-7cdb-41cd-bbad-8f24a8015b3e",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/lib/harness/verifier.ts:13 PERSONAS_GATES wires only typecheck/lint/build commands; the module is an autonomous Plan->Execute->Verify coding loop (orchestrator.ts:3) that owns no test suite, lane, fixture or acceptance journey, so the machinery this subject governs is absent.",
+      "techniques": [
+        { "technique": "suite-partitioning", "verdict": "not-applicable", "evidence": "src/lib/harness/verifier.ts:13 no test suite among the gates; GateType declares 'test' (types.ts:74) but no gate realizes it." },
+        { "technique": "context-starved-executor", "verdict": "not-applicable", "evidence": "src/lib/harness/orchestrator.ts:3 the executor is a code-writing agent, not an agent run as an acceptance journey against the rendered product." }
+      ]
+    },
+    {
+      "context": "1d3f934a-fae4-4cc8-a55c-a098b77b0bee",
+      "subject": "time-travel-replay",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/hooks/execution/useReplayTimeline.ts:258 still spreads line indexes evenly across the run when a log carries no timestamps, and that scrubber plays over invented time with no disclosure; the recorded-tempo path is fixed (aa44e61c7), and the standard now names this third case - 'this record does not support a timeline', never a scrubber over apportioned time",
+      "techniques": [
+        { "technique": "timeline-derivation", "verdict": "deviation", "evidence": "src/hooks/execution/useReplayTimeline.ts:258 falls back to even apportionment (index/len * totalMs) when recordedSpanMs is null, manufacturing per-line timings from one total and playing them as recorded; for timestamped logs the derivation is honest (offsets parsed at :242, silences found at :317)" },
+        { "technique": "estimate-labeling", "verdict": "deviation", "evidence": "src/features/agents/sub_executions/replay/TimelineScrubber.tsx:35 'Nothing extra is drawn' when the log has no timestamps; the per-line recorded flag (useReplayTimeline.ts:22) never reaches the UI, so apportioned timing carries no marker or provenance note before playback" },
+        { "technique": "transport-and-time-mapping", "verdict": "deviation", "evidence": "src/hooks/execution/useReplayTimeline.ts:499 auto-skip jumps the playhead over a recorded silence with no in-flow 'Xm skipped' marker - only the scrubber hatch (TimelineScrubber.tsx:138) records it, and no elapsed figure names which clock it quotes; compression is correctly an opt-in playback policy over true record time" },
+        { "technique": "accrual-overlays", "verdict": "conformant", "evidence": "src/features/agents/sub_executions/replay/ReplayCostPanel.tsx:46 running cost shown with a '~' prefix, so the apportioned accrual declares itself an estimate beside the settled total" }
+      ]
+    },
+    {
+      "context": "4bdc9d46-06f1-4eb7-98f5-f6546aa5ef6e",
+      "subject": "terminal-multiplexing",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:136 still joins the operator's text and a carriage return into one payload written to each PTY as a single chunk (:156), so a program with bracketed paste enabled can buffer the broadcast unsubmitted, while the manager's own paste path (fleetTerminalManager.ts:635) keeps typed and pasted input apart - two authorities for how input reaches a session",
+      "techniques": [
+        { "technique": "keystroke-injection", "verdict": "deviation", "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:136 builds text + '\\r' as one write rather than a paste followed by Enter as a separate keystroke, which fleetTerminalManager.ts:635 term.paste does" }
+      ]
+    },
+    {
+      "context": "03e7f46a-3f19-47b8-98a5-398efed815b4",
+      "subject": "realtime-events",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/hooks/lab/useLabEvents.ts:43 subscribes to the string literal 'lab-arena-status', absent from both src/lib/eventRegistry.ts and src-tauri/core/src/events.rs (the Rust emitter uses its own literal at src-tauri/engine/src/test_runner/modes.rs:229), so a rename on either side silently stops Lab progress updates in a way indistinguishable from an idle run",
+      "techniques": [
+        { "technique": "event-registry", "verdict": "deviation", "evidence": "src/hooks/lab/useLabEvents.ts:43 literal event name outside the registry; RunEventBinding types eventName as a bare string (src/hooks/realtime/useRunEventListener.ts:45), so nothing forces lab/test-run subscriptions through EventName (useEventBusListener.ts:14 does use EventName.EVENT_BUS)" },
+        { "technique": "subscription-lifecycle", "verdict": "conformant", "evidence": "src/hooks/realtime/createSingletonListener.ts:130 tears down the native listener when every consumer left during setup; one native listener per name fanned out to a subscriber set, cancelled flag at :185, bounded early buffer" },
+        { "technique": "coalescing-and-batching", "verdict": "conformant", "evidence": "src/hooks/realtime/createSingletonListener.ts:65 one flush per animation frame so React batches a burst into one commit; each subscriber throw contained" }
+      ]
+    },
+    {
+      "context": "1ffb5765-de47-4f01-87ec-06732a63522c",
+      "subject": "agent-chaining",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/i18n/generated/types.ts:14715 the user-facing chain_stop vocabulary, now 15 tokens, still has no success-shaped 'completed', no 'cancelled' and no 'condition_unevaluable', so an unknown condition type or missing jsonpath (src-tauri/db/src/chain.rs:1045) is recorded as predicate_unmet exactly like a chain that chose to stop; the fix belongs in the chain.rs authority, not this generated mirror",
+      "techniques": [
+        { "technique": "stop-reason-ledgers", "verdict": "deviation", "evidence": "src/i18n/generated/types.ts:14715 lists only error- and machinery-shaped stop tokens; the cross-language rule is now met (src/i18n/__tests__/chainStopReasons.parity.test.ts:16 reads the Rust authority directly, d18d6ce80), but the vocabulary still cannot tell 'stopped naturally' from 'could not evaluate'" }
+      ]
+    },
+    {
+      "context": "0a73aef0-7c50-4be1-b990-cbddad3671bd",
+      "subject": "usage-analytics",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/lib/analytics/index.ts:38 sends every section visit to the sink as its own event, and the Sentry sink ships each as a captureMessage (src/lib/sentry.ts:103), so every navigation becomes a timestamped network event beside the session summary - the per-interaction transmission the standard rules out for cost and for the behavioural trail it leaves",
+      "techniques": [
+        { "technique": "batching-and-quota", "verdict": "deviation", "evidence": "src/lib/analytics/index.ts:38 emits sink.feature() on every section change in addition to bumping the per-session counter; the summary at :58 is not the only thing that leaves the machine" },
+        { "technique": "sink-abstraction", "verdict": "deviation", "evidence": "src/lib/analytics/sink.ts:71 the sink contract includes per-event feature(), the opening the technique names for the next integration to bypass aggregation; the null sink (:86) and withheld raw sentry re-export (index.ts:184) are realized" },
+        { "technique": "activation-and-funnel-honesty", "verdict": "conformant", "evidence": "src/lib/analytics/activation.ts:141 the funnel latch is set only after conversion() is accepted and only when isSinkDelivering() (:138) - the old write-latch-before-emit defect is fixed" },
+        { "technique": "coverage-from-registries", "verdict": "conformant", "evidence": "src/lib/analytics/navCatalog.ts:60 SECTIONS derived from the navigation registry NAV_SECTIONS; summary.ts:33 reports visited/ignored against that full denominator" }
+      ]
+    }
+  ],
+  "declined": []
+}

@@ -16,7 +16,6 @@ use crate::db::repos::resources::persona_change_log as change_log_repo;
 use crate::db::repos::resources::teams as team_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
-use crate::engine;
 use crate::engine::config_merge::{self, EffectiveModelConfig};
 use crate::engine::types::ExecutionState;
 use crate::error::AppError;
@@ -67,9 +66,14 @@ pub fn restore_persona(state: State<'_, Arc<AppState>>, id: String) -> Result<Pe
 #[requires(auth)]
 pub fn bulk_delete_personas(
     state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
     ids: Vec<String>,
 ) -> Result<Vec<BulkDeleteOutcome>, AppError> {
-    repo::bulk_delete_personas(&state.db, &ids)
+    let outcomes = repo::bulk_delete_personas(&state.db, &ids)?;
+    // Same reason as the single-persona door: any of these may have been
+    // starred, and the starred count is Overseer's prerequisite.
+    crate::commands::companions::emit_status(&app, state.inner());
+    Ok(outcomes)
 }
 
 #[tauri::command]
@@ -78,17 +82,29 @@ pub fn get_persona(state: State<'_, Arc<AppState>>, id: String) -> Result<Person
     repo::get_by_id(&state.db, &id)
 }
 
-/// Star/unstar a persona. A starred persona is in the Director's coaching
-/// scope (the Director batch only reviews starred personas). Returns the new
-/// starred value.
+/// Star/unstar a persona. A starred persona is in Overseer's watch scope (his
+/// batch only reviews starred personas). Returns the new starred value.
+///
+/// Starring is a TERM OF THE COMPANIONS STATUS — it is Overseer's whole
+/// prerequisite — so the switch publishes `companions://status-changed` after
+/// the write commits. Without it, starring the first agent would leave his
+/// Setup toggle disabled and his landing column blocked until something else
+/// happened to re-read, which reads as "starring did not work".
+///
+/// Best-effort by construction: the write has already committed when the emit
+/// runs, so a failed emit costs a stale panel until the next read, never a lost
+/// star.
 #[tauri::command]
 #[requires(auth)]
 pub fn set_persona_starred(
     state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
     id: String,
     starred: bool,
 ) -> Result<bool, AppError> {
-    repo::set_starred(&state.db, &id, starred)
+    let value = repo::set_starred(&state.db, &id, starred)?;
+    crate::commands::companions::emit_status(&app, state.inner());
+    Ok(value)
 }
 
 /// Switch a whole persona on or off — the runtime gate the attention loop's
@@ -215,69 +231,10 @@ pub fn update_persona(
         pool.invalidate(&pid).await;
     });
 
-    // Auto-sync to cloud if connected (fire-and-forget).
+    // Auto-sync to cloud if connected and deployed (fire-and-forget, recorded).
     // Use the already-fetched result to avoid re-reading stale data if
     // another update races with the sync task.
-    let cloud_client = state.cloud_client.clone();
-    let db = state.db.clone();
-    let sync_id = id.clone();
-    let sync_persona = result.clone();
-    tauri::async_runtime::spawn(async move {
-        let client = match cloud_client.lock().await.clone() {
-            Some(c) => c,
-            None => return, // not connected to cloud — nothing to sync
-        };
-        // Check if there is an active deployment for this persona
-        let deployments = match client.list_deployments().await {
-            Ok(d) => d,
-            Err(_) => return,
-        };
-        let has_deployment = deployments.iter().any(|d| d.persona_id == sync_id);
-        if !has_deployment {
-            return;
-        }
-        // Use the already-updated persona snapshot; only tools need a DB read
-        let tools_list =
-            match crate::db::repos::resources::tools::get_tools_for_persona(&db, &sync_id) {
-                Ok(t) => t,
-                Err(_) => return,
-            };
-        // v1: living-agent sections not exported (responsibilities/episodes
-        // stay None — `## Core` still renders from the persona snapshot).
-        let prompt = engine::prompt::assemble_prompt(
-            &sync_persona,
-            &tools_list,
-            None,
-            None,
-            None,
-            None,
-            #[cfg(feature = "desktop")]
-            None,
-        );
-        let body = serde_json::json!({
-            "id": sync_persona.id,
-            "name": sync_persona.name,
-            "description": sync_persona.description,
-            "systemPrompt": prompt,
-            "structuredPrompt": sync_persona.structured_prompt,
-            "icon": sync_persona.icon,
-            "color": sync_persona.color,
-            "enabled": sync_persona.enabled,
-            "maxConcurrent": sync_persona.max_concurrent,
-            "timeoutMs": sync_persona.timeout_ms,
-            "modelProfile": sync_persona.model_profile,
-            "maxBudgetUsd": sync_persona.max_budget_usd,
-            "maxTurns": sync_persona.max_turns,
-            "designContext": sync_persona.design_context,
-            "homeTeamId": sync_persona.home_team_id,
-            "coreProfile": sync_persona.core_profile,
-        });
-        if let Err(e) = client.upsert_persona(&body).await {
-            tracing::warn!(persona_id = %sync_id, error = %e, "Background cloud sync failed");
-        } else {
-            tracing::info!(persona_id = %sync_id, "Persona auto-synced to cloud after update");
-        }
-    });
+    crate::cloud::persona_projection::spawn_sync_if_deployed(&state, &id, Some(result.clone()));
 
     Ok(result)
 }
@@ -337,65 +294,9 @@ pub fn update_persona_parameters(
         pool.invalidate(&pid).await;
     });
 
-    // Auto-sync to cloud if connected (fire-and-forget).
+    // Auto-sync to cloud if connected and deployed (fire-and-forget, recorded).
     // Use the already-fetched result to avoid re-reading stale data.
-    let cloud_client = state.cloud_client.clone();
-    let db = state.db.clone();
-    let sync_id = id.clone();
-    let sync_persona = result.clone();
-    tauri::async_runtime::spawn(async move {
-        let client = match cloud_client.lock().await.clone() {
-            Some(c) => c,
-            None => return,
-        };
-        let deployments = match client.list_deployments().await {
-            Ok(d) => d,
-            Err(_) => return,
-        };
-        if !deployments.iter().any(|d| d.persona_id == sync_id) {
-            return;
-        }
-        let tools_list =
-            match crate::db::repos::resources::tools::get_tools_for_persona(&db, &sync_id) {
-                Ok(t) => t,
-                Err(_) => return,
-            };
-        // v1: living-agent sections not exported (responsibilities/episodes
-        // stay None — `## Core` still renders from the persona snapshot).
-        let prompt = engine::prompt::assemble_prompt(
-            &sync_persona,
-            &tools_list,
-            None,
-            None,
-            None,
-            None,
-            #[cfg(feature = "desktop")]
-            None,
-        );
-        let body = serde_json::json!({
-            "id": sync_persona.id,
-            "name": sync_persona.name,
-            "description": sync_persona.description,
-            "systemPrompt": prompt,
-            "structuredPrompt": sync_persona.structured_prompt,
-            "icon": sync_persona.icon,
-            "color": sync_persona.color,
-            "enabled": sync_persona.enabled,
-            "maxConcurrent": sync_persona.max_concurrent,
-            "timeoutMs": sync_persona.timeout_ms,
-            "modelProfile": sync_persona.model_profile,
-            "maxBudgetUsd": sync_persona.max_budget_usd,
-            "maxTurns": sync_persona.max_turns,
-            "designContext": sync_persona.design_context,
-            "homeTeamId": sync_persona.home_team_id,
-            "coreProfile": sync_persona.core_profile,
-        });
-        if let Err(e) = client.upsert_persona(&body).await {
-            tracing::warn!(persona_id = %sync_id, error = %e, "Background cloud sync failed after parameter update");
-        } else {
-            tracing::info!(persona_id = %sync_id, "Persona auto-synced to cloud after parameter update");
-        }
-    });
+    crate::cloud::persona_projection::spawn_sync_if_deployed(&state, &id, Some(result.clone()));
 
     Ok(result)
 }
@@ -733,6 +634,16 @@ pub async fn delete_persona(
     // Clean up the deleting marker regardless of outcome
     state.engine.unmark_deleting(&id).await;
 
+    // A deleted persona may have been STARRED, and the starred count is
+    // Overseer's whole prerequisite: deleting the last one takes him from
+    // eligible to blocked. Published here rather than inside the two-phase
+    // inner fn so it runs on every outcome that actually removed a row, and
+    // after the marker is cleared. Best-effort, like every other publish of
+    // this event.
+    if result.is_ok() {
+        crate::commands::companions::emit_status(&app, state.inner());
+    }
+
     result
 }
 
@@ -893,6 +804,9 @@ async fn delete_persona_inner(
         // captured in Phase 1a before the row was removed.
         if let Some((link, name)) = &kp_link {
             crate::engine::kp_reporter::push_lifecycle_event(link, "retired", id, name);
+            // …and the kp key that hired it loses its per-persona execute
+            // grant (bridge doc §10.8). Best-effort; logs its own failures.
+            personas_engine::kp_execute_grant::revoke_on_retire(&state.db, &state.user_db, id);
         }
     }
 

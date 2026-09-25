@@ -94,7 +94,7 @@ export function KpiTable({
                 <KpiBarRating kpi={kpi} variant={bar} width={density === 'spacious' ? 130 : 96} />
                 {pct != null && <span className="typo-caption tabular-nums w-8">{pct}%</span>}
               </span>
-              <span className="typo-data tabular-nums text-right" style={{ color: STATUS_COLOR[st] }}>
+              <span className="typo-data text-right" style={{ color: STATUS_COLOR[st] }}>
                 {kpi.current ?? '—'}
                 <span className="typo-caption"> / {kpi.target}{kpi.unit}</span>
               </span>

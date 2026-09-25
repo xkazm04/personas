@@ -164,5 +164,13 @@
   "zapier_message": "Tidak dapat menjangkau webhook Zapier.",
   "zapier_suggestion": "Verifikasi URL webhook di pengaturan integrasi Zapier Anda.",
   "oauth_account_mismatch_message": "Anda masuk dengan akun yang berbeda dari akun yang terikat pada kredensial ini.",
-  "oauth_account_mismatch_suggestion": "Masuk dengan akun yang ditampilkan pada kredensial, atau tambahkan kredensial baru untuk akun lainnya."
+  "oauth_account_mismatch_suggestion": "Masuk dengan akun yang ditampilkan pada kredensial, atau tambahkan kredensial baru untuk akun lainnya.",
+  "project_not_found_message": "Proyek itu tidak ada di perangkat lain.",
+  "project_not_found_suggestion": "Clone atau daftarkan proyek di sana dengan remote git yang sama, lalu kirim lagi.",
+  "remote_command_refused_message": "Perangkat lain menolak perintah itu.",
+  "remote_command_refused_suggestion": "Sesi mungkin telah berakhir di sana. Segarkan Monitor dan coba lagi.",
+  "remote_dispatch_failed_message": "Sesi tidak dapat dikirim ke perangkat lain.",
+  "remote_dispatch_failed_suggestion": "Periksa apakah perangkat masih dipasangkan dan coba lagi, atau jalankan di mesin ini.",
+  "remote_peer_offline_message": "Perangkat lain sedang tidak dapat dijangkau.",
+  "remote_peer_offline_suggestion": "Buka Personas di perangkat itu dan pastikan keduanya berada di jaringan yang sama. Dispatch menunggu di outbox sampai perangkat itu aktif."
 }

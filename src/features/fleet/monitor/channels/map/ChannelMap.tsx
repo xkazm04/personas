@@ -148,7 +148,7 @@ export function ChannelMap({
         <div className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
           <Orbit className="w-3.5 h-3.5 text-foreground" />
         </div>
-        <span className="typo-body font-semibold text-foreground">{t.monitor.channels_layout_map}</span>
+        <span className="typo-body text-foreground">{t.monitor.channels_layout_map}</span>
         {layoutControl && <span className="ml-auto flex items-center order-last">{layoutControl}</span>}
 
         {/* Team switcher — one constellation at a time. */}
@@ -162,7 +162,7 @@ export function ChannelMap({
                 onClick={() => setActiveId(tm.teamId)}
                 aria-pressed={on}
                 className={`flex-shrink-0 px-2 py-0.5 rounded-full border typo-caption transition-colors ${
-                  on ? 'border-transparent text-foreground font-medium' : 'border-border text-foreground opacity-55 hover:opacity-90'
+                  on ? 'border-transparent text-foreground' : 'border-border text-foreground opacity-55 hover:opacity-90'
                 }`}
                 style={on ? { backgroundColor: `${tm.teamColor}26`, boxShadow: `inset 0 0 0 1px ${tm.teamColor}66` } : undefined}
               >
@@ -339,11 +339,11 @@ export function ChannelMap({
             </div>
             <div className="absolute top-2 right-3 z-10 font-mono text-right pointer-events-none">
               <p className="typo-label text-foreground opacity-45">{t.monitor.map_members}</p>
-              <p className="typo-data tabular-nums text-foreground opacity-85">{nodes.length}</p>
+              <p className="typo-data text-foreground opacity-85">{nodes.length}</p>
             </div>
             <div className="absolute bottom-2 right-3 z-10 font-mono text-right pointer-events-none flex items-center gap-2">
               <span className="typo-label text-foreground opacity-45">{t.monitor.presence_working}</span>
-              <span className={`typo-data tabular-nums ${workingCount > 0 ? 'text-status-warning' : 'text-foreground opacity-85'}`}>
+              <span className={`typo-data ${workingCount > 0 ? 'text-status-warning' : 'text-foreground opacity-85'}`}>
                 {workingCount}
               </span>
               <span

@@ -7,9 +7,9 @@ laws:
   - gate-sees-target
 shared_with: []
 evidence:
-  - src/features/plugins/companion/useChatScroll.ts            # 80px pin band, disengage on scroll, stable maybeAutoScroll, containerReady-gated listener attach
-  - src/features/plugins/companion/chat/athenaChatSession.ts   # ready-gated open-at-latest, double-rAF measurement, per-conversation keying, instant jump
-  - src/features/plugins/companion/chat/AthenaChatJumpToLatest.tsx  # the way-back pill (fades, not pops, to survive scroll wobble)
+  - src/features/companions/athena/useChatScroll.ts            # 80px pin band, disengage on scroll, stable maybeAutoScroll, containerReady-gated listener attach
+  - src/features/companions/athena/chat/athenaChatSession.ts   # ready-gated open-at-latest, double-rAF measurement, per-conversation keying, instant jump
+  - src/features/companions/athena/chat/AthenaChatJumpToLatest.tsx  # the way-back pill (fades, not pops, to survive scroll wobble)
 ---
 
 # Transcript scroll

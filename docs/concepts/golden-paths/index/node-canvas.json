@@ -42,6 +42,14 @@
       ],
       "resolved": false
     },
+    "AthenaRevertControl.tsx": {"count":1,"sections":[7],"lines":["40"],"contexts":["`NoteEditor.tsx:98`. `AthenaPanel.tsx:117` and `AthenaRevertControl.tsx:40` in the same directory use"],"resolved":false},
+    "CanvasShell.tsx": {
+      "count": 16,
+      "sections": [0,3,5,6,7,8,12],
+      "lines": ["245-317","878","427-470","436","912-914","340-345","386-389","319-332"],
+      "contexts": ["`CanvasShell.tsx:245-317` is the tree's answer to the 2D form: cull to the visible world rect plus"],
+      "resolved": false
+    },
     "ConnectionEdge.tsx": {"count":2,"sections":[6,12],"contexts":["later, and its `ConnectionEdge.tsx` / `PersonaNode.tsx` land on 2026-02-19 in a commit titled"],"resolved":false},
     "CortexMap.tsx": {
       "count": 3,
@@ -73,6 +81,8 @@
       ],
       "resolved": false
     },
+    "GroupLayer.tsx": {"count":4,"sections":[5,7,8],"lines":["224","82"],"contexts":["`sub_mastermind/lib/`** and named `GroupLayer.tsx` as the one missing a travel threshold. **None of"],"resolved":false},
+    "LinkEditor.tsx": {"count":1,"sections":[7],"lines":["71"],"contexts":["`GroupLayer.tsx:224` (`onPointerDown` → `onDelete(g.id)` on an 8 px circle), `LinkEditor.tsx:71`,"],"resolved":false},
     "MatrixTierAggregate.tsx": {
       "count": 1,
       "sections": [6],
@@ -82,6 +92,7 @@
       ],
       "resolved": false
     },
+    "NoteEditor.tsx": {"count":1,"sections":[7],"lines":["98"],"contexts":["`NoteEditor.tsx:98`. `AthenaPanel.tsx:117` and `AthenaRevertControl.tsx:40` in the same directory use"],"resolved":false},
     "OverviewLayout.tsx": {
       "count": 2,
       "sections": [6,12],
@@ -112,6 +123,7 @@
       ],
       "resolved": false
     },
+    "companion/BrainViewer.tsx": {"count":1,"sections":[7],"contexts":["`companion/BrainViewer.tsx` (`grep -c \"<svg\"` = **0** in both — stat tiles and lists named \"graph\");"],"resolved":false},
     "cortex-data.ts": {
       "count": 2,
       "sections": [6,12],
@@ -122,10 +134,17 @@
       "resolved": false
     },
     "eventProcessor.ts": {"count":1,"sections":[6],"lines":["30"],"contexts":["(`eventProcessor.ts:30` *\"Ported from desktop engine/background.rs::event_bus_tick()\"*), reads"],"resolved":false},
+    "farIslandBody.test.tsx": {"count":1,"sections":[6],"lines":["20"],"contexts":["(`farIslandBody.test.tsx:20`, `midLanes.test.tsx:153`). Four layout functions"],"resolved":false},
     "graphEdges.test.ts": {"count":1,"sections":[6],"contexts":["`canvasActionStore.test.ts`, `mapModel.test.ts` and `graphEdges.test.ts` cover layout math, keyboard"],"resolved":false},
+    "hex.ts": {"count":3,"sections":[0,7],"lines":["25"],"contexts":["harness — `tidyLayout.ts` and `hex.ts` were not transcribed at all but **compiled by the repo's own"],"resolved":false},
     "incremental.rs": {"count":1,"sections":[7],"lines":["947-961"],"contexts":["duplicate check is application-level inside a transaction, and `incremental.rs:947-961` had to"],"resolved":false},
+    "kbNav.test.ts": {"count":1,"sections":[6],"contexts":["`kbNav.test.ts`, `layoutStore.test.ts`, `layoutAuthorship.test.ts`, `persistence.test.ts`,"],"resolved":false},
+    "kbNav.ts": {"count":3,"sections":[0,5,6],"contexts":["`kbNav.ts` is real spatial navigation — a directional cone with a perpendicular weight, falling back"],"resolved":false},
+    "layoutAuthorship.test.ts": {"count":1,"sections":[6],"contexts":["`kbNav.test.ts`, `layoutStore.test.ts`, `layoutAuthorship.test.ts`, `persistence.test.ts`,"],"resolved":false},
+    "midLanes.test.tsx": {"count":1,"sections":[6],"lines":["153"],"contexts":["(`farIslandBody.test.tsx:20`, `midLanes.test.tsx:153`). Four layout functions"],"resolved":false},
     "orchestrator/src/index.ts": {"count":1,"sections":[6],"lines":["48"],"contexts":["`data/personas.db` directly (`orchestrator/src/index.ts:48`), and has no frontend at all."],"resolved":false},
     "package.json": {"count":3,"sections":[0,3,6],"lines":["106"],"contexts":["| **D15** — `@dnd-kit/core`, declared at `package.json:106` | imported under `src/` | **0** |"]},
+    "persistence.test.ts": {"count":1,"sections":[6],"contexts":["`kbNav.test.ts`, `layoutStore.test.ts`, `layoutAuthorship.test.ts`, `persistence.test.ts`,"],"resolved":false},
     "playgroundValidation.ts": {
       "count": 1,
       "sections": [6],
@@ -222,13 +241,6 @@
       "resolvedFrom": "basename",
       "verbatim": "PersonasPage.tsx"
     },
-    "src/features/plugins/companion/BrainViewer.tsx": {
-      "count": 1,
-      "sections": [7],
-      "contexts": ["`companion/BrainViewer.tsx` (`grep -c \"<svg\"` = **0** in both — stat tiles and lists named \"graph\");"],
-      "resolvedFrom": "suffix",
-      "verbatim": "companion/BrainViewer.tsx"
-    },
     "src/features/plugins/dev-tools/sub_projects/TeamGraphPreview.tsx": {
       "count": 5,
       "sections": [0,5,6,7],
@@ -261,26 +273,7 @@
       "resolvedFrom": "basename",
       "verbatim": "canvasActionStore.test.ts"
     },
-    "src/features/teams/sub_mastermind/__tests__/farIslandBody.test.tsx": {"count":1,"sections":[6],"lines":["20"],"contexts":["(`farIslandBody.test.tsx:20`, `midLanes.test.tsx:153`). Four layout functions"],"resolvedFrom":"basename","verbatim":"farIslandBody.test.tsx"},
-    "src/features/teams/sub_mastermind/__tests__/kbNav.test.ts": {"count":1,"sections":[6],"contexts":["`kbNav.test.ts`, `layoutStore.test.ts`, `layoutAuthorship.test.ts`, `persistence.test.ts`,"],"resolvedFrom":"basename","verbatim":"kbNav.test.ts"},
-    "src/features/teams/sub_mastermind/__tests__/layoutAuthorship.test.ts": {"count":1,"sections":[6],"contexts":["`kbNav.test.ts`, `layoutStore.test.ts`, `layoutAuthorship.test.ts`, `persistence.test.ts`,"],"resolvedFrom":"basename","verbatim":"layoutAuthorship.test.ts"},
     "src/features/teams/sub_mastermind/__tests__/layoutStore.test.ts": {"count":1,"sections":[6],"contexts":["`kbNav.test.ts`, `layoutStore.test.ts`, `layoutAuthorship.test.ts`, `persistence.test.ts`,"],"resolvedFrom":"basename","verbatim":"layoutStore.test.ts"},
-    "src/features/teams/sub_mastermind/__tests__/midLanes.test.tsx": {"count":1,"sections":[6],"lines":["153"],"contexts":["(`farIslandBody.test.tsx:20`, `midLanes.test.tsx:153`). Four layout functions"],"resolvedFrom":"basename","verbatim":"midLanes.test.tsx"},
-    "src/features/teams/sub_mastermind/__tests__/persistence.test.ts": {"count":1,"sections":[6],"contexts":["`kbNav.test.ts`, `layoutStore.test.ts`, `layoutAuthorship.test.ts`, `persistence.test.ts`,"],"resolvedFrom":"basename","verbatim":"persistence.test.ts"},
-    "src/features/teams/sub_mastermind/__tests__/tidyLayout.test.ts": {
-      "count": 1,
-      "sections": [6],
-      "contexts": ["in `src/` that simulates a pointer event on a canvas, and it tests the *camera*. `tidyLayout.test.ts`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "tidyLayout.test.ts"
-    },
-    "src/features/teams/sub_mastermind/__tests__/useCanvasCamera.test.ts": {
-      "count": 1,
-      "sections": [6],
-      "contexts": ["**Tests: nine files, and zero of them touch a mutation.** `useCanvasCamera.test.ts` is the only test"],
-      "resolvedFrom": "basename",
-      "verbatim": "useCanvasCamera.test.ts"
-    },
     "src/features/teams/sub_mastermind/lib/": {"count":1,"sections":[6],"contexts":["**The ONE file to copy: `src/features/teams/sub_mastermind/lib/` — as a directory, not a file.** Its"],"resolved":false,"isDir":true},
     "src/features/teams/sub_mastermind/lib/AthenaPanel.tsx": {
       "count": 1,
@@ -290,46 +283,6 @@
       "resolvedFrom": "basename",
       "verbatim": "AthenaPanel.tsx"
     },
-    "src/features/teams/sub_mastermind/lib/AthenaRevertControl.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["40"],
-      "contexts": ["`NoteEditor.tsx:98`. `AthenaPanel.tsx:117` and `AthenaRevertControl.tsx:40` in the same directory use"],
-      "resolvedFrom": "basename",
-      "verbatim": "AthenaRevertControl.tsx"
-    },
-    "src/features/teams/sub_mastermind/lib/CanvasShell.tsx": {
-      "count": 17,
-      "sections": [0,3,5,6,7,8,12],
-      "lines": ["245-317","878","427-470","436","912-914","340-345","386-389","319-332"],
-      "contexts": ["`CanvasShell.tsx:245-317` is the tree's answer to the 2D form: cull to the visible world rect plus"],
-      "resolvedFrom": "basename",
-      "verbatim": "CanvasShell.tsx"
-    },
-    "src/features/teams/sub_mastermind/lib/GroupLayer.tsx": {
-      "count": 4,
-      "sections": [5,7,8],
-      "lines": ["224","82"],
-      "contexts": ["`sub_mastermind/lib/`** and named `GroupLayer.tsx` as the one missing a travel threshold. **None of"],
-      "resolvedFrom": "basename",
-      "verbatim": "GroupLayer.tsx"
-    },
-    "src/features/teams/sub_mastermind/lib/LinkEditor.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["71"],
-      "contexts": ["`GroupLayer.tsx:224` (`onPointerDown` → `onDelete(g.id)` on an 8 px circle), `LinkEditor.tsx:71`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "LinkEditor.tsx"
-    },
-    "src/features/teams/sub_mastermind/lib/NoteEditor.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["98"],
-      "contexts": ["`NoteEditor.tsx:98`. `AthenaPanel.tsx:117` and `AthenaRevertControl.tsx:40` in the same directory use"],
-      "resolvedFrom": "basename",
-      "verbatim": "NoteEditor.tsx"
-    },
     "src/features/teams/sub_mastermind/lib/deriveScene.ts": {
       "count": 4,
       "sections": [0,5,7],
@@ -338,22 +291,6 @@
       "resolvedFrom": "basename",
       "verbatim": "deriveScene.ts"
     },
-    "src/features/teams/sub_mastermind/lib/hex.ts": {
-      "count": 3,
-      "sections": [0,7],
-      "lines": ["25"],
-      "contexts": ["harness — `tidyLayout.ts` and `hex.ts` were not transcribed at all but **compiled by the repo's own"],
-      "resolvedFrom": "basename",
-      "verbatim": "hex.ts"
-    },
-    "src/features/teams/sub_mastermind/lib/kbNav.ts": {
-      "count": 5,
-      "sections": [0,3,5,6],
-      "lines": ["20-27"],
-      "contexts": ["`kbNav.ts` is real spatial navigation — a directional cone with a perpendicular weight, falling back"],
-      "resolvedFrom": "basename",
-      "verbatim": "kbNav.ts"
-    },
     "src/features/teams/sub_mastermind/lib/layoutStore.ts": {
       "count": 3,
       "sections": [0,4],
@@ -361,32 +298,6 @@
       "contexts": ["Athena (`layoutStore.ts:1-31`, and it is the best-documented store in the tree). **This leaf owns"],
       "resolvedFrom": "basename",
       "verbatim": "layoutStore.ts"
-    },
-    "src/features/teams/sub_mastermind/lib/tidyLayout.ts": {
-      "count": 5,
-      "sections": [0,3,6],
-      "lines": ["129"],
-      "contexts": ["harness — `tidyLayout.ts` and `hex.ts` were not transcribed at all but **compiled by the repo's own"],
-      "resolvedFrom": "basename",
-      "verbatim": "tidyLayout.ts"
-    },
-    "src/features/teams/sub_mastermind/lib/useCanvasCamera.ts": {
-      "count": 9,
-      "sections": [0,3,6,7,9,12],
-      "lines": ["65","59","152"],
-      "contexts": ["None is in `shared/`. **None is persisted** — `useCanvasCamera.ts:65` starts every mount at"],
-      "resolvedFrom": "basename",
-      "verbatim": "useCanvasCamera.ts"
-    },
-    "src/features/teams/sub_mastermind/lib/useIslandDrag.ts": {
-      "count": 3,
-      "sections": [3,6,7],
-      "lines": ["28","20"],
-      "contexts": [
-        "| **`teams/sub_mastermind/lib/useIslandDrag.ts:28`** | `onCommit(slug, x, y)` — **a move expressed as identity plus world coordinates, with no index and no neighbour anywhere in the signature.** The…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "teams/sub_mastermind/lib/useIslandDrag.ts"
     },
     "src/features/teams/sub_teamWorkspace/BlueprintPreview.tsx": {
       "count": 1,
@@ -505,6 +416,15 @@
       "verbatim": "teamSlice.ts"
     },
     "sub_knowledge/KnowledgeGraphDashboard.tsx": {"count":1,"sections":[7],"contexts":["`sub_knowledge/KnowledgeGraphDashboard.tsx` (a virtualized list);"],"resolved":false},
+    "sub_mastermind/lib/CanvasShell.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["111"],
+      "contexts": [
+        "| 1 | **Mastermind** `sub_mastermind/lib/CanvasShell.tsx:111` | passports + `deriveEdges` / `useLayoutLinks` | spiral `hex.ts:25` **+ stored doc** | **yes** `useIslandDrag.ts:20` | **yes** `:340` | l…"
+      ],
+      "resolved": false
+    },
     "sub_patterns/graph/PatternGraphHost.tsx": {
       "count": 1,
       "sections": [7],
@@ -520,6 +440,42 @@
     "teamConstants.tsx": {"count":3,"sections":[0,7],"lines":["15-16","16"],"contexts":["`teamConstants.tsx:15-16` — are history. The §12.1 finding that this repo's canvas is"],"resolved":false},
     "teams.rs": {"count":1,"sections":[12],"lines":["505-624"],"contexts":["door worth copying is Rust (`teams.rs:505-624`); the compiler that gives an edge meaning is Rust"],"resolved":false},
     "teams/sub_canvas/libs/teamConstants.tsx": {"count":2,"sections":[6,12],"lines":["15"],"contexts":["`teams/sub_canvas/libs/teamConstants.tsx:15`."],"resolved":false},
+    "teams/sub_mastermind/lib/kbNav.ts": {
+      "count": 2,
+      "sections": [3,6],
+      "lines": ["20-27"],
+      "contexts": [
+        "| **`teams/sub_mastermind/lib/kbNav.ts`** | **Spatial keyboard navigation** — a directional cone with `PERP_WEIGHT`, falling back to nearest so the cursor can never be trapped. Paired with the `aria-…"
+      ],
+      "resolved": false
+    },
+    "teams/sub_mastermind/lib/tidyLayout.ts": {
+      "count": 1,
+      "sections": [3],
+      "contexts": [
+        "| **`teams/sub_mastermind/lib/tidyLayout.ts`** | **A one-shot, deterministic, relation-aware arrange** — bounded spring-electrical pass, bounded overlap resolution, no `Date`, no `Math.random`, slug-…"
+      ],
+      "resolved": false
+    },
+    "teams/sub_mastermind/lib/useCanvasCamera.ts": {
+      "count": 1,
+      "sections": [3],
+      "contexts": [
+        "| **`teams/sub_mastermind/lib/useCanvasCamera.ts`** | **The camera done right**: pointer-capture pan, zoom-to-cursor accumulated to one commit per animation frame (`:200-204`), a quantised zoom band…"
+      ],
+      "resolved": false
+    },
+    "teams/sub_mastermind/lib/useIslandDrag.ts": {
+      "count": 1,
+      "sections": [3],
+      "lines": ["28"],
+      "contexts": [
+        "| **`teams/sub_mastermind/lib/useIslandDrag.ts:28`** | `onCommit(slug, x, y)` — **a move expressed as identity plus world coordinates, with no index and no neighbour anywhere in the signature.** The…"
+      ],
+      "resolved": false
+    },
+    "tidyLayout.test.ts": {"count":1,"sections":[6],"contexts":["in `src/` that simulates a pointer event on a canvas, and it tests the *camera*. `tidyLayout.test.ts`,"],"resolved":false},
+    "tidyLayout.ts": {"count":4,"sections":[0,6],"lines":["129"],"contexts":["harness — `tidyLayout.ts` and `hex.ts` were not transcribed at all but **compiled by the repo's own"],"resolved":false},
     "use-flow-composer.ts": {
       "count": 2,
       "sections": [6],
@@ -538,6 +494,8 @@
       ],
       "resolved": false
     },
+    "useCanvasCamera.test.ts": {"count":1,"sections":[6],"contexts":["**Tests: nine files, and zero of them touch a mutation.** `useCanvasCamera.test.ts` is the only test"],"resolved":false},
+    "useCanvasCamera.ts": {"count":8,"sections":[0,6,7,9,12],"lines":["65","59","152"],"contexts":["None is in `shared/`. **None is persisted** — `useCanvasCamera.ts:65` starts every mount at"],"resolved":false},
     "useGraphCanvas.ts": {
       "count": 5,
       "sections": [7,9,12],
@@ -546,6 +504,7 @@
         "| 2 | **Pattern Nexus** `sub_patterns/graph/PatternGraphHost.tsx:47` | prop + `listPatternEdges` IPC `:124` | computed `PatternGraphNexus.tsx:105` | no | no | no | **yes** `useGraphCanvas.ts:51` | si…"
       ],
       "resolved": false
-    }
+    },
+    "useIslandDrag.ts": {"count":2,"sections":[6,7],"lines":["28","20"],"contexts":["(`useIslandDrag.ts:28`) are, individually, the best implementations of those five problems in six"],"resolved":false}
   }
 }

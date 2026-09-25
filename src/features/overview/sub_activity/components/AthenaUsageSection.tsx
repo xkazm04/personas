@@ -148,7 +148,7 @@ export const AthenaUsageSection = memo(function AthenaUsageSection({ fleetCost }
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <span className="typo-heading text-foreground truncate">{actionLabel(row.origin, row.triggerKind)}</span>
-                          <span className="typo-code font-mono text-violet-400">{fmtCost(row.costUsd)}</span>
+                          <span className="typo-code text-violet-400">{fmtCost(row.costUsd)}</span>
                         </div>
                         <div className="h-1.5 bg-secondary/40 rounded-full overflow-hidden">
                           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length], opacity: 0.7 }} />

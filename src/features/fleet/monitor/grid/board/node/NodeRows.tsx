@@ -34,7 +34,7 @@ export function NodeRows({
           hovering a symbol below shows that symbol's tip alone. */}
       <span className="block h-5 min-w-0" data-testid="fleet-node-title-row">
         <Tooltip content={tooltip}>
-          <span className={`block truncate typo-body leading-5 text-foreground ${titleTone}`} data-testid="fleet-node-title">{title}</span>
+          <span className={`block truncate typo-body text-foreground ${titleTone}`} data-testid="fleet-node-title">{title}</span>
         </Tooltip>
       </span>
       <span aria-hidden className="block h-px flex-shrink-0 bg-foreground/10" data-testid="fleet-node-divider" />

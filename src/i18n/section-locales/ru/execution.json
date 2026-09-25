@@ -32,5 +32,9 @@
   "tool_count_other": "Инструментов: {count}",
   "trust": "Доверие",
   "unpin_mini_player": "Открепить мини-плеер",
-  "waiting_for_output": "Ожидание вывода…"
+  "waiting_for_output": "Ожидание вывода…",
+  "bg_failed": "Ошибок: {count}",
+  "bg_open": "Открыть запуск",
+  "bg_running": "Выполняется: {count}",
+  "bg_stop": "Остановить запуск"
 }

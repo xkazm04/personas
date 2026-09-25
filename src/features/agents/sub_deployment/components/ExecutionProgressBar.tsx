@@ -99,7 +99,7 @@ export function ExecutionProgressBar({ executionId }: Props) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Icon className={`w-4 h-4 ${stageColor} ${isAnimated ? 'animate-pulse' : ''}`} />
-          <span className={`typo-body font-medium ${stageColor}`}>
+          <span className={`typo-body ${stageColor}`}>
             {stageLabel}
             {progress.activeTool && (
               <span className="text-foreground font-normal">: {progress.activeTool}</span>

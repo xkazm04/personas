@@ -61,8 +61,14 @@ export default function DraftingTitleBlock({
   const { shouldAnimate } = useMotion();
   const goalsCell = showGoals && (goals.length > 0 || goalsEmpty !== null);
   const notesCell = notes !== null && notes !== undefined && notes !== '';
+  // The block draws itself in, then grows smoothly as cells arrive: each cell
+  // eases in and the ones already there glide to their new place.
   return (
-    <div
+    <motion.div
+      layout={shouldAnimate}
+      initial={shouldAnimate ? { clipPath: 'inset(0 0 100% 0)', opacity: 0.4 } : false}
+      animate={{ clipPath: 'inset(0 0 0% 0)', opacity: 1 }}
+      transition={{ duration: 0.7, ease: 'easeOut', layout: { duration: 0.45, ease: 'easeOut' } }}
       className="relative flex h-full min-h-0 flex-col"
       style={{ border: '1px solid var(--ink)', background: 'color-mix(in srgb, var(--paper) 92%, transparent)' }}
     >
@@ -162,7 +168,7 @@ export default function DraftingTitleBlock({
           </motion.span>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }
 
@@ -194,13 +200,18 @@ function Lettered({ text }: { text: string }) {
 }
 
 function Cell({ label, children, dashed = false }: { label: string; children: ReactNode; dashed?: boolean }) {
+  const { shouldAnimate } = useMotion();
   return (
-    <div
+    <motion.div
+      layout={shouldAnimate ? 'position' : false}
+      initial={shouldAnimate ? { opacity: 0, y: 8 } : false}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: 'easeOut', layout: { duration: 0.45, ease: 'easeOut' } }}
       className="flex min-h-0 min-w-0 flex-col gap-1 overflow-hidden px-3 py-2"
       style={{ border: `1px ${dashed ? 'dashed' : 'solid'} var(--ink-faint)` }}
     >
       <span style={{ ...LETTERING, color: 'var(--ink)' }}>{label}</span>
       {children}
-    </div>
+    </motion.div>
   );
 }

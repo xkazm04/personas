@@ -32,5 +32,9 @@
   "tool_count_other": "{count} टूल्स",
   "trust": "विश्वास",
   "unpin_mini_player": "मिनी-प्लेयर अनपिन करें",
-  "waiting_for_output": "आउटपुट की प्रतीक्षा…"
+  "waiting_for_output": "आउटपुट की प्रतीक्षा…",
+  "bg_failed": "{count} विफल",
+  "bg_open": "रन खोलें",
+  "bg_running": "{count} चल रहे हैं",
+  "bg_stop": "रन रोकें"
 }

@@ -287,5 +287,8 @@
   "verifying_bundle": "Bundle wird verifiziert…",
   "verifying_enclave": "Enklave wird verifiziert…",
   "view_details": "Details anzeigen",
-  "your_identity": "Ihre Identität"
+  "your_identity": "Ihre Identität",
+  "job_kind_fleet_session": "Fleet-Sitzung",
+  "job_kind_instruction": "Anweisung",
+  "job_receipt_title": "Zurückgegebene Arbeit"
 }

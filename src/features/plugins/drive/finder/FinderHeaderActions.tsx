@@ -29,7 +29,7 @@ export function FinderHeaderActions({ drive, onRequestDelete }: Props) {
           className="flex items-center gap-0.5 pl-2.5 pr-0.5 py-0.5 rounded-full bg-primary/15 border border-primary/30"
           data-testid="finder-selection-pill"
         >
-          <span className="typo-title tabular-nums text-foreground mr-1">
+          <span className="typo-title tabular-nums mr-1">
             {tx(f.items_selected_n, { count })}
           </span>
           <Button variant="ghost" size="xs" icon={<Copy className={ic} />} onClick={drive.copySelection}>

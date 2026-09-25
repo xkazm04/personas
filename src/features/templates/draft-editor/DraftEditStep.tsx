@@ -255,7 +255,7 @@ export function DraftEditStep({
       {/* Adjustment request panel (hidden when a dedicated tab handles it) */}
       {!hideAdjustmentPanel && (
         <div className="border-t border-primary/10 pt-4 space-y-2 flex-shrink-0">
-          <label className="typo-heading text-foreground uppercase tracking-wider flex items-center gap-1">
+          <label className="typo-heading text-foreground uppercase flex items-center gap-1">
             <Sparkles className="w-3 h-3" />
             {t.shared.draft_editor.request_ai_adjustments}
           </label>

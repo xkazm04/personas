@@ -16,7 +16,6 @@ import { createMemorySlice } from "./slices/overview/memorySlice";
 import { createCronAgentsSlice } from "./slices/overview/cronAgentsSlice";
 import { createAlertSlice } from "./slices/overview/alertSlice";
 import { createPersonaHealthSlice } from "./slices/overview/personaHealthSlice";
-import { createCertificationSlice } from "./slices/overview/certificationSlice";
 import { createProcessActivitySlice } from "./slices/processActivitySlice";
 import { createHomeSpineSlice } from "./slices/overview/homeSpineSlice";
 
@@ -31,7 +30,6 @@ export const useOverviewStore = create<OverviewStore>()(
     ...createCronAgentsSlice(...a),
     ...createAlertSlice(...a),
     ...createPersonaHealthSlice(...a),
-    ...createCertificationSlice(...a),
     ...createProcessActivitySlice(...a),
     ...createHomeSpineSlice(...a),
   }),

@@ -39,7 +39,7 @@
  * choosing the rung: `docs/concepts/golden-paths/hmr-safe-singletons.md`.
  */
 import { Terminal } from '@xterm/xterm';
-import type { IDisposable, ITheme } from '@xterm/xterm';
+import type { IDisposable, ITerminalOptions, ITheme } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -138,6 +138,24 @@ const LIGHT_THEME: ITheme = {
 
 function themeFor(theme: FleetResolvedTheme): ITheme {
   return theme === 'light' ? LIGHT_THEME : DARK_THEME;
+}
+
+/**
+ * The xterm options every fleet terminal is built with: font, size, theme,
+ * scrollback. Exported so a terminal this manager does NOT own - the Monitor's
+ * read-only mirror of a session running on a paired device - looks exactly
+ * like a local pane instead of growing a second terminal look.
+ */
+export function fleetTerminalOptions(): ITerminalOptions {
+  return {
+    fontFamily: FONT_FAMILY,
+    fontSize: effectiveFontSize(),
+    lineHeight: 1.2,
+    cursorBlink: true,
+    scrollback: 5000,
+    theme: themeFor(currentConfig.theme),
+    allowProposedApi: true,
+  };
 }
 
 /** One managed terminal — the durable resource keyed by session id. */
@@ -629,6 +647,41 @@ function pushResize(m: ManagedTerminal): void {
   resizeSession(m.sessionId, cols, rows).catch(silentCatch('fleetTerminal:resize'));
 }
 
+/**
+ * Ask the child to repaint a whole frame by wiggling the PTY width one column
+ * and back.
+ *
+ * A cursor-addressed TUI (Claude Code's prompt, an AskUserQuestion menu) draws
+ * INCREMENTALLY: once its frame is up it only rewrites what changed. A pane that
+ * hydrates from an empty ring - a session whose earlier output was never
+ * buffered, or one sitting idle on a prompt - therefore stays black until the
+ * child happens to print again, which for a session waiting on the operator is
+ * never. A resize is the one signal every TUI answers with a full redraw
+ * (SIGWINCH; ConPTY's equivalent on Windows), and a same-size resize is a no-op
+ * on both, hence the one-column wiggle. It deliberately bypasses `pushResize`'s
+ * de-dupe and leaves `lastCols`/`lastRows` alone: the grid ends where it began.
+ */
+function nudgeRepaint(m: ManagedTerminal): void {
+  const { cols, rows } = m.term;
+  if (cols < 2 || rows < 1) return;
+  const back = () => resizeSession(m.sessionId, cols, rows).catch(silentCatch('fleetTerminal:repaint'));
+  resizeSession(m.sessionId, cols - 1, rows)
+    .then(() => { setTimeout(back, 60); })
+    .catch(silentCatch('fleetTerminal:repaint'));
+}
+
+/**
+ * Redraw an attached session's frame on demand (the pane's "Redraw" affordance
+ * and any caller that knows the screen is stale). No-op for a session that is
+ * not attached - a parked terminal is not subscribed, so its repaint would land
+ * in the backend ring unseen and be replayed on the next attach anyway.
+ */
+export function redrawTerminal(sessionId: string): void {
+  const m = registry.get(sessionId);
+  if (!m || !m.attached) return;
+  nudgeRepaint(m);
+}
+
 function scheduleFit(m: ManagedTerminal): void {
   if (!m.attached) return;
   if (m.rafId !== null) cancelAnimationFrame(m.rafId);
@@ -721,15 +774,7 @@ function getOrCreate(sessionId: string): ManagedTerminal {
   const existing = registry.get(sessionId);
   if (existing) return existing;
 
-  const term = new Terminal({
-    fontFamily: FONT_FAMILY,
-    fontSize: effectiveFontSize(),
-    lineHeight: 1.2,
-    cursorBlink: true,
-    scrollback: 5000,
-    theme: themeFor(currentConfig.theme),
-    allowProposedApi: true,
-  });
+  const term = new Terminal(fleetTerminalOptions());
 
   const fit = new FitAddon();
   term.loadAddon(fit);
@@ -974,6 +1019,11 @@ function completeHydration(m: ManagedTerminal, gen: number): void {
       m.pendingLive = [];
       m.hydrating = false;
       for (const chunk of queued) writeChunk(m, chunk);
+      // Nothing buffered and nothing arrived while subscribing: the child has
+      // not painted into this ring (see `nudgeRepaint`). Ask for one frame now,
+      // after the snapshot and the queue have landed, so the redraw streams in
+      // as live output on the subscription that was just opened.
+      if (!snapshot && queued.length === 0) nudgeRepaint(m);
     })
     .catch((e) => {
       // Subscribe failed (session gone, etc.) — stop hydrating so any future

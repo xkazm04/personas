@@ -42,7 +42,7 @@ export function TemplateCategoryPills({
           <span
             key={pill.key}
             title={pill.isUnknown ? `Unmapped category: ${pill.key}` : pill.label}
-            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border typo-caption leading-none ${
+            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border typo-caption ${
               pill.isUnknown
                 ? 'bg-status-warning/10 border-status-warning/30 text-status-warning'
                 : 'bg-foreground/[0.04] border-border text-foreground'
@@ -56,7 +56,7 @@ export function TemplateCategoryPills({
       })}
       {overflow > 0 && (
         <span
-          className="inline-flex items-center px-1.5 py-0.5 rounded border border-border bg-foreground/[0.03] typo-caption text-foreground font-medium"
+          className="inline-flex items-center px-1.5 py-0.5 rounded border border-border bg-foreground/[0.03] typo-caption text-foreground"
           title={tags
             .slice(maxVisible)
             .map((p) => p.label)

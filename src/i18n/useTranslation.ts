@@ -15,6 +15,7 @@ import {
 import { sectionsForRoute, useActiveI18nSections } from './routeSections';
 import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
+import { idlePrefetch } from '@/lib/idlePrefetch';
 
 export type { Translations };
 
@@ -177,32 +178,32 @@ export async function getEnglishTranslationsAsync(): Promise<Translations> {
   return getEnglishTranslations();
 }
 
-// Kick off loading every non-core English section as soon as this module is
-// first evaluated — i.e. at app boot, since useTranslation.ts is eagerly
-// reachable from the app shell. This is what makes it safe for `en.ts`'s
-// ~48 module-init consumers (Zustand slices, modelCatalog, connectorRoles, …)
-// to keep reading `en.section.key` synchronously even though most sections
-// are no longer eagerly bundled: every one of those consumers touches `en.x`
-// from inside a function invoked later (a store action, a render, a
-// formatter call), never at pure module-top-level, so by the time any of
-// them actually run, this background load — fetching ~44 small local JSON
-// chunks, no network involved — has almost always already finished. Fired
-// immediately rather than deferred to true browser idle, since correctness
-// here depends on winning a race against user interaction, not on being
-// polite to a busy main thread.
+// Background-load every non-core English section, one idle slice after this
+// module is first evaluated (at app boot: useTranslation.ts is eagerly
+// reachable from the app shell).
 //
-// Residual risk, not closed by this: a pathologically fast synchronous
-// `en.section.key` read (via the `en` proxy in en.ts) for a NON-core section,
-// occurring before this promise settles, sees `undefined` once rather than
-// the real string — it does not throw (englishSections.ts returns
-// `undefined`, and property access on that is only unsafe one level up), but
-// it also has no re-render to self-heal on, unlike the React render path
-// below. No such site was found across en.ts's consumers (see the code
-// review that shipped this change), but it isn't statically provable from
-// this file alone. Flagged for a live smoke check.
-void preloadSectionsAsync(
-  'en',
-  ALL_I18N_SECTIONS.filter((section) => !isCoreSection(section)),
+// WHY IDLE AND NOT IMMEDIATE. Firing at module evaluation issued ~44 chunk
+// requests BEFORE main.tsx's pre-mount gate asked for the current route's
+// sections, so the sections first paint actually waits on were queued
+// behind all of them (the loader dedupes the gate onto the already-issued
+// promises, which then compete with ~40 others for the transport and the
+// main thread's evaluate step). Yielding one idle slice puts the gate's requests first.
+// The deadline is short on purpose: this is deferred only to yield priority,
+// not because it can wait.
+//
+// WHAT STILL HOLDS. The `en` shim's ~19 synchronous consumers read only CORE
+// sections (en.ts header; `EN_TS_SYNC_SECTIONS` in
+// scripts/i18n/split-locales.mjs), which are eagerly bundled and never wait on
+// this load. React paths self-heal through the listener broadcast in
+// `loadSection`; `getActiveTranslations()` degrades to the section's shape
+// (blank, never a throw). The window this widens is one idle slice (bounded by
+// BACKGROUND_EN_IDLE_TIMEOUT_MS), and only an unaudited `en.<non-core>` read
+// inside it would notice: in DEV that throws loudly by design (en.ts), which is
+// the signal that the section belongs in `EN_TS_SYNC_SECTIONS`.
+const BACKGROUND_EN_IDLE_TIMEOUT_MS = 1000;
+idlePrefetch(
+  [() => preloadSectionsAsync('en', ALL_I18N_SECTIONS.filter((section) => !isCoreSection(section)))],
+  { idleTimeoutMs: BACKGROUND_EN_IDLE_TIMEOUT_MS },
 );
 
 /**

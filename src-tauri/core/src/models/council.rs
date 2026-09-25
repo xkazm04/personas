@@ -272,6 +272,15 @@ pub struct CouncilRun {
     /// JSON array of strings.
     pub must_address_json: String,
     pub summary: String,
+    /// True when this run's summary is, character for character, the SUBJECT'S
+    /// own description rather than anything the council concluded. Computed at
+    /// read time (never stored): the ingest door substituted the description
+    /// for an empty summary until 2026-09-22, and rows written before that
+    /// still carry it. Runs supersede and are never rewritten, so the truth is
+    /// exposed rather than repaired - a surface presenting `summary` as the
+    /// verdict should say so when this is set. Only a `use_case` subject can
+    /// ever set it; an architecture subject stores no description to compare.
+    pub summary_is_subject_fallback: bool,
     pub run_dir: String,
     pub started_at: Option<String>,
     pub finished_at: Option<String>,

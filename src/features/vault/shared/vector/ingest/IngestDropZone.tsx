@@ -107,7 +107,7 @@ export function IngestDropZone({ kbId, onIngestStarted, disabled = false, childr
             <div className="w-12 h-12 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
               <Upload className="w-6 h-6 text-violet-400" />
             </div>
-            <p className="typo-body font-medium text-violet-300">{disabled ? sh.ingest_in_progress : sh.drop_to_ingest}</p>
+            <p className="typo-body text-violet-300">{disabled ? sh.ingest_in_progress : sh.drop_to_ingest}</p>
             {!disabled && <p className="typo-caption text-foreground">{sh.drop_supported}</p>}
           </div>
         </div>

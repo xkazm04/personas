@@ -98,6 +98,20 @@ const JOB_WORKER_INTERVAL: Duration = Duration::from_secs(3);
 #[tauri::command]
 pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result<String, AppError> {
     require_auth_sync(&state)?;
+
+    // Athena's master switch (Companions > Athena > Setup). Refused rather than
+    // silently no-oped: this call is what mints her disk layout, her system
+    // conversations and three background workers, and a caller that believes it
+    // succeeded would show an initialised Athena that is not running. The
+    // refusal is typed so the one caller (`AthenaFooterIcon`) can tell "switched
+    // off" from "init failed" — though in practice the footer icon is unmounted
+    // while she is off, so nothing should reach this.
+    if !crate::commands::companions::athena_enabled(&state.db) {
+        return Err(AppError::Validation(
+            "Athena is switched off: switch her on in Companions > Athena > Setup".into(),
+        ));
+    }
+
     let root = disk::ensure_initialized(&state.db)?;
 
     // Multi-conversation: make sure the always-present system threads
@@ -133,6 +147,13 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
                 // job-worker loop alive across a panicking tick instead of
                 // silently dropping the task and stalling the queue.
                 let tick_result = AssertUnwindSafe(async {
+                    // Athena's master switch, re-read EVERY tick (never cached
+                    // at spawn) so switching her off stops the queue within one
+                    // poll interval instead of at the next app start. Queued
+                    // rows are left alone — they resume when she comes back.
+                    if !crate::commands::companions::athena_enabled(&cred_pool) {
+                        return Ok(());
+                    }
                     #[cfg(feature = "ml")]
                     {
                         crate::companion::jobs::worker_tick(
@@ -358,6 +379,18 @@ pub fn start_proactive_scheduler(state: &Arc<AppState>, app: &AppHandle) {
                 // engine::subscription::run_single's panic guard. The trailing
                 // interval sleep prevents tight-looping on a persistent panic.
                 let tick_result = AssertUnwindSafe(async {
+                    // Athena's master switch (Companions > Athena > Setup),
+                    // re-read EVERY tick and never cached at spawn: the loop
+                    // starts at boot and must keep running, so the flip has to
+                    // be observed here or it would only take effect at the next
+                    // app start. This one gate covers everything the tick
+                    // drives — the nudge pipeline, the daily rollup, weekly
+                    // profile synthesis, Night Shift (`night_shift::tick` is
+                    // called from inside `run_proactive_tick`), the three fleet
+                    // reassess passes, execution review and message triage.
+                    if !crate::commands::companions::athena_enabled(&sys_db) {
+                        return Ok(());
+                    }
                     #[cfg(feature = "desktop")]
                     let nudge_res =
                         run_proactive_tick(&pool, &app_handle, Some(&ambient_ctx), Some(&rule_engine)).await;

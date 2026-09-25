@@ -31,7 +31,7 @@ export function BlueprintPreview({ blueprint, onRoleChange, onRemoveMember }: {
   return (
     <div className="space-y-3">
       {cleanDescription && (
-        <p className="typo-caption text-foreground leading-relaxed">{cleanDescription}</p>
+        <p className="typo-caption text-foreground">{cleanDescription}</p>
       )}
 
       {pattern && (
@@ -63,10 +63,10 @@ export function BlueprintPreview({ blueprint, onRoleChange, onRemoveMember }: {
                 // field it should just commit the edit, not create the team.
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); e.currentTarget.blur(); } }}
                 aria-label={t.pipeline.blueprint_role_label}
-                className="w-28 typo-code text-foreground bg-secondary/50 border border-transparent hover:border-primary/20 focus:border-indigo-500/40 px-1.5 py-0.5 rounded font-mono flex-shrink-0 text-right focus-visible:outline-none transition-colors"
+                className="w-28 typo-code text-foreground bg-secondary/50 border border-transparent hover:border-primary/20 focus:border-indigo-500/40 px-1.5 py-0.5 rounded flex-shrink-0 text-right focus-visible:outline-none transition-colors"
               />
             ) : (
-              <span className="typo-code text-foreground bg-secondary/50 px-1.5 py-0.5 rounded font-mono flex-shrink-0">
+              <span className="typo-code text-foreground bg-secondary/50 px-1.5 py-0.5 rounded flex-shrink-0">
                 {member.role}
               </span>
             )}

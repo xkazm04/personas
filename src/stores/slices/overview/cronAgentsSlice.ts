@@ -15,7 +15,7 @@ export interface CronAgentsSlice {
 export const createCronAgentsSlice: StateCreator<OverviewStore, [], [], CronAgentsSlice> = (set) => {
   // Only the latest in-flight `fetchCronAgents` call is allowed to write its
   // result to state — see createLatestWins() for why. Same shape as
-  // `memorySlice.fetchMemories` / `certificationSlice.loadEvalRunDetail`.
+  // `memorySlice.fetchMemories`.
   const latestWins = createLatestWins();
 
   return {
