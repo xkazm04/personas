@@ -576,6 +576,11 @@ into the hire's problem.
 > nowhere in the repo. Do not read the fix as "we found the `?`". The fix is that
 > a connector the hire never requested has no business being in the IR at all, on
 > any of those paths.
+>
+> Update 2026-09-25: `run_scripted_connector_tests` is gone and scripted
+> connector tests are now the default (`tool_tests.rs`, "Strategy"). An error out
+> of `run_healthcheck` (the OAuth resolver included) is no longer reported as a
+> verdict at all: that connector falls back to the LLM test plan.
 
 So `constrain_agent_ir` now trims connectors by the same rule. A connector
 survives when **either**:

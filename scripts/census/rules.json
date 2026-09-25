@@ -3670,6 +3670,10 @@
         {
           "path": "src-tauri/src/engine/runner/credentials.rs",
           "reason": "its only match is seed_credential(), a fixture helper inside #[cfg(test)] mod tests; the file's production half writes no credential"
+        },
+        {
+          "path": "src-tauri/src/engine/build_session/tool_tests.rs",
+          "reason": "its only match is seed_api_key(), a fixture helper inside #[cfg(test)] mod tests that seeds the vault key the scripted connector-test runs send to a local mock API; the file's production half reads and probes credentials but writes none"
         }
       ],
       "baseline": {

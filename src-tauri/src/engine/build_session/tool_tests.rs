@@ -1,14 +1,21 @@
-//! `run_tool_tests` — LLM-driven test runner used right before promote.
+//! `run_tool_tests` — the connector test runner used right before promote.
 //!
 //! The build flow hands this module an `AgentIr` and a set of resolved
-//! credentials; the module spawns a scratch Claude CLI that composes curl
-//! commands for each connector-backed tool, invokes them against real APIs,
-//! and returns a summary the UI renders as the test-result panel.
+//! credentials. Every connector that can be checked without a model is
+//! checked by its own declared healthcheck, in parallel lanes; only what
+//! cannot be scripted goes to a scratch Claude CLI that composes curl
+//! commands, which are then invoked against real APIs. The module returns a
+//! report (and a plain-language summary) the UI renders as the test-result
+//! panel. See "Strategy" below for the routing table.
 //!
 //! Pure side-effect-free execution against the draft — no DB writes, no
 //! persona events fired. The promote pipeline happens in a separate command
 //! once the user approves the test results.
 
+use std::collections::{HashMap, HashSet};
+use std::time::Duration;
+
+use futures_util::future::BoxFuture;
 use tauri::Emitter;
 
 use crate::db::DbPool;
@@ -218,19 +225,84 @@ fn unverified_reason(tool_name: &str, connector: Option<&str>, reason: &str) -> 
 }
 
 // =============================================================================
-// run_tool_tests -- LLM-driven real API testing for build drafts
+// Strategy: scripted first, the LLM only for what cannot be scripted
+// =============================================================================
+//
+// Until 2026-09-25 every test ran three serial steps: a Sonnet call composed a
+// curl plan (~50 s), each curl ran one after another, then a Haiku call wrote
+// the summary (~50 s). A parallel scripted path existed but only behind
+// `PERSONAS_SCRIPTED_TOOL_TESTS=1`, and it was not safe to turn on as it stood:
+//
+//   * it counted an `Unverifiable` healthcheck (a connector with no probe at
+//     all, which `HealthcheckResult::unverifiable` reports as `success: true`)
+//     as `passed`: the exact false green the decision table above removes;
+//   * any connector without a uniquely bound vault credential, INCLUDING
+//     platform connectors (`personas_messages`) and ZeroConfig / GlobalProbe
+//     ones, came back `credential_missing`: a false red;
+//   * it looked only at `required_connectors` and dropped every tool;
+//   * `connectors_resolved` was a list of strings where the frontend
+//     (`TestReportModal`'s ConnectorHandshakeCard) reads `{name, has_credential}`;
+//   * it emitted no `BUILD_TEST_TOOL_RESULT` events and wrote no `summary`;
+//   * it had no per-test timeout of its own.
+//
+// What runs now, per subject (see `plan_scripted_tests`):
+//
+//   | subject                                              | how it is decided                |
+//   |------------------------------------------------------|----------------------------------|
+//   | platform built-in connector / tool (code allow-list) | `passed`, "available at runtime" |
+//   | infrastructure conduit tool (`http_request`, …)      | `passed`, as the no-plan fallback|
+//   | connector uniquely bound to a vault credential       | its declared healthcheck, 3 lanes|
+//   | Credential connector, no vault type matches at all   | `credential_missing`             |
+//   | tool backed by a connector listed above              | covered by that connector's row  |
+//   | anything else, OR a probe that could not run         | the LLM plan, for that subset    |
+//
+// "Could not run" is: no healthcheck of any kind (`Unverifiable`), an error
+// before a verdict (no connector definition, decrypt/OAuth failure), or a
+// panicking lane. A probe that RAN and failed (401, 429, 5xx, unreachable,
+// timeout) is a real verdict and is reported, never retried through the LLM,
+// so no subject is ever tested twice.
+//
+// `PERSONAS_SCRIPTED_TOOL_TESTS=0` (or `false` / `off` / `no`) forces the old
+// all-LLM path; that path is the same code with every subject routed to the
+// LLM, so its report is unchanged.
+
+/// Env override. Unset or any other value → scripted-first (the default).
+const SCRIPTED_TOOL_TESTS_ENV: &str = "PERSONAS_SCRIPTED_TOOL_TESTS";
+
+/// Concurrent healthcheck lanes. Same budget as the vault's bulk sweep
+/// (`HEALTHCHECK_SWEEP_CONCURRENCY`), for the same reason: probes that share
+/// an API host must not trip that provider's rate limit.
+pub(super) const SCRIPTED_TEST_LANES: usize = 3;
+
+/// Ceiling for one connector's scripted check. The healthcheck's own HTTP
+/// client gives up at 10 s (30 s for allow-private connectors); this also
+/// bounds the OAuth refresh and CLI probes that can run before the request.
+pub(super) const SCRIPTED_TEST_TIMEOUT: Duration = Duration::from_secs(20);
+
+/// Shared tail of every "counted but not called" pass preview. The
+/// deterministic summary keys on it, so the wording must not drift apart.
+const AVAILABLE_AT_RUNTIME: &str = "available at runtime, not executed in this test";
+
+/// `true` unless the override explicitly turns scripted tests off.
+pub(super) fn scripted_tool_tests_enabled(raw: Option<&str>) -> bool {
+    !matches!(
+        raw.map(|s| s.trim().to_ascii_lowercase()).as_deref(),
+        Some("0" | "false" | "off" | "no")
+    )
+}
+
+// =============================================================================
+// run_tool_tests -- real API testing for build drafts
 // =============================================================================
 
-/// Test an agent draft by having the LLM compose test curl commands for each
-/// tool, then executing them against real APIs with resolved credentials.
+/// Test an agent draft against real APIs with the user's resolved credentials.
 ///
 /// Flow:
-/// 1. Resolve credentials for the agent's connectors → get env var names
-/// 2. Spawn a CLI process with a test-specific prompt containing the agent_ir
-///    tools and available credential env var names
-/// 3. CLI outputs a `test_plan` JSON with curl commands per tool
-/// 4. Backend executes each curl command with real credential values
-/// 5. Emits per-tool result events and returns aggregate report
+/// 1. Resolve credentials for the agent's connectors → env var names + values
+/// 2. Script every subject that can be scripted (see the table above): run
+///    each bound connector's declared healthcheck in parallel lanes
+/// 3. For the rest only, spawn a CLI that writes a curl `test_plan`, and run it
+/// 4. Emit per-tool result events and return the aggregate report
 pub async fn run_tool_tests(
     pool: &DbPool,
     app: &tauri::AppHandle,
@@ -249,7 +321,7 @@ pub async fn run_tool_tests(
     // name, treat per-UC hints as `AgentIrTool::Simple(name)` so they
     // flow through `tool_def_from_ir` like any other tool.
     use crate::db::models::agent_ir::{AgentIrTool, AgentIrUseCase};
-    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut seen: HashSet<String> = HashSet::new();
     let mut tools: Vec<AgentIrTool> = Vec::new();
     for t in &agent_ir.tools {
         let name = t.name().to_string();
@@ -397,33 +469,94 @@ pub async fn run_tool_tests(
         ctx
     };
 
-    // Phase 4 — scripted deterministic connector tool-tests (env-gated:
-    // PERSONAS_SCRIPTED_TOOL_TESTS=1). Instead of the two LLM calls below (a
-    // ~50s plan-generation + a ~50s summary), run each bound connector's
-    // DECLARED healthcheck directly, in parallel via run_lanes — faster, cheaper,
-    // non-flaky, and semantically the correct read-only test. Falls through to
-    // the LLM path when disabled, so the default is untouched.
-    // NOTE: win-verification is deferred to a connector fixture (web-research-desk
-    // with Airtable/Notion) — native-only builds have no connectors to script.
-    if std::env::var("PERSONAS_SCRIPTED_TOOL_TESTS")
-        .ok()
-        .as_deref()
-        == Some("1")
-    {
-        return run_scripted_connector_tests(pool, agent_ir).await;
-    }
+    let matcher = CredentialMatcher::new(&env_vars, &hints, all_vault_types.iter());
+    let scripted =
+        scripted_tool_tests_enabled(std::env::var(SCRIPTED_TOOL_TESTS_ENV).ok().as_deref());
 
-    // Step 2: Build test prompt for the CLI
-    let tools_json = serde_json::to_string_pretty(&tools).unwrap_or_default();
-    // The connector list is what actually needs credentials — generic tools
-    // like `http_request` are conduits. Pass both so the CLI can generate
-    // one test entry per connector regardless of how many tools the persona
-    // declares.
-    let connectors_json = serde_json::to_string_pretty(&agent_ir.required_connectors)
-        .unwrap_or_else(|_| "[]".to_string());
-    let test_prompt = build_test_prompt(&tools_json, &connectors_json, &cred_context);
+    // Production seams. The orchestrator below never touches the CLI or the
+    // AppHandle directly, which is what lets its tests drive it end to end.
+    let compose_pool = pool.clone();
+    let compose_persona = persona_id.to_string();
+    let compose_plan =
+        move |test_prompt: String| -> BoxFuture<'static, Result<Vec<serde_json::Value>, AppError>> {
+            let pool = compose_pool.clone();
+            let persona_id = compose_persona.clone();
+            Box::pin(
+                async move { compose_test_plan_via_cli(&pool, &persona_id, test_prompt).await },
+            )
+        };
+    let summary_pool = pool.clone();
+    let summary_persona = persona_id.to_string();
+    let summary_agent = persona_name.to_string();
+    let write_summary = move |results_json: String,
+                              c: SummaryCounts|
+          -> BoxFuture<'static, Result<String, AppError>> {
+        let pool = summary_pool.clone();
+        let persona_id = summary_persona.clone();
+        let agent = summary_agent.clone();
+        Box::pin(async move {
+            generate_test_summary(
+                &pool,
+                &persona_id,
+                &results_json,
+                &agent,
+                c.passed,
+                c.failed,
+                c.skipped,
+                c.unverified,
+            )
+            .await
+        })
+    };
+    let emit_app = app.clone();
+    let emit_session = session_id.to_string();
+    let emit = move |r: &tool_runner::ToolTestResult, tested: usize, total: usize| {
+        let _ = emit_app.emit(
+            event_name::BUILD_TEST_TOOL_RESULT,
+            serde_json::json!({
+                "session_id": emit_session,
+                "tool_name": r.tool_name,
+                "status": r.status,
+                "http_status": r.http_status,
+                "latency_ms": r.latency_ms,
+                "error": r.error,
+                "connector": r.connector,
+                "tested": tested,
+                "total": total,
+            }),
+        );
+    };
 
-    // Step 3: Spawn CLI and get test plan
+    run_resolved_tests(
+        pool,
+        &ResolvedTestContext {
+            session_id,
+            tools: &tools,
+            required_connectors: &agent_ir.required_connectors,
+            cred_context: &cred_context,
+            env_vars: &env_vars,
+            matcher: &matcher,
+        },
+        &TestSeams {
+            compose_plan: &compose_plan,
+            write_summary: &write_summary,
+            emit: &emit,
+        },
+        TestStrategy {
+            scripted,
+            lanes: SCRIPTED_TEST_LANES,
+            per_test_timeout: SCRIPTED_TEST_TIMEOUT,
+        },
+    )
+    .await
+}
+
+/// Spawn the plan-composition CLI and parse its `test_plan`.
+async fn compose_test_plan_via_cli(
+    pool: &DbPool,
+    persona_id: &str,
+    test_prompt: String,
+) -> Result<Vec<serde_json::Value>, AppError> {
     let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
     cli_args.args.push(TEST_PLAN_MODEL.to_string());
@@ -467,190 +600,412 @@ pub async fn run_tool_tests(
     let _ = driver.finish().await;
 
     // Parse test_plan from CLI output (may be wrapped in stream-json envelope)
-    let test_plan = extract_test_plan(&raw_output);
+    Ok(extract_test_plan(&raw_output))
+}
 
-    // Build a set of resolved credential connector names for validation
-    let resolved_cred_names: std::collections::HashSet<String> = env_vars
-        .iter()
-        .filter_map(|(k, _)| {
+// =============================================================================
+// The orchestrator (no AppHandle, no CLI: both arrive as seams)
+// =============================================================================
+
+/// Composes a `test_plan` from a prompt. Production: the Sonnet CLI.
+pub(super) type ComposePlanFn =
+    dyn Fn(String) -> BoxFuture<'static, Result<Vec<serde_json::Value>, AppError>> + Send + Sync;
+/// Writes the plain-language report. Production: the Haiku CLI.
+pub(super) type WriteSummaryFn =
+    dyn Fn(String, SummaryCounts) -> BoxFuture<'static, Result<String, AppError>> + Send + Sync;
+/// Reports one finished row: `(result, tested_so_far, expected_total)`.
+/// Production: a `BUILD_TEST_TOOL_RESULT` event.
+pub(super) type EmitFn = dyn Fn(&tool_runner::ToolTestResult, usize, usize) + Send + Sync;
+
+pub(super) struct TestSeams<'a> {
+    pub compose_plan: &'a ComposePlanFn,
+    pub write_summary: &'a WriteSummaryFn,
+    pub emit: &'a EmitFn,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(super) struct TestStrategy {
+    /// `false` = the old path: every subject goes to the LLM plan.
+    pub scripted: bool,
+    pub lanes: usize,
+    pub per_test_timeout: Duration,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) struct SummaryCounts {
+    pub passed: usize,
+    pub failed: usize,
+    pub skipped: usize,
+    pub unverified: usize,
+}
+
+pub(super) struct ResolvedTestContext<'a> {
+    pub session_id: &'a str,
+    pub tools: &'a [crate::db::models::agent_ir::AgentIrTool],
+    pub required_connectors: &'a [crate::db::models::agent_ir::AgentIrConnector],
+    pub cred_context: &'a str,
+    pub env_vars: &'a [(String, String)],
+    pub matcher: &'a CredentialMatcher,
+}
+
+/// The fuzzy "does the vault plausibly hold a credential for this connector"
+/// match the report has always used for `connectors_resolved` and for the
+/// no-plan fallback. Extracted unchanged so the scripted path decides
+/// `credential_missing` by the SAME rule the LLM path's fallback does.
+pub(super) struct CredentialMatcher {
+    resolved_cred_names: HashSet<String>,
+    hints_lower: Vec<String>,
+    vault_types_lower: HashSet<String>,
+}
+
+impl CredentialMatcher {
+    pub(super) fn new<I, S>(env_vars: &[(String, String)], hints: &[String], vault_types: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str>,
+    {
+        Self {
             // Env var names are like NOTION_API_KEY → extract prefix "notion"
-            k.split('_').next().map(|p| p.to_lowercase())
-        })
-        .collect();
-
-    // Build connector resolution list for the report so the frontend can show
-    // which connectors were matched to user credentials.
-    // Check three sources: resolved env vars, credential hints, AND vault service types.
-    let vault_types_lower: std::collections::HashSet<String> =
-        all_vault_types.iter().map(|t| t.to_lowercase()).collect();
-    let connectors_resolved: Vec<serde_json::Value> = {
-        let names: Vec<String> = agent_ir
-            .required_connectors
-            .iter()
-            .filter_map(|c| c.name().map(|n| n.to_string()))
-            .collect();
-        names.iter()
-            .filter(|name| !is_platform_connector(name))
-            .map(|name| {
-                let name_lower = name.to_lowercase();
-                let matched = resolved_cred_names.contains(&name_lower)
-                    || resolved_cred_names.iter().any(|cred| name_lower.contains(cred.as_str()) || cred.contains(&name_lower))
-                    || hints.iter().any(|h| h.to_lowercase().contains(&name_lower))
-                    // Also match against vault service types (covers connectors not matched
-                    // by tool name, e.g. alpha_vantage credential for http_request tool)
-                    || vault_types_lower.contains(&name_lower)
-                    || vault_types_lower.iter().any(|vt| name_lower.contains(vt.as_str()) || vt.contains(&name_lower));
-                serde_json::json!({
-                    "name": name,
-                    "has_credential": matched,
-                })
-            }).collect()
-    };
-
-    let total = test_plan.len();
-    if total == 0 {
-        tracing::warn!(
-            session_id = %session_id,
-            "CLI returned no test_plan entries, falling back to credential check"
-        );
-        // Fallback strategy:
-        //   • Generic infrastructure tools (http_request, web_search, file_read,
-        //     …) never need credentials themselves — their credentials live on
-        //     the connectors they target. Iterating tools here would produce
-        //     meaningless "http_request needs credentials" messages that don't
-        //     tell the user which external service is missing.
-        //   • The right level of granularity is `agent_ir.required_connectors`
-        //     — one result entry per connector, each carrying the connector
-        //     name so the UI can surface "Alpha Vantage needs credentials"
-        //     instead of "http_request needs credentials".
-        let tool_names: Vec<String> = tools
-            .iter()
-            .map(|t| t.name().to_string())
-            .filter(|n| !n.is_empty())
-            .collect();
-
-        // Decision-table row 4: a connector whose name merely SHARES A
-        // SUBSTRING with a vault service type used to be stamped
-        // "Credential available — connector verified" and counted as a pass.
-        // Resolve the (fuzzy, unchanged) match here; `build_no_plan_fallback`
-        // decides what it is worth — which is now `unverified`, not a pass.
-        let connectors: Vec<(String, bool)> = agent_ir
-            .required_connectors
-            .iter()
-            .filter_map(|c| c.name().map(|n| n.to_string()))
-            .map(|cname| {
-                let name_lower = cname.to_lowercase();
-                let has_cred = resolved_cred_names.contains(&name_lower)
-                    || resolved_cred_names.iter().any(|cred| {
-                        name_lower.contains(cred.as_str()) || cred.contains(&name_lower)
-                    })
-                    || hints.iter().any(|h| h.to_lowercase().contains(&name_lower))
-                    || vault_types_lower.contains(&name_lower)
-                    || vault_types_lower
-                        .iter()
-                        .any(|vt| name_lower.contains(vt.as_str()) || vt.contains(&name_lower));
-                (cname, has_cred)
-            })
-            .collect();
-
-        let mut report = build_no_plan_fallback(&tool_names, &connectors);
-        if let Some(obj) = report.as_object_mut() {
-            obj.insert(
-                "connectors_resolved".to_string(),
-                serde_json::Value::Array(connectors_resolved),
-            );
+            resolved_cred_names: env_vars
+                .iter()
+                .filter_map(|(k, _)| k.split('_').next().map(|p| p.to_lowercase()))
+                .collect(),
+            hints_lower: hints.iter().map(|h| h.to_lowercase()).collect(),
+            vault_types_lower: vault_types
+                .into_iter()
+                .map(|t| t.as_ref().to_lowercase())
+                .collect(),
         }
-        return Ok(report);
     }
 
-    // Step 4: Execute each test curl command with real credentials
-    let env_map: std::collections::HashMap<&str, &str> = env_vars
+    pub(super) fn matches(&self, connector: &str) -> bool {
+        let name_lower = connector.to_lowercase();
+        self.resolved_cred_names.contains(&name_lower)
+            || self
+                .resolved_cred_names
+                .iter()
+                .any(|cred| name_lower.contains(cred.as_str()) || cred.contains(&name_lower))
+            || self.hints_lower.iter().any(|h| h.contains(&name_lower))
+            // Also match against vault service types (covers connectors not matched
+            // by tool name, e.g. alpha_vantage credential for http_request tool)
+            || self.vault_types_lower.contains(&name_lower)
+            || self
+                .vault_types_lower
+                .iter()
+                .any(|vt| name_lower.contains(vt.as_str()) || vt.contains(&name_lower))
+    }
+}
+
+/// The `connectors_resolved` block the frontend's ConnectorHandshakeCard
+/// renders: one `{name, has_credential}` per non-platform connector.
+pub(super) fn connectors_resolved_report(
+    connector_names: &[String],
+    matcher: &CredentialMatcher,
+) -> Vec<serde_json::Value> {
+    connector_names
         .iter()
-        .map(|(k, v)| (k.as_str(), v.as_str()))
+        .filter(|name| !is_platform_connector(name))
+        .map(|name| {
+            serde_json::json!({
+                "name": name,
+                "has_credential": matcher.matches(name),
+            })
+        })
+        .collect()
+}
+
+/// Run every subject: scripted where possible, the LLM plan for the rest.
+pub(super) async fn run_resolved_tests(
+    pool: &DbPool,
+    ctx: &ResolvedTestContext<'_>,
+    seams: &TestSeams<'_>,
+    strategy: TestStrategy,
+) -> Result<serde_json::Value, AppError> {
+    let connector_names: Vec<String> = ctx
+        .required_connectors
+        .iter()
+        .filter_map(|c| c.name().map(|n| n.to_string()))
         .collect();
+    let tool_names: Vec<String> = ctx
+        .tools
+        .iter()
+        .map(|t| t.name().to_string())
+        .filter(|n| !n.is_empty())
+        .collect();
+    let connectors_resolved = connectors_resolved_report(&connector_names, ctx.matcher);
 
     let mut tally = ToolTestTally::default();
+    let mut tested = 0usize;
+    // Subjects the scripted phase already reported. An LLM plan entry for
+    // one of these is dropped: no subject is ever tested twice.
+    let mut scripted_connectors: HashSet<String> = HashSet::new();
+    let mut scripted_tools: HashSet<String> = HashSet::new();
 
-    for (idx, entry) in test_plan.iter().enumerate() {
-        let tool_name = entry
-            .get("tool_name")
-            .and_then(|v| v.as_str())
-            .unwrap_or("unknown");
-        let curl_cmd = entry.get("curl").and_then(|v| v.as_str()).unwrap_or("");
-
-        tracing::info!(
-            session_id = %session_id,
-            tool = %tool_name,
-            "Executing test {}/{}",
-            idx + 1,
-            total
-        );
-
-        // The decision table (top of file), applied. `record_planned_entry`
-        // is pure and returns `None` only for entries that must actually be
-        // executed — which is the one thing this loop does that a test can't.
-        let result = match tally.record_planned_entry(entry) {
-            Some(r) => r,
-            None => {
-                let connector = entry
-                    .get("connector")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string());
-                // Self-hosted connectors (LightTrack, Langfuse, LangSmith)
-                // legitimately point at localhost/LAN; every other connector
-                // gets the SSRF check. Same metadata flag the API proxy reads.
-                let allow_private = tool_runner::connector_allows_private_network_by_name(
-                    pool,
-                    connector.as_deref(),
-                );
-                let r = tool_runner::execute_test_curl(curl_cmd, &env_map, allow_private).await;
-                tally.record_executed(tool_name, connector, r)
-            }
+    let (llm_tools, llm_connectors) = if strategy.scripted {
+        let plan = {
+            let links = {
+                let conn = pool.get()?;
+                crate::commands::design::connector_readiness::resolve_credential_links(
+                    &conn,
+                    connector_names.iter().map(|s| s.as_str()),
+                )
+            };
+            let metadata_by_name: HashMap<String, Option<String>> =
+                crate::db::repos::resources::connectors::get_all(pool)
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(|c| (c.name.to_lowercase(), c.metadata))
+                    .collect();
+            let class_of = |name: &str| {
+                crate::db::models::classify_connector(
+                    name,
+                    metadata_by_name
+                        .get(&name.trim().to_lowercase())
+                        .and_then(|m| m.as_deref()),
+                )
+            };
+            let has_cli_auth_route = |name: &str| crate::db::models::cli_probe_spec(name).is_some();
+            let tool_entries: Vec<(String, Option<String>)> = ctx
+                .tools
+                .iter()
+                .filter(|t| !t.name().is_empty())
+                .map(|t| {
+                    (
+                        t.name().to_string(),
+                        tool_runner::tool_def_from_ir(t).and_then(|d| d.requires_credential_type),
+                    )
+                })
+                .collect();
+            plan_scripted_tests(
+                &connector_names,
+                &tool_entries,
+                &ConnectorFacts {
+                    links: &links,
+                    class_of: &class_of,
+                    has_cli_auth_route: &has_cli_auth_route,
+                    matcher: ctx.matcher,
+                },
+            )
         };
 
-        let result_json = serde_json::json!({
-            "tool_name": result.tool_name,
-            "status": result.status,
-            "http_status": result.http_status,
-            "latency_ms": result.latency_ms,
-            "error": result.error,
-            "connector": result.connector,
-            "output_preview": result.output_preview,
-        });
-
-        // Emit per-tool result event
-        let _ = app.emit(
-            event_name::BUILD_TEST_TOOL_RESULT,
-            serde_json::json!({
-                "session_id": session_id,
-                "tool_name": result.tool_name,
-                "status": result.status,
-                "http_status": result.http_status,
-                "latency_ms": result.latency_ms,
-                "error": result.error,
-                "connector": result.connector,
-                "tested": idx + 1,
-                "total": total,
-            }),
+        let expected_total = plan.decided.len()
+            + plan.probes.len()
+            + plan.llm_tools.len()
+            + plan.llm_connectors.len();
+        tracing::info!(
+            session_id = %ctx.session_id,
+            decided = plan.decided.len(),
+            probes = plan.probes.len(),
+            llm_connectors = plan.llm_connectors.len(),
+            llm_tools = plan.llm_tools.len(),
+            "tool tests: scripted plan"
         );
 
-        tally.results.push(result_json);
+        for row in &plan.decided {
+            let r = tally.record_decided(row);
+            note_scripted_subject(&r, &mut scripted_connectors, &mut scripted_tools);
+            tested += 1;
+            (seams.emit)(&r, tested, expected_total);
+            tally.push(&r);
+        }
+
+        let mut llm_connectors = plan.llm_connectors;
+        let probes =
+            run_scripted_probes(pool, plan.probes, strategy.lanes, strategy.per_test_timeout).await;
+        for (connector, outcome, latency_ms) in probes {
+            match verdict_from_probe(&connector, outcome, latency_ms, strategy.per_test_timeout) {
+                ProbeVerdict::Reported(r) => {
+                    let r = tally.record_executed(&connector, Some(connector.clone()), r);
+                    note_scripted_subject(&r, &mut scripted_connectors, &mut scripted_tools);
+                    tested += 1;
+                    (seams.emit)(&r, tested, expected_total);
+                    tally.push(&r);
+                }
+                ProbeVerdict::Unscriptable(reason) => {
+                    tracing::info!(
+                        session_id = %ctx.session_id,
+                        connector = %connector,
+                        reason = %reason,
+                        "tool tests: connector could not be scripted, falling back to the LLM plan"
+                    );
+                    llm_connectors.push(connector);
+                }
+            }
+        }
+        (plan.llm_tools, llm_connectors)
+    } else {
+        (tool_names, connector_names)
+    };
+
+    let scripted_rows = tally.results.len();
+    // None = the LLM was never asked; Some(parsed) = it was.
+    let mut llm_plan_parsed: Option<bool> = None;
+
+    if !llm_tools.is_empty() || !llm_connectors.is_empty() {
+        // The legacy path sends the IR lists untouched; the fallback sends
+        // only the subset nothing else covered.
+        let (tools_json, connectors_json) = if strategy.scripted {
+            let want_tools: HashSet<String> = llm_tools.iter().map(|t| t.to_lowercase()).collect();
+            let want_conns: HashSet<String> = llm_connectors
+                .iter()
+                .map(|c| c.trim().to_lowercase())
+                .collect();
+            let tools: Vec<_> = ctx
+                .tools
+                .iter()
+                .filter(|t| want_tools.contains(&t.name().to_lowercase()))
+                .collect();
+            let conns: Vec<_> = ctx
+                .required_connectors
+                .iter()
+                .filter(|c| {
+                    c.name()
+                        .is_some_and(|n| want_conns.contains(&n.trim().to_lowercase()))
+                })
+                .collect();
+            (
+                serde_json::to_string_pretty(&tools).unwrap_or_default(),
+                serde_json::to_string_pretty(&conns).unwrap_or_else(|_| "[]".to_string()),
+            )
+        } else {
+            (
+                serde_json::to_string_pretty(ctx.tools).unwrap_or_default(),
+                serde_json::to_string_pretty(ctx.required_connectors)
+                    .unwrap_or_else(|_| "[]".to_string()),
+            )
+        };
+        let test_prompt = build_test_prompt(&tools_json, &connectors_json, ctx.cred_context);
+
+        let test_plan = match (seams.compose_plan)(test_prompt).await {
+            Ok(plan) => plan,
+            // With scripted rows already in hand, a CLI that will not start
+            // degrades the leftover subset to the no-plan fallback instead of
+            // throwing away real verdicts. With nothing scripted this is the
+            // old path, and the old path propagated the error.
+            Err(e) if scripted_rows > 0 => {
+                tracing::warn!(
+                    session_id = %ctx.session_id,
+                    error = %e,
+                    "tool tests: LLM plan for the unscriptable subset failed; reporting it without a plan"
+                );
+                Vec::new()
+            }
+            Err(e) => return Err(e),
+        };
+
+        if test_plan.is_empty() {
+            tracing::warn!(
+                session_id = %ctx.session_id,
+                "CLI returned no test_plan entries, falling back to credential check"
+            );
+            // Fallback strategy:
+            //   • Generic infrastructure tools (http_request, web_search, file_read,
+            //     …) never need credentials themselves — their credentials live on
+            //     the connectors they target. Iterating tools here would produce
+            //     meaningless "http_request needs credentials" messages that don't
+            //     tell the user which external service is missing.
+            //   • The right level of granularity is `agent_ir.required_connectors`
+            //     — one result entry per connector, each carrying the connector
+            //     name so the UI can surface "Alpha Vantage needs credentials"
+            //     instead of "http_request needs credentials".
+            //
+            // Decision-table row 4: a connector whose name merely SHARES A
+            // SUBSTRING with a vault service type used to be stamped
+            // "Credential available — connector verified" and counted as a pass.
+            // Resolve the (fuzzy, unchanged) match here; `record_no_plan_fallback`
+            // decides what it is worth — which is now `unverified`, not a pass.
+            let connectors: Vec<(String, bool)> = llm_connectors
+                .iter()
+                .map(|c| (c.clone(), ctx.matcher.matches(c)))
+                .collect();
+            record_no_plan_fallback(&mut tally, &llm_tools, &connectors);
+            llm_plan_parsed = Some(false);
+        } else {
+            // Execute each test curl command with real credentials
+            let env_map: HashMap<&str, &str> = ctx
+                .env_vars
+                .iter()
+                .map(|(k, v)| (k.as_str(), v.as_str()))
+                .collect();
+            let total = tested + test_plan.len();
+
+            for entry in &test_plan {
+                if plan_entry_already_scripted(entry, &scripted_connectors, &scripted_tools) {
+                    tracing::debug!(
+                        session_id = %ctx.session_id,
+                        entry = %entry,
+                        "tool tests: dropping LLM plan entry for a subject the scripted phase already reported"
+                    );
+                    continue;
+                }
+                let tool_name = entry
+                    .get("tool_name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("unknown");
+                let curl_cmd = entry.get("curl").and_then(|v| v.as_str()).unwrap_or("");
+
+                tracing::info!(
+                    session_id = %ctx.session_id,
+                    tool = %tool_name,
+                    "Executing test {}/{}",
+                    tested + 1,
+                    total
+                );
+
+                // The decision table (top of file), applied. `record_planned_entry`
+                // is pure and returns `None` only for entries that must actually be
+                // executed — which is the one thing this loop does that a test can't.
+                let result = match tally.record_planned_entry(entry) {
+                    Some(r) => r,
+                    None => {
+                        let connector = entry
+                            .get("connector")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string());
+                        // Self-hosted connectors (LightTrack, Langfuse, LangSmith)
+                        // legitimately point at localhost/LAN; every other connector
+                        // gets the SSRF check. Same metadata flag the API proxy reads.
+                        let allow_private = tool_runner::connector_allows_private_network_by_name(
+                            pool,
+                            connector.as_deref(),
+                        );
+                        let r =
+                            tool_runner::execute_test_curl(curl_cmd, &env_map, allow_private).await;
+                        tally.record_executed(tool_name, connector, r)
+                    }
+                };
+
+                tested += 1;
+                (seams.emit)(&result, tested, total);
+                tally.push(&result);
+            }
+            llm_plan_parsed = Some(true);
+        }
     }
 
-    // Step 5: Generate human-friendly summary via CLI
-    let results_json = serde_json::to_string_pretty(&tally.results).unwrap_or_default();
-    let summary = generate_test_summary(
-        pool,
-        persona_id,
-        &results_json,
-        persona_name,
-        tally.passed,
-        tally.failed,
-        tally.skipped,
-        tally.unverified,
-    )
-    .await
-    .unwrap_or_else(|_| build_fallback_summary(&tally));
+    // The summary. A parsed LLM plan keeps the Haiku report (and its
+    // deterministic fallback); a fully scripted run writes the same
+    // ### Overview / ### Results / ### Next Steps shape without a model.
+    let summary = match llm_plan_parsed {
+        Some(true) => {
+            let results_json = serde_json::to_string_pretty(&tally.results).unwrap_or_default();
+            Some(
+                (seams.write_summary)(results_json, tally.counts())
+                    .await
+                    .unwrap_or_else(|_| build_fallback_summary(&tally)),
+            )
+        }
+        None => Some(build_scripted_summary(&tally)),
+        Some(false) if scripted_rows > 0 => Some(build_scripted_summary(&tally)),
+        // The old no-plan report carried no summary; keep it that way.
+        Some(false) => None,
+    };
+
+    let test_mode = match (strategy.scripted, llm_plan_parsed.is_some()) {
+        (false, _) => "llm",
+        (true, false) => "scripted",
+        (true, true) => "hybrid",
+    };
 
     let mut report = tally.into_report();
     if let Some(obj) = report.as_object_mut() {
@@ -658,9 +1013,372 @@ pub async fn run_tool_tests(
             "connectors_resolved".to_string(),
             serde_json::Value::Array(connectors_resolved),
         );
-        obj.insert("summary".to_string(), serde_json::Value::String(summary));
+        if let Some(summary) = summary {
+            obj.insert("summary".to_string(), serde_json::Value::String(summary));
+        }
+        if llm_plan_parsed == Some(false) {
+            // The build model returned nothing parseable, so this report is the
+            // degraded path — surfaced so a hold can say WHY nothing ran.
+            obj.insert(
+                "test_plan_parsed".to_string(),
+                serde_json::Value::Bool(false),
+            );
+        }
+        // Additive and informational: which strategy produced this report.
+        // Nothing gates on it; it is what a live check reads to confirm the
+        // scripted path actually ran.
+        obj.insert(
+            "test_mode".to_string(),
+            serde_json::Value::String(test_mode.to_string()),
+        );
     }
     Ok(report)
+}
+
+fn note_scripted_subject(
+    r: &tool_runner::ToolTestResult,
+    connectors: &mut HashSet<String>,
+    tools: &mut HashSet<String>,
+) {
+    match r.connector.as_deref().filter(|c| !c.is_empty()) {
+        Some(c) => {
+            connectors.insert(c.trim().to_lowercase());
+        }
+        None => {
+            tools.insert(r.tool_name.trim().to_lowercase());
+        }
+    }
+}
+
+/// Did the scripted phase already report this plan entry's subject?
+///
+/// Keyed on the entry's connector when it names one — an entry
+/// `{tool_name: "http_request", connector: "alpha_vantage"}` is about Alpha
+/// Vantage, not about the `http_request` conduit, and must still run when
+/// only the conduit was scripted.
+pub(super) fn plan_entry_already_scripted(
+    entry: &serde_json::Value,
+    scripted_connectors: &HashSet<String>,
+    scripted_tools: &HashSet<String>,
+) -> bool {
+    let connector = entry
+        .get("connector")
+        .and_then(|v| v.as_str())
+        .map(|c| c.trim().to_lowercase())
+        .filter(|c| !c.is_empty());
+    match connector {
+        Some(c) => scripted_connectors.contains(&c),
+        None => {
+            let tool = entry
+                .get("tool_name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_lowercase();
+            !tool.is_empty()
+                && (scripted_tools.contains(&tool) || scripted_connectors.contains(&tool))
+        }
+    }
+}
+
+// =============================================================================
+// The scripted plan (pure)
+// =============================================================================
+
+/// A row decided without any call.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) enum DecidedRow {
+    /// On this backend's own allow-list (`is_platform_builtin`). `passed`.
+    PlatformBuiltin {
+        tool_name: String,
+        connector: Option<String>,
+    },
+    /// An infrastructure conduit tool (`INFRASTRUCTURE_TOOLS`). `passed`,
+    /// exactly as the no-plan fallback has always counted it.
+    Conduit { tool_name: String },
+    /// A credential connector with no vault credential even fuzzily matching.
+    CredentialMissing { connector: String },
+}
+
+#[derive(Debug, Default)]
+pub(super) struct ScriptedPlan {
+    pub decided: Vec<DecidedRow>,
+    /// `(connector, credential_id)` to run the declared healthcheck for.
+    pub probes: Vec<(String, String)>,
+    /// Connector names only the LLM plan can cover.
+    pub llm_connectors: Vec<String>,
+    /// Tool names only the LLM plan can cover.
+    pub llm_tools: Vec<String>,
+}
+
+/// What the planner needs to know about connectors, injected so the routing
+/// is a pure function of it.
+pub(super) struct ConnectorFacts<'a> {
+    /// `connector -> credential_id` for connectors uniquely bound to one vault
+    /// credential (`resolve_credential_links`, keyed by the trimmed name).
+    pub links: &'a HashMap<String, String>,
+    pub class_of: &'a dyn Fn(&str) -> crate::db::models::ConnectorClass,
+    /// Whether an authenticated provider CLI can stand in for a vault
+    /// credential (`cli_probe_spec`). Those go to the LLM rather than being
+    /// declared missing.
+    pub has_cli_auth_route: &'a dyn Fn(&str) -> bool,
+    pub matcher: &'a CredentialMatcher,
+}
+
+/// Route every connector and tool to exactly one of: decided, probed, LLM.
+///
+/// `tools` is `(name, requires_credential_type)` as `tool_def_from_ir` infers it.
+pub(super) fn plan_scripted_tests(
+    connectors: &[String],
+    tools: &[(String, Option<String>)],
+    facts: &ConnectorFacts<'_>,
+) -> ScriptedPlan {
+    use crate::db::models::ConnectorClass;
+
+    let mut plan = ScriptedPlan::default();
+    let mut seen: HashSet<String> = HashSet::new();
+    let mut covered: Vec<String> = Vec::new();
+
+    for raw in connectors {
+        let name = raw.trim();
+        if name.is_empty() || !seen.insert(name.to_lowercase()) {
+            continue;
+        }
+        covered.push(name.to_lowercase());
+        if is_platform_builtin(name, Some(name)) {
+            plan.decided.push(DecidedRow::PlatformBuiltin {
+                tool_name: name.to_string(),
+                connector: Some(name.to_string()),
+            });
+        } else if let Some(cred_id) = facts.links.get(name) {
+            plan.probes.push((name.to_string(), cred_id.clone()));
+        } else if (facts.class_of)(name) != ConnectorClass::Credential
+            || (facts.has_cli_auth_route)(name)
+            || facts.matcher.matches(name)
+        {
+            // ZeroConfig / GlobalProbe (local services with no vault entry
+            // and no declared healthcheck), a provider whose CLI can hold the
+            // auth, or a credential that exists but is not uniquely bindable:
+            // nothing scripted can decide these honestly.
+            plan.llm_connectors.push(name.to_string());
+        } else {
+            plan.decided.push(DecidedRow::CredentialMissing {
+                connector: name.to_string(),
+            });
+        }
+    }
+
+    let mut seen_tools: HashSet<String> = HashSet::new();
+    for (raw, cred_type) in tools {
+        let name = raw.trim();
+        let name_l = name.to_lowercase();
+        if name.is_empty() || !seen_tools.insert(name_l.clone()) {
+            continue;
+        }
+        let cred_l = cred_type.as_deref().map(|c| c.trim().to_lowercase());
+        let backed_by_connector = covered.iter().any(|c| {
+            name_l == *c
+                || cred_l.as_deref() == Some(c.as_str())
+                || name_l.starts_with(&format!("{c}_"))
+        });
+        if backed_by_connector {
+            // The connector's own row is this tool's verdict — the LLM prompt
+            // asks for the same thing: one entry per connector.
+            continue;
+        }
+        if is_platform_builtin(name, None) {
+            plan.decided.push(DecidedRow::PlatformBuiltin {
+                tool_name: name.to_string(),
+                connector: None,
+            });
+        } else if INFRASTRUCTURE_TOOLS
+            .iter()
+            .any(|t| t.eq_ignore_ascii_case(name))
+        {
+            plan.decided.push(DecidedRow::Conduit {
+                tool_name: name.to_string(),
+            });
+        } else {
+            plan.llm_tools.push(name.to_string());
+        }
+    }
+
+    plan
+}
+
+// =============================================================================
+// Scripted probes
+// =============================================================================
+
+/// What one healthcheck lane came back with.
+#[derive(Debug)]
+pub(super) enum ProbeOutcome {
+    Checked(super::super::healthcheck::HealthcheckResult),
+    /// `run_healthcheck` returned an error before any verdict.
+    Errored(String),
+    /// The lane hit `per_test_timeout`.
+    TimedOut,
+    /// The lane panicked (isolated by `run_lanes`).
+    Panicked(String),
+}
+
+#[derive(Debug)]
+pub(super) enum ProbeVerdict {
+    /// A real call ran and produced a verdict. Reported as is.
+    Reported(tool_runner::ToolTestResult),
+    /// Nothing could run; the subject goes to the LLM plan.
+    Unscriptable(String),
+}
+
+/// Run each `(connector, credential_id)` healthcheck, at most `lanes` at a
+/// time, each under `per_test_timeout`. Results come back in input order.
+pub(super) async fn run_scripted_probes(
+    pool: &DbPool,
+    probes: Vec<(String, String)>,
+    lanes: usize,
+    per_test_timeout: Duration,
+) -> Vec<(String, ProbeOutcome, u64)> {
+    use super::orchestrator::{lane, run_lanes, LaneOutcome, LaneTask};
+
+    let tasks: Vec<LaneTask<(ProbeOutcome, u64)>> = probes
+        .into_iter()
+        .map(|(connector, credential_id)| {
+            let pool = pool.clone();
+            lane(connector, async move {
+                let started = std::time::Instant::now();
+                let outcome = match tokio::time::timeout(
+                    per_test_timeout,
+                    super::super::healthcheck::run_healthcheck(&pool, &credential_id),
+                )
+                .await
+                {
+                    Ok(Ok(hr)) => ProbeOutcome::Checked(hr),
+                    Ok(Err(e)) => ProbeOutcome::Errored(e.to_string()),
+                    Err(_) => ProbeOutcome::TimedOut,
+                };
+                (outcome, started.elapsed().as_millis() as u64)
+            })
+        })
+        .collect();
+
+    run_lanes(lanes, tasks)
+        .await
+        .into_iter()
+        .map(|LaneOutcome { lane, result }| match result {
+            Ok((outcome, ms)) => (lane, outcome, ms),
+            Err(panic) => (lane, ProbeOutcome::Panicked(panic), 0),
+        })
+        .collect()
+}
+
+/// The HTTP status a healthcheck message names. Coupled to the format strings
+/// in `healthcheck::execute_healthcheck_request_with_strategy`
+/// (`"Connection successful (HTTP 200)"`, `"Service returned HTTP 401"`); a
+/// message without one yields `None`, which only loses the modal's HTTP hint.
+pub(super) fn http_status_from_message(msg: &str) -> Option<u16> {
+    let idx = msg.find("HTTP ")?;
+    let digits: String = msg[idx + 5..]
+        .chars()
+        .take_while(|c| c.is_ascii_digit())
+        .collect();
+    if digits.len() == 3 {
+        digits.parse().ok()
+    } else {
+        None
+    }
+}
+
+/// Turn one lane's outcome into a report row, or send it to the LLM.
+pub(super) fn verdict_from_probe(
+    connector: &str,
+    outcome: ProbeOutcome,
+    latency_ms: u64,
+    per_test_timeout: Duration,
+) -> ProbeVerdict {
+    use super::super::healthcheck::HealthProbeState;
+
+    let row = |status: &str, error: Option<String>, preview: Option<String>, http: Option<u16>| {
+        tool_runner::ToolTestResult {
+            tool_name: connector.to_string(),
+            status: status.to_string(),
+            http_status: http,
+            latency_ms,
+            error,
+            connector: Some(connector.to_string()),
+            output_preview: preview,
+        }
+    };
+
+    match outcome {
+        ProbeOutcome::Checked(hr) => {
+            let http = http_status_from_message(&hr.message);
+            match hr.state {
+                HealthProbeState::Verified => ProbeVerdict::Reported(row(
+                    "passed",
+                    None,
+                    Some(format!(
+                        "{} — checked with the connector's own read-only health check",
+                        hr.message
+                    )),
+                    http,
+                )),
+                HealthProbeState::Failed | HealthProbeState::Unreachable => {
+                    ProbeVerdict::Reported(row("failed", Some(hr.message), None, http))
+                }
+                // `success: true` but NOTHING was called. Counting this as a
+                // pass is the false green; the LLM plan gets a chance instead.
+                HealthProbeState::Unverifiable => ProbeVerdict::Unscriptable(format!(
+                    "no health check is declared for this connector ({})",
+                    hr.message
+                )),
+            }
+        }
+        ProbeOutcome::TimedOut => ProbeVerdict::Reported(row(
+            "failed",
+            Some(format!(
+                "The health check did not answer within {per_test_timeout:?}, so the service may be slow or unreachable."
+            )),
+            None,
+            None,
+        )),
+        ProbeOutcome::Errored(e) => ProbeVerdict::Unscriptable(format!("health check could not run: {e}")),
+        ProbeOutcome::Panicked(p) => ProbeVerdict::Unscriptable(format!("health check lane panicked: {p}")),
+    }
+}
+
+// =============================================================================
+// The tally
+// =============================================================================
+
+/// One report row, in the exact key set the frontend's `ToolTestResult` reads.
+fn result_json(r: &tool_runner::ToolTestResult) -> serde_json::Value {
+    serde_json::json!({
+        "tool_name": r.tool_name,
+        "status": r.status,
+        "http_status": r.http_status,
+        "latency_ms": r.latency_ms,
+        "error": r.error,
+        "connector": r.connector,
+        "output_preview": r.output_preview,
+    })
+}
+
+fn uncalled_row(
+    tool_name: &str,
+    status: &str,
+    error: Option<String>,
+    connector: Option<String>,
+    output_preview: Option<String>,
+) -> tool_runner::ToolTestResult {
+    tool_runner::ToolTestResult {
+        tool_name: tool_name.to_string(),
+        status: status.to_string(),
+        http_status: None,
+        latency_ms: 0,
+        error,
+        connector,
+        output_preview,
+    }
 }
 
 /// Running totals for one `run_tool_tests` pass.
@@ -717,18 +1435,11 @@ impl ToolTestTally {
                 // — the recognition is this backend's own, from a fixed
                 // allow-list, and there is no external service or user
                 // credential behind them.
-                self.passed += 1;
-                Some(tool_runner::ToolTestResult {
-                    tool_name: tool_name.to_string(),
-                    status: "passed".to_string(),
-                    http_status: None,
-                    latency_ms: 0,
-                    error: None,
+                Some(self.record_available(
+                    tool_name,
                     connector,
-                    output_preview: Some(format!(
-                        "{description} — available at runtime, not executed in this test"
-                    )),
-                })
+                    format!("{description} — {AVAILABLE_AT_RUNTIME}"),
+                ))
             }
 
             EntryClass::ClaimedCliNative => {
@@ -742,17 +1453,15 @@ impl ToolTestTally {
                     connector.as_deref(),
                     "The build model marked this tool as CLI-native, so no call was made against it. Nothing was executed, so it could not be verified.",
                 ));
-                Some(tool_runner::ToolTestResult {
-                    tool_name: tool_name.to_string(),
-                    status: STATUS_UNVERIFIED.to_string(),
-                    http_status: None,
-                    latency_ms: 0,
-                    error: Some(
+                Some(uncalled_row(
+                    tool_name,
+                    STATUS_UNVERIFIED,
+                    Some(
                         "Reported as CLI-native by the build model — no call was made, so this tool is unverified.".to_string(),
                     ),
                     connector,
-                    output_preview: None,
-                })
+                    None,
+                ))
             }
 
             EntryClass::NotTestable => {
@@ -760,24 +1469,22 @@ impl ToolTestTally {
                 // these (§4 "Non-testable → emit an entry with empty curl"),
                 // so they stay non-blocking by decision.
                 self.skipped += 1;
-                Some(tool_runner::ToolTestResult {
-                    tool_name: tool_name.to_string(),
-                    status: "skipped".to_string(),
-                    http_status: None,
-                    latency_ms: 0,
-                    error: Some(if description.is_empty() {
+                Some(uncalled_row(
+                    tool_name,
+                    "skipped",
+                    Some(if description.is_empty() {
                         "No curl command generated".to_string()
                     } else {
                         description
                     }),
                     connector,
-                    output_preview: None,
-                })
+                    None,
+                ))
             }
         }
     }
 
-    /// Count the verdict of a curl that actually ran.
+    /// Count the verdict of a call that actually ran (a curl or a healthcheck).
     pub(super) fn record_executed(
         &mut self,
         tool_name: &str,
@@ -799,6 +1506,68 @@ impl ToolTestTally {
             tool_name: tool_name.to_string(),
             connector,
             ..r
+        }
+    }
+
+    /// A code-recognised built-in or conduit: counted `passed`, never called.
+    fn record_available(
+        &mut self,
+        tool_name: &str,
+        connector: Option<String>,
+        preview: String,
+    ) -> tool_runner::ToolTestResult {
+        self.passed += 1;
+        uncalled_row(tool_name, "passed", None, connector, Some(preview))
+    }
+
+    /// A connector with no credential to test with.
+    fn record_credential_missing(&mut self, cname: &str) -> tool_runner::ToolTestResult {
+        self.failed += 1;
+        self.credential_issues.push(serde_json::json!({
+            "connector": cname,
+            "issue": format!("No credential found for connector '{cname}'. Add it in Keys section."),
+        }));
+        uncalled_row(
+            cname,
+            "credential_missing",
+            Some(format!("No credential configured for '{cname}'")),
+            Some(cname.to_string()),
+            None,
+        )
+    }
+
+    /// Count a row the scripted planner decided without a call.
+    fn record_decided(&mut self, row: &DecidedRow) -> tool_runner::ToolTestResult {
+        match row {
+            DecidedRow::PlatformBuiltin {
+                tool_name,
+                connector,
+            } => self.record_available(
+                tool_name,
+                connector.clone(),
+                format!("Built-in platform capability — {AVAILABLE_AT_RUNTIME}"),
+            ),
+            DecidedRow::Conduit { tool_name } => self.record_available(
+                tool_name,
+                None,
+                format!("Built-in platform tool — {AVAILABLE_AT_RUNTIME}"),
+            ),
+            DecidedRow::CredentialMissing { connector } => {
+                self.record_credential_missing(connector)
+            }
+        }
+    }
+
+    fn push(&mut self, r: &tool_runner::ToolTestResult) {
+        self.results.push(result_json(r));
+    }
+
+    pub(super) fn counts(&self) -> SummaryCounts {
+        SummaryCounts {
+            passed: self.passed,
+            failed: self.failed,
+            skipped: self.skipped,
+            unverified: self.unverified,
         }
     }
 
@@ -826,7 +1595,7 @@ pub(super) fn empty_tool_report() -> serde_json::Value {
     ToolTestTally::default().into_report()
 }
 
-/// Build the report for the no-parseable-plan fallback.
+/// Count the no-parseable-plan fallback into `tally`.
 ///
 /// Pure by construction — the caller does the vault lookups and hands in, per
 /// connector, whether a credential NAME matched. Decision-table row 4: that
@@ -839,27 +1608,22 @@ pub(super) fn empty_tool_report() -> serde_json::Value {
 /// they own no credential and are conduits to the connectors, which get their
 /// own entry. Platform connectors likewise — recognised from this backend's
 /// own allow-list, with nothing external behind them.
-pub(super) fn build_no_plan_fallback(
+pub(super) fn record_no_plan_fallback(
+    tally: &mut ToolTestTally,
     tool_names: &[String],
     connectors: &[(String, bool)],
-) -> serde_json::Value {
-    let mut tally = ToolTestTally::default();
-
+) {
     for name in tool_names {
         if INFRASTRUCTURE_TOOLS
             .iter()
             .any(|t| t.eq_ignore_ascii_case(name))
         {
-            tally.passed += 1;
-            tally.results.push(serde_json::json!({
-                "tool_name": name,
-                "status": "passed",
-                "http_status": null,
-                "latency_ms": 0,
-                "error": null,
-                "connector": null,
-                "output_preview": "Built-in platform tool — available at runtime, not executed in this test",
-            }));
+            let r = tally.record_available(
+                name,
+                None,
+                format!("Built-in platform tool — {AVAILABLE_AT_RUNTIME}"),
+            );
+            tally.push(&r);
         }
     }
 
@@ -867,17 +1631,12 @@ pub(super) fn build_no_plan_fallback(
     // so the UI can say "Alpha Vantage needs credentials" rather than
     // "http_request needs credentials".
     for (cname, has_cred) in connectors {
-        if is_platform_connector(cname) {
-            tally.passed += 1;
-            tally.results.push(serde_json::json!({
-                "tool_name": cname,
-                "status": "passed",
-                "http_status": null,
-                "latency_ms": 0,
-                "error": null,
-                "connector": cname,
-                "output_preview": "Built-in platform connector — available at runtime, not executed in this test",
-            }));
+        let r = if is_platform_connector(cname) {
+            tally.record_available(
+                cname,
+                Some(cname.clone()),
+                format!("Built-in platform connector — {AVAILABLE_AT_RUNTIME}"),
+            )
         } else if *has_cred {
             tally.unverified += 1;
             tally.unverified_reasons.push(unverified_reason(
@@ -885,33 +1644,31 @@ pub(super) fn build_no_plan_fallback(
                 Some(cname),
                 "A credential in the vault matches this connector's name, but the build model produced no test plan, so no call was made against it.",
             ));
-            tally.results.push(serde_json::json!({
-                "tool_name": cname,
-                "status": STATUS_UNVERIFIED,
-                "http_status": null,
-                "latency_ms": 0,
-                "error": "A matching credential exists, but no call was made against this connector — it is unverified, not verified.",
-                "connector": cname,
-                "output_preview": null,
-            }));
+            uncalled_row(
+                cname,
+                STATUS_UNVERIFIED,
+                Some("A matching credential exists, but no call was made against this connector — it is unverified, not verified.".to_string()),
+                Some(cname.clone()),
+                None,
+            )
         } else {
-            tally.failed += 1;
-            tally.credential_issues.push(serde_json::json!({
-                "connector": cname,
-                "issue": format!("No credential found for connector '{cname}'. Add it in Keys section."),
-            }));
-            tally.results.push(serde_json::json!({
-                "tool_name": cname,
-                "status": "credential_missing",
-                "http_status": null,
-                "latency_ms": 0,
-                "error": format!("No credential configured for '{cname}'"),
-                "connector": cname,
-                "output_preview": null,
-            }));
-        }
+            tally.record_credential_missing(cname)
+        };
+        tally.push(&r);
     }
+}
 
+/// Build the report for the no-parseable-plan fallback (see
+/// [`record_no_plan_fallback`]). Test-only since the orchestrator counts the
+/// fallback into its running tally; kept as the standalone shape the
+/// promote-gate tests in `oneshot.rs` and the legacy-parity test pin.
+#[cfg(test)]
+pub(super) fn build_no_plan_fallback(
+    tool_names: &[String],
+    connectors: &[(String, bool)],
+) -> serde_json::Value {
+    let mut tally = ToolTestTally::default();
+    record_no_plan_fallback(&mut tally, tool_names, connectors);
     let mut report = tally.into_report();
     if let Some(obj) = report.as_object_mut() {
         // The build model returned nothing parseable, so this report is the
@@ -924,122 +1681,142 @@ pub(super) fn build_no_plan_fallback(
     report
 }
 
-/// Ask the CLI to generate a human-friendly summary of test results.
-/// Phase 4: run each bound connector's declared healthcheck in parallel and
-/// build the same result shape as the LLM/fallback path — no LLM turns. Env-gated
-/// by the caller (`PERSONAS_SCRIPTED_TOOL_TESTS=1`).
-async fn run_scripted_connector_tests(
-    pool: &DbPool,
-    agent_ir: &crate::db::models::AgentIr,
-) -> Result<serde_json::Value, AppError> {
-    use super::orchestrator::{lane, run_lanes, LaneOutcome, LaneTask};
+// =============================================================================
+// The deterministic summary
+// =============================================================================
 
-    let connector_names: Vec<String> = agent_ir
-        .required_connectors
-        .iter()
-        .filter_map(|c| c.name().map(|n| n.to_string()))
-        .collect();
-    if connector_names.is_empty() {
-        return Ok(serde_json::json!({
-            "results": [], "tools_tested": 0, "tools_passed": 0, "tools_failed": 0,
-            "tools_skipped": 0, "tools_unverified": 0, "unverified_reasons": [],
-            "credential_issues": [], "connectors_resolved": []
-        }));
-    }
+/// The subject the modal keys a result on: connector if present, else the
+/// tool, underscores as spaces (`TestReportModal.tsx` `toolSubject`).
+fn row_subject(r: &serde_json::Value) -> String {
+    let connector = r
+        .get("connector")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty());
+    let tool = r
+        .get("tool_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unknown");
+    connector.unwrap_or(tool).replace('_', " ")
+}
 
-    // connector -> credential_id (unique-bind resolution, the authoritative link)
-    let links = {
-        let conn = pool.get()?;
-        crate::commands::design::connector_readiness::resolve_credential_links(
-            &conn,
-            connector_names.iter().map(|s| s.as_str()),
-        )
-    };
-
-    // One lane per connector: run its healthcheck (or credential_missing).
-    let mut tasks: Vec<LaneTask<serde_json::Value>> = Vec::new();
-    for cname in &connector_names {
-        let cred_id = links.get(cname).cloned();
-        let name = cname.clone();
-        let pool_c = pool.clone();
-        tasks.push(lane(cname.clone(), async move {
-            match cred_id {
-                None => serde_json::json!({
-                    "tool_name": name, "status": "credential_missing", "http_status": null,
-                    "latency_ms": 0, "error": format!("No credential bound for connector '{name}'"),
-                    "connector": name, "output_preview": null
-                }),
-                Some(cid) => {
-                    let started = std::time::Instant::now();
-                    let (status, error, preview) =
-                        match super::super::healthcheck::run_healthcheck(&pool_c, &cid).await {
-                            Ok(hr) if hr.success => (
-                                "passed",
-                                serde_json::Value::Null,
-                                serde_json::Value::String(hr.message),
-                            ),
-                            Ok(hr) => (
-                                "failed",
-                                serde_json::Value::String(hr.message),
-                                serde_json::Value::Null,
-                            ),
-                            Err(e) => (
-                                "failed",
-                                serde_json::Value::String(e.to_string()),
-                                serde_json::Value::Null,
-                            ),
-                        };
-                    serde_json::json!({
-                        "tool_name": name, "status": status, "http_status": null,
-                        "latency_ms": started.elapsed().as_millis() as u64,
-                        "error": error, "connector": name, "output_preview": preview
-                    })
-                }
+/// Title-case, as the modal's `toolLabel` does.
+fn title_case(s: &str) -> String {
+    s.split(' ')
+        .map(|w| {
+            let mut chars = w.chars();
+            match chars.next() {
+                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                None => String::new(),
             }
-        }));
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// The plain-language report for a run the LLM did not write, in the exact
+/// `### Overview` / `### Results` / `### Next Steps` shape `TestReportModal`
+/// parses (`parseReportSections`), one `- **Subject** — icon sentence` line
+/// per result so `ToolDetailView` can find each row's line by its subject.
+/// Same rules the Haiku prompt is given: no HTTP codes or JSON, ⚠️ for
+/// anything never called, the **Keys** section for credential problems.
+pub(super) fn build_scripted_summary(tally: &ToolTestTally) -> String {
+    let SummaryCounts {
+        passed,
+        failed,
+        skipped,
+        unverified,
+    } = tally.counts();
+    let checked = passed + failed;
+
+    let mut overview = if failed == 0 && unverified == 0 && passed > 0 {
+        format!("All {passed} checks passed — every connection this agent relies on answered correctly or is built in.")
+    } else if passed == 0 && failed > 0 {
+        format!("None of the {failed} checks passed, so this agent cannot reach the services it needs yet.")
+    } else if checked == 0 {
+        "Nothing could be checked for this agent yet.".to_string()
+    } else {
+        format!("{passed} of {checked} checks passed and {failed} need attention before this agent is ready.")
+    };
+    if unverified > 0 {
+        overview.push_str(&format!(
+            " {unverified} could not be run at all, so they are unverified."
+        ));
+    }
+    if skipped > 0 {
+        overview.push_str(&format!(
+            " {skipped} had no safe read-only check and were skipped."
+        ));
     }
 
     let mut results = Vec::new();
-    let mut passed = 0usize;
-    let mut failed = 0usize;
-    let mut credential_issues: Vec<serde_json::Value> = Vec::new();
-    for LaneOutcome { lane, result } in run_lanes(3, tasks).await {
-        let r = match result {
-            Ok(v) => v,
-            Err(e) => serde_json::json!({
-                "tool_name": lane.clone(), "status": "failed", "http_status": null,
-                "latency_ms": 0, "error": e, "connector": lane, "output_preview": null
-            }),
-        };
-        match r.get("status").and_then(|s| s.as_str()) {
-            Some("passed") => passed += 1,
-            Some("credential_missing") => {
-                failed += 1;
-                credential_issues.push(serde_json::json!({
-                    "connector": r.get("connector").cloned().unwrap_or(serde_json::Value::Null),
-                    "issue": r.get("error").cloned().unwrap_or(serde_json::Value::Null),
-                }));
+    let mut next_steps = Vec::new();
+    for r in &tally.results {
+        let label = title_case(&row_subject(r));
+        let status = r.get("status").and_then(|v| v.as_str()).unwrap_or("");
+        let http = r.get("http_status").and_then(|v| v.as_u64());
+        let preview = r
+            .get("output_preview")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let line = match status {
+            "passed" if preview.contains(AVAILABLE_AT_RUNTIME) => {
+                "✅ Built into Personas, so it is available whenever the agent runs — there is nothing external to call.".to_string()
             }
-            _ => failed += 1,
-        }
-        results.push(r);
+            "passed" => "✅ Connected with your saved credential and answered its read-only check.".to_string(),
+            "credential_missing" => {
+                next_steps.push(format!("- Add a credential for **{label}** in the **Keys** section."));
+                "❌ No credential is set up for it yet — add one in the **Keys** section.".to_string()
+            }
+            STATUS_UNVERIFIED => {
+                "⚠️ Nothing was run against it, so we cannot tell you whether it works.".to_string()
+            }
+            "skipped" => "⚠️ Skipped — there is no safe read-only way to check it.".to_string(),
+            _ => match http {
+                Some(401) | Some(403) => {
+                    next_steps.push(format!(
+                        "- Refresh the **{label}** credential in the **Keys** section."
+                    ));
+                    "❌ The service turned the saved credential down — it may have expired or be missing a permission.".to_string()
+                }
+                Some(429) => {
+                    next_steps.push(format!("- Wait a minute, then test **{label}** again."));
+                    "❌ The service asked us to slow down, so the check could not finish — try again shortly.".to_string()
+                }
+                Some(404) => {
+                    next_steps.push(format!(
+                        "- Check the **{label}** connection settings in the **Keys** section."
+                    ));
+                    "❌ The service could not find what the check asked for — the connection settings may need updating.".to_string()
+                }
+                _ => {
+                    next_steps.push(format!(
+                        "- Make sure **{label}** is reachable from this computer, then test again."
+                    ));
+                    "❌ The service could not be reached or reported a problem on its side.".to_string()
+                }
+            },
+        };
+        results.push(format!("- **{label}** — {line}"));
     }
 
-    Ok(serde_json::json!({
-        "results": results,
-        "tools_tested": passed + failed,
-        "tools_passed": passed,
-        "tools_failed": failed,
-        "tools_skipped": 0usize,
-        // Every lane here runs the connector's DECLARED healthcheck, so each
-        // result is a real call — there is nothing unverified to report.
-        "tools_unverified": 0usize,
-        "unverified_reasons": [],
-        "credential_issues": credential_issues,
-        "connectors_resolved": connector_names,
-    }))
+    if next_steps.is_empty() && unverified == 0 {
+        next_steps.push("Everything checked out — this agent is ready to go.".to_string());
+    }
+    if unverified > 0 {
+        next_steps.push(
+            "- This build will not be promoted automatically until the unverified tools can actually be exercised."
+                .to_string(),
+        );
+    }
+
+    format!(
+        "### Overview\n{overview}\n\n### Results\n{}\n\n### Next Steps\n{}",
+        results.join("\n"),
+        next_steps.join("\n")
+    )
 }
 
+/// Ask the CLI to generate a human-friendly summary of test results.
 #[allow(clippy::too_many_arguments)]
 async fn generate_test_summary(
     pool: &DbPool,
@@ -1627,5 +2404,863 @@ mod tests {
     #[test]
     fn an_unparseable_response_yields_no_plan_which_routes_to_the_fallback() {
         assert!(extract_test_plan("I could not compose a plan, sorry.").is_empty());
+    }
+
+    // =====================================================================
+    // Scripted-first strategy
+    // =====================================================================
+    //
+    // Offline evidence for the default path: routing (pure), probe verdicts
+    // (pure), the deterministic summary against a mirror of the modal's own
+    // parser, and end-to-end runs through `run_resolved_tests` on the
+    // production schema (`init_test_db`) with REAL `run_healthcheck` calls
+    // against a local bearer-auth mock API. Only the two CLI legs are faked.
+
+    use crate::db::init_test_db;
+    use crate::db::models::agent_ir::{AgentIrConnector, AgentIrTool};
+    use crate::db::models::{
+        ConnectorClass, CreateConnectorDefinitionInput, CreateCredentialInput,
+    };
+    use crate::engine::healthcheck::HealthcheckResult;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::{Arc, Mutex};
+
+    const ROW_KEYS: [&str; 7] = [
+        "tool_name",
+        "status",
+        "http_status",
+        "latency_ms",
+        "error",
+        "connector",
+        "output_preview",
+    ];
+
+    #[test]
+    fn scripted_is_the_default_and_only_an_explicit_off_value_disables_it() {
+        for on in [None, Some("1"), Some(""), Some("true"), Some("yes")] {
+            assert!(
+                scripted_tool_tests_enabled(on),
+                "{on:?} must keep scripted on"
+            );
+        }
+        for off in ["0", "false", "OFF", " no "] {
+            assert!(
+                !scripted_tool_tests_enabled(Some(off)),
+                "{off:?} must force the LLM path"
+            );
+        }
+    }
+
+    fn vault_matcher(types: &[&str]) -> CredentialMatcher {
+        CredentialMatcher::new(&[], &[], types.iter())
+    }
+
+    #[test]
+    fn every_subject_is_routed_to_exactly_one_lane() {
+        let connectors: Vec<String> = [
+            "notion",
+            "personas_messages",
+            "vercel",
+            "google_calendar",
+            "stripe",
+            "local_drive",
+            "Notion",
+            "  ",
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+        let tools: Vec<(String, Option<String>)> = vec![
+            ("notion_search".into(), Some("notion".into())),
+            ("web_search".into(), None),
+            ("http_request".into(), None),
+            ("summarize_text".into(), Some("summarize_text".into())),
+            ("stripe_charges".into(), Some("stripe_charges".into())),
+        ];
+        let links: HashMap<String, String> = [("notion".to_string(), "cred-1".to_string())]
+            .into_iter()
+            .collect();
+        let class_of = |n: &str| {
+            if n == "local_drive" {
+                ConnectorClass::ZeroConfig
+            } else {
+                ConnectorClass::Credential
+            }
+        };
+        let has_cli = |n: &str| n == "vercel";
+        let matcher = vault_matcher(&["google"]);
+        let plan = plan_scripted_tests(
+            &connectors,
+            &tools,
+            &ConnectorFacts {
+                links: &links,
+                class_of: &class_of,
+                has_cli_auth_route: &has_cli,
+                matcher: &matcher,
+            },
+        );
+
+        assert_eq!(
+            plan.decided,
+            vec![
+                DecidedRow::PlatformBuiltin {
+                    tool_name: "personas_messages".into(),
+                    connector: Some("personas_messages".into())
+                },
+                DecidedRow::CredentialMissing {
+                    connector: "stripe".into()
+                },
+                DecidedRow::PlatformBuiltin {
+                    tool_name: "web_search".into(),
+                    connector: None
+                },
+                DecidedRow::Conduit {
+                    tool_name: "http_request".into()
+                },
+            ]
+        );
+        assert_eq!(
+            plan.probes,
+            vec![("notion".to_string(), "cred-1".to_string())]
+        );
+        // CLI-auth provider, a fuzzy-but-unbound credential, a ZeroConfig local
+        // service: nothing scripted can decide these honestly.
+        assert_eq!(
+            plan.llm_connectors,
+            vec!["vercel", "google_calendar", "local_drive"]
+        );
+        // `notion_search` / `stripe_charges` ride on their connector's row.
+        assert_eq!(plan.llm_tools, vec!["summarize_text"]);
+    }
+
+    fn reported(v: ProbeVerdict) -> tool_runner::ToolTestResult {
+        match v {
+            ProbeVerdict::Reported(r) => r,
+            ProbeVerdict::Unscriptable(why) => panic!("expected a row, got fallback: {why}"),
+        }
+    }
+
+    #[test]
+    fn probe_verdicts_never_turn_an_uncalled_check_into_a_pass() {
+        let t = Duration::from_secs(20);
+
+        let ok = reported(verdict_from_probe(
+            "notion",
+            ProbeOutcome::Checked(HealthcheckResult::probed(
+                true,
+                "Connection successful (HTTP 200)",
+            )),
+            42,
+            t,
+        ));
+        assert_eq!(
+            (ok.status.as_str(), ok.http_status, ok.latency_ms),
+            ("passed", Some(200), 42)
+        );
+        assert_eq!(ok.connector.as_deref(), Some("notion"));
+
+        let denied = reported(verdict_from_probe(
+            "notion",
+            ProbeOutcome::Checked(HealthcheckResult::probed(
+                false,
+                "Service returned HTTP 401",
+            )),
+            5,
+            t,
+        ));
+        assert_eq!(
+            (denied.status.as_str(), denied.http_status),
+            ("failed", Some(401))
+        );
+
+        let offline = reported(verdict_from_probe(
+            "notion",
+            ProbeOutcome::Checked(HealthcheckResult::unreachable("Connection failed: refused")),
+            5,
+            t,
+        ));
+        assert_eq!(
+            (offline.status.as_str(), offline.http_status),
+            ("failed", None)
+        );
+
+        let slow = reported(verdict_from_probe(
+            "notion",
+            ProbeOutcome::TimedOut,
+            20_000,
+            t,
+        ));
+        assert_eq!(slow.status, "failed");
+        assert!(slow
+            .error
+            .as_deref()
+            .unwrap_or("")
+            .contains("did not answer within 20s"));
+
+        // `unverifiable` carries `success: true` — the gated scripted path used
+        // to count it as a pass. It is a fallback, not a verdict.
+        for outcome in [
+            ProbeOutcome::Checked(HealthcheckResult::unverifiable("credentials stored")),
+            ProbeOutcome::Errored("No connector definition found".into()),
+            ProbeOutcome::Panicked("boom".into()),
+        ] {
+            assert!(
+                matches!(
+                    verdict_from_probe("notion", outcome, 0, t),
+                    ProbeVerdict::Unscriptable(_)
+                ),
+                "a check that could not run must fall back to the LLM plan"
+            );
+        }
+    }
+
+    #[test]
+    fn http_status_is_read_from_the_healthcheck_message_formats() {
+        assert_eq!(
+            http_status_from_message("Connection successful (HTTP 204)"),
+            Some(204)
+        );
+        assert_eq!(
+            http_status_from_message("Service returned HTTP 429"),
+            Some(429)
+        );
+        assert_eq!(
+            http_status_from_message("Connection failed: dns error"),
+            None
+        );
+        assert_eq!(http_status_from_message("HTTP 20"), None);
+    }
+
+    #[test]
+    fn a_plan_entry_about_a_connector_is_keyed_on_the_connector_not_the_conduit() {
+        let conns: HashSet<String> = ["gmail".to_string()].into_iter().collect();
+        let tools: HashSet<String> = ["http_request".to_string(), "web_search".to_string()]
+            .into_iter()
+            .collect();
+        let dropped = |e: serde_json::Value| plan_entry_already_scripted(&e, &conns, &tools);
+        assert!(dropped(
+            json!({"tool_name": "gmail_search", "connector": "gmail"})
+        ));
+        assert!(dropped(
+            json!({"tool_name": "web_search", "connector": null})
+        ));
+        assert!(dropped(json!({"tool_name": "gmail"})));
+        // Scripting the conduit must not swallow the connector it drives.
+        assert!(!dropped(
+            json!({"tool_name": "http_request", "connector": "alpha_vantage"})
+        ));
+        assert!(!dropped(json!({"tool_name": "summarize", "connector": ""})));
+    }
+
+    /// Mirror of `parseReportSections` in `TestReportModal.tsx`:
+    /// `/^###?\s+overview/i`, `/^###?\s+results/i`, `/^###?\s+next\s*steps/i`,
+    /// any other `##`/`###` heading ends the section.
+    fn parse_report_sections(md: &str) -> (String, String, String) {
+        let (mut overview, mut results, mut next) = (String::new(), String::new(), String::new());
+        let mut current: Option<u8> = None;
+        for line in md.split('\n') {
+            let t = line.trim();
+            let lower = t.to_lowercase();
+            let hashes = lower.chars().take_while(|c| *c == '#').count();
+            let rest = &lower[hashes..];
+            if (hashes == 2 || hashes == 3) && rest.starts_with(char::is_whitespace) {
+                let h = rest.trim_start();
+                current = if h.starts_with("overview") {
+                    Some(0)
+                } else if h.starts_with("results") {
+                    Some(1)
+                } else if h.replace(' ', "").starts_with("nextsteps") {
+                    Some(2)
+                } else {
+                    None
+                };
+                continue;
+            }
+            let dst = match current {
+                Some(0) => &mut overview,
+                Some(1) => &mut results,
+                Some(2) => &mut next,
+                _ => continue,
+            };
+            dst.push_str(line);
+            dst.push('\n');
+        }
+        (overview, results, next)
+    }
+
+    fn assert_summary_is_modal_readable(summary: &str, report: &serde_json::Value) {
+        let (overview, results, next) = parse_report_sections(summary);
+        assert!(
+            !overview.trim().is_empty(),
+            "no Overview section: {summary}"
+        );
+        assert!(!next.trim().is_empty(), "no Next Steps section: {summary}");
+        for r in report["results"].as_array().unwrap() {
+            // `ToolDetailView`: a result's line is the first Results line that
+            // contains its subject (connector, else tool; `_` as spaces).
+            let subject = row_subject(r).to_lowercase();
+            assert!(
+                results.lines().any(|l| l.to_lowercase().contains(&subject)),
+                "no Results line for `{subject}`: {summary}"
+            );
+        }
+        assert!(
+            !summary.contains("HTTP") && !summary.contains('{'),
+            "no codes or JSON for a non-technical reader: {summary}"
+        );
+    }
+
+    #[test]
+    fn the_scripted_summary_parses_into_the_sections_the_modal_reads() {
+        let mut tally = ToolTestTally::default();
+        for row in [
+            DecidedRow::PlatformBuiltin {
+                tool_name: "web_search".into(),
+                connector: None,
+            },
+            DecidedRow::CredentialMissing {
+                connector: "alpha_vantage".into(),
+            },
+        ] {
+            let r = tally.record_decided(&row);
+            tally.push(&r);
+        }
+        let denied = reported(verdict_from_probe(
+            "notion",
+            ProbeOutcome::Checked(HealthcheckResult::probed(
+                false,
+                "Service returned HTTP 401",
+            )),
+            3,
+            Duration::from_secs(20),
+        ));
+        let r = tally.record_executed("notion", Some("notion".into()), denied);
+        tally.push(&r);
+
+        let summary = build_scripted_summary(&tally);
+        assert!(summary.contains("**Alpha Vantage** — ❌"), "{summary}");
+        assert!(summary.contains("**Web Search** — ✅"), "{summary}");
+        assert!(summary.contains("**Notion** — ❌"), "{summary}");
+        assert!(summary.contains("**Keys**"), "{summary}");
+        assert_summary_is_modal_readable(&summary, &tally.into_report());
+    }
+
+    // ── end to end, against a local mock API ───────────────────────────────
+
+    /// A bearer-auth API: `Authorization: Bearer good-token` → 200, anything
+    /// else → 401, `GET /hang` is accepted and never answered. Counts
+    /// authorised hits (proof the vault secret was decrypted and sent). The
+    /// server task is owned by the returned value and aborted when it drops.
+    struct MockApi {
+        port: u16,
+        good_hits: Arc<AtomicUsize>,
+        server: tokio::task::JoinHandle<()>,
+    }
+
+    impl Drop for MockApi {
+        fn drop(&mut self) {
+            self.server.abort();
+        }
+    }
+
+    async fn spawn_mock_api() -> MockApi {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind");
+        let port = listener.local_addr().expect("addr").port();
+        let good_hits = Arc::new(AtomicUsize::new(0));
+        let hits = good_hits.clone();
+        let server = tokio::spawn(async move {
+            // Parked, never-answered sockets for `/hang`: held open until the
+            // server is aborted, so the client sees a stalled request.
+            let mut parked = Vec::new();
+            loop {
+                let Ok((mut sock, _)) = listener.accept().await else {
+                    return;
+                };
+                let mut buf = vec![0u8; 8192];
+                let n = sock.read(&mut buf).await.unwrap_or(0);
+                let req = String::from_utf8_lossy(&buf[..n]).to_lowercase();
+                if req.starts_with("get /hang") {
+                    parked.push(sock);
+                    continue;
+                }
+                let resp = if req.contains("authorization: bearer good-token") {
+                    hits.fetch_add(1, Ordering::SeqCst);
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 11\r\nConnection: close\r\n\r\n{\"id\":\"me\"}"
+                } else {
+                    "HTTP/1.1 401 Unauthorized\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                };
+                let _ = sock.write_all(resp.as_bytes()).await;
+                let _ = sock.flush().await;
+            }
+        });
+        MockApi {
+            port,
+            good_hits,
+            server,
+        }
+    }
+
+    /// An HTTP API connector as the catalog declares one: a healthcheck with a
+    /// bearer header template, opted into private-network access (the flag
+    /// self-hosted connectors use) so it may reach 127.0.0.1.
+    fn seed_api_connector(pool: &DbPool, name: &str, endpoint: Option<String>) {
+        crate::db::repos::resources::connectors::create(
+            pool,
+            CreateConnectorDefinitionInput {
+                name: name.to_string(),
+                label: format!("{name} Label"),
+                icon_url: None,
+                color: None,
+                category: None,
+                fields: "[]".to_string(),
+                healthcheck_config: endpoint.map(|e| {
+                    json!({
+                        "endpoint": e,
+                        "method": "GET",
+                        "headers": { "Authorization": "Bearer {{api_key}}" }
+                    })
+                    .to_string()
+                }),
+                services: None,
+                events: None,
+                metadata: Some(json!({ "allow_private_network": true }).to_string()),
+                is_builtin: Some(false),
+            },
+        )
+        .unwrap();
+    }
+
+    /// A vault credential written through the production path (fields
+    /// encrypted by `create_with_fields`).
+    fn seed_api_key(pool: &DbPool, service_type: &str, api_key: &str) {
+        let fields: HashMap<String, String> = [("api_key".to_string(), api_key.to_string())]
+            .into_iter()
+            .collect();
+        crate::db::repos::resources::credentials::create_with_fields(
+            pool,
+            CreateCredentialInput {
+                name: format!("{service_type} key"),
+                service_type: service_type.to_string(),
+                encrypted_data: String::new(),
+                iv: String::new(),
+                metadata: None,
+                session_encrypted_data: None,
+                healthcheck_passed: None,
+                oauth_session_ref: None,
+            },
+            &fields,
+        )
+        .unwrap();
+    }
+
+    #[derive(Default)]
+    struct Recorder {
+        prompts: Mutex<Vec<String>>,
+        emitted: Mutex<Vec<(String, String, usize, usize)>>,
+        summaries: AtomicUsize,
+    }
+
+    /// Drive `run_resolved_tests` with the two CLI legs faked: the plan leg
+    /// answers `plan`, the summary leg returns a marker string.
+    async fn run_with(
+        pool: &DbPool,
+        tools: &[&str],
+        connectors: &[&str],
+        vault_types: &[&str],
+        plan: Result<Vec<serde_json::Value>, String>,
+        scripted: bool,
+        rec: Arc<Recorder>,
+    ) -> Result<serde_json::Value, AppError> {
+        crate::engine::connector_strategy::init_registry();
+        let tools: Vec<AgentIrTool> = tools
+            .iter()
+            .map(|t| AgentIrTool::Simple(t.to_string()))
+            .collect();
+        let connectors: Vec<AgentIrConnector> = connectors
+            .iter()
+            .map(|c| AgentIrConnector::Simple(c.to_string()))
+            .collect();
+        let matcher = vault_matcher(vault_types);
+
+        let rec_c = rec.clone();
+        let compose =
+            move |p: String| -> BoxFuture<'static, Result<Vec<serde_json::Value>, AppError>> {
+                rec_c.prompts.lock().unwrap().push(p);
+                let plan = plan.clone().map_err(AppError::ProcessSpawn);
+                Box::pin(async move { plan })
+            };
+        let rec_s = rec.clone();
+        let summary = move |_json: String,
+                            _c: SummaryCounts|
+              -> BoxFuture<'static, Result<String, AppError>> {
+            rec_s.summaries.fetch_add(1, Ordering::SeqCst);
+            Box::pin(async { Ok("### Overview\nwritten by the summary model".to_string()) })
+        };
+        let rec_e = rec.clone();
+        let emit = move |r: &tool_runner::ToolTestResult, tested: usize, total: usize| {
+            rec_e.emitted.lock().unwrap().push((
+                r.tool_name.clone(),
+                r.status.clone(),
+                tested,
+                total,
+            ));
+        };
+
+        run_resolved_tests(
+            pool,
+            &ResolvedTestContext {
+                session_id: "sess-tt",
+                tools: &tools,
+                required_connectors: &connectors,
+                cred_context: "",
+                env_vars: &[],
+                matcher: &matcher,
+            },
+            &TestSeams {
+                compose_plan: &compose,
+                write_summary: &summary,
+                emit: &emit,
+            },
+            TestStrategy {
+                scripted,
+                lanes: SCRIPTED_TEST_LANES,
+                per_test_timeout: Duration::from_secs(2),
+            },
+        )
+        .await
+    }
+
+    fn row<'a>(report: &'a serde_json::Value, subject: &str) -> &'a serde_json::Value {
+        report["results"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["tool_name"] == json!(subject))
+            .unwrap_or_else(|| panic!("no row for {subject}: {report}"))
+    }
+
+    /// The realistic mix: a working bearer API, a rejected key, a connector
+    /// with no credential, one that hangs, one with no declared healthcheck,
+    /// a platform connector, a built-in, a conduit and a custom tool.
+    #[tokio::test]
+    async fn a_mixed_build_scripts_what_it_can_and_hands_only_the_rest_to_the_llm() {
+        let pool = init_test_db().unwrap();
+        let api = spawn_mock_api().await;
+        let (port, good_hits) = (api.port, api.good_hits.clone());
+        let base = format!("http://127.0.0.1:{port}");
+        seed_api_connector(&pool, "mockapi_tt", Some(format!("{base}/v1/me")));
+        seed_api_key(&pool, "mockapi_tt", "good-token");
+        seed_api_connector(&pool, "mockapi_bad_tt", Some(format!("{base}/v1/me")));
+        seed_api_key(&pool, "mockapi_bad_tt", "revoked-token");
+        seed_api_connector(&pool, "slow_tt", Some(format!("{base}/hang")));
+        seed_api_key(&pool, "slow_tt", "good-token");
+        seed_api_connector(&pool, "nocheck_tt", None);
+        seed_api_key(&pool, "nocheck_tt", "good-token");
+
+        // What the build model answers for the leftover subset — including a
+        // stray entry for a connector the scripted phase already covered.
+        let plan = vec![
+            json!({"tool_name": "nocheck_tt", "connector": "nocheck_tt", "curl": "", "description": "No read-only endpoint"}),
+            json!({"tool_name": "summarize_notes_tt", "connector": null, "curl": "", "cli_native": true}),
+            json!({"tool_name": "mockapi_tt", "connector": "mockapi_tt", "curl": "curl -s http://127.0.0.1:9/never-run"}),
+        ];
+        let rec = Arc::new(Recorder::default());
+        let started = std::time::Instant::now();
+        let report = run_with(
+            &pool,
+            &[
+                "mockapi_tt_list",
+                "web_search",
+                "http_request",
+                "summarize_notes_tt",
+            ],
+            &[
+                "mockapi_tt",
+                "mockapi_bad_tt",
+                "missing_tt",
+                "slow_tt",
+                "nocheck_tt",
+                "personas_messages",
+            ],
+            &["mockapi_tt", "mockapi_bad_tt", "slow_tt", "nocheck_tt"],
+            Ok(plan),
+            true,
+            rec.clone(),
+        )
+        .await
+        .unwrap();
+        // The hanging connector costs one per-test timeout, not the run.
+        assert!(
+            started.elapsed() < Duration::from_secs(15),
+            "{:?}",
+            started.elapsed()
+        );
+
+        // Real calls: the decrypted vault key reached the API as a bearer token.
+        assert!(
+            good_hits.load(Ordering::SeqCst) >= 1,
+            "the good key never arrived"
+        );
+        assert_eq!(row(&report, "mockapi_tt")["status"], json!("passed"));
+        assert_eq!(row(&report, "mockapi_tt")["http_status"], json!(200));
+        assert_eq!(row(&report, "mockapi_bad_tt")["status"], json!("failed"));
+        assert_eq!(row(&report, "mockapi_bad_tt")["http_status"], json!(401));
+        assert_eq!(
+            row(&report, "missing_tt")["status"],
+            json!("credential_missing")
+        );
+        assert_eq!(row(&report, "slow_tt")["status"], json!("failed"));
+        assert!(row(&report, "slow_tt")["error"]
+            .as_str()
+            .unwrap()
+            .contains("did not answer"));
+        assert_eq!(row(&report, "personas_messages")["status"], json!("passed"));
+        assert_eq!(row(&report, "web_search")["status"], json!("passed"));
+        assert_eq!(row(&report, "http_request")["status"], json!("passed"));
+        // Unscriptable → decided by the LLM plan.
+        assert_eq!(row(&report, "nocheck_tt")["status"], json!("skipped"));
+        assert_eq!(
+            row(&report, "summarize_notes_tt")["status"],
+            json!(STATUS_UNVERIFIED)
+        );
+
+        // Never both: one row per subject, the stray plan entry dropped.
+        let results = report["results"].as_array().unwrap();
+        assert_eq!(results.len(), 9, "{report}");
+        let mut subjects: Vec<&str> = results
+            .iter()
+            .map(|r| r["tool_name"].as_str().unwrap())
+            .collect();
+        subjects.sort();
+        subjects.dedup();
+        assert_eq!(subjects.len(), 9, "a subject was reported twice: {report}");
+
+        // The LLM saw ONLY the leftover subset, once.
+        let prompts = rec.prompts.lock().unwrap().clone();
+        assert_eq!(prompts.len(), 1);
+        assert!(prompts[0].contains("nocheck_tt") && prompts[0].contains("summarize_notes_tt"));
+        for scripted in ["mockapi_bad_tt", "slow_tt", "missing_tt", "\"mockapi_tt\""] {
+            assert!(
+                !prompts[0].contains(scripted),
+                "{scripted} leaked into the LLM prompt"
+            );
+        }
+
+        // Counters the promote gate and the frontend read.
+        assert_eq!(report["tools_passed"], json!(4));
+        assert_eq!(report["tools_failed"], json!(3));
+        assert_eq!(report["tools_tested"], json!(7));
+        assert_eq!(report["tools_skipped"], json!(1));
+        assert_eq!(report["tools_unverified"], json!(1));
+        assert_eq!(
+            report["credential_issues"],
+            json!([{
+                "connector": "missing_tt",
+                "issue": "No credential found for connector 'missing_tt'. Add it in Keys section."
+            }])
+        );
+        assert_eq!(report["test_mode"], json!("hybrid"));
+        // A plan was parsed, so the summary model wrote the report.
+        assert_eq!(rec.summaries.load(Ordering::SeqCst), 1);
+        assert_eq!(
+            report["summary"],
+            json!("### Overview\nwritten by the summary model")
+        );
+
+        // One event per row, numbered in order.
+        let emitted = rec.emitted.lock().unwrap().clone();
+        assert_eq!(emitted.len(), 9);
+        assert!(emitted.iter().enumerate().all(|(i, e)| e.2 == i + 1));
+
+        // Shape: every row carries exactly the frontend `ToolTestResult` keys,
+        // `connectors_resolved` is `{name, has_credential}` objects.
+        let mut want = ROW_KEYS.to_vec();
+        want.sort();
+        for r in results {
+            let mut keys: Vec<&str> = r.as_object().unwrap().keys().map(|k| k.as_str()).collect();
+            keys.sort();
+            assert_eq!(keys, want, "row shape drifted: {r}");
+        }
+        let resolved = report["connectors_resolved"].as_array().unwrap();
+        assert_eq!(
+            resolved.len(),
+            5,
+            "platform connectors are not credential subjects"
+        );
+        for c in resolved {
+            let obj = c.as_object().unwrap();
+            assert_eq!(obj.len(), 2);
+            assert!(
+                obj["name"].is_string() && obj["has_credential"].is_boolean(),
+                "{c}"
+            );
+        }
+        assert!(resolved.contains(&json!({"name": "missing_tt", "has_credential": false})));
+        assert!(resolved.contains(&json!({"name": "mockapi_tt", "has_credential": true})));
+    }
+
+    #[tokio::test]
+    async fn a_fully_scriptable_build_never_calls_either_llm() {
+        let pool = init_test_db().unwrap();
+        let api = spawn_mock_api().await;
+        let (port, good_hits) = (api.port, api.good_hits.clone());
+        seed_api_connector(
+            &pool,
+            "mockapi_tt",
+            Some(format!("http://127.0.0.1:{port}/v1/me")),
+        );
+        seed_api_key(&pool, "mockapi_tt", "good-token");
+
+        let rec = Arc::new(Recorder::default());
+        let report = run_with(
+            &pool,
+            &["mockapi_tt_list", "web_search"],
+            &["mockapi_tt", "personas_messages"],
+            &["mockapi_tt"],
+            Err("the plan CLI must not be spawned".into()),
+            true,
+            rec.clone(),
+        )
+        .await
+        .unwrap();
+
+        assert!(
+            rec.prompts.lock().unwrap().is_empty(),
+            "the plan LLM was called"
+        );
+        assert_eq!(
+            rec.summaries.load(Ordering::SeqCst),
+            0,
+            "the summary LLM was called"
+        );
+        assert_eq!(good_hits.load(Ordering::SeqCst), 1);
+        assert_eq!(report["test_mode"], json!("scripted"));
+        assert_eq!(report["tools_passed"], json!(3));
+        assert_eq!(report["tools_failed"], json!(0));
+        assert_eq!(report["tools_unverified"], json!(0));
+        assert!(report.get("test_plan_parsed").is_none());
+        let summary = report["summary"]
+            .as_str()
+            .expect("a scripted run still writes a summary");
+        assert_summary_is_modal_readable(summary, &report);
+        assert_eq!(rec.emitted.lock().unwrap().len(), 3);
+    }
+
+    #[tokio::test]
+    async fn a_failing_plan_cli_degrades_only_the_leftover_subset() {
+        let pool = init_test_db().unwrap();
+        let api = spawn_mock_api().await;
+        let port = api.port;
+        seed_api_connector(
+            &pool,
+            "mockapi_tt",
+            Some(format!("http://127.0.0.1:{port}/v1/me")),
+        );
+        seed_api_key(&pool, "mockapi_tt", "good-token");
+        seed_api_connector(&pool, "nocheck_tt", None);
+        seed_api_key(&pool, "nocheck_tt", "good-token");
+
+        let rec = Arc::new(Recorder::default());
+        let report = run_with(
+            &pool,
+            &["http_request"],
+            &["mockapi_tt", "nocheck_tt"],
+            &["mockapi_tt", "nocheck_tt"],
+            Err("claude not on PATH".into()),
+            true,
+            rec,
+        )
+        .await
+        .expect("real verdicts in hand must not be thrown away");
+
+        assert_eq!(row(&report, "mockapi_tt")["status"], json!("passed"));
+        // No plan for the unscriptable connector: the no-plan fallback's
+        // honest `unverified`, which holds promotion.
+        assert_eq!(
+            row(&report, "nocheck_tt")["status"],
+            json!(STATUS_UNVERIFIED)
+        );
+        assert_eq!(report["test_plan_parsed"], json!(false));
+        assert_eq!(report["tools_unverified"], json!(1));
+        assert_summary_is_modal_readable(report["summary"].as_str().unwrap(), &report);
+    }
+
+    /// `PERSONAS_SCRIPTED_TOOL_TESTS=0`: nothing is probed, the whole IR goes
+    /// to the LLM, and a no-plan answer yields exactly the old report.
+    #[tokio::test]
+    async fn the_override_restores_the_all_llm_path_and_its_report() {
+        let pool = init_test_db().unwrap();
+        let api = spawn_mock_api().await;
+        let (port, good_hits) = (api.port, api.good_hits.clone());
+        seed_api_connector(
+            &pool,
+            "mockapi_tt",
+            Some(format!("http://127.0.0.1:{port}/v1/me")),
+        );
+        seed_api_key(&pool, "mockapi_tt", "good-token");
+
+        let rec = Arc::new(Recorder::default());
+        let report = run_with(
+            &pool,
+            &["http_request"],
+            &["mockapi_tt", "missing_tt"],
+            &["mockapi_tt"],
+            Ok(vec![]),
+            false,
+            rec.clone(),
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            good_hits.load(Ordering::SeqCst),
+            0,
+            "the legacy path must not probe"
+        );
+        let prompts = rec.prompts.lock().unwrap().clone();
+        assert_eq!(prompts.len(), 1);
+        assert!(prompts[0].contains("mockapi_tt") && prompts[0].contains("missing_tt"));
+
+        let mut expected = build_no_plan_fallback(
+            &["http_request".to_string()],
+            &[
+                ("mockapi_tt".to_string(), true),
+                ("missing_tt".to_string(), false),
+            ],
+        );
+        let obj = expected.as_object_mut().unwrap();
+        obj.insert(
+            "connectors_resolved".into(),
+            json!([
+                {"name": "mockapi_tt", "has_credential": true},
+                {"name": "missing_tt", "has_credential": false}
+            ]),
+        );
+        obj.insert("test_mode".into(), json!("llm"));
+        assert_eq!(report, expected);
+        assert!(
+            rec.emitted.lock().unwrap().is_empty(),
+            "the no-plan path never emitted"
+        );
+    }
+
+    #[tokio::test]
+    async fn the_override_still_propagates_a_plan_cli_that_will_not_start() {
+        let pool = init_test_db().unwrap();
+        let err = run_with(
+            &pool,
+            &["http_request"],
+            &["notion"],
+            &[],
+            Err("spawn failed".into()),
+            false,
+            Arc::new(Recorder::default()),
+        )
+        .await
+        .expect_err("with nothing scripted the old error contract holds");
+        assert!(matches!(err, AppError::ProcessSpawn(_)));
     }
 }
