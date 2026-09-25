@@ -1,17 +1,17 @@
 /**
- * Gate K prototype: every word the Spine & Lens port of Fleet Activity shows, from keys that
- * already exist (no new strings in Phase A). Where the variant had a word no catalog carries
- * (its unit legend prose, "Cache share", "Lines"), the port draws the glyph or drops the item.
+ * Every word Fleet Activity shows, from keys the catalog already carries. Where the kit's contest
+ * entry had a word no catalog carries (its unit legend prose, "Cache share", "Lines"), the page
+ * draws the glyph with the column name or drops the item.
  */
 import { useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { SpineState } from './activitySpineModel';
+import type { ActivityState } from './activityModel';
 
-export function useSpineWords() {
+export function useActivityWords() {
   const { t, tx } = useTranslation();
   return useMemo(() => {
     const f = t.plugins.fleet;
-    const state: Record<SpineState, string> = {
+    const state: Record<ActivityState, string> = {
       awaiting_input: f.state_awaiting_input,
       running: f.state_working,
       spawning: f.state_spawning,
@@ -39,4 +39,4 @@ export function useSpineWords() {
   }, [t, tx]);
 }
 
-export type SpineWords = ReturnType<typeof useSpineWords>;
+export type ActivityWords = ReturnType<typeof useActivityWords>;

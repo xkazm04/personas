@@ -1,11 +1,10 @@
 /**
- * Gate K prototype: the Spine & Lens port of Fleet Activity renders the page's rows from its
- * props, a row click selects it and shows its detail, and Enter opens the selection (onOpen).
+ * Fleet Activity's kit surface renders the page's rows from its props, a row click selects it and shows its detail, and Enter opens the selection (onOpen).
  */
 import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
-import type { ActivityKitProps } from '../kitProto';
+import type { FleetActivitySurfaceProps } from '../FleetActivitySurface';
 
 (globalThis as Record<string, unknown>).__IPC_TOKEN = 'test-token';
 
@@ -22,7 +21,7 @@ vi.mock('@/stores/systemStore', () => ({
   ),
 }));
 
-import ActivitySpine from '../ActivitySpine';
+import { FleetActivitySurface } from '../FleetActivitySurface';
 
 function row(o: Partial<FleetTranscriptSummary>): FleetTranscriptSummary {
   return {
@@ -41,7 +40,7 @@ const ROWS = [
   row({ claudeSessionId: 'cs-gone', path: '/p/b.jsonl', cwd: '/repo-b', filesTouched: ['/repo-b/main.ts'], tools: [{ name: 'Bash', count: 9 }] }),
 ];
 
-function props(o: Partial<ActivityKitProps> = {}): ActivityKitProps {
+function props(o: Partial<FleetActivitySurfaceProps> = {}): FleetActivitySurfaceProps {
   return {
     rows: ROWS, filtered: ROWS, loading: false, failed: false, query: '', setQuery: vi.fn(),
     onRefresh: vi.fn(), onOpen: vi.fn(), liveSessionIds: new Set(['cs-live']),
@@ -49,10 +48,10 @@ function props(o: Partial<ActivityKitProps> = {}): ActivityKitProps {
   };
 }
 
-describe('ActivitySpine', () => {
+describe('FleetActivitySurface', () => {
   it('renders one table row per filtered transcript, status on the spine', () => {
-    render(<ActivitySpine {...props()} />);
-    const rows = screen.getAllByTestId('kit-spine-row');
+    render(<FleetActivitySurface {...props()} />);
+    const rows = screen.getAllByTestId('fleet-activity-row');
     expect(rows).toHaveLength(2);
     // The live transcript takes its registry title; the other falls back to its project.
     expect(within(rows[0]!).getByText('Port the pager')).toBeInTheDocument();
@@ -62,8 +61,8 @@ describe('ActivitySpine', () => {
   });
 
   it('selecting a row shows its detail', () => {
-    render(<ActivitySpine {...props()} />);
-    const rows = screen.getAllByTestId('kit-spine-row');
+    render(<FleetActivitySurface {...props()} />);
+    const rows = screen.getAllByTestId('fleet-activity-row');
     fireEvent.click(rows[1]!);
     expect(rows[1]).toHaveClass('is-selected');
     expect(rows[0]).not.toHaveClass('is-selected');
@@ -74,27 +73,27 @@ describe('ActivitySpine', () => {
 
   it('Enter opens the selected row, and the detail Open action does too', () => {
     const onOpen = vi.fn();
-    render(<ActivitySpine {...props({ onOpen })} />);
-    fireEvent.click(screen.getAllByTestId('kit-spine-row')[1]!);
+    render(<FleetActivitySurface {...props({ onOpen })} />);
+    fireEvent.click(screen.getAllByTestId('fleet-activity-row')[1]!);
     fireEvent.keyDown(window, { key: 'Enter' });
     expect(onOpen).toHaveBeenCalledTimes(1);
     expect(onOpen.mock.calls[0]![0]).toBe(ROWS[1]);
-    fireEvent.click(screen.getAllByTestId('kit-spine-open')[0]!);
+    fireEvent.click(screen.getAllByTestId('fleet-activity-open')[0]!);
     expect(onOpen).toHaveBeenCalledTimes(2);
   });
 
   it('j moves the selection down', () => {
-    render(<ActivitySpine {...props()} />);
+    render(<FleetActivitySurface {...props()} />);
     fireEvent.keyDown(window, { key: 'j' });
-    expect(screen.getAllByTestId('kit-spine-row')[1]).toHaveClass('is-selected');
+    expect(screen.getAllByTestId('fleet-activity-row')[1]).toHaveClass('is-selected');
   });
 
   it('keeps chrome and shows a ghost while the first load runs, and the empty band after', () => {
-    const { rerender } = render(<ActivitySpine {...props({ rows: [], filtered: [], loading: true })} />);
+    const { rerender } = render(<FleetActivitySurface {...props({ rows: [], filtered: [], loading: true })} />);
     expect(screen.getByTestId('fleet-activity-search')).toBeInTheDocument();
-    expect(screen.queryAllByTestId('kit-spine-row')).toHaveLength(0);
+    expect(screen.queryAllByTestId('fleet-activity-row')).toHaveLength(0);
     expect(document.querySelector('.k-table[aria-busy="true"]')).not.toBeNull();
-    rerender(<ActivitySpine {...props({ rows: [], filtered: [], loading: false })} />);
+    rerender(<FleetActivitySurface {...props({ rows: [], filtered: [], loading: false })} />);
     expect(document.querySelector('.k-table [data-empty="1"]')).not.toBeNull();
   });
 });

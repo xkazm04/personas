@@ -1,19 +1,19 @@
 /**
- * Gate K prototype, Spine & Lens: the Overview section. Six tiles, each figure drawn as countable
+ * Fleet Activity (composition kit): the Overview section. Six tiles, each figure drawn as countable
  * units at the variant's quanta (1 square = 1 session, 100k tokens, 10 calls, 1 file, 5 turns).
  */
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Section, StatStrip, UnitStrip, apportion } from '@/features/shared/components/kit';
-import { STATE_GLYPH, STATE_ORDER, TOKEN_PARTS, type SpineSession, type SpineTotals } from './activitySpineModel';
-import type { SpineWords } from './useSpineWords';
+import { STATE_GLYPH, STATE_ORDER, TOKEN_PARTS, type ActivitySession, type ActivityTotals } from './activityModel';
+import type { ActivityWords } from './useActivityWords';
 
-export function ActivitySpineOverview({ sessions, totals, fleet, loading, w }: {
-  sessions: readonly SpineSession[];
-  totals: SpineTotals;
+export function FleetActivityOverview({ sessions, totals, fleet, loading, w }: {
+  sessions: readonly ActivitySession[];
+  totals: ActivityTotals;
   fleet: readonly FleetSession[];
   loading: boolean;
-  w: SpineWords;
+  w: ActivityWords;
 }) {
   const turns = totals.userTurns + totals.agentTurns;
   const live = STATE_ORDER.filter((st) => st !== 'gone').map((st) => ({ st, n: fleet.filter((s) => s.state === st).length }));

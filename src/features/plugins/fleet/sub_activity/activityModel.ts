@@ -1,6 +1,6 @@
 /**
- * Gate K prototype: Fleet Activity's transcripts shaped for the Spine & Lens kit. Pure functions,
- * so the page stays a composition. The joins are the variant's own (model.js of the A/3 entry):
+ * Fleet Activity's transcripts shaped for the composition kit. Pure functions,
+ * so the page stays a composition. The joins (as the kit's contest entry made them):
  * a transcript takes its title and state from the registry session with the same claudeSessionId;
  * a transcript with no session is `gone`.
  */
@@ -8,12 +8,12 @@ import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
 import type { Glyph, Tone } from '@/features/shared/components/kit';
-import { projectLabel } from '../activityTarget';
+import { projectLabel } from './activityTarget';
 
-export type SpineState = FleetSessionState | 'gone';
+export type ActivityState = FleetSessionState | 'gone';
 
 /** Tone x glyph per state: the same glyph on the spine, in a segment, in a unit square. */
-export const STATE_GLYPH: Record<SpineState, { tone: Tone; glyph: Glyph }> = {
+export const STATE_GLYPH: Record<ActivityState, { tone: Tone; glyph: Glyph }> = {
   awaiting_input: { tone: 'warning', glyph: 'solid' },
   running: { tone: 'primary', glyph: 'live' },
   spawning: { tone: 'primary', glyph: 'soft' },
@@ -27,7 +27,7 @@ export const STATE_GLYPH: Record<SpineState, { tone: Tone; glyph: Glyph }> = {
 };
 
 /** The variant's order for the state filter; only states present in the data are offered. */
-export const STATE_ORDER: readonly SpineState[] = [
+export const STATE_ORDER: readonly ActivityState[] = [
   'awaiting_input', 'running', 'spawning', 'queued', 'idle', 'stale', 'finished', 'hibernated', 'exited', 'gone',
 ];
 
@@ -42,14 +42,14 @@ export const TOKEN_PARTS = [
 export type TokenKey = (typeof TOKEN_PARTS)[number]['k'];
 export type Tokens = Record<TokenKey | 'total', number>;
 
-export interface SpineSession {
+export interface ActivitySession {
   id: string;
   row: FleetTranscriptSummary;
   title: string | null;
   project: string | null;
   model: string | null;
   models: string[];
-  state: SpineState;
+  state: ActivityState;
   stateReason: string | null;
   origin: string | null;
   tokens: Tokens;
@@ -63,7 +63,7 @@ export function shortModel(m: string): string {
   return m.replace(/^[^-]+-(?=[a-z])/, '');
 }
 
-export function toSpineSession(row: FleetTranscriptSummary, live: FleetSession | undefined): SpineSession {
+export function toActivitySession(row: FleetTranscriptSummary, live: FleetSession | undefined): ActivitySession {
   const tokens = {
     input: Number(row.tokens.input), output: Number(row.tokens.output),
     cacheCreation: Number(row.tokens.cacheCreation), cacheRead: Number(row.tokens.cacheRead), total: 0,
@@ -72,7 +72,8 @@ export function toSpineSession(row: FleetTranscriptSummary, live: FleetSession |
   const first = row.firstTimestamp ? Date.parse(row.firstTimestamp) : NaN;
   const last = row.lastTimestamp ? Date.parse(row.lastTimestamp) : NaN;
   return {
-    id: row.claudeSessionId,
+    // The transcript's path: unique per file, where a session id stem need not be.
+    id: row.path,
     row,
     title: live?.title ?? null,
     project: row.cwd ? projectLabel(row.cwd) : live?.projectLabel ?? null,
@@ -88,7 +89,7 @@ export function toSpineSession(row: FleetTranscriptSummary, live: FleetSession |
   };
 }
 
-export interface SpineTotals {
+export interface ActivityTotals {
   tokens: Tokens;
   toolCalls: number;
   files: number;
@@ -97,7 +98,7 @@ export interface SpineTotals {
   tools: Array<{ name: string; count: number }>;
 }
 
-export function totalsOf(sessions: readonly SpineSession[]): SpineTotals {
+export function totalsOf(sessions: readonly ActivitySession[]): ActivityTotals {
   const tokens: Tokens = { input: 0, output: 0, cacheCreation: 0, cacheRead: 0, total: 0 };
   const tools = new Map<string, number>();
   let toolCalls = 0; let files = 0; let userTurns = 0; let agentTurns = 0;

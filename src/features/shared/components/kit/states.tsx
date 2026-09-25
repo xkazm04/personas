@@ -9,6 +9,7 @@ export interface EmptySpec {
   action?: ReactNode;
   /** Accessible name of the mark; defaults to the title when it is a string. */
   markLabel?: string;
+  testId?: string;
 }
 
 /**
@@ -17,9 +18,9 @@ export interface EmptySpec {
  * list keeps the list's geometry. A render helper, not a component: callers reach it through a
  * composition's `state="empty"` / `empty` prop.
  */
-export function emptyBand({ title, hint, tone = 'neutral', action, markLabel }: EmptySpec): ReactNode {
+export function emptyBand({ title, hint, tone = 'neutral', action, markLabel, testId }: EmptySpec): ReactNode {
   return (
-    <div className="k-empty" data-empty="1">
+    <div className="k-empty" data-empty="1" data-testid={testId}>
       <Mark tone={tone} glyph="hollow" label={markLabel ?? (typeof title === 'string' ? title : '')} />
       <div className="k-empty__text">
         <span className="typo-body k-strong">{title}</span>

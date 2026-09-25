@@ -1,5 +1,5 @@
 /**
- * Gate K prototype, Spine & Lens: the Sessions section. Toolbar (state filter, search, refresh),
+ * Fleet Activity (composition kit): the Sessions section. Toolbar (state filter, search, refresh),
  * then a DataTable whose rows carry their status on the spine and their figures as unit strips.
  */
 import type { ReactNode, Ref } from 'react';
@@ -9,19 +9,19 @@ import {
   ChipView, DataTable, Dot, KitButton, Meta, SearchField, Section, Segmented, Toolbar, UnitStrip, apportion,
   type KitState, type SegmentOption, type TableRow,
 } from '@/features/shared/components/kit';
-import { STATE_GLYPH, STATE_ORDER, TOKEN_PARTS, type SpineSession, type SpineState } from './activitySpineModel';
-import type { SpineWords } from './useSpineWords';
+import { STATE_GLYPH, STATE_ORDER, TOKEN_PARTS, type ActivitySession, type ActivityState } from './activityModel';
+import type { ActivityWords } from './useActivityWords';
 
 type Col = 's' | 'tok' | 'calls' | 'files' | 'turns' | 'age';
-export type StateFilter = SpineState | 'all';
+export type StateFilter = ActivityState | 'all';
 
 const fig = (strip: ReactNode, value: ReactNode) => (
   <span className="k-fig">{strip}<span className="typo-data k-regular">{value}</span></span>
 );
 
 export interface SessionsProps {
-  all: readonly SpineSession[];
-  shown: readonly SpineSession[];
+  all: readonly ActivitySession[];
+  shown: readonly ActivitySession[];
   selected: string | null;
   loading: boolean;
   failed: boolean;
@@ -35,10 +35,10 @@ export interface SessionsProps {
   onRefresh: () => void;
   onSelect: (id: string) => void;
   searchRef: Ref<HTMLInputElement>;
-  w: SpineWords;
+  w: ActivityWords;
 }
 
-export function ActivitySpineSessions(p: SessionsProps) {
+export function FleetActivitySessions(p: SessionsProps) {
   const { w } = p;
   const present = STATE_ORDER.filter((st) => p.all.some((s) => s.state === st));
   const options: Array<SegmentOption<StateFilter>> = [
@@ -96,7 +96,8 @@ export function ActivitySpineSessions(p: SessionsProps) {
         label={w.sessions}
         loading={p.loading && p.all.length === 0}
         onRowClick={p.onSelect}
-        rowTestId="kit-spine-row"
+        rowTestId="fleet-activity-row"
+        testId="fleet-activity-list"
         cols={[
           { key: 's', label: w.f.monitor_col_session },
           { key: 'tok', label: w.f.insights_tokens, num: true },
@@ -108,10 +109,10 @@ export function ActivitySpineSessions(p: SessionsProps) {
         rows={rows}
         empty={
           p.failed
-            ? { title: w.f.activity_error, tone: 'warning', action: <KitButton onClick={p.onRefresh}>{w.t.common.refresh}</KitButton> }
+            ? { title: w.f.activity_error, tone: 'warning', testId: 'fleet-activity-error', action: <KitButton onClick={p.onRefresh}>{w.t.common.refresh}</KitButton> }
             : filteredOut
-              ? { title: w.f.activity_no_matches, action: <KitButton onClick={p.clearFilters}>{w.f.filter_clear}</KitButton> }
-              : { title: w.f.activity_empty }
+              ? { title: w.f.activity_no_matches, testId: 'fleet-activity-empty', action: <KitButton onClick={p.clearFilters}>{w.f.filter_clear}</KitButton> }
+              : { title: w.f.activity_empty, testId: 'fleet-activity-empty' }
         }
         pager={
           <>

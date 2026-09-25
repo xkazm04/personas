@@ -1,34 +1,49 @@
 /**
- * Gate K prototype: Fleet Activity composed from the A/3 "Spine & Lens" kit
- * (`src/features/shared/components/kit/`), as the contest entry composed it:
- * Overview, Sessions and Tools on one spine, the selection's detail in a side pane when the
- * surface has room and in a drawer when it has not.
+ * Fleet Activity composed from the composition kit (`@/features/shared/components/kit`, Spine &
+ * Lens, chosen at Gate K on 2026-09-25): Overview, Sessions and Tools on one spine, the
+ * selection's detail in a side pane when the surface has room and in a drawer when it has not.
  *
- * Beyond `ActivityKitProps` it reads the registry sessions (`fleetSessions`) the page already
- * derives `liveSessionIds` from, because the variant's marks, state filter and titles are a
- * transcript's live session state and title (its model.js makes the same join).
+ * Beyond its props it reads the registry sessions (`fleetSessions`) the page derives
+ * `liveSessionIds` from: the status marks, state filter and titles are a transcript's live
+ * session state and title.
  *
  * Keys (route rung of the app keyboard ladder, never while typing or over a dialog): j/k and
  * arrows move the selection, Enter opens it, Esc closes the drawer, / focuses the search.
- * Not carried: the variant's shell keys (1-5, [ ], L, T), which belong to its page chrome.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAppKeyboard, ROUTE_DECISION_PRIORITY } from '@/lib/keyboard/AppKeyboardProvider';
 import { isTypingTarget } from '@/lib/keyboard/KeyboardNavMode';
 import { ChipRow, Drawer, KitHost, Section, Split, Surface } from '@/features/shared/components/kit';
 import { Numeric } from '@/features/shared/components/display/Numeric';
-import type { ActivityKitProps } from './kitProto';
-import { toSpineSession, totalsOf, type SpineSession } from './activitySpineModel';
-import { useSpineWords } from './useSpineWords';
-import { ActivitySpineOverview } from './ActivitySpineOverview';
-import { ActivitySpineSessions, type StateFilter } from './ActivitySpineSessions';
-import { ActivitySpineDetail } from './ActivitySpineDetail';
+import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
+import { toActivitySession, totalsOf, type ActivitySession } from './activityModel';
+import { useActivityWords } from './useActivityWords';
+import { FleetActivityOverview } from './FleetActivityOverview';
+import { FleetActivitySessions, type StateFilter } from './FleetActivitySessions';
+import { FleetActivityDetail } from './FleetActivityDetail';
 
-export default function ActivitySpine({ rows, filtered, loading, failed, query, setQuery, onRefresh, onOpen, liveSessionIds }: ActivityKitProps) {
-  const w = useSpineWords();
+/** The page's real state and handlers. */
+export interface FleetActivitySurfaceProps {
+  /** Every transcript the backend returned (unfiltered). */
+  rows: FleetTranscriptSummary[];
+  /** Rows after the search query (what the table shows before its own filters). */
+  filtered: FleetTranscriptSummary[];
+  loading: boolean;
+  failed: boolean;
+  query: string;
+  setQuery: (q: string) => void;
+  onRefresh: () => void;
+  /** Opens the live session (switching to Sessions) or the transcript's insights. */
+  onOpen: (row: FleetTranscriptSummary) => void;
+  /** Live registry: which transcripts belong to a running session (keyed by claudeSessionId). */
+  liveSessionIds: ReadonlySet<string>;
+}
+
+export function FleetActivitySurface({ rows, filtered, loading, failed, query, setQuery, onRefresh, onOpen, liveSessionIds }: FleetActivitySurfaceProps) {
+  const w = useActivityWords();
   const fleet = useSystemStore((st) => st.fleetSessions);
-  const [sel, setSel] = useState<string | null>(null);
+  const [picked, setSel] = useState<string | null>(null);
   const [stateFilter, setStateFilter] = useState<StateFilter>('all');
   const [tool, setTool] = useState<string | null>(null);
   const [drawer, setDrawer] = useState(false);
@@ -37,18 +52,17 @@ export default function ActivitySpine({ rows, filtered, loading, failed, query, 
   const searchRef = useRef<HTMLInputElement>(null);
 
   const byId = useMemo(() => new Map(fleet.filter((s) => s.claudeSessionId).map((s) => [s.claudeSessionId!, s])), [fleet]);
-  const all = useMemo(() => rows.map((r) => toSpineSession(r, byId.get(r.claudeSessionId))), [rows, byId]);
+  const all = useMemo(() => rows.map((r) => toActivitySession(r, byId.get(r.claudeSessionId))), [rows, byId]);
   const totals = useMemo(() => totalsOf(all), [all]);
   const shown = useMemo(() => {
-    const keep = new Set(filtered.map((r) => r.claudeSessionId));
+    const keep = new Set(filtered.map((r) => r.path));
     return all.filter((s) => keep.has(s.id)
       && (stateFilter === 'all' || s.state === stateFilter)
       && (!tool || s.row.tools.some((x) => x.name === tool)));
   }, [all, filtered, stateFilter, tool]);
+  // The first session is selected on arrival, so the detail is never blank (as the kit's entry).
+  const sel = picked ?? all[0]?.id ?? null;
   const selected = all.find((s) => s.id === sel) ?? null;
-
-  // The variant arrives with the first session selected, so the detail is never blank.
-  useEffect(() => { if (sel === null && all[0]) setSel(all[0].id); }, [all, sel]);
 
   const select = useCallback((id: string, fromKey = false) => {
     setSel(id);
@@ -57,7 +71,7 @@ export default function ActivitySpine({ rows, filtered, loading, failed, query, 
     // No room for the side pane: the detail opens in the drawer, as the variant does on a click.
     if (!fromKey && paneRef.current && paneRef.current.offsetWidth === 0) setDrawer(true);
   }, []);
-  const open = useCallback((s: SpineSession) => onOpen(s.row), [onOpen]);
+  const open = useCallback((s: ActivitySession) => onOpen(s.row), [onOpen]);
   const clearFilters = useCallback(() => { setStateFilter('all'); setTool(null); setQuery(''); }, [setQuery]);
 
   useAppKeyboard((e) => {
@@ -76,20 +90,20 @@ export default function ActivitySpine({ rows, filtered, loading, failed, query, 
   }, { priority: ROUTE_DECISION_PRIORITY });
 
   const detail = (
-    <ActivitySpineDetail s={selected} live={!!selected && liveSessionIds.has(selected.id)} onOpen={open} w={w} />
+    <FleetActivityDetail s={selected} live={!!selected && liveSessionIds.has(selected.row.claudeSessionId)} onOpen={open} w={w} />
   );
   const top = totals.tools[0]?.count ?? 1;
   return (
     <div ref={hostRef}>
-      <KitHost compact testId="kit-proto-spine">
+      <KitHost compact testId="fleet-activity-surface">
         <Split
           paneRef={paneRef}
           paneLabel={w.f.insights_title}
           pane={detail}
           main={
             <Surface dense>
-              <ActivitySpineOverview sessions={all} totals={totals} fleet={fleet} loading={loading && rows.length === 0} w={w} />
-              <ActivitySpineSessions
+              <FleetActivityOverview sessions={all} totals={totals} fleet={fleet} loading={loading && rows.length === 0} w={w} />
+              <FleetActivitySessions
                 all={all} shown={shown} selected={sel} loading={loading} failed={failed}
                 stateFilter={stateFilter} setStateFilter={setStateFilter}
                 tool={tool} clearTool={() => setTool(null)} query={query} setQuery={setQuery}

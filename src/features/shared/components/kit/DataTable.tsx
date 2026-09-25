@@ -23,7 +23,7 @@ export interface TableRow<K extends string> {
  * sits directly under the last one.
  * @catalog DataTable - column heads over ListRow-family rows (band, mark, selection), pager under the last row. Kit.
  */
-export function DataTable<K extends string>({ cols, rows, label, loading, empty, pager, onRowClick, rowTestId }: {
+export function DataTable<K extends string>({ cols, rows, label, loading, empty, pager, onRowClick, rowTestId, testId }: {
   cols: ReadonlyArray<TableCol<K>>;
   rows: ReadonlyArray<TableRow<K>>;
   label: string;
@@ -32,10 +32,11 @@ export function DataTable<K extends string>({ cols, rows, label, loading, empty,
   pager?: ReactNode;
   onRowClick?: (id: string) => void;
   rowTestId?: string;
+  testId?: string;
 }) {
   const st = loading ? 'loading' : rows.length === 0 ? 'empty' : 'default';
   return (
-    <div className={cx('k-tablewrap', stateClass(st))} {...kitAttrs('DataTable', st)}>
+    <div className={cx('k-tablewrap', stateClass(st))} {...kitAttrs('DataTable', st)} data-testid={testId}>
       <table className="k-table" aria-label={label} aria-busy={loading || undefined}>
         <thead>
           <tr>
@@ -60,7 +61,9 @@ export function DataTable<K extends string>({ cols, rows, label, loading, empty,
           {st === 'empty' && (
             <tr><td colSpan={cols.length} style={{ height: 'auto', padding: 0 }}>{emptyBand(empty)}</td></tr>
           )}
-          {st === 'default' && rows.map((r) => (
+          {st === 'default' && rows.map((r) => {
+            const selected = typeof r.state === 'string' ? r.state === 'selected' : !!r.state?.includes('selected');
+            return (
             <tr
               key={r.id}
               className={stateClass(r.state)}
@@ -69,8 +72,9 @@ export function DataTable<K extends string>({ cols, rows, label, loading, empty,
               data-id={r.id}
               data-testid={rowTestId}
               data-nav={onRowClick ? 'row' : undefined}
-              tabIndex={onRowClick ? -1 : undefined}
-              aria-selected={onRowClick ? (typeof r.state === 'string' ? r.state === 'selected' : !!r.state?.includes('selected')) : undefined}
+              // Roving tabindex: the selected row is the table's one tab stop; j/k move it.
+              tabIndex={onRowClick ? (selected ? 0 : -1) : undefined}
+              aria-selected={onRowClick ? selected : undefined}
               onClick={onRowClick ? () => onRowClick(r.id) : undefined}
             >
               {cols.map((c, ci) => (
@@ -80,7 +84,8 @@ export function DataTable<K extends string>({ cols, rows, label, loading, empty,
                 </td>
               ))}
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
       {st !== 'loading' && pager && <nav className="k-pager" aria-label={label}>{pager}</nav>}

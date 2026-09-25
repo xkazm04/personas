@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
-import type { ActivityKitProps } from '../../kitProto';
+import type { FleetActivitySurfaceProps as ActivityKitProps } from '../../../FleetActivitySurface';
 
 const fleetState = {
   fleetSessions: [{ id: 'reg-a', claudeSessionId: 'cs-a', state: 'running', title: 'Port the pager', stateReason: null, origin: 'manual', mode: 'interactive' }],

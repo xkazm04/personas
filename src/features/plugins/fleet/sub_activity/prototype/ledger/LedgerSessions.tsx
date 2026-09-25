@@ -14,7 +14,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { ActivityKitProps } from '../kitProto';
+import type { FleetActivitySurfaceProps as ActivityKitProps } from '../../FleetActivitySurface';
 import { columnMax, STATE_ORDER, stateLabel, stateTone, type LedgerSession, type LedgerState, type SortKey } from './ledgerModel';
 import { LedgerSessionFolio } from './LedgerSessionFolio';
 import { searchKeys } from './useLedgerKeys';

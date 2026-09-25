@@ -4,7 +4,7 @@
  * across files/tools/projects via the real DOM.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
@@ -65,9 +65,10 @@ describe('FleetActivityPage', () => {
     vi.mocked(fleetApi.recentTranscripts).mockResolvedValue(ROWS);
     render(<FleetActivityPage />);
     await screen.findByTestId('fleet-activity-list');
-    expect(screen.getAllByTestId('fleet-activity-row')).toHaveLength(2);
-    expect(screen.getByText('repo-a')).toBeInTheDocument();
-    expect(screen.getByText('repo-b')).toBeInTheDocument();
+    const rows = screen.getAllByTestId('fleet-activity-row');
+    expect(rows).toHaveLength(2);
+    expect(within(rows[0]!).getByText('repo-a')).toBeInTheDocument();
+    expect(within(rows[1]!).getByText('repo-b')).toBeInTheDocument();
   });
 
   it('filters by file path across sessions', async () => {
@@ -79,8 +80,8 @@ describe('FleetActivityPage', () => {
     await user.type(screen.getByTestId('fleet-activity-search'), 'auth.rs');
 
     await waitFor(() => expect(screen.getAllByTestId('fleet-activity-row')).toHaveLength(1));
-    expect(screen.getByText('repo-a')).toBeInTheDocument();
-    expect(screen.queryByText('repo-b')).not.toBeInTheDocument();
+    expect(within(screen.getByTestId('fleet-activity-row')).getByText('repo-a')).toBeInTheDocument();
+    expect(within(screen.getByTestId('fleet-activity-list')).queryByText('repo-b')).not.toBeInTheDocument();
   });
 
   it('shows the empty state when no sessions', async () => {
@@ -135,7 +136,10 @@ describe('FleetActivityPage row doors', () => {
     render(<FleetActivityPage onOpenSessions={onOpenSessions} />);
     await screen.findByTestId('fleet-activity-list');
 
+    // A click selects; the detail's action (or Enter) is the door.
     await userEvent.click(screen.getByTestId('fleet-activity-row'));
+    expect(fleetState.fleetSetActiveSession).not.toHaveBeenCalled();
+    await userEvent.click(screen.getAllByTestId('fleet-activity-open')[0]!);
     expect(fleetState.fleetSetActiveSession).toHaveBeenCalledWith('sess-1');
     expect(onOpenSessions).toHaveBeenCalled();
   });
@@ -149,18 +153,22 @@ describe('FleetActivityPage row doors', () => {
     await screen.findByTestId('fleet-activity-list');
 
     await userEvent.click(screen.getByTestId('fleet-activity-row'));
+    await userEvent.keyboard('{Enter}');
     await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
     // Reading a finished run is not a reason to leave the Activity tab.
     expect(onOpenSessions).not.toHaveBeenCalled();
     expect(fleetState.fleetSetActiveSession).not.toHaveBeenCalled();
   });
 
-  it('makes every row a real control, not a div with a handler', async () => {
+  it('keeps the row a keyboard stop and the door a real button', async () => {
     vi.mocked(fleetApi.recentTranscripts).mockResolvedValue(ROWS);
     render(<FleetActivityPage />);
     await screen.findByTestId('fleet-activity-list');
-    for (const el of screen.getAllByTestId('fleet-activity-row')) {
-      expect(el.tagName).toBe('BUTTON');
-    }
+    // Roving tabindex: the selected row is the table's one tab stop, the rest are reachable by j/k.
+    const rows = screen.getAllByTestId('fleet-activity-row');
+    expect(rows[0]).toHaveAttribute('tabindex', '0');
+    expect(rows[0]).toHaveAttribute('aria-selected', 'true');
+    expect(rows[1]).toHaveAttribute('tabindex', '-1');
+    for (const el of screen.getAllByTestId('fleet-activity-open')) expect(el.tagName).toBe('BUTTON');
   });
 });

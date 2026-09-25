@@ -17,7 +17,7 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
-import type { ActivityKitProps } from './kitProto';
+import type { FleetActivitySurfaceProps as ActivityKitProps } from '../FleetActivitySurface';
 import { toLedgerSession, sortSessions, toolTotals, type LedgerState, type SortKey } from './ledger/ledgerModel';
 import { LedgerTotals } from './ledger/LedgerTotals';
 import { LedgerSessions } from './ledger/LedgerSessions';

@@ -1,5 +1,5 @@
 /**
- * Gate K prototype, Spine & Lens: the selected session's detail layer (the side pane on a wide
+ * Fleet Activity (composition kit): the selected session's detail layer (the side pane on a wide
  * surface, the drawer on a narrow one). Tokens, run facts, tools and files, from the transcript's
  * own rollup; Open (or Enter) goes where a row click went before (live session or insights).
  */
@@ -8,14 +8,14 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import {
   ChipRow, Dot, KeyValueGrid, KitButton, ListRow, Meta, Rows, Section, UnitStrip, apportion,
 } from '@/features/shared/components/kit';
-import { STATE_GLYPH, TOKEN_PARTS, splitPath, type SpineSession } from './activitySpineModel';
-import type { SpineWords } from './useSpineWords';
+import { STATE_GLYPH, TOKEN_PARTS, splitPath, type ActivitySession } from './activityModel';
+import type { ActivityWords } from './useActivityWords';
 
-export function ActivitySpineDetail({ s, live, onOpen, w }: {
-  s: SpineSession | null;
+export function FleetActivityDetail({ s, live, onOpen, w }: {
+  s: ActivitySession | null;
   live: boolean;
-  onOpen: (s: SpineSession) => void;
-  w: SpineWords;
+  onOpen: (s: ActivitySession) => void;
+  w: ActivityWords;
 }) {
   if (!s) return <Section title={w.f.monitor_col_session} state="empty" empty={{ title: w.f.activity_empty }} />;
   const g = STATE_GLYPH[s.state];
@@ -30,7 +30,7 @@ export function ActivitySpineDetail({ s, live, onOpen, w }: {
       meta={<Meta parts={[s.project, s.model, stateLabel]} />}
       state={s.state === 'gone' ? 'muted' : undefined}
       actions={
-        <KitButton onClick={() => onOpen(s)} hint="↵" testId="kit-spine-open">
+        <KitButton onClick={() => onOpen(s)} hint="↵" testId="fleet-activity-open">
           {live ? w.f.jump_to_session : w.f.view_insights}
         </KitButton>
       }
