@@ -20,6 +20,7 @@ import { OBSERVABILITY_MODULES } from './observabilitySurfaces';
 import { FACTORY_MODULES } from './factorySurfaces';
 import { KIT_MODULES } from './kitSpecimen';
 import { KIT_OVERVIEW_MODULES } from './kitOverview';
+import { HOME_LEARNING_MODULES } from './homeLearningSurfaces';
 
 type Wrap = (children: ReactNode) => ReactNode;
 
@@ -66,6 +67,8 @@ export const MODULES: Record<string, HarnessModule> = {
   ...FLEET_MODULES,
   ...OBSERVABILITY_MODULES,
   ...FACTORY_MODULES,
+  // Kit batch home-1, Home > Learning (homeLearningSurfaces.tsx, homeLearningTapes.mjs).
+  ...HOME_LEARNING_MODULES,
   // The kit specimen: every kit part in its states (kitSpecimen.tsx); harness-only.
   ...KIT_MODULES,
   ...KIT_OVERVIEW_MODULES,
