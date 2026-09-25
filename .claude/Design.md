@@ -108,8 +108,8 @@ these overrides in components.
 > tint. That is why a patch is now a real choice, not a no-op: prefer the token
 > that already says it, and never add a `text-*` colour to a tinted title just to
 > repeat what it is. Still unlayered (they beat utilities): the text-scale rules
-> for `.text-xs` / `.text-sm` / `.text-[Npx]` in globals.css, `.typo-weight-light`,
-> `.fleet-typescale` overrides. `[&_x]:typo-*` arbitrary variants generate no CSS
+> for `.text-xs` / `.text-sm` / `.text-[Npx]` in globals.css and
+> `.typo-weight-light` (`.fleet-typescale` was retired at Gate 3b). `[&_x]:typo-*` arbitrary variants generate no CSS
 > at all: a token cannot be delivered to a child that way.
 
 ---

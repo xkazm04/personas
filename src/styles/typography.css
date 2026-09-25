@@ -420,19 +420,6 @@ body {
   }
 }
 
-/* Compact type density, guard. The unlayered `.fleet-typescale` rules in
-   globals.css pin typo-caption / typo-label to 0.875rem and typo-card-label to
-   1rem as literals (a +2px bump from before the one-factor ramp). Inside a
-   compact surface they beat the rebound steps: measured at Standard, label
-   14.4px instead of 13.4 and card label 16.5px instead of 13.4; at Large a
-   caption rendered 13.1px beside 12.3px body. These three rules give the
-   compact ramp back to them. UNLAYERED with a doubled attribute (0,3,0) so they
-   outrank that (0,2,0) block, which loads later. Delete them together with
-   `.fleet-typescale` once that block is retired. */
-[data-type-density="compact"][data-type-density] .typo-caption    { font-size: calc(var(--type-1) * var(--type-f)); }
-[data-type-density="compact"][data-type-density] .typo-label      { font-size: calc(var(--type-0) * var(--type-f)); }
-[data-type-density="compact"][data-type-density] .typo-card-label { font-size: calc(var(--type-0) * var(--type-f)); }
-
 /* Weight modifier -- one step (100) lighter than the body ramp, for row hints
    that must recede under a .typo-title label. Kept UNLAYERED on purpose when
    the tokens moved into @layer components: it beat the token weight and any

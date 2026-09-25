@@ -1,8 +1,8 @@
 /**
  * Module 3 (`plugins/fleet` sub_grid, sub_activity, sub_settings): the three
  * pages the Fleet plugin's tab strip switches between, each mounted inside the
- * same `.fleet-typescale` column FleetPage gives it (FleetPage.tsx), on the
- * synthetic tapes in `fleetTapes.mjs`.
+ * same column FleetPage gives it (FleetPage.tsx), on the synthetic tapes in
+ * `fleetTapes.mjs`.
  *
  * The FleetPage root (its tab strip and orphan badge) is left out on purpose:
  * other sessions develop it, and a before/after pair must move only because
@@ -47,7 +47,7 @@ function inFleetColumn(load: () => Promise<{ default: ComponentType }>, click?: 
     return {
       default: function FleetHost() {
         const page = (
-          <div className="fleet-typescale h-full w-full flex flex-col">
+          <div className="h-full w-full flex flex-col">
             <div className="flex-1 min-h-0 flex flex-col">
               <Page />
             </div>
