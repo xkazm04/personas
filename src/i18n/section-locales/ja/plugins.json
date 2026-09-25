@@ -4170,7 +4170,7 @@
     "live_ready": "{title} はレビュー準備が完了しました",
     "live_ready_event": "レビュー準備完了",
     "live_seat_limit": "{title} で {seat} が利用上限に達しました",
-    "live_seat_limit_event": "シート上限",
+    "live_seat_limit_event": "利用上限",
     "live_source_label": "コンテスト",
     "note_label": "あなたのメモ(そのままREVIEW.mdに記載されます)",
     "note_placeholder": "うまくいった点、うまくいかなかった点、残すべき点",
@@ -4261,7 +4261,7 @@
         "idle": "未開始",
         "queued": "グリッドで待機中",
         "running": "レース中",
-        "seat_limit": "燃料切れ・シート上限",
+        "seat_limit": "燃料切れ・利用上限",
         "timed_out": "制限時間超過"
       },
       "lane_unlettered": "まだ文字が割り当てられていないレーン",

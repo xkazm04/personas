@@ -14964,7 +14964,7 @@
       "live_ready": "{title} est prêt pour la relecture",
       "live_ready_event": "prêt pour la relecture",
       "live_seat_limit": "{seat} a atteint sa limite d'utilisation dans {title}",
-      "live_seat_limit_event": "limite de siège",
+      "live_seat_limit_event": "limite d'utilisation",
       "live_source_label": "Concours",
       "note_label": "Votre note (reprise mot pour mot dans REVIEW.md)",
       "note_placeholder": "Ce qui fonctionne, ce qui ne fonctionne pas, ce qu'il faut garder",
@@ -15055,7 +15055,7 @@
           "idle": "Non démarré",
           "queued": "Sur la grille",
           "running": "En course",
-          "seat_limit": "Panne sèche · limite de siège",
+          "seat_limit": "Panne sèche · limite d'utilisation",
           "timed_out": "Plafond dépassé"
         },
         "lane_unlettered": "Voie sans lettre pour l'instant",

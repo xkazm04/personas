@@ -14964,7 +14964,7 @@
       "live_ready": "{title} đã sẵn sàng để xem xét",
       "live_ready_event": "sẵn sàng để xem xét",
       "live_seat_limit": "{seat} đã đạt giới hạn sử dụng trong {title}",
-      "live_seat_limit_event": "giới hạn ghế",
+      "live_seat_limit_event": "giới hạn sử dụng",
       "live_source_label": "Cuộc thi",
       "note_label": "Ghi chú của bạn (được ghi nguyên văn vào REVIEW.md)",
       "note_placeholder": "Điều gì hiệu quả, điều gì không, điều gì nên giữ lại",
@@ -15055,7 +15055,7 @@
           "idle": "Chưa bắt đầu",
           "queued": "Trên vạch xuất phát",
           "running": "Đang đua",
-          "seat_limit": "Hết nhiên liệu · giới hạn ghế",
+          "seat_limit": "Hết nhiên liệu · giới hạn sử dụng",
           "timed_out": "Quá giới hạn thời gian"
         },
         "lane_unlettered": "Làn chưa có ký hiệu",

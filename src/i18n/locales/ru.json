@@ -14964,7 +14964,7 @@
       "live_ready": "«{title}» готов к проверке",
       "live_ready_event": "готов к проверке",
       "live_seat_limit": "«{seat}» достиг лимита использования в «{title}»",
-      "live_seat_limit_event": "лимит сиденья",
+      "live_seat_limit_event": "лимит использования",
       "live_source_label": "Конкурс",
       "note_label": "Ваша заметка (дословно записывается в REVIEW.md)",
       "note_placeholder": "Что работает, что нет, что оставить",
@@ -15055,7 +15055,7 @@
           "idle": "Не начато",
           "queued": "На старте",
           "running": "В гонке",
-          "seat_limit": "Топливо кончилось · лимит места",
+          "seat_limit": "Топливо кончилось · лимит использования",
           "timed_out": "Лимит превышен"
         },
         "lane_unlettered": "Дорожка ещё без буквы",

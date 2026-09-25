@@ -14964,7 +14964,7 @@
       "live_ready": "{title} পর্যালোচনার জন্য প্রস্তুত",
       "live_ready_event": "পর্যালোচনার জন্য প্রস্তুত",
       "live_seat_limit": "{title}-এ {seat} তার ব্যবহারের সীমায় পৌঁছেছে",
-      "live_seat_limit_event": "সিট সীমা",
+      "live_seat_limit_event": "ব্যবহারের সীমা",
       "live_source_label": "প্রতিযোগিতা",
       "note_label": "আপনার নোট (হুবহু REVIEW.md-তে যোগ হবে)",
       "note_placeholder": "কী কাজ করছে, কী করছে না, কী রাখা উচিত",
@@ -15055,7 +15055,7 @@
           "idle": "শুরু হয়নি",
           "queued": "গ্রিডে অপেক্ষমাণ",
           "running": "রেসিং চলছে",
-          "seat_limit": "জ্বালানি শেষ · সিট সীমা",
+          "seat_limit": "জ্বালানি শেষ · ব্যবহারের সীমা",
           "timed_out": "সময়সীমা পার হয়েছে"
         },
         "lane_unlettered": "এখনও অক্ষর নির্ধারিত হয়নি এমন লেন",

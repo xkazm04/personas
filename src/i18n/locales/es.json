@@ -14964,7 +14964,7 @@
       "live_ready": "{title} está listo para revisar",
       "live_ready_event": "listo para revisar",
       "live_seat_limit": "{seat} alcanzó su límite de uso en {title}",
-      "live_seat_limit_event": "límite de asiento",
+      "live_seat_limit_event": "límite de uso",
       "live_source_label": "Concurso",
       "note_label": "Tu nota (se incluye textualmente en REVIEW.md)",
       "note_placeholder": "Qué funciona, qué no, qué conservar",
@@ -15055,7 +15055,7 @@
           "idle": "Sin iniciar",
           "queued": "En la parrilla",
           "running": "Corriendo",
-          "seat_limit": "Sin combustible · límite del asiento",
+          "seat_limit": "Sin combustible · límite de uso",
           "timed_out": "Superó el límite"
         },
         "lane_unlettered": "Carril sin letra todavía",

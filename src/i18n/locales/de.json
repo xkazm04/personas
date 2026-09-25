@@ -14964,7 +14964,7 @@
       "live_ready": "{title} ist bereit zur Überprüfung",
       "live_ready_event": "bereit zur Überprüfung",
       "live_seat_limit": "{seat} hat sein Nutzungslimit in {title} erreicht",
-      "live_seat_limit_event": "Sitzlimit",
+      "live_seat_limit_event": "Nutzungslimit",
       "live_source_label": "Wettbewerb",
       "note_label": "Deine Notiz (wird wortwörtlich in REVIEW.md übernommen)",
       "note_placeholder": "Was funktioniert, was nicht, was beibehalten werden soll",
@@ -15055,7 +15055,7 @@
           "idle": "Nicht gestartet",
           "queued": "Auf dem Startgitter",
           "running": "Im Rennen",
-          "seat_limit": "Kein Sprit mehr · Platzlimit",
+          "seat_limit": "Kein Sprit mehr · Nutzungslimit",
           "timed_out": "Zeitlimit überschritten"
         },
         "lane_unlettered": "Spur noch ohne Buchstaben",

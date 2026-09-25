@@ -14964,7 +14964,7 @@
       "live_ready": "{title}이(가) 검토 준비를 마쳤습니다",
       "live_ready_event": "검토 준비 완료",
       "live_seat_limit": "{seat}이(가) {title}에서 사용 한도에 도달했습니다",
-      "live_seat_limit_event": "시트 한도",
+      "live_seat_limit_event": "사용 한도",
       "live_source_label": "콘테스트",
       "note_label": "회원님의 메모 (REVIEW.md에 그대로 기록됩니다)",
       "note_placeholder": "무엇이 효과적인지, 무엇이 그렇지 않은지, 무엇을 유지할지",
@@ -15055,7 +15055,7 @@
           "idle": "시작 전",
           "queued": "그리드에서 대기 중",
           "running": "레이싱 중",
-          "seat_limit": "연료 소진 · 시트 한도",
+          "seat_limit": "연료 소진 · 사용 한도",
           "timed_out": "제한 시간 초과"
         },
         "lane_unlettered": "아직 문자가 지정되지 않은 레인",

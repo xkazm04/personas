@@ -14964,7 +14964,7 @@
       "live_ready": "{title} siap ditinjau",
       "live_ready_event": "siap ditinjau",
       "live_seat_limit": "{seat} mencapai batas penggunaannya di {title}",
-      "live_seat_limit_event": "batas kursi",
+      "live_seat_limit_event": "batas pemakaian",
       "live_source_label": "Kontes",
       "note_label": "Catatan Anda (masuk ke REVIEW.md kata demi kata)",
       "note_placeholder": "Apa yang berhasil, apa yang tidak, apa yang perlu dipertahankan",
@@ -15055,7 +15055,7 @@
           "idle": "Belum dimulai",
           "queued": "Di grid",
           "running": "Sedang balapan",
-          "seat_limit": "Kehabisan bahan bakar · batas seat",
+          "seat_limit": "Kehabisan bahan bakar · batas pemakaian",
           "timed_out": "Melewati batas waktu"
         },
         "lane_unlettered": "Lane belum punya huruf",

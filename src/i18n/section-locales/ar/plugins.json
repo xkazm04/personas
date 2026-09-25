@@ -4170,7 +4170,7 @@
     "live_ready": "{title} جاهز للمراجعة",
     "live_ready_event": "جاهز للمراجعة",
     "live_seat_limit": "بلغ {seat} حد استخدامه في {title}",
-    "live_seat_limit_event": "حد المقعد",
+    "live_seat_limit_event": "حد الاستخدام",
     "live_source_label": "مسابقة",
     "note_label": "ملاحظتك (تُدرج في REVIEW.md كما هي حرفيًا)",
     "note_placeholder": "ما الذي ينجح، وما لا ينجح، وما الذي يجب الاحتفاظ به",
@@ -4261,7 +4261,7 @@
         "idle": "لم يبدأ",
         "queued": "على منصة الانطلاق",
         "running": "يسابق",
-        "seat_limit": "نفد الوقود · حد المقعد",
+        "seat_limit": "نفد الوقود · حد الاستخدام",
         "timed_out": "تجاوز السقف"
       },
       "lane_unlettered": "مسار بلا حرف بعد",

@@ -14964,7 +14964,7 @@
       "live_ready": "{title} 已准备好接受审查",
       "live_ready_event": "准备就绪，可供审查",
       "live_seat_limit": "{seat} 在 {title} 中已达到使用限额",
-      "live_seat_limit_event": "席位限额",
+      "live_seat_limit_event": "使用限额",
       "live_source_label": "竞赛",
       "note_label": "您的备注（将逐字写入 REVIEW.md）",
       "note_placeholder": "哪些有效，哪些无效，应保留什么",
@@ -15055,7 +15055,7 @@
           "idle": "未开始",
           "queued": "在起跑线上",
           "running": "比赛中",
-          "seat_limit": "燃料耗尽 · 席位上限",
+          "seat_limit": "燃料耗尽 · 使用限额",
           "timed_out": "超出时间上限"
         },
         "lane_unlettered": "尚未分配字母的赛道",
