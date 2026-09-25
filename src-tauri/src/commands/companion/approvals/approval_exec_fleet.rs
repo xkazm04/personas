@@ -1954,7 +1954,10 @@ pub async fn companion_dispatch_fleet_plan(
         crate::commands::companion::chat_cards::claim_for_dispatch(&conn, id)?;
     }
 
-    let (action, params) = fleet_plan_dispatch_params(&intent, &plan, quick_dispatch);
+    // What the sessions are sent: the confirmed rows plus each project's
+    // lifecycle contract. The card keeps the rows the operator confirmed.
+    let sent = with_lifecycle_contracts(&state.db, &plan);
+    let (action, params) = fleet_plan_dispatch_params(&intent, &sent, quick_dispatch);
     tracing::info!(
         intent = %intent,
         sessions = plan.len(),
@@ -1985,7 +1988,7 @@ pub async fn companion_dispatch_fleet_plan(
     } else {
         FLEET_PLAN_DECISION_CLASS
     };
-    record_fleet_plan_decision(&state.db, action, &intent, &plan, outcome, decision_class);
+    record_fleet_plan_decision(&state.db, action, &intent, &sent, outcome, decision_class);
 
     // Settle the durable card in the same breath as the audit row: a
     // successful dispatch stores its outcome (so a re-hydrated card renders
@@ -2015,6 +2018,34 @@ pub async fn companion_dispatch_fleet_plan(
         }
     }
     Ok(result?.message)
+}
+
+/// Lifecycle contract, fleet-row door: a row WITHOUT a skill gets its
+/// project's practice (no Land line) appended to the objective it spawns with.
+/// A skill row (e.g. `/note-task`) carries its own method and is left alone. The
+/// project is the registered one whose root contains the row's validated cwd;
+/// a row that resolves to none is sent unchanged.
+pub(crate) fn with_lifecycle_contracts(
+    db: &crate::db::DbPool,
+    plan: &[FleetPlanRow],
+) -> Vec<FleetPlanRow> {
+    plan.iter()
+        .map(|row| {
+            let mut row = row.clone();
+            if row.skill.is_none() {
+                if let Some(pid) = crate::lifecycle::contract::project_id_for_cwd(db, &row.cwd) {
+                    let block = crate::lifecycle::contract_for_project(
+                        db,
+                        &pid,
+                        crate::lifecycle::ContractContext::FleetRow,
+                    );
+                    row.objective =
+                        crate::lifecycle::contract::append_block(&row.objective, &block);
+                }
+            }
+            row
+        })
+        .collect()
 }
 
 /// Ledger `outcome` for a plan the operator confirmed and that dispatched.
@@ -2243,6 +2274,45 @@ mod fleet_plan_tests {
         assert_eq!(intent, "tidy the repo");
         assert_eq!(plan.len(), 1);
         assert_eq!(plan[0].objective, "write tests");
+    }
+
+    /// Only skill-less rows inside a registered project carry the contract.
+    #[test]
+    fn a_skill_less_row_carries_its_projects_lifecycle_contract() -> Result<(), AppError> {
+        let pool = crate::db::init_test_db()?;
+        let root = tempfile::tempdir().unwrap();
+        let cwd = std::fs::canonicalize(root.path()).unwrap();
+        pool.get()?.execute(
+            "INSERT INTO dev_projects (id, name, root_path) VALUES ('p-1', 'Proj', ?1)",
+            rusqlite::params![cwd.to_string_lossy()],
+        )?;
+        let cwd = cwd.to_string_lossy().to_string();
+        let (_, plan) = validate_fleet_plan(
+            &pool,
+            "plan",
+            &[
+                row(&cwd, "write tests", None),
+                row(&cwd, "n-1", Some("note-task")),
+            ],
+        )
+        .map_err(AppError::Validation)?;
+        let sent = with_lifecycle_contracts(&pool, &plan);
+        assert!(sent[0]
+            .objective
+            .starts_with("write tests\n\n## Development practice (lifecycle v0, solo)"));
+        assert!(
+            !sent[0].objective.contains("- Land"),
+            "a fleet row has no Land line"
+        );
+        assert_eq!(
+            sent[1].objective, "n-1",
+            "a skill row carries its own method"
+        );
+        assert_eq!(
+            plan[0].objective, "write tests",
+            "the confirmed rows are untouched"
+        );
+        Ok(())
     }
 
     #[test]

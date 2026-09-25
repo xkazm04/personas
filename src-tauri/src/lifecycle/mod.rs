@@ -10,6 +10,7 @@
 //! - [`contract`] - the block injected into sessions the app starts.
 //! - [`evidence`] - per-step outcomes read from git.
 //! - [`install`] - "Install into repo" as a Run Desk task.
+//! - [`land`] - a finished task's evidence row and the Solo auto-land.
 //!
 //! [`snapshot`] is the one read model; [`current_doc`] and [`append`] are the
 //! read and write doors every writer (commands, Athena ops) goes through.
@@ -18,7 +19,10 @@ pub mod contract;
 pub mod detect;
 pub mod evidence;
 pub mod install;
+pub mod land;
 pub mod presets;
+
+pub use contract::{contract_for_project, ContractContext};
 
 use std::path::Path;
 
@@ -157,13 +161,10 @@ pub fn snapshot(pool: &DbPool, project_id: &str) -> Result<LifecycleSnapshot, Ap
     let project = project_repo::get_project_by_id(pool, project_id)?;
     let (doc, version, row) = current_doc(pool, project_id)?;
     let root = Path::new(&project.root_path);
-    let base = project
-        .main_branch
-        .as_deref()
-        .map(str::trim)
-        .filter(|b| !b.is_empty())
-        .unwrap_or("main")
-        .to_string();
+    // The recorded branch when it exists, else main/master: a repo whose default
+    // is `master` and whose row records none must still show its commits.
+    let base = evidence::resolve_base(root, project.main_branch.as_deref())
+        .unwrap_or_else(|| "main".to_string());
 
     let install_task_id = row.as_ref().and_then(|r| r.install_task_id.clone());
     let install_task_status = install_task_id

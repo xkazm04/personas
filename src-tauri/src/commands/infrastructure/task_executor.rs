@@ -393,10 +393,28 @@ fn build_task_prompt(
         prompt.push('\n');
     }
 
-    prompt.push_str("\nWork in the project directory. Make all necessary code changes.\n");
-    prompt.push_str("When done, output a brief summary of what was accomplished.\n");
+    prompt.push_str(TASK_PROMPT_CLOSING);
 
     prompt
+}
+
+/// The closing instruction every task prompt ends with. The lifecycle contract
+/// is inserted just above it, so "When done" stays the worker's last line.
+const TASK_PROMPT_CLOSING: &str =
+    "\nWork in the project directory. Make all necessary code changes.\n\
+When done, output a brief summary of what was accomplished.\n";
+
+/// Insert the project's lifecycle contract (the Run Desk door, see
+/// `crate::lifecycle::contract`) above [`TASK_PROMPT_CLOSING`]. An empty block
+/// leaves the prompt byte-identical.
+fn insert_lifecycle_contract(prompt: &str, block: &str) -> String {
+    if block.trim().is_empty() {
+        return prompt.to_string();
+    }
+    match prompt.strip_suffix(TASK_PROMPT_CLOSING) {
+        Some(head) => format!("{head}\n{}\n{TASK_PROMPT_CLOSING}", block.trim_end()),
+        None => format!("{}\n\n{}\n", prompt.trim_end(), block.trim_end()),
+    }
 }
 
 // =============================================================================
@@ -505,6 +523,37 @@ pub(crate) fn write_back_to_source_idea(pool: &crate::db::DbPool, task_id: &str,
     }
 }
 
+/// The finished task's lifecycle evidence row and, for a Solo practice, the
+/// auto-land of its branch (`crate::lifecycle::land`). It runs git, so it goes
+/// to the blocking pool; it is best-effort and never touches the task's status.
+fn record_lifecycle(
+    pool: &crate::db::DbPool,
+    task_id: &str,
+    succeeded: bool,
+    output_lines: Option<i32>,
+) {
+    let pool = pool.clone();
+    let task_id = task_id.to_string();
+    // Detached on purpose (the task's status is already final); the panic
+    // boundary turns a crash into a reported error instead of a silent gap.
+    tauri::async_runtime::spawn_blocking(move || {
+        let run = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            crate::lifecycle::land::record_task(&pool, &task_id, succeeded, output_lines)
+        }));
+        match run {
+            Ok(Ok(_)) => {}
+            Ok(Err(e)) => {
+                tracing::warn!(task_id = %task_id, error = %e, "lifecycle: task evidence not recorded")
+            }
+            Err(panic) => tracing::error!(
+                task_id = %task_id,
+                panic = %personas_core::utils::extract_panic_message(panic),
+                "lifecycle: task evidence recording panicked"
+            ),
+        }
+    });
+}
+
 /// Returns the final status (`"completed"` / `"failed"`).
 fn finalize_task(
     app: &tauri::AppHandle,
@@ -557,6 +606,7 @@ fn finalize_task(
             };
             record_task_outcome(pool, task_id, true, &detail);
             write_back_to_source_idea(pool, task_id, true);
+            record_lifecycle(pool, task_id, true, Some(line_count));
 
             if let Some(gid) = goal_id {
                 let _ = repo::create_goal_signal(
@@ -601,6 +651,7 @@ fn finalize_task(
             // Learning loop: a failure is the most instructive outcome.
             record_task_outcome(pool, task_id, false, &msg);
             write_back_to_source_idea(pool, task_id, false);
+            record_lifecycle(pool, task_id, false, None);
 
             if let Some(gid) = goal_id {
                 let _ = repo::create_goal_signal(
@@ -632,16 +683,28 @@ pub async fn dev_tools_execute_task(
     model: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
+    start_task_execution(&state.db, &app, task_id, model)
+}
 
-    let task = repo::get_task_by_id(&state.db, &task_id)?;
+/// The body of [`dev_tools_execute_task`] after its auth check: mark the task
+/// running and spawn its execution through the fleet. Shared with the
+/// lifecycle install (`crate::lifecycle::install`), which creates a task and
+/// starts it exactly as the Run Desk does rather than keeping a second executor.
+pub(crate) fn start_task_execution(
+    db: &crate::db::DbPool,
+    app: &tauri::AppHandle,
+    task_id: String,
+    model: Option<String>,
+) -> Result<serde_json::Value, AppError> {
+    let task = repo::get_task_by_id(db, &task_id)?;
     let project_id = task
         .project_id
         .as_deref()
         .ok_or_else(|| AppError::Validation("Task has no project_id".into()))?;
-    let project = repo::get_project_by_id(&state.db, project_id)?;
+    let project = repo::get_project_by_id(db, project_id)?;
 
     let ctx = gather_task_context(
-        &state.db,
+        db,
         task.source_idea_id.as_deref(),
         task.goal_id.as_deref(),
         project_id,
@@ -662,7 +725,7 @@ pub async fn dev_tools_execute_task(
     // Mark task as running
     let now = chrono::Utc::now().to_rfc3339();
     let _ = repo::update_task(
-        &state.db,
+        db,
         &task_id,
         None, // title
         None, // description
@@ -677,10 +740,10 @@ pub async fn dev_tools_execute_task(
 
     let cancel_token = CancellationToken::new();
     TASK_EXEC_JOBS.insert_running(task_id.clone(), cancel_token.clone(), TaskExecExtra)?;
-    TASK_EXEC_JOBS.set_status(&app, &task_id, "running", None);
+    TASK_EXEC_JOBS.set_status(app, &task_id, "running", None);
 
     let app_handle = app.clone();
-    let pool = state.db.clone();
+    let pool = db.clone();
     let task_id_for_spawn = task_id.clone();
     let token_for_task = cancel_token;
     let root_path = project.root_path.clone();
@@ -1446,6 +1509,37 @@ async fn run_task_execution(
         tracing::warn!(task_id, error = %e, "task executor: could not record the run's worktree");
     }
 
+    // Lifecycle contract, Run Desk door. Rendered here rather than in
+    // `build_task_prompt` because the branch it names exists only now. A run
+    // that could not be isolated has nothing the app can land, so it gets the
+    // fleet-row form (no Land line) instead of a Land rule that would not hold.
+    let block = {
+        let pool = pool.clone();
+        let tid = task_id.to_string();
+        let branch = workspace.branch.clone();
+        let rendering = tokio::task::spawn_blocking(move || {
+            let project_id = repo::get_task_by_id(&pool, &tid).ok()?.project_id?;
+            Some(match branch {
+                Some(b) => crate::lifecycle::contract::run_desk_contract(&pool, &project_id, &b),
+                None => crate::lifecycle::contract_for_project(
+                    &pool,
+                    &project_id,
+                    crate::lifecycle::ContractContext::FleetRow,
+                ),
+            })
+        });
+        match rendering.await {
+            Ok(block) => block.unwrap_or_default(),
+            Err(e) => {
+                // A missing contract never blocks the run; a panic is reported.
+                tracing::warn!(task_id, panicked = e.is_panic(), error = %e,
+                    "task executor: lifecycle contract not rendered");
+                String::new()
+            }
+        }
+    };
+    let prompt_text = insert_lifecycle_contract(&prompt_text, &block);
+
     let exec_dir = workspace.exec_dir;
     let request = dev_runner_request(&exec_dir, title, prompt_text, model, batch_id);
     let admission = queue::admit(app, request).await?;
@@ -2146,6 +2240,49 @@ mod tests {
             "When done, output a brief summary of what was accomplished.\n",
         );
         assert_eq!(prompt, expected);
+    }
+
+    /// The lifecycle contract rides above the closing instruction, names its
+    /// version, and an empty block changes nothing.
+    #[test]
+    fn a_task_prompt_carries_the_lifecycle_contract_with_its_version() {
+        use crate::db::models::LifecyclePreset;
+        use crate::lifecycle::{contract::render_contract, presets::preset_doc, ContractContext};
+        let prompt = build_task_prompt("Fix it", None, None, None, None, None, None, "quick");
+        let block = render_contract(
+            &preset_doc(LifecyclePreset::Solo),
+            4,
+            ContractContext::RunDesk {
+                branch: "autopilot/fix-it".into(),
+                gh_authenticated: false,
+            },
+        );
+        let with = insert_lifecycle_contract(&prompt, &block);
+        let at = with
+            .find("## Development practice (lifecycle v4, solo)")
+            .expect("the contract is in the prompt");
+        assert!(at < with.find("Work in the project directory").unwrap());
+        assert!(with.contains("Commit your work on `autopilot/fix-it` and stop"));
+        assert!(with.ends_with("When done, output a brief summary of what was accomplished.\n"));
+        assert_eq!(insert_lifecycle_contract(&prompt, ""), prompt);
+
+        let team = render_contract(
+            &preset_doc(LifecyclePreset::Team),
+            1,
+            ContractContext::RunDesk {
+                branch: "autopilot/fix-it".into(),
+                gh_authenticated: true,
+            },
+        );
+        let with = insert_lifecycle_contract(&prompt, &team);
+        assert!(with.contains("(lifecycle v1, team)"));
+        assert!(with.contains(
+            &personas_engine::unattended::worktree_ship_rule("autopilot/fix-it", true)
+                .split_whitespace()
+                .skip(1)
+                .collect::<Vec<_>>()
+                .join(" ")
+        ));
     }
 
     /// A campaign's step 1 is "identify 3-7 concrete subtasks" — planning by

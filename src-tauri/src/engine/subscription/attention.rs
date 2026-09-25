@@ -5993,6 +5993,16 @@ async fn dispatch_into_worktree(
         charter.scope_rung,
         gh_authenticated,
     );
+    // Lifecycle contract, unattended door: the practice minus Isolate/Land,
+    // which the rung guardrails above govern (the mandate outranks the preset).
+    let text = crate::lifecycle::contract::append_block(
+        &text,
+        &crate::lifecycle::contract_for_project(
+            &state.db,
+            &project_id,
+            crate::lifecycle::ContractContext::Unattended,
+        ),
+    );
     let text = match &cycle {
         Some((goal, n)) => with_cycle_plan_brief(&text, &goal.id, *n),
         None => text,

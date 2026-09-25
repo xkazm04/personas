@@ -1724,6 +1724,19 @@ pub(crate) async fn drive_fleet_wave(
                     let text = personas_engine::unattended::unattended_worktree_task_text(
                         &recalled, &branch, &wt_str,
                     );
+                    // Lifecycle contract, unattended door (no Isolate/Land:
+                    // the guardrails above govern where to work and landing).
+                    let text = match d.project_id.as_deref() {
+                        Some(pid) => crate::lifecycle::contract::append_block(
+                            &text,
+                            &crate::lifecycle::contract_for_project(
+                                db,
+                                pid,
+                                crate::lifecycle::ContractContext::Unattended,
+                            ),
+                        ),
+                        None => text,
+                    };
                     d.worktree_path = Some(wt_str.clone());
                     d.branch = Some(branch);
                     (wt_str, text)

@@ -142,6 +142,12 @@ fn read_facts(root: &Path) -> RepoFacts {
     facts
 }
 
+/// The pre-commit mechanism guarding commits in `root` (lefthook `pre-commit:`,
+/// husky, or a git hook), as the detector reads it. Evidence uses it for Gate.
+pub fn pre_commit_hook(root: &Path) -> Option<String> {
+    read_facts(root).pre_commit
+}
+
 fn view(
     kind: LifecycleBindingKind,
     state: LifecycleBindingState,

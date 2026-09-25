@@ -1625,14 +1625,26 @@ async fn isolate_step_in_worktree(
                     .to_string(),
                 ),
             );
-            attach_worktree_to_step_input(
+            let mut input = attach_worktree_to_step_input(
                 input,
                 &worktree.branch,
                 &path,
                 &worktree.base_branch,
                 worktree.base_note.as_deref(),
                 worktree.resumed.as_ref(),
-            )
+            );
+            // Lifecycle contract, unattended door: appended after the
+            // guardrails the brief now carries (no Isolate/Land wording).
+            let contract = crate::lifecycle::contract_for_project(
+                pool,
+                &project_id,
+                crate::lifecycle::ContractContext::Unattended,
+            );
+            if let Some(desc) = input.get("step_description").and_then(|v| v.as_str()) {
+                let desc = crate::lifecycle::contract::append_block(desc, &contract);
+                input["step_description"] = serde_json::Value::String(desc);
+            }
+            input
         }
         Err(reason) => {
             tracing::warn!(
