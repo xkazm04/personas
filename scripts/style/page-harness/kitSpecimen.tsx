@@ -8,6 +8,7 @@
  */
 /* eslint-disable custom/no-hardcoded-jsx-text -- specimen fixtures in a harness-only view, not product copy */
 import { useEffect, type ComponentType, type ReactNode } from 'react';
+import { OverviewDemo } from './kitContexts';
 import {
   ChartFrame, ChipRow, ContextCard, ContextCards, Crumbs, DataTable, Dot, Hint, KeyValueGrid, KitButton, KitHost, ListRow,
   Meta, RangePicker, Rows, SearchField, Section, Segmented, StatStrip, Surface, Toolbar, UnitStrip, apportion,
@@ -143,14 +144,14 @@ function Cards() {
     </>
   );
   return (
-    <Section title="ContextCard" level={1} eyebrow="one peer as a tile" meta="a band with a primary rail, not a box">
+    <Section title="ContextCard" level={1} eyebrow="one peer as a tile, when peers are few" meta="head at the top, actions top-right, figures pinned to the foot: every figure line in a row aligns">
       <ContextCards label="Specimen cards">
         <ContextCard title="Authentication" meta={<Meta parts={['backend', '14 files']} />} mark={{ tone: 'success', glyph: 'soft', label: 'Healthy' }} figures={figs('3 KPIs', '$0.40', 6)} onPress={noop} actions={<KitButton quiet onClick={noop} stopPropagation>Scan</KitButton>} />
         <ContextCard title="Billing (hover)" state="hover" meta={<Meta parts={['backend', '9 files']} />} mark={{ tone: 'warning', label: 'At risk' }} figures={figs('2 KPIs', '$1.20', 9)} onPress={noop} />
-        <ContextCard title="Onboarding (selected)" state="selected" meta={<Meta parts={['frontend', '22 files']} />} mark={{ tone: 'error', label: 'Failing' }} figures={figs('5 KPIs', '$2.75', 14)} onPress={noop} />
+        <ContextCard title="Onboarding (selected)" state="selected" meta={<Meta parts={['frontend', '22 files']} />} mark={{ tone: 'error', label: 'Failing' }} figures={figs('5 KPIs', '$2.75', 14)} onPress={noop} actions={<KitButton quiet onClick={noop} stopPropagation>Open</KitButton>} />
         <ContextCard title="Sync engine (live)" state="live" meta="a scan is running" mark={{ tone: 'primary', glyph: 'live', label: 'Live' }} figures={figs('1 KPI', '$0.05', 2)} />
         <ContextCard title="Legacy import (muted)" state="muted" meta="archived" mark={{ tone: 'neutral', glyph: 'hollow', label: 'Archived' }} figures={figs('0 KPIs', '-', 0)} />
-        <ContextCard title="Search" state="empty" empty={{ title: 'Not scanned yet', hint: 'Run a context scan.', tone: 'info' }} />
+        <ContextCard title="Search" state="empty" empty={{ title: 'Not scanned yet', hint: 'Run a context scan.', tone: 'info' }} actions={<KitButton quiet onClick={noop}>Scan</KitButton>} />
         <ContextCard title="" state="loading" />
       </ContextCards>
     </Section>
@@ -234,6 +235,9 @@ function KitSpecimen() {
         <MarksAndUnits />
         <Lists />
         <Cards />
+        <Section title="ContextOverview" level={1} eyebrow="the parent layer over many contexts" meta="320 contexts in 22 groups; kit/overview has level 2, search and render cost">
+          <OverviewDemo />
+        </Section>
         <Facts />
       </Surface>
     </KitHost>

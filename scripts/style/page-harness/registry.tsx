@@ -19,6 +19,7 @@ import { FLEET_MODULES } from './fleetSurfaces';
 import { OBSERVABILITY_MODULES } from './observabilitySurfaces';
 import { FACTORY_MODULES } from './factorySurfaces';
 import { KIT_MODULES } from './kitSpecimen';
+import { KIT_OVERVIEW_MODULES } from './kitOverview';
 
 type Wrap = (children: ReactNode) => ReactNode;
 
@@ -67,6 +68,7 @@ export const MODULES: Record<string, HarnessModule> = {
   ...FACTORY_MODULES,
   // The kit specimen: every kit part in its states (kitSpecimen.tsx); harness-only.
   ...KIT_MODULES,
+  ...KIT_OVERVIEW_MODULES,
   // Probes for `shoot.mjs --self-test`: each must make the shooter exit non-zero.
   '__selftest/empty': {
     load: async () => ({ default: () => <div /> }),
