@@ -74,6 +74,15 @@
     "http.rs": {"count":1,"sections":[],"lines":["172"],"contexts":["`brainiac` is the counter-example that proves the rule: `auth_of` (`http.rs:172`) is genuinely"],"resolved":false},
     "httpApi.ts": {"count":1,"sections":[],"lines":["1174-1287"],"contexts":["its exemption is **by ordering**, six endpoints resolved and returned at `httpApi.ts:1174-1287`"],"resolved":false},
     "ideas_cmds.rs": {"count":1,"sections":[6],"lines":["3"],"contexts":["`social_cmds.rs:3`, `triage_cmds.rs:4`, `ideas_cmds.rs:3`, `claude_cmds.rs:281`) and **every named"],"resolved":false},
+    "install.rs": {
+      "count": 2,
+      "sections": [5,7],
+      "lines": ["79"],
+      "contexts": [
+        "| **Hardening a transport without enumerating its launchers** | `PERSONAS_MCP_TOKEN` has one writer (`install.rs:79`) and two launchers. The app's own launcher was not taught it. Nothing failed loudl…"
+      ],
+      "resolved": false
+    },
     "lib.rs": {
       "count": 21,
       "sections": [0,2,3,4,5,6,7,8,9,12],
@@ -296,8 +305,8 @@
       "verbatim": "mcp_server/auth.rs"
     },
     "src-tauri/src/mcp_server/install.rs": {
-      "count": 3,
-      "sections": [0,5,7],
+      "count": 1,
+      "sections": [0],
       "lines": ["79"],
       "contexts": ["`PERSONAS_MCP_TOKEN` is written in exactly **one** place — `mcp_server/install.rs:79`, the"],
       "resolvedFrom": "suffix",

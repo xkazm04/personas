@@ -36,6 +36,7 @@
     "app/console/modules/{reviews,standards,skills,disputes}/actions.ts": {"count":1,"sections":[],"contexts":["(`app/console/modules/{reviews,standards,skills,disputes}/actions.ts`, `docs/[slug]/actions.ts`)."],"resolved":false},
     "build_sessions.rs": {"count":5,"sections":[7],"lines":["2677","762","2656","2657"],"contexts":["| 45 | `build_no_agent_ir` | 2 (`build_sessions.rs:2677`, `:780`) | `Validation` |"],"resolved":false},
     "console/src/lib/api.ts": {"count":1,"sections":[],"lines":["114-131"],"contexts":["`openapi.json` — and `console/src/lib/api.ts:114-131` parses `parsed.error` and **discards `code`**."],"resolved":false},
+    "contract.rs": {"count":1,"sections":[9],"lines":["42"],"contexts":["`ValidationError::new` messages go through `contract::check` (`contract.rs:42`) into"],"resolved":false},
     "crates/brainiac-server/src/mcp.rs": {"count":1,"sections":[],"lines":["85-95"],"contexts":["right.** `brainiac`'s `ToolError` (`crates/brainiac-server/src/mcp.rs:85-95`) has three arms —"],"resolved":false},
     "data_portability.rs": {"count":1,"sections":[7],"lines":["4975"],"contexts":["| 37 | `invalid_bundle` | 1 (`data_portability.rs:4975`) | `Validation` |"],"resolved":false},
     "db/chain.rs": {"count":1,"sections":[7],"lines":["913,976"],"contexts":["| 28 | `circular_chain` | 2 (`db/chain.rs:913,976`) | `Validation` |"],"resolved":false},
@@ -56,7 +57,7 @@
       "resolvedFrom": "basename",
       "verbatim": "error.rs"
     },
-    "src-tauri/core/src/validation/contract.rs": {"count":2,"sections":[6,9],"lines":["37-50","42"],"contexts":["- `src-tauri/core/src/validation/contract.rs:37-50` — `check(errors)`. **Read this before adding any"]},
+    "src-tauri/core/src/validation/contract.rs": {"count":1,"sections":[6],"lines":["37-50"],"contexts":["- `src-tauri/core/src/validation/contract.rs:37-50` — `check(errors)`. **Read this before adding any"]},
     "src-tauri/core/src/validation/memory.rs": {
       "count": 1,
       "sections": [7],

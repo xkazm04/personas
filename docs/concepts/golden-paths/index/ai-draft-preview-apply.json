@@ -329,14 +329,6 @@
       "verbatim": "IncidentDiagnosisCard.tsx"
     },
     "src/features/plugins/dev-tools/sub_context/ContextMapHealth.tsx": {"count":1,"sections":[8],"lines":["102,113"],"contexts":["returns the effect set. `ContextMapHealth.tsx:102,113` comes closest —"],"resolvedFrom":"basename","verbatim":"ContextMapHealth.tsx"},
-    "src/features/plugins/dev-tools/sub_lifecycle/useDevCloneAdoption.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["33"],
-      "contexts": ["| `useDevCloneAdoption.ts:33` `instantAdoptTemplate('Dev Clone', …)` | a full persona. Deliberate no-preview shortcut, documented. |"],
-      "resolvedFrom": "basename",
-      "verbatim": "useDevCloneAdoption.ts"
-    },
     "src/features/plugins/twin/sub_channels/ReplyOutbox.tsx": {"count":1,"sections":[7],"lines":["177"],"contexts":["`GenerateHypothesesModal.tsx:111`, `ReplyOutbox.tsx:177`, `IdentityAtelier.tsx:68`,"],"resolvedFrom":"basename","verbatim":"ReplyOutbox.tsx"},
     "src/features/plugins/twin/sub_training/TrainingStudio.tsx": {
       "count": 3,
@@ -582,6 +574,13 @@
       "contexts": ["| `devToolsContextSlice.ts:188` `generateContextDescription(contextId)` | the description, server-side, on generate. |"],
       "resolvedFrom": "basename",
       "verbatim": "devToolsContextSlice.ts"
+    },
+    "useDevCloneAdoption.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["33"],
+      "contexts": ["| `useDevCloneAdoption.ts:33` `instantAdoptTemplate('Dev Clone', …)` | a full persona. Deliberate no-preview shortcut, documented. |"],
+      "resolved": false
     },
     "vibeman/src/lib/ideas/ideaAcceptanceWorkflow.ts": {
       "count": 1,

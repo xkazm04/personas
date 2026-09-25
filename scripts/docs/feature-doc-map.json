@@ -350,7 +350,7 @@
       "marketingModule": "home"
     },
     {
-      "doc": "docs/features/companion/layered-voice.md",
+      "doc": "docs/features/companions/athena/layered-voice.md",
       "sourceGlobs": [
         "src-tauri/src/companion/register.rs",
         "src-tauri/src/companion/reports.rs",

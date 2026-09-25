@@ -1,6 +1,6 @@
 {
  "meta": {
-  "entries": 705
+  "entries": 700
  },
  "routes": [
   {
@@ -770,51 +770,6 @@
    ]
   },
   {
-   "glob": "src/features/teams/sub_mastermind/lib/CanvasShell.tsx",
-   "subject": "canvas-graph",
-   "laws": [
-    "identity-survives-reuse",
-    "derivation-names-recomputation",
-    "one-authority-per-vocabulary"
-   ]
-  },
-  {
-   "glob": "src/features/teams/sub_mastermind/lib/useCanvasCamera.ts",
-   "subject": "canvas-graph",
-   "laws": [
-    "identity-survives-reuse",
-    "derivation-names-recomputation",
-    "one-authority-per-vocabulary"
-   ]
-  },
-  {
-   "glob": "src/features/teams/sub_mastermind/lib/useIslandDrag.ts",
-   "subject": "canvas-graph",
-   "laws": [
-    "identity-survives-reuse",
-    "derivation-names-recomputation",
-    "one-authority-per-vocabulary"
-   ]
-  },
-  {
-   "glob": "src/features/teams/sub_mastermind/lib/tidyLayout.ts",
-   "subject": "canvas-graph",
-   "laws": [
-    "identity-survives-reuse",
-    "derivation-names-recomputation",
-    "one-authority-per-vocabulary"
-   ]
-  },
-  {
-   "glob": "src/features/teams/sub_mastermind/lib/layoutStore.ts",
-   "subject": "canvas-graph",
-   "laws": [
-    "identity-survives-reuse",
-    "derivation-names-recomputation",
-    "one-authority-per-vocabulary"
-   ]
-  },
-  {
    "glob": "src/features/overview/sub_memories/components/MemoriesPageGraph.tsx",
    "subject": "canvas-graph",
    "laws": [
@@ -1092,17 +1047,6 @@
   },
   {
    "glob": "src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx",
-   "subject": "client-fetch-cache",
-   "laws": [
-    "identity-survives-reuse",
-    "one-authority-per-vocabulary",
-    "creation-names-reaper",
-    "derivation-names-recomputation",
-    "failure-not-empty-success"
-   ]
-  },
-  {
-   "glob": "src/features/overview/sub_certification/useCertificationData.ts",
    "subject": "client-fetch-cache",
    "laws": [
     "identity-survives-reuse",
@@ -2689,17 +2633,6 @@
   },
   {
    "glob": "src/features/plugins/dev-tools/sub_overview/ProjectOverviewPage.tsx",
-   "subject": "drag-drop",
-   "laws": [
-    "one-authority-per-vocabulary",
-    "creation-names-reaper",
-    "one-validation-door",
-    "gate-sees-target",
-    "identity-survives-reuse"
-   ]
-  },
-  {
-   "glob": "src/features/teams/sub_mastermind/lib/useIslandDrag.ts",
    "subject": "drag-drop",
    "laws": [
     "one-authority-per-vocabulary",
@@ -4302,6 +4235,33 @@
    ]
   },
   {
+   "glob": "scripts/census/rules.json",
+   "subject": "metric-gates",
+   "laws": [
+    "count-carries-predicate",
+    "derivation-names-recomputation",
+    "failure-not-empty-success"
+   ]
+  },
+  {
+   "glob": "scripts/census/run-census.mjs",
+   "subject": "metric-gates",
+   "laws": [
+    "count-carries-predicate",
+    "derivation-names-recomputation",
+    "failure-not-empty-success"
+   ]
+  },
+  {
+   "glob": "package.json",
+   "subject": "metric-gates",
+   "laws": [
+    "count-carries-predicate",
+    "derivation-names-recomputation",
+    "failure-not-empty-success"
+   ]
+  },
+  {
    "glob": "src-tauri/src/commands/communication/observability/metrics.rs",
    "subject": "metrics-rollups",
    "laws": [
@@ -5611,8 +5571,7 @@
     "deletion-is-not-repair",
     "count-carries-predicate",
     "gate-sees-target",
-    "failure-not-empty-success",
-    "derivation-names-recomputation"
+    "failure-not-empty-success"
    ]
   },
   {
@@ -5622,8 +5581,7 @@
     "deletion-is-not-repair",
     "count-carries-predicate",
     "gate-sees-target",
-    "failure-not-empty-success",
-    "derivation-names-recomputation"
+    "failure-not-empty-success"
    ]
   },
   {
@@ -5633,8 +5591,7 @@
     "deletion-is-not-repair",
     "count-carries-predicate",
     "gate-sees-target",
-    "failure-not-empty-success",
-    "derivation-names-recomputation"
+    "failure-not-empty-success"
    ]
   },
   {
@@ -5644,8 +5601,7 @@
     "deletion-is-not-repair",
     "count-carries-predicate",
     "gate-sees-target",
-    "failure-not-empty-success",
-    "derivation-names-recomputation"
+    "failure-not-empty-success"
    ]
   },
   {
@@ -5655,8 +5611,7 @@
     "deletion-is-not-repair",
     "count-carries-predicate",
     "gate-sees-target",
-    "failure-not-empty-success",
-    "derivation-names-recomputation"
+    "failure-not-empty-success"
    ]
   },
   {
@@ -5666,8 +5621,7 @@
     "deletion-is-not-repair",
     "count-carries-predicate",
     "gate-sees-target",
-    "failure-not-empty-success",
-    "derivation-names-recomputation"
+    "failure-not-empty-success"
    ]
   },
   {
@@ -7017,18 +6971,6 @@
   },
   {
    "glob": "src/lib/design/eventTokens.ts",
-   "subject": "status-vocabulary",
-   "laws": [
-    "gate-sees-target",
-    "one-authority-per-vocabulary",
-    "failure-not-empty-success",
-    "one-validation-door",
-    "identity-survives-reuse",
-    "deletion-is-not-repair"
-   ]
-  },
-  {
-   "glob": "src/features/overview/sub_certification/components/VerdictBadge.tsx",
    "subject": "status-vocabulary",
    "laws": [
     "gate-sees-target",

@@ -44,6 +44,7 @@
     },
     "chat.rs": {"count":1,"sections":[7],"contexts":["`validation/persona.rs:516`, **0 in `contract.rs` / `chat.rs` / `memory.rs` /"],"resolved":false},
     "commands/core/validation.rs": {"count":1,"sections":[7],"lines":["11"],"contexts":["(`commands/core/validation.rs:11`) exposes the rule catalog over IPC and has"],"resolved":false},
+    "contract.rs": {"count":3,"sections":[7],"lines":["9-19","37-49"],"contexts":["(`contract.rs:9-19`) and `src/lib/bindings/ValidationError.ts` is committed —"],"resolved":false},
     "dev_tools.rs": {"count":1,"sections":[7],"lines":["7421"],"contexts":["(`resources/connectors.rs:115-128`, `dev_tools.rs:7421`,"],"resolved":false},
     "dev_workspaces.rs": {"count":1,"sections":[7],"lines":["3005-3011"],"contexts":["`dev_workspaces.rs:3005-3011` — the last being the only one that catches"],"resolved":false},
     "eslint-rules/": {"count":4,"sections":[8,9],"contexts":["(`eslint-rules/` contains no `*.test.*`). And `contract::check()` in Rust is"],"resolved":false,"isDir":true},
@@ -94,7 +95,6 @@
     "research-lab/shared/FormField.tsx": {"count":2,"sections":[5,9],"lines":["3"],"contexts":["`research-lab/shared/FormField.tsx:3` (`FIELD_CLASS`, `rounded-card`),"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[7],"contexts":["honestly without this. Verified against `src-tauri/`:"],"resolved":false,"isDir":true},
     "src-tauri/core/src/validation/": {"count":1,"sections":[7],"contexts":["adoption.** `src-tauri/core/src/validation/` (mod 266 lines, persona 569,"],"resolved":false,"isDir":true},
-    "src-tauri/core/src/validation/contract.rs": {"count":3,"sections":[7],"lines":["9-19","37-49"],"contexts":["(`contract.rs:9-19`) and `src/lib/bindings/ValidationError.ts` is committed —"],"resolvedFrom":"basename","verbatim":"contract.rs"},
     "src-tauri/core/src/validation/persona.rs": {"count":1,"sections":[7],"lines":["516"],"contexts":["`validation/persona.rs:516`, **0 in `contract.rs` / `chat.rs` / `memory.rs` /"],"resolvedFrom":"suffix","verbatim":"validation/persona.rs"},
     "src-tauri/core/src/validation/trigger.rs": {"count":1,"sections":[7],"lines":["282"],"contexts":["- Rust validation tests: 13 in `validation/trigger.rs:282`, 5 in"],"resolvedFrom":"suffix","verbatim":"validation/trigger.rs"},
     "src-tauri/db/src/migrations/schema.rs": {
