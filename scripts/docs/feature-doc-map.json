@@ -364,6 +364,8 @@
     {
       "doc": "docs/features/overview/README.md",
       "sourceGlobs": [
+        "src/features/overview/components/dashboard/OverviewPage.tsx",
+        "src/features/overview/sub_observability/**",
         "src/features/agents/quick-answer/**",
         "src/features/fleet/monitor/useMonitorData.ts"
       ]

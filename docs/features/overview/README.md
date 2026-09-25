@@ -41,6 +41,17 @@ The Incidents tab is a cross-source triage inbox: failure-shaped rows from seven
 - **New since your last visit** — leaving the inbox stamps a last-seen time; on return, a "N new since your last visit" marker highlights freshly-arrived incidents with a Mark-seen action.
 - **Nothing rots unseen** — active incidents open past three days carry a "Stale" tag and amber age, and the sortable **Age** column pulls the longest-waiting work to the top of the ledger.
 
+### Observability (`sub_observability`)
+
+Routed 2026-09-25 as a sidebar tab in the Operations group, right after Incidents (TEAM tier, like Incidents). The dashboard had been built and then left unimported since a March 2026 refactor; `OverviewPage.tsx` now lazy-loads it and the route-ladder test (`components/dashboard/__tests__/OverviewPage.routing.test.tsx`) fails if any sidebar tab falls through to the Dashboard default. It is composed from the composition kit on the compact tier, one dense surface top to bottom:
+
+- **Overview**: the persona and date-range filters scope the whole page; four headline figures (cost, runs, success rate, active personas) drawn as countable units, plus a chip row of pipeline sources, shown only when a source failed, went stale or has not loaded. An alerts toggle in the head carries the active-alert count.
+- **Alert rules and history**: opened by that toggle; one row per rule (severity mark, enable switch, edit, delete, the evaluator's last run in the section head), then the fired-alert history.
+- **Health issues**: a toolbar (state filter, list or timeline view, Run analysis), then a split: issues (or healing chains in timeline view) on the left, the picked one's detail in the side pane when there is room and in a drawer when there is not. The healing audit log closes the section, collapsed. A running AI healing streams into an overlay; the full issue opens in a modal.
+- **Trends**: cost and success/failure trend charts with anomaly markers and annotations, plus the per-persona split as a table. A failure bar jumps to the Activity tab for that day; an anomaly opens a drill-down panel.
+- **IPC performance**: headline p50 / p95 / p99 latencies always on screen, with the per-command and slowest-call tables behind a disclosure. Tool performance and the system trace waterfall follow.
+- **Athena health and spend**: the triage funnel, proactive economy and job health as stat strips (errors read as errors per turn), then her spend.
+
 ## Additional overview modules
 
 
