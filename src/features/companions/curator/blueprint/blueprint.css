@@ -1298,10 +1298,9 @@
 }
 
 /* ---- the operator console ------------------------------------------------
-   Run the instrument, what the loop is doing, the human lane, and the composer
-   that fills it. One row of the page grid, between the verdict and the ledger,
-   because that is the order the work happens in: she drains this lane BEFORE
-   the plan below it.
+   Run the instrument, what the loop is doing, and the human lane. One row of
+   the page grid, between the verdict and the ledger, because that is the order
+   the work happens in: she drains this lane BEFORE the plan below it.
 
    Every colour is one of the page's own tokens; the only geometry declared is
    the console's own rhythm. Type is `.typo-*` as it is everywhere else here.
@@ -1458,134 +1457,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* ---- the composer -------------------------------------------------------- */
-.cb-root .cb-compose {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-.cb-root .cb-compose-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  flex-wrap: wrap;
-  min-width: 0;
-}
-/* Always reserved, empty or not: a badge that appeared on pick would move the
-   ledger under it every time the operator chose a skill. It rides at the END
-   of the composer row rather than on a line of its own - the line cost 21px of
-   permanent height on a page whose measured defect is that the chrome takes
-   the whole viewport at 1000x640. */
-.cb-root .cb-need-line {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 7px;
-  min-height: 24px;
-  min-width: 132px;
-  flex: none;
-}
-/* Label and field side by side. Stacked they cost 18px per composer, which is
-   the same 18px three times over across the three fields' shared row. */
-.cb-root .cb-compose-skill,
-.cb-root .cb-compose-arg,
-.cb-root .cb-compose-note {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-.cb-root .cb-compose-skill {
-  position: relative;
-  flex: 1 1 210px;
-}
-.cb-root .cb-compose-arg {
-  flex: 2 1 240px;
-}
-.cb-root .cb-compose-note {
-  flex: 1 1 170px;
-}
-/* Narrow: the label is read out but not drawn. Three inline labels take 45% of
-   the composer row at 1000px and crush every field into an ellipsis ("a URL, a
-   bundle, a do", "carried i"). Each field's placeholder already names it - and
-   for the argument field the placeholder is the picked skill's own argument
-   line, verbatim - so the drawn label is the part that can go. `htmlFor` still
-   binds, so nothing is lost to a screen reader. */
-.cb-root .cb-clab {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
-}
-@media (min-width: 1180px) {
-  .cb-root .cb-clab {
-    position: static;
-    width: auto;
-    height: auto;
-    margin: 0;
-    overflow: visible;
-    clip-path: none;
-    flex: none;
-    color: var(--muted);
-  }
-}
-.cb-root .cb-cfield {
-  width: 100%;
-  height: 26px;
-  padding: 0 7px;
-  border: 1px solid var(--cb-rule-2);
-  border-radius: var(--radius-sm);
-  background: var(--background);
-  color: var(--foreground);
-}
-.cb-root .cb-cfield::placeholder {
-  color: var(--muted-dark);
-}
-.cb-root .cb-cfield:disabled {
-  opacity: 0.55;
-}
-/* The suggestion panel opens DOWNWARD over the ledger rather than pushing it:
-   the console is a row of the page grid and a panel in flow would move every
-   row below it on each keystroke. */
-.cb-root .cb-suggest {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 50;
-  margin-top: 3px;
-}
-.cb-root .cb-lane-tag {
-  font-style: normal;
-  color: var(--muted-dark);
-}
-.cb-root .cb-need {
-  border: 1px solid var(--cb-rule-2);
-  border-radius: var(--radius-sm);
-  padding: 0 5px;
-  color: var(--muted-foreground);
-  white-space: nowrap;
-}
-/* The third state wears the ledger's own UNKNOWN ink: a see-through, dashed
-   box, the same mark the nine columns use for "nobody looked". It must never
-   read as the "runs bare" badge that takes its place. */
-.cb-root .cb-need[data-need='unknown'] {
-  border-style: dashed;
-  border-color: var(--cb-hatch);
-  color: var(--muted-dark);
-  background: transparent;
-}
-.cb-root .cb-need[data-need='optional'] {
-  border-color: color-mix(in srgb, var(--status-success) 45%, transparent);
-  color: var(--status-success);
 }
 
 /* ---- the page before anything has been measured -------------------------
