@@ -1029,6 +1029,62 @@ pub(crate) async fn execute_build_oneshot(
     })
 }
 
+/// The one-shot build intent for a kp hire. Pure — unit-tested below.
+///
+/// The mission plus enough hiring context for the design pass to pick sensible
+/// connectors and use cases. An App master gets the full mission + objectives +
+/// mandate + cadence instead — the design pass has to know the line before it
+/// picks the tools. A requirement-driven hire (`spec.requirements`,
+/// kp.agent-requirements.v1) gets the authoritative "Requirements from kp"
+/// section appended; without one the intent is byte-identical to what it was
+/// before the contract existed.
+pub(crate) fn kp_hire_intent(
+    params: &serde_json::Value,
+    mission: &str,
+    job_title: &str,
+    job_id: &str,
+    app_master: Option<&serde_json::Value>,
+    connectors: &[String],
+    requirements: Option<&personas_engine::kp_requirements::KpAgentRequirements>,
+) -> String {
+    let mut intent = match app_master {
+        Some(am) => super::app_master_hire::app_master_intent(mission, job_title, job_id, am),
+        None => format!(
+            "{mission}\n\nThis persona is an AI hire for the external KP job '{job_title}' (job id {job_id})."
+        ),
+    };
+    if !connectors.is_empty() {
+        intent.push_str(&format!(
+            "\nPreferred connectors: {}.",
+            connectors.join(", ")
+        ));
+    }
+    if let Some(metrics) = params
+        .get("spec")
+        .and_then(|s| s.get("successMetrics"))
+        .and_then(|v| v.as_array())
+        .filter(|a| !a.is_empty())
+    {
+        let lines: Vec<String> = metrics
+            .iter()
+            .filter_map(|m| m.get("label").and_then(|l| l.as_str()))
+            .map(|l| format!("- {l}"))
+            .collect();
+        if !lines.is_empty() {
+            intent.push_str(&format!("\nSuccess metrics:\n{}", lines.join("\n")));
+        }
+    }
+    // Requirements from kp — the authoritative brief the design pass designs
+    // from. Appended last so it reads as the specification the mission
+    // sentence above summarises; it says so itself, and that it wins where
+    // the two differ. Absent ⇒ the intent is byte-identical to before.
+    if let Some(r) = requirements {
+        intent.push_str("\n\n");
+        intent.push_str(&personas_engine::kp_requirements::render_intent_section(r));
+    }
+    intent
+}
+
 /// KP bridge (WP3) — approve an external KP hiring app's persona hire request.
 ///
 /// The pending row is inserted by `POST /api/kp/persona-requests`
@@ -1095,16 +1151,51 @@ pub(crate) async fn execute_kp_hire_request(
     let job_title = str_field(params, &["kp", "jobTitle"], "kp.jobTitle")?.to_string();
     let base_url = str_field(params, &["kp", "baseUrl"], "kp.baseUrl")?.to_string();
     let report_token = str_field(params, &["reportToken"], "reportToken")?.to_string();
+    // `spec.requirements` (kp.agent-requirements.v1): a requirement-driven hire
+    // sends research-derived requirements INSTEAD of a prompt. Stored as the
+    // intake-normalized JSON on the link; parsed through the tolerant typed
+    // view for the intent. A payload whose requirements no longer parse (it
+    // sat in the DB between intake and this click) is refused rather than
+    // silently built from the mission alone — the operator was shown a card
+    // promising a requirements-driven design.
+    let requirements_json: Option<serde_json::Value> = params
+        .get("spec")
+        .and_then(|s| s.get("requirements"))
+        .filter(|v| !v.is_null())
+        .cloned();
+    let requirements = match &requirements_json {
+        None => None,
+        Some(v) => Some(
+            personas_engine::kp_requirements::KpAgentRequirements::from_value(v).ok_or_else(
+                || {
+                    AppError::Internal(
+                        "kp_hire_request: `spec.requirements` is not a kp.agent-requirements.v1 object"
+                            .into(),
+                    )
+                },
+            )?,
+        ),
+    };
     let system_prompt = params
         .get("spec")
         .and_then(|s| s.get("systemPromptDraft"))
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty())
-        // Same minimal fallback as the build_oneshot draft stub — the one-shot
-        // build's design pass replaces it once the agent_ir resolves.
-        .unwrap_or("You are a helpful AI assistant.")
-        .to_string();
+        .map(str::to_string)
+        // A requirement-driven hire has no draft: the placeholder names the
+        // role instead of the generic stub, so the draft row reads as what it
+        // is while the design pass runs. Either way the design pass replaces
+        // it once the agent_ir resolves.
+        .or_else(|| {
+            requirements
+                .as_ref()
+                .map(|r| r.role.trim())
+                .filter(|r| !r.is_empty())
+                .map(|r| format!("You are a {r}, being designed from kp's requirements."))
+        })
+        // Same minimal fallback as the build_oneshot draft stub.
+        .unwrap_or_else(|| "You are a helpful AI assistant.".to_string());
     let connectors: Vec<String> = params
         .get("spec")
         .and_then(|s| s.get("connectors"))
@@ -1138,36 +1229,16 @@ pub(crate) async fn execute_kp_hire_request(
         super::app_master_hire::app_master_block(params).cloned();
 
     // Build intent: the mission plus enough hiring context for the one-shot
-    // design pass to pick sensible connectors and use cases. An App master
-    // gets the full mission + objectives + mandate + cadence instead — the
-    // design pass has to know the line before it picks the tools.
-    let mut intent = match &app_master {
-        Some(am) => super::app_master_hire::app_master_intent(&mission, &job_title, &job_id, am),
-        None => format!(
-            "{mission}\n\nThis persona is an AI hire for the external KP job '{job_title}' (job id {job_id})."
-        ),
-    };
-    if !connectors.is_empty() {
-        intent.push_str(&format!(
-            "\nPreferred connectors: {}.",
-            connectors.join(", ")
-        ));
-    }
-    if let Some(metrics) = params
-        .get("spec")
-        .and_then(|s| s.get("successMetrics"))
-        .and_then(|v| v.as_array())
-        .filter(|a| !a.is_empty())
-    {
-        let lines: Vec<String> = metrics
-            .iter()
-            .filter_map(|m| m.get("label").and_then(|l| l.as_str()))
-            .map(|l| format!("- {l}"))
-            .collect();
-        if !lines.is_empty() {
-            intent.push_str(&format!("\nSuccess metrics:\n{}", lines.join("\n")));
-        }
-    }
+    // design pass (see [`kp_hire_intent`]).
+    let intent = kp_hire_intent(
+        params,
+        &mission,
+        &job_title,
+        &job_id,
+        app_master.as_ref(),
+        &connectors,
+        requirements.as_ref(),
+    );
 
     // The mandate's `approvalGates` are shell commands the App master must run
     // before it may propose a diff (`npm run test:unit`, …). Gates present ⇒ a
@@ -1195,6 +1266,10 @@ pub(crate) async fn execute_kp_hire_request(
             report_token,
             requested_connectors: connectors.clone(),
             runs_commands,
+            // Carried inside the link so promote's design_context rebuild,
+            // which re-injects `kpLink` whole, keeps it — and so the app can
+            // show the operator why the agent was designed the way it was.
+            requirements: requirements_json,
         }),
         ..Default::default()
     };
@@ -2184,5 +2259,76 @@ mod tests {
                 .as_deref(),
             Some(group.id.as_str())
         );
+    }
+
+    // ---- kp hire intent: spec.requirements ---------------------------------
+
+    fn kp_params(requirements: Option<serde_json::Value>) -> serde_json::Value {
+        let mut p = serde_json::json!({
+            "spec": {
+                "name": "Freelance specialist - web development",
+                "mission": "Answer web-development gig briefs.",
+                "connectors": ["research"],
+                "successMetrics": [{"key": "k", "label": "Briefs answered"}]
+            }
+        });
+        if let Some(r) = requirements {
+            p["spec"]["requirements"] = r;
+        }
+        p
+    }
+
+    /// Without requirements the intent is exactly what it was before the
+    /// contract existed — a regression here changes every kp hire's design.
+    #[test]
+    fn kp_hire_intent_without_requirements_is_unchanged() {
+        let intent = kp_hire_intent(
+            &kp_params(None),
+            "Answer web-development gig briefs.",
+            "Landing page fix",
+            "gig-7",
+            None,
+            &["research".to_string()],
+            None,
+        );
+        assert_eq!(
+            intent,
+            "Answer web-development gig briefs.\n\nThis persona is an AI hire for the external KP job \
+             'Landing page fix' (job id gig-7).\nPreferred connectors: research.\nSuccess metrics:\n- Briefs answered"
+        );
+    }
+
+    #[test]
+    fn kp_hire_intent_appends_the_requirements_section_last() {
+        let reqs = serde_json::json!({
+            "kind": "kp.agent-requirements.v1",
+            "role": "Freelance specialist - web development",
+            "outputs": {"handoffFile": "kp-deliverable.json"},
+            "constraints": ["Never send anything; the operator sends."]
+        });
+        let parsed = personas_engine::kp_requirements::KpAgentRequirements::from_value(&reqs)
+            .expect("parses");
+        let base = kp_hire_intent(
+            &kp_params(None),
+            "m",
+            "t",
+            "j",
+            None,
+            &["research".to_string()],
+            None,
+        );
+        let intent = kp_hire_intent(
+            &kp_params(Some(reqs)),
+            "m",
+            "t",
+            "j",
+            None,
+            &["research".to_string()],
+            Some(&parsed),
+        );
+        let section = personas_engine::kp_requirements::render_intent_section(&parsed);
+        assert_eq!(intent, format!("{base}\n\n{section}"));
+        assert!(intent.contains("1. Never send anything; the operator sends."));
+        assert!(intent.contains("Add NO commit, push"));
     }
 }

@@ -175,3 +175,66 @@ pub(crate) fn apply_kp_tool_surface(
 
     Some(trim)
 }
+
+/// Pin a requirement-driven kp hire's `constraints[]` into the promoted
+/// persona — the DB glue around
+/// [`personas_engine::kp_requirements::pin_constraints`].
+///
+/// Reads `design_context.kpLink.requirements` off the draft row (the executor
+/// stamped it there at approval), and guarantees every constraint reaches the
+/// promoted prompt verbatim, reporting which ones the design pass had already
+/// reflected in its own words. Called from `prepare_promote` only — the one
+/// point where the IR becomes the persona's prompt.
+///
+/// Returns `None` (and does not touch `ir`) for every build whose persona is
+/// not a kp hire, or is a kp hire that sent no requirements — i.e. every hire
+/// that predates the contract.
+pub(crate) fn apply_kp_requirement_constraints(
+    pool: &DbPool,
+    persona_id: &str,
+    ir: &mut AgentIr,
+) -> Option<personas_engine::kp_requirements::ConstraintCheck> {
+    let persona = match crate::db::repos::core::personas::get_by_id(pool, persona_id) {
+        Ok(p) => p,
+        Err(e) => {
+            tracing::warn!(
+                persona_id = %persona_id,
+                error = %e,
+                "kp requirements: could not load the persona — constraints NOT pinned"
+            );
+            return None;
+        }
+    };
+    let requirements = persona.parsed_design_context().kp_link?.requirements?;
+    let Some(parsed) =
+        personas_engine::kp_requirements::KpAgentRequirements::from_value(&requirements)
+    else {
+        // Intake normalized it, so this means the row was edited out of band.
+        // Loud, because a constraint set that cannot be read is one that is
+        // not being enforced.
+        tracing::warn!(
+            persona_id = %persona_id,
+            "kp requirements: stored requirements do not parse as kp.agent-requirements.v1 — constraints NOT pinned"
+        );
+        return None;
+    };
+    let check = personas_engine::kp_requirements::pin_constraints(ir, &parsed.constraint_list());
+    if check.items.is_empty() {
+        return Some(check);
+    }
+    for c in check.unreflected() {
+        tracing::info!(
+            persona_id = %persona_id,
+            constraint = %c,
+            "kp requirements: the design pass omitted this constraint — pinned verbatim"
+        );
+    }
+    tracing::info!(
+        persona_id = %persona_id,
+        total = check.items.len(),
+        reflected_by_design = check.reflected_count(),
+        pinned_into = check.pinned_into,
+        "kp requirements: constraints pinned into the promoted prompt"
+    );
+    Some(check)
+}

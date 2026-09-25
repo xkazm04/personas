@@ -305,6 +305,19 @@ paths:
         instead of the active workspace's (human click and headless auto-exec
         alike). An unknown workspace is refused here with 400
         `workspace_not_found`; nothing is queued.
+
+        **Requirement-driven hire (§10.12).** An optional `spec.requirements`
+        (`kp.agent-requirements.v1`) replaces `spec.systemPromptDraft`, which is
+        then simply omitted: kp sends what its research says the agent must do,
+        receive, produce and never do, and Personas designs the agent from it.
+        Validated and normalized here (strings trimmed, unknown keys kept);
+        refusals are 400 with a `code` — `invalid_requirements` (wrong `kind`,
+        not an object, a known field of the wrong type),
+        `requirements_too_large` (> 32 KB serialized),
+        `requirements_too_many_items` (an array > 30 items),
+        `requirements_string_too_long` (a string > 1000 chars). The approval
+        card's rationale ends `designed from kp requirements (N constraint(s))`.
+        Absent ⇒ the request takes exactly the path it took before.
       requestBody:
         required: true
         content: { application/json: { schema: { $ref: "#/components/schemas/KpPersonaRequest" } } }
@@ -318,7 +331,7 @@ paths:
                 properties:
                   requestId: { type: string, examples: ["appr_a1b2c3d4e5f6"] }
                   status: { type: string, const: pending_approval }
-        "400": { description: "Validation failure (`code` `workspace_not_found` / `invalid_placement` for a bad `placement`): empty/oversized field, non-http(s) kp.baseUrl, more than 32 connectors or metrics, or an appMaster block whose mandate.scopeRung is outside 0..2, whose mandate.forbiddenClasses leaves the closed vocabulary, whose app.repo carries neither a url nor a rootPath, or whose objective/trigger/tenure values leave their vocabularies or bounds" }
+        "400": { description: "Validation failure (`code` `workspace_not_found` / `invalid_placement` for a bad `placement`; `invalid_requirements` / `requirements_too_large` / `requirements_too_many_items` / `requirements_string_too_long` for a bad `spec.requirements`): empty/oversized field, non-http(s) kp.baseUrl, more than 32 connectors or metrics, or an appMaster block whose mandate.scopeRung is outside 0..2, whose mandate.forbiddenClasses leaves the closed vocabulary, whose app.repo carries neither a url nor a rootPath, or whose objective/trigger/tenure values leave their vocabularies or bounds" }
         "403": { $ref: "#/components/responses/Forbidden" }
 
   /api/kp/persona-requests/{requestId}:
@@ -1048,6 +1061,8 @@ components:
                   unit: { type: [string, "null"] }
                   direction: { type: [string, "null"] }
                 required: [key, label]
+            requirements:
+              $ref: "#/components/schemas/KpAgentRequirements"
           required: [name, mission]
         reportToken:
           type: string
@@ -1061,6 +1076,83 @@ components:
             workspaceId: { type: string }
           required: [workspaceId]
       required: [kp, spec, reportToken]
+
+    KpAgentRequirements:
+      type: [object, "null"]
+      description: |
+        `kp.agent-requirements.v1` — a requirement-driven hire's brief, sent
+        INSTEAD of `spec.systemPromptDraft` (operator decision 2026-09-25: kp
+        extracts requirements from research; Personas designs the agent).
+        Validated by `personas_engine::kp_requirements::normalize`: the
+        serialized object ≤ 32 KB, every array ≤ 30 items, every string ≤ 1000
+        chars (after trimming). Unknown keys are kept verbatim
+        (forward-compatible) but only the fields below are rendered.
+        Personas renders it into the build intent as an authoritative
+        "Requirements from kp" section, stores it on
+        `design_context.kpLink.requirements`, pins every `constraints[]` item
+        verbatim into the promoted persona's instructions, and shows it on the
+        persona's Design → Manifest tab.
+      properties:
+        kind: { type: string, const: kp.agent-requirements.v1 }
+        role: { type: string }
+        arena: { type: string }
+        niche: { type: string }
+        purpose: { type: string }
+        responsibilities: { type: array, maxItems: 30, items: { type: string } }
+        craft:
+          type: array
+          maxItems: 30
+          items:
+            type: object
+            properties:
+              recipe: { type: string, examples: ["freelance-brief-delivery@0.1.0"] }
+              title: { type: string }
+              need: { type: string }
+              coreAction: { type: string }
+              successCriteria: { type: array, maxItems: 30, items: { type: string } }
+              lessons: { type: array, maxItems: 30, items: { type: string } }
+        research:
+          type: [object, "null"]
+          properties:
+            gigsResearched: { type: [integer, "null"] }
+            categories: { type: array, maxItems: 30, items: { type: string } }
+            commonAsks: { type: array, maxItems: 30, items: { type: string } }
+            commonChallenges: { type: array, maxItems: 30, items: { type: string } }
+            typicalEffortHours:
+              type: [object, "null"]
+              description: null when unknown — rendered as absent, never as zero.
+              properties:
+                min: { type: [number, "null"] }
+                max: { type: [number, "null"] }
+            asOf: { type: string }
+        inputs:
+          type: [object, "null"]
+          properties:
+            assignment: { type: string, examples: ["kp.gig.v1"] }
+            fields: { type: array, maxItems: 30, items: { type: string } }
+        outputs:
+          type: [object, "null"]
+          properties:
+            contract: { type: string, examples: ["kp-deliverable.v1"] }
+            handoffFile: { type: string, examples: ["kp-deliverable.json"] }
+            clientFilesDir: { type: string, examples: ["deliverable/"] }
+            processLog: { type: string, examples: ["NOTES.md"] }
+            reviewChecklist: { type: array, maxItems: 30, items: { type: string } }
+        constraints:
+          type: array
+          maxItems: 30
+          description: MUST hold on every run. Each is pinned verbatim into the promoted persona's `structured_prompt.instructions`.
+          items: { type: string }
+        tools:
+          type: array
+          maxItems: 30
+          items:
+            type: object
+            properties:
+              connector: { type: string }
+              why: { type: string }
+        budgetUsdPerAttempt: { type: [number, "null"] }
+      required: [kind]
 
     AppMasterSpec:
       type: object

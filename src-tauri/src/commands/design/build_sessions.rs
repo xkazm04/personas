@@ -2876,10 +2876,22 @@ async fn prepare_promote(
     // drew it says so instead of just looking small.
     let kp_surface_trim =
         crate::engine::build_session::apply_kp_tool_surface(db, persona_id, &mut ir, "promote");
-    let kp_surface_notes: Vec<String> = kp_surface_trim
+    let mut kp_surface_notes: Vec<String> = kp_surface_trim
         .as_ref()
         .map(|trim| trim.notes())
         .unwrap_or_default();
+
+    // Requirement-driven kp hires only: every `constraints[]` item of the
+    // hire's `kp.agent-requirements.v1` reaches the promoted prompt VERBATIM,
+    // whatever the design pass did with it — and which ones the design had
+    // reflected in its own words is reported next to the surface notes, so a
+    // design that dropped a MUST says so in `setup_detail` instead of shipping
+    // quietly without it. No-op for every other build.
+    if let Some(check) =
+        crate::engine::build_session::apply_kp_requirement_constraints(db, persona_id, &mut ir)
+    {
+        kp_surface_notes.extend(check.notes());
+    }
 
     // Recipe parameterization (Foundry arc, 2026-07): derive tunable params from
     // each capability's `input_schema` and synthesize a `## Capability
@@ -4197,6 +4209,164 @@ mod tests {
         let previewed = serde_json::to_value(preview.setup.expect("preview setup")).unwrap();
         assert_eq!(written, previewed, "promote wrote what the preview showed");
         assert_eq!(session_phase(&pool, "s_guard")?, "promoted");
+        Ok(())
+    }
+
+    // ----------------------------------------------------------------------
+    // kp requirement-driven hire: requirements survive promote's design_context
+    // rebuild, and every constraint reaches the promoted prompt
+    // ----------------------------------------------------------------------
+
+    fn kp_hired_draft(
+        pool: &crate::db::DbPool,
+        persona_id: &str,
+        requirements: Option<serde_json::Value>,
+    ) -> Result<(), AppError> {
+        seed_test_persona(pool, persona_id);
+        let mut link = serde_json::json!({
+            "jobId": "gig-1",
+            "jobTitle": "Landing page fix",
+            "baseUrl": "http://127.0.0.1:1",
+            "reportToken": "tok",
+            "requestedConnectors": ["research"],
+            "runsCommands": false
+        });
+        if let Some(r) = requirements {
+            link["requirements"] = r;
+        }
+        pool.get()?.execute(
+            "UPDATE personas SET design_context = ?1, lifecycle = 'draft' WHERE id = ?2",
+            rusqlite::params![
+                serde_json::json!({ "kpLink": link }).to_string(),
+                persona_id
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// What the design pass produced: its own structured prompt, a commit step
+    /// nobody asked for, and only one of the two constraints in its own words.
+    fn kp_designed_ir() -> serde_json::Value {
+        serde_json::json!({
+            "name": "Web Gig Specialist",
+            "system_prompt": "You deliver web gigs.",
+            "structured_prompt": {
+                "identity": "You are a freelance web specialist.",
+                "instructions": "Answer the brief. Commit each green cycle to GitHub. Disclose AI assistance in what goes out.",
+                "errorHandling": "Write the blocker to NOTES.md."
+            },
+            "use_cases": [{ "id": "uc_deliver", "title": "Deliver the gig" }],
+            "triggers": []
+        })
+    }
+
+    fn kp_requirements() -> serde_json::Value {
+        serde_json::json!({
+            "kind": "kp.agent-requirements.v1",
+            "role": "Freelance specialist - web development",
+            "constraints": [
+                "Never send, submit, post, bid, message or contact anyone; the operator sends.",
+                "Disclose AI assistance in what goes out."
+            ],
+            "futureKey": { "kept": true }
+        })
+    }
+
+    #[tokio::test]
+    async fn promote_reinjects_kp_requirements_and_pins_every_constraint() -> Result<(), AppError> {
+        let pool = crate::db::init_test_db().unwrap();
+        kp_hired_draft(&pool, "p_kpr", Some(kp_requirements()))?;
+        seed_test_complete_session(&pool, "s_kpr", "p_kpr", &kp_designed_ir())?;
+
+        let prepared = prepare_promote(&pool, "s_kpr", "p_kpr", vec![]).await?;
+        commit_promote(&pool, "s_kpr", "p_kpr", prepared)?;
+
+        let persona = persona_repo::get_by_id(&pool, "p_kpr")?;
+        // design_context was REBUILT from the IR — the link and its
+        // requirements (unknown keys included) were re-injected whole.
+        let link = persona
+            .parsed_design_context()
+            .kp_link
+            .expect("kpLink re-injected");
+        assert_eq!(link.requirements, Some(kp_requirements()));
+        assert!(
+            persona
+                .design_context
+                .as_deref()
+                .is_some_and(|dc| dc.contains("\"builderMeta\"")),
+            "the rebuild really happened (builderMeta comes from build_design_json)"
+        );
+
+        // Every constraint is in the promoted instructions, verbatim, ahead of
+        // the design's own text.
+        let sp: serde_json::Value = serde_json::from_str(
+            persona
+                .structured_prompt
+                .as_deref()
+                .expect("structured prompt"),
+        )
+        .unwrap();
+        let instructions = sp["instructions"].as_str().unwrap();
+        assert!(
+            instructions.starts_with(personas_engine::kp_requirements::CONSTRAINTS_BLOCK_HEADING)
+        );
+        for c in kp_requirements()["constraints"].as_array().unwrap() {
+            assert!(
+                instructions.contains(&format!("- {}", c.as_str().unwrap())),
+                "constraint missing from instructions: {c}"
+            );
+        }
+        assert!(instructions.contains("Answer the brief."));
+
+        // …and the omission is on the record the operator reads.
+        let setup_detail: Option<String> = read_one(
+            &pool,
+            "SELECT setup_detail FROM personas WHERE id = 'p_kpr'",
+            [],
+        )?;
+        let setup: serde_json::Value =
+            serde_json::from_str(&setup_detail.expect("setup_detail")).unwrap();
+        let notes: Vec<String> = setup["notes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|n| n.as_str().map(str::to_string))
+            .collect();
+        assert!(
+            notes.iter().any(|n| n.contains("1 of 2 constraint(s)")),
+            "{notes:?}"
+        );
+        assert!(
+            notes
+                .iter()
+                .any(|n| n.contains("the design omitted") && n.contains("Never send, submit")),
+            "{notes:?}"
+        );
+        Ok(())
+    }
+
+    /// A kp hire that sent no requirements promotes exactly as before: the
+    /// design's prompt is untouched and the link carries no requirements key.
+    #[tokio::test]
+    async fn promote_of_a_kp_hire_without_requirements_is_unchanged() -> Result<(), AppError> {
+        let pool = crate::db::init_test_db().unwrap();
+        kp_hired_draft(&pool, "p_kpn", None)?;
+        seed_test_complete_session(&pool, "s_kpn", "p_kpn", &kp_designed_ir())?;
+
+        let prepared = prepare_promote(&pool, "s_kpn", "p_kpn", vec![]).await?;
+        commit_promote(&pool, "s_kpn", "p_kpn", prepared)?;
+
+        let persona = persona_repo::get_by_id(&pool, "p_kpn")?;
+        let sp: serde_json::Value =
+            serde_json::from_str(persona.structured_prompt.as_deref().unwrap()).unwrap();
+        assert_eq!(
+            sp,
+            kp_designed_ir()["structured_prompt"],
+            "no requirements ⇒ the design's structured prompt is promoted verbatim"
+        );
+        let dc = persona.design_context.unwrap_or_default();
+        assert!(dc.contains("\"kpLink\""), "{dc}");
+        assert!(!dc.contains("requirements"), "{dc}");
         Ok(())
     }
 }

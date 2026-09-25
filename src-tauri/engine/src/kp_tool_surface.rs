@@ -1147,6 +1147,7 @@ mod tests {
             report_token: "tok".into(),
             requested_connectors: vec!["GitHub".into(), "  ".into(), " Slack ".into()],
             runs_commands: true,
+            requirements: None,
         };
         let s = KpToolSurface::from_kp_link(&link);
         assert_eq!(s.requested_connectors, vec!["github", "slack"]);

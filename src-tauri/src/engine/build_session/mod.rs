@@ -31,7 +31,7 @@ mod session_prompt;
 mod templates;
 mod tool_tests;
 
-pub(crate) use kp_surface::apply_kp_tool_surface;
+pub(crate) use kp_surface::{apply_kp_requirement_constraints, apply_kp_tool_surface};
 pub use tool_tests::run_tool_tests;
 
 use session_prompt::build_session_prompt;

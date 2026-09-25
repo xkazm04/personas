@@ -390,7 +390,7 @@ back to kp.
 
 | Route | Scope | What it does |
 | --- | --- | --- |
-| `POST /api/kp/persona-requests` | `personas:build` | Validates the body, inserts a `kp_hire_request` row in the companion approval inbox — recording the authenticating key's id in `companion_approval.requested_by_key_id` (§10.8) — and returns `{requestId, status: "pending_approval"}`. Builds nothing. An optional top-level `placement: {workspaceId}` files the approved hire under that workspace's cross-project group; an unknown workspace is refused at intake (§10.9). |
+| `POST /api/kp/persona-requests` | `personas:build` | Validates the body, inserts a `kp_hire_request` row in the companion approval inbox — recording the authenticating key's id in `companion_approval.requested_by_key_id` (§10.8) — and returns `{requestId, status: "pending_approval"}`. Builds nothing. An optional top-level `placement: {workspaceId}` files the approved hire under that workspace's cross-project group; an unknown workspace is refused at intake (§10.9). An optional `spec.requirements` (`kp.agent-requirements.v1`) replaces `systemPromptDraft` for a requirement-driven hire and is refused with a `code` when out of contract (§10.12). |
 | `GET /api/kp/persona-requests/{id}` | any valid key | Derived status: `pending` \| `approved` \| `rejected` \| `failed` \| `expired`, plus `personaId` / `personaName` / `buildPhase` once the executor has stamped them, and `buildFailureReason` when the build session ended `failed` (§10.7). 404s for any approval row that is not a KP hire request, so it cannot enumerate the inbox. |
 | `GET /api/kp/connector-catalog` | any valid key | `{key, name, description}` per compiled-in builtin connector — the picker payload for kp's hire form. No DB read. |
 
@@ -1096,6 +1096,90 @@ kp's executions and another ran them:
 
 Consequence for this bridge: every check a runner repeats must read shared state, not
 process state — which is why the allowed roots moved into the database (§10.9).
+
+### 10.12 Requirement-driven hires — kp sends requirements, Personas designs (2026-09-25)
+
+Operator decision, verbatim: *"KP should not create prompts, KP should extract
+requirements for agent based on research. Personas should create agent in alignment
+with its design to execute it, so we are able to overview and manage in the app."*
+
+The live finding behind it: for kp gig hires the one-shot design pass wrote its own
+`structured_prompt` — which `prompt::assemble` renders **instead of** the system prompt,
+so kp's `systemPromptDraft` never reached a run — and, reading only a mission sentence
+and a connector list, it invented a GitHub-commit phase from the `source_control`
+connector for an agent whose outputs are local files. (Build-prompt rule 11 appends a
+"commit after each green cycle" TDD cycle to any code-flavoured persona; nothing told
+the design pass that did not apply.)
+
+**Wire.** `spec.requirements` (`kp.agent-requirements.v1`, schema `KpAgentRequirements`
+in the OpenAPI file) replaces `spec.systemPromptDraft`, which is simply omitted — it has
+always been optional. Other kp hires (recruiting, App master) are unchanged.
+
+| Step | Where | What |
+| --- | --- | --- |
+| Intake | `management_api::validate_kp_requirements` → `personas_engine::kp_requirements::normalize` | `kind` must be `kp.agent-requirements.v1`; serialized ≤ 32 KB, arrays ≤ 30, strings ≤ 1000 chars after trimming; known fields must parse. Refusals are 400 **with a code** (`invalid_requirements`, `requirements_too_large`, `requirements_too_many_items`, `requirements_string_too_long`). The approval payload stores the NORMALIZED object (strings trimmed, unknown keys verbatim). The card's rationale gains `designed from kp requirements (N constraint(s))`. |
+| Intent | `approval_exec_core::kp_hire_intent` → `kp_requirements::render_intent_section` | The unchanged intent (mission, job, preferred connectors, success metrics) plus a **"Requirements from kp — AUTHORITATIVE"** section: design rules (build exactly what is asked; with local-file outputs, *no commit / push / PR / publish / post / send / bid / message / notify step and no source-control or messaging connector for one*; a platform default that adds an uncalled-for step loses; every MUST constraint goes into the behavior core's `constraints` and `structured_prompt.instructions`, and `errorHandling` where it governs a failure; no connector beyond the Tools list), then role/purpose, the numbered MUST constraints, tools with their why, outputs, budget, and an informational tail (responsibilities, craft, research, inputs). The requirements win over the mission sentence where they differ. |
+| Store | `KpLink.requirements` (`core/src/models/persona.rs`) | Carried **inside** `design_context.kpLink`, so `promote_build_draft`'s design_context rebuild — which re-injects `kpLink` whole (§10.5, the app-master-p4 trap) — keeps it by construction. `None` serializes exactly as before. The draft persona's placeholder system prompt names the role instead of the generic stub. |
+| Verify | `prepare_promote` → `build_session::apply_kp_requirement_constraints` → `kp_requirements::pin_constraints` | See below. |
+| Show | Design → Manifest tab (`sub_design/components/KpRequirementsPanel.tsx`) | A "Requirements from kp" section above the manifest: purpose, role/arena/niche/budget and every MUST constraint always visible; responsibilities, craft, research, inputs, outputs and tools behind one disclosure. Renders nothing for any other persona. |
+
+**Length.** The design pass has no hard cap on the intent — it is written to the CLI
+over stdin, not argv, and the build prompt around it is already a large rule set for a
+200K-context model. The intent does also drive the keyword template match and the gate
+heuristics, and the sibling channel for user reference context is clipped at 8 000
+chars, so the section is capped at `MAX_INTENT_SECTION_CHARS` (12 000). The binding head
+(rules, role, constraints, tools, outputs, budget) is always rendered in full; only the
+informational tail is clipped, with a visible marker. A maximal 30-constraint object keeps
+every constraint (`kp_requirements::tests`).
+
+**The constraint check — pin, then report.** A key-term match can confirm that a
+constraint's words are in the designed prompt but not that the rule survived: "avoid
+sending" shares every key term with "never send". So the guarantee is structural, and the
+match is only a report:
+
+1. Before touching anything, each constraint is checked against the design's own words
+   (every `structured_prompt` section, `system_prompt`, and the v3 persona block): it
+   counts as *reflected* when ≥ 60% of its content-word stems (6-char stems, stopwords
+   out) appear.
+2. A marker-delimited block (`### Constraints from kp — MUST hold on every run` …
+   `(end of kp constraints)`) listing **every** constraint verbatim is **prepended** to
+   `structured_prompt.instructions` — the section the runtime renders — replacing any
+   earlier copy. No structured prompt ⇒ appended to `system_prompt`; neither ⇒ a new
+   structured prompt holding just the block.
+3. Constraints missing from the v3 persona block's `constraints[]` are appended there, so
+   `last_design_result.persona` agrees with the prompt.
+4. The outcome goes to `setup_detail.notes` beside the surface-trim notes —
+   `kp requirements: K of N constraint(s) were reflected by the design pass in its own
+   words; all N are pinned verbatim …` plus one line per constraint the design omitted.
+
+Nothing is ever dropped silently: a stored object that no longer parses is logged at warn
+and leaves the IR untouched rather than pinning half a set; an executor payload whose
+requirements no longer parse fails the hire rather than building from the mission alone.
+
+**The manifest seam.** Seeding a persona's `manifest.md` (opening the Manifest tab, the
+growth/sleep cycles) switches prompt assembly from the structured prompt — where the block
+was pinned — to the manifest. `persona_brain::manifest::render_law_seed` therefore writes
+each requirement constraint into `# Boundaries` as `- (kp requirement) …`, once each (a
+legacy-core constraint with the same text is not repeated).
+
+**Tests.** `personas-engine` `kp_requirements::tests` (intake bounds and codes, trimming,
+unknown keys, the golden intent section for the contract example, clipping that keeps every
+constraint, the pin/report pair, idempotent re-pin, the no-structured-prompt paths);
+`personas-core` `kp_link_tests` (verbatim round trip, no key when absent); `app_lib`
+`management_api::tests::kp_requirements_*` / `kp_hire_without_requirements_is_unchanged`,
+`approval_exec_core::tests::kp_hire_intent_*` (byte-identical intent without requirements),
+`build_sessions::tests::promote_reinjects_kp_requirements_and_pins_every_constraint` /
+`promote_of_a_kp_hire_without_requirements_is_unchanged`,
+`manifest::tests::kp_requirement_constraints_are_seeded_into_boundaries`; vitest
+`sub_design/libs/__tests__/kpRequirements.test.ts` and
+`sub_design/components/__tests__/KpRequirementsPanel.test.tsx`.
+
+**Known gaps.** The intent section is guidance to a model: a design pass can still add a
+phase the requirements did not ask for, and only the tool/connector half of that is
+enforced (§10.5's surface trim, driven by `spec.connectors`). The constraint block is
+enforced; an invented *phase* is not detected. The panel reads `design_context` directly
+because `parseDesignContext` (`sub_lab/use-cases/UseCasesList.tsx`) rebuilds a
+`kpLink`-only envelope without the link.
 
 ---
 

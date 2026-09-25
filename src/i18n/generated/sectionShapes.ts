@@ -60,6 +60,7 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "share": {},
     "design_subtabs": {},
     "manifest": {},
+    "kp_requirements": {},
     "parameters_card": {},
     "editor_empty": {},
     "glyph_dim_label": {},

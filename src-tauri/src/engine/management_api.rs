@@ -2822,6 +2822,15 @@ struct KpPersonaSpec {
     max_turns: Option<i64>,
     #[serde(default)]
     success_metrics: Vec<KpSuccessMetric>,
+    /// `kp.agent-requirements.v1` — the structured brief a requirement-driven
+    /// hire (the freelance gig specialist) sends INSTEAD of
+    /// `systemPromptDraft`, which is then simply absent (it has always been
+    /// optional). Kept as raw JSON here: kp owns the schema and the contract
+    /// keeps unknown keys, so the typed shape check and the bounds live in
+    /// `personas_engine::kp_requirements::normalize`, run by
+    /// [`validate_kp_requirements`] with a refusal CODE rather than prose.
+    #[serde(default)]
+    requirements: Option<serde_json::Value>,
 }
 
 // --- App master (P4) -------------------------------------------------------
@@ -3079,6 +3088,21 @@ fn validate_kp_persona_request(body: &KpPersonaRequestBody) -> Result<(), String
     Ok(())
 }
 
+/// Validate + normalize `spec.requirements` (`kp.agent-requirements.v1`).
+/// Pure — unit-tested below. `Ok(None)` when the hire sent none (every hire
+/// that predates the contract takes exactly its old path). A JSON `null` is
+/// treated as absent. On refusal the error carries the stable code the route
+/// answers with (`invalid_requirements`, `requirements_too_large`,
+/// `requirements_too_many_items`, `requirements_string_too_long`).
+fn validate_kp_requirements(
+    body: &KpPersonaRequestBody,
+) -> Result<Option<serde_json::Value>, personas_engine::kp_requirements::RequirementsError> {
+    match &body.spec.requirements {
+        None | Some(serde_json::Value::Null) => Ok(None),
+        Some(raw) => personas_engine::kp_requirements::normalize(raw).map(Some),
+    }
+}
+
 /// Validate the `appMaster` block. Pure — unit-tested below.
 ///
 /// Two of these checks are the whole reason this function exists rather than a
@@ -3283,12 +3307,28 @@ fn kp_hire_rationale(body: &KpPersonaRequestBody) -> String {
             budget
         );
     }
+    // A requirement-driven hire sends no prompt: the card says the persona
+    // will be designed here from kp's requirements, and how many MUST
+    // constraints the human is agreeing to have pinned into it.
+    let requirements = body
+        .spec
+        .requirements
+        .as_ref()
+        .and_then(personas_engine::kp_requirements::KpAgentRequirements::from_value)
+        .map(|r| {
+            format!(
+                ", designed from kp requirements ({} constraint(s))",
+                r.constraint_list().len()
+            )
+        })
+        .unwrap_or_default();
     format!(
-        "KP job '{}' requests an AI hire: {} — {} connector(s){}",
+        "KP job '{}' requests an AI hire: {} — {} connector(s){}{}",
         body.kp.job_title.trim(),
         body.spec.name.trim(),
         body.spec.connectors.len(),
-        budget
+        budget,
+        requirements
     )
 }
 
@@ -3355,6 +3395,15 @@ async fn kp_create_persona_request(
     if let Err(msg) = validate_kp_persona_request(&body) {
         return err_json(StatusCode::BAD_REQUEST, &msg).into_response();
     }
+    // `spec.requirements` answers with a CODE (kp branches on it), and what is
+    // stored is the NORMALIZED object — trimmed, bounds-checked — so every
+    // reader downstream (executor, promote, the app's panel) sees one shape.
+    let requirements = match validate_kp_requirements(&body) {
+        Ok(r) => r,
+        Err(e) => {
+            return err_code(StatusCode::BAD_REQUEST, e.code, &e.message).into_response();
+        }
+    };
     // Optional `placement: { workspaceId }` — the workspace whose
     // cross-project group the approved hire is filed under. Checked HERE so an
     // unknown workspace is refused before anything is queued; the executor
@@ -3377,6 +3426,9 @@ async fn kp_create_persona_request(
     // The RAW body (see above) — every field kp sent, modeled here or not.
     let mut params = raw_body;
     params["requestId"] = serde_json::Value::String(request_id.clone());
+    if let Some(r) = requirements {
+        params["spec"]["requirements"] = r;
+    }
     // The submitting key is recorded so approval can grant it
     // `personas:execute:persona:<new id>` — that key and no other (§10.8).
     let rationale = with_placement_note(kp_hire_rationale(&body), placement.as_ref());
@@ -4758,6 +4810,117 @@ mod tests {
         assert!(validate_kp_persona_request(&b)
             .unwrap_err()
             .contains("reportToken"));
+    }
+
+    // ---- spec.requirements (kp.agent-requirements.v1) ----------------------
+
+    /// A requirement-driven hire: no `systemPromptDraft`, a requirements object.
+    fn kp_requirements_body(requirements: serde_json::Value) -> KpPersonaRequestBody {
+        serde_json::from_value(serde_json::json!({
+            "kp": {"baseUrl": "http://localhost:3001", "jobId": "gig-7", "jobTitle": "Landing page fix"},
+            "spec": {
+                "name": "Freelance specialist - web development",
+                "mission": "Answer web-development gig briefs with a verified deliverable.",
+                "connectors": ["research"],
+                "maxBudgetUsd": 3,
+                "requirements": requirements
+            },
+            "reportToken": "tok"
+        }))
+        .expect("requirements body")
+    }
+
+    fn kp_requirements_json() -> serde_json::Value {
+        serde_json::json!({
+            "kind": "kp.agent-requirements.v1",
+            "role": "  Freelance specialist - web development  ",
+            "constraints": [
+                "Never send, submit, post, bid, message or contact anyone; the operator sends.",
+                "Disclose AI assistance in what goes out."
+            ],
+            "tools": [{"connector": "research", "why": "check vendor facts"}],
+            "futureKey": {"kept": true}
+        })
+    }
+
+    #[test]
+    fn kp_requirements_hire_needs_no_system_prompt_draft() {
+        let b = kp_requirements_body(kp_requirements_json());
+        assert!(b.spec.system_prompt_draft.is_none());
+        assert_eq!(validate_kp_persona_request(&b), Ok(()));
+        let stored = validate_kp_requirements(&b)
+            .expect("valid requirements")
+            .expect("present");
+        // Normalized: trimmed, unknown keys kept.
+        assert_eq!(stored["role"], "Freelance specialist - web development");
+        assert_eq!(stored["futureKey"], serde_json::json!({"kept": true}));
+    }
+
+    #[test]
+    fn kp_hire_without_requirements_is_unchanged() {
+        let b = kp_body();
+        assert!(b.spec.requirements.is_none());
+        assert_eq!(validate_kp_requirements(&b), Ok(None));
+        // JSON null reads as absent, not as a malformed object.
+        let b = kp_requirements_body(serde_json::Value::Null);
+        assert_eq!(validate_kp_requirements(&b), Ok(None));
+        // The approval card sentence is byte-identical to what it was.
+        assert_eq!(
+            kp_hire_rationale(&kp_body()),
+            "KP job 'Senior Rust Engineer' requests an AI hire: Rust Sourcing Scout — 2 connector(s), budget $25/mo"
+        );
+    }
+
+    #[test]
+    fn kp_requirements_refusals_carry_codes() {
+        use personas_engine::kp_requirements::RequirementsError as E;
+        let mut wrong_kind = kp_requirements_json();
+        wrong_kind["kind"] = "kp.agent-requirements.v9".into();
+        let e = validate_kp_requirements(&kp_requirements_body(wrong_kind)).unwrap_err();
+        assert_eq!(e.code, "invalid_requirements");
+        assert_eq!(e.code, E::INVALID);
+
+        let mut too_big = kp_requirements_json();
+        too_big["padding"] = "x".repeat(33 * 1024).into();
+        assert_eq!(
+            validate_kp_requirements(&kp_requirements_body(too_big))
+                .unwrap_err()
+                .code,
+            E::TOO_LARGE
+        );
+
+        let mut too_long = kp_requirements_json();
+        too_long["purpose"] = "p".repeat(1001).into();
+        assert_eq!(
+            validate_kp_requirements(&kp_requirements_body(too_long))
+                .unwrap_err()
+                .code,
+            E::STRING_TOO_LONG
+        );
+
+        let mut too_many = kp_requirements_json();
+        too_many["constraints"] = serde_json::json!(vec!["c"; 31]);
+        assert_eq!(
+            validate_kp_requirements(&kp_requirements_body(too_many))
+                .unwrap_err()
+                .code,
+            E::TOO_MANY_ITEMS
+        );
+
+        let not_object = kp_requirements_body(serde_json::json!(["x"]));
+        assert_eq!(
+            validate_kp_requirements(&not_object).unwrap_err().code,
+            E::INVALID
+        );
+    }
+
+    #[test]
+    fn kp_requirements_hire_rationale_names_the_design_source() {
+        let r = kp_hire_rationale(&kp_requirements_body(kp_requirements_json()));
+        assert!(
+            r.ends_with(", budget $3/mo, designed from kp requirements (2 constraint(s))"),
+            "{r}"
+        );
     }
 
     // ---- App master block (P4) ---------------------------------------------
