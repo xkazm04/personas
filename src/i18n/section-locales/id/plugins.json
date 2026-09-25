@@ -4362,7 +4362,10 @@
       "track_load_failed": "Tidak dapat memuat balapan ini.",
       "variant_key": "Varian {key}",
       "variants_label": "Varian",
-      "winner": "Pemenang"
+      "winner": "Pemenang",
+      "setup_close_title": "Tutup pengaturan?",
+      "setup_close_body": "Isian Anda disimpan: Balapan baru memulihkannya sampai Anda membuat balapan atau mengosongkan formulir.",
+      "setup_close_confirm": "Tutup pengaturan"
     },
     "decide_locked_decided": "Sudah diputuskan: {key} menang.",
     "decide_locked_shortlisted": "Masuk daftar pendek: pemenang diumumkan di babak penyempurnaan.",
@@ -4370,6 +4373,10 @@
     "decide_locked_collecting": "Varian masih dikumpulkan.",
     "decide_locked_racing": "Balapan belum selesai.",
     "decide_locked_failed": "Rantai berhenti. Coba lagi sebelum memutuskan.",
-    "lineups_load_failed": "Line-up tersimpan tidak dapat dibaca."
+    "lineups_load_failed": "Line-up tersimpan tidak dapat dibaca.",
+    "setup_clear": "Kosongkan formulir",
+    "draft_replace_title": "Ganti brief Anda?",
+    "draft_replace_body": "Draf Athena menggantikan brief yang Anda tulis. Teks Anda tidak disimpan.",
+    "draft_replace_confirm": "Ganti brief"
   }
 }

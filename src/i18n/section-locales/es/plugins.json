@@ -4362,7 +4362,10 @@
       "track_load_failed": "No se pudo cargar esta carrera.",
       "variant_key": "Variante {key}",
       "variants_label": "Variantes",
-      "winner": "Ganador"
+      "winner": "Ganador",
+      "setup_close_title": "¿Cerrar la configuración?",
+      "setup_close_body": "Lo que escribiste se conserva: Nueva carrera lo recupera hasta que crees la carrera o vacíes el formulario.",
+      "setup_close_confirm": "Cerrar la configuración"
     },
     "decide_locked_decided": "Decidido: ganó {key}.",
     "decide_locked_shortlisted": "En la preselección: el ganador se declara en la ronda de refinamiento.",
@@ -4370,6 +4373,10 @@
     "decide_locked_collecting": "Todavía se están recopilando las variantes.",
     "decide_locked_racing": "La carrera todavía no ha terminado.",
     "decide_locked_failed": "La cadena se detuvo. Reintenta antes de decidir.",
-    "lineups_load_failed": "No se pudieron leer las alineaciones guardadas."
+    "lineups_load_failed": "No se pudieron leer las alineaciones guardadas.",
+    "setup_clear": "Vaciar el formulario",
+    "draft_replace_title": "¿Reemplazar tu resumen?",
+    "draft_replace_body": "El borrador de Athena reemplaza el resumen que escribiste. Tu texto no se conserva.",
+    "draft_replace_confirm": "Reemplazar el resumen"
   }
 }

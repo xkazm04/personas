@@ -4362,7 +4362,10 @@
       "track_load_failed": "Impossible de charger cette course.",
       "variant_key": "Variante {key}",
       "variants_label": "Variantes",
-      "winner": "Vainqueur"
+      "winner": "Vainqueur",
+      "setup_close_title": "Fermer la configuration ?",
+      "setup_close_body": "Votre saisie est conservée : Nouvelle course la restaure jusqu’à ce que vous créiez la course ou vidiez le formulaire.",
+      "setup_close_confirm": "Fermer la configuration"
     },
     "decide_locked_decided": "Tranché : {key} a gagné.",
     "decide_locked_shortlisted": "Présélectionné : le gagnant est désigné lors de la manche d’affinage.",
@@ -4370,6 +4373,10 @@
     "decide_locked_collecting": "Les variantes sont encore en cours de collecte.",
     "decide_locked_racing": "La course n’est pas encore terminée.",
     "decide_locked_failed": "La chaîne s’est arrêtée. Relancez-la avant de trancher.",
-    "lineups_load_failed": "Impossible de lire les formations enregistrées."
+    "lineups_load_failed": "Impossible de lire les formations enregistrées.",
+    "setup_clear": "Vider le formulaire",
+    "draft_replace_title": "Remplacer votre brief ?",
+    "draft_replace_body": "Le brouillon d’Athena remplace le brief que vous avez écrit. Votre texte n’est pas conservé.",
+    "draft_replace_confirm": "Remplacer le brief"
   }
 }

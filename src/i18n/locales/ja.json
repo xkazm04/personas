@@ -15156,7 +15156,10 @@
         "track_load_failed": "このレースを読み込めませんでした。",
         "variant_key": "バリアント{key}",
         "variants_label": "バリアント",
-        "winner": "優勝者"
+        "winner": "優勝者",
+        "setup_close_title": "セットアップを閉じますか？",
+        "setup_close_body": "入力内容は保持されます。レースを作成するかフォームをクリアするまで、「新しいレース」で復元されます。",
+        "setup_close_confirm": "セットアップを閉じる"
       },
       "decide_locked_decided": "決定済み: {key} が勝ちました。",
       "decide_locked_shortlisted": "候補に絞り込み済み: 勝者は改良ラウンドで決まります。",
@@ -15164,7 +15167,11 @@
       "decide_locked_collecting": "バリアントをまだ収集中です。",
       "decide_locked_racing": "レースはまだ終わっていません。",
       "decide_locked_failed": "チェーンが停止しました。決定する前に再試行してください。",
-      "lineups_load_failed": "保存済みのラインナップを読み込めませんでした。"
+      "lineups_load_failed": "保存済みのラインナップを読み込めませんでした。",
+      "setup_clear": "フォームをクリア",
+      "draft_replace_title": "ブリーフを置き換えますか？",
+      "draft_replace_body": "Athena の下書きが、あなたの書いたブリーフを置き換えます。元の文章は残りません。",
+      "draft_replace_confirm": "ブリーフを置き換える"
     }
   },
   "process_labels": {

@@ -4362,7 +4362,10 @@
       "track_load_failed": "यह रेस लोड नहीं हो सकी।",
       "variant_key": "वेरिएंट {key}",
       "variants_label": "वेरिएंट",
-      "winner": "विजेता"
+      "winner": "विजेता",
+      "setup_close_title": "सेटअप बंद करें?",
+      "setup_close_body": "आपका भरा हुआ बना रहेगा: जब तक आप रेस नहीं बनाते या फ़ॉर्म साफ़ नहीं करते, नई रेस उसे वापस ले आएगी।",
+      "setup_close_confirm": "सेटअप बंद करें"
     },
     "decide_locked_decided": "फ़ैसला हो गया: {key} जीता।",
     "decide_locked_shortlisted": "शॉर्टलिस्ट में: विजेता की घोषणा सुधार वाले दौर में होगी।",
@@ -4370,6 +4373,10 @@
     "decide_locked_collecting": "वैरिएंट अभी भी इकट्ठा किए जा रहे हैं।",
     "decide_locked_racing": "रेस अभी ख़त्म नहीं हुई है।",
     "decide_locked_failed": "चेन रुक गई है। फ़ैसला करने से पहले इसे दोबारा चलाएँ।",
-    "lineups_load_failed": "सहेजे गए लाइन-अप पढ़े नहीं जा सके।"
+    "lineups_load_failed": "सहेजे गए लाइन-अप पढ़े नहीं जा सके।",
+    "setup_clear": "फ़ॉर्म साफ़ करें",
+    "draft_replace_title": "अपना ब्रीफ बदलें?",
+    "draft_replace_body": "Athena का ड्राफ्ट आपके लिखे ब्रीफ की जगह ले लेगा। आपका लिखा हुआ नहीं रखा जाएगा।",
+    "draft_replace_confirm": "ब्रीफ बदलें"
   }
 }

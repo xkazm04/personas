@@ -19238,7 +19238,10 @@
           "pending": "waiting",
           "skipped": "skipped",
           "failed": "stopped"
-        }
+        },
+        "setup_close_title": "Close the setup?",
+        "setup_close_body": "Your input is kept: New race brings it back until you create the race or clear the form.",
+        "setup_close_confirm": "Close the setup"
       },
       "decide_locked_decided": "Decided: {key} won.",
       "decide_locked_shortlisted": "Shortlisted: the winner is declared in the refine round.",
@@ -19246,7 +19249,11 @@
       "decide_locked_collecting": "The variants are still being collected.",
       "decide_locked_racing": "The race has not finished yet.",
       "decide_locked_failed": "The chain stopped. Retry it before deciding.",
-      "lineups_load_failed": "Could not read the saved line-ups."
+      "lineups_load_failed": "Could not read the saved line-ups.",
+      "setup_clear": "Clear the form",
+      "draft_replace_title": "Replace your brief?",
+      "draft_replace_body": "Athena's draft replaces the brief you have written. Your text is not kept.",
+      "draft_replace_confirm": "Replace the brief"
     }
   },
   "media_studio": {

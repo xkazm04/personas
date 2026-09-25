@@ -15156,7 +15156,10 @@
         "track_load_failed": "Không thể tải cuộc đua này.",
         "variant_key": "Biến thể {key}",
         "variants_label": "Các biến thể",
-        "winner": "Người chiến thắng"
+        "winner": "Người chiến thắng",
+        "setup_close_title": "Đóng phần thiết lập?",
+        "setup_close_body": "Nội dung đã nhập được giữ lại: Cuộc đua mới sẽ khôi phục cho đến khi bạn tạo cuộc đua hoặc xóa biểu mẫu.",
+        "setup_close_confirm": "Đóng phần thiết lập"
       },
       "decide_locked_decided": "Đã quyết định: {key} thắng.",
       "decide_locked_shortlisted": "Đã vào danh sách rút gọn: người thắng được công bố ở vòng tinh chỉnh.",
@@ -15164,7 +15167,11 @@
       "decide_locked_collecting": "Các biến thể vẫn đang được thu thập.",
       "decide_locked_racing": "Cuộc đua chưa kết thúc.",
       "decide_locked_failed": "Chuỗi đã dừng. Hãy thử lại trước khi quyết định.",
-      "lineups_load_failed": "Không đọc được các đội hình đã lưu."
+      "lineups_load_failed": "Không đọc được các đội hình đã lưu.",
+      "setup_clear": "Xóa biểu mẫu",
+      "draft_replace_title": "Thay bản tóm tắt của bạn?",
+      "draft_replace_body": "Bản nháp của Athena sẽ thay bản tóm tắt bạn đã viết. Nội dung của bạn sẽ không được giữ lại.",
+      "draft_replace_confirm": "Thay bản tóm tắt"
     }
   },
   "process_labels": {

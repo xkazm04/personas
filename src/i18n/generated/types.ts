@@ -19245,6 +19245,9 @@ export type Translations = {
           skipped: string;
           failed: string;
         };
+        setup_close_title: string;
+        setup_close_body: string;
+        setup_close_confirm: string;
       };
       decide_locked_decided: string;
       decide_locked_shortlisted: string;
@@ -19253,6 +19256,10 @@ export type Translations = {
       decide_locked_racing: string;
       decide_locked_failed: string;
       lineups_load_failed: string;
+      setup_clear: string;
+      draft_replace_title: string;
+      draft_replace_body: string;
+      draft_replace_confirm: string;
     };
   };
   media_studio: {

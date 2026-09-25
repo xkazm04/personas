@@ -4362,7 +4362,10 @@
       "track_load_failed": "تعذّر تحميل هذا السباق.",
       "variant_key": "المتغير {key}",
       "variants_label": "المتغيرات",
-      "winner": "الفائز"
+      "winner": "الفائز",
+      "setup_close_title": "هل تريد إغلاق الإعداد؟",
+      "setup_close_body": "يُحتفظ بما أدخلته: يعيده «سباق جديد» حتى تنشئ السباق أو تمسح النموذج.",
+      "setup_close_confirm": "إغلاق الإعداد"
     },
     "decide_locked_decided": "تم الحسم: فاز {key}.",
     "decide_locked_shortlisted": "في القائمة المختصرة: يُعلن الفائز في جولة التحسين.",
@@ -4370,6 +4373,10 @@
     "decide_locked_collecting": "ما زال جمع النسخ جاريًا.",
     "decide_locked_racing": "لم ينتهِ السباق بعد.",
     "decide_locked_failed": "توقفت السلسلة. أعد المحاولة قبل اتخاذ القرار.",
-    "lineups_load_failed": "تعذّرت قراءة التشكيلات المحفوظة."
+    "lineups_load_failed": "تعذّرت قراءة التشكيلات المحفوظة.",
+    "setup_clear": "مسح النموذج",
+    "draft_replace_title": "هل تريد استبدال موجزك؟",
+    "draft_replace_body": "تحل مسودة Athena محل الموجز الذي كتبته، ولن يُحتفظ بنصك.",
+    "draft_replace_confirm": "استبدال الموجز"
   }
 }

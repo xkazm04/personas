@@ -1,22 +1,31 @@
 // "New race": the shared setup form (seats, line-ups, judges toggle — off by
 // default — and the optional Athena draft) in a right-hand drawer, so the
 // track stays visible behind it. A created race is focused by the form and
-// lands on the track when the drawer closes.
+// lands on the track when the drawer closes. Closing a form with input in it
+// (Escape, the backdrop, ×) asks first; the input is kept either way.
+import { useState } from 'react';
 import { X } from 'lucide-react';
 
 import { Button } from '@/features/shared/components/buttons';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useTranslation } from '@/i18n/useTranslation';
 import { BaseModal } from '@/lib/ui/BaseModal';
 
 import { SetupForm } from '../components/SetupForm';
+import { isSetupDirty, readSetupDraft } from '../model/setupDraft';
 
 const TITLE_ID = 'arena-setup-title';
 
 export function SetupDrawer({ defaultProjectId, onClose }: { defaultProjectId: string | null; onClose: () => void }) {
   const { t } = useTranslation();
   const a = t.plugins.contest.arena;
+  const [confirmClose, setConfirmClose] = useState(false);
+  const requestClose = () => {
+    if (isSetupDirty(readSetupDraft())) setConfirmClose(true);
+    else onClose();
+  };
   return (
-    <BaseModal isOpen onClose={onClose} titleId={TITLE_ID} placement="right-drawer" portal maxWidthClass="max-w-3xl">
+    <BaseModal isOpen onClose={requestClose} titleId={TITLE_ID} placement="right-drawer" portal maxWidthClass="max-w-3xl">
       <div className="flex h-full min-h-0 flex-col typo-body" data-testid="arena-setup">
         <header className="flex items-start gap-3 border-b border-primary/10 px-5 py-4">
           <div className="min-w-0 flex-1 space-y-1">
@@ -25,7 +34,7 @@ export function SetupDrawer({ defaultProjectId, onClose }: { defaultProjectId: s
             </h2>
             <p className="typo-caption text-foreground">{a.setup_hint}</p>
           </div>
-          <Button size="icon-sm" variant="ghost" aria-label={t.common.close} onClick={onClose}>
+          <Button size="icon-sm" variant="ghost" aria-label={t.common.close} onClick={requestClose}>
             <X className="w-4 h-4" />
           </Button>
         </header>
@@ -33,6 +42,15 @@ export function SetupDrawer({ defaultProjectId, onClose }: { defaultProjectId: s
           <SetupForm defaultProjectId={defaultProjectId} onCreated={onClose} />
         </div>
       </div>
+      {confirmClose && (
+        <ConfirmDialog
+          title={a.setup_close_title}
+          body={a.setup_close_body}
+          confirmLabel={a.setup_close_confirm}
+          onCancel={() => setConfirmClose(false)}
+          onConfirm={onClose}
+        />
+      )}
     </BaseModal>
   );
 }

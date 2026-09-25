@@ -4362,7 +4362,10 @@
       "track_load_failed": "Dieses Rennen konnte nicht geladen werden.",
       "variant_key": "Variante {key}",
       "variants_label": "Varianten",
-      "winner": "Sieger"
+      "winner": "Sieger",
+      "setup_close_title": "Einrichtung schließen?",
+      "setup_close_body": "Deine Eingaben bleiben erhalten: Neues Rennen holt sie zurück, bis du das Rennen anlegst oder das Formular leerst.",
+      "setup_close_confirm": "Einrichtung schließen"
     },
     "decide_locked_decided": "Entschieden: {key} hat gewonnen.",
     "decide_locked_shortlisted": "In der engeren Auswahl: Der Sieger wird in der Verfeinerungsrunde gekürt.",
@@ -4370,6 +4373,10 @@
     "decide_locked_collecting": "Die Varianten werden noch eingesammelt.",
     "decide_locked_racing": "Das Rennen ist noch nicht beendet.",
     "decide_locked_failed": "Die Kette ist stehen geblieben. Wiederhole sie, bevor du entscheidest.",
-    "lineups_load_failed": "Die gespeicherten Aufstellungen konnten nicht gelesen werden."
+    "lineups_load_failed": "Die gespeicherten Aufstellungen konnten nicht gelesen werden.",
+    "setup_clear": "Formular leeren",
+    "draft_replace_title": "Dein Briefing ersetzen?",
+    "draft_replace_body": "Athenas Entwurf ersetzt das Briefing, das du geschrieben hast. Dein Text wird nicht aufbewahrt.",
+    "draft_replace_confirm": "Briefing ersetzen"
   }
 }

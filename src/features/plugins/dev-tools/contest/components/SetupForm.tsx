@@ -1,12 +1,15 @@
 // Set up a contest: title, project, brief (optionally drafted by Athena),
 // seats, variants, time limit, optional LLM judges (OFF by default), data
 // folder and start time. Create, or create and queue the seats at once.
+// The input lives in a module draft (`model/setupDraft.ts`) as well as in
+// state, so closing the drawer never loses it; a create or "Clear" empties it.
 import { useEffect, useMemo, useState } from 'react';
 import { Rocket, Sparkles } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { createContest, draftContestBrief } from '@/api/contest';
-import { AsyncButton } from '@/features/shared/components/buttons';
+import { AsyncButton, Button } from '@/features/shared/components/buttons';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { FormField } from '@/features/shared/components/forms/FormField';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
@@ -24,6 +27,15 @@ import { focusContest } from '../focus';
 import { primeSummary } from '../hooks/contestStore';
 import { useContestEnvironment } from '../hooks/useContests';
 import { setupIssueLabel } from '../model/labels';
+import {
+  blankSetupDraft,
+  clearSetupDraft,
+  isSetupDirty,
+  patchSetupDraft,
+  readSetupDraft,
+  writeSetupDraft,
+  type SetupDraft,
+} from '../model/setupDraft';
 import {
   TIMEOUT_MIN_DEFAULT,
   TIMEOUT_MIN_MAX,
@@ -51,18 +63,48 @@ export function SetupForm({ defaultProjectId, onCreated, className = '' }: Setup
     useShallow((st) => ({ projects: st.projects, activeProjectId: st.activeProjectId, fetchProjects: st.fetchProjects })),
   );
 
-  const [title, setTitle] = useState('');
-  const [projectId, setProjectId] = useState<string | null>(defaultProjectId ?? activeProjectId ?? null);
-  const [idea, setIdea] = useState('');
-  const [brief, setBrief] = useState('');
-  const [seats, setSeats] = useState<ContestSeatSpec[]>([]);
-  const [variantsPerSeat, setVariantsPerSeat] = useState<number>(VARIANTS_DEFAULT);
-  const [timeoutMin, setTimeoutMin] = useState<number>(TIMEOUT_MIN_DEFAULT);
-  const [judgesEnabled, setJudgesEnabled] = useState(false);
-  const [judges, setJudges] = useState<ContestSeatSpec[]>([]);
-  const [dataDir, setDataDir] = useState('');
-  const [startAt, setStartAt] = useState('');
+  const fallbackProjectId = defaultProjectId ?? activeProjectId ?? null;
+  const [initial] = useState<SetupDraft>(() => {
+    const kept = readSetupDraft();
+    return kept ? { ...kept, projectId: kept.projectId ?? fallbackProjectId } : blankSetupDraft(fallbackProjectId);
+  });
+  const [title, setTitle] = useState(initial.title);
+  const [projectId, setProjectId] = useState<string | null>(initial.projectId);
+  const [idea, setIdea] = useState(initial.idea);
+  const [brief, setBrief] = useState(initial.brief);
+  const [seats, setSeats] = useState<ContestSeatSpec[]>(initial.seats);
+  const [variantsPerSeat, setVariantsPerSeat] = useState<number>(initial.variantsPerSeat);
+  const [timeoutMin, setTimeoutMin] = useState<number>(initial.timeoutMin);
+  const [judgesEnabled, setJudgesEnabled] = useState(initial.judgesEnabled);
+  const [judges, setJudges] = useState<ContestSeatSpec[]>(initial.judges);
+  const [dataDir, setDataDir] = useState(initial.dataDir);
+  const [startAt, setStartAt] = useState(initial.startAt);
   const [attempted, setAttempted] = useState(false);
+  const [confirmReplace, setConfirmReplace] = useState(false);
+
+  const current: SetupDraft = {
+    title, projectId, idea, brief, seats, variantsPerSeat, timeoutMin, judgesEnabled, judges, dataDir, startAt,
+  };
+  const dirty = isSetupDirty(current);
+  useEffect(() => {
+    writeSetupDraft({ title, projectId, idea, brief, seats, variantsPerSeat, timeoutMin, judgesEnabled, judges, dataDir, startAt });
+  }, [title, projectId, idea, brief, seats, variantsPerSeat, timeoutMin, judgesEnabled, judges, dataDir, startAt]);
+
+  const clearForm = () => {
+    const blank = blankSetupDraft(projectId);
+    setTitle(blank.title);
+    setIdea(blank.idea);
+    setBrief(blank.brief);
+    setSeats(blank.seats);
+    setVariantsPerSeat(blank.variantsPerSeat);
+    setTimeoutMin(blank.timeoutMin);
+    setJudgesEnabled(blank.judgesEnabled);
+    setJudges(blank.judges);
+    setDataDir(blank.dataDir);
+    setStartAt(blank.startAt);
+    setAttempted(false);
+    clearSetupDraft();
+  };
 
   useEffect(() => {
     if (projects.length === 0) void fetchProjects();
@@ -109,6 +151,7 @@ export function SetupForm({ defaultProjectId, onCreated, className = '' }: Setup
         launch,
       });
       primeSummary(summary);
+      clearSetupDraft();
       useToastStore.getState().addToast(launch ? s.created_and_launched : s.created, 'success');
       focusContest({ projectId: summary.projectId, contestId: summary.contestId });
       onCreated?.(summary, launch);
@@ -117,14 +160,25 @@ export function SetupForm({ defaultProjectId, onCreated, className = '' }: Setup
     }
   };
 
-  const draft = async () => {
+  const runDraft = async () => {
     if (!projectId || !idea.trim()) return;
     try {
       const { brief: drafted } = await draftContestBrief(projectId, idea.trim());
+      // Into the kept draft too: a drawer closed mid-call still gets the paid draft.
+      patchSetupDraft({ brief: drafted });
       setBrief(drafted);
     } catch (err) {
       toastCatch('contest:draft-brief')(err);
     }
+  };
+
+  // A written brief is never replaced silently: ask before spending the call.
+  const draft = async () => {
+    if (brief.trim()) {
+      setConfirmReplace(true);
+      return;
+    }
+    await runDraft();
   };
 
   const draftBlocked = !projectId ? s.draft_needs_project : !idea.trim() ? s.draft_needs_idea : undefined;
@@ -170,6 +224,7 @@ export function SetupForm({ defaultProjectId, onCreated, className = '' }: Setup
                 onChange={(e) => setIdea(e.target.value)}
                 placeholder={s.draft_idea_placeholder}
                 className={INPUT_FIELD}
+                data-testid="contest-setup-idea"
               />
             )}
           </FormField>
@@ -292,6 +347,11 @@ export function SetupForm({ defaultProjectId, onCreated, className = '' }: Setup
       </ul>
 
       <div className="flex flex-wrap justify-end gap-2">
+        {dirty && (
+          <Button variant="ghost" className="mr-auto" onClick={clearForm} data-testid="contest-setup-clear">
+            {s.setup_clear}
+          </Button>
+        )}
         <AsyncButton variant="secondary" onClick={() => submit(false)} data-testid="contest-setup-create">
           {s.create}
         </AsyncButton>
@@ -304,6 +364,18 @@ export function SetupForm({ defaultProjectId, onCreated, className = '' }: Setup
           {s.create_and_launch}
         </AsyncButton>
       </div>
+      {confirmReplace && (
+        <ConfirmDialog
+          title={s.draft_replace_title}
+          body={s.draft_replace_body}
+          confirmLabel={s.draft_replace_confirm}
+          onCancel={() => setConfirmReplace(false)}
+          onConfirm={async () => {
+            await runDraft();
+            setConfirmReplace(false);
+          }}
+        />
+      )}
     </section>
   );
 }

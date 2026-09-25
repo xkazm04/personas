@@ -15156,7 +15156,10 @@
         "track_load_failed": "Tento závod se nepodařilo načíst.",
         "variant_key": "Varianta {key}",
         "variants_label": "Varianty",
-        "winner": "Vítěz"
+        "winner": "Vítěz",
+        "setup_close_title": "Zavřít nastavení?",
+        "setup_close_body": "Zadané údaje zůstanou: Nový závod je vrátí, dokud závod nevytvoříte nebo formulář nevymažete.",
+        "setup_close_confirm": "Zavřít nastavení"
       },
       "decide_locked_decided": "Rozhodnuto: vyhrála varianta {key}.",
       "decide_locked_shortlisted": "Na užším výběru: vítěz se vyhlásí v kole zpřesnění.",
@@ -15164,7 +15167,11 @@
       "decide_locked_collecting": "Varianty se ještě sbírají.",
       "decide_locked_racing": "Závod ještě neskončil.",
       "decide_locked_failed": "Řetězec se zastavil. Před rozhodnutím ho spusťte znovu.",
-      "lineups_load_failed": "Uložené sestavy se nepodařilo načíst."
+      "lineups_load_failed": "Uložené sestavy se nepodařilo načíst.",
+      "setup_clear": "Vymazat formulář",
+      "draft_replace_title": "Nahradit vaše zadání?",
+      "draft_replace_body": "Návrh od Atheny nahradí zadání, které jste napsali. Váš text se neuchová.",
+      "draft_replace_confirm": "Nahradit zadání"
     }
   },
   "process_labels": {

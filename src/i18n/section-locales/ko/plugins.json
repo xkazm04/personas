@@ -4362,7 +4362,10 @@
       "track_load_failed": "이 레이스를 불러오지 못했습니다.",
       "variant_key": "변형 {key}",
       "variants_label": "변형",
-      "winner": "우승자"
+      "winner": "우승자",
+      "setup_close_title": "설정을 닫을까요?",
+      "setup_close_body": "입력한 내용은 유지됩니다. 레이스를 만들거나 양식을 비울 때까지 새 레이스에서 다시 불러옵니다.",
+      "setup_close_confirm": "설정 닫기"
     },
     "decide_locked_decided": "결정됨: {key} 우승.",
     "decide_locked_shortlisted": "후보 선정됨: 우승자는 다듬기 라운드에서 정해집니다.",
@@ -4370,6 +4373,10 @@
     "decide_locked_collecting": "변형을 아직 수집하는 중입니다.",
     "decide_locked_racing": "레이스가 아직 끝나지 않았습니다.",
     "decide_locked_failed": "체인이 멈췄습니다. 결정하기 전에 다시 시도하세요.",
-    "lineups_load_failed": "저장된 라인업을 읽을 수 없습니다."
+    "lineups_load_failed": "저장된 라인업을 읽을 수 없습니다.",
+    "setup_clear": "양식 비우기",
+    "draft_replace_title": "브리프를 교체할까요?",
+    "draft_replace_body": "Athena의 초안이 작성하신 브리프를 대체합니다. 기존 글은 남지 않습니다.",
+    "draft_replace_confirm": "브리프 교체"
   }
 }

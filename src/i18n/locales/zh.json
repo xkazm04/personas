@@ -15156,7 +15156,10 @@
         "track_load_failed": "无法加载此比赛。",
         "variant_key": "变体 {key}",
         "variants_label": "变体",
-        "winner": "获胜者"
+        "winner": "获胜者",
+        "setup_close_title": "关闭设置？",
+        "setup_close_body": "你的输入会保留：在创建比赛或清空表单之前，“新建比赛”都会恢复它。",
+        "setup_close_confirm": "关闭设置"
       },
       "decide_locked_decided": "已决定：{key} 胜出。",
       "decide_locked_shortlisted": "已入围：胜者将在精炼轮中宣布。",
@@ -15164,7 +15167,11 @@
       "decide_locked_collecting": "仍在收集方案。",
       "decide_locked_racing": "比赛尚未结束。",
       "decide_locked_failed": "流程已停止。请先重试再做决定。",
-      "lineups_load_failed": "无法读取已保存的阵容。"
+      "lineups_load_failed": "无法读取已保存的阵容。",
+      "setup_clear": "清空表单",
+      "draft_replace_title": "替换你的简报？",
+      "draft_replace_body": "Athena 的草稿将替换你写的简报，你的文字不会保留。",
+      "draft_replace_confirm": "替换简报"
     }
   },
   "process_labels": {
