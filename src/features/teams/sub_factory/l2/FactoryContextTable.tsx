@@ -10,7 +10,7 @@ import { DataTable, Dot, Meta, Section, UnitStrip, type TableRow } from '@/featu
 import { DIM_TONE, FOCUS_MARK, type FocusKind } from '../factoryTone';
 import type { FactoryWords } from '../useFactoryWords';
 import type { FactoryL2Data } from './factoryL2Data';
-import { kindCounts, type Cell, type CellGroup } from './overviewModel';
+import { coverageOf, kindCounts, type Cell, type CellGroup } from './overviewModel';
 
 type Col = 'context' | 'features' | 'goals' | 'proposed' | 'kpi' | 'errors' | 'cost';
 const ORDER: FocusKind[] = ['crit', 'warn', 'setup', 'ok'];
@@ -55,7 +55,7 @@ export function FactoryContextGroup({ group, data, selected, onSelect, w }: {
   w: FactoryWords;
 }) {
   const rows: Array<TableRow<Col>> = group.cells.map((c) => {
-    const proposals = data.proposalsByContext.get(c.ctx.id)?.length ?? 0;
+    const { features, goals, proposals } = coverageOf(data, c.ctx.id);
     const states = [c.ctx.id === selected ? 'selected' : null, c.kind === 'ok' ? 'muted' : null].filter((s): s is 'selected' | 'muted' => s != null);
     return {
       id: c.ctx.id,
@@ -70,8 +70,8 @@ export function FactoryContextGroup({ group, data, selected, onSelect, w }: {
             </span>
           </div>
         ),
-        features: fig(data.featureCountByContext.get(c.ctx.id) ?? 0),
-        goals: fig(data.goalCountByContext.get(c.ctx.id) ?? 0),
+        features: fig(features),
+        goals: fig(goals),
         proposed: proposals > 0 ? <span className="typo-data k-regular t-agent k-toned">{proposals}</span> : fig(0),
         kpi: kpiCell(c, w),
         errors: toned(c.errs, c.dims.errors, (v) => v),

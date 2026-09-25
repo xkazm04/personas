@@ -20,7 +20,7 @@
 // load (law 3); no `animate-pulse`.
 // ---------------------------------------------------------------------------
 
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-primary/[0.06]';
 /** Cover columns drawn. Four is what fits a desk window before the matrix
  *  scrolls horizontally — past that the ghost would draw off-screen. */
 const GHOST_COL_COUNT = 4;
@@ -70,7 +70,7 @@ export function PassportWallGhost() {
               {Array.from({ length: 5 }).map((__, j) => (
                 <span key={j} className="flex min-w-0 flex-col items-center gap-1">
                   <span className={`h-2.5 w-5 ${GHOST_BAR}`} />
-                  <span className="h-1.5 w-4 rounded bg-primary/[0.04]" />
+                  <span className="h-1.5 w-4 rounded-interactive bg-primary/[0.04]" />
                 </span>
               ))}
             </div>
@@ -90,7 +90,7 @@ export function PassportWallGhost() {
             </div>
             {cols.map((__, i) => (
               <div key={i} className={`${GHOST_COL} border-l border-primary/[0.08] px-3 py-2`}>
-                <span className="block h-2.5 w-16 rounded bg-primary/[0.04]" />
+                <span className="block h-2.5 w-16 rounded-interactive bg-primary/[0.04]" />
               </div>
             ))}
           </div>

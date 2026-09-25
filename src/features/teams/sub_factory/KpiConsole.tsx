@@ -79,7 +79,7 @@ export function KpiConsole({ kpi, onEdit, w }: { kpi: MockKpi; onEdit: (patch: K
           ]}
         />
         <div className="k-in"><Sparkline series={kpi.series} color={toneColor(mark.tone)} width={360} height={34} /></div>
-        {measureMsg && <p className="k-in typo-caption" role="status">{measureMsg}</p>}
+        <p className="k-in typo-caption" role="status">{measureMsg}</p>
       </Section>
       <KpiSteer kpi={kpi} onEdit={onEdit} w={w} />
       {showSetup && <MeasureSetupModal kpi={kpi} onClose={() => setShowSetup(false)} />}

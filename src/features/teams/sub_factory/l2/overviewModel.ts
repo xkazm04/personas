@@ -101,3 +101,17 @@ export function kindCounts(cells: readonly Cell[]): Record<FocusKind, number> {
   for (const c of cells) s[c.kind] += 1;
   return s;
 }
+
+/**
+ * A context's coverage counts. Both maps are built from rows that loaded
+ * (active use cases, the project's goals), so a context missing from one has
+ * none of them among those rows; a failed goals read also lands here as zero,
+ * which the old cards showed the same way.
+ */
+export function coverageOf(data: FactoryL2Data, ctxId: string): { features: number; goals: number; proposals: number } {
+  return {
+    features: data.featureCountByContext.get(ctxId) ?? 0,
+    goals: data.goalCountByContext.get(ctxId) ?? 0,
+    proposals: data.proposalsByContext.get(ctxId)?.length ?? 0,
+  };
+}

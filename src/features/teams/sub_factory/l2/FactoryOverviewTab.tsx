@@ -80,7 +80,8 @@ export function FactoryOverviewTab({ data }: { data: FactoryL2Data }) {
         state={!data.loading && all.length === 0 ? 'empty' : undefined}
         empty={{ title: w.L.noContexts, hint: w.L.noContextsHint, tone: 'human' }}
       >
-        {note && <p className="k-in typo-caption" role="status" style={{ margin: '0 0 10px' }}>{note}</p>}
+        {/* The live region is always mounted, so a new note is announced. */}
+        <p className="k-in typo-caption" role="status" style={{ margin: note ? '0 0 10px' : 0 }}>{note}</p>
         <StatStrip
           state={loading ? 'loading' : undefined}
           tiles={[

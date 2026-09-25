@@ -8,7 +8,7 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { KeyValueGrid, KitButton, ListRow, Meta, Rows, Section } from '@/features/shared/components/kit';
 import type { FactoryWords } from '../useFactoryWords';
 import type { FactoryL2Data } from './factoryL2Data';
-import type { Cell } from './overviewModel';
+import { coverageOf, type Cell } from './overviewModel';
 
 const num = (v: number | null, unit: string) => (v != null ? `${v} ${unit}`.trim() : '-');
 
@@ -23,6 +23,7 @@ export function FactoryContextDetail({ cell, groupName, data, onDecide, onNote, 
   if (!cell) return <Section title={w.context} state="empty" empty={{ title: w.L.noContexts }} />;
   const name = cell.ctx.business_feature?.trim() || cell.ctx.name;
   const proposals = data.proposalsByContext.get(cell.ctx.id) ?? [];
+  const cov = coverageOf(data, cell.ctx.id);
   const cat: Record<string, string> = {
     technical: w.t.kpis.category_technical, quality: w.t.kpis.category_quality,
     traffic: w.t.kpis.category_traffic, value: w.t.kpis.category_value,
@@ -49,8 +50,8 @@ export function FactoryContextDetail({ cell, groupName, data, onDecide, onNote, 
             { k: w.kpis, v: cell.kpiCount },
             { k: w.errors, v: cell.errs, none: w.L.notWired },
             { k: w.cost, v: cell.costUsd == null ? null : <Numeric value={cell.costUsd} unit="usd" precision={2} />, none: w.L.notWired },
-            { k: w.features, v: data.featureCountByContext.get(cell.ctx.id) ?? 0 },
-            { k: w.goals, v: data.goalCountByContext.get(cell.ctx.id) ?? 0 },
+            { k: w.features, v: cov.features },
+            { k: w.goals, v: cov.goals },
           ]}
         />
       </Section>
