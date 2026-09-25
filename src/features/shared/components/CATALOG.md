@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**172 reusable components** live under `src/features/shared/components/`.
+**163 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -191,20 +191,6 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `Toolbar` | Toolbar - a surface filter bar (Segmented, SearchField, KitButton), 30/36px controls. Kit. |
 | `UnitStrip` | UnitStrip - a quantity as countable units of a fixed quantum, coloured by claim (apportion splits a total). Kit. |
 
-## kit-proto
-
-| Component | What it's for |
-|---|---|
-| `EmptyRow` | _(add a `@catalog` tag)_ |
-| `Figure` | _(add a `@catalog` tag)_ |
-| `Folio` | _(add a `@catalog` tag)_ |
-| `KeyValueGrid` | _(add a `@catalog` tag)_ |
-| `LedgerBlock` | _(add a `@catalog` tag)_ |
-| `LedgerKit` | _(add a `@catalog` tag)_ |
-| `Section` | _(add a `@catalog` tag)_ |
-| `StatStrip` | _(add a `@catalog` tag)_ |
-| `Toolbar` | _(add a `@catalog` tag)_ |
-
 ## layout — Page/section structure, headers, tab bars, content shells
 
 | Component | What it's for |
@@ -276,4 +262,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_172 components, 55 without a `@catalog` description._
+_163 components, 46 without a `@catalog` description._
