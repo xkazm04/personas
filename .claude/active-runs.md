@@ -2,14 +2,6 @@
 
 ## Active
 
-- **[2026-09-24 12:23]**
-- **Paths:** `src/features/companions/curator/**` · `src/api/curator.ts` · `src/i18n/**` · `src/lib/commandNames.overrides.ts` · `src/features/plugins/fleet/quick-dispatch/**`
-- **Status:** started
-
-- **[2026-09-24 12:06]**
-- **Paths:** `src-tauri/**` · `src/lib/bindings/**` · `src/features/fleet/monitor/grid/board/queue/originLabel.ts` · `src/features/fleet/monitor/grid/board/queue/useQueueModel.ts`
-- **Status:** started
-
 ### contest-arena-restyle — /contest Opus xhigh vs Opus max: 6 static redesign variants of the Contest page on a baseline copy
 - **[2026-09-25 16:33]**
 - **Paths:** `.contest/staging/contest-arena-restyle/**` · `.contest/arena/contest-arena-restyle/**`
@@ -120,6 +112,15 @@
 - **Status:** started
 - **Handoff:** Sheet · Cinema is the sole build layout on master (0063e14b9); legacy Cinema / Dialogue+Cinema / Sheet · Wild / Sheet · Personas deleted, switcher gone. Next: Sheet · Cinema hardening (i18n of cinema/copy.ts + dead keys, live smoke)
 
+- **[2026-09-24 12:23]**
+- **Paths:** `src/features/companions/curator/**` · `src/api/curator.ts` · `src/i18n/**` · `src/lib/commandNames.overrides.ts` · `src/features/plugins/fleet/quick-dispatch/**`
+- **Status:** started
+
+- **[2026-09-24 12:06]**
+- **Paths:** `src-tauri/**` · `src/lib/bindings/**` · `src/features/fleet/monitor/grid/board/queue/originLabel.ts` · `src/features/fleet/monitor/grid/board/queue/useQueueModel.ts`
+- **Status:** started
+
+### questlog-port — /prototype: port Quest Log into NoteOverview behind an A/B switcher
 - **[2026-09-22 23:21]**
 - **Paths:** `src/features/notepad/overview/**` · `src/i18n/locales/*.json`
 - **Status:** started
@@ -1130,12 +1131,6 @@
 
 ## Recently completed
 
-### curator-runtime-spine — Curator stage 2b spine: DispatchOrigin::Curator, e51 request lane, skill discovery, runtime read
-
-### curator-loop-ui — Curator loop UI: run the instrument, the human request lane, her setup brakes
-
-### spark-features-board — /spark Features page: features + council state + context-map mirror + scenarios; delete sub_certification
-
 ### triage-contest-5 — Contest triage: blind judging, judge parity, overlay focus, rerun wording, auto-PR toggle removal
 
 ### mm-soundings-default — Retire Mastermind Baseline; Soundings becomes the only view
@@ -1181,6 +1176,11 @@
 ### prototype-athena-chat-two-layer — /prototype Athena chat two-layer fusion: 3 variants behind a tab switcher in AthenaChatPanel
 
 ### questlog-port — /prototype: port Quest Log into NoteOverview behind an A/B switcher
+### curator-runtime-spine — Curator stage 2b spine: DispatchOrigin::Curator, e51 request lane, skill discovery, runtime read
+
+### curator-loop-ui — Curator loop UI: run the instrument, the human request lane, her setup brakes
+
+### spark-features-board — /spark Features page: features + council state + context-map mirror + scenarios; delete sub_certification
 
 ### contest-goal-desk-scale — /contest: next-gen goal desk (grouped + stacked by project, 90 goals/16 projects)
 
