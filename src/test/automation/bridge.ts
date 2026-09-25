@@ -19,6 +19,7 @@ import { useAthenaStore } from "@/features/companions/athena/athenaStore";
 import { sections as sidebarSections } from "@/features/shared/chrome/sidebar/sidebarData";
 import { isTierVisible, TIERS, BUILD_MAX_TIER } from "@/lib/constants/uiModes";
 import type { SidebarSection } from "@/lib/types/types";
+import type { CuratorPlan } from "@/lib/bindings/CuratorPlan";
 import { silentCatch } from '@/lib/silentCatch';
 import { registerIpcTape } from "./ipcTape";
 
@@ -85,6 +86,33 @@ interface TestBridge {
     tokenTtlSeconds?: number | null;
     capturedAt?: string;
     expiresAt?: string | null;
+    error?: string;
+  }>;
+  /** Run Curator's instrument and land a superseding plan run. `/curator/plan-refresh`. */
+  curatorPlanRefresh(): Promise<{
+    success: boolean;
+    runId?: string;
+    itemCount?: number;
+    quietBundles?: number;
+    scanGeneratedAt?: string;
+    registryHeadSha?: string | null;
+    createdAt?: string;
+    error?: string;
+  }>;
+  /**
+   * Whether a plan exists at all. `hasPlan: false` = never run; `hasPlan: true`
+   * with `itemCount: 0` = ran and scored nothing. `/curator/plan-status`.
+   */
+  curatorPlanStatus(): Promise<{
+    success: boolean;
+    hasPlan?: boolean;
+    runId?: string;
+    itemCount?: number;
+    quietBundles?: number;
+    scanGeneratedAt?: string;
+    registryHeadSha?: string | null;
+    createdAt?: string;
+    supersededBy?: string | null;
     error?: string;
   }>;
   __reset__(): Promise<{ success: boolean; error?: string }>;
@@ -2187,6 +2215,72 @@ const bridge: TestBridge = {
         { passphrase, filePath, resolutionsJson: projectResolutionsJson },
       );
       return { success: true, result };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
+  // ── Curator's plan — the headless door onto her instrument ────────────
+  //
+  // Reached over HTTP as `/curator/plan-refresh` and `/curator/plan-status`
+  // (see `src-tauri/src/test_automation.rs` for the curl lines). Both are
+  // thin wrappers over the REAL Tauri commands the Blueprint page calls, so
+  // there is one instrument, one projection, and no second answer to "what is
+  // the plan".
+
+  /**
+   * Run the registry's instrument and land a superseding plan run.
+   *
+   * ~11 s warm and minutes cold - it spawns up to four node processes - so
+   * the Rust caller passes a `timeoutMs` that `__exec__` reads to lift its own
+   * 25 s cap. Nothing is declared as a parameter here: `__exec__` reads that
+   * key off the params object itself, and an extra positional argument to a
+   * zero-argument function is dropped by JS.
+   *
+   * Returns the run's identity rather than the whole plan - the items are
+   * hundreds of rows and a driver that wants them reads the DB or the page.
+   */
+  async curatorPlanRefresh() {
+    try {
+      const plan = await invoke<CuratorPlan>('curator_plan_refresh');
+      return {
+        success: true,
+        runId: plan.run.id,
+        itemCount: plan.run.itemCount,
+        quietBundles: plan.quiet.length,
+        scanGeneratedAt: plan.run.scanGeneratedAt,
+        registryHeadSha: plan.run.registryHeadSha,
+        createdAt: plan.run.createdAt,
+      };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
+  /**
+   * The standing plan's identity, or the fact that there is none. A pure read
+   * - it never runs the instrument.
+   *
+   * **`hasPlan: false` is "nobody has ever run it".** That is a different
+   * answer from a plan that ran and scored nothing, which comes back as
+   * `hasPlan: true` with `itemCount: 0`, and no count field is emitted at all
+   * in the first case - an unknown is never reported as a zero.
+   */
+  async curatorPlanStatus() {
+    try {
+      const plan = await invoke<CuratorPlan | null>('curator_plan_current');
+      if (!plan) return { success: true, hasPlan: false };
+      return {
+        success: true,
+        hasPlan: true,
+        runId: plan.run.id,
+        itemCount: plan.run.itemCount,
+        quietBundles: plan.quiet.length,
+        scanGeneratedAt: plan.run.scanGeneratedAt,
+        registryHeadSha: plan.run.registryHeadSha,
+        createdAt: plan.run.createdAt,
+        supersededBy: plan.run.supersededBy,
+      };
     } catch (e: unknown) {
       return { success: false, error: unpackError(e) };
     }
