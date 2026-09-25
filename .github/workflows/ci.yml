@@ -760,6 +760,23 @@ jobs:
             libwayland-dev \
             libdbus-1-dev
 
+      # The contest plugin's one contract test
+      # (`commands::contest::node::instrument_tests`) drives the REAL
+      # /contest instrument (`contest.mjs`) through init -> plan -> collect ->
+      # status, so it needs node and the registry checkout that owns the
+      # instrument. Without them it skipped on every runner, which made it a
+      # test that had never run in CI. Mirrors evidence-check's clone. Under
+      # `CI` the test now FAILS when either is missing, so a broken clone is
+      # red, not a silent skip.
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Clone the knowledge registry (the contest instrument)
+        # Public repo, so no token. Shallow: the test reads the working tree.
+        shell: bash
+        run: git clone --depth 1 https://github.com/xkazm04/ai-registry.git ../ai-registry
+
       - name: Run Rust tests
         # --features desktop is REQUIRED, not optional. The crate's default
         # feature set is empty, but capabilities/default.json references
@@ -790,6 +807,9 @@ jobs:
         # here depends on personas-core, and personas-desktop depends on all of
         # them, so four runners would each rebuild most of the same dependency
         # closure to report what one runner can report for free.
+        env:
+          # Where the contest instrument test finds contest.mjs (the clone above).
+          AI_REGISTRY_DIR: ${{ github.workspace }}/../ai-registry
         run: cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop --no-fail-fast
 
       - name: Run Clippy

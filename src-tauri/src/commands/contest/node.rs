@@ -475,7 +475,8 @@ Node.js v24.12.0
 
 /// Drives the REAL instrument (init → plan → collect → status) against a temp
 /// project, when node is on PATH and a registry checkout is found. Skips
-/// (loudly) otherwise — it must never pass vacuously on a machine that has both.
+/// (loudly) otherwise on a dev machine, and FAILS under `CI`, whose rust-tests
+/// job clones the registry (ci.yml) — it must never pass vacuously.
 #[cfg(test)]
 mod instrument_tests {
     use super::*;
@@ -517,14 +518,35 @@ mod instrument_tests {
         prompt: String,
     }
 
+    /// A missing prerequisite (node, the registry checkout): a loud skip on a
+    /// dev machine, a FAILURE under CI - where a skip would mean the only
+    /// instrument-contract test never runs.
+    fn missing_prerequisite(ci: bool, why: &str) -> Result<(), String> {
+        if ci {
+            return Err(format!(
+                "{why} - under CI this contract test must run, not skip \
+                 (clone the ai-registry and set AI_REGISTRY_DIR)"
+            ));
+        }
+        eprintln!("skipping: {why}");
+        Ok(())
+    }
+
+    #[test]
+    fn a_missing_instrument_fails_under_ci_and_skips_elsewhere() {
+        assert!(missing_prerequisite(true, "no registry").is_err());
+        assert!(missing_prerequisite(false, "no registry").is_ok());
+    }
+
     #[tokio::test]
     async fn init_plan_collect_status_against_the_real_instrument() {
+        let ci = std::env::var_os("CI").is_some();
         if !node_available().await {
-            eprintln!("skipping: node is not on PATH");
+            missing_prerequisite(ci, "node is not on PATH").unwrap();
             return;
         }
         let Some(instrument) = find_instrument() else {
-            eprintln!("skipping: no ai-registry checkout with contest.mjs found");
+            missing_prerequisite(ci, "no ai-registry checkout with contest.mjs found").unwrap();
             return;
         };
         let tmp = tempfile::tempdir().unwrap();

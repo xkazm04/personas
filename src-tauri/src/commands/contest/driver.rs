@@ -662,7 +662,16 @@ async fn finalize(app: &AppHandle, job: &SeatJob, end: RunEnd) -> Result<(), App
 
 /// Move the chain on when a batch of seats has settled.
 async fn advance(app: &AppHandle, ctx: &Ctx) {
-    let s = arena::read_sidecar(&ctx.paths);
+    if let Some(from) = chain_to_resume(&arena::read_sidecar(&ctx.paths)) {
+        spawn_chain(app.clone(), ctx.clone(), from);
+    }
+}
+
+/// Where the chain continues from, given the sidecar (pure; `advance`'s
+/// whole decision): participants all recorded while idle -> collect; an
+/// interrupted collect or visual pass -> that step again; judges all
+/// recorded while judging -> aggregate; otherwise nothing.
+fn chain_to_resume(s: &Sidecar) -> Option<ChainFrom> {
     let all_recorded = |judges: bool| {
         let keys: Vec<&String> = s
             .seat_sessions
@@ -675,20 +684,17 @@ async fn advance(app: &AppHandle, ctx: &Ctx) {
                 .all(|k| s.recorded_sessions.get(*k) == s.seat_sessions.get(*k))
     };
     match s.chain.step {
-        ContestChainStep::Idle if all_recorded(false) => {
-            spawn_chain(app.clone(), ctx.clone(), ChainFrom::Collect);
-        }
-        ContestChainStep::Collecting => {
-            spawn_chain(app.clone(), ctx.clone(), ChainFrom::Collect);
-        }
-        ContestChainStep::Visual => {
-            spawn_chain(app.clone(), ctx.clone(), ChainFrom::Visual);
-        }
-        ContestChainStep::Judging if all_recorded(true) => {
-            spawn_chain(app.clone(), ctx.clone(), ChainFrom::Aggregate);
-        }
-        _ => {}
+        ContestChainStep::Idle if all_recorded(false) => Some(ChainFrom::Collect),
+        ContestChainStep::Collecting => Some(ChainFrom::Collect),
+        ContestChainStep::Visual => Some(ChainFrom::Visual),
+        ContestChainStep::Judging if all_recorded(true) => Some(ChainFrom::Aggregate),
+        _ => None,
     }
+}
+
+/// After the visual pass: judges when a panel is on and named (pure).
+fn judges_follow_visual(s: &Sidecar) -> bool {
+    s.judges_enabled && !s.judges.is_empty()
 }
 
 // ---------------------------------------------------------------------------
@@ -783,7 +789,7 @@ async fn chain_steps(app: &AppHandle, ctx: &Ctx, from: ChainFrom) -> Result<(), 
     }
     let skipped = visual_pass(ctx, &instrument).await;
     let s = arena::read_sidecar(&ctx.paths);
-    if s.judges_enabled && !s.judges.is_empty() {
+    if judges_follow_visual(&s) {
         let from = Some((ContestChainStep::Visual, skipped));
         launch_seats_from(app, ctx, ContestSeatKind::Judge, None, from).await?;
         return Ok(());
@@ -1216,6 +1222,57 @@ mod tests {
         assert!(!skips_completed(p, None, None));
         // Judges keep relaunching: the chain has no CLI-recorded judge path.
         assert!(!skips_completed(ContestSeatKind::Judge, None, Some(&done)));
+    }
+
+    #[test]
+    fn the_chain_resumes_from_the_step_its_state_names() {
+        use ContestChainStep as C;
+        let at = |step: C, sessions: &[(&str, &str)], recorded: &[(&str, &str)]| {
+            let mut s = Sidecar::default();
+            s.chain.step = step;
+            for (k, v) in sessions {
+                s.seat_sessions.insert(k.to_string(), v.to_string());
+            }
+            for (k, v) in recorded {
+                s.recorded_sessions.insert(k.to_string(), v.to_string());
+            }
+            chain_to_resume(&s)
+        };
+        let seats = [("a", "s1"), ("b", "s2")];
+        assert_eq!(at(C::Idle, &[], &[]), None, "nothing launched");
+        assert_eq!(at(C::Idle, &seats, &[("a", "s1")]), None, "b still running");
+        assert_eq!(
+            at(C::Idle, &seats, &[("a", "s1"), ("b", "s0")]),
+            None,
+            "b's record is from an older run"
+        );
+        assert_eq!(
+            at(C::Idle, &seats, &seats),
+            Some(ChainFrom::Collect),
+            "all participants recorded"
+        );
+        assert_eq!(at(C::Collecting, &[], &[]), Some(ChainFrom::Collect));
+        assert_eq!(at(C::Visual, &[], &[]), Some(ChainFrom::Visual));
+        let with_judge = [("a", "s1"), ("judge-x", "j1")];
+        assert_eq!(at(C::Judging, &with_judge, &[("a", "s1")]), None);
+        assert_eq!(
+            at(C::Judging, &with_judge, &with_judge),
+            Some(ChainFrom::Aggregate)
+        );
+        // Idle waits on participants only; a pending judge does not block it.
+        assert_eq!(
+            at(C::Idle, &with_judge, &[("a", "s1")]),
+            Some(ChainFrom::Collect)
+        );
+        assert_eq!(at(C::Ready, &seats, &seats), None);
+        assert_eq!(at(C::Failed, &seats, &seats), None);
+
+        let mut s = Sidecar::default();
+        assert!(!judges_follow_visual(&s));
+        s.judges_enabled = true;
+        assert!(!judges_follow_visual(&s), "a panel with nobody on it");
+        s.judges = vec!["claude:opus@high".into()];
+        assert!(judges_follow_visual(&s));
     }
 
     /// Seats restored by the fleet at boot must get a watcher without anyone
