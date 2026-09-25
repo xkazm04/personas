@@ -21,7 +21,6 @@ export const COPY = {
   buildLogEmpty: "No output yet.",
   back: "Back to the sheet",
   core: {
-    hint: "Who this agent is under the task: its mentality, its character and the model that runs it. Anything left alone is inferred by the build.",
     inferred: "Inferred",
   },
 

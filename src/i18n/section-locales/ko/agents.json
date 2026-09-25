@@ -580,6 +580,7 @@
   "core_disposition_high": "과감",
   "core_disposition_low": "신중",
   "core_effort_label": "추론 깊이",
+  "core_hint": "이 에이전트가 과업 뒤에서 어떤 존재인지: 사고방식, 성격, 그리고 이를 구동하는 모델. 손대지 않은 항목은 빌드가 알아서 추론합니다.",
   "core_model_cost": "상대 비용: 가장 저렴한 모델 등급의 {multiple}배",
   "core_model_label": "모델",
   "core_reset": "기본값으로 되돌리기",

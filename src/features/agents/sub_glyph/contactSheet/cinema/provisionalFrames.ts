@@ -17,23 +17,11 @@ import type { FrameValue } from "./useFrameValues";
 import { triggerFrameValue } from "./useFrameValues";
 import { COPY } from "./copy";
 
-/** v3 capability field -> legacy cell key. Mirrors the backend's
- *  `parser::map_capability_field_to_legacy_dimension`, the mapping the
- *  authoritative pass uses to light the same frame later. */
-const FIELD_TO_CELL_KEY: Record<string, string> = {
-  suggested_trigger: "triggers",
-  connectors: "connectors",
-  notification_channels: "messages",
-  review_policy: "human-review",
-  memory_policy: "memory",
-  event_subscriptions: "events",
-  error_handling: "error-handling",
-  sample_output: "sample-output",
-};
-
-export function provisionalFieldDim(field: string): GlyphDimension | null {
-  const cell = FIELD_TO_CELL_KEY[field];
-  return cell ? CELL_KEY_TO_DIM[cell] ?? null : null;
+/** The frame a previewed field develops. The backend decides the cell (the
+ *  same mapping its authoritative pass lights later) and sends it on the
+ *  event; this only turns that cell key into a frame. */
+export function provisionalCellDim(cellKey: string | undefined): GlyphDimension | null {
+  return cellKey ? CELL_KEY_TO_DIM[cellKey] ?? null : null;
 }
 
 /** Which frames the preview touches: the task frame once capabilities are
@@ -44,8 +32,8 @@ export function provisionalDims(p: ProvisionalBuildState): Set<GlyphDimension> {
     const cap = p.capabilities[id];
     if (!cap) continue;
     out.add("task");
-    for (const field of Object.keys(cap.fields)) {
-      const dim = provisionalFieldDim(field);
+    for (const cellKey of Object.values(cap.cells)) {
+      const dim = provisionalCellDim(cellKey);
       if (dim) out.add(dim);
     }
   }

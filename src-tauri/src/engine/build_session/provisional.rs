@@ -25,7 +25,7 @@ use serde_json::Value;
 
 use crate::db::models::BuildEvent;
 
-use super::parser::parse_json_object;
+use super::parser::{map_capability_field_to_legacy_dimension, parse_json_object};
 
 /// Pull the incremental text out of one CLI stream line, if it is a
 /// `content_block_delta` inside a `stream_event` envelope. Returns None for every
@@ -187,6 +187,7 @@ impl StreamItem {
                 capability_id: capability_id.clone(),
                 field: field.clone(),
                 value: value.clone(),
+                cell_key: map_capability_field_to_legacy_dimension(field).map(str::to_string),
             }),
         }
     }
@@ -677,6 +678,32 @@ mod tests {
         let v = serde_json::to_value(&res).unwrap();
         assert_eq!(v["type"], "provisional_capability_resolution");
         assert_eq!(v["capability_id"], "a");
+        // A field with no frame carries no cell key; a mapped one carries the
+        // cell the authoritative pass lights, so the client never re-derives it.
+        assert!(v["cell_key"].is_null());
+        for (field, cell) in [
+            ("suggested_trigger", "triggers"),
+            ("connectors", "connectors"),
+            ("notification_channels", "messages"),
+            ("review_policy", "human-review"),
+            ("memory_policy", "memory"),
+            ("event_subscriptions", "events"),
+            ("error_handling", "error-handling"),
+            ("sample_output", "sample-output"),
+        ] {
+            let ev = StreamItem::Resolution {
+                capability_id: "a".into(),
+                field: field.into(),
+                value: json!(1),
+            }
+            .provisional_event(SID)
+            .unwrap();
+            assert_eq!(
+                serde_json::to_value(&ev).unwrap()["cell_key"],
+                cell,
+                "{field}"
+            );
+        }
         let settled = BuildEvent::ProvisionalSettled {
             session_id: SID.into(),
             retracted_capability_ids: vec![],
@@ -687,12 +714,66 @@ mod tests {
         assert_eq!(v["retracted_resolutions"], json!([["a", "f"]]));
     }
 
+    /// Captured Claude CLI stream-json lines (a thinking block, then a text
+    /// block, the assistant snapshot and the result), recorded from a real
+    /// run by the stream-timing bench. Each JSONL row wraps one CLI line as
+    /// `{"ms": .., "raw": "<the line>"}`. Real bytes, not an invented
+    /// envelope: see docs/concepts/golden-paths/model-output-streaming.md §2.5.
+    const CAPTURED_THINKING_THEN_TEXT: &str =
+        include_str!("../../../../scripts/test/fixtures/stream-timing/thinking-then-text.jsonl");
+
+    fn captured_lines() -> Vec<String> {
+        CAPTURED_THINKING_THEN_TEXT
+            .lines()
+            .filter(|l| !l.trim().is_empty())
+            .map(|l| {
+                let row: Value = serde_json::from_str(l).expect("fixture row is JSON");
+                row["raw"]
+                    .as_str()
+                    .expect("fixture row has raw")
+                    .to_string()
+            })
+            .collect()
+    }
+
     #[test]
     fn stream_delta_text_reads_only_text_deltas() {
-        let delta = r#"{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"{\"a\""}}}"#;
-        assert_eq!(stream_delta_text(delta).as_deref(), Some("{\"a\""));
-        let thinking = r#"{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"thinking_delta","thinking":"hm"}}}"#;
-        assert!(stream_delta_text(thinking).is_none());
-        assert!(stream_delta_text(r#"{"type":"assistant","message":{}}"#).is_none());
+        let lines = captured_lines();
+        let text: String = lines.iter().filter_map(|l| stream_delta_text(l)).collect();
+        // Only the text block's deltas: not the thinking / signature deltas,
+        // the message_start, the assistant snapshot, the stops or the result.
+        assert_eq!(text, "A proxy typically times T");
+        let released = lines
+            .iter()
+            .filter(|l| stream_delta_text(l).is_some())
+            .count();
+        assert_eq!(released, 3);
+        assert!(
+            lines.iter().any(|l| l.contains("\"thinking_delta\"")),
+            "fixture carries thinking deltas"
+        );
+        assert!(
+            lines
+                .iter()
+                .any(|l| l.starts_with("{\"type\":\"assistant\"")),
+            "fixture carries an assistant line"
+        );
+
+        // A captured text delta whose text is JSON with an escaped quote and a
+        // brace: the model text comes back decoded, exactly as the scanner
+        // must see it.
+        let mut delta: Value = lines
+            .iter()
+            .map(|l| serde_json::from_str::<Value>(l).unwrap())
+            .find(|v| v["event"]["delta"]["type"] == "text_delta")
+            .expect("a captured text delta");
+        delta["event"]["delta"]["text"] = json!("{\"a\"");
+        assert_eq!(
+            stream_delta_text(&delta.to_string()).as_deref(),
+            Some("{\"a\"")
+        );
+        // An empty text delta releases nothing.
+        delta["event"]["delta"]["text"] = json!("");
+        assert!(stream_delta_text(&delta.to_string()).is_none());
     }
 }

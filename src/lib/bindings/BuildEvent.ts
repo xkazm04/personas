@@ -69,7 +69,14 @@ accepts_webhook_source: boolean,
  * options. See the `Question` variant for the full contract. Only
  * meaningful for `scope: "connector_category"`.
  */
-suggested: Array<string>, } | { "type": "provisional_capability_enumeration", session_id: string, data: JsonValue, } | { "type": "provisional_capability_resolution", session_id: string, capability_id: string, field: string, value: JsonValue, } | { "type": "provisional_settled", session_id: string, 
+suggested: Array<string>, } | { "type": "provisional_capability_enumeration", session_id: string, data: JsonValue, } | { "type": "provisional_capability_resolution", session_id: string, capability_id: string, field: string, value: JsonValue, 
+/**
+ * The legacy cell (frame) this field lights once confirmed, decided
+ * here by the same mapping the authoritative pass uses
+ * (`parser::map_capability_field_to_legacy_dimension`) so the client
+ * never re-derives it. `None` for a field with no frame.
+ */
+cell_key: string | null, } | { "type": "provisional_settled", session_id: string, 
 /**
  * Provisionally enumerated capability ids absent from the
  * authoritative enumeration.

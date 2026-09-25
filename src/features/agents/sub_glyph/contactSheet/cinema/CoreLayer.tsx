@@ -37,9 +37,10 @@ interface CoreLayerProps {
 }
 
 export function CoreLayer({ core, onDone, onCrashReset }: CoreLayerProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-4 w-full max-w-[1480px] mx-auto" data-testid="persona-core-layer">
-      <p className="typo-body-lg text-foreground">{COPY.core.hint}</p>
+      <p className="typo-body-lg text-foreground">{t.agents.core_hint}</p>
       <PersonaCoreBody core={core} onDone={onDone} onCrashReset={onCrashReset} fill />
     </div>
   );

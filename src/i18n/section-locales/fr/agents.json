@@ -580,6 +580,7 @@
   "core_disposition_high": "Audacieux",
   "core_disposition_low": "Prudent",
   "core_effort_label": "Profondeur de raisonnement",
+  "core_hint": "Qui est cet agent derrière la tâche : sa mentalité, son caractère et le modèle qui l'anime. Ce que vous laissez tel quel sera déduit par la construction.",
   "core_model_cost": "Coût relatif : {multiple}× le niveau de modèle le moins cher",
   "core_model_label": "Modèle",
   "core_reset": "Rétablir les valeurs par défaut",

@@ -1876,6 +1876,7 @@ export type Translations = {
     core_title: string;
     core_subtitle: string;
     core_custom: string;
+    core_hint: string;
     core_reset: string;
     core_col_character: string;
     core_col_configuration: string;

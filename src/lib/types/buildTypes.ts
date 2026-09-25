@@ -272,6 +272,9 @@ export type BuildEvent =
       capability_id: string;
       field: string;
       value: unknown;
+      /** The legacy cell this field lights once confirmed, decided by the
+       *  backend (null for a field with no frame). */
+      cell_key: string | null;
     }
   | {
       type: "provisional_settled";

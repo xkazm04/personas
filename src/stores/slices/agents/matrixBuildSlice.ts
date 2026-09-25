@@ -72,6 +72,10 @@ export interface ProvisionalCapability {
   title: string;
   /** Previewed field values, keyed by v3 field name (suggested_trigger, ...). */
   fields: Record<string, unknown>;
+  /** The legacy cell each previewed field lights once confirmed, keyed by v3
+   *  field name. Decided by the backend and carried on the event
+   *  (`cell_key`); a field with no frame is absent. */
+  cells: Record<string, string>;
 }
 
 /**
@@ -990,7 +994,7 @@ export const createMatrixBuildSlice: StateCreator<
       for (const d of payload.capabilities ?? []) {
         if (!d?.id) continue;
         const prev = caps[d.id];
-        caps[d.id] = { id: d.id, title: d.title ?? prev?.title ?? d.id, fields: prev?.fields ?? {} };
+        caps[d.id] = { id: d.id, title: d.title ?? prev?.title ?? d.id, fields: prev?.fields ?? {}, cells: prev?.cells ?? {} };
         if (!prev) order.push(d.id);
       }
       if (order.length === 0) return sess;
@@ -1000,13 +1004,17 @@ export const createMatrixBuildSlice: StateCreator<
 
   handleProvisionalCapabilityResolution: (event) => {
     set((state) => updateSessionInState(state, event.session_id, (sess) => {
-      const { capability_id, field, value } = event;
+      const { capability_id, field, value, cell_key } = event;
       if (!capability_id || !field) return sess;
       const prev = sess.provisional.capabilities[capability_id];
+      const cells = { ...(prev?.cells ?? {}) };
+      if (cell_key) cells[field] = cell_key;
+      else delete cells[field];
       const cap: ProvisionalCapability = {
         id: capability_id,
         title: prev?.title ?? capability_id,
         fields: { ...(prev?.fields ?? {}), [field]: value },
+        cells,
       };
       return {
         ...sess,

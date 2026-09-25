@@ -285,6 +285,11 @@ pub enum BuildEvent {
         capability_id: String,
         field: String,
         value: serde_json::Value,
+        /// The legacy cell (frame) this field lights once confirmed, decided
+        /// here by the same mapping the authoritative pass uses
+        /// (`parser::map_capability_field_to_legacy_dimension`) so the client
+        /// never re-derives it. `None` for a field with no frame.
+        cell_key: Option<String>,
     },
 
     /// Closes the provisional preview of a turn. Emitted AFTER that turn's

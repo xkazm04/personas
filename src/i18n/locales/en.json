@@ -1870,6 +1870,7 @@
     "core_title": "Persona core",
     "core_subtitle": "Who this agent is under the task — its disposition, character, and the model that runs it.",
     "core_custom": "Custom core",
+    "core_hint": "Who this agent is under the task: its mentality, its character and the model that runs it. Anything left alone is inferred by the build.",
     "core_reset": "Reset to defaults",
     "core_col_character": "Character",
     "core_col_configuration": "Configuration",

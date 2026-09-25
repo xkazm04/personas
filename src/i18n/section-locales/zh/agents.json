@@ -580,6 +580,7 @@
   "core_disposition_high": "果敢",
   "core_disposition_low": "谨慎",
   "core_effort_label": "推理深度",
+  "core_hint": "任务背后的这个智能体究竟是谁：它的心态、性格，以及驱动它的模型。你未改动的部分将由构建过程自动推断。",
   "core_model_cost": "相对成本：最便宜模型档位的 {multiple} 倍",
   "core_model_label": "模型",
   "core_reset": "恢复默认",

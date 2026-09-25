@@ -586,6 +586,7 @@
     "core_disposition_high": "Audaz",
     "core_disposition_low": "Prudente",
     "core_effort_label": "Profundidad de razonamiento",
+    "core_hint": "Quién es este agente por debajo de la tarea: su mentalidad, su carácter y el modelo que lo mueve. Lo que no toques lo deducirá la compilación.",
     "core_model_cost": "Coste relativo: {multiple}× el nivel de modelo más económico",
     "core_model_label": "Modelo",
     "core_reset": "Restablecer valores",

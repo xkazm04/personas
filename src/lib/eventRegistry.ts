@@ -548,6 +548,7 @@ export type BuildSessionEventPayload =
       capability_id: string;
       field: string;
       value: unknown;
+      cell_key: string | null;
     }
   | {
       type: 'provisional_settled';

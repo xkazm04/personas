@@ -586,6 +586,7 @@
     "core_disposition_high": "Mutig",
     "core_disposition_low": "Vorsichtig",
     "core_effort_label": "Denktiefe",
+    "core_hint": "Wer dieser Agent hinter der Aufgabe ist: seine Mentalität, sein Charakter und das Modell, das ihn antreibt. Was Sie nicht anpassen, leitet der Build selbst ab.",
     "core_model_cost": "Relative Kosten: {multiple}× so teuer wie die günstigste Modellstufe",
     "core_model_label": "Modell",
     "core_reset": "Auf Standard zurücksetzen",

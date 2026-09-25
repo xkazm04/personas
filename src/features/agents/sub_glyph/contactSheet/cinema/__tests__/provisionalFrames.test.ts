@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { en } from "@/i18n/en";
 import type { ProvisionalBuildState } from "@/stores/slices/agents/matrixBuildSlice";
-import { provisionalDims, provisionalFieldDim, provisionalFrameValues } from "../provisionalFrames";
+import { provisionalCellDim, provisionalDims, provisionalFrameValues } from "../provisionalFrames";
 import { deriveFrameState, populatedDims } from "../sheetModel";
 
 const EMPTY: ProvisionalBuildState = { capabilities: {}, order: [] };
@@ -16,23 +16,28 @@ const PREVIEW: ProvisionalBuildState = {
         suggested_trigger: { trigger_type: "schedule", config: { cron: "0 7 * * *" } },
         connectors: ["gmail"],
         review_policy: { mode: "never" },
+        tool_hints: ["x"],
       },
+      // As the backend sends them on each event (tool_hints has no frame).
+      cells: { suggested_trigger: "triggers", connectors: "connectors", review_policy: "human-review" },
     },
-    uc_alert: { id: "uc_alert", title: "Urgent alert", fields: {} },
+    uc_alert: { id: "uc_alert", title: "Urgent alert", fields: {}, cells: {} },
   },
 };
 
 describe("provisionalFrames", () => {
-  it("maps each v3 field to the frame the authoritative pass would light", () => {
-    expect(provisionalFieldDim("suggested_trigger")).toBe("trigger");
-    expect(provisionalFieldDim("connectors")).toBe("connector");
-    expect(provisionalFieldDim("notification_channels")).toBe("message");
-    expect(provisionalFieldDim("review_policy")).toBe("review");
-    expect(provisionalFieldDim("memory_policy")).toBe("memory");
-    expect(provisionalFieldDim("event_subscriptions")).toBe("event");
-    expect(provisionalFieldDim("error_handling")).toBe("error");
-    expect(provisionalFieldDim("sample_output")).toBe("task");
-    expect(provisionalFieldDim("tool_hints")).toBeNull();
+  it("turns each backend cell verdict into the frame the authoritative pass would light", () => {
+    // Every cell key provisional.rs can send (parser::map_capability_field_to_legacy_dimension).
+    expect(provisionalCellDim("triggers")).toBe("trigger");
+    expect(provisionalCellDim("connectors")).toBe("connector");
+    expect(provisionalCellDim("messages")).toBe("message");
+    expect(provisionalCellDim("human-review")).toBe("review");
+    expect(provisionalCellDim("memory")).toBe("memory");
+    expect(provisionalCellDim("events")).toBe("event");
+    expect(provisionalCellDim("error-handling")).toBe("error");
+    expect(provisionalCellDim("sample-output")).toBe("task");
+    expect(provisionalCellDim(undefined)).toBeNull();
+    expect(provisionalCellDim("not-a-cell")).toBeNull();
   });
 
   it("an empty preview touches no frame", () => {

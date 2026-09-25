@@ -23,13 +23,14 @@ function previewEnumeration(ids: string[]) {
   });
 }
 
-function previewResolution(capability_id: string, field: string, value: unknown) {
+function previewResolution(capability_id: string, field: string, value: unknown, cell_key: string | null = null) {
   store().handleProvisionalCapabilityResolution({
     type: "provisional_capability_resolution",
     session_id: SID,
     capability_id,
     field,
     value,
+    cell_key,
   });
 }
 
@@ -41,11 +42,15 @@ describe("matrixBuildSlice — provisional first-turn preview", () => {
 
   it("holds previewed capabilities and fields apart from confirmed state", () => {
     previewEnumeration(["uc_a", "uc_b"]);
-    previewResolution("uc_a", "suggested_trigger", { trigger_type: "schedule" });
+    previewResolution("uc_a", "suggested_trigger", { trigger_type: "schedule" }, "triggers");
+    previewResolution("uc_a", "tool_hints", ["x"]);
 
     const s = store();
     expect(s.buildProvisional.order).toEqual(["uc_a", "uc_b"]);
     expect(s.buildProvisional.capabilities.uc_a?.fields.suggested_trigger).toEqual({ trigger_type: "schedule" });
+    // The backend's cell verdict is kept per field; a field with no frame has none.
+    expect(s.buildProvisional.capabilities.uc_a?.cells).toEqual({ suggested_trigger: "triggers" });
+    expect(s.buildProvisional.capabilities.uc_b?.cells).toEqual({});
     expect(s.buildProvisional.capabilities.uc_b?.title).toBe("Title uc_b");
     // Nothing confirmed, nothing resolved.
     expect(s.buildCapabilities).toEqual({});

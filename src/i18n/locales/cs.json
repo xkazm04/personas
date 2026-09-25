@@ -586,6 +586,7 @@
     "core_disposition_high": "Odvážné",
     "core_disposition_low": "Opatrné",
     "core_effort_label": "Hloubka uvažování",
+    "core_hint": "Kdo je tento agent pod povrchem úkolu: jeho mentalita, jeho povaha a model, který ho pohání. Co necháte být, odvodí sestavení samo.",
     "core_model_cost": "Relativní cena: {multiple}× oproti nejlevnější úrovni modelu",
     "core_model_label": "Jazykový model",
     "core_reset": "Obnovit výchozí",
