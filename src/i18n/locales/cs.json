@@ -24151,7 +24151,6 @@
           "sleep": "její sesouhlasovací spánek"
         },
         "lane_count": "{n} zařazeno, {queued} stále ve frontě",
-        "lane_empty": "Zatím nic zařazeno. Vyberte dole dovednost z registru a půjde na začátek její práce.",
         "lane_note": "tyto vyprazdňuje dřív než svůj vlastní plán",
         "lane_tag": {
           "native": "nativní",
@@ -24197,7 +24196,8 @@
         "skills_unread": "Katalog dovedností se nepodařilo načíst, takže není z čeho vybírat. To není prázdný registr.",
         "terminals": "terminály",
         "terminals_tip": "{running} z {cap} terminálů, které může držet zároveň.",
-        "used_of": "{used} z {cap}"
+        "used_of": "{used} z {cap}",
+        "lane_empty": "Zatím nic nebylo zadáno. Cokoli zadáte, půjde na začátek její práce, před její vlastní plán."
       },
       "band_quiet_unmeasured_tip": "Tichý ocas jsou subjekty, které nedosahují žádného skóre v žádném kanálu, jenž šlo změřit. Zde nebylo změřeno nic, takže kolik jich vlastně je, je neznámé, což není totéž jako žádný.",
       "band_unlisted_unmeasured": "subjekty mimo plán",

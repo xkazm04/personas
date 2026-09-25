@@ -24151,7 +24151,6 @@
           "sleep": "giấc ngủ đối chiếu của cô ấy"
         },
         "lane_count": "{n} đã nộp, {queued} vẫn đang chờ",
-        "lane_empty": "Chưa có gì được nộp. Chọn một kỹ năng registry bên dưới và nó sẽ được đưa lên đầu công việc của cô ấy.",
         "lane_note": "cô ấy xử lý hết những mục này trước kế hoạch của riêng mình",
         "lane_tag": {
           "native": "gốc",
@@ -24197,7 +24196,8 @@
         "skills_unread": "Không thể đọc danh mục kỹ năng, nên không có gì để chọn. Đó không phải là một registry trống.",
         "terminals": "Terminal",
         "terminals_tip": "{running} trong số {cap} terminal cô ấy có thể giữ cùng lúc.",
-        "used_of": "{used} trên {cap}"
+        "used_of": "{used} trên {cap}",
+        "lane_empty": "Chưa có yêu cầu nào được gửi. Bất cứ điều gì bạn gửi sẽ được đặt lên đầu công việc của cô ấy, trước cả kế hoạch riêng của cô ấy."
       },
       "band_quiet_unmeasured_tip": "Phần đuôi im lặng là các chủ đề không đạt điểm nào trên mọi kênh có thể đo lường. Ở đây chưa có gì được đo, nên có bao nhiêu chủ đề như vậy vẫn không rõ, và điều đó không giống với không có chủ đề nào.",
       "band_unlisted_unmeasured": "chủ đề nằm ngoài kế hoạch",

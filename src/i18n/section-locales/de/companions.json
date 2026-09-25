@@ -390,7 +390,6 @@
         "sleep": "ihr Abgleich-Schlaf"
       },
       "lane_count": "{n} eingereicht, {queued} noch in der Warteschlange",
-      "lane_empty": "Noch nichts eingereicht. Wähle unten einen Registry-Skill, und er kommt an die Spitze ihrer Arbeit.",
       "lane_note": "sie arbeitet diese ab, bevor sie ihren eigenen Plan verfolgt",
       "lane_tag": {
         "native": "nativ",
@@ -436,7 +435,8 @@
       "skills_unread": "Der Skill-Katalog konnte nicht gelesen werden, daher gibt es nichts zur Auswahl. Das ist keine leere Registry.",
       "terminals": "Terminals",
       "terminals_tip": "{running} von {cap} Terminals, die sie gleichzeitig halten darf.",
-      "used_of": "{used} von {cap}"
+      "used_of": "{used} von {cap}",
+      "lane_empty": "Noch nichts eingereicht. Alles, was du einreichst, kommt an den Anfang ihrer Arbeit, vor ihren eigenen Plan."
     },
     "band_quiet_unmeasured_tip": "Der stille Ausläufer sind die Themen, die auf jedem messbaren Kanal nichts erzielen. Hier wurde nichts gemessen, daher ist unbekannt, wie viele es sind, und das ist nicht dasselbe wie keine.",
     "band_unlisted_unmeasured": "Themen außerhalb des Plans",

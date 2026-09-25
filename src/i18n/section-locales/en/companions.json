@@ -418,7 +418,7 @@
       "lane_title": "Your queue",
       "lane_note": "she drains these before her own plan",
       "lane_count": "{n} filed, {queued} still queued",
-      "lane_empty": "Nothing filed yet. Pick a registry skill below and it goes to the front of her work.",
+      "lane_empty": "Nothing filed yet. Anything you file goes to the front of her work, before her own plan.",
       "lane_unread": "your queue could not be read",
       "lane_unread_tip": "Its door did not answer. That is not an empty queue: nobody knows what is in it.",
       "request_state": {

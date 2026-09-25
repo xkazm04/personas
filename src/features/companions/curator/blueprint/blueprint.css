@@ -73,10 +73,20 @@
   min-height: 0;
   min-width: 0;
   display: grid;
-  /* top, verdict, the operator console, the stage, the foot. The console
-     row is always present (its slot element is always rendered) so the
-     placement below it never depends on whether a host passed one. */
-  grid-template-rows: auto auto auto minmax(0, max-content) auto minmax(0, 1fr);
+  /* top, verdict, the operator console, the stage, the foot. Five tracks for
+     five children. The console row is always present (its slot element is
+     always rendered) so the placement below it never depends on whether a
+     host passed one.
+
+     The STAGE takes the slack, and there used to be a SIXTH track after the
+     foot that took it instead. With the lane sitting in the console the chrome
+     was tall enough to hide that: 44+145+304+34 of chrome plus a 16-row ledger
+     came to about 1057 of a 1080 window and the vestigial track got nothing.
+     The lane moved to its own drawer, the console fell to 41px, and the same
+     page at 1920x1080 drew its foot at y=894 with 170px of empty canvas under
+     it. `minmax(0, 1fr)` here puts that room where the rows are - which is
+     also where a taller window should put it. */
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
   grid-template-columns: minmax(0, 1fr);
   position: relative;
   overflow: hidden;
@@ -92,7 +102,7 @@
    in every PHASE" rule is untouched: a layer is not a phase, and the deep
    layer is a transient the operator dismisses. */
 .cb-root[data-layer='deep'] {
-  grid-template-rows: auto 0fr 0fr minmax(0, 1fr) auto 0fr;
+  grid-template-rows: auto 0fr 0fr minmax(0, 1fr) auto;
 }
 .cb-root[data-layer='deep'] .cb-verdict,
 .cb-root[data-layer='deep'] .cb-console-slot {
@@ -1038,6 +1048,7 @@
   gap: 7px;
   flex: none;
 }
+
 .cb-root .cb-meta {
   display: flex;
   gap: var(--space-md);
@@ -1439,9 +1450,25 @@
   align-items: baseline;
   gap: 7px;
   min-width: 0;
+  /* ONE ROW PER REQUEST, and a bare skill is the row that breaks it: "no
+     argument" is two words in a cell whose siblings are one, so it wrapped and
+     that request alone became two lines tall. The row's elastic cell is the
+     outcome, not the name of the thing that ran. */
+  white-space: nowrap;
+  /* And it CLIPS. Without this the cell keeps its natural width and simply
+     paints over the note beside it: "no argument" and "after the sweep" were
+     drawn on top of each other, both unreadable, on the one row that had
+     both. */
+  overflow: hidden;
+}
+.cb-root .cb-req-skill > i {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .cb-root .cb-req-skill b {
   color: var(--foreground);
+  flex: none;
 }
 .cb-root .cb-req-arg {
   font-style: normal;
@@ -1457,6 +1484,12 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* The clock never truncates. "25 Sep 09:..." is not a time, and a stamp that
+   has to be hovered to be read is not a stamp - so the width comes out of the
+   outcome beside it, which is prose and degrades honestly to an ellipsis. */
+.cb-root .cb-req-when {
+  flex: none;
 }
 
 /* ---- the page before anything has been measured -------------------------

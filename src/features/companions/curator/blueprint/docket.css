@@ -124,6 +124,13 @@
   padding-bottom: var(--space-sm);
 }
 
+/* The drawer is a flex column and the head is `flex: none`; without a body that
+   fills what is left, anything laid out against its bottom lands under the
+   first line of text. */
+.cb-root .cb-q-body {
+  flex: 1;
+}
+
 /* form 1 - waiting for a person: a raised card with armed keys */
 .cb-root .cb-card {
   position: relative;

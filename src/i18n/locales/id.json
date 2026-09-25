@@ -24151,7 +24151,6 @@
           "sleep": "tidur rekonsiliasinya"
         },
         "lane_count": "{n} diajukan, {queued} masih mengantre",
-        "lane_empty": "Belum ada yang diajukan. Pilih skill registry di bawah dan itu akan ditempatkan di depan pekerjaannya.",
         "lane_note": "dia menuntaskan ini sebelum rencananya sendiri",
         "lane_tag": {
           "native": "bawaan",
@@ -24197,7 +24196,8 @@
         "skills_unread": "Katalog skill tidak dapat dibaca, jadi tidak ada yang bisa dipilih. Itu bukan registry yang kosong.",
         "terminals": "terminal",
         "terminals_tip": "{running} dari {cap} terminal yang boleh dia pegang sekaligus.",
-        "used_of": "{used} dari {cap}"
+        "used_of": "{used} dari {cap}",
+        "lane_empty": "Belum ada yang diajukan. Apa pun yang Anda ajukan akan ditempatkan di depan pekerjaannya, sebelum rencananya sendiri."
       },
       "band_quiet_unmeasured_tip": "Ekor yang sunyi adalah subjek-subjek yang tidak mendapat skor apa pun pada setiap kanal yang dapat diukur. Belum ada yang diukur di sini, sehingga berapa banyak jumlahnya TIDAK DIKETAHUI, dan itu bukan hal yang sama dengan nihil.",
       "band_unlisted_unmeasured": "subjek di luar rencana",
