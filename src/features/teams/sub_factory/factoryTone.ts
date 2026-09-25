@@ -7,7 +7,7 @@
 //   amber   at risk / warning        -> warning
 //   emerald healthy / met            -> success (healthy rows recede: muted)
 //   blue    setup: not configured, waiting on you (an invitation, not a fault)
-//                                    -> human, hollow
+//                                    -> info, hollow (owner, Gate 5: not the pink human role)
 //   teal    KPI proposals, the active tab
 //                                    -> agent (a scan proposed them); the tab is primary
 //   violet  agent actions (scan features, forge a crew)
@@ -38,7 +38,7 @@ export type FocusKind = 'crit' | 'warn' | 'setup' | 'ok';
 export const FOCUS_MARK: Record<FocusKind, ToneGlyph> = {
   crit: { tone: 'error', glyph: 'solid' },
   warn: { tone: 'warning', glyph: 'solid' },
-  setup: { tone: 'human', glyph: 'hollow' },
+  setup: { tone: 'info', glyph: 'hollow' },
   ok: { tone: 'success', glyph: 'soft' },
 };
 

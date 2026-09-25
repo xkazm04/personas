@@ -78,7 +78,7 @@ export function FactoryOverviewTab({ data }: { data: FactoryL2Data }) {
         meta={<KindLegend cells={all} w={w} />}
         actions={<FactoryScanActions data={data} onNote={setNote} w={w} />}
         state={!data.loading && all.length === 0 ? 'empty' : undefined}
-        empty={{ title: w.L.noContexts, hint: w.L.noContextsHint, tone: 'human' }}
+        empty={{ title: w.L.noContexts, hint: w.L.noContextsHint, tone: 'info' }}
       >
         {/* The live region is always mounted, so a new note is announced. */}
         <p className="k-in typo-caption" role="status" style={{ margin: note ? '0 0 10px' : 0 }}>{note}</p>

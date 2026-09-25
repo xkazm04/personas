@@ -22,7 +22,7 @@ type IssueCol = 'issue' | 'events';
 
 /** The empty band for a feed that cannot show rows: not wired, unreachable or empty. */
 function feedEmpty(w: FactoryWords, what: string, wired: boolean, failed: boolean, onRetry: () => void, clear: EmptySpec): EmptySpec {
-  if (!wired) return { title: `${what}: ${w.L.notWired}`, hint: w.L.wireAsk(what), tone: 'human' };
+  if (!wired) return { title: `${what}: ${w.L.notWired}`, hint: w.L.wireAsk(what), tone: 'info' };
   if (failed) {
     return {
       title: w.t.common.source_unreachable, tone: 'warning',
