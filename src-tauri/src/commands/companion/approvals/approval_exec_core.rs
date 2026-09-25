@@ -99,6 +99,82 @@ fn file_under_active_workspace(db: &crate::db::DbPool, persona_id: &str) {
     }
 }
 
+/// An explicit placement on a kp hire: the workspace the request named and
+/// the cross-project group the new persona is filed under.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct HirePlacement {
+    pub(crate) workspace_id: String,
+    pub(crate) workspace_name: String,
+    pub(crate) group_team_id: String,
+}
+
+/// Read `placement.workspaceId` off a kp hire's stored params and resolve it
+/// to that workspace's cross-project group.
+///
+/// `Ok(None)` when the request carried no placement (or `null`) — the hire
+/// then takes today's path, [`file_under_active_workspace`], unchanged.
+///
+/// Intake already refused an unknown workspace, but the payload sat in the
+/// inbox until a human clicked and the workspace may have been deleted since.
+/// That is an ERROR here, never a fallback: kp asked for this workspace
+/// explicitly, and filing the hire under whatever the operator happens to be
+/// looking at would put it where its project-bound runs are refused
+/// (`project_outside_persona_workspace`). The group is ensured rather than
+/// merely read, so a pre-e42 workspace with no group heals instead of failing.
+pub(crate) fn resolve_hire_placement(
+    db: &crate::db::DbPool,
+    params: &serde_json::Value,
+) -> Result<Option<HirePlacement>, AppError> {
+    let placement = match params.get("placement") {
+        None | Some(serde_json::Value::Null) => return Ok(None),
+        Some(p) => p,
+    };
+    let workspace_id = placement
+        .get("workspaceId")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .ok_or_else(|| {
+            AppError::Validation(
+                "kp_hire_request: `placement` must carry a string `workspaceId`".into(),
+            )
+        })?;
+    let ws = match crate::db::repos::workspaces::org::get_workspace_by_id(db, workspace_id) {
+        Ok(ws) => ws,
+        Err(AppError::NotFound(_)) => {
+            return Err(AppError::NotFound(format!(
+                "kp_hire_request: placement workspace {workspace_id} no longer exists — the hire was not created"
+            )))
+        }
+        Err(e) => return Err(e),
+    };
+    let group_team_id = crate::db::workspace_team::ensure_workspace_team(db, &ws.id, &ws.name)?;
+    Ok(Some(HirePlacement {
+        workspace_id: ws.id,
+        workspace_name: ws.name,
+        group_team_id,
+    }))
+}
+
+/// File a just-created kp hire: under the explicit placement's group when the
+/// request named one (an error here fails the hire — see the caller), else
+/// where the operator is standing, best-effort, exactly as before placement
+/// existed.
+pub(crate) fn file_new_hire(
+    db: &crate::db::DbPool,
+    persona_id: &str,
+    placement: Option<&HirePlacement>,
+) -> Result<(), AppError> {
+    match placement {
+        Some(p) => {
+            crate::db::repos::core::personas::set_home_team(db, persona_id, &p.group_team_id)
+        }
+        None => {
+            file_under_active_workspace(db, persona_id);
+            Ok(())
+        }
+    }
+}
+
 // ── action executors ────────────────────────────────────────────────────
 
 pub(crate) async fn execute_run_persona(
@@ -1123,6 +1199,11 @@ pub(crate) async fn execute_kp_hire_request(
         ..Default::default()
     };
 
+    // Explicit placement (`placement.workspaceId`), resolved BEFORE the
+    // persona exists: a placement that can no longer be honoured fails the
+    // hire with nothing to roll back.
+    let placement = resolve_hire_placement(&state.db, params)?;
+
     // G17 (2026-09-08): no capacity gate here. This door used to refuse a hire
     // when the enabled roster was at `max_active_personas`, on the reasoning
     // that a hire is a commitment to an active persona. The operator's ruling
@@ -1156,12 +1237,29 @@ pub(crate) async fn execute_kp_hire_request(
         },
     )?;
 
-    // 1b. File it where the operator is standing, exactly like build_oneshot.
-    //     A KP hire that carries an App master is re-filed under its project's
-    //     team by `bind_app_master` further down — the specific home wins by
-    //     running last. A hire that carries none keeps this one instead of
-    //     landing in the Monitor's ungrouped tray.
-    file_under_active_workspace(&state.db, &persona.id);
+    // 1b. File it: under the requested placement's group when the request
+    //     named a workspace, otherwise where the operator is standing, exactly
+    //     like build_oneshot. A KP hire that carries an App master is re-filed
+    //     under its project's team by `bind_app_master` further down — the
+    //     specific home wins by running last. A hire that carries neither keeps
+    //     the active workspace's group instead of landing in the Monitor's
+    //     ungrouped tray. A placement that cannot be stamped fails the hire:
+    //     the persona would otherwise live outside the workspace kp will bind
+    //     its runs to.
+    if let Err(e) = file_new_hire(&state.db, &persona.id, placement.as_ref()) {
+        if let Err(cleanup_err) = crate::db::repos::core::personas::delete(&state.db, &persona.id) {
+            tracing::error!(
+                persona_id = %persona.id,
+                error = %cleanup_err,
+                "Failed to roll back draft persona after kp_hire_request placement failure"
+            );
+        }
+        return Err(e);
+    }
+    let placement_summary = placement
+        .as_ref()
+        .map(|p| format!(" Filed under workspace '{}'.", p.workspace_name))
+        .unwrap_or_default();
 
     // 2. Start the one-shot build headlessly, exactly like build_oneshot.
     let session_id = uuid::Uuid::new_v4().to_string();
@@ -1307,7 +1405,7 @@ pub(crate) async fn execute_kp_hire_request(
     );
 
     Ok(ExecuteResult::message(format!(
-        "Hired '{persona_name}' for KP job '{job_title}' — created a draft persona and started an autonomous build.{app_master_summary}{execute_grant_summary}",
+        "Hired '{persona_name}' for KP job '{job_title}' — created a draft persona and started an autonomous build.{placement_summary}{app_master_summary}{execute_grant_summary}",
         persona_name = persona.name,
     )))
 }
@@ -1921,6 +2019,113 @@ mod tests {
         // Stale — names a workspace that no longer exists.
         settings_repo::set(&pool, DEVTOOLS_ACTIVE_WORKSPACE, "ws-deleted").unwrap();
         assert_eq!(active_workspace_group(&pool), None);
+    }
+
+    fn draft_persona(pool: &crate::db::DbPool, name: &str) -> crate::db::models::Persona {
+        personas_db::repos::core::personas::create(
+            pool,
+            personas_db::models::CreatePersonaInput {
+                name: name.to_string(),
+                system_prompt: "You are a helpful AI assistant.".to_string(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: Some("draft".to_string()),
+            },
+        )
+        .expect("create persona")
+    }
+
+    fn home_of(pool: &crate::db::DbPool, id: &str) -> Option<String> {
+        personas_db::repos::core::personas::get_by_id(pool, id)
+            .unwrap()
+            .home_team_id
+    }
+
+    /// Placement: an explicit `placement.workspaceId` files the hire under
+    /// THAT workspace's group — even while the operator stands in another.
+    #[test]
+    fn an_explicit_placement_wins_over_the_active_workspace() {
+        let pool = init_test_db().expect("test db");
+        let freelance =
+            workspaces_repo::create_workspace(&pool, "Freelance", None, None, false).unwrap();
+        let bank = workspaces_repo::create_workspace(&pool, "Bank", None, None, false).unwrap();
+        settings_repo::set(&pool, DEVTOOLS_ACTIVE_WORKSPACE, &bank.id).unwrap();
+        let freelance_group =
+            personas_db::workspace_team::group_for_workspace(&pool, &freelance.id)
+                .unwrap()
+                .unwrap();
+
+        let params = serde_json::json!({
+            "spec": {"name": "Gig specialist"},
+            "placement": {"workspaceId": freelance.id},
+        });
+        let placement = resolve_hire_placement(&pool, &params)
+            .unwrap()
+            .expect("placed");
+        assert_eq!(placement.workspace_id, freelance.id);
+        assert_eq!(placement.workspace_name, "Freelance");
+        assert_eq!(placement.group_team_id, freelance_group.id);
+
+        let hire = draft_persona(&pool, "Gig specialist");
+        file_new_hire(&pool, &hire.id, Some(&placement)).unwrap();
+        assert_eq!(
+            home_of(&pool, &hire.id).as_deref(),
+            Some(freelance_group.id.as_str())
+        );
+    }
+
+    /// Absent placement = today's behaviour: the active workspace's group.
+    #[test]
+    fn no_placement_keeps_the_active_workspace_filing() {
+        let pool = init_test_db().expect("test db");
+        let bank = workspaces_repo::create_workspace(&pool, "Bank", None, None, false).unwrap();
+        let bank_group = personas_db::workspace_team::group_for_workspace(&pool, &bank.id)
+            .unwrap()
+            .unwrap();
+        settings_repo::set(&pool, DEVTOOLS_ACTIVE_WORKSPACE, &bank.id).unwrap();
+
+        for params in [
+            serde_json::json!({"spec": {"name": "x"}}),
+            serde_json::json!({"spec": {"name": "x"}, "placement": null}),
+        ] {
+            assert_eq!(resolve_hire_placement(&pool, &params).unwrap(), None);
+        }
+        let hire = draft_persona(&pool, "Unplaced");
+        file_new_hire(&pool, &hire.id, None).unwrap();
+        assert_eq!(
+            home_of(&pool, &hire.id).as_deref(),
+            Some(bank_group.id.as_str())
+        );
+    }
+
+    /// A placement whose workspace was deleted while the request sat in the
+    /// inbox fails the hire — it never falls back to the active workspace.
+    #[test]
+    fn a_placement_that_can_no_longer_be_honoured_is_an_error() {
+        let pool = init_test_db().expect("test db");
+        let gone = workspaces_repo::create_workspace(&pool, "Gone", None, None, false).unwrap();
+        workspaces_repo::delete_workspace(&pool, &gone.id).unwrap();
+        let err = resolve_hire_placement(
+            &pool,
+            &serde_json::json!({"placement": {"workspaceId": gone.id}}),
+        )
+        .unwrap_err();
+        assert!(matches!(err, AppError::NotFound(_)), "{err}");
+
+        let err =
+            resolve_hire_placement(&pool, &serde_json::json!({"placement": {"x": 1}})).unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)), "{err}");
     }
 
     /// The stamp itself, and its refusal: with a mirror the persona gets a

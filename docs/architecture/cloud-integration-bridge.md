@@ -390,7 +390,7 @@ back to kp.
 
 | Route | Scope | What it does |
 | --- | --- | --- |
-| `POST /api/kp/persona-requests` | `personas:build` | Validates the body, inserts a `kp_hire_request` row in the companion approval inbox — recording the authenticating key's id in `companion_approval.requested_by_key_id` (§10.8) — and returns `{requestId, status: "pending_approval"}`. Builds nothing. |
+| `POST /api/kp/persona-requests` | `personas:build` | Validates the body, inserts a `kp_hire_request` row in the companion approval inbox — recording the authenticating key's id in `companion_approval.requested_by_key_id` (§10.8) — and returns `{requestId, status: "pending_approval"}`. Builds nothing. An optional top-level `placement: {workspaceId}` files the approved hire under that workspace's cross-project group; an unknown workspace is refused at intake (§10.9). |
 | `GET /api/kp/persona-requests/{id}` | any valid key | Derived status: `pending` \| `approved` \| `rejected` \| `failed` \| `expired`, plus `personaId` / `personaName` / `buildPhase` once the executor has stamped them, and `buildFailureReason` when the build session ended `failed` (§10.7). 404s for any approval row that is not a KP hire request, so it cannot enumerate the inbox. |
 | `GET /api/kp/connector-catalog` | any valid key | `{key, name, description}` per compiled-in builtin connector — the picker payload for kp's hire form. No DB read. |
 
@@ -458,6 +458,7 @@ shapes and the §39 route counts predate the test surface):
 | KP hiring bridge | `POST /api/kp/persona-requests` · `GET /api/kp/persona-requests/{id}` · `GET /api/kp/connector-catalog` | `personas:build` scope on the mutating POST; GETs follow the any-valid-key read rule | §10.1 |
 | Device pairing | `POST /pair/request` · `POST /pair/claim` | outside the api-key middleware — the nonce + human-approval ceremony is the gate (auto-approved only in headless mode, §13.3) | §4.2 |
 | Gate audit write door | `POST /api/app-master/gate-runs` | a mutating `/api/*` route, so `authorize` demands the broad `personas:execute` scope; the body names gate outcomes (`passed` / `failed` / `did_not_run`, at most 64 per call) and never a table or a statement — the repo half is `app_master_gates::record_gate_audit`, which files the rows under the named branch or `(working tree)` and attributes them to the project's mandate holder when no persona is named | `management_api::record_gate_runs` |
+| Workspaces + projects | `POST /api/dev/workspaces` · `POST /api/dev/projects` (beside the Ship layer's `GET /api/dev/projects`) | writes under `/api/dev/`, so `authorize` demands `personas:build` | §10.9 |
 | Headless test surface | `POST /api/kp/test/tick` · `POST /api/kp/test/seed-work` | routes are **added** only while `PERSONAS_HEADLESS_BRIDGE=1` (§13.1) — with the mode off they 404 rather than 403 — and `authorize` demands `personas:test` for the whole `/api/kp/test/` prefix | §13.6 (tick) · §13.9 (seed-work) |
 
 The port itself is still `PERSONAS_WEBHOOK_PORT` or 9420 (`webhook::webhook_port`).
@@ -827,6 +828,106 @@ grant, an operator grant on another key survives, revoked / deleted / unrecorded
 submitters are skipped), `personas-db` (`external_api_keys::tests`, 4 more), and
 `management_api::tests` (the submitter lands in its column and not in the payload;
 `authorize_a_kp_key_after_a_hire_executes_only_the_hired_persona`).
+
+### 10.9 Gig workspaces, gig projects and project-bound runs (2026-09-25)
+
+kp's **Gigs** module hires "gig specialist" personas and runs them on real freelance
+work: one Personas **workspace** for the specialists, one Personas **project per gig**
+(the gig's folder on disk), the specialist filed in that workspace, and every run of it
+executing **in** the gig's folder. Workspaces and projects used to be Tauri-command-only,
+a hire landed in whatever workspace was active, and `/api/execute` could not choose a
+working directory (runs landed in `%TEMP%/personas-workspace/<persona_id>`). Four
+additions close that, all additive on the wire.
+
+Every refusal below carries a snake_case `code` beside `error` in the usual envelope
+(`{success:false, error, code}`). `code` is new on `ApiResult` and absent on every
+response that predates it.
+
+| Route / field | Scope | Behaviour | Codes |
+| --- | --- | --- | --- |
+| `POST /api/dev/workspaces` `{name, description?, color?}` | `personas:build` | `name` trimmed, 1..80 chars; `description` ≤ 500; `color` ≤ 32. **Idempotent by name** (trimmed, Unicode case-insensitive): an existing workspace comes back **unmodified** with `created:false`. A new one goes through `dev_workspaces::create_workspace`, the Tauri command's door, so it owns its cross-project group from birth (rolled back if the group cannot be made). Returns `{id, name, groupTeamId, created}`. | 400 `invalid_body` · `invalid_name` · `invalid_description` · `invalid_color` |
+| `POST /api/dev/projects` `{name, rootPath, description?, techStack?, workspaceId?}` | `personas:build` | `rootPath` must be absolute and contain no `..` component, then is canonicalised (Windows `\\?\` prefix stripped) and must be an existing directory that is not a filesystem/drive root, **and must lie strictly inside one of the allowed HTTP project roots** (below). Registers through `project_identity::register_project` — idempotent on the folder (an existing project comes back `created:false`, not renamed), gives the project its own team, writes `.personas/project.json` **into the folder**. With `workspaceId`: the workspace must exist (checked before anything is registered); a project with no workspace is assigned to it; a project already in a **different** workspace is refused, never moved. Returns `{id, name, rootPath, workspaceId, created}`. | 400 `invalid_body` · `invalid_name` · `invalid_description` · `invalid_tech_stack` · `invalid_workspace_id` · `invalid_root_path` · `root_path_not_found` · `root_path_not_a_directory` · `root_path_is_filesystem_root`; 403 `project_roots_not_configured` · `root_path_outside_allowed_roots`; 404 `workspace_not_found`; 409 `project_in_other_workspace` · `project_identity_conflict` (the folder's marker names a project still registered elsewhere) |
+| `placement: {workspaceId}` on `POST /api/kp/persona-requests` | `personas:build` | Optional, top level. Validated at intake (nothing is queued on a refusal); the raw body is still stored verbatim. The approval card's rationale gains "— filed under workspace '<name>'". On approval — the human click **and** the headless auto-exec, which run the same executor — the new persona is filed under that workspace's group (`resolve_hire_placement` + `file_new_hire` in `approval_exec_core.rs`) instead of the active workspace's. A workspace deleted between intake and approval **fails** the hire (`approved_failed`, nothing created) rather than falling back. Absent ⇒ today's active-workspace filing, unchanged. An `appMaster` block still re-files the persona under its project's team afterwards (the specific home wins by running last). | 400 `workspace_not_found` · `invalid_placement` |
+| `input_data._projectId` on `POST /api/execute/{persona_id}` | `personas:execute` or `personas:execute:persona:<id>` | Optional top-level string. Checked **synchronously before queueing** by `personas_db::execution_project::bound_project_for_input`. On success the run's working directory is the project's `root_path`, and `CODEBASE_ROOT_PATH` / `CODEBASE_PROJECT_NAME` / `CODEBASE_TECH_STACK` / `CODEBASE_PROJECT_ID` plus the personas-mcp sidecar's project pin describe that project, exactly as for a `devProjectId` pin. | 400 `invalid_project_id` (present but not a non-empty string); 404 `project_not_found` (no such project, switched off, or its folder is not an existing directory); 403 `project_outside_allowed_roots` (its folder is not strictly inside an allowed HTTP project root — also when no root is configured) · `project_outside_persona_workspace` |
+
+**Allowed HTTP project roots — fail-closed.** `PERSONAS_HTTP_PROJECT_ROOTS` names the
+folders projects may live under, as a platform path list (`;`-separated on Windows,
+`:` elsewhere; parsed with `std::env::split_paths`). It is read **at request time**, so
+changing it needs no restart. Each entry is canonicalised; entries that do not exist
+(or are not directories) are ignored. The rule (`personas_db::execution_project`):
+
+- **Unset, empty, or naming no existing folder** ⇒ `POST /api/dev/projects` answers
+  403 `project_roots_not_configured` and registers nothing, and every `_projectId`
+  binding is refused with 403 `project_outside_allowed_roots`.
+- A folder is accepted only when its canonical path is **strictly inside** a root: a
+  root itself is not a project, and containment is compared **component-wise**
+  (`is_strictly_inside`; case-insensitive on Windows), never by string prefix — root
+  `C:\gigs` does not admit `C:\gigs2`. Both sides are canonicalised first, so `..`
+  and symlinks cannot fake containment.
+- The same check runs on every `_projectId` binding, at the route and again in the
+  runner. A project someone assigned to the gig workspace **through the UI** — this
+  checkout, say — therefore still cannot become a skip-permissions working directory
+  for a kp key unless its folder lives under a gig root.
+
+Set it before launching the app, e.g. `set PERSONAS_HTTP_PROJECT_ROOTS=C:\Users\me\gigs`
+(Windows) or `export PERSONAS_HTTP_PROJECT_ROOTS=$HOME/gigs` (elsewhere). Only the
+Personas process's own environment counts.
+
+**The containment rule is the security boundary.** A run executes the Claude CLI with
+permissions skipped, so a binding is write access to a folder. A key allowed to run
+persona P may point P only at a project whose folder is inside an allowed root **and**
+whose `workspace_id` is set **and** whose workspace's cross-project group is P's
+`home_team_id`. A project with no workspace, in
+another workspace, or a persona homed anywhere else (its project's own team included)
+is refused with 403. That check is what stops a gig key steering a run into an
+arbitrary registered repository.
+
+**The runner checks again.** `run_execution` re-resolves the binding before it picks a
+working directory, because the project can be deleted, switched off or moved between
+queue and run. A binding that no longer holds **fails** the execution with
+`Project binding refused (<code>): <reason>`; it never falls back to the scratch dir.
+
+**Working-directory precedence** is one pure function, `pick_exec_dir_lane`
+(`engine/runner/mod.rs`): `_projectId` → per-execution worktree of a `devProjectId`
+pin → a team step's `_worktree` envelope → `homeProjectId` → the per-persona scratch
+dir. A bound run skips worktree isolation (isolation stays a `devProjectId`-pin
+behaviour), ignores a step envelope and the home project, and is never swept by the
+scratch-dir GC, which now runs only on the scratch lane.
+
+**What a bound run leaves in the gig folder.** The runner writes into whatever
+directory it runs in, and a bound run's directory is the gig folder. Recorded, not
+changed:
+
+| Path in the run dir | Written when | Cleaned up |
+| --- | --- | --- |
+| `.claude/personas-mcp-config.json` (system API key, delegate key) | always, when the personas-mcp binary is found | yes — explicit scrub before finalize plus a Drop guard; a force-kill leaves it until the next run's pre-sweep |
+| `.claude/skills/personas-connector-<slug>/SKILL.md` | `skills_sidecar_enabled` (default **ON**) and the persona has connector usage hints | never |
+| `.claude/browser-mcp-config.json` (bridge session token, revoked on drop) | the persona binds the `browser` connector | on Drop at the end of the run |
+| `.claude/settings.json` (hooks) | `PERSONAS_HOOKS_SIDECAR=1` (default off) — **overwrites** an existing file | never |
+| `.personas/session_queue.jsonl` | same env | truncated, not deleted |
+| `.claude/persona-memory.md` + an `@.claude/persona-memory.md` line appended to `CLAUDE.md` | `PERSONAS_CLAUDE_MD_PROJECTION=1` (default off) | never |
+| `.claude/delegate-audit.jsonl` | mixed / local-first engine mode | never |
+| `.personas/project.json` | written by `register_project`, not the runner | never (it is the folder's identity marker) |
+| anything the agent writes | always | never |
+
+**What a `personas:build` key can and cannot do.** It can register a project only under
+an allowed root, and adopt into its workspace only a pre-existing project whose folder
+is under one; it can bind its personas' runs only to projects under an allowed root in
+their own workspace. The roots are the operator's, set in the process environment —
+nothing on the wire can widen them.
+
+Tested in `personas-db` (`execution_project::tests` — 12: input parsing, valid, unknown,
+switched off, folder gone, no workspace, other workspace / project team / unhomed, roots
+list parsing (separators, missing entries), strict component-wise containment incl. the
+sibling-prefix trick and the root itself, case-insensitivity on Windows, `..` escape
+after canonicalisation, a binding outside the roots / with no roots / at the root;
+`workspaces::org::tests::ensure_workspace_is_idempotent_by_name_and_does_not_modify`)
+and `app_lib` (`management_api::workspaces::tests` — workspace create/idempotency/
+validation, root-path checks, allowed roots (unset ⇒ nothing registered, outside,
+sibling prefix, root itself, valid descendant), project idempotency, workspace placement + 404 + 409 +
+adoption, placement intake validation; `approval_exec_core::tests` — explicit placement
+wins over the active workspace, absent placement keeps today's filing, a deleted
+placement workspace errors; `runner::exec_dir_lane_tests`).
 
 ---
 

@@ -99,6 +99,19 @@ paths:
       description: |
         Requires `personas:execute` OR `personas:execute:persona:{personaId}`.
         Returns immediately with an `executionId`; poll `/api/executions/{id}`.
+
+        **Project-bound run.** `input_data` may carry a top-level string
+        `_projectId` naming a registered project. It is checked before anything
+        is queued: the project must exist, be switched on and have an existing
+        folder (else 404 `project_not_found`), and it must be in the workspace
+        whose cross-project group is the persona's home team (else 403
+        `project_outside_persona_workspace`), and its folder must lie strictly
+        inside an allowed HTTP project root from `PERSONAS_HTTP_PROJECT_ROOTS`
+        (else 403 `project_outside_allowed_roots`, also when no root is
+        configured). A valid binding runs the persona
+        IN the project's folder with the `CODEBASE_*` env of that project; the
+        runner re-checks and fails the execution if the binding stopped holding.
+        See `docs/architecture/cloud-integration-bridge.md` §10.9.
       parameters: [{ $ref: "#/components/parameters/PersonaId" }]
       requestBody:
         content:
@@ -109,9 +122,91 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ExecuteResult" }
+        "400": { description: "`invalid_project_id` — `_projectId` present but not a non-empty string" }
         "401": { $ref: "#/components/responses/Unauthorized" }
-        "403": { $ref: "#/components/responses/Forbidden" }
+        "403": { description: "Key lacks the execute scope for this persona, or `project_outside_allowed_roots` / `project_outside_persona_workspace`" }
+        "404": { description: "Persona not found, or `project_not_found`" }
         "429": { $ref: "#/components/responses/RateLimited" }
+
+  /api/dev/workspaces:
+    post:
+      summary: Create a workspace, or return the one with this name
+      description: |
+        Requires `personas:build`. Idempotent by name (trimmed, case-insensitive):
+        an existing workspace is returned unmodified with `created: false`. A new
+        workspace owns its cross-project group (`groupTeamId`) from birth.
+        See `docs/architecture/cloud-integration-bridge.md` §10.9.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, minLength: 1, maxLength: 80 }
+                description: { type: [string, "null"], maxLength: 500 }
+                color: { type: [string, "null"], maxLength: 32 }
+              required: [name]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string }
+                  name: { type: string }
+                  groupTeamId: { type: [string, "null"] }
+                  created: { type: boolean }
+        "400": { description: "`code`: invalid_body | invalid_name | invalid_description | invalid_color" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/dev/projects:
+    post:
+      summary: Register a project folder, or return the one already there
+      description: |
+        Requires `personas:build`. `rootPath` must be absolute, contain no `..`,
+        and canonicalise to an existing directory that is not a filesystem or
+        drive root. **Fail-closed allowed roots:** the canonical folder must lie
+        STRICTLY inside one of the roots in the env var `PERSONAS_HTTP_PROJECT_ROOTS`
+        (a platform path list — `;` on Windows, `:` elsewhere — read per request;
+        entries that do not exist are ignored). Unset/empty ⇒ 403
+        `project_roots_not_configured`, nothing registered; outside every root, or
+        the root itself ⇒ 403 `root_path_outside_allowed_roots`. Containment is
+        component-wise (case-insensitive on Windows), so root `C:\gigs` does not
+        admit `C:\gigs2`. Idempotent on the folder (`created: false`, not renamed).
+        Writes `.personas/project.json` into the folder. With `workspaceId`: an
+        unassigned project is placed in that workspace; one already in another
+        workspace is refused (409), never moved.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, minLength: 1, maxLength: 120 }
+                rootPath: { type: string }
+                description: { type: [string, "null"], maxLength: 2000 }
+                techStack: { type: [string, "null"], maxLength: 200 }
+                workspaceId: { type: [string, "null"] }
+              required: [name, rootPath]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string }
+                  name: { type: string }
+                  rootPath: { type: string }
+                  workspaceId: { type: [string, "null"] }
+                  created: { type: boolean }
+        "400": { description: "`code`: invalid_body | invalid_name | invalid_description | invalid_tech_stack | invalid_workspace_id | invalid_root_path | root_path_not_found | root_path_not_a_directory | root_path_is_filesystem_root" }
+        "403": { description: "Key lacks `personas:build`, or `code`: project_roots_not_configured | root_path_outside_allowed_roots" }
+        "404": { description: "`code`: workspace_not_found" }
+        "409": { description: "`code`: project_in_other_workspace | project_identity_conflict" }
 
   /api/executions:
     get:
@@ -197,6 +292,12 @@ paths:
         sets the project's autopilot to `suggest` (probation) and persists the
         mandate + tenure. Absent ⇒ the request takes exactly the pre-P4 path.
         See `docs/architecture/cloud-integration-bridge.md` §11.
+
+        **Placement (§10.9).** An optional top-level `placement: {workspaceId}`
+        files the approved hire under that workspace's cross-project group
+        instead of the active workspace's (human click and headless auto-exec
+        alike). An unknown workspace is refused here with 400
+        `workspace_not_found`; nothing is queued.
       requestBody:
         required: true
         content: { application/json: { schema: { $ref: "#/components/schemas/KpPersonaRequest" } } }
@@ -210,7 +311,7 @@ paths:
                 properties:
                   requestId: { type: string, examples: ["appr_a1b2c3d4e5f6"] }
                   status: { type: string, const: pending_approval }
-        "400": { description: "Validation failure: empty/oversized field, non-http(s) kp.baseUrl, more than 32 connectors or metrics, or an appMaster block whose mandate.scopeRung is outside 0..2, whose mandate.forbiddenClasses leaves the closed vocabulary, whose app.repo carries neither a url nor a rootPath, or whose objective/trigger/tenure values leave their vocabularies or bounds" }
+        "400": { description: "Validation failure (`code` `workspace_not_found` / `invalid_placement` for a bad `placement`): empty/oversized field, non-http(s) kp.baseUrl, more than 32 connectors or metrics, or an appMaster block whose mandate.scopeRung is outside 0..2, whose mandate.forbiddenClasses leaves the closed vocabulary, whose app.repo carries neither a url nor a rootPath, or whose objective/trigger/tenure values leave their vocabularies or bounds" }
         "403": { $ref: "#/components/responses/Forbidden" }
 
   /api/kp/persona-requests/{requestId}:
@@ -709,6 +810,7 @@ components:
         success: { type: boolean }
         data: {}
         error: { type: string }
+        code: { type: string, description: "snake_case refusal code, on the routes that promise one (absent otherwise)" }
       required: [success]
     ExecuteInput:
       type: object
@@ -774,6 +876,12 @@ components:
           description: Capability token the persona's counter rollups are reported back with.
         appMaster:
           $ref: "#/components/schemas/AppMasterSpec"
+        placement:
+          type: [object, "null"]
+          description: Where the approved hire is filed — the workspace whose cross-project group becomes its home team.
+          properties:
+            workspaceId: { type: string }
+          required: [workspaceId]
       required: [kp, spec, reportToken]
 
     AppMasterSpec:

@@ -52,6 +52,9 @@ use crate::ActiveProcessRegistry;
 
 /// `/api/dev/*` — the Ship layer (milestones, goals, scope). See `ship.rs`.
 mod ship;
+/// `/api/dev/workspaces`, `POST /api/dev/projects`, and the hire `placement`
+/// check — workspaces and projects over HTTP. See `workspaces.rs`.
+mod workspaces;
 
 // =============================================================================
 // Shared state for the management API
@@ -155,7 +158,14 @@ pub fn management_router(state: ManagementState) -> Router {
         // writes demand `personas:build` (see `authorize`). No lifecycle and
         // no deletion routes by design — cutting and shipping are the
         // operator's, in the Ship tab or through Athena's approval-gated op.
-        .route("/api/dev/projects", get(ship::list_projects))
+        // Workspaces + projects over HTTP (management_api/workspaces.rs):
+        // create-or-return by name, and register-or-return by folder with an
+        // optional workspace placement. Writes, so `personas:build`.
+        .route("/api/dev/workspaces", post(workspaces::post_workspace))
+        .route(
+            "/api/dev/projects",
+            get(ship::list_projects).post(workspaces::post_project),
+        )
         .route(
             "/api/dev/projects/{project_id}/ship",
             get(ship::get_project_ship),
@@ -846,6 +856,12 @@ struct ApiResult {
     data: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     error: Option<String>,
+    /// A stable snake_case refusal code (`workspace_not_found`,
+    /// `project_outside_persona_workspace`, …) for the routes that promise one,
+    /// so a client branches on the code and never on `error`'s prose. Absent
+    /// on every response that predates it — additive on the wire.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    code: Option<String>,
 }
 
 fn ok_json(data: impl Serialize) -> impl IntoResponse {
@@ -853,6 +869,7 @@ fn ok_json(data: impl Serialize) -> impl IntoResponse {
         success: true,
         data: serde_json::to_value(data).ok(),
         error: None,
+        code: None,
     })
 }
 
@@ -863,6 +880,20 @@ fn err_json(status: StatusCode, msg: &str) -> (StatusCode, Json<ApiResult>) {
             success: false,
             data: None,
             error: Some(msg.to_string()),
+            code: None,
+        }),
+    )
+}
+
+/// `err_json` plus a snake_case `code` — see [`ApiResult::code`].
+fn err_code(status: StatusCode, code: &str, msg: &str) -> (StatusCode, Json<ApiResult>) {
+    (
+        status,
+        Json(ApiResult {
+            success: false,
+            data: None,
+            error: Some(msg.to_string()),
+            code: Some(code.to_string()),
         }),
     )
 }
@@ -1100,6 +1131,21 @@ async fn execute_persona(
 
     if !persona.enabled {
         return err_json(StatusCode::BAD_REQUEST, "Persona is disabled").into_response();
+    }
+
+    // Project-bound execution: `input_data._projectId` names the folder this
+    // run executes in. Checked synchronously, BEFORE anything is queued — the
+    // key that may run this persona may only point it at a project in the
+    // persona's own workspace (`personas_db::execution_project`). The runner
+    // re-checks before it picks the working directory.
+    if let Err(e) = crate::db::execution_project::bound_project_for_input(
+        &state.pool,
+        persona.home_team_id.as_deref(),
+        input.input_data.as_ref(),
+    ) {
+        let status =
+            StatusCode::from_u16(e.http_status()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        return err_code(status, e.code(), &e.message()).into_response();
     }
 
     // Create execution record
@@ -3131,6 +3177,16 @@ fn validate_kp_app_master(am: &KpAppMasterSpec) -> Result<(), String> {
     Ok(())
 }
 
+/// The approval card renders the rationale and the raw params; the params
+/// carry only `placement.workspaceId`, so the workspace's NAME goes into the
+/// sentence the human reads before deciding where the hire will live.
+fn with_placement_note(rationale: String, placement: Option<&DevWorkspace>) -> String {
+    match placement {
+        Some(ws) => format!("{rationale} — filed under workspace '{}'", ws.name.trim()),
+        None => rationale,
+    }
+}
+
 /// One-line rationale for the approval card — this is the sentence the human
 /// reads before deciding, so it names the job, the hire, and the budget.
 fn kp_hire_rationale(body: &KpPersonaRequestBody) -> String {
@@ -3236,6 +3292,14 @@ async fn kp_create_persona_request(
     if let Err(msg) = validate_kp_persona_request(&body) {
         return err_json(StatusCode::BAD_REQUEST, &msg).into_response();
     }
+    // Optional `placement: { workspaceId }` — the workspace whose
+    // cross-project group the approved hire is filed under. Checked HERE so an
+    // unknown workspace is refused before anything is queued; the executor
+    // re-checks on approval (`approval_exec_core::resolve_hire_placement`).
+    let placement = match workspaces::validate_hire_placement(&state.pool, &raw_body) {
+        Ok(p) => p,
+        Err(e) => return e.into_response(),
+    };
     let app_state: tauri::State<'_, Arc<crate::AppState>> = match state.app.try_state() {
         Some(s) => s,
         None => {
@@ -3256,7 +3320,7 @@ async fn kp_create_persona_request(
         &app_state.user_db,
         &request_id,
         &params,
-        &kp_hire_rationale(&body),
+        &with_placement_note(kp_hire_rationale(&body), placement.as_ref()),
         Some(&submitter.id),
     ) {
         return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response();

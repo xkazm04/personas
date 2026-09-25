@@ -92,6 +92,44 @@ fn authoring_worktrees_root_for_runner() -> PathBuf {
     base.join(AUTHORING_WORKTREES_DIRNAME)
 }
 
+/// Which lane decides an execution's working directory.
+#[derive(Debug, PartialEq, Eq)]
+enum ExecDirLane<'a> {
+    /// `input_data._projectId`, validated against the persona's workspace.
+    BoundProject(&'a std::path::Path),
+    /// Per-execution git worktree of a `devProjectId`-pinned repo.
+    ExecWorktree(&'a std::path::Path),
+    /// A team step's authoring worktree (`_worktree` envelope).
+    StepWorktree(&'a std::path::Path),
+    /// A workspace-bound persona's `homeProjectId`.
+    HomeProject(&'a std::path::Path),
+    /// The per-persona scratch dir under the temp dir.
+    Scratch,
+}
+
+/// The working-directory precedence, as one pure decision: an explicit
+/// per-execution project binding first, then the pinned repo's per-execution
+/// worktree, then a team step's worktree, then the persona's home project,
+/// then scratch. Pure so the order is tested rather than read off a `match`.
+fn pick_exec_dir_lane<'a>(
+    bound_project: Option<&'a std::path::Path>,
+    exec_worktree: Option<&'a std::path::Path>,
+    step_worktree: Option<&'a std::path::Path>,
+    home_project: Option<&'a std::path::Path>,
+) -> ExecDirLane<'a> {
+    if let Some(p) = bound_project {
+        ExecDirLane::BoundProject(p)
+    } else if let Some(p) = exec_worktree {
+        ExecDirLane::ExecWorktree(p)
+    } else if let Some(p) = step_worktree {
+        ExecDirLane::StepWorktree(p)
+    } else if let Some(p) = home_project {
+        ExecDirLane::HomeProject(p)
+    } else {
+        ExecDirLane::Scratch
+    }
+}
+
 /// A cheap fingerprint of a git work tree: the branch `HEAD` points at (or
 /// `HEAD` itself when detached) and the number of dirty paths.
 ///
@@ -795,6 +833,46 @@ pub async fn run_execution(
         })),
     );
 
+    // Project-bound execution (`input_data._projectId`): an explicit,
+    // per-execution binding to a registered project in the persona's own
+    // workspace. The management API refused a bad binding before queueing;
+    // this is the second check, because the project can be deleted, switched
+    // off or moved out of the workspace between queue and run. A binding that
+    // no longer holds FAILS the run — falling back to the scratch dir would
+    // report success for work that never touched the project's folder.
+    let bound_project: Option<crate::db::models::DevProject> =
+        match crate::db::execution_project::bound_project_for_input(
+            &pool,
+            persona.home_team_id.as_deref(),
+            input_data.as_ref(),
+        ) {
+            Ok(p) => p,
+            Err(e) => {
+                let err_msg = format!("Project binding refused ({}): {}", e.code(), e.message());
+                logger.log(&format!("[PROJECT] {err_msg}"));
+                let _ = exec_repo::update_status(
+                    &pool,
+                    &execution_id,
+                    crate::db::models::UpdateExecutionStatus {
+                        status: ExecutionState::Failed,
+                        error_message: Some(err_msg.clone()),
+                        duration_ms: Some(start_time.elapsed().as_millis() as i64),
+                        ..Default::default()
+                    },
+                );
+                return ExecutionResult {
+                    success: false,
+                    error: Some(err_msg),
+                    log_file_path: Some(log_file_path),
+                    duration_ms: start_time.elapsed().as_millis() as u64,
+                    ..default_result()
+                };
+            }
+        };
+    let bound_project_dir: Option<std::path::PathBuf> = bound_project
+        .as_ref()
+        .map(|p| std::path::PathBuf::from(p.root_path.as_str()));
+
     // Per-execution git-worktree isolation (Slice C, DEFAULT-OFF). When the
     // `execution_worktree_isolation` setting is ON and this persona is pinned
     // to a dev_project whose root_path is a git work tree, give THIS execution
@@ -816,7 +894,14 @@ pub async fn run_execution(
         .flatten()
         .as_deref()
             == Some("true");
-        if isolation_on {
+        // Isolation is for `devProjectId` pins only. An explicit `_projectId`
+        // binding names the folder the caller wants written, and wins.
+        if isolation_on && bound_project.is_some() {
+            logger.log(
+                "[WORKTREE] isolation skipped: this execution is bound to a project by `_projectId`",
+            );
+            None
+        } else if isolation_on {
             // Resolve the pinned dev_project's repo root the same robust way the
             // CODEBASE_* injection does below: read `devProjectId` from the raw
             // design_context JSON (the strict struct parse would drop it), then
@@ -879,7 +964,10 @@ pub async fn run_execution(
     // and the platform project's repository stayed empty.
     let home_project_dir: Option<std::path::PathBuf> = {
         let dc = persona.design_context.as_deref();
-        if personas_engine::design_context::pinned_project_id(dc).is_some() {
+        if bound_project.is_some() {
+            // The per-execution binding wins over the persona's home.
+            None
+        } else if personas_engine::design_context::pinned_project_id(dc).is_some() {
             None
         } else {
             personas_engine::design_context::home_project_id(dc)
@@ -915,6 +1003,13 @@ pub async fn run_execution(
             .map(std::path::PathBuf::from);
         match declared {
             None => None,
+            Some(path) if bound_project.is_some() => {
+                logger.log(&format!(
+                    "[WORKTREE] step envelope path {} ignored: this execution is bound to a project by `_projectId`",
+                    path.display()
+                ));
+                None
+            }
             Some(path) => {
                 let root = authoring_worktrees_root_for_runner();
                 if !path.starts_with(&root) {
@@ -939,23 +1034,39 @@ pub async fn run_execution(
 
     // Create a stable per-persona working directory (persists across executions).
     // When isolation is active, use the per-execution worktree instead.
-    let exec_dir = match (&exec_worktree, &step_worktree_dir, &home_project_dir) {
-        (Some(ws), _, _) => ws.path().to_path_buf(),
-        (None, Some(step_wt), _) => {
+    let lane = pick_exec_dir_lane(
+        bound_project_dir.as_deref(),
+        exec_worktree.as_ref().map(|ws| ws.path()),
+        step_worktree_dir.as_deref(),
+        home_project_dir.as_deref(),
+    );
+    // The scratch lane is the only one whose directory the runner owns, and
+    // so the only one the workspace GC may sweep (below).
+    let is_scratch_lane = lane == ExecDirLane::Scratch;
+    let exec_dir = match lane {
+        ExecDirLane::BoundProject(dir) => {
+            logger.log(&format!(
+                "[PROJECT] bound by `_projectId`; running in the project's folder {}",
+                dir.display()
+            ));
+            dir.to_path_buf()
+        }
+        ExecDirLane::ExecWorktree(dir) => dir.to_path_buf(),
+        ExecDirLane::StepWorktree(step_wt) => {
             logger.log(&format!(
                 "[WORKTREE] running in the step's authoring worktree {}",
                 step_wt.display()
             ));
-            step_wt.clone()
+            step_wt.to_path_buf()
         }
-        (None, None, Some(home)) => {
+        ExecDirLane::HomeProject(home) => {
             logger.log(&format!(
                 "[HOME] no codebase pin; running in the persona's home project {}",
                 home.display()
             ));
-            home.clone()
+            home.to_path_buf()
         }
-        (None, None, None) => {
+        ExecDirLane::Scratch => {
             let stable_dir = std::env::temp_dir()
                 .join("personas-workspace")
                 .join(&persona.id);
@@ -1014,7 +1125,7 @@ pub async fn run_execution(
     // never emptying it. Sweep leftovers nothing has touched for days, at most
     // once a day, off the runtime so a large tree cannot stall the executor.
     // Best-effort: a sweep failure must never affect the run.
-    if exec_worktree.is_none() && step_worktree_dir.is_none() && home_project_dir.is_none() {
+    if is_scratch_lane {
         let sweep_dir = exec_dir.clone();
         match tokio::task::spawn_blocking(move || {
             workspace_gc::sweep_if_due(&sweep_dir, std::time::SystemTime::now())
@@ -1661,15 +1772,22 @@ pub async fn run_execution(
     // a persona's design_context carries extra/loosely-typed fields (mapped
     // useCases, builderMeta, …) that fail the strict struct parse, which would
     // silently drop the pin. Reading the `devProjectId` key directly is robust.
-    let pinned_dev_project: Option<String> = persona
-        .design_context
-        .as_deref()
-        .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
-        .and_then(|v| {
-            v.get("devProjectId")
-                .and_then(|x| x.as_str())
-                .map(|s| s.to_string())
-        });
+    //
+    // A project-bound execution (`_projectId`) pins THAT project instead, for
+    // this run only — the sidecar and the CODEBASE_* env below then describe
+    // the folder the run is actually standing in.
+    let pinned_dev_project: Option<String> = match &bound_project {
+        Some(p) => Some(p.id.clone()),
+        None => persona
+            .design_context
+            .as_deref()
+            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+            .and_then(|v| {
+                v.get("devProjectId")
+                    .and_then(|x| x.as_str())
+                    .map(|s| s.to_string())
+            }),
+    };
     // Build CODEBASE_* env overrides from the pinned dev_project. The codebase
     // connector otherwise resolves a dev_project GLOBALLY and injects
     // CODEBASE_ROOT_PATH/PROJECT_NAME/TECH_STACK/PROJECT_ID — which a pinned
@@ -4488,5 +4606,47 @@ mod checkout_drift_tests {
         // dirname the orchestrator's own root ends in.
         let root = authoring_worktrees_root_for_runner();
         assert!(root.ends_with(personas_engine::unattended_worktree::AUTHORING_WORKTREES_DIRNAME));
+    }
+}
+
+#[cfg(test)]
+mod exec_dir_lane_tests {
+    use super::*;
+    use std::path::Path;
+
+    /// The precedence, one rung at a time: `_projectId` beats every other
+    /// lane (including a pinned repo's per-execution worktree), and scratch is
+    /// only what is left when nothing else applies.
+    #[test]
+    fn the_bound_project_wins_and_each_lane_yields_to_the_one_above() {
+        let bound = Path::new("/gigs/acme");
+        let wt = Path::new("/wt/exec");
+        let step = Path::new("/wt/step");
+        let home = Path::new("/repo/home");
+
+        assert_eq!(
+            pick_exec_dir_lane(Some(bound), Some(wt), Some(step), Some(home)),
+            ExecDirLane::BoundProject(bound)
+        );
+        assert_eq!(
+            pick_exec_dir_lane(Some(bound), None, None, None),
+            ExecDirLane::BoundProject(bound)
+        );
+        assert_eq!(
+            pick_exec_dir_lane(None, Some(wt), Some(step), Some(home)),
+            ExecDirLane::ExecWorktree(wt)
+        );
+        assert_eq!(
+            pick_exec_dir_lane(None, None, Some(step), Some(home)),
+            ExecDirLane::StepWorktree(step)
+        );
+        assert_eq!(
+            pick_exec_dir_lane(None, None, None, Some(home)),
+            ExecDirLane::HomeProject(home)
+        );
+        assert_eq!(
+            pick_exec_dir_lane(None, None, None, None),
+            ExecDirLane::Scratch
+        );
     }
 }

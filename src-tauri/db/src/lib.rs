@@ -58,6 +58,8 @@ pub mod chain;
 pub mod credential_fields;
 #[cfg(feature = "ml")]
 pub mod embedder;
+/// `_projectId` — binding one execution to a project in the persona's workspace.
+pub mod execution_project;
 pub mod memory_recall;
 #[allow(dead_code)] // Functions used by Tauri commands in Phase 3
 pub mod migrations;
