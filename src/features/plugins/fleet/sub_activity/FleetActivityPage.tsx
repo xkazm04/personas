@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Activity, RefreshCw, AlertCircle } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
@@ -12,6 +12,14 @@ import { FleetSessionInsights } from '../sub_grid/FleetSessionInsights';
 import { FleetSearchField } from '../sub_grid/FleetSearchField';
 import { resolveActivityTarget, projectLabel } from './activityTarget';
 import { FleetActivityRow } from './FleetActivityRow';
+import { readActivityKit, writeActivityKit, type ActivityKit } from './prototype/kitProto';
+import { KitSwitch } from './prototype/KitSwitch';
+import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
+
+// Gate K decision prototype (dev only): the two shortlisted composition kits render this page
+// from the same data. Deleted, or promoted, when the owner decides; see prototype/kitProto.ts.
+const ActivityLedger = lazy(() => import('./prototype/ActivityLedger'));
+const ActivitySpine = lazy(() => import('./prototype/ActivitySpine'));
 
 /**
  * Cross-session activity feed (F2 / P2.2). Lists the most recently-active
@@ -39,6 +47,12 @@ export default function FleetActivityPage({ onOpenSessions }: {
   const sessions = useSystemStore((st) => st.fleetSessions);
   const setActiveSession = useSystemStore((st) => st.fleetSetActiveSession);
   const [insights, setInsights] = useState<string | null>(null);
+  const [kit, setKitState] = useState<ActivityKit>(readActivityKit);
+  const setKit = useCallback((k: ActivityKit) => { setKitState(k); writeActivityKit(k); }, []);
+  const liveSessionIds = useMemo(
+    () => new Set(sessions.map((s) => s.claudeSessionId).filter((id): id is string => !!id)),
+    [sessions],
+  );
 
   const openRow = useCallback((r: FleetTranscriptSummary) => {
     const target = resolveActivityTarget(r, sessions);
@@ -81,9 +95,30 @@ export default function FleetActivityPage({ onOpenSessions }: {
         icon={<Activity className="w-5 h-5 text-primary" />}
         title={f.activity_title}
         subtitle={tx(rows.length === 1 ? f.activity_subtitle_one : f.activity_subtitle_other, { count: rows.length })}
+        actions={<KitSwitch value={kit} onChange={setKit} />}
       />
       <ContentBody>
-        {/* A dense tool surface: compact type density (typography.css). */}
+        {kit !== 'current' ? (
+          <Suspense fallback={<RouteChunkSkeleton />}>
+            {(() => {
+              const Kit = kit === 'ledger' ? ActivityLedger : ActivitySpine;
+              return (
+                <Kit
+                  rows={rows}
+                  filtered={filtered}
+                  loading={loading}
+                  failed={failed}
+                  query={query}
+                  setQuery={setQuery}
+                  onRefresh={load}
+                  onOpen={openRow}
+                  liveSessionIds={liveSessionIds}
+                />
+              );
+            })()}
+          </Suspense>
+        ) : (
+        /* A dense tool surface: compact type density (typography.css). */
         <div data-type-density="compact">
           {/* Filter and refresh share one row: the Refresh button stood alone on a band of its own. */}
           <div className="flex items-center gap-2 mb-3">
@@ -127,6 +162,7 @@ export default function FleetActivityPage({ onOpenSessions }: {
             </div>
           )}
         </div>
+        )}
       </ContentBody>
 
       <BaseModal
