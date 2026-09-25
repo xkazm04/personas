@@ -110,6 +110,10 @@ export function useActivitySurface({
 
   const remote = useRemoteBoard(board.projects, !simulating);
   const model = useBoardModel(board.cards, board.personas, board.teams, board.sessions, filter, remote);
+  // The same board with no narrowing. `model` drops every session row while a
+  // state filter is on (it narrows personas only); a surface that filters
+  // sessions too starts from this one and applies its own predicate.
+  const unfilteredModel = useBoardModel(board.cards, board.personas, board.teams, board.sessions, NO_BOARD_FILTER, remote);
   useAttentionCursor(model, board.cards, select);
 
   const { scope, toggleScope, clearScope } = useRailScope(board.projects);
@@ -131,7 +135,7 @@ export function useActivitySurface({
     orchestrationOpen, openOrchestration, closeOrchestration,
     queueModel, queueActions, queueOrder, nodeContext,
     select, filter, pickState, clearFilter,
-    model, scope, toggleScope, clearScope,
+    model, unfilteredModel, scope, toggleScope, clearScope,
     terminal, setTerminal, closeTerminal, recap, setRecap, closeRecap,
     sessionsInFlight,
     overAdmitted: board.queue?.overAdmitted ?? 0,

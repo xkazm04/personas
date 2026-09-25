@@ -20,7 +20,9 @@ import { useActivitySurface, type ActivitySurfaceProps } from '../useActivitySur
 import { useUsageFeed } from '../useUsageFeed';
 import { useRailSurface } from '../useRailSurface';
 import { useCapSetting, useQueueConfirm } from '../shared';
-import { CommandBar, CommandFloor } from './CommandBar';
+import { CommandBar, CommandFloor, FilterBanner } from './CommandBar';
+import { SessionMenuProvider } from './SessionMenu';
+import { usePanelFilter } from './boardFilter';
 import { SupplyDeck } from './SupplyDeck';
 import { ClassicPanel } from './ClassicPanel';
 import { RunwayPanel } from './RunwayPanel';
@@ -43,6 +45,7 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
   const cap = surface.queueModel.cap > 0 ? surface.queueModel.cap : capSetting.cap;
   const { layout, setLayout } = surface;
   const onLayout = useCallback((v: typeof layout) => setLayout(v), [setLayout]);
+  const filter = usePanelFilter(surface);
 
   return (
     <div
@@ -50,15 +53,15 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
       data-testid="activity-entry-e"
     >
       <CommandBar
-        totals={surface.model.totals}
+        filter={filter}
         showTally={!surface.cold}
         active={surface.filter.state}
         onPick={surface.pickState}
         onClear={surface.clearFilter}
         layout={layout}
         onLayout={onLayout}
-        agentCount={surface.board.cards.length}
       />
+      <FilterBanner filter={filter} onClear={surface.clearFilter} />
 
       <div className="flex min-h-0 flex-1">
         <SupplyDeck
@@ -70,13 +73,15 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
         />
 
         <CommandFloor layout={layout} className="flex min-h-0 min-w-0 flex-1 flex-col">
-          {layout === 'classic' ? (
-            <ClassicPanel surface={surface} selectedPersonaId={props.selectedPersonaId} onOpenRemote={props.onOpenRemote} />
-          ) : layout === 'runway' ? (
-            <RunwayPanel surface={surface} cap={cap} onStart={confirm.askStart} onCancel={confirm.askCancel} />
-          ) : (
-            <LanesPanel surface={surface} cap={cap} onStart={confirm.askStart} onCancel={confirm.askCancel} />
-          )}
+          <SessionMenuProvider onOpenTerminal={surface.setTerminal} onOpenRecap={surface.setRecap}>
+            {layout === 'classic' ? (
+              <ClassicPanel surface={surface} filter={filter} selectedPersonaId={props.selectedPersonaId} onOpenRemote={props.onOpenRemote} onClearFilter={surface.clearFilter} />
+            ) : layout === 'runway' ? (
+              <RunwayPanel surface={surface} filter={filter} cap={cap} onStart={confirm.askStart} onCancel={confirm.askCancel} />
+            ) : (
+              <LanesPanel surface={surface} filter={filter} cap={cap} onStart={confirm.askStart} onCancel={confirm.askCancel} />
+            )}
+          </SessionMenuProvider>
         </CommandFloor>
 
         <InboxDesk

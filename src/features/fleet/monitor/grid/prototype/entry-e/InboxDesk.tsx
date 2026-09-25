@@ -20,6 +20,7 @@ import type { RailProjectFilter } from '../../rail/railFilter';
 import type { useRailWidth } from '../../rail/useRailWidth';
 import type { RailSurface } from '../useRailSurface';
 import { InboxRow, inboxRowHeight } from './InboxRow';
+import { ReviewRow, reviewRowHeight } from './ReviewRow';
 import { Kbd } from './parts';
 
 export function InboxDesk({
@@ -35,7 +36,9 @@ export function InboxDesk({
   const m = t.monitor;
   const { tab, act, dispatchCtl } = rail;
 
-  const renderRow = useCallback((row: RailRow) => (
+  const renderRow = useCallback((row: RailRow) => tab === 'reviews' ? (
+    <ReviewRow row={row} onOpen={act.openRow} onAccept={act.acceptRow} onReject={act.rejectRow} />
+  ) : (
     <InboxRow
       row={row}
       selected={row.selectable ? dispatchCtl.selected.has(row.id) : undefined}
@@ -44,7 +47,7 @@ export function InboxDesk({
       onAccept={row.decidable ? act.acceptRow : undefined}
       onReject={row.decidable ? act.rejectRow : undefined}
     />
-  ), [dispatchCtl.selected, dispatchCtl.toggle, act.openRow, act.acceptRow, act.rejectRow]);
+  ), [tab, dispatchCtl.selected, dispatchCtl.toggle, act.openRow, act.acceptRow, act.rejectRow]);
 
   const EmptyIcon = tab === 'messages' ? MessagesSquare : tab === 'dispatch' ? Inbox : AlertCircle;
 
@@ -93,7 +96,7 @@ export function InboxDesk({
           <RailList
             key={rail.listKey}
             rows={rail.active.rows}
-            heightOf={inboxRowHeight}
+            heightOf={tab === 'reviews' ? reviewRowHeight : inboxRowHeight}
             renderRow={renderRow}
             hasMore={rail.active.hasMore}
             loading={rail.active.loading}
