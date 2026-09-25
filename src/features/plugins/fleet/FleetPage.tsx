@@ -88,7 +88,7 @@ export default function FleetPage() {
   };
 
   return (
-    <div className="fleet-typescale h-full w-full flex flex-col" data-testid="fleet-page">
+    <div className="h-full w-full flex flex-col" data-testid="fleet-page">
       {/* Internal tab strip — lightweight band above the active sub-page;
           each sub-page renders its own ContentBox/Header underneath. Skills
           now live in the left drawer (opened from the grid), not a tab. */}

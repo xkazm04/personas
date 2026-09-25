@@ -45,11 +45,19 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
     'text-primary hover:text-primary/80 underline-offset-2 hover:underline p-0 h-auto rounded-none',
 };
 
+// The label size. `text-md` stood here and is not a Tailwind class, so a button
+// has always inherited its parent's font-size. CONTROL_TEXT keeps exactly that
+// (1em = the parent's size) unless a type-density tier sets --type-control
+// (typography.css: data-type-density="compact" sets the compact row step), so
+// a compact surface's buttons match its rows and every other button renders
+// what it rendered before.
+const CONTROL_TEXT = 'text-[length:var(--type-control,1em)]';
+
 const SIZE_CLASSES: Record<ButtonSize, string> = {
-  xs:       'px-2 py-0.5 text-md rounded-md gap-1',
-  sm:       'px-2.5 py-1 text-md rounded-lg gap-1.5',
-  md:       'px-3.5 py-1.5 text-md rounded-xl gap-2',
-  lg:       'px-5 py-2.5 text-md rounded-xl gap-2.5',
+  xs:       `px-2 py-0.5 ${CONTROL_TEXT} rounded-md gap-1`,
+  sm:       `px-2.5 py-1 ${CONTROL_TEXT} rounded-lg gap-1.5`,
+  md:       `px-3.5 py-1.5 ${CONTROL_TEXT} rounded-xl gap-2`,
+  lg:       `px-5 py-2.5 ${CONTROL_TEXT} rounded-xl gap-2.5`,
   // Coarse-pointer (touch) bump to 44x44 — WCAG 2.5.5 / HIG 44pt / Material 48dp.
   // icon-lg is already 44px; the global `pointer: coarse` rule in globals.css
   // supplies min-height, these add the matching width so icon buttons stay square.
