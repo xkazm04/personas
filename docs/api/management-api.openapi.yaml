@@ -21,6 +21,10 @@ info:
     - `personas:build` — the `/api/build*` flow.
     - `proxy` / `proxy:credential:<id>` — the credential proxy (NOT covered by
       `personas:execute`).
+    - `personas:approve` — the operator approval API (`/api/approvals*`,
+      `/api/pairings*`), every method. Held only by the file-delivered
+      `operator-local` key (`<app data dir>/operator-api-key`); never pairable,
+      never implied by another scope.
     - `personas:test` — the headless bridge test surface (`/api/kp/test/*`).
       Minted only by the mode's own auto-pairing; the routes it gates exist
       only while `PERSONAS_HEADLESS_BRIDGE=1`.
@@ -695,6 +699,138 @@ paths:
         "400": { description: "`personaId` missing or blank, or the persona is system-origin and cannot be archived" }
         "403": { description: "The key lacks the personas:test scope" }
         "404": { description: "The mode is off, or no persona carries that id" }
+
+  /api/approvals:
+    get:
+      summary: "Operator: list pending approvals"
+      description: |
+        Requires `personas:approve`. The inbox's own read — fresh pending rows
+        (24 h consent window), newest 50. `summary` is filled for
+        `kp_hire_request` (persona name, job, placement workspace, budget);
+        `null` otherwise. See cloud-integration-bridge.md §10.10.
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [pending] } }
+        - { name: action, in: query, schema: { type: string, examples: [kp_hire_request] } }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  approvals:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        action: { type: string }
+                        createdAt: { type: string }
+                        expiresAt: { type: [string, "null"] }
+                        rationale: { type: string }
+                        summary: { type: [object, "null"] }
+                        requestedBy:
+                          type: [object, "null"]
+                          properties:
+                            keyId: { type: string }
+                            keyName: { type: [string, "null"] }
+        "400": { description: "`code`: unsupported_status" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/approvals/{approvalId}/approve:
+    post:
+      summary: "Operator: approve a pending approval"
+      description: |
+        Requires `personas:approve`. Claims the row with the same
+        pending→running compare-and-swap the desktop Approve button uses and
+        runs the same function. Records `decidedBy: "operator-api:<key id>"`
+        in the row's payload. For a kp hire: creates the draft persona, grants
+        the requesting key execute rights on it, starts the build.
+      parameters:
+        - { name: approvalId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { note: { type: string, maxLength: 2000 } } }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string }
+                  action: { type: string }
+                  status: { type: string, enum: [approved, approved_failed] }
+                  message: { type: string }
+                  decidedBy: { type: string }
+                  personaId: { type: [string, "null"] }
+                  buildSessionId: { type: [string, "null"] }
+                  building: { type: boolean }
+        "400": { description: "`code`: invalid_body | invalid_note" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "`code`: approval_not_found" }
+        "409": { description: "`code`: approval_not_pending — decided, in flight, or past the 24 h window" }
+        "500": { description: "`code`: approval_execution_failed" }
+
+  /api/approvals/{approvalId}/reject:
+    post:
+      summary: "Operator: reject a pending approval"
+      description: Requires `personas:approve`. Same claim, then the desktop Reject button's function (a kp hire's requester is notified).
+      parameters:
+        - { name: approvalId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { reason: { type: string, maxLength: 2000 } } }
+      responses:
+        "200": { description: "`{id, action, status: rejected, message, decidedBy}`" }
+        "400": { description: "`code`: invalid_body | invalid_reason" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "`code`: approval_not_found" }
+        "409": { description: "`code`: approval_not_pending" }
+
+  /api/pairings/pending:
+    get:
+      summary: "Operator: list pending cloud pairings"
+      description: Requires `personas:approve`. `requestedScopes` are already moulded to the pairing lane's ceiling.
+      responses:
+        "200": { description: "`{pairings: [{nonce, origin, appName, requestedScopes}]}`" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/pairings/{nonce}/approve:
+    post:
+      summary: "Operator: approve a pending pairing"
+      description: |
+        Requires `personas:approve`. The same code as the desktop pairing
+        modal: mints an origin-bound key for the requesting origin. `scopes`
+        defaults to the request's pairable scopes; any scope outside the
+        pairing ceiling (e.g. `personas:approve`, `proxy`) is refused.
+      parameters:
+        - { name: nonce, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                scopes: { type: array, items: { type: string } }
+                expiresInDays: { type: integer, minimum: 1, maximum: 3650 }
+      responses:
+        "200": { description: "`{nonce, status: approved, origin, keyId, scopes, decidedBy}`" }
+        "400": { description: "`code`: scope_not_pairable | no_scopes | invalid_body" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "`code`: pairing_not_found" }
+
+  /api/pairings/{nonce}/reject:
+    post:
+      summary: "Operator: reject a pending pairing"
+      parameters:
+        - { name: nonce, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: "`{nonce, status: rejected, origin, decidedBy}`" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "`code`: pairing_not_found" }
 
   /api/kp/connector-catalog:
     get:

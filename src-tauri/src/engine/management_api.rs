@@ -50,6 +50,9 @@ use crate::engine::types::EphemeralPersona;
 use crate::error::AppError;
 use crate::ActiveProcessRegistry;
 
+/// `/api/approvals*` + `/api/pairings*` — the operator deciding approvals and
+/// pairings over HTTP (`personas:approve`). See `operator.rs`.
+mod operator;
 /// `/api/dev/*` — the Ship layer (milestones, goals, scope). See `ship.rs`.
 mod ship;
 /// `/api/dev/workspaces`, `POST /api/dev/projects`, and the hire `placement`
@@ -190,7 +193,31 @@ pub fn management_router(state: ManagementState) -> Router {
             "/api/dev/milestones/{milestone_id}/scope",
             post(ship::post_milestone_scope),
         )
-        .route("/api/dev/goals/{goal_id}", post(ship::post_goal_patch));
+        .route("/api/dev/goals/{goal_id}", post(ship::post_goal_patch))
+        // Operator approval API (management_api/operator.rs) — `personas:approve`
+        // only, a scope held by the file-delivered `operator-local` key and
+        // never grantable through pairing (see `authorize`).
+        .route("/api/approvals", get(operator::list_approvals))
+        .route(
+            "/api/approvals/{id}/approve",
+            post(operator::approve_approval),
+        )
+        .route(
+            "/api/approvals/{id}/reject",
+            post(operator::reject_approval),
+        )
+        .route(
+            "/api/pairings/pending",
+            get(operator::list_pending_pairings),
+        )
+        .route(
+            "/api/pairings/{nonce}/approve",
+            post(operator::approve_pairing),
+        )
+        .route(
+            "/api/pairings/{nonce}/reject",
+            post(operator::reject_pairing),
+        );
 
     // Headless bridge test mode (§13). The route is ADDED, not merely refused,
     // so with the mode off it 404s: "there is nothing there" and "you may not
@@ -344,6 +371,11 @@ const SCOPE_TEST: &str = personas_engine::headless::TEST_SCOPE;
 const SCOPE_EXECUTE_PERSONA_PREFIX: &str =
     personas_engine::kp_execute_grant::EXECUTE_PERSONA_SCOPE_PREFIX;
 const SCOPE_PROXY_CREDENTIAL_PREFIX: &str = "proxy:credential:";
+/// Operator approval scope. Held only by the file-delivered `operator-local`
+/// key (`personas_db::operator_key`); never pairable
+/// (`pairing::is_pairable_scope`), never implied by any other scope — the arm
+/// in [`authorize`] checks this exact string and nothing else satisfies it.
+const SCOPE_APPROVE: &str = crate::db::operator_key::APPROVE_SCOPE;
 
 /// Per-key rate limit: max requests per window, keyed by the API key's id.
 /// Generous for interactive/dashboard use — the loopback API is single-user.
@@ -505,6 +537,20 @@ fn authorize(method: &Method, path: &str, scopes: &[String]) -> Result<(), &'sta
 
     if path.starts_with("/a2a/") || path.starts_with("/agent-card/") {
         return Ok(());
+    }
+    if path == "/api/approvals"
+        || path.starts_with("/api/approvals/")
+        || path == "/api/pairings"
+        || path.starts_with("/api/pairings/")
+    {
+        // The operator's decisions — reads included, because the list shows
+        // who asked for what. Exact scope, every method: no broad scope, no
+        // build or execute grant, and no paired key can reach these.
+        return if has(SCOPE_APPROVE) {
+            Ok(())
+        } else {
+            Err("api key lacks the personas:approve scope")
+        };
     }
     if path.starts_with("/api/build") {
         return if has(SCOPE_BUILD) {
@@ -3316,14 +3362,32 @@ async fn kp_create_persona_request(
     params["requestId"] = serde_json::Value::String(request_id.clone());
     // The submitting key is recorded so approval can grant it
     // `personas:execute:persona:<new id>` — that key and no other (§10.8).
+    let rationale = with_placement_note(kp_hire_rationale(&body), placement.as_ref());
     if let Err(e) = insert_kp_hire_approval(
         &app_state.user_db,
         &request_id,
         &params,
-        &with_placement_note(kp_hire_rationale(&body), placement.as_ref()),
+        &rationale,
         Some(&submitter.id),
     ) {
         return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response();
+    }
+    // Announce the card so the orb / Athena chat shows it now. Without this a
+    // kp hire only appeared after the next Athena turn or an app restart —
+    // the inbox fetches once per session and on this event.
+    if !personas_engine::headless::enabled() {
+        use tauri::Emitter;
+        if let Err(e) = state.app.emit(
+            crate::companion::session::APPROVALS_EVENT,
+            vec![crate::companion::dispatcher::CreatedApproval {
+                id: request_id.clone(),
+                action: "kp_hire_request".into(),
+                params_json: params.to_string(),
+                rationale: rationale.clone(),
+            }],
+        ) {
+            tracing::warn!(error = %e, "kp intake: approvals event emit failed");
+        }
     }
 
     // Headless bridge (§13): execute the hire NOW, through the same executor
@@ -5063,6 +5127,58 @@ mod tests {
         // Before the grant (and after retirement removes it) execute is refused.
         let paired_only = scopes(&["personas:read", "personas:build"]);
         assert!(authorize(&Method::POST, "/api/execute/p1", &paired_only).is_err());
+    }
+
+    /// The operator routes demand `personas:approve` exactly, on every method.
+    /// No other scope — broad or resource-scoped, kp's paired key, a key after
+    /// a hire, the proxy-holding system shape — reaches them.
+    #[test]
+    fn authorize_operator_routes_need_the_exact_approve_scope() {
+        let routes: [(Method, &str); 6] = [
+            (Method::GET, "/api/approvals"),
+            (Method::POST, "/api/approvals/appr_1/approve"),
+            (Method::POST, "/api/approvals/appr_1/reject"),
+            (Method::GET, "/api/pairings/pending"),
+            (Method::POST, "/api/pairings/nonce123/approve"),
+            (Method::POST, "/api/pairings/nonce123/reject"),
+        ];
+        let without: [Vec<String>; 6] = [
+            scopes(&["personas:read", "personas:build"]),
+            vec![
+                "personas:read".to_string(),
+                "personas:build".to_string(),
+                personas_engine::kp_execute_grant::execute_scope_for("p1"),
+            ],
+            scopes(&["personas:execute"]),
+            scopes(&[
+                "personas:execute",
+                "personas:build",
+                "proxy",
+                "personas:test",
+            ]),
+            scopes(&["personas:approve:extra", "approve", "personas:*"]),
+            scopes(&[]),
+        ];
+        for (m, path) in &routes {
+            for s in &without {
+                assert!(
+                    authorize(m, path, s).is_err(),
+                    "{m} {path} must refuse {s:?}"
+                );
+            }
+            assert!(
+                authorize(m, path, &scopes(&["personas:read", "personas:approve"])).is_ok(),
+                "{m} {path}"
+            );
+        }
+        // The operator key reaches nothing that mutates besides its own routes.
+        let operator = scopes(&["personas:read", "personas:approve"]);
+        assert!(authorize(&Method::POST, "/api/execute/p1", &operator).is_err());
+        assert!(authorize(&Method::POST, "/api/build", &operator).is_err());
+        assert!(authorize(&Method::POST, "/api/kp/persona-requests", &operator).is_err());
+        assert!(authorize(&Method::POST, "/api/dev/projects", &operator).is_err());
+        assert!(authorize(&Method::POST, "/api/proxy/cred-1", &operator).is_err());
+        assert!(authorize(&Method::POST, "/api/broker/mint/cred-1", &operator).is_err());
     }
 
     #[test]

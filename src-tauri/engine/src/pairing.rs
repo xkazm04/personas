@@ -724,6 +724,30 @@ mod tests {
         );
     }
 
+    /// The operator approval scope is never pairable: a request naming it is
+    /// never offered it, the mint-side check names it as refused, and it is
+    /// not a resource-scoped form of anything pairable.
+    #[test]
+    fn a_pairing_request_never_receives_the_approve_scope() {
+        let approve = personas_db::operator_key::APPROVE_SCOPE;
+        assert_eq!(approve, "personas:approve");
+        assert!(!is_pairable_scope(approve));
+        let n = nonce("ceiling-approve");
+        let view = register(
+            "https://approve.example",
+            owned(&["personas:read", approve]),
+            &n,
+            "Wants approve",
+        )
+        .expect("register");
+        assert_eq!(view.requested_scopes, owned(&["personas:read"]));
+        assert_eq!(unpairable_scopes(&owned(&[approve])), owned(&[approve]));
+        assert!(list_views()
+            .iter()
+            .filter(|v| v.nonce == n)
+            .all(|v| !v.requested_scopes.iter().any(|s| s == approve)));
+    }
+
     #[test]
     fn the_scopes_real_clients_pair_with_survive_the_ceiling() {
         let n = nonce("ceiling-floor");

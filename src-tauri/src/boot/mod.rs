@@ -97,6 +97,8 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
     services::init_browser_bridge_pairing_token(&pool);
 
+    services::ensure_operator_api_key(&pool, &app_data_dir);
+
     services::start_local_http(app, &mut st);
 
     #[cfg(feature = "p2p")]

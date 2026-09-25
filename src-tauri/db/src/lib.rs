@@ -64,6 +64,8 @@ pub mod memory_recall;
 #[allow(dead_code)] // Functions used by Tauri commands in Phase 3
 pub mod migrations;
 pub mod model_routing;
+/// The file-delivered `operator-local` API key (`personas:approve`).
+pub mod operator_key;
 pub mod policy_tuning;
 pub mod project_identity;
 pub mod project_team;

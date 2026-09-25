@@ -458,6 +458,7 @@ shapes and the §39 route counts predate the test surface):
 | KP hiring bridge | `POST /api/kp/persona-requests` · `GET /api/kp/persona-requests/{id}` · `GET /api/kp/connector-catalog` | `personas:build` scope on the mutating POST; GETs follow the any-valid-key read rule | §10.1 |
 | Device pairing | `POST /pair/request` · `POST /pair/claim` | outside the api-key middleware — the nonce + human-approval ceremony is the gate (auto-approved only in headless mode, §13.3) | §4.2 |
 | Gate audit write door | `POST /api/app-master/gate-runs` | a mutating `/api/*` route, so `authorize` demands the broad `personas:execute` scope; the body names gate outcomes (`passed` / `failed` / `did_not_run`, at most 64 per call) and never a table or a statement — the repo half is `app_master_gates::record_gate_audit`, which files the rows under the named branch or `(working tree)` and attributes them to the project's mandate holder when no persona is named | `management_api::record_gate_runs` |
+| Operator approval API | `GET /api/approvals` · `POST /api/approvals/{id}/approve` · `POST /api/approvals/{id}/reject` · `GET /api/pairings/pending` · `POST /api/pairings/{nonce}/approve` · `POST /api/pairings/{nonce}/reject` | `personas:approve`, on every method, reads included — held only by the file-delivered `operator-local` key, never pairable, never implied | §10.10 |
 | Workspaces + projects | `POST /api/dev/workspaces` · `POST /api/dev/projects` (beside the Ship layer's `GET /api/dev/projects`) | writes under `/api/dev/`, so `authorize` demands `personas:build` | §10.9 |
 | Headless test surface | `POST /api/kp/test/tick` · `POST /api/kp/test/seed-work` | routes are **added** only while `PERSONAS_HEADLESS_BRIDGE=1` (§13.1) — with the mode off they 404 rather than 403 — and `authorize` demands `personas:test` for the whole `/api/kp/test/` prefix | §13.6 (tick) · §13.9 (seed-work) |
 
@@ -928,6 +929,105 @@ sibling prefix, root itself, valid descendant), project idempotency, workspace p
 adoption, placement intake validation; `approval_exec_core::tests` — explicit placement
 wins over the active workspace, absent placement keeps today's filing, a deleted
 placement workspace errors; `runner::exec_dir_lane_tests`).
+
+### 10.10 The operator approval API — deciding without the desktop UI (2026-09-25)
+
+The human gate on a kp hire (and on a cloud pairing) is a click in the desktop app.
+That stays true, but the click no longer has to happen *in the window*: the local
+operator can decide over HTTP, with a key no external app can ever hold.
+
+**Where the click lives in the UI**, since that is what the operator could not find.
+There is no inbox page. A pending kp hire is an Athena approval:
+
+1. **The Athena orb** (on by default, floating over every page). Its decision bubble
+   reads "Kp Hire Request: <rationale>" with **Approve** / **Reject**. With the bubble
+   showing, press `;` then `1` (approve) or `2` (reject).
+2. **The Athena chat panel.** Tap the orb, or, when the orb is off, the Athena avatar in
+   the footer's right cluster ("Open Athena"). The card sits below the transcript:
+   "Athena proposes" · chip "Kp Hire Request" · rationale · collapsed "Parameters"
+   (raw JSON) · **Approve** / **Reject**.
+3. Home → Cockpit's briefing shows the newest approval once per session (only when
+   there is a previous session to compare with). The Home "Decisions" widget and the
+   unified inbox do **not** list these — they read manual reviews.
+
+Only pending rows from the last 24 h are listed, newest 50. Until 2026-09-25 a new kp
+hire did not appear **live**: the intake inserted the row and emitted nothing, and the
+frontend fetches approvals once per session and on `companion://approvals`. The intake
+now emits `companion://approvals` for the new card (`kp_create_persona_request`), so it
+shows up without a restart or an Athena turn.
+
+**The scope: `personas:approve`** (`personas_db::operator_key::APPROVE_SCOPE`).
+
+- **Never pairable.** It is not in the pairing lane's ceiling
+  (`pairing::PAIRABLE_EXACT`), so a pairing request naming it is never offered it,
+  and `approve_pairing_core` refuses to mint it (tested:
+  `pairing::tests::a_pairing_request_never_receives_the_approve_scope`,
+  `operator::tests::operator_pairing_approval_stays_under_the_ceiling`).
+- **Never implied.** `authorize` checks the exact string for every method on
+  `/api/approvals*` and `/api/pairings*`, reads included (the list shows who asked for
+  what). kp's `read + build` key, a key holding a hire's `execute:persona:<id>`, broad
+  `personas:execute`, `proxy` and `personas:test` all get 403
+  (`authorize_operator_routes_need_the_exact_approve_scope`). The operator key in turn
+  reaches no mutating route besides these.
+
+**The key: `operator-local`, delivered as a file.** At every desktop boot
+(`boot::services::ensure_operator_api_key` → `personas_db::operator_key::ensure_operator_key`)
+one external API key named `operator-local` with scopes
+`["personas:read","personas:approve"]` is reconciled with the file
+**`<app data dir>/operator-api-key`** — on Windows
+`%APPDATA%\com.personas.desktop\operator-api-key` (or `$PERSONAS_DATA_DIR/operator-api-key`),
+beside `personas.db` and `master.key`.
+
+- **Reuse** when the file's token still resolves to an active `operator-local` key with
+  exactly those scopes (stray active duplicates are revoked).
+- **Re-mint** otherwise — file missing, unreadable, garbled, or holding another key's
+  token. The table stores only a hash, so an existing key whose token is not in the file
+  is unreachable: every active `operator-local` key is revoked first, then a fresh one is
+  minted and written. If the write fails, the new key is revoked too.
+- The write is atomic (a sibling temp file renamed over the target). On Unix the file is
+  `0600`. **On Windows it relies on the ACL it inherits**: the directory is under the
+  user profile, and `init_db` restricts it to the current user
+  (`restrict_dir_permissions`, inheritable). No `icacls` call is made for the file.
+- The token is never logged — boot logs the key id, prefix and file path only.
+- **Why this is default-ON.** Whoever can read that directory already controls the
+  install: the database, `master.key` and every credential it decrypts are there. A
+  token readable only by them grants nothing they did not already have. The key has no
+  expiry and no origin binding; revoke it in Settings → API Keys and it is re-minted
+  (with a new token in the file) at the next boot.
+- **Opt out:** `PERSONAS_OPERATOR_KEY=0` (`false`/`off`/`no`) at launch revokes every
+  active `operator-local` key and deletes the file.
+
+**Routes** (all 403 without `personas:approve`; refusals carry a snake_case `code`):
+
+| Route | Does | Answers |
+| --- | --- | --- |
+| `GET /api/approvals?status=pending&action=<optional>` | The inbox's own read (`pending_approval_rows`, shared with `companion_list_pending_approvals`): fresh pending rows, newest 50, optionally one action. | `{approvals:[{id, action, createdAt, expiresAt, rationale, summary, requestedBy:{keyId,keyName}\|null}]}`; `summary` for `kp_hire_request` = `{personaName, jobTitle, jobId, placementWorkspaceId, placementWorkspaceName, maxBudgetUsd, connectors, appMaster}`, else `null`. 400 `unsupported_status` for any status but `pending`. |
+| `POST /api/approvals/{id}/approve` `{note?}` | Claims the row with the same `pending`→`running` CAS the click uses (`claim_pending`), stamps the actor, then runs **the same function the Approve button runs** (`approve_claimed`: executor table, finalize, episode log, Athena's reaction turn). A kp hire therefore creates the draft persona, grants kp `execute:persona:<id>`, starts the build and pushes `approved` to kp. | `{id, action, status: approved\|approved_failed, message, decidedBy, personaId, buildSessionId, building}` — `building` is true for an approved kp hire whose one-shot build started; poll `GET /api/kp/persona-requests/{id}` for `active`. 404 `approval_not_found`; 409 `approval_not_pending` (decided, in flight, or past the 24 h window); 400 `invalid_body` / `invalid_note`; 500 `approval_execution_failed`. |
+| `POST /api/approvals/{id}/reject` `{reason?}` | Same claim, then **the Reject button's function** (`reject_claimed`; a kp hire's requester is notified `rejected` with the reason). | `{id, action, status: rejected, message, decidedBy}`; same 404/409/400 codes (`invalid_reason`). |
+| `GET /api/pairings/pending` | `pairing::list_views()` — what the pairing modal shows. | `{pairings:[{nonce, origin, appName, requestedScopes}]}` (scopes already moulded to the ceiling). |
+| `POST /api/pairings/{nonce}/approve` `{scopes?, expiresInDays?}` | **The Tauri command's code** (`approve_pairing_core`): mints the origin-bound key, adds the CORS origin, stashes the token for `/pair/claim`. `scopes` defaults to the request's pairable scopes. | `{nonce, status: approved, origin, keyId, scopes, decidedBy}`; 404 `pairing_not_found`; 400 `scope_not_pairable` (e.g. `personas:approve`, `proxy`), `no_scopes`, `invalid_body` (`expiresInDays` 1..3650). |
+| `POST /api/pairings/{nonce}/reject` | `pairing::set_rejected`, as the Tauri command. | `{nonce, status: rejected, origin, decidedBy}`; 404 `pairing_not_found`. |
+
+**The actor.** `companion_approval` has no `decided_by` column and the UI click records
+no actor. Like the headless bridge (§13.2), an operator decision is merged into the
+row's payload as `decidedBy: "operator-api:<key id>"`, `decidedAt`, and `decisionNote`
+(the note or reason), stamped after the claim and before the executor runs. A row with
+no `decidedBy` was a human click. Pairing decisions write `operator-api:<key id>` as the
+`settings_audit_log` source where the UI writes `ui`.
+
+**What it does not do.** It creates no approvals and has no auto-approve; nothing
+decides unless a caller holding the operator key asks. The headless bridge
+(`PERSONAS_HEADLESS_BRIDGE=1`, §13) is unchanged and separate.
+
+Tested in `personas-db` (`operator_key::tests` — first boot mints and the token lives
+only in the file, a second boot reuses it untouched, missing/garbled file revokes and
+re-mints, a file holding another key's token is not reused, opt-out revokes and
+removes, the env switch is default-on), `personas-engine`
+(`pairing::tests::a_pairing_request_never_receives_the_approve_scope`) and `app_lib`
+(`approval_operator::tests` — the CAS lets exactly one claim win, decided/expired rows
+are not pending, the actor stamp, the shared pending read carries the requesting key;
+`management_api::operator::tests` — timestamps, the kp summary, the pairing ceiling;
+`management_api::tests::authorize_operator_routes_need_the_exact_approve_scope`).
 
 ---
 
