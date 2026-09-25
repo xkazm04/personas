@@ -305,6 +305,7 @@ export function derivePassportFromMetadata(
       slug: meta.project_id,
       purpose: (meta.summary && meta.summary.trim()) || (meta.keywords ?? []).slice(0, 4).join(', ') || 'Dev-tools project',
       repo: meta.github_url ?? undefined,
+      root: meta.root_path || undefined,
       archetype: project.team_id ? 'team' : 'solo',
       lifecycle,
       criticality: project.team_id ? 'business' : 'internal',
@@ -380,6 +381,9 @@ export function derivePassportFromMetadata(
       source: 'dev_tools cross-project scan + project config',
       files: meta.db_tables ?? [],
     },
+    // The probe answered and could not read the checkout: say so, instead of
+    // letting "no tests, no docs, no CI" stand as findings about the repo.
+    ...(ev && !ev.scanned ? { repoUnreadable: true } : {}),
   };
 }
 

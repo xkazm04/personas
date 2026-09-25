@@ -11,20 +11,26 @@ import { FlaskConical } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useTranslation } from '@/i18n/useTranslation';
 import { FactoryDataProvider } from './factoryData';
+import { FactoryHeadlineProvider, useFactoryHeadlineState } from './factoryHeadline';
 import { TrendVariant } from './TrendVariant';
 
 export default function FactoryPage() {
   const { t } = useTranslation();
+  // A layer may lift its finding into this header (the Passport Atlas does).
+  const [headline, setHeadline] = useFactoryHeadlineState();
   return (
     <ContentBox>
       <ContentHeader
         icon={<FlaskConical className="w-5 h-5 text-primary" />}
-        title={t.sidebar.factory}
+        title={headline ? `${t.sidebar.factory} · ${headline.eyebrow}` : t.sidebar.factory}
+        subtitle={headline?.title}
       />
       <ContentBody>
-        <FactoryDataProvider>
-          <TrendVariant />
-        </FactoryDataProvider>
+        <FactoryHeadlineProvider set={setHeadline}>
+          <FactoryDataProvider>
+            <TrendVariant />
+          </FactoryDataProvider>
+        </FactoryHeadlineProvider>
       </ContentBody>
     </ContentBox>
   );

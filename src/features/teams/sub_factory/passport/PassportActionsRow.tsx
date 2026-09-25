@@ -14,7 +14,7 @@
 // the app needs to work with the project at all, and offers a transport choice
 // because its KPI phase is a long negotiation the operator may want in their
 // own terminal, outliving the app.
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type MouseEvent } from 'react';
 import { TerminalSquare } from 'lucide-react';
 
 import { installSystemSkill } from '@/api/devTools/devTools';
@@ -22,6 +22,7 @@ import { writeDispatchBrief } from '@/api/fleet/fleet';
 import { listCredentials } from '@/api/vault/credentials';
 import { DispatchChooserModal, type DispatchRequest } from '@/features/shared/dispatch/DispatchChooser';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
+import { Button } from '@/features/shared/components/buttons';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
@@ -50,7 +51,7 @@ import { PASSPORT_FLEET_INK } from './passportFleet';
 import { dispatchSkillToRepo } from './skillPlacement';
 import { passportToMarkdown } from './passportExport';
 
-export function PassportActionsCell({ p, onboardSession, onOpenOnboardTerminal, rescanning, onRescanProject, onOpenPlan }: {
+export function PassportActionsCell({ p, onboardSession, onOpenOnboardTerminal, rescanning, onRescanProject, onOpenPlan, labels }: {
   p: AppPassport;
   /** Live `passport:onboard:<slug>` session, if one runs. */
   onboardSession: FleetSession | null;
@@ -59,6 +60,9 @@ export function PassportActionsCell({ p, onboardSession, onOpenOnboardTerminal, 
   rescanning: boolean;
   onRescanProject: () => void;
   onOpenPlan: () => void;
+  /** Render each action as a labelled kit button (the Passport Atlas) instead of the
+   *  wall's icon row; the consent flow behind every press is the same. */
+  labels?: Readonly<Record<string, string>>;
 }) {
   const improve = useImprove();
   const addToast = useToastStore((s) => s.addToast);
@@ -157,7 +161,7 @@ export function PassportActionsCell({ p, onboardSession, onOpenOnboardTerminal, 
   const ACTIONS = specs.map((s) => ({ ...s, ...behaviour[s.id] }));
 
   return (
-    <span className="inline-flex items-center gap-0.5" data-testid={`passport-actions-${slug}`}>
+    <span className={labels ? 'atlas-actions' : 'inline-flex items-center gap-0.5'} data-testid={`passport-actions-${slug}`}>
       {onboardSession ? (
         <button
           type="button"
@@ -172,6 +176,19 @@ export function PassportActionsCell({ p, onboardSession, onOpenOnboardTerminal, 
       ) : null}
       {ACTIONS.filter((a) => !(a.id === 'onboard' && onboardSession)).map((a) => {
         const Icon = a.icon;
+        const press = (e: MouseEvent) => {
+          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+          if (a.id === 'populate') loadGates();
+          setConfirm((c) => (c?.id === a.id ? null : { id: a.id, anchor: rect }));
+        };
+        if (labels) {
+          return (
+            <Button key={a.id} variant="ghost" size="sm" disabled={a.disabled} loading={a.id === 'rescan' && rescanning} onClick={press}
+              className="k-btn typo-label k-regular" data-testid={`passport-action-${a.id}-${slug}`}>
+              {labels[a.id] ?? a.title}
+            </Button>
+          );
+        }
         return (
           <button
             key={a.id}

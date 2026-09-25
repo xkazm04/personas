@@ -14,8 +14,10 @@ import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
 import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import { silentCatch } from '@/lib/silentCatch';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import { KitHost, Meta, Section, Surface } from '@/features/shared/components/kit';
+import { KitHost, Meta, Section, Segmented, Surface } from '@/features/shared/components/kit';
 import { ProjectsPassportWall } from './passport';
+import { PassportAtlas } from './passport/atlas/PassportAtlas';
+import { ATLAS_WORDS } from './passport/atlas/atlasWords';
 import { buildCoverRoadmap, type CoverRoadmapVM } from './passport/CoverRoadmap';
 import type { WarningItem } from './passport/WarningBadge';
 import { ImproveProvider } from './passport/improve/ImproveContext';
@@ -46,6 +48,9 @@ export function ProjectsLayer({
   onJumpKpi?: (projectId: string, groupId: string, kpiId: string) => void;
 }) {
   const w = useFactoryWords();
+  // The Passport Atlas (contest winner, 2026-09-25) runs beside the legacy wall
+  // until it has been perfected; the wall is then descoped.
+  const [view, setView] = useState<'atlas' | 'wall'>('atlas');
   const { passports, rawByProject, loading, error, generatedAt, rescanningProject, rescanProject, reload } = usePassportData();
   // R22 — a finished `passport:*` dispatch auto-verifies via scoped rescan.
   useAutoRescanOnFleetExit(rescanProject);
@@ -151,6 +156,14 @@ export function ProjectsLayer({
             title={w.L.readiness}
             count={passports.length > 0 ? passports.length : undefined}
             meta={generatedAt ? <Meta parts={[<span key="s">{w.L.scanned} <RelativeTime timestamp={generatedAt} className="tabular-nums" /></span>]} /> : undefined}
+            actions={passports.length > 0 ? (
+              <Segmented
+                label={ATLAS_WORDS.tabsLabel}
+                value={view}
+                onChange={setView}
+                options={[{ v: 'atlas', label: ATLAS_WORDS.tabAtlas }, { v: 'wall', label: ATLAS_WORDS.tabWall }]}
+              />
+            ) : undefined}
             state={failed || empty ? 'empty' : undefined}
             empty={failed
               ? { title: w.L.passportsFailed, hint: error, tone: 'error' }
@@ -163,6 +176,14 @@ export function ProjectsLayer({
         <PassportWallGhost />
       ) : passports.length > 0 && (
         <ImproveProvider value={improve}>
+          {view === 'atlas' ? (
+            <PassportAtlas
+              passports={passports}
+              onOpen={onOpen}
+              rescanningProject={rescanningProject}
+              onRescanProject={rescanProject}
+            />
+          ) : (
           <ProjectsPassportWall
             passports={passports}
             openSlugs={openSlugs}
@@ -176,6 +197,7 @@ export function ProjectsLayer({
             rescanningProject={rescanningProject}
             onRescanProject={rescanProject}
           />
+          )}
         </ImproveProvider>
       )}
     </div>
