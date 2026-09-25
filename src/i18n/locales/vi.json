@@ -18374,7 +18374,6 @@
       "draft_kind_research": "Nghiên cứu",
       "draft_kind_search": "Tìm kiếm",
       "draft_notes": "Ghi chú",
-      "draft_notes_empty": "Chưa có ghi chú nào từ Athena.",
       "draft_project": "Dự án",
       "draft_stamp_approval": "Chờ duyệt",
       "draft_stamp_issued": "Đã phát hành",
@@ -18386,7 +18385,10 @@
       "draft_status_template": "Bản trắng",
       "sheet_style_drafting": "Bản vẽ",
       "sheet_style_label": "Kiểu bản vẽ",
-      "sheet_style_plan": "Thẻ kế hoạch"
+      "sheet_style_plan": "Thẻ kế hoạch",
+      "draft_kind_draw": "Vẽ",
+      "draft_plan_sheet": "Kế hoạch",
+      "draft_status_loading": "Đang mở kế hoạch"
     },
     "bun_missing": "Bun chưa được cài đặt, và Studio cần nó để tạo khung và chạy dự án. Cài đặt từ bun.sh (hoặc thiết lập PERSONAS_BUN_BIN), sau đó khởi động lại ứng dụng.",
     "bun_unknown": "Không thể kiểm tra xem Bun đã được cài đặt hay chưa. Studio cần nó để tạo khung và chạy dự án. Thử lại, hoặc cài đặt từ bun.sh rồi khởi động lại ứng dụng.",

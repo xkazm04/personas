@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import type { SiteSketch } from '@/lib/bindings/SiteSketch';
 import type { SketchRegion } from '@/lib/bindings/SketchRegion';
 import type { BuildPhase } from '../../studioBuildModel';
 
@@ -67,6 +68,22 @@ export function proofFilter(done: number): string {
 }
 
 export type SheetMoment = 'template' | 'sketch' | 'plan';
+
+/** What the sheet draws on page 1: never a part it has nothing for. */
+export type SheetDrawing = 'sketch' | 'plan' | 'template' | 'skeleton';
+
+/**
+ * - the sketch, when it has any page with regions;
+ * - else the plan itself (its goals as frames), when there is one;
+ * - else, for a project being created, the stock Next.js page;
+ * - else (an opened project whose plan has not loaded) unlabelled ghost frames.
+ * A reopened project never shows the stock page: its labels would be made up.
+ */
+export function drawingOf(a: { sketch: SiteSketch | null; planned: boolean; opened: boolean }): SheetDrawing {
+  if (a.sketch?.pages.some((p) => p.regions.length > 0)) return 'sketch';
+  if (a.planned) return 'plan';
+  return a.opened ? 'skeleton' : 'template';
+}
 
 /** Which drawing the sheet shows: the stock template, the sketch, or the plan being built. */
 export function sheetMoment(hasSketch: boolean, phases: BuildPhase[], placeholder: boolean): SheetMoment {

@@ -18374,7 +18374,6 @@
       "draft_kind_research": "Investigar",
       "draft_kind_search": "Buscar",
       "draft_notes": "Notas",
-      "draft_notes_empty": "Todavía no hay palabras de Athena.",
       "draft_project": "Proyecto",
       "draft_stamp_approval": "Para aprobación",
       "draft_stamp_issued": "Emitido",
@@ -18386,7 +18385,10 @@
       "draft_status_template": "Hoja en blanco",
       "sheet_style_drafting": "Dibujo",
       "sheet_style_label": "Estilo de hoja",
-      "sheet_style_plan": "Tarjetas de plan"
+      "sheet_style_plan": "Tarjetas de plan",
+      "draft_kind_draw": "Dibujo",
+      "draft_plan_sheet": "El plan",
+      "draft_status_loading": "Abriendo el plan"
     },
     "bun_missing": "Bun no está instalado y Studio lo necesita para crear y ejecutar proyectos. Instálalo desde bun.sh (o define PERSONAS_BUN_BIN) y reinicia la app.",
     "bun_unknown": "No se pudo comprobar si Bun está instalado. Studio lo necesita para crear y ejecutar proyectos. Vuelve a intentarlo, o instálalo desde bun.sh y reinicia la app.",

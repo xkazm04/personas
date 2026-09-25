@@ -23552,10 +23552,11 @@ export type Translations = {
       draft_stamp_issued: string;
       draft_stamp_approval: string;
       draft_goals_empty: string;
-      draft_notes_empty: string;
       draft_status_template: string;
       draft_status_sketch: string;
       draft_status_plan: string;
+      draft_plan_sheet: string;
+      draft_status_loading: string;
       draft_kind_research: string;
       draft_kind_search: string;
       draft_kind_read: string;
@@ -23564,6 +23565,7 @@ export type Translations = {
       draft_kind_browser: string;
       draft_kind_command: string;
       draft_kind_other: string;
+      draft_kind_draw: string;
     };
   };
   notepad: {

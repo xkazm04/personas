@@ -23546,10 +23546,11 @@
       "draft_stamp_issued": "Issued",
       "draft_stamp_approval": "For approval",
       "draft_goals_empty": "The goals are drawn here once Athena has read your brief.",
-      "draft_notes_empty": "No words from Athena yet.",
       "draft_status_template": "Blank sheet",
       "draft_status_sketch": "First sketch",
       "draft_status_plan": "Plan in work",
+      "draft_plan_sheet": "The plan",
+      "draft_status_loading": "Opening the plan",
       "draft_kind_research": "Research",
       "draft_kind_search": "Search",
       "draft_kind_read": "Read",
@@ -23557,7 +23558,8 @@
       "draft_kind_check": "Check",
       "draft_kind_browser": "Browser",
       "draft_kind_command": "Run",
-      "draft_kind_other": "Work"
+      "draft_kind_other": "Work",
+      "draft_kind_draw": "Draw"
     }
   },
   "notepad": {

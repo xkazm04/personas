@@ -18374,7 +18374,6 @@
       "draft_kind_research": "استكشاف",
       "draft_kind_search": "بحث",
       "draft_notes": "ملاحظات",
-      "draft_notes_empty": "لا كلمات من Athena بعد.",
       "draft_project": "المشروع",
       "draft_stamp_approval": "للاعتماد",
       "draft_stamp_issued": "صدر",
@@ -18386,7 +18385,10 @@
       "draft_status_template": "لوحة فارغة",
       "sheet_style_drafting": "الرسم",
       "sheet_style_label": "نمط اللوحة",
-      "sheet_style_plan": "بطاقات الخطة"
+      "sheet_style_plan": "بطاقات الخطة",
+      "draft_kind_draw": "رسم",
+      "draft_plan_sheet": "الخطة",
+      "draft_status_loading": "جارٍ فتح الخطة"
     },
     "bun_missing": "Bun غير مثبت، ويحتاجه Studio لإنشاء المشاريع وتشغيلها. ثبّته من bun.sh (أو عيّن PERSONAS_BUN_BIN)، ثم أعد تشغيل التطبيق.",
     "bun_unknown": "تعذّر التحقق مما إذا كان Bun مثبتًا. يحتاجه Studio لإنشاء المشاريع وتشغيلها. أعد المحاولة، أو ثبّته من bun.sh وأعد تشغيل التطبيق.",

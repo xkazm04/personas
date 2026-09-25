@@ -19,6 +19,10 @@ const DESKTOP = 1280;
 // done region is inked with a tick. When the live page exists it shows through
 // as a cyanotype proof that develops into colour as the plan gets done, and
 // the regions become a numbered legend over it.
+//
+// Regions are drawn one at a time (`shown`): a region not drawn yet keeps its
+// place, invisible, so the sheet never reflows while it builds up. `skeleton`
+// draws unlabelled ghost frames for a drawing that has not loaded yet.
 export default function DraftingPage({
   num,
   title,
@@ -28,7 +32,9 @@ export default function DraftingPage({
   proof,
   compact = false,
   draftingRef,
-  delay = 0,
+  latestRef,
+  shown = regions.length,
+  skeleton = false,
 }: {
   num: number;
   title: string;
@@ -40,7 +46,11 @@ export default function DraftingPage({
   compact?: boolean;
   /** Receives the region Athena is drafting now, for the pen. */
   draftingRef?: (el: HTMLElement | null) => void;
-  delay?: number;
+  /** Receives the region drawn last, for the pen while the sheet builds up. */
+  latestRef?: (el: HTMLElement | null) => void;
+  /** How many regions are drawn so far. */
+  shown?: number;
+  skeleton?: boolean;
 }) {
   const { shouldAnimate } = useMotion();
   const boxRef = useRef<HTMLDivElement>(null);
@@ -55,29 +65,31 @@ export default function DraftingPage({
     return () => ro.disconnect();
   }, [proof]);
   const weights = regionWeights(regions.map((r) => r.title));
-  const draw = (i: number) =>
-    shouldAnimate
-      ? {
-          initial: { clipPath: 'inset(0 100% 100% 0)' },
-          animate: { clipPath: 'inset(0 0% 0% 0)' },
-          transition: { duration: 0.9, delay: delay + 0.14 * i, ease: 'easeOut' as const },
-        }
-      : {};
+  const started = skeleton || shown > 0;
+  const fade = shouldAnimate ? { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.5 } } : {};
+  const draw = shouldAnimate
+    ? {
+        initial: { clipPath: 'inset(0 100% 100% 0)' },
+        animate: { clipPath: 'inset(0 0% 0% 0)' },
+        transition: { duration: 0.9, ease: 'easeOut' as const },
+      }
+    : {};
+  const ink = (s: RegionState) => (s === 'drafting' ? 'var(--ink-strong)' : s === 'done' ? 'var(--ink)' : 'var(--ink-dim)');
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <p className="mb-2 flex items-baseline gap-2.5">
+      <motion.p key={started ? 'on' : 'off'} {...(started ? fade : {})} className={`mb-2 flex items-baseline gap-2.5 ${started ? '' : 'invisible'}`}>
         <span
           className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
-          style={{ ...LETTERING, letterSpacing: 0, background: 'var(--ink)', color: 'var(--paper)' }}
+          style={{ ...LETTERING, letterSpacing: 0, background: skeleton ? 'transparent' : 'var(--ink)', border: skeleton ? '1px dashed var(--ink-dim)' : undefined, color: skeleton ? 'var(--ink-dim)' : 'var(--paper)' }}
         >
           {num}
         </span>
-        <span style={{ ...LETTERING, color: 'var(--ink-strong)' }}>{title}</span>
-        {route && <span className="typo-code text-foreground/90">{route}</span>}
-      </p>
+        {!skeleton && <span style={{ ...LETTERING, color: 'var(--ink-strong)' }}>{title}</span>}
+        {!skeleton && route && <span className="typo-code text-foreground/90">{route}</span>}
+      </motion.p>
       {!compact && (
-        <div className="relative mb-2 h-3" aria-hidden>
+        <div className={`relative mb-2 h-3 ${started ? '' : 'invisible'}`} aria-hidden>
           <div className="absolute inset-x-0 top-1.5 h-px" style={{ background: 'var(--ink-faint)' }} />
           <div className="absolute left-0 top-0 h-3 w-px" style={{ background: 'var(--ink-dim)' }} />
           <div className="absolute right-0 top-0 h-3 w-px" style={{ background: 'var(--ink-dim)' }} />
@@ -128,28 +140,45 @@ export default function DraftingPage({
           </ol>
         ) : (
           <div className="flex h-full flex-col gap-2">
-            {regions.map((r, i) => (
-              <motion.div
-                key={`${i}-${r.title}`}
-                {...draw(i)}
-                ref={r.state === 'drafting' ? draftingRef : undefined}
-                className="relative min-h-0 overflow-hidden rounded-interactive"
-                style={{
-                  flexGrow: weights[i],
-                  flexBasis: 0,
-                  border: `1px ${r.state === 'pending' ? 'dashed' : 'solid'} ${r.state === 'drafting' ? 'var(--ink-strong)' : r.state === 'done' ? 'var(--ink)' : 'var(--ink-dim)'}`,
-                  boxShadow: r.state === 'drafting' ? '0 0 0 1px var(--ink-faint), 0 0 24px color-mix(in srgb, var(--primary) 18%, transparent)' : undefined,
-                }}
-              >
-                {r.state === 'drafting' && <div aria-hidden className="drafting-hatch pointer-events-none absolute inset-0" />}
-                <div className="relative flex items-baseline gap-2 px-2 pt-1.5">
-                  <span style={{ ...LETTERING, color: 'var(--ink-strong)' }}>{r.title}</span>
-                  {r.state !== 'pending' && <span className="typo-caption">{stateWords[r.state]}</span>}
-                </div>
-                {!compact && r.purpose && <p className="relative truncate px-2 typo-caption">{r.purpose}</p>}
-                {r.state === 'done' && <Ticks />}
-              </motion.div>
-            ))}
+            {regions.map((r, i) => {
+              const box = { flexGrow: weights[i], flexBasis: 0 };
+              if (skeleton) {
+                return (
+                  <div
+                    key={`${i}-${r.title}`}
+                    aria-hidden
+                    className="min-h-0 rounded-interactive"
+                    style={{ ...box, border: '1px dashed var(--ink-faint)', background: 'color-mix(in srgb, var(--ink) 3%, transparent)' }}
+                  />
+                );
+              }
+              if (i >= shown) return <div key={`${i}-${r.title}`} aria-hidden className="min-h-0" style={box} />;
+              const refs = (el: HTMLElement | null) => {
+                if (r.state === 'drafting') draftingRef?.(el);
+                if (i === shown - 1) latestRef?.(el);
+              };
+              return (
+                <motion.div
+                  key={`${i}-${r.title}`}
+                  {...draw}
+                  ref={refs}
+                  className="relative min-h-0 overflow-hidden rounded-interactive"
+                  style={{
+                    ...box,
+                    border: `1px ${r.state === 'pending' ? 'dashed' : 'solid'} ${ink(r.state)}`,
+                    boxShadow: r.state === 'drafting' ? '0 0 0 1px var(--ink-faint), 0 0 24px color-mix(in srgb, var(--primary) 18%, transparent)' : undefined,
+                  }}
+                >
+                  {r.state === 'drafting' && <div aria-hidden className="drafting-hatch pointer-events-none absolute inset-0" />}
+                  <div className="relative flex items-baseline gap-2 px-2 pt-1.5">
+                    <span style={{ ...LETTERING, color: 'var(--ink-strong)' }}>{r.title}</span>
+                    {r.state !== 'pending' && <span className="typo-caption">{stateWords[r.state]}</span>}
+                  </div>
+                  {!compact && r.purpose && <p className="relative truncate px-2 typo-caption">{r.purpose}</p>}
+                  {r.state === 'done' && <Ticks />}
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </div>

@@ -18374,7 +18374,6 @@
       "draft_kind_research": "研究",
       "draft_kind_search": "搜索",
       "draft_notes": "备注",
-      "draft_notes_empty": "Athena 还没有留下任何话。",
       "draft_project": "项目",
       "draft_stamp_approval": "待审批",
       "draft_stamp_issued": "已签发",
@@ -18386,7 +18385,10 @@
       "draft_status_template": "空白图纸",
       "sheet_style_drafting": "制图模式",
       "sheet_style_label": "图纸样式",
-      "sheet_style_plan": "计划卡片"
+      "sheet_style_plan": "计划卡片",
+      "draft_kind_draw": "绘制",
+      "draft_plan_sheet": "计划",
+      "draft_status_loading": "正在打开计划"
     },
     "bun_missing": "未安装 Bun，而 Studio 需要它来搭建和运行项目。请从 bun.sh 安装（或设置 PERSONAS_BUN_BIN），然后重启应用。",
     "bun_unknown": "无法检查是否已安装 Bun。Studio 需要它来搭建和运行项目。请重试，或从 bun.sh 安装后重启应用。",

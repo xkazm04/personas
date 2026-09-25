@@ -18374,7 +18374,6 @@
       "draft_kind_research": "조사",
       "draft_kind_search": "검색",
       "draft_notes": "메모",
-      "draft_notes_empty": "Athena의 메모가 아직 없습니다.",
       "draft_project": "프로젝트",
       "draft_stamp_approval": "승인 대기",
       "draft_stamp_issued": "발행됨",
@@ -18386,7 +18385,10 @@
       "draft_status_template": "빈 시트",
       "sheet_style_drafting": "도면 방식",
       "sheet_style_label": "시트 스타일",
-      "sheet_style_plan": "계획 카드"
+      "sheet_style_plan": "계획 카드",
+      "draft_kind_draw": "그리기",
+      "draft_plan_sheet": "계획",
+      "draft_status_loading": "계획을 여는 중"
     },
     "bun_missing": "Bun이 설치되어 있지 않아 Studio에서 프로젝트를 생성하고 실행할 수 없습니다. bun.sh에서 설치하거나 PERSONAS_BUN_BIN을 설정한 후 앱을 다시 시작하세요.",
     "bun_unknown": "Bun 설치 여부를 확인할 수 없었습니다. Studio는 프로젝트를 생성하고 실행하는 데 Bun이 필요합니다. 다시 시도하거나 bun.sh에서 설치한 후 앱을 다시 시작하세요.",

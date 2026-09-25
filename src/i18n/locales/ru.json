@@ -18374,7 +18374,6 @@
       "draft_kind_research": "Исследование",
       "draft_kind_search": "Поиск",
       "draft_notes": "Заметки",
-      "draft_notes_empty": "От Athena пока нет заметок.",
       "draft_project": "Проект",
       "draft_stamp_approval": "На утверждение",
       "draft_stamp_issued": "Выдано",
@@ -18386,7 +18385,10 @@
       "draft_status_template": "Чистый лист",
       "sheet_style_drafting": "Чертёж",
       "sheet_style_label": "Стиль листа",
-      "sheet_style_plan": "Карточки плана"
+      "sheet_style_plan": "Карточки плана",
+      "draft_kind_draw": "Чертёж",
+      "draft_plan_sheet": "План",
+      "draft_status_loading": "Открываю план"
     },
     "bun_missing": "Bun не установлен, а он нужен Studio для создания и запуска проектов. Установите его с bun.sh (или задайте PERSONAS_BUN_BIN), затем перезапустите приложение.",
     "bun_unknown": "Не удалось проверить, установлен ли Bun. Он нужен Studio для создания и запуска проектов. Повторите попытку или установите его с bun.sh и перезапустите приложение.",

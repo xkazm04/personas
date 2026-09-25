@@ -18374,7 +18374,6 @@
       "draft_kind_research": "Recherche",
       "draft_kind_search": "Suchen",
       "draft_notes": "Notizen",
-      "draft_notes_empty": "Noch keine Worte von Athena.",
       "draft_project": "Projekt",
       "draft_stamp_approval": "Zur Freigabe",
       "draft_stamp_issued": "Ausgestellt",
@@ -18386,7 +18385,10 @@
       "draft_status_template": "Leeres Blatt",
       "sheet_style_drafting": "Zeichnen",
       "sheet_style_label": "Blattstil",
-      "sheet_style_plan": "Plankarten"
+      "sheet_style_plan": "Plankarten",
+      "draft_kind_draw": "Zeichnen",
+      "draft_plan_sheet": "Der Plan",
+      "draft_status_loading": "Plan wird geöffnet"
     },
     "bun_missing": "Bun ist nicht installiert, aber Studio braucht es, um Projekte zu erstellen und auszuführen. Installiere es von bun.sh (oder setze PERSONAS_BUN_BIN) und starte die App neu.",
     "bun_unknown": "Konnte nicht geprüft werden, ob Bun installiert ist. Studio braucht es, um Projekte zu erstellen und auszuführen. Versuch es erneut oder installiere es von bun.sh und starte die App neu.",
