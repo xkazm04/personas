@@ -4315,7 +4315,6 @@
       "subtitle_ready": "{count}件がレビュー待ち",
       "track_empty_body": "リストからレースを選ぶか、新しいレースを開始してください。",
       "track_empty_title": "トラックは空です",
-      "track_load_failed": "このレースを読み込めませんでした。",
       "variant_key": "バリアント{key}",
       "variants_label": "バリアント",
       "winner": "優勝者",
@@ -4323,7 +4322,9 @@
       "setup_close_body": "入力内容は保持されます。レースを作成するかフォームをクリアするまで、「新しいレース」で復元されます。",
       "setup_close_confirm": "セットアップを閉じる",
       "chain_stopped": "停止",
-      "open_tile_hint": "フォトフィニッシュで開く"
+      "open_tile_hint": "フォトフィニッシュで開く",
+      "track_load_failed_detail": "このレースを読み込めませんでした：{message}",
+      "roster_load_failed_detail": "レースを読み込めませんでした：{message}"
     },
     "decide_locked_decided": "決定済み: {key} が勝ちました。",
     "decide_locked_shortlisted": "候補に絞り込み済み: 勝者は改良ラウンドで決まります。",

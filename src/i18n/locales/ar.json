@@ -15109,7 +15109,6 @@
         "subtitle_ready": "{count} جاهزة للمراجعة",
         "track_empty_body": "اختر سباقًا من القائمة، أو ابدأ سباقًا جديدًا.",
         "track_empty_title": "المضمار خالٍ",
-        "track_load_failed": "تعذّر تحميل هذا السباق.",
         "variant_key": "المتغير {key}",
         "variants_label": "المتغيرات",
         "winner": "الفائز",
@@ -15117,7 +15116,9 @@
         "setup_close_body": "يُحتفظ بما أدخلته: يعيده «سباق جديد» حتى تنشئ السباق أو تمسح النموذج.",
         "setup_close_confirm": "إغلاق الإعداد",
         "chain_stopped": "توقفت",
-        "open_tile_hint": "افتحه في صورة الحسم"
+        "open_tile_hint": "افتحه في صورة الحسم",
+        "track_load_failed_detail": "تعذّر تحميل هذا السباق: {message}",
+        "roster_load_failed_detail": "تعذّر تحميل السباقات: {message}"
       },
       "decide_locked_decided": "تم الحسم: فاز {key}.",
       "decide_locked_shortlisted": "في القائمة المختصرة: يُعلن الفائز في جولة التحسين.",

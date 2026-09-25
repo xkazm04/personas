@@ -15109,7 +15109,6 @@
         "subtitle_ready": "리뷰 준비 완료 {count}개",
         "track_empty_body": "목록에서 레이스를 선택하거나 새 레이스를 시작하세요.",
         "track_empty_title": "트랙이 비어 있습니다",
-        "track_load_failed": "이 레이스를 불러오지 못했습니다.",
         "variant_key": "변형 {key}",
         "variants_label": "변형",
         "winner": "우승자",
@@ -15117,7 +15116,9 @@
         "setup_close_body": "입력한 내용은 유지됩니다. 레이스를 만들거나 양식을 비울 때까지 새 레이스에서 다시 불러옵니다.",
         "setup_close_confirm": "설정 닫기",
         "chain_stopped": "중단됨",
-        "open_tile_hint": "포토 피니시에서 열기"
+        "open_tile_hint": "포토 피니시에서 열기",
+        "track_load_failed_detail": "이 레이스를 불러오지 못했습니다: {message}",
+        "roster_load_failed_detail": "레이스를 불러오지 못했습니다: {message}"
       },
       "decide_locked_decided": "결정됨: {key} 우승.",
       "decide_locked_shortlisted": "후보 선정됨: 우승자는 다듬기 라운드에서 정해집니다.",

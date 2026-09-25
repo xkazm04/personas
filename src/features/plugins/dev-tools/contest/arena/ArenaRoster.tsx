@@ -37,7 +37,7 @@ export interface ArenaRosterProps {
 }
 
 export function ArenaRoster({ contests, isLoading, error, onRetry, trackKey, onPick, onNewRace, onStandings }: ArenaRosterProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const a = t.plugins.contest.arena;
   const entries = useMemo(() => raceRounds(contests), [contests]);
   const enter = useRevealTracker('arena-roster');
@@ -59,7 +59,7 @@ export function ArenaRoster({ contests, isLoading, error, onRetry, trackKey, onP
       {error != null && contests.length === 0 ? (
         <ErrorBanner
           variant="inline"
-          message={`${a.roster_load_failed} ${resolveErrorTranslated(t, extractMessage(error)).message}`}
+          message={tx(a.roster_load_failed_detail, { message: resolveErrorTranslated(t, extractMessage(error)).message })}
           onRetry={onRetry}
         />
       ) : showGhost ? (

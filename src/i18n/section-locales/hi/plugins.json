@@ -4315,7 +4315,6 @@
       "subtitle_ready": "{count} समीक्षा के लिए तैयार",
       "track_empty_body": "सूची से कोई रेस चुनें, या नई रेस शुरू करें।",
       "track_empty_title": "ट्रैक खाली है",
-      "track_load_failed": "यह रेस लोड नहीं हो सकी।",
       "variant_key": "वेरिएंट {key}",
       "variants_label": "वेरिएंट",
       "winner": "विजेता",
@@ -4323,7 +4322,9 @@
       "setup_close_body": "आपका भरा हुआ बना रहेगा: जब तक आप रेस नहीं बनाते या फ़ॉर्म साफ़ नहीं करते, नई रेस उसे वापस ले आएगी।",
       "setup_close_confirm": "सेटअप बंद करें",
       "chain_stopped": "रुक गई",
-      "open_tile_hint": "फोटो फिनिश में खोलें"
+      "open_tile_hint": "फोटो फिनिश में खोलें",
+      "track_load_failed_detail": "यह रेस लोड नहीं हो सकी: {message}",
+      "roster_load_failed_detail": "रेस लोड नहीं हो सकीं: {message}"
     },
     "decide_locked_decided": "फ़ैसला हो गया: {key} जीता।",
     "decide_locked_shortlisted": "शॉर्टलिस्ट में: विजेता की घोषणा सुधार वाले दौर में होगी।",

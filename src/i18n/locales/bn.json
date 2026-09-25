@@ -15109,7 +15109,6 @@
         "subtitle_ready": "{count}টি পর্যালোচনার জন্য প্রস্তুত",
         "track_empty_body": "তালিকা থেকে একটি রেস বেছে নিন, অথবা নতুন একটি শুরু করুন।",
         "track_empty_title": "ট্র্যাক ফাঁকা",
-        "track_load_failed": "এই রেসটি লোড করা যায়নি।",
         "variant_key": "ভ্যারিয়েন্ট {key}",
         "variants_label": "ভ্যারিয়েন্ট",
         "winner": "বিজয়ী",
@@ -15117,7 +15116,9 @@
         "setup_close_body": "আপনার লেখা রাখা থাকবে: রেস তৈরি না করা বা ফর্ম মুছে না ফেলা পর্যন্ত নতুন রেস এটি ফিরিয়ে আনবে।",
         "setup_close_confirm": "সেটআপ বন্ধ করুন",
         "chain_stopped": "থেমে গেছে",
-        "open_tile_hint": "ফটো ফিনিশে খুলুন"
+        "open_tile_hint": "ফটো ফিনিশে খুলুন",
+        "track_load_failed_detail": "এই রেসটি লোড করা যায়নি: {message}",
+        "roster_load_failed_detail": "রেসগুলো লোড করা যায়নি: {message}"
       },
       "decide_locked_decided": "সিদ্ধান্ত হয়েছে: {key} জিতেছে।",
       "decide_locked_shortlisted": "সংক্ষিপ্ত তালিকায়: বিজয়ী ঘোষণা হবে পরিমার্জনের রাউন্ডে।",

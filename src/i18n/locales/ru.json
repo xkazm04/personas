@@ -15109,7 +15109,6 @@
         "subtitle_ready": "{count} готово к проверке",
         "track_empty_body": "Выберите заезд из списка или начните новый.",
         "track_empty_title": "Трасса свободна",
-        "track_load_failed": "Не удалось загрузить этот заезд.",
         "variant_key": "Вариант {key}",
         "variants_label": "Варианты",
         "winner": "Победитель",
@@ -15117,7 +15116,9 @@
         "setup_close_body": "Введённое сохранится: «Новый заезд» вернёт его, пока вы не создадите заезд или не очистите форму.",
         "setup_close_confirm": "Закрыть настройку",
         "chain_stopped": "Остановлена",
-        "open_tile_hint": "открыть в фотофинише"
+        "open_tile_hint": "открыть в фотофинише",
+        "track_load_failed_detail": "Не удалось загрузить этот заезд: {message}",
+        "roster_load_failed_detail": "Не удалось загрузить заезды: {message}"
       },
       "decide_locked_decided": "Решено: победил {key}.",
       "decide_locked_shortlisted": "В шорт-листе: победителя объявят в раунде доработки.",

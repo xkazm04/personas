@@ -15109,7 +15109,6 @@
         "subtitle_ready": "{count} připraveno k posouzení",
         "track_empty_body": "Vyberte závod ze seznamu, nebo spusťte nový.",
         "track_empty_title": "Trať je volná",
-        "track_load_failed": "Tento závod se nepodařilo načíst.",
         "variant_key": "Varianta {key}",
         "variants_label": "Varianty",
         "winner": "Vítěz",
@@ -15117,7 +15116,9 @@
         "setup_close_body": "Zadané údaje zůstanou: Nový závod je vrátí, dokud závod nevytvoříte nebo formulář nevymažete.",
         "setup_close_confirm": "Zavřít nastavení",
         "chain_stopped": "Zastaveno",
-        "open_tile_hint": "otevřít v cílové fotografii"
+        "open_tile_hint": "otevřít v cílové fotografii",
+        "track_load_failed_detail": "Tento závod se nepodařilo načíst: {message}",
+        "roster_load_failed_detail": "Závody se nepodařilo načíst: {message}"
       },
       "decide_locked_decided": "Rozhodnuto: vyhrála varianta {key}.",
       "decide_locked_shortlisted": "Na užším výběru: vítěz se vyhlásí v kole zpřesnění.",

@@ -4315,7 +4315,6 @@
       "subtitle_ready": "{count} siap ditinjau",
       "track_empty_body": "Pilih balapan dari daftar, atau mulai yang baru.",
       "track_empty_title": "Trek masih kosong",
-      "track_load_failed": "Tidak dapat memuat balapan ini.",
       "variant_key": "Varian {key}",
       "variants_label": "Varian",
       "winner": "Pemenang",
@@ -4323,7 +4322,9 @@
       "setup_close_body": "Isian Anda disimpan: Balapan baru memulihkannya sampai Anda membuat balapan atau mengosongkan formulir.",
       "setup_close_confirm": "Tutup pengaturan",
       "chain_stopped": "Berhenti",
-      "open_tile_hint": "buka di foto finis"
+      "open_tile_hint": "buka di foto finis",
+      "track_load_failed_detail": "Tidak dapat memuat balapan ini: {message}",
+      "roster_load_failed_detail": "Tidak dapat memuat daftar balapan: {message}"
     },
     "decide_locked_decided": "Sudah diputuskan: {key} menang.",
     "decide_locked_shortlisted": "Masuk daftar pendek: pemenang diumumkan di babak penyempurnaan.",

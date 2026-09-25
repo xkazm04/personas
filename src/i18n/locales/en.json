@@ -19128,7 +19128,6 @@
         "winner": "Winner",
         "track_empty_title": "The track is clear",
         "track_empty_body": "Pick a race from the list, or start a new one.",
-        "track_load_failed": "Could not load this race.",
         "lanes_label": "Lanes",
         "stewards_label": "Stewards (judges)",
         "lane_letter": "Lane {letter}",
@@ -19199,7 +19198,9 @@
         "setup_close_body": "Your input is kept: New race brings it back until you create the race or clear the form.",
         "setup_close_confirm": "Close the setup",
         "chain_stopped": "Stopped",
-        "open_tile_hint": "open in the photo finish"
+        "open_tile_hint": "open in the photo finish",
+        "track_load_failed_detail": "Could not load this race: {message}",
+        "roster_load_failed_detail": "Could not load the races: {message}"
       },
       "decide_locked_decided": "Decided: {key} won.",
       "decide_locked_shortlisted": "Shortlisted: the winner is declared in the refine round.",

@@ -4315,7 +4315,6 @@
       "subtitle_ready": "{count} 项待审核",
       "track_empty_body": "从列表中选择一场比赛，或开始一场新比赛。",
       "track_empty_title": "赛道空闲",
-      "track_load_failed": "无法加载此比赛。",
       "variant_key": "变体 {key}",
       "variants_label": "变体",
       "winner": "获胜者",
@@ -4323,7 +4322,9 @@
       "setup_close_body": "你的输入会保留：在创建比赛或清空表单之前，“新建比赛”都会恢复它。",
       "setup_close_confirm": "关闭设置",
       "chain_stopped": "已停止",
-      "open_tile_hint": "在终点回放中打开"
+      "open_tile_hint": "在终点回放中打开",
+      "track_load_failed_detail": "无法加载此比赛：{message}",
+      "roster_load_failed_detail": "无法加载比赛列表：{message}"
     },
     "decide_locked_decided": "已决定：{key} 胜出。",
     "decide_locked_shortlisted": "已入围：胜者将在精炼轮中宣布。",

@@ -4315,7 +4315,6 @@
       "subtitle_ready": "{count} listos para revisión",
       "track_empty_body": "Elige una carrera de la lista o inicia una nueva.",
       "track_empty_title": "La pista está despejada",
-      "track_load_failed": "No se pudo cargar esta carrera.",
       "variant_key": "Variante {key}",
       "variants_label": "Variantes",
       "winner": "Ganador",
@@ -4323,7 +4322,9 @@
       "setup_close_body": "Lo que escribiste se conserva: Nueva carrera lo recupera hasta que crees la carrera o vacíes el formulario.",
       "setup_close_confirm": "Cerrar la configuración",
       "chain_stopped": "Detenida",
-      "open_tile_hint": "abrir en la foto de llegada"
+      "open_tile_hint": "abrir en la foto de llegada",
+      "track_load_failed_detail": "No se pudo cargar esta carrera: {message}",
+      "roster_load_failed_detail": "No se pudieron cargar las carreras: {message}"
     },
     "decide_locked_decided": "Decidido: ganó {key}.",
     "decide_locked_shortlisted": "En la preselección: el ganador se declara en la ronda de refinamiento.",

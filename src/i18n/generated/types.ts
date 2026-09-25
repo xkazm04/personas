@@ -19134,7 +19134,6 @@ export type Translations = {
         winner: string;
         track_empty_title: string;
         track_empty_body: string;
-        track_load_failed: string;
         lanes_label: string;
         stewards_label: string;
         lane_letter: string;
@@ -19206,6 +19205,8 @@ export type Translations = {
         setup_close_confirm: string;
         chain_stopped: string;
         open_tile_hint: string;
+        track_load_failed_detail: string;
+        roster_load_failed_detail: string;
       };
       decide_locked_decided: string;
       decide_locked_shortlisted: string;

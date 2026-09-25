@@ -15109,7 +15109,6 @@
         "subtitle_ready": "{count} bereit zur Überprüfung",
         "track_empty_body": "Wähle ein Rennen aus der Liste oder starte ein neues.",
         "track_empty_title": "Die Strecke ist frei",
-        "track_load_failed": "Dieses Rennen konnte nicht geladen werden.",
         "variant_key": "Variante {key}",
         "variants_label": "Varianten",
         "winner": "Sieger",
@@ -15117,7 +15116,9 @@
         "setup_close_body": "Deine Eingaben bleiben erhalten: Neues Rennen holt sie zurück, bis du das Rennen anlegst oder das Formular leerst.",
         "setup_close_confirm": "Einrichtung schließen",
         "chain_stopped": "Angehalten",
-        "open_tile_hint": "im Fotofinish öffnen"
+        "open_tile_hint": "im Fotofinish öffnen",
+        "track_load_failed_detail": "Dieses Rennen konnte nicht geladen werden: {message}",
+        "roster_load_failed_detail": "Die Rennen konnten nicht geladen werden: {message}"
       },
       "decide_locked_decided": "Entschieden: {key} hat gewonnen.",
       "decide_locked_shortlisted": "In der engeren Auswahl: Der Sieger wird in der Verfeinerungsrunde gekürt.",

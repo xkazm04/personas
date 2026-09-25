@@ -15109,7 +15109,6 @@
         "subtitle_ready": "{count} sẵn sàng để đánh giá",
         "track_empty_body": "Chọn một cuộc đua từ danh sách, hoặc bắt đầu một cuộc đua mới.",
         "track_empty_title": "Đường đua đang trống",
-        "track_load_failed": "Không thể tải cuộc đua này.",
         "variant_key": "Biến thể {key}",
         "variants_label": "Các biến thể",
         "winner": "Người chiến thắng",
@@ -15117,7 +15116,9 @@
         "setup_close_body": "Nội dung đã nhập được giữ lại: Cuộc đua mới sẽ khôi phục cho đến khi bạn tạo cuộc đua hoặc xóa biểu mẫu.",
         "setup_close_confirm": "Đóng phần thiết lập",
         "chain_stopped": "Đã dừng",
-        "open_tile_hint": "mở trong ảnh chụp về đích"
+        "open_tile_hint": "mở trong ảnh chụp về đích",
+        "track_load_failed_detail": "Không thể tải cuộc đua này: {message}",
+        "roster_load_failed_detail": "Không thể tải các cuộc đua: {message}"
       },
       "decide_locked_decided": "Đã quyết định: {key} thắng.",
       "decide_locked_shortlisted": "Đã vào danh sách rút gọn: người thắng được công bố ở vòng tinh chỉnh.",

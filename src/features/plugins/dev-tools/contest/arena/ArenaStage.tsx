@@ -24,7 +24,7 @@ export interface ArenaStageProps {
 }
 
 export function ArenaStage({ trackKey, reviewKey, onReviewKey, onNewRace }: ArenaStageProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const a = t.plugins.contest.arena;
   const { detail, isLoading, error, refresh } = useContest(trackKey?.projectId ?? null, trackKey?.contestId ?? null);
   const draft = useReviewDraft(detail);
@@ -39,7 +39,7 @@ export function ArenaStage({ trackKey, reviewKey, onReviewKey, onNewRace }: Aren
       return (
         <ErrorBanner
           variant="inline"
-          message={`${a.track_load_failed} ${resolveErrorTranslated(t, extractMessage(error)).message}`}
+          message={tx(a.track_load_failed_detail, { message: resolveErrorTranslated(t, extractMessage(error)).message })}
           onRetry={() => void refresh()}
         />
       );
