@@ -15,6 +15,14 @@ export interface DialogKeyboardOptions {
   priority?: number;
   /** Set false for a surface that must not close on Escape. */
   closeOnEscape?: boolean;
+  /**
+   * Where focus lands on open. Omitted: the first focusable in the container
+   * (BaseModal's rule). A ref: the first focusable inside THAT region, and when
+   * it holds none, the container itself (give it `tabIndex={-1}`). Use it when
+   * the container's chrome puts a dismiss control first in DOM order, so Enter
+   * or Space right after opening cannot close the surface.
+   */
+  initialFocus?: RefObject<HTMLElement | null>;
 }
 
 /**
@@ -33,7 +41,7 @@ export function useDialogKeyboard(
   onClose: () => void,
   options: DialogKeyboardOptions = {},
 ): void {
-  const { enabled = true, priority = 0, closeOnEscape = true } = options;
+  const { enabled = true, priority = 0, closeOnEscape = true, initialFocus } = options;
   const triggerRef = useRef<HTMLElement | null>(null);
 
   // Remember the summoner and move focus inside. The rAF lets the surface (and
@@ -45,7 +53,12 @@ export function useDialogKeyboard(
       const container = containerRef.current;
       if (!container) return;
       if (container.contains(document.activeElement)) return;
-      container.querySelector<HTMLElement>(DIALOG_FOCUSABLE_SELECTOR)?.focus();
+      if (!initialFocus) {
+        container.querySelector<HTMLElement>(DIALOG_FOCUSABLE_SELECTOR)?.focus();
+        return;
+      }
+      const target = initialFocus.current?.querySelector<HTMLElement>(DIALOG_FOCUSABLE_SELECTOR);
+      (target ?? container).focus();
     });
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
