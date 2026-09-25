@@ -2,6 +2,9 @@
  * THE DOCKET - one drawer, three states (shut, a lane, the full surface), and
  * three visibly different FORMS for the three states a decision can be in.
  *
+ * It wears `cb-drawer`, the box it shares with the operator's queue beside it.
+ * Only one of the two is ever open: `useBlueprintState` keeps ONE drawer slot.
+ *
  * It ships EMPTY, and that is the point. `curator_decisions_list` does not
  * exist and nothing writes a decision yet, so there are no rows to show. The
  * page's own doctrine is that an absent thing must not be drawn as a zero, and
@@ -58,7 +61,7 @@ export function Docket(props: DocketProps) {
 
   return (
     <section
-      className={`cb-docket${state.open ? ' cb-open' : ''}${state.full ? ' cb-full' : ''}`}
+      className={`cb-drawer cb-docket${state.open ? ' cb-open' : ''}${state.full ? ' cb-full' : ''}`}
       data-role="cb-docket"
       aria-label={w.docket_title}
       aria-hidden={!state.open}

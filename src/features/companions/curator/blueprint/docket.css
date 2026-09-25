@@ -1,4 +1,11 @@
 /* ============================================================================
+   THE TWO DRAWERS, and the docket's three decision forms.
+
+   `.cb-drawer` is the box BOTH right-hand surfaces wear - the docket and the
+   operator's queue - so the two cannot drift into two dialects of the same
+   thing. Only one is ever open (`useBlueprintState` keeps one drawer slot);
+   only the docket has a full-surface mode.
+
    THE DOCKET - the grafted three-state drawer (shut / a lane / the full
    surface) and the THREE VISIBLY DIFFERENT FORMS a decision can be in:
    a raised card with armed keys (waiting for a person), a receipt with a
@@ -10,7 +17,7 @@
    none of the three survives being approximated by the nearest token.
    ========================================================================== */
 
-.cb-root .cb-docket {
+.cb-root .cb-drawer {
   position: absolute;
   top: 44px;
   right: 0;
@@ -28,7 +35,7 @@
     transform var(--duration-normal) cubic-bezier(0.22, 0.72, 0.16, 1),
     width var(--duration-normal) cubic-bezier(0.22, 0.72, 0.16, 1);
 }
-.cb-root .cb-docket.cb-open {
+.cb-root .cb-drawer.cb-open {
   transform: none;
   visibility: visible;
 }
@@ -59,7 +66,8 @@
 .cb-root .cb-docket.cb-full .cb-dk-body {
   grid-template-columns: minmax(340px, 420px) minmax(0, 1fr);
 }
-.cb-root .cb-dk-list {
+.cb-root .cb-dk-list,
+.cb-root .cb-q-body {
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
@@ -88,9 +96,71 @@
    imported last, because a same-specificity rule in the earlier file would
    lose on order rather than on the cascade. */
 @media (min-width: 1400px) {
-  .cb-root .cb-docket {
+  .cb-root .cb-drawer {
     width: 760px;
   }
+}
+
+/* The drawers hang off the top bar, which the short-viewport block shortens
+   from 44px to 38px. Anchoring them to the same number leaves a 6px band of
+   ledger showing above a surface that is meant to cover it. */
+@media (max-height: 820px) {
+  .cb-root .cb-drawer {
+    top: 38px;
+  }
+}
+
+/* ---- the operator's queue ------------------------------------------------
+   One row per request, in the ledger's own row rhythm - `RequestRow` is the
+   same component the console drew, unchanged. What changes is the room: inside
+   the console the lane wore a 148px cap (two rows on a short viewport) because
+   it was competing with the ledger for the page. A drawer is not competing
+   with anything, so the cap goes and the drawer's own body scrolls. ------- */
+.cb-root .cb-queue .cb-lane-rows {
+  max-height: none;
+  overflow: visible;
+}
+.cb-root .cb-queue .cb-lane-head {
+  padding-bottom: var(--space-sm);
+}
+
+/* Her, in the drawer that is hers, at the one moment it has room: an EMPTY
+   lane, or a lane nobody could read. The same luminance mask as the top bar's
+   mark (blueprint.css, "her mark") - the asset gives the shape, `--primary`
+   gives the colour, so every theme paints her in its own.
+
+   It withdraws the moment the lane draws a row. A watermark that survives
+   under content has stopped being a watermark and started competing with it,
+   and the rows here are a queue somebody is reading to decide what to
+   withdraw. */
+.cb-root .cb-q-body {
+  position: relative;
+  /* The drawer is a flex column and the head is `flex: none`; without a body
+     that fills what is left, anything laid out against its bottom lands under
+     the first line of text. */
+  flex: 1;
+}
+.cb-root .cb-cur-figure {
+  position: absolute;
+  right: var(--space-lg);
+  bottom: var(--space-xl);
+  width: min(280px, 52%);
+  aspect-ratio: 2 / 3;
+  background: var(--primary);
+  opacity: 0.17;
+  pointer-events: none;
+  -webkit-mask-image: url('/companions/curator/portrait.webp');
+  mask-image: url('/companions/curator/portrait.webp');
+  mask-mode: luminance;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: center bottom;
+  mask-position: center bottom;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+.cb-root .cb-lane[data-state='filled'] + .cb-cur-figure {
+  display: none;
 }
 
 /* form 1 - waiting for a person: a raised card with armed keys */

@@ -36,6 +36,16 @@
  * The docket ships EMPTY on purpose. There is no `curator_decisions_list` and
  * nothing writes a decision yet, so there is nothing to read; the drawer says
  * so rather than drawing a zero it did not measure.
+ *
+ * ## No tab strip
+ *
+ * A prototype round put three variants behind a switcher here. The operator
+ * judged none of them an improvement, so this file is the page again: ONE
+ * component, whose first statement is `useTranslation()`. The scaffold before
+ * the switcher returned a variant BEFORE that call ran - a rules-of-hooks
+ * violation that only ever worked because the choice could not change while
+ * mounted - and the shape below cannot reintroduce it, because there is no
+ * branch above the hooks to reintroduce it from.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -45,8 +55,8 @@ import type { CuratorPlan } from '@/lib/bindings/CuratorPlan';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 import { Blueprint } from './Blueprint';
-import { initialV2Key, rememberV2Key, V2Tabs, V2Variant, type V2Key } from './v2/V2Switcher';
 import { CuratorConsole } from './console/CuratorConsole';
+import { RequestLane } from './console/RequestLane';
 import { useCuratorLoop } from './console/useCuratorLoop';
 import type { BlueprintPhase } from './ledger/LedgerEmpty';
 import { buildModel, type BlueprintSources } from './model/buildModel';
@@ -62,7 +72,7 @@ import './blueprint.css';
  */
 let warm: { plan: CuratorPlan | null; sources: BlueprintSources } | null = null;
 
-function ShippedBlueprint() {
+export default function BlueprintPage() {
   const { t, tx } = useTranslation();
   const [plan, setPlan] = useState<CuratorPlan | null>(warm?.plan ?? null);
   const [sources, setSources] = useState<BlueprintSources>(warm?.sources ?? {});
@@ -155,34 +165,7 @@ function ShippedBlueprint() {
           onRefresh={refresh}
         />
       }
+      queue={<RequestLane requests={loop.requests} onCancel={loop.cancel} />}
     />
-  );
-}
-
-/**
- * The page, with the prototype round's tab strip above it.
- *
- * The strip is scaffolding and goes when the operator fuses a variant. It sits
- * HERE rather than inside the shipped page so that switching mounts and
- * unmounts whole trees - each variant keeps its own state, and none of them can
- * reach the shipped page's hooks. The earlier scaffold returned a variant
- * before `useTranslation()` ran, which is a rules-of-hooks violation that
- * happened to work only because the choice could not change while mounted.
- */
-export default function BlueprintPage() {
-  const [variant, setVariant] = useState<V2Key>(initialV2Key);
-
-  const choose = useCallback((next: V2Key) => {
-    setVariant(next);
-    rememberV2Key(next);
-  }, []);
-
-  return (
-    <div className="flex h-full min-h-0 flex-col">
-      <V2Tabs active={variant} onChange={choose} />
-      <div className="min-h-0 flex-1">
-        {variant === 'shipped' ? <ShippedBlueprint /> : <V2Variant which={variant} />}
-      </div>
-    </div>
   );
 }

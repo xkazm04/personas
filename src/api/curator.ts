@@ -60,8 +60,11 @@ export async function curatorRequestsList(): Promise<CuratorRequest[]> {
  *
  * `argument` is `null` only for a skill that DOCUMENTS running bare. A skill
  * whose invocation is undocumented (`runsBare === null`) is not bare-runnable -
- * it is unknown, and the composer makes the operator state the argument rather
- * than letting the UI guess one. See `blueprint/console/skillInvocation.ts`.
+ * it is unknown, and whatever composes a request must make the operator state
+ * the argument rather than letting the UI guess a command the skill's own file
+ * never promised. The Blueprint's composer, which held that rule, moved out to
+ * the app-wide console; the rule travels with it and lives here in the
+ * meantime.
  */
 export async function curatorRequestCreate(input: {
   skill: string;

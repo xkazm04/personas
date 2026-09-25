@@ -1,51 +1,11 @@
 /**
- * The skills the registry actually reads off disk, as the instrument reported
- * them on 2026-09-24 - including the one that documents no invocation at all,
- * which is why `runsBare` is nullable in the first place.
+ * The loop's runtime, as the instrument reported it on 2026-09-24.
+ *
+ * The three skill fixtures that stood beside it went with the request
+ * composer, which is moving to the app-wide console; nothing in this console
+ * reads the skill catalog any more.
  */
 import type { CuratorRuntime } from '@/lib/bindings/CuratorRuntime';
-import type { CuratorSkill } from '@/lib/bindings/CuratorSkill';
-
-export function skill(over: Partial<CuratorSkill> = {}): CuratorSkill {
-  return {
-    name: 'intake',
-    lane: 'native',
-    path: '.claude/skills/intake/SKILL.md',
-    title: 'Intake',
-    description: 'Take a resource into the corpus.',
-    version: '1.0.0',
-    invocationDocumented: true,
-    runsBare: false,
-    argumentHint: '/intake <url or path>',
-    // The lessons lane, as the instrument read it the same day. `intake`'s
-    // file is the registry's largest.
-    lessonsPath: '.claude/skills/intake/LESSONS.md',
-    lessonsBytes: 917087,
-    lessonsModifiedAt: '2026-09-25T00:57:00Z',
-    lessonsLatestEntry: '1.1.0 - 2026-08-30 - operator-control-plane',
-    lessonsLatestAt: '2026-08-30',
-    ...over,
-  };
-}
-
-/** `hygiene` - documents running bare. */
-export const BARE = skill({
-  name: 'hygiene',
-  path: '.claude/skills/hygiene/SKILL.md',
-  runsBare: true,
-  argumentHint: null,
-});
-/** `intake` - documents an argument. */
-export const TAKES_ARGUMENT = skill();
-/** `forge` - documents NO invocation, so bare-runnability is unknown. */
-export const UNKNOWN = skill({
-  name: 'forge',
-  path: '.claude/skills/forge/SKILL.md',
-  lane: 'shared',
-  invocationDocumented: false,
-  runsBare: null,
-  argumentHint: null,
-});
 
 export function runtime(over: Partial<CuratorRuntime> = {}): CuratorRuntime {
   return {

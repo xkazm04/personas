@@ -24017,7 +24017,8 @@
         "open": "展开聚焦的行",
         "sheet": "本表",
         "sort": "按某一通道对台账排序",
-        "undo": "撤销上一次回答"
+        "undo": "撤销上一次回答",
+        "queue": "你的队列，位于待批清单旁"
       },
       "kind": {
         "coverage_delta": "覆盖率增量",
@@ -24150,7 +24151,6 @@
           "sleep": "她的对账休眠"
         },
         "lane_count": "已提交 {n} 项,仍排队 {queued} 项",
-        "lane_empty": "尚未提交任何内容。在下方选择一个注册技能,它将排在她工作的最前面。",
         "lane_note": "她会先处理完这些,再执行自己的计划",
         "lane_tag": {
           "native": "原生",
@@ -24196,7 +24196,8 @@
         "skills_unread": "技能目录无法读取,因此没有可供选择的内容。这不是空注册表。",
         "terminals": "终端",
         "terminals_tip": "她最多可同时持有 {cap} 个终端中的 {running} 个。",
-        "used_of": "{used} / {cap}"
+        "used_of": "{used} / {cap}",
+        "lane_empty": "尚未提交任何内容。你提交的任何内容都会排在她工作的最前面，先于她自己制定的计划。"
       },
       "band_quiet_unmeasured_tip": "安静尾部是指在每一个可测量的通道上都不得分的主题。此处尚未进行任何测量，因此这类主题共有多少是未知的，这与“没有”并不相同。",
       "band_unlisted_unmeasured": "计划之外的主题",
@@ -24211,7 +24212,10 @@
       "verdict_bundles_unmeasured": "分布在无人计数的合集中",
       "verdict_maps_unmeasured": "尚未运行过映射检查",
       "verdict_pairs_unmeasured": "尚未读取任何一对上下文与主题配对，因此没有可报告的占比。",
-      "verdict_pairs_unmeasured_tip": "这是本页唯一的一个小数字：曾被评判过的上下文与主题配对所占的比例。运行仪器后它才会出现。在此之前，它是未知的，而未知的占比并不等于 0%。"
+      "verdict_pairs_unmeasured_tip": "这是本页唯一的一个小数字：曾被评判过的上下文与主题配对所占的比例。运行仪器后它才会出现。在此之前，它是未知的，而未知的占比并不等于 0%。",
+      "projection_note": "推算结果，并非实时数据",
+      "scan_tip": "取自运行 {run}，对应 registry 的 HEAD {sha}。该计划是该提交时 registry 的推算结果，一旦 HEAD 发生变化即会过时。",
+      "scan_tip_no_head": "取自运行 {run}。git 无法确定 registry 的 HEAD。该计划是某次提交时 registry 的推算结果，一旦 HEAD 发生变化即会过时。"
     },
     "process": {
       "cohort_share": "所有仓库 {pct}",

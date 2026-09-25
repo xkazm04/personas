@@ -23896,6 +23896,9 @@ export type Translations = {
       head_projection: string;
       head_projection_unknown: string;
       head_projection_tip: string;
+      projection_note: string;
+      scan_tip: string;
+      scan_tip_no_head: string;
       meta_unrun: string;
       meta_unrun_tip: string;
       find_placeholder: string;
@@ -24131,6 +24134,7 @@ export type Translations = {
         sort: string;
         clear: string;
         docket: string;
+        queue: string;
         full: string;
         answer: string;
         undo: string;

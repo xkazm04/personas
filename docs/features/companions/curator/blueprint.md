@@ -123,7 +123,42 @@ distinction the page draws, over a wire. **Both exist only under
 `--features test-automation`** (`npm run tauri:dev:test`); they are not in a
 shipped build. Contract and timeouts: `src-tauri/src/test_automation.rs`.
 
-## The docket
+## The two drawers
+
+The page has ONE right-hand surface and two things that can hold it. They wear
+the same box, the same head, the same open/close grammar and the same Escape,
+and only one is ever open: the state behind them is a single drawer slot, not a
+boolean each, so pressing the second key swaps rather than stacks.
+
+### Your queue
+
+`Q` opens the operator's own request lane - every request you filed, oldest
+first, because that is the order she drains them in and a reader scanning top to
+bottom is reading the order the work will happen in. One row per request: its
+state, the skill and what it was given, whatever it said when it landed or
+failed, when it settled, and **Withdraw** on a `queued` row, which is the only
+state she has not picked up. A row that has not started has no start stamp and
+no outcome, and those cells stay empty rather than drawing a dash a reader could
+take for a measured nothing.
+
+Three empty readings, three different facts: the door did not answer (nobody
+knows what is queued), the door answered and nothing is filed, or a list.
+
+**The composer that filed into it is gone from this page** (2026-09-25). The
+skill picker, its argument field and its note field are moving to the app-wide
+console rather than disappearing; a second place to type a skill invocation
+would be a second place for the two to drift. The lane still reads and still
+withdraws, and the rule the composer held travels with it: a skill whose file
+documents no invocation at all is not bare-runnable, it is unknown, and whatever
+composes a request must make the operator state the argument rather than guess a
+command the skill's file never promised.
+
+The button beside the docket's carries **no count pill**, and that is the page's
+own rule about absence again: the docket's waiting figure is measured from
+entries the page already holds, while the queue lives behind a door that may not
+have answered. The count lives inside the lane, which can say which it is.
+
+### The docket
 
 `D` opens a drawer with three states (shut, a lane, the full surface) carrying
 the decisions Curator brings to a person. Three states a decision can be in get
@@ -149,10 +184,43 @@ package that raises the first decision fills the contract in
 | `1` - `9` | sort the ledger by one channel |
 | `0` | clear the sort |
 | `D` | the docket |
+| `Q` | your queue, beside the docket |
 | `F` | docket: full surface |
 | `1` `2` `3` | docket: answer the selected card |
 | `U` | undo the last answer |
 | `?` | the key sheet, and the three ways a cell can be empty |
+
+## The header
+
+Under her name the bar carries **when the scan was taken** and that what you are
+looking at is **a projection, not live truth**. It carried two more things until
+2026-09-25 - the plan run's UUID and the registry HEAD sha - and neither is
+something anybody reads off a header: one is a primary key, the other forty hex
+characters, and between them they took the width the two facts above were
+competing for. Both are still reachable, in the scan clock's own tip, so a
+reader chasing a run or a commit has somewhere to go without being made to step
+over it first. With no projection at all the row carries one true sentence and
+no clock.
+
+## Whose page this is
+
+`public/companions/curator/portrait.webp` is 1024x1536 of glow on pure black -
+an asset with two bad answers on a themed surface, since screening it onto a
+light canvas erases it and multiplying it onto a dark one is a black rectangle.
+So it is never drawn as an image. It is used as a **luminance mask** - her glow
+becomes the alpha channel - filled with `--primary`, which the style doctrine
+calls identity rather than decoration, so every theme paints her in its own hue
+and the asset contributes shape only.
+
+Two placements, both deliberately small. A 22px **mark** beside the page's name,
+always, because that is where a page says whose it is. A full **figure** in the
+queue drawer at 17% opacity, bottom-right, drawn ONLY when the lane is empty or
+unread - the stylesheet withdraws it the moment a row appears, because a
+watermark that survives under content has stopped being a watermark.
+
+A full-page background was considered and rejected: this page's UNKNOWN ink is a
+see-through hatched box whose meaning IS transparency, so anything textured
+behind it shows through the one mark whose job is to read as "nobody looked".
 
 ## What it reads, and what it does not
 

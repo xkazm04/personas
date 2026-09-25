@@ -256,7 +256,8 @@
       "open": "abrir la fila enfocada",
       "sheet": "esta hoja",
       "sort": "ordenar el libro por un canal",
-      "undo": "deshacer la última respuesta"
+      "undo": "deshacer la última respuesta",
+      "queue": "tu cola, junto al expediente"
     },
     "kind": {
       "coverage_delta": "delta de cobertura",
@@ -389,7 +390,6 @@
         "sleep": "su sueño de reconciliación"
       },
       "lane_count": "{n} presentadas, {queued} aún en cola",
-      "lane_empty": "Nada presentado todavía. Elige una skill del registro abajo y pasará al frente de su trabajo.",
       "lane_note": "vacía estas antes de su propio plan",
       "lane_tag": {
         "native": "nativa",
@@ -435,7 +435,8 @@
       "skills_unread": "El catálogo de skills no pudo leerse, así que no hay nada entre lo que elegir. Eso no es un registro vacío.",
       "terminals": "terminales",
       "terminals_tip": "{running} de las {cap} terminales que puede mantener a la vez.",
-      "used_of": "{used} de {cap}"
+      "used_of": "{used} de {cap}",
+      "lane_empty": "Aún no se ha presentado nada. Todo lo que presentes se coloca al frente de su trabajo, antes de su propio plan."
     },
     "band_quiet_unmeasured_tip": "La cola silenciosa son los temas que no puntúan nada en ningún canal que se pudiera medir. Aquí no se ha medido nada, así que cuántos son es desconocido, lo cual no es lo mismo que ninguno.",
     "band_unlisted_unmeasured": "temas fuera del plan",
@@ -450,7 +451,10 @@
     "verdict_bundles_unmeasured": "en paquetes que nadie ha contado",
     "verdict_maps_unmeasured": "no se ha ejecutado ninguna comprobación de mapa",
     "verdict_pairs_unmeasured": "Todavía no se ha leído ningún par de contexto y tema, así que no hay ninguna proporción que informar.",
-    "verdict_pairs_unmeasured_tip": "Este es el único número pequeño de la página: la proporción de pares de contexto y tema que alguien ha juzgado alguna vez. Ejecuta el instrumento y aparecerá. Hasta entonces es desconocido, y una proporción desconocida no es 0%."
+    "verdict_pairs_unmeasured_tip": "Este es el único número pequeño de la página: la proporción de pares de contexto y tema que alguien ha juzgado alguna vez. Ejecuta el instrumento y aparecerá. Hasta entonces es desconocido, y una proporción desconocida no es 0%.",
+    "projection_note": "una proyección, no la verdad en vivo",
+    "scan_tip": "Tomado de la ejecución {run}, sobre HEAD del registro {sha}. El plan es una proyección del registro en ese commit, y queda desactualizado en cuanto HEAD se mueve.",
+    "scan_tip_no_head": "Tomado de la ejecución {run}. Git no pudo indicar el HEAD del registro. El plan es una proyección del registro en un commit, y queda desactualizado en cuanto HEAD se mueve."
   },
   "process": {
     "cohort_share": "Todos los repositorios {pct}",

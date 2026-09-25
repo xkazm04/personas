@@ -256,7 +256,8 @@
       "open": "mở hàng đang được chọn",
       "sheet": "bảng này",
       "sort": "sắp xếp sổ cái theo một kênh",
-      "undo": "hoàn tác câu trả lời gần nhất"
+      "undo": "hoàn tác câu trả lời gần nhất",
+      "queue": "hàng đợi của bạn, bên cạnh sổ quyết định"
     },
     "kind": {
       "coverage_delta": "chênh lệch độ phủ",
@@ -389,7 +390,6 @@
         "sleep": "giấc ngủ đối chiếu của cô ấy"
       },
       "lane_count": "{n} đã nộp, {queued} vẫn đang chờ",
-      "lane_empty": "Chưa có gì được nộp. Chọn một kỹ năng registry bên dưới và nó sẽ được đưa lên đầu công việc của cô ấy.",
       "lane_note": "cô ấy xử lý hết những mục này trước kế hoạch của riêng mình",
       "lane_tag": {
         "native": "gốc",
@@ -435,7 +435,8 @@
       "skills_unread": "Không thể đọc danh mục kỹ năng, nên không có gì để chọn. Đó không phải là một registry trống.",
       "terminals": "Terminal",
       "terminals_tip": "{running} trong số {cap} terminal cô ấy có thể giữ cùng lúc.",
-      "used_of": "{used} trên {cap}"
+      "used_of": "{used} trên {cap}",
+      "lane_empty": "Chưa có yêu cầu nào được gửi. Bất cứ điều gì bạn gửi sẽ được đặt lên đầu công việc của cô ấy, trước cả kế hoạch riêng của cô ấy."
     },
     "band_quiet_unmeasured_tip": "Phần đuôi im lặng là các chủ đề không đạt điểm nào trên mọi kênh có thể đo lường. Ở đây chưa có gì được đo, nên có bao nhiêu chủ đề như vậy vẫn không rõ, và điều đó không giống với không có chủ đề nào.",
     "band_unlisted_unmeasured": "chủ đề nằm ngoài kế hoạch",
@@ -450,7 +451,10 @@
     "verdict_bundles_unmeasured": "trong các gói chưa ai đếm",
     "verdict_maps_unmeasured": "chưa có lượt kiểm tra bản đồ nào chạy",
     "verdict_pairs_unmeasured": "Chưa có cặp ngữ cảnh và chủ đề nào được đọc, nên chưa có tỷ lệ nào để báo cáo.",
-    "verdict_pairs_unmeasured_tip": "Đây là con số nhỏ duy nhất của trang: tỷ lệ các cặp ngữ cảnh và chủ đề mà bất kỳ ai từng phán quyết. Chạy công cụ và nó sẽ xuất hiện. Cho đến lúc đó nó không rõ, và một tỷ lệ không rõ không phải là 0%."
+    "verdict_pairs_unmeasured_tip": "Đây là con số nhỏ duy nhất của trang: tỷ lệ các cặp ngữ cảnh và chủ đề mà bất kỳ ai từng phán quyết. Chạy công cụ và nó sẽ xuất hiện. Cho đến lúc đó nó không rõ, và một tỷ lệ không rõ không phải là 0%.",
+    "projection_note": "một dự đoán, không phải dữ liệu thực",
+    "scan_tip": "Lấy từ lần chạy {run}, dựa trên HEAD {sha} của registry. Kế hoạch là một dự đoán về registry tại commit đó, và sẽ lỗi thời ngay khi HEAD thay đổi.",
+    "scan_tip_no_head": "Lấy từ lần chạy {run}. Git không thể xác định HEAD của registry. Kế hoạch là một dự đoán về registry tại một commit, và sẽ lỗi thời ngay khi HEAD thay đổi."
   },
   "process": {
     "cohort_share": "Tất cả kho lưu trữ {pct}",

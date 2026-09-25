@@ -256,7 +256,8 @@
       "open": "otevřít zaměřený řádek",
       "sheet": "tento list",
       "sort": "seřadit knihu podle jednoho kanálu",
-      "undo": "vrátit zpět poslední odpověď"
+      "undo": "vrátit zpět poslední odpověď",
+      "queue": "vaše fronta, vedle evidence"
     },
     "kind": {
       "coverage_delta": "delta pokrytí",
@@ -389,7 +390,6 @@
         "sleep": "její sesouhlasovací spánek"
       },
       "lane_count": "{n} zařazeno, {queued} stále ve frontě",
-      "lane_empty": "Zatím nic zařazeno. Vyberte dole dovednost z registru a půjde na začátek její práce.",
       "lane_note": "tyto vyprazdňuje dřív než svůj vlastní plán",
       "lane_tag": {
         "native": "nativní",
@@ -435,7 +435,8 @@
       "skills_unread": "Katalog dovedností se nepodařilo načíst, takže není z čeho vybírat. To není prázdný registr.",
       "terminals": "terminály",
       "terminals_tip": "{running} z {cap} terminálů, které může držet zároveň.",
-      "used_of": "{used} z {cap}"
+      "used_of": "{used} z {cap}",
+      "lane_empty": "Zatím nic nebylo zadáno. Cokoli zadáte, půjde na začátek její práce, před její vlastní plán."
     },
     "band_quiet_unmeasured_tip": "Tichý ocas jsou subjekty, které nedosahují žádného skóre v žádném kanálu, jenž šlo změřit. Zde nebylo změřeno nic, takže kolik jich vlastně je, je neznámé, což není totéž jako žádný.",
     "band_unlisted_unmeasured": "subjekty mimo plán",
@@ -450,7 +451,10 @@
     "verdict_bundles_unmeasured": "v balících, které nikdo nespočítal",
     "verdict_maps_unmeasured": "žádná kontrola mapy neproběhla",
     "verdict_pairs_unmeasured": "Zatím nebyl přečten žádný pár kontext-subjekt, takže není žádný podíl, který by šlo hlásit.",
-    "verdict_pairs_unmeasured_tip": "Toto je jediné malé číslo této stránky: podíl párů kontext-subjekt, které kdy někdo posoudil. Spusťte nástroj a objeví se. Do té doby je neznámý, a neznámý podíl není 0 %."
+    "verdict_pairs_unmeasured_tip": "Toto je jediné malé číslo této stránky: podíl párů kontext-subjekt, které kdy někdo posoudil. Spusťte nástroj a objeví se. Do té doby je neznámý, a neznámý podíl není 0 %.",
+    "projection_note": "projekce, ne živá pravda",
+    "scan_tip": "Pořízeno z běhu {run}, oproti HEAD registru {sha}. Plán je projekcí registru v daném commitu a je zastaralý, jakmile se HEAD posune.",
+    "scan_tip_no_head": "Pořízeno z běhu {run}. Git nedokázal zjistit HEAD registru. Plán je projekcí registru v jednom commitu a je zastaralý, jakmile se HEAD posune."
   },
   "process": {
     "cohort_share": "Všechna úložiště {pct}",

@@ -1,10 +1,22 @@
 /**
- * The operator's console: run the instrument, see what her loop is doing, and
- * file work into the lane she drains BEFORE her own plan.
+ * The operator's console: run the instrument, and see what her loop is doing.
  *
- * It sits above the ledger because that is the order the work happens in. The
- * ledger below is what she would do next; this is what she is doing now and
- * what you have told her to do first.
+ * ## What left, and what stayed
+ *
+ * The request COMPOSER - the skill picker, its argument field and its note
+ * field - is gone from here. An app-wide universal console is being built to
+ * take that job, and a second place to type a skill invocation would be a
+ * second place for the two to drift. The lane it filed into left too, for the
+ * queue DRAWER beside the docket, where it gets the height a queue deserves
+ * instead of a 148px scroller wedged above the ledger.
+ *
+ * The RUN control stayed, and stays deliberately. It runs her projection, not
+ * a skill - nothing in the universal console's job description covers it - and
+ * without it this page has no way to populate itself at all, which would be a
+ * regression rather than a simplification. When the universal console exists
+ * and can carry it, moving it is one line.
+ *
+ * The runtime strip stayed because it is display, not input.
  *
  * ## The eleven seconds
  *
@@ -24,8 +36,6 @@ import type { CuratorPolicy } from '@/lib/bindings/CuratorPolicy';
 
 import { useWords } from '../words';
 
-import { RequestComposer } from './RequestComposer';
-import { RequestLane } from './RequestLane';
 import { RuntimeStrip } from './RuntimeStrip';
 import type { CuratorLoop } from './useCuratorLoop';
 
@@ -80,8 +90,6 @@ export function CuratorConsole({ loop, policy, refreshing, onRefresh }: ConsoleP
         <RunInstrument refreshing={refreshing} onRefresh={onRefresh} />
         <RuntimeStrip runtime={loop.runtime} policy={policy} />
       </div>
-      <RequestLane requests={loop.requests} onCancel={loop.cancel} />
-      <RequestComposer skills={loop.skills} onFile={loop.file} />
     </section>
   );
 }
