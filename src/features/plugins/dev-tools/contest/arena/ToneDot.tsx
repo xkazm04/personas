@@ -5,7 +5,8 @@ import type { ReactNode } from 'react';
 
 import type { StatusVariant } from '@/features/shared/components/display/StatusBadge';
 
-const DOT: Record<StatusVariant, string> = {
+/** A tone's fill, shared with anything that paints the same state. */
+export const TONE_BG: Record<StatusVariant, string> = {
   success: 'bg-status-success',
   warning: 'bg-status-warning',
   error: 'bg-status-error',
@@ -19,12 +20,15 @@ export interface ToneDotProps {
   children: ReactNode;
   className?: string;
   testId?: string;
+  /** Let a long label wrap under itself instead of forcing one line. */
+  wrap?: boolean;
 }
 
-export function ToneDot({ tone, children, className = '', testId }: ToneDotProps) {
+export function ToneDot({ tone, children, className = '', testId, wrap = false }: ToneDotProps) {
+  const layout = wrap ? 'flex min-w-0 items-baseline' : 'inline-flex shrink-0 items-center';
   return (
-    <span className={`inline-flex shrink-0 items-center gap-1.5 typo-caption ${className}`} data-testid={testId}>
-      <span className={`h-1.5 w-1.5 shrink-0 rounded-pill ${DOT[tone]}`} aria-hidden />
+    <span className={`${layout} gap-1.5 typo-caption ${className}`} data-testid={testId}>
+      <span className={`h-1.5 w-1.5 shrink-0 rounded-pill ${TONE_BG[tone]}`} aria-hidden />
       {children}
     </span>
   );
