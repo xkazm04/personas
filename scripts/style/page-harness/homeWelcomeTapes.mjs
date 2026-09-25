@@ -46,7 +46,7 @@ export function homeWelcomeTapes({ RECORDED_AT, PERSONAS, EVENTS }) {
     last_used_at: ago(30), created_at: ago(60 * 24 * 40), updated_at: ago(60 * 24),
   }));
 
-  function tape(module, note, { personas = PERSONAS, runs = RUNS, runsError = false } = {}) {
+  function tape(module, note, { personas = PERSONAS, runs = RUNS, runsError = false, alerts = ALERTS, approvals = 4 } = {}) {
     return {
       version: 1, module, source: 'synthetic', recordedAt: RECORDED_AT, note,
       calls: [
@@ -58,10 +58,10 @@ export function homeWelcomeTapes({ RECORDED_AT, PERSONAS, EVENTS }) {
         { cmd: 'get_metrics_summary', response: METRICS },
         { cmd: 'list_events_in_range', response: { events: EVENTS, total: EVENTS.length, has_more: false } },
         { cmd: 'get_audit_incidents_summary', response: { open: 2, acknowledged: 0, in_progress: 1, openBySource: [['executions', 2]] } },
-        { cmd: 'list_fired_alerts', response: ALERTS },
+        { cmd: 'list_fired_alerts', response: alerts },
         { cmd: 'get_team_counts', response: TEAMS.map((t, i) => ({ team_id: t.id, member_count: 3 + i, connection_count: 2 + i })) },
         { cmd: 'companion_list_pending_approvals', response: [] },
-        { cmd: 'get_pending_review_count', response: 4 },
+        { cmd: 'get_pending_review_count', response: approvals },
         { cmd: 'list_teams', response: TEAMS },
         { cmd: 'list_credentials', response: CREDENTIALS },
       ],
@@ -72,7 +72,7 @@ export function homeWelcomeTapes({ RECORDED_AT, PERSONAS, EVENTS }) {
     builders: {
       'home/welcome': () => tape('home/welcome', 'Synthetic: returning operator; 14 runs (3 failed) since a visit 14 h ago, 2 alerts, 4 approvals; resume = the newest failure.'),
       'home/welcome/first-run': () => tape('home/welcome/first-run', 'Synthetic: fresh profile, no personas, no runs, no last-seen anchor.', { personas: [], runs: [] }),
-      'home/welcome/edit': () => tape('home/welcome/edit', 'Synthetic: the run list fails (briefing not derived); resume = the last edited agent.', { runsError: true }),
+      'home/welcome/edit': () => tape('home/welcome/edit', 'Synthetic: the run list fails and nothing else happened, so the briefing says it could not derive; resume = the last edited agent.', { runsError: true, alerts: [], approvals: 0 }),
     },
   };
 }
