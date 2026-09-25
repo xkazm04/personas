@@ -606,9 +606,10 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "research_lab": {},
     "scraper": {},
     "contest": {
-      "arena": {
-        "lane_state": {},
+      "ledger": {
+        "state": {},
         "station": {},
+        "dim": {},
         "station_status": {}
       }
     }

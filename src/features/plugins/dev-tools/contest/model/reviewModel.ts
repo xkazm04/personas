@@ -132,7 +132,7 @@ export function isReviewEmpty(review: ContestReview): boolean {
  * review was never saved (or was lost) has no shortlist buckets, yet
  * contest.json recorded the shortlist it was refined with. When the review has
  * no shortlist buckets, `recordedShortlist` is the shortlist a refine retries
- * with — the same fallback the track and the trays take (`arenaModel.recordedBucket`).
+ * with — the same fallback the track and the trays take (`contestModel.recordedBucket`).
  * Pass it only in a phase where a refine is open. `shortlist` stays the
  * owner's own buckets: the runner-up choices are theirs, never the record's.
  */

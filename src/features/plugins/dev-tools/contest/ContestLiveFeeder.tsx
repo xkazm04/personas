@@ -25,7 +25,7 @@ import { contestKeyString, focusContest, type ContestKey } from './focus';
 import { useContestChanged } from './hooks/contestEvents';
 import { contestDetailSlots, contestListSlots, detailKey, refreshContest, refreshContests } from './hooks/contestStore';
 import { createLiveFeedMemory, noticesFor, seedSeats, type ContestNotice } from './model/liveFeed';
-import { isLivePhase } from './arena/arenaModel';
+import { isLivePhase } from './model/contestModel';
 
 type Tx = (template: string, vars: Record<string, string | number>) => string;
 

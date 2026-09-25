@@ -1,5 +1,5 @@
-// Arena — pure helpers behind the race metaphor. No React, no IO; unit-tested
-// in __tests__/arenaModel.test.ts.
+// The contest model: pure helpers the page shares (rounds, chain stations,
+// trays, time). No React, no IO; unit-tested in __tests__/contestModel.test.ts.
 import type { ContestChain } from '@/lib/bindings/ContestChain';
 import type { ContestDetail } from '@/lib/bindings/ContestDetail';
 import type { ContestPhase } from '@/lib/bindings/ContestPhase';

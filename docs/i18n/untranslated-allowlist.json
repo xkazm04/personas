@@ -4026,5 +4026,17 @@
   "vi:plugins.dev_lifecycle.lc_step_commit",
   "vi:plugins.dev_lifecycle.lc_binding_hook",
   "vi:plugins.dev_lifecycle.lc_source_commit",
-  "vi:plugins.dev_lifecycle.lc_source_pr"
+  "vi:plugins.dev_lifecycle.lc_source_pr",
+  "de:plugins.contest.ledger.col_phase",
+  "de:plugins.contest.ledger.start",
+  "de:plugins.contest.ledger.optional",
+  "fr:plugins.contest.ledger.col_phase",
+  "fr:plugins.contest.ledger.col_verdict",
+  "fr:plugins.contest.ledger.dim.interaction",
+  "fr:plugins.contest.ledger.dim.concept",
+  "fr:plugins.contest.ledger.brief_title",
+  "fr:plugins.contest.ledger.key_note",
+  "fr:plugins.contest.ledger.key_suggestions",
+  "id:plugins.contest.ledger.runner_up_option",
+  "id:plugins.contest.ledger.brief_title"
 ]

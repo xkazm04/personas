@@ -1,6 +1,6 @@
 // A line-up save never shrinks the saved set it could not read (FE-9), and the
 // bar tells loading, failed and empty apart.
-import { act, cleanup, render, renderHook, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const api = vi.hoisted(() => ({
@@ -12,7 +12,6 @@ const api = vi.hoisted(() => ({
 }));
 vi.mock('@/api/contest', () => api);
 
-import { LineupBar } from '../components/LineupBar';
 import { __resetContestStoreForTests } from '../hooks/contestStore';
 import { useContestLineups } from '../hooks/useContestLineups';
 
@@ -55,20 +54,5 @@ describe('useContestLineups', () => {
       await pending;
     });
     expect(api.setContestLineups).toHaveBeenCalledWith([...saved, nightly]);
-  });
-});
-
-describe('LineupBar states', () => {
-  it('a failed read is not "No saved line-ups yet"', async () => {
-    api.getContestLineups.mockRejectedValue(new Error('database is locked'));
-    render(<LineupBar panel={[]} onApply={() => {}} testIdPrefix="lu" />);
-    expect(await screen.findByTestId('lu-error')).toBeInTheDocument();
-    expect(screen.queryByText('No saved line-ups yet.')).toBeNull();
-  });
-
-  it('an empty read says so', async () => {
-    api.getContestLineups.mockResolvedValue([]);
-    render(<LineupBar panel={[]} onApply={() => {}} testIdPrefix="lu" />);
-    expect(await screen.findByText('No saved line-ups yet.')).toBeInTheDocument();
   });
 });

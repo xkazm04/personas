@@ -112,6 +112,11 @@ interface ContentHeaderProps {
    *  content area and they get clipped). Opt-in so app-wide headers are
    *  unchanged. */
   fitWidth?: boolean;
+  /** A single 60px row for dense tool pages (the Contest ledger): `title` is
+   *  the <h1> at section size and `subtitle` a one-line meta under it, with
+   *  the actions on the same row. The default two-tier band (caption over a
+   *  large heading) is unchanged for every other page. */
+  compact?: boolean;
   children?: ReactNode;
   /** Inline style applied to the header root — used to thread CSS custom
    *  properties (e.g. `--persona-accent`) into descendant components. */
@@ -126,6 +131,7 @@ export function ContentHeader({
   actions,
   toolbar,
   fitWidth = false,
+  compact = false,
   children,
   style,
 }: ContentHeaderProps) {
@@ -143,6 +149,22 @@ export function ContentHeader({
 
   const layoutCtx = useContext(ContentLayoutContext);
   const scrolled = layoutCtx?.scrolled ?? false;
+
+  if (compact) {
+    return (
+      <div style={style} className="w-full min-w-0 flex-shrink-0 border-b border-primary/10 bg-primary/5" data-testid="content-header-compact">
+        <div className={`flex items-center gap-3 min-w-0 ${IS_MOBILE ? 'px-3 py-2.5' : 'h-[60px] px-5'}`}>
+          {iconElement}
+          <div className="flex-1 min-w-0">
+            <h1 className="typo-section-title text-foreground truncate">{title}</h1>
+            {subtitle && <p className="typo-caption truncate">{subtitle}</p>}
+          </div>
+          {actions && <div className="shrink-0 flex items-center gap-2">{actions}</div>}
+        </div>
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div

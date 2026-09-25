@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { detailFixture, summaryFixture } from '../../__tests__/fixtures';
+import { detailFixture, summaryFixture } from './fixtures';
 import {
   buildLanes,
   chainStations,
@@ -16,7 +16,7 @@ import {
   recordedBucket,
   trays,
   variantName,
-} from '../arenaModel';
+} from '../model/contestModel';
 
 describe('raceRounds', () => {
   it('nests refine rounds under their parent, in round order, keeping root order', () => {
