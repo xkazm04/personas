@@ -50,7 +50,17 @@ export function QueueDrawer({ open, onClose, children }: QueueDrawerProps) {
           {w.docket_close}
         </Button>
       </div>
-      <div className="cb-q-body">{children}</div>
+      <div className="cb-q-body">
+        {children}
+        {/* HER, at the one moment this drawer has room for her: an empty lane,
+            or one nobody could read. The element is always here and the
+            stylesheet withdraws it the moment the lane draws a row - a
+            watermark that survives under content is a watermark that has
+            started competing with it. Same luminance mask over `--primary` as
+            the mark in the top bar, so it is the theme's colour in her shape
+            and not a second palette arriving from an asset. */}
+        <span className="cb-cur-figure" data-role="cb-curator-figure" aria-hidden="true" />
+      </div>
     </section>
   );
 }

@@ -44,6 +44,14 @@ export function TopBar({
   return (
     <header className="cb-top">
       <div className="cb-mark">
+        {/* HER, as the theme's own tint rather than as a picture. The mark is
+            the portrait used as a LUMINANCE MASK over `--primary`, so what is
+            drawn is the theme's identity colour in the shape of her, and both
+            themes get it from their own token rather than from the asset's
+            hues. Decorative: `w.subtitle` beside it already says whose page
+            this is, so a second reading of the same fact would only be noise
+            in the a11y tree. */}
+        <span className="cb-sigil" data-role="cb-sigil" aria-hidden="true" />
         <b className="typo-title-lg">{w.title}</b>
         <i className="typo-eyebrow cb-dim">{w.subtitle}</i>
       </div>

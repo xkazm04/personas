@@ -1049,6 +1049,35 @@
   flex: none;
 }
 
+/* ---- her mark ------------------------------------------------------------
+   `public/companions/curator/portrait.webp` is 1024x1536 of glow on pure
+   black, which is an asset with two bad answers on a themed surface: screened
+   onto a light canvas it disappears, multiplied onto a dark one it is a black
+   rectangle. So it is not drawn as an image at all. It is a LUMINANCE MASK -
+   her glow becomes the alpha channel - and what fills it is `--primary`, the
+   token the doctrine calls identity rather than decoration (style-mastery
+   0b.1). Every theme therefore paints her in its own hue, and the asset
+   contributes shape only.
+
+   Sized and positioned onto the head: `contain` would fit 1024x1536 into a
+   22px square and leave a figure nobody can read. -------------------------- */
+.cb-root .cb-sigil {
+  flex: none;
+  align-self: center;
+  width: 22px;
+  height: 22px;
+  background: var(--primary);
+  -webkit-mask-image: url('/companions/curator/portrait.webp');
+  mask-image: url('/companions/curator/portrait.webp');
+  mask-mode: luminance;
+  -webkit-mask-size: 300% auto;
+  mask-size: 300% auto;
+  -webkit-mask-position: 50% 21%;
+  mask-position: 50% 21%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
 .cb-root .cb-meta {
   display: flex;
   gap: var(--space-md);

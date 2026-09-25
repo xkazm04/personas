@@ -124,11 +124,43 @@
   padding-bottom: var(--space-sm);
 }
 
-/* The drawer is a flex column and the head is `flex: none`; without a body that
-   fills what is left, anything laid out against its bottom lands under the
-   first line of text. */
+/* Her, in the drawer that is hers, at the one moment it has room: an EMPTY
+   lane, or a lane nobody could read. The same luminance mask as the top bar's
+   mark (blueprint.css, "her mark") - the asset gives the shape, `--primary`
+   gives the colour, so every theme paints her in its own.
+
+   It withdraws the moment the lane draws a row. A watermark that survives
+   under content has stopped being a watermark and started competing with it,
+   and the rows here are a queue somebody is reading to decide what to
+   withdraw. */
 .cb-root .cb-q-body {
+  position: relative;
+  /* The drawer is a flex column and the head is `flex: none`; without a body
+     that fills what is left, anything laid out against its bottom lands under
+     the first line of text. */
   flex: 1;
+}
+.cb-root .cb-cur-figure {
+  position: absolute;
+  right: var(--space-lg);
+  bottom: var(--space-xl);
+  width: min(280px, 52%);
+  aspect-ratio: 2 / 3;
+  background: var(--primary);
+  opacity: 0.17;
+  pointer-events: none;
+  -webkit-mask-image: url('/companions/curator/portrait.webp');
+  mask-image: url('/companions/curator/portrait.webp');
+  mask-mode: luminance;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: center bottom;
+  mask-position: center bottom;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+.cb-root .cb-lane[data-state='filled'] + .cb-cur-figure {
+  display: none;
 }
 
 /* form 1 - waiting for a person: a raised card with armed keys */
