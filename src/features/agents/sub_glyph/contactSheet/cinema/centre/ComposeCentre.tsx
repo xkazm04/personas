@@ -18,11 +18,13 @@ interface ComposeCentreProps {
   core: PersonaCore;
   hasContext: boolean;
   onOpenContext: (el: HTMLElement) => void;
+  /** Push the camera into the persona core layer, grown out of its badge. */
+  onOpenCore: (el: HTMLElement) => void;
   /** Quiet decision support under the composer (the recipe starters). */
   below?: React.ReactNode;
 }
 
-export function ComposeCentre({ intentText, onIntentChange, onLaunch, launchDisabled, launching, core, hasContext, onOpenContext, below }: ComposeCentreProps) {
+export function ComposeCentre({ intentText, onIntentChange, onLaunch, launchDisabled, launching, core, hasContext, onOpenContext, onOpenCore, below }: ComposeCentreProps) {
   const ta = useRef<HTMLTextAreaElement | null>(null);
   useEffect(() => {
     const el = ta.current;
@@ -60,7 +62,7 @@ export function ComposeCentre({ intentText, onIntentChange, onLaunch, launchDisa
         />
         {/* One row: identity and context on the left, Launch on the right. */}
         <div className="flex items-center gap-2 flex-nowrap">
-          <PersonaCoreEntry core={core} locked={launching} />
+          <PersonaCoreEntry core={core} locked={launching} onOpen={onOpenCore} />
           <button
             type="button"
             onClick={(e) => onOpenContext(e.currentTarget)}

@@ -16,6 +16,8 @@ import { COPY } from "../copy";
 
 export interface CentreActions {
   openContext: (el: HTMLElement) => void;
+  /** Push the camera into the persona core, grown out of its badge. */
+  openCore: (el: HTMLElement) => void;
   openRefine: () => void;
   openCaps: () => void;
   openReport: () => void;
