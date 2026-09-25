@@ -11,6 +11,7 @@ import { resolve } from 'node:path';
 import { fleetTapes } from './fleetTapes.mjs';
 import { observabilityTapes } from './observabilityTapes.mjs';
 import { factoryTapes } from './factoryTapes.mjs';
+import { homeWelcomeTapes } from './homeWelcomeTapes.mjs';
 import { homeLearningTapes } from './homeLearningTapes.mjs';
 
 export const RECORDED_AT = '2026-09-22T15:40:00.000Z';
@@ -265,6 +266,8 @@ const BUILDERS = {
   ...observabilityTapes({ RECORDED_AT, PERSONAS }).builders,
   // Module 5, Teams > Factory (factorySurfaces.tsx, factoryTapes.mjs).
   ...factoryTapes({ RECORDED_AT }).builders,
+  // Kit batch home-1, Home > Welcome (homeWelcomeSurfaces.tsx, homeWelcomeTapes.mjs).
+  ...homeWelcomeTapes({ RECORDED_AT, PERSONAS, EVENTS }).builders,
   // Kit batch home-1, Home > Learning (homeLearningSurfaces.tsx, homeLearningTapes.mjs).
   ...homeLearningTapes({ RECORDED_AT }).builders,
   // The kit specimen (kitSpecimen.tsx): synthetic props, no IPC.
