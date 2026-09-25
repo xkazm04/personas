@@ -77,6 +77,12 @@ export function useReviewDraft(detail: ContestDetail | null): ReviewDraft {
   reviewRef.current = current.review;
   const idsRef = useRef({ projectId, contestId, key });
   idsRef.current = { projectId, contestId, key };
+  // The saved review the detail carries right now. A save adopts it as the
+  // draft's source, so a detail read BEFORE the save (older content, new
+  // object) is not mistaken for a newer saved review and reseeded over the
+  // edit just written; the next refetch — which carries the save — reseeds.
+  const detailReviewRef = useRef<ContestReview | null | undefined>(detail?.review);
+  detailReviewRef.current = detail?.review;
 
   const save = useCallback(async () => {
     const { projectId: p, contestId: c, key: k } = idsRef.current;
@@ -84,7 +90,9 @@ export function useReviewDraft(detail: ContestDetail | null): ReviewDraft {
     if (!p || !c || !snapshot) return;
     await enqueueSave(k, () => saveContestReview(p, c, snapshot));
     // Only clear dirty if nothing was edited while the save was in flight.
-    setDraft((d) => (d.key === k && d.review === snapshot ? { ...d, dirty: false } : d));
+    setDraft((d) =>
+      d.key === k && d.review === snapshot ? { ...d, dirty: false, source: detailReviewRef.current } : d,
+    );
   }, []);
 
   const { isSaving, lastError, cancel } = useDebouncedSave(
