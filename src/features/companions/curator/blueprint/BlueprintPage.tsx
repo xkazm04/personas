@@ -45,7 +45,7 @@ import type { CuratorPlan } from '@/lib/bindings/CuratorPlan';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 import { Blueprint } from './Blueprint';
-import { isV2Key, V2Switcher } from './v2/V2Switcher';
+import { initialV2Key, rememberV2Key, V2Tabs, V2Variant, type V2Key } from './v2/V2Switcher';
 import { CuratorConsole } from './console/CuratorConsole';
 import { useCuratorLoop } from './console/useCuratorLoop';
 import type { BlueprintPhase } from './ledger/LedgerEmpty';
@@ -62,12 +62,7 @@ import './blueprint.css';
  */
 let warm: { plan: CuratorPlan | null; sources: BlueprintSources } | null = null;
 
-export default function BlueprintPage() {
-  // Prototype round: `?v2=a|b|c` renders a natively-built variant instead of the
-  // shipped page. Throwaway - the switcher and this branch go when one is fused.
-  const v2 = new URLSearchParams(window.location.search).get('v2');
-  if (isV2Key(v2)) return <V2Switcher which={v2} />;
-
+function ShippedBlueprint() {
   const { t, tx } = useTranslation();
   const [plan, setPlan] = useState<CuratorPlan | null>(warm?.plan ?? null);
   const [sources, setSources] = useState<BlueprintSources>(warm?.sources ?? {});
@@ -161,5 +156,33 @@ export default function BlueprintPage() {
         />
       }
     />
+  );
+}
+
+/**
+ * The page, with the prototype round's tab strip above it.
+ *
+ * The strip is scaffolding and goes when the operator fuses a variant. It sits
+ * HERE rather than inside the shipped page so that switching mounts and
+ * unmounts whole trees - each variant keeps its own state, and none of them can
+ * reach the shipped page's hooks. The earlier scaffold returned a variant
+ * before `useTranslation()` ran, which is a rules-of-hooks violation that
+ * happened to work only because the choice could not change while mounted.
+ */
+export default function BlueprintPage() {
+  const [variant, setVariant] = useState<V2Key>(initialV2Key);
+
+  const choose = useCallback((next: V2Key) => {
+    setVariant(next);
+    rememberV2Key(next);
+  }, []);
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <V2Tabs active={variant} onChange={choose} />
+      <div className="min-h-0 flex-1">
+        {variant === 'shipped' ? <ShippedBlueprint /> : <V2Variant which={variant} />}
+      </div>
+    </div>
   );
 }
