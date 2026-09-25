@@ -30,8 +30,8 @@ export function ledgerColsStyle(spec: LedgerSpec): CSSProperties {
   return { '--lg-cols': ledgerCols(spec) } as CSSProperties;
 }
 
-/** A share of the column maximum, clamped, as a CSS width. */
+/** A share of the column maximum, clamped, as a CSS width (a style length, never displayed text). */
 export function pct(v: number): string {
-  const c = Math.max(0, Math.min(1, Number.isFinite(v) ? v : 0));
-  return `${(c * 100).toFixed(1)}%`;
+  const share = Math.max(0, Math.min(1, Number.isFinite(v) ? v : 0)) * 100;
+  return `${share}%`;
 }
