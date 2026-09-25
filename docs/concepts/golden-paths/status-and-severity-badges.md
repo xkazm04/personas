@@ -175,8 +175,8 @@ thing. That absence is the root cause of most of section 7; see Gaps 1.
     UI claim a revision published itself when a human is in fact still owed a decision." Copy the
     reasoning, not just the fallback.
 11. **If the surface genuinely needs a different visual density**, parameterise with a `variant`
-    prop and keep the branch logic in one component — `HealingIssueStatusBadge.tsx:33` is the repo's
-    only instance of this move and its docstring explains it. Do **not** fork the component.
+    prop and keep the branch logic in one component — `HealingIssueStatusBadge.tsx:33` was the repo's
+    only instance of this move and its docstring explained it (deleted 2026-09-25 in `a21c66544`: its state ladder now lives in `sub_observability/libs/issueModel.ts` `issueState`, a closed union rendered through the composition kit's `Mark`, with severity text from translation keys). Do **not** fork the component.
 
 ## Anti-patterns
 
@@ -238,7 +238,7 @@ Also worth reading:
   `DEFAULT_STATUS_ENTRY`, with the fallback deliberately grey and commented *"(gray badge, not
   red)"*. Correct unknown discipline; English labels.
 - `src/features/overview/sub_observability/components/HealingIssueStatusBadge.tsx:8-20,33` — the
-  `variant` move: shared four-way branch logic, per-surface density as a prop rather than a fork.
+  `variant` move: shared four-way branch logic, per-surface density as a prop rather than a fork (deleted 2026-09-25 in `a21c66544`: its state ladder now lives in `sub_observability/libs/issueModel.ts` `issueState`, a closed union rendered through the composition kit's `Mark`, with severity text from translation keys).
   **The shape is exemplary and the content is not** — it hardcodes seven English strings and renders
   `{issue.severity}` raw at `:70` and `:100`. Take the structure, not the body.
 - `src/lib/design/statusTokens.ts:26-105` — `as const satisfies Record<string, StatusToken>`, which
@@ -318,7 +318,7 @@ in one object literal. Concentrations: `traceHelpers.ts` (36) and `traceInspecto
 chart labels rather than status tokens — the status-token subset is the 241 above.
 
 **I. Raw machine text on screen: 79 sites in 55 files.** Including the exemplar —
-`HealingIssueStatusBadge.tsx:70,100` and `HealingIssueModal.tsx:190` render `{issue.severity}`;
+`HealingIssueStatusBadge.tsx:70,100` and `HealingIssueModal.tsx:190` rendered `{issue.severity}` when measured (deleted 2026-09-25 in `a21c66544`: its state ladder now lives in `sub_observability/libs/issueModel.ts` `issueState`, a closed union rendered through the composition kit's `Mark`, with severity text from translation keys);
 `ActivityList.tsx:145,148`, `DeploymentCard.tsx:69-70`, `StandardsScanCard.tsx:91`,
 `ProjectTeamPreviewModal.tsx:386-387`, `CloudExecutionRow.tsx:40`, `EventLogList.tsx:251`,
 `PipelineRow.tsx:27`.

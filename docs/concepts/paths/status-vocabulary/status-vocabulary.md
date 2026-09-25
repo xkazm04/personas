@@ -13,13 +13,13 @@ techniques:
 evidence:
   - src/i18n/tokenMaps.ts                                              # the token→label resolver (layer 3→4); its dev-only unknown path is the w3-i18n deviation
   - src/lib/design/statusTokens.ts                                     # semantic status color palette — the color half of the presentation table
+  - src/features/overview/sub_observability/libs/issueModel.ts        # issueState: one closed union for severity x status x circuit-breaker, rendered by the kit Mark (successor of the deleted HealingIssueStatusBadge, 2026-09-25)
   - src/lib/design/eventTokens.ts                                      # best-typed presentation table: Record<wire-union, …> for color AND icon, shape-not-color rule in-source
   - src/features/shared/components/display/Numeric.tsx                  # the one number renderer — locale bound INSIDE it (the ~212-call-site fix, documented in its own prop docs)
   - src/features/shared/components/display/RelativeTime.tsx             # the elapsed-moment primitive on the one shared self-scaling ticker
   - src/lib/utils/formatters.ts                                         # activeLanguage()-in-the-formatter fix; formatCost/formatPercent/formatCount; EXECUTION_STATUS_MAP fallback discipline
   - src-tauri/db/src/migrations/incremental/                          # 82 CHECK(col IN (…)) write guards — 66 unique closed vocabularies at the storage layer
 counter_evidence:
-  - src/features/overview/sub_observability/components/HealingIssueStatusBadge.tsx # exemplary variant-prop shape; renders {issue.severity} raw and hardcodes seven English strings
   - eslint-rules/prefer-numeric.cjs                                     # the gate that sees ~5 of ~141 display-intent sites — an enclosing arrow function aborts the check
 deviations:
   - w11-status-vocabulary   # anchor in docs/concepts/golden-path-deferred-fixes.md
