@@ -5,8 +5,15 @@ import type { Glyph, Tone } from './types';
  * trailing label; `label` is the accessible name.
  * @catalog Mark - the status node on the spine (Tone x Glyph); Dot is the same glyph inline. Kit.
  */
-export function Mark({ tone = 'neutral', glyph = 'solid', label }: { tone?: Tone; glyph?: Glyph; label: string }) {
-  return <span className={`k-mark t-${tone} g-${glyph}`} role="img" aria-label={label} />;
+export function Mark({ tone = 'neutral', glyph = 'solid', label, ...host }: {
+  tone?: Tone;
+  glyph?: Glyph;
+  label: string;
+  /** Forwarded for a Hint: the description and, when standalone, the tab stop. */
+  'aria-describedby'?: string;
+  tabIndex?: number;
+}) {
+  return <span className={`k-mark t-${tone} g-${glyph}`} role="img" aria-label={label} {...host} />;
 }
 
 /** Dot: the same glyph inline (legends, chips, key-value draws).

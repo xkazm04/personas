@@ -364,3 +364,53 @@ button.k-chip:hover, .k-chip.is-hover { border-color: color-mix(in srgb, var(--p
 .k-surface--dense .k-tile__fig { line-height: 1.15; }
 .k-surface--dense .k-tile__draw { min-height: 0; }
 .k-surface--dense .k-search { flex: 0 1 240px; }
+
+/* ============ Crumbs (added at kit grow-1): the trail in a Section's eyebrow ============ */
+.k-crumbs ol { display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px; margin: 0; padding: 0; list-style: none; }
+.k-crumbs li { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.k-crumb { color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; white-space: nowrap; }
+/* A door: the eyebrow's own text, a 24px hit area won by padding and given back by margin. */
+button.k-crumb {
+  padding: 3px 4px; margin: -3px -4px; border: 0; border-radius: var(--radius-interactive); background: transparent; cursor: pointer;
+  transition: color var(--duration-fast), background-color var(--duration-fast);
+}
+button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); background: var(--band-hover); }
+.k-crumb.is-current { color: var(--foreground); }
+
+/* ============ ContextCard (added at kit grow-1): a band with a primary rail, not a box ============ */
+.k-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--card-min, 240px), 1fr)); gap: 12px;
+  padding: 4px 12px 8px var(--gutter);
+}
+.k-card {
+  --rail: var(--spine-c); --card-band: var(--band-alt);
+  position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; min-height: 104px;
+  padding: 12px 14px 12px 20px; border-radius: 0 var(--radius-card) var(--radius-card) 0;
+  background: linear-gradient(to right, color-mix(in srgb, var(--primary) 7%, var(--card-band)), var(--card-band) 55%);
+  transition: background-color var(--duration-fast);
+}
+.k-card::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; border-radius: 1px; background: var(--rail);
+  transition: background-color var(--duration-fast), box-shadow var(--duration-fast);
+}
+.k-card:hover, .k-card.is-hover { --card-band: var(--band-hover); --rail: color-mix(in srgb, var(--primary) 60%, transparent); }
+.k-card.is-selected { --card-band: var(--band-sel); --rail: var(--primary); }
+.k-card.is-selected::before { width: 3px; box-shadow: 0 0 12px var(--glow); }
+.k-card.is-live::before { background: var(--primary); animation: k-breathe 2.8s ease-in-out infinite; }
+.k-card.is-muted > :not(.k-mark) { opacity: .56; }
+.k-card.is-empty { background: transparent; }
+.k-card.is-empty::after { content: ""; position: absolute; inset: 0; border: 1px dashed var(--line); border-left: 0; border-radius: inherit; pointer-events: none; }
+.k-card.is-loading { cursor: default; }
+.k-card > .k-mark { left: -4px; top: 21px; margin-top: -4.5px; outline-color: var(--background); }
+.k-card.is-loading > .k-mark { background: var(--ghost); }
+.k-card__title { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; }
+.k-card__press { padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; }
+/* The title button's hit area is the whole card; actions sit above it. */
+.k-card__press::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.k-card__press:focus-visible { outline: 0; }
+.k-card:has(> .k-card__press:focus-visible) { outline: 2px solid var(--focus-ring-color); outline-offset: 2px; }
+.k-card__meta { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; }
+.k-card__figs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin-top: auto; padding-top: 6px; }
+.k-card__empty { display: flex; flex-direction: column; gap: 2px; margin-top: auto; }
+.k-card__actions { position: relative; z-index: 1; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding-top: 6px; }
+.k-card__empty > :not(span) { position: relative; z-index: 1; }

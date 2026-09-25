@@ -14,14 +14,17 @@ export type UnitSize = 's' | 'm' | 'l' | 'pip';
  * UnitStrip: a quantity as countable units of a fixed quantum the caller chooses ("1 square =
  * 100k tokens"), coloured by who claims them. Zero draws one hollow placeholder. The grid flows
  * column-major so claims read left to right.
- * @catalog UnitStrip - a quantity as countable units of a fixed quantum, coloured by claim (apportion splits a total). Kit.
+ * @catalog UnitStrip - a quantity as countable units of a fixed quantum, coloured by claim (apportion splits a total, quantumFor picks the quantum). Kit.
  */
-export function UnitStrip({ segments, rows = 1, size = 'm', label, state }: {
+export function UnitStrip({ segments, rows = 1, size = 'm', label, state, ...host }: {
   segments: readonly UnitSegment[];
   rows?: number;
   size?: UnitSize;
   label: string;
   state?: KitState;
+  /** Forwarded for a Hint: the description and, when standalone, the tab stop. */
+  'aria-describedby'?: string;
+  tabIndex?: number;
 }) {
   const units: ReactElement[] = [];
   let total = 0;
@@ -45,6 +48,7 @@ export function UnitStrip({ segments, rows = 1, size = 'm', label, state }: {
       role="img"
       aria-label={label}
       style={{ '--rows': rows } as CSSProperties}
+      {...host}
     >
       {total === 0 ? <i className="k-u" /> : units}
     </span>
