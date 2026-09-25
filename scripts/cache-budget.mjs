@@ -222,7 +222,9 @@ export function measureAll(root, opts = {}) {
   const { targets, warnings } = opts.targets
     ? { targets: opts.targets, warnings: [] }
     : discoverTargetsDetailed({ root, tmpdir: opts.tmpdir ?? (process.env.CACHE_BUDGET_TMPDIR || undefined) });
-  const items = targets.map((t) => {
+  // `exclude`: targets an earlier step of the same (dry) run would already have
+  // removed. A real run does not find them; a preview must not count them either.
+  const items = targets.filter((t) => !opts.exclude?.has(t.path)).map((t) => {
     const m = measure(t.path);
     return {
       label: t.label, kind: t.kind, worktree: t.worktree ?? null, path: t.path,
@@ -427,7 +429,7 @@ export function collectHashSets(depsDir, stems) {
  * crate per shape; of the rest, deletes those older than `minAgeMs` (and never
  * one inside the 90 s active window). Third-party crates never match `crates`.
  */
-export function reapSupersededDeps(profileDir, crates, { minAgeMs = 0, keep = KEEP_HASH_SETS, now = Date.now(), dryRun = false, maxBytes = Infinity } = {}) {
+export function reapSupersededDeps(profileDir, crates, { minAgeMs = 0, keep = KEEP_HASH_SETS, now = Date.now(), dryRun = false, maxBytes = Infinity, gone = null } = {}) {
   const depsDir = join(profileDir, "deps");
   if (!existsSync(depsDir)) return { bytesFreed: 0, count: 0 };
   const stemToPackage = new Map();
@@ -444,6 +446,7 @@ export function reapSupersededDeps(profileDir, crates, { minAgeMs = 0, keep = KE
       for (const s of group.slice(keep)) {
         const age = now - s.mtime;
         if (age < Math.max(minAgeMs, ACTIVE_BUILD_WINDOW_MS)) continue;
+        if (gone?.has(s.files[0].path)) continue; // an earlier stage of this dry run already took it
         victims.push({ stem, ...s });
       }
     }
@@ -464,7 +467,7 @@ export function reapSupersededDeps(profileDir, crates, { minAgeMs = 0, keep = KE
     }
     let freed = 0;
     for (const f of v.files) {
-      if (dryRun) { freed += f.size; continue; }
+      if (dryRun) { freed += f.size; gone?.add(f.path); continue; }
       try {
         rmSync(f.path, { force: true });
         freed += f.size;
@@ -488,7 +491,7 @@ export function reapSupersededDeps(profileDir, crates, { minAgeMs = 0, keep = KE
 }
 
 /** (b) incremental/ session dirs older than `minAgeMs`, oldest first. */
-export function reapIncremental(profileDir, { minAgeMs, now = Date.now(), dryRun = false, maxBytes = Infinity } = {}) {
+export function reapIncremental(profileDir, { minAgeMs, now = Date.now(), dryRun = false, maxBytes = Infinity, gone = null } = {}) {
   const inc = join(profileDir, "incremental");
   if (!existsSync(inc)) return { bytesFreed: 0, count: 0 };
   const sessions = [];
@@ -514,6 +517,7 @@ export function reapIncremental(profileDir, { minAgeMs, now = Date.now(), dryRun
   for (const s of sessions) {
     if (bytesFreed >= maxBytes) break;
     if (now - s.newest < Math.max(minAgeMs, ACTIVE_BUILD_WINDOW_MS)) continue;
+    if (gone?.has(s.full)) continue;
     if (!dryRun) {
       const live = profileLiveReason(profileDir, Date.now());
       if (live) return { bytesFreed, count, refused: live };
@@ -521,7 +525,7 @@ export function reapIncremental(profileDir, { minAgeMs, now = Date.now(), dryRun
     const b = sizeOfTree(s.full);
     if (!dryRun) {
       try { rmPath(s.full); } catch { continue; }
-    }
+    } else gone?.add(s.full);
     bytesFreed += b;
     count++;
   }
@@ -529,7 +533,7 @@ export function reapIncremental(profileDir, { minAgeMs, now = Date.now(), dryRun
 }
 
 /** (d) build/ out-dirs with no matching .fingerprint entry. */
-export function reapBuildOrphans(profileDir, { now = Date.now(), dryRun = false, maxBytes = Infinity } = {}) {
+export function reapBuildOrphans(profileDir, { now = Date.now(), dryRun = false, maxBytes = Infinity, gone = null } = {}) {
   const buildDir = join(profileDir, "build");
   const fpDir = join(profileDir, ".fingerprint");
   if (!existsSync(buildDir)) return { bytesFreed: 0, count: 0 };
@@ -547,6 +551,7 @@ export function reapBuildOrphans(profileDir, { now = Date.now(), dryRun = false,
     if (bytesFreed >= maxBytes) break;
     if (!e.isDirectory() || !re.test(e.name) || fps.has(e.name)) continue;
     const full = join(buildDir, e.name);
+    if (gone?.has(full)) continue;
     try {
       if (now - statSync(full).mtimeMs < ACTIVE_BUILD_WINDOW_MS) continue;
     } catch {
@@ -559,7 +564,7 @@ export function reapBuildOrphans(profileDir, { now = Date.now(), dryRun = false,
     const b = sizeOfTree(full);
     if (!dryRun) {
       try { rmPath(full); } catch { continue; }
-    }
+    } else gone?.add(full);
     bytesFreed += b;
     count++;
   }
@@ -599,14 +604,21 @@ export function enforceBudget(root, opts = {}) {
   const print = opts.print ?? ((l) => process.stderr.write(l + "\n"));
   const record = (row) => {
     if (!dryRun) return recordEviction({ trigger, ...row }, { path: opts.logPath, print, now: opts.now });
-    print(`[hygiene] would evict ${row.category} ${formatBytes(row.bytesFreed)} from ${row.target} — ${row.reason}`);
-    return { trigger, ...row, dryRun: true };
+    // A dry run predicts: it carries every earlier step's would-be removal forward
+    // (`gone`, `exclude`) and evaluates the same read-only liveness checks. What it
+    // cannot predict is anything downstream of a stage it could not simulate; those
+    // lines say MAY, so the printed plan never passes an upper bound off as a forecast.
+    const verb = result.unsimulated.length ? "may evict" : "would evict";
+    const tail = result.unsimulated.length ? ` (after unsimulated ${result.unsimulated.join(", ")})` : "";
+    print(`[hygiene] ${verb} ${row.category} ${formatBytes(row.bytesFreed)} from ${row.target} — ${row.reason}${tail}`);
+    return { trigger, ...row, dryRun: true, certain: !result.unsimulated.length };
   };
+  const gone = dryRun ? new Set() : null;
 
   const snap = measureAll(root, { ...opts, persist: false, now });
   const result = {
     status: "under", budgetBytes, totalBytes: snap.totalBytes, startBytes: snap.totalBytes,
-    freedBytes: 0, evictions: [], refusals: [], unmeasured: snap.unmeasured,
+    freedBytes: 0, evictions: [], refusals: [], unmeasured: snap.unmeasured, unsimulated: [],
     notes: [...snap.discoveryWarnings],
   };
   const finish = () => {
@@ -666,10 +678,10 @@ export function enforceBudget(root, opts = {}) {
       if (refusedTargets.has(item.label)) continue;
       for (const profileDir of findProfileDirs(item.path)) {
         if (over() <= 0) return;
-        if (!dryRun) {
-          const live = profileLiveReason(profileDir, Date.now());
-          if (live) { refuse(item, live); break; }
-        }
+        // Read-only, so the preview asks it too: a refusal the real run would make
+        // is part of the plan, not a surprise after it.
+        const live = profileLiveReason(profileDir, Date.now());
+        if (live) { refuse(item, live); break; }
         const r = fn(profileDir, item);
         if (!r) continue;
         if (r.skipped) result.notes.push(`${item.label}: ${r.skipped}`);
@@ -692,13 +704,13 @@ export function enforceBudget(root, opts = {}) {
         if (item.kind !== "temp") result.notes.push(`${item.label}: workspace crate names could not be derived — superseded-deps reaper skipped`);
         return null;
       }
-      return reapSupersededDeps(p, crates, { minAgeMs, now, dryRun, maxBytes: over() });
+      return reapSupersededDeps(p, crates, { minAgeMs, now, dryRun, maxBytes: over(), gone });
     },
     (r) => `${r.count} superseded hash-set(s) of ${r.crates} workspace crate(s), older than ${AGE_LABEL(minAgeMs)}; newest ${KEEP_HASH_SETS} per crate+shape kept; footprint ${overBy()}`,
   );
   const incStage = (minAgeMs) => perProfileStage(
     "incremental",
-    (p) => reapIncremental(p, { minAgeMs, now, dryRun, maxBytes: over() }),
+    (p) => reapIncremental(p, { minAgeMs, now, dryRun, maxBytes: over(), gone }),
     (r) => `${r.count} incremental session dir(s) older than ${AGE_LABEL(minAgeMs)}; footprint ${overBy()}`,
   );
 
@@ -709,6 +721,20 @@ export function enforceBudget(root, opts = {}) {
   if (over() > 0) depsStage(0);
 
   // (c) cargo sweep — first stage allowed to touch third-party artifacts.
+  // Its effect is decided by cargo, not by this script, so a dry run cannot
+  // simulate it. Name it, and turn every later line into a MAY.
+  if (over() > 0 && dryRun && (opts.hasCargoSweep ?? hasCargoSweep)()) {
+    for (const item of items) {
+      if (over() <= 0) break;
+      if (refusedTargets.has(item.label)) continue;
+      if (item.kind !== "main" && !(item.kind === "worktree" && basename(item.path) === "target")) continue;
+      if (!existsSync(join(dirname(item.path), "Cargo.toml"))) continue;
+      const live = targetLiveReason(item.path, Date.now());
+      if (live) { refuse(item, live); continue; }
+      print(`[hygiene] not simulated: cargo-sweep ${item.label} — stage (c) runs only for real; its effect cannot be previewed`);
+      result.unsimulated.push(`cargo-sweep ${item.label}`);
+    }
+  }
   if (over() > 0 && !dryRun) {
     const sweepAvailable = (opts.hasCargoSweep ?? hasCargoSweep)();
     if (!sweepAvailable) {
@@ -749,7 +775,7 @@ export function enforceBudget(root, opts = {}) {
   if (over() > 0) {
     perProfileStage(
       "build-orphan",
-      (p) => reapBuildOrphans(p, { now, dryRun, maxBytes: over() }),
+      (p) => reapBuildOrphans(p, { now, dryRun, maxBytes: over(), gone }),
       (r) => `${r.count} build/ out-dir(s) with no .fingerprint entry; footprint ${overBy()}`,
     );
   }
@@ -759,9 +785,9 @@ export function enforceBudget(root, opts = {}) {
     for (const item of items.filter((i) => i.kind === "worktree")) {
       if (over() <= 0) break;
       if (refusedTargets.has(item.label) || item.bytes === 0) continue;
+      const live = targetLiveReason(item.path, Date.now());
+      if (live) { refuse(item, live); continue; }
       if (!dryRun) {
-        const live = targetLiveReason(item.path, Date.now());
-        if (live) { refuse(item, live); continue; }
         try { rmPath(item.path); } catch (e) { result.notes.push(`${item.label}: ${e.message}`); continue; }
       }
       const freed = item.bytes;

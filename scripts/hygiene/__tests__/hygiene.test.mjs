@@ -556,3 +556,69 @@ test("(A9) runDaily end to end on a fixture checkout + fixture temp dir", async 
   printLog(5, { path: logPath, out: { write: (s) => { out += s; } } });
   assert.match(out, /last 30 days: \d+ eviction\(s\), .* freed/);
 });
+
+// ---------------------------------------------------------------------------
+// The dry run is a forecast, not an upper bound. Every step after the first
+// responds to state an earlier step changes, so a preview that does not carry
+// those changes forward prints evictions the real run never makes - and a
+// preview that skips the real run's checks prints evictions it would refuse.
+// Each case runs dry on one fixture and for real on an identical one.
+test("(A10) the dry run predicts the real run; what it cannot simulate it names and marks MAY", async () => {
+  const { runDaily } = await import("../run-daily.mjs");
+  const key = (cat, target) => `${cat}|${target.replace(/.*hyg-fid-tmp-[^\\/]+[\\/]/, "TMP/")}`;
+  const plan = (lines) => {
+    const out = { would: [], may: [], unsim: [] };
+    for (const l of lines) {
+      const m = /^\[hygiene\] (would|may) evict (\S+) .*? from (.+?) — /.exec(l);
+      if (m) out[m[1]].push(key(m[2], m[3]));
+      const n = /^\[hygiene\] not simulated: (\S+) (\S+)/.exec(l);
+      if (n) out.unsim.push(`${n[1]}|${n[2]}`);
+    }
+    return out;
+  };
+  const both = (mk) => {
+    const d = mk(); const lines = [];
+    runDaily({ root: d.root, logPath: join(d.root, "dry.jsonl"), dryRun: true, procText: "", print: (l) => lines.push(l), ...d.opts });
+    const r = mk();
+    runDaily({ root: r.root, logPath: join(r.root, "real.jsonl"), procText: "", print: () => {}, ...r.opts });
+    return { dry: plan(lines), real: readLog(join(r.root, "real.jsonl")).rows.map((x) => key(x.category, x.target)) };
+  };
+  const sorted = (a) => [...a].sort();
+
+  // Step 1 removes a stale temp target and that alone brings the footprint under budget.
+  const afterTemp = both(() => {
+    const fx = overgrownCheckout(); const tmp = tmpRoot("hyg-fid-tmp-");
+    const t = join(tmp, "old-worker", "target");
+    cargoTargetShell(t); put(join(t, "debug", "deps", "libq-0000000000000009.rlib"), 2000); age(join(tmp, "old-worker"), 4);
+    return { root: fx.root, opts: { tmpdir: tmp, budgetBytes: measureDirStrict(fx.target).bytes, ...noSweep } };
+  });
+  assert.deepEqual(sorted(afterTemp.dry.would), sorted(afterTemp.real), "dry run must not budget targets step 1 already removes");
+
+  // A build is in flight: the real run refuses the target, so the preview must too.
+  const live = both(() => {
+    const fx = overgrownCheckout();
+    const b = measureDirStrict(fx.target).bytes;
+    put(join(fx.profile, "incremental", "app_lib-live", "s-now", "dep-graph.bin"), 10);
+    return { root: fx.root, opts: { tmpdir: tmpRoot("hyg-fid-tmp-"), budgetBytes: b - 20000, ...noSweep } };
+  });
+  assert.deepEqual(live.dry.would, [], "a live profile is refused in the preview as in the run");
+  assert.deepEqual(live.real, []);
+
+  // Staged reaping to a 1-byte budget with cargo sweep available: each stage must see the
+  // previous stage's would-be deletions, and the one stage cargo decides is named, not skipped.
+  const staged = both(() => {
+    const fx = overgrownCheckout();
+    const sweep = () => { for (const s of fx.serde) { for (const f of s.files) rmSync(f, { force: true }); rmSync(s.fp, { recursive: true, force: true }); } };
+    return { root: fx.root, opts: { tmpdir: tmpRoot("hyg-fid-tmp-"), budgetBytes: 1, hasCargoSweep: () => true, runCargoSweep: sweep } };
+  });
+  const named = new Set([...staged.dry.would, ...staged.dry.may, ...staged.dry.unsim]);
+  assert.ok(staged.real.includes("cargo-sweep|main") && staged.dry.unsim.includes("cargo-sweep|main"), "the unsimulated stage is named");
+  for (const k of staged.real) assert.ok(named.has(k), `real eviction ${k} appears in the preview`);
+  const realLeft = [...staged.real];
+  for (const k of staged.dry.would) {
+    const i = realLeft.indexOf(k);
+    assert.ok(i >= 0, `certain line ${k} is one the real run makes (no double count across stages)`);
+    realLeft.splice(i, 1);
+  }
+  assert.ok(staged.dry.may.length > 0 && staged.dry.would.length > 0, "lines before the unsimulated stage stay certain; lines after it are MAY");
+});

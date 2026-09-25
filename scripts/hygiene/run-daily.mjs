@@ -255,7 +255,11 @@ export function runDaily(opts = {}) {
   const tempTargets = tempWalk.targets.map((p) => ({ label: `temp:${p.slice(tmpdir.length + 1).split("\\").join("/")}`, kind: "temp", path: p }));
   const temp = sweepTempTargets(tempTargets, { ...common, ...("procText" in opts ? { procText: opts.procText } : {}) });
 
-  const budget = enforceBudget(root, { ...common, tmpdir, budgetBytes: opts.budgetBytes, measure: opts.measure, hasCargoSweep: opts.hasCargoSweep, runCargoSweep: opts.runCargoSweep });
+  // A dry run removed nothing, so the budget's own discovery would still find the
+  // temp targets step 1 just said it would remove - and plan evictions the real
+  // run never makes. Carry step 1's would-be removals forward.
+  const exclude = opts.dryRun ? new Set(temp.removed.map((r) => r.target)) : undefined;
+  const budget = enforceBudget(root, { ...common, tmpdir, exclude, budgetBytes: opts.budgetBytes, measure: opts.measure, hasCargoSweep: opts.hasCargoSweep, runCargoSweep: opts.runCargoSweep });
   const warnings = tempWalk.warnings;
   const worktrees = sweepWorktrees(root, common);
 
@@ -276,7 +280,10 @@ export function runDaily(opts = {}) {
   } else {
     print(`[hygiene] footprint ${formatBytes(budget.totalBytes)} / ${formatBytes(budget.budgetBytes)} budget — ${budget.status}`);
   }
-  print(`[hygiene] ${opts.dryRun ? "would free" : "freed"} ${formatBytes(freed)} this run`);
+  const unsim = budget.unsimulated ?? [];
+  print(opts.dryRun
+    ? `[hygiene] would free ${formatBytes(freed)} this run${unsim.length ? ` — NOT a forecast: ${unsim.join(", ")} cannot be simulated, and every line after it is a MAY` : ""}`
+    : `[hygiene] freed ${formatBytes(freed)} this run`);
   return { root, budget, temp, worktrees, residue, freedBytes: freed, exitCode: budget.status === "unmeasured" ? 2 : 0 };
 }
 
