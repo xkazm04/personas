@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { SortableHeader } from '@/features/shared/components/display/SortableHeader';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Mark } from './Mark';
@@ -16,11 +16,17 @@ export interface TableCol<K extends string> {
   /** Accessible column name for the sort button when `label` is not a string. */
   sortLabel?: string;
   /**
-   * The column's width as a CSS length ('8rem', '136px', '12%'), for columns that must line up
-   * across tables. The first column keeps taking the rest. A table column, not a grid track:
-   * `minmax()` and `fr` do not apply to a `<table>`.
+   * The column's width as a CSS length ('8rem', '136px'), border-box (the cell's padding is
+   * inside it), for columns that must line up across tables. The first column takes the rest,
+   * so this is the column's floor: set as width and min-width on its cells. A table column, not
+   * a grid track: `minmax()` and `fr` do not apply to a `<table>`.
    */
   width?: string;
+}
+
+/** A column's fixed width on its cells (a `<col>` width loses to the first column's 99%). */
+function track<K extends string>(c: TableCol<K>): CSSProperties | undefined {
+  return c.width ? { width: c.width, minWidth: c.width } : undefined;
 }
 
 export interface TableRow<K extends string> {
@@ -74,9 +80,6 @@ export function DataTable<K extends string>({ cols, rows: given, label, loading,
   return (
     <div className={cx('k-tablewrap', stateClass(st))} {...kitAttrs('DataTable', st)} data-testid={testId}>
       <table className="k-table" aria-label={label} aria-busy={loading || undefined}>
-        {cols.some((c) => c.width) && (
-          <colgroup>{cols.map((c) => <col key={c.key} style={c.width ? { width: c.width } : undefined} />)}</colgroup>
-        )}
         <thead>
           <tr>
             {cols.map((c) => c.sortable ? (
@@ -91,14 +94,14 @@ export function DataTable<K extends string>({ cols, rows: given, label, loading,
                 className={cx('k-th-sort', c.num && 'k-num')}
                 buttonClassName="k-th-sort__btn typo-label k-regular"
               />
-            ) : <th key={c.key} scope="col" className={cx('typo-label k-regular', c.num && 'k-num')}>{c.label}</th>)}
+            ) : <th key={c.key} scope="col" className={cx('typo-label k-regular', c.num && 'k-num')} style={track(c)}>{c.label}</th>)}
           </tr>
         </thead>
         <tbody>
           {st === 'loading' && [0, 1, 2].map((i) => (
             <tr key={i} className="is-loading" aria-hidden="true">
               {cols.map((c, ci) => (
-                <td key={c.key} className={c.num ? 'k-num' : undefined}>
+                <td key={c.key} className={c.num ? 'k-num' : undefined} style={track(c)}>
                   {ci === 0 ? (
                     <>
                       <span className="k-mark" />
@@ -129,7 +132,7 @@ export function DataTable<K extends string>({ cols, rows: given, label, loading,
               onClick={onRowClick ? () => onRowClick(r.id) : undefined}
             >
               {cols.map((c, ci) => (
-                <td key={c.key} className={c.num ? 'k-num' : undefined}>
+                <td key={c.key} className={c.num ? 'k-num' : undefined} style={track(c)}>
                   {ci === 0 && r.mark && <Mark tone={r.mark.tone} glyph={r.mark.glyph} label={r.mark.label} />}
                   {r.cells[c.key]}
                 </td>

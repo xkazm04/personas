@@ -370,11 +370,13 @@ button.k-chip:hover, .k-chip.is-hover { border-color: color-mix(in srgb, var(--p
 .k-crumbs li { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
 .k-crumb { color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; white-space: nowrap; }
 /* A door: the eyebrow's own text, a 24px hit area won by padding and given back by margin. */
+/* A door reads as one at rest: a quiet underline, lit in the primary on hover. */
 button.k-crumb {
   padding: 3px 4px; margin: -3px -4px; border: 0; border-radius: var(--radius-interactive); background: transparent; cursor: pointer;
-  transition: color var(--duration-fast), background-color var(--duration-fast);
+  text-decoration: underline; text-decoration-color: var(--line); text-decoration-thickness: 1px; text-underline-offset: 3px;
+  transition: color var(--duration-fast), background-color var(--duration-fast), text-decoration-color var(--duration-fast);
 }
-button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); background: var(--band-hover); }
+button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); background: var(--band-hover); text-decoration-color: currentColor; }
 .k-crumb.is-current { color: var(--foreground); }
 
 /* ============ ContextCard (added at kit grow-1): a band with a primary rail, not a box ============ */

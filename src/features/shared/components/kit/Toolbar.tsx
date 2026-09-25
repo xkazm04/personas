@@ -88,7 +88,7 @@ export function SearchField({ value, onChange, placeholder, inputRef, testId }: 
  * reaches the Button's double-submit guard.
  * @catalog KitButton - the kit 32px button over the shared Button (real busy spinner; disabled with a reason; stopPropagation inside a selectable row). Kit.
  */
-export function KitButton({ children, onClick, loading, quiet, hint, className, testId, pressed, expanded, disabled, disabledReason, stopPropagation }: {
+export function KitButton({ children, onClick, loading, quiet, hint, className, testId, pressed, expanded, disabled, disabledReason, stopPropagation, label }: {
   children: ReactNode;
   onClick: () => unknown;
   loading?: boolean;
@@ -106,6 +106,8 @@ export function KitButton({ children, onClick, loading, quiet, hint, className, 
   disabledReason?: string;
   /** Keep the press inside this button (an action in a clickable row or card). */
   stopPropagation?: boolean;
+  /** Accessible name when the content is not text (a sparkline and a figure). */
+  label?: string;
 }) {
   const stop = stopPropagation
     ? { onKeyDown: (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); } }
@@ -119,6 +121,7 @@ export function KitButton({ children, onClick, loading, quiet, hint, className, 
       loading={loading}
       disabled={disabled}
       disabledReason={disabledReason}
+      aria-label={label}
       aria-pressed={pressed}
       aria-expanded={expanded}
       onClick={stopPropagation ? (e: MouseEvent) => { e.stopPropagation(); return onClick(); } : onClick}

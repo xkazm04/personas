@@ -69,16 +69,25 @@ describe('KitButton', () => {
 describe('DataTable column width', () => {
   type K = 'name' | 'n';
   const rows = [{ id: 'a', cells: { name: 'alpha', n: '2' } }];
-  it('renders a colgroup with the given widths only when a column asks for one', () => {
-    const { container, rerender } = render(
+  it('sets width and min-width on the head and every cell of a column that asks, nothing elsewhere', () => {
+    const { container } = render(
       <DataTable<K> label="t" cols={[{ key: 'name', label: 'Name' }, { key: 'n', label: 'N', num: true, width: '8rem' }]} rows={rows} empty={{ title: 'none' }} />,
     );
-    const cols = container.querySelectorAll('colgroup col');
-    expect(cols).toHaveLength(2);
-    expect((cols[0] as HTMLElement).style.width).toBe('');
-    expect((cols[1] as HTMLElement).style.width).toBe('8rem');
-    rerender(<DataTable<K> label="t" cols={[{ key: 'name', label: 'Name' }, { key: 'n', label: 'N' }]} rows={rows} empty={{ title: 'none' }} />);
-    expect(container.querySelector('colgroup')).toBeNull();
+    const [thName, thN] = Array.from(container.querySelectorAll('th')) as HTMLElement[];
+    const [tdName, tdN] = Array.from(container.querySelectorAll('tbody td')) as HTMLElement[];
+    expect(thN!.style.width).toBe('8rem');
+    expect(thN!.style.minWidth).toBe('8rem');
+    expect(tdN!.style.width).toBe('8rem');
+    expect(tdN!.style.minWidth).toBe('8rem');
+    expect(thName!.getAttribute('style')).toBeNull();
+    expect(tdName!.getAttribute('style')).toBeNull();
+  });
+  it('keeps the track on a loading table', () => {
+    const { container } = render(
+      <DataTable<K> label="t" loading cols={[{ key: 'name', label: 'Name' }, { key: 'n', label: 'N', width: '6rem' }]} rows={[]} empty={{ title: 'none' }} />,
+    );
+    const cells = Array.from(container.querySelectorAll('tbody tr:first-child td')) as HTMLElement[];
+    expect(cells[1]!.style.minWidth).toBe('6rem');
   });
 });
 
