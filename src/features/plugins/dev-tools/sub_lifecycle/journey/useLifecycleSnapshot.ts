@@ -11,6 +11,7 @@ import { getLifecycle } from '@/api/devTools/lifecycle';
 import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import type { LifecycleSnapshot } from '@/lib/bindings/LifecycleSnapshot';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { useDevToolsLiveStore } from '@/stores/devToolsLiveStore';
 
 // One entry per project opened this session; the cap names the bound.
@@ -35,7 +36,7 @@ export function useLifecycleSnapshot(projectId: string | null): UseLifecycleSnap
   const [error, setError] = useState<string | null>(null);
   const [gen, setGen] = useState(0);
   // A slow response for project A must not land after a switch to project B.
-  const requestSeq = useRef(0);
+  const latestWins = useRef(createLatestWins()).current;
 
   // Paint the warm copy immediately on a project switch (not on a revision bump,
   // where the current snapshot is already the right project's).
@@ -49,23 +50,23 @@ export function useLifecycleSnapshot(projectId: string | null): UseLifecycleSnap
       setLoading(false);
       return;
     }
-    const seq = ++requestSeq.current;
+    const token = latestWins.next();
     setLoading(true);
     getLifecycle(projectId)
       .then((s) => {
-        if (requestSeq.current !== seq) return;
+        if (!latestWins.isCurrent(token)) return;
         snapshotCache.set(projectId, s);
         setSnapshot(s);
         setError(null);
         setLoading(false);
       })
       .catch((err: unknown) => {
-        if (requestSeq.current !== seq) return;
+        if (!latestWins.isCurrent(token)) return;
         silentCatch('lifecycle:getLifecycle')(err);
         setError(err instanceof Error ? err.message : String(err));
         setLoading(false);
       });
-  }, [projectId, revision, gen]);
+  }, [projectId, revision, gen, latestWins]);
 
   const refetch = useCallback(() => setGen((g) => g + 1), []);
 
