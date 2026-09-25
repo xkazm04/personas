@@ -52,6 +52,9 @@ pub async fn companion_evaluate_proactive_now(
         &app,
     )
     .await;
+    // Layered voice: the weekly reply-register reflection (its own cadence,
+    // not gated by the synthesis toggle; it only files an approval card).
+    crate::companion::register::maybe_propose_register(&state.user_db, &state.db, &app);
     // Extra candidates sourced from the main app DB (not the companion
     // user_db): project-goal nudges + OPEN high/critical incident nudges.
     // Same guards (quiet hours / budget / dedupe) apply via the evaluator.

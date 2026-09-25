@@ -1,0 +1,49 @@
+/*
+ * The Twin experience: the surface the create-and-train overlay is played on.
+ *
+ * Everything is prefixed `tx-` and scoped to this folder. Every colour is an
+ * app token (`--primary`, `--foreground`, `--background`, `--secondary`), so
+ * all ten themes carry it and the `[data-brightness=…]` compensation is never
+ * bypassed. COLOUR MEANS STATUS AND NOTHING ELSE on this surface — the suits
+ * are told apart by their glyph and their rank letter, never by hue.
+ *
+ * Motion contract (Design.md §6): nothing here loops, so there is nothing for
+ * reduced motion to stop. The transitions that exist are paired with
+ * `motion-reduce` at their call sites.
+ */
+
+/*
+ * The table's felt: one soft overhead light, one faint floor, and a diamond
+ * weave. Carried over from the card-table variant at HALF the visibility it
+ * had there — it is a texture the cards sit on, not a thing to look at, and at
+ * full strength it competed with the question for attention.
+ */
+.tx-felt {
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 32%, color-mix(in oklab, var(--primary) 6.5%, transparent), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 110%, color-mix(in oklab, var(--foreground) 2%, transparent), transparent 70%),
+    repeating-linear-gradient(45deg, color-mix(in oklab, var(--foreground) 1.25%, transparent) 0 1px, transparent 1px 22px),
+    repeating-linear-gradient(-45deg, color-mix(in oklab, var(--foreground) 1.25%, transparent) 0 1px, transparent 1px 22px),
+    var(--background);
+}
+
+/*
+ * The answer and its note, weighted apart.
+ *
+ * DELIBERATE DEVIATION from Design.md §8 ("no utility patch over a `typo-*`
+ * token"), on an explicit instruction: the answer carries +100 of weight and
+ * the note under it -100, so the difference between THE ANSWER and WHY IT IS
+ * OFFERED is legible before either is read. The tokens hold the size and the
+ * line-height; only the weight is moved.
+ *
+ * It is written as a two-class selector on purpose. `.typo-body-lg` and
+ * `.typo-caption` are UNLAYERED rules, so a layered Tailwind `font-*` utility
+ * silently loses to them and a one-class rule here would depend on stylesheet
+ * order. `(0,2,0)` beats `(0,1,0)` whichever file loads first.
+ */
+.tx-card .tx-answer {
+  font-weight: 500;
+}
+.tx-card .tx-answer-note {
+  font-weight: 300;
+}

@@ -214,5 +214,6 @@
   "dispatch_run_on_offline": "غير متصل",
   "dispatch_run_on_queued_hint": "قيد الانتظار حتى يستيقظ",
   "dispatch_run_on_stale": "لم يُشاهَد مؤخرًا",
-  "dispatch_run_on_this_machine": "هذا الجهاز"
+  "dispatch_run_on_this_machine": "هذا الجهاز",
+  "md_spellcheck": "الإملاء والقواعد"
 }

@@ -2974,12 +2974,12 @@ progress, and the pointer changes what the footer launcher opens.
 [`guided-tour-step`](./golden-paths/guided-tour-step.md) §7.B.
 `gen-tour-anchors.mjs`'s six regexes require an anchor in attribute position, so
 they cannot see a `const` map value (`ObsidianBrainPage.tsx:33-38`), a ternary
-arm (`DailyGoalsModal.tsx:140`), or an aliased prop
+arm (`ScraperControlRoom.tsx:318`), or an aliased prop
 (`StudioChatInput.tsx:172` — `inputTestId`, whose capital `T` defeats the
 `testId="…"` regex). Measured: the manifest is **127 behind** (101 testids + 26
 prefixes, reproducing `client-rule-mirroring` §7 D5 exactly) **and 4 ahead** —
-`daily-goals-create`, `studio-chat-input`, `companion-strip-`, `mm-category-`
-are committed and no longer derivable. Live cost: the whole Obsidian Brain
+`daily-goals-create` (its feature was deleted 2026-09-24), `studio-chat-input`, `companion-strip-`, `mm-category-`
+were committed and no longer derivable. Live cost: the whole Obsidian Brain
 tour's six panel anchors are absent from the manifest, so
 `dynamicTours.ts:144` refuses any Athena-composed tour that names one.
 

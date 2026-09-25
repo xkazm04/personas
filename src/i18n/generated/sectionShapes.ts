@@ -716,33 +716,7 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
         "close-informal": {}
       }
     },
-    "experience_opus": {
-      "create": {},
-      "suits": {},
-      "stage": {},
-      "mode": {},
-      "table": {},
-      "loot": {
-        "kind": {},
-        "stamp": {}
-      },
-      "pile": {},
-      "twinCard": {},
-      "style": {},
-      "topics": {
-        "tiers": {},
-        "drills": {},
-        "stories": {},
-        "takes": {},
-        "asks": {},
-        "lines": {},
-        "offClock": {}
-      },
-      "notices": {},
-      "keys": {},
-      "launch": {}
-    },
-    "experience_grok": {
+    "experience": {
       "forge": {},
       "table": {},
       "slots": {
@@ -751,7 +725,17 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
         "channels": {},
         "memories": {}
       },
-      "voice": {}
+      "dictation": {},
+      "offers": {},
+      "sheet": {},
+      "deck": {
+        "tiers": {}
+      },
+      "studio": {},
+      "notices": {},
+      "launch": {},
+      "plan": {},
+      "openers": {}
     }
   },
   "radio": {},
@@ -777,7 +761,9 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
   "debt": {},
   "mastermind": {},
   "ship": {},
-  "studio": {},
+  "studio": {
+    "guide": {}
+  },
   "notepad": {},
   "browser": {
     "whitelist": {},

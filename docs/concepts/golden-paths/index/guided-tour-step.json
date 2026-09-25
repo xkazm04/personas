@@ -32,16 +32,6 @@
     "src-tauri/src/companion/generated_tour_anchors.rs": {"count":1,"sections":[7],"contexts":["decomposing it. The Rust twin `generated_tour_anchors.rs` holds 1,232 entries ="],"resolvedFrom":"basename","verbatim":"generated_tour_anchors.rs"},
     "src/features/agents/sub_design/DesignHub.tsx": {"count":1,"sections":[7],"lines":["79"],"contexts":["`data-testid={`design-subtab-${tab.id}`}` (`DesignHub.tsx:79`, with"],"resolvedFrom":"basename","verbatim":"DesignHub.tsx"},
     "src/features/agents/sub_editor/components/EditorTabBar.tsx": {"count":1,"sections":[7],"lines":["111"],"contexts":["(`EditorTabBar.tsx:111`, with `{ id: 'lab' }` at `:19`). This is where my two"],"resolvedFrom":"basename","verbatim":"EditorTabBar.tsx"},
-    "src/features/companions/athena/DailyGoalsModal.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["140"],
-      "contexts": [
-        "| `daily-goals-create` | `data-testid={editing ? 'daily-goals-save' : 'daily-goals-create'}` (`DailyGoalsModal.tsx:140`) | `data-testid=\\{'(…)'\\}` requires the closing brace after the quote |"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "DailyGoalsModal.tsx"
-    },
     "src/features/home/sub_learning/powerMoves/registry.ts": {"count":1,"sections":[7],"contexts":["`home/sub_learning/powerMoves/registry.ts`. An anchor named only there would"],"resolvedFrom":"suffix","verbatim":"home/sub_learning/powerMoves/registry.ts"},
     "src/features/onboarding/anchors/tourAnchorManifest.json": {"count":2,"sections":[0],"contexts":["`tourAnchorManifest.json` (945 testids), `feature-doc-map.json`,"],"resolvedFrom":"basename","verbatim":"tourAnchorManifest.json"},
     "src/features/onboarding/components/GuidedTour.tsx": {
@@ -63,6 +53,16 @@
       "contexts": ["`ObsidianBrainPage.tsx`. Instrumented: 4,399 source files, twice."],
       "resolvedFrom": "basename",
       "verbatim": "ObsidianBrainPage.tsx"
+    },
+    "src/features/scraper/ScraperControlRoom.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["318"],
+      "contexts": [
+        "| a ternary arm (`scrape-status`, standing in for the deleted `daily-goals-create`, same form) | `data-testid={status.collapsed ? 'scrape-status-collapsed' : 'scrape-status'}` (`ScraperControlRoom.ts…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "ScraperControlRoom.tsx"
     },
     "src/features/studio/StudioChatInput.tsx": {
       "count": 1,

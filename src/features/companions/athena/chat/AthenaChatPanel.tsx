@@ -12,24 +12,22 @@
  * a resize rather than a snap between two layouts.
  */
 
-import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Collapse } from '@/features/shared/components/display/Collapse';
 import { useSystemStore } from '@/stores/systemStore';
 import { AthenaAvatar } from '../AthenaAvatar';
-import { DailyGoalsBar } from '../DailyGoalsBar';
 import { DevOpLedger } from '../DevOpLedger';
-import { FleetBoldnessDial } from '../FleetBoldnessDial';
-import { WakeCadence } from '../WakeCadence';
 import { useAthenaStore } from '../athenaStore';
 import { AthenaChatBody } from './AthenaChatBody';
-import { AthenaChatHeader, type ToolStrip } from './AthenaChatHeader';
+import { AthenaChatHeader } from './AthenaChatHeader';
 import { PANEL_HEIGHT_PX, PANEL_MAX_HEIGHT } from './athenaChatGeometry';
 import { useAthenaChatEngine } from './athenaChatEngine';
 import { useChatMount } from './athenaChatMount';
 import { usePanelMotion } from './athenaChatMorph';
 import { useAthenaChatShellEffects } from './athenaChatShell';
+import { ChatVariantPanel, ChatVariantTabs, useChatVariantStore } from './next/ChatVariantTabs';
+import { ChatVariantHost } from './next/ChatVariantHost';
 
 export default function AthenaChatPanel() {
   const { t } = useTranslation();
@@ -51,10 +49,6 @@ export default function AthenaChatPanel() {
   // Mirrors the orb's own z-[210] lift; the panel goes one above.
   const fleetGridOpen = useSystemStore((s) => s.fleetGridOpen);
 
-  // Which tool strip is expanded under the header. An accordion on purpose —
-  // session-scoped, so every panel open starts clean.
-  const [expandedStrip, setExpandedStrip] = useState<ToolStrip | null>(null);
-
   useAthenaChatShellEffects(streaming);
   // The engine listens whether or not the window is up — see `athenaChatEngine`
   // for why that placement is load-bearing (an orb-initiated turn had nothing
@@ -63,12 +57,21 @@ export default function AthenaChatPanel() {
   const isOpen = state === 'open';
   const motionProps = usePanelMotion(compact);
   const mount = useChatMount(isOpen, motionProps.settleMs);
+  // TODO(prototype, 2026-09-22): consolidate the Athena chat switcher.
+  const variant = useChatVariantStore((s) => s.variant);
 
   return (
+    <>
+    {isOpen && <ChatVariantTabs lifted={fleetGridOpen} />}
+    {isOpen && variant !== 'current' && (
+      <ChatVariantPanel>
+        <ChatVariantHost variant={variant} engine={engine} lifted={fleetGridOpen} />
+      </ChatVariantPanel>
+    )}
     <AnimatePresence
       onExitComplete={() => useAthenaStore.getState().setOrbOpenOrigin(null)}
     >
-      {isOpen && (
+      {isOpen && variant === 'current' && (
         <motion.div
           key="companion-panel"
           initial={motionProps.initial}
@@ -105,26 +108,12 @@ export default function AthenaChatPanel() {
               className="absolute inset-0 -z-10 opacity-[0.05]"
             />
           )}
-          <AthenaChatHeader
-            expandedStrip={expandedStrip}
-            onToggleStrip={(strip) =>
-              setExpandedStrip((cur) => (cur === strip ? null : strip))
-            }
-          />
-          {/* Strips animate open/closed rather than blinking in and out — each
-              one changes the panel's whole vertical rhythm, and `Collapse`
-              unmounts on close so nothing keeps polling behind a shut row. */}
-          <Collapse open={autonomousMode && expandedStrip === 'cadence'} unmountWhenClosed className="shrink-0">
-            <WakeCadence />
-          </Collapse>
-          <Collapse open={autonomousMode && expandedStrip === 'boldness'} unmountWhenClosed className="shrink-0">
-            <FleetBoldnessDial />
-          </Collapse>
+          <AthenaChatHeader />
+          {/* The dev row (the op ledger, which also carries the save-log key)
+              animates open rather than blinking in, and `Collapse` unmounts on
+              close so nothing keeps polling behind a shut row. */}
           <Collapse open={devModeAvailable && devMode} unmountWhenClosed className="shrink-0">
             <DevOpLedger />
-          </Collapse>
-          <Collapse open={devModeAvailable && expandedStrip === 'goals'} unmountWhenClosed className="shrink-0">
-            <DailyGoalsBar />
           </Collapse>
           <AthenaChatBody
             compact={compact}
@@ -135,5 +124,6 @@ export default function AthenaChatPanel() {
         </motion.div>
       )}
     </AnimatePresence>
+    </>
   );
 }

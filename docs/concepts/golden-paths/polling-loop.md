@@ -390,8 +390,8 @@ this document — there is no incremental tick to migrate to.
 
 `conventions.json` → `codeRules.effects` advertises `custom/no-unmanaged-effect-resources` as the enforcement for "clean up listeners, timers and subscriptions". A full `npx eslint` run over all **4,829** `src/**/*.{ts,tsx}` files produces **3** findings from that rule:
 
-- `agents/sub_glyph/GlyphCinemaLayout.tsx:60` — **false positive** (`return () => clearTimeout(h)` at `:63`)
-- `agents/sub_glyph/GlyphDialogueCinemaLayout.tsx:72` — **false positive** (cleanup at `:74`)
+- ~~`agents/sub_glyph/GlyphCinemaLayout.tsx:60`~~ (deleted 2026-09-23 with the legacy build layouts) — **false positive** (`return () => clearTimeout(h)` at `:63`)
+- ~~`agents/sub_glyph/GlyphDialogueCinemaLayout.tsx:72`~~ (deleted 2026-09-23 with the legacy build layouts) — **false positive** (cleanup at `:74`)
 - `overview/sub_observability/components/AiHealingStreamOverlay.tsx:25` — **false positive** (cleanup at `:30`)
 
 All three return a cleanup **inside an `if` block**, and `findCleanupFunction`

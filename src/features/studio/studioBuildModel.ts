@@ -89,3 +89,15 @@ export function tabDotClass(rt: TabDotState): string {
   if (rt.phase === 'error') return 'bg-status-error';
   return 'bg-foreground/30';
 }
+
+/**
+ * True while the runtime still holds the seeded `MOCK_PHASES` stand-in (every
+ * runtime starts with it). The Guide layout treats that as "no plan yet" rather
+ * than drawing a portfolio-shaped plan for every project.
+ */
+export function isPlaceholderPlan(phases: BuildPhase[]): boolean {
+  return (
+    phases.length === MOCK_PHASES.length &&
+    phases.every((p, i) => p.id === MOCK_PHASES[i]?.id && p.status === 'pending')
+  );
+}

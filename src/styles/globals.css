@@ -5569,6 +5569,36 @@ html[data-motion="reduce"] .animate-fade-slide-in {
   padding: 0.05em 0.35em;
 }
 
+/* The Halo exchange transcript (chat/next/ExchangeTranscript.tsx) sets replies
+   at typo-body-lg on a 68ch reading measure, not the bubble's typo-body. The
+   bubble rhythm above (0.5rem gaps) reads cramped at that size, so here the
+   gaps scale with the text (em), headings sit flush when they open a reply,
+   and a long path or id in inline code breaks instead of overflowing the
+   column. Scoped to `.athena-exchange`, so the Current bubbles are untouched. */
+.athena-exchange .athena-chat-md p { margin-bottom: 0.7em; }
+.athena-exchange .athena-chat-md ul,
+.athena-exchange .athena-chat-md ol {
+  margin-bottom: 0.7em;
+  padding-left: 1.3em;
+}
+.athena-exchange .athena-chat-md li + li { margin-top: 0.3em; }
+.athena-exchange .athena-chat-md li > p { margin-bottom: 0.3em; }
+.athena-exchange .athena-chat-md.athena-chat-md h1,
+.athena-exchange .athena-chat-md.athena-chat-md h2,
+.athena-exchange .athena-chat-md.athena-chat-md h3,
+.athena-exchange .athena-chat-md.athena-chat-md h4 {
+  margin-top: 1.1em;
+  margin-bottom: 0.35em;
+}
+.athena-exchange .athena-chat-md > :first-child { margin-top: 0; }
+.athena-exchange .athena-chat-md > :last-child { margin-bottom: 0; }
+.athena-exchange .athena-chat-md :not(pre) > code {
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.athena-exchange .athena-chat-md table { margin-top: 0.4em; margin-bottom: 0.8em; }
+
 /* ---------------------------------------------------------------------------
    Athena chat — syntax highlighting tuned to the app palette, SCOPED to the
    chat bubbles. The global `@import github-dark-dimmed` (globals.css top) is a
@@ -5734,6 +5764,49 @@ html[data-motion="reduce"] .animate-fade-slide-in {
 html[data-motion="reduce"] .companion-autonomous {
   animation: none;
   border-color: color-mix(in srgb, var(--primary) 45%, transparent);
+}
+
+/* Athena chat prototypes (two-layer) — the modal's state frame. The border is
+   a conic gradient built from the live workforce (one irregular arc per active
+   project, sized by its process count, coloured by its worst state), so the
+   frame itself is the fleet at a glance. A blurred copy of the same gradient
+   sits behind as the glow: it breathes only while Athena is working and flares
+   once when something new starts waiting. TODO(prototype, 2026-09-22):
+   consolidate with the chat switcher. */
+.athena-frame {
+  /* No `position` here: every framed surface is placed `absolute` by its owner. */
+  isolation: isolate;
+  padding: 1.5px;
+  background: var(--athena-frame, color-mix(in srgb, var(--foreground) 14%, transparent));
+}
+.athena-frame::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--athena-frame, transparent);
+  filter: blur(18px);
+  opacity: 0.28;
+  pointer-events: none;
+  transition: opacity 400ms ease;
+}
+.athena-frame[data-working="true"]::before {
+  animation: athena-frame-breathe 2.6s ease-in-out infinite;
+}
+.athena-frame[data-flare="true"]::before {
+  animation: athena-frame-flare 1.4s ease-out 1;
+}
+@keyframes athena-frame-breathe {
+  0%, 100% { opacity: 0.22; }
+  50% { opacity: 0.6; }
+}
+@keyframes athena-frame-flare {
+  0% { opacity: 0.9; filter: blur(8px); }
+  100% { opacity: 0.28; filter: blur(18px); }
+}
+html[data-motion="reduce"] .athena-frame::before {
+  animation: none;
 }
 
 /* Companion transcript — soft top/bottom scroll fades so messages dissolve

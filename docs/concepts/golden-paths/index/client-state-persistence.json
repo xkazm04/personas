@@ -68,11 +68,12 @@
       ],
       "resolved": false
     },
-    "keys.ts": {
-      "count": 1,
-      "sections": [9],
+    "main.tsx": {
+      "count": 2,
+      "sections": [5,7],
+      "lines": ["93","36,93,151,163"],
       "contexts": [
-        "- **Assert non-zero extraction on both sides before comparing.** Zero keys parsed from `keys.ts`, or zero entries parsed from `ALLOWED_KEYS`, is `exit 1` with \"extractor matched nothing — the file mo…"
+        "- **Hand-parsing the zustand persist envelope.** `main.tsx:93`, `:151`, `:163` reach into `{ state: { … } }` by hand. Adding `version`/`migrate` to any of those three stores changes the envelope and…"
       ],
       "resolved": false
     },
@@ -348,6 +349,15 @@
         "- **`src/features/plugins/obsidian-brain/useSavedVaultConfigs.ts:32-61`** — the **migration** template: read legacy key → merge → write backend → `removeItem` the legacy key, and **keep the legacy ke…"
       ]
     },
+    "src/features/plugins/twin/experience/table/keys.ts": {
+      "count": 1,
+      "sections": [9],
+      "contexts": [
+        "- **Assert non-zero extraction on both sides before comparing.** Zero keys parsed from `keys.ts`, or zero entries parsed from `ALLOWED_KEYS`, is `exit 1` with \"extractor matched nothing — the file mo…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "keys.ts"
+    },
     "src/features/settings/sub_byom/components/ByomApiKeyManager.tsx": {
       "count": 1,
       "sections": [5],
@@ -609,14 +619,12 @@
       "verbatim": "platform.ts"
     },
     "src/main.tsx": {
-      "count": 3,
-      "sections": [5,7,9],
-      "lines": ["93","36,93,151,163"],
+      "count": 1,
+      "sections": [9],
+      "lines": ["36,93,151,163"],
       "contexts": [
-        "- **Hand-parsing the zustand persist envelope.** `main.tsx:93`, `:151`, `:163` reach into `{ state: { … } }` by hand. Adding `version`/`migrate` to any of those three stores changes the envelope and…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "main.tsx"
+        "- `src/main.tsx:36,93,151,163` — pre-mount synchronous reads. These run before React and before the store module graph loads; they genuinely cannot call an async or store-dependent primitive. **Annot…"
+      ]
     },
     "src/stores/**": {
       "count": 1,

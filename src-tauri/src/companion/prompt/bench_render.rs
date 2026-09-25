@@ -5,16 +5,14 @@
 //! Everything static comes from the embedded templates (`CONSTITUTION_MD`,
 //! `IDENTITY_MD_TEMPLATE`, the chat core); everything dynamic is the
 //! scenario's declared state rendered through the same formatters a live turn
-//! uses (`format_connectors`, the voice addenda). Recall is empty, plugins are
+//! uses (`format_connectors`, the voice and register flags). Recall is empty, plugins are
 //! absent, no mode addenda: the bench measures decision ability under the
 //! family, not memory quality.
 
-use super::addenda::{
-    display_addendum_if_voice_active, progress_addendum, voice_addendum_if_needed,
-};
+use super::addenda::progress_addendum;
 use super::budget::PromptBlockSizes;
 use super::capabilities::format_connectors;
-use super::chat_family::{chat_static_core, chat_voice_flag, PromptClass};
+use super::chat_family::{base_layer_one_flag, chat_static_core, voice_flag, PromptClass};
 use super::compose::compose_for_class;
 use crate::companion::brain::retrieval::Recall;
 use crate::companion::templates::{CONSTITUTION_MD, IDENTITY_MD_TEMPLATE};
@@ -68,20 +66,18 @@ pub fn render_bench_prompt(
     };
     let observability_md = bench_observability(&ctx.activity);
     let connectors_md = format_connectors(&ctx.pinned);
+    // No database here, so the register flag is the base register: exactly
+    // what a fresh install's turns carry.
     let (core, voice_md, display_md): (&str, String, String) = match class {
         PromptClass::Full => (
             CONSTITUTION_MD,
-            format!(
-                "{}{}",
-                voice_addendum_if_needed(ctx.voice),
-                progress_addendum()
-            ),
-            display_addendum_if_voice_active(ctx.voice),
+            format!("{}{}", voice_flag(ctx.voice), progress_addendum()),
+            base_layer_one_flag(),
         ),
         PromptClass::Chat => (
             chat_static_core(),
-            chat_voice_flag(ctx.voice),
-            String::new(),
+            voice_flag(ctx.voice),
+            base_layer_one_flag(),
         ),
     };
     Ok(compose_for_class(

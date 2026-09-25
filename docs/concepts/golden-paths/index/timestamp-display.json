@@ -127,7 +127,6 @@
     },
     "feature-voting/data.ts": {"count":1,"sections":[],"lines":["176"],"contexts":["`feature-voting/data.ts:176`, plus one catalog-driven); `brainiac/console` has **7**, all hardcoded English,"],"resolved":false},
     "format-date.test.ts": {"count":1,"sections":[],"contexts":["comment naming the exact off-by-one hazard, and has a regression test at `format-date.test.ts`. This repo"],"resolved":false},
-    "format.ts": {"count":2,"sections":[4,7],"lines":["28-64","43-57"],"contexts":["`format.ts:28-64` does, with telemetry, and it is the best answer any of the three repos has."],"resolved":false},
     "knowledgeDenseFormat.ts": {"count":1,"sections":[],"lines":["3"],"contexts":["**5** independent ladders (`src/lib/format.ts:31`, `knowledgeDenseFormat.ts:3`, `HealthIssueRow.tsx:17`,"],"resolved":false},
     "scripts/census/lib/engine.mjs": {
       "count": 1,
@@ -177,6 +176,14 @@
       "contexts": ["`autoCredHelpers.ts:97`, `AnalyzingPhase.tsx:39`, plus `athenaChatVoice.ts:96` at 1ms."],
       "resolvedFrom": "basename",
       "verbatim": "athenaChatVoice.ts"
+    },
+    "src/features/companions/curator/blueprint/format.ts": {
+      "count": 2,
+      "sections": [4,7],
+      "lines": ["28-64","43-57"],
+      "contexts": ["`format.ts:28-64` does, with telemetry, and it is the best answer any of the three repos has."],
+      "resolvedFrom": "basename",
+      "verbatim": "format.ts"
     },
     "src/features/fleet/monitor/PersonaMonitor.tsx": {
       "count": 2,

@@ -42,6 +42,14 @@
       ],
       "resolved": false
     },
+    "capabilityHelpers.ts": {
+      "count": 1,
+      "sections": [7],
+      "contexts": [
+        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `twinStatus.ts`, `SetupReadinessRow.tsx`, `ProfilesAtelier.tsx` — `readinessGaps.ts`, `CompleteTwinChecklist.tsx` and `R…"
+      ],
+      "resolved": false
+    },
     "index.ts": {"count":1,"sections":[7],"lines":["9-18"],"contexts":["806 LOC, exported from `index.ts:9-18` and imported by nothing, sitting beside"],"resolved":false},
     "onboardingStore.ts": {"count":1,"sections":[7],"contexts":["`/api/goals`; `onboardingStore.ts` stores the result), with `resetOnboarding`"],"resolved":false},
     "overview/sub_patterns/ExtractionMenu.tsx": {"count":1,"sections":[7],"lines":["57"],"contexts":["**The one site to copy is `overview/sub_patterns/ExtractionMenu.tsx:57`:**"],"resolved":false},
@@ -99,15 +107,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "usePersonaReadiness.ts"
-    },
-    "src/features/agents/sub_new_persona/capabilityView/capabilityHelpers.ts": {
-      "count": 1,
-      "sections": [7],
-      "contexts": [
-        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `twinStatus.ts`, `SetupReadinessRow.tsx`, `ProfilesAtelier.tsx` — `readinessGaps.ts`, `CompleteTwinChecklist.tsx` and `R…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "capabilityHelpers.ts"
     },
     "src/features/home/**": {"count":1,"sections":[12],"contexts":["- **\"`setup-checklist` most likely lives in `src/features/home/**` and/or"],"resolved":false,"isDir":true},
     "src/features/home/components/SetupCards.tsx": {"count":1,"sections":[7],"contexts":["(625 LOC)\"*, removing `src/features/home/components/SetupCards.tsx`. Someone"],"resolved":false},

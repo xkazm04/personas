@@ -1710,26 +1710,6 @@ CREATE TABLE IF NOT EXISTS companion_night_event (
 CREATE INDEX IF NOT EXISTS idx_companion_night_event_plan
     ON companion_night_event(plan_id, kind, created_at);
 
--- Dev-only gamification: daily goal sets for the Athena companion panel.
--- One "set" = 1-3 goals entered together (shared set_id); at most one set
--- is status='active' at a time. Evaluation is manual (the operator toggles
--- each goal); when the last open goal is marked done the whole set flips
--- to 'completed' and completed_date (LOCAL 'YYYY-MM-DD') becomes the
--- streak key. Completed rows are kept as history so the streak is always
--- recomputable; discarded sets never count.
-CREATE TABLE IF NOT EXISTS companion_daily_goal (
-    id             TEXT PRIMARY KEY,
-    set_id         TEXT NOT NULL,
-    slot           INTEGER NOT NULL,
-    title          TEXT NOT NULL,
-    done_at        TEXT,
-    status         TEXT NOT NULL DEFAULT 'active',
-    completed_date TEXT,
-    created_at     TEXT NOT NULL DEFAULT (datetime('now'))
-);
-CREATE INDEX IF NOT EXISTS idx_companion_daily_goal_status
-    ON companion_daily_goal(status, completed_date);
-
 -- Per-turn sidecars: the rich side channels the frontend parses out of the
 -- CLI stream for one assistant episode (narration/tool trail, TodoWrite
 -- plan, dispatcher turn summary, recall preview). They used to live only in
@@ -1772,6 +1752,24 @@ CREATE TABLE IF NOT EXISTS companion_chat_card (
 );
 CREATE INDEX IF NOT EXISTS idx_companion_chat_card_pending
     ON companion_chat_card(conversation_id, status, created_at DESC);
+
+-- Layered voice (spark athena-layered-voice, 2026-09-23): the reply register,
+-- i.e. how many sentences Athena's layer-one reply may run to, per scope.
+-- `scope = 'default'` is the global register; any other scope is a topic
+-- override. No row means the base register (3, companion::register::
+-- LAYER_ONE_BASE_SENTENCES). `source` records who set it: the operator
+-- pinning it, or the reflection pass (`adjust_register` op) adapting it.
+-- A NEW table, so `CREATE TABLE IF NOT EXISTS` here is sufficient on existing
+-- installs; it lives in this schema rather than the incremental chain because
+-- that chain runs on the main database only. Contract:
+-- docs/features/companion/layered-voice.md.
+CREATE TABLE IF NOT EXISTS companion_reply_register (
+    scope      TEXT PRIMARY KEY,
+    sentences  INTEGER NOT NULL CHECK (sentences BETWEEN 1 AND 8),
+    source     TEXT NOT NULL CHECK (source IN ('operator','reflection')),
+    reason     TEXT,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 
 -- companion_tours: Athena-composed guided tours (Generative Tours).
 -- One row per composed tour; steps stored as validated JSON in the frontend
@@ -2653,6 +2651,48 @@ mod boot_tests {
             "fresh install must not create any backup"
         );
         let _ = std::fs::remove_dir_all(&data_dir);
+    }
+
+    /// `companion_reply_register` (layered voice) is created by the USER
+    /// database's boot path, survives a reopen with its rows intact, and its
+    /// CHECK constraints hold independently of the Rust validator.
+    #[test]
+    fn user_db_reply_register_survives_reopen_and_enforces_its_checks() -> Result<(), AppError> {
+        let data_dir =
+            std::env::temp_dir().join(format!("personas_user_boot_test_{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&data_dir)?;
+
+        {
+            let pool = init_user_db(&data_dir)?;
+            let conn = pool.get()?;
+            conn.execute(
+                "INSERT INTO companion_reply_register (scope, sentences, source, reason)
+                 VALUES ('default', 4, 'operator', 'pinned')",
+                [],
+            )?;
+        }
+
+        {
+            let pool = init_user_db(&data_dir)?;
+            let conn = pool.get()?;
+            let (sentences, source): (i64, String) = conn.query_row(
+                "SELECT sentences, source FROM companion_reply_register WHERE scope = 'default'",
+                [],
+                |r| Ok((r.get("sentences")?, r.get("source")?)),
+            )?;
+            assert_eq!((sentences, source.as_str()), (4, "operator"));
+
+            for bad in [
+                "INSERT INTO companion_reply_register (scope, sentences, source) VALUES ('a', 0, 'operator')",
+                "INSERT INTO companion_reply_register (scope, sentences, source) VALUES ('b', 9, 'operator')",
+                "INSERT INTO companion_reply_register (scope, sentences, source) VALUES ('c', 3, 'athena')",
+            ] {
+                assert!(conn.execute(bad, []).is_err(), "CHECK let through: {bad}");
+            }
+        }
+
+        let _ = std::fs::remove_dir_all(&data_dir);
+        Ok(())
     }
 
     /// Rotation: only the newest 3 backup sets survive, and WAL/SHM siblings

@@ -35,6 +35,7 @@ import { AthenaChatApprovals, AthenaChatCards } from './AthenaChatProposals';
 import { AthenaChatSkeleton } from './AthenaChatSkeleton';
 import { AthenaChatStreamingTurn } from './AthenaChatStreamingTurn';
 import { AthenaChatTranscript } from './AthenaChatTranscript';
+import { ReportReader } from './refs/ReportReader';
 import type { TurnSummaryJumpTarget } from './AthenaChatMessageRow';
 import type { AthenaChatEngine } from './athenaChatEngine';
 import { useAthenaChatView } from './athenaChatSession';
@@ -55,6 +56,7 @@ export function AthenaChatBody({
   const { t } = useTranslation();
   const view = useAthenaChatView(engine, ready);
   const brainOpen = useAthenaStore((s) => s.brainView.open);
+  const reportViewId = useAthenaStore((s) => s.reportViewId);
   const hasProactive = useAthenaStore((st) => st.proactive.length > 0);
 
   const approvalsAnchorRef = useRef<HTMLDivElement>(null);
@@ -173,6 +175,14 @@ export function AthenaChatBody({
           onSend={engine.send}
           onSendOrQueue={engine.sendOrQueue}
         />
+        {/* Layered voice, layer two: a report opened from a ref link or its
+            one-line card reads over the chat column, like the Brain Viewer. */}
+        {reportViewId && (
+          <ReportReader
+            reportId={reportViewId}
+            onClose={() => useAthenaStore.getState().setReportViewId(null)}
+          />
+        )}
         {brainOpen && (
           <BrainViewer
             onClose={() =>

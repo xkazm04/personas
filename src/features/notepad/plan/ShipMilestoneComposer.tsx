@@ -18,7 +18,7 @@ import { PLAN_BORDER, PLAN_FILL, PLAN_HUE, PLAN_INK, TONE_ROLE } from './planInk
 import { ShipItemAnnotations } from './ShipItemAnnotations';
 import { ShipGoalRail } from './ShipGoalRail';
 import { type ShipGoal, type ShipMilestoneVM } from '@/lib/milestone/shipModel';
-import { LedgerEmpty, LedgerHeader, LedgerList, LedgerRow } from './shipRows';
+import { AfterCutMark, LedgerEmpty, LedgerHeader, LedgerList, LedgerRow } from './shipRows';
 import type { ShipData } from './useProjectPlan';
 
 /** The row-level chip button. Takes an INK/BORDER class pair rather than a hex:
@@ -111,7 +111,7 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
                   ? tx(m.feature.kpiCount === 1 ? t.ship.kpi_count_one : t.ship.kpi_count_other, { count: m.feature.kpiCount })
                   : t.ship.state_no_kpi}
                 stateHue={m.feature.kpiCount > 0 ? PLAN_HUE.success : PLAN_HUE.info}
-                meta={m.afterCut ? <span className={`typo-caption shrink-0 ${PLAN_INK.athena}`}>{t.ship.added_after_cut}</span> : undefined}
+                meta={m.afterCut ? <AfterCutMark label={t.ship.added_after_cut} /> : undefined}
                 footer={(
                   <ShipItemAnnotations
                     kind="use_case"

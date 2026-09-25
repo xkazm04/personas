@@ -424,10 +424,46 @@ pub fn spawn_headless_claude(
     exec_dir: Option<&std::path::Path>,
     capture_stderr: bool,
 ) -> Result<tokio::process::Child, personas_core::error::AppError> {
-    let mut cli_args = super::prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push(model.to_string());
+    spawn_headless_claude_tier(
+        prompt_text,
+        model,
+        super::prompt::DEFAULT_EFFORT,
+        extra_args,
+        exec_dir,
+        capture_stderr,
+    )
+}
+
+/// The argv + env a headless one-shot spawn uses: `build_cli_args` with a
+/// [`ModelProfile`](personas_core::types::ModelProfile) carrying `model` and
+/// `effort`, so the builder emits exactly ONE `--effort` and ONE `--model`
+/// (appending either through `extra_args` would duplicate the flag), then
+/// `extra_args`. Pure, so the flag count is testable without a process.
+pub fn headless_claude_args(model: &str, effort: &str, extra_args: &[String]) -> CliArgs {
+    let profile = personas_core::types::ModelProfile {
+        model: Some(model.to_string()),
+        effort: Some(effort.to_string()),
+        ..Default::default()
+    };
+    let mut cli_args = super::prompt::build_cli_args(None, Some(&profile));
     cli_args.args.extend(extra_args.iter().cloned());
+    cli_args
+}
+
+/// [`spawn_headless_claude`] with the reasoning effort chosen by the caller
+/// (`low` | `medium` | `high`) instead of [`DEFAULT_EFFORT`]. The one spawn
+/// path: `spawn_headless_claude` delegates here with the default effort.
+///
+/// [`DEFAULT_EFFORT`]: super::prompt::DEFAULT_EFFORT
+pub fn spawn_headless_claude_tier(
+    prompt_text: String,
+    model: &str,
+    effort: &str,
+    extra_args: &[String],
+    exec_dir: Option<&std::path::Path>,
+    capture_stderr: bool,
+) -> Result<tokio::process::Child, personas_core::error::AppError> {
+    let cli_args = headless_claude_args(model, effort, extra_args);
 
     let mut cmd = Command::new(&cli_args.command);
     cmd.args(&cli_args.args)
@@ -481,6 +517,45 @@ pub fn spawn_headless_claude(
     }
 
     Ok(child)
+}
+
+/// Why [`collect_within`] gave up.
+#[derive(Debug)]
+pub enum CollectError {
+    /// The deadline passed; the child was killed and reaped.
+    TimedOut,
+    Io(std::io::Error),
+}
+
+/// Read the child's stdout to EOF and reap it, within `timeout`. On timeout
+/// the child is killed and reaped before returning, so no CLI outlives its
+/// budget.
+pub async fn collect_within(
+    child: &mut tokio::process::Child,
+    timeout: std::time::Duration,
+) -> Result<(std::process::ExitStatus, Vec<u8>), CollectError> {
+    use tokio::io::AsyncReadExt;
+
+    let mut stdout = child.stdout.take();
+    let outcome = tokio::time::timeout(timeout, async {
+        let mut buf = Vec::new();
+        if let Some(out) = stdout.as_mut() {
+            out.read_to_end(&mut buf).await?;
+        }
+        let status = child.wait().await?;
+        Ok::<_, std::io::Error>((status, buf))
+    })
+    .await;
+
+    match outcome {
+        Ok(Ok(done)) => Ok(done),
+        Ok(Err(e)) => Err(CollectError::Io(e)),
+        Err(_) => {
+            let _ = child.start_kill();
+            let _ = child.wait().await;
+            Err(CollectError::TimedOut)
+        }
+    }
 }
 
 // =============================================================================
@@ -1020,6 +1095,70 @@ impl CliProcessDriver {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A child that outlives its budget is killed, not abandoned.
+    #[tokio::test]
+    async fn collect_within_kills_on_timeout() -> Result<(), std::io::Error> {
+        #[cfg(windows)]
+        let mut cmd = {
+            let mut c = Command::new("ping");
+            c.args(["-n", "30", "127.0.0.1"]);
+            c
+        };
+        #[cfg(not(windows))]
+        let mut cmd = {
+            let mut c = Command::new("sleep");
+            c.arg("30");
+            c
+        };
+        let mut child = cmd
+            .stdout(std::process::Stdio::piped())
+            .kill_on_drop(true)
+            .spawn()?;
+        let started = std::time::Instant::now();
+        let outcome = collect_within(&mut child, std::time::Duration::from_millis(300)).await;
+        assert!(matches!(outcome, Err(CollectError::TimedOut)));
+        assert!(started.elapsed() < std::time::Duration::from_secs(10));
+        assert!(
+            child.try_wait()?.is_some(),
+            "the child must have exited (killed) by the time the timeout returns"
+        );
+        Ok(())
+    }
+
+    fn flag_values<'a>(args: &'a [String], flag: &str) -> Vec<&'a str> {
+        args.windows(2)
+            .filter(|w| w[0] == flag)
+            .map(|w| w[1].as_str())
+            .collect()
+    }
+
+    /// The tiered spawn emits exactly one `--effort` and one `--model`, with
+    /// the values the caller passed, and keeps caller extras after them.
+    #[test]
+    fn headless_args_carry_one_effort_and_one_model() {
+        let extra = vec!["--worktree".to_string(), "wt".to_string()];
+        let args = headless_claude_args("claude-test-model", "low", &extra).args;
+        assert_eq!(flag_values(&args, "--effort"), ["low"]);
+        assert_eq!(flag_values(&args, "--model"), ["claude-test-model"]);
+        assert_eq!(flag_values(&args, "--worktree"), ["wt"]);
+        let model_at = args.iter().position(|a| a == "--model");
+        let extra_at = args.iter().position(|a| a == "--worktree");
+        assert!(model_at < extra_at, "extras follow the model flag");
+    }
+
+    /// The legacy spawn keeps its old argv: default effort, one model flag.
+    #[test]
+    fn headless_args_default_effort_is_unchanged() {
+        let args = headless_claude_args(
+            "claude-test-model",
+            super::super::prompt::DEFAULT_EFFORT,
+            &[],
+        )
+        .args;
+        assert_eq!(flag_values(&args, "--effort"), ["medium"]);
+        assert_eq!(flag_values(&args, "--model"), ["claude-test-model"]);
+    }
 
     /// Explicit env state of a Command: `Some(val)` = set, `None` = removed.
     fn env_entry(cmd: &Command, key: &str) -> Option<Option<String>> {

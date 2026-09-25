@@ -2,110 +2,18 @@
 //! iframe is cross-origin (the dev server on its own port), so the host can't read
 //! element positions inside it. We bake a tiny client agent into the generated app
 //! that answers a `postMessage` "locate <selector>" with the element's bounding
-//! rect (and briefly outlines it). Injected on every dev-server start; idempotent
-//! and best-effort — if a non-standard layout can't be patched, the orb pointer
-//! simply falls back to coarse-region anchoring.
+//! rect (and briefly outlines it), and reports the element the user right-clicks
+//! (or clicks in pick mode) so Studio can queue a change aimed at it. Injected
+//! on every dev-server start; idempotent and best-effort — if a non-standard
+//! layout can't be patched, the orb pointer simply falls back to coarse-region
+//! anchoring.
 
 use std::path::Path;
 
-/// The agent component, written verbatim into the project. Dev-gated at runtime
-/// (`process.env.NODE_ENV`) so it's tree-shaken out of production builds.
-const AGENT_TSX: &str = r##""use client";
-import { useEffect } from "react";
-
-// Dev-only bridge for Athena Studio. The host postMessages
-// {source:"athena", type:"locate", selector, reqId}; we reply to the parent with
-// the element's bounding rect (this frame's viewport) and briefly outline it.
-type Rect = { x: number; y: number; width: number; height: number };
-
-export function AthenaPreviewAgent() {
-  useEffect(() => {
-    if (process.env.NODE_ENV !== "development") return;
-    let ring: HTMLDivElement | null = null;
-    const clear = () => {
-      if (ring) {
-        ring.remove();
-        ring = null;
-      }
-    };
-    const highlight = (r: DOMRect) => {
-      clear();
-      ring = document.createElement("div");
-      Object.assign(ring.style, {
-        position: "fixed",
-        left: `${r.x}px`,
-        top: `${r.y}px`,
-        width: `${r.width}px`,
-        height: `${r.height}px`,
-        border: "2px solid #2dd4bf",
-        borderRadius: "8px",
-        boxShadow: "0 0 0 4px rgba(45,212,191,0.25)",
-        pointerEvents: "none",
-        zIndex: "2147483647",
-      });
-      document.body.appendChild(ring);
-      window.setTimeout(clear, 2600);
-    };
-    const onMsg = (e: MessageEvent) => {
-      const d = e.data as
-        | { source?: string; type?: string; selector?: string; reqId?: string }
-        | null;
-      if (!d || d.source !== "athena" || d.type !== "locate") return;
-      let el: Element | null = null;
-      try {
-        el = d.selector ? document.querySelector(d.selector) : null;
-      } catch {
-        el = null;
-      }
-      const send = (rect: Rect | null, found: boolean) =>
-        window.parent?.postMessage(
-          { source: "athena-agent", type: "located", reqId: d.reqId, selector: d.selector, found, rect },
-          "*",
-        );
-      if (!el) {
-        send(null, false);
-        return;
-      }
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-      window.setTimeout(() => {
-        const r = (el as Element).getBoundingClientRect();
-        highlight(r);
-        send({ x: r.x, y: r.y, width: r.width, height: r.height }, true);
-      }, 350);
-    };
-    // Route reporting (A4) — post the live path to Studio so the preview toolbar
-    // reflects navigation for ANY client router (Next app/pages, React Router):
-    // they all go through the History API, so hooking it + popstate covers them.
-    const reportRoute = () =>
-      window.parent?.postMessage(
-        { source: "athena-agent", type: "route", path: location.pathname + location.search },
-        "*",
-      );
-    const origPush = history.pushState;
-    const origReplace = history.replaceState;
-    history.pushState = function (this: History, ...args: Parameters<History["pushState"]>) {
-      origPush.apply(this, args);
-      reportRoute();
-    };
-    history.replaceState = function (this: History, ...args: Parameters<History["replaceState"]>) {
-      origReplace.apply(this, args);
-      reportRoute();
-    };
-    window.addEventListener("popstate", reportRoute);
-    reportRoute();
-
-    window.addEventListener("message", onMsg);
-    return () => {
-      window.removeEventListener("message", onMsg);
-      window.removeEventListener("popstate", reportRoute);
-      history.pushState = origPush;
-      history.replaceState = origReplace;
-      clear();
-    };
-  }, []);
-  return null;
-}
-"##;
+/// The agent component, written verbatim into the project. It lives as a real
+/// `.tsx` file so it is type-shaped and unit-tested (the Studio preview-agent
+/// test renders it in jsdom). It does nothing in a production build.
+const AGENT_TSX: &str = include_str!("athena_preview_agent.tsx");
 
 /// Ensure the preview agent exists + is mounted in the project's root layout.
 /// Idempotent + best-effort: never errors out the dev-server start.

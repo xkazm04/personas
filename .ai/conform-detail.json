@@ -57,71 +57,25 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-1",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
       "techniques": [
         {
-          "technique": "heterogeneous-model-panels",
+          "technique": "soft-budget-under-the-hard-cap",
           "verdict": "deviation",
-          "evidence": "src/features/fleet/monitor/channels/DeliberationRail.tsx:52 - advance / run-to-budget / split / merge drive a multi-round persona debate whose seats are personas, not independently trained models (TeamDeliberation carries a rosterIds list and no per-seat model), and it is the default path for routine team work with no voting-baseline comparison on record; the product is the transcript plus a proposal, never a concordance structure. Two rules ARE realized well: the run is bounded by cost rather than turns (costBudgetUsd, rail line 56) and by consecutiveStallRounds rather than a fixed round cap, which is a better answer to 'rounds continued after an unchanged-positions round'."
+          "evidence": "src/features/fleet/monitor/channels/DeliberationRail.tsx:80 '?? 5' literal beside an enforced engine cap; the agenda stop conditions (:194) are sound"
+        },
+        {
+          "technique": "heterogeneous-model-panels",
+          "verdict": "not-applicable",
+          "evidence": "src/features/fleet/monitor/channels/DeliberationRail.tsx:173 role-prompted persona seats are division of labour under the revised technique, not a panel"
         },
         {
           "technique": "session-registry",
-          "verdict": "deviation",
-          "evidence": "src/features/fleet/monitor/channels/types.ts:21 - PresenceMap introduces a two-value persona state ('working'|'waiting') alongside the store's closed ActiveProcessStatus and the monitor's own ExecState, so a persona that is failed, queued or input_required has no presence value and reads on the live map as merely waiting."
-        },
-        {
-          "technique": "result-harvest",
-          "verdict": "not-applicable",
-          "evidence": "A deliberation resolves into a proposal, not a dispatch roster; there is no set of members whose terminal accounts must sum, so the roster arithmetic has no referent here."
-        },
-        {
-          "technique": "lifecycle-signals",
-          "verdict": "not-applicable",
-          "evidence": "These surfaces consume a channel subscription; they neither emit lifecycle signals nor own a sweeper, so the two-tier mechanism has no implementation site in this context."
-        },
-        {
-          "technique": "parallel-dispatch",
-          "verdict": "not-applicable",
-          "evidence": "The rail's split/runAllTracks buttons request a backend fan-out; capacity, assignment and roster accounting are all decided in engine/deliberation.rs, outside these paths."
-        },
-        {
-          "technique": "durable-fleet-state",
-          "verdict": "not-applicable",
-          "evidence": "Read-only view over the pipeline store's channel cache; it holds no registry to mirror."
-        },
-        {
-          "technique": "hibernation-and-resume",
-          "verdict": "not-applicable",
-          "evidence": "No park/wake concept: a deliberation is paused or escalated as a status on the backend row, not by freeing a process under a preserved identity."
-        },
-        {
-          "technique": "brief-carries-the-session",
-          "verdict": "not-applicable",
-          "evidence": "The composer emits a directive into a channel a persona already subscribes to; no fresh worker session is minted here whose inherited context could be enumerated."
-        },
-        {
-          "technique": "worker-trajectory-anatomy",
-          "verdict": "not-applicable",
-          "evidence": "The rail shows a deliberation's round and spend, never a member's step trajectory; there is no per-worker recovery budget or completion claim to verify at this layer."
-        },
-        {
-          "technique": "coordination-failure-triage",
-          "verdict": "not-applicable",
-          "evidence": "An escalated deliberation is handed to a human with a free-text decision (rail lines 113-135); nothing classifies it into the three-class taxonomy before a fix is chosen."
-        },
-        {
-          "technique": "outbound-compute-plane",
-          "verdict": "not-applicable",
-          "evidence": "No executor plane in these paths."
-        },
-        {
-          "technique": "substrate-reconciliation",
-          "verdict": "not-applicable",
-          "evidence": "No substrate resources are owned or reconciled here."
+          "verdict": "conformant",
+          "evidence": "src/features/fleet/monitor/grid/fleetGridModel.ts:31 grid squares derive from the shared pillarStateKey authority; presence is derived from step records (channels/types.ts:21)"
         }
-      ],
-      "registryProposal": "heterogeneous-model-panels splits the world into cross-family panels and same-weights sampling runs, and this repo sits in a third place the technique does not name: seats that are one provider's tiers (haiku/sonnet/opus) driven by materially different role prompts. That is not cross-family concordance, but it is also not variants of the same weights sampled N times. A sentence on where role-diverse, same-provider panels fall - and what, if anything, their agreement is evidence of - would stop implementers reading themselves into the conformant column."
+      ]
     },
     "743a0ae5-b7d0-46a6-a915-cb82c7834bf8/fleet-orchestration": {
       "context": "fleet-monitor-shell",
@@ -309,66 +263,35 @@
       "subject": "eval-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-1",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-3",
       "techniques": [
         {
           "technique": "judge-stability",
           "verdict": "deviation",
-          "evidence": "src/features/overview/sub_certification/components/JudgePanel.tsx:64 - the panel shows meanJudge / minPersonaOutput / portfolioBalance and per-persona dimension grades with no judge identity anywhere in the type (src/lib/bindings/Judge.ts:10); no anchor-set drift is surfaced, and no own-family disclosure accompanies scores produced by a model of the same family as the candidates. RunHistoryView ranks runs by verdict and score across time (RunHistoryView.tsx:10-15), which is exactly the artifact an unpinned judge turns into fiction."
+          "evidence": "src/lib/bindings/Judge.ts:10 no judge identity; JudgePanel.tsx:76 renders judge means without the instrument"
+        },
+        {
+          "technique": "comparison-modes",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_certification/components/TrajectoryChart.tsx:21 plots a missing score as 0 and marks no rubric discontinuity"
         },
         {
           "technique": "certification-levels",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_certification/components/CertOverview.tsx:47 drops the provisional flag while the streak (src-tauri/src/commands/eval_runs.rs:667) counts provisional verdicts"
+        },
+        {
+          "technique": "reliability-aggregation",
           "verdict": "conformant",
-          "evidence": "src/lib/bindings/Judge.ts:6-7 - judge is null for deterministic-only scorecards, and VerdictBadge.tsx:24-51 marks those verdicts `provisional` with a trailing asterisk and a distinct title, so a candidate certified by the cheap level is never presented as having passed the expensive one; the four-level ladder itself is a declared closed vocabulary (VerdictBadge.tsx:17-22)."
+          "evidence": "src/features/overview/sub_certification/components/TeamCertCells.tsx:16 certifies only on 3 consecutive held-out production runs"
         },
         {
           "technique": "assertion-vs-judgment",
           "verdict": "conformant",
-          "evidence": "src/features/overview/sub_certification/components/GateBreakdown.tsx:44 - deterministic build/lint/test steps render as the outer gate with a three-state read (pass / fail / '-' for absent, lines 13-19), and the judged dimensions sit inside it in JudgePanel; a missing gate step is never painted as a pass."
-        },
-        {
-          "technique": "metric-role-contract",
-          "verdict": "unknown",
-          "evidence": "DimensionBars.tsx:5-9 applies one uniform 80/60 band to all five deterministic dimensions including grounding, and the surface shows them as peers under a composite verdict - but whether the bundle producer declares one optimized metric and N thresholds is decided in the eval_runs backend, outside these paths."
-        },
-        {
-          "technique": "scenario-design",
-          "verdict": "not-applicable",
-          "evidence": "Read-only viewer of bundles produced elsewhere; the run's seed is surfaced (RunHistoryView.tsx:68-73, RunDetailView.tsx:64) but scenario identity, sourcing and cache keys are all decided in the docs/test/runs producer."
-        },
-        {
-          "technique": "failure-attribution",
-          "verdict": "not-applicable",
-          "evidence": "The technique prescribes a manual review over a sample of both tails, producing classes; this context neither performs nor records attribution, and there is no field for an owner class on a red case."
-        },
-        {
-          "technique": "comparison-modes",
-          "verdict": "not-applicable",
-          "evidence": "The viewer shows absolute per-run scorecards; no pairwise or matrix comparison is constructed here."
-        },
-        {
-          "technique": "eval-economics",
-          "verdict": "not-applicable",
-          "evidence": "Cadence, caps, caches and mock modes are producer-side; the viewer only reads finished bundles from disk."
-        },
-        {
-          "technique": "unaided-baseline-screening",
-          "verdict": "not-applicable",
-          "evidence": "No deprived-candidate control can be run from a read-only surface."
-        },
-        {
-          "technique": "overshoot-and-restore",
-          "verdict": "not-applicable",
-          "evidence": "The harness is used as a certification gate, not as a bound on a reduction search."
-        },
-        {
-          "technique": "discriminating-task-selection",
-          "verdict": "not-applicable",
-          "evidence": "The surface reports per-team certification status, not a selection search ranking a population."
+          "evidence": "src/features/overview/sub_certification/components/GateBreakdown.tsx:18 deterministic gates rendered three-state, outside the judge panel"
         }
-      ],
-      "registryProposal": "Upward lesson for policy-projection (quality-gates) with a real anchor: DimensionBars.tsx:14-15 clamps a bar's visual width to 100% while printing the true number, with the reason written next to it ('Bars can exceed 100... clamp the visual width but show the true number'). That is the display-cap-is-not-a-data-cap rule realized as a two-line habit rather than as a postmortem, and it belongs in the application layer as a positive citation."
+      ]
     },
     "6a81750d-fdbf-4518-bae6-689303e1a884/eval-harness": {
       "context": "test-runner-lab",
@@ -4602,10 +4525,26 @@
       "context": "recipe-build-models",
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
-      "state": "not-applicable",
-      "evaluatedAt": "2026-08-31",
-      "worker": "w1-personas-agent-platform",
-      "techniques": []
+      "state": "deviation",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
+      "techniques": [
+        {
+          "technique": "result-harvest",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/team_assignment.rs:321 no never-started or cut-off class; src-tauri/src/engine/team_assignment_learning.rs:189 counts the total over all steps"
+        },
+        {
+          "technique": "session-registry",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/team_assignment.rs:150 'pub status: String' beside the closed enum at :31; consumers compare string literals. BuildSession (build_session.rs:263) is a single session and not-applicable"
+        },
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "unknown",
+          "evidence": "src-tauri/core/src/models/team_assignment.rs:152 max_parallel_steps is a per-assignment cap; fleet-wide admission lives in the engine, outside this context"
+        }
+      ]
     },
     "4bdc9d46-06f1-4eb7-98f5-f6546aa5ef6e/fleet-orchestration": {
       "context": "fleet-terminal-manager",

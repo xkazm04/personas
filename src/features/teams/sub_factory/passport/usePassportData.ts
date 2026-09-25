@@ -26,6 +26,12 @@ interface PassportData {
   error: string | null;
   /** ISO timestamp of the scan the passports were derived from. */
   generatedAt: string | null;
+  /** True once the passports on screen are MEASURED: the evidence-complete
+   *  publish (or a cache of one). The skeleton, phase-0 and phase-1 publishes
+   *  are interim estimates that later publishes correct, so a surface that
+   *  renders verdicts (state colour, blocker counts, scores) waits for this
+   *  rather than showing a verdict it will retract a second later. */
+  measured: boolean;
   rescanning: boolean;
   /** Project id currently in a scoped rescan (null when idle). */
   rescanningProject: string | null;
@@ -85,6 +91,7 @@ let cachedSnapshot: {
   passports: AppPassport[];
   rawByProject: Map<string, ImproveRaw>;
   generatedAt: string | null;
+  measured: boolean;
   at: number;
 } | null = null;
 const CACHE_FRESH_MS = 60_000;
@@ -95,10 +102,10 @@ let lastSweepAt = 0;
 const SWEEP_MIN_INTERVAL_MS = 15 * 60_000;
 
 export function usePassportData(): PassportData {
-  const [state, setState] = useState<{ passports: AppPassport[]; rawByProject: Map<string, ImproveRaw>; loading: boolean; error: string | null; generatedAt: string | null }>(
+  const [state, setState] = useState<{ passports: AppPassport[]; rawByProject: Map<string, ImproveRaw>; loading: boolean; error: string | null; generatedAt: string | null; measured: boolean }>(
     () => cachedSnapshot
-      ? { passports: cachedSnapshot.passports, rawByProject: cachedSnapshot.rawByProject, loading: false, error: null, generatedAt: cachedSnapshot.generatedAt }
-      : { passports: [], rawByProject: EMPTY, loading: true, error: null, generatedAt: null },
+      ? { passports: cachedSnapshot.passports, rawByProject: cachedSnapshot.rawByProject, loading: false, error: null, generatedAt: cachedSnapshot.generatedAt, measured: cachedSnapshot.measured }
+      : { passports: [], rawByProject: EMPTY, loading: true, error: null, generatedAt: null, measured: false },
   );
   const [rescanning, setRescanning] = useState(false);
   const [rescanningProject, setRescanningProject] = useState<string | null>(null);
@@ -114,10 +121,10 @@ export function usePassportData(): PassportData {
     // Every publish also refreshes the module cache so the NEXT mount paints
     // from it instantly. Guarded: if a newer build has since started, this
     // build's data is stale and must not overwrite the cache or state.
-    const publish = (passports: AppPassport[], rawByProject: Map<string, ImproveRaw>, generatedAt: string | null) => {
+    const publish = (passports: AppPassport[], rawByProject: Map<string, ImproveRaw>, generatedAt: string | null, measured: boolean) => {
       if (!buildLatestWins.isCurrent(token)) return;
-      cachedSnapshot = { passports, rawByProject, generatedAt, at: Date.now() };
-      setState({ passports, rawByProject, loading: false, error: null, generatedAt });
+      cachedSnapshot = { passports, rawByProject, generatedAt, measured, at: Date.now() };
+      setState({ passports, rawByProject, loading: false, error: null, generatedAt, measured });
     };
     // PHASE -1 — the SKELETON paint, one IPC deep.
     //
@@ -150,7 +157,7 @@ export function usePassportData(): PassportData {
         // caching placeholders would make the NEXT mount paint unmeasured cells
         // from cache and never learn better. This frame is deliberately
         // transient — it exists on screen and nowhere else.
-        setState({ passports: skeletons, rawByProject: rawSk, loading: true, error: null, generatedAt: null });
+        setState({ passports: skeletons, rawByProject: rawSk, loading: true, error: null, generatedAt: null, measured: false });
       }
     }
     const [projects, cached] = await Promise.all([projectsP, cachedP]);
@@ -174,7 +181,7 @@ export function usePassportData(): PassportData {
         raw0.set(project.id, { project, meta });
         p0.push(derivePassportFromMetadata(meta, project));
       }
-      publish(sortByNameAsc(p0), raw0, map.generated_at);
+      publish(sortByNameAsc(p0), raw0, map.generated_at, false);
     }
 
     // Reusable skills: each project's .claude/skills + the global library. Build a
@@ -317,7 +324,7 @@ export function usePassportData(): PassportData {
     // real evidence in as one second commit. History snapshots only record the
     // final, evidence-complete build.
     const phase1 = assemble(new Map());
-    publish(phase1.passports, phase1.rawByProject, map.generated_at);
+    publish(phase1.passports, phase1.rawByProject, map.generated_at, false);
 
     // Deep evidence (D1): a deterministic file probe per project, in parallel.
     // Defensive — null on older builds (command unregistered) or unreadable paths,
@@ -332,7 +339,7 @@ export function usePassportData(): PassportData {
     // Append to the local readiness history (deduped) so the cover sparkline +
     // "since last scan" delta accrue across scans. Best-effort, never blocks.
     recordSnapshot(phase2.passports, Date.now());
-    publish(phase2.passports, phase2.rawByProject, map.generated_at);
+    publish(phase2.passports, phase2.rawByProject, map.generated_at, true);
   }, [buildLatestWins]);
 
   useEffect(() => {

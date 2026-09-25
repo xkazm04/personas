@@ -7,8 +7,8 @@
   "headline": "Leaf: ui-system/controls-and-forms/button Date: 2026-08-13 Dimensions: ui · code-quality · function Sweep size: 2,104 .tsx files parsed; 2,869 raw <button> elements in 1,115 files extracted and classified individually (118 of them inside shared/components/, leaving 2,751 app-layer elements in 1,055 files). Plus Button.tsx, AsyncButton.tsx, CopyButton.tsx, Button.test.tsx, index.ts, globals.css, .…",
   "oneWay": "Import Button from @/features/shared/components/buttons and pass a variant and a size — never a className that paints. Six variants (primary secondary ghost danger accent link) and seven sizes (xs sm md lg icon-sm icon-md icon-lg) cover every push-button shape this app has; accent plus one of thirt…",
   "deviations": ["Is it a defect, or is Button the wrong shape?","Cross-cutting defects (these hold regardless of the shape argument)","The second pass — what is upstream of all of this"],
-  "ruleIds": [],
-  "ruleIdsFrom": "none",
+  "ruleIds": ["raw-button-element"],
+  "ruleIdsFrom": "section-9",
   "sections": [1,2,3,4,5,6,7,8,9],
   "citationCount": 65,
   "triggers": [

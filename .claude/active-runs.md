@@ -10,6 +10,20 @@
 - **Paths:** `src-tauri/**` · `src/lib/bindings/**` · `src/features/fleet/monitor/grid/board/queue/originLabel.ts` · `src/features/fleet/monitor/grid/board/queue/useQueueModel.ts`
 - **Status:** started
 
+### questlog-port — /prototype: port Quest Log into NoteOverview behind an A/B switcher
+- **[2026-09-22 23:21]**
+- **Paths:** `src/features/notepad/overview/**` · `src/i18n/locales/*.json`
+- **Status:** started
+
+### prototype-athena-chat-two-layer — /prototype Athena chat two-layer fusion: 3 variants behind a tab switcher in AthenaChatPanel
+- **[2026-09-22 23:18]**
+- **Paths:** `src/features/plugins/companion/chat/**` · `src/i18n/locales/*.json`
+- **Status:** started
+
+- **[2026-09-22 20:56]**
+- **Paths:** `.contest/**` · `src/features/notepad/overview/**`
+- **Status:** started
+
 - **[2026-09-22 09:52]**
 - **Paths:** `src/features/teams/sub_kpis/**`
 - **Status:** started
@@ -1013,6 +1027,8 @@
 ### curator-loop-ui — Curator loop UI: run the instrument, the human request lane, her setup brakes
 
 ### spark-features-board — /spark Features page: features + council state + context-map mirror + scenarios; delete sub_certification
+
+### contest-goal-desk-scale — /contest: next-gen goal desk (grouped + stacked by project, 90 goals/16 projects)
 
 ### kpi-surfaces-port — port the contest winners into sub_kpis (map/ledger/river)
 

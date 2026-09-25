@@ -10,6 +10,8 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 const webbuildBunStatus = vi.fn();
 vi.mock('@/api/webbuild', () => ({
   webbuildBunStatus: () => webbuildBunStatus(),
+  // Every name is free here; this file is about the Bun preflight.
+  webbuildCheckName: (name: string) => Promise.resolve({ slug: name.toLowerCase(), taken: false, suggestion: null }),
 }));
 
 vi.mock('@/lib/silentCatch', () => ({

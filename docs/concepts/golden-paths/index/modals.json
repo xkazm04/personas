@@ -48,6 +48,15 @@
       ],
       "resolved": false
     },
+    "GlyphFullLayout.tsx": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["116","329"],
+      "contexts": [
+        "**Duplicate Escape handler (8).** `GlyphFullLayout.tsx:116` · `DriveImageLightbox.tsx:153` · `KbPickerDialog.tsx:107` · `CreateTwinWizard.tsx:53` · `PeerDetailDrawer.tsx:77` · `AutoTeamModal.tsx:48`…"
+      ],
+      "resolved": false
+    },
     "agents/sub_use_cases/components/core/EventRenameModal.tsx": {
       "count": 1,
       "sections": [7],
@@ -169,16 +178,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "ExecutionDetail.tsx"
-    },
-    "src/features/agents/sub_glyph/GlyphFullLayout.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["116","329"],
-      "contexts": [
-        "**Duplicate Escape handler (8).** `GlyphFullLayout.tsx:116` · `DriveImageLightbox.tsx:153` · `KbPickerDialog.tsx:107` · `CreateTwinWizard.tsx:53` · `PeerDetailDrawer.tsx:77` · `AutoTeamModal.tsx:48`…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "GlyphFullLayout.tsx"
     },
     "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx": {
       "count": 2,

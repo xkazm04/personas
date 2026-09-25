@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
 import { CornerDownLeft, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useDecisionKeys } from './useDecisionKeys';
 
 // A1 — Athena's decision as a first-class steering moment: a titled card with the
 // question, concrete numbered option rows (click OR press 1–N to answer), and a
@@ -16,35 +16,7 @@ export default function StudioDecision({
   onAnswer: (answer: string) => void;
 }) {
   const { t, tx } = useTranslation();
-  // Keyboard select: 1–N picks an option — unless the user is typing an answer.
-  useEffect(() => {
-    if (options.length === 0) return;
-    const onKey = (e: KeyboardEvent) => {
-      // A held modifier means the digit belongs to a shortcut, not to this card
-      // — Ctrl/Cmd+1..9 is "switch tab" everywhere, and answering Athena's
-      // question instead is both surprising and unrecoverable (the answer is
-      // sent immediately). Autorepeat likewise: one keypress, one answer.
-      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
-      const el = document.activeElement as HTMLElement | null;
-      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
-      // …and not while a popover is open over the preview. Studio's three
-      // popovers — the tab picker, the build-settings panel, the version-history
-      // menu — are all opened from a trigger that declares `aria-haspopup` and
-      // flips `aria-expanded`, so one query answers "is the user looking at
-      // something else". Without this, reading the version list and typing a
-      // digit sent an irreversible answer to Athena: none of those surfaces is a
-      // text field, so every other guard here passed.
-      if (document.querySelector('[aria-haspopup][aria-expanded="true"]')) return;
-      const n = Number(e.key);
-      if (!Number.isInteger(n) || n < 1 || n > options.length) return;
-      const opt = options[n - 1];
-      if (opt === undefined) return;
-      e.preventDefault();
-      onAnswer(opt);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [options, onAnswer]);
+  useDecisionKeys(options, onAnswer);
 
   return (
     <div className="pointer-events-auto mt-2 overflow-hidden rounded-card border border-primary/40 bg-primary/[0.07] shadow-elevation-2">

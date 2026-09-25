@@ -160,7 +160,7 @@ export default function StudioTabBar({
               // `opacity-0` + `group-hover:opacity-100` alone makes this a
               // control you can Tab to but cannot see — the focus ring lands on
               // a fully transparent button. Reveal it on focus too.
-              className="mr-1 shrink-0 rounded-interactive p-0.5 text-foreground/40 opacity-0 hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+              className="mr-1 shrink-0 rounded-interactive p-0.5 text-foreground/90 opacity-0 hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
             >
               <X className="h-3 w-3" />
             </button>
@@ -175,7 +175,7 @@ export default function StudioTabBar({
         aria-label={t.studio.open_or_create}
         aria-haspopup="menu"
         aria-expanded={pickerOpen}
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-interactive text-foreground/60 hover:bg-secondary/40 hover:text-foreground"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-interactive text-foreground/90 hover:bg-secondary/40 hover:text-foreground"
       >
         <Plus className="h-4 w-4" />
       </button>
@@ -211,7 +211,7 @@ export default function StudioTabBar({
                   {recent.length > 0 && (
                     <>
                       <div className="my-1 h-px bg-border" />
-                      <div className="px-3 py-1 typo-caption text-foreground/45">
+                      <div className="px-3 py-1 typo-caption text-foreground/90">
                         {t.studio.resume}
                       </div>
                       {recent.map((p) => {
@@ -224,11 +224,11 @@ export default function StudioTabBar({
                               setPickerOpen(false);
                               void startExisting(p.id, p.name);
                             }}
-                            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-md text-foreground/80 hover:bg-secondary/50 hover:text-foreground"
+                            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-md text-foreground/90 hover:bg-secondary/50 hover:text-foreground"
                           >
                             <span className="min-w-0 flex-1 truncate">{p.name}</span>
                             <span
-                              className="flex shrink-0 items-center gap-1 typo-caption text-foreground/45"
+                              className="flex shrink-0 items-center gap-1 typo-caption text-foreground/90"
                               title={t.studio.saved_progress_hint}
                             >
                               <ListChecks className="h-3 w-3" />
@@ -242,7 +242,7 @@ export default function StudioTabBar({
                   {importable.length > 0 && (
                     <>
                       <div className="my-1 h-px bg-border" />
-                      <div className="px-3 py-1 typo-caption text-foreground/45">
+                      <div className="px-3 py-1 typo-caption text-foreground/90">
                         {t.studio.dev_tools_projects}
                       </div>
                       {importable.map((p) => {
@@ -271,7 +271,7 @@ export default function StudioTabBar({
                                 : 'text-foreground/80 hover:bg-secondary/50 hover:text-foreground'
                             }`}
                           >
-                            <FolderGit2 className="h-3.5 w-3.5 shrink-0 text-foreground/40" />
+                            <FolderGit2 className="h-3.5 w-3.5 shrink-0 text-foreground/90" />
                             <span className="min-w-0 flex-1 truncate">{p.name}</span>
                             {blocked && (
                               <span className="shrink-0 typo-caption text-status-warning/80">

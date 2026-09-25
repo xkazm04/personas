@@ -112,3 +112,35 @@ recorded under 2026-09-21 below.
   within 0.5 on seven of nine variants and differed by 3.4 and 3.6 on the other two: both
   were logically sound surfaces that leave 40-70% of the window empty on the real data. A
   panel of readers alone would have ranked them fourth and fifth.
+- 2026-09-22 (goal-desk-scale) - **The Codex bypass flag was NOT applied; the note above was
+  aspirational.** `participants.mjs` still sent `--sandbox workspace-write`, which answers
+  "patch rejected: writing is blocked by read-only sandbox" on this machine and leaves a
+  participant seat with nothing written. Probed both ways and applied the fix in the registry.
+  Probe a seat's write path in a scratch dir before trusting a contest to it.
+- 2026-09-22 (goal-desk-scale) - **Validate every staged asset before `init`.** `tokens.css`
+  was built by piping the light-theme block through `head -80`, which cut it mid-rule; the
+  unclosed brace swallowed the whole `.typo-*` scale for both seats. A brace-balance check is
+  one line. Also: the app has **no light-theme block to stage** - light is applied at runtime
+  by rewriting the same custom properties, so say that in SCHEMA.md instead of shipping a
+  broken excerpt.
+- 2026-09-22 (goal-desk-scale) - **Model ids on this machine, verified rather than assumed:**
+  `claude-opus-5-5` is real and distinct (`opus-5-5` and `claude-opus-9` both return
+  `unrecognized_model`; `claude-opus-5-5` answers and reports itself in `modelUsage`), and
+  `gpt-6-sol` is in Codex's model list beside `gpt-6-astra` / `gpt-6-luna`. Grok's Build
+  balance was still exhausted (402), so no third family was available to blind a panel.
+- 2026-09-22 (goal-desk-scale) - **`--titles` is the instrument this repo's UI briefs need.**
+  Counting how many real strings render IN FULL separated the two seats completely (80/90 vs
+  7-18/90) on the brief's own first constraint. Pair it with hidden-scroll measurement, not
+  with a clipped-leaf test - the leaf test reports 0 for a container-level fade and is a false
+  negative on exactly the truncation a fade hides.
+- 2026-09-22 (goal-desk-scale) - **`/prototype` adapts cleanly to an HTML contest artifact.**
+  A won contest handed one layer of the winner straight into a prototype round: four maps
+  behind a throwaway switcher, the other two levels shared, the contest winner extracted
+  unchanged as the control, and a Personas-chrome frame toggle at measured geometry (48px
+  title bar, 40px pad header, 32px footer, no sidebar - the map gets 1280x640, not 1280x800).
+  Proving the extracted control renders identical rects to the original is what makes the
+  round a measurement instead of a re-pitch.
+- 2026-09-22 (goal-desk-scale) - **`--titlebar-height` is referenced by six surfaces and
+  defined nowhere in the tree**, so the notepad, the Fleet monitor, the notification centre
+  and the Twin experience all resolve to the 40px fallback while `.titlebar` renders 48px.
+  Found while measuring the shell for the frame mock. Not fixed here.

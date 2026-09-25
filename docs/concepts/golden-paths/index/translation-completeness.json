@@ -52,6 +52,7 @@
       "contexts": ["| **politicas** | 17 (`KG_EDGE_RELS`, `lib/analysis/kg-verdict.ts:25-58`) | 13 | **4** | raw key `graph.rels.rapporteur` |"],
       "resolved": false
     },
+    "main.tsx": {"count":3,"sections":[7],"lines":["173-181","161-171"],"contexts":["`lefthook.yml` and `main.tsx` read in full. All **61** catalog sections and all **13** non-English"],"resolved":false},
     "messages.test.ts": {"count":1,"sections":[],"contexts":["`messages.test.ts`** — it is the one large feature never enrolled, and it is exactly where the"],"resolved":false},
     "mvp-passport.json": {"count":1,"sections":[],"lines":["43"],"contexts":["English-only as an explicit launch decision (`mvp-passport.json:43`) and has zero i18n crates"],"resolved":false},
     "opengraph-image.tsx": {"count":2,"sections":[8],"lines":["137-139"],"contexts":["(`t.has(kindKey) ? t(kindKey) : …`, `opengraph-image.tsx:137-139`)."],"resolved":false},
@@ -471,14 +472,6 @@
       "contexts": ["| `xhigh` | thinking | UI-selectable at `modelCatalog.ts:87` → stamped at `runner/mod.rs:1813-1818` | `LlmCallsTable.tsx:219`, `ExecutionValueBadges.tsx:44` |"],
       "resolvedFrom": "basename",
       "verbatim": "modelCatalog.ts"
-    },
-    "src/main.tsx": {
-      "count": 3,
-      "sections": [7],
-      "lines": ["173-181","161-171"],
-      "contexts": ["`lefthook.yml` and `main.tsx` read in full. All **61** catalog sections and all **13** non-English"],
-      "resolvedFrom": "basename",
-      "verbatim": "main.tsx"
     },
     "sub_director/PersonaDetailModal.tsx": {
       "count": 1,

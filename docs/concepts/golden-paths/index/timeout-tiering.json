@@ -113,7 +113,6 @@
       "verbatim": "check-csp-hosts.mjs"
     },
     "scripts/generate-command-names.mjs": {"count":1,"sections":[8],"contexts":["*could* exist is a generated table — `scripts/generate-command-names.mjs`"]},
-    "session.rs": {"count":1,"sections":[6],"lines":["1047"],"contexts":["did not blank (`healing.rs:405` `\"{new_timeout}ms\"`, `session.rs:1047`,"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[],"contexts":["**Sweep size.** All **963** non-generated `.rs` files under `src-tauri/` (agrees"],"resolved":false,"isDir":true},
     "src-tauri/build.rs": {"count":1,"sections":[9],"contexts":["~20 lines in `src-tauri/build.rs` plus a generated file, and it is the only fix"]},
     "src-tauri/core/src/error_taxonomy.rs": {
@@ -288,6 +287,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "src/engine/runner/mod.rs"
     },
+    "src-tauri/src/engine/twin_setup/session.rs": {"count":1,"sections":[6],"lines":["1047"],"contexts":["did not blank (`healing.rs:405` `\"{new_timeout}ms\"`, `session.rs:1047`,"],"resolvedFrom":"basename","verbatim":"session.rs"},
     "src-tauri/src/notifications.rs": {
       "count": 1,
       "sections": [7],

@@ -184,3 +184,38 @@ mod tests {
         assert!(options.is_empty());
     }
 }
+
+/// A Studio project's plan as kept in the database (`webbuild_plans`): the
+/// latest BUILD_PLAN phases and the sketch lane's first drawing of the site.
+/// Read on open so the Guide layout can replay the plan while the preview boots.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct StudioPlan {
+    pub phases: Vec<WebBuildPhase>,
+    pub sketch: Option<crate::webbuild::sketch::SiteSketch>,
+    pub updated_at: String,
+}
+
+impl StudioPlan {
+    /// Decode a stored row. A row whose JSON no longer parses is reported, not
+    /// silently emptied: it names the project so the cause can be found.
+    pub fn from_row(
+        row: &crate::db::repos::dev::webbuild_plans::WebBuildPlanRow,
+    ) -> Result<Self, crate::error::AppError> {
+        let bad = |what: &str, e: serde_json::Error| {
+            crate::error::AppError::Internal(format!(
+                "webbuild plan {what} for {}: {e}",
+                row.project_id
+            ))
+        };
+        Ok(Self {
+            phases: serde_json::from_str(&row.phases_json).map_err(|e| bad("phases", e))?,
+            sketch: match row.sketch_json.as_deref() {
+                Some(s) => Some(serde_json::from_str(s).map_err(|e| bad("sketch", e))?),
+                None => None,
+            },
+            updated_at: row.updated_at.clone(),
+        })
+    }
+}

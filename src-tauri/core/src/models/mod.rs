@@ -80,6 +80,7 @@ mod tool_audit;
 mod tool_usage;
 mod trigger;
 mod twin;
+mod twin_setup;
 pub mod webhook_log;
 
 pub use agent_ir::*;
@@ -163,3 +164,4 @@ pub use tool_audit::*;
 pub use tool_usage::*;
 pub use trigger::*;
 pub use twin::*;
+pub use twin_setup::*;

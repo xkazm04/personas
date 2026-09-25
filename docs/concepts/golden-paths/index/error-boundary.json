@@ -118,6 +118,13 @@
     "error.tsx": {"count":3,"sections":[6,9],"contexts":["collapsed nine module routes into one and therefore **lost** framework-native `error.tsx`"],"resolved":false},
     "errorboundary.js": {"count":3,"sections":[5,8],"lines":["38"],"contexts":["`preloadErrorRecovery.ts` and `@sentry/react`'s own `errorboundary.js` / `error.js` read in full."],"resolved":false},
     "eslint-rules/": {"count":1,"sections":[7],"contexts":["There is also no ESLint rule anywhere in `eslint-rules/` (21 rules) touching boundaries, and"],"resolved":false,"isDir":true},
+    "main.tsx": {
+      "count": 15,
+      "sections": [0,3,4,5,6,7,8,9],
+      "lines": ["190","190-238","104-142","218","304"],
+      "contexts": ["`ErrorBoundary.tsx`, `App.tsx`, `main.tsx`, `sectionRouter.tsx`, `PersonasPage.tsx`,"],
+      "resolved": false
+    },
     "node_modules/@sentry/react/build/cjs/errorboundary.js": {"count":1,"sections":[0],"lines":["38"],"contexts":["— `node_modules/@sentry/react/build/cjs/errorboundary.js:38`"],"resolved":false},
     "personas-web/DashboardErrorBoundary.tsx": {
       "count": 2,
@@ -296,12 +303,12 @@
       "verbatim": "crashPersistence.ts"
     },
     "src/main.tsx": {
-      "count": 19,
-      "sections": [0,3,4,5,6,7,8,9],
-      "lines": ["190","190-238","104-142","50-80","218","120-127","304"],
-      "contexts": ["`ErrorBoundary.tsx`, `App.tsx`, `main.tsx`, `sectionRouter.tsx`, `PersonasPage.tsx`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "main.tsx"
+      "count": 4,
+      "sections": [3,6],
+      "lines": ["104-142","50-80","120-127"],
+      "contexts": [
+        "| `src/main.tsx:104-142` — `window.onerror` + `unhandledrejection` | **the async-gap cover (P7).** Registered synchronously before React mounts, so no early crash is lost; suppresses the known Tauri…"
+      ]
     },
     "src/stores/slices/system/onboardingSlice.ts": {
       "count": 1,

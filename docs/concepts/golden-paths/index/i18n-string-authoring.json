@@ -32,6 +32,7 @@
   "citations": {
     ".github/workflows/ci.yml": {"count":3,"sections":[7],"lines":["119","130"],"contexts":["The enforcement wiring, verified from `lefthook.yml` and `.github/workflows/ci.yml`:"]},
     "DocReader.tsx": {"count":1,"sections":[],"lines":["60"],"contexts":["is enumerable: `console/src/kb/kb-data.ts:42` `STATUS_LABEL`, `DocReader.tsx:60` `LIFECYCLE_COPY`,"],"resolved":false},
+    "GlyphCinemaLayout.tsx": {"count":1,"sections":[7],"contexts":["`GlyphCinemaLayout.tsx`, `PersonaCoreModal.tsx`, `SensorScoreboard.tsx`, `FleetPage.tsx`,"],"resolved":false},
     "KnowledgeHealth.tsx": {"count":1,"sections":[],"lines":["50"],"contexts":["`KnowledgeHealth.tsx:50` `PILLAR_COPY`, each with a test asserting non-emptiness"],"resolved":false},
     "console/app/layout.tsx": {"count":1,"sections":[],"lines":["46"],"contexts":["dir in the console; `console/app/layout.tsx:46` hardcodes `lang=\"en\"`). Its absence is"],"resolved":false},
     "console/src/kb/kb-data.ts": {"count":1,"sections":[],"lines":["42"],"contexts":["is enumerable: `console/src/kb/kb-data.ts:42` `STATUS_LABEL`, `DocReader.tsx:60` `LIFECYCLE_COPY`,"],"resolved":false},
@@ -72,7 +73,6 @@
     "scripts/report-hardcoded-ui-strings.mjs": {"count":1,"sections":[],"contexts":["(`scripts/report-hardcoded-ui-strings.mjs`) is **report-only, wired to neither CI nor the hook** —"],"resolved":false},
     "src/": {"count":1,"sections":[1],"contexts":["`src/`** — in JSX, in a `placeholder`, in a `label:` on a constant, as the second argument to a"],"resolved":false,"isDir":true},
     "src/data/*.ts": {"count":1,"sections":[9],"contexts":["live in `src/data/*.ts` under different key names, so both signals below would score **zero** there"],"resolved":false},
-    "src/features/agents/sub_glyph/GlyphCinemaLayout.tsx": {"count":1,"sections":[7],"contexts":["`GlyphCinemaLayout.tsx`, `PersonaCoreModal.tsx`, `SensorScoreboard.tsx`, `FleetPage.tsx`,"],"resolvedFrom":"basename","verbatim":"GlyphCinemaLayout.tsx"},
     "src/features/agents/sub_glyph/personaCore/PersonaCoreModal.tsx": {"count":1,"sections":[7],"contexts":["`GlyphCinemaLayout.tsx`, `PersonaCoreModal.tsx`, `SensorScoreboard.tsx`, `FleetPage.tsx`,"],"resolvedFrom":"basename","verbatim":"PersonaCoreModal.tsx"},
     "src/features/home/sub_welcome/HeroHeader.tsx": {
       "count": 1,

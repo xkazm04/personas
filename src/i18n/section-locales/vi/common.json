@@ -214,5 +214,6 @@
   "dispatch_run_on_offline": "Ngoại tuyến",
   "dispatch_run_on_queued_hint": "Xếp hàng chờ đến khi máy thức dậy",
   "dispatch_run_on_stale": "Gần đây chưa thấy hoạt động",
-  "dispatch_run_on_this_machine": "Máy này"
+  "dispatch_run_on_this_machine": "Máy này",
+  "md_spellcheck": "Chính tả và ngữ pháp"
 }

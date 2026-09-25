@@ -435,7 +435,7 @@ stale. Executed.** The generator is named in **no** `package.json` script, **not
 **not** in `vite.config.ts`. Its two artifacts are `src/features/onboarding/anchors/tourAnchorManifest.json`
 (33,854 bytes committed → 37,321 fresh) and `src-tauri/src/companion/generated_tour_anchors.rs`
 (34,425 → 37,893). Decomposed in §0 (a): **127 anchors in the tree absent from the allow-list, 4 dead
-(`daily-goals-create`, `studio-chat-input`, `companion-strip-`, `mm-category-`), and 0 disagreements
+(`daily-goals-create` (its feature was deleted 2026-09-24), `studio-chat-input`, `companion-strip-`, `mm-category-`), and 0 disagreements
 between the two committed artifacts.** Consumers: `src/stores/slices/system/dynamicTours.ts:20`
 imports the JSON and validates Athena-composed tours against it; `src-tauri/src/companion/tours.rs:98`
 rejects any `highlightTestId` outside `TOUR_TESTIDS` before persisting; and `tours.rs:325-333`

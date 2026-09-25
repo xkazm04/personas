@@ -54,6 +54,7 @@
     },
     "docs/concepts/shared-facts.json": {"count":2,"sections":[9],"contexts":["`.ts`/`.tsx` files under `src/` ([`shared-facts.json`](../shared-facts.json), independently"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "layout.tsx": {"count":1,"sections":[],"contexts":["`route.ts`, 10 `layout.tsx`) and `../brainiac/console` (Next.js, 14 modules on one `?m=` route)."],"resolved":false},
+    "main.tsx": {"count":4,"sections":[4,7],"lines":["167","161-171"],"contexts":["`partialize` + rehydrate block, and `main.tsx`'s boot read."],"resolved":false},
     "package.json": {"count":1,"sections":[9],"lines":["51"],"contexts":["`eslint src/` with **no `--max-warnings`** (`package.json:51`), and the pre-commit hook runs"]},
     "page.tsx": {"count":2,"sections":[9],"contexts":["routes (`personas-web`: 37 `page.tsx` files, **0** destination-vocabulary assertions, and yet 9"],"resolved":false},
     "registry.test.ts": {"count":5,"sections":[6,7,9],"lines":["57-59","26"],"contexts":["`SECTION_ROUTES` (compile-checked). `registry.test.ts` verifies six invariants in both"],"resolved":false},
@@ -367,7 +368,6 @@
       "resolvedFrom": "basename",
       "verbatim": "platform.ts"
     },
-    "src/main.tsx": {"count":4,"sections":[4,7],"lines":["167","161-171"],"contexts":["`partialize` + rehydrate block, and `main.tsx`'s boot read."],"resolvedFrom":"basename","verbatim":"main.tsx"},
     "src/stores/slices/overview/overviewSlice.ts": {"count":1,"sections":[7],"lines":["162"],"contexts":["**C2 — 20 more are store defaults** (`uiSlice.ts:379-418`, `overviewSlice.ts:162`,"],"resolvedFrom":"basename","verbatim":"overviewSlice.ts"},
     "src/stores/slices/system/obsidianBrainSlice.ts": {
       "count": 1,

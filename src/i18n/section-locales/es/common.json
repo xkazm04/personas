@@ -214,5 +214,6 @@
   "dispatch_run_on_offline": "Sin conexión",
   "dispatch_run_on_queued_hint": "En cola hasta que se active",
   "dispatch_run_on_stale": "No visto recientemente",
-  "dispatch_run_on_this_machine": "Este equipo"
+  "dispatch_run_on_this_machine": "Este equipo",
+  "md_spellcheck": "Ortografía y gramática"
 }

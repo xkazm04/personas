@@ -253,7 +253,7 @@ byte-for-byte. It is threaded through `start_session` and all build entry points
 (the UI `start_build_session` command, the headless command, and the
 test-automation + management-api HTTP build endpoints); the companion one-shot
 path passes `None` for now. On the UI, an optional collapsed **"Add reference
-context"** field (`BuildContextField`, in the matrix build entry) collects a
+context"** layer on the build sheet (Sheet · Cinema's context editor) collects a
 writing sample / role / brand guide pre-launch. The context is **transient** —
 used to build the prompt, not persisted on the build session row.
 

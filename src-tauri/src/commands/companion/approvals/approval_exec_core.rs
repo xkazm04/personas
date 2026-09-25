@@ -693,6 +693,37 @@ pub(crate) fn execute_set_ritual_active(
     }))
 }
 
+/// Layered voice: apply a reflection-originated register change the operator
+/// approved. The chat op of the same name auto-fires in the dispatcher (source
+/// `operator`); this is the approval door, so the row records `reflection`.
+/// Both parse the params with the same function and write through
+/// `register::apply_op`, so the two doors cannot disagree about what a legal
+/// register is.
+pub(crate) fn execute_adjust_register(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let (scope, sentences, reason) = crate::companion::dispatcher::parse_adjust_register(params)
+        .map_err(|e| AppError::Validation(format!("adjust_register: {e}")))?;
+    let row = crate::companion::register::apply_op(
+        &state.user_db,
+        &scope,
+        sentences,
+        reason.as_deref(),
+        "reflection",
+    )?;
+    Ok(ExecuteResult::message(format!(
+        "Replies on {} now run to at most {} sentence{}.",
+        if row.scope == crate::companion::register::DEFAULT_SCOPE {
+            "everything".to_string()
+        } else {
+            format!("\"{}\"", row.scope)
+        },
+        row.sentences,
+        if row.sentences == 1 { "" } else { "s" }
+    )))
+}
+
 pub(crate) fn execute_delete_ritual(
     state: &State<'_, Arc<AppState>>,
     params: &serde_json::Value,

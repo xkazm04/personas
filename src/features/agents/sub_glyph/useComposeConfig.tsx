@@ -1,7 +1,7 @@
 /** useComposeConfig — shared compose-phase configuration backbone.
  *
- *  Every compose-surface prototype (Dialogue, Constellation, the baseline)
- *  gathers the SAME pre-launch preferences — What/When/Apps/Events/Memory/
+ *  Every compose surface (today: the build sheet, Sheet · Cinema) gathers the
+ *  SAME pre-launch preferences — What/When/Apps/Events/Memory/
  *  Review/Messages — through the SAME picker modals, and augments the launch
  *  intent identically. Only the VISUAL arrangement of those affordances is the
  *  design differentiator. This hook owns all of that plumbing so a variant is
@@ -53,6 +53,22 @@ export interface ComposeConfigItem {
   /** One-line human read of the current value (empty ⇒ "not set"). */
   summary: string[];
   onClick: () => void;
+  /** Inline quick-setup controller shared by every item (optional, additive):
+   *  the same state the picker modals write, exposed so a surface can offer
+   *  one-click picks without opening a modal. */
+  quick?: ComposeQuickSetup;
+}
+
+/** The compose-time quick config plus direct setters. Every setter writes the
+ *  same state the picker modals write, so onQuickConfigChange fires as usual. */
+export interface ComposeQuickSetup {
+  config: QuickConfigState;
+  setSchedule: (next: { frequency: Frequency | null; days: string[]; monthDay: number; time: string }) => void;
+  toggleConnector: (name: string) => void;
+  setConnectorTables: (name: string, tables: string[]) => void;
+  toggleEvent: (sub: EventSubscription) => void;
+  /** Adds or removes a channel by type + credential. The built-in inbox stays pinned. */
+  toggleChannel: (spec: ChannelSpecV2) => void;
 }
 
 interface UseComposeConfigArgs {
@@ -156,7 +172,60 @@ export function useComposeConfig({
     }, healthyConnectors);
   }, [selectedConnectors, connectorTables, healthyConnectors]);
 
-  const items: ComposeConfigItem[] = useMemo(() => [
+  const quick: ComposeQuickSetup = useMemo(() => ({
+    config: {
+      frequency, days, monthDay, time,
+      selectedConnectors, connectorTables, selectedEvents,
+      notificationChannels: selectedChannels,
+    },
+    setSchedule: (next) => {
+      setFrequency(next.frequency);
+      setDays(next.days.length > 0 ? next.days : ["mon"]);
+      setMonthDay(next.monthDay);
+      setTime(next.time);
+    },
+    toggleConnector: (name) => {
+      setSelectedConnectors((prev) => {
+        if (!prev.includes(name)) return [...prev, name];
+        // Deselecting drops any table scope it carried (same as the picker).
+        setConnectorTables((tbl) => {
+          if (!(name in tbl)) return tbl;
+          const nextTbl = { ...tbl };
+          delete nextTbl[name];
+          return nextTbl;
+        });
+        return prev.filter((n) => n !== name);
+      });
+    },
+    setConnectorTables: (name, tables) => {
+      setConnectorTables((prev) => {
+        const nextTbl = { ...prev };
+        // [] = all tables = no filter; only a non-empty subset is persisted.
+        if (tables.length > 0) nextTbl[name] = tables; else delete nextTbl[name];
+        return nextTbl;
+      });
+    },
+    toggleEvent: (sub) => {
+      setSelectedEvents((prev) => {
+        const hit = prev.some((e) => e.personaId === sub.personaId && e.triggerId === sub.triggerId);
+        return hit
+          ? prev.filter((e) => !(e.personaId === sub.personaId && e.triggerId === sub.triggerId))
+          : [...prev, sub];
+      });
+    },
+    toggleChannel: (spec) => {
+      if (spec.type === "built-in") return;
+      setSelectedChannels((prev) => {
+        const hit = prev.some((c) => c.type === spec.type && c.credential_id === spec.credential_id);
+        const next = hit
+          ? prev.filter((c) => !(c.type === spec.type && c.credential_id === spec.credential_id))
+          : [...prev, spec];
+        return next.some((c) => c.type === "built-in") ? next : [BUILT_IN_INBOX, ...next];
+      });
+    },
+  }), [frequency, days, monthDay, time, selectedConnectors, connectorTables, selectedEvents, selectedChannels]);
+
+  const items: ComposeConfigItem[] = useMemo(() => { const base: ComposeConfigItem[] = [
     {
       dim: "task", label: "What", icon: ListTodo, color: "#a78bfa", kind: "input",
       active: showInput && intentText.trim().length > 0,
@@ -201,8 +270,8 @@ export function useComposeConfig({
         .map((c) => c.type),
       onClick: () => setMessagingModalOpen(true),
     },
-  ], [showInput, intentText, frequency, triggerSummary, selectedConnectors, connectorSummary,
-      selectedEvents, memoryEnabled, reviewEnabled, selectedChannels]);
+  ]; return base.map((it) => ({ ...it, quick })); }, [showInput, intentText, frequency, triggerSummary, selectedConnectors, connectorSummary,
+      selectedEvents, memoryEnabled, reviewEnabled, selectedChannels, quick]);
 
   const anyActive = useMemo(
     () => items.some((i) => i.active),
@@ -287,6 +356,7 @@ export function useComposeConfig({
 
   return {
     items,
+    quick,
     modals,
     composeCellStates,
     formingRow,

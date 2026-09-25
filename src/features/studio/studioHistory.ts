@@ -56,7 +56,23 @@ interface StudioHistoryStore {
    */
   prune: (liveIds: readonly string[]) => void;
   setOpenTabs: (ids: string[], activeId: string | null) => void;
+  /**
+   * Which Studio layout renders: the current one or Guide.
+   * TODO(prototype, 2026-09-23): the switch exists until Guide reaches parity;
+   * then the current layout is descoped (docs/design/studio-guide.md).
+   */
+  layout: StudioLayout;
+  setLayout: (layout: StudioLayout) => void;
+  /**
+   * The last "Plan first" choice, which new projects start with. It is set
+   * from a project's build settings; without it the switch could never reach
+   * the first build, which runs the moment a project is created.
+   */
+  gatePlanDefault: boolean;
+  setGatePlanDefault: (on: boolean) => void;
 }
+
+export type StudioLayout = 'current' | 'guide';
 
 export const useStudioHistory = create<StudioHistoryStore>()(
   persist(
@@ -64,6 +80,8 @@ export const useStudioHistory = create<StudioHistoryStore>()(
       byProject: {},
       openTabIds: [],
       activeTabId: null,
+      layout: 'guide',
+      gatePlanDefault: false,
       save: (id, entry) =>
         set((s) => ({
           byProject: {
@@ -102,6 +120,8 @@ export const useStudioHistory = create<StudioHistoryStore>()(
           };
         }),
       setOpenTabs: (ids, activeId) => set({ openTabIds: ids, activeTabId: activeId }),
+      setLayout: (layout) => set({ layout }),
+      setGatePlanDefault: (on) => set({ gatePlanDefault: on }),
     }),
     { name: 'studio-history-v1' },
   ),

@@ -291,30 +291,13 @@ pub struct TwinChannel {
 }
 
 // ============================================================================
-// Guided Setup (twin-atelier-v2 WP1)
+// Guided Setup — the one shape left from the per-turn contract
 //
-// The Setup module's wire contract. Its hand-written TypeScript mirror is
-// `src/features/plugins/twin/setup/setupContract.ts`, and THAT file is the
-// authority these structs match field for field — the four Setup variant
-// renderers compile against it while this engine is built in parallel.
-//
-// The governing rule the shapes encode: the generator proposes CONTENT, the
-// flow owns STRUCTURE. `done_hint` is advisory and is never the completion
-// authority (readiness is, client-side), and a proposal is a typed OFFER that
-// nothing writes until a human accepts it.
+// `twin_setup_turn` (one question per call, nothing stored) and its
+// `SetupTurnMessage` / `SetupTurnResult` / `SetupProposal` are gone; the setup
+// plan's wire types live in `models::twin_setup`. `SetupSuggestion` stays
+// because every persisted `SetupStep` carries its suggested answers in it.
 // ============================================================================
-
-/// One transcript line handed back to the generator so the next question
-/// continues a conversation rather than restarting one.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
-#[serde(rename_all = "camelCase")]
-pub struct SetupTurnMessage {
-    /// `"guide"` (the question) or `"user"` (the answer).
-    #[ts(type = "\"guide\" | \"user\"")]
-    pub role: String,
-    pub text: String,
-}
 
 /// One offered answer. A suggestion is a position the user can adopt, edit or
 /// ignore — never a silent default, which is why it carries its reason.
@@ -325,73 +308,6 @@ pub struct SetupSuggestion {
     pub text: String,
     /// One line saying why this answer is being offered.
     pub reason: String,
-}
-
-/// A typed value the guide proposes for a real field. Nothing here is written
-/// until the user accepts it, and an accepted value stays editable.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
-#[serde(rename_all = "camelCase")]
-pub struct SetupProposal {
-    /// Stable per-turn id, assigned by the backend when the turn is parsed —
-    /// never by the model. Two tone proposals for the same channel are two
-    /// different offers, so the channel cannot serve as the key.
-    #[serde(default)]
-    pub id: String,
-    #[ts(type = "\"bio\" | \"role\" | \"tone\"")]
-    pub kind: String,
-    /// Which column of the tone row a `kind == "tone"` proposal fills:
-    /// `"voice"` (the voice directives, and the reading when absent) or
-    /// `"constraints"` (one Always/Never rule appended to the list). The model
-    /// is never allowed `"examples"`: a sample message has to be the person's
-    /// own words, so the client offers those itself from what they typed.
-    #[serde(default)]
-    #[ts(type = "\"voice\" | \"constraints\" | null")]
-    pub part: Option<String>,
-    /// Tone channel id for `kind == "tone"`; `None` otherwise.
-    pub channel: Option<String>,
-    pub value: String,
-    /// Reply-length guidance, only meaningful for a tone proposal.
-    pub length_hint: Option<String>,
-    pub reason: String,
-}
-
-/// A turn the model sent without `answerMode` is a choice between answers,
-/// which is what every turn was before the field existed.
-fn default_answer_mode() -> String {
-    "pick".to_string()
-}
-
-/// One turn of the guided setup conversation.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
-#[serde(rename_all = "camelCase")]
-pub struct SetupTurnResult {
-    pub question: String,
-    /// Which slot this question is working on.
-    #[ts(type = "\"identity\" | \"tone\" | \"channels\" | \"memories\"")]
-    pub focus: String,
-    /// Tone channel the question is about when `focus == "tone"`.
-    pub tone_channel: Option<String>,
-    /// How the question wants answering. `"pick"`: the suggestions are real
-    /// alternatives to choose between. `"write"`: the answer IS a writing
-    /// sample (a reply drill, a pasted message), so the person types it and
-    /// `suggestions` is empty by contract — a sample the model wrote would
-    /// teach the twin the model's voice instead of theirs.
-    #[serde(default = "default_answer_mode")]
-    #[ts(type = "\"pick\" | \"write\"")]
-    pub answer_mode: String,
-    /// For a `"write"` turn, the message they are replying to, exactly as it
-    /// would arrive. `None` for every other question.
-    #[serde(default)]
-    pub incoming: Option<String>,
-    pub suggestions: Vec<SetupSuggestion>,
-    pub proposals: Vec<SetupProposal>,
-    /// ADVISORY ONLY. The model's guess that this slot now has enough. The
-    /// client derives completion from readiness and must not promote this to
-    /// a completion signal — a generator that cannot count words cannot be
-    /// the authority on whether a bio is written.
-    pub done_hint: bool,
 }
 
 // ============================================================================

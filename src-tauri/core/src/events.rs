@@ -242,6 +242,10 @@ event_names! {
     TWIN_STUDIO_PROGRESS       => "twin-studio-progress",
     TWIN_STUDIO_COMPLETE       => "twin-studio-complete",
 
+    // Twin setup plan (background planner / reconciler changed the session;
+    // payload `SetupUpdatedEvent`, the client refetches the snapshot)
+    TWIN_SETUP_UPDATED         => "twin-setup-updated",
+
     // Auto-run scheduler (drains backlog respecting goal-DAG)
     AUTO_RUN_STATUS            => "auto-run-status",
     AUTO_RUN_COMPLETE          => "auto-run-complete",
@@ -382,6 +386,10 @@ event_names! {
     STANDARDS_SCAN_STATUS        => "dev_tools_standards_scan_status",
     RADIO_STATE                  => "radio:state",
     KB_EXTRACTION_PROGRESS       => "kb-extraction-progress",
+    // New pending approval rows: from a turn, or from a background pass that
+    // files one (profile synthesis, the reply-register reflection). Payload:
+    // `Vec<CreatedApproval>`. `companion::session::APPROVALS_EVENT` aliases it.
+    COMPANION_APPROVALS          => "companion://approvals",
 }
 
 /// Payload of [`event_name::FLEET_QUEUE_CHANGED`]. `kind` is one of

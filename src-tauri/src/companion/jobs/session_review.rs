@@ -68,8 +68,12 @@ pub async fn run(
     )?;
 
     // Episode so Athena's next turn (and consolidation) knows the outcome.
+    // The session's human name beside its short id, when it has one.
+    let label = crate::companion::brain::fleet::label_suffix(
+        crate::companion::brain::fleet::session_label_for(&session_id, &project).as_deref(),
+    );
     let episode = format!(
-        "[Night shift review] `{project}` session `{sid}` — {verdict}: {reason}\nObjective was: {objective}",
+        "[Night shift review] `{project}` session `{sid}`{label} — {verdict}: {reason}\nObjective was: {objective}",
         sid = &session_id[..session_id.len().min(8)],
         verdict = verdict.as_str(),
     );

@@ -69,7 +69,9 @@ mod e43_council;
 mod e44_backlog_contract;
 mod e45_one_idea_scale;
 mod e46_feature_scenarios;
+mod e46_webbuild_plans;
 mod e47_remote_sessions;
+mod e47_twin_setup_plan;
 mod e48_registry_link;
 mod e49_curator_plan;
 mod e50_curator_quiet;
@@ -146,6 +148,8 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e50_curator_quiet::run(conn)?;
     e51_curator_request::run(conn)?;
     e52_curator_dispatch::run(conn)?;
+    e46_webbuild_plans::run(conn)?;
+    e47_twin_setup_plan::run(conn)?;
 
     Ok(())
 }

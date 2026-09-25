@@ -64,3 +64,16 @@ export function parseBrainLinks(content: string): ParsedBrainLink[] {
   }
   return out;
 }
+
+const WHOLE_ID_REGEX = new RegExp(`^(${KIND_TOKENS.join('|')})_[A-Za-z0-9-]+$`);
+
+/**
+ * The Brain Viewer kind a full brain id belongs to (`fact_abc` → `fact`), or
+ * null when the prefix is not one the viewer can open. Shares the kind table
+ * with `parseBrainLinks` so a `ref:memory/<id>` link and the chip strip can
+ * never disagree about what is openable.
+ */
+export function brainKindOfId(id: string): BrainKind | null {
+  const m = WHOLE_ID_REGEX.exec(id);
+  return m ? (m[1] as BrainKind) : null;
+}

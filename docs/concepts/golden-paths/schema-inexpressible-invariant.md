@@ -467,12 +467,13 @@ the condition is an absence (see §9).
 
 Sampling the DDL comments that state a rule (*must*, *never*, *always*,
 *exactly one*, *at most one*) in `lib.rs`'s two schema constants: e.g.
-`lib.rs:1430` — *"at most one set is `status='active'` at a time"* on
-`companion_goal`. There is no unique index, no trigger and no CHECK; the rule
-is kept by `companion/brain/daily_goals.rs` writing `'completed'` before
-inserting a new set. **A partial-index uniqueness constraint would express this
-exactly** — `CREATE UNIQUE INDEX … ON companion_goal(set_id) WHERE status =
-'active'` — and SQLite supports it. This is the most common shape in the
+*"at most one set is `status='active'` at a time"*, the DDL comment on the
+daily-goal table. There was no unique index, no trigger and no CHECK; the rule
+was kept only by the writer flipping the old set to `'completed'` before
+inserting a new one. **A partial-index uniqueness constraint would have
+expressed it exactly** — `CREATE UNIQUE INDEX … ON <table>(set_id) WHERE status
+= 'active'` — and SQLite supports it. (That table and its writer were removed
+with the Daily Goals feature on 2026-09-24; the finding stands as the shape.) This is the most common shape in the
 "guarded by nothing" bucket: an invariant that *is* expressible, stated in
 prose, and not written.
 

@@ -107,6 +107,7 @@
     "lefthook.yml": {"count":1,"sections":[9],"lines":["74-75"],"contexts":["**Where it runs.** `lefthook.yml:74-75` — the `golden-path-census` **pre-push** job runs"]},
     "lib.rs": {"count":3,"sections":[3,7],"lines":["2372","1959","1551-1578"],"contexts":["Tauri command (`lib.rs:2372`) with **no wrapper in `src/api/` and no call site in `src/`**. The"],"resolved":false},
     "live/shared/[token]/page.tsx": {"count":1,"sections":[],"lines":["44"],"contexts":["fails **closed** (`live/shared/[token]/page.tsx:44`). `personas-cloud` is **1 grant : 0 revoke**"],"resolved":false},
+    "main.tsx": {"count":2,"sections":[5],"lines":["304"],"contexts":["2026-08-17 by [usage-analytics](./usage-analytics.md): `main.tsx:304` here is NOT the same shape —"],"resolved":false},
     "memories.rs": {"count":1,"sections":[],"lines":["97-121"],"contexts":["(`memories.rs:97-121`, `raw → rejected` with a `policy_rule='raw_ttl_sweep'` audit row, reasoned"],"resolved":false},
     "package.json": {"count":1,"sections":[9],"lines":["52"],"contexts":["NOWHERE\"* before that. It is also inside `npm run check` (`package.json:52`). It is **not** in"]},
     "packages/shared/src/prompt.ts": {"count":1,"sections":[],"lines":["199"],"contexts":["(`packages/shared/src/prompt.ts:199`), never computed. Nothing in that repo fetches a blast"],"resolved":false},
@@ -507,12 +508,10 @@
       "verbatim": "telemetryPreference.ts"
     },
     "src/main.tsx": {
-      "count": 3,
-      "sections": [5,7],
-      "lines": ["304","298-320"],
-      "contexts": ["2026-08-17 by [usage-analytics](./usage-analytics.md): `main.tsx:304` here is NOT the same shape —"],
-      "resolvedFrom": "basename",
-      "verbatim": "main.tsx"
+      "count": 1,
+      "sections": [7],
+      "lines": ["298-320"],
+      "contexts": ["| `src/main.tsx:298-320` | module-scope IIFE: `if (isTelemetryEnabled()) { initSentry(appVersion); … initAnalytics(useSystemStore.subscribe); }` |"]
     },
     "src/test/automation/bridge.ts": {"count":1,"sections":[7],"lines":["1385-1391"],"contexts":["4. **A third door exists in test builds.** `src/test/automation/bridge.ts:1385-1391` exposes"]},
     "system_ops.rs": {"count":1,"sections":[1],"lines":["135-136"],"contexts":["manual \"Run now\" — `system_ops.rs:135-136` says a human pressing it *is* the approval), when the"],"resolved":false},

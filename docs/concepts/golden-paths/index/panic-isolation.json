@@ -90,15 +90,6 @@
       "contexts": ["| of those 3, sites that convert the panic into a value a caller can act on | **1** (`remote_jobs.rs:145`) |"],
       "resolved": false
     },
-    "session.rs": {
-      "count": 2,
-      "sections": [9],
-      "lines": ["1637","1718"],
-      "contexts": [
-        "| **recall gap the anchor cannot close** | **4** — `let _ = tokio::spawn(…)` puts `=` before the path, so `[;{}]` never fires: `alert_evaluator.rs:368`, `kpi_compose.rs:375`, `session.rs:1637`, `sess…"
-      ],
-      "resolved": false
-    },
     "src-tauri/Cargo.toml": {"count":1,"sections":[],"contexts":["`src/lib.rs` `RunGuard`, `src-tauri/Cargo.toml`'s four profiles."]},
     "src-tauri/db/src/embedder.rs": {
       "count": 2,
@@ -208,6 +199,16 @@
       "verbatim": "subscription.rs"
     },
     "src-tauri/src/engine/runner/mod.rs": {"count":1,"sections":[7],"contexts":["| `src/engine/runner/mod.rs` | 4 | runner side-work |"],"resolvedFrom":"suffix","verbatim":"src/engine/runner/mod.rs"},
+    "src-tauri/src/engine/twin_setup/session.rs": {
+      "count": 2,
+      "sections": [9],
+      "lines": ["1637","1718"],
+      "contexts": [
+        "| **recall gap the anchor cannot close** | **4** — `let _ = tokio::spawn(…)` puts `=` before the path, so `[;{}]` never fires: `alert_evaluator.rs:368`, `kpi_compose.rs:375`, `session.rs:1637`, `sess…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "session.rs"
+    },
     "src-tauri/src/freeze_monitor.rs": {
       "count": 1,
       "sections": [7],

@@ -49,6 +49,7 @@
       ],
       "resolved": false
     },
+    "GlyphDialogueCinemaLayout.tsx": {"count":1,"sections":[7],"lines":["62"],"contexts":["appended to the build intent as prose (`GlyphDialogueCinemaLayout.tsx:62`). Nothing writes"],"resolved":false},
     "ModelScorecard.tsx": {
       "count": 1,
       "sections": [],
@@ -151,15 +152,6 @@
       "contexts": ["(`check-coverage.mjs`, `check-untranslated.mjs`) compare locales to each other, so an arm punched"],
       "resolvedFrom": "basename",
       "verbatim": "check-untranslated.mjs"
-    },
-    "session.rs": {
-      "count": 7,
-      "sections": [5,7,8,9],
-      "lines": ["1789","2199","1783","1809-1813","2158","1809"],
-      "contexts": [
-        "| **Defaulting to the top of the scale** | `BUILD_TURN_EFFORT = \"xhigh\"` (`session.rs:1789`) and `studioStore.ts:221 effort: 'xhigh'`, both on long-form build work, against a benchmark in this repo t…"
-      ],
-      "resolved": false
     },
     "settings.rs": {"count":1,"sections":[6],"lines":["79"],"contexts":["value. The frontend calls it through `set_model_routing_rules` (`settings.rs:79`) and surfaces the"],"resolved":false},
     "shared/src/prompt.ts": {"count":1,"sections":[],"lines":["473-475"],"contexts":["`buildCliArgs` correctly emits `args.push('--model', modelProfile.model)` (`shared/src/prompt.ts:473-475`)."],"resolved":false},
@@ -344,6 +336,16 @@
       "resolvedFrom": "suffix",
       "verbatim": "src/engine/runner/mod.rs"
     },
+    "src-tauri/src/engine/twin_setup/session.rs": {
+      "count": 7,
+      "sections": [5,7,8,9],
+      "lines": ["1789","2199","1783","1809-1813","2158","1809"],
+      "contexts": [
+        "| **Defaulting to the top of the scale** | `BUILD_TURN_EFFORT = \"xhigh\"` (`session.rs:1789`) and `studioStore.ts:221 effort: 'xhigh'`, both on long-form build work, against a benchmark in this repo t…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "session.rs"
+    },
     "src/": {"count":2,"sections":[],"contexts":["Sweep: all **963** non-generated Rust files under `src-tauri/` and all **3,793** `.ts`/`.tsx` files under `src/`"],"resolved":false,"isDir":true},
     "src/**/*.{ts,tsx}": {
       "count": 1,
@@ -369,14 +371,6 @@
       "contexts": ["`ExecutionValueBadges.tsx:44` and `LlmCallsTable.tsx:219`, both `tokenLabel(t, 'thinking', …)`."],
       "resolvedFrom": "basename",
       "verbatim": "ExecutionValueBadges.tsx"
-    },
-    "src/features/agents/sub_glyph/GlyphDialogueCinemaLayout.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["62"],
-      "contexts": ["appended to the build intent as prose (`GlyphDialogueCinemaLayout.tsx:62`). Nothing writes"],
-      "resolvedFrom": "basename",
-      "verbatim": "GlyphDialogueCinemaLayout.tsx"
     },
     "src/features/agents/sub_glyph/personaCore/*": {"count":1,"sections":[],"contexts":["`src/lib/models/modelCatalog.ts`, `src/features/agents/sub_glyph/personaCore/*`,"],"resolved":false,"isDir":true},
     "src/features/agents/sub_glyph/personaCore/ConfigTiles.tsx": {

@@ -39,6 +39,8 @@
 //!   and the System episode a rejected `use_connector` leaves behind.
 //! - [`research`] — the `research` op's two spellings, its validation, and
 //!   the job title it enqueues under (athena-browser-react).
+//! - [`refs`] — layered voice: the `[phrase](ref:kind/handle)` pass over the
+//!   cleaned reply, and the reply-shape counters the turn ledger stores.
 //!
 //! Everything stays reachable as `crate::companion::dispatcher::X`; the
 //! re-exports below preserve the pre-split surface exactly.
@@ -49,6 +51,7 @@ mod catalog;
 mod dispatch;
 mod envelope;
 mod read_ops;
+mod refs;
 mod research;
 mod types;
 
@@ -57,4 +60,6 @@ mod tests;
 
 pub(crate) use catalog::*;
 pub use dispatch::*;
+pub(crate) use refs::parse_adjust_register;
+pub use refs::stamp_reply_metrics;
 pub use types::*;

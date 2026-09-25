@@ -1,6 +1,7 @@
 # Captured Claude CLI stream-json output, verbatim from a real run on
 # 2026-09-16, where the model was asked for a strict JSON object -- the shape
-# twin_setup_turn depends on. Same redaction as the sibling fixture.
+# the setup engine's plan / assess / refill calls depend on (it was captured
+# for the retired twin_setup_turn). Same redaction as the sibling fixture.
 #
 # The point of the pairing: the JSON answer arrives INSIDE the result event's
 # string, so a parser that spans from the first brace of the first hook record

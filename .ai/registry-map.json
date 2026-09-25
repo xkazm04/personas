@@ -330,6 +330,18 @@
     ],
     "docs-sync": [
       "63edaec0-367e-4553-a6ee-bfd4144be305"
+    ],
+    "companion-runtime": [
+      "3effd422-2610-4c8a-bc02-53aceafd827c",
+      "b0e9ba6b-7737-43ec-b551-9bcc1b71d76f",
+      "9e46b252-8eb1-4a15-a627-f7e342f1d85a",
+      "5ed4c95e-037f-459e-ba3e-aa1300fd7504",
+      "d77a22ee-23cb-42f3-a910-590f8622977f",
+      "50bf2ad0-3da7-4405-991a-6e22695903a2",
+      "b30528dc-8655-4b38-800e-8cb73e96d618",
+      "1bad7967-29dc-4e12-b99a-cb5177b4fb9b",
+      "3f38546e-e970-4837-97f7-f0504aa32daf",
+      "11fe7642-7a1a-47c5-8910-499850aa04fe"
     ]
   },
   "subjectIndex": {
@@ -873,7 +885,10 @@
     ],
     "credential-vault": [
       "fbfcd99a-a333-42da-b85e-2ec1f560b4be",
+      "621caefc-8ae0-42e7-89b6-8e879ad62814",
       "cf38b51d-aebb-4b36-bb8e-68a494a3662f",
+      "94b0b4ea-9adb-44d7-8222-4e2345de455b",
+      "4560e824-e952-45a9-8aef-fe88d721952e",
       "8b5d1d60-a129-4cd1-9567-d795589bde29",
       "937c9d47-b0ca-4e3b-90e3-25baefe04474",
       "0dabb588-48ce-4c35-b425-c344fd723ce7",
@@ -1248,7 +1263,6 @@
       "e0a448bc-24d4-4663-ba31-27d4ce378a14",
       "d146b88b-6223-41c7-8330-8b9d7a1b3ee0",
       "14c7d145-2166-454b-aee5-d69d9d527d79",
-      "94b0b4ea-9adb-44d7-8222-4e2345de455b",
       "3effd422-2610-4c8a-bc02-53aceafd827c",
       "2de6333f-8375-404b-8fdc-fe0fb15d4f95",
       "5ed4c95e-037f-459e-ba3e-aa1300fd7504",
@@ -1739,7 +1753,6 @@
     ],
     "design-tokens": [
       "14c7d145-2166-454b-aee5-d69d9d527d79",
-      "17f44718-7d6d-4579-91bf-86191e29595a",
       "ef4a1671-8bf4-44b2-9ae9-cb2533b780a6",
       "3619ab0d-0367-43d0-b4eb-ec39c1302d65"
     ],
@@ -2232,7 +2245,10 @@
       "e61f931c-25d7-4532-9ec7-ab6f3fc377e2"
     ],
     "connector-catalog": [
+      "17f44718-7d6d-4579-91bf-86191e29595a",
+      "0b0ee725-52a2-4656-9e13-07c5204de60e",
       "e61f931c-25d7-4532-9ec7-ab6f3fc377e2",
+      "e13cfc6c-f666-4959-81c0-2cfbc4815f04",
       "c4a2fa9d-1b41-4141-894b-c90663aa0433",
       "3619ab0d-0367-43d0-b4eb-ec39c1302d65",
       "6229df3d-d54e-47bb-8091-abb479003c18",
@@ -2314,7 +2330,8 @@
       "a3cb83b5-7325-4d1c-b10d-b249ab1a186f"
     ],
     "stream-proxy-hop": [
-      "90f639de-ffc7-4225-b67f-1566e5d66b8b"
+      "90f639de-ffc7-4225-b67f-1566e5d66b8b",
+      "ee9d4d9e-0414-4460-b159-5d9c7c4108a7"
     ],
     "scoring-rubrics": [
       "92f6c0fc-8d5c-43a7-bab8-1851973d5198"
@@ -2418,8 +2435,7 @@
     ],
     "federated-benchmark-sharing": [
       "742be60e-3ddf-4160-b7cb-4c5cac5965a0",
-      "ebca0ef1-e509-4721-8472-1588ac2f93cc",
-      "b38217f2-397e-49a7-ac32-4cce440c7e74"
+      "ebca0ef1-e509-4721-8472-1588ac2f93cc"
     ],
     "docs-content-model": [
       "3a377c10-3b0f-4674-87f9-aae9cb267c99"
@@ -2479,6 +2495,9 @@
     ],
     "llm-extracted-entity-graph": [
       "876c0b4e-6472-4544-a21b-56e7529fb6b3"
+    ],
+    "invariant-placement": [
+      "ae80cd74-5beb-4d76-ae0a-16a4b581a2df"
     ]
   },
   "contexts": [

@@ -20,6 +20,7 @@ pub mod resources;
 pub mod run_budget;
 pub mod system_ops;
 pub mod twin;
+pub mod twin_setup;
 pub mod utils;
 pub mod workspaces;
 

@@ -419,8 +419,9 @@ pub async fn worker_tick(
             }
             // Append a system episode so Athena's next turn reads it.
             let summary = format!(
-                "[Background job `{kind}` completed — id `{id}`]\n\n{report}",
+                "[Background job `{kind}`{title} completed — id `{id}`]\n\n{report}",
                 kind = job.kind,
+                title = job_title_suffix(&job),
                 id = job.id,
                 report = report
             );
@@ -449,8 +450,9 @@ pub async fn worker_tick(
             // and still need the system episode so Athena is aware.
             if job.kind != "connector_use" {
                 let summary = format!(
-                    "[Background job `{kind}` FAILED — id `{id}`]\n\n{err}",
+                    "[Background job `{kind}`{title} FAILED — id `{id}`]\n\n{err}",
                     kind = job.kind,
+                    title = job_title_suffix(&job),
                     id = job.id,
                     err = err_text
                 );
@@ -515,6 +517,27 @@ async fn dispatch_handler(
         other => Err(AppError::Internal(format!(
             "unknown background job kind `{other}`"
         ))),
+    }
+}
+
+/// ` "Scanning ai-paralegal"` for the completed/failed episode row, so the
+/// job reads by its human title beside its kind and id, or nothing when the
+/// job has no title. Quotes and line breaks are stripped so the title cannot
+/// break the bracketed header line.
+fn job_title_suffix(job: &BackgroundJob) -> String {
+    let Some(title) = job.short_title.as_deref() else {
+        return String::new();
+    };
+    let clean: String = title
+        .chars()
+        .filter(|c| !matches!(c, '"' | '\n' | '\r' | ']'))
+        .take(80)
+        .collect();
+    let clean = clean.trim();
+    if clean.is_empty() {
+        String::new()
+    } else {
+        format!(" \"{clean}\"")
     }
 }
 

@@ -40,6 +40,7 @@
     "index.ts": {"count":1,"sections":[6],"lines":["12"],"contexts":["re-exported from the barrel at `index.ts:12` with a usage `@example` in its docstring. Grepping"],"resolved":false},
     "kafka.ts": {"count":2,"sections":[6,7],"lines":["108-117","102-117,275"],"contexts":["(2 consumers, and unexported outside `sub_editor/libs`) and `kafka.ts:108-117` (a backend). No repo"],"resolved":false},
     "lib/pendingWrites.ts": {"count":1,"sections":[],"contexts":["`lib/pendingWrites.ts` — `schedule(key, flush, delay)` / `flushAll()` — module-scoped, one"],"resolved":false},
+    "main.tsx": {"count":2,"sections":[4,8],"lines":["120-141"],"contexts":["component is gone) and reaches only the global `unhandledrejection` handler at `main.tsx:120-141`."],"resolved":false},
     "package.json": {"count":1,"sections":[6],"contexts":["`usehooks-ts`, `ahooks`: **zero declared dependencies in all six `package.json` trees**, including the"]},
     "parameterEditing.tsx": {"count":1,"sections":[6],"lines":["73"],"contexts":["nothing: `useAppSetting.ts:77` (2000 ms), `parameterEditing.tsx:73` (1500 ms),"],"resolved":false},
     "personas-cloud/packages/orchestrator/src/kafka.ts": {"count":2,"sections":[6,9],"lines":["94"],"contexts":["`personas-cloud/packages/orchestrator/src/kafka.ts` is a headless Kafka outbox and it has the entire"],"resolved":false},
@@ -266,14 +267,6 @@
       "verbatim": "executionSink.ts"
     },
     "src/lib/throttledStorage.ts": {"count":7,"sections":[2,4,6,7,8],"lines":["42-43","25-44","25-44,81-89"],"contexts":["of a `pagehide`/`beforeunload` flush in the entire fleet (`src/lib/throttledStorage.ts:42-43`) and it"]},
-    "src/main.tsx": {
-      "count": 2,
-      "sections": [4,8],
-      "lines": ["120-141"],
-      "contexts": ["component is gone) and reaches only the global `unhandledrejection` handler at `main.tsx:120-141`."],
-      "resolvedFrom": "basename",
-      "verbatim": "main.tsx"
-    },
     "src/stores/agentStore.ts": {
       "count": 1,
       "sections": [6],

@@ -154,15 +154,6 @@
       "resolved": false
     },
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Neither rule duplicates an existing one, checked against all 31 entries in `rules.json` before"],"resolvedFrom":"basename","verbatim":"rules.json"},
-    "session.rs": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["727"],
-      "contexts": [
-        "| **width 12 (48 bits) — the post-`d96f085ff` standard:** `companion/util.rs:11` called from `dispatcher.rs:3172`, `session.rs:727`, `turn_ledger.rs:317`, `projects.rs:117`, `backlog_triage.rs:197`,…"
-      ],
-      "resolved": false
-    },
     "src-tauri/core/src/models/tool.rs": {
       "count": 1,
       "sections": [6],
@@ -509,6 +500,16 @@
       "verbatim": "engine/persona_jobs.rs"
     },
     "src-tauri/src/engine/share_link.rs": {"count":3,"sections":[5,7],"lines":["112","376"],"contexts":["- **Using a UUID as a bearer token.** `engine/share_link.rs:112` mints"],"resolvedFrom":"suffix","verbatim":"engine/share_link.rs"},
+    "src-tauri/src/engine/twin_setup/session.rs": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["727"],
+      "contexts": [
+        "| **width 12 (48 bits) — the post-`d96f085ff` standard:** `companion/util.rs:11` called from `dispatcher.rs:3172`, `session.rs:727`, `turn_ledger.rs:317`, `projects.rs:117`, `backlog_triage.rs:197`,…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "session.rs"
+    },
     "src-tauri/src/ipc_auth.rs": {
       "count": 2,
       "sections": [2,5],
