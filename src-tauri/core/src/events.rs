@@ -164,6 +164,13 @@ event_names! {
     // query per write and is impossible on DELETE, which is the unbind-a-goal
     // case the planner most needs to see.
     DEV_TOOLS_SHIP_CHANGED     => "dev-tools-ship-changed",
+    // Lifecycle v2: a project's lifecycle moved -- a version was appended
+    // (preset switch, standards edit, Athena proposal), an install task was
+    // recorded on a version, or a finished task's evidence was stored. CDC on
+    // `dev_lifecycle_versions` + `dev_lifecycle_evidence`, payload `CdcEvent`
+    // (`{action, table, rowid}`); the journey refetches its snapshot. ONE name
+    // for both tables for the same reason as the Ship event above.
+    DEV_TOOLS_LIFECYCLE_CHANGED => "dev-tools-lifecycle-changed",
     // Notepad: one note changed status behind the UI's back — the fleet
     // stale ticker's notepad sweeper flipped it after reading a run's
     // `started.json` / `result.json`. Payload `{noteId, status}`; the pad

@@ -32,6 +32,9 @@ pub mod ipc_auth;
 /// The IPC command registration lists and the router over them.
 mod ipc_shards;
 pub mod keyed_pool;
+/// Lifecycle v2: each project's development practice (presets, binding
+/// detection, contract, git evidence, install). See the module docs.
+mod lifecycle;
 mod local_http;
 mod logging;
 /// MCP tool implementations (also compiled into the `personas-mcp` binary).

@@ -261,6 +261,13 @@ fn table_to_event(table: &str, action: CdcAction) -> Option<&'static str> {
             Some(event_name::DEV_TOOLS_SHIP_CHANGED)
         }
 
+        // Lifecycle v2: version appends and per-task evidence. Both are low
+        // volume (one row per operator/Athena change, one per finished task),
+        // so they cannot saturate the channel the way scan tables do.
+        "dev_lifecycle_versions" | "dev_lifecycle_evidence" => {
+            Some(event_name::DEV_TOOLS_LIFECYCLE_CHANGED)
+        }
+
         _ => None,
     }
 }
@@ -662,6 +669,19 @@ mod tests {
         // convenience — this assertion is the tripwire.
         for table in ["dev_kpis", "dev_contexts", "dev_ideas"] {
             assert_eq!(table_to_event(table, CdcAction::Insert), None, "{table}");
+        }
+    }
+
+    #[test]
+    fn lifecycle_tables_map_to_the_lifecycle_event() {
+        for table in ["dev_lifecycle_versions", "dev_lifecycle_evidence"] {
+            for action in [CdcAction::Insert, CdcAction::Update, CdcAction::Delete] {
+                assert_eq!(
+                    table_to_event(table, action),
+                    Some(event_name::DEV_TOOLS_LIFECYCLE_CHANGED),
+                    "{table} / {action:?} must reach the lifecycle journey"
+                );
+            }
         }
     }
 

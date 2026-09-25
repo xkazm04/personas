@@ -41,6 +41,14 @@ interface DevToolsLiveState {
   /** Push path: a Ship-table write landed. Called from `eventBridge`. */
   markShipChanged: () => void;
   /**
+   * Monotonic counter for the Lifecycle v2 journey, bumped once per
+   * (debounced) burst of `dev_lifecycle_*` writes (`DEV_TOOLS_LIFECYCLE_CHANGED`).
+   * Subscribers treat any change as "refetch the snapshot".
+   */
+  lifecycleRevision: number;
+  /** Push path: a lifecycle-table write landed. Called from `eventBridge`. */
+  markLifecycleChanged: () => void;
+  /**
    * Reconcile on EVIDENCE, not on a clock.
    *
    * `db/src/cdc.rs` pushes through a bounded channel and DROPS events when the
@@ -63,6 +71,9 @@ export const useDevToolsLiveStore = create<DevToolsLiveState>((set, get) => ({
   reconciling: false,
 
   markShipChanged: () => set((s) => ({ shipRevision: s.shipRevision + 1 })),
+
+  lifecycleRevision: 0,
+  markLifecycleChanged: () => set((s) => ({ lifecycleRevision: s.lifecycleRevision + 1 })),
 
   reconcileShip: async () => {
     if (get().reconciling) return;

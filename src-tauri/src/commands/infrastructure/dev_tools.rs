@@ -174,20 +174,24 @@ pub fn dev_tools_update_project(
 }
 
 /// Set or clear the project's standards & branching policy (Pipeline Stage 3).
-/// `config` is the raw JSON envelope `{ precommit, branching }` (the shape is
-/// owned by the frontend; validated here only to be parseable). `None` clears it.
+/// `config` is the raw JSON envelope `{ precommit, branching }` (validated here
+/// only to be parseable). Since Lifecycle v2 the lifecycle document is the
+/// authority: the envelope is mapped onto the current document and appended as
+/// a new version (author `operator`), which rewrites `standards_config` through
+/// the projection. `None` maps to "nothing enabled".
 #[tauri::command]
-pub fn dev_tools_set_standards_config(
+pub async fn dev_tools_set_standards_config(
     state: State<'_, Arc<AppState>>,
     project_id: String,
     config: Option<String>,
 ) -> Result<DevProject, AppError> {
-    require_auth_sync(&state)?;
-    if let Some(ref json) = config {
-        serde_json::from_str::<serde_json::Value>(json)
-            .map_err(|e| AppError::Validation(format!("Invalid standards_config JSON: {e}")))?;
-    }
-    repo::update_standards_config(&state.db, &project_id, config.as_deref())
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    run_blocking("dev_tools_set_standards_config", move || {
+        crate::lifecycle::apply_standards_edit(&db, &project_id, config.as_deref())?;
+        repo::get_project_by_id(&db, &project_id)
+    })
+    .await
 }
 
 /// PR-test-merge protocol embedded into existing QA Guardian instances'

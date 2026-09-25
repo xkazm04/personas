@@ -35,6 +35,7 @@ mod knowledge;
 #[cfg(feature = "ml")]
 mod knowledge_base;
 pub mod lab;
+mod lifecycle;
 mod llm_spend;
 mod memory;
 mod n8n_session;
@@ -118,6 +119,7 @@ pub use knowledge::*;
 #[cfg(feature = "ml")]
 pub use knowledge_base::*;
 pub use lab::*;
+pub use lifecycle::*;
 pub use llm_spend::*;
 pub use memory::*;
 pub use n8n_session::*;

@@ -37,6 +37,9 @@ pub mod goals;
 pub mod ideas;
 /// `dev_kpis`, `dev_kpi_measurements`, `dev_kpi_bindings`.
 pub mod kpis;
+/// `dev_lifecycle_versions` and `dev_lifecycle_evidence` - Lifecycle v2: each
+/// project's versioned development practice and the per-task evidence of it.
+pub mod lifecycle;
 /// `dev_milestones` and `dev_milestone_items`.
 pub mod milestones;
 /// `dev_note_comments` — the per-note thread (comments, reviews, status milestones).

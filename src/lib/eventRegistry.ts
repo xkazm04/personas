@@ -172,6 +172,13 @@ export const EventName = {
    */
   DEV_TOOLS_SHIP_CHANGED: 'dev-tools-ship-changed',
   /**
+   * Lifecycle v2: a write landed on `dev_lifecycle_versions` (a version append
+   * or its install task) or `dev_lifecycle_evidence` (a finished task's
+   * evidence). Pushed by the SQLite update hook in `db/src/cdc.rs`; the
+   * journey refetches its snapshot. ONE name for both tables.
+   */
+  DEV_TOOLS_LIFECYCLE_CHANGED: 'dev-tools-lifecycle-changed',
+  /**
    * The council store changed for a project: the ingest door absorbed a run,
    * the decide command recorded a verdict, or the tier of a subject moved.
    * ONE name for the whole council slice, like DEV_TOOLS_SHIP_CHANGED — the
@@ -944,6 +951,12 @@ export interface EventPayloadMap {
    * slice; `table` is here for anyone who wants to narrow that.
    */
   [EventName.DEV_TOOLS_SHIP_CHANGED]: {
+    action: 'insert' | 'update' | 'delete';
+    table: string;
+    rowid: number;
+  };
+  /** Same `CdcEvent` payload as `DEV_TOOLS_SHIP_CHANGED`; listeners refetch. */
+  [EventName.DEV_TOOLS_LIFECYCLE_CHANGED]: {
     action: 'insert' | 'update' | 'delete';
     table: string;
     rowid: number;

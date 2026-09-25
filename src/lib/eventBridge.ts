@@ -887,6 +887,30 @@ const registry: EventRegistration[] = [
     },
   },
 
+  // -- Lifecycle-table write landed (CDC push) -------------------------------
+  //
+  // A version append (preset switch, standards edit, Athena proposal), an
+  // install task recorded on a version, or a finished task's evidence. Same
+  // pre-commit hazard as the Ship push, so the same trailing debounce.
+  {
+    event: EventName.DEV_TOOLS_LIFECYCLE_CHANGED,
+    setup: async () => {
+      let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+      const unlisten = await typedListen(
+        EventName.DEV_TOOLS_LIFECYCLE_CHANGED,
+        () => {
+          if (debounceTimer !== null) clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            debounceTimer = null;
+            useDevToolsLiveStore.getState().markLifecycleChanged();
+          }, EVENT_BRIDGE_TIMING.DEV_TOOLS_SHIP_DEBOUNCE_MS);
+        },
+      );
+      return [unlisten];
+    },
+  },
+
   // -- Share link received (OS deep link) -----------------------------------
   {
     event: EventName.SHARE_LINK_RECEIVED,
