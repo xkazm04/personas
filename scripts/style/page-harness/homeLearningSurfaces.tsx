@@ -79,7 +79,9 @@ export const HOME_LEARNING_MODULES: Record<string, HarnessModule> = {
   'home/learning/fresh': { load: inHomePane(), prepare: () => prepareLearning(false) },
   'home/learning/failed': { load: inHomePane(), prepare: () => prepareLearning(true) },
   'home/learning/tour': {
-    load: inHomePane(`[data-testid="learning-tour-${IN_PROGRESS}"]`),
+    // The tour's card carries the test id and its title is the one button (the kit ContextCard);
+    // before batch home-1 the whole card was the button and carried the id itself.
+    load: inHomePane(`[data-testid="learning-tour-${IN_PROGRESS}"] button, button[data-testid="learning-tour-${IN_PROGRESS}"]`),
     prepare: () => prepareLearning(true),
   },
 };
