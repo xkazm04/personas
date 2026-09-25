@@ -256,7 +256,8 @@
       "open": "buka baris yang difokuskan",
       "sheet": "lembar ini",
       "sort": "urutkan buku besar berdasarkan satu kanal",
-      "undo": "batalkan jawaban terakhir"
+      "undo": "batalkan jawaban terakhir",
+      "queue": "antreanmu, di samping berkas keputusan"
     },
     "kind": {
       "coverage_delta": "delta cakupan",
@@ -450,7 +451,10 @@
     "verdict_bundles_unmeasured": "di bundel yang belum pernah dihitung siapa pun",
     "verdict_maps_unmeasured": "belum ada pemeriksaan peta yang berjalan",
     "verdict_pairs_unmeasured": "Belum ada pasangan konteks dan subjek yang dibaca, sehingga tidak ada bagian dari mereka untuk dilaporkan.",
-    "verdict_pairs_unmeasured_tip": "Ini adalah satu angka kecil pada halaman ini: bagian dari pasangan konteks dan subjek yang pernah dinilai siapa pun. Jalankan instrumen dan angka itu akan muncul. Sampai saat itu statusnya TIDAK DIKETAHUI, dan bagian yang tidak diketahui bukanlah 0%."
+    "verdict_pairs_unmeasured_tip": "Ini adalah satu angka kecil pada halaman ini: bagian dari pasangan konteks dan subjek yang pernah dinilai siapa pun. Jalankan instrumen dan angka itu akan muncul. Sampai saat itu statusnya TIDAK DIKETAHUI, dan bagian yang tidak diketahui bukanlah 0%.",
+    "projection_note": "proyeksi, bukan kebenaran langsung",
+    "scan_tip": "Diambil dari run {run}, terhadap HEAD registry {sha}. Rencana ini adalah proyeksi registry pada commit tersebut, dan menjadi usang begitu HEAD berpindah.",
+    "scan_tip_no_head": "Diambil dari run {run}. Git tidak dapat melaporkan HEAD registry. Rencana ini adalah proyeksi registry pada satu commit, dan menjadi usang begitu HEAD berpindah."
   },
   "process": {
     "cohort_share": "Semua repositori {pct}",

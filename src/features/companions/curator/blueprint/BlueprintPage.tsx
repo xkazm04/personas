@@ -56,6 +56,7 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 import { Blueprint } from './Blueprint';
 import { CuratorConsole } from './console/CuratorConsole';
+import { RequestLane } from './console/RequestLane';
 import { useCuratorLoop } from './console/useCuratorLoop';
 import type { BlueprintPhase } from './ledger/LedgerEmpty';
 import { buildModel, type BlueprintSources } from './model/buildModel';
@@ -164,6 +165,7 @@ export default function BlueprintPage() {
           onRefresh={refresh}
         />
       }
+      queue={<RequestLane requests={loop.requests} onCancel={loop.cancel} />}
     />
   );
 }

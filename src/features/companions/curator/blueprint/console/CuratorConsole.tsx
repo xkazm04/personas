@@ -6,8 +6,9 @@
  * The request COMPOSER - the skill picker, its argument field and its note
  * field - is gone from here. An app-wide universal console is being built to
  * take that job, and a second place to type a skill invocation would be a
- * second place for the two to drift. The lane it filed into stays: reading
- * what she has been asked to do is not input.
+ * second place for the two to drift. The lane it filed into left too, for the
+ * queue DRAWER beside the docket, where it gets the height a queue deserves
+ * instead of a 148px scroller wedged above the ledger.
  *
  * The RUN control stayed, and stays deliberately. It runs her projection, not
  * a skill - nothing in the universal console's job description covers it - and
@@ -35,7 +36,6 @@ import type { CuratorPolicy } from '@/lib/bindings/CuratorPolicy';
 
 import { useWords } from '../words';
 
-import { RequestLane } from './RequestLane';
 import { RuntimeStrip } from './RuntimeStrip';
 import type { CuratorLoop } from './useCuratorLoop';
 
@@ -90,7 +90,6 @@ export function CuratorConsole({ loop, policy, refreshing, onRefresh }: ConsoleP
         <RunInstrument refreshing={refreshing} onRefresh={onRefresh} />
         <RuntimeStrip runtime={loop.runtime} policy={policy} />
       </div>
-      <RequestLane requests={loop.requests} onCancel={loop.cancel} />
     </section>
   );
 }

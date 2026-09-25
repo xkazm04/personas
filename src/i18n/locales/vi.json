@@ -24017,7 +24017,8 @@
         "open": "mở hàng đang được chọn",
         "sheet": "bảng này",
         "sort": "sắp xếp sổ cái theo một kênh",
-        "undo": "hoàn tác câu trả lời gần nhất"
+        "undo": "hoàn tác câu trả lời gần nhất",
+        "queue": "hàng đợi của bạn, bên cạnh sổ quyết định"
       },
       "kind": {
         "coverage_delta": "chênh lệch độ phủ",
@@ -24211,7 +24212,10 @@
       "verdict_bundles_unmeasured": "trong các gói chưa ai đếm",
       "verdict_maps_unmeasured": "chưa có lượt kiểm tra bản đồ nào chạy",
       "verdict_pairs_unmeasured": "Chưa có cặp ngữ cảnh và chủ đề nào được đọc, nên chưa có tỷ lệ nào để báo cáo.",
-      "verdict_pairs_unmeasured_tip": "Đây là con số nhỏ duy nhất của trang: tỷ lệ các cặp ngữ cảnh và chủ đề mà bất kỳ ai từng phán quyết. Chạy công cụ và nó sẽ xuất hiện. Cho đến lúc đó nó không rõ, và một tỷ lệ không rõ không phải là 0%."
+      "verdict_pairs_unmeasured_tip": "Đây là con số nhỏ duy nhất của trang: tỷ lệ các cặp ngữ cảnh và chủ đề mà bất kỳ ai từng phán quyết. Chạy công cụ và nó sẽ xuất hiện. Cho đến lúc đó nó không rõ, và một tỷ lệ không rõ không phải là 0%.",
+      "projection_note": "một dự đoán, không phải dữ liệu thực",
+      "scan_tip": "Lấy từ lần chạy {run}, dựa trên HEAD {sha} của registry. Kế hoạch là một dự đoán về registry tại commit đó, và sẽ lỗi thời ngay khi HEAD thay đổi.",
+      "scan_tip_no_head": "Lấy từ lần chạy {run}. Git không thể xác định HEAD của registry. Kế hoạch là một dự đoán về registry tại một commit, và sẽ lỗi thời ngay khi HEAD thay đổi."
     },
     "process": {
       "cohort_share": "Tất cả kho lưu trữ {pct}",

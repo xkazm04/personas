@@ -24017,7 +24017,8 @@
         "open": "otevřít zaměřený řádek",
         "sheet": "tento list",
         "sort": "seřadit knihu podle jednoho kanálu",
-        "undo": "vrátit zpět poslední odpověď"
+        "undo": "vrátit zpět poslední odpověď",
+        "queue": "vaše fronta, vedle evidence"
       },
       "kind": {
         "coverage_delta": "delta pokrytí",
@@ -24211,7 +24212,10 @@
       "verdict_bundles_unmeasured": "v balících, které nikdo nespočítal",
       "verdict_maps_unmeasured": "žádná kontrola mapy neproběhla",
       "verdict_pairs_unmeasured": "Zatím nebyl přečten žádný pár kontext-subjekt, takže není žádný podíl, který by šlo hlásit.",
-      "verdict_pairs_unmeasured_tip": "Toto je jediné malé číslo této stránky: podíl párů kontext-subjekt, které kdy někdo posoudil. Spusťte nástroj a objeví se. Do té doby je neznámý, a neznámý podíl není 0 %."
+      "verdict_pairs_unmeasured_tip": "Toto je jediné malé číslo této stránky: podíl párů kontext-subjekt, které kdy někdo posoudil. Spusťte nástroj a objeví se. Do té doby je neznámý, a neznámý podíl není 0 %.",
+      "projection_note": "projekce, ne živá pravda",
+      "scan_tip": "Pořízeno z běhu {run}, oproti HEAD registru {sha}. Plán je projekcí registru v daném commitu a je zastaralý, jakmile se HEAD posune.",
+      "scan_tip_no_head": "Pořízeno z běhu {run}. Git nedokázal zjistit HEAD registru. Plán je projekcí registru v jednom commitu a je zastaralý, jakmile se HEAD posune."
     },
     "process": {
       "cohort_share": "Všechna úložiště {pct}",

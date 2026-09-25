@@ -51,6 +51,24 @@ export function useBlueprintKeys({ state, deep, descend, ascend }: KeyDeps) {
         state.toggleDocket();
         return;
       }
+      // The docket's sibling. Both toggles go through one slot, so pressing
+      // this with the docket open SWAPS drawers rather than stacking them.
+      if (k === 'q' || k === 'Q') {
+        e.preventDefault();
+        state.toggleQueue();
+        return;
+      }
+
+      // The queue drawer is a lane and nothing else: Escape shuts it, and the
+      // ledger's own keys stay inert underneath rather than moving a cursor
+      // the operator cannot see.
+      if (state.queue.open) {
+        if (k === 'Escape') {
+          e.preventDefault();
+          state.closeQueue();
+        }
+        return;
+      }
 
       if (state.docket.open) {
         if (k === 'Escape') {

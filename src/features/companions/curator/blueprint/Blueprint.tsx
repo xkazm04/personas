@@ -28,6 +28,7 @@ import { Verdict } from './ledger/Verdict';
 import type { DocketFeed } from './model/docket';
 import type { BlueprintModel } from './model/types';
 import { HelpSheet } from './HelpSheet';
+import { QueueDrawer } from './QueueDrawer';
 import { useBlueprintKeys } from './useBlueprintKeys';
 import { useBlueprintState } from './useBlueprintState';
 import { useDelegatedTip } from './useDelegatedTip';
@@ -49,6 +50,12 @@ export interface BlueprintProps {
    */
   console?: ReactNode;
   /**
+   * The operator's own request queue, drawn in the drawer beside the docket.
+   * A node for the same reason the console is one: the lane reaches IPC and
+   * this component reaches nothing.
+   */
+  queue?: ReactNode;
+  /**
    * Which unpopulated phase the page is in, read ONLY when the model carries no
    * rows. A read in flight, an instrument running and a registry nobody has
    * measured are three sentences, and the ledger body says the right one rather
@@ -62,6 +69,7 @@ export function Blueprint({
   docket,
   words,
   console: operatorConsole,
+  queue,
   phase = 'unrun',
 }: BlueprintProps) {
   const state = useBlueprintState(model, docket);
@@ -122,6 +130,8 @@ export function Blueprint({
           waiting={state.waiting}
           docketOpen={state.docket.open}
           onToggleDocket={state.toggleDocket}
+          queueOpen={state.queue.open}
+          onToggleQueue={state.toggleQueue}
           query={state.query}
           onQuery={state.setQuery}
           onHelp={state.toggleHelp}
@@ -169,6 +179,9 @@ export function Blueprint({
           onPromptChange={state.setPromptValue}
           onPromptCommit={state.commitPrompt}
         />
+        <QueueDrawer open={state.queue.open} onClose={state.closeQueue}>
+          {queue}
+        </QueueDrawer>
         <HelpSheet open={state.help} onClose={state.toggleHelp} />
         <AnchoredTooltip anchor={tip.anchor} content={tip.content} />
       </div>

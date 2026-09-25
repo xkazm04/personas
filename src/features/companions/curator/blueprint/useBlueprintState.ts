@@ -4,8 +4,14 @@
  * Every key the help sheet names is bound here and nowhere else, so the sheet
  * and the behaviour cannot drift: J/K and the arrows move the row cursor,
  * Enter opens it, Esc backs out of whatever is deepest, 1-9 sort the ledger by
- * one channel, 0 clears, D opens the docket, F widens it, U takes the last
- * answer back.
+ * one channel, 0 clears, D opens the docket, Q opens the operator's queue, F
+ * widens the docket, U takes the last answer back.
+ *
+ * THE TWO DRAWERS ARE ONE SLOT. `drawer` is a single nullable name, not two
+ * booleans: the page has one right-hand surface and they would otherwise be
+ * able to hold it together, each transformed over the other with no way to
+ * reach the one behind. Mutual exclusion by construction beats two setters
+ * that each have to remember to close the other.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -28,6 +34,8 @@ export interface BlueprintState {
     selected: string | null;
     decided: Record<string, { option: string; reason: string }>;
   };
+  /** The operator's own request queue, the docket's sibling drawer. */
+  queue: { open: boolean };
   prompt: { id: string; option: string } | null;
   promptValue: string;
   setPromptValue: (value: string) => void;
@@ -40,6 +48,8 @@ export interface BlueprintState {
   toggleDocket: () => void;
   toggleFull: () => void;
   closeDocket: () => void;
+  toggleQueue: () => void;
+  closeQueue: () => void;
   help: boolean;
   toggleHelp: () => void;
   waiting: number;
@@ -49,7 +59,7 @@ export function useBlueprintState(model: BlueprintModel, feed: DocketFeed): Blue
   const [cursor, setCursor] = useState(0);
   const [solo, setSolo] = useState<ChannelId | 0>(0);
   const [query, setQuery] = useState('');
-  const [open, setOpen] = useState(false);
+  const [drawer, setDrawer] = useState<'docket' | 'queue' | null>(null);
   const [full, setFull] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [decided, setDecided] = useState<Record<string, { option: string; reason: string }>>({});
@@ -123,8 +133,8 @@ export function useBlueprintState(model: BlueprintModel, feed: DocketFeed): Blue
   // the drawer opens. A default that pointed at nothing would make `1` do
   // nothing and look broken.
   useEffect(() => {
-    if (open && !selected && feed.entries.length) setSelected(feed.entries[0]!.id);
-  }, [open, selected, feed.entries]);
+    if (drawer === 'docket' && !selected && feed.entries.length) setSelected(feed.entries[0]!.id);
+  }, [drawer, selected, feed.entries]);
 
   return {
     rows,
@@ -134,7 +144,8 @@ export function useBlueprintState(model: BlueprintModel, feed: DocketFeed): Blue
     toggleSolo,
     query,
     setQuery,
-    docket: { open, full, selected, decided },
+    docket: { open: drawer === 'docket', full, selected, decided },
+    queue: { open: drawer === 'queue' },
     prompt,
     promptValue,
     setPromptValue,
@@ -144,16 +155,23 @@ export function useBlueprintState(model: BlueprintModel, feed: DocketFeed): Blue
     undo,
     selectCard: setSelected,
     toggleDocket: () => {
-      setOpen((v) => !v);
+      setDrawer((v) => (v === 'docket' ? null : 'docket'));
       setFull(false);
     },
     toggleFull: () => {
       setFull((v) => !v);
     },
     closeDocket: () => {
-      setOpen(false);
+      setDrawer((v) => (v === 'docket' ? null : v));
       setFull(false);
       setPrompt(null);
+    },
+    toggleQueue: () => {
+      setDrawer((v) => (v === 'queue' ? null : 'queue'));
+      setFull(false);
+    },
+    closeQueue: () => {
+      setDrawer((v) => (v === 'queue' ? null : v));
     },
     help,
     toggleHelp: () => {

@@ -256,7 +256,8 @@
       "open": "abrir la fila enfocada",
       "sheet": "esta hoja",
       "sort": "ordenar el libro por un canal",
-      "undo": "deshacer la última respuesta"
+      "undo": "deshacer la última respuesta",
+      "queue": "tu cola, junto al expediente"
     },
     "kind": {
       "coverage_delta": "delta de cobertura",
@@ -450,7 +451,10 @@
     "verdict_bundles_unmeasured": "en paquetes que nadie ha contado",
     "verdict_maps_unmeasured": "no se ha ejecutado ninguna comprobación de mapa",
     "verdict_pairs_unmeasured": "Todavía no se ha leído ningún par de contexto y tema, así que no hay ninguna proporción que informar.",
-    "verdict_pairs_unmeasured_tip": "Este es el único número pequeño de la página: la proporción de pares de contexto y tema que alguien ha juzgado alguna vez. Ejecuta el instrumento y aparecerá. Hasta entonces es desconocido, y una proporción desconocida no es 0%."
+    "verdict_pairs_unmeasured_tip": "Este es el único número pequeño de la página: la proporción de pares de contexto y tema que alguien ha juzgado alguna vez. Ejecuta el instrumento y aparecerá. Hasta entonces es desconocido, y una proporción desconocida no es 0%.",
+    "projection_note": "una proyección, no la verdad en vivo",
+    "scan_tip": "Tomado de la ejecución {run}, sobre HEAD del registro {sha}. El plan es una proyección del registro en ese commit, y queda desactualizado en cuanto HEAD se mueve.",
+    "scan_tip_no_head": "Tomado de la ejecución {run}. Git no pudo indicar el HEAD del registro. El plan es una proyección del registro en un commit, y queda desactualizado en cuanto HEAD se mueve."
   },
   "process": {
     "cohort_share": "Todos los repositorios {pct}",

@@ -22,6 +22,8 @@ interface TopBarProps {
   waiting: number;
   docketOpen: boolean;
   onToggleDocket: () => void;
+  queueOpen: boolean;
+  onToggleQueue: () => void;
   query: string;
   onQuery: (value: string) => void;
   onHelp: () => void;
@@ -32,6 +34,8 @@ export function TopBar({
   waiting,
   docketOpen,
   onToggleDocket,
+  queueOpen,
+  onToggleQueue,
   query,
   onQuery,
   onHelp,
@@ -92,6 +96,25 @@ export function TopBar({
         <kbd>D</kbd>
         {w.docket_button}
         <span className={`cb-pill typo-label${waiting ? '' : ' cb-zero'}`}>{waiting}</span>
+      </Button>
+      {/* The queue's toggle, beside the docket's, because they are the two
+          drawers of the same surface. It carries NO count pill: the docket's
+          waiting figure is measured from entries this page already holds,
+          while the queue lives behind a door that may not have answered - and
+          on this page an unread queue and an empty one must never wear the
+          same mark. The count lives inside the lane, where it can say which
+          it is. */}
+      <Button
+        variant={queueOpen ? 'secondary' : 'ghost'}
+        size="sm"
+        className="cb-keep cb-tbtn"
+        aria-pressed={queueOpen}
+        data-role="cb-queue-toggle"
+        data-cb-tip={w.console.lane_note}
+        onClick={onToggleQueue}
+      >
+        <kbd>Q</kbd>
+        {w.console.lane_title}
       </Button>
       <Button
         variant="ghost"
