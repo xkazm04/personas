@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**164 reusable components** live under `src/features/shared/components/`.
+**166 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -182,11 +182,13 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 |---|---|
 | `ChartFrame` | ChartFrame - a chart's plot area on the reading line, fixed height, with its loading ghost and empty band. Kit. |
 | `ChipRow` | ChipRow - 30px chips with count and share bar, a chip with onPress is a filter; ChipView is one chip (toolbar filter). Kit. |
-| `DataTable` | DataTable - column heads over ListRow-family rows (band, mark, selection), pager under the last row. Kit. |
+| `DataTable` | DataTable - column heads over ListRow-family rows (band, mark, selection), pager under the last row, opt-in sortable heads. Kit. |
 | `KeyValueGrid` | KeyValueGrid - quiet keys over regular values in auto-fill columns; null renders honestly. Kit. |
 | `ListRow` | ListRow - fixed-height row: one emphasised name, quiet meta, status mark on the spine, figures. Kit. |
 | `Mark` | Mark - the status node on the spine (Tone x Glyph); Dot is the same glyph inline. Kit. |
+| `RangePicker` | RangePicker - a time-window control: preset segments plus an optional Custom segment that opens the caller's date picking. Kit. |
 | `Section` | Section - a titled part of a surface, bounded by a node on the spine (eyebrow, title, count, meta, actions; empty/loading states). |
+| `sortRows` | sortRows - the kit's stable table order: typed compare, absent values last, row id breaks ties. Kit. |
 | `StatStrip` | StatStrip - stat tiles (glowing label, figure, drawn quantity); a lone tile is a strip of one. Kit. |
 | `Surface` | Kit surface family: KitHost (root, compact tier), Surface (a region on one spine), Split (detail pane when roomy), Drawer (narrow  |
 | `Toolbar` | Toolbar - a surface filter bar (Segmented, SearchField, KitButton), 30/36px controls. Kit. |
@@ -263,4 +265,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_164 components, 46 without a `@catalog` description._
+_166 components, 46 without a `@catalog` description._

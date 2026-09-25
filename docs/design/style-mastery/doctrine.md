@@ -284,11 +284,13 @@ stepped by its own lightness, so light themes keep them without per-theme code.
 | `Drawer` | the same detail on a narrow surface; Esc closes | `<Drawer open onClose closeLabel label>` |
 | `Section` | a titled part of a surface; level 1 or 2; owns empty and loading states | `<Section title eyebrow? count? meta? actions? level? state? empty?>` |
 | `ListRow` / `Rows` | a list of fixed-height rows (name, meta, mark, figures, time) with its ghost and empty band | `<ListRow name meta? mark? figures? size? state?>`, `<Rows count empty loading?>` |
-| `DataTable` | the same row family under column heads, with a pager under the last row; rows select | `<DataTable cols rows label empty loading? pager? onRowClick?>` |
+| `DataTable` | the same row family under column heads, with a pager under the last row; rows select; a column opts in to sorting (head is a button with `aria-sort`, absent values last, row id breaks ties) | `<DataTable cols rows label empty loading? pager? onRowClick? sort?/defaultSort? onSortChange? locale?>`, col `sortable: 'asc'\|'desc'`, row `sort: {key: value}` |
 | `StatStrip` | headline figures; a lone tile is a strip of one; `draw` shows the quantity | `<StatStrip tiles={[{label, value, unit?, draw?, note?}]} state?>` |
 | `KeyValueGrid` | facts about one thing; a null value renders its `none` text, muted | `<KeyValueGrid items={[{k, v, draw?, none?}]} min?>` |
 | `ChipRow` / `ChipView` | a set of named counts; a chip with `onPress` is a filter | `<ChipRow chips={[{id, label, count?, share?, onPress?}]} label emptyLabel>` |
 | `Toolbar` | a surface filter bar: `Segmented`, `SearchField` (with `/`), `KitButton` | `<Toolbar label>...</Toolbar>` |
+| `RangePicker` | a time window: preset segments plus an optional Custom segment that opens the caller's own date picking | `<RangePicker label presets={[{v, label}]} value onChange custom?={{label, active, render(close)}}>` |
+| `ChartFrame` | a chart's plot area on the reading line, fixed height, with its ghost and empty band; `toneColor(tone)` colours its series | `<ChartFrame height label state? empty?>{chart}</ChartFrame>` |
 | `UnitStrip` | a quantity as units of a fixed quantum; `apportion()` splits a total by claim | `<UnitStrip segments={[{n, tone, glyph?}]} size rows? label>` |
 | `Mark` / `Dot` | status as Tone x Glyph, on the spine or inline | `<Mark tone glyph label>`, `<Dot tone glyph>` |
 

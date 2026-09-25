@@ -239,6 +239,10 @@ button.k-chip:hover, .k-chip.is-hover { border-color: color-mix(in srgb, var(--p
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 55%, transparent);
 }
 .k-seg__opt:disabled { opacity: .45; cursor: default; }
+/* RangePicker (added at Gate 4): the Segmented look; the caller's date picking opens under it. */
+.k-range { position: relative; display: inline-flex; }
+.k-seg__opt.is-open { color: var(--foreground); background: var(--band-hover); }
+.k-range__cal { width: 10px; height: 9px; border-radius: 2px; box-shadow: inset 0 0 0 1.5px currentColor; border-top: 2px solid currentColor; flex: none; }
 .k-search {
   display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 8px 0 10px; min-width: 180px; flex: 0 1 300px;
   border-radius: var(--radius-input); border: 1px solid var(--line); background: color-mix(in srgb, var(--background) 60%, transparent);
@@ -287,6 +291,13 @@ button.k-chip:hover, .k-chip.is-hover { border-color: color-mix(in srgb, var(--p
 .k-table tr.is-muted td > * { opacity: .56; }
 .k-table tr.is-muted td > .k-mark { opacity: 1; }
 .k-cell2 { display: flex; flex-direction: column; min-width: 0; }
+/* Sortable head (added at Gate 4): the shared SortableHeader in the kit's head look. Its button
+ * fills the head and keeps the head's padding, so a sortable column lines up with a plain one. */
+.k-table th.k-th-sort { padding: 0 0 0 0; }
+.k-table th.k-th-sort:first-child .k-th-sort__btn { padding-left: var(--gutter); }
+.k-th-sort__btn { padding: 0 12px 8px; color: var(--quiet); border-radius: var(--radius-interactive); }
+.k-th-sort__btn:hover { color: var(--foreground); }
+.k-table th[aria-sort="ascending"] .k-th-sort__btn, .k-table th[aria-sort="descending"] .k-th-sort__btn { color: var(--foreground); }
 .k-pager { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 6px 12px 0 var(--gutter); }
 
 /* ============ ChartFrame: a chart's plot on the reading line (added for Observability, Gate 4) ============ */
