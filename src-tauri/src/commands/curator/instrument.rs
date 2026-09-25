@@ -469,6 +469,19 @@ fn cache_key(registry_root: &Path, head: &str) -> String {
     format!("{}\u{0}{head}", registry_root.to_string_lossy())
 }
 
+/// One reading, and where it came from.
+///
+/// The provenance is carried rather than inferred because **nothing downstream
+/// can measure it honestly**: the caller sees an eleven-second answer or a
+/// two-second one, and a stopwatch around the call is a guess at the cache, not
+/// a reading of it. It rides here so `curator_plan_refresh` can say which of
+/// the two it gave.
+pub struct Reading {
+    pub value: Arc<InstrumentReading>,
+    /// True when [`CACHE_TTL`] answered and no node process ran.
+    pub from_cache: bool,
+}
+
 /// Read the registry's instrument, from cache when the corpus has not moved.
 ///
 /// The cache is keyed on the checkout path plus its HEAD and expires after
@@ -478,7 +491,7 @@ fn cache_key(registry_root: &Path, head: &str) -> String {
 /// slot freezes the first attempt's error for the life of the process, and the
 /// usual cause here (a half-written report, a node that was not installed yet)
 /// clears by itself.
-pub async fn read(registry_root: &Path) -> Result<Arc<InstrumentReading>, AppError> {
+pub async fn read(registry_root: &Path) -> Result<Reading, AppError> {
     let _serialised = INSTRUMENT_LOCK
         .get_or_init(|| tokio::sync::Mutex::new(()))
         .lock()
@@ -492,7 +505,10 @@ pub async fn read(registry_root: &Path) -> Result<Arc<InstrumentReading>, AppErr
         let guard = cache.lock().unwrap_or_else(|p| p.into_inner());
         if let Some((k, at, reading)) = guard.as_ref() {
             if k == key && at.elapsed() < CACHE_TTL {
-                return Ok(Arc::clone(reading));
+                return Ok(Reading {
+                    value: Arc::clone(reading),
+                    from_cache: true,
+                });
             }
         }
     }
@@ -504,7 +520,10 @@ pub async fn read(registry_root: &Path) -> Result<Arc<InstrumentReading>, AppErr
         let mut guard = cache.lock().unwrap_or_else(|p| p.into_inner());
         *guard = Some((key, Instant::now(), Arc::clone(&reading)));
     }
-    Ok(reading)
+    Ok(Reading {
+        value: reading,
+        from_cache: false,
+    })
 }
 
 /// Drop both cached readings, so the next read goes to disk.

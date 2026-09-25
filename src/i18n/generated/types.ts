@@ -24162,6 +24162,17 @@ export type Translations = {
         refresh_working: string;
         refresh_title: string;
         refresh_body: string;
+        refresh_changed: string;
+        refresh_same: string;
+        refresh_unknown: string;
+        refresh_fresh: string;
+        refresh_cached: string;
+        switch_unread: string;
+        switch_label_on: string;
+        switch_label_off: string;
+        switch_tip: string;
+        switch_unread_tip: string;
+        runtime_off_holding: string;
         runtime_unread: string;
         runtime_unread_tip: string;
         runtime_off: string;

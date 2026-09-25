@@ -57,6 +57,9 @@ function operatorConsole(refreshing: boolean): ReactNode {
       loop={loop}
       policy={null}
       refreshing={refreshing}
+      // This page has never run the instrument, so there is no verdict to
+      // draw - which is a different thing from a verdict of "nothing changed".
+      outcome={null}
       onRefresh={() => Promise.resolve()}
     />
   );

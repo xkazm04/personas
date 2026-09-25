@@ -123,6 +123,117 @@ distinction the page draws, over a wire. **Both exist only under
 `--features test-automation`** (`npm run tauri:dev:test`); they are not in a
 shipped build. Contract and timeouts: `src-tauri/src/test_automation.rs`.
 
+## Her console: the switch, the run, and what she is doing
+
+The strip across the top of the page is three things in one row, and it stays
+one row because the ledger's thirteen visible lines at 1000x640 are not a
+budget to spend on chrome.
+
+### The run control says what happened, not only that it is happening
+
+`curator_plan_refresh` spawns up to four node processes against the registry on
+disk. Cold that is about eleven seconds; a second press against the same commit
+inside five minutes is answered from the reading cache in about two. **Both can
+produce the same projection**, and until 2026-09-25 the page said nothing about
+either fact - so the operator who pressed it twice against an unmoved registry
+watched the spinner stop, saw the page not change, and reasonably concluded the
+button was dead.
+
+The live region beside the control (the same `aria-live` that narrates the
+wait - there is no toast) now reports two measurements the backend takes and the
+client cannot honestly derive:
+
+| It says | Because |
+|---|---|
+| the projection **changed** | the new run's ranked subjects, points, engines and dominant clauses differ from the run it superseded |
+| the projection is **the same** | they are identical. Two runs over an unmoved corpus produce identical projections, and that is a fact about the corpus, not a failure of the control |
+| whether anything moved is **unknown** | the standing run could not be read to compare against. This is a third arm, never collapsed into "the same" |
+
+and beside it, where the reading came from: a fresh walk with four instruments,
+or the five-minute cache against this commit. `CuratorRefresh` carries all
+three (`plan`, `fromCache`, `changed`), and `changed` is `null` for the third
+arm rather than `false`.
+
+### The run switch
+
+`curator_enabled` lived only on her Setup page, two navigations from the one
+surface that draws what it does. It is now in front of the strip as well,
+through **the same door** the Setup page uses - `companions_set_enabled`, which
+refuses to switch her ON without a mapped knowledge registry, never refuses OFF,
+and broadcasts the category status. (It is deliberately *not* `set_app_setting`,
+which would persist the same key while skipping all three.)
+
+**It is a bare toggle with no word of its own, and that is measured rather than
+minimal for its own sake.** The strip immediately to its right already says
+"serving your queue" or "switched off", so the state is drawn in prose and a
+label on the toggle would be a second authority for it. It also would not fit:
+measured in a browser at 1000x640, this console row is EXACTLY full before the
+switch exists (the run control 182px, the strip 781px, one 12px gap, in a 975px
+box), a labelled switch is ~322px, and every extra line in this row costs a
+ledger row.
+
+**What it claims and what it refuses to claim.** ON means her loop may start
+work; OFF means it may not. It does **not** mean her terminals close: a headless
+worker already running runs to its end. The strip draws both halves of that fact
+side by side - "switched off" and "terminals 2 of 2" - and the terminals tip
+explains the pair, so no count is repeated. When her switch could not be read at
+all the control says so rather than drawing itself off.
+
+### What this row costs, measured
+
+Driven in a real browser against the shot harness at 2026-09-25, dark and light:
+
+| Width | rows visible, before | rows visible, after |
+|---|---|---|
+| 1000px, `fannedOut` known | 10 | **10** |
+| 1000px, `fannedOut` UNKNOWN (the strip's widest form) | 10 | 9 |
+| 1100px and above | 10 | **10** |
+
+The one cell that costs a row is the narrowest window with the widest strip: the
+run control is squeezed and its label wraps to two lines. The verdict sentence
+costs nothing at any width, because its flex basis is zero - it takes only what
+the control does not need, and clips (with the whole sentence still in its tip
+and in what the live region announces).
+
+### The runtime strip is live, and it is not polled
+
+Until 2026-09-25 the strip was **a photograph**: `useCuratorLoop` read
+`curator_runtime_get` once, on mount, and nothing ever read it again. Measured
+against the operator's own machine that day, her loop had dispatched at 13:47,
+17:38 and 20:46 UTC and two of her workers were running that minute, while the
+console reported none of it - so "the loop is broken" was the reasonable
+conclusion and the wrong one. **The loop was never the defect.**
+
+The fix is her own announcement rather than a clock. Her loop emits
+**`curator://pulse`** whenever its observable state moves, through the same
+event registry that carries `companions://status-changed`:
+
+| kind | emitted when |
+|---|---|
+| `dispatched` | a worker started |
+| `settled` | a worker ended and the row it came from was settled |
+| `halted` | a brake bit, or the reason she is stopped changed |
+| `resumed` | the brake that was on came off |
+| `slept` | a reconcile pass completed, superseding the standing plan |
+| `switched` | the operator moved her switch |
+
+**Her whole runtime rides on the payload**, so the strip re-paints with no IPC
+at all; only the kinds that move rows the page draws spend a read (the operator's
+lane on `dispatched`/`settled`, the projection on `settled`/`slept`). The halt
+kinds are announced on the EDGE, never on the state: her tick runs every minute
+and announcing "still halted" sixty times an hour would be the poll this design
+exists to avoid.
+
+`runtime` on the payload is nullable, and the null arm is load-bearing: when the
+backend could not measure her the event still fires - something moved, and a
+surface that was not told goes back to being a photograph - but it carries no
+reading, and the client re-reads rather than being handed a zeroed stand-in.
+
+There is **no repeating timer anywhere under `src/features/companions/curator/`**,
+which is the operator's own instruction ("I would avoid polling") and is checked
+by grep. The mount read stays, because the first paint happens before any event
+has fired and has to come from somewhere.
+
 ## The two drawers
 
 The page has ONE right-hand surface and two things that can hold it. They wear

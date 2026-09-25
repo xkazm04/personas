@@ -16,6 +16,15 @@
  * ACTION - a real spinner on the control the operator pressed - and never as a
  * surface ghost. See `console/CuratorConsole.tsx`.
  *
+ * ## The page also LISTENS
+ *
+ * `curator_plan_refresh` is the operator's own act and answers him directly.
+ * Her loop's work is not: a reconcile pass supersedes the standing run while
+ * nobody is pressing anything, and a worker that ends without landing writes
+ * its plan item to `blocked`. Both change a row this page is drawing, so the
+ * page re-reads on her pulse (`console/curatorPulse.ts`) - subscribed on mount,
+ * dropped on unmount, and on no clock whatsoever.
+ *
  * ## Why there is no empty state here
  *
  * There used to be: with no plan the page rendered a console over one
@@ -55,7 +64,8 @@ import type { CuratorPlan } from '@/lib/bindings/CuratorPlan';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 import { Blueprint } from './Blueprint';
-import { CuratorConsole } from './console/CuratorConsole';
+import { CuratorConsole, type RefreshOutcome } from './console/CuratorConsole';
+import { PLAN_MOVED, useCuratorPulse } from './console/curatorPulse';
 import { RequestLane } from './console/RequestLane';
 import { useCuratorLoop } from './console/useCuratorLoop';
 import type { BlueprintPhase } from './ledger/LedgerEmpty';
@@ -78,6 +88,9 @@ export default function BlueprintPage() {
   const [sources, setSources] = useState<BlueprintSources>(warm?.sources ?? {});
   const [loading, setLoading] = useState(!warm);
   const [refreshing, setRefreshing] = useState(false);
+  // What the LAST run of the instrument did. Null before he has run one - which
+  // is not "nothing changed", and the live region stays silent for it.
+  const [outcome, setOutcome] = useState<RefreshOutcome | null>(null);
   const loop = useCuratorLoop();
   const { reload } = loop;
 
@@ -113,6 +126,22 @@ export default function BlueprintPage() {
   }, [load]);
 
   /**
+   * Her own work, landing on a page nobody is touching.
+   *
+   * Only the kinds that can move a row this page draws spend a read: a
+   * reconcile (which supersedes the run outright) and a settle (which can write
+   * a plan item to `blocked`). A dispatch moves the lane, which the console's
+   * own subscription owns, and this one deliberately stays out of it.
+   */
+  const onPulse = useCallback(
+    (pulse: { kind: string }) => {
+      if (PLAN_MOVED.has(pulse.kind)) void load();
+    },
+    [load],
+  );
+  useCuratorPulse(onPulse);
+
+  /**
    * Run the instrument and supersede the standing projection.
    *
    * `refreshing` is owned HERE rather than left to the button's own guard,
@@ -124,12 +153,20 @@ export default function BlueprintPage() {
     setRefreshing(true);
     try {
       const next = await curatorPlanRefresh();
-      setPlan(next);
-      warm = { plan: next, sources: warm?.sources ?? {} };
+      setPlan(next.plan);
+      warm = { plan: next.plan, sources: warm?.sources ?? {} };
+      // Both facts are the BACKEND'S measurements, carried rather than
+      // inferred: a stopwatch around this call is a guess at the cache, and
+      // comparing against `plan` here would compare against what this page
+      // happened to hold rather than against the run that was superseded.
+      setOutcome({ changed: next.changed, fromCache: next.fromCache });
       // Eleven seconds is long enough for her to have taken a request off the
       // lane, so the lane is re-read rather than left showing the before.
       await reload();
     } catch (err) {
+      // A run that failed answered nothing, so the last run's verdict must not
+      // stand as if it were this one's.
+      setOutcome(null);
       toastCatch('curator:blueprint:refresh')(err);
     } finally {
       setRefreshing(false);
@@ -162,6 +199,7 @@ export default function BlueprintPage() {
           loop={loop}
           policy={sources.policy ?? null}
           refreshing={refreshing}
+          outcome={outcome}
           onRefresh={refresh}
         />
       }
