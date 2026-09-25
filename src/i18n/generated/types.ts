@@ -8333,43 +8333,6 @@ export type Translations = {
       metric_auto_healed: string;
       metric_cancelled: string;
     };
-    knowledge: {
-      title: string;
-      patterns_tab: string;
-      graph_tab: string;
-      search_placeholder: string;
-      sort_aria: string;
-      sort_default: string;
-      sort_confidence: string;
-      sort_runs: string;
-      sort_recent: string;
-      needs_review: string;
-      pending_scope_hint: string;
-      subtitle: string;
-      total_patterns: string;
-      tool_sequences: string;
-      tool_sequences_hint: string;
-      failure_patterns: string;
-      failure_patterns_hint: string;
-      model_insights: string;
-      model_insights_hint: string;
-      all_personas: string;
-      all_types: string;
-      failure_drilldown: string;
-      failure_drilldown_hint: string;
-      failure_drilldown_empty: string;
-      unavailable: string;
-      empty: string;
-      empty_hint: string;
-      recent_learnings: string;
-      successes: string;
-      failures: string;
-      avg_cost: string;
-      avg_duration: string;
-      pattern_data: string;
-      extracted_tab: string;
-      patterns_library_tab: string;
-    };
     dashboard: {
       mission_control_eyebrow: string;
       greeting_morning: string;
@@ -9081,25 +9044,6 @@ export type Translations = {
       retry: string;
       never: string;
     };
-    cron: {
-      title: string;
-      subtitle: string;
-      mock_schedule: string;
-      seed_tooltip: string;
-      scheduled_count: string;
-      headless_count: string;
-      loading: string;
-      no_agents: string;
-      no_agents_hint: string;
-      headless_section: string;
-      interactive_section: string;
-      scheduled_section: string;
-      headless_badge: string;
-      no_schedule: string;
-      every_interval: string;
-      next: string;
-      last: string;
-    };
     sla_card: {
       successful: string;
       failed: string;
@@ -9424,55 +9368,6 @@ export type Translations = {
       byom_recommendations: string;
       per_month: string;
       confidence_pct: string;
-    };
-    annotate_modal: {
-      title: string;
-      persona_label: string;
-      scope_label: string;
-      tool_name: string;
-      connector_type: string;
-      annotation_label: string;
-      cancel: string;
-      saving: string;
-      save_annotation: string;
-      annotation_placeholder: string;
-    };
-    knowledge_row: {
-      annotation: string;
-      successes: string;
-      failures: string;
-      avg_cost: string;
-      avg_duration: string;
-      pattern_data: string;
-      collapse_details: string;
-      expand_details: string;
-      verify_annotation: string;
-      dismiss_annotation: string;
-      execution_trend_label: string;
-    };
-    knowledge_graph: {
-      mock_pattern: string;
-      seed_tooltip: string;
-      all_types: string;
-      all_scopes: string;
-      failure_drilldown_prefix: string;
-      failure_date_filter: string;
-      data_unavailable: string;
-      loading_patterns: string;
-      drilldown_toggle_title: string;
-      no_patterns_yet: string;
-      no_patterns_yet_hint: string;
-      no_patterns_match: string;
-      recent_learnings: string;
-      curating_manually: string;
-      obsidian_tip: string;
-      type_tool_sequence: string;
-      type_failure_pattern: string;
-      type_cost_quality: string;
-      type_model_performance: string;
-      type_data_flow: string;
-      type_agent_annotation: string;
-      type_user_annotation: string;
     };
     focused_decision: {
       accept: string;
@@ -14625,8 +14520,6 @@ export type Translations = {
     month: string;
     engine_running_title: string;
     engine_stopped_title: string;
-    next_at: string;
-    last_at: string;
   };
   recipes_catalog: {
     _comment_section_RecipesBrowseList: string;

@@ -59,7 +59,5 @@
   "week": "Week",
   "month": "Month",
   "engine_running_title": "Scheduler running — click to pause",
-  "engine_stopped_title": "Scheduler stopped — click to start",
-  "next_at": "next {time}",
-  "last_at": "last {time}"
+  "engine_stopped_title": "Scheduler stopped — click to start"
 }
