@@ -3585,7 +3585,6 @@ export type Translations = {
       model_provider: string;
       unsaved_changes: string;
       price_unit_note: string;
-      price_unit_short: string;
       max_budget: string;
       max_turns: string;
       prompt_caching: string;
@@ -3664,29 +3663,6 @@ export type Translations = {
       ollama_save_label: string;
       ollama_signup: string;
       ollama_copy_key: string;
-      compare_models: string;
-      side_by_side: string;
-      model_a: string;
-      model_b: string;
-      add_prompt_first: string;
-      select_different_models: string;
-      no_results_produced: string;
-      run_comparison: string;
-      generating_scenarios: string;
-      testing_model: string;
-      running: string;
-      tokens_in: string;
-      tokens_out: string;
-      wins: string;
-      composite: string;
-      quality: string;
-      tool_accuracy: string;
-      protocol: string;
-      scenario: string;
-      latency: string;
-      cost: string;
-      output_previews: string;
-      no_output: string;
     };
     use_cases: {
       no_persona: string;

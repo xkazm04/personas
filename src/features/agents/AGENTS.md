@@ -26,7 +26,7 @@ there. If it legitimately spans two modules, the shared helper belongs in
 | `sub_activity`          | Activity matrix, per-execution drill-down.                                    | Top-level observability charts (those live in `features/overview`).               |
 | `sub_editor`            | Outer agent-editor shell, tab bar, draft save/restore, focus trap.            | Any single-tab content.                                                           |
 | `sub_settings`          | Per-agent settings (twin binding, visibility, workspace).                     | App-wide settings (that's `features/settings`).                                   |
-| `sub_model_config`      | Per-agent model profile, A/B compare, model override UI.                      | Global model profile (`settings_keys::GLOBAL_MODEL_PROFILE`).                     |
+| `sub_model_config`      | Model profile selector (`ModelSelector` tree, mounted today only by the unreachable `templates/draft-editor`) and the live `libs/` (Ollama presets, model tiers). The A/B compare was deleted 2026-09-25. | Global model profile (`settings_keys::GLOBAL_MODEL_PROFILE`).                     |
 | `sub_tool_runner`       | Live tool-invocation surface inside a chat turn.                              | Tool DEFINITION authoring.                                                        |
 | `sub_health`            | Health-check panel rendered **inside the agent editor**.                      | Cross-agent digest/scoring — that's `health/` (sibling dir).                      |
 | `health/` (NOT sub_)    | Cross-agent health-check logic, scoring, digest scheduler, proposal engine.   | Editor-pane rendering (`sub_health` does that).                                   |
