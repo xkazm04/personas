@@ -76,7 +76,6 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "lab": {},
     "design": {},
     "connectors": {},
-    "model_config": {},
     "use_cases": {},
     "chat_thread": {},
     "matrix_entry": {},

@@ -765,9 +765,9 @@ result by `fieldKey`, and pass `isSensitive` down. The IPC call already exists
 
 | Path | What's wrong |
 |---|---|
-| `src/features/agents/sub_model_config/components/ProviderCredentialField.tsx:63,:78,:97` | renders `PasswordToggleField` bound to `useAppSetting(settingKey)`. |
-| `src/features/agents/sub_model_config/components/LiteLLMConfigField.tsx:12` | `field2 = { settingKey: 'litellm_master_key', type: 'password' }`. |
-| `src/features/agents/sub_model_config/components/OllamaApiKeyField.tsx:15` | `field1 = { settingKey: OLLAMA_API_KEY_SETTING /* 'ollama_api_key' */, type: 'password' }`. |
+| `src/features/agents/sub_model_config/components/ProviderCredentialField.tsx:63,:78,:97` (deleted 2026-09-25) | renders `PasswordToggleField` bound to `useAppSetting(settingKey)`. |
+| `src/features/agents/sub_model_config/components/LiteLLMConfigField.tsx:12` (deleted 2026-09-25) | `field2 = { settingKey: 'litellm_master_key', type: 'password' }`. |
+| `src/features/agents/sub_model_config/components/OllamaApiKeyField.tsx:15` (deleted 2026-09-25) | `field1 = { settingKey: OLLAMA_API_KEY_SETTING /* 'ollama_api_key' */, type: 'password' }`. |
 | `src/hooks/utility/data/useAppSetting.ts:47-58` | on mount, `getAppSettingCoalesced(key)` → `setValueRaw(val)` — **the stored value is fetched back and rendered into the input.** |
 
 Two consequences. First, a field the UI declares a password lands in `app_settings`, a

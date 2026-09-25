@@ -97,7 +97,7 @@ const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
   // reused by the persona surfaces.
   // deployment / deploy_errors — agents/sub_deployment (incl. the cloud panels
   //   and the deployTarget slice its health monitor reads).
-  // agent_lab / eval_strategies — agents/sub_lab + sub_model_config compare.
+  // agent_lab / eval_strategies — agents/sub_lab.
   personas: [
     'agents', 'director', 'matrix_v3', 'design', 'execution', 'models', 'templates',
     'foundry', 'recipes_catalog', 'deployment', 'deploy_errors', 'agent_lab', 'eval_strategies',
