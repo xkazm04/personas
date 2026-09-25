@@ -1,17 +1,10 @@
-// Honest data-health banner for the Mastermind canvas. The canvas fetches
-// several independent data families (relations / idea scans / KPI / fleet /
-// monitoring); when one FAILS the canvas used to render a silent partial truth
-// — edges vanished, Ideas cells lied "never scanned", KPI cells looked
-// honestly "absent". This compact page-level chrome (NOT inside the SVG) names
-// exactly which families failed and offers a retry; it renders NOTHING when
-// every family is clean, so a healthy canvas carries zero added chrome.
-// POSITIONING IS NOT ITS OWN (changed 2026-08-20). It used to place itself at
-// `bottom-14` with a comment saying it must never overlap the mode toolbar —
-// a rule held up by a coordinated constant, which is exactly the kind of rule
-// that breaks the moment a third piece of bottom chrome appears. It did:
-// `MilestoneStatusBar` wanted the same slot. Both now render inside one
-// bottom-anchored column in `MastermindPage`, so "they cannot overlap" is a
-// property of the layout instead of an agreement between two files.
+// Honest data-health banner for Mastermind. The page fetches several
+// independent data families (relations / idea scans / KPI / fleet /
+// monitoring); when one FAILS the chart would otherwise render a silent partial
+// truth — currents vanish, Ideas readings lie "never scanned", KPI readings
+// look honestly "absent". This compact page-level chrome names exactly which
+// families failed and offers a retry; it renders NOTHING when every family is
+// clean. The page places it under the chart's top bar.
 import { AlertTriangle } from 'lucide-react';
 
 import { Button } from '@/features/shared/components/buttons';

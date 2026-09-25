@@ -15,7 +15,6 @@ export type DimStatus = 'absent' | 'solid' | 'partial' | 'risk' | 'alert' | 'unk
 // the dimension system) so a new registry entry extends the key space with no
 // edit here. Type-only import → no runtime cycle (dimRegistry imports DimStatus
 // from this file, also type-only). Imported for local use AND re-exported.
-import type { CategoryNode } from './dimCategories';
 import type { DimKey } from './dimRegistry';
 import type { IslandStat } from './islandStats';
 
@@ -99,9 +98,6 @@ export interface Island {
   slug: string;
   name: string;
   purpose: string;
-  /** World coordinates of the island centre. */
-  x: number;
-  y: number;
   state: IslandState;
   autoScore: number;
   prodScore: number;
@@ -161,130 +157,8 @@ export interface Scene {
   demo: boolean;
 }
 
-export interface Camera {
-  x: number;
-  y: number;
-  z: number;
-}
-
-/** Canvas interaction mode (round 5 — Figma-like, edit-first):
- *  edit = default; pan on empty sea, move islands by their header, move/resize
- *  groups, open the project sidebar by header click.
- *  group = drag draws a labelled organizational rectangle.
- *  connect = click two projects to link them (styled, labelled lines). */
-export type CanvasMode = 'edit' | 'group' | 'connect' | 'note';
-
-export type NoteSize = 'sm' | 'md' | 'lg' | 'xl';
-
-export type NoteFont = 'inter' | 'roboto' | 'caveat';
-
-/** Who put an object on the canvas. Absent on layout documents written before
- *  the second (programmatic) writer existed — those are all the user's, and the
- *  store's v1 → v2 migration says so explicitly. */
-export type LayoutAuthor = 'user' | 'athena';
-
-/** Free text note placed on the canvas (note tool). World coordinates. */
-export interface CanvasNote {
-  id: string;
-  x: number;
-  y: number;
-  text: string;
-  size: NoteSize;
-  font: NoteFont;
-  author?: LayoutAuthor;
-}
-
-/** Contract between the page and the canvas (single Hex Mosaic view). */
-export interface VariantProps {
-  scene: Scene;
-  mode: CanvasMode;
-  /** Drag finished — persist the position. (Mid-drag movement is imperative
-   *  — see useIslandDrag — so there is no per-move callback.) */
-  onIslandCommit: (slug: string, x: number, y: number) => void;
-  /** Fleet node clicked — open the CLI preview popover for this session. */
-  onFleetOpen: (sessionId: string) => void;
-  /** Project header clicked (not dragged) — open the project sidebar. */
-  onProjectOpen: (slug: string) => void;
-  /** Banner Ship chip clicked — deep-link into the project's Factory Ship tab. */
-  onShipOpen: (slug: string) => void;
-  /** Island menu "Open in Factory" — deep-link into the project's Factory L2. */
-  onFactoryOpen: (slug: string) => void;
-  /** Island menu "Open Skills manager" — activate the project + open Skills. */
-  onSkillsOpen: (slug: string) => void;
-  /** Actionable dimension cell clicked — open its Improve popover at the
-   *  cursor (same popovers the Passport wall uses). */
-  onDimOpen: (slug: string, node: DimNode, e: React.MouseEvent) => void;
-  /** In-progress-personas badge clicked — open the persona name list. */
-  onPersonasOpen: (slug: string, e: React.MouseEvent) => void;
-  /** Mid-band runner face clicked — open the island's dev-runner task list. */
-  onRunnersOpen: (slug: string, e: React.MouseEvent) => void;
-  /** Collapsed category cell clicked at far/mid zoom — open the list of the
-   *  dimensions it rolled up, each still routable to its own action. */
-  onCategoryOpen: (slug: string, category: CategoryNode, e: React.MouseEvent) => void;
-  /** Island context-menu "Open terminal" — spawn an interactive Fleet session
-   *  in the project's root and open its preview. */
-  onOpenTerminal: (slug: string) => void;
-  /** Island context-menu "Dispatch Fleet…" — open the instruction modal, which
-   *  spawns a background Fleet session running the typed task (stays on canvas). */
-  onDispatchFleet: (slug: string) => void;
-  /** Group label-plate rocket — dispatch ONE instruction to every dispatchable
-   *  project inside that group. Empty label = an unnamed group. */
-  onDispatchGroupFleet: (slugs: string[], label: string) => void;
-  /** Whether a given island can host a terminal (real project + root_path);
-   *  false for demo islands and projects without a folder path. Gates BOTH the
-   *  "Open terminal" and "Dispatch Fleet…" rows (each needs a real repo root). */
-  canOpenTerminal: (slug: string) => boolean;
-}
-
 // Zoom bands — the single source of truth for level-of-detail. Round-3 split:
 // the old NEAR secretly contained two levels (labels vs details); `close` makes
 // that explicit so each band can be tuned independently from user feedback.
 export type ZoomBand = 'far' | 'mid' | 'near' | 'close';
 
-export const ZOOM_THRESHOLDS = { mid: 0.2, near: 0.5, close: 0.8 } as const;
-
-export function zoomBand(z: number): ZoomBand {
-  if (z < ZOOM_THRESHOLDS.mid) return 'far';
-  if (z < ZOOM_THRESHOLDS.near) return 'mid';
-  if (z < ZOOM_THRESHOLDS.close) return 'near';
-  return 'close';
-}
-
-const BAND_ORDER: Record<ZoomBand, number> = { far: 0, mid: 1, near: 2, close: 3 };
-
-/** True when `band` is at least as zoomed-in as `min` (far < mid < near < close). */
-export const bandGte = (band: ZoomBand, min: ZoomBand): boolean => BAND_ORDER[band] >= BAND_ORDER[min];
-
-/** User-drawn organizational rectangle on the canvas (world coordinates). */
-export interface GroupRect {
-  id: string;
-  label: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  author?: LayoutAuthor;
-}
-
-/** User-drawn connection between two projects (connect tool). */
-export interface UserLink {
-  id: string;
-  from: string;
-  to: string;
-  label: string;
-  dashed: boolean;
-  /** CSS colour (theme token or literal) from the short palette. */
-  color: string;
-  author?: LayoutAuthor;
-}
-
-/** World-space bounding box of the scene, padded so fit() leaves shoreline room. */
-export function sceneBounds(islands: Island[], pad = 300): { minX: number; minY: number; maxX: number; maxY: number } {
-  if (islands.length === 0) return { minX: -600, minY: -400, maxX: 600, maxY: 400 };
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const i of islands) {
-    minX = Math.min(minX, i.x); minY = Math.min(minY, i.y);
-    maxX = Math.max(maxX, i.x); maxY = Math.max(maxY, i.y);
-  }
-  return { minX: minX - pad, minY: minY - pad, maxX: maxX + pad, maxY: maxY + pad };
-}

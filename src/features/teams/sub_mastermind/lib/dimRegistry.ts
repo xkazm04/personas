@@ -1,23 +1,15 @@
-// Dimension registry — the single source of truth for the Mastermind canvas's
-// per-project dimensions. Every dimension declares, in ONE place, everything
-// the rest of the canvas needs to know about it:
-//   • label / category        — identity + (reserved) grouping
+// Dimension registry — the single source of truth for Mastermind's per-project
+// dimensions (Soundings calls them readings). Every dimension declares, in ONE
+// place, everything the rest of Mastermind needs to know about it:
+//   • label / category        — identity + the Soundings lane it sits in
 //   • derive(passport, extras) — status/detail/progress from a readiness passport
-//   • icon                     — the lucide outline the cells and menus render
 //   • rowKey / action          — Passport-wall Improve mapping + actionability kind
-//   • payloadKind              — how a far/mid cell renders (generic icon vs a
-//                                dedicated numeric payload, e.g. Ideas' day count)
 //
-// deriveScene, dimMeta, dimActions, DimGlyph and both cell renderers all read
-// this registry. Adding a future dimension (Memory, Billing, Integrations…) is
-// therefore a ONE-entry change here — see `addingADimension` below.
+// deriveScene, dimActions and Soundings all read this registry. Adding a future
+// dimension (Memory, Billing, Integrations…) is therefore a ONE-entry change
+// here — see `addingADimension` below.
 //
 // This module owns no JSX literals, so it stays a plain `.ts`.
-import {
-  Activity, Bot, BrainCircuit, Database, FlaskConical, Gauge, GitFork, KeyRound,
-  LifeBuoy, Lightbulb, Server, ShieldCheck, Target, Wand2, Workflow, type LucideIcon,
-} from 'lucide-react';
-
 import {
   AUTOMATION_LABEL, AUTOMATION_SCALE, CI_SCALE, OBSERVABILITY_SCALE,
   SECURITY_SCALE, TESTS_SCALE, type AppPassport,
@@ -56,13 +48,12 @@ export interface DimDerived {
   detail: string | null;
   reached: number;
   steps: number;
-  /** Numeric far/mid payload: whole days for `payloadKind: 'days'` (Ideas'
-   *  freshness) or a plain count for `payloadKind: 'count'` (Goals). Null =
-   *  no payload → the cell falls back to its fullscale glyph. */
+  /** Numeric reading: whole days since the last idea scan (Ideas) or the
+   *  ongoing-goal count (Goals). Null = no number to show. */
   days?: number | null;
 }
 
-/** Reserved for a future category-grouping UI (no grouping UI is built yet). */
+/** The lane a reading sits in on a Soundings station (soundingsModel.LANES). */
 export type DimCategory = 'runtime' | 'delivery' | 'agentic' | 'product';
 
 /** Which Improve resolution path a dimension takes (see dimActions.dimAction):
@@ -74,19 +65,12 @@ export type DimCategory = 'runtime' | 'delivery' | 'agentic' | 'product';
  *  Skills cell only), null = never actionable. */
 export type DimActionKind = 'standards' | 'deploy' | 'ideas' | 'goals' | 'kpi' | 'stack-list' | 'skills-run' | null;
 
-/** How a cell renders its far/mid-zoom payload. `icon` = the dimension glyph;
- *  `days` = a large day-counter with a `d` suffix (Ideas' freshness); `count`
- *  = a large plain number (Goals). Numeric kinds shrink the glyph to a corner. */
-export type DimPayloadKind = 'icon' | 'days' | 'count';
-
 export interface DimRegistryEntry {
   label: string;
   category: DimCategory;
-  icon: LucideIcon;
   /** Passport-wall row key this dimension maps to (null = no wall counterpart). */
   rowKey: string | null;
   action: DimActionKind;
-  payloadKind: DimPayloadKind;
   /** True for dimensions that are inert BY DESIGN, not by omission — the
    *  passport reports them read-only and the wall offers no row action either
    *  (`auth`). The cells say so in their tooltip instead of leaving the user
@@ -106,10 +90,9 @@ const ord = <T extends string>(scale: T[], v: T) => {
 /** Boolean-presence dimensions: solid when a value exists, absent otherwise. */
 const presence = (v: string | null | undefined): DimStatus => (v ? 'solid' : 'absent');
 
-// Canvas node order — the lattice slots map onto this 1:1 (MosaicIsland.AXIAL).
-// DimKey is derived from this tuple (NOT from the registry
-// value types) so the key space stays decoupled from the entry value types
-// and free of circular type references. DO NOT reorder without updating that lattice.
+// Dimension order — the order readings are listed in. DimKey is derived from
+// this tuple (NOT from the registry value types) so the key space stays
+// decoupled from the entry value types and free of circular type references.
 export const DIM_ORDER = [
   'db', 'monitoring', 'ci', 'tests', 'security', 'hosting', 'auth', 'agents',
   'skills', 'llm', 'kpi', 'ideas', 'goals', 'datalinks', 'support',
@@ -127,8 +110,8 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     // from `stack.persistence`, so pointing its click at the migrations row sent
     // it to a surface about something else — and, once Database grew a real
     // modal, meant the canvas silently kept opening the generic deploy popover.
-    label: 'Database', category: 'runtime', icon: Database,
-    rowKey: 'persistence', action: 'deploy', payloadKind: 'icon',
+    label: 'Database', category: 'runtime',
+    rowKey: 'persistence', action: 'deploy',
     derive: (p) => {
       const db = p.stack.persistence.filter((x) => x.kind !== 'none');
       return {
@@ -142,8 +125,8 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     // Same correction as `db`: the wall's Monitoring row key is `monitoring`.
     // `observability` is a different (ordinal) row, and routing here sent the
     // canvas to the deploy popover instead of the Monitoring modal.
-    label: 'Monitoring', category: 'runtime', icon: Activity,
-    rowKey: 'monitoring', action: 'deploy', payloadKind: 'icon',
+    label: 'Monitoring', category: 'runtime',
+    rowKey: 'monitoring', action: 'deploy',
     derive: (p, { monitorErrors }) => {
       const monTools = [p.stack.monitoring.errorTracking, p.stack.monitoring.logs, p.stack.monitoring.metrics, p.stack.monitoring.tracing]
         .filter((x): x is string => Boolean(x));
@@ -167,8 +150,8 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     },
   },
   ci: {
-    label: 'CI', category: 'delivery', icon: Workflow,
-    rowKey: 'ci', action: 'standards', payloadKind: 'icon',
+    label: 'CI', category: 'delivery',
+    rowKey: 'ci', action: 'standards',
     derive: (p) => {
       const ci = ord(CI_SCALE, p.productionReadiness.ci.level);
       return {
@@ -179,8 +162,8 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     },
   },
   tests: {
-    label: 'Tests', category: 'delivery', icon: FlaskConical,
-    rowKey: 'tests', action: 'deploy', payloadKind: 'icon',
+    label: 'Tests', category: 'delivery',
+    rowKey: 'tests', action: 'deploy',
     derive: (p) => {
       const tests = ord(TESTS_SCALE, p.productionReadiness.tests.level);
       return {
@@ -191,8 +174,8 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     },
   },
   security: {
-    label: 'Security', category: 'delivery', icon: ShieldCheck,
-    rowKey: 'security', action: 'deploy', payloadKind: 'icon',
+    label: 'Security', category: 'delivery',
+    rowKey: 'security', action: 'deploy',
     derive: (p) => {
       const sec = ord(SECURITY_SCALE, p.productionReadiness.security.level);
       return {
@@ -203,8 +186,8 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     },
   },
   hosting: {
-    label: 'Hosting', category: 'runtime', icon: Server,
-    rowKey: 'hosting', action: 'deploy', payloadKind: 'icon',
+    label: 'Hosting', category: 'runtime',
+    rowKey: 'hosting', action: 'deploy',
     derive: (p) => ({ status: presence(p.stack.hosting), detail: p.stack.hosting ?? null, reached: 0, steps: 0 }),
   },
   auth: {
@@ -212,13 +195,13 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     // no `auth` row in deployActions/connectors and the wall renders it as a
     // plain presence cell, so a canvas action here would break dimActions'
     // invariant that a cell is clickable exactly when its wall row shows a gear.
-    label: 'Auth', category: 'runtime', icon: KeyRound,
-    rowKey: null, action: null, payloadKind: 'icon', viewOnly: true,
+    label: 'Auth', category: 'runtime',
+    rowKey: null, action: null, viewOnly: true,
     derive: (p) => ({ status: presence(p.stack.auth), detail: p.stack.auth ?? null, reached: 0, steps: 0 }),
   },
   agents: {
-    label: 'Agents', category: 'agentic', icon: Bot,
-    rowKey: 'aiflow', action: 'deploy', payloadKind: 'icon',
+    label: 'Agents', category: 'agentic',
+    rowKey: 'aiflow', action: 'deploy',
     derive: (p) => {
       const agents = ord(AUTOMATION_SCALE, p.automationReadiness.level);
       return {
@@ -229,13 +212,13 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     },
   },
   skills: {
-    label: 'Skills', category: 'agentic', icon: Wand2,
-    rowKey: 'skills', action: 'deploy', payloadKind: 'icon',
+    label: 'Skills', category: 'agentic',
+    rowKey: 'skills', action: 'deploy',
     derive: (p) => ({ status: p.automationReadiness.artifacts.skills ? 'solid' : 'absent', detail: p.automationReadiness.artifacts.skills ? 'installed' : null, reached: 0, steps: 0 }),
   },
   llm: {
-    label: 'LLM cost', category: 'agentic', icon: BrainCircuit,
-    rowKey: 'llmtracking', action: 'deploy', payloadKind: 'icon',
+    label: 'LLM cost', category: 'agentic',
+    rowKey: 'llmtracking', action: 'deploy',
     derive: (p) => ({ status: p.stack.llmTracking ? 'solid' : 'absent', detail: p.stack.llmTracking ?? null, reached: 0, steps: 0 }),
   },
   kpi: {
@@ -243,8 +226,8 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     // no Passport-wall counterpart — KPIs live in the Factory, not the wall —
     // so the action is its own kind rather than a rowKey mapping. The page
     // downgrades a cell with zero KPIs to inert (nothing to list).
-    label: 'KPIs', category: 'product', icon: Gauge,
-    rowKey: null, action: 'kpi', payloadKind: 'icon',
+    label: 'KPIs', category: 'product',
+    rowKey: null, action: 'kpi',
     derive: (_p, { kpi, kpiUnknown }) => {
       if (kpiUnknown) return { status: 'unknown', detail: null, reached: 0, steps: 0 };
       return {
@@ -256,8 +239,8 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
   },
   ideas: {
     // Freshness bands: green <7d, amber 7–30d, red >30d, grey when never scanned.
-    label: 'Ideas', category: 'product', icon: Lightbulb,
-    rowKey: null, action: 'ideas', payloadKind: 'days',
+    label: 'Ideas', category: 'product',
+    rowKey: null, action: 'ideas',
     derive: (_p, { lastScanAt, scansUnknown }) => {
       if (scansUnknown) return { status: 'unknown', detail: null, reached: 0, steps: 0, days: null };
       const days = lastScanAt ? Math.max(0, Math.floor((Date.now() - new Date(lastScanAt).getTime()) / 86_400_000)) : null;
@@ -269,11 +252,11 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     },
   },
   goals: {
-    // Ongoing (not done) dev goals. Count > 0 paints the cell active (info)
-    // and renders the count as the far/mid payload; 0 = grey icon-only cell
-    // ("no active goals" is honest, not a gap). Click lists the goal names.
-    label: 'Goals', category: 'product', icon: Target,
-    rowKey: null, action: 'goals', payloadKind: 'count',
+    // Ongoing (not done) dev goals. Count > 0 paints the reading active (info)
+    // and carries the count; 0 = a grey reading ("no active goals" is honest,
+    // not a gap). Click lists the goal names.
+    label: 'Goals', category: 'product',
+    rowKey: null, action: 'goals',
     derive: (_p, { goalsOngoing, goalsUnknown }) => {
       if (goalsUnknown) return { status: 'unknown', detail: null, reached: 0, steps: 0, days: null };
       const n = goalsOngoing ?? 0;
@@ -290,16 +273,16 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
   // deploy; what they DO have is a declared list, so the click just names it
   // (stack-list). The page downgrades an empty list to inert.
   datalinks: {
-    label: 'Data analysis', category: 'product', icon: GitFork,
-    rowKey: null, action: 'stack-list', payloadKind: 'icon',
+    label: 'Data analysis', category: 'product',
+    rowKey: null, action: 'stack-list',
     derive: (p) => {
       const links = p.stack.dataLinks ?? [];
       return { status: links.length > 0 ? 'solid' : 'absent', detail: links.join(' · ') || null, reached: 0, steps: 0 };
     },
   },
   support: {
-    label: 'Support', category: 'product', icon: LifeBuoy,
-    rowKey: null, action: 'stack-list', payloadKind: 'icon',
+    label: 'Support', category: 'product',
+    rowKey: null, action: 'stack-list',
     derive: (p) => {
       const channels = p.stack.supportChannels ?? [];
       return { status: channels.length > 0 ? 'solid' : 'absent', detail: channels.join(' · ') || null, reached: 0, steps: 0 };
@@ -309,10 +292,6 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
 
 // addingADimension:
 //   1. In THIS file: add the key to DIM_ORDER and its entry to DIM_REGISTRY
-//      (label/category/icon/derive/rowKey/action/payloadKind).
-//      deriveScene/dimMeta/dimActions/DimGlyph and the cell renderer pick it
-//      up with no further edits.
-//   2. Open a lattice slot for it: add a [q,r] coord to MosaicIsland.AXIAL
-//      (currently 15 — the 16th+ slot is the only render-side change a new
-//      dimension needs; at ~15 we're at the comfortable ceiling, see
-//      mastermind.md §5 dimension-categories).
+//      (label/category/derive/rowKey/action). deriveScene, dimActions and
+//      Soundings (which places it in its category's lane) pick it up with no
+//      further edits.

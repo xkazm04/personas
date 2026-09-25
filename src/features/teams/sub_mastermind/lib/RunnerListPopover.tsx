@@ -1,6 +1,6 @@
-// Dev-runner task popover — opened from the mid band's runner face.
+// Dev-runner task popover — opened from a project's runner tasks in Soundings.
 //
-// The face answers "how many"; this answers "which tasks, in what state, how
+// The chart answers "how many"; this answers "which tasks, in what state, how
 // far along". Rows navigate to the Run Desk (the queue surface that owns the
 // full task rows) with this project active — same door discipline as the
 // persona popover routing through the Monitor's navigate switch.
@@ -9,9 +9,12 @@ import { Cog } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 
-import { RUNNER_INK } from './farProcesses';
 import { ListPopover } from './ListPopover';
 import type { RunnerNode } from './types';
+
+/** Dev-runner ink — distinct from the persona lane's: both are headless, and
+ *  sharing a colour would make the two impossible to tell apart. */
+const RUNNER_INK = 'var(--accent)';
 
 export function RunnerListPopover({ rows, x, y, onOpen, onClose }: {
   rows: RunnerNode[];

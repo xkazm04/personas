@@ -7,6 +7,7 @@ import type { CSSProperties } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { DIM_REGISTRY, type DimKey } from '../lib/dimRegistry';
+import { MemorySection } from '../lib/MemorySection';
 import type { DimNode, IslandEdge } from '../lib/types';
 import type { ChartGeo, Box } from './soundingsGeometry';
 import { compareY, stationCentre } from './soundingsGeometry';
@@ -21,6 +22,7 @@ export interface CardHandlers {
   onFollow: (station: number, edge: IslandEdge) => void;
   onSession: (sessionId: string) => void;
   onPersonas: (anchor: Anchor) => void;
+  onRunners: (anchor: Anchor) => void;
   onShip: () => void;
   onFactory: () => void;
   onDispatch: () => void;
@@ -193,7 +195,7 @@ export function ReadingCard({ station, dimKey, stations, g, card, h }: {
 }
 
 /** The project's own file: live work, the release plan, readiness, relations,
- *  and the doors the Baseline offers (Factory, dispatch, terminal). */
+ *  and the doors out of the chart (Factory, dispatch, terminal). */
 export function ProjectFile({ station, stations, rankOf, edges, related, g, card, h }: {
   station: Station;
   stations: readonly Station[];
@@ -247,7 +249,15 @@ export function ProjectFile({ station, stations, rankOf, edges, related, g, card
                 <span className="sd-muted">{m.world_persona_running}</span>
               </li>
             )}
-            {island.fleet.length === 0 && island.personasRunning.length === 0 && <li className="sd-muted">{m.far_idle}</li>}
+            {island.runners.length > 0 && (
+              <li>
+                <button type="button" className="sd-sess" data-state="runner" aria-label={m.soundings_open_runners} onClick={(e) => h.onRunners(anchorOf(e))}>
+                  <i />{tx(island.runners.length === 1 ? m.soundings_runners_one : m.soundings_runners_other, { count: island.runners.length })}
+                </button>
+                <span className="sd-muted">{m.lane_runners}</span>
+              </li>
+            )}
+            {island.fleet.length === 0 && island.personasRunning.length === 0 && island.runners.length === 0 && <li className="sd-muted">{m.far_idle}</li>}
           </ul>
           <div className="sd-acts">
             <button type="button" className="sd-act" onClick={h.onDispatch}>{m.dispatch_fleet}</button>
@@ -288,6 +298,7 @@ export function ProjectFile({ station, stations, rankOf, edges, related, g, card
           <div className="sd-acts">
             <button type="button" className="sd-act" onClick={h.onFactory}>{m.open_in_factory}</button>
           </div>
+          {!island.slug.startsWith('demo-') && <MemorySection projectId={island.slug} />}
         </div>
         <div>
           <span className="sd-c-lab typo-label">{m.family_relations}</span>

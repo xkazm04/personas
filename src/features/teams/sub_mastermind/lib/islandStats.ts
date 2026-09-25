@@ -16,14 +16,6 @@ export interface IslandStat {
   tone: 'good' | 'warn' | 'bad' | 'info' | 'muted';
 }
 
-export const STAT_TONE_INK: Record<IslandStat['tone'], string> = {
-  good: 'var(--status-success)',
-  warn: 'var(--status-warning)',
-  bad: 'var(--status-error)',
-  info: 'var(--status-info)',
-  muted: 'var(--status-neutral)',
-};
-
 const NONE = '—';
 
 const scoreTone = (score: number): IslandStat['tone'] =>

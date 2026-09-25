@@ -1,7 +1,7 @@
 // Soundings — the Mastermind portfolio as a nautical sounding chart, where
 // DEPTH MEANS URGENCY. The owner's pick from the 2026-09 next-gen contest
-// (docs/design/mastermind-soundings.md); it sits beside the Baseline until it
-// is fine-tuned.
+// (docs/design/mastermind-soundings.md), and since 2026-09-25 the only view:
+// the Hex Mosaic canvas it sat beside was retired.
 //
 //   L0 chart    every project a buoy at its urgency depth, reasons on the
 //               waterline, relations as currents along the seabed
@@ -28,7 +28,9 @@ import {
   type CanvasActionResult,
   type CanvasCameraReadout,
 } from '../lib/canvasActionStore';
+import { useCanvasTestBridge } from '../lib/canvasTestBridge';
 import type { DimKey } from '../lib/dimRegistry';
+import { useCanvasFocus } from '../lib/focusStore';
 import { IslandJumpPalette } from '../lib/IslandJumpPalette';
 import type { DimNode, Scene } from '../lib/types';
 import { useEventCallback } from '../lib/useEventCallback';
@@ -72,11 +74,10 @@ export interface SoundingsViewProps {
   /** The page's scene has not settled yet (useSceneSettle): the chart shows its
    *  chrome and a loading line, never a ghost of stations it does not have. */
   settling?: boolean;
-  /** The view switcher, rendered in the chart's own top bar. */
-  switcher?: ReactNode;
   onDimOpen: (slug: string, node: DimNode, anchor: Anchor) => void;
   onFleetOpen: (sessionId: string) => void;
   onPersonasOpen: (slug: string, anchor: Anchor) => void;
+  onRunnersOpen: (slug: string, anchor: Anchor) => void;
   onShipOpen: (slug: string) => void;
   onFactoryOpen: (slug: string) => void;
   onDispatchFleet: (slug: string) => void;
@@ -98,7 +99,7 @@ const sleep = (t: number) => new Promise<void>((r) => { window.setTimeout(r, t);
 let seq = 0;
 
 export default function SoundingsView(props: SoundingsViewProps) {
-  const { scene, switcher, settling = false } = props;
+  const { scene, settling = false } = props;
   const { t, tx } = useTranslation();
   const m = t.mastermind;
   const statusWord = useStatusWord();
@@ -397,7 +398,7 @@ export default function SoundingsView(props: SoundingsViewProps) {
     return false;
   }, { priority: ROUTE_DECISION_PRIORITY });
 
-  // ── Athena: answer the same canvas action grammar the Baseline answers ──
+  // ── Athena: answer the canvas action grammar (canvasActionStore) ──
   const camera = useCallback((): CanvasCameraReadout => ({
     x: 0,
     y: 0,
@@ -494,6 +495,22 @@ export default function SoundingsView(props: SoundingsViewProps) {
       setBusy(false);
     })();
   }, [actionVersion, runAction]);
+  // Dev/test door into the same grammar (window.__mmCanvas, dev builds only).
+  useCanvasTestBridge();
+
+  // Athena composing a panel for a project points the page at it (focusStore);
+  // with `travel` the chart opens that station. A focus set before the chart
+  // mounted (she composed from elsewhere in the app) is honoured once the
+  // stations it names have arrived.
+  const canvasFocus = useCanvasFocus();
+  const seenFocus = useRef(0);
+  useEffect(() => {
+    if (!canvasFocus?.travel || canvasFocus.seq === seenFocus.current) return;
+    const i = indexOf.get(canvasFocus.target.slug);
+    if (i === undefined) return;
+    seenFocus.current = canvasFocus.seq;
+    goL1(i);
+  }, [canvasFocus, indexOf, goL1]);
 
   // ── words ───────────────────────────────────────────────────────────────
   const bandName = [m.soundings_band_surface, m.soundings_band_shallows, m.soundings_band_midwater, m.soundings_band_deep];
@@ -562,6 +579,7 @@ export default function SoundingsView(props: SoundingsViewProps) {
     },
     onSession: (id) => props.onFleetOpen(id),
     onPersonas: (anchor) => props.onPersonasOpen(curStation.island.slug, anchor),
+    onRunners: (anchor) => props.onRunnersOpen(curStation.island.slug, anchor),
     onShip: () => props.onShipOpen(curStation.island.slug),
     onFactory: () => props.onFactoryOpen(curStation.island.slug),
     onDispatch: () => props.onDispatchFleet(curStation.island.slug),
@@ -640,7 +658,6 @@ export default function SoundingsView(props: SoundingsViewProps) {
           )}
         </nav>
         <p className="sd-reading" aria-live="polite">{reading}</p>
-        {switcher}
         <button type="button" className="sd-topbtn" aria-label={m.soundings_help_aria} onClick={() => setHelpOpen(true)}>?</button>
         {g && (
           <div className="sd-hair" aria-hidden>
@@ -774,7 +791,7 @@ export default function SoundingsView(props: SoundingsViewProps) {
                   <div>
                     <span className="sd-in-l typo-label">{m.world_fleet}</span>
                     <span className="sd-in-v">
-                      {curStation.island.fleet.length === 0 && curStation.island.personasRunning.length === 0 && <span className="sd-muted">{m.lane_none}</span>}
+                      {curStation.island.fleet.length === 0 && curStation.island.personasRunning.length === 0 && curStation.island.runners.length === 0 && <span className="sd-muted">{m.lane_none}</span>}
                       {curStation.island.fleet.map((f) => (
                         <span key={f.id} className={flash === f.id ? 'sd-sess sd-flash' : 'sd-sess'} data-state={f.state}>
                           <i />
@@ -784,6 +801,9 @@ export default function SoundingsView(props: SoundingsViewProps) {
                       ))}
                       {curStation.island.personasRunning.length > 0 && (
                         <span className="sd-muted">{tx(curStation.island.personasRunning.length === 1 ? m.far_personas_one : m.far_personas_other, { count: curStation.island.personasRunning.length })}</span>
+                      )}
+                      {curStation.island.runners.length > 0 && (
+                        <span className="sd-muted">{tx(curStation.island.runners.length === 1 ? m.soundings_runners_one : m.soundings_runners_other, { count: curStation.island.runners.length })}</span>
                       )}
                     </span>
                   </div>

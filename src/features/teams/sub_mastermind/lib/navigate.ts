@@ -30,24 +30,10 @@ export function openNotepadForProject(projectId: string): void {
   useSystemStore.getState().notepadOpenForProject(projectId);
 }
 
-/** Open the Skills manager with this project as the app-wide active project. */
-export function openSkillsManager(projectId: string): void {
-  const s = useSystemStore.getState();
-  // Fire-and-forget: the Skills page keys on activeProjectId and remounts when
-  // the switch lands; navigating first would only flash the previous project.
-  s.setActiveProject(projectId)
-    .catch(silentCatch('mastermind openSkillsManager'))
-    .finally(() => {
-      const n = useSystemStore.getState();
-      n.setSidebarSection('plugins');
-      n.setPluginTab('dev-tools');
-      n.setDevToolsTab('skills');
-    });
-}
-
 /** Open the Run Desk (dev-runner queue) with this project active — the runner
- *  popover's row destination. Same fire-and-forget active-project switch as
- *  the Skills door: the Run Desk keys on activeProjectId. */
+ *  popover's row destination. Fire-and-forget active-project switch: the Run
+ *  Desk keys on activeProjectId, and navigating first would only flash the
+ *  previous project. */
 export function openRunDesk(projectId: string): void {
   const s = useSystemStore.getState();
   s.setActiveProject(projectId)
