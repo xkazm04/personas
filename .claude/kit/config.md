@@ -54,6 +54,7 @@ Authority: `.claude/CLAUDE.md` + `.claude/rules/ui.md` (path-scoped; the kit is 
   dense tool surfaces opt into `data-type-density="compact"`.
 
 ## Visibility order
+Dev-only surfaces (Home Welcome, What's New, System Check; anything behind a devOnly flag) ARE targets: the owner runs dev builds daily (home-1: "Treat dev tabs as targets").
 home, overview, agents, vault, settings, then plugins, companions, teams, triggers, templates, the rest
 (owner, 2026-09-25: "What you see most").
 
@@ -70,6 +71,9 @@ home, overview, agents, vault, settings, then plugins, companions, teams, trigge
 - Weight hierarchy, one emphasis per row, compact type on tool surfaces (Gate 3).
 - Chose the more visual kit (drawn unit quantities) over the one that matched its source perfectly (Gate K2).
 - Setup/"waiting on you" reads info-blue, not the pink human role (Gate 5).
+- Thinks at the scale of real data: "projects will have hundreds of contexts" - entity surfaces need a parent layer before cards (grow-1).
+- Notices card alignment at once: figures pinned to the bottom edge in every card (grow-1).
+- Prefers the kit's composed uniformity over bespoke illustrated tiles and per-item icons on Home (home-1: approved both despite the Director's flag). Do not over-protect decoration the kit replaces with drawn quantities; protect theme tint/glow, not every icon.
 
 ## Skill improvement log
 - 2026-09-25 (grow-1 / dead code): deleting a component broke `check:evidence` through a subject evidence list; second sighting in this repo, promoted into `## Gates`.
