@@ -4,7 +4,8 @@
  * the same SDLC pipeline in "view mode": a compact horizontal rail + per-stage
  * summary cards. Presentational — the caller resolves team/connector names.
  */
-import { FolderKanban, GitBranch, Users, Code2, GitFork, FlaskConical, Folder, ShieldCheck, GitMerge, Pencil } from 'lucide-react';
+import { FolderKanban, GitBranch, Users, Code2, GitFork, FlaskConical, Folder, ShieldCheck, GitMerge, Pencil, Route, Sparkles } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PipelineRail } from './PipelineRail';
 import type { PipelineStage, SourceMode, PipelineFieldId } from './pipelineTypes';
@@ -23,8 +24,13 @@ interface ProjectPipelineViewProps {
   mainBranch?: string;
   testEnvUrl?: string;
   testEnvBranch?: string;
-  /** Standards & branching policy JSON (Pipeline Stage 3). */
+  /**
+   * `standards_config` JSON: a read-only projection of the project's
+   * Lifecycle practice (Pipeline Stage 3). Nobody edits it here.
+   */
   standardsConfig?: string;
+  /** When provided, the Practice stage offers "Ask Athena to change it". */
+  onAskAthena?: () => void;
   /**
    * When provided, each editable KvRow becomes a trigger that opens a
    * quick-edit popover for that field (Overview tab). Omitted → read-only.
@@ -35,7 +41,7 @@ interface ProjectPipelineViewProps {
 export function ProjectPipelineView({
   name, path, sourceMode, teamName, connectorName,
   githubUrl, mainBranch, testEnvUrl, testEnvBranch, standardsConfig,
-  onEditField,
+  onEditField, onAskAthena,
 }: ProjectPipelineViewProps) {
   const { t } = useTranslation();
   const dp = t.plugins.dev_projects;
@@ -55,7 +61,8 @@ export function ProjectPipelineView({
   const stages: PipelineStage[] = [
     { id: 'project', label: dp.pipeline_step_project, icon: FolderKanban, status: name ? 'complete' : 'incomplete' },
     { id: 'source', label: dp.pipeline_step_source, icon: GitBranch, status: sourceConfigured ? 'complete' : 'incomplete' },
-    { id: 'standards', label: dp.pipeline_step_standards, icon: ShieldCheck, status: standardsConfig ? 'complete' : 'incomplete' },
+    // Every project has a practice (an absent version reads as Solo v0).
+    { id: 'practice', label: dp.pipeline_step_practice, icon: Route, status: 'complete' },
   ];
 
   return (
@@ -90,11 +97,23 @@ export function ProjectPipelineView({
           />
         </StageCard>
 
-        {/* Stage 3 — Standards */}
-        <StageCard icon={ShieldCheck} label={dp.pipeline_step_standards}>
-          <KvRow icon={ShieldCheck} label={dp.standards_precommit_heading} value={gates || null} field="std-precommit" onEdit={onEditField} />
-          <KvRow icon={GitBranch} label={dp.standards_pr_base} value={prBaseName} mono field="std-pr-base" onEdit={onEditField} />
-          <KvRow icon={GitMerge} label={dp.standards_automerge} value={automergeText} field="std-automerge" onEdit={onEditField} />
+        {/* Stage 3 — Practice: the standards projection, read-only. Athena changes it. */}
+        <StageCard icon={Route} label={dp.pipeline_step_practice}>
+          <KvRow icon={ShieldCheck} label={dp.standards_precommit_heading} value={gates || null} />
+          <KvRow icon={GitBranch} label={dp.standards_pr_base} value={prBaseName} mono />
+          <KvRow icon={GitMerge} label={dp.standards_automerge} value={automergeText} />
+          {onAskAthena && (
+            <Button
+              variant="ghost"
+              size="xs"
+              icon={<Sparkles className="w-3 h-3" />}
+              onClick={onAskAthena}
+              data-testid="pipeline-practice-ask-athena"
+              className="-mx-1 mt-1"
+            >
+              {dp.practice_ask_athena}
+            </Button>
+          )}
         </StageCard>
       </div>
     </div>

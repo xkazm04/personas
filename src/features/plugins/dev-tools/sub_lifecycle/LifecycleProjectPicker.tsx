@@ -17,8 +17,8 @@ interface LifecycleProjectPickerProps {
 
 /**
  * Page-header scope picker: the universal workspace / project selector plus a
- * GitHub indicator for the selected project (Dev Clone adoption needs a repo
- * to wire up PR workflows).
+ * GitHub indicator for the selected project (a Team practice lands through
+ * pull requests, which need a repo).
  */
 export function LifecycleProjectPicker({ allowNone = false }: LifecycleProjectPickerProps) {
   const { t } = useTranslation();
@@ -55,7 +55,7 @@ export function LifecycleProjectPicker({ allowNone = false }: LifecycleProjectPi
     <div className="flex items-center gap-2 min-w-0 max-w-full">
       <WorkspaceProjectSelector allowNone={allowNone} testId="header-scope-picker" />
       {activeProject && (
-        <Tooltip content={hasGithub ? activeProject.github_url ?? 'GitHub connected' : 'No GitHub repo — Dev Clone needs GitHub for PR workflows'}>
+        <Tooltip content={activeProject.github_url ?? t.plugins.dev_tools.no_repo}>
           <div
             className={`flex items-center gap-1.5 px-2 py-1 rounded-interactive border shrink-0 ${
               hasGithub ? 'bg-emerald-500/10 border-emerald-500/25' : 'bg-amber-500/5 border-amber-500/20'

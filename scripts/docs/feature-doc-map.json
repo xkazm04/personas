@@ -419,7 +419,9 @@
       "doc": "docs/features/plugins/dev tools/dev-tools.md",
       "sourceGlobs": [
         "src/features/plugins/dev-tools/**",
-        "src-tauri/src/commands/infrastructure/dev_tools.rs"
+        "src-tauri/src/commands/infrastructure/dev_tools.rs",
+        "src-tauri/src/commands/infrastructure/lifecycle.rs",
+        "src-tauri/src/lifecycle/**"
       ],
       "onboardingFlows": [
         "plugin-dev-tools"

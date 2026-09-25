@@ -3,7 +3,9 @@
  * {@link ProjectPipelineView} into an inline-editable surface. Each editable
  * KvRow opens a {@link QuickEditPopover} anchored to the row; saving persists
  * through the dev-tools API and refreshes the project. The folder path stays
- * read-only (no update path for root_path).
+ * read-only (no update path for root_path), and so does the Practice stage:
+ * it is the Lifecycle projection, changed by Athena ("Ask Athena to change it"),
+ * never by a field editor.
  */
 import { useMemo, useState } from 'react';
 import { ProjectPipelineView } from '../sub_projects/pipeline/ProjectPipelineView';
@@ -11,12 +13,12 @@ import { QuickEditPopover } from '@/features/shared/components/overlays/QuickEdi
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
-import { parseStandards, defaultStandards, resolveBranchName } from '../sub_projects/pipeline/standardsConfig';
+import { useAskAthena } from '@/features/plugins/companion/useAskAthena';
 import type { PipelineFieldId } from '../sub_projects/pipeline/pipelineTypes';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import { repoConnectorOptions } from './useOverviewData';
-import { DraftEditor, saveDraft, canSaveDraft, type Draft, type SelectOption } from './pipelineFieldEditor';
+import { DraftEditor, saveDraft, canSaveDraft, type Draft } from './pipelineFieldEditor';
 
 interface EditableProjectPipelineProps {
   project: DevProject;
@@ -29,8 +31,9 @@ interface EditableProjectPipelineProps {
 }
 
 export function EditableProjectPipeline({ project, teams, credentials, onSaved }: EditableProjectPipelineProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const dp = t.plugins.dev_projects;
+  const askAthena = useAskAthena();
   const addToast = useToastStore((s) => s.addToast);
 
   const [edit, setEdit] = useState<{ field: PipelineFieldId; anchor: DOMRect; draft: Draft; title: string } | null>(null);
@@ -46,20 +49,7 @@ export function EditableProjectPipeline({ project, teams, credentials, onSaved }
     [credentials, project.github_url],
   );
 
-  const branchOptions: SelectOption[] = useMemo(() => {
-    const main = project.main_branch ?? '';
-    const test = project.test_env_branch ?? '';
-    return [
-      { value: 'main', label: `${dp.standards_branch_main} (${resolveBranchName('main', main, test)})` },
-      { value: 'test', label: `${dp.standards_branch_test} (${resolveBranchName('test', main, test)})` },
-    ];
-  }, [project.main_branch, project.test_env_branch, dp.standards_branch_main, dp.standards_branch_test]);
-
   const buildDraft = (field: PipelineFieldId): { draft: Draft; title: string } => {
-    // Read-time parse defaults to all-false (nothing actually enforced); when
-    // opening the editor for a project with no stored config yet, pre-fill
-    // with sensible starting values instead of showing "everything off".
-    const std = project.standards_config ? parseStandards(project.standards_config) : defaultStandards();
     switch (field) {
       case 'name':
         return { title: dp.project_name, draft: { kind: 'text', value: project.name, placeholder: dp.project_name_placeholder } };
@@ -73,12 +63,6 @@ export function EditableProjectPipeline({ project, teams, credentials, onSaved }
         return { title: dp.main_branch_label, draft: { kind: 'text', value: project.main_branch ?? '', placeholder: dp.main_branch_placeholder } };
       case 'test-env':
         return { title: dp.test_env_url, draft: { kind: 'pair', a: project.test_env_url ?? '', b: project.test_env_branch ?? '', aLabel: dp.test_env_url, bLabel: dp.test_env_branch, aPlaceholder: dp.test_env_url_placeholder, bPlaceholder: dp.test_env_branch_placeholder } };
-      case 'std-precommit':
-        return { title: dp.standards_precommit_heading, draft: { kind: 'precommit', lint: std.precommit.lint, docs: std.precommit.docs_required, quality: std.precommit.code_quality } };
-      case 'std-pr-base':
-        return { title: dp.standards_pr_base, draft: { kind: 'select', value: std.branching.pr_base ?? 'main', options: branchOptions } };
-      case 'std-automerge':
-        return { title: dp.standards_automerge, draft: { kind: 'automerge', enabled: std.branching.automerge.enabled, target: std.branching.automerge.target ?? 'main', branchOptions } };
     }
   };
 
@@ -115,6 +99,7 @@ export function EditableProjectPipeline({ project, teams, credentials, onSaved }
         testEnvBranch={project.test_env_branch ?? undefined}
         standardsConfig={project.standards_config ?? undefined}
         onEditField={handleEditField}
+        onAskAthena={() => askAthena('lifecycle', tx(t.plugins.dev_lifecycle.lc_ask_athena_prompt, { name: project.name, id: project.id }))}
       />
       <QuickEditPopover
         open={edit !== null}
