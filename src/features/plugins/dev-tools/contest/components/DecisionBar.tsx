@@ -79,6 +79,9 @@ export function DecisionBar({ detail, draft, onRefined, onDecided, className = '
     ...ready.shortlist.map((k) => ({ value: k, label: k })),
   ];
   const deletions = refineDeletions(detail, review);
+  // The pick is kept as typed, but only a key still in the shortlist counts:
+  // one promoted to Winner or sorted away since is never shown or sent.
+  const effectiveRunnerUp = ready.shortlist.includes(runnerUp) ? runnerUp : '';
 
   const declare = async () => {
     if (!ready.winner) return;
@@ -87,7 +90,7 @@ export function DecisionBar({ detail, draft, onRefined, onDecided, className = '
       const summary = await decideContest(projectId, contestId, {
         kind: 'winner',
         winner: ready.winner,
-        runnerUp: runnerUp || null,
+        runnerUp: effectiveRunnerUp || null,
         note: winnerNote(review, ready.winner),
       });
       primeSummary(summary);
@@ -119,7 +122,7 @@ export function DecisionBar({ detail, draft, onRefined, onDecided, className = '
 
   const winnerBody = [
     s.confirm_winner_body,
-    runnerUp ? tx(s.confirm_winner_runner_up, { key: runnerUp }) : '',
+    effectiveRunnerUp ? tx(s.confirm_winner_runner_up, { key: effectiveRunnerUp }) : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -137,8 +140,9 @@ export function DecisionBar({ detail, draft, onRefined, onDecided, className = '
           <ThemedSelect
             filterable
             hideSearch
+            aria-label={s.runner_up_label}
             options={runnerUpOptions}
-            value={runnerUp}
+            value={effectiveRunnerUp}
             onValueChange={setRunnerUp}
             wrapperClassName="w-44"
           />

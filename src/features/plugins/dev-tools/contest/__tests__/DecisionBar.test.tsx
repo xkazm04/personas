@@ -1,6 +1,6 @@
 // The verdict bar offers only what the backend can honour in the contest's
-// phase (FE-4).
-import { cleanup, render, screen } from '@testing-library/react';
+// phase (FE-4), and sends only a runner-up that is still shortlisted (FE-13).
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { detailFixture, summaryFixture } from './fixtures';
@@ -82,5 +82,31 @@ describe('DecisionBar phase gate', () => {
     expect(screen.getByTestId('contest-decide-refine')).not.toBeDisabled();
     expect(screen.queryByTestId('contest-decide-winner')).toBeNull();
     expect(screen.getByTestId('contest-decision-locked')).toBeInTheDocument();
+  });
+});
+
+describe('DecisionBar runner-up (FE-13)', () => {
+  it('a runner-up later promoted to Winner is not sent as runner-up', async () => {
+    api.decideContest.mockResolvedValue(summaryFixture({ phase: 'decided', winner: 'B/1' }));
+    const review = setBucket(setBucket(emptyReview(detailFixture().variants), 'A/1', 'winner'), 'B/1', 'shortlist');
+    const { rerender } = render(<Bar detail={detailIn('review', review)} />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Runner-up (optional)' }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'B/1' }));
+    });
+    // The owner changes their mind: B/1 becomes the winner, A/1 drops to the shortlist.
+    rerender(<Bar detail={detailIn('review', setBucket(review, 'B/1', 'winner'))} />);
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('contest-decide-winner'));
+    });
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).not.toHaveTextContent('Runner-up: B/1');
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Declare winner' }));
+    });
+    expect(api.decideContest).toHaveBeenCalledTimes(1);
+    expect(api.decideContest.mock.calls[0]![2]).toMatchObject({ kind: 'winner', winner: 'B/1', runnerUp: null });
   });
 });
