@@ -19,6 +19,7 @@
 // Options: --sizes 1280x800,1920x1080  --themes dark-midnight,light  --settle 1500  --tz UTC
 //          --brightness low|mid|high (default: the store default, as a fresh profile gets)
 //          --strict-ipc (fail on IPC commands missing from the tape)
+//          --kit <name> (appends ?kit=<name>, read by a page's dev-only kit switch, e.g. fleet/activity)
 //
 // Output (per --label): <label>-<W>x<H>-<theme>.png for each size x theme, <label>-report.json
 // (console errors, unknown IPC commands, args mismatches, text length, page dimensions),
@@ -115,7 +116,7 @@ function parseSizes(s) {
   });
 }
 
-async function shootOne(browser, baseUrl, { moduleId, theme, size, tape, settle, tz, brightness }) {
+async function shootOne(browser, baseUrl, { moduleId, theme, size, tape, settle, tz, brightness, kit }) {
   const context = await browser.newContext({ viewport: size, deviceScaleFactor: 1, locale: 'en-US', timezoneId: tz });
   const page = await context.newPage();
   const consoleErrors = [];
@@ -123,7 +124,7 @@ async function shootOne(browser, baseUrl, { moduleId, theme, size, tape, settle,
   page.on('pageerror', (e) => consoleErrors.push(`pageerror: ${String(e?.message ?? e).slice(0, 2000)}`));
   await page.clock.setFixedTime(new Date(tape.recordedAt));
   await page.addInitScript((t) => { window.__PAGE_HARNESS_TAPE__ = t; }, tape);
-  const url = `${baseUrl}${HARNESS_PATH}?module=${encodeURIComponent(moduleId)}&theme=${encodeURIComponent(theme)}${brightness ? `&brightness=${brightness}` : ''}`;
+  const url = `${baseUrl}${HARNESS_PATH}?module=${encodeURIComponent(moduleId)}&theme=${encodeURIComponent(theme)}${brightness ? `&brightness=${brightness}` : ''}${kit ? `&kit=${encodeURIComponent(kit)}` : ''}`;
   // 'commit', not 'load': on a cold dep cache Vite holds module requests while
   // it pre-bundles (measured 37 s on the first run), which would trip goto's
   // own timeout before the harness has had a chance to report anything.
@@ -172,6 +173,7 @@ async function runShoot() {
   const settle = Number(args.settle) || 1500;
   const tz = args.tz && args.tz !== true ? args.tz : 'UTC';
   const brightness = args.brightness && args.brightness !== true ? args.brightness : null;
+  const kit = args.kit && args.kit !== true ? args.kit : null;
   mkdirSync(outDir, { recursive: true });
   writeFileSync(join(outDir, 'tape.json'), JSON.stringify(tape, null, 2));
 
@@ -184,10 +186,10 @@ async function runShoot() {
     // differed from the same view in a re-run by 17 px of anti-aliasing in the
     // header icon while every later shot was byte-identical; a throwaway first
     // render makes every kept shot a warm one.
-    await shootOne(browser, url, { moduleId, theme: themes[0], size: sizes[0], tape, settle: 300, tz, brightness });
+    await shootOne(browser, url, { moduleId, theme: themes[0], size: sizes[0], tape, settle: 300, tz, brightness, kit });
     for (const theme of themes) {
       for (const size of sizes) {
-        const r = await shootOne(browser, url, { moduleId, theme, size, tape, settle, tz, brightness });
+        const r = await shootOne(browser, url, { moduleId, theme, size, tape, settle, tz, brightness, kit });
         const file = `${label}-${size.width}x${size.height}-${theme}.png`;
         writeFileSync(join(outDir, file), r.png);
         const problems = [];
@@ -217,7 +219,7 @@ async function runShoot() {
   }
   const unknownCmds = [...new Set(shots.flatMap((s) => s.unknownIpc.map((u) => u.cmd)))];
   const report = {
-    module: moduleId, label, createdAt: new Date().toISOString(), browser: browserVersion,
+    module: moduleId, kit, label, createdAt: new Date().toISOString(), browser: browserVersion,
     tape: { path: tapePath, source: tape.source, recordedAt: tape.recordedAt, calls: tape.calls.length, note: tape.note ?? null },
     ok: shots.every((s) => s.ok), unknownIpcCommands: unknownCmds, shots,
   };
