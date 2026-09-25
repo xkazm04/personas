@@ -15157,7 +15157,13 @@
         "variant_key": "ভ্যারিয়েন্ট {key}",
         "variants_label": "ভ্যারিয়েন্ট",
         "winner": "বিজয়ী"
-      }
+      },
+      "decide_locked_decided": "সিদ্ধান্ত হয়েছে: {key} জিতেছে।",
+      "decide_locked_shortlisted": "সংক্ষিপ্ত তালিকায়: বিজয়ী ঘোষণা হবে পরিমার্জনের রাউন্ডে।",
+      "decide_locked_judging": "বিচারকেরা এখনও মূল্যায়ন করছেন।",
+      "decide_locked_collecting": "ভ্যারিয়েন্টগুলো এখনও সংগ্রহ করা হচ্ছে।",
+      "decide_locked_racing": "রেস এখনও শেষ হয়নি।",
+      "decide_locked_failed": "চেইন থেমে গেছে। সিদ্ধান্ত নেওয়ার আগে আবার চেষ্টা করুন।"
     }
   },
   "process_labels": {

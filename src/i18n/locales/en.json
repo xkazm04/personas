@@ -19239,7 +19239,13 @@
           "skipped": "skipped",
           "failed": "stopped"
         }
-      }
+      },
+      "decide_locked_decided": "Decided: {key} won.",
+      "decide_locked_shortlisted": "Shortlisted: the winner is declared in the refine round.",
+      "decide_locked_judging": "The stewards are still judging.",
+      "decide_locked_collecting": "The variants are still being collected.",
+      "decide_locked_racing": "The race has not finished yet.",
+      "decide_locked_failed": "The chain stopped. Retry it before deciding."
     }
   },
   "media_studio": {

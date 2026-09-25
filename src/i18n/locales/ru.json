@@ -15157,7 +15157,13 @@
         "variant_key": "Вариант {key}",
         "variants_label": "Варианты",
         "winner": "Победитель"
-      }
+      },
+      "decide_locked_decided": "Решено: победил {key}.",
+      "decide_locked_shortlisted": "В шорт-листе: победителя объявят в раунде доработки.",
+      "decide_locked_judging": "Судьи ещё оценивают.",
+      "decide_locked_collecting": "Варианты ещё собираются.",
+      "decide_locked_racing": "Гонка ещё не закончилась.",
+      "decide_locked_failed": "Цепочка остановилась. Перезапустите её, прежде чем решать."
     }
   },
   "process_labels": {

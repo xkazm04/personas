@@ -15157,7 +15157,13 @@
         "variant_key": "المتغير {key}",
         "variants_label": "المتغيرات",
         "winner": "الفائز"
-      }
+      },
+      "decide_locked_decided": "تم الحسم: فاز {key}.",
+      "decide_locked_shortlisted": "في القائمة المختصرة: يُعلن الفائز في جولة التحسين.",
+      "decide_locked_judging": "الحكام ما زالوا يقيّمون.",
+      "decide_locked_collecting": "ما زال جمع النسخ جاريًا.",
+      "decide_locked_racing": "لم ينتهِ السباق بعد.",
+      "decide_locked_failed": "توقفت السلسلة. أعد المحاولة قبل اتخاذ القرار."
     }
   },
   "process_labels": {

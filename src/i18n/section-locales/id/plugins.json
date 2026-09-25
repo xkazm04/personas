@@ -4363,6 +4363,12 @@
       "variant_key": "Varian {key}",
       "variants_label": "Varian",
       "winner": "Pemenang"
-    }
+    },
+    "decide_locked_decided": "Sudah diputuskan: {key} menang.",
+    "decide_locked_shortlisted": "Masuk daftar pendek: pemenang diumumkan di babak penyempurnaan.",
+    "decide_locked_judging": "Juri masih menilai.",
+    "decide_locked_collecting": "Varian masih dikumpulkan.",
+    "decide_locked_racing": "Balapan belum selesai.",
+    "decide_locked_failed": "Rantai berhenti. Coba lagi sebelum memutuskan."
   }
 }

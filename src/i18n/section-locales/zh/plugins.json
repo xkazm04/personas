@@ -4363,6 +4363,12 @@
       "variant_key": "变体 {key}",
       "variants_label": "变体",
       "winner": "获胜者"
-    }
+    },
+    "decide_locked_decided": "已决定：{key} 胜出。",
+    "decide_locked_shortlisted": "已入围：胜者将在精炼轮中宣布。",
+    "decide_locked_judging": "评审仍在打分。",
+    "decide_locked_collecting": "仍在收集方案。",
+    "decide_locked_racing": "比赛尚未结束。",
+    "decide_locked_failed": "流程已停止。请先重试再做决定。"
   }
 }

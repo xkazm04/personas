@@ -4363,6 +4363,12 @@
       "variant_key": "Biến thể {key}",
       "variants_label": "Các biến thể",
       "winner": "Người chiến thắng"
-    }
+    },
+    "decide_locked_decided": "Đã quyết định: {key} thắng.",
+    "decide_locked_shortlisted": "Đã vào danh sách rút gọn: người thắng được công bố ở vòng tinh chỉnh.",
+    "decide_locked_judging": "Ban giám khảo vẫn đang chấm.",
+    "decide_locked_collecting": "Các biến thể vẫn đang được thu thập.",
+    "decide_locked_racing": "Cuộc đua chưa kết thúc.",
+    "decide_locked_failed": "Chuỗi đã dừng. Hãy thử lại trước khi quyết định."
   }
 }

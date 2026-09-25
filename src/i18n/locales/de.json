@@ -15157,7 +15157,13 @@
         "variant_key": "Variante {key}",
         "variants_label": "Varianten",
         "winner": "Sieger"
-      }
+      },
+      "decide_locked_decided": "Entschieden: {key} hat gewonnen.",
+      "decide_locked_shortlisted": "In der engeren Auswahl: Der Sieger wird in der Verfeinerungsrunde gekürt.",
+      "decide_locked_judging": "Die Rennkommissare bewerten noch.",
+      "decide_locked_collecting": "Die Varianten werden noch eingesammelt.",
+      "decide_locked_racing": "Das Rennen ist noch nicht beendet.",
+      "decide_locked_failed": "Die Kette ist stehen geblieben. Wiederhole sie, bevor du entscheidest."
     }
   },
   "process_labels": {

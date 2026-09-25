@@ -19246,6 +19246,12 @@ export type Translations = {
           failed: string;
         };
       };
+      decide_locked_decided: string;
+      decide_locked_shortlisted: string;
+      decide_locked_judging: string;
+      decide_locked_collecting: string;
+      decide_locked_racing: string;
+      decide_locked_failed: string;
     };
   };
   media_studio: {

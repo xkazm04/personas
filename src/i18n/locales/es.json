@@ -15157,7 +15157,13 @@
         "variant_key": "Variante {key}",
         "variants_label": "Variantes",
         "winner": "Ganador"
-      }
+      },
+      "decide_locked_decided": "Decidido: ganó {key}.",
+      "decide_locked_shortlisted": "En la preselección: el ganador se declara en la ronda de refinamiento.",
+      "decide_locked_judging": "Los comisarios todavía están evaluando.",
+      "decide_locked_collecting": "Todavía se están recopilando las variantes.",
+      "decide_locked_racing": "La carrera todavía no ha terminado.",
+      "decide_locked_failed": "La cadena se detuvo. Reintenta antes de decidir."
     }
   },
   "process_labels": {

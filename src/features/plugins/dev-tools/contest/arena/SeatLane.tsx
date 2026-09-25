@@ -11,12 +11,13 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { ContestPhase } from '@/lib/bindings/ContestPhase';
 import type { ContestReviewBucket } from '@/lib/bindings/ContestReviewBucket';
 import { toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
 import { openSessionInMonitor } from '../components/RunBoard';
-import { isRerunnable, laneStateLabel, seatStateTone } from '../model/labels';
+import { canRerun, isRerunnable, laneStateLabel, seatStateTone } from '../model/labels';
 import type { Lane } from './arenaModel';
 import { LaneMeter } from './LaneTrack';
 import { SeatLabel } from './SeatLabel';
@@ -30,12 +31,14 @@ export interface SeatLaneProps {
   lane: Lane;
   projectId: string;
   contestId: string;
+  /** The contest phase: a rerun is offered only where it cannot undo a verdict. */
+  phase: ContestPhase;
   ceilingS: number | null;
   bucketOf: (key: string) => ContestReviewBucket | null;
   onOpenVariant: (key: string) => void;
 }
 
-export function SeatLane({ lane, projectId, contestId, ceilingS, bucketOf, onOpenVariant }: SeatLaneProps) {
+export function SeatLane({ lane, projectId, contestId, phase, ceilingS, bucketOf, onOpenVariant }: SeatLaneProps) {
   const { t, tx } = useTranslation();
   const a = t.plugins.contest.arena;
   const { seat, variants } = lane;
@@ -48,7 +51,7 @@ export function SeatLane({ lane, projectId, contestId, ceilingS, bucketOf, onOpe
     return fs ? Number(fs.createdAtMs) : null;
   });
   const startedAtMs = seat.startedAtMs ?? monitorStartMs;
-  const rerunnable = isRerunnable(seat.state);
+  const rerunnable = isRerunnable(seat.state) && canRerun(phase, seat.kind);
   const hasControls = seat.errors.length > 0 || rerunnable || seat.fleetSessionId !== null;
 
   return (

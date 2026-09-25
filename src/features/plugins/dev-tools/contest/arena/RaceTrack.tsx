@@ -49,6 +49,7 @@ export function RaceTrack({ detail, draft, onOpenVariant }: RaceTrackProps) {
           lane={lane}
           projectId={projectId}
           contestId={contestId}
+          phase={phase}
           ceilingS={ceilingS}
           bucketOf={bucketOf}
           onOpenVariant={onOpenVariant}

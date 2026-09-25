@@ -5,6 +5,7 @@
 // a NEW review and never mutates its input: the autosave compares drafts by
 // reference, so an in-place edit would read as "nothing changed" and be lost.
 import type { ContestDetail } from '@/lib/bindings/ContestDetail';
+import type { ContestPhase } from '@/lib/bindings/ContestPhase';
 import type { ContestPin } from '@/lib/bindings/ContestPin';
 import type { ContestReview } from '@/lib/bindings/ContestReview';
 import type { ContestReviewBucket } from '@/lib/bindings/ContestReviewBucket';
@@ -134,6 +135,40 @@ export function decisionReadiness(review: ContestReview) {
     shortlist,
     canRefine: shortlist.length > 0,
   };
+}
+
+export type DecisionKind = 'winner' | 'refine';
+
+/** Whether the backend can honour this decision in this phase. The instrument's
+ *  verdict dies once its note exists (decided), a shortlisted parent's winner
+ *  belongs to the refine round (only the refine retry stays open), and before
+ *  review the stewards have not finished. */
+export function canDecide(phase: ContestPhase, kind: DecisionKind): boolean {
+  if (phase === 'review') return true;
+  if (phase === 'shortlisted') return kind === 'refine';
+  return false;
+}
+
+/** Why the verdict is (partly) closed in this phase; null when it is open. */
+export type DecisionLock = 'decided' | 'shortlisted' | 'judging' | 'collecting' | 'racing' | 'failed';
+
+export function decisionLock(phase: ContestPhase): DecisionLock | null {
+  switch (phase) {
+    case 'review': return null;
+    case 'decided':
+    case 'shortlisted':
+    case 'judging':
+    case 'collecting':
+    case 'failed': return phase;
+    case 'draft':
+    case 'queued':
+    case 'running': return 'racing';
+    default: return lockFor(phase);
+  }
+}
+
+function lockFor(_phase: never): DecisionLock {
+  return 'racing';
 }
 
 /** The winner's note: the owner's words on the winning variant, else the

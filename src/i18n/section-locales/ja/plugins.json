@@ -4363,6 +4363,12 @@
       "variant_key": "バリアント{key}",
       "variants_label": "バリアント",
       "winner": "優勝者"
-    }
+    },
+    "decide_locked_decided": "決定済み: {key} が勝ちました。",
+    "decide_locked_shortlisted": "候補に絞り込み済み: 勝者は改良ラウンドで決まります。",
+    "decide_locked_judging": "審査員がまだ審査中です。",
+    "decide_locked_collecting": "バリアントをまだ収集中です。",
+    "decide_locked_racing": "レースはまだ終わっていません。",
+    "decide_locked_failed": "チェーンが停止しました。決定する前に再試行してください。"
   }
 }

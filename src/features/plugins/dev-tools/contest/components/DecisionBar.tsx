@@ -2,6 +2,8 @@
 // new round. Both confirm first; refine names every variant folder the
 // failure tray will delete. The review is flushed before deciding, because
 // the backend reads REVIEW.md (refine's feedback) and the owner's note.
+// Only what the backend can honour in the contest's phase is offered
+// (`canDecide`); outside it the bar reads-only with a one-line reason.
 import { useState } from 'react';
 import { GitBranch, Trophy } from 'lucide-react';
 
@@ -18,7 +20,15 @@ import { useToastStore } from '@/stores/toastStore';
 import { focusContest } from '../focus';
 import { primeSummary } from '../hooks/contestStore';
 import type { ReviewDraft } from '../hooks/useReviewDraft';
-import { decisionReadiness, refineDeletions, winnerNote } from '../model/reviewModel';
+import type { ContestStrings } from '../model/labels';
+import {
+  canDecide,
+  decisionLock,
+  decisionReadiness,
+  refineDeletions,
+  winnerNote,
+  type DecisionLock,
+} from '../model/reviewModel';
 
 export interface DecisionBarProps {
   detail: ContestDetail;
@@ -32,15 +42,37 @@ export interface DecisionBarProps {
 
 type Confirming = 'winner' | 'refine' | null;
 
+function lockReason(s: ContestStrings, lock: DecisionLock, winner: string | null, tx: (t: string, v: Record<string, string>) => string): string {
+  switch (lock) {
+    case 'decided': return winner ? tx(s.decide_locked_decided, { key: winner }) : s.phase_decided;
+    case 'shortlisted': return s.decide_locked_shortlisted;
+    case 'judging': return s.decide_locked_judging;
+    case 'collecting': return s.decide_locked_collecting;
+    case 'racing': return s.decide_locked_racing;
+    case 'failed': return s.decide_locked_failed;
+  }
+}
+
 export function DecisionBar({ detail, draft, onRefined, onDecided, className = '' }: DecisionBarProps) {
   const { t, tx } = useTranslation();
   const s = t.plugins.contest;
   const [confirming, setConfirming] = useState<Confirming>(null);
   const [runnerUp, setRunnerUp] = useState<string>('');
   const review = draft.review;
+  const { projectId, contestId, phase, winner } = detail.summary;
+  const lock = decisionLock(phase);
+  const winnerOpen = canDecide(phase, 'winner');
+  const refineOpen = canDecide(phase, 'refine');
+  const lockLine = lock ? (
+    <p className="typo-caption text-foreground w-full" data-testid="contest-decision-locked">
+      {lockReason(s, lock, winner, tx)}
+    </p>
+  ) : null;
+  if (!winnerOpen && !refineOpen) {
+    return lockLine ? <div className={className} data-testid="contest-decision-bar">{lockLine}</div> : null;
+  }
   if (!review) return null;
 
-  const { projectId, contestId } = detail.summary;
   const ready = decisionReadiness(review);
   const runnerUpOptions = [
     { value: '', label: s.runner_up_none },
@@ -98,7 +130,8 @@ export function DecisionBar({ detail, draft, onRefined, onDecided, className = '
 
   return (
     <div className={`flex flex-wrap items-end gap-3 ${className}`} data-testid="contest-decision-bar">
-      {ready.shortlist.length > 0 && (
+      {lockLine}
+      {winnerOpen && ready.shortlist.length > 0 && (
         <label className="space-y-1">
           <span className="typo-label text-foreground block">{s.runner_up_label}</span>
           <ThemedSelect
@@ -112,7 +145,7 @@ export function DecisionBar({ detail, draft, onRefined, onDecided, className = '
         </label>
       )}
       <div className="flex flex-wrap gap-2 ml-auto">
-        <Button
+        {refineOpen && <Button
           variant="secondary"
           icon={<GitBranch className="w-3.5 h-3.5" />}
           disabled={!ready.canRefine}
@@ -121,8 +154,8 @@ export function DecisionBar({ detail, draft, onRefined, onDecided, className = '
           data-testid="contest-decide-refine"
         >
           {s.decide_refine}
-        </Button>
-        <Button
+        </Button>}
+        {winnerOpen && <Button
           variant="primary"
           icon={<Trophy className="w-3.5 h-3.5" />}
           disabled={!ready.canDeclare}
@@ -131,7 +164,7 @@ export function DecisionBar({ detail, draft, onRefined, onDecided, className = '
           data-testid="contest-decide-winner"
         >
           {s.decide_winner}
-        </Button>
+        </Button>}
       </div>
 
       {confirming === 'winner' && ready.winner && (

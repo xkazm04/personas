@@ -82,6 +82,21 @@ export function isRerunnable(state: ContestSeatState): boolean {
   return state === 'seat-limit' || state === 'timed-out' || state === 'errored';
 }
 
+/** Whether a lane rerun is offered in this phase. A participant launch resets
+ *  the chain to idle, so after the verdict (decided, shortlisted) it would spend
+ *  a paid seat and re-arm collect on a decided arena, and mid-chain (collecting,
+ *  judging) it would pull the chain out from under the stewards. A judge seat
+ *  may be rerun while the stewards judge. */
+export function canRerun(phase: ContestPhase, kind: ContestSeatKind): boolean {
+  switch (phase) {
+    case 'decided':
+    case 'shortlisted':
+    case 'collecting': return false;
+    case 'judging': return kind === 'judge';
+    default: return true;
+  }
+}
+
 export function seatKindLabel(s: ContestStrings, kind: ContestSeatKind): string {
   return kind === 'judge' ? s.kind_judge : s.kind_participant;
 }
