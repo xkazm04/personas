@@ -347,6 +347,7 @@ pub async fn launch_seats(
     kind: ContestSeatKind,
     only: Option<Vec<String>>,
 ) -> Result<usize, AppError> {
+    refuse_while_chain_runs(&ctx.paths.dir)?;
     launch_seats_from(app, ctx, kind, only, None).await
 }
 
@@ -749,6 +750,22 @@ pub fn chain_is_busy(dir: &Path) -> bool {
         .contains(dir)
 }
 
+const CHAIN_BUSY: &str =
+    "a chain step is already running for this contest; try again when it finishes";
+
+/// The door every owner-driven step goes through (`contest_launch`,
+/// `contest_run_step`): refused while a chain holds the claim. A launch that
+/// raced it could re-arm the chain under it (participants reset it to Idle),
+/// or, with every judge already completed, find no chain to continue and
+/// leave the contest in Judging. The chain's own judge launch does not come
+/// through here: it holds the claim itself.
+fn refuse_while_chain_runs(dir: &Path) -> Result<(), AppError> {
+    if chain_is_busy(dir) {
+        return Err(AppError::Validation(CHAIN_BUSY.into()));
+    }
+    Ok(())
+}
+
 /// Run the chain from `from` in the background; a no-op while one runs.
 /// Returns whether it started.
 pub fn spawn_chain(app: AppHandle, ctx: Ctx, from: ChainFrom) -> bool {
@@ -874,11 +891,7 @@ pub async fn run_step(
     step: super::types::ContestStep,
 ) -> Result<(), AppError> {
     use super::types::ContestStep;
-    if chain_is_busy(&ctx.paths.dir) {
-        return Err(AppError::Validation(
-            "a chain step is already running for this contest".into(),
-        ));
-    }
+    refuse_while_chain_runs(&ctx.paths.dir)?;
     match step {
         ContestStep::Collect => {
             spawn_chain(app.clone(), ctx.clone(), ChainFrom::Collect);
@@ -897,9 +910,7 @@ pub async fn run_step(
         },
         ContestStep::Aggregate => {
             if !claim_chain(&ctx.paths.dir) {
-                return Err(AppError::Validation(
-                    "a chain step is already running for this contest".into(),
-                ));
+                return Err(AppError::Validation(CHAIN_BUSY.into()));
             }
             let res = async {
                 let db = db_of(app)?;
@@ -1219,6 +1230,27 @@ mod tests {
         .await;
         assert!(dead.is_err());
         assert_eq!(calls.load(Ordering::SeqCst), 3, "gave up after 3 tries");
+    }
+
+    /// `contest_launch` from the UI while a chain holds the claim is refused,
+    /// the way `run_step` is: a judge launch that raced the running chain with
+    /// every judge completed used to log a warning and strand the contest in
+    /// Judging. The refusal is a Validation error, which the UI shows.
+    #[test]
+    fn a_launch_is_refused_while_a_chain_runs() {
+        let (_tmp, paths) = arena();
+        assert!(refuse_while_chain_runs(&paths.dir).is_ok(), "idle: allowed");
+        assert!(claim_chain(&paths.dir));
+        let refused = refuse_while_chain_runs(&paths.dir);
+        release_chain(&paths.dir);
+        match refused {
+            Err(AppError::Validation(msg)) => assert!(msg.contains("already running"), "{msg}"),
+            other => panic!("a launch during a running chain was let through: {other:?}"),
+        }
+        assert!(
+            refuse_while_chain_runs(&paths.dir).is_ok(),
+            "released: allowed again"
+        );
     }
 
     #[test]
