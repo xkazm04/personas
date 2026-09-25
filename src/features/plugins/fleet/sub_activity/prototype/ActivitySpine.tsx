@@ -1,6 +1,6 @@
 /**
  * Gate K prototype: Fleet Activity composed from the A/3 "Spine & Lens" kit
- * (`src/features/shared/components/kit-proto/spine/`), as the contest entry composed it:
+ * (`src/features/shared/components/kit/`), as the contest entry composed it:
  * Overview, Sessions and Tools on one spine, the selection's detail in a side pane when the
  * surface has room and in a drawer when it has not.
  *
@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAppKeyboard, ROUTE_DECISION_PRIORITY } from '@/lib/keyboard/AppKeyboardProvider';
 import { isTypingTarget } from '@/lib/keyboard/KeyboardNavMode';
-import { ChipRow, Drawer, KitHost, Section, Split, Surface } from '@/features/shared/components/kit-proto/spine';
+import { ChipRow, Drawer, KitHost, Section, Split, Surface } from '@/features/shared/components/kit';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import type { ActivityKitProps } from './kitProto';
 import { toSpineSession, totalsOf, type SpineSession } from './activitySpineModel';

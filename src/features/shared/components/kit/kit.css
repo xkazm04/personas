@@ -1,8 +1,9 @@
-/* Spine & Lens: the A/3 composition kit, ported from the style-kit contest entry
- * (.contest/arena/style-kit/entries/claude-opus_xhigh/variant-3/kit.css) in the form it was written.
- * Colour only through app tokens, type only through .typo-* recipes, no font-size anywhere.
+/* The app's composition kit (Spine & Lens, chosen at Gate K on 2026-09-25 from the style-kit
+ * contest entry A/3, .contest/arena/style-kit/entries/claude-opus_xhigh/variant-3/kit.css), in the
+ * form the entry wrote it. Colour only through app tokens, type only through .typo-* recipes, no
+ * font-size anywhere. Doctrine: docs/design/style-mastery/doctrine.md, "Composition kit".
  *
- * Port changes, all structural:
+ * Changes from the entry, all structural:
  * - Scoped to .k-host (the variant owned the whole page, so its variables sat on :root and its
  *   focus and reduced-motion rules were global). Nothing here reaches outside a kit surface.
  * - The side pane follows the surface's own width (a container query at the variant's breakpoint

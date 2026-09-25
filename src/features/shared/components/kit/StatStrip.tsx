@@ -16,6 +16,7 @@ export interface StatTile {
 /**
  * StatStrip: a lone stat tile is a strip of one. The label glows (`typo-card-label`), the figure
  * is `typo-data-lg` at 500, the draw sits under the figure, and the strip wraps.
+ * @catalog StatStrip - stat tiles (glowing label, figure, drawn quantity); a lone tile is a strip of one. Kit.
  */
 export function StatStrip({ tiles, state }: { tiles: readonly StatTile[]; state?: KitState }) {
   return (

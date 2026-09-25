@@ -8,7 +8,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import {
   ChipView, DataTable, Dot, KitButton, Meta, SearchField, Section, Segmented, Toolbar, UnitStrip, apportion,
   type KitState, type SegmentOption, type TableRow,
-} from '@/features/shared/components/kit-proto/spine';
+} from '@/features/shared/components/kit';
 import { STATE_GLYPH, STATE_ORDER, TOKEN_PARTS, type SpineSession, type SpineState } from './activitySpineModel';
 import type { SpineWords } from './useSpineWords';
 

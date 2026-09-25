@@ -21,6 +21,7 @@ export interface TableRow<K extends string> {
  * DataTable: a DataTable row IS a ListRow under column heads (same band, mark, selection), which
  * is why a table and a list read as one family. The table is as tall as its rows and the pager
  * sits directly under the last one.
+ * @catalog DataTable - column heads over ListRow-family rows (band, mark, selection), pager under the last row. Kit.
  */
 export function DataTable<K extends string>({ cols, rows, label, loading, empty, pager, onRowClick, rowTestId }: {
   cols: ReadonlyArray<TableCol<K>>;

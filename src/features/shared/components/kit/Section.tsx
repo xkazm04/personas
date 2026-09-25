@@ -24,6 +24,7 @@ export interface SectionProps {
 /**
  * Section: bounded by a node on the spine, not by a card. Owns the head recipe (eyebrow, title,
  * count, meta, actions) and its spacing; the caller owns the body and the order of sections.
+ * @catalog Section - a titled part of a surface, bounded by a node on the spine (eyebrow, title, count, meta, actions; empty/loading states). Kit.
  */
 export function Section({ title, eyebrow, count, meta, actions, desc, level = 1, state, empty, ghostRows = 3, id, className, children }: SectionProps) {
   const states = typeof state === 'string' ? [state] : state ?? [];
@@ -53,7 +54,9 @@ export function Section({ title, eyebrow, count, meta, actions, desc, level = 1,
   );
 }
 
-/** Meta parts joined by a quiet middle dot, empty parts dropped. */
+/** Meta parts joined by a quiet middle dot, empty parts dropped.
+ * @catalog Meta - meta parts joined by a quiet middle dot. Kit.
+ */
 export function Meta({ parts }: { parts: ReadonlyArray<ReactNode> }) {
   const shown = parts.filter((p) => p != null && p !== '' && p !== false);
   return (

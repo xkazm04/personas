@@ -11,7 +11,9 @@ export interface KeyValueItem {
   state?: KitState;
 }
 
-/** KeyValueGrid: quiet `typo-label` keys, regular `typo-data` values, auto-fill columns. */
+/** KeyValueGrid: quiet `typo-label` keys, regular `typo-data` values, auto-fill columns.
+ * @catalog KeyValueGrid - quiet keys over regular values in auto-fill columns; null renders honestly. Kit.
+ */
 export function KeyValueGrid({ items, min, state }: { items: readonly KeyValueItem[]; min?: string; state?: KitState }) {
   const style = min ? ({ '--kv-min': min } as CSSProperties) : undefined;
   return (

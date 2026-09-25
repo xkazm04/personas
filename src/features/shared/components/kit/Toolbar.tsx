@@ -3,7 +3,9 @@ import { Button } from '@/features/shared/components/buttons';
 import { Dot } from './Mark';
 import { cx, kitAttrs, stateClass, type Glyph, type KitState, type Tone } from './types';
 
-/** Toolbar: owns control heights (30/36px), spacing and wrap; the caller owns the filtering logic. */
+/** Toolbar: owns control heights (30/36px), spacing and wrap; the caller owns the filtering logic.
+ * @catalog Toolbar - a surface filter bar (Segmented, SearchField, KitButton), 30/36px controls. Kit.
+ */
 export function Toolbar({ label, state, children }: { label: string; state?: KitState; children: ReactNode }) {
   return (
     <div className={cx('k-toolbar', stateClass(state))} {...kitAttrs('Toolbar', state)} role="toolbar" aria-label={label}>
@@ -20,7 +22,9 @@ export interface SegmentOption<V extends string> {
   glyph?: Glyph;
 }
 
-/** Segmented: a closed choice; each option can carry the glyph of the state it filters to. */
+/** Segmented: a closed choice; each option can carry the glyph of the state it filters to.
+ * @catalog Segmented - closed choice whose options can carry a state glyph and count. Kit.
+ */
 export function Segmented<V extends string>({ label, options, value, onChange }: {
   label: string;
   options: ReadonlyArray<SegmentOption<V>>;
@@ -46,7 +50,9 @@ export function Segmented<V extends string>({ label, options, value, onChange }:
   );
 }
 
-/** Search: a 36px field with the `/` hint; the hint is the key that focuses it. */
+/** Search: a 36px field with the `/` hint; the hint is the key that focuses it.
+ * @catalog SearchField - 36px search field with the / hint. Kit.
+ */
 export function SearchField({ value, onChange, placeholder, inputRef, testId }: {
   value: string;
   onChange: (v: string) => void;
@@ -75,6 +81,7 @@ export function SearchField({ value, onChange, placeholder, inputRef, testId }: 
 /**
  * The kit's 32px button. It renders the shared Button, so a busy state is the product's real
  * spinner with disabled + aria-busy, and wears the kit's look (kit.css is unlayered).
+ * @catalog KitButton - the kit 32px button over the shared Button (real busy spinner). Kit.
  */
 export function KitButton({ children, onClick, loading, quiet, hint, className, testId }: {
   children: ReactNode;

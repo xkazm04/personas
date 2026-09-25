@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**151 reusable components** live under `src/features/shared/components/`.
+**172 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -50,6 +50,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `Collapse` | Pure-CSS animated expand/collapse container. |
 | `ConfidenceArc` | Semi-circular arc gauge for displaying confidence metrics. |
 | `DataGrid` | Paginated table — page-size selector, row selection + bulk-action toolbar, row drag; caller-owned sort. Else use UnifiedTable. |
+| `DataGridPager` | _(add a `@catalog` tag)_ |
 | `DensityToggle` | Suffix added to layoutId to avoid collisions when multiple toggles render. |
 | `DesignConnectorGrid` | _(add a `@catalog` tag)_ |
 | `DragHandle` | Visual size of the grip icon. |
@@ -77,6 +78,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `Tooltip` | Hover/focus tooltip. Use instead of bare title= when you need styling/rich content. |
 | `TruncateWithTooltip` | Truncates overflowing text and shows the full value in a Tooltip. |
 | `UnifiedTable` | Standard data table (sorting/columns). Use instead of hand-built <table> grids. |
+| `UnifiedTableRow` | _(add a `@catalog` tag)_ |
 | `UuidLabel` | _(add a `@catalog` tag)_ |
 
 ## document
@@ -174,6 +176,35 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `KanbanBoard` | Generic Kanban board — buckets items into status columns, movable by |
 | `useKanbanKeyboardMove` | Announced on pick-up; also the per-card instruction. |
 
+## kit — Composition kit (Spine & Lens): compose a surface from these. Import from @/features/shared/components/kit
+
+| Component | What it's for |
+|---|---|
+| `ChipRow` | ChipRow - 30px chips with count and share bar, a chip with onPress is a filter; ChipView is one chip (toolbar filter). Kit. |
+| `DataTable` | DataTable - column heads over ListRow-family rows (band, mark, selection), pager under the last row. Kit. |
+| `KeyValueGrid` | KeyValueGrid - quiet keys over regular values in auto-fill columns; null renders honestly. Kit. |
+| `ListRow` | ListRow - fixed-height row: one emphasised name, quiet meta, status mark on the spine, figures. Kit. |
+| `Mark` | Mark - the status node on the spine (Tone x Glyph); Dot is the same glyph inline. Kit. |
+| `Section` | Section - a titled part of a surface, bounded by a node on the spine (eyebrow, title, count, meta, actions; empty/loading states). |
+| `StatStrip` | StatStrip - stat tiles (glowing label, figure, drawn quantity); a lone tile is a strip of one. Kit. |
+| `Surface` | Kit surface family: KitHost (root, compact tier), Surface (a region on one spine), Split (detail pane when roomy), Drawer (narrow  |
+| `Toolbar` | Toolbar - a surface filter bar (Segmented, SearchField, KitButton), 30/36px controls. Kit. |
+| `UnitStrip` | UnitStrip - a quantity as countable units of a fixed quantum, coloured by claim (apportion splits a total). Kit. |
+
+## kit-proto
+
+| Component | What it's for |
+|---|---|
+| `EmptyRow` | _(add a `@catalog` tag)_ |
+| `Figure` | _(add a `@catalog` tag)_ |
+| `Folio` | _(add a `@catalog` tag)_ |
+| `KeyValueGrid` | _(add a `@catalog` tag)_ |
+| `LedgerBlock` | _(add a `@catalog` tag)_ |
+| `LedgerKit` | _(add a `@catalog` tag)_ |
+| `Section` | _(add a `@catalog` tag)_ |
+| `StatStrip` | _(add a `@catalog` tag)_ |
+| `Toolbar` | _(add a `@catalog` tag)_ |
+
 ## layout — Page/section structure, headers, tab bars, content shells
 
 | Component | What it's for |
@@ -245,4 +276,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_151 components, 44 without a `@catalog` description._
+_172 components, 55 without a `@catalog` description._

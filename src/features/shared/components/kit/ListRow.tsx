@@ -21,6 +21,7 @@ export interface ListRowProps {
 /**
  * ListRow: a fixed-height row on the 8px grid with ONE emphasised name, quiet meta and an
  * alternating band; its status mark sits on the spine and a selected row lights its segment.
+ * @catalog ListRow - fixed-height row: one emphasised name, quiet meta, status mark on the spine, figures. Kit.
  */
 export function ListRow({ name, meta, mark, figures, time, size = 'm', state, nameClass }: ListRowProps) {
   const trail = figures != null || time != null;
@@ -41,7 +42,9 @@ export function ListRow({ name, meta, mark, figures, time, size = 'm', state, na
   );
 }
 
-/** A list of rows, or its loading ghost, or its empty band: the list's three states. */
+/** A list of rows, or its loading ghost, or its empty band: the list's three states.
+ * @catalog Rows - a list of ListRows with its loading ghost and empty band. Kit.
+ */
 export function Rows({ loading, empty, children, count }: {
   loading?: boolean;
   empty: EmptySpec;

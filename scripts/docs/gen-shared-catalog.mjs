@@ -135,6 +135,7 @@ const CATEGORY_BLURB = {
   progress: 'Progress bars, steppers, skeletons',
   terminal: 'Terminal / streaming-output rendering',
   'use-cases': 'Use-case list/row/history domain components',
+  kit: 'Composition kit (Spine & Lens): compose a surface from these. Import from @/features/shared/components/kit',
   icons: 'Icon helpers',
 };
 

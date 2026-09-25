@@ -7,7 +7,7 @@ import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime'
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import {
   ChipRow, Dot, KeyValueGrid, KitButton, ListRow, Meta, Rows, Section, UnitStrip, apportion,
-} from '@/features/shared/components/kit-proto/spine';
+} from '@/features/shared/components/kit';
 import { STATE_GLYPH, TOKEN_PARTS, splitPath, type SpineSession } from './activitySpineModel';
 import type { SpineWords } from './useSpineWords';
 

@@ -16,7 +16,9 @@ export interface Chip {
   onPress?: () => void;
 }
 
-/** One 30px chip: glyph, label, count, share bar. Selected = an active filter. */
+/** One 30px chip: glyph, label, count, share bar. Selected = an active filter.
+ * @catalog ChipRow - 30px chips with count and share bar, a chip with onPress is a filter; ChipView is one chip (toolbar filter). Kit.
+ */
 export function ChipView({ chip: c }: { chip: Chip }) {
   const inner = (
     <>
@@ -34,7 +36,9 @@ export function ChipView({ chip: c }: { chip: Chip }) {
 
 const GHOST_WIDTHS = [70, 90, 60, 80, 54];
 
-/** ChipRow: owns chip height, count recipe and share bar; the caller owns what a press does. */
+/** ChipRow: owns chip height, count recipe and share bar; the caller owns what a press does.
+ * @catalog ChipRow - 30px chips with count and share bar; a chip with onPress is a filter. Kit.
+ */
 export function ChipRow({ chips, label, emptyLabel, state }: {
   chips: readonly Chip[];
   label: string;

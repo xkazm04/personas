@@ -1,8 +1,9 @@
 /**
- * Spine & Lens (A/3), the composition kit shortlisted in the style-kit contest, ported for the
- * Gate K decision (spark style-unification, 2026-09-25). Dev-only prototype: rendered by
- * Fleet Activity's kit switch (`plugins/fleet/sub_activity/prototype/`) and deleted, or promoted,
- * when the owner decides. API: the contest entry's API.md, reduced to what Fleet Activity uses.
+ * The composition kit: the shared building blocks one level above buttons (section, list row,
+ * data table, stat strip, key-value grid, chip row, toolbar, unit strip, status mark) plus the
+ * surface primitives they hang from (KitHost, Surface, Split, Drawer). Spine & Lens, chosen by
+ * the owner at Gate K (spark style-unification, 2026-09-25). A surface is composed from these;
+ * when and how: docs/design/style-mastery/doctrine.md, "Composition kit".
  */
 import './kit.css';
 

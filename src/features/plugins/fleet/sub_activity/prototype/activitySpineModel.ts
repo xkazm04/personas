@@ -7,7 +7,7 @@
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
-import type { Glyph, Tone } from '@/features/shared/components/kit-proto/spine';
+import type { Glyph, Tone } from '@/features/shared/components/kit';
 import { projectLabel } from '../activityTarget';
 
 export type SpineState = FleetSessionState | 'gone';

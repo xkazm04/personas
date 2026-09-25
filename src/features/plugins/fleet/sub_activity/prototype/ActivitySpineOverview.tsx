@@ -4,7 +4,7 @@
  */
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { Numeric } from '@/features/shared/components/display/Numeric';
-import { Section, StatStrip, UnitStrip, apportion } from '@/features/shared/components/kit-proto/spine';
+import { Section, StatStrip, UnitStrip, apportion } from '@/features/shared/components/kit';
 import { STATE_GLYPH, STATE_ORDER, TOKEN_PARTS, type SpineSession, type SpineTotals } from './activitySpineModel';
 import type { SpineWords } from './useSpineWords';
 
