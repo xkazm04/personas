@@ -3,8 +3,9 @@
 // The page is a lazy route that fully unmounts on nav-away, so the last fetch
 // lives here and a remount paints warm instead of re-ghosting. Every entry is
 // a `{data, loading, error}` slot in a `createModuleCache`; hooks subscribe
-// with `useModuleSubscription`. Fetches are latest-wins per slot, and
-// concurrent refreshes of one slot share the in-flight request.
+// with `useModuleSubscription`. Fetches are latest-wins per slot; concurrent
+// refreshes of one slot share the in-flight request and owe it one trailing
+// re-fetch (see `load`).
 //
 // Errors are kept RAW (`unknown`) and resolved at render through
 // `resolveErrorTranslated` — the commands may answer "not implemented" until
@@ -50,9 +51,36 @@ export const contestLineupSlots = createModuleCache<'all', Slot<ContestLineup[]>
 
 const listWins = createKeyedLatestWins<string>();
 const inflight = new Map<string, Promise<void>>();
+/** Keys asked for again while their fetch was running: they owe one more. */
+const trailing = new Set<string>();
 
-/** Fetch into one slot; keeps the previous data while loading (a refetch
+/** One fetch into one slot; keeps the previous data while loading (a refetch
  *  never blanks rendered rows — law 1) and drops stale responses. */
+async function fetchOnce<K, T>(
+  cache: ModuleCache<K, Slot<T>>,
+  key: K,
+  flightKey: string,
+  fetcher: () => Promise<T>,
+): Promise<void> {
+  const token = listWins.next(flightKey);
+  const prev = cache.get(key) ?? (EMPTY_SLOT as Slot<T>);
+  cache.set(key, { ...prev, loading: true });
+  cache.notify();
+  try {
+    const data = await fetcher();
+    if (!listWins.isCurrent(flightKey, token)) return;
+    cache.set(key, { data, loading: false, error: null });
+  } catch (error: unknown) {
+    if (!listWins.isCurrent(flightKey, token)) return;
+    const cur = cache.get(key) ?? (EMPTY_SLOT as Slot<T>);
+    cache.set(key, { data: cur.data, loading: false, error });
+  }
+}
+
+/** Coalesce, but keep the trailing edge: a refresh asked for while one is in
+ *  flight marks the key and runs exactly ONE more fetch after it settles, so
+ *  an event that landed mid-read is never answered with the read that began
+ *  before it. Every caller's promise settles after the last fetch. */
 function load<K, T>(
   cache: ModuleCache<K, Slot<T>>,
   key: K,
@@ -60,27 +88,19 @@ function load<K, T>(
   fetcher: () => Promise<T>,
 ): Promise<void> {
   const running = inflight.get(flightKey);
-  if (running) return running;
-  const token = listWins.next(flightKey);
-  const prev = cache.get(key) ?? (EMPTY_SLOT as Slot<T>);
-  cache.set(key, { ...prev, loading: true });
-  cache.notify();
-  const p = fetcher()
-    .then(
-      (data) => {
-        if (!listWins.isCurrent(flightKey, token)) return;
-        cache.set(key, { data, loading: false, error: null });
-      },
-      (error: unknown) => {
-        if (!listWins.isCurrent(flightKey, token)) return;
-        const cur = cache.get(key) ?? (EMPTY_SLOT as Slot<T>);
-        cache.set(key, { data: cur.data, loading: false, error });
-      },
-    )
-    .finally(() => {
-      inflight.delete(flightKey);
-      cache.notify();
-    });
+  if (running) {
+    trailing.add(flightKey);
+    return running;
+  }
+  const p = (async () => {
+    do {
+      trailing.delete(flightKey);
+      await fetchOnce(cache, key, flightKey, fetcher);
+    } while (trailing.has(flightKey));
+  })().finally(() => {
+    inflight.delete(flightKey);
+    cache.notify();
+  });
   inflight.set(flightKey, p);
   return p;
 }
@@ -130,4 +150,5 @@ export function __resetContestStoreForTests(): void {
   contestEnvSlots.clear();
   contestLineupSlots.clear();
   inflight.clear();
+  trailing.clear();
 }
