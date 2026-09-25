@@ -90,7 +90,15 @@ export default function DraftingPage({
       </motion.p>
       {!compact && (
         <div className={`relative mb-2 h-3 ${started ? '' : 'invisible'}`} aria-hidden>
-          <div className="absolute inset-x-0 top-1.5 h-px" style={{ background: 'var(--ink-faint)' }} />
+          {/* The dimension line is drawn left to right as the page starts. */}
+          <motion.div
+            key={started ? 'dim-on' : 'dim-off'}
+            initial={started && shouldAnimate ? { scaleX: 0 } : false}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: 0.7, ease: 'easeOut' }}
+            className="absolute inset-x-0 top-1.5 h-px origin-left"
+            style={{ background: 'var(--ink-faint)' }}
+          />
           <div className="absolute left-0 top-0 h-3 w-px" style={{ background: 'var(--ink-dim)' }} />
           <div className="absolute right-0 top-0 h-3 w-px" style={{ background: 'var(--ink-dim)' }} />
           <span className="absolute left-1/2 top-0 -translate-x-1/2 px-1 typo-code leading-3" style={{ background: 'var(--paper)', color: 'var(--ink-dim)' }}>

@@ -13,8 +13,11 @@ import { LETTERING, doneShare, drawingOf, proofFilter, regionForGoal, sheetMomen
 import { useBuildUp } from './useBuildUp';
 import './drafting.css';
 
-/** A new project's sheet builds up across the setup wait; a reopened one replays quickly. */
-const STEP_MS = { template: 1100, sketch: 1500, replay: 140 } as const;
+/**
+ * A new project's sheet builds up across the setup wait; a reopened one
+ * replays in a couple of seconds, slow enough to be seen being drawn.
+ */
+const STEP_MS = { template: 1100, sketch: 1500, replay: 380 } as const;
 /** Unlabelled ghost frames for a reopened project whose plan has not loaded. */
 const SKELETON = ['Top bar', 'Hero', 'Content', 'Content', 'Footer'].map((title) => ({ title, purpose: '' }));
 
