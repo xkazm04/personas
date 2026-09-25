@@ -4369,6 +4369,7 @@
     "decide_locked_judging": "審査員がまだ審査中です。",
     "decide_locked_collecting": "バリアントをまだ収集中です。",
     "decide_locked_racing": "レースはまだ終わっていません。",
-    "decide_locked_failed": "チェーンが停止しました。決定する前に再試行してください。"
+    "decide_locked_failed": "チェーンが停止しました。決定する前に再試行してください。",
+    "lineups_load_failed": "保存済みのラインナップを読み込めませんでした。"
   }
 }

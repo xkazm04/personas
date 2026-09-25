@@ -4369,6 +4369,7 @@
     "decide_locked_judging": "Rozhodčí ještě hodnotí.",
     "decide_locked_collecting": "Varianty se ještě sbírají.",
     "decide_locked_racing": "Závod ještě neskončil.",
-    "decide_locked_failed": "Řetězec se zastavil. Před rozhodnutím ho spusťte znovu."
+    "decide_locked_failed": "Řetězec se zastavil. Před rozhodnutím ho spusťte znovu.",
+    "lineups_load_failed": "Uložené sestavy se nepodařilo načíst."
   }
 }

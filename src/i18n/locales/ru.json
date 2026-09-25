@@ -15163,7 +15163,8 @@
       "decide_locked_judging": "Судьи ещё оценивают.",
       "decide_locked_collecting": "Варианты ещё собираются.",
       "decide_locked_racing": "Гонка ещё не закончилась.",
-      "decide_locked_failed": "Цепочка остановилась. Перезапустите её, прежде чем решать."
+      "decide_locked_failed": "Цепочка остановилась. Перезапустите её, прежде чем решать.",
+      "lineups_load_failed": "Не удалось прочитать сохранённые составы."
     }
   },
   "process_labels": {

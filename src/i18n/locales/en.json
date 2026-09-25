@@ -19245,7 +19245,8 @@
       "decide_locked_judging": "The stewards are still judging.",
       "decide_locked_collecting": "The variants are still being collected.",
       "decide_locked_racing": "The race has not finished yet.",
-      "decide_locked_failed": "The chain stopped. Retry it before deciding."
+      "decide_locked_failed": "The chain stopped. Retry it before deciding.",
+      "lineups_load_failed": "Could not read the saved line-ups."
     }
   },
   "media_studio": {

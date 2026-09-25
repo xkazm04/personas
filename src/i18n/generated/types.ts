@@ -19252,6 +19252,7 @@ export type Translations = {
       decide_locked_collecting: string;
       decide_locked_racing: string;
       decide_locked_failed: string;
+      lineups_load_failed: string;
     };
   };
   media_studio: {

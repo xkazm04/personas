@@ -15163,7 +15163,8 @@
       "decide_locked_judging": "Los comisarios todavía están evaluando.",
       "decide_locked_collecting": "Todavía se están recopilando las variantes.",
       "decide_locked_racing": "La carrera todavía no ha terminado.",
-      "decide_locked_failed": "La cadena se detuvo. Reintenta antes de decidir."
+      "decide_locked_failed": "La cadena se detuvo. Reintenta antes de decidir.",
+      "lineups_load_failed": "No se pudieron leer las alineaciones guardadas."
     }
   },
   "process_labels": {

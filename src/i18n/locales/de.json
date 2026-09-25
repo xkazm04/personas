@@ -15163,7 +15163,8 @@
       "decide_locked_judging": "Die Rennkommissare bewerten noch.",
       "decide_locked_collecting": "Die Varianten werden noch eingesammelt.",
       "decide_locked_racing": "Das Rennen ist noch nicht beendet.",
-      "decide_locked_failed": "Die Kette ist stehen geblieben. Wiederhole sie, bevor du entscheidest."
+      "decide_locked_failed": "Die Kette ist stehen geblieben. Wiederhole sie, bevor du entscheidest.",
+      "lineups_load_failed": "Die gespeicherten Aufstellungen konnten nicht gelesen werden."
     }
   },
   "process_labels": {

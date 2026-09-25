@@ -4369,6 +4369,7 @@
     "decide_locked_judging": "الحكام ما زالوا يقيّمون.",
     "decide_locked_collecting": "ما زال جمع النسخ جاريًا.",
     "decide_locked_racing": "لم ينتهِ السباق بعد.",
-    "decide_locked_failed": "توقفت السلسلة. أعد المحاولة قبل اتخاذ القرار."
+    "decide_locked_failed": "توقفت السلسلة. أعد المحاولة قبل اتخاذ القرار.",
+    "lineups_load_failed": "تعذّرت قراءة التشكيلات المحفوظة."
   }
 }

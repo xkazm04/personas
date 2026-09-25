@@ -4369,6 +4369,7 @@
     "decide_locked_judging": "निर्णायक अभी भी आकलन कर रहे हैं।",
     "decide_locked_collecting": "वैरिएंट अभी भी इकट्ठा किए जा रहे हैं।",
     "decide_locked_racing": "रेस अभी ख़त्म नहीं हुई है।",
-    "decide_locked_failed": "चेन रुक गई है। फ़ैसला करने से पहले इसे दोबारा चलाएँ।"
+    "decide_locked_failed": "चेन रुक गई है। फ़ैसला करने से पहले इसे दोबारा चलाएँ।",
+    "lineups_load_failed": "सहेजे गए लाइन-अप पढ़े नहीं जा सके।"
   }
 }

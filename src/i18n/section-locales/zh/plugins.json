@@ -4369,6 +4369,7 @@
     "decide_locked_judging": "评审仍在打分。",
     "decide_locked_collecting": "仍在收集方案。",
     "decide_locked_racing": "比赛尚未结束。",
-    "decide_locked_failed": "流程已停止。请先重试再做决定。"
+    "decide_locked_failed": "流程已停止。请先重试再做决定。",
+    "lineups_load_failed": "无法读取已保存的阵容。"
   }
 }

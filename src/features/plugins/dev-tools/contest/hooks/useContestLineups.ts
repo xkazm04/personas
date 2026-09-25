@@ -1,5 +1,7 @@
 // Saved seat line-ups (app setting `contest.lineups`), read and replaced
 // whole — the list is small and the backend stores it as one JSON array.
+// Because a write replaces the whole array, it is built only from a list that
+// was actually READ: a failed or unsettled read never becomes "no line-ups".
 import { useCallback, useEffect } from 'react';
 
 import { setContestLineups } from '@/api/contest';
@@ -22,6 +24,18 @@ export interface ContestLineupsState {
   refresh: () => Promise<void>;
 }
 
+/** The saved line-ups as last read, reading first when nothing has loaded.
+ *  Throws when they cannot be read — never answers `[]` for "unknown". */
+async function readLineups(): Promise<ContestLineup[]> {
+  let slot = contestLineupSlots.get('all');
+  if (slot?.data == null) {
+    await refreshLineups();
+    slot = contestLineupSlots.get('all');
+  }
+  if (slot?.data == null) throw slot?.error ?? new Error('saved line-ups could not be read');
+  return slot.data;
+}
+
 export function useContestLineups(): ContestLineupsState {
   const slot = useModuleSubscription(contestLineupSlots, 'all') ?? emptySlot<ContestLineup[]>();
   const lineups = slot.data ?? [];
@@ -37,7 +51,7 @@ export function useContestLineups(): ContestLineupsState {
 
   const upsert = useCallback(
     async (lineup: ContestLineup) => {
-      const rest = (contestLineupSlots.get('all')?.data ?? []).filter((l) => l.name !== lineup.name);
+      const rest = (await readLineups()).filter((l) => l.name !== lineup.name);
       await save([...rest, lineup]);
     },
     [save],
@@ -45,7 +59,7 @@ export function useContestLineups(): ContestLineupsState {
 
   const remove = useCallback(
     async (name: string) => {
-      await save((contestLineupSlots.get('all')?.data ?? []).filter((l) => l.name !== name));
+      await save((await readLineups()).filter((l) => l.name !== name));
     },
     [save],
   );

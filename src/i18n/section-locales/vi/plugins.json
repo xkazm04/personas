@@ -4369,6 +4369,7 @@
     "decide_locked_judging": "Ban giám khảo vẫn đang chấm.",
     "decide_locked_collecting": "Các biến thể vẫn đang được thu thập.",
     "decide_locked_racing": "Cuộc đua chưa kết thúc.",
-    "decide_locked_failed": "Chuỗi đã dừng. Hãy thử lại trước khi quyết định."
+    "decide_locked_failed": "Chuỗi đã dừng. Hãy thử lại trước khi quyết định.",
+    "lineups_load_failed": "Không đọc được các đội hình đã lưu."
   }
 }

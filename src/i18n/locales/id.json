@@ -15163,7 +15163,8 @@
       "decide_locked_judging": "Juri masih menilai.",
       "decide_locked_collecting": "Varian masih dikumpulkan.",
       "decide_locked_racing": "Balapan belum selesai.",
-      "decide_locked_failed": "Rantai berhenti. Coba lagi sebelum memutuskan."
+      "decide_locked_failed": "Rantai berhenti. Coba lagi sebelum memutuskan.",
+      "lineups_load_failed": "Line-up tersimpan tidak dapat dibaca."
     }
   },
   "process_labels": {

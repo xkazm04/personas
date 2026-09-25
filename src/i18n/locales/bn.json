@@ -15163,7 +15163,8 @@
       "decide_locked_judging": "বিচারকেরা এখনও মূল্যায়ন করছেন।",
       "decide_locked_collecting": "ভ্যারিয়েন্টগুলো এখনও সংগ্রহ করা হচ্ছে।",
       "decide_locked_racing": "রেস এখনও শেষ হয়নি।",
-      "decide_locked_failed": "চেইন থেমে গেছে। সিদ্ধান্ত নেওয়ার আগে আবার চেষ্টা করুন।"
+      "decide_locked_failed": "চেইন থেমে গেছে। সিদ্ধান্ত নেওয়ার আগে আবার চেষ্টা করুন।",
+      "lineups_load_failed": "সংরক্ষিত লাইন-আপগুলো পড়া যায়নি।"
     }
   },
   "process_labels": {

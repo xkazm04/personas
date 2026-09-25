@@ -24,7 +24,8 @@ interface LineupBarProps {
 export function LineupBar({ panel, onApply, testIdPrefix }: LineupBarProps) {
   const { t, tx } = useTranslation();
   const s = t.plugins.contest;
-  const { lineups, remove } = useContestLineups();
+  const { lineups, remove, isLoading, error, refresh } = useContestLineups();
+  const failed = !isLoading && error != null;
   const [saving, setSaving] = useState(false);
   const [dropped, setDropped] = useState(0);
 
@@ -32,7 +33,20 @@ export function LineupBar({ panel, onApply, testIdPrefix }: LineupBarProps) {
     <div className="space-y-1.5" data-testid={testIdPrefix}>
       <div className="flex flex-wrap items-center gap-1.5">
         <span className="typo-label text-foreground mr-1">{s.lineups_label}</span>
-        {lineups.length === 0 && <span className="typo-caption text-foreground">{s.lineups_empty}</span>}
+        {isLoading && (
+          <span aria-hidden className="h-6 w-20 rounded-interactive bg-primary/[0.06]" data-testid={`${testIdPrefix}-ghost`} />
+        )}
+        {failed && (
+          <span className="inline-flex items-center gap-1 typo-caption text-foreground" data-testid={`${testIdPrefix}-error`}>
+            {s.lineups_load_failed}
+            <AsyncButton size="xs" variant="ghost" onClick={refresh}>
+              {t.common.retry}
+            </AsyncButton>
+          </span>
+        )}
+        {!isLoading && !failed && lineups.length === 0 && (
+          <span className="typo-caption text-foreground">{s.lineups_empty}</span>
+        )}
         {lineups.map((l) => (
           <span key={l.name} className="inline-flex items-center rounded-interactive border border-primary/15 bg-secondary/30">
             <Button

@@ -4369,6 +4369,7 @@
     "decide_locked_judging": "Les commissaires évaluent encore.",
     "decide_locked_collecting": "Les variantes sont encore en cours de collecte.",
     "decide_locked_racing": "La course n’est pas encore terminée.",
-    "decide_locked_failed": "La chaîne s’est arrêtée. Relancez-la avant de trancher."
+    "decide_locked_failed": "La chaîne s’est arrêtée. Relancez-la avant de trancher.",
+    "lineups_load_failed": "Impossible de lire les formations enregistrées."
   }
 }
