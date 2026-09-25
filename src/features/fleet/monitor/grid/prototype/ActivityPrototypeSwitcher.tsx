@@ -5,26 +5,22 @@
 import { useState, type ComponentType } from 'react';
 import { silentCatch } from '@/lib/silentCatch';
 import type { ActivitySurfaceProps } from './useActivitySurface';
-import { ActivityInstrument } from './instrument/ActivityInstrument';
-import { ActivityEntryD } from './entry-d/ActivityEntryD';
 import { ActivityEntryE } from './entry-e/ActivityEntryE';
 
-type Pick = 'baseline' | 'instrument' | 'entry-d' | 'entry-e';
+type Pick = 'baseline' | 'entry-e';
 
 const KEY = 'personas.prototype.activity-variant';
 function read(): Pick {
   try {
     const v = localStorage.getItem(KEY);
-    if (v === 'baseline' || v === 'instrument' || v === 'entry-d' || v === 'entry-e') return v;
+    if (v === 'baseline' || v === 'entry-e') return v;
   } catch (err) { silentCatch('fleet/prototype:readVariant')(err); }
   return 'baseline';
 }
 
 const TABS: Array<{ id: Pick; label: string; hint: string }> = [
   { id: 'baseline', label: 'Baseline', hint: 'Current production surface' },
-  { id: 'instrument', label: 'A · Instrument', hint: 'Avionics HUD: luminous spines, mono data, gauges' },
-  { id: 'entry-d', label: 'D', hint: 'Contest entry D' },
-  { id: 'entry-e', label: 'E', hint: 'Contest entry E' },
+  { id: 'entry-e', label: 'E · Annunciator', hint: 'Contest winner, with the owner adjustments' },
 ];
 
 export function ActivityPrototypeSwitcher({
@@ -35,10 +31,7 @@ export function ActivityPrototypeSwitcher({
     setPick(p);
     try { localStorage.setItem(KEY, p); } catch (err) { silentCatch('fleet/prototype:writeVariant')(err); }
   };
-  const Body = pick === 'instrument' ? ActivityInstrument
-    : pick === 'entry-d' ? ActivityEntryD
-      : pick === 'entry-e' ? ActivityEntryE
-        : Baseline;
+  const Body = pick === 'entry-e' ? ActivityEntryE : Baseline;
   return (
     <div className="flex h-full min-h-0 flex-col gap-1.5">
       <div className="flex flex-shrink-0 items-center gap-1 self-start rounded-interactive border border-dashed border-primary/30 bg-background/80 p-0.5" role="group" aria-label="Prototype variants">
