@@ -977,28 +977,45 @@ pub async fn ensure_reattached(app: &AppHandle) {
     if REATTACHED.swap(true, Ordering::SeqCst) {
         return;
     }
-    // The fleet restores its rows from the DB on its own ticker; make sure it
-    // has (both calls are idempotent and one-shot), so a restored seat is not
-    // misread as gone, and a finished claude seat is settled from its
-    // transcript before we read it.
-    crate::commands::fleet::persist::rehydrate(app);
-    crate::commands::fleet::persist::recover_after_restart(app);
-
-    let projects = match crate::db::repos::dev_tools::list_projects(&db, None) {
-        Ok(p) => p,
-        Err(e) => {
+    // The sync part (the fleet's DB restore, the project list, the walk of
+    // every arena) runs on the blocking pool, never on a runtime worker.
+    let handle = app.clone();
+    let found = tokio::task::spawn_blocking(move || {
+        // The fleet restores its rows from the DB on its own ticker; make
+        // sure it has (both calls are idempotent and one-shot), so a restored
+        // seat is not misread as gone, and a finished claude seat is settled
+        // from its transcript before we read it.
+        crate::commands::fleet::persist::rehydrate(&handle);
+        crate::commands::fleet::persist::recover_after_restart(&handle);
+        let projects = crate::db::repos::dev_tools::list_projects(&db, None)?;
+        let mut ctxs = Vec::new();
+        for p in &projects {
+            for contest_id in arena::list_contest_ids(Path::new(&p.root_path)) {
+                if let Ok(ctx) = ctx_for_project(p, &contest_id) {
+                    ctxs.push(ctx);
+                }
+            }
+        }
+        Ok::<_, AppError>(ctxs)
+    })
+    .await;
+    let ctxs = match found {
+        Ok(Ok(c)) => c,
+        Ok(Err(e)) => {
             tracing::warn!(error = %e, "contest: re-attach could not list projects");
             return;
         }
+        Err(e) => {
+            tracing::error!(
+                panicked = e.is_panic(),
+                "contest: the re-attach walk failed"
+            );
+            return;
+        }
     };
-    for p in projects {
-        for contest_id in arena::list_contest_ids(Path::new(&p.root_path)) {
-            let Ok(ctx) = ctx_for_project(&p, &contest_id) else {
-                continue;
-            };
-            if let Err(e) = reattach_contest(app, &ctx).await {
-                tracing::warn!(contest = %contest_id, error = %e, "contest: re-attach failed");
-            }
+    for ctx in ctxs {
+        if let Err(e) = reattach_contest(app, &ctx).await {
+            tracing::warn!(contest = %ctx.contest_id(), error = %e, "contest: re-attach failed");
         }
     }
 }

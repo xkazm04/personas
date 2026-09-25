@@ -44,7 +44,8 @@ use types::{
     ContestLineup, ContestReview, ContestSeatKind, ContestStep, ContestSummary,
 };
 
-/// Run blocking file/DB work off the IPC worker. The JoinHandle is awaited
+/// Run blocking file/DB work off the IPC worker. Every command below routes
+/// its DB lookups and arena file work through here (or `ctx_of`). The JoinHandle is awaited
 /// here and a panic is reported as what it is, never flattened into a
 /// generic failure.
 async fn blocking<T: Send + 'static>(
@@ -57,6 +58,28 @@ async fn blocking<T: Send + 'static>(
         )),
         Err(e) => Err(AppError::Internal(format!("contest: task cancelled: {e}"))),
     }
+}
+
+/// Resolve an existing contest off the IPC worker (DB + a file check).
+async fn ctx_of(
+    app: &AppHandle,
+    project_id: &str,
+    contest_id: &str,
+) -> Result<driver::Ctx, AppError> {
+    let db = driver::db_of(app)?;
+    let (p, c) = (project_id.to_string(), contest_id.to_string());
+    blocking(move || driver::ctx(&db, &p, &c)).await
+}
+
+/// A contest's summary, off the IPC worker.
+async fn summary_of(
+    app: &AppHandle,
+    project_id: &str,
+    contest_id: &str,
+) -> Result<ContestSummary, AppError> {
+    let db = driver::db_of(app)?;
+    let (p, c) = (project_id.to_string(), contest_id.to_string());
+    blocking(move || view::summary(&db, &p, &c)).await
 }
 
 /// Every contest across every managed dev project, newest first.
@@ -87,7 +110,7 @@ pub async fn contest_create(
     req: ContestCreateRequest,
 ) -> Result<ContestSummary, AppError> {
     let ctx = create::create(&app, req).await?;
-    view::summary(&driver::db_of(&app)?, &ctx.project_id, ctx.contest_id())
+    summary_of(&app, &ctx.project_id, ctx.contest_id()).await
 }
 
 /// Queue a contest's seats of `kind` through the fleet. `only` limits the
@@ -100,7 +123,7 @@ pub async fn contest_launch(
     kind: ContestSeatKind,
     only: Option<Vec<String>>,
 ) -> Result<(), AppError> {
-    let ctx = driver::ctx(&driver::db_of(&app)?, &project_id, &contest_id)?;
+    let ctx = ctx_of(&app, &project_id, &contest_id).await?;
     driver::launch_seats(&app, &ctx, kind, only)
         .await
         .map(|_| ())
@@ -113,7 +136,7 @@ pub async fn contest_cancel(
     project_id: String,
     contest_id: String,
 ) -> Result<(), AppError> {
-    let ctx = driver::ctx(&driver::db_of(&app)?, &project_id, &contest_id)?;
+    let ctx = ctx_of(&app, &project_id, &contest_id).await?;
     driver::cancel(&app, &ctx).await
 }
 
@@ -125,8 +148,8 @@ pub async fn contest_save_review(
     contest_id: String,
     review: ContestReview,
 ) -> Result<(), AppError> {
-    let ctx = driver::ctx(&driver::db_of(&app)?, &project_id, &contest_id)?;
-    review::save_review(&ctx.paths, &review)?;
+    let ctx = ctx_of(&app, &project_id, &contest_id).await?;
+    blocking(move || review::save_review(&ctx.paths, &review)).await?;
     driver::emit_changed(&app, &project_id, &contest_id);
     Ok(())
 }
@@ -139,10 +162,9 @@ pub async fn contest_decide(
     contest_id: String,
     decision: ContestDecision,
 ) -> Result<ContestSummary, AppError> {
-    let db = driver::db_of(&app)?;
-    let ctx = driver::ctx(&db, &project_id, &contest_id)?;
+    let ctx = ctx_of(&app, &project_id, &contest_id).await?;
     let shown = decide::decide(&app, &ctx, decision).await?;
-    view::summary(&db, &shown.project_id, shown.contest_id())
+    summary_of(&app, &shown.project_id, shown.contest_id()).await
 }
 
 /// Run (or retry) one autopilot chain step.
@@ -153,7 +175,7 @@ pub async fn contest_run_step(
     contest_id: String,
     step: ContestStep,
 ) -> Result<(), AppError> {
-    let ctx = driver::ctx(&driver::db_of(&app)?, &project_id, &contest_id)?;
+    let ctx = ctx_of(&app, &project_id, &contest_id).await?;
     driver::run_step(&app, &ctx, step).await
 }
 
@@ -164,7 +186,8 @@ pub async fn contest_environment(
     project_id: String,
 ) -> Result<ContestEnvironment, AppError> {
     let db = driver::db_of(&app)?;
-    let project = driver::project(&db, &project_id)?;
+    let lookup = db.clone();
+    let project = blocking(move || driver::project(&lookup, &project_id)).await?;
     Ok(env::probe(&db, &PathBuf::from(project.root_path)).await)
 }
 
@@ -192,7 +215,29 @@ pub async fn contest_draft_brief(
     project_id: String,
     idea: String,
 ) -> Result<ContestBriefDraft, AppError> {
-    let project = driver::project(&state.db, &project_id)?;
+    let db = state.db.clone();
+    let project = blocking(move || driver::project(&db, &project_id)).await?;
     let brief = draft::draft(&state.user_db, &PathBuf::from(project.root_path), &idea).await?;
     Ok(ContestBriefDraft { brief })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The one door every contest command's sync work goes through: the
+    /// work runs on the blocking pool, its result comes back as-is, and a
+    /// panic is reported as what it is.
+    #[tokio::test]
+    async fn blocking_runs_off_the_worker_and_reports_a_panic() {
+        let caller = std::thread::current().id();
+        let ran_on = blocking(|| Ok(std::thread::current().id())).await.unwrap();
+        assert_ne!(ran_on, caller, "the work ran on the calling worker");
+        let e = blocking::<()>(|| Err(AppError::NotFound("x".into())))
+            .await
+            .unwrap_err();
+        assert!(matches!(e, AppError::NotFound(_)));
+        let panicked = blocking::<()>(|| panic!("boom")).await.unwrap_err();
+        assert!(panicked.to_string().contains("panicked"), "{panicked}");
+    }
 }

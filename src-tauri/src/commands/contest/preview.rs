@@ -273,10 +273,14 @@ async fn serve(State(st): State<PreviewState>, AxPath(rest): AxPath<String>) -> 
         _ => return refuse(Refusal::NotFound),
     };
     let contest_dir = arena::arena_root(&root).join(contest_id);
-    let target = match resolve_contained(&contest_dir, rel) {
-        Ok(t) => t,
-        Err(r) => return refuse(r),
-    };
+    // Canonicalising walks the filesystem: off the runtime worker.
+    let rel = rel.to_string();
+    let target =
+        match tokio::task::spawn_blocking(move || resolve_contained(&contest_dir, &rel)).await {
+            Ok(Ok(t)) => t,
+            Ok(Err(r)) => return refuse(r),
+            Err(_) => return refuse(Refusal::NotFound),
+        };
     let bytes = match tokio::fs::read(&target).await {
         Ok(b) => b,
         Err(_) => return refuse(Refusal::NotFound),
