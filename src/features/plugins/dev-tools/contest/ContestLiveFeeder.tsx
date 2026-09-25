@@ -15,6 +15,7 @@ import type { Translations } from '@/i18n/generated/types';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ContestChangedPayload } from '@/lib/bindings/ContestChangedPayload';
 import type { ContestSummary } from '@/lib/bindings/ContestSummary';
+import { mapWithConcurrency } from '@/lib/concurrency';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { pushExternalLiveMessage, registerLiveSource } from '@/features/fleet/monitor/live/liveExternal';
@@ -82,6 +83,9 @@ export function openContest(key: ContestKey): void {
 /** Seed the baseline once, at mount: every phase from the list, and the seat
  *  states of contests still racing from their detail, so a seat already at
  *  its limit before boot stays quiet and one that hits it after boot does not. */
+/** How many live contests are seeded at once at boot. */
+const SEED_CONCURRENCY = 3;
+
 async function seedFromList(): Promise<void> {
   await refreshContests();
   const live: ContestSummary[] = [];
@@ -90,13 +94,13 @@ async function seedFromList(): Promise<void> {
     if (!memory.phases.has(k)) memory.phases.set(k, s.phase);
     if (isLivePhase(s.phase)) live.push(s);
   }
-  await Promise.all(
-    live.map(async (s) => {
-      await refreshContest(s.projectId, s.contestId);
-      const detail = contestDetailSlots.get(detailKey(s.projectId, s.contestId))?.data;
-      if (detail) seedSeats(memory, contestKeyString(s), detail.seats);
-    }),
-  );
+  // Bounded: every live contest's detail is one arena walk on the backend, and a
+  // boot with many running races must not issue them all at once.
+  await mapWithConcurrency(live, SEED_CONCURRENCY, async (s) => {
+    await refreshContest(s.projectId, s.contestId);
+    const detail = contestDetailSlots.get(detailKey(s.projectId, s.contestId))?.data;
+    if (detail) seedSeats(memory, contestKeyString(s), detail.seats);
+  });
 }
 
 export function ContestLiveFeeder() {
