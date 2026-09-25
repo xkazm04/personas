@@ -41,8 +41,16 @@ export function FullScreenOverlay({
   const { t } = useTranslation();
   const prefersReducedMotion = useReducedMotion();
   const shellRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
-  useDialogKeyboard(shellRef, onClose, { priority: FULLSCREEN_LAYER_PRIORITY });
+  // Initial focus goes into the CONTENT, never the close bar: Close is the
+  // first focusable in DOM order, so the default rule parked focus on it and
+  // Enter or Space right after opening dismissed the overlay. Content with
+  // nothing focusable (a lazy chunk still loading) focuses the dialog itself.
+  useDialogKeyboard(shellRef, onClose, {
+    priority: FULLSCREEN_LAYER_PRIORITY,
+    initialFocus: contentRef,
+  });
 
   return (
     <motion.div
@@ -51,11 +59,12 @@ export function FullScreenOverlay({
       role="dialog"
       aria-modal="true"
       aria-label={ariaLabel}
+      tabIndex={-1}
       initial={prefersReducedMotion ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
       transition={{ duration: 0.16, ease: 'easeOut' }}
-      className="fixed inset-x-0 bottom-0 top-[var(--titlebar-height,40px)] z-50 bg-background flex flex-col"
+      className="fixed inset-x-0 bottom-0 top-[var(--titlebar-height,40px)] z-50 bg-background flex flex-col outline-none"
     >
       {/* Slim close bar — collision-free spot for the dismiss control, so the
           content's own ContentHeader stays the module's title. */}
@@ -69,7 +78,9 @@ export function FullScreenOverlay({
           <X className="w-4 h-4" />
         </button>
       </div>
-      <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+      <div ref={contentRef} className="flex-1 min-h-0 overflow-hidden">
+        {children}
+      </div>
     </motion.div>
   );
 }

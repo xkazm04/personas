@@ -19,7 +19,7 @@ pub(crate) fn collect_dev_project_exports(
     let conn = pool.get()?;
 
     const PROJECT_COLS: &str = "id, name, root_path, description, status, tech_stack, team_id, \
-         auto_pr_on_success, github_url, main_branch, \
+         github_url, main_branch, \
          test_env_url, test_env_branch, workspace_id, data_links, static_scan_config, \
          standards_config, monitoring_project_slug, created_at, updated_at";
     type ProjectRow = (
@@ -30,7 +30,6 @@ pub(crate) fn collect_dev_project_exports(
         String,
         Option<String>,
         Option<String>,
-        bool,
         Option<String>,
         Option<String>,
         Option<String>,
@@ -63,7 +62,6 @@ pub(crate) fn collect_dev_project_exports(
             r.get(15)?,
             r.get(16)?,
             r.get(17)?,
-            r.get(18)?,
         ))
     };
 
@@ -135,7 +133,6 @@ pub(crate) fn collect_dev_project_exports(
             status,
             tech_stack,
             team_id,
-            auto_pr_on_success,
             github_url,
             main_branch,
             test_env_url,
@@ -706,7 +703,6 @@ pub(crate) fn collect_dev_project_exports(
             status,
             tech_stack,
             team_id,
-            auto_pr_on_success,
             github_url,
             main_branch,
             test_env_url,

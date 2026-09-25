@@ -115,6 +115,8 @@ pub async fn contest_create(
 
 /// Queue a contest's seats of `kind` through the fleet. `only` limits the
 /// launch to those seat ids (a retry); `None` launches every seat of the kind.
+/// Refused (Validation) while an autopilot chain step runs, like
+/// `contest_run_step`.
 #[tauri::command]
 pub async fn contest_launch(
     app: AppHandle,

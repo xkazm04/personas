@@ -220,17 +220,12 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
     )
     .ok();
 
-    // -- dev_projects: auto-PR-on-success gate + GitHub credential pointer ---
-    // When `auto_pr_on_success = 1` and a task ran inside a worktree, the
-    // task_executor's success branch pushes the worktree branch and opens a
-    // PR via `engine/platforms/github.rs::GitHubClient::create_pull_request`.
-    // The credential is resolved from `pr_credential_id`. Both columns are
-    // nullable / default-off so existing projects are unaffected.
-    ddl_step(
-        conn,
-        "ALTER TABLE dev_projects ADD COLUMN auto_pr_on_success INTEGER NOT NULL DEFAULT 0;",
-    )
-    .ok();
+    // -- dev_projects: GitHub connector pointer ------------------------------
+    // The project's GitHub credential (repo / PR / git operations). Nullable,
+    // so existing projects are unaffected. Its sibling `auto_pr_on_success`
+    // (the runner auto-PR toggle) was added here too and is dropped by
+    // `e53_drop_auto_pr_columns`; its ADD COLUMN is gone so it is never
+    // re-added after that drop.
     ddl_step(
         conn,
         "ALTER TABLE dev_projects ADD COLUMN pr_credential_id TEXT;",

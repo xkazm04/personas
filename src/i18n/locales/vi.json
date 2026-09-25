@@ -13747,7 +13747,7 @@
           "idle": "Chưa bắt đầu",
           "queued": "Trên vạch xuất phát",
           "running": "Đang đua",
-          "seat_limit": "Hết nhiên liệu · giới hạn sử dụng",
+          "seat_limit": "Đã đạt giới hạn gói",
           "timed_out": "Quá giới hạn thời gian"
         },
         "lane_unlettered": "Làn chưa có ký hiệu",
@@ -13763,7 +13763,7 @@
         "photo_finish": "Ảnh chụp về đích",
         "photo_finish_hint": "Tất cả biến thể đã vào. Mở ảnh chụp về đích để sắp xếp chúng.",
         "podium_history": "Lịch sử bục vinh quang",
-        "rerun": "Quay lại vạch xuất phát",
+        "rerun": "Chạy lại ghế",
         "retry": "Thử lại {step}",
         "review_panel": "Đánh giá",
         "roster_empty_body": "Xếp một vài ghế và để chúng đua trên cùng một brief. Các vòng tinh chỉnh nằm dưới cuộc đua mà chúng bắt nguồn.",

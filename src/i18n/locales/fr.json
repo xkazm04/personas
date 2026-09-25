@@ -13747,7 +13747,7 @@
           "idle": "Non démarré",
           "queued": "Sur la grille",
           "running": "En course",
-          "seat_limit": "Panne sèche · limite d'utilisation",
+          "seat_limit": "Limite du forfait atteinte",
           "timed_out": "Plafond dépassé"
         },
         "lane_unlettered": "Voie sans lettre pour l'instant",
@@ -13763,7 +13763,7 @@
         "photo_finish": "Photo-finish",
         "photo_finish_hint": "Toutes les variantes sont arrivées. Ouvrez la photo-finish pour les classer.",
         "podium_history": "Historique des podiums",
-        "rerun": "Retour à la grille",
+        "rerun": "Relancer le siège",
         "retry": "Réessayer {step}",
         "review_panel": "Revue",
         "roster_empty_body": "Alignez quelques sièges et laissez-les s'affronter sur un brief. Les manches de révision se trouvent sous la course dont elles proviennent.",

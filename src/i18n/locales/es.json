@@ -13747,7 +13747,7 @@
           "idle": "Sin iniciar",
           "queued": "En la parrilla",
           "running": "Corriendo",
-          "seat_limit": "Sin combustible · límite de uso",
+          "seat_limit": "Límite del plan alcanzado",
           "timed_out": "Superó el límite"
         },
         "lane_unlettered": "Carril sin letra todavía",
@@ -13763,7 +13763,7 @@
         "photo_finish": "Foto de llegada",
         "photo_finish_hint": "Todas las variantes están listas. Abre la foto de llegada para ordenarlas.",
         "podium_history": "Historial del podio",
-        "rerun": "Volver a la parrilla",
+        "rerun": "Volver a ejecutar el asiento",
         "retry": "Reintentar {step}",
         "review_panel": "Revisión",
         "roster_empty_body": "Alinea algunos asientos y déjalos competir en un mismo brief. Las rondas de refinamiento aparecen bajo la carrera de origen.",

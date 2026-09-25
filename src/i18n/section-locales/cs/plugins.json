@@ -3023,7 +3023,7 @@
         "idle": "Nezahájeno",
         "queued": "Na startu",
         "running": "Závodí",
-        "seat_limit": "Došlo palivo · limit využití",
+        "seat_limit": "Dosažen limit tarifu",
         "timed_out": "Překročen limit"
       },
       "lane_unlettered": "Dráha zatím bez písmene",
@@ -3039,7 +3039,7 @@
       "photo_finish": "Cílová fotografie",
       "photo_finish_hint": "Všechny varianty jsou v cíli. Otevřete cílovou fotografii a seřaďte je.",
       "podium_history": "Historie pódia",
-      "rerun": "Zpět na start",
+      "rerun": "Znovu spustit místo",
       "retry": "Zopakovat {step}",
       "review_panel": "Hodnocení",
       "roster_empty_body": "Sestavte několik míst a nechte je závodit na jednom zadání. Kola zpřesnění najdete pod závodem, ze kterého vzešla.",

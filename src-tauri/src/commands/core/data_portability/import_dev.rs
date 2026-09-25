@@ -221,11 +221,11 @@ pub(crate) fn import_dev_project_graph(
                 tx,
                 "UPDATE dev_projects SET name = ?1, root_path = COALESCE(?2, root_path), \
                      description = ?3, status = ?4, tech_stack = ?5, team_id = ?6, \
-                     auto_pr_on_success = ?7, github_url = ?8, main_branch = ?9, \
-                     test_env_url = ?10, test_env_branch = ?11, workspace_id = ?12, \
-                     data_links = ?13, static_scan_config = ?14, standards_config = ?15, \
-                     monitoring_project_slug = ?16, updated_at = ?17 \
-                 WHERE id = ?18",
+                     github_url = ?7, main_branch = ?8, \
+                     test_env_url = ?9, test_env_branch = ?10, workspace_id = ?11, \
+                     data_links = ?12, static_scan_config = ?13, standards_config = ?14, \
+                     monitoring_project_slug = ?15, updated_at = ?16 \
+                 WHERE id = ?17",
                 rusqlite::params![
                     final_name,
                     root_for_update,
@@ -233,7 +233,6 @@ pub(crate) fn import_dev_project_graph(
                     p.status,
                     p.tech_stack,
                     team_id,
-                    p.auto_pr_on_success,
                     p.github_url,
                     p.main_branch,
                     p.test_env_url,
@@ -262,10 +261,10 @@ pub(crate) fn import_dev_project_graph(
                 tx,
                 "INSERT INTO dev_projects \
                      (id, name, root_path, description, status, tech_stack, team_id, \
-                      auto_pr_on_success, github_url, main_branch, test_env_url, \
+                      github_url, main_branch, test_env_url, \
                       test_env_branch, workspace_id, data_links, static_scan_config, \
                       standards_config, monitoring_project_slug, created_at, updated_at) \
-                 VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19)",
+                 VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18)",
                 rusqlite::params![
                     target_id,
                     final_name,
@@ -274,7 +273,6 @@ pub(crate) fn import_dev_project_graph(
                     p.status,
                     p.tech_stack,
                     team_id,
-                    p.auto_pr_on_success,
                     p.github_url,
                     p.main_branch,
                     p.test_env_url,

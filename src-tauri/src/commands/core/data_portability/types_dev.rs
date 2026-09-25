@@ -35,7 +35,6 @@ pub struct DevProjectExport {
     /// import side remaps it via id_mapping when the team travels in the
     /// same bundle, else keeps it as-is.
     pub team_id: Option<String>,
-    pub auto_pr_on_success: bool,
     pub github_url: Option<String>,
     pub main_branch: Option<String>,
     pub test_env_url: Option<String>,

@@ -79,7 +79,7 @@ export function dimensionReason(rowKey: string, raw: ImproveRaw): string | null 
       return (ev?.has_repo_memory ? 'In-repo memory artifact detected (MEMORY.md / .claude/memory).' : 'No agent memory detected for this repo.') + healthBit;
     }
     case 'aiflow':
-      return project.pr_credential_id || project.auto_pr_on_success ? 'PR automation is wired.' : 'No automated PR / team pipeline wired.';
+      return project.pr_credential_id ? 'A PR connector is bound.' :'No automated PR / team pipeline wired.';
     case 'skills':
       return raw.hasSkills ? 'Reusable skills present in .claude/skills.' : 'No reusable skills installed.';
     case 'selfverify':

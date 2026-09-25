@@ -3023,7 +3023,7 @@
         "idle": "시작 전",
         "queued": "그리드에서 대기 중",
         "running": "레이싱 중",
-        "seat_limit": "연료 소진 · 사용 한도",
+        "seat_limit": "요금제 한도에 도달함",
         "timed_out": "제한 시간 초과"
       },
       "lane_unlettered": "아직 문자가 지정되지 않은 레인",
@@ -3039,7 +3039,7 @@
       "photo_finish": "포토 피니시",
       "photo_finish_hint": "모든 변형이 도착했습니다. 포토 피니시를 열어 정렬하세요.",
       "podium_history": "포디움 기록",
-      "rerun": "그리드로 돌아가기",
+      "rerun": "시트 다시 실행",
       "retry": "{step} 재시도",
       "review_panel": "리뷰",
       "roster_empty_body": "시트 몇 개를 정렬해 하나의 브리프로 경주시켜 보세요. 리파인 라운드는 원래 레이스 아래에 표시됩니다.",
