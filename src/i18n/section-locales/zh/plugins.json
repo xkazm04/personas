@@ -4261,7 +4261,7 @@
         "idle": "未开始",
         "queued": "在起跑线上",
         "running": "比赛中",
-        "seat_limit": "燃料耗尽 · 使用限额",
+        "seat_limit": "已达套餐限额",
         "timed_out": "超出时间上限"
       },
       "lane_unlettered": "尚未分配字母的赛道",
@@ -4277,7 +4277,7 @@
       "photo_finish": "终点回放",
       "photo_finish_hint": "所有变体均已就位。打开终点回放进行排序。",
       "podium_history": "领奖台历史",
-      "rerun": "返回起跑线",
+      "rerun": "重新运行席位",
       "retry": "重试 {step}",
       "review_panel": "审核",
       "roster_empty_body": "安排几个席位，让它们围绕同一份简报比赛。优化轮次会归入其所属的比赛下。",

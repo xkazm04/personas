@@ -4261,7 +4261,7 @@
         "idle": "Belum dimulai",
         "queued": "Di grid",
         "running": "Sedang balapan",
-        "seat_limit": "Kehabisan bahan bakar · batas pemakaian",
+        "seat_limit": "Batas paket tercapai",
         "timed_out": "Melewati batas waktu"
       },
       "lane_unlettered": "Lane belum punya huruf",
@@ -4277,7 +4277,7 @@
       "photo_finish": "Foto finis",
       "photo_finish_hint": "Semua varian sudah masuk. Buka photo finish untuk mengurutkannya.",
       "podium_history": "Riwayat podium",
-      "rerun": "Kembali ke grid",
+      "rerun": "Jalankan ulang kursi",
       "retry": "Coba lagi {step}",
       "review_panel": "Tinjau",
       "roster_empty_body": "Susun beberapa seat dan biarkan mereka balapan pada satu brief. Ronde penyempurnaan berada di bawah balapan asalnya.",

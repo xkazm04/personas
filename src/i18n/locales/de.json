@@ -15057,7 +15057,7 @@
           "idle": "Nicht gestartet",
           "queued": "Auf dem Startgitter",
           "running": "Im Rennen",
-          "seat_limit": "Kein Sprit mehr · Nutzungslimit",
+          "seat_limit": "Tariflimit erreicht",
           "timed_out": "Zeitlimit überschritten"
         },
         "lane_unlettered": "Spur noch ohne Buchstaben",
@@ -15073,7 +15073,7 @@
         "photo_finish": "Fotofinish",
         "photo_finish_hint": "Alle Varianten sind da. Öffne das Fotofinish, um sie zu sortieren.",
         "podium_history": "Podiumsverlauf",
-        "rerun": "Zurück ins Startgitter",
+        "rerun": "Sitz neu starten",
         "retry": "{step} wiederholen",
         "review_panel": "Überprüfung",
         "roster_empty_body": "Stelle ein paar Plätze auf und lass sie bei einem Briefing gegeneinander antreten. Verfeinerungsrunden liegen unter dem Rennen, aus dem sie stammen.",

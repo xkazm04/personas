@@ -4261,7 +4261,7 @@
       "errors_show_one": "1 incident",
       "errors_show_other": "{count} incidents",
       "errors_hide": "Hide incidents",
-      "rerun": "Back to the grid",
+      "rerun": "Rerun seat",
       "monitor": "Watch in Monitor",
       "launch": "Start the race",
       "cancel": "Stop the race",
@@ -4301,7 +4301,7 @@
         "queued": "On the grid",
         "running": "Racing",
         "completed": "Finished",
-        "seat_limit": "Out of fuel · seat limit",
+        "seat_limit": "Plan limit reached",
         "timed_out": "Past the ceiling",
         "errored": "Did not finish"
       },
