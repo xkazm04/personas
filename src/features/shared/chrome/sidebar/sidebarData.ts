@@ -1,5 +1,5 @@
 import {
-  BarChart3, Zap, Key, Activity, ClipboardCheck, MessageSquare, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Globe, Palette, GitBranch, LayoutDashboard, Cpu, Network, Database, Compass, Shield, ShieldCheck, HardDriveDownload, Map, Play, Share2, Gauge, Unplug, Webhook, Store, Archive, Layers, GraduationCap, AlertOctagon, Sparkles, Headphones, Wand2, Gauge as GaugeIcon, Bell, Terminal, RefreshCw, FolderOpen, History, MoonStar, Landmark, Library, GitFork, Laptop, type LucideIcon,
+  BarChart3, Zap, Key, Activity, ClipboardCheck, MessageSquare, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Globe, Palette, GitBranch, LayoutDashboard, Cpu, Network, Database, Compass, Shield, ShieldCheck, HardDriveDownload, Map, Play, Share2, Gauge, Unplug, Webhook, Store, Archive, Layers, GraduationCap, AlertOctagon, Sparkles, Headphones, Wand2, Gauge as GaugeIcon, Bell, Terminal, RefreshCw, FolderOpen, History, MoonStar, Landmark, Library, GitFork, Laptop, Stethoscope, type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
 import type { SubNavItem } from '@/features/shared/chrome/sidebar/SidebarSubNav';
@@ -78,6 +78,10 @@ export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: st
   // incidents per capability. Backend IPC (list/ack/resolve/dismiss) is wired;
   // the execution-failure → incident promotion is the remaining runtime hook.
   { id: 'incidents', icon: AlertOctagon, label: 'Incidents', minTier: TIERS.TEAM },
+  // Observability, routed 2026-09-25: the dashboard (headline figures, health
+  // issues, trends, alert rules, IPC latency, Athena health and spend) had been
+  // orphaned since a March 2026 refactor. Gated like its neighbour Incidents.
+  { id: 'observability', icon: Stethoscope, label: 'Observability', minTier: TIERS.TEAM },
   { id: 'executions', icon: Activity, label: 'Activity', minTier: TIERS.TEAM },
   { id: 'manual-review', icon: ClipboardCheck, label: 'Approvals', minTier: TIERS.TEAM },
   { id: 'messages', icon: MessageSquare, label: 'Messages' },
@@ -210,7 +214,7 @@ export interface SidebarItemGroupDef {
 /** Overview → Monitoring / Operations / Memory. */
 export const overviewGroups: SidebarItemGroupDef[] = [
   { id: 'monitoring', labelKey: 'group_monitoring', itemIds: ['executions', 'events', 'home'] },
-  { id: 'operations', labelKey: 'group_operations', itemIds: ['manual-review', 'incidents', 'messages'] },
+  { id: 'operations', labelKey: 'group_operations', itemIds: ['manual-review', 'incidents', 'observability', 'messages'] },
   { id: 'memory',     labelKey: 'group_memory',     itemIds: ['memories', 'patterns', 'memory-graph'] },
 ];
 

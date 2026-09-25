@@ -40,6 +40,7 @@ function buildSidebarLabelMap(sb: SidebarBundle): Map<string, string> {
     ['home-overview', sb.dashboard], // disambiguate from top-level 'home'
     ['executions', sb.executions],
     ['manual-review', sb.manual_review],
+    ['observability', sb.observability],
     ['messages', sb.messages],
     // `knowledge` is no longer an Overview tab (dissolved into the four rows
     // below); the key stays because Plugins → Twin still has a 'knowledge' item.

@@ -1983,6 +1983,7 @@ export type Translations = {
     extracted: string;
     memories: string;
     memory_graph: string;
+    observability: string;
     patterns: string;
     devices: string;
     unread_reports_sr: string;
