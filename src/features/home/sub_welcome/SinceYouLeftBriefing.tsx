@@ -1,20 +1,19 @@
-import { Activity, Bell, ClipboardCheck, ChevronRight, Clock, RefreshCw, X, type LucideIcon } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { OverviewTab } from '@/lib/types/types';
-import Button from '@/features/shared/components/buttons/Button';
+import { ContextCard, ContextCards, KitButton, Section, UnitStrip, quantumFor, type Glyph, type Tone } from '@/features/shared/components/kit';
 import { useSinceLeftBriefing, type BriefingLine } from './lib/sinceLeftBriefing';
 
 /**
- * "Since you left" briefing — a compact, dismissible debrief of what happened
- * while the user was away (runs, alerts, waiting approvals). Every line is a
- * one-click jump to the right Overview surface. Renders nothing when the delta
- * is trivial or on first run (see useSinceLeftBriefing).
+ * "Since you left": what happened while the user was away (runs, alerts, waiting approvals) as a
+ * kit Section of cards, one per kind, each drawing its count as units and opening the Overview
+ * surface that holds it. Renders nothing when the delta is trivial or on first run (see
+ * useSinceLeftBriefing). Must sit inside a kit surface (WelcomeLayout's KitHost).
  *
- * When the derivation could not run at all - an input the delta needs never
- * loaded - the panel says so and offers a retry instead of rendering nothing,
- * because an absence nobody files a bug against is how a briefing stays broken.
+ * When the derivation could not run at all - an input the delta needs never loaded - the section
+ * says so and offers a retry instead of rendering nothing, because an absence nobody files a bug
+ * against is how a briefing stays broken.
  */
 export default function SinceYouLeftBriefing() {
   const { visible, lines, dismiss, outcome, retry } = useSinceLeftBriefing();
@@ -30,85 +29,71 @@ export default function SinceYouLeftBriefing() {
     setSidebarSection('overview');
   };
 
-  const rowFor = (line: BriefingLine): { icon: LucideIcon; label: string; onClick: () => void; accent: string } => {
+  const cardFor = (line: BriefingLine): {
+    title: string; meta?: string; tone: Tone; glyph: Glyph; units: { n: number; tone: Tone; glyph?: Glyph }[]; onPress: () => void;
+  } => {
     if (line.kind === 'runs') {
-      const base = tx(line.count === 1 ? sl.runs : sl.runs_other, { count: line.count });
-      const failed = line.failed && line.failed > 0
-        ? ` · ${tx(line.failed === 1 ? sl.failed : sl.failed_other, { count: line.failed })}`
-        : '';
+      const failed = line.failed ?? 0;
       return {
-        icon: Activity,
-        label: `${base}${failed}`,
-        onClick: goTo('executions'),
-        accent: line.failed && line.failed > 0 ? 'text-red-400' : 'text-cyan-400',
+        title: tx(line.count === 1 ? sl.runs : sl.runs_other, { count: line.count }),
+        meta: failed > 0 ? tx(failed === 1 ? sl.failed : sl.failed_other, { count: failed }) : undefined,
+        tone: failed > 0 ? 'error' : 'success',
+        glyph: 'solid',
+        units: [{ n: line.count - failed, tone: 'success' }, { n: failed, tone: 'error' }],
+        onPress: goTo('executions'),
       };
     }
     if (line.kind === 'alerts') {
       return {
-        icon: Bell,
-        label: tx(line.count === 1 ? sl.alerts : sl.alerts_other, { count: line.count }),
+        title: tx(line.count === 1 ? sl.alerts : sl.alerts_other, { count: line.count }),
+        tone: 'warning',
+        glyph: 'solid',
+        units: [{ n: line.count, tone: 'warning' }],
         // Alerts surface on the Mission Control dashboard since the
         // 2026-08-25 monitoring consolidation (the Health tab is gone).
-        onClick: goTo('home'),
-        accent: 'text-amber-400',
+        onPress: goTo('home'),
       };
     }
+    // Waiting on you reads info, as setup does elsewhere in the app.
     return {
-      icon: ClipboardCheck,
-      label: tx(line.count === 1 ? sl.approvals : sl.approvals_other, { count: line.count }),
-      onClick: goTo('manual-review'),
-      accent: 'text-violet-300',
+      title: tx(line.count === 1 ? sl.approvals : sl.approvals_other, { count: line.count }),
+      tone: 'info',
+      glyph: 'hollow',
+      units: [{ n: line.count, tone: 'info', glyph: 'soft' }],
+      onPress: goTo('manual-review'),
     };
   };
 
+  const notDerived = outcome === 'not-derived' && lines.length === 0;
   return (
-    <div className="animate-fade-slide-in motion-reduce:animate-none w-full rounded-modal border border-primary/15 bg-secondary/30 backdrop-blur-sm px-4 py-3">
-      <div className="flex items-center gap-2 mb-2">
-        <Clock className="w-3.5 h-3.5 text-primary/70 flex-shrink-0" />
-        <span className="typo-section-title flex-1">{sl.title}</span>
-        <button
-          type="button"
-          onClick={dismiss}
-          aria-label={sl.dismiss}
-          className="flex-shrink-0 p-1 rounded-input text-foreground opacity-50 outline-none hover:opacity-100 hover:bg-secondary/40 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-current transition-opacity"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
-      </div>
-      {outcome === 'not-derived' && lines.length === 0 ? (
-        <div
-          className="flex items-center gap-3 px-2 py-1.5"
-          data-testid="since-left-not-derived"
-        >
-          <span className="flex-1 typo-body text-foreground">{sl.not_derived}</span>
-          <Button
-            size="sm"
-            variant="secondary"
-            icon={<RefreshCw className="w-3.5 h-3.5" />}
-            onClick={retry}
-          >
-            {t.common.retry}
-          </Button>
-        </div>
-      ) : null}
-      <div className="flex flex-col gap-1">
+    <Section
+      title={sl.title}
+      actions={<KitButton quiet onClick={dismiss}>{sl.dismiss}</KitButton>}
+      state={notDerived ? 'empty' : undefined}
+      empty={{
+        title: sl.not_derived,
+        tone: 'warning',
+        testId: 'since-left-not-derived',
+        action: <KitButton onClick={retry}>{t.common.retry}</KitButton>,
+      }}
+    >
+      <ContextCards label={sl.title}>
         {lines.map((line) => {
-          const { icon: Icon, label, onClick, accent } = rowFor(line);
+          const c = cardFor(line);
+          const total = c.units.reduce((a, u) => a + u.n, 0);
+          const q = quantumFor(total, 60);
           return (
-            <button
+            <ContextCard
               key={line.kind}
-              type="button"
-              onClick={onClick}
-              data-testid={`since-left-${line.kind}`}
-              className="group flex items-center gap-3 rounded-input px-2 py-1.5 outline-none hover:bg-secondary/40 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-current transition-colors"
-            >
-              <Icon className={`w-4 h-4 flex-shrink-0 ${accent}`} />
-              <span className="flex-1 text-left typo-body text-foreground truncate">{label}</span>
-              <ChevronRight className="w-4 h-4 text-foreground opacity-50 group-hover:translate-x-0.5 transition-transform" />
-            </button>
+              title={<span data-testid={`since-left-${line.kind}`}>{c.title}</span>}
+              meta={c.meta}
+              mark={{ tone: c.tone, glyph: c.glyph, label: c.title }}
+              onPress={c.onPress}
+              figures={<UnitStrip size="m" label={c.title} segments={c.units.map((u) => ({ ...u, n: u.n / q }))} />}
+            />
           );
         })}
-      </div>
-    </div>
+      </ContextCards>
+    </Section>
   );
 }

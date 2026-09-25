@@ -6,7 +6,8 @@ import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
 /**
- * First-run call-to-action band on the Welcome hero.
+ * First-run call-to-action band on the Cockpit landing (the Welcome surface shows the same
+ * entry as a kit section, GetStartedSection).
  *
  * Fixes UAT L1 F-ONBOARDING-DEAD-CODE (the 5-step onboarding overlay had no
  * entry point — nothing called startOnboarding(), so a first-timer landed on a
@@ -26,42 +27,53 @@ import { useTranslation } from '@/i18n/useTranslation';
  * is held invisible for the same 150ms window as a Suspense fallback
  * (`animate-fade-in`, `fill-mode: both`) before its existing fade/slide plays,
  * so a decision that lands within a frame never visibly "pops".
+ *
+ * `useGetStarted` says whether the entry shows and holds its two actions, shared by the band below
+ * and the Welcome surface's kit section (GetStartedSection). Only a genuinely fresh profile, and
+ * never during the initial fetch (so it can't flash for a returning user before their personas
+ * load).
  */
-export default function WelcomeGetStarted() {
-  const { t } = useTranslation();
-  const g = t.home.get_started;
+export function useGetStarted(): { visible: boolean; build: () => void; ask: () => void } {
   const personaCount = useAgentStore((s) => s.personas.length);
   const isLoading = useAgentStore((s) => s.isLoading);
   const startOnboarding = useSystemStore((s) => s.startOnboarding);
   const onboardingCompleted = useSystemStore((s) => s.onboardingCompleted);
   const openCompanion = useAthenaStore((s) => s.setState);
+  return {
+    visible: !isLoading && personaCount === 0 && !onboardingCompleted,
+    build: () => startOnboarding(),
+    ask: () => openCompanion('open'),
+  };
+}
 
-  // Only a genuinely fresh profile, and never during the initial fetch (so it
-  // can't flash for a returning user before their personas load).
-  if (isLoading || personaCount > 0 || onboardingCompleted) return null;
+export default function WelcomeGetStarted() {
+  const { t } = useTranslation();
+  const g = t.home.get_started;
+  const { visible, build, ask } = useGetStarted();
+  if (!visible) return null;
 
   return (
     <div
       data-testid="welcome-get-started"
-      className="animate-fade-slide-in motion-reduce:animate-none rounded-2xl border border-violet-500/25 bg-gradient-to-br from-violet-500/10 to-cyan-500/5 p-5 flex flex-col sm:flex-row sm:items-center gap-4"
+      className="animate-fade-slide-in motion-reduce:animate-none rounded-2xl border border-role-agent/25 bg-gradient-to-br from-role-agent/10 to-primary/5 p-5 flex flex-col sm:flex-row sm:items-center gap-4"
       style={{ animationDelay: '150ms' }}
     >
-      <div className="w-11 h-11 shrink-0 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
-        <Sparkles className="w-5 h-5 text-violet-400" />
+      <div className="w-11 h-11 shrink-0 rounded-modal bg-role-agent/15 border border-role-agent/25 flex items-center justify-center">
+        <Sparkles className="w-5 h-5 text-role-agent" />
       </div>
       <div className="flex-1 min-w-0">
         <h2 className="typo-heading text-foreground">{g.title}</h2>
         <p className="typo-body text-foreground">{g.subtitle}</p>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <Button variant="primary" size="md" icon={<Bot className="w-4 h-4" />} onClick={() => startOnboarding()}>
+        <Button variant="primary" size="md" icon={<Bot className="w-4 h-4" />} onClick={build}>
           {g.build_cta}
         </Button>
         <Button
           variant="secondary"
           size="md"
           icon={<MessageCircle className="w-4 h-4" />}
-          onClick={() => openCompanion('open')}
+          onClick={ask}
         >
           {g.ask_cta}
         </Button>

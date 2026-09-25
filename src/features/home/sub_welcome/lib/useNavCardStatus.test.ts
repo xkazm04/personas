@@ -74,7 +74,7 @@ describe('useNavCardStatus', () => {
 
     const personas = chip(result.current, 'personas', 'agents');
     expect(personas?.value).toBe(5);
-    expect(personas?.tone).toBe('cyan');
+    expect(personas?.tone).toBe('primary');
     expect(personas?.trend).toBe('up'); // 5 > 2
 
     const events = chip(result.current, 'events', 'events');
@@ -91,7 +91,7 @@ describe('useNavCardStatus', () => {
     const withInc = renderHook(() => useNavCardStatus());
     const inc = chip(withInc.result.current, 'overview', 'incidents');
     expect(inc?.value).toBe(4);
-    expect(inc?.tone).toBe('red');
+    expect(inc?.tone).toBe('error');
   });
 
   it('splits credentials into external vs built-in from the vault source', async () => {

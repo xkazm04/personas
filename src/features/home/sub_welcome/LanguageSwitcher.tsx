@@ -10,25 +10,24 @@ type LanguageEntry = {
   code: Language;
   label: string;
   english: string;
-  flag: string;
   script: ScriptFamily;
 };
 
 const LANGUAGES: LanguageEntry[] = [
-  { code: 'en', label: 'English', english: 'English', flag: '🇺🇸', script: 'latin' },
-  { code: 'cs', label: 'Čeština', english: 'Czech', flag: '🇨🇿', script: 'latin' },
-  { code: 'de', label: 'Deutsch', english: 'German', flag: '🇩🇪', script: 'latin' },
-  { code: 'es', label: 'Español', english: 'Spanish', flag: '🇪🇸', script: 'latin' },
-  { code: 'fr', label: 'Français', english: 'French', flag: '🇫🇷', script: 'latin' },
-  { code: 'id', label: 'Bahasa Indonesia', english: 'Indonesian', flag: '🇮🇩', script: 'latin' },
-  { code: 'vi', label: 'Tiếng Việt', english: 'Vietnamese', flag: '🇻🇳', script: 'latin' },
-  { code: 'ja', label: '日本語', english: 'Japanese', flag: '🇯🇵', script: 'cjk' },
-  { code: 'ko', label: '한국어', english: 'Korean', flag: '🇰🇷', script: 'cjk' },
-  { code: 'zh', label: '中文', english: 'Chinese', flag: '🇨🇳', script: 'cjk' },
-  { code: 'bn', label: 'বাংলা', english: 'Bengali', flag: '🇧🇩', script: 'indic' },
-  { code: 'hi', label: 'हिन्दी', english: 'Hindi', flag: '🇮🇳', script: 'indic' },
-  { code: 'ar', label: 'العربية', english: 'Arabic', flag: '🇸🇦', script: 'arabic' },
-  { code: 'ru', label: 'Русский', english: 'Russian', flag: '🇷🇺', script: 'cyrillic' },
+  { code: 'en', label: 'English', english: 'English', script: 'latin' },
+  { code: 'cs', label: 'Čeština', english: 'Czech', script: 'latin' },
+  { code: 'de', label: 'Deutsch', english: 'German', script: 'latin' },
+  { code: 'es', label: 'Español', english: 'Spanish', script: 'latin' },
+  { code: 'fr', label: 'Français', english: 'French', script: 'latin' },
+  { code: 'id', label: 'Bahasa Indonesia', english: 'Indonesian', script: 'latin' },
+  { code: 'vi', label: 'Tiếng Việt', english: 'Vietnamese', script: 'latin' },
+  { code: 'ja', label: '日本語', english: 'Japanese', script: 'cjk' },
+  { code: 'ko', label: '한국어', english: 'Korean', script: 'cjk' },
+  { code: 'zh', label: '中文', english: 'Chinese', script: 'cjk' },
+  { code: 'bn', label: 'বাংলা', english: 'Bengali', script: 'indic' },
+  { code: 'hi', label: 'हिन्दी', english: 'Hindi', script: 'indic' },
+  { code: 'ar', label: 'العربية', english: 'Arabic', script: 'arabic' },
+  { code: 'ru', label: 'Русский', english: 'Russian', script: 'cyrillic' },
 ];
 
 const SCRIPT_ORDER: ScriptFamily[] = ['latin', 'cjk', 'indic', 'arabic', 'cyrillic'];
@@ -103,14 +102,13 @@ export function LanguageCardGrid() {
                 )}
               </div>
               <div className="px-2 py-1.5 bg-card/80">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="typo-body shrink-0">{lang.flag}</span>
-                  <div className="min-w-0 flex-1 text-left">
-                    <div className={`truncate ${isActive ? 'typo-card-label' : 'typo-card-label'}`}>{lang.label}</div>
-                    {lang.code !== 'en' && (
-                      <div className="typo-caption text-foreground truncate">{lang.english}</div>
-                    )}
-                  </div>
+                {/* No flag glyph: Windows has no flag emoji and drew each one as its two
+                    region letters ("US", "CZ") beside the name; the illustration carries it. */}
+                <div className="min-w-0 text-left">
+                  <div className="truncate typo-card-label">{lang.label}</div>
+                  {lang.code !== 'en' && (
+                    <div className="typo-caption truncate">{lang.english}</div>
+                  )}
                 </div>
               </div>
             </button>

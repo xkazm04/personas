@@ -31,10 +31,16 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Window2 } from '@/stores/slices/overview/homeSpineWindows';
+import type { Tone } from '@/features/shared/components/kit';
 import { isLocalConnector } from './connectorScope';
 import { useVaultCredentials } from './useVaultCredentials';
 
-export type NavChipTone = 'red' | 'amber' | 'blue' | 'emerald' | 'cyan' | 'sky' | 'slate';
+/**
+ * A chip's colour is its meaning, in the kit's closed tone vocabulary: an incident is an error,
+ * a review waiting on you is info, a report is a highlight, agents and teams are the agent role,
+ * connections the external role, activity the theme's primary.
+ */
+export type NavChipTone = Tone;
 export type NavTrend = 'up' | 'down' | 'flat';
 
 export interface NavStatChip {
@@ -94,13 +100,13 @@ export function useNavCardStatus(): Record<string, NavStatChip[]> {
     // Overview — non-zero attention counts, most-actionable first (the corner
     // model shows the top two: incidents, then reviews, then messages).
     const ov: NavStatChip[] = [];
-    if (incidents > 0) ov.push({ key: 'incidents', value: incidents, icon: AlertOctagon, tone: 'red', title: tx(incidents === 1 ? ns.incidents : ns.incidents_other, { count: incidents }) });
-    if (counts.pending_reviews > 0) ov.push({ key: 'reviews', value: counts.pending_reviews, icon: ClipboardCheck, tone: 'amber', title: tx(counts.pending_reviews === 1 ? ns.reviews : ns.reviews_other, { count: counts.pending_reviews }) });
-    if (counts.unread_reports > 0) ov.push({ key: 'messages', value: counts.unread_reports, icon: MessageSquare, tone: 'blue', title: tx(counts.unread_reports === 1 ? ns.reports : ns.reports_other, { count: counts.unread_reports }) });
+    if (incidents > 0) ov.push({ key: 'incidents', value: incidents, icon: AlertOctagon, tone: 'error', title: tx(incidents === 1 ? ns.incidents : ns.incidents_other, { count: incidents }) });
+    if (counts.pending_reviews > 0) ov.push({ key: 'reviews', value: counts.pending_reviews, icon: ClipboardCheck, tone: 'info', title: tx(counts.pending_reviews === 1 ? ns.reviews : ns.reviews_other, { count: counts.pending_reviews }) });
+    if (counts.unread_reports > 0) ov.push({ key: 'messages', value: counts.unread_reports, icon: MessageSquare, tone: 'highlight', title: tx(counts.unread_reports === 1 ? ns.reports : ns.reports_other, { count: counts.unread_reports }) });
     if (ov.length) status.overview = ov;
 
     // Teams — always show the count (card only renders on Team+ tiers).
-    status.teams = [{ key: 'teams', value: teams.length, icon: Users, tone: 'sky', title: tx(teams.length === 1 ? ns.teams : ns.teams_other, { count: teams.length }) }];
+    status.teams = [{ key: 'teams', value: teams.length, icon: Users, tone: 'agent', title: tx(teams.length === 1 ? ns.teams : ns.teams_other, { count: teams.length }) }];
 
     // Agents — distinct active in last 24h + trend (primary, top-right: the
     // live/actionable metric), then the total enabled/configured fleet size
@@ -109,8 +115,8 @@ export function useNavCardStatus(): Record<string, NavStatChip[]> {
       const trend = trendOf(agents.curr, agents.prev);
       const base = tx(agents.curr === 1 ? ns.agents_active : ns.agents_active_other, { count: agents.curr });
       status.personas = [
-        { key: 'agents', value: agents.curr, icon: Activity, tone: 'cyan', trend, title: `${base} · ${trendTitle(trend, pctChange(agents.curr, agents.prev))}` },
-        { key: 'enabled', value: enabledAgents, icon: Bot, tone: 'sky', title: tx(enabledAgents === 1 ? ns.agents_enabled : ns.agents_enabled_other, { count: enabledAgents }) },
+        { key: 'agents', value: agents.curr, icon: Activity, tone: 'primary', trend, title: `${base} · ${trendTitle(trend, pctChange(agents.curr, agents.prev))}` },
+        { key: 'enabled', value: enabledAgents, icon: Bot, tone: 'agent', title: tx(enabledAgents === 1 ? ns.agents_enabled : ns.agents_enabled_other, { count: enabledAgents }) },
       ];
     }
 
@@ -118,7 +124,7 @@ export function useNavCardStatus(): Record<string, NavStatChip[]> {
     {
       const trend = trendOf(events.curr, events.prev);
       const base = tx(events.curr === 1 ? ns.events_today : ns.events_today_other, { count: events.curr });
-      status.events = [{ key: 'events', value: events.curr, icon: Zap, tone: 'amber', trend, title: `${base} · ${trendTitle(trend, pctChange(events.curr, events.prev))}` }];
+      status.events = [{ key: 'events', value: events.curr, icon: Zap, tone: 'primary', trend, title: `${base} · ${trendTitle(trend, pctChange(events.curr, events.prev))}` }];
     }
 
     // Connections — external (3rd-party) primary, built-in/local secondary.
@@ -126,8 +132,8 @@ export function useNavCardStatus(): Record<string, NavStatChip[]> {
       let local = 0;
       let external = 0;
       for (const c of creds) { if (isLocalConnector(c.service_type)) local++; else external++; }
-      const conn: NavStatChip[] = [{ key: 'external', value: external, icon: Key, tone: 'emerald', title: tx(external === 1 ? ns.connections_external : ns.connections_external_other, { count: external }) }];
-      if (local > 0) conn.push({ key: 'builtin', value: local, icon: HardDrive, tone: 'slate', title: tx(local === 1 ? ns.connections_builtin : ns.connections_builtin_other, { count: local }) });
+      const conn: NavStatChip[] = [{ key: 'external', value: external, icon: Key, tone: 'external', title: tx(external === 1 ? ns.connections_external : ns.connections_external_other, { count: external }) }];
+      if (local > 0) conn.push({ key: 'builtin', value: local, icon: HardDrive, tone: 'neutral', title: tx(local === 1 ? ns.connections_builtin : ns.connections_builtin_other, { count: local }) });
       status.credentials = conn;
     }
 

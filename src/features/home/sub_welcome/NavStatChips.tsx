@@ -1,85 +1,37 @@
 /**
- * Corner status indicators for a Quick-Navigation card.
- *
- * Each metric renders as one large, dominant, semi-transparent number with its
- * type-icon (and trend arrow, when present) at roughly half the number's size
- * arranged around it. One number per corner:
- *   - 1 metric  → top-right
- *   - 2 metrics → first top-right, second top-left
- * (Cards with more than two metrics — only Overview — show their two highest
- * priority; the corner model is intentionally limited to the two top corners.)
+ * The live figures at the foot of a Quick-Navigation card: each metric is its type icon in the
+ * metric's tone, the figure, and a trend arrow when there is one. What a figure counts is the
+ * chip's title, carried by the kit's Hint (a tip on hover plus a description a reader hears),
+ * so the number is never unexplained. A card shows its two highest-priority metrics.
  *
  * Data comes from {@link useNavCardStatus}; this component is presentational.
  */
 import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import type { NavChipTone, NavStatChip, NavTrend } from './lib/useNavCardStatus';
-
-// Static literals so Tailwind's JIT keeps them. The number is intentionally
-// low-opacity (dominant but semi-transparent); the icons sit a touch stronger.
-const TONE_NUM: Record<NavChipTone, string> = {
-  red: 'text-red-400/45',
-  amber: 'text-amber-400/45',
-  blue: 'text-blue-400/45',
-  emerald: 'text-emerald-400/45',
-  cyan: 'text-cyan-400/45',
-  sky: 'text-sky-400/45',
-  slate: 'text-slate-300/45',
-};
-const TONE_ICON: Record<NavChipTone, string> = {
-  red: 'text-red-400/80',
-  amber: 'text-amber-400/80',
-  blue: 'text-blue-400/80',
-  emerald: 'text-emerald-400/80',
-  cyan: 'text-cyan-400/80',
-  sky: 'text-sky-400/80',
-  slate: 'text-slate-300/80',
-};
+import { Hint } from '@/features/shared/components/kit';
+import type { NavStatChip, NavTrend } from './lib/useNavCardStatus';
 
 const TREND_ICON: Record<NavTrend, typeof ArrowUp> = { up: ArrowUp, down: ArrowDown, flat: Minus };
-const TREND_COLOR: Record<NavTrend, string> = {
-  up: 'text-emerald-400',
-  down: 'text-rose-400',
-  flat: 'text-foreground/40',
-};
+const TREND_TONE: Record<NavTrend, string> = { up: 't-success', down: 't-error', flat: 't-neutral' };
 
-// Slot 0 → top-right, slot 1 → top-left.
-const SLOT_POS = ['top-2.5 right-3', 'top-2.5 left-3'] as const;
-
-function StatBadge({ chip, slot }: { chip: NavStatChip; slot: 0 | 1 }) {
+function NavFigure({ chip }: { chip: NavStatChip }) {
   const Icon = chip.icon;
   const Trend = chip.trend ? TREND_ICON[chip.trend] : null;
-  const alignRight = slot === 0;
   return (
-    <div className={`pointer-events-none absolute z-20 ${SLOT_POS[slot]}`}>
-      <Tooltip content={chip.title} placement={alignRight ? 'left' : 'right'} delay={300}>
-        <div
-          className={`pointer-events-auto flex flex-col gap-0.5 ${alignRight ? 'items-end' : 'items-start'}`}
-          aria-label={chip.title}
-        >
-          {/* Icons at ~half the number's size, around it. */}
-          <div className={`flex items-center gap-1 ${TONE_ICON[chip.tone]}`}>
-            <Icon className="h-5 w-5" aria-hidden />
-            {Trend && <Trend className={`h-5 w-5 ${TREND_COLOR[chip.trend!]}`} aria-hidden />}
-          </div>
-          {/* Dominant, semi-transparent number. */}
-          <span className={`typo-hero tabular-nums ${TONE_NUM[chip.tone]}`}>
-            {chip.value}
-          </span>
-        </div>
-      </Tooltip>
-    </div>
+    <Hint content={chip.title}>
+      <span className="inline-flex items-center gap-1.5">
+        <Icon className={`w-4 h-4 k-toned t-${chip.tone}`} aria-hidden />
+        <span className="typo-data-lg k-medium">{chip.value}</span>
+        {Trend && <Trend className={`w-3.5 h-3.5 k-toned ${TREND_TONE[chip.trend!]}`} aria-hidden />}
+      </span>
+    </Hint>
   );
 }
 
 export default function NavStatChips({ chips }: { chips: NavStatChip[] }) {
   if (chips.length === 0) return null;
-  // Two top corners only — first metric top-right, second top-left.
   return (
     <>
-      {chips.slice(0, 2).map((chip, i) => (
-        <StatBadge key={chip.key} chip={chip} slot={i as 0 | 1} />
-      ))}
+      {chips.slice(0, 2).map((chip) => <NavFigure key={chip.key} chip={chip} />)}
     </>
   );
 }

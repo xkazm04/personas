@@ -49,11 +49,10 @@ export default function HeroHeader({ greeting, displayName }: HeroHeaderProps) {
   const webpSrc = `${bgBase}.webp`;
 
   return (
-    // min-w-[80vw] mirrors the ContentHeader minimum-width contract so the
-    // Welcome hero anchors to the same horizontal extent as every other
-    // module header. HeroHeader is visually unique (centered greeting, no
-    // sticky bar, no border), but the layout constraint is shared.
-    <div className="relative w-full min-w-[80vw]">
+    // The hero spans its column and no further. It carried min-w-[80vw] to match the
+    // ContentHeader minimum width, which pushed the illustration past the right edge of the
+    // main column at every window narrower than about 1500px.
+    <div className="relative w-full mb-2">
       {showHero && (
         <>
           {/* React 19 hoists <link> to <head>; preload kicks off the WebP fetch
@@ -88,6 +87,7 @@ export default function HeroHeader({ greeting, displayName }: HeroHeaderProps) {
                 loading="eager"
                 decoding="async"
                 fetchPriority="high"
+                // style-deviation: the logo's own violet glow, kept as its artwork's halo (Gate 0 keeps brand glow).
                 className="max-w-full max-h-full object-contain relative z-10 drop-shadow-[0_0_20px_rgba(139,92,246,0.4)]"
               />
             </div>
