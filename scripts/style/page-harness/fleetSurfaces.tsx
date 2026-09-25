@@ -23,6 +23,19 @@ function prepareFleet(): void {
   useSystemStore.setState({ activeProjectId: PROJECT, fleetActiveSessionId: FOCUSED });
 }
 
+/**
+ * Activity reads the live registry (which transcript still has a session, and
+ * its state and title) from `fleetSessions`, which the app-wide FleetBootstrap
+ * fills at startup. The harness mounts no bootstrap, so load the registry from
+ * the tape the same way, without the bootstrap's policy push.
+ */
+async function prepareFleetWithRegistry(): Promise<void> {
+  prepareFleet();
+  const { listSessions } = await import('@/api/fleet/fleet');
+  const snapshot = await listSessions();
+  useSystemStore.setState({ fleetSessions: snapshot.sessions });
+}
+
 /** Clicks `selector` once it exists (polled for up to 5 s). Guarded against StrictMode's double effect. */
 function ClickWhenReady({ selector, children }: { selector: string; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -66,6 +79,6 @@ const settings = () => import('@/features/plugins/fleet/sub_settings/FleetSettin
 export const FLEET_MODULES: Record<string, HarnessModule> = {
   'fleet/grid': { load: inFleetColumn(grid), prepare: prepareFleet },
   'fleet/grid/insights': { load: inFleetColumn(grid, '[data-testid="fleet-rightview-insights"]'), prepare: prepareFleet },
-  'fleet/activity': { load: inFleetColumn(activity), prepare: prepareFleet },
+  'fleet/activity': { load: inFleetColumn(activity), prepare: prepareFleetWithRegistry },
   'fleet/settings': { load: inFleetColumn(settings), prepare: prepareFleet },
 };
