@@ -1,0 +1,348 @@
+/* ==========================================================================
+   LEDGER KIT (Gate K prototype, ported from the style-kit contest entry A/1)
+   The page is the surface. Hairlines carry structure. One grid carries rows.
+   Colour: tokens only. Type: .typo-* only (+ the modifiers at the bottom).
+
+   Ported rule for rule from the arena's kit.css, only the rules Fleet Activity
+   uses. Every selector is scoped under `:where(.lgk)`: zero added specificity,
+   so the cascade against the app's layered typo-* tokens is exactly the one the
+   variant was judged in, while nothing leaks into the rest of the app.
+   ========================================================================== */
+
+/* ---- 1. The ledger grid: the ONE set of tracks every row snaps to -------- */
+.lgk {
+  --bar-h: 3.25rem;
+  --lg-mark: 0.75rem;              /* status stroke track                    */
+  --lg-gap: 0.9rem;                /* column gap                             */
+  --lg-pri-min: 13rem;             /* primary cell never narrower            */
+  --lg-meta: minmax(9rem, 0.85fr); /* quiet meta track (collapses narrow)    */
+  --lg-fig: 5.75rem;               /* ONE figure width, every surface        */
+  --lg-time: 4.25rem;              /* one-line age                           */
+  --lg-act: 10rem;                 /* trailing actions                       */
+  --lg-row-1: 2.75rem;             /* single-line row                        */
+  --lg-row-2: 3.5rem;              /* two-line row                           */
+  --lg-folio: 18.5rem;
+
+  --lg-wash: color-mix(in srgb, var(--primary) 5%, transparent);
+  --lg-sel: color-mix(in srgb, var(--primary) 8%, transparent);
+  --lg-glow: color-mix(in srgb, var(--primary) 55%, transparent);
+  --lg-ink: color-mix(in srgb, var(--primary) 42%, transparent);
+  --lg-ink-pale: color-mix(in srgb, var(--primary) 18%, transparent);
+  /* --border washes to white under the app's brightness filter in light themes;
+     --muted-dark reads as a hairline in both, with no per-theme code. */
+  --lg-line: color-mix(in srgb, var(--muted-dark) 36%, transparent);
+  --lg-rule-strong: color-mix(in srgb, var(--muted-dark) 62%, transparent);
+  --lg-track: color-mix(in srgb, var(--muted-dark) 26%, transparent);
+  --lg-ghost: color-mix(in srgb, var(--muted-dark) 30%, transparent);
+  --lg-quiet: var(--muted-foreground);
+  --lg-quieter: var(--muted);
+  --lg-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  color: var(--foreground);
+}
+@media (max-width: 1280px) {
+  .lgk { --lg-gap: 0.7rem; --lg-fig: 5.25rem; --lg-folio: 17.5rem; }
+}
+/* The variant reset every button and input. Here it reaches only the kit's own raw
+   controls: a shared `Button` placed in a kit slot keeps the primitive's own look. */
+:where(.lgk) :where(button.sort, .seg button, .field input) { font: inherit; color: inherit; }
+:where(.lgk) :where(button.sort, .seg button) { background: none; border: 0; padding: 0; }
+
+/* ---- 3. SECTION: a head rule, never a box ---------------------------------- */
+:where(.lgk) .sec { position: relative; margin-top: 2rem; }
+:where(.lgk) .sec:first-of-type { margin-top: 1rem; }
+:where(.lgk) .sec-head {
+  position: sticky; top: 0; z-index: 6;
+  display: flex; align-items: flex-end; flex-wrap: wrap; gap: 0.5rem 1rem;
+  padding: 0.85rem 0 0.65rem;
+  transition: background-color var(--duration-normal) ease;
+}
+:where(.lgk) .sec-head.is-stuck { background: color-mix(in srgb, var(--background) 97%, transparent); backdrop-filter: blur(12px); box-shadow: 0 10px 18px -14px var(--background); }
+:where(.lgk) .sec-head::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+  background: linear-gradient(90deg, var(--primary), color-mix(in srgb, var(--primary) 30%, var(--lg-line)) 9rem, var(--lg-line) 40%);
+}
+:where(.lgk) .sec-head::before {
+  content: ""; position: absolute; left: 0; bottom: -1px; width: 6rem; height: 3px;
+  background: linear-gradient(90deg, var(--lg-glow), transparent);
+  filter: blur(2px);
+}
+:where(.lgk) .sec-titles { display: flex; flex-direction: column; min-width: 0; }
+:where(.lgk) .sec-eyebrow { color: var(--lg-quieter); }
+:where(.lgk) .sec-line { display: flex; align-items: baseline; gap: 0.6rem; min-width: 0; }
+:where(.lgk) .sec-title { margin: 0; }
+:where(.lgk) .sec-count { color: var(--lg-quiet); }
+:where(.lgk) .sec-status { display: flex; align-items: center; gap: 0.5rem; color: var(--lg-quiet); padding-bottom: 0.1rem; }
+:where(.lgk) .sec-actions { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; }
+:where(.lgk) .sec-body { padding-top: 0.15rem; }
+:where(.lgk) .sec.is-muted .sec-head::after { background: var(--lg-line); }
+:where(.lgk) .sec.is-muted .sec-head::before { display: none; }
+:where(.lgk) .sec.is-muted .typo-section-title { opacity: 0.6; }
+
+/* ---- DENSE TIER RHYTHM: tightens vertical rhythm, never the row grid ------ */
+.lgk[data-type-density="compact"] .sec { margin-top: 1.35rem; }
+.lgk[data-type-density="compact"] .sec:first-of-type { margin-top: 0.5rem; }
+:where(.lgk)[data-type-density="compact"] .sec-head { padding: 0.5rem 0 0.45rem; }
+.lgk[data-type-density="compact"] .tb { padding: 0.55rem 0 0.5rem; }
+
+/* ---- 4. LEDGER BLOCK + ROW ------------------------------------------------ */
+:where(.lgk) .lg-wrap { container-type: inline-size; position: relative; }
+:where(.lgk) .lg { position: relative; }
+@container (max-width: 54rem) {
+  :where(.lgk) .lg { --lg-meta: 0px; }
+  :where(.lgk) .lg .c-meta { visibility: hidden; }
+}
+@container (max-width: 40rem) {
+  :where(.lgk) .lg { --lg-fig: 4.5rem; --lg-pri-min: 9rem; --lg-time: 3.5rem; --lg-act: 7rem; }
+}
+:where(.lgk) .lg-row {
+  position: relative;
+  display: grid; grid-template-columns: var(--lg-cols); column-gap: var(--lg-gap); align-items: center;
+  min-height: var(--lg-h, var(--lg-row-2));
+  padding-right: 0.6rem;
+  border-bottom: 1px solid var(--lg-line);
+  outline: none;
+  transition: background-color var(--duration-fast) ease, box-shadow var(--duration-normal) ease;
+}
+:where(.lgk) .lg-row[data-h="1"] { --lg-h: var(--lg-row-1); }
+:where(.lgk) .lg-row::before {
+  content: ""; position: absolute; left: 0; top: 0.55rem; bottom: 0.55rem; width: 3px;
+  border-radius: var(--radius-pill); background: var(--tone, transparent);
+  transition: box-shadow var(--duration-normal) ease;
+}
+:where(.lgk) .lg-row[data-tone="success"] { --tone: var(--status-success); }
+:where(.lgk) .lg-row[data-tone="warning"] { --tone: var(--status-warning); }
+:where(.lgk) .lg-row[data-tone="error"] { --tone: var(--status-error); }
+:where(.lgk) .lg-row[data-tone="info"] { --tone: var(--status-info); }
+:where(.lgk) .lg-row[data-tone="neutral"] { --tone: color-mix(in srgb, var(--status-neutral) 70%, transparent); }
+:where(.lgk) .lg-row[data-tone="primary"] { --tone: var(--primary); }
+:where(.lgk) .lg-row[data-tone="primary"]::before { box-shadow: 0 0 10px var(--lg-glow), 0 0 2px var(--primary); }
+:where(.lgk) .lg-row[data-hollow]::before { background: transparent; box-shadow: inset 0 0 0 1.5px var(--tone); }
+
+:where(.lgk) .lg-row.is-link { cursor: pointer; }
+:where(.lgk) .lg-row.is-link:hover { background: var(--lg-wash); }
+:where(.lgk) .lg-row.is-selected {
+  background: var(--lg-sel);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 40%, transparent), 0 0 18px -6px var(--lg-glow);
+  border-bottom-color: transparent;
+  z-index: 1;
+}
+:where(.lgk) .lg-row:focus-visible { box-shadow: inset 0 0 0 2px var(--focus-ring-color); }
+:where(.lgk) .lg-row.is-muted .lg-name { color: var(--lg-quiet); font-weight: 400; }
+:where(.lgk) .lg-row.is-muted .lg-sub, :where(.lgk) .lg-row.is-muted .c-meta, :where(.lgk) .lg-row.is-muted .c-time { color: var(--lg-quieter); }
+:where(.lgk) .lg-row.is-muted .fig-n { color: var(--lg-quiet); }
+:where(.lgk) .lg-row.is-muted .ink i { opacity: 0.45; }
+
+/* column heads */
+:where(.lgk) .lg-colhead { --lg-h: 2.3rem; border-bottom: 1px solid var(--lg-rule-strong); }
+:where(.lgk) .lg-colhead > span { color: var(--lg-quiet); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:where(.lgk) .lg-colhead .is-num { text-align: right; }
+:where(.lgk) .lg-colhead button.sort { display: inline-flex; align-items: center; gap: 0.3rem; justify-content: flex-end; width: 100%; color: inherit; border-radius: var(--radius-interactive); cursor: pointer; }
+:where(.lgk) .lg-colhead button.sort:hover { color: var(--foreground); }
+:where(.lgk) .lg-colhead button.sort[aria-sort] { color: var(--primary); }
+:where(.lgk) .lg-colhead button.sort:focus-visible { outline: 2px solid var(--focus-ring-color); outline-offset: 2px; }
+:where(.lgk) .sort-arrow { display: inline-block; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid currentColor; opacity: 0; }
+:where(.lgk) button.sort[aria-sort] .sort-arrow { opacity: 1; }
+:where(.lgk) button.sort[aria-sort="ascending"] .sort-arrow { transform: rotate(180deg); }
+
+/* cells */
+:where(.lgk) .c-mark { align-self: stretch; }
+:where(.lgk) .c-pri { min-width: 0; display: flex; flex-direction: column; justify-content: center; padding: 0.35rem 0; }
+:where(.lgk) .lg-name, :where(.lgk) .lg-sub { display: block; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:where(.lgk) .lg-sub { color: var(--lg-quiet); }
+:where(.lgk) .dot { color: var(--lg-quieter); padding: 0 0.35rem; }
+:where(.lgk) .c-meta { min-width: 0; display: flex; flex-direction: column; justify-content: center; color: var(--lg-quiet); }
+:where(.lgk) .c-meta > * { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:where(.lgk) .c-meta .quieter { color: var(--lg-quieter); }
+:where(.lgk) .c-fig { min-width: 0; text-align: right; white-space: nowrap; }
+:where(.lgk) .c-time { text-align: right; white-space: nowrap; color: var(--lg-quiet); }
+
+/* ---- 5. FIGURES: ink under every number ------------------------------------ */
+:where(.lgk) .fig { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 4px; width: 100%; vertical-align: middle; }
+:where(.lgk) .fig-n { color: var(--foreground); white-space: nowrap; }
+:where(.lgk) .ink { display: flex; justify-content: flex-end; width: 100%; height: 2px; border-radius: var(--radius-pill); background: var(--lg-track); overflow: hidden; }
+:where(.lgk) .ink i { display: block; height: 100%; background: var(--ink, var(--lg-ink)); transition: width var(--duration-slow) var(--lg-ease); }
+:where(.lgk) .ink i.pale { background: var(--lg-ink-pale); }
+:where(.lgk) .ink.is-zero { background: transparent; }
+:where(.lgk) .t-success { --ink: color-mix(in srgb, var(--status-success) 70%, transparent); }
+:where(.lgk) .t-warning { --ink: color-mix(in srgb, var(--status-warning) 75%, transparent); }
+:where(.lgk) .t-error { --ink: color-mix(in srgb, var(--status-error) 75%, transparent); }
+:where(.lgk) .t-neutral { --ink: color-mix(in srgb, var(--foreground) 34%, transparent); }
+:where(.lgk) .t-primary { --ink: color-mix(in srgb, var(--primary) 70%, transparent); }
+:where(.lgk) .t-info { --ink: color-mix(in srgb, var(--status-info) 70%, transparent); }
+
+/* countable units */
+:where(.lgk) .units { display: flex; flex-wrap: wrap; gap: 3px; }
+:where(.lgk) .units i { width: 0.6rem; height: 0.6rem; border-radius: 2px; background: var(--u, var(--lg-ink)); }
+:where(.lgk) .units.is-tall i { width: 0.5rem; height: 1.1rem; }
+:where(.lgk) .u-primary { --u: var(--primary); box-shadow: 0 0 6px var(--lg-glow); }
+:where(.lgk) .u-warning { --u: var(--status-warning); }
+:where(.lgk) .u-success { --u: var(--status-success); }
+:where(.lgk) .u-error { --u: var(--status-error); }
+:where(.lgk) .u-info { --u: var(--status-info); }
+:where(.lgk) .u-neutral { --u: color-mix(in srgb, var(--status-neutral) 70%, transparent); }
+:where(.lgk) .u-hollow { background: transparent !important; box-shadow: inset 0 0 0 1.5px var(--u) !important; }
+
+/* split bar (tile drawings) */
+:where(.lgk) .split-bar { display: flex; gap: 2px; height: 6px; width: 100%; }
+:where(.lgk) .split-bar i { display: block; height: 100%; border-radius: 1px; background: var(--ink, var(--lg-ink)); }
+:where(.lgk) .split-bar i.is-pale { opacity: 0.45; }
+
+/* ---- 6. STAT STRIP ------------------------------------------------------- */
+:where(.lgk) .strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); }
+:where(.lgk) .tile { position: relative; display: block; min-width: 0; padding: 0.9rem 1.25rem 1rem; border-left: 1px solid var(--lg-line); container-type: inline-size; transition: background-color var(--duration-fast) ease; }
+:where(.lgk) .tile-in { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
+:where(.lgk)[data-type-density="compact"] .tile { padding: 0.55rem 1rem 0.65rem; }
+:where(.lgk)[data-type-density="compact"] .tile .units { gap: 2px; }
+:where(.lgk)[data-type-density="compact"] .tile .units i { width: 0.45rem; height: 0.45rem; }
+:where(.lgk)[data-type-density="compact"] .tile .units.is-tall i { width: 0.45rem; height: 0.95rem; }
+@container (min-width: 9.5rem) {
+  :where(.lgk)[data-type-density="compact"] .tile-in { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 0.9rem; row-gap: 0.1rem; align-items: end; }
+  :where(.lgk)[data-type-density="compact"] .tile-label { grid-column: 1 / -1; }
+  :where(.lgk)[data-type-density="compact"] .tile-fig { grid-column: 1; grid-row: 2 / span 2; align-self: center; }
+  :where(.lgk)[data-type-density="compact"] .tile-draw { grid-column: 2; grid-row: 2; min-height: 0.5rem; }
+  :where(.lgk)[data-type-density="compact"] .tile-sub { grid-column: 2; grid-row: 3; }
+}
+:where(.lgk) .tile:first-child { border-left-color: transparent; padding-left: calc(var(--lg-mark) + var(--lg-gap)); }
+:where(.lgk) .tile-label { color: var(--lg-quiet); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:where(.lgk) .tile-fig { display: flex; align-items: baseline; gap: 0.35rem; white-space: nowrap; color: var(--foreground); }
+:where(.lgk) .tile-draw { min-height: 0.75rem; display: flex; align-items: center; }
+:where(.lgk) .tile-sub { color: var(--lg-quiet); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---- 7. KEY-VALUE GRID ------------------------------------------------------ */
+:where(.lgk) .kv { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); column-gap: var(--lg-gap); margin: 0; }
+:where(.lgk) .kv-item { display: flex; flex-direction: column; gap: 0.2rem; padding: 0.55rem 0 0.6rem; border-top: 1px solid var(--lg-line); min-width: 0; transition: background-color var(--duration-fast) ease; }
+:where(.lgk) .kv-item dd { margin: 0; min-width: 0; }
+:where(.lgk) .kv-k { color: var(--lg-quiet); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:where(.lgk) .kv-v { color: var(--foreground); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+:where(.lgk) .kv-v.is-null { color: var(--lg-quieter); }
+:where(.lgk) .kv-item .fig { align-items: flex-start; }
+:where(.lgk) .kv-item .ink { justify-content: flex-start; }
+:where(.lgk) .kv-item:hover { background: var(--lg-wash); }
+
+/* ---- 8. CHIPS --------------------------------------------------------------- */
+:where(.lgk) .chips { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+:where(.lgk) .chip {
+  position: relative; overflow: hidden;
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  height: 2rem; padding: 0 0.75rem;
+  border: 1px solid var(--lg-line); border-radius: var(--radius-pill);
+  color: var(--foreground); background: transparent;
+  transition: border-color var(--duration-fast) ease, background-color var(--duration-fast) ease, box-shadow var(--duration-normal) ease;
+}
+:where(.lgk) .chip-sep { align-self: stretch; width: 1px; margin: 0.5rem 0; background: var(--lg-line); }
+:where(.lgk) .chip-n { color: var(--lg-quiet); }
+:where(.lgk) .chip-u { position: absolute; left: 0.75rem; right: 0.75rem; bottom: 0; height: 2px; }
+:where(.lgk) .chip-u i { display: block; height: 100%; border-radius: var(--radius-pill); background: var(--lg-ink); }
+
+/* ---- 9. TOOLBAR ------------------------------------------------------------- */
+:where(.lgk) .tb { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; padding: 0.7rem 0 0.6rem; }
+:where(.lgk) .tb-spacer { flex: 1; }
+:where(.lgk) .tb-note { color: var(--lg-quiet); white-space: nowrap; }
+:where(.lgk) .seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 2px; border: 1px solid var(--lg-line); border-radius: var(--radius-interactive); }
+:where(.lgk) .seg button {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  height: 1.95rem; padding: 0 0.65rem;
+  border-radius: calc(var(--radius-interactive) - 2px);
+  color: var(--lg-quiet); white-space: nowrap; cursor: pointer;
+  transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease, box-shadow var(--duration-normal) ease;
+}
+:where(.lgk) .seg button:hover { color: var(--foreground); background: var(--lg-wash); }
+:where(.lgk) .seg button[aria-pressed="true"] { color: var(--foreground); background: color-mix(in srgb, var(--primary) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 45%, transparent); }
+:where(.lgk) .seg button:focus-visible { outline: 2px solid var(--focus-ring-color); outline-offset: 1px; }
+:where(.lgk) .seg .n { color: var(--lg-quieter); }
+:where(.lgk) .seg button[aria-pressed="true"] .n { color: var(--lg-quiet); }
+:where(.lgk) .seg .sw { width: 0.5rem; height: 0.5rem; border-radius: 2px; background: var(--u, var(--lg-ink)); }
+
+:where(.lgk) .field { display: inline-flex; align-items: center; gap: 0.45rem; height: 2.3rem; padding: 0 0.4rem 0 0.7rem; border: 1px solid var(--lg-line); border-radius: var(--radius-input); background: color-mix(in srgb, var(--secondary) 30%, transparent); min-width: 12rem; transition: border-color var(--duration-fast) ease, box-shadow var(--duration-normal) ease; }
+:where(.lgk) .field:hover { border-color: color-mix(in srgb, var(--primary) 35%, var(--lg-line)); }
+:where(.lgk) .field:focus-within { border-color: color-mix(in srgb, var(--primary) 70%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 14%, transparent); }
+:where(.lgk) .field input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--foreground); }
+:where(.lgk) .field input::placeholder { color: var(--lg-quieter); }
+:where(.lgk) .field .glass { width: 0.8rem; height: 0.8rem; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--lg-quiet); flex: none; position: relative; }
+:where(.lgk) .field .glass::after { content: ""; position: absolute; width: 2px; height: 0.4rem; right: -0.12rem; bottom: -0.3rem; background: var(--lg-quiet); transform: rotate(-45deg); border-radius: 1px; }
+
+:where(.lgk) .kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 1.45rem; height: 1.45rem; padding: 0 0.3rem; border: 1px solid var(--lg-line); border-bottom-width: 2px; border-radius: var(--radius-interactive); color: var(--lg-quiet); background: color-mix(in srgb, var(--secondary) 35%, transparent); line-height: 1; }
+
+/* ---- 11. EMPTY + GHOST ----------------------------------------------------- */
+:where(.lgk) .empty { display: grid; grid-template-columns: var(--lg-mark) minmax(0, 1fr) auto; column-gap: var(--lg-gap); align-items: center; min-height: calc(var(--lg-row-2) * 1.5); border-bottom: 1px solid var(--lg-line); padding-right: 0.6rem; }
+:where(.lgk) .empty-mark { align-self: stretch; margin: 0.7rem 0; width: 3px; border-radius: var(--radius-pill); background: repeating-linear-gradient(180deg, var(--lg-quieter) 0 3px, transparent 3px 7px); }
+:where(.lgk) .empty-text { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+:where(.lgk) .empty-title { color: var(--foreground); }
+:where(.lgk) .empty-why { color: var(--lg-quiet); }
+
+:where(.lgk) .ghost-bar { display: block; height: 0.62rem; border-radius: var(--radius-pill); background: linear-gradient(90deg, var(--lg-ghost) 0%, color-mix(in srgb, var(--muted-dark) 48%, transparent) 50%, var(--lg-ghost) 100%); background-size: 300% 100%; animation: lgk-ghost 3.6s ease-in-out infinite; }
+:where(.lgk) .ghost-bar.is-sub { height: 0.5rem; margin-top: 0.45rem; opacity: 0.7; }
+:where(.lgk) .ghost-bar.is-fig { margin-left: auto; width: 60%; }
+:where(.lgk) .ghost-tile { height: 1.8rem; width: 60%; border-radius: var(--radius-interactive); }
+@keyframes lgk-ghost { from { background-position: 100% 0; } to { background-position: -200% 0; } }
+
+/* ---- 12. FOLIO: the selected row's detail, a second ledger column -------- */
+:where(.lgk) .split { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; }
+:where(.lgk) .split.has-folio { grid-template-columns: minmax(0, 1fr) var(--lg-folio); }
+:where(.lgk) .split-wrap { container-type: inline-size; }
+:where(.lgk) .folio {
+  position: sticky; top: 4.75rem;
+  max-height: calc(100vh - var(--bar-h) - 6rem); overflow-y: auto;
+  margin-left: 1rem; padding: 0.2rem 0.2rem 1rem 1rem;
+  border-left: 1px solid var(--lg-line);
+  animation: lgk-folio-in var(--duration-normal) var(--lg-ease) both;
+}
+:where(.lgk) .folio::before { content: ""; position: absolute; left: -1px; top: 0; width: 1px; height: 6rem; background: linear-gradient(var(--primary), transparent); box-shadow: 0 0 8px var(--lg-glow); }
+@keyframes lgk-folio-in { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: none; } }
+:where(.lgk) .folio-head { display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.35rem 0 0.7rem; }
+:where(.lgk) .folio-titles { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; flex: 1; }
+:where(.lgk) .folio-titles .typo-title-lg { overflow-wrap: anywhere; }
+:where(.lgk) .folio-eyebrow { color: var(--lg-quieter); }
+:where(.lgk) .folio-state { display: flex; align-items: center; gap: 0.45rem; color: var(--lg-quiet); }
+:where(.lgk) .folio-state .units i { width: 0.55rem; height: 0.55rem; }
+:where(.lgk) .folio-part { padding-top: 0.9rem; }
+:where(.lgk) .folio-part-head { display: flex; align-items: baseline; gap: 0.5rem; padding-bottom: 0.4rem; color: var(--lg-quiet); }
+:where(.lgk) .folio-part-head .n { color: var(--lg-quieter); }
+:where(.lgk) .folio .lg { --lg-pri-min: 6rem; }
+:where(.lgk) .folio .kv { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* With a folio open the table keeps priority: the figure tracks narrow, the name
+   never does. A selected name that still overflows hands its sub line (the folio
+   repeats it) to the name, which wraps to a second line at the same row height. */
+:where(.lgk) .split.has-folio > .lg-wrap > .lg { --lg-fig: 4.5rem; --lg-gap: 0.7rem; }
+:where(.lgk) .split.has-folio .lg-row.is-selected.is-name-wrap .lg-name { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+:where(.lgk) .split.has-folio .lg-row.is-selected.is-name-wrap .lg-sub { display: none; }
+:where(.lgk) .folio-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; padding-top: 1rem; }
+@container (max-width: 62rem) {
+  :where(.lgk) .split.has-folio { grid-template-columns: minmax(0, 1fr); }
+  :where(.lgk) .split.has-folio .folio {
+    position: absolute; right: 0; top: 0; z-index: 8;
+    width: min(var(--lg-folio), 92%); max-height: none;
+    margin: 0; padding: 0.4rem 1rem 1rem 1.1rem;
+    background: var(--background); box-shadow: var(--shadow-elevation-4);
+    border: 1px solid var(--lg-line); border-radius: var(--radius-card);
+  }
+  :where(.lgk) .split.has-folio .folio::before { display: none; }
+  :where(.lgk) .split { position: relative; }
+}
+
+/* ---- 13. Legend (section status slot) ------------------------------------ */
+:where(.lgk) .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.9rem; color: var(--lg-quiet); }
+:where(.lgk) .legend span { display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap; }
+:where(.lgk) .legend i { display: inline-block; width: 0.9rem; height: 4px; border-radius: 1px; background: var(--ink, var(--lg-ink)); }
+:where(.lgk) .legend i.pale { background: var(--lg-ink-pale); }
+
+/* ---- 15. Modifiers (the ONLY weight/tint changes the kit allows) --------- */
+:where(.lgk) .k-strong { font-weight: 600; }
+:where(.lgk) .k-regular { font-weight: 400; }
+:where(.lgk) .k-quiet { color: var(--lg-quiet); }
+:where(.lgk) .k-warn { color: var(--status-warning); }
+
+@media (prefers-reduced-motion: reduce) {
+  :where(.lgk) *, :where(.lgk) *::before, :where(.lgk) *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; transition-delay: 0ms !important; }
+  :where(.lgk) .ghost-bar { animation: none; }
+}
+
+/* the Tools section body sits 0.9rem under its head rule (the variant's inline padding) */
+:where(.lgk) .lgk-pad-top { padding-top: 0.9rem; }
+
+/* A labelled button (column sort, segment) set 13.4px at weight 400 in the variant the
+   owner judged: the arena's app stylesheet still carried an unlayered compact-tier rule
+   ([data-type-density="compact"][data-type-density] .typo-label { font-size }) that beat
+   the reset above on size only. The product retired that rule (41801a609); this keeps the
+   judged look instead of the reset's inherited 16.5px. */
+.lgk[data-type-density="compact"] :where(button.sort, .seg button) { font-size: calc(var(--type-0) * var(--type-f)); }
