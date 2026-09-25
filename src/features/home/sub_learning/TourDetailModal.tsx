@@ -96,7 +96,7 @@ export function TourDetailModal({
                   </span>
                   <div className="min-w-0">
                     <p className="typo-title">{step.title}</p>
-                    <p className="typo-body text-foreground">{step.description}</p>
+                    <p className="typo-caption">{step.description}</p>
                   </div>
                 </li>
               ))}
