@@ -220,6 +220,12 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     // `app.state()`, so this must follow every `manage` the engine reads.
     workers::spawn_requeue_persisted(app, &engine, &pool);
 
+    // Build sessions a dead process left in flight: resume a kp hire's
+    // one-shot build once, fail the rest with `interrupted_by_restart`, and
+    // leave alone any session a live instance still holds a claim on. Needs
+    // the managed AppState (the resumed runner reads it), hence here.
+    workers::spawn_build_session_recovery(app, &state_arc);
+
     // Athena's proactive scheduler — the 5-min autonomy loop (fleet
     // reassess passes, execution review, message triage, stale-approval
     // GC). Started here, alongside the other always-on loops, because

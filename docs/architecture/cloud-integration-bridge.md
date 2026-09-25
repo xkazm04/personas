@@ -1212,6 +1212,68 @@ enforced; an invented *phase* is not detected. The panel reads `design_context` 
 because `parseDesignContext` (`sub_lab/use-cases/UseCasesList.tsx`) rebuilds a
 `kpLink`-only envelope without the link.
 
+### 10.13 A restart never orphans a hire's build (2026-09-25)
+
+**What was true.** A build session's state is the `build_sessions` row
+(`db/src/repos/core/build_sessions.rs`); its progress is one tokio task in the process
+that started it (`BuildSessionManager::start_session`, `engine/build_session/mod.rs`),
+with the CLI child and the answer channel held only in that process's memory. `analyzing`
+means "the design pass is running turns" and is written once when the run starts; the row
+is next written at the end of a turn (up to ~15 minutes later). Nothing at boot read
+`build_sessions`: `boot::recovery::recover_interrupted_work` classifies executions and
+fails n8n / pipeline / lab runs, and skips entirely when another instance leads. The only
+thing that ever settled a dead session was the cleanup tick's 24 h sweeper
+(`expire_stale_non_terminal`). The claim columns migration e07 added to
+`build_sessions` (`claimed_by_instance`, `claim_expires_at`) had never been written. So
+when another session's instance restarted the app at 19:14 local, both gig hires in
+flight (build sessions `3532ed2b…`, `75c5f399…`) read `approved` / `analyzing` /
+`buildFailureReason: null` to kp's poller, and would have for a day.
+
+**Ownership.** Each process's `BuildSessionManager` has an owner id (a fresh UUID per
+launch). `start_session` claims the row it creates (`claimed_by_instance`,
+`claim_expires_at = now + 180 s`), and the runner task refreshes the claim every 30 s for
+as long as it is alive (`build_sessions::heartbeat`, which only lands for the claiming
+owner on a non-terminal row). The engine-leader lease is deliberately not the signal: a
+follower runs its own builds in-process, so who leads says nothing about who runs a
+session.
+
+**Recovery at boot** (`engine::build_session::restart::recover_after_restart`, spawned
+from `boot::mod` right after the durable execution queue is re-admitted;
+`build_sessions::recover_orphans` holds the data half). Not leader-gated, because the
+claim is per session. A session is an **orphan** when it is non-terminal and either its
+claim has lapsed, or it carries no claim at all (a build started by code older than this,
+like the two above) and has not been written for an hour — a live build writes at least
+once per turn, and a turn is bounded by the 10-minute CLI silence watchdog. Interactive
+sessions count only in phases where a process was working (`initializing`, `analyzing`,
+`resolving`, `testing`); one parked on a person (`awaiting_input`, `draft_ready`,
+`test_complete`) is not in flight and keeps waiting. Each orphan is then:
+
+| Case | Outcome |
+| --- | --- |
+| a **kp hire's one-shot build** (persona carries `kpLink`), last written within 2 h, never resumed before | **resumed in place**: the same row, so kp's stamped `buildSessionId` still points at it, reset to `initializing` (cells, question, agent_ir, error and pid cleared), claimed by the recovering process, and recorded as `{"phase":"resumed_after_restart","from_phase":…}` in `phase_timings_json`; its runner starts again from the persisted intent, mode, workflow/parser inputs and companion link |
+| already resumed once (the ledger shows it) | **failed**: `interrupted_by_restart: … it had already been resumed once after an earlier restart. Start the build again.` — so a crash loop buys at most one extra design pass |
+| a kp hire's one-shot build last written more than 2 h ago | **failed**: `interrupted_by_restart: … more than 2 hours before it could be resumed, so it was not rebuilt.` — kp's poller gives a hire minutes, and a rebuild nobody waits for spends a design pass on a persona a rehire has likely replaced |
+| anything else (other one-shot doors, interactive) | **failed**: `interrupted_by_restart: … It could not be resumed automatically; start the build again.` Those doors may have passed `language` / `context`, which the row does not persist, so a rerun could not be faithful |
+
+Every write is a compare-and-set on the orphan predicate, so two instances booting together
+settle a row once, and a session a live instance claims in between is left alone. A failed
+session is terminal, so `GET /api/kp/persona-requests/{id}` answers `status: "failed"` with
+the reason as `buildFailureReason` (§10.1), and kp's poller settles. A resume whose runner
+cannot start is failed with the same prefix rather than left looking in flight.
+
+**Tests.** `personas-db` `build_sessions::tests` — an orphan is resumed once in place; a
+second restart fails it instead; a session a live instance owns (fresh claim, or an
+unclaimed row written moments ago) is left alone and only its owner's heartbeat lands;
+terminal sessions are untouched; a silent unclaimed session that cannot resume is failed
+with the reason; a resumable orphan past the window is failed; interactive sessions are
+recovered only in working phases. `app_lib`
+`build_session::restart::tests::only_a_kp_hires_one_shot_build_is_resumable`.
+
+**Known gaps.** Recovery runs at boot only: when one instance dies and another stays up,
+the survivor settles the dead one's sessions at its own next boot (the 24 h sweeper still
+catches them if it never restarts). A resume reruns the whole design, including for a
+session interrupted at `testing` / `test_complete` whose agent_ir was already written.
+
 ---
 
 ## 11. App master (P4) — the mandated hire
