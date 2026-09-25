@@ -61,6 +61,22 @@ function summarise(text: string | null): string | null {
   return flat.length > CAPTION_MAX ? `${flat.slice(0, CAPTION_MAX).trimEnd()}…` : flat;
 }
 
+/**
+ * Whether the app-wide orb is on screen: the setting is on and Athena is
+ * minimized (open as the panel, collapsed or dismissed, it is not). The orb
+ * layer renders on exactly this, and a surface that would otherwise draw its
+ * own Athena (Studio's Guide) steps aside on it.
+ */
+export function isAthenaOrbShown(orbEnabled: boolean, state: string): boolean {
+  return orbEnabled && state === 'minimized';
+}
+
+export function useAthenaOrbShown(): boolean {
+  const orbEnabled = useSystemStore((s) => s.companionOrbEnabled);
+  const state = useCompanionStore((s) => s.state);
+  return isAthenaOrbShown(orbEnabled, state);
+}
+
 export interface OrbPresence {
   avatarState: AthenaState;
   speaking: boolean;
@@ -115,8 +131,11 @@ export function useAthenaOrbPresence(args: {
     for (const j of Object.values(s.inTurnToolJobs)) {
       if (j.status === 'running' || j.status === 'queued') n += 1;
     }
-    return n;
+    // Work another surface runs as Athena (a Studio build turn) is her work too.
+    return n + Object.keys(s.orbBusySources).length;
   });
+  // A clip another surface is playing in her voice right now (Studio read-aloud).
+  const speakingNow = useCompanionStore((s) => Object.keys(s.orbSpeakingSources).length > 0);
   // While the Fleet grid is open, a working orb is most likely orchestrating
   // the fleet — surface that as a glanceable caption.
   const fleetGridOpen = useSystemStore((s) => s.fleetGridOpen);
@@ -181,13 +200,19 @@ export function useAthenaOrbPresence(args: {
   // `composing` (Explain-in-Cockpit in flight) outranks the generic thinking
   // posture — the user just asked for a visual explanation and the presenting
   // clip telegraphs "she's building it".
+  // A clip playing now outranks background work: while she speaks, she is
+  // seen speaking.
   const avatarState: AthenaState = explainComposing
     ? 'composing'
-    : talking || anyConversationStreaming || working
+    : talking || anyConversationStreaming
       ? 'thinking'
-      : hasUnreadPlayback
+      : speakingNow
         ? 'speaking'
-        : 'idle';
+        : working
+          ? 'thinking'
+          : hasUnreadPlayback
+            ? 'speaking'
+            : 'idle';
 
   const shown = Math.min(runningTaskCount, MAX_TASK_DOTS);
   const taskDots = useMemo(

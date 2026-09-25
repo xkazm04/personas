@@ -1,0 +1,63 @@
+/* The drafting sheet's paper and ink (contest A/3, "Blueprint").
+
+   A component stylesheet on purpose (precedent: teams/sub_mastermind/soundings/
+   soundings.css): the sheet is a cyanotype, a deep blue paper with light blue
+   ink in dark themes and white paper with blue ink in light ones, and the two
+   are one selector apart. Every colour derives from the theme (--primary,
+   --background, --foreground) mixed with one fixed anchor, the cyanotype blue,
+   so each theme gets its own sheet. Scoped under .drafting-root. */
+
+.drafting-root {
+  --drafting-blue: #0b2447;
+  --paper: color-mix(in srgb, var(--primary) 10%, color-mix(in srgb, var(--drafting-blue) 72%, var(--background)));
+  --paper-deep: color-mix(in srgb, var(--drafting-blue) 50%, var(--background));
+  --ink: color-mix(in srgb, var(--primary) 70%, #7fd3f7);
+  --ink-strong: color-mix(in srgb, var(--ink) 45%, var(--foreground));
+  --ink-dim: color-mix(in srgb, var(--ink) 48%, transparent);
+  --ink-faint: color-mix(in srgb, var(--ink) 22%, transparent);
+  --grid-fine: color-mix(in srgb, var(--ink) 7%, transparent);
+  --grid-major: color-mix(in srgb, var(--ink) 14%, transparent);
+
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
+    linear-gradient(var(--grid-fine) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-fine) 1px, transparent 1px);
+  background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+  /* A drawing sheet's double frame, inset from the edge. */
+  outline: 1px solid var(--ink-dim);
+  outline-offset: -8px;
+  box-shadow: inset 0 0 0 2px var(--ink-faint);
+}
+
+[data-theme^="light"] .drafting-root {
+  --paper: color-mix(in srgb, var(--primary) 3%, var(--background));
+  --paper-deep: color-mix(in srgb, var(--primary) 7%, var(--background));
+  --ink: color-mix(in srgb, var(--primary) 80%, #1d4ed8);
+  --ink-strong: color-mix(in srgb, var(--ink) 60%, var(--foreground));
+  --ink-dim: color-mix(in srgb, var(--ink) 55%, transparent);
+  --ink-faint: color-mix(in srgb, var(--ink) 25%, transparent);
+}
+
+/* The two loops on the sheet are CSS on purpose: the app's global
+   reduced-motion reset stops CSS animations, and it cannot see framer-motion's
+   script-driven ones (census rule looping-framer-animation). */
+.drafting-hatch {
+  background-image: repeating-linear-gradient(135deg, var(--ink-dim) 0 1px, transparent 1px 8px);
+  background-size: 200% 200%;
+  opacity: 0.8;
+  animation: drafting-hatch 1.6s linear infinite;
+}
+.drafting-nib {
+  background: radial-gradient(circle, var(--ink-strong) 0 2px, color-mix(in srgb, var(--primary) 40%, transparent) 3px, transparent 7px);
+}
+.drafting-nib[data-working="true"] {
+  animation: drafting-nib 1.4s ease-in-out infinite;
+}
+@keyframes drafting-hatch {
+  to { background-position: 18px 0; }
+}
+@keyframes drafting-nib {
+  50% { transform: scale(1.35); }
+}

@@ -466,6 +466,18 @@ interface CompanionStore {
   pulseMessageReaction: () => void;
 
   /**
+   * Work and speech from other surfaces that should show on the one orb, keyed
+   * by source so each surface clears only its own (e.g. `studio` while a
+   * web-build turn runs, `studio-read` while Studio reads a reply aloud).
+   * Busy sources put her in the working posture with a task dot; speaking
+   * sources light the speaking glow while their clip plays.
+   */
+  orbBusySources: Record<string, true>;
+  orbSpeakingSources: Record<string, true>;
+  setOrbBusy: (source: string, on: boolean) => void;
+  setOrbSpeaking: (source: string, on: boolean) => void;
+
+  /**
    * Screen-space center (viewport px) of the orb at the moment the user
    * tapped it to open the chat. Lets `CompanionPanel` animate its entrance
    * from the orb's position (and exit back toward it) for an orb→panel
@@ -1111,6 +1123,26 @@ export const useCompanionStore = create<CompanionStore>()(
   messageReactionPulse: 0,
   pulseMessageReaction: () =>
     set((s) => ({ messageReactionPulse: s.messageReactionPulse + 1 })),
+
+  orbBusySources: {},
+  orbSpeakingSources: {},
+  setOrbBusy: (source, on) =>
+    set((s) => {
+      // Unchanged keeps the same object: the orb subscribes on every screen.
+      if (!!s.orbBusySources[source] === on) return s;
+      const next = { ...s.orbBusySources };
+      if (on) next[source] = true;
+      else delete next[source];
+      return { orbBusySources: next };
+    }),
+  setOrbSpeaking: (source, on) =>
+    set((s) => {
+      if (!!s.orbSpeakingSources[source] === on) return s;
+      const next = { ...s.orbSpeakingSources };
+      if (on) next[source] = true;
+      else delete next[source];
+      return { orbSpeakingSources: next };
+    }),
 
   orbOpenOrigin: null,
   setOrbOpenOrigin: (orbOpenOrigin) => set({ orbOpenOrigin }),

@@ -19,9 +19,15 @@ export interface PreviewPick {
   selector: string;
   label: string;
   tag: string;
+  /** The owner's component whose outermost element this is, when React says so. */
+  component: string | null;
+  /** The named frames around it, outermost first, ending with the element. */
+  chain: string[];
   rect: PreviewRect;
   path: string;
 }
+
+export type InspectMove = 'out' | 'in' | 'prev' | 'next';
 
 function sameRect(a: PreviewRect | null, b: PreviewRect | null): boolean {
   if (a === b) return true;
@@ -116,6 +122,8 @@ export function useStudioPreview() {
             label?: string;
             tag?: string;
             on?: boolean;
+            component?: string | null;
+            chain?: unknown;
           }
         | null;
       if (!d || d.source !== 'athena-agent') return;
@@ -146,11 +154,18 @@ export function useStudioPreview() {
           selector: d.selector,
           label: typeof d.label === 'string' ? d.label.slice(0, 80) : '',
           tag: typeof d.tag === 'string' ? d.tag.slice(0, 20) : '',
+          component: typeof d.component === 'string' ? d.component.slice(0, 60) : null,
+          chain: Array.isArray(d.chain)
+            ? d.chain.filter((c): c is string => typeof c === 'string').slice(-5).map((c) => c.slice(0, 40))
+            : [],
           rect: d.rect,
           path: typeof d.path === 'string' ? d.path.slice(0, 200) : '/',
         });
-      } else if (d.type === 'pickmode') {
-        if (id === activeIdRef.current) setPicking(!!d.on);
+      } else if (d.type === 'inspect' || d.type === 'pickmode') {
+        // The page left inspect mode (Esc inside it): the composer goes too.
+        if (id !== activeIdRef.current) return;
+        setPicking(!!d.on);
+        if (!d.on) setPick(null);
       } else if (d.type === 'route' && typeof d.path === 'string') {
         const path = d.path;
         setCurrentPaths((m) => (m[id] === path ? m : { ...m, [id]: path }));
@@ -225,19 +240,36 @@ export function useStudioPreview() {
     setPick(null);
     setPicking(false);
   }, [activeId]);
-  const clearPick = useCallback(() => setPick(null), []);
-  // Ask the active preview to pick the next element clicked (or stop asking).
-  const startPickMode = useCallback(
-    (on = true) => {
+  // Talk to the active preview's agent (addressed to its own origin).
+  const tellPreview = useCallback(
+    (msg: Record<string, unknown>, focus = false) => {
       const targetOrigin = previewTargetOrigin(activeId ? previewUrls[activeId] : null);
-      if (!activeId || !targetOrigin) return;
+      if (!activeId || !targetOrigin) return false;
       const iframe = document.querySelector<HTMLIFrameElement>(`iframe[data-tab="${CSS.escape(activeId)}"]`);
-      iframe?.contentWindow?.postMessage({ source: 'athena', type: 'pickmode', on }, targetOrigin);
-      setPicking(on);
-      if (on) setPick(null);
+      iframe?.contentWindow?.postMessage({ source: 'athena', ...msg }, targetOrigin);
+      // Inspect keys ([, ], arrows) are read inside the page: give it focus.
+      if (focus) iframe?.focus();
+      return true;
     },
     [activeId, previewUrls],
   );
+  // Enter or leave inspect mode: frames drawn in the page, hover to target,
+  // click to choose. Leaving also closes the composer.
+  const startPickMode = useCallback(
+    (on = true) => {
+      if (!tellPreview({ type: 'inspect', on }, on)) return;
+      setPicking(on);
+      if (on) setPick(null);
+    },
+    [tellPreview],
+  );
+  const clearPick = useCallback(() => {
+    setPick(null);
+    setPicking(false);
+    tellPreview({ type: 'inspect', on: false });
+  }, [tellPreview]);
+  // Step the chosen element out to its wrapper, in to its child, or across.
+  const moveInspect = useCallback((dir: InspectMove) => tellPreview({ type: 'inspect-move', dir }), [tellPreview]);
   const live = !!active && active.phase === 'live' && active.healthy;
 
   return {
@@ -256,6 +288,7 @@ export function useStudioPreview() {
     clearPick,
     picking,
     startPickMode,
+    moveInspect,
   };
 }
 

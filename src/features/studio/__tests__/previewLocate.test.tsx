@@ -97,7 +97,22 @@ describe('right-click targeting', () => {
     const { result } = renderHook(() => useStudioPreview());
     act(() => result.current.startPickMode());
     expect(result.current.picking).toBe(true);
-    expect(post).toHaveBeenCalledWith({ source: 'athena', type: 'pickmode', on: true }, 'http://localhost:5000');
+    expect(post).toHaveBeenCalledWith({ source: 'athena', type: 'inspect', on: true }, 'http://localhost:5000');
+    act(() => result.current.moveInspect('out'));
+    expect(post).toHaveBeenCalledWith({ source: 'athena', type: 'inspect-move', dir: 'out' }, 'http://localhost:5000');
+  });
+
+  it('leaving inspect mode inside the page (Esc there) closes the composer', () => {
+    const { result } = renderHook(() => useStudioPreview());
+    act(() => {
+      window.dispatchEvent(pickedMsg(frame.contentWindow));
+    });
+    expect(result.current.pick).not.toBeNull();
+    act(() => {
+      window.dispatchEvent(new MessageEvent('message', { data: { source: 'athena-agent', type: 'inspect', on: false }, source: frame.contentWindow }));
+    });
+    expect(result.current.pick).toBeNull();
+    expect(result.current.picking).toBe(false);
   });
 });
 

@@ -1,4 +1,6 @@
+import { Wand2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useAthenaOrbShown } from '@/features/plugins/companion/orb/athenaOrbPresence';
 import { AUTO_MAX_TURNS } from '../studioStore';
 import type { StudioActivity } from '../studioActivity';
 import { activityText, guideStrings } from './guideCopy';
@@ -6,7 +8,10 @@ import { clock, useElapsed } from './useGuideRuntime';
 import GuideQueuedNotes from './GuideQueuedNotes';
 
 // One plain line under the frame: what Athena is doing now, with honest elapsed
-// time and never a percentage. The orb at its left opens her tools.
+// time and never a percentage. The button at its left opens her tools: Studio's
+// own orb when the app-wide orb is off or hidden, else a plain tools button,
+// so there is only ever one Athena on screen (the app-wide orb then shows her
+// busy and speaking for Studio).
 export default function GuideNowLine({
   name,
   settingUp,
@@ -47,6 +52,7 @@ export default function GuideNowLine({
 }) {
   const { t, tx } = useTranslation();
   const g = guideStrings(t);
+  const orbShown = useAthenaOrbShown();
   const elapsed = useElapsed(busy ? turnStartedAt : null);
   const last = activity[activity.length - 1];
 
@@ -69,24 +75,42 @@ export default function GuideNowLine({
 
   return (
     <div className="flex min-h-10 items-center gap-3 px-1">
-      <button
-        type="button"
-        onClick={onOrb}
-        aria-label={g.tools_open}
-        aria-haspopup="menu"
-        aria-expanded={toolsOpen}
-        className="group relative h-9 w-9 shrink-0 rounded-full"
-        style={{
-          background:
-            'radial-gradient(circle at 34% 28%, color-mix(in srgb, var(--foreground) 85%, transparent) 0 6%, color-mix(in srgb, var(--primary) 70%, var(--foreground)) 26%, var(--primary) 58%, color-mix(in srgb, var(--primary) 45%, var(--background)) 82%)',
-          boxShadow: '0 0 18px color-mix(in srgb, var(--primary) 45%, transparent)',
-        }}
-      >
-        {busy && <span className="absolute inset-0 animate-ping rounded-full border border-primary/60" />}
-        <kbd className="absolute -right-2 -top-1.5 rounded border border-border bg-background px-1 font-mono text-xs leading-4 text-foreground/90 opacity-0 transition-opacity group-hover:opacity-100">
-          O
-        </kbd>
-      </button>
+      {orbShown ? (
+        <button
+          type="button"
+          onClick={onOrb}
+          aria-label={g.tools_open}
+          aria-haspopup="menu"
+          aria-expanded={toolsOpen}
+          data-testid="guide-tools-button"
+          className="group relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-primary/50 text-primary transition-colors hover:bg-primary/10"
+        >
+          <Wand2 className="h-4 w-4" />
+          <kbd className="absolute -right-2 -top-1.5 rounded border border-border bg-background px-1 font-mono text-xs leading-4 text-foreground/90 opacity-0 transition-opacity group-hover:opacity-100">
+            O
+          </kbd>
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onOrb}
+          aria-label={g.tools_open}
+          aria-haspopup="menu"
+          aria-expanded={toolsOpen}
+          data-testid="guide-orb"
+          className="group relative h-9 w-9 shrink-0 rounded-full"
+          style={{
+            background:
+              'radial-gradient(circle at 34% 28%, color-mix(in srgb, var(--foreground) 85%, transparent) 0 6%, color-mix(in srgb, var(--primary) 70%, var(--foreground)) 26%, var(--primary) 58%, color-mix(in srgb, var(--primary) 45%, var(--background)) 82%)',
+            boxShadow: '0 0 18px color-mix(in srgb, var(--primary) 45%, transparent)',
+          }}
+        >
+          {busy && <span className="absolute inset-0 animate-ping rounded-full border border-primary/60" />}
+          <kbd className="absolute -right-2 -top-1.5 rounded border border-border bg-background px-1 font-mono text-xs leading-4 text-foreground/90 opacity-0 transition-opacity group-hover:opacity-100">
+            O
+          </kbd>
+        </button>
+      )}
       {/* Only the lead is a live region: the rest carries a clock that ticks
           every second and would be re-announced each time. */}
       <p className="min-w-0 flex-1 truncate typo-body text-foreground/90">

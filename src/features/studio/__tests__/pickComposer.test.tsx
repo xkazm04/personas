@@ -20,7 +20,7 @@ const { aimedNote } = await import('../studioSeed');
 const StudioPickComposer = (await import('../StudioPickComposer')).default;
 
 type RT = ReturnType<typeof useStudioStore.getState>['runtimes'][string];
-const PICK = { projectId: 'p1', selector: '.pricing h3', label: 'Pro $19', tag: 'h3', rect: { x: 40, y: 300, width: 200, height: 30 }, path: '/pricing' };
+const PICK = { projectId: 'p1', selector: '.pricing h3', label: 'Pro $19', tag: 'h3', component: null, chain: ['Pricing', 'PricingCard', 'h3'], rect: { x: 40, y: 300, width: 200, height: 30 }, path: '/pricing' };
 function seed(p: Partial<RT> = {}) {
   useStudioStore.setState({
     runtimes: {
@@ -34,7 +34,7 @@ function seed(p: Partial<RT> = {}) {
   });
 }
 function preview(over: Record<string, unknown> = {}) {
-  return { pick: PICK, clearPick: vi.fn(), picking: false, startPickMode: vi.fn(), activeId: 'p1', live: true, ...over } as never;
+  return { pick: PICK, clearPick: vi.fn(), picking: false, startPickMode: vi.fn(), moveInspect: vi.fn(), activeId: 'p1', live: true, ...over } as never;
 }
 
 afterEach(() => {
@@ -69,12 +69,30 @@ describe('the pick composer', () => {
     seed();
     const p = preview();
     render(<StudioPickComposer preview={p} />);
-    expect(screen.getByText('Pro $19')).toBeTruthy();
+    expect(screen.getByText('"Pro $19" · /pricing')).toBeTruthy();
     const input = screen.getByTestId('studio-pick-input');
     fireEvent.change(input, { target: { value: 'make this the highlighted plan' } });
     fireEvent.submit(input.closest('form')!);
     expect(String(send.mock.calls[0]?.[1])).toContain('make this the highlighted plan');
     expect((p as unknown as { clearPick: ReturnType<typeof vi.fn> }).clearPick).toHaveBeenCalled();
+  });
+
+  it('names the frames around the element and steps wider or narrower, keeping what was typed', () => {
+    seed();
+    const p = preview() as unknown as { moveInspect: ReturnType<typeof vi.fn> };
+    const { rerender } = render(<StudioPickComposer preview={p as never} />);
+    const chain = screen.getByTestId('studio-pick-chain');
+    expect(Array.from(chain.querySelectorAll('li')).map((li) => li.textContent)).toEqual(['Pricing', 'PricingCard', 'h3']);
+    expect(chain.querySelector('[aria-current="true"]')?.textContent).toBe('h3');
+    const input = screen.getByTestId('studio-pick-input') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'make it bigger' } });
+    fireEvent.keyDown(input, { key: 'ArrowUp', altKey: true });
+    expect(p.moveInspect).toHaveBeenCalledWith('out');
+    fireEvent.click(screen.getByText('pick_narrower'));
+    expect(p.moveInspect).toHaveBeenCalledWith('in');
+    // The page answers with the wider element: the words stay.
+    rerender(<StudioPickComposer preview={{ ...(p as object), pick: { ...PICK, tag: 'div', chain: ['Pricing', 'PricingCard'] } } as never} />);
+    expect((screen.getByTestId('studio-pick-input') as HTMLInputElement).value).toBe('make it bigger');
   });
 
   it('says so when the note has to wait, and when the queue is full', () => {

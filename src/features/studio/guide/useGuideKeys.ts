@@ -2,6 +2,7 @@ import { ROUTE_DECISION_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeybo
 import { isFreeKey } from '../useDecisionKeys';
 
 // The Guide layout's single-letter keys: O tools, G add a goal, B blueprint,
+// I inspect the preview (frames, then click what should change),
 // Esc steps back. On the app keyboard ladder at the route-decision rung, so any
 // overlay above the route (a modal, the tool arc) takes the key first; ignored
 // while typing, with a modifier held, or while a popover is open. Esc has its
@@ -13,6 +14,7 @@ export function useGuideKeys(h: {
   onTools: () => void;
   onAddGoal: () => void;
   onToggleBlueprint: () => void;
+  onInspect: () => void;
   onEscape: () => boolean;
 }) {
   useAppKeyboard(
@@ -28,6 +30,7 @@ export function useGuideKeys(h: {
       if (k === 'o') h.onTools();
       else if (k === 'g') h.onAddGoal();
       else if (k === 'b') h.onToggleBlueprint();
+      else if (k === 'i') h.onInspect();
       else return false;
       e.preventDefault();
       return true;

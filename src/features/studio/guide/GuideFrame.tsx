@@ -6,6 +6,7 @@ import { guideStrings } from './guideCopy';
 import StudioVisionStart from '../StudioVisionStart';
 import StudioVersions from '../StudioVersions';
 import { useStudioStore } from '../studioStore';
+import { useStudioHistory } from '../studioHistory';
 import type { StudioPreviewState } from '../useStudioPreview';
 
 // The main frame: the app being built, wrapped and given full focus (contest
@@ -43,6 +44,8 @@ export default function GuideFrame({
   }, [activePath]);
 
   const label = vision ? g.frame_vision : blueprint ? g.frame_blueprint : live ? g.frame_live : g.frame_setup;
+  const sheetStyle = useStudioHistory((s) => s.sheetStyle);
+  const setSheetStyle = useStudioHistory((s) => s.setSheetStyle);
   return (
     <div
       className={`relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-modal border bg-background shadow-elevation-3 transition-colors duration-500 ${
@@ -52,6 +55,22 @@ export default function GuideFrame({
       <header className="flex h-9 shrink-0 items-center gap-2 border-b border-border bg-gradient-to-r from-secondary/70 via-secondary/40 to-secondary/70 px-3">
         <span className={`h-2 w-2 rounded-full ${live && !vision ? 'bg-status-success' : 'bg-primary'}`} />
         <span className="typo-body text-foreground/85">{label}</span>
+        {blueprint && !vision && (
+          // TODO(prototype, 2026-09-25): two sheet styles until one is chosen.
+          <div role="group" aria-label={g.sheet_style_label} className="ml-auto flex items-center gap-0.5 rounded-interactive border border-border p-0.5">
+            {(['drafting', 'plan'] as const).map((style) => (
+              <button
+                key={style}
+                type="button"
+                aria-pressed={sheetStyle === style}
+                onClick={() => setSheetStyle(style)}
+                className={`rounded-interactive px-2 py-0.5 typo-caption ${sheetStyle === style ? 'bg-primary/15 text-primary' : 'hover:bg-secondary/60'}`}
+              >
+                {style === 'drafting' ? g.sheet_style_drafting : g.sheet_style_plan}
+              </button>
+            ))}
+          </div>
+        )}
         {vision && onCancelCreate && (
           <button type="button" onClick={onCancelCreate} aria-label={t.common.close} className="ml-auto rounded-interactive p-1 text-foreground/90 hover:text-foreground">
             <X className="h-4 w-4" />

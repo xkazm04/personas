@@ -70,7 +70,16 @@ interface StudioHistoryStore {
    */
   gatePlanDefault: boolean;
   setGatePlanDefault: (on: boolean) => void;
+  /**
+   * How the plan sheet is drawn: the plan cards, or the drafting sheet
+   * (contest A/3 brought in as a second version).
+   * TODO(prototype, 2026-09-25): keep one once the owner has compared them.
+   */
+  sheetStyle: StudioSheetStyle;
+  setSheetStyle: (style: StudioSheetStyle) => void;
 }
+
+export type StudioSheetStyle = 'plan' | 'drafting';
 
 export type StudioLayout = 'current' | 'guide';
 
@@ -82,6 +91,7 @@ export const useStudioHistory = create<StudioHistoryStore>()(
       activeTabId: null,
       layout: 'guide',
       gatePlanDefault: false,
+      sheetStyle: 'drafting',
       save: (id, entry) =>
         set((s) => ({
           byProject: {
@@ -122,6 +132,7 @@ export const useStudioHistory = create<StudioHistoryStore>()(
       setOpenTabs: (ids, activeId) => set({ openTabIds: ids, activeTabId: activeId }),
       setLayout: (layout) => set({ layout }),
       setGatePlanDefault: (on) => set({ gatePlanDefault: on }),
+      setSheetStyle: (sheetStyle) => set({ sheetStyle }),
     }),
     { name: 'studio-history-v1' },
   ),

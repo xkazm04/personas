@@ -32,6 +32,10 @@ const { useStudioStore } = await import('../studioStore');
 const { MOCK_PHASES } = await import('../studioBuildModel');
 const { GUIDE_TOOLS } = await import('../guide/guideModel');
 const GuideStudio = (await import('../guide/GuideStudio')).default;
+const { useStudioHistory } = await import('../studioHistory');
+// These cases pin the plan-cards sheet; the drafting sheet (the default) has
+// its own tests (draftingSheet.test) and one wiring case at the end.
+useStudioHistory.setState({ sheetStyle: 'plan' });
 
 type RT = ReturnType<typeof useStudioStore.getState>['runtimes'][string];
 function seed(p: Partial<RT>) {
@@ -267,4 +271,43 @@ describe('Guide layout', () => {
     expect(screen.getByRole('menu')).toBeTruthy();
     expect(screen.getAllByRole('menuitem')).toHaveLength(GUIDE_TOOLS.length);
   });
+
+  it('draws the drafting sheet when that sheet style is chosen, and the frame can switch back', () => {
+    useStudioHistory.setState({ sheetStyle: 'drafting' });
+    try {
+      seed({ phase: 'starting', status: null });
+      mount();
+      expect(screen.getByTestId('drafting-sheet')).toBeTruthy();
+      fireEvent.click(screen.getByText('sheet_style_plan'));
+      expect(useStudioHistory.getState().sheetStyle).toBe('plan');
+      expect(screen.queryByTestId('drafting-sheet')).toBeNull();
+    } finally {
+      useStudioHistory.setState({ sheetStyle: 'plan' });
+    }
+  });
+
+  it('with the app-wide orb on screen, Studio shows a tools button, not a second Athena', async () => {
+    const { useCompanionStore } = await import('@/features/plugins/companion/companionStore');
+    const { useSystemStore } = await import('@/stores/systemStore');
+    useSystemStore.setState({ companionOrbEnabled: true } as never);
+    useCompanionStore.setState({ state: 'minimized' } as never);
+    try {
+      seed({});
+      mount();
+      expect(screen.queryByTestId('guide-orb')).toBeNull();
+      fireEvent.click(screen.getByTestId('guide-tools-button'));
+      expect(screen.getByRole('menu')).toBeTruthy();
+    } finally {
+      useCompanionStore.setState({ state: 'dormant' } as never);
+    }
+  });
+
+  it('a build turn running in Studio shows on the app-wide orb, and clears when it ends', async () => {
+    const { useCompanionStore } = await import('@/features/plugins/companion/companionStore');
+    seed({ busy: true });
+    expect(useCompanionStore.getState().orbBusySources.studio).toBe(true);
+    seed({ busy: false });
+    expect(useCompanionStore.getState().orbBusySources.studio).toBeUndefined();
+  });
 });
+

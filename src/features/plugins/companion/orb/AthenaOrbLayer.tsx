@@ -7,6 +7,7 @@ import { explainDecision, runDecisionOption } from '../decision/resolveDecision'
 import { useGlobalVoiceHotkey } from '../useGlobalVoiceHotkey';
 import { useHoldToTalk } from '../useHoldToTalk';
 import { AthenaOrb } from './AthenaOrb';
+import { isAthenaOrbShown } from './athenaOrbPresence';
 import { OrbQuickInputBar } from './OrbQuickInputBar';
 
 /** How long the `;` leader stays armed before a digit must follow (Slice 5). */
@@ -189,7 +190,7 @@ export default function AthenaOrbLayer() {
     { priority: ROUTE_DECISION_PRIORITY },
   );
 
-  if (!orbEnabled || state !== 'minimized') return null;
+  if (!isAthenaOrbShown(orbEnabled, state)) return null;
 
   return createPortal(
     <div
