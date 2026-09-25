@@ -1160,7 +1160,7 @@ captured**, not assumed.
 | **a real violation written into a real source file** | **1** | `[drift] files rose 17 -> 18 (+1)` and `matches rose 17 -> 18 (+1)` |
 
 The last row is the one that matters. An actual `x && <div aria-live="polite">…</div>`
-appended to `src/features/shared/components/progress/AnalysisModeView.tsx` moved both
+appended to `src/features/shared/components/progress/AnalysisModeView.tsx` (deleted 2026-09-25) moved both
 counts by exactly 1 and failed the gate; reverting returned the tree to exit 0 with
 `git status --porcelain` clean for that path.
 

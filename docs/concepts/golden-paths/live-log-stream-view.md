@@ -14,7 +14,7 @@
 > line-bearing Tauri event channels enumerated from `eventRegistry.ts`'s payload
 > map and traced to its subscribers on both sides. `executionSink.ts`,
 > `useCorrelatedCliStream.ts`, `terminal/TerminalBody.tsx`,
-> `progress/TerminalBody.tsx`, `background_job.rs`, `fleet/registry.rs`'s
+> `progress/TerminalBody.tsx` (deleted 2026-09-25), `background_job.rs`, `fleet/registry.rs`'s
 > `OutputRing`, `fleet/pty.rs`'s reader loop, `engine/src/parser.rs` and the
 > `runner/mod.rs` stream loop read in full. All **19** `scrollTop = scrollHeight`
 > pins in the tree opened and hand-read.
@@ -349,7 +349,7 @@ it is 13 lines from correct at every one of the 13 sites that get it wrong.
   has zero call sites.
 - **A second `TerminalBody`.** There are two components with that exact name —
   `shared/components/terminal/TerminalBody.tsx` (virtualized, sticky, FAB) and
-  `shared/components/progress/TerminalBody.tsx` (plain `.map`, its own
+  `shared/components/progress/TerminalBody.tsx` (deleted 2026-09-25) (plain `.map`, its own
   `useTerminalScroll`). Importing "TerminalBody" is currently a coin flip.
 
 ## 4 Steps
@@ -789,7 +789,7 @@ stays in the ring and stays available to the snapshot poll; it stops crossing IP
 ### P2 — two different components are named `TerminalBody`
 
 `shared/components/terminal/TerminalBody.tsx` (virtualized, sticky, unseen
-counter, four empty states) and `shared/components/progress/TerminalBody.tsx`
+counter, four empty states) and `shared/components/progress/TerminalBody.tsx` (deleted 2026-09-25)
 (plain `{lines.map(...)}` at `:57`, its own `useTerminalScroll` at `:28-48`).
 Both are under `shared/components/`. **Fix:** delete the `progress/` one, or
 rename it and have it delegate; keep `useTerminalScroll` only if it becomes the

@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**171 reusable components** live under `src/features/shared/components/`.
+**165 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -244,14 +244,8 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 
 | Component | What it's for |
 |---|---|
-| `AnalysisModeView` | _(add a `@catalog` tag)_ |
 | `ContentLoader` | _(add a `@catalog` tag)_ |
 | `EstimatedProgressBar` | if (progress < 75) return 'hsl(var(primary) / 0. |
-| `TerminalBody` | _(add a `@catalog` tag)_ |
-| `TransformModeView` | _(add a `@catalog` tag)_ |
-| `TransformProgress` | _(add a `@catalog` tag)_ |
-| `TransformStatusPanels` | _(add a `@catalog` tag)_ |
-| `WizardStepper` | _(add a `@catalog` tag)_ |
 
 ## surface
 
@@ -270,4 +264,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_171 components, 46 without a `@catalog` description._
+_165 components, 40 without a `@catalog` description._

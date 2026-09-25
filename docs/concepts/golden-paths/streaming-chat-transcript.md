@@ -587,7 +587,7 @@ opened and are genuinely guarded (`shouldAutoScroll`, `stuckToBottomRef` at 16 p
 `userScrolledUp`, and one explicit `End` keypress at
 `useDeckDialog.tsx:113`) — the rule's precision is intact; only its recall moves.
 Same file also carries a second compliant reference implementation the rule's
-description does not mention: `shared/components/progress/TerminalBody.tsx:29-45`
+description does not mention: `shared/components/progress/TerminalBody.tsx:29-45` (deleted 2026-09-25)
 (`useTerminalScroll`, 10 px), beside the cited `shared/components/terminal/TerminalBody.tsx`.
 
 **12.4 — A code comment states a measurement without a date and no longer reproduces.**
