@@ -47,20 +47,38 @@ export function TopBar({
         <b className="typo-title-lg">{w.title}</b>
         <i className="typo-eyebrow cb-dim">{w.subtitle}</i>
       </div>
-      {/* With no projection there is no run id, no scan clock and no commit
-          the plan was made against - so the meta row carries the one true
-          sentence rather than three empty ones. */}
+      {/* WHAT A PERSON READS, AND NOTHING A MACHINE READS.
+
+          This row used to print the plan run's UUID and the registry's HEAD
+          sha beside the clock. Neither is something anybody reads off a
+          header: one is a primary key and the other is forty hex characters,
+          and between them they took the width that the two facts a reader
+          DOES need were competing for - when the scan was taken, and that what
+          they are looking at is a projection rather than live truth.
+
+          Both survive, on demand, in the clock's own tip. A reader chasing a
+          run or a commit has somewhere to go; a reader reading the page is not
+          made to step over them first.
+
+          With no projection at all there is no run, no clock and no commit, so
+          the row carries the one true sentence rather than two empty ones. */}
       <div className="cb-meta typo-caption">
         {model.planRunId === null ? (
           <span data-cb-tip={w.meta_unrun_tip}>{w.meta_unrun}</span>
         ) : (
           <>
-            <span>{model.planRunId}</span>
-            <span>{tx(w.scan_at, { at: utcStamp(model.scanGeneratedAt) })}</span>
-            <span data-cb-tip={w.head_projection_tip}>
-              {model.registryHeadSha
-                ? tx(w.head_projection, { sha: model.registryHeadSha })
-                : w.head_projection_unknown}
+            <span
+              data-role="cb-scan"
+              data-cb-tip={
+                model.registryHeadSha
+                  ? tx(w.scan_tip, { run: model.planRunId, sha: model.registryHeadSha })
+                  : tx(w.scan_tip_no_head, { run: model.planRunId })
+              }
+            >
+              {tx(w.scan_at, { at: utcStamp(model.scanGeneratedAt) })}
+            </span>
+            <span data-role="cb-projection" data-cb-tip={w.head_projection_tip}>
+              {w.projection_note}
             </span>
           </>
         )}
