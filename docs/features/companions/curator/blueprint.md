@@ -119,7 +119,11 @@ curl -s -X POST http://127.0.0.1:17320/curator/plan-refresh # run it, land the p
 
 `plan-status` answers `{"hasPlan":false}` when nobody has ever run it and
 `{"hasPlan":true,"itemCount":0,…}` when a run found nothing - the same
-distinction the page draws, over a wire. **Both exist only under
+distinction the page draws, over a wire. `plan-refresh` answers with the run's
+identity plus the same two measurements the page's live region reports,
+`fromCache` and `changed` (`null` when the superseded run could not be read),
+so a driver pressing it twice against an unmoved registry can tell two
+successful runs apart instead of seeing two identical projections. **Both exist only under
 `--features test-automation`** (`npm run tauri:dev:test`); they are not in a
 shipped build. Contract and timeouts: `src-tauri/src/test_automation.rs`.
 

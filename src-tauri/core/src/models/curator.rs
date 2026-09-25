@@ -701,8 +701,12 @@ pub struct CuratorQuietBundle {
     pub demand_known: bool,
 }
 
-/// A plan run with its items - what `curator_plan_current` and
-/// `curator_plan_refresh` both return.
+/// A plan run with its items.
+///
+/// What `curator_plan_current` returns, and what [`CuratorRefresh`] carries
+/// back from `curator_plan_refresh` - that command wraps this rather than
+/// returning it bare since 2026-09-25, because the plan alone cannot say
+/// whether the projection moved or where the reading came from.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
