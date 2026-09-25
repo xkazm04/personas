@@ -32,7 +32,7 @@ const EXPECTED_SECTIONS: Record<SidebarSection, NavReachability> = {
   credentials: 'sidebar',
   'design-reviews': 'nested',
   plugins: 'sidebar',
-  studio: 'sidebar',
+  studio: 'nested',
   schedules: 'overlay-only',
   settings: 'sidebar',
 };
@@ -115,7 +115,7 @@ describe('navigation registry — completeness', () => {
   // (f) nested sections are NOT in the rail, still route, and name a rail parent
   // that IS in the rail — so a nested destination can never become unreachable.
   it('anchors every nested section to a rail parent', () => {
-    expect(NESTED_SECTIONS.map((e) => e.id)).toEqual(['design-reviews']);
+    expect(NESTED_SECTIONS.map((e) => e.id)).toEqual(['design-reviews', 'studio']);
     const railIds = new Set(SIDEBAR_SECTIONS.map((e) => e.id));
     for (const entry of NESTED_SECTIONS) {
       expect(railIds.has(entry.id)).toBe(false);

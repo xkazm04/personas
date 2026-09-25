@@ -144,8 +144,9 @@ export default function Sidebar() {
     setSidebarSection('personas');
   }, [selectPersona, setIsCreatingPersona, setSidebarSection]);
 
-  // Studio has no Level-2 sub-nav, so it collapses to just the Level-1 icon
-  // rail — don't reserve/render the empty 240px panel (it cropped the preview).
+  // Studio is entered from the Projects Level-2 nav, but while it is open the
+  // sidebar collapses to just the Level-1 icon rail (Projects stays lit there):
+  // the 240px panel cropped the live preview. Projects in the rail is the way back.
   const hasLevel2 = sidebarSection !== 'studio';
 
   // Expose total sidebar width as a CSS variable so fixed-position elements

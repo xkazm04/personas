@@ -34,7 +34,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   Home, BarChart3, Users, Bot, Radio, Key, FlaskConical,
-  Puzzle, Globe, Settings, CalendarClock,
+  Puzzle, Settings, CalendarClock, PenTool,
 } from 'lucide-react';
 import type { SidebarSection } from '@/lib/types/types';
 import { type Tier, TIERS } from '@/lib/constants/uiModes';
@@ -85,7 +85,9 @@ export const NAV_SECTIONS: readonly NavSectionEntry[] = [
   { id: 'plugins',        label: 'Plugins',     labelKey: 'plugins',        icon: Puzzle,        gates: { minTier: TIERS.TEAM }, reachability: 'sidebar' },
   // Studio — the Athena web-dev companion preview. Dev-only while in
   // active development; still rail-rendered (behind the devOnly gate).
-  { id: 'studio',         label: 'Studio',      labelKey: 'studio',         icon: Globe,         gates: { devOnly: true },       reachability: 'sidebar' },
+  // Studio lives under Projects (Development group), not in the rail: an app
+  // build is a project's engineering surface, like Lifecycle and Factory.
+  { id: 'studio',         label: 'Studio',      labelKey: 'studio',         icon: PenTool,       gates: { devOnly: true },       reachability: 'nested', parent: 'teams' },
   // Schedules is summoned as a full-screen title-bar overlay
   // (see useTitleBarTray → headerOverlay==='schedules'), NOT a rail section.
   // It keeps a `SidebarSection` type member for legacy persisted state, but

@@ -52,7 +52,7 @@ disappearing — a visible failure, not a silent one.
 | --- | --- |
 | Home | Home (Welcome · Cockpit · Learning · What's New · System Check) |
 | Overview | **Monitoring** (Activity · Events · Health · Leaderboard · Mission Control · Reliability) · **Operations** (Approvals · Certification · Director · Incidents · Messages) · **Memory** (Knowledge) |
-| Projects | Teams · Goals · KPIs · Development |
+| Projects | Teams · Goals · KPIs · Development (Lifecycle · Factory · Contest · Mastermind · Council · Studio, dev-only) · Browser |
 | Agents | dynamic — Draft builds · active project · Favorites · Recent · Progress · Cloud (dev) |
 | Events | **Build** (Studio · Local Relay · Marketplace · Test) · **Maintain** (Cloud Events · Dead Letter Queue · Live Stream · Speed Limits) |
 | Connections | **Credentials** · **Templates** |
@@ -69,7 +69,7 @@ Group headings are `t.sidebar.group_*` keys.
 | Value | Meaning | Example |
 | --- | --- | --- |
 | `sidebar` | rendered in the Level-1 rail, mounted by the content router | Overview |
-| `nested` | **not** in the rail; reached from another section's Level-2 nav. Still a full router destination. Declares a `parent`. | Templates → Connections |
+| `nested` | **not** in the rail; reached from another section's Level-2 nav. Still a full router destination. Declares a `parent`. | Templates → Connections, Studio → Projects |
 | `overlay-only` | not in the rail; summoned as a title-bar overlay | Schedules |
 | `hidden` | has a type member / persisted value but no live surface | — |
 

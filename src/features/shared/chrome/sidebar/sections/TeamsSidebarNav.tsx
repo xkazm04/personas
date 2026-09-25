@@ -1,11 +1,13 @@
 import { useEffect, useMemo } from 'react';
-import { Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Radio, Gauge, Inbox, Factory, FolderKanban, GitBranch, Trophy, Network, Scale, ShieldCheck, Globe } from 'lucide-react';
+import { Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Radio, Gauge, Inbox, Factory, FolderKanban, GitBranch, Trophy, Network, Scale, ShieldCheck, Globe, PenTool } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useImproveActivityStore, selectAnyImproveRunning } from '@/stores/improveActivityStore';
 import { isOngoing } from '@/features/teams/sub_goals/goalStatus';
+import { navSection, passesGates } from '@/lib/navigation/registry';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import type { TeamsTab, GoalsTab, KpisTab } from '@/lib/types/types';
 
 /**
@@ -21,7 +23,9 @@ import type { TeamsTab, GoalsTab, KpisTab } from '@/lib/types/types';
  * - **KPIs** — the outcome layer + its view submenu.
  * - **Development** — a label-only group holding the remaining project-engineering
  *   surfaces folded in from the retired Dev Tools tabs (Lifecycle / Factory /
- *   Contest / Mastermind). See DEV_ITEMS.
+ *   Contest / Mastermind), plus Studio, which is its own content section
+ *   (`sidebarSection: 'studio'`, nested under Projects in the nav registry)
+ *   rather than a Teams tab. See DEV_ITEMS.
  * - **Browser** — a label-only group for agent web-app control: the Whitelist of
  *   origins agents may drive, and the embedded Webview they drive them in. See
  *   BROWSER_ITEMS and docs/features/browser.md.
@@ -100,6 +104,12 @@ function prefetchMastermindIntent() {
 export function TeamsSidebarNav() {
   const { t } = useTranslation();
   const teamsTab = useSystemStore((s) => s.teamsTab);
+  const sidebarSection = useSystemStore((s) => s.sidebarSection);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  // Studio's visibility is the registry's gate, resolved by the one resolver
+  // the rail and the palette use, so all three agree on who can reach it.
+  const { isVisible } = useTier();
+  const showStudio = passesGates(navSection('studio').gates, { isDev: import.meta.env.DEV, isTierVisible: isVisible });
   const setTeamsTab = useSystemStore((s) => s.setTeamsTab);
   const goalsTab = useSystemStore((s) => s.goalsTab);
   const kpiProposalCount = useSystemStore((s) => s.kpis.filter((k) => k.status === 'proposed').length);
@@ -329,6 +339,29 @@ export function TeamsSidebarNav() {
               </button>
             );
           })}
+          {/* Studio — the app builder. A content section of its own, not a
+              Teams tab, so it switches `sidebarSection` instead of `teamsTab`
+              (the registry nests it under Projects, so the rail keeps Projects
+              lit). Experimental (the registry gates it `devOnly`), so it wears
+              the DEV_ITEMS golden rail. */}
+          {showStudio && (
+            <button
+              type="button"
+              data-testid="teams-studio-nav"
+              data-experimental="true"
+              onClick={() => setSidebarSection('studio')}
+              aria-current={sidebarSection === 'studio' ? 'page' : undefined}
+              className={`w-full flex items-center gap-2 px-2.5 py-1.5 typo-body transition-colors border-l-2 border-amber-400/70 rounded-r-md ${
+                sidebarSection === 'studio'
+                  ? 'bg-primary/10 text-foreground/90 font-medium'
+                  : 'text-foreground/70 hover:bg-secondary/30 hover:text-foreground/90'
+              }`}
+            >
+              <PenTool className="w-3.5 h-3.5 flex-shrink-0 text-amber-400/80" />
+              <span className="truncate">{t.sidebar.studio}</span>
+              <span className="sr-only">{t.sidebar.experimental}</span>
+            </button>
+          )}
         </div>
       </div>
 
