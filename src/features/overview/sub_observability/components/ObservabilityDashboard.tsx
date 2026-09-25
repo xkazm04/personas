@@ -6,8 +6,10 @@
  * pane), the trend charts and per-persona split, IPC and tool performance, system traces,
  * Athena's health and spend.
  *
- * NOT ROUTED: no file in src/ imports this dashboard (src/lib/analytics/navCatalog.ts records
- * it). It is judged in the style page harness (scripts/style/page-harness, observability/*).
+ * Routed since 2026-09-25 as an Overview tab: `overviewTab === 'observability'` in
+ * src/features/overview/components/dashboard/OverviewPage.tsx (commit 0239ccde9). It was
+ * unmounted before; the style page harness still shoots it (scripts/style/page-harness,
+ * observability/*).
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Stethoscope } from 'lucide-react';
