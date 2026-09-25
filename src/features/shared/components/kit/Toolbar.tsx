@@ -83,11 +83,15 @@ export function SearchField({ value, onChange, placeholder, inputRef, testId }: 
  * spinner with disabled + aria-busy, and wears the kit's look (kit.css is unlayered).
  * @catalog KitButton - the kit 32px button over the shared Button (real busy spinner). Kit.
  */
-export function KitButton({ children, onClick, loading, quiet, hint, className, testId }: {
+export function KitButton({ children, onClick, loading, quiet, hint, className, testId, pressed, expanded }: {
   children: ReactNode;
   onClick: () => void;
   loading?: boolean;
   quiet?: boolean;
+  /** A toggle: sets aria-pressed, which kit.css already draws as the pressed (selected) look. */
+  pressed?: boolean;
+  /** A disclosure: sets aria-expanded for the region it opens. */
+  expanded?: boolean;
   /** A key glyph shown after the label (`Esc`, `↵`). */
   hint?: string;
   className?: string;
@@ -100,6 +104,8 @@ export function KitButton({ children, onClick, loading, quiet, hint, className, 
       data-testid={testId}
       className={cx('k-btn typo-label k-regular', quiet && 'k-btn--quiet', className)}
       loading={loading}
+      aria-pressed={pressed}
+      aria-expanded={expanded}
       onClick={onClick}
     >
       {children}

@@ -42,17 +42,26 @@ export function ListRow({ name, meta, mark, figures, time, size = 'm', state, na
   );
 }
 
-/** A list of rows, or its loading ghost, or its empty band: the list's three states.
- * @catalog Rows - a list of ListRows with its loading ghost and empty band. Kit.
+/** A list of rows, or its loading ghost, or its empty band: the list's three states; a pager under the last row.
+ * @catalog Rows - a list of ListRows with its loading ghost, empty band and optional pager. Kit.
  */
-export function Rows({ loading, empty, children, count }: {
+export function Rows({ loading, empty, children, count, pager, label }: {
   loading?: boolean;
   empty: EmptySpec;
   /** Number of rows about to render; 0 renders the empty band. */
   count: number;
   children: ReactNode;
+  /** Under the last row, as DataTable's pager (a "show all" or page control). */
+  pager?: ReactNode;
+  /** Accessible name of the pager. */
+  label?: string;
 }) {
   if (loading) return <GhostRows />;
   if (count === 0) return <>{emptyBand(empty)}</>;
-  return <div className="k-rows">{children}</div>;
+  return (
+    <>
+      <div className="k-rows">{children}</div>
+      {pager && <nav className="k-pager" aria-label={label}>{pager}</nav>}
+    </>
+  );
 }

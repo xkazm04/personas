@@ -17,5 +17,6 @@ export { Toolbar, Segmented, SearchField, KitButton, type SegmentOption } from '
 export { DataTable, type TableCol, type TableRow } from './DataTable';
 export { UnitStrip, apportion, type UnitSegment, type UnitSize } from './UnitStrip';
 export { Mark, Dot } from './Mark';
+export { ChartFrame, toneColor } from './ChartFrame';
 export { Ghost, GhostRows, type EmptySpec } from './states';
 export type { Tone, Glyph, KitState, KitStates } from './types';
