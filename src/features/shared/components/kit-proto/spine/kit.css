@@ -222,7 +222,7 @@ button.k-chip:hover, .k-chip.is-hover { border-color: color-mix(in srgb, var(--p
 }
 .k-chip.is-muted { border-style: dashed; }
 .k-chip.is-muted > :not(.k-dot) { opacity: .62; }
-.k-chip__share { position: absolute; left: 0; bottom: 0; height: 2px; width: var(--share); background: color-mix(in srgb, var(--primary) 70%, transparent); }
+.k-chip__share { position: absolute; left: 0; bottom: 0; height: 2px; width: calc(var(--share) * 100%); /* --share is a 0..1 fraction */ background: color-mix(in srgb, var(--primary) 70%, transparent); }
 .k-chip__count { color: var(--quiet); }
 
 /* ============ Toolbar ============ */

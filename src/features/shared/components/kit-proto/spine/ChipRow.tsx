@@ -23,7 +23,7 @@ export function ChipView({ chip: c }: { chip: Chip }) {
       {c.glyph && <Dot tone={c.tone} glyph={c.glyph} />}
       <span className="typo-label k-regular">{c.label}</span>
       {c.count != null && <span className="k-chip__count typo-data k-regular">{c.count}</span>}
-      {c.share != null && <span className="k-chip__share" style={{ '--share': `${Math.round(c.share * 100)}%` } as CSSProperties} />}
+      {c.share != null && <span className="k-chip__share" style={{ '--share': Math.min(1, Math.max(0, c.share)) } as CSSProperties} />}
     </>
   );
   const cls = cx('k-chip', stateClass(c.state));
