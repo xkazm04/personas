@@ -1,341 +1,101 @@
+/**
+ * Observability (composition kit): alert rules as a Section of ListRows. A rule's Mark is its
+ * severity, a disabled rule recedes; its switch, edit and delete sit in the row's figures. The
+ * evaluator's last run is the section meta (a Dot in success or error, then how long ago).
+ */
 import { useState } from 'react';
-import { Plus, Trash2, ToggleLeft, ToggleRight, Pencil, X, Check, Activity } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useOverviewStore } from '@/stores/overviewStore';
-import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
 import type { AlertRule } from '@/lib/bindings/AlertRule';
-import {
-  ALERT_METRIC_OPTIONS,
-  ALERT_SEVERITY_OPTIONS,
-  alertLabel,
-  type AlertMetric,
-  type AlertOperator,
-  type AlertSeverity,
-  type AlertEvalHealth,
-} from '@/stores/slices/overview/alertSlice';
+import { ALERT_METRIC_OPTIONS, ALERT_SEVERITY_OPTIONS, alertLabel, type AlertSeverity } from '@/stores/slices/overview/alertSlice';
 import { silentCatch } from '@/lib/silentCatch';
-import { formatRelativeTime } from '@/lib/utils/formatters';
-import { DebtText } from '@/i18n/DebtText';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { Dot, KitButton, ListRow, Rows, Section, type Glyph, type Tone } from '@/features/shared/components/kit';
+import { AlertRuleForm, type RuleFormData } from './AlertRuleForm';
 
-
-
-// -- Rule Form ---------------------------------------------------------
-
-interface RuleFormData {
-  name: string;
-  metric: AlertMetric;
-  operator: AlertOperator;
-  threshold: string;
-  severity: AlertSeverity;
-  personaId: string | null;
-}
-
-const DEFAULT_FORM: RuleFormData = {
-  name: '',
-  metric: 'error_rate',
-  operator: '>',
-  threshold: '10',
-  severity: 'warning',
-  personaId: null,
+export const SEVERITY_MARK: Record<AlertSeverity, { tone: Tone; glyph: Glyph }> = {
+  critical: { tone: 'error', glyph: 'solid' },
+  warning: { tone: 'warning', glyph: 'solid' },
+  info: { tone: 'info', glyph: 'soft' },
 };
 
-function RuleForm({
-  initial,
-  personas,
-  onSubmit,
-  onCancel,
-}: {
-  initial?: RuleFormData;
-  personas: { id: string; name: string }[];
-  onSubmit: (data: RuleFormData) => void;
-  onCancel: () => void;
-}) {
-  // The option lists carry KEYS, not English values (see alertSlice) — resolve
-  // them here so the labels follow a language switch instead of freezing at
-  // module-init time.
+const toInput = (d: RuleFormData) => ({
+  name: d.name.trim(), metric: d.metric, operator: d.operator, threshold: parseFloat(d.threshold), severity: d.severity, persona_id: d.personaId,
+});
+const toForm = (r: AlertRule): RuleFormData => ({
+  name: r.name, metric: r.metric, operator: r.operator, threshold: String(r.threshold), severity: r.severity, personaId: r.persona_id,
+});
+
+export function AlertRulesPanel({ eyebrow }: { eyebrow?: string }) {
   const { t } = useTranslation();
-  const [form, setForm] = useState<RuleFormData>(initial ?? DEFAULT_FORM);
-  const metricInfo = ALERT_METRIC_OPTIONS.find(m => m.value === form.metric);
-
-  return (
-    <div className="space-y-3 p-3 rounded-modal border border-primary/15 bg-secondary/20">
-      {/* Name */}
-      <input
-        value={form.name}
-        onChange={(e) => setForm({ ...form, name: e.target.value })}
-        placeholder={"rule_name_placeholder"}
-        className="w-full px-3 py-2 typo-body rounded-card bg-secondary/40 border border-primary/15 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
-      />
-
-      {/* Metric + Operator + Threshold */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <select
-          value={form.metric}
-          onChange={(e) => setForm({ ...form, metric: e.target.value as AlertMetric })}
-          className="px-2.5 py-1.5 typo-body rounded-card bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none"
-        >
-          {ALERT_METRIC_OPTIONS.map(m => (
-            <option key={m.value} value={m.value}>{alertLabel(t, m.labelKey)}</option>
-          ))}
-        </select>
-
-        <select
-          value={form.operator}
-          onChange={(e) => setForm({ ...form, operator: e.target.value as AlertOperator })}
-          className="px-2.5 py-1.5 typo-body rounded-card bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none w-16"
-        >
-          <option value=">">&gt;</option>
-          <option value="<">&lt;</option>
-          <option value=">=">&ge;</option>
-          <option value="<=">&le;</option>
-        </select>
-
-        <div className="relative">
-          <input
-            type="number"
-            value={form.threshold}
-            onChange={(e) => setForm({ ...form, threshold: e.target.value })}
-            className="w-24 px-2.5 py-1.5 typo-body rounded-card bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none pr-6"
-            step="any"
-          />
-          {metricInfo?.unit && (
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 typo-caption text-foreground">
-              {metricInfo.unit}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Severity + Scope */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <select
-          value={form.severity}
-          onChange={(e) => setForm({ ...form, severity: e.target.value as AlertSeverity })}
-          className="px-2.5 py-1.5 typo-body rounded-card bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none"
-        >
-          {ALERT_SEVERITY_OPTIONS.map(s => (
-            <option key={s.value} value={s.value}>{alertLabel(t, s.labelKey)}</option>
-          ))}
-        </select>
-
-        <select
-          value={form.personaId ?? '__global__'}
-          onChange={(e) => setForm({ ...form, personaId: e.target.value === '__global__' ? null : e.target.value })}
-          className="px-2.5 py-1.5 typo-body rounded-card bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none flex-1 min-w-[120px]"
-        >
-          <option value="__global__"><DebtText k="auto_all_agents_global_0ca4bef1" /></option>
-          {personas.map(p => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center gap-2 pt-1">
-        <button
-          type="button"
-          onClick={() => {
-            if (!form.name.trim() || !form.threshold) return;
-            onSubmit(form);
-          }}
-          disabled={!form.name.trim() || !form.threshold}
-          className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-card bg-blue-600 hover:bg-blue-500 text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          <Check className="w-3.5 h-3.5" /> Save
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors"
-        >
-          <X className="w-3.5 h-3.5" /> Cancel
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// -- Rule Row ----------------------------------------------------------
-
-function RuleRow({
-  rule,
-  personas,
-  onToggle,
-  onDelete,
-  onEdit,
-}: {
-  rule: AlertRule;
-  personas: { id: string; name: string }[];
-  onToggle: () => void;
-  onDelete: () => void;
-  onEdit: () => void;
-}) {
-  const { t } = useTranslation();
-  const metricInfo = ALERT_METRIC_OPTIONS.find(m => m.value === rule.metric);
-  const sevInfo = ALERT_SEVERITY_OPTIONS.find(s => s.value === rule.severity);
-  const scopeName = rule.persona_id ? personas.find(p => p.id === rule.persona_id)?.name ?? 'Unknown' : 'Global';
-
-  return (
-    <div className={`flex items-center gap-3 px-3 py-2.5 rounded-modal border transition-colors ${rule.enabled ? 'border-primary/10 bg-secondary/20' : 'border-primary/10 bg-secondary/10 opacity-60'}`}>
-      <button type="button" onClick={onToggle} aria-pressed={rule.enabled} className="shrink-0 text-foreground hover:text-foreground transition-colors" title={rule.enabled ? 'Disable' : 'Enable'}>
-        {rule.enabled
-          ? <ToggleRight className="w-5 h-5 text-emerald-400" />
-          : <ToggleLeft className="w-5 h-5" />
-        }
-      </button>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="typo-heading text-foreground truncate">{rule.name}</span>
-          <span
-            className="px-1.5 py-0.5 rounded text-[10px] font-medium"
-            style={{ backgroundColor: `${sevInfo?.color ?? '#888'}20`, color: sevInfo?.color ?? '#888' }}
-          >
-            {sevInfo ? alertLabel(t, sevInfo.labelKey) : rule.severity}
-          </span>
-        </div>
-        <p className="typo-caption text-foreground mt-0.5">
-          {metricInfo ? alertLabel(t, metricInfo.labelKey) : rule.metric} {rule.operator} {rule.threshold}{metricInfo?.unit ?? ''} &middot; {scopeName}
-        </p>
-      </div>
-      <button type="button" onClick={onEdit} className="p-1 text-foreground hover:text-muted-foreground transition-colors" title={"edit"}>
-        <Pencil className="w-3.5 h-3.5" />
-      </button>
-      <button type="button" onClick={onDelete} className="p-1 text-foreground hover:text-red-400 transition-colors" title="Delete">
-        <Trash2 className="w-3.5 h-3.5" />
-      </button>
-    </div>
-  );
-}
-
-// -- Eval Health Indicator ---------------------------------------------
-
-function EvalHealthIndicator({ health }: { health: AlertEvalHealth }) {
-  if (!health.lastEvalAt) return null;
-
-  const agoText = formatRelativeTime(health.lastEvalAt);
-
-  const isHealthy = !health.lastError;
-  const dotColor = isHealthy ? 'bg-emerald-400' : 'bg-red-400';
-
-  return (
-    <div className="flex items-center gap-1.5 typo-caption text-foreground" title={
-      health.lastError
-        ? `Last error: ${health.lastError} (${health.totalFailures} total failures)`
-        : `Evaluated ${health.rulesEvaluated} rules in ${health.lastEvalDurationMs}ms, ${health.rulesTriggered} triggered`
-    }>
-      <Activity className="w-3 h-3" />
-      <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
-      <span>{agoText}</span>
-      {health.lastError && <span className="text-red-400/80">failed</span>}
-    </div>
-  );
-}
-
-// -- Panel -------------------------------------------------------------
-
-export function AlertRulesPanel() {
-  const { t } = useTranslation();
-  const {
-    alertRules, addAlertRule, updateAlertRule, deleteAlertRule,
-    toggleAlertRule, alertEvalHealth,
-  } = useOverviewStore(useShallow((s) => ({
-    alertRules: s.alertRules,
-    addAlertRule: s.addAlertRule,
-    updateAlertRule: s.updateAlertRule,
-    deleteAlertRule: s.deleteAlertRule,
-    toggleAlertRule: s.toggleAlertRule,
-    alertEvalHealth: s.alertEvalHealth,
+  const hp = t.overview.healing_issues_panel;
+  const s = useOverviewStore(useShallow((st) => ({
+    alertRules: st.alertRules, addAlertRule: st.addAlertRule, updateAlertRule: st.updateAlertRule,
+    deleteAlertRule: st.deleteAlertRule, toggleAlertRule: st.toggleAlertRule, health: st.alertEvalHealth,
   })));
-  const personas = useAgentStore((s) => s.personas);
-
-  const [showForm, setShowForm] = useState(false);
+  const personas = useAgentStore((st) => st.personas);
+  const personaList = personas.map((p) => ({ id: p.id, name: p.name }));
+  const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const personaList = personas.map(p => ({ id: p.id, name: p.name }));
-
-  const handleAdd = async (data: RuleFormData) => {
-    const threshold = parseFloat(data.threshold);
-    if (!Number.isFinite(threshold)) return;
-    try {
-      await addAlertRule({
-        name: data.name.trim(),
-        metric: data.metric,
-        operator: data.operator,
-        threshold,
-        severity: data.severity,
-        persona_id: data.personaId,
-        enabled: true,
-      });
-      setShowForm(false);
-    } catch (err) { silentCatch("features/overview/sub_observability/components/AlertRulesPanel:catch1")(err); }
+  const add = async (data: RuleFormData) => {
+    const input = toInput(data);
+    if (!Number.isFinite(input.threshold)) return;
+    try { await s.addAlertRule({ ...input, enabled: true }); setAdding(false); } catch (err) { silentCatch('AlertRulesPanel:addAlertRule')(err); }
+  };
+  const edit = async (id: string, data: RuleFormData) => {
+    const input = toInput(data);
+    if (!Number.isFinite(input.threshold)) return;
+    try { await s.updateAlertRule(id, input); setEditingId(null); } catch (err) { silentCatch('AlertRulesPanel:updateAlertRule')(err); }
   };
 
-  const handleEdit = async (id: string, data: RuleFormData) => {
-    const threshold = parseFloat(data.threshold);
-    if (!Number.isFinite(threshold)) return;
-    try {
-      await updateAlertRule(id, {
-        name: data.name.trim(),
-        metric: data.metric,
-        operator: data.operator,
-        threshold,
-        severity: data.severity,
-        persona_id: data.personaId,
-      });
-      setEditingId(null);
-    } catch (err) { silentCatch("features/overview/sub_observability/components/AlertRulesPanel:catch2")(err); }
-  };
-
+  const h = s.health;
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h3 className="typo-heading text-foreground">{t.overview.observability.alert_rules}</h3>
-          <EvalHealthIndicator health={alertEvalHealth} />
-        </div>
-        <button
-          type="button"
-          onClick={() => { setShowForm(true); setEditingId(null); }}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 hover:text-foreground transition-colors"
-        >
-          <Plus className="w-3 h-3" /> <DebtText k="auto_add_rule_05c4128d" />
-        </button>
-      </div>
-
-      {showForm && (
-          <div className="animate-fade-slide-in">
-            <RuleForm personas={personaList} onSubmit={handleAdd} onCancel={() => setShowForm(false)} />
-          </div>
-        )}
-
-      {alertRules.length === 0 && !showForm && (
-        <p className="typo-body text-foreground text-center py-6">
-          <DebtText k="auto_no_alert_rules_configured_add_a_rule_to_ge_665e9e77" />
-        </p>
-      )}
-
-      <div className="space-y-2">
-        {alertRules.map((rule) => (
-          editingId === rule.id ? (
-            <RuleForm
+    <Section
+      id="s-obs-alert-rules"
+      eyebrow={eyebrow}
+      title={t.overview.observability.alert_rules}
+      count={s.alertRules.length}
+      meta={h.lastEvalAt ? (
+        <span className="inline-flex items-center gap-2">
+          <Dot tone={h.lastError ? 'error' : 'success'} />
+          <RelativeTime timestamp={h.lastEvalAt} />
+          {h.lastError && <span className="t-error k-toned">{t.common.error}</span>}
+        </span>
+      ) : undefined}
+      actions={<KitButton onClick={() => { setAdding(true); setEditingId(null); }} testId="obs-rule-add">{hp.add_rule}</KitButton>}
+    >
+      {adding && <AlertRuleForm personas={personaList} onSubmit={add} onCancel={() => setAdding(false)} />}
+      <Rows count={s.alertRules.length} empty={{ title: hp.no_rules_configured }}>
+        {s.alertRules.map((rule) => {
+          if (editingId === rule.id) {
+            return <AlertRuleForm key={rule.id} initial={toForm(rule)} personas={personaList} onSubmit={(d) => edit(rule.id, d)} onCancel={() => setEditingId(null)} />;
+          }
+          const metric = ALERT_METRIC_OPTIONS.find((m) => m.value === rule.metric);
+          const sev = ALERT_SEVERITY_OPTIONS.find((x) => x.value === rule.severity);
+          const scope = rule.persona_id ? personaList.find((p) => p.id === rule.persona_id)?.name ?? t.overview.activity.unknown : hp.all_agents_global;
+          return (
+            <ListRow
               key={rule.id}
-              personas={personaList}
-              onSubmit={(data) => handleEdit(rule.id, data)}
-              onCancel={() => setEditingId(null)}
+              size="m"
+              name={rule.name}
+              meta={`${metric ? alertLabel(t, metric.labelKey) : rule.metric} ${rule.operator} ${rule.threshold}${metric?.unit ?? ''} · ${scope}`}
+              mark={{ ...SEVERITY_MARK[rule.severity], label: sev ? alertLabel(t, sev.labelKey) : rule.severity }}
+              state={rule.enabled ? undefined : 'muted'}
+              figures={
+                <>
+                  <AccessibleToggle size="sm" checked={rule.enabled} label={rule.name} onChange={() => { s.toggleAlertRule(rule.id).catch(silentCatch('AlertRulesPanel:toggleAlertRule')); }} />
+                  <KitButton quiet onClick={() => { setEditingId(rule.id); setAdding(false); }}>{t.common.edit}</KitButton>
+                  <KitButton quiet onClick={() => { s.deleteAlertRule(rule.id).catch(silentCatch('AlertRulesPanel:deleteAlertRule')); }}>{t.common.delete}</KitButton>
+                </>
+              }
             />
-          ) : (
-            <RuleRow
-              key={rule.id}
-              rule={rule}
-              personas={personaList}
-              onToggle={() => { toggleAlertRule(rule.id).catch(silentCatch('AlertRulesPanel:toggleAlertRule')); }}
-              onDelete={() => { deleteAlertRule(rule.id).catch(silentCatch('AlertRulesPanel:deleteAlertRule')); }}
-              onEdit={() => { setEditingId(rule.id); setShowForm(false); }}
-            />
-          )
-        ))}
-      </div>
-    </div>
+          );
+        })}
+      </Rows>
+    </Section>
   );
 }

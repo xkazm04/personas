@@ -1,275 +1,93 @@
-import { useState, useMemo, useCallback } from 'react';
+/**
+ * Observability (composition kit): the system trace timeline. Traces are a DataTable (a trace's
+ * Mark: error, live while in flight, done); the operation filter is a Segmented and Clear a
+ * KitButton in the Toolbar. Picking a trace opens its span waterfall in a level-2 Section.
+ */
+import { useMemo, useState } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
-import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
-import { Activity, Trash2, AlertCircle, ChevronDown, ChevronRight, Clock } from 'lucide-react';
+import { Numeric } from '@/features/shared/components/display/Numeric';
+import { DataTable, KitButton, Meta, Section, Segmented, Toolbar, type TableRow, type KitState } from '@/features/shared/components/kit';
 import { useSystemTraces } from '@/hooks/execution/useSystemTrace';
-import { SYSTEM_OPERATION_CONFIG, getSpanConfig } from '@/features/agents/sub_executions/libs/traceHelpers';
-import { buildSpanTree, flattenTree } from '@/features/agents/sub_executions/libs/traceHelpers';
-import type { SystemTrace } from '@/lib/execution/systemTrace';
+import { SYSTEM_OPERATION_CONFIG } from '@/features/agents/sub_executions/libs/traceHelpers';
 import type { SystemOperationType } from '@/lib/execution/pipeline';
-import { formatDuration } from '@/lib/utils/formatters';
-import type { UnifiedSpan } from '@/lib/execution/pipeline';
 import { useTranslation } from '@/i18n/useTranslation';
+import { SystemTraceWaterfall } from './SystemTraceWaterfall';
 
-function TraceCard({ trace }: { trace: SystemTrace }) {
+type Col = 'trace' | 'spans' | 'dur' | 'at';
+const opLabel = (op: SystemOperationType) => SYSTEM_OPERATION_CONFIG[op]?.label ?? op;
+
+export default function SystemTraceViewer({ eyebrow }: { eyebrow?: string }) {
   const { t } = useTranslation();
-  const [expanded, setExpanded] = useState(false);
-  const [collapsedSpans, setCollapsedSpans] = useState<Set<string>>(new Set());
-
-  const config = SYSTEM_OPERATION_CONFIG[trace.operationType];
-  const duration = trace.completedAt ? trace.completedAt - trace.startedAt : null;
-  const hasErrors = trace.spans.some((s) => s.error);
-  const isActive = !trace.completedAt;
-
-  const toggleSpan = useCallback((spanId: string) => {
-    setCollapsedSpans((prev) => {
-      const next = new Set(prev);
-      if (next.has(spanId)) next.delete(spanId);
-      else next.add(spanId);
-      return next;
-    });
-  }, []);
-
-  const { visibleNodes, totalMs, childrenMap } = useMemo(() => {
-    const tree = buildSpanTree(trace.spans);
-    const allFlat = flattenTree(tree);
-
-    const isAncestorCollapsed = (node: typeof allFlat[0]): boolean => {
-      let currentParentId = node.span.parent_span_id;
-      while (currentParentId) {
-        if (collapsedSpans.has(currentParentId)) return true;
-        const parent = trace.spans.find((s) => s.span_id === currentParentId);
-        currentParentId = parent?.parent_span_id ?? null;
-      }
-      return false;
-    };
-
-    const visible = allFlat.filter((n) => !isAncestorCollapsed(n));
-    const total = duration ?? Math.max(0, ...trace.spans.map((s) => s.end_ms ?? s.start_ms + (s.duration_ms ?? 0)));
-    const children = new Map<string, boolean>();
-    for (const span of trace.spans) {
-      if (span.parent_span_id) children.set(span.parent_span_id, true);
-    }
-
-    return { visibleNodes: visible, totalMs: total, childrenMap: children };
-  }, [trace.spans, collapsedSpans, duration]);
-
-  // Status-accent left edge, matching the overview tables' gutter language:
-  // errored traces read red, in-flight traces read blue, completed stay neutral.
-  const accentLeft = hasErrors ? 'border-l-red-400/70' : isActive ? 'border-l-blue-400/70' : 'border-l-primary/15';
-
-  return (
-    <div className={`rounded-card border border-l-2 ${hasErrors ? 'border-red-500/30' : 'border-primary/15'} ${accentLeft} bg-secondary/30 overflow-hidden`}>
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-secondary/50 transition-colors text-left"
-      >
-        {expanded ? (
-          <ChevronDown className="w-3.5 h-3.5 text-foreground shrink-0" />
-        ) : (
-          <ChevronRight className="w-3.5 h-3.5 text-foreground shrink-0" />
-        )}
-        <span className={`inline-flex px-1.5 py-0.5 typo-code uppercase rounded border ${config.bg} ${config.color} ${config.border} shrink-0`}>
-          {config.label}
-        </span>
-        <span className="typo-code text-foreground/85 truncate flex-1">{trace.label}</span>
-
-        {isActive && (
-          <StatusBadge variant="info" size="sm" icon={<span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />} className="typo-code rounded shrink-0">
-            Active
-          </StatusBadge>
-        )}
-
-        {hasErrors && (
-          <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
-        )}
-
-        <span className="typo-code text-foreground shrink-0 flex items-center gap-1">
-          <Clock className="w-2.5 h-2.5" />
-          {duration != null ? formatDuration(duration) : '...'}
-        </span>
-
-        <span className="typo-code text-foreground shrink-0">
-          {trace.spans.length} span{trace.spans.length !== 1 ? 's' : ''}
-        </span>
-
-        <span className="typo-code text-foreground shrink-0">
-          {<AbsoluteTime timestamp={trace.startedAt} variant="time" />}
-        </span>
-      </button>
-
-      {expanded && (
-          <div className="animate-fade-slide-in"
-          >
-            <div className="border-t border-primary/10">
-              {/* Time axis */}
-              <div className="grid grid-cols-[minmax(180px,1fr)_minmax(180px,2fr)] gap-2 px-2 py-1 bg-secondary/40">
-                <div className="typo-code text-foreground uppercase tracking-wider">{t.overview.system_trace_extra.span}</div>
-                <div className="flex justify-between typo-code text-foreground uppercase tracking-wider">
-                  <span>{t.overview.system_trace_extra.zero_ms}</span>
-                  <span>{formatDuration(totalMs)}</span>
-                </div>
-              </div>
-
-              {/* Span rows */}
-              <div className="max-h-[300px] overflow-y-auto">
-                {visibleNodes.map((node) => (
-                  <SpanRowCompact
-                    key={node.span.span_id}
-                    span={node.span}
-                    depth={node.depth}
-                    totalMs={totalMs}
-                    hasChildren={childrenMap.has(node.span.span_id)}
-                    expanded={!collapsedSpans.has(node.span.span_id)}
-                    onToggle={() => toggleSpan(node.span.span_id)}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-    </div>
-  );
-}
-
-function SpanRowCompact({
-  span,
-  depth,
-  totalMs,
-  hasChildren,
-  expanded,
-  onToggle,
-}: {
-  span: UnifiedSpan;
-  depth: number;
-  totalMs: number;
-  hasChildren: boolean;
-  expanded: boolean;
-  onToggle: () => void;
-}) {
-  const config = getSpanConfig(span.span_type);
-
-  const leftPct = totalMs > 0 ? (span.start_ms / totalMs) * 100 : 0;
-  const widthPct = totalMs > 0
-    ? span.duration_ms != null
-      ? Math.max((span.duration_ms / totalMs) * 100, 0.5)
-      : Math.max(((totalMs - span.start_ms) / totalMs) * 100, 0.5)
-    : 100;
-
-  return (
-    <div className={`grid grid-cols-[minmax(180px,1fr)_minmax(180px,2fr)] gap-2 items-center px-2 py-0.5 hover:bg-secondary/30 ${span.error ? 'bg-red-500/5' : ''}`}>
-      <div className="flex items-center gap-1 min-w-0" style={{ paddingLeft: `${depth * 14}px` }}>
-        {hasChildren ? (
-          <button type="button" onClick={onToggle} className="p-0.5 rounded hover:bg-primary/10 shrink-0">
-            {expanded ? <ChevronDown className="w-2.5 h-2.5 text-foreground" /> : <ChevronRight className="w-2.5 h-2.5 text-foreground" />}
-          </button>
-        ) : (
-          <span className="w-3.5 shrink-0" />
-        )}
-        <span className={`inline-flex px-1 py-0.5 text-[10px] uppercase rounded border ${config.bg} ${config.color} ${config.border} shrink-0`}>
-          {config.label}
-        </span>
-        <span className="typo-code text-foreground truncate">{span.name}</span>
-        {span.error && <AlertCircle className="w-2.5 h-2.5 text-red-400 shrink-0" />}
-      </div>
-
-      <div className="relative h-4">
-        <div className="absolute inset-0 bg-primary/5 rounded" />
-        <div
-          className={`absolute top-0.5 bottom-0.5 rounded ${span.error ? 'bg-red-500/40' : config.bg}`}
-          style={{ left: `${leftPct}%`, width: `${widthPct}%`, minWidth: '2px' }}
-        />
-        {span.duration_ms != null && (
-          <span className="absolute top-0 typo-code text-foreground text-[10px]" style={{ left: `${Math.min(leftPct + widthPct + 0.5, 85)}%` }}>
-            {formatDuration(span.duration_ms)}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export default function SystemTraceViewer() {
-  const { t } = useTranslation();
+  const st = t.overview.system_trace_extra;
   const { traces, activeCount, errorCount, clear } = useSystemTraces();
   const [filter, setFilter] = useState<SystemOperationType | 'all'>('all');
+  const [picked, setPicked] = useState<string | null>(null);
+  const ops = useMemo(() => [...new Set(traces.map((x) => x.operationType))].sort(), [traces]);
+  const shown = useMemo(() => (filter === 'all' ? traces : traces.filter((x) => x.operationType === filter)), [traces, filter]);
+  const selected = traces.find((x) => x.traceId === picked) ?? null;
 
-  const filtered = useMemo(
-    () => filter === 'all' ? traces : traces.filter((t) => t.operationType === filter),
-    [traces, filter],
-  );
-
-  const operationTypes = useMemo(() => {
-    const types = new Set(traces.map((t) => t.operationType));
-    return Array.from(types).sort();
-  }, [traces]);
-
-  if (traces.length === 0) {
-    return (
-      <div className="text-center py-10">
-        <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-secondary/60 border border-primary/20 flex items-center justify-center">
-          <Activity className="w-6 h-6 text-foreground" />
-        </div>
-        <p className="typo-body text-foreground">{t.overview.system_trace_extra.no_traces}</p>
-        <p className="typo-body text-foreground mt-1">
-          {t.overview.system_trace_extra.no_traces_hint}
-        </p>
-      </div>
-    );
-  }
+  const rows: Array<TableRow<Col>> = shown.map((trace) => {
+    const errored = trace.spans.some((s) => s.error);
+    const live = !trace.completedAt;
+    const state: KitState[] = [];
+    if (trace.traceId === picked) state.push('selected');
+    if (live) state.push('live');
+    return {
+      id: trace.traceId,
+      state,
+      mark: errored ? { tone: 'error', glyph: 'solid', label: t.common.error } : live ? { tone: 'primary', glyph: 'live', label: t.common.active } : { tone: 'success', glyph: 'hollow', label: opLabel(trace.operationType) },
+      cells: {
+        trace: (
+          <div className="k-cell2">
+            <span className="k-row__name typo-code k-strong">{trace.label}</span>
+            <span className="k-row__meta typo-caption"><Meta parts={[opLabel(trace.operationType), live ? t.common.active : null]} /></span>
+          </div>
+        ),
+        spans: <span className="typo-data k-regular">{trace.spans.length}</span>,
+        dur: <span className="typo-data k-regular">{trace.completedAt ? <Numeric value={trace.completedAt - trace.startedAt} unit="ms" /> : <span className="k-quiet">-</span>}</span>,
+        at: <span className="typo-data k-regular k-quiet"><AbsoluteTime timestamp={trace.startedAt} variant="time" /></span>,
+      },
+    };
+  });
 
   return (
-    <div className="space-y-3">
-      {/* Summary bar */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="typo-code text-foreground">
-            {traces.length} trace{traces.length !== 1 ? 's' : ''}
-          </span>
-          {activeCount > 0 && (
-            <span className="typo-code text-blue-400">
-              {activeCount} active
-            </span>
-          )}
-          {errorCount > 0 && (
-            <span className="typo-code text-red-400">
-              {errorCount} error{errorCount !== 1 ? 's' : ''}
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <select
+    <Section
+      id="s-obs-trace"
+      eyebrow={eyebrow}
+      title={t.overview.observability_extra.system_trace}
+      count={traces.length || undefined}
+      meta={traces.length > 0 ? <Meta parts={[activeCount > 0 ? `${activeCount} ${t.common.active.toLowerCase()}` : null, errorCount > 0 ? `${errorCount} ${t.common.error.toLowerCase()}` : null]} /> : undefined}
+      state={traces.length === 0 ? 'empty' : undefined}
+      empty={{ title: st.no_traces, hint: st.no_traces_hint }}
+    >
+      <Toolbar label={t.overview.observability_extra.system_trace}>
+        {ops.length > 1 && (
+          <Segmented<SystemOperationType | 'all'>
+            label={st.all_operations}
             value={filter}
-            onChange={(e) => setFilter(e.target.value as SystemOperationType | 'all')}
-            className="typo-code bg-secondary/60 border border-primary/20 rounded px-2 py-1 text-foreground"
-          >
-            <option value="all">{t.overview.system_trace_extra.all_operations}</option>
-            {operationTypes.map((type) => (
-              <option key={type} value={type}>
-                {SYSTEM_OPERATION_CONFIG[type as SystemOperationType]?.label ?? type}
-              </option>
-            ))}
-          </select>
-
-          <button
-            type="button"
-            onClick={clear}
-            className="p-1.5 rounded hover:bg-secondary/60 text-foreground hover:text-foreground/80 transition-colors"
-            title={t.overview.system_trace_extra.clear_completed}
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-
-      {/* Trace list */}
-      <div className="space-y-2">
-        {filtered.map((trace) => (
-          <TraceCard key={trace.traceId} trace={trace} />
-        ))}
-      </div>
-    </div>
+            onChange={setFilter}
+            options={[{ v: 'all', label: st.all_operations, count: traces.length }, ...ops.map((op) => ({ v: op, label: opLabel(op), count: traces.filter((x) => x.operationType === op).length }))]}
+          />
+        )}
+        <KitButton quiet onClick={clear}>{st.clear_completed}</KitButton>
+      </Toolbar>
+      <DataTable<Col>
+        label={t.overview.observability_extra.system_trace}
+        onRowClick={(id) => setPicked((cur) => (cur === id ? null : id))}
+        cols={[
+          { key: 'trace', label: t.agents.executions.trace },
+          { key: 'spans', label: '#', num: true },
+          { key: 'dur', label: t.overview.ipc_panel.duration_header, num: true },
+          { key: 'at', label: t.overview.ipc_panel.when_header, num: true },
+        ]}
+        rows={rows}
+        empty={{ title: st.no_traces }}
+      />
+      {selected && (
+        <Section level={2} title={selected.label} meta={opLabel(selected.operationType)}>
+          <SystemTraceWaterfall trace={selected} />
+        </Section>
+      )}
+    </Section>
   );
 }

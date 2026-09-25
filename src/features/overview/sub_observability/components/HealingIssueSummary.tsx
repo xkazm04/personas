@@ -1,83 +1,42 @@
 import { useMemo } from 'react';
-import { TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
+import { Dot, Meta } from '@/features/shared/components/kit';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
-import { useTranslation } from '@/i18n/useTranslation';
+import type { ObservabilityWords } from '../libs/useObservabilityWords';
 
-export function HealingIssueSummary({ issues }: { issues: PersonaHealingIssue[] }) {
-  const { t } = useTranslation();
+const WEEK = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * The health issues' one-line summary, as the Section's meta: open count, auto-fixes this week,
+ * the week-over-week trend (a Dot in its tone) and the categories recurring in the last 7 days.
+ */
+export function HealingIssueSummary({ issues, w }: { issues: PersonaHealingIssue[]; w: ObservabilityWords }) {
+  const { o } = w;
   const stats = useMemo(() => {
     const now = Date.now();
-    const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
-    const twoWeeksAgo = now - 14 * 24 * 60 * 60 * 1000;
-
-    const openIssues = issues.filter((i) => i.status !== 'resolved');
-    const autoFixedThisWeek = issues.filter(
-      (i) => i.auto_fixed && new Date(i.created_at).getTime() >= weekAgo,
-    );
-
-    const recentCategoryCounts = new Map<string, number>();
-    for (const issue of issues) {
-      if (new Date(issue.created_at).getTime() >= weekAgo) {
-        recentCategoryCounts.set(issue.category, (recentCategoryCounts.get(issue.category) || 0) + 1);
-      }
-    }
-    const recurring = Array.from(recentCategoryCounts.entries())
-      .filter(([, count]) => count >= 2)
-      .sort((a, b) => b[1] - a[1]);
-
-    const thisWeekCount = issues.filter(
-      (i) => new Date(i.created_at).getTime() >= weekAgo,
-    ).length;
-    const lastWeekCount = issues.filter((i) => {
-      const t = new Date(i.created_at).getTime();
-      return t >= twoWeeksAgo && t < weekAgo;
-    }).length;
-
-    let trend: 'improving' | 'worsening' | 'stable' = 'stable';
-    if (thisWeekCount < lastWeekCount) trend = 'improving';
-    else if (thisWeekCount > lastWeekCount) trend = 'worsening';
-
-    return { openIssues: openIssues.length, autoFixedThisWeek: autoFixedThisWeek.length, recurring, trend, thisWeekCount, lastWeekCount };
+    const at = (i: PersonaHealingIssue) => new Date(i.created_at).getTime();
+    const thisWeek = issues.filter((i) => at(i) >= now - WEEK);
+    const lastWeek = issues.filter((i) => at(i) >= now - 2 * WEEK && at(i) < now - WEEK).length;
+    const byCat = new Map<string, number>();
+    for (const i of thisWeek) byCat.set(i.category, (byCat.get(i.category) ?? 0) + 1);
+    return {
+      open: issues.filter((i) => i.status !== 'resolved').length,
+      autoFixed: thisWeek.filter((i) => i.auto_fixed).length,
+      trend: thisWeek.length < lastWeek ? 'improving' : thisWeek.length > lastWeek ? 'degrading' : 'stable',
+      recurring: [...byCat.entries()].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]),
+    } as const;
   }, [issues]);
 
-  const TrendIcon = stats.trend === 'improving' ? TrendingDown : stats.trend === 'worsening' ? TrendingUp : ArrowRight;
-  const trendColor = stats.trend === 'improving' ? 'text-emerald-400' : stats.trend === 'worsening' ? 'text-red-400' : 'text-foreground';
-  const trendBg = stats.trend === 'improving' ? 'bg-emerald-500/10' : stats.trend === 'worsening' ? 'bg-red-500/10' : 'bg-secondary/40';
-  const trendLabel = stats.trend === 'improving' ? 'Improving' : stats.trend === 'worsening' ? 'Worsening' : 'Stable';
-
+  const trend = {
+    improving: { tone: 'success' as const, label: o.health_extra.improving },
+    degrading: { tone: 'error' as const, label: o.health_extra.degrading },
+    stable: { tone: 'neutral' as const, label: o.health_extra.stable },
+  }[stats.trend];
   return (
-    <div className="px-4 py-3 border-b border-primary/10 bg-secondary/20">
-      <div className="flex items-center gap-3 flex-wrap typo-body">
-        <div className="flex items-center gap-1.5">
-          <span className="font-medium text-foreground/90">{stats.openIssues}</span>
-          <span className="text-foreground">open</span>
-        </div>
-
-        <span className="inline-block w-1 h-1 rounded-full bg-primary/20" />
-
-        <div className="flex items-center gap-1.5">
-          <span className="font-medium text-emerald-400">{stats.autoFixedThisWeek}</span>
-          <span className="text-foreground">{t.overview.healing_summary.auto_fixed_this_week}</span>
-        </div>
-
-        <span className="inline-block w-1 h-1 rounded-full bg-primary/20" />
-
-        <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-card ${trendBg}`}>
-          <TrendIcon className={`w-3 h-3 ${trendColor}`} />
-          <span className={`font-medium ${trendColor}`}>{trendLabel}</span>
-        </div>
-
-        {stats.recurring.length > 0 && (
-          <>
-            <span className="inline-block w-1 h-1 rounded-full bg-primary/20" />
-            {stats.recurring.map(([category, count]) => (
-              <span key={category} className="text-amber-400/80">
-                {count} {category} {t.overview.healing_summary.issues_in_7d}
-              </span>
-            ))}
-          </>
-        )}
-      </div>
-    </div>
+    <Meta parts={[
+      w.tx(o.health_extra.open, { count: stats.open }),
+      `${stats.autoFixed} ${o.healing_summary.auto_fixed_this_week}`,
+      <span key="trend" className="inline-flex items-center gap-1.5"><Dot tone={trend.tone} />{trend.label}</span>,
+      ...stats.recurring.map(([cat, n]) => `${n} ${cat} ${o.healing_summary.issues_in_7d}`),
+    ]} />
   );
 }

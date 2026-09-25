@@ -1,148 +1,106 @@
+/**
+ * Athena operational health in Observability (direction 6 / A4), composed from the kit: the
+ * triage funnel, the proactive economy and job health are StatStrips in level-2 Sections, each
+ * count drawn as units of its section's quantum in the tone of what it counts; spend follows
+ * (AthenaSpendSection). Reads `companion_get_health` via {@link useAthenaHealth}.
+ *
+ * The error figure reads `errors / turns` on purpose: the count alone sat at a structural zero
+ * for the whole life of the ledger, and a bare "0" gave no way to tell a healthy run from a
+ * blind one.
+ */
 import { memo } from 'react';
-import { Bot, Filter, Bell } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Numeric } from '@/features/shared/components/display/Numeric';
+import { Section, StatStrip, UnitStrip, apportion, type StatTile, type Tone, type Glyph } from '@/features/shared/components/kit';
 import { useAthenaHealth } from '../libs/useAthenaHealth';
+import { quantumFor } from '../libs/quantum';
 import { AthenaSpendSection } from './AthenaSpendSection';
 
-/**
- * Athena operational-health panel in the Observability tab (direction 6 / A4).
- * Operational quality rather than spend: the triage funnel (is the signal
- * economy actually filtering?), the proactive economy (are her nudges engaged
- * or dismissed?), and job/error health. Reads `companion_get_health` via
- * {@link useAthenaHealth}.
- *
- * The error stat reads `errors / turns`. It is deliberately a ratio: the count
- * alone sat at a structural zero for the whole life of the ledger (every failed
- * turn returned before the ledger write), and a bare "0" gave the operator no
- * way to tell a healthy run from a blind one.
- */
+type Part = { label: string; n: number; tone: Tone; glyph?: Glyph };
 
-function Stat({ label, value, accent }: { label: string; value: string; accent?: string }) {
-  return (
-    <div className="rounded-card border border-primary/10 bg-secondary/20 px-3 py-2 min-w-0">
-      <div className="typo-caption uppercase tracking-wider text-foreground truncate">{label}</div>
-      <div className={`typo-heading tabular-nums ${accent ?? 'text-foreground'}`}>{value}</div>
-    </div>
-  );
+/** One tile per part, each drawing its own count at the shared quantum. */
+function tiles(parts: readonly Part[], q: number): StatTile[] {
+  return parts.map((x) => ({
+    label: x.label,
+    value: <Numeric value={x.n} unit="count" />,
+    draw: <UnitStrip size="s" rows={2} label={x.label} segments={[{ n: x.n / q, tone: x.tone, glyph: x.glyph }]} />,
+  }));
 }
 
-export const AthenaHealthPanel = memo(function AthenaHealthPanel() {
-  const { t, language } = useTranslation();
+const Legend = ({ q, label }: { q: number; label: string }) => (
+  <span className="k-legend-row typo-caption">
+    <span><UnitStrip size="s" label={label} segments={[{ n: 1, tone: 'neutral', glyph: 'soft' }]} /> = {q}</span>
+  </span>
+);
+
+export const AthenaHealthPanel = memo(function AthenaHealthPanel({ eyebrow }: { eyebrow?: string }) {
+  const { t } = useTranslation();
   const a = t.overview.athena;
   const { data, loading } = useAthenaHealth();
-
-  if (loading && !data) {
-    return (
-      <div className="p-4 rounded-modal border border-primary/10 bg-secondary/20 space-y-4" data-testid="athena-health-panel">
-        <div className="flex items-center gap-2">
-          <Bot className="w-4 h-4 text-primary" />
-          <h3 className="typo-heading text-foreground/90">{a.health_title}</h3>
-          <span className="typo-caption text-foreground">{a.health_hint}</span>
-        </div>
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2" aria-hidden="true">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-12 rounded-card bg-primary/[0.06] animate-fade-in"
-              style={{ animationDelay: `${120 + i * 35}ms` }}
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const head = { id: 's-obs-athena', eyebrow, title: a.health_title, meta: a.health_hint };
+  if (loading && !data) return <Section {...head} state="loading" ghostRows={3} />;
   if (!data) return null;
 
   const { triage, proactive, jobs, errors, turns } = data;
-  const fmt = (n: number) => Math.round(n).toLocaleString(language);
-  const engagedRate = proactive.delivered > 0 ? (proactive.engaged / proactive.delivered) * 100 : 0;
-  // `turns > 0` matters on its own: a chat-only user runs no triage passes and
-  // no jobs, and the panel used to claim "no activity" while Athena had been
-  // answering all day.
-  const anyActivity =
-    triage.passes > 0 ||
-    proactive.delivered > 0 ||
-    jobs.completed + jobs.failed > 0 ||
-    turns > 0 ||
-    errors > 0;
+  const anyActivity = triage.passes > 0 || proactive.delivered > 0 || jobs.completed + jobs.failed > 0 || turns > 0 || errors > 0;
+  if (!anyActivity) return <Section {...head} state="empty" empty={{ title: a.health_no_activity }} />;
 
+  const tq = quantumFor(triage.passes, 40);
+  const pq = quantumFor(proactive.delivered, 40);
+  const jq = quantumFor(jobs.completed + jobs.failed, 40);
   return (
-    <div className="p-4 rounded-modal border border-primary/10 bg-secondary/20 space-y-4" data-testid="athena-health-panel">
-      <div className="flex items-center gap-2">
-        <Bot className="w-4 h-4 text-primary" />
-        <h3 className="typo-heading text-foreground/90">{a.health_title}</h3>
-        <span className="typo-caption text-foreground">{a.health_hint}</span>
-      </div>
-
-      {!anyActivity ? (
-        <p className="typo-body text-foreground">{a.health_no_activity}</p>
-      ) : (
-        <>
-          {/* Triage funnel */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5">
-              <Filter className="w-3.5 h-3.5 text-cyan-400" />
-              <h4 className="typo-heading text-foreground">{a.triage_title}</h4>
-            </div>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-              <Stat label={a.triage_passes} value={fmt(triage.passes)} />
-              <Stat label={a.triage_drop} value={fmt(triage.drop)} />
-              <Stat label={a.triage_digest} value={fmt(triage.digest)} accent="text-amber-400" />
-              <Stat label={a.triage_attention} value={fmt(triage.attention)} accent="text-rose-400" />
-              <Stat label={a.triage_deep_dive} value={fmt(triage.deepDive)} accent="text-violet-400" />
-              <Stat
-                label={a.triage_parse_failures}
-                value={fmt(triage.parseFailures)}
-                accent={triage.parseFailures > 0 ? 'text-rose-400' : 'text-foreground'}
-              />
-            </div>
-          </div>
-
-          {/* Proactive economy */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5">
-              <Bell className="w-3.5 h-3.5 text-amber-400" />
-              <h4 className="typo-heading text-foreground">{a.proactive_title}</h4>
-            </div>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-              <Stat label={a.proactive_delivered} value={fmt(proactive.delivered)} />
-              <Stat label={a.proactive_engaged} value={fmt(proactive.engaged)} accent="text-emerald-400" />
-              <Stat label={a.proactive_dismissed} value={fmt(proactive.dismissed)} />
-              <Stat label={a.proactive_expired} value={fmt(proactive.expired)} />
-              <Stat label={a.proactive_engaged_rate} value={`${engagedRate.toFixed(0)}%`} accent="text-emerald-400" />
-              <Stat
-                label={a.proactive_budget}
-                value={`${fmt(proactive.budgetUsedToday)} / ${fmt(proactive.budgetCap)}`}
-              />
-            </div>
-          </div>
-
-          {/* Jobs + errors */}
-          <div className="grid grid-cols-3 gap-2">
-            <Stat label={a.jobs_completed} value={fmt(jobs.completed)} accent="text-emerald-400" />
-            <Stat
-              label={a.jobs_failed}
-              value={fmt(jobs.failed)}
-              accent={jobs.failed > 0 ? 'text-rose-400' : 'text-foreground'}
-            />
-            {/* Errors over turns, not a bare count. A lone "0" is exactly what
-                made the old structural zero so convincing — the denominator
-                shows how much was actually measured to get it. Mirrors the
-                budget stat's "used / cap" shape, so no new label is needed. */}
-            <Stat
-              label={a.errors}
-              value={`${fmt(errors)} / ${fmt(turns)}`}
-              accent={errors > 0 ? 'text-rose-400' : 'text-foreground'}
-            />
-          </div>
-
-          {/* Spend — the union of both ledgers Athena's cost lands in. Owns
-              its own fetch so a slow rollup never delays the health stats
-              above it, and so the loading-v2 machine can live entirely inside
-              UnifiedTable. */}
-          <AthenaSpendSection />
-        </>
-      )}
-    </div>
+    <Section {...head}>
+      <Section level={2} title={a.triage_title} meta={<Legend q={tq} label={a.triage_title} />}>
+        <StatStrip tiles={[
+          {
+            label: a.triage_passes,
+            value: <Numeric value={triage.passes} unit="count" />,
+            draw: <UnitStrip size="s" rows={2} label={a.triage_passes} segments={apportion([
+              { value: triage.drop, tone: 'neutral', glyph: 'soft' }, { value: triage.digest, tone: 'warning' },
+              { value: triage.attention, tone: 'error' }, { value: triage.deepDive, tone: 'highlight' },
+            ], tq)} />,
+          },
+          ...tiles([
+            { label: a.triage_drop, n: triage.drop, tone: 'neutral', glyph: 'soft' },
+            { label: a.triage_digest, n: triage.digest, tone: 'warning' },
+            { label: a.triage_attention, n: triage.attention, tone: 'error' },
+            { label: a.triage_deep_dive, n: triage.deepDive, tone: 'highlight' },
+            { label: a.triage_parse_failures, n: triage.parseFailures, tone: 'error', glyph: 'hollow' },
+          ], tq),
+        ]} />
+      </Section>
+      <Section level={2} title={a.proactive_title} meta={<Legend q={pq} label={a.proactive_title} />}>
+        <StatStrip tiles={[
+          ...tiles([
+            { label: a.proactive_delivered, n: proactive.delivered, tone: 'primary', glyph: 'soft' },
+            { label: a.proactive_engaged, n: proactive.engaged, tone: 'success' },
+            { label: a.proactive_dismissed, n: proactive.dismissed, tone: 'neutral', glyph: 'soft' },
+            { label: a.proactive_expired, n: proactive.expired, tone: 'pending', glyph: 'hollow' },
+          ], pq),
+          {
+            label: a.proactive_engaged_rate,
+            value: <Numeric value={proactive.delivered > 0 ? proactive.engaged / proactive.delivered : 0} unit="ratio" precision={0} />,
+          },
+          {
+            label: a.proactive_budget,
+            value: <><Numeric value={proactive.budgetUsedToday} unit="count" /> / <Numeric value={proactive.budgetCap} unit="count" /></>,
+            draw: <UnitStrip size="m" label={a.proactive_budget} segments={[
+              { n: proactive.budgetUsedToday, tone: 'primary' },
+              { n: Math.max(0, proactive.budgetCap - proactive.budgetUsedToday), glyph: 'empty' },
+            ]} />,
+          },
+        ]} />
+      </Section>
+      <Section level={2} title={a.jobs_title} meta={<Legend q={jq} label={a.jobs_title} />}>
+        <StatStrip tiles={[
+          ...tiles([
+            { label: a.jobs_completed, n: jobs.completed, tone: 'success' },
+            { label: a.jobs_failed, n: jobs.failed, tone: 'error' },
+          ], jq),
+          { label: a.errors, value: <><Numeric value={errors} unit="count" /> / <Numeric value={turns} unit="count" /></> },
+        ]} />
+      </Section>
+      <AthenaSpendSection />
+    </Section>
   );
 });
