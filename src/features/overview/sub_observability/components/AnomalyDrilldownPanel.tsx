@@ -1,17 +1,19 @@
+/**
+ * Anomaly drill-down (Observability and Activity > cost anomalies), in the shared BaseModal's own
+ * panel, composed from the kit: the spike's value, baseline and deviation as a StatStrip, then
+ * the likely root causes and the correlated events as ListRows on the spine, each Mark in the
+ * tone of what kind of event it was, relevance drawn as ten units. Loading is the kit's ghost,
+ * not a spinner.
+ */
 import { memo, useMemo } from 'react';
-import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
-import { X, Search, AlertTriangle, Clock, ArrowRight, Zap, Shield, RefreshCw, Bell, HelpCircle } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import { KitButton, KitHost, ListRow, Rows, Section, StatStrip, Surface, UnitStrip, type Glyph, type Tone } from '@/features/shared/components/kit';
 import type { AnomalyDrilldownData } from '@/lib/bindings/AnomalyDrilldownData';
-import type { CorrelatedEvent } from '@/lib/bindings/CorrelatedEvent';
-import type { RootCauseSuggestion } from '@/lib/bindings/RootCauseSuggestion';
 import type { MetricAnomaly } from '@/lib/bindings/MetricAnomaly';
 import { useTranslation } from '@/i18n/useTranslation';
-import { DebtText } from '@/i18n/DebtText';
 import { formatSignedOffset } from '@/lib/utils/formatters';
-
 
 interface AnomalyDrilldownPanelProps {
   anomaly: MetricAnomaly;
@@ -21,208 +23,98 @@ interface AnomalyDrilldownPanelProps {
   onClose: () => void;
 }
 
-const EVENT_TYPE_CONFIG: Record<string, { icon: typeof Search; color: string; bg: string }> = {
-  prompt_deployment: { icon: Zap, color: 'text-violet-400', bg: 'bg-violet-500/15' },
-  credential_rotation: { icon: RefreshCw, color: 'text-amber-400', bg: 'bg-amber-500/15' },
-  circuit_breaker: { icon: Shield, color: 'text-red-400', bg: 'bg-red-500/15' },
-  healing_issue: { icon: RefreshCw, color: 'text-cyan-400', bg: 'bg-cyan-500/15' },
-  alert: { icon: Bell, color: 'text-orange-400', bg: 'bg-orange-500/15' },
-  external: { icon: HelpCircle, color: 'text-foreground', bg: 'bg-secondary/30' },
+const EVENT_MARK: Record<string, { tone: Tone; glyph: Glyph }> = {
+  prompt_deployment: { tone: 'agent', glyph: 'solid' },
+  credential_rotation: { tone: 'warning', glyph: 'soft' },
+  circuit_breaker: { tone: 'error', glyph: 'solid' },
+  healing_issue: { tone: 'primary', glyph: 'soft' },
+  alert: { tone: 'error', glyph: 'soft' },
+  external: { tone: 'neutral', glyph: 'hollow' },
 };
+const markOf = (type: string) => EVENT_MARK[type] ?? EVENT_MARK.external!;
 
-const METRIC_LABELS: Record<string, string> = {
-  cost: 'Cost',
-  error_rate: 'Error Rate',
-  latency: 'Latency (P95)',
-};
-
-function confidenceBar(confidence: number) {
-  const pct = Math.round(confidence * 100);
-  const color = pct >= 70 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : 'bg-red-500';
+const Relevance = memo(function Relevance({ value, label }: { value: number; label: string }) {
+  const n = Math.max(0, Math.min(1, value)) * 10;
+  const tone: Tone = value >= 0.7 ? 'success' : value >= 0.4 ? 'warning' : 'error';
   return (
-    <div className="flex items-center gap-2 min-w-[100px]">
-      <div className="flex-1 h-1.5 rounded-full bg-secondary/30 overflow-hidden">
-        <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${pct}%` }} />
-      </div>
-      <span className="text-[10px] text-foreground tabular-nums">{pct}%</span>
-    </div>
-  );
-}
-
-const CorrelatedEventRow = memo(function CorrelatedEventRow({ event }: { event: CorrelatedEvent }) {
-  const config = EVENT_TYPE_CONFIG[event.eventType] ?? EVENT_TYPE_CONFIG.external!;
-  const Icon = config.icon;
-
-  return (
-    <div className="flex items-start gap-3 py-2.5 px-3 rounded-card hover:bg-secondary/20 transition-colors group">
-      {/* Timeline dot + icon */}
-      <div className={`flex-shrink-0 w-7 h-7 rounded-card ${config.bg} flex items-center justify-center mt-0.5`}>
-        <Icon className={`w-3.5 h-3.5 ${config.color}`} />
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="typo-body text-foreground/90 truncate">{event.label}</span>
-          <span className="text-[10px] text-foreground flex-shrink-0">
-            {formatSignedOffset(event.offsetSeconds)}
-          </span>
-        </div>
-        {event.detail && (
-          <p className="typo-caption text-foreground mt-0.5 line-clamp-2">{event.detail}</p>
-        )}
-        <div className="flex items-center gap-3 mt-1">
-          <span className="text-[10px] text-foreground">
-            {<AbsoluteTime timestamp={event.timestamp} />}
-          </span>
-          {confidenceBar(event.relevance)}
-        </div>
-      </div>
-    </div>
-  );
-});
-
-const RootCauseCard = memo(function RootCauseCard({ suggestion }: { suggestion: RootCauseSuggestion }) {
-  const config = EVENT_TYPE_CONFIG[suggestion.eventType] ?? EVENT_TYPE_CONFIG.external!;
-  const Icon = config.icon;
-  const pct = Math.round(suggestion.confidence * 100);
-
-  return (
-    <div className="p-3 rounded-modal border border-primary/10 bg-secondary/10 space-y-2">
-      <div className="flex items-center gap-2">
-        <div className={`w-5 h-5 rounded-input ${config.bg} flex items-center justify-center`}>
-          <Icon className={`w-3 h-3 ${config.color}`} />
-        </div>
-        <span className="typo-heading text-foreground/90">
-          #{suggestion.rank} {suggestion.title}
-        </span>
-        <span className={`ml-auto typo-caption ${
-          pct >= 70 ? 'text-emerald-400' : pct >= 40 ? 'text-amber-400' : 'text-red-400'
-        }`}>
-          {pct}<DebtText k="auto_confidence_a89b4754" />
-        </span>
-      </div>
-      <p className="typo-caption text-foreground">{suggestion.description}</p>
-      {suggestion.relatedEventTimestamp && (
-        <div className="flex items-center gap-1.5 text-[10px] text-foreground">
-          <Clock className="w-3 h-3" />
-          {<AbsoluteTime timestamp={suggestion.relatedEventTimestamp} />}
-        </div>
-      )}
-    </div>
+    <span className="k-fig">
+      <UnitStrip size="pip" label={label} segments={[{ n, tone }, { n: 10 - n, glyph: 'empty' }]} />
+      <span className="typo-data k-regular"><Numeric value={value} unit="ratio" precision={0} /></span>
+    </span>
   );
 });
 
 export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, onClose }: AnomalyDrilldownPanelProps) {
   const { t } = useTranslation();
-  const metricLabel = METRIC_LABELS[anomaly.metric] ?? anomaly.metric;
-  const deviationPct = anomaly.deviation_pct.toFixed(0);
-
-  const sortedEvents = useMemo(() => {
-    if (!data) return [];
-    return [...data.correlatedEvents].sort((a, b) => a.offsetSeconds - b.offsetSeconds);
-  }, [data]);
+  const x = t.overview.anomaly_drilldown_extra;
+  const metricLabel = ({
+    cost: t.overview.activity.col_cost,
+    error_rate: t.overview.observability_extra.error_rate,
+    latency: t.overview.health_extra.latency_p95,
+  } as Record<string, string>)[anomaly.metric] ?? anomaly.metric;
+  const events = useMemo(() => (data ? [...data.correlatedEvents].sort((a, b) => a.offsetSeconds - b.offsetSeconds) : []), [data]);
+  const causes = data?.rootCauseSuggestions ?? [];
+  const confidence = t.overview.healing_issues_panel.confidence_pct_suffix.replace(/^%\s*/, '');
 
   return (
-    <BaseModal
-      isOpen={true}
-      onClose={onClose}
-      titleId="anomaly-drilldown-title"
-      maxWidthClass="max-w-2xl"
-      panelClassName="bg-background border border-primary/20 rounded-2xl shadow-elevation-4 overflow-hidden"
-    >
-      {/* Header */}
-      <div className="px-5 py-4 border-b border-primary/10 bg-gradient-to-r from-red-500/5 to-transparent">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-card bg-red-500/15 flex items-center justify-center">
-              <Search className="w-4 h-4 text-red-400" />
-            </div>
-            <div>
-              <h2 id="anomaly-drilldown-title" className="typo-body-lg text-foreground/90">
-                {t.overview.anomaly_drilldown_extra.title}
-              </h2>
-              <p className="typo-caption text-foreground">
-                {metricLabel} <DebtText k="auto_spike_on_64ee70a2" /> {new Date(anomaly.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-              </p>
-            </div>
-          </div>
-          <button type="button" onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
-            <X className="w-4 h-4 text-foreground" />
-          </button>
-        </div>
-
-        {/* Anomaly summary bar */}
-        <div className="mt-3 flex items-center gap-4 typo-caption">
-          <div className="flex items-center gap-1.5">
-            <span className="text-foreground">{t.overview.anomaly_drilldown_extra.value_label}</span>
-            <Numeric value={anomaly.value} precision={2} className="font-medium text-red-400" />
-          </div>
-          <ArrowRight className="w-3 h-3 text-foreground" />
-          <div className="flex items-center gap-1.5">
-            <span className="text-foreground">{t.overview.anomaly_drilldown_extra.baseline_label}</span>
-            <Numeric value={anomaly.baseline} precision={2} className="font-medium text-foreground" />
-          </div>
-          <div className="ml-auto px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 font-semibold text-[11px]">
-            +{deviationPct}%
-          </div>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="max-h-[60vh] overflow-y-auto">
-        {loading && (
-          <div className="flex items-center justify-center py-12">
-            <LoadingSpinner size="md" />
-            <span className="ml-3 typo-body text-foreground">{t.overview.anomaly_drilldown_extra.correlating}</span>
-          </div>
-        )}
-
-        {error && (
-          <div className="m-4 p-3 rounded-modal border border-red-500/20 bg-red-500/10 flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-            <p className="typo-body text-red-300">{error}</p>
-          </div>
-        )}
-
-        {data && !loading && (
-          <div className="p-4 space-y-5">
-            {/* Root Cause Suggestions */}
-            {data.rootCauseSuggestions.length > 0 && (
-              <section>
-                <h3 className="typo-label text-foreground mb-2">
-                  {t.overview.anomaly_drilldown_extra.likely_root_causes}
-                </h3>
-                <div className="space-y-2">
-                  {data.rootCauseSuggestions.map((s) => (
-                    <RootCauseCard key={`${s.rank}-${s.eventType}`} suggestion={s} />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Correlated Events Timeline */}
-            <section>
-              <h3 className="typo-label text-foreground mb-2">
-                <DebtText k="auto_correlated_events_4a6b6c7a" />{data.correlatedEvents.length})
-              </h3>
-              {sortedEvents.length === 0 ? (
-                <div className="text-center py-6 typo-body text-foreground">
-                  {t.overview.anomaly_drilldown_extra.no_correlated}
-                </div>
-              ) : (
-                <div className="space-y-0.5 relative">
-                  {/* Timeline line */}
-                  <div className="absolute left-[13px] top-3 bottom-3 w-px bg-primary/10" />
-                  {sortedEvents.map((event, i) => (
-                    <CorrelatedEventRow key={`${event.timestamp}-${event.eventType}-${i}`} event={event} />
-                  ))}
-                </div>
+    <BaseModal isOpen onClose={onClose} titleId="anomaly-drilldown-title" maxWidthClass="max-w-2xl" staggerChildren={false}>
+      <KitHost compact testId="anomaly-drilldown">
+        <div className="overflow-y-auto" style={{ maxHeight: '85vh', padding: '20px 8px 8px 4px' }}>
+          <Surface>
+            <Section
+              eyebrow={<>{metricLabel} {t.overview.healing_issues_panel.spike_on} <AbsoluteTime timestamp={anomaly.date} variant="date" /></>}
+              title={<span id="anomaly-drilldown-title">{x.title}</span>}
+              actions={<KitButton quiet onClick={onClose} hint="Esc">{t.common.close}</KitButton>}
+            >
+              <StatStrip tiles={[
+                { label: x.value_label.replace(/:$/, ''), value: <Numeric value={anomaly.value} precision={2} /> },
+                { label: x.baseline_label.replace(/:$/, ''), value: <Numeric value={anomaly.baseline} precision={2} /> },
+                { label: metricLabel, value: <span className="t-error k-toned">+<Numeric value={anomaly.deviation_pct} unit="percent" precision={0} /></span> },
+              ]} />
+              {causes.length > 0 && !loading && (
+                <Section level={2} title={x.likely_root_causes} count={causes.length}>
+                  <Rows count={causes.length} empty={{ title: '' }}>
+                    {causes.map((s) => (
+                      <ListRow
+                        key={`${s.rank}-${s.eventType}`}
+                        size="l"
+                        name={`#${s.rank} ${s.title}`}
+                        meta={s.description}
+                        mark={{ ...markOf(s.eventType), label: s.eventType }}
+                        figures={<Relevance value={s.confidence} label={confidence} />}
+                        time={s.relatedEventTimestamp ? <AbsoluteTime timestamp={s.relatedEventTimestamp} variant="compact" /> : undefined}
+                      />
+                    ))}
+                  </Rows>
+                </Section>
               )}
-            </section>
-          </div>
-        )}
-      </div>
+              <Section
+                level={2}
+                title={x.correlated_events}
+                count={data && !loading ? data.correlatedEvents.length : undefined}
+                desc={loading ? x.correlating : undefined}
+                state={loading ? 'loading' : error ? 'empty' : undefined}
+                empty={{ title: error ?? '', tone: 'error' }}
+              >
+                <Rows count={events.length} empty={{ title: x.no_correlated }}>
+                  {events.map((e, i) => (
+                    <ListRow
+                      key={`${e.timestamp}-${e.eventType}-${i}`}
+                      size="m"
+                      name={e.label}
+                      nameClass="typo-body k-regular"
+                      meta={e.detail ?? <AbsoluteTime timestamp={e.timestamp} variant="compact" />}
+                      mark={{ ...markOf(e.eventType), label: e.eventType }}
+                      figures={<Relevance value={e.relevance} label={e.label} />}
+                      time={formatSignedOffset(e.offsetSeconds)}
+                    />
+                  ))}
+                </Rows>
+              </Section>
+            </Section>
+          </Surface>
+        </div>
+      </KitHost>
     </BaseModal>
   );
 }

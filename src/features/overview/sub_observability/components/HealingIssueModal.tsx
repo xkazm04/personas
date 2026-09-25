@@ -1,18 +1,20 @@
-import { useState, useEffect, useCallback } from 'react';
-import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
-import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
-import { X, AlertTriangle, Wrench, CheckCircle, Copy, ClipboardCheck, Zap } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+/**
+ * The full health issue, in the shared BaseModal's own panel (its radius and 85vh cap; the
+ * override that dropped the cap let a tall issue run under the titlebar). Inside, the kit:
+ * a Section on a spine whose Mark vocabulary matches the list (issueModel), the analysis and
+ * the suggested fix as level-2 Sections, the facts as a KeyValueGrid, the actions as
+ * KitButtons with the product's real spinner while resolving.
+ */
+import { useCallback, useEffect, useState } from 'react';
+import { CheckCircle } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
+import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
+import { Dot, KeyValueGrid, KitButton, KitHost, Meta, Section, Surface } from '@/features/shared/components/kit';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
-import { HEALING_CATEGORY_COLORS } from '@/lib/utils/formatters';
-import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
-import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
-import { DebtText, debtText } from '@/i18n/DebtText';
-import { HealingIssueStatusBadge, HealingRetryChip } from './HealingIssueStatusBadge';
-
-
+import { ISSUE_GLYPH, canResolve, issueState } from '../libs/issueModel';
+import { useObservabilityWords, type ObservabilityWords } from '../libs/useObservabilityWords';
 
 interface HealingIssueModalProps {
   issue: PersonaHealingIssue;
@@ -21,13 +23,9 @@ interface HealingIssueModalProps {
 }
 
 export default function HealingIssueModal({ issue, onResolve, onClose }: HealingIssueModalProps) {
+  const w = useObservabilityWords();
   const [resolved, setResolved] = useState(false);
   const [resolving, setResolving] = useState(false);
-  const defaultCat = { bg: 'bg-violet-500/10', text: 'text-violet-400', border: 'border-violet-500/20' };
-  const cat = HEALING_CATEGORY_COLORS[issue.category] ?? defaultCat;
-  const isAutoFixed = issue.auto_fixed && issue.status === 'resolved';
-  const isAutoFixPending = issue.status === 'auto_fix_pending';
-  const isCircuitBreaker = issue.is_circuit_breaker;
 
   useEffect(() => {
     if (!resolved) return;
@@ -35,197 +33,98 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
     return () => clearTimeout(timer);
   }, [resolved, onClose]);
 
-  const { copied, copy } = useCopyToClipboard();
-
   const handleResolve = useCallback(async () => {
     if (resolving) return;
     setResolving(true);
     try {
       await onResolve(issue.id);
       setResolved(true);
-    } catch (err) { silentCatch("features/overview/sub_observability/components/HealingIssueModal:catch1")(err); } finally {
+    } catch (err) {
+      silentCatch('HealingIssueModal:resolve')(err);
+    } finally {
       setResolving(false);
     }
   }, [onResolve, issue.id, resolving]);
 
-  const handleCopyFix = useCallback(() => {
-    if (!issue.suggested_fix) return;
-    copy(issue.suggested_fix);
-  }, [issue.suggested_fix, copy]);
-
   return (
-    <BaseModal
-      isOpen={true}
-      onClose={onClose}
-      titleId="healing-issue-title"
-      maxWidthClass="max-w-lg"
-      panelClassName="bg-background border border-primary/20 rounded-2xl shadow-elevation-4 overflow-hidden"
-    >
-      {resolved ? (
-          <ResolvedAnimation />
-        ) : (
-          <ModalContent
-            issue={issue}
-            cat={cat}
-            isAutoFixed={isAutoFixed}
-            isAutoFixPending={isAutoFixPending}
-            isCircuitBreaker={isCircuitBreaker}
-            copied={copied}
-            resolving={resolving}
-            onClose={onClose}
-            onResolve={handleResolve}
-            onCopyFix={handleCopyFix}
-          />
-        )}
+    <BaseModal isOpen onClose={onClose} titleId="healing-issue-title" maxWidthClass="max-w-xl" staggerChildren={false}>
+      <KitHost compact testId="healing-issue-modal">
+        {resolved
+          ? (
+            <div className="animate-fade-scale-in flex flex-col items-center justify-center gap-4 py-16 px-8">
+              <CheckCircle className="w-10 h-10 text-status-success" strokeWidth={1.5} />
+              <p className="typo-heading text-status-success">{w.o.healing_issue_modal.issue_resolved}</p>
+            </div>
+          )
+          : <IssueBody issue={issue} w={w} resolving={resolving} onResolve={handleResolve} onClose={onClose} />}
+      </KitHost>
     </BaseModal>
   );
 }
 
-function ResolvedAnimation() {
-  const { t } = useTranslation();
-  return (
-    <div
-      key="success"
-      className="animate-fade-slide-in flex flex-col items-center justify-center py-16 px-8"
-    >
-      <div className="relative">
-        <div
-          className="animate-fade-slide-in absolute inset-0 rounded-full border-2 border-emerald-400/40"
-          style={{ width: 48, height: 48, top: -4, left: -4 }}
-        />
-        <div
-          className="animate-fade-slide-in absolute inset-0 rounded-full border border-emerald-400/20"
-          style={{ width: 48, height: 48, top: -4, left: -4 }}
-        />
-        <div className="animate-fade-scale-in"
-        >
-          <CheckCircle className="w-10 h-10 text-emerald-400" strokeWidth={1.5} />
-        </div>
-      </div>
-      <p
-        className="animate-fade-slide-in mt-4 typo-heading text-emerald-400"
-      >
-        {t.overview.healing_issue_modal.issue_resolved}
-      </p>
-    </div>
-  );
-}
-
-function ModalContent({ issue, cat, isAutoFixed, isAutoFixPending, isCircuitBreaker, copied, resolving, onClose, onResolve, onCopyFix }: {
+function IssueBody({ issue, w, resolving, onResolve, onClose }: {
   issue: PersonaHealingIssue;
-  cat: { bg: string; text: string; border: string };
-  isAutoFixed: boolean;
-  isAutoFixPending: boolean;
-  isCircuitBreaker: boolean;
-  copied: boolean;
+  w: ObservabilityWords;
   resolving: boolean;
-  onClose: () => void;
   onResolve: () => void;
-  onCopyFix: () => void;
+  onClose: () => void;
 }) {
-  const { t } = useTranslation();
+  const { o, t } = w;
+  const m = o.healing_issue_modal;
+  const s = issueState(issue);
+  const open = canResolve(s);
   return (
-    <div key="content">
-      {/* Header */}
-      <div className="animate-fade-in flex items-start justify-between p-4 border-b border-primary/10">
-        <div className="flex-1 min-w-0 pr-4">
-          <h3 id="healing-issue-title" className="typo-heading text-foreground/90 mb-2">{issue.title}</h3>
-          <div className="flex items-center gap-2 flex-wrap">
-            <HealingIssueStatusBadge issue={issue} variant="detailed" breakerLabel={<DebtText k="auto_circuit_breaker_e76dce35" />} />
-            <HealingRetryChip issue={issue} variant="detailed" />
-            <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-card border ${cat.bg} ${cat.text} ${cat.border}`}>
-              {issue.category}
-            </span>
-            <span className="typo-body text-foreground">{<AbsoluteTime timestamp={issue.created_at} variant="date" />}</span>
-          </div>
-        </div>
-        <button type="button" onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground/95 transition-colors focus-ring" aria-label="Close">
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Description */}
-      <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
-        {isCircuitBreaker && (
-          <div className={`flex items-start gap-2.5 p-3.5 rounded-modal ${SEVERITY_STYLES.error.bg} ${SEVERITY_STYLES.error.border}`}>
-            <Zap className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="typo-heading text-red-300/90">{t.overview.healing_issue_modal.persona_auto_disabled}</p>
-              <p className="typo-body text-red-300/60 mt-1">
-                <DebtText k="auto_this_persona_was_automatically_disabled_af_93e2b7d2" />
-              </p>
-            </div>
-          </div>
-        )}
-        <div>
-          <h4 className="text-sm font-mono uppercase text-foreground mb-2">{t.overview.healing_issue_modal.analysis}</h4>
-          <div className="typo-body text-foreground whitespace-pre-wrap">{issue.description}</div>
-        </div>
-        {issue.suggested_fix && (
-          <div className={`p-4 rounded-modal ${SEVERITY_STYLES.success.bg} ${SEVERITY_STYLES.success.border}`}>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Wrench className="w-3.5 h-3.5 text-emerald-400" />
-                <h4 className="text-sm font-mono uppercase text-emerald-400/80">{t.overview.healing_issue_modal.suggested_fix}</h4>
-              </div>
-              <button type="button" onClick={onCopyFix} className="flex items-center gap-1 px-2 py-1 typo-heading text-emerald-400/70 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-card transition-colors">
-                {copied ? <ClipboardCheck className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                {copied ? t.overview.healing_issue_modal.copied : t.overview.healing_issue_modal.copy_fix}
-              </button>
-            </div>
-            <div className="typo-body text-foreground whitespace-pre-wrap">{issue.suggested_fix}</div>
-          </div>
-        )}
-        {issue.execution_id && (
-          <div className="text-sm font-mono text-foreground"><DebtText k="auto_execution_0cbb19a7" /> {issue.execution_id}</div>
-        )}
-      </div>
-
-      {/* Footer */}
-      {!isAutoFixed && !isAutoFixPending && (
-        <div className="px-5 py-4 border-t border-primary/10 space-y-2">
-          {(issue.severity === 'high' || issue.severity === 'critical') && (
-            <div className="flex items-center gap-1.5 typo-body text-amber-400/60">
-              <AlertTriangle className="w-3 h-3 flex-shrink-0" />
-              <DebtText k="auto_this_issue_is_marked_as_08f3c756" /> {issue.severity} severity
-            </div>
-          )}
-          <p className="typo-body text-foreground">
-            {t.overview.healing_issue_modal.marking_resolved_note}
-          </p>
-        </div>
-      )}
-      <div className="flex items-center justify-end gap-3 px-5 py-4 bg-secondary/20">
-        {isAutoFixPending && (
-          <div className="flex items-center gap-1.5 mr-auto">
-            <LoadingSpinner size="sm" className="text-amber-400" />
-            <span className="typo-body text-amber-400/60"><DebtText k="auto_retry_in_progress_status_will_update_when__0f8bc7c7" /></span>
-          </div>
-        )}
-        {isAutoFixed && (
-          <div className="flex items-center gap-1.5 mr-auto">
-            <div>
-              <CheckCircle className="animate-fade-scale-in w-3.5 h-3.5 text-emerald-400" />
-            </div>
-            <span className="typo-body text-emerald-400/60">{t.overview.healing_issue_modal.auto_resolved}</span>
-          </div>
-        )}
-        <button type="button" onClick={onClose} className="px-4 py-2 typo-heading text-foreground hover:text-foreground/95 rounded-modal hover:bg-secondary/60 transition-colors">
-          Close
-        </button>
-        {!isAutoFixed && !isAutoFixPending && (
-          <button
-            type="button"
-            onClick={onResolve}
-            disabled={resolving}
-            title={debtText("auto_manual_fix_applied_outside_the_healing_sys_aaac4a33")}
-            className="flex items-center gap-1.5 px-4 py-2 typo-heading text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded-modal hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+    <div className="flex flex-col" style={{ maxHeight: '85vh' }}>
+      <div className="flex-1 min-h-0 overflow-y-auto" style={{ padding: '20px 8px 4px 4px' }}>
+        <Surface>
+          <Section
+            eyebrow={`${o.healing_issues_panel.title} · ${w.state[s]}`}
+            title={<span id="healing-issue-title">{issue.title}</span>}
+            meta={<Meta parts={[issue.category, <AbsoluteTime key="at" timestamp={issue.created_at} variant="date" />]} />}
+            state={s === 'fixed' || s === 'resolved' ? 'muted' : undefined}
           >
-            {resolving ? <LoadingSpinner size="xs" /> : <CheckCircle className="w-3.5 h-3.5" />}
-            {resolving ? t.overview.healing_issue_modal.resolving : t.overview.healing_issue_modal.mark_resolved}
-          </button>
-        )}
+            {s === 'breaker' && (
+              <p className="k-in typo-body flex items-start gap-2" style={{ margin: '0 0 12px' }}>
+                <Dot tone="error" />
+                <span><span className="k-strong">{m.persona_auto_disabled}.</span> {m.persona_auto_disabled_desc}</span>
+              </p>
+            )}
+            <Section level={2} title={m.analysis}>
+              <p className="k-in typo-body whitespace-pre-wrap" style={{ margin: 0 }}>{issue.description}</p>
+            </Section>
+            {issue.suggested_fix && (
+              <Section
+                level={2}
+                title={m.suggested_fix}
+                actions={<CopyButton text={issue.suggested_fix} label={m.copy_fix} copiedLabel={m.copied} />}
+              >
+                <p className="k-in typo-body whitespace-pre-wrap" style={{ margin: 0 }}>{issue.suggested_fix}</p>
+              </Section>
+            )}
+            <KeyValueGrid
+              min="140px"
+              items={[
+                { k: t.common.status, v: w.state[s], draw: <Dot {...ISSUE_GLYPH[s]} /> },
+                { k: o.incidents.filter_severity_label, v: issue.severity },
+                { k: w.t.agents.activity.execution, v: issue.execution_id ? <span className="typo-code">{issue.execution_id}</span> : null, none: t.common.none },
+              ]}
+            />
+          </Section>
+        </Surface>
       </div>
+      <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-primary/10" style={{ padding: '12px 16px' }}>
+        <span className="typo-caption mr-auto flex items-center gap-2" style={{ flex: '1 1 240px' }}>
+          {s === 'retrying' && <><Dot glyph="live" />{m.retry_in_progress}</>}
+          {s === 'fixed' && <><Dot tone="success" glyph="hollow" />{m.auto_resolved}</>}
+          {open && m.marking_resolved_note}
+        </span>
+        <KitButton quiet onClick={onClose}>{m.close}</KitButton>
+        {open && (
+          <KitButton onClick={onResolve} loading={resolving} testId="healing-issue-resolve">
+            {resolving ? m.resolving : m.mark_resolved}
+          </KitButton>
+        )}
+      </footer>
     </div>
   );
 }
