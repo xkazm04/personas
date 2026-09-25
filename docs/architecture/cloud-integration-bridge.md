@@ -1044,6 +1044,12 @@ application — instead of an ordinary persona. The difference is that the hire
 carries an application: a repository, a value ledger, a mandate that says how
 far the holder may go, a cadence, and a probation window.
 
+
+**From a terminal.** `node scripts/operator-approvals.mjs list | approve <id> [note] | reject <id> [reason] | pair-approve <nonce> | pair-reject <nonce>`
+reads the token from the key file itself (never printed, never passed on the command line) and
+prints one line per decision. It is the operator's tool; an agent uses it only when the operator
+asked it to decide on their behalf.
+
 ### 11.1 The wire (v2, additive)
 
 `POST /api/kp/persona-requests` gains **one optional field**:
