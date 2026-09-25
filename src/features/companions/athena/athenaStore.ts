@@ -832,6 +832,32 @@ function withQueue(
   return patch;
 }
 
+/**
+ * Rehydrate a persisted message queue as DRAFT text, never as a runnable queue.
+ *
+ * A queued message is intent the app has not acted on yet: the composer
+ * already cleared its draft, so if the queue were in-memory only, a restart
+ * would lose the text silently. Restoring it AS a queue is worse — the drain
+ * fires on the next turn completion, so a message written against a turn
+ * that no longer exists would reach the model without the user asking again.
+ * Folding it back into the conversation's draft keeps the text and hands the
+ * send decision back to the user. Queued text precedes any existing draft,
+ * in arrival order, because it was typed first.
+ */
+function restoreQueuedAsDrafts(persisted: unknown, current: AthenaStore): AthenaStore {
+  const p = (persisted ?? {}) as Partial<
+    Pick<AthenaStore, 'draftsByConversation' | 'queuedByConversation'>
+  >;
+  const drafts: Record<string, string> = { ...(p.draftsByConversation ?? {}) };
+  for (const [conversationId, queued] of Object.entries(p.queuedByConversation ?? {})) {
+    const texts = (queued ?? []).map((m) => m.text).filter((t) => t.trim());
+    if (texts.length === 0) continue;
+    const existing = drafts[conversationId];
+    drafts[conversationId] = [...texts, ...(existing ? [existing] : [])].join('\n\n');
+  }
+  return { ...current, draftsByConversation: drafts, queuedByConversation: {}, queuedMessages: [] };
+}
+
 export const useAthenaStore = create<AthenaStore>()(
   persist(
     (set, get) => ({
@@ -1478,9 +1504,15 @@ export const useAthenaStore = create<AthenaStore>()(
     {
       name: 'companion-drafts',
       storage: createDedupedJSONStorage(),
-      // Only the composer draft map is durable — everything else here is
-      // live session/UI state that resets fine on a fresh app launch.
-      partialize: (state) => ({ draftsByConversation: state.draftsByConversation }),
+      // Durable: the composer draft map, and the mid-turn message queue —
+      // which is restored as draft text, never as a queue (see
+      // `restoreQueuedAsDrafts`). Everything else here is live session/UI
+      // state that resets on a fresh app launch.
+      partialize: (state) => ({
+        draftsByConversation: state.draftsByConversation,
+        queuedByConversation: state.queuedByConversation,
+      }),
+      merge: restoreQueuedAsDrafts,
     },
   ),
 );
