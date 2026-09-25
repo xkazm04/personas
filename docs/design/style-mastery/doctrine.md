@@ -32,6 +32,7 @@ for the specimen. Worklist: `migration-map.md`.
 | - | Phantoms mapped, inert `[&_x]:typo-*` variants deleted, `typo-eyebrow` defined | **KEPT** (eyebrow composites migrate per module) | `5e5cd9ca5` |
 | - | Dead overrides deleted, tokens moved into `@layer components` | **KEPT** (D6 steps 1-2) | `937854f7d`, `266c05551` |
 | - | Gate 1: highlight's hue shifts off status-info; roles graded against every status and role | **KEPT** (WP4c) | `7103b5c27`, `658e6196c` |
+| K | Composition kit: A/3 Spine & Lens over A/1 Ledger, judged on Fleet Activity | **KEPT**: `shared/components/kit/`, section 6b | `26c19f6a5`, `9acfd7aea` |
 
 Sections below describe what was decided. Where a proposal was rejected it stays
 visible, marked "considered, rejected at Gate 0".
@@ -252,6 +253,68 @@ the factory passport) keeps its composition, geometry and motion. Its font-size,
 font-family and text or accent colour come from `var(--...)` or a `.typo-*` token.
 SVG and illustration art is exempt by a named exclusion. The census counts literals
 in `src/features/**/*.css` (WP2).
+
+## 6b. Composition kit (Gate K, 2026-09-25)
+
+The owner ran a contest for the building blocks one level above buttons, shortlisted
+A/1 "Ledger" and A/3 "Spine & Lens", saw both ported onto Fleet Activity with real
+data, and chose **Spine & Lens**. It lives in `@/features/shared/components/kit`
+(catalogued under `kit` in `CATALOG.md`); its look is `kit/kit.css`, the contest
+entry's own stylesheet, token-only. Fleet Activity is the reference page.
+
+**The rule: a surface is composed from the kit. A local one-off composition that
+duplicates a kit part (a hand-built section head, stat tile, key-value grid, chip
+strip, filter bar or table row) is a finding**, fixed by composing the kit part,
+or by extending the kit when the need is real and shared.
+
+The idea in one paragraph: every part of a surface hangs from one vertical spine. A
+section head is a node on it, a row's status is a Mark on it, a selected row lights
+its segment in the theme's primary glow, a working (live) row glows. No card
+backgrounds and no row hairlines: rows are fixed heights on an 8px grid with a faint
+alternating band, and every name starts on one reading line (40px). One emphasised
+name per row; figures and meta at regular weight. Quantities are drawn as countable
+units of a stated quantum, coloured by who claims them. Bands are the background
+stepped by its own lightness, so light themes keep them without per-theme code.
+
+| Part | What it is for | API (one line) |
+|---|---|---|
+| `KitHost` | root of any kit surface: kit variables, the compact tier, the container the side pane measures | `<KitHost compact? testId?>` |
+| `Surface` | a region whose parts hang from the spine; `dense` for tool surfaces | `<Surface dense?>` |
+| `Split` | work area plus a sticky detail pane, shown only when the surface has room (container query) | `<Split main pane paneLabel paneRef?>` |
+| `Drawer` | the same detail on a narrow surface; Esc closes | `<Drawer open onClose closeLabel label>` |
+| `Section` | a titled part of a surface; level 1 or 2; owns empty and loading states | `<Section title eyebrow? count? meta? actions? level? state? empty?>` |
+| `ListRow` / `Rows` | a list of fixed-height rows (name, meta, mark, figures, time) with its ghost and empty band | `<ListRow name meta? mark? figures? size? state?>`, `<Rows count empty loading?>` |
+| `DataTable` | the same row family under column heads, with a pager under the last row; rows select | `<DataTable cols rows label empty loading? pager? onRowClick?>` |
+| `StatStrip` | headline figures; a lone tile is a strip of one; `draw` shows the quantity | `<StatStrip tiles={[{label, value, unit?, draw?, note?}]} state?>` |
+| `KeyValueGrid` | facts about one thing; a null value renders its `none` text, muted | `<KeyValueGrid items={[{k, v, draw?, none?}]} min?>` |
+| `ChipRow` / `ChipView` | a set of named counts; a chip with `onPress` is a filter | `<ChipRow chips={[{id, label, count?, share?, onPress?}]} label emptyLabel>` |
+| `Toolbar` | a surface filter bar: `Segmented`, `SearchField` (with `/`), `KitButton` | `<Toolbar label>...</Toolbar>` |
+| `UnitStrip` | a quantity as units of a fixed quantum; `apportion()` splits a total by claim | `<UnitStrip segments={[{n, tone, glyph?}]} size rows? label>` |
+| `Mark` / `Dot` | status as Tone x Glyph, on the spine or inline | `<Mark tone glyph label>`, `<Dot tone glyph>` |
+
+When to use which: a list the operator scans and picks from is a `DataTable` when
+its figures line up in columns, `Rows` when each row is a name and a sentence. Facts
+about the selection go in a `KeyValueGrid` inside a level-2 `Section` in the `Split`
+pane (narrow: `Drawer`). Headline numbers are a `StatStrip` at the top; a count of
+named things (tools, tags) is a `ChipRow`. State is a `Mark`, never a trailing
+status word. Tone is closed (`primary`, the status names, the role names) and Glyph
+is closed (`solid`, `soft`, `hollow`, `empty`, `live`): a state gets one Tone x Glyph
+and keeps it on every surface.
+
+Decided with the kit:
+- **Stat label size follows the product's compact tier** (14.4px at the default
+  scale), not the entry's 13.4px: the compact tier (`ec6ca0516`) puts
+  `typo-card-label` on the row step and the kit does not override the type scale.
+  `kit.css` declares no font size anywhere.
+- **Busy controls use the product's spinner.** `KitButton` renders the shared
+  `Button` in the kit's look; kit.css sets `--type-control` so its label is the
+  label step, as in the entry.
+- **Status tones take the brightness compensation** the app applies to every
+  status colour (the entry's page had none), so a neutral mark is darker in the
+  product than in the entry. That is the product's rule, not a kit deviation.
+- Not carried from the entry: its Lens overlay (outline and count every part),
+  its specimen page and SettingRow. Every composition root still carries
+  `data-kit` / `data-kit-state`, so a Lens can be added without touching parts.
 
 ## 7. How it landed (D6, as decided at Gate 0)
 
