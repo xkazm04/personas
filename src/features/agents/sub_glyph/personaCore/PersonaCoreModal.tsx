@@ -1,76 +1,27 @@
-/** PersonaCoreModal — the persona-core configurator.
+/** PersonaCoreModal — the persona-core configurator as a modal.
  *
  *  Rethought (2026-07-08) against the real corpus: model tier × reasoning effort,
  *  a conflict style + a clickable character-trait palette.
  *  Memory is NOT here — the build surface's memory dimension owns it. The layout
  *  is the "Codex" design (won the /prototype round): an ordered, icon-forward
- *  3-column grid — Character · Configuration · Mentality.
+ *  3-column grid — Mentality · Character · Configuration. The content lives in
+ *  PersonaCoreBody, which the Sheet · Cinema loupe layer hosts as well.
  */
-import { Suspense, useCallback } from "react";
+import { useCallback } from "react";
 import { BaseModal } from "@/features/shared/components/modals";
-import { ErrorBoundary } from "@/features/shared/components/feedback/ErrorBoundary";
-import Button from "@/features/shared/components/buttons/Button";
 import { useTranslation } from "@/i18n/useTranslation";
-import { getAnalyticsSink } from "@/lib/analytics/sink";
-import { RotateCcw } from "lucide-react";
-import { personaCoreSelectionLabel } from "./usePersonaCore";
+import { PersonaCoreBody } from "./PersonaCoreBody";
+import { recordPersonaCoreClose } from "./coreAnalytics";
 import type { PersonaCore } from "./types";
-import { lazyRetry } from "@/lib/lazyRetry";
-
-// Lazy at the modal boundary: PersonaCoreCodex statically pulls
-// archetypeGlyphData (~310KB of generated SVG path strings), which otherwise
-// rides in the compose-surface chunk and is parsed on every entry into the
-// build flow even though it renders only inside this explicitly-opened modal.
-const PersonaCoreCodex = lazyRetry(() =>
-  import("./PersonaCoreCodex").then((m) => ({ default: m.PersonaCoreCodex })),
-);
-
-/** The calm, geometry-matched placeholder for the codex body — used for BOTH
- *  waits (the archetype fetch and the lazy chunk) so a cold open settles once
- *  instead of stacking two differently-shaped skeletons. It ghosts the three
- *  columns' silhouette, holds the body height so arrival replaces rather than
- *  rearranges, and sits behind a 150ms CSS delay (fill-mode both) so a warm
- *  open never flashes it. `feedback/LoadingSpinner` used to stand here and
- *  renders `null`, i.e. the modal body was blank for the whole wait. */
-function CodexGhost() {
-  return (
-    <div
-      aria-hidden="true"
-      className="flex flex-col lg:flex-row gap-6 min-h-[24rem] animate-fade-in"
-      style={{ animationDelay: "150ms" }}
-    >
-      {[0, 1, 2].map((col) => (
-        <div key={col} className="flex-1 min-w-0 flex flex-col gap-3">
-          <span className="h-4 w-28 rounded-input bg-secondary/60" />
-          <div className="flex flex-col gap-1.5">
-            {[0, 1, 2, 3, 4].map((row) => (
-              <span key={row} className="h-8 w-full rounded-input bg-secondary/30" />
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 export function PersonaCoreModal({ core, isOpen, onClose }: { core: PersonaCore; isOpen: boolean; onClose: () => void }) {
   const { t } = useTranslation();
 
-  // Close is the one moment the whole selection is settled and still in hand —
-  // after this the core leaves the component tree only as prose folded into the
-  // build intent, which is why nothing downstream could ever answer "which
-  // archetypes and traits do people actually pick?". Fires on every exit route
-  // (Done, Esc, backdrop) so an ABANDONED open is recorded too, and routes
-  // through getAnalyticsSink() rather than Sentry directly so the user's
-  // telemetry switch governs it like every other usage event.
+  // Fires on every exit route (Done, Esc, backdrop); see coreAnalytics.
   const handleClose = useCallback(() => {
-    getAnalyticsSink().interaction({
-      category: "persona_core",
-      action: core.configured ? "configured" : "dismissed",
-      label: personaCoreSelectionLabel(core.state),
-    });
+    recordPersonaCoreClose(core);
     onClose();
-  }, [core.configured, core.state, onClose]);
+  }, [core, onClose]);
 
   return (
     <BaseModal isOpen={isOpen} onClose={handleClose} titleId="persona-core-modal" size="6xl" maxWidthClass="max-w-[86rem]">
@@ -79,36 +30,9 @@ export function PersonaCoreModal({ core, isOpen, onClose }: { core: PersonaCore;
           <h2 id="persona-core-modal" className="typo-heading-lg text-foreground">{t.agents.core_title}</h2>
           <span className="typo-caption">{t.agents.core_subtitle}</span>
         </div>
-
-        {core.loading ? (
-          <CodexGhost />
-        ) : (
-          // The codex is a lazy chunk, and lazyRetry's contract is that a
-          // permanent import failure is rethrown to the NEAREST ErrorBoundary.
-          // Without one here that failure escapes the modal and takes the whole
-          // compose surface down; with it, the failure occupies only the
-          // territory the codex would have and "Try again" closes back to the
-          // build surface the user came from. Deliberately the RAW onClose: a
-          // boundary reset is crash recovery, not a user closing the modal, and
-          // recording a selection the user never saw would be noise.
-          <ErrorBoundary name="PersonaCore" onReset={onClose}>
-            <Suspense fallback={<CodexGhost />}>
-              <PersonaCoreCodex core={core} />
-            </Suspense>
-          </ErrorBoundary>
-        )}
-
-        <div className="flex items-center justify-between gap-2 pt-1 border-t border-card-border/50">
-          <button
-            type="button"
-            onClick={core.reset}
-            disabled={!core.configured}
-            className="inline-flex items-center gap-1.5 typo-caption text-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer hover:text-foreground/80"
-          >
-            <RotateCcw className="w-3.5 h-3.5" /> {t.agents.core_reset}
-          </button>
-          <Button variant="primary" size="sm" onClick={handleClose} data-testid="persona-core-done">{t.common.done}</Button>
-        </div>
+        {/* Crash reset is the RAW onClose: a boundary reset is crash recovery,
+            not a user closing the modal. */}
+        <PersonaCoreBody core={core} onDone={handleClose} onCrashReset={onClose} />
       </div>
     </BaseModal>
   );

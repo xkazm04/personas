@@ -26,6 +26,7 @@ import { useReducedMotion } from "@/hooks/utility/interaction/useMotion";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import { useGlyphDimText } from "@/features/shared/glyph/persona-sigil";
 import { useAgentStore } from "@/stores/agentStore";
+import { recordPersonaCoreClose } from "@/features/agents/sub_glyph/personaCore";
 import type { GlyphFullLayoutProps } from "@/features/agents/sub_glyph/glyphLayoutTypes";
 import { useSheetState } from "./useSheetState";
 import { SheetCentre } from "./SheetCentre";
@@ -87,7 +88,15 @@ export function ContactSheetCinemaLayout(props: GlyphFullLayoutProps) {
     setLayer({ kind: "frame", dim, from: frameRect(dim) });
   }, [flowStage, pullBack, frameRect]);
   const openRefine = useCallback((prefill: string | null) => setLayer({ kind: "refine", prefill, from: centreRect() }), [centreRect]);
-  const closeLayer = useCallback(() => setLayer(null), []);
+  // Every user close route (Esc, back, Done) lands here, so the persona core
+  // layer records its settled selection exactly as its modal does on close.
+  const coreRef = useRef(s.core);
+  coreRef.current = s.core;
+  const closeLayer = useCallback(() => {
+    if (layer?.kind === "core") recordPersonaCoreClose(coreRef.current);
+    setLayer(null);
+  }, [layer]);
+  const dropLayer = useCallback(() => setLayer(null), []);
 
   const questionOpen = act === "questions" && flow.stage === "asking" && !layer;
   const shot = useCamera(layerShot(layer, s, questionOpen, frameRect), reduce);
@@ -132,6 +141,7 @@ export function ContactSheetCinemaLayout(props: GlyphFullLayoutProps) {
                 p={props} s={s} tight={tight} billing={billing}
                 a={{
                   openContext: (el) => setLayer({ kind: "context", from: clientRect(el) }),
+                  openCore: (el) => setLayer({ kind: "core", from: clientRect(el) }),
                   openRefine: () => openRefine(null),
                   openCaps: () => setLayer({ kind: "caps", from: centreRect() }),
                   openReport: () => setModal("report"),
@@ -145,7 +155,7 @@ export function ContactSheetCinemaLayout(props: GlyphFullLayoutProps) {
             }
           />
         </motion.div>
-        <SheetLayers p={props} s={s} layer={layer} shot={shot} scene={scene} dimText={dimText} close={closeLayer} openRefine={openRefine} />
+        <SheetLayers p={props} s={s} layer={layer} shot={shot} scene={scene} dimText={dimText} close={closeLayer} drop={dropLayer} openRefine={openRefine} />
       </div>
 
       <FilmRail scene={scene} elapsed={s.clock.elapsed} marks={s.clock.marks} showWindow={act === "casting"} running={s.clock.running} partial={s.clock.partial} />

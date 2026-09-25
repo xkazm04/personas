@@ -1,6 +1,6 @@
 /** SheetLayers - the one inner layer the camera is on, if any. The question
  *  round's layer is driven by the question flow; every other layer (a frame's
- *  page, context, refine, capability review, build log) by the sheet. `layerShot` names
+ *  page, context, persona core, refine, capability review, build log) by the sheet. `layerShot` names
  *  the camera target for either; the layout runs it through `useCamera`, so a
  *  hand-over between two layers always pulls out to the sheet first and this
  *  component only ever renders the layer the camera has actually arrived at. */
@@ -16,6 +16,7 @@ import { QuestionLayer } from "./QuestionLayer";
 import { FrameLayer, frameStatus } from "./FrameLayer";
 import { ContextLayer, RefineLayer, CapsLayer } from "./MiscLayers";
 import { LogLayer } from "./LogLayer";
+import { CoreLayer, useCoreHead } from "./CoreLayer";
 import { shotAt, type Rect, type Shot } from "./useCamera";
 import type { SheetState } from "./useSheetState";
 import { frameNumber } from "./sheetModel";
@@ -24,6 +25,7 @@ import { COPY } from "./copy";
 export type Layer =
   | { kind: "frame"; dim: GlyphDimension; from: Rect }
   | { kind: "context"; from: Rect }
+  | { kind: "core"; from: Rect }
   | { kind: "refine"; prefill: string | null; from: Rect }
   | { kind: "caps"; from: Rect }
   | { kind: "log"; from: Rect };
@@ -46,12 +48,15 @@ interface SheetLayersProps {
   scene: string;
   dimText: GlyphDimText;
   close: () => void;
+  /** Pull out WITHOUT the close bookkeeping (a crashed layer's recovery). */
+  drop: () => void;
   openRefine: (prefill: string | null) => void;
 }
 
-export function SheetLayers({ p, s, layer, shot, scene, dimText, close, openRefine }: SheetLayersProps) {
+export function SheetLayers({ p, s, layer, shot, scene, dimText, close, drop, openRefine }: SheetLayersProps) {
   const { flow } = s;
   const accent = s.cast.accent;
+  const core = useCoreHead(s.core, scene);
   const centre = (title: string, status: LoupeHead["status"] = null): LoupeHead => ({ code: CENTRE_CODE, title, status, context: scene });
   let node: React.ReactNode = null;
 
@@ -73,6 +78,12 @@ export function SheetLayers({ p, s, layer, shot, scene, dimText, close, openRefi
     node = (
       <Loupe key={shot.key} shot={shot} color={accent} head={centre(COPY.context, added)} onClose={close}>
         <ContextLayer value={p.contextText ?? ""} onChange={p.onContextChange} onDone={close} />
+      </Loupe>
+    );
+  } else if (layer?.kind === "core") {
+    node = (
+      <Loupe key={shot.key} shot={shot} color={core.color} head={core.head} onClose={close}>
+        <CoreLayer core={s.core} onDone={close} onCrashReset={drop} />
       </Loupe>
     );
   } else if (layer?.kind === "refine") {

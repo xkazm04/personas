@@ -37,7 +37,7 @@ export function SheetCentre({ p, s, a, tight, billing }: SheetCentreProps) {
       <ComposeCentre
         intentText={p.intentText} onIntentChange={p.onIntentChange} onLaunch={s.launch}
         launchDisabled={p.launchDisabled} launching={s.launching} core={s.core}
-        hasContext={!!p.contextText?.trim()} onOpenContext={a.openContext}
+        hasContext={!!p.contextText?.trim()} onOpenContext={a.openContext} onOpenCore={a.openCore}
         below={<RecipeStarters recipes={s.recipes} />}
       />
     );

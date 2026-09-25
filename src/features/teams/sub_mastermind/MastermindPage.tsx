@@ -1,9 +1,14 @@
-// Mastermind — multi-project development canvas (Projects → Development).
-// Live data: readiness passports (usePassportData) as islands, cross-project
-// relations as edges, Factory KPI rollups as the KPI dimension, and open Fleet
-// CLI sessions as clickable dock nodes per island. The Hex Mosaic is the final
-// view mode (Grid Board and Inverse Grid prototypes retired).
-import { Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+// Mastermind — the multi-project portfolio (Projects → Development), drawn as
+// Soundings: a sounding chart where depth means urgency
+// (docs/design/mastermind-soundings.md). Live data: readiness passports
+// (usePassportData) as stations, cross-project relations as currents, Factory
+// KPI rollups as the KPI reading, open Fleet CLI sessions, running personas and
+// dev-runner tasks as live work per project. The Hex Mosaic canvas it replaced
+// was retired on 2026-09-25.
+//
+// This page owns the data and every surface a reading opens (Improve, goals,
+// KPIs, idea scans, dispatch, previews); SoundingsView owns the chart.
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { GitFork, LifeBuoy } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
@@ -12,7 +17,6 @@ import { runScan } from '@/api/devTools/devTools';
 import { spawnSession } from '@/api/fleet/fleet';
 import { listCredentials } from '@/api/vault/credentials';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { navigateToProcess } from '@/features/fleet/monitor/navigateToProcess';
 import { useContextScanBackground } from '@/features/plugins/dev-tools/hooks/useContextScanBackground';
 import { ProjectModal } from '@/features/plugins/dev-tools/sub_projects/ProjectModal';
@@ -37,46 +41,35 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { isOngoing } from '@/features/teams/sub_goals/goalStatus';
 
-import { CanvasToolbar } from './lib/CanvasToolbar';
 import { DataHealthBar } from './lib/DataHealthBar';
-import { MilestoneStatusBar } from './lib/MilestoneStatusBar';
 import { DemoNotice } from './lib/DemoNotice';
 import { deriveScene, type FamilyHealth, type KpiRollup } from './lib/deriveScene';
 import { dimAction } from './lib/dimActions';
 import { DispatchFleetModal } from './lib/DispatchFleetModal';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
-import { CategoryPopover } from './lib/CategoryPopover';
-import type { CategoryNode } from './lib/dimCategories';
 import { DimListPopover } from './lib/DimListPopover';
 import { DIM_INK } from './lib/ink';
 import { MastermindGoalsModal } from './lib/goals/MastermindGoalsModal';
 import { KpiListPopover, type KpiListItem } from './lib/KpiListPopover';
 import { IdeaScanPopover, type ScanParams } from './lib/IdeaScanPopover';
-import { sameIslandContent } from './lib/islandEquality';
-import { hydrateLayout, isLayoutHydrated, loadHidden, saveHidden } from './lib/layoutStore';
-import { useAthenaPanels, useLayoutHidden, useLayoutPositions } from './lib/useLayout';
+import { hydrateLayout } from './lib/layoutStore';
+import { useAthenaPanels } from './lib/useLayout';
 import { AthenaPanel } from './lib/AthenaPanel';
-import { clearCanvasFocus, focusCanvasProject, useFocusedProjectSlug } from './lib/focusStore';
+import { clearCanvasFocus, useFocusedProjectSlug } from './lib/focusStore';
 import { publishCanvasScene } from './lib/scenePublish';
-import { openFactory, openNotepadForProject, openRunDesk, openSkillsManager } from './lib/navigate';
+import { openFactory, openNotepadForProject, openRunDesk } from './lib/navigate';
 import { computeAttention } from './lib/liveState';
 import { useSceneStore, type FamilyStatus } from './lib/sceneStore';
 import { useRunnerRefresh } from './lib/useRunnerRefresh';
-import { loadPositions, savePositions } from './lib/positions';
 import { PersonaListPopover, type PersonaRow } from './lib/PersonaListPopover';
 import { RunnerListPopover } from './lib/RunnerListPopover';
-import { ProjectListSidebar } from './lib/ProjectListSidebar';
-import { ProjectSidebar } from './lib/ProjectSidebar';
-import type { CanvasMode, DimNode, FleetNode, IslandShip, RunnerNode, Scene } from './lib/types';
-import { MastermindHexMosaic } from './variants/MastermindHexMosaic';
-import { ViewPanel, ViewSwitcher, type MastermindView } from './lib/ViewSwitcher';
+import type { DimNode, FleetNode, IslandShip, RunnerNode, Scene } from './lib/types';
 import { useSceneSettle } from './lib/useSceneSettle';
 import { cachedShipSummaries, loadShipSummaries } from './lib/shipSummaries';
 import { lazyRetry } from '@/lib/lazyRetry';
 
-// Soundings, the next-gen chart (docs/design/mastermind-soundings.md), in its
-// own chunk so the Baseline never pays for it. lazyRetry, not React.lazy (see
-// PersonasPage for why).
+// The chart in its own chunk, so the page's data spine starts before the chart
+// code has loaded. lazyRetry, not React.lazy (see PersonasPage for why).
 const SoundingsView = lazyRetry(() => import('./soundings/SoundingsView'));
 /** What Soundings draws while the scene settles: its chrome, no stations. */
 const UNSETTLED_SCENE: Scene = { islands: [], edges: [], demo: false };
@@ -87,9 +80,6 @@ const EMPTY_NAMES: string[] = [];
 const EMPTY_RUNNERS: RunnerNode[] = [];
 /** Stable empty KPI list — a fresh `[]` per render would remount the goals modal. */
 const EMPTY_KPIS: KpiListItem[] = [];
-
-/** Islands allowed to ADOPT changed content per pass (see hydration waves). */
-const HYDRATE_WAVE = 6;
 
 /** How long the scene must stop changing before it is worth serializing for
  *  Athena. Shorter than the publisher's own write debounce, so a settled scene
@@ -156,23 +146,7 @@ function MastermindInner() {
   const invalidateScans = useSceneStore((s) => s.invalidateScans);
   const retryFailed = useSceneStore((s) => s.retryFailed);
   const [credentials, setCredentials] = useState<PersonaCredential[]>([]);
-  const [mode, setMode] = useState<CanvasMode>('edit');
-  // Canvas view: the shipped Hex Mosaic, or Soundings beside it until it is
-  // fine-tuned. Session-local on purpose: the owner has not made it a
-  // preference yet.
-  const [view, setView] = useState<MastermindView>('baseline');
-  const baseline = view === 'baseline';
-  // Durable layout hydrates once per session from the DB (async IPC). Until it
-  // resolves the canvas is held back so CanvasShell's sync `useState(loadGroups)`
-  // initializers read the hydrated doc, not an empty one. `isLayoutHydrated()`
-  // is already true on remounts, so this only gates the first-ever mount.
-  const [layoutReady, setLayoutReady] = useState(isLayoutHydrated);
-  // Positions come straight from the layout store (subscribed, not snapshotted)
-  // so an out-of-band write paints without a remount and the next drag commit
-  // builds on it instead of over it.
-  const overrides = useLayoutPositions();
   const [previewId, setPreviewId] = useState<string | null>(null);
-  const [openSlug, setOpenSlug] = useState<string | null>(null);
   // Slug whose "Dispatch Fleet…" instruction modal is open (null = closed).
   const [dispatchSlug, setDispatchSlug] = useState<string | null>(null);
   // Slug whose "Run a skill" modal is open (green Skills cell click; null = closed).
@@ -202,8 +176,6 @@ function MastermindInner() {
     return () => { for (const id of timers.values()) window.clearTimeout(id); timers.clear(); };
   }, []);
   const [demoDismissed, setDemoDismissed] = useState(false);
-  const [projectsOpen, setProjectsOpen] = useState(false);
-  const hiddenSlugs = useLayoutHidden();
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [personaMenu, setPersonaMenu] = useState<{ slug: string; x: number; y: number } | null>(null);
   // Mid runner face clicked — the dev-runner task list for that island.
@@ -213,8 +185,6 @@ function MastermindInner() {
   const [goalSlug, setGoalSlug] = useState<string | null>(null);
   const [kpiPopup, setKpiPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
   const [stackPopup, setStackPopup] = useState<{ slug: string; key: 'datalinks' | 'support'; x: number; y: number } | null>(null);
-  const [dispatchGroup, setDispatchGroup] = useState<{ slugs: string[]; label: string } | null>(null);
-  const [categoryPopup, setCategoryPopup] = useState<{ slug: string; category: CategoryNode; x: number; y: number } | null>(null);
   const { startBackgroundScan } = useContextScanBackground();
   // In-progress personas — same sources + persona→team→project join the
   // Monitor's project columns use (active processes attributed to personas).
@@ -297,20 +267,9 @@ function MastermindInner() {
     void loadLlmSpend(projects, credentials);
   }, [projects, credentials, loadSentry, loadLlmSpend]);
 
-  // One-time layout hydration: read the durable doc from the DB, then re-seed
-  // the state that was initialized from the (empty) pre-hydration doc and drop
-  // the canvas gate. Runs at most once per session (guarded by layoutReady).
-  useEffect(() => {
-    if (layoutReady) return;
-    let live = true;
-    void hydrateLayout().then(() => {
-      if (!live) return;
-      // Hydration notifies every store subscriber, so positions/hidden re-read
-      // themselves; this only drops the canvas gate.
-      setLayoutReady(true);
-    });
-    return () => { live = false; };
-  }, [layoutReady]);
+  // Athena's composed panels live in the durable layout doc. Idempotent (once
+  // per session); hydration notifies useAthenaPanels, so nothing waits on it.
+  useEffect(() => { void hydrateLayout(); }, []);
 
   // A scan finishing anywhere (here or in the Idea Scanner page) refreshes the
   // freshness data. When WE dispatched it we know the project, so invalidate
@@ -326,22 +285,6 @@ function MastermindInner() {
     }
   }, [invalidateScans, loadScans, clearScanBusy]);
   useTauriEvent<{ job_id: string; status: string; error?: string }>(EventName.IDEA_SCAN_STATUS, onScanStatus);
-
-  // Keyboard: E/G/C switch modes, Esc closes panels (the shell handles its own
-  // Esc for half-drawn links/editors). Ignored while typing.
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement;
-      if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable) return;
-      if (e.key === 'Escape') { setOpenSlug(null); setPreviewId(null); }
-      else if (e.key === 'e' || e.key === 'E') setMode('edit');
-      else if (e.key === 'g' || e.key === 'G') setMode('group');
-      else if (e.key === 'c' || e.key === 'C') setMode('connect');
-      else if (e.key === 'n' || e.key === 'N') setMode('note');
-    };
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
-  }, []);
 
   const kpiByProject = useMemo(() => {
     const m = new Map<string, KpiRollup>();
@@ -518,92 +461,24 @@ function MastermindInner() {
     if (factoryError) factoryReload();
     if (fleetSessionsError) void fleetRefresh();
   }, [retryFailed, error, reload, factoryError, factoryReload, fleetSessionsError, fleetRefresh]);
-  // Saved positions + live fleet + per-dim Improve actionability overlay the
-  // derived scene. Actionability mirrors the wall's ImproveCell checks, so a
-  // canvas cell is clickable exactly when its wall row would show a gear.
+  // Live work + per-dim Improve actionability overlay the derived scene.
+  // Actionability mirrors the wall's ImproveCell checks, so a reading is
+  // clickable exactly when its wall row would show a gear.
   //
-  // CONTENT-STABLE IDENTITY (optimizer pass): every input here churns object
-  // identity — fleetByProject rebuilds all its arrays on every session event
-  // (sub-second cadence while any CLI runs). Handing each memoized island a
-  // fresh object every tick re-rendered the whole world once a second. The
-  // cache below reuses the previous island object whenever that island's
-  // actual inputs are unchanged, so a fleet tick re-renders only the island
-  // whose dock changed.
-  //
-  // The base island is compared by CONTENT, not identity: `deriveScene` is a
-  // pure rebuild, so each of the ~9 data families landing in its own microtask
-  // on first mount (passport phases 0/1/2, relations, scans, goals, KPI,
-  // monitoring, LLM spend) produced a brand-new object for EVERY island and
-  // blew the cache on `base === i` — the whole world reconciled ~10× in the
-  // first seconds. Most of those arrivals change one family's cells on a few
-  // islands, so the comparison buys back the freeze.
-  //
-  // That comparison used to be `JSON.stringify(island)`. It is now an early-exit
-  // structural walk (`sameIslandContent`) that allocates nothing: the pass below
-  // re-runs once per animation frame while the hydration waves drain, and paying
-  // N multi-kilobyte serializations per frame was itself a visible slice of the
-  // cold-load cost it was there to fix. The cache holds the previous BASE island
-  // rather than a key string.
+  // One plain pass: the chart receives the scene only once it has settled
+  // (useSceneSettle), so the Hex Mosaic's per-island identity cache and
+  // staggered hydration waves (which kept ~150 SVG nodes per island from
+  // reconciling on every family arrival) have nothing left to protect.
   const passportBySlug = useMemo(() => new Map(passports.map((p) => [p.identity.slug, p])), [passports]);
-  const islandCache = useRef(new Map<string, {
-    base: (typeof scene.islands)[number]; passport: unknown; raw: unknown;
-    oX: number | undefined; oY: number | undefined;
-    fleetKey: string; personasKey: string; busy: boolean; shipKey: string; runnerKey: string;
-    out: (typeof scene.islands)[number];
-  }>());
-  // HYDRATION WAVES (staggered data adoption): the identity cache above stops
-  // an island from re-rendering when its data DIDN'T change — but the first
-  // seconds after mount are the opposite case. ~9 data families resolve in
-  // quick succession (passport phases 0/1/2, ship, KPI, relations, scans,
-  // monitoring, spend) and several of them touch EVERY island, so each arrival
-  // still reconciled the whole world (~150 SVG nodes × N islands) in one
-  // synchronous commit — the first-open lag. The budget below caps how many
-  // islands may adopt CHANGED content per pass: the rest keep their previous
-  // painted object (identical reference → memo skip, briefly stale by design)
-  // and an rAF re-runs the memo until every island is current. A burst now
-  // rolls across the canvas at HYDRATE_WAVE islands/frame instead of freezing
-  // it. Single-island updates (drag commit, busy flag, one fleet tick) always
-  // fit the first wave, so interactions stay same-frame.
-  const [hydrateTick, forceHydrate] = useReducer((n: number) => n + 1, 0);
-  const hydratePending = useRef(false);
-  const positioned = useMemo(() => {
-    void hydrateTick; // re-entry ticket for deferred adoptions below
-    const cache = islandCache.current;
-    let adopted = 0;
-    const next = new Map<string, NonNullable<ReturnType<typeof cache.get>>>();
-    const islands = scene.islands.map((i) => {
-      const o = overrides[i.slug];
+  const positioned = useMemo<Scene>(() => ({
+    ...scene,
+    islands: scene.islands.map((i) => {
       const fleet = scene.demo ? i.fleet : fleetByProject.get(i.slug) ?? EMPTY_FLEET;
       const personasRunning = scene.demo ? i.personasRunning : personasByProject.get(i.slug) ?? EMPTY_NAMES;
       const runners = scene.demo ? i.runners : runnersByProject.get(i.slug) ?? EMPTY_RUNNERS;
       const passport = passportBySlug.get(i.slug);
       const raw = rawByProject.get(i.slug);
       const busy = busySlugs.has(i.slug);
-      const ship = shipByProject.get(i.slug) ?? null;
-      const fleetKey = fleet.map((f) => `${f.id}:${f.state}`).join('|');
-      const personasKey = personasRunning.join('|');
-      const runnerKey = runners.map((r) => `${r.id}:${r.status}:${r.progress}`).join('|');
-      const shipKey = ship ? `${ship.next}|${ship.shipped}/${ship.total}|${ship.late}` : '';
-      const c = cache.get(i.slug);
-      // Cheap scalar checks first, the island walk last — a fleet tick or a drag
-      // commit is decided before `sameIslandContent` is ever entered.
-      if (c && c.passport === passport && c.raw === raw
-        && c.oX === o?.x && c.oY === o?.y && c.fleetKey === fleetKey
-        && c.personasKey === personasKey && c.busy === busy && c.shipKey === shipKey
-        && c.runnerKey === runnerKey
-        && sameIslandContent(c.base, i)) {
-        next.set(i.slug, c);
-        return c.out;
-      }
-      // Changed, but over budget this pass — keep the stale painted entry for a
-      // frame and reclaim it on the next tick. Brand-new islands (no prior
-      // entry) can't be deferred: the shell's mount waves stagger those.
-      if (c && adopted >= HYDRATE_WAVE) {
-        hydratePending.current = true;
-        next.set(i.slug, c);
-        return c.out;
-      }
-      if (c) adopted += 1;
       const nodes = i.nodes.map((n) => {
         const decorated = {
           ...n,
@@ -619,39 +494,11 @@ function MastermindInner() {
         return decorated;
       });
       // Attention derives from the RESOLVED fleet (live for real projects, the
-      // demo fleet for demo islands) — a needs-you marker the banner shows at
-      // every zoom band.
+      // demo fleet for demo islands).
       const attention = computeAttention(fleet);
-      const out = { ...i, ...(o ? { x: o.x, y: o.y } : {}), fleet, personasRunning, runners, nodes, attention, ship };
-      const entry = { base: i, passport, raw, oX: o?.x, oY: o?.y, fleetKey, personasKey, busy, shipKey, runnerKey, out };
-      next.set(i.slug, entry);
-      return out;
-    });
-    islandCache.current = next;
-    return { ...scene, islands };
-  }, [scene, overrides, fleetByProject, personasByProject, runnersByProject, passportBySlug, rawByProject, busySlugs, kpiListByProject, shipByProject, hydrateTick]);
-
-  // Drain deferred adoptions one animation frame at a time. Runs after every
-  // commit (no dep array on purpose): whenever the pass above left islands on
-  // stale content, the next frame re-enters it with a fresh budget.
-  useEffect(() => {
-    if (!hydratePending.current) return;
-    hydratePending.current = false;
-    const id = requestAnimationFrame(forceHydrate);
-    return () => cancelAnimationFrame(id);
-  });
-
-  // Read-modify-write against the store (not a stale render closure) so a drag
-  // that lands between someone else's write still merges rather than reverts.
-  const onIslandCommit = (slug: string, x: number, y: number) =>
-    savePositions({ ...loadPositions(), [slug]: { x, y } });
-
-  // Sidebar hide/show filter — the canvas renders only visible islands; the
-  // project list sees all of them.
-  const canvasScene = useMemo(() => ({
-    ...positioned,
-    islands: positioned.islands.filter((i) => !hiddenSlugs.has(i.slug)),
-  }), [positioned, hiddenSlugs]);
+      return { ...i, fleet, personasRunning, runners, nodes, attention, ship: shipByProject.get(i.slug) ?? null };
+    }),
+  }), [scene, fleetByProject, personasByProject, runnersByProject, passportBySlug, rawByProject, busySlugs, kpiListByProject, shipByProject]);
 
   // ── Publishing the scene for Athena ──────────────────────────────────────
   // WP2 reads `mastermind.scene.v1`; this is the only writer. Per-family load
@@ -669,17 +516,11 @@ function MastermindInner() {
     kpi: factoryError ? 'failed' : 'loaded',
   }), [error, loading, metaStatus, scansStatus, sentryStatus, goalsStatus, runnersStatus, llmSpendStatus, factoryError]);
 
-  // `positioned`, not `canvasScene`: hiding an island is a view filter, and a
-  // digest that silently drops projects the user tucked away would let her
-  // report a portfolio that isn't the portfolio. The publisher debounces,
-  // dedupes and refuses the demo scene itself.
-  //
-  // The call is debounced HERE as well, because the publisher's own debounce
-  // only protects the IPC write — `publishCanvasScene` still builds and
-  // serializes the whole portfolio on every invocation to compute its dedupe
-  // key. During a cold load `positioned` re-derives once per hydration frame,
-  // so that was a second full-scene stringify per frame competing with the
-  // fetches the canvas is waiting on. A settled scene publishes exactly once.
+  // The publisher debounces, dedupes and refuses the demo scene itself. The
+  // call is debounced HERE as well, because the publisher's own debounce only
+  // protects the IPC write — `publishCanvasScene` still builds and serializes
+  // the whole portfolio on every invocation to compute its dedupe key, and the
+  // families land in a burst on a cold load. A settled scene publishes once.
   useEffect(() => {
     const id = setTimeout(
       () => publishCanvasScene({ scene: positioned, families: publishFamilies, kpiByProject }),
@@ -689,37 +530,22 @@ function MastermindInner() {
   }, [positioned, publishFamilies, kpiByProject]);
 
   // ── Athena's composed panel ──────────────────────────────────────────────
-  // Persisted per project by the layout store; restored whenever that project
-  // is the canvas focus target (her compose op sets it, and so does opening a
-  // project from the canvas or the list).
+  // Persisted per project by the layout store; shown whenever that project is
+  // the focus target (her compose op sets it, and the chart travels to it).
   const athenaPanels = useAthenaPanels();
   const focusedSlug = useFocusedProjectSlug();
   const athenaPanel = focusedSlug ? athenaPanels[focusedSlug] ?? null : null;
-  const openProject = useCallback((slug: string) => {
-    setOpenSlug(slug);
-    // No camera travel — the user just clicked the island, it is already there.
-    focusCanvasProject(slug, false);
-  }, []);
   const panelDispatchTarget = useMemo(() => {
     if (!focusedSlug) return undefined;
     const p = projects.find((x) => x.id === focusedSlug);
     return p?.root_path ? { projectId: p.id, projectName: p.name, rootPath: p.root_path } : undefined;
   }, [focusedSlug, projects]);
 
-  const toggleVisible = (slug: string) => {
-    const next = loadHidden();
-    if (next.has(slug)) next.delete(slug);
-    else next.add(slug);
-    saveHidden(next);
-  };
-
   const previewSession = previewId ? sessions.find((s) => s.id === previewId) ?? null : null;
-  const openIsland = openSlug ? positioned.islands.find((i) => i.slug === openSlug) ?? null : null;
-  const openPassport = openSlug ? passports.find((p) => p.identity.slug === openSlug) ?? null : null;
 
-  // Canvas cell → the same Improve popovers the Passport wall opens, anchored
+  // A reading → the same Improve popovers the Passport wall opens, anchored
   // at the click point (they flip/clamp against the window themselves). The
-  // Ideas dimension opens the scan-dispatch popover instead.
+  // Ideas reading opens the scan-dispatch popover instead.
   const onDimOpen = (slug: string, node: DimNode, e: { clientX: number; clientY: number }) => {
     if (node.action === 'ideas') {
       setScanPopup({ slug, x: e.clientX, y: e.clientY });
@@ -862,95 +688,36 @@ function MastermindInner() {
   return (
     <ImproveProvider value={improve}>
     <div className="relative h-[calc(100dvh-120px)] min-h-[480px] overflow-hidden rounded-card border border-primary/[0.08]" data-testid="mastermind-page">
-      {/* The canvas waits on the durable LAYOUT doc and on nothing else.
-          Islands pop in as their projects resolve.
-
-          It used to also wait on `!(loading && passports.length === 0)` — the
-          first passport load for EVERY project — with `LoadingSpinner` as the
-          fallback. That component renders `null` (it is a documented shim, not
-          a spinner), so the cold open was not a slow canvas but a BLANK
-          RECTANGLE, and its duration was set by the slowest project in the
-          workspace. The reasoning in the old comment was sound — an empty world
-          reads as "you have nothing" — but the fix for that is to show the
-          projects sooner, not to show nothing for longer: `usePassportData`
-          now publishes a skeleton island per project one IPC deep, so the
-          population is real from the first frame and each island sharpens in
-          place as its data lands.
-
-          The layout gate stays. It is a single durable-doc read, and dropping
-          it would let islands paint at their spiral fallback positions and then
-          JUMP when the persisted layout arrives. */}
-      <ViewPanel view={view}>
-      {!baseline ? (
-        // No skeleton: a ghost of stations that do not exist yet has a different
-        // geometry from the chart that replaces it, and the swap read as a blink.
-        // The chart's own chrome (water, bands) is the loading state.
-        <Suspense fallback={<div className="absolute inset-0" aria-hidden />}>
-          <SoundingsView
-            scene={settled ? canvasScene : UNSETTLED_SCENE}
-            settling={!settled}
-            switcher={<ViewSwitcher view={view} onChange={setView} inline />}
-            onDimOpen={onDimOpen}
-            onFleetOpen={setPreviewId}
-            onPersonasOpen={(slug, at) => setPersonaMenu({ slug, x: Math.min(at.clientX, window.innerWidth - 244), y: Math.min(at.clientY + 10, window.innerHeight - 280) })}
-            onShipOpen={openNotepadForProject}
-            onFactoryOpen={(slug) => openFactory(slug, 'overview')}
-            onDispatchFleet={setDispatchSlug}
-            onOpenTerminal={openTerminal}
-            canOpenTerminal={canOpenTerminal}
-          />
-        </Suspense>
-      ) : layoutReady && settled ? (
-        <MastermindHexMosaic
-          scene={canvasScene}
-          mode={mode}
-          onIslandCommit={onIslandCommit}
+      {/* No skeleton: a ghost of stations that do not exist yet has a different
+          geometry from the chart that replaces it, and the swap read as a
+          blink. Until the scene settles (useSceneSettle) the chart shows its
+          own chrome (water, depth bands, a loading line) and no stations. */}
+      <Suspense fallback={<div className="absolute inset-0" aria-hidden />}>
+        <SoundingsView
+          scene={settled ? positioned : UNSETTLED_SCENE}
+          settling={!settled}
+          onDimOpen={onDimOpen}
           onFleetOpen={setPreviewId}
-          onProjectOpen={openProject}
+          onPersonasOpen={(slug, at) => setPersonaMenu({ slug, x: Math.min(at.clientX, window.innerWidth - 244), y: Math.min(at.clientY + 10, window.innerHeight - 280) })}
+          onRunnersOpen={(slug, at) => setRunnerMenu({ slug, x: Math.min(at.clientX, window.innerWidth - 292), y: Math.min(at.clientY + 10, window.innerHeight - 300) })}
           onShipOpen={openNotepadForProject}
           onFactoryOpen={(slug) => openFactory(slug, 'overview')}
-          onSkillsOpen={openSkillsManager}
-          onDimOpen={onDimOpen}
-          onPersonasOpen={(slug, e) => setPersonaMenu({ slug, x: Math.min(e.clientX, window.innerWidth - 244), y: Math.min(e.clientY + 10, window.innerHeight - 280) })}
-          onRunnersOpen={(slug, e) => setRunnerMenu({ slug, x: Math.min(e.clientX, window.innerWidth - 292), y: Math.min(e.clientY + 10, window.innerHeight - 300) })}
-          onCategoryOpen={(slug, category, e) => setCategoryPopup({ slug, category, x: Math.min(e.clientX, window.innerWidth - 300), y: Math.min(e.clientY + 10, window.innerHeight - 320) })}
-          onOpenTerminal={openTerminal}
           onDispatchFleet={setDispatchSlug}
-          onDispatchGroupFleet={(slugs, label) => setDispatchGroup({ slugs, label })}
+          onOpenTerminal={openTerminal}
           canOpenTerminal={canOpenTerminal}
         />
-      ) : (
-        // Until the layout doc is read AND the scene has settled (useSceneSettle),
-        // the canvas stays empty under its permanent chrome (switcher, toolbar,
-        // project list). Provisional islands used to paint here first, and their
-        // placeholder geometry (no chips, dashed scores) blinked into the real
-        // islands. The label is announced for assistive tech; there is no spinner,
-        // which this app bans as a surface loading state.
-        <LoadingSpinner label={t.mastermind.loading_projects} />
-      )}
-      </ViewPanel>
+      </Suspense>
 
-      {baseline && <ViewSwitcher view={view} onChange={setView} />}
-
-      {baseline && <ProjectListSidebar
-        islands={positioned.islands}
-        hidden={hiddenSlugs}
-        open={projectsOpen}
-        onOpenToggle={() => setProjectsOpen((v) => !v)}
-        onToggleVisible={toggleVisible}
-        onNewProject={() => setNewProjectOpen(true)}
-        onProjectOpen={openProject}
-      />}
-
-      {baseline && <CanvasToolbar mode={mode} onModeChange={setMode} />}
+      {/* A family that failed (or is serving stale data) says so under the
+          chart's top bar, with one retry for all of them. Self-hides. */}
+      <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20">
+        <DataHealthBar failed={failedFamilies} onRetry={onRetryData} />
+      </div>
 
       {previewId && (
         <FleetPreviewPanel sessionId={previewId} session={previewSession} onClose={() => setPreviewId(null)} />
       )}
 
-      {/* One right dock, two contents: a composed panel takes precedence over
-          the passport sidebar (both are project-scoped, and stacking them would
-          bury hers under his). Closing the panel reveals the sidebar again. */}
       <AnimatePresence>
         {athenaPanel && focusedSlug && (
           <AthenaPanel
@@ -960,20 +727,6 @@ function MastermindInner() {
             projectName={positioned.islands.find((i) => i.slug === focusedSlug)?.name ?? focusedSlug}
             dispatchTarget={panelDispatchTarget}
             onClose={clearCanvasFocus}
-          />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {openIsland && !athenaPanel && (
-          <ProjectSidebar
-            key="project-sidebar"
-            passport={openPassport}
-            name={openIsland.name}
-            onClose={() => setOpenSlug(null)}
-            onOpenFactory={() => openFactory(openIsland.slug, 'overview')}
-            onOpenShip={() => openNotepadForProject(openIsland.slug)}
-            onOpenSkills={() => openSkillsManager(openIsland.slug)}
           />
         )}
       </AnimatePresence>
@@ -1004,16 +757,6 @@ function MastermindInner() {
           projectName={positioned.islands.find((i) => i.slug === goalSlug)?.name ?? goalSlug}
           kpis={kpiListByProject.get(goalSlug) ?? EMPTY_KPIS}
           onClose={() => setGoalSlug(null)}
-        />
-      )}
-
-      {categoryPopup && (
-        <CategoryPopover
-          category={categoryPopup.category}
-          x={categoryPopup.x}
-          y={categoryPopup.y}
-          onDimOpen={(node, e) => onDimOpen(categoryPopup.slug, node, e)}
-          onClose={() => setCategoryPopup(null)}
         />
       )}
 
@@ -1059,31 +802,17 @@ function MastermindInner() {
         );
       })()}
 
-      {dispatchGroup && (
-        <DispatchFleetModal
-          name={dispatchGroup.label || t.mastermind.group_untitled}
-          targetCount={dispatchGroup.slugs.length}
-          onDispatch={async (instruction) => {
-            // Sequential on purpose: each spawn is a PTY + a Claude process, and
-            // firing six at once is how a portfolio-wide dispatch becomes a
-            // machine-wide stall. A failure surfaces and stops the rest.
-            for (const slug of dispatchGroup.slugs) await dispatchFleet(slug, instruction);
-          }}
-          onClose={() => setDispatchGroup(null)}
-        />
-      )}
-
-      {/* No `initialMode`: the canvas opens on the landing chooser so the
+      {/* No `initialMode`: the workbench opens on the landing chooser so the
           operator picks Manage vs Registry, rather than being dropped into one
           lane with no sign the other exists. */}
       {skillRunSlug && (
         <SkillsWorkbench slug={skillRunSlug} onClose={() => setSkillRunSlug(null)} />
       )}
 
-      {/* One router for every entry point (see ImproveSurface). The canvas used
+      {/* One router for every entry point (see ImproveSurface). The page used
           to carry its OWN two-branch copy of this, so each dimension added to
           the ladder was reachable from the Passport wall and silently NOT from
-          here — clicking Database or Monitoring on an island opened the generic
+          here — clicking Database or Monitoring on a project opened the generic
           deploy popover and the new modal never mounted. */}
       {improvePopup && passportBySlug.get(improvePopup.slug) && (
         <ImproveSurface
@@ -1116,7 +845,7 @@ function MastermindInner() {
         editProject={null}
       />
 
-      {baseline && scene.demo && layoutReady && !demoDismissed && (
+      {settled && scene.demo && !demoDismissed && (
         <DemoNotice
           scanning={rescanning}
           onScan={rescan}
@@ -1124,34 +853,22 @@ function MastermindInner() {
           onDismiss={() => setDemoDismissed(true)}
         />
       )}
-      {baseline && scene.demo && demoDismissed && (
-        // The badge is the way BACK to the notice: once dismissed, the canvas
-        // is a wall of cells that quietly refuse every click (demo islands have
-        // no passport, so nothing resolves an action). Clicking it re-opens the
+      {settled && scene.demo && demoDismissed && (
+        // The badge is the way BACK to the notice: once dismissed, the chart
+        // is a set of stations that quietly refuse every action (demo projects
+        // have no passport, so nothing resolves one). Clicking it re-opens the
         // two exits — scan the workspace, or add a project.
         <button
           type="button"
           onClick={() => setDemoDismissed(false)}
           title={t.mastermind.demo_badge_reopen}
-          className="absolute bottom-3 left-3 z-10 typo-caption text-foreground/50 px-2 py-1 rounded-interactive mm-chrome surface-blur-tooltip hover:text-foreground transition-colors focus-ring"
+          className="absolute bottom-16 left-3 z-10 typo-caption text-foreground/60 px-2 py-1 rounded-interactive bg-secondary border border-primary/15 shadow-elevation-2 hover:text-foreground transition-colors focus-ring"
           data-testid="mm-demo-badge"
         >
           {t.mastermind.demo_badge}
         </button>
       )}
 
-      {/* Bottom chrome, stacked in ONE column above the mode toolbar. Both
-          children self-hide, so a healthy workspace with nothing in flight
-          renders an empty (invisible) stack — and neither can be positioned
-          on top of the other by a constant drifting in the wrong file. */}
-      {baseline && <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 pointer-events-none [&>*]:pointer-events-auto">
-        <DataHealthBar failed={failedFamilies} onRetry={onRetryData} />
-        <MilestoneStatusBar
-          islands={positioned.islands}
-          focusedSlug={focusedSlug ?? openSlug}
-          onOpenShip={openNotepadForProject}
-        />
-      </div>}
     </div>
     </ImproveProvider>
   );

@@ -17,7 +17,6 @@
 import { useSyncExternalStore } from 'react';
 
 import type { DimNode, DimStatus, Island, IslandShip, IslandState, ZoomBand } from './types';
-import { zoomBand } from './types';
 import type { IslandStat } from './islandStats';
 
 // --- the grammar --------------------------------------------------------------
@@ -142,27 +141,6 @@ export function islandReadPayload(island: Island): IslandReadPayload {
     dims: island.nodes.map(dimReadPayload),
   };
 }
-
-// --- band targeting (pure, unit-tested) --------------------------------------
-
-/** Target z that lands comfortably INSIDE each band — not at its threshold,
- *  where a rounding wobble could read back as the neighbouring band. `close`
- *  matches fit()'s 0.9 ceiling so "focus close" and a tight fit agree. */
-export const BAND_TARGET_Z: Record<ZoomBand, number> = {
-  far: 0.12,
-  mid: 0.3,
-  near: 0.62,
-  close: 0.9,
-};
-
-/** Sanity guard kept next to the table: every target must map into its band. */
-export const bandTargetZ = (band: ZoomBand): number => BAND_TARGET_Z[band];
-
-// A dimension cell is only an individual click target from `near` in — below
-// that the body renders collapsed categories (see dimCategories.ts).
-export const DIM_OPEN_MIN_BAND: ZoomBand = 'near';
-
-export { zoomBand };
 
 // --- the queue ----------------------------------------------------------------
 

@@ -207,7 +207,6 @@
     "draft_kind_research": "調査",
     "draft_kind_search": "検索",
     "draft_notes": "メモ",
-    "draft_notes_empty": "Athenaからのメモはまだありません。",
     "draft_project": "プロジェクト",
     "draft_stamp_approval": "承認用",
     "draft_stamp_issued": "発行済み",
@@ -219,7 +218,10 @@
     "draft_status_template": "白紙のシート",
     "sheet_style_drafting": "作図",
     "sheet_style_label": "シートスタイル",
-    "sheet_style_plan": "プランカード"
+    "sheet_style_plan": "プランカード",
+    "draft_kind_draw": "作図",
+    "draft_plan_sheet": "計画",
+    "draft_status_loading": "計画を開いています"
   },
   "bun_missing": "Bunがインストールされていません。Studioはプロジェクトの作成と実行にBunを必要とします。bun.shからインストールするか、PERSONAS_BUN_BINを設定してから、アプリを再起動してください。",
   "bun_unknown": "Bunがインストールされているか確認できませんでした。Studioはプロジェクトの作成と実行にBunを必要とします。再試行するか、bun.shからインストールしてアプリを再起動してください。",

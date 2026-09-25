@@ -8,7 +8,8 @@
 // Input follows this repo's rules rather than the prototype's: the wheel is a
 // NATIVE non-passive listener (a React `onWheel` cannot `preventDefault`), and
 // panning uses element pointer capture rather than a document-scoped move loop
-// (precedent: `sub_mastermind/lib/useCanvasCamera.ts:141-215`).
+// (precedent: the retired Mastermind canvas camera, `useCanvasCamera.ts`,
+// deleted 2026-09-25 and recoverable from git history).
 import {
   categoryScale,
   domainScale,

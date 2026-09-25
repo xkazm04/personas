@@ -207,7 +207,6 @@
     "draft_kind_research": "शोध",
     "draft_kind_search": "खोजें",
     "draft_notes": "नोट्स",
-    "draft_notes_empty": "Athena की ओर से अभी कोई बात नहीं।",
     "draft_project": "प्रोजेक्ट",
     "draft_stamp_approval": "स्वीकृति हेतु",
     "draft_stamp_issued": "जारी",
@@ -219,7 +218,10 @@
     "draft_status_template": "खाली शीट",
     "sheet_style_drafting": "ड्राफ्टिंग",
     "sheet_style_label": "शीट शैली",
-    "sheet_style_plan": "प्लान कार्ड्स"
+    "sheet_style_plan": "प्लान कार्ड्स",
+    "draft_kind_draw": "चित्र",
+    "draft_plan_sheet": "योजना",
+    "draft_status_loading": "योजना खुल रही है"
   },
   "bun_missing": "Bun इंस्टॉल नहीं है, और Studio को प्रोजेक्ट बनाने और चलाने के लिए इसकी ज़रूरत होती है। इसे bun.sh से इंस्टॉल करें (या PERSONAS_BUN_BIN सेट करें), फिर ऐप को फिर से शुरू करें।",
   "bun_unknown": "यह जांचा नहीं जा सका कि Bun इंस्टॉल है या नहीं। Studio को प्रोजेक्ट बनाने और चलाने के लिए इसकी ज़रूरत होती है। फिर से कोशिश करें, या इसे bun.sh से इंस्टॉल करके ऐप फिर से शुरू करें।",

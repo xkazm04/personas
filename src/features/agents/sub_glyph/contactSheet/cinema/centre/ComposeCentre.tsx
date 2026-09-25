@@ -18,11 +18,13 @@ interface ComposeCentreProps {
   core: PersonaCore;
   hasContext: boolean;
   onOpenContext: (el: HTMLElement) => void;
+  /** Push the camera into the persona core layer, grown out of its badge. */
+  onOpenCore: (el: HTMLElement) => void;
   /** Quiet decision support under the composer (the recipe starters). */
   below?: React.ReactNode;
 }
 
-export function ComposeCentre({ intentText, onIntentChange, onLaunch, launchDisabled, launching, core, hasContext, onOpenContext, below }: ComposeCentreProps) {
+export function ComposeCentre({ intentText, onIntentChange, onLaunch, launchDisabled, launching, core, hasContext, onOpenContext, onOpenCore, below }: ComposeCentreProps) {
   const ta = useRef<HTMLTextAreaElement | null>(null);
   useEffect(() => {
     const el = ta.current;
@@ -58,18 +60,19 @@ export function ComposeCentre({ intentText, onIntentChange, onLaunch, launchDisa
           placeholder={COPY.placeholder}
           className="w-full min-h-[64px] resize-none bg-transparent outline-none typo-body-lg text-foreground placeholder:text-foreground/35 leading-relaxed"
         />
-        <div className="flex items-center gap-2 flex-wrap">
-          <PersonaCoreEntry core={core} locked={launching} />
+        {/* One row: identity and context on the left, Launch on the right. */}
+        <div className="flex items-center gap-2 flex-nowrap">
+          <PersonaCoreEntry core={core} locked={launching} onOpen={onOpenCore} />
           <button
             type="button"
             onClick={(e) => onOpenContext(e.currentTarget)}
-            className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-interactive border border-card-border typo-body text-foreground hover:text-foreground hover:bg-foreground/5"
+            className="inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 h-8 px-2.5 rounded-interactive border border-card-border typo-body text-foreground hover:text-foreground hover:bg-foreground/5"
           >
             <FileText className="w-3.5 h-3.5" />
             {hasContext ? COPY.contextAdded : COPY.context}
           </button>
-          <span className="ml-auto typo-caption text-foreground">{COPY.buildRange}</span>
           <Button
+            className="ml-auto shrink-0"
             variant="primary"
             size="md"
             icon={<Rocket className="w-3.5 h-3.5" />}

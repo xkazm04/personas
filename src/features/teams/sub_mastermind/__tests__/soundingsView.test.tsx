@@ -4,6 +4,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { __resetCanvasActionsForTests, dispatchCanvasAction } from '../lib/canvasActionStore';
+import { __resetCanvasFocusForTests, focusCanvasProject } from '../lib/focusStore';
 import type { DimKey } from '../lib/dimRegistry';
 import type { DimNode, DimStatus, Island, Scene } from '../lib/types';
 import SoundingsView from '../soundings/SoundingsView';
@@ -12,7 +13,7 @@ const node = (key: DimKey, status: DimStatus, action: DimNode['action'] = null):
   ({ key, label: `L-${key}`, status, detail: `${key} tool`, reached: 1, steps: 2, action, rowKey: key });
 
 const island = (slug: string, name: string, nodes: DimNode[], over: Partial<Island> = {}): Island => ({
-  slug, name, purpose: '', x: 0, y: 0, state: 'healthy', autoScore: 70, prodScore: 60, lifecycle: 'live', automationLabel: '',
+  slug, name, purpose: '', state: 'healthy', autoScore: 70, prodScore: 60, lifecycle: 'live', automationLabel: '',
   blockers: 0, nodes, fleet: [], personasRunning: [], runners: [], attention: false, monitorErrors: 0, stateSource: 'readiness',
   stats: [], ship: null, ...over,
 });
@@ -21,7 +22,10 @@ const scene: Scene = {
   demo: false,
   islands: [
     island('alpha', 'Alpha', [node('db', 'alert', 'deploy'), node('ci', 'solid')]),
-    island('beta', 'Beta', [node('db', 'solid'), node('ci', 'risk')], { fleet: [{ id: 's1', label: 'otter', state: 'awaiting_input' }] }),
+    island('beta', 'Beta', [node('db', 'solid'), node('ci', 'risk')], {
+      fleet: [{ id: 's1', label: 'otter', state: 'awaiting_input' }],
+      runners: [{ id: 'r1', title: 'Migrate schema', status: 'running', progress: 40 }],
+    }),
   ],
   edges: [{ from: 'alpha', to: 'beta', kind: 'relation', strength: 1, label: 'api' }],
 };
@@ -30,13 +34,14 @@ const rect = { x: 0, y: 0, top: 0, left: 0, right: 1192, bottom: 552, width: 119
 const original = HTMLElement.prototype.getBoundingClientRect;
 beforeAll(() => { HTMLElement.prototype.getBoundingClientRect = () => rect as DOMRect; });
 afterAll(() => { HTMLElement.prototype.getBoundingClientRect = original; });
-beforeEach(() => __resetCanvasActionsForTests());
+beforeEach(() => { __resetCanvasActionsForTests(); __resetCanvasFocusForTests(); });
 
 function mount() {
   const handlers = {
     onDimOpen: vi.fn(),
     onFleetOpen: vi.fn(),
     onPersonasOpen: vi.fn(),
+    onRunnersOpen: vi.fn(),
     onShipOpen: vi.fn(),
     onFactoryOpen: vi.fn(),
     onDispatchFleet: vi.fn(),
@@ -49,7 +54,7 @@ function mount() {
 
 describe('SoundingsView', () => {
   it('while the scene settles: chrome and a loading line, no ghost stations, no empty message', () => {
-    render(<SoundingsView scene={{ islands: [], edges: [], demo: false }} settling onDimOpen={vi.fn()} onFleetOpen={vi.fn()} onPersonasOpen={vi.fn()} onShipOpen={vi.fn()} onFactoryOpen={vi.fn()} onDispatchFleet={vi.fn()} onOpenTerminal={vi.fn()} canOpenTerminal={() => true} />);
+    render(<SoundingsView scene={{ islands: [], edges: [], demo: false }} settling onDimOpen={vi.fn()} onFleetOpen={vi.fn()} onPersonasOpen={vi.fn()} onRunnersOpen={vi.fn()} onShipOpen={vi.fn()} onFactoryOpen={vi.fn()} onDispatchFleet={vi.fn()} onOpenTerminal={vi.fn()} canOpenTerminal={() => true} />);
     expect(screen.queryAllByTestId(/^sd-buoy-/)).toHaveLength(0);
     expect(document.querySelector('.sd-empty')).toBeNull();
     expect(document.querySelector('.sd-reading')?.textContent).toMatch(/\S/);
@@ -104,5 +109,22 @@ describe('SoundingsView', () => {
     let missing: Awaited<ReturnType<typeof dispatchCanvasAction>> | undefined;
     await act(async () => { missing = await dispatchCanvasAction({ kind: 'camera.focus', slug: 'nope' }); });
     expect(missing).toMatchObject({ ok: false, reason: 'unknown_slug' });
+  });
+
+  it('Athena composing a panel for a project opens its station', async () => {
+    const { root } = mount();
+    act(() => focusCanvasProject('beta', true));
+    await waitFor(() => expect(root().dataset.level).toBe('1'));
+    expect(screen.getByTestId('sd-strip').getAttribute('aria-label')).toMatch(/^Beta/);
+  });
+
+  it("shows a project's runner tasks and opens their list", async () => {
+    const { handlers } = mount();
+    act(() => focusCanvasProject('beta', true));
+    await waitFor(() => expect(screen.getByTestId('sd-strip').textContent).toContain('1 runner task'));
+    fireEvent.click(screen.getByTestId('sd-strip'));
+    const open = await screen.findByRole('button', { name: 'Show runner tasks' });
+    fireEvent.click(open);
+    expect(handlers.onRunnersOpen).toHaveBeenCalledWith('beta', expect.objectContaining({ clientX: expect.any(Number) }));
   });
 });

@@ -1,10 +1,11 @@
 # Mastermind Soundings: migrating the contest winner into Personas
 
-Status: phase 1 in progress (2026-09-24). Owner decision: **Soundings** won the Mastermind
-next-gen contest (round 1 shortlisted Vitrine and Soundings, round 2 reworked both onto the
-Personas themes, and the owner picked Soundings). It ships as a second view beside the shipped
-**Baseline** (Hex Mosaic) until it is fine-tuned; the three.js prototypes (**Strata**, **Holo**, the
-dev-only design **Board**) are deleted in the same change.
+Status: phase 3 done (2026-09-25) — Soundings is Mastermind's only view. Owner decision:
+**Soundings** won the Mastermind next-gen contest (round 1 shortlisted Vitrine and Soundings,
+round 2 reworked both onto the Personas themes, and the owner picked Soundings). It shipped as a
+second view beside the **Baseline** (Hex Mosaic) on 2026-09-24, with the three.js prototypes
+(**Strata**, **Holo**, the dev-only design **Board**) deleted in the same change; on 2026-09-25
+the owner retired the Baseline and Soundings became the default and only view.
 
 Why the 3D line ends: "The three.js approach capped us into what we can do with design quality."
 Text in WebGL is either blurry or a DOM label floating in front of a scene it does not belong to,
@@ -39,8 +40,9 @@ unknown). Bands: `u >= 6` Surface, `>= 2` Shallows, `>= 1` Mid-water, else Deep.
 
 ## Mapping the prototype onto live data
 
-The prototype read the contest fixture (`mockWorld`). Soundings in the app reads the same
-`canvasScene` the Baseline renders, so hidden projects stay hidden and a live fleet tick moves a buoy.
+The prototype read the contest fixture (`mockWorld`). Soundings in the app reads the page's
+settled scene, so a live fleet tick moves a buoy. (While the Baseline existed the chart read its
+`canvasScene`, which also honoured the Baseline's hidden-project filter; that filter retired with it.)
 
 | Prototype field | Live source | Note |
 |---|---|---|
@@ -49,6 +51,7 @@ The prototype read the contest fixture (`mockWorld`). Soundings in the app reads
 | `project.tag` (`PRS-01`) | **dropped** | real projects have no tag; slivers show the name vertically and the comparison strip shows the name |
 | `fleet[]` | `Island.fleet` (`FleetNode`: id, label, state) | `awaiting_input` drives the lilac flag |
 | `personasRunning` | `Island.personasRunning` | |
+| (not in the prototype) | `Island.runners` (`RunnerNode`) | dev-runner tasks, added when the Baseline retired so its runner lane was not lost |
 | `ship` | `Island.ship` (`IslandShip`) | `late`, `targetDate`, `shipped/total`, `next` |
 | `llmSpend30d` | `Island.stats` entry `llm` (already formatted) | honest `-` when unwired |
 | `monitorErrors` | `Island.monitorErrors` | `null` = not bound, counts toward urgency |
@@ -57,13 +60,14 @@ The prototype read the contest fixture (`mockWorld`). Soundings in the app reads
 | station order | project name, locale compare | stable across sessions, the prototype's "position never moves" |
 
 **Actions are real, not demos.** The L2 Improve button calls the page's `onDimOpen` (the same
-popovers the Baseline cell opens). The project file's sessions open the Fleet preview, personas
-open the persona list, the next ship opens the notepad, and the file offers Open in Factory,
-Dispatch fleet and Open terminal through the page's existing handlers.
+popovers the Baseline cell opened). The project file's sessions open the Fleet preview, personas
+and runner tasks open their lists, the next ship opens the notepad, and the file offers Open in
+Factory, Dispatch fleet and Open terminal through the page's handlers, plus the Memory block
+(ledger coverage and the Obsidian vault sync / import) carried over from the Baseline's sidebar.
 
 **Athena operates through the real grammar.** The prototype's four scripted commands and its
 revert key were demos over a mock world; they are not ported. Instead Soundings answers the same
-`canvasActionStore` queue the Baseline answers: `camera.focus` opens a station, `camera.fit`
+`canvasActionStore` queue the Baseline answered: `camera.focus` opens a station, `camera.fit`
 returns to the chart, `dim.open` lifts a reading and opens its Improve popover, `island.read` /
 `dim.read` answer from the model. Each answered action pings the target with the sonar ring and
 writes one line to the dock's log, so what Athena does is visible where she does it.
@@ -99,9 +103,9 @@ sub_mastermind/soundings/
   meaning is the same (`dim_cat_*`, `world_fleet`, `world_next_ship`, `world_tooling`,
   `world_progress`, `world_llm_spend`, `fleet_*`, `legend_*`, `kb_state_*`, `jump_*`); new keys
   are `soundings_*`, in all 14 locales.
-- **Page wiring.** `ViewSwitcher` becomes Baseline / Soundings. Soundings is lazy-loaded behind
-  `RouteChunkSkeleton`; the Baseline-only chrome (mode toolbar, project list sidebar) hides while
-  Soundings is up. The choice stays session-local until the owner makes it a preference.
+- **Page wiring.** Soundings is lazy-loaded by `MastermindPage`, which owns the data and every
+  surface a reading opens. (Phases 1–2 had a Baseline / Soundings `ViewSwitcher`; it went with the
+  Baseline.)
 
 ## Deleting the 3D line
 
@@ -121,8 +125,14 @@ sub_mastermind/soundings/
    queue, keyboard, help, jump, i18n x14, unit tests for the pure core; the Baseline unchanged.
 2. **Fine-tune with the owner (next).** Live smoke on the real portfolio; whether the urgency
    weights need tuning against real projects (the fixture's scale may not be the workspace's);
-   persisting the view choice; whether the dock should carry Athena's composed panel.
-3. **Retire the Baseline** only when the owner says Soundings replaces it.
+   whether the dock should carry Athena's composed panel.
+3. **Retire the Baseline (done 2026-09-25).** The Hex Mosaic, the switcher and every module only
+   it used were deleted. Kept or carried into Soundings: all data families, every popover and
+   modal, the data-health bar, the demo notice, Athena's panel and focus (composing a panel now
+   opens the station), the dev test bridge, runner tasks and the Memory block. Dropped with the
+   canvas: spatial authoring (positions, groups, links, notes), the hidden-project filter, zoom
+   bands, the milestone status bar and group dispatch; their stored layout data is carried
+   through untouched in `mastermind.layout.v1`.
 
 ## Owed
 

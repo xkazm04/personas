@@ -1,8 +1,14 @@
 // DEMO-ONLY stats: six deterministic per-slug numbers so the demo scene's stat
-// columns are evaluable without live data. Real islands get real stats from
+// stats are evaluable without live data. Real islands get real stats from
 // islandStats.buildIslandStats — same keys, same tones, same renderer.
-import { hash01 } from './hex';
 import type { IslandStat } from './islandStats';
+
+/** Deterministic 0..1 hash of a string — stable per-slug demo values. */
+function hash01(s: string): number {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+  return ((h >>> 0) % 1000) / 1000;
+}
 
 const toneOf = (pct: number, warnBelow: number, badBelow: number): IslandStat['tone'] =>
   pct < badBelow ? 'bad' : pct < warnBelow ? 'warn' : 'good';

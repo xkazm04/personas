@@ -32,8 +32,6 @@ const island = (over: Partial<Island> = {}): Island => ({
   slug: 'calm',
   name: 'Calm',
   purpose: '',
-  x: 0,
-  y: 0,
   state: 'healthy',
   autoScore: 80,
   prodScore: 80,

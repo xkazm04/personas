@@ -1,14 +1,13 @@
 /**
- * The '/' jump palette: type an island's name, land on it.
+ * The '/' jump palette: type a project's name, land on it.
  *
- * CanvasShell already had one tab stop, spatial arrows, Home, Enter and
- * Shift+F10 - everything except the one navigation that scales. This is the
- * search half; the shell hands `onJump` the same `focusSlug` the arrow keys
- * use, so a jump focuses AND pans exactly as a cursor move does.
+ * Soundings already moves by arrows, Enter and Esc; this is the search half,
+ * the one navigation that scales with the portfolio. The chart receives
+ * `onJump` and opens that station, as Enter on it would.
  *
  * A query that matches nothing calls `onMiss` rather than closing silently:
- * the shell routes it into the live region, so a miss is spoken instead of
- * looking like a dead keypress.
+ * the chart logs it, so a miss is visible instead of looking like a dead
+ * keypress.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search } from 'lucide-react';

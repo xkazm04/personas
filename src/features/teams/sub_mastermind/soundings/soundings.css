@@ -232,6 +232,7 @@
 .sd-sess[data-state="awaiting_input"] { color: var(--sd-lilac); font-weight: 600; }
 .sd-sess[data-state="awaiting_input"] i { background: var(--sd-lilac); border-radius: 2px; }
 .sd-sess[data-state="persona"] i { background: transparent; border: 1.5px solid var(--sd-lilac); border-radius: 2px; }
+.sd-sess[data-state="runner"] i { background: transparent; border: 1.5px solid var(--sd-sonar); border-radius: 1px; transform: rotate(45deg) scale(.8); }
 .sd-sess em { font-style: normal; font-weight: 400; font-size: 12px; }
 .sd-sess.sd-flash { background: color-mix(in srgb, var(--sd-lilac) 20%, transparent); }
 .sd-tide { display: inline-flex; gap: 2px; align-items: flex-end; }
@@ -312,6 +313,8 @@
 .sd-act { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent); border-radius: var(--radius-interactive); background: color-mix(in srgb, var(--primary) 10%, transparent); font-size: 14px; font-weight: 600; color: var(--primary); }
 .sd-act:hover { border-color: var(--primary); }
 .sd-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.sd-d-mem { margin-top: 18px; font-size: 14px; }
+.sd-act:disabled { opacity: .5; cursor: default; }
 .sd-c-note { font-size: 14px; line-height: 20px; color: var(--sd-ink2); margin-top: 8px; }
 .sd-c-cmp { position: relative; height: 104px; margin: 8px -22px 0; border-top: 1px solid var(--sd-hair); }
 .sd-cmp-wl { position: absolute; left: 0; right: 0; height: 0; border-top: 1px solid var(--sd-wl); opacity: .7; }

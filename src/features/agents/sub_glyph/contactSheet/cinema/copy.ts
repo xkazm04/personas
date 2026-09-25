@@ -6,7 +6,6 @@ export const COPY = {
   placeholder: "e.g. Summarize my unread emails each morning",
   launch: "Launch",
   launching: "Launching",
-  buildRange: "3 to 6 min",
   context: "Reference context",
   contextAdded: "Context added",
   contextHint: "Docs, examples or constraints the build should read. Optional.",
@@ -21,6 +20,10 @@ export const COPY = {
   buildLogHint: "The build's own output, newest at the bottom.",
   buildLogEmpty: "No output yet.",
   back: "Back to the sheet",
+  core: {
+    hint: "Who this agent is under the task: its mentality, its character and the model that runs it. Anything left alone is inferred by the build.",
+    inferred: "Inferred",
+  },
 
   loupe: {
     esc: "Esc",

@@ -162,10 +162,6 @@ export function relatedStations(i: number, edges: readonly IslandEdge[], indexOf
   return [...out].sort((x, y) => x - y);
 }
 
-export function edgeBetween(a: string, b: string, edges: readonly IslandEdge[]): IslandEdge | null {
-  return edges.find((e) => (e.from === a && e.to === b) || (e.from === b && e.to === a)) ?? null;
-}
-
 /** Edges whose both ends are on the chart (a hidden project drops its currents). */
 export function visibleEdges(edges: readonly IslandEdge[], indexOf: ReadonlyMap<string, number>): IslandEdge[] {
   return edges.filter((e) => indexOf.has(e.from) && indexOf.has(e.to));

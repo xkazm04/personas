@@ -38,8 +38,6 @@ const island = (slug: string, over: Partial<Island> = {}): Island =>
     slug,
     name: slug,
     purpose: '',
-    x: 0,
-    y: 0,
     state: 'warning',
     autoScore: 50,
     prodScore: 50,

@@ -3,7 +3,8 @@
  *  The intent textarea is the mandatory "what"; the persona core is one of the
  *  OPTIONAL dimensions beside it. So this renders as a sibling chip to the other
  *  dimension badges — icon + label, tinted when configured — and opens the
- *  configurator on click. View-only while a build is in flight.
+ *  configurator on click. View-only while a build is in flight. `onOpen` gets
+ *  the badge element, so a host can grow the configurator out of it.
  */
 import { motion } from "framer-motion";
 import { Atom } from "lucide-react";
@@ -14,7 +15,7 @@ import type { PersonaCore } from "./types";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-export function PersonaCoreBadge({ core, onOpen, locked = false, index = 0 }: { core: PersonaCore; onOpen: () => void; locked?: boolean; index?: number }) {
+export function PersonaCoreBadge({ core, onOpen, locked = false, index = 0 }: { core: PersonaCore; onOpen: (el: HTMLElement) => void; locked?: boolean; index?: number }) {
   const { t } = useTranslation();
   const { configured, preset } = core;
   const PresetIcon = preset ? coreIcon(preset.icon) : Atom;
@@ -26,7 +27,7 @@ export function PersonaCoreBadge({ core, onOpen, locked = false, index = 0 }: { 
   return (
     <motion.button
       type="button"
-      onClick={locked ? undefined : onOpen}
+      onClick={locked ? undefined : (e) => onOpen(e.currentTarget)}
       disabled={locked}
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
