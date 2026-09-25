@@ -1,6 +1,21 @@
 // Shared test fixtures for the Contest engine (also handy for WP5 shells).
 import type { ContestDetail } from '@/lib/bindings/ContestDetail';
+import type { ContestLedger } from '@/lib/bindings/ContestLedger';
 import type { ContestSummary } from '@/lib/bindings/ContestSummary';
+
+/** A summary's ledger projection: no seats or variants unless a test adds them. */
+export function ledgerFixture(over: Partial<ContestLedger> = {}): ContestLedger {
+  return {
+    timeoutMin: 60,
+    notBeforeMs: null,
+    judgesEnabled: false,
+    chain: { step: 'idle', reason: null, updatedAtMs: null },
+    seats: [],
+    variants: [],
+    judgesLead: null,
+    ...over,
+  };
+}
 
 export function summaryFixture(over: Partial<ContestSummary> = {}): ContestSummary {
   return {
@@ -19,6 +34,7 @@ export function summaryFixture(over: Partial<ContestSummary> = {}): ContestSumma
     parentId: null,
     round: null,
     updatedAtMs: 1_758_700_000_000,
+    ledger: ledgerFixture(),
     ...over,
   };
 }

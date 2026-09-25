@@ -11,27 +11,128 @@ use super::driver::{self, Ctx};
 use super::preview;
 use super::review;
 use super::types::{
-    ContestDetail, ContestSeat, ContestSeatKind, ContestSeatState, ContestSummary, ContestVariant,
+    ContestDetail, ContestJudgesLead, ContestLedgerVariant, ContestReview, ContestReviewBucket,
+    ContestScoreboard, ContestSeat, ContestSeatKind, ContestSeatState, ContestSummary,
+    ContestVariant,
 };
 use crate::db::models::DevProject;
 use crate::db::DbPool;
 use crate::error::AppError;
 
-fn summary_of(ctx: &Ctx, c: &ContestFile, s: &Sidecar) -> ContestSummary {
+/// What one read of an arena yields: everything the ledger row and the full
+/// detail are both built from, so a `contest_get` reads each file once.
+struct ArenaRead {
+    live: BTreeMap<String, SeatLive>,
+    participants: Vec<ContestSeat>,
+    variants: Vec<ContestVariant>,
+    scoreboard: Option<ContestScoreboard>,
+    review: Option<ContestReview>,
+}
+
+fn read_arena(ctx: &Ctx, c: &ContestFile, s: &Sidecar) -> ArenaRead {
+    let paths = &ctx.paths;
     let live = driver::live_by_key(s);
+    let blind: BTreeMap<String, String> = arena::read_json_opt(&paths.blind_map_json())
+        .ok()
+        .flatten()
+        .unwrap_or_default();
+    let letter_of: BTreeMap<String, String> = blind
+        .iter()
+        .map(|(letter, id)| (id.clone(), letter.clone()))
+        .collect();
+    let participants = c
+        .participants
+        .iter()
+        .map(|p| {
+            seat_view(
+                paths,
+                s,
+                &live,
+                &p.id,
+                &p.spec,
+                ContestSeatKind::Participant,
+                letter_of.get(&p.id).cloned(),
+            )
+        })
+        .collect();
+    let variants = read_variants(paths, &ctx.project_id, ctx.contest_id());
+    let scoreboard = match arena::read_json_opt::<ScoreboardFile>(&paths.scoreboard_json()) {
+        Ok(sb) => sb.map(arena::project_scoreboard),
+        Err(e) => {
+            tracing::warn!(error = %e, "contest: scoreboard.json unreadable");
+            None
+        }
+    };
+    ArenaRead {
+        live,
+        participants,
+        variants,
+        scoreboard,
+        review: review::read_review(paths),
+    }
+}
+
+fn summary_of(ctx: &Ctx, c: &ContestFile, s: &Sidecar, read: &ArenaRead) -> ContestSummary {
     let by_sid: BTreeMap<String, SeatLive> = s
         .seat_sessions
         .iter()
-        .filter_map(|(k, sid)| live.get(k).map(|l| (sid.clone(), *l)))
+        .filter_map(|(k, sid)| read.live.get(k).map(|l| (sid.clone(), *l)))
         .collect();
-    arena::build_summary(
+    let mut summary = arena::build_summary(
         &ctx.project_id,
         &ctx.project_name,
         &ctx.paths,
         c,
         s,
         &|sid| by_sid.get(sid).copied(),
-    )
+    );
+    summary.ledger.seats = read.participants.clone();
+    summary.ledger.variants = read
+        .variants
+        .iter()
+        .map(|v| ledger_variant(v, read.review.as_ref()))
+        .collect();
+    summary.ledger.judges_lead = read.scoreboard.as_ref().and_then(judges_lead);
+    summary
+}
+
+fn ledger_variant(v: &ContestVariant, review: Option<&ContestReview>) -> ContestLedgerVariant {
+    ContestLedgerVariant {
+        key: v.key.clone(),
+        seat_id: v.seat_id.clone(),
+        n: v.n,
+        present: v.present,
+        title: v.title.clone(),
+        concept: v.concept.clone(),
+        still: pick_still(&v.screenshots).cloned(),
+        bucket: review_bucket(review, &v.key),
+    }
+}
+
+fn review_bucket(review: Option<&ContestReview>, key: &str) -> Option<ContestReviewBucket> {
+    review?.variants.iter().find(|r| r.key == key)?.bucket
+}
+
+/// The screenshot a small still shows: the visual pass's load shot (the
+/// page as it first paints, before any probe clicked it), else the first.
+fn pick_still(shots: &[String]) -> Option<&String> {
+    shots
+        .iter()
+        .find(|u| u.to_ascii_lowercase().ends_with("-load.png"))
+        .or_else(|| shots.first())
+}
+
+/// The highest-scoring variant no judge marked broken.
+fn judges_lead(sb: &ContestScoreboard) -> Option<ContestJudgesLead> {
+    sb.rows
+        .iter()
+        .filter(|r| !r.broken)
+        .filter_map(|r| r.mean.map(|m| (r, m)))
+        .max_by(|a, b| a.1.total_cmp(&b.1))
+        .map(|(r, mean)| ContestJudgesLead {
+            key: r.key.clone(),
+            mean,
+        })
 }
 
 /// Every contest across every managed dev project, newest first. A malformed
@@ -48,7 +149,8 @@ pub fn list(db: &DbPool) -> Result<Vec<ContestSummary>, AppError> {
             match driver::read_contest(&ctx.paths) {
                 Ok(c) => {
                     let s = arena::read_sidecar(&ctx.paths);
-                    out.push(summary_of(&ctx, &c, &s));
+                    let read = read_arena(&ctx, &c, &s);
+                    out.push(summary_of(&ctx, &c, &s, &read));
                 }
                 Err(e) => {
                     tracing::warn!(project = %p.name, contest = %contest_id, error = %e,
@@ -73,7 +175,8 @@ pub fn summary(
     let ctx = driver::ctx(db, project_id, contest_id)?;
     let c = driver::read_contest(&ctx.paths)?;
     let s = arena::read_sidecar(&ctx.paths);
-    Ok(summary_of(&ctx, &c, &s))
+    let read = read_arena(&ctx, &c, &s);
+    Ok(summary_of(&ctx, &c, &s, &read))
 }
 
 fn state_of_outcome(outcome: &str) -> ContestSeatState {
@@ -161,61 +264,9 @@ fn pick_screenshots(pngs: &[String], letter: &str, seat_id: &str, n: u32) -> Vec
         .collect()
 }
 
-pub fn detail(db: &DbPool, project_id: &str, contest_id: &str) -> Result<ContestDetail, AppError> {
-    let ctx = driver::ctx(db, project_id, contest_id)?;
-    let paths = &ctx.paths;
-    let c = driver::read_contest(paths)?;
-    let s = arena::read_sidecar(paths);
-    let live = driver::live_by_key(&s);
-    let summary = summary_of(&ctx, &c, &s);
-
-    let blind: BTreeMap<String, String> = arena::read_json_opt(&paths.blind_map_json())
-        .ok()
-        .flatten()
-        .unwrap_or_default();
-    let letter_of: BTreeMap<String, String> = blind
-        .iter()
-        .map(|(letter, id)| (id.clone(), letter.clone()))
-        .collect();
-
-    let mut seats: Vec<ContestSeat> = c
-        .participants
-        .iter()
-        .map(|p| {
-            seat_view(
-                paths,
-                &s,
-                &live,
-                &p.id,
-                &p.spec,
-                ContestSeatKind::Participant,
-                letter_of.get(&p.id).cloned(),
-            )
-        })
-        .collect();
-    // Judges: those contest.json recorded (planned) plus those configured.
-    let mut judge_specs: Vec<String> = Vec::new();
-    for spec in c.judges.iter().chain(s.judges.iter()) {
-        if let Ok(p) = parse_seat_spec(spec) {
-            if !judge_specs.contains(&p.spec) {
-                judge_specs.push(p.spec);
-            }
-        }
-    }
-    for spec in &judge_specs {
-        if let Ok(p) = parse_seat_spec(spec) {
-            let key = judge_seat_key(&p.id);
-            seats.push(seat_view(
-                paths,
-                &s,
-                &live,
-                &key,
-                &p.spec,
-                ContestSeatKind::Judge,
-                None,
-            ));
-        }
-    }
+/// Every collected variant, from `manifest.json`, with its preview URL and
+/// the visual pass's screenshots.
+fn read_variants(paths: &ArenaPaths, project_id: &str, contest_id: &str) -> Vec<ContestVariant> {
     let manifest: Option<ManifestFile> = match arena::read_json_opt(&paths.manifest_json()) {
         Ok(m) => m,
         Err(e) => {
@@ -263,14 +314,48 @@ pub fn detail(db: &DbPool, project_id: &str, contest_id: &str) -> Result<Contest
         }
     }
     variants.sort_by(|a, b| a.letter.cmp(&b.letter).then(a.n.cmp(&b.n)));
+    variants
+}
 
-    let scoreboard = match arena::read_json_opt::<ScoreboardFile>(&paths.scoreboard_json()) {
-        Ok(sb) => sb.map(arena::project_scoreboard),
-        Err(e) => {
-            tracing::warn!(error = %e, "contest: scoreboard.json unreadable");
-            None
+pub fn detail(db: &DbPool, project_id: &str, contest_id: &str) -> Result<ContestDetail, AppError> {
+    let ctx = driver::ctx(db, project_id, contest_id)?;
+    let paths = &ctx.paths;
+    let c = driver::read_contest(paths)?;
+    let s = arena::read_sidecar(paths);
+    let read = read_arena(&ctx, &c, &s);
+    let summary = summary_of(&ctx, &c, &s, &read);
+    let ArenaRead {
+        live,
+        participants,
+        variants,
+        scoreboard,
+        review,
+    } = read;
+
+    let mut seats = participants;
+    // Judges: those contest.json recorded (planned) plus those configured.
+    let mut judge_specs: Vec<String> = Vec::new();
+    for spec in c.judges.iter().chain(s.judges.iter()) {
+        if let Ok(p) = parse_seat_spec(spec) {
+            if !judge_specs.contains(&p.spec) {
+                judge_specs.push(p.spec);
+            }
         }
-    };
+    }
+    for spec in &judge_specs {
+        if let Ok(p) = parse_seat_spec(spec) {
+            let key = judge_seat_key(&p.id);
+            seats.push(seat_view(
+                paths,
+                &s,
+                &live,
+                &key,
+                &p.spec,
+                ContestSeatKind::Judge,
+                None,
+            ));
+        }
+    }
     let brief = std::fs::read_to_string(paths.brief_md()).unwrap_or_default();
 
     Ok(ContestDetail {
@@ -289,7 +374,7 @@ pub fn detail(db: &DbPool, project_id: &str, contest_id: &str) -> Result<Contest
         seats,
         variants,
         scoreboard,
-        review: review::read_review(paths),
+        review,
         chain: s.chain_view(),
     })
 }
@@ -319,6 +404,69 @@ mod tests {
             .collect();
         names.sort();
         names
+    }
+
+    #[test]
+    fn a_ledger_still_is_the_load_shot_else_the_first() {
+        let shots = |names: &[&str]| names.iter().map(|n| n.to_string()).collect::<Vec<_>>();
+        let probe_first = shots(&["A-1-1280x800-descend.png", "A-1-1280x800-load.png"]);
+        assert_eq!(
+            pick_still(&probe_first).map(String::as_str),
+            Some("A-1-1280x800-load.png")
+        );
+        let plain = shots(&["A-1-1280.png", "A-1-1920.png"]);
+        assert_eq!(pick_still(&plain).map(String::as_str), Some("A-1-1280.png"));
+        assert_eq!(pick_still(&[]), None);
+    }
+
+    fn row(key: &str, mean: Option<f64>, broken: bool) -> super::super::types::ContestScoreRow {
+        super::super::types::ContestScoreRow {
+            key: key.into(),
+            mean,
+            spread: None,
+            broken,
+            dims: BTreeMap::new(),
+        }
+    }
+
+    #[test]
+    fn the_judges_lead_is_the_best_intact_variant() {
+        let sb = ContestScoreboard {
+            judges: vec!["j".into()],
+            rows: vec![
+                row("A/1", Some(9.1), true),
+                row("A/2", Some(7.4), false),
+                row("B/1", Some(8.2), false),
+                row("B/2", None, false),
+            ],
+        };
+        let lead = judges_lead(&sb).unwrap();
+        assert_eq!((lead.key.as_str(), lead.mean), ("B/1", 8.2));
+        let all_broken = ContestScoreboard {
+            judges: vec![],
+            rows: vec![row("A/1", Some(9.0), true)],
+        };
+        assert!(judges_lead(&all_broken).is_none());
+    }
+
+    #[test]
+    fn a_ledger_variant_carries_the_owners_tray() {
+        use super::super::types::ContestVariantReview;
+        let review = ContestReview {
+            field: String::new(),
+            variants: vec![ContestVariantReview {
+                key: "B/2".into(),
+                bucket: Some(ContestReviewBucket::Shortlist),
+                note: String::new(),
+                pins: vec![],
+            }],
+        };
+        assert_eq!(
+            review_bucket(Some(&review), "B/2"),
+            Some(ContestReviewBucket::Shortlist)
+        );
+        assert_eq!(review_bucket(Some(&review), "A/1"), None);
+        assert_eq!(review_bucket(None, "B/2"), None);
     }
 
     #[test]

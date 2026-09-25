@@ -18,8 +18,8 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 use super::types::{
-    ContestChain, ContestChainStep, ContestEffort, ContestEngine, ContestPhase, ContestScoreRow,
-    ContestScoreboard, ContestSeatSpec, ContestSummary,
+    ContestChain, ContestChainStep, ContestEffort, ContestEngine, ContestLedger, ContestPhase,
+    ContestScoreRow, ContestScoreboard, ContestSeatSpec, ContestSummary,
 };
 use crate::error::AppError;
 
@@ -678,6 +678,17 @@ pub fn build_summary(
         parent_id: c.parent.clone(),
         round: c.round,
         updated_at_ms: updated_at_ms(paths),
+        // The file-free half of the ledger; the view fills seats, variants
+        // and the judges' lead from the records it reads anyway.
+        ledger: ContestLedger {
+            timeout_min: c.timeout_min,
+            not_before_ms: sidecar.not_before_ms,
+            judges_enabled: sidecar.judges_enabled,
+            chain: sidecar.chain_view(),
+            seats: Vec::new(),
+            variants: Vec::new(),
+            judges_lead: None,
+        },
     }
 }
 

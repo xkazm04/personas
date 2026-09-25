@@ -4,6 +4,7 @@ import type { ContestPhase } from '@/lib/bindings/ContestPhase';
 import type { ContestSeatState } from '@/lib/bindings/ContestSeatState';
 import type { ContestSummary } from '@/lib/bindings/ContestSummary';
 
+import { ledgerFixture } from './fixtures';
 import { createLiveFeedMemory, noticesFor, observePhase, seedSeats } from '../model/liveFeed';
 
 const summary = (phase: ContestPhase): ContestSummary => ({
@@ -22,6 +23,7 @@ const summary = (phase: ContestPhase): ContestSummary => ({
   parentId: null,
   round: null,
   updatedAtMs: 1,
+  ledger: ledgerFixture(),
 });
 const seats = (a: ContestSeatState, b: ContestSeatState) => [
   { seatId: 'claude-opus_high', spec: 'claude:opus@high', state: a },

@@ -168,6 +168,55 @@ pub struct ContestSeat {
 // Contests
 // ---------------------------------------------------------------------------
 
+/// One variant as a ledger row draws it: a small still and the owner's tray.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ContestLedgerVariant {
+    /// Blind key, `"<letter>/<n>"`.
+    pub key: String,
+    pub seat_id: String,
+    #[ts(type = "number")]
+    pub n: u32,
+    pub present: bool,
+    pub title: String,
+    pub concept: String,
+    /// Preview URL of the variant's load screenshot from the visual pass;
+    /// `None` when the pass took none.
+    pub still: Option<String>,
+    /// The owner's tray from `review.json`; `None` when it is unsorted there
+    /// (the page then falls back to the verdict `contest.json` recorded).
+    pub bucket: Option<ContestReviewBucket>,
+}
+
+/// The judges' leading intact variant, when a panel scored.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ContestJudgesLead {
+    pub key: String,
+    pub mean: f64,
+}
+
+/// A contest's run at a glance: what one row of the contest ledger draws
+/// (seat strands, variant stills, the verdict line, the cost) without a
+/// `contest_get` per row.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ContestLedger {
+    #[ts(type = "number")]
+    pub timeout_min: u32,
+    #[ts(type = "number | null")]
+    pub not_before_ms: Option<i64>,
+    pub judges_enabled: bool,
+    pub chain: ContestChain,
+    /// Participant seats, in seat order (judges are left to `contest_get`).
+    pub seats: Vec<ContestSeat>,
+    pub variants: Vec<ContestLedgerVariant>,
+    pub judges_lead: Option<ContestJudgesLead>,
+}
+
 /// A contest as listed. Keyed by `(projectId, contestId)`.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -197,6 +246,7 @@ pub struct ContestSummary {
     pub round: Option<u32>,
     #[ts(type = "number")]
     pub updated_at_ms: i64,
+    pub ledger: ContestLedger,
 }
 
 /// One built variant, as collected into `manifest.json`.
