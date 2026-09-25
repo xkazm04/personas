@@ -17,6 +17,13 @@ export function skill(over: Partial<CuratorSkill> = {}): CuratorSkill {
     invocationDocumented: true,
     runsBare: false,
     argumentHint: '/intake <url or path>',
+    // The lessons lane, as the instrument read it the same day. `intake`'s
+    // file is the registry's largest.
+    lessonsPath: '.claude/skills/intake/LESSONS.md',
+    lessonsBytes: 917087,
+    lessonsModifiedAt: '2026-09-25T00:57:00Z',
+    lessonsLatestEntry: '1.1.0 - 2026-08-30 - operator-control-plane',
+    lessonsLatestAt: '2026-08-30',
     ...over,
   };
 }
