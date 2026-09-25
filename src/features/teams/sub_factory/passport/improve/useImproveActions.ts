@@ -77,7 +77,7 @@ export function useImproveActions(slug: string, rowKey: string, onDone: () => vo
         const title = a.taskTitle?.(raw.project) ?? a.label;
         const prompt = a.prompt?.(raw.project, passport) ?? '';
         if (mode === 'queue') { await engine.queueTask(slug, title, prompt); addToast(`Queued “${title}” for ${raw.project.name}`, 'success'); }
-        else { const taskId = await engine.deployNow(slug, title, prompt); markBusy(taskId, 'deploy'); addToast(`Deploying Claude Code on ${raw.project.name}, auto-PR on green`, 'success'); }
+        else { const taskId = await engine.deployNow(slug, title, prompt); markBusy(taskId, 'deploy'); addToast(`Deploying Claude Code on ${raw.project.name}`, 'success'); }
       }
       onDone();
     } catch {

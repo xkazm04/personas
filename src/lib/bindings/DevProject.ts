@@ -8,15 +8,9 @@ export type DevProject = { id: string, name: string, root_path: string, descript
  */
 static_scan_config: string | null, 
 /**
- * When true and the task ran inside a worktree, `task_executor` pushes
- * the worktree branch and opens a PR after the task succeeds. Failures
- * are surfaced in the task log but do NOT mark the task as failed.
- */
-auto_pr_on_success: boolean, 
-/**
- * GitHub credential row id used to authorise the auto-PR call. Nullable;
- * when None and `auto_pr_on_success` is true the wiring emits a warning
- * and skips PR creation.
+ * The project's GitHub connector: the credential row id that authorises
+ * repo / PR / git operations (the Source-control step, the repo picker).
+ * Nullable; set via `dev_tools_update_project`.
  */
 pr_credential_id: string | null, 
 /**

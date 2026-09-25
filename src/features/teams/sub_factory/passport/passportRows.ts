@@ -187,7 +187,7 @@ export const SECTIONS: SectionSpec[] = [
         return { kind: 'counts', items };
       } },
       { key: 'evals', label: 'Evals', info: 'Runnable, scored evaluation cases that regression-check the product’s core behaviour.', get: (p) => (ordinalCell(EVALS_SCALE, p.automationReadiness.artifacts.evals, EVALS_LABEL[p.automationReadiness.artifacts.evals])) },
-      { key: 'aiflow', label: 'AI in workflow', info: 'Whether AI is wired into delivery: auto-PR on green, a team pipeline, or a PR connector.', get: (p) => ({ kind: 'bool', on: p.automationReadiness.aiInWorkflow }) },
+      { key: 'aiflow', label: 'AI in workflow', info: 'Whether AI is wired into delivery: a team pipeline or a PR connector.', get: (p) => ({ kind: 'bool', on: p.automationReadiness.aiInWorkflow }) },
     ],
   },
   {

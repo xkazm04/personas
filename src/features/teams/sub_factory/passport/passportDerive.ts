@@ -5,7 +5,7 @@
 //   · cross-project scan → tech_layers, db_tables, context_count, group_count,
 //     keywords, active_goal_count, summary  (run via dev_tools_generate_cross_project_metadata)
 //   · DevProject row     → standards_config (precommit + branching), github_url,
-//     monitoring_credential_id, pr_credential_id, auto_pr_on_success, team_id
+//     monitoring_credential_id, pr_credential_id, team_id
 // Where there is NO signal the passport shows an explicit gap (null / 'none'),
 // never an invented value — that honesty is the whole point of the comparison.
 import type { CrossProjectProjectMetadata, RepoEvidence } from '@/api/devTools/devTools';
@@ -139,7 +139,7 @@ export function derivePassportFromMetadata(
 
   const integrations: PassportIntegration[] = [];
   if (project.github_url) integrations.push({ name: 'GitHub', kind: 'vcs', direction: 'bidirectional' });
-  if (project.pr_credential_id || project.auto_pr_on_success) integrations.push({ name: 'Auto-PR', kind: 'ci-cd', direction: 'outbound' });
+  if (project.pr_credential_id) integrations.push({ name: 'PR connector', kind: 'ci-cd', direction: 'outbound' });
   if (project.monitoring_credential_id) integrations.push({ name: 'Monitoring', kind: 'analytics', direction: 'inbound' });
   const haystack = (meta.keywords ?? []).concat(meta.api_surface ?? []).join(' ').toLowerCase();
   for (const [re, name, kind] of VENDOR_HINTS) {
@@ -154,7 +154,7 @@ export function derivePassportFromMetadata(
     lint: Boolean(precommit.lint),
     typecheck: Boolean(precommit.code_quality),
   };
-  const aiInWorkflow = Boolean(project.auto_pr_on_success) || Boolean(project.team_id) || Boolean(project.pr_credential_id);
+  const aiInWorkflow = Boolean(project.team_id) || Boolean(project.pr_credential_id);
   const hasManifest = Boolean(project.standards_config);
   // Real CLAUDE.md beats the team_id heuristic for "agent instructions exist".
   const agentInstructions = [

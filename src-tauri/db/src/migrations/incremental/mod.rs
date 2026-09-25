@@ -71,6 +71,7 @@ mod e45_one_idea_scale;
 mod e46_webbuild_plans;
 mod e47_twin_setup_plan;
 mod e48_retire_competitions;
+mod e53_drop_auto_pr_columns;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -138,6 +139,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e46_webbuild_plans::run(conn)?;
     e47_twin_setup_plan::run(conn)?;
     e48_retire_competitions::run(conn)?;
+    e53_drop_auto_pr_columns::run(conn)?;
 
     Ok(())
 }

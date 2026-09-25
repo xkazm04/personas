@@ -2032,3 +2032,78 @@ fn retire_competitions_drops_both_tables_and_keeps_projects_and_tasks(
     }
     Ok(())
 }
+
+// ── e53: the dead runner auto-PR toggle ─────────────────────────────────────
+
+/// e53 — `dev_projects.auto_pr_on_success` never appears on a fresh database,
+/// and a LEGACY database that still carries it (with rows, one of them
+/// toggled on) loses the column on the next boot while every row keeps every
+/// other column, including `pr_credential_id`, which stays. The chain is then
+/// replayed twice more: an `ADD COLUMN` surviving in an older step would show
+/// up here as the column coming back.
+#[test]
+fn drop_auto_pr_columns_keeps_every_project_row() -> Result<(), Box<dyn std::error::Error>> {
+    let pool = crate::init_test_db()?;
+    let conn = pool.get()?;
+    assert!(
+        !has_column(&conn, "dev_projects", "auto_pr_on_success")?,
+        "a fresh database still creates dev_projects.auto_pr_on_success"
+    );
+    assert!(has_column(&conn, "dev_projects", "pr_credential_id")?);
+
+    // Reconstruct the legacy shape: the column as c01 used to add it.
+    conn.execute_batch(
+        "ALTER TABLE dev_projects ADD COLUMN auto_pr_on_success INTEGER NOT NULL DEFAULT 0;
+         INSERT INTO dev_projects (id, name, root_path, auto_pr_on_success, pr_credential_id)
+            VALUES ('p1', 'On', '/tmp/p1', 1, 'cred-gh');
+         INSERT INTO dev_projects (id, name, root_path) VALUES ('p2', 'Off', '/tmp/p2');",
+    )?;
+
+    run_incremental(&conn)?;
+
+    assert!(
+        !has_column(&conn, "dev_projects", "auto_pr_on_success")?,
+        "auto_pr_on_success survived the drop"
+    );
+    let rows: Vec<(String, String, String, Option<String>)> = {
+        let mut stmt = conn.prepare(
+            "SELECT id, name, root_path, pr_credential_id FROM dev_projects ORDER BY id",
+        )?;
+        let mapped = stmt.query_map([], |r| {
+            Ok((
+                r.get("id")?,
+                r.get("name")?,
+                r.get("root_path")?,
+                r.get("pr_credential_id")?,
+            ))
+        })?;
+        mapped.collect::<Result<_, _>>()?
+    };
+    assert_eq!(
+        rows,
+        vec![
+            (
+                "p1".to_string(),
+                "On".to_string(),
+                "/tmp/p1".to_string(),
+                Some("cred-gh".to_string())
+            ),
+            (
+                "p2".to_string(),
+                "Off".to_string(),
+                "/tmp/p2".to_string(),
+                None
+            ),
+        ]
+    );
+
+    for _ in 0..2 {
+        ensure_composite_fires_table(&conn)?;
+        run_incremental(&conn)?;
+    }
+    assert!(
+        !has_column(&conn, "dev_projects", "auto_pr_on_success")?,
+        "auto_pr_on_success came back on replay"
+    );
+    Ok(())
+}
