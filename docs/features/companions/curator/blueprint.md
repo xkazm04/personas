@@ -103,6 +103,26 @@ plan, so the operator's real caps are drawn. Where it did not answer, the gauges
 read unknown rather than "no cap declared", which would be a claim about
 settings nobody has looked at.
 
+### Running it without the page
+
+Pressing the console's control was, until 2026-09-25, the **only** way to run
+the instrument - so a registry nobody had opened Blueprint on had a
+`curator_plan_run` table with zero rows, and an agent asked to populate it had
+no door to knock on. Two routes on the test-automation bridge close that, and
+they call the same two Tauri commands the page does rather than re-deriving the
+projection:
+
+```bash
+curl -s      http://127.0.0.1:17320/curator/plan-status    # never run vs. ran-and-empty
+curl -s -X POST http://127.0.0.1:17320/curator/plan-refresh # run it, land the plan
+```
+
+`plan-status` answers `{"hasPlan":false}` when nobody has ever run it and
+`{"hasPlan":true,"itemCount":0,…}` when a run found nothing - the same
+distinction the page draws, over a wire. **Both exist only under
+`--features test-automation`** (`npm run tauri:dev:test`); they are not in a
+shipped build. Contract and timeouts: `src-tauri/src/test_automation.rs`.
+
 ## The docket
 
 `D` opens a drawer with three states (shut, a lane, the full surface) carrying

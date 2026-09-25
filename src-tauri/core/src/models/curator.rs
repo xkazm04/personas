@@ -873,6 +873,37 @@ pub struct CuratorSkill {
     pub runs_bare: Option<bool>,
     /// The argument line as the file states it, verbatim, or null.
     pub argument_hint: Option<String>,
+    // -- What the skill has LEARNED. Read from its `LESSONS.md`, which is the
+    // append-only log each skill keeps in its own voice. Nothing here parses
+    // that prose into structure: the point is that the plan can SEE which
+    // engines are still moving and which have gone quiet, and every one of the
+    // five is `None` when the skill keeps no such file - never a zero, which
+    // would claim a measurement nobody made. Measured 2026-09-25: 43 of the
+    // 44 skills the two lanes report keep one (`llm-bench` is the exception),
+    // 1.58 MB in total.
+    /// Repo-relative path of the skill's `LESSONS.md`, when it keeps one.
+    pub lessons_path: Option<String>,
+    /// That file's size in bytes. `None` is "there is no such file"; `Some(0)`
+    /// would be a file that exists and says nothing, which is a different fact.
+    /// u64 because a file size is; pinned to `number` on the wire because a
+    /// markdown log stays many orders under 2^53 and `bigint` would be a lie
+    /// about what `JSON.parse` hands back.
+    #[ts(type = "number | null")]
+    pub lessons_bytes: Option<u64>,
+    /// Its last-modified time, RFC3339. `None` when there is no file, or when
+    /// this filesystem does not report one - both are unknown, not "never".
+    pub lessons_modified_at: Option<String>,
+    /// The `##` heading of the newest DATED entry, verbatim and unparsed.
+    /// `None` when the file carries no dated heading at all: measured
+    /// 2026-09-25, `assay` still holds the template's
+    /// `## <version used> - <YYYY-MM-DD> - <source slug>` and has recorded
+    /// nothing, which must never read as a date.
+    pub lessons_latest_entry: Option<String>,
+    /// That entry's `YYYY-MM-DD`, lifted out of the heading as a substring so
+    /// a surface can sort and age it. It is the MAXIMUM date in the file, not
+    /// the topmost heading - see `instrument::newest_lesson` for why the two
+    /// differ.
+    pub lessons_latest_at: Option<String>,
 }
 
 // ---------------------------------------------------------------------------

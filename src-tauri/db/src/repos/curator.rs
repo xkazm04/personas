@@ -1515,10 +1515,29 @@ mod tests {
         Ok(())
     }
 
+    /// **Never run and ran-and-found-nothing are two different answers**, and
+    /// this read is what keeps them apart. `None` means no projection has ever
+    /// been made; `Some` whose `item_count` is 0 means the instrument walked
+    /// the corpus and scored no subject. A read that collapsed them would
+    /// leave every caller - the Blueprint page and the headless
+    /// `/curator/plan-status` door alike - showing an empty ledger for a
+    /// registry nobody has ever looked at.
     #[test]
-    fn no_projection_reads_back_as_none_rather_than_an_empty_plan() {
+    fn no_projection_is_none_and_an_empty_projection_is_still_a_plan() {
         let pool = init_test_db().unwrap();
-        assert!(current_plan(&pool).unwrap().is_none());
+        assert!(
+            current_plan(&pool).unwrap().is_none(),
+            "nothing has ever run, which is not the same as a run that found nothing"
+        );
+
+        insert_plan(&pool, "run-empty", &run_input("2026-09-25T09:00:00Z"), &[]).unwrap();
+
+        let plan = current_plan(&pool)
+            .unwrap()
+            .expect("the run happened, so there IS a plan");
+        assert_eq!(plan.run.id, "run-empty");
+        assert_eq!(plan.run.item_count, 0, "and it found nothing");
+        assert!(plan.items.is_empty());
     }
 
     /// Everything a plan item carries must survive the round trip, and the

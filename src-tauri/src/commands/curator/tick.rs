@@ -1000,6 +1000,11 @@ mod tests {
             invocation_documented: runs_bare.is_some(),
             runs_bare,
             argument_hint: None,
+            lessons_path: None,
+            lessons_bytes: None,
+            lessons_modified_at: None,
+            lessons_latest_entry: None,
+            lessons_latest_at: None,
         }
     }
 

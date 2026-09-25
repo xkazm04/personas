@@ -122,8 +122,18 @@ pub struct ScanSubject {
     pub last_swept: Option<String>,
     /// The registry's own field. Carried, never trusted - see the `e49`
     /// migration header for the measurement that says why.
+    ///
+    /// **`Option` because the registry now writes `null` here, and a `u32`
+    /// made the WHOLE instrument unparseable.** Measured 2026-09-25 against a
+    /// live `librarian-scan --json`: of 475 subjects, **449 carry `null`** and
+    /// 26 carry `0` - where the 2026-09-23 reading behind `e49` found `0` on
+    /// all 349 of them. serde fails the entire document on one bad field, so
+    /// this one drifted field took the plan down with it: `curator_plan_refresh`
+    /// answered `librarian-scan produced unreadable JSON: invalid type: null,
+    /// expected u32` and NO projection could be made at all. That is why
+    /// `curator_plan_run` had zero rows.
     #[serde(default)]
-    pub dry_streak: u32,
+    pub dry_streak: Option<u32>,
     #[serde(default)]
     pub points: u32,
     /// The scan's own sentences, one per clause that fired.
@@ -761,12 +771,16 @@ fn read_skills_uncached(registry_root: &Path) -> Result<Vec<CuratorSkill>, AppEr
                 .file_name()
                 .map(|n| n.to_string_lossy().into_owned())
                 .unwrap_or_default();
-            out.push(parse_skill(
-                lane,
-                &dir_name,
-                &relative_to(registry_root, &file),
-                &raw,
-            ));
+            let mut skill = parse_skill(lane, &dir_name, &relative_to(registry_root, &file), &raw);
+            // Attached here rather than inside `parse_skill`, which is a pure
+            // parse of one file's prose and stays testable without a disk.
+            let lessons = read_lessons(registry_root, &path);
+            skill.lessons_path = lessons.path;
+            skill.lessons_bytes = lessons.bytes;
+            skill.lessons_modified_at = lessons.modified_at;
+            skill.lessons_latest_entry = lessons.latest_entry;
+            skill.lessons_latest_at = lessons.latest_at;
+            out.push(skill);
         }
     }
     // Native before shared, then by name: the order the operator reads them in
@@ -787,11 +801,14 @@ fn is_linked_in(entry: &Path, real_lane: Option<&Path>) -> bool {
     }
 }
 
-/// `SKILL.md`, whatever the repository spelled it. Eleven of one managed repo's
-/// thirty-six skills are tracked lowercase, and a case-sensitive match would
-/// read a lane as empty on Linux while finding it on Windows.
-fn skill_file(dir: &Path) -> Option<PathBuf> {
-    for candidate in ["SKILL.md", "skill.md"] {
+/// A file in `dir` called `name`, whatever the repository spelled it. Eleven of
+/// one managed repo's thirty-six skills track `skill.md` lowercase, and a
+/// case-sensitive match would read a lane as empty on Linux while finding it on
+/// Windows. The two cheap spellings are stat'ed first so the common case costs
+/// no directory listing.
+fn file_named(dir: &Path, name: &str) -> Option<PathBuf> {
+    let lower = name.to_ascii_lowercase();
+    for candidate in [name, lower.as_str()] {
         let path = dir.join(candidate);
         if path.is_file() {
             return Some(path);
@@ -801,8 +818,154 @@ fn skill_file(dir: &Path) -> Option<PathBuf> {
     entries.flatten().map(|e| e.path()).find(|p| {
         p.is_file()
             && p.file_name()
-                .is_some_and(|n| n.to_string_lossy().eq_ignore_ascii_case("skill.md"))
+                .is_some_and(|n| n.to_string_lossy().eq_ignore_ascii_case(&lower))
     })
+}
+
+/// `SKILL.md`, whatever the repository spelled it.
+fn skill_file(dir: &Path) -> Option<PathBuf> {
+    file_named(dir, "SKILL.md")
+}
+
+// ---------------------------------------------------------------------------
+// What a skill has LEARNED
+//
+// Every skill in this registry keeps an append-only `LESSONS.md` beside its
+// `SKILL.md`, written after a run in that skill's own voice. Measured
+// 2026-09-25: 43 of the 44 skills the two lanes report keep one (`llm-bench`
+// is the exception), 1.58 MB in total, the largest (`intake`) 917 KB.
+//
+// **Nothing here reads them for meaning.** They are long, unstructured and
+// each written to a different shape below the entry heading; a parser over
+// that prose would be this app inventing structure the registry never wrote.
+// What IS honestly derivable is that a skill has accumulated lessons and when
+// it last learned something - which is the signal an operator reading Blueprint
+// wants: which engine is still moving, and which has gone quiet.
+// ---------------------------------------------------------------------------
+
+/// What a skill's `LESSONS.md` says about ITSELF. All-`None` when there is no
+/// such file, which is how [`CuratorSkill`]'s five lessons fields read "this
+/// skill has never written anything down".
+#[derive(Default)]
+struct LessonsReading {
+    path: Option<String>,
+    bytes: Option<u64>,
+    modified_at: Option<String>,
+    latest_entry: Option<String>,
+    latest_at: Option<String>,
+}
+
+/// Read a skill directory's `LESSONS.md` for its existence, its weight, its
+/// clock and its newest dated heading - and nothing else.
+///
+/// A file that exists but cannot be stat'ed or opened still yields its path:
+/// "there is a lessons file here and this reader could not measure it" is a
+/// truer answer than pretending there is none.
+fn read_lessons(registry_root: &Path, skill_dir: &Path) -> LessonsReading {
+    let Some(file) = file_named(skill_dir, "LESSONS.md") else {
+        return LessonsReading::default();
+    };
+    let meta = std::fs::metadata(&file).ok();
+    let newest = newest_lesson(&file);
+    LessonsReading {
+        path: Some(relative_to(registry_root, &file)),
+        bytes: meta.as_ref().map(|m| m.len()),
+        modified_at: meta
+            .as_ref()
+            .and_then(|m| m.modified().ok())
+            .map(|t| chrono::DateTime::<chrono::Utc>::from(t).to_rfc3339()),
+        latest_entry: newest.as_ref().map(|(heading, _)| heading.clone()),
+        latest_at: newest.map(|(_, date)| date),
+    }
+}
+
+/// The newest dated `##` entry in a lessons file, as `(heading, YYYY-MM-DD)`.
+///
+/// Read LINE BY LINE rather than into a `String`: only the heading lines are
+/// ever looked at, and `intake`'s file is 917 KB.
+///
+/// **The newest entry is the MAXIMUM date, not the topmost heading.** These
+/// files are appended by hand in each skill's own session and the order is not
+/// a convention: measured 2026-09-25, `harvest` runs ASCENDING (2026-09-23 at
+/// the top, 2026-09-24 at the bottom) and `contest` is in neither order, so a
+/// reader that trusted the top of the file would report harvest's newest lesson
+/// as a day older than it is. A tie keeps the first heading seen, which is the
+/// top of the file.
+///
+/// A heading with no `YYYY-MM-DD` in it is not an entry: measured the same day,
+/// `assay` still carries the template's
+/// `## <version used> - <YYYY-MM-DD> - <source slug>` and has recorded nothing.
+/// That is `None`, and it must never read as a date.
+fn newest_lesson(file: &Path) -> Option<(String, String)> {
+    use std::io::BufRead;
+
+    let handle = std::fs::File::open(file)
+        .map_err(|e| {
+            tracing::warn!(error = %e, path = %file.display(),
+                "curator: a LESSONS.md could not be opened - carrying its path without its newest entry");
+        })
+        .ok()?;
+    let mut in_fence = false;
+    let mut best: Option<(String, String)> = None;
+    for line in std::io::BufReader::new(handle)
+        .lines()
+        .map_while(Result::ok)
+    {
+        let trimmed = line.trim_start();
+        if trimmed.starts_with("```") || trimmed.starts_with("~~~") {
+            in_fence = !in_fence;
+            continue;
+        }
+        // A `##` inside a fenced block is a shell comment, not an entry - the
+        // same trap `invocation_lines` guards against two screens up.
+        if in_fence || !trimmed.starts_with("## ") {
+            continue;
+        }
+        let Some(date) = iso_date_in(trimmed) else {
+            continue;
+        };
+        let date = date.to_string();
+        // Not `is_none_or` - this workspace's clippy MSRV is 1.80 and that is
+        // 1.82.
+        let newer = match best.as_ref() {
+            Some((_, seen)) => date > *seen,
+            None => true,
+        };
+        if newer {
+            best = Some((trimmed[3..].trim().to_string(), date));
+        }
+    }
+    best
+}
+
+/// The first `YYYY-MM-DD` in a line, or `None`.
+///
+/// Deliberately not a regex and not a date library: the shape is ten ASCII
+/// bytes, the month and day ranges are the only guess worth refusing, and a
+/// parsed `NaiveDate` would only be turned straight back into the same string.
+/// Lexicographic order on ISO dates is chronological order, which is what
+/// [`newest_lesson`] compares on.
+fn iso_date_in(line: &str) -> Option<&str> {
+    let bytes = line.as_bytes();
+    for start in 0..bytes.len().saturating_sub(9) {
+        let w = &bytes[start..start + 10];
+        let shaped = w[..4].iter().all(u8::is_ascii_digit)
+            && w[4] == b'-'
+            && w[5..7].iter().all(u8::is_ascii_digit)
+            && w[7] == b'-'
+            && w[8..].iter().all(u8::is_ascii_digit);
+        if !shaped {
+            continue;
+        }
+        let month = (w[5] - b'0') * 10 + (w[6] - b'0');
+        let day = (w[8] - b'0') * 10 + (w[9] - b'0');
+        if (1..=12).contains(&month) && (1..=31).contains(&day) {
+            // Every one of the ten bytes is ASCII, so both ends are char
+            // boundaries however the rest of the line is encoded.
+            return Some(&line[start..start + 10]);
+        }
+    }
+    None
 }
 
 /// The path as the registry states it, with forward slashes so the string reads
@@ -864,6 +1027,13 @@ fn parse_skill(lane: CuratorSkillLane, dir_name: &str, path: &str, raw: &str) ->
         // one - it is the file stating the argument directly rather than this
         // reader inferring it from a usage line.
         argument_hint: field("argument-hint").or(line_hint),
+        // A SKILL.md says nothing about its neighbour. `read_skills_uncached`
+        // fills these from the directory - see [`read_lessons`].
+        lessons_path: None,
+        lessons_bytes: None,
+        lessons_modified_at: None,
+        lessons_latest_entry: None,
+        lessons_latest_at: None,
     }
 }
 
@@ -1099,6 +1269,7 @@ mod tests {
         assert_eq!(scan.subjects[0].id, "d/s");
         assert_eq!(scan.subjects[0].demand, None);
         assert_eq!(scan.subjects[0].last_swept, None);
+        assert_eq!(scan.subjects[0].dry_streak, Some(0));
         assert_eq!(scan.domains[0].techniques, 25);
         // The bundle names itself and answers the demand question for itself.
         // Both are what the quiet tail and `demandKnownDomains` are built from,
@@ -1217,6 +1388,12 @@ mod tests {
         std::fs::write(dir.join("SKILL.md"), body).unwrap();
     }
 
+    fn write_lessons(root: &Path, lane: &str, name: &str, body: &str) {
+        let dir = root.join(lane).join(name);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("LESSONS.md"), body).unwrap();
+    }
+
     /// The eight native skills as they really read, plus one shared skill.
     fn measured_registry() -> tempfile::TempDir {
         let dir = tempfile::tempdir().unwrap();
@@ -1290,6 +1467,48 @@ mod tests {
             concat!(
                 "---\nname: leonardo\ndescription: \"Generate images\"\nversion: 1.0.0\n",
                 "argument-hint: <description of visual asset to create>\n---\n\n# Leonardo\n",
+            ),
+        );
+
+        // The lessons lane, in the three shapes the registry really holds on
+        // 2026-09-25. Every other skill written above keeps NO LESSONS.md,
+        // which is `llm-bench`'s state - the one skill of the forty-four that
+        // has never written anything down.
+        //
+        // `intake` appends at the TOP, which is the shape everyone assumes.
+        write_lessons(
+            root,
+            native,
+            "intake",
+            concat!(
+                "# Lessons - intake\n\n",
+                "## 1.1.0 - 2026-08-30 - operator-control-plane\n\n- a lesson\n\n",
+                "### Redesign proposal - a subheading carries no date and is not an entry\n\n",
+                "## 0.16.0 - 2026-08-28 - plan-review execution\n\n- an older lesson\n",
+            ),
+        );
+        // `harvest` appends at the BOTTOM. A reader that took the topmost
+        // heading would report its newest lesson as a day older than it is.
+        write_lessons(
+            root,
+            native,
+            "harvest",
+            concat!(
+                "# Lessons - harvest\n\n",
+                "## 0.4.1 - 2026-09-23 - ai-registry\n\n- the first pass\n\n",
+                "```\n## 2099-01-01 - a fenced line is a comment, not an entry\n```\n\n",
+                "## 0.5.2 - 2026-09-24 - ai-registry (run hv-auto-0924)\n\n- the newest\n",
+            ),
+        );
+        // `assay` still holds the template it was seeded with and has recorded
+        // nothing. The file exists; no dated entry is in it.
+        write_lessons(
+            root,
+            native,
+            "assay",
+            concat!(
+                "# Lessons - assay\n\n",
+                "## <version used> - <YYYY-MM-DD> - <source slug>\n\n- one bullet per lesson\n",
             ),
         );
         dir
@@ -1399,6 +1618,119 @@ mod tests {
         );
     }
 
+    /// **A skill with no `LESSONS.md` carries `None` in all five fields, never
+    /// a zero.** A `0` for `lessons_bytes` is a legal reading of a file that
+    /// exists and has been emptied; "there is no such file" is a different
+    /// fact, and collapsing them is the one thing this whole feature refuses to
+    /// do. Measured 2026-09-25: `llm-bench` is the only skill of the
+    /// forty-four in that state.
+    #[test]
+    fn a_skill_with_no_lessons_file_carries_none_and_not_a_zero() {
+        let dir = measured_registry();
+        let skills = read_skills_uncached(dir.path()).unwrap();
+
+        for silent in ["deepen", "forge", "hygiene", "librarian", "leonardo"] {
+            let s = by_name(&skills, silent);
+            assert_eq!(s.lessons_path, None, "{silent} keeps no lessons file");
+            assert_eq!(
+                s.lessons_bytes, None,
+                "{silent} has NO size - not a size of zero, which would claim a \
+                 measurement of a file that is not there"
+            );
+            assert_eq!(s.lessons_modified_at, None, "{silent}");
+            assert_eq!(s.lessons_latest_entry, None, "{silent}");
+            assert_eq!(s.lessons_latest_at, None, "{silent}");
+        }
+    }
+
+    /// A skill that keeps one carries its weight, its clock and the heading of
+    /// its newest DATED entry - **which is the maximum date, not the top of the
+    /// file.** `harvest` really does append at the bottom (measured
+    /// 2026-09-25), so trusting the first heading would report its newest
+    /// lesson as a day older than it is.
+    #[test]
+    fn a_skill_with_lessons_carries_its_newest_dated_heading() {
+        let dir = measured_registry();
+        let skills = read_skills_uncached(dir.path()).unwrap();
+
+        let intake = by_name(&skills, "intake");
+        assert_eq!(
+            intake.lessons_path.as_deref(),
+            Some(".claude/skills/intake/LESSONS.md")
+        );
+        assert!(intake.lessons_bytes.is_some_and(|b| b > 0));
+        assert!(intake.lessons_modified_at.is_some());
+        assert_eq!(
+            intake.lessons_latest_entry.as_deref(),
+            Some("1.1.0 - 2026-08-30 - operator-control-plane")
+        );
+        assert_eq!(intake.lessons_latest_at.as_deref(), Some("2026-08-30"));
+
+        // The ascending file. Its newest entry is the LAST heading, and the
+        // `## 2099-01-01` inside the fenced block is a comment, not an entry.
+        let harvest = by_name(&skills, "harvest");
+        assert_eq!(harvest.lessons_latest_at.as_deref(), Some("2026-09-24"));
+        assert_eq!(
+            harvest.lessons_latest_entry.as_deref(),
+            Some("0.5.2 - 2026-09-24 - ai-registry (run hv-auto-0924)")
+        );
+    }
+
+    /// **A lessons file with no dated heading has never recorded a run**, and
+    /// that is `None` rather than the template's own `<YYYY-MM-DD>` placeholder
+    /// read as a date. The file's existence, weight and clock are still carried
+    /// - a seeded template IS a fact about the skill, and a different one from
+    /// having no file at all.
+    #[test]
+    fn a_lessons_file_that_is_still_the_template_has_no_dated_entry() {
+        let dir = measured_registry();
+        let skills = read_skills_uncached(dir.path()).unwrap();
+
+        let assay = by_name(&skills, "assay");
+        assert_eq!(
+            assay.lessons_path.as_deref(),
+            Some(".claude/skills/assay/LESSONS.md")
+        );
+        assert!(assay.lessons_bytes.is_some_and(|b| b > 0));
+        assert!(assay.lessons_modified_at.is_some());
+        assert_eq!(
+            assay.lessons_latest_entry, None,
+            "the template's placeholder heading is not an entry"
+        );
+        assert_eq!(assay.lessons_latest_at, None);
+    }
+
+    /// The date reader takes the ten-byte ISO shape and refuses everything that
+    /// only looks like it. A month of 13 or a day of 00 is not a date, and the
+    /// template's `<YYYY-MM-DD>` is not one either.
+    #[test]
+    fn the_date_reader_refuses_what_only_looks_like_a_date() {
+        assert_eq!(
+            iso_date_in("## 1.1.0 - 2026-08-30 - slug"),
+            Some("2026-08-30")
+        );
+        // The FIRST date in the line wins, and a version number is not one.
+        assert_eq!(
+            iso_date_in("## 2026-09-24 then 2026-09-25"),
+            Some("2026-09-24")
+        );
+        assert_eq!(
+            iso_date_in("## <version used> - <YYYY-MM-DD> - <slug>"),
+            None
+        );
+        assert_eq!(
+            iso_date_in("## 2026-13-01 - a month that does not exist"),
+            None
+        );
+        assert_eq!(
+            iso_date_in("## 2026-08-00 - a day that does not exist"),
+            None
+        );
+        assert_eq!(iso_date_in("## 1.6.2 - no date at all"), None);
+        // A multi-byte line still slices on a char boundary.
+        assert_eq!(iso_date_in("## přehled - 2026-09-25"), Some("2026-09-25"));
+    }
+
     /// A registry with no native lane is a registry with no native skills -
     /// a real answer about a younger checkout, not an error.
     #[test]
@@ -1421,6 +1753,27 @@ mod tests {
         let real_lane = std::fs::canonicalize(&lane).unwrap();
         assert!(!is_linked_in(&lane.join("assay"), Some(&real_lane)));
         assert!(is_linked_in(&shared.join("explorer"), Some(&real_lane)));
+    }
+
+    /// **A `null` `dryStreak` must parse.** serde fails the WHOLE document on
+    /// one bad field, so while `ScanSubject::dry_streak` was a `u32` this one
+    /// drifted field took the entire plan down: measured 2026-09-25, 449 of the
+    /// registry's 475 subjects write `null` there, `curator_plan_refresh`
+    /// answered `librarian-scan produced unreadable JSON: invalid type: null,
+    /// expected u32`, and no projection could be made at all. A subject with a
+    /// number keeps it; the two spellings are both "the registry cannot tell
+    /// you", and `e49` already says the stored `0` means unknown.
+    #[test]
+    fn a_null_dry_streak_parses_rather_than_failing_the_whole_scan() {
+        let scan: LibrarianScan = serde_json::from_str(
+            r#"{"generatedAt":"2026-09-25T09:00:00.000Z","today":"2026-09-25",
+                "demandKnownForAnyBundle":true,"domains":[],
+                "subjects":[{"id":"d/a","domain":"d","slug":"a","at":"c/a","dryStreak":null},
+                            {"id":"d/b","domain":"d","slug":"b","at":"c/b","dryStreak":3}]}"#,
+        )
+        .expect("a null dryStreak is the registry's own spelling of unknown");
+        assert_eq!(scan.subjects[0].dry_streak, None);
+        assert_eq!(scan.subjects[1].dry_streak, Some(3));
     }
 
     /// A `#` inside a fenced block is not a heading, and a name that is a
