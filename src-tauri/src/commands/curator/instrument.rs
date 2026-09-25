@@ -122,8 +122,18 @@ pub struct ScanSubject {
     pub last_swept: Option<String>,
     /// The registry's own field. Carried, never trusted - see the `e49`
     /// migration header for the measurement that says why.
+    ///
+    /// **`Option` because the registry now writes `null` here, and a `u32`
+    /// made the WHOLE instrument unparseable.** Measured 2026-09-25 against a
+    /// live `librarian-scan --json`: of 475 subjects, **449 carry `null`** and
+    /// 26 carry `0` - where the 2026-09-23 reading behind `e49` found `0` on
+    /// all 349 of them. serde fails the entire document on one bad field, so
+    /// this one drifted field took the plan down with it: `curator_plan_refresh`
+    /// answered `librarian-scan produced unreadable JSON: invalid type: null,
+    /// expected u32` and NO projection could be made at all. That is why
+    /// `curator_plan_run` had zero rows.
     #[serde(default)]
-    pub dry_streak: u32,
+    pub dry_streak: Option<u32>,
     #[serde(default)]
     pub points: u32,
     /// The scan's own sentences, one per clause that fired.
@@ -1259,6 +1269,7 @@ mod tests {
         assert_eq!(scan.subjects[0].id, "d/s");
         assert_eq!(scan.subjects[0].demand, None);
         assert_eq!(scan.subjects[0].last_swept, None);
+        assert_eq!(scan.subjects[0].dry_streak, Some(0));
         assert_eq!(scan.domains[0].techniques, 25);
         // The bundle names itself and answers the demand question for itself.
         // Both are what the quiet tail and `demandKnownDomains` are built from,
@@ -1742,6 +1753,27 @@ mod tests {
         let real_lane = std::fs::canonicalize(&lane).unwrap();
         assert!(!is_linked_in(&lane.join("assay"), Some(&real_lane)));
         assert!(is_linked_in(&shared.join("explorer"), Some(&real_lane)));
+    }
+
+    /// **A `null` `dryStreak` must parse.** serde fails the WHOLE document on
+    /// one bad field, so while `ScanSubject::dry_streak` was a `u32` this one
+    /// drifted field took the entire plan down: measured 2026-09-25, 449 of the
+    /// registry's 475 subjects write `null` there, `curator_plan_refresh`
+    /// answered `librarian-scan produced unreadable JSON: invalid type: null,
+    /// expected u32`, and no projection could be made at all. A subject with a
+    /// number keeps it; the two spellings are both "the registry cannot tell
+    /// you", and `e49` already says the stored `0` means unknown.
+    #[test]
+    fn a_null_dry_streak_parses_rather_than_failing_the_whole_scan() {
+        let scan: LibrarianScan = serde_json::from_str(
+            r#"{"generatedAt":"2026-09-25T09:00:00.000Z","today":"2026-09-25",
+                "demandKnownForAnyBundle":true,"domains":[],
+                "subjects":[{"id":"d/a","domain":"d","slug":"a","at":"c/a","dryStreak":null},
+                            {"id":"d/b","domain":"d","slug":"b","at":"c/b","dryStreak":3}]}"#,
+        )
+        .expect("a null dryStreak is the registry's own spelling of unknown");
+        assert_eq!(scan.subjects[0].dry_streak, None);
+        assert_eq!(scan.subjects[1].dry_streak, Some(3));
     }
 
     /// A `#` inside a fenced block is not a heading, and a name that is a

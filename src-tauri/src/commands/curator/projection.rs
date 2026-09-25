@@ -233,7 +233,14 @@ pub fn project(
             stacks: subject.stacks.clone(),
             demand: demand_of(subject),
             last_swept: subject.last_swept.clone(),
-            registry_dry_streak: subject.dry_streak,
+            // The registry's `null` collapses into the column's `0`, and that
+            // loses nothing: `e49`'s header already states that `0` in
+            // `registry_dry_streak` MEANS UNKNOWN, because nothing in the
+            // registry ever increments the field. So both spellings of "the
+            // registry cannot tell you" land in the one slot that already says
+            // so, and `suppressed_by_saturation` beside it - computed from
+            // Curator's own outcomes - remains the only reading that fires.
+            registry_dry_streak: subject.dry_streak.unwrap_or(0),
             suppressed_by_saturation: repo::suppressed(streaks, &subject.id),
             // `None` when the ledger could not be read - UNKNOWN, not "never
             // applied". A ledger that exists and names nothing gives `false`.
@@ -1075,14 +1082,20 @@ mod tests {
     // -----------------------------------------------------------------------
 
     /// The registry's `dry_streak` reaches `registry_dry_streak` unchanged and
-    /// is never consulted. Measured: it is 0 for all 471 subjects, which is
-    /// exactly why suppression cannot be read off it.
+    /// is never consulted. In this fixture it is `Some(0)` for all 471
+    /// subjects, which is exactly why suppression cannot be read off it.
+    ///
+    /// **The live registry has since moved to `null`** - 449 of 475 subjects on
+    /// 2026-09-25 - and a `null` lands in the same column as the `0`, because
+    /// `e49`'s header already says a `0` there means unknown. The fixture is a
+    /// frozen capture of the earlier shape and is kept as the OTHER spelling,
+    /// so both reach the same reading.
     #[test]
     fn the_registrys_dry_streak_is_carried_and_never_consulted() {
         let (r, p) = project_real();
         assert!(
-            r.scan.subjects.iter().all(|s| s.dry_streak == 0),
-            "the registry's field is 0 everywhere - the measurement this design rests on"
+            r.scan.subjects.iter().all(|s| s.dry_streak == Some(0)),
+            "this capture's field is 0 everywhere - the measurement this design rests on"
         );
         assert!(p.items.iter().all(|i| i.registry_dry_streak == 0));
         // With no history of her own, nothing is suppressed - even though the
