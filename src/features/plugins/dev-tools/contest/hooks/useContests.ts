@@ -18,6 +18,7 @@ import {
   refreshContest,
   refreshContests,
   refreshEnvironment,
+  refreshForChange,
 } from './contestStore';
 import { useContestChanged } from './contestEvents';
 
@@ -40,8 +41,10 @@ export function useContests(): ContestsState {
     void refreshContests();
   }, []);
 
-  useContestChanged(() => {
-    void refreshContests();
+  // One contest changed: patch its row from its fresh detail (a full re-list
+  // only for a contest the list has never seen). Mount still re-lists.
+  useContestChanged((p: ContestChangedPayload) => {
+    void refreshForChange(p.projectId, p.contestId);
   });
 
   return {

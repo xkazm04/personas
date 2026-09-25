@@ -53,6 +53,10 @@ const listWins = createKeyedLatestWins<string>();
 const inflight = new Map<string, Promise<void>>();
 /** Keys asked for again while their fetch was running: they owe one more. */
 const trailing = new Set<string>();
+/** Flights started in the current task. Every subscriber of ONE event asks in
+ *  the same task (the singleton listener fans out synchronously), and that
+ *  read already sees the event — only a LATER ask owes a trailing re-read. */
+const fresh = new Set<string>();
 
 /** One fetch into one slot; keeps the previous data while loading (a refetch
  *  never blanks rendered rows — law 1) and drops stale responses. */
@@ -89,9 +93,11 @@ function load<K, T>(
 ): Promise<void> {
   const running = inflight.get(flightKey);
   if (running) {
-    trailing.add(flightKey);
+    if (!fresh.has(flightKey)) trailing.add(flightKey);
     return running;
   }
+  fresh.add(flightKey);
+  queueMicrotask(() => fresh.delete(flightKey));
   const p = (async () => {
     do {
       trailing.delete(flightKey);
@@ -143,6 +149,37 @@ export function primeSummary(summary: ContestSummary): void {
   contestListSlots.notify();
 }
 
+/** Replace one list row with a fresh summary, in the backend's order (newest
+ *  `updatedAtMs` first, then id). No-op when the list does not hold it. */
+export function patchSummary(summary: ContestSummary): void {
+  const cur = contestListSlots.get('all');
+  if (!cur?.data) return;
+  const same = (s: ContestSummary) => s.projectId === summary.projectId && s.contestId === summary.contestId;
+  if (!cur.data.some(same)) return;
+  const rows = cur.data.map((s) => (same(s) ? summary : s));
+  rows.sort((a, b) => b.updatedAtMs - a.updatedAtMs || a.contestId.localeCompare(b.contestId));
+  contestListSlots.set('all', { ...cur, data: rows });
+  contestListSlots.notify();
+}
+
+/**
+ * React to a `contest-changed` for one contest. The event names the contest,
+ * and its fresh detail carries the list row, so the list is patched from it —
+ * one `contest_get` instead of a walk of every arena on disk. Only a contest
+ * the list has never seen (a create from the CLI) or a failed detail read
+ * falls back to a full re-list.
+ */
+export async function refreshForChange(projectId: string, contestId: string): Promise<void> {
+  const listed = contestListSlots
+    .get('all')
+    ?.data?.some((s) => s.projectId === projectId && s.contestId === contestId);
+  if (!listed) return refreshContests();
+  await refreshContest(projectId, contestId);
+  const slot = contestDetailSlots.get(detailKey(projectId, contestId));
+  if (!slot?.data || slot.error) return refreshContests();
+  patchSummary(slot.data.summary);
+}
+
 /** Test hatch: forget every slot. */
 export function __resetContestStoreForTests(): void {
   contestListSlots.clear();
@@ -151,4 +188,5 @@ export function __resetContestStoreForTests(): void {
   contestLineupSlots.clear();
   inflight.clear();
   trailing.clear();
+  fresh.clear();
 }
