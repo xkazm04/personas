@@ -1268,6 +1268,11 @@ mod live {
         let reading = super::super::instrument::read(&root)
             .await
             .expect("the instrument must read a real checkout");
+        assert!(
+            !reading.from_cache,
+            "the first read of a process cannot have come from the cache"
+        );
+        let reading = reading.value;
 
         // The corpus answered at all.
         assert!(!reading.scan.generated_at.is_empty());
@@ -1314,7 +1319,11 @@ mod live {
 
         // And the second read is the CACHE, not a second 11-second pass.
         let again = super::super::instrument::read(&root).await.unwrap();
-        assert_eq!(again.scan.generated_at, reading.scan.generated_at);
+        assert!(
+            again.from_cache,
+            "the second read must say it came from cache"
+        );
+        assert_eq!(again.value.scan.generated_at, reading.scan.generated_at);
     }
 
     /// The allowlist's read, live: the registry's own resolver, through the

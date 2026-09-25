@@ -701,8 +701,12 @@ pub struct CuratorQuietBundle {
     pub demand_known: bool,
 }
 
-/// A plan run with its items - what `curator_plan_current` and
-/// `curator_plan_refresh` both return.
+/// A plan run with its items.
+///
+/// What `curator_plan_current` returns, and what [`CuratorRefresh`] carries
+/// back from `curator_plan_refresh` - that command wraps this rather than
+/// returning it bare since 2026-09-25, because the plan alone cannot say
+/// whether the projection moved or where the reading came from.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
@@ -713,6 +717,39 @@ pub struct CuratorPlan {
     /// only for a subject that scores, so these 170 have no row anywhere - and
     /// `table` scores 0 while holding 16 stale verdicts across 6 projects.
     pub quiet: Vec<CuratorQuietBundle>,
+}
+
+/// One run of the instrument, and the two things about it a person cannot see
+/// by looking at the plan it produced.
+///
+/// **Measured 2026-09-25, and it is the whole reason this type exists:** the
+/// operator pressed the run control twice against an unmoved registry HEAD.
+/// The first press took about eleven seconds and the second about two, and
+/// BOTH produced a projection identical to the one already on screen - so the
+/// page could not change, the control snapped back, and a working instrument
+/// was indistinguishable from a dead button. Neither fact was on the wire:
+/// `curator_plan_refresh` returned a `CuratorPlan` and nothing else.
+///
+/// Both fields are measurements taken by the side that can take them. The
+/// client cannot honestly derive either - a stopwatch around the IPC is a
+/// guess at the cache, and comparing against whatever the page happens to hold
+/// is not comparing against the run that was superseded.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CuratorRefresh {
+    /// The projection that now stands.
+    pub plan: CuratorPlan,
+    /// True when the five-minute reading cache answered and no instrument ran.
+    /// A 2-second answer and an 11-second answer are different events and the
+    /// surface must not hide which one it gave.
+    pub from_cache: bool,
+    /// Whether this projection differs from the one it superseded. `None` when
+    /// the standing run could not be READ to compare against - which is not the
+    /// same as "it did not change", and must not be drawn as if it were. A run
+    /// with nothing standing before it is `Some(true)`: there was no plan and
+    /// now there is one.
+    pub changed: Option<bool>,
 }
 
 // ---------------------------------------------------------------------------

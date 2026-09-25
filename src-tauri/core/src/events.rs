@@ -379,6 +379,12 @@ event_names! {
     // changes: a switch, a star, a delete, an onboarding finish. `companions`
     // rather than `athena` because it carries all three companions.
     COMPANIONS_STATUS_CHANGED    => "companions://status-changed",
+    // Curator's loop, every time her OBSERVABLE state moves: a worker
+    // dispatched or settled, a brake biting or releasing, a reconcile pass, or
+    // the operator's switch. `curator` rather than `companions` because it
+    // carries one companion's runtime and fires on her cadence, not on the
+    // category's. Payload: [`CuratorPulsePayload`].
+    CURATOR_PULSE                => "curator://pulse",
     STANDARDS_SCAN_STATUS        => "dev_tools_standards_scan_status",
     RADIO_STATE                  => "radio:state",
     KB_EXTRACTION_PROGRESS       => "kb-extraction-progress",
@@ -394,4 +400,63 @@ event_names! {
 pub struct QueueChangedPayload {
     pub kind: String,
     pub session_id: Option<String>,
+}
+
+/// What one [`event_name::CURATOR_PULSE`] says moved.
+///
+/// Closed, and spelled HERE rather than beside each emitter, for the reason
+/// [`crate::models::curator_lane`] is: the loop writes these tokens and one
+/// console reads them, and two private lists is one typo away from a surface
+/// that listens to a name nothing sends.
+pub mod curator_pulse {
+    /// A worker started. Her lane moved: a request went `queued -> dispatched`,
+    /// or a plan item did.
+    pub const DISPATCHED: &str = "dispatched";
+    /// A worker ended and the row it came from was settled - landed, declined
+    /// or failed. **The outcome is NOT on the payload**: it lives on the row,
+    /// which the client re-reads, and a copy on the wire would be a second
+    /// authority for the same fact.
+    pub const SETTLED: &str = "settled";
+    /// A brake bit, or the reason she is stopped changed. The reason itself is
+    /// `runtime.halted_reason` - there is no second copy of it here either.
+    pub const HALTED: &str = "halted";
+    /// The brake that was on is off. Emitted because otherwise a surface would
+    /// keep drawing a halt that ended at 07:00 until something else happened to
+    /// move - which on a quiet morning is never.
+    pub const RESUMED: &str = "resumed";
+    /// A reconcile pass completed, which always supersedes the standing plan
+    /// run with a fresh projection (it is step 4 of the pass, and a pass that
+    /// does not reach it emits nothing).
+    pub const SLEPT: &str = "slept";
+    /// The operator moved her switch. Without this the loop's own silence after
+    /// being turned off would leave the last "serving" reading on screen for
+    /// good, which is the exact photograph this event exists to end.
+    pub const SWITCHED: &str = "switched";
+}
+
+/// Payload of [`event_name::CURATOR_PULSE`].
+///
+/// **The whole runtime travels, so the console never has to read back for the
+/// thing that moved.** That is the same choice
+/// [`event_name::COMPANIONS_STATUS_CHANGED`] made and for the same reason: the
+/// alternative - a bare "something changed" ping - buys a smaller wire and
+/// pays for it with an IPC round trip on every pulse, during which the surface
+/// is showing the old answer anyway.
+///
+/// `runtime` is `Option` and the `None` arm is load-bearing: when this app
+/// could not measure her (the brakes read failed, the pool could not be
+/// reached) the event still fires, because SOMETHING moved and a surface that
+/// was not told would go on showing a photograph. What it must not do is ship
+/// a zeroed stand-in, so the field is absent and the client re-reads. Nothing
+/// here is ever a `0` that was not measured as zero.
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CuratorPulsePayload {
+    /// One of [`curator_pulse`]. A `String` on the wire rather than an enum so
+    /// a console can ignore a kind it does not know instead of failing on it.
+    pub kind: String,
+    /// Her whole runtime as of this moment, or `None` when it could not be
+    /// measured - never a zeroed stand-in.
+    pub runtime: Option<crate::models::CuratorRuntime>,
 }

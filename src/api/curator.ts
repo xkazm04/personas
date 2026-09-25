@@ -7,8 +7,11 @@
 // `curator_decisions_list` is absent because the command is: nothing writes a
 // `curator_decision` yet, so a read would only ever return `[]`. The package
 // that raises the first decision adds the wrapper with it.
+import { EventName } from "@/lib/eventRegistry";
+
 import type { CuratorPlan } from "@/lib/bindings/CuratorPlan";
 import type { CuratorPolicy } from "@/lib/bindings/CuratorPolicy";
+import type { CuratorRefresh } from "@/lib/bindings/CuratorRefresh";
 import type { CuratorProject } from "@/lib/bindings/CuratorProject";
 import type { CuratorRequest } from "@/lib/bindings/CuratorRequest";
 import type { CuratorRuntime } from "@/lib/bindings/CuratorRuntime";
@@ -26,9 +29,18 @@ export async function curatorPlanCurrent(): Promise<CuratorPlan | null> {
   return invoke<CuratorPlan | null>("curator_plan_current");
 }
 
-/** Re-read the instrument and supersede the current projection. */
-export async function curatorPlanRefresh(): Promise<CuratorPlan> {
-  return invoke<CuratorPlan>("curator_plan_refresh");
+/**
+ * Re-read the instrument and supersede the current projection.
+ *
+ * Answers with more than the plan, because the plan alone cannot tell the
+ * operator what happened: an identical projection returned from the five-minute
+ * cache looks exactly like a control that did nothing. `fromCache` and
+ * `changed` are measurements only the backend can take - a stopwatch around
+ * this call is a guess at the cache, and comparing against whatever the page
+ * holds is not comparing against the run that was superseded.
+ */
+export async function curatorPlanRefresh(): Promise<CuratorRefresh> {
+  return invoke<CuratorRefresh>("curator_plan_refresh");
 }
 
 /** The operator's standing settings, with the unset caps left as `null`. */
@@ -98,3 +110,12 @@ export async function curatorSkillsList(): Promise<CuratorSkill[]> {
 export async function curatorRuntimeGet(): Promise<CuratorRuntime> {
   return invoke<CuratorRuntime>("curator_runtime_get");
 }
+
+/**
+ * The event her loop fires whenever its observable state moves.
+ *
+ * The literal comes FROM the registry rather than being repeated here: the name
+ * crosses the Rust -> JS boundary, and two copies of a string is one typo away
+ * from a surface that listens to nothing and says nothing about it.
+ */
+export const CURATOR_PULSE_EVENT = EventName.CURATOR_PULSE;

@@ -1364,20 +1364,85 @@
   flex-wrap: wrap;
   min-width: 0;
 }
+/* Shrinkable, never growable. The live region carries a whole sentence now -
+   the wait while one runs, the verdict once it has - and a console row that
+   grew to fit it would take its extra line out of the ledger, which holds 13
+   of its 16 rows at 1000x640 and has none to give. So the say clips to one
+   line and its full text stays in the tip (and, unclipped, in the accessible
+   name the live region announces). */
 .cb-root .cb-run {
   display: inline-flex;
   align-items: center;
   gap: var(--space-sm);
-  flex: none;
+  /* Basis 0 and min-width 0, so the line-breaking algorithm sizes this item at
+     NOTHING and the console row can never wrap - every wrap of it costs a
+     ledger row. It then grows into whatever the strip leaves: at the operator's
+     own window that is the whole sentence, at 1000x640 it is a few pixels of
+     it, and the tip carries the rest.
+
+     `min-width: min-content` was tried here first and is WRONG, measured: a
+     flex item's min-content contribution is its own min-content size, and for
+     the `white-space: nowrap` say below that equals its FULL text width - so
+     the clamp put this item at 1286px inside a 975px box and it overflowed the
+     page instead of clipping the sentence. */
+  flex: 1 1 0;
+  min-width: 0;
 }
+/* Basis 0, so the sentence never competes with the CONTROL for width - it only
+   takes what the control does not need. Measured 2026-09-25: with the default
+   `flex-basis: auto` the say's max-content (1150px) and the button's (174px)
+   shrink in proportion, so the button lost 60px and wrapped its label at EVERY
+   width, including a 1400px window with 200px to spare. */
 .cb-root .cb-run-say {
   color: var(--muted);
   min-height: 1em;
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .cb-root .cb-console .cb-unset {
   color: var(--muted-dark);
   font-weight: 400;
   font-style: normal;
+}
+
+/* ---- the run switch: her loop, in front of what it moves ----------------- */
+/* The switch and the strip are ONE flex item, and the switch leads it: the
+   strip's first words are the state this control sets ("serving your queue" /
+   "switched off"), so the pair reads as one phrase and the toggle needs no
+   label of its own. Measured 2026-09-25 at 1000x640: the console row carries
+   about 50px of slack, a labelled switch is ~322px, and every wrap of this row
+   costs a ledger row. `cb-keep` on the toggle opts it out of the page's element
+   reset, which would otherwise strip the primitive's own skin. */
+.cb-root .cb-console-live {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-left: auto;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+.cb-root .cb-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: none;
+  min-width: 0;
+  color: var(--muted);
+}
+.cb-root .cb-switch-hold {
+  display: inline-flex;
+  align-items: center;
+}
+/* The only state that is allowed to take width from the strip: no knowledge
+   registry is mapped, so she cannot be switched on - and there is no projection
+   on this page to push off the screen either. It wears the page's existing
+   caveat ink, the one `.cb-halted` already uses, not a fifth colour beside the
+   ledger's four. */
+.cb-root .cb-switch-note {
+  color: var(--status-warning);
 }
 
 /* ---- the runtime strip: what she is doing, and every brake on it --------- */
@@ -1386,7 +1451,8 @@
   align-items: center;
   gap: 0 var(--space-md);
   flex-wrap: wrap;
-  margin-left: auto;
+  /* `margin-left: auto` moved up to `.cb-console-live`, which is now the flex
+     item this strip travels inside. */
   min-width: 0;
   color: var(--muted);
 }

@@ -11,6 +11,13 @@
  *    reading that tells the operator a brake exists and has room; a meter that
  *    hid itself until something was spent would hide the brake as well.
  *
+ * 3. **"Switched off" and a live terminal count are not a contradiction.** Her
+ *    switch stops the loop STARTING work; a headless worker already running
+ *    runs to its end. The strip draws both readings side by side and the
+ *    terminals tip explains the pair, which is also why `RunSwitch` - the
+ *    control immediately to the left of this strip - carries no count of its
+ *    own. One number, one authority.
+ *
  * The ceiling comes from `CuratorPolicy` when that door answered, because the
  * policy is the OPERATOR'S declaration. **The runtime's own figures are now
  * nullable too** (2026-09-24), so the fallback path - the one that runs when
@@ -102,7 +109,20 @@ export function RuntimeStrip({ runtime, policy }: {
           {tx(w.console.halted, { why: runtime.haltedReason })}
         </span>
       )}
-      <span data-cb-tip={tx(w.console.terminals_tip, { running: fmt(runtime.running), cap: fmt(runtime.workerCap) })}>
+      {/* Switched off and still holding terminals is a real, common pair - the
+          switch stops her STARTING work and a headless worker already running
+          runs to its end - and "switched off · terminals 2 of 2" beside each
+          other is the whole fact, drawn, at no extra width. The tip is what
+          explains the pair, so nothing on this row has to repeat the count. */}
+      <span
+        data-role="cb-terminals"
+        data-holding={!runtime.enabled && runtime.running > 0 ? 'true' : 'false'}
+        data-cb-tip={
+          !runtime.enabled && runtime.running > 0
+            ? w.console.runtime_off_holding
+            : tx(w.console.terminals_tip, { running: fmt(runtime.running), cap: fmt(runtime.workerCap) })
+        }
+      >
         {w.console.terminals} <b>{tx(w.console.used_of, { used: fmt(runtime.running), cap: fmt(runtime.workerCap) })}</b>
       </span>
       {/* Rule 1. The null arm carries no digit at all, so there is nothing on

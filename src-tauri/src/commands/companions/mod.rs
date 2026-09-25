@@ -398,6 +398,19 @@ pub fn companions_set_enabled(
     if let Err(e) = app.emit(event_name::COMPANIONS_STATUS_CHANGED, &snapshot) {
         tracing::warn!(error = %e, "companions: status event emit failed");
     }
+    // Curator's own console draws her RUNTIME - which lane she is serving, how
+    // many terminals she holds - and the category status carries none of it.
+    // Without this second announcement her loop simply goes quiet when switched
+    // off (its first statement is `curator_enabled`, and it returns), so the
+    // last "serving her own plan" reading would stay on screen for good: the
+    // exact photograph `curator://pulse` exists to end.
+    if companion_id == CompanionId::Curator {
+        crate::commands::curator::pulse::emit(
+            &app,
+            &state.db,
+            personas_core::events::curator_pulse::SWITCHED,
+        );
+    }
     Ok(snapshot)
 }
 

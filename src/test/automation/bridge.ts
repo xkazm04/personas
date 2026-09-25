@@ -20,6 +20,7 @@ import { sections as sidebarSections } from "@/features/shared/chrome/sidebar/si
 import { isTierVisible, TIERS, BUILD_MAX_TIER } from "@/lib/constants/uiModes";
 import type { SidebarSection } from "@/lib/types/types";
 import type { CuratorPlan } from "@/lib/bindings/CuratorPlan";
+import type { CuratorRefresh } from "@/lib/bindings/CuratorRefresh";
 import { silentCatch } from '@/lib/silentCatch';
 import { registerIpcTape } from "./ipcTape";
 
@@ -97,6 +98,14 @@ interface TestBridge {
     scanGeneratedAt?: string;
     registryHeadSha?: string | null;
     createdAt?: string;
+    /** True when the five-minute reading cache answered and no instrument ran. */
+    fromCache?: boolean;
+    /**
+     * Whether this projection differs from the one it superseded. `null` when
+     * the superseded run could not be read to compare against, which is not the
+     * same as "it did not change".
+     */
+    changed?: boolean | null;
     error?: string;
   }>;
   /**
@@ -2238,11 +2247,26 @@ const bridge: TestBridge = {
    * zero-argument function is dropped by JS.
    *
    * Returns the run's identity rather than the whole plan - the items are
-   * hundreds of rows and a driver that wants them reads the DB or the page.
+   * hundreds of rows and a driver that wants them reads the DB or the page -
+   * plus the two facts the page's own live region now reports: whether the
+   * reading came from the five-minute cache, and whether the projection moved
+   * against the run it superseded. **A driver pressing this twice against an
+   * unmoved registry gets two successes and two identical projections, which
+   * is what made a working instrument look like a dead button**; `changed` is
+   * how it tells them apart, and `changed: null` is the third answer, for a
+   * superseded run that could not be read to compare against.
+   *
+   * The command's return type changed with those fields (`CuratorRefresh`
+   * wraps the plan), and this call site is why the change is not free: `invoke`
+   * is generic, so the old `invoke<CuratorPlan>` here type-checked while
+   * reading `plan.run` off an object that no longer had one. That is exactly
+   * the data-boundary assertion `.claude/CLAUDE.md` warns about, and it is
+   * named rather than repeated.
    */
   async curatorPlanRefresh() {
     try {
-      const plan = await invoke<CuratorPlan>('curator_plan_refresh');
+      const refresh = await invoke<CuratorRefresh>('curator_plan_refresh');
+      const { plan } = refresh;
       return {
         success: true,
         runId: plan.run.id,
@@ -2251,6 +2275,8 @@ const bridge: TestBridge = {
         scanGeneratedAt: plan.run.scanGeneratedAt,
         registryHeadSha: plan.run.registryHeadSha,
         createdAt: plan.run.createdAt,
+        fromCache: refresh.fromCache,
+        changed: refresh.changed,
       };
     } catch (e: unknown) {
       return { success: false, error: unpackError(e) };

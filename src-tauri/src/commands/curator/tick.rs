@@ -56,6 +56,7 @@ use std::time::Duration;
 
 use tauri::AppHandle;
 
+use personas_core::events::curator_pulse;
 use personas_core::models::{
     curator_lane, CuratorEngine, CuratorPlanItem, CuratorPlanItemState, CuratorPolicy,
     CuratorRequest, CuratorRequestState, CuratorSkill, CURATOR_SPEND_SOURCE,
@@ -71,7 +72,7 @@ use crate::error::AppError;
 
 use super::dispatch::{self, Brief};
 use super::standing::{self, Marks, Rung, Standing};
-use super::{instrument, sleep};
+use super::{instrument, pulse, sleep};
 
 /// Poll cadence while the app is in use.
 ///
@@ -161,7 +162,7 @@ async fn tick_once(app: &AppHandle, pool: &DbPool) {
         }
     };
 
-    settle_ended(pool, &root).await;
+    settle_ended(app, pool, &root).await;
     maybe_dispatch(app, pool, &root).await;
     // **Outside `maybe_dispatch`, and that is the bug this shape exists to
     // avoid.** Every reason not to START work - a spent budget, quiet hours, a
@@ -170,7 +171,7 @@ async fn tick_once(app: &AppHandle, pool: &DbPool) {
     // reads and projects; it dispatches nothing, so no brake applies to it. It
     // runs last so a pass that is actually due (at most hourly) delays the
     // dispatch of work rather than the other way round.
-    sleep::maybe_reconcile(pool, &root).await;
+    sleep::maybe_reconcile(app, pool, &root).await;
 }
 
 /// The dispatch half of a tick: the brakes, her worker cap, and the lanes.
@@ -183,7 +184,12 @@ async fn maybe_dispatch(app: &AppHandle, pool: &DbPool, root: &Path) {
             return;
         }
     };
-    if let Some(why) = super::halted_reason(&brakes, &policy) {
+    let halted = super::halted_reason(&brakes, &policy);
+    // Announced on the EDGE, never on the state. See `halt_kind`.
+    if let Some(kind) = halt_transition(halted.as_deref()) {
+        pulse::emit(app, pool, kind);
+    }
+    if let Some(why) = halted {
         warn_occasionally(&format!("curator loop: halted - {why}"));
         return;
     }
@@ -625,6 +631,10 @@ async fn start(
         rank = admission.rank.unwrap_or(0),
         "curator: dispatched a worker"
     );
+    // Last, after every row is written: the payload carries her runtime, and a
+    // runtime measured before `record_dispatch` would report one fewer terminal
+    // than she now holds.
+    pulse::emit(app, pool, curator_pulse::DISPATCHED);
     Ok(())
 }
 
@@ -698,7 +708,7 @@ fn ended_how(sessions: &HashMap<String, (FleetSessionState, Option<i32>)>, id: &
 
 /// Close every dispatch whose worker has ended: settle the row it came from,
 /// and write the commits it caused into her audit ledger.
-async fn settle_ended(pool: &DbPool, root: &Path) {
+async fn settle_ended(app: &AppHandle, pool: &DbPool, root: &Path) {
     let open = match repo::open_dispatches(pool) {
         Ok(open) => open,
         Err(err) => {
@@ -737,6 +747,12 @@ async fn settle_ended(pool: &DbPool, root: &Path) {
         if let Err(err) = settle_source(pool, &dispatched, ended, &now) {
             tracing::warn!(error = %err, "curator loop: could not settle what a dispatch came from");
         }
+        // One per settled dispatch, not one per pass: each is a row the
+        // operator's lane draws, and a pass that settles three is three things
+        // he watched finish. The OUTCOME is deliberately not on the payload -
+        // it was just written to the row the client re-reads, and a copy on the
+        // wire would be a second authority for it.
+        pulse::emit(app, pool, curator_pulse::SETTLED);
     }
 }
 
@@ -913,6 +929,50 @@ fn parse_git_log(raw: &str) -> Vec<(String, Vec<String>)> {
 }
 
 // ---------------------------------------------------------------------------
+// The halt edge
+// ---------------------------------------------------------------------------
+
+/// Which pulse a change of halt state deserves, or `None` when nothing moved.
+///
+/// **Edge, not state, and that is the whole point.** Her tick runs every minute
+/// and her switch ships OFF, so announcing the halt STATE would push sixty
+/// identical events an hour saying she is still stopped for the same reason -
+/// the event equivalent of the poll the operator asked not to have.
+///
+/// The release arm is not symmetry for its own sake. Without it a quiet-hours
+/// brake that ended at 07:00 would stay on screen until something else happened
+/// to move, and on a morning with nothing queued that is never: the surface
+/// would be drawing a brake that is off.
+///
+/// Pure, so both edges and both non-edges can be proven without a loop, a clock
+/// or a database.
+fn halt_kind(last: Option<&str>, now: Option<&str>) -> Option<&'static str> {
+    if last == now {
+        return None;
+    }
+    Some(if now.is_some() {
+        curator_pulse::HALTED
+    } else {
+        curator_pulse::RESUMED
+    })
+}
+
+/// [`halt_kind`] against the reason the last pulse announced.
+///
+/// Starts at "not halted", which is the honest presumption at boot: if her
+/// first tick finds a brake on, that IS an edge and is announced; if it finds
+/// none, nothing changed and the console's own mount read is what tells it so.
+fn halt_transition(now: Option<&str>) -> Option<&'static str> {
+    static LAST: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
+    let mut guard = LAST.lock().unwrap_or_else(|p| p.into_inner());
+    let kind = halt_kind(guard.as_deref(), now);
+    if kind.is_some() {
+        *guard = now.map(str::to_string);
+    }
+    kind
+}
+
+// ---------------------------------------------------------------------------
 // Logging
 // ---------------------------------------------------------------------------
 
@@ -943,6 +1003,36 @@ mod tests {
 
     fn now() -> String {
         chrono::Utc::now().to_rfc3339()
+    }
+
+    /// **A halt is announced on its EDGE, never on its state.**
+    ///
+    /// Her tick runs every minute and her switch ships OFF, so announcing the
+    /// state would push sixty identical events an hour - the event equivalent
+    /// of the poll the operator asked not to have. Both non-edges and both
+    /// edges are pinned here, including the release, which exists so a
+    /// quiet-hours brake that ended at 07:00 does not stay on screen until the
+    /// next thing happens to move.
+    #[test]
+    fn a_halt_is_announced_once_and_its_release_is_announced_too() {
+        // Still free, and still stopped for the same reason: nothing to say.
+        assert_eq!(halt_kind(None, None), None);
+        assert_eq!(halt_kind(Some("quiet hours"), Some("quiet hours")), None);
+        // Both edges.
+        assert_eq!(
+            halt_kind(None, Some("quiet hours")),
+            Some(curator_pulse::HALTED)
+        );
+        assert_eq!(
+            halt_kind(Some("quiet hours"), None),
+            Some(curator_pulse::RESUMED)
+        );
+        // A brake that hands over to a different brake is still a halt, and it
+        // is announced, because the REASON on screen would otherwise be wrong.
+        assert_eq!(
+            halt_kind(Some("quiet hours"), Some("today's budget is spent")),
+            Some(curator_pulse::HALTED)
+        );
     }
 
     fn seed_plan(pool: &DbPool, engine: CuratorEngine, points: u32, subject: &str) -> String {

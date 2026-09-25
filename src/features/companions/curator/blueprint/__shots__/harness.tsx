@@ -112,7 +112,19 @@ function Harness() {
       model={model}
       docket={EMPTY_DOCKET}
       words={words}
-      console={<CuratorConsole loop={LOOP} policy={null} refreshing={false} onRefresh={async () => undefined} />}
+      console={
+        // `outcome` is the LAST run's verdict. Null by default, which is what a
+        // freshly opened page draws; `?said=1` puts the WIDEST of the three
+        // sentences into the live region, which is what the console row has to
+        // survive without taking a line off the ledger.
+        <CuratorConsole
+          loop={LOOP}
+          policy={null}
+          refreshing={false}
+          outcome={params.get('said') === '1' ? { changed: null, fromCache: true } : null}
+          onRefresh={async () => undefined}
+        />
+      }
       queue={<RequestLane requests={REQUESTS} onCancel={async () => undefined} />}
     />
   );
