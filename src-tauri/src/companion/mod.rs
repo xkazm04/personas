@@ -20,6 +20,7 @@ pub mod generated_anchors;
 pub mod generated_tour_anchors;
 pub mod jobs;
 pub mod knowledge_ops;
+pub mod lifecycle_ops;
 pub mod model_routing;
 pub mod night_shift;
 pub mod note_ops;

@@ -295,6 +295,13 @@ pub(super) const READ_OPS: &[&str] = &[
     // The answer also carries the project's OPEN milestone, which is the
     // `milestone_id` the goals card needs. See `companion::note_ops`.
     "describe_note",
+    // Lifecycle v2 (2026-09-25). A project's development practice (the steps
+    // before and after every dev task, their repo bindings and git evidence)
+    // is never edited by the user directly; he asks Athena. This is the read
+    // half she must call before any `show_lifecycle_proposal`: preset,
+    // version, each step's binding states and evidence tally, the newest
+    // evidence. See `companion::lifecycle_ops`.
+    "describe_lifecycle",
     // Browser control (WP3). The read half of the three browser ops above:
     // which backend is up, which tabs are leased and by whom, and the
     // Whitelist itself (enabled / tier / scan status / budget / whether a
@@ -540,6 +547,7 @@ pub(super) const AUTO_FIRE_ACTIONS: &[&str] = &[
     "show_ship_goals",
     "show_note_suggestions",
     "comment_on_note",
+    "show_lifecycle_proposal",
     "show_persona_overview",
     "show_connected_services",
     "show_decisions",
@@ -710,7 +718,7 @@ const OP_SECTIONS: &[OpSection] = &[
         ],
     },
     OpSection {
-        title: "Mastermind canvas, Ship milestones, the Notepad",
+        title: "Mastermind canvas, Ship milestones, the Notepad, lifecycles",
         gate: Some(OpGate::Approval),
         note: "Approval unless marked. `slug` is a canvas slug exactly as printed in your Mastermind block; every `item_id` / `milestone_id` / `note_id` is a REAL id you READ (`describe_*` first), never a guess. A milestone `goal` is a TITLE under 72 chars.",
         compact: true,
@@ -726,6 +734,8 @@ const OP_SECTIONS: &[OpSection] = &[
             op!("show_ship_goals", Card, "", r#"{milestone_id,note_id?,goals:[{title,description?}]}"#),
             op!("show_note_suggestions", Card, "", r#"{note_id,rows:[{kind:section|edit|question,anchor:{after_heading},body_md}]} (draft notes only)"#),
             op!("comment_on_note", Auto, "", r#"{note_id,body_md} (reply on its thread)"#),
+            op!("describe_lifecycle", Read, "", r#"{project}"#),
+            op!("show_lifecycle_proposal", Card, "", r#"{project,change_note,preset?,steps:[{id,phase?,label?,rule?,bindings?,params?}]} (FULL list; omit = keep)"#),
         ],
     },
     OpSection {
@@ -786,7 +796,10 @@ fn op_docs() -> impl Iterator<Item = &'static OpDoc> {
 // `adjust_register` joined the reference at their shortest rows (the chat core
 // teaches both in full under `# Layer one`); the table was already within 20
 // chars of the old ceiling.
-pub(crate) const OP_REFERENCE_MAX_CHARS: usize = 12_700;
+// 12,700 -> 12,895 (2026-09-25, Lifecycle v2): exactly the 195 characters the
+// `describe_lifecycle` and `show_lifecycle_proposal` rows plus the section
+// title's ", lifecycles" add; the existing ~20-character headroom is unchanged.
+pub(crate) const OP_REFERENCE_MAX_CHARS: usize = 12_895;
 
 /// The compact markdown op reference the chat-class prompt family carries in
 /// place of the constitution's per-op prose. One line per op: name, gate,

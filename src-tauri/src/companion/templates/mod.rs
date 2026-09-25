@@ -579,7 +579,16 @@ pub const RESEARCH_PROMPT_MD: &str = include_str!("research-prompt.md");
 /// ElevenLabs line and the always-emit `TTS:` rule, becomes `## Voice`: layer
 /// one IS the spoken register and `TTS:` is an optional escape. Teaches the
 /// `adjust_register` op, and adds a layer-one step to the pre-reply checklist.
-pub const CONSTITUTION_VERSION: u32 = 67;
+///
+/// v68 (lifecycle-v2): the `### Lifecycle` section. A project's lifecycle (its
+/// development practice: steps before and after every dev task, their bindings
+/// and git evidence) is never edited by the user; Athena reads it with
+/// `describe_lifecycle` and proposes the FULL step list with
+/// `show_lifecycle_proposal` (an existing step may be a bare `{"id"}` to keep
+/// it). Teaches the id / label / preset / params rules the validator enforces,
+/// that the operator unticks changes on the card, and that confirm installs
+/// repo bindings through a Run Desk task (pending, then live).
+pub const CONSTITUTION_VERSION: u32 = 68;
 
 #[cfg(test)]
 mod tests {
@@ -587,7 +596,7 @@ mod tests {
 
     #[test]
     fn the_constitution_teaches_layer_one_at_v67() {
-        assert_eq!(CONSTITUTION_VERSION, 67);
+        assert!(CONSTITUTION_VERSION >= 67);
         assert!(CONSTITUTION_MD.contains("\n# Layer one\n"));
         assert!(CONSTITUTION_MD.contains("Layer one this turn:"));
         // Canonical `propose_action` envelope, as the op reference teaches.
@@ -603,5 +612,14 @@ mod tests {
             !CONSTITUTION_MD.contains("Use `inline code` for IDs"),
             "the constitution still asks for ids in inline code"
         );
+    }
+
+    #[test]
+    fn the_constitution_teaches_the_lifecycle_toolset_at_v68() {
+        assert_eq!(CONSTITUTION_VERSION, 68);
+        assert!(CONSTITUTION_MD.contains("\n### Lifecycle ("));
+        assert!(CONSTITUTION_MD.contains("\"action\": \"describe_lifecycle\""));
+        assert!(CONSTITUTION_MD.contains("\"action\": \"show_lifecycle_proposal\""));
+        assert!(CONSTITUTION_MD.contains("`describe_lifecycle` ALWAYS comes first"));
     }
 }

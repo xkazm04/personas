@@ -80,6 +80,32 @@ pub(super) fn note_read_op_result(
     }
 }
 
+/// Append a card op's rejection as a System episode, so Athena reads the exact
+/// reason at the top of her next turn. `out.warnings` never reaches her in
+/// production (the turn pipeline logs it and drops it), so a card op that
+/// rejects only into warnings fails silently from her side. Same channel and
+/// best-effort posture as [`note_read_op_result`].
+pub(super) fn note_op_rejection(pool: &UserDbPool, session_id: &str, action: &str, reason: &str) {
+    let content = format!(
+        "[dispatcher] Your last `{action}` was rejected and drew no card. Reason: {reason}\n\n\
+         Fix exactly that and re-propose, or tell the user plainly why you cannot. Do NOT \
+         re-emit the same op unchanged.",
+        reason = clip(reason, READ_OP_DETAIL_CHARS),
+    );
+    if let Err(e) = crate::companion::brain::episodic::append_episode(
+        pool,
+        session_id,
+        crate::companion::brain::episodic::EpisodeRole::System,
+        &content,
+    ) {
+        tracing::warn!(
+            action = action,
+            error = %e,
+            "note_op_rejection: failed to append system episode"
+        );
+    }
+}
+
 /// Full detail for one persona, resolved by exact id, then exact
 /// (case-insensitive) name, then a substring match on name.
 pub(super) fn describe_persona(sys_db: &crate::db::DbPool, query: &str) -> String {

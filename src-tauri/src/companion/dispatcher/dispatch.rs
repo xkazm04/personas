@@ -16,7 +16,7 @@ use super::catalog::{
 use super::envelope::{repair_op_json, OpEnvelope};
 use super::read_ops::{
     describe_context, describe_persona, describe_skill, list_runner_tasks, list_teams,
-    note_read_op_result,
+    note_op_rejection, note_read_op_result,
 };
 use super::research;
 use super::types::{
@@ -2168,6 +2168,54 @@ pub fn dispatch_with_sys(
                 }
             }
             // ─────────────────────────────────────────────────────────────
+            // Lifecycle v2: the lifecycle proposal card.
+            //
+            // Same contract as `show_ship_milestone`: auto-fire, no approval
+            // row, the durable card IS the consent surface, and NOT an
+            // `ALLOWED_ACTIONS` entry. The whole proposed document is resolved
+            // and validated here against the project's current version, by
+            // the same validator the confirm command re-runs.
+            //
+            // Unlike the ship arms, a rejection ALSO lands as an episode:
+            // `out.warnings` never reaches Athena in production, so a
+            // warnings-only rejection is a silent failure from her side.
+            // ─────────────────────────────────────────────────────────────
+            Ok(env) if env.op == "propose_action" && env.action == "show_lifecycle_proposal" => {
+                let built = match sys_db {
+                    Some(db) => {
+                        crate::companion::lifecycle_ops::build_proposal_card(db, &env.params)
+                    }
+                    None => Err(
+                        "the project registry is not reachable from this turn, so the \
+                                 proposal could not be validated. Tell the user rather than \
+                                 proposing."
+                            .to_string(),
+                    ),
+                };
+                let config = built.and_then(|card| {
+                    serde_json::to_value(&card)
+                        .map_err(|e| format!("the card could not be serialized: {e}"))
+                });
+                match config {
+                    Ok(config) => out.chat_cards.push(ChatCard {
+                        kind: crate::companion::lifecycle_ops::LIFECYCLE_PROPOSAL_KIND.to_string(),
+                        title: env
+                            .params
+                            .get("title")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string()),
+                        config,
+                    }),
+                    Err(reason) => {
+                        note_op_rejection(pool, session_id, "show_lifecycle_proposal", &reason);
+                        out.warnings
+                            .push(format!("rejected show_lifecycle_proposal: {reason}"));
+                        cleaned_lines.push(line);
+                        continue;
+                    }
+                }
+            }
+            // ─────────────────────────────────────────────────────────────
             // Detail-on-demand read ops (auto-fire, read-only, no approval).
             //
             // The prompt carries a BOUNDED index of personas / dev contexts
@@ -2194,6 +2242,8 @@ pub fn dispatch_with_sys(
                     .or_else(|| env.params.get("context_id").and_then(|v| v.as_str()))
                     .or_else(|| env.params.get("name").and_then(|v| v.as_str()))
                     .or_else(|| env.params.get("slug").and_then(|v| v.as_str()))
+                    // `describe_lifecycle` is taught with `{project}`.
+                    .or_else(|| env.params.get("project").and_then(|v| v.as_str()))
                     .map(str::trim)
                     .unwrap_or("");
                 let action = env.action.as_str();
@@ -2253,6 +2303,12 @@ pub fn dispatch_with_sys(
                                 crate::companion::ship_ops::describe_ship_milestone(db, query)
                             }
                             "describe_note" => crate::companion::note_ops::describe_note(db, query),
+                            // Lifecycle v2: reads repo files and runs git
+                            // through `lifecycle::snapshot`; bounded (one
+                            // project, max 20 commits).
+                            "describe_lifecycle" => {
+                                crate::companion::lifecycle_ops::describe_lifecycle(db, query)
+                            }
                             _ => list_teams(db, query),
                         },
                         None => format!(
