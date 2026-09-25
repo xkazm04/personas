@@ -214,11 +214,36 @@ export function chainStations(
 
 export type TrayId = ContestReviewBucket | 'unsorted';
 
-/** Variant keys per tray, in manifest order. */
-export function trays(review: ContestReview | null, variants: readonly Pick<ContestVariant, 'key'>[]): Record<TrayId, string[]> {
+/** The verdict contest.json records (`summary.winner` / `summary.shortlist`). */
+export type RecordedVerdict = Pick<ContestSummary, 'winner' | 'shortlist'>;
+
+/**
+ * A variant's tray: the owner's bucket when the review sorts it, else the
+ * recorded verdict (a race decided through the CLI, or before the app, has no
+ * review.json but its contest.json names the winner and shortlist). The
+ * recorded verdict is the floor; the owner's buckets override it.
+ */
+export function recordedBucket(
+  review: ContestReview | null,
+  recorded: RecordedVerdict | null,
+  key: string,
+): ContestReviewBucket | null {
+  const own = review?.variants.find((v) => v.key === key)?.bucket ?? null;
+  if (own) return own;
+  if (!recorded) return null;
+  if (recorded.winner === key) return 'winner';
+  if (recorded.shortlist.includes(key)) return 'shortlist';
+  return null;
+}
+
+/** Variant keys per tray, in manifest order (see `recordedBucket`). */
+export function trays(
+  review: ContestReview | null,
+  variants: readonly Pick<ContestVariant, 'key'>[],
+  recorded: RecordedVerdict | null = null,
+): Record<TrayId, string[]> {
   const out: Record<TrayId, string[]> = { winner: [], shortlist: [], impractical: [], failure: [], unsorted: [] };
-  const bucketOf = new Map((review?.variants ?? []).map((v) => [v.key, v.bucket]));
-  for (const v of variants) out[bucketOf.get(v.key) ?? 'unsorted'].push(v.key);
+  for (const v of variants) out[recordedBucket(review, recorded, v.key) ?? 'unsorted'].push(v.key);
   return out;
 }
 

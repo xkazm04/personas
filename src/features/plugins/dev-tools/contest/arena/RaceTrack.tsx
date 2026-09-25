@@ -3,7 +3,7 @@
 // judges run, and the finish-line strip. When every variant is in, "Photo
 // finish" becomes the primary action and opens the review lightbox.
 import { useState } from 'react';
-import { Camera, Play, Square } from 'lucide-react';
+import { Camera, Play, Square, Trophy } from 'lucide-react';
 
 import { cancelContest, launchContest } from '@/api/contest';
 import { AsyncButton, Button } from '@/features/shared/components/buttons';
@@ -15,9 +15,9 @@ import { toastCatch } from '@/lib/silentCatch';
 
 import type { ReviewDraft } from '../hooks/useReviewDraft';
 import { phaseLabel, phaseTone } from '../model/labels';
-import { variantReview } from '../model/reviewModel';
-import { buildLanes, isLivePhase, raceStartMs, relevantLayer, type Lane } from './arenaModel';
+import { buildLanes, isLivePhase, makerSpec, raceStartMs, recordedBucket, relevantLayer, variantName, type Lane } from './arenaModel';
 import { FinishLine } from './FinishLine';
+import { SeatLabel } from './SeatLabel';
 import { SeatLane } from './SeatLane';
 import { ToneDot } from './ToneDot';
 
@@ -35,7 +35,10 @@ export function RaceTrack({ detail, draft, onOpenVariant }: RaceTrackProps) {
   const { projectId, contestId, phase } = summary;
   const [confirmStop, setConfirmStop] = useState(false);
   const { racers, stewards } = buildLanes(detail);
-  const bucketOf = (key: string) => (draft.review ? variantReview(draft.review, key).bucket : null);
+  const bucketOf = (key: string) => recordedBucket(draft.review, summary, key);
+  // The recorded verdict, named in the header (the roster alone carried it).
+  const winnerVariant = summary.winner ? detail.variants.find((v) => v.key === summary.winner) ?? null : null;
+  const winnerMaker = winnerVariant ? makerSpec(detail, winnerVariant) : summary.winnerSeatSpec;
   const firstVariant = detail.variants[0]?.key ?? null;
   const ceilingS = detail.timeoutMin > 0 ? detail.timeoutMin * 60 : null;
   const inReview = relevantLayer(phase) === 'review';
@@ -122,6 +125,27 @@ export function RaceTrack({ detail, draft, onOpenVariant }: RaceTrackProps) {
         </div>
       </header>
 
+      {summary.winner && (
+        <p className="flex flex-wrap items-center gap-x-1.5 typo-body text-foreground" data-testid="arena-track-winner">
+          <Trophy className="w-3.5 h-3.5 text-status-success" aria-hidden />
+          <span className="typo-label">{a.winner}</span>
+          <span className="typo-data">{summary.winner}</span>
+          {winnerVariant && <span>· {variantName(winnerVariant)}</span>}
+          {winnerMaker && (
+            <>
+              <span aria-hidden>·</span>
+              <span className="typo-caption">{a.made_by}</span>
+              <SeatLabel spec={winnerMaker} />
+            </>
+          )}
+        </p>
+      )}
+      {!summary.winner && summary.shortlist.length > 0 && (
+        <p className="flex flex-wrap items-center gap-x-1.5 typo-body text-foreground" data-testid="arena-track-shortlist">
+          <span className="typo-label">{s.bucket_shortlist}</span>
+          <span className="typo-data">{summary.shortlist.join(', ')}</span>
+        </p>
+      )}
       {inReview && <p className="typo-caption">{a.photo_finish_hint}</p>}
 
       <div className="space-y-1">

@@ -17,7 +17,7 @@ import { VariantFrame } from '../components/VariantFrame';
 import type { ReviewDraft } from '../hooks/useReviewDraft';
 import { DESIGN_WIDTHS, type DesignWidth } from '../model/pinMath';
 import { addPin, variantReview } from '../model/reviewModel';
-import { makerSpec, stepKey, trays } from './arenaModel';
+import { makerSpec, recordedBucket, stepKey, trays } from './arenaModel';
 import { PhotoFacts } from './PhotoFacts';
 import { PodiumTrays } from './PodiumTrays';
 import { StewardsScoreboard } from './StewardsScoreboard';
@@ -109,7 +109,7 @@ export function PhotoFinish({ detail, draft, currentKey, onSelect, onClose }: Ph
                   <VariantTile
                     variant={v}
                     active={v.key === current}
-                    bucket={review ? variantReview(review, v.key).bucket : null}
+                    bucket={recordedBucket(review, detail.summary, v.key)}
                     onOpen={onSelect}
                   />
                 </li>
@@ -119,7 +119,7 @@ export function PhotoFinish({ detail, draft, currentKey, onSelect, onClose }: Ph
 
           <aside className="min-h-0 space-y-5 overflow-y-auto pr-1" aria-label={a.review_panel}>
             {variant && <PhotoFacts variant={variant} maker={maker} />}
-            <PodiumTrays trays={trays(review, detail.variants)} current={current} draft={draft} onSelect={onSelect} />
+            <PodiumTrays trays={trays(review, detail.variants, detail.summary)} current={current} draft={draft} onSelect={onSelect} />
             {variant && <ReviewSheet variant={variant} draft={draft} showBuckets={false} showHeader={false} />}
             <FieldNoteEditor draft={draft} />
             {detail.scoreboard && <StewardsScoreboard

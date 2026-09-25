@@ -13,6 +13,7 @@ import {
   raceStartMs,
   relevantLayer,
   stepKey,
+  recordedBucket,
   trays,
   variantName,
 } from '../arenaModel';
@@ -154,5 +155,27 @@ describe('variantName', () => {
     expect(variantName({ concept: 'Spotlight', title: 'Studio: Spotlight', key: 'C/1' })).toBe('Spotlight');
     expect(variantName({ concept: ' ', title: 'Studio', key: 'C/1' })).toBe('Studio');
     expect(variantName({ concept: '', title: '', key: 'C/1' })).toBe('C/1');
+  });
+});
+
+describe('the recorded verdict is the floor (FE-5)', () => {
+  const variants = [{ key: 'A/1' }, { key: 'A/2' }, { key: 'B/1' }, { key: 'B/2' }];
+
+  it('a CLI-decided race with no review.json still shows its winner and shortlist', () => {
+    const recorded = { winner: 'A/1', shortlist: ['B/2'] };
+    expect(trays(null, variants, recorded)).toEqual({
+      winner: ['A/1'], shortlist: ['B/2'], impractical: [], failure: [], unsorted: ['A/2', 'B/1'],
+    });
+    expect(recordedBucket(null, recorded, 'A/1')).toBe('winner');
+    expect(recordedBucket(null, recorded, 'A/2')).toBeNull();
+  });
+
+  it("the owner's buckets override the recorded verdict", () => {
+    const review = { field: '', variants: [{ key: 'A/1', bucket: 'failure' as const, note: '', pins: [] }] };
+    const recorded = { winner: 'A/1', shortlist: ['A/1', 'B/2'] };
+    const out = trays(review, variants, recorded);
+    expect(out.failure).toEqual(['A/1']);
+    expect(out.winner).toEqual([]);
+    expect(out.shortlist).toEqual(['B/2']);
   });
 });
