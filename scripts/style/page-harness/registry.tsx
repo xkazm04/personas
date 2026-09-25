@@ -16,6 +16,7 @@ import { TONE_MODULES } from './toneSurfaces';
 import { TRIAGE_MODULES } from './triageSurfaces';
 import { DATAGRID_MODULES } from './datagridSurfaces';
 import { FLEET_MODULES } from './fleetSurfaces';
+import { OBSERVABILITY_MODULES } from './observabilitySurfaces';
 
 type Wrap = (children: ReactNode) => ReactNode;
 
@@ -60,6 +61,7 @@ export const MODULES: Record<string, HarnessModule> = {
   ...TRIAGE_MODULES,
   ...DATAGRID_MODULES,
   ...FLEET_MODULES,
+  ...OBSERVABILITY_MODULES,
   // Probes for `shoot.mjs --self-test`: each must make the shooter exit non-zero.
   '__selftest/empty': {
     load: async () => ({ default: () => <div /> }),
