@@ -341,7 +341,6 @@
     "table_empty": "इस तालिका में कोई पंक्तियाँ नहीं हैं।",
     "terminal_empty": "कोई आउटपुट पंक्तियाँ नहीं।"
   },
-  "suspense_loading": "लोड हो रहा है",
   "table_deselect_all": "सभी अचयनित करें",
   "table_filter": "तालिकाएं फ़िल्टर करें…",
   "table_loading": "तालिकाएं लोड हो रही हैं…",

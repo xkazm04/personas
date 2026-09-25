@@ -341,7 +341,6 @@
     "table_empty": "В этой таблице нет строк.",
     "terminal_empty": "Нет строк вывода."
   },
-  "suspense_loading": "Загрузка",
   "table_deselect_all": "Снять все",
   "table_filter": "Фильтр таблиц…",
   "table_loading": "Загрузка таблиц…",

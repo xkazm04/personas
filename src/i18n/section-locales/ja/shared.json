@@ -341,7 +341,6 @@
     "table_empty": "このテーブルには行がありません。",
     "terminal_empty": "出力行はありません。"
   },
-  "suspense_loading": "読み込み中",
   "table_deselect_all": "すべて選択解除",
   "table_filter": "テーブルをフィルター…",
   "table_loading": "テーブルを読み込み中…",

@@ -341,7 +341,6 @@
     "table_empty": "Keine Zeilen in dieser Tabelle.",
     "terminal_empty": "Keine Ausgabezeilen."
   },
-  "suspense_loading": "Wird geladen",
   "table_deselect_all": "Alle abwählen",
   "table_filter": "Tabellen filtern…",
   "table_loading": "Tabellen werden geladen…",

@@ -341,7 +341,6 @@
     "table_empty": "Aucune ligne dans ce tableau.",
     "terminal_empty": "Aucune ligne de sortie."
   },
-  "suspense_loading": "Chargement",
   "table_deselect_all": "Tout désélectionner",
   "table_filter": "Filtrer les tables…",
   "table_loading": "Chargement des tables…",

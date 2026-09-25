@@ -1,5 +1,0 @@
-{
-  "schema_parse_error": "Không thể đọc các trường đầu vào của công thức này — schema đã lưu bị sai định dạng.",
-  "schema_parse_error_detail": "Lỗi: {error}",
-  "schema_parse_error_hint": "Tạo lại công thức hoặc chỉnh sửa schema đầu vào thủ công để khắc phục."
-}

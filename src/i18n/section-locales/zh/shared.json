@@ -341,7 +341,6 @@
     "table_empty": "此表格没有行。",
     "terminal_empty": "没有输出行。"
   },
-  "suspense_loading": "加载中",
   "table_deselect_all": "全部取消选择",
   "table_filter": "筛选表格…",
   "table_loading": "加载表格…",

@@ -341,7 +341,6 @@
     "table_empty": "이 테이블에 행이 없습니다.",
     "terminal_empty": "출력 줄이 없습니다."
   },
-  "suspense_loading": "로딩 중",
   "table_deselect_all": "전체 선택 해제",
   "table_filter": "테이블 필터…",
   "table_loading": "테이블 로딩 중…",

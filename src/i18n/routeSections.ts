@@ -106,7 +106,7 @@ const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
   credentials: ['vault', 'connector_roles', 'connector_licensing', 'auth'],
   // `explore` — templates/sub_explore (the Atlas bento + domain drill-down),
   // mounted by templates/components/DesignReviewsPage.tsx.
-  'design-reviews': ['design', 'feedback_labels', 'templates', 'recipes', 'recipe_shared', 'explore'],
+  'design-reviews': ['design', 'feedback_labels', 'templates', 'recipes', 'explore'],
   // `twin` — plugins/twin (629 keys; also feeds the plugins sidebar nav).
   // `project_overview` — plugins/dev-tools project overview + LLM monitoring.
   // `cockpit` — companions/athena inbox helpers.

@@ -62,7 +62,6 @@
   "copy_tooltip": "Copy",
   "copy_copied": "Copied",
   "copy_copied_bang": "Copied!",
-  "suspense_loading": "Loading",
   "persona_select": "Select persona",
   "persona_all": "All Personas",
   "persona_no_match": "No personas matching “{query}”",

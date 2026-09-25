@@ -341,7 +341,6 @@
     "table_empty": "No hay filas en esta tabla.",
     "terminal_empty": "No hay líneas de salida."
   },
-  "suspense_loading": "Cargando",
   "table_deselect_all": "Deseleccionar todo",
   "table_filter": "Filtrar tablas…",
   "table_loading": "Cargando tablas…",

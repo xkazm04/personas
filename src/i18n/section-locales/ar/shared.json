@@ -341,7 +341,6 @@
     "table_empty": "لا توجد صفوف في هذا الجدول.",
     "terminal_empty": "لا توجد أسطر إخراج."
   },
-  "suspense_loading": "جارٍ التحميل",
   "table_deselect_all": "إلغاء تحديد الكل",
   "table_filter": "تصفية الجداول…",
   "table_loading": "جارٍ تحميل الجداول…",

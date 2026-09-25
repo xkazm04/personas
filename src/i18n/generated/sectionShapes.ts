@@ -533,16 +533,8 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
   "explore": {},
   "foundry": {},
   "recipes": {
-    "editor": {
-      "categories": {}
-    },
-    "schema": {
-      "field_types": {},
-      "placeholders": {}
-    },
     "composer_suggestion": {}
   },
-  "recipe_shared": {},
   "agent_lab": {},
   "execution_status": {},
   "status_tokens": {

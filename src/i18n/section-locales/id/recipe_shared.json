@@ -1,5 +1,0 @@
-{
-  "schema_parse_error": "Tidak dapat membaca kolom input resep ini — skema yang tersimpan tidak valid.",
-  "schema_parse_error_detail": "Kesalahan: {error}",
-  "schema_parse_error_hint": "Buat ulang resep atau edit skema input secara manual untuk memperbaikinya."
-}

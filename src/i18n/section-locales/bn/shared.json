@@ -341,7 +341,6 @@
     "table_empty": "এই টেবিলে কোনো সারি নেই।",
     "terminal_empty": "কোনো আউটপুট লাইন নেই।"
   },
-  "suspense_loading": "লোড হচ্ছে",
   "table_deselect_all": "সব নির্বাচন বাতিল করুন",
   "table_filter": "টেবিল ফিল্টার করুন…",
   "table_loading": "টেবিল লোড হচ্ছে…",

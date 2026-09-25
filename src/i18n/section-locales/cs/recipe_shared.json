@@ -1,5 +1,0 @@
-{
-  "schema_parse_error": "Nepodařilo se načíst vstupní pole tohoto receptu — uložené schéma je poškozené.",
-  "schema_parse_error_detail": "Chyba: {error}",
-  "schema_parse_error_hint": "Vygenerujte recept znovu, nebo upravte vstupní schéma ručně."
-}
