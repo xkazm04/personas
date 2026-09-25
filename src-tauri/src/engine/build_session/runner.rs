@@ -27,7 +27,7 @@ use crate::ActiveProcessRegistry;
 use super::super::build_stall::{
     design_fingerprint, stall_reason, stall_turns_from_env, stalled, TurnProgress,
 };
-use super::super::cli_process::{read_line_within, CliProcessDriver, LineRead};
+use super::super::cli_process::{read_line_within_capped_oob, CliProcessDriver, Clip, LineRead};
 use super::super::types::CliArgs;
 use super::events::{
     cleanup_session, dual_emit, emit_error, emit_session_status, record_build_spend,
@@ -89,6 +89,21 @@ const CLI_SILENCE_KILL_TIMEOUT: Duration = Duration::from_secs(600);
 /// point, so timing out here is NOT a session failure — we kill the stuck
 /// process and carry on with the turn we read.
 const CLI_EXIT_GRACE_TIMEOUT: Duration = Duration::from_secs(120);
+
+/// Largest single stdout line a build turn will read before clipping it.
+///
+/// NOT the shared 64 KB `cli_process::MAX_LINE_BYTES`. The build stream is a
+/// PARSING sink whose protocol puts the model's entire reply on ONE line (the
+/// stream-json `assistant` and `result` envelopes), and a one-shot design pass
+/// writes its whole event stream — behavior_core, capabilities, resolutions,
+/// the agent_ir — in one reply. Measured 2026-09-25: healthy kp builds produced
+/// 58-62 KB replies (62-66 KB as escaped envelopes, straddling the old cap),
+/// and requirement-driven hires 78-82 KB (82-86 KB envelopes). Every line over
+/// 64 KB came back as a clipped prefix, failed to parse, and the turn's events
+/// were lost without a trace; three such turns and the stall detector failed
+/// the build (`design_pass_stalled`, session 658fd89a / a0d97843). 4 MB is ~50x
+/// the largest reply seen and still a bound on a runaway child.
+const BUILD_STREAM_MAX_LINE_BYTES: usize = 4 * 1024 * 1024;
 
 type ConversationHistory = Vec<(&'static str, Arc<str>)>;
 
@@ -763,7 +778,35 @@ pub(super) async fn run_session(
                         cleanup_session(&sessions_map, &registry, &session_id, handle_generation);
                         return;
                     }
-                    line_result = read_line_within(&mut reader, CLI_SILENCE_KILL_TIMEOUT) => {
+                    line_result = read_line_within_capped_oob(&mut reader, CLI_SILENCE_KILL_TIMEOUT, BUILD_STREAM_MAX_LINE_BYTES) => {
+                        let line_result = line_result.map(|(read, clip)| match (read, clip) {
+                            (LineRead::Line(mut line), Some(clip)) => {
+                                if let Clip::SizeCap { at_bytes } = clip {
+                                    // A clipped envelope cannot parse, so every
+                                    // event in it is lost. Say so, loudly and to
+                                    // the build's own event stream, instead of
+                                    // letting the turn read as "no progress".
+                                    tracing::warn!(
+                                        session_id = %session_id,
+                                        turn = turn + 1,
+                                        at_bytes,
+                                        "build stream line exceeded the line cap — its events were dropped"
+                                    );
+                                    turn_events.push(BuildEvent::Progress {
+                                        session_id: session_id.clone(),
+                                        dimension: None,
+                                        message: format!(
+                                            "The build model's reply was longer than {at_bytes} bytes on one line and was cut off, so its events could not be read."
+                                        ),
+                                        percent: None,
+                                        activity: None,
+                                    });
+                                }
+                                line.push_str(clip.in_band_marker());
+                                LineRead::Line(line)
+                            }
+                            (read, _) => read,
+                        });
                         match line_result {
                             Ok(LineRead::Line(line)) => {
                                 turn_raw.push_str(&line);
@@ -2363,5 +2406,84 @@ mod progress_tests {
         // zero total; this is the coupling that makes the runner the ONE
         // producer.
         assert_eq!(TOTAL_COUNT_UNKNOWN, 0);
+    }
+}
+
+/// REGRESSION (2026-09-25, kp requirement-driven hires, sessions 658fd89a /
+/// a0d97843): a one-shot design pass writes its whole event stream in ONE
+/// reply, which the CLI delivers as ONE stream-json line. Replies of 78-82 KB
+/// (82-86 KB envelopes) were read through the shared 64 KB line cap, came back
+/// clipped, parsed as nothing, and the build stalled with zero resolutions.
+#[cfg(test)]
+mod long_reply_tests {
+    use super::*;
+    use tokio::io::{AsyncWriteExt, BufReader};
+
+    /// An assistant envelope whose text is a real event stream padded past
+    /// 64 KB inside a resolution value — the failing sessions' shape.
+    fn long_envelope() -> String {
+        let core = serde_json::json!({"behavior_core": {"mission": "Ensure every gig is answered.",
+            "identity": {"role": "You are a freelance specialist.", "description": "d"},
+            "principles": ["p"], "constraints": ["Never send anything."]}});
+        let caps = serde_json::json!({"capability_enumeration": {"capabilities": [
+            {"id": "uc_deliver", "title": "Deliver the gig", "capability_summary": "s"}]}});
+        let res = serde_json::json!({"persona_resolution": {"field": "operating_instructions",
+            "value": "x".repeat(80 * 1024), "status": "resolved"}});
+        let text = format!("{core}\n{caps}\n{res}");
+        serde_json::json!({"type": "assistant", "message": {"content": [{"type": "text", "text": text}]}})
+            .to_string()
+    }
+
+    #[tokio::test]
+    async fn a_reply_over_64kb_on_one_line_still_yields_its_events() {
+        let line = long_envelope();
+        assert!(line.len() > 64 * 1024 && line.len() < BUILD_STREAM_MAX_LINE_BYTES);
+
+        let (client, server) = tokio::io::duplex(16 * 1024);
+        let payload = line.clone();
+        tokio::spawn(async move {
+            let mut server = server;
+            let _ = server.write_all(payload.as_bytes()).await;
+            let _ = server.write_all(b"\n").await;
+            let _ = server.flush().await;
+            std::future::pending::<()>().await;
+        });
+        let mut reader = BufReader::new(client);
+        let (read, clip) = read_line_within_capped_oob(
+            &mut reader,
+            Duration::from_secs(5),
+            BUILD_STREAM_MAX_LINE_BYTES,
+        )
+        .await
+        .unwrap();
+        assert!(
+            clip.is_none(),
+            "the build reader clipped a legitimate reply"
+        );
+        let LineRead::Line(got) = read else {
+            panic!("expected a line")
+        };
+        let kinds: Vec<&'static str> = parse_build_line(&got, "s")
+            .iter()
+            .map(|e| match e {
+                BuildEvent::BehaviorCoreUpdate { .. } => "core",
+                BuildEvent::Progress { .. } => "progress",
+                _ => "other",
+            })
+            .collect();
+        assert!(
+            kinds.contains(&"core"),
+            "no behavior_core parsed: {kinds:?}"
+        );
+        assert!(
+            kinds.iter().filter(|k| **k != "progress").count() >= 2,
+            "the reply's events were not read: {kinds:?}"
+        );
+
+        // …and the old 64 KB cap is exactly what lost them.
+        let clipped: String = line.chars().take(64 * 1024).collect();
+        assert!(parse_build_line(&clipped, "s")
+            .iter()
+            .all(|e| matches!(e, BuildEvent::Progress { .. })));
     }
 }

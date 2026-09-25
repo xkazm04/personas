@@ -2329,6 +2329,7 @@ mod tests {
         let section = personas_engine::kp_requirements::render_intent_section(&parsed);
         assert_eq!(intent, format!("{base}\n\n{section}"));
         assert!(intent.contains("1. Never send anything; the operator sends."));
-        assert!(intent.contains("Add NO commit, push"));
+        assert!(intent.contains("So there is NO commit, push"));
+        assert!(intent.contains("- Trigger: `manual` for every capability."));
     }
 }

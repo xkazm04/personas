@@ -1118,7 +1118,7 @@ always been optional. Other kp hires (recruiting, App master) are unchanged.
 | Step | Where | What |
 | --- | --- | --- |
 | Intake | `management_api::validate_kp_requirements` → `personas_engine::kp_requirements::normalize` | `kind` must be `kp.agent-requirements.v1`; serialized ≤ 32 KB, arrays ≤ 30, strings ≤ 1000 chars after trimming; known fields must parse. Refusals are 400 **with a code** (`invalid_requirements`, `requirements_too_large`, `requirements_too_many_items`, `requirements_string_too_long`). The approval payload stores the NORMALIZED object (strings trimmed, unknown keys verbatim). The card's rationale gains `designed from kp requirements (N constraint(s))`. |
-| Intent | `approval_exec_core::kp_hire_intent` → `kp_requirements::render_intent_section` | The unchanged intent (mission, job, preferred connectors, success metrics) plus a **"Requirements from kp — AUTHORITATIVE"** section: design rules (build exactly what is asked; with local-file outputs, *no commit / push / PR / publish / post / send / bid / message / notify step and no source-control or messaging connector for one*; a platform default that adds an uncalled-for step loses; every MUST constraint goes into the behavior core's `constraints` and `structured_prompt.instructions`, and `errorHandling` where it governs a failure; no connector beyond the Tools list), then role/purpose, the numbered MUST constraints, tools with their why, outputs, budget, and an informational tail (responsibilities, craft, research, inputs). The requirements win over the mission sentence where they differ. |
+| Intent | `approval_exec_core::kp_hire_intent` → `kp_requirements::render_intent_section` | The unchanged intent (mission, job, preferred connectors, success metrics) plus a **"Requirements from kp — AUTHORITATIVE"** section. It opens with **how to resolve this hire** — an ANSWER, in the pass's own vocabulary, for every dimension it must fill: capabilities = the Responsibilities and nothing else; trigger = `manual` (one run per `inputs.assignment`); connectors and tools = exactly the Tools list, by name; with local-file outputs, output destination = the working folder with *no commit / push / PR / publish / post / send / bid / message / notify step and no connector for one* (a platform default such as a test-driven commit cycle does not apply) and review policy = `never`; every other field a safe default with no clarifying question; every MUST constraint into the behavior core's `constraints` and `structured_prompt.instructions` (and `errorHandling` where it governs a failure); keep the design compact. Then role/purpose, the numbered MUST constraints, tools with their why, outputs, budget, and an informational tail (responsibilities, craft, research, inputs). The requirements win over the mission sentence where they differ. |
 | Store | `KpLink.requirements` (`core/src/models/persona.rs`) | Carried **inside** `design_context.kpLink`, so `promote_build_draft`'s design_context rebuild — which re-injects `kpLink` whole (§10.5, the app-master-p4 trap) — keeps it by construction. `None` serializes exactly as before. The draft persona's placeholder system prompt names the role instead of the generic stub. |
 | Verify | `prepare_promote` → `build_session::apply_kp_requirement_constraints` → `kp_requirements::pin_constraints` | See below. |
 | Show | Design → Manifest tab (`sub_design/components/KpRequirementsPanel.tsx`) | A "Requirements from kp" section above the manifest: purpose, role/arena/niche/budget and every MUST constraint always visible; responsibilities, craft, research, inputs, outputs and tools behind one disclosure. Renders nothing for any other persona. |
@@ -1127,10 +1127,41 @@ always been optional. Other kp hires (recruiting, App master) are unchanged.
 over stdin, not argv, and the build prompt around it is already a large rule set for a
 200K-context model. The intent does also drive the keyword template match and the gate
 heuristics, and the sibling channel for user reference context is clipped at 8 000
-chars, so the section is capped at `MAX_INTENT_SECTION_CHARS` (12 000). The binding head
-(rules, role, constraints, tools, outputs, budget) is always rendered in full; only the
-informational tail is clipped, with a visible marker. A maximal 30-constraint object keeps
+chars, so the section is capped at `MAX_INTENT_SECTION_CHARS` (8 000, the same as that
+channel). The binding head (answers, role, constraints, tools, outputs, budget) is always
+rendered in full; only the informational tail is clipped, with a visible marker, and its
+lists are capped first (research lists 6, success criteria 5, lessons 3) — the full object
+stays on the persona and in the panel. A maximal 30-constraint object keeps
 every constraint (`kp_requirements::tests`).
+
+**The first live hires stalled — and why (2026-09-25).** The first two requirement-driven
+hires (sessions `658fd89a…`, `a0d97843…`) failed `design_pass_stalled`: three turns, zero
+resolutions, $7.50 and 20 minutes spent. The CLI transcripts
+(`~/.claude/projects/…build-session-*/…jsonl`) show two failure shapes, neither of them
+the design being wrong:
+
+1. **The reply outgrew the line cap.** A one-shot pass writes its whole event stream in one
+   reply, which the CLI delivers as ONE stream-json `assistant` line (and again in the
+   `result` line). With requirements the replies were 78-82 KB (82-86 KB as envelopes); the
+   build runner read stdout through the shared `cli_process::MAX_LINE_BYTES` of 64 KB, got a
+   clipped prefix, parsed nothing from it (`events=["Progress", …]`), and the stall detector
+   fired. It was latent before: a no-requirements hire's first reply (62 KB, a 66 KB envelope)
+   was lost the same way and only its SECOND, shorter reply got through. Fix: the runner
+   reads through `read_line_within_capped_oob` with `BUILD_STREAM_MAX_LINE_BYTES` (4 MB), and
+   a line that still hits the cap is logged at warn and reported into the build's own event
+   stream instead of passing as "no progress".
+2. **The events were emitted through a tool.** In `658fd89a` the model wrote every event as a
+   Bash `cat <<'JSONSTREAM'` heredoc or a Python script's `print` — 27 Bash calls, 3 file
+   writes — and replied with a 3.5 KB summary. The runner reads only the reply text, so the
+   events never existed for it. Fix: the build prompt's Output Format now says to write every
+   event directly in the reply and never through a tool, and why.
+
+The intent was reworded at the same time (answers instead of prohibitions, lists capped,
+8 000-char ceiling) so the pass has less to restate; the size of the requirement was a
+contributor, not the defect. Regressions: `runner::long_reply_tests`,
+`cli_process::tests::a_caller_chosen_cap_returns_a_line_over_the_default_whole`,
+`kp_requirements::tests::every_dimension_the_pass_resolves_has_an_answer` /
+`tail_lists_are_capped`.
 
 **The constraint check — pin, then report.** A key-term match can confirm that a
 constraint's words are in the designed prompt but not that the rule survived: "avoid
