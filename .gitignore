@@ -209,6 +209,7 @@ docs/plans/
 /.claude/skills/explorer
 /.claude/skills/friend
 /.claude/skills/i18n-translate
+/.claude/skills/kit
 /.claude/skills/kpi-sim
 /.claude/skills/leonardo
 /.claude/skills/motionize
@@ -226,6 +227,7 @@ docs/plans/
 /.claude/rules/ai-registry-software-engineering.md
 /.claude/rules/ai-registry-llm-observability.md
 /.claude/rules/ai-registry-localization.md
+/.ai/skill-runs.local.jsonl
 # END ai-registry linked skills
 
 # Raw ESLint JSON dumps. `eslint -f json -o lint-output.json` was committed twice
