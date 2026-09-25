@@ -10,12 +10,120 @@
 - **Paths:** `src-tauri/**` · `src/lib/bindings/**` · `src/features/fleet/monitor/grid/board/queue/originLabel.ts` · `src/features/fleet/monitor/grid/board/queue/useQueueModel.ts`
 - **Status:** started
 
-### questlog-port — /prototype: port Quest Log into NoteOverview behind an A/B switcher
+### contest-arena-restyle — /contest Opus xhigh vs Opus max: 6 static redesign variants of the Contest page on a baseline copy
+- **[2026-09-25 16:33]**
+- **Paths:** `.contest/staging/contest-arena-restyle/**` · `.contest/arena/contest-arena-restyle/**`
+- **Status:** started
+
+### studio-nav — Studio: reopened sheet load motion; Studio moved under Projects
+- **[2026-09-25 16:24]**
+- **Paths:** `src/features/studio/**` · `src/features/shared/chrome/sidebar/**` · `src/lib/navigation/**`
+- **Status:** started
+
+### build-stream-and-parallel-tests — Build sheet: release finished first-turn results mid-turn (provisional frames) + parallel scripted connector tests by default
+- **[2026-09-25 15:06]**
+- **Paths:** `src-tauri/src/engine/build_session/**` · `src/features/agents/sub_glyph/contactSheet/cinema/**` · `src/stores/slices/agents/matrixBuildSlice.ts` · `src/features/agents/components/matrix/useBuildSession.ts`
+- **Status:** started
+
+### spark-lifecycle-v2 — /spark lifecycle-v2: dev practice pipeline presets + contest UI + Athena toolset
+- **[2026-09-25 15:03]**
+- **Paths:** `src/features/plugins/dev-tools/sub_lifecycle/**`
+- **Status:** started
+
+- **[2026-09-25 13:55]**
+- **Paths:** `src/features/teams/sub_mastermind/**` · `src/i18n/locales/**` · `docs/features/plugins/dev tools/mastermind.md` · `docs/design/mastermind-soundings.md`
+- **Status:** started
+
+- **[2026-09-25 13:47]**
+- **Paths:** `src/features/studio/**` · `src/i18n/**`
+- **Status:** started
+
+- **[2026-09-25 13:25]**
+- **Paths:** `src/features/plugins/dev-tools/contest/**` · `src-tauri/src/commands/contest/**` · `src/features/shared/components/layout/FullScreenOverlay.tsx` · `src/features/teams/sub_factory/passport/**` · `src-tauri/db/**`
+- **Status:** started
+
+- **[2026-09-25 10:40]**
+- **Paths:** `src/features/studio/**` · `src/features/plugins/companion/**`
+- **Status:** started
+
+- **[2026-09-25 00:06]**
+- **Paths:** `src/features/plugins/dev-tools/contest/**` · `src-tauri/src/commands/contest/**`
+- **Status:** started
+
+- **[2026-09-24 23:46]**
+- **Paths:** `src/features/studio/**` · `src-tauri/src/webbuild/**` · `src/i18n/**`
+- **Status:** started
+
+- **[2026-09-24 22:54]**
+- **Paths:** `src/features/teams/sub_mastermind/**` · `src/features/teams/sub_factory/**` · `src/features/personas/PersonasPage.tsx` · `src-tauri/src/commands/**`
+- **Status:** started
+
+- **[2026-09-24 19:03]**
+- **Paths:** `src/features/teams/sub_mastermind/**` · `src/features/teams/sub_factory/factoryData.tsx` · `src/features/teams/sub_factory/passport/usePassportData.ts`
+- **Status:** started
+
+- **[2026-09-24 18:32]**
+- **Paths:** `src/features/studio/**` · `src-tauri/src/webbuild/**` · `src-tauri/src/companion/session/build_turn.rs` · `src/i18n/**`
+- **Status:** started
+
+- **[2026-09-24 16:06]**
+- **Paths:** `src/features/studio/**` · `src-tauri/src/webbuild/**` · `src-tauri/src/commands/infrastructure/webbuild.rs` · `src/api/webbuild.ts` · `src/i18n/**`
+- **Status:** started
+
+- **[2026-09-24 14:59]**
+- **Paths:** `src/features/plugins/twin/**` · `src-tauri/src/commands/infrastructure/twin*.rs` · `src-tauri/src/engine/twin*` · `src-tauri/db/src/repos/**/twin*` · `src/api/twin/**` · `src/i18n/locales/*.json`
+- **Status:** started
+
+- **[2026-09-24 14:43]**
+- **Paths:** `src/features/plugins/dev-tools/sub_lifecycle/**` · `src-tauri/src/commands/**` · `src/features/overview/**`
+- **Status:** started
+
+- **[2026-09-24 14:28]**
+- **Paths:** `src/features/studio/**` · `src-tauri/src/webbuild/**` · `src-tauri/src/commands/infrastructure/webbuild.rs` · `src-tauri/db/src/**` · `src/i18n/**`
+- **Status:** started
+
+- **[2026-09-24 13:15]**
+- **Paths:** `src/features/studio/**` · `src-tauri/src/webbuild/**` · `src-tauri/src/commands/infrastructure/webbuild.rs` · `src/api/webbuild.ts` · `src/i18n/**`
+- **Status:** started
+
+- **[2026-09-24 13:10]**
+- **Paths:** `src/features/teams/sub_mastermind/**` · `src/i18n/**` · `package.json` · `package-lock.json` · `vite.config.ts` · `scripts/bundle-baseline.json` · `docs/design/mastermind-soundings.md`
+- **Status:** started
+
+- **[2026-09-24 10:40]**
+- **Paths:** `src/features/plugins/twin/experience/**` · `src/i18n/locales/*.json`
+- **Status:** started
+
+- **[2026-09-24 10:32]**
+- **Paths:** `src/features/plugins/companion/**` · `src-tauri/src/companion/**`
+- **Status:** started
+
+- **[2026-09-23 19:34]**
+- **Paths:** `src/features/studio/**` · `src/i18n/**` · `docs/plans/studio-guide-migration.md`
+- **Status:** started
+
+- **[2026-09-23 16:51]**
+- **Paths:** `src/features/plugins/companion/**`
+- **Status:** started
+
+- **[2026-09-23 11:40]**
+- **Paths:** `src-tauri/src/companion/**` · `src/features/plugins/companion/**`
+- **Status:** started
+
+- **[2026-09-23 10:40]**
+- **Paths:** `src/features/notepad/overview/questlog/**`
+- **Status:** started
+
+### prototype-contact-sheet — /prototype: Contact Sheet (contest winner) -> persona build surface, 3 variants behind the build layout switcher
+- **[2026-09-23 09:24]**
+- **Paths:** `src/features/agents/components/matrix/UnifiedBuildEntry.tsx` · `src/features/agents/components/matrix/buildTemplateMatchConfidence.ts` · `src/features/agents/sub_glyph/glyphLayoutTypes.ts` · `src/features/agents/sub_glyph/contactSheet/**`
+- **Status:** started
+- **Handoff:** Sheet · Cinema is the sole build layout on master (0063e14b9); legacy Cinema / Dialogue+Cinema / Sheet · Wild / Sheet · Personas deleted, switcher gone. Next: Sheet · Cinema hardening (i18n of cinema/copy.ts + dead keys, live smoke)
+
 - **[2026-09-22 23:21]**
 - **Paths:** `src/features/notepad/overview/**` · `src/i18n/locales/*.json`
 - **Status:** started
 
-### prototype-athena-chat-two-layer — /prototype Athena chat two-layer fusion: 3 variants behind a tab switcher in AthenaChatPanel
 - **[2026-09-22 23:18]**
 - **Paths:** `src/features/plugins/companion/chat/**` · `src/i18n/locales/*.json`
 - **Status:** started
@@ -1027,6 +1135,52 @@
 ### curator-loop-ui — Curator loop UI: run the instrument, the human request lane, her setup brakes
 
 ### spark-features-board — /spark Features page: features + council state + context-map mirror + scenarios; delete sub_certification
+
+### triage-contest-5 — Contest triage: blind judging, judge parity, overlay focus, rerun wording, auto-PR toggle removal
+
+### mm-soundings-default — Retire Mastermind Baseline; Soundings becomes the only view
+
+### studio-buildup — Studio drafting sheet: paced build-up, graceful empty parts
+
+### sweep-contest-arena — Contest: Arena consolidation + polish + /scan-sweep (single context)
+
+### studio-orb — Studio: one Athena (busy + read-aloud into the global orb, local orb hidden)
+
+### studio-inspect — Studio inspect mode + blueprint v2 (contest A/3)
+
+### mm-load2 — Mastermind load: no skeleton, prefetch, bulk IPC, Soundings labels
+
+### spark-contest-home — /spark: Competition module -> Contest UI home (consolidation + 3 prototypes)
+
+### spark-twin-setup-plan — spark: Twin setup — launch card instead of auto-open; planned, persisted question path with parallel reconcile
+
+### studio-triage — Studio triage: right-click targeting, private snapshot ref, Plan first, voice rule
+
+### mm-load — Mastermind cold load: settle gate, one commit, compositor buoys, Factory cache
+
+### scan-studio — scan-sweep: Studio single context, all lenses; build risk 1-3, backlog the rest
+
+### studio-plan-db — Studio: template blueprint, plan metadata in DB, inline create-form validation
+
+### mm-soundings — Mastermind: port contest winner Soundings, delete Strata/Holo/Board + three.js
+
+### studio-sketch — Studio: parallel sketch lane, draft stage blueprint, early seed, queue pump
+
+### athena-halo-r4 — Athena chat r4: Spread width, autonomy popup, remove daily goals, dev ledger log button, transcript polish, shared confirm popover, decision card variants
+
+### twin-contest-r2 — Twin experience contest round 2: upgrade opus+grok variants, add a third (Mirror)
+
+### studio-guide — Studio Guide layout: port the /prototype Guide winner into React behind a Current/Guide switch
+
+### prototype-athena-halo-r3 — /prototype Athena chat round 3: drop Fused, Halo fixes, ProcessColumns + card-game decision variants
+
+### spark-athena-layered-voice — C:/Program Files/Git/spark Athena two-layer reply awareness (short layer one + references, id hygiene)
+
+### questlog-row-design — /prototype: three row + expanded-row designs for the journal desk
+
+### prototype-athena-chat-two-layer — /prototype Athena chat two-layer fusion: 3 variants behind a tab switcher in AthenaChatPanel
+
+### questlog-port — /prototype: port Quest Log into NoteOverview behind an A/B switcher
 
 ### contest-goal-desk-scale — /contest: next-gen goal desk (grouped + stacked by project, 90 goals/16 projects)
 
