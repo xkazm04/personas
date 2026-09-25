@@ -303,17 +303,31 @@ struct PlanSeat {
 }
 
 /// Whether a launch skips this seat because its record already says
-/// `completed` (the instrument's `runSeats` rule). A named retry (`only`)
-/// always runs.
-fn skips_completed(
-    kind: ContestSeatKind,
-    only: Option<&[String]>,
-    record: Option<&RecordView>,
-) -> bool {
+/// `completed` (the instrument's `runSeats` rule), for participants and
+/// judges alike: a completed judge is not paid for twice. A named retry
+/// (`only`) always runs.
+fn skips_completed(only: Option<&[String]>, record: Option<&RecordView>) -> bool {
     let retry = only.is_some_and(|o| !o.is_empty());
-    matches!(kind, ContestSeatKind::Participant)
-        && !retry
-        && record.is_some_and(|r| r.outcome == record::OUTCOME_COMPLETED)
+    !retry && record.is_some_and(|r| r.outcome == record::OUTCOME_COMPLETED)
+}
+
+/// Where the chain continues once a launch's loop is over (pure). When every
+/// planned seat was skipped as already completed, no watcher will settle to
+/// move the chain on, so it continues from here, exactly as if those seats
+/// had just settled: participants -> collect, judges -> aggregate (then
+/// ready). When only some were skipped, the launched ones settle the chain.
+fn chain_after_launch(
+    kind: ContestSeatKind,
+    planned: usize,
+    already_completed: usize,
+) -> Option<ChainFrom> {
+    if planned == 0 || already_completed < planned {
+        return None;
+    }
+    Some(match kind {
+        ContestSeatKind::Participant => ChainFrom::Collect,
+        ContestSeatKind::Judge => ChainFrom::Aggregate,
+    })
 }
 
 /// One seat under watch.
@@ -402,6 +416,8 @@ async fn launch_seats_from(
             .unwrap_or(JUDGE_TIMEOUT),
     };
 
+    // Launched by the running chain (its judges): that chain holds the claim.
+    let in_chain = chain_from.is_some();
     // Arm the chain BEFORE any seat can settle, so the last seat to settle
     // always finds the step it advances from.
     match (kind, chain_from) {
@@ -434,11 +450,7 @@ async fn launch_seats_from(
             tracing::info!(seat = %key, "contest: cancelled mid-launch, no more seats");
             break;
         }
-        if skips_completed(
-            kind,
-            only.as_deref(),
-            read_record(&ctx.paths, &key).as_ref(),
-        ) {
+        if skips_completed(only.as_deref(), read_record(&ctx.paths, &key).as_ref()) {
             // What `contest.mjs run` does without --force; a named retry reruns it.
             tracing::info!(seat = %key, "contest: seat already completed, not relaunched");
             already_completed += 1;
@@ -501,10 +513,18 @@ async fn launch_seats_from(
         );
         launched += 1;
     }
-    // Every seat had already completed (a contest the CLI ran): no watcher
-    // will settle to move the chain on, so collect now.
-    if planned > 0 && already_completed == planned {
-        spawn_chain(app.clone(), ctx.clone(), ChainFrom::Collect);
+    // Every seat had already completed (a contest the CLI ran, or a judge
+    // panel re-launched after it finished): no watcher will settle to move
+    // the chain on, so it moves on now.
+    if let Some(next) = chain_after_launch(kind, planned, already_completed) {
+        if in_chain && next == ChainFrom::Aggregate {
+            // The running chain holds the claim, so a second chain could not
+            // start: this one aggregates and marks the contest ready itself.
+            aggregate_to_ready(app, ctx, &instrument).await?;
+        } else if !spawn_chain(app.clone(), ctx.clone(), next) {
+            tracing::warn!(contest = %ctx.contest_id(), ?next,
+                "contest: every seat already completed but a chain is running; it was not continued");
+        }
     }
     Ok(launched)
 }
@@ -1211,17 +1231,53 @@ mod tests {
             outcome: "errored".into(),
             ..RecordView::default()
         };
-        let p = ContestSeatKind::Participant;
-        assert!(skips_completed(p, None, Some(&done)));
+        assert!(skips_completed(None, Some(&done)));
+        assert!(skips_completed(Some(&[]), Some(&done)), "empty only = all");
+        assert!(!skips_completed(Some(&["a".to_string()]), Some(&done)));
+        assert!(!skips_completed(None, Some(&errored)));
+        assert!(!skips_completed(None, None));
+    }
+
+    /// Judge resume parity: a completed judge is not paid for twice, and when
+    /// the whole panel already has completed records the chain goes straight
+    /// to aggregate (then ready), as if the judges had just settled.
+    #[test]
+    fn a_judge_launch_skips_completed_judges_and_aggregates_when_none_are_left() {
+        let done = RecordView {
+            outcome: "completed".into(),
+            ..RecordView::default()
+        };
+        let errored = RecordView {
+            outcome: "errored".into(),
+            ..RecordView::default()
+        };
+        let j = ContestSeatKind::Judge;
         assert!(
-            skips_completed(p, Some(&[]), Some(&done)),
-            "empty only = all"
+            skips_completed(None, Some(&done)),
+            "a completed judge was launched (and paid for) again"
         );
-        assert!(!skips_completed(p, Some(&["a".to_string()]), Some(&done)));
-        assert!(!skips_completed(p, None, Some(&errored)));
-        assert!(!skips_completed(p, None, None));
-        // Judges keep relaunching: the chain has no CLI-recorded judge path.
-        assert!(!skips_completed(ContestSeatKind::Judge, None, Some(&done)));
+        assert!(
+            !skips_completed(Some(&["judge-x".to_string()]), Some(&done)),
+            "a named retry reruns the judge"
+        );
+        assert!(!skips_completed(None, Some(&errored)));
+        assert!(!skips_completed(None, None));
+
+        assert_eq!(
+            chain_after_launch(j, 2, 2),
+            Some(ChainFrom::Aggregate),
+            "every judge already completed: the chain must not park in Judging"
+        );
+        assert_eq!(
+            chain_after_launch(j, 2, 1),
+            None,
+            "the rest were launched; their watchers settle the chain"
+        );
+        assert_eq!(chain_after_launch(j, 0, 0), None);
+        let p = ContestSeatKind::Participant;
+        assert_eq!(chain_after_launch(p, 3, 3), Some(ChainFrom::Collect));
+        assert_eq!(chain_after_launch(p, 3, 2), None);
+        assert_eq!(chain_after_launch(p, 0, 0), None);
     }
 
     #[test]
