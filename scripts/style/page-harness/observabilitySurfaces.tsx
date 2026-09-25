@@ -20,7 +20,11 @@ import type { HarnessModule } from './registry';
 
 async function prepareObservability(): Promise<void> {
   useSystemStore.setState({ sidebarSection: 'overview' });
-  await useAgentStore.getState().fetchPersonas().catch((err) => console.warn('[page-harness] fetchPersonas failed', err));
+  try {
+    await useAgentStore.getState().fetchPersonas();
+  } catch (err) {
+    console.warn('[page-harness] fetchPersonas failed', err);
+  }
   const s = useOverviewStore.getState();
   await Promise.allSettled([
     s.fetchObservabilityMetrics(30),
@@ -72,6 +76,9 @@ const entry = (click?: string): HarnessModule => ({ load: page(click), providers
 export const OBSERVABILITY_MODULES: Record<string, HarnessModule> = {
   'observability/dashboard': entry(),
   'observability/alerts': entry('[data-testid="obs-alerts-toggle"], button[title="Alert Rules"]'),
-  'observability/timeline': entry('[data-testid="obs-view-timeline"], button[title="timeline_view"]'),
-  'observability/issue': entry('tr[data-testid="obs-issue-row"], [role="option"]'),
+  'observability/timeline': entry('[data-testid="obs-view"] button:last-child, button[title="timeline_view"]'),
+  // The full issue: the detail's Details button (pre-kit: a row click opened the modal).
+  'observability/issue': entry('[data-testid="obs-issue-open"], [role="option"]'),
+  // A row click: the detail in the pane or the drawer (pre-kit: the modal).
+  'observability/select': entry('tr[data-testid="obs-issue-row"]:nth-child(2), [role="option"]:nth-child(2)'),
 };
