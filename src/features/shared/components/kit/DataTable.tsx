@@ -43,7 +43,7 @@ export interface TableRow<K extends string> {
  * is why a table and a list read as one family. The table is as tall as its rows and the pager
  * sits directly under the last one. A column with `sortable` gets a sort button head (aria-sort,
  * one caret, the change announced politely); rows then carry `sort` values (sortRows.ts).
- * @catalog DataTable - column heads over ListRow-family rows (band, mark, selection), pager under the last row, opt-in sortable heads and fixed column widths. Kit.
+ * @catalog DataTable - column heads over ListRow-family rows (band, mark, selection), pager under the last row, sortable, widths. Kit.
  */
 export function DataTable<K extends string>({ cols, rows: given, label, loading, empty, pager, onRowClick, rowTestId, testId, sort, defaultSort, onSortChange, locale }: {
   cols: ReadonlyArray<TableCol<K>>;
@@ -80,6 +80,8 @@ export function DataTable<K extends string>({ cols, rows: given, label, loading,
   return (
     <div className={cx('k-tablewrap', stateClass(st))} {...kitAttrs('DataTable', st)} data-testid={testId}>
       <table className="k-table" aria-label={label} aria-busy={loading || undefined}>
+        {/* Also on the columns: an empty table has no body cells to hold a sortable column's width. */}
+        {cols.some((c) => c.width) && <colgroup>{cols.map((c) => <col key={c.key} style={track(c)} />)}</colgroup>}
         <thead>
           <tr>
             {cols.map((c) => c.sortable ? (

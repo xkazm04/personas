@@ -79,6 +79,7 @@ describe('DataTable column width', () => {
     expect(thN!.style.minWidth).toBe('8rem');
     expect(tdN!.style.width).toBe('8rem');
     expect(tdN!.style.minWidth).toBe('8rem');
+    expect(container.querySelectorAll('colgroup col')).toHaveLength(2);
     expect(thName!.getAttribute('style')).toBeNull();
     expect(tdName!.getAttribute('style')).toBeNull();
   });

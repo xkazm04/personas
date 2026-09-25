@@ -18,7 +18,7 @@ type Described = { 'aria-describedby'?: string; tabIndex?: number };
  * the tip too; leave it off inside rows and tables, where a stop per mark would bury the row's
  * one stop (keyboard-navigation-models: tab between widgets, not through every part). Never a
  * native `title=`.
- * @catalog Hint - the kit tooltip for a mark, figure or unit strip: the shared Tooltip plus an always-present aria-describedby description. Kit.
+ * @catalog Hint - the kit tip on a mark, figure or unit strip: shared Tooltip plus an always-present description. Kit.
  */
 export function Hint({ content, focusable, placement = 'top', children }: {
   /** What the tip says; plain text (it is also the description a reader hears). */

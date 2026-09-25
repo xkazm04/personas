@@ -14,7 +14,7 @@ export interface Crumb {
  * LAST crumb has no `onPress` it is where the reader is and carries `aria-current="page"`; a
  * surface whose Section title already names the current level passes only the levels above it,
  * so the name is not said twice. One tab stop per door, the separators are hidden from readers.
- * @catalog Crumbs - the trail of levels above a drilled surface (Section eyebrow); a crumb with onPress is a door back up, a last plain crumb is aria-current. Kit.
+ * @catalog Crumbs - the trail above a drilled surface (Section eyebrow): onPress makes a door up; a last plain crumb is current. Kit.
  */
 export function Crumbs({ items, label, testId }: {
   items: readonly Crumb[];

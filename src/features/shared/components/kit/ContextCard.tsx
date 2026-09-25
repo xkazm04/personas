@@ -28,7 +28,7 @@ export interface ContextCardProps {
  * a live card breathes. One emphasised name, quiet meta, regular figures at the foot. Loading
  * keeps the card's geometry with ghosts; empty is the kit's dashed band. A pressable card's
  * title is the one button (its hit area stretched over the card) so actions are never nested.
- * @catalog ContextCard - one peer as a tile: a band with a primary rail (mark on it, glow when selected), name, meta, figures, actions; ghost and empty states. ContextCards is the grid. Kit.
+ * @catalog ContextCard - one peer as a tile: a band on a primary rail, name, meta, figures, actions; ContextCards is the grid. Kit.
  */
 export function ContextCard({ title, meta, figures, actions, mark, state, empty, onPress, testId }: ContextCardProps) {
   const states = typeof state === 'string' ? [state] : state ?? [];

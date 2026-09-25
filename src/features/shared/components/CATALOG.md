@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**166 reusable components** live under `src/features/shared/components/`.
+**169 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -182,7 +182,10 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 |---|---|
 | `ChartFrame` | ChartFrame - a chart's plot area on the reading line, fixed height, with its loading ghost and empty band. Kit. |
 | `ChipRow` | ChipRow - 30px chips with count and share bar, a chip with onPress is a filter; ChipView is one chip (toolbar filter). Kit. |
-| `DataTable` | DataTable - column heads over ListRow-family rows (band, mark, selection), pager under the last row, opt-in sortable heads. Kit. |
+| `ContextCard` | ContextCard - one peer as a tile: a band on a primary rail, name, meta, figures, actions; ContextCards is the grid. Kit. |
+| `Crumbs` | Crumbs - the trail above a drilled surface (Section eyebrow): onPress makes a door up; a last plain crumb is current. Kit. |
+| `DataTable` | DataTable - column heads over ListRow-family rows (band, mark, selection), pager under the last row, sortable, widths. Kit. |
+| `Hint` | Hint - the kit tip on a mark, figure or unit strip: shared Tooltip plus an always-present description. Kit. |
 | `KeyValueGrid` | KeyValueGrid - quiet keys over regular values in auto-fill columns; null renders honestly. Kit. |
 | `ListRow` | ListRow - fixed-height row: one emphasised name, quiet meta, status mark on the spine, figures. Kit. |
 | `Mark` | Mark - the status node on the spine (Tone x Glyph); Dot is the same glyph inline. Kit. |
@@ -192,7 +195,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `StatStrip` | StatStrip - stat tiles (glowing label, figure, drawn quantity); a lone tile is a strip of one. Kit. |
 | `Surface` | Kit surface family: KitHost (root, compact tier), Surface (a region on one spine), Split (detail pane when roomy), Drawer (narrow  |
 | `Toolbar` | Toolbar - a surface filter bar (Segmented, SearchField, KitButton), 30/36px controls. Kit. |
-| `UnitStrip` | UnitStrip - a quantity as countable units of a fixed quantum, coloured by claim (apportion splits a total). Kit. |
+| `UnitStrip` | UnitStrip - a quantity as countable units of a fixed quantum, coloured by claim (apportion, quantumFor). Kit. |
 
 ## layout — Page/section structure, headers, tab bars, content shells
 
@@ -265,4 +268,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_166 components, 46 without a `@catalog` description._
+_169 components, 46 without a `@catalog` description._

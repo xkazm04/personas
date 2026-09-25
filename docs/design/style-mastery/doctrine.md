@@ -283,16 +283,21 @@ stepped by its own lightness, so light themes keep them without per-theme code.
 | `Split` | work area plus a sticky detail pane, shown only when the surface has room (container query) | `<Split main pane paneLabel paneRef?>` |
 | `Drawer` | the same detail on a narrow surface; Esc closes | `<Drawer open onClose closeLabel label>` |
 | `Section` | a titled part of a surface; level 1 or 2; owns empty and loading states | `<Section title eyebrow? count? meta? actions? level? state? empty?>` |
+| `Crumbs` | the trail of levels above a drilled surface, in a Section's `eyebrow`; a crumb with `onPress` is a text button back up; a last crumb without one is `aria-current="page"`, so a surface whose title names the current level passes only the levels above (grow-1) | `<Crumbs label items={[{label, onPress?, testId?}]}>` |
 | `ListRow` / `Rows` | a list of fixed-height rows (name, meta, mark, figures, time) with its ghost and empty band | `<ListRow name meta? mark? figures? size? state?>`, `<Rows count empty loading?>` |
-| `DataTable` | the same row family under column heads, with a pager under the last row; rows select; a column opts in to sorting (head is a button with `aria-sort`, absent values last, row id breaks ties) | `<DataTable cols rows label empty loading? pager? onRowClick? sort?/defaultSort? onSortChange? locale?>`, col `sortable: 'asc'\|'desc'`, row `sort: {key: value}` |
+| `DataTable` | the same row family under column heads, with a pager under the last row; rows select; a column opts in to sorting (head is a button with `aria-sort`, absent values last, row id breaks ties) | `<DataTable cols rows label empty loading? pager? onRowClick? sort?/defaultSort? onSortChange? locale?>`, col `sortable: 'asc'\|'desc'`, col `width: '8rem'` (a CSS length through a colgroup; a table column, not a grid track), row `sort: {key: value}` |
 | `StatStrip` | headline figures; a lone tile is a strip of one; `draw` shows the quantity | `<StatStrip tiles={[{label, value, unit?, draw?, note?}]} state?>` |
 | `KeyValueGrid` | facts about one thing; a null value renders its `none` text, muted | `<KeyValueGrid items={[{k, v, draw?, none?}]} min?>` |
 | `ChipRow` / `ChipView` | a set of named counts; a chip with `onPress` is a filter | `<ChipRow chips={[{id, label, count?, share?, onPress?}]} label emptyLabel>` |
 | `Toolbar` | a surface filter bar: `Segmented`, `SearchField` (with `/`), `KitButton` | `<Toolbar label>...</Toolbar>` |
+| `KitButton` | the kit's 32px button over the shared Button: real busy spinner; `disabled` is the Button's (native, out of the tab order) with an optional reason; `stopPropagation` for an action inside a selectable row or card (grow-1) | `<KitButton onClick loading? quiet? pressed? expanded? hint? label? disabled? disabledReason? stopPropagation?>` |
 | `RangePicker` | a time window: preset segments plus an optional Custom segment that opens the caller's own date picking | `<RangePicker label presets={[{v, label}]} value onChange custom?={{label, active, render(close)}}>` |
 | `ChartFrame` | a chart's plot area on the reading line, fixed height, with its ghost and empty band; `toneColor(tone)` colours its series | `<ChartFrame height label state? empty?>{chart}</ChartFrame>` |
 | `UnitStrip` | a quantity as units of a fixed quantum; `apportion()` splits a total by claim | `<UnitStrip segments={[{n, tone, glyph?}]} size rows? label>` |
+| `quantumFor` | the unit quantum: the smallest 1-2-5 step at or above `min` that keeps a strip at or under `maxUnits`; state it in the legend (grow-1) | `quantumFor(total, maxUnits = 60, min = 1) -> number` |
 | `Mark` / `Dot` | status as Tone x Glyph, on the spine or inline | `<Mark tone glyph label>`, `<Dot tone glyph>` |
+| `Hint` | the explanation on a mark, figure or unit strip: the shared Tooltip plus an always-present hidden description the trigger points at (`aria-describedby`); `focusable` only for a standalone trigger, never per mark in a row (grow-1) | `<Hint content focusable? placement?>{one element}</Hint>` |
+| `ContextCard` / `ContextCards` | one peer as a tile when peers read as tiles (Home, Overview): a band, not a box; the stepped band with a primary wash from a 2px rail, its Mark on the rail, selected lights the rail in the primary glow, live breathes; ghost and dashed-empty states; a pressable card's title is its one button (grow-1) | `<ContextCard title meta? figures? actions? mark? state? empty? onPress?>`, `<ContextCards label min?>` |
 
 When to use which: a list the operator scans and picks from is a `DataTable` when
 its figures line up in columns, `Rows` when each row is a name and a sentence. Facts
@@ -314,6 +319,11 @@ Decided with the kit:
 - **Status tones take the brightness compensation** the app applies to every
   status colour (the entry's page had none), so a neutral mark is darker in the
   product than in the entry. That is the product's rule, not a kit deviation.
+- **ContextCard is the one tile, and it is a band** (kit grow-1). The owner kept card
+  surfaces at Gate 1 and the Factory turned context cards into tables for lack of a kit
+  card, so the kit gained one, drawn from the spine idea rather than a boxed surface: the
+  row's stepped band and right-only radius, a 2px rail as the card's own spine. It is for
+  peers that read as tiles; a list the operator scans stays `Rows` / `DataTable`.
 - Not carried from the entry: its Lens overlay (outline and count every part),
   its specimen page and SettingRow. Every composition root still carries
   `data-kit` / `data-kit-state`, so a Lens can be added without touching parts.
