@@ -16,10 +16,10 @@ import type { ContestReviewBucket } from '@/lib/bindings/ContestReviewBucket';
 import { toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
-import { openSessionInMonitor } from '../components/RunBoard';
 import { canRerun, isRerunnable, laneStateLabel, seatStateTone } from '../model/labels';
 import type { Lane } from './arenaModel';
 import { LaneMeter } from './LaneTrack';
+import { openSessionInMonitor } from './openInMonitor';
 import { SeatLabel } from './SeatLabel';
 import { VariantTile } from './VariantTile';
 

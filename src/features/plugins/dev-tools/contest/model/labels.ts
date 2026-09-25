@@ -5,7 +5,6 @@
 // so no component authors a label next to its colour and a new wire value is
 // a compile error (the `never` arms), not a blank chip.
 import type { Translations } from '@/i18n/generated/types';
-import type { ContestChainStep } from '@/lib/bindings/ContestChainStep';
 import type { ContestEffort } from '@/lib/bindings/ContestEffort';
 import type { ContestEngine } from '@/lib/bindings/ContestEngine';
 import type { ContestPhase } from '@/lib/bindings/ContestPhase';
@@ -51,19 +50,6 @@ export function phaseTone(phase: ContestPhase): StatusVariant {
   }
 }
 
-export function seatStateLabel(s: ContestStrings, state: ContestSeatState): string {
-  switch (state) {
-    case 'idle': return s.seat_state_idle;
-    case 'queued': return s.seat_state_queued;
-    case 'running': return s.seat_state_running;
-    case 'completed': return s.seat_state_completed;
-    case 'seat-limit': return s.seat_state_seat_limit;
-    case 'timed-out': return s.seat_state_timed_out;
-    case 'errored': return s.seat_state_errored;
-    default: return unknownLabel(state);
-  }
-}
-
 export function seatStateTone(state: ContestSeatState): StatusVariant {
   switch (state) {
     case 'idle': return 'neutral';
@@ -97,34 +83,6 @@ export function canRerun(phase: ContestPhase, kind: ContestSeatKind): boolean {
   }
 }
 
-export function seatKindLabel(s: ContestStrings, kind: ContestSeatKind): string {
-  return kind === 'judge' ? s.kind_judge : s.kind_participant;
-}
-
-export function chainStepLabel(s: ContestStrings, step: ContestChainStep): string {
-  switch (step) {
-    case 'idle': return s.chain_idle;
-    case 'collecting': return s.chain_collecting;
-    case 'visual': return s.chain_visual;
-    case 'judging': return s.chain_judging;
-    case 'ready': return s.chain_ready;
-    case 'failed': return s.chain_failed;
-    default: return unknownLabel(step);
-  }
-}
-
-export function chainStepTone(step: ContestChainStep): StatusVariant {
-  switch (step) {
-    case 'idle': return 'neutral';
-    case 'collecting':
-    case 'visual':
-    case 'judging': return 'processing';
-    case 'ready': return 'success';
-    case 'failed': return 'error';
-    default: return unknownTone(step);
-  }
-}
-
 export function stepLabel(s: ContestStrings, step: ContestStep): string {
   switch (step) {
     case 'collect': return s.step_collect;
@@ -134,13 +92,6 @@ export function stepLabel(s: ContestStrings, step: ContestStep): string {
     default: return unknownLabel(step);
   }
 }
-
-/**
- * The retryable step for a chain that stopped: the one it was on when it
- * failed is not recorded, so offer the chain's entry step. `collect` is
- * idempotent and the chain continues from there.
- */
-export const CHAIN_RETRY_STEPS: readonly ContestStep[] = ['collect', 'visual', 'judge', 'aggregate'];
 
 export function bucketLabel(s: ContestStrings, bucket: ContestReviewBucket): string {
   switch (bucket) {

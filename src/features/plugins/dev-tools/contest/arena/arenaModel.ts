@@ -7,6 +7,7 @@ import type { ContestReview } from '@/lib/bindings/ContestReview';
 import type { ContestReviewBucket } from '@/lib/bindings/ContestReviewBucket';
 import type { ContestSeat } from '@/lib/bindings/ContestSeat';
 import type { ContestSeatState } from '@/lib/bindings/ContestSeatState';
+import type { ContestStep } from '@/lib/bindings/ContestStep';
 import type { ContestSummary } from '@/lib/bindings/ContestSummary';
 import type { ContestVariant } from '@/lib/bindings/ContestVariant';
 
@@ -243,6 +244,11 @@ export function chainStations(
     if (i === at) return { id, status: 'active' };
     return { id, status: 'pending' };
   });
+}
+
+/** Steps worth offering as a retry: the judging steps only when judges ran. */
+export function retrySteps(detail: Pick<ContestDetail, 'judgesEnabled'>): ContestStep[] {
+  return detail.judgesEnabled ? ['collect', 'visual', 'judge', 'aggregate'] : ['collect', 'visual'];
 }
 
 // ── Photo finish (review) ─────────────────────────────────────────────────

@@ -11,9 +11,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { ContestDetail } from '@/lib/bindings/ContestDetail';
 import { toastCatch } from '@/lib/silentCatch';
 
-import { retrySteps } from '../components/RunBoard';
 import { stepLabel } from '../model/labels';
-import { chainStations, type StationStatus } from './arenaModel';
+import { chainStations, retrySteps, type StationStatus } from './arenaModel';
 
 const STATION_ICON: Record<StationStatus, typeof Check> = {
   done: Check,

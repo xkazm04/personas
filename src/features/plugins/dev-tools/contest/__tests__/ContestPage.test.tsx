@@ -24,7 +24,6 @@ vi.mock('@/api/contest', () => api);
 import ContestPage from '../ContestPage';
 import { DecisionBar } from '../components/DecisionBar';
 import { ReviewSheet, FieldNoteEditor } from '../components/ReviewSheet';
-import { RunBoard } from '../components/RunBoard';
 import { SeatStatsBoard } from '../components/SeatStatsBoard';
 import { VariantFrame } from '../components/VariantFrame';
 import { useContestFocus } from '../focus';
@@ -76,7 +75,6 @@ function ReviewHarness({ detail }: { detail: ContestDetail }) {
   const draft = useReviewDraft(detail);
   return (
     <div>
-      <RunBoard detail={detail} />
       {detail.variants.map((v) => (
         <div key={v.key}>
           <VariantFrame variant={v} pins={draft.review ? [] : []} onAddPin={() => {}} />
@@ -93,9 +91,6 @@ describe('shared components', () => {
   it('render a review contest end to end', async () => {
     const detail = detailFixture();
     render(<ReviewHarness detail={detail} />);
-    expect(screen.getByTestId('contest-run-board')).toBeInTheDocument();
-    // A seat that hit its limit offers a rerun; its errors stay folded.
-    expect(screen.getByTestId('contest-seat-rerun-codex-gpt-6-sol_high')).toBeInTheDocument();
     // A variant with no preview says so calmly.
     expect(screen.getByTestId('contest-frame-unavailable-B/1')).toBeInTheDocument();
     // Sorting into Winner arms "Declare winner".
@@ -105,14 +100,6 @@ describe('shared components', () => {
       fireEvent.click(screen.getByTestId('contest-review-bucket-A/1-winner'));
     });
     expect(screen.getByTestId('contest-decide-winner')).not.toBeDisabled();
-  });
-
-  it('rerun launches exactly that seat', async () => {
-    render(<RunBoard detail={detailFixture()} />);
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('contest-seat-rerun-codex-gpt-6-sol_high'));
-    });
-    expect(api.launchContest).toHaveBeenCalledWith('p1', 'hero-page', 'participant', ['codex-gpt-6-sol_high']);
   });
 
   it('the stats board renders decided contests', () => {
