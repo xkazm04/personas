@@ -71,13 +71,14 @@ export const SheetFrame = memo(function SheetFrame({ dim, label, state, value, p
       type="button"
       onClick={(e) => onOpen(dim, e.currentTarget)}
       aria-label={`${frameNumber(dim)} ${label}: ${caption || COPY.frame.unexposed}`}
-      className="relative w-full h-full min-w-0 min-h-0 flex flex-col text-left px-3.5 py-2.5 rounded-[4px] transition-[background-color] duration-500 hover:bg-foreground/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/60"
+      className="group relative w-full h-full min-w-0 min-h-0 flex flex-col text-left px-3.5 py-2.5 rounded-[4px] transition-[background-color,box-shadow] duration-300 hover:bg-foreground/[0.06] hover:shadow-elevation-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/60"
       style={{
         background: `${cropMarks(mark)}, ${paper}`,
         boxShadow: state === "pending" ? `0 0 28px ${colorWithAlpha(color, 0.22)}` : undefined,
       }}
     >
-      <span className="flex items-center gap-2 typo-caption">
+      {/* An inactive (empty) frame keeps its title 20% quieter until hovered. */}
+      <span className={`flex items-center gap-2 typo-caption transition-opacity duration-200 ${vivid ? "" : "opacity-80 group-hover:opacity-100 group-focus-visible:opacity-100"}`}>
         <span className="font-mono text-foreground">{frameNumber(dim)}</span>
         <span className="font-semibold uppercase tracking-[0.12em]" style={{ color: vivid ? color : "var(--muted-foreground)" }}>
           {label}
