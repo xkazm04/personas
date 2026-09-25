@@ -65,7 +65,7 @@ export default function GuideQuestionCard({
           onClick={onHide}
           className="ml-auto flex items-center gap-1.5 rounded-interactive px-2 py-1 typo-caption text-foreground/90 hover:bg-secondary/60 hover:text-foreground"
         >
-          <kbd className="rounded border border-border px-1.5 font-mono text-xs">Esc</kbd>
+          <kbd className="rounded-interactive border border-border px-1.5 font-mono text-xs">Esc</kbd>
           {g.look_around}
         </button>
       </header>
@@ -82,7 +82,7 @@ export default function GuideQuestionCard({
                   onClick={() => onAnswer(o)}
                   className="flex w-full items-center gap-3 rounded-card border border-border bg-background/50 px-4 py-3 text-left transition-colors hover:border-primary/70 hover:bg-primary/10 focus-visible:border-primary focus-visible:outline-none"
                 >
-                  <kbd className="flex h-6 w-6 shrink-0 items-center justify-center rounded border border-border font-mono text-sm text-foreground/90">
+                  <kbd className="flex h-6 w-6 shrink-0 items-center justify-center rounded-interactive border border-border font-mono text-sm text-foreground/90">
                     {i + 1}
                   </kbd>
                   <span className="typo-title-lg text-foreground">{o}</span>

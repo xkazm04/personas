@@ -83,7 +83,7 @@ export default function GuideNowLine({
         }}
       >
         {busy && <span className="absolute inset-0 animate-ping rounded-full border border-primary/60" />}
-        <kbd className="absolute -right-2 -top-1.5 rounded border border-border bg-background px-1 font-mono text-xs leading-4 text-foreground/90 opacity-0 transition-opacity group-hover:opacity-100">
+        <kbd className="absolute -right-2 -top-1.5 rounded-interactive border border-border bg-background px-1 font-mono text-xs leading-4 text-foreground/90 opacity-0 transition-opacity group-hover:opacity-100">
           O
         </kbd>
       </button>

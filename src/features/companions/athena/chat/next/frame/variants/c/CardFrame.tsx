@@ -140,7 +140,7 @@ export function CardFace({
             className={`inline-flex items-center gap-2 rounded-interactive border border-foreground/15 px-3 py-1 typo-body text-foreground focus-ring ${HOVER_GLOW}`}
           >
             {S.setAside}
-            <kbd className="rounded border border-foreground/20 bg-foreground/[0.06] px-1.5 typo-caption font-mono text-foreground/90">
+            <kbd className="rounded-interactive border border-foreground/20 bg-foreground/[0.06] px-1.5 typo-caption font-mono text-foreground/90">
               {S.keySpace}
             </kbd>
           </button>

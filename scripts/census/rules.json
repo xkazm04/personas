@@ -103,8 +103,8 @@
         }
       ],
       "baseline": {
-        "files": 141,
-        "matches": 194
+        "files": 134,
+        "matches": 186
       },
       "floor": 2500
     },
@@ -132,8 +132,8 @@
         }
       ],
       "baseline": {
-        "files": 35,
-        "matches": 51
+        "files": 33,
+        "matches": 48
       },
       "floor": 4000
     },
@@ -155,8 +155,8 @@
         "description": "a chunk boundary declared with raw React.lazy(); lazyRetry() is the drop-in that survives a failed chunk fetch instead of caching the rejection forever (2026-06-07 incident). Proxy for: a dynamic-import boundary with no recovery path."
       },
       "baseline": {
-        "files": 20,
-        "matches": 62
+        "files": 19,
+        "matches": 61
       },
       "floor": 4000
     },
@@ -287,8 +287,8 @@
         "description": "ONE object literal that holds BOTH an English `label:` string AND a colour utility class. PROXY FOR the stack-free condition \"the human-readable name of a closed-vocabulary member is authored at the same site as its presentation, so it can never be translated and the vocabulary has no single home\". PRECONDITION (measured, must be re-derived per repo): this repo writes badge/status config as flat single-level object entries on one line, with the key spelled `label` and colours as Tailwind utilities. Where a repo formats those entries across lines with nested objects, or names the key `title`/`text`, or uses CSS-in-JS, this pattern scores ZERO while the condition is present at full scale — the same failure the portability test measured for `tables.md` and `form-field-and-validation.md`. Sibling evidence that the CONDITION is universal but the SHAPE is not: personas-web's shared badge is `label: \"Queued\"` beside `bgColor` at StatusBadge.tsx:11 (would match), brainiac's is a separate `STATUS_LABEL` table with the colour resolved through band() at kb-data.ts:42 (would NOT match, same defect). Legal destinations: `tokenLabel(t, category, token)` for the label + `STATUS_PALETTE` / `StatusBadge variant` for the colour."
       },
       "baseline": {
-        "files": 35,
-        "matches": 215
+        "files": 34,
+        "matches": 211
       },
       "floor": 4000
     },
@@ -564,8 +564,8 @@
         "note": "RE-BASELINED 2026-09-24 by the style-unification Director on a git-archive HEAD export after c57032963: 731/1754 -> 12/15, every removed match traced to 937854f7d (dead-override codemod, 977 files). The remaining 15 are live overrides, most in src/features/fleet/monitor/grid/prototype/ (committed by another session in 96bbd8b20 while the codemod skipped it as dirty)."
       },
       "baseline": {
-        "files": 12,
-        "matches": 15
+        "files": 9,
+        "matches": 12
       },
       "floor": 2000
     },
@@ -593,8 +593,8 @@
         }
       ],
       "baseline": {
-        "files": 292,
-        "matches": 642
+        "files": 283,
+        "matches": 621
       },
       "floor": 4000
     },
@@ -914,8 +914,8 @@
         }
       ],
       "baseline": {
-        "files": 38,
-        "matches": 93
+        "files": 37,
+        "matches": 92
       },
       "floor": 900
     },
@@ -1038,8 +1038,8 @@
         "description": "a column named `id` declared TEXT PRIMARY KEY with no NOT NULL in the same column clause. PROXY FOR the stack-free condition \"a row's identity column can be absent\". This is a SQLite-specific manifestation of a universal condition, and the reason it exists is a documented SQLite bug preserved for backwards compatibility: unless the column is INTEGER PRIMARY KEY, or the table is WITHOUT ROWID, or NOT NULL is written explicitly, SQLite ALLOWS NULLs in a PRIMARY KEY column - and allows MANY of them, because the PK index treats each NULL as distinct. VERIFIED BEHAVIOURALLY, not inferred: against a copy of the operator's real 347MB personas.db, `INSERT INTO t (id) VALUES (NULL)` into a fresh `id TEXT PRIMARY KEY` table was accepted three times and left three rows with a NULL id; the same insert into `id TEXT PRIMARY KEY NOT NULL` was rejected with `NOT NULL constraint failed`. The consequence three layers up is the one docs/concepts/golden-paths/persisted-model-struct.md measures: every Rust read model types `pub id: String` (1,039 of them, non-Option), so a NULL id makes the row read fail with InvalidColumnType and, per docs/concepts/golden-paths/row-to-struct-mapping.md, take the whole list with it or make the row silently vanish. This tree has NO `WITHOUT ROWID` and NO `STRICT` table, so nothing else closes the hole. WHAT THIS DOES NOT SAY: no NULL or empty id exists in the live database - 77,763 rows across 198 tables with an `id` column were scanned and the count is zero. The class is reachable by construction and has never been reached. This is a preventive ratchet on a clean surface, not a fix backlog. PRECISION: 299 matches across 29 files, and an independent balanced-paren DDL parser over all 398 CREATE TABLE statements in the tree reaches the same 299 by a different route (parse the statement, split its top-level clauses, take the one that carries PRIMARY KEY, test its text for NOT NULL) - 299/299 true positives, 0 declared NOT NULL anywhere. The lookahead is scoped to the next comma or close-paren rather than to end-of-line, which is load-bearing: several fixtures write a whole CREATE TABLE on one line, and a line-scoped lookahead lets a LATER column's NOT NULL suppress the match (measured: 271 instead of 299, hiding 28 real declarations in 9 files). PRECONDITION (must be re-derived per repo): this repo writes DDL as SQL string literals inside Rust and names the identity column `id`. A Postgres sibling cannot have this condition at all - the SQL standard makes PRIMARY KEY imply NOT NULL, and brainiac's 30 `uuid PRIMARY KEY` columns are non-nullable for free. LEGAL FIX: write `id TEXT PRIMARY KEY NOT NULL`. It is two words, it makes `pub id: String` a true statement about the column instead of a hopeful one, and it is the type-level fix this golden path prefers over the gate."
       },
       "baseline": {
-        "files": 44,
-        "matches": 293
+        "files": 43,
+        "matches": 291
       },
       "floor": 900
     },
@@ -1426,8 +1426,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 469,
-        "matches": 865
+        "files": 451,
+        "matches": 833
       },
       "floor": 2000
     },
@@ -2117,8 +2117,8 @@
         "$comment": "Recall is deliberately partial: it cannot see a toggle whose button lives in a child component while the state lives in the parent, nor a non-button disclosure. Both are stated in the golden path rather than papered over."
       },
       "baseline": {
-        "files": 48,
-        "matches": 51
+        "files": 47,
+        "matches": 50
       },
       "floor": 2000
     },
@@ -2140,8 +2140,8 @@
         "description": "The semantic body-text token composited toward the canvas at 45% alpha or less. PROXY FOR the stack-free condition: TEXT HIERARCHY EXPRESSED AS ALPHA ON THE BODY-TEXT TOKEN, TUNED ON ONE THEME FAMILY AND SHIPPED TO ALL OF THEM. Computed, not asserted: on the three light themes this repo ships, text-foreground at 45% alpha measures 2.65-2.93:1 across every configuration the app can be in (canvas and card surfaces, all three brightness levels of the Appearance setting) - below the 3:1 AA-large floor as well as the 4.5:1 AA floor, so no font size rescues it. The same class measures 4.52-4.94:1 on all eight dark themes, which is why it was authored and why it survives review. 45 is the highest alpha at which the failure is unconditional; 50-60 also fail AA on every light configuration but can clear 3:1 for large text, so they are excluded to keep precision at 100% of the WCAG floor that applies. Measured precision 94.0% (23 of 385 are aria-hidden decorative marks, WCAG-exempt but still 2.4:1). PRECONDITION: this repo expresses alpha with Tailwind's /N modifier on a CSS-variable-backed colour token, and renders light themes through a global brightness(0.82) filter that lowers their contrast further. A repo whose light theme is a separate stylesheet, or that has no light theme, must re-derive the proxy - the condition is the alpha, not the slash. The legal fix is bare text-foreground with hierarchy carried by the typo-* scale, per Design.md principle 4."
       },
       "baseline": {
-        "files": 151,
-        "matches": 322
+        "files": 148,
+        "matches": 315
       },
       "floor": 4000
     },
@@ -4195,8 +4195,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 32,
-        "matches": 36
+        "files": 31,
+        "matches": 35
       },
       "floor": 3000
     },
@@ -4734,8 +4734,8 @@
         "note": "Disclosed imprecision: 6 of 130 sites are DDL inside test fixtures, which the runner cannot exclude. Site-level overlap against all 87 registered src-tauri/.rs rules: unresumable-migration-step 3 lines (2.3%), default-contradicted-by-backfill 2 lines (1.5%); no merge warranted."
       },
       "baseline": {
-        "files": 24,
-        "matches": 117
+        "files": 23,
+        "matches": 115
       },
       "floor": 900,
       "exclude": [
@@ -4786,8 +4786,8 @@
         "note": "THIS RULE CAN REACH ZERO - every site should be calling init_test_db()/init_test_user_db(), which go through SqlitePragmaCustomizer. Delete it at 1 rather than baselining at 0 (the census cannot express must-be-zero). Site-level overlap against all 87 registered src-tauri/.rs rules: untimed-repo-query 6 lines (0.1% of theirs); optional-store-handle, the nearest conceptual neighbour, shares 0 sites."
       },
       "baseline": {
-        "files": 46,
-        "matches": 49
+        "files": 45,
+        "matches": 48
       },
       "floor": 900
     },
@@ -4982,12 +4982,6 @@
     },
     {
       "id": "hand-painted-modal-backdrop",
-      "exclude": [
-        {
-          "path": "src/features/plugins/companion/chat/next/frame/variants/c/SpreadStage.tsx",
-          "reason": "a decorative, pointer-events-none dim layer behind the Halo · Spread card-game prototype stage, not a modal: no focus trap, no dismiss semantics, the app stays clickable around it. Prototype-only; it is deleted (and this entry goes stale and fails loud) when the Athena chat switcher is consolidated"
-        }
-      ],
       "goldenPath": "docs/concepts/golden-paths/modal-stacking.md",
       "roots": [
         "src"
@@ -5098,8 +5092,8 @@
         "description": "A control's busy state rendered as <LoadingSpinner/> in the consequent of a ternary whose alternate is another element — almost always an icon. feedback/LoadingSpinner renders null (it emits only an sr-only role=status when passed a label), so the icon vanishes and nothing takes its place while the action is in flight. Use buttons/AsyncButton (returns-a-promise onClick) or buttons/Button loading={flag}, whose spinners are real (Button.tsx:230,237; AsyncButton.tsx:85). Doctrine: inline-busy-state.md."
       },
       "baseline": {
-        "files": 37,
-        "matches": 49
+        "files": 36,
+        "matches": 48
       },
       "floor": 4000
     },
@@ -5564,8 +5558,8 @@
         }
       ],
       "baseline": {
-        "files": 208,
-        "matches": 601
+        "files": 194,
+        "matches": 528
       },
       "floor": 5000
     },
@@ -5615,8 +5609,8 @@
         }
       ],
       "baseline": {
-        "files": 984,
-        "matches": 4584
+        "files": 958,
+        "matches": 4487
       },
       "floor": 5000
     },
@@ -5654,8 +5648,8 @@
         }
       ],
       "baseline": {
-        "files": 305,
-        "matches": 648
+        "files": 303,
+        "matches": 635
       },
       "floor": 5000
     },
@@ -5762,7 +5756,7 @@
       ],
       "baseline": {
         "files": 9,
-        "matches": 385
+        "matches": 312
       },
       "floor": 8
     }
