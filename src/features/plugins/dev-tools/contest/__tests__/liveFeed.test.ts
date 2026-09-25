@@ -4,7 +4,7 @@ import type { ContestPhase } from '@/lib/bindings/ContestPhase';
 import type { ContestSeatState } from '@/lib/bindings/ContestSeatState';
 import type { ContestSummary } from '@/lib/bindings/ContestSummary';
 
-import { createLiveFeedMemory, noticesFor, observePhase } from '../model/liveFeed';
+import { createLiveFeedMemory, noticesFor, observePhase, seedSeats } from '../model/liveFeed';
 
 const summary = (phase: ContestPhase): ContestSummary => ({
   projectId: 'p1',
@@ -58,5 +58,19 @@ describe('live feed transitions', () => {
     const mem = createLiveFeedMemory();
     mem.phases.set('p1/hero', 'collecting');
     expect(noticesFor(mem, summary('review'), seats('completed', 'completed')).map((n) => n.kind)).toEqual(['ready']);
+  });
+
+  it('a seat-limit in the first event after boot notifies when the phase was seeded (FE-2)', () => {
+    const mem = createLiveFeedMemory();
+    mem.phases.set('p1/hero', 'running');
+    expect(noticesFor(mem, summary('running'), seats('running', 'seat-limit')).map((n) => n.kind)).toEqual(['seat-limit']);
+  });
+
+  it('a seat already at its limit before boot stays silent once seeded from detail (FE-2)', () => {
+    const mem = createLiveFeedMemory();
+    mem.phases.set('p1/hero', 'running');
+    seedSeats(mem, 'p1/hero', seats('running', 'seat-limit'));
+    expect(noticesFor(mem, summary('running'), seats('running', 'seat-limit'))).toEqual([]);
+    expect(noticesFor(mem, summary('running'), seats('seat-limit', 'seat-limit')).map((n) => n.kind)).toEqual(['seat-limit']);
   });
 });

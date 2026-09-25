@@ -14,6 +14,7 @@ import { useEffect } from 'react';
 import type { Translations } from '@/i18n/generated/types';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ContestChangedPayload } from '@/lib/bindings/ContestChangedPayload';
+import type { ContestSummary } from '@/lib/bindings/ContestSummary';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { pushExternalLiveMessage, registerLiveSource } from '@/features/fleet/monitor/live/liveExternal';
@@ -22,7 +23,8 @@ import type { LiveMessage } from '@/features/fleet/monitor/live/liveModel';
 import { contestKeyString, focusContest, type ContestKey } from './focus';
 import { useContestChanged } from './hooks/contestEvents';
 import { contestDetailSlots, contestListSlots, detailKey, refreshContest, refreshContests } from './hooks/contestStore';
-import { createLiveFeedMemory, noticesFor, type ContestNotice } from './model/liveFeed';
+import { createLiveFeedMemory, noticesFor, seedSeats, type ContestNotice } from './model/liveFeed';
+import { isLivePhase } from './arena/arenaModel';
 
 type Tx = (template: string, vars: Record<string, string | number>) => string;
 
@@ -77,13 +79,24 @@ export function openContest(key: ContestKey): void {
   focusContest(key);
 }
 
-/** Seed the phase baseline from the list, once, at mount. */
+/** Seed the baseline once, at mount: every phase from the list, and the seat
+ *  states of contests still racing from their detail, so a seat already at
+ *  its limit before boot stays quiet and one that hits it after boot does not. */
 async function seedFromList(): Promise<void> {
   await refreshContests();
+  const live: ContestSummary[] = [];
   for (const s of contestListSlots.get('all')?.data ?? []) {
     const k = contestKeyString(s);
     if (!memory.phases.has(k)) memory.phases.set(k, s.phase);
+    if (isLivePhase(s.phase)) live.push(s);
   }
+  await Promise.all(
+    live.map(async (s) => {
+      await refreshContest(s.projectId, s.contestId);
+      const detail = contestDetailSlots.get(detailKey(s.projectId, s.contestId))?.data;
+      if (detail) seedSeats(memory, contestKeyString(s), detail.seats);
+    }),
+  );
 }
 
 export function ContestLiveFeeder() {

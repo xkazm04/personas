@@ -4,7 +4,10 @@
 //  - a contest's phase moving INTO `review` ("ready for review"), and
 //  - a seat ending `seat-limit` (the engine's plan ran out; the owner acts).
 // The FIRST observation of any contest after boot only seeds the memory: a
-// contest that was already in review when the app started is not news.
+// contest that was already in review when the app started is not news. The
+// feeder seeds a baseline at mount — phases from the list, and seat states from
+// detail for contests still racing — so the first EVENT after boot is judged
+// against what was true at boot, and a seat that runs out of plan then is news.
 import type { ContestPhase } from '@/lib/bindings/ContestPhase';
 import type { ContestSeat } from '@/lib/bindings/ContestSeat';
 import type { ContestSeatState } from '@/lib/bindings/ContestSeatState';
@@ -42,6 +45,18 @@ export function observeSeat(
   return prev !== 'seat-limit' && state === 'seat-limit';
 }
 
+/** Record seat states as a baseline (boot seeding): never notifies. */
+export function seedSeats(
+  mem: LiveFeedMemory,
+  contestKey: string,
+  seats: readonly Pick<ContestSeat, 'seatId' | 'state'>[],
+): void {
+  for (const seat of seats) {
+    const k = `${contestKey}#${seat.seatId}`;
+    if (!mem.seats.has(k)) mem.seats.set(k, seat.state);
+  }
+}
+
 export type ContestNotice =
   | { kind: 'ready'; summary: ContestSummary }
   | { kind: 'seat-limit'; summary: ContestSummary; seat: Pick<ContestSeat, 'seatId' | 'spec'> };
@@ -53,7 +68,10 @@ export function noticesFor(
   seats: readonly Pick<ContestSeat, 'seatId' | 'spec' | 'state'>[],
 ): ContestNotice[] {
   const key = `${summary.projectId}/${summary.contestId}`;
-  const seenSeats = [...mem.seats.keys()].some((k) => k.startsWith(`${key}#`));
+  // Seen = a baseline exists for this contest: its seats, or at least its
+  // phase (seeded from the list at boot). Only a contest first met in this
+  // very event seeds silently.
+  const seenSeats = mem.phases.has(key) || [...mem.seats.keys()].some((k) => k.startsWith(`${key}#`));
   const out: ContestNotice[] = [];
   for (const seat of seats) {
     if (observeSeat(mem, key, seat.seatId, seat.state, seenSeats)) out.push({ kind: 'seat-limit', summary, seat });
