@@ -9,6 +9,7 @@ import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { FullScreenOverlay } from '@/features/shared/components/layout/FullScreenOverlay';
 import { useTranslation } from '@/i18n/useTranslation';
+import { FULLSCREEN_LAYER_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import type { ContestDetail } from '@/lib/bindings/ContestDetail';
 
 import { DecisionBar } from '../components/DecisionBar';
@@ -31,6 +32,15 @@ export interface PhotoFinishProps {
   onClose: () => void;
 }
 
+/** A key typed here belongs to the control, not the lightbox (caret movement,
+ *  a listbox or radio group's own arrows). */
+function ownsArrows(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  if (target.closest('input, textarea, select')) return true;
+  return target.closest('[role="listbox"], [role="menu"], [role="radiogroup"], [role="slider"], [role="tablist"]') !== null;
+}
+
 export function PhotoFinish({ detail, draft, currentKey, onSelect, onClose }: PhotoFinishProps) {
   const { t, tx } = useTranslation();
   const s = t.plugins.contest;
@@ -48,6 +58,19 @@ export function PhotoFinish({ detail, draft, currentKey, onSelect, onClose }: Ph
     const next = stepKey(keys, current, delta);
     if (next) onSelect(next);
   };
+  // Arrows step the filmstrip, one rung above the overlay's own Escape/Tab
+  // handler (which lets arrows through), unless a text field owns them.
+  useAppKeyboard(
+    (event) => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return false;
+      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return false;
+      if (ownsArrows(event.target) || keys.length < 2) return false;
+      event.preventDefault();
+      go(event.key === 'ArrowRight' ? 1 : -1);
+      return true;
+    },
+    { priority: FULLSCREEN_LAYER_PRIORITY + 1 },
+  );
 
   return (
     <FullScreenOverlay onClose={onClose} ariaLabel={`${a.photo_finish} · ${detail.summary.title}`} testId="arena-photo-finish">

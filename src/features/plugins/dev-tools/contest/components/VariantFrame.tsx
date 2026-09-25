@@ -5,7 +5,7 @@
 // so LLM-written code runs in an opaque origin and cannot reach the app. The
 // only thing the app accepts from it is the preview route's scroll report,
 // and only from THIS iframe's window (`event.source === contentWindow`).
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { MapPin, MonitorOff } from 'lucide-react';
 
 import { Button } from '@/features/shared/components/buttons';
@@ -123,6 +123,22 @@ export function VariantFrame({
     setNote('');
   };
 
+  // The pin editor is the innermost thing: Escape cancels the pin (and goes no
+  // further, so the lightbox around it stays open) and Ctrl/Cmd+Enter saves it.
+  // stopPropagation on the synthetic event also stops the native one before it
+  // reaches the window-level keyboard ladder.
+  const onEditorKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      setPending(null);
+    } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      e.stopPropagation();
+      confirmPin();
+    }
+  };
+
   const confirmPin = () => {
     if (!pending || !onAddPin) return;
     onAddPin({ ...pending.pin, note: note.trim() });
@@ -218,6 +234,7 @@ export function VariantFrame({
               transform: `translate(${Math.min(pending.x, Math.max(0, boxWidth - 232))}px, ${pending.y + 8}px)`,
             }}
             data-testid={`contest-frame-pin-editor-${variant.key}`}
+            onKeyDown={onEditorKeyDown}
           >
             <textarea
               autoFocus
