@@ -91,6 +91,7 @@ recordings/
 !.claude/ship-loop/
 !.claude/mvp/
 !.claude/spark/
+!.claude/kit/
 !.claude/agents/
 !.claude/codebase-catalogs.md
 !.claude/codebase-context.md
