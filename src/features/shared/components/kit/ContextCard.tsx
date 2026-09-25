@@ -21,54 +21,52 @@ export interface ContextCardProps {
 }
 
 /**
- * ContextCard: one thing among peers (a context, a project, a crew) when the peers read as
- * tiles, not as a list. It is a BAND, not a boxed surface: the kit's stepped band with a faint
- * primary wash from a 2px rail on its left edge, no border, the row's right-only radius. The
- * rail is the card's spine: its Mark sits on it, a selected card lights it in the primary glow,
- * a live card breathes. One emphasised name, quiet meta, regular figures at the foot. Loading
- * keeps the card's geometry with ghosts; empty is the kit's dashed band. A pressable card's
- * title is the one button (its hit area stretched over the card) so actions are never nested.
- * @catalog ContextCard - one peer as a tile: a band on a primary rail, name, meta, figures, actions; ContextCards is the grid. Kit.
+ * ContextCard: one thing among peers (a context, a project, a crew) when the peers are FEW and
+ * read as tiles, not as a list (many peers get a parent layer first: ContextOverview). It is a
+ * BAND, not a boxed surface: the kit's stepped band with a faint primary wash from a 2px rail on
+ * its left edge, no border, the row's right-only radius. The rail is the card's spine: its Mark
+ * sits on it, a selected card lights it in the primary glow, a live card breathes.
+ *
+ * One layout whatever the card carries, so cards in a row align: the HEAD (title, then meta) at
+ * the top with the actions at its top-right, and the FOOT (figures) pinned to the bottom edge.
+ * Actions never take the foot, so a card with actions and one without keep their figure lines
+ * on one line. Loading ghosts the same two places; empty puts its title in the meta line and
+ * its hint and action in the foot. A pressable card's title is its one button (its hit area
+ * stretched over the card) so the actions are never nested in it.
+ * @catalog ContextCard - one of few peers as a tile: a band on a rail, head on top, figures on the foot; ContextCards grids them. Kit.
  */
 export function ContextCard({ title, meta, figures, actions, mark, state, empty, onPress, testId }: ContextCardProps) {
   const states = typeof state === 'string' ? [state] : state ?? [];
   const loading = states.includes('loading');
   const isEmpty = !loading && states.includes('empty');
   const selected = states.includes('selected');
+  const cardMark = loading
+    ? <span className="k-mark" aria-hidden="true" />
+    : isEmpty
+      ? <Mark tone={empty?.tone ?? 'neutral'} glyph="hollow" label={empty?.markLabel ?? (typeof empty?.title === 'string' ? empty.title : '')} />
+      : mark && <Mark tone={mark.tone} glyph={mark.glyph} label={mark.label} />;
+  const name = loading
+    ? <Ghost width="58%" height="12px" />
+    : onPress
+      ? <button type="button" className="k-card__title k-card__press typo-body k-strong" aria-pressed={selected} onClick={onPress}>{title}</button>
+      : <div className="k-card__title typo-body k-strong">{title}</div>;
+  const line = loading ? <Ghost width="40%" height="8px" /> : isEmpty ? empty?.title : meta;
+  const foot = loading
+    ? <><Ghost width="44px" inline /><Ghost width="72px" inline /></>
+    : isEmpty
+      ? <>{empty?.hint && <span className="typo-caption">{empty.hint}</span>}{empty?.action}</>
+      : figures;
   return (
     <div className={cx('k-card', stateClass(state), onPress && 'is-pressable')} {...kitAttrs('ContextCard', state)} data-testid={testId}>
-      {loading ? (
-        <>
-          <span className="k-mark" aria-hidden="true" />
-          <Ghost width="58%" height="12px" />
-          <Ghost width="40%" height="8px" />
-          <span className="k-card__figs"><Ghost width="44px" inline /><Ghost width="72px" inline /></span>
-        </>
-      ) : (
-        <>
-          {isEmpty
-            ? <Mark tone={empty?.tone ?? 'neutral'} glyph="hollow" label={empty?.markLabel ?? (typeof empty?.title === 'string' ? empty.title : '')} />
-            : mark && <Mark tone={mark.tone} glyph={mark.glyph} label={mark.label} />}
-          {onPress ? (
-            <button type="button" className="k-card__title k-card__press typo-body k-strong" aria-pressed={selected} onClick={onPress}>{title}</button>
-          ) : (
-            <div className="k-card__title typo-body k-strong">{title}</div>
-          )}
-          {isEmpty ? (
-            <div className="k-card__empty">
-              {empty?.title && <span className="typo-caption">{empty.title}</span>}
-              {empty?.hint && <span className="typo-caption">{empty.hint}</span>}
-              {empty?.action}
-            </div>
-          ) : (
-            <>
-              {meta != null && <div className="k-card__meta typo-caption">{meta}</div>}
-              {figures != null && <div className="k-card__figs">{figures}</div>}
-            </>
-          )}
-          {actions && <div className="k-card__actions">{actions}</div>}
-        </>
-      )}
+      {cardMark}
+      <div className="k-card__head">
+        <div className="k-card__titles">
+          {name}
+          {line != null && line !== '' && <div className="k-card__meta typo-caption">{line}</div>}
+        </div>
+        {actions && !loading && <div className="k-card__actions">{actions}</div>}
+      </div>
+      <div className="k-card__foot">{foot}</div>
     </div>
   );
 }

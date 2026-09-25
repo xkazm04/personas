@@ -297,7 +297,8 @@ stepped by its own lightness, so light themes keep them without per-theme code.
 | `quantumFor` | the unit quantum: the smallest 1-2-5 step at or above `min` that keeps a strip at or under `maxUnits`; state it in the legend (grow-1) | `quantumFor(total, maxUnits = 60, min = 1) -> number` |
 | `Mark` / `Dot` | status as Tone x Glyph, on the spine or inline | `<Mark tone glyph label>`, `<Dot tone glyph>` |
 | `Hint` | the explanation on a mark, figure or unit strip: the shared Tooltip plus an always-present hidden description the trigger points at (`aria-describedby`); `focusable` only for a standalone trigger, never per mark in a row (grow-1) | `<Hint content focusable? placement?>{one element}</Hint>` |
-| `ContextCard` / `ContextCards` | one peer as a tile when peers read as tiles (Home, Overview): a band, not a box; the stepped band with a primary wash from a 2px rail, its Mark on the rail, selected lights the rail in the primary glow, live breathes; ghost and dashed-empty states; a pressable card's title is its one button (grow-1) | `<ContextCard title meta? figures? actions? mark? state? empty? onPress?>`, `<ContextCards label min?>` |
+| `ContextCard` / `ContextCards` | one peer as a tile when the peers are FEW (a level-2 group of at most 12): a band, not a box; the stepped band with a primary wash from a 2px rail, its Mark on the rail, selected lights the rail, live breathes. One layout whatever it carries: head (title, meta) at the top with actions at its top-right, figures pinned to the foot, so every figure line in a row aligns; ghost and dashed-empty states; a pressable card's title is its one button (grow-1) | `<ContextCard title meta? figures? actions? mark? state? empty? onPress?>`, `<ContextCards label min?>` |
+| `ContextOverview` / `ContextGroups` | the parent layer over MANY contexts: level 1 is one 56px row per group (worst state as the Mark, size, its contexts as units by state at one quantum for every row, fixed figure columns; one roving tab stop) under a search that reaches every context (at most `MATCH_CAP` = 50 matches mounted); a row opens level 2, a level-2 Section with Crumbs back up whose body is cards up to `CARD_LEVEL_MAX` = 12 and a DataTable past it (`contextLevel(n)`). One level mounted at a time: 320 contexts in 22 groups mount 22 rows (grow-1) | `<ContextOverview label rootLabel groups={[{id, name, meta?, count, mark, states, figures?, contexts}]} open onOpen query onQuery searchPlaceholder match renderGroup(g, level) renderMatches(matches, total) unitLabel legend? figureHeads? toolbar? loading? empty>` |
 
 When to use which: a list the operator scans and picks from is a `DataTable` when
 its figures line up in columns, `Rows` when each row is a name and a sentence. Facts
@@ -319,6 +320,11 @@ Decided with the kit:
 - **Status tones take the brightness compensation** the app applies to every
   status colour (the entry's page had none), so a neutral mark is darker in the
   product than in the entry. That is the product's rule, not a kit deviation.
+- **Cards are for a level where the count is small; a surface that can hold many entities
+  gets a parent layer first** (owner, grow-1: "projects will have hundreds of contexts").
+  `ContextOverview` is that layer for contexts: groups at level 1, one group at level 2, cards
+  only up to 12. Measured on its 320-context specimen: level 1 mounts 507 DOM nodes (React
+  first commit 23 ms) where a flat grid of the same contexts mounts 2,241 (74 ms).
 - **ContextCard is the one tile, and it is a band** (kit grow-1). The owner kept card
   surfaces at Gate 1 and the Factory turned context cards into tables for lack of a kit
   card, so the kit gained one, drawn from the spine idea rather than a boxed surface: the

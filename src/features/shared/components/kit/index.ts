@@ -24,6 +24,8 @@ export { quantumFor } from './quantum';
 export { Mark, Dot } from './Mark';
 export { ChartFrame, toneColor } from './ChartFrame';
 export { ContextCard, ContextCards, type ContextCardProps } from './ContextCard';
+export { ContextGroups, type ContextGroupRow, type ContextGroupState } from './ContextGroups';
+export { ContextOverview, contextLevel, CARD_LEVEL_MAX, MATCH_CAP, type ContextGroup } from './ContextOverview';
 export { Hint } from './Hint';
 export { Ghost, GhostRows, type EmptySpec } from './states';
 export type { Tone, Glyph, KitState, KitStates } from './types';

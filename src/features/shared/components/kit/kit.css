@@ -386,7 +386,7 @@ button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); backgroun
 }
 .k-card {
   --rail: var(--spine-c); --card-band: var(--band-alt);
-  position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; min-height: 104px;
+  position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 104px;
   padding: 12px 14px 12px 20px; border-radius: 0 var(--radius-card) var(--radius-card) 0;
   background: linear-gradient(to right, color-mix(in srgb, var(--primary) 7%, var(--card-band)), var(--card-band) 55%);
   transition: background-color var(--duration-fast);
@@ -405,14 +405,40 @@ button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); backgroun
 .k-card.is-loading { cursor: default; }
 .k-card > .k-mark { left: -4px; top: 21px; margin-top: -4.5px; outline-color: var(--background); }
 .k-card.is-loading > .k-mark { background: var(--ghost); }
+/* One layout for every card: head at the top (actions at its top-right), foot pinned to the bottom edge. */
+.k-card__head { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
+.k-card__titles { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
 .k-card__title { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; }
 .k-card__press { padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; }
-/* The title button's hit area is the whole card; actions sit above it. */
+/* The title button's hit area is the whole card; actions and foot controls sit above it. */
 .k-card__press::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
 .k-card__press:focus-visible { outline: 0; }
-.k-card:has(> .k-card__press:focus-visible) { outline: 2px solid var(--focus-ring-color); outline-offset: 2px; }
+.k-card:has(.k-card__press:focus-visible) { outline: 2px solid var(--focus-ring-color); outline-offset: 2px; }
 .k-card__meta { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; }
-.k-card__figs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin-top: auto; padding-top: 6px; }
-.k-card__empty { display: flex; flex-direction: column; gap: 2px; margin-top: auto; }
-.k-card__actions { position: relative; z-index: 1; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding-top: 6px; }
-.k-card__empty > :not(span) { position: relative; z-index: 1; }
+.k-card__actions { position: relative; z-index: 1; flex: none; display: flex; align-items: center; gap: 6px; margin: -6px -6px 0 0; }
+.k-card__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; min-height: 20px; margin-top: auto; padding-top: 10px; }
+.k-card__foot > :is(button, a) { position: relative; z-index: 1; }
+
+/* ============ ContextGroups (added at kit grow-1): level 1 over many contexts ============ */
+.k-groups { display: flex; flex-direction: column; }
+.k-grp {
+  --band: transparent;
+  position: relative; display: grid; align-items: center; column-gap: 20px; width: 100%; height: 56px;
+  grid-template-columns: minmax(10rem, 16rem) 3rem minmax(0, 1fr) repeat(var(--grp-figs, 0), 6.5rem);
+  padding: 0 12px 0 var(--gutter); border: 0; color: inherit; text-align: left; cursor: pointer; outline-offset: -2px;
+  background: linear-gradient(to right, transparent calc(var(--spine-x) + 8px), var(--band) calc(var(--spine-x) + 8px));
+  border-radius: 0 var(--radius-interactive) var(--radius-interactive) 0;
+}
+.k-grp__item:nth-child(even) > .k-grp { --band: var(--band-alt); }
+.k-grp:hover, .k-grp.is-hover { --band: var(--band-hover); }
+.k-grp.is-selected { --band: var(--band-sel); }
+.k-grp.is-muted > :not(.k-mark) { opacity: .56; }
+.k-grp:focus-visible { outline: 2px solid var(--focus-ring-color); }
+.k-grp--head { height: 28px; cursor: default; align-items: end; padding-bottom: 6px; border-bottom: 1px solid var(--rule); border-radius: 0; }
+.k-grp__name { display: flex; flex-direction: column; min-width: 0; }
+.k-grp__count { text-align: right; color: var(--quiet); }
+.k-grp__units { min-width: 0; overflow: hidden; display: flex; align-items: center; }
+.k-grp__fig { text-align: right; white-space: nowrap; }
+@container kit (max-width: 900px) {
+  .k-grp { grid-template-columns: minmax(8rem, 12rem) 2.5rem minmax(0, 1fr) repeat(var(--grp-figs, 0), 5rem); column-gap: 12px; }
+}

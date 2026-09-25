@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**169 reusable components** live under `src/features/shared/components/`.
+**171 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -182,7 +182,9 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 |---|---|
 | `ChartFrame` | ChartFrame - a chart's plot area on the reading line, fixed height, with its loading ghost and empty band. Kit. |
 | `ChipRow` | ChipRow - 30px chips with count and share bar, a chip with onPress is a filter; ChipView is one chip (toolbar filter). Kit. |
-| `ContextCard` | ContextCard - one peer as a tile: a band on a primary rail, name, meta, figures, actions; ContextCards is the grid. Kit. |
+| `ContextCard` | ContextCard - one of few peers as a tile: a band on a rail, head on top, figures on the foot; ContextCards grids them. Kit. |
+| `ContextGroups` | ContextGroups - level 1 over many contexts: a row per group (worst mark, size, units by state, figures). Kit. |
+| `ContextOverview` | ContextOverview - parent layer over many contexts: groups + search, then one group as cards or a table. Kit. |
 | `Crumbs` | Crumbs - the trail above a drilled surface (Section eyebrow): onPress makes a door up; a last plain crumb is current. Kit. |
 | `DataTable` | DataTable - column heads over ListRow-family rows (band, mark, selection), pager under the last row, sortable, widths. Kit. |
 | `Hint` | Hint - the kit tip on a mark, figure or unit strip: shared Tooltip plus an always-present description. Kit. |
@@ -268,4 +270,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_169 components, 46 without a `@catalog` description._
+_171 components, 46 without a `@catalog` description._
