@@ -105,6 +105,7 @@ import {
   onTerminalHolderLost,
   setFleetTerminalDeadNotice,
   setFleetTerminalListenerNotice,
+  redrawTerminal,
   setTerminalLiveness,
 } from '../fleetTerminalManager';
 
@@ -485,6 +486,15 @@ describe('WebGL renderer budget', () => {
 });
 
 describe('resize push', () => {
+  // These pin `pushResize`'s de-dupe, so hand every attach a snapshot with
+  // content: an EMPTY ring triggers the separate repaint nudge (pinned below).
+  beforeEach(() => {
+    vi.mocked(fleetApi.subscribeTerminal).mockResolvedValue('frame');
+  });
+  afterEach(() => {
+    vi.mocked(fleetApi.subscribeTerminal).mockResolvedValue('');
+  });
+
   it('pushes once per real grid change and skips the no-op re-push', async () => {
     const host = attach('r1');
     const m = registryMap().get('r1')!;
@@ -522,6 +532,53 @@ describe('resize push', () => {
     await flushFrames();
     expect(vi.mocked(fleetApi.resizeSession).mock.calls).toEqual([['r2', 80, 24]]);
     detachTerminal('r2');
+    host.remove();
+  });
+});
+
+describe('repaint nudge', () => {
+  /** Let the subscribe resolve, then the nudge's 60 ms settle-back. */
+  const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 120));
+
+  it('asks an empty-ring session for a full frame by wiggling one column and back', async () => {
+    vi.mocked(fleetApi.subscribeTerminal).mockResolvedValueOnce('');
+    const host = attach('n1');
+    await flushFrames();
+    await settle();
+    const calls = vi.mocked(fleetApi.resizeSession).mock.calls.filter(([id]) => id === 'n1');
+    // The fit reconciles 80x24, the nudge goes 79 then back to 80: the grid
+    // ends where it began.
+    expect(calls).toContainEqual(['n1', 79, 24]);
+    expect(calls[calls.length - 1]).toEqual(['n1', 80, 24]);
+    detachTerminal('n1');
+    host.remove();
+  });
+
+  it('leaves a session alone when its ring already holds a frame', async () => {
+    vi.mocked(fleetApi.subscribeTerminal).mockResolvedValueOnce('a frame');
+    const host = attach('n2');
+    await flushFrames();
+    await settle();
+    const calls = vi.mocked(fleetApi.resizeSession).mock.calls.filter(([id]) => id === 'n2');
+    expect(calls).toEqual([['n2', 80, 24]]);
+    detachTerminal('n2');
+    host.remove();
+  });
+
+  it('redraws on demand only while attached', async () => {
+    vi.mocked(fleetApi.subscribeTerminal).mockResolvedValueOnce('a frame');
+    const host = attach('n3');
+    await flushFrames();
+    await settle();
+    vi.mocked(fleetApi.resizeSession).mockClear();
+    redrawTerminal('n3');
+    await settle();
+    expect(vi.mocked(fleetApi.resizeSession).mock.calls).toEqual([['n3', 79, 24], ['n3', 80, 24]]);
+    detachTerminal('n3');
+    vi.mocked(fleetApi.resizeSession).mockClear();
+    redrawTerminal('n3');
+    await settle();
+    expect(vi.mocked(fleetApi.resizeSession)).not.toHaveBeenCalled();
     host.remove();
   });
 });
