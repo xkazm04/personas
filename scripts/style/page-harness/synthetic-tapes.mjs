@@ -264,6 +264,8 @@ const BUILDERS = {
   ...observabilityTapes({ RECORDED_AT, PERSONAS }).builders,
   // Module 5, Teams > Factory (factorySurfaces.tsx, factoryTapes.mjs).
   ...factoryTapes({ RECORDED_AT }).builders,
+  // The kit specimen (kitSpecimen.tsx): synthetic props, no IPC.
+  'kit/specimen': () => ({ version: 1, module: 'kit/specimen', source: 'synthetic', recordedAt: RECORDED_AT, note: 'Synthetic props, no IPC: every kit part in its states.', calls: [] }),
   // WP4b tone surfaces (toneSurfaces.tsx): props are synthetic, no IPC.
   ...Object.fromEntries(['tone/health-cards', 'tone/n8n-footer', 'tone/query-toolbar'].map((id) => [
     id, () => ({ version: 1, module: id, source: 'synthetic', recordedAt: RECORDED_AT, note: 'Synthetic props, no IPC.', calls: [] }),

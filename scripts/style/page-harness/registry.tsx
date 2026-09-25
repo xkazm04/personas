@@ -18,6 +18,7 @@ import { DATAGRID_MODULES } from './datagridSurfaces';
 import { FLEET_MODULES } from './fleetSurfaces';
 import { OBSERVABILITY_MODULES } from './observabilitySurfaces';
 import { FACTORY_MODULES } from './factorySurfaces';
+import { KIT_MODULES } from './kitSpecimen';
 
 type Wrap = (children: ReactNode) => ReactNode;
 
@@ -64,6 +65,8 @@ export const MODULES: Record<string, HarnessModule> = {
   ...FLEET_MODULES,
   ...OBSERVABILITY_MODULES,
   ...FACTORY_MODULES,
+  // The kit specimen: every kit part in its states (kitSpecimen.tsx); harness-only.
+  ...KIT_MODULES,
   // Probes for `shoot.mjs --self-test`: each must make the shooter exit non-zero.
   '__selftest/empty': {
     load: async () => ({ default: () => <div /> }),
