@@ -291,7 +291,7 @@
     {
       "doc": "docs/features/recipes/README.md",
       "sourceGlobs": [
-        "src/features/recipes/**",
+        "src/features/templates/sub_recipes/**",
         "src-tauri/src/commands/recipes/**"
       ],
       "onboardingFlows": [
