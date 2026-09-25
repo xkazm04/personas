@@ -4316,7 +4316,6 @@
       "made_by": "Dibuat oleh",
       "monitor": "Pantau di Monitor",
       "new_race": "Balapan baru",
-      "open_tile": "Buka varian {key} di photo finish",
       "page_subtitle": "Balapkan seat model pada satu brief",
       "photo_finish": "Foto finis",
       "photo_finish_hint": "Semua varian sudah masuk. Buka photo finish untuk mengurutkannya.",
@@ -4366,7 +4365,8 @@
       "setup_close_title": "Tutup pengaturan?",
       "setup_close_body": "Isian Anda disimpan: Balapan baru memulihkannya sampai Anda membuat balapan atau mengosongkan formulir.",
       "setup_close_confirm": "Tutup pengaturan",
-      "chain_stopped": "Berhenti"
+      "chain_stopped": "Berhenti",
+      "open_tile_hint": "buka di foto finis"
     },
     "decide_locked_decided": "Sudah diputuskan: {key} menang.",
     "decide_locked_shortlisted": "Masuk daftar pendek: pemenang diumumkan di babak penyempurnaan.",

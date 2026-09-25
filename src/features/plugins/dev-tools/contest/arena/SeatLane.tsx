@@ -57,8 +57,9 @@ export function SeatLane({ lane, projectId, contestId, phase, ceilingS, bucketOf
   return (
     <li className="space-y-1.5 py-2" data-testid={`arena-lane-${seat.seatId}`}>
       <div className={LANE_GRID}>
-        <span className="typo-label text-primary" aria-label={seat.letter ? tx(a.lane_letter, { letter: seat.letter }) : a.lane_unlettered}>
-          {seat.letter ?? '—'}
+        <span className="typo-label text-primary">
+          <span aria-hidden>{seat.letter ?? '—'}</span>
+          <span className="sr-only">{seat.letter ? tx(a.lane_letter, { letter: seat.letter }) : a.lane_unlettered}</span>
         </span>
         <SeatLabel spec={seat.spec} />
         <LaneMeter
@@ -69,7 +70,8 @@ export function SeatLane({ lane, projectId, contestId, phase, ceilingS, bucketOf
           startedAtMs={startedAtMs}
           ceilingS={ceilingS}
         />
-        <span className="typo-data text-right text-foreground" aria-label={a.cost}>
+        <span className="typo-data text-right text-foreground">
+          <span className="sr-only">{a.cost} </span>
           <Numeric value={seat.costUsd} unit="usd" />
         </span>
       </div>

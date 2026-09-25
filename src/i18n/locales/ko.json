@@ -15110,7 +15110,6 @@
         "made_by": "제작",
         "monitor": "모니터에서 보기",
         "new_race": "새 레이스",
-        "open_tile": "포토 피니시에서 변형 {key} 열기",
         "page_subtitle": "하나의 브리프로 모델 시트 경주",
         "photo_finish": "포토 피니시",
         "photo_finish_hint": "모든 변형이 도착했습니다. 포토 피니시를 열어 정렬하세요.",
@@ -15160,7 +15159,8 @@
         "setup_close_title": "설정을 닫을까요?",
         "setup_close_body": "입력한 내용은 유지됩니다. 레이스를 만들거나 양식을 비울 때까지 새 레이스에서 다시 불러옵니다.",
         "setup_close_confirm": "설정 닫기",
-        "chain_stopped": "중단됨"
+        "chain_stopped": "중단됨",
+        "open_tile_hint": "포토 피니시에서 열기"
       },
       "decide_locked_decided": "결정됨: {key} 우승.",
       "decide_locked_shortlisted": "후보 선정됨: 우승자는 다듬기 라운드에서 정해집니다.",

@@ -4316,7 +4316,6 @@
       "made_by": "صنعه",
       "monitor": "المشاهدة في Monitor",
       "new_race": "سباق جديد",
-      "open_tile": "فتح المتغير {key} في صورة الحسم",
       "page_subtitle": "سباق مقاعد النماذج على موجز واحد",
       "photo_finish": "صورة الحسم",
       "photo_finish_hint": "وصلت جميع المتغيرات. افتح صورة الحسم لترتيبها.",
@@ -4366,7 +4365,8 @@
       "setup_close_title": "هل تريد إغلاق الإعداد؟",
       "setup_close_body": "يُحتفظ بما أدخلته: يعيده «سباق جديد» حتى تنشئ السباق أو تمسح النموذج.",
       "setup_close_confirm": "إغلاق الإعداد",
-      "chain_stopped": "توقفت"
+      "chain_stopped": "توقفت",
+      "open_tile_hint": "افتحه في صورة الحسم"
     },
     "decide_locked_decided": "تم الحسم: فاز {key}.",
     "decide_locked_shortlisted": "في القائمة المختصرة: يُعلن الفائز في جولة التحسين.",

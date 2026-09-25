@@ -15110,7 +15110,6 @@
         "made_by": "Creado por",
         "monitor": "Ver en Monitor",
         "new_race": "Nueva carrera",
-        "open_tile": "Abrir la variante {key} en la foto de llegada",
         "page_subtitle": "Enfrenta asientos de modelos en un mismo brief",
         "photo_finish": "Foto de llegada",
         "photo_finish_hint": "Todas las variantes están listas. Abre la foto de llegada para ordenarlas.",
@@ -15160,7 +15159,8 @@
         "setup_close_title": "¿Cerrar la configuración?",
         "setup_close_body": "Lo que escribiste se conserva: Nueva carrera lo recupera hasta que crees la carrera o vacíes el formulario.",
         "setup_close_confirm": "Cerrar la configuración",
-        "chain_stopped": "Detenida"
+        "chain_stopped": "Detenida",
+        "open_tile_hint": "abrir en la foto de llegada"
       },
       "decide_locked_decided": "Decidido: ganó {key}.",
       "decide_locked_shortlisted": "En la preselección: el ganador se declara en la ronda de refinamiento.",

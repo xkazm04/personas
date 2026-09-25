@@ -4316,7 +4316,6 @@
       "made_by": "Vytvořil",
       "monitor": "Sledovat v Monitoru",
       "new_race": "Nový závod",
-      "open_tile": "Otevřít variantu {key} v cílové fotografii",
       "page_subtitle": "Nechte modelová místa závodit na jednom zadání",
       "photo_finish": "Cílová fotografie",
       "photo_finish_hint": "Všechny varianty jsou v cíli. Otevřete cílovou fotografii a seřaďte je.",
@@ -4366,7 +4365,8 @@
       "setup_close_title": "Zavřít nastavení?",
       "setup_close_body": "Zadané údaje zůstanou: Nový závod je vrátí, dokud závod nevytvoříte nebo formulář nevymažete.",
       "setup_close_confirm": "Zavřít nastavení",
-      "chain_stopped": "Zastaveno"
+      "chain_stopped": "Zastaveno",
+      "open_tile_hint": "otevřít v cílové fotografii"
     },
     "decide_locked_decided": "Rozhodnuto: vyhrála varianta {key}.",
     "decide_locked_shortlisted": "Na užším výběru: vítěz se vyhlásí v kole zpřesnění.",

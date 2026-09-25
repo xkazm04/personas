@@ -1,7 +1,9 @@
 // A variant that crossed the line: its concept (once), its blind key and
 // size, and the visual-pass screenshot only when one exists — never a
 // broken-image placeholder. Clicking it opens the photo finish on it. The
-// filmstrip uses the same tile, with the active one highlighted.
+// filmstrip uses the same tile, with the active one highlighted. Its name is
+// its visible content (concept, key, tray) plus an sr-only "open in the photo
+// finish", so a voice user can say what they see (WCAG 2.5.3).
 import { useState } from 'react';
 import { FileText } from 'lucide-react';
 
@@ -22,7 +24,7 @@ export interface VariantTileProps {
 }
 
 export function VariantTile({ variant, bucket = null, active = false, onOpen }: VariantTileProps) {
-  const { t, tx } = useTranslation();
+  const { t } = useTranslation();
   const s = t.plugins.contest;
   const a = s.arena;
   const [shotFailed, setShotFailed] = useState(false);
@@ -31,7 +33,6 @@ export function VariantTile({ variant, bucket = null, active = false, onOpen }: 
     <button
       type="button"
       onClick={() => onOpen?.(variant.key)}
-      aria-label={tx(a.open_tile, { key: variant.key })}
       aria-current={active ? 'true' : undefined}
       className={`flex h-full w-40 flex-col overflow-hidden rounded-interactive border text-left transition-colors focus-ring ${
         active ? 'border-primary/60 bg-primary/10' : 'border-primary/10 bg-secondary/20 hover:border-primary/30'
@@ -49,10 +50,16 @@ export function VariantTile({ variant, bucket = null, active = false, onOpen }: 
           <span className="text-primary">{variant.key}</span>
           <span aria-hidden>·</span>
           <Numeric value={variant.bytes} unit="compact" />
-          {variant.hasNotes && <FileText className="w-3 h-3 shrink-0" aria-label={s.variant_has_notes} />}
+          {variant.hasNotes && (
+            <>
+              <FileText className="w-3 h-3 shrink-0" aria-hidden />
+              <span className="sr-only">{s.variant_has_notes}</span>
+            </>
+          )}
         </span>
         {bucket && <ToneDot tone={bucketTone(bucket)}>{bucketLabel(s, bucket)}</ToneDot>}
       </span>
+      <span className="sr-only">{a.open_tile_hint}</span>
     </button>
   );
 }

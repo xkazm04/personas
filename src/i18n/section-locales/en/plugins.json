@@ -4313,7 +4313,6 @@
       "cancel_body": "Running seats are killed and queued seats are withdrawn. Finished variants stay on disk.",
       "photo_finish": "Photo finish",
       "photo_finish_hint": "Every variant is in. Open the photo finish to sort them.",
-      "open_tile": "Open variant {key} in the photo finish",
       "starts": "Starts",
       "started": "Started",
       "variants_label": "Variants",
@@ -4366,7 +4365,8 @@
       "setup_close_title": "Close the setup?",
       "setup_close_body": "Your input is kept: New race brings it back until you create the race or clear the form.",
       "setup_close_confirm": "Close the setup",
-      "chain_stopped": "Stopped"
+      "chain_stopped": "Stopped",
+      "open_tile_hint": "open in the photo finish"
     },
     "decide_locked_decided": "Decided: {key} won.",
     "decide_locked_shortlisted": "Shortlisted: the winner is declared in the refine round.",

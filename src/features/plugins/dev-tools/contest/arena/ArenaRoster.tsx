@@ -113,7 +113,8 @@ function RaceRow({ summary, active, onPick }: { summary: ContestSummary; active:
       </span>
       {summary.winner && (
         <span className="mt-0.5 flex min-w-0 items-center gap-1.5 typo-caption">
-          <Trophy className="w-3.5 h-3.5 shrink-0 text-status-success" aria-label={a.winner} />
+          <Trophy className="w-3.5 h-3.5 shrink-0 text-status-success" aria-hidden />
+          <span className="sr-only">{a.winner}</span>
           <span className="text-foreground shrink-0">{summary.winner}</span>
           {summary.winnerSeatSpec && <SeatLabel spec={summary.winnerSeatSpec} />}
         </span>

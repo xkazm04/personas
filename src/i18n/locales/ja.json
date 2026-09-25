@@ -15110,7 +15110,6 @@
         "made_by": "作成者",
         "monitor": "Monitorで確認",
         "new_race": "新しいレース",
-        "open_tile": "バリアント{key}をフォトフィニッシュで開く",
         "page_subtitle": "1つのブリーフで複数のモデルシートを競わせる",
         "photo_finish": "フォトフィニッシュ",
         "photo_finish_hint": "すべてのバリアントが揃いました。フォトフィニッシュを開いて並び替えましょう。",
@@ -15160,7 +15159,8 @@
         "setup_close_title": "セットアップを閉じますか？",
         "setup_close_body": "入力内容は保持されます。レースを作成するかフォームをクリアするまで、「新しいレース」で復元されます。",
         "setup_close_confirm": "セットアップを閉じる",
-        "chain_stopped": "停止"
+        "chain_stopped": "停止",
+        "open_tile_hint": "フォトフィニッシュで開く"
       },
       "decide_locked_decided": "決定済み: {key} が勝ちました。",
       "decide_locked_shortlisted": "候補に絞り込み済み: 勝者は改良ラウンドで決まります。",

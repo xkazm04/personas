@@ -15110,7 +15110,6 @@
         "made_by": "Erstellt von",
         "monitor": "In Monitor beobachten",
         "new_race": "Neues Rennen",
-        "open_tile": "Variante {key} im Fotofinish öffnen",
         "page_subtitle": "Modell-Plätze treten zu einem Briefing gegeneinander an",
         "photo_finish": "Fotofinish",
         "photo_finish_hint": "Alle Varianten sind da. Öffne das Fotofinish, um sie zu sortieren.",
@@ -15160,7 +15159,8 @@
         "setup_close_title": "Einrichtung schließen?",
         "setup_close_body": "Deine Eingaben bleiben erhalten: Neues Rennen holt sie zurück, bis du das Rennen anlegst oder das Formular leerst.",
         "setup_close_confirm": "Einrichtung schließen",
-        "chain_stopped": "Angehalten"
+        "chain_stopped": "Angehalten",
+        "open_tile_hint": "im Fotofinish öffnen"
       },
       "decide_locked_decided": "Entschieden: {key} hat gewonnen.",
       "decide_locked_shortlisted": "In der engeren Auswahl: Der Sieger wird in der Verfeinerungsrunde gekürt.",

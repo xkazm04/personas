@@ -4316,7 +4316,6 @@
       "made_by": "制作者",
       "monitor": "在 Monitor 中查看",
       "new_race": "新建比赛",
-      "open_tile": "在终点回放中打开变体 {key}",
       "page_subtitle": "让模型席位围绕同一份简报展开竞赛",
       "photo_finish": "终点回放",
       "photo_finish_hint": "所有变体均已就位。打开终点回放进行排序。",
@@ -4366,7 +4365,8 @@
       "setup_close_title": "关闭设置？",
       "setup_close_body": "你的输入会保留：在创建比赛或清空表单之前，“新建比赛”都会恢复它。",
       "setup_close_confirm": "关闭设置",
-      "chain_stopped": "已停止"
+      "chain_stopped": "已停止",
+      "open_tile_hint": "在终点回放中打开"
     },
     "decide_locked_decided": "已决定：{key} 胜出。",
     "decide_locked_shortlisted": "已入围：胜者将在精炼轮中宣布。",

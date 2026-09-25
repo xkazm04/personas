@@ -67,7 +67,8 @@ function LaneMeterView({ state, stateLabel, stateTone, wallS, ceilingS, elapsedS
       <ToneDot tone={stateTone} className="text-foreground" wrap>
         <span className="min-w-0 break-words">{stateLabel}</span>
       </ToneDot>
-      <span className="typo-data text-right whitespace-nowrap" aria-label={a.elapsed}>
+      <span className="typo-data text-right whitespace-nowrap">
+        <span className="sr-only">{a.elapsed} </span>
         <Numeric value={shownS} unit="s" />
         <span className="typo-caption"> / </span>
         <span className="typo-caption">
