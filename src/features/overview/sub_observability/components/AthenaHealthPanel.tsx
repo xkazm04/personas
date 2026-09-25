@@ -11,9 +11,8 @@
 import { memo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Numeric } from '@/features/shared/components/display/Numeric';
-import { Section, StatStrip, UnitStrip, apportion, type StatTile, type Tone, type Glyph } from '@/features/shared/components/kit';
+import { Section, StatStrip, UnitStrip, apportion, quantumFor, type StatTile, type Tone, type Glyph } from '@/features/shared/components/kit';
 import { useAthenaHealth } from '../libs/useAthenaHealth';
-import { quantumFor } from '../libs/quantum';
 import { AthenaSpendSection } from './AthenaSpendSection';
 
 type Part = { label: string; n: number; tone: Tone; glyph?: Glyph };

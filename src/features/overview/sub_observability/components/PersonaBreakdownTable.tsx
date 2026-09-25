@@ -6,8 +6,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Numeric } from '@/features/shared/components/display/Numeric';
-import { DataTable, Section, UnitStrip, type TableRow } from '@/features/shared/components/kit';
-import { quantumFor } from '../libs/quantum';
+import { DataTable, Section, UnitStrip, quantumFor, type TableRow } from '@/features/shared/components/kit';
 import type { PieDataPoint } from './MetricsCharts';
 
 type Col = 'persona' | 'runs' | 'cost';

@@ -6,8 +6,6 @@
 // KPI in a cell is a button (its sparkline and value, in its status tone) that
 // opens its console (L4). Only the 'spark' cell look is routed (TrendVariant);
 // the unrouted 'chip' and 'heat' looks were dropped with the port.
-import type { MouseEvent } from 'react';
-import { Button } from '@/features/shared/components/buttons';
 import { DataTable, Dot, KitButton, Meta, Section, toneColor, type TableRow } from '@/features/shared/components/kit';
 import {
   KPI_CATEGORIES,
@@ -27,7 +25,11 @@ import { useFactoryWords, type FactoryWords } from './useFactoryWords';
 
 type Col = 'context' | 'technical' | 'quality' | 'traffic' | 'value' | 'score';
 const TALLY: KpiStatus[] = ['crit', 'warn', 'ok', 'unmeasured'];
-const CELL_MIN = 112;
+// Fixed tracks so the columns of every group's table line up down the page:
+// a category cell holds its KPI buttons in at least 112px, the score 48px
+// (widths are border-box, so each adds the cell's 24px of padding).
+const CAT_W = '136px';
+const SCORE_W = '72px';
 
 export type MatrixCellStyle = 'spark';
 
@@ -46,20 +48,19 @@ function Tally({ kpis, w }: { kpis: MockKpi[]; w: FactoryWords }) {
 function CellKpi({ kpi, onOpen }: { kpi: MockKpi; onOpen: (id: string) => void }) {
   const tone = KPI_STATUS_MARK[kpiStatus(kpi)].tone;
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="k-btn k-btn--quiet typo-label k-regular"
-      aria-label={`${kpi.name}: ${kpi.current ?? '-'} / ${kpi.target}${kpi.unit}`}
-      data-testid={`factory-open-kpi-${kpi.id}`}
+    <KitButton
+      quiet
+      label={`${kpi.name}: ${kpi.current ?? '-'} / ${kpi.target}${kpi.unit}`}
+      testId={`factory-open-kpi-${kpi.id}`}
       // The row opens the context's table; this opens the KPI's console instead.
-      onClick={(e: MouseEvent) => { e.stopPropagation(); onOpen(kpi.id); }}
+      stopPropagation
+      onClick={() => onOpen(kpi.id)}
     >
       <span className="inline-flex items-center gap-2">
         {kpi.series.length > 1 && <Sparkline series={kpi.series} color={toneColor(tone)} width={40} height={12} />}
         <span className="typo-data k-regular">{kpi.current ?? '-'}</span>
       </span>
-    </Button>
+    </KitButton>
   );
 }
 
@@ -73,8 +74,8 @@ export function ContextMatrix({ project, ed, openKpi, openGroup }: {
   const w = useFactoryWords();
   const cols = [
     { key: 'context' as const, label: w.context },
-    ...KPI_CATEGORIES.map((c) => ({ key: c, label: CATEGORY_LABEL[c], num: true })),
-    { key: 'score' as const, label: w.L.score, num: true },
+    ...KPI_CATEGORIES.map((c) => ({ key: c, label: CATEGORY_LABEL[c], num: true, width: CAT_W })),
+    { key: 'score' as const, label: w.L.score, num: true, width: SCORE_W },
   ];
   return (
     <div data-testid="factory-matrix">
@@ -87,14 +88,12 @@ export function ContextMatrix({ project, ed, openKpi, openGroup }: {
           const cr = rollup(ck);
           const cells: TableRow<Col>['cells'] = {
             context: <span className="k-row__name typo-body k-strong">{c.name}</span>,
-            score: <span className={cr.health == null ? 'typo-data k-regular k-quiet' : 'typo-data k-regular'} style={{ display: 'inline-block', minWidth: 48 }}>{cr.health ?? '-'}</span>,
+            score: <span className={cr.health == null ? 'typo-data k-regular k-quiet' : 'typo-data k-regular'}>{cr.health ?? '-'}</span>,
           };
           for (const cat of KPI_CATEGORIES) {
             const ks = ck.filter((k) => k.category === cat);
-            // A fixed minimum width per category cell, so the columns of every
-            // group's table line up down the page.
             cells[cat] = (
-              <span className="inline-flex items-center justify-end gap-1" style={{ minWidth: CELL_MIN }}>
+              <span className="inline-flex items-center justify-end gap-1">
                 {ks.length === 0
                   ? <span className="typo-data k-quiet">·</span>
                   : ks.map((k) => <CellKpi key={k.id} kpi={k} onOpen={(kid) => openKpi(g.id, kid)} />)}

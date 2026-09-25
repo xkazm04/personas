@@ -8,10 +8,9 @@
 import { useMemo } from 'react';
 
 import { Numeric } from '@/features/shared/components/display/Numeric';
-import { DataTable, KitButton, Section, UnitStrip, type TableRow } from '@/features/shared/components/kit';
+import { DataTable, KitButton, Section, UnitStrip, quantumFor, type TableRow } from '@/features/shared/components/kit';
 import type { EmptySpec } from '@/features/shared/components/kit';
 
-import { unitQuantum } from '../factoryTone';
 import { useFactoryWords, type FactoryWords } from '../useFactoryWords';
 import type { FactoryL2Data } from './factoryL2Data';
 import { useObservabilityFeeds } from './useObservabilityFeeds';
@@ -51,8 +50,8 @@ export function FactoryObservabilityTab({ data }: { data: FactoryL2Data }) {
   const totalCost = byFeature.reduce((s, [, e]) => s + e.cost, 0);
   const issues = f.issues ?? [];
   const totalEvents = issues.reduce((s, i) => s + i.count, 0);
-  const costQ = unitQuantum(byFeature[0]?.[1].cost ?? 0, 24, 0.5);
-  const eventQ = unitQuantum(issues.reduce((m, i) => Math.max(m, i.count), 0), 24, 1);
+  const costQ = quantumFor(byFeature[0]?.[1].cost ?? 0, 24, 0.5);
+  const eventQ = quantumFor(issues.reduce((m, i) => Math.max(m, i.count), 0), 24, 1);
 
   const featureRows: Array<TableRow<FeatureCol>> = byFeature.slice(0, SHOWN).map(([name, e]) => ({
     id: name,

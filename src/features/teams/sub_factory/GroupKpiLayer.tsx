@@ -1,5 +1,5 @@
 // L3, composed from the kit: the group as a level-1 Section (FactoryHead: the
-// trail above it, a step back to the project or to the portfolio, Add KPI),
+// Crumbs above it, doors back to the project and the portfolio, Add KPI),
 // an active context filter as a pressable chip (press clears it), and the
 // group's KPIs in the kit table. Variants no longer vary the table's bar or
 // density: the kit row family has one of each.
@@ -39,14 +39,10 @@ export function GroupKpiLayer({ project, group, ed, contextFilter, setContextFil
     <>
       <FactoryHead
         id="s-fac-group"
-        trail={[w.factory, w.projects, project.name]}
+        trail={[{ label: w.factory }, { label: w.projects, onClick: onToProjects }, { label: project.name, onClick: onToGroups }]}
         title={group.name}
         count={rows.length}
         meta={DOMAIN_LABEL[group.domain]}
-        steps={[
-          { label: w.projects, onClick: onToProjects },
-          { label: project.name, onClick: onToGroups },
-        ]}
         extra={<KitButton onClick={() => setShowAdd(true)} testId="factory-add-kpi-btn">{w.t.kpis.add_kpi_for_context}</KitButton>}
       >
         {fc && (

@@ -4,8 +4,8 @@
 //   • KPI matrix    the context x KPI matrix, kept because it owns the L3 table
 //                   and L4 console drill path.
 //   • Observability LLM spend and production errors: the technical dimension.
-// Since Gate 5 the head is a FactoryHead (the project, a step back to the
-// portfolio, the sibling switcher) and the tab strip is a kit Segmented in its
+// Since Gate 5 the head is a FactoryHead (the project under the Crumbs, whose
+// Projects crumb is the door back to the portfolio, and the sibling switcher) and the tab strip is a kit Segmented in its
 // Toolbar; each tab renders Sections on the same spine.
 import type { ReactNode } from 'react';
 

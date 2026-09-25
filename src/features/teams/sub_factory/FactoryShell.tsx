@@ -3,7 +3,7 @@
 // the keyed fade-slide transition between layers. Variants supply ONLY the L2
 // group/context overview (via renderGroups). Since Gate 5 every level below the
 // portfolio is one kit surface (KitHost compact > Surface dense) whose head is
-// a FactoryHead: the trail above, a step back, the level's name.
+// a FactoryHead: the kit Crumbs of the levels above (doors back up), the level's name.
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { saveKpiAssessment } from '@/api/devTools/kpis';
@@ -110,13 +110,14 @@ export function FactoryShell({
     content = (
       <FactoryHead
         id="s-fac-kpi"
-        trail={[w.factory, w.projects, project.name, group.name]}
-        title={kpi.name}
-        meta={<Meta parts={[TIER_LABEL[kpi.tier], CATEGORY_LABEL[kpi.category], <span key="st" className="inline-flex items-center gap-2"><Dot {...KPI_STATUS_MARK[st]} />{w.status[st]}</span>]} />}
-        steps={[
+        trail={[
+          { label: w.factory },
           { label: w.projects, onClick: () => { setProjectId(null); setGroupId(null); setKpiId(null); } },
+          { label: project.name, onClick: () => { setGroupId(null); setKpiId(null); } },
           { label: group.name, onClick: () => setKpiId(null) },
         ]}
+        title={kpi.name}
+        meta={<Meta parts={[TIER_LABEL[kpi.tier], CATEGORY_LABEL[kpi.category], <span key="st" className="inline-flex items-center gap-2"><Dot {...KPI_STATUS_MARK[st]} />{w.status[st]}</span>]} />}
       >
         <KpiConsole kpi={kpi} w={w} onEdit={(patch) => setEdits((p) => ({ ...p, [kpi.id]: { ...p[kpi.id], ...patch } }))} />
       </FactoryHead>
@@ -155,10 +156,9 @@ export function FactoryShell({
         onTabChange={setL2Tab}
         head={{
           id: 's-fac-project',
-          trail: [w.factory, w.projects],
+          trail: [{ label: w.factory }, { label: w.projects, onClick: () => setProjectId(null) }],
           title: project?.name ?? projectId,
           meta: project ? <span className="inline-flex items-center gap-2"><Dot tone={offTrack(project) > 0 ? 'error' : 'success'} />{note(project)}</span> : undefined,
-          steps: [{ label: w.projects, onClick: () => setProjectId(null) }],
           extra: (
             <FactoryProjectSwitcher
               current={projectId}

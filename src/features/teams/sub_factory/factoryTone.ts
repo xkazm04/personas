@@ -45,15 +45,3 @@ export const FOCUS_MARK: Record<FocusKind, ToneGlyph> = {
 /** One measured dimension of a context (errors, cost, KPI attainment). */
 export type DimTone = 'crit' | 'warn' | 'ok' | 'unmeasured';
 export const DIM_TONE: Record<DimTone, Tone> = { crit: 'error', warn: 'warning', ok: 'success', unmeasured: 'neutral' };
-
-/**
- * A 1-2-5 quantum so `value` draws in at most `maxUnits` units (never below
- * `floor`). The same rule Observability states in its legends; proposed for the
- * kit next to `apportion` (Gate 5 kit gaps).
- */
-export function unitQuantum(value: number, maxUnits: number, floor: number): number {
-  const raw = Math.max(floor, value / maxUnits);
-  const mag = 10 ** Math.floor(Math.log10(raw));
-  const step = [1, 2, 5, 10].find((m) => m * mag >= raw) ?? 10;
-  return step * mag;
-}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { HealingTimelineEvent } from '@/lib/bindings/HealingTimelineEvent';
 import { canResolve, chainMark, groupChains, issueRowStates, issueState, ISSUE_GLYPH } from '../issueModel';
-import { quantumFor } from '../quantum';
+import { quantumFor } from '@/features/shared/components/kit/quantum';
 
 const base = { is_circuit_breaker: false, status: 'open', auto_fixed: false, severity: 'medium' };
 

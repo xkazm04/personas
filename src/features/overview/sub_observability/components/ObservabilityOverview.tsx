@@ -7,12 +7,11 @@
  */
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { Numeric } from '@/features/shared/components/display/Numeric';
-import { ChipRow, Dot, KitButton, RangePicker, Section, StatStrip, Toolbar, UnitStrip, apportion, type Chip } from '@/features/shared/components/kit';
+import { ChipRow, Dot, KitButton, RangePicker, Section, StatStrip, Toolbar, UnitStrip, apportion, quantumFor, type Chip } from '@/features/shared/components/kit';
 import { DateRangePopover } from '@/features/overview/sub_usage/components/DayRangePicker';
 import type { OverviewDayRange } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
 import type { useObservabilityData } from '../libs/useObservabilityData';
-import { quantumFor } from '../libs/quantum';
 import type { ObservabilityWords } from '../libs/useObservabilityWords';
 
 const STALE_MS = 300_000;
