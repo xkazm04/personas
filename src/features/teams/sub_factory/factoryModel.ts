@@ -77,39 +77,10 @@ export interface MockProject {
   groups: MockGroup[];
 }
 
-// -- token palette (semantic CSS vars — siblings of the live app) -------------
-
-/** Universal traffic-light palette — green = good, yellow = at risk, red = off
- *  track, gray = unmeasured. The whole point: good/bad readable at first sight. */
-export const TRAFFIC_COLOR = {
-  green: 'var(--success)',
-  yellow: 'var(--warning, #eab308)',
-  red: 'var(--destructive)',
-  gray: 'var(--muted-foreground)',
-} as const;
-export type Traffic = keyof typeof TRAFFIC_COLOR;
-
-export function statusTraffic(s: KpiStatus): Traffic {
-  return s === 'met' || s === 'ok' ? 'green' : s === 'warn' ? 'yellow' : s === 'crit' ? 'red' : 'gray';
-}
-
-/** Status → traffic colour. `met` and `ok` are BOTH green by design (first-sight
- *  good/bad); the met-vs-ok nuance survives in STATUS_LABEL + a ✓ where it counts. */
-export const STATUS_COLOR: Record<KpiStatus, string> = {
-  met: TRAFFIC_COLOR.green,
-  ok: TRAFFIC_COLOR.green,
-  warn: TRAFFIC_COLOR.yellow,
-  crit: TRAFFIC_COLOR.red,
-  unmeasured: TRAFFIC_COLOR.gray,
-};
-
-export const STATUS_LABEL: Record<KpiStatus, string> = {
-  met: 'Target met',
-  ok: 'On track',
-  warn: 'At risk',
-  crit: 'Off track',
-  unmeasured: 'Unmeasured',
-};
+// Colour lives in factoryTone.ts (kit Tone x Glyph). The traffic palette that
+// stood here pointed at `var(--success)` and `var(--destructive)`, which no
+// theme defines, so the healthy and failing marks it drew were invisible
+// (Gate 5); it was removed with its last user.
 
 export const CATEGORY_LABEL: Record<KpiCategory, string> = {
   technical: 'Technical',
@@ -259,19 +230,6 @@ export function describeMeasureConfig(
 export function fmtUnit(v: number | null | undefined, unit: string): string {
   const num = v ?? '—';
   return unit && unit !== '%' ? `${num} ${unit}` : `${num}${unit}`;
-}
-
-/** Green/yellow/red/gray tallies for a set of KPIs — the traffic-light summary. */
-export function trafficCounts(kpis: MockKpi[]): Record<Traffic, number> {
-  const c: Record<Traffic, number> = { green: 0, yellow: 0, red: 0, gray: 0 };
-  for (const k of kpis) c[statusTraffic(kpiStatus(k))] += 1;
-  return c;
-}
-
-/** Worst-wins traffic colour for a node — red if any red, else yellow, etc. */
-export function worstTraffic(kpis: MockKpi[]): Traffic {
-  const c = trafficCounts(kpis);
-  return c.red > 0 ? 'red' : c.yellow > 0 ? 'yellow' : c.green > 0 ? 'green' : 'gray';
 }
 
 export const KPI_CATEGORIES: KpiCategory[] = ['technical', 'quality', 'traffic', 'value'];

@@ -1,254 +1,140 @@
-// Factory L2 — tab (c) Observability. A /prototype MIX of the Dev Tools LLM
-// and Monitoring submodules in one surface: the project's technical dimension.
-// Left: LLM spend by feature (30d pinpoints via the shared tracing adapters).
-// Right: unresolved production errors (Sentry). Unwired sensors render the blue
-// invitation, never a fake number — measurement before opinion.
-import { useEffect, useMemo, useState } from 'react';
-import { Activity, AlertTriangle, CircleDollarSign } from 'lucide-react';
+// Factory L2 — Observability, composed from the kit: the project's technical
+// dimension in two Sections on the spine. LLM spend by feature (30 days of
+// pinpoints via the shared tracing adapters) and unresolved production errors
+// (Sentry), each a DataTable whose rows carry a Mark for how heavy they are and
+// a pip strip drawn at a stated quantum. The four honest states survive the
+// port: not wired (an invitation, waiting on you), unreachable (a retry, never
+// the empty-success copy), loading (the kit ghost) and a real empty.
+import { useMemo } from 'react';
 
-import { useVaultStore } from '@/stores/vaultStore';
 import { Numeric } from '@/features/shared/components/display/Numeric';
-import {
-  fetchLlmPinpoints,
-  hasLiveAdapter,
-  type LlmPinpoint,
-} from '@/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters';
-import {
-  fetchSentryUnresolvedIssues,
-  splitSentrySlug,
-  type SentryUnresolvedIssue,
-} from '@/features/plugins/dev-tools/sub_overview/adapters';
-import { silentCatch } from '@/lib/silentCatch';
-import { useTranslation } from '@/i18n/useTranslation';
+import { DataTable, KitButton, Section, UnitStrip, type TableRow } from '@/features/shared/components/kit';
+import type { EmptySpec } from '@/features/shared/components/kit';
 
-import { INK } from '../passport/passportInk';
+import { unitQuantum } from '../factoryTone';
+import { useFactoryWords, type FactoryWords } from '../useFactoryWords';
 import type { FactoryL2Data } from './factoryL2Data';
+import { useObservabilityFeeds } from './useObservabilityFeeds';
 
-function Panel({ title, icon, hue, children }: {
-  title: string;
-  icon: React.ReactNode;
-  hue: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-modal p-3.5 min-w-0" style={{ border: '1px solid rgba(148,163,184,.14)', background: 'rgba(148,163,184,.025)' }}>
-      <h3 className="flex items-center gap-2 mb-2.5">
-        <span style={{ color: hue }}>{icon}</span>
-        <span className="text-[10.5px] uppercase tracking-[0.14em] text-foreground/55">{title}</span>
-      </h3>
-      {children}
-    </section>
-  );
-}
+const SHOWN = 12;
+type FeatureCol = 'feature' | 'calls' | 'cost';
+type IssueCol = 'issue' | 'events';
 
-/**
- * A sensor that IS wired and did not answer.
- *
- * Distinct from `WireAsk` (nothing bound yet) and from the empty-success copy
- * below it: both adapters used to `setX([])` in their catch, which made an
- * unreachable Sentry render "No unresolved issues — clear." in emerald and a
- * dead LLM adapter render a $0 month. Failure is not emptiness — it is
- * retryable, and it is never good news.
- */
-function LoadFailed({ onRetry }: { onRetry: () => void }) {
-  const { t } = useTranslation();
-  return (
-    <div className="rounded-card border border-dashed px-3 py-4 text-center" style={{ borderColor: `${INK.amber}55`, background: `${INK.amber}0a` }}>
-      <p className="typo-caption" style={{ color: INK.amber }}>{t.common.source_unreachable}</p>
-      <button
-        type="button"
-        onClick={onRetry}
-        data-testid="observability-retry"
-        className="mt-2 typo-caption underline underline-offset-2 text-foreground/70 hover:text-foreground"
-      >
-        {t.common.retry}
-      </button>
-    </div>
-  );
-}
-
-function WireAsk({ what }: { what: string }) {
-  return (
-    <p className="typo-caption rounded-card border border-dashed px-3 py-4 text-center" style={{ color: INK.blue, borderColor: `${INK.blue}55`, background: `${INK.blue}0a` }}>
-      {what} is not wired — bind a connector on the project (Passport wall → Tooling rows) to light this panel.
-    </p>
-  );
+/** The empty band for a feed that cannot show rows: not wired, unreachable or empty. */
+function feedEmpty(w: FactoryWords, what: string, wired: boolean, failed: boolean, onRetry: () => void, clear: EmptySpec): EmptySpec {
+  if (!wired) return { title: `${what}: ${w.L.notWired}`, hint: w.L.wireAsk(what), tone: 'human' };
+  if (failed) {
+    return {
+      title: w.t.common.source_unreachable, tone: 'warning',
+      action: <KitButton onClick={onRetry} testId="observability-retry">{w.t.common.retry}</KitButton>,
+    };
+  }
+  return clear;
 }
 
 export function FactoryObservabilityTab({ data }: { data: FactoryL2Data }) {
-  const credentials = useVaultStore((s) => s.credentials);
-  const [pinpoints, setPinpoints] = useState<LlmPinpoint[] | null>(null);
-  const [issues, setIssues] = useState<SentryUnresolvedIssue[] | null>(null);
-  // `null` rows = still loading. These say the fetch REJECTED, which used to be
-  // written as `[]` and was therefore indistinguishable from a healthy empty.
-  const [llmFailed, setLlmFailed] = useState(false);
-  const [issuesFailed, setIssuesFailed] = useState(false);
-  // Bumped by the retry buttons; re-runs the effect that owns each adapter.
-  const [llmNonce, setLlmNonce] = useState(0);
-  const [issuesNonce, setIssuesNonce] = useState(0);
+  const w = useFactoryWords();
+  const f = useObservabilityFeeds(data);
 
-  const project = data.project;
-  const llmCredId = project?.llm_tracking_credential_id ?? null;
-  const llmServiceType = useMemo(
-    () => (llmCredId ? credentials.find((c) => c.id === llmCredId)?.serviceType ?? null : null),
-    [llmCredId, credentials],
-  );
-  const monCredId = project?.monitoring_credential_id ?? null;
-  const monSlug = project?.monitoring_project_slug ?? null;
-
-  useEffect(() => {
-    if (!llmCredId || !llmServiceType || !hasLiveAdapter(llmServiceType)) { setPinpoints(null); setLlmFailed(false); return; }
-    let alive = true;
-    setLlmFailed(false);
-    setPinpoints(null);
-    void fetchLlmPinpoints(llmServiceType, llmCredId, '30d')
-      .then((rows) => { if (alive) setPinpoints(rows); })
-      .catch((e) => { silentCatch('factoryL2:obs-llm')(e); if (alive) setLlmFailed(true); });
-    return () => { alive = false; };
-  }, [llmCredId, llmServiceType, llmNonce]);
-
-  useEffect(() => {
-    const [orgSlug, projSlug] = splitSentrySlug(monSlug);
-    if (!monCredId || !orgSlug || !projSlug) { setIssues(null); setIssuesFailed(false); return; }
-    let alive = true;
-    setIssuesFailed(false);
-    setIssues(null);
-    void fetchSentryUnresolvedIssues(monCredId, orgSlug, projSlug)
-      .then((rows) => { if (alive) setIssues(rows); })
-      .catch((e) => { silentCatch('factoryL2:obs-sentry')(e); if (alive) setIssuesFailed(true); });
-    return () => { alive = false; };
-  }, [monCredId, monSlug, issuesNonce]);
-
-  // Fold pinpoints per feature (use-case name), spend-descending.
   const byFeature = useMemo(() => {
-    if (!pinpoints) return [];
-    const m = new Map<string, { cost: number; calls: number; models: Set<string> }>();
-    for (const r of pinpoints) {
-      const key = r.useCaseName ?? `(untagged · ${r.model})`;
-      const e = m.get(key) ?? { cost: 0, calls: 0, models: new Set<string>() };
+    const m = new Map<string, { cost: number; calls: number; models: Set<string>; untagged: boolean }>();
+    for (const r of f.pinpoints ?? []) {
+      const key = r.useCaseName ?? w.L.untagged(r.model);
+      const e = m.get(key) ?? { cost: 0, calls: 0, models: new Set<string>(), untagged: r.useCaseName == null };
       e.cost += r.totalCostUsd;
       e.calls += r.calls;
       e.models.add(r.model);
       m.set(key, e);
     }
     return [...m.entries()].sort((a, b) => b[1].cost - a[1].cost);
-  }, [pinpoints]);
+  }, [f.pinpoints, w.L]);
+  const totalCost = byFeature.reduce((s, [, e]) => s + e.cost, 0);
+  const issues = f.issues ?? [];
+  const totalEvents = issues.reduce((s, i) => s + i.count, 0);
+  const costQ = unitQuantum(byFeature[0]?.[1].cost ?? 0, 24, 0.5);
+  const eventQ = unitQuantum(issues.reduce((m, i) => Math.max(m, i.count), 0), 24, 1);
 
-  const totalCost = useMemo(() => byFeature.reduce((s, [, e]) => s + e.cost, 0), [byFeature]);
-  const totalEvents = useMemo(() => (issues ?? []).reduce((s, i) => s + i.count, 0), [issues]);
-  const maxCost = byFeature[0]?.[1].cost ?? 0;
-  const maxEvents = issues?.[0] ? Math.max(...issues.map((i) => i.count)) : 0;
+  const featureRows: Array<TableRow<FeatureCol>> = byFeature.slice(0, SHOWN).map(([name, e]) => ({
+    id: name,
+    mark: e.cost >= 18 ? { tone: 'error', glyph: 'solid', label: w.cost } : e.cost >= 6 ? { tone: 'warning', glyph: 'solid', label: w.cost } : { tone: 'neutral', glyph: 'soft', label: w.cost },
+    cells: {
+      feature: (
+        <div className="k-cell2">
+          <span className="k-row__name typo-body k-strong">{name}</span>
+          {!e.untagged && <span className="k-row__meta typo-caption">{[...e.models][0]}{e.models.size > 1 ? ` +${e.models.size - 1}` : ''}</span>}
+        </div>
+      ),
+      calls: <span className="typo-data k-regular"><Numeric value={e.calls} unit="count" /></span>,
+      cost: (
+        <span className="k-fig">
+          <UnitStrip size="pip" label={w.cost} segments={[{ n: e.cost / costQ, tone: 'primary', glyph: 'soft' }]} />
+          <span className="typo-data k-regular"><Numeric value={e.cost} unit="usd" precision={2} /></span>
+        </span>
+      ),
+    },
+  }));
+  const issueRows: Array<TableRow<IssueCol>> = issues.slice(0, SHOWN).map((i, idx) => ({
+    id: `${i.culprit ?? i.title}-${idx}`,
+    mark: { tone: i.count >= 25 ? 'error' : 'warning', glyph: 'solid', label: w.errors },
+    cells: {
+      issue: (
+        <div className="k-cell2">
+          <span className="k-row__name typo-body k-strong">{i.title}</span>
+          {i.culprit && <span className="k-row__meta typo-code k-quiet">{i.culprit}</span>}
+        </div>
+      ),
+      events: (
+        <span className="k-fig">
+          <UnitStrip size="pip" label={w.L.events} segments={[{ n: i.count / eventQ, tone: 'error', glyph: 'soft' }]} />
+          <span className="typo-data k-regular">{i.count}</span>
+        </span>
+      ),
+    },
+  }));
 
+  const llmReady = f.llmWired && !f.llmFailed;
+  const issuesReady = data.monitoringWired && !f.issuesFailed;
   return (
-    <div className="grid gap-3 items-start" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))' }} data-testid="factory-observability-tab">
-      <Panel title="LLM spend by feature · 30d" icon={<CircleDollarSign className="w-4 h-4" aria-hidden />} hue={INK.teal}>
-        {!data.llmWired || !llmServiceType ? (
-          <WireAsk what="LLM tracking" />
-        ) : llmFailed ? (
-          <LoadFailed onRetry={() => setLlmNonce((n) => n + 1)} />
-        ) : pinpoints === null ? (
-          <ObservabilityGhostRows />
-        ) : byFeature.length === 0 ? (
-          <p className="typo-caption text-foreground/45 py-3 text-center">No traced LLM calls in the last 30 days.</p>
-        ) : (
-          <>
-            <p className="typo-caption text-foreground/55 mb-2 tabular-nums">
-              <Numeric value={totalCost} unit="usd" precision={2} /> across {byFeature.length} features
-            </p>
-            <ul className="space-y-1.5">
-              {byFeature.slice(0, 12).map(([name, e]) => {
-                const heavy = e.cost >= 18 ? INK.red : e.cost >= 6 ? INK.amber : INK.emerald;
-                return (
-                  <li key={name} className="min-w-0">
-                    <span className="flex items-baseline gap-2 min-w-0">
-                      <span className="typo-caption text-foreground/85 truncate">{name}</span>
-                      <span className="text-[10px] text-foreground/40 shrink-0">{e.calls} calls · {[...e.models][0]}{e.models.size > 1 ? ` +${e.models.size - 1}` : ''}</span>
-                      <span className="typo-caption tabular-nums ml-auto shrink-0" style={{ color: heavy }}>
-                        <Numeric value={e.cost} unit="usd" precision={2} />
-                      </span>
-                    </span>
-                    <span className="block h-[2px] rounded-full mt-1" style={{ background: 'rgba(148,163,184,.10)' }}>
-                      <span className="block h-full rounded-full" style={{ width: `${maxCost > 0 ? (e.cost / maxCost) * 100 : 0}%`, background: heavy }} />
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-            {byFeature.length > 12 && <p className="text-[10px] text-foreground/35 mt-2">+{byFeature.length - 12} more features</p>}
-          </>
-        )}
-      </Panel>
-
-      <Panel title="Monitoring: unresolved errors" icon={<Activity className="w-4 h-4" aria-hidden />} hue={INK.red}>
-        {!data.monitoringWired ? (
-          <WireAsk what="Monitoring" />
-        ) : issuesFailed ? (
-          <LoadFailed onRetry={() => setIssuesNonce((n) => n + 1)} />
-        ) : issues === null ? (
-          <ObservabilityGhostRows />
-        ) : issues.length === 0 ? (
-          <p className="typo-caption py-3 text-center" style={{ color: INK.emerald }}>No unresolved issues — clear.</p>
-        ) : (
-          <>
-            <p className="typo-caption text-foreground/55 mb-2 tabular-nums">{totalEvents} events across {issues.length} unresolved issues</p>
-            <ul className="space-y-1.5">
-              {issues.slice(0, 12).map((i, idx) => {
-                const heavy = i.count >= 25 ? INK.red : INK.amber;
-                return (
-                  <li key={`${i.culprit ?? i.title}-${idx}`} className="min-w-0">
-                    <span className="flex items-baseline gap-2 min-w-0">
-                      <AlertTriangle className="w-3 h-3 shrink-0 self-center" style={{ color: heavy }} aria-hidden />
-                      <span className="typo-caption text-foreground/85 truncate" title={i.title}>{i.title}</span>
-                      <span className="typo-caption tabular-nums ml-auto shrink-0" style={{ color: heavy }}>{i.count}</span>
-                    </span>
-                    {i.culprit && <span className="block text-[10px] text-foreground/40 truncate pl-5">{i.culprit}</span>}
-                    <span className="block h-[2px] rounded-full mt-1" style={{ background: 'rgba(148,163,184,.10)' }}>
-                      <span className="block h-full rounded-full" style={{ width: `${maxEvents > 0 ? (i.count / maxEvents) * 100 : 0}%`, background: heavy }} />
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-            {issues.length > 12 && <p className="text-[10px] text-foreground/35 mt-2">+{issues.length - 12} more issues</p>}
-          </>
-        )}
-      </Panel>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// ObservabilityGhostRows — calm delayed ghost for a panel's list body while
-// its fetch is in flight (loading choreography v2). Mirrors the real list's
-// geometry: a summary line + a handful of name/stat rows each with a thin
-// proportion bar underneath. `animate-fade-in` + a ≥120ms staggered delay so
-// a fast-resolving fetch never paints it; no `animate-pulse`.
-// ---------------------------------------------------------------------------
-
-const OBS_GHOST_BAR = 'rounded bg-primary/[0.06]';
-const OBS_GHOST_NAME_WIDTHS = ['w-32', 'w-24', 'w-28', 'w-20'];
-
-function ObservabilityGhostRows() {
-  return (
-    <div aria-hidden="true">
-      <span className={`block h-2.5 w-40 mb-2 ${OBS_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '120ms' }} />
-      <ul className="space-y-1.5">
-        {OBS_GHOST_NAME_WIDTHS.map((w, i) => (
-          <li key={i} className="min-w-0">
-            <span
-              className="flex items-baseline gap-2 min-w-0 animate-fade-in"
-              style={{ animationDelay: `${140 + i * 35}ms` }}
-            >
-              <span className={`h-3 ${w} ${OBS_GHOST_BAR}`} />
-              <span className="h-2.5 w-10 rounded bg-primary/[0.04] ml-auto shrink-0" />
-            </span>
-            <span
-              className="block h-[2px] rounded-full mt-1 animate-fade-in"
-              style={{ background: 'rgba(148,163,184,.10)', animationDelay: `${140 + i * 35}ms` }}
-            />
-          </li>
-        ))}
-      </ul>
+    <div data-testid="factory-observability-tab">
+      <Section
+        id="s-fac-llm"
+        eyebrow={`${w.observability} · ${w.L.window30d}`}
+        title={w.L.llmSpend}
+        count={llmReady && f.pinpoints ? byFeature.length : undefined}
+        meta={llmReady && byFeature.length > 0 ? <span className="k-legend-row"><span><Numeric value={totalCost} unit="usd" precision={2} /></span><span><UnitStrip size="pip" label={w.cost} segments={[{ n: 1, tone: 'primary', glyph: 'soft' }]} /> = <Numeric value={costQ} unit="usd" precision={costQ < 1 ? 2 : 0} /></span></span> : undefined}
+      >
+        <DataTable<FeatureCol>
+          label={w.L.llmSpend}
+          loading={llmReady && f.pinpoints === null}
+          cols={[
+            { key: 'feature', label: w.features },
+            { key: 'calls', label: w.t.overview.llm_spend.calls, num: true },
+            { key: 'cost', label: w.cost, num: true },
+          ]}
+          rows={llmReady ? featureRows : []}
+          empty={feedEmpty(w, w.L.llmTracking, f.llmWired, f.llmFailed, f.retryLlm, { title: w.L.noLlm })}
+          pager={byFeature.length > SHOWN ? <span className="typo-caption">{w.L.moreFeatures(byFeature.length - SHOWN)}</span> : undefined}
+        />
+      </Section>
+      <Section
+        id="s-fac-errors"
+        eyebrow={w.observability}
+        title={w.L.errorsTitle}
+        count={issuesReady && f.issues ? issues.length : undefined}
+        meta={issuesReady && issues.length > 0 ? <span className="k-legend-row"><span>{totalEvents} {w.L.events}</span><span><UnitStrip size="pip" label={w.L.events} segments={[{ n: 1, tone: 'error', glyph: 'soft' }]} /> = {eventQ} {w.L.events}</span></span> : undefined}
+      >
+        <DataTable<IssueCol>
+          label={w.L.errorsTitle}
+          loading={issuesReady && f.issues === null}
+          cols={[
+            { key: 'issue', label: w.errors },
+            { key: 'events', label: w.t.sidebar.events, num: true },
+          ]}
+          rows={issuesReady ? issueRows : []}
+          empty={feedEmpty(w, w.monitoring, data.monitoringWired, f.issuesFailed, f.retryIssues, { title: w.L.noIssues, tone: 'success' })}
+          pager={issues.length > SHOWN ? <span className="typo-caption">{w.L.moreIssues(issues.length - SHOWN)}</span> : undefined}
+        />
+      </Section>
     </div>
   );
 }

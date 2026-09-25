@@ -1,26 +1,18 @@
-// Shared L3 chrome: breadcrumb + group header (+ optional context filter chip) +
-// the KpiTable. Variants reuse this and only vary the table's bar/density, so
-// the "aggregate a group's KPIs in a table" behaviour stays identical.
+// L3, composed from the kit: the group as a level-1 Section (FactoryHead: the
+// trail above it, a step back to the project or to the portfolio, Add KPI),
+// an active context filter as a pressable chip (press clears it), and the
+// group's KPIs in the kit table. Variants no longer vary the table's bar or
+// density: the kit row family has one of each.
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
 
+import { ChipRow, KitButton } from '@/features/shared/components/kit';
 import { DOMAIN_LABEL, type MockGroup, type MockProject, type MockKpi } from './factoryModel';
-import { Breadcrumb } from './factoryPrimitives';
+import { FactoryHead } from './FactoryHead';
 import { KpiTable } from './KpiTable';
 import { AddKpiModal } from './AddKpiModal';
+import { useFactoryWords } from './useFactoryWords';
 
-export function GroupKpiLayer({
-  project,
-  group,
-  ed,
-  contextFilter,
-  setContextFilter,
-  onOpenKpi,
-  onToProjects,
-  onToGroups,
-  bar = 'bar',
-  density = 'comfortable',
-}: {
+export function GroupKpiLayer({ project, group, ed, contextFilter, setContextFilter, onOpenKpi, onToProjects, onToGroups }: {
   project: MockProject;
   group: MockGroup;
   ed: (k: MockKpi) => MockKpi;
@@ -29,9 +21,8 @@ export function GroupKpiLayer({
   onOpenKpi: (id: string) => void;
   onToProjects: () => void;
   onToGroups: () => void;
-  bar?: 'bar' | 'segments' | 'meter';
-  density?: 'compact' | 'comfortable' | 'spacious';
 }) {
+  const w = useFactoryWords();
   const [showAdd, setShowAdd] = useState(false);
   const rows = group.contexts
     .filter((c) => !contextFilter || c.id === contextFilter)
@@ -39,33 +30,34 @@ export function GroupKpiLayer({
   const fc = contextFilter ? group.contexts.find((c) => c.id === contextFilter) : null;
 
   // Synthetic group/context rows (project-level, ungrouped, group-level) carry
-  // "__" composite ids that aren't real FKs — don't scope a new KPI to those.
+  // "__" composite ids that aren't real FKs; don't scope a new KPI to those.
   const realGroupId = group.id.includes('__') ? undefined : group.id;
   const realContextId = contextFilter && !contextFilter.includes('__') ? contextFilter : undefined;
   const scopeLabel = fc ? (realContextId ? fc.name : group.name) : group.name;
 
   return (
     <>
-      <Breadcrumb trail={[
-        { label: 'Projects', onClick: onToProjects },
-        { label: project.name, onClick: onToGroups },
-        { label: group.name },
-      ]} />
-      <div className="flex items-center gap-2 mb-3 flex-wrap">
-        <span className="w-3 h-3 rounded-full" style={{ background: group.color }} />
-        <h2 className="typo-section-title">{group.name}</h2>
-        <span className="typo-caption">{DOMAIN_LABEL[group.domain]} · {rows.length} KPIs</span>
+      <FactoryHead
+        id="s-fac-group"
+        trail={[w.factory, w.projects, project.name]}
+        title={group.name}
+        count={rows.length}
+        meta={DOMAIN_LABEL[group.domain]}
+        steps={[
+          { label: w.projects, onClick: onToProjects },
+          { label: project.name, onClick: onToGroups },
+        ]}
+        extra={<KitButton onClick={() => setShowAdd(true)} testId="factory-add-kpi-btn">{w.t.kpis.add_kpi_for_context}</KitButton>}
+      >
         {fc && (
-          <button type="button" onClick={() => setContextFilter(null)} className="typo-caption rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-foreground hover:bg-primary/20">
-            {fc.name} ✕
-          </button>
+          <ChipRow
+            label={w.context}
+            emptyLabel=""
+            chips={[{ id: fc.id, label: fc.name, state: 'selected', onPress: () => setContextFilter(null) }]}
+          />
         )}
-        <span className="flex-1" />
-        <button type="button" onClick={() => setShowAdd(true)} className="inline-flex items-center gap-1 typo-caption rounded-interactive border border-primary/20 bg-primary/10 px-2.5 py-1 text-foreground hover:bg-primary/20" data-testid="factory-add-kpi-btn">
-          <Plus className="w-3.5 h-3.5" /> Add KPI
-        </button>
-      </div>
-      <KpiTable kpis={rows} bar={bar} density={density} onOpen={onOpenKpi} />
+        <KpiTable kpis={rows} onOpen={onOpenKpi} w={w} />
+      </FactoryHead>
 
       {showAdd && (
         <AddKpiModal

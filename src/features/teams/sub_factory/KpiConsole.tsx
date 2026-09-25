@@ -1,45 +1,36 @@
-// L4 — KPI detail console (consolidated to the "Console" two-pane layout the
-// user picked). Left pane = read (status, hero value, calibration track,
-// measurement methodic). Right pane = steer (threshold sliders + rate/pros/cons).
-//
-// Round-6 wiring:
-//   · number↔unit spacing via fmtUnit ("0 errors", "78%")
-//   · assessment = rating + Pros + Cons (extended note)
-//   · "Measure now" calls the REAL eval engine (dev_tools_evaluate_kpi)
-//   · the measurement methodic (measure_config) is shown + editable (adjust)
-// Calibration/assessment edits flow up via onEdit; persistence to dev_kpis is
-// handled by the caller (FactoryShell) so the same widget works on mock + live.
+// L4: a KPI's console, composed from the kit (Gate 5). The caller's FactoryHead
+// names the KPI; this is its body. Read: the headline figures (StatStrip, the
+// distance to target drawn as 20 units of 5%), the calibration track, the
+// honest "over to you" state, and the Measurement section (methodic, last
+// reading, Measure now against the real eval engine, Configure). Steer: the
+// threshold and assessment sections (KpiSteer).
+// Calibration and assessment edits flow up via onEdit; FactoryShell persists them.
 import { useState } from 'react';
-import { Clock, SlidersHorizontal, Activity, Play, Settings2, Loader2, Hand } from 'lucide-react';
 
 import { evaluateKpi } from '@/api/devTools/kpis';
-import { STATUS_COLOR, TRAFFIC_COLOR, CATEGORY_LABEL, KIND_LABEL, CADENCE_LABEL, TIER_LABEL, kpiStatus, progressPct, fmtUnit, describeMeasureConfig, type MockKpi, type KpiEdit, type KpiStatus } from './factoryModel';
-import { Sparkline, CalibrationTrack, StatusPill, ThresholdSlider, AssessmentEditor } from './factoryPrimitives';
+import { Dot, KeyValueGrid, KitButton, Section, StatStrip, toneColor, UnitStrip } from '@/features/shared/components/kit';
+import { KIND_LABEL, CADENCE_LABEL, kpiStatus, progressPct, fmtUnit, describeMeasureConfig, type MockKpi, type KpiEdit } from './factoryModel';
+import { CalibrationTrack, Sparkline } from './factoryPrimitives';
+import { KPI_STATUS_MARK } from './factoryTone';
 import { errMsg } from './composeTask';
 import { MeasureSetupModal } from './MeasureSetupModal';
+import { KpiSteer } from './KpiSteer';
+import type { FactoryWords } from './useFactoryWords';
 
-function domain(kpi: MockKpi): { min: number; max: number } {
-  const vals = [kpi.baseline, kpi.target, kpi.warnAt, kpi.critAt, kpi.current ?? kpi.baseline];
-  const lo = Math.min(...vals);
-  const hi = Math.max(...vals);
-  const pad = (hi - lo) * 0.15 || 1;
-  return { min: Math.round((lo - pad) * 100) / 100, max: Math.round((hi + pad) * 100) / 100 };
-}
-
-export function KpiConsole({ kpi, onEdit }: { kpi: MockKpi; onEdit: (patch: KpiEdit) => void }) {
+export function KpiConsole({ kpi, onEdit, w }: { kpi: MockKpi; onEdit: (patch: KpiEdit) => void; w: FactoryWords }) {
   const st = kpiStatus(kpi);
+  const mark = KPI_STATUS_MARK[st];
   const pct = progressPct(kpi);
-  const { min, max } = domain(kpi);
-
-  // Measure now — calls the real eval engine.
   const [measuring, setMeasuring] = useState(false);
   const [measureMsg, setMeasureMsg] = useState<string | null>(null);
+  const [showSetup, setShowSetup] = useState(false);
+
   const handleMeasure = async () => {
     setMeasuring(true);
     setMeasureMsg(null);
     try {
       const m = await evaluateKpi(kpi.id);
-      setMeasureMsg(`Measured ${fmtUnit(m.value, kpi.unit)} saved`);
+      setMeasureMsg(w.L.measured(fmtUnit(m.value, kpi.unit)));
     } catch (e) {
       setMeasureMsg(errMsg(e));
     } finally {
@@ -47,137 +38,51 @@ export function KpiConsole({ kpi, onEdit }: { kpi: MockKpi; onEdit: (patch: KpiE
     }
   };
 
-  // Measurement setup — opens the per-type configuration modal.
-  const [showSetup, setShowSetup] = useState(false);
-
   return (
-    <div className="grid lg:grid-cols-2 gap-4" data-testid="factory-kpi-console">
-      {/* READ */}
-      <div className="rounded-card border border-primary/15 bg-secondary/10 p-5">
-        <div className="flex items-center gap-2 mb-2">
-          <StatusPill status={st} />
-          <span className="ml-auto typo-caption">{TIER_LABEL[kpi.tier]} · {CATEGORY_LABEL[kpi.category]}</span>
+    <div data-testid="factory-kpi-console">
+      <StatStrip
+        tiles={[
+          { label: w.current, value: kpi.current, unit: kpi.unit || undefined },
+          {
+            label: w.L.toTarget,
+            value: pct == null ? null : `${pct}%`,
+            draw: pct == null ? undefined : <UnitStrip size="s" label={w.L.toTarget} segments={[{ n: pct / 5, tone: mark.tone }, { n: 20 - pct / 5, tone: 'neutral', glyph: 'empty' }]} />,
+          },
+          { label: w.baseline, value: fmtUnit(kpi.baseline, kpi.unit) },
+          { label: w.target, value: fmtUnit(kpi.target, kpi.unit) },
+        ]}
+      />
+      <div className="k-in" style={{ margin: '8px 0 20px' }}><CalibrationTrack kpi={kpi} height={28} /></div>
+      {/* D9: the derivation looked at this off-track KPI and judged nothing the team can build would move it. */}
+      {kpi.skipFresh && (
+        <div className="k-in" style={{ marginBottom: 16 }}>
+          <p className="typo-body flex items-center gap-2"><Dot tone="human" glyph="hollow" />{w.L.overToYou}</p>
+          {kpi.skipRationale && <p className="typo-caption">{kpi.skipRationale}</p>}
         </div>
-        <h2 className="typo-section-title mb-3">{kpi.name}</h2>
-        <div className="flex items-end gap-2 mb-4">
-          <span className="text-5xl font-bold tabular-nums" style={{ color: STATUS_COLOR[st] }}>{kpi.current ?? '—'}</span>
-          <span className="typo-body mb-1.5">{kpi.unit}</span>
-          {pct != null && (
-            <span className="ml-auto mb-1 text-right leading-none">
-              <span className="typo-data-lg" style={{ color: STATUS_COLOR[st] }}>{pct}%</span>
-              <span className="block typo-caption">to target</span>
-            </span>
-          )}
-        </div>
-        <CalibrationTrack kpi={kpi} height={36} />
-
-        {/* D9 — honest "over to you" state: the derivation looked at this
-            off-track KPI and judged nothing the team can build would move it. */}
-        {kpi.skipFresh && (
-          <div className="mt-4 rounded-interactive border border-primary/15 bg-secondary/20 px-3 py-2">
-            <p className="typo-caption text-foreground flex items-start gap-1.5">
-              <Hand className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-foreground/60" />
-              <span>The system looked and found nothing it can build for this right now — over to you.</span>
-            </p>
-            {kpi.skipRationale && <p className="typo-caption opacity-70 mt-1 ml-5">{kpi.skipRationale}</p>}
-          </div>
-        )}
-
-        {/* measurement methodic */}
-        <div className="mt-5">
-          <div className="flex items-center gap-2 mb-2">
-            <h3 className="typo-label text-foreground flex items-center gap-1.5"><Activity className="w-3.5 h-3.5" /> Measurement</h3>
-            <span className="typo-caption ml-1">{KIND_LABEL[kpi.measureKind]}</span>
-            <span className="typo-caption flex items-center gap-1"><Clock className="w-3 h-3" /> {CADENCE_LABEL[kpi.cadence]}</span>
-            <span className="flex-1" />
-            <button
-              type="button"
-              onClick={handleMeasure}
-              disabled={measuring}
-              className="typo-caption inline-flex items-center gap-1 rounded-interactive border border-primary/20 bg-primary/10 px-2.5 py-1 text-foreground hover:bg-primary/20 transition-colors disabled:opacity-50"
-            >
-              {measuring ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
-              {measuring ? 'Measuring…' : 'Measure now'}
-            </button>
-          </div>
-
-          {/* methodic: preview + configure */}
-          <div className="rounded-interactive border border-primary/10 bg-background/40 p-2.5 mb-2">
-            <div className="flex items-start gap-2">
-              <span className="typo-caption flex-1 break-words">
-                {describeMeasureConfig(kpi.measureConfig, { emptyText: '(no methodic configured)', unparsedFallback: kpi.measureConfig })}
-              </span>
-              <button type="button" onClick={() => setShowSetup(true)} className="typo-caption inline-flex items-center gap-1 text-primary hover:underline flex-shrink-0">
-                <Settings2 className="w-3 h-3" /> configure
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Sparkline series={kpi.series} color={STATUS_COLOR[st]} width={360} height={34} />
-            <span className="typo-caption">last {kpi.lastMeasuredAt}</span>
-          </div>
-          {measureMsg && <p className="typo-caption mt-1.5" style={{ color: STATUS_COLOR[st] }}>{measureMsg}</p>}
-        </div>
-      </div>
-
-      {/* STEER */}
-      <div className="space-y-4">
-        <section className="rounded-card border border-primary/10 bg-secondary/10 p-4">
-          <h3 className="typo-label text-foreground mb-3 flex items-center gap-1.5"><SlidersHorizontal className="w-3.5 h-3.5" /> Calibrate thresholds</h3>
-          <div className="space-y-5">
-            <ThresholdSlider label="Yellow, at risk" color={TRAFFIC_COLOR.yellow} value={kpi.warnAt} min={min} max={max} unit={kpi.unit} onChange={(v) => onEdit({ warnAt: v })} />
-            <ThresholdSlider label="Red, off track" color={TRAFFIC_COLOR.red} value={kpi.critAt} min={min} max={max} unit={kpi.unit} onChange={(v) => onEdit({ critAt: v })} />
-          </div>
-          <ConsequencePreview st={st} kpi={kpi} />
-        </section>
-        <section className="rounded-card border border-primary/10 bg-secondary/10 p-4">
-          <h3 className="typo-label text-foreground mb-3">Assess</h3>
-          <AssessmentEditor
-            rating={kpi.manualRating}
-            pros={kpi.pros}
-            cons={kpi.cons}
-            onRate={(v) => onEdit({ rating: v })}
-            onPros={(v) => onEdit({ pros: v })}
-            onCons={(v) => onEdit({ cons: v })}
-          />
-        </section>
-      </div>
+      )}
+      <Section
+        level={2}
+        title={w.L.measurement}
+        meta={`${KIND_LABEL[kpi.measureKind]} · ${CADENCE_LABEL[kpi.cadence]}`}
+        actions={
+          <>
+            <KitButton quiet onClick={() => setShowSetup(true)}>{w.t.common.configure}</KitButton>
+            <KitButton onClick={() => { if (!measuring) void handleMeasure(); }} loading={measuring}>{w.t.kpis.measure_now}</KitButton>
+          </>
+        }
+      >
+        <KeyValueGrid
+          min="200px"
+          items={[
+            { k: w.L.methodic, v: describeMeasureConfig(kpi.measureConfig, { emptyText: w.L.noMethodic, unparsedFallback: kpi.measureConfig }) },
+            { k: w.L.lastMeasured, v: kpi.lastMeasuredAt },
+          ]}
+        />
+        <div className="k-in"><Sparkline series={kpi.series} color={toneColor(mark.tone)} width={360} height={34} /></div>
+        {measureMsg && <p className="k-in typo-caption" role="status">{measureMsg}</p>}
+      </Section>
+      <KpiSteer kpi={kpi} onEdit={onEdit} w={w} />
       {showSetup && <MeasureSetupModal kpi={kpi} onClose={() => setShowSetup(false)} />}
-    </div>
-  );
-}
-
-/**
- * D8 — calibration consequence preview. The threshold sliders used to end in a
- * static "red derives a goal" caption; this turns the lever LEGIBLE by reading
- * the live calibrated status (`kpiStatus`, which recomputes as the sliders move)
- * and saying what the system does to THIS KPI at the current lines, right now.
- * It scopes the statement to the thresholds the user is dragging (a breach is
- * the slider's direct consequence); pace-lag is a separate trigger the slider
- * doesn't control.
- */
-function ConsequencePreview({ st, kpi }: { st: KpiStatus; kpi: MockKpi }) {
-  const cur = kpi.current != null ? fmtUnit(kpi.current, kpi.unit) : null;
-  const text =
-    st === 'crit'
-      ? `${cur} is past your red line. The system derives a goal to fix this now.`
-      : st === 'warn'
-        ? `${cur} is in the watch zone. The team gets a nudge, no goal yet.`
-        : st === 'met'
-          ? `Target met at ${cur}. Nothing to steer.`
-          : st === 'unmeasured'
-            ? 'Not measured yet. Your lines take effect on the next measurement.'
-            : `${cur} is clear of both lines. Nothing triggers.`;
-  return (
-    <div className="mt-3">
-      <p className="typo-caption flex items-start gap-1.5" style={{ color: STATUS_COLOR[st] }}>
-        <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: STATUS_COLOR[st] }} />
-        <span>{text}</span>
-      </p>
-      <p className="typo-caption mt-1 opacity-70">
-        Baseline {fmtUnit(kpi.baseline, kpi.unit)} → target {fmtUnit(kpi.target, kpi.unit)}.
-      </p>
     </div>
   );
 }

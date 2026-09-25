@@ -1,85 +1,68 @@
-// R21 — the cockpit bench's hierarchy breadcrumb, migrated into the Factory as
-// the bench retires: Projects ▸ project, where the leaf carries the project's
-// attention dot and doubles as a SIBLING SWITCHER (anchored portal menu) — the
-// breadcrumb is a navigation manipulator, not just a location label.
-import { useState } from 'react';
-import { createPortal } from 'react-dom';
-import { ChevronRight, ChevronsUpDown } from 'lucide-react';
+// The L2 project switcher (R21, migrated from the cockpit bench). It was the
+// breadcrumb's leaf; since Gate 5 the trail lives in FactoryHead and this is
+// its sibling switcher: a KitButton that opens the shared Listbox of every
+// project, each with its attention Dot and a short note (off-track count or
+// healthy). The hand-built portal menu with rgba inline colours is gone.
+import { ChevronsUpDown } from 'lucide-react';
 
-import { anchorTip } from './passport/passportInk';
+import { Button } from '@/features/shared/components/buttons';
+import { Listbox } from '@/features/shared/components/forms/Listbox';
+import { Dot, KitButton, type Tone } from '@/features/shared/components/kit';
 
 export interface FactoryCrumbSibling {
   id: string;
   label: string;
-  /** Short right-aligned note in the switcher (off-track count, "healthy"…). */
+  /** Short right-aligned note (off-track count, "healthy"...). */
   note?: string;
-  hue: string;
+  tone: Tone;
 }
 
-export function FactoryBreadcrumb({ root, onRoot, leaf }: {
-  root: string;
-  onRoot: () => void;
-  leaf: {
-    label: string;
-    hue: string;
-    siblings: FactoryCrumbSibling[];
-    onSelect: (id: string) => void;
-  };
+export function FactoryProjectSwitcher({ current, siblings, label, onSelect }: {
+  current: string;
+  siblings: FactoryCrumbSibling[];
+  label: string;
+  onSelect: (id: string) => void;
 }) {
-  const [menu, setMenu] = useState<DOMRect | null>(null);
-
+  const pick = (i: number) => {
+    const s = siblings[i];
+    if (s && s.id !== current) onSelect(s.id);
+  };
   return (
-    <nav aria-label="Factory hierarchy" data-testid="factory-breadcrumb" className="flex items-center gap-1 min-w-0 mb-2">
-      <button
-        type="button"
-        onClick={onRoot}
-        className="typo-caption text-foreground/50 hover:text-foreground transition-colors focus-ring rounded-interactive px-1 -mx-1"
-      >
-        {root}
-      </button>
-      <ChevronRight className="w-3 h-3 text-foreground/25 shrink-0" aria-hidden />
-      <button
-        type="button"
-        data-testid="factory-crumb-leaf"
-        onClick={(e) => setMenu(menu ? null : e.currentTarget.getBoundingClientRect())}
-        className="inline-flex items-center gap-1.5 min-w-0 px-1.5 py-0.5 rounded-input border border-transparent hover:border-foreground/15 hover:bg-foreground/[0.04] transition-colors focus-ring"
-        title="Switch project"
-      >
-        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: leaf.hue, boxShadow: `0 0 5px ${leaf.hue}88` }} />
-        <span className="typo-caption text-foreground truncate">{leaf.label}</span>
-        <ChevronsUpDown className="w-3 h-3 text-foreground/40 shrink-0" aria-hidden />
-      </button>
-      {menu && createPortal(
-        <div
-          data-testid="factory-crumb-switcher"
-          className="fixed z-50 w-[240px] rounded-modal overflow-hidden py-1"
-          style={{
-            ...anchorTip(menu, 240, 40 + leaf.siblings.length * 34),
-            background: 'color-mix(in srgb, var(--background) 88%, #1e293b)',
-            border: '1px solid rgba(148,163,184,.22)',
-            boxShadow: '0 16px 40px rgba(0,0,0,.45)',
-          }}
-          onMouseLeave={() => setMenu(null)}
-        >
-          <div className="px-3 pt-1.5 pb-1 text-[10px] uppercase tracking-[0.14em] text-foreground/40">{root}</div>
-          {leaf.siblings.map((s) => {
-            const current = s.label === leaf.label;
-            return (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => { setMenu(null); if (!current) leaf.onSelect(s.id); }}
-                className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-foreground/[0.05] ${current ? 'bg-foreground/[0.03]' : ''}`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: s.hue, boxShadow: `0 0 4px ${s.hue}77` }} />
-                <span className={`typo-caption truncate ${current ? 'text-foreground' : 'text-foreground/80'}`}>{s.label}</span>
-                {s.note && <span className="typo-label text-foreground/40 ml-auto shrink-0">{s.note}</span>}
-              </button>
-            );
-          })}
-        </div>,
-        document.body,
+    <Listbox
+      ariaLabel={label}
+      itemCount={siblings.length}
+      onSelectFocused={pick}
+      menuClassName="animate-fade-slide-in absolute top-full mt-1 right-0 w-[280px] glass-sm rounded-card shadow-elevation-3 z-50 overflow-hidden py-1"
+      renderTrigger={({ toggle, isOpen }) => (
+        <KitButton onClick={toggle} expanded={isOpen} testId="factory-crumb-leaf">
+          <span className="inline-flex items-center gap-2">
+            {label}
+            <ChevronsUpDown className="w-3.5 h-3.5" aria-hidden />
+          </span>
+        </KitButton>
       )}
-    </nav>
+    >
+      {({ close, focusIndex }) => (
+        <div data-testid="factory-crumb-switcher">
+          {siblings.map((s, i) => (
+            <Button
+              key={s.id}
+              variant="ghost"
+              size="sm"
+              role="option"
+              aria-selected={s.id === current}
+              className={`w-full justify-start gap-2 ${i === focusIndex || s.id === current ? 'bg-secondary/40' : ''}`}
+              onClick={() => { close(); pick(i); }}
+            >
+              <span className="flex w-full items-center gap-2">
+                <Dot tone={s.tone} glyph="solid" />
+                <span className="typo-body truncate">{s.label}</span>
+                {s.note && <span className="typo-caption ml-auto shrink-0">{s.note}</span>}
+              </span>
+            </Button>
+          ))}
+        </div>
+      )}
+    </Listbox>
   );
 }

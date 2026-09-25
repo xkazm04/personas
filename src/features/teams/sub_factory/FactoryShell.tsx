@@ -1,18 +1,21 @@
 // Drill-down shell shared by every variant. Owns the navigation state and the
 // three shared layers (L1 ProjectsLayer, L3 GroupKpiLayer, L4 KpiConsole) and
 // the keyed fade-slide transition between layers. Variants supply ONLY the L2
-// group/context overview (via renderGroups) + the L3 table look (bar/density) —
-// that's the surface we're still exploring.
+// group/context overview (via renderGroups). Since Gate 5 every level below the
+// portfolio is one kit surface (KitHost compact > Surface dense) whose head is
+// a FactoryHead: the trail above, a step back, the level's name.
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { saveKpiAssessment } from '@/api/devTools/kpis';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
-import { projectKpis, applyEdit, collectKpiAttention, type KpiEdit, type MockKpi, type MockProject } from './factoryModel';
-import { Breadcrumb } from './factoryPrimitives';
-import { FactoryBreadcrumb } from './FactoryBreadcrumb';
-import { INK } from './passport/passportInk';
+import { Dot, KitHost, Meta, Surface } from '@/features/shared/components/kit';
+import { projectKpis, applyEdit, collectKpiAttention, kpiStatus, CATEGORY_LABEL, TIER_LABEL, type KpiEdit, type MockKpi, type MockProject } from './factoryModel';
+import { FactoryHead } from './FactoryHead';
+import { FactoryProjectSwitcher } from './FactoryBreadcrumb';
+import { KPI_STATUS_MARK } from './factoryTone';
+import { useFactoryWords } from './useFactoryWords';
 import { ProjectsLayer } from './ProjectsLayer';
 import { GroupKpiLayer } from './GroupKpiLayer';
 import { KpiConsole } from './KpiConsole';
@@ -30,25 +33,19 @@ export interface GroupsRenderArgs {
 
 export function FactoryShell({
   renderGroups,
-  bar = 'bar',
-  density = 'comfortable',
   testid,
 }: {
   renderGroups: (args: GroupsRenderArgs) => ReactNode;
-  bar?: 'bar' | 'segments' | 'meter';
-  density?: 'compact' | 'comfortable' | 'spacious';
   testid?: string;
 }) {
+  const w = useFactoryWords();
   const [projectId, setProjectId] = useState<string | null>(null);
   const [groupId, setGroupId] = useState<string | null>(null);
   const [contextFilter, setContextFilter] = useState<string | null>(null);
   const [kpiId, setKpiId] = useState<string | null>(null);
-  // The L2 tab, owned HERE rather than inside FactoryProjectTabs. That subtree
-  // is keyed on the project id, so local tab state would be thrown away every
-  // time the breadcrumb switched project and the user would be dropped back on
-  // Overview mid-task. Lifting it keeps the tab you are reading across a
-  // project switch; only an explicit door sets it (a plain open resets to
-  // Overview).
+  // The L2 tab, owned HERE: the tabs subtree is keyed on the project id, so
+  // local state would reset on every project switch. Only an explicit door sets
+  // it (a plain open resets to Overview).
   const [l2Tab, setL2Tab] = useState<L2Tab>('overview');
   const [edits, setEdits] = useState<Record<string, KpiEdit>>({});
   const ed = (k: MockKpi) => applyEdit(k, edits[k.id]);
@@ -109,16 +106,20 @@ export function FactoryShell({
 
   if (project && group && kpi) {
     layerKey = `console:${kpi.id}`;
+    const st = kpiStatus(kpi);
     content = (
-      <>
-        <Breadcrumb trail={[
-          { label: 'Projects', onClick: () => { setProjectId(null); setGroupId(null); setKpiId(null); } },
-          { label: project.name, onClick: () => { setGroupId(null); setKpiId(null); } },
+      <FactoryHead
+        id="s-fac-kpi"
+        trail={[w.factory, w.projects, project.name, group.name]}
+        title={kpi.name}
+        meta={<Meta parts={[TIER_LABEL[kpi.tier], CATEGORY_LABEL[kpi.category], <span key="st" className="inline-flex items-center gap-2"><Dot {...KPI_STATUS_MARK[st]} />{w.status[st]}</span>]} />}
+        steps={[
+          { label: w.projects, onClick: () => { setProjectId(null); setGroupId(null); setKpiId(null); } },
           { label: group.name, onClick: () => setKpiId(null) },
-          { label: kpi.name },
-        ]} />
-        <KpiConsole kpi={kpi} onEdit={(patch) => setEdits((p) => ({ ...p, [kpi.id]: { ...p[kpi.id], ...patch } }))} />
-      </>
+        ]}
+      >
+        <KpiConsole kpi={kpi} w={w} onEdit={(patch) => setEdits((p) => ({ ...p, [kpi.id]: { ...p[kpi.id], ...patch } }))} />
+      </FactoryHead>
     );
   } else if (project && group) {
     layerKey = `table:${group.id}:${contextFilter ?? 'all'}`;
@@ -132,8 +133,6 @@ export function FactoryShell({
         onOpenKpi={setKpiId}
         onToProjects={() => { setProjectId(null); setGroupId(null); }}
         onToGroups={() => setGroupId(null)}
-        bar={bar}
-        density={density}
       />
     );
   } else if (projectId) {
@@ -142,39 +141,34 @@ export function FactoryShell({
     // Overview/Observability fetch the opened project themselves; the matrix
     // fills in once this project's groups land.
     layerKey = `groups:${projectId}`;
+    const offTrack = (pj: MockProject) => collectKpiAttention(pj).length;
+    const note = (pj: MockProject) => (offTrack(pj) > 0 ? `${offTrack(pj)} ${w.L.offTrack}` : w.kind.ok.toLowerCase());
+    // L2 (2026-07, R15): Overview (the consolidated Focus grid) · KPI matrix
+    // (keeping the L3/L4 drill) · Observability. The Dev Tools originals stay:
+    // dual-run until proven.
     content = (
-      <>
-        {(() => {
-          const hueFor = (pj: MockProject) => (collectKpiAttention(pj).length > 0 ? INK.red : INK.emerald);
-          const noteFor = (pj: MockProject) => {
-            const n = collectKpiAttention(pj).length;
-            return n > 0 ? `${n} off-track` : 'healthy';
-          };
-          return (
-            <FactoryBreadcrumb
-              root="Projects"
-              onRoot={() => setProjectId(null)}
-              leaf={{
-                label: project?.name ?? projectId,
-                hue: project ? hueFor(project) : INK.emerald,
-                siblings: projects.map((pj) => ({ id: pj.id, label: pj.name, note: noteFor(pj), hue: hueFor(pj) })),
-                onSelect: (id) => { setProjectId(id); setGroupId(null); setKpiId(null); },
-              }}
+      <FactoryProjectTabs
+        projectId={projectId}
+        matrix={project ? renderGroups({ project, ed, openGroup, openKpi }) : null}
+        onKpisChanged={reload}
+        tab={l2Tab}
+        onTabChange={setL2Tab}
+        head={{
+          id: 's-fac-project',
+          trail: [w.factory, w.projects],
+          title: project?.name ?? projectId,
+          meta: project ? <span className="inline-flex items-center gap-2"><Dot tone={offTrack(project) > 0 ? 'error' : 'success'} />{note(project)}</span> : undefined,
+          steps: [{ label: w.projects, onClick: () => setProjectId(null) }],
+          extra: (
+            <FactoryProjectSwitcher
+              current={projectId}
+              label={w.L.switchProject}
+              siblings={projects.map((pj) => ({ id: pj.id, label: pj.name, note: note(pj), tone: offTrack(pj) > 0 ? 'error' : 'success' }))}
+              onSelect={(id) => { setProjectId(id); setGroupId(null); setKpiId(null); }}
             />
-          );
-        })()}
-        {/* L2 restructure (2026-07): four ink tabs — KPIs (proposals queue +
-            the matrix, keeping the L3/L4 drill) · Context map · Observability ·
-            Overview (the Focus health grid on real data). The donor modules in
-            Dev Tools / Projects→KPIs stay — dual-run until proven. */}
-        <FactoryProjectTabs
-          projectId={projectId}
-          matrix={project ? renderGroups({ project, ed, openGroup, openKpi }) : null}
-          onKpisChanged={reload}
-          tab={l2Tab}
-          onTabChange={setL2Tab}
-        />
-      </>
+          ),
+        }}
+      />
     );
   } else {
     content = (
@@ -194,7 +188,11 @@ export function FactoryShell({
 
   return (
     <div key={layerKey} className="animate-fade-slide-in flex-1 min-h-0 overflow-y-auto" data-testid={testid}>
-      {content}
+      {layerKey === 'projects' ? content : (
+        <KitHost compact testId="factory-surface">
+          <Surface dense>{content}</Surface>
+        </KitHost>
+      )}
     </div>
   );
 }
