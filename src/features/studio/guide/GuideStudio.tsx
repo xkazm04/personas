@@ -204,6 +204,7 @@ export default function GuideStudio({
               awaitingApproval={awaitingApproval}
               proofUrl={live && id ? (preview.previewUrls[id] ?? null) : null}
               booting={!drafting && !!rt && rt.phase !== 'live'}
+              opened={opened}
             />
           )}
           {!drafted && sketchMode && !showVision && (sketchSrc || rt) && (

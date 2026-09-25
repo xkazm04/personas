@@ -18305,7 +18305,6 @@
       "draft_kind_research": "Recherche",
       "draft_kind_search": "Rechercher",
       "draft_notes": "Remarques",
-      "draft_notes_empty": "Aucun mot d'Athena pour le moment.",
       "draft_project": "Projet",
       "draft_stamp_approval": "Pour approbation",
       "draft_stamp_issued": "Emis",
@@ -18317,7 +18316,10 @@
       "draft_status_template": "Feuille vierge",
       "sheet_style_drafting": "Dessin",
       "sheet_style_label": "Style de feuille",
-      "sheet_style_plan": "Cartes de plan"
+      "sheet_style_plan": "Cartes de plan",
+      "draft_kind_draw": "Tracé",
+      "draft_plan_sheet": "Le plan",
+      "draft_status_loading": "Ouverture du plan"
     },
     "bun_missing": "Bun n'est pas installé, et Studio en a besoin pour créer et exécuter des projets. Installez le depuis bun.sh (ou définissez PERSONAS_BUN_BIN), puis redémarrez l'application.",
     "bun_unknown": "Impossible de vérifier si Bun est installé. Studio en a besoin pour créer et exécuter des projets. Réessayez, ou installez le depuis bun.sh et redémarrez l'application.",

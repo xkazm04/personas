@@ -18305,7 +18305,6 @@
       "draft_kind_research": "Riset",
       "draft_kind_search": "Cari",
       "draft_notes": "Catatan",
-      "draft_notes_empty": "Belum ada kata dari Athena.",
       "draft_project": "Proyek",
       "draft_stamp_approval": "Untuk persetujuan",
       "draft_stamp_issued": "Diterbitkan",
@@ -18317,7 +18316,10 @@
       "draft_status_template": "Lembar kosong",
       "sheet_style_drafting": "Menggambar",
       "sheet_style_label": "Gaya lembar",
-      "sheet_style_plan": "Kartu rencana"
+      "sheet_style_plan": "Kartu rencana",
+      "draft_kind_draw": "Gambar",
+      "draft_plan_sheet": "Rencananya",
+      "draft_status_loading": "Membuka rencana"
     },
     "bun_missing": "Bun belum terinstal, padahal Studio membutuhkannya untuk membuat kerangka dan menjalankan proyek. Instal dari bun.sh (atau atur PERSONAS_BUN_BIN), lalu mulai ulang aplikasi.",
     "bun_unknown": "Tidak dapat memeriksa apakah Bun terinstal. Studio membutuhkannya untuk membuat kerangka dan menjalankan proyek. Coba lagi, atau instal dari bun.sh dan mulai ulang aplikasi.",

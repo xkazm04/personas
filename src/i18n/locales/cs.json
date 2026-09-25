@@ -18305,7 +18305,6 @@
       "draft_kind_research": "Výzkum",
       "draft_kind_search": "Hledat",
       "draft_notes": "Poznámky",
-      "draft_notes_empty": "Zatím žádná slova od Athena.",
       "draft_project": "Projekt",
       "draft_stamp_approval": "Ke schválení",
       "draft_stamp_issued": "Vydáno",
@@ -18317,7 +18316,10 @@
       "draft_status_template": "Prázdný list",
       "sheet_style_drafting": "Kreslení",
       "sheet_style_label": "Styl listu",
-      "sheet_style_plan": "Plánovací karty"
+      "sheet_style_plan": "Plánovací karty",
+      "draft_kind_draw": "Kreslení",
+      "draft_plan_sheet": "Plán",
+      "draft_status_loading": "Otevírám plán"
     },
     "bun_missing": "Bun není nainstalovaný a Studio ho potřebuje k vytváření a spouštění projektů. Nainstaluj ho z bun.sh (nebo nastav PERSONAS_BUN_BIN) a restartuj aplikaci.",
     "bun_unknown": "Nepodařilo se zjistit, jestli je Bun nainstalovaný. Studio ho potřebuje k vytváření a spouštění projektů. Zkus to znovu, nebo ho nainstaluj z bun.sh a restartuj aplikaci.",
