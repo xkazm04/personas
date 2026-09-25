@@ -25,6 +25,7 @@ starts in the batch track.
   `npx vitest run --reporter=dot --shard=i/4`); `npm run check:i18n:strict` when strings change.
 - Director at batch close: `npm run census:check` on a clean tree; ratchet drops only after tracing each to a
   removal in the batch diff (`npm run census -- --update` then commit it alone); never re-baseline a rise.
+- When a builder DELETES or MOVES a file: `node scripts/census/check-corpus-integrity.mjs` and `npm run check:evidence` (subject evidence lists and golden-path citations resolve paths; a deleted component broke both on 2026-09-25, the companions move did the same on 2026-09-22).
 - Theme colour: `npm run check:themes` (contrast + CIEDE2000 role/status distinctness) when roles move.
 
 ## Instruments
@@ -71,3 +72,4 @@ home, overview, agents, vault, settings, then plugins, companions, teams, trigge
 - Setup/"waiting on you" reads info-blue, not the pink human role (Gate 5).
 
 ## Skill improvement log
+- 2026-09-25 (grow-1 / dead code): deleting a component broke `check:evidence` through a subject evidence list; second sighting in this repo, promoted into `## Gates`.
