@@ -136,23 +136,29 @@ fn seat_view(
     }
 }
 
-/// Screenshot files of the visual pass for one variant (`<tag>-<n>-*.png`,
-/// the tag being the blind letter or the seat id).
-fn screenshots(paths: &ArenaPaths, letter: &str, seat_id: &str, n: u32) -> Vec<String> {
+/// Every screenshot of the visual pass (`runs/visual/*.png`), sorted. Read
+/// ONCE per `contest_get`, then split per variant by [`pick_screenshots`].
+fn visual_pngs(paths: &ArenaPaths) -> Vec<String> {
     let Ok(rd) = std::fs::read_dir(paths.visual_dir()) else {
         return Vec::new();
     };
-    let prefixes = [format!("{letter}-{n}-"), format!("{seat_id}-{n}-")];
     let mut names: Vec<String> = rd
         .flatten()
         .filter_map(|e| e.file_name().to_str().map(str::to_string))
-        .filter(|name| {
-            name.to_ascii_lowercase().ends_with(".png")
-                && prefixes.iter().any(|p| name.starts_with(p.as_str()))
-        })
+        .filter(|name| name.to_ascii_lowercase().ends_with(".png"))
         .collect();
     names.sort();
     names
+}
+
+/// One variant's screenshots (`<tag>-<n>-*.png`, the tag being the blind
+/// letter or the seat id), in the listing's order.
+fn pick_screenshots(pngs: &[String], letter: &str, seat_id: &str, n: u32) -> Vec<String> {
+    let prefixes = [format!("{letter}-{n}-"), format!("{seat_id}-{n}-")];
+    pngs.iter()
+        .filter(|name| prefixes.iter().any(|p| name.starts_with(p.as_str())))
+        .cloned()
+        .collect()
 }
 
 pub fn detail(db: &DbPool, project_id: &str, contest_id: &str) -> Result<ContestDetail, AppError> {
@@ -218,6 +224,7 @@ pub fn detail(db: &DbPool, project_id: &str, contest_id: &str) -> Result<Contest
         }
     };
     let mut variants = Vec::new();
+    let pngs = visual_pngs(paths);
     if let Some(m) = manifest {
         for (seat_id, entry) in &m.entries {
             if !arena::is_safe_slug(seat_id) {
@@ -241,7 +248,7 @@ pub fn detail(db: &DbPool, project_id: &str, contest_id: &str) -> Result<Contest
                     } else {
                         None
                     },
-                    screenshots: screenshots(paths, &entry.letter, seat_id, v.n)
+                    screenshots: pick_screenshots(&pngs, &entry.letter, seat_id, v.n)
                         .into_iter()
                         .filter_map(|name| {
                             preview::preview_url(
@@ -285,4 +292,76 @@ pub fn detail(db: &DbPool, project_id: &str, contest_id: &str) -> Result<Contest
         review: review::read_review(paths),
         chain: s.chain_view(),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The old per-variant scan (one read_dir per variant), kept as the oracle.
+    fn screenshots_per_variant(
+        paths: &ArenaPaths,
+        letter: &str,
+        seat_id: &str,
+        n: u32,
+    ) -> Vec<String> {
+        let Ok(rd) = std::fs::read_dir(paths.visual_dir()) else {
+            return Vec::new();
+        };
+        let prefixes = [format!("{letter}-{n}-"), format!("{seat_id}-{n}-")];
+        let mut names: Vec<String> = rd
+            .flatten()
+            .filter_map(|e| e.file_name().to_str().map(str::to_string))
+            .filter(|name| {
+                name.to_ascii_lowercase().ends_with(".png")
+                    && prefixes.iter().any(|p| name.starts_with(p.as_str()))
+            })
+            .collect();
+        names.sort();
+        names
+    }
+
+    #[test]
+    fn one_listing_splits_into_the_same_screenshots_per_variant() {
+        let tmp = tempfile::tempdir().unwrap();
+        let paths = ArenaPaths::new(tmp.path(), "c").unwrap();
+        std::fs::create_dir_all(paths.visual_dir()).unwrap();
+        for name in [
+            "A-1-desktop.png",
+            "A-1-mobile.PNG",
+            "A-10-desktop.png",
+            "A-2-desktop.png",
+            "claude-opus_high-1-wide.png",
+            "B-1-desktop.png",
+            "A-1-notes.txt",
+            "A-1.png",
+        ] {
+            std::fs::write(paths.visual_dir().join(name), b"x").unwrap();
+        }
+        let pngs = visual_pngs(&paths);
+        for (letter, seat, n) in [
+            ("A", "claude-opus_high", 1),
+            ("A", "claude-opus_high", 2),
+            ("A", "claude-opus_high", 10),
+            ("B", "grok-grok-4.6_low", 1),
+            ("C", "nobody", 3),
+        ] {
+            assert_eq!(
+                pick_screenshots(&pngs, letter, seat, n),
+                screenshots_per_variant(&paths, letter, seat, n),
+                "{letter}/{n}"
+            );
+        }
+        assert_eq!(
+            pick_screenshots(&pngs, "A", "claude-opus_high", 1),
+            vec![
+                "A-1-desktop.png",
+                "A-1-mobile.PNG",
+                "claude-opus_high-1-wide.png"
+            ]
+        );
+        // No visual dir at all: nothing, as before.
+        let bare = ArenaPaths::new(tmp.path(), "other").unwrap();
+        assert!(visual_pngs(&bare).is_empty());
+    }
 }
