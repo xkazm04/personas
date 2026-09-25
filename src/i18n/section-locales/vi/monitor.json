@@ -820,5 +820,7 @@
   "usage_provider_claude": "Claude",
   "usage_provider_codex": "OpenAI Codex",
   "usage_provider_grok": "xAI Grok",
-  "queue_origin_contest": "Cuộc thi"
+  "queue_origin_contest": "Cuộc thi",
+  "grid_column_contest_open": "Mở {contest} trên trang Cuộc thi",
+  "grid_column_contest_unlinked": "{contest} bắt đầu trước khi các ghế ghi lại dự án của chúng, nên không thể mở từ đây"
 }

@@ -150,7 +150,8 @@ pub fn worker_end_kind(state_reason: Option<&str>) -> WorkerEndKind {
 /// fleet's stdin-held headless lane the one-shot reap is what keeps a finished
 /// task from holding a slot.
 ///
-/// A **contest seat** (`contest:<contestId>:<seatId>`) is one-shot by
+/// A **contest seat** (`contest:<projectId>/<contestId>:<seatId>`, or the older
+/// `contest:<contestId>:<seatId>`) is one-shot by
 /// construction: the /contest method gives each seat exactly one headless turn
 /// on its brief, and the contest driver reads the seat's end from the process
 /// exit.
@@ -654,6 +655,11 @@ mod tests {
         assert!(is_one_shot_worker_label(Some(
             "contest:home-hero:claude-opus_xhigh"
         )));
+        // The current label carries the project; both forms are one-shot.
+        assert!(is_one_shot_worker_label(Some(
+            &super::super::contest_seat::contest_run_label("p1", "home-hero", "claude-opus_xhigh")
+        )));
+        assert!(!is_one_shot_worker_label(Some("contest:p1/home-hero")));
         assert!(!is_one_shot_worker_label(Some("contest notes")));
         assert!(!is_one_shot_worker_label(Some("contest:")));
         // The night's own dispatcher drives its sessions across several turns —

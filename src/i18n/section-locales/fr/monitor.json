@@ -820,5 +820,7 @@
   "usage_provider_claude": "Claude",
   "usage_provider_codex": "OpenAI Codex",
   "usage_provider_grok": "xAI Grok",
-  "queue_origin_contest": "Concours"
+  "queue_origin_contest": "Concours",
+  "grid_column_contest_open": "Ouvrir {contest} sur la page Concours",
+  "grid_column_contest_unlinked": "{contest} a démarré avant que ses places n'enregistrent leur projet ; impossible de l'ouvrir d'ici"
 }

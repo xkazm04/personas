@@ -14,7 +14,7 @@ import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { PersonaCardModel } from '../monitorModel';
 import { groupFleet, tallyStates, type SquareState, type TeamGroup } from './fleetGridModel';
 import { filterCards, isBoardFilterActive, NO_BOARD_FILTER, type BoardFilter } from './boardFilter';
-import { contestIdOfGroupKey, type SessionGrouping } from './fleetSessionModel';
+import { contestOfGroupKey, type SessionGrouping } from './fleetSessionModel';
 import { columnRows, type ColumnRow } from './gridGeometry';
 
 /** Stable empty list so a session-less column never rebuilds its rows. */
@@ -30,10 +30,18 @@ export interface BoardColumn extends TeamGroup {
   /**
    * The contest this column is the run group OF, or `null` for a team or
    * workspace column. A contest column carries no personas, only that
-   * contest's seats; its `teamId` is the run-group key (`contest:<id>`) and
-   * its `teamName` the contest id, so it needs no string of its own.
+   * contest's seats; its `teamId` is the run-group key
+   * (`contest:<projectId>/<contestId>`) and its `teamName` the contest id —
+   * the header swaps in the title when the contest list cache knows it.
    */
   contestId: string | null;
+  /**
+   * The project whose arena holds that contest — the other half of its
+   * identity, and what lets the header open it. `null` for a team column,
+   * and for a contest whose seats were labelled before the project joined
+   * the run label.
+   */
+  contestProjectId: string | null;
 }
 
 /**
@@ -128,6 +136,7 @@ export function useBoardModel(
       ...g,
       rows: columnRows(g.cards, filtered ? EMPTY_SESSIONS : (sessionGroups.byTeam.get(g.teamId) ?? EMPTY_SESSIONS), g.teamName),
       contestId: null,
+      contestProjectId: null,
     })),
     [ordered, sessionGroups.byTeam, filtered],
   );
@@ -140,16 +149,17 @@ export function useBoardModel(
     if (filtered) return [];
     const out: BoardColumn[] = [];
     for (const [key, list] of sessionGroups.byRun) {
-      const contestId = contestIdOfGroupKey(key);
-      if (!contestId || list.length === 0) continue;
+      const contest = contestOfGroupKey(key);
+      if (!contest || list.length === 0) continue;
       out.push({
         teamId: key,
-        teamName: contestId,
+        teamName: contest.contestId,
         teamColor: CONTEST_COLUMN_COLOR,
         workspaceId: null,
         cards: [],
         rows: columnRows([], list, null),
-        contestId,
+        contestId: contest.contestId,
+        contestProjectId: contest.projectId,
       });
     }
     return out;

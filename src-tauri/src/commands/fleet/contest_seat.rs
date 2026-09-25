@@ -6,7 +6,7 @@
 //!
 //! - [`spawn_contest_seat`] admits the seat through `queue::admit` — the
 //!   fleet's one admission door, no bypass — with origin `contest`, the run
-//!   label `contest:<contestId>:<seatId>` (which makes it a ONE-SHOT worker:
+//!   label `contest:<projectId>/<contestId>:<seatId>` (which makes it a ONE-SHOT worker:
 //!   its single turn ending ends the session, and the process exits or is
 //!   reaped) and the /contest skill's per-engine isolation (`engineCommand`).
 //! - [`kill_contest_seat`] ends a seat through the fleet's own kill path (a
@@ -45,23 +45,60 @@ use super::types::{FleetSessionMode, FleetSessionState};
 /// "contest notes" is never read as a seat.
 pub const CONTEST_RUN_LABEL_PREFIX: &str = "contest:";
 
-/// The run label of one seat: `contest:<contestId>:<seatId>`.
-pub fn contest_run_label(contest_id: &str, seat_id: &str) -> String {
+/// Separates the project from the contest inside a run label. A contest id is
+/// a filesystem slug (`[A-Za-z0-9._-]+`, `contest::arena::is_safe_slug`) and a
+/// project id is a UUID, so neither can hold a `/`.
+pub const CONTEST_RUN_LABEL_PROJECT_SEP: char = '/';
+
+/// The run label of one seat: `contest:<projectId>/<contestId>:<seatId>`.
+///
+/// Arenas are per project and contest ids are unique only inside one arena,
+/// so the project is part of the contest's identity: without it two projects'
+/// same-slug contests share one Monitor column and the column cannot link back.
+pub fn contest_run_label(project_id: &str, contest_id: &str, seat_id: &str) -> String {
     format!(
-        "{CONTEST_RUN_LABEL_PREFIX}{}:{}",
+        "{CONTEST_RUN_LABEL_PREFIX}{}{CONTEST_RUN_LABEL_PROJECT_SEP}{}:{}",
+        project_id.trim(),
         contest_id.trim(),
         seat_id.trim()
     )
 }
 
-/// `(contestId, seatId)` from a seat's run label, `None` for anything else.
-/// The contest id is a filesystem slug (no `:`), so the FIRST colon after the
-/// prefix separates the two; both halves must be non-empty.
-pub fn parse_contest_run_label(label: &str) -> Option<(&str, &str)> {
+/// A seat's run label, parsed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ContestRunLabel<'a> {
+    /// `None` for a label written before the project joined it
+    /// (`contest:<contestId>:<seatId>`) — such sessions persist across a
+    /// release, so the old form still parses.
+    pub project_id: Option<&'a str>,
+    pub contest_id: &'a str,
+    pub seat_id: &'a str,
+}
+
+/// The parts of a seat's run label, `None` for anything else. Two forms:
+/// `contest:<projectId>/<contestId>:<seatId>` (current) and
+/// `contest:<contestId>:<seatId>` (before the project joined the label). The
+/// FIRST colon after the prefix ends the contest half (neither a slug nor a
+/// UUID holds a `:`); every part present must be non-empty.
+pub fn parse_contest_run_label(label: &str) -> Option<ContestRunLabel<'_>> {
     let rest = label.trim_start().strip_prefix(CONTEST_RUN_LABEL_PREFIX)?;
-    let (contest_id, seat_id) = rest.split_once(':')?;
-    let (contest_id, seat_id) = (contest_id.trim(), seat_id.trim());
-    (!contest_id.is_empty() && !seat_id.is_empty()).then_some((contest_id, seat_id))
+    let (head, seat_id) = rest.split_once(':')?;
+    let seat_id = seat_id.trim();
+    let (project_id, contest_id) = match head.split_once(CONTEST_RUN_LABEL_PROJECT_SEP) {
+        Some((project, contest)) => {
+            let project = project.trim();
+            if project.is_empty() {
+                return None;
+            }
+            (Some(project), contest.trim())
+        }
+        None => (None, head.trim()),
+    };
+    (!contest_id.is_empty() && !seat_id.is_empty()).then_some(ContestRunLabel {
+        project_id,
+        contest_id,
+        seat_id,
+    })
 }
 
 /// True when a fleet session's run label marks it a contest seat.
@@ -181,7 +218,7 @@ pub struct ContestSeatLaunch {
     pub engine: ContestEngine,
     pub model: String,
     pub effort: ContestEffort,
-    /// `contest:<contestId>:<seatId>` — build it with [`contest_run_label`].
+    /// `contest:<projectId>/<contestId>:<seatId>` — build it with [`contest_run_label`].
     pub run_label: String,
     /// Earliest start (epoch ms); the queue holds the seat until then.
     pub not_before_ms: Option<i64>,
@@ -196,9 +233,9 @@ pub async fn spawn_contest_seat(
     app: &AppHandle,
     launch: ContestSeatLaunch,
 ) -> Result<String, AppError> {
-    let Some((_, seat_id)) = parse_contest_run_label(&launch.run_label) else {
+    let Some(ContestRunLabel { seat_id, .. }) = parse_contest_run_label(&launch.run_label) else {
         return Err(AppError::Validation(format!(
-            "contest seat run label must be `contest:<contestId>:<seatId>`, got `{}`",
+            "contest seat run label must be `contest:<projectId>/<contestId>:<seatId>`, got `{}`",
             launch.run_label
         )));
     };
@@ -589,11 +626,16 @@ mod tests {
 
     #[test]
     fn the_run_label_round_trips_and_rejects_lookalikes() {
-        let label = contest_run_label("home-hero", "claude-opus_xhigh");
-        assert_eq!(label, "contest:home-hero:claude-opus_xhigh");
+        let pid = "0b7c2a4e-3f1d-4c2b-9a8e-5d6f7a8b9c0d";
+        let label = contest_run_label(pid, "home-hero", "claude-opus_xhigh");
+        assert_eq!(label, format!("contest:{pid}/home-hero:claude-opus_xhigh"));
         assert_eq!(
             parse_contest_run_label(&label),
-            Some(("home-hero", "claude-opus_xhigh"))
+            Some(ContestRunLabel {
+                project_id: Some(pid),
+                contest_id: "home-hero",
+                seat_id: "claude-opus_xhigh",
+            })
         );
         assert!(is_contest_run_label(Some(&label)));
         for bad in [
@@ -601,11 +643,31 @@ mod tests {
             "contest:",
             "contest:x",
             "contest::seat",
+            "contest:p1/:seat",
+            "contest:/c1:seat",
+            "contest:p1/c1:",
+            "contest:p1/c1",
             "app-master:x",
         ] {
             assert!(!is_contest_run_label(Some(bad)), "{bad}");
         }
         assert!(!is_contest_run_label(None));
+    }
+
+    /// Sessions labelled before the project joined the label persist across a
+    /// release: the old two-part form still parses, with no project.
+    #[test]
+    fn an_old_two_part_label_still_parses_with_no_project() {
+        let old = "contest:home-hero:claude-opus_xhigh";
+        assert_eq!(
+            parse_contest_run_label(old),
+            Some(ContestRunLabel {
+                project_id: None,
+                contest_id: "home-hero",
+                seat_id: "claude-opus_xhigh",
+            })
+        );
+        assert!(is_contest_run_label(Some(old)));
     }
 
     fn value_of<'a>(args: &'a [String], flag: &str) -> Option<&'a str> {

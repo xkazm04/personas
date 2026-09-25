@@ -828,6 +828,8 @@ export type Translations = {
     usage_provider_claude: string;
     usage_provider_codex: string;
     usage_provider_grok: string;
+    grid_column_contest_open: string;
+    grid_column_contest_unlinked: string;
   };
   common: {
     unknown_error: string;

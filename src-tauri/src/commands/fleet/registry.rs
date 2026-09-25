@@ -397,6 +397,10 @@ impl AdmissionFacts {
 
 impl FleetSessionInner {
     pub fn to_dto(&self) -> FleetSession {
+        let contest = self
+            .run_label
+            .as_deref()
+            .and_then(super::contest_seat::parse_contest_run_label);
         FleetSession {
             id: self.id.clone(),
             claude_session_id: self.claude_session_id.clone(),
@@ -433,11 +437,8 @@ impl FleetSessionInner {
             cycle_index: self.cycle_index,
             run_label: self.run_label.clone(),
             run_id: self.run_id.clone(),
-            contest_id: self
-                .run_label
-                .as_deref()
-                .and_then(super::contest_seat::parse_contest_run_label)
-                .map(|(contest_id, _)| contest_id.to_string()),
+            contest_id: contest.map(|c| c.contest_id.to_string()),
+            contest_project_id: contest.and_then(|c| c.project_id).map(str::to_string),
         }
     }
 }

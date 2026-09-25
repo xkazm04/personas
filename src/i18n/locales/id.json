@@ -7362,7 +7362,9 @@
     "usage_provider_claude": "Claude",
     "usage_provider_codex": "OpenAI Codex",
     "usage_provider_grok": "xAI Grok",
-    "queue_origin_contest": "Kontes"
+    "queue_origin_contest": "Kontes",
+    "grid_column_contest_open": "Buka {contest} di halaman Kontes",
+    "grid_column_contest_unlinked": "{contest} dimulai sebelum kursinya mencatat proyeknya, jadi tidak bisa dibuka dari sini"
   },
   "onboarding": {
     "adopt_button": "Siapkan agen",

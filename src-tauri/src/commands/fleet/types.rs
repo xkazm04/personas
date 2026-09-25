@@ -249,7 +249,7 @@ pub struct FleetSession {
     /// Which autopilot / night-shift cycle produced this dispatch.
     #[ts(type = "number | null")]
     pub cycle_index: Option<i64>,
-    /// The dispatcher's run label (`contest:<contestId>:<seatId>`,
+    /// The dispatcher's run label (`contest:<projectId>/<contestId>:<seatId>`,
     /// `app-master:<personaId>`, `dev-runner:<batch>`, …), or null for an
     /// operator's unlabelled session. The Monitor groups `contest:` sessions
     /// into one column per contest from it.
@@ -259,10 +259,17 @@ pub struct FleetSession {
     #[serde(default)]
     pub run_id: Option<String>,
     /// The contest this session is a seat of, parsed once here from a
-    /// `contest:<contestId>:<seatId>` run label (`contest_seat`), or null. The
-    /// Monitor groups on it rather than re-parsing the label.
+    /// `contest:<projectId>/<contestId>:<seatId>` run label (`contest_seat`), or
+    /// null. The Monitor groups on it rather than re-parsing the label.
     #[serde(default)]
     pub contest_id: Option<String>,
+    /// The project whose arena holds that contest, from the same label. Null
+    /// for a non-contest session AND for a seat labelled before the project
+    /// joined the label (`contest:<contestId>:<seatId>`): contest ids are
+    /// unique only inside one project's arena, so the Monitor keys a column on
+    /// the pair and links the column back to its contest only when it is known.
+    #[serde(default)]
+    pub contest_project_id: Option<String>,
 }
 
 /// Snapshot of the full fleet registry — returned by `fleet_list_sessions`.

@@ -463,7 +463,7 @@ async fn launch_seats_from(
                 engine: parsed.engine,
                 model: parsed.model.clone(),
                 effort: parsed.effort,
-                run_label: contest_run_label(ctx.contest_id(), &key),
+                run_label: contest_run_label(&ctx.project_id, ctx.contest_id(), &key),
                 not_before_ms: sidecar.not_before_ms,
             },
         )

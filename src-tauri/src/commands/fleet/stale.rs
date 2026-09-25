@@ -335,7 +335,8 @@ fn staleness_transition(
 }
 
 /// True when the silence sweep must leave a session's process alone: a
-/// contest seat (`contest:<contestId>:<seatId>`, `contest_seat::parse_contest_run_label`).
+/// contest seat (`contest:<projectId>/<contestId>:<seatId>` or the older
+/// `contest:<contestId>:<seatId>`, `contest_seat::parse_contest_run_label`).
 ///
 /// A contest seat is a design run that may think silently for long stretches
 /// (a codex or grok seat has no transcript to grow at all), and the contest
@@ -2072,8 +2073,14 @@ mod tests {
     #[test]
     fn only_a_contest_seat_is_exempt_from_the_silence_sweep() {
         use personas_engine::unattended::app_master_run_label;
-        let seat = crate::commands::fleet::contest_seat::contest_run_label("c1", "grok-4.6_high");
+        let seat =
+            crate::commands::fleet::contest_seat::contest_run_label("p1", "c1", "grok-4.6_high");
         assert!(super::exempt_from_silence_sweep(Some(&seat)));
+        // A seat labelled before the project joined the label keeps its exemption.
+        assert!(super::exempt_from_silence_sweep(Some(
+            "contest:c1:grok-4.6_high"
+        )));
+        assert!(!super::exempt_from_silence_sweep(Some("contest:p1/c1")));
         assert!(!super::exempt_from_silence_sweep(Some(
             &app_master_run_label("p1")
         )));
@@ -2092,7 +2099,7 @@ mod tests {
         const NOW: i64 = 1_700_000_000_000;
         let am = app_master_run_label("p1");
         let night = overnight_run_label("bank");
-        let seat = crate::commands::fleet::contest_seat::contest_run_label("c1", "seat-a");
+        let seat = crate::commands::fleet::contest_seat::contest_run_label("p1", "c1", "seat-a");
         for state in [S::Finished, S::Stale, S::Exited] {
             assert!(machine_worker_ended_for(Some(&am), state, NOW - W, NOW, W));
             assert!(machine_worker_ended_for(

@@ -821,7 +821,9 @@
     "usage_accounts_switch_aria": "Switch the Claude login to {email}",
     "usage_provider_claude": "Claude",
     "usage_provider_codex": "OpenAI Codex",
-    "usage_provider_grok": "xAI Grok"
+    "usage_provider_grok": "xAI Grok",
+    "grid_column_contest_open": "Open {contest} on the Contest page",
+    "grid_column_contest_unlinked": "{contest} started before its seats recorded their project, so it cannot be opened from here"
   },
   "common": {
     "unknown_error": "Unknown error",

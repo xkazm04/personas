@@ -9,7 +9,7 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import {
-  contestGroupKey, contestIdOfGroupKey,
+  contestGroupKey, contestOfGroupKey,
   groupSessions, isLiveSession, sessionGlyph, sessionLabel, sessionStateMeta,
 } from '../fleetSessionModel';
 
@@ -20,6 +20,7 @@ function session(o: Partial<FleetSession> & { id: string }): FleetSession {
     lastActivityMs: 0n, lastPtyOutputMs: 0n, lastGrewMs: 0n, createdAtMs: 0n,
     childPid: null, exitCode: null, stateReason: null, athenaActive: false, dozing: false,
     limitResetAtMs: null, staleKind: null, runLabel: null, runId: null, contestId: null,
+    contestProjectId: null,
     ...o,
   } as unknown as FleetSession;
 }
@@ -119,10 +120,16 @@ describe('groupSessions', () => {
 describe('contest run groups', () => {
   const projects = [project('C:/work/alpha', 't1')];
 
-  it('round-trips a contest id through its run-group key, and nothing else', () => {
-    expect(contestIdOfGroupKey(contestGroupKey('home-hero'))).toBe('home-hero');
-    expect(contestIdOfGroupKey('t1')).toBeNull();
-    expect(contestIdOfGroupKey('contest:')).toBeNull();
+  it('round-trips (project, contest) through its run-group key, and nothing else', () => {
+    expect(contestGroupKey('home-hero', 'p1')).toBe('contest:p1/home-hero');
+    expect(contestOfGroupKey(contestGroupKey('home-hero', 'p1'))).toEqual({ projectId: 'p1', contestId: 'home-hero' });
+    // A seat labelled before the project joined the label keys on its id alone.
+    expect(contestGroupKey('home-hero', null)).toBe('contest:home-hero');
+    expect(contestOfGroupKey(contestGroupKey('home-hero', null))).toEqual({ projectId: null, contestId: 'home-hero' });
+    expect(contestOfGroupKey('t1')).toBeNull();
+    expect(contestOfGroupKey('contest:')).toBeNull();
+    expect(contestOfGroupKey('contest:p1/')).toBeNull();
+    expect(contestOfGroupKey('contest:/c1')).toBeNull();
   });
 
   it('puts every seat of a contest in one run group, never in a team column or the tray', () => {

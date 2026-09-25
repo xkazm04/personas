@@ -7362,7 +7362,9 @@
     "usage_provider_claude": "Claude",
     "usage_provider_codex": "OpenAI Codex",
     "usage_provider_grok": "xAI Grok",
-    "queue_origin_contest": "Wettbewerb"
+    "queue_origin_contest": "Wettbewerb",
+    "grid_column_contest_open": "{contest} auf der Wettbewerbsseite öffnen",
+    "grid_column_contest_unlinked": "{contest} begann, bevor seine Plätze ihr Projekt erfassten, daher lässt es sich hier nicht öffnen"
   },
   "onboarding": {
     "adopt_button": "Agent einrichten",

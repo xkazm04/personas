@@ -7362,7 +7362,9 @@
     "usage_provider_claude": "Claude",
     "usage_provider_codex": "OpenAI Codex",
     "usage_provider_grok": "xAI Grok",
-    "queue_origin_contest": "竞赛"
+    "queue_origin_contest": "竞赛",
+    "grid_column_contest_open": "在竞赛页面打开 {contest}",
+    "grid_column_contest_unlinked": "{contest} 在其席位记录所属项目之前就已开始，因此无法从这里打开"
   },
   "onboarding": {
     "adopt_button": "设置智能体",

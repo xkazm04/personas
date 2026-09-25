@@ -77,8 +77,9 @@ export interface SessionGrouping {
   byTeam: Map<string, FleetSession[]>;
   /**
    * Run-group key → its sessions, attention-first. Today the only run group is
-   * a contest: key `contest:<contestId>`, one per contest with seats on the
-   * board, ordered newest contest first. A run group wins over the team
+   * a contest: key `contest:<projectId>/<contestId>` (`contest:<contestId>` for
+   * a seat labelled before the project joined its run label), one per contest
+   * with seats on the board, ordered newest contest first. A run group wins over the team
    * mapping — a contest's seats run in its arena folders, not a project root,
    * and belong together whatever project the arena sits in.
    */
@@ -87,15 +88,37 @@ export interface SessionGrouping {
   ungrouped: FleetSession[];
 }
 
-/** Prefix of a contest's run-group key (`contest:<contestId>`). */
+/** Prefix of a contest's run-group key (`contest:<projectId>/<contestId>`). */
 export const CONTEST_GROUP_PREFIX = 'contest:';
 
-/** The run-group key of a contest (`contest:<contestId>`). */
-export const contestGroupKey = (contestId: string): string => `${CONTEST_GROUP_PREFIX}${contestId}`;
+/** A contest column's identity. `projectId` is null only for seats labelled
+ *  before the project joined the run label: their contest cannot be told apart
+ *  from a same-id contest in another project, nor opened. */
+export interface ContestGroup {
+  projectId: string | null;
+  contestId: string;
+}
 
-/** The contest id back out of a run-group key, or `null` for another kind of key. */
-export function contestIdOfGroupKey(key: string): string | null {
-  return key.startsWith(CONTEST_GROUP_PREFIX) ? key.slice(CONTEST_GROUP_PREFIX.length) || null : null;
+/**
+ * The run-group key of a contest. Arenas are per project and contest ids are
+ * unique only inside one arena (`contest/focus.ts`), so the key is the pair:
+ * `contest:<projectId>/<contestId>`. Neither half can hold a `/` (a project
+ * id is a UUID, a contest id a `[A-Za-z0-9._-]` slug). With no project it
+ * falls back to `contest:<contestId>`.
+ */
+export function contestGroupKey(contestId: string, projectId: string | null): string {
+  return projectId ? `${CONTEST_GROUP_PREFIX}${projectId}/${contestId}` : `${CONTEST_GROUP_PREFIX}${contestId}`;
+}
+
+/** The (project, contest) back out of a run-group key, or `null` for another kind of key. */
+export function contestOfGroupKey(key: string): ContestGroup | null {
+  if (!key.startsWith(CONTEST_GROUP_PREFIX)) return null;
+  const rest = key.slice(CONTEST_GROUP_PREFIX.length);
+  const slash = rest.indexOf('/');
+  if (slash < 0) return rest ? { projectId: null, contestId: rest } : null;
+  const projectId = rest.slice(0, slash);
+  const contestId = rest.slice(slash + 1);
+  return projectId && contestId ? { projectId, contestId } : null;
 }
 
 /**
@@ -122,11 +145,11 @@ export function groupSessions(sessions: FleetSession[], projects: DevProject[]):
   };
   for (const s of sessions) {
     if (!isLiveSession(s)) continue;
-    // The fleet parses the seat's `contest:<contestId>:<seatId>` run label
-    // once and sends the contest id; the board only groups on it.
+    // The fleet parses the seat's `contest:<projectId>/<contestId>:<seatId>`
+    // run label once and sends both halves; the board only groups on them.
     const contestId = s.contestId?.trim();
     if (contestId) {
-      push(runGroups, contestGroupKey(contestId), s);
+      push(runGroups, contestGroupKey(contestId, s.contestProjectId?.trim() || null), s);
       continue;
     }
     const teamId = s.cwd ? teamByRoot.get(normPath(s.cwd)) : undefined;

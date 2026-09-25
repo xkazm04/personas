@@ -7362,7 +7362,9 @@
     "usage_provider_claude": "Claude",
     "usage_provider_codex": "OpenAI Codex",
     "usage_provider_grok": "xAI Grok",
-    "queue_origin_contest": "प्रतियोगिता"
+    "queue_origin_contest": "प्रतियोगिता",
+    "grid_column_contest_open": "प्रतियोगिता पेज पर {contest} खोलें",
+    "grid_column_contest_unlinked": "{contest} अपनी सीटों के प्रोजेक्ट दर्ज करने से पहले शुरू हुई थी, इसलिए इसे यहाँ से नहीं खोला जा सकता"
   },
   "onboarding": {
     "adopt_button": "एजेंट सेट करें",

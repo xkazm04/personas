@@ -2252,20 +2252,29 @@ mod tests {
         let mut r = req("C:/arena/entries/seat-a");
         r.origin = DispatchOrigin::Contest;
         r.run_label = Some(super::super::contest_seat::contest_run_label(
-            "c1", "seat-a",
+            "p1", "c1", "seat-a",
         ));
         let dto = queued_inner(&r, "q-contest".into(), "cc".into(), 1, 1, 1, 0).to_dto();
         assert_eq!(dto.origin.as_deref(), Some("contest"));
-        assert_eq!(dto.run_label.as_deref(), Some("contest:c1:seat-a"));
+        assert_eq!(dto.run_label.as_deref(), Some("contest:p1/c1:seat-a"));
         assert!(dto.run_id.is_some());
         assert_eq!(dto.contest_id.as_deref(), Some("c1"));
+        assert_eq!(dto.contest_project_id.as_deref(), Some("p1"));
         let wire = serde_json::to_value(&dto).unwrap();
-        assert_eq!(wire["runLabel"], "contest:c1:seat-a");
+        assert_eq!(wire["runLabel"], "contest:p1/c1:seat-a");
         assert_eq!(wire["contestId"], "c1");
+        assert_eq!(wire["contestProjectId"], "p1");
+        // A seat labelled before the project joined the label keeps its
+        // contest and reports no project.
+        r.run_label = Some("contest:c1:seat-a".into());
+        let old = queued_inner(&r, "q-old".into(), "cc".into(), 1, 1, 1, 0).to_dto();
+        assert_eq!(old.contest_id.as_deref(), Some("c1"));
+        assert_eq!(old.contest_project_id, None);
         // Any other label carries no contest.
         r.run_label = Some("app-master:p1".into());
         let plain = queued_inner(&r, "q-plain".into(), "cc".into(), 1, 1, 1, 0).to_dto();
         assert_eq!(plain.contest_id, None);
+        assert_eq!(plain.contest_project_id, None);
     }
 
     #[test]

@@ -30,7 +30,7 @@
 import { useCallback, useState, type MouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { Power, PowerOff, Trophy } from 'lucide-react';
+import { Power, PowerOff } from 'lucide-react';
 import { ContextMenu } from '@/features/shared/components/overlays/ContextMenu';
 import {
   useProjectForTeam, useToggleProject,
@@ -41,6 +41,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { cleanName } from '../fleetGridModel';
 import { ColumnBody } from '../ColumnBody';
 import { ColumnGhost } from '../BoardGhost';
+import { ContestColumnHeader } from './ContestColumnHeader';
 import { COLUMN_BODY_MAX_H, type ColumnRow } from '../gridGeometry';
 import type { BoardColumn } from '../useBoardModel';
 import {
@@ -99,21 +100,13 @@ export function TeamColumn({
       <div className="relative z-10 flex flex-shrink-0 flex-col gap-1 pb-2 pt-0.5">
         {column.contestId !== null ? (
           // A CONTEST COLUMN is a run group, not a roster: nothing to scope the
-          // rail to and no project to switch, so its header is a plain label —
-          // the contest id (data, no string of its own) and its seat count.
-          <Tooltip content={column.contestId}>
-            <div
-              data-testid="fleet-grid-column-header"
-              data-contest-id={column.contestId}
-              className="flex w-full items-baseline gap-1.5 px-1 py-0.5 text-foreground"
-            >
-              <Trophy className="h-3 w-3 flex-shrink-0 self-center opacity-60" aria-hidden />
-              <span className="min-w-0 flex-1 truncate typo-label">{name}</span>
-              <span className="flex-shrink-0 typo-caption tabular-nums opacity-50">
-                {column.rows.filter((r) => r.kind === 'session').length}
-              </span>
-            </div>
-          </Tooltip>
+          // rail to and no project to switch, so its header is the way back to
+          // the race instead — see `ContestColumnHeader`.
+          <ContestColumnHeader
+            projectId={column.contestProjectId}
+            contestId={column.contestId}
+            seats={column.rows.filter((r) => r.kind === 'session').length}
+          />
         ) : (
           <Tooltip
             content={workspaceId !== null
