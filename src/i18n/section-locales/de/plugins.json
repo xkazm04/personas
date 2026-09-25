@@ -4324,7 +4324,8 @@
       "chain_stopped": "Angehalten",
       "open_tile_hint": "im Fotofinish öffnen",
       "track_load_failed_detail": "Dieses Rennen konnte nicht geladen werden: {message}",
-      "roster_load_failed_detail": "Die Rennen konnten nicht geladen werden: {message}"
+      "roster_load_failed_detail": "Die Rennen konnten nicht geladen werden: {message}",
+      "refresh_failed": "Aktualisierung fehlgeschlagen: Es wird der zuletzt geladene Stand angezeigt."
     },
     "decide_locked_decided": "Entschieden: {key} hat gewonnen.",
     "decide_locked_shortlisted": "In der engeren Auswahl: Der Sieger wird in der Verfeinerungsrunde gekürt.",

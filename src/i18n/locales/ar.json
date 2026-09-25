@@ -15118,7 +15118,8 @@
         "chain_stopped": "توقفت",
         "open_tile_hint": "افتحه في صورة الحسم",
         "track_load_failed_detail": "تعذّر تحميل هذا السباق: {message}",
-        "roster_load_failed_detail": "تعذّر تحميل السباقات: {message}"
+        "roster_load_failed_detail": "تعذّر تحميل السباقات: {message}",
+        "refresh_failed": "تعذّر التحديث: يُعرض آخر ما تم تحميله."
       },
       "decide_locked_decided": "تم الحسم: فاز {key}.",
       "decide_locked_shortlisted": "في القائمة المختصرة: يُعلن الفائز في جولة التحسين.",

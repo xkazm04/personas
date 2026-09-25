@@ -4324,7 +4324,8 @@
       "chain_stopped": "Detenida",
       "open_tile_hint": "abrir en la foto de llegada",
       "track_load_failed_detail": "No se pudo cargar esta carrera: {message}",
-      "roster_load_failed_detail": "No se pudieron cargar las carreras: {message}"
+      "roster_load_failed_detail": "No se pudieron cargar las carreras: {message}",
+      "refresh_failed": "No se pudo actualizar: se muestra el último estado cargado."
     },
     "decide_locked_decided": "Decidido: ganó {key}.",
     "decide_locked_shortlisted": "En la preselección: el ganador se declara en la ronda de refinamiento.",

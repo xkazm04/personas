@@ -4324,7 +4324,8 @@
       "chain_stopped": "중단됨",
       "open_tile_hint": "포토 피니시에서 열기",
       "track_load_failed_detail": "이 레이스를 불러오지 못했습니다: {message}",
-      "roster_load_failed_detail": "레이스를 불러오지 못했습니다: {message}"
+      "roster_load_failed_detail": "레이스를 불러오지 못했습니다: {message}",
+      "refresh_failed": "새로고침하지 못했습니다. 마지막으로 불러온 상태를 표시합니다."
     },
     "decide_locked_decided": "결정됨: {key} 우승.",
     "decide_locked_shortlisted": "후보 선정됨: 우승자는 다듬기 라운드에서 정해집니다.",

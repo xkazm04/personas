@@ -13,6 +13,7 @@
 import { createModuleCache, type ModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import { createKeyedLatestWins } from '@/stores/util/latestWins';
 import { getContest, getContestEnvironment, getContestLineups, listContests } from '@/api/contest';
+import { silentCatch } from '@/lib/silentCatch';
 import type { ContestDetail } from '@/lib/bindings/ContestDetail';
 import type { ContestEnvironment } from '@/lib/bindings/ContestEnvironment';
 import type { ContestLineup } from '@/lib/bindings/ContestLineup';
@@ -75,6 +76,9 @@ async function fetchOnce<K, T>(
     if (!listWins.isCurrent(flightKey, token)) return;
     cache.set(key, { data, loading: false, error: null });
   } catch (error: unknown) {
+    // Reported even when the slot keeps older data: a backend that stops
+    // answering must not leave a frozen page with no trace.
+    silentCatch(`contest:load:${flightKey.split(':')[0]}`)(error);
     if (!listWins.isCurrent(flightKey, token)) return;
     const cur = cache.get(key) ?? (EMPTY_SLOT as Slot<T>);
     cache.set(key, { data: cur.data, loading: false, error });

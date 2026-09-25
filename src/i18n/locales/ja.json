@@ -15118,7 +15118,8 @@
         "chain_stopped": "停止",
         "open_tile_hint": "フォトフィニッシュで開く",
         "track_load_failed_detail": "このレースを読み込めませんでした：{message}",
-        "roster_load_failed_detail": "レースを読み込めませんでした：{message}"
+        "roster_load_failed_detail": "レースを読み込めませんでした：{message}",
+        "refresh_failed": "更新できませんでした。最後に読み込んだ状態を表示しています。"
       },
       "decide_locked_decided": "決定済み: {key} が勝ちました。",
       "decide_locked_shortlisted": "候補に絞り込み済み: 勝者は改良ラウンドで決まります。",

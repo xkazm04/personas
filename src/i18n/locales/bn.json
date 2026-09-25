@@ -15118,7 +15118,8 @@
         "chain_stopped": "থেমে গেছে",
         "open_tile_hint": "ফটো ফিনিশে খুলুন",
         "track_load_failed_detail": "এই রেসটি লোড করা যায়নি: {message}",
-        "roster_load_failed_detail": "রেসগুলো লোড করা যায়নি: {message}"
+        "roster_load_failed_detail": "রেসগুলো লোড করা যায়নি: {message}",
+        "refresh_failed": "রিফ্রেশ করা যায়নি: সর্বশেষ লোড হওয়া অবস্থা দেখানো হচ্ছে।"
       },
       "decide_locked_decided": "সিদ্ধান্ত হয়েছে: {key} জিতেছে।",
       "decide_locked_shortlisted": "সংক্ষিপ্ত তালিকায়: বিজয়ী ঘোষণা হবে পরিমার্জনের রাউন্ডে।",

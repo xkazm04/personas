@@ -4324,7 +4324,8 @@
       "chain_stopped": "Berhenti",
       "open_tile_hint": "buka di foto finis",
       "track_load_failed_detail": "Tidak dapat memuat balapan ini: {message}",
-      "roster_load_failed_detail": "Tidak dapat memuat daftar balapan: {message}"
+      "roster_load_failed_detail": "Tidak dapat memuat daftar balapan: {message}",
+      "refresh_failed": "Gagal memuat ulang: menampilkan keadaan terakhir yang dimuat."
     },
     "decide_locked_decided": "Sudah diputuskan: {key} menang.",
     "decide_locked_shortlisted": "Masuk daftar pendek: pemenang diumumkan di babak penyempurnaan.",

@@ -19207,6 +19207,7 @@ export type Translations = {
         open_tile_hint: string;
         track_load_failed_detail: string;
         roster_load_failed_detail: string;
+        refresh_failed: string;
       };
       decide_locked_decided: string;
       decide_locked_shortlisted: string;

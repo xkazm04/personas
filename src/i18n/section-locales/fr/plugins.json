@@ -4324,7 +4324,8 @@
       "chain_stopped": "Arrêtée",
       "open_tile_hint": "ouvrir dans la photo-finish",
       "track_load_failed_detail": "Impossible de charger cette course : {message}",
-      "roster_load_failed_detail": "Impossible de charger les courses : {message}"
+      "roster_load_failed_detail": "Impossible de charger les courses : {message}",
+      "refresh_failed": "Actualisation impossible : dernier état chargé affiché."
     },
     "decide_locked_decided": "Tranché : {key} a gagné.",
     "decide_locked_shortlisted": "Présélectionné : le gagnant est désigné lors de la manche d’affinage.",

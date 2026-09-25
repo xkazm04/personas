@@ -15,6 +15,7 @@ import { useContest } from '../hooks/useContests';
 import { useReviewDraft } from '../hooks/useReviewDraft';
 import { PhotoFinish } from './PhotoFinish';
 import { RaceTrack } from './RaceTrack';
+import { RefreshFailed } from './RefreshFailed';
 
 export interface ArenaStageProps {
   trackKey: ContestKey | null;
@@ -49,6 +50,7 @@ export function ArenaStage({ trackKey, reviewKey, onReviewKey, onNewRace }: Aren
 
   return (
     <>
+      {error != null && <RefreshFailed onRetry={refresh} testId="arena-track-refresh-failed" />}
       <RaceTrack detail={detail} draft={draft} onOpenVariant={onReviewKey} />
       {reviewKey && detail.variants.length > 0 && (
         <PhotoFinish detail={detail} draft={draft} currentKey={reviewKey} onSelect={onReviewKey} onClose={() => onReviewKey(null)} />

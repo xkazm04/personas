@@ -15118,7 +15118,8 @@
         "chain_stopped": "Đã dừng",
         "open_tile_hint": "mở trong ảnh chụp về đích",
         "track_load_failed_detail": "Không thể tải cuộc đua này: {message}",
-        "roster_load_failed_detail": "Không thể tải các cuộc đua: {message}"
+        "roster_load_failed_detail": "Không thể tải các cuộc đua: {message}",
+        "refresh_failed": "Không thể làm mới: đang hiển thị trạng thái tải gần nhất."
       },
       "decide_locked_decided": "Đã quyết định: {key} thắng.",
       "decide_locked_shortlisted": "Đã vào danh sách rút gọn: người thắng được công bố ở vòng tinh chỉnh.",

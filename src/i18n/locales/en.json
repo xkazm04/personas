@@ -19200,7 +19200,8 @@
         "chain_stopped": "Stopped",
         "open_tile_hint": "open in the photo finish",
         "track_load_failed_detail": "Could not load this race: {message}",
-        "roster_load_failed_detail": "Could not load the races: {message}"
+        "roster_load_failed_detail": "Could not load the races: {message}",
+        "refresh_failed": "Couldn't refresh: showing the last loaded state."
       },
       "decide_locked_decided": "Decided: {key} won.",
       "decide_locked_shortlisted": "Shortlisted: the winner is declared in the refine round.",

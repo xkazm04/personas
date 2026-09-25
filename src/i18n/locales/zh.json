@@ -15118,7 +15118,8 @@
         "chain_stopped": "已停止",
         "open_tile_hint": "在终点回放中打开",
         "track_load_failed_detail": "无法加载此比赛：{message}",
-        "roster_load_failed_detail": "无法加载比赛列表：{message}"
+        "roster_load_failed_detail": "无法加载比赛列表：{message}",
+        "refresh_failed": "无法刷新：显示的是上次加载的状态。"
       },
       "decide_locked_decided": "已决定：{key} 胜出。",
       "decide_locked_shortlisted": "已入围：胜者将在精炼轮中宣布。",

@@ -15118,7 +15118,8 @@
         "chain_stopped": "रुक गई",
         "open_tile_hint": "फोटो फिनिश में खोलें",
         "track_load_failed_detail": "यह रेस लोड नहीं हो सकी: {message}",
-        "roster_load_failed_detail": "रेस लोड नहीं हो सकीं: {message}"
+        "roster_load_failed_detail": "रेस लोड नहीं हो सकीं: {message}",
+        "refresh_failed": "रीफ़्रेश नहीं हो सका: आख़िरी लोड की गई स्थिति दिखाई जा रही है।"
       },
       "decide_locked_decided": "फ़ैसला हो गया: {key} जीता।",
       "decide_locked_shortlisted": "शॉर्टलिस्ट में: विजेता की घोषणा सुधार वाले दौर में होगी।",

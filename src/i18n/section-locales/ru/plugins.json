@@ -4324,7 +4324,8 @@
       "chain_stopped": "Остановлена",
       "open_tile_hint": "открыть в фотофинише",
       "track_load_failed_detail": "Не удалось загрузить этот заезд: {message}",
-      "roster_load_failed_detail": "Не удалось загрузить заезды: {message}"
+      "roster_load_failed_detail": "Не удалось загрузить заезды: {message}",
+      "refresh_failed": "Не удалось обновить: показано последнее загруженное состояние."
     },
     "decide_locked_decided": "Решено: победил {key}.",
     "decide_locked_shortlisted": "В шорт-листе: победителя объявят в раунде доработки.",

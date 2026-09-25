@@ -4324,7 +4324,8 @@
       "chain_stopped": "Zastaveno",
       "open_tile_hint": "otevřít v cílové fotografii",
       "track_load_failed_detail": "Tento závod se nepodařilo načíst: {message}",
-      "roster_load_failed_detail": "Závody se nepodařilo načíst: {message}"
+      "roster_load_failed_detail": "Závody se nepodařilo načíst: {message}",
+      "refresh_failed": "Obnovení se nezdařilo: zobrazuje se naposledy načtený stav."
     },
     "decide_locked_decided": "Rozhodnuto: vyhrála varianta {key}.",
     "decide_locked_shortlisted": "Na užším výběru: vítěz se vyhlásí v kole zpřesnění.",

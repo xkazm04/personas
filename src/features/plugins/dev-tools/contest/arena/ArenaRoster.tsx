@@ -20,6 +20,7 @@ import { extractMessage } from '@/lib/silentCatch';
 import { contestKeyString, type ContestKey } from '../focus';
 import { phaseLabel, phaseTone } from '../model/labels';
 import { raceRounds } from './arenaModel';
+import { RefreshFailed } from './RefreshFailed';
 import { SeatLabel } from './SeatLabel';
 import { ToneDot } from './ToneDot';
 
@@ -56,6 +57,9 @@ export function ArenaRoster({ contests, isLoading, error, onRetry, trackKey, onP
         </Button>
       </header>
 
+      {error != null && contests.length > 0 && (
+        <RefreshFailed onRetry={async () => onRetry()} testId="arena-roster-refresh-failed" />
+      )}
       {error != null && contests.length === 0 ? (
         <ErrorBanner
           variant="inline"
