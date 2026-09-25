@@ -17,6 +17,7 @@ import { TRIAGE_MODULES } from './triageSurfaces';
 import { DATAGRID_MODULES } from './datagridSurfaces';
 import { FLEET_MODULES } from './fleetSurfaces';
 import { OBSERVABILITY_MODULES } from './observabilitySurfaces';
+import { FACTORY_MODULES } from './factorySurfaces';
 
 type Wrap = (children: ReactNode) => ReactNode;
 
@@ -62,6 +63,7 @@ export const MODULES: Record<string, HarnessModule> = {
   ...DATAGRID_MODULES,
   ...FLEET_MODULES,
   ...OBSERVABILITY_MODULES,
+  ...FACTORY_MODULES,
   // Probes for `shoot.mjs --self-test`: each must make the shooter exit non-zero.
   '__selftest/empty': {
     load: async () => ({ default: () => <div /> }),

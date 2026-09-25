@@ -10,6 +10,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fleetTapes } from './fleetTapes.mjs';
 import { observabilityTapes } from './observabilityTapes.mjs';
+import { factoryTapes } from './factoryTapes.mjs';
 
 export const RECORDED_AT = '2026-09-22T15:40:00.000Z';
 const T0 = Date.parse(RECORDED_AT);
@@ -261,6 +262,8 @@ const BUILDERS = {
   ...fleetTapes({ RECORDED_AT }).builders,
   // Module 4, Overview > Observability (observabilitySurfaces.tsx, observabilityTapes.mjs).
   ...observabilityTapes({ RECORDED_AT, PERSONAS }).builders,
+  // Module 5, Teams > Factory (factorySurfaces.tsx, factoryTapes.mjs).
+  ...factoryTapes({ RECORDED_AT }).builders,
   // WP4b tone surfaces (toneSurfaces.tsx): props are synthetic, no IPC.
   ...Object.fromEntries(['tone/health-cards', 'tone/n8n-footer', 'tone/query-toolbar'].map((id) => [
     id, () => ({ version: 1, module: id, source: 'synthetic', recordedAt: RECORDED_AT, note: 'Synthetic props, no IPC.', calls: [] }),
