@@ -7,10 +7,13 @@ import type { ContestEngine } from '@/lib/bindings/ContestEngine';
 import { effortLabel, engineLabel } from '../model/labels';
 import { seatLabel } from '../model/seatCatalog';
 
+// The dot names the ENGINE, so it takes the categorical brand hues, never a
+// status tone (the same row's state dot owns those) and never the theme
+// accent: violet, cyan and the foreground stay apart from every state colour.
 const ENGINE_DOT: Record<ContestEngine, string> = {
-  claude: 'bg-primary',
-  codex: 'bg-status-info',
-  grok: 'bg-status-pending',
+  claude: 'bg-brand-purple',
+  codex: 'bg-brand-cyan',
+  grok: 'bg-foreground',
 };
 
 export interface SeatLabelProps {
