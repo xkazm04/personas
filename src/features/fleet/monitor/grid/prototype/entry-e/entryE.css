@@ -160,3 +160,40 @@
   .ae-win, .ae-reveal { transition: none; }
   .ae-win.is-flash { animation: none; box-shadow: 0 0 0 2px var(--primary); }
 }
+
+/* ── Adjustments round (owner's verdict) ─────────────────────────────── */
+/* An icon that takes its colour from the lamp tone of its subtree. */
+.ae-tone-text { color: var(--ae-tone); }
+
+/* Masonry of bays: a bay is as tall as its roster, the next one fills the gap. */
+.ae-bays { columns: 250px auto; column-gap: 10px; }
+.ae-bays > * { break-inside: avoid; margin-bottom: 10px; }
+
+/* Flat rows inside a plate: hairlines between, no boxes around. A lit row
+   spills its tone from the left edge, the same light a window carries. */
+.ae-line { position: relative; border-top: 1px solid var(--ae-edge); transition: background-color 120ms ease; }
+.ae-line:first-child { border-top-color: transparent; }
+.ae-line:hover { background-color: var(--ae-glass-hi); }
+.ae-line.is-lit {
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--ae-tone) 16%, transparent), transparent 70%);
+  box-shadow: inset 2px 0 0 var(--ae-tone);
+}
+.ae-line.is-selected { background-color: color-mix(in srgb, var(--primary) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 55%, transparent); }
+.ae-line.is-off { opacity: 0.5; filter: grayscale(1); }
+.ae-line.is-over { box-shadow: inset 2px 0 0 var(--status-warning); }
+.ae-line.is-flash { animation: ae-flash 900ms ease-out 3; }
+
+/* The bay's roster drawn as its states: a 3px bar under the nameplate. */
+.ae-share { display: flex; height: 3px; gap: 1px; border-radius: 2px; overflow: hidden; background: var(--ae-edge); }
+.ae-share > span { background: var(--ae-tone); }
+
+/* A compact wait/age bar beside the figure it draws. */
+.ae-bar { position: relative; height: 4px; border-radius: 999px; background: color-mix(in srgb, var(--foreground) 9%, transparent); overflow: hidden; }
+.ae-bar > span { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--ae-tone); }
+
+/* A queue rung being dragged lifts off the ladder. */
+.ae-dragging { box-shadow: 0 0 0 1px var(--primary), 0 14px 28px -12px color-mix(in srgb, var(--background) 90%, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ae-line, .ae-line.is-flash { transition: none; animation: none; }
+}

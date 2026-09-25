@@ -9,24 +9,26 @@ import { Activity, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { Button } from '@/features/shared/components/buttons';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { SimulationToggle } from '../../simulation';
 import { SQUARE_STATE_ORDER, type SquareState } from '../../fleetGridModel';
 import { BOARD_TABS_PREFIX } from '../../board/GridHeader';
 import { BOARD_VARIANTS, type BoardVariant } from '../../board/queue/boardVariant';
 import { PERSONA_LAMP } from './tone';
 import { Kbd, Lamp } from './parts';
+import type { PanelFilter } from './boardFilter';
 
 export function CommandBar({
-  totals, showTally, active, onPick, onClear, layout, onLayout, agentCount,
+  filter, showTally, active, onPick, onClear, layout, onLayout,
 }: {
-  totals: Record<SquareState, number>;
+  /** Counts per state over what the current layout can show (agents + sessions). */
+  filter: PanelFilter;
   showTally: boolean;
   active: SquareState | null;
   onPick: (s: SquareState) => void;
   onClear: () => void;
   layout: BoardVariant;
   onLayout: (v: BoardVariant) => void;
-  agentCount: number;
 }) {
   const { t, tx } = useTranslation();
   const m = t.monitor;
@@ -53,25 +55,30 @@ export function CommandBar({
 
       {showTally && (
         <div className="flex items-center gap-1" role="group" aria-label={t.sidebar.agents} data-testid="fleet-grid-tally">
-          <span className="mr-1 typo-caption tabular-nums">{tx(t.common.agent_count_other, { count: agentCount })}</span>
+          <span className="mr-1 typo-caption tabular-nums">
+            {tx(t.common.agent_count_other, { count: filter.agentTotal })} · {filter.sessionTotal} {filter.sessionTotal === 1 ? 'session' : 'sessions'}
+          </span>
           {SQUARE_STATE_ORDER.map((s) => {
             const on = active === s;
             const lamp = PERSONA_LAMP[s];
+            const c = filter.counts[s];
+            const total = c.agents + c.sessions;
             return (
+              <Tooltip key={s} content={`${labels[s]}: ${tx(t.common.agent_count_other, { count: c.agents })} · ${c.sessions} ${c.sessions === 1 ? 'session' : 'sessions'}`}>
               <button
-                key={s}
                 type="button"
                 onClick={() => onPick(s)}
                 aria-pressed={on}
                 aria-label={tx(m.grid_filter_state_aria, { state: labels[s] })}
                 data-testid={`fleet-grid-tally-${s}`}
                 className={`ae-win ae-focus flex items-center gap-2 rounded-input px-2.5 py-1 ${
-                  on ? 'is-selected' : ''} ${lamp.lit && totals[s] > 0 ? `is-lit ae-t-${lamp.tone}` : ''}`}
+                  on ? 'is-selected' : ''} ${lamp.lit && total > 0 ? `is-lit ae-t-${lamp.tone}` : ''}`}
               >
-                <Lamp lamp={{ tone: lamp.tone, lit: lamp.lit && totals[s] > 0 }} />
+                <Lamp lamp={{ tone: lamp.tone, lit: lamp.lit && total > 0 }} />
                 <span className="typo-caption text-foreground">{labels[s]}</span>
-                <span className="typo-data tabular-nums text-foreground">{totals[s]}</span>
+                <span className="typo-data tabular-nums text-foreground">{total}</span>
               </button>
+              </Tooltip>
             );
           })}
           {active && (
@@ -101,6 +108,28 @@ export function CommandBar({
         />
         <SimulationToggle />
       </div>
+    </div>
+  );
+}
+
+/** The filtered state, said once above the board with its one-click undo. */
+export function FilterBanner({ filter, onClear }: { filter: PanelFilter; onClear: () => void }) {
+  const { t, tx } = useTranslation();
+  if (!filter.state) return null;
+  const m = t.monitor;
+  const label = { running: m.grid_state_running, attention: m.grid_state_attention, failed: m.grid_state_failed, idle: m.grid_state_idle }[filter.state];
+  const c = filter.counts[filter.state];
+  const lamp = PERSONA_LAMP[filter.state];
+  return (
+    <div className={`flex flex-shrink-0 items-center gap-2.5 border-b border-border px-3 py-1.5 ae-t-${lamp.tone}`} role="status" data-testid="entry-e-filter-banner">
+      <Lamp lamp={{ tone: lamp.tone, lit: true }} />
+      <span className="typo-body text-foreground">{tx(m.grid_filter_state_aria, { state: label })}</span>
+      <span className="typo-caption tabular-nums">
+        {tx(t.common.agent_count_other, { count: c.agents })} · {c.sessions} {c.sessions === 1 ? 'session' : 'sessions'}
+      </span>
+      <Button variant="ghost" size="sm" onClick={onClear} icon={<X className="h-3.5 w-3.5" />} className="ml-auto" data-testid="entry-e-filter-banner-clear">
+        {t.common.clear}
+      </Button>
     </div>
   );
 }

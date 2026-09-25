@@ -1,8 +1,8 @@
-// Classic: the whole fleet as bays of one panel. Bays flow into as many
-// columns as the width allows and the panel grows downward, so forty projects
-// are four screens of scroll, not a sideways drag. Workspace groups come first
-// (the model already orders them), device columns last, and the ungrouped tray
-// is the panel's widest bay at the foot.
+// Classic: the whole fleet as bays of one panel, laid as masonry so a bay is
+// exactly as tall as its roster and the next bay fills the gap below it.
+// Agents are one line each, live sessions two. The panel filter narrows agents
+// AND sessions; a bay the filter empties leaves the board. The ungrouped tray
+// is the widest bay, at the foot, in as many columns as the width allows.
 
 import { useCallback, useMemo, type ReactNode } from 'react';
 import { Laptop, Users } from 'lucide-react';
@@ -12,51 +12,58 @@ import { effectiveRemoteState } from '@/lib/network/remoteSessionModel';
 import type { ColumnRow } from '../../gridGeometry';
 import type { BoardColumn } from '../../useBoardModel';
 import type { ActivitySurface } from '../useActivitySurface';
-import { PersonaWindow } from './PersonaWindow';
-import { SessionWindow } from './SessionWindow';
-import { Bay } from './Bay';
+import { PersonaLine } from './PersonaLine';
+import { SessionLine } from './SessionLine';
+import { Bay, ShareBar } from './Bay';
 import { BayGhosts, PanelEmpty } from './Ghosts';
 import { sessionLamp, toneClass } from './tone';
 import { Engraved, Lamp } from './parts';
+import type { PanelFilter } from './boardFilter';
 
 const TICK_MS = 30_000;
 
 export function ClassicPanel({
-  surface, selectedPersonaId, onOpenRemote,
+  surface, filter, selectedPersonaId, onOpenRemote, onClearFilter,
 }: {
   surface: ActivitySurface;
+  filter: PanelFilter;
   selectedPersonaId: string | null;
   onOpenRemote?: (jobId: string) => void;
+  onClearFilter: () => void;
 }) {
   const { t } = useTranslation();
   const m = t.monitor;
   useFixedTicker(TICK_MS);
   const now = Date.now();
-  const { model, select, focusKey, bubbles, unseen, setTerminal, setRecap, scope, toggleScope, reducedMotion } = surface;
+  const { unfilteredModel: model, select, focusKey, bubbles, unseen, setTerminal, setRecap, scope, toggleScope } = surface;
+
+  const keep = useCallback((row: ColumnRow): boolean => {
+    if (row.kind === 'persona') return filter.card(row.card);
+    if (row.kind === 'session') return filter.session(row.session);
+    if (row.kind === 'remote') {
+      const st = effectiveRemoteState(row.view, now);
+      return !filter.active || (st !== 'unknown' && filter.session({ state: st, exitCode: null }));
+    }
+    return false;
+  }, [filter, now]);
 
   const renderRow = useCallback((row: ColumnRow): ReactNode => {
     if (row.kind === 'persona') {
       return (
-        <PersonaWindow
+        <PersonaLine
+          key={row.key}
           card={row.card}
           selected={row.card.personaId === selectedPersonaId}
           onSelect={select}
           flash={focusKey === `p:${row.card.personaId}`}
           bubble={bubbles.get(row.card.personaId) ?? null}
           unseenChat={unseen.get(row.card.personaId) ?? 0}
+          now={now}
         />
       );
     }
     if (row.kind === 'session') {
-      return (
-        <SessionWindow
-          session={row.session}
-          onOpen={setTerminal}
-          onRecap={setRecap}
-          flash={focusKey === `s:${row.session.id}`}
-          now={now}
-        />
-      );
+      return <SessionLine key={row.key} session={row.session} onOpen={setTerminal} onRecap={setRecap} flash={focusKey === `s:${row.session.id}`} now={now} />;
     }
     if (row.kind === 'remote') {
       const state = effectiveRemoteState(row.view, now);
@@ -64,69 +71,69 @@ export function ClassicPanel({
       const title = row.view.title?.trim() || row.view.projectLabel || row.view.jobId.slice(0, 8);
       const device = row.view.peerDisplayName || row.view.peerId.slice(0, 8);
       return (
-        <button
-          type="button"
+        <div
+          key={row.key}
+          role="button"
+          tabIndex={0}
           onClick={() => onOpenRemote?.(row.view.jobId)}
-          disabled={!onOpenRemote}
+          onKeyDown={(e) => { if (e.key === 'Enter') onOpenRemote?.(row.view.jobId); }}
           data-testid="fleet-grid-remote"
-          className={`ae-win ae-focus flex w-full min-w-0 flex-col gap-0.5 rounded-input px-2.5 py-1.5 text-left ${toneClass(lamp.tone)} ${lamp.lit ? 'is-lit' : ''}`}
+          className={`ae-line ae-focus flex min-w-0 cursor-pointer flex-col justify-center gap-0.5 px-2.5 py-1.5 ${toneClass(lamp.tone)} ${lamp.lit ? 'is-lit' : ''}`}
         >
-          <span className="flex min-w-0 items-start gap-2">
-            <Lamp lamp={lamp} className="mt-[7px]" />
-            <span className="ae-clamp2 min-w-0 flex-1 typo-body text-foreground">{title}</span>
-          </span>
-          <span className="flex min-w-0 items-center gap-1.5 pl-[18px] typo-caption">
-            <Laptop className="h-3 w-3 flex-shrink-0" aria-hidden />
-            <span className="truncate">{device}</span>
-          </span>
-        </button>
+          <span className="flex min-w-0 items-center gap-2"><Lamp lamp={lamp} /><span className="truncate typo-body text-foreground">{title}</span></span>
+          <span className="flex min-w-0 items-center gap-1.5 pl-[18px] typo-caption"><Laptop className="h-3.5 w-3.5 flex-shrink-0" aria-hidden /><span className="truncate">{device}</span></span>
+        </div>
       );
     }
     return null;
   }, [selectedPersonaId, select, focusKey, bubbles, unseen, setTerminal, setRecap, onOpenRemote, now]);
 
-  const onScope = useCallback(
-    (c: BoardColumn) => toggleScope(c.teamId, c.teamName, c.cards),
-    [toggleScope],
-  );
+  const bays = useMemo(() => model.columns.map((column) => {
+    const rows = column.rows.filter(keep);
+    const personas = rows.filter((r) => r.kind === 'persona');
+    const live = rows.filter((r) => r.kind === 'session' || r.kind === 'remote');
+    return { column, personas, live, show: !filter.active || rows.length > 0 };
+  }).filter((b) => b.show), [model.columns, keep, filter.active]);
 
-  const tray = useMemo(() => [
-    ...model.ungrouped.map((card) => ({ kind: 'persona' as const, key: `p:${card.personaId}`, height: 0, card, teamName: null })),
-    ...model.traySessions.map((session) => ({ kind: 'session' as const, key: `s:${session.id}`, height: 0, session })),
-  ], [model.ungrouped, model.traySessions]);
+  const trayCards = useMemo(() => model.ungrouped.filter(filter.card), [model.ungrouped, filter]);
+  const traySessions = useMemo(() => model.traySessions.filter(filter.session), [model.traySessions, filter]);
+  const onScope = useCallback((c: BoardColumn) => toggleScope(c.teamId, c.teamName, c.cards), [toggleScope]);
 
   if (surface.cold) return <BayGhosts />;
-  if (model.empty) {
-    return <PanelEmpty icon={Users} heading={model.filtered ? m.grid_filter_empty : m.channels_combined_quiet} />;
+  if (bays.length === 0 && trayCards.length === 0 && traySessions.length === 0) {
+    return filter.active
+      ? <PanelEmpty icon={Users} heading="No card is in this state." actionLabel={t.common.clear} onAction={onClearFilter} />
+      : <PanelEmpty icon={Users} heading={m.channels_combined_quiet} />;
   }
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto p-3" aria-label={m.grid_board_aria} data-testid="entry-e-classic">
-      <div className="grid items-start gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(218px, 1fr))' }}>
-        {model.columns.map((column, i) => (
+      <div className="ae-bays">
+        {bays.map(({ column, personas, live }) => (
           <Bay
             key={column.teamId}
             column={column}
-            index={i}
+            liveCount={live.length}
             scoped={scope?.teamId === column.teamId}
             onScope={onScope}
-            renderRow={renderRow}
-            reducedMotion={reducedMotion}
+            rows={<>{personas.map(renderRow)}{live.length > 0 && personas.length > 0 && <span aria-hidden className="mx-2.5 my-1 h-px bg-primary/25" />}{live.map(renderRow)}</>}
           />
         ))}
-        {tray.length > 0 && (
-          <section className="ae-plate col-span-full flex flex-col gap-2 rounded-card p-2.5" data-testid="entry-e-tray">
-            <span className="flex items-center gap-2 px-1">
-              <Users className="h-3.5 w-3.5 text-foreground" aria-hidden />
-              <Engraved>{m.grid_ungrouped}</Engraved>
-              <span className="typo-data tabular-nums text-foreground">{tray.length}</span>
-            </span>
-            <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))' }}>
-              {tray.map((row) => <div key={row.key}>{renderRow(row)}</div>)}
-            </div>
-          </section>
-        )}
       </div>
+      {(trayCards.length > 0 || traySessions.length > 0) && (
+        <section className="ae-plate flex flex-col gap-1 overflow-hidden rounded-card pb-1" data-testid="entry-e-tray">
+          <span className="flex items-center gap-2 px-3 py-2">
+            <Users className="h-3.5 w-3.5 text-foreground" aria-hidden />
+            <Engraved>{m.grid_ungrouped}</Engraved>
+            <span className="ml-auto typo-caption tabular-nums">{trayCards.length} · {traySessions.length}</span>
+          </span>
+          <ShareBar cards={trayCards} />
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', columnGap: 10 }}>
+            {trayCards.map((card) => renderRow({ kind: 'persona', key: card.personaId, height: 0, card, teamName: null }))}
+            {traySessions.map((s) => renderRow({ kind: 'session', key: s.id, height: 0, session: s }))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
