@@ -44,6 +44,8 @@ export function ArenaRoster({ contests, isLoading, error, onRetry, trackKey, onP
   const enter = useRevealTracker('arena-roster');
   const current = trackKey ? contestKeyString(trackKey) : null;
   const showGhost = isLoading && contests.length === 0;
+  // One project's name repeated on every row is noise; show it only when races span projects.
+  const multiProject = useMemo(() => new Set(contests.map((c) => c.projectId)).size > 1, [contests]);
 
   return (
     <aside className="flex min-h-0 flex-col gap-2" aria-label={a.roster_title} data-testid="arena-roster">
@@ -78,7 +80,7 @@ export function ArenaRoster({ contests, isLoading, error, onRetry, trackKey, onP
             return (
               <RevealItem as="li" key={id} revealId={id} order={i} hasEntered={enter.hasEntered} markEntered={enter.markEntered}>
                 <div className={depth > 0 ? 'ml-3 border-l border-primary/15 pl-2' : ''}>
-                  <RaceRow summary={summary} active={id === current} onPick={() => onPick(key)} />
+                  <RaceRow summary={summary} active={id === current} showProject={multiProject} onPick={() => onPick(key)} />
                 </div>
               </RevealItem>
             );
@@ -89,7 +91,17 @@ export function ArenaRoster({ contests, isLoading, error, onRetry, trackKey, onP
   );
 }
 
-function RaceRow({ summary, active, onPick }: { summary: ContestSummary; active: boolean; onPick: () => void }) {
+function RaceRow({
+  summary,
+  active,
+  showProject,
+  onPick,
+}: {
+  summary: ContestSummary;
+  active: boolean;
+  showProject: boolean;
+  onPick: () => void;
+}) {
   const { t, tx } = useTranslation();
   const s = t.plugins.contest;
   const a = s.arena;
@@ -109,7 +121,7 @@ function RaceRow({ summary, active, onPick }: { summary: ContestSummary; active:
       </span>
       <span className="flex flex-wrap items-center gap-x-1.5 typo-caption">
         <ToneDot tone={phaseTone(summary.phase)}>{phaseLabel(s, summary.phase)}</ToneDot>
-        <MetaItem>{summary.projectName}</MetaItem>
+        {showProject && <MetaItem>{summary.projectName}</MetaItem>}
         {summary.round !== null && <MetaItem>{tx(a.round_n, { n: summary.round })}</MetaItem>}
         <MetaItem>
           <RelativeTime timestamp={summary.updatedAtMs} className="typo-caption" />
