@@ -1,6 +1,7 @@
 use serde_json::json;
 
 use super::*;
+use crate::companion::lifecycle_ops;
 use crate::db::models::{LifecycleAuthor, LifecyclePreset};
 use crate::lifecycle::presets::preset_doc;
 
@@ -46,7 +47,7 @@ fn confirm_appends_an_athena_version_with_only_the_ticked_changes() -> Result<()
     let user_db = crate::db::init_test_user_db()?;
     let card_id = seed(&db, &user_db)?;
 
-    let done = apply_lifecycle_proposal_inner(&db, &user_db, &card_id, &["x-demo".to_string()])?;
+    let done = apply_proposal(&db, &user_db, &card_id, &["x-demo".to_string()])?;
     assert_eq!(done.version, 1);
     assert_eq!(done.applied, 1);
     assert!(
@@ -72,9 +73,7 @@ fn confirm_appends_an_athena_version_with_only_the_ticked_changes() -> Result<()
         chat_cards::get_card(&user_db, &card_id)?.status,
         "dispatched"
     );
-    assert!(
-        apply_lifecycle_proposal_inner(&db, &user_db, &card_id, &["x-demo".to_string()]).is_err()
-    );
+    assert!(apply_proposal(&db, &user_db, &card_id, &["x-demo".to_string()]).is_err());
     assert_eq!(crate::lifecycle::current_doc(&db, "p1")?.1, 1);
     Ok(())
 }
@@ -87,7 +86,7 @@ fn confirm_refuses_a_stale_from_version_and_supersedes_the_card() -> Result<(), 
     // The operator switched preset after the card was drawn.
     crate::lifecycle::set_preset(&db, "p1", LifecyclePreset::Team)?;
 
-    let err = apply_lifecycle_proposal_inner(&db, &user_db, &card_id, &["x-demo".to_string()])
+    let err = apply_proposal(&db, &user_db, &card_id, &["x-demo".to_string()])
         .unwrap_err()
         .to_string();
     assert!(err.contains("changed since this proposal"), "{err}");
@@ -109,7 +108,7 @@ fn confirm_refuses_an_unknown_change_id_without_burning_the_card() -> Result<(),
     let db = crate::db::init_test_db()?;
     let user_db = crate::db::init_test_user_db()?;
     let card_id = seed(&db, &user_db)?;
-    let err = apply_lifecycle_proposal_inner(&db, &user_db, &card_id, &["frame".to_string()])
+    let err = apply_proposal(&db, &user_db, &card_id, &["frame".to_string()])
         .unwrap_err()
         .to_string();
     assert!(err.contains("`frame` is not one of"), "{err}");

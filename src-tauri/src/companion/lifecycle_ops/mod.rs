@@ -9,11 +9,14 @@
 //! it calls `companion_apply_lifecycle_proposal`, which appends a version
 //! authored `athena` with only the ticked changes.
 //!
+//! - [`apply`] - the database half of confirming a card (the command is
+//!   `companion_apply_lifecycle_proposal`).
 //! - [`describe`] - the read op's answer.
 //! - [`proposal`] - parse / resolve / diff / apply, pure over documents.
 //! - [`validate`] - the rules a document must satisfy, run at proposal time
 //!   AND at confirm.
 
+pub mod apply;
 pub mod describe;
 pub mod proposal;
 pub mod validate;

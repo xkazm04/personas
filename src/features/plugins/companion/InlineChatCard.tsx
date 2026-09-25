@@ -9,6 +9,7 @@ import { AthenaFleetPlanCard } from './fleet/AthenaFleetPlanCard';
 import { AthenaShipMilestoneCard } from './ship/AthenaShipMilestoneCard';
 import { AthenaShipGoalsCard } from './ship/AthenaShipGoalsCard';
 import { AthenaNoteSuggestionsCard } from './notepad/AthenaNoteSuggestionsCard';
+import { LifecycleProposalCard } from './lifecycle/LifecycleProposalCard';
 import { ReportCard } from './chat/refs/ReportCard';
 
 /**
@@ -106,6 +107,13 @@ export function InlineChatCard({ card }: { card: ChatCard }) {
     return (
       <AthenaNoteSuggestionsCard config={card.config} title={card.title} cardId={card.id} />
     );
+  }
+
+  // `lifecycle_proposal` (Lifecycle v2) writes a new lifecycle version and can
+  // start a repo install on confirm, so it is chat-only like the cards above.
+  // Its confirm needs `cardId`: the backend reads the proposal back by id.
+  if (card.kind === 'lifecycle_proposal') {
+    return <LifecycleProposalCard config={card.config} title={card.title} cardId={card.id} />;
   }
 
   const Component = cockpitWidgetRegistry[card.kind];

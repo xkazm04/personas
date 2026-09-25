@@ -64,6 +64,9 @@ export const ACTIONABLE_CHAT_CARD_KINDS = [
   // and the durable row is what keeps the un-answered ones alive across the
   // send that would otherwise wipe them.
   'note_suggestions',
+  // Lifecycle v2: confirm appends a lifecycle version and reads the proposal
+  // back from the durable row by id.
+  'lifecycle_proposal',
 ] as const;
 
 /** True when a card is an unresolved actionable proposal worth preserving. */
