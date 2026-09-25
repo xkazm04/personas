@@ -120,7 +120,7 @@ Three incompatible error dialects. Representative worst cases:
 | `hooks/agents/useRecentAgents.ts:25` | `persist()` → unguarded `setItem`; its sibling `load()` at `:16` **is** guarded. Runs on every persona selection. |
 | `overview/components/dashboard/widgets/MetricHelpPopover.tsx:63` | `persistDismissed()` unguarded; sibling `getDismissedSet()` at `:54` guarded. Same asymmetry. |
 | `lib/icons/autoAssignIcons.ts:64,:83,:112` | Unguarded read **and** two unguarded writes inside an `async` fn → a throw becomes an unhandled rejection. Runs from the `personaSlice` fetch path. |
-| `templates/sub_generated/generation/modals/createTemplateTypes.ts:17,:21` | 23-line file, two storage writes, zero guarding. |
+| `templates/sub_generated/generation/modals/createTemplateTypes.ts:17,:21` (deleted 2026-09-25) | 23-line file, two storage writes, zero guarding. |
 | `teams/sub_teamMemory/components/panel/TeamMemoryPanel.tsx:50-56,:82` | Unguarded `getItem` inside a `useState` lazy initializer → **throws during the initial render**, taking the panel with it; `setItem` in `mouseup` also unguarded. |
 | `hooks/utility/data/usePersistedContext.ts:52` | `getItem` sits **outside** the `try` that starts at `:55`. The parse is guarded; the read is not. |
 | `lib/utils/crashPersistence.ts:68` | The `removeItem` recovery call is inside the `catch`, not itself wrapped — with storage disabled, the recovery path throws out of `readCrashLogs()`. |

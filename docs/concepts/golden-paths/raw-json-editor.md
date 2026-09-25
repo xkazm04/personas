@@ -287,7 +287,7 @@ monospace textareas hold SQL, prompts, CLI args, PEM blocks and free prose.
 | 2 | `forms/KeyValueEditor.tsx:157` | via #1 | forwarded to the parent as a string | `Record<string,string>` (lossy, D5) |
 | 3 | `sub_executions/.../PersonaRunner.tsx:92` | at execute | **blocks** (`useRunnerExecution.ts:55`) | `{}` — see D6 |
 | 4 | `sub_lab/use-cases/UseCaseExecutionPanel.tsx:73` | at execute | **blocks** | `{}` |
-| 5 | `templates/draft-editor/DraftJsonTab.tsx:92` | on change | **blocks** confirm (`navigationReducer.ts:31`) | `N8nPersonaDraft` via reconstruction ✅ |
+| 5 | `templates/draft-editor/DraftJsonTab.tsx:92` (deleted 2026-09-25) | on change | **blocks** confirm (`navigationReducer.ts:31`) | `N8nPersonaDraft` via reconstruction ✅ |
 | 6 | `triggers/sub_test/TestTab.tsx:308` | in render | **blocks** fire | re-parsed, re-stringified |
 | 7 | `sub_tool_runner/ToolInvocationCard.tsx:126` | in render | **blocks** run | re-parsed |
 | 8 | `sub_n8n/.../N8nUploadStep.tsx:203` | on change (debounced) | **blocks** import ✅ | text re-sent ✅ |

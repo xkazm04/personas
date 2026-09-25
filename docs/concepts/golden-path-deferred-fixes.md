@@ -1129,7 +1129,7 @@ flagship authoring path.
 
 **Where:** `db/src/repos/dev_tools.rs:1254-1261` (`goal_summary`);
 `TeamSynthesisPanel.tsx:28` → `team_synthesis.rs:581,619`;
-`useCreateTemplateActions.ts:89`; `TrainingStudio.tsx:111,:160`.
+`useCreateTemplateActions.ts:89` (deleted 2026-09-25 with the never-mounted Create Template flow); `TrainingStudio.tsx:111,:160`.
 
 **What is measured:** across the whole schema — **78 personas (at least 73
 model-drafted) with `trust_origin='builtin'` on 77; 351 triggers, 44 of them
@@ -1146,7 +1146,7 @@ model-authored, 0 of 2 showing it.
 **Six "generate is apply" surfaces have no gate at all.** `TeamSynthesisPanel`
 creates a team **and N live personas** from one prompt with no preview step.
 
-**Two smaller ones worth not losing:** `useCreateTemplateActions.ts:89`
+**Two smaller ones worth not losing:** `useCreateTemplateActions.ts:89` (moot since 2026-09-25: the file was deleted, unmounted)
 **silently discards the user's edits** on the snapshot-recovery path — `updateDraft`
 writes `draft` while the save reads `designResultJson`. And
 `TrainingStudio.tsx:111` computes `aiDrafted: true`, then `:160` persists the
@@ -1278,7 +1278,7 @@ today.
 ## 33. 21 of 21 tab strips ship a dangling `aria-controls`
 
 **Where:** `SegmentedTabs.tsx:124,:41,:176-182` vs `PanelTabBar.tsx:86`;
-`DraftEditStep.tsx:129`; `PrototypeTabs.tsx`, `TwinVariantTabs.tsx`.
+`DraftEditStep.tsx:129` (deleted 2026-09-25, never mounted); `PrototypeTabs.tsx`, `TwinVariantTabs.tsx`.
 
 **What is measured:** two tab-strip primitives sit in one folder, differ on one
 line, and score **2/2 versus 0/21**. `PanelTabBar` **withholds**
@@ -1293,7 +1293,7 @@ cleanest in-repo controlled experiment for *withholding beats requiring*.
 `role="tabpanel"` appears **4 times in the entire tree** against 34 tab strips.
 
 **A keyboard trap, and it is the only one in six repos:**
-`DraftEditStep.tsx:129` uses a roving `tabIndex` with **no arrow-key handler**,
+`DraftEditStep.tsx:129` (deleted 2026-09-25, never mounted) used a roving `tabIndex` with **no arrow-key handler**,
 leaving **2 of 3 tabs unreachable from the keyboard.** Four sibling repos have
 zero.
 

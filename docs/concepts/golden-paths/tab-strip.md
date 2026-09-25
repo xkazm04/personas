@@ -11,7 +11,7 @@
 > ARIA-first — and the four disagreed materially; §12.1 reports the disagreement and its cause rather
 > than the reconciled number alone. Read in full:
 > `shared/components/layout/{SegmentedTabs,PanelTabBar}.tsx`,
-> `templates/draft-editor/DraftEditStep.tsx`,
+> `templates/draft-editor/DraftEditStep.tsx` (deleted 2026-09-25),
 > `templates/sub_generated/gallery/modals/TemplateDetailModal.tsx`,
 > `templates/sub_generated/shared/TabTransition.tsx`,
 > `settings/sub_byom/components/ByomSettings.tsx`,

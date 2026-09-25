@@ -402,7 +402,7 @@ Against **16** production `useAppKeyboard` adopters, exactly **1** of which sets
 
 **13 `role="tablist"` surfaces — 6 have arrow keys, 7 manage roving `tabIndex`:**
 
-- **`templates/draft-editor/DraftEditStep.tsx:119,129` — the single most severe
+- **`templates/draft-editor/DraftEditStep.tsx:119,129` (deleted 2026-09-25) — the single most severe
   deviation in this document.** Roving `tabIndex={activeTab === tab.id ? 0 : -1}` with
   **no `onKeyDown` anywhere in the file**: every non-active tab is removed from the tab
   order and nothing replaces it, so the tab bar cannot be operated by keyboard at all.

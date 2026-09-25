@@ -157,7 +157,7 @@ exist do not qualify. What you must use instead:
 | `hooks/utility/interaction/useUnsavedGuard.ts` | **The leave guard** — intercepts sidebar navigation *and* `beforeunload` when dirty. Exists; **0 of 13 flows use it** (D6). |
 | `features/shared/components/buttons/Button` — `disabled` | The control-level half of the double guard. Never the only half. |
 
-**Do NOT reach for** `hooks/useWizardReducer.ts`, `features/shared/components/progress/WizardStepper.tsx`,
+**Do NOT reach for** `hooks/useWizardReducer.ts` (deleted 2026-09-25), `features/shared/components/progress/WizardStepper.tsx`,
 or `hooks/useStepProgress.ts` for a wizard. See §8 Gap 2 — measured, all three.
 
 ---
@@ -434,7 +434,7 @@ and `:69-90` intercepts sidebar navigation when dirty. **2 call sites**, both si
 3 of 6 is dirty by definition; every one of them lets a sidebar click silently destroy the flow.
 
 **D7 — the three shared step primitives are unreachable or wrong-shaped.** Full measurement in
-§8 Gap 2. In deviation terms: `hooks/useWizardReducer.ts` has **1 consumer**
+§8 Gap 2. In deviation terms: `hooks/useWizardReducer.ts` (deleted 2026-09-25) has **1 consumer**
 (`useCreateTemplateReducer.ts:85`) whose only consumer `CreateTemplateModal.tsx` **is imported
 nowhere in `src/`** — verified by exhaustive grep, including dynamic-import paths. So the repo's
 shared wizard hook, its shared `WizardStepper` (2 call sites, both inside that dead modal), and
@@ -479,7 +479,7 @@ three different reasons.** Measured:
 
 | Candidate | Live call sites | Why it does not qualify |
 | --- | --- | --- |
-| `hooks/useWizardReducer.ts` | **0** | Its own base state is not generic: `WizardStateBase` (`:6-13`) mandates `draft: N8nPersonaDraft \| null`, `draftJson`, `draftJsonError`, `adjustmentRequest` — it is the n8n wizard's state with a generic parameter bolted on. And `goToStep` (`:67-69`) just assigns; there is **no precondition hook at all**, so adopting it would *remove* the one guarantee that matters. Its single consumer chain is dead (D7). |
+| `hooks/useWizardReducer.ts` (deleted 2026-09-25) | **0** | Its own base state is not generic: `WizardStateBase` (`:6-13`) mandates `draft: N8nPersonaDraft \| null`, `draftJson`, `draftJsonError`, `adjustmentRequest` — it is the n8n wizard's state with a generic parameter bolted on. And `goToStep` (`:67-69`) just assigns; there is **no precondition hook at all**, so adopting it would *remove* the one guarantee that matters. Its single consumer chain is dead (D7). |
 | `shared/components/progress/WizardStepper.tsx` | **0** | Presentation only — `{steps, currentIndex}`. Both call sites are inside the dead modal. Also `label: string` (`:8`), so it reproduces A1 by construction. |
 | `hooks/useStepProgress.ts` | 3 (`AnalyzingPhase.tsx:45`, `InteractiveSetupInstructions.tsx:48`, `useCredentialNegotiator.ts:133`) | It is a **checklist**, not a navigator: `toggleStep` / `completeStep` / `setDerivedIndex`, no `canAdvance`, no back, no persistence, and `goToStep(index)` is an unguarded assignment (`:106-108`). Correct for the three surfaces that use it; wrong for a sequence with preconditions. |
 

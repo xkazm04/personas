@@ -307,7 +307,7 @@ control**, so this is a clean set, not a heuristic. Worst files:
 | `plugins/dev-tools/sub_overview/OverviewParts.tsx` | 5 | |
 | `settings/sub_network/components/ExposureManager.tsx` · `recipes/sub_editor/components/RecipeEditor.tsx` · `overview/sub_memories/components/CreateMemoryForm.tsx` · `agents/sub_settings/components/PersonaSettingsTab.tsx:146,176,194,219` · `agents/sub_lab/use-cases/StructuredField.tsx` · `agents/sub_connectors/components/automation/AutomationTriggerStep.tsx` | 4 each | `PersonaSettingsTab` is the sharpest case — it uses `htmlFor` correctly at `:98`, `:117`, `:129` and then omits it four times in the same component. |
 | `vault/sub_credentials/components/features/EventConfigSubPanels.tsx` · `settings/sub_network/components/BundleExportDialog.tsx` · `settings/sub_byom/components/ByomRoutingRules.tsx` · `settings/sub_api_keys/components/CreateApiKeyDialog.tsx:125` | 3 each | `CreateApiKeyDialog`'s hint `<p>` at `:136` is also unlinked. |
-| `agents/sub_deployment/components/cloud/CreateTriggerForm.tsx:52,67,99` · `vault/sub_credentials/components/import/ImportSyncConfig.tsx:41,56` · `teams/sub_goals/GoalEditorModal.tsx:189,234` · `templates/draft-editor/DraftIdentityTab.tsx:55,73` · `vault/sub_catalog/components/forms/TemplateFormBody.tsx:100` · `teams/sub_teamWorkspace/CreateTeamForm.tsx:127,141,157` | 2–3 each | `GoalEditorModal` also uses `htmlFor` correctly at `:157`/`:174` in the same file. `CreateTeamForm` — the exemplary site — hand-rolls three of them beside its two `FormField`s. `ImportSyncConfig`'s four provider-specific formats exist only as rotating placeholders (`:47-50`) that vanish on type. |
+| `agents/sub_deployment/components/cloud/CreateTriggerForm.tsx:52,67,99` · `vault/sub_credentials/components/import/ImportSyncConfig.tsx:41,56` · `teams/sub_goals/GoalEditorModal.tsx:189,234` · `templates/draft-editor/DraftIdentityTab.tsx:55,73` (deleted 2026-09-25) · `vault/sub_catalog/components/forms/TemplateFormBody.tsx:100` · `teams/sub_teamWorkspace/CreateTeamForm.tsx:127,141,157` | 2–3 each | `GoalEditorModal` also uses `htmlFor` correctly at `:157`/`:174` in the same file. `CreateTeamForm` — the exemplary site — hand-rolls three of them beside its two `FormField`s. `ImportSyncConfig`'s four provider-specific formats exist only as rotating placeholders (`:47-50`) that vanish on type. |
 
 ### Errors that exist but are not wired — 8 `aria-invalid` sites for ~300 inputs
 
@@ -390,7 +390,7 @@ either every-keystroke or nothing-until-the-IPC-fails.
   ("Approximately … run(s)"), so word order is untranslatable.
 - `vault/…/EditFormFields.tsx:58,64,67` · `agents/…/PersonaSettingsTab.tsx:113`
   (behind an eslint-disable) · `vault/…/FieldCaptureRow.tsx:106` (`'Select...'`)
-  · `templates/…/RecipeAdoptionModal.tsx:262` · `templates/draft-editor/DraftIdentityTab.tsx:17-19,95`
+  · `templates/…/RecipeAdoptionModal.tsx:262` · `templates/draft-editor/DraftIdentityTab.tsx:17-19,95` (deleted 2026-09-25)
   · `agents/…/CreateTriggerForm.tsx:38,91,149`.
 - **`shared/components/forms/CharBudget.tsx:59`** — the only one inside a shared
   primitive, and therefore the only one that is untranslated on *every* correct
