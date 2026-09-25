@@ -64,8 +64,9 @@ export function HealingTimeline({ chains, knowledge, loading, selectedId, onSele
     };
   });
 
+  // One element: this is the Split's main column, and a fragment would spill into the pane's.
   return (
-    <>
+    <div className="min-w-0">
       <DataTable<Col>
         label={o.observability_extra.healing_view_timeline}
         loading={loading && chains.length === 0}
@@ -95,6 +96,6 @@ export function HealingTimeline({ chains, knowledge, loading, selectedId, onSele
           </Rows>
         </Section>
       )}
-    </>
+    </div>
   );
 }
