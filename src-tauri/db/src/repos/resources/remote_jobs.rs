@@ -24,6 +24,14 @@
 //! distinction is the whole point: a resume asks for "everything above what I
 //! hold contiguously", so a note that arrived out of order can never mark the
 //! gap beneath it as delivered.
+//!
+//! ## The outbox
+//!
+//! A job sent to a paired device that is offline is stored `queued` and drained,
+//! oldest first, when the link next comes up ([`list_queued_for_peer`],
+//! [`mark_pending`]); a send that got no answer returns to the outbox
+//! ([`mark_queued`]) rather than failing, because the peer's `create_inbound`
+//! is idempotent on the job id and a repeat is re-acked, never re-run.
 
 use crate::models::{RemoteJob, RemoteJobDirection, RemoteJobNote, RemoteJobStatus};
 use crate::DbPool;
@@ -31,7 +39,7 @@ use personas_core::error::AppError;
 
 const COLUMNS: &str = "id, direction, peer_id, peer_display_name, kind, instruction, \
                        status, summary, refusal_reason, last_seq, created_at, updated_at, \
-                       completed_at";
+                       completed_at, payload_json, receipt_json";
 
 /// Insert a job row this device is originating (status `Pending`).
 ///
@@ -45,6 +53,40 @@ pub fn create_outbound(
     kind: &str,
     instruction: &str,
 ) -> Result<RemoteJob, AppError> {
+    create_outbound_with_payload(
+        pool,
+        id,
+        peer_id,
+        peer_display_name,
+        kind,
+        instruction,
+        None,
+        RemoteJobStatus::Pending,
+    )
+}
+
+/// Insert an outbound job with its kind-specific body, as `Pending` (the peer is
+/// connected and the request is about to go on the wire) or `Queued` (the peer
+/// is offline, so the job waits in this device's outbox for the next link-up).
+/// Any other starting status is refused: an outbound row is born in one of the
+/// two states that still have a send ahead of them.
+#[allow(clippy::too_many_arguments)]
+pub fn create_outbound_with_payload(
+    pool: &DbPool,
+    id: &str,
+    peer_id: &str,
+    peer_display_name: &str,
+    kind: &str,
+    instruction: &str,
+    payload_json: Option<&str>,
+    status: RemoteJobStatus,
+) -> Result<RemoteJob, AppError> {
+    if !matches!(status, RemoteJobStatus::Queued | RemoteJobStatus::Pending) {
+        return Err(AppError::Validation(format!(
+            "an outbound remote job starts queued or pending, not {}",
+            status.as_str()
+        )));
+    }
     insert(
         pool,
         id,
@@ -53,7 +95,8 @@ pub fn create_outbound(
         peer_display_name,
         kind,
         instruction,
-        RemoteJobStatus::Pending,
+        payload_json,
+        status,
     )
 }
 
@@ -70,6 +113,29 @@ pub fn create_inbound(
     kind: &str,
     instruction: &str,
 ) -> Result<(RemoteJob, bool), AppError> {
+    create_inbound_with_payload(
+        pool,
+        id,
+        peer_id,
+        peer_display_name,
+        kind,
+        instruction,
+        None,
+    )
+}
+
+/// [`create_inbound`] carrying the request's kind-specific body, so the running
+/// side keeps what it was asked to do (a `fleet_session` payload) next to the
+/// job row. Same idempotency: a repeat returns the existing row and `false`.
+pub fn create_inbound_with_payload(
+    pool: &DbPool,
+    id: &str,
+    peer_id: &str,
+    peer_display_name: &str,
+    kind: &str,
+    instruction: &str,
+    payload_json: Option<&str>,
+) -> Result<(RemoteJob, bool), AppError> {
     if let Some(existing) = get(pool, id)? {
         return Ok((existing, false));
     }
@@ -81,6 +147,7 @@ pub fn create_inbound(
         peer_display_name,
         kind,
         instruction,
+        payload_json,
         RemoteJobStatus::Running,
     )?;
     Ok((job, true))
@@ -95,6 +162,7 @@ fn insert(
     peer_display_name: &str,
     kind: &str,
     instruction: &str,
+    payload_json: Option<&str>,
     status: RemoteJobStatus,
 ) -> Result<RemoteJob, AppError> {
     if id.trim().is_empty() {
@@ -115,8 +183,9 @@ fn insert(
     conn.execute(
         "INSERT INTO remote_jobs
             (id, direction, peer_id, peer_display_name, kind, instruction,
-             status, summary, refusal_reason, last_seq, created_at, updated_at, completed_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, NULL, NULL, 0, ?8, ?8, NULL)",
+             status, summary, refusal_reason, last_seq, created_at, updated_at, completed_at,
+             payload_json)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, NULL, NULL, 0, ?8, ?8, NULL, ?9)",
         rusqlite::params![
             id,
             direction.as_str(),
@@ -126,6 +195,7 @@ fn insert(
             instruction,
             status.as_str(),
             now,
+            payload_json,
         ],
     )?;
     get(pool, id)?.ok_or_else(|| AppError::Internal("remote job vanished after insert".into()))
@@ -271,6 +341,190 @@ fn set_status(
     Ok(())
 }
 
+// -- The outbox ---------------------------------------------------------------
+//
+// An outbound job sent while its peer is offline is persisted `queued` and goes
+// on the wire when the link next comes up. The two transitions below are
+// CONDITIONAL updates, so two drains racing for the same row (a simultaneous
+// connect raises link-up on both connections) cannot both send it: exactly one
+// `mark_pending` reports `true`.
+
+/// Outbound jobs waiting in the outbox for one peer, oldest first — the order
+/// they are drained in.
+pub fn list_queued_for_peer(pool: &DbPool, peer_id: &str) -> Result<Vec<RemoteJob>, AppError> {
+    timed_query!("remote_jobs", "remote_jobs::list_queued_for_peer", {
+        let conn = pool.get()?;
+        let rows = conn
+            .prepare(&format!(
+                "SELECT {COLUMNS} FROM remote_jobs
+                 WHERE direction = 'outbound' AND peer_id = ?1 AND status = 'queued'
+                 ORDER BY created_at ASC, rowid ASC"
+            ))?
+            .query_map(rusqlite::params![peer_id], map_job)?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    })
+}
+
+/// Claim a queued job for sending: `queued` → `pending`. `false` when the row
+/// was not queued (another drain claimed it, or it has since moved on).
+pub fn mark_pending(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    transition(pool, id, RemoteJobStatus::Queued, RemoteJobStatus::Pending)
+}
+
+/// Put a job whose send did not get an answer back in the outbox:
+/// `pending` → `queued`. A send that failed on the wire is a suspension, not a
+/// failure — the peer either never saw the request (and will get it on the next
+/// link-up) or already accepted it (and will re-ack the repeat without running
+/// it twice, because `create_inbound` is idempotent on the job id). `false` when
+/// the row was not pending (an ack or a result landed in the meantime).
+pub fn mark_queued(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    transition(pool, id, RemoteJobStatus::Pending, RemoteJobStatus::Queued)
+}
+
+/// Return every outbound `pending` row to the outbox. Called once at network
+/// start: nothing can be in flight across a restart, so a row still `pending`
+/// is one whose send died with the process, and leaving it would strand it
+/// (the drain only takes `queued`, and the resume exchange has nothing to ask
+/// the peer about a request it may never have received).
+pub fn requeue_stranded_pending(pool: &DbPool) -> Result<usize, AppError> {
+    timed_query!("remote_jobs", "remote_jobs::requeue_stranded_pending", {
+        let conn = pool.get()?;
+        let n = conn.execute(
+            "UPDATE remote_jobs SET status = 'queued', updated_at = ?1
+              WHERE direction = 'outbound' AND status = 'pending'",
+            rusqlite::params![chrono::Utc::now().to_rfc3339()],
+        )?;
+        Ok(n)
+    })
+}
+
+fn transition(
+    pool: &DbPool,
+    id: &str,
+    from: RemoteJobStatus,
+    to: RemoteJobStatus,
+) -> Result<bool, AppError> {
+    timed_query!("remote_jobs", "remote_jobs::transition", {
+        let conn = pool.get()?;
+        let n = conn.execute(
+            "UPDATE remote_jobs SET status = ?3, updated_at = ?4 WHERE id = ?1 AND status = ?2",
+            rusqlite::params![
+                id,
+                from.as_str(),
+                to.as_str(),
+                chrono::Utc::now().to_rfc3339()
+            ],
+        )?;
+        Ok(n > 0)
+    })
+}
+
+// -- Receipt and mirror -------------------------------------------------------
+
+/// Store a job's completion receipt (a serialized `FleetSessionJobReceipt`).
+/// The caller validates the JSON; this layer stores it verbatim, and
+/// [`map_job`] reads an unparseable value back as absent.
+pub fn set_receipt(pool: &DbPool, id: &str, receipt_json: &str) -> Result<(), AppError> {
+    timed_query!("remote_jobs", "remote_jobs::set_receipt", {
+        let conn = pool.get()?;
+        let n = conn.execute(
+            "UPDATE remote_jobs SET receipt_json = ?2, updated_at = ?3 WHERE id = ?1",
+            rusqlite::params![id, receipt_json, chrono::Utc::now().to_rfc3339()],
+        )?;
+        if n == 0 {
+            return Err(AppError::NotFound(format!("No remote job with id {id}")));
+        }
+        Ok(())
+    })
+}
+
+/// The last-known view of a remote session, as the running device last mirrored
+/// it to this (originating) device. Latest-wins: each mirror replaces the last.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RemoteJobMirror {
+    /// The running device's serialized `RemoteSessionView`, verbatim.
+    pub view_json: String,
+    /// RFC 3339, this device's clock, when the frame landed.
+    pub mirror_at: String,
+}
+
+/// Replace a job's mirror. Deliberately does NOT touch `updated_at`: a mirror is
+/// a live view, not a change to the job, and `updated_at` is what the liveness
+/// rule reads as "when the job last changed state".
+pub fn set_mirror(
+    pool: &DbPool,
+    id: &str,
+    mirror_json: &str,
+    mirror_at: &str,
+) -> Result<(), AppError> {
+    timed_query!("remote_jobs", "remote_jobs::set_mirror", {
+        let conn = pool.get()?;
+        let n = conn.execute(
+            "UPDATE remote_jobs SET mirror_json = ?2, mirror_at = ?3 WHERE id = ?1",
+            rusqlite::params![id, mirror_json, mirror_at],
+        )?;
+        if n == 0 {
+            return Err(AppError::NotFound(format!("No remote job with id {id}")));
+        }
+        Ok(())
+    })
+}
+
+/// A job's last mirror, or `None` when none has arrived (or the job is unknown).
+pub fn get_mirror(pool: &DbPool, id: &str) -> Result<Option<RemoteJobMirror>, AppError> {
+    timed_query!("remote_jobs", "remote_jobs::get_mirror", {
+        let conn = pool.get()?;
+        match conn.query_row(
+            "SELECT mirror_json, mirror_at FROM remote_jobs WHERE id = ?1",
+            rusqlite::params![id],
+            map_mirror,
+        ) {
+            Ok(mirror) => Ok(mirror),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(AppError::Database(e)),
+        }
+    })
+}
+
+/// Every outbound job of `kind` that is still open, or finished at or after
+/// `terminal_since` (RFC 3339), with its last mirror — newest first. The read
+/// behind the originating device's remote-session tiles.
+pub fn list_outbound_with_mirrors(
+    pool: &DbPool,
+    kind: &str,
+    terminal_since: &str,
+) -> Result<Vec<(RemoteJob, Option<RemoteJobMirror>)>, AppError> {
+    timed_query!("remote_jobs", "remote_jobs::list_outbound_with_mirrors", {
+        let conn = pool.get()?;
+        let rows = conn
+            .prepare(&format!(
+                "SELECT {COLUMNS}, mirror_json, mirror_at FROM remote_jobs
+                 WHERE direction = 'outbound' AND kind = ?1
+                   AND (completed_at IS NULL OR completed_at >= ?2)
+                 ORDER BY created_at DESC, id DESC
+                 LIMIT 200"
+            ))?
+            .query_map(rusqlite::params![kind, terminal_since], |row| {
+                Ok((map_job(row)?, map_mirror(row)?))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    })
+}
+
+fn map_mirror(row: &rusqlite::Row<'_>) -> rusqlite::Result<Option<RemoteJobMirror>> {
+    let view_json: Option<String> = row.get("mirror_json")?;
+    let mirror_at: Option<String> = row.get("mirror_at")?;
+    Ok(match (view_json, mirror_at) {
+        (Some(view_json), Some(mirror_at)) => Some(RemoteJobMirror {
+            view_json,
+            mirror_at,
+        }),
+        _ => None,
+    })
+}
+
 /// Mint the next progress sequence number for a job we are running.
 ///
 /// A single atomic `last_seq + 1` bump, so two concurrent progress reports can
@@ -403,6 +657,12 @@ fn map_job(row: &rusqlite::Row<'_>) -> rusqlite::Result<RemoteJob> {
         created_at: row.get(10)?,
         updated_at: row.get(11)?,
         completed_at: row.get(12)?,
+        payload_json: row.get("payload_json")?,
+        // An unparseable receipt reads as absent rather than failing the whole
+        // listing, for the same reason an unknown status token does above.
+        receipt: row
+            .get::<_, Option<String>>("receipt_json")?
+            .and_then(|raw| serde_json::from_str(&raw).ok()),
     })
 }
 
@@ -692,6 +952,161 @@ mod tests {
         }
         assert_eq!(list(&pool, None, 50).expect("list").len(), 1);
         assert_eq!(list_notes(&pool, "job-1").expect("notes").len(), 1);
+    }
+
+    fn queued(pool: &DbPool, id: &str, peer: &str) -> RemoteJob {
+        create_outbound_with_payload(
+            pool,
+            id,
+            peer,
+            "Laptop",
+            "fleet_session",
+            "fix the flaky test",
+            Some(r#"{"prompt":"fix it"}"#),
+            RemoteJobStatus::Queued,
+        )
+        .expect("queued outbound")
+    }
+
+    /// An offline send lands in the outbox with its payload, and only `queued`
+    /// or `pending` are valid starting states for an outbound row.
+    #[test]
+    fn an_outbox_row_keeps_its_payload_and_starts_queued() {
+        let pool = test_pool();
+        let job = queued(&pool, "job-q", "peerA");
+        assert_eq!(job.status, RemoteJobStatus::Queued);
+        assert!(
+            !job.status.is_terminal(),
+            "queued still has a send ahead of it"
+        );
+        assert_eq!(job.payload_json.as_deref(), Some(r#"{"prompt":"fix it"}"#));
+
+        for bad in [RemoteJobStatus::Running, RemoteJobStatus::Completed] {
+            assert!(matches!(
+                create_outbound_with_payload(
+                    &pool,
+                    "job-x",
+                    "peerA",
+                    "L",
+                    "instruction",
+                    "x",
+                    None,
+                    bad
+                ),
+                Err(AppError::Validation(_))
+            ));
+        }
+        // A queued job is not something a reconnect RESUMES - it is drained.
+        assert!(
+            list_unfinished_for_peer(&pool, RemoteJobDirection::Outbound, "peerA")
+                .expect("unfinished")
+                .is_empty()
+        );
+    }
+
+    /// The drain order is oldest first, and a claim is exclusive: two drains
+    /// racing for the same row cannot both send it.
+    #[test]
+    fn the_outbox_drains_oldest_first_and_a_claim_is_exclusive() {
+        let pool = test_pool();
+        queued(&pool, "job-1", "peerA");
+        std::thread::sleep(std::time::Duration::from_millis(2));
+        queued(&pool, "job-2", "peerA");
+        queued(&pool, "job-other", "peerB");
+
+        let ids: Vec<String> = list_queued_for_peer(&pool, "peerA")
+            .expect("queued")
+            .into_iter()
+            .map(|j| j.id)
+            .collect();
+        assert_eq!(ids, vec!["job-1", "job-2"]);
+
+        assert!(mark_pending(&pool, "job-1").expect("claim"));
+        assert!(
+            !mark_pending(&pool, "job-1").expect("second claim"),
+            "a row can be claimed for sending once"
+        );
+        // An unanswered send goes back to the outbox, once.
+        assert!(mark_queued(&pool, "job-1").expect("requeue"));
+        assert!(!mark_queued(&pool, "job-1").expect("requeue twice"));
+        assert_eq!(
+            get(&pool, "job-1").expect("get").unwrap().status,
+            RemoteJobStatus::Queued
+        );
+    }
+
+    /// A restart strands nothing: an outbound row left `pending` goes back to
+    /// the outbox, and inbound rows are untouched.
+    #[test]
+    fn a_restart_returns_stranded_pending_sends_to_the_outbox() {
+        let pool = test_pool();
+        outbound(&pool, "job-p");
+        create_inbound(&pool, "job-in", "peerB", "D", "instruction", "go").expect("in");
+        assert_eq!(requeue_stranded_pending(&pool).expect("requeue"), 1);
+        assert_eq!(
+            get(&pool, "job-p").expect("get").unwrap().status,
+            RemoteJobStatus::Queued
+        );
+        assert_eq!(
+            get(&pool, "job-in").expect("get").unwrap().status,
+            RemoteJobStatus::Running
+        );
+    }
+
+    /// Receipt and mirror round-trip, and the list behind the remote tiles
+    /// carries both while skipping long-finished and foreign-kind rows.
+    #[test]
+    fn receipts_and_mirrors_round_trip_and_feed_the_tile_list() -> Result<(), AppError> {
+        let pool = test_pool();
+        queued(&pool, "job-1", "peerA");
+        assert!(get_mirror(&pool, "job-1").expect("mirror").is_none());
+        assert!(get_mirror(&pool, "ghost").expect("ghost").is_none());
+
+        set_mirror(
+            &pool,
+            "job-1",
+            r#"{"state":"running"}"#,
+            "2026-09-23T10:00:00Z",
+        )
+        .expect("m1");
+        set_mirror(
+            &pool,
+            "job-1",
+            r#"{"state":"idle"}"#,
+            "2026-09-23T10:00:05Z",
+        )
+        .expect("m2");
+        let mirror = get_mirror(&pool, "job-1")
+            .expect("mirror")
+            .expect("present");
+        assert_eq!(mirror.view_json, r#"{"state":"idle"}"#, "latest wins");
+        assert_eq!(mirror.mirror_at, "2026-09-23T10:00:05Z");
+        assert!(set_mirror(&pool, "ghost", "{}", "x").is_err());
+
+        let receipt = r#"{"sessionId":"s1","branch":"remote/a/b","pushedSha":"abc","pushError":null,"verified":null}"#;
+        set_receipt(&pool, "job-1", receipt).expect("receipt");
+        let job = get(&pool, "job-1").expect("get").unwrap();
+        assert_eq!(
+            job.receipt.expect("parsed").pushed_sha.as_deref(),
+            Some("abc")
+        );
+
+        outbound(&pool, "job-instruction");
+        queued(&pool, "job-old", "peerA");
+        finish(&pool, "job-old", RemoteJobStatus::Completed, "done").expect("finish");
+        pool.get()?.execute(
+            "UPDATE remote_jobs SET completed_at = '2000-01-01T00:00:00Z' WHERE id = 'job-old'",
+            [],
+        )?;
+        let rows = list_outbound_with_mirrors(&pool, "fleet_session", "2026-01-01T00:00:00Z")
+            .expect("list");
+        assert_eq!(rows.len(), 1, "only the open fleet_session job: {rows:?}");
+        assert_eq!(rows[0].0.id, "job-1");
+        assert_eq!(
+            rows[0].1.as_ref().map(|m| m.mirror_at.as_str()),
+            Some("2026-09-23T10:00:05Z")
+        );
+        Ok(())
     }
 
     /// Deleting a job takes its notes with it (FK cascade), so a cleared history

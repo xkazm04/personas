@@ -159,7 +159,7 @@ function ModalContent({ issue, cat, isAutoFixed, isAutoFixPending, isCircuitBrea
         )}
         <div>
           <h4 className="text-sm font-mono uppercase text-foreground mb-2">{t.overview.healing_issue_modal.analysis}</h4>
-          <div className="typo-body text-foreground leading-relaxed whitespace-pre-wrap">{issue.description}</div>
+          <div className="typo-body text-foreground whitespace-pre-wrap">{issue.description}</div>
         </div>
         {issue.suggested_fix && (
           <div className={`p-4 rounded-modal ${SEVERITY_STYLES.success.bg} ${SEVERITY_STYLES.success.border}`}>
@@ -173,7 +173,7 @@ function ModalContent({ issue, cat, isAutoFixed, isAutoFixPending, isCircuitBrea
                 {copied ? t.overview.healing_issue_modal.copied : t.overview.healing_issue_modal.copy_fix}
               </button>
             </div>
-            <div className="typo-body text-foreground leading-relaxed whitespace-pre-wrap">{issue.suggested_fix}</div>
+            <div className="typo-body text-foreground whitespace-pre-wrap">{issue.suggested_fix}</div>
           </div>
         )}
         {issue.execution_id && (

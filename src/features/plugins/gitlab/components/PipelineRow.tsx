@@ -23,8 +23,8 @@ export function PipelineRow({ pipeline, isActive, onSelect }: PipelineRowProps) 
         <StatusIcon status={pipeline.status} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="typo-body font-medium text-foreground/90">#{pipeline.id}</span>
-            <span className={`typo-caption font-medium capitalize ${statusColor(pipeline.status)}`}>
+            <span className="typo-body text-foreground/90">#{pipeline.id}</span>
+            <span className={`typo-caption capitalize ${statusColor(pipeline.status)}`}>
               {pipeline.status}
             </span>
           </div>

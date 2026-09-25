@@ -33,7 +33,7 @@ function SectionRule({ index, label, count }: { index: number; label: string; co
       <span className="typo-caption font-mono text-primary/70 tabular-nums">
         {String(index).padStart(2, '0')}
       </span>
-      <h2 className="typo-label uppercase tracking-widest text-foreground/70 whitespace-nowrap">
+      <h2 className="typo-label uppercase text-foreground/70 whitespace-nowrap">
         {label}
         {typeof count === 'number' && (
           <span className="text-muted-foreground ml-1.5 tabular-nums normal-case tracking-normal">{count}</span>
@@ -132,7 +132,7 @@ export function SubjectsConsole(props: SubjectsVariantProps) {
                 }`}
               >
                 <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${active ? 'text-primary' : 'text-muted-foreground'}`} aria-hidden />
-                <span className="typo-caption flex-1 truncate leading-tight">
+                <span className="typo-caption flex-1 truncate">
                   {g.id === null ? p.category_unassigned : g.title}
                 </span>
                 {/* muted-ok: strip count micro-label */}
@@ -191,7 +191,7 @@ export function SubjectsConsole(props: SubjectsVariantProps) {
             <div className="mb-2 flex items-center gap-2.5">
               {/* h2, not h1: ContentHeader owns this page's single h1 and the parent
                   panel already renders it. Two h1s made the plate a second page title. */}
-              <h2 className="typo-section-title text-foreground">{subject.title}</h2>
+              <h2 className="typo-section-title">{subject.title}</h2>
               {/* muted-ok: slug echo, structural chrome */}
               <code className="typo-caption font-mono text-muted-foreground">{subject.slug}</code>
             </div>
@@ -202,13 +202,13 @@ export function SubjectsConsole(props: SubjectsVariantProps) {
               {[
                 { label: 'Status', node: <HierarchyStatusChip status={subject.status} /> },
                 { label: 'Category', node: <span className="typo-body text-foreground truncate block">{categoryTitle}</span> },
-                { label: p.tab_techniques, node: <span className="typo-data-lg text-foreground tabular-nums">{techniques.length}</span> },
-                { label: p.tab_applications, node: <span className="typo-data-lg text-foreground tabular-nums">{subject.applications.length}</span> },
-                { label: p.evidence_heading, node: <span className="typo-data-lg text-foreground tabular-nums">{subject.evidence.length}</span> },
+                { label: p.tab_techniques, node: <span className="typo-data-lg text-foreground">{techniques.length}</span> },
+                { label: p.tab_applications, node: <span className="typo-data-lg text-foreground">{subject.applications.length}</span> },
+                { label: p.evidence_heading, node: <span className="typo-data-lg text-foreground">{subject.evidence.length}</span> },
                 {
                   label: p.deviations_heading,
                   node: (
-                    <span className={`typo-data-lg tabular-nums ${subject.deviations.length > 0 ? 'text-status-warning' : 'text-foreground/50'}`}>
+                    <span className={`typo-data-lg ${subject.deviations.length > 0 ? 'text-status-warning' : 'text-foreground/50'}`}>
                       {subject.deviations.length}
                     </span>
                   ),
@@ -276,7 +276,7 @@ export function SubjectsConsole(props: SubjectsVariantProps) {
                         </span>
                       </span>
                       {tech.summary && (
-                        <span className="block typo-caption text-foreground/70 mt-1 ml-[30px] leading-relaxed max-w-[70ch]">
+                        <span className="block typo-caption text-foreground/70 mt-1 ml-[30px] max-w-[70ch]">
                           {tech.summary}
                         </span>
                       )}
@@ -330,12 +330,12 @@ export function SubjectsConsole(props: SubjectsVariantProps) {
             {subject.evidence.length === 0 && <p className="typo-body text-foreground">{p.evidence_empty}</p>}
             <ul className="space-y-0.5 mb-4">
               {subject.evidence.map((path) => (
-                <li key={path} className="typo-code font-mono text-foreground/85 px-2 py-1 rounded-interactive hover:bg-secondary/30 truncate">
+                <li key={path} className="typo-code text-foreground/85 px-2 py-1 rounded-interactive hover:bg-secondary/30 truncate">
                   {path}
                 </li>
               ))}
               {subject.counterEvidence.map((path) => (
-                <li key={path} className="typo-code font-mono text-status-warning/90 px-2 py-1 rounded-interactive hover:bg-status-warning/10 truncate">
+                <li key={path} className="typo-code text-status-warning/90 px-2 py-1 rounded-interactive hover:bg-status-warning/10 truncate">
                   {path}
                 </li>
               ))}

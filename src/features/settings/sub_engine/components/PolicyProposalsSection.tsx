@@ -293,7 +293,7 @@ export function PolicyProposalsSection({ onRulesChanged }: { onRulesChanged?: ()
   return (
     <div className="space-y-4">
       <div>
-        <h4 className="typo-body font-medium text-foreground">{s.tuning_title}</h4>
+        <h4 className="typo-body text-foreground">{s.tuning_title}</h4>
         <p className="typo-caption text-foreground">{s.tuning_subtitle}</p>
       </div>
 
@@ -324,7 +324,7 @@ export function PolicyProposalsSection({ onRulesChanged }: { onRulesChanged?: ()
 
       {report && report.declined.length > 0 && (
         <div className="space-y-1">
-          <p className="typo-caption font-medium text-foreground">{s.tuning_declined_title}</p>
+          <p className="typo-caption text-foreground">{s.tuning_declined_title}</p>
           {report.declined.map((d) => (
             <p key={`${d.category}:${d.incumbentModel}:${d.reason}`} className="typo-caption text-foreground">
               {declinedLine(d)}
@@ -341,7 +341,7 @@ export function PolicyProposalsSection({ onRulesChanged }: { onRulesChanged?: ()
 
       {decided.length > 0 && (
         <div className="space-y-2">
-          <p className="typo-caption font-medium text-foreground">{s.tuning_history_title}</p>
+          <p className="typo-caption text-foreground">{s.tuning_history_title}</p>
           {decided.map(renderProposal)}
         </div>
       )}

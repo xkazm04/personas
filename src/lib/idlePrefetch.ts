@@ -30,10 +30,13 @@ interface IdleApi {
   ) => number;
 }
 
-function scheduleIdle(cb: () => void): void {
+/** Default ceiling on how long one chunk waits for an idle slice. */
+const DEFAULT_IDLE_TIMEOUT_MS = 5000;
+
+function scheduleIdle(cb: () => void, timeoutMs: number): void {
   const ric = (globalThis as unknown as IdleApi).requestIdleCallback;
   if (typeof ric === "function") {
-    ric(() => cb(), { timeout: 5000 });
+    ric(() => cb(), { timeout: timeoutMs });
     return;
   }
   // MessageChannel fallback: posts run as a task (not microtask), so the
@@ -60,6 +63,14 @@ interface IdlePrefetchOptions {
    * on the next idle slice).
    */
   initialDelayMs?: number;
+  /**
+   * Longest a scheduled chunk waits for an idle slice before it runs anyway
+   * (the `requestIdleCallback` timeout). Default 5000. Lower it when the work
+   * is deferred only to yield priority, not because it can wait: idle may
+   * never arrive on a busy machine, and the deadline is what turns "deferred"
+   * into "shortly after" instead of "late".
+   */
+  idleTimeoutMs?: number;
 }
 
 /**
@@ -87,6 +98,7 @@ export function idlePrefetch(
   let cancelled = false;
   let startTimer: ReturnType<typeof setTimeout> | null = null;
   const queue = [...imports];
+  const idleTimeoutMs = opts.idleTimeoutMs ?? DEFAULT_IDLE_TIMEOUT_MS;
 
   const pump = (): void => {
     if (cancelled) return;
@@ -97,7 +109,7 @@ export function idlePrefetch(
       // Schedule the next chunk only after this one settles, so at most one
       // chunk evaluates per idle slice.
       void fn().catch(silentCatch("idlePrefetch:chunk")).finally(pump);
-    });
+    }, idleTimeoutMs);
   };
 
   if (opts.initialDelayMs && opts.initialDelayMs > 0) {

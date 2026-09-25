@@ -164,5 +164,13 @@
   "zapier_message": "تعذّر الوصول إلى Zapier webhook.",
   "zapier_suggestion": "تحقق من عنوان webhook في إعدادات تكامل Zapier.",
   "oauth_account_mismatch_message": "لقد سجّلت الدخول بحساب مختلف عن الحساب المرتبط ببيانات الاعتماد هذه.",
-  "oauth_account_mismatch_suggestion": "سجّل الدخول بالحساب الظاهر على بيانات الاعتماد، أو أضف بيانات اعتماد جديدة للحساب الآخر."
+  "oauth_account_mismatch_suggestion": "سجّل الدخول بالحساب الظاهر على بيانات الاعتماد، أو أضف بيانات اعتماد جديدة للحساب الآخر.",
+  "project_not_found_message": "هذا المشروع غير موجود على الجهاز الآخر.",
+  "project_not_found_suggestion": "استنسخ المشروع أو سجّله هناك بنفس مستودع git البعيد، ثم أرسله مرة أخرى.",
+  "remote_command_refused_message": "رفض الجهاز الآخر هذا الأمر.",
+  "remote_command_refused_suggestion": "ربما انتهت الجلسة هناك. حدّث شاشة المراقبة وحاول مرة أخرى.",
+  "remote_dispatch_failed_message": "تعذر إرسال الجلسة إلى الجهاز الآخر.",
+  "remote_dispatch_failed_suggestion": "تحقق من أن الجهاز لا يزال مقترنًا وحاول مرة أخرى، أو شغّله على هذا الجهاز.",
+  "remote_peer_offline_message": "الجهاز الآخر غير متاح الآن.",
+  "remote_peer_offline_suggestion": "افتح Personas على ذلك الجهاز وتأكد من أن كليهما على نفس الشبكة. ينتظر الإرسال في صندوق الصادر حتى يستيقظ الجهاز."
 }

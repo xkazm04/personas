@@ -89,11 +89,11 @@ export function FlowStepsWidget({ config, title }: CockpitWidgetProps) {
                   )}
                 </div>
                 <div className={`min-w-0 flex-1 ${last ? '' : 'pb-3'}`}>
-                  <div className="typo-body font-medium text-foreground leading-snug">
+                  <div className="typo-body text-foreground">
                     {step.label}
                   </div>
                   {step.detail && (
-                    <div className="typo-caption leading-relaxed mt-0.5">{step.detail}</div>
+                    <div className="typo-caption mt-0.5">{step.detail}</div>
                   )}
                 </div>
               </motion.li>

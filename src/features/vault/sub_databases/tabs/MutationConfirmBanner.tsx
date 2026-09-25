@@ -35,13 +35,13 @@ export function MutationConfirmBanner({
       <div className="flex items-start gap-2">
         <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
         <div className="space-y-1 min-w-0">
-          <p className="typo-body font-medium text-amber-300/90">{db.modifies_data}</p>
+          <p className="typo-body text-amber-300/90">{db.modifies_data}</p>
           <p className="typo-body text-foreground">{hint}</p>
           {/* The whole statement stays readable (scroll), never truncated: the
               user is being asked to authorise exactly this text, and a cut at
               200 characters hides the WHERE clause of a long DELETE — the one
               part that decides how much it destroys. */}
-          <pre className="typo-code font-mono text-foreground bg-secondary/30 rounded-card px-2.5 py-1.5 overflow-auto max-h-20 border border-primary/5">
+          <pre className="typo-code text-foreground bg-secondary/30 rounded-card px-2.5 py-1.5 overflow-auto max-h-20 border border-primary/5">
             {pendingMutation}
           </pre>
         </div>
@@ -51,7 +51,7 @@ export function MutationConfirmBanner({
           type="button"
           data-testid="db-mutation-confirm-run"
           onClick={onConfirm}
-          className="px-3 py-1.5 rounded-modal typo-body font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
+          className="px-3 py-1.5 rounded-modal typo-body bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
         >
           {db.execute_anyway}
         </button>
@@ -59,7 +59,7 @@ export function MutationConfirmBanner({
           type="button"
           data-testid="db-mutation-confirm-cancel"
           onClick={onCancel}
-          className="px-3 py-1.5 rounded-modal typo-body font-medium text-foreground hover:text-muted-foreground/70 hover:bg-secondary/40 border border-transparent hover:border-primary/10 transition-colors"
+          className="px-3 py-1.5 rounded-modal typo-body text-foreground hover:text-muted-foreground/70 hover:bg-secondary/40 border border-transparent hover:border-primary/10 transition-colors"
         >
           {t.common.cancel}
         </button>

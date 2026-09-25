@@ -371,7 +371,7 @@ export function ArenaPanelColosseum({
                 type="button"
                 onClick={() => void handleCancel()}
                 data-testid="arena-cancel-btn"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-300 typo-body-lg font-medium transition-colors"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-300 typo-body-lg transition-colors"
               >
                 <Flame className="w-4 h-4" />
                 {t.agents.lab.cancel_test}
@@ -413,7 +413,7 @@ export function ArenaPanelColosseum({
                         <span className="flex items-center justify-center w-7 h-7 rounded-card border border-primary/25 bg-primary/10">
                           <Sigil className="w-4 h-4 text-primary" strokeWidth={1.75} />
                         </span>
-                        <span className="flex-1 min-w-0 typo-body-lg font-medium text-foreground truncate">
+                        <span className="flex-1 min-w-0 typo-body-lg text-foreground truncate">
                           {m.label}
                         </span>
                         <StatPips label="cost" level={h.cost} icon={Coins} />
@@ -436,7 +436,7 @@ export function ArenaPanelColosseum({
                 {selectedUseCase ? (
                   <>
                     <span className="typo-label text-primary/70"><DebtText k="auto_chosen_ground_79f67ac1" /></span>
-                    <p className="typo-body-lg font-medium text-foreground mt-1">{selectedUseCase.title}</p>
+                    <p className="typo-body-lg text-foreground mt-1">{selectedUseCase.title}</p>
                   </>
                 ) : useCases.length > 0 ? (
                   <>
@@ -479,7 +479,7 @@ export function ArenaPanelColosseum({
         <div className="rounded-modal border border-amber-500/25 bg-amber-500/[0.05] px-4 py-3 flex items-start gap-3">
           <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
           <div className="space-y-1 text-foreground/90">
-            <p className="typo-body-lg font-medium text-amber-300"><DebtText k="auto_match_conditions_unmet_a823c1a7" /></p>
+            <p className="typo-body-lg text-amber-300"><DebtText k="auto_match_conditions_unmet_a823c1a7" /></p>
             {!hasPrompt && <p className="typo-body-lg">{t.agents.lab.no_prompt_warning}</p>}
             {!hasTools && <p className="typo-body-lg">{t.agents.lab.no_tools_warning}</p>}
           </div>
@@ -550,7 +550,7 @@ function ArenaMarquee({
           <Flame className={`w-4 h-4 ${ready ? 'text-amber-300' : 'text-foreground'}`} fill="currentColor" strokeWidth={1.25} />
         </div>
         <div className="min-w-0">
-          <h3 className="typo-heading-lg font-semibold text-foreground tracking-wide"><DebtText k="auto_the_arena_f7188466" /></h3>
+          <h3 className="typo-heading-lg text-foreground"><DebtText k="auto_the_arena_f7188466" /></h3>
           <p className="typo-body-lg text-foreground flex flex-wrap items-center gap-1">
             {personaName ? (
               <>
@@ -648,7 +648,7 @@ function UseCasePopover({
                 className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${
                   focusIndex === i ? 'bg-primary/15' : ''
                 } ${
-                  active ? 'text-primary font-medium' : 'text-foreground hover:bg-secondary/30'
+                  active ? 'text-primary' : 'text-foreground hover:bg-secondary/30'
                 }`}
               >
                 {opt.label}
@@ -758,7 +758,7 @@ function PersonaStandard({
         } bg-gradient-to-br from-background/80 to-background/40`}>
           <PersonaIcon icon={iconToken} color={color} size="w-8 h-8" />
         </div>
-        <p className="typo-body-lg font-semibold text-foreground mt-2.5 text-center truncate">
+        <p className="typo-body-lg text-foreground mt-2.5 text-center truncate">
           {name ?? '—'}
         </p>
         <p className="typo-label text-primary/85 text-center mt-0.5">
@@ -827,7 +827,7 @@ function ModelRowCard({
       )}
 
       {/* Model name — top row */}
-      <p className="relative typo-heading text-foreground font-semibold truncate pr-6">
+      <p className="relative typo-heading text-foreground truncate pr-6">
         {option.label}
       </p>
 
@@ -901,7 +901,7 @@ function ConditionRow({ tone, label }: { tone: 'ok' | 'warn' | 'neutral'; label:
   return (
     <li className="flex items-center gap-2 px-2.5 py-1.5 rounded-interactive">
       <span className={`h-2 w-2 flex-shrink-0 rounded-full ring-2 ${toneClasses.dot}`} />
-      <span className={`typo-body font-medium truncate ${toneClasses.label}`} title={label}>
+      <span className={`typo-body truncate ${toneClasses.label}`} title={label}>
         {label}
       </span>
     </li>
@@ -931,7 +931,7 @@ function FormulaToken({
   return (
     <span className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-card border ${color}`}>
       <Icon className="w-3.5 h-3.5 text-primary/70" />
-      <span className="typo-body-lg font-semibold tabular-nums">{n}</span>
+      <span className="typo-body-lg tabular-nums">{n}</span>
       <span className="typo-body text-foreground/90">{label}</span>
     </span>
   );
@@ -954,7 +954,7 @@ function WaxSealButton({
         onClick={onLaunch}
         disabled={!canLaunch}
         data-testid="arena-run-btn"
-        className={`relative group flex items-center gap-3 pl-6 pr-5 py-3 rounded-modal border typo-body-lg font-semibold transition-all ${
+        className={`relative group flex items-center gap-3 pl-6 pr-5 py-3 rounded-modal border typo-body-lg transition-all ${
           canLaunch
             ? 'bg-gradient-to-r from-primary/30 via-primary/20 to-accent/20 hover:from-primary/40 hover:via-primary/30 hover:to-accent/30 border-primary/40 text-foreground shadow-elevation-3'
             : 'bg-secondary/40 border-primary/10 text-foreground/85 cursor-not-allowed'
@@ -971,7 +971,7 @@ function WaxSealButton({
           <Swords className={`w-4 h-4 ${canLaunch ? 'text-background' : 'text-foreground'}`} strokeWidth={2} />
         </span>
         <span className="flex flex-col items-start leading-tight">
-          <span className="typo-body-lg font-semibold"><DebtText k="auto_begin_the_match_439d5782" /></span>
+          <span className="typo-body-lg"><DebtText k="auto_begin_the_match_439d5782" /></span>
           <span className="typo-label text-foreground/90">
             {contenders} {contenders === 1 ? 'contender' : 'contenders'}
           </span>
@@ -998,7 +998,7 @@ function SectionHeader({
     <div className="flex items-end justify-between gap-3 px-1">
       <div>
         <p className="typo-label text-primary/80">{eyebrow}</p>
-        <h4 className="typo-heading-lg font-semibold text-foreground flex items-center gap-2 mt-0.5">
+        <h4 className="typo-heading-lg text-foreground flex items-center gap-2 mt-0.5">
           <Icon className="w-4 h-4 text-primary" />
           {title}
         </h4>
@@ -1027,7 +1027,7 @@ function ParchmentCard({
           <Icon className="w-4 h-4 text-primary" strokeWidth={1.75} />
           <span className="typo-label text-primary/80">{title}</span>
         </div>
-        <span className="typo-body text-foreground/90 font-medium truncate max-w-[140px]" title={meta}>{meta}</span>
+        <span className="typo-body text-foreground/90 truncate max-w-[140px]" title={meta}>{meta}</span>
       </div>
       <div className="p-4">{children}</div>
     </div>
@@ -1077,7 +1077,7 @@ function ChampionCard({
           <PersonaIcon icon={iconToken} color={color} size="w-5 h-5" />
           <div className="flex-1 min-w-0">
             <p className="typo-label text-primary/70">Defender</p>
-            <p className="typo-body-lg font-medium text-foreground truncate">{personaName ?? '—'}</p>
+            <p className="typo-body-lg text-foreground truncate">{personaName ?? '—'}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 typo-body text-foreground/90">
@@ -1120,7 +1120,7 @@ function StandingChampionBanner({
             <Crown className="w-3.5 h-3.5" fill="currentColor" />
             <DebtText k="auto_standing_champion_97e028f7" />
           </p>
-          <p className="typo-heading-lg font-semibold text-foreground capitalize mt-0.5 truncate">
+          <p className="typo-heading-lg text-foreground capitalize mt-0.5 truncate">
             {champion.model}
           </p>
           <p className="typo-body text-foreground/90">

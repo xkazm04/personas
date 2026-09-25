@@ -130,8 +130,8 @@ export function MeasureSetupModal({ kpi, onClose }: { kpi: MockKpi; onClose: () 
                 data-testid={`measure-mech-${m.kind}`}
               >
                 <Icon className="w-4 h-4 mb-1 text-foreground" />
-                <span className="typo-title block leading-tight">{m.label}</span>
-                <span className="typo-caption block leading-tight">{m.blurb}</span>
+                <span className="typo-title block">{m.label}</span>
+                <span className="typo-caption block">{m.blurb}</span>
               </button>
             );
           })}
@@ -167,7 +167,7 @@ export function MeasureSetupModal({ kpi, onClose }: { kpi: MockKpi; onClose: () 
               {compose.phase === 'done' && composed && (
                 <div className="rounded-card border border-success/25 bg-success/10 p-3 space-y-2">
                   <div className="flex items-baseline gap-2">
-                    <span className="typo-data-lg tabular-nums text-foreground">{fmtUnit(composed.value, kpi.unit)}</span>
+                    <span className="typo-data-lg text-foreground">{fmtUnit(composed.value, kpi.unit)}</span>
                     <span className="typo-caption ml-auto">tested just now</span>
                   </div>
                   <code className="typo-code block break-all rounded-input bg-background/50 p-2">{composed.cmd}</code>

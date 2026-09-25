@@ -85,7 +85,7 @@ export function SubagentTree({ executionId }: { executionId: string }) {
               <span className="typo-body text-foreground truncate">
                 {a.desc || a.type}
               </span>
-              <span className="typo-code text-foreground/90 shrink-0 font-mono">
+              <span className="typo-code text-foreground/90 shrink-0">
                 {/* Backend/CLI status token -- resolved through the catalog so
                     it is not the one untranslated word in a translated row.
                     `tokenLabel` falls back to the raw token for a status the
@@ -95,7 +95,7 @@ export function SubagentTree({ executionId }: { executionId: string }) {
               </span>
             </div>
             {a.last ? (
-              <div className="typo-code text-foreground/90 font-mono mt-1 line-clamp-2 break-words">
+              <div className="typo-code text-foreground/90 mt-1 line-clamp-2 break-words">
                 {a.last}
               </div>
             ) : null}

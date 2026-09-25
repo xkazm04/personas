@@ -13,7 +13,7 @@ technique's hardest rule.
 
 ## The pin: `useChatScroll`
 
-`src/features/plugins/companion/useChatScroll.ts` is the single scroll
+`src/features/companions/athena/useChatScroll.ts` is the single scroll
 authority for the transcript:
 
 - **Forgiving pin band** — `NEAR_BOTTOM_PX = 80` (`:4`): "at the tail" is a
@@ -58,7 +58,7 @@ This is [gate-sees-target](../../_laws.md#gate-sees-target) in miniature: the
 gate that existed ("effect ran once on mount") observed a proxy; the repaired
 gate observes the mounted container and only then writes its done-stamp. The
 regression test lives at
-`src/features/plugins/companion/__tests__/athenaChatSession.test.tsx`.
+`src/features/companions/athena/__tests__/athenaChatSession.test.tsx`.
 
 ## History upward, ground held still
 

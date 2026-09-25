@@ -32,7 +32,7 @@ export function SaveConfigButton({ onClick, disabled, saved, label }: SaveConfig
       type="button"
       size="sm"
       variant={saved ? 'accent' : 'secondary'}
-      accentColor={saved ? 'emerald' : undefined}
+      tone={saved ? 'success' : undefined}
       // The resting tint is the primary token, which has no `accent` entry.
       className={saved ? '' : 'bg-primary/20 text-primary border-primary/30 hover:bg-primary/30'}
       disabled={disabled || saved}

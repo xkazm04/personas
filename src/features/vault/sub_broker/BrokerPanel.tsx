@@ -45,18 +45,18 @@ export function BrokerPanel() {
       <div className="rounded-modal border border-primary/15 bg-secondary/30 p-4 space-y-2">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <span className="typo-body font-medium text-foreground">{b.title}</span>
+          <span className="typo-body text-foreground">{b.title}</span>
         </div>
-        <p className="typo-caption text-foreground leading-relaxed">{b.subtitle}</p>
+        <p className="typo-caption text-foreground">{b.subtitle}</p>
         <div className="flex items-start gap-2 px-2.5 py-2 rounded-card bg-amber-500/8 border border-amber-500/20">
           <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-          <p className="typo-caption text-foreground leading-relaxed">{b.exclusion_note}</p>
+          <p className="typo-caption text-foreground">{b.exclusion_note}</p>
         </div>
       </div>
 
       {/* Consumer list */}
       <div>
-        <div className="typo-caption font-medium text-foreground mb-2">{b.consumers_header}</div>
+        <div className="typo-caption text-foreground mb-2">{b.consumers_header}</div>
 
         {consumers === null && !loadError && (
           <div className="typo-caption text-foreground px-1 py-2">{b.loading}…</div>
@@ -68,7 +68,7 @@ export function BrokerPanel() {
           <div className="rounded-modal border border-dashed border-primary/15 bg-secondary/20 p-6 text-center space-y-1">
             <KeyRound className="w-5 h-5 text-foreground opacity-60 mx-auto" />
             <div className="typo-body text-foreground/85">{b.empty_title}</div>
-            <p className="typo-caption text-foreground leading-relaxed">{b.empty_body}</p>
+            <p className="typo-caption text-foreground">{b.empty_body}</p>
           </div>
         )}
 
@@ -128,9 +128,9 @@ function ConsumerRow({ consumer, onChanged }: { consumer: BrokerConsumer; onChan
         <KeyRound className="w-4 h-4 text-foreground shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="typo-body font-medium text-foreground truncate">{consumer.consumerName}</span>
+            <span className="typo-body text-foreground truncate">{consumer.consumerName}</span>
             {consumer.keyPrefix && (
-              <span className="typo-code font-mono text-foreground">{consumer.keyPrefix}…</span>
+              <span className="typo-code text-foreground">{consumer.keyPrefix}…</span>
             )}
             <span className={`px-1.5 py-0.5 typo-caption rounded-card border ${status.cls}`}>{status.label}</span>
           </div>
@@ -157,7 +157,7 @@ function ConsumerRow({ consumer, onChanged }: { consumer: BrokerConsumer; onChan
               type="button"
               onClick={() => void revoke()}
               disabled={revoking}
-              className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-card border border-red-500/40 bg-red-500/15 text-red-400 typo-caption font-medium hover:bg-red-500/25 transition-colors cursor-pointer disabled:opacity-50"
+              className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-card border border-red-500/40 bg-red-500/15 text-red-400 typo-caption hover:bg-red-500/25 transition-colors cursor-pointer disabled:opacity-50"
               title={b.kill_switch_hint}
             >
               <ShieldOff className="w-3.5 h-3.5" />

@@ -82,7 +82,7 @@ export function GitLabAgentList({
             <Bot className="w-4 h-4 text-orange-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="typo-body font-medium text-foreground/90 truncate">{agent.name}</p>
+            <p className="typo-body text-foreground/90 truncate">{agent.name}</p>
             {agent.description && (
               <p className="typo-body text-foreground truncate">{agent.description}</p>
             )}
@@ -180,7 +180,7 @@ function PipelineStatusBadge({ projectId, agentName }: { projectId: number; agen
 
   return (
     <span
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input border typo-caption font-medium capitalize ${c.bg} ${c.text}`}
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input border typo-caption capitalize ${c.bg} ${c.text}`}
       data-testid={`agent-pipeline-${agentName}`}
       title={tx(t.gitlab.agent_pipeline_title, { agent: agentName, ref: latest.ref, status: latest.status })}
     >

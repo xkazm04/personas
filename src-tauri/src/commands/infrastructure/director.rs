@@ -34,6 +34,13 @@ pub async fn run_director_on_persona(
     persona_id: String,
 ) -> Result<i64, AppError> {
     require_auth_sync(&state)?;
+    // Overseer's master switch: on AND at least one starred agent. Refused
+    // rather than run-and-report-nothing, so the Setup page can say which
+    // prerequisite is missing instead of the operator watching a cycle spend
+    // budget and emit no verdict.
+    if !crate::commands::companions::overseer_active(&state.db) {
+        return Err(crate::commands::companions::overseer_inactive_error());
+    }
     director::run_director_cycle_for(state.inner(), app, &persona_id).await
 }
 
@@ -60,8 +67,12 @@ pub async fn run_director_memory_cleanup(
     .await
 }
 
-/// Evaluate every enabled persona (except the Director itself). Returns an
+/// Evaluate every STARRED persona (except the Director itself). Returns an
 /// aggregate report. `max_personas` caps the batch size — unset means "all".
+///
+/// Starred, not "enabled", and this line said otherwise until 2026-09-22:
+/// `run_director_cycle_batch` walks `personas::get_starred`, which is exactly
+/// Overseer's declared scope and the same set his Setup page lists.
 ///
 /// Async + long-running: each target is a sequential Director persona run.
 #[tauri::command]
@@ -71,6 +82,12 @@ pub async fn run_director_batch(
     max_personas: Option<i64>,
 ) -> Result<DirectorReport, AppError> {
     require_auth_sync(&state)?;
+    // Same gate as the single-persona path: on AND at least one starred agent.
+    // A batch over an empty scope is the specific failure this refusal names —
+    // it used to run, review nothing, and report a cycle that did nothing.
+    if !crate::commands::companions::overseer_active(&state.db) {
+        return Err(crate::commands::companions::overseer_inactive_error());
+    }
     director::run_director_cycle_batch(state.inner(), app, max_personas).await
 }
 

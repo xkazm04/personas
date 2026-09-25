@@ -109,7 +109,7 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
-          <h2 className="typo-body font-medium text-foreground">{s.create_dialog_title}</h2>
+          <h2 className="typo-body text-foreground">{s.create_dialog_title}</h2>
           <button
             type="button"
             onClick={onClose}

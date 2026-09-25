@@ -11,6 +11,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { DispatchChooserModal, type DispatchRequest } from '@/features/shared/dispatch/DispatchChooser';
 import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 import { interpolate } from '@/i18n/useTranslation';
+import { navigateToCompanions } from '@/features/companions/navigation';
 import { useSystemStore } from '@/stores/systemStore';
 
 import type { TDevTools } from './contextLedgerShared';
@@ -33,8 +34,6 @@ export function FeatureChip({
   t: TDevTools;
 }) {
   const [open, setOpen] = useState(false);
-  const setTeamsTab = useSystemStore((s) => s.setTeamsTab);
-  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setPendingCouncilSubjectId = useSystemStore((s) => s.setPendingCouncilSubjectId);
   const [request, setRequest] = useState<DispatchRequest | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -65,10 +64,11 @@ export function FeatureChip({
      the door and nothing is parsed out of a label. */
   const openCouncil = useCallback((subjectId: string) => {
     setOpen(false);
+    // The subject is handed over in the store, never parsed out of a label; the
+    // Council page is Curator's now, so the route is the Companions one.
     setPendingCouncilSubjectId(subjectId);
-    setSidebarSection('teams');
-    setTeamsTab('council');
-  }, [setPendingCouncilSubjectId, setSidebarSection, setTeamsTab]);
+    navigateToCompanions('curator:council');
+  }, [setPendingCouncilSubjectId]);
 
   // The project has features, none of them reaches a context. Saying "0" here
   // would report an unscanned link layer as a measured absence.

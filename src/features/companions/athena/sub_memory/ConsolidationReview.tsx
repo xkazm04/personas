@@ -1,0 +1,620 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  ArrowLeft,
+  Check,
+  Edit3,
+  Loader2,
+  RefreshCw,
+  Sparkles,
+  X,
+} from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { silentCatch } from '@/lib/silentCatch';
+import { DebtText, debtText } from '@/i18n/DebtText';
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
+
+import {
+  companionApplyConsolidationItem,
+  companionGetConsolidationItems,
+  companionListConsolidationRuns,
+  companionRejectConsolidationItem,
+  companionRunConsolidation,
+  type ConsolidationItem,
+  type ConsolidationRun,
+} from '@/api/companion';
+
+/**
+ * Rows/cards in the first viewport that play the one-shot entrance cascade
+ * when a run/item list lands (35ms stagger via RevealItem, id-guarded so a
+ * poll/refresh re-delivering the same ids never replays it).
+ */
+const RUN_CASCADE_ROWS = 20;
+const ITEM_CASCADE_ROWS = 20;
+
+/**
+ * Diff-review surface for memory consolidation. Two modes:
+ *   - **Runs index** — list of past consolidation passes (status,
+ *     counts). Click one to drill in.
+ *   - **Review** — for one run, show every proposal with Approve /
+ *     Edit / Reject controls. Inline edits are applied as overrides
+ *     during apply.
+ *
+ * Designed for the plugin sub-page (Memory tab). The chat panel can
+ * deep-link here later, but for v1 the user runs consolidations from
+ * the dedicated page where there's room to think.
+ */
+export function ConsolidationReview({
+  onClose,
+}: {
+  onClose?: () => void;
+}) {
+  const { t } = useTranslation();
+  const [runs, setRuns] = useState<ConsolidationRun[] | null>(null);
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const enterRuns = useRevealTracker();
+
+  const loadRuns = useCallback(() => {
+    setRuns(null);
+    companionListConsolidationRuns(20)
+      .then(setRuns)
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : String(err));
+        setRuns([]);
+        silentCatch('companion_list_consolidation_runs')(err);
+      });
+  }, []);
+
+  useEffect(() => {
+    loadRuns();
+  }, [loadRuns]);
+
+  const startRun = useCallback(async () => {
+    setRunning(true);
+    setError(null);
+    try {
+      const id = await companionRunConsolidation();
+      setActiveRunId(id);
+      loadRuns();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
+      silentCatch('companion_run_consolidation')(err);
+    } finally {
+      setRunning(false);
+    }
+  }, [loadRuns]);
+
+  if (activeRunId) {
+    return (
+      <RunDetail
+        runId={activeRunId}
+        onBack={() => {
+          setActiveRunId(null);
+          loadRuns();
+        }}
+      />
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      <header className="flex items-center justify-between gap-2 px-5 py-3 border-b border-foreground/10 shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 focus-ring"
+              aria-label={t.common.close}
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+          )}
+          <span className="typo-body">
+            {t.athena.consolidation_runs_title}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={startRun}
+          disabled={running}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 focus-ring"
+        >
+          {running ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Sparkles className="w-3.5 h-3.5" />
+          )}
+          {t.athena.memory_run_consolidation}
+        </button>
+      </header>
+
+      {running && (
+        <div className="flex items-start gap-3 m-5 p-4 rounded-card border border-primary/30 bg-primary/5">
+          <LoadingSpinner size="sm" />
+          <div className="flex-1 min-w-0">
+            <div className="typo-body">
+              {t.athena.consolidation_running}
+            </div>
+            <div className="typo-caption text-foreground mt-1">
+              {t.athena.consolidation_running_long}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="m-5 rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400">
+          {error}
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto">
+        {runs === null ? (
+          <ConsolidationRunGhostRows />
+        ) : runs.length === 0 ? (
+          <p className="p-5 typo-body text-foreground">
+            {t.athena.brain_empty}
+          </p>
+        ) : (
+          <ul className="divide-y divide-foreground/5">
+            {runs.map((run, index) => (
+              <li key={run.id}>
+                <RevealItem
+                  revealId={run.id}
+                  order={index}
+                  hasEntered={(id) => index >= RUN_CASCADE_ROWS || enterRuns.hasEntered(id)}
+                  markEntered={enterRuns.markEntered}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setActiveRunId(run.id)}
+                    className="w-full text-left px-5 py-3 hover:bg-foreground/[0.04] focus-ring"
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="typo-caption text-foreground">
+                        {run.summary
+                          ? run.summary
+                          : `${run.episodesCount} episodes reviewed`}
+                      </span>
+                      <RunStatusBadge run={run} />
+                    </div>
+                    <div className="typo-caption text-foreground">
+                      {run.itemsTotal} <DebtText k="auto_proposals_52cac85b" /> {run.itemsPending} <DebtText k="auto_pending_5829114a" />{' '}
+                      {run.itemsApplied} <DebtText k="auto_applied_8858b48c" /> {run.itemsRejected} <DebtText k="auto_rejected_bb194a7a" />{' '}
+                      <RelativeTime timestamp={run.triggeredAt} showTooltip={false} />
+                    </div>
+                    {run.errorText && (
+                      <div className="typo-caption text-rose-400 mt-1 truncate">
+                        {run.errorText}
+                      </div>
+                    )}
+                  </button>
+                </RevealItem>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Ghost blocks — the ONLY moment either list (runs / consolidation items) has
+// nothing to show while its fetch is in flight. `animate-fade-in` behind a
+// staggered animation-delay starting at 120ms keeps them invisible until
+// then, so a fast fetch never paints one. No `animate-pulse`, ever.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_RUN_TITLE_WIDTHS = ['w-48', 'w-36', 'w-40', 'w-32', 'w-44'];
+
+function ConsolidationRunGhostRows() {
+  return (
+    <div className="divide-y divide-foreground/5" aria-hidden="true">
+      {Array.from({ length: 5 }).map((_, i) => {
+        const titleW = GHOST_RUN_TITLE_WIDTHS[i % GHOST_RUN_TITLE_WIDTHS.length];
+        const delay = `${120 + i * 35}ms`;
+        return (
+          <div key={i} className="px-5 py-3 animate-fade-in" style={{ animationDelay: delay }}>
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span className={`h-3 ${titleW} max-w-full ${GHOST_BAR}`} />
+              <span className={`h-4 w-16 shrink-0 ${GHOST_BAR}`} />
+            </div>
+            <span className={`block h-2.5 w-3/4 ${GHOST_BAR}`} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ConsolidationItemGhostCards() {
+  return (
+    <div className="space-y-2" aria-hidden="true">
+      {Array.from({ length: 4 }).map((_, i) => {
+        const delay = `${120 + i * 35}ms`;
+        return (
+          <div
+            key={i}
+            className="rounded-card border border-foreground/10 bg-foreground/[0.03] p-3.5 space-y-2 animate-fade-in"
+            style={{ animationDelay: delay }}
+          >
+            <div className="flex items-center gap-2">
+              <span className={`h-4 w-16 ${GHOST_BAR}`} />
+              <span className={`h-4 w-28 ${GHOST_BAR}`} />
+            </div>
+            <span className={`block h-3 w-full ${GHOST_BAR}`} />
+            <span className={`block h-3 w-2/3 ${GHOST_BAR}`} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function RunStatusBadge({ run }: { run: ConsolidationRun }) {
+  const { t } = useTranslation();
+  const cfg = useMemo(() => {
+    switch (run.status) {
+      case 'review':
+        return {
+          label: t.athena.consolidation_run_status_review,
+          tone: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+        };
+      case 'applied':
+        return {
+          label: t.athena.consolidation_run_status_applied,
+          tone: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+        };
+      case 'failed':
+        return {
+          label: t.athena.consolidation_run_status_failed,
+          tone: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+        };
+      default:
+        return {
+          label: t.athena.consolidation_run_status_running,
+          tone: 'bg-primary/15 text-primary border-primary/30',
+        };
+    }
+  }, [run.status, t]);
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center px-2 py-0.5 rounded typo-caption border ${cfg.tone}`}
+    >
+      {cfg.label}
+    </span>
+  );
+}
+
+function RunDetail({
+  runId,
+  onBack,
+}: {
+  runId: string;
+  onBack: () => void;
+}) {
+  const { t } = useTranslation();
+  const [items, setItems] = useState<ConsolidationItem[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const enterItems = useRevealTracker(runId);
+
+  const refresh = useCallback(() => {
+    // Reset to the fetching signal (mirrors `loadRuns` above) — a different
+    // run is genuinely different data, not a same-context refresh, so the
+    // stale run's cards shouldn't linger under the new run's header.
+    setItems(null);
+    setError(null);
+    companionGetConsolidationItems(runId)
+      .then(setItems)
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : String(err));
+        setItems([]);
+        silentCatch('companion_get_consolidation_items')(err);
+      });
+  }, [runId]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  return (
+    <div className="flex flex-col h-full">
+      <header className="flex items-center justify-between gap-2 px-5 py-3 border-b border-foreground/10 shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <button
+            type="button"
+            onClick={onBack}
+            className="p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 focus-ring"
+            aria-label={t.athena.consolidation_back_to_runs}
+            title={t.athena.consolidation_back_to_runs}
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <span className="typo-body">
+            {t.athena.consolidation_review_title}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={refresh}
+          className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 focus-ring"
+          aria-label="Refresh"
+          title="Refresh"
+        >
+          <RefreshCw className="w-4 h-4" />
+        </button>
+      </header>
+
+      <p className="px-5 pt-3 typo-caption text-foreground">
+        {t.athena.consolidation_review_subtitle}
+      </p>
+
+      {error && (
+        <div className="m-5 rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400">
+          {error}
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+        {items === null ? (
+          <ConsolidationItemGhostCards />
+        ) : items.length === 0 ? (
+          <p className="p-2 typo-body text-foreground">
+            {t.athena.consolidation_no_proposals}
+          </p>
+        ) : (
+          items.map((item, index) => (
+            <RevealItem
+              key={item.id}
+              revealId={item.id}
+              order={index}
+              hasEntered={(id) => index >= ITEM_CASCADE_ROWS || enterItems.hasEntered(id)}
+              markEntered={enterItems.markEntered}
+            >
+              <ItemCard item={item} onResolved={refresh} />
+            </RevealItem>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ItemCard({
+  item,
+  onResolved,
+}: {
+  item: ConsolidationItem;
+  onResolved: () => void;
+}) {
+  const { t } = useTranslation();
+  const [editing, setEditing] = useState(false);
+  const [draftValue, setDraftValue] = useState(item.proposedValue);
+  const [draftKey, setDraftKey] = useState(item.factKey);
+  const [draftImportance, setDraftImportance] = useState(item.importance);
+  const [busy, setBusy] = useState<'apply' | 'reject' | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const isResolved = item.status !== 'pending';
+
+  const apply = useCallback(async () => {
+    setBusy('apply');
+    setError(null);
+    try {
+      const edits = editing
+        ? {
+            value: draftValue !== item.proposedValue ? draftValue : undefined,
+            key: draftKey !== item.factKey ? draftKey : undefined,
+            importance:
+              draftImportance !== item.importance ? draftImportance : undefined,
+          }
+        : undefined;
+      await companionApplyConsolidationItem(item.id, edits);
+      onResolved();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
+      silentCatch('companion_apply_consolidation_item')(err);
+    } finally {
+      setBusy(null);
+    }
+  }, [
+    editing,
+    draftValue,
+    draftKey,
+    draftImportance,
+    item.id,
+    item.proposedValue,
+    item.factKey,
+    item.importance,
+    onResolved,
+  ]);
+
+  const reject = useCallback(async () => {
+    setBusy('reject');
+    setError(null);
+    try {
+      await companionRejectConsolidationItem(item.id);
+      onResolved();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
+      silentCatch('companion_reject_consolidation_item')(err);
+    } finally {
+      setBusy(null);
+    }
+  }, [item.id, onResolved]);
+
+  const kindLabel =
+    item.kind === 'add'
+      ? t.athena.consolidation_kind_add
+      : item.kind === 'update'
+        ? t.athena.consolidation_kind_update
+        : t.athena.consolidation_kind_contradict;
+  const kindTone =
+    item.kind === 'add'
+      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+      : item.kind === 'update'
+        ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+        : 'bg-rose-500/15 text-rose-400 border-rose-500/30';
+
+  return (
+    <div
+      className={`rounded-card border p-3.5 space-y-2 ${
+        isResolved
+          ? 'border-foreground/5 bg-foreground/[0.02] opacity-70'
+          : 'border-foreground/10 bg-foreground/[0.03]'
+      }`}
+    >
+      <div className="flex items-center gap-2 flex-wrap">
+        <span
+          className={`inline-flex items-center px-2 py-0.5 rounded typo-caption border ${kindTone}`}
+        >
+          {kindLabel}
+        </span>
+        <code className="typo-caption text-foreground px-1.5 py-0.5 rounded bg-foreground/5">
+          {item.scope}/{item.factKey}
+        </code>
+        <span className="typo-caption text-foreground">
+          imp {item.importance} <DebtText k="auto_conf_20ae73f6" /> {Math.round(item.confidence * 100)}% ·{' '}
+          {item.sources.length} source{item.sources.length === 1 ? '' : 's'}
+        </span>
+        {isResolved && (
+          <span className="ml-auto typo-caption text-foreground">
+            {item.status === 'applied'
+              ? t.athena.consolidation_applied
+              : t.athena.consolidation_rejected}
+          </span>
+        )}
+      </div>
+
+      {editing ? (
+        <div className="space-y-2">
+          <label className="block">
+            <span className="typo-caption text-foreground">key</span>
+            <input
+              type="text"
+              value={draftKey}
+              onChange={(e) => setDraftKey(e.target.value)}
+              className="mt-0.5 w-full bg-foreground/5 rounded px-2 py-1 typo-caption focus-ring"
+            />
+          </label>
+          <label className="block">
+            <span className="typo-caption text-foreground">value</span>
+            <textarea
+              value={draftValue}
+              onChange={(e) => setDraftValue(e.target.value)}
+              rows={4}
+              className="mt-0.5 w-full bg-foreground/5 rounded px-2 py-1 typo-body focus-ring resize-y"
+            />
+          </label>
+          <label className="block">
+            <span className="typo-caption text-foreground">
+              <DebtText k="auto_importance_1_5_1bfa4b92" />
+            </span>
+            <NumberStepper
+              value={draftImportance}
+              onChange={(v) => setDraftImportance(v ?? 1)}
+              min={1}
+              max={5}
+              ariaLabel={debtText('auto_importance_1_5_1bfa4b92')}
+              className="mt-0.5 w-24"
+            />
+          </label>
+        </div>
+      ) : (
+        <p className="typo-body text-foreground/85 whitespace-pre-wrap">
+          {item.proposedValue}
+        </p>
+      )}
+
+      {item.rationale && (
+        <details className="text-foreground">
+          <summary className="cursor-pointer typo-caption hover:text-foreground">
+            {t.athena.consolidation_rationale}
+          </summary>
+          <p className="mt-1 typo-caption text-foreground">
+            {item.rationale}
+          </p>
+        </details>
+      )}
+
+      {item.supersedesId && (
+        <div className="typo-caption text-foreground">
+          {t.athena.consolidation_supersedes}:{' '}
+          <code className="px-1 py-0.5 rounded bg-foreground/5">
+            {item.supersedesId}
+          </code>
+        </div>
+      )}
+
+      {item.sources.length > 0 && (
+        <div className="typo-caption text-foreground">
+          {t.athena.facts_sources_label}:{' '}
+          {item.sources.map((s, i) => (
+            <code key={s} className="ml-1 px-1 py-0.5 rounded bg-foreground/5">
+              {s}
+              {i < item.sources.length - 1 ? '' : ''}
+            </code>
+          ))}
+        </div>
+      )}
+
+      {error && (
+        <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-2 py-1 typo-caption text-rose-400">
+          {error}
+        </div>
+      )}
+
+      {!isResolved && (
+        <div className="flex items-center gap-2 pt-1">
+          <button
+            type="button"
+            onClick={apply}
+            disabled={busy !== null}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 focus-ring"
+          >
+            {busy === 'apply' ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Check className="w-3.5 h-3.5" />
+            )}
+            {editing
+              ? t.athena.consolidation_apply_edits
+              : t.athena.consolidation_apply}
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditing((v) => !v)}
+            disabled={busy !== null}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            {t.athena.consolidation_edit}
+          </button>
+          <button
+            type="button"
+            onClick={reject}
+            disabled={busy !== null}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 text-foreground hover:bg-foreground/10 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+          >
+            {busy === 'reject' ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <X className="w-3.5 h-3.5" />
+            )}
+            {t.athena.consolidation_reject}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+

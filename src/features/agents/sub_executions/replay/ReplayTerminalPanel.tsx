@@ -83,7 +83,7 @@ function JsonHighlight({ json }: { json: string }) {
   }, [highlighted]);
 
   return (
-    <pre className="typo-caption leading-relaxed pl-2 border-l-2 border-primary/10 my-0.5 whitespace-pre-wrap">
+    <pre className="typo-caption pl-2 border-l-2 border-primary/10 my-0.5 whitespace-pre-wrap">
       {parts}
     </pre>
   );
@@ -188,7 +188,7 @@ export function ReplayTerminalPanel({
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 typo-code leading-relaxed"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 typo-code"
       >
         {shouldVirtualize ? (
           /* Spacer of the full list height so the scrollbar keeps describing

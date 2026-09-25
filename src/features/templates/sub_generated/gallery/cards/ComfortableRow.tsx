@@ -131,7 +131,7 @@ function ComfortableRowImpl({
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="typo-body-lg font-semibold template-name-themed">
+                <span className="typo-body-lg template-name-themed">
                   {highlightMatch(review.test_case_name, searchQuery)}
                 </span>
                 {isAiResult && (
@@ -141,7 +141,7 @@ function ComfortableRowImpl({
                 )}
                 {review.adoption_count > 0 && (
                   <span
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code font-mono rounded bg-emerald-500/10 text-emerald-400/70 border border-emerald-500/15"
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded bg-emerald-500/10 text-emerald-400/70 border border-emerald-500/15"
                     title={`Adopted ${review.adoption_count} time${review.adoption_count !== 1 ? 's' : ''}`}
                   >
                     <Download className="w-2.5 h-2.5" />

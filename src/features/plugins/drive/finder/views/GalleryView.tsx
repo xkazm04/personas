@@ -44,7 +44,7 @@ function GalleryHero({ entry, onQuickLook }: { entry: DriveEntry; onQuickLook: (
           <Icon className={`w-16 h-16 ${tint}`} aria-hidden />
         </div>
       )}
-      <div className="typo-title text-foreground text-center break-words max-w-full">{entry.name}</div>
+      <div className="typo-title text-center break-words max-w-full">{entry.name}</div>
       <div className="flex items-center gap-2 typo-caption">
         <span className="text-foreground">{kindLabelFor(t, entry)}</span>
         {entry.kind === "file" && (

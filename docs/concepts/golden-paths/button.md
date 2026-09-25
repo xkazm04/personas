@@ -472,3 +472,58 @@ And the one change worth more than all three: **[Gap 4](#8-gaps) — make
 `size="icon-*"` require `aria-label` at the type level.** That converts the
 844-element defect class from a lint warning into a compile error, and unlike an
 ESLint rule it cannot be disabled with a comment.
+
+### Census ratchet: `raw-button-element` (added 2026-09-24)
+
+The argument above rejects "raw `<button>` is banned" as a WARNING, because a warning at
+thousands of sites with ~16% legitimate is ignored. A ratchet answers it differently: it
+never asks for the backlog, it fails only when the count rises, and a genuinely legitimate
+new raw button lands as a visible baseline change in its own diff. Signals A to C above
+remain the precise gates; this one only stops the population growing. Measured on a HEAD
+export at `39f519143`: signature precision 2595/2595 against a TypeScript-AST ground truth,
+recall 2595/2600; the judgment sample is in `signal.note`.
+
+```json
+{
+  "rules": [
+    {
+      "id": "raw-button-element",
+      "goldenPath": "docs/concepts/golden-paths/button.md",
+      "title": "Styled raw <button> outside the shared primitive catalog",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "<button(?![A-Za-z0-9_-])(?:(?!<)[\\s\\S]){0,1200}?\\sclassName=",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a lowercase <button> JSX element carrying className= in its opening tag, outside src/features/shared/components/**. PROXY FOR the stack-free condition (the temptation signature for Button/AsyncButton): a control re-derives the canonical control's look, focus ring, busy state and touch target by hand, so each copy drifts on its own. This is a RATCHET, not a ban: button.md section 9 declined \"raw <button> is banned\" at warn level because ~16% of sites are legitimate and a warning nobody fails on is ignored; a baselined count answers that objection differently, because it never asks for the backlog, only that new code adopts, and a genuinely legitimate new raw button lands as a visible baseline change in its own diff. Tag window and (?!<) guard are copied from native-title-tooltip.",
+        "note": "MEASURED 2026-09-24 at 39f519143 (HEAD export). SIGNATURE PRECISION 2595/2595 against a TypeScript-AST ground truth (every regex hit is a real <button> with className in its opening tag); RECALL 2595/2600, the 5 misses are opening tags containing a < (a comparison or generic) before className. JUDGMENT SAMPLE of 20 hits: 10 are plain action or icon buttons Button covers (close, back, refresh, primary action); 4 are selection controls a shared primitive covers (SegmentedTabs/PanelTabBar, aria-pressed option chips); 6 are arguably legitimate or have no primitive yet: 4 selectable cards or disclosure rows (VoicePanel, TableProgress, ImportConflictPanel, DeploymentFilters trigger) and 2 footer chrome icon buttons (NotepadFooterIcon, NetworkFooterIcon). No path beyond the catalog is excluded: shared/chrome is app-shell code, not a primitive layer.",
+        "fix": "buttons/Button (variant + size, icon sizes for icon-only) or buttons/AsyncButton for a promise onClick; layout/SegmentedTabs or PanelTabBar for a tab strip."
+      },
+      "exclude": [
+        {
+          "path": "**/__tests__/**",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.tsx",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "src/features/shared/components/**",
+          "reason": "the shared primitive catalog is where Button/AsyncButton and the other control primitives are built from raw <button>"
+        }
+      ],
+      "baseline": {
+        "files": 1107,
+        "matches": 2542
+      },
+      "floor": 2200
+    }
+  ]
+}
+```

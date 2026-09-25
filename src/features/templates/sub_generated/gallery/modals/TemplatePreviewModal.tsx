@@ -129,10 +129,10 @@ export function TemplatePreviewModal({
                 <Play className="w-7 h-7 text-violet-400" />
               </div>
               <div className="text-center max-w-md">
-                <h3 className="typo-body-lg font-medium text-foreground/85 mb-1.5">
+                <h3 className="typo-body-lg text-foreground/85 mb-1.5">
                   {t.templates.preview_modal.try_this_template}
                 </h3>
-                <p className="typo-body text-foreground leading-relaxed">
+                <p className="typo-body text-foreground">
                   {t.templates.preview_modal.try_description}
                 </p>
               </div>

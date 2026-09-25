@@ -22,7 +22,7 @@ import StudioMessages from './StudioMessages';
 import StudioPlanDrawer from './StudioPlanDrawer';
 import StudioQuickActions from './StudioQuickActions';
 import { phaseProgress } from './studioBuildModel';
-import { classifyMidTurnIntent } from '@/features/plugins/companion/midTurnIntent';
+import { classifyMidTurnIntent } from '@/features/companions/athena/midTurnIntent';
 import { isStopOnly } from './studioSeed';
 
 // The Studio dock — Athena's conversation + input, docked bottom-center over the

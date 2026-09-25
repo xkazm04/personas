@@ -78,7 +78,7 @@ export function PeerList() {
   return (
     <section>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="typo-heading font-semibold text-foreground flex items-center gap-2">
+        <h3 className="typo-heading text-foreground flex items-center gap-2">
           <Users className="w-4 h-4" />
           {st.discovered_peers}
         </h3>

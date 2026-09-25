@@ -105,7 +105,7 @@ function AgentRow({ agent }: { agent: CronAgent }) {
       <div className="flex items-center gap-1.5 shrink-0 ml-2">
         <HealthIcon className={`w-4 h-4 ${healthColor}`} />
         {agent.recent_executions > 0 && (
-          <span className={`typo-code font-mono ${healthColor}`}>
+          <span className={`typo-code ${healthColor}`}>
             {agent.recent_executions - agent.recent_failures}/{agent.recent_executions}
           </span>
         )}

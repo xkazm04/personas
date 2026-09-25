@@ -101,13 +101,13 @@ export default function PairApprovalModal() {
   return (
     <BaseModal isOpen onClose={dequeue} titleId="pair-approval-title" size="sm" portal>
       <div className="p-6 space-y-5">
-        <div className="flex items-center gap-2 typo-caption font-medium text-sky-300">
+        <div className="flex items-center gap-2 typo-caption text-sky-300">
           <Globe className="w-3.5 h-3.5" />
           {s.pair_title}
         </div>
 
         <div>
-          <h2 id="pair-approval-title" className="typo-body-lg font-semibold text-foreground break-all">
+          <h2 id="pair-approval-title" className="typo-body-lg text-foreground break-all">
             {current.app_name}
           </h2>
           <p className="typo-caption text-foreground break-all mt-0.5">{current.origin}</p>
@@ -122,7 +122,7 @@ export default function PairApprovalModal() {
         <p className="typo-body text-foreground">{s.pair_body}</p>
 
         <div className="space-y-1.5">
-          <p className="typo-caption font-medium text-foreground uppercase tracking-wide">
+          <p className="typo-caption text-foreground uppercase tracking-wide">
             {s.pair_scopes_label}
           </p>
           {current.requested_scopes.length === 0 ? (
@@ -148,7 +148,7 @@ export default function PairApprovalModal() {
         </div>
 
         <div className="space-y-1.5">
-          <p className="typo-caption font-medium text-foreground uppercase tracking-wide">
+          <p className="typo-caption text-foreground uppercase tracking-wide">
             {s.field_expiry_label}
           </p>
           <div className="flex gap-1.5">

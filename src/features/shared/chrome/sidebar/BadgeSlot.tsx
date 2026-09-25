@@ -40,7 +40,7 @@ function CountBadge({ badge, suppressed = 0 }: { badge: BadgeDefinition; suppres
   const isDark = useIsDarkTheme();
   const darkVariant = DARK_BADGE_COLORS[badge.color];
   return (
-    <span className={`min-w-[16px] h-4 px-1 flex items-center justify-center typo-heading leading-none rounded-full shadow-elevation-1 ${
+    <span className={`min-w-[16px] h-4 px-1 flex items-center justify-center typo-heading rounded-full shadow-elevation-1 ${
       isDark && darkVariant ? darkVariant : `text-foreground ${badge.color}`
     }`}>
       {(badge.count ?? 0) > 99 ? '99+' : badge.count}
@@ -104,7 +104,7 @@ export function BadgeSlot({ badges }: BadgeSlotProps) {
             <span className={`absolute inset-0 rounded-full animate-ping ${top.pingColor ?? 'bg-orange-500/40'}`} />
             <span className={`relative w-2.5 h-2.5 rounded-full border ${top.color}`} />
             {suppressed > 0 && (
-              <span className="absolute -bottom-1.5 -right-1 min-w-[12px] h-3 px-0.5 flex items-center justify-center typo-heading text-[8px] leading-none rounded-full bg-foreground/80 text-background shadow-elevation-1">
+              <span className="absolute -bottom-1.5 -right-1 min-w-[12px] h-3 px-0.5 flex items-center justify-center typo-heading text-[8px] rounded-full bg-foreground/80 text-background shadow-elevation-1">
                 +{suppressed}
               </span>
             )}
@@ -115,7 +115,7 @@ export function BadgeSlot({ badges }: BadgeSlotProps) {
           <>
             <span className={`w-3 h-3 rounded-full shadow-elevation-1 ${top.color}`} />
             {suppressed > 0 && (
-              <span className="absolute -bottom-1.5 -right-1 min-w-[12px] h-3 px-0.5 flex items-center justify-center typo-heading text-[8px] leading-none rounded-full bg-foreground/80 text-background shadow-elevation-1">
+              <span className="absolute -bottom-1.5 -right-1 min-w-[12px] h-3 px-0.5 flex items-center justify-center typo-heading text-[8px] rounded-full bg-foreground/80 text-background shadow-elevation-1">
                 +{suppressed}
               </span>
             )}

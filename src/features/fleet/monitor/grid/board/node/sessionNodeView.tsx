@@ -32,7 +32,7 @@ export function sessionNodeView(
   { meanDurationMs, queueLength, eta, notBefore, reducedMotion }: SessionViewContext,
 ): NodeView {
   const s = t.monitor;
-  const { session, overAdmitted = false } = props;
+  const { session, overAdmitted = false, originDevice = null } = props;
   const queue = props.queue ?? null;
   const m = sessionStateMeta(session.state);
   const queued = session.state === 'queued';
@@ -52,8 +52,11 @@ export function sessionNodeView(
       <StateGlyph mark={SESSION_STATE_MARK[session.state]} reducedMotion={reducedMotion} />
     </Sym>
   );
+  const originText = originDevice
+    ? tx(s.remote_from_device, { device: originDevice })
+    : tx(s.node_symbol_origin, { origin: originLabel(s, origin) });
   renderers.origin = () => (
-    <Sym id="origin" label={tx(s.node_symbol_origin, { origin: originLabel(s, origin) })} testId="fleet-queue-origin" data={{ 'data-origin': origin }} className={symbolClass(hue)}>
+    <Sym id="origin" label={originText} testId="fleet-queue-origin" data={{ 'data-origin': origin, ...(originDevice ? { 'data-origin-device': originDevice } : {}) }} className={symbolClass(hue)}>
       <OriginIcon aria-hidden className={GLYPH} />
     </Sym>
   );

@@ -100,7 +100,7 @@ export function PassportTerminalModal({ sessionId, session, onClose }: {
       <div data-testid="passport-terminal-modal">
         <div className="flex items-center gap-2 pb-2 border-b border-primary/10">
           <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: ink, boxShadow: `0 0 6px ${ink}88` }} aria-hidden />
-          <h2 id="passport-terminal-title" className="typo-body font-medium text-foreground truncate">{label}</h2>
+          <h2 id="passport-terminal-title" className="typo-body text-foreground truncate">{label}</h2>
           <span className="typo-caption text-foreground/55 shrink-0">{String(session?.state ?? 'exited').replace('_', ' ')}</span>
           {session?.stateReason && <span className="typo-caption text-foreground/45 truncate">— {session.stateReason}</span>}
           <button

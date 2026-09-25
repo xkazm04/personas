@@ -31,6 +31,8 @@
     "DriveToolbar.tsx": {"count":1,"sections":[7],"lines":["441"],"contexts":["(`DriveFileList.tsx:306`, `DriveSidebar.tsx:49`, `DriveToolbar.tsx:441`). The shared version carries a"],"resolved":false},
     "MessageDetailModal.tsx": {"count":1,"sections":[0],"lines":["131"],"contexts":["`PluginsSidebarNav.tsx:108` (the sidebar filter), and `MessageDetailModal.tsx:131` (one unrelated"],"resolved":false},
     "ResearchLabPage.tsx": {"count":1,"sections":[7],"lines":["24"],"contexts":["`ResearchLabPage.tsx:24` is an unguarded `Record<ResearchLabTab, ComponentType>` lookup rendered as"],"resolved":false},
+    "companion/applyClientAction.ts": {"count":1,"sections":[7],"lines":["68"],"contexts":["`companion/applyClientAction.ts:68`, `companion/companionRoutes.ts:38`,"],"resolved":false},
+    "companion/companionRoutes.ts": {"count":1,"sections":[7],"lines":["38"],"contexts":["`companion/applyClientAction.ts:68`, `companion/companionRoutes.ts:38`,"],"resolved":false},
     "eslint.config.js": {"count":1,"sections":[2],"contexts":["`shared/components` boundary rule in `eslint.config.js` is advisory and warn-level, and per the"]},
     "plugins/{PluginBrowsePage,PluginIcons}.tsx": {"count":1,"sections":[],"contexts":["`plugins/{PluginBrowsePage,PluginIcons}.tsx`,"],"resolved":false},
     "rules-uilayoutnav-2be17a89.json": {"count":1,"sections":[9],"contexts":["(`rules-uilayoutnav-2be17a89.json` — filename unique to this composer), hand-verified,"],"resolved":false},
@@ -44,6 +46,16 @@
       "resolvedFrom": "basename",
       "verbatim": "PersonaDecisionsFooter.tsx"
     },
+    "src/features/companions/athena/applyClientAction.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["68"],
+      "contexts": ["`applyClientAction.ts:68` is the companion **model** dispatching a client action;"],
+      "resolvedFrom": "basename",
+      "verbatim": "applyClientAction.ts"
+    },
+    "src/features/companions/athena/fleet/FleetStatsSidePanel.tsx": {"count":2,"sections":[7],"lines":["121,127","10,11,12"],"contexts":["`GuidedTour.tsx:133,144`, `FleetStatsSidePanel.tsx:121,127`,"],"resolvedFrom":"basename","verbatim":"FleetStatsSidePanel.tsx"},
+    "src/features/companions/overseer/DirectorCoachingTab.tsx": {"count":1,"sections":[7],"lines":["87"],"contexts":["`DirectorCoachingTab.tsx:87`, `backlog/BacklogPanel.tsx:200`,"],"resolvedFrom":"basename","verbatim":"DirectorCoachingTab.tsx"},
     "src/features/fleet/": {"count":1,"sections":[7],"contexts":["- **`src/features/fleet/` at top level is not a second fleet plugin** — it is `monitor/` only, a"],"resolved":false,"isDir":true},
     "src/features/fleet/monitor/navigateToProcess.ts": {
       "count": 1,
@@ -70,7 +82,6 @@
       "verbatim": "powerMoves/registry.ts"
     },
     "src/features/onboarding/components/GuidedTour.tsx": {"count":1,"sections":[7],"lines":["133,144"],"contexts":["`GuidedTour.tsx:133,144`, `FleetStatsSidePanel.tsx:121,127`,"],"resolvedFrom":"basename","verbatim":"GuidedTour.tsx"},
-    "src/features/overview/sub_director/DirectorCoachingTab.tsx": {"count":1,"sections":[7],"lines":["87"],"contexts":["`DirectorCoachingTab.tsx:87`, `backlog/BacklogPanel.tsx:200`,"],"resolvedFrom":"basename","verbatim":"DirectorCoachingTab.tsx"},
     "src/features/overview/sub_manual-review/components/backlog/BacklogPanel.tsx": {"count":1,"sections":[7],"lines":["200"],"contexts":["`DirectorCoachingTab.tsx:87`, `backlog/BacklogPanel.tsx:200`,"],"resolvedFrom":"suffix","verbatim":"backlog/BacklogPanel.tsx"},
     "src/features/personas/PersonasPage.tsx": {
       "count": 9,
@@ -99,9 +110,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "plugins/PluginIcons.tsx"
     },
-    "src/features/plugins/companion/applyClientAction.ts": {"count":2,"sections":[7],"lines":["68"],"contexts":["`companion/applyClientAction.ts:68`, `companion/companionRoutes.ts:38`,"],"resolvedFrom":"suffix","verbatim":"companion/applyClientAction.ts"},
-    "src/features/plugins/companion/companionRoutes.ts": {"count":1,"sections":[7],"lines":["38"],"contexts":["`companion/applyClientAction.ts:68`, `companion/companionRoutes.ts:38`,"],"resolvedFrom":"suffix","verbatim":"companion/companionRoutes.ts"},
-    "src/features/plugins/companion/fleet/FleetStatsSidePanel.tsx": {"count":2,"sections":[7],"lines":["121,127","10,11,12"],"contexts":["`GuidedTour.tsx:133,144`, `FleetStatsSidePanel.tsx:121,127`,"],"resolvedFrom":"basename","verbatim":"FleetStatsSidePanel.tsx"},
     "src/features/plugins/dev-tools/DevToolsPage.tsx": {
       "count": 2,
       "sections": [7],

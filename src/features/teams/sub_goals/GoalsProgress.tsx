@@ -242,7 +242,7 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
               className="shrink-0 px-3 py-2.5 flex flex-col justify-center gap-0.5 min-w-0 border-r border-primary/5"
               style={{ width: LEFT_W }}
             >
-              <span className="typo-body text-foreground font-medium truncate" title={row.name}>
+              <span className="typo-body text-foreground truncate" title={row.name}>
                 {row.name}
               </span>
               <span className="typo-caption text-foreground tabular-nums">

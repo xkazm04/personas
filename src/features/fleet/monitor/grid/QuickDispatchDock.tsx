@@ -57,6 +57,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
+import { RunOnSelect } from '@/features/shared/dispatch/RunOnSelect';
 import { laneOfState } from '@/features/plugins/fleet/fleetStateMeta';
 import { DockPresetSelect } from './DockPresetSelect';
 import { DockSkillPicker } from './DockSkillPicker';
@@ -309,7 +310,7 @@ export function QuickDispatchDock() {
               </span>
             </Tooltip>
             <span
-              className={`typo-label whitespace-nowrap rounded-pill border px-2 py-0.5 tracking-[0.08em] ${
+              className={`typo-label whitespace-nowrap rounded-pill border px-2 py-0.5 ${
                 armed
                   ? 'border-status-success/45 bg-status-success/10 text-status-success'
                   : `border-card-border bg-card-bg text-muted [[data-theme^='light']_&]:border-primary/35 [[data-theme^='light']_&]:bg-secondary/50`
@@ -397,7 +398,7 @@ export function QuickDispatchDock() {
                 rows={1}
                 placeholder={c.quickT.input_placeholder}
                 data-testid="quick-dispatch-input"
-                className="typo-body w-full resize-none border-0 bg-transparent p-0 leading-[1.45] text-foreground outline-none placeholder:text-foreground placeholder:opacity-40"
+                className="typo-body w-full resize-none border-0 bg-transparent p-0 text-foreground outline-none placeholder:text-foreground placeholder:opacity-40"
                 style={{ height: FIELD_MIN_PX }}
               />
             </div>
@@ -412,7 +413,7 @@ export function QuickDispatchDock() {
               loading={c.sending}
               aria-label={c.quickT.send}
               data-testid="quick-dispatch-send"
-              className={`typo-label dock-launch-flare relative w-[84px] flex-shrink-0 flex-col justify-center gap-1 self-stretch overflow-hidden rounded-input border !px-0 tracking-[0.04em] ${
+              className={`typo-label dock-launch-flare relative w-[84px] flex-shrink-0 flex-col justify-center gap-1 self-stretch overflow-hidden rounded-input border !px-0 ${
                 firing ? 'dock-launch-firing' : ''
               } ${
                 c.canSend
@@ -445,6 +446,9 @@ export function QuickDispatchDock() {
             ariaLabel={c.quickT.effort_chip_unset}
             testId="quick-dispatch-effort-chip"
           />
+          {/* Run on another device: hidden unless p2p is in this build and a
+              device is paired. Opens upward, like the preset menus. */}
+          <RunOnSelect value={c.runOn} onChange={c.setRunOn} githubUrl={c.projectRemote} placement="up" />
           <div className="min-w-0 flex-1 px-1">
             <QuickDispatchMetaLine c={c} />
           </div>

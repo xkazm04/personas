@@ -106,7 +106,7 @@ export function SettingsScaffold({
                     />
                   )}
                   {s.icon && <span className="relative z-10 flex-shrink-0 flex">{s.icon}</span>}
-                  <span className="relative z-10 typo-caption font-medium">{s.label}</span>
+                  <span className="relative z-10 typo-caption">{s.label}</span>
                 </button>
               </li>
             );

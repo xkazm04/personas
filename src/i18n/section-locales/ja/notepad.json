@@ -55,6 +55,7 @@
   "suggestions_title": "Athenaのメモ",
   "tabs_label": "メモ",
   "timeline_title": "ライフサイクル",
+  "title": "目標概要",
   "to_goals": "目標に変換",
   "variant_split": "分割キャンバス",
   "variant_workbench": "ワークベンチ",
@@ -220,6 +221,5 @@
   "desk_key_open_project": "プロジェクトを開く",
   "desk_lane_brainstorm": "アイデアレール",
   "desk_lane_plan": "プランレール",
-  "desk_room_back": "デスク",
-  "title": "目標概要"
+  "desk_room_back": "デスク"
 }

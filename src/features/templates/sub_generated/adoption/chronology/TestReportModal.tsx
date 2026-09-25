@@ -80,11 +80,11 @@ export function TestReportModal({ results, summary, onClose, onCredentialAdded }
               {allPassed ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <AlertTriangle className="w-5 h-5 text-amber-400" />}
             </div>
             <div>
-              <h2 className="typo-body-lg font-semibold text-foreground/90">{t.templates.test_report.title}</h2>
+              <h2 className="typo-body-lg text-foreground/90">{t.templates.test_report.title}</h2>
               <div className="flex items-center gap-3 mt-1">
-                {passedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-emerald-400/90 font-medium"><CheckCircle2 className="w-3 h-3" />{tx(t.templates.test_report.passed, { count: passedCount })}</span>}
-                {failedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-red-400/90 font-medium"><XCircle className="w-3 h-3" />{tx(t.templates.test_report.failed, { count: failedCount })}</span>}
-                {unverifiedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-amber-400/90 font-medium"><HelpCircle className="w-3 h-3" />{tx(t.templates.test_report.unverified, { count: unverifiedCount })}</span>}
+                {passedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-emerald-400/90"><CheckCircle2 className="w-3 h-3" />{tx(t.templates.test_report.passed, { count: passedCount })}</span>}
+                {failedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-red-400/90"><XCircle className="w-3 h-3" />{tx(t.templates.test_report.failed, { count: failedCount })}</span>}
+                {unverifiedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-amber-400/90"><HelpCircle className="w-3 h-3" />{tx(t.templates.test_report.unverified, { count: unverifiedCount })}</span>}
                 {skippedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-foreground"><AlertTriangle className="w-3 h-3" />{tx(t.templates.test_report.skipped, { count: skippedCount })}</span>}
               </div>
               {results.length > 0 && (
@@ -276,7 +276,7 @@ function ConnectorHandshakeCard({
       <div className="rounded-modal border border-primary/10 bg-primary/[0.02] px-4 py-3">
         <div className="flex items-center gap-2 mb-2">
           <Key className="w-4 h-4 text-primary/50" />
-          <h4 className="typo-label font-semibold text-foreground">{t.templates.test_report.connector_credentials}</h4>
+          <h4 className="typo-label text-foreground">{t.templates.test_report.connector_credentials}</h4>
         </div>
         <div className="space-y-1.5">
           {matched.map((c) => (
@@ -299,7 +299,7 @@ function ConnectorHandshakeCard({
                 type="button"
                 onClick={() => handleAddKey(c.name)}
                 title={tx(t.templates.test_report.add_key_for, { connector: c.name })}
-                className="flex items-center gap-1 px-2.5 py-1 typo-caption font-medium rounded-card bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors"
+                className="flex items-center gap-1 px-2.5 py-1 typo-caption rounded-card bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors"
               >
                 <Plus className="w-3 h-3" />
                 {t.templates.test_report.add_key}
@@ -341,7 +341,7 @@ function ReportOverview({ sections, summary, results, connectors = [], onCredent
     return (
       <div className="space-y-5">
         <ConnectorHandshakeCard connectors={connectors} onCredentialAdded={onCredentialAdded} />
-        <p className="typo-body text-foreground leading-relaxed">
+        <p className="typo-body text-foreground">
           {failed.length === 0 && credentialMissing.length === 0 && unverified.length === 0 && passed.length > 0
             ? `Your agent successfully connected to ${passed.length === 1 ? 'its service' : `all ${passed.length} services`}.${skipped.length > 0 ? ` ${skipped.length} tool${skipped.length > 1 ? 's use' : ' uses'} built-in capabilities and didn't need testing.` : ''}`
             : (failed.length > 0 || credentialMissing.length > 0)
@@ -376,7 +376,7 @@ function ReportOverview({ sections, summary, results, connectors = [], onCredent
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Zap className="w-4 h-4 text-foreground" />
-            <h4 className="typo-label font-semibold text-foreground">Results</h4>
+            <h4 className="typo-label text-foreground">Results</h4>
           </div>
           <div className="space-y-1.5">{sections.results.trim().split('\n').filter(Boolean).map((line, i) => <MarkdownLine key={i} text={line} />)}</div>
         </div>
@@ -395,7 +395,7 @@ function SectionBlock({ icon, label, children }: { icon: React.ReactNode; label:
     <div className="rounded-modal border border-primary/10 bg-primary/[0.02] px-4 py-3">
       <div className="flex items-center gap-2 mb-2">
         {icon}
-        <h4 className="typo-label font-semibold text-foreground">{label}</h4>
+        <h4 className="typo-label text-foreground">{label}</h4>
       </div>
       <div className="space-y-1.5">{children}</div>
     </div>
@@ -408,14 +408,14 @@ function ResultCards({ passed, failed, credentialMissing, skipped, unverified = 
     <div className="space-y-3">
       {unverified.length > 0 && (
         <div className="rounded-modal border border-amber-500/15 bg-amber-500/5 px-4 py-3">
-          <div className="flex items-center gap-2 mb-2"><HelpCircle className="w-4 h-4 text-amber-400" /><h4 className="typo-label font-semibold text-amber-400">{t.templates.test_report.not_verified}</h4></div>
+          <div className="flex items-center gap-2 mb-2"><HelpCircle className="w-4 h-4 text-amber-400" /><h4 className="typo-label text-amber-400">{t.templates.test_report.not_verified}</h4></div>
           <div className="space-y-1">{unverified.map((r) => <div key={r.tool_name} className="typo-body text-foreground">{toolLabel(r)}{r.connector ? <span className="text-foreground ml-1.5">({r.connector})</span> : null}</div>)}</div>
           <p className="text-[11px] text-amber-400/60 mt-2">{t.templates.test_report.unverified_hint}</p>
         </div>
       )}
       {passed.length > 0 && (
         <div className="rounded-modal border border-emerald-500/15 bg-emerald-500/5 px-4 py-3">
-          <div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /><h4 className="typo-label font-semibold text-emerald-400">{t.templates.test_report.connected_successfully}</h4></div>
+          <div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /><h4 className="typo-label text-emerald-400">{t.templates.test_report.connected_successfully}</h4></div>
           <div className="space-y-1">{passed.map((r) => (
             <div key={r.tool_name} className="flex items-center justify-between typo-body">
               <span className="text-foreground">{toolLabel(r)}{r.connector ? <span className="text-foreground ml-1.5">via {r.connector}</span> : null}</span>
@@ -426,14 +426,14 @@ function ResultCards({ passed, failed, credentialMissing, skipped, unverified = 
       )}
       {credentialMissing.length > 0 && (
         <div className="rounded-modal border border-amber-500/15 bg-amber-500/5 px-4 py-3">
-          <div className="flex items-center gap-2 mb-2"><Key className="w-4 h-4 text-amber-400" /><h4 className="typo-label font-semibold text-amber-400">{t.templates.test_report.needs_credentials}</h4></div>
+          <div className="flex items-center gap-2 mb-2"><Key className="w-4 h-4 text-amber-400" /><h4 className="typo-label text-amber-400">{t.templates.test_report.needs_credentials}</h4></div>
           <div className="space-y-1">{credentialMissing.map((r) => <div key={r.tool_name} className="typo-body text-foreground">{toolLabel(r)}{r.connector ? <span className="text-foreground ml-1.5">({r.connector})</span> : null}</div>)}</div>
           <p className="text-[11px] text-amber-400/60 mt-2">{t.templates.test_report.add_keys_hint}</p>
         </div>
       )}
       {failed.length > 0 && (
         <div className="rounded-modal border border-red-500/15 bg-red-500/5 px-4 py-3">
-          <div className="flex items-center gap-2 mb-2"><XCircle className="w-4 h-4 text-red-400" /><h4 className="typo-label font-semibold text-red-400">{t.templates.test_report.connection_failed}</h4></div>
+          <div className="flex items-center gap-2 mb-2"><XCircle className="w-4 h-4 text-red-400" /><h4 className="typo-label text-red-400">{t.templates.test_report.connection_failed}</h4></div>
           <div className="space-y-1">{failed.map((r) => {
             const hint = r.http_status ? httpStatusHint(t, r.http_status) : null;
             return <div key={r.tool_name} className="typo-body"><span className="text-foreground">{toolLabel(r)}</span>{hint && <span className="text-red-400/50 ml-1.5 typo-caption">{hint}</span>}</div>;
@@ -442,7 +442,7 @@ function ResultCards({ passed, failed, credentialMissing, skipped, unverified = 
       )}
       {skipped.length > 0 && (
         <div className="rounded-modal border border-primary/10 bg-secondary/20 px-4 py-3">
-          <div className="flex items-center gap-2 mb-2"><Zap className="w-4 h-4 text-foreground" /><h4 className="typo-label font-semibold text-foreground">{t.templates.test_report.builtin_no_test}</h4></div>
+          <div className="flex items-center gap-2 mb-2"><Zap className="w-4 h-4 text-foreground" /><h4 className="typo-label text-foreground">{t.templates.test_report.builtin_no_test}</h4></div>
           <div className="flex flex-wrap gap-x-4 gap-y-0.5">{skipped.map((r) => <span key={r.tool_name} className="typo-body text-foreground">{toolLabel(r)}</span>)}</div>
         </div>
       )}
@@ -457,9 +457,9 @@ function ResultCards({ passed, failed, credentialMissing, skipped, unverified = 
 function MarkdownLine({ text }: { text: string }) {
   const trimmed = text.trim();
   if (!trimmed) return null;
-  if (/^####\s+/.test(trimmed)) return <h5 className="typo-label font-semibold text-primary/70 mt-3 mb-1">{trimmed.replace(/^####\s+/, '')}</h5>;
-  if (/^###\s+/.test(trimmed)) return <h4 className="typo-heading font-semibold text-primary/80 mt-3 mb-1">{trimmed.replace(/^###\s+/, '')}</h4>;
-  if (/^##\s+/.test(trimmed)) return <h3 className="typo-body-lg font-bold text-foreground/90 mt-4 mb-1.5">{trimmed.replace(/^##\s+/, '')}</h3>;
+  if (/^####\s+/.test(trimmed)) return <h5 className="typo-label text-primary/70 mt-3 mb-1">{trimmed.replace(/^####\s+/, '')}</h5>;
+  if (/^###\s+/.test(trimmed)) return <h4 className="typo-heading text-primary/80 mt-3 mb-1">{trimmed.replace(/^###\s+/, '')}</h4>;
+  if (/^##\s+/.test(trimmed)) return <h3 className="typo-body-lg text-foreground/90 mt-4 mb-1.5">{trimmed.replace(/^##\s+/, '')}</h3>;
   if (/^---+$/.test(trimmed)) return <hr className="border-primary/10 my-3" />;
 
   const isBullet = /^[-*]\s/.test(trimmed);
@@ -476,9 +476,9 @@ function MarkdownLine({ text }: { text: string }) {
   });
 
   return (
-    <div className="flex gap-2 typo-body text-foreground leading-relaxed">
+    <div className="flex gap-2 typo-body text-foreground">
       {isBullet && <span className="text-primary/40 mt-0.5 flex-shrink-0">&bull;</span>}
-      {isNumbered && <span className="text-primary/40 mt-0.5 flex-shrink-0 font-medium typo-caption min-w-[1rem] text-right">{numberedMatch![1]}.</span>}
+      {isNumbered && <span className="text-primary/40 mt-0.5 flex-shrink-0 typo-caption min-w-[1rem] text-right">{numberedMatch![1]}.</span>}
       <span>{parts}</span>
     </div>
   );
@@ -520,7 +520,7 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
       }`}>
         {isPassed ? <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" /> : isSkipped ? <Zap className="w-5 h-5 text-foreground flex-shrink-0" /> : isUnverified ? <HelpCircle className="w-5 h-5 text-amber-400 flex-shrink-0" /> : result.status === 'credential_missing' ? <Key className="w-5 h-5 text-amber-400 flex-shrink-0" /> : <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />}
         <div className="flex-1">
-          <span className={`typo-heading font-semibold ${isPassed ? 'text-emerald-400' : isSkipped ? 'text-foreground' : isUnverified || result.status === 'credential_missing' ? 'text-amber-400' : 'text-red-400'}`}>
+          <span className={`typo-heading ${isPassed ? 'text-emerald-400' : isSkipped ? 'text-foreground' : isUnverified || result.status === 'credential_missing' ? 'text-amber-400' : 'text-red-400'}`}>
             {isPassed ? t.templates.test_report.status_passed : isSkipped ? t.templates.test_report.status_skipped_builtin : isUnverified ? t.templates.test_report.status_unverified : result.status === 'credential_missing' ? t.templates.test_report.status_needs_credential : t.templates.test_report.status_failed}
           </span>
           {result.http_status && (
@@ -530,23 +530,23 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
           )}
         </div>
         {result.latency_ms != null && result.latency_ms > 0 && (
-          <div className="flex items-center gap-1 text-foreground"><Clock className="w-3 h-3" /><span className="typo-code font-mono">{result.latency_ms}ms</span></div>
+          <div className="flex items-center gap-1 text-foreground"><Clock className="w-3 h-3" /><span className="typo-code">{result.latency_ms}ms</span></div>
         )}
       </div>
 
       <div>
-        <h4 className="typo-label font-semibold text-foreground mb-2">{t.templates.test_report.what_happened}</h4>
+        <h4 className="typo-label text-foreground mb-2">{t.templates.test_report.what_happened}</h4>
         {toolSummaryLine ? <MarkdownLine text={toolSummaryLine} /> : (
-          <div className="typo-body text-foreground leading-relaxed space-y-1">{fallbackDescription.split('\n').map((line, i) => <MarkdownLine key={i} text={line} />)}</div>
+          <div className="typo-body text-foreground space-y-1">{fallbackDescription.split('\n').map((line, i) => <MarkdownLine key={i} text={line} />)}</div>
         )}
       </div>
 
-      {result.connector && <div><h4 className="typo-label font-semibold text-foreground mb-1">{t.templates.test_report.service}</h4><p className="typo-body text-foreground">{result.connector}</p></div>}
+      {result.connector && <div><h4 className="typo-label text-foreground mb-1">{t.templates.test_report.service}</h4><p className="typo-body text-foreground">{result.connector}</p></div>}
 
       {result.output_preview && isPassed && (
         <div>
           <div className="flex items-center justify-between mb-1">
-            <h4 className="typo-label font-semibold text-foreground">{t.templates.test_report.response_preview}</h4>
+            <h4 className="typo-label text-foreground">{t.templates.test_report.response_preview}</h4>
             <InlineCopyButton text={result.output_preview} />
           </div>
           <div className="rounded-card bg-black/20 border border-primary/10 px-3 py-2.5 font-mono text-[11px] leading-relaxed max-h-64 overflow-y-auto">
@@ -562,7 +562,7 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
       {!isPassed && !isSkipped && !isUnverified && result.error && (
         <div>
           <div className="flex items-center justify-between mb-1">
-            <h4 className="typo-label font-semibold text-foreground">{t.templates.test_report.error_detail}</h4>
+            <h4 className="typo-label text-foreground">{t.templates.test_report.error_detail}</h4>
             <InlineCopyButton text={result.error} />
           </div>
           <div className="rounded-card bg-red-500/5 border border-red-500/10 px-3 py-2.5 font-mono text-[11px] text-red-400/70 leading-relaxed max-h-32 overflow-y-auto whitespace-pre-wrap">

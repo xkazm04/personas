@@ -20,8 +20,10 @@
  */
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Inbox, X } from 'lucide-react';
+import { Inbox, X } from 'lucide-react';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { TruncateWithTooltip } from './TruncateWithTooltip';
+import { DataGridPager } from './DataGridPager';
 import { SortableHeader } from '@/features/shared/components/display/SortableHeader';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useRowRevealEntrance } from './UnifiedTable';
@@ -46,6 +48,12 @@ export interface DataGridColumn<T> {
   sortable?: boolean;
   /** Align content: 'left' (default) | 'right' | 'center' */
   align?: 'left' | 'right' | 'center';
+  /**
+   * Keep the cell on one line. For a time, a figure or a short code: "8 min ago"
+   * broken over two lines reads as two values. Opt-in per column, because a
+   * wrapping text column is sometimes what a caller wants.
+   */
+  nowrap?: boolean;
   /** Custom cell renderer. If not provided, displays `row[key]` as string */
   render: (row: T, index: number) => React.ReactNode;
 }
@@ -119,6 +127,20 @@ export interface DataGridProps<T> {
   draggingRowKey?: string | null;
   /** Optional className for the outer container */
   className?: string;
+  /**
+   * How tall the grid is. `'fill'` (default, the historic behaviour): the body
+   * takes the height the caller gives it, so the pager sits at the bottom of that
+   * box. `'content'`: the body is as tall as its rows, capped by the height
+   * available (it scrolls only past that), and the pager sits right under the
+   * last row. `'page'`: the body is as tall as ALL its rows, uncapped, so the
+   * page around the grid scrolls instead of the grid (one surface, one
+   * scrollbar); the header stays sticky against that page scroller and the
+   * bulk toolbar sticks to its bottom edge. With `'content'` or `'page'` the
+   * caller must not force the grid's height (no `flex-1`/`h-full` in
+   * `className`), and with `'page'` no ancestor between the grid and the page
+   * scroller may clip overflow, or the sticky header has nothing to stick to.
+   */
+  fit?: 'fill' | 'content' | 'page';
   /** When true, hides column filters and reduces page size to 5. */
   simplified?: boolean;
   /** Whether all rows are selected (renders a header checkbox for the first column) */
@@ -177,6 +199,7 @@ export function DataGrid<T>({
   getRowProps,
   draggingRowKey,
   className,
+  fit = 'fill',
   simplified = false,
   selectAll,
   onSelectAll,
@@ -293,7 +316,7 @@ export function DataGrid<T>({
           /* Custom filter component takes precedence */
           if (!simplified && col.filterComponent) {
             return (
-              <div key={col.key} className={`${headerPadCls} flex items-center`}>
+              <div key={col.key} className={`${headerPadCls} flex items-center min-w-0 whitespace-nowrap`}>
                 {col.filterComponent}
               </div>
             );
@@ -302,7 +325,7 @@ export function DataGrid<T>({
           /* Filterable header (hidden in simplified mode) */
           if (!simplified && col.filterOptions && col.onFilterChange) {
             return (
-              <div key={col.key} className={`${headerPadCls} flex items-center`}>
+              <div key={col.key} className={`${headerPadCls} flex items-center min-w-0`}>
                 <ThemedSelect
                   filterable
                   options={col.filterOptions}
@@ -312,7 +335,12 @@ export function DataGrid<T>({
                   // -mx-2 cancels the select's own !px-2 so its label starts on
                   // the same x as a plain/sortable header, while the hover
                   // background still bleeds into the cell padding.
-                  className="!px-2 !py-0 -mx-2 !rounded-lg !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
+                  // Headers never wrap. The select fills its cell (it used to shrink to
+                  // its text, which put the chevron on top of the label), keeps room
+                  // for the chevron, and ellipsizes its label; the open list carries
+                  // every option in full.
+                  wrapperClassName="flex-1 min-w-0"
+                  className="!pl-2 !pr-7 !py-0 -mx-2 !rounded-interactive !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label whitespace-nowrap [&>span]:block [&>span]:truncate"
                 />
               </div>
             );
@@ -330,6 +358,11 @@ export function DataGrid<T>({
                 onSort={() => onSort(col.key)}
                 align={col.align === 'right' ? 'right' : 'left'}
                 padding={headerPadCls}
+                // Headers never wrap. SortableHeader's label is a bare string in a flex
+                // button, so a cut label clips rather than ellipsizes; its aria-label
+                // ("Sort by <label>") still carries the whole name.
+                className="min-w-0"
+                buttonClassName="whitespace-nowrap overflow-hidden"
               />
             );
           }
@@ -338,11 +371,12 @@ export function DataGrid<T>({
           return (
             <div
               key={col.key}
-              className={`${headerPadCls} flex items-center typo-label text-foreground ${
+              className={`${headerPadCls} flex items-center min-w-0 typo-label text-foreground ${
                 col.align === 'right' ? 'justify-end' : col.align === 'center' ? 'justify-center' : ''
               }`}
             >
-              {col.label}
+              {/* One line; the full label in a Tooltip only when it is actually cut. */}
+              <TruncateWithTooltip text={col.label} />
             </div>
           );
         })}
@@ -395,7 +429,10 @@ export function DataGrid<T>({
         </div>
       ) : (
       <div
-        className="flex-1 overflow-y-auto"
+        data-testid="data-grid-body"
+        // 'content' sizes the body to its rows and lets it shrink (min-h-0) when
+        // the grid is capped, so it scrolls only past the available height.
+        className={fit === 'page' ? '' : fit === 'content' ? 'min-h-0 overflow-y-auto' : 'flex-1 overflow-y-auto'}
         // Remount per page so the scroll offset resets to the top; the row
         // entrance stays id-guarded, so this never replays seen rows' fades.
         key={`page-${page}`}
@@ -439,7 +476,7 @@ export function DataGrid<T>({
               {columns.map((col) => (
                 <div
                   key={col.key}
-                  className={`${rowPadCls} flex items-center min-w-0 ${
+                  className={`${rowPadCls} flex items-center min-w-0 ${col.nowrap ? 'whitespace-nowrap' : ''} ${
                     col.align === 'right' ? 'justify-end' : col.align === 'center' ? 'justify-center' : ''
                   }`}
                 >
@@ -452,7 +489,10 @@ export function DataGrid<T>({
       </div>
       )}
 
-      {/* Bulk-action toolbar — slides up when rows are selected */}
+      {/* Bulk-action toolbar — slides up when rows are selected. Under
+          fit='page' the grid can be taller than the screen, so the toolbar hangs
+          from a zero-height sticky rail that stays at the scroller's bottom edge. */}
+      <BulkToolbarRail page={fit === 'page'}>
       <AnimatePresence>
         {showBulkToolbar && (
           <motion.div
@@ -466,10 +506,10 @@ export function DataGrid<T>({
               ? { duration: 0.22, ease: EASE_CURVE }
               : { duration: 0.01 }}
             className="pointer-events-none absolute left-1/2 z-30 -translate-x-1/2"
-            style={{ bottom: effectivePageSize > 0 ? '52px' : '12px' }}
+            style={{ bottom: fit === 'page' ? '0px' : effectivePageSize > 0 ? '52px' : '12px' }}
           >
             <div className="pointer-events-auto flex items-center gap-2 px-3 py-2 rounded-modal border border-primary/20 bg-secondary/80 shadow-elevation-3 backdrop-blur-md">
-              <span className="typo-body text-foreground font-medium px-2">
+              <span className="typo-body text-foreground px-2">
                 {tx(t.shared.bulk_selected, { count: selectedCount })}
               </span>
               <div className="w-px h-5 bg-primary/15" />
@@ -512,82 +552,30 @@ export function DataGrid<T>({
           </motion.div>
         )}
       </AnimatePresence>
+      </BulkToolbarRail>
 
       {/* Pagination */}
       {effectivePageSize > 0 && (
-        <div className="flex items-center justify-between px-4 py-2 border-t border-primary/10 bg-background/60 shrink-0">
-          {/* Left: page-size selector + item range */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <span className="typo-code text-foreground/90 text-[11px]">{t.shared.grid_rows}</span>
-              <select
-                value={effectivePageSize}
-                onChange={(e) => {
-                  const newSize = Number(e.target.value);
-                  setInternalPageSize(newSize);
-                  setPage(1);
-                  onPageSizeChange?.(newSize);
-                }}
-                data-testid="page-size-select"
-                aria-label={t.shared.grid_rows_per_page}
-                className="typo-code text-[11px] bg-secondary/30 border border-primary/10 rounded-md px-1.5 py-0.5 text-foreground hover:bg-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/30 cursor-pointer appearance-auto"
-              >
-                {pageSizeOptions.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-            </div>
-            <span className="typo-code text-foreground/90 text-[11px]">
-              {t.shared.grid_showing
-                .replace('{start}', String(Math.min((page - 1) * effectivePageSize + 1, data.length)))
-                .replace('{end}', String(Math.min(page * effectivePageSize, data.length)))
-                .replace('{total}', String(data.length))}
-            </span>
-          </div>
-          {/* Right: page buttons */}
-          {totalPages > 1 && (
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setPage(Math.max(1, page - 1))}
-              disabled={page <= 1}
-              className="p-1 rounded-lg text-foreground hover:text-foreground hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              let p: number;
-              if (totalPages <= 5) p = i + 1;
-              else if (page <= 3) p = i + 1;
-              else if (page >= totalPages - 2) p = totalPages - 4 + i;
-              else p = page - 2 + i;
-              return (
-                <button
-                  type="button"
-                  key={p}
-                  onClick={() => setPage(p)}
-                  className={`w-7 h-7 rounded-lg typo-code transition-colors ${
-                    p === page
-                      ? 'bg-primary/10 text-foreground font-semibold border border-primary/20'
-                      : 'text-foreground hover:text-foreground hover:bg-secondary/40'
-                  }`}
-                >
-                  {p}
-                </button>
-              );
-            })}
-            <button
-              type="button"
-              onClick={() => setPage(Math.min(totalPages, page + 1))}
-              disabled={page >= totalPages}
-              className="p-1 rounded-lg text-foreground hover:text-foreground hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-          )}
-        </div>
+        <DataGridPager
+          page={page}
+          totalPages={totalPages}
+          pageSize={effectivePageSize}
+          pageSizeOptions={pageSizeOptions}
+          total={data.length}
+          onPage={setPage}
+          onPageSize={(newSize) => {
+            setInternalPageSize(newSize);
+            setPage(1);
+            onPageSizeChange?.(newSize);
+          }}
+        />
       )}
     </div>
   );
+}
+
+/** Under fit='page', a zero-height rail stuck to the page scroller's bottom edge; otherwise nothing. */
+function BulkToolbarRail({ page, children }: { page: boolean; children: React.ReactNode }) {
+  if (!page) return <>{children}</>;
+  return <div className="sticky bottom-3 z-30 h-0">{children}</div>;
 }

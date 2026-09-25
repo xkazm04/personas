@@ -58,7 +58,7 @@ export function StaticScanCard({ projectId }: { projectId: string }) {
       <Zap className="w-4 h-4 text-status-success flex-shrink-0" aria-hidden />
       <span className="min-w-0 flex-1">
         <Tooltip content={d.skills_static_subtitle} placement="top">
-          <span className="inline-flex items-center gap-1.5 typo-body font-semibold text-foreground">
+          <span className="inline-flex items-center gap-1.5 typo-body text-foreground">
             {d.skills_static_title}
             <Info className="w-3 h-3 text-foreground/35" aria-hidden />
           </span>

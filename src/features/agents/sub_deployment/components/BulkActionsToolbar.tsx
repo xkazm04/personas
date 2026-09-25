@@ -77,7 +77,7 @@ export function BulkActionsToolbar({
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-secondary/95 border border-primary/20 shadow-elevation-4 shadow-black/30 backdrop-blur-md">
-      <span className="typo-data font-medium text-foreground/90 tabular-nums">
+      <span className="typo-data text-foreground/90">
         {tx(dt.bulk_selected, { count: selectedRows.length })}
       </span>
 
@@ -86,7 +86,7 @@ export function BulkActionsToolbar({
       {pausableIds.length > 0 && (
         <Button
           variant="accent"
-          accentColor="amber"
+          tone="warning"
           size="sm"
           onClick={() => handleBulk('pause')}
           disabled={isBusy}
@@ -100,7 +100,7 @@ export function BulkActionsToolbar({
       {resumableIds.length > 0 && (
         <Button
           variant="accent"
-          accentColor="emerald"
+          tone="success"
           size="sm"
           onClick={() => handleBulk('resume')}
           disabled={isBusy}
@@ -144,7 +144,7 @@ export function BulkActionsToolbar({
             type="button"
             onClick={() => setConfirmingDelete(true)}
             disabled={isBusy}
-            className="flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-modal bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 disabled:opacity-40 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-modal bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 disabled:opacity-40 transition-colors cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
             {tx(dt.bulk_delete, { count: removableIds.length })}

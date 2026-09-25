@@ -18,5 +18,6 @@
   "network_offline": "Keine Internetverbindung",
   "not_found": "Die angeforderte Ressource wurde nicht gefunden",
   "rate_limited": "Zu viele Anfragen -- versuchen Sie es gleich erneut",
-  "validation": "Ungültige Eingabe: {detail}"
+  "validation": "Ungültige Eingabe: {detail}",
+  "run_superseded": "An anderer Stelle in der App wurde ein neuer Lauf dieser Aufgabe gestartet, daher wurde dieser gestoppt. Starte ihn hier erneut, falls du ihn noch brauchst."
 }

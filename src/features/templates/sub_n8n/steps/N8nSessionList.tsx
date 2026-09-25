@@ -45,16 +45,16 @@ const SessionCard = memo(function SessionCard({ session, isBusy, onLoad, onDelet
       data-testid={`n8n-session-card-${session.id}`}
     >
       <div className="w-10 h-10 rounded-card bg-violet-500/10 border border-violet-500/15 flex items-center justify-center flex-shrink-0">
-        <span className="typo-code font-mono font-medium text-violet-400">
+        <span className="typo-code text-violet-400">
           {(STEP_META[session.step as N8nWizardStep]?.index ?? 0) + 1}/{WIZARD_STEPS.length}
         </span>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="typo-body font-medium text-foreground/90 truncate">
+        <p className="typo-body text-foreground/90 truncate">
           {session.workflow_name}
         </p>
         <div className="flex items-center gap-2 mt-1">
-          <span className={`px-1.5 py-0.5 typo-body font-medium rounded-card ${style.bg} ${style.text}`}>
+          <span className={`px-1.5 py-0.5 typo-body rounded-card ${style.bg} ${style.text}`}>
             {style.label}
           </span>
           <span className="typo-body text-foreground flex items-center gap-1">
@@ -76,7 +76,7 @@ const SessionCard = memo(function SessionCard({ session, isBusy, onLoad, onDelet
           <Trash2 className="w-3.5 h-3.5" />
         </button>
         {interrupted ? (
-          <span className="flex items-center gap-1 typo-body text-amber-400 font-medium">
+          <span className="flex items-center gap-1 typo-body text-amber-400">
             <RotateCcw className="w-3 h-3" />
             Retry
           </span>
@@ -246,7 +246,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="typo-body font-medium text-foreground/90 uppercase tracking-wider">
+        <h3 className="typo-body text-foreground/90 uppercase tracking-wider">
           {t.templates.n8n.previous_imports}
         </h3>
         {!showGhost && (

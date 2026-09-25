@@ -98,7 +98,7 @@ export function PreviewPhase() {
               <button
                 type="button"
                 onClick={() => setShowNegotiator(true)}
-                className={`shrink-0 px-3 py-1.5 rounded-modal typo-body font-medium transition-colors ${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text} hover:opacity-90`}
+                className={`shrink-0 px-3 py-1.5 rounded-modal typo-body transition-colors ${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text} hover:opacity-90`}
               >
                 {dp.negotiator_start}
               </button>
@@ -122,7 +122,7 @@ export function PreviewPhase() {
 
       {/* Credential name */}
       <div>
-        <label className="block typo-body font-medium text-foreground mb-1.5">
+        <label className="block typo-body text-foreground mb-1.5">
           {dp.credential_name_label}
         </label>
         <input

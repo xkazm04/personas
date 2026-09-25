@@ -2151,7 +2151,14 @@
     "header_subtitle_editing": "{name} wird bearbeitet",
     "header_subtitle_new": "Neuen Agenten von Grund auf erstellen",
     "header_title": "Build",
-    "new_agent": "Neuer Agent"
+    "new_agent": "Neuer Agent",
+    "promote_receipt_connect": "Konnektoren öffnen",
+    "promote_receipt_connectors": "Noch zu verbinden: {names}",
+    "promote_receipt_failed_title": "Hochstufen ist nicht durchgegangen",
+    "promote_receipt_later": "Später",
+    "promote_receipt_needs_setup_title": "Hochgestuft, aber vor dem ersten Lauf ist noch Einrichtung nötig",
+    "promote_receipt_retry": "Hochstufen erneut versuchen",
+    "promote_receipt_unverified": "Der erste Prüflauf konnte keinen Nutzen liefern. Prüfe die Konnektoren, bevor du dich darauf verlässt."
   },
   "matrix_tab": {
     "loading": "Matrix wird geladen",
@@ -2708,7 +2715,7 @@
     "all_saved": "Alle Änderungen gespeichert",
     "changed": "{sections} geändert",
     "cli_awareness": "Wahrnehmung der Claude-CLI-Sitzung",
-    "cli_awareness_desc": "Lässt diese Persona aktuelle Runden aus Ihrer aktiven, interaktiven Claude-CLI-Sitzung als zusätzlichen Kontext lesen. Erfordert außerdem, dass der globale Schalter unter Companion → Setup → Sensorische Signale aktiviert ist. Nur lesend — Ihre CLI-Sitzung wird nie verändert.",
+    "cli_awareness_desc": "Lässt diese Persona aktuelle Runden aus Ihrer aktiven, interaktiven Claude-CLI-Sitzung als zusätzlichen Kontext lesen. Erfordert außerdem, dass der globale Schalter unter Athena → Einrichtung → Sensorische Signale aktiviert ist. Nur lesend — Ihre CLI-Sitzung wird nie verändert.",
     "execution": "Ausführung",
     "execution_retention": "Ausführungsaufbewahrung",
     "failed_health_watch": "Gesundheitsüberwachungseinstellung konnte nicht aktualisiert werden",
@@ -3275,5 +3282,16 @@
     "parse": "Parsen",
     "paste_json": "Oder JSON direkt einfügen",
     "paste_placeholder": "Workflow-JSON hier einfügen…"
+  },
+  "promote_preview": {
+    "blocked_tooltip": "Die Übernahme würde abgelehnt: {reason}",
+    "heading": "Was die Übernahme bewirkt",
+    "needs_setup": "Zuerst einrichten: {connectors}",
+    "refused": "Die Übernahme wird diesen Entwurf ablehnen",
+    "refused_hint": "Überarbeite den Entwurf, um das zu beheben, und übernimm ihn dann.",
+    "repaired": "Vom Build angepasst",
+    "runs_manual": "Läuft, wenn du es startest",
+    "runs_next": "{type}-Auslöser, nächster Lauf {time}",
+    "runs_on_event": "{type}-Auslöser, läuft, wenn er auslöst"
   }
 }

@@ -1,0 +1,59 @@
+{
+  "roles": {
+    "page": {
+      "winner": ".stage",
+      "port": "[data-role=page]"
+    },
+    "column": {
+      "winner": ".col",
+      "port": "[data-role=column]"
+    },
+    "portrait": {
+      "winner": ".col[data-id=overseer] .portrait",
+      "port": "[data-role=column][data-id=overseer] [data-role=portrait]"
+    },
+    "heart": {
+      "winner": ".heart",
+      "port": "[data-role=heart]",
+      "position": true
+    },
+    "name": {
+      "winner": ".name",
+      "port": "[data-role=name]"
+    },
+    "title": {
+      "winner": ".title",
+      "port": "[data-role=title]"
+    },
+    "tagline": {
+      "winner": ".tag",
+      "port": "[data-role=tagline]"
+    },
+    "state": {
+      "winner": ".word",
+      "port": "[data-role=state]",
+      "position": true
+    },
+    "blocker": {
+      "winner": ".wake",
+      "port": "[data-role=blocker]"
+    },
+    "facts": {
+      "winner": ".count b",
+      "port": "[data-role=facts] b"
+    },
+    "open": {
+      "winner": ".open",
+      "port": "[data-role=open]"
+    },
+    "portraitAthena": {
+      "winner": ".col[data-id=athena] .portrait",
+      "port": "[data-role=column][data-id=athena] [data-role=portrait]"
+    },
+    "fact": {
+      "winner": ".col[data-id=curator] .fact",
+      "port": "[data-role=column][data-id=curator] [data-role=fact]"
+    }
+  },
+  "$comment": "Heartlight promotion contract, 13 roles. NO accepted departures: the seven keys the Director added (companions.landing.decisions_label / agents_label / wake_* / registry_fact) closed both text-length widths that the first pass had to accept. `portrait` names Overseer's illustration on BOTH sides - the element whose art and framing did not change - while Athena's portrait was re-rendered at 2:3 by owner instruction and is measured separately as `portraitAthena`. `fact` is scoped to Curator on both sides: it is the only column CompanionDetailDto can build a sentence for (registryName); the prototype's lastActive / lastWave / planNext have no wire field until stages 2 and 3."
+}

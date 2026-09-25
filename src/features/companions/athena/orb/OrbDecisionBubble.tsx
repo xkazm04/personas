@@ -1,0 +1,422 @@
+import { useCallback, useEffect, useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
+import type { LucideIcon } from 'lucide-react';
+import { Lightbulb, ChevronDown, ChevronUp, Layers, Loader2, Sparkles, MessageSquareText, TriangleAlert, ShieldCheck, Mail, KeyRound, X } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
+import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useSystemStore } from '@/stores/systemStore';
+import { useAthenaStore } from '../athenaStore';
+import { explainDecision, runDecisionOption } from '../decision/resolveDecision';
+import { deferDecision, skipDecision } from '../decision/decisionDeferral';
+import type { DecisionOption, DecisionSource } from '../decision/types';
+import { orbDock } from './athenaOrbDock';
+
+/** Symbol shown on the collapsed chip, by what produced the decision. */
+const SOURCE_ICON: Record<DecisionSource, LucideIcon> = {
+  approval: ShieldCheck,
+  human_review: MessageSquareText,
+  incident: TriangleAlert,
+  message_attention: Mail,
+  credential_reauth: KeyRound,
+  adhoc: Sparkles,
+};
+
+/**
+ * Athena hands-free decision bubble (P3, slices 2 + 4). A positioned,
+ * numbered-choice surface that floats ABOVE the orb and asks the user to make
+ * one decision — approve an action, resolve an incident, clear a human review.
+ *
+ * Mounted in `AthenaGuideLayer` (the always-on body portal) rather than inside
+ * `AthenaOrb` (which only renders while `state === 'minimized'`), so a decision
+ * can surface over any screen. Renders nothing unless `pendingDecision != null`
+ * AND the presence state is `minimized` — the bubble docks against the orb, so
+ * with the chat panel open (orb hidden) it stays hidden too and re-surfaces
+ * when the panel closes.
+ *
+ * Chrome + positioning mirror `GuideCaption` (rounded-card, bg-background/95,
+ * shadow-elevation-3, a small primary tail pointing back at the orb, flipped to
+ * whichever side has room off `orbGuideTarget`). The numbered chips copy
+ * `QuickReplies`' render (a `{i+1}` digit badge + label).
+ *
+ * Interaction (click-only here; the `;`-leader key + voice land in later
+ * slices):
+ *  - clicking option `n` runs `option.run()` then `clearPendingDecision()`.
+ *  - clicking `0` ("Explain / recommend") does NOT clear — it sets
+ *    `decisionExplained` so the recommendation renders above the still-present
+ *    options (slice 4).
+ *
+ * On mount it promotes Athena to `minimized` if she's dormant (so the orb the
+ * bubble docks against is visible) and, when the decision carries a
+ * `highlightTestId`, rings the relevant element via the shared guidance setters.
+ */
+export function OrbDecisionBubble() {
+  const { t, tx } = useTranslation();
+  const reduceMotion = useReducedMotion();
+  const decision = useAthenaStore((s) => s.pendingDecision);
+  const athenaState = useAthenaStore((s) => s.state);
+  const explained = useAthenaStore((s) => s.decisionExplained);
+  const composing = useAthenaStore((s) => s.explainComposing);
+  const composeError = useAthenaStore((s) => s.explainComposeError);
+  // A picked option whose action failed. The decision stays pending on purpose;
+  // this is the ONLY failure feedback the operator gets, and it must appear
+  // right where they clicked (it used to be a detached toast).
+  const runError = useAthenaStore((s) => s.decisionError);
+  const orbTarget = useAthenaStore((s) => s.orbGuideTarget);
+  // How many decisions the last queue build found, this one included. Without
+  // it a twelve-item backlog looks exactly like a single question.
+  const queueDepth = useAthenaStore((s) => s.decisionQueueDepth);
+  const clearPendingDecision = useAthenaStore((s) => s.clearPendingDecision);
+  const orbPos = useSystemStore((s) => s.athenaOrbPos);
+  // Float above the Fleet grid overlay (z-200) while it's open — a key
+  // orchestration decision must be visible/answerable over the grid, not
+  // buried behind it (same lift as the orb + chat panel).
+  const fleetGridOpen = useSystemStore((s) => s.fleetGridOpen);
+  const setState = useAthenaStore((s) => s.setState);
+  const setGuidanceHighlightTestId = useAthenaStore((s) => s.setGuidanceHighlightTestId);
+  const flashHighlight = useAthenaStore((s) => s.flashHighlight);
+
+  const decisionId = decision?.id ?? null;
+
+  /**
+   * Skip and Later are the only two ways PAST a decision without answering it.
+   * Hiding or collapsing the bubble keeps the same id pending, so the queue
+   * never advances and everything behind it stays invisible. Both record the
+   * id in the session-scoped deferral ledger and then clear the bubble, which
+   * makes the queue pump surface the next one.
+   *
+   * Neither touches the underlying row: a skipped approval is still pending
+   * work and returns on the next app start.
+   */
+  const skipCurrent = useCallback(() => {
+    if (!decisionId) return;
+    skipDecision(decisionId);
+    clearPendingDecision();
+  }, [decisionId, clearPendingDecision]);
+  const snoozeCurrent = useCallback(() => {
+    if (!decisionId) return;
+    deferDecision(decisionId);
+    clearPendingDecision();
+  }, [decisionId, clearPendingDecision]);
+  const navigateRoute = decision?.navigateRoute;
+  const highlightTestId = decision?.highlightTestId;
+
+  // The bubble has three visibility levels: expanded (full), compact (small
+  // chip) — toggled by the bottom chevron handle — and fully hidden (just a
+  // tiny restore peek dotted at the orb) — toggled by the top-corner X. A
+  // fresh decision always opens expanded + visible; both are per-decision
+  // local state.
+  const [collapsed, setCollapsed] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    setCollapsed(false);
+    setHidden(false);
+  }, [decisionId]);
+
+  // A failed action must be readable even if the user had minimized/hidden the
+  // bubble before picking — reopen it so the error is never silent.
+  useEffect(() => {
+    if (!runError) return;
+    setCollapsed(false);
+    setHidden(false);
+  }, [runError]);
+
+  // `pos` below reads window.innerWidth/innerHeight at render time, but this
+  // component only re-renders on store changes — a viewport resize (or the
+  // Tauri webview being snapped) while a decision is pending would otherwise
+  // leave the bubble pinned to stale viewport math until an unrelated store
+  // update forces a re-render. Force one on resize.
+  const [, forceRerenderOnResize] = useState(0);
+  useEffect(() => {
+    const onResize = () => forceRerenderOnResize((n) => n + 1);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // On a fresh decision: promote Athena out of dormancy so the orb is visible,
+  // and ring the element the bubble is asking about (best-effort). Promote
+  // ONLY from the dormant states — when the chat panel is `open` the user is
+  // mid-conversation; yanking it down to the orb would close their chat. The
+  // decision stays pending and the bubble surfaces once the panel closes.
+  useEffect(() => {
+    if (!decisionId) return;
+    const presence = useAthenaStore.getState().state;
+    if (presence === 'collapsed' || presence === 'closed') {
+      setState('minimized');
+    }
+    if (highlightTestId) {
+      // Prefer the proactive one-shot flash (auto-clears, no walkthrough
+      // needed); fall back to the durable guidance highlight if a walkthrough
+      // is already holding the ring.
+      if (useAthenaStore.getState().activeWalkthrough) {
+        setGuidanceHighlightTestId(highlightTestId);
+      } else {
+        flashHighlight(highlightTestId, { label: t.athena.decision_title });
+      }
+    }
+    // navigateRoute is carried on each option's run() (resolve/open paths
+    // navigate when picked); we don't force-navigate on mere surfacing.
+    void navigateRoute;
+  }, [
+    decisionId,
+    highlightTestId,
+    navigateRoute,
+    setState,
+    setGuidanceHighlightTestId,
+    flashHighlight,
+    t.athena.decision_title,
+  ]);
+
+  // The bubble docks against the orb, which normally exists only while
+  // `minimized` — with the chat panel open (or Athena dismissed) there's no
+  // anchor, so render nothing (the decision stays in `pendingDecision` and
+  // re-surfaces when the orb returns). EXCEPTION: in Grid mode the orb is lifted
+  // over the fleet overlay (`AthenaOrbLayer` → z-[210]) and stays visible even
+  // with the chat open, so a fleet orchestration decision MUST surface there —
+  // otherwise an operator running the grid (often with the chat open to watch)
+  // sees nothing to approve and Athena appears stuck. (User report 2026-06-25.)
+  if (!decision || (athenaState !== 'minimized' && !fleetGridOpen)) return null;
+
+  // Click → run the option then clear. Shared with the `;`-leader key (Slice 5)
+  // and spoken-number answering (Slice 7) via `runDecisionOption` so all three
+  // input methods resolve identically.
+  const pick = (opt: DecisionOption) => runDecisionOption(opt);
+
+  // Sit the bubble above the orb, nudged toward whichever side has room. The
+  // arrow/handle bridges the surface to the orb AND is the show/hide toggle, so
+  // it sits at the bottom on the docked side, pointing back at her. Shared with
+  // `OrbUnreadBubble` — see `athenaOrbDock`.
+  const { pos, handleSide } = orbDock(orbTarget, orbPos);
+
+  // A markdown-free label for the collapsed chip: the full first line of
+  // the prompt, untruncated — the chip wraps instead of ellipsizing so the
+  // title is always readable while minimized.
+  const shortLabel =
+    (decision.prompt.split('\n')[0] ?? decision.prompt)
+      .replace(/[*_`#>]/g, '')
+      .trim() || t.athena.decision_title;
+  const SourceIcon = SOURCE_ICON[decision.source] ?? Sparkles;
+
+  return (
+    <motion.div
+      data-testid="athena-decision-bubble"
+      data-companion-decision-id={decision.id}
+      data-companion-decision-source={decision.source}
+      data-companion-decision-collapsed={collapsed}
+      data-companion-decision-hidden={hidden}
+      initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+      className={`pointer-events-auto fixed ${fleetGridOpen ? 'z-[220]' : 'z-[61]'} max-w-[80vw] ${hidden || collapsed ? 'w-auto' : 'w-[336px]'}`}
+      style={pos}
+    >
+      {hidden ? (
+        /* Fully hidden — a tiny restore peek dotted at the orb. Click to bring
+           the decision back to its previous (compact or full) size. */
+        <button
+          type="button"
+          onClick={() => setHidden(false)}
+          data-testid="athena-decision-restore"
+          aria-label={t.athena.decision_show}
+          title={t.athena.decision_show}
+          className="pointer-events-auto relative flex items-center justify-center w-9 h-9 rounded-full bg-background/95 border border-primary/30 shadow-elevation-3 hover:border-primary/50 transition-colors"
+        >
+          <span className="absolute -top-0.5 -right-0.5 flex w-2 h-2">
+            {!reduceMotion && <span className="absolute inline-flex w-full h-full rounded-full bg-primary opacity-60 animate-ping" />}
+            <span className="relative inline-flex w-2 h-2 rounded-full bg-primary" />
+          </span>
+          <SourceIcon className="w-4 h-4 text-primary" aria-hidden />
+        </button>
+      ) : (
+        <>
+      {collapsed ? (
+        /* Compact chip — a small symbol/label above the arrow. Click to expand. */
+        <button
+          type="button"
+          onClick={() => setCollapsed(false)}
+          data-testid="athena-decision-expand"
+          aria-label={t.athena.decision_expand}
+          className="flex items-center gap-2 rounded-card bg-background/95 border border-primary/30 shadow-elevation-3 pl-2.5 pr-3 py-2 hover:border-primary/50 transition-colors max-w-[420px]"
+        >
+          <span className="relative flex w-2 h-2 flex-shrink-0">
+            {!reduceMotion && <span className="absolute inline-flex w-full h-full rounded-full bg-primary opacity-60 animate-ping" />}
+            <span className="relative inline-flex w-2 h-2 rounded-full bg-primary" />
+          </span>
+          <SourceIcon className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
+          {/* Wraps — never ellipsized; the chip caps line length, not content. */}
+          <span className="typo-caption text-foreground/90 text-left whitespace-normal break-words min-w-0">
+            {shortLabel}
+          </span>
+        </button>
+      ) : (
+        <div className="relative rounded-card bg-background/95 border border-primary/30 shadow-elevation-3 p-3.5">
+          <div data-testid="athena-decision-prompt">
+            <MarkdownRenderer content={decision.prompt} className="typo-body text-foreground/90" />
+          </div>
+
+          {/* Explain-in-Cockpit — composing / fallback states for the
+              escalated `0` turn. The static recommendation below stays
+              visible throughout (it's the floor). */}
+          {composing && (
+            <div
+              data-testid="athena-decision-composing"
+              className="mt-2.5 flex items-center gap-2 rounded-input border border-primary/20 bg-primary/5 px-3 py-2"
+            >
+              <Loader2 className="w-3.5 h-3.5 text-primary animate-spin shrink-0" aria-hidden />
+              <span className="typo-caption text-foreground">
+                {t.athena.decision_composing}
+              </span>
+            </div>
+          )}
+          {!composing && composeError && (
+            <p
+              data-testid="athena-decision-compose-failed"
+              className="mt-2.5 typo-caption text-status-warning"
+            >
+              {t.athena.decision_compose_failed}
+            </p>
+          )}
+
+          {/* The picked option's action failed — say so in place. The decision
+              stays pending so the same numbered chips are a retry. */}
+          {runError && (
+            <p
+              data-testid="athena-decision-run-failed"
+              role="alert"
+              className="mt-2.5 rounded-input border border-rose-500/25 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400"
+            >
+              {t.athena.decision_run_failed}
+            </p>
+          )}
+
+          {/* Slice 4 — `0` was picked: show the recommendation above the options. */}
+          {explained && decision.recommendation && (
+            <div
+              data-testid="athena-decision-recommendation"
+              className="mt-2.5 rounded-input border border-primary/20 bg-primary/5 px-3 py-2.5"
+            >
+              <p className="typo-label text-primary">
+                {t.athena.decision_recommend_prefix}
+              </p>
+              <MarkdownRenderer content={decision.recommendation} className="mt-1 typo-body text-foreground/90" />
+              {decision.detail && (
+                <p className="mt-1.5 typo-caption text-foreground">
+                  {decision.detail}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* What is waiting behind this question, and the two ways past it. */}
+          {queueDepth > 1 && (
+            <div className="mt-2.5 flex items-center gap-2">
+              <span
+                data-testid="athena-decision-queue-depth"
+                className="inline-flex items-center gap-1.5 rounded-interactive bg-foreground/5 border border-foreground/10 px-2 py-1 typo-caption text-foreground"
+              >
+                <Layers className="w-3 h-3" aria-hidden />
+                {tx(t.athena.decision_queue_remaining, { count: queueDepth - 1 })}
+              </span>
+              {/* The hints ride on the shared Tooltip, not `title=`: these are
+                  controls that change what the queue shows next, and a native
+                  tooltip never reaches a keyboard user (golden path: tooltip). */}
+              <Tooltip content={t.athena.decision_skip_hint}>
+                <button
+                  type="button"
+                  data-testid="athena-decision-skip"
+                  onClick={skipCurrent}
+                  className="rounded-interactive px-2 py-1 typo-caption text-foreground hover:bg-foreground/10 transition-colors focus-ring"
+                >
+                  {t.athena.decision_skip}
+                </button>
+              </Tooltip>
+              <Tooltip content={t.athena.decision_snooze_hint}>
+                <button
+                  type="button"
+                  data-testid="athena-decision-snooze"
+                  onClick={snoozeCurrent}
+                  className="rounded-interactive px-2 py-1 typo-caption text-foreground hover:bg-foreground/10 transition-colors focus-ring"
+                >
+                  {t.athena.decision_later}
+                </button>
+              </Tooltip>
+            </div>
+          )}
+
+          <div className="mt-2.5 flex flex-wrap gap-1.5">
+            {decision.options.map((opt, i) => (
+              <button
+                key={opt.key}
+                type="button"
+                data-testid={`athena-decision-option-${i + 1}`}
+                onClick={() => pick(opt)}
+                title={opt.hint ?? opt.label}
+                className={`inline-flex items-center gap-1.5 max-w-full rounded-interactive px-2.5 py-1.5 typo-caption transition-colors focus-ring ${
+                  opt.danger
+                    ? 'bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500/30 text-rose-400'
+                    : 'bg-primary/10 border border-primary/20 hover:bg-primary/20 hover:border-primary/30 text-primary'
+                }`}
+              >
+                <span
+                  className={`inline-flex items-center justify-center w-4 h-4 rounded text-[10px] font-medium ${
+                    opt.danger ? 'bg-rose-500/20' : 'bg-primary/20'
+                  }`}
+                  aria-hidden
+                >
+                  {i + 1}
+                </span>
+                <span className="text-left whitespace-normal break-words min-w-0">
+                  {opt.label}
+                </span>
+              </button>
+            ))}
+
+            {/* `0` — explain + recommend (slice 4), escalating into the
+                Explain-in-Cockpit turn. Icon-only (lightbulb); the `0` leader
+                key still triggers it. Does not clear the decision; disabled
+                while a composition is already in flight. */}
+            <button
+              type="button"
+              data-testid="athena-decision-option-0"
+              onClick={() => explainDecision()}
+              disabled={composing}
+              aria-label={t.athena.decision_explain}
+              title={t.athena.decision_explain_hint}
+              className="inline-flex items-center justify-center w-8 h-8 shrink-0 rounded-interactive bg-foreground/5 border border-foreground/10 hover:bg-foreground/10 text-foreground transition-colors focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Lightbulb className="w-4 h-4" aria-hidden />
+            </button>
+          </div>
+        </div>
+      )}
+
+          {/* Fully-hide X — top-upper corner. Collapses the bubble to the
+              restore peek (distinct from the bottom minimize/expand handle). */}
+          <button
+            type="button"
+            onClick={() => setHidden(true)}
+            data-testid="athena-decision-dismiss"
+            aria-label={t.athena.decision_dismiss}
+            title={t.athena.decision_dismiss}
+            className="absolute -top-2.5 -right-2.5 z-10 inline-flex items-center justify-center w-6 h-6 rounded-full bg-background/95 border border-primary/25 text-foreground shadow-elevation-2 ring-2 ring-background hover:border-primary/50 transition"
+          >
+            <X className="w-3 h-3" />
+          </button>
+
+          {/* The arrow/handle — minimize ⇄ expand; points at the orb. */}
+          <button
+            type="button"
+            onClick={() => setCollapsed((c) => !c)}
+            data-testid="athena-decision-toggle"
+            aria-label={collapsed ? t.athena.decision_expand : t.athena.decision_minimize}
+            title={collapsed ? t.athena.decision_expand : t.athena.decision_minimize}
+            className="absolute -bottom-3 z-10 inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-background shadow-elevation-2 ring-2 ring-background hover:brightness-110 transition"
+            style={handleSide}
+          >
+            {collapsed ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+        </>
+      )}
+    </motion.div>
+  );
+}

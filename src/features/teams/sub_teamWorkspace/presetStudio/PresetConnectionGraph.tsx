@@ -226,7 +226,7 @@ export function PresetConnectionGraph({
               >
                 <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: colorWithAlpha(teamColor, active ? 1 : 0.5) }} />
                 <span
-                  className="typo-body-lg font-semibold uppercase tracking-wider whitespace-nowrap leading-none"
+                  className="typo-body-lg uppercase tracking-wider whitespace-nowrap"
                   style={{ color: active ? teamColor : undefined }}
                 >
                   {n.role}

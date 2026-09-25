@@ -40,8 +40,8 @@ export function EmptyState({
       <div className="w-12 h-12 rounded-modal bg-secondary/40 border border-primary/15 flex items-center justify-center">
         <Icon className="w-6 h-6 text-foreground" aria-hidden="true" />
       </div>
-      <p className="typo-body-lg font-medium text-foreground">{displayTitle}</p>
-      <p className="typo-body text-foreground text-center max-w-xs leading-relaxed">
+      <p className="typo-body-lg text-foreground">{displayTitle}</p>
+      <p className="typo-body text-foreground text-center max-w-xs">
         {displayDescription}
       </p>
       {(action || secondaryAction) && (
@@ -50,7 +50,7 @@ export function EmptyState({
             <button
               type="button"
               onClick={action.onClick}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors"
             >
               {action.label}
             </button>

@@ -111,7 +111,7 @@ export default function RevitalizePanel() {
               />
             </div>
 
-            <p className="typo-caption text-foreground leading-relaxed">{ob.revitalize_safety_note}</p>
+            <p className="typo-caption text-foreground">{ob.revitalize_safety_note}</p>
 
             {!running && (
               <button

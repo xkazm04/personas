@@ -58,14 +58,14 @@ export function AutomationConditionStep({
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-4">
           <div>
-            <label className="typo-body font-medium text-foreground uppercase tracking-wider">{t.agents.connectors.auto_name_label}</label>
+            <label className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_name_label}</label>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)}
               className="w-full mt-1.5 px-3 py-2 typo-body rounded-modal border border-border bg-secondary/20 text-foreground focus-ring" />
           </div>
           <div>
-            <label className="typo-body font-medium text-foreground uppercase tracking-wider">{t.agents.connectors.auto_platform_label}</label>
+            <label className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_platform_label}</label>
             <div className="mt-1.5">
-              <span className={`inline-flex items-center px-2.5 py-1 typo-body font-medium rounded-modal border ${PLATFORM_CONFIG[platform]?.bg ?? ''} ${PLATFORM_CONFIG[platform]?.color ?? ''}`}>
+              <span className={`inline-flex items-center px-2.5 py-1 typo-body rounded-modal border ${PLATFORM_CONFIG[platform]?.bg ?? ''} ${PLATFORM_CONFIG[platform]?.color ?? ''}`}>
                 {PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : platform}
               </span>
             </div>
@@ -94,7 +94,7 @@ export function AutomationConditionStep({
             </div>
           )}
           <div>
-            <label className="typo-body font-medium text-foreground uppercase tracking-wider">{t.agents.connectors.auto_credential_label}</label>
+            <label className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_credential_label}</label>
             {hasPlatformCredential ? (
               <div className="mt-1.5 flex items-center gap-2 px-3 py-2 rounded-modal bg-brand-emerald/5 border border-brand-emerald/15">
                 <CheckCircle2 className="w-3.5 h-3.5 text-brand-emerald/70 flex-shrink-0" />
@@ -108,12 +108,12 @@ export function AutomationConditionStep({
         <div className="space-y-4">
           {designResult.setup_steps && designResult.setup_steps.length > 0 && (
             <div>
-              <label className="typo-body font-medium text-foreground uppercase tracking-wider">{t.agents.connectors.auto_what_will_happen}</label>
+              <label className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_what_will_happen}</label>
               <div className="mt-1.5 space-y-1.5">
                 {designResult.setup_steps.map((step, i) => (
                   <div key={i} className="flex items-start gap-2.5 px-3 py-2 rounded-modal bg-secondary/20 border border-border/40">
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center typo-heading font-bold text-primary mt-0.5">{i + 1}</span>
-                    <p className="typo-body text-foreground leading-relaxed">{step}</p>
+                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center typo-heading text-primary mt-0.5">{i + 1}</span>
+                    <p className="typo-body text-foreground">{step}</p>
                   </div>
                 ))}
               </div>
@@ -121,7 +121,7 @@ export function AutomationConditionStep({
           )}
           {designResult.handles_connectors && designResult.handles_connectors.length > 0 && (
             <div>
-              <label className="typo-body font-medium text-foreground uppercase tracking-wider">{t.agents.connectors.auto_replaces}</label>
+              <label className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_replaces}</label>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {designResult.handles_connectors.map((c) => (
                   <span key={c} className="px-2 py-0.5 typo-body rounded-card bg-secondary/40 border border-border/40 text-foreground">{c}</span>
@@ -133,7 +133,7 @@ export function AutomationConditionStep({
       </div>
 
       <button type="button" onClick={() => setShowAdvanced(!showAdvanced)}
-        className="flex items-center gap-1.5 typo-body font-medium text-foreground hover:text-foreground transition-colors">
+        className="flex items-center gap-1.5 typo-body text-foreground hover:text-foreground transition-colors">
         <Pencil className="w-3.5 h-3.5" />
         {showAdvanced ? t.agents.connectors.auto_hide_advanced : t.agents.connectors.auto_show_advanced}
         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
@@ -142,12 +142,12 @@ export function AutomationConditionStep({
       {showAdvanced && (
           <div className="animate-fade-slide-in overflow-hidden space-y-4">
             <div>
-              <label className="typo-body font-medium text-foreground uppercase tracking-wider">{t.agents.connectors.auto_input_schema}</label>
+              <label className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_input_schema}</label>
               <textarea placeholder={t.agents.connectors.auto_input_schema_placeholder} value={inputSchema} onChange={(e) => setInputSchema(e.target.value)} rows={3}
-                className="w-full mt-1.5 px-3 py-2 typo-code rounded-modal border border-border bg-secondary/20 text-foreground placeholder:text-foreground font-mono focus-ring resize-none" />
+                className="w-full mt-1.5 px-3 py-2 typo-code rounded-modal border border-border bg-secondary/20 text-foreground placeholder:text-foreground focus-ring resize-none" />
             </div>
             <div>
-              <label className="typo-body font-medium text-foreground uppercase tracking-wider">{t.agents.connectors.auto_on_failure}</label>
+              <label className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_on_failure}</label>
               <div className="mt-1.5 space-y-1.5">
                 {FALLBACK_OPTIONS.map((opt) => (
                   <label key={opt.value} className={`flex items-start gap-2.5 p-2.5 rounded-card border cursor-pointer transition-colors ${fallbackMode === opt.value ? 'border-primary/30 bg-primary/5' : 'border-border/60 hover:border-border'}`}>
@@ -161,7 +161,7 @@ export function AutomationConditionStep({
               </div>
             </div>
             <div>
-              <label className="typo-body font-medium text-foreground uppercase tracking-wider">{t.agents.connectors.auto_timeout}</label>
+              <label className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_timeout}</label>
               <div className="flex items-center gap-2 mt-1.5">
                 <NumberStepper
                   value={timeoutSecs}
@@ -184,7 +184,7 @@ export function AutomationConditionStep({
         <div className="flex items-start gap-2.5 p-3 rounded-modal bg-brand-rose/5 border border-brand-rose/15">
           <AlertCircle className="w-4 h-4 text-brand-rose/70 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="typo-body font-medium text-brand-rose/80">{t.agents.connectors.auto_deploy_failed}</p>
+            <p className="typo-body text-brand-rose/80">{t.agents.connectors.auto_deploy_failed}</p>
             <p className="typo-body text-brand-rose/50 mt-0.5">{deployError}</p>
           </div>
         </div>

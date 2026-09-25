@@ -52,7 +52,7 @@ disappearing — a visible failure, not a silent one.
 | --- | --- |
 | Home | Home (Welcome · Cockpit · Learning · What's New · System Check) |
 | Overview | **Monitoring** (Activity · Events · Health · Leaderboard · Mission Control · Reliability) · **Operations** (Approvals · Certification · Director · Incidents · Messages) · **Memory** (Knowledge) |
-| Projects | Teams · Goals · KPIs · Development (Lifecycle · Factory · Contest · Mastermind · Council · Studio, dev-only) · Browser |
+| Projects | Teams · Goals · KPIs · Development (Lifecycle · Factory · Contest · Mastermind · Features · Studio, dev-only) · Browser |
 | Agents | dynamic — Draft builds · active project · Favorites · Recent · Progress · Cloud (dev) |
 | Events | **Build** (Studio · Local Relay · Marketplace · Test) · **Maintain** (Cloud Events · Dead Letter Queue · Live Stream · Speed Limits) |
 | Connections | **Credentials** · **Templates** |

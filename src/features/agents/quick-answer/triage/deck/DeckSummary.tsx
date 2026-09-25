@@ -36,7 +36,7 @@ function Stat({
   return (
     <div className="min-w-16 text-center">
       <p
-        className={`typo-data-lg tabular-nums ${
+        className={`typo-data-lg ${
           tone === 'success'
             ? TONE_TEXT.success
             : tone === 'warning'
@@ -107,7 +107,7 @@ export function DeckSummary({ summary }: { summary: TriageSessionSummary }) {
               <li key={tally.kind} className="inline-flex items-center gap-1.5 typo-caption text-foreground">
                 <Icon className={`h-3.5 w-3.5 shrink-0 ${TONE_TEXT[KIND_META[tally.kind].tone]}`} aria-hidden />
                 <span>{kindCopy(t, tally.kind).label}</span>
-                <span className="typo-data tabular-nums">
+                <span className="typo-data">
                   {tx(m.triage_summary_kind_value, {
                     accepted: tally.accepted,
                     decided: tally.decided,

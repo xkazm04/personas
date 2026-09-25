@@ -74,7 +74,7 @@ export function DatasetInspector({
   return (
     <div className="rounded-card border border-primary/12 bg-secondary/20">
       <header className="flex items-center gap-3 border-b border-primary/8 px-4 py-2.5">
-        <span className="typo-card-label text-foreground">{name}</span>
+        <span className="typo-card-label">{name}</span>
         <span className="typo-caption text-muted-foreground">
           {records.length}{records.length === PAGE_SIZE ? '+' : ''} records
         </span>

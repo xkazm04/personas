@@ -18,7 +18,7 @@ import { POLLING_CONFIG } from "@/hooks/utility/timing/usePolling";
 import { useAttention } from "@/hooks/useAttention";
 import { getPollingCoordinator } from "@/lib/polling/pollingCoordinator";
 import { getDirectorPortfolio } from "@/api/director";
-import { flaggedAgentCount } from "@/features/overview/sub_director/attention";
+import { flaggedAgentCount } from "@/features/companions/overseer/attention";
 import { silentCatch } from "@/lib/silentCatch";
 
 interface BadgeCounts {

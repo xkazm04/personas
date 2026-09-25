@@ -83,7 +83,7 @@ export function ConnectorTableScopeRow({ connector, selected, onChange }: Connec
             <ComposerBrandIcon iconUrl={meta.iconUrl} color={meta.color} size={16} />
           ) : null}
         </div>
-        <span className="flex-1 min-w-0 truncate typo-body text-foreground font-medium">{meta.label}</span>
+        <span className="flex-1 min-w-0 truncate typo-body text-foreground">{meta.label}</span>
         {/* All-tables toggle */}
         <button
           type="button"

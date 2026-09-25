@@ -50,13 +50,13 @@ export function DraftDiffViewer({ currentPromptJson, draftPromptJson, changeSumm
         diffs.map((d) => (
           <div key={d.key} className="rounded-card border border-primary/10 bg-secondary/20 p-3">
             <div className="flex items-center gap-2 mb-2">
-              <h4 className="typo-body font-medium text-foreground uppercase tracking-wider">{d.label}</h4>
+              <h4 className="typo-body text-foreground uppercase tracking-wider">{d.label}</h4>
               {!d.changed && (
                 <span className="typo-body text-foreground">{t.agents.lab.no_changes_diff}</span>
               )}
             </div>
             {d.changed && (
-              <div className="typo-body leading-relaxed">
+              <div className="typo-body">
                 {d.diff.map((seg, i) => (
                   <span
                     key={i}

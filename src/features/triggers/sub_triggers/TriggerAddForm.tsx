@@ -209,14 +209,14 @@ export function TriggerAddForm({
       {triggerType === 'schedule' && (
         <div className="space-y-3">
           <div>
-            <label className="block typo-body font-medium text-foreground mb-1.5">{t.triggers.schedule_mode_label}</label>
+            <label className="block typo-body text-foreground mb-1.5">{t.triggers.schedule_mode_label}</label>
             <div className="flex gap-1.5">
               <button type="button" onClick={() => { setScheduleMode('interval'); setValidationError(null); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium transition-all border ${scheduleMode === 'interval' ? 'bg-primary/15 text-primary border-primary/30' : 'bg-secondary/30 text-foreground border-border/30 hover:text-muted-foreground hover:bg-secondary/50'}`}>
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body transition-all border ${scheduleMode === 'interval' ? 'bg-primary/15 text-primary border-primary/30' : 'bg-secondary/30 text-foreground border-border/30 hover:text-muted-foreground hover:bg-secondary/50'}`}>
                 <Clock className="w-3.5 h-3.5" /> {t.triggers.schedule.mode_interval}
               </button>
               <button type="button" onClick={() => { setScheduleMode('cron'); setValidationError(null); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium transition-all border ${scheduleMode === 'cron' ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' : 'bg-secondary/30 text-foreground border-border/30 hover:text-muted-foreground hover:bg-secondary/50'}`}>
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body transition-all border ${scheduleMode === 'cron' ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' : 'bg-secondary/30 text-foreground border-border/30 hover:text-muted-foreground hover:bg-secondary/50'}`}>
                 <CalendarClock className="w-3.5 h-3.5" /> {t.triggers.schedule.mode_cron}
               </button>
             </div>
@@ -247,7 +247,7 @@ export function TriggerAddForm({
           type="button"
           onClick={handleAddTrigger}
           disabled={isScheduleInvalid || isCreating}
-          className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-foreground rounded-modal typo-body font-medium transition-all shadow-elevation-3 shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary"
+          className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-foreground rounded-modal typo-body transition-all shadow-elevation-3 shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary"
         >
           {t.triggers.add.create_trigger}
         </button>

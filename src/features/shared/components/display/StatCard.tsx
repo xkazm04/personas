@@ -76,7 +76,7 @@ export function StatCard({
         )}
       </div>
       <div className="flex items-end gap-2">
-        <span className="typo-data-lg font-semibold text-foreground/90 tabular-nums leading-none">
+        <span className="typo-data-lg text-foreground/90">
           {value}
         </span>
         {delta && delta.direction !== 'flat' && (

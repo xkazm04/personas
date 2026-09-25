@@ -65,7 +65,7 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
         <div className="flex flex-col gap-2">
           {triggers.map((tr, i) => (
             <div key={i} className="flex flex-col gap-0.5">
-              <span className="typo-body font-semibold text-foreground">{prettyTriggerType(t, tr.trigger_type)}</span>
+              <span className="typo-body text-foreground">{prettyTriggerType(t, tr.trigger_type)}</span>
               {triggerDetail(t, tr) && <span className="typo-label text-foreground">{triggerDetail(t, tr)}</span>}
             </div>
           ))}
@@ -115,7 +115,7 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
                   <ConnectorIcon meta={meta} size="w-4 h-4" />
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <span className="typo-body font-semibold text-foreground truncate">{cn.label || cn.name}</span>
+                  <span className="typo-body text-foreground truncate">{cn.label || cn.name}</span>
                   {cn.purpose && <span className="typo-label text-foreground truncate">{cn.purpose}</span>}
                 </div>
               </div>
@@ -148,7 +148,7 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
                   <Icon className="w-4 h-4" style={{ color: tint }} />
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <span className="typo-body font-semibold text-foreground capitalize">{ch.type}</span>
+                  <span className="typo-body text-foreground capitalize">{ch.type}</span>
                   {ch.description && <span className="typo-label text-foreground truncate">{ch.description}</span>}
                 </div>
               </div>
@@ -161,14 +161,14 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
     case 'review': {
       const review = DIM_CONTENT.review(row);
       return review
-        ? <p className="typo-body text-foreground leading-relaxed">{review}</p>
+        ? <p className="typo-body text-foreground">{review}</p>
         : <EmptyNote label={t.templates.chronology.empty_review} />;
     }
 
     case 'memory': {
       const memory = DIM_CONTENT.memory(row);
       return memory
-        ? <p className="typo-body text-foreground leading-relaxed">{memory}</p>
+        ? <p className="typo-body text-foreground">{memory}</p>
         : <EmptyNote label={t.templates.chronology.empty_memory} />;
     }
 
@@ -179,7 +179,7 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
         <div className="flex flex-col gap-1.5">
           {events.map((e, i) => (
             <div key={i} className="flex flex-col gap-0.5 p-1.5 rounded bg-primary/5 border border-card-border">
-              <span className="typo-body font-semibold text-foreground">{e.event_type}</span>
+              <span className="typo-body text-foreground">{e.event_type}</span>
               {e.description && <span className="typo-label text-foreground">{e.description}</span>}
             </div>
           ))}
@@ -190,7 +190,7 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
     case 'error': {
       const error = DIM_CONTENT.error(row);
       return error
-        ? <p className="typo-body text-foreground leading-relaxed">{error}</p>
+        ? <p className="typo-body text-foreground">{error}</p>
         : <EmptyNote label={t.templates.chronology.empty_error} />;
     }
 

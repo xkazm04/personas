@@ -140,7 +140,7 @@ export function ComposerConnectorsPickerModal({
             type="button"
             onClick={applyNow}
             disabled={draft.length === 0 && selected.length === 0}
-            className="px-4 py-1.5 rounded-interactive bg-primary/30 hover:bg-primary/50 border border-primary/50 text-foreground typo-body font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-4 py-1.5 rounded-interactive bg-primary/30 hover:bg-primary/50 border border-primary/50 text-foreground typo-body transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ boxShadow: "0 0 20px rgba(96,165,250,0.25)" }}
           >
             {draft.length === 0 ? t.agents.glyph_apps_clear : tx(draft.length === 1 ? t.agents.glyph_apps_attach_one : t.agents.glyph_apps_attach_other, { count: draft.length })}

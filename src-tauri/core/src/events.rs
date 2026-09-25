@@ -296,6 +296,13 @@ event_names! {
     // "I asked" and "I was asked" halves of the UI. Fired only on a genuine
     // state change — a note redelivered after a reconnect is applied silently.
     REMOTE_JOB_UPDATED         => "network:remote-job-updated",
+    // One remote session's view changed on the ORIGINATING device (a mirror
+    // frame arrived, the job changed status, or liveness turned it `unknown`).
+    // Payload: `RemoteSessionView`.
+    REMOTE_SESSION_UPDATED     => "network:remote-session-updated",
+    // One chunk of a subscribed remote session's terminal output (lossy tail).
+    // Payload: `RemoteSessionOutputChunk`.
+    REMOTE_SESSION_OUTPUT      => "network:remote-session-output",
     // Payload: `RemoteJobTurnEvent` — the answering turn for a job another
     // paired device asked THIS one to run, started or finished. That turn runs
     // with `suppress_chat`, so this is the ONLY signal the frontend gets; the
@@ -377,6 +384,10 @@ event_names! {
     MCP_APPROVAL_REQUEST         => "athena://mcp/approval-request",
     ORCHESTRATION_DIGEST_CHANGED => "athena://orchestration/digest-changed",
     FLEET_AUTO_DECIDED           => "athena://fleet/auto-decided",
+    // The Companions CATEGORY's standing, published whenever a term of it
+    // changes: a switch, a star, a delete, an onboarding finish. `companions`
+    // rather than `athena` because it carries all three companions.
+    COMPANIONS_STATUS_CHANGED    => "companions://status-changed",
     STANDARDS_SCAN_STATUS        => "dev_tools_standards_scan_status",
     RADIO_STATE                  => "radio:state",
     KB_EXTRACTION_PROGRESS       => "kb-extraction-progress",

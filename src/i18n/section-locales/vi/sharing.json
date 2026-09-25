@@ -287,5 +287,8 @@
   "verifying_bundle": "Đang xác minh gói…",
   "verifying_enclave": "Đang xác minh enclave…",
   "view_details": "Xem chi tiết",
-  "your_identity": "Danh tính của bạn"
+  "your_identity": "Danh tính của bạn",
+  "job_kind_fleet_session": "Phiên Fleet",
+  "job_kind_instruction": "Chỉ thị",
+  "job_receipt_title": "Kết quả đã trả về"
 }

@@ -309,7 +309,7 @@ function QwenKeyRow() {
     <div className="rounded-card border border-primary/10 bg-secondary/20 p-3 space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="typo-body font-medium text-foreground">{s.provider_qwen_label}</span>
+          <span className="typo-body text-foreground">{s.provider_qwen_label}</span>
           {configured && (
             <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input bg-secondary/40 border border-primary/15 text-foreground">
               <Check className="w-3 h-3" />
@@ -337,7 +337,7 @@ function QwenKeyRow() {
           <PasswordToggleField
             className="flex-1"
             inputClassName="w-full px-3 py-1.5 typo-code rounded-card bg-secondary/50 border border-primary/15
-              text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/40 font-mono"
+              text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/40"
             value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder="sk-..."
@@ -360,7 +360,7 @@ function QwenKeyRow() {
       ) : (
         <div onClick={() => setEditing(true)} className="flex items-center gap-2 cursor-pointer group">
           <div className="flex-1 px-3 py-1.5 typo-code rounded-card border border-primary/10 bg-secondary/30
-            group-hover:border-primary/20 transition-all font-mono min-h-[32px] flex items-center">
+            group-hover:border-primary/20 transition-all min-h-[32px] flex items-center">
             <span className="text-foreground">{'•'.repeat(16)}</span>
           </div>
         </div>
@@ -403,7 +403,7 @@ function KeyEntryRow({
       {/* Header row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="typo-body font-medium text-foreground">{s[entry.def.labelKey]}</span>
+          <span className="typo-body text-foreground">{s[entry.def.labelKey]}</span>
           <ConnectionBadge state={entry.connectionState} />
         </div>
         <div className="flex items-center gap-1.5">
@@ -451,7 +451,7 @@ function KeyEntryRow({
               placeholder={entry.def.placeholder}
               className="flex-1 px-3 py-1.5 typo-code rounded-card bg-secondary/50 border border-primary/15
                 text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/40
-                font-mono"
+                "
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && isDirty) onSave();
@@ -463,7 +463,7 @@ function KeyEntryRow({
               className="flex-1"
               inputClassName="w-full px-3 py-1.5 typo-code rounded-card bg-secondary/50 border border-primary/15
                 text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/40
-                font-mono"
+                "
               value={entry.value}
               onChange={(e) => onChange(e.target.value)}
               placeholder={entry.def.placeholder}
@@ -499,7 +499,7 @@ function KeyEntryRow({
           className="flex items-center gap-2 cursor-pointer group"
         >
           <div className="flex-1 px-3 py-1.5 typo-code rounded-card border border-primary/10 bg-secondary/30
-            group-hover:border-primary/20 transition-all font-mono min-h-[32px] flex items-center">
+            group-hover:border-primary/20 transition-all min-h-[32px] flex items-center">
             {hasValue ? (
               <span className="text-foreground">
                 {entry.revealed ? entry.value : maskValue(entry.savedValue, entry.def.isUrl)}

@@ -24,7 +24,7 @@ export function FleetRunSessionRow({ session }: { session: FleetRunSession }) {
           className={`h-2 w-2 flex-shrink-0 rounded-full ${meta?.dot ?? 'bg-foreground/40'}`}
           aria-hidden="true"
         />
-        <span className="min-w-0 flex-1 truncate typo-body font-medium">{session.label}</span>
+        <span className="min-w-0 flex-1 truncate typo-body">{session.label}</span>
         <span className={`typo-caption ${meta?.text ?? 'text-foreground'}`}>
           {meta ? t.plugins.fleet[meta.labelKey] : session.state}
         </span>

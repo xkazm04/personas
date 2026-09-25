@@ -29,7 +29,7 @@ export function CategoryCountRow({
         <Icon className="w-3.5 h-3.5" />
       </span>
       <span className="typo-body text-foreground flex-1 min-w-0 truncate">{label}</span>
-      <span className="typo-data-lg font-semibold text-foreground tabular-nums">{selected}</span>
+      <span className="typo-data-lg text-foreground">{selected}</span>
       <span className="typo-caption text-foreground tabular-nums">/ {total}</span>
     </div>
   );
@@ -51,7 +51,7 @@ export function KpiSetupCard({ picker }: { picker: ExportPicker }) {
           <Target className="w-4 h-4" />
         </span>
         <div className="flex-1 min-w-0">
-          <div className="typo-body font-medium text-foreground">{p.kpi_setup_title}</div>
+          <div className="typo-body text-foreground">{p.kpi_setup_title}</div>
         </div>
         <AccessibleToggle
           checked={picker.includeKpiSetup}
@@ -90,7 +90,7 @@ export function SecuritySection({ picker }: { picker: ExportPicker }) {
           <Brain className="w-4 h-4" />
         </span>
         <div className="flex-1 min-w-0">
-          <div className="typo-body font-medium text-foreground">{p.memories_title}</div>
+          <div className="typo-body text-foreground">{p.memories_title}</div>
         </div>
         <AccessibleToggle
           checked={picker.includeMemories}
@@ -108,7 +108,7 @@ export function SecuritySection({ picker }: { picker: ExportPicker }) {
           gated ? 'border-amber-500/30 bg-amber-500/5' : 'border-primary/10 bg-secondary/5'
         }`}
       >
-        <label className="flex items-center gap-2 typo-body font-medium text-foreground">
+        <label className="flex items-center gap-2 typo-body text-foreground">
           <KeyRound className="w-4 h-4 text-amber-300" />
           {picker.passphraseRequired ? p.encryption_title_required : p.encryption_title}
         </label>
@@ -127,13 +127,13 @@ export function SecuritySection({ picker }: { picker: ExportPicker }) {
         ) : gated ? (
           <p
             data-testid="portability-passphrase-gate"
-            className="flex items-start gap-1.5 typo-caption text-amber-400 leading-snug"
+            className="flex items-start gap-1.5 typo-caption text-amber-400"
           >
             <ShieldAlert className="w-3.5 h-3.5 mt-px flex-shrink-0" />
             {p.passphrase_required_hint}
           </p>
         ) : (
-          <p className="typo-caption text-foreground leading-snug">{p.encryption_hint}</p>
+          <p className="typo-caption text-foreground">{p.encryption_hint}</p>
         )}
       </div>
     </div>
@@ -174,7 +174,7 @@ export function DependencyNotes() {
   return (
     <div className="flex items-start gap-2 rounded-card bg-blue-500/5 border border-blue-500/10 px-3 py-2.5">
       <Info className="w-4 h-4 text-blue-300 mt-0.5 flex-shrink-0" />
-      <p className="typo-caption text-foreground leading-relaxed">{p.dependency_note}</p>
+      <p className="typo-caption text-foreground">{p.dependency_note}</p>
     </div>
   );
 }
@@ -211,7 +211,7 @@ export function ExportButton({
       onClick={onClick}
       disabled={disabled}
       data-testid="export-confirm-button"
-      className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-modal typo-body font-semibold
+      className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-modal typo-body
         bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/20
         transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${className ?? ''}`}
     >

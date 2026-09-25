@@ -2151,7 +2151,14 @@
     "header_subtitle_editing": "Modification de {name}",
     "header_subtitle_new": "Composez un nouvel agent à partir de zéro",
     "header_title": "Création",
-    "new_agent": "Nouvel agent"
+    "new_agent": "Nouvel agent",
+    "promote_receipt_connect": "Ouvrir les connecteurs",
+    "promote_receipt_connectors": "Reste à connecter : {names}",
+    "promote_receipt_failed_title": "La promotion n'a pas abouti",
+    "promote_receipt_later": "Plus tard",
+    "promote_receipt_needs_setup_title": "Promu, mais une configuration est nécessaire avant qu'il puisse fonctionner",
+    "promote_receipt_retry": "Relancer la promotion",
+    "promote_receipt_unverified": "Sa première exécution de contrôle n'a pas produit de valeur. Vérifiez ses connecteurs avant de vous y fier."
   },
   "matrix_tab": {
     "loading": "Chargement de la matrice",
@@ -2708,7 +2715,7 @@
     "all_saved": "Toutes les modifications enregistrées",
     "changed": "{sections} modifié(es)",
     "cli_awareness": "Connaissance de la session CLI Claude",
-    "cli_awareness_desc": "Permet à ce persona de lire les tours récents de votre session CLI Claude interactive active comme contexte supplémentaire. Nécessite que l’option globale de Companion → Configuration → Signaux sensoriels soit également activée. Lecture seule — votre session CLI n’est jamais modifiée.",
+    "cli_awareness_desc": "Permet à ce persona de lire les tours récents de votre session CLI Claude interactive active comme contexte supplémentaire. Nécessite que l’option globale d’Athena → Configuration → Signaux sensoriels soit également activée. Lecture seule — votre session CLI n’est jamais modifiée.",
     "execution": "Exécution",
     "execution_retention": "Rétention des exécutions",
     "failed_health_watch": "Échec de la mise à jour du paramètre de surveillance de santé",
@@ -3275,5 +3282,16 @@
     "parse": "Analyser",
     "paste_json": "Ou collez du JSON directement",
     "paste_placeholder": "Collez votre JSON de workflow ici…"
+  },
+  "promote_preview": {
+    "blocked_tooltip": "La promotion serait refusée : {reason}",
+    "heading": "Ce que fera la promotion",
+    "needs_setup": "Configuration requise d'abord : {connectors}",
+    "refused": "La promotion refusera ce brouillon",
+    "refused_hint": "Affinez le brouillon pour corriger cela, puis promouvez-le.",
+    "repaired": "Ajusté par la construction",
+    "runs_manual": "S'exécute quand vous le lancez",
+    "runs_next": "Déclencheur {type}, prochaine exécution {time}",
+    "runs_on_event": "Déclencheur {type}, s'exécute quand il se déclenche"
   }
 }

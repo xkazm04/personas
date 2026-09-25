@@ -151,7 +151,7 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
         <div className="w-6 h-6 rounded-card bg-violet-500/10 border border-violet-500/20 flex items-center justify-center flex-shrink-0">
           <RotateCw className="w-3 h-3 text-violet-400" />
         </div>
-        <h3 className="typo-heading font-bold text-foreground/90 uppercase tracking-wider truncate">{t.overview.analytics_dashboard.credential_rotation}</h3>
+        <h3 className="typo-heading text-foreground/90 uppercase truncate">{t.overview.analytics_dashboard.credential_rotation}</h3>
         {stats.total > 0 && (
           <StatusBadge accent="violet" size="sm" className="font-bold flex-shrink-0">
             {stats.total}
@@ -194,7 +194,7 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
             <div className="w-10 h-10 rounded-modal bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-2 opacity-70">
               <RotateCw className="w-4 h-4 text-violet-400" />
             </div>
-            <p className="typo-body font-medium text-foreground">{t.overview.analytics_dashboard.no_rotation_policies}</p>
+            <p className="typo-body text-foreground">{t.overview.analytics_dashboard.no_rotation_policies}</p>
             <p className="typo-caption text-foreground mt-0.5">{t.overview.analytics_dashboard.no_rotation_hint}</p>
           </div>
         </div>
@@ -242,7 +242,7 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
 
                 {/* Credential info — single line: name · service */}
                 <div className="flex-1 min-w-0 flex items-baseline gap-1.5">
-                  <span className="typo-body font-medium text-foreground/90 truncate">{item.credentialName}</span>
+                  <span className="typo-body text-foreground/90 truncate">{item.credentialName}</span>
                   <span className="typo-caption text-foreground truncate">· {item.serviceType}</span>
                   {item.status.consecutive_failures > 0 && (
                     <StatusBadge
@@ -259,7 +259,7 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
                 {/* Countdown */}
                 {countdown && (
                   <span className={`typo-caption font-mono flex-shrink-0 ${
-                    isDue ? 'text-amber-400 font-semibold' : 'text-foreground'
+                    isDue ? 'text-amber-400' : 'text-foreground'
                   }`}>
                     {countdown}
                   </span>

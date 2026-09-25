@@ -179,6 +179,7 @@
     "cancelled": "Cancelado",
     "completed": "Completado",
     "failed": "Fallido",
+    "queued": "En cola",
     "pending": "Pendiente",
     "refused": "Rechazado",
     "running": "En curso"

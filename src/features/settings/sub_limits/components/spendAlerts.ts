@@ -15,6 +15,8 @@
 
 import { createThrottledLocalStorage } from '@/lib/throttledStorage';
 import { silentCatch } from '@/lib/silentCatch';
+import { parseNotificationPrefs } from '@/lib/notifications/notificationPrefs';
+import { bucketMonthlySpend, parseCeiling, type SpendPoint } from './monthlySpend';
 
 export type SpendAlertBand = 'approaching' | 'over';
 
@@ -64,6 +66,43 @@ export function decideSpendAlert({
  */
 export function bandsRetiredBy(band: SpendAlertBand): SpendAlertBand[] {
   return band === 'over' ? ['approaching', 'over'] : ['approaching'];
+}
+
+export interface SpendAlertTickInput {
+  /** Raw `monthly_cost_ceiling_usd` setting value. */
+  ceilingRaw: string | null;
+  /** Raw `notification_prefs` blob; its `spend_alerts` field gates the alert. */
+  prefsRaw: string | null;
+  /** Daily cost points (`get_metrics_chart_data`), bucketed here by month. */
+  chartPoints: readonly SpendPoint[];
+  /**
+   * Bands already delivered: a list for the month being judged, or a reader
+   * keyed by month (`readSentBands`), since the month is only known once the
+   * points are bucketed.
+   */
+  alreadySent: readonly SpendAlertBand[] | ((monthKey: string) => readonly SpendAlertBand[]);
+}
+
+/**
+ * The runner half: raw settings + chart points in, the band to emit out. It
+ * used to live in a LimitsSettings effect, so it ran only while the operator
+ * was looking at the Limits tab; `SpendAlertWatcher` now runs it always-on.
+ * Pure: the caller records the band and emits the notification.
+ */
+export function runSpendAlertTick({
+  ceilingRaw,
+  prefsRaw,
+  chartPoints,
+  alreadySent,
+}: SpendAlertTickInput): { monthKey: string; band: SpendAlertBand } | null {
+  if (!parseNotificationPrefs(prefsRaw).spend_alerts) return null;
+  const ceiling = parseCeiling(ceilingRaw);
+  if (ceiling <= 0) return null;
+  const head = bucketMonthlySpend(chartPoints)[0];
+  if (!head) return null;
+  const sent = typeof alreadySent === 'function' ? alreadySent(head.key) : alreadySent;
+  const band = decideSpendAlert({ monthKey: head.key, spend: head.spend, ceiling, alreadySent: sent });
+  return band ? { monthKey: head.key, band } : null;
 }
 
 const STORAGE_KEY = 'spend_ceiling_alerts_sent';

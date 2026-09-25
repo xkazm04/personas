@@ -84,7 +84,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
     <div className="space-y-4">
       {/* Persona selector */}
       <div>
-        <label htmlFor="gitops-persona" className="block typo-body font-medium text-foreground mb-1.5">
+        <label htmlFor="gitops-persona" className="block typo-body text-foreground mb-1.5">
           {t.gitlab.persona_label}
         </label>
         <select
@@ -112,7 +112,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
             <button
               type="button"
               onClick={() => setShowBranches(!showBranches)}
-              className="w-full flex items-center gap-2 px-3 py-2.5 typo-body font-medium text-foreground hover:bg-secondary/20 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2.5 typo-body text-foreground hover:bg-secondary/20 transition-colors"
             >
               {showBranches ? (
                 <ChevronDown className="w-4 h-4 text-foreground" />
@@ -150,10 +150,10 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
                     >
                       <GitBranch className="w-3.5 h-3.5 text-amber-400/70 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <span className="typo-body font-medium text-foreground">
+                        <span className="typo-body text-foreground">
                           {branch.environment}
                         </span>
-                        <span className="ml-2 typo-code text-foreground font-mono">
+                        <span className="ml-2 typo-code text-foreground">
                           {branch.commitSha.slice(0, 8)}
                         </span>
                       </div>
@@ -173,7 +173,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <History className="w-4 h-4 text-amber-400" />
-              <h3 className="typo-body font-medium text-foreground">{t.gitlab.version_history}</h3>
+              <h3 className="typo-body text-foreground">{t.gitlab.version_history}</h3>
             </div>
             <button
               type="button"
@@ -271,7 +271,7 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
         {/* Version info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="typo-body font-medium text-foreground/90">
+            <span className="typo-body text-foreground/90">
               {version.version}
             </span>
             {version.isCurrent && (
@@ -308,7 +308,7 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
                   type="button"
                   onClick={onRollback}
                   disabled={rollingBack}
-                  className="flex items-center gap-1 px-2.5 py-1.5 typo-caption font-medium rounded-card bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/15 transition-colors disabled:opacity-40"
+                  className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/15 transition-colors disabled:opacity-40"
                 >
                   {rollingBack ? (
                     <LoadingSpinner size="xs" />
@@ -330,7 +330,7 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
               <button
                 type="button"
                 onClick={onRollback}
-                className="flex items-center gap-1 px-2.5 py-1.5 typo-caption font-medium rounded-card hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20 text-foreground hover:text-amber-400 transition-colors"
+                className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20 text-foreground hover:text-amber-400 transition-colors"
                 title={tx(t.gitlab.rollback_to_version, { version: version.version })}
               >
                 <RotateCcw className="w-3.5 h-3.5" />

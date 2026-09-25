@@ -85,7 +85,7 @@ export function TriageEmpty({ title, body }: { title: string; body: string }) {
   return (
     <div className="h-full flex flex-col items-center justify-center gap-1 px-6 text-center py-12">
       <Target className="w-7 h-7 text-foreground/15 mb-1" aria-hidden />
-      <p className="typo-title text-foreground">{title}</p>
+      <p className="typo-title">{title}</p>
       <p className="typo-caption text-foreground/70 max-w-[42ch]">{body}</p>
     </div>
   );

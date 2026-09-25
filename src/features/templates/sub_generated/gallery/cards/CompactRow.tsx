@@ -35,7 +35,7 @@ export function CompactRow({
       data-testid={`template-row-${review.id}`}
     >
       <div className="flex-1 min-w-0 flex items-center gap-2">
-        <span className="typo-body font-medium template-name-themed truncate">
+        <span className="typo-body template-name-themed truncate">
           {highlightMatch(review.test_case_name, searchQuery)}
         </span>
         {isAiResult && (
@@ -75,7 +75,7 @@ export function CompactRow({
       </div>
       <div className="flex items-center gap-3 flex-shrink-0">
         {review.adoption_count > 0 && (
-          <span className="inline-flex items-center gap-1 typo-code font-mono text-emerald-400/70">
+          <span className="inline-flex items-center gap-1 typo-code text-emerald-400/70">
             <Download className="w-2.5 h-2.5" />
             {review.adoption_count}
           </span>

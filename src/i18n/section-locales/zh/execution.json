@@ -32,5 +32,9 @@
   "tool_count_other": "{count} 个工具",
   "trust": "信任",
   "unpin_mini_player": "取消固定迷你播放器",
-  "waiting_for_output": "等待输出…"
+  "waiting_for_output": "等待输出…",
+  "bg_failed": "{count} 个失败",
+  "bg_open": "打开运行",
+  "bg_running": "{count} 个运行中",
+  "bg_stop": "停止运行"
 }

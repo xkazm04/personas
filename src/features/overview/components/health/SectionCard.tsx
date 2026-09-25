@@ -121,7 +121,7 @@ export function SectionCard({
                 {check.id === 'ollama_api_key' && !ipcError && (
                   <Button
                     variant="accent"
-                    accentColor="emerald"
+                    tone="success"
                     size="xs"
                     onClick={onShowOllama}
                     icon={<Key className="w-3 h-3" />}
@@ -133,7 +133,7 @@ export function SectionCard({
                 {check.id === 'litellm_proxy' && !ipcError && (
                   <Button
                     variant="accent"
-                    accentColor="sky"
+                    tone="info"
                     size="xs"
                     onClick={onShowLiteLLM}
                     icon={<Key className="w-3 h-3" />}
@@ -157,7 +157,7 @@ export function SectionCard({
           <div className="px-4 py-2.5 space-y-1.5">
             <Button
               variant="accent"
-              accentColor="amber"
+              tone="warning"
               size="sm"
               onClick={onSignIn}
               disabled={authLoading}
@@ -235,7 +235,7 @@ function ClaudeDesktopMcpButton({
     <div className="mt-2 space-y-1">
       <Button
         variant="accent"
-        accentColor={isConnected ? 'rose' : 'violet'}
+        tone={isConnected ? 'error' : 'agent'}
         size="xs"
         onClick={handleToggle}
         disabled={busy}

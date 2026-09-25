@@ -15,7 +15,8 @@ import type { PersonaCardModel } from '../monitorModel';
 import { groupFleet, tallyStates, type SquareState, type TeamGroup } from './fleetGridModel';
 import { filterCards, isBoardFilterActive, NO_BOARD_FILTER, type BoardFilter } from './boardFilter';
 import { contestOfGroupKey, type SessionGrouping } from './fleetSessionModel';
-import { columnRows, type ColumnRow } from './gridGeometry';
+import { columnRows, remoteRows, type ColumnRow } from './gridGeometry';
+import { deviceColumnId, NO_REMOTE, withOrphansOnDevices, type RemoteGrouping } from './remote/remoteBoardModel';
 
 /** Stable empty list so a session-less column never rebuilds its rows. */
 const EMPTY_SESSIONS: FleetSession[] = [];
@@ -42,6 +43,12 @@ export interface BoardColumn extends TeamGroup {
    * the run label.
    */
   contestProjectId: string | null;
+  /**
+   * Set on an "On <device>" column: remote sessions no local project claims
+   * (see `remote/remoteBoardModel`). It has no roster, no project switch and
+   * no rail scope, so the board paints it with its own header.
+   */
+  remoteDevice?: { peerId: string; displayName: string };
 }
 
 /**
@@ -85,6 +92,8 @@ export function useBoardModel(
   teams: PersonaTeam[],
   sessionGroups: SessionGrouping,
   filter: BoardFilter = NO_BOARD_FILTER,
+  /** Sessions this device sent to paired devices. A filtered board carries none. */
+  remote: RemoteGrouping = NO_REMOTE,
 ): BoardModel {
   const visible = useMemo(() => filterCards(cards, filter), [cards, filter]);
   const grouped = useMemo(() => groupFleet(visible, personas, teams), [visible, personas, teams]);
@@ -131,15 +140,36 @@ export function useBoardModel(
     return [...groups, ...grouped.teams.filter((g) => g.workspaceId === null)];
   }, [grouped.teams]);
 
-  const teamColumns = useMemo(
-    (): BoardColumn[] => ordered.map((g) => ({
+  // REMOTE SESSIONS follow the local ones: into their project's column when a
+  // local project shares the git remote, else into one trailing "On <device>"
+  // column per device. No remote sessions = no extra column, ever.
+  const teamColumns = useMemo((): BoardColumn[] => {
+    const own: BoardColumn[] = ordered.map((g) => ({
       ...g,
-      rows: columnRows(g.cards, filtered ? EMPTY_SESSIONS : (sessionGroups.byTeam.get(g.teamId) ?? EMPTY_SESSIONS), g.teamName),
+      rows: columnRows(
+        g.cards,
+        filtered ? EMPTY_SESSIONS : (sessionGroups.byTeam.get(g.teamId) ?? EMPTY_SESSIONS),
+        g.teamName,
+        filtered ? [] : (remote.byTeam.get(g.teamId) ?? []),
+      ),
       contestId: null,
       contestProjectId: null,
-    })),
-    [ordered, sessionGroups.byTeam, filtered],
-  );
+    }));
+    if (filtered || (remote.byTeam.size === 0 && remote.byDevice.length === 0)) return own;
+    const devices = withOrphansOnDevices(remote, new Set(ordered.map((g) => g.teamId)));
+    const deviceColumns: BoardColumn[] = devices.map((d) => ({
+      teamId: deviceColumnId(d.peerId),
+      teamName: d.displayName,
+      teamColor: '',
+      workspaceId: null,
+      cards: [],
+      rows: remoteRows(d.views),
+      contestId: null,
+      contestProjectId: null,
+      remoteDevice: { peerId: d.peerId, displayName: d.displayName },
+    }));
+    return [...own, ...deviceColumns];
+  }, [ordered, sessionGroups.byTeam, filtered, remote]);
 
   // ONE COLUMN PER CONTEST, after the team columns. A contest's seats are one
   // piece of work spread over several engines, so they read as a lane of their

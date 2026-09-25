@@ -17,7 +17,7 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
       >
         <div className="rounded-modal border border-amber-500/20 bg-amber-500/5 p-3 space-y-2.5">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5 typo-body font-medium text-amber-400">
+            <div className="flex items-center gap-1.5 typo-body text-amber-400">
               <FlaskConical className="w-3.5 h-3.5" />
               {t.triggers.dry_run_result_title}
             </div>
@@ -44,8 +44,8 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
           {/* Simulated Event */}
           {dryRunResult.simulated_event && (
             <div className="space-y-1.5">
-              <div className="typo-body text-foreground font-medium">{t.triggers.simulated_event}</div>
-              <div className="rounded-card bg-background/40 border border-primary/8 p-2 space-y-1 typo-code font-mono">
+              <div className="typo-body text-foreground">{t.triggers.simulated_event}</div>
+              <div className="rounded-card bg-background/40 border border-primary/8 p-2 space-y-1 typo-code">
                 <div className="flex items-center gap-1.5">
                   <Radio className="w-3 h-3 text-amber-400/60" />
                   <span className="text-amber-400">{dryRunResult.simulated_event.event_type}</span>
@@ -65,7 +65,7 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
           {/* Matched Subscriptions */}
           {dryRunResult.matched_subscriptions.length > 0 && (
             <div className="space-y-1.5">
-              <div className="typo-body text-foreground font-medium">
+              <div className="typo-body text-foreground">
                 {tx(t.triggers.matched_subscriptions_count, { count: dryRunResult.matched_subscriptions.length })}
               </div>
               <div className="space-y-1">

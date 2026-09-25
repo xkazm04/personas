@@ -160,7 +160,7 @@ export function CrashLogsSection() {
                   </button>
                   {selectedLog === log.filename && (
                     <div className="border-t border-primary/5 px-3 py-2">
-                      <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto leading-relaxed">
+                      <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
                         {log.content}
                       </pre>
                     </div>
@@ -187,12 +187,12 @@ export function CrashLogsSection() {
                         {log.createdAt}{log.appVersion ? ` (v${log.appVersion})` : ''}
                       </p>
                       {log.stack && (
-                        <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto leading-relaxed">
+                        <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
                           {log.stack}
                         </pre>
                       )}
                       {log.componentStack && (
-                        <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-24 overflow-y-auto leading-relaxed mt-1">
+                        <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-24 overflow-y-auto mt-1">
                           <DebtText k="auto_component_stack_f77592eb" />{'\n'}{log.componentStack}
                         </pre>
                       )}
@@ -219,7 +219,7 @@ export function CrashLogsSection() {
                         {log.timestamp}
                       </p>
                       {log.stack && (
-                        <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto leading-relaxed">
+                        <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
                           {log.stack}
                         </pre>
                       )}

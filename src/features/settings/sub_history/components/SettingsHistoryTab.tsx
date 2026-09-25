@@ -139,7 +139,7 @@ export default function SettingsHistoryTab() {
           </div>
         )}
 
-        <p className="typo-body text-foreground leading-relaxed mb-4">{s.description}</p>
+        <p className="typo-body text-foreground mb-4">{s.description}</p>
 
         <div className="flex items-center gap-3 mb-3">
           <label className="typo-caption text-foreground flex items-center gap-1.5">
@@ -204,7 +204,7 @@ export default function SettingsHistoryTab() {
                     <span className="typo-caption text-foreground uppercase tracking-wider">
                       {categoryLabel(entry.category)}
                     </span>
-                    <span className="typo-body font-medium text-foreground truncate flex-1 text-left">
+                    <span className="typo-body text-foreground truncate flex-1 text-left">
                       {entry.settingKey}
                     </span>
                     {entry.actor && (

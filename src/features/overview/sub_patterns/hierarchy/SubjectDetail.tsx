@@ -147,7 +147,7 @@ export function SubjectDetail({
     <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
       <div className="flex-shrink-0 px-5 pt-4 pb-3 border-b border-border/40">
         <div className="flex items-center gap-2.5 flex-wrap">
-          <h2 className="typo-section-title text-foreground">{subject.title}</h2>
+          <h2 className="typo-section-title">{subject.title}</h2>
           <HierarchyStatusChip status={subject.status} />
           {categoryTitle && (
             <>
@@ -159,7 +159,7 @@ export function SubjectDetail({
           )}
         </div>
         {subject.summary && (
-          <p className="typo-body text-foreground mt-1.5 leading-relaxed">{subject.summary}</p>
+          <p className="typo-body text-foreground mt-1.5">{subject.summary}</p>
         )}
         <div className="mt-3">
           <SegmentedTabs<DetailTab>
@@ -230,7 +230,7 @@ export function SubjectDetail({
                       <LawChips laws={tech.laws} graph={graph} onOpenLaw={onOpenLaw} />
                     </span>
                     {tech.summary && (
-                      <span className="block typo-caption text-foreground mt-1 leading-relaxed">
+                      <span className="block typo-caption text-foreground mt-1">
                         {tech.summary}
                       </span>
                     )}
@@ -299,7 +299,7 @@ export function SubjectDetail({
           <div className="space-y-5">
             <section>
               {/* muted-ok: section band header, structural chrome */}
-              <h3 className="typo-label uppercase tracking-wide text-foreground/50 mb-2">
+              <h3 className="typo-label uppercase text-foreground/50 mb-2">
                 {p.evidence_heading}
               </h3>
               {subject.evidence.length === 0 && (
@@ -320,7 +320,7 @@ export function SubjectDetail({
 
             {subject.counterEvidence.length > 0 && (
               <section>
-                <h3 className="typo-label uppercase tracking-wide text-status-warning mb-2">
+                <h3 className="typo-label uppercase text-status-warning mb-2">
                   {p.counter_evidence_heading}
                 </h3>
                 <ul className="space-y-1">
@@ -339,7 +339,7 @@ export function SubjectDetail({
 
             <section>
               {/* muted-ok: section band header, structural chrome */}
-              <h3 className="typo-label uppercase tracking-wide text-foreground/50 mb-2">
+              <h3 className="typo-label uppercase text-foreground/50 mb-2">
                 {p.adherence_heading}
               </h3>
               {!scorecard?.source.present ? (
@@ -451,7 +451,7 @@ export function SubjectDetail({
 
             <section>
               {/* muted-ok: section band header, structural chrome */}
-              <h3 className="typo-label uppercase tracking-wide text-foreground/50 mb-2">
+              <h3 className="typo-label uppercase text-foreground/50 mb-2">
                 {p.deviations_heading}
               </h3>
               {subject.deviations.length === 0 && (

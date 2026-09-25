@@ -287,5 +287,8 @@
   "verifying_bundle": "번들 확인 중…",
   "verifying_enclave": "엔클레이브 확인 중…",
   "view_details": "세부 정보 보기",
-  "your_identity": "내 정체성"
+  "your_identity": "내 정체성",
+  "job_kind_fleet_session": "Fleet 세션",
+  "job_kind_instruction": "지시",
+  "job_receipt_title": "반환된 작업"
 }

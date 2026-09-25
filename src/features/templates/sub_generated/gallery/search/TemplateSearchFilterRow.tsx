@@ -55,7 +55,7 @@ export function TemplateSearchControls({
     <>
       {/* Count */}
       {total > 0 && (
-        <span className="typo-data text-foreground tabular-nums flex-shrink-0 hidden sm:inline">
+        <span className="typo-data text-foreground flex-shrink-0 hidden sm:inline">
           {loadedCount < total ? `${loadedCount}/${total}` : `${total}`}
         </span>
       )}

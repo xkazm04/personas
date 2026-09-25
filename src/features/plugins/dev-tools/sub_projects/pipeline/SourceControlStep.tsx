@@ -75,9 +75,9 @@ export function SourceControlStep({
       {/* Mandatory selector for the chosen mode */}
       {sourceMode === 'team' ? (
         <div>
-          <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+          <label className="typo-caption text-foreground mb-1.5 flex items-center gap-1.5">
             {dp.team_binding_label}
-            <span className="typo-caption text-amber-400/80 font-normal">({dp.field_required})</span>
+            <span className="typo-caption text-amber-400/80">({dp.field_required})</span>
           </label>
           <ThemedSelect value={teamId ?? ''} onValueChange={(v) => onTeamChange(v || null)}>
             <option value="">{dp.team_binding_none}</option>
@@ -91,9 +91,9 @@ export function SourceControlStep({
         </div>
       ) : (
         <div data-testid="project-github-connector">
-          <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+          <label className="typo-caption text-foreground mb-1.5 flex items-center gap-1.5">
             {dp.github_connector_label}
-            <span className="typo-caption text-amber-400/80 font-normal">({dp.field_required})</span>
+            <span className="typo-caption text-amber-400/80">({dp.field_required})</span>
           </label>
           <ThemedSelect value={prCredentialId ?? ''} onValueChange={(v) => onCredChange(v || null)}>
             <option value="">{dp.team_binding_none}</option>
@@ -115,10 +115,10 @@ export function SourceControlStep({
 
       {/* Main branch */}
       <div>
-        <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+        <label className="typo-caption text-foreground mb-1.5 flex items-center gap-1.5">
           <GitFork className="w-3 h-3 text-amber-400/70" />
           {dp.main_branch_label}
-          <span className="typo-caption text-foreground font-normal">({dp.team_binding_optional})</span>
+          <span className="typo-caption text-foreground">({dp.team_binding_optional})</span>
         </label>
         <input
           value={mainBranch}
@@ -131,9 +131,9 @@ export function SourceControlStep({
       {/* Living test environment — url + branch, both optional */}
       <div className="grid md:grid-cols-2 gap-3 items-start">
         <div>
-          <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+          <label className="typo-caption text-foreground mb-1.5 flex items-center gap-1.5">
             {dp.test_env_url}
-            <span className="typo-caption text-foreground font-normal">({dp.team_binding_optional})</span>
+            <span className="typo-caption text-foreground">({dp.team_binding_optional})</span>
           </label>
           <input
             value={testEnvUrl}
@@ -143,9 +143,9 @@ export function SourceControlStep({
           />
         </div>
         <div>
-          <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+          <label className="typo-caption text-foreground mb-1.5 flex items-center gap-1.5">
             {dp.test_env_branch}
-            <span className="typo-caption text-foreground font-normal">({dp.team_binding_optional})</span>
+            <span className="typo-caption text-foreground">({dp.team_binding_optional})</span>
           </label>
           <input
             value={testEnvBranch}
@@ -179,11 +179,11 @@ function ModeButton({
           : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50'
       }`}
     >
-      <span className="flex items-center gap-1.5 typo-caption font-medium text-foreground">
+      <span className="flex items-center gap-1.5 typo-caption text-foreground">
         <Icon className={`w-3.5 h-3.5 ${active ? 'text-amber-400' : 'text-foreground/60'}`} />
         {label}
       </span>
-      <span className="typo-caption text-foreground leading-snug">{hint}</span>
+      <span className="typo-caption text-foreground">{hint}</span>
     </button>
   );
 }

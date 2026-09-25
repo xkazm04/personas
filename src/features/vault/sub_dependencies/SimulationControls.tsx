@@ -34,7 +34,7 @@ export function AffectedPersonas({ personas }: AffectedPersonasProps) {
 
   return (
     <div>
-      <div className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+      <div className="typo-caption text-foreground mb-1.5 flex items-center gap-1.5">
         <Bot className="w-3 h-3" />
         {tx(dep.personas_would_stop, { count: personas.length })}
       </div>
@@ -74,7 +74,7 @@ export function FailoverSuggestions({ suggestions }: FailoverSuggestionsProps) {
 
   return (
     <div>
-      <div className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+      <div className="typo-caption text-foreground mb-1.5 flex items-center gap-1.5">
         <ArrowRightLeft className="w-3 h-3" />
         {tx(dep.failover_credentials, { count: suggestions.length })}
       </div>

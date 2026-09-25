@@ -183,7 +183,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
               <CheckCircle2 className="w-7 h-7 text-emerald-400" />
             </div>
             <div className="text-center">
-              <p className="typo-body-lg font-semibold text-foreground">{t.vault.auto_cred_extra.credential_saved}</p>
+              <p className="typo-body-lg text-foreground">{t.vault.auto_cred_extra.credential_saved}</p>
               <p className="typo-body text-foreground mt-1">
                 {tx(t.vault.auto_cred_extra.credential_stored, { label: designResult.connector.label })}
               </p>
@@ -191,7 +191,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
             <button
               type="button"
               onClick={onComplete}
-              className="px-4 py-2 bg-primary/15 hover:bg-primary/25 text-primary rounded-modal typo-body font-medium transition-colors"
+              className="px-4 py-2 bg-primary/15 hover:bg-primary/25 text-primary rounded-modal typo-body transition-colors"
             >
               {t.common.done}
             </button>

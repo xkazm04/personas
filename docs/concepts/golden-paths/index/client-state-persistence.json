@@ -59,6 +59,24 @@
       ],
       "resolved": false
     },
+    "features/plugins/companion/companionStore.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["1382"],
+      "contexts": [
+        "| `features/plugins/companion/companionStore.ts:1382` | Persists `draftsByConversation` — unsent user chat text with Athena — to localStorage in plaintext. Privacy, not a secret; worth a decision eit…"
+      ],
+      "resolved": false
+    },
+    "main.tsx": {
+      "count": 2,
+      "sections": [5,7],
+      "lines": ["93","36,93,151,163"],
+      "contexts": [
+        "- **Hand-parsing the zustand persist envelope.** `main.tsx:93`, `:151`, `:163` reach into `{ state: { … } }` by hand. Adding `version`/`migrate` to any of those three stores changes the envelope and…"
+      ],
+      "resolved": false
+    },
     "personas.rs": {
       "count": 1,
       "sections": [7],
@@ -314,16 +332,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "memoryActions.ts"
-    },
-    "src/features/plugins/companion/companionStore.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["1382"],
-      "contexts": [
-        "| `features/plugins/companion/companionStore.ts:1382` | Persists `draftsByConversation` — unsent user chat text with Athena — to localStorage in plaintext. Privacy, not a secret; worth a decision eit…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "features/plugins/companion/companionStore.ts"
     },
     "src/features/plugins/drive/hooks/useDrive.ts": {
       "count": 1,
@@ -611,14 +619,12 @@
       "verbatim": "platform.ts"
     },
     "src/main.tsx": {
-      "count": 3,
-      "sections": [5,7,9],
-      "lines": ["93","36,93,151,163"],
+      "count": 1,
+      "sections": [9],
+      "lines": ["36,93,151,163"],
       "contexts": [
-        "- **Hand-parsing the zustand persist envelope.** `main.tsx:93`, `:151`, `:163` reach into `{ state: { … } }` by hand. Adding `version`/`migrate` to any of those three stores changes the envelope and…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "main.tsx"
+        "- `src/main.tsx:36,93,151,163` — pre-mount synchronous reads. These run before React and before the store module graph loads; they genuinely cannot call an async or store-dependent primitive. **Annot…"
+      ]
     },
     "src/stores/**": {
       "count": 1,

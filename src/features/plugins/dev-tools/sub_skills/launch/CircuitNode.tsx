@@ -41,7 +41,7 @@ export default function CircuitNode({ cell, onLaunch, onAdopt, justSent }: {
 
   const nameRow = (icon: React.ReactNode) => (
     <span className="flex items-center gap-1.5 min-w-0 w-full">
-      <span className="typo-body font-medium text-foreground truncate">{project.name}</span>
+      <span className="typo-body text-foreground truncate">{project.name}</span>
       <span className="ml-auto flex items-center gap-1 flex-shrink-0">{icon}</span>
     </span>
   );
@@ -78,7 +78,7 @@ export default function CircuitNode({ cell, onLaunch, onAdopt, justSent }: {
               type="button"
               onClick={onAdopt}
               aria-label={`${d.launch_action_adopt}: ${project.name}`}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive typo-caption font-medium text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive typo-caption text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 transition-colors"
             >
               <ArrowDownToLine className="w-3 h-3" aria-hidden />
               {d.launch_action_adopt}

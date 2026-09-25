@@ -31,7 +31,7 @@ import { parseItemExtra, reviewStatusOf } from './personaConversationModel';
  * rhythm belongs to the detail modal, never to a bubble.
  */
 const MD_CHAT_RHYTHM =
-  '[&_p]:mb-1.5 [&_p]:leading-normal [&_p:last-child]:mb-0 [&_ul]:mb-1.5 [&_ul:last-child]:mb-0 ' +
+  '[&_p]:mb-1.5 [&_p:last-child]:mb-0 [&_ul]:mb-1.5 [&_ul:last-child]:mb-0 ' +
   '[&_ol]:mb-1.5 [&_ol:last-child]:mb-0 [&_pre]:mb-1.5 [&_table]:my-2 [&_h1]:mt-2 [&_h2]:mt-2 [&_h3]:mt-1.5';
 
 /* ── CHAT ──────────────────────────────────────────────────────────────────── */
@@ -63,7 +63,7 @@ export const PersonaChatBubble = memo(function PersonaChatBubble({
         {!mine && (
           <span className="flex items-center gap-1.5 mb-0.5">
             {item.authorKind === 'athena' && <Sparkles className="w-3 h-3 text-violet-300" />}
-            <span className="typo-caption font-medium" style={{ color: personaColor ?? undefined }}>
+            <span className="typo-caption" style={{ color: personaColor ?? undefined }}>
               {item.authorKind === 'athena' ? 'Athena' : personaName}
             </span>
             <span className="typo-caption text-foreground opacity-35">
@@ -151,7 +151,7 @@ export const PersonaReportBubble = memo(function PersonaReportBubble({
     <div className="py-1 flex justify-start">
       <div className="max-w-[78%] min-w-0 px-3 py-2 rounded-card border border-border bg-secondary/20">
         <span className="flex items-center gap-1.5 mb-0.5">
-          <span className="typo-body font-semibold text-foreground truncate">
+          <span className="typo-body text-foreground truncate">
             {item.title ?? t.monitor.conv_persona_report_chip}
           </span>
           <span className="flex-shrink-0 typo-caption text-foreground opacity-35">
@@ -266,7 +266,7 @@ export const PersonaReviewCard = memo(function PersonaReviewCard({
       <div className="px-3 py-2">
         <span className="flex items-center gap-2 min-w-0">
           <AlertCircle className={`w-4 h-4 flex-shrink-0 ${sev.text}`} aria-hidden />
-          <span className="typo-body font-medium text-foreground truncate min-w-0 flex-1">{item.title}</span>
+          <span className="typo-body text-foreground truncate min-w-0 flex-1">{item.title}</span>
           {!pending && (
             <span className={`flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full border typo-caption ${sev.badge}`}>
               {status === 'rejected' ? <X className="w-3 h-3" aria-hidden /> : <Check className="w-3 h-3" aria-hidden />}

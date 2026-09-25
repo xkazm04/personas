@@ -58,6 +58,7 @@ pub mod mcp_config;
 pub mod model_ids;
 pub mod models;
 pub mod pool;
+pub mod quiet_hours;
 pub mod redact;
 pub mod retrieval;
 pub mod run_budget;

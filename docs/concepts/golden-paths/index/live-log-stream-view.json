@@ -47,11 +47,20 @@
     ".github/workflows/ci.yml": {"count":2,"sections":[7,9],"contexts":["- **`ci.yml` remains red on pre-existing failures**, so §9 does not depend on it."],"resolvedFrom":"basename","verbatim":"ci.yml"},
     "CompactTerminal.tsx": {"count":2,"sections":[6,7],"lines":["244-249,1074-1086","70-71,274-297"],"contexts":["(`ExecutionOutput.tsx:53-56,125-141` vs `CompactTerminal.tsx:244-249,1074-1086`)."],"resolved":false},
     "ExecutionOutput.tsx": {"count":1,"sections":[6],"lines":["53-56,125-141"],"contexts":["(`ExecutionOutput.tsx:53-56,125-141` vs `CompactTerminal.tsx:244-249,1074-1086`)."],"resolved":false},
+    "NoteLayer.tsx": {
+      "count": 1,
+      "sections": [9],
+      "contexts": [
+        "| **an unbounded `.map` over a stream-ish array in JSX** (`{lines.map(`, `{output.map(`, …) | 15 files / 15 | 8 files / 8 (`X.slice(-N)`) | The partition looks clean and the precision is not: hand-re…"
+      ],
+      "resolved": false
+    },
     "ReportClientStatus.tsx": {"count":1,"sections":[7],"lines":["78-92"],"contexts":["(`ReportClientStatus.tsx:78-92`) as the zero-heartbeat fallback, and put it in"],"resolved":false},
     "dispatch.rs": {"count":1,"sections":[7],"contexts":["actually emits — the prefixes are enumerable from `dispatch.rs` and"],"resolved":false},
     "dispatcher.ts": {"count":1,"sections":[6],"lines":["970"],"contexts":["wire (`dispatcher.ts:970`, `httpApi.ts:1674`) and no consumer renders it either."],"resolved":false},
     "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["count, matching [`shared-facts.json`](../shared-facts.json) `frontend.tsFiles`"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "executions.rs": {"count":2,"sections":[0,12],"lines":["672-727","658,703,716"],"contexts":["`get_execution_log_lines` (`executions.rs:672-727`) is the reload path."],"resolved":false},
+    "features/plugins/companion/useChatScroll.ts": {"count":1,"sections":[7],"contexts":["**Fix:** extract `useChatScroll` (`features/plugins/companion/useChatScroll.ts`)"],"resolved":false},
     "httpApi.ts": {"count":2,"sections":[6],"lines":["1422","1674"],"contexts":["`personas-cloud`'s `redactDeployment` (`httpApi.ts:1422`), `personas-web`'s"],"resolved":false},
     "lefthook.yml": {"count":1,"sections":[9],"lines":["74-75"],"contexts":["(`lefthook.yml:74-75`, `npm run census:check`) and inside `npm run check`"]},
     "package.json": {"count":1,"sections":[9],"lines":["52"],"contexts":["(`package.json:52`). **Not CI** — `ci.yml` is red on pre-existing failures, so"]},
@@ -173,6 +182,14 @@
       "resolvedFrom": "basename",
       "verbatim": "ReplayTerminalPanel.tsx"
     },
+    "src/features/companions/athena/useChatScroll.ts": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["9-28"],
+      "contexts": ["| `useChatScroll.ts:9-28` | a docstring that states the defect it exists to prevent, in the words a user would use |"],
+      "resolvedFrom": "basename",
+      "verbatim": "useChatScroll.ts"
+    },
     "src/features/home/sub_cockpit/widgets/LogExcerptWidget.tsx": {
       "count": 1,
       "sections": [9],
@@ -210,12 +227,12 @@
       "verbatim": ".../AiHealingStreamOverlay.tsx"
     },
     "src/features/plugins/companion/useChatScroll.ts": {
-      "count": 3,
-      "sections": [3,6,7],
-      "lines": ["9-28"],
+      "count": 1,
+      "sections": [3],
       "contexts": [
         "| `src/features/plugins/companion/useChatScroll.ts` | the stickiness contract written down: `NEAR_BOTTOM_PX = 80`, an `atBottom` state **and** a ref, `maybeAutoScroll`, and a docstring naming the exa…"
-      ]
+      ],
+      "resolved": false
     },
     "src/features/plugins/dev-tools/sub_context/ScanOverlay.tsx": {
       "count": 1,
@@ -300,15 +317,6 @@
       "contexts": ["The worst placement is `shared/components/terminal/TerminalStrip.tsx:57-61`"],
       "resolvedFrom": "suffix",
       "verbatim": "shared/components/terminal/TerminalStrip.tsx"
-    },
-    "src/features/teams/sub_mastermind/lib/NoteLayer.tsx": {
-      "count": 1,
-      "sections": [9],
-      "contexts": [
-        "| **an unbounded `.map` over a stream-ish array in JSX** (`{lines.map(`, `{output.map(`, …) | 15 files / 15 | 8 files / 8 (`X.slice(-N)`) | The partition looks clean and the precision is not: hand-re…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "NoteLayer.tsx"
     },
     "src/features/templates/draft-editor/SectionEditor.tsx": {
       "count": 1,

@@ -151,7 +151,7 @@ function Value({ value, unit, strong = false }: { value: number | null; unit: st
     // One line, always: a unit like "obligations" wrapped under its figure and
     // doubled the row height. The unit truncates before the number ever does.
     <span className="flex min-w-0 items-baseline justify-end gap-1 whitespace-nowrap">
-      <span className={`typo-data tabular-nums ${strong ? 'font-semibold text-foreground' : 'text-foreground'}`}>
+      <span className={`typo-data ${strong ? 'text-foreground' : 'text-foreground'}`}>
         {value}
       </span>
       {unit ? <span className="min-w-0 truncate typo-caption">{unit}</span> : null}

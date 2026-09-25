@@ -105,7 +105,7 @@ export function MetricHelpPopover({ metricKey }: { metricKey: string }) {
       {open && (
         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 w-64 rounded-modal border border-primary/10 bg-card p-3 shadow-elevation-3 text-left">
           <div className="flex items-start justify-between gap-2 mb-2">
-            <h4 className="typo-heading text-sm text-foreground">{info.label}</h4>
+            <h4 className="typo-heading text-foreground">{info.label}</h4>
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
@@ -115,7 +115,7 @@ export function MetricHelpPopover({ metricKey }: { metricKey: string }) {
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
-          <p className="typo-caption text-foreground leading-relaxed mb-2">{info.description}</p>
+          <p className="typo-caption text-foreground mb-2">{info.description}</p>
           <div className="typo-caption space-y-1.5">
             <p className="text-emerald-400">
               <span className="font-medium">{t.overview.metric_help_popover.healthy}</span> {info.healthyRange}

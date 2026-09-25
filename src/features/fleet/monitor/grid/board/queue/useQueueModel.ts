@@ -24,8 +24,8 @@ import { isLiveSession } from '../../fleetSessionModel';
 
 /** The origin tokens the queue can name. Anything else reads as `manual`. */
 const ORIGINS: ReadonlySet<string> = new Set<DispatchOrigin>([
-  'manual', 'dev_runner', 'dispatch_ideas', 'athena', 'autopilot', 'night_shift', 'feed_impact', 'orphan_resume',
-  'contest',
+  'manual', 'dev_runner', 'dispatch_ideas', 'athena', 'autopilot', 'night_shift', 'feed_impact', 'orphan_resume', 'remote',
+  'curator', 'contest',
 ]);
 
 export function asOrigin(raw: string | null | undefined): DispatchOrigin {

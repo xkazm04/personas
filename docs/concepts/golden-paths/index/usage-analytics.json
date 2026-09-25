@@ -35,6 +35,7 @@
     "gp-msurf-navdims.mjs": {"count":1,"sections":[],"contexts":["`TAB_DIMENSIONS`. Script: `gp-msurf-navdims.mjs` (scratch)."],"resolved":false},
     "gp-msurf-scratch-rules2.json": {"count":1,"sections":[9],"contexts":["(`gp-msurf-scratch-rules2.json`), full registry not run:"],"resolved":false},
     "index.ts": {"count":9,"sections":[0,3,5,7],"lines":["149","162","14-16","79-100","70"],"contexts":["(`index.ts` 186, `sink.ts` 118, `activation.ts` 186, `navCatalog.ts` 130,"],"resolved":false},
+    "main.tsx": {"count":5,"sections":[5,7,12],"lines":["304","306"],"contexts":["boot (`main.tsx:304`) and a swappable object consulted at emit are two different"],"resolved":false},
     "parser.rs": {"count":4,"sections":[6,7,12],"lines":["340-341","339"],"contexts":["engine's `parser.rs` `result` arm. Denominators cited by id from"],"resolved":false},
     "researchLabSlice.ts": {"count":2,"sections":[7,9],"contexts":["`researchLabSlice.ts`, `storeTypes.ts`."],"resolved":false},
     "scripts/check-csp-hosts.mjs": {"count":2,"sections":[9],"contexts":["different instrument**, in the tradition of `check-csp-hosts.mjs`:"],"resolvedFrom":"basename","verbatim":"check-csp-hosts.mjs"},
@@ -125,20 +126,12 @@
     "src/lib/telemetryPreference.ts": {"count":3,"sections":[3,12],"lines":["14-20"],"contexts":["`src/lib/telemetryPreference.ts`, `src/lib/throttledStorage.ts`,"]},
     "src/lib/throttledStorage.ts": {"count":3,"sections":[0,7],"lines":["41-43"],"contexts":["`src/lib/telemetryPreference.ts`, `src/lib/throttledStorage.ts`,"]},
     "src/lib/types/types.ts": {"count":2,"sections":[4,7],"contexts":["is `NAV_SECTIONS` for sections and the `*Tab` unions in `lib/types/types.ts`"],"resolvedFrom":"suffix","verbatim":"lib/types/types.ts"},
-    "src/main.tsx": {"count":7,"sections":[5,7,9,12],"lines":["304","306"],"contexts":["`src/lib/execution/middleware/analyticsMiddleware.ts`, `src/main.tsx`'s boot"]},
+    "src/main.tsx": {"count":2,"sections":[9],"contexts":["`src/lib/execution/middleware/analyticsMiddleware.ts`, `src/main.tsx`'s boot"]},
     "src/stores/": {"count":1,"sections":[],"contexts":["reading: two independent scanners over `src/stores/` (one on the interface"],"resolved":false,"isDir":true},
     "src/stores/**": {"count":1,"sections":[7],"contexts":["| A — interface declarations (`  fooTab: FooTab;`) in `src/stores/**` | **20** |"],"resolved":false,"isDir":true},
     "src/stores/slices/": {"count":2,"sections":[9],"contexts":["block, and every nav-store slice under `src/stores/slices/`. Both usage"],"resolved":false,"isDir":true},
     "src/stores/slices/agents/personaSlice.ts": {"count":1,"sections":[7],"lines":["352"],"contexts":["(`personaSlice.ts:352`), has `persona_created` written to"],"resolvedFrom":"basename","verbatim":"personaSlice.ts"},
     "src/stores/slices/overview/alertSlice.ts": {"count":2,"sections":[7,9],"contexts":["`analyticsMiddleware.ts`, `silentFailureTelemetry.ts`, `alertSlice.ts`,"],"resolvedFrom":"basename","verbatim":"alertSlice.ts"},
-    "src/stores/slices/system/companionPluginSlice.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["114"],
-      "contexts": ["| `companionPluginTab` | `stores/slices/system/companionPluginSlice.ts:114` | — | no |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "stores/slices/system/companionPluginSlice.ts"
-    },
     "src/stores/slices/system/obsidianBrainSlice.ts": {
       "count": 1,
       "sections": [7],
@@ -152,6 +145,7 @@
     "src/stores/slices/system/uiSlice.ts": {"count":3,"sections":[7],"lines":["147","94"],"contexts":["informative: `pendingLifecycleSubTab` (`uiSlice.ts:147`) is"],"resolvedFrom":"basename","verbatim":"uiSlice.ts"},
     "src/stores/storeTypes.ts": {"count":2,"sections":[7,9],"contexts":["`researchLabSlice.ts`, `storeTypes.ts`."],"resolvedFrom":"basename","verbatim":"storeTypes.ts"},
     "stores/slices/system/artistSlice.ts": {"count":1,"sections":[7],"lines":["74"],"contexts":["| `artistTab` | `stores/slices/system/artistSlice.ts:74` | 3 | no |"],"resolved":false},
+    "stores/slices/system/companionPluginSlice.ts": {"count":1,"sections":[7],"lines":["114"],"contexts":["| `companionPluginTab` | `stores/slices/system/companionPluginSlice.ts:114` | — | no |"],"resolved":false},
     "track.ts": {"count":1,"sections":[6],"lines":["22-24"],"contexts":["`track.ts:22-24` — `if (!analyticsEnabled()) return;` is the first line of"],"resolved":false}
   }
 }

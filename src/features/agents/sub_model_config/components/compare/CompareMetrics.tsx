@@ -29,14 +29,14 @@ export function MetricCard({
   return (
     <div className={`px-3 py-2.5 rounded-modal border ${borderColor} ${bgColor} space-y-2`}>
       <div className="flex items-center gap-2">
-        <span className="typo-heading font-semibold text-foreground/90">{model.label}</span>
+        <span className="typo-heading text-foreground/90">{model.label}</span>
         {isWinner && <Trophy className="w-3 h-3 text-primary" />}
       </div>
 
       {/* An em dash, not a 0: a model whose rows were never graded has no
           composite to state, and painting one as zero is the fold this panel
           used to make. */}
-      <div className={`typo-data-lg font-bold tabular-nums ${scoreColor(metrics.composite)}`}>
+      <div className={`typo-data-lg ${scoreColor(metrics.composite)}`}>
         {metrics.composite ?? '—'}
       </div>
 
@@ -133,7 +133,7 @@ export function CompareBar({
             <div className="h-full bg-blue-500 rounded-full" style={{ width: '100%' }} />
           </div>
         </div>
-        <div className="w-16 text-center typo-code font-mono tabular-nums">
+        <div className="w-16 text-center typo-code tabular-nums">
           <span className={scoreColor(valueA)}>{valueA ?? '—'}</span>
           <span className="text-foreground mx-0.5">:</span>
           <span className={scoreColor(valueB)}>{valueB ?? '—'}</span>

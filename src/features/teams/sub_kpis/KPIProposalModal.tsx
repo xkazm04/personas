@@ -1,6 +1,6 @@
 // Proposal detail modal — follows the app's detail-modal golden standard
 // (IncidentDetailModal anatomy): a header band with title + meta, content
-// SECTIONS under typo-overline headers with typo-body copy, and a footer
+// SECTIONS under typo-eyebrow headers with typo-body copy, and a footer
 // action band. The decision (Accept / Reject) is the footer; everything else
 // is reading + one adjustment block.
 import { useState } from 'react';
@@ -21,7 +21,7 @@ import { KPIConnectWizard } from './KPIConnectWizard';
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="typo-overline text-foreground mb-1.5">{title}</h3>
+      <h3 className="typo-eyebrow text-foreground mb-1.5">{title}</h3>
       {children}
     </div>
   );

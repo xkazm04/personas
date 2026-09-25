@@ -2151,7 +2151,14 @@
     "header_subtitle_editing": "Editando {name}",
     "header_subtitle_new": "Componga un nuevo agente desde cero",
     "header_title": "Compilación",
-    "new_agent": "Nuevo agente"
+    "new_agent": "Nuevo agente",
+    "promote_receipt_connect": "Abrir conectores",
+    "promote_receipt_connectors": "Falta conectar: {names}",
+    "promote_receipt_failed_title": "La promoción no se completó",
+    "promote_receipt_later": "Más tarde",
+    "promote_receipt_needs_setup_title": "Promovido, pero necesita configuración antes de poder ejecutarse",
+    "promote_receipt_retry": "Reintentar promoción",
+    "promote_receipt_unverified": "Su primera ejecución de comprobación no pudo aportar valor. Revisa sus conectores antes de confiar en él."
   },
   "matrix_tab": {
     "loading": "Cargando matriz",
@@ -2708,7 +2715,7 @@
     "all_saved": "Todos los cambios guardados",
     "changed": "{sections} cambiado(s)",
     "cli_awareness": "Conciencia de sesión de CLI de Claude",
-    "cli_awareness_desc": "Permite que esta persona lea los turnos recientes de su sesión interactiva activa de la CLI de Claude como contexto adicional. Requiere que el interruptor global en Companion → Configuración → Señales sensoriales también esté activado. Solo lectura — su sesión de CLI nunca se modifica.",
+    "cli_awareness_desc": "Permite que esta persona lea los turnos recientes de su sesión interactiva activa de la CLI de Claude como contexto adicional. Requiere que el interruptor global en Athena → Configuración → Señales sensoriales también esté activado. Solo lectura — su sesión de CLI nunca se modifica.",
     "execution": "Ejecución",
     "execution_retention": "Retención de ejecuciones",
     "failed_health_watch": "Error al actualizar la configuración de monitoreo de salud",
@@ -3275,5 +3282,16 @@
     "parse": "Analizar",
     "paste_json": "O pega el JSON directamente",
     "paste_placeholder": "Pegue su JSON de flujo de trabajo aquí…"
+  },
+  "promote_preview": {
+    "blocked_tooltip": "La promoción se rechazaría: {reason}",
+    "heading": "Qué hará la promoción",
+    "needs_setup": "Necesita configuración primero: {connectors}",
+    "refused": "La promoción rechazará este borrador",
+    "refused_hint": "Refina el borrador para corregirlo y luego promuévelo.",
+    "repaired": "Ajustado por la compilación",
+    "runs_manual": "Se ejecuta cuando lo inicias",
+    "runs_next": "Disparador {type}, próxima ejecución {time}",
+    "runs_on_event": "Disparador {type}, se ejecuta cuando se activa"
   }
 }

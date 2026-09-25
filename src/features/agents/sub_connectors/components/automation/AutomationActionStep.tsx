@@ -51,7 +51,7 @@ export function AutomationActionStep({
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <span className={`typo-body font-medium ${status === 'completed' ? 'text-foreground' : status === 'active' ? 'text-foreground' : 'text-foreground'}`}>
+                <span className={`typo-body ${status === 'completed' ? 'text-foreground' : status === 'active' ? 'text-foreground' : 'text-foreground'}`}>
                   {t.agents.connectors[def.labelKey]}
                 </span>
                 {status === 'active' && <span className="ml-2 typo-body text-foreground">{t.agents.connectors[def.descriptionKey]}</span>}
@@ -62,7 +62,7 @@ export function AutomationActionStep({
       </div>
 
       {tailLines.length > 0 && (
-        <div ref={tailRef} className="px-3 py-2 rounded-modal bg-secondary/30 border border-border/60 typo-code text-foreground font-mono max-h-[4.5rem] overflow-y-auto">
+        <div ref={tailRef} className="px-3 py-2 rounded-modal bg-secondary/30 border border-border/60 typo-code text-foreground max-h-[4.5rem] overflow-y-auto">
           {tailLines.map((line, i) => (
             <div key={outputLinesLength - tailLines.length + i}>{line}</div>
           ))}

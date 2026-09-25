@@ -40,6 +40,7 @@
       ],
       "resolved": false
     },
+    "CanvasShell.tsx": {"count":2,"sections":[7],"lines":["878"],"contexts":["`ShipMilestoneComposer.tsx:148` · `KpiDetailModal.tsx:45` · `CanvasShell.tsx:878` ·"],"resolved":false},
     "ChannelsAtelier.tsx": {"count":3,"sections":[3,5,7],"lines":["214-216","207"],"contexts":["- **A hand-typed id field beside a picker.** `ChannelsAtelier.tsx:214-216` binds a persona by"],"resolved":false},
     "DashboardHomeMissionControl.tsx": {"count":1,"sections":[7],"lines":["132"],"contexts":["`AutomationConditionStep.tsx:101` · `DispatchPanel.tsx:79` · `DashboardHomeMissionControl.tsx:132` ·"],"resolved":false},
     "DashboardScopeBar.tsx": {"count":3,"sections":[6],"lines":["18","53-56","134-136"],"contexts":["(`DashboardScopeBar.tsx:18` pulls `usePersonaStore`), so its **persona-picking** verdicts are"],"resolved":false},
@@ -669,7 +670,6 @@
       "resolvedFrom": "basename",
       "verbatim": "KpiDetailModal.tsx"
     },
-    "src/features/teams/sub_mastermind/lib/CanvasShell.tsx": {"count":2,"sections":[7],"lines":["878"],"contexts":["`ShipMilestoneComposer.tsx:148` · `KpiDetailModal.tsx:45` · `CanvasShell.tsx:878` ·"],"resolvedFrom":"basename","verbatim":"CanvasShell.tsx"},
     "src/features/teams/sub_teamWorkspace/TeamCanvas.tsx": {"count":1,"sections":[7],"lines":["37"],"contexts":["`TeamCanvas.tsx:37` · `SlackBridgePickers.tsx:101` · `studioDraftModel.ts:90` ·"],"resolvedFrom":"basename","verbatim":"TeamCanvas.tsx"},
     "src/features/teams/sub_teamWorkspace/TeamList.tsx": {
       "count": 5,

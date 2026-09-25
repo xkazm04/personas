@@ -53,12 +53,12 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
             <div className="flex items-center gap-2.5 mb-1.5">
               <h3
                 id="event-detail-modal-title"
-                className="typo-body-lg font-semibold text-foreground tracking-tight"
+                className="typo-body-lg text-foreground tracking-tight"
               >
                 {event.event_type}
               </h3>
               {/* Improvement #4: Status badge with color coding */}
-              <span className={`inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-full font-semibold ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
+              <span className={`inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-full ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
                 {event.status}
               </span>
             </div>
@@ -95,7 +95,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
               <MetaCell icon={SourceIcon ?? Hash} iconColor={sourceConfig?.color} label={t.triggers.meta_source}>
                 <div className="flex items-center gap-1.5">
                   {event.source_type && (
-                    <span className={`typo-caption font-medium px-1.5 py-0.5 rounded-input bg-secondary/50 border border-primary/10 ${sourceConfig?.color ?? 'text-foreground'}`}>
+                    <span className={`typo-caption px-1.5 py-0.5 rounded-input bg-secondary/50 border border-primary/10 ${sourceConfig?.color ?? 'text-foreground'}`}>
                       {event.source_type}
                     </span>
                   )}
@@ -117,14 +117,14 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
               {/* Improvement #3: Themed section label */}
               <div className="flex items-center justify-between px-5 py-2.5 border-b border-primary/8 flex-shrink-0 bg-secondary/5">
-                <span className="typo-label font-semibold text-foreground">
+                <span className="typo-label text-foreground">
                   {t.triggers.event_data_section_label}
                 </span>
                 {/* Improvement #10: Copy button with improved hover/animation */}
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-caption font-medium transition-all duration-200 ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-caption transition-all duration-200 ${
                     copiedPayload
                       ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                       : 'text-foreground hover:text-foreground hover:bg-secondary/60 border border-transparent hover:border-primary/10'
@@ -166,7 +166,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
             <div className="flex-shrink-0 border-t border-red-500/15 bg-red-500/3">
               <div className="flex items-center gap-2 px-5 py-2.5 border-b border-red-500/10">
                 <AlertCircle className="w-3.5 h-3.5 text-red-400" />
-                <span className="typo-label font-semibold text-red-400/70">
+                <span className="typo-label text-red-400/70">
                   {t.triggers.error_section_label}
                 </span>
               </div>

@@ -132,11 +132,12 @@ const GuidedTour = lazyRetry(() => import("@/features/onboarding/components/Guid
 const TourSpotlight = lazyRetry(() => import("@/features/onboarding/components/TourSpotlight"));
 const ExecutionMiniPlayer = lazyRetry(() => import("@/features/agents/executionPlayer/ExecutionMiniPlayer"));
 const HealingToast = lazyRetry(() => import("@/features/overview/components/feedback/HealingToast").then(m => ({ default: m.HealingToast })));
+const SpendAlertWatcher = lazyRetry(() => import("@/features/overview/components/feedback/SpendAlertWatcher").then(m => ({ default: m.SpendAlertWatcher })));
 const AlertToastContainer = lazyRetry(() => import("@/features/overview/sub_observability/components/AlertToastContainer").then(m => ({ default: m.AlertToastContainer })));
 const NotificationCenter = lazyRetry(() => import("@/features/shared/chrome/notifications/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
 const ShareLinkHandler = lazyRetry(() => import("@/features/settings/sub_network/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
-const CompanionPanel = lazyRetry(() => import("@/features/plugins/companion/chat/AthenaChatPanel"));
-const AthenaOrbLayer = lazyRetry(() => import("@/features/plugins/companion/orb/AthenaOrbLayer"));
+const AthenaChatPanel = lazyRetry(() => import("@/features/companions/athena/chat/AthenaChatPanel"));
+const AthenaOrbLayer = lazyRetry(() => import("@/features/companions/athena/orb/AthenaOrbLayer"));
 const StudioAttention = lazyRetry(() => import("@/features/studio/StudioAttention"));
 // Fleet grid is an app-wide LAYER, not a page surface: the footer raises it
 // over whatever you're looking at so checking a CLI never costs a navigation.
@@ -155,7 +156,11 @@ const ContestLiveFeeder = lazyRetry(() => import("@/features/plugins/dev-tools/c
 // policy push). SEPARATE from FleetGridLayer on purpose and mounted UNGATED —
 // see the two mounts below and FleetBootstrap's own header.
 const FleetBootstrap = lazyRetry(() => import("@/features/plugins/fleet/FleetBootstrap"));
-const AthenaGuideLayer = lazyRetry(() => import("@/features/plugins/companion/orb/AthenaGuideLayer"));
+const AthenaGuideLayer = lazyRetry(() => import("@/features/companions/athena/orb/AthenaGuideLayer"));
+// Athena's master switch, as a mount gate. Lazy like everything else in this
+// group: it is what decides whether her three overlays exist at all, and none
+// of them is needed for first paint.
+const AthenaGate = lazyRetry(() => import("@/features/companions/athena/AthenaGate"));
 // First-run onboarding overlay. Self-guards on `onboardingActive` (returns null
 // until startOnboarding() flips it), so it's safe to mount unconditionally once
 // consented. Previously orphaned — built but never rendered (UAT L1
@@ -178,12 +183,13 @@ const LAZY_OVERLAY_IMPORTS = [
   () => import("@/features/onboarding/components/TourHandoffOffer"),
   () => import("@/features/agents/executionPlayer/ExecutionMiniPlayer"),
   () => import("@/features/overview/components/feedback/HealingToast"),
+  () => import("@/features/overview/components/feedback/SpendAlertWatcher"),
   () => import("@/features/overview/sub_observability/components/AlertToastContainer"),
   () => import("@/features/shared/chrome/notifications/NotificationCenter"),
   () => import("@/features/settings/sub_network/components/ShareLinkHandler"),
-  () => import("@/features/plugins/companion/chat/AthenaChatPanel"),
-  () => import("@/features/plugins/companion/orb/AthenaOrbLayer"),
-  () => import("@/features/plugins/companion/orb/AthenaGuideLayer"),
+  () => import("@/features/companions/athena/chat/AthenaChatPanel"),
+  () => import("@/features/companions/athena/orb/AthenaOrbLayer"),
+  () => import("@/features/companions/athena/orb/AthenaGuideLayer"),
 ] as const;
 
 function DevMobilePreviewShortcut() {
@@ -419,6 +425,7 @@ export default function App() {
               <SilentErrorBoundary name="GlobalOverlays">
                 <Suspense fallback={null}>
                   <OverlayIsland name="healing-toast"><HealingToast /></OverlayIsland>
+                  <OverlayIsland name="spend-alerts"><SpendAlertWatcher /></OverlayIsland>
                   <OverlayIsland name="alert-toasts"><AlertToastContainer /></OverlayIsland>
                   <OverlayIsland name="guided-tour"><GuidedTour /></OverlayIsland>
                   <OverlayIsland name="tour-spotlight"><TourSpotlight /></OverlayIsland>
@@ -428,9 +435,17 @@ export default function App() {
                   <OverlayIsland name="command-palette"><CommandPalette /></OverlayIsland>
                   <OverlayIsland name="notification-center"><NotificationCenter /></OverlayIsland>
                   <OverlayIsland name="share-link"><ShareLinkHandler /></OverlayIsland>
-                  <OverlayIsland name="companion-panel"><CompanionPanel /></OverlayIsland>
-                  <OverlayIsland name="athena-orb"><AthenaOrbLayer /></OverlayIsland>
-                  <OverlayIsland name="athena-guide"><AthenaGuideLayer /></OverlayIsland>
+                  {/* Athena's three overlays live and die with her switch.
+                      Gated as a GROUP rather than each on its own: they are one
+                      presence, and mounting any of them while she is off would
+                      open subscriptions and timers for an assistant that is not
+                      running. Her pages stay reachable either way, so the
+                      control that brings her back is always there. */}
+                  <AthenaGate>
+                    <OverlayIsland name="companion-panel"><AthenaChatPanel /></OverlayIsland>
+                    <OverlayIsland name="athena-orb"><AthenaOrbLayer /></OverlayIsland>
+                    <OverlayIsland name="athena-guide"><AthenaGuideLayer /></OverlayIsland>
+                  </AthenaGate>
                   {import.meta.env.DEV && <OverlayIsland name="studio-attention"><StudioAttention /></OverlayIsland>}
                   {/* Fleet is TWO mounts, and the split is load-bearing.
                       The grid OVERLAY is dev tooling, so it stays gated — in a
@@ -467,7 +482,7 @@ export default function App() {
           {/* Direction 1: approval gate for cloud-app pairing requests. */}
           <PairApprovalModal />
           {import.meta.env.DEV && isMobilePreview && (
-            <div className={`fixed top-1 right-1 z-[999] ${TOOLS_BTN_COMPACT} rounded-card bg-cyan-500/90 text-foreground typo-caption font-bold shadow-elevation-3 pointer-events-none select-none`}>
+            <div className={`fixed top-1 right-1 z-[999] ${TOOLS_BTN_COMPACT} rounded-card bg-cyan-500/90 text-foreground typo-caption shadow-elevation-3 pointer-events-none select-none`}>
               {t.chrome.mobile_preview}
             </div>
           )}

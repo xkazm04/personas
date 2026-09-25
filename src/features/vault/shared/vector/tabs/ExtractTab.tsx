@@ -103,7 +103,7 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
       <div className="flex items-center gap-2">
         <Button
           variant="accent"
-          accentColor="violet"
+          tone="agent"
           size="sm"
           icon={<Sparkles className="w-3.5 h-3.5" />}
           loading={inferring}
@@ -117,7 +117,7 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
         {schema && (
           <Button
             variant="accent"
-            accentColor="emerald"
+            tone="success"
             size="sm"
             icon={<Play className="w-3.5 h-3.5" />}
             loading={busy}
@@ -144,7 +144,7 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
 
       {schema && (
         <div>
-          <h3 className="typo-title text-primary mb-1">{sh.extract_schema_heading}</h3>
+          <h3 className="typo-title mb-1">{sh.extract_schema_heading}</h3>
           <p className="typo-caption text-foreground mb-2">{sh.extract_schema_hint}</p>
           <SchemaEditor schema={schema} onChange={setSchema} />
         </div>

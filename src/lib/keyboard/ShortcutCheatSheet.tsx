@@ -65,7 +65,7 @@ export default function ShortcutCheatSheet() {
             <Keyboard className="w-4 h-4 text-primary" />
           </div>
           <div className="min-w-0">
-            <h2 id={TITLE_ID} className="typo-body font-semibold text-foreground">
+            <h2 id={TITLE_ID} className="typo-body text-foreground">
               {t.chrome.shortcuts.title}
             </h2>
             <p className="typo-caption text-foreground/85 truncate">{t.chrome.shortcuts.subtitle}</p>
@@ -75,7 +75,7 @@ export default function ShortcutCheatSheet() {
         <div className="px-5 py-4 grid gap-5 max-h-[60vh] overflow-y-auto">
           {SHORTCUT_GROUPS.map((group) => (
             <section key={group.section}>
-              <h3 className="typo-caption uppercase tracking-wider text-foreground/85 font-medium mb-2">
+              <h3 className="typo-caption uppercase tracking-wider text-foreground/85 mb-2">
                 {group.title(t)}
               </h3>
               <div className="space-y-1.5">

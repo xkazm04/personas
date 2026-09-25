@@ -6,6 +6,7 @@
  * and will retry naturally on real navigation.
  */
 import { silentCatch } from '@/lib/silentCatch';
+import { prefetchSection } from '@/features/shared/chrome/navPrefetch';
 
 type Prefetcher = () => Promise<unknown>;
 
@@ -26,20 +27,12 @@ function cache(fn: Prefetcher): Prefetcher {
 export const prefetchHomeReleases = cache(() => import('@/features/home/sub_releases/HomeReleases'));
 export const prefetchHomeLearning = cache(() => import('@/features/home/sub_learning/HomeLearning'));
 
-// Top-level sidebar section targets (mirrors the lazy imports in PersonasPage).
-const NAV_PREFETCHERS: Record<string, Prefetcher> = {
-  overview: cache(() => import('@/features/overview/components/dashboard/OverviewPage')),
-  personas: cache(() => import('@/features/agents/components/allPersonas/PersonaOverviewPage')),
-  events: cache(() => import('@/features/triggers/TriggersPage')),
-  credentials: cache(() => import('@/features/vault/sub_credentials/manager/CredentialManager')),
-  'design-reviews': cache(() => import('@/features/templates/components/DesignReviewsPage')),
-  plugins: cache(() => import('@/features/plugins/PluginBrowsePage')),
-  settings: cache(() => import('@/features/settings/components/SettingsPage')),
-};
-
+// Top-level section targets: delegated to the shell's shared, deduped
+// section-chunk map (`shared/chrome/navPrefetch.ts`), the same map the main
+// rail's hover prefetch and the content router use. A card hover and a rail
+// hover on the same section cost one import between them.
 export function prefetchNavTarget(id: string): void {
-  const fn = NAV_PREFETCHERS[id];
-  if (fn) void fn();
+  void prefetchSection(id);
 }
 
 type IdleCb = (deadline: { didTimeout: boolean; timeRemaining: () => number }) => void;

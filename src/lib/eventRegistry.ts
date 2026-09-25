@@ -23,6 +23,7 @@ import type { PendingPairingView } from '@/lib/bindings/PendingPairingView';
 import type { RadioState } from '@/lib/bindings/RadioState';
 import type { KbExtractionProgress } from '@/lib/bindings/KbExtractionProgress';
 import type { ContestChangedPayload } from '@/lib/bindings/ContestChangedPayload';
+import type { CompanionsStatusDto } from '@/lib/bindings/CompanionsStatusDto';
 import type { CircuitTransitionEvent } from '@/lib/bindings/CircuitTransitionEvent';
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
 import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
@@ -264,6 +265,13 @@ export const EventName = {
   /** One remote-job row changed state. Payload is the whole updated row. */
   REMOTE_JOB_UPDATED: 'network:remote-job-updated',
   /**
+   * One remote session's view changed on the ORIGINATING device: a mirror frame
+   * arrived, its job changed status, or liveness turned it `unknown`.
+   */
+  REMOTE_SESSION_UPDATED: 'network:remote-session-updated',
+  /** One chunk of a subscribed remote session's terminal output (lossy tail). */
+  REMOTE_SESSION_OUTPUT: 'network:remote-session-output',
+  /**
    * A paired device asked THIS device to run something and the answering turn
    * started / finished. The turn is `suppress_chat`, so this is the ONLY signal
    * the frontend gets — it drives the ambient orb notice, nothing else.
@@ -331,6 +339,7 @@ export const EventName = {
   MCP_APPROVAL_REQUEST: 'athena://mcp/approval-request',
   ORCHESTRATION_DIGEST_CHANGED: 'athena://orchestration/digest-changed',
   FLEET_AUTO_DECIDED: 'athena://fleet/auto-decided',
+  COMPANIONS_STATUS_CHANGED: 'companions://status-changed',
   STANDARDS_SCAN_STATUS: 'dev_tools_standards_scan_status',
   RADIO_STATE: 'radio:state',
   KB_EXTRACTION_PROGRESS: 'kb-extraction-progress',
@@ -1110,6 +1119,8 @@ export interface EventPayloadMap {
    */
   [EventName.DEVICE_PAIRING_REQUESTED]: import('@/api/network/devices').DevicePairingRequest[];
   [EventName.REMOTE_JOB_UPDATED]: import('@/lib/bindings/RemoteJob').RemoteJob;
+  [EventName.REMOTE_SESSION_UPDATED]: import('@/lib/bindings/RemoteSessionView').RemoteSessionView;
+  [EventName.REMOTE_SESSION_OUTPUT]: import('@/lib/bindings/RemoteSessionOutputChunk').RemoteSessionOutputChunk;
   [EventName.REMOTE_JOB_TURN]: import('@/lib/network/remoteJobNotice').RemoteJobTurnEvent;
 
   // Notification delivery
@@ -1217,6 +1228,10 @@ export interface EventPayloadMap {
   [EventName.MCP_APPROVAL_REQUEST]: McpRequestNoticePayload;
   [EventName.ORCHESTRATION_DIGEST_CHANGED]: unknown;
   [EventName.FLEET_AUTO_DECIDED]: { sessionId: string; projectLabel: string; text: string };
+  // The whole Companions status travels ON the event, so a listener never has
+  // to read back. Typed as the generated DTO so a field that moves in Rust
+  // breaks here rather than at the surface that draws it.
+  [EventName.COMPANIONS_STATUS_CHANGED]: CompanionsStatusDto;
   [EventName.STANDARDS_SCAN_STATUS]: { project_id?: string; status?: string };
   [EventName.RADIO_STATE]: RadioState;
   [EventName.KB_EXTRACTION_PROGRESS]: KbExtractionProgress;

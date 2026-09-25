@@ -147,7 +147,7 @@ function RoleStep({ selected, onSelect }: { selected: string | null; onSelect: (
               </div>
 
               {/* Label */}
-              <span className="typo-body-lg font-bold text-foreground">{label}</span>
+              <span className="typo-body-lg text-foreground">{label}</span>
               <span className="typo-body text-foreground mt-0.5">{subtitle}</span>
 
               {/* Selection indicator */}
@@ -532,7 +532,7 @@ function SetupCardItem({
 
         {/* Title overlaid at bottom */}
         <div className="absolute bottom-0 left-0 right-0 px-3 pb-2.5 pt-8 bg-gradient-to-t dark:from-black/40 from-transparent to-transparent pointer-events-none z-10">
-          <h3 className="typo-heading-lg font-semibold tracking-wide uppercase dark:text-white text-foreground/85 drop-shadow-elevation-1">
+          <h3 className="typo-heading-lg uppercase dark:text-white text-foreground/85 drop-shadow-elevation-1">
             {displayTitle}
           </h3>
         </div>
@@ -541,7 +541,7 @@ function SetupCardItem({
         {completed && (
           <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30">
             <Check className="w-3 h-3 text-emerald-400" />
-            <span className="typo-body font-medium text-emerald-400 max-w-[80px] truncate">
+            <span className="typo-body text-emerald-400 max-w-[80px] truncate">
               {value}
             </span>
           </div>
@@ -555,7 +555,7 @@ function SetupCardItem({
 
       {/* Description below */}
       <div className="mt-2 px-1 h-[64px] flex items-start">
-        <p className="typo-body leading-relaxed dark:text-foreground text-foreground line-clamp-3">
+        <p className="typo-body dark:text-foreground text-foreground line-clamp-3">
           {locked
             ? card.id === 'tool'
               ? setup.select_role_first

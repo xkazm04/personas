@@ -15,6 +15,7 @@
 // is the only shape in which those two cannot disagree.
 
 import type { FleetSession } from '@/lib/bindings/FleetSession';
+import type { RemoteSessionView } from '@/lib/bindings/RemoteSessionView';
 import type { PersonaCardModel } from '../monitorModel';
 
 /**
@@ -62,9 +63,19 @@ export const TRAY_GAP = 6;
 /** Gap between columns, and between the board's rows of columns (`gap-3`). */
 export const BOARD_GAP = 12;
 
+/**
+ * A REMOTE session (sent to a paired device) is a session node plus one status
+ * line: "queued until <device> wakes", "last seen <ago>", or the returned
+ * work's receipt. That line is text, which the node's symbol row may not hold,
+ * so it gets a row of its own rather than bending the node's two-row rule.
+ */
+export const REMOTE_STATUS_H = 14;
+export const REMOTE_TILE_H = SESSION_TILE_H + REMOTE_STATUS_H;
+
 /** Row heights = tile + its trailing gap. See the header for why the gap lives here. */
 export const PERSONA_ROW_H = TILE_H + ROW_GAP;
 export const SESSION_ROW_H = SESSION_TILE_H + ROW_GAP;
+export const REMOTE_ROW_H = REMOTE_TILE_H + ROW_GAP;
 /**
  * The rule between a column's roster and its live sessions.
  *
@@ -222,7 +233,8 @@ export function chunkRows<T>(items: readonly T[], perRow: number): T[][] {
 export type ColumnRow =
   | { kind: 'persona'; key: string; height: number; card: PersonaCardModel; teamName: string | null }
   | { kind: 'divider'; key: string; height: number }
-  | { kind: 'session'; key: string; height: number; session: FleetSession };
+  | { kind: 'session'; key: string; height: number; session: FleetSession }
+  | { kind: 'remote'; key: string; height: number; view: RemoteSessionView };
 
 /**
  * Flatten a column into its rows: the roster, then — only if the column has
@@ -239,6 +251,8 @@ export function columnRows(
   sessions: readonly FleetSession[],
   /** The column's team, which the persona node's meta row names. */
   teamName: string | null = null,
+  /** Sessions this device sent to a paired device FOR this column's project. */
+  remotes: readonly RemoteSessionView[] = [],
 ): ColumnRow[] {
   const rows: ColumnRow[] = cards.map((card) => ({
     kind: 'persona' as const,
@@ -247,12 +261,17 @@ export function columnRows(
     card,
     teamName,
   }));
-  if (sessions.length === 0) return rows;
+  if (sessions.length === 0 && remotes.length === 0) return rows;
   rows.push({ kind: 'divider', key: 'divider', height: DIVIDER_ROW_H });
   for (const session of sessions) {
     rows.push({ kind: 'session', key: `s:${session.id}`, height: SESSION_ROW_H, session });
   }
-  return rows;
+  return [...rows, ...remoteRows(remotes)];
+}
+
+/** Remote rows alone - the body of an "On <device>" column, which has no roster to divide from. */
+export function remoteRows(remotes: readonly RemoteSessionView[]): ColumnRow[] {
+  return remotes.map((view) => ({ kind: 'remote' as const, key: `remote:${view.jobId}`, height: REMOTE_ROW_H, view }));
 }
 
 /**

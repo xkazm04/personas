@@ -106,13 +106,13 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
           <div className="p-4 space-y-3">
             {selectedReview.description && (
               <div>
-                <div className="typo-code font-mono text-foreground uppercase mb-1">{t.agents.activity.description}</div>
+                <div className="typo-code text-foreground uppercase mb-1">{t.agents.activity.description}</div>
                 <p className="typo-body text-foreground whitespace-pre-wrap">{selectedReview.description}</p>
               </div>
             )}
             {selectedReview.context_data && (
               <div>
-                <div className="typo-code font-mono text-foreground uppercase mb-1">{t.agents.activity.context}</div>
+                <div className="typo-code text-foreground uppercase mb-1">{t.agents.activity.context}</div>
                 <pre className="typo-body text-foreground bg-secondary/30 rounded-card p-2 overflow-x-auto">{selectedReview.context_data}</pre>
               </div>
             )}
@@ -120,7 +120,7 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
               <div className="flex items-center gap-2 pt-2 border-t border-primary/10">
                 <Button
                   variant="accent"
-                  accentColor="emerald"
+                  tone="success"
                   size="sm"
                   onClick={() => handleReviewAction('approved')}
                   disabled={reviewProcessing !== null}
@@ -132,7 +132,7 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
                 </Button>
                 <Button
                   variant="accent"
-                  accentColor="rose"
+                  tone="error"
                   size="sm"
                   onClick={() => handleReviewAction('rejected')}
                   disabled={reviewProcessing !== null}
@@ -146,7 +146,7 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
             )}
             {selectedReview.reviewer_notes && (
               <div>
-                <div className="typo-code font-mono text-foreground uppercase mb-1">{t.agents.activity.reviewer_notes}</div>
+                <div className="typo-code text-foreground uppercase mb-1">{t.agents.activity.reviewer_notes}</div>
                 <p className="typo-body text-foreground italic">{selectedReview.reviewer_notes}</p>
               </div>
             )}

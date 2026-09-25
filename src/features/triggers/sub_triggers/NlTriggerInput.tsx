@@ -93,7 +93,7 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
 
   return (
     <div className="space-y-2">
-      <label className="flex items-center gap-1.5 typo-body font-medium text-foreground">
+      <label className="flex items-center gap-1.5 typo-body text-foreground">
         <Sparkles className="w-3.5 h-3.5 text-violet-400" />
         {t.triggers.describe_trigger}
       </label>
@@ -129,7 +129,7 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
             {meta && <meta.Icon className={`w-4 h-4 shrink-0 ${meta.color}`} />}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="typo-body font-medium text-foreground/90 truncate">
+                <span className="typo-body text-foreground/90 truncate">
                   {result.label}
                 </span>
                 <span className={`typo-caption px-1.5 py-0.5 rounded-input ${confidence!.bg} ${confidence!.text} border ${confidence!.border}`}>
@@ -152,7 +152,7 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
             <button
               type="button"
               onClick={handleApply}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-card typo-caption font-medium transition-colors shrink-0 border border-violet-500/20"
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-card typo-caption transition-colors shrink-0 border border-violet-500/20"
             >
               <Check className="w-3 h-3" />
               Apply

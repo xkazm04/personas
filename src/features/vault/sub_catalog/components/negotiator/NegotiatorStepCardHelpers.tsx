@@ -59,7 +59,7 @@ export function StepHeader({ step, stepIndex, isActive, isCompleted, onSelect, c
   return (
     <button type="button" id={id} onClick={onSelect} className="w-full flex items-center gap-3 px-4 py-3 text-left">
       <div
-        className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 typo-heading font-bold border ${
+        className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 typo-heading border ${
           isCompleted
             ? `${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border} ${SUCCESS_STATUS.text}`
             : isActive
@@ -71,10 +71,10 @@ export function StepHeader({ step, stepIndex, isActive, isCompleted, onSelect, c
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className={`typo-body font-medium ${isActive ? 'text-foreground' : 'text-foreground/90'}`}>
+          <span className={`typo-body ${isActive ? 'text-foreground' : 'text-foreground/90'}`}>
             {step.title}
           </span>
-          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded typo-body font-medium border ${colorClasses}`}>
+          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded typo-body border ${colorClasses}`}>
             <Icon className="w-2.5 h-2.5" />
             {step.action_type.replace('_', ' ')}
           </span>

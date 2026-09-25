@@ -77,7 +77,7 @@ export function GoalsTriage({ goals, kpis, busyIds, groupByProject, onAccept, on
               <button
                 type="button"
                 onClick={() => onAcceptAll(pending.map((r) => r.goal.id))}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption font-medium text-[var(--status-success)] bg-[var(--status-success)]/15 hover:bg-[var(--status-success)]/25 transition-colors shrink-0"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption text-[var(--status-success)] bg-[var(--status-success)]/15 hover:bg-[var(--status-success)]/25 transition-colors shrink-0"
                 data-testid="goals-triage-accept-all"
               >
                 <Check className="w-3.5 h-3.5" /> {dl.accept_accept_all}
@@ -150,13 +150,13 @@ function TriageCard({ row, busy, onAccept, onReject }: {
   return (
     <li className="px-3 py-2.5 rounded-card bg-secondary/[0.15] hover:bg-secondary/25 transition-colors">
       <div className="flex items-start gap-2">
-        <h4 className="typo-title-lg leading-snug break-words flex-1 min-w-0">{row.goal.title}</h4>
+        <h4 className="typo-title-lg break-words flex-1 min-w-0">{row.goal.title}</h4>
         {finished && (
           <span className="typo-caption text-foreground/70 tabular-nums shrink-0">{tx(dl.triage_ago, { time: finished })}</span>
         )}
       </div>
       {row.goal.description && (
-        <p className="typo-body text-foreground leading-relaxed mt-1 whitespace-pre-wrap break-words">
+        <p className="typo-body text-foreground mt-1 whitespace-pre-wrap break-words">
           {row.goal.description}
         </p>
       )}

@@ -37,6 +37,7 @@ import { useColumnWidths, ColumnResizeHandle } from './ColumnResize';
 import { MotionizedGlyph, type TracedGlyph } from './MotionizedGlyph';
 import { buildGroupRows, type GroupSpec } from './grouping';
 import { useGroupedVirtualizer, GroupHeaderRow, GROUP_HEADER_SIZE } from './GroupedVirtualList';
+import { UnifiedTableRow, useStableRowClick, useIndexSensitive } from './UnifiedTableRow';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('unified-table');
@@ -237,23 +238,45 @@ interface RowEntrance {
  * Exported for sibling table primitives (DataGrid) — not a public API.
  */
 export function useRowRevealEntrance(rowReveal?: { resetKey?: string | number }) {
-  const reduced = useReducedMotion();
-  const { hasEntered, markEntered } = useRevealTracker(rowReveal?.resetKey);
-  const enabled = !!rowReveal && !reduced;
+  const { delayFor, markEntered } = useRowRevealDelay(rowReveal);
   return useCallback(
     (id: string, index: number): RowEntrance | null => {
-      if (!enabled || index >= REVEAL_CASCADE_ROWS || hasEntered(id)) return null;
+      const delay = delayFor(id, index);
+      if (delay === null) return null;
       return {
         className: 'animate-fade-in',
-        style: { animationDelay: `${Math.min(index, REVEAL_MAX_STAGGER) * REVEAL_STEP_MS}ms` },
+        style: { animationDelay: `${delay}ms` },
         onAnimationEnd: (e) => {
           // Only our own fade — ignore CSS animations bubbling up from cells.
           if (e.target === e.currentTarget) markEntered(id);
         },
       };
     },
-    [enabled, hasEntered, markEntered],
+    [delayFor, markEntered],
   );
+}
+
+/**
+ * The entrance decision as primitives: `delayFor(id, index)` is the stagger in
+ * ms, or `null` when the row renders plainly (feature off, reduced motion,
+ * beyond the first viewport, or already entered); `markEntered` records a
+ * finished entrance. Primitives, not a fresh style object per row, keep the
+ * memoized `UnifiedTableRow` equal across renders. With `surfaceKey` the
+ * seen-set is module-scoped per surface (`useRevealTracker`), so a warm return
+ * to the same table plays no cascade.
+ */
+function useRowRevealDelay(rowReveal: { resetKey?: string | number } | undefined, surfaceKey?: string) {
+  const reduced = useReducedMotion();
+  const { hasEntered, markEntered } = useRevealTracker(rowReveal?.resetKey, surfaceKey);
+  const enabled = !!rowReveal && !reduced;
+  const delayFor = useCallback(
+    (id: string, index: number): number | null => {
+      if (!enabled || index >= REVEAL_CASCADE_ROWS || hasEntered(id)) return null;
+      return Math.min(index, REVEAL_MAX_STAGGER) * REVEAL_STEP_MS;
+    },
+    [enabled, hasEntered],
+  );
+  return { delayFor, markEntered };
 }
 
 /**
@@ -484,7 +507,12 @@ export function UnifiedTable<T>({
   // Couple the row cascade to the load ghost: passing `isLoading` gives the
   // whole cold-load choreography from one prop (opt out with rowReveal={false}).
   const resolvedReveal = resolveRowReveal(rowReveal, isLoading);
-  const rowEntrance = useRowRevealEntrance(resolvedReveal);
+  // "Where you are" for the entrance seen-set: a table that names itself keeps
+  // its seen ids across unmount, so a warm return plays no cascade.
+  const revealSurfaceKey = scrollRestoreKey ?? tableId;
+  const { delayFor, markEntered } = useRowRevealDelay(resolvedReveal, revealSurfaceKey);
+  const handleRowClick = useStableRowClick(onRowClick);
+  const indexSensitive = useIndexSensitive(columns);
   const compact = density === 'compact';
   const rowPadY = compact ? 'py-1' : 'py-2';
   // A persisted sort (keyed by tableId) wins over defaultSortKey on first
@@ -579,7 +607,6 @@ export function UnifiedTable<T>({
       }
     }
   }, [navigable, sortedData, useVirtual, virtualizer, focusedIndex, onRowClick]);
-  const focusClass = (i: number) => (i === focusedIndex ? 'ring-1 ring-inset ring-primary/40 z-[1]' : '');
 
   const { t } = useTranslation();
 
@@ -654,13 +681,14 @@ export function UnifiedTable<T>({
           gridTemplate={gridTemplate}
           rowHeight={rowHeight}
           getRowKey={getRowKey}
-          onRowClick={onRowClick}
+          onRowClick={onRowClick ? handleRowClick : undefined}
           rowAccent={rowAccent}
           groupBy={groupBy!}
           scrollRestoreKey={scrollRestoreKey}
           onEndReached={onEndReached}
           endReachedThreshold={endReachedThreshold}
           rowReveal={resolvedReveal}
+          revealSurfaceKey={revealSurfaceKey}
         />
       ) : sortedData.length > 0 && (useVirtual ? (
         <div
@@ -672,22 +700,26 @@ export function UnifiedTable<T>({
           <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
             {virtualizer.getVirtualItems().map((vRow) => {
               const row = sortedData[vRow.index]!;
-              const accent = rowAccent?.(row, vRow.index);
-              const entrance = rowEntrance(getRowKey(row), vRow.index);
+              const rowKey = getRowKey(row);
               return (
-                <div
-                  key={getRowKey(row)}
-                  onClick={() => onRowClick?.(row)}
-                  onAnimationEnd={entrance?.onAnimationEnd}
-                  style={{ position: 'absolute', top: 0, transform: `translateY(${vRow.start}px)`, width: '100%', height: `${vRow.size}px`, gridTemplateColumns: gridTemplate, contain: 'layout paint style', ...entrance?.style }}
-                  className={`row-hover-lift grid items-center border-l-2 ${accent ?? 'border-transparent'} hover:bg-primary/[0.12] ${focusClass(vRow.index)} ${onRowClick ? 'cursor-pointer' : ''} ${vRow.index > 0 ? 'border-t border-t-primary/10' : ''} ${vRow.index % 2 === 0 ? 'bg-primary/[0.03]' : ''} ${entrance?.className ?? ''}`}
-                >
-                  {columns.map((col) => (
-                    <div key={col.key} className={`px-4 min-w-0 ${col.align === 'right' ? 'text-right' : ''}`}>
-                      {col.render(row, vRow.index)}
-                    </div>
-                  ))}
-                </div>
+                <UnifiedTableRow<T>
+                  key={rowKey}
+                  row={row}
+                  rowKey={rowKey}
+                  index={vRow.index}
+                  columns={columns}
+                  gridTemplate={gridTemplate}
+                  indexSensitive={indexSensitive}
+                  onRowClick={handleRowClick}
+                  clickable={navigable}
+                  accent={rowAccent?.(row, vRow.index)}
+                  focused={vRow.index === focusedIndex}
+                  revealDelayMs={delayFor(rowKey, vRow.index)}
+                  onRevealEnd={markEntered}
+                  padY={rowPadY}
+                  virtualStart={vRow.start}
+                  virtualSize={vRow.size}
+                />
               );
             })}
           </div>
@@ -699,22 +731,24 @@ export function UnifiedTable<T>({
           onKeyDown={navigable ? handleKeyNav : undefined}
         >
           {sortedData.map((row, idx) => {
-            const accent = rowAccent?.(row, idx);
-            const entrance = rowEntrance(getRowKey(row), idx);
+            const rowKey = getRowKey(row);
             return (
-            <div
-              key={getRowKey(row)}
-              onClick={() => onRowClick?.(row)}
-              onAnimationEnd={entrance?.onAnimationEnd}
-              style={{ gridTemplateColumns: gridTemplate, contain: 'layout paint style', ...entrance?.style }}
-              className={`row-hover-lift grid items-center px-0 ${rowPadY} border-l-2 ${accent ?? 'border-transparent'} hover:bg-primary/[0.12] ${focusClass(idx)} ${onRowClick ? 'cursor-pointer' : ''} ${idx > 0 ? 'border-t border-t-primary/10' : ''} ${idx % 2 === 0 ? 'bg-primary/[0.03]' : ''} ${entrance?.className ?? ''}`}
-            >
-              {columns.map((col) => (
-                <div key={col.key} className={`px-4 min-w-0 ${col.align === 'right' ? 'text-right' : ''}`}>
-                  {col.render(row, idx)}
-                </div>
-              ))}
-            </div>
+              <UnifiedTableRow<T>
+                key={rowKey}
+                row={row}
+                rowKey={rowKey}
+                index={idx}
+                columns={columns}
+                gridTemplate={gridTemplate}
+                indexSensitive={indexSensitive}
+                onRowClick={handleRowClick}
+                clickable={navigable}
+                accent={rowAccent?.(row, idx)}
+                focused={idx === focusedIndex}
+                revealDelayMs={delayFor(rowKey, idx)}
+                onRevealEnd={markEntered}
+                padY={rowPadY}
+              />
             );
           })}
         </div>
@@ -746,6 +780,7 @@ function GroupedTableBody<T>({
   onEndReached,
   endReachedThreshold,
   rowReveal,
+  revealSurfaceKey,
 }: {
   sortedData: T[];
   columns: TableColumn<T>[];
@@ -759,8 +794,11 @@ function GroupedTableBody<T>({
   onEndReached?: () => void;
   endReachedThreshold?: number;
   rowReveal?: { resetKey?: string | number };
+  revealSurfaceKey?: string;
 }) {
-  const rowEntrance = useRowRevealEntrance(rowReveal);
+  const { delayFor, markEntered } = useRowRevealDelay(rowReveal, revealSurfaceKey);
+  const handleRowClick = useStableRowClick(onRowClick);
+  const indexSensitive = useIndexSensitive(columns);
   const parentRef = useRef<HTMLDivElement>(null);
   const setScrollRef = useScrollRestoration(scrollRestoreKey, parentRef);
   useEndReached(parentRef, onEndReached, { threshold: endReachedThreshold });
@@ -827,23 +865,26 @@ function GroupedTableBody<T>({
             );
           }
           const { item, dataIndex } = row;
-          const accent = rowAccent?.(item, dataIndex);
-          const focused = dataIndex === focusedIndex;
-          const entrance = rowEntrance(getRowKey(item), dataIndex);
+          const rowKey = getRowKey(item);
           return (
-            <div
-              key={getRowKey(item)}
-              onClick={() => onRowClick?.(item)}
-              onAnimationEnd={entrance?.onAnimationEnd}
-              style={{ position: 'absolute', top: 0, transform: `translateY(${vRow.start}px)`, width: '100%', height: `${rowHeight}px`, gridTemplateColumns: gridTemplate, contain: 'layout paint style', ...entrance?.style }}
-              className={`row-hover-lift grid items-center border-l-2 ${accent ?? 'border-transparent'} hover:bg-primary/[0.12] ${focused ? 'ring-1 ring-inset ring-primary/40 z-[1]' : ''} ${onRowClick ? 'cursor-pointer' : ''} ${dataIndex > 0 ? 'border-t border-t-primary/10' : ''} ${dataIndex % 2 === 0 ? 'bg-primary/[0.03]' : ''} ${entrance?.className ?? ''}`}
-            >
-              {columns.map((col) => (
-                <div key={col.key} className={`px-4 min-w-0 ${col.align === 'right' ? 'text-right' : ''}`}>
-                  {col.render(item, dataIndex)}
-                </div>
-              ))}
-            </div>
+            <UnifiedTableRow<T>
+              key={rowKey}
+              row={item}
+              rowKey={rowKey}
+              index={dataIndex}
+              columns={columns}
+              gridTemplate={gridTemplate}
+              indexSensitive={indexSensitive}
+              onRowClick={handleRowClick}
+              clickable={navigable}
+              accent={rowAccent?.(item, dataIndex)}
+              focused={dataIndex === focusedIndex}
+              revealDelayMs={delayFor(rowKey, dataIndex)}
+              onRevealEnd={markEntered}
+              padY=""
+              virtualStart={vRow.start}
+              virtualSize={rowHeight}
+            />
           );
         })}
       </div>

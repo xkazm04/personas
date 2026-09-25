@@ -46,7 +46,7 @@ export function TemplateCardHeader({
     <div className="px-4 pt-4 pb-2.5 flex items-start justify-between gap-2">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <h3 className="typo-body-lg font-semibold text-foreground/90 truncate">
+          <h3 className="typo-body-lg text-foreground/90 truncate">
             {name}
           </h3>
           <TrustBadge trustLevel={verification.trustLevel} compact />
@@ -85,11 +85,11 @@ export function TemplateCardHeader({
           )}
         </div>
         {goal ? (
-          <p className="typo-body text-foreground/85 mt-1 line-clamp-2 leading-relaxed italic">
+          <p className="typo-body text-foreground/85 mt-1 line-clamp-2 italic">
             {goal}
           </p>
         ) : (
-          <p className="typo-body text-foreground mt-1 line-clamp-2 leading-relaxed">
+          <p className="typo-body text-foreground mt-1 line-clamp-2">
             {instruction.length > 120
               ? instruction.slice(0, 120) + '...'
               : instruction}

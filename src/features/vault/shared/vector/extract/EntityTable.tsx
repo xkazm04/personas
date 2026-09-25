@@ -96,7 +96,7 @@ export function EntityTable({ entities, isLoading = false }: { entities: KbEntit
           return (
             <tr key={e.id} className="typo-body text-foreground border-b border-border/15 align-top">
               <td className="py-1.5 pr-3">
-                <span className="font-mono typo-code text-violet-400/80">{e.entityType}</span>
+                <span className="typo-code text-violet-400/80">{e.entityType}</span>
               </td>
               <td className="py-1.5 px-3">
                 <span className="inline-flex items-center gap-1.5">

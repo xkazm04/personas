@@ -106,7 +106,7 @@ export function LanguageCardGrid() {
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span className="typo-body shrink-0">{lang.flag}</span>
                   <div className="min-w-0 flex-1 text-left">
-                    <div className={`truncate ${isActive ? 'text-primary typo-card-label' : 'typo-card-label group-hover:text-foreground'}`}>{lang.label}</div>
+                    <div className={`truncate ${isActive ? 'typo-card-label' : 'typo-card-label'}`}>{lang.label}</div>
                     {lang.code !== 'en' && (
                       <div className="typo-caption text-foreground truncate">{lang.english}</div>
                     )}

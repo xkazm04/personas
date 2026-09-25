@@ -1,0 +1,1695 @@
+/* ============================================================================
+   THE LEDGER OPENS - Curator's Blueprint, ported from the contest winner
+   (.contest/arena/curator-blueprint/fused/direction-2).
+
+   Ported AS A STYLESHEET, not as utilities, because the winner's look IS
+   layered gradients, pseudo-elements, masks and color-mix(): approximating
+   those with the nearest design token is how the previous promotion in this
+   project lost 69 measured properties across 10 roles while every code gate
+   stayed green. Every colour here is a reference to one of the app's own
+   tokens, so all eleven themes repaint it; the only geometry written down is
+   the ledger's own grid, which is the drawing.
+
+   Type comes from the app's `.typo-*` roles, used as they are. Four
+   hand-rolled font-size declarations survive and each one says why.
+   ========================================================================== */
+
+.cb-root {
+  /* The nine channels, in the scan's own weight order, drawn as ONE ramp
+     across the app's five brand tokens. No hue is invented: --cb-h1..h9 are
+     the five tokens and the four mixes that fall between them. */
+  --cb-h1: var(--brand-rose);
+  --cb-h2: color-mix(in srgb, var(--brand-rose) 52%, var(--brand-amber));
+  --cb-h3: var(--brand-amber);
+  --cb-h4: color-mix(in srgb, var(--brand-amber) 46%, var(--brand-emerald));
+  --cb-h5: var(--brand-emerald);
+  --cb-h6: color-mix(in srgb, var(--brand-emerald) 42%, var(--brand-cyan));
+  --cb-h7: var(--brand-cyan);
+  --cb-h8: color-mix(in srgb, var(--brand-cyan) 46%, var(--brand-purple));
+  --cb-h9: var(--brand-purple);
+  --cb-ch1: var(--cb-h1);
+  --cb-ch2: var(--cb-h2);
+  --cb-ch3: var(--cb-h3);
+  --cb-ch4: var(--cb-h4);
+  --cb-ch5: var(--cb-h5);
+  --cb-ch6: var(--cb-h6);
+  --cb-ch7: var(--cb-h7);
+  --cb-ch8: var(--cb-h8);
+  --cb-ch9: var(--cb-h9);
+
+  --cb-panel: color-mix(in srgb, var(--secondary) 55%, var(--background));
+  --cb-panel-2: color-mix(in srgb, var(--secondary) 88%, var(--background));
+  --cb-rule: var(--card-border);
+  --cb-rule-2: color-mix(in srgb, var(--foreground) 22%, transparent);
+  --cb-hatch: color-mix(in srgb, var(--foreground) 34%, transparent);
+
+  /* ledger geometry - one grid, one set of gutters, one row rhythm */
+  --cb-thin: 36px;
+  --cb-devw: 92px;
+  --cb-stkw: 122px;
+  --cb-clkw: 32px;
+  --cb-totw: 64px;
+  --cb-rkw: 26px;
+  --cb-stw: 16px;
+  --cb-bdw: 32px;
+  --cb-subw: 268px;
+  --cb-gutter: 9px;
+  --cb-rowh: 30px;
+  --cb-cols: var(--cb-rkw) var(--cb-stw) minmax(var(--cb-subw), 1fr) var(--cb-bdw)
+    repeat(6, var(--cb-thin)) 8px var(--cb-devw) var(--cb-stkw) var(--cb-clkw) var(--cb-totw);
+
+  /* No font-size of its own. The root carries `data-type-density="compact"`
+     (typography.css, Gate 3) - the app's opt-in tier for a dense tool surface -
+     so text with no role token lands on step 1 of the compact ramp, and the
+     Appearance text scale still multiplies it. The ledger was the surface that
+     tier was written for and was not using it. */
+  font-size: calc(var(--type-1) * var(--type-f));
+  line-height: 1.5;
+  font-family: var(--font-sans);
+  color: var(--foreground);
+  background: var(--background);
+  font-variant-numeric: tabular-nums lining-nums;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  display: grid;
+  /* top, verdict, the operator console, the stage, the foot. The console
+     row is always present (its slot element is always rendered) so the
+     placement below it never depends on whether a host passed one. */
+  grid-template-rows: auto auto auto minmax(0, max-content) auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  position: relative;
+  overflow: hidden;
+  transition: grid-template-rows var(--duration-normal) ease;
+}
+
+/* The descent gives the page to the row.
+   The corpus verdict and the operator's console stayed on screen through the
+   whole descent and took 400 of 1080px with them, so the row the operator had
+   just zoomed into got 620px and its side panel was cut mid-line. Neither
+   region is about the subject being read; both come back with Esc, along with
+   the ledger, which was already hidden here. The run control's "exactly one,
+   in every PHASE" rule is untouched: a layer is not a phase, and the deep
+   layer is a transient the operator dismisses. */
+.cb-root[data-layer='deep'] {
+  grid-template-rows: auto 0fr 0fr minmax(0, 1fr) auto 0fr;
+}
+.cb-root[data-layer='deep'] .cb-verdict,
+.cb-root[data-layer='deep'] .cb-console-slot {
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-fast) ease;
+}
+
+/* The channel ramp carries TEXT in the light themes (a strip's name is its
+   channel's colour), and the light brand tokens are tuned for fills on a white
+   card, not for 14px type on the app's grey canvas. Seating each hue a third of
+   the way into the foreground puts all nine over 4.5:1 without moving the
+   ramp's order or its identity. */
+[data-theme^='light'] .cb-root {
+  --cb-rule-2: color-mix(in srgb, var(--foreground) 24%, transparent);
+  --cb-hatch: color-mix(in srgb, var(--foreground) 44%, transparent);
+  --cb-ch1: color-mix(in srgb, var(--cb-h1) 67%, var(--foreground));
+  --cb-ch2: color-mix(in srgb, var(--cb-h2) 67%, var(--foreground));
+  --cb-ch3: color-mix(in srgb, var(--cb-h3) 67%, var(--foreground));
+  --cb-ch4: color-mix(in srgb, var(--cb-h4) 67%, var(--foreground));
+  --cb-ch5: color-mix(in srgb, var(--cb-h5) 67%, var(--foreground));
+  --cb-ch6: color-mix(in srgb, var(--cb-h6) 67%, var(--foreground));
+  --cb-ch7: color-mix(in srgb, var(--cb-h7) 67%, var(--foreground));
+  --cb-ch8: color-mix(in srgb, var(--cb-h8) 67%, var(--foreground));
+  --cb-ch9: color-mix(in srgb, var(--cb-h9) 67%, var(--foreground));
+}
+
+.cb-root *,
+.cb-root *::before,
+.cb-root *::after {
+  box-sizing: border-box;
+}
+/* The element reset is UNLAYERED, so it beats Tailwind's layered utilities on
+   order regardless of specificity - which means a shared primitive rendered
+   inside this page would lose its own background, border and padding. Anything
+   carrying `.cb-keep` opts out: it is the app's component and wears the app's
+   styling. Nothing else in the page uses the class, so the ledger's own
+   thousands of bare buttons are reset exactly as before. */
+.cb-root button:not(.cb-keep),
+.cb-root input {
+  font: inherit;
+  color: inherit;
+}
+.cb-root button:not(.cb-keep) {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.cb-root h2,
+.cb-root h3,
+.cb-root h4,
+.cb-root p,
+.cb-root dl,
+.cb-root dd {
+  margin: 0;
+}
+.cb-root :focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: 1px;
+  border-radius: var(--radius-sm);
+}
+.cb-root .cb-dim {
+  color: var(--muted);
+}
+.cb-root .cb-dimmer {
+  color: var(--muted-dark);
+}
+/* `.cb-up` retired: `typo-label cb-up` was the tracked-uppercase composite the
+   style campaign named as a phantom and retired into `typo-eyebrow`, and it
+   needed the root's extra class purely to out-specify `.typo-label`'s own
+   tracking. 28 sites now write the token. */
+.cb-root .cb-sp {
+  flex: 1;
+}
+/* A keycap is code: step 0 of whatever ramp the surface is on. Written out
+   rather than as a class because kbd is styled by element here. */
+.cb-root kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--cb-rule-2);
+  border-bottom-width: 2px;
+  background: var(--cb-panel-2);
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: calc(var(--type-0) * var(--type-f));
+  line-height: 1;
+}
+
+/* Glyphs are marks, not text: they carry no type role, and they are sized on
+   the ramp's steps rather than on private values so the Appearance text scale
+   and the compact tier both move them with everything else. */
+.cb-root .cb-gl {
+  font-size: calc(var(--type-2) * var(--type-f));
+  line-height: 1;
+  display: inline-block;
+}
+.cb-root .cb-gl-lg {
+  font-size: calc(var(--type-4) * var(--type-f));
+  line-height: 1;
+  display: inline-block;
+}
+
+/* ---- verdict ------------------------------------------------------------- */
+/* The first block carries five figures on its foot line and the third carries
+   one, so the tracks are not equal: at 1:1.6:1 the first wrapped 4+1 at every
+   width tested, orphaning "1,825 applications" on a line of its own. */
+.cb-root .cb-verdict {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.5fr) minmax(0, 0.8fr);
+  gap: 0 var(--density-gap);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--cb-rule-2);
+  background: var(--cb-panel);
+}
+.cb-root .cb-vb {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: center;
+}
+.cb-root .cb-vb + .cb-vb {
+  border-left: 1px solid var(--cb-rule);
+  padding-left: var(--density-gap);
+}
+.cb-root .cb-vtop {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  min-width: 0;
+}
+.cb-root .cb-vtop .cb-lab {
+  min-width: 0;
+}
+.cb-root .cb-vfoot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-md);
+  color: var(--muted);
+  min-width: 0;
+}
+.cb-root .cb-vfoot b {
+  color: var(--muted-foreground);
+  font-weight: 600;
+}
+
+/* ---- ink: four marks, and a zero is never an unknown --------------------- */
+.cb-root .cb-bar {
+  display: flex;
+  height: 10px;
+  border-radius: 2px;
+  overflow: hidden;
+  border: 1px solid var(--cb-rule);
+  background: transparent;
+}
+.cb-root .cb-bar.cb-tall {
+  height: 14px;
+}
+.cb-root .cb-bar i {
+  display: block;
+  height: 100%;
+  min-width: 0;
+}
+.cb-root .cb-ink-solid {
+  background: var(--cb-c, currentColor);
+}
+.cb-root .cb-ink-stale {
+  background:
+    repeating-linear-gradient(135deg, var(--background) 0 1.5px, transparent 1.5px 4px),
+    color-mix(in srgb, var(--cb-c, currentColor) 66%, transparent);
+}
+.cb-root .cb-ink-unknown {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--cb-hatch);
+  background-image: radial-gradient(circle at 2px 50%, var(--cb-hatch) 1px, transparent 1.2px);
+  background-size: 6px 100%;
+}
+.cb-root .cb-ink-unmeasurable {
+  background: repeating-linear-gradient(135deg, var(--cb-hatch) 0 1px, transparent 1px 5px);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cb-hatch) 50%, transparent);
+}
+.cb-root .cb-swatch {
+  width: 15px;
+  height: 10px;
+  border-radius: 2px;
+  flex: none;
+  display: inline-block;
+  border: 1px solid var(--cb-rule);
+}
+/* One candle per consumer project, at the width a candle wants. They used to
+   be `flex: 1`, so three of them spread across the whole block and a 10% share
+   drew as a 300px-wide, 2px-tall slab that reads as a broken progress bar
+   rather than as a small measurement. Height is the reading; width is not. */
+.cb-root .cb-candles {
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+  height: 18px;
+  border-bottom: 1px solid var(--cb-rule);
+}
+.cb-root .cb-candles .cb-cd {
+  flex: 0 0 auto;
+  width: 22px;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.cb-root .cb-candles .cb-cd i {
+  display: block;
+  width: 100%;
+  border-radius: 1px;
+}
+.cb-root .cb-candles .cb-fill {
+  background: var(--accent);
+}
+.cb-root .cb-candles .cb-hollow {
+  box-shadow: inset 0 0 0 1px var(--cb-hatch);
+}
+
+/* ---- stage: two layers, one place --------------------------------------- */
+.cb-root .cb-stage {
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+.cb-root .cb-ledger,
+.cb-root .cb-deep {
+  grid-area: 1/1;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* ---- LAYER ONE: the spread ledger --------------------------------------- */
+.cb-root .cb-ledger {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition:
+    opacity var(--duration-normal) ease,
+    transform var(--duration-normal) ease;
+}
+.cb-root[data-layer='deep'] .cb-ledger {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.994);
+  pointer-events: none;
+}
+.cb-root .cb-lscroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  padding: 0 var(--cb-gutter);
+}
+.cb-root .cb-lrow {
+  display: grid;
+  grid-template-columns: var(--cb-cols);
+  align-items: stretch;
+}
+
+/* the sticky head: group labels, then the icon column heads */
+.cb-root .cb-lhead {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  background: var(--background);
+  border-bottom: 1px solid var(--cb-rule-2);
+}
+.cb-root .cb-grp {
+  padding: 5px 2px 3px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.cb-root .cb-grp b {
+  color: var(--foreground);
+}
+.cb-root .cb-grp .cb-ln {
+  flex: 1;
+  height: 1px;
+  background: var(--cb-rule);
+}
+.cb-root .cb-grp.cb-g1 {
+  grid-column: 1 / 5;
+}
+.cb-root .cb-grp.cb-g2 {
+  grid-column: 5 / 11;
+  border-top: 2px solid var(--cb-rule-2);
+}
+.cb-root .cb-grp.cb-g3 {
+  grid-column: 12 / 15;
+  border-top: 2px solid color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.cb-root .cb-grp.cb-g4 {
+  grid-column: 15 / 16;
+  justify-content: flex-end;
+}
+/* `button.cb-chh`, not `.cb-chh`: the reset above is `.cb-root
+   button:not(.cb-keep)` at specificity 0-2-1, and a column head IS a button,
+   so a plain `.cb-root .cb-chh` at 0-2-0 loses to it and this rule's padding
+   and left rule are silently dead. That happened: the reset gained
+   `:not(.cb-keep)` in dc779f097 (so an AsyncButton could keep its own skin)
+   AFTER the style contract had been verified at zero, and it took four roles
+   with it unnoticed. Matching the reset's specificity and winning on source
+   order is the fix; raising it further would only move the next collision. */
+.cb-root button.cb-chh {
+  grid-row: 2;
+  padding: 4px 3px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  border-left: 1px solid var(--cb-rule);
+  min-width: 0;
+  position: relative;
+  cursor: pointer;
+  text-align: center;
+}
+.cb-root .cb-chh:hover {
+  background: var(--card-bg);
+}
+.cb-root .cb-chh .cb-gl,
+.cb-root .cb-chh .cb-gl-lg {
+  color: var(--cb-cc);
+}
+.cb-root .cb-chh .cb-n {
+  color: var(--foreground);
+}
+.cb-root .cb-chh .cb-n.cb-z {
+  color: var(--muted-dark);
+}
+.cb-root .cb-chh .cb-st {
+  width: 100%;
+  height: 5px;
+  display: flex;
+  gap: 1px;
+  align-items: center;
+}
+.cb-root .cb-chh .cb-st .cb-on {
+  background: var(--cb-cc);
+  height: 100%;
+  border-radius: 1px;
+}
+.cb-root .cb-chh .cb-st .cb-flat {
+  height: 1px;
+  width: 9px;
+  background: var(--muted-dark);
+  margin: 0 auto;
+  border-radius: 0;
+}
+.cb-root .cb-chh .cb-st .cb-unk {
+  flex: 1;
+  height: 100%;
+  border-radius: 1px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--cb-hatch);
+  background-image: radial-gradient(circle at 2px 50%, var(--cb-hatch) 1px, transparent 1.2px);
+  background-size: 5px 100%;
+}
+.cb-root .cb-chh .cb-st .cb-unm {
+  flex: 1;
+  height: 100%;
+  border-radius: 1px;
+  background: repeating-linear-gradient(135deg, var(--cb-hatch) 0 1px, transparent 1px 4px);
+}
+.cb-root .cb-chh[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--cb-cc) 16%, transparent);
+}
+.cb-root .cb-hid {
+  grid-row: 2;
+  border-left: 1px solid var(--cb-rule);
+}
+.cb-root .cb-hid.cb-idb {
+  border-left: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 0 6px;
+  color: var(--muted);
+}
+.cb-root .cb-hid.cb-rankhead {
+  justify-content: flex-end;
+  padding-right: 5px;
+}
+.cb-root .cb-hid.cb-subjecthead {
+  padding-left: 2px;
+}
+.cb-root .cb-hid.cb-bundlehead {
+  justify-content: center;
+}
+.cb-root .cb-hid.cb-hrule {
+  grid-column: 11 / 12;
+  border-left: 0;
+}
+.cb-root .cb-hid.cb-tot {
+  grid-column: 15 / 16;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0 4px 6px;
+  color: var(--muted-dark);
+}
+
+/* rows */
+.cb-root .cb-row {
+  height: var(--cb-rowh);
+  border-bottom: 1px solid var(--cb-rule);
+  cursor: zoom-in;
+  position: relative;
+  scroll-margin: 74px;
+  transition: background var(--duration-fast) ease;
+}
+.cb-root .cb-row:hover {
+  background: var(--card-bg);
+}
+.cb-root .cb-row.cb-cur {
+  background: color-mix(in srgb, var(--accent) 13%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.cb-root .cb-row.cb-faded {
+  opacity: 0.26;
+}
+.cb-root .cb-row .cb-rk {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 5px;
+  color: var(--muted-dark);
+}
+.cb-root .cb-row.cb-cur .cb-rk {
+  color: var(--accent);
+  font-weight: 700;
+}
+.cb-root .cb-row .cb-stg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* The subject cell. `display:flex` is declared HERE and not on `.cb-row .cb-sl`,
+   which is where it lived until 2026-09-24: a band row is `.cb-lrow.cb-band`
+   and never `.cb-row`, so in both bands the cell fell back to a block and its
+   two inline children ran together with no separator - the page shipped
+   "subjects outside the plannothing counted, so nothing is outside anything
+   yet" and "46 more scoring subjectsmeasured, not carried by this plan". A
+   layout rule that never applied where it was most needed. */
+.cb-root .cb-sl {
+  display: flex;
+  min-width: 0;
+}
+.cb-root .cb-row .cb-sl {
+  align-items: center;
+  gap: 7px;
+  padding: 0 6px 0 2px;
+}
+.cb-root .cb-row .cb-sl .cb-s {
+  white-space: nowrap;
+}
+.cb-root .cb-row.cb-cur .cb-sl .cb-s {
+  font-weight: 650;
+}
+.cb-root .cb-row .cb-sl .cb-path {
+  color: var(--muted-dark);
+  white-space: nowrap;
+  display: none;
+}
+.cb-root .cb-row .cb-bd {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted-dark);
+}
+.cb-root .cb-row .cb-bd.cb-unk {
+  color: var(--muted-foreground);
+}
+
+/* a cell: one channel, one subject */
+.cb-root .cb-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 3px;
+  border-left: 1px solid var(--cb-rule);
+  min-width: 0;
+  position: relative;
+  background: color-mix(in srgb, var(--cb-cc) calc(var(--cb-a, 0) * 100%), transparent);
+}
+.cb-root .cb-cell.cb-wide {
+  justify-content: flex-start;
+  padding: 0 5px;
+}
+.cb-root .cb-flat {
+  width: 9px;
+  height: 1px;
+  background: var(--muted-dark);
+  opacity: 0.75;
+  flex: none;
+  display: inline-block;
+  vertical-align: 4px;
+}
+.cb-root .cb-unkbox {
+  width: 16px;
+  height: 11px;
+  border-radius: 2px;
+  flex: none;
+  display: inline-block;
+  vertical-align: -1px;
+  box-shadow: inset 0 0 0 1px var(--cb-hatch);
+  background-image: radial-gradient(circle at 2px 50%, var(--cb-hatch) 1px, transparent 1.2px);
+  background-size: 5px 100%;
+}
+.cb-root .cb-pips {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+.cb-root .cb-pips i {
+  width: 4px;
+  height: 11px;
+  border-radius: 1px;
+  background: var(--cb-cc);
+  display: block;
+}
+.cb-root .cb-pips i.cb-o {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--cb-cc);
+  opacity: 0.65;
+}
+.cb-root .cb-track {
+  flex: 1;
+  min-width: 16px;
+  height: 11px;
+  position: relative;
+}
+.cb-root .cb-track .cb-fl {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--cb-cc);
+  border-radius: 2px;
+}
+.cb-root .cb-track .cb-cl {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border: 1px dashed var(--cb-cc);
+  border-left: 0;
+  border-radius: 2px;
+  opacity: 0.8;
+}
+.cb-root .cb-chip {
+  border: 1px solid var(--cb-cc);
+  border-radius: var(--radius-sm);
+  padding: 0 5px;
+  line-height: 17px;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--muted-foreground);
+}
+.cb-root .cb-num {
+  white-space: nowrap;
+  color: var(--foreground);
+}
+.cb-root .cb-num .cb-ce {
+  color: var(--muted-dark);
+}
+.cb-root .cb-vrule {
+  border-left: 1px solid var(--cb-rule-2);
+}
+.cb-root .cb-tot {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 4px 0 6px;
+  border-left: 1px solid var(--cb-rule);
+}
+.cb-root .cb-tot .cb-tb {
+  flex: 1;
+  height: 9px;
+  display: flex;
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--card-bg);
+}
+.cb-root .cb-tot .cb-tb i {
+  display: block;
+  height: 100%;
+}
+.cb-root .cb-tot .cb-tn {
+  min-width: 20px;
+  text-align: right;
+}
+.cb-root .cb-tot .cb-tn.cb-z {
+  color: var(--muted-dark);
+}
+
+/* aggregate bands: the corpus the plan does not touch stays on the surface */
+.cb-root .cb-band {
+  border-bottom: 1px solid var(--cb-rule);
+  background: var(--card-bg);
+  min-height: 46px;
+}
+.cb-root .cb-band .cb-sl {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+  padding: 6px 2px;
+}
+.cb-root .cb-band .cb-cell {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 5px 2px;
+}
+.cb-root .cb-band .cb-cell.cb-wide {
+  align-items: flex-start;
+}
+.cb-root .cb-note {
+  grid-column: 1 / -1;
+  padding: 8px 2px 10px;
+  color: var(--muted-foreground);
+  max-width: 104ch;
+}
+.cb-root .cb-noteline {
+  display: flex;
+  gap: var(--space-md);
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin-bottom: 5px;
+}
+
+/* ---- LAYER TWO: the same row, grown ------------------------------------- */
+.cb-root .cb-deep {
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  padding: 0 var(--cb-gutter);
+}
+.cb-root[data-layer='deep'] .cb-deep {
+  display: flex;
+}
+.cb-root .cb-scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--background);
+  z-index: 0;
+  opacity: 1;
+}
+.cb-root .cb-dorigin {
+  position: relative;
+  z-index: 2;
+  background: var(--background);
+  border-bottom: 1px solid var(--cb-rule-2);
+  box-shadow: 0 6px 14px -12px var(--background);
+  cursor: zoom-out;
+}
+.cb-root .cb-dorigin .cb-row {
+  cursor: zoom-out;
+  box-shadow: inset 3px 0 0 var(--accent);
+  background: color-mix(in srgb, var(--accent) 13%, transparent);
+}
+.cb-root .cb-dorigin .cb-cell.cb-ring {
+  outline: 2px solid var(--cb-cc);
+  outline-offset: -2px;
+  border-radius: 2px;
+}
+.cb-root .cb-dorigin .cb-cell.cb-ring::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--cb-cc);
+}
+.cb-root .cb-dwrap {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.cb-root .cb-dhead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px var(--space-md);
+  padding: 7px 2px;
+  border-bottom: 1px solid var(--cb-rule);
+  flex: none;
+  align-items: center;
+}
+.cb-root .cb-dhead .cb-idy {
+  min-width: 0;
+  flex: 1;
+}
+.cb-root .cb-dhead .cb-at {
+  color: var(--muted);
+  word-break: break-all;
+}
+.cb-root .cb-dhead .cb-facts {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  align-items: baseline;
+  color: var(--muted);
+}
+.cb-root .cb-dhead .cb-tbtn {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  align-self: center;
+}
+.cb-root .cb-dbody {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(300px, 0.88fr);
+  gap: 0 var(--density-gap);
+}
+.cb-root .cb-dchans {
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  padding: var(--space-sm) 0 var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.cb-root .cb-dside {
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  border-left: 1px solid var(--cb-rule);
+  padding: var(--space-sm) 0 var(--space-xl) var(--density-gap);
+}
+
+.cb-root .cb-strip {
+  border: 1px solid var(--cb-rule);
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--cb-panel) 92%, var(--background));
+  border-left: 3px solid var(--cb-cc);
+  position: relative;
+  will-change: transform;
+}
+.cb-root .cb-strip.cb-empty {
+  background: transparent;
+  border-left-color: color-mix(in srgb, var(--cb-cc) 30%, transparent);
+}
+.cb-root .cb-strip.cb-empty .cb-strip-in {
+  grid-template-columns: 26px auto auto auto minmax(0, 1fr) auto;
+  padding: 3px 10px 4px;
+}
+.cb-root .cb-strip.cb-empty .cb-gl-lg {
+  grid-row: auto;
+  opacity: 0.5;
+}
+.cb-root .cb-strip.cb-empty .cb-say {
+  grid-column: auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.cb-root .cb-strip.cb-empty .cb-w {
+  display: none;
+}
+.cb-root .cb-strip-in {
+  padding: 6px 10px 7px;
+  display: grid;
+  grid-template-columns: 26px auto minmax(0, 1fr) auto;
+  gap: 2px var(--space-sm);
+  align-items: center;
+}
+.cb-root .cb-strip .cb-gl-lg,
+.cb-root .cb-strip .cb-gl {
+  color: var(--cb-cc);
+  grid-row: 1 / span 2;
+  justify-self: center;
+}
+.cb-root .cb-strip .typo-title {
+  color: var(--cb-cc);
+}
+.cb-root .cb-strip .cb-hd {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.cb-root .cb-strip .cb-hd .cb-w {
+  color: var(--muted-dark);
+}
+.cb-root .cb-strip .cb-pts {
+  text-align: right;
+  white-space: nowrap;
+}
+.cb-root .cb-strip .cb-pts.cb-z {
+  color: var(--muted-dark);
+}
+.cb-root .cb-strip .cb-say {
+  grid-column: 3 / -1;
+  color: var(--muted-foreground);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.cb-root .cb-strip .cb-draw {
+  grid-column: 3 / -1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin-top: 3px;
+}
+.cb-root .cb-strip .cb-ruler {
+  display: flex;
+  gap: 1px;
+  align-items: flex-end;
+  height: 10px;
+  align-self: center;
+  opacity: 0.85;
+}
+.cb-root .cb-strip .cb-ruler i {
+  width: 2px;
+  height: 3px;
+  border-radius: 1px;
+  background: var(--cb-rule-2);
+}
+.cb-root .cb-strip .cb-ruler i.cb-me {
+  height: 10px;
+  background: var(--cb-cc);
+}
+.cb-root .cb-strip:focus-visible,
+.cb-root .cb-strip:hover {
+  outline: 2px solid var(--cb-cc);
+  outline-offset: 1px;
+}
+
+.cb-root .cb-sect {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  margin: var(--space-md) 0 var(--space-sm);
+}
+.cb-root .cb-sect:first-child {
+  margin-top: 0;
+}
+.cb-root .cb-sect .cb-ln {
+  flex: 1;
+  height: 1px;
+  background: var(--cb-rule);
+}
+.cb-root .cb-pj {
+  display: grid;
+  grid-template-columns: minmax(72px, 1fr) minmax(60px, 2.1fr) auto;
+  gap: var(--space-sm);
+  align-items: center;
+  padding: 3px 0;
+  border-radius: var(--radius-sm);
+}
+.cb-root .cb-pj.cb-lit {
+  background: color-mix(in srgb, var(--brand-amber) 15%, transparent);
+  box-shadow: inset 2px 0 0 var(--brand-amber);
+}
+.cb-root .cb-pj.cb-lit .cb-pn {
+  color: var(--foreground);
+}
+.cb-root .cb-pj.cb-dull {
+  opacity: 0.42;
+}
+.cb-root .cb-pj .cb-pn {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.cb-root .cb-pj .cb-pv {
+  text-align: right;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.cb-root .cb-pj .cb-pv b {
+  color: var(--foreground);
+  font-weight: 650;
+}
+.cb-root .cb-kv {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 3px var(--density-gap);
+  align-items: baseline;
+}
+.cb-root .cb-kv dt {
+  color: var(--muted);
+  white-space: nowrap;
+}
+.cb-root .cb-kv dd {
+  color: var(--muted-foreground);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.cb-root .cb-chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.cb-root .cb-chips .cb-chip {
+  border-color: var(--cb-rule-2);
+}
+
+/* ---- top bar and footer -------------------------------------------------- */
+.cb-root .cb-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0 var(--space-md);
+  height: 44px;
+  border-bottom: 1px solid var(--cb-rule-2);
+  background: var(--cb-panel);
+  position: relative;
+  z-index: 40;
+}
+.cb-root .cb-mark {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  flex: none;
+}
+.cb-root .cb-meta {
+  display: flex;
+  gap: var(--space-md);
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--muted);
+}
+/* The two bar controls ARE the app's Button (variant ghost / secondary,
+   `cb-keep` so the element reset leaves them alone). What is left here is the
+   bar's own rhythm - its height and its gap - and the pressed tint, which
+   says "this drawer is open" and no Button variant carries. Everything the
+   page used to re-derive by hand (border, background, hover, focus ring,
+   press response, coarse-pointer target) is the primitive's now. */
+.cb-root .cb-tbtn {
+  gap: 6px;
+  height: 27px;
+  white-space: nowrap;
+}
+.cb-root .cb-tbtn[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  color: var(--foreground);
+}
+.cb-root .cb-pill {
+  display: inline-grid;
+  place-items: center;
+  min-width: 19px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  background: var(--brand-amber);
+  color: var(--background);
+}
+.cb-root .cb-pill.cb-zero {
+  background: var(--cb-rule-2);
+  color: var(--muted);
+}
+.cb-root .cb-find {
+  width: 142px;
+  height: 27px;
+  padding: 0 9px;
+  border-radius: var(--radius-interactive);
+  border: 1px solid var(--cb-rule);
+  background: var(--cb-panel-2);
+}
+.cb-root .cb-find:focus {
+  width: 208px;
+}
+.cb-root .cb-foot {
+  border-top: 1px solid var(--cb-rule-2);
+  background: var(--cb-panel);
+  padding: 4px var(--space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  min-height: 34px;
+  z-index: 40;
+}
+.cb-root .cb-legend {
+  display: flex;
+  gap: 2px var(--space-md);
+  flex-wrap: wrap;
+  align-items: center;
+  min-width: 0;
+  color: var(--muted);
+}
+.cb-root .cb-legend .cb-lg {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.cb-root .cb-legend .cb-lg .cb-gl {
+  color: var(--cb-cc);
+}
+.cb-root .cb-gauge {
+  margin-left: auto;
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+  flex-wrap: wrap;
+  color: var(--muted);
+}
+.cb-root .cb-gauge > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.cb-root .cb-gauge b {
+  color: var(--muted-foreground);
+  font-weight: 650;
+}
+.cb-root .cb-gbar {
+  width: 46px;
+  height: 6px;
+  border: 1px solid var(--cb-rule-2);
+  border-radius: 2px;
+  display: flex;
+  overflow: hidden;
+}
+.cb-root .cb-gbar i {
+  display: block;
+  height: 100%;
+  background: var(--brand-amber);
+}
+
+/* How far Curator may reach into a checkout, beside its name. `unknown` wears
+   the muted mark and never the refused one: a door that did not name the
+   project is not a person who said no. */
+.cb-root .cb-reach {
+  margin-left: 5px;
+  font-style: normal;
+}
+.cb-root .cb-reach-granted {
+  color: var(--status-success);
+}
+.cb-root .cb-reach-refused {
+  color: var(--status-error);
+}
+.cb-root .cb-reach-never_asked {
+  color: var(--muted-dark);
+}
+.cb-root .cb-reach-off {
+  color: var(--muted-dark);
+}
+.cb-root .cb-reach-unknown {
+  color: var(--muted-foreground);
+}
+.cb-root .cb-gauge b.cb-unset {
+  color: var(--muted-dark);
+  font-weight: 400;
+}
+.cb-root .cb-drift {
+  margin-left: 4px;
+  font-style: normal;
+  color: var(--status-warning);
+}
+
+/* ---- the key sheet ------------------------------------------------------- */
+.cb-root.cb-help {
+  padding: var(--space-lg) var(--space-xl);
+}
+.cb-root .cb-kgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 4px var(--space-xl);
+  margin: 12px 0;
+}
+.cb-root .cb-krow {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: baseline;
+  padding: 2px 0;
+  border-bottom: 1px solid var(--cb-rule);
+}
+.cb-root .cb-krow .cb-kk {
+  flex: none;
+  width: 104px;
+}
+
+/* ---- responsive ---------------------------------------------------------- */
+@media (min-width: 1400px) {
+  .cb-root {
+    --cb-thin: 48px;
+    --cb-devw: 128px;
+    --cb-stkw: 130px;
+    --cb-clkw: 40px;
+    --cb-totw: 84px;
+    --cb-rkw: 32px;
+    --cb-stw: 18px;
+    --cb-bdw: 40px;
+    --cb-subw: 300px;
+    --cb-gutter: 14px;
+    --cb-rowh: 32px;
+  }
+  .cb-root .cb-strip.cb-empty .cb-w {
+    display: inline;
+  }
+  .cb-root .cb-dbody {
+    grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr);
+  }
+}
+/* The taxonomy address only appears where the whole of it fits beside the
+   longest slug in the corpus. The ledger never abbreviates: it either shows
+   the thing or it does not carry it.
+
+   The threshold was 1660px, and that was measured against the wrong thing. The
+   subject cell is the grid's only `1fr`, so it absorbs ALL the slack: at 1440
+   it is 634px wide carrying 116px of ink - 82% dead - and the address that
+   would fill it stayed hidden for another 220px of window. Measured at 1180
+   the cell is already 374px, which holds the longest address in the corpus
+   (`engineering-assessment/measurement-method`, 268px at the compact step)
+   beside a 36-character slug. */
+@media (min-width: 1180px) {
+  .cb-root .cb-row .cb-sl .cb-path {
+    display: block;
+  }
+}
+/* Short viewports: the chrome yields, the ledger does not.
+   Measured before this block at 1000x640 - top 44 + verdict 145 + console 304
+   + head 116 + foot 34 = 643px of chrome against a 640px viewport, so ZERO of
+   sixteen rows were visible and Playwright could not click one at all (the
+   sticky head intercepted every attempt for thirty seconds). The page's whole
+   subject was unreachable on a laptop. Nothing is hidden here: the regions
+   keep every fact they carry and give up their padding, and the operator's
+   lane scrolls at two rows instead of five. */
+@media (max-height: 820px) {
+  .cb-root {
+    --cb-rowh: 27px;
+  }
+}
+@media (max-width: 900px) {
+  .cb-root {
+    --cb-subw: 200px;
+    --cb-thin: 30px;
+    --cb-devw: 74px;
+    --cb-stkw: 86px;
+    --cb-totw: 54px;
+  }
+  .cb-root .cb-verdict {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cb-root .cb-vb + .cb-vb {
+    border-left: 0;
+    border-top: 1px solid var(--cb-rule);
+    padding-left: 0;
+    padding-top: 6px;
+  }
+  .cb-root .cb-dbody {
+    grid-template-columns: minmax(0, 1fr);
+    overflow-y: auto;
+  }
+  .cb-root .cb-dchans,
+  .cb-root .cb-dside {
+    overflow: visible;
+    min-height: auto;
+  }
+  .cb-root .cb-dside {
+    border-left: 0;
+    border-top: 1px solid var(--cb-rule);
+    padding-left: 0;
+    margin-top: var(--space-md);
+  }
+}
+
+/* ---- motion: one transition, and it survives being switched off ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .cb-root *,
+  .cb-root *::before,
+  .cb-root *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* ---- the operator console ------------------------------------------------
+   Run the instrument, what the loop is doing, the human lane, and the composer
+   that fills it. One row of the page grid, between the verdict and the ledger,
+   because that is the order the work happens in: she drains this lane BEFORE
+   the plan below it.
+
+   Every colour is one of the page's own tokens; the only geometry declared is
+   the console's own rhythm. Type is `.typo-*` as it is everywhere else here.
+   -------------------------------------------------------------------------- */
+.cb-root .cb-console-slot {
+  min-width: 0;
+}
+.cb-root .cb-console {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--cb-rule-2);
+  background: var(--cb-panel-2);
+  min-width: 0;
+}
+.cb-root .cb-console-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.cb-root .cb-run {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: none;
+}
+.cb-root .cb-run-say {
+  color: var(--muted);
+  min-height: 1em;
+}
+.cb-root .cb-console .cb-unset {
+  color: var(--muted-dark);
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* ---- the runtime strip: what she is doing, and every brake on it --------- */
+.cb-root .cb-runtime {
+  display: flex;
+  align-items: center;
+  gap: 0 var(--space-md);
+  flex-wrap: wrap;
+  margin-left: auto;
+  min-width: 0;
+  color: var(--muted);
+}
+.cb-root .cb-runtime b {
+  color: var(--muted-foreground);
+  font-weight: 600;
+}
+.cb-root .cb-serving {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted-foreground);
+}
+.cb-root .cb-serving .cb-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--status-success);
+}
+.cb-root .cb-serving.cb-unset .cb-dot {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--cb-hatch);
+}
+.cb-root .cb-halted {
+  color: var(--status-warning);
+}
+/* An unknown fan-out carries no digit at all, so there is nothing on screen a
+   reader could mistake for a measured count of none. */
+.cb-root [data-role='cb-fanned'][data-known='false'] b {
+  font-weight: 400;
+}
+
+/* ---- the human lane ------------------------------------------------------ */
+.cb-root .cb-lane {
+  min-width: 0;
+}
+.cb-root .cb-lane-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  color: var(--muted);
+  padding-bottom: 2px;
+}
+.cb-root .cb-lane-head b {
+  color: var(--muted-foreground);
+}
+.cb-root .cb-lane-head i {
+  font-style: normal;
+}
+.cb-root .cb-lane-empty {
+  color: var(--muted-dark);
+  padding: 2px 0;
+}
+.cb-root .cb-lane-rows {
+  display: flex;
+  flex-direction: column;
+  max-height: 148px;
+  overflow-y: auto;
+  border-top: 1px solid var(--cb-rule);
+}
+.cb-root .cb-req {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-height: var(--cb-rowh);
+  padding: 0 2px;
+  border-bottom: 1px solid var(--cb-rule);
+  min-width: 0;
+}
+.cb-root .cb-req:last-child {
+  border-bottom: 0;
+}
+.cb-root .cb-req-state {
+  flex: none;
+  min-width: 78px;
+  color: var(--muted);
+}
+.cb-root .cb-req[data-state='queued'] .cb-req-state {
+  color: var(--muted-foreground);
+}
+.cb-root .cb-req[data-state='failed'] .cb-req-state,
+.cb-root .cb-req[data-state='declined'] .cb-req-state {
+  color: var(--status-error);
+}
+.cb-root .cb-req[data-state='landed'] .cb-req-state {
+  color: var(--status-success);
+}
+.cb-root .cb-req-skill {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+}
+.cb-root .cb-req-skill b {
+  color: var(--foreground);
+}
+.cb-root .cb-req-arg {
+  font-style: normal;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cb-root .cb-req-note,
+.cb-root .cb-req-say,
+.cb-root .cb-req-when {
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- the composer -------------------------------------------------------- */
+.cb-root .cb-compose {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.cb-root .cb-compose-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+/* Always reserved, empty or not: a badge that appeared on pick would move the
+   ledger under it every time the operator chose a skill. It rides at the END
+   of the composer row rather than on a line of its own - the line cost 21px of
+   permanent height on a page whose measured defect is that the chrome takes
+   the whole viewport at 1000x640. */
+.cb-root .cb-need-line {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  min-height: 24px;
+  min-width: 132px;
+  flex: none;
+}
+/* Label and field side by side. Stacked they cost 18px per composer, which is
+   the same 18px three times over across the three fields' shared row. */
+.cb-root .cb-compose-skill,
+.cb-root .cb-compose-arg,
+.cb-root .cb-compose-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.cb-root .cb-compose-skill {
+  position: relative;
+  flex: 1 1 210px;
+}
+.cb-root .cb-compose-arg {
+  flex: 2 1 240px;
+}
+.cb-root .cb-compose-note {
+  flex: 1 1 170px;
+}
+/* Narrow: the label is read out but not drawn. Three inline labels take 45% of
+   the composer row at 1000px and crush every field into an ellipsis ("a URL, a
+   bundle, a do", "carried i"). Each field's placeholder already names it - and
+   for the argument field the placeholder is the picked skill's own argument
+   line, verbatim - so the drawn label is the part that can go. `htmlFor` still
+   binds, so nothing is lost to a screen reader. */
+.cb-root .cb-clab {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+@media (min-width: 1180px) {
+  .cb-root .cb-clab {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    clip-path: none;
+    flex: none;
+    color: var(--muted);
+  }
+}
+.cb-root .cb-cfield {
+  width: 100%;
+  height: 26px;
+  padding: 0 7px;
+  border: 1px solid var(--cb-rule-2);
+  border-radius: var(--radius-sm);
+  background: var(--background);
+  color: var(--foreground);
+}
+.cb-root .cb-cfield::placeholder {
+  color: var(--muted-dark);
+}
+.cb-root .cb-cfield:disabled {
+  opacity: 0.55;
+}
+/* The suggestion panel opens DOWNWARD over the ledger rather than pushing it:
+   the console is a row of the page grid and a panel in flow would move every
+   row below it on each keystroke. */
+.cb-root .cb-suggest {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  margin-top: 3px;
+}
+.cb-root .cb-lane-tag {
+  font-style: normal;
+  color: var(--muted-dark);
+}
+.cb-root .cb-need {
+  border: 1px solid var(--cb-rule-2);
+  border-radius: var(--radius-sm);
+  padding: 0 5px;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+/* The third state wears the ledger's own UNKNOWN ink: a see-through, dashed
+   box, the same mark the nine columns use for "nobody looked". It must never
+   read as the "runs bare" badge that takes its place. */
+.cb-root .cb-need[data-need='unknown'] {
+  border-style: dashed;
+  border-color: var(--cb-hatch);
+  color: var(--muted-dark);
+  background: transparent;
+}
+.cb-root .cb-need[data-need='optional'] {
+  border-color: color-mix(in srgb, var(--status-success) 45%, transparent);
+  color: var(--status-success);
+}
+
+/* ---- the page before anything has been measured -------------------------
+
+   There is no second layout here. The page draws itself - top bar, verdict,
+   console, the nine channel heads, both bands, the foot - and only the FIGURES
+   are missing. What stands in their place is the ledger's own UNKNOWN ink, at
+   three sizes, so the hero slot, a column head's count and a band's tally all
+   say the same thing the nine columns say. It is never a shimmer: a shimmer
+   promises arrival, and nothing arrives here until someone runs the
+   instrument. -------------------------------------------------------------- */
+.cb-root .cb-unmeasured {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
+.cb-root .cb-unmeasured[data-size='lg'] .cb-unkbox {
+  width: 34px;
+  height: 18px;
+  vertical-align: 0;
+}
+.cb-root .cb-unmeasured[data-size='hero'] .cb-unkbox {
+  width: 74px;
+  height: 30px;
+  border-radius: 3px;
+  vertical-align: 0;
+  background-size: 7px 100%;
+}
+
+/* Where the rows would be: one line, on the ledger's own grid, between the
+   real head and the real bands. Not a card, and not a card's worth of room. */
+.cb-root .cb-lempty {
+  border-bottom: 1px solid var(--cb-rule);
+}
+.cb-root .cb-lempty .cb-note {
+  max-width: 92ch;
+}
+.cb-root .cb-lempty .cb-noteline {
+  align-items: center;
+}
+
+/* ---- short viewports: the chrome yields, the ledger does not -------------
+   Last in the file on purpose: every rule below overrides one declared
+   earlier at the same specificity, and order is what decides.
+
+   Measured before this block at 1000x640: top 44 + verdict 145 + console 304
+   + head 116 + foot 34 = 643px of chrome against a 640px viewport, so ZERO of
+   sixteen rows were visible and Playwright could not click one at all - the
+   sticky head intercepted every attempt for thirty seconds. The page's whole
+   subject was unreachable on a laptop.
+
+   Nothing is hidden here. Every region keeps every fact it carries and gives
+   up its padding; the operator's lane scrolls at two rows instead of five.
+   -------------------------------------------------------------------------- */
+@media (max-height: 820px) {
+  .cb-root .cb-top {
+    height: 38px;
+  }
+  .cb-root .cb-verdict {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+  .cb-root .cb-console {
+    padding-top: 4px;
+    padding-bottom: 4px;
+    gap: 4px;
+  }
+  .cb-root .cb-lane-rows {
+    max-height: calc(var(--cb-rowh) * 2);
+  }
+  .cb-root .cb-req {
+    min-height: var(--cb-rowh);
+  }
+  .cb-root .cb-foot {
+    min-height: 28px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+  .cb-root button.cb-chh {
+    padding-top: 2px;
+    padding-bottom: 3px;
+    gap: 2px;
+  }
+  .cb-root .cb-grp {
+    padding-top: 3px;
+    padding-bottom: 2px;
+  }
+}
+/* Tall viewports: the one region that can honestly use the room does.
+   The lane's 148px cap is a scroll at five requests whatever the window is; a
+   tall window has the space to show the queue whole, and the queue is the one
+   thing on this page whose length is the operator's own doing. Nothing else
+   grows - a 16-row plan is 16 rows, and filling 2,000px with invented height
+   would be this page telling a different kind of lie. */
+@media (min-height: 1200px) {
+  .cb-root .cb-lane-rows {
+    max-height: 340px;
+  }
+}
+@media (max-height: 700px) {
+  .cb-root .cb-verdict .cb-bar {
+    height: 7px;
+  }
+  .cb-root .cb-verdict .cb-bar.cb-tall {
+    height: 10px;
+  }
+}

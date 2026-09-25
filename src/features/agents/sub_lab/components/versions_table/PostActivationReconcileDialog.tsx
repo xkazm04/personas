@@ -58,7 +58,7 @@ export function PostActivationReconcileDialog({ isOpen, onClose, conflicts, prom
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} titleId="vr-reconcile-modal" maxWidthClass="max-w-2xl">
       <div className="p-4 space-y-3">
-        <h3 className="typo-section-title text-foreground flex items-center gap-2">
+        <h3 className="typo-section-title flex items-center gap-2">
           <Pin className="w-4 h-4 text-amber-300" />
           {lab.vr_reconcile_title}
         </h3>
@@ -77,7 +77,7 @@ export function PostActivationReconcileDialog({ isOpen, onClose, conflicts, prom
                 className="flex items-center gap-3 rounded-card border border-primary/15 bg-secondary/30 px-3 py-2"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="typo-body text-foreground font-medium truncate">{c.title}</p>
+                  <p className="typo-body text-foreground truncate">{c.title}</p>
                   <p className="typo-caption text-foreground/85">
                     {isCleared
                       ? tx(lab.vr_reconcile_now_follows, { model: promotedLabel })

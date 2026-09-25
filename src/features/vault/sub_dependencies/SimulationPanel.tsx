@@ -29,7 +29,7 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
       <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
         <div className="flex items-center gap-2">
           <FlaskConical className="w-4 h-4 text-fuchsia-400/80" />
-          <span className="typo-body font-medium text-foreground/85">{dep.revocation_simulation}</span>
+          <span className="typo-body text-foreground/85">{dep.revocation_simulation}</span>
           <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded-input border ${sev.bg} ${sev.text} ${sev.border}`}>
             {sev.label}
           </span>
@@ -43,11 +43,11 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
         {/* Impact Summary Cards */}
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-card bg-secondary/40 border border-primary/8 p-2 text-center">
-            <div className="typo-heading-lg font-semibold text-foreground/90">{simulation.totalAffectedPersonas}</div>
+            <div className="typo-heading-lg text-foreground/90">{simulation.totalAffectedPersonas}</div>
             <div className="text-[10px] text-foreground">{dep.personas_affected}</div>
           </div>
           <div className="rounded-card bg-secondary/40 border border-primary/8 p-2 text-center">
-            <div className="typo-heading-lg font-semibold text-foreground/90">{simulation.estimatedDailyExecutionsLost}</div>
+            <div className="typo-heading-lg text-foreground/90">{simulation.estimatedDailyExecutionsLost}</div>
             <div className="text-[10px] text-foreground">{dep.daily_execs_lost}</div>
           </div>
           <div className="rounded-card bg-secondary/40 border border-primary/8 p-2 text-center">
@@ -55,14 +55,14 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
               as="div"
               value={simulation.estimatedDailyRevenueLost}
               unit="usd"
-              className="typo-heading-lg font-semibold text-foreground/90"
+              className="typo-heading-lg text-foreground/90"
             />
             <div className="text-[10px] text-foreground">{dep.daily_cost_impact}</div>
           </div>
         </div>
 
         {/* Scenario description */}
-        <div className="typo-caption text-foreground leading-relaxed px-1">
+        <div className="typo-caption text-foreground px-1">
           {simulation.severity === 'high' ? (
             <span
               dangerouslySetInnerHTML={{

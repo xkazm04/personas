@@ -18,7 +18,7 @@ export function ExtraFieldRenderer({
         <>
           <div className="border-t border-primary/8" />
           <div>
-            <h4 className="typo-heading font-semibold uppercase tracking-wider text-foreground mb-3">
+            <h4 className="typo-heading uppercase text-foreground mb-3">
               {def.sectionTitle}
             </h4>
             <textarea
@@ -27,7 +27,7 @@ export function ExtraFieldRenderer({
               placeholder={def.placeholder}
               aria-label={def.sectionTitle}
               rows={def.rows ?? 4}
-              className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-modal text-foreground typo-code font-mono focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30 resize-y"
+              className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-modal text-foreground typo-code focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30 resize-y"
             />
             {def.helpText && <p className="mt-1 typo-body text-foreground">{def.helpText}</p>}
           </div>
@@ -91,7 +91,7 @@ function KeyValueListField({
       <div className="border-t border-primary/8" />
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h4 className="typo-heading font-semibold uppercase tracking-wider text-foreground">
+          <h4 className="typo-heading uppercase text-foreground">
             {def.sectionTitle}
           </h4>
           <button
@@ -125,7 +125,7 @@ function KeyValueListField({
                 }}
                 placeholder={s.kv_key_placeholder}
                 aria-label={s.kv_key_label}
-                className="flex-1 px-2.5 py-1.5 bg-background/50 border border-border/50 rounded-modal typo-code text-foreground font-mono focus-ring placeholder-muted-foreground/30"
+                className="flex-1 px-2.5 py-1.5 bg-background/50 border border-border/50 rounded-modal typo-code text-foreground focus-ring placeholder-muted-foreground/30"
               />
               <span className="text-foreground">=</span>
               <div className="flex-1 relative">
@@ -139,7 +139,7 @@ function KeyValueListField({
                   }}
                   placeholder={s.kv_value_placeholder}
                   aria-label={s.kv_value_label}
-                  className="w-full px-2.5 py-1.5 pr-8 bg-background/50 border border-border/50 rounded-modal typo-code text-foreground font-mono focus-ring placeholder-muted-foreground/30"
+                  className="w-full px-2.5 py-1.5 pr-8 bg-background/50 border border-border/50 rounded-modal typo-code text-foreground focus-ring placeholder-muted-foreground/30"
                 />
                 <button
                   type="button"

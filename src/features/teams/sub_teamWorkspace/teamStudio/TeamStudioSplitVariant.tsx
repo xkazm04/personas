@@ -138,7 +138,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
               <button
                 type="button"
                 onClick={requestBack}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body font-medium text-foreground hover:bg-secondary/50 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body text-foreground hover:bg-secondary/50 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 {t.plugins.dev_tools.back_to_projects}
@@ -172,7 +172,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
                 }`}
               >
                 <Brain className="w-4 h-4 flex-shrink-0" />
-                <span className="typo-body font-medium">{ts.memory_label}</span>
+                <span className="typo-body">{ts.memory_label}</span>
               </button>
 
               {/* Workspace settings */}
@@ -188,7 +188,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
                 }`}
               >
                 <Settings className="w-4 h-4 flex-shrink-0" />
-                <span className="typo-body font-medium">{ts.workspace_settings}</span>
+                <span className="typo-body">{ts.workspace_settings}</span>
               </button>
             </div>
           </div>
@@ -292,7 +292,7 @@ function RosterRow({
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 min-w-0">
-          <span className="typo-body font-medium text-foreground truncate">{member.name}</span>
+          <span className="typo-body text-foreground truncate">{member.name}</span>
           <TeamReadinessChip setupStatus={member.persona?.setup_status} />
         </div>
         <div className="typo-caption text-foreground">
@@ -326,7 +326,7 @@ function MemberAdjustPane({
         <PersonaIcon icon={member.icon} color={member.color} display="pop" frameSize="md" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="typo-heading font-semibold text-foreground truncate">{member.name}</h3>
+            <h3 className="typo-heading text-foreground truncate">{member.name}</h3>
             <MemberTierChip tier={member.modelTier} />
           </div>
           <div className="flex items-center gap-2 mt-1">

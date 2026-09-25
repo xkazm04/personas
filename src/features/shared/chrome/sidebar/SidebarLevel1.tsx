@@ -18,6 +18,7 @@ import { railSection } from '@/lib/navigation/registry';
 import { useSidebarLabels } from '@/i18n/useSidebarTranslation';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useIsDarkTheme } from '@/stores/themeStore';
+import { prefetchSectionOnIntent, cancelSectionIntent } from '@/features/shared/chrome/navPrefetch';
 
 interface SidebarLevel1Props {
   collapsed: boolean;
@@ -222,6 +223,12 @@ export default function SidebarLevel1({
                   setSidebarSection(section.id);
                 }
               }}
+              // Intent prefetch: resting on an entry warms its section chunk so
+              // the click finds it loaded (debounced + deduped in navPrefetch).
+              onPointerEnter={isDisabled ? undefined : () => prefetchSectionOnIntent(section.id)}
+              onFocus={isDisabled ? undefined : () => prefetchSectionOnIntent(section.id)}
+              onPointerLeave={cancelSectionIntent}
+              onBlur={cancelSectionIntent}
               disabled={isDisabled}
               className={`relative ${collapsed ? 'w-[40px]' : 'w-[76px]'} rounded-xl flex flex-col items-center justify-center py-2 transition-all group ${
                 isDisabled ? 'cursor-not-allowed opacity-40' : ''
@@ -255,7 +262,7 @@ export default function SidebarLevel1({
                 </span>
               )}
               {isDisabled && (
-                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 z-20 px-1 py-px typo-label leading-none rounded bg-muted-foreground/15 text-foreground/90 whitespace-nowrap">
+                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 z-20 px-1 py-px typo-label rounded bg-muted-foreground/15 text-foreground/90 whitespace-nowrap">
                   {t.sidebar.soon_badge}
                 </span>
               )}

@@ -38,7 +38,17 @@ use personas_core::error::AppError;
 /// baffling signature failure. There is deliberately NO negotiation: an
 /// attacker would simply advertise v2, which is exactly the downgrade this
 /// revision exists to prevent.
-pub const PROTOCOL_VERSION: u32 = 3;
+///
+/// **v4 (remote sessions).** The job lane learns to carry a fleet session:
+/// `RemoteJobRequest` gains a kind-specific `payload_json`, `RemoteJobResult` a
+/// `receipt_json`, and five frames are added: a latest-wins session mirror, a
+/// subscribe switch and a lossy output tail for it, and a steering command with
+/// its ack. MessagePack encodes struct variants POSITIONALLY, so a v3 peer would
+/// misread a v4 request rather than reject it; the version bump turns that into
+/// the same named hard reject as v2 to v3. No v3 device was ever paired in the
+/// field, so nothing is stranded. The handshake transcript is unchanged, which
+/// is why [`HANDSHAKE_DOMAIN`] still says v3.
+pub const PROTOCOL_VERSION: u32 = 4;
 
 /// Maximum message size (16 MB) to prevent memory exhaustion from malicious peers.
 const MAX_MESSAGE_SIZE: u32 = 16 * 1024 * 1024;
@@ -151,6 +161,10 @@ pub enum Message {
         /// The originating device's display name, so the running device can say
         /// whose request it is without a registry lookup.
         origin_display_name: String,
+        /// v4: the kind-specific request body as JSON. `None` for
+        /// `"instruction"` (the text is the whole request); a
+        /// `FleetSessionJobPayload` for `"fleet_session"`.
+        payload_json: Option<String>,
     },
     /// Receipt for a [`Message::RemoteJobRequest`] — accepted, or refused with
     /// the reason. Written back on the same stream, like `Ping`→`Pong`.
@@ -176,6 +190,9 @@ pub enum Message {
         /// A `RemoteJobStatus` token: `completed` / `failed` / `cancelled`.
         status: String,
         summary: String,
+        /// v4: the completion receipt as JSON (a `FleetSessionJobReceipt` for a
+        /// `fleet_session` job), `None` for kinds that have none.
+        receipt_json: Option<String>,
     },
     /// Sent by the ORIGINATING device on reconnect: "for this job I hold every
     /// note up to `last_seq`; send me the rest."
@@ -186,6 +203,41 @@ pub enum Message {
     /// was running when the link dropped keeps running; only the delivery
     /// resumes.
     RemoteJobResume { job_id: String, last_seq: u32 },
+    /// v4, RUNNING -> ORIGINATING: the running device's current view of a remote
+    /// session (a serialized `RemoteSessionView`). Latest-wins and NOT a
+    /// progress note: never numbered, never replayed; a lost mirror is simply
+    /// superseded by the next one, and the originator re-derives liveness from
+    /// how long ago the last one landed.
+    RemoteSessionMirror { job_id: String, view_json: String },
+    /// v4, ORIGINATING -> RUNNING: start (`true`) or stop (`false`) streaming the
+    /// session's terminal output. Stopping never cancels the session.
+    RemoteSessionOutputSubscribe { job_id: String, subscribe: bool },
+    /// v4, RUNNING -> ORIGINATING: one chunk of terminal output while
+    /// subscribed. LOSSY: `seq` is minted per chunk on the running side, and a
+    /// chunk dropped from its bounded queue leaves a gap the viewer can see.
+    /// Nothing is persisted or replayed.
+    RemoteSessionOutput {
+        job_id: String,
+        seq: u32,
+        chunk_b64: String,
+    },
+    /// v4, ORIGINATING -> RUNNING: steer a running session. `command` is a
+    /// `RemoteSessionCommand` snake_case token (`send_input` / `kill` / `wake`);
+    /// `text` is the input for `send_input`. Answered on the same stream by
+    /// [`Message::RemoteJobCommandAck`].
+    RemoteJobCommand {
+        job_id: String,
+        command: String,
+        text: Option<String>,
+    },
+    /// v4, RUNNING -> ORIGINATING: whether the command was carried out, and why
+    /// not when it was not.
+    RemoteJobCommandAck {
+        job_id: String,
+        command: String,
+        accepted: bool,
+        reason: Option<String>,
+    },
     /// Keep-alive ping.
     Ping,
     /// Keep-alive pong response.
@@ -504,8 +556,8 @@ mod tests {
     #[test]
     fn pairing_messages_round_trip_the_counter_offer_fields() {
         assert_eq!(
-            PROTOCOL_VERSION, 3,
-            "the counter-offer shipped in v2 and rides along unchanged in v3"
+            PROTOCOL_VERSION, 4,
+            "the counter-offer shipped in v2 and rides along unchanged in v3 and v4"
         );
 
         let req = Message::PairRequest {
@@ -560,17 +612,35 @@ mod tests {
             kind: "instruction".into(),
             instruction: "summarize today's inbox".into(),
             origin_display_name: "Laptop".into(),
+            payload_json: None,
         }) {
             Message::RemoteJobRequest {
                 job_id,
                 kind,
                 instruction,
                 origin_display_name,
+                payload_json,
             } => {
                 assert_eq!(job_id, "job-1");
                 assert_eq!(kind, "instruction");
                 assert_eq!(instruction, "summarize today's inbox");
                 assert_eq!(origin_display_name, "Laptop");
+                assert!(payload_json.is_none());
+            }
+            other => panic!("expected RemoteJobRequest, got {other:?}"),
+        }
+        match round_trip(&Message::RemoteJobRequest {
+            job_id: "job-2".into(),
+            kind: "fleet_session".into(),
+            instruction: "fix the flaky test".into(),
+            origin_display_name: "Laptop".into(),
+            payload_json: Some(r#"{"prompt":"fix it"}"#.into()),
+        }) {
+            Message::RemoteJobRequest {
+                kind, payload_json, ..
+            } => {
+                assert_eq!(kind, "fleet_session");
+                assert_eq!(payload_json.as_deref(), Some(r#"{"prompt":"fix it"}"#));
             }
             other => panic!("expected RemoteJobRequest, got {other:?}"),
         }
@@ -620,15 +690,18 @@ mod tests {
             job_id: "job-1".into(),
             status: "completed".into(),
             summary: "three things need you".into(),
+            receipt_json: Some(r#"{"branch":"remote/a/b"}"#.into()),
         }) {
             Message::RemoteJobResult {
                 job_id,
                 status,
                 summary,
+                receipt_json,
             } => {
                 assert_eq!(job_id, "job-1");
                 assert_eq!(status, "completed");
                 assert_eq!(summary, "three things need you");
+                assert_eq!(receipt_json.as_deref(), Some(r#"{"branch":"remote/a/b"}"#));
             }
             other => panic!("expected RemoteJobResult, got {other:?}"),
         }
@@ -645,13 +718,94 @@ mod tests {
         }
     }
 
-    /// The remote-job frames shipped as part of the never-released v2 and are
-    /// unchanged by the v3 channel-binding revision. Pin the version so a
-    /// future shape change against a SHIPPED protocol has to be a deliberate
-    /// decision rather than an accident.
+    /// The five v4 remote-session frames round-trip with every field in its
+    /// slot: the same positional-encoding hazard as above.
+    #[test]
+    fn remote_session_frames_round_trip_every_field() {
+        fn round_trip(msg: &Message) -> Message {
+            let bytes = rmp_serde::to_vec(msg).expect("encode");
+            rmp_serde::from_slice::<Message>(&bytes).expect("decode")
+        }
+
+        match round_trip(&Message::RemoteSessionMirror {
+            job_id: "job-1".into(),
+            view_json: r#"{"state":"running"}"#.into(),
+        }) {
+            Message::RemoteSessionMirror { job_id, view_json } => {
+                assert_eq!(job_id, "job-1");
+                assert_eq!(view_json, r#"{"state":"running"}"#);
+            }
+            other => panic!("expected RemoteSessionMirror, got {other:?}"),
+        }
+        match round_trip(&Message::RemoteSessionOutputSubscribe {
+            job_id: "job-1".into(),
+            subscribe: true,
+        }) {
+            Message::RemoteSessionOutputSubscribe { job_id, subscribe } => {
+                assert_eq!(job_id, "job-1");
+                assert!(subscribe);
+            }
+            other => panic!("expected RemoteSessionOutputSubscribe, got {other:?}"),
+        }
+        match round_trip(&Message::RemoteSessionOutput {
+            job_id: "job-1".into(),
+            seq: 9,
+            chunk_b64: B64.encode(b"hello"),
+        }) {
+            Message::RemoteSessionOutput {
+                job_id,
+                seq,
+                chunk_b64,
+            } => {
+                assert_eq!(job_id, "job-1");
+                assert_eq!(seq, 9);
+                assert_eq!(B64.decode(chunk_b64).expect("b64"), b"hello");
+            }
+            other => panic!("expected RemoteSessionOutput, got {other:?}"),
+        }
+        match round_trip(&Message::RemoteJobCommand {
+            job_id: "job-1".into(),
+            command: "send_input".into(),
+            text: Some("y".into()),
+        }) {
+            Message::RemoteJobCommand {
+                job_id,
+                command,
+                text,
+            } => {
+                assert_eq!(job_id, "job-1");
+                assert_eq!(command, "send_input");
+                assert_eq!(text.as_deref(), Some("y"));
+            }
+            other => panic!("expected RemoteJobCommand, got {other:?}"),
+        }
+        match round_trip(&Message::RemoteJobCommandAck {
+            job_id: "job-1".into(),
+            command: "kill".into(),
+            accepted: false,
+            reason: Some("already exited".into()),
+        }) {
+            Message::RemoteJobCommandAck {
+                job_id,
+                command,
+                accepted,
+                reason,
+            } => {
+                assert_eq!(job_id, "job-1");
+                assert_eq!(command, "kill");
+                assert!(!accepted);
+                assert_eq!(reason.as_deref(), Some("already exited"));
+            }
+            other => panic!("expected RemoteJobCommandAck, got {other:?}"),
+        }
+    }
+
+    /// v4 is a hard break (positional encoding; see [`PROTOCOL_VERSION`]). Pin
+    /// the version so a future shape change against a SHIPPED protocol has to
+    /// be a deliberate decision rather than an accident.
     #[test]
     fn remote_job_frames_are_part_of_the_current_protocol() {
-        assert_eq!(PROTOCOL_VERSION, 3);
+        assert_eq!(PROTOCOL_VERSION, 4);
     }
 
     #[test]

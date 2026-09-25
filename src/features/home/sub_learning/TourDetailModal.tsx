@@ -88,7 +88,7 @@ export function TourDetailModal({
 
         {/* Scrollable body */}
         <div className="relative z-10 flex-1 overflow-y-auto p-6 space-y-5">
-          <p className="typo-body text-foreground leading-relaxed">{tour.description}</p>
+          <p className="typo-body text-foreground">{tour.description}</p>
 
           <div className="space-y-3">
             <span className={`typo-label ${colors.text}`}>{ht.tour_steps_label}</span>
@@ -102,7 +102,7 @@ export function TourDetailModal({
                     {i + 1}
                   </span>
                   <div className="min-w-0">
-                    <p className={`typo-body font-semibold ${colors.text}`}>{step.title}</p>
+                    <p className={`typo-body ${colors.text}`}>{step.title}</p>
                     <p className="text-[13px] text-foreground leading-relaxed">{step.description}</p>
                   </div>
                 </li>

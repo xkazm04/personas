@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useSystemStore } from '../systemStore';
 import { _resetDedupCacheForTests } from '../util/dedupedStorage';
+import { COMPANIONS_PAGES } from '@/features/companions/types';
+import { ALL_SIDEBAR_SECTIONS } from '@/lib/navigation/registry';
 
 /**
  * Tests for the `persona-ui-system` persist `onRehydrateStorage` callback.
@@ -178,5 +180,135 @@ describe('systemStore onRehydrateStorage — editorTab migration', () => {
     const state = useSystemStore.getState();
     expect(state.editorTab).toBe('design');
     expect(state.designSubTab).toBe('manifest');
+  });
+});
+
+describe('systemStore onRehydrateStorage — sidebarSection membership', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    _resetDedupCacheForTests();
+    useSystemStore.setState({ sidebarSection: 'home', teamsTab: 'projects' });
+  });
+
+  it('keeps every section the registry declares', async () => {
+    for (const id of ALL_SIDEBAR_SECTIONS) {
+      localStorage.clear();
+      _resetDedupCacheForTests();
+      seedPersistedSystemStore({ sidebarSection: id });
+      await useSystemStore.persist.rehydrate();
+      expect(useSystemStore.getState().sidebarSection).toBe(id);
+    }
+  });
+
+  it('lands an unknown persisted section on home instead of crashing the shell', async () => {
+    // `navSection()` returns undefined for an id outside the registry, and
+    // `isSectionGated` — the first statement of PersonasPage.renderContent —
+    // throws reading `.gates`. The value is persisted, so before this guard
+    // the crash survived a restart.
+    seedPersistedSystemStore({ sidebarSection: 'pipeline' });
+    await useSystemStore.persist.rehydrate();
+    expect(useSystemStore.getState().sidebarSection).toBe('home');
+  });
+
+  it('migrates the retired `goals` section BEFORE the membership guard sees it', async () => {
+    // Order matters: a value with a recorded successor must be migrated, not
+    // discarded. `goals` is not in the registry, so a guard running first
+    // would send the user to Home and drop the Goals tab.
+    seedPersistedSystemStore({ sidebarSection: 'goals' });
+    await useSystemStore.persist.rehydrate();
+    const s = useSystemStore.getState();
+    expect(s.sidebarSection).toBe('teams');
+    expect(s.teamsTab).toBe('goals');
+  });
+
+  it('survives a persisted section that is not a string at all', async () => {
+    seedPersistedSystemStore({ sidebarSection: 42 });
+    await useSystemStore.persist.rehydrate();
+    expect(useSystemStore.getState().sidebarSection).toBe('home');
+  });
+});
+
+describe('systemStore onRehydrateStorage — Athena stops being a plugin', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    _resetDedupCacheForTests();
+    useSystemStore.setState({
+      sidebarSection: 'home',
+      pluginTab: 'browse',
+      companionsPage: 'landing',
+    });
+  });
+
+  it("moves a user parked on Plugins > Companion to the Companions section", async () => {
+    // The REMAP, not a discard: someone whose last screen was Athena's page
+    // must land on Athena's page, at its new address.
+    seedPersistedSystemStore({
+      sidebarSection: 'plugins',
+      pluginTab: 'companion',
+      companionPluginTab: 'memory',
+    });
+    await useSystemStore.persist.rehydrate();
+    const s = useSystemStore.getState();
+    expect(s.sidebarSection).toBe('companions');
+    expect(s.companionsPage).toBe('athena:memory');
+    // `companion` is no longer a PluginTab — leaving it would strand the
+    // Plugins section on a tab nothing answers to the next time it opens.
+    expect(s.pluginTab).toBe('browse');
+  });
+
+  it('migrates every retired companionPluginTab value onto its page', async () => {
+    const cases: [string, string][] = [
+      ['create-athena', 'athena:create-athena'],
+      ['setup', 'athena:setup'],
+      ['memory', 'athena:memory'],
+      ['voice', 'athena:voice'],
+      ['decisions', 'athena:decisions'],
+    ];
+    for (const [tab, expected] of cases) {
+      localStorage.clear();
+      _resetDedupCacheForTests();
+      useSystemStore.setState({ companionsPage: 'landing' });
+      seedPersistedSystemStore({ companionPluginTab: tab });
+      await useSystemStore.persist.rehydrate();
+      expect(useSystemStore.getState().companionsPage).toBe(expected);
+    }
+  });
+
+  it('drops the retired field so it cannot shadow the new one later', async () => {
+    seedPersistedSystemStore({ companionPluginTab: 'voice' });
+    await useSystemStore.persist.rehydrate();
+    expect(useSystemStore.getState()).not.toHaveProperty('companionPluginTab');
+  });
+
+  it('ignores a companionPluginTab value no page answers to', async () => {
+    // A tab from a build that had one this one does not: there is no page to
+    // land on, so the section's default is the honest destination.
+    seedPersistedSystemStore({ companionPluginTab: 'dashboard' });
+    await useSystemStore.persist.rehydrate();
+    expect(useSystemStore.getState().companionsPage).toBe('landing');
+  });
+
+  it('leaves a plugins section that is NOT on companion alone', async () => {
+    seedPersistedSystemStore({ sidebarSection: 'plugins', pluginTab: 'twin' });
+    await useSystemStore.persist.rehydrate();
+    const s = useSystemStore.getState();
+    expect(s.sidebarSection).toBe('plugins');
+    expect(s.pluginTab).toBe('twin');
+  });
+
+  it('keeps every page the current vocabulary declares', async () => {
+    for (const page of COMPANIONS_PAGES) {
+      localStorage.clear();
+      _resetDedupCacheForTests();
+      seedPersistedSystemStore({ companionsPage: page });
+      await useSystemStore.persist.rehydrate();
+      expect(useSystemStore.getState().companionsPage).toBe(page);
+    }
+  });
+
+  it('lands an unknown companionsPage on the section default', async () => {
+    seedPersistedSystemStore({ companionsPage: 'athena:from-the-future' });
+    await useSystemStore.persist.rehydrate();
+    expect(useSystemStore.getState().companionsPage).toBe('landing');
   });
 });

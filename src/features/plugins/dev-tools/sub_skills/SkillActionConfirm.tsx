@@ -58,7 +58,7 @@ export function SkillActionConfirm({ kind, skill, projectName, busy, preset = fa
               blurb stays readable; scrolls if it runs long. */}
           <div className="rounded-input bg-background/40 border border-primary/10 px-3 py-2.5 max-h-40 overflow-y-auto">
             {skill.description
-              ? <p className="typo-caption text-foreground/75 leading-relaxed" style={{ fontWeight: 400 }}>{skill.description}</p>
+              ? <p className="typo-caption text-foreground/75" style={{ fontWeight: 400 }}>{skill.description}</p>
               : <p className="typo-caption text-foreground/35 italic">{d.skills_confirm_no_desc}</p>}
           </div>
 
@@ -105,7 +105,7 @@ export function SkillActionConfirm({ kind, skill, projectName, busy, preset = fa
             type="button"
             onClick={() => onConfirm(args)}
             disabled={busy}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption font-medium text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             data-testid="skill-action-confirm-cta"
           >
             <Icon className="w-3 h-3" aria-hidden />

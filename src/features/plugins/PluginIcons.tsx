@@ -113,11 +113,15 @@ export function IconCompanion({ active = false, className = '' }: IconProps) {
 }
 
 /** Map plugin id → custom illustrated icon. Plugins not listed fall back to
- *  their lucide icon at the call site. */
+ *  their lucide icon at the call site.
+ *
+ *  `IconCompanion` is deliberately NOT in this map any more and is deliberately
+ *  still exported: Athena stopped being a plugin on 2026-09-22, but the glyph
+ *  is still hers and `AthenaPage` renders it. The category's own glyph is
+ *  `IconCompanions` (a trio) in SidebarIcons. */
 export const PLUGIN_ICONS: Partial<Record<PluginTab, (props: IconProps) => React.JSX.Element>> = {
   'dev-tools': IconDevTools,
   'obsidian-brain': IconObsidianBrain,
   drive: IconDrive,
   twin: IconTwin,
-  companion: IconCompanion,
 };

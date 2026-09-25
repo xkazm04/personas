@@ -105,10 +105,10 @@ function IconTile({ icon: Icon, label, active, color, onClick, testid, blurb, co
       style={active ? { borderColor: colorWithAlpha(color, 0.6), background: colorWithAlpha(color, 0.14) } : undefined}
     >
       <Icon className="w-4 h-4" style={{ color: active ? color : undefined }} />
-      <span className="typo-body text-foreground leading-none">{label}</span>
+      <span className="typo-body text-foreground">{label}</span>
       {costLabel && (
         <>
-          <span aria-hidden className="typo-caption tabular-nums text-foreground/85 leading-none" data-testid={testid ? `${testid}-cost` : undefined}>
+          <span aria-hidden className="typo-caption tabular-nums text-foreground/85" data-testid={testid ? `${testid}-cost` : undefined}>
             {costLabel}
           </span>
           <span className="sr-only">{costAria}</span>
@@ -175,7 +175,7 @@ export function EffortMeter({ core }: { core: PersonaCore }) {
                 className={`w-full rounded-sm transition-colors ${on ? "" : "bg-secondary/60"}`}
                 style={{ height: h, background: on ? colorWithAlpha(EFFORT_ACCENT, core.state.effort === e.id ? 0.9 : 0.5) : undefined }}
               />
-              <span className={`typo-body leading-none ${core.state.effort === e.id ? "text-foreground" : "text-foreground/85 group-hover:text-foreground"}`}>{t.models[`effort_${e.id}`]}</span>
+              <span className={`typo-body ${core.state.effort === e.id ? "text-foreground" : "text-foreground/85 group-hover:text-foreground"}`}>{t.models[`effort_${e.id}`]}</span>
             </button>
           </Tooltip>
         );

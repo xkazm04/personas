@@ -28,13 +28,13 @@ export function AnomalyScorePanel({ score, tolerance }: { score: AnomalyScore; t
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Activity className={`w-3.5 h-3.5 ${rem.color}`} />
-          <span className={`typo-body font-medium ${rem.color}`}>{label}</span>
+          <span className={`typo-body ${rem.color}`}>{label}</span>
         </div>
         <div className="flex items-center gap-2">
           {score.data_stale && (
             <span className="typo-body text-foreground bg-secondary/40 px-1.5 py-0.5 rounded">{an.stale}</span>
           )}
-          <span className="typo-data text-foreground tabular-nums">{tx(an.samples, { count: score.sample_count })}</span>
+          <span className="typo-data text-foreground">{tx(an.samples, { count: score.sample_count })}</span>
         </div>
       </div>
 
@@ -78,8 +78,8 @@ function RateBar({ label, rate, threshold }: { label: string; rate: number; thre
   return (
     <div className="space-y-0.5">
       <div className="flex items-center justify-between">
-        <span className="typo-code text-foreground font-mono">{label}</span>
-        <span className={`typo-code font-mono tabular-nums ${isOver ? 'text-red-400' : 'text-foreground'}`}>
+        <span className="typo-code text-foreground">{label}</span>
+        <span className={`typo-code tabular-nums ${isOver ? 'text-red-400' : 'text-foreground'}`}>
           <Numeric value={pct} unit="percent" precision={0} />
         </span>
       </div>

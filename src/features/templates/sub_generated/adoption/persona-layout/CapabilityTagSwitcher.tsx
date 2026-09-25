@@ -91,7 +91,7 @@ export function CapabilityTagSwitcher({
               >
                 <span
                   className={`flex-1 min-w-0 truncate typo-caption ${
-                    isActive ? 'text-foreground font-medium' : 'text-foreground'
+                    isActive ? 'text-foreground' : 'text-foreground'
                   } ${off ? 'line-through decoration-foreground/40' : ''}`}
                 >
                   {item.title}

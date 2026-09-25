@@ -321,7 +321,7 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
           <div className="flex items-center gap-2">
             <Button
               variant="accent"
-              accentColor="violet"
+              tone="agent"
               size="sm"
               icon={<RefreshCw className={`w-3.5 h-3.5 ${generating ? 'animate-spin' : ''}`} />}
               onClick={handleGenerate}

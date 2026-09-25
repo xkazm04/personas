@@ -81,7 +81,7 @@ function Panel({ title, count, header, footer, children }: {
   return (
     <section className="min-h-0 flex flex-col rounded-card border border-primary/12 bg-secondary/[0.12]">
       <div className="flex items-baseline gap-2 px-3 py-2 bg-primary/[0.04] border-b border-primary/10 rounded-t-card flex-shrink-0">
-        <span className="typo-body font-semibold text-foreground truncate">{title}</span>
+        <span className="typo-body text-foreground truncate">{title}</span>
         <span className="typo-label text-foreground/40 tabular-nums flex-shrink-0">{count}</span>
       </div>
       {header}
@@ -270,7 +270,7 @@ export function SkillsManagerBoard({ ws, proj, library, totalContexts, busy, pro
           className="min-w-0 text-left hover:text-primary transition-colors"
           data-testid={`skills-manager-proj-${r.entry.name}`}
         >
-          <span className="typo-caption font-medium text-foreground truncate">{r.entry.name}</span>
+          <span className="typo-caption text-foreground truncate">{r.entry.name}</span>
         </button>
       </span>
       {/* Coverage — its own column; click opens the context-coverage detail. */}
@@ -348,7 +348,7 @@ export function SkillsManagerBoard({ ws, proj, library, totalContexts, busy, pro
                       </span>
                     )}
                     <button type="button" onClick={() => onOpenInfo(entry.name)}
-                      className={`typo-caption font-medium truncate text-left hover:text-primary transition-colors ${installed ? 'text-foreground/45' : 'text-foreground'}`}
+                      className={`typo-caption truncate text-left hover:text-primary transition-colors ${installed ? 'text-foreground/45' : 'text-foreground'}`}
                       data-testid={`skills-manager-ws-${entry.name}`}>
                       {entry.name}
                     </button>

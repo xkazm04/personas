@@ -131,7 +131,7 @@ function EmptyState({
         <Sparkles className="w-6 h-6 text-violet-400" />
       </div>
       <div>
-        <p className="typo-body font-medium text-foreground">{db.ask_plain_english}</p>
+        <p className="typo-body text-foreground">{db.ask_plain_english}</p>
         <p className="typo-body text-foreground mt-1 max-w-md">
           {tx(db.describe_query, { language: language === 'sql' ? 'SQL' : language })}
         </p>

@@ -72,7 +72,7 @@ export function NoteStatusTimeline({ note, plan }: { note: DevNote; plan?: NoteP
               <Icon className="w-3 h-3" aria-hidden />
             </span>
             <span className="min-w-0 flex flex-col">
-              <span className={`typo-caption ${current ? 'text-foreground font-medium' : reached ? 'text-foreground/80' : 'text-foreground/60'}`}>
+              <span className={`typo-caption ${current ? 'text-foreground' : reached ? 'text-foreground/80' : 'text-foreground/60'}`}>
                 {meta.labelKey(t)}
               </span>
               {at ? (

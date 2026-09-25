@@ -82,7 +82,7 @@ export function LabEventStream({ resultId, resultKind }: LabEventStreamProps) {
       className="group"
       onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
     >
-      <summary className="flex items-center gap-1.5 typo-label font-semibold text-foreground cursor-pointer hover:text-muted-foreground/80">
+      <summary className="flex items-center gap-1.5 typo-label text-foreground cursor-pointer hover:text-muted-foreground/80">
         <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
         {t.agents.lab.event_stream}
       </summary>
@@ -162,10 +162,10 @@ function EventRow({
           <MessageSquare className="w-3.5 h-3.5 text-emerald-400 mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="typo-caption font-semibold text-foreground/90">{tEventAssistant}</span>
+              <span className="typo-caption text-foreground/90">{tEventAssistant}</span>
               <span className="typo-caption text-foreground tabular-nums">{renderDuration(ev.tsMsRelative)}</span>
             </div>
-            <p className="typo-caption text-foreground whitespace-pre-wrap leading-relaxed">{ev.textPreview ?? ''}</p>
+            <p className="typo-caption text-foreground whitespace-pre-wrap">{ev.textPreview ?? ''}</p>
           </div>
         </li>
       );
@@ -175,7 +175,7 @@ function EventRow({
           <Wrench className="w-3.5 h-3.5 text-blue-400 mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span className="typo-caption font-semibold text-foreground/90">{tEventToolUse}</span>
+              <span className="typo-caption text-foreground/90">{tEventToolUse}</span>
               <code className="typo-caption px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-300/90">{ev.toolName ?? '?'}</code>
               <span className="typo-caption text-foreground tabular-nums">{renderDuration(ev.tsMsRelative)}</span>
               {tool?.durationMs != null && (
@@ -201,7 +201,7 @@ function EventRow({
           <ArrowRight className="w-3.5 h-3.5 text-violet-400 mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="typo-caption font-semibold text-foreground/90">{tEventToolResult}</span>
+              <span className="typo-caption text-foreground/90">{tEventToolResult}</span>
               <span className="typo-caption text-foreground tabular-nums">{renderDuration(ev.tsMsRelative)}</span>
             </div>
             {ev.toolResultPreview && (

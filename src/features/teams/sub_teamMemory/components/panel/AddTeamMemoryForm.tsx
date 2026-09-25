@@ -58,7 +58,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
   return (
     <div className="border border-primary/15 rounded-card p-2.5 space-y-2">
       <div className="flex items-center justify-between">
-        <span className="typo-body font-medium text-foreground">{t.pipeline.new_memory}</span>
+        <span className="typo-body text-foreground">{t.pipeline.new_memory}</span>
         <button
           type="button"
           className="p-0.5 rounded-interactive hover:bg-primary/10 text-foreground"

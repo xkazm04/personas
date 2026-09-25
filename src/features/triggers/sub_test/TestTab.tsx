@@ -220,7 +220,7 @@ export function TestTab() {
           {/* Config card — who fires it, and which event */}
           <section className="rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.02] to-transparent p-5 space-y-4">
             <div>
-              <label className="block typo-caption font-medium text-foreground mb-1.5">
+              <label className="block typo-caption text-foreground mb-1.5">
                 {t.triggers.test_source_persona_label}
               </label>
               <PersonaSelector
@@ -235,7 +235,7 @@ export function TestTab() {
             </div>
 
             <div>
-              <label className="block typo-caption font-medium text-foreground mb-1.5">
+              <label className="block typo-caption text-foreground mb-1.5">
                 {t.triggers.test_output_event_label}
               </label>
               <ThemedSelect
@@ -257,7 +257,7 @@ export function TestTab() {
 
             {isCustomPicked && (
               <div>
-                <label className="block typo-caption font-medium text-foreground mb-1.5">
+                <label className="block typo-caption text-foreground mb-1.5">
                   {t.triggers.test_custom_event_label}
                 </label>
                 <input
@@ -275,7 +275,7 @@ export function TestTab() {
           <section className="rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.02] to-transparent p-5 space-y-4">
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="typo-caption font-medium text-foreground">{t.triggers.payload_json_label}</label>
+                <label className="typo-caption text-foreground">{t.triggers.payload_json_label}</label>
                 {payloadSource === 'history' && historyEvent && (
                   <button
                     type="button"
@@ -292,7 +292,7 @@ export function TestTab() {
                 value={payload}
                 onChange={(e) => setPayload(e.target.value)}
                 rows={8}
-                className="w-full px-3 py-2 typo-code rounded-card border border-border/40 bg-secondary/30 text-foreground font-mono placeholder:text-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/40 resize-y"
+                className="w-full px-3 py-2 typo-code rounded-card border border-border/40 bg-secondary/30 text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/40 resize-y"
               />
               <div className="mt-1.5 typo-caption flex items-start gap-1.5">
                 {payloadSource === 'history' && historyEvent ? (
@@ -316,7 +316,7 @@ export function TestTab() {
               type="button"
               onClick={handleTestFire}
               disabled={!canFire}
-              className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-card bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-2 px-4 py-2 typo-body rounded-card bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Zap className={`w-3.5 h-3.5 ${isTesting ? 'animate-pulse' : ''}`} />
               {isTesting ? t.triggers.publishing_label : t.triggers.publish_event}
@@ -333,8 +333,8 @@ export function TestTab() {
 
         {testResult && (
           <section className="rounded-modal border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.05] to-transparent p-5 space-y-2">
-            <p className="typo-body font-medium text-emerald-400">{t.triggers.event_published}</p>
-            <div className="typo-code text-foreground space-y-1 font-mono">
+            <p className="typo-body text-emerald-400">{t.triggers.event_published}</p>
+            <div className="typo-code text-foreground space-y-1">
               <p>{t.triggers.result_id_prefix} {testResult.id}</p>
               <p>{t.triggers.result_type_prefix} {testResult.event_type}</p>
               <p>{t.triggers.result_status_prefix} {testResult.status}</p>

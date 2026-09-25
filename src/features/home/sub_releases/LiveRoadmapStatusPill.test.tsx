@@ -25,8 +25,17 @@ const t = {
   },
 } as unknown as ReleasesTranslation;
 
-/** Tailwind sizing classes that satisfy WCAG 2.2 SC 2.5.8 (24x24 CSS px). */
-const MIN_TARGET = ['h-6', 'w-6'];
+/** WCAG 2.2 SC 2.5.8: a pointer target is at least 24x24 CSS px. */
+const MIN_TARGET_PX = 24;
+
+/** The px a Tailwind spacing class (`h-7`, `w-6`) resolves to, 4px per step. */
+function sizePx(className: string, axis: 'h' | 'w'): number {
+  for (const cls of className.split(/\s+/)) {
+    const m = /^([hw])-(\d+(?:\.\d+)?)$/.exec(cls);
+    if (m && m[1] === axis) return Number(m[2]) * 4;
+  }
+  return 0;
+}
 
 describe('LiveRoadmapStatusPill refresh target', () => {
   it('gives the refresh control a >=24x24 pointer target', () => {
@@ -43,9 +52,9 @@ describe('LiveRoadmapStatusPill refresh target', () => {
     const button = screen.getByRole('button', { name: en.common.refresh });
     // `px-2 py-0.5` around a 12px icon measured ~26x16 — under the 24px floor
     // on the short axis, on the only control this surface has.
-    for (const cls of MIN_TARGET) {
-      expect(button.className.split(/\s+/)).toContain(cls);
-    }
+    // The control is the shared icon Button now; assert the floor, not a class.
+    expect(sizePx(button.className, 'h')).toBeGreaterThanOrEqual(MIN_TARGET_PX);
+    expect(sizePx(button.className, 'w')).toBeGreaterThanOrEqual(MIN_TARGET_PX);
     expect(button.className).not.toContain('py-0.5');
   });
 

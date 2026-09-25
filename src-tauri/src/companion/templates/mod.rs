@@ -569,7 +569,28 @@ pub const RESEARCH_PROMPT_MD: &str = include_str!("research-prompt.md");
 /// answer the pad asked for goes on the thread, not in the chat; and a body
 /// change is still a `show_note_suggestions` row, never a comment.
 ///
-/// v67 (athena-layered-voice): the `# Layer one` section. Every reply is what
+/// v67 (companions): `open_route` gains the `companions` destination — the
+/// first-level section Athena now lives in, beside Overseer and Curator — and
+/// the routes list plus a short paragraph teach her that she is no longer
+/// under Plugins, so she stops sending him there to find herself. Also fixes
+/// the `compose_dashboard` line, which had promised a `Companion → Dashboard`
+/// tab that was retired: a composed dashboard lands in Home → Cockpit.
+///
+/// v68 (two machines, one operator): adds `remote_fleet_dispatch` — a whole
+/// fleet session sent to another of Michal's paired devices, run there on its
+/// own `remote/…` branch, pushed by the app, and verified on this machine
+/// before she reports it. What needed teaching rather than listing: when it is
+/// the right op instead of `remote_instruct` (code in a project vs a question
+/// for the assistant there); that the project needs a git remote or nothing
+/// can come back; that `project_not_found` means the other machine lacks the
+/// project, not that the send failed; and that a verified branch is a fact
+/// while an unverified one is a claim. It also corrects the reachability
+/// doctrine v51 taught: an unreachable device is no longer a dead end — work
+/// sent there queues in the outbox until it wakes, so the honest word is
+/// "queued until <device> wakes", never "sent".
+///
+/// v69 (athena-layered-voice; written as v67 on a parallel line and renumbered
+/// at the 2026-09-25 merge): the `# Layer one` section. Every reply is what
 /// she would say aloud: lead with the answer, at most N sentences (the per-turn
 /// `Layer one this turn:` line, base 3, from the reply register), anything
 /// longer is a `show_report` linked as `[phrase](ref:report/new)`, no printed
@@ -579,15 +600,15 @@ pub const RESEARCH_PROMPT_MD: &str = include_str!("research-prompt.md");
 /// ElevenLabs line and the always-emit `TTS:` rule, becomes `## Voice`: layer
 /// one IS the spoken register and `TTS:` is an optional escape. Teaches the
 /// `adjust_register` op, and adds a layer-one step to the pre-reply checklist.
-pub const CONSTITUTION_VERSION: u32 = 67;
+pub const CONSTITUTION_VERSION: u32 = 69;
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn the_constitution_teaches_layer_one_at_v67() {
-        assert_eq!(CONSTITUTION_VERSION, 67);
+    fn the_constitution_teaches_layer_one_at_v69() {
+        assert_eq!(CONSTITUTION_VERSION, 69);
         assert!(CONSTITUTION_MD.contains("\n# Layer one\n"));
         assert!(CONSTITUTION_MD.contains("Layer one this turn:"));
         // Canonical `propose_action` envelope, as the op reference teaches.

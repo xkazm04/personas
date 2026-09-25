@@ -57,6 +57,11 @@ mod scene;
 #[cfg(test)]
 mod tests;
 
+/// The fresh-install predicate, for the Companions status door
+/// (`commands::companions`), which must answer "has Athena been onboarded?"
+/// with exactly the question her own prompt asks. `mod addenda` stays private;
+/// this is the one item of it anything outside `prompt` may reach.
+pub(crate) use addenda::needs_onboarding;
 pub use bench_render::*;
 pub use budget::*;
 pub use build::*;

@@ -115,6 +115,8 @@ function session(id: string, cwd: string, projectLabel: string, now: number, ran
     runId: null,
     contestId: null,
     contestProjectId: null,
+    remoteJobId: null,
+    originPeerId: null,
   };
 }
 

@@ -132,7 +132,7 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
 
   if (state === 'success') {
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium bg-emerald-500/15 text-emerald-400">
+      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-emerald-500/15 text-emerald-400">
         <CheckCircle2 className="w-3.5 h-3.5" />
         {newVersion != null ? `${lab.improve_ready_title} · v${newVersion}` : lab.improve_ready_title}
       </span>
@@ -149,7 +149,7 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
         <button
           type="button"
           onClick={handleClick}
-          className="px-3 py-1.5 rounded-card typo-caption font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+          className="px-3 py-1.5 rounded-card typo-caption bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
         >
           {t.common.retry}
         </button>
@@ -173,7 +173,7 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
         type="button"
         onClick={handleClick}
         disabled={disabled || state === 'loading'}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium bg-gradient-to-r from-violet-500/15 to-primary/15 text-primary border border-primary/15 hover:border-primary/25 hover:from-violet-500/20 hover:to-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-gradient-to-r from-violet-500/15 to-primary/15 text-primary border border-primary/15 hover:border-primary/25 hover:from-violet-500/20 hover:to-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
       >
         {state === 'loading' ? (
           <>

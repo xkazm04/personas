@@ -46,18 +46,22 @@ import { bridge, CompanionBridge } from './companion-bridge';
  *
  * ── Known-uncovered (stated, not papered over) ──
  *
- * • `PluginTab` has 7 values; the bridge's `VALID_PLUGIN_TABS`
- *   (src/test/automation/bridge.ts) has 6 — **`scraper` is unreachable**
+ * • `PluginTab` has 6 values; the bridge's `VALID_PLUGIN_TABS`
+ *   (src/test/automation/bridge.ts) has 5 — **`scraper` is unreachable**
  *   from the bridge and is therefore not walked.
+ * • `CompanionsPage` (10) has no bridge setter, so the Companions section is
+ *   walked at its landing page only — its nine other destinations are not.
+ *   That is the same shape as every other L2 union below, stated rather than
+ *   papered over.
  * • `TeamsTab` (8), `OverviewTab` (15), `EditorTab` (8), `DevToolsTab` (7),
  *   `EventBusTab` (8), `ObsidianBrainTab` (6),
  *   `HomeTab` (5), `TemplateTab` (5) have no bridge setter that this spec
  *   uses. `setTemplateTab` exists but covers 4 of TemplateTab's 5 values
  *   (`explore` is absent from its allow-list); it is left out rather than
  *   walked partially under a whole-union name.
- * • Tier/dev gates: `teams`, `events` and `plugins` are `minTier: TEAM` and
- *   `studio` is `devOnly` (sidebarData.ts). Under `tauri:dev:test` all four
- *   are reachable. If a gate does close one, the walk records it as GATED
+ * • Tier/dev gates: `teams`, `events`, `plugins` and `companions` are
+ *   `minTier: TEAM` and `studio` is `devOnly` (sidebarData.ts). Under
+ *   `tauri:dev:test` all five are reachable. If a gate does close one, the walk records it as GATED
  *   rather than failing — but only for those four, and the suite still
  *   requires a floor of sections actually walked, so "everything was gated"
  *   cannot pass.
@@ -102,9 +106,11 @@ function parseUnion(alias: string): string[] {
  *  union changed (fine — update this) or the parser broke (not fine). Either
  *  way it must be loud, not silent. */
 const EXPECTED = {
-  SidebarSection: 11,
+  // 2026-09-22: `companions` joined the union and `companion` left `PluginTab`
+  // when Athena became a built-in companion rather than a plugin.
+  SidebarSection: 12,
   SettingsTab: 13,
-  PluginTab: 7,
+  PluginTab: 6,
   TwinTab: 3,
 } as const;
 
@@ -112,7 +118,7 @@ const EXPECTED = {
 const PLUGIN_TABS_UNREACHABLE = ['scraper'];
 
 /** Sections allowed to answer "gated" instead of rendering. */
-const GATEABLE_SECTIONS = new Set(['teams', 'events', 'plugins', 'studio']);
+const GATEABLE_SECTIONS = new Set(['teams', 'events', 'plugins', 'companions', 'studio']);
 
 /** Minimum sections that must actually be walked. Guards against a run where
  *  every section reports gated and the suite passes having proven nothing. */

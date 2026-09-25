@@ -128,7 +128,7 @@ export function NegotiatorGuidingPhase({
           <button
             type="button"
             onClick={onFinish}
-            className="animate-fade-slide-in px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-modal typo-body font-medium transition-colors"
+            className="animate-fade-slide-in px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-modal typo-body transition-colors"
           >
             {t.vault.negotiator.apply_credentials}
           </button>

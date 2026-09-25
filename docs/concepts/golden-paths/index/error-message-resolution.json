@@ -100,7 +100,7 @@
       "resolvedFrom": "basename",
       "verbatim": "tauri-command-error-envelope.test.ts"
     },
-    "src/features/plugins/companion/fleet/AthenaFleetPlanCard.tsx": {
+    "src/features/companions/athena/fleet/AthenaFleetPlanCard.tsx": {
       "count": 1,
       "sections": [7],
       "lines": ["116"],
@@ -108,7 +108,7 @@
       "resolvedFrom": "basename",
       "verbatim": "AthenaFleetPlanCard.tsx"
     },
-    "src/features/plugins/companion/ship/AthenaShipMilestoneCard.tsx": {
+    "src/features/companions/athena/ship/AthenaShipMilestoneCard.tsx": {
       "count": 1,
       "sections": [7],
       "lines": ["101"],

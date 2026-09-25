@@ -11,7 +11,7 @@ export function VersionTimelinePanel({ timeline, loading }: { timeline: SkillRev
   const { t } = useTranslation();
   return (
     <section className="rounded-card border border-border/50 bg-secondary/30 p-3">
-      <h3 className="typo-card-label text-foreground pb-2">{t.plugins.dev_tools.trace_timeline_title}</h3>
+      <h3 className="typo-card-label pb-2">{t.plugins.dev_tools.trace_timeline_title}</h3>
       {loading && timeline.length === 0 ? (
         <div aria-hidden className="flex flex-col gap-1.5">
           {[0, 1, 2].map((i) => (

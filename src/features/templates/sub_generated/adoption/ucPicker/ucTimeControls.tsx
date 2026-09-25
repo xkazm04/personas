@@ -35,7 +35,7 @@ export function TimeControls({
               key={p.key}
               type="button"
               onClick={() => onChange(selectionForTimePreset(p.key, selection))}
-              className={`focus-ring inline-flex items-center gap-1 rounded px-2 py-0.5 typo-caption font-medium transition-colors ${
+              className={`focus-ring inline-flex items-center gap-1 rounded px-2 py-0.5 typo-caption transition-colors ${
                 on
                   ? 'bg-primary/20 text-primary ring-1 ring-primary/40'
                   : 'bg-foreground/[0.04] text-foreground hover:bg-foreground/[0.08]'
