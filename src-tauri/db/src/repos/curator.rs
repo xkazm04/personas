@@ -29,9 +29,9 @@ use rusqlite::{params, OptionalExtension, Row};
 
 use crate::models::{
     CuratorConsentState, CuratorConsumers, CuratorCorpus, CuratorDecisionLevel, CuratorDemand,
-    CuratorEngine, CuratorPlan, CuratorPlanItem, CuratorPlanItemState, CuratorPolicy,
-    CuratorProject, CuratorQuietBundle, CuratorReason, CuratorReasonCode, CuratorRequest,
-    CuratorRequestState, CURATOR_SATURATION_THRESHOLD,
+    CuratorEngine, CuratorGrowth, CuratorPlan, CuratorPlanItem, CuratorPlanItemState,
+    CuratorPolicy, CuratorProject, CuratorQuietBundle, CuratorReason, CuratorReasonCode,
+    CuratorRequest, CuratorRequestState, CURATOR_SATURATION_THRESHOLD,
 };
 use crate::DbPool;
 use personas_core::error::AppError;
@@ -1142,6 +1142,76 @@ pub fn record_commit(
             ],
         )?;
         Ok(written == 1)
+    })
+}
+
+// ---------------------------------------------------------------------------
+// Growth samples
+// ---------------------------------------------------------------------------
+
+/// The seven metrics, in the order the reader binds them.
+const GROWTH_COLUMNS: &str = "measured_at, projects, judged_pairs, stale_verdicts, \
+                              applied_subjects, subjects, techniques, applications";
+
+/// Record one sample of the ecosystem's size.
+///
+/// Append-only and never upserted: two samples taken in the same second by two
+/// of her terminals are two observations, and collapsing them on a timestamp
+/// would silently drop one.
+pub fn insert_growth(pool: &DbPool, sample: &CuratorGrowth) -> Result<(), AppError> {
+    timed_query!("curator_growth", "curator::insert_growth", {
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO curator_growth
+                (measured_at, projects, judged_pairs, stale_verdicts,
+                 applied_subjects, subjects, techniques, applications)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            params![
+                sample.measured_at,
+                sample.projects,
+                sample.judged_pairs,
+                sample.stale_verdicts,
+                sample.applied_subjects,
+                sample.subjects,
+                sample.techniques,
+                sample.applications,
+            ],
+        )?;
+        Ok(())
+    })
+}
+
+/// Her newest `limit` samples, **newest first** - which is the order
+/// `CuratorGrowthReading::from_samples` is specified against.
+pub fn recent_growth(pool: &DbPool, limit: u32) -> Result<Vec<CuratorGrowth>, AppError> {
+    timed_query!("curator_growth", "curator::recent_growth", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {GROWTH_COLUMNS} FROM curator_growth
+              ORDER BY measured_at DESC, id DESC
+              LIMIT ?1"
+        ))?;
+        let rows = stmt.query_map(params![limit], growth_from_row)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
+/// A NULL column reads as `None`, never as `0`.
+///
+/// The whole point of the nullable columns: `0` projects is a collapsed
+/// ecosystem and `NULL` projects is a report nobody could read, and this is the
+/// one function where the two could be confused.
+fn growth_from_row(row: &Row<'_>) -> rusqlite::Result<CuratorGrowth> {
+    Ok(CuratorGrowth {
+        measured_at: row.get("measured_at")?,
+        projects: row.get("projects")?,
+        judged_pairs: row.get("judged_pairs")?,
+        stale_verdicts: row.get("stale_verdicts")?,
+        applied_subjects: row.get("applied_subjects")?,
+        subjects: row.get("subjects")?,
+        techniques: row.get("techniques")?,
+        applications: row.get("applications")?,
     })
 }
 
@@ -2360,6 +2430,158 @@ mod tests {
             commits_today(&pool).unwrap(),
             2,
             "two commits, three attempts - the brake counts commits, not writes"
+        );
+    }
+
+    // -----------------------------------------------------------------------
+    // Growth samples
+    // -----------------------------------------------------------------------
+
+    /// **A NULL metric comes back as `None`, never as `0`.**
+    ///
+    /// The single most important assertion about this table. Every metric column
+    /// is nullable so that "the map check could not be read" and "there are no
+    /// consumer projects" stay different facts - and a reader that coerced NULL
+    /// to zero would make an unreadable report look like a collapsed ecosystem,
+    /// which is the exact mistake this feature has already made three times in
+    /// other columns.
+    #[test]
+    fn a_metric_that_could_not_be_read_round_trips_as_none_and_not_as_zero() {
+        let pool = init_test_db().unwrap();
+        let unreadable = CuratorGrowth {
+            measured_at: "2026-09-26T10:00:00Z".into(),
+            projects: None,
+            judged_pairs: None,
+            stale_verdicts: None,
+            applied_subjects: None,
+            subjects: None,
+            techniques: None,
+            applications: None,
+        };
+        // ... beside a sample that genuinely measured nothing, which is the
+        // reading it must not be confused with.
+        let genuinely_empty = CuratorGrowth {
+            measured_at: "2026-09-26T11:00:00Z".into(),
+            projects: Some(0),
+            judged_pairs: Some(0),
+            stale_verdicts: Some(0),
+            applied_subjects: Some(0),
+            subjects: Some(0),
+            techniques: Some(0),
+            applications: Some(0),
+        };
+        insert_growth(&pool, &unreadable).unwrap();
+        insert_growth(&pool, &genuinely_empty).unwrap();
+
+        let back = recent_growth(&pool, 10).unwrap();
+        assert_eq!(back.len(), 2);
+        // Newest first.
+        assert_eq!(back[0], genuinely_empty);
+        assert_eq!(back[1], unreadable);
+        assert_eq!(
+            back[0].projects,
+            Some(0),
+            "measured zero stays a measurement"
+        );
+        assert_eq!(back[1].projects, None, "unread stays unread");
+    }
+
+    /// Every one of the seven metrics is bound to its own column.
+    ///
+    /// A single transposed pair in an eight-placeholder INSERT is invisible to a
+    /// test that writes the same number everywhere, so each metric here carries
+    /// a distinct value and is read back by name.
+    #[test]
+    fn every_metric_lands_in_its_own_column() {
+        let pool = init_test_db().unwrap();
+        let sample = CuratorGrowth {
+            measured_at: "2026-09-26T12:00:00Z".into(),
+            projects: Some(12),
+            judged_pairs: Some(287),
+            stale_verdicts: Some(40),
+            applied_subjects: Some(7),
+            subjects: Some(475),
+            techniques: Some(3274),
+            applications: Some(1825),
+        };
+        insert_growth(&pool, &sample).unwrap();
+        assert_eq!(recent_growth(&pool, 1).unwrap(), vec![sample]);
+    }
+
+    /// **Two samples in the same second are two observations.** Her worker cap
+    /// is two terminals, so a collision is reachable - and collapsing them on a
+    /// timestamp would silently drop one, which is data loss dressed as
+    /// de-duplication.
+    #[test]
+    fn two_samples_at_the_same_instant_are_both_kept_newest_first() {
+        let pool = init_test_db().unwrap();
+        let at = "2026-09-26T13:00:00Z";
+        for projects in [11u32, 12] {
+            insert_growth(
+                &pool,
+                &CuratorGrowth {
+                    measured_at: at.into(),
+                    projects: Some(projects),
+                    ..CuratorGrowth::default()
+                },
+            )
+            .unwrap();
+        }
+        let back = recent_growth(&pool, 10).unwrap();
+        assert_eq!(back.len(), 2, "neither was collapsed into the other");
+        assert_eq!(
+            back[0].projects,
+            Some(12),
+            "the tie breaks on insertion order, so the later write reads as newer"
+        );
+    }
+
+    /// The window is a LIMIT, and it takes the newest end.
+    #[test]
+    fn the_window_keeps_the_newest_samples_and_not_the_first_ones() {
+        let pool = init_test_db().unwrap();
+        for day in 20..=26u32 {
+            insert_growth(
+                &pool,
+                &CuratorGrowth {
+                    measured_at: format!("2026-09-{day:02}T00:00:00Z"),
+                    projects: Some(day),
+                    ..CuratorGrowth::default()
+                },
+            )
+            .unwrap();
+        }
+        let back = recent_growth(&pool, 3).unwrap();
+        assert_eq!(
+            back.iter().map(|g| g.projects).collect::<Vec<_>>(),
+            vec![Some(26), Some(25), Some(24)]
+        );
+    }
+
+    /// **A dispatch in her method lane is accepted, and one outside the set is
+    /// still refused.** The widened CHECK has to widen by exactly one token.
+    #[test]
+    fn the_store_accepts_the_method_lane_and_still_refuses_an_invented_one() {
+        let pool = init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        for lane in ["queue", "plan", "refill", "method"] {
+            conn.execute(
+                "INSERT INTO curator_dispatch
+                    (id, lane, session_id, skill, level_that_authorised, repo_path, created_at)
+                 VALUES (?1, ?2, 's', 'x', ?3, '/tmp', '2026-09-26T00:00:00Z')",
+                params![format!("ok-{lane}"), lane, "L0"],
+            )
+            .unwrap_or_else(|e| panic!("{lane} is a real lane: {e}"));
+        }
+        assert!(
+            conn.execute(
+                "INSERT INTO curator_dispatch
+                    (id, lane, session_id, skill, level_that_authorised, repo_path, created_at)
+                 VALUES ('no', 'sleep', 's', 'x', 'L0', '/tmp', '2026-09-26T00:00:00Z')",
+                [],
+            )
+            .is_err(),
+            "`sleep` is a real lane of HERS and deliberately not a DISPATCH lane"
         );
     }
 }

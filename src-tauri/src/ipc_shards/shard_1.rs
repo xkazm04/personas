@@ -32,6 +32,11 @@ pub(super) fn shard(
         commands::curator::curator_request_cancel,
         commands::curator::curator_skills_list,
         commands::curator::curator_runtime_get,
+        // What stops her, and whether any of it is moving the world: the
+        // impediment ledger her method lane reads, and the growth samples her
+        // projections write.
+        commands::curator::curator_impediments_get,
+        commands::curator::curator_growth_get,
         // Execution -- Genome Breeding
         commands::execution::genome::genome_extract,
         commands::execution::genome::genome_fitness,

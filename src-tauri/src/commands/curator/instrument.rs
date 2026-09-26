@@ -1467,12 +1467,22 @@ mod tests {
             "/reconcile status                # read the vault\n",
             "```\n",
         ));
-        // The two that document NOTHING. Both have a body; neither has an
-        // Invocation section anywhere in it.
+        // `deepen` documented NOTHING until 2026-09-26, which is why this
+        // fixture carried it as the undocumented specimen. It now states an
+        // address-shaped invocation and none of its lines is bare, so it
+        // belongs with `intake` and `reconcile` - and the fixture moved
+        // because the registry moved, never the other way round.
         write_skill(root, native, "deepen", concat!(
-            "---\nname: deepen\ndescription: \"Review and widen an existing knowledge-bundle topic\"\nversion: 1.3.1\n---\n\n",
-            "# Deepen\n\n## What it is\n\nprose about lanes and saturation\n",
+            "---\nname: deepen\ndescription: \"Review and widen an existing knowledge-bundle topic\"\nversion: 1.4.0\n---\n\n",
+            "# Deepen\n\n## Invocation\n\n```\n",
+            "/deepen <domain>                      # one interactive pass over the bundle\n",
+            "/deepen <domain>/<subject>            # one named subject the caller already ranked\n",
+            "/deepen <domain> --loop <N>           # up to N cycles against the saturation ledger\n",
+            "/deepen status [<domain>]             # read the ledger, touch nothing\n",
+            "```\n\n## The cycle\n\nprose about lanes and saturation\n",
         ));
+        // The one that still documents NOTHING: a body, and no Invocation
+        // section anywhere in it.
         write_skill(root, native, "forge", concat!(
             "---\nname: forge\ndescription: \"Extract a repository's domain knowledge\"\nversion: 1.4.0\n---\n\n",
             "# Forge - domain knowledge extraction\n\n## Failure modes observed (do not rediscover)\n\nprose\n",
@@ -1556,7 +1566,7 @@ mod tests {
             assert!(s.invocation_documented, "{bare} documents an invocation");
             assert_eq!(s.runs_bare, Some(true), "{bare} runs bare");
         }
-        for needs_argument in ["assay", "intake", "reconcile"] {
+        for needs_argument in ["assay", "intake", "reconcile", "deepen"] {
             let s = by_name(&skills, needs_argument);
             assert!(s.invocation_documented);
             assert_eq!(
@@ -1565,7 +1575,7 @@ mod tests {
                 "{needs_argument} documents an invocation and none of its lines is bare"
             );
         }
-        for undocumented in ["deepen", "forge"] {
+        for undocumented in ["forge"] {
             let s = by_name(&skills, undocumented);
             assert!(
                 !s.invocation_documented,

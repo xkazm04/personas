@@ -88,6 +88,12 @@ export function plan(over: Partial<CuratorPlan> = {}): CuratorPlan {
         levelForge: 'L0',
         levelConform: 'L3',
         levelSweep: 'L1',
+        // Her fifth level, added 2026-09-26 with the method lane: authority for
+        // editing the registry's own SKILL.md files. `L0` here is the shipped
+        // default - always ask - and the fixture keeps it, because a fixture
+        // that declared a higher authority than the app ships would be asserting
+        // a policy nobody set.
+        levelMethod: 'L0',
         dailyBudgetUsd: null,
         dailyRunCap: 12,
         dailyCommitCap: null,

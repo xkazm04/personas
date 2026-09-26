@@ -58,8 +58,8 @@ use tauri::AppHandle;
 
 use personas_core::events::curator_pulse;
 use personas_core::models::{
-    curator_lane, CuratorEngine, CuratorPlanItem, CuratorPlanItemState, CuratorPolicy,
-    CuratorRequest, CuratorRequestState, CuratorSkill, CURATOR_SPEND_SOURCE,
+    curator_lane, CuratorEngine, CuratorImpediment, CuratorPlanItem, CuratorPlanItemState,
+    CuratorPolicy, CuratorRequest, CuratorRequestState, CuratorSkill, CURATOR_SPEND_SOURCE,
 };
 
 use crate::commands::fleet::queue::{self, DispatchOrigin, DispatchRequest};
@@ -244,7 +244,19 @@ async fn maybe_dispatch(app: &AppHandle, pool: &DbPool, root: &Path) {
             .as_ref()
             .filter(|_| !harvest_in_flight())
             .and_then(|lane| standing::standing_rung(lane, &read_marks(pool)));
-        let chosen = match choose_work(pool, &engines, rung, &now) {
+        // Re-derived per slot for the same reason the rung is: a method fix
+        // dispatched into the first slot must not be dispatched again into the
+        // second, and the in-flight check inside `choose_method` is what sees
+        // that - but only if it is asked again.
+        //
+        // The plan is read here rather than passed in because it MOVES: the
+        // claim above marks an item `dispatched`, which is exactly the state
+        // `measure` excludes, so a plan captured before the loop would rank a
+        // fix by items she had since taken.
+        let method = plan_items(pool)
+            .as_deref()
+            .and_then(|items| choose_method(pool, items, &skills, head.as_deref()));
+        let chosen = match choose_work(pool, &engines, method, rung, &now) {
             Ok(Some(work)) => work,
             Ok(None) => break,
             Err(err) => {
@@ -263,6 +275,26 @@ async fn maybe_dispatch(app: &AppHandle, pool: &DbPool, root: &Path) {
                 tracing::warn!(error = %err, "curator loop: a dispatch did not start");
                 break;
             }
+        }
+    }
+}
+
+/// Her standing plan's items, or `None` when there is no plan or it could not
+/// be read.
+///
+/// `None` rather than an empty slice on failure, so the method lane cannot
+/// mistake an unreadable plan for a plan with no impediments in it - which would
+/// be the difference between "nothing is blocking her" and "nobody looked".
+fn plan_items(pool: &DbPool) -> Option<Vec<CuratorPlanItem>> {
+    match repo::current_plan(pool) {
+        Ok(plan) => plan.map(|p| p.items),
+        Err(err) => {
+            tracing::warn!(
+                error = %err,
+                "curator loop: her standing plan could not be read, so the method lane is skipped \
+                 for this tick"
+            );
+            None
         }
     }
 }
@@ -332,6 +364,12 @@ pub(super) enum Work {
     /// because there is no row in THIS database to claim: the registry's own
     /// queue file is the state, and [`super::standing`] measured it.
     Standing(Standing),
+    /// **The gap in a method file that is blocking her plan.** Claims nothing
+    /// either: the state is the registry's own `SKILL.md`, and what stops a
+    /// second tick taking it is an in-flight check plus a mark keyed on the
+    /// registry HEAD - the same shape the standing lane's rungs use, for the
+    /// same reason.
+    Method(CuratorImpediment),
 }
 
 impl Work {
@@ -345,13 +383,23 @@ impl Work {
             // token would need the table's CHECK rebuilt and a label in
             // fourteen locales to say something the row already says.
             Work::Standing(_) => curator_lane::REFILL,
+            Work::Method(_) => curator_lane::METHOD,
         }
     }
 }
 
-/// **The lane order.** The operator's queue, then her plan, then her standing
-/// lane - which is itself two rungs, `/harvest auto` before `/harvest
-/// research`.
+/// **The lane order.** The operator's queue, then her plan, then her METHOD
+/// lane, then her standing lane - which is itself two rungs, `/harvest auto`
+/// before `/harvest research`.
+///
+/// **Why method sits fourth and not second.** Work she can already do outranks
+/// widening what she can do: a plan item dispatched now is knowledge landed now.
+/// But it sits ahead of the standing lane, and that placement is the whole
+/// lesson of 2026-09-24, when eight consecutive refill passes ran at ~$0.26 each
+/// against a queue that was already full. The rung that was missing was never
+/// "go and find more sources" - it was "my plan is not empty, I simply cannot
+/// spell the command". Between those two states the honest move is to fix the
+/// grammar, not to buy more sentences.
 ///
 /// Separated from the dispatch so it can be driven against a real database in a
 /// test with no Tauri app: the ordering is the operator's own rule and the only
@@ -367,6 +415,7 @@ impl Work {
 pub(super) fn choose_work(
     pool: &DbPool,
     engines: &[CuratorEngine],
+    method: Option<CuratorImpediment>,
     standing: Option<Standing>,
     now: &str,
 ) -> Result<Option<Work>, AppError> {
@@ -376,7 +425,91 @@ pub(super) fn choose_work(
     if let Some(item) = repo::claim_next_plan_item(pool, engines, now)? {
         return Ok(Some(Work::Plan(item)));
     }
+    if let Some(impediment) = method {
+        return Ok(Some(Work::Method(impediment)));
+    }
     Ok(standing.map(Work::Standing))
+}
+
+/// The one impediment she may act on, or `None`.
+///
+/// Three gates, and every one of them fails CLOSED - because this lane edits the
+/// instructions every future worker reads, and the cost of a wrong dispatch here
+/// is not a wasted run but a method file with a fiction in it.
+///
+/// 1. **Only a self-fixable kind, and only one that is holding something.** An
+///    `apply` item that cannot name a technique is a gap in *this app's*
+///    projection; she may not rewrite Personas, so it is reported and never
+///    dispatched. See [`super::impediment`].
+///
+///    **Eligibility is what it HOLDS; the rank is what it FREES**, and the two
+///    were deliberately separated after the live plan was measured on 2026-09-26.
+///    Gating on `frees` was tried first and was wrong: every engine except
+///    `Reconcile` and `Deepen` frees nothing today, and both of those already
+///    have documented skills, so the gate made the lane unable to ever fire -
+///    a lane that runs green while doing nothing, which is the failure this
+///    repository names in its own census doctrine. What it would have skipped is
+///    `conform`, whose invocation lives only in a prose sentence inside its
+///    `description:` frontmatter: no program can address it, it holds 99 items,
+///    and documenting it is exactly the change the operator authorised. That it
+///    releases none of those 99 immediately is a fact for the worker's brief to
+///    state, not a reason to leave the defect in place.
+///
+///    She cannot loop on it either: the mark below allows one attempt per
+///    registry HEAD, and once the file documents an invocation the impediment
+///    becomes `ItemLacksArgument`, which is not hers, so she never returns.
+/// 2. **Nothing already in flight.** One method worker at a time, and an
+///    unreadable dispatch table counts as "in flight" rather than as "clear".
+/// 3. **The registry must have moved since the last attempt.** The mark is
+///    `<impediment-id>@<head>`: re-running the same fix against the same HEAD
+///    would either repeat work that landed or repeat work that was refused, and
+///    the file itself is the only evidence which. **With no HEAD she does
+///    nothing** - a mark that cannot be compared is not a mark, and an act this
+///    privileged is exactly the one not to take while blind.
+pub(super) fn choose_method(
+    pool: &DbPool,
+    items: &[CuratorPlanItem],
+    skills: &[CuratorSkill],
+    head: Option<&str>,
+) -> Option<CuratorImpediment> {
+    let head = head?;
+    if method_in_flight(pool) {
+        return None;
+    }
+    let top = super::impediment::measure(items, skills)
+        .into_iter()
+        .find(|i| i.self_fixable && i.blocks > 0)?;
+    let mark = method_mark(&top, head);
+    if super::setting(pool, settings_keys::CURATOR_METHOD_MARK).as_deref() == Some(mark.as_str()) {
+        return None;
+    }
+    Some(top)
+}
+
+/// What one method attempt is remembered by: the impediment, and the corpus
+/// version it was attempted against.
+pub(super) fn method_mark(impediment: &CuratorImpediment, head: &str) -> String {
+    format!("{}@{head}", impediment.id)
+}
+
+/// Whether a method fix she dispatched is still open.
+///
+/// Read from her own dispatch table rather than from the fleet registry, unlike
+/// [`harvest_in_flight`]: a method dispatch HAS a row of its own, and the row is
+/// the more direct evidence. An unreadable table answers `true` - she does not
+/// get to dispatch the most privileged thing she does on the strength of a
+/// failed query.
+fn method_in_flight(pool: &DbPool) -> bool {
+    match repo::open_dispatches(pool) {
+        Ok(rows) => rows.iter().any(|r| r.lane == curator_lane::METHOD),
+        Err(err) => {
+            tracing::warn!(
+                error = %err,
+                "curator loop: her open dispatches could not be read, so the method lane stays shut"
+            );
+            true
+        }
+    }
 }
 
 /// Whether ANY pass of her standing lane is already running or waiting.
@@ -511,6 +644,19 @@ async fn start(
             None,
             Some(chosen.because.clone()),
         ),
+        // The pseudo-skill, with NO argument: this lane injects no slash
+        // command, so there is nothing for an argument to be part of.
+        Work::Method(impediment) => (
+            dispatch::METHOD_SKILL.to_string(),
+            None,
+            None,
+            None,
+            None,
+            Some(format!(
+                "{} blocks {} planned item(s)",
+                impediment.skill, impediment.blocks
+            )),
+        ),
     };
 
     // The operator's lane was vetted when the request was filed; the registry
@@ -521,31 +667,44 @@ async fn start(
         Work::Plan(_) | Work::Standing(_) => {
             dispatch::vet_autonomous(skills, &skill, argument.as_deref())
         }
+        // Nothing to vet against the skill table: the whole premise of this lane
+        // is that the skill it is about documents NO invocation, so the vet that
+        // protects the other lanes would refuse the one dispatch whose purpose is
+        // to end that refusal. What stands in its place is `choose_method`'s three
+        // fail-closed gates and the fact that the worker runs no slash command.
+        Work::Method(_) => Ok(()),
     };
     if let Err(err) = vetted {
         settle_unstarted(pool, &work, &err.to_string(), &now)?;
         return Err(err);
     }
 
-    let prompt = dispatch::compose(&Brief {
-        lane,
-        skill: &skill,
-        argument: argument.as_deref(),
-        note: note.as_deref(),
-        subject: subject.as_deref(),
-        finding: finding.as_deref(),
-        measurement: measurement.as_deref(),
-        head,
-    });
+    let prompt = match &work {
+        Work::Method(impediment) => dispatch::compose_method(impediment, head),
+        _ => dispatch::compose(&Brief {
+            lane,
+            skill: &skill,
+            argument: argument.as_deref(),
+            note: note.as_deref(),
+            subject: subject.as_deref(),
+            finding: finding.as_deref(),
+            measurement: measurement.as_deref(),
+            head,
+        }),
+    };
 
     let admission = queue::admit(
         app,
         DispatchRequest {
             cwd: root.to_string_lossy().into_owned(),
             name: Some(format!("curator-{lane}")),
-            title: Some(match argument.as_deref() {
-                Some(arg) => format!("/{skill} {arg}"),
-                None => format!("/{skill}"),
+            title: Some(match (&work, argument.as_deref()) {
+                // Named for what it does, not `/method`, which is not a command
+                // anybody can type - a terminal labelled with a slash form that
+                // does not exist is a worse label than no slash at all.
+                (Work::Method(imp), _) => format!("document {}'s invocation", imp.skill),
+                (_, Some(arg)) => format!("/{skill} {arg}"),
+                (_, None) => format!("/{skill}"),
             }),
             args: queue::headless_args(&prompt, Vec::new()),
             // Headless, not a PTY. An interactive session parks in `Idle` when
@@ -579,7 +738,7 @@ async fn start(
     let (request_id, plan_item_id) = match &work {
         Work::Queue(request) => (Some(request.id.clone()), None),
         Work::Plan(item) => (None, Some(item.id.clone())),
-        Work::Standing(_) => (None, None),
+        Work::Standing(_) | Work::Method(_) => (None, None),
     };
     repo::record_dispatch(
         pool,
@@ -606,6 +765,26 @@ async fn start(
         // cannot be handed the same bytes again on the next tick. Written after
         // the admission, never before - a rung that failed to start has not
         // been tried.
+        // The same shape as the standing rung below, and for the same reason:
+        // written only once the fleet has admitted the worker, because a fix
+        // that never started has not been attempted. Keyed on the registry HEAD
+        // as well as the impediment, so the NEXT commit to the registry - hers
+        // or anybody's - lets her look again.
+        Work::Method(impediment) => {
+            if let Some(head) = head {
+                if let Err(err) = crate::db::repos::core::settings::set(
+                    pool,
+                    settings_keys::CURATOR_METHOD_MARK,
+                    &method_mark(impediment, head),
+                ) {
+                    tracing::warn!(
+                        error = %err,
+                        "curator: her method mark could not be written, so the same fix may be \
+                         dispatched again against an unmoved registry"
+                    );
+                }
+            }
+        }
         Work::Standing(chosen) => {
             if let Err(err) =
                 crate::db::repos::core::settings::set(pool, mark_key(chosen.rung), &chosen.mark)
@@ -663,7 +842,9 @@ fn settle_unstarted(pool: &DbPool, work: &Work, why: &str, now: &str) -> Result<
         }
         // Nothing was claimed, so there is nothing to write back - and no mark
         // either: `start` writes that only after the fleet admits the worker.
-        Work::Standing(_) => {}
+        // The method lane is the same on both counts, which is why a refused
+        // method dispatch is retried on the next tick rather than lost.
+        Work::Standing(_) | Work::Method(_) => {}
     }
     Ok(())
 }
@@ -1113,22 +1294,22 @@ mod tests {
         // Both operator requests go before the plan item, oldest first, even
         // though the plan item scores and is ready - and even though her
         // standing lane has a rung ready the whole time.
-        match choose_work(&pool, &engines, a_rung(Rung::Drain), &now()).unwrap() {
+        match choose_work(&pool, &engines, None, a_rung(Rung::Drain), &now()).unwrap() {
             Some(Work::Queue(r)) => assert_eq!(r.id, "r1"),
             other => panic!("the oldest request must go first: {:?}", other.is_some()),
         }
-        match choose_work(&pool, &engines, a_rung(Rung::Drain), &now()).unwrap() {
+        match choose_work(&pool, &engines, None, a_rung(Rung::Drain), &now()).unwrap() {
             Some(Work::Queue(r)) => assert_eq!(r.id, "r2"),
             other => panic!("the human lane drains WHOLE: {:?}", other.is_some()),
         }
         // Only now does her own plan get a hearing.
-        match choose_work(&pool, &engines, a_rung(Rung::Drain), &now()).unwrap() {
+        match choose_work(&pool, &engines, None, a_rung(Rung::Drain), &now()).unwrap() {
             Some(Work::Plan(item)) => assert_eq!(item.subject_id, "localization/czech"),
             other => panic!("the plan comes after the queue: {:?}", other.is_some()),
         }
         // And with both lanes drained she does NOT stop - she goes to her
         // standing lane, whose rung the measurement already chose.
-        match choose_work(&pool, &engines, a_rung(Rung::Drain), &now()).unwrap() {
+        match choose_work(&pool, &engines, None, a_rung(Rung::Drain), &now()).unwrap() {
             Some(Work::Standing(s)) => assert_eq!(s.rung, Rung::Drain),
             other => panic!(
                 "a drained pair goes to the standing lane: {:?}",
@@ -1151,6 +1332,7 @@ mod tests {
         let chosen = choose_work(
             &pool,
             &[],
+            None,
             standing::standing_rung(&real, &Marks::default()),
             &now(),
         )
@@ -1173,6 +1355,7 @@ mod tests {
         let chosen = choose_work(
             &pool,
             &[],
+            None,
             standing::standing_rung(&emptied, &Marks::default()),
             &now(),
         )
@@ -1200,16 +1383,30 @@ mod tests {
             refill: Some("88bff378".into()),
         };
         assert!(
-            choose_work(&pool, &[], standing::standing_rung(&real, &spent), &now())
-                .unwrap()
-                .is_none(),
+            choose_work(
+                &pool,
+                &[],
+                None,
+                standing::standing_rung(&real, &spent),
+                &now()
+            )
+            .unwrap()
+            .is_none(),
             "both rungs have been run at these bytes; another dispatch buys the same nothing"
         );
 
         // The operator's own lane is never gated by any of this: a request
         // filed while both rungs are spent still goes out immediately.
         repo::create_request(&pool, "r1", "hygiene", None, None, &now()).unwrap();
-        match choose_work(&pool, &[], standing::standing_rung(&real, &spent), &now()).unwrap() {
+        match choose_work(
+            &pool,
+            &[],
+            None,
+            standing::standing_rung(&real, &spent),
+            &now(),
+        )
+        .unwrap()
+        {
             Some(Work::Queue(r)) => assert_eq!(r.id, "r1"),
             other => panic!("the human lane is never braked: {:?}", other.is_some()),
         }
@@ -1222,11 +1419,13 @@ mod tests {
     fn a_standing_pass_already_in_flight_is_not_started_twice() {
         let pool = init_test_db().unwrap();
         assert!(matches!(
-            choose_work(&pool, &[], a_rung(Rung::Drain), &now()).unwrap(),
+            choose_work(&pool, &[], None, a_rung(Rung::Drain), &now()).unwrap(),
             Some(Work::Standing(_))
         ));
         assert!(
-            choose_work(&pool, &[], None, &now()).unwrap().is_none(),
+            choose_work(&pool, &[], None, None, &now())
+                .unwrap()
+                .is_none(),
             "a second harvest pass into the same checkout would race the first writer"
         );
         // Nothing of hers is live in this process, so the predicate finds
@@ -1252,7 +1451,7 @@ mod tests {
         assert!(engines.is_empty());
         assert!(
             matches!(
-                choose_work(&pool, &engines, a_rung(Rung::Drain), &now()).unwrap(),
+                choose_work(&pool, &engines, None, a_rung(Rung::Drain), &now()).unwrap(),
                 Some(Work::Standing(_))
             ),
             "she goes to her standing lane rather than guessing a /deepen command"
@@ -1301,6 +1500,7 @@ mod tests {
                 choose_work(
                     &pool,
                     &[CuratorEngine::Reconcile],
+                    None,
                     a_rung(Rung::Drain),
                     &now()
                 )
@@ -1389,5 +1589,175 @@ mod tests {
         let one = parse_git_log(&format!("{GIT_RECORD_SEP}aaa\n"));
         assert_eq!(one.len(), 1);
         assert!(one[0].1.is_empty());
+    }
+
+    /// One planned item whose engine her plan cannot derive an invocation for -
+    /// built directly rather than through the DB, because `choose_method` takes
+    /// the items and the skills, not a pool to read them from.
+    fn blocked_plan_item(engine: CuratorEngine) -> CuratorPlanItem {
+        CuratorPlanItem {
+            id: uuid::Uuid::new_v4().to_string(),
+            plan_run_id: "r1".into(),
+            subject_id: "software-engineering/a-subject".into(),
+            domain: "software-engineering".into(),
+            at: "cat/sub".into(),
+            points: 7,
+            reasons: Vec::new(),
+            dominant_reason: CuratorReasonCode::ExpiredApplication,
+            engine,
+            techniques: 4,
+            applications: 2,
+            stacks: Vec::new(),
+            demand_known: false,
+            demand: None,
+            last_swept: None,
+            registry_dry_streak: 0,
+            suppressed_by_saturation: false,
+            has_applied_row: None,
+            state: CuratorPlanItemState::Planned,
+            declined_reason: None,
+            dispatched_run_id: None,
+            evidence_ref: None,
+            updated_at: "2026-09-26T00:00:00Z".into(),
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // The method lane
+    // -----------------------------------------------------------------------
+
+    /// An impediment shaped like the real one: `forge` documents no invocation.
+    fn an_impediment() -> CuratorImpediment {
+        CuratorImpediment {
+            id: "undocumented_invocation:forge".into(),
+            kind: personas_core::models::CuratorImpedimentKind::UndocumentedInvocation,
+            engine: CuratorEngine::Forge,
+            skill: "forge".into(),
+            blocks: 110,
+            frees: 0,
+            file: Some(".claude/skills/forge/SKILL.md".into()),
+            summary: "'forge' documents no invocation".into(),
+            self_fixable: true,
+            refusal: None,
+        }
+    }
+
+    /// **The rung's position, asserted as an ordering rather than described.**
+    ///
+    /// Work she can already do outranks widening what she can do - so a ready
+    /// plan item goes first. But the method lane goes ahead of the standing
+    /// lane, which is the whole lesson of the eight refill passes that ran
+    /// against an already-full queue: between "my plan is dry" and "go and find
+    /// more sources" there is "my plan is NOT dry, I cannot spell the command".
+    #[test]
+    fn the_method_lane_comes_after_her_plan_and_before_the_standing_lane() {
+        let pool = init_test_db().unwrap();
+        seed_plan(&pool, CuratorEngine::Reconcile, 9, "localization/czech");
+        let engines = [CuratorEngine::Reconcile];
+
+        // Her plan first, with a method fix and a standing rung both waiting.
+        match choose_work(
+            &pool,
+            &engines,
+            Some(an_impediment()),
+            a_rung(Rung::Drain),
+            &now(),
+        )
+        .unwrap()
+        {
+            Some(Work::Plan(item)) => assert_eq!(item.subject_id, "localization/czech"),
+            other => panic!("the plan outranks a method fix: {:?}", other.is_some()),
+        }
+        // Plan drained: now the method lane, NOT the refill.
+        match choose_work(
+            &pool,
+            &engines,
+            Some(an_impediment()),
+            a_rung(Rung::Drain),
+            &now(),
+        )
+        .unwrap()
+        {
+            Some(Work::Method(imp)) => {
+                assert_eq!(imp.skill, "forge");
+                assert_eq!(imp.blocks, 110);
+            }
+            other => panic!(
+                "a dry plan goes to the method lane before the standing lane: {:?}",
+                other.is_some()
+            ),
+        }
+        // And with no method fix available it falls through to the standing
+        // lane, exactly as it did before this lane existed.
+        match choose_work(&pool, &engines, None, a_rung(Rung::Drain), &now()).unwrap() {
+            Some(Work::Standing(s)) => assert_eq!(s.rung, Rung::Drain),
+            other => panic!("no fix available falls through: {:?}", other.is_some()),
+        }
+    }
+
+    /// The lane token is its own, so the audit can tell the most privileged
+    /// thing she does from ordinary plan work.
+    #[test]
+    fn a_method_dispatch_records_its_own_lane() {
+        assert_eq!(Work::Method(an_impediment()).lane(), curator_lane::METHOD);
+        assert_ne!(Work::Method(an_impediment()).lane(), curator_lane::PLAN);
+    }
+
+    /// **Three fail-closed gates**, driven against a real database.
+    #[test]
+    fn she_will_not_dispatch_a_method_fix_without_a_head_or_twice_against_one() {
+        let pool = init_test_db().unwrap();
+        let skills = [skill("forge", None), skill("reconcile", Some(false))];
+        let items = vec![blocked_plan_item(CuratorEngine::Forge)];
+
+        // No HEAD: a mark that cannot be compared is not a mark, and this is
+        // the act not to take while blind.
+        assert!(
+            choose_method(&pool, &items, &skills, None).is_none(),
+            "with no registry HEAD she does nothing"
+        );
+
+        // With a HEAD, the fix is offered.
+        let chosen = choose_method(&pool, &items, &skills, Some("abc1234"))
+            .expect("forge documents nothing and blocks a planned item");
+        assert_eq!(chosen.skill, "forge");
+
+        // Once marked against that HEAD, not again - the registry has not moved,
+        // so nothing could have changed.
+        crate::db::repos::core::settings::set(
+            &pool,
+            settings_keys::CURATOR_METHOD_MARK,
+            &method_mark(&chosen, "abc1234"),
+        )
+        .unwrap();
+        assert!(
+            choose_method(&pool, &items, &skills, Some("abc1234")).is_none(),
+            "the same fix against an unmoved registry is not dispatched twice"
+        );
+        // A new commit to the registry - anybody's - lets her look again.
+        assert!(
+            choose_method(&pool, &items, &skills, Some("def5678")).is_some(),
+            "a moved HEAD is reason enough to look again"
+        );
+    }
+
+    /// **An impediment that is not hers is never dispatched**, however much it
+    /// blocks. `apply` blocks the most items in the real plan and its fix is a
+    /// change to Personas, which she may not make.
+    #[test]
+    fn an_impediment_that_is_not_hers_is_never_dispatched_however_large() {
+        let pool = init_test_db().unwrap();
+        let skills = [skill("intake", Some(false)), skill("conform", Some(false))];
+        let mut items = Vec::new();
+        for _ in 0..110 {
+            items.push(blocked_plan_item(CuratorEngine::Apply));
+        }
+        for _ in 0..99 {
+            items.push(blocked_plan_item(CuratorEngine::Conform));
+        }
+        assert!(
+            choose_method(&pool, &items, &skills, Some("abc1234")).is_none(),
+            "209 blocked items, none of them hers to fix"
+        );
     }
 }

@@ -492,7 +492,14 @@ pub const CURATOR_LEVEL_FORGE: &str = "curator_level_forge";
 pub const CURATOR_LEVEL_CONFORM: &str = "curator_level_conform";
 /// Authority level for a maintenance sweep over the corpus.
 pub const CURATOR_LEVEL_SWEEP: &str = "curator_level_sweep";
-/// Default for all four levels — `L0`, always ask.
+/// Authority level for editing the registry's own METHOD files - the skills
+/// that say how every other lane runs.
+///
+/// Distinct from [`CURATOR_LEVEL_SWEEP`] because the blast radius is: a sweep
+/// changes what the corpus says, a method edit changes what every future worker
+/// is told to do. Added 2026-09-26 with the `method` lane.
+pub const CURATOR_LEVEL_METHOD: &str = "curator_level_method";
+/// Default for all five levels — `L0`, always ask.
 ///
 /// An autonomy setting that has never been touched must not be read as
 /// permission, which is the same call [`CURATOR_ENABLED_DEFAULT`] makes.
@@ -576,6 +583,14 @@ pub const CURATOR_HARVEST_DRAIN_MARK: &str = "curator_harvest_drain_mark";
 /// nothing about whether the gap list has a source worth fetching - and because
 /// two rungs sharing one mark would let either silence the other.
 pub const CURATOR_HARVEST_REFILL_MARK: &str = "curator_harvest_refill_mark";
+/// The one method fix she last dispatched, as `<impediment-id>@<registry-head>`.
+///
+/// The same shape and the same job as the two harvest marks above: it stops her
+/// dispatching the same repair against inputs that have not moved. Keyed on the
+/// registry HEAD rather than on a fingerprint of the file, because the evidence
+/// that a method fix landed is a COMMIT - and any commit to the registry, hers
+/// or anybody's, is reason enough to look again.
+pub const CURATOR_METHOD_MARK: &str = "curator_method_mark";
 
 /// Whether `spec` is a window Curator's tick and the attention loop will both
 /// honour. Delegates to the ONE parser
@@ -1327,11 +1342,12 @@ const ALLOWED_KEYS: &[&str] = &[
     ATHENA_ONBOARDED_AT,
     OVERSEER_ENABLED,
     CURATOR_ENABLED,
-    // Curator's policy — the nine keys `CuratorPolicy` is projected from.
+    // Curator's policy — the ten keys `CuratorPolicy` is projected from.
     CURATOR_LEVEL_RESEARCH,
     CURATOR_LEVEL_FORGE,
     CURATOR_LEVEL_CONFORM,
     CURATOR_LEVEL_SWEEP,
+    CURATOR_LEVEL_METHOD,
     CURATOR_DAILY_BUDGET_USD,
     CURATOR_DAILY_RUN_CAP,
     CURATOR_DAILY_COMMIT_CAP,
@@ -1341,6 +1357,7 @@ const ALLOWED_KEYS: &[&str] = &[
     CURATOR_LAST_SLEEP_AT,
     CURATOR_HARVEST_DRAIN_MARK,
     CURATOR_HARVEST_REFILL_MARK,
+    CURATOR_METHOD_MARK,
     MONTHLY_COST_CEILING_USD,
     AUTONOMOUS_GOAL_ADVANCEMENT,
     AUTONOMOUS_ATTENTION_LOOP,

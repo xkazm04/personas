@@ -24,7 +24,8 @@
 //!    `/librarian` by hand must still get the safe default.
 
 use personas_core::models::{
-    curator_lane, CuratorDecisionLevel, CuratorEngine, CuratorPlanItem, CuratorPolicy, CuratorSkill,
+    curator_lane, CuratorDecisionLevel, CuratorEngine, CuratorImpediment, CuratorPlanItem,
+    CuratorPolicy, CuratorSkill,
 };
 
 use crate::error::AppError;
@@ -32,7 +33,11 @@ use crate::error::AppError;
 /// The standing lane's skill. Both of its rungs are `harvest` passes over the
 /// same queue file, which is why they can never run at the same time.
 ///
-/// **`harvest` and deliberately not `/deepen`.** Both were read on 2026-09-24.
+/// **`harvest` and deliberately not `/deepen`, and that is about THIS lane
+/// only.** Her plan lane does route to `deepen` as of 2026-09-26; the standing
+/// lane still must not, and the reason below is unchanged by that.
+///
+/// Both were read on 2026-09-24.
 /// `deepen`'s file says "Saturation is a state, not an end: when nothing clears
 /// threshold the loop **idles until the earliest clock or an event**". A lane
 /// whose job is that she never idles cannot be built on a skill that idles by
@@ -64,6 +69,15 @@ pub(super) const REFILL_ARGUMENT: &str = "research";
 /// pair - a date typed twice is a date that drifts.
 pub(super) const AUTHORIZED_BY: &str = "Operator (xkazm04)";
 pub(super) const AUTHORIZED_ON: &str = "2026-09-24";
+/// The day the operator widened her write surface from the corpus's CONTENT to
+/// the registry's own METHOD files.
+///
+/// A second date rather than a bump of the first, because the grants are not the
+/// same grant: one lets her land knowledge, the other lets her change the
+/// instructions every future worker reads. A reviewer asking "when was she
+/// allowed to edit a SKILL.md?" gets an answer that is not entangled with when
+/// she was allowed to push.
+pub(super) const METHOD_AUTHORIZED_ON: &str = "2026-09-26";
 
 // ---------------------------------------------------------------------------
 // Which level authorises which skill
@@ -83,6 +97,10 @@ pub(super) const AUTHORIZED_ON: &str = "2026-09-24";
 /// where guessing a HIGHER authority would be the expensive mistake.
 pub(super) fn authorising_level(policy: &CuratorPolicy, skill: &str) -> CuratorDecisionLevel {
     match skill {
+        // Not a registry skill: the name the method lane dispatches under. It
+        // is matched FIRST so a future registry skill of the same name could
+        // not silently inherit the highest authority she holds.
+        METHOD_SKILL => policy.level_method,
         "forge" => policy.level_forge,
         "conform" => policy.level_conform,
         "harvest" | "intake" | "assay" | "deepen" | "research" => policy.level_research,
@@ -102,8 +120,12 @@ pub(super) fn authorising_level(policy: &CuratorPolicy, skill: &str) -> CuratorD
 /// allowed to name such a skill because the operator typed the invocation; her
 /// own lanes are not, because nobody did.
 ///
-/// Measured 2026-09-24 against the registry: `deepen` and `forge` are in
-/// exactly that state, and 31 of the 36 shared skills are too.
+/// Measured 2026-09-24 against the registry: `deepen` and `forge` were in
+/// exactly that state, and 31 of the 36 shared skills are too. `deepen` left it
+/// on 2026-09-26 - see [`PLAN_ROUTES`] - which is the first time this app's own
+/// refusal was answered by a change to the registry rather than by a carve-out
+/// here. `forge` has not, and is now measured as an impediment rather than
+/// described in a comment.
 pub(super) fn vet_autonomous(
     skills: &[CuratorSkill],
     skill: &str,
@@ -134,10 +156,21 @@ pub(super) fn vet_autonomous(
 /// Engine -> the registry skill that answers it, for the engines her plan can
 /// turn into a command she may actually run.
 ///
-/// ONE route, and the list is short because the honest answer is short. See
-/// [`plan_invocation`] for why each of the other five is absent.
-pub(super) const PLAN_ROUTES: [(CuratorEngine, &str); 1] =
-    [(CuratorEngine::Reconcile, "reconcile")];
+/// TWO routes, and the list is short because the honest answer is short. See
+/// [`plan_invocation`] for why each of the other four is absent.
+///
+/// `Deepen` joined on 2026-09-26 and nothing about the subject changed to let
+/// it: the registry's `deepen/SKILL.md` gained the `## Invocation` block it had
+/// never had, so `runs_bare` moved from `None` (unknown) to `Some(false)`
+/// (needs an argument) and a command she may write exists for the first time.
+/// It was 103 of the standing plan's 314 items - the largest engine after
+/// `apply` - and every one of them was undispatchable because of an absent
+/// heading in a method file, not because of a policy. That is the shape of
+/// impediment worth measuring on purpose rather than rediscovering.
+pub(super) const PLAN_ROUTES: [(CuratorEngine, &str); 2] = [
+    (CuratorEngine::Reconcile, "reconcile"),
+    (CuratorEngine::Deepen, "deepen"),
+];
 
 /// The engines the claim may take, given what the registry's disk actually
 /// carries right now.
@@ -162,7 +195,7 @@ pub(super) fn claimable_engines(skills: &[CuratorSkill]) -> Vec<CuratorEngine> {
 /// | engine | what the registry documents | derivable from the item? |
 /// |---|---|---|
 /// | `Reconcile` | `/reconcile <bundle>` | **yes** - a bundle IS the item's `domain` |
-/// | `Deepen` | nothing at all (`runs_bare: None`) | no - there is no command to write |
+/// | `Deepen` | `/deepen <domain>/<subject>` | **yes** - that address IS the item's `subject_id`, which is the scan's own id |
 /// | `Intake` | `/intake <url\|path\|->` | no - the finding is a citation that DIED; a replacement source is not in the item |
 /// | `Apply` | `/intake apply <technique> [--project <slug>]` | no - the item carries a technique COUNT, never a technique's name |
 /// | `Conform` | `/conform [context-or-path] [--subject <slug>]` | no - it judges a CONSUMER repo against the standard, and the item names no project; running it in the registry checkout would have the corpus grade itself |
@@ -180,8 +213,17 @@ pub(super) fn plan_invocation(item: &CuratorPlanItem) -> Option<(&'static str, S
             .into_iter()
             .find(|(engine, _)| *engine == CuratorEngine::Reconcile)
             .map(|(_, skill)| (skill, item.domain.clone())),
-        CuratorEngine::Deepen
-        | CuratorEngine::Intake
+        // The subject form, and the argument is the item's `subject_id`
+        // VERBATIM - `<domain>/<slug>` is what the scan produced, what
+        // `index.json` keys on and what the skill's own invocation block
+        // spells. Rebuilding it from `domain` + a slug would be constructing an
+        // address the registry already states, which is the failure mode that
+        // skill's step 1 names in its own rules.
+        CuratorEngine::Deepen => PLAN_ROUTES
+            .into_iter()
+            .find(|(engine, _)| *engine == CuratorEngine::Deepen)
+            .map(|(_, skill)| (skill, item.subject_id.clone())),
+        CuratorEngine::Intake
         | CuratorEngine::Apply
         | CuratorEngine::Conform
         | CuratorEngine::Forge
@@ -195,7 +237,9 @@ pub(super) fn plan_invocation(item: &CuratorPlanItem) -> Option<(&'static str, S
 
 /// Everything one worker is told.
 pub(super) struct Brief<'a> {
-    /// One of [`curator_lane`]'s three dispatch lanes.
+    /// One of [`curator_lane`]'s dispatch lanes. The method lane does not use
+    /// this struct at all - it has no skill to inject, so it composes through
+    /// [`compose_method`].
     pub lane: &'a str,
     pub skill: &'a str,
     pub argument: Option<&'a str>,
@@ -309,6 +353,13 @@ fn lane_sentence(lane: &str) -> &'static str {
             "the operator's own request queue, which she drains before her own plan"
         }
         curator_lane::PLAN => "her projection of the registry's own attention scan",
+        // Reachable only through `compose_method`, which writes its own lane
+        // line - but spelled here anyway, because a `match` on a closed
+        // vocabulary that silently fell through to the refill sentence would
+        // tell a worker it was doing the opposite of what it is doing.
+        curator_lane::METHOD => {
+            "her method lane - repairing the instruction that blocks her own plan"
+        }
         // ONE lane, two rungs: `/harvest auto` drains the standing queue and
         // `/harvest research` refills it. The first line of this prompt says
         // which rung you are, so the sentence names the lane rather than
@@ -323,6 +374,124 @@ fn lane_sentence(lane: &str) -> &'static str {
         // know which lane it came from.
         _ => "a lane this app could not name",
     }
+}
+
+// ---------------------------------------------------------------------------
+// The method lane
+// ---------------------------------------------------------------------------
+
+/// The name a method dispatch is recorded under.
+///
+/// **Not a registry skill, and deliberately not shaped like one.** Every other
+/// lane's first line is `/<skill> <argument>`, which injects a skill at spawn.
+/// This lane has no skill to inject: the worker is not running the registry's
+/// method, it is repairing the method so that a future worker can run it. A
+/// pseudo-skill name that collided with a real one would hand that real skill
+/// the highest authority she holds, which is why [`authorising_level`] matches
+/// this arm before any other.
+pub(super) const METHOD_SKILL: &str = "method";
+
+/// The dated grant that widens her write surface from content to method.
+///
+/// Appended to [`authorization_line`] for this lane alone, and kept separate
+/// rather than folded in, for the reason the original carries its own limits:
+/// **an authorization is only as honest as its boundary**, and this one crosses a
+/// boundary the other never did. The other three lanes edit what the corpus
+/// SAYS. This one edits the files that say how every future worker WORKS.
+///
+/// Its own limit is the interesting half. She may document an invocation a
+/// file's prose already implies - the bounded, reviewable act that was measured
+/// on 2026-09-26 as the sole thing standing between her and 103 ranked subjects.
+/// She may not invent a mode, change what a skill does, or touch a rule; and she
+/// may not edit Personas, which is the app that runs her and the one place where
+/// a change could rewrite its own audit.
+fn method_authorization() -> String {
+    format!(
+        "METHOD AUTHORIZATION - {AUTHORIZED_BY}, {METHOD_AUTHORIZED_ON}. This run edits the \
+         registry's own METHOD files - a `SKILL.md`, not a subject - because a gap in one is \
+         what is blocking her plan.\n\
+         What this covers: writing down an invocation the file's own prose ALREADY implies, \
+         bumping its `version:`, and appending the lesson that records why. That is the whole \
+         grant, and it was written on the day 103 ranked subjects turned out to be \
+         undispatchable because one file was missing one heading.\n\
+         What it does NOT cover, and this is the point of a separate paragraph: inventing a \
+         mode the file does not describe; changing what the skill DOES; editing any rule, \
+         limit or anti-pattern; deleting anything. If the honest answer is that the file \
+         describes no invocation because its author had not decided on one, say exactly that \
+         and stop - an undocumented skill is a better outcome than a documented fiction, \
+         because everything downstream will believe the fiction.\n\
+         It also does not cover the Personas application source at any path. Personas is the \
+         app that dispatched you and reads your commits back; a run that edited it would be \
+         rewriting the record of itself."
+    )
+}
+
+/// The whole prompt a method worker is spawned with.
+///
+/// Separate from [`compose`] rather than a branch inside it, because that
+/// function's first-line contract - the invocation, which is how a skill is
+/// injected - is exactly what this lane does not have, and its own test asserts
+/// that contract. A branch would have made the assertion conditional and the
+/// contract stop meaning anything.
+pub(super) fn compose_method(impediment: &CuratorImpediment, head: Option<&str>) -> String {
+    let mut out = String::new();
+    out.push_str(
+        "You are a worker Curator dispatched. She is the companion who keeps this knowledge \
+         registry world-class and applied, and she is running unattended.\n\n\
+         Lane: her METHOD lane. She is not asking you to do registry work; she is asking you \
+         to repair the instruction that stops her doing it.\n",
+    );
+    if let Some(head) = head {
+        out.push_str(&format!("Registry HEAD at dispatch: {head}\n"));
+    }
+    out.push_str(&format!(
+        "\nWhat is blocking her, measured from her own standing plan at dispatch:\n\
+         - skill: {}\n\
+         - file: {}\n\
+         - it holds: {} ranked plan item(s) she otherwise cannot dispatch at all\n\
+         - closing it releases: {} of them - the rest, if any, are waiting on \
+         something else as well\n\
+         - what is missing: {}\n",
+        impediment.skill,
+        impediment.file.as_deref().unwrap_or("(none - see below)"),
+        impediment.blocks,
+        impediment.frees,
+        impediment.summary,
+    ));
+    out.push_str(
+        "\nRecount that before you write anything. The count came from this app's projection, \
+         and if the file already documents an invocation - or documents one that her plan \
+         still could not fill - then the finding is about her projection rather than about \
+         this file, and saying so is the result. Do not add a heading to make a number go \
+         down.\n\n\
+         How to write it, if it is genuinely missing:\n\
+         1. Read the WHOLE file first. The invocation you write must be the one its prose \
+            already describes - its modes, its arguments, its ledgers - and nothing else. \
+            Every line you add has to be answerable by the method that is already there.\n\
+         2. Match the house shape of the lane's other skills: a fenced block under an \
+            `## Invocation` heading, one `/<name> <args>` line per mode with a trailing \
+            comment. Read two neighbours before you decide the shape; do not invent one.\n\
+         3. Say out loud in the file which forms do NOT exist and why, when the absence is \
+            deliberate. A bare form that would sweep everything, when another skill owns \
+            that job, is worth one sentence naming the other skill.\n\
+         4. Bump `version:` in the frontmatter and append an entry to the skill's \
+            `LESSONS.md` in that file's own existing format, recording what was absent and \
+            what it cost. If there is no `LESSONS.md`, do not create one.\n\
+         5. Commit that file (and its `LESSONS.md`) and nothing else, with a message that \
+            names the impediment. Other sessions are writing this checkout: stage by \
+            pathspec, never `git add -A`, and never stash work that is not yours.\n",
+    );
+    out.push('\n');
+    out.push_str(&authorization_line());
+    out.push_str("\n\n");
+    out.push_str(&method_authorization());
+    out.push_str(
+        "\n\nOne file, one gap, one commit. If you find a second thing wrong with the file, \
+         write it in your report rather than fixing it - a method change is reviewed by a \
+         person reading a small diff, and that is the only reason this lane is allowed to \
+         exist.",
+    );
+    out
 }
 
 #[cfg(test)]
@@ -420,17 +589,23 @@ mod tests {
         ));
     }
 
-    /// The plan table, asserted whole. A sixth engine becoming derivable is a
+    /// The plan table, asserted whole. A further engine becoming derivable is a
     /// deliberate act that has to edit this test.
     #[test]
-    fn the_plan_derives_one_engine_and_names_the_rest_as_unreachable() {
+    fn the_plan_derives_two_engines_and_names_the_rest_as_unreachable() {
         assert_eq!(
             plan_invocation(&item(CuratorEngine::Reconcile, "localization")),
             Some(("reconcile", "localization".to_string())),
             "a bundle IS the item's domain"
         );
+        // The address is carried, never rebuilt: `item()` sets `subject_id` to
+        // `<domain>/a-subject`, and that whole string is the argument.
+        assert_eq!(
+            plan_invocation(&item(CuratorEngine::Deepen, "localization")),
+            Some(("deepen", "localization/a-subject".to_string())),
+            "the subject_id IS the address /deepen documents"
+        );
         for engine in [
-            CuratorEngine::Deepen,
             CuratorEngine::Intake,
             CuratorEngine::Apply,
             CuratorEngine::Conform,
@@ -459,13 +634,25 @@ mod tests {
     /// worker that was then refused never comes back.
     #[test]
     fn a_route_whose_skill_is_missing_is_never_claimable() {
-        let full = [skill("reconcile", Some(false), Some("/reconcile <bundle>"))];
-        assert_eq!(claimable_engines(&full), vec![CuratorEngine::Reconcile]);
+        let full = [
+            skill("reconcile", Some(false), Some("/reconcile <bundle>")),
+            skill("deepen", Some(false), Some("/deepen <domain>")),
+        ];
+        assert_eq!(
+            claimable_engines(&full),
+            vec![CuratorEngine::Reconcile, CuratorEngine::Deepen]
+        );
+
+        // One route documented and one not is the state the registry was in
+        // until 2026-09-26, and the answer is the documented one ALONE - not
+        // both, and not neither.
+        let half = [skill("reconcile", Some(false), Some("/reconcile <bundle>"))];
+        assert_eq!(claimable_engines(&half), vec![CuratorEngine::Reconcile]);
 
         // The registry dropped or renamed it.
         assert!(claimable_engines(&[]).is_empty());
-        // ... or it lost its documented invocation, which is the same
-        // situation as `deepen`'s and must read the same way.
+        // ... or it lost its documented invocation, which is the situation
+        // `deepen` was in until 2026-09-26 and must read the same way.
         let undocumented = [skill("reconcile", None, None)];
         assert!(claimable_engines(&undocumented).is_empty());
     }

@@ -35,6 +35,13 @@
 //! convenience for the consult lane, and it carries no stat.
 
 pub mod dispatch;
+/// Whether the ecosystem of projects is growing, sampled once per projection.
+/// Her goal signal - see [`growth`].
+pub mod growth;
+/// **Why an engine of her plan cannot be dispatched, counted and ranked.** The
+/// input to her method lane, and the one place that decides whether a gap is
+/// hers to close or the operator's to hear about - see [`impediment`].
+mod impediment;
 pub mod instrument;
 pub mod process;
 pub mod projection;
@@ -58,8 +65,9 @@ use crate::ipc_auth::require_auth;
 use crate::AppState;
 
 use personas_core::models::{
-    curator_lane, CuratorConsentState, CuratorDecisionLevel, CuratorPlan, CuratorPolicy,
-    CuratorProject, CuratorRefresh, CuratorRequest, CuratorRuntime, CuratorSkill,
+    curator_lane, CuratorConsentState, CuratorDecisionLevel, CuratorGrowthReading,
+    CuratorImpediment, CuratorPlan, CuratorPolicy, CuratorProject, CuratorRefresh, CuratorRequest,
+    CuratorRuntime, CuratorSkill,
 };
 
 /// Run a blocking read/write off the IPC worker. The curator lane touches
@@ -121,7 +129,7 @@ fn level(db: &crate::db::DbPool, key: &str) -> CuratorDecisionLevel {
         .unwrap_or(CuratorDecisionLevel::L0)
 }
 
-/// The nine settings keys, as one typed value with the defaults resolved.
+/// The ten settings keys, as one typed value with the defaults resolved.
 ///
 /// The four caps stay `None` when unset, which is NOT zero: `None` means the
 /// operator has declared no ceiling, and a `0` would say she may never run.
@@ -132,6 +140,7 @@ pub fn load_policy(db: &crate::db::DbPool) -> CuratorPolicy {
         level_forge: level(db, settings_keys::CURATOR_LEVEL_FORGE),
         level_conform: level(db, settings_keys::CURATOR_LEVEL_CONFORM),
         level_sweep: level(db, settings_keys::CURATOR_LEVEL_SWEEP),
+        level_method: level(db, settings_keys::CURATOR_LEVEL_METHOD),
         daily_budget_usd: setting(db, settings_keys::CURATOR_DAILY_BUDGET_USD)
             .and_then(|v| v.parse::<f64>().ok())
             .filter(|v| v.is_finite() && *v >= 0.0),
@@ -321,6 +330,22 @@ pub async fn curator_plan_refresh(
             );
         }
 
+        // One growth sample per projection, from the SAME reading the plan was
+        // built from. Logged and swallowed rather than propagated: a lost sample
+        // costs one interval of trend resolution, while failing the refresh over
+        // it would cost the operator their plan.
+        //
+        // Taken before the plan is written, so the sample's clock and the run's
+        // are the same `now` - a trend whose samples were timestamped after a
+        // variable amount of DB work would have a jittered x-axis.
+        if let Err(err) = growth::record(&db, &reading, &now) {
+            tracing::warn!(
+                error = %err,
+                "curator: this projection's growth sample was not recorded, so her trend is one \
+                 interval coarser than it should be"
+            );
+        }
+
         // Read BEFORE the insert supersedes it. The comparison is against the
         // run this one replaces, which is the only comparison that answers
         // "did anything move" - not against whatever a page happens to hold.
@@ -348,6 +373,47 @@ pub async fn curator_plan_refresh(
             from_cache,
             changed,
         })
+    })
+    .await
+}
+
+/// **Is the ecosystem of projects growing?** Her goal signal, over the newest
+/// [`growth::WINDOW`] samples.
+///
+/// Sync and cheap: it reads rows her projections already wrote and runs no
+/// script. `verdict: unknown` with `samples: 1` is the honest answer on a fresh
+/// install, and it is not the same answer as `flat`.
+#[tauri::command]
+pub async fn curator_growth_get(
+    state: State<'_, Arc<AppState>>,
+) -> Result<CuratorGrowthReading, AppError> {
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    blocking("curator_growth_get", move || growth::read(&db)).await
+}
+
+/// **What stops her, counted and ranked.** Worst first, with the ones she may
+/// close herself flagged and the rest carrying the reason they are not hers.
+///
+/// An empty answer means her standing plan has no undispatchable engine in it -
+/// which is a real and good state, and distinguishable from a missing plan,
+/// because a missing plan errors instead.
+#[tauri::command]
+pub async fn curator_impediments_get(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<CuratorImpediment>, AppError> {
+    require_auth(&state).await?;
+    let root = registry_root(state.inner())?;
+    let db = state.db.clone();
+    blocking("curator_impediments_get", move || {
+        // Both halves are blocking work: `read_skills` walks the registry's two
+        // skill lanes on disk and `current_plan` is rusqlite. Neither belongs on
+        // the IPC worker, which is what this module's header is about.
+        let skills = instrument::read_skills(&root)?;
+        let Some(plan) = repo::current_plan(&db)? else {
+            return Ok(Vec::new());
+        };
+        Ok(impediment::measure(&plan.items, &skills))
     })
     .await
 }

@@ -12,6 +12,17 @@ import type { CuratorDecisionLevel } from "./CuratorDecisionLevel";
  */
 export type CuratorPolicy = { levelResearch: CuratorDecisionLevel, levelForge: CuratorDecisionLevel, levelConform: CuratorDecisionLevel, levelSweep: CuratorDecisionLevel, 
 /**
+ * Authority for editing the registry's own METHOD files - the skills that
+ * say how every other lane runs.
+ *
+ * A fifth level rather than a reuse of [`Self::level_sweep`] because the
+ * blast radius is categorically different: a sweep changes what the corpus
+ * says, a method edit changes what every future worker is told to do. The
+ * level is recorded, never a gate; the permission itself is the dated
+ * standing authorization the dispatch package carries.
+ */
+levelMethod: CuratorDecisionLevel, 
+/**
  * Dollars per day. `None` = no ceiling declared.
  */
 dailyBudgetUsd: number | null, 

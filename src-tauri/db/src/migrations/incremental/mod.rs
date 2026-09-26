@@ -75,6 +75,7 @@ mod e49_curator_plan;
 mod e50_curator_quiet;
 mod e51_curator_request;
 mod e52_curator_dispatch;
+mod e53_curator_method;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -146,6 +147,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e50_curator_quiet::run(conn)?;
     e51_curator_request::run(conn)?;
     e52_curator_dispatch::run(conn)?;
+    e53_curator_method::run(conn)?;
 
     Ok(())
 }
