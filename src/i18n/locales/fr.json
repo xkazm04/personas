@@ -24018,7 +24018,8 @@
         "sheet": "cette feuille",
         "sort": "trier le grand livre par un canal",
         "undo": "annuler la dernière réponse",
-        "queue": "ta file, à côté du dossier"
+        "queue": "ta file, à côté du dossier",
+        "gaps": "les écarts : ce qui la bloque, et ce que cela a coûté"
       },
       "kind": {
         "coverage_delta": "delta de couverture",
@@ -24226,7 +24227,66 @@
       "verdict_pairs_unmeasured_tip": "C'est le seul petit chiffre de cette page : la part des paires contexte-sujet que quiconque a jamais jugée. Exécutez l'instrument et il apparaît. D'ici là, elle est inconnue, et une part inconnue n'est pas 0 %.",
       "projection_note": "une projection, pas la vérité en direct",
       "scan_tip": "Extrait de l'exécution {run}, sur le HEAD du registre {sha}. Le plan est une projection du registre à ce commit, et il devient obsolète dès que HEAD bouge.",
-      "scan_tip_no_head": "Extrait de l'exécution {run}. Git n'a pas pu indiquer le HEAD du registre. Le plan est une projection du registre à un commit donné, et il devient obsolète dès que HEAD bouge."
+      "scan_tip_no_head": "Extrait de l'exécution {run}. Git n'a pas pu indiquer le HEAD du registre. Le plan est une projection du registre à un commit donné, et il devient obsolète dès que HEAD bouge.",
+      "gaps": {
+        "abandoned": "{n} dispatchs sans clôture ni run actif",
+        "abandoned_tip": "Un dispatch que son registre n'a jamais clôturé et dont la session n'est plus active. C'est la fuite, un fait distinct d'un run devenu silencieux mais tout de même clôturé.",
+        "blocked_none": "Rien dans son plan n'est indispatchable.",
+        "blocked_title": "Ce qui bloque",
+        "button": "Écarts",
+        "button_tip": "Ce qui bloque son plan, ce que ses runs ont coûté, et si l'écosystème a grandi",
+        "frees": "libère {n}",
+        "growth_no_samples": "Aucun échantillon encore. Elle en prend un à chaque exécution de l'instrument.",
+        "growth_nothing_moved": "Rien n'a bougé depuis l'échantillon précédent.",
+        "growth_one_sample": "Un seul échantillon. Une direction nécessite deux échantillons, il n'y a donc encore rien à soustraire.",
+        "growth_samples": "sur {n} échantillons",
+        "growth_streak": "rien n'a bougé en {n} passages",
+        "growth_title": "L'écosystème grandit-il",
+        "growth_unread_metrics": "Illisible dans l'un des deux échantillons : {metrics}",
+        "growth_verdict": {
+          "flat": "Stable",
+          "grew": "En hausse",
+          "shrank": "En baisse",
+          "unknown": "Inconnu"
+        },
+        "hers": "à elle",
+        "hers_tip": "Elle peut clore cela elle-même : l'écart se trouve dans un fichier que le registre possède.",
+        "holds": "bloque {n}",
+        "kind": {
+          "item_lacks_argument": "l'élément du plan ne peut pas le fournir",
+          "skill_missing": "compétence introuvable",
+          "undocumented_invocation": "ne documente aucune invocation"
+        },
+        "metric": {
+          "applications": "applications",
+          "applied_subjects": "a atteint un projet",
+          "judged_pairs": "paires jugées",
+          "projects": "projets",
+          "stale_verdicts": "verdicts obsolètes",
+          "subjects": "sujets",
+          "techniques": "techniques"
+        },
+        "quiet_for": "silencieux {n}m",
+        "quiet_more": "et {n} de plus.",
+        "quiet_none": "Aucun de ses runs n'est en suspens.",
+        "quiet_threshold": "la flotte déclare un run obsolète après {n} min sans croissance du log",
+        "quiet_threshold_tip": "Cette règle s'applique à toute la flotte et suppose qu'une personne s'est éloignée d'une session interactive. Ses workers sont headless et une passe de recherche peut réfléchir plus longtemps que cela, donc un run silencieux ici est autant une affirmation sur le tracker que sur le worker.",
+        "quiet_title": "Ne signale plus",
+        "quiet_unlinked": "aucune ligne de dispatch",
+        "quiet_unlinked_tip": "Rien dans son registre ne pointe vers cette session, le travail qui lui a été confié est donc inconnu.",
+        "quiet_unsettled": "non clôturé",
+        "quiet_unsettled_tip": "Son registre n'a enregistré aucun résultat pour ce run, rien ne l'a donc clôturé.",
+        "region": "Écarts : ce qui est en travers de son chemin, ce que cela a coûté, et si quoi que ce soit a fonctionné",
+        "stops": "Aucun plafond déclaré. Elle tourne jusqu'à ce que la limite d'utilisation de l'abonnement l'arrête.",
+        "stops_tip": "Délibéré : aucun budget quotidien, plafond de runs ou plafond de commits n'est défini, donc aucun d'eux ne peut l'arrêter. Son plafond de workers, ses heures calmes et la contre-pression s'appliquent toujours, et l'arrêt définitif reste la limite d'utilisation elle-même.",
+        "title": "Écarts",
+        "unknown_mark": "?",
+        "unread": "Non lu.",
+        "unread_tip": "Cette porte n'a pas répondu, ce qui n'est pas la même chose que n'avoir rien à signaler.",
+        "written_off": "{n} sujets de ce plan passés en perte après un dispatch",
+        "written_off_tip": "Pas une perte permanente : la prochaine projection remplace celle-ci et les renvoie à l'état planifié. Le coût est un cycle de ce sujet chaque fois.",
+        "yours": "à vous"
+      }
     },
     "process": {
       "cohort_share": "Tous les dépôts {pct}",

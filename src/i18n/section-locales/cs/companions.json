@@ -257,7 +257,8 @@
       "sheet": "tento list",
       "sort": "seřadit knihu podle jednoho kanálu",
       "undo": "vrátit zpět poslední odpověď",
-      "queue": "vaše fronta, vedle evidence"
+      "queue": "vaše fronta, vedle evidence",
+      "gaps": "mezery: co jí blokuje a co to stálo"
     },
     "kind": {
       "coverage_delta": "delta pokrytí",
@@ -465,7 +466,66 @@
     "verdict_pairs_unmeasured_tip": "Toto je jediné malé číslo této stránky: podíl párů kontext-subjekt, které kdy někdo posoudil. Spusťte nástroj a objeví se. Do té doby je neznámý, a neznámý podíl není 0 %.",
     "projection_note": "projekce, ne živá pravda",
     "scan_tip": "Pořízeno z běhu {run}, oproti HEAD registru {sha}. Plán je projekcí registru v daném commitu a je zastaralý, jakmile se HEAD posune.",
-    "scan_tip_no_head": "Pořízeno z běhu {run}. Git nedokázal zjistit HEAD registru. Plán je projekcí registru v jednom commitu a je zastaralý, jakmile se HEAD posune."
+    "scan_tip_no_head": "Pořízeno z běhu {run}. Git nedokázal zjistit HEAD registru. Plán je projekcí registru v jednom commitu a je zastaralý, jakmile se HEAD posune.",
+    "gaps": {
+      "abandoned": "{n} vyslání bez vyřízení a bez živého běhu",
+      "abandoned_tip": "Vyslání, které její evidence nikdy neuzavřela a jehož relace už neběží. To je únik, a je to jiný fakt než běh, který ztichl, ale přesto byl vyřízen.",
+      "blocked_none": "V jejím plánu není nic, co by nešlo vyslat.",
+      "blocked_title": "V cestě",
+      "button": "Mezery",
+      "button_tip": "Co blokuje její plán, kolik ji stál provoz a zda ekosystém rostl",
+      "frees": "uvolní {n}",
+      "growth_no_samples": "Zatím žádný vzorek. Bere jeden pokaždé, když nástroj běží.",
+      "growth_nothing_moved": "Od předchozího vzorku se nic nezměnilo.",
+      "growth_one_sample": "Jeden vzorek. Směr potřebuje dva, takže zatím není co odečítat.",
+      "growth_samples": "za {n} vzorků",
+      "growth_streak": "nic se nehnulo v {n} průchodech",
+      "growth_title": "Roste ekosystém",
+      "growth_unread_metrics": "Nečitelné v jednom ze dvou vzorků: {metrics}",
+      "growth_verdict": {
+        "flat": "Beze změny",
+        "grew": "Rostlo",
+        "shrank": "Šlo zpět",
+        "unknown": "Neznámé"
+      },
+      "hers": "její",
+      "hers_tip": "Může to uzavřít sama: mezera je v souboru, který vlastní registr.",
+      "holds": "blokuje {n}",
+      "kind": {
+        "item_lacks_argument": "položka plánu ji nemůže naplnit",
+        "skill_missing": "chybí dovednost",
+        "undocumented_invocation": "bez dokumentovaného vyvolání"
+      },
+      "metric": {
+        "applications": "aplikace",
+        "applied_subjects": "dosáhlo projektu",
+        "judged_pairs": "posouzené dvojice",
+        "projects": "projekty",
+        "stale_verdicts": "zastaralé verdikty",
+        "subjects": "předměty",
+        "techniques": "techniky"
+      },
+      "quiet_for": "ticho {n} m",
+      "quiet_more": "a dalších {n}.",
+      "quiet_none": "Žádný její běh není v limbu.",
+      "quiet_threshold": "flotila označí běh za neaktivní po {n} min bez růstu logu",
+      "quiet_threshold_tip": "Toto pravidlo platí pro celou flotilu a předpokládá, že člověk odešel od interaktivní relace. Její pracovníci běží bez rozhraní a výzkumný průchod může přemýšlet déle než to, takže tichý běh je tu tvrzení o sledovači stejně často jako o pracovníkovi.",
+      "quiet_title": "Přestaly hlásit",
+      "quiet_unlinked": "bez řádku vyslání",
+      "quiet_unlinked_tip": "Nic v její evidenci neukazuje na tuto relaci, takže úkol, který dostala, je neznámý.",
+      "quiet_unsettled": "nevyřízeno",
+      "quiet_unsettled_tip": "Její evidence nezaznamenala výsledek tohoto běhu, takže ho nic neuzavřelo.",
+      "region": "Mezery: co jí stojí v cestě, co to stálo a zda z toho něco fungovalo",
+      "stops": "Žádný strop není stanoven. Běží, dokud ji nezastaví limit využití předplatného.",
+      "stops_tip": "Záměrně: není nastaven žádný denní rozpočet, strop běhů ani strop commitů, takže ji žádný z nich nemůže zastavit. Její strop pracovníků, klidové hodiny a protitlak stále platí, a tvrdým limitem je samotný limit využití.",
+      "title": "Mezery",
+      "unknown_mark": "?",
+      "unread": "Nepřečteno.",
+      "unread_tip": "Tyto dveře neodpověděly, což není totéž jako nemít co hlásit.",
+      "written_off": "{n} předmětů tohoto plánu odepsáno po vyslání",
+      "written_off_tip": "Není to trvalá ztráta: další projekce tuto nahradí a vrátí je zpět do plánovaných. Cena je jeden cyklus daného předmětu pokaždé.",
+      "yours": "vaše"
+    }
   },
   "process": {
     "cohort_share": "Všechna úložiště {pct}",

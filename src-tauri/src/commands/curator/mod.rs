@@ -65,10 +65,13 @@ use crate::ipc_auth::require_auth;
 use crate::AppState;
 
 use personas_core::models::{
-    curator_lane, CuratorConsentState, CuratorDecisionLevel, CuratorGrowthReading,
-    CuratorImpediment, CuratorPlan, CuratorPolicy, CuratorProject, CuratorRefresh, CuratorRequest,
-    CuratorRuntime, CuratorSkill,
+    curator_lane, CuratorAttrition, CuratorConsentState, CuratorDecisionLevel,
+    CuratorGrowthReading, CuratorImpediment, CuratorPlan, CuratorPolicy, CuratorProject,
+    CuratorQuietRun, CuratorRefresh, CuratorRequest, CuratorRuntime, CuratorSkill,
 };
+
+use crate::commands::fleet::queue::DispatchOrigin;
+use crate::commands::fleet::types::{state_to_token, FleetSessionState};
 
 /// Run a blocking read/write off the IPC worker. The curator lane touches
 /// rusqlite AND the filesystem, so a sync command here would block it.
@@ -416,6 +419,112 @@ pub async fn curator_impediments_get(
         Ok(impediment::measure(&plan.items, &skills))
     })
     .await
+}
+
+/// **The work of hers that stopped reporting.** What her running cost, beside
+/// what it produced.
+///
+/// The operator saw this before any surface did: 18 of her sessions sitting in
+/// `stale`, all carrying `No log growth for 6 min`, several marked `restored
+/// after restart` - which is why they reappear at every launch. Until now the
+/// only way to know was to open the database.
+///
+/// Read from the fleet registry her own loop reads (`list_dto`), not from the
+/// `fleet_sessions` table, so the panel and her tick can never disagree about
+/// which of her runs is alive.
+#[tauri::command]
+pub async fn curator_attrition_get(
+    state: State<'_, Arc<AppState>>,
+) -> Result<CuratorAttrition, AppError> {
+    require_auth(&state).await?;
+    let db = state.db.clone();
+
+    // Taken BEFORE the blocking hop, on the IPC thread, because the registry is
+    // an in-memory mutex and not database work - and because the quiet clock
+    // must be measured against the same instant for every row.
+    let now_ms = chrono::Utc::now().timestamp_millis();
+    let sessions: Vec<_> = crate::commands::fleet::registry::registry()
+        .list_dto()
+        .into_iter()
+        .filter(|s| s.origin.as_deref() == Some(DispatchOrigin::Curator.token()))
+        .collect();
+
+    blocking("curator_attrition_get", move || {
+        let open = repo::open_dispatches(&db)?;
+        // Every dispatch, so a quiet session can be named by the work it was
+        // given rather than by a terminal title. Cheap: the table is bounded by
+        // her run cap.
+        let all = repo::all_dispatches(&db)?;
+
+        let runs: Vec<CuratorQuietRun> = sessions
+            .iter()
+            // Neither working nor finished. `Stale` is the state the operator is
+            // looking at; `Hibernated` is the other one that is not terminal and
+            // not alive. A `Finished` or `Exited` session is an outcome, however
+            // it ended, and does not belong in a list about work in limbo.
+            .filter(|s| {
+                matches!(
+                    s.state,
+                    FleetSessionState::Stale | FleetSessionState::Hibernated
+                )
+            })
+            .map(|s| {
+                let row = all.iter().find(|d| d.session_id == s.id);
+                CuratorQuietRun {
+                    session_id: s.id.clone(),
+                    lane: row.map(|d| d.lane.clone()),
+                    skill: row.map(|d| d.skill.clone()),
+                    argument: row.and_then(|d| d.argument.clone()),
+                    state: state_to_token(s.state).to_string(),
+                    reason: s.state_reason.clone(),
+                    started_at: ms_to_rfc3339(s.created_at_ms),
+                    // `None` rather than `0` when the clock reads backwards or
+                    // the stamp is absent: a row claiming "quiet for 0 minutes"
+                    // would read as a session active this second, which is the
+                    // opposite of why it is in this list.
+                    quiet_minutes: (s.last_activity_ms > 0 && now_ms >= s.last_activity_ms)
+                        .then(|| ((now_ms - s.last_activity_ms) / 60_000) as u32),
+                    settled: row.is_some_and(|d| !open.iter().any(|o| o.id == d.id)),
+                }
+            })
+            .collect();
+
+        // A dispatch with no settle and no live session behind it. This is the
+        // leak, and it is a different fact from a quiet run: the run above may
+        // be tidily settled in her ledger while nobody knows what it did, and
+        // this one is not recorded as ended at all.
+        let live: Vec<&str> = sessions
+            .iter()
+            .filter(|s| crate::commands::fleet::registry::is_live_state(s.state))
+            .map(|s| s.id.as_str())
+            .collect();
+        let abandoned = open
+            .iter()
+            .filter(|d| !live.contains(&d.session_id.as_str()))
+            .count() as u32;
+
+        Ok(CuratorAttrition {
+            runs,
+            written_off: repo::written_off_in_standing_plan(&db)?,
+            abandoned,
+            // From the fleet's own constant. Written down here it would be a
+            // second copy of a number that has already moved once.
+            stale_after_secs: crate::commands::fleet::stale::STALE_AFTER_SECS.max(0) as u32,
+        })
+    })
+    .await
+}
+
+/// A fleet millisecond stamp as an RFC 3339 string, or `None`.
+///
+/// `None` for a zero or un-representable stamp rather than the epoch: 1970 on a
+/// surface about what happened today is worse than an absence, because a reader
+/// will try to explain it.
+fn ms_to_rfc3339(ms: i64) -> Option<String> {
+    if ms <= 0 {
+        return None;
+    }
+    chrono::DateTime::from_timestamp_millis(ms).map(|dt| dt.to_rfc3339())
 }
 
 /// Record separator inside [`projection_fingerprint`]. Neither can occur in a

@@ -68,6 +68,7 @@ import { CuratorConsole, type RefreshOutcome } from './console/CuratorConsole';
 import { PLAN_MOVED, useCuratorPulse } from './console/curatorPulse';
 import { RequestLane } from './console/RequestLane';
 import { useCuratorLoop } from './console/useCuratorLoop';
+import { useGaps } from './gaps/useGaps';
 import type { BlueprintPhase } from './ledger/LedgerEmpty';
 import { buildModel, type BlueprintSources } from './model/buildModel';
 import { EMPTY_DOCKET } from './model/docket';
@@ -92,6 +93,21 @@ export default function BlueprintPage() {
   // is not "nothing changed", and the live region stays silent for it.
   const [outcome, setOutcome] = useState<RefreshOutcome | null>(null);
   const loop = useCuratorLoop();
+  /**
+   * The Gaps drawer's three reads, paid for only while it is the open drawer.
+   *
+   * The primitive owns the one drawer slot and reports it outward, so this page
+   * learns the drawer opened without owning its state - which is what keeps the
+   * mutual exclusion in one place. `gapsPulse` re-reads on her own work landing:
+   * a settle can retire a quiet run and a reconcile can change what is blocked,
+   * and both arrive while nobody is touching the page. No clock either way.
+   */
+  const [gapsOpen, setGapsOpen] = useState(false);
+  const [gapsPulse, setGapsPulse] = useState(0);
+  const gaps = useGaps(gapsOpen, gapsPulse);
+  const onDrawerChange = useCallback((which: 'docket' | 'queue' | 'gaps' | null) => {
+    setGapsOpen(which === 'gaps');
+  }, []);
   const { reload } = loop;
 
   const load = useCallback(async () => {
@@ -136,6 +152,10 @@ export default function BlueprintPage() {
   const onPulse = useCallback(
     (pulse: { kind: string }) => {
       if (PLAN_MOVED.has(pulse.kind)) void load();
+      // The same kinds move the Gaps drawer's own figures - a settle retires a
+      // quiet run, a reconcile changes what is blocked - and it re-reads only
+      // while it is open, which `useGaps` already enforces.
+      if (PLAN_MOVED.has(pulse.kind)) setGapsPulse((n) => n + 1);
     },
     [load],
   );
@@ -204,6 +224,8 @@ export default function BlueprintPage() {
         />
       }
       queue={<RequestLane requests={loop.requests} onCancel={loop.cancel} />}
+      gaps={gaps}
+      onDrawerChange={onDrawerChange}
     />
   );
 }

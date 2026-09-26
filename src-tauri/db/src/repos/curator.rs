@@ -1145,6 +1145,49 @@ pub fn record_commit(
     })
 }
 
+/// Every dispatch she has ever recorded, newest first.
+///
+/// Bounded by her run cap and read whole on purpose: the attrition surface names
+/// a quiet session by the WORK it was given, and the work lives on the dispatch
+/// row. Matching by session id against a list is cheaper and more honest than a
+/// per-session query that would answer `None` for a row that exists.
+pub fn all_dispatches(pool: &DbPool) -> Result<Vec<CuratorDispatchRow>, AppError> {
+    timed_query!("curator_dispatch", "curator::all_dispatches", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {DISPATCH_COLUMNS} FROM curator_dispatch ORDER BY created_at DESC, id DESC"
+        ))?;
+        let rows = stmt.query_map([], row_to_dispatch)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
+/// Items of the STANDING plan that were dispatched and then written off.
+///
+/// `dispatched_run_id IS NOT NULL` is what separates this from the other reason
+/// an item is `blocked` - "this app could not derive an invocation", which is a
+/// fact about the app and was never given to a worker. Only a subject a worker
+/// actually went at and did not settle belongs in a figure about attrition.
+pub fn written_off_in_standing_plan(pool: &DbPool) -> Result<u32, AppError> {
+    timed_query!(
+        "curator_plan_item",
+        "curator::written_off_in_standing_plan",
+        {
+            let conn = pool.get()?;
+            let n: i64 = conn.query_row(
+                "SELECT COUNT(*) FROM curator_plan_item
+              WHERE plan_run_id = (SELECT id FROM curator_plan_run WHERE superseded_by IS NULL)
+                AND state = 'blocked'
+                AND dispatched_run_id IS NOT NULL",
+                [],
+                |r| r.get(0),
+            )?;
+            Ok(n.max(0) as u32)
+        }
+    )
+}
+
 // ---------------------------------------------------------------------------
 // Growth samples
 // ---------------------------------------------------------------------------
@@ -2583,5 +2626,118 @@ mod tests {
             .is_err(),
             "`sleep` is a real lane of HERS and deliberately not a DISPATCH lane"
         );
+    }
+
+    // -----------------------------------------------------------------------
+    // Attrition
+    // -----------------------------------------------------------------------
+
+    /// **Only a subject a WORKER went at counts as written off.**
+    ///
+    /// `blocked` has two causes and they are not the same fact: a worker was
+    /// dispatched and never settled it, or this app could not derive an
+    /// invocation for the engine in the first place. The second never left the
+    /// building, so counting it as attrition would blame her running for a gap
+    /// in her grammar. `dispatched_run_id IS NOT NULL` is the discriminator.
+    #[test]
+    fn only_a_blocked_item_a_worker_went_at_counts_as_written_off() {
+        let pool = init_test_db().unwrap();
+        assert_eq!(
+            written_off_in_standing_plan(&pool).unwrap(),
+            0,
+            "no plan yet"
+        );
+
+        // One item, dispatched, then written off - the real shape.
+        let dispatched = seed_plan_item(&pool, CuratorEngine::Reconcile, false);
+        claim_next_plan_item(&pool, &[CuratorEngine::Reconcile], "2026-09-26T13:00:00Z").unwrap();
+        bind_plan_item_session(&pool, &dispatched, "session-1").unwrap();
+        settle_plan_item(
+            &pool,
+            &dispatched,
+            CuratorPlanItemState::Blocked,
+            "the worker went quiet and the fleet called it stale",
+            "2026-09-26T13:30:00Z",
+        )
+        .unwrap();
+        assert_eq!(written_off_in_standing_plan(&pool).unwrap(), 1);
+
+        // A SECOND projection supersedes it, and the figure returns to zero -
+        // which is the fact the surface must not overstate: a written-off
+        // subject is one lost cycle, never a permanent loss.
+        insert_plan(
+            &pool,
+            "run-next",
+            &run_input("2026-09-26T14:00:00Z"),
+            &[item("software-engineering/table")],
+        )
+        .unwrap();
+        assert_eq!(
+            written_off_in_standing_plan(&pool).unwrap(),
+            0,
+            "the next projection returns it to planned"
+        );
+    }
+
+    /// A blocked item nobody dispatched is NOT attrition.
+    #[test]
+    fn a_blocked_item_no_worker_ever_saw_is_not_attrition() {
+        let pool = init_test_db().unwrap();
+        let id = seed_plan_item(&pool, CuratorEngine::Reconcile, false);
+        // Claimed, so the state may move, but never bound to a session: this is
+        // the "no invocation derivable" path, which settles without dispatching.
+        claim_next_plan_item(&pool, &[CuratorEngine::Reconcile], "2026-09-26T13:00:00Z").unwrap();
+        settle_plan_item(
+            &pool,
+            &id,
+            CuratorPlanItemState::Blocked,
+            "this app could not derive an invocation",
+            "2026-09-26T13:01:00Z",
+        )
+        .unwrap();
+        assert_eq!(
+            written_off_in_standing_plan(&pool).unwrap(),
+            0,
+            "it never left the building, so her running did not cost it"
+        );
+    }
+
+    /// Every dispatch, newest first - and the settled ones are still there,
+    /// because a quiet session needs its name whether or not it was closed.
+    #[test]
+    fn all_dispatches_carries_the_settled_ones_too_newest_first() {
+        let pool = init_test_db().unwrap();
+        for (id, at) in [
+            ("d1", "2026-09-26T10:00:00Z"),
+            ("d2", "2026-09-26T11:00:00Z"),
+        ] {
+            record_dispatch(
+                &pool,
+                id,
+                &CuratorDispatchInput {
+                    lane: "plan",
+                    request_id: None,
+                    plan_item_id: None,
+                    session_id: &format!("session-{id}"),
+                    skill: "deepen",
+                    argument: Some("agent-operations/agent-run-budgeting"),
+                    level_that_authorised: CuratorDecisionLevel::L0,
+                    repo_path: "/tmp",
+                    head_at_dispatch: Some("abc1234"),
+                    created_at: at,
+                },
+            )
+            .unwrap();
+        }
+        settle_dispatch(&pool, "d1", "2026-09-26T10:30:00Z").unwrap();
+
+        let all = all_dispatches(&pool).unwrap();
+        assert_eq!(all.len(), 2, "a settled dispatch is still a dispatch");
+        assert_eq!(all[0].id, "d2", "newest first");
+        // ... while the OPEN read shows only the one nothing has closed, which
+        // is what separates a quiet-but-settled run from the leak.
+        let open = open_dispatches(&pool).unwrap();
+        assert_eq!(open.len(), 1);
+        assert_eq!(open[0].id, "d2");
     }
 }

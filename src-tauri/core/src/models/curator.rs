@@ -1362,6 +1362,70 @@ impl CuratorGrowthReading {
     }
 }
 
+// ---------------------------------------------------------------------------
+// The work that stopped reporting
+// ---------------------------------------------------------------------------
+
+/// **One run of hers that went quiet.**
+///
+/// Measured 2026-09-26, and this type exists because the operator saw it before
+/// any surface did: **18 of her sessions sitting in `stale`**, every one of them
+/// carrying the same reason - `No log growth for 6 min` - and several marked
+/// `restored after restart`, which is why they come back after every launch.
+///
+/// The fleet's staleness rule is fleet-wide and its own doc says what it assumes:
+/// "No hook activity AND no JSONL writes for `STALE_AFTER_SECS`. Likely user
+/// walked away or session hung." A **headless** worker has no user to walk away,
+/// and a research pass legitimately thinks for longer than six minutes without
+/// writing a line - so `stale` on one of her workers is a claim about the
+/// tracker at least as often as about the worker. Nothing here changes that
+/// rule; this reports what it did, so the question stops being invisible.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CuratorQuietRun {
+    pub session_id: String,
+    /// From her own dispatch row, so the run is named by the work rather than by
+    /// a terminal title somebody's naming lane may have rewritten. `None` when
+    /// no dispatch row points at this session.
+    pub lane: Option<String>,
+    pub skill: Option<String>,
+    pub argument: Option<String>,
+    /// The fleet's state token, as the fleet spells it.
+    pub state: String,
+    /// The fleet's own sentence for why - the evidence, carried verbatim.
+    pub reason: Option<String>,
+    pub started_at: Option<String>,
+    /// Minutes since its last activity. `None` when the clock could not be read
+    /// - never `0`, which would read as "active this second".
+    pub quiet_minutes: Option<u32>,
+    /// Whether her ledger has settled the dispatch this session was started for.
+    /// A settled row with a quiet session is tidy bookkeeping over a run nobody
+    /// knows the outcome of; an unsettled one is a leak.
+    pub settled: bool,
+}
+
+/// **What her running has cost, as opposed to what it produced.**
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CuratorAttrition {
+    /// Her runs that stopped reporting, newest first.
+    pub runs: Vec<CuratorQuietRun>,
+    /// Items of the STANDING plan that were dispatched and then written off.
+    ///
+    /// Not a permanent loss and the surface must not imply one: a projection
+    /// supersedes its predecessor, so a written-off subject returns to `planned`
+    /// on the next run. The cost is one cycle of that subject, per occurrence.
+    pub written_off: u32,
+    /// Her dispatches with no settle and no live session behind them.
+    pub abandoned: u32,
+    /// The fleet's staleness threshold, read from the constant rather than
+    /// written down here, so this surface cannot quote a number the fleet has
+    /// since changed.
+    pub stale_after_secs: u32,
+}
+
 /// The five lanes [`CuratorRuntime::lane`] names.
 ///
 /// The field is a `String` on the wire rather than an enum, so a surface can

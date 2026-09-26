@@ -24135,6 +24135,7 @@ export type Translations = {
         clear: string;
         docket: string;
         queue: string;
+        gaps: string;
         full: string;
         answer: string;
         undo: string;
@@ -24232,6 +24233,65 @@ export type Translations = {
         note_label: string;
         note_placeholder: string;
         file_request: string;
+      };
+      gaps: {
+        region: string;
+        title: string;
+        button: string;
+        button_tip: string;
+        unread: string;
+        unread_tip: string;
+        unknown_mark: string;
+        growth_title: string;
+        growth_no_samples: string;
+        growth_one_sample: string;
+        growth_nothing_moved: string;
+        growth_streak: string;
+        growth_samples: string;
+        growth_unread_metrics: string;
+        growth_verdict: {
+          grew: string;
+          flat: string;
+          shrank: string;
+          unknown: string;
+        };
+        metric: {
+          projects: string;
+          judged_pairs: string;
+          stale_verdicts: string;
+          applied_subjects: string;
+          subjects: string;
+          techniques: string;
+          applications: string;
+        };
+        blocked_title: string;
+        blocked_none: string;
+        hers: string;
+        hers_tip: string;
+        yours: string;
+        frees: string;
+        holds: string;
+        kind: {
+          undocumented_invocation: string;
+          item_lacks_argument: string;
+          skill_missing: string;
+        };
+        quiet_title: string;
+        quiet_none: string;
+        quiet_for: string;
+        quiet_more: string;
+        quiet_unlinked: string;
+        quiet_unlinked_tip: string;
+        quiet_unsettled: string;
+        quiet_unsettled_tip: string;
+        quiet_threshold: string;
+        quiet_threshold_tip: string;
+        written_off: string;
+        written_off_tip: string;
+        abandoned: string;
+        abandoned_tip: string;
+        stops: string;
+        stops_tip: string;
       };
     };
     process: {

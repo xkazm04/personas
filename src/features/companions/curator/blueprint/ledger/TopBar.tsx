@@ -24,6 +24,16 @@ interface TopBarProps {
   onToggleDocket: () => void;
   queueOpen: boolean;
   onToggleQueue: () => void;
+  gapsOpen: boolean;
+  onToggleGaps: () => void;
+  /**
+   * Impediments she may not act on plus runs that went quiet, or `null` when
+   * neither door has answered. Drawn as a pill so the bar can say there is
+   * something to look at without the operator opening the drawer - and left
+   * absent rather than zeroed when unread, because on this page an unread
+   * count and a count of nothing must never wear the same mark.
+   */
+  gapCount: number | null;
   query: string;
   onQuery: (value: string) => void;
   onHelp: () => void;
@@ -36,6 +46,9 @@ export function TopBar({
   onToggleDocket,
   queueOpen,
   onToggleQueue,
+  gapsOpen,
+  onToggleGaps,
+  gapCount,
   query,
   onQuery,
   onHelp,
@@ -141,6 +154,26 @@ export function TopBar({
       >
         <kbd>Q</kbd>
         {w.console.lane_title}
+      </Button>
+      {/* The third drawer's toggle. It CARRIES a pill where the queue's does
+          not, and the difference is that both figures behind it are measured by
+          doors this page awaits: an unread one draws nothing at all rather than
+          a zero, which is the same rule the queue's absent pill follows from the
+          other direction. */}
+      <Button
+        variant={gapsOpen ? 'secondary' : 'ghost'}
+        size="sm"
+        className="cb-keep cb-tbtn"
+        aria-pressed={gapsOpen}
+        data-role="cb-gaps-toggle"
+        data-cb-tip={w.gaps.button_tip}
+        onClick={onToggleGaps}
+      >
+        <kbd>G</kbd>
+        {w.gaps.button}
+        {gapCount !== null && (
+          <span className={`cb-pill typo-label${gapCount ? '' : ' cb-zero'}`}>{gapCount}</span>
+        )}
       </Button>
       <Button
         variant="ghost"

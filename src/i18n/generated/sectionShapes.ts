@@ -796,6 +796,11 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
         "lane": {},
         "request_state": {},
         "lane_tag": {}
+      },
+      "gaps": {
+        "growth_verdict": {},
+        "metric": {},
+        "kind": {}
       }
     },
     "process": {}

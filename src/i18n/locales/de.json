@@ -24018,7 +24018,8 @@
         "sheet": "diese Übersicht",
         "sort": "die Tabelle nach einem Kanal sortieren",
         "undo": "die letzte Antwort rückgängig machen",
-        "queue": "deine Warteschlange, neben der Ablage"
+        "queue": "deine Warteschlange, neben der Ablage",
+        "gaps": "die Lücken: was sie blockiert, und was es gekostet hat"
       },
       "kind": {
         "coverage_delta": "Abdeckungs-Delta",
@@ -24226,7 +24227,66 @@
       "verdict_pairs_unmeasured_tip": "Das ist die eine kleine Zahl dieser Seite: der Anteil der Kontext-Thema-Paare, die je beurteilt wurden. Lassen Sie das Instrument laufen, und sie erscheint. Bis dahin ist sie unbekannt, und ein unbekannter Anteil ist nicht 0 %.",
       "projection_note": "eine Projektion, keine Live-Wahrheit",
       "scan_tip": "Entnommen aus Lauf {run}, gegen Registry-HEAD {sha}. Der Plan ist eine Projektion der Registry zu diesem Commit und veraltet, sobald sich HEAD bewegt.",
-      "scan_tip_no_head": "Entnommen aus Lauf {run}. Git konnte den Registry-HEAD nicht ermitteln. Der Plan ist eine Projektion der Registry zu einem Commit und veraltet, sobald sich HEAD bewegt."
+      "scan_tip_no_head": "Entnommen aus Lauf {run}. Git konnte den Registry-HEAD nicht ermitteln. Der Plan ist eine Projektion der Registry zu einem Commit und veraltet, sobald sich HEAD bewegt.",
+      "gaps": {
+        "abandoned": "{n} Dispatches ohne Verbuchung und ohne laufende Sitzung",
+        "abandoned_tip": "Ein Dispatch, den ihr Ledger nie abgeschlossen hat und dessen Sitzung nicht mehr aktiv ist. Das ist das Leck, ein anderer Sachverhalt als ein Lauf, der verstummt ist und trotzdem verbucht wurde.",
+        "blocked_none": "In ihrem Plan gibt es nichts, das sich nicht dispatchen lässt.",
+        "blocked_title": "Im Weg",
+        "button": "Lücken",
+        "button_tip": "Was ihren Plan blockiert, was ihr Betrieb kostet und ob das Ökosystem gewachsen ist",
+        "frees": "befreit {n}",
+        "growth_no_samples": "Noch keine Stichprobe. Sie nimmt bei jedem Lauf des Instruments eine.",
+        "growth_nothing_moved": "Seit der vorherigen Stichprobe hat sich nichts bewegt.",
+        "growth_one_sample": "Eine Stichprobe. Für eine Richtung braucht es zwei, also gibt es noch nichts zu subtrahieren.",
+        "growth_samples": "über {n} Stichproben",
+        "growth_streak": "in {n} Durchläufen hat sich nichts bewegt",
+        "growth_title": "Wächst das Ökosystem",
+        "growth_unread_metrics": "In einer der beiden Stichproben nicht lesbar: {metrics}",
+        "growth_verdict": {
+          "flat": "Gehalten",
+          "grew": "Gewachsen",
+          "shrank": "Geschrumpft",
+          "unknown": "Unbekannt"
+        },
+        "hers": "ihre",
+        "hers_tip": "Das kann sie selbst schließen: Die Lücke liegt in einer Datei, die der Registry gehört.",
+        "holds": "hält {n}",
+        "kind": {
+          "item_lacks_argument": "das Planelement kann es nicht füllen",
+          "skill_missing": "kein solcher Skill",
+          "undocumented_invocation": "dokumentiert keinen Aufruf"
+        },
+        "metric": {
+          "applications": "Anwendungen",
+          "applied_subjects": "hat ein Projekt erreicht",
+          "judged_pairs": "bewertete Paare",
+          "projects": "Projekte",
+          "stale_verdicts": "veraltete Urteile",
+          "subjects": "Themen",
+          "techniques": "Techniken"
+        },
+        "quiet_for": "still {n}m",
+        "quiet_more": "und {n} weitere.",
+        "quiet_none": "Keiner ihrer Läufe ist in der Schwebe.",
+        "quiet_threshold": "die Flotte markiert einen Lauf nach {n} Min. ohne Log-Wachstum als veraltet",
+        "quiet_threshold_tip": "Diese Regel gilt flottenweit und setzt voraus, dass jemand eine interaktive Sitzung verlassen hat. Ihre Worker laufen headless, und ein Recherchedurchgang kann länger brauchen als das, also ist ein stiller Lauf hier mindestens so oft eine Aussage über den Tracker wie über den Worker.",
+        "quiet_title": "Meldet sich nicht mehr",
+        "quiet_unlinked": "keine Dispatch-Zeile",
+        "quiet_unlinked_tip": "Nichts in ihrem Ledger verweist auf diese Sitzung, daher ist unbekannt, welche Arbeit sie erhalten hat.",
+        "quiet_unsettled": "offen",
+        "quiet_unsettled_tip": "Ihr Ledger hat für diesen Lauf kein Ergebnis verzeichnet, also hat ihn nichts abgeschlossen.",
+        "region": "Lücken: was ihr im Weg steht, was es gekostet hat und ob etwas davon funktioniert hat",
+        "stops": "Keine Obergrenze festgelegt. Sie läuft, bis das Nutzungslimit des Abonnements sie stoppt.",
+        "stops_tip": "Beabsichtigt: Es ist weder ein Tagesbudget noch eine Lauf- oder Commit-Obergrenze gesetzt, also kann keine davon sie anhalten. Ihre Worker-Obergrenze, Ruhezeiten und Backpressure gelten weiterhin, und der harte Stopp ist das Nutzungslimit selbst.",
+        "title": "Lücken",
+        "unknown_mark": "?",
+        "unread": "Nicht gelesen.",
+        "unread_tip": "Diese Tür hat nicht geantwortet, was nicht dasselbe ist wie nichts zu melden zu haben.",
+        "written_off": "{n} Themen dieses Plans nach einem Dispatch abgeschrieben",
+        "written_off_tip": "Kein endgültiger Verlust: Die nächste Projektion ersetzt diese und setzt sie zurück auf geplant. Die Kosten sind jedes Mal ein Zyklus dieses Themas.",
+        "yours": "Ihre"
+      }
     },
     "process": {
       "cohort_share": "Alle Repositories {pct}",

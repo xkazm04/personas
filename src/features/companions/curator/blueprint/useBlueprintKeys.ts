@@ -58,6 +58,13 @@ export function useBlueprintKeys({ state, deep, descend, ascend }: KeyDeps) {
         state.toggleQueue();
         return;
       }
+      // The third drawer, through the same slot: G for the gaps - what is in her
+      // way, what her running cost, and whether the ecosystem grew.
+      if (k === 'g' || k === 'G') {
+        e.preventDefault();
+        state.toggleGaps();
+        return;
+      }
 
       // The queue drawer is a lane and nothing else: Escape shuts it, and the
       // ledger's own keys stay inert underneath rather than moving a cursor
@@ -66,6 +73,16 @@ export function useBlueprintKeys({ state, deep, descend, ascend }: KeyDeps) {
         if (k === 'Escape') {
           e.preventDefault();
           state.closeQueue();
+        }
+        return;
+      }
+
+      // The Gaps drawer is read-only, so it holds even fewer keys than the
+      // queue: Escape, and nothing else reaches past it.
+      if (state.gaps.open) {
+        if (k === 'Escape') {
+          e.preventDefault();
+          state.closeGaps();
         }
         return;
       }

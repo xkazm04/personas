@@ -257,7 +257,8 @@
       "sheet": "lembar ini",
       "sort": "urutkan buku besar berdasarkan satu kanal",
       "undo": "batalkan jawaban terakhir",
-      "queue": "antreanmu, di samping berkas keputusan"
+      "queue": "antreanmu, di samping berkas keputusan",
+      "gaps": "celah: apa yang menghalanginya, dan berapa biayanya"
     },
     "kind": {
       "coverage_delta": "delta cakupan",
@@ -465,7 +466,66 @@
     "verdict_pairs_unmeasured_tip": "Ini adalah satu angka kecil pada halaman ini: bagian dari pasangan konteks dan subjek yang pernah dinilai siapa pun. Jalankan instrumen dan angka itu akan muncul. Sampai saat itu statusnya TIDAK DIKETAHUI, dan bagian yang tidak diketahui bukanlah 0%.",
     "projection_note": "proyeksi, bukan kebenaran langsung",
     "scan_tip": "Diambil dari run {run}, terhadap HEAD registry {sha}. Rencana ini adalah proyeksi registry pada commit tersebut, dan menjadi usang begitu HEAD berpindah.",
-    "scan_tip_no_head": "Diambil dari run {run}. Git tidak dapat melaporkan HEAD registry. Rencana ini adalah proyeksi registry pada satu commit, dan menjadi usang begitu HEAD berpindah."
+    "scan_tip_no_head": "Diambil dari run {run}. Git tidak dapat melaporkan HEAD registry. Rencana ini adalah proyeksi registry pada satu commit, dan menjadi usang begitu HEAD berpindah.",
+    "gaps": {
+      "abandoned": "{n} dispatch tanpa penyelesaian dan tanpa proses aktif",
+      "abandoned_tip": "Dispatch yang tidak pernah ditutup oleh buku besarnya dan sesinya tidak aktif. Inilah kebocorannya, fakta yang berbeda dari proses yang berhenti melapor namun tetap diselesaikan.",
+      "blocked_none": "Tidak ada bagian dalam rencananya yang tidak dapat di-dispatch.",
+      "blocked_title": "Menghalangi",
+      "button": "Celah",
+      "button_tip": "Apa yang menghalangi rencananya, berapa biaya prosesnya, dan apakah ekosistem bertambah",
+      "frees": "lepas {n}",
+      "growth_no_samples": "Belum ada sampel. Dia mengambil satu setiap kali instrumen ini berjalan.",
+      "growth_nothing_moved": "Tidak ada perubahan sejak sampel sebelumnya.",
+      "growth_one_sample": "Satu sampel. Arah butuh dua, jadi belum ada yang bisa dikurangkan.",
+      "growth_samples": "selama {n} sampel",
+      "growth_streak": "tidak ada perubahan dalam {n} putaran",
+      "growth_title": "Apakah ekosistem bertambah",
+      "growth_unread_metrics": "Tidak terbaca di salah satu dari dua sampel: {metrics}",
+      "growth_verdict": {
+        "flat": "Stabil",
+        "grew": "Bertambah",
+        "shrank": "Menyusut",
+        "unknown": "Tidak diketahui"
+      },
+      "hers": "miliknya",
+      "hers_tip": "Dia bisa menutup ini sendiri: celah ini berada di berkas yang dimiliki registry.",
+      "holds": "tahan {n}",
+      "kind": {
+        "item_lacks_argument": "item rencana tidak dapat mengisinya",
+        "skill_missing": "skill tidak ditemukan",
+        "undocumented_invocation": "tidak ada dokumentasi pemanggilan"
+      },
+      "metric": {
+        "applications": "penerapan",
+        "applied_subjects": "menjangkau proyek",
+        "judged_pairs": "pasangan yang dinilai",
+        "projects": "proyek",
+        "stale_verdicts": "verdict kedaluwarsa",
+        "subjects": "subjek",
+        "techniques": "teknik"
+      },
+      "quiet_for": "diam {n}m",
+      "quiet_more": "dan {n} lainnya.",
+      "quiet_none": "Tidak ada prosesnya yang menggantung.",
+      "quiet_threshold": "Fleet menyebut proses diam setelah {n} menit tanpa pertumbuhan log",
+      "quiet_threshold_tip": "Aturan itu berlaku di seluruh fleet dan mengasumsikan seseorang meninggalkan sesi interaktif. Worker-nya bersifat headless, dan satu putaran riset bisa berpikir lebih lama dari itu, sehingga proses yang diam di sini sama sering menjadi klaim tentang tracker seperti tentang worker itu sendiri.",
+      "quiet_title": "Berhenti melapor",
+      "quiet_unlinked": "tanpa baris dispatch",
+      "quiet_unlinked_tip": "Tidak ada di buku besarnya yang menunjuk ke sesi ini, sehingga pekerjaan yang diberikan padanya tidak diketahui.",
+      "quiet_unsettled": "belum selesai",
+      "quiet_unsettled_tip": "Buku besarnya belum mencatat hasil untuk proses ini, sehingga belum ada yang menutupnya.",
+      "region": "Celah: apa yang menghalanginya, berapa biayanya, dan apakah ada yang berhasil",
+      "stops": "Tidak ada batas atas yang ditetapkan. Dia berjalan sampai batas penggunaan langganan menghentikannya.",
+      "stops_tip": "Disengaja: tidak ada anggaran harian, batas proses, atau batas commit yang ditetapkan, sehingga tidak satu pun bisa menghentikannya. Batas worker, jam tenang, dan backpressure-nya tetap berlaku, dan penghentian akhir adalah batas penggunaan itu sendiri.",
+      "title": "Celah",
+      "unknown_mark": "?",
+      "unread": "Tidak terbaca.",
+      "unread_tip": "Pintu ini tidak merespons, yang bukan berarti tidak ada yang perlu dilaporkan.",
+      "written_off": "{n} subjek dari rencana ini dihapuskan setelah sebuah dispatch",
+      "written_off_tip": "Bukan kerugian permanen: proyeksi berikutnya menggantikan yang ini dan mengembalikannya ke status direncanakan. Biayanya adalah satu siklus subjek tersebut setiap kali.",
+      "yours": "milikmu"
+    }
   },
   "process": {
     "cohort_share": "Semua repositori {pct}",

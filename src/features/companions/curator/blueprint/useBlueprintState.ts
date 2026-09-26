@@ -7,11 +7,13 @@
  * one channel, 0 clears, D opens the docket, Q opens the operator's queue, F
  * widens the docket, U takes the last answer back.
  *
- * THE TWO DRAWERS ARE ONE SLOT. `drawer` is a single nullable name, not two
- * booleans: the page has one right-hand surface and they would otherwise be
- * able to hold it together, each transformed over the other with no way to
- * reach the one behind. Mutual exclusion by construction beats two setters
- * that each have to remember to close the other.
+ * THE THREE DRAWERS ARE ONE SLOT. `drawer` is a single nullable name, not
+ * three booleans: the page has one right-hand surface and they would otherwise
+ * be able to hold it together, each transformed over the other with no way to
+ * reach the one behind. Mutual exclusion by construction beats three setters
+ * that each have to remember to close the other two - and it is what lets the
+ * page name which drawer is open as ONE value, which is how the Gaps drawer's
+ * reads are paid for only while it is the open one.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -36,6 +38,17 @@ export interface BlueprintState {
   };
   /** The operator's own request queue, the docket's sibling drawer. */
   queue: { open: boolean };
+  /** What is in her way, what it costs, and whether any of it is working. */
+  gaps: { open: boolean };
+  /**
+   * Which surface holds the right-hand slot, for a host that must know.
+   *
+   * Exposed because the Gaps drawer's three reads are paid for ON OPEN rather
+   * than at mount, and the container that owns IPC cannot see this hook's
+   * state. One value rather than a callback per drawer: the slot is already
+   * one thing, and a host that wants a different drawer reads the same field.
+   */
+  drawerName: 'docket' | 'queue' | 'gaps' | null;
   prompt: { id: string; option: string } | null;
   promptValue: string;
   setPromptValue: (value: string) => void;
@@ -50,6 +63,8 @@ export interface BlueprintState {
   closeDocket: () => void;
   toggleQueue: () => void;
   closeQueue: () => void;
+  toggleGaps: () => void;
+  closeGaps: () => void;
   help: boolean;
   toggleHelp: () => void;
   waiting: number;
@@ -59,7 +74,7 @@ export function useBlueprintState(model: BlueprintModel, feed: DocketFeed): Blue
   const [cursor, setCursor] = useState(0);
   const [solo, setSolo] = useState<ChannelId | 0>(0);
   const [query, setQuery] = useState('');
-  const [drawer, setDrawer] = useState<'docket' | 'queue' | null>(null);
+  const [drawer, setDrawer] = useState<'docket' | 'queue' | 'gaps' | null>(null);
   const [full, setFull] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [decided, setDecided] = useState<Record<string, { option: string; reason: string }>>({});
@@ -146,6 +161,8 @@ export function useBlueprintState(model: BlueprintModel, feed: DocketFeed): Blue
     setQuery,
     docket: { open: drawer === 'docket', full, selected, decided },
     queue: { open: drawer === 'queue' },
+    gaps: { open: drawer === 'gaps' },
+    drawerName: drawer,
     prompt,
     promptValue,
     setPromptValue,
@@ -172,6 +189,13 @@ export function useBlueprintState(model: BlueprintModel, feed: DocketFeed): Blue
     },
     closeQueue: () => {
       setDrawer((v) => (v === 'queue' ? null : v));
+    },
+    toggleGaps: () => {
+      setDrawer((v) => (v === 'gaps' ? null : 'gaps'));
+      setFull(false);
+    },
+    closeGaps: () => {
+      setDrawer((v) => (v === 'gaps' ? null : v));
     },
     help,
     toggleHelp: () => {

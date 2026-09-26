@@ -257,7 +257,8 @@
       "sheet": "esta hoja",
       "sort": "ordenar el libro por un canal",
       "undo": "deshacer la última respuesta",
-      "queue": "tu cola, junto al expediente"
+      "queue": "tu cola, junto al expediente",
+      "gaps": "los huecos: qué la bloquea, y cuánto costó"
     },
     "kind": {
       "coverage_delta": "delta de cobertura",
@@ -465,7 +466,66 @@
     "verdict_pairs_unmeasured_tip": "Este es el único número pequeño de la página: la proporción de pares de contexto y tema que alguien ha juzgado alguna vez. Ejecuta el instrumento y aparecerá. Hasta entonces es desconocido, y una proporción desconocida no es 0%.",
     "projection_note": "una proyección, no la verdad en vivo",
     "scan_tip": "Tomado de la ejecución {run}, sobre HEAD del registro {sha}. El plan es una proyección del registro en ese commit, y queda desactualizado en cuanto HEAD se mueve.",
-    "scan_tip_no_head": "Tomado de la ejecución {run}. Git no pudo indicar el HEAD del registro. El plan es una proyección del registro en un commit, y queda desactualizado en cuanto HEAD se mueve."
+    "scan_tip_no_head": "Tomado de la ejecución {run}. Git no pudo indicar el HEAD del registro. El plan es una proyección del registro en un commit, y queda desactualizado en cuanto HEAD se mueve.",
+    "gaps": {
+      "abandoned": "{n} despachos sin liquidar y sin ejecución activa",
+      "abandoned_tip": "Un despacho que su libro nunca cerró y cuya sesión no está activa. Esta es la fuga, un hecho distinto de una ejecución que se quedó en silencio pero sí se liquidó.",
+      "blocked_none": "Nada en su plan es indespachable.",
+      "blocked_title": "En el camino",
+      "button": "Huecos",
+      "button_tip": "Qué bloquea su plan, cuánto costó su ejecución, y si el ecosistema creció",
+      "frees": "libera {n}",
+      "growth_no_samples": "Aún no hay muestra. Toma una cada vez que se ejecuta el instrumento.",
+      "growth_nothing_moved": "Nada cambió desde la muestra anterior.",
+      "growth_one_sample": "Una muestra. Una dirección necesita dos, así que aún no hay nada que restar.",
+      "growth_samples": "en {n} muestras",
+      "growth_streak": "nada cambió en {n} pasadas",
+      "growth_title": "¿Está creciendo el ecosistema?",
+      "growth_unread_metrics": "No se pudo leer en una de las dos muestras: {metrics}",
+      "growth_verdict": {
+        "flat": "Se mantuvo",
+        "grew": "Creció",
+        "shrank": "Retrocedió",
+        "unknown": "Desconocido"
+      },
+      "hers": "suya",
+      "hers_tip": "Puede cerrarlo ella misma: el hueco está en un archivo que pertenece al registro.",
+      "holds": "bloquea {n}",
+      "kind": {
+        "item_lacks_argument": "el elemento del plan no puede completarlo",
+        "skill_missing": "esa skill no existe",
+        "undocumented_invocation": "no documenta ninguna invocación"
+      },
+      "metric": {
+        "applications": "aplicaciones",
+        "applied_subjects": "llegó a un proyecto",
+        "judged_pairs": "pares evaluados",
+        "projects": "proyectos",
+        "stale_verdicts": "veredictos obsoletos",
+        "subjects": "temas",
+        "techniques": "técnicas"
+      },
+      "quiet_for": "silencio {n}m",
+      "quiet_more": "y {n} más.",
+      "quiet_none": "Ninguna de sus ejecuciones está en el limbo.",
+      "quiet_threshold": "la flota declara obsoleta una ejecución tras {n} min sin crecimiento del registro",
+      "quiet_threshold_tip": "Esa regla es de toda la flota y asume que una persona abandonó una sesión interactiva. Sus workers son headless y una pasada de investigación puede pensar más tiempo que eso, así que una ejecución silenciosa aquí es, al menos con la misma frecuencia, una afirmación sobre el rastreador como sobre el worker.",
+      "quiet_title": "Dejó de reportar",
+      "quiet_unlinked": "sin fila de despacho",
+      "quiet_unlinked_tip": "Nada en su libro apunta a esta sesión, así que se desconoce el trabajo que se le asignó.",
+      "quiet_unsettled": "sin liquidar",
+      "quiet_unsettled_tip": "Su libro no ha registrado un resultado para esta ejecución, así que nada la ha cerrado.",
+      "region": "Huecos: qué se le atraviesa, cuánto costó, y si algo de eso funcionó",
+      "stops": "No hay techo declarado. Ella sigue hasta que el límite de uso de la suscripción la detiene.",
+      "stops_tip": "Deliberado: no hay presupuesto diario, tope de ejecuciones ni tope de commits configurado, así que ninguno puede detenerla. Su tope de workers, las horas de silencio y la contrapresión siguen aplicando, y el límite de uso es el único freno duro.",
+      "title": "Huecos",
+      "unknown_mark": "?",
+      "unread": "No leído.",
+      "unread_tip": "Esta puerta no respondió, lo cual no es lo mismo que no tener nada que reportar.",
+      "written_off": "{n} temas de este plan dados de baja tras un despacho",
+      "written_off_tip": "No es una pérdida permanente: la próxima proyección sustituye a esta y los devuelve a planificados. El costo es un ciclo de ese tema cada vez.",
+      "yours": "tuya"
+    }
   },
   "process": {
     "cohort_share": "Todos los repositorios {pct}",

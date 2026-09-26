@@ -19,6 +19,7 @@ const KEYS: { key: string; say: keyof ReturnType<typeof useWords>['w']['keys'] }
   { key: '0', say: 'clear' },
   { key: 'D', say: 'docket' },
   { key: 'Q', say: 'queue' },
+  { key: 'G', say: 'gaps' },
   { key: 'F', say: 'full' },
   { key: '1 2 3', say: 'answer' },
   { key: 'U', say: 'undo' },

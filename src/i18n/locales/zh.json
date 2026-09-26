@@ -24018,7 +24018,8 @@
         "sheet": "本表",
         "sort": "按某一通道对台账排序",
         "undo": "撤销上一次回答",
-        "queue": "你的队列，位于待批清单旁"
+        "queue": "你的队列，位于待批清单旁",
+        "gaps": "缺口:阻碍她的因素,以及付出的成本"
       },
       "kind": {
         "coverage_delta": "覆盖率增量",
@@ -24226,7 +24227,66 @@
       "verdict_pairs_unmeasured_tip": "这是本页唯一的一个小数字：曾被评判过的上下文与主题配对所占的比例。运行仪器后它才会出现。在此之前，它是未知的，而未知的占比并不等于 0%。",
       "projection_note": "推算结果，并非实时数据",
       "scan_tip": "取自运行 {run}，对应 registry 的 HEAD {sha}。该计划是该提交时 registry 的推算结果，一旦 HEAD 发生变化即会过时。",
-      "scan_tip_no_head": "取自运行 {run}。git 无法确定 registry 的 HEAD。该计划是某次提交时 registry 的推算结果，一旦 HEAD 发生变化即会过时。"
+      "scan_tip_no_head": "取自运行 {run}。git 无法确定 registry 的 HEAD。该计划是某次提交时 registry 的推算结果，一旦 HEAD 发生变化即会过时。",
+      "gaps": {
+        "abandoned": "{n} 个已派发但未结算且无存活运行",
+        "abandoned_tip": "一次她的台账从未结算、且其会话已不存活的派发。这是泄漏,与那些静默但仍被结算的运行是不同的事实。",
+        "blocked_none": "她的计划中没有无法派发的项。",
+        "blocked_title": "阻碍",
+        "button": "缺口",
+        "button_tip": "阻碍她计划的因素、她的运行成本,以及生态是否在增长",
+        "frees": "释放 {n}",
+        "growth_no_samples": "尚无样本。该仪表每次运行都会采集一次样本。",
+        "growth_nothing_moved": "自上一次采样以来没有变化。",
+        "growth_one_sample": "只有一个样本。判断方向需要两个,因此尚无可比较的差值。",
+        "growth_samples": "跨 {n} 个样本",
+        "growth_streak": "连续 {n} 轮无变化",
+        "growth_title": "生态是否在增长",
+        "growth_unread_metrics": "两个样本中有一个无法读取：{metrics}",
+        "growth_verdict": {
+          "flat": "持平",
+          "grew": "增长",
+          "shrank": "倒退",
+          "unknown": "未知"
+        },
+        "hers": "她的",
+        "hers_tip": "她或许能自行解决:该缺口位于注册库所拥有的文件中。",
+        "holds": "占用 {n}",
+        "kind": {
+          "item_lacks_argument": "该计划项无法填补",
+          "skill_missing": "无此技能",
+          "undocumented_invocation": "未记录调用方式"
+        },
+        "metric": {
+          "applications": "应用",
+          "applied_subjects": "已触达项目",
+          "judged_pairs": "已评定配对",
+          "projects": "项目",
+          "stale_verdicts": "过期判定",
+          "subjects": "主题",
+          "techniques": "技术"
+        },
+        "quiet_for": "静默{n}分钟",
+        "quiet_more": "还有 {n} 个。",
+        "quiet_none": "她没有运行处于悬而未决状态。",
+        "quiet_threshold": "编队将 {n} 分钟内无日志增长的运行判定为过期",
+        "quiet_threshold_tip": "该规则是编队级的通用规则,假定是有人离开了交互式会话。她的工作进程是无界面运行的,一次调研过程的思考时间可能超过这个阈值,因此这里的静默运行,与其说是在描述工作进程,不如说至少同样是在描述追踪器本身。",
+        "quiet_title": "停止上报",
+        "quiet_unlinked": "无派发记录",
+        "quiet_unlinked_tip": "她的台账中没有任何记录指向此会话,因此无法得知它被分配了什么工作。",
+        "quiet_unsettled": "未结算",
+        "quiet_unsettled_tip": "她的台账尚未记录此次运行的结果,因此没有任何机制将其结案。",
+        "region": "缺口:阻碍她的因素、付出的成本,以及是否奏效",
+        "stops": "未设上限。她会一直运行,直到订阅的用量限制将她拦停。",
+        "stops_tip": "这是有意为之:未设置每日预算、运行次数上限或提交次数上限,因此这些都无法拦停她。她的工作进程上限、静默时段和背压机制仍然生效,唯一的硬性终止条件就是用量限制本身。",
+        "title": "缺口",
+        "unknown_mark": "?",
+        "unread": "未读取。",
+        "unread_tip": "此接口没有响应,这不同于确无内容可报告。",
+        "written_off": "此计划中有 {n} 个主题在一次派发后被注销",
+        "written_off_tip": "并非永久损失:下一次推算会取代这一次,并将它们重新归入计划中。每次的代价是该主题多耗费一个周期。",
+        "yours": "你的"
+      }
     },
     "process": {
       "cohort_share": "所有仓库 {pct}",

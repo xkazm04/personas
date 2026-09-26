@@ -24018,7 +24018,8 @@
         "sheet": "bảng này",
         "sort": "sắp xếp sổ cái theo một kênh",
         "undo": "hoàn tác câu trả lời gần nhất",
-        "queue": "hàng đợi của bạn, bên cạnh sổ quyết định"
+        "queue": "hàng đợi của bạn, bên cạnh sổ quyết định",
+        "gaps": "lỗ hổng: điều gì cản cô, và chi phí là gì"
       },
       "kind": {
         "coverage_delta": "chênh lệch độ phủ",
@@ -24226,7 +24227,66 @@
       "verdict_pairs_unmeasured_tip": "Đây là con số nhỏ duy nhất của trang: tỷ lệ các cặp ngữ cảnh và chủ đề mà bất kỳ ai từng phán quyết. Chạy công cụ và nó sẽ xuất hiện. Cho đến lúc đó nó không rõ, và một tỷ lệ không rõ không phải là 0%.",
       "projection_note": "một dự đoán, không phải dữ liệu thực",
       "scan_tip": "Lấy từ lần chạy {run}, dựa trên HEAD {sha} của registry. Kế hoạch là một dự đoán về registry tại commit đó, và sẽ lỗi thời ngay khi HEAD thay đổi.",
-      "scan_tip_no_head": "Lấy từ lần chạy {run}. Git không thể xác định HEAD của registry. Kế hoạch là một dự đoán về registry tại một commit, và sẽ lỗi thời ngay khi HEAD thay đổi."
+      "scan_tip_no_head": "Lấy từ lần chạy {run}. Git không thể xác định HEAD của registry. Kế hoạch là một dự đoán về registry tại một commit, và sẽ lỗi thời ngay khi HEAD thay đổi.",
+      "gaps": {
+        "abandoned": "{n} lượt điều phối chưa chốt kết quả và không còn phiên chạy",
+        "abandoned_tip": "Một lượt điều phối mà sổ ghi của cô chưa từng đóng lại và phiên của nó không còn hoạt động. Đây là điểm rò, khác với một lượt chạy im lặng nhưng vẫn đã được chốt kết quả.",
+        "blocked_none": "Không có mục nào trong kế hoạch của cô không thể điều phối được.",
+        "blocked_title": "Cản đường",
+        "button": "Lỗ hổng",
+        "button_tip": "Điều gì cản kế hoạch của cô, chi phí vận hành của cô là gì, và hệ sinh thái có tăng trưởng không",
+        "frees": "giải phóng {n}",
+        "growth_no_samples": "Chưa có mẫu nào. Cô lấy một mẫu mỗi khi công cụ này chạy.",
+        "growth_nothing_moved": "Không có gì thay đổi so với mẫu trước.",
+        "growth_one_sample": "Một mẫu. Cần hai mẫu để xác định xu hướng, nên chưa có gì để so sánh.",
+        "growth_samples": "qua {n} mẫu",
+        "growth_streak": "không có gì thay đổi qua {n} lượt",
+        "growth_title": "Hệ sinh thái có đang tăng trưởng",
+        "growth_unread_metrics": "Không đọc được ở một trong hai mẫu: {metrics}",
+        "growth_verdict": {
+          "flat": "Giữ nguyên",
+          "grew": "Đã tăng",
+          "shrank": "Đã giảm",
+          "unknown": "Không rõ"
+        },
+        "hers": "của cô",
+        "hers_tip": "Cô có thể tự khắc phục việc này: lỗ hổng nằm trong một tệp do registry sở hữu.",
+        "holds": "giữ {n}",
+        "kind": {
+          "item_lacks_argument": "mục kế hoạch không thể lấp đầy nó",
+          "skill_missing": "không có skill này",
+          "undocumented_invocation": "không ghi cách gọi"
+        },
+        "metric": {
+          "applications": "lượt áp dụng",
+          "applied_subjects": "đã đến một dự án",
+          "judged_pairs": "cặp đã đánh giá",
+          "projects": "dự án",
+          "stale_verdicts": "kết luận đã cũ",
+          "subjects": "chủ đề",
+          "techniques": "kỹ thuật"
+        },
+        "quiet_for": "im lặng {n}p",
+        "quiet_more": "và {n} nữa.",
+        "quiet_none": "Không có lượt chạy nào của cô bị treo.",
+        "quiet_threshold": "Fleet coi một lượt chạy là cũ sau {n} phút không có log mới",
+        "quiet_threshold_tip": "Quy tắc đó áp dụng cho toàn Fleet và giả định rằng có người đã rời khỏi một phiên tương tác. Các worker của cô chạy không giao diện, và một lượt nghiên cứu có thể suy nghĩ lâu hơn mức đó, nên một lượt chạy im lặng ở đây phản ánh về bộ theo dõi ít nhất là ngang với phản ánh về worker.",
+        "quiet_title": "Ngừng báo cáo",
+        "quiet_unlinked": "không có dòng điều phối",
+        "quiet_unlinked_tip": "Không có gì trong sổ ghi của cô chỉ đến phiên này, nên công việc được giao là không rõ.",
+        "quiet_unsettled": "chưa chốt",
+        "quiet_unsettled_tip": "Sổ ghi của cô chưa ghi nhận kết quả cho lượt chạy này, nên chưa có gì đóng lại nó.",
+        "region": "Lỗ hổng: điều gì cản đường cô, chi phí là gì, và liệu có gì thành công hay không",
+        "stops": "Không có giới hạn nào được đặt. Cô chạy đến khi hạn mức sử dụng của gói đăng ký chặn cô lại.",
+        "stops_tip": "Có chủ đích: không đặt ngân sách ngày, giới hạn số lượt chạy hay giới hạn commit, nên không cái nào có thể chặn cô. Giới hạn worker, giờ im lặng và áp lực ngược của cô vẫn áp dụng, và điểm chặn cứng chính là hạn mức sử dụng.",
+        "title": "Lỗ hổng",
+        "unknown_mark": "?",
+        "unread": "Chưa đọc.",
+        "unread_tip": "Cửa này không phản hồi, điều đó không giống với việc không có gì để báo cáo.",
+        "written_off": "{n} chủ đề trong kế hoạch này bị xóa bỏ sau một lượt điều phối",
+        "written_off_tip": "Không phải mất mát vĩnh viễn: lượt dự báo tiếp theo sẽ thay thế lượt này và đưa chúng trở lại trạng thái đã lên kế hoạch. Chi phí là một chu kỳ của chủ đề đó mỗi lần.",
+        "yours": "của bạn"
+      }
     },
     "process": {
       "cohort_share": "Tất cả kho lưu trữ {pct}",

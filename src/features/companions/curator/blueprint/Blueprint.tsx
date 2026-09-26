@@ -27,6 +27,8 @@ import { TopBar } from './ledger/TopBar';
 import { Verdict } from './ledger/Verdict';
 import type { DocketFeed } from './model/docket';
 import type { BlueprintModel } from './model/types';
+import { GapsDrawer } from './GapsDrawer';
+import type { GapsReading } from './gaps/useGaps';
 import { HelpSheet } from './HelpSheet';
 import { QueueDrawer } from './QueueDrawer';
 import { useBlueprintKeys } from './useBlueprintKeys';
@@ -36,6 +38,15 @@ import { BlueprintWordsProvider, type BlueprintWords } from './words';
 
 import './blueprint.css';
 import './docket.css';
+
+/** No host supplied a reading: every door is unread, nothing is a zero. */
+const EMPTY_GAPS: GapsReading = {
+  impediments: null,
+  growth: null,
+  attrition: null,
+  loading: false,
+  reload: () => {},
+};
 
 export interface BlueprintProps {
   model: BlueprintModel;
@@ -56,6 +67,22 @@ export interface BlueprintProps {
    */
   queue?: ReactNode;
   /**
+   * What is in her way, what her running cost, and whether the ecosystem grew.
+   *
+   * DATA rather than a node, unlike the console and the queue, because the
+   * drawer's chrome and its three bands are page furniture and belong here; only
+   * the reading crosses IPC. An all-`null` reading is the honest default: a
+   * harness with no backend draws the drawer's unread form, which is a form the
+   * app genuinely has.
+   */
+  gaps?: GapsReading;
+  /**
+   * Told which surface holds the right-hand slot, so a container that owns IPC
+   * can pay for the Gaps reads only while that drawer is the open one. The one
+   * drawer slot lives in here; this is how it gets out.
+   */
+  onDrawerChange?: (which: 'docket' | 'queue' | 'gaps' | null) => void;
+  /**
    * Which unpopulated phase the page is in, read ONLY when the model carries no
    * rows. A read in flight, an instrument running and a registry nobody has
    * measured are three sentences, and the ledger body says the right one rather
@@ -70,6 +97,8 @@ export function Blueprint({
   words,
   console: operatorConsole,
   queue,
+  gaps,
+  onDrawerChange,
   phase = 'unrun',
 }: BlueprintProps) {
   const state = useBlueprintState(model, docket);
@@ -107,7 +136,25 @@ export function Blueprint({
     rootRef.current?.focus({ preventScroll: true });
   }, []);
 
+  // The slot, reported outward. An effect rather than a call inside the toggle
+  // because the slot also moves when one drawer swaps for another, and a host
+  // that learned about it from three separate setters would miss exactly that.
+  useEffect(() => {
+    onDrawerChange?.(state.drawerName);
+  }, [onDrawerChange, state.drawerName]);
+
   const current = state.rows[state.cursor];
+
+  // An all-absent reading when no host supplied one: the drawer then draws its
+  // unread form, which is a real form of the surface rather than a stand-in.
+  const reading: GapsReading = gaps ?? EMPTY_GAPS;
+  // What the bar's pill counts: the things a person would open the drawer FOR -
+  // what is in her way, and what stopped reporting. `null` while neither door
+  // has answered, because an unread count must not draw as a zero.
+  const gapCount =
+    reading.impediments === null && reading.attrition === null
+      ? null
+      : (reading.impediments?.length ?? 0) + (reading.attrition?.runs.length ?? 0);
 
   return (
     <BlueprintWordsProvider value={words}>
@@ -132,6 +179,9 @@ export function Blueprint({
           onToggleDocket={state.toggleDocket}
           queueOpen={state.queue.open}
           onToggleQueue={state.toggleQueue}
+          gapsOpen={state.gaps.open}
+          onToggleGaps={state.toggleGaps}
+          gapCount={gapCount}
           query={state.query}
           onQuery={state.setQuery}
           onHelp={state.toggleHelp}
@@ -182,6 +232,7 @@ export function Blueprint({
         <QueueDrawer open={state.queue.open} onClose={state.closeQueue}>
           {queue}
         </QueueDrawer>
+        <GapsDrawer open={state.gaps.open} onClose={state.closeGaps} reading={reading} />
         <HelpSheet open={state.help} onClose={state.toggleHelp} />
         <AnchoredTooltip anchor={tip.anchor} content={tip.content} />
       </div>

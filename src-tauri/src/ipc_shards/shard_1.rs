@@ -37,6 +37,7 @@ pub(super) fn shard(
         // projections write.
         commands::curator::curator_impediments_get,
         commands::curator::curator_growth_get,
+        commands::curator::curator_attrition_get,
         // Execution -- Genome Breeding
         commands::execution::genome::genome_extract,
         commands::execution::genome::genome_fitness,

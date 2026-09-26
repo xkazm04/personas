@@ -9,6 +9,9 @@
 // that raises the first decision adds the wrapper with it.
 import { EventName } from "@/lib/eventRegistry";
 
+import type { CuratorAttrition } from "@/lib/bindings/CuratorAttrition";
+import type { CuratorGrowthReading } from "@/lib/bindings/CuratorGrowthReading";
+import type { CuratorImpediment } from "@/lib/bindings/CuratorImpediment";
 import type { CuratorPlan } from "@/lib/bindings/CuratorPlan";
 import type { CuratorPolicy } from "@/lib/bindings/CuratorPolicy";
 import type { CuratorRefresh } from "@/lib/bindings/CuratorRefresh";
@@ -109,6 +112,47 @@ export async function curatorSkillsList(): Promise<CuratorSkill[]> {
  */
 export async function curatorRuntimeGet(): Promise<CuratorRuntime> {
   return invoke<CuratorRuntime>("curator_runtime_get");
+}
+
+/**
+ * What blocks her plan, counted and ranked worst first.
+ *
+ * `blocks` is what an impediment HOLDS; `frees` is what closing it would
+ * release, and they are different numbers whenever two things are missing at
+ * once - a surface that drew only the first would rank the biggest number on the
+ * board ahead of the one that actually unblocks her.
+ *
+ * `[]` is a real and good answer: her plan has no undispatchable engine in it.
+ * A missing plan errors instead, so the two cannot be confused.
+ */
+export async function curatorImpedimentsGet(): Promise<CuratorImpediment[]> {
+  return invoke<CuratorImpediment[]>("curator_impediments_get");
+}
+
+/**
+ * Is the ecosystem of projects growing, over her newest samples.
+ *
+ * Every metric is nullable because unknown is not zero, and `verdict: "unknown"`
+ * with `samples: 1` is the honest answer on a fresh install - which is NOT the
+ * same answer as `flat`. `flatStreak` is the figure the owner actually asks for:
+ * how many consecutive passes moved nothing at all.
+ */
+export async function curatorGrowthGet(): Promise<CuratorGrowthReading> {
+  return invoke<CuratorGrowthReading>("curator_growth_get");
+}
+
+/**
+ * Her runs that stopped reporting, and what that cost.
+ *
+ * The fleet marks a session `stale` after `staleAfterSecs` of no log growth, a
+ * rule written for an interactive session that a person walked away from. Her
+ * workers are headless and a research pass thinks for longer than that, so a
+ * quiet run here is a claim about the tracker at least as often as about the
+ * worker - which is exactly why the reason travels verbatim instead of being
+ * summarised into a status.
+ */
+export async function curatorAttritionGet(): Promise<CuratorAttrition> {
+  return invoke<CuratorAttrition>("curator_attrition_get");
 }
 
 /**
