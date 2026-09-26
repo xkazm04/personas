@@ -3,6 +3,24 @@ use std::fs::{self, OpenOptions};
 use std::io::{BufWriter, Write};
 use std::path::PathBuf;
 
+/// Tag the runner writes before every subprocess stdout line
+/// (`logger.log(&format!("[STDOUT] {}", ..))` in `runner/mod.rs`).
+pub const STDOUT_TAG: &str = "[STDOUT] ";
+
+/// Split one on-disk log line into its `[rfc3339] ` stamp and the stdout text
+/// after [`STDOUT_TAG`]. `None` for every line that is not subprocess stdout.
+///
+/// The reader lives beside the writer because the two drifted once already:
+/// the paged log command kept only the text after the tag, so the replay's
+/// first page reached the timeline with no stamps. The timeline then fell back
+/// to spreading lines evenly across the run, and no silence could render. On
+/// 2026-09-26 that was every one of 523 stdout-bearing logs on the operator's
+/// machine; keeping the stamp gave all 523 their recorded tempo back.
+pub fn split_stdout_line(line: &str) -> Option<(&str, &str)> {
+    let pos = line.find(STDOUT_TAG)?;
+    Some((&line[..pos], &line[pos + STDOUT_TAG.len()..]))
+}
+
 pub struct ExecutionLogger {
     writer: Option<BufWriter<std::fs::File>>,
     path: PathBuf,
@@ -105,5 +123,40 @@ impl ExecutionLogger {
 impl Drop for ExecutionLogger {
     fn drop(&mut self) {
         self.close();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The stamp a reader gets back is the one the writer put down, in a shape
+    /// the replay's `LOG_TIMESTAMP_RE` (`useReplayTimeline.ts`) anchors on.
+    #[test]
+    fn split_returns_the_written_stamp_and_the_stdout_text() -> std::io::Result<()> {
+        let dir = std::env::temp_dir().join(format!("personas-logger-{}", std::process::id()));
+        let mut logger = ExecutionLogger::new(&dir, "split-roundtrip")?;
+        logger.log(&format!("{STDOUT_TAG}{{\"type\":\"result\"}}"));
+        logger.log("engine line with no stdout tag");
+        logger.close();
+        let content = fs::read_to_string(ExecutionLogger::log_path(&dir, "split-roundtrip"))?;
+        let _ = fs::remove_dir_all(&dir);
+
+        let mut lines = content.lines();
+        let (stamp, text) = lines
+            .next()
+            .and_then(split_stdout_line)
+            .ok_or_else(|| std::io::Error::other("stdout line did not split"))?;
+        assert_eq!(text, "{\"type\":\"result\"}");
+        let inner = stamp
+            .strip_prefix('[')
+            .and_then(|s| s.strip_suffix("] "))
+            .ok_or_else(|| std::io::Error::other("stamp is not `[..] `"))?;
+        assert!(
+            chrono::DateTime::parse_from_rfc3339(inner).is_ok(),
+            "stamp {inner:?}"
+        );
+        assert_eq!(lines.next().and_then(split_stdout_line), None);
+        Ok(())
     }
 }

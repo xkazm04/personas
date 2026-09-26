@@ -197,6 +197,48 @@ describe('useReplayTimeline — recorded tempo', () => {
   });
 });
 
+/**
+ * The tests above feed a whole log string. The Replay tab never sees one: it
+ * gets a PAGE from `get_execution_log_lines`, and that page shipped the text
+ * after `[STDOUT] ` with the stamp cut off, so every assertion above passed
+ * while every real replay played evenly spread with no silence (0 of 523 logs
+ * on 2026-09-26). These pin the page in the shape the command returns.
+ */
+describe('useReplayTimeline — the page get_execution_log_lines serves', () => {
+  // `chrono::Utc::now().to_rfc3339()`: nanoseconds and `+00:00`, not `Z`.
+  const stamped = [
+    '[2026-09-26T10:00:00.000000100+00:00] {"type":"system"}',
+    '[2026-09-26T10:00:00.250000100+00:00] {"type":"assistant"}',
+    '[2026-09-26T10:04:00.250000100+00:00] {"type":"result"}',
+  ];
+  const bare = stamped.map((l) => l.slice(l.indexOf('] ') + 2));
+
+  it('plays a stamped page at its recorded tempo, with the silence shown', () => {
+    const { result } = renderHook(() => useReplayTimeline(null, stamped, 300_000, 0));
+    expect(result.current[0].allLines.map((l) => l.timestamp_ms)).toEqual([0, 250, 240_250]);
+    expect(result.current[0].allLines.every((l) => l.recorded)).toBe(true);
+    expect(result.current[0].silences).toEqual([{ start_ms: 250, end_ms: 240_250 }]);
+  });
+
+  it('shows the stdout text, not the stamp', () => {
+    const { result } = renderHook(() => useReplayTimeline(null, stamped, 300_000, 0));
+    expect(result.current[0].allLines.map((l) => l.text)).toEqual(bare);
+  });
+
+  it('keeps a cancelled run replayable from the stamps alone', () => {
+    const { result } = renderHook(() => useReplayTimeline(null, stamped, null, 0));
+    expect(result.current[0].totalMs).toBe(240_250);
+  });
+
+  it('has no tempo to read from a bare page, which is why the replay asks for stamps', () => {
+    const { result } = renderHook(() => useReplayTimeline(null, bare, 300_000, 0));
+    expect(result.current[0].allLines.some((l) => l.recorded)).toBe(false);
+    expect(result.current[0].silences).toEqual([]);
+    const cancelled = renderHook(() => useReplayTimeline(null, bare, null, 0));
+    expect(cancelled.result.current[0].totalMs).toBe(0);
+  });
+});
+
 describe('useReplayTimeline — visible window and reset', () => {
   it('reveals lines as the scrub advances', () => {
     const log = '[2026-06-01T10:00:00.000Z] a\n[2026-06-01T10:00:01.000Z] b\n[2026-06-01T10:00:02.000Z] c';

@@ -40,7 +40,9 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
     let cancelled = false;
     setLogLines(null);
     setLogLoading(true);
-    getExecutionLogLines(execution.id, execution.persona_id, 0, LOG_PAGE_SIZE)
+    // Stamped: the timeline places each line at the time it was written, and
+    // a page without its stamps plays back evenly spread with no silences.
+    getExecutionLogLines(execution.id, execution.persona_id, 0, LOG_PAGE_SIZE, true)
       .then((lines) => {
         if (!cancelled) setLogLines(lines);
       })

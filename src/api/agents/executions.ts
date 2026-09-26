@@ -117,8 +117,10 @@ export const getExecutionLogLines = (
   callerPersonaId: string,
   offset?: number,
   limit?: number,
+  /** Keep each line's `[rfc3339] ` prefix. The replay reads its tempo from it. */
+  stamped?: boolean,
 ) =>
-  invoke<string[]>("get_execution_log_lines", { id, callerPersonaId, offset, limit });
+  invoke<string[]>("get_execution_log_lines", { id, callerPersonaId, offset, limit, stamped });
 
 // ============================================================================
 // Traces

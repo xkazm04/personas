@@ -803,10 +803,24 @@ pub fn get_execution_log_lines(
     caller_persona_id: String,
     offset: Option<usize>,
     limit: Option<usize>,
+    stamped: Option<bool>,
 ) -> Result<Vec<String>, AppError> {
     require_auth_sync(&state)?;
     let execution = repo::get_by_id(&state.db, &id)?;
     verify_execution_owner(&execution, &caller_persona_id)?;
+    // `stamped` keeps each line's `[rfc3339] ` prefix. The replay reads its
+    // tempo from it; every other reader wants the bare stdout text.
+    let stamped = stamped.unwrap_or(false);
+    let project = |line: &str| {
+        crate::engine::logger::split_stdout_line(line).map(|(stamp, text)| {
+            let text = sanitize_secrets(text);
+            if stamped {
+                format!("{stamp}{text}")
+            } else {
+                text
+            }
+        })
+    };
     if let Some(ref path) = execution.log_file_path {
         let file = match open_log_file_safely(path, state.engine.log_dir()) {
             Ok(f) => f,
@@ -826,10 +840,7 @@ pub fn get_execution_log_lines(
             let lines: Vec<String> = reader
                 .lines()
                 .map_while(Result::ok)
-                .filter_map(|line| {
-                    line.find("[STDOUT] ")
-                        .map(|pos| sanitize_secrets(&line[pos + 9..]))
-                })
+                .filter_map(|line| project(&line))
                 .skip(skip)
                 .take(max_lines)
                 .collect();
@@ -840,8 +851,8 @@ pub fn get_execution_log_lines(
             use std::collections::VecDeque;
             let mut ring = VecDeque::with_capacity(max_lines + 1);
             for line in reader.lines().map_while(Result::ok) {
-                if let Some(pos) = line.find("[STDOUT] ") {
-                    ring.push_back(sanitize_secrets(&line[pos + 9..]));
+                if let Some(projected) = project(&line) {
+                    ring.push_back(projected);
                     if ring.len() > max_lines {
                         ring.pop_front();
                     }
