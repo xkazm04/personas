@@ -2119,17 +2119,62 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             ],
         )?;
 
+        // `services` has a second writer: the n8n import confirmation appends
+        // `source: "import"` entries to a builtin row. Carry them across.
+        let installed_services: Option<String> = conn
+            .query_row(
+                "SELECT services FROM connector_definitions WHERE name = ?1 AND is_builtin = 1",
+                params![c.name],
+                |row| row.get("services"),
+            )
+            .ok();
+        let services = refreshed_services(c.services, installed_services.as_deref());
+
         // Update existing rows to refresh fields/metadata/category/services/events/resources on app upgrade
         conn.execute(
             "UPDATE connector_definitions
              SET label = ?1, icon_url = ?2, fields = ?3, healthcheck_config = ?4, metadata = ?5, category = ?6, services = ?7, events = ?8, resources = ?9, updated_at = ?10
              WHERE name = ?11 AND is_builtin = 1",
-            params![c.label, c.icon_url, c.fields, c.healthcheck_config, c.metadata, c.category, c.services, c.events, c.resources, now, c.name],
+            params![c.label, c.icon_url, c.fields, c.healthcheck_config, c.metadata, c.category, services, c.events, c.resources, now, c.name],
         )?;
     }
 
     tracing::debug!("Seeded {} builtin connector definitions", connectors.len());
     Ok(())
+}
+
+/// The shipped `services` list plus the installed row's import-written
+/// entries. The shipped entries own the column; an entry tagged
+/// `"source": "import"` was written by the n8n import confirmation
+/// (`register_connector_services_txn`) and is kept unless the shipped list
+/// now names the same tool. Rewriting the column from the shipped copy alone
+/// dropped every import mapping at the next launch, leaving credential
+/// injection to the name-prefix fallback the import had already resolved.
+/// Returns the shipped string untouched when there is nothing to carry.
+fn refreshed_services(shipped: &str, installed: Option<&str>) -> String {
+    use serde_json::Value;
+    let tool = |s: &Value| s.get("toolName").and_then(Value::as_str).map(str::to_owned);
+
+    let imported: Vec<Value> = installed
+        .and_then(|raw| serde_json::from_str::<Vec<Value>>(raw).ok())
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|s| s.get("source").and_then(Value::as_str) == Some("import"))
+        .collect();
+    if imported.is_empty() {
+        return shipped.to_string();
+    }
+    let Ok(mut services) = serde_json::from_str::<Vec<Value>>(shipped) else {
+        return shipped.to_string();
+    };
+    for entry in imported {
+        let name = tool(&entry);
+        if name.is_some() && services.iter().any(|s| tool(s) == name) {
+            continue;
+        }
+        services.push(entry);
+    }
+    serde_json::to_string(&services).unwrap_or_else(|_| shipped.to_string())
 }
 
 /// Seed the curated shared-event catalog + baked firings that ship with this
@@ -2560,6 +2605,91 @@ mod boot_tests {
         }
 
         let _ = std::fs::remove_dir_all(&data_dir);
+    }
+
+    /// The boot refresh rewrites a builtin row's `services` from the shipped
+    /// copy on every launch. An entry the n8n import appended (same UPDATE as
+    /// `register_connector_services_txn`) must survive the next launch, and
+    /// the shipped entries must still be there beside it.
+    #[test]
+    fn init_db_second_launch_keeps_import_written_services() -> Result<(), AppError> {
+        let data_dir =
+            std::env::temp_dir().join(format!("personas_boot_test_{}", uuid::Uuid::new_v4()));
+        let shipped = builtin_connectors::BUILTIN_CONNECTORS
+            .iter()
+            .find(|c| c.services.contains("toolName"))
+            .expect("a builtin connector that ships services");
+
+        {
+            let pool = init_db(&data_dir, None)?;
+            let conn = pool.get()?;
+            let (id, services): (String, String) = conn.query_row(
+                "SELECT id, services FROM connector_definitions WHERE name = ?1 AND is_builtin = 1",
+                params![shipped.name],
+                |r| Ok((r.get("id")?, r.get("services")?)),
+            )?;
+            let mut services: Vec<serde_json::Value> = serde_json::from_str(&services).unwrap();
+            services
+                .push(serde_json::json!({ "toolName": "imported_tool_qq", "source": "import" }));
+            conn.execute(
+                "UPDATE connector_definitions SET services = ?1, updated_at = ?2 WHERE id = ?3",
+                params![
+                    serde_json::to_string(&services).unwrap(),
+                    chrono::Utc::now().to_rfc3339(),
+                    id
+                ],
+            )?;
+        }
+
+        {
+            let pool = init_db(&data_dir, None)?;
+            let conn = pool.get()?;
+            let services: String = conn.query_row(
+                "SELECT services FROM connector_definitions WHERE name = ?1 AND is_builtin = 1",
+                params![shipped.name],
+                |r| r.get("services"),
+            )?;
+            let services: Vec<serde_json::Value> = serde_json::from_str(&services).unwrap();
+            let shipped_services: Vec<serde_json::Value> =
+                serde_json::from_str(shipped.services).unwrap();
+            assert!(
+                services.iter().any(|s| s["toolName"] == "imported_tool_qq"),
+                "the import-written service entry was dropped by the second launch's refresh"
+            );
+            assert_eq!(
+                services.len(),
+                shipped_services.len() + 1,
+                "the shipped entries did not refresh beside the carried import entry"
+            );
+        }
+
+        let _ = std::fs::remove_dir_all(&data_dir);
+        Ok(())
+    }
+
+    #[test]
+    fn refreshed_services_defers_to_a_shipped_entry_for_the_same_tool() {
+        let shipped = r#"[{"toolName":"a"},{"toolName":"b"}]"#;
+        let installed = r#"[{"toolName":"a"},{"toolName":"b","source":"import"},{"toolName":"c","source":"import"}]"#;
+        let merged: Vec<serde_json::Value> =
+            serde_json::from_str(&refreshed_services(shipped, Some(installed))).unwrap();
+        let names: Vec<&str> = merged
+            .iter()
+            .filter_map(|s| s["toolName"].as_str())
+            .collect();
+        assert_eq!(names, ["a", "b", "c"]);
+        assert!(
+            merged[1].get("source").is_none(),
+            "the shipped entry must win"
+        );
+
+        // Nothing to carry: the shipped string passes through byte-for-byte.
+        assert_eq!(
+            refreshed_services(shipped, Some(r#"[{"toolName":"a"}]"#)),
+            shipped
+        );
+        assert_eq!(refreshed_services(shipped, None), shipped);
+        assert_eq!(refreshed_services(shipped, Some("not json")), shipped);
     }
 
     /// List `*.db` files in a backup dir, sorted ascending (lexicographic ==
