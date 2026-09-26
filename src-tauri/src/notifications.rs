@@ -11,6 +11,7 @@ use crate::db::models::{ChannelScopeV2, ChannelSpecV2, ChannelSpecV2Type};
 use crate::engine::crypto::SecureString;
 use crate::engine::event_registry::{emit_event, event_name};
 use crate::error::AppError;
+use crate::utils::sanitization::sanitize_secrets;
 
 /// Per-persona notification preferences parsed from `notification_channels` JSON.
 #[derive(Debug, Deserialize)]
@@ -373,6 +374,7 @@ async fn resolve_credential_fields(
             return HashMap::new();
         }
     };
+    alias_provider_keys(&cred.service_type, &mut merged);
 
     // Surface the first selected item from each scoped resource as
     // `selected_<resource_id>` so an adapter can pick a default destination
@@ -568,6 +570,8 @@ pub(crate) fn deliver_to_channels(
         // report nothing at all.
         let delivered = std::panic::AssertUnwindSafe(async {
         for ch in enabled {
+            // Same vault merge the shape-v2 path does; see resolve_legacy_channel.
+            let ch = resolve_legacy_channel(&app, ch).await;
             let metrics = DELIVERY_METRICS.for_channel(&ch.channel_type);
             let start = std::time::Instant::now();
             let result = match ch.channel_type.as_str() {
@@ -647,6 +651,80 @@ fn validate_webhook_target(provider: &str, url: &str) -> Result<(), String> {
         .map_err(|reason| format!("{provider}: webhook URL blocked -- {reason}"))
 }
 
+/// Describe a failed outbound request WITHOUT its URL.
+///
+/// reqwest's `Display` appends ` for url (<url>)` to every transport error
+/// (0.12, `error.rs`), and on four of the channels below the URL is the
+/// secret: Telegram's path is `/bot<token>/...`, and a Slack, Discord or
+/// Teams incoming-webhook URL is a bearer capability by itself. Formatting
+/// `{e}` therefore put the credential into the Test button's error panel,
+/// the delivery log and the delivery event. `without_url` keeps the cause
+/// (timeout, connect, DNS) and drops the carrier. Every `send()` in this
+/// file maps through here; do not format a `reqwest::Error` with `{e}`.
+fn transport_error(provider: &str, e: reqwest::Error) -> String {
+    format!("{provider} request failed: {}", e.without_url())
+}
+
+/// Provider-specific key aliases for vault credentials.
+///
+/// The connector catalog stores a SendGrid or Resend key under `api_key`,
+/// while `deliver_email` reads `sendgrid_api_key` / `resend_api_key` (it has
+/// to know which provider to call). Without the alias a linked email
+/// credential resolved to a map the sender could not read, so the channel
+/// said "Connected" and delivered nothing. Aliases never overwrite an
+/// explicit key.
+fn alias_provider_keys(service_type: &str, fields: &mut HashMap<String, String>) {
+    let alias = match service_type {
+        "sendgrid" => "sendgrid_api_key",
+        "resend" => "resend_api_key",
+        _ => return,
+    };
+    if fields.contains_key(alias) {
+        return;
+    }
+    if let Some(key) = fields.get("api_key").filter(|k| !k.is_empty()).cloned() {
+        fields.insert(alias.to_string(), key);
+    }
+}
+
+/// Overlay a channel's inline config on its vault-resolved fields. Inline
+/// wins on collision (it carries the per-channel destination: channel, chat
+/// id, address); the vault fills what the form left blank (the secret).
+fn overlay_channel_config(
+    mut vault: HashMap<String, String>,
+    inline: &HashMap<String, String>,
+) -> HashMap<String, String> {
+    for (k, v) in inline {
+        if v.is_empty() && vault.contains_key(k) {
+            // An empty inline field is "not set", not "clear the vault value".
+            continue;
+        }
+        vault.insert(k.clone(), v.clone());
+    }
+    vault
+}
+
+/// Resolve a legacy (shape-B) channel's `credential_id` against the vault the
+/// way the shape-v2 path already does. The persona connectors form saves
+/// exactly this shape -- `{type, config, enabled, credential_id}`, which
+/// `parse_channels_v2` rejects by its own test -- and until this existed the
+/// legacy loop and `test_notification_channel` handed the raw channel to the
+/// senders, so a picked vault credential was never read: the card said
+/// "Connected" and delivery failed with "<field> not configured".
+async fn resolve_legacy_channel(app: &AppHandle, ch: ExternalChannel) -> ExternalChannel {
+    let Some(cred_id) = ch.credential_id.as_deref() else {
+        return ch;
+    };
+    let vault = resolve_credential_fields(app, cred_id).await;
+    if vault.is_empty() {
+        return ch;
+    }
+    ExternalChannel {
+        config: overlay_channel_config(vault, &ch.config),
+        ..ch
+    }
+}
+
 /// Deliver to Slack. Two paths:
 ///   - `bot_token` present (vault-resolved) → `chat.postMessage` API to a
 ///     channel set in `channel`/`channel_id`/`selected_channels` (Slice 1).
@@ -674,7 +752,7 @@ async fn deliver_slack(ch: &ExternalChannel, title: &str, body: &str) -> Result<
             .timeout(std::time::Duration::from_secs(10))
             .send()
             .await
-            .map_err(|e| format!("Slack request failed: {e}"))?;
+            .map_err(|e| transport_error("Slack", e))?;
         drop(token);
         if !resp.status().is_success() {
             let status = resp.status();
@@ -725,7 +803,7 @@ async fn deliver_slack(ch: &ExternalChannel, title: &str, body: &str) -> Result<
         .timeout(std::time::Duration::from_secs(10))
         .send()
         .await
-        .map_err(|e| format!("Slack request failed: {e}"))?;
+        .map_err(|e| transport_error("Slack", e))?;
     // `webhook_url` (SecureString) drops here -- memory is zeroized
 
     if !resp.status().is_success() {
@@ -768,7 +846,7 @@ async fn deliver_telegram(ch: &ExternalChannel, title: &str, body: &str) -> Resu
         .timeout(std::time::Duration::from_secs(10))
         .send()
         .await
-        .map_err(|e| format!("Telegram request failed: {e}"))?;
+        .map_err(|e| transport_error("Telegram", e))?;
 
     if !resp.status().is_success() {
         let status = resp.status();
@@ -828,7 +906,7 @@ async fn send_via_sendgrid(
         .timeout(std::time::Duration::from_secs(10))
         .send()
         .await
-        .map_err(|e| format!("SendGrid request failed: {e}"))?;
+        .map_err(|e| transport_error("SendGrid", e))?;
     // `api_key` borrow ends here; caller's SecureString drops after return
 
     if !resp.status().is_success() {
@@ -860,7 +938,7 @@ async fn send_via_resend(
         .timeout(std::time::Duration::from_secs(10))
         .send()
         .await
-        .map_err(|e| format!("Resend request failed: {e}"))?;
+        .map_err(|e| transport_error("Resend", e))?;
     // `api_key` borrow ends here; caller's SecureString drops after return
 
     if !resp.status().is_success() {
@@ -889,7 +967,7 @@ async fn deliver_discord(ch: &ExternalChannel, title: &str, body: &str) -> Resul
             .timeout(std::time::Duration::from_secs(10))
             .send()
             .await
-            .map_err(|e| format!("Discord request failed: {e}"))?;
+            .map_err(|e| transport_error("Discord", e))?;
         drop(url);
         if !resp.status().is_success() {
             let status = resp.status();
@@ -925,7 +1003,7 @@ async fn deliver_discord(ch: &ExternalChannel, title: &str, body: &str) -> Resul
         .timeout(std::time::Duration::from_secs(10))
         .send()
         .await
-        .map_err(|e| format!("Discord request failed: {e}"))?;
+        .map_err(|e| transport_error("Discord", e))?;
     drop(token);
     if !resp.status().is_success() {
         let status = resp.status();
@@ -964,7 +1042,7 @@ async fn deliver_teams(ch: &ExternalChannel, title: &str, body: &str) -> Result<
             .timeout(std::time::Duration::from_secs(10))
             .send()
             .await
-            .map_err(|e| format!("Teams request failed: {e}"))?;
+            .map_err(|e| transport_error("Teams", e))?;
         drop(url);
         if !resp.status().is_success() {
             let status = resp.status();
@@ -1015,7 +1093,7 @@ async fn deliver_teams(ch: &ExternalChannel, title: &str, body: &str) -> Result<
             .timeout(std::time::Duration::from_secs(10))
             .send()
             .await
-            .map_err(|e| format!("Teams Graph request failed: {e}"))?;
+            .map_err(|e| transport_error("Teams Graph", e))?;
         drop(token);
         if !resp.status().is_success() {
             let status = resp.status();
@@ -1493,9 +1571,19 @@ async fn test_deliver_external(
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub async fn test_notification_channel(channel_json: String) -> Result<String, AppError> {
+pub async fn test_notification_channel(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, std::sync::Arc<crate::AppState>>,
+    channel_json: String,
+) -> Result<String, AppError> {
+    // Every other command on this surface is gated; this one fires a real
+    // outbound request with a credential and was not.
+    crate::ipc_auth::require_auth(&state).await?;
     let channel: ExternalChannel = serde_json::from_str(&channel_json)
         .map_err(|e| AppError::Validation(format!("Invalid channel config: {e}")))?;
+    // A picked vault credential is read here exactly as production delivery
+    // reads it, so Test and the scheduled send agree.
+    let channel = resolve_legacy_channel(&app, channel).await;
 
     let title = "Personas -- Test Notification";
     let body = "If you see this, your notification channel is working correctly.";
@@ -1504,21 +1592,24 @@ pub async fn test_notification_channel(channel_json: String) -> Result<String, A
     // return `String`; wrap at this boundary. A delivery failure is an outbound
     // call to a third-party channel API → `External`.
     match channel.channel_type.as_str() {
+        // The provider's own response body rides in these errors (HTTP 4xx
+        // text); it is rendered verbatim under the Test button, so it passes
+        // the shared secret sanitizer at this door.
         "slack" => deliver_slack(&channel, title, body)
             .await
-            .map_err(AppError::External)?,
+            .map_err(|e| AppError::External(sanitize_secrets(&e)))?,
         "telegram" => deliver_telegram(&channel, title, body)
             .await
-            .map_err(AppError::External)?,
+            .map_err(|e| AppError::External(sanitize_secrets(&e)))?,
         "email" => deliver_email(&channel, title, body)
             .await
-            .map_err(AppError::External)?,
+            .map_err(|e| AppError::External(sanitize_secrets(&e)))?,
         "discord" => deliver_discord(&channel, title, body)
             .await
-            .map_err(AppError::External)?,
+            .map_err(|e| AppError::External(sanitize_secrets(&e)))?,
         "teams" => deliver_teams(&channel, title, body)
             .await
-            .map_err(AppError::External)?,
+            .map_err(|e| AppError::External(sanitize_secrets(&e)))?,
         other => {
             return Err(AppError::Validation(format!(
                 "Unknown channel type: {other}"
@@ -1670,6 +1761,91 @@ mod tests {
         let ch = webhook_channel("teams", METADATA_URL);
         let err = deliver_teams(&ch, "t", "b").await.expect_err("must block");
         assert!(err.contains("blocked"), "expected a block, got: {err}");
+    }
+
+    // -- Secrets in transport errors ----------------------------------------
+    //
+    // This test carries its own premise: it first asserts that reqwest's
+    // Display DOES put the URL (and so the token) into the error string, then
+    // that `transport_error` does not. If a reqwest upgrade stops echoing the
+    // URL the premise assert fails first and says so, rather than the fix
+    // silently becoming decorative. A closed loopback port refuses at connect,
+    // so no packet leaves the machine and the test runs in milliseconds.
+
+    const TELEGRAM_SECRET_URL: &str =
+        "http://127.0.0.1:9/bot7123456789:AAHf3kLm9QpXyZ2wVbNcSECRET/sendMessage";
+    // Named per the census `anonymous-deadline` rule: a probe timeout still needs a
+    // name, even in a test, so a sibling bound could reference it.
+    const PROBE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+
+    #[tokio::test]
+    async fn transport_error_never_carries_the_secret_url() {
+        let err = reqwest::Client::new()
+            .get(TELEGRAM_SECRET_URL)
+            .timeout(PROBE_TIMEOUT)
+            .send()
+            .await
+            .expect_err("nothing listens on loopback port 9");
+        let raw = err.to_string();
+        assert!(
+            raw.contains("SECRET"),
+            "premise: reqwest's Display no longer echoes the URL; re-evaluate the fix: {raw}"
+        );
+        let msg = transport_error("Telegram", err);
+        assert!(
+            !msg.contains("SECRET") && !msg.contains("127.0.0.1"),
+            "the token or host survived into the message: {msg}"
+        );
+        assert!(msg.starts_with("Telegram request failed: "), "{msg}");
+    }
+
+    // -- Legacy channel vault resolution -------------------------------------
+
+    fn fields(pairs: &[(&str, &str)]) -> HashMap<String, String> {
+        pairs
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect()
+    }
+
+    #[test]
+    fn provider_key_aliases_reach_what_deliver_email_reads() {
+        let mut f = fields(&[("api_key", "SG.abc")]);
+        alias_provider_keys("sendgrid", &mut f);
+        assert_eq!(
+            f.get("sendgrid_api_key").map(String::as_str),
+            Some("SG.abc")
+        );
+
+        let mut f = fields(&[("api_key", "re_abc")]);
+        alias_provider_keys("resend", &mut f);
+        assert_eq!(f.get("resend_api_key").map(String::as_str), Some("re_abc"));
+
+        // An explicit provider key is never overwritten by the alias.
+        let mut f = fields(&[("api_key", "SG.new"), ("sendgrid_api_key", "SG.explicit")]);
+        alias_provider_keys("sendgrid", &mut f);
+        assert_eq!(
+            f.get("sendgrid_api_key").map(String::as_str),
+            Some("SG.explicit")
+        );
+
+        // Unrelated services get no alias at all.
+        let mut f = fields(&[("api_key", "x")]);
+        alias_provider_keys("slack", &mut f);
+        assert_eq!(f.len(), 1);
+    }
+
+    #[test]
+    fn inline_destination_wins_and_vault_fills_the_secret() {
+        let vault = fields(&[("bot_token", "123:vault"), ("chat_id", "from-cred")]);
+        let inline = fields(&[("chat_id", "42"), ("bot_token", "")]);
+        let merged = overlay_channel_config(vault, &inline);
+        assert_eq!(merged.get("chat_id").map(String::as_str), Some("42"));
+        // The form's blank secret field does not erase the vault's value.
+        assert_eq!(
+            merged.get("bot_token").map(String::as_str),
+            Some("123:vault")
+        );
     }
 
     #[test]
