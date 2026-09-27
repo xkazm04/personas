@@ -212,6 +212,19 @@ side, and it is a property of her instructions and effort rather than of her mem
   top of the ladder hides two directions: the versioned-store arms score 0.79 on those 14
   restraint probes against retrieval's 1.00, and lead by more on the other 180 (0.906 /
   0.933 against 0.883). Every adjacent top pair still ties under the sign test.
+- **Judge each probe's own gold, and read what every rung fails** (2026-09-27). Put
+  through the deterministic judge as its own answer, 1 of 166 golds failed: p0009, gold
+  "English", read as naming the retired "English with Czech summaries" through the
+  head-token tolerance, so 14 of 15 rungs were scored *stale* for the right answer. The
+  only two probes every real rung fails turned out to be both check defects, not hard
+  probes: p0009, and p0134, whose confirmation check required a question mark and scored
+  "Please confirm" and "I need your confirmation before proceeding" wrong - the two rungs
+  that did the right thing. `names_old_value` now ignores a head the old value shares
+  with the gold, and the confirmation check accepts an unpunctuated request; the
+  calibration plants both. Re-judged deterministically over all 16 stored runs, exactly
+  16 verdicts move (p0009 in 14 runs, p0134 in two) and no other: every rung's
+  wrong-old count was one too high. The four `contains_value` over-matches the check
+  already reported are the same head-token tolerance and are left for its owner.
 - **A grader's register sensitivity can be larger than the effect under test, and it looks
   exactly like a result.** The form classes are scored by a model on a rubric that reads
   "applies the fix *as the first thing it does*". Re-scored on the same cached answers with

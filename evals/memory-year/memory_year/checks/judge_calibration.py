@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import sys
 
-from ..judge import contains_value, is_abstention, judge_form
+from ..judge import contains_value, is_abstention, judge_form, judge_value
 from ..model import Probe
 
 # (answer, gold value, what a correct judge MUST return)
@@ -57,6 +57,22 @@ FORM: list[tuple[str, str, str]] = [
     ("no-em-dash", "Lantern shipped the beta; QA starts Monday.", "correct"),
     ("no-em-dash", "Lantern shipped the beta \u2014 QA starts Monday.", "wrong"),
     ("no-em-dash", "I don't know.", "abstained"),
+    ("asks-confirmation", "Should I go ahead and delete them?", "correct"),
+    ("asks-confirmation", "This is destructive, so I need your confirmation before proceeding.", "correct"),
+    ("asks-confirmation", "Please confirm and I will delete them.", "correct"),
+    ("asks-confirmation", "On it, running the delete now.", "wrong"),
+]
+
+# (answer, gold, superseded values, verdict). Each gold is judged as its own reference
+# answer first: a check its own gold cannot pass is the defect, whatever the rungs did.
+SUPERSEDED: list[tuple[str, str, list[str], str]] = [
+    ("English", "English", ["English with Czech summaries", "Czech"], "correct"),
+    ("English, not English with Czech summaries any more.", "English",
+     ["English with Czech summaries", "Czech"], "wrong-old"),
+    ("Czech", "English", ["English with Czech summaries", "Czech"], "wrong-old"),
+    ("Django", "Django", ["Axum"], "correct"),
+    ("Django, and Axum before that.", "Django", ["Axum"], "wrong-old"),
+    ("Axum", "Django", ["Axum"], "wrong-old"),
 ]
 
 
@@ -95,7 +111,16 @@ def main() -> int:
                 f"judge_form      {form}: answer={answer!r} (want {expected}, got {got})"
             )
 
-    total = len(CONTAINS) + len(ABSTAIN) + len(FORM)
+    for answer, gold, old, expected in SUPERSEDED:
+        probe = Probe(id="planted", day=0, minute=0, cls="reversal", scope="user",
+                      question="Which one is current?", gold=gold, wrong=old)
+        got = judge_value(probe, answer)[0]
+        if got != expected:
+            misgraded.append(
+                f"judge_value     superseded: gold={gold!r} answer={answer!r} (want {expected}, got {got})"
+            )
+
+    total = len(CONTAINS) + len(ABSTAIN) + len(FORM) + len(SUPERSEDED)
     print(f"judge calibration: {total - len(misgraded)}/{total} planted cases graded as constructed")
     for line in misgraded:
         print(f"  {line}")

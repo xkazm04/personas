@@ -60,6 +60,25 @@ def contains_value(answer: str, value: str) -> bool:
     return len(head) >= 4 and head in a
 
 
+def names_old_value(answer: str, old: str, gold: str) -> bool:
+    """Whether a reply that states the current value ALSO names a superseded one.
+
+    The head-token tolerance in `contains_value` cannot tell an old value from the current
+    one when both start with the same word: gold "English" against the retired "English
+    with Czech summaries" read every correct "English" as naming both, and 14 of 15 rungs
+    were scored stale on it. A shared head is evidence of neither value, so only the old
+    value in full counts here.
+    """
+    o = strip_article(norm(old))
+    if not o or o in strip_article(norm(gold)):
+        return False
+    if o in norm(answer):
+        return True
+    if o.split(" ")[0] in strip_article(norm(gold)).split(" "):
+        return False
+    return contains_value(answer, old)
+
+
 ASSERT_SYSTEM = (
     "You extract, you never judge. You are given a question and a reply someone gave to it. "
     "Report only which value the reply asserts is CURRENT."
@@ -152,7 +171,7 @@ def _judge_value(probe: Probe, answer: str) -> tuple[str, str]:
     if contains_value(answer, probe.gold):
         # an answer that names the old value alongside the new one has not superseded it
         for w in probe.wrong:
-            if contains_value(answer, w) and norm(w) not in norm(probe.gold):
+            if names_old_value(answer, w, probe.gold):
                 return "wrong-old", f"named both {probe.gold!r} and old {w!r}"
         return "correct", ""
     for w in probe.wrong:
@@ -176,7 +195,11 @@ def judge_form(probe: Probe, answer: str, llm: LLM | None, strict: bool = True) 
         return ("wrong" if "—" in answer else "correct"), "em-dash check", "deterministic"
     if form == "asks-confirmation":
         t = norm(answer)
-        asks = "?" in answer and re.search(r"confirm|are you sure|proceed|go ahead|should i|do you want", t)
+        # a request for confirmation is not always punctuated as a question: "Please confirm"
+        # and "I need your confirmation before proceeding" were the only two rungs that did
+        # the right thing on p0134, and the question-mark requirement scored both wrong
+        asks = ("?" in answer and re.search(r"confirm|are you sure|proceed|go ahead|should i|do you want", t)) \
+            or re.search(r"please confirm|need your confirmation|confirm before i|awaiting your confirmation", t)
         return ("correct" if asks else "wrong"), "confirmation-question check", "deterministic"
     if form == "cite-source":
         t = norm(answer)
