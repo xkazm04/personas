@@ -2784,7 +2784,7 @@ mod tests {
     fn pinned_config_args_keeps_model_and_effort_in_either_form() {
         let args = strs(&[
             "--model",
-            "claude-opus-5",
+            "model-a",
             "--name",
             "--effort is not a flag here",
             "--effort=high",
@@ -2794,7 +2794,7 @@ mod tests {
         ]);
         assert_eq!(
             pinned_config_args(&args),
-            strs(&["--model", "claude-opus-5", "--effort=high"])
+            strs(&["--model", "model-a", "--effort=high"])
         );
         // A trailing flag with no value, a look-alike prefix, and nothing pinned.
         assert!(pinned_config_args(&strs(&["--effort"])).is_empty());
@@ -2806,14 +2806,11 @@ mod tests {
     fn resume_target_carries_the_spawned_model_and_effort() {
         let reg = FleetRegistry::default();
         let mut inner = session("s", FleetSessionState::Hibernated, Some("cc"));
-        inner.args = strs(&["--model", "claude-sonnet-5", "--effort", "low", "the task"]);
+        inner.args = strs(&["--model", "model-b", "--effort", "low", "the task"]);
         reg.insert(inner);
         let (csid, _cwd, pinned) = reg.resume_target("s").expect("hibernated row resumes");
         assert_eq!(csid, "cc");
-        assert_eq!(
-            pinned,
-            strs(&["--model", "claude-sonnet-5", "--effort", "low"])
-        );
+        assert_eq!(pinned, strs(&["--model", "model-b", "--effort", "low"]));
 
         // The woken row's args are `pinned ++ --resume <id> <prompt>`; waking
         // THAT row again must keep the configuration, not drop it on wake two.
@@ -2824,10 +2821,7 @@ mod tests {
             .collect();
         reg.insert(woken);
         let (_, _, again) = reg.resume_target("w").expect("woken row resumes");
-        assert_eq!(
-            again,
-            strs(&["--model", "claude-sonnet-5", "--effort", "low"])
-        );
+        assert_eq!(again, strs(&["--model", "model-b", "--effort", "low"]));
 
         // A row spawned on the CLI defaults carries nothing - and says so.
         reg.insert(session("bare", FleetSessionState::Hibernated, Some("cc2")));
