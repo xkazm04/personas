@@ -2217,10 +2217,12 @@ impl FleetRegistry {
             .unwrap_or(false)
     }
 
-    /// Resume target `(claude_session_id, cwd)` for a hibernated session, used
-    /// by `fleet_wake_session` to respawn `claude --resume`. `None` if the
-    /// session isn't hibernated or never bound a `claude_session_id`.
-    pub fn resume_target(&self, session_id: &str) -> Option<(String, PathBuf)> {
+    /// Resume target `(claude_session_id, cwd, pinned_args)` for a hibernated
+    /// session, used by `fleet_wake_session` to respawn `claude --resume`.
+    /// `pinned_args` are the `--model` / `--effort` pairs the session was
+    /// spawned with (see [`pinned_config_args`]). `None` if the session isn't
+    /// hibernated or never bound a `claude_session_id`.
+    pub fn resume_target(&self, session_id: &str) -> Option<(String, PathBuf, Vec<String>)> {
         let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         let s = map.get(session_id)?;
         // Hibernated rows AND dozing rows (light sleep — process freed, state
@@ -2230,7 +2232,7 @@ impl FleetRegistry {
             return None;
         }
         let csid = s.claude_session_id.clone()?;
-        Some((csid, s.cwd.clone()))
+        Some((csid, s.cwd.clone(), pinned_config_args(&s.args)))
     }
 
     /// Removes a session entirely. Used by the UI to dismiss exited rows.
@@ -2279,6 +2281,38 @@ impl FleetRegistry {
         }
         removed
     }
+}
+
+/// The configuration flags a wake carries from the sleeping row to its
+/// continuation. A bare `claude --resume <id>` re-resolves them: measured on
+/// CLI 2.1.283, the CLI restores the conversation's model but NOT its effort -
+/// a session spawned at `--effort low` resumed at the operator's settings
+/// level, and the woken turn rewrote the cached conversation (6-11K
+/// cache-creation tokens against 55 with the flag carried). The model is
+/// carried too, because restoring it is harness behaviour nobody pinned.
+const PINNED_CONFIG_FLAGS: &[&str] = &["--model", "--effort"];
+
+/// The `--model` / `--effort` pairs in a row's spawn args, in order, in the
+/// form they were given (`--effort high` or `--effort=high`). Carried forward
+/// by the wake so the continuation runs - and its persisted row records - the
+/// configuration the plan chose, and a second wake keeps it again.
+pub(super) fn pinned_config_args(args: &[String]) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut it = args.iter();
+    while let Some(a) = it.next() {
+        if PINNED_CONFIG_FLAGS.contains(&a.as_str()) {
+            if let Some(v) = it.next() {
+                out.push(a.clone());
+                out.push(v.clone());
+            }
+        } else if PINNED_CONFIG_FLAGS
+            .iter()
+            .any(|f| a.strip_prefix(f).is_some_and(|rest| rest.starts_with('=')))
+        {
+            out.push(a.clone());
+        }
+    }
+    out
 }
 
 /// Serialize one user turn as a stream-json input line for a headless
@@ -2740,6 +2774,65 @@ mod tests {
             Some(KillOutcome::NoChild)
         );
         assert_eq!(state_of(&reg, "idle"), FleetSessionState::Hibernated);
+    }
+
+    fn strs(v: &[&str]) -> Vec<String> {
+        v.iter().map(|s| s.to_string()).collect()
+    }
+
+    #[test]
+    fn pinned_config_args_keeps_model_and_effort_in_either_form() {
+        let args = strs(&[
+            "--model",
+            "claude-opus-5",
+            "--name",
+            "--effort is not a flag here",
+            "--effort=high",
+            "--permission-mode",
+            "bypassPermissions",
+            "fix the flaky test",
+        ]);
+        assert_eq!(
+            pinned_config_args(&args),
+            strs(&["--model", "claude-opus-5", "--effort=high"])
+        );
+        // A trailing flag with no value, a look-alike prefix, and nothing pinned.
+        assert!(pinned_config_args(&strs(&["--effort"])).is_empty());
+        assert!(pinned_config_args(&strs(&["--models=x", "--effortless"])).is_empty());
+        assert!(pinned_config_args(&[]).is_empty());
+    }
+
+    #[test]
+    fn resume_target_carries_the_spawned_model_and_effort() {
+        let reg = FleetRegistry::default();
+        let mut inner = session("s", FleetSessionState::Hibernated, Some("cc"));
+        inner.args = strs(&["--model", "claude-sonnet-5", "--effort", "low", "the task"]);
+        reg.insert(inner);
+        let (csid, _cwd, pinned) = reg.resume_target("s").expect("hibernated row resumes");
+        assert_eq!(csid, "cc");
+        assert_eq!(
+            pinned,
+            strs(&["--model", "claude-sonnet-5", "--effort", "low"])
+        );
+
+        // The woken row's args are `pinned ++ --resume <id> <prompt>`; waking
+        // THAT row again must keep the configuration, not drop it on wake two.
+        let mut woken = session("w", FleetSessionState::Hibernated, Some("cc"));
+        woken.args = pinned
+            .into_iter()
+            .chain(strs(&["--resume", "cc", "continue"]))
+            .collect();
+        reg.insert(woken);
+        let (_, _, again) = reg.resume_target("w").expect("woken row resumes");
+        assert_eq!(
+            again,
+            strs(&["--model", "claude-sonnet-5", "--effort", "low"])
+        );
+
+        // A row spawned on the CLI defaults carries nothing - and says so.
+        reg.insert(session("bare", FleetSessionState::Hibernated, Some("cc2")));
+        let (_, _, none) = reg.resume_target("bare").expect("bare row resumes");
+        assert!(none.is_empty());
     }
 
     #[test]
