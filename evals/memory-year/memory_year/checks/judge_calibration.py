@@ -21,7 +21,8 @@ from __future__ import annotations
 
 import sys
 
-from ..judge import contains_value, is_abstention
+from ..judge import contains_value, is_abstention, judge_form
+from ..model import Probe
 
 # (answer, gold value, what a correct judge MUST return)
 CONTAINS: list[tuple[str, str, bool]] = [
@@ -45,6 +46,17 @@ ABSTAIN: list[tuple[str, bool]] = [
     ("I do not know", True),
     ("It is Postgres 16.", False),
     ("The unknown soldier was buried in 1921.", False),  # 'unknown' not at the head
+]
+
+# (form, answer, the verdict a correct judge MUST return). A rule that forbids something
+# is passed by a reply that does nothing, so the doing-nothing reply is the case to plant.
+FORM: list[tuple[str, str, str]] = [
+    ("no-emoji", "Lantern shipped the beta. QA starts Monday.", "correct"),
+    ("no-emoji", "Lantern shipped the beta \U0001F680 QA starts Monday.", "wrong"),
+    ("no-emoji", "UNKNOWN", "abstained"),      # the no-memory rung's only form pass
+    ("no-em-dash", "Lantern shipped the beta; QA starts Monday.", "correct"),
+    ("no-em-dash", "Lantern shipped the beta \u2014 QA starts Monday.", "wrong"),
+    ("no-em-dash", "I don't know.", "abstained"),
 ]
 
 
@@ -74,7 +86,16 @@ def main() -> int:
                 f"is_abstention   {kind}: text={text!r} (want {expected}, got {got})"
             )
 
-    total = len(CONTAINS) + len(ABSTAIN)
+    for form, answer, expected in FORM:
+        probe = Probe(id="planted", day=0, minute=0, cls="rule", scope="user",
+                      question="Give me a two-sentence status update.", gold="FORM", form=form)
+        got = judge_form(probe, answer, None)[0]
+        if got != expected:
+            misgraded.append(
+                f"judge_form      {form}: answer={answer!r} (want {expected}, got {got})"
+            )
+
+    total = len(CONTAINS) + len(ABSTAIN) + len(FORM)
     print(f"judge calibration: {total - len(misgraded)}/{total} planted cases graded as constructed")
     for line in misgraded:
         print(f"  {line}")

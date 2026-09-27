@@ -164,6 +164,12 @@ def _judge_value(probe: Probe, answer: str) -> tuple[str, str]:
 def judge_form(probe: Probe, answer: str, llm: LLM | None, strict: bool = True) -> tuple[str, str, str]:
     """-> (verdict, note, judge-name). Deterministic where the form is checkable; model otherwise."""
     form = probe.form or ""
+    # A rule that forbids something is satisfied by saying nothing. The no-memory rung
+    # answered "UNKNOWN" to a status-update request and passed its no-emoji check - the
+    # only form pass it ever got - so a reply that did none of the asked work shows no
+    # compliance and is scored the way a value probe scores it: abstained.
+    if form in ("no-emoji", "no-em-dash") and is_abstention(answer):
+        return "abstained", "no reply to check the form against", "deterministic"
     if form == "no-emoji":
         return ("wrong" if EMOJI_RE.search(answer) else "correct"), "emoji check", "deterministic"
     if form == "no-em-dash":

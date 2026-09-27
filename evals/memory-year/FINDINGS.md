@@ -202,6 +202,16 @@ side, and it is a property of her instructions and effort rather than of her mem
 - **The restraint pair earns itself.** False fire and silent failure travel together because
   either alone is gamed by being louder or quieter. The empty rung reads 0.00 against 1.00,
   the degenerate quiet extreme in two numbers.
+- **Read what the empty rung passes, not only its total** (2026-09-27). Its 0.08 is 15
+  probes: the 14 whose gold is UNKNOWN (distractor, expired), which saying nothing is
+  supposed to pass, and one it should not - p0136 asks for a status update and is checked
+  only for "no emoji", so "UNKNOWN" passed it. A rule that forbids something is satisfied
+  by doing nothing; `judge_form` now scores an abstention on a forbidding form as
+  abstained, and `judge_calibration` plants the case. No real arm abstained there, so no
+  other rung moves; the empty rung's work-probe accuracy is 0.00. Split the same way, the
+  top of the ladder hides two directions: the versioned-store arms score 0.79 on those 14
+  restraint probes against retrieval's 1.00, and lead by more on the other 180 (0.906 /
+  0.933 against 0.883). Every adjacent top pair still ties under the sign test.
 - **A grader's register sensitivity can be larger than the effect under test, and it looks
   exactly like a result.** The form classes are scored by a model on a rubric that reads
   "applies the fix *as the first thing it does*". Re-scored on the same cached answers with
