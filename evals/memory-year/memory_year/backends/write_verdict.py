@@ -36,7 +36,7 @@ import numpy as np
 from . import Backend, Context, Cost
 from ..clock import Clock
 from ..embed import DEFAULT_EMBEDDER, Embedder
-from ..llm import LLM, estimate_tokens
+from ..llm import LLM, SeatLimit, estimate_tokens
 from ..model import Event, Probe
 
 DEFAULT_MODEL = "claude:claude-sonnet-5@low"
@@ -201,6 +201,8 @@ class WriteVerdict(Backend):
         prompt = self._prompt(batch, pool, clock)
         try:
             reply = self.llm.complete(prompt, SYSTEM)
+        except SeatLimit:
+            raise   # a refused seat judged nothing about the design: stop, rerun after the reset
         except RuntimeError as exc:
             # the CLI gave up after its own retries. A lost pass is a lost admission -
             # data about a design that does its thinking on the hot path, not a harness fault

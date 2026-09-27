@@ -40,7 +40,7 @@ import numpy as np
 from . import Backend, Context, Cost
 from ..clock import Clock
 from ..embed import DEFAULT_EMBEDDER, Embedder
-from ..llm import LLM, Reply, estimate_tokens
+from ..llm import LLM, Reply, SeatLimit, estimate_tokens
 from ..model import Event, Probe
 from .full_history import render
 
@@ -187,6 +187,8 @@ class CompiledTruth(Backend):
         """-> (compiled truth or "", reply for costing, failure message)."""
         try:
             reply = self.llm.complete(self._prompt(page, new_lines), system=SYSTEM)
+        except SeatLimit:
+            raise                                    # a refused seat is not the design failing: stop, rerun after the reset
         except Exception as exc:                     # model/CLI failure is data, not a crash
             return "", None, repr(exc)[:300]
         truth = self._usable(reply.text)

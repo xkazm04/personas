@@ -23,12 +23,58 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
+import re
 import shutil
 
 CLAUDE = shutil.which("claude") or "claude"   # the resolved shim, so no shell is needed and argv stays short
 
 DEFAULT_CONSUMER = "claude:claude-opus-4-8@medium"
 DEFAULT_JUDGE = "claude:claude-sonnet-5@low"
+
+
+class SeatLimit(RuntimeError):
+    """The seat refused: a session, weekly or per-model allowance is exhausted until a reset.
+
+    A refusal is not a result and not a failure to retry. Retrying into a closed window only
+    spends attempts and log lines, and a caller that swallows a generic error (the judge does,
+    by design) would store a degraded verdict for a probe that was never judged. So this is
+    raised on the first refusal, and callers that tolerate model failures let it through: the
+    run stops, and `--resume` redoes the refused probe after the reset the message names.
+    """
+
+
+# Fallback vocabulary, read only from the error text of an envelope that says it errored -
+# never from a successful reply, whose content may quote a limit message.
+_ALLOWANCE = re.compile(r"usage limit|session limit|weekly limit|hit your limit|rate limit|quota|out of (extra )?usage", re.I)
+_CAPACITY = re.compile(r"overloaded|at capacity|server is busy|temporarily unavailable", re.I)
+
+
+def failure_cause(data: dict | None) -> str:
+    """-> 'refused-allowance' | 'refused-capacity' | 'turn-cap' | 'spend-cap' | 'error'.
+
+    Structured fields first. The CLI has been observed returning `subtype: "success"` with
+    `is_error: true` and exit 0 on a rejected request, so neither the subtype nor the exit code
+    is read as the outcome; the forwarded API status is, where the CLI version carries it
+    (429 = your allowance, 529 = provider capacity). The text is the fallback.
+    """
+    if not data:
+        return "error"
+    status = data.get("api_error_status")
+    if status == 429:
+        return "refused-allowance"
+    if status == 529:
+        return "refused-capacity"
+    subtype = str(data.get("subtype") or "")
+    if subtype == "error_max_turns":
+        return "turn-cap"
+    if subtype == "error_max_budget_usd":
+        return "spend-cap"
+    text = str(data.get("result") or "")
+    if _ALLOWANCE.search(text):
+        return "refused-allowance"
+    if _CAPACITY.search(text):
+        return "refused-capacity"
+    return "error"
 
 
 @dataclass
@@ -67,6 +113,7 @@ class LLM:
         self.tokens_out = 0
         self.cache_hits = 0
         self.errors = 0
+        self.refusals = 0
 
     def _key(self, system: str, prompt: str) -> str:
         return hashlib.sha256(json.dumps([self.spec, system, prompt]).encode()).hexdigest()
@@ -98,6 +145,10 @@ class LLM:
                 if data and not data.get("is_error"):
                     break
                 last_err = (data or {}).get("result") or out.stderr[-400:] or "empty output"
+                if data and failure_cause(data) == "refused-allowance":
+                    with self._lock:
+                        self.refusals += 1
+                    raise SeatLimit(f"claude CLI refused (allowance): {last_err}")
             except (subprocess.TimeoutExpired, json.JSONDecodeError, OSError) as exc:
                 last_err = repr(exc)
             time.sleep(5 * (attempt + 1))

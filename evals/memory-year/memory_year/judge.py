@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 
-from .llm import LLM
+from .llm import LLM, SeatLimit
 from .model import Probe
 
 EMOJI_RE = re.compile("[\U0001F300-\U0001FAFF☀-➿]")
@@ -104,6 +104,8 @@ def asserted_value(llm: LLM, question: str, answer: str) -> str:
     )
     try:
         lines = llm.complete(prompt, system=ASSERT_SYSTEM).text.strip().splitlines()
+    except SeatLimit:
+        raise           # a refused seat judged nothing: stop, and --resume judges this probe after the reset
     except Exception:
         return None     # the judge failed, not the design: judge_value marks the verdict
     return lines[0][:120] if lines else None
