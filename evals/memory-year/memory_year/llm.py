@@ -5,10 +5,18 @@ replaced system prompt, JSON output, no session persistence, no tools. That is t
 engine Athena ships with, so the consumer in a ladder is the consumer in production, and
 the arms differ only in what memory they were shown.
 
+"No tools" is enforced by ISOLATION, not by the empty working directory. Until 2026-09-27
+the argv said nothing about tools or settings, and a call from an empty directory still
+loaded the operator's user settings: 25 tools, 30 skills, a plugin, and three user hooks
+that posted every prompt to a local app - 23,277 input tokens for a 7-word prompt that
+costs 479 isolated. `py -m memory_year.checks.cli_isolation` reads what a call loaded.
+
 Model specs are `claude:<model>@<effort>`, e.g. `claude:claude-opus-4-8@low` (Athena's
-main turn), `claude:claude-sonnet-5@low`. Calls are cached by (spec, system, prompt) so a
-re-run, a re-judge or a second rung over the same probe costs nothing. The cache is
-process-shared and thread-safe; concurrent calls are the normal mode.
+main turn), `claude:claude-sonnet-5@low`. Calls are cached by (spec, CLI_PROFILE, system,
+prompt) so a re-run, a re-judge or a second rung over the same probe costs nothing. The
+profile is in the key because a reply cached under a different invocation is a replay of a
+different configuration, not a result of this one. The cache is process-shared and
+thread-safe; concurrent calls are the normal mode.
 """
 from __future__ import annotations
 
@@ -30,6 +38,21 @@ CLAUDE = shutil.which("claude") or "claude"   # the resolved shim, so no shell i
 
 DEFAULT_CONSUMER = "claude:claude-opus-4-8@medium"
 DEFAULT_JUDGE = "claude:claude-sonnet-5@low"
+
+# What a call must not inherit from the machine it runs on: built-in tools, the user,
+# project and local settings files (hooks, plugins, permissions, model settings), MCP
+# servers, and skills. Changing this list changes what the model reads, so bump
+# CLI_PROFILE with it - the profile is part of every cache key.
+ISOLATION = ["--tools", "", "--setting-sources", "", "--strict-mcp-config", "--disable-slash-commands"]
+CLI_PROFILE = "isolated-1"
+
+
+def cli_args(model: str, effort: str, system_file: Path, output_format: str = "json",
+             isolated: bool = True) -> list[str]:
+    """The argv of one headless call. `isolated=False` exists for the isolation check's control."""
+    args = [CLAUDE, "-p", "--no-session-persistence", "--output-format", output_format,
+            "--model", model, "--effort", effort, "--system-prompt-file", str(system_file)]
+    return args + ISOLATION if isolated else args
 
 
 class SeatLimit(RuntimeError):
@@ -116,7 +139,7 @@ class LLM:
         self.refusals = 0
 
     def _key(self, system: str, prompt: str) -> str:
-        return hashlib.sha256(json.dumps([self.spec, system, prompt]).encode()).hexdigest()
+        return hashlib.sha256(json.dumps([self.spec, CLI_PROFILE, system, prompt]).encode()).hexdigest()
 
     def complete(self, prompt: str, system: str = "") -> Reply:
         k = self._key(system, prompt)
@@ -131,8 +154,7 @@ class LLM:
         sys_path = self.workdir / f"system-{hashlib.sha256((system or 'x').encode()).hexdigest()[:12]}.txt"
         if not sys_path.exists():
             sys_path.write_text(system or "You are a helpful assistant.", encoding="utf-8")
-        args = [CLAUDE, "-p", "--no-session-persistence", "--output-format", "json",
-                "--model", self.model, "--effort", self.effort, "--system-prompt-file", str(sys_path)]
+        args = cli_args(self.model, self.effort, sys_path)
         env = dict(os.environ)
         env.pop("CLAUDECODE", None)   # allow a nested headless call from inside a Claude Code session
         t0 = time.time()

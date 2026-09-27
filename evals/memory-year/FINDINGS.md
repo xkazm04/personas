@@ -330,3 +330,10 @@ rebasing fix lands, and the expired class (6 probes, 0.50) is the one to distrus
 - [ ] decide whether MAIN stays at `low` (finding 5)
 - [ ] re-run the ladder after the reconcile fix; a verdict is pinned to what it measured
 - [ ] merge `direction/memory-year-sim` (sim clock and driver)
+- [ ] every ladder before 2026-09-27 ran its consumer and judge with the operator's user
+      settings loaded: 25 tools, 30 skills, a plugin and three user hooks, about 22,800 input
+      tokens that are not memory (`checks/cli_isolation.py`). Arms within a round shared that
+      configuration, so their pairing holds. An absolute score quoted as "the consumer in
+      production", or compared across a settings change, does not. The calls are now isolated,
+      and the cache key carries the invocation profile, so no older reply is replayed as an
+      isolated one. Re-run a rung before quoting it against a post-fix number.
