@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { ChevronRight, GitBranch, Save, ScrollText } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Hint, ListRow, Rows, Tile } from '@/features/shared/components/kit';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
 interface Decision {
@@ -10,23 +10,23 @@ interface Decision {
   timestamp?: string;
 }
 
+/** Rows shown before "Show all" (home-2 contract: grid lists cap at 6-8). */
+const CAP = 6;
+
 /**
  * Inline chat-card Athena emits via `show_decision_log { intent, decisions }`.
  * Captures the design choices made during the current conversation so
  * the user (and future-Athena) can retrace reasoning later without
  * re-running the conversation.
  *
- * Each decision row reads:
- *   <label>  →  <choice>
- *     · <rationale>
- *
- * Renders as a vertical timeline with a subtle accent rail — implies
- * causal sequence (the order matters) without forcing it visually.
+ * One kit Tile, one row per decision in the order they were taken (the
+ * order is the sequence, so no timeline rail is drawn): the topic
+ * emphasised, the choice beside it at regular
+ * weight, the rationale as the row's meta with the full text in a Hint,
+ * the time in the row's time column. The "Saved" note is the tile's meta.
  */
-export function DecisionLogWidget({ config, title }: CockpitWidgetProps) {
+export function DecisionLogWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
   const { t } = useTranslation();
-  const intent =
-    typeof config?.intent === 'string' ? (config.intent as string).trim() : '';
   const decisions = useMemo<Decision[]>(() => {
     const raw = config?.decisions;
     if (!Array.isArray(raw)) return [];
@@ -43,78 +43,48 @@ export function DecisionLogWidget({ config, title }: CockpitWidgetProps) {
       .filter((d) => d.label.length > 0 && d.choice.length > 0);
   }, [config]);
 
-  if (decisions.length === 0) {
-    return (
-      <div className="rounded-card border border-foreground/10 bg-secondary/40 p-3 typo-caption text-foreground">
-        {t.athena.decision_log_empty}
-      </div>
-    );
-  }
-
+  const heading = title || t.athena.decision_log_title;
+  const empty = decisions.length === 0;
   return (
-    <div
-      className="rounded-card border border-fuchsia-500/30 bg-fuchsia-500/[0.04] p-4 space-y-3"
-      data-testid="companion-decision-log-widget"
-    >
-      <header className="flex items-baseline gap-2 typo-caption text-fuchsia-300/85">
-        <ScrollText className="w-3.5 h-3.5" />
-        <span className="font-medium">
-          {title || t.athena.decision_log_title}
-        </span>
-        {intent && (
-          <span className="text-foreground truncate" title={intent}>
-            · {intent}
-          </span>
-        )}
-        <span
-          className="inline-flex items-center gap-1 text-foreground ml-auto shrink-0"
-          title={t.athena.decision_log_persisted_tooltip}
-        >
-          <Save className="w-3 h-3" />
+    <Tile
+      span={span}
+      title={heading}
+      count={empty ? undefined : decisions.length}
+      meta={empty ? undefined : (
+        <Hint content={t.athena.decision_log_persisted_tooltip} focusable>
           <span>{t.athena.decision_log_persisted_badge}</span>
-        </span>
-      </header>
-      <ol className="relative space-y-3 pl-4">
-        <span
-          aria-hidden
-          className="absolute left-1.5 top-1.5 bottom-1.5 w-px bg-fuchsia-500/20"
-        />
+        </Hint>
+      )}
+      actions={actions}
+      footer={footer}
+      state={empty ? 'empty' : undefined}
+      empty={{ title: t.athena.decision_log_empty }}
+      testId="companion-decision-log-widget"
+    >
+      <Rows count={decisions.length} cap={CAP} label={heading} empty={{ title: t.athena.decision_log_empty }}>
         {decisions.map((d, i) => (
-          <li
+          <ListRow
             key={`${d.label}-${i}`}
-            className="relative space-y-1"
-            data-decision-index={i}
-          >
-            <span
-              aria-hidden
-              className="absolute -left-[14px] top-1 w-2 h-2 rounded-full bg-fuchsia-500/45 ring-2 ring-fuchsia-500/20"
-            />
-            <div className="flex items-center gap-1.5 typo-caption text-foreground/85">
-              <span className="font-medium">{d.label}</span>
-              <ChevronRight className="w-3 h-3 text-foreground shrink-0" />
-              <span className="text-foreground/95">{d.choice}</span>
-              {d.timestamp && (
-                <span className="text-foreground typo-caption ml-auto">
-                  {prettyTime(d.timestamp)}
-                </span>
-              )}
-            </div>
-            {d.rationale && (
-              <div className="flex items-baseline gap-1.5 typo-caption text-foreground">
-                <GitBranch className="w-3 h-3 text-foreground shrink-0" />
-                <span className="leading-relaxed">{d.rationale}</span>
-              </div>
+            size="s"
+            name={(
+              <span data-decision-index={i}>
+                <span>{d.label}</span>
+                <span className="k-quiet k-regular" aria-hidden="true">{' › '}</span>
+                <span className="k-regular">{d.choice}</span>
+              </span>
             )}
-          </li>
+            meta={d.rationale ? <Hint content={d.rationale}><span className="k-ellipsis">{d.rationale}</span></Hint> : undefined}
+            time={d.timestamp ? prettyTime(d.timestamp) : undefined}
+          />
         ))}
-      </ol>
-    </div>
+      </Rows>
+    </Tile>
   );
 }
 
 /**
- * Cheap timestamp render — full ISO is too noisy in a chip; we keep
- * just hh:mm if today, otherwise the full date. The widget doesn't
+ * Cheap timestamp render - full ISO is too noisy in a row; we keep
+ * just hh:mm if today, otherwise the date. The widget doesn't
  * own a richer relative-time formatter, and the chat scroll already
  * implies recency.
  */

@@ -32,7 +32,8 @@ describe('DecisionLogWidget', () => {
     expect(screen.getByText('Sonnet')).toBeInTheDocument();
     expect(screen.getByText('Use case split')).toBeInTheDocument();
     expect(screen.getByText('Three')).toBeInTheDocument();
-    expect(screen.getByText(/Drafts need capability/)).toBeInTheDocument();
+    // The rationale shows in the row and again as its Hint's always-present description.
+    expect(screen.getAllByText(/Drafts need capability/)[0]).toBeInTheDocument();
   });
 
   it('shows the persisted "Saved" badge in the header', () => {

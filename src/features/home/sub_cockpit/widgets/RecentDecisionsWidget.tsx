@@ -1,33 +1,30 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ChevronRight, ScrollText } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import {
   companionListDesignDecisions,
   type CompanionDesignDecision,
 } from '@/api/companion';
-import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
-import { RevealItem } from '@/features/shared/components/display/RevealItem';
-import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { ChipRow, KitButton, Tile } from '@/features/shared/components/kit';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
 /**
- * Compact "Athena recently decided…" chip strip. Lighter cousin of
+ * Compact "Athena recently decided..." chip strip. Lighter cousin of
  * `DecisionLogWidget`: shows 1-5 of the most recent saved decisions
- * for a given `persona_context` as small chips (no rationale, no
- * timeline). Intended for inline "by the way, you decided X" surface
- * — Athena emits this on `show_recent_decisions { persona_context }`
- * when she wants to remind the user of prior choices without
- * derailing the conversation into a full audit-trail render.
+ * for a given `persona_context` as kit chips "label > choice" (no rationale,
+ * no timeline). Athena emits this on `show_recent_decisions { persona_context }`
+ * when she wants to remind the user of prior choices without derailing the
+ * conversation into a full audit-trail render.
  *
  * Renders nothing when the fetch comes back EMPTY; this is a softer
  * surface than the full DecisionLogWidget and shouldn't hold a slot
  * with an empty state. A fetch that THREW is a different story: it used
  * to unmount the same way, so a down `companion_list_design_decisions`
- * was indistinguishable from "Athena has decided nothing here". It now
- * keeps its slot and offers a retry.
+ * was indistinguishable from "Athena has decided nothing here". It keeps
+ * its slot as an error Tile with a retry.
  */
-export function RecentDecisionsWidget({ config, title }: CockpitWidgetProps) {
+export function RecentDecisionsWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
   const { t } = useTranslation();
   const personaContext =
     typeof config?.persona_context === 'string'
@@ -69,69 +66,43 @@ export function RecentDecisionsWidget({ config, title }: CockpitWidgetProps) {
     };
   }, [personaContext, limit, attempt]);
 
-  // One-shot chip cascade, latched for the widget's lifetime (no resetKey) —
-  // chips already on screen never replay their entrance.
-  const enter = useRevealTracker();
-
-  // Empty still unmounts — that is the soft-surface contract. A FAILURE does
+  // Empty still unmounts - that is the soft-surface contract. A FAILURE does
   // not: it keeps the slot so the user knows a read did not happen.
   if (!loading && !error && rows.length === 0) {
     return null;
   }
 
+  const heading = title || t.athena.recent_decisions_title;
+  const message = t.athena.recent_decisions_error;
   return (
-    <div
-      className="rounded-card border border-fuchsia-500/25 bg-fuchsia-500/[0.03] px-3 py-2 space-y-1.5"
-      data-testid="companion-recent-decisions-widget"
+    <Tile
+      span={span}
+      title={heading}
+      count={!loading && !error ? rows.length : undefined}
+      actions={actions}
+      footer={footer}
+      testId="companion-recent-decisions-widget"
+      error={error ? {
+        title: <span role="alert">{message}</span>,
+        markLabel: message,
+        action: <KitButton onClick={retry}>{t.common.retry}</KitButton>,
+      } : undefined}
     >
-      <header className="flex items-baseline gap-1.5 typo-caption text-fuchsia-300/75">
-        <ScrollText className="w-3 h-3" />
-        <span className="font-medium">
-          {title || t.athena.recent_decisions_title}
-        </span>
-        {personaContext && (
-          <span className="text-foreground truncate" title={personaContext}>
-            · {personaContext}
-          </span>
-        )}
-      </header>
-      {error ? (
-        <div className="pl-4">
-          <InlineErrorBanner
-            compact
-            message={t.athena.recent_decisions_error}
-            onRetry={retry}
-          />
-        </div>
-      ) : loading ? (
-        <div className="flex flex-wrap gap-1.5 pl-4" aria-hidden="true">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <span
-              key={i}
-              className="inline-block h-5 w-20 rounded-interactive bg-foreground/[0.04] animate-fade-in"
-              style={{ animationDelay: `${120 + i * 35}ms` }}
-            />
-          ))}
-        </div>
-      ) : (
-        <ul className="flex flex-wrap gap-1.5 pl-4">
-          {rows.map((d, index) => (
-            <li key={d.id}>
-              <RevealItem
-                revealId={d.id}
-                order={index}
-                hasEntered={enter.hasEntered}
-                markEntered={enter.markEntered}
-                className="inline-flex items-baseline gap-1 rounded-interactive border border-foreground/10 bg-foreground/[0.04] px-2 py-0.5 typo-caption"
-              >
-                <span className="text-foreground">{d.label}</span>
-                <ChevronRight className="w-2.5 h-2.5 text-foreground shrink-0" />
-                <span className="text-foreground/85">{d.choice}</span>
-              </RevealItem>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+      <ChipRow
+        label={heading}
+        emptyLabel=""
+        state={loading ? 'loading' : undefined}
+        chips={rows.map((d) => ({
+          id: d.id,
+          label: (
+            <span className="inline-flex items-center gap-1">
+              <span className="k-quiet">{d.label}</span>
+              <ChevronRight className="w-3 h-3 shrink-0 k-quiet" aria-hidden="true" />
+              <span>{d.choice}</span>
+            </span>
+          ),
+        }))}
+      />
+    </Tile>
   );
 }
