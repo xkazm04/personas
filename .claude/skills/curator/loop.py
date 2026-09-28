@@ -572,7 +572,13 @@ LANE_SENTENCE = {
 # --------------------------------------------------------------------------
 
 
-def take_next(c: sqlite3.Connection, root: pathlib.Path, skills: dict, dry: bool) -> dict | None:
+def take_next(
+    c: sqlite3.Connection,
+    root: pathlib.Path,
+    skills: dict,
+    dry: bool,
+    lanes: set[str] | None = None,
+) -> dict | None:
     """Decide AND claim, in the app's own order. `None` = nothing to take.
 
     The claim is a compare-and-set inside an IMMEDIATE transaction, so if the app
@@ -580,12 +586,16 @@ def take_next(c: sqlite3.Connection, root: pathlib.Path, skills: dict, dry: bool
     zero affected rows.
     """
     stamp = now()
+    # `None` means every lane, which is the loop's normal shape. A filter never
+    # REORDERS the ladder - it only skips rungs - so a restricted run still takes
+    # the operator's queue before her plan.
+    want = (lambda name: lanes is None or name in lanes)
 
     # 1. The operator's queue, oldest first, always.
     row = c.execute(
         "SELECT * FROM curator_request WHERE state = 'queued' ORDER BY created_at ASC, id ASC LIMIT 1"
     ).fetchone()
-    if row:
+    if row and want("queue"):
         why = vet_autonomous(skills, row["skill"], row["argument"])
         # The operator's lane may name an undocumented skill - a request IS an
         # explicit invocation somebody typed - so only a MISSING skill refuses.
@@ -618,7 +628,7 @@ def take_next(c: sqlite3.Connection, root: pathlib.Path, skills: dict, dry: bool
 
     # 2. Her own plan.
     engines = [e for e, s in PLAN_ROUTES.items() if vet_autonomous(skills, s, "probe") is None]
-    if engines:
+    if engines and want("plan"):
         ph = ",".join("?" for _ in engines)
         row = c.execute(
             f"SELECT i.* FROM curator_plan_item i JOIN curator_plan_run r ON r.id = i.plan_run_id "
@@ -655,7 +665,7 @@ def take_next(c: sqlite3.Connection, root: pathlib.Path, skills: dict, dry: bool
     # 3. The method lane - widen what she can dispatch. Eligibility is what an
     #    impediment HOLDS; the rank is what closing it would free.
     head = git_head(root)
-    if head:
+    if head and want("method"):
         mark = setting(c, "curator_method_mark")
         for imp in impediments(c, skills):
             if not imp["self_fixable"] or imp["blocks"] == 0:
@@ -675,6 +685,8 @@ def take_next(c: sqlite3.Connection, root: pathlib.Path, skills: dict, dry: bool
             }
 
     # 4. The standing lane's two rungs.
+    if not want("refill"):
+        return None
     lane = harvest_lane(root)
     rung = standing_rung(lane, setting(c, "curator_harvest_drain_mark"), setting(c, "curator_harvest_refill_mark"))
     if rung:
@@ -1192,6 +1204,8 @@ def main() -> int:
     p.add_argument("--dry", action="store_true")
     p.add_argument("--allow-stale", action="store_true", help="dispatch even from a stale corpus")
     p.add_argument("--fetch", action="store_true", help="git fetch before measuring the lag")
+    p.add_argument("--lane", help="restrict the ladder to these lanes, comma separated "
+                                  "(queue,plan,method,refill); the order never changes")
     p = sub.add_parser("work")
     p.add_argument("--claim", required=True)
     p.add_argument("--timeout-min", type=int, default=45)
@@ -1222,6 +1236,7 @@ def main() -> int:
             "plan": plan_summary(c),
             "queue_file": {k: lane[k] for k in ("exists", "queued", "fingerprint")},
             "next": take_next(c, root, skills, dry=True),
+            "lanes": sorted(LANE_SENTENCE),
             "stops_her": "no daily ceiling is declared; the hard stop is the subscription's usage limit",
         }, indent=2, default=str))
         return 0
@@ -1252,7 +1267,10 @@ def main() -> int:
                 "corpus": fresh,
             }, indent=2))
             return 0
-        claim = take_next(c, root, skills, dry=a.dry)
+        lanes = {x.strip() for x in a.lane.split(",")} if a.lane else None
+        if lanes and not lanes <= set(LANE_SENTENCE):
+            die(f"unknown lane(s): {sorted(lanes - set(LANE_SENTENCE))}; known: {sorted(LANE_SENTENCE)}")
+        claim = take_next(c, root, skills, dry=a.dry, lanes=lanes)
         if claim and not claim.get("declined") and not a.dry:
             claim["head"] = claim.get("head") or git_head(root)
             claim["dispatch_id"] = record_dispatch(c, claim, root)

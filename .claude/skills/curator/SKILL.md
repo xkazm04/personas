@@ -23,6 +23,12 @@ description: Drive Curator's work loop from a terminal instead of from the Perso
 /curator release               put a stranded claim back after an aborted pass
 ```
 
+`next` takes `--lane queue,plan,method,refill` to drive part of the ladder. The filter
+only SKIPS rungs, never reorders them, so a restricted run still drains the operator's
+queue before her plan. Two situations need it and both have happened: the app is up and
+owns the standing lane, or her plan is still the one projected from an older checkout and
+only the queue file is current.
+
 There is **no bare worker form**: every pass goes through the ladder, because a run that
 picked its own subject would be a person using her credentials rather than her loop.
 
@@ -44,7 +50,8 @@ precisely so this driver and a running app cannot take the same item, and a hand
    safe on the *claimed* lanes (the compare-and-set sees to that), but the standing lane's
    two rungs both write `librarian/harvest/queue.md`, and two harvest passes in one checkout
    is the single-writer violation harvest's own law names. If the app is up, drive the plan
-   and queue lanes only, or switch her off in the app first, and say which you did.
+   and queue lanes only (`next --lane queue,plan`), or switch her off in the app first, and
+   say which you did.
 4. **`corpus` and `corpus_is_stale`** - how far the checkout the plan was ranked from is
    from its own origin. See **The corpus brake** below. This is the first thing to read,
    because it decides whether any pass is worth paying for.
@@ -85,6 +92,13 @@ the operator's: the checkout needs its local commits pushed and origin merged in
 push on their behalf. `--allow-stale` exists because an unreachable origin must not make the
 loop unusable, and `--fetch` measures against a freshly fetched origin rather than a stale
 remote-tracking ref; neither is a reason to run a loop you already know will idle.
+
+**Merging is not the whole fix.** Her plan is a projection the APP wrote, so a fresh
+checkout does not refresh it - only `curator_plan_refresh` does, and that is an app command.
+After a large merge the plan lane is still ranked from the old corpus until the app
+re-projects, while the standing lane is not, because it reads the queue file the merge just
+brought current. So with the app closed, the honest move after a merge is
+`next --lane refill` - and saying that is what you did.
 
 ## One pass, step by step
 
