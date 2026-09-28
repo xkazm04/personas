@@ -3640,7 +3640,11 @@ fn improve_period_block(
                 .map(str::trim)
                 .filter(|t| !t.is_empty());
             match last.and_then(|t| attention_decide::age_phrase(&now, t)) {
-                Some(age) => s.push_str(&format!("- {}: last dispatched {age}\n", c.title)),
+                Some(age) => s.push_str(&format!(
+                    "- {}: last dispatched {age}{}\n",
+                    c.title,
+                    last_dispatch_outcome_note(pool, &rows, &c.id)
+                )),
                 None => s.push_str(&format!(
                     "- {}: never dispatched{}\n",
                     c.title,
@@ -3697,6 +3701,44 @@ fn improve_period_block(
     }
     s.push('\n');
     s
+}
+
+/// How a charter's newest dispatch ENDED, as a suffix for the improve brief's
+/// "last dispatched <age>" line (96c0f9d3) — empty when it finished or is
+/// still running.
+///
+/// The age alone counts a dead attempt exactly like a clean one, so a
+/// self-review read "last dispatched 8h 41m ago" about a run that stalled and
+/// was swept, and could not tell unfinished work from done work. The decide
+/// lane already follows the worker ([`resolve_last_dispatch`]); this reuses it
+/// on the rows the period block already holds, so it costs no ledger read.
+/// Only a failure or a lost record is worth the words.
+fn last_dispatch_outcome_note(
+    pool: &DbPool,
+    rows: &[crate::db::models::AttentionLedgerEntry],
+    charter_id: &str,
+) -> String {
+    let Some(row) = rows.iter().find(|r| {
+        r.responsibility_id.as_deref() == Some(charter_id)
+            && r.verdict != "refused"
+            && r.stats_json.is_some()
+    }) else {
+        return String::new();
+    };
+    match resolve_last_dispatch(pool, row) {
+        Some(d) if d.state == attention_decide::DISPATCH_FAILED => format!(
+            " — that dispatch FAILED{}; its work is unfinished, not done",
+            d.summary
+                .as_deref()
+                .filter(|x| !x.trim().is_empty())
+                .map(|x| format!(" ({x})"))
+                .unwrap_or_default()
+        ),
+        Some(d) if d.state == attention_decide::DISPATCH_UNKNOWN => {
+            " — how that dispatch ended is UNKNOWN (its worker record is gone)".to_string()
+        }
+        _ => String::new(),
+    }
 }
 
 /// How many charters the improve brief period block names. More than this and
@@ -8927,6 +8969,71 @@ mod attention_tests {
             "{header}"
         );
         assert!(header.contains("UNOBSERVED"), "{header}");
+    }
+
+    /// 96c0f9d3: the self-review sees how a charter's last dispatch ENDED, the
+    /// way the decide lane does. An age alone reads a dead attempt as done.
+    #[test]
+    fn a_failed_last_dispatch_renders_as_failed_in_the_improve_brief() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let failed_id = seed_charter(&pool, "p1", "Carry decisions", &one_outcome());
+        let clean_id = seed_charter(&pool, "p1", "Keep docs honest", &one_outcome());
+        decide_row(
+            &pool,
+            "p1",
+            &failed_id,
+            serde_json::json!({ "charterId": failed_id, "executionId": "exec-dead" }),
+        );
+        decide_row(
+            &pool,
+            "p1",
+            &clean_id,
+            serde_json::json!({ "charterId": clean_id, "executionId": "exec-done" }),
+        );
+        pool.get()?.execute(
+            "INSERT INTO persona_executions (id, persona_id, status, error_message, created_at)
+             VALUES ('exec-dead', 'p1', 'failed', 'Engine safety ceiling exceeded (20m)',
+                     datetime('now')),
+                    ('exec-done', 'p1', 'completed', NULL, datetime('now'))",
+            [],
+        )?;
+        let dispatched = |id: &str, title: &str| {
+            let mut c = charter_fixture(id);
+            c.title = title.into();
+            c.spec.pacing = Some(personas_core::models::ResponsibilityPacing {
+                last_dispatched_at: Some(
+                    (chrono::Utc::now() - chrono::Duration::hours(8)).to_rfc3339(),
+                ),
+                ..Default::default()
+            });
+            c
+        };
+        let failed = dispatched(&failed_id, "Carry decisions");
+        let clean = dispatched(&clean_id, "Keep docs honest");
+
+        let brief = build_improve_task(&pool, "p1", &[&failed, &clean]);
+        let line = |title: &str| {
+            brief
+                .lines()
+                .find(|l| l.starts_with(&format!("- {title}:")))
+                .unwrap_or_default()
+                .to_string()
+        };
+        let failed_line = line("Carry decisions");
+        assert!(failed_line.contains("last dispatched 8h 0m ago"), "{brief}");
+        assert!(failed_line.contains("FAILED"), "{failed_line}");
+        assert!(
+            failed_line.contains("Engine safety ceiling exceeded (20m)"),
+            "{failed_line}"
+        );
+        let clean_line = line("Keep docs honest");
+        assert!(clean_line.contains("last dispatched 8h 0m ago"), "{brief}");
+        assert!(
+            !clean_line.contains("FAILED") && !clean_line.contains("UNKNOWN"),
+            "a finished dispatch carries no failure note: {clean_line}"
+        );
+        Ok(())
     }
 
     #[test]
