@@ -67,8 +67,9 @@ describe('UseCaseSetWidget', () => {
         }}
       />,
     );
-    const labels = Array.from(container.querySelectorAll('li')).map(
-      (li) => li.textContent ?? '',
+    // One kit ListRow per use case, in render order.
+    const labels = Array.from(container.querySelectorAll('[data-kit="ListRow"]')).map(
+      (row) => row.textContent ?? '',
     );
     // Sequence must put golden first, then variant, then out_of_scope
     const goldIdx = labels.findIndex((s) => s.includes('GoldA'));

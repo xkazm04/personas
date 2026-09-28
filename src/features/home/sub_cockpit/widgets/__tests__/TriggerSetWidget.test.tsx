@@ -25,7 +25,8 @@ describe('TriggerSetWidget', () => {
     );
     expect(screen.getByText('New Slack message in #ops')).toBeInTheDocument();
     expect(screen.getByText('Slack webhook')).toBeInTheDocument();
-    expect(screen.getByText(/Body contains "incident"/)).toBeInTheDocument();
+    // The condition is the row's meta and also the full wording in its Hint.
+    expect(screen.getAllByText(/Body contains "incident"/).length).toBeGreaterThan(0);
   });
 
   it('shows optional grain + idempotency notes when present', () => {
@@ -44,8 +45,8 @@ describe('TriggerSetWidget', () => {
         }}
       />,
     );
-    expect(screen.getByText(/One message → one triage response/)).toBeInTheDocument();
-    expect(screen.getByText(/dedupe on Slack ts/)).toBeInTheDocument();
+    expect(screen.getAllByText(/One message → one triage response/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/dedupe on Slack ts/).length).toBeGreaterThan(0);
   });
 
   it('drops trigger rows missing a label', () => {
@@ -60,8 +61,8 @@ describe('TriggerSetWidget', () => {
       />,
     );
     expect(screen.getByText('Kept')).toBeInTheDocument();
-    // The empty-label row is filtered, so only one rendered li
-    const items = document.querySelectorAll('li');
+    // The empty-label row is filtered, so only one rendered row
+    const items = document.querySelectorAll('[data-kit="ListRow"]');
     expect(items.length).toBe(1);
   });
 });
