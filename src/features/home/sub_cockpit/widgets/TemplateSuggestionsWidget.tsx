@@ -111,7 +111,7 @@ export function TemplateSuggestionsWidget({ config, title, span, actions, footer
               size="l"
               name={m.name}
               meta={<Meta parts={[m.category, m.snippet]} />}
-              figures={m.connectors.length > 0 ? <span className="typo-caption k-quiet"><Meta parts={m.connectors} /></span> : undefined}
+              figures={m.connectors.length > 0 ? <span className="typo-caption k-quiet inline-flex items-center gap-1.5 whitespace-nowrap"><Meta parts={m.connectors} /></span> : undefined}
               onPress={() => openTemplate(m.id)}
               testId={`template-suggestion-${m.id}`}
             />
