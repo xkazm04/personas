@@ -775,6 +775,105 @@ def corpus_freshness(root: pathlib.Path, fetch: bool = False) -> dict:
 STALE_CORPUS_BEHIND = 50
 
 
+def projection_freshness(c: sqlite3.Connection, root: pathlib.Path) -> dict:
+    """Whether her standing plan was projected from the checkout as it stands.
+
+    **The SECOND staleness axis, and it is not the corpus one.** A checkout can be
+    perfectly in step with origin while the plan ranked from it is hundreds of
+    commits old, because a projection is a snapshot the app wrote at a moment. Both
+    have to be fresh before the plan lane is worth a dispatch, and conflating them
+    is how a merge looked like a fix: measured 2026-09-28, merging brought the
+    checkout to 0 behind while the standing plan was still the one projected at
+    `bd295204`, 256 commits earlier.
+
+    `behind` is `None` when either sha is unknown - never `0`, which would read as
+    "projected from exactly this commit".
+    """
+    row = c.execute(
+        "SELECT id, registry_head_sha, created_at FROM curator_plan_run "
+        " WHERE superseded_by IS NULL"
+    ).fetchone()
+    head = git_head(root)
+    out = {
+        "plan_run": row["id"][:8] if row else None,
+        "projected_at": row["registry_head_sha"] if row else None,
+        "projected_when": row["created_at"] if row else None,
+        "head": head,
+        "behind": None,
+        "matches_head": None,
+    }
+    if not row or not row["registry_head_sha"] or not head:
+        return out
+    out["matches_head"] = row["registry_head_sha"].startswith(head) or head.startswith(
+        row["registry_head_sha"]
+    )
+    if out["matches_head"]:
+        out["behind"] = 0
+        return out
+    try:
+        r = subprocess.run(
+            ["git", "-C", str(root), "rev-list", "--count",
+             f"{row['registry_head_sha']}..HEAD"],
+            capture_output=True, text=True, timeout=60,
+        )
+        if r.returncode == 0 and r.stdout.strip().isdigit():
+            out["behind"] = int(r.stdout.strip())
+    except Exception:
+        pass
+    return out
+
+
+# Above this many commits between the projection and the checkout, the plan lane
+# is ranking subjects from a corpus that has moved under it. Same threshold as
+# the corpus brake, for the same reason.
+STALE_PROJECTION_BEHIND = 50
+
+
+def project_binary(root_repo: pathlib.Path) -> pathlib.Path | None:
+    """The headless re-projection binary, release preferred over debug."""
+    exe = "personas-curator-project" + (".exe" if sys.platform == "win32" else "")
+    for profile in ("release", "debug"):
+        cand = root_repo / "src-tauri" / "target" / profile / exe
+        if cand.exists():
+            return cand
+    return None
+
+
+def reproject(repo: pathlib.Path) -> dict:
+    """Re-project her plan without the app.
+
+    Runs `personas-curator-project`, which is the app's OWN instrument and
+    projection behind a `main` - not a re-implementation. A Python port of the
+    1,300-line scoring function would be a second source of truth for the one
+    number her whole loop is ranked on, which is the thing not to build.
+    """
+    exe = project_binary(repo)
+    if not exe:
+        return {
+            "ok": False,
+            "error": "personas-curator-project is not built; run: cargo build --release "
+                     "--bin personas-curator-project --features desktop "
+                     "--manifest-path src-tauri/Cargo.toml",
+        }
+    try:
+        # It spawns up to four node processes over the whole registry; eleven
+        # seconds cold is normal and a cold cache on a big corpus is slower.
+        r = subprocess.run([str(exe)], capture_output=True, text=True, timeout=900)
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "error": "the re-projection timed out after 15 minutes"}
+    try:
+        out = json.loads(r.stdout.strip() or "{}")
+    except json.JSONDecodeError:
+        return {"ok": False, "error": f"unreadable output: {r.stdout[-400:]}",
+                "stderr": r.stderr[-400:]}
+    if r.stderr.strip():
+        # The binary reports unmatched clauses and arithmetic drift on stderr.
+        # Carried, not swallowed: a projection missing a clause still lands, and
+        # the operator is the one who needs to know the matcher drifted.
+        out["notes"] = r.stderr.strip().splitlines()[-12:]
+    return out
+
+
 def app_running() -> bool | None:
     """Whether the Personas app is also driving. `None` when it cannot be told.
 
@@ -1223,6 +1322,7 @@ def main() -> int:
     sub.add_parser("status")
     sub.add_parser("gaps")
     sub.add_parser("growth")
+    sub.add_parser("project")
     p = sub.add_parser("next")
     p.add_argument("--dry", action="store_true")
     p.add_argument("--allow-stale", action="store_true", help="dispatch even from a stale corpus")
@@ -1257,10 +1357,13 @@ def main() -> int:
             return 0
         lane = harvest_lane(root)
         fresh = corpus_freshness(root)
+        proj = projection_freshness(c, root)
         print(json.dumps({
             "ok": True, "registry": str(root), "head": git_head(root),
             "corpus": fresh,
             "corpus_is_stale": (fresh["behind"] or 0) > STALE_CORPUS_BEHIND,
+            "projection": proj,
+            "projection_is_stale": (proj["behind"] or 0) > STALE_PROJECTION_BEHIND,
             "app_running": app_running(),
             "brakes": brakes(c),
             "plan": plan_summary(c),
@@ -1285,6 +1388,27 @@ def main() -> int:
         # handled, and they come back idled having paid full price. Overridable,
         # because an unreachable origin must not make the loop unusable - but
         # never silent, because silence is what made it cost 43 dispatches.
+        # The projection axis, checked before the corpus one because it is the
+        # one a merge does NOT fix and the one with a remedy this driver owns.
+        proj = projection_freshness(c, root)
+        wants_plan = not a.lane or "plan" in {x.strip() for x in a.lane.split(",")}
+        if (
+            not a.dry
+            and not a.allow_stale
+            and wants_plan
+            and (proj["behind"] or 0) > STALE_PROJECTION_BEHIND
+        ):
+            print(json.dumps({
+                "ok": True, "claim": None,
+                "held_by": [
+                    f"her standing plan was projected at {proj['projected_at']}, "
+                    f"{proj['behind']} commits behind this checkout, so the plan lane would rank "
+                    "subjects from a corpus that has moved under it - run `loop.py project` "
+                    "first, or --lane refill to drive a lane that reads the tree directly"
+                ],
+                "projection": proj,
+            }, indent=2))
+            return 0
         fresh = corpus_freshness(root, fetch=a.fetch)
         if not a.dry and not a.allow_stale and (fresh["behind"] or 0) > STALE_CORPUS_BEHIND:
             print(json.dumps({
@@ -1315,6 +1439,11 @@ def main() -> int:
     if a.cmd == "growth":
         print(json.dumps({"ok": True, "sample": take_growth(c, root)}, indent=2, default=str))
         return 0
+    if a.cmd == "project":
+        # `parents[3]` from `.claude/skills/curator/loop.py` is the repo root.
+        out = reproject(pathlib.Path(__file__).resolve().parents[3])
+        print(json.dumps(out, indent=2, default=str))
+        return 0 if out.get("ok") else 1
 
     claim = json.loads(pathlib.Path(a.claim).read_text(encoding="utf-8"))
     # `next` prints `{"ok":…, "claim":{…}}` and every other subcommand wants the

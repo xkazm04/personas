@@ -19,6 +19,7 @@ description: Drive Curator's work loop from a terminal instead of from the Perso
 /curator run                   ONE pass: claim the next work, run its worker, settle it
 /curator loop [N]              passes until N, or until a brake or the usage limit stops her
 /curator gaps                  what blocks her, what her running cost, whether the corpus grew
+/curator project               re-project her plan from the current checkout, no app needed
 /curator growth                take one growth sample from the registry's own instruments
 /curator release               put a stranded claim back after an aborted pass
 ```
@@ -93,12 +94,32 @@ push on their behalf. `--allow-stale` exists because an unreachable origin must 
 loop unusable, and `--fetch` measures against a freshly fetched origin rather than a stale
 remote-tracking ref; neither is a reason to run a loop you already know will idle.
 
-**Merging is not the whole fix.** Her plan is a projection the APP wrote, so a fresh
-checkout does not refresh it - only `curator_plan_refresh` does, and that is an app command.
-After a large merge the plan lane is still ranked from the old corpus until the app
-re-projects, while the standing lane is not, because it reads the queue file the merge just
-brought current. So with the app closed, the honest move after a merge is
-`next --lane refill` - and saying that is what you did.
+**There are TWO staleness axes and a merge only fixes one.** `status` reports both:
+
+| | What it compares | Fixed by |
+|---|---|---|
+| `corpus` | this checkout vs its origin | merging |
+| `projection` | the plan's `registry_head_sha` vs this checkout's HEAD | re-projecting |
+
+A checkout can sit at 0 behind while the plan ranked from it is hundreds of commits old,
+because a projection is a snapshot taken at a moment. Measured 2026-09-28: the merge took
+the corpus to 0 behind and left the projection 258 behind, and the plan lane was still not
+worth a dispatch. `next` refuses on EITHER axis, and the projection message names the
+remedy.
+
+**`loop.py project` is that remedy, and it needs no app.** It runs
+`personas-curator-project`, a binary in this repo that wraps the app's OWN instrument and
+projection - not a re-implementation, because a second copy of the 1,300-line scoring
+function would be a second source of truth for the number her whole loop is ranked on. It
+takes about 80 seconds. Build it once:
+
+```bash
+cargo build --release --bin personas-curator-project --features desktop   --manifest-path src-tauri/Cargo.toml
+```
+
+Re-project after any merge that moves the registry, then read `status` again: both axes
+should say 0. The standing lane never needed this - it reads the queue file directly - so
+`--lane refill` stays available even when the projection is stale.
 
 ## One pass, step by step
 
