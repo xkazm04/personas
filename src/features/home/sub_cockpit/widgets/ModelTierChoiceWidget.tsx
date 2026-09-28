@@ -62,7 +62,7 @@ export function ModelTierChoiceWidget({ config, title, span, actions, footer }: 
                 ? { tone: 'success', glyph: 'solid', label: `${label}, ${a.model_tier_recommended_badge}` }
                 : { tone: 'neutral', glyph: 'hollow', label }}
               meta={<Hint content={entry.rationale}><span className="k-ellipsis">{entry.rationale}</span></Hint>}
-              figures={isReco ? <span className="k-fig typo-data k-regular k-toned t-success k-cap">{a.model_tier_recommended_badge}</span> : undefined}
+              figures={isReco ? <span className="k-fig typo-data k-regular k-toned t-success"><span className="k-cap inline-block">{a.model_tier_recommended_badge}</span></span> : undefined}
             />
           );
         })}

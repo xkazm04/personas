@@ -56,7 +56,7 @@ export function UseCaseSetWidget({ config, title, span, actions, footer }: Cockp
   const ordered = [...useCases].sort((a, b) => rank(a.role) - rank(b.role));
   const chips = ROLES.map(({ role, tone }) => ({
     id: role,
-    label: <span className="k-cap">{roleLabel[role]}</span>,
+    label: <span className="k-cap inline-block">{roleLabel[role]}</span>,
     count: useCases.filter((u) => roleOf(u.role) === role).length,
     tone,
     glyph: 'soft' as const,

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Hint, ListRow, Meta, Rows, Tile } from '@/features/shared/components/kit';
+import { Hint, ListRow, Rows, Tile } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
@@ -64,7 +64,7 @@ export function TriggerSetWidget({ config, title, span, actions, footer }: Cockp
               name={tr.label}
               meta={
                 <Hint content={detail}>
-                  <span className="k-ellipsis"><Meta parts={[tr.condition, tr.grain]} /></span>
+                  <span className="k-ellipsis">{[tr.condition, tr.grain].filter(Boolean).join(' · ')}</span>
                 </Hint>
               }
               figures={tr.source ? <span className="k-fig typo-data k-regular k-quiet">{tr.source}</span> : undefined}

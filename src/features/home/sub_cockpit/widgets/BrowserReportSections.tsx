@@ -1,5 +1,4 @@
-import type { ReactNode } from 'react';
-import { Hint, ListRow, Meta, Rows, Section, type Tone } from '@/features/shared/components/kit';
+import { Hint, ListRow, Rows, Section, type Tone } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 
@@ -19,8 +18,8 @@ const RESULT_TONE: Record<string, Tone> = { pass: 'success', fail: 'error', warn
 const SEVERITY_TONE: Record<string, Tone> = { critical: 'error', high: 'error', medium: 'warning', low: 'neutral' };
 
 /** A meta line that may truncate: its full text in the kit Hint, never cut silently. */
-function Clipped({ text, children }: { text: string; children?: ReactNode }) {
-  return <Hint content={text}><span className="k-ellipsis">{children ?? text}</span></Hint>;
+function Clipped({ text }: { text: string }) {
+  return <Hint content={text}><span className="k-ellipsis">{text}</span></Hint>;
 }
 
 /**
@@ -66,7 +65,7 @@ export function BrowserReportSections({ steps, defects, consoleErrors, securityN
                   size="s"
                   name={d.title}
                   mark={{ tone: SEVERITY_TONE[sev] ?? 'neutral', glyph: sev === 'low' ? 'hollow' : 'solid', label: tokenLabel(t, 'severity', sev) }}
-                  meta={why ? <Clipped text={why}><Meta parts={[d.detail, d.fix]} /></Clipped> : undefined}
+                  meta={why ? <Clipped text={why} /> : undefined}
                 />
               );
             })}

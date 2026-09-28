@@ -51,19 +51,17 @@ export function ObservabilityPlanWidget({ config, title, span, actions, footer }
   if (errorHandling) {
     if (errorHandling.triggers.length > 0) {
       items.push({
-        k: a.observability_plan_error_path,
-        draw: <Dot tone="warning" glyph="soft" />,
-        v: <span data-section="error-handling"><Meta parts={errorHandling.triggers.map((trig, i) => <span key={i}>{trig}</span>)} /></span>,
+        k: <Keyed tone="warning" label={a.observability_plan_error_path} />,
+        v: <span className="flex flex-wrap gap-x-2" data-section="error-handling"><Meta parts={errorHandling.triggers.map((trig, i) => <span key={i}>{trig}</span>)} /></span>,
       });
     }
     if (errorHandling.escalation) items.push({ k: a.observability_plan_escalation, v: errorHandling.escalation });
   }
   if (successMetric) {
     items.push({
-      k: a.observability_plan_success_metric,
-      draw: <Dot tone="success" glyph="soft" />,
+      k: <Keyed tone="success" label={a.observability_plan_success_metric} />,
       v: (
-        <span data-section="success-metric">
+        <span className="flex flex-wrap gap-x-2" data-section="success-metric">
           <Meta parts={[<span key="k">{metricLabel(successMetric.kind, t)}</span>, successMetric.description ? <span key="d">{successMetric.description}</span> : null]} />
         </span>
       ),
@@ -84,6 +82,11 @@ export function ObservabilityPlanWidget({ config, title, span, actions, footer }
       <KeyValueGrid items={items} min="260px" />
     </Tile>
   );
+}
+
+/** A key with its half's glyph: the failure half in the warning tone, the health half in success. */
+function Keyed({ tone, label }: { tone: 'warning' | 'success'; label: string }) {
+  return <span className="inline-flex items-center gap-1.5"><Dot tone={tone} glyph="soft" />{label}</span>;
 }
 
 function metricLabel(kind: string, t: ReturnType<typeof useTranslation>['t']): string {
