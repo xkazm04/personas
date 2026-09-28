@@ -42,9 +42,16 @@ pub mod growth;
 /// input to her method lane, and the one place that decides whether a gap is
 /// hers to close or the operator's to hear about - see [`impediment`].
 mod impediment;
-pub mod instrument;
+/// The registry's instruments and the projection, now owned by
+/// `personas-engine`.
+///
+/// Moved there 2026-09-28: neither used a line of Tauri, the repo's rule is the
+/// lowest crate whose reach closes, and the headless re-projection binary needs
+/// them without the Tauri dependency tree. Re-exported under their old names, so
+/// every `super::instrument::…` and `super::projection::…` in this module
+/// resolves unchanged - the move was a move, not an API change.
+pub use personas_engine::curator::{instrument, projection};
 pub mod process;
-pub mod projection;
 /// What she announces. One event, six kinds, and her whole runtime on every
 /// one of them - see [`pulse`].
 pub mod pulse;
@@ -65,9 +72,9 @@ use crate::ipc_auth::require_auth;
 use crate::AppState;
 
 use personas_core::models::{
-    curator_lane, CuratorAttrition, CuratorConsentState, CuratorDecisionLevel,
-    CuratorGrowthReading, CuratorImpediment, CuratorPlan, CuratorPolicy, CuratorProject,
-    CuratorQuietRun, CuratorRefresh, CuratorRequest, CuratorRuntime, CuratorSkill,
+    curator_lane, CuratorAttrition, CuratorConsentState, CuratorGrowthReading, CuratorImpediment,
+    CuratorPlan, CuratorPolicy, CuratorProject, CuratorQuietRun, CuratorRefresh, CuratorRequest,
+    CuratorRuntime, CuratorSkill,
 };
 
 use crate::commands::fleet::queue::DispatchOrigin;
@@ -95,79 +102,19 @@ fn registry_root(state: &Arc<AppState>) -> Result<std::path::PathBuf, AppError> 
     registry_root_of(&state.db)
 }
 
-/// [`registry_root`] for a caller that holds a pool rather than the whole app
-/// state - her loop, which never sees an `AppState`, and the headless
-/// re-projection binary, which never sees a Tauri runtime either.
+/// The registry she curates, her policy, and the settings reader behind both -
+/// all three now owned by `personas-engine`.
 ///
-/// `pub` rather than `pub(super)` since 2026-09-28: `personas-curator-project`
-/// is a separate crate, so crate-internal visibility would have forced it to
-/// re-derive which registry is hers. Two answers to that question is exactly one
-/// too many.
-pub fn registry_root_of(db: &crate::db::DbPool) -> Result<std::path::PathBuf, AppError> {
-    crate::commands::companions::curator_registry(db)
-        .map(|r| std::path::PathBuf::from(r.clone_path))
-        .ok_or_else(|| {
-            AppError::Validation(
-                "Curator has no registry to curate: map a knowledge registry in Dev Tools > \
-                 Workspaces, and make sure its checkout is on this disk"
-                    .into(),
-            )
-        })
-}
-
-// ---------------------------------------------------------------------------
-// The policy
-// ---------------------------------------------------------------------------
-
-/// Read a setting, treating blank as ABSENT - which is how every optional
-/// setting in this file is written and cleared.
-fn setting(db: &crate::db::DbPool, key: &str) -> Option<String> {
-    crate::db::repos::core::settings::get(db, key)
-        .ok()
-        .flatten()
-        .map(|v| v.trim().to_string())
-        .filter(|v| !v.is_empty())
-}
-
-fn level(db: &crate::db::DbPool, key: &str) -> CuratorDecisionLevel {
-    setting(db, key)
-        .and_then(|v| CuratorDecisionLevel::parse(&v))
-        // A value the validator would have refused can only arrive by a
-        // hand-edited database. `L0` is the reading that claims least: always
-        // ask, never a permission nobody gave.
-        .unwrap_or(CuratorDecisionLevel::L0)
-}
-
-/// The ten settings keys, as one typed value with the defaults resolved.
+/// Moved there 2026-09-28 with `instrument` and `projection`, for the same
+/// reason: none of them touches Tauri, and the headless re-projection binary
+/// needs them without linking this crate. Re-exported so every
+/// `super::setting(…)` here and in `tick` resolves unchanged.
 ///
-/// The four caps stay `None` when unset, which is NOT zero: `None` means the
-/// operator has declared no ceiling, and a `0` would say she may never run.
-pub fn load_policy(db: &crate::db::DbPool) -> CuratorPolicy {
-    let defaults = CuratorPolicy::default();
-    CuratorPolicy {
-        level_research: level(db, settings_keys::CURATOR_LEVEL_RESEARCH),
-        level_forge: level(db, settings_keys::CURATOR_LEVEL_FORGE),
-        level_conform: level(db, settings_keys::CURATOR_LEVEL_CONFORM),
-        level_sweep: level(db, settings_keys::CURATOR_LEVEL_SWEEP),
-        level_method: level(db, settings_keys::CURATOR_LEVEL_METHOD),
-        daily_budget_usd: setting(db, settings_keys::CURATOR_DAILY_BUDGET_USD)
-            .and_then(|v| v.parse::<f64>().ok())
-            .filter(|v| v.is_finite() && *v >= 0.0),
-        daily_run_cap: setting(db, settings_keys::CURATOR_DAILY_RUN_CAP)
-            .and_then(|v| v.parse::<u32>().ok()),
-        daily_commit_cap: setting(db, settings_keys::CURATOR_DAILY_COMMIT_CAP)
-            .and_then(|v| v.parse::<u32>().ok()),
-        quiet_hours: setting(db, settings_keys::CURATOR_QUIET_HOURS),
-        backpressure_n: setting(db, settings_keys::CURATOR_BACKPRESSURE_N)
-            .and_then(|v| v.parse::<u32>().ok())
-            .filter(|v| *v >= 1)
-            .unwrap_or(defaults.backpressure_n),
-        worker_cap: setting(db, settings_keys::CURATOR_WORKER_CAP)
-            .and_then(|v| v.parse::<u32>().ok())
-            .filter(|v| *v >= 1)
-            .unwrap_or(defaults.worker_cap),
-    }
-}
+/// `registry_root_of`'s failure semantics moved with it verbatim, including the
+/// deliberate one: a failed read reports "no registry" rather than propagating,
+/// because neither answer is established by a read that did not happen and
+/// "blocked" is the one that claims least.
+pub use personas_engine::curator::policy::{load_policy, registry_root_of, setting};
 
 /// Curator's standing policy, typed, with defaults resolved.
 ///

@@ -91,6 +91,8 @@ pub mod context_rules;
 pub mod cost;
 pub mod credential_design;
 pub mod credential_negotiator;
+/// Curator's plan: the registry instruments, the projection, and her policy.
+pub mod curator;
 pub mod design;
 pub mod design_context;
 #[cfg(feature = "desktop")]

@@ -125,3 +125,9 @@ personas-db = { workspace = true, features = ["test-support"] }
 
 [lints]
 workspace = true
+
+[[bin]]
+# Re-project Curator's plan with no app running. Here rather than beside the
+# Tauri package so it compiles against core + db + engine only.
+name = "personas-curator-project"
+path = "src/bin/curator_project.rs"

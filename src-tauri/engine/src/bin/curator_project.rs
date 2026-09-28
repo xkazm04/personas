@@ -18,8 +18,10 @@
 //! been a second source of truth for the one number her whole loop is ranked on;
 //! that is the thing not to build.
 //!
-//! Same shape as `personas-daemon`: a bin in this package that opens the database
-//! directly and never constructs an `AppState` or a webview.
+//! It lives in `personas-engine` rather than beside the app, so building it pulls
+//! core + db + engine and NOT the Tauri dependency tree: seconds rather than
+//! minutes, which is the difference between a step a loop can take and one a
+//! person schedules.
 //!
 //! # Usage
 //!
@@ -35,7 +37,7 @@
 //! # Build
 //!
 //! ```text
-//! cargo build --release --bin personas-curator-project --features desktop
+//! cargo build --release -p personas-engine --bin personas-curator-project
 //! ```
 
 // A terminal binary: its output IS the interface, so the workspace-wide ban on
@@ -45,8 +47,9 @@
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use app_lib::curator_plan::{instrument, load_policy, projection, registry_root_of};
-use app_lib::db::repos::curator as repo;
+use personas_db::repos::curator as repo;
+use personas_engine::curator::policy::{load_policy, registry_root_of};
+use personas_engine::curator::{instrument, projection};
 
 const EXIT_USAGE: u8 = 2;
 const EXIT_FAILED: u8 = 1;
@@ -131,7 +134,7 @@ fn main() -> ExitCode {
         ));
     }
 
-    let pool = match app_lib::db::init_db(&app_data_dir, None) {
+    let pool = match personas_db::init_db(&app_data_dir, None) {
         Ok(p) => p,
         Err(e) => return fail(format!("could not open the database: {e}")),
     };

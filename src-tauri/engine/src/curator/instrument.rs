@@ -47,8 +47,8 @@ use personas_core::models::{CuratorSkill, CuratorSkillLane};
 use personas_core::types::CliArgs;
 use serde::Deserialize;
 
-use crate::engine::cli_process::{capture_output, CapturedOutput};
-use crate::error::AppError;
+use crate::cli_process::{capture_output, CapturedOutput};
+use personas_core::error::AppError;
 
 // ---------------------------------------------------------------------------
 // Timeouts - each a generous multiple of the measured time, because a cold
@@ -316,7 +316,7 @@ pub struct InstrumentReading {
 ///
 /// `cwd` is the checkout because every one of these scripts resolves its own
 /// paths from `process.cwd()`.
-pub(super) async fn run_node(
+pub async fn run_node(
     cwd: &Path,
     args: Vec<String>,
     timeout: Duration,
@@ -356,7 +356,7 @@ pub(super) async fn run_node(
 /// app does not understand, and projecting a plan from a default-filled
 /// structure would put invented numbers in front of a person. The tail of
 /// stderr rides along because it is usually the node stack that explains it.
-pub(super) fn parse_json<T: serde::de::DeserializeOwned>(
+pub fn parse_json<T: serde::de::DeserializeOwned>(
     out: &CapturedOutput,
     what: &str,
 ) -> Result<T, AppError> {
@@ -395,8 +395,8 @@ pub(super) fn parse_json<T: serde::de::DeserializeOwned>(
 ///
 /// Degraded rather than fatal: a corpus read without a version is still a
 /// correct read, it just cannot be cached.
-pub(super) async fn git_head_short(dir: &Path) -> Option<String> {
-    crate::engine::git_checkpoint::run_git(dir, &["rev-parse", "--short", "HEAD"])
+pub async fn git_head_short(dir: &Path) -> Option<String> {
+    crate::git_checkpoint::run_git(dir, &["rev-parse", "--short", "HEAD"])
         .await
         .ok()
         .filter(|sha| !sha.is_empty())
@@ -540,7 +540,7 @@ pub async fn read(registry_root: &Path) -> Result<Reading, AppError> {
 /// Deliberately not exposed as a command: a person cannot want this, and a
 /// surface that offered "drop the cache" would be offering a button whose only
 /// effect is an eleven-second wait.
-pub(super) fn invalidate() {
+pub fn invalidate() {
     if let Some(cache) = INSTRUMENT_CACHE.get() {
         *cache.lock().unwrap_or_else(|p| p.into_inner()) = None;
     }
@@ -673,7 +673,7 @@ async fn read_fleet(registry_root: &Path) -> Result<(Vec<FleetProject>, Vec<Stri
 /// A missing script is an error (not a finding): it means this is not a
 /// registry checkout, or one older than the instrument this app was built
 /// against, and either way there is nothing to project.
-pub(super) fn script(registry_root: &Path, name: &str) -> Result<String, AppError> {
+pub fn script(registry_root: &Path, name: &str) -> Result<String, AppError> {
     let path: PathBuf = registry_root.join("scripts").join(name);
     if !path.is_file() {
         return Err(AppError::NotFound(format!(
@@ -719,7 +719,7 @@ static SKILLS_CACHE: OnceLock<Mutex<SkillsSlot>> = OnceLock::new();
 /// Cheap enough to be uncached (44 small files) and cached anyway for the
 /// reason the instrument's other reads are: a panel re-reads on navigation, and
 /// a read that costs nothing still costs a syscall storm on a cold disk.
-pub(super) fn read_skills(registry_root: &Path) -> Result<Arc<Vec<CuratorSkill>>, AppError> {
+pub fn read_skills(registry_root: &Path) -> Result<Arc<Vec<CuratorSkill>>, AppError> {
     let key = registry_root.to_string_lossy().into_owned();
     {
         let cache = SKILLS_CACHE.get_or_init(|| Mutex::new(None));
