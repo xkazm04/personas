@@ -237,24 +237,17 @@ function Grow2Parts() {
           <ContextCard title="" state="loading" art={art('agent', Bot)} />
         </ContextCards>
       </Section>
-      <Section title="KitButton tone and icon" level={2} meta="tone default | quiet | primary (B: the theme primary -> brand purple gradient, lightness capped for the white ink); quiet={true} is an alias of tone=quiet">
-        {/* Specimen only: row A paints round 2's primary -> accent gradient over the kit's B, for the owner to compare by eye. */}
-        <style>{'[data-specimen-primary="a"] .k-btn.k-btn--primary { background: linear-gradient(135deg, oklch(from var(--primary) min(l, 0.45) c h), oklch(from var(--accent) min(l, 0.52) c h)); }'}</style>
-        {[...tones, 'a' as const].map((row) => {
-          const tone = row === 'a' ? 'primary' : row;
-          return (
-          <Toolbar key={row} label={`${row} buttons`}>
-            <span className="contents" data-specimen-primary={row === 'a' ? 'a' : undefined}>
-            <span className="typo-label k-quiet" style={{ width: '4.5rem' }}>{row === 'a' ? 'A (r2)' : row === 'primary' ? 'B primary' : row}</span>
+      <Section title="KitButton tone and icon" level={2} meta="tone default | quiet | primary (the theme primary -> accent gradient, lightness capped for the white ink); quiet={true} is an alias of tone=quiet">
+        {tones.map((tone) => (
+          <Toolbar key={tone} label={`${tone} buttons`}>
+            <span className="typo-label k-quiet" style={{ width: '4.5rem' }}>{tone}</span>
             <KitButton tone={tone} onClick={noop}>Label</KitButton>
             <KitButton tone={tone} icon={<Play />} onClick={noop}>With icon</KitButton>
             <KitButton tone={tone} icon={<RefreshCw />} onClick={noop} className="is-hover">Hover</KitButton>
             <KitButton tone={tone} icon={<Play />} onClick={noop} disabled>Disabled</KitButton>
             <KitButton tone={tone} icon={<Play />} onClick={noop} loading>Busy</KitButton>
-            </span>
           </Toolbar>
-          );
-        })}
+        ))}
       </Section>
       <Section title="UnitStrip legend" level={2} meta="what one unit stands for: nothing drawn; the strip's Hint on hover and focus (the first shown open) and its description">
         <div className="k-in" data-specimen-hint style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 36, marginBottom: 16 }}>
