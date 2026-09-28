@@ -15,8 +15,8 @@ const HEALTH_MARK: Record<HealthState, { tone: Tone; glyph: Glyph }> = {
 /**
  * One credential in the Cockpit's connected-services tile: the name is the row's one emphasis
  * (its full text in a Hint, so a long name never truncates silently), health on the mark, the
- * failing probe's own message as the meta in the error tone (otherwise the service type), and
- * the personas that use it as a regular figure.
+ * failing probe's own message as the meta in its tone (a healthy row has no meta: the name
+ * already says the service), and the personas that use it as a regular figure.
  */
 export function ServiceRow({ credential: c, health, used, onPress }: {
   credential: CredentialMetadata;
@@ -34,14 +34,14 @@ export function ServiceRow({ credential: c, health, used, onPress }: {
     untested: cl.health_untested,
   };
   const failing = health === 'failed' || health === 'unreachable';
-  const message = failing ? c.healthcheck_last_message || healthLabel[health] : c.service_type;
+  const message = failing ? c.healthcheck_last_message || healthLabel[health] : null;
   return (
     <ListRow
       size="s"
       testId={`cockpit-service-${c.id}`}
       name={<Hint content={c.name}><span>{c.name}</span></Hint>}
       mark={{ ...HEALTH_MARK[health], label: healthLabel[health] }}
-      meta={<span className={failing ? `k-ellipsis k-toned t-${HEALTH_MARK[health].tone}` : 'k-ellipsis'}>{message}</span>}
+      meta={message ? <span className={`k-ellipsis k-toned t-${HEALTH_MARK[health].tone}`}>{message}</span> : undefined}
       figures={used > 0
         ? <span className="k-fig typo-data k-regular">{tx(used === 1 ? t.vault.audit_log.personas_one : t.vault.audit_log.personas_other, { count: used })}</span>
         : undefined}
