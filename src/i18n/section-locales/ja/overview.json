@@ -369,7 +369,14 @@
     "verdict_resolve": "今すぐ解決",
     "verdict_title": "Athena の評決",
     "widget_empty": "表示するものがありません。",
-    "linked_decisions_error": "リンクされた決定を読み込めませんでした。"
+    "linked_decisions_error": "リンクされた決定を読み込めませんでした。",
+    "decisions_title": "判断が必要な項目",
+    "decisions_count": "{shown} / {total}",
+    "decisions_kind_approval": "承認",
+    "decisions_kind_message": "メッセージ",
+    "decisions_kind_output": "出力",
+    "decisions_kind_health": "ヘルスの問題",
+    "linked_memories_importance": "重要度 {value}/{max}"
   },
   "conflicts": {
     "conflict_count_one": "{count}件の競合",

@@ -369,7 +369,14 @@
     "verdict_resolve": "Selesaikan sekarang",
     "verdict_title": "Vonis Athena",
     "widget_empty": "Belum ada yang ditampilkan.",
-    "linked_decisions_error": "Tidak dapat memuat keputusan terkait."
+    "linked_decisions_error": "Tidak dapat memuat keputusan terkait.",
+    "decisions_title": "Keputusan yang perlu diambil",
+    "decisions_count": "{shown} dari {total}",
+    "decisions_kind_approval": "Persetujuan",
+    "decisions_kind_message": "Pesan",
+    "decisions_kind_output": "Keluaran",
+    "decisions_kind_health": "Masalah kesehatan",
+    "linked_memories_importance": "Tingkat penting {value} dari {max}"
   },
   "conflicts": {
     "conflict_count_one": "{count} konflik",

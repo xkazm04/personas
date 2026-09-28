@@ -369,7 +369,14 @@
     "verdict_resolve": "अभी हल करें",
     "verdict_title": "Athena का निर्णय",
     "widget_empty": "अभी दिखाने के लिए कुछ नहीं।",
-    "linked_decisions_error": "लिंक किए गए निर्णय लोड नहीं हो सके।"
+    "linked_decisions_error": "लिंक किए गए निर्णय लोड नहीं हो सके।",
+    "decisions_title": "लेने योग्य निर्णय",
+    "decisions_count": "{total} में से {shown}",
+    "decisions_kind_approval": "स्वीकृति",
+    "decisions_kind_message": "संदेश",
+    "decisions_kind_output": "आउटपुट",
+    "decisions_kind_health": "स्वास्थ्य समस्या",
+    "linked_memories_importance": "महत्व {max} में से {value}"
   },
   "conflicts": {
     "conflict_count_one": "{count} विवाद",

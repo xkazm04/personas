@@ -369,7 +369,14 @@
     "verdict_resolve": "Giải quyết ngay",
     "verdict_title": "Phán quyết của Athena",
     "widget_empty": "Chưa có gì để hiển thị.",
-    "linked_decisions_error": "Không thể tải các quyết định liên kết."
+    "linked_decisions_error": "Không thể tải các quyết định liên kết.",
+    "decisions_title": "Quyết định cần đưa ra",
+    "decisions_count": "{shown} / {total}",
+    "decisions_kind_approval": "Phê duyệt",
+    "decisions_kind_message": "Tin nhắn",
+    "decisions_kind_output": "Đầu ra",
+    "decisions_kind_health": "Sự cố tình trạng",
+    "linked_memories_importance": "Mức quan trọng {value}/{max}"
   },
   "conflicts": {
     "conflict_count_one": "{count} xung đột",

@@ -369,7 +369,14 @@
     "verdict_resolve": "Решить сейчас",
     "verdict_title": "Вердикт Athena",
     "widget_empty": "Пока нечего показать.",
-    "linked_decisions_error": "Не удалось загрузить связанные решения."
+    "linked_decisions_error": "Не удалось загрузить связанные решения.",
+    "decisions_title": "Требуют решения",
+    "decisions_count": "{shown} из {total}",
+    "decisions_kind_approval": "Одобрение",
+    "decisions_kind_message": "Сообщение",
+    "decisions_kind_output": "Результат",
+    "decisions_kind_health": "Проблема состояния",
+    "linked_memories_importance": "Важность {value} из {max}"
   },
   "conflicts": {
     "conflict_count_one": "{count} конфликт",

@@ -8264,7 +8264,14 @@
       "verdict_resolve": "এখনই সমাধান করুন",
       "verdict_title": "Athena-র রায়",
       "widget_empty": "এখনও দেখানোর মতো কিছু নেই।",
-      "linked_decisions_error": "সংযুক্ত সিদ্ধান্তগুলি লোড করা যায়নি।"
+      "linked_decisions_error": "সংযুক্ত সিদ্ধান্তগুলি লোড করা যায়নি।",
+      "decisions_title": "যে সিদ্ধান্তগুলো নিতে হবে",
+      "decisions_count": "{total}টির মধ্যে {shown}টি",
+      "decisions_kind_approval": "অনুমোদন",
+      "decisions_kind_message": "বার্তা",
+      "decisions_kind_output": "আউটপুট",
+      "decisions_kind_health": "স্বাস্থ্য সমস্যা",
+      "linked_memories_importance": "গুরুত্ব {max}-এর মধ্যে {value}"
     },
     "conflicts": {
       "conflict_count_one": "{count}টি দ্বন্দ্ব",

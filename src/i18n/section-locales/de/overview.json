@@ -369,7 +369,14 @@
     "verdict_resolve": "Jetzt beheben",
     "verdict_title": "Athenas Urteil",
     "widget_empty": "Noch nichts anzuzeigen.",
-    "linked_decisions_error": "Verknüpfte Entscheidungen konnten nicht geladen werden."
+    "linked_decisions_error": "Verknüpfte Entscheidungen konnten nicht geladen werden.",
+    "decisions_title": "Zu treffende Entscheidungen",
+    "decisions_count": "{shown} von {total}",
+    "decisions_kind_approval": "Freigabe",
+    "decisions_kind_message": "Nachricht",
+    "decisions_kind_output": "Ergebnis",
+    "decisions_kind_health": "Zustandsproblem",
+    "linked_memories_importance": "Wichtigkeit {value} von {max}"
   },
   "conflicts": {
     "conflict_count_one": "{count} Konflikt",

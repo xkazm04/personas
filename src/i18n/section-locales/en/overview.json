@@ -593,7 +593,14 @@
     "report_empty": "(empty body)",
     "open_in_reports": "Open in Reports",
     "subtitle_composed_prefix": "Composed",
-    "linked_decisions_error": "Could not load linked decisions."
+    "linked_decisions_error": "Could not load linked decisions.",
+    "decisions_title": "Decisions to make",
+    "decisions_count": "{shown} of {total}",
+    "decisions_kind_approval": "Approval",
+    "decisions_kind_message": "Message",
+    "decisions_kind_output": "Output",
+    "decisions_kind_health": "Health issue",
+    "linked_memories_importance": "Importance {value} of {max}"
   },
   "events": {
     "title": "Events",

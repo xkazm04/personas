@@ -8264,7 +8264,14 @@
       "verdict_resolve": "Résoudre maintenant",
       "verdict_title": "Verdict d’Athena",
       "widget_empty": "Rien à afficher pour l’instant.",
-      "linked_decisions_error": "Impossible de charger les décisions liées."
+      "linked_decisions_error": "Impossible de charger les décisions liées.",
+      "decisions_title": "Décisions à prendre",
+      "decisions_count": "{shown} sur {total}",
+      "decisions_kind_approval": "Approbation",
+      "decisions_kind_message": "Message reçu",
+      "decisions_kind_output": "Résultat",
+      "decisions_kind_health": "Problème de santé",
+      "linked_memories_importance": "Importance {value} sur {max}"
     },
     "conflicts": {
       "conflict_count_one": "{count} conflit",

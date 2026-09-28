@@ -369,7 +369,14 @@
     "verdict_resolve": "Vyřešit nyní",
     "verdict_title": "Verdikt Atheny",
     "widget_empty": "Zatím není co zobrazit.",
-    "linked_decisions_error": "Propojená rozhodnutí se nepodařilo načíst."
+    "linked_decisions_error": "Propojená rozhodnutí se nepodařilo načíst.",
+    "decisions_title": "Rozhodnutí k vyřízení",
+    "decisions_count": "{shown} z {total}",
+    "decisions_kind_approval": "Schválení",
+    "decisions_kind_message": "Zpráva",
+    "decisions_kind_output": "Výstup",
+    "decisions_kind_health": "Problém se stavem",
+    "linked_memories_importance": "Důležitost {value} z {max}"
   },
   "conflicts": {
     "conflict_count_one": "{count} konflikt",

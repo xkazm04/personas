@@ -369,7 +369,14 @@
     "verdict_resolve": "지금 해결",
     "verdict_title": "Athena의 판정",
     "widget_empty": "아직 표시할 내용이 없습니다.",
-    "linked_decisions_error": "연결된 결정을 불러오지 못했습니다."
+    "linked_decisions_error": "연결된 결정을 불러오지 못했습니다.",
+    "decisions_title": "내려야 할 결정",
+    "decisions_count": "{total}개 중 {shown}개",
+    "decisions_kind_approval": "승인",
+    "decisions_kind_message": "메시지",
+    "decisions_kind_output": "출력",
+    "decisions_kind_health": "상태 문제",
+    "linked_memories_importance": "중요도 {value}/{max}"
   },
   "conflicts": {
     "conflict_count_one": "충돌 {count}건",

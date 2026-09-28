@@ -369,7 +369,14 @@
     "verdict_resolve": "Resolver ahora",
     "verdict_title": "Veredicto de Athena",
     "widget_empty": "Nada que mostrar todavía.",
-    "linked_decisions_error": "No se pudieron cargar las decisiones vinculadas."
+    "linked_decisions_error": "No se pudieron cargar las decisiones vinculadas.",
+    "decisions_title": "Decisiones pendientes",
+    "decisions_count": "{shown} de {total}",
+    "decisions_kind_approval": "Aprobación",
+    "decisions_kind_message": "Mensaje",
+    "decisions_kind_output": "Resultado",
+    "decisions_kind_health": "Problema de estado",
+    "linked_memories_importance": "Importancia {value} de {max}"
   },
   "conflicts": {
     "conflict_count_one": "{count} conflicto",

@@ -369,7 +369,14 @@
     "verdict_resolve": "حل الآن",
     "verdict_title": "حكم Athena",
     "widget_empty": "لا يوجد شيء لعرضه بعد.",
-    "linked_decisions_error": "تعذّر تحميل القرارات المرتبطة."
+    "linked_decisions_error": "تعذّر تحميل القرارات المرتبطة.",
+    "decisions_title": "قرارات بانتظارك",
+    "decisions_count": "{shown} من {total}",
+    "decisions_kind_approval": "موافقة",
+    "decisions_kind_message": "رسالة",
+    "decisions_kind_output": "مُخرَج",
+    "decisions_kind_health": "مشكلة في السلامة",
+    "linked_memories_importance": "الأهمية {value} من {max}"
   },
   "conflicts": {
     "conflict_count_one": "{count} تعارض",

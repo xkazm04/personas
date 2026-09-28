@@ -8599,6 +8599,13 @@ export type Translations = {
       open_in_reports: string;
       subtitle_composed_prefix: string;
       linked_decisions_error: string;
+      decisions_title: string;
+      decisions_count: string;
+      decisions_kind_approval: string;
+      decisions_kind_message: string;
+      decisions_kind_output: string;
+      decisions_kind_health: string;
+      linked_memories_importance: string;
     };
     events: {
       title: string;

@@ -8264,7 +8264,14 @@
       "verdict_resolve": "立即解决",
       "verdict_title": "Athena 的裁定",
       "widget_empty": "暂无内容可显示。",
-      "linked_decisions_error": "无法加载关联决策。"
+      "linked_decisions_error": "无法加载关联决策。",
+      "decisions_title": "待做的决定",
+      "decisions_count": "{shown} / {total}",
+      "decisions_kind_approval": "审批",
+      "decisions_kind_message": "消息",
+      "decisions_kind_output": "输出",
+      "decisions_kind_health": "健康问题",
+      "linked_memories_importance": "重要性 {value}/{max}"
     },
     "conflicts": {
       "conflict_count_one": "{count} 个冲突",
