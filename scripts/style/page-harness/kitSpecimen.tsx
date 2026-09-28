@@ -216,6 +216,12 @@ function SectionStates() {
 }
 
 const tones = ['default', 'quiet', 'primary'] as const;
+const LEGEND_ROWS: Array<{ line: string; size: 'm' | 's' | 'pip'; label: string; legend: string; segments: Array<{ n: number; tone: Tone; glyph?: Glyph }> }> = [
+  { line: 'm, quantum 5', size: 'm', label: '240 runs', legend: '5 runs', segments: [{ n: 40, tone: 'success' }, { n: 8, tone: 'error' }] },
+  { line: 'm, quantum 1', size: 'm', label: '11 runs', legend: '1 run', segments: [{ n: 8, tone: 'success' }, { n: 3, tone: 'error' }] },
+  { line: 's, quantum 100k', size: 's', label: '1.2M tokens', legend: '100k tokens', segments: [{ n: 8, tone: 'primary' }, { n: 4, tone: 'agent', glyph: 'soft' }] },
+  { line: 'pip, quantum 10', size: 'pip', label: '120 calls', legend: '10 calls', segments: [{ n: 12, tone: 'info' }] },
+];
 
 /** Kit grow-2: the five parts the home-1 batch proposed, in their states (also at the foot of kit/specimen). */
 function Grow2Parts() {
@@ -231,24 +237,33 @@ function Grow2Parts() {
           <ContextCard title="" state="loading" art={art('agent', Bot)} />
         </ContextCards>
       </Section>
-      <Section title="KitButton tone and icon" level={2} meta="tone default | quiet | primary (the theme primary -> accent gradient, lightness capped for the white ink); quiet={true} is an alias of tone=quiet">
-        {tones.map((tone) => (
-          <Toolbar key={tone} label={`${tone} buttons`}>
-            <span className="typo-label k-quiet" style={{ width: '4.5rem' }}>{tone}</span>
+      <Section title="KitButton tone and icon" level={2} meta="tone default | quiet | primary (B: the theme primary -> brand purple gradient, lightness capped for the white ink); quiet={true} is an alias of tone=quiet">
+        {/* Specimen only: row A paints round 2's primary -> accent gradient over the kit's B, for the owner to compare by eye. */}
+        <style>{'[data-specimen-primary="a"] .k-btn.k-btn--primary { background: linear-gradient(135deg, oklch(from var(--primary) min(l, 0.45) c h), oklch(from var(--accent) min(l, 0.52) c h)); }'}</style>
+        {[...tones, 'a' as const].map((row) => {
+          const tone = row === 'a' ? 'primary' : row;
+          return (
+          <Toolbar key={row} label={`${row} buttons`}>
+            <span className="contents" data-specimen-primary={row === 'a' ? 'a' : undefined}>
+            <span className="typo-label k-quiet" style={{ width: '4.5rem' }}>{row === 'a' ? 'A (r2)' : row === 'primary' ? 'B primary' : row}</span>
             <KitButton tone={tone} onClick={noop}>Label</KitButton>
             <KitButton tone={tone} icon={<Play />} onClick={noop}>With icon</KitButton>
             <KitButton tone={tone} icon={<RefreshCw />} onClick={noop} className="is-hover">Hover</KitButton>
             <KitButton tone={tone} icon={<Play />} onClick={noop} disabled>Disabled</KitButton>
             <KitButton tone={tone} icon={<Play />} onClick={noop} loading>Busy</KitButton>
+            </span>
           </Toolbar>
-        ))}
+          );
+        })}
       </Section>
       <Section title="UnitStrip legend" level={2} meta="what one unit stands for: nothing drawn; the strip's Hint on hover and focus (the first shown open) and its description">
-        <div className="k-in" data-specimen-hint style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 36, marginBottom: 12 }}>
-          <UnitStrip size="m" label="240 runs" legend="5 runs" segments={[{ n: 40, tone: 'success' }, { n: 8, tone: 'error' }]} />
-          <UnitStrip size="m" label="11 runs" legend="1 run" segments={[{ n: 8, tone: 'success' }, { n: 3, tone: 'error' }]} />
-          <UnitStrip size="s" label="1.2M tokens" legend="100k tokens" segments={[{ n: 8, tone: 'primary' }, { n: 4, tone: 'agent', glyph: 'soft' }]} />
-          <UnitStrip size="pip" label="120 calls" legend="10 calls" segments={[{ n: 12, tone: 'info' }]} />
+        <div className="k-in" data-specimen-hint style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 36, marginBottom: 16 }}>
+          {LEGEND_ROWS.map((r) => (
+            <span key={r.line} className="k-legend-row">
+              <span className="typo-label k-quiet" style={{ width: '10rem' }}>{r.line}</span>
+              <UnitStrip size={r.size} label={r.label} legend={r.legend} segments={r.segments} />
+            </span>
+          ))}
         </div>
       </Section>
       <Section title="ListRow onPress" level={2} meta="the name is the row's one button; hover band, pointer and focus ring on the row">

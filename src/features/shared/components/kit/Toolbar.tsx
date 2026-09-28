@@ -91,7 +91,7 @@ export type KitButtonTone = 'default' | 'quiet' | 'primary';
  * reaches the Button's double-submit guard.
  * `tone` (grow-2) is what the press means, one closed set: `default` (bordered), `quiet` (no
  * border, muted ink: a secondary action), `primary` (the surface's one call to action, filled
- * with the theme primary -> accent gradient and the primary glow; it rides the shared Button's primary
+ * with the theme primary -> brand purple gradient and the primary glow; it rides the shared Button's primary
  * variant, so its brightness compensation is the product's). `icon` sits before the label as
  * its own flex item (hidden from the tree; a busy spinner takes its place), so it never wraps.
  * @catalog KitButton - the kit 32px button over the shared Button: tone default|quiet|primary, a leading icon, real busy spinner, disabled with a reason, stopPropagation inside a selectable row. Kit.
