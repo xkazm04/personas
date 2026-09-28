@@ -1,7 +1,8 @@
-/** provisionalFrames — the build's first-turn PREVIEW, projected onto the
+/** provisionalFrames — the build's streaming PREVIEW, projected onto the
  *  eight frames. Pure; no React.
  *
- *  While the first LLM turn streams (50-155 s), the backend releases each
+ *  While a design turn streams (50-224 s; the first turn, or the next one
+ *  when the first only asked a direction question), the backend releases each
  *  finished capability enumeration / resolution as a provisional event
  *  (matrixBuildSlice `provisional`). A frame one of them touches DEVELOPS
  *  (FrameState "filling") and may show the picture it is developing into, but

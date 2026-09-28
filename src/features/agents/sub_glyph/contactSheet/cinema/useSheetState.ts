@@ -36,7 +36,7 @@ export function useSheetState(props: GlyphFullLayoutProps) {
   const sessionId = useAgentStore((s) => s.buildSessionId);
   const coreRole = useAgentStore((s) => s.buildBehaviorCore?.identity?.role ?? null);
   const coreMission = useAgentStore((s) => s.buildBehaviorCore?.mission ?? null);
-  // First-turn streaming preview: develops frames, never lights them.
+  // Streaming preview (any turn, scoped to unconfirmed cells): develops frames, never lights them.
   const provisional = useAgentStore((s) => s.buildProvisional);
   const { t } = useTranslation();
   const isCompose = sessionId === null && !hasDesignResult;

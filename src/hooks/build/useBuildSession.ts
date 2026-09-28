@@ -243,7 +243,7 @@ export function useBuildSession(
         case "clarifying_question_v3":
           store.handleClarifyingQuestionV3(event);
           break;
-        // First-turn preview: held apart from confirmed state and dropped
+        // Streaming preview: held apart from confirmed state and dropped
         // whole on provisional_settled (see matrixBuildSlice).
         case "provisional_capability_enumeration":
           store.handleProvisionalCapabilityEnumeration(event);

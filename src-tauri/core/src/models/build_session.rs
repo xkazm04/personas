@@ -255,9 +255,9 @@ pub enum BuildEvent {
     },
 
     // ------------------------------------------------------------------
-    // Provisional streaming preview (first build turn only)
+    // Provisional streaming preview (any turn, scoped to cells not yet confirmed)
     //
-    // The first turn is one 50-155 s CLI call whose output is validated
+    // A build turn is one long CLI call (the first 50-155 s) whose output is validated
     // (capability gates) only once the turn ends. These variants release
     // each `capability_enumeration` / `capability_resolution` object the
     // moment it is complete in the partial-message stream, so the build

@@ -42,7 +42,7 @@ use super::parser::{
     extract_result_usage, map_capability_field_to_legacy_dimension,
     map_persona_field_to_legacy_dimension, parse_build_line,
 };
-use super::provisional::{stream_delta_text, ProvisionalTurn, StreamItem};
+use super::provisional::{stream_delta_text, PreviewScope, ProvisionalTurn, StreamItem};
 use super::SessionHandle;
 
 const CANCEL_POLL_INTERVAL: Duration = Duration::from_millis(100);
@@ -238,6 +238,30 @@ fn stalled_turn_reason(turn: usize) -> String {
 // =============================================================================
 // run_session -- the long-lived tokio task body
 // =============================================================================
+
+/// The gate ledger the mid-turn preview consults: the session's gates as they
+/// stand when the turn starts (answers already opened theirs), with every
+/// gate whose legacy cell was answered in the previous round opened too - the
+/// same defensive open the post-turn gate pass applies to a re-emitted
+/// resolution. A copy: the preview never writes the real ledger.
+fn preview_gate_ledger(
+    coverage: &HashMap<String, CapabilityGates>,
+    last_answered_cells: &[String],
+) -> HashMap<String, CapabilityGates> {
+    let mut ledger = coverage.clone();
+    let answered: Vec<&'static str> = last_answered_cells
+        .iter()
+        .filter_map(|cell| legacy_cell_to_v3_field(cell))
+        .collect();
+    for gates in ledger.values_mut() {
+        for field in &answered {
+            if !gates.is_gate_open(field) {
+                gates.mark_open(field);
+            }
+        }
+    }
+    ledger
+}
 
 #[allow(clippy::too_many_arguments)]
 pub(super) async fn run_session(
@@ -678,24 +702,36 @@ pub(super) async fn run_session(
         //   ~15-20 s in instead of at the end of a 50-155 s turn. Identity is
         //   not part of the gate state machine, so this cannot contradict the
         //   validator; the post-turn re-emit of the same core is idempotent.
-        // * capability_enumeration / capability_resolution (FIRST turn only):
-        //   emitted as PROVISIONAL events. They are a preview, never state:
-        //   dual_emit does not persist, the legacy CellUpdate mirror is not
-        //   sent, and the gate pass below stays the single authority. After
-        //   the authoritative events go out, one ProvisionalSettled closes the
+        // * capability_enumeration / capability_resolution (EVERY turn, scoped
+        //   to what is not yet confirmed - see `PreviewScope`): emitted as
+        //   PROVISIONAL events. They are a preview, never state: dual_emit
+        //   does not persist, the legacy CellUpdate mirror is not sent, and
+        //   the gate pass below stays the single authority. After the
+        //   authoritative events go out, one ProvisionalSettled closes the
         //   preview and names what the validator dropped or changed.
+        //   Every turn, not just the first: on a vague intent turn 1 only asks
+        //   a design-direction question and the enumeration first lands on
+        //   turn 2 (observed 2026-09-26). Wiring turns after answers are
+        //   previewed too, but the scope withholds the enumeration once a
+        //   validated one has landed and any resolution whose cell is already
+        //   confirmed, so a preview only fills gaps and never regresses a
+        //   confirmed value.
         // * questions are never streamed early.
         //
         // Purely additive: turn_raw still accumulates every line and the
-        // authoritative parse + gate pass below is unchanged.
-        let mut stream_turn = ProvisionalTurn::new(turn == 0);
-        // Scratch gate ledger mirroring what the gate pass will do on turn 0
-        // (no answers yet, so a gate is open iff its intent seed opened it).
-        // A resolution it would suppress for a question is never previewed,
-        // so the preview does not flash a value the user is about to be asked
-        // for. Only ever consulted on turn 0; never merged into `coverage`.
-        let mut preview_coverage: HashMap<String, CapabilityGates> = HashMap::new();
-        let mut preview_titles: HashMap<String, String> = HashMap::new();
+        // authoritative parse + gate pass below is unchanged. Later turns get
+        // the same `--include-partial-messages` as turn 0: `turn_args` above
+        // is `cli_args` (which carries it for interactive builds) + --continue.
+        let mut stream_turn =
+            ProvisionalTurn::new(PreviewScope::from_confirmed(resolved_cells.keys()));
+        // Scratch gate ledger mirroring what the gate pass below will decide:
+        // the session's real gates as they stand after the user's answers,
+        // plus the same answered-cell auto-open the gate pass applies. A
+        // resolution it would suppress for a question is never previewed, so
+        // the preview does not flash a value the user is about to be asked
+        // for. A clone: never merged back into `coverage`.
+        let mut preview_coverage = preview_gate_ledger(&coverage, &last_answered_cells);
+        let mut preview_titles: HashMap<String, String> = capability_titles.clone();
 
         if let Some(mut reader) = driver.take_stdout_reader() {
             let cancel_wait = wait_for_cancel_flag(cancel_flag.clone());

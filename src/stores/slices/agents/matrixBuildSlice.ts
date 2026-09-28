@@ -64,9 +64,9 @@ export interface MatrixEditState {
   useCases?: Array<{ id: string; title: string; category: string }>;
 }
 
-// -- Provisional first-turn preview -----------------------------------------
+// -- Provisional streaming preview ------------------------------------------
 
-/** A capability as the first build turn's stream previews it. */
+/** A capability as a build turn's stream previews it. */
 export interface ProvisionalCapability {
   id: string;
   title: string;
@@ -79,7 +79,7 @@ export interface ProvisionalCapability {
 }
 
 /**
- * The first build turn's streaming PREVIEW, held apart from confirmed state.
+ * A build turn's streaming PREVIEW, held apart from confirmed state.
  *
  * The backend releases each finished capability_enumeration /
  * capability_resolution mid-turn as a `provisional_*` event so the build sheet
@@ -88,7 +88,10 @@ export interface ProvisionalCapability {
  * counts as resolved or populated. Contract (provisional.rs): the
  * authoritative pass fully REPLACES the preview. `provisional_settled` (sent
  * after the turn's authoritative events) clears it whole, and so does a build
- * error. It is never persisted, so hydration starts it empty.
+ * error. It is never persisted, so hydration starts it empty. Any turn may
+ * stream one (the design work can land on turn 2 after a direction question);
+ * the backend scopes it to what is not yet confirmed, and the sheet only lets
+ * it develop a frame that has no confirmed value.
  */
 export interface ProvisionalBuildState {
   capabilities: Record<string, ProvisionalCapability>;
@@ -168,7 +171,7 @@ export interface BuildSessionState {
     category?: string | null;
   } | null;
 
-  /** First-turn streaming preview; see {@link ProvisionalBuildState}. */
+  /** Streaming preview; see {@link ProvisionalBuildState}. */
   provisional: ProvisionalBuildState;
 
   createdAt: number;
@@ -223,7 +226,7 @@ export interface MatrixBuildSlice {
     question: string;
     options: string[] | null;
   } | null;
-  /** Mirror of the active session's first-turn preview (never confirmed state). */
+  /** Mirror of the active session's streaming preview (never confirmed state). */
   buildProvisional: ProvisionalBuildState;
 
   /** Read-only snapshot for MatrixTab viewing promoted agents. Isolated from
@@ -269,7 +272,7 @@ export interface MatrixBuildSlice {
     event: Extract<BuildEvent, { type: "clarifying_question_v3" }>,
   ) => void;
 
-  // Provisional first-turn preview handlers (never touch confirmed state)
+  // Provisional streaming preview handlers (never touch confirmed state)
   handleProvisionalCapabilityEnumeration: (
     event: Extract<BuildEvent, { type: "provisional_capability_enumeration" }>,
   ) => void;
@@ -982,7 +985,7 @@ export const createMatrixBuildSlice: StateCreator<
     })));
   },
 
-  // -- Provisional first-turn preview ---------------------------------------
+  // -- Provisional streaming preview ----------------------------------------
   // Kept in `provisional` only. Nothing here reaches capabilities/cellStates,
   // so no frame counts it as resolved or populated.
 
