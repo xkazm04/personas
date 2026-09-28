@@ -292,7 +292,7 @@ const BUILDERS = {
   ...homeCockpitTapes({ RECORDED_AT }).builders,
   // Kit grow-3 (kitTiles.tsx): the composed-a Cockpit tape, its seed joined by the briefing,
   // chat-card and council-seat seeds the recomposed stacks read.
-  ...Object.fromEntries(['kit/tiles-a', 'kit/tiles-b'].map((id) => [id, () => kitTilesTape(id)])),
+  ...Object.fromEntries(['kit/tiles'].map((id) => [id, () => kitTilesTape(id)])),
   // The kit specimen (kitSpecimen.tsx): synthetic props, no IPC.
   ...Object.fromEntries(['kit/specimen', 'kit/specimen/grow-2', 'kit/overview', 'kit/overview-flat'].map((id) => [
     id, () => ({ version: 1, module: id, source: 'synthetic', recordedAt: RECORDED_AT, note: 'Synthetic props, no IPC: kit parts in their states.', calls: [] }),

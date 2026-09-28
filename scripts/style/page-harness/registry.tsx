@@ -79,7 +79,7 @@ export const MODULES: Record<string, HarnessModule> = {
   // The kit specimen: every kit part in its states (kitSpecimen.tsx); harness-only.
   ...KIT_MODULES,
   ...KIT_OVERVIEW_MODULES,
-  // Kit grow-3: the dashboard tile in its two looks on the recomposed Cockpit (kitTiles.tsx).
+  // Kit grow-3: the dashboard tile on the recomposed Cockpit (kitTiles.tsx).
   ...KIT_TILES_MODULES,
   // Probes for `shoot.mjs --self-test`: each must make the shooter exit non-zero.
   '__selftest/empty': {

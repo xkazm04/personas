@@ -43,12 +43,14 @@ export interface TileProps {
 }
 
 /**
- * Tile: one dashboard part in a Tiles grid. Owns the chrome and the head recipe (ONE emphasis,
+ * Tile: one dashboard part in a Tiles grid, drawn as ContextCard's band (the stepped background, a
+ * faint primary wash from a 2px rail, right-only radius; owner, grow-3 gate: "B Band"). Owns the
+ * chrome and the head recipe (ONE emphasis,
  * the title; count and meta regular; actions top-right), the body and the footer. No row span
  * and no inner scroll: the content decides the height. A long list inside is a capped `Rows`
- * (`cap`), which expands in place. The loading ghost follows `ghostRows`; empty and error are the
- * kit's empty band.
- * @catalog Tile - a dashboard tile in Tiles: head (title, count, meta, actions), body, footer actions; loading/empty/error states; content-sized. Kit.
+ * (`cap`), which expands in place; in a tile stretched beside a taller one its pager sits on the
+ * tile's foot. The loading ghost follows `ghostRows`; empty and error are the kit's empty band.
+ * @catalog Tile - a dashboard tile in Tiles, a band on a rail: head (title, count, meta, actions), body, footer actions; loading/empty/error states; content-sized. Kit.
  */
 export function Tile({ span = 12, title, count, meta, actions, footer, state, empty, error, ghostRows = 3, testId, children }: TileProps) {
   const id = useId();
@@ -77,7 +79,6 @@ export function Tile({ span = 12, title, count, meta, actions, footer, state, em
           {title != null && (
             <div className="k-dtile__titles">
               <h3 id={id} className="k-dtile__title typo-title">
-                <span className="k-node" aria-hidden="true" />
                 {title}
                 {count != null && <span className="k-count typo-data k-regular">{count}</span>}
               </h3>

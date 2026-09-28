@@ -1,10 +1,9 @@
 /**
- * `kit/tiles-a` and `kit/tiles-b`: the kit grow-3 dashboard tile in its two looks (A Spine, B
- * Band), proven on the Cockpit's composed-a ops landing recomposed FROM KIT PARTS ONLY, on the
- * same data as the H0 tape (kitTilesData.ts), plus two stacked hosts: Athena's chat column and
- * the council evidence well. Harness-only; the look switch is the kit-internal
- * `data-kit-tile-look` attribute, never a prop. Words are the tape's; the rest are specimen
- * fixtures, not product copy.
+ * `kit/tiles`: the kit grow-3 dashboard tile (the band look the owner chose at the gate), proven
+ * on the Cockpit's composed-a ops landing recomposed FROM KIT PARTS ONLY, on the same data as the
+ * H0 tape (kitTilesData.ts), plus two stacked hosts: Athena's chat column and the council
+ * evidence well. Harness-only. Words are the tape's; the rest are specimen fixtures, not product
+ * copy.
  */
 /* eslint-disable custom/no-hardcoded-jsx-text -- specimen fixtures in a harness-only view, not product copy */
 import type { ComponentType, ReactNode } from 'react';
@@ -173,19 +172,14 @@ function Stacks() {
   );
 }
 
-function view(look: 'a' | 'b'): ComponentType {
-  return function KitTiles() {
-    return (
-      <div className="contents" data-kit-tile-look={look}>
-        <KitHost compact testId={`kit-tiles-${look}`}>
-          <Surface><Landing /><Stacks /></Surface>
-        </KitHost>
-      </div>
-    );
-  };
+function KitTiles() {
+  return (
+    <KitHost compact testId="kit-tiles">
+      <Surface><Landing /><Stacks /></Surface>
+    </KitHost>
+  );
 }
 
 export const KIT_TILES_MODULES: Record<string, { load: () => Promise<{ default: ComponentType }> }> = {
-  'kit/tiles-a': { load: async () => ({ default: view('a') }) },
-  'kit/tiles-b': { load: async () => ({ default: view('b') }) },
+  'kit/tiles': { load: async () => ({ default: KitTiles }) },
 };

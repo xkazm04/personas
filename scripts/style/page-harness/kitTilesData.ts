@@ -1,5 +1,5 @@
 /**
- * Data for `kit/tiles-a|b` (kitTiles.tsx), read straight off the tape the shooter injects: the
+ * Data for `kit/tiles` (kitTiles.tsx), read straight off the tape the shooter injects: the
  * H0 composed-a Cockpit tape (homeCockpitTapes.mjs, read-only here) plus the briefing, chat-card
  * and council-seat seeds that synthetic-tapes.mjs merges into this view's `__harness_seed`.
  * Harness-only; the shapes are the tape's own (see homeCockpitTapes.mjs).

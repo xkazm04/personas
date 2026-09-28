@@ -45,6 +45,17 @@
   }
 }
 
+/* Light themes (grow-3 gate: "Yes, lighten them"): the lightness step above lands about 0.14 below
+ * a light background, so lists read as dark stripes and bands as grey slabs. On a light theme the
+ * alternating band (and the card and tile band built on it) is a small fixed step instead: still
+ * a perceptible rhythm (Gate 2b), no longer a stripe. Dark themes keep the step above. */
+@supports (color: oklch(from red l c h)) {
+  :is([data-theme^="light"], [data-brightness^="light"]) .k-host {
+    --band-alt: oklch(from var(--background) calc(l - 0.035) c h);
+  }
+  :is([data-theme^="light"], [data-brightness^="light"]) .k-dtile::before { background: color-mix(in srgb, var(--primary) 60%, transparent); }
+}
+
 /* ============ modifiers ============ */
 .k-strong { font-weight: 600; }
 .k-medium { font-weight: 500; }
@@ -489,10 +500,10 @@ button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); backgroun
  * container: spans collapse by the room the grid has, not by the window. */
 .k-dtiles {
   container: tiles / inline-size;
-  display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: auto; align-items: stretch; gap: 12px 24px;
+  display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: auto; align-items: stretch; gap: 12px;
 }
 .k-dtiles--stack { grid-template-columns: minmax(0, 1fr); }
-.k-dtile { grid-column: span var(--span, 12); position: relative; display: flex; flex-direction: column; min-width: 0; padding-bottom: 16px; }
+.k-dtile { grid-column: span var(--span, 12); position: relative; display: flex; flex-direction: column; min-width: 0; }
 .k-dtiles--stack > .k-dtile { grid-column: 1 / -1; }
 @container tiles (max-width: 1099px) {
   .k-dtiles:not(.k-dtiles--stack) > .k-dtile:is([data-span="1"], [data-span="2"], [data-span="3"]) { grid-column: span 6; }
@@ -505,28 +516,20 @@ button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); backgroun
 .k-dtile__title { position: relative; display: flex; align-items: baseline; gap: 10px; margin: 0; min-width: 0; }
 .k-dtile__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
 .k-dtile__actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-.k-dtile__body { min-width: 0; }
+.k-dtile__body { flex: 1 0 auto; display: flex; flex-direction: column; min-width: 0; }
 .k-dtile__foot { margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 12px 0 var(--gutter); }
 
-/* Look A, Spine (the default until the owner picks): every tile is a level-2 Section in its cell,
- * hanging from its own spine with a node on its head; no background, no border. */
-.k-dtile::before { content: ""; position: absolute; left: var(--spine-x); top: 10px; bottom: 0; width: 1px; background: var(--spine-c); }
-.k-dtile__title > .k-node {
-  width: 9px; height: 9px; margin-top: -4.5px; left: calc(var(--spine-x) - var(--gutter) - 4.5px);
-  background: color-mix(in srgb, var(--primary) 55%, var(--background)); box-shadow: 0 0 0 3px var(--background);
-}
-
-/* Look B, Band (harness-only switch until the gate: `data-kit-tile-look="b"` on an ancestor; the
- * public API has no look prop, and the losing look is deleted): ContextCard's band, the stepped
- * background with a faint primary wash from a 2px rail on its left edge, right-only radius. */
-[data-kit-tile-look="b"] .k-dtiles { gap: 12px; }
-[data-kit-tile-look="b"] .k-dtile {
+/* The look (owner, grow-3 gate: "B Band"; a grid of mixed tiles keeps card feel): ContextCard's
+ * band, the stepped background with a faint primary wash from a 2px rail on its left edge and a
+ * right-only radius. No spine runs through a band, so a mark needs no background ring cutting it. */
+.k-dtile {
   --card-band: var(--band-alt);
   padding: 12px 0; border-radius: 0 var(--radius-card) var(--radius-card) 0;
   background: linear-gradient(to right, color-mix(in srgb, var(--primary) 7%, var(--card-band)), var(--card-band) 55%);
 }
-[data-kit-tile-look="b"] .k-dtile::before { left: 0; top: 0; bottom: 0; width: 2px; border-radius: 1px; }
-[data-kit-tile-look="b"] .k-dtile__title > .k-node { display: none; }
-[data-kit-tile-look="b"] .k-dtile .k-rows > .k-row:nth-child(even) { --band: color-mix(in srgb, var(--foreground) 4%, transparent); }
-/* No spine runs through a band, so a mark needs no background ring cutting it. */
-[data-kit-tile-look="b"] .k-dtile .k-mark { outline-color: transparent; }
+.k-dtile::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; border-radius: 1px; background: var(--spine-c); }
+.k-dtile .k-rows > .k-row:nth-child(even) { --band: color-mix(in srgb, var(--foreground) 4%, transparent); }
+.k-dtile .k-mark { outline-color: transparent; }
+/* A short list beside a long one: the body fills the stretched tile and its pager ("Show all")
+ * sits on the tile's foot, so the height reads as the tile's own, not a gap under the rows. */
+.k-dtile__body > .k-pager { margin-top: auto; }

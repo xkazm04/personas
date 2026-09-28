@@ -40,6 +40,16 @@ describe('Tiles grid', () => {
 });
 
 describe('Tile', () => {
+  it('has one look: no look switch survives the gate, and the band sits on a rail', () => {
+    expect(KIT_CSS).not.toMatch(/data-kit-tile-look/);
+    expect(rule('.k-dtile::before')).toMatch(/left: 0/);
+  });
+
+  it('a stretched tile puts its pager on its foot', () => {
+    expect(rule('.k-dtile__body')).toMatch(/flex: 1 0 auto/);
+    expect(rule('.k-dtile__body > .k-pager')).toMatch(/margin-top: auto/);
+  });
+
   it('a titled tile is a region named by its h3; an untitled one is a plain box', () => {
     render(<><Tile title="Fleet vitals" count={6}>body</Tile><Tile>metric</Tile></>);
     const region = screen.getByRole('region', { name: /Fleet vitals/ });
