@@ -281,6 +281,15 @@ pub(super) const SCRIPTED_TEST_LANES: usize = 3;
 /// bounds the OAuth refresh and CLI probes that can run before the request.
 pub(super) const SCRIPTED_TEST_TIMEOUT: Duration = Duration::from_secs(20);
 
+/// Hard ceilings on the two model legs. Their read loops used to wait for EOF
+/// with no deadline, so a stalled CLI (network drop, a starved or suspended
+/// machine) held the whole test step in `testing` forever: measured live on
+/// 2026-09-28, a build sat 15 minutes after its last row. On expiry the CLI is
+/// killed and the existing fallbacks take over (the leftover subset degrades,
+/// the summary falls back to `build_fallback_summary`).
+const TEST_PLAN_TIMEOUT: Duration = Duration::from_secs(240);
+const TEST_SUMMARY_TIMEOUT: Duration = Duration::from_secs(120);
+
 /// Shared tail of every "counted but not called" pass preview. The
 /// deterministic summary keys on it, so the wording must not drift apart.
 const AVAILABLE_AT_RUNTIME: &str = "available at runtime, not executed in this test";
@@ -659,26 +668,36 @@ async fn compose_test_plan_via_cli(
     // Read CLI output and extract test_plan
     let mut raw_output = String::new();
     if let Some(mut reader) = driver.take_stdout_reader() {
-        loop {
-            match read_line_limited(&mut reader).await {
-                Ok(Some(line)) => {
-                    // Book this leg in `dev_llm_spend` — the one-shot
-                    // test/fix-pass path used to be entirely unmetered while
-                    // running up to MAX_TEST_RETRIES real LLM passes. No-op for
-                    // every line that is not a `result` envelope.
-                    super::events::record_build_spend(
-                        pool,
-                        Some(persona_id),
-                        super::events::SPEND_TOOL_TEST,
-                        Some(TEST_PLAN_MODEL),
-                        &line,
-                    );
-                    raw_output.push_str(&line);
-                    raw_output.push('\n');
+        let read = tokio::time::timeout(TEST_PLAN_TIMEOUT, async {
+            loop {
+                match read_line_limited(&mut reader).await {
+                    Ok(Some(line)) => {
+                        // Book this leg in `dev_llm_spend` — the one-shot
+                        // test/fix-pass path used to be entirely unmetered while
+                        // running up to MAX_TEST_RETRIES real LLM passes. No-op for
+                        // every line that is not a `result` envelope.
+                        super::events::record_build_spend(
+                            pool,
+                            Some(persona_id),
+                            super::events::SPEND_TOOL_TEST,
+                            Some(TEST_PLAN_MODEL),
+                            &line,
+                        );
+                        raw_output.push_str(&line);
+                        raw_output.push('\n');
+                    }
+                    Ok(None) => break,
+                    Err(_) => break,
                 }
-                Ok(None) => break,
-                Err(_) => break,
             }
+        })
+        .await;
+        if read.is_err() {
+            let _ = driver.kill().await;
+            return Err(AppError::Execution(format!(
+                "Test plan CLI did not finish within {}s",
+                TEST_PLAN_TIMEOUT.as_secs()
+            )));
         }
     }
     let _ = driver.finish().await;
@@ -2112,22 +2131,33 @@ If some are unverified: say that this build will not be promoted automatically u
 
     let mut raw_output = String::new();
     if let Some(mut reader) = driver.take_stdout_reader() {
-        loop {
-            match read_line_limited(&mut reader).await {
-                Ok(Some(line)) => {
-                    super::events::record_build_spend(
-                        pool,
-                        Some(persona_id),
-                        super::events::SPEND_TEST_SUMMARY,
-                        Some(TEST_SUMMARY_MODEL),
-                        &line,
-                    );
-                    raw_output.push_str(&line);
-                    raw_output.push('\n');
+        let read = tokio::time::timeout(TEST_SUMMARY_TIMEOUT, async {
+            loop {
+                match read_line_limited(&mut reader).await {
+                    Ok(Some(line)) => {
+                        super::events::record_build_spend(
+                            pool,
+                            Some(persona_id),
+                            super::events::SPEND_TEST_SUMMARY,
+                            Some(TEST_SUMMARY_MODEL),
+                            &line,
+                        );
+                        raw_output.push_str(&line);
+                        raw_output.push('\n');
+                    }
+                    Ok(None) => break,
+                    Err(_) => break,
                 }
-                Ok(None) => break,
-                Err(_) => break,
             }
+        })
+        .await;
+        if read.is_err() {
+            // The caller falls back to `build_fallback_summary`.
+            let _ = driver.kill().await;
+            return Err(AppError::Execution(format!(
+                "Test summary CLI did not finish within {}s",
+                TEST_SUMMARY_TIMEOUT.as_secs()
+            )));
         }
     }
     let _ = driver.finish().await;
