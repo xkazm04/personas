@@ -41,7 +41,7 @@ export function PersonaCoreBadge({ core, onOpen, locked = false, index = 0 }: { 
       // since the lint colour rules only inspect Tailwind class names.
       // Only the CONFIGURED skin stays inline: it is tinted from the
       // archetype's own runtime colour, which no class can express.
-      className={`inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-1.5 rounded-interactive border transition-colors ${locked ? "cursor-default" : "cursor-pointer hover:border-foreground/30"} ${configured ? "" : "border-card-border bg-secondary/20"}`}
+      className={`inline-flex shrink-0 max-w-[14rem] whitespace-nowrap items-center gap-1.5 pl-1.5 pr-2.5 py-1.5 rounded-interactive border transition-colors ${locked ? "cursor-default" : "cursor-pointer hover:border-foreground/30"} ${configured ? "" : "border-card-border bg-secondary/20"}`}
       style={configured ? {
         borderColor: colorWithAlpha(accent, 0.5),
         background: colorWithAlpha(accent, 0.14),
@@ -53,7 +53,10 @@ export function PersonaCoreBadge({ core, onOpen, locked = false, index = 0 }: { 
       >
         <PresetIcon className="w-3.5 h-3.5" style={{ color: configured ? accent : undefined }} />
       </span>
-      <span className="typo-caption text-foreground">{label}</span>
+      {/* One line, always (the compose row is flex-nowrap and the label wrapped
+          to two lines there): the chip never shrinks below its label, and a
+          long archetype name truncates at the cap instead of wrapping. */}
+      <span className="min-w-0 truncate typo-caption text-foreground">{label}</span>
     </motion.button>
   );
 }

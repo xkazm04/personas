@@ -180,4 +180,22 @@ describe('BuildTemplateSuggestion', () => {
     fireEvent.click(dismiss);
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
+
+  it('reports whether a match is on screen, and false again on unmount', async () => {
+    companionMatchTemplates.mockResolvedValue([MATCH]);
+    const onShowChange = vi.fn();
+    const { unmount } = render(
+      <BuildTemplateSuggestion
+        intent="harvest ideas from slack and triage them"
+        active
+        onAccept={vi.fn()}
+        onDismiss={vi.fn()}
+        onShowChange={onShowChange}
+      />,
+    );
+    await screen.findByTestId('build-template-suggestion');
+    await waitFor(() => expect(onShowChange).toHaveBeenLastCalledWith(true));
+    unmount();
+    expect(onShowChange).toHaveBeenLastCalledWith(false);
+  });
 });

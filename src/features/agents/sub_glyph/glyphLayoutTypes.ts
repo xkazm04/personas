@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { GlyphDimension, GlyphRow } from "@/features/shared/glyph";
 import type { BuildQuestion, CellBuildStatus, BuildPhase, ToolTestResult } from "@/lib/types/buildTypes";
 import type { QuickConfigState } from "@/features/agents/shared/quickConfig/quickConfigTypes";
@@ -54,6 +55,18 @@ export interface GlyphFullLayoutProps {
    *  context editor, so it receives the value and setter. */
   contextText?: string;
   onContextChange?: (v: string) => void;
+  /** The "Faster path" template row, built by the container (it owns the
+   *  decision, the accept route and the dismiss latch). The sheet renders it
+   *  inside the centre action panel of the questions act, never above the
+   *  layout, so it can no longer push the fixed-height sheet down. */
+  templateSuggestion?: ReactNode;
+  /** True while that row actually shows a match: the sheet then holds the
+   *  camera on the panel instead of pushing into the first question. */
+  templateSuggestionShowing?: boolean;
+  /** A launch failure (draft creation / session start). Shown inside the
+   *  compose centre rather than as a banner that would shrink the sheet. */
+  launchError?: string | null;
+  onDismissLaunchError?: () => void;
 }
 
 export type { GlyphDimension, GlyphRow, BuildQuestion, CellBuildStatus, BuildPhase, QuickConfigState };

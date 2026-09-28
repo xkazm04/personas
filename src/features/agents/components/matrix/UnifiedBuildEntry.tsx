@@ -173,6 +173,9 @@ export function UnifiedBuildEntry() {
   // (reset per build session below); `adoptionReview` (when set) swaps the
   // build surface for the inline adoption wizard.
   const [templateSuggestionDismissed, setTemplateSuggestionDismissed] = useState(false);
+  // Whether the row currently shows a match (reported by the row itself), so
+  // the sheet can hold its camera on the panel while the choice is open.
+  const [templateSuggestionShowing, setTemplateSuggestionShowing] = useState(false);
   const [adoptionReview, setAdoptionReview] = useState<PersonaDesignReview | null>(null);
 
   // Phase F: pending auto-launch from Athena's prefill_persona_create.
@@ -749,18 +752,52 @@ export function UnifiedBuildEntry() {
       className="flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-hidden transition-opacity duration-400 ease-out"
       style={{ opacity: fadeOut ? 0 : 1 }}
     >
+      {/* `fitWidth`: the default header carries an app-wide `min-w-[80vw]`
+          floor, which is wider than this container whenever the sidebar is
+          open (1280 - 52 rail - 240 nav = 988 < 1024 px) and was the source
+          of the horizontal scrollbar track under the build area. The one-shot
+          toggle rides in the header's actions slot instead of a row of its
+          own above the sheet, so no chrome pushes the sheet down. */}
       <ContentHeader
+        fitWidth
         title={t.agents.matrix_entry.header_title}
         subtitle={
           agentName && agentName !== 'New Agent'
             ? `${t.agents.matrix_entry.header_subtitle_editing.replace('{name}', agentName)}`
             : t.agents.matrix_entry.header_subtitle_new
         }
+        actions={adoptionReview ? undefined : (
+          <button
+            type="button"
+            onClick={() => setOneShotEnabled((v) => !v)}
+            disabled={isActivelyBuilding}
+            className={`inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-full border px-3 py-1 typo-caption transition disabled:opacity-50 disabled:cursor-not-allowed ${
+              oneShotEnabled
+                ? "border-primary/40 bg-primary/15 text-primary"
+                : "border-border/30 bg-secondary/20 text-foreground hover:text-foreground"
+            }`}
+            title={
+              oneShotEnabled
+                ? "One-shot is on. Launching will let the AI decide every gate; you'll get a notification when it's ready."
+                : "Turn on one-shot to skip the questionnaire — the AI will pick safe defaults and notify you when the build lands."
+            }
+            data-testid="build-oneshot-toggle"
+          >
+            <span
+              className={`inline-block h-1.5 w-1.5 rounded-full ${
+                oneShotEnabled ? "bg-primary" : "bg-foreground/30"
+              }`}
+              aria-hidden
+            />
+            {oneShotEnabled ? "One-shot: on" : "Let AI decide everything"}
+          </button>
+        )}
       />
 
       <div className="flex-1 min-h-0 flex flex-col w-full px-4 md:px-6 xl:px-8 pt-4">
-      {/* Q&A, context and the rest of the build live inside the Contact Sheet
-          (Sheet · Cinema), the one build layout. */}
+      {/* Q&A, context, the "Faster path" template row and build errors all
+          live inside the Contact Sheet (Sheet · Cinema), the one build layout:
+          nothing is rendered above or beside it that could push it down. */}
 
       {adoptionReview ? (
         <AdoptionWizardModal
@@ -772,47 +809,6 @@ export function UnifiedBuildEntry() {
         />
       ) : (
         <>
-      {/* Build-mode toggle (one-shot vs interactive). */}
-      <div className="flex-shrink-0 mb-2 flex justify-end items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setOneShotEnabled((v) => !v)}
-          disabled={isActivelyBuilding}
-          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 typo-caption transition disabled:opacity-50 disabled:cursor-not-allowed ${
-            oneShotEnabled
-              ? "border-primary/40 bg-primary/15 text-primary"
-              : "border-border/30 bg-secondary/20 text-foreground hover:text-foreground"
-          }`}
-          title={
-            oneShotEnabled
-              ? "One-shot is on. Launching will let the AI decide every gate; you'll get a notification when it's ready."
-              : "Turn on one-shot to skip the questionnaire — the AI will pick safe defaults and notify you when the build lands."
-          }
-          data-testid="build-oneshot-toggle"
-        >
-          <span
-            className={`inline-block h-1.5 w-1.5 rounded-full ${
-              oneShotEnabled ? "bg-primary" : "bg-foreground/30"
-            }`}
-            aria-hidden
-          />
-          {oneShotEnabled ? "One-shot: on" : "Let AI decide everything"}
-        </button>
-      </div>
-
-      {/* The "Faster path" template alert floats above the build surface once
-          the first clarifying questions land. `shouldSurfaceTemplateSuggestion`
-          owns the decision. */}
-      <BuildTemplateSuggestion
-        intent={intentText}
-        active={shouldSurfaceTemplateSuggestion(
-          build.pendingQuestions?.length ?? 0,
-          templateSuggestionDismissed,
-        )}
-        onAccept={handleAcceptTemplate}
-        onDismiss={() => setTemplateSuggestionDismissed(true)}
-      />
-
       {(() => {
         const layoutProps: GlyphFullLayoutProps = {
           intentText,
@@ -851,6 +847,23 @@ export function UnifiedBuildEntry() {
           onLaunchCoreSnapshot: handleLaunchCoreSnapshot,
           contextText,
           onContextChange: setContextText,
+          // The "Faster path" row: `shouldSurfaceTemplateSuggestion` owns the
+          // decision; the sheet renders the row in its questions panel.
+          templateSuggestion: (
+            <BuildTemplateSuggestion
+              intent={intentText}
+              active={shouldSurfaceTemplateSuggestion(
+                build.pendingQuestions?.length ?? 0,
+                templateSuggestionDismissed,
+              )}
+              onAccept={handleAcceptTemplate}
+              onDismiss={() => setTemplateSuggestionDismissed(true)}
+              onShowChange={setTemplateSuggestionShowing}
+            />
+          ),
+          templateSuggestionShowing,
+          launchError,
+          onDismissLaunchError: () => setLaunchError(null),
         };
         return <ContactSheetCinemaLayout {...layoutProps} />;
       })()}
@@ -863,19 +876,6 @@ export function UnifiedBuildEntry() {
         onDismiss={() => setPromoteReceipt(null)}
       />
 
-      {/* Error banner */}
-      {(launchError || build.buildError) && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-card border border-red-500/20 bg-red-500/5 typo-body text-red-400 flex-shrink-0">
-          <span className="flex-1">{launchError || build.buildError}</span>
-          <button
-            type="button"
-            onClick={() => setLaunchError(null)}
-            className="text-red-400/60 hover:text-red-400 typo-caption"
-          >
-            {t.errors.dismiss_error}
-          </button>
-        </div>
-      )}
         </>
       )}
 

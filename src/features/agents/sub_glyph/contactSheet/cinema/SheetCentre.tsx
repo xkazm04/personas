@@ -38,6 +38,7 @@ export function SheetCentre({ p, s, a, tight, billing }: SheetCentreProps) {
         intentText={p.intentText} onIntentChange={p.onIntentChange} onLaunch={s.launch}
         launchDisabled={p.launchDisabled} launching={s.launching} core={s.core}
         hasContext={!!p.contextText?.trim()} onOpenContext={a.openContext} onOpenCore={a.openCore}
+        error={p.launchError} onDismissError={p.onDismissLaunchError}
         below={<RecipeStarters recipes={s.recipes} />}
       />
     );

@@ -11,7 +11,8 @@ import { ActionPanel } from "./ActionPanel";
 import type { SlateProps } from "./Slate";
 import { BuildAside, LogLine } from "./BuildAside";
 import { AnswersList, QuestionsSummary } from "./QuestionsCentre";
-import { DraftActions, Enter, Note, ScreeningBody, VerdictActions, VerdictBody } from "./ActFooters";
+import { DraftActions, Enter, Note, ScreeningBody, VerdictActions, VerdictBody, VerdictPromotePreview } from "./ActFooters";
+import { usePromoteView } from "./usePromoteView";
 import { COPY } from "../copy";
 
 export interface CentreActions {
@@ -37,6 +38,8 @@ interface ActPanelProps {
 
 export function ActPanel({ p, s, a, tight }: ActPanelProps) {
   const activity = useAgentStore((st) => st.buildActivity);
+  // Fetches only while the draft sits at test_complete (the verdict act).
+  const promoteView = usePromoteView();
   const { act, flow, clock, cast } = s;
   const phase = COPY.phaseLabel[p.buildPhase ?? "initializing"] ?? null;
   const refine = p.onRefine ? a.openRefine : undefined;
@@ -44,11 +47,14 @@ export function ActPanel({ p, s, a, tight }: ActPanelProps) {
   const lines = p.cliOutputLines ?? [];
   const base = { elapsed: clock.elapsed, running: clock.running, partial: clock.partial, detail: phase };
   const slate = (state: string, tone: SlateProps["tone"], extra?: Partial<SlateProps>): SlateProps => ({ ...base, state, tone, ...extra });
+  // A build error rides inside the panel in every act (the stopped act prints
+  // it as its body instead), never as a banner that would shrink the sheet.
+  const errorLine = act === "stopped" ? null : p.buildError;
 
   if (act === "casting") {
     const state = cast.phase === "crowned" ? COPY.crowned : cast.phase === "deliberation" ? COPY.deliberating : COPY.casting;
     return (
-      <ActionPanel slate={slate(state, "work")}>
+      <ActionPanel alert={errorLine} slate={slate(state, "work")}>
         <Note>{activity || COPY.firstPassNote}</Note>
         <BuildAside picked={s.recipes.picked} lines={lines} tight={tight} onOpenLog={a.openLog} />
       </ActionPanel>
@@ -57,7 +63,7 @@ export function ActPanel({ p, s, a, tight }: ActPanelProps) {
 
   if (act === "wiring") {
     return (
-      <ActionPanel slate={slate(COPY.wiring, "work")}>
+      <ActionPanel alert={errorLine} slate={slate(COPY.wiring, "work")}>
         <Note>{activity || COPY.wiringNote}</Note>
         <LogLine lines={lines} onOpen={a.openLog} />
       </ActionPanel>
@@ -69,6 +75,7 @@ export function ActPanel({ p, s, a, tight }: ActPanelProps) {
       const sending = flow.stage === "sending";
       return (
         <ActionPanel
+          alert={errorLine}
           slate={slate(sending ? COPY.state.sendingAnswers : COPY.answersReady(flow.n), sending ? "work" : "wait", sending ? {} : { detail: COPY.state.reviewNote })}
           hint={COPY.sendNote}
           actions={
@@ -82,8 +89,12 @@ export function ActPanel({ p, s, a, tight }: ActPanelProps) {
       );
     }
     const away = flow.stage === "away";
+    // The "Faster path" row takes the questions note's place while it shows,
+    // so the panel keeps its height in the short centre cell.
+    const suggesting = !!p.templateSuggestionShowing;
     return (
       <ActionPanel
+        alert={errorLine}
         slate={slate(COPY.questionsFor(flow.n), "wait")}
         actions={
           <Button variant="primary" size="md" icon={<MessageCircleQuestion className="w-3.5 h-3.5" />} onClick={() => flow.open()} autoFocus={away}>
@@ -91,7 +102,8 @@ export function ActPanel({ p, s, a, tight }: ActPanelProps) {
           </Button>
         }
       >
-        <QuestionsSummary qs={flow.qs} />
+        <QuestionsSummary qs={flow.qs} note={!suggesting} />
+        {p.templateSuggestion}
       </ActionPanel>
     );
   }
@@ -99,6 +111,7 @@ export function ActPanel({ p, s, a, tight }: ActPanelProps) {
   if (act === "draft") {
     return (
       <ActionPanel
+        alert={errorLine}
         slate={slate(COPY.draftReady, "wait", { detail: COPY.state.draftNote })}
         actions={<DraftActions onStartTest={p.onStartTest} onRefine={refine} onReviewCaps={a.openCaps} onSimulate={simulate} />}
       />
@@ -107,7 +120,7 @@ export function ActPanel({ p, s, a, tight }: ActPanelProps) {
 
   if (act === "screening") {
     return (
-      <ActionPanel slate={slate(COPY.screening, "work")}>
+      <ActionPanel alert={errorLine} slate={slate(COPY.screening, "work")}>
         <ScreeningBody lines={p.testOutputLines ?? []} />
       </ActionPanel>
     );
@@ -119,6 +132,7 @@ export function ActPanel({ p, s, a, tight }: ActPanelProps) {
     const hasBody = !passed ? !!p.testError || results.length > 0 : results.length > 0;
     return (
       <ActionPanel
+        alert={errorLine}
         slate={slate(passed ? COPY.testsPassed : COPY.testsFailed, passed ? "good" : "bad")}
         actions={
           <VerdictActions
@@ -126,10 +140,16 @@ export function ActPanel({ p, s, a, tight }: ActPanelProps) {
             onReviewCaps={a.openCaps} onSimulate={simulate}
             onAskForce={p.onPromoteForce ? a.askForce : undefined}
             onAskReject={p.onRejectTest ? a.askReject : undefined}
+            blockedReason={promoteView.canPromote ? null : promoteView.reason ?? ""}
           />
         }
       >
-        {hasBody && <VerdictBody passed={passed} testError={p.testError} results={results} />}
+        {hasBody || promoteView.hasContent ? (
+          <>
+            {hasBody && <VerdictBody passed={passed} testError={p.testError} results={results} />}
+            <VerdictPromotePreview view={promoteView} />
+          </>
+        ) : null}
       </ActionPanel>
     );
   }
@@ -137,6 +157,7 @@ export function ActPanel({ p, s, a, tight }: ActPanelProps) {
   if (act === "premiere") {
     return (
       <ActionPanel
+        alert={errorLine}
         slate={slate(COPY.ready, "good", { final: true })}
         actions={
           <Button variant="primary" size="md" iconRight={<ArrowRight className="w-3.5 h-3.5" />} onClick={p.onViewAgent} autoFocus>

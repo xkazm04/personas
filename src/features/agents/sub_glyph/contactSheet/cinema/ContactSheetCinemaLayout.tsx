@@ -105,11 +105,15 @@ export function ContactSheetCinemaLayout(props: GlyphFullLayoutProps) {
   const scene = COPY.scene[act === "questions" && (flow.stage === "review" || flow.stage === "sending") ? "review" : act];
 
   // Cinema's beat: let the coronation land before the camera pushes into the first question.
+  // While the panel offers a "Faster path" template the camera holds: that row
+  // is a choice about whether to answer at all, so it must stay on screen.
+  // "Keep building" clears it and the beat runs again.
+  const holdForTemplate = !!props.templateSuggestionShowing;
   useEffect(() => {
-    if (act !== "questions" || flowStage !== "intro" || layer) return;
+    if (act !== "questions" || flowStage !== "intro" || layer || holdForTemplate) return;
     const h = window.setTimeout(() => openQuestion(0), 2600);
     return () => window.clearTimeout(h);
-  }, [act, flowStage, openQuestion, layer]);
+  }, [act, flowStage, openQuestion, layer, holdForTemplate]);
 
   useSheetKeys({ act, flow, layer, confirm: modal, closeLayer });
 
@@ -120,7 +124,10 @@ export function ContactSheetCinemaLayout(props: GlyphFullLayoutProps) {
 
   return (
     <div className="flex-1 min-h-0 w-full flex flex-col" data-testid="ContactSheetCinemaLayout" style={{ ["--cinema-accent" as string]: s.cast.accent }}>
-      <div ref={stageRef} className="relative flex-1 min-h-0">
+      {/* The stage is the camera's frame: `overflow-clip` keeps the 2.5x push
+          (and any frame edge) from widening the build container's scroll area,
+          without making the stage itself a scroll container. */}
+      <div ref={stageRef} className="relative flex-1 min-h-0 min-w-0 overflow-clip">
         {/* The camera: sigil and sheet move as one sleeping print under the lens. */}
         <motion.div
           className={`absolute inset-0 ${sleep.frozen ? PAUSED : ""}`}

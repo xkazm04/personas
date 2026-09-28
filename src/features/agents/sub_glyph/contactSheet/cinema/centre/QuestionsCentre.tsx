@@ -19,7 +19,7 @@ function useFrameName() {
 }
 
 /** The pending questions at a glance: the frame each one belongs to. */
-export function QuestionsSummary({ qs }: { qs: BuildQuestion[] }) {
+export function QuestionsSummary({ qs, note = true }: { qs: BuildQuestion[]; note?: boolean }) {
   const frameName = useFrameName();
   return (
     <>
@@ -34,7 +34,7 @@ export function QuestionsSummary({ qs }: { qs: BuildQuestion[] }) {
           );
         })}
       </ul>
-      <span className="typo-body text-foreground">{COPY.questionsNote}</span>
+      {note && <span className="typo-body text-foreground">{COPY.questionsNote}</span>}
     </>
   );
 }
