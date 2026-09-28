@@ -2110,7 +2110,10 @@ fn build_decision_context_with_mode(
         p.unmerged_branches = read_unmerged_branches(pool, &p.project_id, &branch_charters);
     }
 
-    let open_asks = list_open_asks(pool, &persona.id)
+    let open_ask_records = list_open_asks(pool, &persona.id);
+    // What aged out unanswered (71c28238) — minus anything asked again since.
+    let expired_reviews = list_expired_reviews(pool, &persona.id, &open_ask_records);
+    let open_asks = open_ask_records
         .into_iter()
         .map(|r| attention_decide::OpenAsk {
             age_minutes: minutes_since_ts(&r.created_at),
@@ -2212,6 +2215,7 @@ fn build_decision_context_with_mode(
         projects,
         open_asks,
         answered_reviews,
+        expired_reviews,
         loop_hold,
         // The end of the newest COMPLETED pass of any lane (e90e189a) — the
         // same ledger read the briefs take, from the history already in hand.
@@ -2599,6 +2603,13 @@ pub(crate) fn list_answered_reviews(
         }
     };
     rows.into_iter()
+        // A row the review GC closed was answered by nobody (71c28238); it is
+        // carried by `list_expired_reviews` instead, never as an answer.
+        .filter(|r| {
+            !crate::db::repos::communication::manual_reviews::is_gc_expired(
+                r.reviewer_notes.as_deref(),
+            )
+        })
         .filter(|r| match (since, r.resolved_at.as_deref()) {
             // Answered before this persona last decided: it has already had
             // the chance to act on it, and repeating it every wake would read
@@ -2633,6 +2644,71 @@ pub(crate) fn list_answered_reviews(
             notes: r.reviewer_notes.map(|n| bound_summary(&n)),
             resolved_at: r.resolved_at,
         })
+        .collect()
+}
+
+/// The reviews of this persona's that the review GC closed with nobody having
+/// read them, newest first (71c28238).
+///
+/// Such a row ends `status = 'resolved'` like an answer, so before this it was
+/// shown to the decision as ANSWERED and, being no longer pending, dropped out
+/// of the open asks: an unanswered question read back as decided. Carried on
+/// its own list so the prompt can say what it is.
+///
+/// An expired ask the persona has since asked again (a pending ask with the
+/// same title, in `open`) is left out: that question is open, not expired.
+/// Bounded by the same lookback as the answered reviews; best-effort likewise.
+pub(crate) fn list_expired_reviews(
+    pool: &DbPool,
+    persona_id: &str,
+    open: &[OpenAskRecord],
+) -> Vec<attention_decide::ExpiredReview> {
+    use crate::db::repos::communication::manual_reviews;
+    let rows = match manual_reviews::get_recent_resolved(
+        pool,
+        persona_id,
+        ANSWERED_REVIEW_LOOKBACK_DAYS,
+        (attention_decide::MAX_EXPIRED_REVIEWS as i64) * 4,
+    ) {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e,
+                "persona_attention: could not read the expired reviews — this wake \
+                 sees none");
+            return Vec::new();
+        }
+    };
+    rows.into_iter()
+        .filter(|r| manual_reviews::is_gc_expired(r.reviewer_notes.as_deref()))
+        .filter_map(|r| {
+            let ctx = r
+                .context_data
+                .as_deref()
+                .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok());
+            let ask = ctx.as_ref().filter(|v| {
+                v.get("source").and_then(|s| s.as_str()) == Some(attention_decide::ASK_SOURCE)
+            });
+            // An ask renders under its own title — the one the duplicate check
+            // and the open-asks list compare on — not the row's display title.
+            let title = ask
+                .and_then(|v| v.get("askTitle").and_then(|t| t.as_str()))
+                .unwrap_or(&r.title)
+                .to_string();
+            if ask.is_some() && open.iter().any(|o| o.title == title) {
+                return None;
+            }
+            Some(attention_decide::ExpiredReview {
+                ask_kind: ask.map(|v| {
+                    v.get("kind")
+                        .and_then(|k| k.as_str())
+                        .unwrap_or(attention_decide::ASK_DECISION)
+                        .to_string()
+                }),
+                title,
+                expired_at: r.resolved_at,
+            })
+        })
+        .take(attention_decide::MAX_EXPIRED_REVIEWS)
         .collect()
 }
 
@@ -12506,6 +12582,55 @@ mod attention_tests {
             list_answered_reviews(&pool, "p2", None).is_empty(),
             "another persona's answers are not this one's"
         );
+        Ok(())
+    }
+
+    /// 71c28238: an ask the review GC closed unanswered is not an answer. It
+    /// stays visible to the persona as EXPIRED — until it is asked again, when
+    /// it is simply open.
+    #[test]
+    fn a_gc_expired_ask_is_expired_not_answered() -> Result<(), AppError> {
+        use crate::db::repos::communication::manual_reviews;
+
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+        crate::db::repos::execution::executions::create(&pool, "p1", None, None, None, None)?;
+        let project = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "Ascent",
+            "C:/repos/ascent",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        let ctx = ask_context("p1", &project.id);
+        raise_asks(&pool, &ctx, &[accept_ask(vec![])]);
+        assert_eq!(list_open_asks(&pool, "p1").len(), 1);
+
+        let cutoff = (chrono::Utc::now() + chrono::Duration::minutes(1)).to_rfc3339();
+        assert_eq!(manual_reviews::gc_stale_pending(&pool, &cutoff)?.len(), 1);
+
+        assert!(list_open_asks(&pool, "p1").is_empty(), "no longer pending");
+        assert!(
+            list_answered_reviews(&pool, "p1", None).is_empty(),
+            "an expired ask is never an answer"
+        );
+        let expired = list_expired_reviews(&pool, "p1", &list_open_asks(&pool, "p1"));
+        assert_eq!(expired.len(), 1, "{expired:?}");
+        assert_eq!(expired[0].title, "27 ideas are waiting on your triage");
+        assert_eq!(
+            expired[0].ask_kind.as_deref(),
+            Some(attention_decide::ASK_ACCEPT_IDEAS)
+        );
+        assert!(expired[0].expired_at.is_some());
+
+        // Asked again: the question is open, not expired, and not doubled.
+        raise_asks(&pool, &ctx, &[accept_ask(vec![])]);
+        let open = list_open_asks(&pool, "p1");
+        assert_eq!(open.len(), 1, "{open:?}");
+        assert!(list_expired_reviews(&pool, "p1", &open).is_empty());
         Ok(())
     }
 

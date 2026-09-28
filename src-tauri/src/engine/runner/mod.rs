@@ -1557,30 +1557,21 @@ pub async fn run_execution(
     // `get_recent_resolved` had no call site — reviews were resolved but never
     // fed back into subsequent runs. Skip on session resume (context loaded).
     let prompt_text = if !is_session_resume {
-        match manual_review_repo::get_recent_resolved(&pool, &persona.id, 14, 5) {
+        // Over-read: rows the review GC closed unanswered are rendered apart
+        // and must not crowd the real decisions out of their cap.
+        match manual_review_repo::get_recent_resolved(
+            &pool,
+            &persona.id,
+            14,
+            (PRIOR_FEEDBACK_CAP * 2) as i64,
+        ) {
             Ok(reviews) if !reviews.is_empty() => {
-                let mut fb = String::from(
-                    "\n\n## Prior Human Feedback — Apply These Decisions\n\nA human reviewed your recent work. Repeat what was approved; do NOT repeat what was rejected. These decisions override your defaults.\n\n",
-                );
-                for r in &reviews {
-                    fb.push_str(&format!(
-                        "- [{}] **{}**: {}",
-                        r.status.as_str(),
-                        r.title,
-                        r.description.as_deref().unwrap_or("")
-                    ));
-                    if let Some(notes) = r.reviewer_notes.as_deref() {
-                        if !notes.trim().is_empty() {
-                            fb.push_str(&format!(" — reviewer said: {notes}"));
-                        }
-                    }
-                    fb.push('\n');
-                }
+                let fb = render_prior_feedback(&reviews);
                 logger.log(&format!(
-                    "[LEARNING] Injected {} prior human-review decision(s)",
-                    reviews.len()
+                    "[LEARNING] Injected {} prior human-review decision(s), {} expired unanswered",
+                    fb.decisions, fb.expired
                 ));
-                format!("{prompt_text}{fb}")
+                format!("{prompt_text}{}", fb.text)
             }
             Ok(_) => prompt_text,
             Err(e) => {
@@ -4170,6 +4161,146 @@ fn finalize_open_tool_steps(tool_steps: &mut [ToolCallStep], end_ms: u64) -> usi
         stamped += 1;
     }
     stamped
+}
+
+/// How many reviews each half of the prior-feedback block carries.
+const PRIOR_FEEDBACK_CAP: usize = 5;
+
+/// The prior-feedback block and what went into it, for the run log.
+struct PriorFeedback {
+    text: String,
+    decisions: usize,
+    expired: usize,
+}
+
+/// Render recently resolved reviews into the prompt's prior-feedback block.
+///
+/// A review the GC closed unanswered (`manual_reviews::is_gc_expired`) is not
+/// a decision, and rendered as one it did the most damage the block can do:
+/// three App Master asks that aged out on 2026-09-22/23 reached the next runs
+/// under "A human reviewed your recent work ... These decisions override your
+/// defaults" (71c28238). Those rows go under their own heading with no
+/// override framing, and never under "Apply These Decisions".
+///
+/// Pure, so the wording is tested without a database or a run.
+fn render_prior_feedback(reviews: &[crate::db::models::PersonaManualReview]) -> PriorFeedback {
+    let (expired, decided): (Vec<_>, Vec<_>) = reviews
+        .iter()
+        .partition(|r| manual_review_repo::is_gc_expired(r.reviewer_notes.as_deref()));
+    let decided: Vec<_> = decided.into_iter().take(PRIOR_FEEDBACK_CAP).collect();
+    let expired: Vec<_> = expired.into_iter().take(PRIOR_FEEDBACK_CAP).collect();
+
+    let mut text = String::new();
+    if !decided.is_empty() {
+        text.push_str(
+            "\n\n## Prior Human Feedback — Apply These Decisions\n\nA human reviewed your recent work. Repeat what was approved; do NOT repeat what was rejected. These decisions override your defaults.\n\n",
+        );
+        for r in &decided {
+            text.push_str(&format!(
+                "- [{}] **{}**: {}",
+                r.status.as_str(),
+                r.title,
+                r.description.as_deref().unwrap_or("")
+            ));
+            if let Some(notes) = r.reviewer_notes.as_deref() {
+                if !notes.trim().is_empty() {
+                    text.push_str(&format!(" — reviewer said: {notes}"));
+                }
+            }
+            text.push('\n');
+        }
+    }
+    if !expired.is_empty() {
+        text.push_str(
+            "\n\n## Expired Unanswered — No Human Read These\n\nThese reviews and questions aged out of the review queue without an answer. They are NOT decisions: nothing here was approved or rejected, and nothing here overrides your defaults. A question you still need answered is still open; ask it again.\n\n",
+        );
+        for r in &expired {
+            text.push_str(&format!(
+                "- **{}**: {}\n",
+                r.title,
+                r.description.as_deref().unwrap_or("")
+            ));
+        }
+    }
+    PriorFeedback {
+        text,
+        decisions: decided.len(),
+        expired: expired.len(),
+    }
+}
+
+#[cfg(test)]
+mod prior_feedback_tests {
+    use super::render_prior_feedback;
+    use crate::db::models::{ManualReviewStatus, PersonaManualReview};
+    use crate::db::repos::communication::manual_reviews::GC_AUTO_RESOLVED_NOTE;
+
+    fn review(title: &str, status: ManualReviewStatus, notes: Option<&str>) -> PersonaManualReview {
+        PersonaManualReview {
+            id: format!("rev-{title}"),
+            execution_id: "exec-1".into(),
+            persona_id: "p1".into(),
+            title: title.into(),
+            description: Some(format!("about {title}")),
+            severity: "info".into(),
+            context_data: None,
+            suggested_actions: None,
+            status,
+            reviewer_notes: notes.map(str::to_string),
+            resolved_at: Some("2026-09-23T10:00:00Z".into()),
+            created_at: "2026-09-20T10:00:00Z".into(),
+            updated_at: "2026-09-23T10:00:00Z".into(),
+            use_case_id: None,
+            assignment_id: None,
+            step_id: None,
+        }
+    }
+
+    /// 71c28238: a GC-closed ask renders only under "Expired unanswered",
+    /// never after "override your defaults".
+    #[test]
+    fn a_gc_closed_review_is_expired_not_a_decision() {
+        let fb = render_prior_feedback(&[
+            review(
+                "Merge PR 57?",
+                ManualReviewStatus::Resolved,
+                Some(GC_AUTO_RESOLVED_NOTE),
+            ),
+            review("Ship the parser", ManualReviewStatus::Approved, Some("yes")),
+        ]);
+        assert_eq!((fb.decisions, fb.expired), (1, 1));
+        let decisions_at = fb
+            .text
+            .find("Apply These Decisions")
+            .expect("decisions block");
+        let expired_at = fb.text.find("Expired Unanswered").expect("expired block");
+        assert!(decisions_at < expired_at, "{}", fb.text);
+        let decisions = &fb.text[decisions_at..expired_at];
+        assert!(
+            decisions.contains("[approved] **Ship the parser**"),
+            "{decisions}"
+        );
+        assert!(!decisions.contains("Merge PR 57?"), "{decisions}");
+        let expired = &fb.text[expired_at..];
+        assert!(expired.contains("**Merge PR 57?**"), "{expired}");
+        assert!(expired.contains("NOT decisions"), "{expired}");
+        assert!(!expired.contains("override your defaults."), "{expired}");
+        assert!(!expired.contains("[resolved]"), "{expired}");
+    }
+
+    /// Only expired rows: no "Apply These Decisions" block at all.
+    #[test]
+    fn only_expired_reviews_render_no_decision_block() {
+        let fb = render_prior_feedback(&[review(
+            "Which channel?",
+            ManualReviewStatus::Resolved,
+            Some("earlier note (auto-resolved: stale > GC threshold)"),
+        )]);
+        assert_eq!((fb.decisions, fb.expired), (0, 1));
+        assert!(!fb.text.contains("Apply These Decisions"), "{}", fb.text);
+        assert!(!fb.text.contains("A human reviewed"), "{}", fb.text);
+        assert!(fb.text.contains("**Which channel?**"), "{}", fb.text);
+    }
 }
 
 #[cfg(test)]

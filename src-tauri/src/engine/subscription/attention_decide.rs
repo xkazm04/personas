@@ -735,6 +735,28 @@ pub(crate) struct AnsweredReview {
 /// counted, like every other capped list in this prompt.
 pub(crate) const MAX_ANSWERED_REVIEWS: usize = 8;
 
+/// A review of this persona's that the review GC closed with nobody having
+/// read it (71c28238).
+///
+/// It ends `status = 'resolved'` exactly like an answered row, so it used to
+/// reach this prompt as an ANSWER and drop out of the open asks at the same
+/// time: the persona's question aged out and read back as decided. Carried
+/// separately so it is rendered as what it is, a question still unanswered.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct ExpiredReview {
+    /// The ask's own title (`context_data.askTitle`) for an ask, else the
+    /// review's title.
+    pub title: String,
+    /// The ask kind for this persona's own ask; `None` for a review somebody
+    /// filed about its work.
+    pub ask_kind: Option<String>,
+    /// When the GC closed it.
+    pub expired_at: Option<String>,
+}
+
+/// How many expired reviews one wake is shown.
+pub(crate) const MAX_EXPIRED_REVIEWS: usize = 8;
+
 /// A window in which the LOOP ITSELF was stopped, as a prompt is told it.
 ///
 /// The App Master's own reading of a silent stretch is "nothing happened", and
@@ -846,6 +868,9 @@ pub(crate) struct DecisionContext {
     /// Reviews of this persona's that were ANSWERED since its last decide pass
     /// (9ef19a00), newest first, at most [`MAX_ANSWERED_REVIEWS`].
     pub answered_reviews: Vec<AnsweredReview>,
+    /// Reviews of this persona's the GC closed unanswered (71c28238), newest
+    /// first, at most [`MAX_EXPIRED_REVIEWS`]. Never among `answered_reviews`.
+    pub expired_reviews: Vec<ExpiredReview>,
     /// The loop-wide hold that overlapped the time since this persona's last
     /// decide, when there was one (fed0339f). `None` is the ordinary case and
     /// renders nothing.
@@ -2750,6 +2775,34 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
         );
     }
 
+    // --- What aged out unanswered (71c28238) ---
+    //
+    // Beside the answers and deliberately NOT among them: the review GC closes
+    // a row with the same status an answer gets, and read as an answer an
+    // expired question became a decision nobody made.
+    if !ctx.expired_reviews.is_empty() {
+        s.push_str("EXPIRED UNANSWERED (nobody read these; they are NOT answers)\n");
+        for r in &ctx.expired_reviews {
+            s.push_str(&format!(
+                "- [{}] {}{}\n",
+                match r.ask_kind.as_deref() {
+                    Some(kind) => format!("your ask · {kind}"),
+                    None => "review of your work".to_string(),
+                },
+                r.title,
+                r.expired_at
+                    .as_deref()
+                    .map(|t| format!(" — expired {t}"))
+                    .unwrap_or_default(),
+            ));
+        }
+        s.push_str(
+            "These aged out of the operator's queue with no answer. Nothing in them was \
+             approved or rejected, so do not act on them as decisions. An ask here is \
+             no longer with the operator: if it still blocks you, ask it again.\n\n",
+        );
+    }
+
     // --- What the channel says ---
     //
     // Before the charters, like the open asks and for the same reason: a
@@ -4078,6 +4131,7 @@ mod tests {
             // Nothing came back since the last wake either: the 9ef19a00 test
             // supplies its own answers.
             answered_reviews: Vec::new(),
+            expired_reviews: Vec::new(),
             loop_hold: None,
             last_pass_ended_at: None,
             // The channel is empty in the base fixture on purpose: every
@@ -4473,6 +4527,46 @@ mod tests {
         ctx.answered_reviews.clear();
         let p = render_decision_prompt(&ctx);
         assert!(!p.contains("ANSWERED SINCE YOUR LAST WAKE"), "{p}");
+    }
+
+    /// 71c28238: a question the review GC closed unanswered renders as EXPIRED,
+    /// never as an answer, and tells the persona it is no longer with anyone.
+    #[test]
+    fn expired_reviews_render_as_unanswered_not_as_answers() {
+        let mut ctx = ctx_fixture();
+        ctx.expired_reviews = vec![
+            ExpiredReview {
+                title: "May I merge PR #57?".into(),
+                ask_kind: Some(ASK_DECISION.into()),
+                expired_at: Some("2026-09-23T04:00:00+00:00".into()),
+            },
+            ExpiredReview {
+                title: "Check the output".into(),
+                ask_kind: None,
+                expired_at: None,
+            },
+        ];
+        let p = render_decision_prompt(&ctx);
+        assert!(
+            p.contains("EXPIRED UNANSWERED (nobody read these; they are NOT answers)"),
+            "{p}"
+        );
+        assert!(
+            p.contains(&format!(
+                "- [your ask · {ASK_DECISION}] May I merge PR #57? — expired 2026-09-23T04:00:00+00:00"
+            )),
+            "{p}"
+        );
+        assert!(
+            p.contains("- [review of your work] Check the output\n"),
+            "{p}"
+        );
+        assert!(p.contains("if it still blocks you, ask it again"), "{p}");
+        assert!(!p.contains("ANSWERED SINCE YOUR LAST WAKE"), "{p}");
+
+        ctx.expired_reviews.clear();
+        let p = render_decision_prompt(&ctx);
+        assert!(!p.contains("EXPIRED UNANSWERED"), "{p}");
     }
 
     /// 733b83b5: branches the persona's own workers authored and nobody merged
