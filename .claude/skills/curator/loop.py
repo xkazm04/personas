@@ -695,6 +695,71 @@ def take_next(c: sqlite3.Connection, root: pathlib.Path, skills: dict, dry: bool
     return None
 
 
+def corpus_freshness(root: pathlib.Path, fetch: bool = False) -> dict:
+    """How far the checkout the plan was ranked from is from its own origin.
+
+    **The single most expensive thing this loop can get wrong.** Measured
+    2026-09-28 on the first live run: the registry's local `main` was 242 commits
+    behind `origin/main`, so every projection was ranked from a corpus two
+    hundred commits stale, and subjects that upstream runs had already deepened
+    kept scoring as needing attention. The day's 43 dispatches settled 39
+    `blocked` and 2 `idled` for 1 commit - a ~2% yield, every pass paid for in
+    full. A worker diagnosed it from inside; nothing in the loop was looking.
+
+    `behind`/`ahead` are `None` when there is no upstream or git could not answer
+    - unknown, which is not zero and must not read as "fresh".
+    """
+    out: dict = {"behind": None, "ahead": None, "upstream": None, "fetched": False}
+    try:
+        up = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"],
+            capture_output=True, text=True, timeout=30,
+        )
+        if up.returncode != 0 or not up.stdout.strip():
+            return out
+        out["upstream"] = up.stdout.strip()
+        if fetch:
+            subprocess.run(["git", "-C", str(root), "fetch", "--quiet"],
+                           capture_output=True, text=True, timeout=180)
+            out["fetched"] = True
+        counts = subprocess.run(
+            ["git", "-C", str(root), "rev-list", "--left-right", "--count", "@{u}...HEAD"],
+            capture_output=True, text=True, timeout=60,
+        )
+        if counts.returncode == 0:
+            parts = counts.stdout.split()
+            if len(parts) == 2:
+                out["behind"], out["ahead"] = int(parts[0]), int(parts[1])
+    except Exception:
+        pass
+    return out
+
+
+# Above this many commits behind, a projection is ranked from a corpus so stale
+# that a dispatch is near-certain to rediscover work already done upstream. Not a
+# hard stop - `next --allow-stale` proceeds - because an unreachable origin must
+# not make the loop unusable.
+STALE_CORPUS_BEHIND = 50
+
+
+def app_running() -> bool | None:
+    """Whether the Personas app is also driving. `None` when it cannot be told.
+
+    Hoisted out of the session's own shell because the boot ritual needs it every
+    time and a hand-rolled process query is one typo from reporting "not running"
+    for an app that is.
+    """
+    try:
+        if sys.platform == "win32":
+            r = subprocess.run(["tasklist", "/FI", "IMAGENAME eq personas-desktop.exe", "/NH"],
+                               capture_output=True, text=True, timeout=30)
+            return "personas-desktop" in r.stdout.lower()
+        r = subprocess.run(["pgrep", "-f", "personas-desktop"], capture_output=True, text=True, timeout=30)
+        return r.returncode == 0
+    except Exception:
+        return None
+
+
 def git_head(root: pathlib.Path) -> str | None:
     try:
         r = subprocess.run(
@@ -1081,15 +1146,30 @@ def run_worker(c: sqlite3.Connection, claim: dict, timeout_min: int) -> int:
            if k not in SUBSCRIPTION_RESERVED_ENV and k not in CLAUDE_NESTING_ENV}
     env["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = "1"
     argv = [claude, "--print", "--dangerously-skip-permissions", claim["brief"]]
+    # `--print` buffers the whole run, so there is no progress until it exits. The
+    # pid is printed first and written beside the claim so the driving session can
+    # watch the process rather than reconstruct it from a command-line grep - the
+    # first live run needed three PowerShell attempts to find its own child.
+    pidfile = pathlib.Path(claim.get("pidfile") or "")
     try:
-        r = subprocess.run(
-            argv, cwd=claim["cwd"], env=env, capture_output=True, text=True,
-            timeout=timeout_min * 60,
-        )
-        out, err, code = r.stdout, r.stderr, r.returncode
-    except subprocess.TimeoutExpired as e:
-        out = (e.stdout or b"").decode("utf-8", "replace") if isinstance(e.stdout, bytes) else (e.stdout or "")
-        err, code = f"timed out after {timeout_min} min", 124
+        proc = subprocess.Popen(argv, cwd=claim["cwd"], env=env,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    except OSError as e:
+        die(f"could not spawn the worker: {e}")
+    print(json.dumps({"event": "spawned", "pid": proc.pid, "cwd": claim["cwd"]}), file=sys.stderr)
+    if str(pidfile):
+        try:
+            pidfile.write_text(str(proc.pid), encoding="utf-8")
+        except OSError:
+            pass
+    try:
+        out, err = proc.communicate(timeout=timeout_min * 60)
+        code = proc.returncode
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        out, err = proc.communicate()
+        err = f"{err or ''}\ntimed out after {timeout_min} min"
+        code = 124
     screen = f"{out}\n{err}".lower()
     limited = any(s in screen for s in LIMIT_SIGNATURES)
     print(json.dumps({
@@ -1108,8 +1188,14 @@ def main() -> int:
     sub.add_parser("status")
     sub.add_parser("gaps")
     sub.add_parser("growth")
-    p = sub.add_parser("next"); p.add_argument("--dry", action="store_true")
-    p = sub.add_parser("work"); p.add_argument("--claim", required=True); p.add_argument("--timeout-min", type=int, default=45)
+    p = sub.add_parser("next")
+    p.add_argument("--dry", action="store_true")
+    p.add_argument("--allow-stale", action="store_true", help="dispatch even from a stale corpus")
+    p.add_argument("--fetch", action="store_true", help="git fetch before measuring the lag")
+    p = sub.add_parser("work")
+    p.add_argument("--claim", required=True)
+    p.add_argument("--timeout-min", type=int, default=45)
+    p.add_argument("--pidfile", help="write the worker pid here so a watcher can find it")
     p = sub.add_parser("settle"); p.add_argument("--claim", required=True); p.add_argument("--state", required=True); p.add_argument("--evidence", required=True)
     p = sub.add_parser("release"); p.add_argument("--claim", required=True); p.add_argument("--why", default="released by the terminal driver")
     p = sub.add_parser("commits"); p.add_argument("--claim", required=True); p.add_argument("--since", required=True)
@@ -1126,8 +1212,12 @@ def main() -> int:
                               "growth": growth_reading(c)}, indent=2, default=str))
             return 0
         lane = harvest_lane(root)
+        fresh = corpus_freshness(root)
         print(json.dumps({
             "ok": True, "registry": str(root), "head": git_head(root),
+            "corpus": fresh,
+            "corpus_is_stale": (fresh["behind"] or 0) > STALE_CORPUS_BEHIND,
+            "app_running": app_running(),
             "brakes": brakes(c),
             "plan": plan_summary(c),
             "queue_file": {k: lane[k] for k in ("exists", "queued", "fingerprint")},
@@ -1144,6 +1234,23 @@ def main() -> int:
         b = brakes(c)
         if not b["may_start"] and not a.dry:
             print(json.dumps({"ok": True, "claim": None, "held_by": b["held_by"]}, indent=2))
+            return 0
+        # The corpus brake. A projection ranked from a checkout hundreds of
+        # commits behind its origin sends workers at subjects upstream already
+        # handled, and they come back idled having paid full price. Overridable,
+        # because an unreachable origin must not make the loop unusable - but
+        # never silent, because silence is what made it cost 43 dispatches.
+        fresh = corpus_freshness(root, fetch=a.fetch)
+        if not a.dry and not a.allow_stale and (fresh["behind"] or 0) > STALE_CORPUS_BEHIND:
+            print(json.dumps({
+                "ok": True, "claim": None,
+                "held_by": [
+                    f"the registry checkout is {fresh['behind']} commits behind "
+                    f"{fresh['upstream']} ({fresh['ahead']} ahead), so the plan was ranked from a "
+                    "stale corpus - bring it up to date, or pass --allow-stale to proceed anyway"
+                ],
+                "corpus": fresh,
+            }, indent=2))
             return 0
         claim = take_next(c, root, skills, dry=a.dry)
         if claim and not claim.get("declined") and not a.dry:
@@ -1162,8 +1269,18 @@ def main() -> int:
         return 0
 
     claim = json.loads(pathlib.Path(a.claim).read_text(encoding="utf-8"))
+    # `next` prints `{"ok":…, "claim":{…}}` and every other subcommand wants the
+    # claim itself. Unwrapping here rather than making each caller do it: the
+    # session had to hand-normalise the file three times in the first live run,
+    # which is three chances to hand a half-written file to a settle.
+    if isinstance(claim, dict) and "claim" in claim:
+        claim = claim["claim"]
+    if not isinstance(claim, dict) or "lane" not in claim:
+        die(f"{a.claim} does not hold a claim - run `next` and pass the file it wrote")
 
     if a.cmd == "work":
+        if a.pidfile:
+            claim["pidfile"] = a.pidfile
         return run_worker(c, claim, a.timeout_min)
     if a.cmd == "settle":
         settle(c, claim, a.state, a.evidence)

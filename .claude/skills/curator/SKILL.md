@@ -40,12 +40,14 @@ precisely so this driver and a running app cannot take the same item, and a hand
    the standing plan, the queue file, and **what the ladder would take next**.
 2. Read the `brakes.held_by` list. If it is non-empty, say which brake and stop; do not
    work around one. `curator_enabled` being off means the operator has not switched her on.
-3. **Check whether the app is also running** (`Get-Process personas-desktop` / look at the
-   tray). Both drivers are safe on the *claimed* lanes - the compare-and-set sees to that -
-   but the standing lane's two rungs both write `librarian/harvest/queue.md`, and two
-   harvest passes in one checkout is the single-writer violation harvest's own law names.
-   If the app is up and its loop is on, drive the plan and queue lanes only, or switch her
-   off in the app first, and say which you did.
+3. **`app_running`** is in that same output - do not shell out for it. Both drivers are
+   safe on the *claimed* lanes (the compare-and-set sees to that), but the standing lane's
+   two rungs both write `librarian/harvest/queue.md`, and two harvest passes in one checkout
+   is the single-writer violation harvest's own law names. If the app is up, drive the plan
+   and queue lanes only, or switch her off in the app first, and say which you did.
+4. **`corpus` and `corpus_is_stale`** - how far the checkout the plan was ranked from is
+   from its own origin. See **The corpus brake** below. This is the first thing to read,
+   because it decides whether any pass is worth paying for.
 
 ## The ladder (the same four rungs the app's tick runs)
 
@@ -63,23 +65,60 @@ precisely so this driver and a running app cannot take the same item, and a hand
    `/harvest research` to refill it, chosen by counting the queue file, and never re-run
    against bytes that rung already saw.
 
+## The corpus brake - read this before running a loop
+
+**Her plan is projected from the LOCAL checkout.** If that checkout is behind its origin,
+the ranking is computed from a corpus somebody else has already moved, so the highest-
+scoring subjects are the ones upstream runs have already handled - and every worker sent at
+one comes back having honestly found nothing, at full price.
+
+> Measured on this skill's first live run, 2026-09-28. The registry's local `main` was
+> **242 commits behind `origin/main`** and 4 ahead with unpushed local work. That day's 43
+> dispatches settled **39 `blocked`, 2 `idled`, 1 commit** - about a 2% yield. The first CLI
+> pass idled and its worker diagnosed the cause from inside the registry; nothing in either
+> driver was looking at it. The app's loop had been running at ~13 dispatches an hour into
+> that.
+
+`next` now refuses when the checkout is more than 50 commits behind, and says the number.
+**That refusal is the result** - report it and stop. The fix is hygiene, not code, and it is
+the operator's: the checkout needs its local commits pushed and origin merged in. Do not
+push on their behalf. `--allow-stale` exists because an unreachable origin must not make the
+loop unusable, and `--fetch` measures against a freshly fetched origin rather than a stale
+remote-tracking ref; neither is a reason to run a loop you already know will idle.
+
 ## One pass, step by step
 
 ```bash
 python .claude/skills/curator/loop.py next > claim.json          # decides AND claims
 ```
 
-Read it. `claim: null` with `held_by` means a brake; `claim: null` with neither means the
-ladder is genuinely empty, which is a result - say so and stop rather than inventing work.
-A `declined` claim means the vet refused an invocation; report it and move on.
+Read it. `claim: null` with `held_by` means a brake - including the corpus brake above;
+`claim: null` with neither means the ladder is genuinely empty, which is a result - say so
+and stop rather than inventing work. A `declined` claim means the vet refused an invocation;
+report it and move on.
+
+Pass that file straight to the other subcommands. They accept the wrapper `next` writes as
+well as a bare claim, so there is nothing to hand-edit between steps - the first live run
+normalised it by hand three times, and each of those was a chance to hand a half-written
+file to a settle.
 
 ```bash
-python .claude/skills/curator/loop.py work --claim claim.json --timeout-min 45
+python .claude/skills/curator/loop.py work --claim claim.json --timeout-min 40 \
+  --pidfile worker.pid            # ALWAYS in the background - see below
 ```
 
 That spawns a headless `claude` in the registry checkout with the composed brief - the same
-shape the app's fleet spawns, with the subscription-auth and nesting env stripped. Then
-**you judge what came back**, which is the whole reason a session drives this and not a
+shape the app's fleet spawns, with the subscription-auth and nesting env stripped.
+
+**Run it in the background.** A `/deepen` pass takes minutes and the harness's foreground
+shell tops out at 600 s, so a foreground call is killed before the worker finishes and the
+claim strands. `--print` also buffers the whole run, so there is no incremental output: the
+worker is a black box until it exits. What you get instead is the pid (on stderr and in
+`--pidfile`) and the registry's git log - watch those, not the empty stdout file. The first
+live run needed three process-grep attempts to find its own child, which is why the pid is
+printed now.
+
+Then **you judge what came back**, which is the whole reason a session drives this and not a
 cron job:
 
 | What the output shows | Settle as | Evidence to write |
@@ -149,7 +188,13 @@ and resumes; this driver does not, and pretending otherwise would burn the reset
 
 ## Ending a session
 
-Report, in this order: how many passes ran and what each settled as; what the ladder would
-take next; whether the ecosystem grew (`loop.py gaps` - the verdict and the flat streak);
-anything you escalated; and whether the loop stopped on a brake, the usage limit, or your
-own judgement. A number the run did not measure is left absent, not estimated.
+Report, in this order: how many passes ran and what each settled as; **the corpus state**
+(behind/ahead, and whether that is what stopped you); what the ladder would take next;
+whether the ecosystem grew (`loop.py gaps` - the verdict and the flat streak); anything you
+escalated; and whether the loop stopped on a brake, the usage limit, or your own judgement.
+A number the run did not measure is left absent, not estimated.
+
+**Stopping early on evidence is a good outcome.** A loop that keeps dispatching after a pass
+has shown the next one will idle is buying a known-zero result with the operator's
+subscription. Say what you learned and why you stopped; that is worth more than a pass
+count.
