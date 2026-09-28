@@ -76,6 +76,7 @@ home, overview, agents, vault, settings, then plugins, companions, teams, trigge
 - Notices card alignment at once: figures pinned to the bottom edge in every card (grow-1).
 - Prefers the kit's composed uniformity over bespoke illustrated tiles and per-item icons on Home (home-1: approved both despite the Director's flag). Do not over-protect decoration the kit replaces with drawn quantities; protect theme tint/glow, not every icon.
 - A call to action wears the theme's own primary -> accent gradient (subtle, same hue family), not a flat fill and not a hue-crossing gradient (grow-2: "Theme gradient", then "A (round 2)" over primary -> brand purple).
+- A grid of mixed dashboard tiles keeps card feel: tiles are band cards (ContextCard-style), not spine sections, even against the builder's pick (grow-3: "B Band"). Light-theme row bands must not read as stripes (grow-3: "Yes, lighten them").
 - Explanatory scaffolding stays off the surface: a strip's quantum lives in its Hint, not drawn beside it (grow-2: "Hover only (Hint)"). Approved buttons over big cards for first-run actions, and whole-row press without a "Try it" button, despite the Director's flags.
 
 ## Skill improvement log
