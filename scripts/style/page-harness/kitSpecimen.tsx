@@ -231,7 +231,7 @@ function Grow2Parts() {
           <ContextCard title="" state="loading" art={art('agent', Bot)} />
         </ContextCards>
       </Section>
-      <Section title="KitButton tone and icon" level={2} meta="tone default | quiet | primary; quiet={true} is an alias of tone=quiet">
+      <Section title="KitButton tone and icon" level={2} meta="tone default | quiet | primary (the theme primary -> accent gradient, lightness capped for the white ink); quiet={true} is an alias of tone=quiet">
         {tones.map((tone) => (
           <Toolbar key={tone} label={`${tone} buttons`}>
             <span className="typo-label k-quiet" style={{ width: '4.5rem' }}>{tone}</span>
@@ -243,10 +243,10 @@ function Grow2Parts() {
           </Toolbar>
         ))}
       </Section>
-      <Section title="UnitStrip legend" level={2} meta="what one unit stands for, drawn beside the strip and wired as its description">
-        <div className="k-in" style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
-          <UnitStrip size="m" label="11 runs" legend="1 run" segments={[{ n: 8, tone: 'success' }, { n: 3, tone: 'error' }]} />
+      <Section title="UnitStrip legend" level={2} meta="what one unit stands for: nothing drawn; the strip's Hint on hover and focus (the first shown open) and its description">
+        <div className="k-in" data-specimen-hint style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 36, marginBottom: 12 }}>
           <UnitStrip size="m" label="240 runs" legend="5 runs" segments={[{ n: 40, tone: 'success' }, { n: 8, tone: 'error' }]} />
+          <UnitStrip size="m" label="11 runs" legend="1 run" segments={[{ n: 8, tone: 'success' }, { n: 3, tone: 'error' }]} />
           <UnitStrip size="s" label="1.2M tokens" legend="100k tokens" segments={[{ n: 8, tone: 'primary' }, { n: 4, tone: 'agent', glyph: 'soft' }]} />
           <UnitStrip size="pip" label="120 calls" legend="10 calls" segments={[{ n: 12, tone: 'info' }]} />
         </div>
@@ -276,6 +276,7 @@ function Grow2Parts() {
 }
 
 function KitGrow2() {
+  useOpenFirstHint();
   return <KitHost compact testId="kit-specimen-grow-2"><Surface><Grow2Parts /></Surface></KitHost>;
 }
 

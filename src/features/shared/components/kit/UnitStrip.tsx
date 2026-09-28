@@ -1,5 +1,6 @@
-import { useId, type CSSProperties, type ReactElement } from 'react';
+import type { CSSProperties, ReactElement } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Hint } from './Hint';
 import { cx, kitAttrs, stateClass, type Glyph, type KitState, type Tone } from './types';
 
 export interface UnitSegment {
@@ -18,9 +19,11 @@ export type UnitSize = 's' | 'm' | 'l' | 'pip';
  *
  * `legend` (grow-2) states the quantum when it is more than one: what ONE unit stands for, in
  * the caller's words and noun ("5 runs", "100k tokens"; the caller words it, since only it knows
- * the noun, which is why there is no `auto`). The kit draws it beside the strip as one unit of
- * the first claim, then "= 5 runs", and wires it as the strip's description ("1 unit = 5 runs"),
- * so a reader hears the scale after the count and never twice.
+ * the noun, which is why there is no `auto`). Nothing is drawn for it (owner, grow-2 gate: "Hover
+ * only"): the strip becomes its own kit Hint, "1 unit = 5 runs" on hover and keyboard focus (a
+ * tab stop, lifted above a pressable card's press so the pointer reaches it), and the same
+ * sentence is its accessible description, merged with any description a caller forwards. Wrap a
+ * legend strip in a caller Hint only for the description: its tip would stack on the legend's.
  * @catalog UnitStrip - a quantity as countable units of a fixed quantum, coloured by claim, its quantum stated by legend (apportion, quantumFor). Kit.
  */
 export function UnitStrip({ segments, rows = 1, size = 'm', label, state, legend, ...host }: {
@@ -35,7 +38,6 @@ export function UnitStrip({ segments, rows = 1, size = 'm', label, state, legend
   'aria-describedby'?: string;
   tabIndex?: number;
 }) {
-  const legendId = useId();
   const units: ReactElement[] = [];
   let total = 0;
   segments.forEach((s, si) => {
@@ -51,42 +53,25 @@ export function UnitStrip({ segments, rows = 1, size = 'm', label, state, legend
     }
   });
   const st: KitState = state ?? (total === 0 ? 'empty' : 'default');
-  const described = legend ? [host['aria-describedby'], legendId].filter(Boolean).join(' ') : host['aria-describedby'];
   const strip = (
     <span
-      className={cx('k-units', `k-units--${size}`, stateClass(st))}
+      className={cx('k-units', `k-units--${size}`, stateClass(st), legend && 'k-units--hint')}
       {...kitAttrs('UnitStrip', st)}
       role="img"
       aria-label={label}
       style={{ '--rows': rows } as CSSProperties}
       {...host}
-      aria-describedby={described}
     >
       {total === 0 ? <i className="k-u" /> : units}
     </span>
   );
-  if (!legend) return strip;
-  const key = segments.find((s) => s.n > 0) ?? segments[0];
-  return (
-    <span className="k-units-legend">
-      {strip}
-      <UnitLegend id={legendId} size={size} tone={key?.tone} glyph={key?.glyph} value={legend} />
-    </span>
-  );
+  return legend ? <LegendHint value={legend}>{strip}</LegendHint> : strip;
 }
 
-/** The quantum key: one unit drawn as the strip draws it, "= value", and the sentence a reader hears. */
-function UnitLegend({ id, size, tone = 'neutral', glyph = 'solid', value }: { id: string; size: UnitSize; tone?: Tone; glyph?: Glyph; value: string }) {
+/** The legend's Hint: the kit string "1 unit = {value}" as the tip and the description. */
+function LegendHint({ value, children }: { value: string; children: ReactElement<{ 'aria-describedby'?: string; tabIndex?: number }> }) {
   const { t, tx } = useTranslation();
-  return (
-    <>
-      <span className="k-units__legend typo-caption" aria-hidden="true">
-        <span className={`k-units k-units--${size}`}><i className={`k-u t-${tone} g-${glyph}`} /></span>
-        <span>= {value}</span>
-      </span>
-      <span id={id} hidden>{tx(t.shared.unit_legend, { value })}</span>
-    </>
-  );
+  return <Hint content={tx(t.shared.unit_legend, { value })} focusable>{children}</Hint>;
 }
 
 /** Split a total into units of `quantum`, each part's share coloured by its claim. */

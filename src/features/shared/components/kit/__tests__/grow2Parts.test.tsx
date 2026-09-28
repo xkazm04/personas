@@ -1,6 +1,6 @@
 /** The five parts proposed by the home-1 batch (kit grow-2). */
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ContextCard, KitButton, ListRow, UnitStrip } from '../index';
 import { readFileSync } from 'node:fs';
@@ -91,7 +91,7 @@ describe('KitButton icon', () => {
 });
 
 describe('UnitStrip legend', () => {
-  it('is the strip description: a hidden sentence it points at, merged with an existing one', () => {
+  it('is the strip description: the hidden sentence of its Hint, merged with a forwarded one', () => {
     render(<UnitStrip label="120 runs" legend="5 runs" segments={[{ n: 24, tone: 'success' }]} aria-describedby="other" />);
     const strip = screen.getByRole('img', { name: '120 runs' });
     const ids = strip.getAttribute('aria-describedby')!.split(' ');
@@ -101,19 +101,29 @@ describe('UnitStrip legend', () => {
     expect(node.textContent).toBe('1 unit = 5 runs');
   });
 
-  it('draws the key visibly beside the strip, hidden from the tree, in the first claim tone', () => {
-    const { container } = render(<UnitStrip label="x" size="s" legend="100k tokens" segments={[{ n: 0 }, { n: 3, tone: 'agent', glyph: 'soft' }]} />);
-    const key = container.querySelector('.k-units__legend')!;
-    expect(key.getAttribute('aria-hidden')).toBe('true');
-    expect(key.textContent).toContain('100k tokens');
-    expect(key.querySelector('.k-units--s .k-u.t-agent.g-soft')).not.toBeNull();
+  it('draws nothing beside the strip: the quantum is its Hint, shown on keyboard focus', async () => {
+    vi.useFakeTimers();
+    const { container } = render(<UnitStrip label="120 runs" legend="5 runs" segments={[{ n: 24, tone: 'success' }]} />);
+    const strip = screen.getByRole('img', { name: '120 runs' });
+    // The only text is the Hint's hidden description node: nothing visible beside the strip.
+    expect(Array.from(container.querySelectorAll('span:not([hidden])')).some((n) => n.textContent?.includes('5 runs'))).toBe(false);
+    expect(container.querySelectorAll('.k-units')).toHaveLength(1);
+    expect(strip.classList.contains('k-units--hint')).toBe(true);
+    expect(strip.getAttribute('tabindex')).toBe('0');
+    expect(strip.hasAttribute('title')).toBe(false);
+    fireEvent.focus(strip);
+    await act(async () => { vi.advanceTimersByTime(1000); });
+    expect(document.querySelector('[role="tooltip"]')?.textContent).toContain('1 unit = 5 runs');
+    vi.useRealTimers();
   });
 
   it('without a legend renders the strip alone, as before', () => {
     const { container } = render(<UnitStrip label="x" segments={[{ n: 2 }]} />);
     expect(container.firstElementChild?.getAttribute('data-kit')).toBe('UnitStrip');
-    expect(container.querySelector('.k-units__legend')).toBeNull();
-    expect(screen.getByRole('img', { name: 'x' }).hasAttribute('aria-describedby')).toBe(false);
+    expect(container.querySelector('.k-units--hint')).toBeNull();
+    const strip = screen.getByRole('img', { name: 'x' });
+    expect(strip.hasAttribute('aria-describedby')).toBe(false);
+    expect(strip.hasAttribute('tabindex')).toBe(false);
   });
 });
 
