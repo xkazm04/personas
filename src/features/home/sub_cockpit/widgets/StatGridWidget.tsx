@@ -1,14 +1,17 @@
-import { motion, useReducedMotion } from 'framer-motion';
-
+import { StatStrip, Tile } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
-import { intentTextClass, intentTrendClass } from './intentColors';
+import { figureTile, type FigureConfig } from './figureTile';
 
 /**
  * `stat_grid` — N labeled numbers in a compact tile grid; generalizes
  * `metric_spark` so Athena can show the 3-6 figures that frame a
  * situation ("4 failures this week · $0.82 spent · 96% success") in
  * one widget instead of a row of singletons.
+ *
+ * Rendered as one kit Tile holding a StatStrip: the strip wraps by the room it has, so labels
+ * never truncate and a sixth figure never leaves a half-empty second row of boxes. `columns` is
+ * accepted for old specs and ignored (the strip decides its own wrap).
  *
  * Config:
  *   {
@@ -18,75 +21,28 @@ import { intentTextClass, intentTrendClass } from './intentColors';
  *         "value": 4,                     // number or string
  *         "unit": "runs",                 // optional suffix
  *         "delta": "+3",                  // optional change string
- *         "trend": "up",                  // "up" | "down" | "flat" — colors delta
- *         "intent": "bad"                 // "default" | "good" | "warn" | "bad"
+ *         "trend": "up",                  // "up" | "down" | "flat"
+ *         "intent": "bad",                // "default" | "good" | "warn" | "bad"
+ *         "better": "down",               // optional: which direction is good news
+ *         "delta_intent": "bad"           // optional: the delta's tone, stated outright
  *       }
- *     ],
- *     "columns": 3                        // optional, 2-4 (default 3)
+ *     ]
  *   }
  */
-interface StatItem {
-  label: string;
-  value: number | string;
-  unit?: string;
-  delta?: string;
-  trend?: 'up' | 'down' | 'flat';
-  intent?: 'default' | 'good' | 'warn' | 'bad';
-}
-
-export function StatGridWidget({ config, title }: CockpitWidgetProps) {
+export function StatGridWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
   const { t } = useTranslation();
-  const reduceMotion = useReducedMotion();
-  const stats = (config?.stats as StatItem[] | undefined) ?? [];
-  const rawColumns = Number(config?.columns);
-  const columns = Number.isFinite(rawColumns) ? Math.max(2, Math.min(rawColumns, 4)) : 3;
-
+  const stats = Array.isArray(config?.stats) ? (config.stats as FigureConfig[]) : [];
   return (
-    <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col min-h-0">
-      {title ? (
-        <div className="typo-caption text-foreground uppercase tracking-wide mb-3">
-          {title}
-        </div>
-      ) : null}
-      {stats.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center typo-caption">
-          {t.overview.cockpit.widget_empty}
-        </div>
-      ) : (
-        <div
-          className="flex-1 grid gap-2 content-start overflow-y-auto"
-          style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
-        >
-          {stats.map((stat, i) => (
-            <motion.div
-              key={`${i}-${stat.label}`}
-              initial={reduceMotion ? false : { opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.2, ease: 'easeOut', delay: reduceMotion ? 0 : i * 0.06 }}
-              className="rounded-input border border-foreground/10 bg-secondary/20 px-3 py-2.5 min-w-0"
-            >
-              <div className="typo-caption uppercase tracking-wide truncate">
-                {stat.label}
-              </div>
-              <div
-                className={`typo-data-lg mt-0.5 ${intentTextClass(stat.intent)}`}
-              >
-                {stat.value === null || stat.value === undefined ? '—' : String(stat.value)}
-                {stat.unit ? (
-                  <span className="typo-caption ml-1">{stat.unit}</span>
-                ) : null}
-              </div>
-              {stat.delta && (
-                <div
-                  className={`typo-caption tabular-nums ${intentTrendClass(stat.trend, '')}`}
-                >
-                  {stat.delta}
-                </div>
-              )}
-            </motion.div>
-          ))}
-        </div>
-      )}
-    </div>
+    <Tile
+      span={span}
+      title={title}
+      actions={actions}
+      footer={footer}
+      state={stats.length === 0 ? 'empty' : undefined}
+      empty={{ title: t.overview.cockpit.widget_empty }}
+      testId="cockpit-stat-grid"
+    >
+      <StatStrip tiles={stats.map(figureTile)} />
+    </Tile>
   );
 }

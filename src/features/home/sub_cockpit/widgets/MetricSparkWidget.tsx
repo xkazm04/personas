@@ -1,5 +1,7 @@
+import { StatStrip, Tile } from '@/features/shared/components/kit';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
-import { intentTextClass, intentTrendClass } from './intentColors';
+import { figureTile } from './figureTile';
 
 /**
  * `metric_spark` — single KPI card with optional trend marker.
@@ -12,49 +14,28 @@ import { intentTextClass, intentTrendClass } from './intentColors';
  * computed via connector_use or memory. The widget is purely visual
  * presentation of her conclusion.
  *
+ * Rendered as one kit Tile holding a StatStrip of one: the label glows, the figure takes the
+ * figure's own tone, the delta's tone follows what the figure MEANS (`deltaTone`), and a small
+ * count with a unit is drawn as units.
+ *
  * Config:
  *   {
  *     "label": "Unresolved Sentry issues",
  *     "value": 12,        // number or string
  *     "delta": "+3",      // optional change indicator (raw string)
- *     "trend": "up",      // "up" | "down" | "flat" — colors the delta
+ *     "trend": "up",      // "up" | "down" | "flat"
  *     "unit": "issues",   // optional suffix
- *     "intent": "warn"    // "default" | "good" | "warn" | "bad"
+ *     "intent": "warn",   // "default" | "good" | "warn" | "bad" (how the figure reads)
+ *     "better": "down",   // optional: which direction is good news for this figure
+ *     "delta_intent": "bad" // optional: the delta's tone, stated outright
  *   }
  */
-export function MetricSparkWidget({ config, title }: CockpitWidgetProps) {
-  const label = (config?.label as string) ?? title ?? 'Metric';
-  const value = config?.value;
-  const delta = config?.delta as string | undefined;
-  const trend = config?.trend as 'up' | 'down' | 'flat' | undefined;
-  const unit = config?.unit as string | undefined;
-  const intent = (config?.intent as string | undefined) ?? 'default';
-
-  const intentClass = intentTextClass(intent);
-
-  const trendClass = intentTrendClass(trend);
-
-  const displayValue =
-    value === null || value === undefined ? '—' : String(value);
-
+export function MetricSparkWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
+  const { t } = useTranslation();
+  const label = (config?.label as string | undefined) ?? title ?? t.overview.cockpit.metric_default;
   return (
-    <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col min-h-0">
-      <div className="typo-caption text-foreground uppercase tracking-wide mb-2">
-        {label}
-      </div>
-      <div className="flex-1 flex flex-col items-start justify-center gap-1">
-        <div className={`typo-data-lg ${intentClass} tabular-nums`}>
-          {displayValue}
-          {unit ? (
-            <span className="typo-body text-foreground ml-1">{unit}</span>
-          ) : null}
-        </div>
-        {delta ? (
-          <div className={`typo-caption ${trendClass} tabular-nums`}>
-            {delta}
-          </div>
-        ) : null}
-      </div>
-    </div>
+    <Tile span={span} actions={actions} footer={footer} testId="cockpit-metric-spark">
+      <StatStrip tiles={[figureTile({ ...config, label })]} />
+    </Tile>
   );
 }

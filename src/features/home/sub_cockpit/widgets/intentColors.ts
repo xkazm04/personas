@@ -1,4 +1,5 @@
 import type { Tone } from '@/features/shared/components/kit';
+import type { Translations } from '@/i18n/en';
 
 /**
  * Tone by meaning (home-2, contract item 4): the cockpit's one map from Athena's free-form
@@ -67,16 +68,8 @@ export function toneText(tone: Tone): string {
   return tone === 'neutral' ? '' : `k-toned t-${tone}`;
 }
 
-/**
- * @deprecated Raw-palette text class by intent; kept only until the cockpit's figure widgets
- * move to `intentTone` + `toneText` (home-2 C4). Do not add callers.
- */
-export function intentTextClass(intent: string | undefined, fallback: 'default' | 'info' = 'default'): string {
-  const tone = intentTone(intent, fallback === 'info' ? 'primary' : 'neutral');
-  return tone === 'neutral' ? 'text-foreground' : tone === 'primary' ? 'text-primary' : `text-status-${tone}`;
-}
-
-/** @deprecated Trend-direction colour; the X5 defect. Use `deltaTone`. Do not add callers. */
-export function intentTrendClass(trend: string | undefined, neutralClass = 'text-foreground'): string {
-  return toneText(deltaTone({ trend, intent: 'good' })) || neutralClass;
+/** The accessible name of a tone drawn as a Mark (a row's meaning, not a status word on screen). */
+export function toneLabel(t: Translations, tone: Tone): string {
+  const c = t.overview.cockpit;
+  return tone === 'success' ? c.tone_good : tone === 'warning' ? c.tone_warn : tone === 'error' ? c.tone_bad : c.tone_info;
 }
