@@ -250,6 +250,23 @@ function subTriage() {
   };
 }
 
+function kitTilesTape(id) {
+  const b = homeCockpitTapes({ RECORDED_AT }).builders;
+  const seedOf = (m) => b[m]().calls.find((c) => c.cmd === '__harness_seed')?.response ?? {};
+  const base = b['home/cockpit/composed-a']();
+  const seed = {
+    ...seedOf('home/cockpit/composed-a'),
+    briefing: seedOf('home/cockpit/contextual-briefing').contextual,
+    chatCards: seedOf('athena/inline-cards').chatCards,
+    seat: seedOf('curator/evidence-well').seat,
+  };
+  return {
+    ...base, module: id,
+    note: 'Synthetic: the home/cockpit/composed-a tape plus the briefing, chat-card and council-seat seeds, recomposed from kit parts.',
+    calls: [...base.calls.filter((c) => c.cmd !== '__harness_seed'), { cmd: '__harness_seed', response: seed }],
+  };
+}
+
 const BUILDERS = {
   'overview/sub_events': () => subEvents(),
   'plugins/dev-tools/sub_triage': () => subTriage(),
@@ -273,6 +290,9 @@ const BUILDERS = {
   ...homeLearningTapes({ RECORDED_AT }).builders,
   // Kit batch home-2, Home > Cockpit + Athena chat cards + council evidence well (homeCockpitSurfaces.tsx, homeCockpitTapes.mjs).
   ...homeCockpitTapes({ RECORDED_AT }).builders,
+  // Kit grow-3 (kitTiles.tsx): the composed-a Cockpit tape, its seed joined by the briefing,
+  // chat-card and council-seat seeds the recomposed stacks read.
+  ...Object.fromEntries(['kit/tiles-a', 'kit/tiles-b'].map((id) => [id, () => kitTilesTape(id)])),
   // The kit specimen (kitSpecimen.tsx): synthetic props, no IPC.
   ...Object.fromEntries(['kit/specimen', 'kit/specimen/grow-2', 'kit/overview', 'kit/overview-flat'].map((id) => [
     id, () => ({ version: 1, module: id, source: 'synthetic', recordedAt: RECORDED_AT, note: 'Synthetic props, no IPC: kit parts in their states.', calls: [] }),

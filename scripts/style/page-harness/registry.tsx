@@ -23,6 +23,7 @@ import { KIT_OVERVIEW_MODULES } from './kitOverview';
 import { HOME_WELCOME_MODULES } from './homeWelcomeSurfaces';
 import { HOME_LEARNING_MODULES } from './homeLearningSurfaces';
 import { HOME_COCKPIT_MODULES } from './homeCockpitSurfaces';
+import { KIT_TILES_MODULES } from './kitTiles';
 
 type Wrap = (children: ReactNode) => ReactNode;
 
@@ -78,6 +79,8 @@ export const MODULES: Record<string, HarnessModule> = {
   // The kit specimen: every kit part in its states (kitSpecimen.tsx); harness-only.
   ...KIT_MODULES,
   ...KIT_OVERVIEW_MODULES,
+  // Kit grow-3: the dashboard tile in its two looks on the recomposed Cockpit (kitTiles.tsx).
+  ...KIT_TILES_MODULES,
   // Probes for `shoot.mjs --self-test`: each must make the shooter exit non-zero.
   '__selftest/empty': {
     load: async () => ({ default: () => <div /> }),
