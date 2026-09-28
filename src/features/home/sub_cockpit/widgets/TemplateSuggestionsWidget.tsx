@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
 import {
@@ -49,7 +50,9 @@ export function TemplateSuggestionsWidget({ config, title, span, actions, footer
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : String(err));
+        // Kept raw here and resolved at render into the product's sentence.
+        const raw = err instanceof Error ? err.message : String(err);
+        setError(raw);
         setLoading(false);
         silentCatch('companion_match_templates')(err);
       });
@@ -70,6 +73,7 @@ export function TemplateSuggestionsWidget({ config, title, span, actions, footer
   };
 
   const searched = !loading && !error && intent !== '';
+  const failure = error ? resolveErrorTranslated(t, error) : null;
   return (
     <Tile
       span={span}
@@ -81,7 +85,7 @@ export function TemplateSuggestionsWidget({ config, title, span, actions, footer
       state={loading ? 'loading' : searched && matches.length === 0 ? 'empty' : undefined}
       ghostRows={2}
       empty={{ title: t.athena.template_suggestions_empty }}
-      error={error ? { title: error } : undefined}
+      error={error ? { title: failure?.message, hint: failure?.suggestion } : undefined}
       footer={
         matches.length > 0 || footer ? (
           <>

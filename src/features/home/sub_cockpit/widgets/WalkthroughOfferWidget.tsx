@@ -104,9 +104,11 @@ export function WalkthroughOfferWidget({ config, title, span, actions, footer }:
       }
     >
       {summary && !composing && <p className="k-in typo-body m-0">{summary}</p>}
+      {/* One polite region, mounted from the first render, so the change to "composing" is announced. */}
+      <span className="sr-only" role="status">{composing ? c.walkthrough_composing : ''}</span>
       {composing && (
         /* Athena is authoring + validating the tour steps: the kit ghost under the sentence. */
-        <div data-testid="companion-walkthrough-composing" role="status" aria-live="polite">
+        <div data-testid="companion-walkthrough-composing">
           <p className="k-in typo-body m-0">{c.walkthrough_composing}</p>
           <p className="k-in typo-caption k-quiet m-0">{c.walkthrough_composing_hint}</p>
           <GhostRows count={2} size="s" />
