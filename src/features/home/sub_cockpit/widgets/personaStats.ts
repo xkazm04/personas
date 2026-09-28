@@ -1,10 +1,7 @@
 /**
- * personaStats — shared, prototype-phase helpers for derived display
- * values used by all PersonaOverview variants. Pure, framework-free.
- *
- * Lives next to the variants during prototyping. If a non-winning
- * variant uses values uniquely, that derivation should inline into the
- * variant before Phase 5 consolidation.
+ * personaStats: helpers for derived persona display values (model tier,
+ * trust, attention). Pure and framework-free; words and money are formatted
+ * by the caller in the active language.
  */
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTrustLevel } from '@/lib/bindings/PersonaTrustLevel';
@@ -35,73 +32,8 @@ export function modelTierLabel(profile: string | null | undefined): string {
     case 'haiku':
       return 'Haiku';
     default:
-      return 'Mixed';
-  }
-}
-
-/**
- * Accent class bundle for the model tier — used by Constellation nodes
- * + Atelier hero cards. Includes both a hex (for inline SVG strokes)
- * and tailwind class names (for DOM fills/borders).
- */
-export interface TierAccent {
-  fillClass: string;
-  strokeClass: string;
-  strokeHoverClass: string;
-  textClass: string;
-  bgSoftClass: string;
-  borderClass: string;
-  btnClass: string;
-  /** Hex literal for SVG `stroke=` attributes. Approximation of the tailwind class. */
-  haloHex: string;
-}
-
-export function modelTierAccent(profile: string | null | undefined): TierAccent {
-  switch (modelTierKey(profile)) {
-    case 'opus':
-      return {
-        fillClass: 'fill-violet-500/30 stroke-violet-300/80',
-        strokeClass: 'stroke-violet-300/80',
-        strokeHoverClass: 'stroke-violet-200',
-        textClass: 'text-violet-300',
-        bgSoftClass: 'bg-violet-500/10',
-        borderClass: 'border-violet-500/25',
-        btnClass: 'bg-violet-500/15 hover:bg-violet-500/25 text-violet-200 border border-violet-500/30',
-        haloHex: '#c4b5fd',
-      };
-    case 'sonnet':
-      return {
-        fillClass: 'fill-cyan-500/30 stroke-cyan-300/80',
-        strokeClass: 'stroke-cyan-300/80',
-        strokeHoverClass: 'stroke-cyan-200',
-        textClass: 'text-cyan-300',
-        bgSoftClass: 'bg-cyan-500/10',
-        borderClass: 'border-cyan-500/25',
-        btnClass: 'bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-200 border border-cyan-500/30',
-        haloHex: '#67e8f9',
-      };
-    case 'haiku':
-      return {
-        fillClass: 'fill-amber-500/30 stroke-amber-300/80',
-        strokeClass: 'stroke-amber-300/80',
-        strokeHoverClass: 'stroke-amber-200',
-        textClass: 'text-amber-300',
-        bgSoftClass: 'bg-amber-500/10',
-        borderClass: 'border-amber-500/25',
-        btnClass: 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-200 border border-amber-500/30',
-        haloHex: '#fcd34d',
-      };
-    default:
-      return {
-        fillClass: 'fill-foreground/20 stroke-foreground/40',
-        strokeClass: 'stroke-foreground/40',
-        strokeHoverClass: 'stroke-foreground/60',
-        textClass: 'text-foreground',
-        bgSoftClass: 'bg-foreground/[0.04]',
-        borderClass: 'border-foreground/15',
-        btnClass: 'bg-foreground/[0.06] hover:bg-foreground/[0.10] text-foreground/85 border border-foreground/15',
-        haloHex: '#a1a1aa',
-      };
+      // No tier to name: the caller drops the part rather than print a guess.
+      return '';
   }
 }
 
@@ -130,18 +62,6 @@ export function recentActivity(updatedAt: string): boolean {
   if (Number.isNaN(t)) return false;
   const days = (Date.now() - t) / (1000 * 60 * 60 * 24);
   return days <= 7;
-}
-
-/** Compact relative-time formatter. `2026-05-15T..` → `3d ago`. */
-export function relativeUpdated(updatedAt: string): string {
-  const t = Date.parse(updatedAt);
-  if (Number.isNaN(t)) return '—';
-  const sec = (Date.now() - t) / 1000;
-  if (sec < 60) return 'just now';
-  if (sec < 3600) return `${Math.floor(sec / 60)}m ago`;
-  if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`;
-  if (sec < 604800) return `${Math.floor(sec / 86400)}d ago`;
-  return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 /**
@@ -176,17 +96,12 @@ export function trustPercent(score: number): TrustPercent {
   return { pct: Math.round(Math.min(100, asPercent)), overflow: asPercent > 100 };
 }
 
-/** Budget label — handles null + 0 + sub-dollar cleanly. */
-export function budgetLabel(budget: number | null | undefined): string {
-  if (budget == null) return '—';
-  if (budget === 0) return 'free';
-  if (budget < 1) return `${(budget * 100).toFixed(0)}¢`;
-  return `$${budget.toFixed(2)}`;
-}
-
 /**
  * Persona "needs attention" reasons. Used by all variants to flag
  * personas that should pop visually before the user even hovers.
+ * `label` is a non-displayed fallback kept for this signature's callers (the
+ * triggers studio reads only null / not null); surfaces show the localized
+ * reason keyed by `kind`.
  */
 export interface AttentionFlag {
   kind: 'setup' | 'disabled' | 'low_trust';

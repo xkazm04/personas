@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, BookOpen } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
@@ -7,8 +7,7 @@ import {
   companionMatchTemplates,
   type CompanionTemplateMatch,
 } from '@/api/companion';
-import { RevealItem } from '@/features/shared/components/display/RevealItem';
-import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { KitButton, ListRow, Meta, Rows, Tile } from '@/features/shared/components/kit';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
 /**
@@ -18,15 +17,15 @@ import type { CockpitWidgetProps } from '../widgetRegistry';
  * fetches matches on mount via `companion_match_templates`; the
  * dispatcher only carries the intent string forward.
  *
- * Each result IS the "Open template" affordance: the row is a button that
- * stashes its template id, switches the templates tab to the generated
+ * One kit Tile: each result is a pressable kit row (the name is the row's
+ * one button) that stashes its template id, switches the templates tab to the generated
  * gallery and routes to design-reviews, where the gallery opens that
  * template's detail modal and the user adopts it through the normal flow.
  * No direct adoption from chat - that would bypass the questionnaire and
  * customization steps users expect. The footer keeps the unfiltered browse.
  */
-export function TemplateSuggestionsWidget({ config, title }: CockpitWidgetProps) {
-  const { t, tx } = useTranslation();
+export function TemplateSuggestionsWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
+  const { t } = useTranslation();
   const intent =
     typeof config?.intent === 'string' ? (config.intent as string).trim() : '';
   const limit =
@@ -70,116 +69,51 @@ export function TemplateSuggestionsWidget({ config, title }: CockpitWidgetProps)
     sys.setSidebarSection('design-reviews');
   };
 
-  // One-shot row cascade, latched for the widget's lifetime (no resetKey) —
-  // matches already on screen never replay their entrance.
-  const enter = useRevealTracker();
-
+  const searched = !loading && !error && intent !== '';
   return (
-    <div
-      className="rounded-card border border-sky-500/30 bg-sky-500/[0.04] p-4 space-y-3"
-      data-testid="companion-template-suggestions-widget"
+    <Tile
+      span={span}
+      title={title || t.athena.template_suggestions_title}
+      actions={actions}
+      count={matches.length > 0 ? matches.length : undefined}
+      meta={intent || undefined}
+      testId="companion-template-suggestions-widget"
+      state={loading ? 'loading' : searched && matches.length === 0 ? 'empty' : undefined}
+      ghostRows={2}
+      empty={{ title: t.athena.template_suggestions_empty }}
+      error={error ? { title: error } : undefined}
+      footer={
+        matches.length > 0 || footer ? (
+          <>
+            {matches.length > 0 && (
+              <KitButton tone="quiet" icon={<ArrowRight />} onClick={openTemplates}>
+                {t.athena.template_suggestions_open_browse}
+              </KitButton>
+            )}
+            {footer}
+          </>
+        ) : undefined
+      }
     >
-      <header className="flex items-baseline gap-2 typo-caption text-sky-300/85">
-        <BookOpen className="w-3.5 h-3.5" />
-        <span className="font-medium">
-          {title || t.athena.template_suggestions_title}
-        </span>
-        {intent && (
-          <span className="text-foreground truncate" title={intent}>
-            · {intent}
-          </span>
-        )}
-      </header>
-      {loading && (
-        <ul className="space-y-2" aria-hidden="true">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <li
-              key={i}
-              className="rounded-card border border-foreground/10 bg-secondary/40 p-3 space-y-1.5 animate-fade-in"
-              style={{ animationDelay: `${120 + i * 35}ms` }}
-            >
-              <span className="block h-3.5 w-32 rounded bg-foreground/[0.06]" />
-              <span className="block h-3 w-full rounded bg-foreground/[0.05]" />
-              <span className="block h-3 w-3/4 rounded bg-foreground/[0.05]" />
-            </li>
+      {/* Only a search that actually ran can report finding nothing (the
+          `empty` state above needs an intent): with none the widget never
+          queried, so "no templates" would be a claim about a catalog it never
+          looked at. Each row IS the "Open template" control. */}
+      {matches.length > 0 && (
+        <Rows count={matches.length} empty={{ title: '' }}>
+          {matches.map((m) => (
+            <ListRow
+              key={m.id}
+              size="l"
+              name={m.name}
+              meta={<Meta parts={[m.category, m.snippet]} />}
+              figures={m.connectors.length > 0 ? <span className="typo-caption k-quiet"><Meta parts={m.connectors} /></span> : undefined}
+              onPress={() => openTemplate(m.id)}
+              testId={`template-suggestion-${m.id}`}
+            />
           ))}
-        </ul>
+        </Rows>
       )}
-      {!loading && error && (
-        <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-2.5 py-1.5 typo-caption text-rose-400">
-          {error}
-        </div>
-      )}
-      {/* Only a search that actually ran can report finding nothing. With no
-          intent the widget never queried, so "no templates" would be a claim
-          about a catalog it never looked at. */}
-      {!loading && !error && intent !== '' && matches.length === 0 && (
-        <div className="typo-caption text-foreground">
-          {t.athena.template_suggestions_empty}
-        </div>
-      )}
-      {!loading && matches.length > 0 && (
-        <ul className="space-y-2">
-          {matches.map((m, index) => (
-            <li key={m.id}>
-              <RevealItem
-                revealId={m.id}
-                order={index}
-                hasEntered={enter.hasEntered}
-                markEntered={enter.markEntered}
-                data-template-id={m.id}
-              >
-                {/* The row itself is the "Open template" control the header
-                    promises. RevealItem stays the entrance wrapper - it is a
-                    div/tr/li primitive, not a button. */}
-                <button
-                  type="button"
-                  onClick={() => openTemplate(m.id)}
-                  data-testid={`template-suggestion-${m.id}`}
-                  aria-label={tx(t.athena.template_suggestions_open_one, { name: m.name })}
-                  className="w-full text-left rounded-card border border-foreground/10 bg-secondary/40 p-3 space-y-1 hover:border-sky-500/40 hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60 transition-colors"
-                >
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="typo-body text-foreground/95">
-                    {m.name}
-                  </span>
-                  {m.category && (
-                    <span className="typo-caption text-foreground shrink-0">
-                      {m.category}
-                    </span>
-                  )}
-                </div>
-                <p className="typo-caption text-foreground line-clamp-3">
-                  {m.snippet}
-                </p>
-                {m.connectors.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {m.connectors.map((c) => (
-                      <span
-                        key={c}
-                        className="rounded-interactive bg-foreground/[0.06] border border-foreground/10 px-1.5 py-0.5 typo-caption text-foreground"
-                      >
-                        {c}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                </button>
-              </RevealItem>
-            </li>
-          ))}
-        </ul>
-      )}
-      {!loading && matches.length > 0 && (
-        <button
-          type="button"
-          onClick={openTemplates}
-          className="inline-flex items-center gap-1 typo-caption text-sky-300/85 hover:text-sky-300 rounded-interactive"
-        >
-          <span>{t.athena.template_suggestions_open_browse}</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </button>
-      )}
-    </div>
+    </Tile>
   );
 }

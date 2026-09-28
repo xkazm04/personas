@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Compass, MessageSquareText, Sparkles } from 'lucide-react';
+import { Compass, MessageSquareText } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { GhostRows, Hint, KitButton, Tile } from '@/features/shared/components/kit';
 import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { WALKTHROUGHS } from '@/features/companions/athena/guidance/walkthroughs';
 import { useTourStore } from '@/stores/tourStore';
@@ -27,7 +28,7 @@ type ComposeState = 'idle' | 'composing' | 'failed';
  * Composition failure is honest: the card flips to a short apology and the
  * "Just tell me" path stays available — a broken tour never plays.
  */
-export function WalkthroughOfferWidget({ config }: CockpitWidgetProps) {
+export function WalkthroughOfferWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
   const { t, tx } = useTranslation();
   const c = t.athena;
   const topic = typeof config?.topic === 'string' ? config.topic : '';
@@ -69,78 +70,53 @@ export function WalkthroughOfferWidget({ config }: CockpitWidgetProps) {
 
   if (!topic) return null;
 
+  const composing = composeState === 'composing';
+  const failed = composeState === 'failed';
   return (
-    <div
-      data-testid="companion-walkthrough-offer-widget"
-      className="rounded-card border border-primary/30 bg-primary/[0.04] p-4 space-y-3"
-    >
-      <header className="flex items-baseline gap-2 typo-caption text-primary">
-        <Sparkles className="w-3.5 h-3.5" />
-        <span className="font-medium">{c.walkthrough_offer_intro}</span>
-        <span className="text-foreground truncate" title={summary || label}>
-          · {label}
-        </span>
-      </header>
-      {summary && <p className="typo-body text-foreground">{summary}</p>}
-
-      {composeState === 'composing' ? (
-        /* Ghost state: Athena is authoring + validating the tour steps. */
-        <div
-          data-testid="companion-walkthrough-composing"
-          className="rounded-interactive border border-primary/20 bg-secondary/30 px-3 py-3 space-y-2"
-          role="status"
-          aria-live="polite"
-        >
-          <div className="flex items-center gap-2.5">
-            <Sparkles className="w-4 h-4 shrink-0 text-primary animate-pulse" />
-            <span className="typo-body text-foreground">{c.walkthrough_composing}</span>
-          </div>
-          <p className="typo-caption text-foreground">{c.walkthrough_composing_hint}</p>
-          <div className="space-y-1.5 pt-1" aria-hidden="true">
-            <div className="h-2 rounded-full bg-primary/10 animate-pulse w-3/4" />
-            <div className="h-2 rounded-full bg-primary/10 animate-pulse w-1/2" />
-            <div className="h-2 rounded-full bg-primary/10 animate-pulse w-2/3" />
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {composeState === 'failed' && (
-            <p
-              data-testid="companion-walkthrough-compose-failed"
-              className="typo-caption text-destructive"
-              role="alert"
-            >
-              {c.walkthrough_compose_failed}
-            </p>
-          )}
-          {composeState !== 'failed' && (
-            <button
-              type="button"
-              data-testid="companion-walkthrough-offer-show"
-              onClick={showMe}
-              className="flex items-center gap-2.5 w-full text-left px-3 py-2 rounded-interactive bg-primary text-primary-foreground hover:opacity-90 focus-ring"
-            >
-              <Compass className="w-4 h-4 shrink-0" />
-              <span className="flex flex-col">
-                <span className="typo-body">{c.walkthrough_offer_show}</span>
-                <span className="typo-caption opacity-90">{c.walkthrough_offer_show_hint}</span>
+    <Tile
+      span={span}
+      title={title || c.walkthrough_offer_intro}
+      actions={actions}
+      meta={label}
+      testId="companion-walkthrough-offer-widget"
+      footer={
+        composing ? footer : (
+          <>
+            {!failed && (
+              <Hint content={c.walkthrough_offer_show_hint}>
+                <span>
+                  <KitButton tone="primary" icon={<Compass />} onClick={showMe} testId="companion-walkthrough-offer-show">
+                    {c.walkthrough_offer_show}
+                  </KitButton>
+                </span>
+              </Hint>
+            )}
+            <Hint content={c.walkthrough_offer_tell_hint}>
+              <span>
+                <KitButton tone={failed ? 'primary' : 'default'} icon={<MessageSquareText />} onClick={tellMe} testId="companion-walkthrough-offer-tell">
+                  {c.walkthrough_offer_tell}
+                </KitButton>
               </span>
-            </button>
-          )}
-          <button
-            type="button"
-            data-testid="companion-walkthrough-offer-tell"
-            onClick={tellMe}
-            className="flex items-center gap-2.5 w-full text-left px-3 py-2 rounded-interactive border border-primary/30 bg-secondary/30 text-foreground hover:bg-secondary/50 focus-ring"
-          >
-            <MessageSquareText className="w-4 h-4 shrink-0 text-primary" />
-            <span className="flex flex-col">
-              <span className="typo-body">{c.walkthrough_offer_tell}</span>
-              <span className="typo-caption text-foreground">{c.walkthrough_offer_tell_hint}</span>
-            </span>
-          </button>
+            </Hint>
+            {footer}
+          </>
+        )
+      }
+    >
+      {summary && !composing && <p className="k-in typo-body m-0">{summary}</p>}
+      {composing && (
+        /* Athena is authoring + validating the tour steps: the kit ghost under the sentence. */
+        <div data-testid="companion-walkthrough-composing" role="status" aria-live="polite">
+          <p className="k-in typo-body m-0">{c.walkthrough_composing}</p>
+          <p className="k-in typo-caption k-quiet m-0">{c.walkthrough_composing_hint}</p>
+          <GhostRows count={2} size="s" />
         </div>
       )}
-    </div>
+      {failed && (
+        <p data-testid="companion-walkthrough-compose-failed" className="k-in typo-body k-toned t-error m-0" role="alert">
+          {c.walkthrough_compose_failed}
+        </p>
+      )}
+    </Tile>
   );
 }
