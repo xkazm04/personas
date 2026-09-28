@@ -307,40 +307,58 @@ def table_exists(c: sqlite3.Connection, name: str) -> bool:
 
 
 def harvest_lane(root: pathlib.Path) -> dict:
-    """`queue.md` as it stands: rows per section, and a fingerprint of the bytes.
+    """`queue.md` as it stands: per-section queued rows, and a byte fingerprint.
 
-    A simplification of `standing.rs`'s parser and it says so: it counts the
-    per-section `queued` rows the drain would batch, which is the only figure the
-    rung rule needs. The fingerprint is over the whole file, exactly as the app's
-    is, so the two drivers' marks are comparable.
+    **Reads the STATUS COLUMN, which is the last cell of each row.** The first
+    version scanned the whole line for `mined:`/`parked` tokens and counted every
+    remaining `|` line as queued - including each section's own header row. With
+    ten sections that over-counted by exactly ten: it reported 267 queued against
+    a real 257, and named the section `software-engineering / core (57)` when only
+    51 of those 57 rows were queued.
+
+    A dispatched worker caught it, recounted, and refused to admit a batch on
+    numbers it could not reproduce - which is the behaviour the brief asks for and
+    the reason the count travels in the brief at all. The fix is this function;
+    the worker was right.
+
+    The fingerprint is over the whole file, exactly as the app's is, so the two
+    drivers' marks stay comparable.
     """
     f = root / QUEUE_REL
     if not f.exists():
-        return {"exists": False, "queued": 0, "sections": [], "fingerprint": None}
-    raw = f.read_bytes()
+        return {"exists": False, "queued": 0, "rows": 0, "sections": [], "fingerprint": None}
     import hashlib
 
+    raw = f.read_bytes()
     text = raw.decode("utf-8", errors="replace")
     sections: list[dict] = []
     cur = None
     for line in text.splitlines():
         if line.startswith("## "):
-            cur = {"name": line[3:].strip(), "rows": 0, "queued": 0}
+            # The heading carries its own total in parentheses and that total
+            # counts EVERY row, not the queued ones. Kept for display, stripped
+            # from the name the brief quotes, so no reader confuses the two again.
+            name = line[3:].strip()
+            cur = {"name": re.sub(r"\s*\(\d+\)\s*$", "", name), "heading": name,
+                   "rows": 0, "queued": 0}
             sections.append(cur)
-        elif cur is not None and line.lstrip().startswith("|"):
-            cells = [x.strip() for x in line.strip().strip("|").split("|")]
-            if len(cells) < 3 or set(cells[0]) <= set("-: "):
-                continue
-            cur["rows"] += 1
-            # A row is queued unless some cell marks it otherwise. The app reads
-            # the status column; this reads the whole row for the same tokens,
-            # which is looser and is why the worker is told to recount.
-            low = line.lower()
-            if not any(t in low for t in ("mined:", "parked", "declined", "landed")):
-                cur["queued"] += 1
+            continue
+        if cur is None or not line.lstrip().startswith("|"):
+            continue
+        cells = [x.strip() for x in line.strip().strip("|").split("|")]
+        if len(cells) < 3:
+            continue
+        if set(cells[0]) <= set("-: "):
+            continue                      # the |---|---| rule
+        if cells[0].lower() == "id":
+            continue                      # the header row - this is the +10
+        cur["rows"] += 1
+        if cells[-1].lower().startswith("queued"):
+            cur["queued"] += 1
     return {
         "exists": True,
         "queued": sum(s["queued"] for s in sections),
+        "rows": sum(s["rows"] for s in sections),
         "sections": sections,
         "fingerprint": hashlib.sha256(raw).hexdigest()[:8],
     }
@@ -370,7 +388,10 @@ def standing_rung(lane: dict, drain_mark: str | None, refill_mark: str | None) -
         return {
             "rung": "drain",
             "argument": "auto",
-            "because": f"{lane['queued']} rows queued; '{best['name']}' can furnish a batch",
+            "because": (
+                f"{lane['queued']} of {lane['rows']} rows are queued; the fullest section "
+                f"'{best['name']}' has {best['queued']} queued of its {best['rows']}"
+            ),
             "mark": fp,
             "mark_key": "curator_harvest_drain_mark",
         }
