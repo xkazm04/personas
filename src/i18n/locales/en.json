@@ -20793,6 +20793,7 @@
     "cmd_navigate": "navigate",
     "cmd_select": "select",
     "cmd_commands": "commands",
+    "unit_legend": "1 unit = {value}",
     "kanban": {
       "card_roledescription": "Movable card",
       "picked_up": "Picked up. Use the arrow keys to choose a lane, Enter to drop, Escape to cancel.",

@@ -152,6 +152,9 @@
 .k-units--pip { --uw: 3px; --uh: 12px; --ug: 2px; }
 .k-units.is-muted { opacity: .5; }
 .k-units.is-empty .k-u { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+/* The quantum key (grow-2): one unit as the strip draws it, then "= 5 runs", beside the strip. */
+.k-units-legend { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; vertical-align: middle; }
+.k-units__legend { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 
 /* ============ ListRow ============ */
 .k-rows { display: flex; flex-direction: column; }
@@ -182,6 +185,15 @@
 .k-row__name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .k-row__meta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; display: flex; align-items: center; gap: 6px; }
 .k-row__trail { display: flex; align-items: center; gap: 20px; }
+/* A pressable row (grow-2): the name is the row's one button, its hit area stretched over the
+ * row as a pressable card's title is; trail controls sit above it, the focus ring is the row's. */
+.k-row.is-pressable { cursor: pointer; }
+.k-row.is-pressable > .k-mark { pointer-events: none; }
+.k-row__press { display: block; width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.k-row__press::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.k-row__press:focus-visible { outline: 0; }
+.k-row.is-pressable:has(.k-row__press:focus-visible) { outline: 2px solid var(--focus-ring-color); outline-offset: -2px; }
+.k-row.is-pressable .k-row__trail :is(button, a, [tabindex]) { position: relative; z-index: 1; }
 .k-fig { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; white-space: nowrap; }
 .k-time { min-width: 2.6em; text-align: right; white-space: nowrap; }
 
@@ -263,6 +275,18 @@ button.k-chip:hover, .k-chip.is-hover { border-color: color-mix(in srgb, var(--p
 .k-btn { --type-control: calc(var(--type-0) * var(--type-f)); }
 .k-btn:hover, .k-btn.is-hover { border-color: color-mix(in srgb, var(--primary) 50%, transparent); background: var(--band-hover); }
 .k-btn--quiet { border-color: transparent; color: var(--quiet); }
+/* Primary (grow-2): the surface's one call to action, filled in the theme's button primary (the
+ * shared Button's primary fill and ink, one token per theme) with the kit's primary glow. */
+.k-btn.k-btn--primary {
+  border-color: transparent; background: var(--btn-primary); color: var(--btn-primary-fg); font-weight: 500;
+  box-shadow: 0 0 14px -4px var(--glow);
+}
+.k-btn.k-btn--primary:hover, .k-btn.k-btn--primary.is-hover {
+  background: color-mix(in srgb, var(--btn-primary) 86%, var(--btn-primary-fg)); box-shadow: 0 0 16px -2px var(--glow);
+}
+/* A leading icon (grow-2): its own flex item at a fixed glyph size, so it never wraps the label. */
+.k-btn__icon { display: inline-flex; }
+.k-btn__icon > svg { width: 14px; height: 14px; flex: none; }
 .k-btn[aria-pressed="true"] { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, transparent); box-shadow: 0 0 12px -4px var(--glow); }
 .k-btn:disabled { opacity: .45; cursor: default; }
 .k-legend-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
@@ -415,6 +439,10 @@ button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); backgroun
 .k-card__press:focus-visible { outline: 0; }
 .k-card:has(.k-card__press:focus-visible) { outline: 2px solid var(--focus-ring-color); outline-offset: 2px; }
 .k-card__meta { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; }
+/* Art (grow-2): the head's decoration, top-right, beside the actions when both are present (the
+ * actions keep the corner). It paints under the stretched press and never catches a pointer. */
+.k-card__art { flex: none; display: flex; align-items: center; margin: -6px -6px 0 0; pointer-events: none; }
+.k-card__art:has(+ .k-card__actions) { margin-right: 0; }
 .k-card__actions { position: relative; z-index: 1; flex: none; display: flex; align-items: center; gap: 6px; margin: -6px -6px 0 0; }
 .k-card__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; min-height: 20px; margin-top: auto; padding-top: 10px; }
 .k-card__foot > :is(button, a) { position: relative; z-index: 1; }

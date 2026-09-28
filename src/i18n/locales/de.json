@@ -16799,7 +16799,8 @@
     "rich_markdown": {
       "invalid_block": "Der Block {name} konnte nicht angezeigt werden ({reason}). Er wird unten unverändert beibehalten.",
       "unknown_block": "„{name}“ ist kein bekannter Tag und wird daher unverändert angezeigt."
-    }
+    },
+    "unit_legend": "1 Einheit = {value}"
   },
   "sharing": {
     "access_level_label": "Zugriffsebene",

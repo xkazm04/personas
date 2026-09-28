@@ -345,5 +345,6 @@
   "rich_markdown": {
     "invalid_block": "تعذر عرض كتلة {name} ({reason}). تم الاحتفاظ بها أدناه كما كُتبت.",
     "unknown_block": "\"{name}\" ليس وسمًا معروفًا، لذا يُعرض كما كُتب."
-  }
+  },
+  "unit_legend": "1 وحدة = {value}"
 }

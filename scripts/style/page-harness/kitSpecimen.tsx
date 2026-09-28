@@ -8,6 +8,7 @@
  */
 /* eslint-disable custom/no-hardcoded-jsx-text -- specimen fixtures in a harness-only view, not product copy */
 import { useEffect, type ComponentType, type ReactNode } from 'react';
+import { Bot, MessageCircle, Play, RefreshCw, Sparkles, Workflow } from 'lucide-react';
 import { OverviewDemo } from './kitContexts';
 import {
   ChartFrame, ChipRow, ContextCard, ContextCards, Crumbs, DataTable, Dot, Hint, KeyValueGrid, KitButton, KitHost, ListRow,
@@ -214,6 +215,70 @@ function SectionStates() {
   );
 }
 
+const tones = ['default', 'quiet', 'primary'] as const;
+
+/** Kit grow-2: the five parts the home-1 batch proposed, in their states (also at the foot of kit/specimen). */
+function Grow2Parts() {
+  const art = (tone: Tone, Icon: typeof Bot) => <span className={`k-toned t-${tone}`}><Icon className="w-10 h-10" strokeWidth={1} /></span>;
+  const figs = <><span className="typo-data k-regular">6 agents</span><UnitStrip size="s" label="6 units" segments={[{ n: 6, tone: 'agent' }]} /></>;
+  return (
+    <Section title="Kit grow-2" level={1} eyebrow="the five parts home-1 proposed" meta="art, tone, icon, legend, pressable row">
+      <Section title="ContextCard art" level={2} meta="top-right, hidden from the tree, a press on it lands on the card; beside actions the actions keep the corner">
+        <ContextCards label="Art cards">
+          <ContextCard title="Art alone" meta="pressable" art={art('agent', Bot)} figures={figs} onPress={noop} />
+          <ContextCard title="Art and actions" meta="art left of the actions" art={art('primary', Workflow)} actions={<KitButton quiet onClick={noop} stopPropagation>Scan</KitButton>} figures={figs} onPress={noop} />
+          <ContextCard title="Art, selected" state="selected" art={art('info', Sparkles)} figures={figs} onPress={noop} />
+          <ContextCard title="" state="loading" art={art('agent', Bot)} />
+        </ContextCards>
+      </Section>
+      <Section title="KitButton tone and icon" level={2} meta="tone default | quiet | primary; quiet={true} is an alias of tone=quiet">
+        {tones.map((tone) => (
+          <Toolbar key={tone} label={`${tone} buttons`}>
+            <span className="typo-label k-quiet" style={{ width: '4.5rem' }}>{tone}</span>
+            <KitButton tone={tone} onClick={noop}>Label</KitButton>
+            <KitButton tone={tone} icon={<Play />} onClick={noop}>With icon</KitButton>
+            <KitButton tone={tone} icon={<RefreshCw />} onClick={noop} className="is-hover">Hover</KitButton>
+            <KitButton tone={tone} icon={<Play />} onClick={noop} disabled>Disabled</KitButton>
+            <KitButton tone={tone} icon={<Play />} onClick={noop} loading>Busy</KitButton>
+          </Toolbar>
+        ))}
+      </Section>
+      <Section title="UnitStrip legend" level={2} meta="what one unit stands for, drawn beside the strip and wired as its description">
+        <div className="k-in" style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
+          <UnitStrip size="m" label="11 runs" legend="1 run" segments={[{ n: 8, tone: 'success' }, { n: 3, tone: 'error' }]} />
+          <UnitStrip size="m" label="240 runs" legend="5 runs" segments={[{ n: 40, tone: 'success' }, { n: 8, tone: 'error' }]} />
+          <UnitStrip size="s" label="1.2M tokens" legend="100k tokens" segments={[{ n: 8, tone: 'primary' }, { n: 4, tone: 'agent', glyph: 'soft' }]} />
+          <UnitStrip size="pip" label="120 calls" legend="10 calls" segments={[{ n: 12, tone: 'info' }]} />
+        </div>
+      </Section>
+      <Section title="ListRow onPress" level={2} meta="the name is the row's one button; hover band, pointer and focus ring on the row">
+        <Rows count={4} empty={{ title: 'none' }}>
+          <ListRow size="s" name="Pressable row" onPress={noop} />
+          <ListRow size="s" name="Pressable, hover" state="hover" onPress={noop} />
+          <ListRow size="s" name="Pressable, selected" state="selected" mark={{ tone: 'success', glyph: 'solid', label: 'used' }} onPress={noop} />
+          <ListRow size="s" name="Pressable, trailing action" onPress={noop} figures={<KitButton quiet onClick={noop}>Details</KitButton>} time="5m" />
+        </Rows>
+      </Section>
+      <Section title="Get started: card-as-button (A) or primary button (B)" level={2} meta="home/welcome first run; B adopted">
+        <Caption>A, as home-1 shipped: two pressable cards of equal weight.</Caption>
+        <ContextCards label="Variant A" min="min(100%, 20rem)">
+          <ContextCard title="Build your first agent" mark={{ tone: 'info', glyph: 'hollow', label: 'Build' }} onPress={noop} figures={<Bot className="ml-auto -mb-1 w-10 h-10 k-toned t-info" strokeWidth={1.25} aria-hidden />} />
+          <ContextCard title="Ask the assistant" mark={{ tone: 'agent', glyph: 'soft', label: 'Ask' }} onPress={noop} figures={<MessageCircle className="ml-auto -mb-1 w-10 h-10 k-toned t-agent" strokeWidth={1.25} aria-hidden />} />
+        </ContextCards>
+        <Caption>B: the one call to action is primary, the second a default button, on the reading line.</Caption>
+        <Toolbar label="Variant B">
+          <KitButton tone="primary" icon={<Bot />} onClick={noop}>Build your first agent</KitButton>
+          <KitButton icon={<MessageCircle />} onClick={noop}>Ask the assistant</KitButton>
+        </Toolbar>
+      </Section>
+    </Section>
+  );
+}
+
+function KitGrow2() {
+  return <KitHost compact testId="kit-specimen-grow-2"><Surface><Grow2Parts /></Surface></KitHost>;
+}
+
 /** Opens the first Hint for the shot: a synthetic pointer entry, as React reads hover. */
 function useOpenFirstHint() {
   useEffect(() => {
@@ -239,6 +304,7 @@ function KitSpecimen() {
           <OverviewDemo />
         </Section>
         <Facts />
+        <Grow2Parts />
       </Surface>
     </KitHost>
   );
@@ -247,5 +313,9 @@ function KitSpecimen() {
 export const KIT_MODULES: Record<string, { load: () => Promise<{ default: ComponentType }> }> = {
   'kit/specimen': {
     load: async () => ({ default: KitSpecimen }),
+  },
+  // Kit grow-2 alone, so its parts are in the shot (on kit/specimen they sit below 3200px).
+  'kit/specimen/grow-2': {
+    load: async () => ({ default: KitGrow2 }),
   },
 };

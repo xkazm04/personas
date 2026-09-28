@@ -16799,7 +16799,8 @@
     "rich_markdown": {
       "invalid_block": "无法显示 {name} 区块（{reason}）。已在下方保留原始内容。",
       "unknown_block": "“{name}” 不是已知标签，因此按原样显示。"
-    }
+    },
+    "unit_legend": "1 个单位 = {value}"
   },
   "sharing": {
     "access_level_label": "访问级别",

@@ -20799,6 +20799,7 @@ export type Translations = {
     cmd_navigate: string;
     cmd_select: string;
     cmd_commands: string;
+    unit_legend: string;
     kanban: {
       card_roledescription: string;
       picked_up: string;

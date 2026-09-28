@@ -10,6 +10,12 @@ export interface ContextCardProps {
   figures?: ReactNode;
   /** Actions (KitButtons); they stay pressable above the card's own press. */
   actions?: ReactNode;
+  /**
+   * Decoration in the head's top-right (an illustration, a module glyph): hidden from the tree,
+   * never pressable (a press on it lands on the card), never on the foot. Beside actions it sits
+   * to their left and the actions keep the corner. The caller colours it (`k-toned t-<tone>`).
+   */
+  art?: ReactNode;
   /** Status, drawn ON the card's rail at the title's height (the card's own spine). */
   mark?: { tone: Tone; glyph?: Glyph; label: string };
   state?: KitStates;
@@ -32,10 +38,11 @@ export interface ContextCardProps {
  * Actions never take the foot, so a card with actions and one without keep their figure lines
  * on one line. Loading ghosts the same two places; empty puts its title in the meta line and
  * its hint and action in the foot. A pressable card's title is its one button (its hit area
- * stretched over the card) so the actions are never nested in it.
- * @catalog ContextCard - one of few peers as a tile: a band on a rail, head on top, figures on the foot; ContextCards grids them. Kit.
+ * stretched over the card) so the actions are never nested in it. Art (grow-2) is the head's
+ * decoration: top-right, aria-hidden, pointer-events off, so it never displaces the foot.
+ * @catalog ContextCard - one of few peers as a tile: a band on a rail, head on top (art top-right), figures on the foot; ContextCards grids them. Kit.
  */
-export function ContextCard({ title, meta, figures, actions, mark, state, empty, onPress, testId }: ContextCardProps) {
+export function ContextCard({ title, meta, figures, actions, art, mark, state, empty, onPress, testId }: ContextCardProps) {
   const states = typeof state === 'string' ? [state] : state ?? [];
   const loading = states.includes('loading');
   const isEmpty = !loading && states.includes('empty');
@@ -64,6 +71,7 @@ export function ContextCard({ title, meta, figures, actions, mark, state, empty,
           {name}
           {line != null && line !== '' && <div className="k-card__meta typo-caption">{line}</div>}
         </div>
+        {art && !loading && <div className="k-card__art" aria-hidden="true">{art}</div>}
         {actions && !loading && <div className="k-card__actions">{actions}</div>}
       </div>
       <div className="k-card__foot">{foot}</div>

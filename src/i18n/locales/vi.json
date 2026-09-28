@@ -16799,7 +16799,8 @@
     "rich_markdown": {
       "invalid_block": "Không thể hiển thị khối {name} ({reason}). Khối này được giữ nguyên bên dưới như đã viết.",
       "unknown_block": "\"{name}\" không phải là thẻ đã biết, vì vậy nó được hiển thị nguyên trạng như đã viết."
-    }
+    },
+    "unit_legend": "1 đơn vị = {value}"
   },
   "sharing": {
     "access_level_label": "Cấp độ truy cập",

@@ -345,5 +345,6 @@
   "rich_markdown": {
     "invalid_block": "Le bloc {name} n'a pas pu être affiché ({reason}). Il est conservé ci-dessous tel qu'écrit.",
     "unknown_block": "« {name} » n'est pas une balise reconnue, elle est donc affichée telle qu'écrite."
-  }
+  },
+  "unit_legend": "1 unité = {value}"
 }

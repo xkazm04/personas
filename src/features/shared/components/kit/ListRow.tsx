@@ -16,20 +16,33 @@ export interface ListRowProps {
   state?: KitStates;
   /** Overrides the one emphasised name recipe (`typo-body k-strong`). */
   nameClass?: string;
+  /**
+   * Present = the row presses (opens, launches, selects): its name becomes the row's one button,
+   * its hit area stretched over the row; figures and time stay pressable above it. A selected
+   * pressable row is the current one (`aria-current`). The row keeps its fixed height.
+   */
+  onPress?: () => void;
+  testId?: string;
 }
 
 /**
  * ListRow: a fixed-height row on the 8px grid with ONE emphasised name, quiet meta and an
- * alternating band; its status mark sits on the spine and a selected row lights its segment.
- * @catalog ListRow - fixed-height row: one emphasised name, quiet meta, status mark on the spine, figures. Kit.
+ * alternating band; its status mark sits on the spine and a selected row lights its segment. With
+ * `onPress` (grow-2) the name is the row's one button, as a pressable ContextCard's title is:
+ * one tab stop per row, the focus ring on the row, hover band and pointer over all of it.
+ * @catalog ListRow - fixed-height row: one emphasised name, quiet meta, status mark on the spine, figures; onPress makes the name the row's one button. Kit.
  */
-export function ListRow({ name, meta, mark, figures, time, size = 'm', state, nameClass }: ListRowProps) {
+export function ListRow({ name, meta, mark, figures, time, size = 'm', state, nameClass, onPress, testId }: ListRowProps) {
   const trail = figures != null || time != null;
+  const nameCls = cx('k-row__name', nameClass ?? 'typo-body k-strong');
+  const selected = typeof state === 'string' ? state === 'selected' : !!state?.includes('selected');
   return (
-    <div className={cx('k-row', `k-row--${size}`, stateClass(state))} {...kitAttrs('ListRow', state)}>
+    <div className={cx('k-row', `k-row--${size}`, stateClass(state), onPress && 'is-pressable')} {...kitAttrs('ListRow', state)} data-testid={testId}>
       {mark && <Mark tone={mark.tone} glyph={mark.glyph} label={mark.label} />}
       <div className="k-row__main">
-        <div className={cx('k-row__name', nameClass ?? 'typo-body k-strong')}>{name}</div>
+        {onPress
+          ? <button type="button" className={cx(nameCls, 'k-row__press')} aria-current={selected || undefined} onClick={onPress}>{name}</button>
+          : <div className={nameCls}>{name}</div>}
         {meta != null && <div className="k-row__meta typo-caption">{meta}</div>}
       </div>
       {trail && (

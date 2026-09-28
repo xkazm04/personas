@@ -16799,7 +16799,8 @@
     "rich_markdown": {
       "invalid_block": "{name} ブロックを表示できませんでした（{reason}）。元のまま下に保持されています。",
       "unknown_block": "「{name}」は既知のタグではないため、そのまま表示されます。"
-    }
+    },
+    "unit_legend": "1単位 = {value}"
   },
   "sharing": {
     "access_level_label": "アクセスレベル",

@@ -345,5 +345,6 @@
   "rich_markdown": {
     "invalid_block": "{name} 블록을 표시할 수 없습니다 ({reason}). 작성된 그대로 아래에 유지됩니다.",
     "unknown_block": "\"{name}\"은(는) 알려진 태그가 아니므로 작성된 그대로 표시됩니다."
-  }
+  },
+  "unit_legend": "1단위 = {value}"
 }

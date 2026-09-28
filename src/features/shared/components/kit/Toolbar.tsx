@@ -78,6 +78,9 @@ export function SearchField({ value, onChange, placeholder, inputRef, testId }: 
   );
 }
 
+/** What a KitButton's press means (grow-2): a closed set, named for meaning. */
+export type KitButtonTone = 'default' | 'quiet' | 'primary';
+
 /**
  * The kit's 32px button. It renders the shared Button, so a busy state is the product's real
  * spinner with disabled + aria-busy, and wears the kit's look (kit.css is unlayered).
@@ -86,13 +89,23 @@ export function SearchField({ value, onChange, placeholder, inputRef, testId }: 
  * `stopPropagation` is for an action inside a selectable row or card: its press (and the
  * Enter/Space that activates it) never reaches the row, and a promise from `onClick` still
  * reaches the Button's double-submit guard.
- * @catalog KitButton - the kit 32px button over the shared Button (real busy spinner; disabled with a reason; stopPropagation inside a selectable row). Kit.
+ * `tone` (grow-2) is what the press means, one closed set: `default` (bordered), `quiet` (no
+ * border, muted ink: a secondary action), `primary` (the surface's one call to action, filled
+ * in the theme's button primary with the primary glow; it rides the shared Button's primary
+ * variant, so its brightness compensation is the product's). `icon` sits before the label as
+ * its own flex item (hidden from the tree; a busy spinner takes its place), so it never wraps.
+ * @catalog KitButton - the kit 32px button over the shared Button: tone default|quiet|primary, a leading icon, real busy spinner, disabled with a reason, stopPropagation inside a selectable row. Kit.
  */
-export function KitButton({ children, onClick, loading, quiet, hint, className, testId, pressed, expanded, disabled, disabledReason, stopPropagation, label }: {
+export function KitButton({ children, onClick, loading, tone, quiet, icon, hint, className, testId, pressed, expanded, disabled, disabledReason, stopPropagation, label }: {
   children: ReactNode;
   onClick: () => unknown;
   loading?: boolean;
+  /** What the press means; see above. Defaults to `default` (or `quiet` through the alias). */
+  tone?: KitButtonTone;
+  /** @deprecated Alias of `tone="quiet"`, kept for the call sites that pass it; `tone` wins. */
   quiet?: boolean;
+  /** A glyph before the label (lucide icon); the kit sizes it. */
+  icon?: ReactNode;
   /** A toggle: sets aria-pressed, which kit.css already draws as the pressed (selected) look. */
   pressed?: boolean;
   /** A disclosure: sets aria-expanded for the region it opens. */
@@ -109,15 +122,17 @@ export function KitButton({ children, onClick, loading, quiet, hint, className, 
   /** Accessible name when the content is not text (a sparkline and a figure). */
   label?: string;
 }) {
+  const look: KitButtonTone = tone ?? (quiet ? 'quiet' : 'default');
   const stop = stopPropagation
     ? { onKeyDown: (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); } }
     : null;
   return (
     <Button
-      variant="ghost"
+      variant={look === 'primary' ? 'primary' : 'ghost'}
       size="sm"
       data-testid={testId}
-      className={cx('k-btn typo-label k-regular', quiet && 'k-btn--quiet', className)}
+      className={cx('k-btn typo-label k-regular', look === 'quiet' && 'k-btn--quiet', look === 'primary' && 'k-btn--primary', className)}
+      icon={icon ? <span className="k-btn__icon" aria-hidden="true">{icon}</span> : undefined}
       loading={loading}
       disabled={disabled}
       disabledReason={disabledReason}

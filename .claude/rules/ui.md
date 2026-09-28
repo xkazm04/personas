@@ -35,7 +35,7 @@ Reference: **`.claude/Design.md`**. Primitives: **`src/features/shared/component
 | switch, select, label+input+error | `forms/AccessibleToggle`, `forms/Listbox`, `forms/FormField` |
 | tab strip; "no data" | `layout/PanelTabBar`, `layout/SegmentedTabs`; `feedback/ScenarioEmptyState` |
 | row or tile entrance | `display/RevealItem` + `useRevealTracker` |
-| section head, trail, stat tile, key-value, chip strip, filter bar, list or table row, tile, detail pane, hint on a mark, unit quantum | the composition kit `@/features/shared/components/kit` (Section, Crumbs, StatStrip, KeyValueGrid, ChipRow, Toolbar/KitButton, Rows/DataTable, ContextCard (few) / ContextOverview (many), Split/Drawer, Hint, quantumFor); a one-off duplicate is a finding (doctrine 6b) |
+| section head, trail, stat tile, key-value, chip strip, filter bar, list or table row, tile, detail pane, hint on a mark, unit quantum | the composition kit `@/features/shared/components/kit` (Section, Crumbs, StatStrip, KeyValueGrid, ChipRow, Toolbar/KitButton, Rows/DataTable, ContextCard (few) / ContextOverview (many), Split/Drawer, Hint, quantumFor; props: ContextCard `art`, KitButton `tone`/`icon`, UnitStrip `legend`, ListRow `onPress`); a one-off duplicate is a finding (doctrine 6b) |
 
 **Spinner boundary:** a spinner is banned for a surface loading its data and required on a control the user just pressed. `feedback/LoadingSpinner` renders `null`: it is neither.
 **Loading pattern v2:** `docs/design/overview-loading.md` (chrome always renders; a fetch never hides

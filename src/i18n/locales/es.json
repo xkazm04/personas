@@ -16799,7 +16799,8 @@
     "rich_markdown": {
       "invalid_block": "No se pudo mostrar el bloque {name} ({reason}). Se conserva abajo tal como se escribió.",
       "unknown_block": "«{name}» no es una etiqueta reconocida, por lo que se muestra tal como se escribió."
-    }
+    },
+    "unit_legend": "1 unidad = {value}"
   },
   "sharing": {
     "access_level_label": "Nivel de acceso",

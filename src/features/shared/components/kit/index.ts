@@ -14,7 +14,7 @@ export { ListRow, Rows, type ListRowProps, type RowSize } from './ListRow';
 export { StatStrip, type StatTile } from './StatStrip';
 export { KeyValueGrid, type KeyValueItem } from './KeyValueGrid';
 export { ChipRow, ChipView, type Chip } from './ChipRow';
-export { Toolbar, Segmented, SearchField, KitButton, type SegmentOption } from './Toolbar';
+export { Toolbar, Segmented, SearchField, KitButton, type SegmentOption, type KitButtonTone } from './Toolbar';
 export { Crumbs, type Crumb } from './Crumbs';
 export { RangePicker, type RangePreset } from './RangePicker';
 export { DataTable, type TableCol, type TableRow } from './DataTable';

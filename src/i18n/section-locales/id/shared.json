@@ -345,5 +345,6 @@
   "rich_markdown": {
     "invalid_block": "Blok {name} tidak dapat ditampilkan ({reason}). Blok ini tetap disimpan di bawah persis seperti aslinya.",
     "unknown_block": "\"{name}\" bukan tag yang dikenali, jadi ditampilkan persis seperti aslinya."
-  }
+  },
+  "unit_legend": "1 satuan = {value}"
 }

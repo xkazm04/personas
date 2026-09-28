@@ -271,7 +271,7 @@ const BUILDERS = {
   // Kit batch home-1, Home > Learning (homeLearningSurfaces.tsx, homeLearningTapes.mjs).
   ...homeLearningTapes({ RECORDED_AT }).builders,
   // The kit specimen (kitSpecimen.tsx): synthetic props, no IPC.
-  ...Object.fromEntries(['kit/specimen', 'kit/overview', 'kit/overview-flat'].map((id) => [
+  ...Object.fromEntries(['kit/specimen', 'kit/specimen/grow-2', 'kit/overview', 'kit/overview-flat'].map((id) => [
     id, () => ({ version: 1, module: id, source: 'synthetic', recordedAt: RECORDED_AT, note: 'Synthetic props, no IPC: kit parts in their states.', calls: [] }),
   ])),
   // WP4b tone surfaces (toneSurfaces.tsx): props are synthetic, no IPC.

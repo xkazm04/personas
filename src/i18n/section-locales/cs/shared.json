@@ -345,5 +345,6 @@
   "rich_markdown": {
     "invalid_block": "Blok {name} se nepodařilo zobrazit ({reason}). Níže je ponechán tak, jak byl napsán.",
     "unknown_block": "„{name}“ není známá značka, proto je zobrazena tak, jak byla napsána."
-  }
+  },
+  "unit_legend": "1 jednotka = {value}"
 }
