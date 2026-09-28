@@ -73,8 +73,8 @@ export function LinkedMemoriesWidget({ config, title, span, actions, footer }: C
       <Rows count={memories.length} cap={CAP} label={heading} empty={{ title: c.linked_memories_empty }}>
         {memories.map((m) => {
           const tier = TIER_MARK[m.tier] ?? TIER_MARK.working!;
-          const importance = Math.min(IMPORTANCE_MAX, Math.max(0, Math.round(m.importance)));
-          const said = tx(c.linked_memories_importance, { value: importance, max: IMPORTANCE_MAX });
+          // A row without a score draws no strip rather than five empty units.
+          const importance = Number.isFinite(m.importance) ? Math.min(IMPORTANCE_MAX, Math.max(0, Math.round(m.importance))) : null;
           return (
             <ListRow
               key={m.id}
@@ -82,10 +82,10 @@ export function LinkedMemoriesWidget({ config, title, span, actions, footer }: C
               name={m.title}
               mark={{ ...tier, label: tokenLabel(t, 'memory_tier', m.tier) }}
               meta={<Meta parts={[tokenLabel(t, 'memory_category', m.category), <Hint key="c" content={m.content}><span className="k-ellipsis">{m.content}</span></Hint>]} />}
-              figures={(
+              figures={importance == null ? undefined : (
                 <UnitStrip
                   size="s"
-                  label={said}
+                  label={tx(c.linked_memories_importance, { value: importance, max: IMPORTANCE_MAX })}
                   segments={[{ n: importance, tone: 'primary' }, { n: IMPORTANCE_MAX - importance, tone: 'neutral', glyph: 'empty' }]}
                 />
               )}
