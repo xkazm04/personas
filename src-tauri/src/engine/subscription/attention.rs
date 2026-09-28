@@ -2188,6 +2188,23 @@ fn build_decision_context_with_mode(
                 },
             );
 
+    // The end of the newest COMPLETED pass of any lane (e90e189a) - the same
+    // ledger read the briefs take, from the history already in hand. A refusal
+    // is not a pass (2cc79b6a): it lands already completed, so counting it let
+    // an interval-floor refusal five minutes ago hide a three-day gap behind
+    // "your last pass ended 5m ago".
+    let now_utc = chrono::Utc::now().to_rfc3339();
+    let last_pass_ended_at = history
+        .iter()
+        .find(|r| r.completed_at.is_some() && r.verdict != "refused")
+        .and_then(|r| r.completed_at.clone());
+    // ...and whether the operator had the loop switched off inside that gap
+    // (97dc6b94).
+    let loop_off = last_pass_ended_at
+        .as_deref()
+        .map(|since| read_loop_off_windows(pool, since, &now_utc))
+        .unwrap_or_default();
+
     Ok(attention_decide::DecisionContext {
         persona_id: persona.id.clone(),
         persona_name: persona.name.clone(),
@@ -2205,7 +2222,7 @@ fn build_decision_context_with_mode(
         active_personas: personas_engine::active_persona_cap::active_persona_headroom(pool).ok(),
         // The clock is read HERE, not inside the renderer, so the prompt stays
         // a pure function of the context it was handed.
-        now_utc: chrono::Utc::now().to_rfc3339(),
+        now_utc,
         model: codex_mode.map_or_else(
             || decision_model(persona, charters, cascade.as_ref()),
             |m| m.model.clone(),
@@ -2217,15 +2234,8 @@ fn build_decision_context_with_mode(
         answered_reviews,
         expired_reviews,
         loop_hold,
-        // The end of the newest COMPLETED pass of any lane (e90e189a) — the
-        // same ledger read the briefs take, from the history already in hand.
-        // A refusal is not a pass (2cc79b6a): it lands already completed, so
-        // counting it let an interval-floor refusal five minutes ago hide a
-        // three-day gap behind "your last pass ended 5m ago".
-        last_pass_ended_at: history
-            .iter()
-            .find(|r| r.completed_at.is_some() && r.verdict != "refused")
-            .and_then(|r| r.completed_at.clone()),
+        last_pass_ended_at,
+        loop_off,
         channel,
         peers,
         may_direct,
@@ -3541,12 +3551,46 @@ fn wall_clock_header(pool: &DbPool, persona_id: &str) -> String {
                      quiet. Nothing ran for you in it, so it is not evidence that nothing \
                      needed doing.\n",
                 );
+                s.push_str(&attention_decide::loop_off_lines(
+                    &read_loop_off_windows(pool, ended, &now),
+                    &now,
+                ));
             }
         }
         None => s.push_str("You have no completed pass on record — this is your first.\n"),
     }
     s.push('\n');
     s
+}
+
+/// When the operator had the attention loop's switch off inside
+/// `[since, now]` (97dc6b94), read from the settings audit trail - the switch
+/// opens no loop hold, so the audit log is the only record of it.
+///
+/// Best-effort like every brief read: an unreadable log names no window, which
+/// is the behaviour before this existed. The newest 1,000 autonomy-category
+/// rows are far more than one gap's worth of toggles.
+fn read_loop_off_windows(
+    pool: &DbPool,
+    since: &str,
+    now: &str,
+) -> Vec<attention_decide::LoopOffWindow> {
+    use crate::db::repos::resources::settings_audit_log;
+    let key = settings_keys::AUTONOMOUS_ATTENTION_LOOP;
+    let Some(category) = settings_keys::audit_category(key) else {
+        return Vec::new();
+    };
+    let rows = settings_audit_log::list(pool, 1000, Some(category)).unwrap_or_else(|e| {
+        tracing::warn!(error = %e,
+            "persona_attention: settings audit read failed - no loop-off window is named");
+        Vec::new()
+    });
+    let changes: Vec<(String, Option<String>)> = rows
+        .into_iter()
+        .filter(|r| r.setting_key == key)
+        .map(|r| (r.created_at, r.after_value))
+        .collect();
+    attention_decide::loop_off_windows(&changes, since, now)
 }
 
 /// The advance lane's bounded work brief: charter title, ONE outcome with its

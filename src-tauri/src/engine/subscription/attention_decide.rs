@@ -773,6 +773,105 @@ pub(crate) struct LoopHoldNote {
     pub detail: String,
 }
 
+/// A stretch in which the operator had the attention loop switched OFF, as the
+/// settings audit trail records it (97dc6b94).
+///
+/// The loop's own switch opens no [`LoopHoldNote`], so after 2026-09-16..24 -
+/// eight days with the switch off and nothing dispatched for anyone - every
+/// wake was told its gap was "UNOBSERVED" and nothing about why. This is the
+/// one fact that separates "the app was switched off" from "you were not
+/// chosen", read from the audit log rather than from a new hold record.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct LoopOffWindow {
+    pub from: String,
+    /// `None` = still off when the prompt was written.
+    pub to: Option<String>,
+}
+
+/// How many switched-off windows a prompt names; the rest are counted.
+pub(crate) const MAX_LOOP_OFF_WINDOWS: usize = 3;
+
+/// The windows inside `[since, now]` in which the attention loop's switch was
+/// off, from its audit trail: `(created_at, after_value)` per change, in any
+/// order. `after_value` other than `"true"` (including a deleted row, `None`)
+/// is OFF - the switch defaults off.
+///
+/// The state at `since` is the last change at or before it; with none on
+/// record the loop is taken as ON, because `since` is the end of a pass the
+/// loop ran. Pure; unparseable instants are skipped, never guessed.
+pub(crate) fn loop_off_windows(
+    changes: &[(String, Option<String>)],
+    since: &str,
+    now: &str,
+) -> Vec<LoopOffWindow> {
+    let parse = |t: &str| chrono::DateTime::parse_from_rfc3339(t.trim()).ok();
+    let (Some(since_t), Some(now_t)) = (parse(since), parse(now)) else {
+        return Vec::new();
+    };
+    let mut timed: Vec<(chrono::DateTime<chrono::FixedOffset>, &str, bool)> = changes
+        .iter()
+        .filter_map(|(at, after)| {
+            let on = after.as_deref().map(str::trim) == Some("true");
+            parse(at).map(|t| (t, at.as_str(), on))
+        })
+        .collect();
+    timed.sort_by_key(|(t, _, _)| *t);
+
+    let mut off_since: Option<String> = timed
+        .iter()
+        .rev()
+        .find(|(t, _, _)| *t <= since_t)
+        .filter(|(_, _, on)| !on)
+        .map(|_| since.trim().to_string());
+    let mut out = Vec::new();
+    for (_, at, on) in timed.iter().filter(|(t, _, _)| *t > since_t && *t <= now_t) {
+        match (&off_since, on) {
+            (None, false) => off_since = Some((*at).to_string()),
+            (Some(from), true) => {
+                out.push(LoopOffWindow {
+                    from: from.clone(),
+                    to: Some((*at).to_string()),
+                });
+                off_since = None;
+            }
+            _ => {}
+        }
+    }
+    if let Some(from) = off_since {
+        out.push(LoopOffWindow { from, to: None });
+    }
+    out
+}
+
+/// The switched-off windows as prompt lines, or empty. Printed only after a
+/// long gap, beside the UNOBSERVED line it explains.
+pub(crate) fn loop_off_lines(windows: &[LoopOffWindow], now: &str) -> String {
+    let mut s = String::new();
+    for w in windows.iter().take(MAX_LOOP_OFF_WINDOWS) {
+        let end = w.to.as_deref().unwrap_or(now);
+        let length = minutes_between(end, &w.from)
+            .map(|m| format!(" ({})", duration_phrase(m)))
+            .unwrap_or_default();
+        s.push_str(&format!(
+            "The attention loop itself was SWITCHED OFF by its operator setting from {} {}{length}. \
+             Nothing was dispatched for ANY persona in that stretch: that part of your gap is \
+             the switch, not your charters.\n",
+            w.from,
+            match w.to.as_deref() {
+                Some(to) => format!("to {to}"),
+                None => "and it is still off".to_string(),
+            },
+        ));
+    }
+    if windows.len() > MAX_LOOP_OFF_WINDOWS {
+        s.push_str(&format!(
+            "...and it was switched off {} more time(s) in the same gap.\n",
+            windows.len() - MAX_LOOP_OFF_WINDOWS
+        ));
+    }
+    s
+}
+
 /// How long ago `then` was, measured from `now` — "3d 4h ago", "45m ago".
 /// `None` when either instant is unparseable, and the caller then prints no
 /// age rather than a fabricated one.
@@ -879,6 +978,10 @@ pub(crate) struct DecisionContext {
     /// (e90e189a). Printed beside the clock so the wake knows how long it has
     /// been away; `None` for a persona that has never completed one.
     pub last_pass_ended_at: Option<String>,
+    /// When the operator had the loop's own switch off between
+    /// `last_pass_ended_at` and now (97dc6b94), oldest first. Rendered only
+    /// beside the long-gap line it explains.
+    pub loop_off: Vec<LoopOffWindow>,
     /// What was said in the channels this persona can hear, newest first, at
     /// most [`MAX_CHANNEL_LINES`].
     pub channel: Vec<ChannelLine>,
@@ -2531,6 +2634,7 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
                 "That is a long gap: treat the interval behind you as UNOBSERVED rather \
                  than quiet.\n",
             );
+            s.push_str(&loop_off_lines(&ctx.loop_off, now));
         }
     }
     if let Some(minutes) = chosen_sleep {
@@ -4134,6 +4238,7 @@ mod tests {
             expired_reviews: Vec::new(),
             loop_hold: None,
             last_pass_ended_at: None,
+            loop_off: Vec::new(),
             // The channel is empty in the base fixture on purpose: every
             // prompt assertion written before G3 must keep holding for a
             // persona nobody has spoken to.
@@ -4527,6 +4632,89 @@ mod tests {
         ctx.answered_reviews.clear();
         let p = render_decision_prompt(&ctx);
         assert!(!p.contains("ANSWERED SINCE YOUR LAST WAKE"), "{p}");
+    }
+
+    /// 97dc6b94: the audit trail of the loop's own switch becomes the windows
+    /// it was off inside the gap - the real 2026-09-16..24 stop, then a later
+    /// flicker - and a window still open at `now` stays open.
+    #[test]
+    fn loop_off_windows_are_read_from_the_switch_trail() {
+        let change = |at: &str, v: Option<&str>| (at.to_string(), v.map(str::to_string));
+        let trail = vec![
+            // Before the gap: switched on, so the gap opens with the loop ON.
+            change("2026-09-10T08:00:00+00:00", Some("true")),
+            change("2026-09-16T09:15:03+00:00", Some("false")),
+            change("2026-09-24T17:53:34+00:00", Some("true")),
+            change("2026-09-24T18:09:00+00:00", Some("false")),
+            // A second OFF while off is no new window.
+            change("2026-09-24T18:10:00+00:00", None),
+            change("2026-09-24T20:32:00+00:00", Some("true")),
+        ];
+        let since = "2026-09-16T08:23:16+00:00";
+        let now = "2026-09-24T22:37:55+00:00";
+        let w = loop_off_windows(&trail, since, now);
+        assert_eq!(
+            w,
+            vec![
+                LoopOffWindow {
+                    from: "2026-09-16T09:15:03+00:00".into(),
+                    to: Some("2026-09-24T17:53:34+00:00".into()),
+                },
+                LoopOffWindow {
+                    from: "2026-09-24T18:09:00+00:00".into(),
+                    to: Some("2026-09-24T20:32:00+00:00".into()),
+                },
+            ]
+        );
+        let lines = loop_off_lines(&w, now);
+        assert!(
+            lines.contains(
+                "SWITCHED OFF by its operator setting from 2026-09-16T09:15:03+00:00 \
+                 to 2026-09-24T17:53:34+00:00 (8d 8h)"
+            ),
+            "{lines}"
+        );
+
+        // Already off when the gap opened, still off now: one open window
+        // from the start of the gap.
+        let off = vec![change("2026-09-15T00:00:00+00:00", Some("false"))];
+        let w = loop_off_windows(&off, since, now);
+        assert_eq!(
+            w,
+            vec![LoopOffWindow {
+                from: since.into(),
+                to: None
+            }]
+        );
+        assert!(loop_off_lines(&w, now).contains("and it is still off"));
+
+        // Nothing switched: nothing to say.
+        assert!(loop_off_windows(&trail[..1], since, now).is_empty());
+        assert!(loop_off_lines(&[], now).is_empty());
+    }
+
+    /// 97dc6b94: after a long gap the decide prompt names the switch-off; a
+    /// short gap prints nothing about it.
+    #[test]
+    fn a_long_gap_names_the_loop_switch_off() {
+        let mut ctx = ctx_fixture();
+        ctx.now_utc = "2026-09-24T22:37:55+00:00".into();
+        ctx.last_pass_ended_at = Some("2026-09-16T08:23:16+00:00".into());
+        ctx.loop_off = vec![LoopOffWindow {
+            from: "2026-09-16T09:15:03+00:00".into(),
+            to: Some("2026-09-24T17:53:34+00:00".into()),
+        }];
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("That is a long gap"), "{p}");
+        assert!(
+            p.contains("from 2026-09-16T09:15:03+00:00 to 2026-09-24T17:53:34+00:00 (8d 8h)"),
+            "{p}"
+        );
+        assert!(p.contains("Nothing was dispatched for ANY persona"), "{p}");
+
+        ctx.last_pass_ended_at = Some("2026-09-24T22:07:55+00:00".into());
+        let p = render_decision_prompt(&ctx);
+        assert!(!p.contains("SWITCHED OFF"), "a 30-minute gap: {p}");
     }
 
     /// 71c28238: a question the review GC closed unanswered renders as EXPIRED,
