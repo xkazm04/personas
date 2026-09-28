@@ -1,16 +1,21 @@
 /**
- * Morning Director — the one-click action bar rendered under a briefing
- * widget. Follows the shared action grammar: explicit affordance → one
- * click → confirm when spendy/destructive (rerun, pause) → executes via
- * existing IPC → recorded to the decision ledger.
+ * Morning Director: the one-click actions of a briefing widget, rendered in
+ * the widget Tile's footer (the host hands this bar to the widget as its
+ * `footer`, so the actions sit inside the tile they act on). Follows the
+ * shared action grammar: explicit affordance, one click, confirm when
+ * spendy/destructive (rerun, pause), executes via existing IPC, recorded to
+ * the decision ledger.
  *
- * Visual language mirrors the DecisionAction tone system: approve-ish
- * verbs read primary, decline/pause read rose, everything else neutral.
+ * Kit buttons: approving a proposal is the tile's one call to action
+ * (`tone="primary"`); the rest are default. A press shows the kit's real busy
+ * spinner; the destructive meaning of pause and decline lives in their
+ * confirm dialog, not in a hue.
  */
 import { useState } from 'react';
 import { Check, Pause, Play, X } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
+import { KitButton } from '@/features/shared/components/kit';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -41,24 +46,13 @@ function defaultLabel(
 function actionIcon(kind: CockpitWidgetAction['kind']) {
   switch (kind) {
     case 'rerun_persona':
-      return <Play className="w-3 h-3" aria-hidden />;
+      return <Play />;
     case 'pause_persona':
-      return <Pause className="w-3 h-3" aria-hidden />;
+      return <Pause />;
     case 'approve_approval':
-      return <Check className="w-3 h-3" aria-hidden />;
+      return <Check />;
     case 'decline_approval':
-      return <X className="w-3 h-3" aria-hidden />;
-  }
-}
-
-/** Tone classes per verb — reads like the shared DecisionAction tones. */
-function toneClass(kind: CockpitWidgetAction['kind']): string {
-  switch (kind) {
-    case 'decline_approval':
-    case 'pause_persona':
-      return 'bg-rose-500/10 border-rose-500/20 hover:bg-rose-500/20 text-rose-400';
-    default:
-      return 'bg-primary/10 border-primary/20 hover:bg-primary/20 text-primary';
+      return <X />;
   }
 }
 
@@ -111,23 +105,16 @@ function ActionButton({ action }: { action: CockpitWidgetAction }) {
 
   return (
     <>
-      <button
-        type="button"
-        data-testid={`briefing-action-${action.kind}`}
+      <KitButton
+        testId={`briefing-action-${action.kind}`}
         onClick={onClick}
-        disabled={state === 'busy' || state === 'done'}
-        title={label}
-        className={`inline-flex items-center gap-1.5 max-w-full rounded-interactive px-2.5 py-1.5 typo-caption transition-colors focus-ring border disabled:opacity-60 ${
-          state === 'done'
-            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-            : state === 'failed'
-              ? 'bg-status-error/10 border-status-error/20 text-status-error'
-              : toneClass(action.kind)
-        }`}
+        tone={action.kind === 'approve_approval' && state !== 'done' ? 'primary' : 'default'}
+        icon={state === 'done' ? <Check /> : actionIcon(action.kind)}
+        loading={state === 'busy'}
+        disabled={state === 'done'}
       >
-        {state === 'done' ? <Check className="w-3 h-3" aria-hidden /> : actionIcon(action.kind)}
-        <span className="truncate">{stateLabel}</span>
-      </button>
+        <span className={state === 'failed' ? 'text-status-error' : undefined}>{stateLabel}</span>
+      </KitButton>
       {confirming && (
         <ConfirmDialog
           title={confirmCopy.title}
@@ -145,17 +132,14 @@ function ActionButton({ action }: { action: CockpitWidgetAction }) {
 }
 
 /**
- * Renders the enum-validated actions for one widget. Parent passes an
- * already-parsed list (see `parseWidgetActions`); empty list renders
- * nothing, so display-only widgets are untouched.
+ * Renders the enum-validated actions for one widget, as the content of its
+ * Tile footer. Parent passes an already-parsed list (see `parseWidgetActions`);
+ * an empty list renders nothing, so display-only widgets are untouched.
  */
 export function WidgetActionBar({ actions }: { actions: CockpitWidgetAction[] }) {
   if (actions.length === 0) return null;
   return (
-    <div
-      className="flex flex-wrap gap-1.5 pt-2"
-      data-testid="briefing-widget-actions"
-    >
+    <div className="flex flex-wrap items-center gap-2" data-testid="briefing-widget-actions">
       {actions.map((a, i) => (
         <ActionButton
           key={`${a.kind}-${'personaId' in a ? a.personaId : a.approvalId}-${i}`}

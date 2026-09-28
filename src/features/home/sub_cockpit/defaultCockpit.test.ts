@@ -7,7 +7,6 @@ import { composeDefaultCockpit, type DefaultCockpitLabels } from './defaultCockp
 
 const LABELS: DefaultCockpitLabels = {
   title: 'Starter cockpit',
-  callout: { title: 'Starter cockpit', body: 'body' },
   vitalsTitle: 'Fleet vitals',
   rosterTitle: 'Your personas',
   attentionTitle: 'Needs attention',
@@ -53,13 +52,12 @@ const METRICS: MetricsSummary = {
 };
 
 describe('composeDefaultCockpit', () => {
-  it('produces the 4 expected widget kinds in order', () => {
+  it('produces the 3 expected widget kinds in order, the attention list above the roster', () => {
     const spec = composeDefaultCockpit([persona({})], METRICS, LABELS);
     expect(spec.widgets.map((w) => w.kind)).toEqual([
-      'text_callout',
       'stat_grid',
-      'persona_overview',
       'issue_list',
+      'persona_overview',
     ]);
     expect(spec.title).toBe('Starter cockpit');
   });
@@ -67,10 +65,9 @@ describe('composeDefaultCockpit', () => {
   it('uses only registered widget kinds with stable ids', () => {
     const spec = composeDefaultCockpit([persona({})], METRICS, LABELS);
     expect(spec.widgets.map((w) => w.id)).toEqual([
-      'default-callout',
       'default-vitals',
-      'default-roster',
       'default-attention',
+      'default-roster',
     ]);
   });
 
@@ -129,14 +126,17 @@ describe('composeDefaultCockpit', () => {
     expect(stats[3]!.intent).toBe('warn');
   });
 
-  it('caps attention items at 6', () => {
+  it('passes every flagged persona to the attention list (the widget caps its rows, not the spec)', () => {
     const personas = Array.from({ length: 10 }, (_, i) =>
       persona({ id: `p${i}`, enabled: false }),
     );
     const spec = composeDefaultCockpit(personas, METRICS, LABELS);
     const items = spec.widgets.find((w) => w.id === 'default-attention')!.config!
       .items as unknown[];
-    expect(items).toHaveLength(6);
+    expect(items).toHaveLength(10);
+    const stats = spec.widgets.find((w) => w.id === 'default-vitals')!.config!
+      .stats as Array<{ value: unknown }>;
+    expect(stats[3]!.value).toBe(items.length);
   });
 
   it('reports a healthy fleet with a good needs-attention intent + empty list', () => {
