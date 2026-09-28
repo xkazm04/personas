@@ -1027,6 +1027,14 @@ def record_commits(c: sqlite3.Connection, claim: dict, root: pathlib.Path, since
         return 0
     n = 0
     slug = registry_slug(c, root)
+    # The branch the commits landed on, as the checkout reports it. NOT NULL in
+    # the table, so an unreadable branch is recorded as the literal "(unknown)"
+    # rather than left out - the row is evidence about a commit that exists.
+    br = subprocess.run(
+        ["git", "-C", str(root), "rev-parse", "--abbrev-ref", "HEAD"],
+        capture_output=True, text=True, timeout=30,
+    )
+    branch = br.stdout.strip() if br.returncode == 0 and br.stdout.strip() else "(unknown)"
     for line in r.stdout.splitlines():
         parts = line.split("\x1f")
         if len(parts) < 3:
@@ -1036,16 +1044,38 @@ def record_commits(c: sqlite3.Connection, claim: dict, root: pathlib.Path, since
             ["git", "-C", str(root), "show", "--name-only", "--format=", sha],
             capture_output=True, text=True, timeout=60,
         ).stdout.split()
-        try:
-            c.execute(
-                "INSERT OR IGNORE INTO curator_commit "
-                "(id, project_slug, sha, files_json, level_that_authorised, created_at) "
-                "VALUES (?,?,?,?,?,?)",
-                (str(uuid.uuid4()), slug, sha, json.dumps(files), "L0", now()),
-            )
-            n += 1
-        except sqlite3.Error:
-            pass
+        # EVERY not-null column, and the affected-row count as the evidence.
+        #
+        # The first version named six of the ten columns and counted attempts.
+        # `INSERT OR IGNORE` does not raise on a NOT NULL violation - it skips the
+        # row - so the insert "succeeded", the counter advanced, and `commits`
+        # reported "recorded 3" having written nothing. Twice. The app's own
+        # `record_commit` gets this right by returning `written == 1`, which is
+        # the shape copied here: a writer that cannot say how many rows it wrote
+        # is a writer that will eventually claim work it did not do, and this one
+        # feeds `commits_today`, one of her three daily brakes.
+        cur = c.execute(
+            "INSERT OR IGNORE INTO curator_commit "
+            "  (id, project_slug, repo_path, branch, sha, files_json, decision_id,"
+            "   level_that_authorised, run_id, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?)",
+            (
+                str(uuid.uuid4()),
+                slug,
+                str(root),
+                branch,
+                sha,
+                json.dumps(files),
+                "L0",
+                claim.get("session_id"),
+                now(),
+            ),
+        )
+        # `OR IGNORE` also absorbs the LEGITIMATE case - this sha is already
+        # recorded, because two of her terminals saw overlapping ranges - so a
+        # zero here is not necessarily a failure. It is still not a write, and
+        # only the rows actually written are reported.
+        n += cur.rowcount if cur.rowcount and cur.rowcount > 0 else 0
     return n
 
 
