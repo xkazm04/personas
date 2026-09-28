@@ -11,6 +11,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { companionListRecentMessages } from '@/api/companion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { Tiles } from '@/features/shared/components/kit';
 import { useAthenaStore } from '../athenaStore';
 import { ApprovalCard } from '../ApprovalCard';
 import { InlineChatCard } from '../InlineChatCard';
@@ -68,19 +69,22 @@ export const AthenaChatCards = forwardRef<HTMLDivElement>(
             {t.athena.chat_cards_restored_label}
           </p>
         )}
-        <AnimatePresence initial={false}>
-          {chatCards.map((card, idx) => (
-            <motion.div
-              key={card.id ?? `${card.kind}-${idx}`}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.22, ease: CHAT_EASE }}
-            >
-              <InlineChatCard card={card} />
-            </motion.div>
-          ))}
-        </AnimatePresence>
+        {/* The cards stack as kit tiles at the kit gap (they used to touch). */}
+        <Tiles label={t.athena.turn_summary_card} cols={1}>
+          <AnimatePresence initial={false}>
+            {chatCards.map((card, idx) => (
+              <motion.div
+                key={card.id ?? `${card.kind}-${idx}`}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.22, ease: CHAT_EASE }}
+              >
+                <InlineChatCard card={card} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </Tiles>
       </div>
     );
   },

@@ -107,13 +107,11 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   council_media: CouncilMediaWidget,
   // Persona-design walkthrough — Athena's step-by-step plan applying
   // the persona-design best-practices doctrine to a user intent. Emitted
-  // via `show_persona_walkthrough`. Long-form markdown; InlineChatCard
-  // relaxes its 260px height clamp for this kind so it flows naturally.
+  // via `show_persona_walkthrough`. Long-form markdown.
   persona_walkthrough: PersonaWalkthroughWidget,
   // Template-match suggestions — fetched on mount via
   // companion_match_templates(intent). Emitted via
-  // `show_template_suggestions { intent, limit? }`. Also unclamped in
-  // InlineChatCard since 3-5 result rows exceed 260px comfortably.
+  // `show_template_suggestions { intent, limit? }`.
   template_suggestions: TemplateSuggestionsWidget,
   // Use-case decomposition. Emitted via
   // `show_use_case_set { intent, use_cases: [{label, role, description}] }`.
@@ -123,7 +121,7 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   // Browser-test verdict — Athena's structured report at the end of a
   // `run_browser_test` turn. Emitted via `show_browser_test_report
   // { url, steps, defects?, console_errors?, security_notes? }`.
-  // Unclamped in InlineChatCard; carries a "File as ideas" affordance.
+  // Carries a "File as ideas" affordance.
   browser_test_report: BrowserTestReportWidget,
   // Trigger decomposition — sibling of use_case_set. Emitted via
   // `show_trigger_set { intent, triggers: [{label, source, condition, grain?, idempotency_note?}] }`.

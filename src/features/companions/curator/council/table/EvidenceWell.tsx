@@ -38,7 +38,13 @@ export function EvidenceWell({ seat, runId }: { seat: Seat; runId: string | null
     [e, tbl, seat.name],
   );
 
-  const widgets = useMemo(() => composeEvidence(seat, labels), [seat, labels]);
+  // The findings are MemberReading's own section right above the well (the
+  // FindingCards, with the weakest one highlighted); the composed findings
+  // list drew them a second time, so the well shows only the evidence.
+  const widgets = useMemo(
+    () => composeEvidence(seat, labels).filter((w) => w.id !== `${seat.name}-findings`),
+    [seat, labels],
+  );
 
   if (widgets.length === 0) {
     return <p className="m-0 typo-body text-muted">{e.empty}</p>;
@@ -46,13 +52,11 @@ export function EvidenceWell({ seat, runId }: { seat: Seat; runId: string | null
 
   return (
     <KitHost compact testId="council-evidence-well">
-      <div className="[&_.k-dtiles>:not(.k-dtile)]:col-span-12">
-        <Tiles label={e.findings_title} cols={1}>
-          {widgets.map((w) => (
-            <EvidenceCell key={w.id} widget={w} runId={runId} unknown={tx} />
-          ))}
-        </Tiles>
-      </div>
+      <Tiles label={tbl.evidence_heading} cols={1}>
+        {widgets.map((w) => (
+          <EvidenceCell key={w.id} widget={w} runId={runId} unknown={tx} />
+        ))}
+      </Tiles>
     </KitHost>
   );
 }
