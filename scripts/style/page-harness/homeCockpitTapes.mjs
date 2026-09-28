@@ -100,11 +100,18 @@ export function homeCockpitTapes({ RECORDED_AT }) {
     ['cred-hubspot', 'HubSpot CRM (sales pipeline, EU workspace)', 'hubspot'], ['cred-linear', 'Linear', 'linear'],
     ['cred-aws', 'AWS Cost Explorer', 'aws'], ['cred-openai', 'OpenAI', 'openai'], ['cred-drive', 'Local Drive', 'local_drive'],
     ['cred-messages', 'Messages', 'personas_messages'], ['cred-postgres', 'Postgres (analytics replica)', 'postgres'], ['cred-jira', 'Jira', 'jira'],
-  ].map(([id, name, service_type], i) => ({
-    id, name, service_type, metadata: null, healthcheck_last_success: i !== 4 && i !== 12,
-    healthcheck_last_message: i === 4 ? 'Token expired 2 days ago' : i === 12 ? 'Connection refused' : null,
-    healthcheck_last_tested_at: ago(60 + i), healthcheck_last_success_at: ago(60 + i * 30), last_used_at: ago(20 + i * 45),
-    created_at: ago(60 * 24 * (60 - i)), updated_at: ago(60 * 24),
+  // The wire shape is the ts-rs PersonaCredential (camelCase; health lives INSIDE the metadata JSON,
+  // which toCredentialMetadata / readCredentialHealthState parse). A flat snake_case row reads "untested".
+  ].map(([id, name, serviceType], i) => ({
+    id, name, serviceType,
+    metadata: JSON.stringify({
+      healthcheck_last_success: i !== 4 && i !== 12,
+      healthcheck_last_state: i === 4 ? 'failed' : i === 12 ? 'unreachable' : 'verified',
+      healthcheck_last_message: i === 4 ? 'Token expired 2 days ago' : i === 12 ? 'Connection refused' : null,
+      healthcheck_last_tested_at: ago(60 + i), healthcheck_last_success_at: ago(60 + i * 30),
+    }),
+    lastUsedAt: ago(20 + i * 45), scopedResources: null,
+    createdAt: ago(60 * 24 * (60 - i)), updatedAt: ago(60 * 24),
   }));
 
   // ── the execution a message, a verdict and the evidence all point at ────────────
@@ -133,7 +140,7 @@ export function homeCockpitTapes({ RECORDED_AT }) {
     ['Vendor ACME invoices in EUR and USD', 'fact'], ['Budget cap was $2 since August', 'observation'], ['Ask before touching Q3 closed periods', 'preference'],
   ].map(([title, category], i) => ({
     id: `mem-${i + 1}`, persona_id: 'p-finance', title, content: `Seen in run ${EXEC_ID} and ${i + 2} earlier nightly runs; confirmed against the ledger export.`, category,
-    source_execution_id: EXEC_ID, tier: i < 3 ? 'core' : 'working', access_count: 12 - i, last_accessed_at: ago(40 + i),
+    source_execution_id: EXEC_ID, importance: [5, 4, 4, 3, 3, 2, 2, 1][i], tags: null, tier: i < 3 ? 'core' : 'working', access_count: 12 - i, last_accessed_at: ago(40 + i),
     created_at: ago(60 * 24 * (i + 2)), updated_at: ago(60 * (i + 1)), use_case_id: null, home_team_id: null,
     derived_from: null, open_claim_count: i === 1 ? 2 : 0, fact_key: null,
   }));
