@@ -254,6 +254,8 @@ fn unverified_reason(tool_name: &str, connector: Option<&str>, reason: &str) -> 
 //   | connector uniquely bound to a vault credential       | its declared healthcheck, 3 lanes|
 //   | Credential connector, no vault type matches at all   | `credential_missing`             |
 //   | tool backed by a connector listed above              | covered by that connector's row  |
+//   |   (declared connector > catalog `services` > prefix; |   (`backing_connector`)          |
+//   |   see `backing_connector`)                           |                                  |
 //   | anything else, OR a probe that could not run         | the LLM plan, for that subset    |
 //
 // "Could not run" is: no healthcheck of any kind (`Unverifiable`), an error
@@ -292,6 +294,117 @@ pub(super) fn scripted_tool_tests_enabled(raw: Option<&str>) -> bool {
 }
 
 // =============================================================================
+// What a draft asks to be tested
+// =============================================================================
+//
+// Measured 2026-09-28 against the seven drafts of the 2026-09-26 live check:
+// NONE carried a top-level `tools[]` or `required_connectors[]`. A build
+// draft's `agent_ir` is v3-shaped (`persona.tools[]`, `persona.connectors[]`,
+// `use_cases[i].tool_hints[]`); the flat keys are only hoisted by
+// `template_v3::normalize_v3_to_flat`, which the test path never runs. So
+// this module saw zero connectors on every build: no connector was ever
+// probed, `connectors_resolved` was always `[]`, every connector-backed tool
+// became an LLM leftover (`hybrid` in 6 of 7 builds), and a draft whose
+// connector tools were absent from `tool_hints` (the GitHub + Airtable PR
+// reviewer) ran `scripted` with its connectors never tested at all.
+
+/// The subjects one test pass covers.
+#[derive(Debug, Default)]
+pub(super) struct DraftSubjects {
+    pub tools: Vec<crate::db::models::agent_ir::AgentIrTool>,
+    pub connectors: Vec<crate::db::models::agent_ir::AgentIrConnector>,
+}
+
+/// Read every tool and connector the draft declares, in whichever shape it
+/// declares them.
+///
+/// * Tools: top-level `tools[]` ∪ `persona.tools[]` ∪ every use case's
+///   `tool_hints[]`, deduplicated by name (first declaration wins). A
+///   `persona.tools[]` object that names its connector (`connector` /
+///   `service_type` / `requires_credential_type`) keeps it as
+///   `requires_credential_type`, which is what `plan_scripted_tests` reads as
+///   the tool's declared connector.
+/// * Connectors: top-level `required_connectors[]` when present, else
+///   `persona.connectors[]`. Never the union: after adoption,
+///   `apply_credential_bindings_to_connectors` rewrites the flat list's role
+///   names (`email`) to bound services (`gmail`) while `persona.connectors`
+///   keeps the role, so a union would test an unbound role as a second,
+///   falsely missing connector.
+pub(super) fn draft_test_subjects(agent_ir: &crate::db::models::AgentIr) -> DraftSubjects {
+    use crate::db::models::agent_ir::{
+        AgentIrConnector, AgentIrTool, AgentIrToolData, AgentIrUseCase,
+    };
+
+    let mut out = DraftSubjects::default();
+    let mut seen: HashSet<String> = HashSet::new();
+    let mut push_tool = |tool: AgentIrTool, out: &mut DraftSubjects| {
+        let key = tool.name().trim().to_lowercase();
+        if !key.is_empty() && seen.insert(key) {
+            out.tools.push(tool);
+        }
+    };
+
+    for t in &agent_ir.tools {
+        push_tool(t.clone(), &mut out);
+    }
+    let persona_list = |key: &str| -> Vec<serde_json::Value> {
+        agent_ir
+            .persona
+            .as_ref()
+            .and_then(|p| p.get(key))
+            .and_then(|v| v.as_array())
+            .cloned()
+            .unwrap_or_default()
+    };
+    for raw in persona_list("tools") {
+        let tool = match &raw {
+            serde_json::Value::String(s) => AgentIrTool::Simple(s.trim().to_string()),
+            serde_json::Value::Object(obj) => {
+                let Ok(mut data) = serde_json::from_value::<AgentIrToolData>(raw.clone()) else {
+                    continue;
+                };
+                if data.requires_credential_type.is_none() {
+                    data.requires_credential_type = ["connector", "service_type"]
+                        .iter()
+                        .find_map(|k| obj.get(*k).and_then(|v| v.as_str()))
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty());
+                }
+                AgentIrTool::Structured(data)
+            }
+            _ => continue,
+        };
+        push_tool(tool, &mut out);
+    }
+    for uc in &agent_ir.use_cases {
+        if let AgentIrUseCase::Structured(d) = uc {
+            for h in d.tool_hints.iter().flatten() {
+                push_tool(AgentIrTool::Simple(h.trim().to_string()), &mut out);
+            }
+        }
+    }
+
+    let connectors: Vec<AgentIrConnector> = if agent_ir.required_connectors.is_empty() {
+        persona_list("connectors")
+            .into_iter()
+            .filter_map(|v| serde_json::from_value::<AgentIrConnector>(v).ok())
+            .collect()
+    } else {
+        agent_ir.required_connectors.clone()
+    };
+    let mut seen_conn: HashSet<String> = HashSet::new();
+    out.connectors = connectors
+        .into_iter()
+        .filter(|c| {
+            c.name()
+                .map(|n| n.trim().to_lowercase())
+                .is_some_and(|n| !n.is_empty() && seen_conn.insert(n))
+        })
+        .collect();
+    out
+}
+
+// =============================================================================
 // run_tool_tests -- real API testing for build drafts
 // =============================================================================
 
@@ -310,41 +423,12 @@ pub async fn run_tool_tests(
     persona_id: &str,
     agent_ir: &crate::db::models::AgentIr,
 ) -> Result<serde_json::Value, AppError> {
-    // Tools may live in two places in the v3 IR:
-    //   - top-level `agent_ir.tools[]`              (legacy + structured form)
-    //   - per-UC `useCases[i].tool_hints: Vec<String>` (v3 advisory form)
-    //
-    // The build prompt encourages tool_hints; many builds produce IRs with
-    // an empty top-level tools array but populated per-UC hints. The test
-    // runner used to bail out with `tools_tested: 0` in that case (the
-    // user saw a "report empty" gap). Backfill: union the two, dedup by
-    // name, treat per-UC hints as `AgentIrTool::Simple(name)` so they
-    // flow through `tool_def_from_ir` like any other tool.
-    use crate::db::models::agent_ir::{AgentIrTool, AgentIrUseCase};
-    let mut seen: HashSet<String> = HashSet::new();
-    let mut tools: Vec<AgentIrTool> = Vec::new();
-    for t in &agent_ir.tools {
-        let name = t.name().to_string();
-        if name.is_empty() || !seen.insert(name) {
-            continue;
-        }
-        tools.push(t.clone());
-    }
-    for uc in &agent_ir.use_cases {
-        if let AgentIrUseCase::Structured(d) = uc {
-            if let Some(hints) = &d.tool_hints {
-                for h in hints {
-                    let name = h.trim().to_string();
-                    if name.is_empty() || !seen.insert(name.clone()) {
-                        continue;
-                    }
-                    tools.push(AgentIrTool::Simple(name));
-                }
-            }
-        }
-    }
+    let DraftSubjects { tools, connectors } = draft_test_subjects(agent_ir);
 
-    if tools.is_empty() {
+    // Decision-table row 1 is "the persona has nothing to exercise". A draft
+    // that binds connectors but names no tool still has something to test:
+    // each connector gets its own health-check row.
+    if tools.is_empty() && connectors.is_empty() {
         return Ok(empty_tool_report());
     }
 
@@ -371,10 +455,10 @@ pub async fn run_tool_tests(
     // user authed Google Calendar yesterday.
     //
     // Mirrors the runtime `inject_design_context_credentials` pass: walk
-    // `agent_ir.required_connectors`, inject anything we didn't already
-    // cover, with the OAuth refresh path running for credentials that
-    // store a refresh_token.
-    for ir_conn in &agent_ir.required_connectors {
+    // the draft's connectors (`draft_test_subjects`), inject anything we
+    // didn't already cover, with the OAuth refresh path running for
+    // credentials that store a refresh_token.
+    for ir_conn in &connectors {
         let Some(name) = ir_conn.name() else {
             continue;
         };
@@ -532,7 +616,7 @@ pub async fn run_tool_tests(
         &ResolvedTestContext {
             session_id,
             tools: &tools,
-            required_connectors: &agent_ir.required_connectors,
+            required_connectors: &connectors,
             cred_context: &cred_context,
             env_vars: &env_vars,
             matcher: &matcher,
@@ -750,12 +834,16 @@ pub(super) async fn run_resolved_tests(
                     connector_names.iter().map(|s| s.as_str()),
                 )
             };
-            let metadata_by_name: HashMap<String, Option<String>> =
-                crate::db::repos::resources::connectors::get_all(pool)
-                    .unwrap_or_default()
-                    .into_iter()
-                    .map(|c| (c.name.to_lowercase(), c.metadata))
-                    .collect();
+            let catalog =
+                crate::db::repos::resources::connectors::get_all(pool).unwrap_or_default();
+            let metadata_by_name: HashMap<String, Option<String>> = catalog
+                .iter()
+                .map(|c| (c.name.to_lowercase(), c.metadata.clone()))
+                .collect();
+            let services_by_name: HashMap<String, Vec<String>> = catalog
+                .iter()
+                .map(|c| (c.name.to_lowercase(), catalog_service_tools(&c.services)))
+                .collect();
             let class_of = |name: &str| {
                 crate::db::models::classify_connector(
                     name,
@@ -765,6 +853,35 @@ pub(super) async fn run_resolved_tests(
                 )
             };
             let has_cli_auth_route = |name: &str| crate::db::models::cli_probe_spec(name).is_some();
+            let connector_keys: Vec<ConnectorKeys> = ctx
+                .required_connectors
+                .iter()
+                .filter_map(|c| {
+                    let name = c.name()?.trim().to_string();
+                    let service_type = match c {
+                        crate::db::models::agent_ir::AgentIrConnector::Structured(d) => {
+                            d.service_type.clone()
+                        }
+                        crate::db::models::agent_ir::AgentIrConnector::Simple(_) => None,
+                    };
+                    let mut catalog_tools = Vec::new();
+                    for key in std::iter::once(name.as_str()).chain(service_type.as_deref()) {
+                        if let Some(tools) = services_by_name.get(&key.trim().to_lowercase()) {
+                            catalog_tools.extend(tools.iter().cloned());
+                        }
+                    }
+                    Some(ConnectorKeys {
+                        name,
+                        service_type,
+                        catalog_tools,
+                    })
+                })
+                .collect();
+            // The tool's DECLARED connector only: a structured tool's
+            // `requires_credential_type`. `tool_def_from_ir`'s inference for a
+            // plain name (which falls back to the name itself) is a guess, and
+            // guessing is `backing_connector`'s job, done against the draft's
+            // own connectors rather than a fixed list.
             let tool_entries: Vec<(String, Option<String>)> = ctx
                 .tools
                 .iter()
@@ -772,12 +889,12 @@ pub(super) async fn run_resolved_tests(
                 .map(|t| {
                     (
                         t.name().to_string(),
-                        tool_runner::tool_def_from_ir(t).and_then(|d| d.requires_credential_type),
+                        t.data().and_then(|d| d.requires_credential_type.clone()),
                     )
                 })
                 .collect();
             plan_scripted_tests(
-                &connector_names,
+                &connector_keys,
                 &tool_entries,
                 &ConnectorFacts {
                     links: &links,
@@ -1125,11 +1242,131 @@ pub(super) struct ConnectorFacts<'a> {
     pub matcher: &'a CredentialMatcher,
 }
 
+/// One connector the draft binds, with every key a tool can be tied to it by.
+#[derive(Debug, Clone, Default)]
+pub(super) struct ConnectorKeys {
+    /// The connector name as the draft declares it (the row's subject).
+    pub name: String,
+    /// The draft's `service_type`, when it differs from the name.
+    pub service_type: Option<String>,
+    /// The tool names the connector CATALOG declares for it
+    /// (`connector_definitions.services[].toolName`).
+    pub catalog_tools: Vec<String>,
+}
+
+/// Tool names a catalog connector declares in its `services` JSON
+/// (`[{"toolName": "send_message", "label": …}, …]`). Anything unparseable is
+/// no declaration at all.
+pub(super) fn catalog_service_tools(services_json: &str) -> Vec<String> {
+    serde_json::from_str::<Vec<serde_json::Value>>(services_json)
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|s| s.get("toolName").and_then(|v| v.as_str()))
+        .map(|s| s.trim().to_lowercase())
+        .filter(|s| !s.is_empty())
+        .collect()
+}
+
+/// Trailing vendor-suffix tokens a catalog connector name carries that its
+/// tools drop: `leonardo_ai` → `leonardo_generate_image`, `cal_com` →
+/// `cal_list_bookings`, `fly_io`, `news_api`. Derived from the builtin catalog
+/// (`scripts/connectors/builtin/*.json`) — every multi-token name ending in
+/// one of these is a brand plus a domain/"api" suffix.
+const CONNECTOR_NAME_SUFFIXES: &[&str] = &["ai", "io", "com", "api", "app", "hq"];
+
+/// Which of the draft's connectors backs `tool`, or `None` when the draft
+/// does not tie it to exactly one of them.
+///
+/// In order, first rule that decides wins:
+///   1. the tool's DECLARED connector (`requires_credential_type`): matches a
+///      connector's name or service_type, or nothing — a tool the draft ties
+///      to an unbound service is never re-assigned to a bound one by name;
+///   2. the tool IS a connector's name / service_type;
+///   3. the connector catalog declares the tool (`services[].toolName`) for
+///      exactly one of the draft's connectors;
+///   4. the tool name is `<key>_…` for a connector key (name, service_type, or
+///      the name without a `CONNECTOR_NAME_SUFFIXES` token). Longest key wins,
+///      an exact key beats a stem of the same length, and a tie between two
+///      connectors decides nothing.
+pub(super) fn backing_connector<'a>(
+    tool: &str,
+    declared: Option<&str>,
+    connectors: &'a [ConnectorKeys],
+) -> Option<&'a str> {
+    let tool = tool.trim().to_lowercase();
+    let keys_of = |c: &ConnectorKeys| -> Vec<String> {
+        std::iter::once(c.name.as_str())
+            .chain(c.service_type.as_deref())
+            .map(|k| k.trim().to_lowercase())
+            .filter(|k| !k.is_empty())
+            .collect()
+    };
+
+    if let Some(declared) = declared
+        .map(|d| d.trim().to_lowercase())
+        .filter(|d| !d.is_empty())
+    {
+        return connectors
+            .iter()
+            .find(|c| keys_of(c).contains(&declared))
+            .map(|c| c.name.as_str());
+    }
+
+    if let Some(c) = connectors.iter().find(|c| keys_of(c).contains(&tool)) {
+        return Some(c.name.as_str());
+    }
+
+    let mut claimed = connectors
+        .iter()
+        .filter(|c| c.catalog_tools.contains(&tool));
+    if let (Some(only), None) = (claimed.next(), claimed.next()) {
+        return Some(only.name.as_str());
+    }
+
+    // (key length, exact key) per connector — the best prefix it can claim.
+    let mut best: Option<((usize, bool), &ConnectorKeys)> = None;
+    let mut tied = false;
+    for c in connectors {
+        let mut score: Option<(usize, bool)> = None;
+        for key in keys_of(c) {
+            let stem = key
+                .rsplit_once('_')
+                .filter(|(head, suffix)| {
+                    !head.is_empty() && CONNECTOR_NAME_SUFFIXES.contains(suffix)
+                })
+                .map(|(head, _)| head.to_string());
+            for (candidate, exact) in [(Some(key.clone()), true), (stem, false)] {
+                let Some(candidate) = candidate else { continue };
+                if tool.starts_with(&format!("{candidate}_")) {
+                    let s = (candidate.len(), exact);
+                    score = Some(score.map_or(s, |cur| cur.max(s)));
+                }
+            }
+        }
+        let Some(score) = score else { continue };
+        match &best {
+            Some((b, _)) if score < *b => {}
+            Some((b, _)) if score == *b => tied = true,
+            _ => {
+                best = Some((score, c));
+                tied = false;
+            }
+        }
+    }
+    match best {
+        Some((_, c)) if !tied => Some(c.name.as_str()),
+        _ => None,
+    }
+}
+
 /// Route every connector and tool to exactly one of: decided, probed, LLM.
 ///
-/// `tools` is `(name, requires_credential_type)` as `tool_def_from_ir` infers it.
+/// Every connector gets exactly one row, whether or not any tool names it.
+/// A tool the draft ties to one of those connectors (`backing_connector`)
+/// gets no row of its own: the connector's row is its verdict. `tools` is
+/// `(name, declared connector)`.
 pub(super) fn plan_scripted_tests(
-    connectors: &[String],
+    connectors: &[ConnectorKeys],
     tools: &[(String, Option<String>)],
     facts: &ConnectorFacts<'_>,
 ) -> ScriptedPlan {
@@ -1137,14 +1374,14 @@ pub(super) fn plan_scripted_tests(
 
     let mut plan = ScriptedPlan::default();
     let mut seen: HashSet<String> = HashSet::new();
-    let mut covered: Vec<String> = Vec::new();
+    let mut covered: Vec<ConnectorKeys> = Vec::new();
 
-    for raw in connectors {
-        let name = raw.trim();
+    for keys in connectors {
+        let name = keys.name.trim();
         if name.is_empty() || !seen.insert(name.to_lowercase()) {
             continue;
         }
-        covered.push(name.to_lowercase());
+        covered.push(keys.clone());
         if is_platform_builtin(name, Some(name)) {
             plan.decided.push(DecidedRow::PlatformBuiltin {
                 tool_name: name.to_string(),
@@ -1169,19 +1406,13 @@ pub(super) fn plan_scripted_tests(
     }
 
     let mut seen_tools: HashSet<String> = HashSet::new();
-    for (raw, cred_type) in tools {
+    for (raw, declared) in tools {
         let name = raw.trim();
         let name_l = name.to_lowercase();
-        if name.is_empty() || !seen_tools.insert(name_l.clone()) {
+        if name.is_empty() || !seen_tools.insert(name_l) {
             continue;
         }
-        let cred_l = cred_type.as_deref().map(|c| c.trim().to_lowercase());
-        let backed_by_connector = covered.iter().any(|c| {
-            name_l == *c
-                || cred_l.as_deref() == Some(c.as_str())
-                || name_l.starts_with(&format!("{c}_"))
-        });
-        if backed_by_connector {
+        if backing_connector(name, declared.as_deref(), &covered).is_some() {
             // The connector's own row is this tool's verdict — the LLM prompt
             // asks for the same thing: one entry per connector.
             continue;
@@ -2455,9 +2686,19 @@ mod tests {
         CredentialMatcher::new(&[], &[], types.iter())
     }
 
+    fn keys(names: &[&str]) -> Vec<ConnectorKeys> {
+        names
+            .iter()
+            .map(|n| ConnectorKeys {
+                name: n.to_string(),
+                ..Default::default()
+            })
+            .collect()
+    }
+
     #[test]
     fn every_subject_is_routed_to_exactly_one_lane() {
-        let connectors: Vec<String> = [
+        let connectors = keys(&[
             "notion",
             "personas_messages",
             "vercel",
@@ -2466,16 +2707,13 @@ mod tests {
             "local_drive",
             "Notion",
             "  ",
-        ]
-        .iter()
-        .map(|s| s.to_string())
-        .collect();
+        ]);
         let tools: Vec<(String, Option<String>)> = vec![
             ("notion_search".into(), Some("notion".into())),
             ("web_search".into(), None),
             ("http_request".into(), None),
-            ("summarize_text".into(), Some("summarize_text".into())),
-            ("stripe_charges".into(), Some("stripe_charges".into())),
+            ("summarize_text".into(), None),
+            ("stripe_charges".into(), None),
         ];
         let links: HashMap<String, String> = [("notion".to_string(), "cred-1".to_string())]
             .into_iter()
@@ -3262,5 +3500,657 @@ mod tests {
         .await
         .expect_err("with nothing scripted the old error contract holds");
         assert!(matches!(err, AppError::ProcessSpawn(_)));
+    }
+
+    // =====================================================================
+    // Real draft shapes (2026-09-26 live check)
+    // =====================================================================
+    //
+    // A build draft's `agent_ir` is v3-shaped: tools in `persona.tools[]`,
+    // connectors in `persona.connectors[]`, per-capability `tool_hints[]`, and
+    // NO top-level `tools` / `required_connectors`. The drafts below are the
+    // live-check drafts trimmed to the fields this module reads.
+
+    // ── the tool -> connector mapping ────────────────────────────────────
+
+    #[test]
+    fn real_tool_names_map_to_the_connector_the_draft_binds() {
+        let bound = vec![
+            ConnectorKeys {
+                name: "linear".into(),
+                service_type: Some("linear".into()),
+                catalog_tools: vec![],
+            },
+            ConnectorKeys {
+                name: "leonardo_ai".into(),
+                ..Default::default()
+            },
+            ConnectorKeys {
+                name: "google_calendar".into(),
+                ..Default::default()
+            },
+            ConnectorKeys {
+                name: "personas_messages".into(),
+                service_type: None,
+                catalog_tools: vec!["send_notification".into(), "send_message".into()],
+            },
+            ConnectorKeys {
+                name: "email".into(),
+                service_type: Some("gmail".into()),
+                catalog_tools: vec![],
+            },
+        ]
+        .into_iter()
+        .chain(keys(&[
+            "sentry",
+            "notion",
+            "github",
+            "github_actions",
+            "airtable",
+            "alpha_vantage",
+            "cal_com",
+        ]))
+        .collect::<Vec<_>>();
+        let map = |t: &str| backing_connector(t, None, &bound);
+
+        // Every connector-backed tool name the seven live drafts carried.
+        for (tool, want) in [
+            ("linear_issues_list", "linear"),
+            ("linear_issues_search", "linear"),
+            ("linear_create_issue", "linear"),
+            ("sentry_list_issues", "sentry"),
+            ("sentry_get_issue_stats", "sentry"),
+            ("notion_create_page", "notion"),
+            ("notion_append_block", "notion"),
+            ("github_read_pr", "github"),
+            ("airtable_create_record", "airtable"),
+            ("airtable_query_records", "airtable"),
+            // The prefix is the catalog name minus its vendor suffix.
+            ("leonardo_generate_image", "leonardo_ai"),
+            ("alpha_vantage_quote", "alpha_vantage"),
+            ("alpha_vantage_time_series", "alpha_vantage"),
+            ("google_calendar_list_events", "google_calendar"),
+            ("google_calendar_create_event", "google_calendar"),
+            // Adopted drafts: a role name bound to a concrete service_type.
+            ("gmail_send", "email"),
+            ("gmail_send_email", "email"),
+            ("gmail_get_attachment", "email"),
+            // The catalog's declared services.
+            ("send_message", "personas_messages"),
+            // The longest key wins over its own prefix.
+            ("github_actions_list_runs", "github_actions"),
+            ("cal_list_bookings", "cal_com"),
+        ] {
+            assert_eq!(map(tool), Some(want), "{tool}");
+        }
+
+        // Conduits, built-ins and unrelated names are nobody's.
+        for tool in [
+            "http_request",
+            "web_fetch",
+            "data_processing",
+            "ai_generation",
+            "file_read",
+            "vector_store_upsert",
+            "calendar_sync",
+            "linearize_text",
+        ] {
+            assert_eq!(map(tool), None, "{tool}");
+        }
+
+        // A declared connector decides, even against the name.
+        assert_eq!(
+            backing_connector("create_ticket", Some("Linear"), &bound),
+            Some("linear")
+        );
+        // …and a tool the draft ties to an UNBOUND service is not
+        // re-assigned to a bound one because of its name.
+        assert_eq!(
+            backing_connector("notion_create_page", Some("confluence"), &bound),
+            None
+        );
+        // Two connectors claiming one catalog tool decide nothing.
+        let both = vec![
+            ConnectorKeys {
+                name: "codebase".into(),
+                service_type: None,
+                catalog_tools: vec!["read_file".into()],
+            },
+            ConnectorKeys {
+                name: "codebases".into(),
+                service_type: None,
+                catalog_tools: vec!["read_file".into()],
+            },
+        ];
+        assert_eq!(backing_connector("read_file", None, &both), None);
+    }
+
+    /// The whole seeded catalog bound at once (the worst case for
+    /// collisions): every tool a catalog connector declares maps to that
+    /// connector or, when two connectors declare it, to nobody; and
+    /// `<name>_x` maps to `<name>` for every connector — no stem or shorter
+    /// name steals another connector's tools.
+    #[test]
+    fn the_mapping_is_sound_across_the_real_connector_catalog() {
+        let pool = init_test_db().unwrap();
+        let catalog = crate::db::repos::resources::connectors::get_all(&pool).unwrap();
+        assert!(catalog.len() > 100, "the builtin catalog was not seeded");
+        let bound: Vec<ConnectorKeys> = catalog
+            .iter()
+            .map(|c| ConnectorKeys {
+                name: c.name.clone(),
+                service_type: None,
+                catalog_tools: catalog_service_tools(&c.services),
+            })
+            .collect();
+        let mut declared = 0usize;
+        for c in &bound {
+            for tool in &c.catalog_tools {
+                declared += 1;
+                let claimants = bound
+                    .iter()
+                    .filter(|o| o.catalog_tools.contains(tool))
+                    .count();
+                let got = backing_connector(tool, None, &bound);
+                if claimants == 1 {
+                    assert_eq!(got, Some(c.name.as_str()), "{tool}");
+                } else {
+                    assert_ne!(got, Some(c.name.as_str()), "{tool} is claimed twice");
+                }
+            }
+            let probe = format!("{}_list_items", c.name.to_lowercase());
+            assert_eq!(
+                backing_connector(&probe, None, &bound),
+                Some(c.name.as_str()),
+                "{probe}"
+            );
+        }
+        assert!(declared > 50, "the catalog declares its services");
+    }
+
+    #[test]
+    fn a_v3_draft_is_read_from_its_persona_block_and_tool_hints() {
+        let ir: crate::db::models::AgentIr = serde_json::from_value(json!({
+            "name": "Morning Motivator",
+            "persona": {
+                "tools": [
+                    {"category": "connector", "name": "gmail_send"},
+                    {"category": "connector", "name": "crm_lookup", "connector": "hubspot"},
+                    "ai_generation"
+                ],
+                "connectors": [
+                    {"name": "gmail", "service_type": "gmail", "has_credential": true, "purpose": "send"},
+                    "hubspot",
+                    {"name": "Gmail"}
+                ]
+            },
+            "use_cases": [
+                {"id": "uc_note", "tool_hints": ["gmail_send", "web_fetch"], "connectors": ["gmail"]}
+            ]
+        }))
+        .unwrap();
+        let s = draft_test_subjects(&ir);
+        let names: Vec<&str> = s.tools.iter().map(|t| t.name()).collect();
+        assert_eq!(
+            names,
+            vec!["gmail_send", "crm_lookup", "ai_generation", "web_fetch"]
+        );
+        assert_eq!(
+            s.tools[1]
+                .data()
+                .and_then(|d| d.requires_credential_type.as_deref()),
+            Some("hubspot"),
+            "a tool's declared connector is kept"
+        );
+        let conns: Vec<&str> = s.connectors.iter().filter_map(|c| c.name()).collect();
+        assert_eq!(conns, vec!["gmail", "hubspot"]);
+
+        // The flat list, when present, wins outright (post-binding names).
+        let flat: crate::db::models::AgentIr = serde_json::from_value(json!({
+            "required_connectors": [{"name": "gmail", "service_type": "gmail"}],
+            "persona": {"connectors": [{"name": "email"}]}
+        }))
+        .unwrap();
+        let conns: Vec<String> = draft_test_subjects(&flat)
+            .connectors
+            .iter()
+            .filter_map(|c| c.name().map(str::to_string))
+            .collect();
+        assert_eq!(conns, vec!["gmail"]);
+    }
+
+    // ── end to end on real drafts ─────────────────────────────────────────
+
+    /// Point a REAL catalog connector's declared healthcheck at the mock API
+    /// (bearer header, private network allowed); its catalog `services` stay.
+    fn point_catalog_connector_at(pool: &DbPool, name: &str, endpoint: &str) {
+        let def = crate::db::repos::resources::connectors::get_all(pool)
+            .unwrap()
+            .into_iter()
+            .find(|c| c.name == name)
+            .unwrap_or_else(|| panic!("{name} is not in the seeded catalog"));
+        crate::db::repos::resources::connectors::update(
+            pool,
+            &def.id,
+            crate::db::models::UpdateConnectorDefinitionInput {
+                name: None,
+                label: None,
+                icon_url: None,
+                color: None,
+                category: None,
+                fields: None,
+                healthcheck_config: Some(Some(
+                    json!({
+                        "endpoint": endpoint,
+                        "method": "GET",
+                        "headers": { "Authorization": "Bearer {{api_key}}" }
+                    })
+                    .to_string(),
+                )),
+                services: None,
+                events: None,
+                metadata: Some(Some(json!({ "allow_private_network": true }).to_string())),
+            },
+        )
+        .unwrap();
+    }
+
+    /// Drive a real draft through the production subject reader and the
+    /// scripted orchestrator.
+    async fn run_draft(
+        pool: &DbPool,
+        draft: serde_json::Value,
+        vault_types: &[&str],
+        rec: Arc<Recorder>,
+    ) -> serde_json::Value {
+        crate::engine::connector_strategy::init_registry();
+        let ir: crate::db::models::AgentIr = serde_json::from_value(draft).unwrap();
+        let DraftSubjects { tools, connectors } = draft_test_subjects(&ir);
+        let matcher = vault_matcher(vault_types);
+        let rec_c = rec.clone();
+        let compose =
+            move |p: String| -> BoxFuture<'static, Result<Vec<serde_json::Value>, AppError>> {
+                rec_c.prompts.lock().unwrap().push(p);
+                Box::pin(async { Ok(Vec::new()) })
+            };
+        let rec_s = rec.clone();
+        let summary = move |_json: String,
+                            _c: SummaryCounts|
+              -> BoxFuture<'static, Result<String, AppError>> {
+            rec_s.summaries.fetch_add(1, Ordering::SeqCst);
+            Box::pin(async { Ok("### Overview\nmodel".to_string()) })
+        };
+        let rec_e = rec.clone();
+        let emit = move |r: &tool_runner::ToolTestResult, tested: usize, total: usize| {
+            rec_e.emitted.lock().unwrap().push((
+                r.tool_name.clone(),
+                r.status.clone(),
+                tested,
+                total,
+            ));
+        };
+        run_resolved_tests(
+            pool,
+            &ResolvedTestContext {
+                session_id: "sess-draft",
+                tools: &tools,
+                required_connectors: &connectors,
+                cred_context: "",
+                env_vars: &[],
+                matcher: &matcher,
+            },
+            &TestSeams {
+                compose_plan: &compose,
+                write_summary: &summary,
+                emit: &emit,
+            },
+            TestStrategy {
+                scripted: true,
+                lanes: SCRIPTED_TEST_LANES,
+                per_test_timeout: Duration::from_secs(5),
+            },
+        )
+        .await
+        .unwrap()
+    }
+
+    /// `(tool_name, connector, status, http_status)` per row, in report order.
+    fn rows(report: &serde_json::Value) -> Vec<(String, Option<String>, String, Option<u64>)> {
+        report["results"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|r| {
+                (
+                    r["tool_name"].as_str().unwrap().to_string(),
+                    r["connector"].as_str().map(str::to_string),
+                    r["status"].as_str().unwrap().to_string(),
+                    r["http_status"].as_u64(),
+                )
+            })
+            .collect()
+    }
+
+    fn r(
+        tool: &str,
+        connector: Option<&str>,
+        status: &str,
+        http: Option<u64>,
+    ) -> (String, Option<String>, String, Option<u64>) {
+        (
+            tool.to_string(),
+            connector.map(str::to_string),
+            status.to_string(),
+            http,
+        )
+    }
+
+    /// Everything a fully scripted run must NOT do, and the shape it must keep.
+    fn assert_fully_scripted(report: &serde_json::Value, rec: &Recorder) {
+        assert_eq!(report["test_mode"], json!("scripted"), "{report}");
+        assert!(
+            rec.prompts.lock().unwrap().is_empty(),
+            "the Sonnet plan was called: {report}"
+        );
+        assert_eq!(rec.summaries.load(Ordering::SeqCst), 0);
+        let n = report["results"].as_array().unwrap().len();
+        let emitted = rec.emitted.lock().unwrap().clone();
+        assert_eq!(emitted.len(), n, "one event per row");
+        assert!(emitted
+            .iter()
+            .enumerate()
+            .all(|(i, e)| e.2 == i + 1 && e.3 == n));
+        assert_summary_is_modal_readable(report["summary"].as_str().unwrap(), report);
+    }
+
+    #[tokio::test]
+    async fn a_linear_digest_draft_is_fully_scripted() {
+        let pool = init_test_db().unwrap();
+        let api = spawn_mock_api().await;
+        point_catalog_connector_at(
+            &pool,
+            "linear",
+            &format!("http://127.0.0.1:{}/v1/me", api.port),
+        );
+        seed_api_key(&pool, "linear", "good-token");
+
+        let rec = Arc::new(Recorder::default());
+        let report = run_draft(
+            &pool,
+            json!({
+                "name": "Linear Morning Digest",
+                "persona": {
+                    "tools": [
+                        {"category": "connector", "name": "linear_issues_list"},
+                        {"category": "connector", "name": "linear_issues_search"},
+                        {"category": "built_in", "name": "data_processing"},
+                        {"category": "connector", "name": "send_message"}
+                    ],
+                    "connectors": [
+                        {"has_credential": true, "name": "linear", "service_type": "linear"},
+                        {"has_credential": true, "name": "personas_messages", "service_type": "personas_messages"}
+                    ]
+                },
+                "use_cases": [{
+                    "id": "uc_morning_linear_digest",
+                    "tool_hints": ["linear_issues_list", "linear_issues_search", "data_processing"],
+                    "connectors": ["linear", "personas_messages"]
+                }]
+            }),
+            &["linear"],
+            rec.clone(),
+        )
+        .await;
+
+        assert_eq!(
+            rows(&report),
+            vec![
+                r(
+                    "personas_messages",
+                    Some("personas_messages"),
+                    "passed",
+                    None
+                ),
+                r("data_processing", None, "passed", None),
+                r("linear", Some("linear"), "passed", Some(200)),
+            ]
+        );
+        assert_eq!(api.good_hits.load(Ordering::SeqCst), 1);
+        assert_fully_scripted(&report, &rec);
+        assert_eq!(
+            report["connectors_resolved"],
+            json!([{"name": "linear", "has_credential": true}])
+        );
+        assert_eq!(report["tools_passed"], json!(3));
+        assert_eq!(report["tools_failed"], json!(0));
+    }
+
+    #[tokio::test]
+    async fn a_sentry_linear_notion_incident_draft_scripts_every_connector() {
+        let pool = init_test_db().unwrap();
+        let api = spawn_mock_api().await;
+        let me = format!("http://127.0.0.1:{}/v1/me", api.port);
+        for name in ["sentry", "linear", "notion"] {
+            point_catalog_connector_at(&pool, name, &me);
+        }
+        seed_api_key(&pool, "sentry", "good-token");
+        seed_api_key(&pool, "linear", "good-token");
+        // A revoked key: a real verdict, reported — never re-tried via the LLM.
+        seed_api_key(&pool, "notion", "revoked-token");
+
+        let rec = Arc::new(Recorder::default());
+        let report = run_draft(
+            &pool,
+            json!({
+                "name": "Sentry Incident Sentinel",
+                "persona": {
+                    "tools": [
+                        {"category": "connector", "name": "sentry_list_issues"},
+                        {"category": "connector", "name": "sentry_get_issue_stats"},
+                        {"category": "connector", "name": "linear_create_issue"},
+                        {"category": "connector", "name": "notion_create_page"},
+                        {"category": "connector", "name": "notion_append_block"}
+                    ],
+                    "connectors": [
+                        {"has_credential": true, "name": "sentry", "service_type": "sentry"},
+                        {"has_credential": true, "name": "linear", "service_type": "linear"},
+                        {"has_credential": true, "name": "notion", "service_type": "notion"}
+                    ]
+                },
+                "use_cases": [
+                    {"id": "uc_spike_detection", "tool_hints": ["sentry_list_issues", "sentry_get_issue_stats"], "connectors": ["sentry"]},
+                    {"id": "uc_linear_ticket", "tool_hints": ["linear_create_issue"], "connectors": ["linear"]},
+                    {"id": "uc_notion_incident_log", "tool_hints": ["notion_create_page", "notion_append_block"], "connectors": ["notion"]}
+                ]
+            }),
+            &["sentry", "linear", "notion"],
+            rec.clone(),
+        )
+        .await;
+
+        assert_eq!(
+            rows(&report),
+            vec![
+                r("sentry", Some("sentry"), "passed", Some(200)),
+                r("linear", Some("linear"), "passed", Some(200)),
+                r("notion", Some("notion"), "failed", Some(401)),
+            ]
+        );
+        assert_eq!(api.good_hits.load(Ordering::SeqCst), 2);
+        assert_fully_scripted(&report, &rec);
+        assert_eq!(report["tools_passed"], json!(2));
+        assert_eq!(report["tools_failed"], json!(1));
+        assert_eq!(report["connectors_resolved"].as_array().unwrap().len(), 3);
+    }
+
+    /// Live-check S5: `test_mode: scripted` with three conduit rows and its
+    /// GitHub / Airtable connectors never tested, because the capability
+    /// hints named only conduits and `persona.tools` / `persona.connectors`
+    /// were never read.
+    #[tokio::test]
+    async fn a_github_airtable_leonardo_pr_reviewer_tests_every_connector() {
+        let pool = init_test_db().unwrap();
+        let api = spawn_mock_api().await;
+        let me = format!("http://127.0.0.1:{}/v1/me", api.port);
+        for name in ["github", "airtable", "leonardo_ai"] {
+            point_catalog_connector_at(&pool, name, &me);
+            seed_api_key(&pool, name, "good-token");
+        }
+
+        let rec = Arc::new(Recorder::default());
+        let report = run_draft(
+            &pool,
+            json!({
+                "name": "PR Risk Radar",
+                "persona": {
+                    "tools": [
+                        {"category": "connector", "name": "github_read_pr"},
+                        {"category": "connector", "name": "airtable_create_record"},
+                        {"category": "connector", "name": "airtable_query_records"},
+                        {"category": "connector", "name": "leonardo_generate_image"},
+                        {"category": "connector", "name": "gmail_send_email"},
+                        {"category": "built-in", "name": "web_fetch"},
+                        {"category": "built-in", "name": "data_processing"},
+                        {"category": "built-in", "name": "ai_generation"}
+                    ],
+                    "connectors": [
+                        {"has_credential": true, "name": "github", "service_type": "github"},
+                        {"has_credential": true, "name": "airtable", "service_type": "airtable"},
+                        {"has_credential": true, "name": "leonardo_ai", "service_type": "leonardo_ai"},
+                        {"has_credential": true, "name": "gmail", "service_type": "gmail"}
+                    ]
+                },
+                "use_cases": [
+                    {"id": "uc_pr_risk_review", "tool_hints": ["web_fetch", "data_processing", "ai_generation"], "connectors": ["github", "airtable"]},
+                    {"id": "uc_weekly_engineering_report", "tool_hints": ["ai_generation", "data_processing"], "connectors": ["airtable", "leonardo_ai", "gmail"]}
+                ]
+            }),
+            &["github", "airtable", "leonardo_ai"],
+            rec.clone(),
+        )
+        .await;
+
+        assert_eq!(
+            rows(&report),
+            vec![
+                // No vault credential for Gmail at all: its row, not a skip.
+                r("gmail", Some("gmail"), "credential_missing", None),
+                r("web_fetch", None, "passed", None),
+                r("data_processing", None, "passed", None),
+                r("ai_generation", None, "passed", None),
+                r("github", Some("github"), "passed", Some(200)),
+                r("airtable", Some("airtable"), "passed", Some(200)),
+                r("leonardo_ai", Some("leonardo_ai"), "passed", Some(200)),
+            ]
+        );
+        assert_eq!(api.good_hits.load(Ordering::SeqCst), 3);
+        assert_fully_scripted(&report, &rec);
+        assert_eq!(report["tools_failed"], json!(1));
+        assert_eq!(
+            report["credential_issues"],
+            json!([{
+                "connector": "gmail",
+                "issue": "No credential found for connector 'gmail'. Add it in Keys section."
+            }])
+        );
+    }
+
+    /// A connector no tool names still gets its own health-check row, from
+    /// the flat `required_connectors` shape and from a draft with no tools.
+    #[tokio::test]
+    async fn a_connector_with_no_tool_rows_still_gets_its_health_check() {
+        let pool = init_test_db().unwrap();
+        let api = spawn_mock_api().await;
+        point_catalog_connector_at(
+            &pool,
+            "alpha_vantage",
+            &format!("http://127.0.0.1:{}/v1/me", api.port),
+        );
+        seed_api_key(&pool, "alpha_vantage", "good-token");
+
+        let rec = Arc::new(Recorder::default());
+        let report = run_draft(
+            &pool,
+            json!({
+                "name": "Finance Digest",
+                "required_connectors": [{"name": "alpha_vantage", "service_type": "alpha_vantage"}],
+                "use_cases": [{"id": "uc_morning_digest", "tool_hints": ["data_processing"]}]
+            }),
+            &["alpha_vantage"],
+            rec.clone(),
+        )
+        .await;
+        assert_eq!(
+            rows(&report),
+            vec![
+                r("data_processing", None, "passed", None),
+                r("alpha_vantage", Some("alpha_vantage"), "passed", Some(200)),
+            ]
+        );
+        assert_fully_scripted(&report, &rec);
+
+        let rec = Arc::new(Recorder::default());
+        let report = run_draft(
+            &pool,
+            json!({
+                "name": "Connector only",
+                "persona": {"connectors": [{"name": "alpha_vantage", "service_type": "alpha_vantage"}]}
+            }),
+            &["alpha_vantage"],
+            rec.clone(),
+        )
+        .await;
+        assert_eq!(
+            rows(&report),
+            vec![r(
+                "alpha_vantage",
+                Some("alpha_vantage"),
+                "passed",
+                Some(200)
+            )]
+        );
+        assert_fully_scripted(&report, &rec);
+        assert_eq!(api.good_hits.load(Ordering::SeqCst), 2);
+    }
+
+    /// Only a genuinely unscriptable leftover reaches the plan: here a
+    /// custom tool no connector backs. The bound connector's tools do not.
+    #[tokio::test]
+    async fn only_unbacked_tools_reach_the_plan() {
+        let pool = init_test_db().unwrap();
+        let api = spawn_mock_api().await;
+        point_catalog_connector_at(
+            &pool,
+            "linear",
+            &format!("http://127.0.0.1:{}/v1/me", api.port),
+        );
+        seed_api_key(&pool, "linear", "good-token");
+
+        let rec = Arc::new(Recorder::default());
+        let report = run_draft(
+            &pool,
+            json!({
+                "persona": {
+                    "tools": [
+                        {"name": "linear_issues_list"},
+                        {"name": "vector_store_upsert"}
+                    ],
+                    "connectors": [{"name": "linear", "service_type": "linear"}]
+                }
+            }),
+            &["linear"],
+            rec.clone(),
+        )
+        .await;
+        assert_eq!(report["test_mode"], json!("hybrid"));
+        let prompts = rec.prompts.lock().unwrap().clone();
+        assert_eq!(prompts.len(), 1);
+        assert!(prompts[0].contains("vector_store_upsert"));
+        assert!(
+            !prompts[0].contains("linear_issues_list") && !prompts[0].contains("\"linear\""),
+            "a connector-backed tool leaked into the plan: {}",
+            prompts[0]
+        );
+        assert_eq!(row(&report, "linear")["status"], json!("passed"));
     }
 }
