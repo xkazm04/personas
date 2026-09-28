@@ -21,15 +21,14 @@ import {
   ContentBox,
   ContentHeader,
 } from '@/features/shared/components/layout/ContentLayout';
-import { RevealItem } from '@/features/shared/components/display/RevealItem';
-import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { KitHost, Tile, Tiles } from '@/features/shared/components/kit';
 import { silentCatch } from '@/lib/silentCatch';
 
 import { AthenaComposedBadge } from '@/features/shared/components/feedback/AthenaComposedBadge';
 import ResumeBanner from '@/features/home/sub_welcome/ResumeBanner';
 import WelcomeGetStarted from '@/features/home/sub_welcome/WelcomeGetStarted';
 
-import { cockpitRowSpan, cockpitWidgetRegistry } from './widgetRegistry';
+import { cockpitWidgetRegistry } from './widgetRegistry';
 import { composeDefaultCockpit, type DefaultCockpitLabels } from './defaultCockpit';
 import { parseWidgetActions } from './briefing/actions';
 import { WidgetActionBar } from './briefing/WidgetActionBar';
@@ -218,12 +217,6 @@ export default function CockpitPanel() {
         ? cockpit.default_subtitle
         : cockpit.subtitle_default;
 
-  // Loading choreography (docs/design/overview-loading.md): grid tiles ripple
-  // in once when the real spec lands (id-guarded — a compose_cockpit event or
-  // a window-focus refetch that re-delivers the same widget ids never replays
-  // the entrance). No resetKey: entries are latched for the panel's lifetime.
-  const widgetEnter = useRevealTracker();
-
   const talkToAthena = (
     <button
       type="button"
@@ -352,11 +345,20 @@ export default function CockpitPanel() {
         ) : !contextualCockpit && !spec && !defaultBody ? (
           <CockpitEmptyState onTalk={composePersonaCockpit} />
         ) : (
-          <div className="grid grid-cols-12 gap-3 auto-rows-[180px]">
-            {widgets.map((w, i) => (
-              <CockpitWidgetCell key={w.id} widget={w} order={i} enter={widgetEnter} />
-            ))}
-          </div>
+          // The grid is the kit's Tiles: content-sized rows, spans that collapse by
+          // the grid's own width. Each widget IS its Tile (a direct child), so the
+          // cell adds no wrapper. The arbitrary variant spans any child that is not
+          // yet a kit Tile across the row, so a widget mid-migration never lands in
+          // a one-column sliver.
+          <KitHost compact testId="cockpit-grid">
+            <div className="[&_.k-dtiles>:not(.k-dtile)]:col-span-12">
+              <Tiles label={headerTitle}>
+                {widgets.map((w) => (
+                  <CockpitWidgetCell key={w.id} widget={w} />
+                ))}
+              </Tiles>
+            </div>
+          </KitHost>
         )}
       </ContentBody>
     </ContentBox>
@@ -451,46 +453,17 @@ function CockpitEmptyState({ onTalk }: { onTalk: () => void }) {
   );
 }
 
-interface CockpitWidgetCellProps {
-  widget: CompanionCockpitWidget;
-  /** Position in the current grid — drives the entrance stagger order. */
-  order: number;
-  /** Id-guarded reveal tracker shared across the grid (latched for the panel's lifetime). */
-  enter: { hasEntered: (id: string) => boolean; markEntered: (id: string) => void };
-}
-
-function CockpitWidgetCell({ widget, order, enter }: CockpitWidgetCellProps) {
+/** One widget in the grid: the widget's own Tile at Athena's column span, with the
+ *  Morning Director's enum-validated actions (re-parsed here: never trust a
+ *  stored/composed spec's raw shape) handed to it as the Tile footer. */
+function CockpitWidgetCell({ widget }: { widget: CompanionCockpitWidget }) {
   const { t, tx } = useTranslation();
   const span = Math.max(1, Math.min(12, widget.span ?? 6));
-  const rowSpan = cockpitRowSpan(widget.kind);
   const Component = cockpitWidgetRegistry[widget.kind];
-  // Morning Director: enum-validated one-click actions (re-parsed here —
-  // never trust a stored/composed spec's raw shape).
   const actions = useMemo(() => parseWidgetActions(widget.actions), [widget.actions]);
-  return (
-    <RevealItem
-      revealId={widget.id}
-      order={order}
-      hasEntered={enter.hasEntered}
-      markEntered={enter.markEntered}
-      style={{
-        gridColumn: `span ${span} / span ${span}`,
-        gridRow: `span ${rowSpan} / span ${rowSpan}`,
-      }}
-      className="min-h-0"
-    >
-      <div className="h-full flex flex-col min-h-0">
-        <div className="flex-1 min-h-0">
-          {Component ? (
-            <Component title={widget.title} config={widget.config} />
-          ) : (
-            <div className="rounded-card border border-status-error/30 bg-status-error/[0.06] p-4 typo-caption text-status-error h-full flex items-center justify-center">
-              {tx(t.overview.cockpit.unknown_widget, { kind: widget.kind })}
-            </div>
-          )}
-        </div>
-        <WidgetActionBar actions={actions} />
-      </div>
-    </RevealItem>
-  );
+  if (!Component) {
+    return <Tile span={span} error={{ title: tx(t.overview.cockpit.unknown_widget, { kind: widget.kind }) }} />;
+  }
+  const footer = actions.length > 0 ? <WidgetActionBar actions={actions} /> : undefined;
+  return <Component title={widget.title} config={widget.config} span={span} footer={footer} />;
 }

@@ -9,7 +9,7 @@
  * update the doctrine in `src-tauri/src/companion/templates/constitution.md`
  * so Athena knows the kind is available.
  */
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 
 import { ConnectedServicesWidget } from './widgets/ConnectedServicesWidget';
 import { DecisionsPanelWidget } from './widgets/DecisionsPanelWidget';
@@ -42,11 +42,25 @@ import { StatGridWidget } from './widgets/StatGridWidget';
 import { LogExcerptWidget } from './widgets/LogExcerptWidget';
 import { CouncilMediaWidget } from './widgets/CouncilMediaWidget';
 
+/**
+ * The host/widget contract (kit batch home-2). A widget renders as exactly ONE kit `Tile` and
+ * forwards the three host-owned props to it: `span` to `Tile span`, `actions` into the Tile head
+ * (after its own), `footer` into the Tile foot (after its own). The HOST decides size and
+ * stacking: the Cockpit grid is a 12-column `Tiles`, Athena's chat column and the council
+ * evidence well are `Tiles cols={1}` (where span is ignored). A widget never declares card
+ * chrome, a fixed height, an inner scroll or a row span; its height is its content.
+ */
 export interface CockpitWidgetProps {
   /** Free-form config block from Athena's compose_cockpit op. */
   config?: Record<string, unknown>;
   /** Optional title override; widget falls back to its own default. */
   title?: string;
+  /** Columns of 12 the host grants the widget's Tile. Omitted = 12 (full width, or a stacked host). */
+  span?: number;
+  /** Host-owned head actions (Athena chat's "Pin to cockpit"): render after the widget's own. */
+  actions?: ReactNode;
+  /** Host-owned foot actions (the Morning Director's one-click actions): render after the widget's own. */
+  footer?: ReactNode;
 }
 
 export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetProps>> = {
@@ -160,29 +174,3 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   // "Just tell me" seeds a chat explanation instead.
   walkthrough_offer: WalkthroughOfferWidget,
 };
-
-/** `council_media` sits with the three-row kinds because a frame at two rows
- *  is a thumbnail, and the frame IS the evidence.
- *
- *  Tunes the grid `rowSpan` per widget kind. Multi-row gives long-form
- *  widgets vertical room; dense widgets stay at 2 rows. */
-export function cockpitRowSpan(kind: string): number {
-  switch (kind) {
-    case 'persona_overview':
-    case 'decisions_panel':
-    case 'linked_decisions':
-    case 'linked_memories':
-    case 'issue_list':
-    case 'flow_steps':
-    case 'comparison_cards':
-    case 'timeline':
-    case 'council_media':
-    case 'log_excerpt':
-      return 3;
-    case 'metric_spark':
-      // KPI tile — short and wide, looks crammed at 2 rows.
-      return 2;
-    default:
-      return 2;
-  }
-}

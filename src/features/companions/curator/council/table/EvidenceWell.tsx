@@ -1,22 +1,18 @@
 // The evidence well: one member's record, rendered through the cockpit
-// widget registry on a 12-column grid.
+// widget registry as a stack of kit tiles (`Tiles cols={1}`).
 //
-// WHY A LOCAL GRID RATHER THAN AN EXTRACTED `<WidgetGrid>`:
-// `CockpitPanel`'s cell is not forty lines of grid logic. It is grid logic
-// PLUS `parseWidgetActions` and `<WidgetActionBar>` - Morning Director's
-// enum-validated one-click actions. Lifting the cell wholesale would move
-// home's action machinery into a shared primitive; lifting only the geometry
-// would change the very cell that has to stay byte-for-byte. And the council
-// must never render an action button on an evidence tile at all: the gate in
-// the footer is the one door a decision goes through, and a second
-// affordance inside the evidence would be a second door. So the registry,
-// the row spans and the reveal cascade are shared - the cell is not.
+// WHY NOT THE COCKPIT'S CELL:
+// `CockpitPanel`'s cell hands each widget Morning Director's enum-validated
+// one-click actions as its Tile footer. The council must never render an
+// action button on an evidence tile at all: the gate in the footer is the
+// one door a decision goes through, and a second affordance inside the
+// evidence would be a second door. So the registry and the host/widget
+// contract are shared; the cell is not, and it passes no footer.
 import { useMemo } from 'react';
 
 import type { CompanionCockpitWidget } from '@/api/companion';
-import { RevealItem } from '@/features/shared/components/display/RevealItem';
-import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
-import { cockpitRowSpan, cockpitWidgetRegistry } from '@/features/home/sub_cockpit/widgetRegistry';
+import { KitHost, Tile, Tiles } from '@/features/shared/components/kit';
+import { cockpitWidgetRegistry } from '@/features/home/sub_cockpit/widgetRegistry';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { composeEvidence, type EvidenceLabels } from './composeEvidence';
@@ -26,7 +22,6 @@ export function EvidenceWell({ seat, runId }: { seat: Seat; runId: string | null
   const { t, tx } = useTranslation();
   const e = t.council.evidence;
   const tbl = t.council.table;
-  const enter = useRevealTracker();
 
   const labels: EvidenceLabels = useMemo(
     () => ({
@@ -50,30 +45,28 @@ export function EvidenceWell({ seat, runId }: { seat: Seat; runId: string | null
   }
 
   return (
-    <div className="grid auto-rows-[180px] grid-cols-12 gap-3" data-testid="council-evidence-well">
-      {widgets.map((w, i) => (
-        <EvidenceCell key={w.id} widget={w} order={i} runId={runId} enter={enter} unknown={tx} />
-      ))}
-    </div>
+    <KitHost compact testId="council-evidence-well">
+      <div className="[&_.k-dtiles>:not(.k-dtile)]:col-span-12">
+        <Tiles label={e.findings_title} cols={1}>
+          {widgets.map((w) => (
+            <EvidenceCell key={w.id} widget={w} runId={runId} unknown={tx} />
+          ))}
+        </Tiles>
+      </div>
+    </KitHost>
   );
 }
 
 function EvidenceCell({
   widget,
-  order,
   runId,
-  enter,
   unknown,
 }: {
   widget: CompanionCockpitWidget;
-  order: number;
   runId: string | null;
-  enter: { hasEntered: (id: string) => boolean; markEntered: (id: string) => void };
   unknown: ReturnType<typeof useTranslation>['tx'];
 }) {
   const { t } = useTranslation();
-  const span = Math.max(1, Math.min(12, widget.span ?? 6));
-  const rowSpan = cockpitRowSpan(widget.kind);
   // Total lookup with an explicit unknown arm: a kind this build does not
   // hold renders a named tile, never an empty cell that reads as "no
   // evidence" (census `unverifiable-catalog-lookup`).
@@ -82,27 +75,10 @@ function EvidenceCell({
   // run is on screen, so the media widget cannot be pointed anywhere else.
   const config = widget.kind === 'council_media' ? { ...widget.config, runId } : widget.config;
 
-  return (
-    <RevealItem
-      revealId={widget.id}
-      order={order}
-      hasEntered={enter.hasEntered}
-      markEntered={enter.markEntered}
-      style={{
-        gridColumn: `span ${span} / span ${span}`,
-        gridRow: `span ${rowSpan} / span ${rowSpan}`,
-      }}
-      className="min-h-0"
-    >
-      {Component ? (
-        <Component title={widget.title} config={config} />
-      ) : (
-        <div className="flex h-full items-center justify-center rounded-card border border-status-error/30 bg-status-error/[0.06] p-4 typo-caption text-status-error">
-          {unknown(t.overview.cockpit.unknown_widget, { kind: widget.kind })}
-        </div>
-      )}
-    </RevealItem>
-  );
+  if (!Component) {
+    return <Tile error={{ title: unknown(t.overview.cockpit.unknown_widget, { kind: widget.kind }) }} />;
+  }
+  return <Component title={widget.title} config={config} />;
 }
 
 export default EvidenceWell;
