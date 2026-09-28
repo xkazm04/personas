@@ -13,6 +13,7 @@ import { observabilityTapes } from './observabilityTapes.mjs';
 import { factoryTapes } from './factoryTapes.mjs';
 import { homeWelcomeTapes } from './homeWelcomeTapes.mjs';
 import { homeLearningTapes } from './homeLearningTapes.mjs';
+import { homeCockpitTapes } from './homeCockpitTapes.mjs';
 
 export const RECORDED_AT = '2026-09-22T15:40:00.000Z';
 const T0 = Date.parse(RECORDED_AT);
@@ -270,6 +271,8 @@ const BUILDERS = {
   ...homeWelcomeTapes({ RECORDED_AT, PERSONAS, EVENTS }).builders,
   // Kit batch home-1, Home > Learning (homeLearningSurfaces.tsx, homeLearningTapes.mjs).
   ...homeLearningTapes({ RECORDED_AT }).builders,
+  // Kit batch home-2, Home > Cockpit + Athena chat cards + council evidence well (homeCockpitSurfaces.tsx, homeCockpitTapes.mjs).
+  ...homeCockpitTapes({ RECORDED_AT }).builders,
   // The kit specimen (kitSpecimen.tsx): synthetic props, no IPC.
   ...Object.fromEntries(['kit/specimen', 'kit/specimen/grow-2', 'kit/overview', 'kit/overview-flat'].map((id) => [
     id, () => ({ version: 1, module: id, source: 'synthetic', recordedAt: RECORDED_AT, note: 'Synthetic props, no IPC: kit parts in their states.', calls: [] }),

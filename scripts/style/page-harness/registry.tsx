@@ -22,6 +22,7 @@ import { KIT_MODULES } from './kitSpecimen';
 import { KIT_OVERVIEW_MODULES } from './kitOverview';
 import { HOME_WELCOME_MODULES } from './homeWelcomeSurfaces';
 import { HOME_LEARNING_MODULES } from './homeLearningSurfaces';
+import { HOME_COCKPIT_MODULES } from './homeCockpitSurfaces';
 
 type Wrap = (children: ReactNode) => ReactNode;
 
@@ -72,6 +73,8 @@ export const MODULES: Record<string, HarnessModule> = {
   ...HOME_WELCOME_MODULES,
   // Kit batch home-1, Home > Learning (homeLearningSurfaces.tsx, homeLearningTapes.mjs).
   ...HOME_LEARNING_MODULES,
+  // Kit batch home-2, Home > Cockpit + Athena chat cards + council evidence well (homeCockpitSurfaces.tsx, homeCockpitTapes.mjs).
+  ...HOME_COCKPIT_MODULES,
   // The kit specimen: every kit part in its states (kitSpecimen.tsx); harness-only.
   ...KIT_MODULES,
   ...KIT_OVERVIEW_MODULES,
