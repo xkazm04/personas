@@ -16,15 +16,11 @@ import { WidgetActionBar } from '../briefing/WidgetActionBar';
 export function CockpitGrid({ label, widgets }: { label: string; widgets: CompanionCockpitWidget[] }) {
   return (
     <KitHost compact testId="cockpit-grid">
-      {/* Transitional (home-2): a child that is not yet a kit Tile spans the row,
-          so a widget mid-migration never lands in a one-column sliver. */}
-      <div className="[&_.k-dtiles>:not(.k-dtile)]:col-span-12">
-        <Tiles label={label}>
-          {widgets.map((w) => (
-            <CockpitWidgetCell key={w.id} widget={w} />
-          ))}
-        </Tiles>
-      </div>
+      <Tiles label={label}>
+        {widgets.map((w) => (
+          <CockpitWidgetCell key={w.id} widget={w} />
+        ))}
+      </Tiles>
     </KitHost>
   );
 }
