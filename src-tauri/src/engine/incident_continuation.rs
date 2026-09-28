@@ -333,8 +333,23 @@ pub async fn continue_resolved_incidents(
 /// Drive [`continue_resolved_incidents`] from the engine handle (used by the
 /// reactive subscription, which holds an `Arc<ExecutionEngine>`).
 pub async fn run_tick(engine: Arc<ExecutionEngine>, app: AppHandle, pool: DbPool) {
+    // G55: the resolve is consent to re-run the blocked work, not consent to
+    // run it past the operator's quota or memory stop. A refused tick claims
+    // nothing, so the resolved incidents are simply picked up on a later tick.
+    {
+        use crate::engine::subscription::autonomy_admission as admission;
+        let state = admission::app_state(&app);
+        let verdict = admission::admit_global(&pool, state.as_deref()).await;
+        admission::log_transition(&CONTINUATION_HELD, "incident_continuation", &verdict);
+        if !verdict.is_go() {
+            return;
+        }
+    }
     let _ = continue_resolved_incidents(&engine, app, pool).await;
 }
+
+/// Once-per-transition flag for the admission hold (G55).
+static CONTINUATION_HELD: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Reactive background loop that re-runs blocked work when its incident is
 /// resolved. Registered in `engine::background::start_loops`. Always-on: the
