@@ -30,7 +30,7 @@ interface NavigationGridProps {
  */
 const GRID_MIN = 'max(190px, calc((100% - 36px) / 4))';
 
-/** One module as a kit card: its name heads the card, its live figures and illustration sit on the foot. */
+/** One module as a kit card: its name heads the card with its illustration as the card's art, its live figures on the foot. */
 const NavTile = memo(function NavTile({ card, label, chips, onCardClick }: {
   card: NavCard;
   label: string;
@@ -53,10 +53,7 @@ const NavTile = memo(function NavTile({ card, label, chips, onCardClick }: {
         title={<span data-testid={`home-card-${card.id}`}>{label}</span>}
         mark={lead ? { tone: 'error', glyph: 'solid', label: lead.title } : undefined}
         onPress={() => onCardClick(card.id)}
-        // The illustration rides the head's top-right corner, so the foot holds the figures alone
-        // at every card width. It is decoration: pointer-events pass through to the card's press.
-        // style-deviation: the kit's actions slot carries art here (proposed kit gap: a ContextCard art slot).
-        actions={<span className={`pointer-events-none k-toned t-${card.tone}`} aria-hidden="true">{art}</span>}
+        art={<span className={`k-toned t-${card.tone}`}>{art}</span>}
         figures={chips.length > 0 ? <NavStatChips chips={chips} /> : undefined}
       />
     </div>

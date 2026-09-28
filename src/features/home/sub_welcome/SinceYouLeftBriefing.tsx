@@ -31,6 +31,8 @@ export default function SinceYouLeftBriefing() {
 
   const cardFor = (line: BriefingLine): {
     title: string; meta?: string; tone: Tone; glyph: Glyph; units: { n: number; tone: Tone; glyph?: Glyph }[]; onPress: () => void;
+    /** The same count phrase at another count: what one unit stands for when the quantum is above 1. */
+    per: (count: number) => string;
   } => {
     if (line.kind === 'runs') {
       const failed = line.failed ?? 0;
@@ -41,6 +43,7 @@ export default function SinceYouLeftBriefing() {
         glyph: 'solid',
         units: [{ n: line.count - failed, tone: 'success' }, { n: failed, tone: 'error' }],
         onPress: goTo('executions'),
+        per: (count) => tx(count === 1 ? sl.runs : sl.runs_other, { count }),
       };
     }
     if (line.kind === 'alerts') {
@@ -52,6 +55,7 @@ export default function SinceYouLeftBriefing() {
         // Alerts surface on the Mission Control dashboard since the
         // 2026-08-25 monitoring consolidation (the Health tab is gone).
         onPress: goTo('home'),
+        per: (count) => tx(count === 1 ? sl.alerts : sl.alerts_other, { count }),
       };
     }
     // Waiting on you reads info, as setup does elsewhere in the app.
@@ -61,6 +65,7 @@ export default function SinceYouLeftBriefing() {
       glyph: 'hollow',
       units: [{ n: line.count, tone: 'info', glyph: 'soft' }],
       onPress: goTo('manual-review'),
+      per: (count) => tx(count === 1 ? sl.approvals : sl.approvals_other, { count }),
     };
   };
 
@@ -89,7 +94,7 @@ export default function SinceYouLeftBriefing() {
               meta={c.meta}
               mark={{ tone: c.tone, glyph: c.glyph, label: c.title }}
               onPress={c.onPress}
-              figures={<UnitStrip size="m" label={c.title} segments={c.units.map((u) => ({ ...u, n: u.n / q }))} />}
+              figures={<UnitStrip size="m" label={c.title} legend={q > 1 ? c.per(q) : undefined} segments={c.units.map((u) => ({ ...u, n: u.n / q }))} />}
             />
           );
         })}

@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { RefreshCw, X } from 'lucide-react';
 import { ContextCard, ContextCards, Hint, KitButton, Section, UnitStrip } from '@/features/shared/components/kit';
 import type { TourDef } from '@/stores/slices/system/tourSlice';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -124,7 +124,7 @@ export function ComposedToursSection({ composed, completion, stepCompleted, onOp
       title: ht.composed_failed,
       tone: 'error' as const,
       testId: 'learning-composed-failed',
-      action: <KitButton onClick={reload}>{t.common.retry}</KitButton>,
+      action: <KitButton icon={<RefreshCw />} onClick={reload}>{t.common.retry}</KitButton>,
     }
     : { title: total > 0 ? ht.composed_all_dismissed : ht.composed_empty };
   return (
