@@ -1,15 +1,19 @@
-import { motion, useReducedMotion } from 'framer-motion';
-import { Check, Minus, Star } from 'lucide-react';
-
+import { ContextCard, ContextCards, Dot, Tile } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
-import { intentTextClass } from './intentColors';
+import { intentTone, toneLabel } from './intentColors';
 
 /**
  * `comparison_cards` — the decision's options side-by-side with pros,
  * cons, and a recommended badge. Athena reaches for this when the user
  * is weighing 2-3 paths (approve vs reject, retry vs rollback) and the
  * trade-offs deserve more structure than prose.
+ *
+ * Rendered as one kit Tile of kit ContextCards (few peers, so cards): an option's meaning is the
+ * Mark on its rail, the recommended option is the selected card (its rail lit in the theme's
+ * primary glow) with "Recommended" leading its meta, and its advantages and drawbacks are the
+ * card's meta as a list with a success or warning dot, under the head (the kit card has no body
+ * slot and its foot is for figures; see the report's kit gap). Cards in a row share a height.
  *
  * Config:
  *   {
@@ -19,7 +23,7 @@ import { intentTextClass } from './intentColors';
  *         "summary": "Run the persona…",    // optional one-liner
  *         "pros": ["…"],                    // optional
  *         "cons": ["…"],                    // optional
- *         "recommended": true,              // accents the card + badge
+ *         "recommended": true,              // lights the card
  *         "intent": "good"                  // "good" | "warn" | "bad" | "info"
  *       }
  *     ]
@@ -34,80 +38,60 @@ interface ComparisonOption {
   intent?: 'good' | 'warn' | 'bad' | 'info';
 }
 
-export function ComparisonCardsWidget({ config, title }: CockpitWidgetProps) {
-  const { t } = useTranslation();
-  const reduceMotion = useReducedMotion();
-  const options = (config?.options as ComparisonOption[] | undefined) ?? [];
-  const cols = Math.max(1, Math.min(options.length, 3));
-
+function Points({ items, side, tone }: { items?: string[]; side: string; tone: 'success' | 'warning' }) {
+  if (!items?.length) return null;
   return (
-    <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col min-h-0">
-      {title ? (
-        <div className="typo-caption text-foreground uppercase tracking-wide mb-3">
-          {title}
-        </div>
-      ) : null}
-      {options.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center typo-caption">
-          {t.overview.cockpit.widget_empty}
-        </div>
-      ) : (
-        <div
-          className="flex-1 grid gap-2.5 overflow-y-auto"
-          style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
-        >
-          {options.map((opt, i) => (
-            <motion.div
+    <ul className="m-0 p-0 list-none flex flex-col gap-1 w-full">
+      {items.map((p, j) => (
+        <li key={j} className="flex items-baseline gap-2">
+          <Dot tone={tone} glyph={tone === 'success' ? 'soft' : 'hollow'} />
+          <span className="min-w-0"><span className="sr-only">{side}: </span>{p}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function ComparisonCardsWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
+  const { t } = useTranslation();
+  const c = t.overview.cockpit;
+  const options = Array.isArray(config?.options) ? (config.options as ComparisonOption[]) : [];
+  return (
+    <Tile
+      span={span}
+      title={title}
+      actions={actions}
+      footer={footer}
+      state={options.length === 0 ? 'empty' : undefined}
+      empty={{ title: c.widget_empty }}
+      testId="cockpit-comparison-cards"
+    >
+      <ContextCards label={title ?? options.map((o) => o.label).join(' / ')} min="15rem">
+        {options.map((opt, i) => {
+          const tone = opt.recommended ? 'primary' : intentTone(opt.intent, 'info');
+          return (
+            <ContextCard
               key={`${i}-${opt.label}`}
-              initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, ease: 'easeOut', delay: reduceMotion ? 0 : i * 0.1 }}
-              className={`rounded-card border p-3 min-w-0 flex flex-col ${
-                opt.recommended
-                  ? 'border-primary/40 bg-primary/[0.06]'
-                  : 'border-foreground/10 bg-secondary/20'
-              }`}
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <span
-                  className={`typo-body truncate ${intentTextClass(opt.intent, 'info')}`}
-                >
-                  {opt.label}
-                </span>
-                {opt.recommended && (
-                  <span className="ml-auto inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-full bg-primary/15 text-primary shrink-0">
-                    <Star className="w-3 h-3" aria-hidden />
-                    {t.overview.cockpit.comparison_recommended}
-                  </span>
-                )}
-              </div>
-              {opt.summary && (
-                <p className="typo-caption mt-1">{opt.summary}</p>
+              title={opt.label}
+              state={opt.recommended ? 'selected' : undefined}
+              mark={{ tone, glyph: opt.recommended ? 'solid' : 'soft', label: opt.recommended ? c.comparison_recommended : toneLabel(t, tone) }}
+              meta={(
+                <div className="flex flex-col gap-1.5 w-full">
+                  {(opt.recommended || opt.summary) && (
+                    <span>
+                      {opt.recommended && <span className="k-tint">{c.comparison_recommended}</span>}
+                      {opt.recommended && opt.summary && ' · '}
+                      {opt.summary}
+                    </span>
+                  )}
+                  <Points items={opt.pros} side={c.comparison_pro} tone="success" />
+                  <Points items={opt.cons} side={c.comparison_con} tone="warning" />
+                </div>
               )}
-              {(opt.pros?.length ?? 0) > 0 && (
-                <ul className="mt-2 space-y-1">
-                  {opt.pros!.map((p, j) => (
-                    <li key={j} className="flex items-start gap-1.5 typo-caption">
-                      <Check className="w-3 h-3 text-emerald-400 mt-0.5 shrink-0" aria-hidden />
-                      <span className="min-w-0">{p}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {(opt.cons?.length ?? 0) > 0 && (
-                <ul className="mt-1.5 space-y-1">
-                  {opt.cons!.map((c, j) => (
-                    <li key={j} className="flex items-start gap-1.5 typo-caption">
-                      <Minus className="w-3 h-3 text-rose-400 mt-0.5 shrink-0" aria-hidden />
-                      <span className="min-w-0">{c}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </motion.div>
-          ))}
-        </div>
-      )}
-    </div>
+            />
+          );
+        })}
+      </ContextCards>
+    </Tile>
   );
 }
