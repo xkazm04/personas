@@ -11,6 +11,7 @@ import './kit.css';
 export { KitHost, Surface, Split, Drawer } from './Surface';
 export { Section, Meta, type SectionProps } from './Section';
 export { ListRow, Rows, type ListRowProps, type RowSize } from './ListRow';
+export { Tiles, Tile, type TileProps } from './Tiles';
 export { StatStrip, type StatTile } from './StatStrip';
 export { KeyValueGrid, type KeyValueItem } from './KeyValueGrid';
 export { ChipRow, ChipView, type Chip } from './ChipRow';

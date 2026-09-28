@@ -16800,7 +16800,11 @@
       "invalid_block": "تعذر عرض كتلة {name} ({reason}). تم الاحتفاظ بها أدناه كما كُتبت.",
       "unknown_block": "\"{name}\" ليس وسمًا معروفًا، لذا يُعرض كما كُتب."
     },
-    "unit_legend": "1 وحدة = {value}"
+    "unit_legend": "1 وحدة = {value}",
+    "rows_show_all": "عرض الكل ({count})",
+    "rows_show_fewer": "عرض أقل",
+    "rows_showing_all": "يتم عرض الكل ({count})",
+    "rows_showing_first": "يتم عرض أول {count}"
   },
   "sharing": {
     "access_level_label": "مستوى الوصول",

@@ -346,5 +346,9 @@
     "invalid_block": "{name} ブロックを表示できませんでした（{reason}）。元のまま下に保持されています。",
     "unknown_block": "「{name}」は既知のタグではないため、そのまま表示されます。"
   },
-  "unit_legend": "1単位 = {value}"
+  "unit_legend": "1単位 = {value}",
+  "rows_show_all": "すべて表示（{count}件）",
+  "rows_show_fewer": "表示を減らす",
+  "rows_showing_all": "すべて表示中（{count}件）",
+  "rows_showing_first": "最初の{count}件を表示中"
 }

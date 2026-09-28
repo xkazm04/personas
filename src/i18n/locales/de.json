@@ -16800,7 +16800,11 @@
       "invalid_block": "Der Block {name} konnte nicht angezeigt werden ({reason}). Er wird unten unverändert beibehalten.",
       "unknown_block": "„{name}“ ist kein bekannter Tag und wird daher unverändert angezeigt."
     },
-    "unit_legend": "1 Einheit = {value}"
+    "unit_legend": "1 Einheit = {value}",
+    "rows_show_all": "Alle {count} anzeigen",
+    "rows_show_fewer": "Weniger anzeigen",
+    "rows_showing_all": "Alle {count} werden angezeigt",
+    "rows_showing_first": "Die ersten {count} werden angezeigt"
   },
   "sharing": {
     "access_level_label": "Zugriffsebene",

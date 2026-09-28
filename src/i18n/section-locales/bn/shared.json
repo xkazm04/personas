@@ -346,5 +346,9 @@
     "invalid_block": "{name} ব্লকটি দেখানো যায়নি ({reason})। এটি নিচে লেখা অবস্থাতেই রাখা হয়েছে।",
     "unknown_block": "\"{name}\" একটি পরিচিত ট্যাগ নয়, তাই এটি লেখা অবস্থাতেই দেখানো হচ্ছে।"
   },
-  "unit_legend": "১ একক = {value}"
+  "unit_legend": "১ একক = {value}",
+  "rows_show_all": "সবগুলো দেখান ({count})",
+  "rows_show_fewer": "কম দেখান",
+  "rows_showing_all": "সবগুলো দেখানো হচ্ছে ({count})",
+  "rows_showing_first": "প্রথম {count}টি দেখানো হচ্ছে"
 }

@@ -16800,7 +16800,11 @@
       "invalid_block": "{name} ब्लॉक नहीं दिखाया जा सका ({reason})। इसे नीचे जैसा लिखा गया था वैसा ही रखा गया है।",
       "unknown_block": "\"{name}\" कोई ज्ञात टैग नहीं है, इसलिए इसे जैसा लिखा गया था वैसा ही दिखाया गया है।"
     },
-    "unit_legend": "1 इकाई = {value}"
+    "unit_legend": "1 इकाई = {value}",
+    "rows_show_all": "सभी {count} दिखाएँ",
+    "rows_show_fewer": "कम दिखाएँ",
+    "rows_showing_all": "सभी {count} दिखाए जा रहे हैं",
+    "rows_showing_first": "पहले {count} दिखाए जा रहे हैं"
   },
   "sharing": {
     "access_level_label": "पहुंच स्तर",

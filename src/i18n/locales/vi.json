@@ -16800,7 +16800,11 @@
       "invalid_block": "Không thể hiển thị khối {name} ({reason}). Khối này được giữ nguyên bên dưới như đã viết.",
       "unknown_block": "\"{name}\" không phải là thẻ đã biết, vì vậy nó được hiển thị nguyên trạng như đã viết."
     },
-    "unit_legend": "1 đơn vị = {value}"
+    "unit_legend": "1 đơn vị = {value}",
+    "rows_show_all": "Hiện tất cả {count}",
+    "rows_show_fewer": "Ẩn bớt",
+    "rows_showing_all": "Đang hiện tất cả {count}",
+    "rows_showing_first": "Đang hiện {count} mục đầu"
   },
   "sharing": {
     "access_level_label": "Cấp độ truy cập",

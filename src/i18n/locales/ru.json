@@ -16800,7 +16800,11 @@
       "invalid_block": "Не удалось отобразить блок {name} ({reason}). Ниже он сохранён в исходном виде.",
       "unknown_block": "«{name}» не является известным тегом, поэтому отображается в исходном виде."
     },
-    "unit_legend": "1 единица = {value}"
+    "unit_legend": "1 единица = {value}",
+    "rows_show_all": "Показать все ({count})",
+    "rows_show_fewer": "Показать меньше",
+    "rows_showing_all": "Показаны все ({count})",
+    "rows_showing_first": "Показаны первые {count}"
   },
   "sharing": {
     "access_level_label": "Уровень доступа",

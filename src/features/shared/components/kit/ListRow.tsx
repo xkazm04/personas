@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react';
+import { Children, type ReactNode } from 'react';
 import { Mark } from './Mark';
+import { CappedRows } from './RowsCap';
 import { emptyBand, GhostRows, type EmptySpec } from './states';
 import { cx, kitAttrs, stateClass, type Glyph, type KitStates, type Tone } from './types';
 
@@ -56,9 +57,10 @@ export function ListRow({ name, meta, mark, figures, time, size = 'm', state, na
 }
 
 /** A list of rows, or its loading ghost, or its empty band: the list's three states; a pager under the last row.
- * @catalog Rows - a list of ListRows with its loading ghost, empty band and optional pager. Kit.
+ * `cap` (grow-3) shows the first `cap` rows and a "Show all N" control that expands the list in place.
+ * @catalog Rows - a list of ListRows with its loading ghost, empty band, optional pager and an in-place "Show all" cap. Kit.
  */
-export function Rows({ loading, empty, children, count, pager, label }: {
+export function Rows({ loading, empty, children, count, pager, label, cap }: {
   loading?: boolean;
   empty: EmptySpec;
   /** Number of rows about to render; 0 renders the empty band. */
@@ -68,9 +70,12 @@ export function Rows({ loading, empty, children, count, pager, label }: {
   pager?: ReactNode;
   /** Accessible name of the pager. */
   label?: string;
+  /** Show the first `cap` rows and a "Show all N" control that expands in place (the page scrolls). */
+  cap?: number;
 }) {
   if (loading) return <GhostRows />;
   if (count === 0) return <>{emptyBand(empty)}</>;
+  if (cap != null && Children.count(children) > cap) return <CappedRows cap={cap} pager={pager} label={label}>{children}</CappedRows>;
   return (
     <>
       <div className="k-rows">{children}</div>

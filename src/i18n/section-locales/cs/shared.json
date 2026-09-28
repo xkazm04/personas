@@ -346,5 +346,9 @@
     "invalid_block": "Blok {name} se nepodařilo zobrazit ({reason}). Níže je ponechán tak, jak byl napsán.",
     "unknown_block": "„{name}“ není známá značka, proto je zobrazena tak, jak byla napsána."
   },
-  "unit_legend": "1 jednotka = {value}"
+  "unit_legend": "1 jednotka = {value}",
+  "rows_show_all": "Zobrazit vše ({count})",
+  "rows_show_fewer": "Zobrazit méně",
+  "rows_showing_all": "Zobrazeno vše ({count})",
+  "rows_showing_first": "Zobrazeno prvních {count}"
 }

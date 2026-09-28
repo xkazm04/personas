@@ -20800,6 +20800,10 @@ export type Translations = {
     cmd_select: string;
     cmd_commands: string;
     unit_legend: string;
+    rows_show_all: string;
+    rows_show_fewer: string;
+    rows_showing_all: string;
+    rows_showing_first: string;
     kanban: {
       card_roledescription: string;
       picked_up: string;

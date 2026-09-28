@@ -16800,7 +16800,11 @@
       "invalid_block": "{name} 블록을 표시할 수 없습니다 ({reason}). 작성된 그대로 아래에 유지됩니다.",
       "unknown_block": "\"{name}\"은(는) 알려진 태그가 아니므로 작성된 그대로 표시됩니다."
     },
-    "unit_legend": "1단위 = {value}"
+    "unit_legend": "1단위 = {value}",
+    "rows_show_all": "모두 보기 ({count})",
+    "rows_show_fewer": "간략히 보기",
+    "rows_showing_all": "모두 표시 중 ({count})",
+    "rows_showing_first": "처음 {count}개 표시 중"
   },
   "sharing": {
     "access_level_label": "접근 수준",

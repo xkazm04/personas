@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**165 reusable components** live under `src/features/shared/components/`.
+**166 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -196,6 +196,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `sortRows` | sortRows - the kit's stable table order: typed compare, absent values last, row id breaks ties. Kit. |
 | `StatStrip` | StatStrip - stat tiles (glowing label, figure, drawn quantity); a lone tile is a strip of one. Kit. |
 | `Surface` | Kit surface family: KitHost (root, compact tier), Surface (a region on one spine), Split (detail pane when roomy), Drawer (narrow  |
+| `Tiles` | Tiles - the dashboard grid: 12 columns, content-sized rows, spans collapse by the grid's own width; cols={1} stacks. Kit. |
 | `Toolbar` | Toolbar - a surface filter bar (Segmented, SearchField, KitButton), 30/36px controls. Kit. |
 | `UnitStrip` | UnitStrip - a quantity as countable units of a fixed quantum, coloured by claim, its quantum stated by legend (apportion, quantumF |
 
@@ -264,4 +265,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_165 components, 40 without a `@catalog` description._
+_166 components, 40 without a `@catalog` description._

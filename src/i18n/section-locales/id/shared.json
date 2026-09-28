@@ -346,5 +346,9 @@
     "invalid_block": "Blok {name} tidak dapat ditampilkan ({reason}). Blok ini tetap disimpan di bawah persis seperti aslinya.",
     "unknown_block": "\"{name}\" bukan tag yang dikenali, jadi ditampilkan persis seperti aslinya."
   },
-  "unit_legend": "1 satuan = {value}"
+  "unit_legend": "1 satuan = {value}",
+  "rows_show_all": "Tampilkan semua {count}",
+  "rows_show_fewer": "Tampilkan lebih sedikit",
+  "rows_showing_all": "Menampilkan semua {count}",
+  "rows_showing_first": "Menampilkan {count} pertama"
 }

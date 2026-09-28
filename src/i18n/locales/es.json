@@ -16800,7 +16800,11 @@
       "invalid_block": "No se pudo mostrar el bloque {name} ({reason}). Se conserva abajo tal como se escribió.",
       "unknown_block": "«{name}» no es una etiqueta reconocida, por lo que se muestra tal como se escribió."
     },
-    "unit_legend": "1 unidad = {value}"
+    "unit_legend": "1 unidad = {value}",
+    "rows_show_all": "Mostrar los {count}",
+    "rows_show_fewer": "Mostrar menos",
+    "rows_showing_all": "Mostrando los {count}",
+    "rows_showing_first": "Mostrando los primeros {count}"
   },
   "sharing": {
     "access_level_label": "Nivel de acceso",

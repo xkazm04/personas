@@ -336,6 +336,10 @@
   "cmd_select": "select",
   "cmd_commands": "commands",
   "unit_legend": "1 unit = {value}",
+  "rows_show_all": "Show all {count}",
+  "rows_show_fewer": "Show fewer",
+  "rows_showing_all": "Showing all {count}",
+  "rows_showing_first": "Showing the first {count}",
   "kanban": {
     "card_roledescription": "Movable card",
     "picked_up": "Picked up. Use the arrow keys to choose a lane, Enter to drop, Escape to cancel.",
