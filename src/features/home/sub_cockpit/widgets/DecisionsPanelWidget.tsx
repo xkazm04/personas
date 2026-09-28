@@ -12,11 +12,11 @@ import { DecisionDrawer } from './DecisionDrawer';
 import { inboxMark } from './decisionMarks';
 
 /** Rows shown before "Show all": the grid's list cap (home-2 contract). */
-const CAP = 6;
+const CAP = 8;
 
 /**
  * Decisions panel: the unified inbox (approvals, messages, health, outputs) as one kit Tile.
- * Rows arrive ranked by the inbox, so the first six are the ones to act on; the rest expand in
+ * Rows arrive ranked by the inbox, so the first eight are the ones to act on; the rest expand in
  * place with Show all (the page scrolls, never the list). Pressing a row opens the
  * DecisionDrawer with the full body and the per-kind actions.
  *
