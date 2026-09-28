@@ -1,89 +1,59 @@
 import { useMemo, useState } from 'react';
-import { Inbox } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
+import { debtText } from '@/i18n/DebtText';
+import { ListRow, Meta, Rows, Tile } from '@/features/shared/components/kit';
 import { useUnifiedInboxSnapshot } from '@/features/companions/athena/inbox/hooks/useUnifiedInbox';
 import { formatRelativeTime } from '@/features/companions/athena/inbox/utils/formatRelativeTime';
-import { toneForInboxItem } from '@/features/companions/athena/inbox/_shared/inboxTone';
-import { inboxKindIcon } from '@/features/companions/athena/inbox/_shared/inboxKindIcon';
 import type { UnifiedInboxItem } from '@/features/companions/athena/inbox/types';
 
 import type { CockpitWidgetProps } from '../widgetRegistry';
 import { DecisionDrawer } from './DecisionDrawer';
-import { DebtText } from '@/i18n/DebtText';
+import { inboxMark } from './decisionMarks';
 
+/** Rows shown before "Show all": the grid's list cap (home-2 contract). */
+const CAP = 6;
 
 /**
- * Decisions panel — flat list of unified inbox items (approvals + messages +
- * health + outputs). Clicking a row opens a modal drawer with the full body
- * and the per-kind action buttons. The widget itself stays compact so it can
- * sit comfortably in a 6-12-column cell.
+ * Decisions panel: the unified inbox (approvals, messages, health, outputs) as one kit Tile.
+ * Rows arrive ranked by the inbox, so the first six are the ones to act on; the rest expand in
+ * place with Show all (the page scrolls, never the list). Pressing a row opens the
+ * DecisionDrawer with the full body and the per-kind actions.
  *
  * Config:
  *   { "limit": N }
  */
-export function DecisionsPanelWidget({ config, title }: CockpitWidgetProps) {
+export function DecisionsPanelWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
   const limit = (config?.limit as number) ?? 20;
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const inbox = useUnifiedInboxSnapshot();
   const [open, setOpen] = useState<UnifiedInboxItem | null>(null);
 
   const rows = useMemo(() => inbox.items.slice(0, limit), [inbox.items, limit]);
+  const heading = title ?? t.overview.cockpit.decisions_title;
+  const count = rows.length < inbox.total
+    ? tx(t.overview.cockpit.decisions_count, { shown: rows.length, total: inbox.total })
+    : rows.length;
 
   return (
-    <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col min-h-0">
-      <div className="flex items-center justify-between mb-3">
-        <div className="typo-caption text-foreground uppercase tracking-wide">
-          {title ?? 'Decisions to make'}
-        </div>
-        <div className="typo-caption text-foreground">
-          {rows.length} of {inbox.total}
-        </div>
-      </div>
-      {rows.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-2 text-foreground">
-          <Inbox className="w-6 h-6" />
-          <div className="typo-caption"><DebtText k="auto_nothing_waiting_c5cb3e55" /></div>
-        </div>
-      ) : (
-        <ul className="flex-1 space-y-1 overflow-y-auto">
-          {rows.map((item) => (
-            <li key={item.id}>
-              <button
-                type="button"
-                onClick={() => setOpen(item)}
-                className="w-full flex items-center gap-2 rounded-input px-2 py-1.5 hover:bg-foreground/[0.04] transition-colors text-left"
-              >
-                <KindGlyph kind={item.kind} tone={toneForInboxItem(item)} />
-                <div className="flex-1 min-w-0">
-                  <div className="typo-caption truncate text-foreground/85">{item.title}</div>
-                  <div className="typo-caption text-foreground truncate">
-                    {item.personaName} · {formatRelativeTime(item.createdAt, t)}
-                  </div>
-                </div>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+    <Tile span={span} title={heading} count={rows.length ? count : undefined} actions={actions} footer={footer} testId="cockpit-widget-decisions_panel">
+      <Rows count={rows.length} cap={CAP} label={heading} empty={{ title: debtText('auto_nothing_waiting_c5cb3e55') }}>
+        {rows.map((item) => {
+          const mark = inboxMark(item, t);
+          return (
+            <ListRow
+              key={item.id}
+              size="s"
+              name={item.title}
+              mark={mark}
+              meta={<Meta parts={[mark.label, item.personaName]} />}
+              time={formatRelativeTime(item.createdAt, t)}
+              onPress={() => setOpen(item)}
+            />
+          );
+        })}
+      </Rows>
       {open && <DecisionDrawer item={open} onClose={() => setOpen(null)} />}
-    </div>
+    </Tile>
   );
-}
-
-function KindGlyph({
-  kind,
-  tone,
-}: {
-  kind: UnifiedInboxItem['kind'];
-  tone: 'amber' | 'violet' | 'emerald' | 'rose' | 'gold';
-}) {
-  const Icon = inboxKindIcon(kind);
-  const cls =
-    tone === 'amber' ? 'text-amber-400'
-    : tone === 'violet' ? 'text-violet-400'
-    : tone === 'emerald' ? 'text-emerald-400'
-    : tone === 'rose' ? 'text-rose-400'
-    : 'text-yellow-400';
-  return <Icon className={`w-3.5 h-3.5 shrink-0 ${cls}`} />;
 }
