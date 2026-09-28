@@ -8517,6 +8517,17 @@ export type Translations = {
       flow_title: string;
       timeline_title: string;
       log_title: string;
+      tone_good: string;
+      tone_warn: string;
+      tone_bad: string;
+      tone_info: string;
+      flow_done: string;
+      flow_current: string;
+      flow_pending: string;
+      flow_blocked: string;
+      comparison_pro: string;
+      comparison_con: string;
+      metric_default: string;
       execution_facts_title: string;
       fact_model: string;
       fact_cost: string;
