@@ -8,6 +8,20 @@ mod browser_bridge;
 mod cloud;
 mod commands;
 mod companion;
+/// Curator's plan, for the headless re-projection binary.
+///
+/// `mod commands` is private and `personas-curator-project`'s whole job is to
+/// reach the three steps of `curator_plan_refresh` that carry no Tauri - reading
+/// the registry's instruments, projecting, and writing the plan. Exported as ONE
+/// named item rather than by opening `commands`, which holds ~1,600 command entry
+/// points nothing outside this crate should be able to call: the same shape
+/// `personas-memory-sim` takes through `memory_sim` and `athena-bench-validate`
+/// through `pub mod bench`.
+///
+/// The alternative was a Python re-implementation of the projection in the
+/// `/curator` skill, which would have been a second source of truth for the one
+/// number her whole loop is ranked on.
+pub use commands::curator as curator_plan;
 /// The `personas-memory-sim` driver, for the `memory-year` benchmark harness.
 ///
 /// `mod companion` is private, and the driver's whole job is to reach into it,

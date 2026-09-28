@@ -523,6 +523,13 @@ required-features = ["memory-sim"]
 # acquires the daemon lock file, and in future sessions will spawn the
 # headless trigger runtime.
 [[bin]]
+# Headless re-projection of Curator's plan: the one step of her loop that
+# used to need the window open. No required-features - it builds with
+# whatever the caller passes, and `desktop` is what the app itself uses.
+name = "personas-curator-project"
+path = "src/curator_project_bin.rs"
+
+[[bin]]
 name = "personas-daemon"
 path = "src/daemon_bin.rs"
 required-features = ["daemon"]

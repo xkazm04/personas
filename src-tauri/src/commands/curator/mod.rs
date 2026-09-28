@@ -96,8 +96,14 @@ fn registry_root(state: &Arc<AppState>) -> Result<std::path::PathBuf, AppError> 
 }
 
 /// [`registry_root`] for a caller that holds a pool rather than the whole app
-/// state - her loop, which never sees an `AppState`.
-pub(super) fn registry_root_of(db: &crate::db::DbPool) -> Result<std::path::PathBuf, AppError> {
+/// state - her loop, which never sees an `AppState`, and the headless
+/// re-projection binary, which never sees a Tauri runtime either.
+///
+/// `pub` rather than `pub(super)` since 2026-09-28: `personas-curator-project`
+/// is a separate crate, so crate-internal visibility would have forced it to
+/// re-derive which registry is hers. Two answers to that question is exactly one
+/// too many.
+pub fn registry_root_of(db: &crate::db::DbPool) -> Result<std::path::PathBuf, AppError> {
     crate::commands::companions::curator_registry(db)
         .map(|r| std::path::PathBuf::from(r.clone_path))
         .ok_or_else(|| {
