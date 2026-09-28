@@ -860,6 +860,8 @@ def settle(c: sqlite3.Connection, claim: dict, state: str, evidence: str) -> Non
     item `dispatched` forever, which is exactly the leak the Gaps drawer counts.
     """
     stamp = now()
+    if claim["lane"] in ("queue", "plan") and not state:
+        die(f"the {claim['lane']} lane settles a row, so --state is required")
     if claim["lane"] == "queue":
         if state not in TERMINAL_REQUEST:
             die(f"'{state}' is not terminal for a request: {TERMINAL_REQUEST}")
@@ -1231,7 +1233,14 @@ def main() -> int:
     p.add_argument("--claim", required=True)
     p.add_argument("--timeout-min", type=int, default=45)
     p.add_argument("--pidfile", help="write the worker pid here so a watcher can find it")
-    p = sub.add_parser("settle"); p.add_argument("--claim", required=True); p.add_argument("--state", required=True); p.add_argument("--evidence", required=True)
+    p = sub.add_parser("settle")
+    p.add_argument("--claim", required=True)
+    # Only the queue and plan lanes own a row whose state this writes. The
+    # standing and method lanes have no row in THIS database - the registry's own
+    # files are the state - so requiring a state there forced the caller to
+    # invent one that nothing reads, which is a fact waiting to be misread.
+    p.add_argument("--state", help="terminal state; required for the queue and plan lanes only")
+    p.add_argument("--evidence", required=True)
     p = sub.add_parser("release"); p.add_argument("--claim", required=True); p.add_argument("--why", default="released by the terminal driver")
     p = sub.add_parser("commits"); p.add_argument("--claim", required=True); p.add_argument("--since", required=True)
     a = ap.parse_args()
