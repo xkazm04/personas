@@ -1,6 +1,8 @@
 import { ExternalLink } from 'lucide-react';
 
+import { openExternalUrl } from '@/api/system/system';
 import { ListRow, Rows, Tile } from '@/features/shared/components/kit';
+import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 import { intentTone, toneLabel } from './intentColors';
@@ -13,7 +15,8 @@ import { intentTone, toneLabel } from './intentColors';
  *
  * No backend fetching — items are populated from Athena's prior
  * connector_use result (or her memory). An item with an href is a pressable row: pressing its
- * name opens the link in the user's default browser via `window.open`.
+ * name opens the link in the user's default browser through the app's outbound URL door
+ * (`openExternalUrl`, the `open_external_url` command).
  *
  * Rendered as one kit Tile of kit rows: severity is the row's Mark on the spine, the name spans
  * the tile's width, and a long list is capped (`ISSUE_CAP`) with "Show all N" expanding in
@@ -64,7 +67,7 @@ export function IssueListWidget({ config, title, span, actions, footer }: Cockpi
               meta={item.sublabel}
               mark={{ tone, glyph: tone === 'neutral' ? 'hollow' : 'solid', label: toneLabel(t, tone) }}
               figures={href ? <ExternalLink className="w-3.5 h-3.5 k-quiet" aria-hidden /> : undefined}
-              onPress={href ? () => { window.open(href, '_blank', 'noopener'); } : undefined}
+              onPress={href ? () => { openExternalUrl(href).catch(toastCatch('IssueListWidget:openHref')); } : undefined}
             />
           );
         })}
