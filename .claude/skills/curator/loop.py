@@ -1315,9 +1315,15 @@ def run_worker(c: sqlite3.Connection, claim: dict, timeout_min: int) -> int:
     # watch the process rather than reconstruct it from a command-line grep - the
     # first live run needed three PowerShell attempts to find its own child.
     pidfile = pathlib.Path(claim.get("pidfile") or "")
+    # `claude` writes UTF-8 whatever the console code page is. Bare `text=True`
+    # decodes with the locale's (cp1250 on this machine), which first garbled every
+    # quote and section sign in the tail and then, on 2026-09-29, raised inside the
+    # reader thread on byte 0x98 and left `out` as None - after the worker had
+    # landed and pushed three commits the driver could no longer report.
     try:
         proc = subprocess.Popen(argv, cwd=claim["cwd"], env=env,
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                text=True, encoding="utf-8", errors="replace")
     except OSError as e:
         die(f"could not spawn the worker: {e}")
     print(json.dumps({"event": "spawned", "pid": proc.pid, "cwd": claim["cwd"]}), file=sys.stderr)
@@ -1334,6 +1340,7 @@ def run_worker(c: sqlite3.Connection, claim: dict, timeout_min: int) -> int:
         out, err = proc.communicate()
         err = f"{err or ''}\ntimed out after {timeout_min} min"
         code = 124
+    out, err = out or "", err or ""
     screen = f"{out}\n{err}".lower()
     limited = any(s in screen for s in LIMIT_SIGNATURES)
     print(json.dumps({
