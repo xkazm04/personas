@@ -14,6 +14,8 @@ export interface FigureConfig {
 }
 
 const MAX_DRAWN = 40;
+/** Units per strip row: a strip wraps to rows of at most this many, so it never outgrows a stat tile. */
+const ROW_UNITS = 16;
 
 /**
  * The units a figure is drawn as, when a count alone is weak: "36 of 40" as 36 units of 40, and
@@ -45,6 +47,6 @@ export function figureTile(f: FigureConfig): StatTile {
     value: text != null && tone ? <span className={tone}>{text}</span> : text,
     unit,
     note: f.delta ? <span className={`typo-caption ${toneText(deltaTone(f))}`}>{String(f.delta)}</span> : undefined,
-    draw: units ? <UnitStrip size="s" segments={units} label={[text, unit, label].filter(Boolean).join(' ')} /> : undefined,
+    draw: units ? <UnitStrip size="s" rows={Math.ceil(units.reduce((a, u) => a + u.n, 0) / ROW_UNITS)} segments={units} label={[text, unit, label].filter(Boolean).join(' ')} /> : undefined,
   };
 }

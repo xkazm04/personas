@@ -78,7 +78,7 @@ export function VerdictWidget({ config, title, span, actions, footer }: CockpitW
       testId="cockpit-verdict"
     >
       <div className="k-in flex flex-col gap-2 max-w-[96ch]">
-        <div className="typo-heading k-strong flex items-baseline gap-2">
+        <div className="typo-heading-lg k-strong flex items-baseline gap-2">
           <Dot tone={intentTone(config?.intent, 'info')} glyph="solid" />
           <span className="min-w-0">{headline}</span>
         </div>
