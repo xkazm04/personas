@@ -1308,6 +1308,12 @@ fn plan_tick_with_mode(
             }
             LaneWork::Improve => {
                 counts.dispatched.get_or_insert(LANE_IMPROVE);
+                // The brief is built BEFORE this pass opens its own row
+                // (2cc79b6a): its period block reads the newest improve row as
+                // "your previous self-review", and built after `insert_started`
+                // it found the row opened a microsecond earlier and told every
+                // self-review its window was "just now".
+                let task = build_improve_task(pool, pid, persona_charters);
                 let ledger_id = attention_ledger::insert_started(
                     pool,
                     pid,
@@ -1319,9 +1325,7 @@ fn plan_tick_with_mode(
                     persona_id: pid.to_string(),
                     persona_name: persona.name.clone(),
                     ledger_id,
-                    work: DispatchWork::Improve {
-                        task: build_improve_task(pool, pid, persona_charters),
-                    },
+                    work: DispatchWork::Improve { task },
                 });
             }
         }
@@ -2211,9 +2215,12 @@ fn build_decision_context_with_mode(
         loop_hold,
         // The end of the newest COMPLETED pass of any lane (e90e189a) — the
         // same ledger read the briefs take, from the history already in hand.
+        // A refusal is not a pass (2cc79b6a): it lands already completed, so
+        // counting it let an interval-floor refusal five minutes ago hide a
+        // three-day gap behind "your last pass ended 5m ago".
         last_pass_ended_at: history
             .iter()
-            .find(|r| r.completed_at.is_some())
+            .find(|r| r.completed_at.is_some() && r.verdict != "refused")
             .and_then(|r| r.completed_at.clone()),
         channel,
         peers,
@@ -3594,11 +3601,18 @@ fn improve_period_block(
                     "persona_attention: improve-period ledger read failed");
             Vec::new()
         });
-    // The window is "since the previous improve pass" — this one has not
-    // opened a row yet, so the newest improve row IS the previous pass.
+    // The window is "since the previous improve pass". `plan_tick` builds this
+    // brief before opening the pass's own row, and an open or refused improve
+    // row is skipped regardless (2cc79b6a): read after `insert_started`, the
+    // newest improve row was THIS pass, and every self-review was told its
+    // previous one had happened "just now".
     let since = rows
         .iter()
-        .find(|r| r.lane.as_deref() == Some(LANE_IMPROVE))
+        .find(|r| {
+            r.lane.as_deref() == Some(LANE_IMPROVE)
+                && r.completed_at.is_some()
+                && r.verdict != "refused"
+        })
         .map(|r| r.started_at.clone());
 
     let mut s = String::from("--- The period you are reviewing ---\n");
@@ -8829,6 +8843,90 @@ mod attention_tests {
             1,
             "exactly one improve pass today"
         );
+    }
+
+    /// 2cc79b6a: the self-review brief names the PREVIOUS self-review. Built
+    /// after the pass opened its own row, it found that row and told every
+    /// self-review its window was "just now".
+    #[test]
+    fn an_improve_brief_names_the_previous_self_review_not_the_one_it_opens() {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        seed_persona(&pool, "p1").unwrap();
+        seed_charter(&pool, "p1", "Charter A", &one_outcome());
+        let yesterday = (chrono::Utc::now() - chrono::Duration::hours(26)).to_rfc3339();
+        let prev =
+            attention_ledger::insert_started(&pool, "p1", None, KIND_ATTENTION, Some(LANE_IMPROVE))
+                .unwrap();
+        attention_ledger::complete(&pool, &prev, "dispatched", "", None, None, None).unwrap();
+        pool.get()
+            .unwrap()
+            .execute(
+                "UPDATE persona_attention_ledger SET started_at = ?1, completed_at = ?1 \
+                 WHERE id = ?2",
+                params![yesterday, prev],
+            )
+            .unwrap();
+
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        assert_eq!(counts.dispatched, Some(LANE_IMPROVE));
+        let plan = dispatch.expect("improve planned");
+        let DispatchWork::Improve { task } = &plan.work else {
+            panic!("expected improve work");
+        };
+        assert!(
+            task.contains(&format!("Since your previous self-review at {yesterday}")),
+            "{task}"
+        );
+        assert!(task.contains("(1d 2h ago)"), "{task}");
+        assert!(!task.contains("just now"), "{task}");
+
+        // Belt and braces: even a brief built while this pass's own row is
+        // open reads past it to the completed one.
+        let brief = build_improve_task(&pool, "p1", &[]);
+        assert!(
+            brief.contains(&format!("Since your previous self-review at {yesterday}")),
+            "{brief}"
+        );
+    }
+
+    /// 2cc79b6a / e4bedd2f: a refusal is not a pass. An interval-floor refusal
+    /// five minutes ago must not stand in for a real pass three days back.
+    #[test]
+    fn a_recent_refusal_does_not_hide_a_long_gap() {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1").unwrap();
+        let three_days = (chrono::Utc::now() - chrono::Duration::days(3)).to_rfc3339();
+        let pass =
+            attention_ledger::insert_started(&pool, "p1", None, KIND_ATTENTION, Some(LANE_DECIDE))
+                .unwrap();
+        attention_ledger::complete(&pool, &pass, "dispatched", "", None, None, None).unwrap();
+        pool.get()
+            .unwrap()
+            .execute(
+                "UPDATE persona_attention_ledger SET started_at = ?1, completed_at = ?1 \
+                 WHERE id = ?2",
+                params![three_days, pass],
+            )
+            .unwrap();
+        attention_ledger::insert_refusal(
+            &pool,
+            "p1",
+            None,
+            KIND_ATTENTION,
+            None,
+            r#"{"kind":"interval_floor"}"#,
+        )
+        .unwrap();
+
+        let header = wall_clock_header(&pool, "p1");
+        assert!(
+            header.contains(&format!(
+                "Your last completed pass ended {three_days} (3d 0h ago)"
+            )),
+            "{header}"
+        );
+        assert!(header.contains("UNOBSERVED"), "{header}");
     }
 
     #[test]
