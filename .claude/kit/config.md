@@ -35,6 +35,7 @@ starts in the batch track.
   and `--pair <before-dir> <after-dir> --out <dir>`. Modules register in `scripts/style/page-harness/`
   (registry + a synthetic tape builder; one entry per view). Docs: `docs/design/style-mastery/instruments.md`.
   Never record a tape from the running app (it drives the operator's window); synthesize from bindings/fixtures.
+- Shoot SEQUENTIALLY: parallel shoot lanes race the harness's Vite port, `page.goto` times out and shots go missing (grow-2). Pages with runtime-measured figures need a second AFTER run to separate noise from change.
 - Family image: `${CLAUDE_SKILL_DIR}/scripts/family.py` (Pillow), kit reference page = `fleet/activity`.
 - Scratch for briefs and shots: the session scratchpad (`spark-style/` precedent).
 
@@ -74,6 +75,9 @@ home, overview, agents, vault, settings, then plugins, companions, teams, trigge
 - Thinks at the scale of real data: "projects will have hundreds of contexts" - entity surfaces need a parent layer before cards (grow-1).
 - Notices card alignment at once: figures pinned to the bottom edge in every card (grow-1).
 - Prefers the kit's composed uniformity over bespoke illustrated tiles and per-item icons on Home (home-1: approved both despite the Director's flag). Do not over-protect decoration the kit replaces with drawn quantities; protect theme tint/glow, not every icon.
+- A call to action wears the theme's own primary -> accent gradient (subtle, same hue family), not a flat fill and not a hue-crossing gradient (grow-2: "Theme gradient", then "A (round 2)" over primary -> brand purple).
+- Explanatory scaffolding stays off the surface: a strip's quantum lives in its Hint, not drawn beside it (grow-2: "Hover only (Hint)"). Approved buttons over big cards for first-run actions, and whole-row press without a "Try it" button, despite the Director's flags.
 
 ## Skill improvement log
 - 2026-09-25 (grow-1 / dead code): deleting a component broke `check:evidence` through a subject evidence list; second sighting in this repo, promoted into `## Gates`.
+- 2026-09-28 (grow-2): a gate option worded from token NAMES ("primary -> accent gradient") could not deliver its own description ("the hero banner's hue family"): the theme's primary and accent are one hue, so the build read flat and cost two extra rounds. Render or measure a visual option (hue gap, contrast) before offering it at a gate.
