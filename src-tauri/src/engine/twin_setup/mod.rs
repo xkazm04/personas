@@ -3,8 +3,8 @@
 //! The guided setup as a planned, persisted interview. Each twin has a plan
 //! (goals per code-owned slot, coverage, a queue of questions written ahead),
 //! so an answer shows the next question at once while the background worker
-//! reconciles it — ASSESS ∥ REFILL on OPUS_5_5 @ low — and a periodic deep
-//! pass on OPUS_5_5 @ medium sharpens the plan. Readiness (computed in TS and
+//! reconciles it — ASSESS ∥ REFILL on SONNET_CURRENT @ low — and a periodic deep
+//! pass on SONNET_CURRENT @ medium sharpens the plan. Readiness (computed in TS and
 //! sent with every call) stays the only completion authority: goal coverage
 //! only steers which question comes next.
 //!

@@ -18,11 +18,12 @@ pub struct TurnTier {
 /// Main conversational turns — full op grammar, gated proposals, the
 /// quality-critical surface. Opus@low matched Opus@default accuracy exactly
 /// (93.9% over 114 runs per cell) at 16% lower p50 latency — the effort dial
-/// is a free win on this corpus. Model stays Opus: the bench's promotion
-/// candidate (reinforced Sonnet@high, 96.5%) waits on corpus v3 + a judge
-/// pass before main turns move.
+/// is a free win on this corpus. Model moved Opus → Sonnet 5.5 on the
+/// operator's decision 2026-09-29 (Sonnet 5.5 is capable enough to replace
+/// Opus by default); the bench's Sonnet candidate was reinforced Sonnet@high
+/// (96.5%), so effort stays a dial to re-measure, not a number to trust here.
 pub const MAIN: TurnTier = TurnTier {
-    model: personas_core::model_ids::OPUS_CURRENT,
+    model: personas_core::model_ids::SONNET_CURRENT,
     effort: Some("low"),
 };
 

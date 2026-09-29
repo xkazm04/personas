@@ -16,7 +16,7 @@ project: string,
 recipes: Array<AppMasterRecipeRequest>, 
 /**
  * A tier slug (`haiku` | `sonnet` | `opus`) or a full `claude-*` model
- * id. Defaults to `opus`.
+ * id. Defaults to `sonnet`.
  */
 model?: string, 
 /**

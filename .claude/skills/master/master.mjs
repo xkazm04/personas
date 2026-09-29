@@ -344,7 +344,7 @@ async function cmdOnboard() {
   const recipes = (brief.charters || []).map((c) => (typeof c === 'string' ? { slug: c } : c));
   if (!recipes.length) throw new Error('brief.charters must name at least one recipe slug');
   const adoption = await devTools('/app-master/adopt', {
-    project: p.id, recipes, model: brief.model || 'claude-opus-5',
+    project: p.id, recipes, model: brief.model || 'claude-sonnet-5-5',
     maxConcurrent: brief.maxConcurrent ?? 2, scopeRung: 2, enabled: false,
   });
   console.log(`adopted: persona ${adoption.personaId} (${adoption.created ? 'created' : 'updated'}), charters ${adoption.charters?.length}, suspended ${adoption.suspended?.length ?? 0}${adoption.notes?.length ? ' notes: ' + adoption.notes.join(' | ') : ''}`);

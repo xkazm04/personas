@@ -464,7 +464,7 @@ curl -s "${AUTH[@]}" "$B/app-master/<project_id>"    # the current adoption, or 
 ```
 
 `project` accepts an id, a name or a `root_path`. Everything but `project` is optional:
-`model` defaults to `opus` (a tier slug or a full `claude-*` id), `maxConcurrent` to 2,
+`model` defaults to `sonnet` (a tier slug or a full `claude-*` id), `maxConcurrent` to 2,
 `scopeRung` to 2 (the mandate ceiling — rung 3/4 are never granted), `enabled` to **false**
 (adoption prepares the App Master; enabling it is a separate act), `name` to
 `App Master <project name>`.

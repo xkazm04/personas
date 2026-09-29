@@ -12,7 +12,7 @@
 //
 // Requires the app running with the test-automation server (npm run tauri:dev:test).
 // The headless kp bridge (PERSONAS_HEADLESS_BRIDGE=1) is an environment variable of the
-// app process, not a setting: launch the app with it set. Opus for agents is a per-charter
+// app process, not a setting: launch the app with it set. Sonnet for agents is a per-charter
 // modelOverride the adoption doors already write.
 
 import os from 'node:os';

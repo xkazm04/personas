@@ -1043,7 +1043,7 @@ struct LiveCall {
 ///
 /// Every other engine test scripts the model; this is the one that proves the
 /// model's actual output gets through the three doors. It costs real tokens
-/// (three to six Opus 5.5 calls), so it only runs when asked:
+/// (three to six Sonnet 5.5 calls), so it only runs when asked:
 ///
 /// ```text
 /// CARGO_TARGET_DIR="$PWD/src-tauri/target-wt" npm run test:rust -- live_opus_round_trip --ignored --nocapture
@@ -1169,7 +1169,7 @@ async fn live_opus_round_trip() -> Result<(), AppError> {
         }
     };
 
-    // 1. First open, no plan: the deep pass (OPUS_5_5 @ medium).
+    // 1. First open, no plan: the deep pass (SONNET_CURRENT @ medium).
     let opened = session::open(&pool, &twin, Some("en"), readiness(), None, false)?;
     assert!(
         opened.wants.contains(&Want::Plan),
@@ -1232,7 +1232,7 @@ async fn live_opus_round_trip() -> Result<(), AppError> {
     );
     assert!(path.iter().all(|s| !s.question.trim().is_empty()));
 
-    // 2. Answer the live step: reconcile = assess ∥ refill (OPUS_5_5 @ low).
+    // 2. Answer the live step: reconcile = assess ∥ refill (SONNET_CURRENT @ low).
     let live = snap
         .live
         .clone()

@@ -98,7 +98,7 @@ row through `dev_tools_create_goal` (skipped by title when it exists).
 (3), `codebase-architecture-review` (4), `technical-decision-capture` (unset). Offer the
 `/grande` four as a second multi-select when the project has a money or data path:
 `service-contract-stewardship`, `gate-authorship`, `threat-and-evidence`,
-`acceptance-certification`. Model: `claude-opus-5` (default) / `claude-opus-4-8`. Parallel
+`acceptance-certification`. Model: `claude-sonnet-5-5` (default) / `claude-opus-5`. Parallel
 workers: `1` / `2` (default). Boundaries (multi-select, then `Other` for more): `never touch
 <path>`, `no dependency changes`, `no schema migrations without an ask`, `no new external
 services`, `English only in the UI`. Rung is always 2 (branch and PR; the operator merges).

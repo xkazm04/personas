@@ -219,7 +219,7 @@ Sentry: <shortId> — <permalink>
 Root cause: <1-2 sentences>
 Fix: <1 sentence describing the change>
 
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
 EOF
 )"
 ```

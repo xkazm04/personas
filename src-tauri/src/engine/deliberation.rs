@@ -470,12 +470,13 @@ pub struct ModeratorContext {
     pub result_pending: bool,
 }
 
-/// The moderator (orchestrator) runs on Opus — promoted from Haiku to test how
-/// far a more capable conversation manager pushes flow efficiency. Reasoning
-/// effort isn't exposed on the headless `claude -p` path, so it runs at default.
-pub const MODERATOR_MODEL: &str = personas_core::model_ids::OPUS_CURRENT;
+/// The moderator (orchestrator) runs on Sonnet 5.5 — promoted from Haiku to test
+/// how far a more capable conversation manager pushes flow efficiency (Opus
+/// before 2026-09-29). Reasoning effort isn't exposed on the headless
+/// `claude -p` path, so it runs at default.
+pub const MODERATOR_MODEL: &str = personas_core::model_ids::DEFAULT_STRONG;
 /// Track (child) moderator — Sonnet. A track is one scoped checklist item, so a
-/// cheaper conversation manager suffices; keeps the Opus tax on the parent only.
+/// cheaper conversation manager suffices; keeps the full-strength moderator on the parent only.
 pub const TRACK_MODERATOR_MODEL: &str = "claude-sonnet-4-6";
 /// Max deliberations advanced per tick — bounds a cold-start fan-out.
 const MAX_DELIBERATIONS_PER_TICK: usize = 8;

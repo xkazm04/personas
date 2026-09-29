@@ -8,7 +8,7 @@ aliases: "@=src"
 kit_path: src/features/shared/components/kit
 doctrine: docs/design/style-mastery/doctrine.md
 batch_builders: 5
-contest_seats: "claude:opus@xhigh,claude:fable@high,codex:gpt-6-sol@high"
+contest_seats: "claude:sonnet@xhigh,claude:sonnet@high,codex:gpt-6-sol@high"
 ---
 
 # kit overlay - personas (desktop)

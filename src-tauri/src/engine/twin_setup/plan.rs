@@ -1,4 +1,4 @@
-//! The deep pass: OPUS_5_5 @ medium writes (or revises) the goals, the
+//! The deep pass: SONNET_CURRENT @ medium writes (or revises) the goals, the
 //! observations and the first stretch of the question path.
 //!
 //! Code owns the skeleton. An out-of-skeleton slot is rejected, a slot keeps

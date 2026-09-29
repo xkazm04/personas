@@ -142,7 +142,7 @@ was accepted.
 - **Named member, not the persona enum:** Athena's `AthenaEngine {Claude, Grok}` stays
   separate from the persona execution `EngineKind`, as the fleet's codex lane token does.
 - **Auth:** Grok uses its own login; Personas holds no xAI key.
-- **Defaults unchanged:** MAIN opus-5 low, ASIDE sonnet-5 medium, MICRO sonnet-5 low. The
+- **Defaults unchanged:** MAIN sonnet-5-5 low (was opus-5 until 2026-09-29), ASIDE sonnet-5 medium, MICRO sonnet-5 low. The
   1,026-turn calibration stands; n of 6 here is not a re-measure.
 
 ## Risks carried into the build

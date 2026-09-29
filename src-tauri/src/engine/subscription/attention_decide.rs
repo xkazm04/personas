@@ -138,12 +138,12 @@ pub(crate) const MAX_GOAL_STATUS_CHARS: usize = 32;
 /// nobody reviewed.
 ///
 /// The TIER, not a dated id. `resolve_model_id` in the adoption door accepts
-/// either, and a literal `claude-opus-<n>` here would be a vendor-scheduled
+/// either, and a literal `claude-sonnet-<n>` here would be a vendor-scheduled
 /// fact spelled at a call site — the `bare-model-id-literal` census rule's
 /// whole subject, and the reason the retired `*-20250514` ids outlived their
 /// retirement in the failover ladder. Naming the tier lets the one door that
-/// owns model ids decide which opus that is today.
-pub(crate) const ADOPTED_APP_MASTER_MODEL: &str = personas_core::model_ids::ALIAS_OPUS;
+/// owns model ids decide which sonnet that is today.
+pub(crate) const ADOPTED_APP_MASTER_MODEL: &str = personas_core::model_ids::ALIAS_SONNET;
 
 /// Does this roster license the three authority verbs?
 ///
