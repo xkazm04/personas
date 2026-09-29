@@ -28,6 +28,7 @@
     "\"I'm paging with a cursor — can I use the id?\""
   ],
   "citations": {
+    "RecipeEditor.tsx": {"count":1,"sections":[7],"lines":["40"],"contexts":["**discarded before persistence** — `RecipeEditor.tsx:40` mints one per schema field on every parse"],"resolved":false},
     "backlog_triage.rs": {
       "count": 1,
       "sections": [7],
@@ -530,14 +531,6 @@
       "verbatim": "api/agents/executions.ts"
     },
     "src/commands/core/data_portability.rs": {"count":1,"sections":[3],"lines":["1502"],"contexts":["- **`src/commands/core/data_portability.rs:1502` `ImportResult.id_mapping`** — the import remapper."],"resolved":false},
-    "src/features/recipes/sub_editor/components/RecipeEditor.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["40"],
-      "contexts": ["**discarded before persistence** — `RecipeEditor.tsx:40` mints one per schema field on every parse"],
-      "resolvedFrom": "basename",
-      "verbatim": "RecipeEditor.tsx"
-    },
     "src/features/templates/sub_recipes/libs/useAdoption.ts": {
       "count": 4,
       "sections": [5,7],

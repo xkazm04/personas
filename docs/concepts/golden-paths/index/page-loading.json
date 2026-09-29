@@ -36,6 +36,13 @@
         "8. **Zero automated enforcement.** No ESLint rule, no check script, no test asserts any of the five laws; `UnifiedTable` has no test file. Contrast `custom/enforce-base-modal`, which does gate the mo…"
       ]
     },
+    "agents/sub_model_config/components/EffectiveConfigPanel.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["54-59"],
+      "contexts": ["| `agents/sub_model_config/components/EffectiveConfigPanel.tsx:54-59` (deleted 2026-09-25) | `if (loading)` returns an `animate-pulse` card. |"],
+      "resolved": false
+    },
     "overview/sub_director/components/CampaignReportPanel.tsx": {
       "count": 1,
       "sections": [7],
@@ -65,6 +72,7 @@
       ],
       "resolved": false
     },
+    "recipes/sub_list/components/RecipeList.tsx": {"count":1,"sections":[7],"lines":["59-65"],"contexts":["| `recipes/sub_list/components/RecipeList.tsx:59-65` | Bespoke `RecipePageFlipLoader` centred in place of the list. |"],"resolved":false},
     "scripts/docs/gen-shared-catalog.mjs": {"count":1,"sections":[8],"lines":["92-96"],"contexts":["`scripts/docs/gen-shared-catalog.mjs:92-96` — `describe()` returns"]},
     "shared/chrome/DesktopFooter.tsx": {
       "count": 1,
@@ -239,14 +247,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_lab/use-cases/UseCaseHistory.tsx"
-    },
-    "src/features/agents/sub_model_config/components/EffectiveConfigPanel.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["54-59"],
-      "contexts": ["| `agents/sub_model_config/components/EffectiveConfigPanel.tsx:54-59` | `if (loading)` returns an `animate-pulse` card. |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "agents/sub_model_config/components/EffectiveConfigPanel.tsx"
     },
     "src/features/companions/athena/BrainViewer.tsx": {
       "count": 1,
@@ -532,14 +532,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/radio/components/RadioFooter.tsx"
-    },
-    "src/features/recipes/sub_list/components/RecipeList.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["59-65"],
-      "contexts": ["| `recipes/sub_list/components/RecipeList.tsx:59-65` | Bespoke `RecipePageFlipLoader` centred in place of the list. |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "recipes/sub_list/components/RecipeList.tsx"
     },
     "src/features/schedules/components/SchedulesOverlay.tsx": {
       "count": 2,

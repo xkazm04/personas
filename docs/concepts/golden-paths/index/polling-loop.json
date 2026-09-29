@@ -1041,14 +1041,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "templates/sub_generated/gallery/cards/useAdoptionCompletionNotifier.ts"
     },
-    "src/features/templates/sub_generated/generation/useCreateTemplateSnapshot.ts": {
-      "count": 1,
-      "sections": [6],
-      "lines": ["146"],
-      "contexts": ["- `hooks/utility/data/useBackgroundSnapshot.ts:88-164` — the terminal-poll reference. Consumers: `useCreateTemplateSnapshot.ts:146`, `useN8nTransform.ts:278`, `useBackgroundRebuild.ts:94`."],
-      "resolvedFrom": "basename",
-      "verbatim": "useCreateTemplateSnapshot.ts"
-    },
     "src/features/templates/sub_n8n/hooks/useN8nTransform.ts": {
       "count": 1,
       "sections": [6],
@@ -1269,6 +1261,13 @@
       ],
       "resolved": false,
       "isDir": true
+    },
+    "useCreateTemplateSnapshot.ts": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["146"],
+      "contexts": ["- `hooks/utility/data/useBackgroundSnapshot.ts:88-164` — the terminal-poll reference. Consumers: `useCreateTemplateSnapshot.ts:146`, `useN8nTransform.ts:278`, `useBackgroundRebuild.ts:94`."],
+      "resolved": false
     },
     "useHarvestAutoIngest.ts": {
       "count": 1,

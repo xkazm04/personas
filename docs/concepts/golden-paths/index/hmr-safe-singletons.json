@@ -33,6 +33,7 @@
     "docs/concepts/shared-facts.json": {"count":2,"sections":[],"contexts":["**4,829** `.ts`/`.tsx` files ([`shared-facts.json`](../shared-facts.json) `frontend.tsFiles`)"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "firebase/admin.ts": {"count":1,"sections":[],"lines":["33"],"contexts":["process-idempotence it **delegates to the SDK's own registry** — `firebase/admin.ts:33`"],"resolved":false},
     "firebase/client.ts": {"count":1,"sections":[],"lines":["22"],"contexts":["(`getApps()[0]`), `firebase/client.ts:22`, Sentry's hub — rather than building a second one. That"],"resolved":false},
+    "main.tsx": {"count":2,"sections":[7,9],"lines":["87"],"contexts":["`main.tsx:87` (Sentry ready — and the entry module is the least exposed of all, since a change"],"resolved":false},
     "personas-web/src/hooks/usePageVisibility.ts": {"count":1,"sections":[],"lines":["30-40"],"contexts":["- `personas-web/src/hooks/usePageVisibility.ts:30-40` — a slot keyed"],"resolved":false},
     "personas-web/src/lib/bodyScrollLock.ts": {"count":1,"sections":[],"lines":["8-30"],"contexts":["- `personas-web/src/lib/bodyScrollLock.ts:8-30` — a `globalThis` `{ lockCount, previousOverflow }`,"],"resolved":false},
     "personas-web/src/lib/review-voice.ts": {"count":1,"sections":[],"lines":["99"],"contexts":["- `personas-web/src/lib/review-voice.ts:99` — `let voiceListenerBound = false` guarding"],"resolved":false},
@@ -231,14 +232,7 @@
         "| `src/lib/throttledStorage.ts:23` | installs a `pagehide`/`beforeunload` flush hook. Currently inert *only* because the module has **zero call sites** ([`client-state-persistence`](./client-state-pe…"
       ]
     },
-    "src/main.tsx": {
-      "count": 3,
-      "sections": [7,8,9],
-      "lines": ["87"],
-      "contexts": ["`main.tsx:87` (Sentry ready — and the entry module is the least exposed of all, since a change"],
-      "resolvedFrom": "basename",
-      "verbatim": "main.tsx"
-    },
+    "src/main.tsx": {"count":1,"sections":[8],"contexts":["`-- src` returns `src/main.tsx`). The `Grep` tool independently missed"]},
     "src/stores/slices/agents/executionSlice.ts": {"count":4,"sections":[3,4,6,7],"lines":["189-192","198"],"contexts":["`src/stores/slices/agents/executionSlice.ts:189-192` — `executionSink.reset()` then"]},
     "src/stores/slices/system/dynamicTours.test.ts": {
       "count": 2,

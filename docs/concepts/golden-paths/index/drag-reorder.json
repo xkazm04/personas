@@ -55,6 +55,7 @@
       "contexts": ["| `ReferenceBoard.tsx` mood board | in-memory zustand only (`referenceBoard` is not in `systemStore.ts`'s `partialize`) | **Broken and lost on reload** — §7-B |"],
       "resolved": false
     },
+    "SchemaFieldBuilder.tsx": {"count":2,"sections":[4,7],"lines":["10-12"],"contexts":["refetch. `SchemaFieldBuilder.tsx:10-12` is the note to copy: a client-side"],"resolved":false},
     "artistSlice.ts": {"count":1,"sections":[7],"lines":["340-343"],"contexts":["`reorderReferences(targetId, targetIndex)`, and `artistSlice.ts:340-343` resolves"],"resolved":false},
     "brainiac/console/src/home/Home.tsx": {"count":1,"sections":[11],"lines":["290-305"],"contexts":["(`brainiac/console/src/home/Home.tsx:290-305`), and a native `<input type=\"range\">`"],"resolved":false},
     "brainiac/crates/brainiac-store/src/documents.rs": {"count":1,"sections":[11],"lines":["444"],"contexts":["- `brainiac/crates/brainiac-store/src/documents.rs:444` persists with a"],"resolved":false},
@@ -114,14 +115,6 @@
       "contexts": ["`ProjectOverviewPage.tsx:171-179` explains why in eight lines of comment, and"],
       "resolvedFrom": "basename",
       "verbatim": "ProjectOverviewPage.tsx"
-    },
-    "src/features/recipes/sub_editor/components/SchemaFieldBuilder.tsx": {
-      "count": 2,
-      "sections": [4,7],
-      "lines": ["10-12"],
-      "contexts": ["refetch. `SchemaFieldBuilder.tsx:10-12` is the note to copy: a client-side"],
-      "resolvedFrom": "basename",
-      "verbatim": "SchemaFieldBuilder.tsx"
     },
     "src/features/shared/components/display/DataGrid.tsx": {"count":1,"sections":[7],"lines":["2"],"contexts":["`DataGrid.tsx:2` (`@catalog … row drag`) and `tables.md`'s \"The one way\" both"],"resolvedFrom":"basename","verbatim":"DataGrid.tsx"},
     "src/features/shared/components/display/DragHandle.tsx": {"count":1,"sections":[7],"lines":["42-48"],"contexts":["`DragHandle.tsx:42-48` renders a `<span>` with `role=\"button\"`, a localized"],"resolvedFrom":"basename","verbatim":"DragHandle.tsx"},

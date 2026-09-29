@@ -41,8 +41,11 @@
     },
     "CapabilityTagBar.tsx": {"count":1,"sections":[7],"lines":["29"],"contexts":["- No arrows, no roving: `CapabilityTagBar.tsx:29` · `CapabilityTagSwitcher.tsx:67` ·"],"resolved":false},
     "Composer.tsx": {"count":2,"sections":[7],"lines":["233","310"],"contexts":["`TwinPicker.tsx:162`, `FabricSearch.tsx:65`, `Composer.tsx:233` and `Listbox.tsx:137`"],"resolved":false},
+    "CreateTemplateModal.tsx": {"count":1,"sections":[7],"contexts":["`CreateTemplateModal.tsx`, `DesignReviewRunner.tsx`, `TeamSynthesisPanel.tsx`,"],"resolved":false},
     "DesignPhaseApplied.tsx": {"count":2,"sections":[4,6],"lines":["32","21-32"],"contexts":["Landing target gets `tabIndex={-1}` (`DesignPhaseApplied.tsx:32`,"],"resolved":false},
     "DesignPhasePreview.tsx": {"count":1,"sections":[4],"lines":["85"],"contexts":["`DesignPhasePreview.tsx:85`, `DimensionPanel.tsx:65`, `SigilEditModal.tsx:93` all do"],"resolved":false},
+    "DraftEditStep.tsx": {"count":2,"sections":[4,7],"lines":["119-129","107"],"contexts":["unreachable — `DraftEditStep.tsx:119-129` does exactly this. Shipping (c) without (d)"],"resolved":false},
+    "DraftPromptTab.tsx": {"count":1,"sections":[7],"lines":["125"],"contexts":["`AutomationsSection.tsx:125` · `ProjectStep.tsx:37` · `DraftPromptTab.tsx:125` ·"],"resolved":false},
     "DriveImageLightbox.tsx": {"count":1,"sections":[7],"lines":["178"],"contexts":["`DriveImageLightbox.tsx:178` · `useTimelineKeyboard.ts:122` · `Gallery3D.tsx:90` ·"],"resolved":false},
     "DriveToolbar.tsx": {"count":1,"sections":[7],"lines":["144"],"contexts":["`DriveToolbar.tsx:144`, `TwinPicker.tsx:146`, `CommandPalette.tsx:74`,"],"resolved":false},
     "EventRenameModal.tsx": {"count":1,"sections":[7],"lines":["176"],"contexts":["`EventRenameModal.tsx:176`, `ApiKeyAuditDrawer.tsx:68` — open with focus still behind"],"resolved":false},
@@ -57,6 +60,7 @@
     "MessageDetailModal.tsx": {"count":1,"sections":[7],"lines":["172"],"contexts":["`MessageDetailModal.tsx:172` · `IncidentsInbox.tsx:365`."],"resolved":false},
     "PracticeDetailModal.tsx": {"count":1,"sections":[7],"lines":["99"],"contexts":["`PracticeDetailModal.tsx:99` · `BacklogDetailModal.tsx:110` ·"],"resolved":false},
     "PrototypeTabs.tsx": {"count":1,"sections":[7],"contexts":["`AuthMethodTabs.tsx` · `TwinVariantTabs.tsx` · `PrototypeTabs.tsx`."],"resolved":false},
+    "RecipePlaygroundModal.tsx": {"count":1,"sections":[7],"contexts":["`HealingIssueModal.tsx`, `RecipePlaygroundModal.tsx`."],"resolved":false},
     "ReportPreviewDrawer.tsx": {"count":1,"sections":[7],"lines":["215"],"contexts":["consumers), `TestReportModal.tsx:68`, `ReportPreviewDrawer.tsx:215`,"],"resolved":false},
     "StickyNoteNode.tsx": {"count":1,"sections":[7],"lines":["127"],"contexts":["`TerminalSearchBar.tsx:83` · `StickyNoteNode.tsx:127` · `DraftEditStep.tsx:107` ·"],"resolved":false},
     "TagEditorModal.tsx": {"count":1,"sections":[7],"lines":["114"],"contexts":["`AddToScopeModal.tsx:60` · `TagEditorModal.tsx:114` · `Composer.tsx:310` ·"],"resolved":false},
@@ -259,7 +263,6 @@
     "src/features/plugins/fleet/sub_monitor/MonitorView.tsx": {"count":1,"sections":[7],"lines":["94"],"contexts":["priority: `IngestDirectoryPicker.tsx:42`, `MonitorView.tsx:94`."],"resolvedFrom":"basename","verbatim":"MonitorView.tsx"},
     "src/features/plugins/fleet/useFleetHotkeys.ts": {"count":1,"sections":[7],"lines":["82"],"contexts":["`Gallery2D.tsx:262` · `useGuidanceRunner.ts:168` · `useFleetHotkeys.ts:82` ·"],"resolvedFrom":"basename","verbatim":"useFleetHotkeys.ts"},
     "src/features/plugins/twin/sub_training/useTrainingSession.ts": {"count":1,"sections":[7],"lines":["217,266"],"contexts":["`useTrainingSession.ts:217,266` (100) · `ThemedSelect.tsx:115` (0) ·"],"resolvedFrom":"basename","verbatim":"useTrainingSession.ts"},
-    "src/features/recipes/sub_playground/components/RecipePlaygroundModal.tsx": {"count":1,"sections":[7],"contexts":["`HealingIssueModal.tsx`, `RecipePlaygroundModal.tsx`."],"resolvedFrom":"basename","verbatim":"RecipePlaygroundModal.tsx"},
     "src/features/settings/sub_api_keys/components/ApiKeyAuditDrawer.tsx": {
       "count": 1,
       "sections": [7],
@@ -460,15 +463,6 @@
       "verbatim": "KPIConnectWizard.tsx"
     },
     "src/features/teams/sub_teamWorkspace/AutoTeamModal.tsx": {"count":1,"sections":[7],"lines":["37"],"contexts":["`AutoTeamModal.tsx:37` (100) · `QuestionnaireFormGrid.tsx:127` (200) ·"],"resolvedFrom":"basename","verbatim":"AutoTeamModal.tsx"},
-    "src/features/templates/draft-editor/DraftEditStep.tsx": {
-      "count": 3,
-      "sections": [4,7],
-      "lines": ["119-129","119,129","107"],
-      "contexts": ["unreachable — `DraftEditStep.tsx:119-129` does exactly this. Shipping (c) without (d)"],
-      "resolvedFrom": "basename",
-      "verbatim": "DraftEditStep.tsx"
-    },
-    "src/features/templates/draft-editor/DraftPromptTab.tsx": {"count":1,"sections":[7],"lines":["125"],"contexts":["`AutomationsSection.tsx:125` · `ProjectStep.tsx:37` · `DraftPromptTab.tsx:125` ·"],"resolvedFrom":"basename","verbatim":"DraftPromptTab.tsx"},
     "src/features/templates/sub_explore/level2/DomainTable.tsx": {"count":1,"sections":[7],"lines":["110"],"contexts":["`LabHistoryTable.tsx:75` · `DomainTable.tsx:110` · `RecipesTableResults.tsx:232` ·"],"resolvedFrom":"basename","verbatim":"DomainTable.tsx"},
     "src/features/templates/sub_generated/adoption/QuestionnaireFormGrid.tsx": {"count":1,"sections":[7],"lines":["127"],"contexts":["`AutoTeamModal.tsx:37` (100) · `QuestionnaireFormGrid.tsx:127` (200) ·"],"resolvedFrom":"basename","verbatim":"QuestionnaireFormGrid.tsx"},
     "src/features/templates/sub_generated/adoption/QuickAddCredentialModal.tsx": {"count":1,"sections":[7],"lines":["139"],"contexts":["`DisconnectDialog.tsx:20`, `QuickAddCredentialModal.tsx:139`,"],"resolvedFrom":"basename","verbatim":"QuickAddCredentialModal.tsx"},
@@ -504,7 +498,6 @@
     "src/features/templates/sub_generated/gallery/search/filters/ComponentFilterDropdown.tsx": {"count":1,"sections":[7],"lines":["40"],"contexts":["`SelectPills.tsx:77` (50) · `ComponentFilterDropdown.tsx:40` (50) ·"],"resolvedFrom":"basename","verbatim":"ComponentFilterDropdown.tsx"},
     "src/features/templates/sub_generated/gallery/search/filters/ConnectorFilterDropdown.tsx": {"count":1,"sections":[7],"lines":["36"],"contexts":["`ConnectorFilterDropdown.tsx:36` (50) · `useCredentialTags.ts:60` (0) ·"],"resolvedFrom":"basename","verbatim":"ConnectorFilterDropdown.tsx"},
     "src/features/templates/sub_generated/gallery/search/suggestions/SearchAutocomplete.tsx": {"count":2,"sections":[7],"lines":["114"],"contexts":["for the same press: `Listbox.tsx:152` · `SearchAutocomplete.tsx:114` ·"],"resolvedFrom":"basename","verbatim":"SearchAutocomplete.tsx"},
-    "src/features/templates/sub_generated/generation/modals/CreateTemplateModal.tsx": {"count":1,"sections":[7],"contexts":["`CreateTemplateModal.tsx`, `DesignReviewRunner.tsx`, `TeamSynthesisPanel.tsx`,"],"resolvedFrom":"basename","verbatim":"CreateTemplateModal.tsx"},
     "src/features/templates/sub_generated/generation/runner/DesignReviewRunner.tsx": {"count":1,"sections":[7],"contexts":["`CreateTemplateModal.tsx`, `DesignReviewRunner.tsx`, `TeamSynthesisPanel.tsx`,"],"resolvedFrom":"basename","verbatim":"DesignReviewRunner.tsx"},
     "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts": {
       "count": 1,
@@ -595,6 +588,7 @@
       "resolvedFrom": "basename",
       "verbatim": "globals.css"
     },
+    "templates/draft-editor/DraftEditStep.tsx": {"count":1,"sections":[7],"lines":["119,129"],"contexts":["- **`templates/draft-editor/DraftEditStep.tsx:119,129` (deleted 2026-09-25) — the single most severe"],"resolved":false},
     "useDialogFocusTrap.ts": {"count":3,"sections":[5,8],"lines":["65-90"],"contexts":["for restoration (`useDialogFocusTrap.ts:65-90`), and a global `*:focus-visible`"],"resolved":false},
     "useFocusTrap.ts": {"count":1,"sections":[8],"lines":["25-30"],"contexts":["`useFocusTrap.ts:25-30` has exactly this prop** — independent confirmation the API"],"resolved":false},
     "useTimelineKeyboard.ts": {"count":1,"sections":[7],"lines":["122"],"contexts":["`DriveImageLightbox.tsx:178` · `useTimelineKeyboard.ts:122` · `Gallery3D.tsx:90` ·"],"resolved":false}

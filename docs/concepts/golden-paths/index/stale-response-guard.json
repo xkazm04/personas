@@ -172,7 +172,6 @@
       "verbatim": "ScenarioDetailPanel.tsx"
     },
     "src/features/agents/sub_lab/use-cases/UseCaseHistory.tsx": {"count":1,"sections":[7],"lines":["40"],"contexts":["`useRecipeStarters.ts:29` · `useHealthCheck.ts:376` · `UseCaseHistory.tsx:40` ·"],"resolvedFrom":"basename","verbatim":"UseCaseHistory.tsx"},
-    "src/features/agents/sub_model_config/hooks/useEffectiveConfig.ts": {"count":1,"sections":[7],"lines":["20"],"contexts":["`useEffectiveConfig.ts:20` (`[personaId, refreshKey]`) ·"],"resolvedFrom":"basename","verbatim":"useEffectiveConfig.ts"},
     "src/features/agents/sub_tool_runner/libs/useToolRunner.ts": {
       "count": 3,
       "sections": [6],
@@ -336,14 +335,6 @@
       "contexts": ["`plugins/twin/sub_training/TrainingStudio.tsx:147` (row *content* at `:143` is"],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/twin/sub_training/TrainingStudio.tsx"
-    },
-    "src/features/recipes/sub_playground/libs/useRecipeTestRunner.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["41"],
-      "contexts": ["`useDrive.ts:414` · `useRecipeTestRunner.ts:41` · `useFieldValidation.ts:63` ·"],
-      "resolvedFrom": "basename",
-      "verbatim": "useRecipeTestRunner.ts"
     },
     "src/features/schedules/libs/useCronPreview.ts": {"count":1,"sections":[7],"lines":["90,306"],"contexts":["`overviewSlice.ts:215,358,410` · `useCronPreview.ts:90,306` ·"],"resolvedFrom":"basename","verbatim":"useCronPreview.ts"},
     "src/features/scraper/useScraperData.ts": {"count":1,"sections":[7],"lines":["114"],"contexts":["`scraper/useScraperData.ts:114`."],"resolvedFrom":"suffix","verbatim":"scraper/useScraperData.ts"},
@@ -704,7 +695,9 @@
         "- **`src/stores/util/latestWins.ts` — `createLatestWins()`** → `{ next(): number, isCurrent(token): boolean }`. 13 lines, module-scope closure counter. `next()` mints and increments (`:35-37`); `isCu…"
       ]
     },
+    "useEffectiveConfig.ts": {"count":1,"sections":[7],"lines":["20"],"contexts":["`useEffectiveConfig.ts:20` (`[personaId, refreshKey]`) ·"],"resolved":false},
     "useExecutionPolling.ts": {"count":1,"sections":[],"lines":["44-53"],"contexts":["(`useExecutionPolling.ts:44-53`) that appends execution A's stdout into execution"],"resolved":false},
+    "useRecipeTestRunner.ts": {"count":1,"sections":[7],"lines":["41"],"contexts":["`useDrive.ts:414` · `useRecipeTestRunner.ts:41` · `useFieldValidation.ts:63` ·"],"resolved":false},
     "useRenderPlan.ts": {"count":1,"sections":[7],"lines":["34"],"contexts":["`useAthenaHealth.ts:24` · `useRenderPlan.ts:34` · `useLocalDictation.ts:257` ·"],"resolved":false}
   }
 }

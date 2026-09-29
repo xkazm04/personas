@@ -1257,10 +1257,20 @@ pub const DEVTOOLS_ACTIVE_WORKSPACE: &str = "devtools.active_workspace";
 /// a kp key can never widen its own containment.
 pub const MANAGEMENT_HTTP_PROJECT_ROOTS: &str = "management.http_project_roots";
 
+/// The gig persona policy (`personas_db::kp_gig_policy`): the operator's
+/// standing approval for kp's one-persona-per-gig hires. JSON object
+/// `{enabled, maxBudgetUsd, allowedModels, rootPath}`; absent = disabled.
+///
+/// **Operator-only** for the same reason as [`MANAGEMENT_HTTP_PROJECT_ROOTS`]:
+/// it decides which persona requests a kp key gets approved WITHOUT a human
+/// click, so a kp key must never be able to widen it. Written only by the
+/// `kp_gig_persona_policy_set` Tauri command (Settings → API Keys).
+pub const KP_GIG_PERSONA_POLICY: &str = "kp.gig_persona_policy";
+
 /// Keys the generic settings writers refuse. They carry a security boundary
 /// the operator alone may move, so they are written only through
 /// `repos::core::settings::set_operator_only`.
-const OPERATOR_ONLY_KEYS: &[&str] = &[MANAGEMENT_HTTP_PROJECT_ROOTS];
+const OPERATOR_ONLY_KEYS: &[&str] = &[MANAGEMENT_HTTP_PROJECT_ROOTS, KP_GIG_PERSONA_POLICY];
 
 /// Whether `key` may be written only through the operator path.
 pub fn is_operator_only(key: &str) -> bool {
@@ -1272,6 +1282,7 @@ const ALLOWED_KEYS: &[&str] = &[
     PLATFORM_PROJECT_ID,
     DEVTOOLS_ACTIVE_WORKSPACE,
     MANAGEMENT_HTTP_PROJECT_ROOTS,
+    KP_GIG_PERSONA_POLICY,
     EXECUTIONS_FTS_STALE,
     MIGRATION_E31_NOTES_ADOPT_MILESTONES,
     OLLAMA_API_KEY,
@@ -1482,6 +1493,11 @@ pub fn validate_key(key: &str) -> Result<(), String> {
 pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
     // A JSON array of strings; the path checks (absolute, existing directory,
     // not a root) live at the write route, which can touch the filesystem.
+    // The gig persona policy's shape; the root folder's existence is checked
+    // by the operator's write command, which can touch the filesystem.
+    if key == KP_GIG_PERSONA_POLICY {
+        return crate::kp_gig_policy::parse(value).map(|_| ());
+    }
     if key == MANAGEMENT_HTTP_PROJECT_ROOTS {
         return match serde_json::from_str::<Vec<String>>(value) {
             Ok(_) => Ok(()),
@@ -2063,7 +2079,7 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         // Secrets / credentials.
         OLLAMA_API_KEY | LITELLM_MASTER_KEY | BROWSER_BRIDGE_PAIRING_TOKEN => "api_keys",
         // The management API's containment boundary.
-        MANAGEMENT_HTTP_PROJECT_ROOTS => "security",
+        MANAGEMENT_HTTP_PROJECT_ROOTS | KP_GIG_PERSONA_POLICY => "security",
         // Engine wiring: which CLI/remote engine, routing, capabilities, concurrency.
         CLI_ENGINE
         | QWEN_BASE_URL

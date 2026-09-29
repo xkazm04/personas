@@ -103,6 +103,7 @@
       ],
       "resolved": false
     },
+    "main.tsx": {"count":1,"sections":[7],"lines":["194"],"contexts":["(form validation, vault errors, the root error boundary at `main.tsx:194`), which is why"],"resolved":false},
     "plugins/artist/hooks/useCreativeSession.ts": {
       "count": 1,
       "sections": [7],
@@ -538,7 +539,7 @@
       "verbatim": "Listbox.tsx"
     },
     "src/features/shared/components/modals/ExecutionDetailModal/DataDiffSection.tsx": {"count":1,"sections":[7],"lines":["122"],"contexts":["`DataDiffSection.tsx:122`."],"resolvedFrom":"basename","verbatim":"DataDiffSection.tsx"},
-    "src/features/shared/components/progress/AnalysisModeView.tsx": {"count":1,"sections":[9],"contexts":["appended to `src/features/shared/components/progress/AnalysisModeView.tsx` moved both"]},
+    "src/features/shared/components/progress/AnalysisModeView.tsx": {"count":1,"sections":[9],"contexts":["appended to `src/features/shared/components/progress/AnalysisModeView.tsx` (deleted 2026-09-25) moved both"],"resolved":false},
     "src/features/shared/components/progress/EstimatedProgressBar.tsx": {
       "count": 5,
       "sections": [5,7,9],
@@ -591,7 +592,6 @@
     },
     "src/features/vault/sub_credentials/components/forms/OAuthProgressRing.tsx": {"count":2,"sections":[7],"lines":["58"],"contexts":["`OAuthProgressRing.tsx:58`."],"resolvedFrom":"basename","verbatim":"OAuthProgressRing.tsx"},
     "src/i18n/useTranslation.ts": {"count":1,"sections":[3],"contexts":["- **`src/i18n/useTranslation.ts` — `t` / `tx`**, and `getActiveTranslations()` for `.ts`"]},
-    "src/main.tsx": {"count":1,"sections":[7],"lines":["194"],"contexts":["(form validation, vault errors, the root error boundary at `main.tsx:194`), which is why"],"resolvedFrom":"basename","verbatim":"main.tsx"},
     "src/stores/toastStore.ts": {
       "count": 7,
       "sections": [0,3,5,6,7],

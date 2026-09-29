@@ -53,7 +53,6 @@
       "verbatim": "shared-facts.json"
     },
     "eslint-rules/prefer-numeric.cjs": {"count":4,"sections":[3,7,9],"lines":["78-80","80"],"contexts":["`RelativeTime`, `AbsoluteTime`, `useFormattedDate`, `eslint-rules/prefer-numeric.cjs` and both"]},
-    "format.ts": {"count":3,"sections":[7],"lines":["12","1"],"contexts":["**five** precisions (`format.ts:12` 4dp, `knowledgeDenseFormat.ts:20` 3dp,"],"resolved":false},
     "incremental.rs": {"count":1,"sections":[7],"lines":["763,1453,5108,6380"],"contexts":["(`incremental.rs:763,1453,5108,6380`), `number` in all **23** `cost_usd`-bearing ts-rs bindings,"],"resolved":false},
     "knowledgeDenseFormat.ts": {"count":2,"sections":[],"lines":["20","13"],"contexts":["**five** precisions (`format.ts:12` 4dp, `knowledgeDenseFormat.ts:20` 3dp,"],"resolved":false},
     "lefthook.yml": {"count":1,"sections":[7],"lines":["20"],"contexts":["(`lefthook.yml:20`), where `--quiet` discards warnings before they can be counted. **A warn-level"]},
@@ -123,6 +122,7 @@
       "resolvedFrom": "basename",
       "verbatim": "LabEconomicsPanel.tsx"
     },
+    "src/features/companions/curator/blueprint/format.ts": {"count":3,"sections":[7],"lines":["12","1"],"contexts":["**five** precisions (`format.ts:12` 4dp, `knowledgeDenseFormat.ts:20` 3dp,"],"resolvedFrom":"basename","verbatim":"format.ts"},
     "src/features/home/sub_cockpit/widgets/personaStats.ts": {
       "count": 1,
       "sections": [7],

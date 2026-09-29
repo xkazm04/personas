@@ -78,6 +78,13 @@ recorded under 2026-09-21 below.
 
 ## Skill improvement log
 
+- 2026-09-23 (process-strategic) - **A brief with a hidden answer key measures the finding
+  engine, not only the picture.** The projected dataset carried 7 planted structural truths in a
+  host-only file; a headless text scrape of each variant's findings scored them (4 / 3 / 3 of 7),
+  and the three that no seat found became the analytical skill's backlog. Also: `visual-pass.py`
+  captures only the default state, so a two-dataset brief needs a second capture per dataset (the
+  host scripted it; C-seat variants switch on `d`, not `2`).
+
 - 2026-09-21 (kpi-descent) - **A brief that ASSIGNS the three variants fights the rendered
   participant brief, which says the opposite.** `references/participant-brief.md` hard-codes
   "each a genuinely different answer to the idea - a different metaphor", and this contest

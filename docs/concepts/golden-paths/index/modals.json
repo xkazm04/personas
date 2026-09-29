@@ -30,6 +30,24 @@
     "\"The picker needs to open on top of the modal that launched it.\""
   ],
   "citations": {
+    "AnnotateModal.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["41"],
+      "contexts": [
+        "**`panelClassName` override drops the `max-h-[85vh]` ceiling (25 of 64).** Worst are the large surfaces: `AnomalyDrilldownPanel.tsx:127` · `HealingIssueModal.tsx:57` · `AutomationSetupModal.tsx:28` ·…"
+      ],
+      "resolved": false
+    },
+    "CreateTemplateModal.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["67"],
+      "contexts": [
+        "**Latent flex-chain break — scrolling body with stagger still on (15).** `PersonaSelectorModal.tsx:78` · `onboarding/OnboardingOverlay.tsx:97` · `ReviewResultsModal.tsx:17` · `ProjectTeamPreviewModal…"
+      ],
+      "resolved": false
+    },
     "CreateTwinWizard.tsx": {
       "count": 1,
       "sections": [7],
@@ -45,6 +63,15 @@
       "lines": ["153","295"],
       "contexts": [
         "**Duplicate Escape handler (8).** `GlyphFullLayout.tsx:116` · `DriveImageLightbox.tsx:153` · `KbPickerDialog.tsx:107` · `CreateTwinWizard.tsx:53` · `PeerDetailDrawer.tsx:77` · `AutoTeamModal.tsx:48`…"
+      ],
+      "resolved": false
+    },
+    "RecipePlaygroundModal.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["35"],
+      "contexts": [
+        "**Latent flex-chain break — scrolling body with stagger still on (15).** `PersonaSelectorModal.tsx:78` · `onboarding/OnboardingOverlay.tsx:97` · `ReviewResultsModal.tsx:17` · `ProjectTeamPreviewModal…"
       ],
       "resolved": false
     },
@@ -118,6 +145,15 @@
       "lines": ["215"],
       "contexts": [
         "- `plugins/research-lab/sub_reports/ReportPreviewDrawer.tsx:215` · `plugins/research-lab/sub_experiments/ExperimentRunsDrawer.tsx:47` — right drawers; `placement=\"right-drawer\"` already exists."
+      ],
+      "resolved": false
+    },
+    "recipes/sub_list/components/RecipePicker.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["39"],
+      "contexts": [
+        "- `triggers/sub_studio/routing/layouts/AddPersonaModal.tsx:107` · `templates/sub_generated/adoption/QuickAddCredentialModal.tsx:139` · `plugins/dev-tools/sub_projects/CrossProjectMetadataModal.tsx:30…"
       ],
       "resolved": false
     },
@@ -235,16 +271,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "overview/components/dashboard/widgets/DetailModal.tsx"
-    },
-    "src/features/overview/sub_knowledge/components/AnnotateModal.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["41"],
-      "contexts": [
-        "**`panelClassName` override drops the `max-h-[85vh]` ceiling (25 of 64).** Worst are the large surfaces: `AnomalyDrilldownPanel.tsx:127` · `HealingIssueModal.tsx:57` · `AutomationSetupModal.tsx:28` ·…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "AnnotateModal.tsx"
     },
     "src/features/overview/sub_manual-review/components/backlog/BacklogDetailLedger.tsx": {
       "count": 1,
@@ -371,26 +397,6 @@
       "contexts": ["- `plugins/fleet/SkillLibraryDrawer.tsx:75` — left-edge drawer; no left placement in the primitive (see Gaps)."],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/fleet/SkillLibraryDrawer.tsx"
-    },
-    "src/features/recipes/sub_list/components/RecipePicker.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["39"],
-      "contexts": [
-        "- `triggers/sub_studio/routing/layouts/AddPersonaModal.tsx:107` · `templates/sub_generated/adoption/QuickAddCredentialModal.tsx:139` · `plugins/dev-tools/sub_projects/CrossProjectMetadataModal.tsx:30…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "recipes/sub_list/components/RecipePicker.tsx"
-    },
-    "src/features/recipes/sub_playground/components/RecipePlaygroundModal.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["35"],
-      "contexts": [
-        "**Latent flex-chain break — scrolling body with stagger still on (15).** `PersonaSelectorModal.tsx:78` · `onboarding/OnboardingOverlay.tsx:97` · `ReviewResultsModal.tsx:17` · `ProjectTeamPreviewModal…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "RecipePlaygroundModal.tsx"
     },
     "src/features/scraper/ScrapeEditorModal.tsx": {
       "count": 1,
@@ -651,16 +657,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "TemplateDetailModal.tsx"
-    },
-    "src/features/templates/sub_generated/generation/modals/CreateTemplateModal.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["67"],
-      "contexts": [
-        "**Latent flex-chain break — scrolling body with stagger still on (15).** `PersonaSelectorModal.tsx:78` · `onboarding/OnboardingOverlay.tsx:97` · `ReviewResultsModal.tsx:17` · `ProjectTeamPreviewModal…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "CreateTemplateModal.tsx"
     },
     "src/features/templates/sub_presets/PresetPreviewModal.tsx": {
       "count": 1,

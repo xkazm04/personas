@@ -60,6 +60,8 @@ pub mod credential_fields;
 pub mod embedder;
 /// `_projectId` — binding one execution to a project in the persona's workspace.
 pub mod execution_project;
+/// `kp.gig_persona_policy` — the operator's standing approval for kp gig personas.
+pub mod kp_gig_policy;
 pub mod memory_recall;
 #[allow(dead_code)] // Functions used by Tauri commands in Phase 3
 pub mod migrations;

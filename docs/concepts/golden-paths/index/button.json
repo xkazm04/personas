@@ -7,8 +7,8 @@
   "headline": "Leaf: ui-system/controls-and-forms/button Date: 2026-08-13 Dimensions: ui · code-quality · function Sweep size: 2,104 .tsx files parsed; 2,869 raw <button> elements in 1,115 files extracted and classified individually (118 of them inside shared/components/, leaving 2,751 app-layer elements in 1,055 files). Plus Button.tsx, AsyncButton.tsx, CopyButton.tsx, Button.test.tsx, index.ts, globals.css, .…",
   "oneWay": "Import Button from @/features/shared/components/buttons and pass a variant and a size — never a className that paints. Six variants (primary secondary ghost danger accent link) and seven sizes (xs sm md lg icon-sm icon-md icon-lg) cover every push-button shape this app has; accent plus one of thirt…",
   "deviations": ["Is it a defect, or is Button the wrong shape?","Cross-cutting defects (these hold regardless of the shape argument)","The second pass — what is upstream of all of this"],
-  "ruleIds": [],
-  "ruleIdsFrom": "none",
+  "ruleIds": ["raw-button-element"],
+  "ruleIdsFrom": "section-9",
   "sections": [1,2,3,4,5,6,7,8,9],
   "citationCount": 65,
   "triggers": [
@@ -23,6 +23,15 @@
     "*.test.tsx": {"count":1,"sections":[9],"contexts":["- `*.test.tsx` / `*.stories.tsx`."],"resolved":false},
     ".claude/conventions.json": {"count":1,"sections":[],"contexts":["`.claude/conventions.json`, and all 21 custom ESLint rules."]},
     ".github/workflows/ci.yml": {"count":1,"sections":[9],"contexts":["failure mode `ci.yml` is already a museum of."],"resolvedFrom":"basename","verbatim":"ci.yml"},
+    "RecipeManager.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["96"],
+      "contexts": [
+        "| D7 | **Dead size presets** | 3 uses / 2 files | `globals.css:1272-1296` `.btn-sm/.btn-md/.btn-lg`, advertised at `Design.md:316`, unused by `Button.tsx`, used 3 times app-wide (`AutomationSetupModa…"
+      ],
+      "resolved": false
+    },
     "eslint-rules/no-raw-radius-classes.cjs": {"count":2,"sections":[7],"contexts":["- `eslint-rules/no-raw-radius-classes.cjs` docstring — same: \"rounded-interactive — buttons, toggles, chips (6px)\"."]},
     "eslint-rules/prefer-button-primitive.cjs": {"count":1,"sections":[9],"contexts":["One rule file, **`eslint-rules/prefer-button-primitive.cjs`**, registered in"],"resolved":false},
     "eslint-rules/prefer-status-badge.cjs": {"count":2,"sections":[9],"contexts":["primitive\" rules, and `prefer-status-badge.cjs` already demonstrates the design"],"resolvedFrom":"basename","verbatim":"prefer-status-badge.cjs"},
@@ -138,16 +147,6 @@
         "| X1 | **Icon-only control with no accessible name** | **844 elements** | Neither `aria-label` nor `title` nor text. WCAG 4.1.2. `src/features/plugins/twin/sub_channels/ChannelsAtelier.tsx:293` has `…"
       ],
       "resolved": false
-    },
-    "src/features/recipes/sub_manager/components/RecipeManager.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["96"],
-      "contexts": [
-        "| D7 | **Dead size presets** | 3 uses / 2 files | `globals.css:1272-1296` `.btn-sm/.btn-md/.btn-lg`, advertised at `Design.md:316`, unused by `Button.tsx`, used 3 times app-wide (`AutomationSetupModa…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "RecipeManager.tsx"
     },
     "src/features/settings/sub_engine/components/PolicyProposalsSection.tsx": {
       "count": 1,

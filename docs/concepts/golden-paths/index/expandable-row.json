@@ -34,7 +34,6 @@
   "citations": {
     "CompanionFooterIcon.tsx": {"count":1,"sections":[9],"lines":["204"],"contexts":["regex does not (`CompanionFooterIcon.tsx:204`, `AthenaOrbCornerActions.tsx:49`,"],"resolved":false},
     "ComplianceRow.tsx": {"count":3,"sections":[4],"lines":["37","34-38"],"contexts":["`SLABreachRow.tsx:57`, `IncidentList.tsx:79`, `ComplianceRow.tsx:37`,"],"resolved":false},
-    "DataTable.tsx": {"count":3,"sections":[7],"lines":["97","85"],"contexts":["`DataTable.tsx` takes a `keyExtractor` (`:16`), holds `expandedId: string | null`"],"resolved":false},
     "DebuggerControls.tsx": {"count":2,"sections":[9],"lines":["106"],"contexts":["`DebuggerControls.tsx:106` (`onExpandInspector`) and `DebuggerVariables.tsx:38`"],"resolved":false},
     "DebuggerVariables.tsx": {"count":2,"sections":[9],"lines":["38"],"contexts":["`DebuggerControls.tsx:106` (`onExpandInspector`) and `DebuggerVariables.tsx:38`"],"resolved":false},
     "IncidentList.tsx": {"count":1,"sections":[],"lines":["79"],"contexts":["`SLABreachRow.tsx:57`, `IncidentList.tsx:79`, `ComplianceRow.tsx:37`,"],"resolved":false},
@@ -229,6 +228,7 @@
       "resolvedFrom": "basename",
       "verbatim": "SortableColumnHeader.tsx"
     },
+    "src/features/shared/components/kit/DataTable.tsx": {"count":3,"sections":[7],"lines":["97","85"],"contexts":["`DataTable.tsx` takes a `keyExtractor` (`:16`), holds `expandedId: string | null`"],"resolvedFrom":"basename","verbatim":"DataTable.tsx"},
     "src/features/shared/components/terminal/TerminalStrip.tsx": {"count":2,"sections":[5,7],"lines":["89"],"contexts":["(`'Hide prompt'` / `'View prompt'`), `TerminalStrip.tsx:89` + `:92`"],"resolvedFrom":"basename","verbatim":"TerminalStrip.tsx"},
     "src/features/studio/StudioChatInput.tsx": {
       "count": 2,
