@@ -39,6 +39,13 @@
     "CortexMap.tsx": {"count":1,"sections":[],"lines":["79"],"contexts":["`console/app/demo/DemoConsole.tsx:324`, `CortexMap.tsx:79`, `IngestMonitor.tsx:78`; `vibeman`"],"resolved":false},
     "DatabaseHealthPanel.tsx": {"count":1,"sections":[],"lines":["265-280"],"contexts":["`ExecutiveSummary.tsx:894`, `ArchitectureBottomBar.tsx:169-221`, `DatabaseHealthPanel.tsx:265-280`;"],"resolved":false},
     "DemoConsole.tsx": {"count":3,"sections":[6],"lines":["317-321","238"],"contexts":["- `brainiac`'s `DemoConsole.tsx:317-321` renders the **identical** panel content in a bare fragment"],"resolved":false},
+    "DraftEditStep.tsx": {
+      "count": 7,
+      "sections": [0,5,6,7,9,12],
+      "lines": ["118-172","129","146","119"],
+      "contexts": ["hosts — `ByomSettings.tsx:162-220` and `DraftEditStep.tsx:118-172` — transcribed into the same"],
+      "resolved": false
+    },
     "ExecutiveSummary.tsx": {"count":1,"sections":[],"lines":["894"],"contexts":["`ExecutiveSummary.tsx:894`, `ArchitectureBottomBar.tsx:169-221`, `DatabaseHealthPanel.tsx:265-280`;"],"resolved":false},
     "IngestMonitor.tsx": {"count":1,"sections":[],"lines":["78"],"contexts":["`console/app/demo/DemoConsole.tsx:324`, `CortexMap.tsx:79`, `IngestMonitor.tsx:78`; `vibeman`"],"resolved":false},
     "LiteratureSearchPanel.tsx": {"count":1,"sections":[7],"contexts":["(`LiteratureSearchPanel.tsx`, `ResearchProjectList.tsx`)."],"resolved":false},
@@ -206,14 +213,6 @@
     },
     "src/features/teams/sub_factory/passport/passportInk.tsx": {"count":2,"sections":[7,9],"lines":["145"],"contexts":["§9's rule accepts it.** `CapabilityTagBar.tsx:29`, `passportInk.tsx:145` and"],"resolvedFrom":"basename","verbatim":"passportInk.tsx"},
     "src/features/templates/components/DesignReviewsPage.tsx": {"count":1,"sections":[],"contexts":["`triggers/TriggersPage.tsx`, `templates/components/DesignReviewsPage.tsx`,"],"resolvedFrom":"suffix","verbatim":"templates/components/DesignReviewsPage.tsx"},
-    "src/features/templates/draft-editor/DraftEditStep.tsx": {
-      "count": 8,
-      "sections": [0,5,6,7,9,12],
-      "lines": ["118-172","129","146","119"],
-      "contexts": ["`templates/draft-editor/DraftEditStep.tsx`,"],
-      "resolvedFrom": "suffix",
-      "verbatim": "templates/draft-editor/DraftEditStep.tsx"
-    },
     "src/features/templates/sub_generated/adoption/persona-layout/CapabilityTagSwitcher.tsx": {"count":1,"sections":[7],"lines":["67"],"contexts":["`CapabilityTagSwitcher.tsx:67` need triage in the same pass."],"resolvedFrom":"basename","verbatim":"CapabilityTagSwitcher.tsx"},
     "src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx": {
       "count": 4,
@@ -260,6 +259,7 @@
     },
     "src/stores/systemStore.ts": {"count":5,"sections":[3,7,12],"lines":["92-95"],"contexts":["`stores/systemStore.ts`."],"resolvedFrom":"suffix","verbatim":"stores/systemStore.ts"},
     "stores/slices/{system/uiSlice,overview/overviewSlice}.ts": {"count":1,"sections":[],"contexts":["`plugins/fleet/FleetTerminalOverlay.tsx`, `stores/slices/{system/uiSlice,overview/overviewSlice}.ts`,"],"resolved":false},
+    "templates/draft-editor/DraftEditStep.tsx": {"count":1,"sections":[],"contexts":["`templates/draft-editor/DraftEditStep.tsx` (deleted 2026-09-25),"],"resolved":false},
     "useTabNavigation.ts": {"count":1,"sections":[],"lines":["7"],"contexts":["`personas-web` is 6/6 roving-tabindex-with-arrows; `vibeman` is 7/8 paired (`useTabNavigation.ts:7`,"],"resolved":false},
     "vibeman/DatabaseHealthPanel.tsx": {"count":1,"sections":[],"lines":["109-131"],"contexts":["`vibeman/DatabaseHealthPanel.tsx:109-131`, an uncached `fetch` in a `useEffect` inside a panel that"],"resolved":false},
     "vibeman/src/lib/accessibility/aria.tsx": {"count":1,"sections":[12],"lines":["329-337"],"contexts":["(`vibeman/src/lib/accessibility/aria.tsx:329-337`, 0 consumers). Physics and house convention in the"],"resolved":false}

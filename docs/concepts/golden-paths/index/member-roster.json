@@ -35,6 +35,7 @@
       "resolved": false
     },
     "MembersPanel.tsx": {"count":1,"sections":[],"lines":["147"],"contexts":["`MembersPanel.tsx:147` keys rows `key={m.login}`. `src/lib/db/members.ts:277` sets"],"resolved":false},
+    "SchemaFieldBuilder.tsx": {"count":1,"sections":[9],"contexts":["`SchemaFieldBuilder.tsx` (3), `ByomApiKeyManager.tsx` (3), `ModelRoutingSection.tsx` (3),"],"resolved":false},
     "console/src/pitch/pitch-data.ts": {"count":1,"sections":[],"lines":["144"],"contexts":["(`console/src/pitch/pitch-data.ts:144`). The nearest structural analogue is an API-token"],"resolved":false},
     "incremental.rs": {
       "count": 1,
@@ -127,7 +128,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "plugins/dev-tools/sub_workspaces/centerShared.tsx"
     },
-    "src/features/recipes/sub_editor/components/SchemaFieldBuilder.tsx": {"count":1,"sections":[9],"contexts":["`SchemaFieldBuilder.tsx` (3), `ByomApiKeyManager.tsx` (3), `ModelRoutingSection.tsx` (3),"],"resolvedFrom":"basename","verbatim":"SchemaFieldBuilder.tsx"},
     "src/features/settings/sub_byom/components/ByomApiKeyManager.tsx": {"count":1,"sections":[9],"contexts":["`SchemaFieldBuilder.tsx` (3), `ByomApiKeyManager.tsx` (3), `ModelRoutingSection.tsx` (3),"],"resolvedFrom":"basename","verbatim":"ByomApiKeyManager.tsx"},
     "src/features/settings/sub_byom/components/ByomComplianceRules.tsx": {
       "count": 1,

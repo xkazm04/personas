@@ -25,6 +25,7 @@
   "triggers": [],
   "citations": {
     ".claude/worktrees/": {"count":1,"sections":[],"contexts":["`src-tauri/`, `target/` and `.claude/worktrees/` excluded), `src/` (4,801"],"resolved":false,"isDir":true},
+    "RecipeVersionsTab.tsx": {"count":2,"sections":[7],"lines":["78"],"contexts":["`RecipeVersionsTab.tsx`, a `useRecipeVersioning` hook, and a dedicated LLM prompt"],"resolved":false},
     "build_sessions.rs": {"count":4,"sections":[7,9,12],"lines":["2607","2601"],"contexts":["doors is `build_sessions.rs:2607`, and it is responsible for **10 of the 25 rows**,"],"resolved":false},
     "db/src/migrations/incremental.rs": {"count":1,"sections":[7],"lines":["1963"],"contexts":["| DDL, 16 columns, 2 indexes, FK CASCADE | `db/src/migrations/incremental.rs:1963` | present |"],"resolved":false},
     "engine/src/test_runner.rs": {"count":1,"sections":[7],"lines":["2941"],"contexts":["| `engine/src/test_runner.rs:2941` | none | — | `#[cfg(test)]` fixture |"],"resolved":false},
@@ -151,14 +152,6 @@
       "contexts": ["(`GitOpsVersionHistory.tsx:334`) but not for `persona_change_log`, which is"],
       "resolvedFrom": "basename",
       "verbatim": "GitOpsVersionHistory.tsx"
-    },
-    "src/features/recipes/sub_playground/tabs/RecipeVersionsTab.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["78"],
-      "contexts": ["`RecipeVersionsTab.tsx`, a `useRecipeVersioning` hook, and a dedicated LLM prompt"],
-      "resolvedFrom": "basename",
-      "verbatim": "RecipeVersionsTab.tsx"
     },
     "src/lib/bindings/PersonaVersion.ts": {"count":1,"sections":[7],"contexts":["| ts-rs binding | `src/lib/bindings/PersonaVersion.ts`, exported at `index.ts:640` | **0 importers** |"]},
     "src/lib/bindings/index.ts": {"count":1,"sections":[0],"lines":["640"],"contexts":["`src/lib/bindings/index.ts:640`, and a boot-time orphan scrub that names it"]},

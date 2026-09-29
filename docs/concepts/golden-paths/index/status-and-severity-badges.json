@@ -23,7 +23,7 @@
   "ruleIds": ["untranslatable-token-label"],
   "ruleIdsFrom": "section-9",
   "sections": [1,2,3,4,5,6,7,8,9],
-  "citationCount": 97,
+  "citationCount": 100,
   "triggers": [
     "\"I'm adding a new status to this table — where do I put the badge colour?\"",
     "\"This chip is showing `dead_letter` / `auto_fix_pending` instead of English.\"",
@@ -36,6 +36,7 @@
   ],
   "citations": {
     "EventsListColumns.tsx": {"count":2,"sections":[5],"lines":["10","85"],"contexts":["mistake — `personas-web` has 4 (`HealthIssueRow.tsx:6`, `EventsListColumns.tsx:10`, …), `brainiac`"],"resolved":false},
+    "HealingIssueStatusBadge.tsx": {"count":2,"sections":[4,7],"lines":["33","70,100"],"contexts":["prop and keep the branch logic in one component — `HealingIssueStatusBadge.tsx:33` was the repo's"],"resolved":false},
     "HealthIssueRow.tsx": {"count":2,"sections":[5],"lines":["6","15"],"contexts":["mistake — `personas-web` has 4 (`HealthIssueRow.tsx:6`, `EventsListColumns.tsx:10`, …), `brainiac`"],"resolved":false},
     "PracticeRolloutModal.tsx": {"count":1,"sections":[7],"lines":["129"],"contexts":["`ScheduleRow.tsx:120`, `STATE_ICON` at `PracticeRolloutModal.tsx:129`, `STATUS_DOT`-alikes elsewhere."],"resolved":false},
     "ScheduleRow.tsx": {"count":2,"sections":[7],"lines":["66","120"],"contexts":["`HEALTH_CONFIG` at `ScheduleRow.tsx:66` and again at `ConnectorReadiness.tsx:30`, `SEVERITY_CONFIG`"],"resolved":false},
@@ -142,17 +143,21 @@
       "count": 1,
       "sections": [7],
       "lines": ["190"],
-      "contexts": ["`HealingIssueStatusBadge.tsx:70,100` and `HealingIssueModal.tsx:190` render `{issue.severity}`;"],
+      "contexts": [
+        "`HealingIssueStatusBadge.tsx:70,100` and `HealingIssueModal.tsx:190` rendered `{issue.severity}` when measured (deleted 2026-09-25 in `a21c66544`: its state ladder now lives in `sub_observability/lib…"
+      ],
       "resolvedFrom": "basename",
       "verbatim": "HealingIssueModal.tsx"
     },
-    "src/features/overview/sub_observability/components/HealingIssueStatusBadge.tsx": {
+    "src/features/overview/sub_observability/components/HealingIssueStatusBadge.tsx": {"count":1,"sections":[6],"lines":["8-20,33"],"contexts":["- `src/features/overview/sub_observability/components/HealingIssueStatusBadge.tsx:8-20,33` — the"],"resolved":false},
+    "src/features/overview/sub_observability/libs/issueModel.ts": {
       "count": 3,
       "sections": [4,6,7],
-      "lines": ["33","8-20,33","70,100"],
-      "contexts": ["prop and keep the branch logic in one component — `HealingIssueStatusBadge.tsx:33` is the repo's"],
-      "resolvedFrom": "basename",
-      "verbatim": "HealingIssueStatusBadge.tsx"
+      "contexts": [
+        "only instance of this move and its docstring explained it (deleted 2026-09-25 in `a21c66544`: its state ladder now lives in `sub_observability/libs/issueModel.ts` `issueState`, a closed union rendere…"
+      ],
+      "resolvedFrom": "suffix",
+      "verbatim": "sub_observability/libs/issueModel.ts"
     },
     "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx": {
       "count": 1,

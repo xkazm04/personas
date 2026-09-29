@@ -444,25 +444,6 @@
       "resolvedFrom": "basename",
       "verbatim": "FactoryOverviewTab.tsx"
     },
-    "src/features/templates/sub_generated/generation/useCreateTemplateActions.ts": {
-      "count": 1,
-      "sections": [3],
-      "contexts": [
-        "- **`src/hooks/utility/data/usePersistedContext.ts`** — `{ key, maxAge, validate, getSavedAt, onRestore }`. Survives a full window reload by parking the job id (not the progress) in storage and re-at…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "useCreateTemplateActions.ts"
-    },
-    "src/features/templates/sub_generated/generation/useCreateTemplateSnapshot.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["146"],
-      "contexts": [
-        "**C1 — 1 of 7 primitive-based job surfaces reconciles a snapshot with its stream.** Stream-only (5): `useN8nTest.ts:25`, `useQueryDebug.ts:13`, `useBackgroundPreview.ts:32`, `usePersonaExecution.ts:1…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "useCreateTemplateSnapshot.ts"
-    },
     "src/features/templates/sub_n8n/hooks/useN8nTest.ts": {
       "count": 1,
       "sections": [7],
@@ -596,6 +577,23 @@
       "lines": ["1626"],
       "contexts": [
         "4. **Spawn inside `AssertUnwindSafe(...).catch_unwind()`** and write a terminal status in the panic arm too. 15 of the 16 job files do this (`twin.rs` is the exception — see Deviations). Better: hold…"
+      ],
+      "resolved": false
+    },
+    "useCreateTemplateActions.ts": {
+      "count": 1,
+      "sections": [3],
+      "contexts": [
+        "- **`src/hooks/utility/data/usePersistedContext.ts`** — `{ key, maxAge, validate, getSavedAt, onRestore }`. Survives a full window reload by parking the job id (not the progress) in storage and re-at…"
+      ],
+      "resolved": false
+    },
+    "useCreateTemplateSnapshot.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["146"],
+      "contexts": [
+        "**C1 — 1 of 7 primitive-based job surfaces reconciles a snapshot with its stream.** Stream-only (5): `useN8nTest.ts:25`, `useQueryDebug.ts:13`, `useBackgroundPreview.ts:32`, `usePersonaExecution.ts:1…"
       ],
       "resolved": false
     },

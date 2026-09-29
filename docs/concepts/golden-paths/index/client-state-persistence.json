@@ -77,15 +77,6 @@
       ],
       "resolved": false
     },
-    "main.tsx": {
-      "count": 2,
-      "sections": [5,7],
-      "lines": ["93","36,93,151,163"],
-      "contexts": [
-        "- **Hand-parsing the zustand persist envelope.** `main.tsx:93`, `:151`, `:163` reach into `{ state: { … } }` by hand. Adding `version`/`migrate` to any of those three stores changes the envelope and…"
-      ],
-      "resolved": false
-    },
     "personas.rs": {
       "count": 1,
       "sections": [7],

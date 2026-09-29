@@ -35,6 +35,15 @@
   ],
   "citations": {
     ".github/workflows/ci.yml": {"count":3,"sections":[7,9,12],"contexts":["- **`ci.yml` is red on pre-existing failures**, so §9 does not depend on it — and"],"resolvedFrom":"basename","verbatim":"ci.yml"},
+    "RecipePicker.tsx": {
+      "count": 1,
+      "sections": [9],
+      "lines": ["31"],
+      "contexts": [
+        "| **a global key handler that acts without consulting `e.target`** (the brief's primed lead) | **38 files / 38** | **19 files / 19** | Structurally beautiful — the two halves share **zero files** and…"
+      ],
+      "resolved": false
+    },
     "api/claude-terminal/stream/route.ts": {"count":1,"sections":[6],"lines":["219-230"],"contexts":["(`api/claude-terminal/stream/route.ts:219-230`), and durable session rows — three"],"resolved":false},
     "cli-service.ts": {"count":1,"sections":[6],"lines":["700-706"],"contexts":["(`cli-service.ts:700-706`, cap 500, trimmed at 1000), subscribe-then-flush replay"],"resolved":false},
     "commands.rs": {"count":7,"sections":[0,5,7,8],"lines":["91-94","91","37-38,204-205"],"contexts":["newline, appends its own Enter and confirms the submit (`commands.rs:91-94`)."],"resolved":false},
@@ -183,16 +192,6 @@
       "contexts": ["`src/features/plugins/fleet/{fleetTerminalManager.ts,FleetTerminalPane.tsx,FleetTerminalOverlay.tsx,FleetOverlayTile.tsx,useFleetOverlayActions.ts,useFleetHotkeys.ts}`,"],
       "resolved": false,
       "isDir": true
-    },
-    "src/features/recipes/sub_list/components/RecipePicker.tsx": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["31"],
-      "contexts": [
-        "| **a global key handler that acts without consulting `e.target`** (the brief's primed lead) | **38 files / 38** | **19 files / 19** | Structurally beautiful — the two halves share **zero files** and…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "RecipePicker.tsx"
     },
     "src/features/shared/chrome/notifications/NotificationCenter.tsx": {
       "count": 1,

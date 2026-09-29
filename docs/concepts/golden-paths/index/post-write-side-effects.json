@@ -46,6 +46,7 @@
     },
     "0032_skill_proposals.sql": {"count":1,"sections":[4],"lines":["12"],"contexts":["windowed question\"* — and `0032_skill_proposals.sql:12`, *\"no separate counter"],"resolved":false},
     "MessageList.tsx": {"count":3,"sections":[5,6,7],"lines":["116-118","113","113-118"],"contexts":["D3. `MessageList.tsx:116-118` is the defensive guard, shipped with a comment"],"resolved":false},
+    "ProviderCredentialField.tsx": {"count":1,"sections":[7],"lines":["37,39"],"contexts":["`ProviderCredentialField.tsx:37,39`, `LimitsSettings.tsx:42,43`,"],"resolved":false},
     "background.rs": {
       "count": 1,
       "sections": [6],
@@ -179,7 +180,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "features/agents/components/matrix/useLifecycle.ts"
     },
-    "src/features/agents/sub_model_config/components/ProviderCredentialField.tsx": {"count":1,"sections":[7],"lines":["37,39"],"contexts":["`ProviderCredentialField.tsx:37,39`, `LimitsSettings.tsx:42,43`,"],"resolvedFrom":"basename","verbatim":"ProviderCredentialField.tsx"},
     "src/features/settings/sub_byom/components/ByomApiKeyManager.tsx": {
       "count": 1,
       "sections": [7],

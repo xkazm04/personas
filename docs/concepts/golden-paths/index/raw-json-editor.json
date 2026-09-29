@@ -13,6 +13,7 @@
   "citationCount": 83,
   "triggers": [],
   "citations": {
+    "DraftJsonTab.tsx": {"count":1,"sections":[7],"lines":["30"],"contexts":["**D8 — P2. Hardcoded English inside the raw editors.** `DraftJsonTab.tsx:30`"],"resolved":false},
     "claude_desktop_config.json": {"count":1,"sections":[7],"contexts":["reads the target client's `claude_desktop_config.json`, and if it fails to parse —"],"resolved":false},
     "highlight.js": {"count":2,"sections":[7],"contexts":["`sqlTokenizers.tokenize(_, 'json')` (`:238`); `DraftJsonTab` via `highlight.js`;"],"resolved":false},
     "package.json": {"count":2,"sections":[],"contexts":["parsing dependency at all** — verified against `package.json`."]},
@@ -132,14 +133,6 @@
         "| `shared/components/forms/KeyValueEditor` | the **escape-hatch pattern**: key/value rows with a `Simple ⇄ Advanced JSON` toggle, duplicate-key detection, and a `canSwitchToSimple` guard that refuses…"
       ]
     },
-    "src/features/templates/draft-editor/DraftJsonTab.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["92","30"],
-      "contexts": ["| 5 | `templates/draft-editor/DraftJsonTab.tsx:92` | on change | **blocks** confirm (`navigationReducer.ts:31`) | `N8nPersonaDraft` via reconstruction ✅ |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "templates/draft-editor/DraftJsonTab.tsx"
-    },
     "src/features/templates/sub_n8n/hooks/n8nTypes.ts": {
       "count": 2,
       "sections": [3],
@@ -152,7 +145,7 @@
       "count": 1,
       "sections": [7],
       "lines": ["31"],
-      "contexts": ["| 5 | `templates/draft-editor/DraftJsonTab.tsx:92` | on change | **blocks** confirm (`navigationReducer.ts:31`) | `N8nPersonaDraft` via reconstruction ✅ |"],
+      "contexts": ["| 5 | `templates/draft-editor/DraftJsonTab.tsx:92` (deleted 2026-09-25) | on change | **blocks** confirm (`navigationReducer.ts:31`) | `N8nPersonaDraft` via reconstruction ✅ |"],
       "resolvedFrom": "basename",
       "verbatim": "navigationReducer.ts"
     },
@@ -186,14 +179,6 @@
     "src/features/vault/shared/playground/tabs/McpToolsTab.tsx": {"count":2,"sections":[5,7],"lines":["53"],"contexts":["`inputData` when it does not parse; `McpToolsTab.tsx:53` does it per argument —"],"resolvedFrom":"basename","verbatim":"McpToolsTab.tsx"},
     "src/features/vault/sub_databases/SqlEditor.tsx": {"count":1,"sections":[7],"contexts":["`POST`/`PUT`/`PATCH` bodies. `SqlEditor.tsx` has **no validation, no error"],"resolvedFrom":"basename","verbatim":"SqlEditor.tsx"},
     "src/features/vault/sub_databases/sqlTokenizers.ts": {"count":1,"sections":[3],"lines":["238"],"contexts":["(`sqlTokenizers.ts:238`), so it *looks* right — and it has **no validation of any"],"resolvedFrom":"basename","verbatim":"sqlTokenizers.ts"},
-    "src/hooks/useWizardReducer.ts": {
-      "count": 2,
-      "sections": [5,7],
-      "lines": ["76","75-77"],
-      "contexts": ["is opt-in and fine. `draftUpdated` at `useWizardReducer.ts:76` is not: any edit"],
-      "resolvedFrom": "basename",
-      "verbatim": "useWizardReducer.ts"
-    },
     "src/lib/utils/sanitizers/variableSanitizer.ts": {
       "count": 1,
       "sections": [5],
@@ -203,6 +188,14 @@
       "verbatim": "variableSanitizer.ts"
     },
     "sub_tool_runner/ToolInvocationCard.tsx": {"count":1,"sections":[7],"lines":["126"],"contexts":["| 7 | `sub_tool_runner/ToolInvocationCard.tsx:126` | in render | **blocks** run | re-parsed |"],"resolved":false},
+    "templates/draft-editor/DraftJsonTab.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["92"],
+      "contexts": ["| 5 | `templates/draft-editor/DraftJsonTab.tsx:92` (deleted 2026-09-25) | on change | **blocks** confirm (`navigationReducer.ts:31`) | `N8nPersonaDraft` via reconstruction ✅ |"],
+      "resolved": false
+    },
+    "useWizardReducer.ts": {"count":2,"sections":[5,7],"lines":["76","75-77"],"contexts":["is opt-in and fine. `draftUpdated` at `useWizardReducer.ts:76` is not: any edit"],"resolved":false},
     "wB-private-rules.json": {"count":1,"sections":[9],"contexts":["composer (`wB-private-rules.json`) and run with"],"resolved":false}
   }
 }

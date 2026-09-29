@@ -64,6 +64,7 @@
     "knip.json": {"count":3,"sections":[7],"lines":["18"],"contexts":["(plus `serde_json/JsonValue.ts` and the barrel), `ci.yml`, `knip.json`, and the two checkers that guard"]},
     "openapi.json": {"count":3,"sections":[6],"contexts":["Read-only sweep 2026-08-14 against `../brainiac` (Rust · utoipa → `openapi.json` → `openapi-typescript`),"],"resolved":false},
     "openapi.rs": {"count":1,"sections":[6],"lines":["437"],"contexts":["the chain is enforced by a sentence inside an assert message** (`openapi.rs:437`: \"…and re-run"],"resolved":false},
+    "overview/sub_cron_agents/components/CronAgentCard.tsx": {"count":1,"sections":[7],"contexts":["`fleet/monitor/monitorModel.ts`, `overview/sub_cron_agents/components/CronAgentCard.tsx` and 30+ other"],"resolved":false},
     "package.json": {"count":1,"sections":[3],"contexts":["- **`npm run census:check`** — inside `npm run check` (`package.json`). Hosts `bigint-binding-field`,"]},
     "personas-cloud/packages/shared/src/types.ts": {"count":2,"sections":[6],"lines":["5","2"],"contexts":["(exact) → **20** in `personas-cloud/packages/shared/src/types.ts:5` → **18** in"],"resolved":false},
     "personas-web/src/lib/types.ts": {"count":2,"sections":[6],"lines":["5","2"],"contexts":["`personas-web/src/lib/types.ts:5`. The two fields lost at the last hop are `permissionPolicy` and"],"resolved":false},
@@ -223,13 +224,6 @@
       "sections": [7],
       "lines": ["9"],
       "contexts": ["| `typeof x === 'bigint'` guards — branches that cannot execute | **6** (`src/api/companion.ts:745,794,795,865,867`; `src/features/overview/components/health/LogDiskUsageSection.tsx:9`) |"]
-    },
-    "src/features/overview/sub_cron_agents/components/CronAgentCard.tsx": {
-      "count": 1,
-      "sections": [7],
-      "contexts": ["`fleet/monitor/monitorModel.ts`, `overview/sub_cron_agents/components/CronAgentCard.tsx` and 30+ other"],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/sub_cron_agents/components/CronAgentCard.tsx"
     },
     "src/features/overview/sub_health/libs/compositeHealthScore.test.ts": {"count":3,"sections":[5,7],"lines":["20-23"],"contexts":["- **Writing test fixtures against `bigint`.** `src/features/overview/sub_health/libs/compositeHealthScore.test.ts:20-23`"]},
     "src/lib/bindings/": {

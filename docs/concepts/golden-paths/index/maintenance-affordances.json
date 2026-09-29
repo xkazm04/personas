@@ -22,6 +22,8 @@
   "citationCount": 49,
   "triggers": [],
   "citations": {
+    "CronAgentsPage.tsx": {"count":1,"sections":[7],"lines":["42"],"contexts":["`CronAgentsPage.tsx:42`) **and** refuse server-side under"],"resolved":false},
+    "KnowledgeGraphDashboard.tsx": {"count":1,"sections":[7],"lines":["193"],"contexts":["`EventLogList.tsx:303`, `KnowledgeGraphDashboard.tsx:193`,"],"resolved":false},
     "MessageList.tsx": {
       "count": 2,
       "sections": [7],
@@ -86,9 +88,7 @@
     "src/api/**": {"count":4,"sections":[0,7,12],"contexts":["(`src/api/**` invoke sites · `src-tauri/src/lib.rs`'s `generate_handler!` ·"],"resolved":false,"isDir":true},
     "src/features/**": {"count":2,"sections":[0,7],"contexts":["Of the 21 with a client wrapper, **3 have no call site in `src/features/**` at"],"resolved":false,"isDir":true},
     "src/features/overview/components/health/CrashLogsSection.tsx": {"count":1,"sections":[7],"lines":["80-92"],"contexts":["- `CrashLogsSection.tsx:80-92` — one click clears **three** stores in one"],"resolvedFrom":"basename","verbatim":"CrashLogsSection.tsx"},
-    "src/features/overview/sub_cron_agents/components/CronAgentsPage.tsx": {"count":1,"sections":[7],"lines":["42"],"contexts":["`CronAgentsPage.tsx:42`) **and** refuse server-side under"],"resolvedFrom":"basename","verbatim":"CronAgentsPage.tsx"},
     "src/features/overview/sub_events/components/EventLogList.tsx": {"count":1,"sections":[7],"lines":["303"],"contexts":["`EventLogList.tsx:303`, `KnowledgeGraphDashboard.tsx:193`,"],"resolvedFrom":"basename","verbatim":"EventLogList.tsx"},
-    "src/features/overview/sub_knowledge/components/KnowledgeGraphDashboard.tsx": {"count":1,"sections":[7],"lines":["193"],"contexts":["`EventLogList.tsx:303`, `KnowledgeGraphDashboard.tsx:193`,"],"resolvedFrom":"basename","verbatim":"KnowledgeGraphDashboard.tsx"},
     "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {
       "count": 4,
       "sections": [2,7],

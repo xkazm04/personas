@@ -30,6 +30,9 @@
   ],
   "citations": {
     "CortexMap.tsx": {"count":1,"sections":[2],"lines":["49"],"contexts":["`IngestMonitor.tsx:49`, `CortexMap.tsx:49`, `PrototypeSwitcher.tsx:42`, all tab/lens"],"resolved":false},
+    "CreateTemplateModal.tsx": {"count":3,"sections":[5,7],"lines":["51-55"],"contexts":["**A8 — a flow that renders its own copy of the sequence.** `CreateTemplateModal.tsx` inlines a"],"resolved":false},
+    "CreateTemplateModalFooter.tsx": {"count":1,"sections":[5],"contexts":["`CreateTemplateModalFooter.tsx`, and `handleBack` is duplicated verbatim in"],"resolved":false},
+    "CreateTemplateModalHeader.tsx": {"count":1,"sections":[5],"contexts":["header and a footer that also exist as `CreateTemplateModalHeader.tsx` /"],"resolved":false},
     "IngestMonitor.tsx": {"count":1,"sections":[2],"lines":["49"],"contexts":["`IngestMonitor.tsx:49`, `CortexMap.tsx:49`, `PrototypeSwitcher.tsx:42`, all tab/lens"],"resolved":false},
     "KeyShared.tsx": {"count":1,"sections":[2],"lines":["206"],"contexts":["`KeyShared.tsx:206`+`:122`, `SubmitBox.tsx:71`+`:28`, `Projects.tsx:217`+`:52`); and"],"resolved":false},
     "Projects.tsx": {"count":1,"sections":[2],"lines":["217"],"contexts":["`KeyShared.tsx:206`+`:122`, `SubmitBox.tsx:71`+`:28`, `Projects.tsx:217`+`:52`); and"],"resolved":false},
@@ -41,6 +44,18 @@
     "background.rs": {"count":1,"sections":[6],"lines":["3151"],"contexts":["never touches a draft's live build. Ships **on** (`background.rs:3151`)."],"resolved":false},
     "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["under `src/` (counts cited from [`shared-facts.json`](../shared-facts.json), not re-derived):"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "e2e/tour.spec.ts": {"count":1,"sections":[5],"lines":["55-60"],"contexts":["(`e2e/tour.spec.ts:55-60`)."],"resolved":false},
+    "features/shared/components/progress/WizardStepper.tsx": {
+      "count": 1,
+      "sections": [3],
+      "contexts": ["**Do NOT reach for** `hooks/useWizardReducer.ts` (deleted 2026-09-25), `features/shared/components/progress/WizardStepper.tsx` (deleted 2026-09-25),"],
+      "resolved": false
+    },
+    "hooks/useWizardReducer.ts": {
+      "count": 3,
+      "sections": [3,7,8],
+      "contexts": ["**Do NOT reach for** `hooks/useWizardReducer.ts` (deleted 2026-09-25), `features/shared/components/progress/WizardStepper.tsx` (deleted 2026-09-25),"],
+      "resolved": false
+    },
     "migrations/0034_projects_onboarding.sql": {"count":1,"sections":[2],"lines":["76-77"],"contexts":["its pointer **is a Postgres row** (`migrations/0034_projects_onboarding.sql:76-77`,"],"resolved":false},
     "n8n_sessions.rs": {
       "count": 1,
@@ -48,6 +63,14 @@
       "lines": ["215"],
       "contexts": [
         "| `n8n_transform_sessions` at `status='draft'`, `step='analyze'`, `persona_id` NULL | **2 of 2 — the entire table** | 129 days; `updated_at` is 0.6 s after `created_at`, i.e. never touched again | **…"
+      ],
+      "resolved": false
+    },
+    "shared/components/progress/WizardStepper.tsx": {
+      "count": 1,
+      "sections": [8],
+      "contexts": [
+        "| `shared/components/progress/WizardStepper.tsx` (deleted 2026-09-25) | **0** | Presentation only — `{steps, currentIndex}`. Both call sites are inside the dead modal. Also `label: string` (`:8`), so…"
       ],
       "resolved": false
     },
@@ -178,13 +201,6 @@
       "resolvedFrom": "basename",
       "verbatim": "DesktopFooter.tsx"
     },
-    "src/features/shared/components/progress/WizardStepper.tsx": {
-      "count": 2,
-      "sections": [3,8],
-      "contexts": ["**Do NOT reach for** `hooks/useWizardReducer.ts`, `features/shared/components/progress/WizardStepper.tsx`,"],
-      "resolvedFrom": "suffix",
-      "verbatim": "features/shared/components/progress/WizardStepper.tsx"
-    },
     "src/features/teams/sub_kpis/KPIConnectWizard.tsx": {"count":1,"sections":[7],"lines":["116"],"contexts":["`src/features/teams/sub_kpis/KPIConnectWizard.tsx:116` — `await updateKpi(kpi.id, { metricType: mt.id })`"]},
     "src/features/templates/sub_generated/adoption/AdoptionWizardModal.tsx": {
       "count": 3,
@@ -209,24 +225,6 @@
       "contexts": ["`sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:434-435`, with a reason"],
       "resolvedFrom": "suffix",
       "verbatim": "sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx"
-    },
-    "src/features/templates/sub_generated/generation/modals/CreateTemplateModal.tsx": {
-      "count": 3,
-      "sections": [5,7],
-      "lines": ["51-55"],
-      "contexts": ["**A8 — a flow that renders its own copy of the sequence.** `CreateTemplateModal.tsx` inlines a"],
-      "resolvedFrom": "basename",
-      "verbatim": "CreateTemplateModal.tsx"
-    },
-    "src/features/templates/sub_generated/generation/modals/CreateTemplateModalFooter.tsx": {"count":1,"sections":[5],"contexts":["`CreateTemplateModalFooter.tsx`, and `handleBack` is duplicated verbatim in"],"resolvedFrom":"basename","verbatim":"CreateTemplateModalFooter.tsx"},
-    "src/features/templates/sub_generated/generation/modals/CreateTemplateModalHeader.tsx": {"count":1,"sections":[5],"contexts":["header and a footer that also exist as `CreateTemplateModalHeader.tsx` /"],"resolvedFrom":"basename","verbatim":"CreateTemplateModalHeader.tsx"},
-    "src/features/templates/sub_generated/generation/useCreateTemplateReducer.ts": {
-      "count": 2,
-      "sections": [5,7],
-      "lines": ["89-92","85"],
-      "contexts": ["`CreateTemplateModal.tsx:51-55` and `useCreateTemplateReducer.ts:89-92`. When the sequence is"],
-      "resolvedFrom": "basename",
-      "verbatim": "useCreateTemplateReducer.ts"
     },
     "src/features/templates/sub_n8n/": {"count":1,"sections":[6],"contexts":["`src/features/templates/sub_n8n/`. It is the only flow in the repo that answers every question"],"resolved":false,"isDir":true},
     "src/features/templates/sub_n8n/hooks/useN8nImportReducer.ts": {
@@ -314,13 +312,6 @@
       "verbatim": "useCredentialNegotiator.ts"
     },
     "src/hooks/useStepProgress.ts": {"count":2,"sections":[3,8],"contexts":["or `hooks/useStepProgress.ts` for a wizard. See §8 Gap 2 — measured, all three."],"resolvedFrom":"suffix","verbatim":"hooks/useStepProgress.ts"},
-    "src/hooks/useWizardReducer.ts": {
-      "count": 3,
-      "sections": [3,7,8],
-      "contexts": ["**Do NOT reach for** `hooks/useWizardReducer.ts`, `features/shared/components/progress/WizardStepper.tsx`,"],
-      "resolvedFrom": "suffix",
-      "verbatim": "hooks/useWizardReducer.ts"
-    },
     "src/hooks/utility/data/usePersistedContext.ts": {
       "count": 1,
       "sections": [7],
@@ -357,6 +348,7 @@
     },
     "tour-script.ts": {"count":1,"sections":[2],"contexts":["personas-web: `tour-script.ts` × `TourContext.tsx`); the guard written **twice**, on the"],"resolved":false},
     "types.ts": {"count":1,"sections":[8],"contexts":["generated alongside `types.ts`) resolved by the *engine* at render, not by the author at"],"resolved":false},
+    "useCreateTemplateReducer.ts": {"count":2,"sections":[5,7],"lines":["89-92","85"],"contexts":["`CreateTemplateModal.tsx:51-55` and `useCreateTemplateReducer.ts:89-92`. When the sequence is"],"resolved":false},
     "useTourVolume.ts": {"count":1,"sections":[2],"lines":["5"],"contexts":["(`useTourVolume.ts:5`) and nothing else. Reload mid-tour = tour gone, by design."],"resolved":false}
   }
 }

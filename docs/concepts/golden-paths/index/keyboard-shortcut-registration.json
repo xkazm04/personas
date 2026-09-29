@@ -34,6 +34,7 @@
     "DriveImageLightbox.tsx": {"count":1,"sections":[7],"lines":["178"],"contexts":["`DriveImageLightbox.tsx:178` (arrows, `+ = - _ 0 r R`) — all three are lightboxes that are usually"],"resolved":false},
     "Gallery2D.tsx": {"count":1,"sections":[7],"lines":["262"],"contexts":["`Gallery2D.tsx:262` (arrows, `+ = - _ 0 f F c C`), `Gallery3D.tsx:90` (arrows),"],"resolved":false},
     "Gallery3D.tsx": {"count":2,"sections":[4,7],"lines":["90"],"contexts":["Nothing forces `Gallery3D.tsx:90` to skip its guard; the API simply never mentioned one. Widening"],"resolved":false},
+    "RecipeManager.tsx": {"count":1,"sections":[7],"lines":["55-62"],"contexts":["returns `true`, and both `RecipeManager.tsx:55-62` and `useCredentialManagerState.ts:72-79` (raw"],"resolved":false},
     "ReviewWorklist.tsx": {"count":3,"sections":[8],"lines":["314-316","327-336","358-361"],"contexts":["one.** `brainiac`'s is the only complete one (`ReviewWorklist.tsx:314-316`,"],"resolved":false},
     "TinderLayout.tsx": {"count":1,"sections":[],"lines":["153"],"contexts":["(`TinderLayout.tsx:153`). It is `exclusive: true` hand-built for exactly one pair of components,"],"resolved":false},
     "_dev-inspector/DevInspector.tsx": {"count":1,"sections":[7],"lines":["125"],"contexts":["look. The sibling sweep found the identical move in `ascent` (`_dev-inspector/DevInspector.tsx:125`)"],"resolved":false},
@@ -136,14 +137,6 @@
       "contexts": ["`plugins/fleet/useFleetHotkeys.ts`, `plugins/drive/DrivePage.tsx`,"],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/fleet/useFleetHotkeys.ts"
-    },
-    "src/features/recipes/sub_manager/components/RecipeManager.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["55-62"],
-      "contexts": ["returns `true`, and both `RecipeManager.tsx:55-62` and `useCredentialManagerState.ts:72-79` (raw"],
-      "resolvedFrom": "basename",
-      "verbatim": "RecipeManager.tsx"
     },
     "src/features/shared/chrome/CommandPalette.tsx": {
       "count": 7,

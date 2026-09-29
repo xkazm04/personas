@@ -34,6 +34,7 @@
   "citations": {
     ".claude/conventions.json": {"count":1,"sections":[9],"lines":["112"],"contexts":["`.claude/conventions.json:112` lists `\"select\"` under `reuse.doNotHandRoll`"]},
     ".claude/worktrees/**": {"count":1,"sections":[],"contexts":["`src/**/*.tsx`, not estimated. `.claude/worktrees/**` excluded."],"resolved":false,"isDir":true},
+    "AnnotateModal.tsx": {"count":2,"sections":[7],"lines":["49,61","55,67"],"contexts":["`AutomationTriggerStep.tsx:186` · `AnnotateModal.tsx:49,61` ·"],"resolved":false},
     "BaseModal.tsx": {"count":1,"sections":[4],"lines":["9"],"contexts":["`Z_INDEX_PORTAL_BASE = 10000` from `BaseModal.tsx:9`) are the two sanctioned"],"resolved":false},
     "ChannelsAtelier.tsx": {"count":1,"sections":[7],"lines":["202,209"],"contexts":["`matrixShared.tsx:127` · `ChannelsAtelier.tsx:202,209` · `ReplyOutbox.tsx:236` ·"],"resolved":false},
     "ClusterPatternsModal.tsx": {"count":1,"sections":[7],"lines":["290"],"contexts":["`ClusterPatternsModal.tsx:290` · `CreatePlaybookModal.tsx:138` ·"],"resolved":false},
@@ -50,16 +51,29 @@
     "CreatePlaybookModal.tsx": {"count":1,"sections":[7],"lines":["138"],"contexts":["`ClusterPatternsModal.tsx:290` · `CreatePlaybookModal.tsx:138` ·"],"resolved":false},
     "CreatePracticeModal.tsx": {"count":3,"sections":[7],"lines":["76,113","76","79"],"contexts":["`CreatePracticeModal.tsx:76,113` · `LifecycleProjectPicker.tsx:69` ·"],"resolved":false},
     "CredentialPicker.tsx": {"count":2,"sections":[4,7],"lines":["92"],"contexts":["any ancestor scrolls or clips. `CredentialPicker.tsx` does all of this in 99"],"resolved":false},
+    "DraftEditStep.tsx": {"count":1,"sections":[8],"lines":["129"],"contexts":["`ExecutionDetailTabs.tsx:89`, `DraftEditStep.tsx:129`, `SchedulesOverlay.tsx:419` (tab strip removed 2026-09-17),"],"resolved":false},
     "DriveToolbar.tsx": {"count":1,"sections":[7],"lines":["447"],"contexts":["`DriveToolbar.tsx:447` · `CompanionToolbar.tsx:453` · `StationPicker.tsx:186`."],"resolved":false},
     "ExtractionMenu.tsx": {"count":1,"sections":[7],"lines":["345"],"contexts":["`teamStudioShared.tsx:181` · `WorkspaceEditMenu.tsx:50` · `ExtractionMenu.tsx:345` ·"],"resolved":false},
     "FabricSearch.tsx": {"count":1,"sections":[7],"lines":["65"],"contexts":["`SearchAutocomplete.tsx:95`, `FabricSearch.tsx:65`."],"resolved":false},
     "Gallery3D.tsx": {"count":1,"sections":[7],"lines":["183"],"contexts":["`Gallery3D.tsx:183` · `GalleryPage.tsx:122` · `TextLane.tsx:110` · `VoiceoverButton.tsx:97` ·"],"resolved":false},
     "GalleryPage.tsx": {"count":1,"sections":[7],"lines":["122"],"contexts":["`Gallery3D.tsx:183` · `GalleryPage.tsx:122` · `TextLane.tsx:110` · `VoiceoverButton.tsx:97` ·"],"resolved":false},
     "KnowledgeTree.tsx": {"count":2,"sections":[4,6],"lines":["414"],"contexts":["`hideSearch={options.length < 8}` (`KnowledgeTree.tsx:414`) beats a static"],"resolved":false},
+    "ModelDropdown.tsx": {"count":1,"sections":[5],"lines":["35"],"contexts":["`TimezoneSelect.tsx:64`, `ModelDropdown.tsx:35`), `rounded-md`"],"resolved":false},
     "NodeContextMenu.tsx": {"count":1,"sections":[7],"lines":["32"],"contexts":["`FactoryBreadcrumb.tsx:62` (mouse-leave only) and `NodeContextMenu.tsx:32` (no Escape)."],"resolved":false},
     "ProjectFilter.tsx": {"count":1,"sections":[7],"lines":["55"],"contexts":["`UseCaseFixtureDropdown.tsx:66` · `ProjectFilter.tsx:55` · `SortDropdown.tsx:44` ·"],"resolved":false},
+    "RecipeInputSection.tsx": {"count":1,"sections":[7],"lines":["125"],"contexts":["`SchemaFieldBuilder.tsx:96` · `RecipeInputSection.tsx:125` · `AmbientContextPanel.tsx:427` ·"],"resolved":false},
+    "RecipePicker.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["73"],
+      "contexts": [
+        "| **Empty state only** — a failed fetch is indistinguishable from \"you have none\" | 6 | `ExecutePersonaPicker.tsx:60` (`.catch` → `silentCatch` → `setPersonas([])`, `:36-39`) · `CredentialPicker.tsx:…"
+      ],
+      "resolved": false
+    },
     "ReportPreviewDrawer.tsx": {"count":1,"sections":[7],"lines":["224"],"contexts":["`research-lab/shared/FormField.tsx:90` · `ReportPreviewDrawer.tsx:224` ·"],"resolved":false},
     "ScheduleRow.tsx": {"count":1,"sections":[7],"lines":["265"],"contexts":["`GitHubRepoSelector.tsx:214` · `ScheduleRow.tsx:265` · `TeamToolbar.tsx:67` ·"],"resolved":false},
+    "SchemaFieldBuilder.tsx": {"count":1,"sections":[7],"lines":["96"],"contexts":["`SchemaFieldBuilder.tsx:96` · `RecipeInputSection.tsx:125` · `AmbientContextPanel.tsx:427` ·"],"resolved":false},
     "TeamToolbar.tsx": {"count":1,"sections":[7],"lines":["67"],"contexts":["`GitHubRepoSelector.tsx:214` · `ScheduleRow.tsx:265` · `TeamToolbar.tsx:67` ·"],"resolved":false},
     "TextLane.tsx": {"count":1,"sections":[7],"lines":["110"],"contexts":["`Gallery3D.tsx:183` · `GalleryPage.tsx:122` · `TextLane.tsx:110` · `VoiceoverButton.tsx:97` ·"],"resolved":false},
     "TwinPicker.tsx": {"count":2,"sections":[7],"lines":["160-182","224"],"contexts":["`TwinPicker.tsx:160-182` (the best of them — arrows, Enter, Escape,"],"resolved":false},
@@ -67,6 +81,7 @@
     "UseCaseFixtureDropdown.tsx": {"count":1,"sections":[7],"lines":["66"],"contexts":["`UseCaseFixtureDropdown.tsx:66` · `ProjectFilter.tsx:55` · `SortDropdown.tsx:44` ·"],"resolved":false},
     "VoiceoverButton.tsx": {"count":1,"sections":[7],"lines":["97"],"contexts":["`Gallery3D.tsx:183` · `GalleryPage.tsx:122` · `TextLane.tsx:110` · `VoiceoverButton.tsx:97` ·"],"resolved":false},
     "agents/sub_design/components/parameterEditing.tsx": {"count":1,"sections":[6],"lines":["204-219"],"contexts":["- **`agents/sub_design/components/parameterEditing.tsx:204-219` — the reference"],"resolved":false},
+    "compare/ModelDropdown.tsx": {"count":1,"sections":[7],"lines":["30"],"contexts":["`CreateTriggerForm.tsx:53` · `compare/ModelDropdown.tsx:30` · `SystemTraceViewer.tsx:243` ·"],"resolved":false},
     "designTokens.ts": {"count":1,"sections":[7],"contexts":["at `:49`), exactly as it skips `designTokens.ts` for"],"resolved":false},
     "eslint-rules/": {"count":2,"sections":[9],"contexts":["Three rules in `eslint-rules/`, registered in `eslint.config.js`. Ship"],"resolved":false,"isDir":true},
     "eslint-rules/no-raw-radius-classes.cjs": {
@@ -194,11 +209,9 @@
       "resolvedFrom": "basename",
       "verbatim": "ArenaPanelColosseum.tsx"
     },
-    "src/features/agents/sub_model_config/components/compare/ModelDropdown.tsx": {"count":2,"sections":[5,7],"lines":["35","30"],"contexts":["`TimezoneSelect.tsx:64`, `ModelDropdown.tsx:35`), `rounded-md`"],"resolvedFrom":"basename","verbatim":"ModelDropdown.tsx"},
     "src/features/companions/athena/ConversationSwitcher.tsx": {"count":1,"sections":[7],"lines":["149"],"contexts":["· `PersonaOverviewBatchBar.tsx:108` · `ConversationSwitcher.tsx:149` ·"],"resolvedFrom":"basename","verbatim":"ConversationSwitcher.tsx"},
     "src/features/fleet/monitor/channels/ConversationComposer.tsx": {"count":2,"sections":[7],"lines":["162"],"contexts":["· `PlaygroundHeader.tsx:166` · `ConversationComposer.tsx:162`. Plus"],"resolvedFrom":"basename","verbatim":"ConversationComposer.tsx"},
     "src/features/overview/sub_activity/components/GlobalExecutionList.tsx": {"count":1,"sections":[7],"lines":["388"],"contexts":["`GlobalExecutionList.tsx:388` · `AnnotateModal.tsx:55,67` ·"],"resolvedFrom":"basename","verbatim":"GlobalExecutionList.tsx"},
-    "src/features/overview/sub_knowledge/components/AnnotateModal.tsx": {"count":2,"sections":[7],"lines":["49,61","55,67"],"contexts":["`AutomationTriggerStep.tsx:186` · `AnnotateModal.tsx:49,61` ·"],"resolvedFrom":"basename","verbatim":"AnnotateModal.tsx"},
     "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {"count":1,"sections":[7],"lines":["397"],"contexts":["`ManualReviewList.tsx:397` · `CreatePracticeModal.tsx:79` ·"],"resolvedFrom":"basename","verbatim":"ManualReviewList.tsx"},
     "src/features/overview/sub_memories/components/CreateMemoryForm.tsx": {
       "count": 2,
@@ -360,32 +373,6 @@
     },
     "src/features/plugins/radio/components/VolumePopover.tsx": {"count":1,"sections":[7],"lines":["47"],"contexts":["· `StationPicker.tsx:186` · `VolumePopover.tsx:47` · `NowPlayingCard.tsx:91`."],"resolvedFrom":"basename","verbatim":"VolumePopover.tsx"},
     "src/features/plugins/twin/sub_channels/ReplyOutbox.tsx": {"count":1,"sections":[7],"lines":["236"],"contexts":["`matrixShared.tsx:127` · `ChannelsAtelier.tsx:202,209` · `ReplyOutbox.tsx:236` ·"],"resolvedFrom":"basename","verbatim":"ReplyOutbox.tsx"},
-    "src/features/recipes/sub_editor/components/SchemaFieldBuilder.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["96"],
-      "contexts": ["`SchemaFieldBuilder.tsx:96` · `RecipeInputSection.tsx:125` · `AmbientContextPanel.tsx:427` ·"],
-      "resolvedFrom": "basename",
-      "verbatim": "SchemaFieldBuilder.tsx"
-    },
-    "src/features/recipes/sub_list/components/RecipePicker.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["73"],
-      "contexts": [
-        "| **Empty state only** — a failed fetch is indistinguishable from \"you have none\" | 6 | `ExecutePersonaPicker.tsx:60` (`.catch` → `silentCatch` → `setPersonas([])`, `:36-39`) · `CredentialPicker.tsx:…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "RecipePicker.tsx"
-    },
-    "src/features/recipes/sub_playground/tabs/RecipeInputSection.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["125"],
-      "contexts": ["`SchemaFieldBuilder.tsx:96` · `RecipeInputSection.tsx:125` · `AmbientContextPanel.tsx:427` ·"],
-      "resolvedFrom": "basename",
-      "verbatim": "RecipeInputSection.tsx"
-    },
     "src/features/schedules/components/SchedulesOverlay.tsx": {
       "count": 1,
       "sections": [8],
@@ -712,14 +699,6 @@
       "contexts": ["`SlackBridgePickers.tsx:65,76,95` · `SourceDefinitionInput.tsx:312,364` ·"],
       "resolvedFrom": "basename",
       "verbatim": "SourceDefinitionInput.tsx"
-    },
-    "src/features/templates/draft-editor/DraftEditStep.tsx": {
-      "count": 1,
-      "sections": [8],
-      "lines": ["129"],
-      "contexts": ["`ExecutionDetailTabs.tsx:89`, `DraftEditStep.tsx:129`, `SchedulesOverlay.tsx:419` (tab strip removed 2026-09-17),"],
-      "resolvedFrom": "basename",
-      "verbatim": "DraftEditStep.tsx"
     },
     "src/features/templates/sub_generated/adoption/QuestionnaireFormGridParts.tsx": {
       "count": 1,

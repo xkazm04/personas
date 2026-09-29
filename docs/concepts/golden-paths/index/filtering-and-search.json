@@ -95,6 +95,15 @@
       ],
       "resolved": false
     },
+    "KnowledgeGraphDashboard.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["114"],
+      "contexts": [
+        "- **`useFilteredCollection` has 3 adopters, and all 4 of their call sites defeat its memo** by passing an inline `spec` literal (`GlobalExecutionList.tsx:120`,`:140`; `KnowledgeGraphDashboard.tsx:114…"
+      ],
+      "resolved": false
+    },
     "KnowledgeTree.tsx": {"count":1,"sections":[7],"contexts":["| ↳ `BacklogTable.tsx` · `DispatchTable.tsx` · `KnowledgeTree.tsx` | | inherited from the above |"],"resolved":false},
     "MessageList.tsx": {
       "count": 1,
@@ -168,6 +177,15 @@
       "lines": ["163"],
       "contexts": [
         "| **Filter → page reset** | **0 of 7** paginating surfaces reset | **3 of 3** reset (`EventsListPanel.tsx:89-91`, `executions/page.tsx:64-67`, `messages/page.tsx:163`) | **5 of 5** reset — via `reset…"
+      ],
+      "resolved": false
+    },
+    "overview/sub_knowledge/components/KnowledgeGraphDashboard.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["114-138"],
+      "contexts": [
+        "| `overview/sub_knowledge/components/KnowledgeGraphDashboard.tsx:114-138` | `listExecutionKnowledge(personaId, type, 100)` (`:76`) | `search`, `scope`, `pendingOnly`, a date drilldown. With no person…"
       ],
       "resolved": false
     },
@@ -344,16 +362,6 @@
         "- **`src/features/overview/sub_incidents/libs/useIncidentsData.ts:42-63`** — the adapter shape: `filterKey = JSON.stringify(filters)`, one typed `IncidentFilters` binding sent whole, and a `truncated…"
       ]
     },
-    "src/features/overview/sub_knowledge/components/KnowledgeGraphDashboard.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["114-138","114"],
-      "contexts": [
-        "| `overview/sub_knowledge/components/KnowledgeGraphDashboard.tsx:114-138` | `listExecutionKnowledge(personaId, type, 100)` (`:76`) | `search`, `scope`, `pendingOnly`, a date drilldown. With no person…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/sub_knowledge/components/KnowledgeGraphDashboard.tsx"
-    },
     "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {
       "count": 3,
       "sections": [3,6,7],
@@ -442,7 +450,6 @@
       "verbatim": "plugins/fleet/sub_activity/FleetActivityPage.tsx"
     },
     "src/features/plugins/fleet/sub_skills/useSkillData.ts": {"count":2,"sections":[7],"lines":["207-208"],"contexts":["`useSkillData.ts:207-208` re-lowercases the *needle* inside the loop, once per"],"resolvedFrom":"basename","verbatim":"useSkillData.ts"},
-    "src/features/recipes/hooks/useRecipeViewFSM.ts": {"count":1,"sections":[7],"lines":["49-52"],"contexts":["component) · `useApiExplorerState.ts:124-127` · `useRecipeViewFSM.ts:49-52` ·"],"resolvedFrom":"basename","verbatim":"useRecipeViewFSM.ts"},
     "src/features/settings/sub_portability/components/ExportSelectionModal.tsx": {
       "count": 1,
       "sections": [7],
@@ -692,6 +699,7 @@
       "verbatim": "overviewSlice.ts"
     },
     "src/test/**": {"count":2,"sections":[7,11],"contexts":["`src/test/**` and the shared matcher excluded). Against that: **0**"],"resolved":false,"isDir":true},
+    "useRecipeViewFSM.ts": {"count":1,"sections":[7],"lines":["49-52"],"contexts":["component) · `useApiExplorerState.ts:124-127` · `useRecipeViewFSM.ts:49-52` ·"],"resolved":false},
     "useSearchParamState.ts": {
       "count": 1,
       "sections": [10],
