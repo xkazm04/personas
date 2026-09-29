@@ -214,5 +214,6 @@
   "dispatch_run_on_offline": "オフライン",
   "dispatch_run_on_queued_hint": "起動するまでキューで待機します",
   "dispatch_run_on_stale": "最近確認されていません",
-  "dispatch_run_on_this_machine": "このマシン"
+  "dispatch_run_on_this_machine": "このマシン",
+  "md_spellcheck": "スペルと文法"
 }

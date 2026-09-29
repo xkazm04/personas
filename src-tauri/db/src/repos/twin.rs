@@ -551,9 +551,30 @@ pub fn create_pending_memory(
     importance: i32,
     source_communication_id: Option<&str>,
 ) -> Result<TwinPendingMemory, AppError> {
+    let conn = pool.get()?;
+    create_pending_memory_on(
+        &conn,
+        twin_id,
+        channel,
+        content,
+        title,
+        importance,
+        source_communication_id,
+    )
+}
+
+/// [`create_pending_memory`] on a caller's connection (or transaction).
+pub fn create_pending_memory_on(
+    conn: &rusqlite::Connection,
+    twin_id: &str,
+    channel: Option<&str>,
+    content: &str,
+    title: Option<&str>,
+    importance: i32,
+    source_communication_id: Option<&str>,
+) -> Result<TwinPendingMemory, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
     conn.execute(
         "INSERT INTO twin_pending_memories \
             (id, twin_id, channel, content, title, importance, source_communication_id, created_at) \
@@ -678,9 +699,37 @@ pub fn record_interaction(
     key_facts_json: Option<&str>,
     create_memory: bool,
 ) -> Result<TwinCommunication, AppError> {
+    let conn = pool.get()?;
+    record_interaction_on(
+        &conn,
+        twin_id,
+        channel,
+        direction,
+        contact_handle,
+        content,
+        summary,
+        key_facts_json,
+        create_memory,
+    )
+}
+
+/// [`record_interaction`] on a caller's connection (or transaction), so the
+/// communication and its pending memory can land atomically with the caller's
+/// own writes (the twin setup engine records a training answer this way).
+#[allow(clippy::too_many_arguments)]
+pub fn record_interaction_on(
+    conn: &rusqlite::Connection,
+    twin_id: &str,
+    channel: &str,
+    direction: &str,
+    contact_handle: Option<&str>,
+    content: &str,
+    summary: Option<&str>,
+    key_facts_json: Option<&str>,
+    create_memory: bool,
+) -> Result<TwinCommunication, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
     conn.execute(
         "INSERT INTO twin_communications (id, twin_id, channel, direction, contact_handle, content, summary, key_facts_json, occurred_at, created_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
@@ -710,8 +759,8 @@ pub fn record_interaction(
         let title = contact_handle
             .map(|h| format!("{direction} with {h} on {channel}"))
             .or_else(|| Some(format!("{direction} on {channel}")));
-        let _ = create_pending_memory(
-            pool,
+        let _ = create_pending_memory_on(
+            conn,
             twin_id,
             Some(channel),
             &mem_content,

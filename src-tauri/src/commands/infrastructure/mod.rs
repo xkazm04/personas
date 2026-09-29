@@ -38,6 +38,8 @@ pub mod kp_hire;
 pub mod kpi_compose;
 pub mod kpi_scan;
 pub mod kpi_sim;
+/// Lifecycle v2: each project's development practice (read, preset, install).
+pub mod lifecycle;
 pub mod llm_spend;
 pub mod memory_health;
 pub mod memory_ledger;
@@ -67,6 +69,8 @@ pub mod system_ops;
 pub mod task_executor;
 pub mod tier_usage;
 pub mod twin;
+/// The twin setup plan: a durable, planned guided setup (spark twin-setup-plan).
+pub mod twin_setup;
 pub mod twin_style;
 pub mod twin_voice;
 pub mod use_case_scan;

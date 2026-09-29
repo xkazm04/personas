@@ -42,8 +42,8 @@ const MAX_TRACKED_CREDENTIALS = 20;
  * convenience it lacks is a reason to paste the connection credential into an
  * external client, where the vault stops having custody of it.
  *
- * Same shape as the repo's other remount caches (`LifecyclePage`,
- * `CompetitionList`): module-scoped, keyed by entity, capped in both
+ * Same shape as the repo's other remount caches (`LifecyclePage`):
+ * module-scoped, keyed by entity, capped in both
  * directions. Deliberately memory-only and never localStorage — a query text
  * can carry the very data the vault is responsible for, and it must not
  * survive the process or reach disk.

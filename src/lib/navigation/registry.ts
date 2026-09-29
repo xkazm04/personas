@@ -34,7 +34,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   Home, BarChart3, Users, Bot, Radio, Key, FlaskConical,
-  Puzzle, Globe, Settings, CalendarClock, Orbit,
+  Puzzle, Settings, CalendarClock, Orbit, PenTool,
 } from 'lucide-react';
 import type { SidebarSection } from '@/lib/types/types';
 import { type Tier, TIERS } from '@/lib/constants/uiModes';
@@ -83,9 +83,10 @@ export const NAV_SECTIONS: readonly NavSectionEntry[] = [
   // Connections Level-2 nav ("Templates" group).
   { id: 'design-reviews', label: 'Templates',   labelKey: 'design-reviews', icon: FlaskConical,  gates: {},                      reachability: 'nested', parent: 'credentials' },
   { id: 'plugins',        label: 'Plugins',     labelKey: 'plugins',        icon: Puzzle,        gates: { minTier: TIERS.TEAM }, reachability: 'sidebar' },
-  // Studio — the Athena web-dev companion preview. Dev-only while in
-  // active development; still rail-rendered (behind the devOnly gate).
-  { id: 'studio',         label: 'Studio',      labelKey: 'studio',         icon: Globe,         gates: { devOnly: true },       reachability: 'sidebar' },
+  // Studio — the Athena app builder. Dev-only while in active development.
+  // It lives under Projects (Development group), not in the rail: an app
+  // build is a project's engineering surface, like Lifecycle and Factory.
+  { id: 'studio',         label: 'Studio',      labelKey: 'studio',         icon: PenTool,       gates: { devOnly: true },       reachability: 'nested', parent: 'teams' },
   // Companions — the category holding the three built-in agents (Athena,
   // Overseer, Curator). Its own L2 nav (`CompanionsSidebarNav`) and one
   // persisted destination field (`companionsPage`); the landing is the

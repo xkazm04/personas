@@ -83,11 +83,14 @@ pub async fn companion_record_fleet_event(
         }
     };
 
+    let session_label =
+        crate::companion::brain::fleet::session_label_for(&input.session_id, &input.project_label);
     let event = FleetEpisodeInput {
         session_id: &input.session_id,
         claude_session_id: input.claude_session_id.as_deref(),
         project_label: &input.project_label,
         cwd: &input.cwd,
+        session_label: session_label.as_deref(),
         kind: kind.clone(),
     };
 
@@ -2302,9 +2305,9 @@ pub fn notify_completion(app: &tauri::AppHandle, session_id: &str, summary: &str
         return;
     }
     let directive = format!(
-        "[Fleet] `{label}` just finished: {summary}\n\nTell the operator in one or two \
-         sentences what landed and what — if anything — it now unblocks. Do not re-plan and \
-         do not dispatch anything; if follow-up work is obvious, name it and stop."
+        "[Fleet] `{label}` just finished: {summary}\n\nTell the operator what landed and \
+         what, if anything, it now unblocks. Do not re-plan and do not dispatch anything; if \
+         follow-up work is obvious, name it and stop."
     );
     crate::companion::session::spawn_proactive_turn(
         app.clone(),
@@ -2374,8 +2377,15 @@ fn write_episode_with_summary(
         Some(_) => "exited_failed",
         None => "exited_abnormal",
     };
+    // The marker line stays correlators only (`athenaChatSystemKind.ts`
+    // renders it as meta, `episodic` classifies on its `fleet-event ` prefix);
+    // the session's human name goes in the prose, beside the id.
+    let label = crate::companion::brain::fleet::label_suffix(
+        crate::companion::brain::fleet::session_label_for(&input.session_id, &input.project_label)
+            .as_deref(),
+    );
     let body = format!(
-        "fleet-event session:{sid} cc:{csid} state:{tok} project:{proj}\n\nSession **{sid}** ({proj}) {summary}",
+        "fleet-event session:{sid} cc:{csid} state:{tok} project:{proj}\n\nSession **{sid}**{label} ({proj}) {summary}",
         sid = input.session_id,
         tok = exit_token,
         proj = input.project_label,

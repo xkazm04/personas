@@ -16,7 +16,7 @@ import { avatarBgFor, AUTHOR_KIND_META, slackAuthorName } from '@/features/teams
 import { cleanName } from '../grid/fleetGridModel';
 
 /** Where a live message came from. Absent = `channel` (a team-channel item). */
-export type LiveMessageSource = 'channel' | 'notepad';
+export type LiveMessageSource = 'channel' | 'notepad' | 'contest';
 
 /** A single channel message, projected for the corner live overlay. */
 export interface LiveMessage {

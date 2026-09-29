@@ -10,6 +10,7 @@
  */
 import { memo, useMemo, type RefObject } from 'react';
 
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { matchesQuery } from '@/lib/text/search';
 
 import type { ChannelId } from '../model/channels';
@@ -17,7 +18,7 @@ import type { BlueprintModel, BlueprintRow } from '../model/types';
 import { useWords } from '../words';
 
 import { Bands } from './Bands';
-import { LedgerEmpty, type BlueprintPhase } from './LedgerEmpty';
+import { ledgerPhaseCopy, type BlueprintPhase } from './LedgerEmpty';
 import { LedgerHead } from './LedgerHead';
 import { LedgerRow } from './LedgerRow';
 
@@ -85,7 +86,15 @@ function LedgerBodyInner({
           {/* No rows is not an empty list: it is a ledger nobody has read, and
               it says so once, here, on the ledger's own grid rather than as a
               card that replaced the page. */}
-          {model.rows === null && <LedgerEmpty phase={phase} />}
+          {model.rows === null && (
+            <div className="cb-lrow cb-lempty" data-role="cb-ledger-empty" data-phase={phase}>
+              <EmptyState className="cb-note" {...ledgerPhaseCopy(w, phase)}>
+                {/* The ledger's own ink for "nobody looked", in the place the
+                    rows would be. */}
+                <span className="cb-unkbox" aria-hidden="true" />
+              </EmptyState>
+            </div>
+          )}
           {bodyRows}
           <Bands model={model} />
         </div>

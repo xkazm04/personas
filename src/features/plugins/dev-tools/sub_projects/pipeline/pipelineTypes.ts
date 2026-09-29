@@ -5,7 +5,7 @@
  * conceptual pipeline (a horizontal rail of SDLC stages, each stage's config
  * shown below its node). This file holds the vocabulary both surfaces share.
  *
- * Phase 1 ships two stages (Project, Source control); the design is built to
+ * Three stages (Project, Source control, Practice); the design is built to
  * grow — adding a stage is a new `PipelineStage` entry + an editor/summary
  * component, with no change to `PipelineRail`.
  */
@@ -29,10 +29,7 @@ export type PipelineFieldId =
   | 'source-cred'
   | 'github-url'
   | 'main-branch'
-  | 'test-env'
-  | 'std-precommit'
-  | 'std-pr-base'
-  | 'std-automerge';
+  | 'test-env';
 
 /** A stage's progress state, used to tint its rail node. */
 export type StageStatus = 'complete' | 'active' | 'incomplete';

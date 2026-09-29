@@ -573,6 +573,7 @@
   "core_disposition_high": "Berani",
   "core_disposition_low": "Hati-hati",
   "core_effort_label": "Kedalaman penalaran",
+  "core_hint": "Siapa agen ini di balik tugasnya: mentalitasnya, karakternya, dan model yang menjalankannya. Apa pun yang tidak Anda ubah akan disimpulkan oleh proses build.",
   "core_model_cost": "Biaya relatif: {multiple}× dari tingkat model termurah",
   "core_model_label": "Model bahasa",
   "core_reset": "Kembalikan ke bawaan",

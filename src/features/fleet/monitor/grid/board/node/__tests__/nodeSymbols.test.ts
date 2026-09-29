@@ -93,8 +93,8 @@ describe('the state and origin marks', () => {
   // membership and this only guards the distinctness.
   it('gives every origin a distinct glyph', () => {
     const glyphs = Object.values(ORIGIN_GLYPH);
-    expect(glyphs).toHaveLength(10);
-    expect(new Set(glyphs).size).toBe(10);
+    expect(glyphs).toHaveLength(11);
+    expect(new Set(glyphs).size).toBe(11);
   });
 });
 

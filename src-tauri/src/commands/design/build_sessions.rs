@@ -2553,6 +2553,30 @@ fn update_persona_in_tx(
     // keep their existing persona default — per-UC `model_override` in
     // `design_context.useCases[]` already drives runtime selection there.
     let solo_model_profile_json: Option<String> = solo_use_case_model_profile(ir);
+    // A kp hire that asked for a model (`spec.modelProfile`, bridge doc
+    // §10.14) was created WITH that `model_profile`; the design pass's
+    // recommendation must not replace what the requester — and, for a gig
+    // persona, the operator's policy — agreed to. So a kp-linked draft that
+    // already carries a model profile keeps it; any other persona (and a kp
+    // hire that named no model) takes the solo seed exactly as before.
+    let keeps_requested_model: bool = tx
+        .query_row(
+            "SELECT model_profile, design_context FROM personas WHERE id = ?1",
+            rusqlite::params![persona_id],
+            |r| {
+                Ok((
+                    r.get::<_, Option<String>>(0)?,
+                    r.get::<_, Option<String>>(1)?,
+                ))
+            },
+        )
+        .map(|(mp, dc)| kp_requested_model_is_pinned(mp.as_deref(), dc.as_deref()))
+        .unwrap_or(false);
+    let solo_model_profile_json = if keeps_requested_model {
+        None
+    } else {
+        solo_model_profile_json
+    };
 
     tx.execute(
         "UPDATE personas SET
@@ -2596,6 +2620,17 @@ fn update_persona_in_tx(
     );
 
     Ok(())
+}
+
+/// A kp-hired draft (its `design_context` carries a `kpLink`) that already has
+/// a non-empty `model_profile` was given that model by the hire request, and
+/// promote keeps it rather than seeding the design's solo-use-case model.
+fn kp_requested_model_is_pinned(model_profile: Option<&str>, design_context: Option<&str>) -> bool {
+    let has_profile = model_profile.is_some_and(|m| !m.trim().is_empty());
+    let kp_hired = design_context
+        .and_then(|dc| serde_json::from_str::<serde_json::Value>(dc).ok())
+        .is_some_and(|v| v.get("kpLink").is_some_and(|l| !l.is_null()));
+    has_profile && kp_hired
 }
 
 /// When the IR has exactly ONE structured use_case with a non-null
@@ -3079,9 +3114,23 @@ async fn prepare_promote(
     let dev_project_id: Option<String> = persona_repo::get_by_id(db, persona_id)
         .ok()
         .and_then(|p| p.parsed_design_context().dev_project_id);
+    // Same hazard for a kp gig persona's home project (`placement.projectId`
+    // → `homeProjectId`, bridge doc §10.14): the persona → project link the
+    // Monitor reads, and the persona's default working directory. Only a kp
+    // hire's is re-injected — the one door that sets it before a build — so
+    // every other promote is unchanged.
+    let home_project_id: Option<String> = if kp_link.is_some() {
+        persona_repo::get_by_id(db, persona_id)
+            .ok()
+            .and_then(|p| p.parsed_design_context().home_project_id)
+    } else {
+        None
+    };
     let design_context_str = {
-        let needs_reinject =
-            kp_link.is_some() || app_master_link.is_some() || dev_project_id.is_some();
+        let needs_reinject = kp_link.is_some()
+            || app_master_link.is_some()
+            || dev_project_id.is_some()
+            || home_project_id.is_some();
         match (
             needs_reinject,
             serde_json::from_str::<serde_json::Value>(&design_context_str),
@@ -3095,6 +3144,9 @@ async fn prepare_promote(
                 }
                 if let Some(pid) = &dev_project_id {
                     v["devProjectId"] = serde_json::Value::String(pid.clone());
+                }
+                if let Some(pid) = &home_project_id {
+                    v["homeProjectId"] = serde_json::Value::String(pid.clone());
                 }
                 v.to_string()
             }
@@ -4368,6 +4420,83 @@ mod tests {
         assert!(dc.contains("\"kpLink\""), "{dc}");
         assert!(!dc.contains("requirements"), "{dc}");
         Ok(())
+    }
+
+    /// A kp gig persona (bridge doc §10.14) was created with the model kp
+    /// asked for and a home project. Promote rebuilds design_context from the
+    /// IR and seeds a solo use case's model — neither may undo the hire.
+    #[tokio::test]
+    async fn promote_keeps_a_kp_gig_personas_requested_model_and_home_project(
+    ) -> Result<(), AppError> {
+        let pool = crate::db::init_test_db().unwrap();
+        let requested = r#"{"model":"claude-opus-5-5","effort":"high"}"#;
+        // The design recommends another model for its only use case.
+        let mut ir = kp_designed_ir();
+        ir["use_cases"] = serde_json::json!([{
+            "id": "uc_deliver",
+            "title": "Deliver the gig",
+            "model_override": "claude-sonnet-5"
+        }]);
+
+        kp_hired_draft(&pool, "p_kpg", None)?;
+        let dc: String = read_one(
+            &pool,
+            "SELECT design_context FROM personas WHERE id = 'p_kpg'",
+            [],
+        )?;
+        let mut dc: serde_json::Value = serde_json::from_str(&dc).unwrap();
+        dc["homeProjectId"] = serde_json::json!("proj-gig-1");
+        pool.get()?.execute(
+            "UPDATE personas SET model_profile = ?1, design_context = ?2 WHERE id = 'p_kpg'",
+            rusqlite::params![requested, dc.to_string()],
+        )?;
+        seed_test_complete_session(&pool, "s_kpg", "p_kpg", &ir)?;
+        let prepared = prepare_promote(&pool, "s_kpg", "p_kpg", vec![]).await?;
+        commit_promote(&pool, "s_kpg", "p_kpg", prepared)?;
+
+        let persona = persona_repo::get_by_id(&pool, "p_kpg")?;
+        assert_eq!(persona.model_profile.as_deref(), Some(requested));
+        let parsed = persona.parsed_design_context();
+        assert_eq!(parsed.home_project_id.as_deref(), Some("proj-gig-1"));
+        assert!(parsed.kp_link.is_some());
+
+        // Control: the same IR on a kp hire that named no model DOES seed the
+        // design's model, so the assertion above is the pin, not a no-op.
+        kp_hired_draft(&pool, "p_kpg2", None)?;
+        seed_test_complete_session(&pool, "s_kpg2", "p_kpg2", &ir)?;
+        let prepared = prepare_promote(&pool, "s_kpg2", "p_kpg2", vec![]).await?;
+        commit_promote(&pool, "s_kpg2", "p_kpg2", prepared)?;
+        let control = persona_repo::get_by_id(&pool, "p_kpg2")?;
+        assert!(
+            control
+                .model_profile
+                .as_deref()
+                .is_some_and(|m| m.contains("claude-sonnet-5")),
+            "{:?}",
+            control.model_profile
+        );
+        assert_eq!(control.parsed_design_context().home_project_id, None);
+        Ok(())
+    }
+
+    #[test]
+    fn only_a_kp_hire_with_a_model_keeps_it_at_promote() {
+        let kp =
+            r#"{"kpLink":{"jobId":"j","jobTitle":"t","baseUrl":"http://x","reportToken":"r"}}"#;
+        assert!(kp_requested_model_is_pinned(
+            Some(r#"{"model":"m"}"#),
+            Some(kp)
+        ));
+        assert!(!kp_requested_model_is_pinned(None, Some(kp)));
+        assert!(!kp_requested_model_is_pinned(Some("  "), Some(kp)));
+        assert!(!kp_requested_model_is_pinned(
+            Some(r#"{"model":"m"}"#),
+            Some("{}")
+        ));
+        assert!(!kp_requested_model_is_pinned(
+            Some(r#"{"model":"m"}"#),
+            None
+        ));
     }
 }
 // touch 1777378957

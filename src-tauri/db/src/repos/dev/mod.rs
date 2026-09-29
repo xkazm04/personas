@@ -16,8 +16,6 @@ pub mod auto_runs;
 /// `dev_triage_rules` row) in exactly the shape the overnight engine's triage
 /// pass reads, so a bench night has real work to dispatch.
 pub mod bench_seed;
-/// `dev_competitions` and `dev_competition_slots`.
-pub mod competitions;
 /// `dev_contexts` and its caches: groups, relationships, file hashes, fingerprints,
 /// and `context_health_snapshots`.
 pub mod contexts;
@@ -42,6 +40,9 @@ pub mod goals;
 pub mod ideas;
 /// `dev_kpis`, `dev_kpi_measurements`, `dev_kpi_bindings`.
 pub mod kpis;
+/// `dev_lifecycle_versions` and `dev_lifecycle_evidence` - Lifecycle v2: each
+/// project's versioned development practice and the per-task evidence of it.
+pub mod lifecycle;
 /// `dev_milestones` and `dev_milestone_items`.
 pub mod milestones;
 /// `dev_note_comments` — the per-note thread (comments, reviews, status milestones).
@@ -67,3 +68,5 @@ pub mod tasks;
 pub mod triage_rules;
 /// `dev_use_cases` and `dev_use_case_contexts`.
 pub mod use_cases;
+/// `webbuild_plans` - a Studio project's plan phases and site sketch.
+pub mod webbuild_plans;

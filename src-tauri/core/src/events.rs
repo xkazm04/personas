@@ -164,6 +164,13 @@ event_names! {
     // query per write and is impossible on DELETE, which is the unbind-a-goal
     // case the planner most needs to see.
     DEV_TOOLS_SHIP_CHANGED     => "dev-tools-ship-changed",
+    // Lifecycle v2: a project's lifecycle moved -- a version was appended
+    // (preset switch, standards edit, Athena proposal), an install task was
+    // recorded on a version, or a finished task's evidence was stored. CDC on
+    // `dev_lifecycle_versions` + `dev_lifecycle_evidence`, payload `CdcEvent`
+    // (`{action, table, rowid}`); the journey refetches its snapshot. ONE name
+    // for both tables for the same reason as the Ship event above.
+    DEV_TOOLS_LIFECYCLE_CHANGED => "dev-tools-lifecycle-changed",
     // Notepad: one note changed status behind the UI's back — the fleet
     // stale ticker's notepad sweeper flipped it after reading a run's
     // `started.json` / `result.json`. Payload `{noteId, status}`; the pad
@@ -241,6 +248,10 @@ event_names! {
     TWIN_STUDIO_OUTPUT         => "twin-studio-output",
     TWIN_STUDIO_PROGRESS       => "twin-studio-progress",
     TWIN_STUDIO_COMPLETE       => "twin-studio-complete",
+
+    // Twin setup plan (background planner / reconciler changed the session;
+    // payload `SetupUpdatedEvent`, the client refetches the snapshot)
+    TWIN_SETUP_UPDATED         => "twin-setup-updated",
 
     // Auto-run scheduler (drains backlog respecting goal-DAG)
     AUTO_RUN_STATUS            => "auto-run-status",
@@ -367,6 +378,11 @@ event_names! {
     // cancelled, or the live-session cap changed. Payload: `QueueChangedPayload`.
     FLEET_QUEUE_CHANGED        => "fleet-queue-changed",
 
+    // Contest plugin: a seat changed state or an autopilot chain step moved.
+    // Payload: `commands::contest::types::ContestChangedPayload`
+    // (`{ projectId, contestId }`).
+    CONTEST_CHANGED            => "contest-changed",
+
     // Companion / MCP bridges and plugin surfaces. These names lived as private
     // consts or literals beside their emitters, so the two registry lists agreed
     // while the app subscribed to names in neither; the call-site scan in
@@ -388,6 +404,10 @@ event_names! {
     STANDARDS_SCAN_STATUS        => "dev_tools_standards_scan_status",
     RADIO_STATE                  => "radio:state",
     KB_EXTRACTION_PROGRESS       => "kb-extraction-progress",
+    // New pending approval rows: from a turn, or from a background pass that
+    // files one (profile synthesis, the reply-register reflection). Payload:
+    // `Vec<CreatedApproval>`. `companion::session::APPROVALS_EVENT` aliases it.
+    COMPANION_APPROVALS          => "companion://approvals",
 }
 
 /// Payload of [`event_name::FLEET_QUEUE_CHANGED`]. `kind` is one of

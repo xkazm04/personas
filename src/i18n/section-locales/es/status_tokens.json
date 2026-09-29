@@ -46,12 +46,6 @@
     "provider_codex_cli": "Codex",
     "provider_global": "Global"
   },
-  "competition": {
-    "awaiting_review": "Pendiente de revisión",
-    "cancelled": "Cancelado",
-    "resolved": "Resuelto",
-    "running": "En ejecución"
-  },
   "connector_status": {
     "failed": "Fallido",
     "no_credential": "Sin credencial",

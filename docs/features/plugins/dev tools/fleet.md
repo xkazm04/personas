@@ -440,9 +440,9 @@ forwards them into the same task output stream the panel always read; the
 `[Progress]` markers, the stderr tail on a bad exit, the ten-minute run
 timeout (counted from the session's START, not its admission), cancel (a
 queued session is removed from the queue, a running one is ended through its
-own kill handle) and the auto-PR hook all survive. The task row is bound to
-its fleet session id (unless the column carries a competition `worktree:`
-binding). The batch semaphore (`max_parallel`, default 2) and the auto-run
+own kill handle) all survive. The task row is bound to its fleet session id.
+(The `worktree:<name>` session binding and the auto-PR hook that fired only on
+it were retired with Competition, their only producer, on 2026-09-24.) The batch semaphore (`max_parallel`, default 2) and the auto-run
 wave width (`max_parallel.clamp(1, 8)`) are retired — both parameters stay on
 the wire and are ignored; the fleet cap is the only cap. The Dev runner's
 spend rows (`scanner` / `task_exec`) are still written, now by the headless

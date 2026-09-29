@@ -89,11 +89,11 @@ const check = (name, ok) => { results.push(ok); console.log(`${ok ? 'PASS' : 'FA
   for (let i = 0; i < Math.min(tabs, 5); i++) {
     await ev(`(()=>{const t=document.querySelectorAll('[data-testid="studio-tab"] button');if(t[${i}]){t[${i}].click();return 1}return 0})()`);
     await sleep(1500);
-    if (await exists('[data-testid="studio-checklist-tab"], iframe[title="preview"], [data-testid="studio-chat-input"]')) switched++;
+    if (await exists('[data-testid="studio-checklist-tab"], iframe[data-testid="studio-preview"], [data-testid="studio-chat-input"]')) switched++;
   }
   check(`tab switching renders active project (${switched}/${Math.min(tabs, 5)})`, switched >= Math.min(tabs, 5));
 
-  check('preview iframe present', await waitFor(async () => await exists('iframe[title="preview"]'), 36, 5000, 'preview iframe'));
+  check('preview iframe present', await waitFor(async () => await exists('iframe[data-testid="studio-preview"]'), 36, 5000, 'preview iframe'));
   check('build bubble present', await exists('[data-testid="studio-chat-bubble"]'));
   check('chat input present', await exists('[data-testid="studio-chat-input"]'));
 

@@ -4,7 +4,9 @@
 >
 > **Origin:** `/research` run on OpenAI Symphony (2026-05-09, video `n8qDKMPpLXc`). Symphony's primary configuration surface IS its lifecycle hooks (`create_after`, `run_after`) — the value prop the user sees in the demo is "wire your own steps around the agent run." Personas explicitly does **not** have a runner-level hook surface today (see `.claude/codebase-stack.md` §2: "There is no `pre_tool_call` / `post_tool_call` / `pre_llm_call` / `post_llm_call` / `on_session_start` / `on_session_end` plugin hook system at the personas Rust layer"). This doc explores three shapes the surface could take.
 >
-> **Companion finding shipped in same session:** `auto_pr_on_success` flag + `task_executor` wiring (see `commands/infrastructure/task_executor.rs::try_auto_pr_after_success`). That's a *hardcoded* lifecycle step. This doc considers the *generalised* surface where users compose arbitrary steps.
+> **Companion finding shipped in same session:** an auto-PR-on-success flag + `task_executor` wiring (`try_auto_pr_after_success`). That's a *hardcoded* lifecycle step. This doc considers the *generalised* surface where users compose arbitrary steps.
+>
+> **Removed since:** the auto-PR hook went with Competition (`4f0369a82`, it only fired on Competition's `worktree:` tasks), and its `dev_projects.auto_pr_on_success` flag was dropped by migration `e53_drop_auto_pr_columns` (2026-09-25). The later mentions of it below are this exploration's history, not a live caller.
 
 ## What Symphony actually does
 

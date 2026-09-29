@@ -178,6 +178,27 @@ unset, so the default is untouched. **Win-verification deferred** to a connector
 fixture (web-research-desk + Airtable/Notion creds) — native-only builds have no
 connectors to script — per the "broaden coverage later" sequencing.
 
+**Update 2026-09-25 — scripted-first is now the DEFAULT, not gated on `multiagent`.**
+Reading the gated path end to end showed why it could not simply be switched on: it
+counted an `Unverifiable` healthcheck (no probe at all, `success: true`) as `passed`,
+reported platform / ZeroConfig connectors and ambiguous credentials as
+`credential_missing`, ignored tools, returned `connectors_resolved` as strings where
+the modal reads `{name, has_credential}`, emitted no `BUILD_TEST_TOOL_RESULT` events
+and wrote no summary. `run_scripted_connector_tests` is gone; `tool_tests.rs` now
+routes every subject to exactly one lane (see its "Strategy" table): code-recognised
+built-ins and conduits are decided without a call, a connector uniquely bound to a
+vault credential runs its declared healthcheck (3 lanes, 20 s each), a credential
+connector with no matching vault entry is `credential_missing`, and ONLY the rest
+(no declared healthcheck, error before a verdict, ZeroConfig / GlobalProbe,
+CLI-auth providers, fuzzy-but-unbound credentials, tools no connector backs) goes
+to the Sonnet plan, for that subset only. A fully scripted run makes no LLM call and
+writes the `### Overview / ### Results / ### Next Steps` summary itself.
+`PERSONAS_SCRIPTED_TOOL_TESTS=0` forces the old all-LLM path. Evidence is offline
+(real `run_healthcheck` against a local bearer-auth mock API in
+`tool_tests.rs`'s tests); **a live run against a real connector build is still
+owed** — the report's new `test_mode` field (`scripted` / `hybrid` / `llm`) says
+which path produced it.
+
 ---
 
 ## Phase 3 — Fan-out #1: parallel per-capability resolution  ·  _the big lift · NOW THE PRIORITY_

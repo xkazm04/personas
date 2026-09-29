@@ -48,6 +48,14 @@
     "AnalysisModeView.tsx": {"count":1,"sections":[7],"contexts":["`AnalysisModeView.tsx`, `TransformModeView.tsx`, `CliOutputPanel.tsx`. Those"],"resolved":false},
     "CompactTerminal.tsx": {"count":2,"sections":[6,7],"lines":["244-249,1074-1086","70-71,274-297"],"contexts":["(`ExecutionOutput.tsx:53-56,125-141` vs `CompactTerminal.tsx:244-249,1074-1086`)."],"resolved":false},
     "ExecutionOutput.tsx": {"count":1,"sections":[6],"lines":["53-56,125-141"],"contexts":["(`ExecutionOutput.tsx:53-56,125-141` vs `CompactTerminal.tsx:244-249,1074-1086`)."],"resolved":false},
+    "NoteLayer.tsx": {
+      "count": 1,
+      "sections": [9],
+      "contexts": [
+        "| **an unbounded `.map` over a stream-ish array in JSX** (`{lines.map(`, `{output.map(`, …) | 15 files / 15 | 8 files / 8 (`X.slice(-N)`) | The partition looks clean and the precision is not: hand-re…"
+      ],
+      "resolved": false
+    },
     "ReportClientStatus.tsx": {"count":1,"sections":[7],"lines":["78-92"],"contexts":["(`ReportClientStatus.tsx:78-92`) as the zero-heartbeat fallback, and put it in"],"resolved":false},
     "SectionEditor.tsx": {
       "count": 1,
@@ -325,15 +333,6 @@
       "contexts": ["The worst placement is `shared/components/terminal/TerminalStrip.tsx:57-61`"],
       "resolvedFrom": "suffix",
       "verbatim": "shared/components/terminal/TerminalStrip.tsx"
-    },
-    "src/features/teams/sub_mastermind/lib/NoteLayer.tsx": {
-      "count": 1,
-      "sections": [9],
-      "contexts": [
-        "| **an unbounded `.map` over a stream-ish array in JSX** (`{lines.map(`, `{output.map(`, …) | 15 files / 15 | 8 files / 8 (`X.slice(-N)`) | The partition looks clean and the precision is not: hand-re…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "NoteLayer.tsx"
     },
     "src/features/templates/sub_generated/adoption/chronology/commandCenterParts.tsx": {
       "count": 1,

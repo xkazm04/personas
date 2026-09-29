@@ -410,7 +410,7 @@ export type SidebarSection = "home" | "overview" | "teams" | "personas" | "event
 /** L2 inside the Teams section: the team workspace (canvas/orchestration) or the Goals hub. */
 // `council` left this union on 2026-09-22: the Council page is Curator's, and
 // it lives at `companions` -> `curator:council` now.
-export type TeamsTab = "workspace" | "goals" | "kpis" | "factory" | "projects" | "lifecycle" | "competition" | "mastermind" | "features" | "whitelist" | "webview";
+export type TeamsTab = "workspace" | "goals" | "kpis" | "factory" | "projects" | "lifecycle" | "contest" | "mastermind" | "features" | "whitelist" | "webview";
 export type HomeTab = "welcome" | "cockpit" | "roadmap" | "system-check" | "learning";
 export type GoalsTab = "board" | "timeline" | "progress" | "missions";
 /** Sub-view within the KPIs hub — surfaced as sidebar sub-items (mirrors GoalsTab). */

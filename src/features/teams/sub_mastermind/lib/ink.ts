@@ -34,28 +34,8 @@ export const FLEET_INK: Record<string, string> = {
   exited: 'var(--status-neutral)',
 };
 
-/** Score → ink, mirroring the passport ramp (80+ success / 60+ info / 40+ warning / else error). */
-export function scoreInkVar(score: number): string {
-  if (score >= 80) return 'var(--status-success)';
-  if (score >= 60) return 'var(--status-info)';
-  if (score >= 40) return 'var(--status-warning)';
-  return 'var(--status-error)';
-}
-
 export const mix = (color: string, pct: number, base = 'transparent'): string =>
   `color-mix(in srgb, ${color} ${pct}%, ${base})`;
 
-// The canvas forges its own typographic identity (deliberately NOT the app's
-// UI stack): cartographic serif for identity/details, mono for instrumentation.
-export const SERIF = `'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif`;
+// Mono for instrumentation (the Fleet preview's terminal lines).
 export const MONO = `ui-monospace, 'Cascadia Code', Consolas, 'SF Mono', monospace`;
-
-// Note-tool fonts. Deliberately IMPORT-FREE (the "light alternative" per the
-// round-7 brief): each stack leads with the requested face for users who have
-// it installed and falls back to a visually-equivalent system face — Caveat's
-// handwriting look maps to Segoe Script / Ink Free, which ship with Windows.
-export const NOTE_FONT: Record<'inter' | 'roboto' | 'caveat', string> = {
-  inter: `'Inter', ui-sans-serif, system-ui, 'Segoe UI', sans-serif`,
-  roboto: `'Roboto', 'Segoe UI', Arial, sans-serif`,
-  caveat: `'Caveat', 'Segoe Script', 'Ink Free', 'Comic Sans MS', cursive`,
-};

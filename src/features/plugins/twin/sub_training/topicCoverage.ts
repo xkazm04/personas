@@ -1,4 +1,4 @@
-import { TRAINING_TOPIC_PRESETS } from './useTrainingSession';
+import { TRAINING_TOPIC_PRESETS } from './topicPresets';
 import type { TwinPendingMemory } from '@/lib/bindings/TwinPendingMemory';
 
 /**

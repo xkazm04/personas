@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { GlyphDimension, GlyphRow } from "@/features/shared/glyph";
 import type { BuildQuestion, CellBuildStatus, BuildPhase, ToolTestResult } from "@/lib/types/buildTypes";
 import type { QuickConfigState } from "@/features/agents/shared/quickConfig/quickConfigTypes";
@@ -48,12 +49,24 @@ export interface GlyphFullLayoutProps {
    *  snapshot (typed state + resolved archetype); the matrix entry holds it
    *  until promote, where `composeCoreProfile` turns it into
    *  `personas.core_profile` (an explicit `update_persona` AFTER the Rust
-   *  seed-if-absent stamp has run inside `promote_build_draft`). BOTH compose
-   *  surfaces call it: the dialogue panel and, since sweep #41, GlyphFullLayout
-   *  (the `cinema` layout's compose step), which had no codex at all - so the
-   *  build-layout toggle could silently strip mentality/traits/model from the
-   *  promote stamp. */
+   *  seed-if-absent stamp has run inside `promote_build_draft`). */
   onLaunchCoreSnapshot?: (snapshot: PersonaCoreLaunchSnapshot) => void;
+  /** Optional reference context ("Add reference context"). The sheet owns the
+   *  context editor, so it receives the value and setter. */
+  contextText?: string;
+  onContextChange?: (v: string) => void;
+  /** The "Faster path" template row, built by the container (it owns the
+   *  decision, the accept route and the dismiss latch). The sheet renders it
+   *  inside the centre action panel of the questions act, never above the
+   *  layout, so it can no longer push the fixed-height sheet down. */
+  templateSuggestion?: ReactNode;
+  /** True while that row actually shows a match: the sheet then holds the
+   *  camera on the panel instead of pushing into the first question. */
+  templateSuggestionShowing?: boolean;
+  /** A launch failure (draft creation / session start). Shown inside the
+   *  compose centre rather than as a banner that would shrink the sheet. */
+  launchError?: string | null;
+  onDismissLaunchError?: () => void;
 }
 
 export type { GlyphDimension, GlyphRow, BuildQuestion, CellBuildStatus, BuildPhase, QuickConfigState };

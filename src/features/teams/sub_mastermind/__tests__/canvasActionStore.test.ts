@@ -1,13 +1,10 @@
 // canvasActionStore — the queue mechanics, refusal paths, and the pure band /
-// payload math the CanvasShell consumer builds on.
+// payload math the Soundings consumer builds on.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  BAND_TARGET_Z,
-  DIM_OPEN_MIN_BAND,
   PICKUP_TIMEOUT_MS,
   __resetCanvasActionsForTests,
-  bandTargetZ,
   canvasActionVersion,
   dimReadPayload,
   dispatchCanvasAction,
@@ -15,14 +12,12 @@ import {
   subscribeCanvasActions,
   takeCanvasActions,
 } from '../lib/canvasActionStore';
-import { ZOOM_THRESHOLDS, bandGte, zoomBand, type Island, type ZoomBand } from '../lib/types';
+import type { Island } from '../lib/types';
 
 const island = (over: Partial<Island> = {}): Island => ({
   slug: 'proj-a',
   name: 'Project A',
   purpose: 'testing',
-  x: 100,
-  y: 200,
   state: 'healthy',
   autoScore: 3,
   prodScore: 4,
@@ -49,28 +44,6 @@ beforeEach(() => {
 afterEach(() => {
   __resetCanvasActionsForTests();
   vi.useRealTimers();
-});
-
-describe('band targeting', () => {
-  it('every band target z lands inside its own band', () => {
-    for (const band of Object.keys(BAND_TARGET_Z) as ZoomBand[]) {
-      expect(zoomBand(bandTargetZ(band))).toBe(band);
-    }
-  });
-
-  it('targets sit comfortably away from thresholds (≥10% margin)', () => {
-    // A rounding wobble at a threshold must not read back as the neighbour.
-    expect(BAND_TARGET_Z.far).toBeLessThan(ZOOM_THRESHOLDS.mid * 0.9);
-    expect(BAND_TARGET_Z.mid).toBeGreaterThan(ZOOM_THRESHOLDS.mid * 1.1);
-    expect(BAND_TARGET_Z.near).toBeGreaterThan(ZOOM_THRESHOLDS.near * 1.1);
-    expect(BAND_TARGET_Z.close).toBeGreaterThan(ZOOM_THRESHOLDS.close * 1.1);
-  });
-
-  it('the dim-open gate matches where individual cells become click targets', () => {
-    expect(DIM_OPEN_MIN_BAND).toBe('near');
-    expect(bandGte('close', DIM_OPEN_MIN_BAND)).toBe(true);
-    expect(bandGte('mid', DIM_OPEN_MIN_BAND)).toBe(false);
-  });
 });
 
 describe('queue mechanics', () => {

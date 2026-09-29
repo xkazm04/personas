@@ -81,9 +81,18 @@ const TOKEN_ENV: &str = "PERSONAS_LOCAL_HTTP_TOKEN";
 ///   secret there would break every existing pairing for no gain, since the
 ///   pairing token is already the thing an attacker would have to steal.
 ///
+/// - `contest-preview`: its ONE handler (`commands::contest::preview::serve`,
+///   GET only, read-only) checks a per-boot random token carried in the PATH,
+///   in constant time, before touching the DB or the disk, and serves only
+///   files contained in a contest arena. The shared secret cannot be used
+///   there: the pages it serves are LLM-written code in a sandboxed iframe, and
+///   handing them the server-wide token would unlock every other prefix; a
+///   query-string credential would also not survive the page's relative asset
+///   URLs. SECURITY-SENSITIVE — reviewed as part of the Contest plugin.
+///
 /// The `Host` allowlist below applies to these prefixes too — exemption is
 /// from the token check only, never from the rebinding defence.
-pub const SELF_AUTHENTICATED_PREFIXES: &[&str] = &["browser-bridge"];
+pub const SELF_AUTHENTICATED_PREFIXES: &[&str] = &["browser-bridge", "contest-preview"];
 
 // ---------------------------------------------------------------------------
 // Token store

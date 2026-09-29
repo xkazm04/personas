@@ -846,5 +846,8 @@
   "remote_terminal_title": "طرفية، للقراءة فقط",
   "remote_terminal_waiting": "بانتظار المخرجات من {device}",
   "remote_tile_aria": "{title} على {device}، {state}. افتح الجلسة البعيدة",
-  "remote_wake": "إيقاظ"
+  "remote_wake": "إيقاظ",
+  "queue_origin_contest": "مسابقة",
+  "grid_column_contest_open": "افتح {contest} في صفحة المسابقة",
+  "grid_column_contest_unlinked": "بدأت {contest} قبل أن تسجّل مقاعدها مشروعها، لذا لا يمكن فتحها من هنا"
 }

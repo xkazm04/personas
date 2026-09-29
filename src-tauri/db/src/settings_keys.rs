@@ -72,6 +72,15 @@ pub const CLI_ENGINE: &str = "cli_engine";
 /// thing: the consult lane is off and executions run exactly as before.
 pub const KNOWLEDGE_REGISTRY_ROOT: &str = "knowledge_registry_root";
 
+/// Saved seat line-ups of the Contest plugin: a JSON array of
+/// `{name, seats: [engine:model@effort[#label]]}` (`commands::contest::lineups`).
+pub const CONTEST_LINEUPS: &str = "contest.lineups";
+
+/// Absolute path of the /contest instrument (`contest.mjs`), the last rung of
+/// the resolution ladder after `$AI_REGISTRY_DIR` and the project's
+/// `.ai/manifest.yaml` `registry.local` (`commands::contest::node`).
+pub const CONTEST_INSTRUMENT_PATH: &str = "contest.instrument_path";
+
 /// Absolute directory under which `create_project_repository` scaffolds new
 /// project repositories: `<root>/<workspace-slug>/<project-name>`.
 ///
@@ -828,6 +837,11 @@ pub const COMPANION_PROFILE_SYNTHESIS_DEFAULT: bool = false;
 /// RFC3339 timestamp the synthesis pass last ran — gates the 7-day cadence.
 /// Free-form value (no typed validation).
 pub const COMPANION_PROFILE_SYNTHESIS_LAST: &str = "companion_profile_synthesis_last";
+/// RFC3339 timestamp the reply-register reflection pass last ran — gates its
+/// 7-day cadence (`companion::register::maybe_propose_register`). Independent of
+/// [`COMPANION_PROFILE_SYNTHESIS`]: the pass only files an approval card, so it
+/// needs no opt-in. Free-form value (no typed validation).
+pub const COMPANION_REGISTER_REFLECTION_LAST: &str = "companion_register_reflection_last";
 
 /// Whether the autonomous assignment-retry tick may, unattended, resume a team
 /// assignment that soft-paused at `awaiting_review` because a step failed for a
@@ -1296,6 +1310,8 @@ const ALLOWED_KEYS: &[&str] = &[
     QWEN_CONNECTOR_TOOLS,
     CLI_ENGINE,
     KNOWLEDGE_REGISTRY_ROOT,
+    CONTEST_LINEUPS,
+    CONTEST_INSTRUMENT_PATH,
     SIMULATION_PROJECTS_ROOT,
     BROWSER_BRIDGE_PAIRING_TOKEN,
     EVENT_RETENTION_DAYS,
@@ -1395,6 +1411,7 @@ const ALLOWED_KEYS: &[&str] = &[
     COMPANION_NIGHT_SHIFT_PLAN_LAST,
     COMPANION_PROFILE_SYNTHESIS,
     COMPANION_PROFILE_SYNTHESIS_LAST,
+    COMPANION_REGISTER_REFLECTION_LAST,
     AUTONOMOUS_ASSIGNMENT_RETRY,
     AUTONOMOUS_REVIEW_TRIAGE,
     AUTONOMOUS_REVIEW_TRIAGE_HIGH,
@@ -2004,6 +2021,7 @@ const AUDIT_EXCLUDED_KEYS: &[&str] = &[
     // Nobody sets it from Settings and nobody can unset it, so it is a
     // milestone, not a config change the History tab should carry.
     ATHENA_ONBOARDED_AT,
+    COMPANION_REGISTER_REFLECTION_LAST,
     // Cloud-sync bookkeeping: minted device id, last-pass watermark, row counter.
     CLOUD_SYNC_DEVICE_ID,
     CLOUD_SYNC_LAST_AT,

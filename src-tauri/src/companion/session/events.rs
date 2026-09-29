@@ -13,7 +13,8 @@ pub const STREAM_EVENT: &str = "companion://stream";
 
 /// Tauri event channel for approval-card creation (Phase 3). Fires once
 /// per turn that produced any new approvals.
-pub const APPROVALS_EVENT: &str = "companion://approvals";
+/// An alias of the registered name, so the wire string has one authority.
+pub const APPROVALS_EVENT: &str = crate::engine::event_registry::event_name::COMPANION_APPROVALS;
 
 /// Tauri event channel for a `ClientAction` produced by an approval that
 /// resolved WITHOUT a card — i.e. autonomous-mode auto-fire. On the manual

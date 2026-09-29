@@ -74,7 +74,6 @@
     },
     "scripts/check-cargo-invocations.mjs": {"count":1,"sections":[9],"contexts":["specifies a ~50-line `scripts/check-cargo-invocations.mjs` that reads cargo invocations as"],"resolved":false},
     "scripts/install-daemon-task.ps1": {"count":2,"sections":[7,9],"lines":["48"],"contexts":["`scripts/install-daemon-task.ps1:48`, which is a `build`, not a `test`. These tests have"]},
-    "session.rs": {"count":1,"sections":[7],"lines":["2814"],"contexts":["now*, by hand, in three separate files (`turn_ledger.rs:432`, `session.rs:2814`,"],"resolved":false},
     "sqlite_master.sql": {"count":1,"sections":[8],"contexts":["`PRAGMA table_info` and `sqlite_master.sql`, and the repo already has"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[],"contexts":["**963** `.rs` files under `src-tauri/` — every `#[test]` / `#[tokio::test]` attribute"],"resolved":false,"isDir":true},
     "src-tauri/capabilities/default.json": {
@@ -391,6 +390,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "src/engine/recipe_seed.rs"
     },
+    "src-tauri/src/engine/twin_setup/session.rs": {"count":1,"sections":[7],"lines":["2814"],"contexts":["now*, by hand, in three separate files (`turn_ledger.rs:432`, `session.rs:2814`,"],"resolvedFrom":"basename","verbatim":"session.rs"},
     "src-tauri/src/mcp_server/obsidian_vault_tests.rs": {
       "count": 2,
       "sections": [5,7],

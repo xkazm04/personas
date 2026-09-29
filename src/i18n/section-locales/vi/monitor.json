@@ -846,5 +846,8 @@
   "remote_terminal_title": "Terminal, chỉ đọc",
   "remote_terminal_waiting": "Đang chờ đầu ra từ {device}",
   "remote_tile_aria": "{title} trên {device}, {state}. Mở phiên từ xa",
-  "remote_wake": "Đánh thức"
+  "remote_wake": "Đánh thức",
+  "queue_origin_contest": "Cuộc thi",
+  "grid_column_contest_open": "Mở {contest} trên trang Cuộc thi",
+  "grid_column_contest_unlinked": "{contest} bắt đầu trước khi các ghế ghi lại dự án của chúng, nên không thể mở từ đây"
 }

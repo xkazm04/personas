@@ -846,5 +846,8 @@
   "remote_terminal_title": "टर्मिनल, केवल पढ़ने के लिए",
   "remote_terminal_waiting": "{device} से आउटपुट की प्रतीक्षा",
   "remote_tile_aria": "{device} पर {title}, {state}। रिमोट सेशन खोलें",
-  "remote_wake": "जगाएं"
+  "remote_wake": "जगाएं",
+  "queue_origin_contest": "प्रतियोगिता",
+  "grid_column_contest_open": "प्रतियोगिता पेज पर {contest} खोलें",
+  "grid_column_contest_unlinked": "{contest} अपनी सीटों के प्रोजेक्ट दर्ज करने से पहले शुरू हुई थी, इसलिए इसे यहाँ से नहीं खोला जा सकता"
 }

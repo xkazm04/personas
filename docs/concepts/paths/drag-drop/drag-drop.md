@@ -12,7 +12,7 @@ techniques:
 evidence:
   - src/features/shared/components/kanban/KanbanBoard.tsx            # ownership-boundary exemplar: display-only lanes when status is backend-owned; id+status drop signature; typed drag payload gating
   - src/features/plugins/dev-tools/sub_overview/ProjectOverviewPage.tsx  # the reference complete reorder: id in payload, refuse-before-accept, persist once, persisted order treated as untrusted
-  - src/features/teams/sub_mastermind/lib/useIslandDrag.ts           # lifecycle contract: pointer capture, 4px click-vs-drag threshold, one commit on release, cancel on gesture loss
+  # (useIslandDrag.ts, the lifecycle-contract exemplar — pointer capture, 4px click-vs-drag threshold, one commit on release — was retired 2026-09-25 with the Mastermind canvas; recoverable from git history)
   - src/features/shared/components/display/DropIndicator.tsx         # position preview: one gliding indicator per list, reduced-motion aware
 counter_evidence:
 deviations:

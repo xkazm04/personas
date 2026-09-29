@@ -1,0 +1,453 @@
+/* Season Ledger: the Contest page's own stylesheet (contest-arena-restyle A/3,
+   the owner's winner of 2026-09-25).
+
+   A component stylesheet on purpose (precedents: studio/guide/drafting/
+   drafting.css, teams/sub_mastermind/soundings/soundings.css): the winner's look
+   is hairlines, color-mix surfaces, strands and dials, and porting it onto the
+   nearest utility classes is how a port loses what won. Every selector is
+   scoped under .contest-ledger (the page root, and each portaled drawer's root).
+
+   Type stays on the token scale: the root opts into the compact density tier
+   (data-type-density="compact"), and every size below is a type step,
+   calc(var(--type-N) * var(--type-f)), never a literal. At the app's default
+   text scale the steps render 13.4 / 14.4 / 16.5 / 18.6 px where the winner
+   drew 13 / 14 / 16 / 18. Colours derive from the theme tokens, so a light theme
+   repaints the page with no second rule set. */
+
+.contest-ledger {
+  --cl-t0: calc(var(--type-0) * var(--type-f));
+  --cl-t1: calc(var(--type-1) * var(--type-f));
+  --cl-t2: calc(var(--type-2) * var(--type-f));
+  --cl-t3: calc(var(--type-3) * var(--type-f));
+  --hair: var(--card-border);
+  --hair-soft: color-mix(in srgb, var(--foreground) 6%, transparent);
+  --panel: color-mix(in srgb, var(--secondary) 25%, transparent);
+  --panel-2: color-mix(in srgb, var(--secondary) 42%, transparent);
+  --lift: color-mix(in srgb, var(--foreground) 4%, transparent);
+  --mf: var(--muted-foreground);
+  --mu: var(--muted);
+  --pri-soft: color-mix(in srgb, var(--primary) 14%, transparent);
+  --scrim-ink: color-mix(in srgb, var(--background) 86%, transparent);
+  --row-h: 52px;
+  font-size: var(--cl-t1);
+  color: var(--foreground);
+}
+
+.contest-ledger .tab { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+.contest-ledger .edot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.contest-ledger .tdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--t); box-shadow: 0 0 0 3px color-mix(in srgb, var(--t) 16%, transparent); }
+.contest-ledger .seat { display: inline-flex; align-items: center; min-width: 0; white-space: nowrap; }
+.contest-ledger .seat .edot { margin-right: 7px; }
+.contest-ledger .seat .seat-m { color: var(--foreground); font-weight: 500; }
+.contest-ledger .seat .seat-e { color: var(--mf); }
+.contest-ledger .seat.quiet .seat-m { color: var(--mf); font-weight: 400; }
+.contest-ledger .seat.quiet .seat-e { color: var(--mu); }
+.contest-ledger .mu { color: var(--mu); }
+.contest-ledger .mf { color: var(--mf); }
+.contest-ledger .sep { color: var(--mu); padding: 0 6px; }
+.contest-ledger .ic { flex: none; }
+.contest-ledger .cl-kbd { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 5px; border: 1px solid color-mix(in srgb, var(--foreground) 16%, transparent); background: color-mix(in srgb, var(--foreground) 6%, transparent); font-size: var(--cl-t0); font-weight: 600; line-height: 1; color: var(--mf); }
+.contest-ledger .cl-btn.cl-primary .cl-kbd { color: inherit; border-color: color-mix(in srgb, currentColor 28%, transparent); background: color-mix(in srgb, currentColor 12%, transparent); }
+/* The shared Button wraps its children in one span: lay that span out like the
+   button itself, so icons, labels, counts and key caps keep their gaps. */
+.contest-ledger button > span { display: inline-flex; align-items: center; gap: inherit; min-width: 0; }
+.contest-ledger .fs > span { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+.contest-ledger .cl-sort > span { flex: 1; }
+.contest-ledger .cl-btn { height: 32px; padding: 0 13px; border-radius: 8px; gap: 7px; font-weight: 500; line-height: 1; white-space: nowrap; }
+.contest-ledger .cl-btn.cl-sm { height: 28px; padding: 0 10px; }
+
+/* ── Page header ─────────────────────────────────────────────── */
+.contest-ledger.sl { display: flex; flex-direction: column; height: 100%; min-height: 0; background: var(--background); }
+.contest-ledger .sl-hact { display: flex; align-items: center; gap: 8px; flex: none; }
+.contest-ledger .sl-search { display: flex; align-items: center; gap: 8px; height: 32px; width: 192px; padding: 0 6px 0 10px; border-radius: 8px; border: 1px solid var(--hair); background: var(--panel); color: var(--mu); }
+.contest-ledger .sl-search:focus-within { border-color: color-mix(in srgb, var(--primary) 55%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 14%, transparent); }
+.contest-ledger .sl-search input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: transparent; color: var(--foreground); font-size: var(--cl-t0); }
+.contest-ledger .sl-search input::placeholder { color: var(--mu); }
+.contest-ledger .sl-search input::-webkit-search-cancel-button { display: none; }
+.contest-ledger .sl-ready { flex: none; padding: 10px 20px 0; }
+
+/* ── Stage & levels ──────────────────────────────────────────── */
+.contest-ledger .sl-stage { flex: 1; min-height: 0; position: relative; overflow: hidden; }
+.contest-ledger .lv[hidden] { display: none; }
+.contest-ledger .lv { position: absolute; inset: 0; display: flex; flex-direction: column; min-height: 0; transform-origin: 0 0; background: var(--background); }
+.contest-ledger .sl-legend { flex: none; height: 38px; display: flex; align-items: center; gap: 18px; padding: 0 20px; border-top: 1px solid var(--hair); font-size: var(--cl-t0); color: var(--mf); white-space: nowrap; overflow: hidden; }
+.contest-ledger .sl-legend .lg { display: inline-flex; align-items: center; gap: 7px; }
+.contest-ledger .sl-legend .lg .cl-kbd { min-width: 22px; }
+.contest-ledger .sl-legend .where { margin-left: auto; color: var(--mu); display: inline-flex; align-items: center; gap: 6px; }
+.contest-ledger .sl-legend .where b { color: var(--mf); font-weight: 500; }
+.contest-ledger .sl-legend .lock { color: var(--mu); display: inline-flex; gap: 6px; align-items: center; }
+
+/* ── Level 1: attention bar ──────────────────────────────────── */
+.contest-ledger .att { flex: none; height: 42px; display: flex; align-items: center; gap: 4px; padding: 0 14px; border-bottom: 1px solid var(--hair); }
+.contest-ledger .att-seg { display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--mf); font-size: var(--cl-t0); font-weight: 500; }
+.contest-ledger .att-seg b { color: var(--foreground); font-weight: 600; font-variant-numeric: tabular-nums; }
+.contest-ledger .att-seg:hover { background: var(--lift); color: var(--foreground); }
+.contest-ledger .att-seg.on { background: color-mix(in srgb, var(--t) 12%, transparent); border-color: color-mix(in srgb, var(--t) 38%, transparent); color: var(--foreground); }
+.contest-ledger .att-seg.zero { opacity: .55; }
+.contest-ledger .att-div { width: 1px; height: 16px; background: var(--hair); margin: 0 4px; }
+.contest-ledger .att-clear { height: 30px; padding: 0 8px; color: var(--mu); font-size: var(--cl-t0); }
+.contest-ledger .att-live { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--cl-t0); color: var(--mf); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 6px; }
+.contest-ledger .att-live b { color: var(--foreground); font-weight: 500; }
+.contest-ledger .att-live .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--status-processing); animation: clPulse 1.8s ease-out infinite; flex: none; }
+@keyframes clPulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--status-processing) 55%, transparent); } 70% { box-shadow: 0 0 0 7px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+
+/* ── Level 1: the ledger ─────────────────────────────────────── */
+.contest-ledger .ledger { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 0 16px 12px; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--foreground) 14%, transparent) transparent; }
+.contest-ledger .lcols, .contest-ledger .lr { display: grid; grid-template-columns: 120px minmax(0, 1fr) 128px 234px 204px 58px; column-gap: 14px; align-items: center; padding: 0 12px; }
+.contest-ledger .lcols { position: sticky; top: 0; z-index: 3; height: 32px; background: var(--background); border-bottom: 1px solid var(--hair); font-size: var(--cl-t0); font-weight: 600; letter-spacing: .02em; color: var(--mu); }
+.contest-ledger .lcols > :last-child, .contest-ledger .lr .c-cost { text-align: right; }
+.contest-ledger .lgrp { display: flex; align-items: center; gap: 10px; height: 30px; padding: 8px 12px 0; font-size: var(--cl-t0); font-weight: 600; color: var(--mf); }
+.contest-ledger .lgrp .n { font-weight: 500; color: var(--mu); font-variant-numeric: tabular-nums; }
+.contest-ledger .lgrp::after { content: ''; flex: 1; height: 1px; background: var(--hair-soft); }
+.contest-ledger .lgrp .gdot { width: 6px; height: 6px; border-radius: 50%; background: var(--t); }
+.contest-ledger .lmonth { height: 28px; display: flex; align-items: center; padding: 6px 12px 0 24px; font-size: var(--cl-t0); font-weight: 600; letter-spacing: .02em; color: var(--mu); }
+.contest-ledger .lr { position: relative; height: var(--row-h); border-radius: 8px; cursor: pointer; outline: none; transition: background .12s; }
+.contest-ledger .lr + .lr::before { content: ''; position: absolute; left: 12px; right: 12px; top: 0; height: 1px; background: var(--hair-soft); }
+.contest-ledger .lr:hover { background: var(--lift); }
+.contest-ledger .lr.focus { background: color-mix(in srgb, var(--primary) 7%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 45%, transparent); }
+.contest-ledger .lr.focus::before, .contest-ledger .lr.focus + .lr::before { opacity: 0; }
+.contest-ledger .lr:focus-visible { box-shadow: inset 0 0 0 2px var(--primary); }
+.contest-ledger .lr.ctx .t1 { color: var(--mf); font-weight: 500; }
+.contest-ledger .c-phase { display: flex; align-items: center; gap: 9px; font-size: var(--cl-t0); color: var(--mf); white-space: nowrap; min-width: 0; }
+.contest-ledger .c-phase span { overflow: hidden; text-overflow: ellipsis; }
+.contest-ledger .c-title { position: relative; min-width: 0; }
+.contest-ledger .t1 { font-size: var(--cl-t1); font-weight: 500; color: var(--foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 20px; }
+.contest-ledger .t2 { font-size: var(--cl-t0); color: var(--mu); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 18px; display: flex; align-items: center; }
+.contest-ledger .t2 .proj { color: var(--mf); }
+.contest-ledger .lr.child .c-title { padding-left: 26px; }
+.contest-ledger .lr.child .c-title::before { content: ''; position: absolute; left: 6px; top: calc(var(--row-h) / -2 + 6px); height: calc(var(--row-h) / 2 + 3px); width: 13px; border-left: 1.5px solid color-mix(in srgb, var(--primary) 50%, transparent); border-bottom: 1.5px solid color-mix(in srgb, var(--primary) 50%, transparent); border-bottom-left-radius: 7px; }
+.contest-ledger .rpill { display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 6px; margin-right: 6px; border-radius: 5px; font-size: var(--cl-t0); font-weight: 600; color: color-mix(in srgb, var(--primary) 85%, var(--foreground)); background: color-mix(in srgb, var(--primary) 12%, transparent); }
+
+/* strands: one per seat, a track the length of the time limit */
+.contest-ledger .c-run { display: flex; flex-direction: column; justify-content: center; gap: var(--strand-gap, 8px); }
+.contest-ledger .strand { display: flex; align-items: center; gap: 7px; height: 7px; }
+.contest-ledger .strand .track { position: relative; flex: 1; height: 3px; border-radius: 2px; background: color-mix(in srgb, var(--foreground) 9%, transparent); }
+.contest-ledger .strand .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; background: var(--t); }
+.contest-ledger .strand.running .fill { background: linear-gradient(90deg, color-mix(in srgb, var(--t) 55%, transparent), var(--t)); }
+.contest-ledger .strand.running .fill::after { content: ''; position: absolute; right: -3px; top: -2px; width: 7px; height: 7px; border-radius: 50%; background: var(--t); box-shadow: 0 0 8px var(--t); animation: clGlow 1.6s ease-in-out infinite; }
+.contest-ledger .strand.running .fill::before { content: ''; position: absolute; inset: 0; border-radius: 2px; background: linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--foreground) 55%, transparent) 50%, transparent 100%); background-size: 40px 100%; background-repeat: no-repeat; animation: clShimmer 1.8s linear infinite; }
+@keyframes clShimmer { from { background-position: -40px 0; } to { background-position: calc(100% + 40px) 0; } }
+@keyframes clGlow { 50% { box-shadow: 0 0 2px var(--t); } }
+.contest-ledger .strand.done .fill::after { content: ''; position: absolute; right: -2px; top: -1.5px; width: 6px; height: 6px; border-radius: 50%; background: var(--t); }
+.contest-ledger .strand .xend { position: absolute; top: -5px; width: 12px; height: 12px; margin-left: -6px; color: var(--t); display: grid; place-items: center; }
+.contest-ledger .strand.queued .track { background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--foreground) 12%, transparent) 0 4px, transparent 4px 8px); }
+.contest-ledger .strand.queued .tick { position: absolute; left: 0; top: -4px; width: 2px; height: 11px; border-radius: 1px; background: var(--t); }
+
+/* micro stills: every variant of the contest, in its tray colour */
+.contest-ledger .c-vars { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.contest-ledger .mg { display: flex; gap: 3px; }
+.contest-ledger .ms { position: relative; display: block; width: var(--mw); height: var(--mh); border-radius: 3px; overflow: hidden; background: var(--panel-2); flex: none; }
+.contest-ledger .ms img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top left; }
+.contest-ledger .ms .bb { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--b); }
+.contest-ledger .ms.win { box-shadow: 0 0 0 1.5px var(--status-success); }
+.contest-ledger .ms.empty { background: transparent; border: 1px dashed color-mix(in srgb, var(--foreground) 16%, transparent); box-sizing: border-box; }
+.contest-ledger .ms.empty.out { border-color: color-mix(in srgb, var(--status-error) 30%, transparent); }
+
+/* verdict */
+.contest-ledger .c-verdict { min-width: 0; }
+.contest-ledger .v1 { display: flex; align-items: center; gap: 7px; font-size: var(--cl-t1); color: var(--foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 20px; }
+.contest-ledger .v1 .k { font-weight: 600; font-variant-numeric: tabular-nums; }
+.contest-ledger .v1 .ic { color: var(--t, var(--mf)); }
+.contest-ledger .v2 { font-size: var(--cl-t0); color: var(--mu); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 18px; display: flex; align-items: center; gap: 6px; }
+.contest-ledger .segbar { display: inline-flex; gap: 2px; margin-left: 4px; }
+.contest-ledger .segbar i { width: 12px; height: 5px; border-radius: 1.5px; background: color-mix(in srgb, var(--foreground) 14%, transparent); }
+.contest-ledger .c-cost { font-size: var(--cl-t0); color: var(--mf); font-variant-numeric: tabular-nums; }
+.contest-ledger .c-wall { display: none; font-size: var(--cl-t0); color: var(--mf); font-variant-numeric: tabular-nums; }
+.contest-ledger .c-wall .w2 { color: var(--mu); }
+.contest-ledger .lempty { padding: 60px 20px; text-align: center; color: var(--mf); font-size: var(--cl-t1); }
+.contest-ledger .lempty b { display: block; color: var(--foreground); font-weight: 600; margin-bottom: 4px; }
+.contest-ledger .lfoot { display: flex; align-items: center; gap: 18px; margin: 14px 12px 0; padding-top: 12px; border-top: 1px solid var(--hair-soft); font-size: var(--cl-t0); color: var(--mu); }
+.contest-ledger .lfoot b { color: var(--mf); font-weight: 500; }
+.contest-ledger .lfoot .cl-btn { margin-left: auto; }
+.contest-ledger .lghost { display: grid; grid-template-columns: 120px minmax(0, 1fr) 128px 234px 204px 58px; column-gap: 14px; align-items: center; height: var(--row-h); padding: 0 12px; }
+.contest-ledger .lghost i { display: block; height: 10px; border-radius: 4px; background: color-mix(in srgb, var(--primary) 6%, transparent); }
+
+/* ── Level 2: the contest ────────────────────────────────────── */
+.contest-ledger .crumbs { flex: none; display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 0 20px; border-bottom: 1px solid var(--hair); }
+.contest-ledger .crumbs .cc { min-width: 0; flex: 1; }
+.contest-ledger .crumb-path { display: flex; align-items: center; gap: 8px; font-size: var(--cl-t0); color: var(--mu); white-space: nowrap; min-width: 0; }
+.contest-ledger .crumb-path .crumb { padding: 0; height: auto; border: 0; background: none; color: var(--mf); font-size: var(--cl-t0); font-weight: 400; border-radius: 4px; }
+.contest-ledger .crumb-path .crumb:hover { color: var(--foreground); text-decoration: underline; text-underline-offset: 3px; background: none; }
+.contest-ledger .crumb-path .cur { font-size: var(--cl-t1); font-weight: 600; color: var(--foreground); overflow: hidden; text-overflow: ellipsis; }
+.contest-ledger .crumb-path .slash { color: color-mix(in srgb, var(--foreground) 22%, transparent); }
+.contest-ledger .crumb-meta { margin-top: 3px; font-size: var(--cl-t0); color: var(--mu); display: flex; align-items: center; white-space: nowrap; overflow: hidden; }
+.contest-ledger .crumb-meta .ph { display: inline-flex; align-items: center; gap: 7px; color: var(--mf); }
+.contest-ledger .crumbs .acts { display: flex; gap: 8px; flex: none; }
+.contest-ledger .l2body { flex: 1; min-height: 0; display: grid; grid-template-columns: 268px minmax(0, 1fr); }
+.contest-ledger .l2left { min-height: 0; overflow-y: auto; padding: 14px 16px 16px 20px; border-right: 1px solid var(--hair); display: flex; flex-direction: column; gap: 14px; scrollbar-width: thin; }
+.contest-ledger .l2main { min-height: 0; min-width: 0; display: flex; flex-direction: column; padding: 14px 20px 14px 18px; gap: 14px; overflow: hidden; }
+.contest-ledger .sect-h { display: flex; align-items: center; gap: 8px; font-size: var(--cl-t0); font-weight: 600; color: var(--mf); margin: 0 0 8px; }
+.contest-ledger .sect-h .n { color: var(--mu); font-weight: 500; }
+.contest-ledger .sect-h .r { margin-left: auto; font-weight: 400; color: var(--mu); display: inline-flex; align-items: center; gap: 6px; }
+
+/* seat dials: the ring is the time limit, the beads are delivered variants */
+.contest-ledger .dials { display: flex; flex-direction: column; gap: 8px; }
+.contest-ledger .dialrow { display: grid; grid-template-columns: 66px minmax(0, 1fr); gap: 10px; align-items: start; }
+.contest-ledger .dial { width: 66px; height: 66px; position: relative; }
+.contest-ledger .dial svg { display: block; overflow: visible; }
+.contest-ledger .dial .ring { fill: none; stroke: color-mix(in srgb, var(--foreground) 9%, transparent); }
+.contest-ledger .dial .arc { fill: none; stroke: var(--t); stroke-linecap: round; transition: stroke-dasharray .6s ease; }
+.contest-ledger .dial .head { fill: var(--t); filter: drop-shadow(0 0 4px var(--t)); animation: clHead 1.6s ease-in-out infinite; }
+@keyframes clHead { 50% { opacity: .45; } }
+.contest-ledger .dial .ctr { font-size: var(--cl-t0); font-weight: 600; fill: var(--foreground); font-variant-numeric: tabular-nums; }
+.contest-ledger .dial .bead { stroke: var(--t); stroke-width: 1.3; }
+.contest-ledger .dial .bead.off { fill: none; stroke: color-mix(in srgb, var(--foreground) 28%, transparent); }
+.contest-ledger .dinfo { min-width: 0; display: flex; flex-direction: column; gap: 1px; padding-top: 2px; }
+.contest-ledger .dinfo .l1 { font-size: var(--cl-t1); }
+.contest-ledger .dinfo .l2 { font-size: var(--cl-t0); color: var(--mf); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; }
+.contest-ledger .dinfo .l2 .st { color: var(--t); font-weight: 500; }
+.contest-ledger .dinfo .l3 { font-size: var(--cl-t0); color: var(--mu); }
+.contest-ledger .dinfo .dacts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 4px; }
+.contest-ledger .lnk { display: inline-flex; align-items: center; gap: 5px; padding: 0; height: auto; border: 0; background: none; font-size: var(--cl-t0); font-weight: 500; color: var(--mf); border-radius: 4px; white-space: nowrap; }
+.contest-ledger .lnk:hover { color: var(--foreground); background: none; }
+.contest-ledger .lnk.paid { color: color-mix(in srgb, var(--status-warning) 85%, var(--foreground)); white-space: normal; text-align: left; align-items: flex-start; }
+.contest-ledger .lnk.paid .ic { margin-top: 2px; }
+.contest-ledger .errbox { margin-top: 6px; padding: 6px 9px; border-radius: 6px; background: color-mix(in srgb, var(--t) 9%, transparent); border-left: 2px solid var(--t); font-size: var(--cl-t0); line-height: 1.45; color: color-mix(in srgb, var(--t) 45%, var(--foreground)); word-break: break-word; }
+.contest-ledger .derr { grid-column: 1 / -1; margin-top: -4px; }
+.contest-ledger .derr .errbox { margin-top: 0; }
+
+/* the chain after the seats */
+.contest-ledger .chain { display: flex; flex-direction: column; }
+.contest-ledger .stn { display: flex; align-items: center; gap: 10px; height: 23px; font-size: var(--cl-t0); color: var(--mf); position: relative; }
+.contest-ledger .stn .mk { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; flex: none; color: var(--t); background: color-mix(in srgb, var(--t) 14%, transparent); position: relative; z-index: 1; }
+.contest-ledger .stn + .stn::before { content: ''; position: absolute; left: 8.5px; top: -6px; height: 8px; width: 1px; background: var(--hair); }
+.contest-ledger .stn .sw { margin-left: auto; color: var(--mu); }
+.contest-ledger .stn.active .mk { animation: clPulseT 1.8s ease-out infinite; }
+@keyframes clPulseT { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--t) 55%, transparent); } 70% { box-shadow: 0 0 0 6px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+.contest-ledger .stn.failed { color: var(--foreground); }
+.contest-ledger .retry { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+/* bench: five trays, empty ones collapse to strips */
+.contest-ledger .bench { flex: none; display: flex; gap: 6px; min-height: 0; align-items: stretch; }
+.contest-ledger .bcol { display: flex; flex-direction: column; min-width: 0; border-radius: 10px; background: var(--panel); border: 1px solid var(--hair-soft); transition: background .15s, border-color .15s; }
+.contest-ledger .bcol.drop { border-color: color-mix(in srgb, var(--b) 60%, transparent); background: color-mix(in srgb, var(--b) 8%, transparent); }
+.contest-ledger .bh { display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 8px; font-size: var(--cl-t0); font-weight: 600; color: var(--foreground); border-bottom: 1px solid var(--hair-soft); white-space: nowrap; }
+.contest-ledger .bh .ic { color: var(--b); }
+.contest-ledger .bh .n { color: var(--mu); font-weight: 500; font-variant-numeric: tabular-nums; }
+.contest-ledger .bh .cl-kbd { margin-left: auto; }
+.contest-ledger .bgrid { display: grid; gap: 6px; padding: 6px; align-content: start; grid-template-columns: repeat(var(--cols, 1), var(--cw)); }
+.contest-ledger .bcol.slim { width: 40px; flex: none; }
+.contest-ledger .bcol.slim .bh { flex-direction: column; height: auto; padding: 10px 0 8px; gap: 8px; border-bottom: 0; }
+.contest-ledger .bcol.slim .bh .cl-kbd { margin: 0; }
+.contest-ledger .bcol.slim .vlabel { writing-mode: vertical-rl; transform: rotate(180deg); font-size: var(--cl-t0); font-weight: 600; color: var(--mf); letter-spacing: .01em; }
+.contest-ledger .vcard { width: var(--cw); border-radius: 8px; background: color-mix(in srgb, var(--secondary) 55%, var(--background)); border: 1px solid var(--hair); overflow: hidden; cursor: pointer; position: relative; outline: none; transition: border-color .12s, box-shadow .12s; }
+.contest-ledger .vcard:hover { border-color: color-mix(in srgb, var(--foreground) 22%, transparent); }
+.contest-ledger .vcard.focus, .contest-ledger .vcard:focus-visible { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent); }
+.contest-ledger .vcard.dragging { opacity: .4; }
+.contest-ledger .vcard .still { position: relative; width: 100%; aspect-ratio: 16 / 10; background: var(--panel-2); overflow: hidden; }
+.contest-ledger .vcard .still img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top left; }
+.contest-ledger .vcard .still .bbar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--b); }
+.contest-ledger .vcard .still .pinct, .contest-ledger .vcard .still .size, .contest-ledger .vcard .still .glp { position: absolute; display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 6px; background: var(--scrim-ink); font-size: var(--cl-t0); font-weight: 600; font-variant-numeric: tabular-nums; }
+.contest-ledger .vcard .still .pinct { top: 6px; right: 6px; border-radius: 10px; color: var(--foreground); }
+.contest-ledger .vcard .still .size { left: 6px; bottom: 7px; border-radius: 5px; color: var(--mf); }
+.contest-ledger .vcard .still .glp { top: 6px; left: 6px; border-radius: 10px; color: var(--mf); }
+.contest-ledger .vcard .still .nostill { position: absolute; inset: 0; display: grid; place-items: center; color: var(--mu); font-size: var(--cl-t0); font-weight: 600; }
+.contest-ledger .vcard .meta { padding: 6px 7px 7px; display: flex; flex-direction: column; gap: 1px; }
+.contest-ledger .vcard .m1 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: var(--cl-t0); line-height: 18px; overflow: hidden; color: var(--foreground); }
+.contest-ledger .vcard .m1 .k { font-weight: 600; font-variant-numeric: tabular-nums; }
+.contest-ledger .vcard .m2 { font-size: var(--cl-t0); overflow: hidden; }
+.contest-ledger .vcard .m2 .seat { max-width: 100%; }
+.contest-ledger .vcard .m2 .seat-m { font-weight: 400; color: var(--mf); }
+.contest-ledger .vcard .m2 .seat-e { color: var(--mu); overflow: hidden; text-overflow: ellipsis; }
+.contest-ledger .desk { flex: 1; min-height: 0; display: grid; gap: 14px; }
+.contest-ledger .panel { min-height: 0; min-width: 0; display: flex; flex-direction: column; border-radius: 10px; background: var(--panel); border: 1px solid var(--hair-soft); padding: 10px 12px; }
+.contest-ledger .panel .sect-h { margin-bottom: 6px; }
+.contest-ledger .ta { width: 100%; box-sizing: border-box; resize: none; border-radius: 8px; border: 1px solid var(--hair); background: color-mix(in srgb, var(--background) 60%, transparent); color: var(--foreground); font-size: var(--cl-t1); line-height: 1.55; padding: 8px 10px; outline: none; }
+.contest-ledger .ta:focus { border-color: color-mix(in srgb, var(--primary) 55%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent); }
+.contest-ledger .ta::placeholder { color: var(--mu); }
+.contest-ledger .panel .ta { flex: 1; min-height: 60px; }
+.contest-ledger .brief { flex: 1; min-height: 0; overflow-y: auto; font-size: var(--cl-t1); line-height: 1.65; color: var(--mf); padding-right: 8px; scrollbar-width: thin; }
+.contest-ledger .brief h1, .contest-ledger .brief h2, .contest-ledger .brief h3, .contest-ledger .brief h4 { font-size: var(--cl-t1); font-weight: 600; color: var(--foreground); margin: 14px 0 4px; }
+.contest-ledger .brief p { margin: 0 0 8px; }
+.contest-ledger .brief ul, .contest-ledger .brief ol { margin: 0 0 8px; padding-left: 20px; }
+.contest-ledger .brief strong { color: var(--foreground); font-weight: 600; }
+.contest-ledger .empty-state { display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; border-radius: 10px; border: 1px dashed color-mix(in srgb, var(--foreground) 14%, transparent); font-size: var(--cl-t1); color: var(--mf); line-height: 1.55; }
+.contest-ledger .empty-state .ic { color: var(--mu); margin-top: 2px; }
+.contest-ledger .empty-state b { color: var(--foreground); font-weight: 600; display: block; }
+
+/* the judges' scores as a heat table */
+.contest-ledger .heat { width: 100%; border-collapse: separate; border-spacing: 2px; font-size: var(--cl-t0); }
+.contest-ledger .heat th { font-size: var(--cl-t0); font-weight: 600; color: var(--mu); text-align: center; padding: 0 2px 3px; white-space: nowrap; }
+.contest-ledger .heat th:first-child { text-align: left; }
+.contest-ledger .heat td { text-align: center; height: 24px; border-radius: 4px; font-variant-numeric: tabular-nums; color: var(--foreground); background: color-mix(in srgb, var(--primary) var(--h, 0%), transparent); }
+.contest-ledger .heat td.hk { text-align: left; font-weight: 600; background: none; padding-right: 6px; white-space: nowrap; }
+.contest-ledger .heat td.hm { font-weight: 600; }
+.contest-ledger .heat tr.broken td:not(.hk):not(.hb) { text-decoration: line-through; color: var(--mu); }
+.contest-ledger .heat td.hb { white-space: nowrap; padding: 0 6px; text-align: left; font-weight: 600; background: none; }
+.contest-ledger .chip { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 11px; font-size: var(--cl-t0); font-weight: 600; color: var(--c); background: color-mix(in srgb, var(--c) 13%, transparent); white-space: nowrap; }
+
+/* decision */
+.contest-ledger .decide { display: flex; flex-direction: column; gap: 8px; }
+.contest-ledger .decide .row { display: flex; flex-direction: column; gap: 8px; }
+.contest-ledger .decide .row .cl-btn { justify-content: center; }
+.contest-ledger .why { font-size: var(--cl-t0); color: var(--mu); line-height: 1.45; display: flex; gap: 6px; align-items: flex-start; }
+.contest-ledger .why .ic { margin-top: 2px; }
+.contest-ledger .lockline { font-size: var(--cl-t0); color: var(--mf); display: flex; gap: 8px; align-items: flex-start; line-height: 1.45; padding: 8px 10px; border-radius: 8px; background: var(--panel); border: 1px solid var(--hair-soft); }
+.contest-ledger .lockline .ic { color: var(--mu); margin-top: 2px; }
+.contest-ledger .lockline b { color: var(--foreground); font-weight: 500; }
+.contest-ledger .hint { font-size: var(--cl-t0); color: var(--mu); line-height: 1.45; }
+.contest-ledger .savest { font-size: var(--cl-t0); color: var(--mu); display: inline-flex; align-items: center; gap: 6px; }
+
+/* ── Level 3: the variant ────────────────────────────────────── */
+.contest-ledger .l3body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 336px; }
+.contest-ledger .viewer { min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 14px 16px 12px 20px; gap: 10px; }
+.contest-ledger .vtools { display: flex; align-items: center; gap: 8px; font-size: var(--cl-t0); color: var(--mf); flex: none; }
+.contest-ledger .segc { display: inline-flex; padding: 2px; border-radius: 8px; border: 1px solid var(--hair); background: var(--panel); }
+.contest-ledger .segc .cl-seg { height: 26px; padding: 0 10px; border: 0; border-radius: 6px; background: none; color: var(--mf); font-size: var(--cl-t0); font-weight: 500; }
+.contest-ledger .segc .cl-seg.on { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--foreground); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 40%, transparent); }
+.contest-ledger .pinbtn.on { background: color-mix(in srgb, var(--status-warning) 16%, transparent); border-color: color-mix(in srgb, var(--status-warning) 50%, transparent); }
+.contest-ledger .vstage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative; }
+.contest-ledger .vframe { width: 100%; max-height: 100%; overflow: auto; border-radius: 10px; }
+.contest-ledger .film { flex: none; display: flex; gap: 6px; align-items: flex-end; overflow-x: auto; padding: 2px 2px 4px; scrollbar-width: thin; }
+.contest-ledger .fs { flex: none; width: 92px; height: auto; display: block; border-radius: 6px; padding: 3px; border: 1px solid transparent; background: none; text-align: left; color: var(--mf); }
+.contest-ledger .fs:hover { background: var(--lift); }
+.contest-ledger .fs.cur { border-color: color-mix(in srgb, var(--primary) 60%, transparent); background: color-mix(in srgb, var(--primary) 8%, transparent); }
+.contest-ledger .fs .fi { position: relative; display: block; width: 100%; aspect-ratio: 16 / 10; border-radius: 4px; overflow: hidden; background: var(--panel-2); }
+.contest-ledger .fs .fi img { width: 100%; height: 100%; object-fit: cover; object-position: top left; display: block; }
+.contest-ledger .fs .fi .bbar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--b); }
+.contest-ledger .fs .fk { display: block; font-size: var(--cl-t0); font-weight: 600; margin-top: 2px; color: var(--mf); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contest-ledger .fs.cur .fk { color: var(--foreground); }
+.contest-ledger .vside { min-height: 0; overflow-y: auto; border-left: 1px solid var(--hair); padding: 14px 18px 16px; display: flex; flex-direction: column; gap: 14px; scrollbar-width: thin; }
+.contest-ledger .facts { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 4px 10px; font-size: var(--cl-t0); margin: 0; }
+.contest-ledger .facts dt { color: var(--mu); }
+.contest-ledger .facts dd { margin: 0; color: var(--foreground); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.contest-ledger .sortbtns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.contest-ledger .sortbtns .cl-sort { display: flex; align-items: center; justify-content: flex-start; gap: 8px; height: 34px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--hair); background: transparent; color: var(--mf); font-size: var(--cl-t0); font-weight: 500; }
+.contest-ledger .sortbtns .cl-sort .ic { color: var(--b); }
+.contest-ledger .sortbtns .cl-sort .cl-kbd { margin-left: auto; }
+.contest-ledger .sortbtns .cl-sort:hover { color: var(--foreground); background: var(--lift); }
+.contest-ledger .sortbtns .cl-sort.on { color: var(--foreground); border-color: color-mix(in srgb, var(--b) 60%, transparent); background: color-mix(in srgb, var(--b) 13%, transparent); }
+.contest-ledger .pins { display: flex; flex-direction: column; gap: 6px; }
+.contest-ledger .pinrow { display: flex; align-items: center; gap: 8px; }
+.contest-ledger .pinrow .pn { width: 22px; height: 22px; border-radius: 50%; background: var(--status-warning); color: var(--background); font-size: var(--cl-t0); font-weight: 700; display: grid; place-items: center; flex: none; }
+.contest-ledger .pinrow input { flex: 1; min-width: 0; height: 30px; border-radius: 7px; border: 1px solid var(--hair); background: transparent; color: var(--foreground); font-size: var(--cl-t0); padding: 0 8px; outline: none; }
+.contest-ledger .pinrow input:focus { border-color: color-mix(in srgb, var(--primary) 55%, transparent); }
+.contest-ledger .judgeline { font-size: var(--cl-t0); color: var(--mf); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+.contest-ledger .judgeline .lab { font-weight: 600; color: var(--mf); }
+
+/* ── Drawers (each drawer root is its own .contest-ledger) ───── */
+.contest-ledger.sl-drawer { display: flex; flex-direction: column; height: 100%; min-height: 0; background: color-mix(in srgb, var(--secondary) 30%, var(--background)); }
+.contest-ledger .dr-h { flex: none; display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--hair); }
+.contest-ledger .dr-h .hx { flex: 1; min-width: 0; }
+.contest-ledger .dr-h h2 { margin: 0; font-size: var(--cl-t2); font-weight: 600; color: var(--foreground); }
+.contest-ledger .dr-h p { margin: 2px 0 0; font-size: var(--cl-t0); color: var(--mf); }
+.contest-ledger .dr-body { flex: 1; min-height: 0; display: grid; }
+.contest-ledger .dr-foot { flex: none; border-top: 1px solid var(--hair); padding: 10px 18px; display: flex; align-items: center; gap: 8px; }
+.contest-ledger .dr-foot .issues { flex: 1; min-width: 0; font-size: var(--cl-t0); color: var(--mf); line-height: 1.4; }
+.contest-ledger .dr-foot .issues .e { color: color-mix(in srgb, var(--status-error) 70%, var(--foreground)); display: flex; gap: 6px; align-items: center; }
+.contest-ledger .dr-foot .issues .w { color: color-mix(in srgb, var(--status-warning) 75%, var(--foreground)); display: flex; gap: 6px; align-items: center; }
+.contest-ledger .dr-foot .issues .okl { color: color-mix(in srgb, var(--status-success) 75%, var(--foreground)); display: flex; gap: 6px; align-items: center; }
+
+/* setup: a form and its receipt */
+.contest-ledger .setup { grid-template-columns: minmax(0, 1fr) 264px; }
+.contest-ledger .form { min-height: 0; overflow-y: auto; padding: 14px 18px 18px; display: flex; flex-direction: column; gap: 14px; scrollbar-width: thin; }
+.contest-ledger .fld { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.contest-ledger .fld > label, .contest-ledger .fld > .lab { font-size: var(--cl-t0); font-weight: 600; color: var(--mf); display: flex; align-items: center; gap: 8px; }
+.contest-ledger .fld .opt { font-weight: 400; color: var(--mu); }
+.contest-ledger .fld .sub { font-size: var(--cl-t0); color: var(--mu); line-height: 1.4; }
+.contest-ledger .in { height: 34px; box-sizing: border-box; border-radius: 8px; border: 1px solid var(--hair); background: color-mix(in srgb, var(--background) 55%, transparent); color: var(--foreground); font-size: var(--cl-t1); padding: 0 10px; outline: none; min-width: 0; }
+.contest-ledger .in:focus { border-color: color-mix(in srgb, var(--primary) 55%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent); }
+.contest-ledger .in::placeholder { color: var(--mu); }
+.contest-ledger .in[type="datetime-local"] { color-scheme: dark; }
+[data-theme^="light"] .contest-ledger .in[type="datetime-local"] { color-scheme: light; }
+.contest-ledger .frow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.contest-ledger .frow3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.contest-ledger .idea { display: flex; gap: 8px; }
+.contest-ledger .idea .in { flex: 1; }
+.contest-ledger .cmd { position: relative; }
+.contest-ledger .cmd .in { width: 100%; padding-left: 34px; }
+.contest-ledger .cmd > .ic { position: absolute; left: 11px; top: 9px; color: var(--primary); }
+.contest-ledger .sugg { position: absolute; left: 0; right: 0; top: 38px; z-index: 5; padding: 4px; border-radius: 10px; background: color-mix(in srgb, var(--secondary) 94%, var(--background)); border: 1px solid var(--hair); max-height: 300px; overflow-y: auto; }
+.contest-ledger .sg { display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 10px; border-radius: 7px; font-size: var(--cl-t1); cursor: pointer; color: var(--foreground); }
+.contest-ledger .sg.on { background: color-mix(in srgb, var(--primary) 14%, transparent); }
+.contest-ledger .sg .r { margin-left: auto; font-size: var(--cl-t0); color: var(--mu); }
+.contest-ledger .seatlines { display: flex; flex-direction: column; gap: 6px; }
+.contest-ledger .sline { display: flex; align-items: center; gap: 10px; min-height: 36px; padding: 0 6px 0 10px; border-radius: 8px; background: var(--panel); border: 1px solid var(--hair-soft); }
+.contest-ledger .sline .seat { flex: 1; min-width: 0; font-size: var(--cl-t1); }
+.contest-ledger .effseg { display: inline-flex; padding: 2px; border-radius: 7px; background: color-mix(in srgb, var(--background) 60%, transparent); border: 1px solid var(--hair-soft); flex: none; }
+.contest-ledger .effseg .cl-eff { height: 24px; padding: 0 7px; border: 0; border-radius: 5px; background: none; color: var(--mu); font-size: var(--cl-t0); font-weight: 500; }
+.contest-ledger .effseg .cl-eff.on { background: color-mix(in srgb, var(--primary) 18%, transparent); color: var(--foreground); }
+.contest-ledger .grid-pick { display: flex; flex-direction: column; gap: 6px; }
+.contest-ledger .gp-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.contest-ledger .gp-row .eng { width: 58px; font-size: var(--cl-t0); color: var(--mf); display: inline-flex; align-items: center; gap: 6px; }
+.contest-ledger .chipbtn { height: 28px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--hair); background: transparent; color: var(--foreground); font-size: var(--cl-t0); font-weight: 500; gap: 6px; }
+.contest-ledger .chipbtn:hover { background: var(--lift); border-color: color-mix(in srgb, var(--foreground) 20%, transparent); }
+.contest-ledger .gp-row .other { width: 118px; height: 28px; font-size: var(--cl-t0); }
+.contest-ledger .tickets { display: flex; flex-wrap: wrap; gap: 6px; }
+.contest-ledger .ticket { display: inline-flex; align-items: center; height: 30px; border-radius: 8px; border: 1px dashed color-mix(in srgb, var(--foreground) 20%, transparent); overflow: hidden; }
+.contest-ledger .ticket .cl-tk { white-space: nowrap; height: 100%; border: 0; border-radius: 0; background: none; color: var(--foreground); font-size: var(--cl-t0); font-weight: 500; padding: 0 10px; gap: 7px; }
+.contest-ledger .ticket .cl-tk:hover { background: var(--lift); }
+.contest-ledger .ticket .del { padding: 0 8px; color: var(--mu); border-left: 1px dashed color-mix(in srgb, var(--foreground) 16%, transparent); }
+.contest-ledger .ticket .del:hover { color: var(--status-error); }
+.contest-ledger .ticket .sm { color: var(--mu); font-weight: 400; }
+.contest-ledger .saveline { display: flex; gap: 8px; align-items: center; }
+.contest-ledger .saveline .in { flex: 1; height: 30px; font-size: var(--cl-t0); }
+.contest-ledger .toggle-row { display: flex; align-items: center; gap: 10px; font-size: var(--cl-t1); color: var(--foreground); }
+.contest-ledger .judgebox { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 8px; border: 1px solid var(--hair-soft); background: var(--panel); }
+
+/* the receipt: likely cost and time, before anything is spent */
+.contest-ledger .receipt { min-height: 0; overflow-y: auto; border-left: 1px solid var(--hair); padding: 16px; background: color-mix(in srgb, var(--background) 55%, transparent); scrollbar-width: thin; }
+.contest-ledger .rc-paper { position: relative; padding: 14px 14px 16px; border-radius: 4px; background: color-mix(in srgb, var(--foreground) 5%, var(--background)); border: 1px solid var(--hair); }
+.contest-ledger .rc-paper::after { content: ''; position: absolute; left: -1px; right: -1px; bottom: -7px; height: 7px; background: radial-gradient(circle at 5px -1px, transparent 5px, color-mix(in srgb, var(--foreground) 5%, var(--background)) 5.5px) repeat-x; background-size: 10px 7px; }
+.contest-ledger .rc-h { display: flex; align-items: center; justify-content: space-between; font-size: var(--cl-t0); font-weight: 600; color: var(--foreground); padding-bottom: 8px; border-bottom: 1px dashed color-mix(in srgb, var(--foreground) 18%, transparent); }
+.contest-ledger .rc-h span:last-child { font-weight: 400; color: var(--mu); }
+.contest-ledger .rc-item { padding: 8px 0; border-bottom: 1px dashed color-mix(in srgb, var(--foreground) 10%, transparent); }
+.contest-ledger .rc-item .a { display: flex; align-items: center; gap: 8px; font-size: var(--cl-t1); }
+.contest-ledger .rc-item .a .seat { flex: 1; min-width: 0; overflow: hidden; }
+.contest-ledger .rc-item .b { font-size: var(--cl-t0); color: var(--mu); margin-top: 2px; line-height: 1.4; }
+.contest-ledger .rc-item .b .p { font-weight: 600; color: var(--foreground); font-variant-numeric: tabular-nums; }
+.contest-ledger .rc-item .b .bad { color: color-mix(in srgb, var(--status-warning) 80%, var(--foreground)); }
+.contest-ledger .rc-line { display: flex; justify-content: space-between; gap: 10px; font-size: var(--cl-t0); color: var(--mf); padding: 5px 0; }
+.contest-ledger .rc-line b { color: var(--foreground); font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.contest-ledger .rc-line.over b { color: var(--status-warning); }
+.contest-ledger .rc-total { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--cl-t1); font-weight: 600; color: var(--foreground); padding: 9px 0 4px; margin-top: 4px; border-top: 1px solid color-mix(in srgb, var(--foreground) 22%, transparent); }
+.contest-ledger .rc-total b { font-variant-numeric: tabular-nums; }
+.contest-ledger .rc-total .range { color: var(--mu); font-weight: 400; margin-left: 4px; }
+.contest-ledger .rc-empty { font-size: var(--cl-t0); color: var(--mu); padding: 14px 0; line-height: 1.5; }
+.contest-ledger .rc-foot { font-size: var(--cl-t0); color: var(--mu); margin-top: 10px; line-height: 1.45; }
+
+/* standings: podiums, and each seat's record with its Wilson bar */
+.contest-ledger .stand { overflow-y: auto; padding: 14px 18px 18px; display: flex; flex-direction: column; gap: 18px; scrollbar-width: thin; }
+.contest-ledger .pod { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 8px; border-radius: 10px; cursor: pointer; outline: none; }
+.contest-ledger .pod:hover, .contest-ledger .pod:focus-visible { background: var(--lift); }
+.contest-ledger .pod .thumb { width: 96px; height: 60px; border-radius: 6px; overflow: hidden; background: var(--panel-2); box-shadow: 0 0 0 1.5px var(--status-success); }
+.contest-ledger .pod .thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top left; display: block; }
+.contest-ledger .pod .p1 { font-size: var(--cl-t1); font-weight: 500; color: var(--foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contest-ledger .pod .p2 { font-size: var(--cl-t0); color: var(--mf); display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; }
+.contest-ledger .pod .p2 b { color: var(--foreground); font-weight: 600; }
+.contest-ledger .pod .p3 { font-size: var(--cl-t0); color: var(--mu); text-align: right; white-space: nowrap; }
+.contest-ledger .matrix { width: 100%; border-collapse: collapse; font-size: var(--cl-t0); }
+.contest-ledger .matrix th { font-size: var(--cl-t0); font-weight: 600; color: var(--mu); padding: 0 4px 6px; text-align: center; white-space: nowrap; }
+.contest-ledger .matrix th.l, .contest-ledger .matrix td.l { text-align: left; }
+.contest-ledger .matrix td { padding: 6px 4px; border-top: 1px solid var(--hair-soft); text-align: center; font-variant-numeric: tabular-nums; color: var(--foreground); }
+.contest-ledger .matrix .won { color: var(--status-success); }
+.contest-ledger .matrix .ent { color: var(--mu); }
+.contest-ledger .wbar { position: relative; display: inline-block; width: 120px; height: 14px; }
+.contest-ledger .wbar .ax { position: absolute; left: 0; right: 0; top: 6px; height: 2px; border-radius: 1px; background: color-mix(in srgb, var(--foreground) 10%, transparent); }
+.contest-ledger .wbar .iv { position: absolute; top: 4px; height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--primary) 40%, transparent); }
+.contest-ledger .wbar .pt { position: absolute; top: 3px; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: var(--primary); }
+.contest-ledger .mlegend { display: flex; flex-direction: column; gap: 3px; font-size: var(--cl-t0); color: var(--mf); margin-top: 8px; }
+.contest-ledger .mlegend b { color: var(--foreground); font-weight: 600; margin-right: 6px; font-variant-numeric: tabular-nums; }
+
+/* ── Wide windows: more columns, bigger stills ───────────────── */
+@container ledger (min-width: 1500px) {
+  .contest-ledger .lr, .contest-ledger .lcols, .contest-ledger .lghost { grid-template-columns: 124px minmax(0, 1fr) 176px 380px 270px 118px 72px; column-gap: 20px; }
+  .contest-ledger .lr { --row-h: 62px; }
+  .contest-ledger .c-wall { display: block; }
+  .contest-ledger .sl-search { width: 300px; }
+}
+.contest-ledger.sl { container: ledger / inline-size; }
+.contest-ledger.wide .l2body { grid-template-columns: 312px minmax(0, 1fr); }
+.contest-ledger.wide .dialrow { grid-template-columns: 84px minmax(0, 1fr); }
+.contest-ledger.wide .dial { width: 84px; height: 84px; }
+.contest-ledger.wide .l3body { grid-template-columns: minmax(0, 1fr) 380px; }
+.contest-ledger.wide .fs { width: 116px; }
+.contest-ledger.sl-drawer.wide .setup { grid-template-columns: minmax(0, 1fr) 320px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .contest-ledger .strand.running .fill::before,
+  .contest-ledger .strand.running .fill::after,
+  .contest-ledger .dial .head,
+  .contest-ledger .stn.active .mk,
+  .contest-ledger .att-live .pulse { animation: none; }
+}

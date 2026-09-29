@@ -7,21 +7,16 @@
  */
 import { useEffect, useRef } from 'react';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
-import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
-import { useTranslation } from '@/i18n/useTranslation';
-import { updateProject, setStandardsConfig } from '@/api/devTools/devTools';
+import { updateProject } from '@/api/devTools/devTools';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { PipelineFieldId } from '../sub_projects/pipeline/pipelineTypes';
-import { parseStandards, serializeStandards, type BranchSel } from '../sub_projects/pipeline/standardsConfig';
 
 export interface SelectOption { value: string; label: string }
 
 export type Draft =
   | { kind: 'text'; value: string; placeholder?: string }
   | { kind: 'pair'; a: string; b: string; aLabel: string; bLabel: string; aPlaceholder?: string; bPlaceholder?: string }
-  | { kind: 'select'; value: string; options: SelectOption[]; emptyLabel?: string }
-  | { kind: 'precommit'; lint: boolean; docs: boolean; quality: boolean }
-  | { kind: 'automerge'; enabled: boolean; target: BranchSel; branchOptions: SelectOption[] };
+  | { kind: 'select'; value: string; options: SelectOption[]; emptyLabel?: string };
 
 const INPUT_CLASS =
   'w-full px-3 py-2 typo-body bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground/40 focus-ring';
@@ -34,7 +29,6 @@ export function canSaveDraft(field: PipelineFieldId, draft: Draft): boolean {
 
 /** Persist one field's draft. No-op if the draft kind doesn't match the field. */
 export async function saveDraft(field: PipelineFieldId, draft: Draft, project: DevProject): Promise<void> {
-  const std = () => parseStandards(project.standards_config);
   switch (field) {
     case 'name':
       if (draft.kind === 'text') await updateProject(project.id, { name: draft.value.trim() });
@@ -54,30 +48,10 @@ export async function saveDraft(field: PipelineFieldId, draft: Draft, project: D
     case 'test-env':
       if (draft.kind === 'pair') await updateProject(project.id, { testEnvUrl: draft.a.trim() || null, testEnvBranch: draft.b.trim() || null });
       return;
-    case 'std-precommit':
-      if (draft.kind === 'precommit') {
-        const cfg = std();
-        await setStandardsConfig(project.id, serializeStandards({ ...cfg, precommit: { lint: draft.lint, docs_required: draft.docs, code_quality: draft.quality } }));
-      }
-      return;
-    case 'std-pr-base':
-      if (draft.kind === 'select') {
-        const cfg = std();
-        await setStandardsConfig(project.id, serializeStandards({ ...cfg, branching: { ...cfg.branching, pr_base: draft.value === 'test' ? 'test' : 'main' } }));
-      }
-      return;
-    case 'std-automerge':
-      if (draft.kind === 'automerge') {
-        const cfg = std();
-        await setStandardsConfig(project.id, serializeStandards({ ...cfg, branching: { ...cfg.branching, automerge: { enabled: draft.enabled, target: draft.target } } }));
-      }
-      return;
   }
 }
 
 export function DraftEditor({ draft, setDraft }: { draft: Draft; setDraft: (next: Draft) => void }) {
-  const { t } = useTranslation();
-  const dp = t.plugins.dev_projects;
   const firstInputRef = useRef<HTMLInputElement>(null);
 
   // Focus the first text input on open (the orchestrator keys this component by
@@ -115,36 +89,5 @@ export function DraftEditor({ draft, setDraft }: { draft: Draft; setDraft: (next
           {draft.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </ThemedSelect>
       );
-    case 'precommit':
-      return (
-        <div className="space-y-2">
-          <ToggleRow label={dp.standards_lint} checked={draft.lint} onChange={() => setDraft({ ...draft, lint: !draft.lint })} />
-          <ToggleRow label={dp.standards_docs} checked={draft.docs} onChange={() => setDraft({ ...draft, docs: !draft.docs })} />
-          <ToggleRow label={dp.standards_quality} checked={draft.quality} onChange={() => setDraft({ ...draft, quality: !draft.quality })} />
-        </div>
-      );
-    case 'automerge':
-      return (
-        <div className="space-y-2.5">
-          <ToggleRow label={dp.standards_automerge} checked={draft.enabled} onChange={() => setDraft({ ...draft, enabled: !draft.enabled })} />
-          {draft.enabled && (
-            <div className="space-y-1">
-              <label className="typo-caption text-foreground">{dp.standards_automerge_target}</label>
-              <ThemedSelect value={draft.target} onValueChange={(v) => setDraft({ ...draft, target: v === 'test' ? 'test' : 'main' })}>
-                {draft.branchOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </ThemedSelect>
-            </div>
-          )}
-        </div>
-      );
   }
-}
-
-function ToggleRow({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="typo-caption text-foreground">{label}</span>
-      <AccessibleToggle checked={checked} onChange={onChange} label={label} size="sm" />
-    </div>
-  );
 }

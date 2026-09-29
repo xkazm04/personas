@@ -573,6 +573,7 @@
   "core_disposition_high": "大胆",
   "core_disposition_low": "慎重",
   "core_effort_label": "推論の深さ",
+  "core_hint": "タスクの奥にいるこのエージェントの正体：メンタリティ、性格、そして動かすモデル。手を加えなかった部分はビルドが自動で推定します。",
   "core_model_cost": "相対コスト：最も安価なモデル階層の{multiple}倍",
   "core_model_label": "モデル",
   "core_reset": "初期設定に戻す",

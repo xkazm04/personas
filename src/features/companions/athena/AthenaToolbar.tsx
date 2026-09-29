@@ -62,7 +62,18 @@ export function AthenaToolbar(props: {
   compact?: boolean;
   /** Toggle the panel between full and compact width. */
   onToggleCompact?: () => void;
+  /**
+   * `left` docks the rail on the LEFT edge of a floating chat (the two-layer
+   * prototypes): no width handle, no Brain button (the Current panel keeps
+   * it), its own surface classes, connector menus that open to the right
+   * instead of off-screen, and enabled connectors moved into a second narrow
+   * rail attached to the primary one's right edge.
+   */
+  dock?: 'panel' | 'left';
+  /** Root surface classes when `dock="left"`. */
+  className?: string;
 } = {}) {
+  const dock = props.dock ?? 'panel';
   const { t } = useTranslation();
   const voiceConfigured = useTtsVoiceSelection().configured;
 
@@ -137,16 +148,69 @@ export function AthenaToolbar(props: {
     }
   };
 
-  return (
+  // One pinned connector button, shared by the primary rail and (docked left)
+  // the attached rail of enabled connectors, so the toggle, the remove path and
+  // the right-click menu behave identically in both.
+  const renderConnector = (c: (typeof connectors)[number]) => (
+    <ConnectorIconButton
+      key={c.connectorName}
+      menuSide={dock === 'left' ? 'right' : 'left'}
+      name={c.connectorName}
+      enabled={c.enabled}
+      onToggle={async () => {
+        const next = !c.enabled;
+        try {
+          await companionSetConnectorEnabled(c.connectorName, next);
+          setConnectors(
+            connectors.map((row) =>
+              row.connectorName === c.connectorName
+                ? { ...row, enabled: next }
+                : row,
+            ),
+          );
+        } catch (err: unknown) {
+          addToast(
+            err instanceof Error ? err.message : String(err),
+            'error',
+          );
+          silentCatch('companion_set_connector_enabled')(err);
+        }
+      }}
+      onRemove={async () => {
+        try {
+          await companionRemoveConnector(c.connectorName);
+          setConnectors(
+            connectors.filter(
+              (row) => row.connectorName !== c.connectorName,
+            ),
+          );
+        } catch (err: unknown) {
+          addToast(
+            err instanceof Error ? err.message : String(err),
+            'error',
+          );
+          silentCatch('companion_remove_connector')(err);
+        }
+      }}
+    />
+  );
+
+  const enabledConnectors = dock === 'left' ? connectors.filter((c) => c.enabled) : [];
+
+  const primary = (
     <aside
-      className="relative shrink-0 w-11 border-l border-foreground/10 flex flex-col items-center py-3 gap-1.5 bg-foreground/[0.02]"
+      className={
+        dock === 'left'
+          ? `relative shrink-0 w-11 flex flex-col items-center py-3 gap-1.5 ${props.className ?? ''}`
+          : 'relative shrink-0 w-11 border-l border-foreground/10 flex flex-col items-center py-3 gap-1.5 bg-foreground/[0.02]'
+      }
       aria-label={t.athena.toolbar_label}
       data-testid="companion-toolbar"
     >
       {/* Minimize / expand handle — a vertically-centered arrow tab straddling
           the toolbar's inner edge. Replaces the old header compact button.
           ◀ collapses the panel to compact width; ▶ expands it back. */}
-      <button
+      {dock === 'panel' && <button
         type="button"
         onClick={onToggleCompact}
         data-testid="companion-toggle-compact"
@@ -156,7 +220,7 @@ export function AthenaToolbar(props: {
         className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 inline-flex items-center justify-center w-5 h-14 rounded-full bg-secondary border border-foreground/15 text-foreground hover:bg-foreground/10 hover:border-foreground/25 shadow-elevation-2 transition-colors focus-ring"
       >
         {compact ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
-      </button>
+      </button>}
 
       {/* Plugins group — single Dev Tools toggle */}
       <PluginToggleButton
@@ -173,13 +237,16 @@ export function AthenaToolbar(props: {
 
       <Divider />
 
-      {/* Assist group (existing) */}
-      <ToolbarButton
-        icon={<Brain className="w-4 h-4" />}
-        label={t.athena.brain_open}
-        onClick={onOpenBrain}
-        active={brainOpen}
-      />
+      {/* Assist group (existing). The left-docked rail carries no Brain
+          button: the Current panel keeps it. */}
+      {dock === 'panel' && (
+        <ToolbarButton
+          icon={<Brain className="w-4 h-4" />}
+          label={t.athena.brain_open}
+          onClick={onOpenBrain}
+          active={brainOpen}
+        />
+      )}
       {voiceConfigured && <VoiceControlPopover />}
 
       {/* Spacer pushes the connectors group to the bottom. */}
@@ -187,49 +254,9 @@ export function AthenaToolbar(props: {
 
       <Divider />
 
-      {/* Connectors group */}
-      {connectors.map((c) => (
-        <ConnectorIconButton
-          key={c.connectorName}
-          name={c.connectorName}
-          enabled={c.enabled}
-          onToggle={async () => {
-            const next = !c.enabled;
-            try {
-              await companionSetConnectorEnabled(c.connectorName, next);
-              setConnectors(
-                connectors.map((row) =>
-                  row.connectorName === c.connectorName
-                    ? { ...row, enabled: next }
-                    : row,
-                ),
-              );
-            } catch (err: unknown) {
-              addToast(
-                err instanceof Error ? err.message : String(err),
-                'error',
-              );
-              silentCatch('companion_set_connector_enabled')(err);
-            }
-          }}
-          onRemove={async () => {
-            try {
-              await companionRemoveConnector(c.connectorName);
-              setConnectors(
-                connectors.filter(
-                  (row) => row.connectorName !== c.connectorName,
-                ),
-              );
-            } catch (err: unknown) {
-              addToast(
-                err instanceof Error ? err.message : String(err),
-                'error',
-              );
-              silentCatch('companion_remove_connector')(err);
-            }
-          }}
-        />
-      ))}
+      {/* Connectors group. Docked left, the enabled ones move to the attached
+          second rail; only the pinned-but-off ones stay here. */}
+      {(dock === 'left' ? connectors.filter((c) => !c.enabled) : connectors).map(renderConnector)}
       <ToolbarButton
         icon={<Plus className="w-4 h-4" />}
         label={t.athena.connectors_add}
@@ -267,6 +294,24 @@ export function AthenaToolbar(props: {
         }}
       />
     </aside>
+  );
+
+  if (dock !== 'left' || enabledConnectors.length === 0) return primary;
+
+  // Docked left: the enabled connectors ride in a second narrow rail attached
+  // to the primary one's right edge, so the pair reads as one piece.
+  return (
+    <div className="flex items-stretch">
+      {primary}
+      <div
+        className="shrink-0 w-11 flex flex-col items-center py-3 gap-1.5 border-l border-foreground/10"
+        aria-label={t.athena.connectors_section_label}
+        role="group"
+        data-testid="companion-toolbar-enabled-connectors"
+      >
+        {enabledConnectors.map(renderConnector)}
+      </div>
+    </div>
   );
 }
 
@@ -373,7 +418,10 @@ function ConnectorIconButton({
   enabled,
   onToggle,
   onRemove,
+  menuSide = 'left',
 }: {
+  /** Which side of the button its right-click menu opens on. */
+  menuSide?: 'left' | 'right';
   name: string;
   enabled: boolean;
   onToggle: () => void;
@@ -450,7 +498,7 @@ function ConnectorIconButton({
       </button>
       {menuOpen && (
         <div
-          className="absolute right-9 top-0 z-50 min-w-[160px] rounded-card border border-foreground/15 bg-secondary/95 backdrop-blur-md shadow-elevation-3 py-1"
+          className={`absolute ${menuSide === 'right' ? 'left-9' : 'right-9'} top-0 z-50 min-w-[160px] rounded-card border border-foreground/15 bg-secondary/95 backdrop-blur-md shadow-elevation-3 py-1`}
           role="menu"
         >
           <button

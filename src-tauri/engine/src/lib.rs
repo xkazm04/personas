@@ -177,4 +177,3 @@ pub mod unattended_worktree;
 pub mod verification_command;
 pub mod workflow_compiler;
 pub mod workspace_sync;
-pub mod worktree_settings;

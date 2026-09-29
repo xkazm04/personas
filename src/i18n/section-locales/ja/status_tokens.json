@@ -46,12 +46,6 @@
     "provider_codex_cli": "Codex",
     "provider_global": "全体"
   },
-  "competition": {
-    "awaiting_review": "レビュー待ち",
-    "cancelled": "キャンセル済み",
-    "resolved": "解決済み",
-    "running": "実行中"
-  },
   "connector_status": {
     "failed": "失敗",
     "no_credential": "認証情報なし",

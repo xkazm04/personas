@@ -64,7 +64,7 @@ export function CuratorAuthoritySection({ policy, write }: {
   return (
     <section className="space-y-2" data-testid="curator-authority">
       <h3 className="typo-title">{s.curator_authority_title}</h3>
-      <p className="typo-caption text-foreground opacity-70">{s.curator_authority_desc}</p>
+      <p className="typo-caption">{s.curator_authority_desc}</p>
       {rows.map((row) => (
         <PolicyRow
           key={row.key}

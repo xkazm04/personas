@@ -15,6 +15,11 @@
  * calls `stripModelDirectives` before passing it as children) so the user
  * never sees raw OP:/QR:/TTS: directive lines.
  *
+ * Layered voice: assistant prose renders through `AssistantProse` — ref
+ * links (`[phrase](ref:kind/handle)`) become inline links, raw ids are
+ * shortened, and a reply past the register's cap folds behind "Read the
+ * rest". The copy button still copies the original text.
+ *
  * Brain links: when an assistant message body mentions a brain-id token
  * (goal_xyz, procedural_abc, …) and an `onOpenInBrain` handler is wired,
  * a small chip strip renders below the bubble linking each token to its
@@ -28,6 +33,7 @@ import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { stripModelDirectives } from './athenaLabels';
 import { BrainLinksStrip } from './BrainLinksStrip';
+import { AssistantProse } from './chat/refs/AssistantProse';
 import { systemMarkerOf } from './systemMarkers';
 
 export function Bubble({
@@ -203,6 +209,10 @@ export function Bubble({
           >
             {isUser || !displayIsString ? (
               displayText
+            ) : !isSystem ? (
+              // Athena's own words: id net, ref links, and the safety-net fold
+              // (never mid-stream — a fold that moves as tokens land would jump).
+              <AssistantProse content={displayText as string} fold={!streaming} codeBlockActions />
             ) : (
               <MarkdownRenderer
                 content={displayText as string}

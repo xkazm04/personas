@@ -334,6 +334,13 @@ fn event_meta(event: &BuildEvent) -> (&str, &'static str) {
         BuildEvent::ClarifyingQuestionV3 { session_id, .. } => {
             (session_id, "clarifying_question_v3")
         }
+        BuildEvent::ProvisionalCapabilityEnumeration { session_id, .. } => {
+            (session_id, "provisional_capability_enumeration")
+        }
+        BuildEvent::ProvisionalCapabilityResolution { session_id, .. } => {
+            (session_id, "provisional_capability_resolution")
+        }
+        BuildEvent::ProvisionalSettled { session_id, .. } => (session_id, "provisional_settled"),
     }
 }
 

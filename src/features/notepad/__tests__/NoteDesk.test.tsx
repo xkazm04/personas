@@ -14,6 +14,7 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 import type { NotePlanSummary } from '@/lib/bindings/NotePlanSummary';
 import type { NoteStatus } from '@/lib/bindings/NoteStatus';
 
+import { deskForecasts } from '../overview/deskForecast';
 import { NoteDeskCard } from '../overview/NoteDeskCard';
 import { NoteOverview } from '../overview/NoteOverview';
 
@@ -100,8 +101,21 @@ function desk(notes: DevNote[], over: { initialProjectId?: string | null } = {})
   return { onOpen };
 }
 
+/** Every goal the desk put on screen, in reading order. */
 const visibleIds = (all: DevNote[]) =>
-  all.filter((n) => screen.queryByTestId(`notepad-card-${n.id}`)).map((n) => n.id);
+  all.filter((n) => document.querySelector(`[data-goal-id="${n.id}"]`)).map((n) => n.id);
+
+/** The goals the current rail ADMITS. The journal's rail is a lens: an off-rail
+ *  goal stays on screen, dimmed, so "visible" and "on the rail" are different
+ *  questions and the tests have to ask both. */
+const onRailIds = (all: DevNote[]) =>
+  all.filter((n) => {
+    // Design-agnostic on purpose: the row design is an A/B that will be
+    // consolidated, and a test that names one design's class would go red on a
+    // switch that changed nothing about the lens.
+    const wrap = document.querySelector(`[data-goal-id="${n.id}"]`);
+    return wrap && !wrap.querySelector('.is-off');
+  }).map((n) => n.id);
 
 const reveal = { hasEntered: () => true, markEntered: vi.fn() };
 
@@ -128,24 +142,27 @@ describe('NoteOverview — the status lens', () => {
     note('shipped', { status: 'shipped', milestoneId: 'ms-3' }),
   ];
 
-  it('opens on All, which is every rail EXCEPT shipped', () => {
+  it('opens on All, which admits every rail EXCEPT shipped', () => {
     desk(all);
     expect(visibleIds(all)).toEqual(['draft', 'published', 'done', 'scoped', 'cut']);
+    expect(onRailIds(all)).toEqual(['draft', 'published', 'done', 'scoped', 'cut']);
   });
 
-  it('Drafts is the brainstorm rail, Scoped is the plan rail mid-flight', async () => {
+  // THE RAIL IS A LENS, NOT A CUT. Everything stays put and the off-rail goals
+  // dim, so switching rails moves nothing and the desk can be learned by
+  // position. That is the whole reason the journal replaced the grid.
+  it('Drafts admits the brainstorm rail, Scoped the plan rail — and neither removes a goal', async () => {
     desk(all);
 
     fireEvent.click(screen.getByRole('tab', { name: 'Drafts' }));
-    await waitFor(() => expect(visibleIds(all)).toEqual(['draft', 'published', 'done']));
+    await waitFor(() => expect(onRailIds(all)).toEqual(['draft', 'published', 'done']));
+    expect(visibleIds(all)).toEqual(['draft', 'published', 'done', 'scoped', 'cut']);
 
     fireEvent.click(screen.getByRole('tab', { name: 'Scoped' }));
-    await waitFor(() => expect(visibleIds(all)).toEqual(['scoped', 'cut']));
+    await waitFor(() => expect(onRailIds(all)).toEqual(['scoped', 'cut']));
+    expect(visibleIds(all)).toEqual(['draft', 'published', 'done', 'scoped', 'cut']);
   });
 
-  // A shipped note lives in the archive drawer's Shipped group. If it leaked
-  // onto the desk it would also be counted by the project tabs, and the desk
-  // would fill up with records.
   it('never shows a shipped note, under any lens', () => {
     desk(all);
     for (const label of ['Drafts', 'Scoped']) {
@@ -165,29 +182,34 @@ describe('NoteOverview — the status lens', () => {
     cleanup();
     desk(all);
     expect(screen.getByRole('tab', { name: 'Scoped' })).toHaveAttribute('aria-selected', 'true');
-    expect(visibleIds(all)).toEqual(['scoped', 'cut']);
+    expect(onRailIds(all)).toEqual(['scoped', 'cut']);
   });
 });
 
 describe('NoteOverview — initialProjectId', () => {
   const all = [note('a', { projectId: 'p1' }), note('b', { projectId: 'p2' })];
 
-  it('seeds the project filter so a deep link opens already narrowed', () => {
+  const currentZone = () => document.querySelector('.ql-zone.is-current')?.getAttribute('data-zone-name') ?? null;
+
+  // The journal has no project filter to seed — every project is always on
+  // screen, which is the point. The deep link now seeds the CURSOR instead, so
+  // "show me this repo's notes" opens with that project under the caret.
+  it('seeds the cursor onto the linked project', () => {
     desk(all, { initialProjectId: 'p2' });
-    expect(visibleIds(all)).toEqual(['b']);
+    expect(currentZone()).toBe('athena');
+  });
+
+  it('falls back to the first project when the prop is absent', () => {
+    desk(all);
+    expect(currentZone()).toBe('athena');
   });
 
   // A SEED, not a controlled value: once the pad is open the operator owns the
-  // filter, and a prop that kept re-asserting itself would undo every click.
-  it('does not fight the operator once they pick another project', async () => {
+  // cursor, and a prop that kept re-asserting itself would undo every move.
+  it('does not fight the operator once they move', async () => {
     desk(all, { initialProjectId: 'p2' });
-    fireEvent.click(screen.getByRole('tab', { name: /personas/ }));
-    await waitFor(() => expect(visibleIds(all)).toEqual(['a']));
-  });
-
-  it('falls back to All when the prop is absent', () => {
-    desk(all);
-    expect(visibleIds(all)).toEqual(['a', 'b']);
+    fireEvent.keyDown(window, { key: ']' });
+    await waitFor(() => expect(currentZone()).toBe('personas'));
   });
 });
 
@@ -258,25 +280,30 @@ describe('the desk forecast', () => {
     live: summary('live', { milestoneStatus: 'active', cutAt: '2026-03-01T00:00:00.000Z' }),
   };
 
-  it('appears on a cut card once the project has enough observed cycles', () => {
-    summaries = historySummaries;
-    desk(withHistory);
+  // Tested on the function rather than through a card: the forecast is a
+  // reading the desk DERIVES, and every surface that shows it — the journal's
+  // second row, the interlayer's cards — reads this same map.
+  it('appears once the project has enough observed cycles', () => {
+    const out = deskForecasts(withHistory, historySummaries);
     // Four-day median from 2026-03-01.
-    expect(screen.getByTestId('notepad-card-forecast-live')).toHaveTextContent('2026-03-05');
+    expect(out.live?.date).toBe('2026-03-05');
+    expect(out.live?.basis).toBe('cut');
   });
 
   it('is absent below the evidence bar — one cycle is an anecdote', () => {
-    summaries = { s1: historySummaries.s1, live: historySummaries.live };
-    desk([withHistory[0]!, withHistory[2]!]);
-    expect(screen.queryByTestId('notepad-card-forecast-live')).toBeNull();
+    const out = deskForecasts([withHistory[0]!, withHistory[2]!], { s1: historySummaries.s1, live: historySummaries.live });
+    expect(out.live).toBeUndefined();
   });
 
   // A stale map is the LAST GOOD reading, not the current one. A median built
-  // on it is a guess on a guess, and "unknown" is the honest rendering.
-  it('is suppressed entirely while the plan join is stale', () => {
+  // on it is a guess on a guess, and "unknown" is the honest rendering. The
+  // journal's first port dropped this guard; this test is why it came back.
+  it('is suppressed entirely while the plan join is stale', async () => {
     summaries = historySummaries;
     stale = true;
     desk(withHistory);
-    expect(screen.queryByTestId('notepad-card-forecast-live')).toBeNull();
+    fireEvent.keyDown(window, { key: 'x' });
+    await waitFor(() => expect(document.querySelector('.rw-detail, .ql-detail')).not.toBeNull());
+    expect(document.querySelector('.rw-detail, .ql-detail')?.textContent ?? '').not.toContain('2026-03-05');
   });
 });

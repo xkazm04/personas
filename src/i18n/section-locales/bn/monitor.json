@@ -846,5 +846,8 @@
   "remote_terminal_title": "টার্মিনাল, শুধু পড়ার জন্য",
   "remote_terminal_waiting": "{device} থেকে আউটপুটের অপেক্ষায়",
   "remote_tile_aria": "{device}-এ {title}, {state}। রিমোট সেশন খুলুন",
-  "remote_wake": "জাগান"
+  "remote_wake": "জাগান",
+  "queue_origin_contest": "প্রতিযোগিতা",
+  "grid_column_contest_open": "প্রতিযোগিতা পৃষ্ঠায় {contest} খুলুন",
+  "grid_column_contest_unlinked": "{contest} এর আসনগুলো তাদের প্রকল্প রেকর্ড করার আগেই এটি শুরু হয়েছিল, তাই এখান থেকে খোলা যাবে না"
 }

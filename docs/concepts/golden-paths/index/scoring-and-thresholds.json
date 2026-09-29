@@ -164,6 +164,15 @@
       "resolved": false
     },
     "lefthook.yml": {"count":1,"sections":[9],"contexts":["**Where this runs.** `npm run census:check` is a **pre-push job** (`lefthook.yml`, `golden-path-census`)"]},
+    "model.ts": {
+      "count": 3,
+      "sections": [3,6],
+      "lines": ["53","73","283-287"],
+      "contexts": [
+        "| **`compositeHealthScore.ts:238-243` — `computeGrade(score)`** | **THE score → grade function.** Four bands including `unknown`, keyed off `GRADE_THRESHOLDS`. | **4** files (`model.ts:53` aliased `g…"
+      ],
+      "resolved": false
+    },
     "orchestrator/src/db.ts": {"count":1,"sections":[6],"lines":["1052"],"contexts":["flag (`orchestrator/src/db.ts:1052`) and its only threshold is a named rate limit. It is reported as"],"resolved":false},
     "personas.rs": {
       "count": 8,
@@ -282,14 +291,7 @@
     },
     "src/features/home/sub_cockpit/widgets/personaStats.ts": {"count":3,"sections":[0,7],"lines":["204"],"contexts":["`personaStats.ts`, `statusTokens.ts`, `KPIDashboard.tsx`, `KpiDetailModal.tsx`,"],"resolvedFrom":"basename","verbatim":"personaStats.ts"},
     "src/features/overview/components/shared/KpiTile.tsx": {"count":1,"sections":[9],"lines":["178"],"contexts":["- **Hand-verified all 54.** Two false positives: `KpiTile.tsx:178`"],"resolvedFrom":"basename","verbatim":"KpiTile.tsx"},
-    "src/features/overview/sub_health/components/heartbeats/model.ts": {
-      "count": 4,
-      "sections": [3,6],
-      "lines": ["53","73","283-287"],
-      "contexts": ["`compositeHealthScore.ts`, `useStatusPageData.ts`, `StatusPageView.tsx`, `heartbeats/model.ts`,"],
-      "resolvedFrom": "suffix",
-      "verbatim": "heartbeats/model.ts"
-    },
+    "src/features/overview/sub_health/components/heartbeats/model.ts": {"count":1,"sections":[],"contexts":["`compositeHealthScore.ts`, `useStatusPageData.ts`, `StatusPageView.tsx`, `heartbeats/model.ts`,"],"resolvedFrom":"suffix","verbatim":"heartbeats/model.ts"},
     "src/features/overview/sub_health/components/heartbeats/primitives.tsx": {
       "count": 1,
       "sections": [3],

@@ -57,6 +57,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createTurnTimer } from './lib/stream-timing.mjs';
+import { replyShape as computeReplyShape } from './lib/reply-shape.mjs';
+import { selfTest as replyShapeSelfTest } from './lib/reply-shape-self-test.mjs';
 
 // A crashed run must say so in run.log, not die silently (bitten twice by
 // async EPIPE from killed children).
@@ -229,6 +231,41 @@ function spokenFriendly(report) {
   return !text.split('\n').some((l) => /^\s*(#{1,6}\s|[-*]\s|\|\s|```|\d+\.\s)/.test(l));
 }
 
+/** replyShape (WP4, spark athena-layered-voice): sentence cap, zero bare ids,
+ *  well-formed ref links — scored on the dispatcher's cleaned display text via
+ *  the SAME counters `scripts/companion/reply-stats.mjs` uses on the live
+ *  brain, so a bench number and a production number always mean the same
+ *  thing. SOFT by default (`expect.hardShape` unset or false): the check
+ *  always reports its numbers per scenario like the existing checks, but only
+ *  FAILS the scenario when the scenario declares `hardShape: true`. This is
+ *  deliberate — layer_one is a new prompt contract (WP1) that most of the
+ *  corpus's existing cells were never taught, so a hard gate here would fail
+ *  every pre-layer-one cell on a rule it doesn't know exists yet.
+ *
+ *  `bareIds` is `computeReplyShape`'s PRIMARY count (Director amendment,
+ *  2026-09-23: an id inside INLINE code counts; only a fenced code block or a
+ *  ref-link handle is exempt — `scripts/test/lib/reply-shape.mjs`'s
+ *  `countBareIds` doc comment has the full reasoning). `bareIdsStrict`
+ *  (all code spans exempt, the pre-amendment reading) rides along in the
+ *  detail line, clearly labeled, for comparison only — it is never what
+ *  `bareIdsOk`/`structurallyOk`/`hardShape` score against. */
+function replyShapeCheck(report, expect) {
+  const cap = expect.replyShape?.cap ?? 3;
+  const text = (report.cleanedText ?? '').trim();
+  const shape = computeReplyShape(text);
+  const sentencesOk = shape.sentences <= cap;
+  const bareIdsOk = shape.bareIds === 0;
+  const refsOk = shape.refsMalformed === 0;
+  const structurallyOk = sentencesOk && bareIdsOk && refsOk;
+  const detail =
+    `sentences=${shape.sentences}/${cap}${sentencesOk ? '' : ' OVER'} ` +
+    `bareIds=${shape.bareIds}${bareIdsOk ? '' : ' LEAK'} (strict/code-exempt, comparison only: ${shape.bareIdsStrict}) ` +
+    `refLinks=${shape.refLinkCount} (${shape.refsWellFormed} ok, ${shape.refsMalformed} malformed) ` +
+    `words=${shape.words} chars=${shape.chars}` +
+    (structurallyOk || expect.hardShape ? '' : ' [soft-fail — not scored against pass/fail]');
+  return { pass: expect.hardShape ? structurallyOk : true, detail };
+}
+
 function score(report, expect) {
   const checks = [];
   const add = (name, pass, detail = '') => checks.push({ name, pass, detail });
@@ -270,6 +307,17 @@ function score(report, expect) {
     add('ttsNotDuplicate', !tts || tts !== (report.cleanedText ?? '').trim(), 'TTS line repeats the prose verbatim');
   }
   if (expect.noLeak) add('noLeak', report.machineGrammarLeak === false);
+  // The dispatcher's chat_cards array is how a `show_report` op is visible in
+  // the validator report (a companion_chat_card row, kind "report"); there is
+  // no dedicated `reportEmitted` field on this bench's report shape yet (that
+  // lives in WP2's companion_turn.outcome_json, a production-only surface),
+  // so this checks the same evidence the production reader would.
+  if (expect.reportCard)
+    add('reportCard', (report.chatCards ?? []).some((c) => c.kind === 'report'), `chatCards=${JSON.stringify(report.chatCards ?? [])}`);
+  if (expect.replyShape) {
+    const shape = replyShapeCheck(report, expect);
+    add('replyShape', shape.pass, shape.detail);
+  }
   if (expect.noParseErrors)
     add('noParseErrors', !report.warnings.some((w) => /parse error|malformed/i.test(w)), report.warnings.join(' | '));
 
@@ -665,6 +713,47 @@ const pctl = (arr, p) => {
 };
 const fmtS = (ms) => (ms == null ? '—' : `${(ms / 1000).toFixed(1)}s`);
 
+/** Failure signatures beside the pass rate. Two cells with the same pass %
+ *  can have failed for different reasons — one emitting malformed ops, the
+ *  other omitting the action — and the pass % alone cannot say which lever
+ *  (prompt, format contract, model/effort) to pull. Each failing check maps
+ *  to one family; a failing run counts once per family it hit (a CASE count,
+ *  not an event count — one run with three rejected ops is one format case).
+ *  A family can only be counted on runs whose scenario declared a check of
+ *  that family, so the report prints how many runs declared each one: a 0
+ *  over 0 declaring runs is "not measured", not "clean". */
+const FAILURE_FAMILIES = [
+  ['format', (name) => /^(noRejectedOps|noParseErrors|noLeak|replyShape)$/.test(name)],
+  ['omission', (name) => /^(job:|approval:|nav:|reportCard$|anyOf\()/.test(name)],
+  ['over-action', (name) => /^(noSideEffects|noNewJobs)$/.test(name)],
+  ['stall', (name, detail) => name === 'delegated-promptly' || /still running/.test(detail ?? '')],
+  ['voice', (name) => /^(requireTts|spokenFriendly|ttsNotDuplicate)$/.test(name)],
+];
+const FAMILY_NAMES = [...FAILURE_FAMILIES.map(([f]) => f), 'other'];
+const familyOf = (check) => (FAILURE_FAMILIES.find(([, test]) => test(check.name, check.detail)) ?? ['other'])[0];
+/** Families a run failed on (deduped). */
+const failedFamilies = (r) => [...new Set((r.checks ?? []).filter((c) => !c.pass).map(familyOf))];
+/** Families a run's scenario declared at least one check of. */
+const declaredFamilies = (r) => new Set((r.checks ?? []).map(familyOf));
+/** Raw-output signatures, read on EVERY scored run from the validator report
+ *  regardless of which checks the scenario declared — so a passing run that
+ *  emitted a rejected op still shows up. */
+const RAW_SIGNATURES = [
+  ['rejected op', (r) => (r.validator?.warnings ?? []).length > 0],
+  ['grammar leak', (r) => r.validator?.machineGrammarLeak === true],
+];
+function signatureProfile(runs) {
+  const failing = runs.filter((r) => !r.pass);
+  const byFamily = Object.fromEntries(FAMILY_NAMES.map((f) => [f, failing.filter((r) => failedFamilies(r).includes(f)).length]));
+  const declared = Object.fromEntries(FAMILY_NAMES.map((f) => [f, runs.filter((r) => declaredFamilies(r).has(f)).length]));
+  const raw = Object.fromEntries(
+    RAW_SIGNATURES.map(([name, test]) => [name, { onPass: runs.filter((r) => r.pass && test(r)).length, onFail: failing.filter(test).length }]),
+  );
+  return { failing: failing.length, byFamily, declared, raw };
+}
+const fmtFamilies = (p) =>
+  FAMILY_NAMES.filter((f) => p.byFamily[f]).map((f) => `${f} ${p.byFamily[f]}`).join(', ') || '—';
+
 function report() {
   if (!fs.existsSync(RESULTS)) {
     console.error('no results yet');
@@ -741,6 +830,24 @@ function report() {
     md += `| ${c} | ${CELLS[c].promptClass} | ${classes.map((k) => `${agg[c].byClass[k].pass}/${agg[c].byClass[k].n}`).join(' | ')} |\n`;
   }
 
+  md += `\n## Failure signatures beside the pass rate\n\nFailing runs by the family of check they failed (a run counts once per family). Equal pass rates with different families are different problems: format → the op grammar / format contract, omission → the model did not take the expected action, over-action → it acted when it should not, stall → it held the turn instead of delegating. Raw signatures are read from the validator report on every scored run, passing ones included (pass/fail).\n\n| cell | pass % | failing runs | ${FAMILY_NAMES.join(' | ')} | ${RAW_SIGNATURES.map(([n]) => `${n} (pass/fail)`).join(' | ')} |\n|---|---|---|${FAMILY_NAMES.map(() => '---').join('|')}|${RAW_SIGNATURES.map(() => '---').join('|')}|\n`;
+  for (const c of cells) {
+    const p = signatureProfile(rows.filter((r) => r.cell === c));
+    md += `| ${c} | ${agg[c].passRate} | ${p.failing} | ${FAMILY_NAMES.map((f) => `${p.byFamily[f]}`).join(' | ')} | ${RAW_SIGNATURES.map(([n]) => `${p.raw[n].onPass}/${p.raw[n].onFail}`).join(' | ')} |\n`;
+  }
+  const allProfile = signatureProfile(rows);
+  md += `\nRuns that declared a check of each family (a family column can only count on these; 0 declaring runs means not measured, not clean): ${FAMILY_NAMES.map((f) => `${f} ${allProfile.declared[f]}/${rows.length}`).join(' · ')}\n`;
+  md += `\n### By class (pass/runs [failing families])\n\n| cell | ${classes.join(' | ')} |\n|---|${classes.map(() => '---').join('|')}|\n`;
+  for (const c of cells) {
+    md += `| ${c} | ${classes
+      .map((k) => {
+        const b = agg[c].byClass[k];
+        const p = signatureProfile(rows.filter((r) => r.cell === c && r.class === k));
+        return `${b.pass}/${b.n}${p.failing ? ` [${fmtFamilies(p)}]` : ''}`;
+      })
+      .join(' | ')} |\n`;
+  }
+
   md += `\n## Gate verdicts vs ${BASELINE}\n\nGates: accuracy drop ≤ ${GATES.maxAccuracyDropPts}pts per class; ANY drop in ${GATES.hardFailClasses.join(', ')} is a hard fail. Latency (p50 total win ≥ ${GATES.minLatencyWinPct}%) is reported beside the verdict: it decides the headline for a model/effort cell and is informational for a prompt-class cell, whose speed lever is the warm session this cold-spawn bench cannot see.\n\n`;
   if (!agg[BASELINE]) {
     md += `_${BASELINE} has no runs yet — verdicts need the baseline first._\n`;
@@ -789,8 +896,28 @@ function report() {
   console.log(`written to ${REPORT}`);
 }
 
+// ── help / self-test (no model, no validator binary) ───────────────────────
+function printHelp() {
+  const classes = [...new Set(corpus.scenarios.map((s) => s.class))].sort();
+  console.log(`Athena model/effort/prompt-family bench — ${corpus.scenarios.length} scenarios across ${classes.length} classes:\n  ${classes.join(', ')}\n`);
+  console.log('Cells: ' + Object.keys(CELLS).join(', '));
+  console.log(`
+Usage:
+  --help                       this message (no model, no validator)
+  --self-test                  unit-check the replyShape counter on fixture strings (no model, no validator)
+  --dry-run                    validate corpus + round-trip sample texts (builds the validator, no model)
+  --cell <id> [--reps N]       run one matrix cell
+  --cells <id,id,...|all>      run several cells (add --parallel to run them concurrently)
+  --report [--baseline <id>]   aggregate results.jsonl into report.md
+See the file header for the full option list (--scenarios, --prompt-file, --fixture-prompt, --timeout, ...).`);
+}
+
 // ── main ─────────────────────────────────────────────────────────────────
-if (has('--dry-run')) {
+if (has('--help')) {
+  printHelp();
+} else if (has('--self-test')) {
+  process.exit(replyShapeSelfTest() ? 0 : 1);
+} else if (has('--dry-run')) {
   await dryRun();
 } else if (has('--report')) {
   report();

@@ -22,10 +22,6 @@ import type { DevProjectEnvConnector } from "@/lib/bindings/DevProjectEnvConnect
 import type { DevIdea } from "@/lib/bindings/DevIdea";
 import type { DevScan } from "@/lib/bindings/DevScan";
 import type { DevTask } from "@/lib/bindings/DevTask";
-import type { DevCompetition } from "@/lib/bindings/DevCompetition";
-import type { DevCompetitionSlot } from "@/lib/bindings/DevCompetitionSlot";
-import type { DevStrategyStats } from "@/lib/bindings/DevStrategyStats";
-import type { CompetitionSlotInput } from "@/lib/bindings/CompetitionSlotInput";
 import type { ScanAgentMeta } from "@/lib/bindings/ScanAgentMeta";
 import type { StaticScanConfig } from "@/lib/bindings/StaticScanConfig";
 import type { StaticScanResult } from "@/lib/bindings/StaticScanResult";
@@ -466,110 +462,6 @@ export interface RepoEvidence {
 
 export const probeRepoEvidence = (rootPath: string) =>
   safeInvoke<RepoEvidence | null>(null, "dev_tools_probe_repo_evidence", { rootPath });
-
-// ============================================================================
-// Competitions (multi-clone parallel task execution via Claude Code worktrees)
-// ============================================================================
-
-export interface CompetitionDetail {
-  competition: DevCompetition;
-  slots: { slot: DevCompetitionSlot; task: DevTask | null }[];
-}
-
-export const startCompetition = (
-  projectId: string,
-  taskTitle: string,
-  taskDescription: string | null,
-  sourceIdeaId: string | null,
-  sourceGoalId: string | null,
-  slots: CompetitionSlotInput[],
-  worktreeBaseRef: 'head' | 'fresh' | null = null,
-) =>
-  invoke<{ competition: DevCompetition; slots: DevCompetitionSlot[] }>(
-    "dev_tools_start_competition",
-    {
-      projectId,
-      taskTitle,
-      taskDescription: taskDescription,
-      sourceIdeaId: sourceIdeaId,
-      sourceGoalId: sourceGoalId,
-      slots,
-      worktreeBaseRef: worktreeBaseRef,
-    },
-  );
-
-export const listCompetitions = (projectId: string, status?: string) =>
-  safeInvoke<DevCompetition[]>([], "dev_tools_list_competitions", {
-    projectId,
-    status: status,
-  });
-
-export const getCompetition = (id: string) =>
-  invoke<CompetitionDetail>("dev_tools_get_competition", { id });
-
-export const pickCompetitionWinner = (
-  id: string,
-  winnerTaskId: string,
-  reviewerNotes: string | null,
-  winnerInsight: string | null,
-) =>
-  invoke<DevCompetition>("dev_tools_pick_competition_winner", {
-    id,
-    winnerTaskId,
-    reviewerNotes: reviewerNotes,
-    winnerInsight: winnerInsight,
-  });
-
-export const cancelCompetition = (id: string) =>
-  invoke<DevCompetition>("dev_tools_cancel_competition", { id });
-
-export const refreshCompetitionSlot = (slotId: string) =>
-  invoke<DevCompetitionSlot>("dev_tools_refresh_competition_slot", { slotId });
-
-export const getCompetitionSlotDiff = (slotId: string) =>
-  invoke<string>("dev_tools_get_competition_slot_diff", { slotId });
-
-export const getStrategyLeaderboard = (projectId: string) =>
-  safeInvoke<DevStrategyStats[]>([], "dev_tools_get_strategy_leaderboard", {
-    projectId,
-  });
-
-export const deleteCompetition = (id: string) =>
-  invoke<boolean>("dev_tools_delete_competition", { id });
-
-export const startSlotServer = (slotId: string) =>
-  invoke<{ status: string; port: number; pid: number; url: string; command?: string }>(
-    "dev_tools_start_slot_server",
-    { slotId },
-  );
-
-export const stopSlotServer = (slotId: string) =>
-  invoke<boolean>("dev_tools_stop_slot_server", { slotId });
-
-export const switchToWorktree = (slotId: string) =>
-  invoke<{ worktree_path: string; branch_name: string; project_root: string }>(
-    "dev_tools_switch_to_worktree",
-    { slotId },
-  );
-
-/** Parsed diff stats JSON stored on each slot. */
-export interface CompetitionSlotDiffStats {
-  files_changed: number;
-  lines_added: number;
-  lines_removed: number;
-}
-
-export function parseCompetitionSlotDiffStats(
-  slot: DevCompetitionSlot,
-): CompetitionSlotDiffStats | null {
-  if (!slot.diff_stats_json) return null;
-  try {
-    const parsed = JSON.parse(slot.diff_stats_json) as CompetitionSlotDiffStats;
-    return parsed;
-  } catch {
-    return null;
-  }
-}
 
 // ============================================================================
 // Context Groups

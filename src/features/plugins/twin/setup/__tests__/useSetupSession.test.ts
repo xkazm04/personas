@@ -1,20 +1,50 @@
+/**
+ * useSetupSession as a thin client over the persisted setup session.
+ *
+ * `@/api/twin/twinSetup` is mocked (the backend owns the plan and the queue);
+ * the i18n layer is NOT — the opener comes from the real catalog, so a missing
+ * key fails here rather than rendering `undefined` to the person.
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import type { TwinProfile } from '@/lib/bindings/TwinProfile';
 import type { TwinTone } from '@/lib/bindings/TwinTone';
 import type { TwinChannel } from '@/lib/bindings/TwinChannel';
 import type { TwinPendingMemory } from '@/lib/bindings/TwinPendingMemory';
-import type { SetupTurnResult } from '@/lib/bindings/SetupTurnResult';
+import type { SetupSessionSnapshot } from '@/lib/bindings/SetupSessionSnapshot';
+import type { SetupStep } from '@/lib/bindings/SetupStep';
+import type { SetupOffer } from '@/lib/bindings/SetupOffer';
+import type { SetupUpdatedEvent } from '@/lib/bindings/SetupUpdatedEvent';
 
 // ---------------------------------------------------------------------------
 // Mocks — before the module under test is imported.
 // ---------------------------------------------------------------------------
 
-const mockSetupTurn = vi.fn();
-const mockRecordInteraction = vi.fn().mockResolvedValue({});
-vi.mock('@/api/twin/twin', () => ({
-  setupTurn: (...args: unknown[]) => mockSetupTurn(...args),
+const api = vi.hoisted(() => ({
+  setupGet: vi.fn(),
+  setupOpen: vi.fn(),
+  setupAnswer: vi.fn(),
+  setupSteer: vi.fn(),
+  setupOfferVerdict: vi.fn(),
+  setupRebuild: vi.fn(),
 }));
+vi.mock('@/api/twin/twinSetup', () => api);
+
+/** The one `twin-setup-updated` handler the hook registered, if any. */
+const events = vi.hoisted(() => ({
+  handler: null as null | ((payload: SetupUpdatedEvent) => void),
+  unlisten: vi.fn(),
+}));
+vi.mock('@/lib/eventRegistry', async () => {
+  const actual = await vi.importActual<Record<string, unknown>>('@/lib/eventRegistry');
+  return {
+    ...actual,
+    typedListen: vi.fn(async (_name: string, handler: (payload: SetupUpdatedEvent) => void) => {
+      events.handler = handler;
+      return events.unlisten;
+    }),
+  };
+});
 
 const mockUpdateTwinProfile = vi.fn().mockResolvedValue(undefined);
 const mockUpsertTwinTone = vi.fn().mockResolvedValue({});
@@ -24,7 +54,6 @@ let storeState: Record<string, unknown> = {};
 vi.mock('@/stores/systemStore', () => {
   const useSystemStore = <T,>(selector: (s: Record<string, unknown>) => T): T =>
     selector(storeState);
-  (useSystemStore as unknown as { getState: () => unknown }).getState = () => storeState;
   return { useSystemStore };
 });
 
@@ -33,6 +62,7 @@ vi.mock('@/lib/silentCatch', async () => {
   return { ...actual, toastCatch: () => () => {}, silentCatch: () => () => {} };
 });
 
+import { typedListen } from '@/lib/eventRegistry';
 import { useSetupSession } from '../useSetupSession';
 
 // ---------------------------------------------------------------------------
@@ -104,16 +134,63 @@ function makeMemory(over: Partial<TwinPendingMemory> = {}): TwinPendingMemory {
   };
 }
 
-function turn(over: Partial<SetupTurnResult> = {}): SetupTurnResult {
+function step(over: Partial<SetupStep> = {}): SetupStep {
   return {
+    id: 's1',
+    goalId: null,
+    stage: 'setup',
+    origin: 'plan',
+    kind: 'opinion',
     question: 'What are you known for?',
-    focus: 'identity',
-    toneChannel: null,
     answerMode: 'pick',
     incoming: null,
+    toneChannel: null,
     suggestions: [{ text: 'Shipping things', reason: 'Matches the bio.' }],
-    proposals: [],
-    doneHint: false,
+    status: 'live',
+    answer: null,
+    position: 0,
+    askedAt: '2026-09-24 10:00:00',
+    answeredAt: null,
+    reconciled: false,
+    ...over,
+  };
+}
+
+function offer(over: Partial<SetupOffer> = {}): SetupOffer {
+  return {
+    id: 'o1',
+    stepId: 's0',
+    origin: 'reconcile',
+    kind: 'bio',
+    part: null,
+    channel: null,
+    value: 'Builds local-first tools.',
+    lengthHint: null,
+    reason: 'From what they said.',
+    status: 'open',
+    ...over,
+  };
+}
+
+function snap(over: Partial<SetupSessionSnapshot> = {}): SetupSessionSnapshot {
+  return {
+    twinId: 't1',
+    stage: 'setup',
+    topicPreset: null,
+    focusSlot: null,
+    planStatus: 'ready',
+    planVersion: 1,
+    planError: null,
+    changeNote: null,
+    goals: [],
+    live: step(),
+    upcoming: [],
+    transcript: [],
+    offers: [],
+    lastAnswerOfferIds: [],
+    observations: [],
+    planning: false,
+    reconciling: false,
     ...over,
   };
 }
@@ -127,234 +204,338 @@ function setStore(over: Record<string, unknown> = {}) {
     twinReadinessApproved: [],
     updateTwinProfile: mockUpdateTwinProfile,
     upsertTwinTone: mockUpsertTwinTone,
-    recordTwinInteraction: mockRecordInteraction,
     pendingTrainingQuestions: null,
     setPendingTrainingQuestions: mockSetPendingTrainingQuestions,
     ...over,
   };
 }
 
+/** Mount and wait for the open to land. */
+async function mounted() {
+  const hook = renderHook(() => useSetupSession());
+  await waitFor(() => expect(hook.result.current.question).not.toBeNull());
+  return hook;
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
-  mockSetupTurn.mockResolvedValue(turn());
-  mockRecordInteraction.mockResolvedValue({});
+  events.handler = null;
+  const initial = snap();
+  api.setupOpen.mockResolvedValue(initial);
+  api.setupGet.mockResolvedValue(initial);
+  api.setupAnswer.mockResolvedValue(initial);
+  api.setupSteer.mockResolvedValue(initial);
+  api.setupOfferVerdict.mockResolvedValue(initial);
+  api.setupRebuild.mockResolvedValue(initial);
   mockUpdateTwinProfile.mockResolvedValue(undefined);
   mockUpsertTwinTone.mockResolvedValue({});
   setStore();
 });
 
 // ---------------------------------------------------------------------------
-// The completion authority
+// Open and resume
 // ---------------------------------------------------------------------------
 
-describe('useSetupSession — readiness is the completion authority', () => {
-  it('derives the checklist from stored rows, not from doneHint', async () => {
-    // The generator insists everything is finished. Nothing is stored.
-    mockSetupTurn.mockResolvedValue(turn({ doneHint: true }));
-    const { result } = renderHook(() => useSetupSession());
-    await waitFor(() => expect(result.current.question).not.toBeNull());
+describe('useSetupSession — open and resume', () => {
+  it('subscribes, then opens exactly once with the readiness and a setup opener', async () => {
+    const { result } = await mounted();
 
-    expect(result.current.checklist.map((c) => c.status)).toEqual([
-      'empty',
-      'empty',
-      'empty',
-      'empty',
-    ]);
-    expect(result.current.score).toBe(0);
-    // And the focus still points at the first unfinished slot.
-    expect(result.current.focus).toBe('identity');
+    expect(events.handler).not.toBeNull();
+    expect(api.setupOpen).toHaveBeenCalledTimes(1);
+    // The listener is registered before the open is sent, so nothing the
+    // engine announces between the two can be missed.
+    expect(vi.mocked(typedListen).mock.invocationCallOrder[0]!).toBeLessThan(
+      api.setupOpen.mock.invocationCallOrder[0]!,
+    );
+    const [twinId, readiness, locale, opener] = api.setupOpen.mock.calls[0]!;
+    expect(twinId).toBe('t1');
+    expect(readiness).toEqual({ identity: 'empty', tone: 'empty', channels: 'empty', memories: 'empty' });
+    expect(typeof locale).toBe('string');
+    // The opener is the real catalog's line for the first open slot.
+    expect(opener).toEqual({ slot: 'identity', question: expect.any(String) });
+    expect((opener as { question: string }).question.length).toBeGreaterThan(0);
+
+    expect(result.current.question).toBe('What are you known for?');
+    expect(result.current.suggestions).toEqual([{ text: 'Shipping things', reason: 'Matches the bio.' }]);
   });
 
-  it('moves the checklist when the STORE changes, with doneHint false throughout', async () => {
-    mockSetupTurn.mockResolvedValue(turn({ doneHint: false }));
+  it('a remount resumes with another open and never answers or rebuilds', async () => {
+    const first = await mounted();
+    first.unmount();
+    expect(events.unlisten).toHaveBeenCalled();
+
+    const second = await mounted();
+    expect(api.setupOpen).toHaveBeenCalledTimes(2);
+    expect(api.setupAnswer).not.toHaveBeenCalled();
+    expect(api.setupRebuild).not.toHaveBeenCalled();
+    expect(second.result.current.question).toBe('What are you known for?');
+  });
+
+  it('sends readiness from stored rows — the planner plans against what is filled', async () => {
     setStore({
       twinProfiles: [
-        makeProfile({
-          bio: 'I build local-first developer tools and I write about the parts that go wrong.',
-        }),
+        makeProfile({ bio: 'I build local-first developer tools and I write about the parts that go wrong.' }),
       ],
-      twinTones: [makeTone(), makeTone({ id: 'tn2', channel: 'discord' })],
-      twinChannels: [makeChannel()],
-      twinReadinessApproved: Array.from({ length: 5 }, (_, i) =>
-        makeMemory({ id: `m${i}` }),
-      ),
+      twinTones: [makeTone()],
     });
-    const { result } = renderHook(() => useSetupSession());
-    await waitFor(() => expect(result.current.question).not.toBeNull());
-
-    expect(result.current.checklist.map((c) => c.status)).toEqual([
-      'set',
-      'set',
-      'set',
-      'set',
-    ]);
-    // 80, not 100: `deriveReadiness` scores FIVE milestones and the fifth —
-    // `brain` (a bound knowledge base) — is not one of Setup's four slots; it
-    // lives in the Hub. The checklist and the score answer different questions
-    // and the session reports both unmodified.
-    expect(result.current.score).toBe(80);
+    await mounted();
+    expect(api.setupOpen.mock.calls[0]![1]).toEqual({
+      identity: 'set',
+      tone: 'partial',
+      channels: 'empty',
+      memories: 'empty',
+    });
+    // Identity is set, so the opener asks the first slot that is not.
+    expect(api.setupOpen.mock.calls[0]![3]).toMatchObject({ slot: 'tone' });
   });
 
-  it("exposes 'generic' plus every bound channel type as the tone slots", async () => {
-    setStore({
-      twinChannels: [
-        makeChannel({ channel_type: 'discord' }),
-        makeChannel({ id: 'c2', channel_type: 'email' }),
-        makeChannel({ id: 'c3', channel_type: 'discord' }),
-      ],
+  it('a training request opens with no opener and steers to training once', async () => {
+    api.setupOpen.mockResolvedValue(snap({ stage: 'setup', live: null }));
+    api.setupSteer.mockResolvedValue(snap({ stage: 'training' }));
+    const { result } = renderHook(() => {
+      const session = useSetupSession();
+      return session;
     });
-    const { result } = renderHook(() => useSetupSession());
-    await waitFor(() => expect(result.current.question).not.toBeNull());
-    expect(result.current.toneChannels).toEqual(['generic', 'discord', 'email']);
+    // The entry point's request lands in the same commit as the mount.
+    act(() => result.current.setStage('training'));
+
+    await waitFor(() => expect(result.current.stage).toBe('training'));
+    expect(api.setupOpen.mock.calls[0]![3]).toBeNull();
+    expect(api.setupSteer).toHaveBeenCalledTimes(1);
+    expect(api.setupSteer.mock.calls[0]![1]).toEqual({ action: 'setStage', stage: 'training' });
   });
 
-  it('opens the typed fields on what is stored', async () => {
-    setStore({
-      twinProfiles: [makeProfile({ role: 'Founder', bio: 'I ship.' })],
-      twinTones: [makeTone({ channel: 'discord', voice_directives: 'Lowercase, no emoji.' })],
-      twinChannels: [makeChannel({ channel_type: 'discord' })],
+  it('asking for the stage already stored sends nothing', async () => {
+    const { result } = await mounted();
+    await act(async () => {
+      result.current.setStage('setup');
     });
-    const { result } = renderHook(() => useSetupSession());
-    await waitFor(() => expect(result.current.question).not.toBeNull());
+    expect(api.setupSteer).not.toHaveBeenCalled();
+  });
 
-    expect(result.current.values.role).toBe('Founder');
-    expect(result.current.values.bio).toBe('I ship.');
-    expect(result.current.values['tone:discord']).toBe('Lowercase, no emoji.');
-    // A tone slot with no row yet opens empty rather than undefined.
-    expect(result.current.values['tone:generic']).toBe('');
+  it('an update event refetches the snapshot and renders it', async () => {
+    const { result } = await mounted();
+    api.setupGet.mockResolvedValue(
+      snap({ offers: [offer()], lastAnswerOfferIds: ['o1'] }),
+    );
+    await act(async () => {
+      events.handler?.({ twinId: 't1', reason: 'reconciled', planVersion: 1 });
+    });
+    await waitFor(() => expect(result.current.proposals).toHaveLength(1));
+    expect(api.setupGet).toHaveBeenCalledWith('t1');
+    expect(result.current.lastAnswerOfferIds).toEqual(['o1']);
+  });
+
+  it("another twin's event is ignored", async () => {
+    await mounted();
+    await act(async () => {
+      events.handler?.({ twinId: 't2', reason: 'reconciled', planVersion: 1 });
+    });
+    expect(api.setupGet).not.toHaveBeenCalled();
   });
 });
 
 // ---------------------------------------------------------------------------
-// A generator failure must not read as completion
+// Answering
 // ---------------------------------------------------------------------------
 
-describe('useSetupSession — a failing generator leaves the slot open', () => {
-  it('sets generatorError, keeps the checklist untouched and still allows a typed edit', async () => {
-    mockSetupTurn.mockRejectedValue(new Error('Claude CLI returned non-zero exit code'));
-    const { result } = renderHook(() => useSetupSession());
+describe('useSetupSession — answer and skip', () => {
+  it('answers the LIVE step id and renders the next step from the reply', async () => {
+    const { result } = await mounted();
+    api.setupAnswer.mockResolvedValue(
+      snap({
+        live: step({ id: 's2', question: 'Who do you write for?' }),
+        transcript: [step({ status: 'answered', answer: 'Shipping things' })],
+        reconciling: true,
+      }),
+    );
 
-    await waitFor(() => expect(result.current.generatorError).not.toBeNull());
-    expect(result.current.question).toBeNull();
-    expect(result.current.checklist.every((c) => c.status === 'empty')).toBe(true);
-    expect(result.current.score).toBe(0);
-    expect(result.current.focus).toBe('identity');
-
-    // The typed path is untouched by the generator being down — this is the
-    // whole reason `edit` shares no code with `answer`.
     await act(async () => {
-      await result.current.edit({ field: 'bio', value: 'I build local-first tools.' });
+      await result.current.answer('  Shipping things  ');
     });
-    expect(mockUpdateTwinProfile).toHaveBeenCalledWith('t1', {
-      bio: 'I build local-first tools.',
-    });
+
+    expect(api.setupAnswer).toHaveBeenCalledWith('t1', 's1', 'Shipping things', expect.any(Object), expect.any(String));
+    expect(result.current.question).toBe('Who do you write for?');
+    // The next question is already there, so the table is not busy while the
+    // answer is read in the background.
+    expect(result.current.busy).toBe(false);
+    expect(result.current.reconciling).toBe(true);
+    expect(result.current.history.map((h) => [h.role, h.text])).toEqual([
+      ['guide', 'What are you known for?'],
+      ['user', 'Shipping things'],
+      ['guide', 'Who do you write for?'],
+    ]);
   });
 
-  it('clears generatorError on the next successful turn', async () => {
-    mockSetupTurn.mockRejectedValueOnce(new Error('boom'));
-    const { result } = renderHook(() => useSetupSession());
-    await waitFor(() => expect(result.current.generatorError).not.toBeNull());
+  it('skip answers the live step with null and stores no value', async () => {
+    const { result } = await mounted();
+    api.setupAnswer.mockResolvedValue(
+      snap({
+        live: step({ id: 's2', question: 'Something else, then?' }),
+        transcript: [step({ status: 'skipped' })],
+      }),
+    );
+    await act(async () => {
+      await result.current.skip();
+    });
+    expect(api.setupAnswer).toHaveBeenCalledWith('t1', 's1', null, expect.any(Object), expect.any(String));
+    expect(mockUpdateTwinProfile).not.toHaveBeenCalled();
+    expect(mockUpsertTwinTone).not.toHaveBeenCalled();
+    // A declined question is a guide line with no user line after it.
+    expect(result.current.history.map((h) => h.role)).toEqual(['guide', 'guide']);
+  });
 
-    mockSetupTurn.mockResolvedValue(turn({ question: 'Second question?' }));
+  it('is busy only with no live step and background work in flight', async () => {
+    api.setupOpen.mockResolvedValue(snap({ live: null, planning: true, planStatus: 'building' }));
+    const { result } = renderHook(() => useSetupSession());
+    await waitFor(() => expect(api.setupOpen).toHaveBeenCalled());
+    await waitFor(() => expect(result.current.plan?.status).toBe('building'));
+    expect(result.current.busy).toBe(true);
+    expect(result.current.question).toBeNull();
+  });
+
+  it('a failed answer sets generatorError, keeps the question and leaves typed edits working', async () => {
+    const { result } = await mounted();
+    api.setupAnswer.mockRejectedValue(new Error('Claude CLI returned non-zero exit code'));
     await act(async () => {
       await result.current.answer('an answer');
     });
-    await waitFor(() => expect(result.current.generatorError).toBeNull());
-    expect(result.current.question).toBe('Second question?');
+    expect(result.current.generatorError).not.toBeNull();
+    expect(result.current.question).toBe('What are you known for?');
+    expect(result.current.checklist.every((c) => c.status === 'empty')).toBe(true);
+
+    await act(async () => {
+      await result.current.edit({ field: 'bio', value: 'I build local-first tools.' });
+    });
+    expect(mockUpdateTwinProfile).toHaveBeenCalledWith('t1', { bio: 'I build local-first tools.' });
+
+    // The next successful mutation clears it.
+    api.setupAnswer.mockResolvedValue(snap());
+    await act(async () => {
+      await result.current.answer('again');
+    });
+    expect(result.current.generatorError).toBeNull();
+  });
+
+  it('a failed plan with nothing live reads as the guide being down', async () => {
+    api.setupOpen.mockResolvedValue(snap({ live: null, planStatus: 'failed', planError: 'boom' }));
+    const { result } = renderHook(() => useSetupSession());
+    await waitFor(() => expect(result.current.generatorError).not.toBeNull());
+    expect(result.current.busy).toBe(false);
   });
 });
 
 // ---------------------------------------------------------------------------
-// accept / skip
+// Offers: the write stays here, the verdict goes to the server
 // ---------------------------------------------------------------------------
 
-describe('useSetupSession — accept writes, skip does not', () => {
-  it('accept() routes a bio proposal to updateTwinProfile and records the verdict', async () => {
-    mockSetupTurn.mockResolvedValue(
-      turn({
-        proposals: [
-          {
-            id: 'p1',
-            kind: 'bio',
-            channel: null,
-            value: 'I build local-first developer tools.',
-            lengthHint: null,
-            reason: 'Their own words.',
-          },
-        ],
+describe('useSetupSession — offers', () => {
+  it('maps open offers to proposals and stamps them on their step with verdicts', async () => {
+    api.setupOpen.mockResolvedValue(
+      snap({
+        transcript: [step({ id: 's0', status: 'answered', answer: 'I build tools' })],
+        offers: [offer(), offer({ id: 'o2', kind: 'role', value: 'Founder', status: 'dismissed' })],
       }),
     );
-    const { result } = renderHook(() => useSetupSession());
-    await waitFor(() => expect(result.current.proposals.length).toBe(1));
-
-    const proposal = result.current.proposals[0]!;
-    await act(async () => {
-      await result.current.accept(proposal);
-    });
-
-    expect(mockUpdateTwinProfile).toHaveBeenCalledWith('t1', {
-      bio: 'I build local-first developer tools.',
-    });
-    expect(mockUpsertTwinTone).not.toHaveBeenCalled();
-    const guideEntry = result.current.history.find((h) => h.proposals);
-    expect(guideEntry?.resolutions?.p1).toBe('accepted');
+    const { result } = await mounted();
+    expect(result.current.proposals.map((p) => p.id)).toEqual(['o1']);
+    expect(result.current.offerRecord.map((v) => [v.proposal.id, v.resolution])).toEqual([
+      ['o1', null],
+      ['o2', 'dismissed'],
+    ]);
+    const guide = result.current.history.find((h) => h.id === 'g-s0');
+    expect(guide?.proposals?.map((p) => p.id)).toEqual(['o1', 'o2']);
+    expect(guide?.resolutions).toEqual({ o2: 'dismissed' });
   });
 
-  it('accept() routes a tone proposal to upsertTwinTone on its own channel', async () => {
-    setStore({ twinChannels: [makeChannel({ channel_type: 'discord' })] });
-    mockSetupTurn.mockResolvedValue(
-      turn({
-        focus: 'tone',
-        toneChannel: 'discord',
-        proposals: [
-          {
-            id: 'p2',
-            kind: 'tone',
-            channel: 'discord',
-            value: 'lowercase, no emoji, one line',
-            lengthHint: '1-2 sentences',
-            reason: 'How they wrote in the answer above.',
-          },
-        ],
-      }),
-    );
-    const { result } = renderHook(() => useSetupSession());
-    await waitFor(() => expect(result.current.proposals.length).toBe(1));
+  it('arriving writes nothing', async () => {
+    api.setupOpen.mockResolvedValue(snap({ offers: [offer()] }));
+    await mounted();
+    expect(mockUpdateTwinProfile).not.toHaveBeenCalled();
+    expect(mockUpsertTwinTone).not.toHaveBeenCalled();
+  });
+
+  it('accept writes the field, then records the accepted verdict', async () => {
+    api.setupOpen.mockResolvedValue(snap({ offers: [offer()] }));
+    const { result } = await mounted();
+    api.setupOfferVerdict.mockResolvedValue(snap({ offers: [offer({ status: 'accepted' })] }));
 
     await act(async () => {
       await result.current.accept(result.current.proposals[0]!);
     });
 
-    expect(mockUpsertTwinTone).toHaveBeenCalledWith(
-      't1',
-      'discord',
-      'lowercase, no emoji, one line',
-      null,
-      null,
-      '1-2 sentences',
-    );
-    expect(mockUpdateTwinProfile).not.toHaveBeenCalled();
+    expect(mockUpdateTwinProfile).toHaveBeenCalledWith('t1', { bio: 'Builds local-first tools.' });
+    expect(api.setupOfferVerdict).toHaveBeenCalledWith('t1', 'o1', 'accepted');
+    expect(result.current.proposals).toEqual([]);
+    expect(result.current.offerRecord[0]?.resolution).toBe('accepted');
   });
 
-  it('a proposal is never auto-applied — arriving writes nothing', async () => {
-    mockSetupTurn.mockResolvedValue(
-      turn({
-        proposals: [
-          {
-            id: 'p3',
-            kind: 'role',
-            channel: null,
-            value: 'Founder',
-            lengthHint: null,
-            reason: 'They said so.',
-          },
+  it('a failed write records no verdict', async () => {
+    api.setupOpen.mockResolvedValue(snap({ offers: [offer()] }));
+    const { result } = await mounted();
+    mockUpdateTwinProfile.mockRejectedValueOnce(new Error('db locked'));
+    await act(async () => {
+      await result.current.accept(result.current.proposals[0]!);
+    });
+    expect(api.setupOfferVerdict).not.toHaveBeenCalled();
+  });
+
+  it('accept routes a tone offer to its own channel', async () => {
+    setStore({ twinChannels: [makeChannel({ channel_type: 'discord' })] });
+    api.setupOpen.mockResolvedValue(
+      snap({
+        offers: [
+          offer({ kind: 'tone', part: 'voice', channel: 'discord', value: 'lowercase, one line', lengthHint: '1-2 sentences' }),
         ],
       }),
     );
-    const { result } = renderHook(() => useSetupSession());
-    await waitFor(() => expect(result.current.proposals.length).toBe(1));
+    const { result } = await mounted();
+    await act(async () => {
+      await result.current.accept(result.current.proposals[0]!);
+    });
+    expect(mockUpsertTwinTone).toHaveBeenCalledWith('t1', 'discord', 'lowercase, one line', null, null, '1-2 sentences');
+  });
+
+  it('an accepted rule is appended to the constraints and carries the rest of the row', async () => {
+    setStore({
+      twinTones: [makeTone({ channel: 'email', voice_directives: 'Short.', constraints_json: '["Always sign off with M"]' })],
+    });
+    api.setupOpen.mockResolvedValue(
+      snap({ offers: [offer({ kind: 'tone', part: 'constraints', channel: 'email', value: 'Never book a time unasked.' })] }),
+    );
+    const { result } = await mounted();
+    await act(async () => {
+      await result.current.accept(result.current.proposals[0]!);
+    });
+    expect(mockUpsertTwinTone).toHaveBeenCalledWith(
+      't1',
+      'email',
+      'Short.',
+      null,
+      '["Always sign off with M","Never book a time unasked."]',
+      null,
+    );
+  });
+
+  it('dismiss records the verdict and writes nothing', async () => {
+    api.setupOpen.mockResolvedValue(snap({ offers: [offer()] }));
+    const { result } = await mounted();
+    await act(async () => {
+      result.current.dismiss(result.current.proposals[0]!);
+    });
+    await waitFor(() => expect(api.setupOfferVerdict).toHaveBeenCalledWith('t1', 'o1', 'dismissed'));
     expect(mockUpdateTwinProfile).not.toHaveBeenCalled();
-    expect(mockUpsertTwinTone).not.toHaveBeenCalled();
+  });
+
+  it('a typed edit marks the open offer for the same slot edited', async () => {
+    api.setupOpen.mockResolvedValue(snap({ offers: [offer(), offer({ id: 'o2', kind: 'role', value: 'Founder' })] }));
+    const { result } = await mounted();
+    await act(async () => {
+      await result.current.edit({ field: 'bio', value: 'My own words.' });
+    });
+    expect(mockUpdateTwinProfile).toHaveBeenCalledWith('t1', { bio: 'My own words.' });
+    expect(api.setupOfferVerdict).toHaveBeenCalledTimes(1);
+    expect(api.setupOfferVerdict).toHaveBeenCalledWith('t1', 'o1', 'edited');
   });
 
   it('a tone edit writes ONE part and carries the rest of the row over', async () => {
@@ -368,21 +549,10 @@ describe('useSetupSession — accept writes, skip does not', () => {
         }),
       ],
     });
-    const { result } = renderHook(() => useSetupSession());
-    await waitFor(() => expect(result.current.question).not.toBeNull());
-
+    const { result } = await mounted();
     await act(async () => {
-      await result.current.edit({
-        field: 'tone',
-        channel: 'generic',
-        part: 'examples',
-        value: '["ship it","on it"]',
-      });
+      await result.current.edit({ field: 'tone', channel: 'generic', part: 'examples', value: '["ship it","on it"]' });
     });
-
-    // The row is upserted whole, so the three parts the user did not touch have
-    // to travel with the one they did. Writing null for them (what this did
-    // until the typed surface exposed them) emptied the columns silently.
     expect(mockUpsertTwinTone).toHaveBeenCalledWith(
       't1',
       'generic',
@@ -392,333 +562,135 @@ describe('useSetupSession — accept writes, skip does not', () => {
       '1-2 sentences',
     );
   });
-
-  it('skip() stores no value and asks the next question instead', async () => {
-    const { result } = renderHook(() => useSetupSession());
-    await waitFor(() => expect(result.current.question).not.toBeNull());
-    mockSetupTurn.mockClear();
-    mockSetupTurn.mockResolvedValue(turn({ question: 'Something else, then?' }));
-
-    await act(async () => {
-      await result.current.skip();
-    });
-
-    expect(mockUpdateTwinProfile).not.toHaveBeenCalled();
-    expect(mockUpsertTwinTone).not.toHaveBeenCalled();
-    expect(mockRecordInteraction).not.toHaveBeenCalled();
-    expect(mockSetupTurn).toHaveBeenCalledTimes(1);
-    expect(result.current.question).toBe('Something else, then?');
-  });
-
-  it('a training answer is recorded as a memory carrying both question and answer', async () => {
-    const { result } = renderHook(() => useSetupSession());
-    await waitFor(() => expect(result.current.question).not.toBeNull());
-    act(() => {
-      result.current.setStage('training');
-    });
-
-    await act(async () => {
-      await result.current.answer('I start from the smallest thing that unblocks someone.');
-    });
-
-    expect(mockRecordInteraction).toHaveBeenCalledWith(
-      't1',
-      'training',
-      'out',
-      'I start from the smallest thing that unblocks someone.',
-      undefined,
-      'Training Q&A: What are you known for?',
-      JSON.stringify([
-        {
-          q: 'What are you known for?',
-          a: 'I start from the smallest thing that unblocks someone.',
-        },
-      ]),
-      true,
-    );
-  });
-
-  it('a setup-stage answer records nothing — only training material is stored', async () => {
-    const { result } = renderHook(() => useSetupSession());
-    await waitFor(() => expect(result.current.question).not.toBeNull());
-
-    await act(async () => {
-      await result.current.answer('Local-first developer tools.');
-    });
-
-    expect(mockRecordInteraction).not.toHaveBeenCalled();
-  });
 });
 
 // ---------------------------------------------------------------------------
-// The readiness strip has to DRIVE the content
+// Steering
 // ---------------------------------------------------------------------------
 
-describe('useSetupSession — focusOn asks the new slot a question', () => {
-  it('requests a turn on the slot it was given, and drops the previous cards', async () => {
-    const { result } = renderHook(() => useSetupSession());
-    await waitFor(() => expect(result.current.question).not.toBeNull());
-    expect(result.current.suggestions.length).toBe(1);
-
-    // The second call is held open so the state BETWEEN the click and the
-    // reply is observable: that window is where the old suggestions used to
-    // sit under the new slot's heading.
-    let release!: (value: SetupTurnResult) => void;
-    mockSetupTurn.mockClear();
-    mockSetupTurn.mockReturnValue(
-      new Promise<SetupTurnResult>((resolve) => {
-        release = resolve;
-      }),
-    );
-
-    act(() => {
+describe('useSetupSession — steering', () => {
+  it('redeal, focus, topic, steer and rebuild each send one command', async () => {
+    const { result } = await mounted();
+    await act(async () => {
+      result.current.redeal();
       result.current.focusOn('tone');
+      result.current.setTopic('Ask me about my work.', 'background');
+      await result.current.steer({ action: 'pinGoal', goalId: 'g1', pinned: true });
+      await result.current.rebuild();
     });
-
-    expect(result.current.focus).toBe('tone');
-    expect(mockSetupTurn).toHaveBeenCalledTimes(1);
-    // The focus argument is the NEW slot. Reading it out of state would have
-    // sent 'identity' here, which is the defect this test exists for.
-    expect(mockSetupTurn.mock.calls[0]?.[3]).toBe('tone');
-    expect(result.current.suggestions).toEqual([]);
-    expect(result.current.proposals).toEqual([]);
-
-    await act(async () => {
-      release(turn({ focus: 'tone', question: 'How do you sound at work?' }));
-    });
-    await waitFor(() => expect(result.current.question).toBe('How do you sound at work?'));
-    // The transcript keeps both turns: the trail is how the switch stays legible.
-    expect(result.current.history.length).toBeGreaterThanOrEqual(2);
+    expect(api.setupSteer.mock.calls.map((c) => c[1])).toEqual([
+      { action: 'redeal' },
+      { action: 'focusSlot', slot: 'tone' },
+      { action: 'setTopic', presetId: 'background', prompt: 'Ask me about my work.' },
+      { action: 'pinGoal', goalId: 'g1', pinned: true },
+    ]);
+    expect(api.setupRebuild).toHaveBeenCalledTimes(1);
   });
 
-  it('ignores a click on the slot already in focus while its turn is in flight', async () => {
-    let release!: (value: SetupTurnResult) => void;
-    mockSetupTurn.mockReturnValue(
-      new Promise<SetupTurnResult>((resolve) => {
-        release = resolve;
-      }),
-    );
-    const { result } = renderHook(() => useSetupSession());
-    await waitFor(() => expect(result.current.busy).toBe(true));
-    expect(mockSetupTurn).toHaveBeenCalledTimes(1);
-
-    act(() => {
-      result.current.focusOn('identity');
-    });
-    expect(mockSetupTurn).toHaveBeenCalledTimes(1);
-
+  it('a click on the slot already being asked is not a new instruction', async () => {
+    const { result } = await mounted();
     await act(async () => {
-      release(turn());
-    });
-    await waitFor(() => expect(result.current.busy).toBe(false));
-
-    // And once a question is on screen, clicking its own slot still leaves it
-    // alone rather than re-rolling the question the user is reading.
-    act(() => {
       result.current.focusOn('identity');
     });
-    expect(mockSetupTurn).toHaveBeenCalledTimes(1);
+    expect(api.setupSteer).not.toHaveBeenCalled();
   });
-});
 
-// ---------------------------------------------------------------------------
-// The Hub handoff
-// ---------------------------------------------------------------------------
-
-describe('useSetupSession — dig-deeper handoff', () => {
-  it('asks the handed-over questions before consulting the generator', async () => {
-    setStore({ pendingTrainingQuestions: ['What went wrong in 2019?'] });
-    const { result } = renderHook(() => useSetupSession());
-
-    await waitFor(() => expect(result.current.question).toBe('What went wrong in 2019?'));
+  it('the topic is the preset prompt from the snapshot', async () => {
+    api.setupOpen.mockResolvedValue(snap({ stage: 'training', topicPreset: 'background' }));
+    const { result } = await mounted();
     expect(result.current.stage).toBe('training');
+    expect(result.current.topicPreset).toBe('background');
+    expect(typeof result.current.topic).toBe('string');
+    expect(result.current.topic?.length).toBeGreaterThan(0);
+  });
+
+  it('focus follows the plan, and falls back to the first open slot', async () => {
+    api.setupOpen.mockResolvedValue(snap({ focusSlot: 'channels' }));
+    const { result } = await mounted();
+    expect(result.current.focus).toBe('channels');
+  });
+
+  it('the Hub handoff joins the queue behind the open, then clears', async () => {
+    setStore({ pendingTrainingQuestions: ['a?', 'b?', 'c?', 'd?', 'e?', 'f?'] });
+    await mounted();
+    await waitFor(() => expect(api.setupSteer).toHaveBeenCalled());
+    expect(api.setupSteer.mock.calls[0]![1]).toEqual({
+      action: 'enqueueHandoff',
+      questions: ['a?', 'b?', 'c?', 'd?', 'e?'],
+    });
     expect(mockSetPendingTrainingQuestions).toHaveBeenCalledWith(null);
+    // Behind the open: the session exists before anything is queued on it.
+    expect(api.setupOpen.mock.invocationCallOrder[0]!).toBeLessThan(api.setupSteer.mock.invocationCallOrder[0]!);
   });
 });
 
 // ---------------------------------------------------------------------------
-// Writing samples are the person's own words
+// Readiness stays the completion authority
 // ---------------------------------------------------------------------------
 
-describe("useSetupSession — a writing sample is the person's own words", () => {
-  const writeTurn = () =>
-    turn({
-      question: 'Your manager on Slack sends this. Reply the way you would.',
-      focus: 'tone',
-      toneChannel: 'slack',
-      answerMode: 'write',
-      incoming: 'can we push the review to thursday?',
-      suggestions: [],
-    });
-
-  it('a write turn deals no cards and says what is being replied to', async () => {
-    mockSetupTurn.mockResolvedValue({
-      ...writeTurn(),
-      // A model that ignored the contract. The hand stays empty regardless.
-      suggestions: [{ text: 'Sure thing! Thursday works great.', reason: 'x' }],
-    });
-    const { result } = renderHook(() => useSetupSession());
-    await waitFor(() => expect(result.current.question).not.toBeNull());
-
-    expect(result.current.answerMode).toBe('write');
-    expect(result.current.incoming).toBe('can we push the review to thursday?');
-    expect(result.current.toneChannel).toBe('slack');
-    expect(result.current.suggestions).toEqual([]);
-  });
-
-  it('the answer is offered back verbatim as a sample, and nothing is written until it is accepted', async () => {
-    setStore({
-      twinTones: [
-        makeTone({
-          channel: 'slack',
-          voice_directives: 'lowercase',
-          examples_json: '["on it"]',
-          constraints_json: '["never apologise twice"]',
-          length_hint: 'one line',
-        }),
-      ],
-    });
-    mockSetupTurn.mockResolvedValueOnce(writeTurn());
-    mockSetupTurn.mockResolvedValue(turn({ question: 'And on email?' }));
-    const { result } = renderHook(() => useSetupSession());
-    await waitFor(() => expect(result.current.answerMode).toBe('write'));
-
-    await act(async () => {
-      await result.current.answer('  yep thursday works, same time?  ');
-    });
-
-    expect(mockUpsertTwinTone).not.toHaveBeenCalled();
-    const sample = result.current.proposals.find((p) => p.part === 'examples');
-    expect(sample).toMatchObject({
-      kind: 'tone',
-      part: 'examples',
-      channel: 'slack',
-      value: 'yep thursday works, same time?',
-    });
-    // It rides on the next guide turn, so its verdict lands in the trail.
-    expect(result.current.history.at(-1)?.proposals?.some((p) => p.id === sample!.id)).toBe(true);
-
-    await act(async () => {
-      await result.current.accept(sample!);
-    });
-    // Appended to the samples; the voice, the rules and the length travel over.
-    expect(mockUpsertTwinTone).toHaveBeenCalledWith(
-      't1',
-      'slack',
-      'lowercase',
-      '["on it","yep thursday works, same time?"]',
-      '["never apologise twice"]',
-      'one line',
-    );
-  });
-
-  it('a pick answer and a training answer are never offered as samples', async () => {
-    const { result } = renderHook(() => useSetupSession());
-    await waitFor(() => expect(result.current.question).not.toBeNull());
-    await act(async () => {
-      await result.current.answer('Shipping things');
-    });
-    expect(result.current.proposals).toEqual([]);
-
-    mockSetupTurn.mockResolvedValue(writeTurn());
-    act(() => {
-      result.current.focusOn('tone');
-    });
-    await waitFor(() => expect(result.current.answerMode).toBe('write'));
-    act(() => {
-      result.current.setStage('training');
-    });
-    mockSetupTurn.mockResolvedValue(turn({ question: 'Next?' }));
-    await act(async () => {
-      await result.current.answer('yep thursday works');
-    });
-    // Kept word for word as training material instead.
-    expect(mockRecordInteraction).toHaveBeenCalled();
-    expect(result.current.proposals).toEqual([]);
-  });
-
-  it('an accepted rule is appended to the constraints and carries the rest of the row', async () => {
-    setStore({
-      twinTones: [makeTone({ channel: 'email', voice_directives: 'Short.', constraints_json: '["Always sign off with M"]' })],
-    });
-    mockSetupTurn.mockResolvedValue(
-      turn({
-        focus: 'channels',
-        proposals: [
+describe('useSetupSession — readiness is the completion authority', () => {
+  it('derives the checklist from stored rows, whatever the plan says', async () => {
+    api.setupOpen.mockResolvedValue(
+      snap({
+        goals: [
           {
-            id: 'r1',
-            kind: 'tone',
-            part: 'constraints',
-            channel: 'email',
-            value: 'Never agree to a meeting time without checking with me.',
-            lengthHint: null,
-            reason: 'They said so.',
+            id: 'g1',
+            slot: 'identity',
+            title: 'Who they are',
+            intent: '',
+            criteria: [],
+            state: 'covered',
+            pinned: false,
+            coverage: 1,
+            position: 0,
+            answered: 4,
           },
         ],
       }),
     );
-    const { result } = renderHook(() => useSetupSession());
-    await waitFor(() => expect(result.current.proposals.length).toBe(1));
-
-    await act(async () => {
-      await result.current.accept(result.current.proposals[0]!);
-    });
-    expect(mockUpsertTwinTone).toHaveBeenCalledWith(
-      't1',
-      'email',
-      'Short.',
-      null,
-      '["Always sign off with M","Never agree to a meeting time without checking with me."]',
-      null,
-    );
+    const { result } = await mounted();
+    expect(result.current.checklist.map((c) => c.status)).toEqual(['empty', 'empty', 'empty', 'empty']);
+    expect(result.current.score).toBe(0);
   });
 
-  it('a register with a tone row and no bound channel is still covered', async () => {
-    setStore({ twinTones: [makeTone({ channel: 'email' })] });
-    const { result } = renderHook(() => useSetupSession());
-    await waitFor(() => expect(result.current.question).not.toBeNull());
-    expect(result.current.toneChannels).toEqual(['generic', 'email']);
+  it('moves the checklist when the STORE changes', async () => {
+    setStore({
+      twinProfiles: [
+        makeProfile({ bio: 'I build local-first developer tools and I write about the parts that go wrong.' }),
+      ],
+      twinTones: [makeTone(), makeTone({ id: 'tn2', channel: 'discord' })],
+      twinChannels: [makeChannel()],
+      twinReadinessApproved: Array.from({ length: 5 }, (_, i) => makeMemory({ id: `m${i}` })),
+    });
+    const { result } = await mounted();
+    expect(result.current.checklist.map((c) => c.status)).toEqual(['set', 'set', 'set', 'set']);
+    // 80, not 100: the fifth milestone (Brain) is not one of Setup's slots.
+    expect(result.current.score).toBe(80);
   });
 
-  it('asks the guide to speak the app language', async () => {
-    renderHook(() => useSetupSession());
-    await waitFor(() => expect(mockSetupTurn).toHaveBeenCalled());
-    expect(typeof mockSetupTurn.mock.calls[0]?.[6]).toBe('string');
-  });
-});
-
-describe('useSetupSession — redeal asks again without recording anything', () => {
-  it('replaces the live question on the same slot and writes nothing', async () => {
-    const { result } = renderHook(() => useSetupSession());
-    await waitFor(() => expect(result.current.question).toBe('What are you known for?'));
-    mockSetupTurn.mockClear();
-    mockSetupTurn.mockResolvedValue(turn({ question: 'Where did you start out?' }));
-
-    act(() => {
-      result.current.redeal();
+  it("exposes 'generic' plus every bound channel type and every tone row as the tone slots", async () => {
+    setStore({
+      twinChannels: [
+        makeChannel({ channel_type: 'discord' }),
+        makeChannel({ id: 'c2', channel_type: 'email' }),
+        makeChannel({ id: 'c3', channel_type: 'discord' }),
+      ],
+      twinTones: [makeTone({ channel: 'slack' })],
     });
-
-    await waitFor(() => expect(result.current.question).toBe('Where did you start out?'));
-    expect(mockSetupTurn).toHaveBeenCalledTimes(1);
-    expect(mockRecordInteraction).not.toHaveBeenCalled();
-    expect(mockUpdateTwinProfile).not.toHaveBeenCalled();
+    const { result } = await mounted();
+    expect(result.current.toneChannels).toEqual(['generic', 'discord', 'email', 'slack']);
   });
 
-  it('is ignored while a turn is in flight', async () => {
-    let release!: (value: SetupTurnResult) => void;
-    mockSetupTurn.mockReturnValue(
-      new Promise<SetupTurnResult>((resolve) => {
-        release = resolve;
-      }),
-    );
-    const { result } = renderHook(() => useSetupSession());
-    await waitFor(() => expect(result.current.busy).toBe(true));
-    act(() => {
-      result.current.redeal();
+  it('opens the typed fields on what is stored', async () => {
+    setStore({
+      twinProfiles: [makeProfile({ role: 'Founder', bio: 'I ship.' })],
+      twinTones: [makeTone({ channel: 'discord', voice_directives: 'Lowercase, no emoji.' })],
+      twinChannels: [makeChannel({ channel_type: 'discord' })],
     });
-    expect(mockSetupTurn).toHaveBeenCalledTimes(1);
-    await act(async () => {
-      release(turn());
-    });
+    const { result } = await mounted();
+    expect(result.current.values.role).toBe('Founder');
+    expect(result.current.values.bio).toBe('I ship.');
+    expect(result.current.values['tone:discord']).toBe('Lowercase, no emoji.');
+    expect(result.current.values['tone:generic']).toBe('');
   });
 });

@@ -46,12 +46,6 @@
     "provider_codex_cli": "Codex",
     "provider_global": "글로벌"
   },
-  "competition": {
-    "awaiting_review": "검토 대기 중",
-    "cancelled": "취소됨",
-    "resolved": "해결됨",
-    "running": "실행 중"
-  },
   "connector_status": {
     "failed": "실패",
     "no_credential": "자격 증명 없음",

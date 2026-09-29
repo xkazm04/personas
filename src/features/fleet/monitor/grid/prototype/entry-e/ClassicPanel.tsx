@@ -15,7 +15,8 @@ import type { ActivitySurface } from '../useActivitySurface';
 import { PersonaLine } from './PersonaLine';
 import { SessionLine } from './SessionLine';
 import { Bay, ShareBar } from './Bay';
-import { BayGhosts, PanelEmpty } from './Ghosts';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { BayGhosts } from './Ghosts';
 import { sessionLamp, toneClass } from './tone';
 import { Engraved, Lamp } from './parts';
 import type { PanelFilter } from './boardFilter';
@@ -101,9 +102,13 @@ export function ClassicPanel({
 
   if (surface.cold) return <BayGhosts />;
   if (bays.length === 0 && trayCards.length === 0 && traySessions.length === 0) {
-    return filter.active
-      ? <PanelEmpty icon={Users} heading="No card is in this state." actionLabel={t.common.clear} onAction={onClearFilter} />
-      : <PanelEmpty icon={Users} heading={m.channels_combined_quiet} />;
+    return (
+      <div className="flex min-h-0 flex-1 items-center justify-center px-6" data-testid="entry-e-empty">
+        {filter.active
+          ? <ScenarioEmptyState icon={Users} title="No card is in this state." action={{ label: t.common.clear, onClick: onClearFilter }} />
+          : <ScenarioEmptyState icon={Users} title={m.channels_combined_quiet} />}
+      </div>
+    );
   }
 
   return (

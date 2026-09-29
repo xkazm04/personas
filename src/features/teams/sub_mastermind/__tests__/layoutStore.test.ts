@@ -1,22 +1,22 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 // eslint-disable-next-line no-restricted-imports
 import { invoke } from '@tauri-apps/api/core';
+import { renderHook, act } from '@testing-library/react';
 import { resetInvokeMocks } from '@/test/tauriMock';
 
 import {
+  athenaPanelsSnapshot,
   hydrateLayout,
-  isLayoutHydrated,
-  loadGroups,
-  loadHidden,
-  loadNotes,
-  loadPositions,
-  savePositions,
-  saveGroups,
-  saveNotes,
+  loadAthenaPanels,
+  removeAthenaPanel,
+  saveAthenaPanel,
+  subscribeLayout,
   LAYOUT_KEY,
   WRITE_DEBOUNCE_MS,
   __resetLayoutStoreForTests,
+  type AthenaPanel,
 } from '../lib/layoutStore';
+import { useAthenaPanels } from '../lib/useLayout';
 
 const mocked = vi.mocked(invoke);
 
@@ -42,15 +42,9 @@ function installIpc(): void {
   });
 }
 
-const LEGACY = {
-  positions: 'mastermind.positions.v1',
-  groups: 'mastermind.groups.v1',
-  links: 'mastermind.links.v1',
-  notes: 'mastermind.notes.v1',
-  hidden: 'mastermind.hidden.v1',
-};
+const panel = (tag: string): AthenaPanel => ({ specVersion: 1, spec: { tag }, composedAt: '2026-09-25T00:00:00Z' });
 
-describe('layoutStore — DB boundary', () => {
+describe('layoutStore — Athena panels', () => {
   beforeEach(() => {
     resetInvokeMocks();
     dbValue = null;
@@ -65,112 +59,79 @@ describe('layoutStore — DB boundary', () => {
     vi.useRealTimers();
   });
 
-  it('hydrates the in-memory doc from an existing DB document', async () => {
-    dbValue = JSON.stringify({
-      version: 1,
-      positions: { a: { x: 1, y: 2 } },
-      groups: [{ id: 'g', label: 'G', x: 0, y: 0, w: 1, h: 1 }],
-      links: [],
-      notes: [{ id: 'n', x: 0, y: 0, text: 't', size: 'md', font: 'inter' }],
-      hidden: ['zzz'],
-    });
-    expect(isLayoutHydrated()).toBe(false);
+  it('hydrates panels from an existing DB document', async () => {
+    dbValue = JSON.stringify({ version: 2, athenaPanels: { a: panel('a') } });
     await hydrateLayout();
-    expect(isLayoutHydrated()).toBe(true);
-    expect(loadPositions()).toEqual({ a: { x: 1, y: 2 } });
-    expect(loadGroups()).toHaveLength(1);
-    expect(loadNotes()).toHaveLength(1);
-    expect(loadHidden()).toEqual(new Set(['zzz']));
+    expect(loadAthenaPanels()).toEqual({ a: panel('a') });
   });
 
-  it('empty DB + no legacy keys → empty layout, no migration write', async () => {
+  it('drops panels on an unrecognised specVersion, keeps supported ones', async () => {
+    dbValue = JSON.stringify({
+      version: 2,
+      athenaPanels: {
+        good: panel('good'),
+        future: { specVersion: 99, spec: {}, composedAt: 'x' },
+        junk: { spec: {} },
+        alsoJunk: 'nope',
+      },
+    });
     await hydrateLayout();
-    expect(loadPositions()).toEqual({});
-    expect(loadGroups()).toEqual([]);
+    expect(Object.keys(loadAthenaPanels())).toEqual(['good']);
+    // …and the writer refuses an unsupported version too.
+    saveAthenaPanel('later', { specVersion: 99, spec: {}, composedAt: 'x' });
+    expect(Object.keys(loadAthenaPanels())).toEqual(['good']);
+  });
+
+  it('empty or corrupted DB → no panels, no write, never throws', async () => {
+    dbValue = '{ not valid json';
+    await expect(hydrateLayout()).resolves.toBeUndefined();
+    expect(loadAthenaPanels()).toEqual({});
     expect(writes).toHaveLength(0);
   });
 
-  it('corrupted DB document falls back to empty (never throws)', async () => {
-    dbValue = '{ not valid json';
-    await expect(hydrateLayout()).resolves.toBeUndefined();
-    expect(loadPositions()).toEqual({});
-    expect(loadGroups()).toEqual([]);
-  });
-
-  it('one-time migration imports legacy localStorage keys and writes them through', async () => {
-    localStorage.setItem(LEGACY.positions, JSON.stringify({ old: { x: 9, y: 9 } }));
-    localStorage.setItem(LEGACY.groups, JSON.stringify([{ id: 'lg', label: 'L', x: 0, y: 0, w: 2, h: 2 }]));
-    localStorage.setItem(LEGACY.hidden, JSON.stringify(['hiddenslug']));
-
+  it('carries the retired canvas fields through a write instead of erasing them', async () => {
+    vi.useFakeTimers();
+    const board = {
+      positions: { a: { x: 1, y: 2 } },
+      groups: [{ id: 'g', label: 'G', x: 0, y: 0, w: 1, h: 1, author: 'user' }],
+      notes: [{ id: 'n', x: 0, y: 0, text: 't', size: 'md', font: 'inter' }],
+      hidden: ['zzz'],
+    };
+    dbValue = JSON.stringify({ version: 2, ...board, athenaPanels: {} });
     await hydrateLayout();
-
-    // Imported into memory…
-    expect(loadPositions()).toEqual({ old: { x: 9, y: 9 } });
-    expect(loadGroups()).toHaveLength(1);
-    expect(loadHidden()).toEqual(new Set(['hiddenslug']));
-    // …and persisted to the DB exactly once (DB is now the source of truth).
+    saveAthenaPanel('a', panel('a'));
+    await vi.advanceTimersByTimeAsync(WRITE_DEBOUNCE_MS);
     expect(writes).toHaveLength(1);
-    const persisted = JSON.parse(dbValue!);
-    expect(persisted.positions).toEqual({ old: { x: 9, y: 9 } });
-    // set_app_setting was called with our registered key.
+    expect(JSON.parse(writes[0]!)).toEqual({ version: 2, ...board, athenaPanels: { a: panel('a') } });
     const setCall = mocked.mock.calls.find((c) => c[0] === 'set_app_setting');
     expect((setCall![1] as { key: string }).key).toBe(LAYOUT_KEY);
   });
 
-  it('restart-proof round-trip: write → (simulated restart) → re-read returns it', async () => {
+  it('debounced write-through coalesces a burst; restart re-reads it', async () => {
     vi.useFakeTimers();
     await hydrateLayout();
-    savePositions({ p: { x: 7, y: 8 } });
-    // Debounced — nothing written until the window elapses.
+    saveAthenaPanel('a', panel('a1'));
+    saveAthenaPanel('b', panel('b'));
+    saveAthenaPanel('a', panel('a2')); // last write wins
+    removeAthenaPanel('b');
     expect(writes).toHaveLength(0);
     await vi.advanceTimersByTimeAsync(WRITE_DEBOUNCE_MS);
     expect(writes).toHaveLength(1);
 
-    // Simulate an app restart: fresh store, same DB row, re-mock (clears dedup).
+    // Simulated restart: fresh store, same DB row, re-mock (clears dedup).
     __resetLayoutStoreForTests();
     resetInvokeMocks();
     installIpc();
     await hydrateLayout();
-    expect(loadPositions()).toEqual({ p: { x: 7, y: 8 } });
-  });
-
-  it('debounced write-through coalesces a burst into a single IPC call', async () => {
-    vi.useFakeTimers();
-    await hydrateLayout();
-    savePositions({ a: { x: 1, y: 1 } });
-    saveGroups([{ id: 'g', label: 'G', x: 0, y: 0, w: 1, h: 1 }]);
-    saveNotes([{ id: 'n', x: 0, y: 0, text: 't', size: 'sm', font: 'inter' }]);
-    savePositions({ a: { x: 2, y: 2 } }); // last write wins
-    expect(writes).toHaveLength(0);
-
-    await vi.advanceTimersByTimeAsync(WRITE_DEBOUNCE_MS);
-
-    expect(writes).toHaveLength(1);
-    const doc = JSON.parse(writes[0]);
-    expect(doc.positions).toEqual({ a: { x: 2, y: 2 } });
-    expect(doc.groups).toHaveLength(1);
-    expect(doc.notes).toHaveLength(1);
+    expect(loadAthenaPanels()).toEqual({ a: panel('a2') });
   });
 
   it('never downgrades a document written by a NEWER build', async () => {
     vi.useFakeTimers();
-    // Version skew runs in both directions: rollbacks, old installers, a synced
-    // profile. A v3 doc carries a field this build has no parser for.
-    dbValue = JSON.stringify({
-      version: 3,
-      positions: { a: { x: 1, y: 2 } },
-      groups: [],
-      links: [],
-      notes: [],
-      hidden: [],
-      lanes: [{ id: 'lane-1' }],
-    });
+    dbValue = JSON.stringify({ version: 3, athenaPanels: {}, lanes: [{ id: 'lane-1' }] });
     await hydrateLayout();
-    expect(loadPositions()).toEqual({ a: { x: 1, y: 2 } });
-
-    savePositions({ a: { x: 9, y: 9 } });
+    saveAthenaPanel('a', panel('a'));
     await vi.advanceTimersByTimeAsync(WRITE_DEBOUNCE_MS);
-
     // Preserve-and-default: run on what this build understands, and leave the
     // newer build's payload untouched rather than re-saving it as v2.
     expect(writes).toHaveLength(0);
@@ -181,14 +142,23 @@ describe('layoutStore — DB boundary', () => {
     vi.useFakeTimers();
     failIpc = true;
     await expect(hydrateLayout()).resolves.toBeUndefined();
-    expect(isLayoutHydrated()).toBe(true);
-
-    savePositions({ q: { x: 3, y: 4 } });
+    saveAthenaPanel('q', panel('q'));
     await vi.advanceTimersByTimeAsync(WRITE_DEBOUNCE_MS);
-
-    // No DB write happened; the doc landed in the single localStorage key.
     expect(writes).toHaveLength(0);
-    const local = JSON.parse(localStorage.getItem(LAYOUT_KEY)!);
-    expect(local.positions).toEqual({ q: { x: 3, y: 4 } });
+    expect(JSON.parse(localStorage.getItem(LAYOUT_KEY)!).athenaPanels).toEqual({ q: panel('q') });
+  });
+
+  it('an out-of-band write notifies subscribers and repaints a React reader', async () => {
+    await hydrateLayout();
+    const seen: number[] = [];
+    const stop = subscribeLayout(() => seen.push(Object.keys(athenaPanelsSnapshot()).length));
+    const before = athenaPanelsSnapshot();
+    expect(athenaPanelsSnapshot()).toBe(before); // stable until someone writes
+    const { result } = renderHook(() => useAthenaPanels());
+    act(() => { saveAthenaPanel('hers', panel('hers')); });
+    expect(seen).toEqual([1]);
+    expect(athenaPanelsSnapshot()).not.toBe(before);
+    expect(Object.keys(result.current)).toEqual(['hers']);
+    stop();
   });
 });

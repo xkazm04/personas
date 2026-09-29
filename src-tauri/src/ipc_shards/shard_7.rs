@@ -41,9 +41,14 @@ pub(super) fn shard(
         commands::infrastructure::twin::twin_generate_bio,
         // Twin plugin -- Training Studio: twin-simulated answer drafting
         commands::infrastructure::twin::twin_simulate_answer,
-        // Twin plugin -- guided Setup: one conversation turn (own prompt,
-        // deliberately NOT routed through twin_generate_bio)
-        commands::infrastructure::twin::twin_setup_turn,
+        // Twin plugin -- setup plan (spark twin-setup-plan): the planned,
+        // durable guided setup; every command returns the whole snapshot
+        commands::infrastructure::twin_setup::twin_setup_get,
+        commands::infrastructure::twin_setup::twin_setup_open,
+        commands::infrastructure::twin_setup::twin_setup_answer,
+        commands::infrastructure::twin_setup::twin_setup_steer,
+        commands::infrastructure::twin_setup::twin_setup_offer_verdict,
+        commands::infrastructure::twin_setup::twin_setup_rebuild,
         // Twin plugin -- style studio (spark twin-presets): roll 3 candidate
         // styles, materialize one per channel (both preview-only), apply
         commands::infrastructure::twin_style::twin_style_roll,
@@ -312,6 +317,10 @@ pub(super) fn shard(
         commands::fleet::pairing::fleet_companion_revoke,
         // Web-build runtime (Athena web-dev companion, P0)
         commands::infrastructure::webbuild::webbuild_scaffold,
+        commands::infrastructure::webbuild::webbuild_sketch,
+        commands::infrastructure::webbuild::webbuild_check_name,
+        commands::infrastructure::webbuild::webbuild_get_plan,
+        commands::infrastructure::webbuild::webbuild_save_plan,
         commands::infrastructure::webbuild::webbuild_register_existing,
         commands::infrastructure::webbuild::webbuild_dev_start,
         commands::infrastructure::webbuild::webbuild_dev_stop,

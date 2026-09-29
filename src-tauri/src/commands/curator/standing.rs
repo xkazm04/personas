@@ -204,10 +204,19 @@ fn fingerprint(raw: &[u8]) -> String {
     let mut hasher = sha2::Sha256::new();
     hasher.update(raw);
     let digest = hasher.finalize();
-    // Sixteen hex characters. This is an identity check against a value this
-    // app wrote itself minutes ago, not a security boundary.
-    digest.iter().take(8).map(|b| format!("{b:02x}")).collect()
+    digest
+        .iter()
+        .take(FINGERPRINT_BYTES)
+        .map(|b| format!("{b:02x}"))
+        .collect()
 }
+
+/// How many leading bytes of the SHA-256 digest the fingerprint keeps - sixteen
+/// hex characters. This is an identity check against a value this app wrote
+/// itself minutes ago, not a security boundary. Must not exceed the digest's 32
+/// bytes, or the fingerprint silently stops growing with the constant.
+const FINGERPRINT_BYTES: usize = 8;
+const _: () = assert!(FINGERPRINT_BYTES <= 32);
 
 /// Parse the queue's markdown into sections and their `queued` counts.
 ///

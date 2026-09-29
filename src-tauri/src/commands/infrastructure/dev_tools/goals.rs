@@ -1,3 +1,4 @@
+use crate::commands::blocking::run_blocking;
 use crate::db::models::{
     AttentionQueue, AttentionThresholds, DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal,
     GoalProgressSuggestion, UndispatchedIdea,
@@ -14,13 +15,17 @@ use tauri::State;
 // ============================================================================
 
 #[tauri::command]
-pub fn dev_tools_list_goals(
+pub async fn dev_tools_list_goals(
     state: State<'_, Arc<AppState>>,
     project_id: String,
     status: Option<String>,
 ) -> Result<Vec<DevGoal>, AppError> {
     require_auth_sync(&state)?;
-    repo::list_goals_by_project(&state.db, &project_id, status.as_deref())
+    let db = state.db.clone();
+    run_blocking("dev_tools_list_goals", move || {
+        repo::list_goals_by_project(&db, &project_id, status.as_deref())
+    })
+    .await
 }
 
 #[tauri::command]

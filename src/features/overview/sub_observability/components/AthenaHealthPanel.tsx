@@ -14,6 +14,7 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Section, StatStrip, UnitStrip, apportion, quantumFor, type StatTile, type Tone, type Glyph } from '@/features/shared/components/kit';
 import { useAthenaHealth } from '../libs/useAthenaHealth';
 import { AthenaSpendSection } from './AthenaSpendSection';
+import { ReplyShapePanel } from '@/features/companions/athena/ReplyShapePanel';
 
 type Part = { label: string; n: number; tone: Tone; glyph?: Glyph };
 
@@ -100,6 +101,7 @@ export const AthenaHealthPanel = memo(function AthenaHealthPanel({ eyebrow }: { 
         ]} />
       </Section>
       <AthenaSpendSection />
+      <ReplyShapePanel />
     </Section>
   );
 });

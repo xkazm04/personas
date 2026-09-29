@@ -214,5 +214,6 @@
   "dispatch_run_on_offline": "离线",
   "dispatch_run_on_queued_hint": "排队中，等待其唤醒",
   "dispatch_run_on_stale": "最近未见",
-  "dispatch_run_on_this_machine": "此设备"
+  "dispatch_run_on_this_machine": "此设备",
+  "md_spellcheck": "拼写和语法"
 }

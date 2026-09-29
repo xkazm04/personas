@@ -214,5 +214,6 @@
   "dispatch_receipt_could_not_verify": "Could not verify here",
   "dispatch_receipt_not_pushed": "Nothing pushed",
   "dispatch_receipt_push_failed": "Push failed",
-  "dispatch_receipt_detail": "Branch {branch} at {sha}"
+  "dispatch_receipt_detail": "Branch {branch} at {sha}",
+  "md_spellcheck": "Spelling and grammar"
 }

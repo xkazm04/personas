@@ -1,15 +1,10 @@
-/** cinemaShared — primitives shared by the two build-loading "cinema"
- *  layouts (`GlyphCinemaLayout`'s fullscreen crowd and
- *  `GlyphDialogueCinemaLayout`'s below-content reel).
+/** cinemaShared — build-loading "cinema" primitives: the abstract persona
+ *  silhouette geometry/rendering, the palette, and the connector-name dedup.
  *
- *  Both variants cast a crowd of abstract persona silhouettes down to a
- *  small finalist pool, then crown a winner as the real persona identity
- *  streams in. The casting *choreography* differs enough between the two
- *  (different phase model, different fast-forward behavior) that it stays
- *  per-file — but the silhouette geometry/rendering, the palette, and the
- *  connector-name dedup used to be near-identical copies. Import from here
- *  instead so a fix (e.g. to the silhouette shape or the dedup rule) only
- *  has to be made once.
+ *  The build surface (Sheet · Cinema, `contactSheet/cinema/`) casts a crowd of
+ *  silhouettes down to a small finalist pool, then crowns a winner as the real
+ *  persona identity streams in. The casting choreography lives in
+ *  `contactSheet/cinema/cinemaMotion.ts`; these are the pieces it draws with.
  */
 import type { PersonaResolution } from "@/lib/types/buildTypes";
 

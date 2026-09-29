@@ -44,6 +44,7 @@
       "contexts": ["| `wry-0.55.1` (WebKitGTK / WKWebView) | `webkitgtk/mod.rs:487` and `class/wry_web_view_ui_delegate.rs:147` are the same `if let Some` — no handler, no window. **Cross-platform.** |"],
       "resolved": false
     },
+    "dev_tools/competitions.rs": {"count":1,"sections":[7],"lines":["679-693"],"contexts":["`drive/mod.rs:1437`/`:1445` and `dev_tools/competitions.rs:679-693` reveal a folder via"],"resolved":false},
     "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json)). Every `<a>` opening tag in the tree parsed as a"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "ideas_cmds.rs": {"count":1,"sections":[],"lines":["36-167"],"contexts":["Personas has an OS handler to hand it to. `vibeman`'s `ideas_cmds.rs:36-167` is the closest"],"resolved":false},
     "lefthook.yml": {"count":1,"sections":[9],"contexts":["`lefthook.yml` and **not** in any `.github/workflows/*.yml`, which per the brief's calibration is"]},
@@ -140,14 +141,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "cloud.rs"
-    },
-    "src-tauri/src/commands/infrastructure/dev_tools/competitions.rs": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["679-693"],
-      "contexts": ["`drive/mod.rs:1437`/`:1445` and `dev_tools/competitions.rs:679-693` reveal a folder via"],
-      "resolvedFrom": "suffix",
-      "verbatim": "dev_tools/competitions.rs"
     },
     "src-tauri/src/commands/infrastructure/system/mod.rs": {"count":11,"sections":[0,3,5,7],"lines":["39-42","18","20","26","28"],"contexts":["`src-tauri/src/commands/infrastructure/system/mod.rs:39-42` (*\"no `tauri-plugin-shell` crate in"]},
     "src-tauri/src/commands/network/bundle.rs": {

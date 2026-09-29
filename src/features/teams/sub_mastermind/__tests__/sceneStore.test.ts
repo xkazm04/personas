@@ -1,8 +1,11 @@
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 
 import type { DevScan } from '@/lib/bindings/DevScan';
 
-import { groupScansByProject, mapWithConcurrency, failStatus, useSceneStore } from '../lib/sceneStore';
+import { __resetSceneFreshnessForTests, groupScansByProject, mapWithConcurrency, failStatus, useSceneStore } from '../lib/sceneStore';
+
+// The freshness window (FAMILY_FRESH_MS) would let one test's load satisfy the next.
+beforeEach(() => __resetSceneFreshnessForTests());
 
 const listScansMock = vi.fn();
 vi.mock('@/api/devTools/devTools', () => ({
@@ -141,13 +144,25 @@ describe('sceneStore — in-flight dedup per family', () => {
     expect(useSceneStore.getState().scans.get('p')!.map((r) => r.id)).toEqual(['one']);
   });
 
-  it('a settled flight clears its entry — the next call fetches again', async () => {
+  it('a settled flight clears its entry — the next forced call fetches again', async () => {
     listScansMock.mockReset();
     listScansMock.mockResolvedValue([scan('again', 'p', '2026-07-11T00:00:00Z')]);
 
     await useSceneStore.getState().loadScans();
-    await useSceneStore.getState().loadScans();
+    await useSceneStore.getState().loadScans({ fresh: true });
     expect(listScansMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('a non-forced load of the same inputs inside the freshness window reuses the store', async () => {
+    listScansMock.mockReset();
+    listScansMock.mockResolvedValue([scan('warm', 'p', '2026-07-12T00:00:00Z')]);
+
+    await useSceneStore.getState().loadScans({ projectIds: ['p'] });
+    await useSceneStore.getState().loadScans({ projectIds: ['p'] });
+    expect(listScansMock).toHaveBeenCalledTimes(1);
+    // A different project set is a different request.
+    await useSceneStore.getState().loadScans({ projectIds: ['p', 'q'] });
+    expect(listScansMock).toHaveBeenCalledTimes(3);
   });
 });
 

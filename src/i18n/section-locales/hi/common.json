@@ -214,5 +214,6 @@
   "dispatch_run_on_offline": "ऑफ़लाइन",
   "dispatch_run_on_queued_hint": "जागने तक कतार में",
   "dispatch_run_on_stale": "हाल में नहीं देखा गया",
-  "dispatch_run_on_this_machine": "यह मशीन"
+  "dispatch_run_on_this_machine": "यह मशीन",
+  "md_spellcheck": "वर्तनी और व्याकरण"
 }

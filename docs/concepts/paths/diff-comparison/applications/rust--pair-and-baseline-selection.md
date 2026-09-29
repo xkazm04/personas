@@ -7,6 +7,10 @@ stack: rust
 
 # Pair & baseline selection — the competition slot diff that picks its baseline by byte length
 
+> **Competition removed 2026-09-24.** `competitions.rs` and `CompetitionSlotRow.tsx`
+> were deleted with the Competition page; the file:line citations below point at
+> their last version and are kept as the technique's worked counter-example.
+
 `src-tauri/src/commands/infrastructure/dev_tools/competitions.rs::compute_slot_diff`
 (`:520`) is the repo's clearest instance of a baseline *selected by the
 data* — the failure the technique names as "an accident dressed as a

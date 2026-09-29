@@ -33,6 +33,7 @@
   ],
   "citations": {
     "CompanionFooterIcon.tsx": {"count":1,"sections":[9],"lines":["204"],"contexts":["regex does not (`CompanionFooterIcon.tsx:204`, `AthenaOrbCornerActions.tsx:49`,"],"resolved":false},
+    "CompetitionSlotRow.tsx": {"count":3,"sections":[5,9,12],"lines":["81-93","82-93"],"contexts":["(`CompetitionSlotRow.tsx:81-93`). A 2-site population cannot carry a doctrine clause on"],"resolved":false},
     "ComplianceRow.tsx": {"count":3,"sections":[4],"lines":["37","34-38"],"contexts":["`SLABreachRow.tsx:57`, `IncidentList.tsx:79`, `ComplianceRow.tsx:37`,"],"resolved":false},
     "DebuggerControls.tsx": {"count":2,"sections":[9],"lines":["106"],"contexts":["`DebuggerControls.tsx:106` (`onExpandInspector`) and `DebuggerVariables.tsx:38`"],"resolved":false},
     "DebuggerVariables.tsx": {"count":2,"sections":[9],"lines":["38"],"contexts":["`DebuggerControls.tsx:106` (`onExpandInspector`) and `DebuggerVariables.tsx:38`"],"resolved":false},
@@ -47,6 +48,15 @@
     "overview/sub_director/components/PersonaDetailModal.tsx": {"count":1,"sections":[7],"contexts":["- `overview/sub_director/components/PersonaDetailModal.tsx` — the **row** disclosure at"],"resolved":false},
     "personas-web/src/components/dashboard/DataTable.tsx": {"count":1,"sections":[8],"contexts":["exists, in a sibling repo:** `personas-web/src/components/dashboard/DataTable.tsx` —"],"resolved":false},
     "plugins/companion/orchestration/LiveOpsStrip.tsx": {"count":1,"sections":[7],"contexts":["- `plugins/companion/orchestration/LiveOpsStrip.tsx` — **two buttons toggling the same"],"resolved":false},
+    "plugins/dev-tools/sub_lifecycle/competitions/CompetitionSlotRow.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["81-93"],
+      "contexts": [
+        "| `plugins/dev-tools/sub_lifecycle/competitions/CompetitionSlotRow.tsx:81-93` | `setExpandedDiff(null)` on collapse; re-runs `getCompetitionSlotDiff(slot.id)` on every re-expand. No cache, no cancell…"
+      ],
+      "resolved": false
+    },
     "plugins/twin/sub_tone/ToneConsole.tsx": {"count":1,"sections":[6],"lines":["158-241"],"contexts":["- `plugins/twin/sub_tone/ToneConsole.tsx:158-241` and `scraper/ScraperControlRoom.tsx:157-241`"],"resolved":false},
     "scripts/census/lib/engine.mjs": {
       "count": 2,
@@ -148,14 +158,6 @@
       "contexts": ["individually correct as code.** There is no bug to find in `HealingTimeline.tsx:47`; the"],
       "resolvedFrom": "basename",
       "verbatim": "HealingTimeline.tsx"
-    },
-    "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionSlotRow.tsx": {
-      "count": 4,
-      "sections": [5,7,9,12],
-      "lines": ["81-93","82-93"],
-      "contexts": ["(`CompetitionSlotRow.tsx:81-93`). A 2-site population cannot carry a doctrine clause on"],
-      "resolvedFrom": "basename",
-      "verbatim": "CompetitionSlotRow.tsx"
     },
     "src/features/plugins/dev-tools/sub_projects/ProjectTeamPreviewModal.tsx": {
       "count": 3,

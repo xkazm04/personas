@@ -70,19 +70,15 @@ describe('strongMatches', () => {
 });
 
 describe('shouldSurfaceTemplateSuggestion', () => {
-  it('surfaces on the default dialogue-cinema layout while questions are pending', () => {
-    expect(shouldSurfaceTemplateSuggestion('dialogue-cinema', 3, false)).toBe(true);
-  });
-
-  it('surfaces on cinema too', () => {
-    expect(shouldSurfaceTemplateSuggestion('cinema', 3, false)).toBe(true);
+  it('surfaces while questions are pending', () => {
+    expect(shouldSurfaceTemplateSuggestion(3, false)).toBe(true);
   });
 
   it('stays hidden before any question lands', () => {
-    expect(shouldSurfaceTemplateSuggestion('dialogue-cinema', 0, false)).toBe(false);
+    expect(shouldSurfaceTemplateSuggestion(0, false)).toBe(false);
   });
 
   it('stays hidden once dismissed', () => {
-    expect(shouldSurfaceTemplateSuggestion('dialogue-cinema', 3, true)).toBe(false);
+    expect(shouldSurfaceTemplateSuggestion(3, true)).toBe(false);
   });
 });

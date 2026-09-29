@@ -12,17 +12,15 @@
 // (everything waiting on a human). One band of chrome above them all.
 
 import { memo, useCallback } from 'react';
-import { segmentedTabPanelProps } from '@/features/shared/components/layout/SegmentedTabs';
 import { OrchestrationPanel } from '../../orchestration';
 import { SessionModals } from '../../board/SessionModals';
-import { BOARD_TABS_PREFIX } from '../../board/GridHeader';
 import { FINAL_STAGE } from '../../useStagedMount';
 import { useRailWidth } from '../../rail/useRailWidth';
 import { useActivitySurface, type ActivitySurfaceProps } from '../useActivitySurface';
 import { useUsageFeed } from '../useUsageFeed';
 import { useRailSurface } from '../useRailSurface';
 import { useCapSetting, useQueueConfirm } from '../shared';
-import { CommandBar, FilterBanner } from './CommandBar';
+import { CommandBar, CommandFloor, FilterBanner } from './CommandBar';
 import { SessionMenuProvider } from './SessionMenu';
 import { usePanelFilter } from './boardFilter';
 import { SupplyDeck } from './SupplyDeck';
@@ -74,7 +72,7 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
           onOpenOrchestration={surface.openOrchestration}
         />
 
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col" {...segmentedTabPanelProps(BOARD_TABS_PREFIX, layout)}>
+        <CommandFloor layout={layout} className="flex min-h-0 min-w-0 flex-1 flex-col">
           <SessionMenuProvider onOpenTerminal={surface.setTerminal} onOpenRecap={surface.setRecap}>
             {layout === 'classic' ? (
               <ClassicPanel surface={surface} filter={filter} selectedPersonaId={props.selectedPersonaId} onOpenRemote={props.onOpenRemote} onClearFilter={surface.clearFilter} />
@@ -84,7 +82,7 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
               <LanesPanel surface={surface} filter={filter} cap={cap} onStart={confirm.askStart} onCancel={confirm.askCancel} />
             )}
           </SessionMenuProvider>
-        </main>
+        </CommandFloor>
 
         <InboxDesk
           rail={rail}

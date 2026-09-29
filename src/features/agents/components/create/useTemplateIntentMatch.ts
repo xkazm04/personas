@@ -10,8 +10,8 @@ const DEBOUNCE_MS = 300;
  *
  * As the user types their intent, debounce 300ms and rank the template corpus
  * via `companion_match_templates` (the same fast matcher the home stepper and
- * Athena's TemplateSuggestionsWidget use). Mirrors the ComposerRecipeSuggestion
- * guards: a min-char gate, out-of-order responses dropped via a request-id
+ * Athena's TemplateSuggestionsWidget use). Mirrors the guards of the retired
+ * ComposerRecipeSuggestion chip: a min-char gate, out-of-order responses dropped via a request-id
  * ref, and best-effort errors (an empty list, never a surfaced error mid-type).
  * The command already ranks + limits, so there's no client-side score
  * threshold here — we trust its ordering.

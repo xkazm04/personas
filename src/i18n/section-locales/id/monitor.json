@@ -846,5 +846,8 @@
   "remote_terminal_title": "Terminal, hanya baca",
   "remote_terminal_waiting": "Menunggu output dari {device}",
   "remote_tile_aria": "{title} di {device}, {state}. Buka sesi remote",
-  "remote_wake": "Bangunkan"
+  "remote_wake": "Bangunkan",
+  "queue_origin_contest": "Kontes",
+  "grid_column_contest_open": "Buka {contest} di halaman Kontes",
+  "grid_column_contest_unlinked": "{contest} dimulai sebelum kursinya mencatat proyeknya, jadi tidak bisa dibuka dari sini"
 }

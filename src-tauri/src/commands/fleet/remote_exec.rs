@@ -1664,6 +1664,10 @@ mod tests {
             persona_id: None,
             goal_id: None,
             cycle_index: None,
+            run_label: None,
+            run_id: None,
+            contest_id: None,
+            contest_project_id: None,
             remote_job_id: Some("job".into()),
             origin_peer_id: Some("peer".into()),
         }

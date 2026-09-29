@@ -846,5 +846,8 @@
   "remote_terminal_title": "Terminál, pouze pro čtení",
   "remote_terminal_waiting": "Čeká se na výstup z {device}",
   "remote_tile_aria": "{title} na {device}, {state}. Otevřít vzdálenou relaci",
-  "remote_wake": "Probudit"
+  "remote_wake": "Probudit",
+  "queue_origin_contest": "Soutěž",
+  "grid_column_contest_open": "Otevřít {contest} na stránce Soutěž",
+  "grid_column_contest_unlinked": "{contest} začala dřív, než její místa zaznamenala svůj projekt, proto ji odtud nelze otevřít"
 }

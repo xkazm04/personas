@@ -6,6 +6,7 @@
 // Next step through the subject's techniques; Close (or Esc) unpins.
 import { useMemo } from 'react';
 
+import { Button } from '@/features/shared/components/buttons';
 import { interpolate as tx } from '@/i18n/useTranslation';
 
 import { useCouncilStore } from '../../councilStore';
@@ -58,15 +59,17 @@ export function TechniqueDocument({ engine, layout, technique, data, wide }: Pro
     <aside className={`fz-doc open${wide ? ' wide' : ''}`} aria-label={f.doc_label} data-role="hud-doc">
       <div className="d-in">
         <div className="d-bar">
-          <button className="d-btn" type="button" disabled={t.rank === 1} onClick={() => step(-1)}>
-            <kbd>←</kbd> {f.doc_prev}
-          </button>
-          <button className="d-btn" type="button" disabled={t.rank === sibs.length} onClick={() => step(1)}>
-            {f.doc_next} <kbd>→</kbd>
-          </button>
-          <button className="d-btn d-close" type="button" onClick={() => engine?.climb()}>
-            {f.doc_close} <kbd>{KEY_ESC}</kbd>
-          </button>
+          {/* Skin from fused.css `.d-btn`; Button brings focus, press and the
+              inert state. */}
+          <Button variant="ghost" className="d-btn" disabled={t.rank === 1} icon={<kbd>←</kbd>} onClick={() => step(-1)}>
+            {f.doc_prev}
+          </Button>
+          <Button variant="ghost" className="d-btn" disabled={t.rank === sibs.length} iconRight={<kbd>→</kbd>} onClick={() => step(1)}>
+            {f.doc_next}
+          </Button>
+          <Button variant="ghost" className="d-btn d-close" iconRight={<kbd>{KEY_ESC}</kbd>} onClick={() => engine?.climb()}>
+            {f.doc_close}
+          </Button>
         </div>
         <div className="d-kick">{tx(f.doc_kick, { index: t.rank, count: sibs.length, subject: S.title })}</div>
         <h2 className="d-title" data-role="hud-doc-title">

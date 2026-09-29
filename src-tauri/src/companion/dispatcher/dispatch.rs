@@ -16,12 +16,12 @@ use super::catalog::{
 use super::envelope::{repair_op_json, OpEnvelope};
 use super::read_ops::{
     describe_context, describe_persona, describe_skill, list_runner_tasks, list_teams,
-    note_read_op_result,
+    note_op_rejection, note_read_op_result,
 };
 use super::research;
 use super::types::{
     CanvasControlDispatch, CanvasPanelCompose, ChatCard, ComposedWalkthrough, Dispatched,
-    NoteStatusChange, PointAt, CANVAS_CONTROL_MAX_PER_TURN, CANVAS_PANEL_MAX_BLOCKS,
+    MintedReport, NoteStatusChange, PointAt, CANVAS_CONTROL_MAX_PER_TURN, CANVAS_PANEL_MAX_BLOCKS,
     CANVAS_PANEL_SPEC_VERSION,
 };
 use crate::db::UserDbPool;
@@ -2090,6 +2090,132 @@ pub fn dispatch_with_sys(
                 }
             }
             // ─────────────────────────────────────────────────────────────
+            // Layered voice: `show_report` (auto-fire). The detail that does
+            // not belong in the layer-one reply goes into a report the reply
+            // links to as `[phrase](ref:report/new)`. The row is written HERE,
+            // before any event goes out, so the card and the rewritten link
+            // both point at something that exists (the durable-first rule the
+            // actionable cards follow). Its status is `unread`, never
+            // `pending`: a report is not waiting on him.
+            // ─────────────────────────────────────────────────────────────
+            Ok(env)
+                if env.op == "show_report"
+                    || (env.op == "propose_action" && env.action == "show_report") =>
+            {
+                let fields = super::refs::op_fields(&env.op, &env.params, payload);
+                let report = match super::refs::parse_show_report(&fields) {
+                    Ok(r) => r,
+                    Err(reason) => {
+                        out.warnings.push(format!("rejected show_report: {reason}"));
+                        continue;
+                    }
+                };
+                match crate::companion::reports::insert_report(
+                    pool,
+                    session_id,
+                    None,
+                    &report.title,
+                    report.summary.as_deref(),
+                    &report.body,
+                ) {
+                    Ok(id) => {
+                        out.chat_cards.push(ChatCard {
+                            kind: crate::companion::reports::REPORT_KIND.to_string(),
+                            title: Some(report.title),
+                            config: serde_json::json!({
+                                "reportId": id,
+                                "summary": report.summary,
+                            }),
+                        });
+                        out.reports.push(MintedReport { id });
+                    }
+                    Err(e) => {
+                        out.warnings
+                            .push(format!("show_report could not be saved: {e}"));
+                    }
+                }
+            }
+            // ─────────────────────────────────────────────────────────────
+            // Layered voice: `adjust_register` (auto-fire from chat). He asked
+            // for longer or shorter replies, so the register moves now, source
+            // `operator`. The same action name is also in `ALLOWED_ACTIONS`
+            // for the OTHER door: a reflection-originated proposal the sleep
+            // cycle files as an approval row directly (never through this
+            // text path), executed by `execute_adjust_register` with source
+            // `reflection`. This arm sits ahead of the generic approval arm,
+            // so a chat op never becomes a card.
+            // ─────────────────────────────────────────────────────────────
+            Ok(env)
+                if env.op == "adjust_register"
+                    || (env.op == "propose_action" && env.action == "adjust_register") =>
+            {
+                let fields = super::refs::op_fields(&env.op, &env.params, payload);
+                let applied = super::refs::parse_adjust_register(&fields).and_then(
+                    |(scope, sentences, reason)| {
+                        crate::companion::register::apply_op(
+                            pool,
+                            &scope,
+                            sentences,
+                            reason.as_deref(),
+                            "operator",
+                        )
+                        .map_err(|e| e.to_string())
+                    },
+                );
+                if let Err(reason) = applied {
+                    out.warnings
+                        .push(format!("rejected adjust_register: {reason}"));
+                }
+            }
+            // ─────────────────────────────────────────────────────────────
+            // Lifecycle v2: the lifecycle proposal card.
+            //
+            // Same contract as `show_ship_milestone`: auto-fire, no approval
+            // row, the durable card IS the consent surface, and NOT an
+            // `ALLOWED_ACTIONS` entry. The whole proposed document is resolved
+            // and validated here against the project's current version, by
+            // the same validator the confirm command re-runs.
+            //
+            // Unlike the ship arms, a rejection ALSO lands as an episode:
+            // `out.warnings` never reaches Athena in production, so a
+            // warnings-only rejection is a silent failure from her side.
+            // ─────────────────────────────────────────────────────────────
+            Ok(env) if env.op == "propose_action" && env.action == "show_lifecycle_proposal" => {
+                let built = match sys_db {
+                    Some(db) => {
+                        crate::companion::lifecycle_ops::build_proposal_card(db, &env.params)
+                    }
+                    None => Err(
+                        "the project registry is not reachable from this turn, so the \
+                                 proposal could not be validated. Tell the user rather than \
+                                 proposing."
+                            .to_string(),
+                    ),
+                };
+                let config = built.and_then(|card| {
+                    serde_json::to_value(&card)
+                        .map_err(|e| format!("the card could not be serialized: {e}"))
+                });
+                match config {
+                    Ok(config) => out.chat_cards.push(ChatCard {
+                        kind: crate::companion::lifecycle_ops::LIFECYCLE_PROPOSAL_KIND.to_string(),
+                        title: env
+                            .params
+                            .get("title")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string()),
+                        config,
+                    }),
+                    Err(reason) => {
+                        note_op_rejection(pool, session_id, "show_lifecycle_proposal", &reason);
+                        out.warnings
+                            .push(format!("rejected show_lifecycle_proposal: {reason}"));
+                        cleaned_lines.push(line);
+                        continue;
+                    }
+                }
+            }
+            // ─────────────────────────────────────────────────────────────
             // Detail-on-demand read ops (auto-fire, read-only, no approval).
             //
             // The prompt carries a BOUNDED index of personas / dev contexts
@@ -2116,6 +2242,8 @@ pub fn dispatch_with_sys(
                     .or_else(|| env.params.get("context_id").and_then(|v| v.as_str()))
                     .or_else(|| env.params.get("name").and_then(|v| v.as_str()))
                     .or_else(|| env.params.get("slug").and_then(|v| v.as_str()))
+                    // `describe_lifecycle` is taught with `{project}`.
+                    .or_else(|| env.params.get("project").and_then(|v| v.as_str()))
                     .map(str::trim)
                     .unwrap_or("");
                 let action = env.action.as_str();
@@ -2175,6 +2303,12 @@ pub fn dispatch_with_sys(
                                 crate::companion::ship_ops::describe_ship_milestone(db, query)
                             }
                             "describe_note" => crate::companion::note_ops::describe_note(db, query),
+                            // Lifecycle v2: reads repo files and runs git
+                            // through `lifecycle::snapshot`; bounded (one
+                            // project, max 20 commits).
+                            "describe_lifecycle" => {
+                                crate::companion::lifecycle_ops::describe_lifecycle(db, query)
+                            }
                             _ => list_teams(db, query),
                         },
                         None => format!(
@@ -2477,6 +2611,29 @@ pub fn dispatch_with_sys(
     // Trim the trailing whitespace introduced by stripped lines.
     while out.cleaned_text.ends_with(['\n', ' ']) {
         out.cleaned_text.pop();
+    }
+
+    // Layered voice: resolve the reply's reference links. Runs on the CLEANED
+    // text, after every op line is gone, so `report/new` can resolve to the
+    // report this reply just minted (the first one, when there are several).
+    // A link that does not resolve becomes its plain phrase, so the prose
+    // still reads. One indexed lookup per link; a reply without `(ref:` skips
+    // the walk entirely.
+    if out.cleaned_text.contains("(ref:") {
+        let minted = out.reports.first().map(|r| r.id.clone());
+        let (text, scan) = super::refs::rewrite_refs(&out.cleaned_text, |kind, handle| {
+            // The user-DB check first; only what it cannot answer reaches the
+            // app database, and absence of that store is decided HERE, where
+            // the Option is, never inside the resolver.
+            super::refs::validate_ref(pool, kind, handle, minted.as_deref()).unwrap_or_else(|| {
+                match sys_db {
+                    Some(db) => super::refs::validate_system_ref(db, kind, handle),
+                    None => super::refs::validate_ref_without_system_store(kind, handle),
+                }
+            })
+        });
+        out.cleaned_text = text;
+        out.refs = scan;
     }
     Ok(out)
 }

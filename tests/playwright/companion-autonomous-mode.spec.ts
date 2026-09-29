@@ -36,6 +36,9 @@ test.describe('Companion autonomous-mode toggle (A2)', () => {
   test('toggle starts OFF and click flips it ON, then OFF again', async () => {
     expect(await app.getAutonomousMode()).toBe(false);
 
+    // Autonomy sits behind the one option key; Power is inside its popup.
+    await app.clickTestId('companion-autonomy-options');
+    await new Promise((r) => setTimeout(r, 100));
     await app.clickTestId('companion-toggle-autonomous');
     // Give the store a frame to commit.
     await new Promise((r) => setTimeout(r, 100));
@@ -46,18 +49,18 @@ test.describe('Companion autonomous-mode toggle (A2)', () => {
     expect(await app.getAutonomousMode()).toBe(false);
   });
 
-  test('toggle button reflects active state via className', async () => {
-    // OFF state: button uses the muted-foreground variant.
-    let nodes = await app.query('[data-testid="companion-toggle-autonomous"]');
+  test('option key reflects active state via className', async () => {
+    // OFF state: the option key wears the idle look (no primary tint).
+    let nodes = await app.query('[data-testid="companion-autonomy-options"]');
     expect(nodes.length).toBeGreaterThan(0);
-    expect(nodes[0]!.className ?? '').toContain('text-foreground/60');
+    expect(nodes[0]!.className ?? '').not.toContain('bg-primary/15');
 
     // Flip ON via the programmatic setter (click path is exercised in the
     // previous test).
     await app.setAutonomousMode(true);
     await new Promise((r) => setTimeout(r, 100));
 
-    nodes = await app.query('[data-testid="companion-toggle-autonomous"]');
+    nodes = await app.query('[data-testid="companion-autonomy-options"]');
     expect(nodes.length).toBeGreaterThan(0);
     const cls = nodes[0]!.className ?? '';
     // Active variant: primary-tinted background.
@@ -75,7 +78,7 @@ test.describe('Companion autonomous-mode toggle (A2)', () => {
 
     expect(await app.getAutonomousMode()).toBe(true);
 
-    const nodes = await app.query('[data-testid="companion-toggle-autonomous"]');
+    const nodes = await app.query('[data-testid="companion-autonomy-options"]');
     expect(nodes.length).toBeGreaterThan(0);
     expect(nodes[0]!.className ?? '').toMatch(/bg-primary\/15|text-primary/);
   });
@@ -85,6 +88,9 @@ test.describe('Companion autonomous-mode toggle (A2)', () => {
     // findText on the button's accessible name (aria-label) as a proxy
     // for the pressed state since the label flips per state.
     await app.setAutonomousMode(false);
+    await new Promise((r) => setTimeout(r, 100));
+    // Power lives in the autonomy option popup.
+    await app.clickTestId('companion-autonomy-options');
     await new Promise((r) => setTimeout(r, 100));
     // OFF label: "Enable autonomous mode ..."
     let buttons = await app.query('[data-testid="companion-toggle-autonomous"]');

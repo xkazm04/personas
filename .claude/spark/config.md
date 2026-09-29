@@ -102,6 +102,10 @@ Authority: `.claude/CLAUDE.md` (parallel-safety primitives apply in full).
   module if `scripts/docs/feature-doc-map.json` maps one). Ask the scout in Phase 2 whether the target
   source paths are covered by that map at all.
 - New Rust types with ts-rs: run the `export_bindings` gate above and commit `src/lib/bindings/`.
+- Incremental migration numbers collide across machines and sibling sessions (three collisions
+  2026-09-21 to 09-25). Name the migration in WP0 from the highest e-number on BOTH local master and
+  `origin/master`, and re-check both before landing; a rename is mechanical (file, `mod` line, `run`
+  call, doc references), the `id` marker string stays. Promoted 2026-09-25 (lifecycle-v2).
 
 ## Context map
 `context-map.json` at the repo root. Note the standing three-way disagreement documented in

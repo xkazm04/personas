@@ -202,6 +202,29 @@ side, and it is a property of her instructions and effort rather than of her mem
 - **The restraint pair earns itself.** False fire and silent failure travel together because
   either alone is gamed by being louder or quieter. The empty rung reads 0.00 against 1.00,
   the degenerate quiet extreme in two numbers.
+- **Read what the empty rung passes, not only its total** (2026-09-27). Its 0.08 is 15
+  probes: the 14 whose gold is UNKNOWN (distractor, expired), which saying nothing is
+  supposed to pass, and one it should not - p0136 asks for a status update and is checked
+  only for "no emoji", so "UNKNOWN" passed it. A rule that forbids something is satisfied
+  by doing nothing; `judge_form` now scores an abstention on a forbidding form as
+  abstained, and `judge_calibration` plants the case. No real arm abstained there, so no
+  other rung moves; the empty rung's work-probe accuracy is 0.00. Split the same way, the
+  top of the ladder hides two directions: the versioned-store arms score 0.79 on those 14
+  restraint probes against retrieval's 1.00, and lead by more on the other 180 (0.906 /
+  0.933 against 0.883). Every adjacent top pair still ties under the sign test.
+- **Judge each probe's own gold, and read what every rung fails** (2026-09-27). Put
+  through the deterministic judge as its own answer, 1 of 166 golds failed: p0009, gold
+  "English", read as naming the retired "English with Czech summaries" through the
+  head-token tolerance, so 14 of 15 rungs were scored *stale* for the right answer. The
+  only two probes every real rung fails turned out to be both check defects, not hard
+  probes: p0009, and p0134, whose confirmation check required a question mark and scored
+  "Please confirm" and "I need your confirmation before proceeding" wrong - the two rungs
+  that did the right thing. `names_old_value` now ignores a head the old value shares
+  with the gold, and the confirmation check accepts an unpunctuated request; the
+  calibration plants both. Re-judged deterministically over all 16 stored runs, exactly
+  16 verdicts move (p0009 in 14 runs, p0134 in two) and no other: every rung's
+  wrong-old count was one too high. The four `contains_value` over-matches the check
+  already reported are the same head-token tolerance and are left for its owner.
 - **A grader's register sensitivity can be larger than the effect under test, and it looks
   exactly like a result.** The form classes are scored by a model on a rubric that reads
   "applies the fix *as the first thing it does*". Re-scored on the same cached answers with
@@ -307,3 +330,10 @@ rebasing fix lands, and the expired class (6 probes, 0.50) is the one to distrus
 - [ ] decide whether MAIN stays at `low` (finding 5)
 - [ ] re-run the ladder after the reconcile fix; a verdict is pinned to what it measured
 - [ ] merge `direction/memory-year-sim` (sim clock and driver)
+- [ ] every ladder before 2026-09-27 ran its consumer and judge with the operator's user
+      settings loaded: 25 tools, 30 skills, a plugin and three user hooks, about 22,800 input
+      tokens that are not memory (`checks/cli_isolation.py`). Arms within a round shared that
+      configuration, so their pairing holds. An absolute score quoted as "the consumer in
+      production", or compared across a settings change, does not. The calls are now isolated,
+      and the cache key carries the invocation profile, so no older reply is replayed as an
+      isolated one. Re-run a rung before quoting it against a post-fix number.

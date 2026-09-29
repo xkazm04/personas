@@ -19,7 +19,7 @@
   "ruleIds": ["unchecked-closed-set-default","unchecked-closed-set-default-positive-control"],
   "ruleIdsFrom": "section-9",
   "sections": [0,1,2,3,4,5,6,7,8,9,12],
-  "citationCount": 39,
+  "citationCount": 37,
   "triggers": [
     "*\"this column can only ever be one of these five values\"* — and you are about",
     "*\"the repo layer validates that before it writes\"* / *\"nothing else writes",
@@ -43,7 +43,7 @@
     "docs/concepts/shared-facts.json": {"count":1,"sections":[6],"contexts":["That leaves `vibeman` — which `shared-facts.json` records as"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "helpers.rs": {"count":2,"sections":[0,2],"lines":["396-449","396"],"contexts":["(`helpers.rs:396-449`), two `BEFORE INSERT`/`BEFORE UPDATE OF` triggers that"],"resolved":false},
     "incremental.rs": {"count":6,"sections":[0,3,7],"lines":["3534","4789","2233","2200"],"contexts":["`group_id` column.** `retire_persona_groups` (`incremental.rs:3534`, and see"],"resolved":false},
-    "lib.rs": {"count":4,"sections":[7],"lines":["545","1430"],"contexts":["By file: `incremental.rs` 47, `schema.rs` 34, `lib.rs` 21, `initial.rs` 12,"],"resolved":false},
+    "lib.rs": {"count":3,"sections":[7],"lines":["545"],"contexts":["By file: `incremental.rs` 47, `schema.rs` 34, `lib.rs` 21, `initial.rs` 12,"],"resolved":false},
     "memory.rs": {"count":1,"sections":[3],"lines":["273"],"contexts":["the clause number (`memory.rs:273`, `:280`, `:284`, `:287`, `:297`, `:309`)."],"resolved":false},
     "scripts/census/lib/instruments/extractRustStrings.mjs": {"count":1,"sections":[],"contexts":["`scripts/census/lib/instruments/extractRustStrings.mjs`: **55,267** string"]},
     "scripts/check-csp-hosts.mjs": {"count":1,"sections":[9],"contexts":["is a check script in the shape of `scripts/check-csp-hosts.mjs`: enumerate"]},
@@ -69,7 +69,6 @@
     "src-tauri/db/src/migrations/initial.rs": {"count":1,"sections":[7],"contexts":["By file: `incremental.rs` 47, `schema.rs` 34, `lib.rs` 21, `initial.rs` 12,"],"resolvedFrom":"basename","verbatim":"initial.rs"},
     "src-tauri/db/src/migrations/schema.rs": {"count":1,"sections":[7],"contexts":["By file: `incremental.rs` 47, `schema.rs` 34, `lib.rs` 21, `initial.rs` 12,"],"resolvedFrom":"basename","verbatim":"schema.rs"},
     "src-tauri/src/commands/infrastructure/dev_tools.rs": {"count":2,"sections":[0,7],"lines":["191"],"contexts":["`commands/infrastructure/dev_tools.rs:191`,"],"resolvedFrom":"suffix","verbatim":"commands/infrastructure/dev_tools.rs"},
-    "src-tauri/src/companion/brain/daily_goals.rs": {"count":1,"sections":[7],"contexts":["is kept by `companion/brain/daily_goals.rs` writing `'completed'` before"],"resolvedFrom":"suffix","verbatim":"companion/brain/daily_goals.rs"},
     "src/app/db/drivers/sqlite.driver.ts": {"count":1,"sections":[6],"lines":["112-118"],"contexts":["(`src/app/db/drivers/sqlite.driver.ts:112-118`) sets `foreign_keys = ON`"],"resolved":false}
   }
 }

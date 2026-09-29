@@ -75,12 +75,55 @@ const normPath = (p: string): string => p.replace(/\\/g, '/').toLowerCase().repl
 export interface SessionGrouping {
   /** teamId → its sessions, attention-first. Only non-empty teams appear. */
   byTeam: Map<string, FleetSession[]>;
+  /**
+   * Run-group key → its sessions, attention-first. Today the only run group is
+   * a contest: key `contest:<projectId>/<contestId>` (`contest:<contestId>` for
+   * a seat labelled before the project joined its run label), one per contest
+   * with seats on the board, ordered newest contest first. A run group wins over the team
+   * mapping — a contest's seats run in its arena folders, not a project root,
+   * and belong together whatever project the arena sits in.
+   */
+  byRun: Map<string, FleetSession[]>;
   /** Sessions whose cwd maps to no project, or to a project with no team. */
   ungrouped: FleetSession[];
 }
 
+/** Prefix of a contest's run-group key (`contest:<projectId>/<contestId>`). */
+export const CONTEST_GROUP_PREFIX = 'contest:';
+
+/** A contest column's identity. `projectId` is null only for seats labelled
+ *  before the project joined the run label: their contest cannot be told apart
+ *  from a same-id contest in another project, nor opened. */
+export interface ContestGroup {
+  projectId: string | null;
+  contestId: string;
+}
+
 /**
- * Group live sessions into team columns via cwd → DevProject → team_id.
+ * The run-group key of a contest. Arenas are per project and contest ids are
+ * unique only inside one arena (`contest/focus.ts`), so the key is the pair:
+ * `contest:<projectId>/<contestId>`. Neither half can hold a `/` (a project
+ * id is a UUID, a contest id a `[A-Za-z0-9._-]` slug). With no project it
+ * falls back to `contest:<contestId>`.
+ */
+export function contestGroupKey(contestId: string, projectId: string | null): string {
+  return projectId ? `${CONTEST_GROUP_PREFIX}${projectId}/${contestId}` : `${CONTEST_GROUP_PREFIX}${contestId}`;
+}
+
+/** The (project, contest) back out of a run-group key, or `null` for another kind of key. */
+export function contestOfGroupKey(key: string): ContestGroup | null {
+  if (!key.startsWith(CONTEST_GROUP_PREFIX)) return null;
+  const rest = key.slice(CONTEST_GROUP_PREFIX.length);
+  const slash = rest.indexOf('/');
+  if (slash < 0) return rest ? { projectId: null, contestId: rest } : null;
+  const projectId = rest.slice(0, slash);
+  const contestId = rest.slice(slash + 1);
+  return projectId && contestId ? { projectId, contestId } : null;
+}
+
+/**
+ * Group live sessions into team columns via cwd → DevProject → team_id, and
+ * contest seats into one run group per contest.
  *
  * Everything unresolvable lands in `ungrouped` on purpose: a session running in
  * an unregistered directory is still real work the operator started, and
@@ -93,22 +136,36 @@ export function groupSessions(sessions: FleetSession[], projects: DevProject[]):
   }
 
   const byTeam = new Map<string, FleetSession[]>();
+  const runGroups = new Map<string, FleetSession[]>();
   const ungrouped: FleetSession[] = [];
+  const push = (map: Map<string, FleetSession[]>, key: string, s: FleetSession) => {
+    const list = map.get(key);
+    if (list) list.push(s);
+    else map.set(key, [s]);
+  };
   for (const s of sessions) {
     if (!isLiveSession(s)) continue;
-    const teamId = s.cwd ? teamByRoot.get(normPath(s.cwd)) : undefined;
-    if (teamId) {
-      const list = byTeam.get(teamId);
-      if (list) list.push(s);
-      else byTeam.set(teamId, [s]);
-    } else {
-      ungrouped.push(s);
+    // The fleet parses the seat's `contest:<projectId>/<contestId>:<seatId>`
+    // run label once and sends both halves; the board only groups on them.
+    const contestId = s.contestId?.trim();
+    if (contestId) {
+      push(runGroups, contestGroupKey(contestId, s.contestProjectId?.trim() || null), s);
+      continue;
     }
+    const teamId = s.cwd ? teamByRoot.get(normPath(s.cwd)) : undefined;
+    if (teamId) push(byTeam, teamId, s);
+    else ungrouped.push(s);
   }
 
   for (const list of byTeam.values()) list.sort(compareSessions);
+  for (const list of runGroups.values()) list.sort(compareSessions);
   ungrouped.sort(compareSessions);
-  return { byTeam, ungrouped };
+  // Newest contest first: the one being run now leads the board's run columns.
+  const newest = (list: FleetSession[]) => Math.max(...list.map((s) => Number(s.createdAtMs)));
+  const byRun = new Map(
+    [...runGroups.entries()].sort(([ka, a], [kb, b]) => newest(b) - newest(a) || (ka < kb ? -1 : ka > kb ? 1 : 0)),
+  );
+  return { byTeam, byRun, ungrouped };
 }
 
 /** Attention-first, then newest — the same reading order the fleet surfaces use. */

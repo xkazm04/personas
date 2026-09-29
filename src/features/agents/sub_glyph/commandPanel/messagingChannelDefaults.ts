@@ -7,9 +7,8 @@
  *     deliverable, and the i18n keys that label/placeholder them
  *   · whether a given spec is "fully configured" (all required fields set)
  *
- * These used to be hand-duplicated across `useComposeConfig.tsx`,
- * `CommandPanelComposer.tsx`, `CommandPanelMessagingRow.tsx`, and
- * `ComposerMessagingPickerModal.tsx`. Import from here instead — the
+ * These used to be hand-duplicated across several compose surfaces
+ * (today: `useComposeConfig.tsx` and `ComposerMessagingPickerModal.tsx`). Import from here instead — the
  * required destination keys must match the dispatcher's `deliver_*`
  * adapters in `notifications.rs`.
  */

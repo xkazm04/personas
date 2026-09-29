@@ -211,14 +211,6 @@
     },
     "src/features/shared/components/layout/ContentLayout.tsx": {"count":2,"sections":[7],"lines":["260"],"contexts":["`shared/components/layout/ContentLayout.tsx`,"],"resolvedFrom":"suffix","verbatim":"shared/components/layout/ContentLayout.tsx"},
     "src/features/shared/components/layout/settings/useSectionScrollSpy.ts": {"count":1,"sections":[],"contexts":["`shared/components/layout/settings/useSectionScrollSpy.ts`,"],"resolvedFrom":"suffix","verbatim":"shared/components/layout/settings/useSectionScrollSpy.ts"},
-    "src/features/teams/sub_mastermind/lib/GroupLayer.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["149-150"],
-      "contexts": ["`teams/sub_mastermind/lib/GroupLayer.tsx`, `plugins/drive/hooks/useScrollShadows.ts`,"],
-      "resolvedFrom": "suffix",
-      "verbatim": "teams/sub_mastermind/lib/GroupLayer.tsx"
-    },
     "src/features/teams/sub_teamMemory/components/panel/TeamMemoryPanel.tsx": {
       "count": 3,
       "sections": [7],
@@ -267,6 +259,7 @@
       "contexts": ["`systemStore.ts`'s `partialize` holds **64 keys and not one `*Width`/`*Height`**, so none of this goes"],
       "resolvedFrom": "basename",
       "verbatim": "systemStore.ts"
-    }
+    },
+    "teams/sub_mastermind/lib/GroupLayer.tsx": {"count":2,"sections":[7],"lines":["149-150"],"contexts":["`teams/sub_mastermind/lib/GroupLayer.tsx`, `plugins/drive/hooks/useScrollShadows.ts`,"],"resolved":false}
   }
 }

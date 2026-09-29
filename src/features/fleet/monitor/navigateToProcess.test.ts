@@ -37,9 +37,9 @@ describe('navigateToProcess', () => {
 
   it('routes a section + tab through that section own tab setter', () => {
     const dismiss = vi.fn();
-    navigateToProcess(proc({ section: 'teams', tab: 'competition' }), dismiss);
+    navigateToProcess(proc({ section: 'teams', tab: 'contest' }), dismiss);
     expect(system.setSidebarSection).toHaveBeenCalledWith('teams');
-    expect(system.setTeamsTab).toHaveBeenCalledWith('competition');
+    expect(system.setTeamsTab).toHaveBeenCalledWith('contest');
     expect(system.setTemplateTab).not.toHaveBeenCalled();
     expect(dismiss).toHaveBeenCalled();
   });

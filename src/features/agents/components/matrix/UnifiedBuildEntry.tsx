@@ -19,8 +19,7 @@ import {
   type PromoteRedirect,
 } from "@/features/agents/components/matrix/promoteReceipt";
 import { PromoteReceiptCard } from "@/features/agents/components/matrix/PromoteReceiptCard";
-import { GlyphCinemaLayout } from "@/features/agents/sub_glyph/GlyphCinemaLayout";
-import { GlyphDialogueCinemaLayout } from "@/features/agents/sub_glyph/GlyphDialogueCinemaLayout";
+import { ContactSheetCinemaLayout } from "@/features/agents/sub_glyph/contactSheet/cinema/ContactSheetCinemaLayout";
 import type { GlyphFullLayoutProps } from "@/features/agents/sub_glyph/glyphLayoutTypes";
 import type { PersonaCoreLaunchSnapshot } from "@/features/agents/sub_glyph/personaCore";
 import { useUseCaseChronology } from "@/features/templates/sub_generated/adoption/chronology/useUseCaseChronology";
@@ -45,34 +44,11 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import AdoptionWizardModal from "@/features/templates/sub_generated/adoption/AdoptionWizardModal";
 import { BuildTemplateSuggestion } from "@/features/agents/components/matrix/BuildTemplateSuggestion";
 import { shouldSurfaceTemplateSuggestion } from "@/features/agents/components/matrix/buildTemplateMatchConfidence";
-import { BuildContextField } from "@/features/agents/components/matrix/BuildContextField";
 import { getDesignReview } from "@/api/overview/reviews";
 import { cancelBuildSession } from "@/api/agents/buildSession";
 import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 import type { CompanionTemplateMatch } from "@/api/companion";
 
-
-
-// Layout preference — persists across sessions via localStorage.
-// The switcher now offers only the two cinematic variants (2026-07-07). The
-// retired variants live on as background baselines the survivors are built on —
-// GlyphFullLayout (GlyphCinemaLayout's compose delegate) and the Dialogue compose
-// pieces (DialogueComposePanel/DialogueStageSurface, used by GlyphDialogueCinemaLayout)
-// — but "glyph-full", "composer-prototype" and "dialogue" are no longer selectable.
-// "dialogue-cinema" is the default.
-type BuildLayout = "cinema" | "dialogue-cinema";
-const LAYOUT_STORAGE_KEY = "personas:build-layout";
-const BUILD_LAYOUTS: BuildLayout[] = ["cinema", "dialogue-cinema"];
-function readLayoutPreference(): BuildLayout {
-  try {
-    const raw = localStorage.getItem(LAYOUT_STORAGE_KEY);
-    if (raw && (BUILD_LAYOUTS as string[]).includes(raw)) return raw as BuildLayout;
-  } catch (err) { silentCatch("features/agents/components/matrix/UnifiedBuildEntry:catch1")(err); }
-  return "dialogue-cinema";
-}
-function writeLayoutPreference(value: BuildLayout): void {
-  try { localStorage.setItem(LAYOUT_STORAGE_KEY, value); } catch (err) { silentCatch("features/agents/components/matrix/UnifiedBuildEntry:catch2")(err); }
-}
 
 const logger = createLogger("unified-matrix-entry");
 
@@ -197,6 +173,9 @@ export function UnifiedBuildEntry() {
   // (reset per build session below); `adoptionReview` (when set) swaps the
   // build surface for the inline adoption wizard.
   const [templateSuggestionDismissed, setTemplateSuggestionDismissed] = useState(false);
+  // Whether the row currently shows a match (reported by the row itself), so
+  // the sheet can hold its camera on the panel while the choice is open.
+  const [templateSuggestionShowing, setTemplateSuggestionShowing] = useState(false);
   const [adoptionReview, setAdoptionReview] = useState<PersonaDesignReview | null>(null);
 
   // Phase F: pending auto-launch from Athena's prefill_persona_create.
@@ -352,7 +331,7 @@ export function UnifiedBuildEntry() {
     };
   }, [draftPersonaId]);
 
-  // -- Persona Core Codex snapshot (either compose surface) ---------------
+  // -- Persona Core Codex snapshot ------------------------------------------
   // The layout hands the typed codex snapshot up at Launch (before the build
   // session exists); handlePromote consumes it once and composes it into
   // `personas.core_profile` AFTER the Rust seed-if-absent stamp has run. A ref,
@@ -492,8 +471,8 @@ export function UnifiedBuildEntry() {
   // -- Auto-submit collected answers when the round empties ----------------
   // The QuestionRow / GlyphQuestionCard Send buttons call `collectAnswer`
   // which only stores the answer locally; the CLI never receives anything
-  // until `submitAllAnswers` fires. The Glyph Full layout (the default) had
-  // no Submit-All affordance, so users would answer every question, watch
+  // until `submitAllAnswers` fires. The build surface has no Submit-All
+  // affordance, so users would answer every question, watch
   // them disappear, then see the same questions re-emitted by the CLI on its
   // next turn (the LLM never got a reply). Auto-submit once the visible
   // queue is empty and at least one answer is buffered. A short debounce
@@ -717,7 +696,7 @@ export function UnifiedBuildEntry() {
 
   // 2026-05-05 — handleApplyEdits / handleDiscardEdits removed alongside
   // the legacy 8-dimension matrix view. Both were only consumed by
-  // PersonaMatrix's inline cell editor; the Glyph-based layouts edit
+  // PersonaMatrix's inline cell editor; the build layout edits
   // capabilities through the Refine composer instead.
 
   // -- Derived props -------------------------------------------------------
@@ -726,13 +705,6 @@ export function UnifiedBuildEntry() {
   const hasWorkflowImport = !!useAgentStore((s) => s.buildWorkflowJson);
   const launchDisabled = (!intentText.trim() && !hasWorkflowImport) || isActivelyBuilding;
   const hasDesignResult = build.buildPhase === "draft_ready" || build.buildPhase === "testing" || build.buildPhase === "test_complete" || build.buildPhase === "promoted";
-
-  // -- Layout toggle (legacy dimensions vs v3 capabilities) ---------------
-  const [layout, setLayout] = useState<BuildLayout>(readLayoutPreference);
-  const handleLayoutChange = useCallback((next: BuildLayout) => {
-    setLayout(next);
-    writeLayoutPreference(next);
-  }, []);
 
   // -- Build mode toggle (interactive vs autonomous one-shot) -------------
   // 2026-05-06 — explicit user opt-in for autonomous builds. Defaults off
@@ -745,11 +717,11 @@ export function UnifiedBuildEntry() {
   const oneShotEnabledRef = useRef(false);
   oneShotEnabledRef.current = oneShotEnabled;
 
-  // Glyph Full reads the same buildDraft as the adoption flow, so the shared
+  // The sheet reads the same buildDraft as the adoption flow, so the shared
   // chronology builder produces the rows without any edit-mode-specific shim.
   const glyphRows = useUseCaseChronology();
 
-  // Glyph Full owns its own DimensionQuickConfig state so we can append the
+  // The entry owns the DimensionQuickConfig state so we can append the
   // serialized config to intent at launch time — mirrors what PersonaMatrix
   // does internally for its pre-build quick setup.
   const [, setGlyphQuickConfig] = useState<QuickConfigState>({
@@ -780,19 +752,52 @@ export function UnifiedBuildEntry() {
       className="flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-hidden transition-opacity duration-400 ease-out"
       style={{ opacity: fadeOut ? 0 : 1 }}
     >
+      {/* `fitWidth`: the default header carries an app-wide `min-w-[80vw]`
+          floor, which is wider than this container whenever the sidebar is
+          open (1280 - 52 rail - 240 nav = 988 < 1024 px) and was the source
+          of the horizontal scrollbar track under the build area. The one-shot
+          toggle rides in the header's actions slot instead of a row of its
+          own above the sheet, so no chrome pushes the sheet down. */}
       <ContentHeader
+        fitWidth
         title={t.agents.matrix_entry.header_title}
         subtitle={
           agentName && agentName !== 'New Agent'
             ? `${t.agents.matrix_entry.header_subtitle_editing.replace('{name}', agentName)}`
             : t.agents.matrix_entry.header_subtitle_new
         }
+        actions={adoptionReview ? undefined : (
+          <button
+            type="button"
+            onClick={() => setOneShotEnabled((v) => !v)}
+            disabled={isActivelyBuilding}
+            className={`inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-full border px-3 py-1 typo-caption transition disabled:opacity-50 disabled:cursor-not-allowed ${
+              oneShotEnabled
+                ? "border-primary/40 bg-primary/15 text-primary"
+                : "border-border/30 bg-secondary/20 text-foreground hover:text-foreground"
+            }`}
+            title={
+              oneShotEnabled
+                ? "One-shot is on. Launching will let the AI decide every gate; you'll get a notification when it's ready."
+                : "Turn on one-shot to skip the questionnaire — the AI will pick safe defaults and notify you when the build lands."
+            }
+            data-testid="build-oneshot-toggle"
+          >
+            <span
+              className={`inline-block h-1.5 w-1.5 rounded-full ${
+                oneShotEnabled ? "bg-primary" : "bg-foreground/30"
+              }`}
+              aria-hidden
+            />
+            {oneShotEnabled ? "One-shot: on" : "Let AI decide everything"}
+          </button>
+        )}
       />
 
       <div className="flex-1 min-h-0 flex flex-col w-full px-4 md:px-6 xl:px-8 pt-4">
-      {/* 2026-05-06 — inline GlyphQuestionPanel removed. Cinema hosts Q&A through
-          the GlyphAnswerCard overlay on the sigil; Dialogue+Cinema hosts it as a
-          dialogue turn in DialogueStageSurface. */}
+      {/* Q&A, context, the "Faster path" template row and build errors all
+          live inside the Contact Sheet (Sheet · Cinema), the one build layout:
+          nothing is rendered above or beside it that could push it down. */}
 
       {adoptionReview ? (
         <AdoptionWizardModal
@@ -804,92 +809,7 @@ export function UnifiedBuildEntry() {
         />
       ) : (
         <>
-      {/* Layout toggle — two variants: Cinema and Dialogue+Cinema. */}
-      <div
-        className="flex-shrink-0 mb-2 flex justify-end items-center gap-2"
-        data-testid="build-layout-toggle"
-      >
-        <button
-          type="button"
-          onClick={() => setOneShotEnabled((v) => !v)}
-          disabled={isActivelyBuilding}
-          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 typo-caption transition disabled:opacity-50 disabled:cursor-not-allowed ${
-            oneShotEnabled
-              ? "border-primary/40 bg-primary/15 text-primary"
-              : "border-border/30 bg-secondary/20 text-foreground hover:text-foreground"
-          }`}
-          title={
-            oneShotEnabled
-              ? "One-shot is on. Launching will let the AI decide every gate; you'll get a notification when it's ready."
-              : "Turn on one-shot to skip the questionnaire — the AI will pick safe defaults and notify you when the build lands."
-          }
-          data-testid="build-oneshot-toggle"
-        >
-          <span
-            className={`inline-block h-1.5 w-1.5 rounded-full ${
-              oneShotEnabled ? "bg-primary" : "bg-foreground/30"
-            }`}
-            aria-hidden
-          />
-          {oneShotEnabled ? "One-shot: on" : "Let AI decide everything"}
-        </button>
-        <div className="inline-flex rounded-full border border-border/30 bg-secondary/20 p-0.5">
-          <button
-            type="button"
-            onClick={() => handleLayoutChange("cinema")}
-            className={`rounded-full px-3 py-1 typo-caption transition ${
-              layout === "cinema"
-                ? "bg-primary/20 text-primary"
-                : "text-foreground hover:text-foreground"
-            }`}
-            title="Cinema — sigil compose + cinematic build loading (prototype)"
-            data-testid="build-layout-toggle-cinema"
-          >
-            Cinema
-          </button>
-          <button
-            type="button"
-            onClick={() => handleLayoutChange("dialogue-cinema")}
-            className={`rounded-full px-3 py-1 typo-caption transition ${
-              layout === "dialogue-cinema"
-                ? "bg-primary/20 text-primary"
-                : "text-foreground hover:text-foreground"
-            }`}
-            title="Dialogue+Cinema — brief stays on top, cinema plays below while loading (prototype)"
-            data-testid="build-layout-toggle-dialogue-cinema"
-          >
-            Dialogue+Cinema
-          </button>
-        </div>
-      </div>
-
-      {/* The "Faster path" template alert floats at the container level for BOTH
-          layouts. Dialogue+Cinema's recipe starters are not a substitute: once
-          the build is running its compose panel is locked and the starter row
-          has no open handler, so it reports provenance rather than offering
-          adoption. `shouldSurfaceTemplateSuggestion` owns the decision. */}
-      <BuildTemplateSuggestion
-        intent={intentText}
-        active={shouldSurfaceTemplateSuggestion(
-          layout,
-          build.pendingQuestions?.length ?? 0,
-          templateSuggestionDismissed,
-        )}
-        onAccept={handleAcceptTemplate}
-        onDismiss={() => setTemplateSuggestionDismissed(true)}
-      />
-
-      {!build.isBuilding && !hasDesignResult && (
-        <BuildContextField
-          value={contextText}
-          onChange={setContextText}
-          disabled={isLaunching}
-        />
-      )}
-
       {(() => {
-        // All build layouts consume the identical GlyphFullLayoutProps bundle —
-        // assemble once and pick the component (baseline + 2 prototype variants).
         const layoutProps: GlyphFullLayoutProps = {
           intentText,
           onIntentChange: setIntentText,
@@ -922,16 +842,30 @@ export function UnifiedBuildEntry() {
           onViewAgent: () => handleViewPromotedAgent(redirectTarget(promoteReceipt)),
           buildError: build.buildError,
           initialNotificationChannels: initialNotificationChannels ?? undefined,
-          // Persona Core Codex → typed core_profile. Both compose surfaces
-          // mount the codex and call this - the dialogue-cinema panel and
-          // GlyphFullLayout, which the cinema layout renders while composing.
-          // A layout preference therefore cannot change which identity source
-          // the promote stamp gets.
+          // Persona Core Codex → typed core_profile: the sheet hands the codex
+          // snapshot up at Launch and handlePromote stamps it after promotion.
           onLaunchCoreSnapshot: handleLaunchCoreSnapshot,
+          contextText,
+          onContextChange: setContextText,
+          // The "Faster path" row: `shouldSurfaceTemplateSuggestion` owns the
+          // decision; the sheet renders the row in its questions panel.
+          templateSuggestion: (
+            <BuildTemplateSuggestion
+              intent={intentText}
+              active={shouldSurfaceTemplateSuggestion(
+                build.pendingQuestions?.length ?? 0,
+                templateSuggestionDismissed,
+              )}
+              onAccept={handleAcceptTemplate}
+              onDismiss={() => setTemplateSuggestionDismissed(true)}
+              onShowChange={setTemplateSuggestionShowing}
+            />
+          ),
+          templateSuggestionShowing,
+          launchError,
+          onDismissLaunchError: () => setLaunchError(null),
         };
-        const LayoutComponent =
-          layout === "cinema" ? GlyphCinemaLayout : GlyphDialogueCinemaLayout;
-        return <LayoutComponent {...layoutProps} />;
+        return <ContactSheetCinemaLayout {...layoutProps} />;
       })()}
 
       <PromoteReceiptCard
@@ -942,19 +876,6 @@ export function UnifiedBuildEntry() {
         onDismiss={() => setPromoteReceipt(null)}
       />
 
-      {/* Error banner */}
-      {(launchError || build.buildError) && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-card border border-red-500/20 bg-red-500/5 typo-body text-red-400 flex-shrink-0">
-          <span className="flex-1">{launchError || build.buildError}</span>
-          <button
-            type="button"
-            onClick={() => setLaunchError(null)}
-            className="text-red-400/60 hover:text-red-400 typo-caption"
-          >
-            {t.errors.dismiss_error}
-          </button>
-        </div>
-      )}
         </>
       )}
 

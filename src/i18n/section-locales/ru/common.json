@@ -214,5 +214,6 @@
   "dispatch_run_on_offline": "Не в сети",
   "dispatch_run_on_queued_hint": "В очереди до пробуждения",
   "dispatch_run_on_stale": "Недавно не виден",
-  "dispatch_run_on_this_machine": "Этот компьютер"
+  "dispatch_run_on_this_machine": "Этот компьютер",
+  "md_spellcheck": "Орфография и грамматика"
 }

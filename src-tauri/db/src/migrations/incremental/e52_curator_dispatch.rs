@@ -260,9 +260,10 @@ mod tests {
 
         let (n, item): (i64, Option<String>) = conn
             .query_row(
-                "SELECT COUNT(id), MAX(plan_item_id) FROM curator_dispatch WHERE id = 'd1'",
+                "SELECT COUNT(id) AS n, MAX(plan_item_id) AS plan_item_id
+                   FROM curator_dispatch WHERE id = 'd1'",
                 [],
-                |r| Ok((r.get(0)?, r.get(1)?)),
+                |r| Ok((r.get("n")?, r.get("plan_item_id")?)),
             )
             .unwrap();
         assert_eq!(n, 1, "the dispatch survives the plan it came from");

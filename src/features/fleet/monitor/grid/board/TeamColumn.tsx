@@ -41,6 +41,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { cleanName } from '../fleetGridModel';
 import { ColumnBody } from '../ColumnBody';
 import { ColumnGhost } from '../BoardGhost';
+import { ContestColumnHeader } from './ContestColumnHeader';
 import { COLUMN_BODY_MAX_H, type ColumnRow } from '../gridGeometry';
 import type { BoardColumn } from '../useBoardModel';
 import {
@@ -97,37 +98,48 @@ export function TeamColumn({
     >
       {workspaceId !== null && <WorkspaceFrame />}
       <div className="relative z-10 flex flex-shrink-0 flex-col gap-1 pb-2 pt-0.5">
-        <Tooltip
-          content={workspaceId !== null
-            ? tx(t.monitor.grid_column_workspace_hint, { workspace: spaceName })
-            : projectOff
-              ? tx(t.plugins.dev_projects.project_off_hint, { project: name })
-              : tx(t.monitor.grid_column_scope, { project: name })}
-        >
-          <button
-            type="button"
-            onClick={() => onToggleScope(column.teamId, column.teamName, column.cards)}
-            onContextMenu={onContextMenu}
-            aria-pressed={scoped}
-            data-project-off={projectOff || undefined}
-            data-testid="fleet-grid-column-header"
-            className={`focus-ring flex w-full items-baseline gap-1.5 rounded-interactive px-1 py-0.5 text-left transition-colors ${
-              scoped ? 'bg-primary/15 text-foreground' : 'text-foreground hover:bg-secondary/40'
-            }`}
+        {column.contestId !== null ? (
+          // A CONTEST COLUMN is a run group, not a roster: nothing to scope the
+          // rail to and no project to switch, so its header is the way back to
+          // the race instead — see `ContestColumnHeader`.
+          <ContestColumnHeader
+            projectId={column.contestProjectId}
+            contestId={column.contestId}
+            seats={column.rows.filter((r) => r.kind === 'session').length}
+          />
+        ) : (
+          <Tooltip
+            content={workspaceId !== null
+              ? tx(t.monitor.grid_column_workspace_hint, { workspace: spaceName })
+              : projectOff
+                ? tx(t.plugins.dev_projects.project_off_hint, { project: name })
+                : tx(t.monitor.grid_column_scope, { project: name })}
           >
-            <span className={`min-w-0 flex-1 truncate typo-label ${projectOff ? 'opacity-55' : ''}`}>{name}</span>
-            {workspaceId !== null && <WorkspaceBadge label={t.monitor.grid_column_workspace_badge} />}
-            {projectOff && (
-              <span className="inline-flex flex-shrink-0 items-center gap-1 rounded-full border border-status-warning/30 bg-status-warning/10 px-1.5 typo-caption text-status-warning">
-                <PowerOff className="h-2.5 w-2.5" aria-hidden />
-                {t.plugins.dev_projects.project_state_off}
+            <button
+              type="button"
+              onClick={() => onToggleScope(column.teamId, column.teamName, column.cards)}
+              onContextMenu={onContextMenu}
+              aria-pressed={scoped}
+              data-project-off={projectOff || undefined}
+              data-testid="fleet-grid-column-header"
+              className={`focus-ring flex w-full items-baseline gap-1.5 rounded-interactive px-1 py-0.5 text-left transition-colors ${
+                scoped ? 'bg-primary/15 text-foreground' : 'text-foreground hover:bg-secondary/40'
+              }`}
+            >
+              <span className={`min-w-0 flex-1 truncate typo-label ${projectOff ? 'opacity-55' : ''}`}>{name}</span>
+              {workspaceId !== null && <WorkspaceBadge label={t.monitor.grid_column_workspace_badge} />}
+              {projectOff && (
+                <span className="inline-flex flex-shrink-0 items-center gap-1 rounded-full border border-status-warning/30 bg-status-warning/10 px-1.5 typo-caption text-status-warning">
+                  <PowerOff className="h-2.5 w-2.5" aria-hidden />
+                  {t.plugins.dev_projects.project_state_off}
+                </span>
+              )}
+              <span className="flex-shrink-0 typo-caption tabular-nums opacity-50">
+                {column.cards.length}
               </span>
-            )}
-            <span className="flex-shrink-0 typo-caption tabular-nums opacity-50">
-              {column.cards.length}
-            </span>
-          </button>
-        </Tooltip>
+            </button>
+          </Tooltip>
+        )}
         <span
           aria-hidden
           className="h-0.5 w-full rounded-full"

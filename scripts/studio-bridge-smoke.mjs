@@ -70,7 +70,7 @@ const check = (n, ok) => { results.push(ok); console.log(`${ok ? 'PASS' : 'FAIL'
   console.log('submitted; scaffold + dev server (~1-2 min)…');
 
   check('project tab appears', await waitFor(async () => (await count('[data-testid="studio-tab"]')) >= 1, 60, 5000, 'tab'));
-  check('preview iframe loads', await waitFor(async () => (await count('iframe[title="preview"]')) >= 1, 48, 5000, 'preview'));
+  check('preview iframe loads', await waitFor(async () => (await count('iframe[data-testid="studio-preview"]')) >= 1, 48, 5000, 'preview'));
   check('chat input present', (await count('[data-testid="studio-chat-input"]')) >= 1);
 
   const passed = results.filter(Boolean).length;

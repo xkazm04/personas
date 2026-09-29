@@ -175,6 +175,78 @@ pub(crate) fn file_new_hire(
     }
 }
 
+/// The `model_profile` JSON a kp hire asked for (`spec.modelProfile`,
+/// normalized at intake to `{model, effort?}`), or `None` when it named none —
+/// every hire before the field existed, and every hire that still omits it.
+///
+/// Only `model` and `effort` are ever read: the stored params hold nothing
+/// else by construction, and reading two fields here keeps it that way should
+/// a row written by some other door carry more.
+pub(crate) fn kp_hire_model_profile(params: &serde_json::Value) -> Option<String> {
+    let mp = params.pointer("/spec/modelProfile")?;
+    let model = mp
+        .get("model")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|m| !m.is_empty())?;
+    let effort = mp
+        .get("effort")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|e| !e.is_empty())
+        .map(str::to_string);
+    serde_json::to_string(&crate::engine::types::ModelProfile {
+        model: Some(model.to_string()),
+        effort,
+        ..Default::default()
+    })
+    .ok()
+}
+
+/// The home project a kp hire asked for (`placement.projectId`), re-checked
+/// now that the hire is about to be filed: the project must still pass the
+/// per-run binding rule (`execution_project::resolve_bound_project`) for a
+/// persona homed in the placement's group — inside the allowed HTTP project
+/// roots, in that workspace. The project may have been switched off, moved
+/// or deleted while the request waited; that fails the hire (nothing is
+/// created yet) rather than homing a persona in a folder kp may no longer use.
+///
+/// `Ok(None)` when the request named no project.
+pub(crate) fn resolve_hire_home_project(
+    db: &crate::db::DbPool,
+    params: &serde_json::Value,
+    placement: Option<&HirePlacement>,
+) -> Result<Option<String>, AppError> {
+    let Some(project_id) = params
+        .pointer("/placement/projectId")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    else {
+        return Ok(None);
+    };
+    let Some(placement) = placement else {
+        // Intake writes the project's workspace into the placement, so a
+        // project with no placement is a row no current intake produced.
+        return Err(AppError::Validation(format!(
+            "kp_hire_request: `placement.projectId` {project_id} names no workspace to file the hire in — the hire was not created"
+        )));
+    };
+    crate::db::execution_project::resolve_bound_project(
+        db,
+        Some(&placement.group_team_id),
+        project_id,
+    )
+    .map(|p| Some(p.id))
+    .map_err(|e| {
+        AppError::Validation(format!(
+            "kp_hire_request: home project refused ({}): {} — the hire was not created",
+            e.code(),
+            e.message()
+        ))
+    })
+}
+
 // ── action executors ────────────────────────────────────────────────────
 
 pub(crate) async fn execute_run_persona(
@@ -769,6 +841,37 @@ pub(crate) fn execute_set_ritual_active(
     }))
 }
 
+/// Layered voice: apply a reflection-originated register change the operator
+/// approved. The chat op of the same name auto-fires in the dispatcher (source
+/// `operator`); this is the approval door, so the row records `reflection`.
+/// Both parse the params with the same function and write through
+/// `register::apply_op`, so the two doors cannot disagree about what a legal
+/// register is.
+pub(crate) fn execute_adjust_register(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let (scope, sentences, reason) = crate::companion::dispatcher::parse_adjust_register(params)
+        .map_err(|e| AppError::Validation(format!("adjust_register: {e}")))?;
+    let row = crate::companion::register::apply_op(
+        &state.user_db,
+        &scope,
+        sentences,
+        reason.as_deref(),
+        "reflection",
+    )?;
+    Ok(ExecuteResult::message(format!(
+        "Replies on {} now run to at most {} sentence{}.",
+        if row.scope == crate::companion::register::DEFAULT_SCOPE {
+            "everything".to_string()
+        } else {
+            format!("\"{}\"", row.scope)
+        },
+        row.sentences,
+        if row.sentences == 1 { "" } else { "s" }
+    )))
+}
+
 pub(crate) fn execute_delete_ritual(
     state: &State<'_, Arc<AppState>>,
     params: &serde_json::Value,
@@ -1278,6 +1381,16 @@ pub(crate) async fn execute_kp_hire_request(
     // persona exists: a placement that can no longer be honoured fails the
     // hire with nothing to roll back.
     let placement = resolve_hire_placement(&state.db, params)?;
+    // The home project (`placement.projectId`) → `design_context.homeProjectId`,
+    // the persona → project link. Re-checked against the placement's group
+    // for the same reason, before anything exists.
+    let home_project_id = resolve_hire_home_project(&state.db, params, placement.as_ref())?;
+    let design_context = crate::db::models::DesignContextData {
+        home_project_id,
+        ..design_context
+    };
+    // The model kp asked this persona to run on (`spec.modelProfile`).
+    let model_profile = kp_hire_model_profile(params);
 
     // G17 (2026-09-08): no capacity gate here. This door used to refuse a hire
     // when the enabled roster was at `max_active_personas`, on the reasoning
@@ -1301,7 +1414,7 @@ pub(crate) async fn execute_kp_hire_request(
             enabled: Some(true),
             max_concurrent: None,
             timeout_ms: None,
-            model_profile: None,
+            model_profile,
             max_budget_usd,
             max_turns,
             design_context: Some(design_context.to_json_string()),
@@ -2280,6 +2393,118 @@ mod tests {
 
     /// Without requirements the intent is exactly what it was before the
     /// contract existed — a regression here changes every kp hire's design.
+    #[test]
+    fn a_requested_model_profile_becomes_the_personas_model_profile() {
+        let params = serde_json::json!({"spec": {"modelProfile": {"model": "claude-opus-5-5", "effort": "high"}}});
+        let raw = kp_hire_model_profile(&params).expect("a profile");
+        let parsed: crate::engine::types::ModelProfile = serde_json::from_str(&raw).unwrap();
+        assert_eq!(parsed.model.as_deref(), Some("claude-opus-5-5"));
+        assert_eq!(parsed.effort.as_deref(), Some("high"));
+        assert_eq!(parsed.base_url, None);
+        assert_eq!(parsed.auth_token, None);
+        assert_eq!(
+            parsed.provider, None,
+            "an unset provider is the Anthropic default"
+        );
+
+        // Without one the hire keeps today's `None`.
+        assert_eq!(
+            kp_hire_model_profile(&serde_json::json!({"spec": {}})),
+            None
+        );
+        assert_eq!(
+            kp_hire_model_profile(&serde_json::json!({"spec": {"modelProfile": {"model": " "}}})),
+            None
+        );
+        // Effort is optional.
+        let raw =
+            kp_hire_model_profile(&serde_json::json!({"spec": {"modelProfile": {"model": "m"}}}))
+                .unwrap();
+        let parsed: crate::engine::types::ModelProfile = serde_json::from_str(&raw).unwrap();
+        assert_eq!(parsed.effort, None);
+    }
+
+    #[test]
+    fn a_placement_project_becomes_the_home_project_only_inside_the_boundary() {
+        // The env override would shadow the setting this test writes.
+        if std::env::var_os(crate::db::execution_project::HTTP_PROJECT_ROOTS_ENV).is_some() {
+            return;
+        }
+        let pool = crate::db::init_test_db().unwrap();
+        let roots = serde_json::to_string(&vec![std::fs::canonicalize(std::env::temp_dir())
+            .unwrap()
+            .to_string_lossy()
+            .to_string()])
+        .unwrap();
+        crate::db::repos::core::settings::set_operator_only(
+            &pool,
+            crate::db::settings_keys::MANAGEMENT_HTTP_PROJECT_ROOTS,
+            &roots,
+        )
+        .unwrap();
+        let dir = std::env::temp_dir().join(format!("kp_home_project_{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let ws =
+            crate::db::repos::workspaces::org::create_workspace(&pool, "Gigs", None, None, false)
+                .unwrap();
+        let project = crate::db::project_identity::register_project(
+            &pool,
+            "gig",
+            dir.to_str().unwrap(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        crate::db::repos::workspaces::org::assign_project(&pool, &project.id, Some(&ws.id))
+            .unwrap();
+        let params =
+            serde_json::json!({"placement": {"workspaceId": ws.id, "projectId": project.id}});
+        let placement = resolve_hire_placement(&pool, &params).unwrap();
+
+        assert_eq!(
+            resolve_hire_home_project(&pool, &params, placement.as_ref()).unwrap(),
+            Some(project.id.clone()),
+            "placement.projectId sets the home project"
+        );
+        // No project named: no home project, today's behaviour.
+        let bare = serde_json::json!({"placement": {"workspaceId": ws.id}});
+        assert_eq!(
+            resolve_hire_home_project(&pool, &bare, placement.as_ref()).unwrap(),
+            None
+        );
+        // A project with no placement to file beside is refused.
+        assert!(resolve_hire_home_project(&pool, &params, None).is_err());
+        // Another workspace's group: refused, nothing created.
+        let other =
+            crate::db::repos::workspaces::org::create_workspace(&pool, "Other", None, None, false)
+                .unwrap();
+        let other_placement = resolve_hire_placement(
+            &pool,
+            &serde_json::json!({"placement": {"workspaceId": other.id}}),
+        )
+        .unwrap();
+        let err = resolve_hire_home_project(&pool, &params, other_placement.as_ref()).unwrap_err();
+        assert!(
+            err.to_string()
+                .contains("project_outside_persona_workspace"),
+            "{err}"
+        );
+
+        // The DesignContextData key it lands in is `homeProjectId`.
+        let dc = crate::db::models::DesignContextData {
+            home_project_id: Some(project.id.clone()),
+            ..Default::default()
+        };
+        assert_eq!(
+            personas_engine::design_context::home_project_id(Some(&dc.to_json_string())),
+            Some(project.id)
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
     #[test]
     fn kp_hire_intent_without_requirements_is_unchanged() {
         let intent = kp_hire_intent(

@@ -846,5 +846,8 @@
   "remote_terminal_title": "Terminal, lecture seule",
   "remote_terminal_waiting": "En attente de la sortie de {device}",
   "remote_tile_aria": "{title} sur {device}, {state}. Ouvrir la session distante",
-  "remote_wake": "Réveiller"
+  "remote_wake": "Réveiller",
+  "queue_origin_contest": "Concours",
+  "grid_column_contest_open": "Ouvrir {contest} sur la page Concours",
+  "grid_column_contest_unlinked": "{contest} a démarré avant que ses places n'enregistrent leur projet ; impossible de l'ouvrir d'ici"
 }

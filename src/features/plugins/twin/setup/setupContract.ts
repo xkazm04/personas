@@ -1,18 +1,26 @@
 /**
- * The Setup module's wire contract — hand-written mirror of the Rust types
- * behind `twin_setup_turn`, plus the shape the Setup Desk renders.
+ * The Setup module's render contract — the shape the table and its layers
+ * consume. `useSetupSession` maps the persisted `SetupSessionSnapshot` (the
+ * generated bindings behind `@/api/twin/twinSetup`) onto it, so the surfaces
+ * never read the wire types directly. The plan-side fields reuse the bindings
+ * rather than re-declaring them.
  *
- * Why a hand-written mirror rather than the generated bindings: the renderer
- * and the engine were built in parallel, and this file is the seam that lets
- * them compile independently. WP1 makes the Rust structs
- * match these names field for field (`#[serde(rename_all = "camelCase")]`).
+ * The backend is the setup plan engine (the `twin_setup_*` commands, Rust
+ * `engine::twin_setup`): a persisted plan per twin, a queue of questions
+ * written ahead, and a background reconcile after each answer. It replaced
+ * the per-turn `twin_setup_turn`, which is gone.
  *
  * The governing rule (wizard-flows / ai-driven-elicitation): the generator
- * proposes CONTENT; this flow owns STRUCTURE. `doneHint` is advisory. A slot
- * is complete only when `deriveReadiness` says so, and a generator failure
- * leaves the slot open rather than reading as finished.
+ * proposes CONTENT; this flow owns STRUCTURE. Goal coverage only steers which
+ * question comes next. A slot is complete only when `deriveReadiness` says
+ * so, and a generator failure leaves the slot open rather than reading as
+ * finished.
  */
 
+import type { SetupGoal } from '@/lib/bindings/SetupGoal';
+import type { SetupObservation } from '@/lib/bindings/SetupObservation';
+import type { SetupSteer } from '@/lib/bindings/SetupSteer';
+import type { SetupStep } from '@/lib/bindings/SetupStep';
 import type { TwinSlotId, TwinSlotStatus } from '../shared/twinStatus';
 
 /** Which slots the guided conversation itself can fill. */
@@ -21,11 +29,6 @@ export type SetupFocus = 'identity' | 'tone' | 'channels' | 'memories';
 export const SETUP_FOCUS_ORDER: readonly SetupFocus[] = ['identity', 'tone', 'channels', 'memories'] as const;
 
 export type SetupStage = 'setup' | 'training';
-
-export interface SetupTurnMessage {
-  role: 'guide' | 'user';
-  text: string;
-}
 
 /** One offered answer. A suggestion is a position, never a silent default. */
 export interface SetupSuggestion {
@@ -52,7 +55,7 @@ export type SetupProposalPart = 'voice' | 'examples' | 'constraints';
  * until the user accepts it, and an accepted value stays editable.
  */
 export interface SetupProposal {
-  /** Stable per-turn id. Two tone proposals for one channel must not collide. */
+  /** The stored offer's id (`SetupOffer.id`). Two tone offers for one channel never collide. */
   id: string;
   kind: 'bio' | 'role' | 'tone';
   /** Tone proposals only; absent or null reads as `'voice'`. */
@@ -70,19 +73,6 @@ export interface SetupProposal {
  * drill, a pasted message), so it is typed, and the hand is empty by contract.
  */
 export type SetupAnswerMode = 'pick' | 'write';
-
-export interface SetupTurnResult {
-  question: string;
-  focus: SetupFocus;
-  toneChannel: string | null;
-  answerMode: SetupAnswerMode;
-  /** The message a `write` turn asks them to reply to; null otherwise. */
-  incoming: string | null;
-  suggestions: SetupSuggestion[];
-  proposals: SetupProposal[];
-  /** ADVISORY. Never the completion authority — see the file header. */
-  doneHint: boolean;
-}
 
 /** One row of the thin readiness strip that replaces the old readiness panel. */
 export interface SetupChecklistItem {
@@ -116,6 +106,36 @@ export interface SetupHistoryEntry {
  * otherwise typing an example would blank the voice directives.
  */
 export type SetupTonePart = 'voice' | 'examples' | 'constraints' | 'lengthHint';
+
+/** What the person did with one offer. */
+export type SetupOfferVerdict = 'accepted' | 'edited' | 'dismissed';
+
+/**
+ * One offer as the table shows it: still open (`resolution === null`), or
+ * resolved since the live question was dealt and wearing its verdict — so a
+ * verdict survives closing and reopening the overlay.
+ */
+export interface SetupOfferView {
+  proposal: SetupProposal;
+  resolution: SetupOfferVerdict | null;
+}
+
+/**
+ * The persisted plan behind the table (spark twin-setup-plan). A STEERING
+ * signal only: goal coverage decides what is asked next, never whether a slot
+ * is complete — that stays `deriveReadiness`'s call.
+ */
+export interface SetupPlanView {
+  status: 'building' | 'ready' | 'failed';
+  version: number;
+  error: string | null;
+  /** One line on what the last re-plan changed. */
+  changeNote: string | null;
+  goals: SetupGoal[];
+  /** Queued questions, in the order they will be asked. */
+  upcoming: SetupStep[];
+  observations: SetupObservation[];
+}
 
 /** Direct-edit surface: every slot is reachable without saying a word. */
 export interface SetupFieldEdit {
@@ -191,6 +211,30 @@ export interface SetupSessionApi {
    */
   topicPreset: string | null;
   setTopic: (topic: string | null, presetId?: string | null) => void;
+
+  // -- The persisted plan (spark twin-setup-plan) ---------------------------
+
+  /** Null until the first snapshot for the active twin has arrived. */
+  plan: SetupPlanView | null;
+  /** The plan is being (re)built in the background. */
+  planning: boolean;
+  /** An answer is being read in the background; its offers are on the way. */
+  reconciling: boolean;
+  /** Offers produced by the most recently answered question. */
+  lastAnswerOfferIds: string[];
+  /**
+   * Every offer the table should show: the open ones, plus those resolved
+   * since the live question was dealt. `proposals` is the open subset.
+   */
+  offerRecord: SetupOfferView[];
+  /**
+   * The person took an offer's value into the composer to rewrite it: record
+   * the `edited` verdict. Writes no field — their answer is what gets read.
+   */
+  editOffer: (proposal: SetupProposal) => Promise<void>;
+  steer: (steer: SetupSteer) => Promise<void>;
+  /** A fresh deep pass over everything on file. Nothing is deleted. */
+  rebuild: () => Promise<void>;
 }
 
 export interface SetupVoiceApi {

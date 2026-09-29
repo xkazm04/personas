@@ -60,7 +60,7 @@ function roster(): PersonaCardModel[] {
   ];
 }
 
-const NO_SESSIONS: SessionGrouping = { byTeam: new Map(), ungrouped: [] };
+const NO_SESSIONS: SessionGrouping = { byTeam: new Map(), byRun: new Map(), ungrouped: [] };
 
 function tiles(model: { columns: { cards: PersonaCardModel[] }[]; ungrouped: PersonaCardModel[] }) {
   return [...model.columns.flatMap((c) => c.cards), ...model.ungrouped];
@@ -149,6 +149,7 @@ describe('useBoardModel under a filter', () => {
   it('drops sessions from a filtered board rather than piling them in the tray', () => {
     const groups: SessionGrouping = {
       byTeam: new Map([['t3', [session('s1')]]]),
+      byRun: new Map(),
       ungrouped: [session('s2')],
     };
     const { result } = renderHook(

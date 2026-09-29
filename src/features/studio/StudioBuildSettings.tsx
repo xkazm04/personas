@@ -113,8 +113,8 @@ export default function StudioBuildSettings({ id }: { id: string }) {
           </Row>
           <div className="my-2 border-t border-border/60" />
           <div className="mb-1.5 flex items-baseline justify-between">
-            <span className="typo-caption text-foreground/70">{t.studio.nudge_the_design}</span>
-            <span className="text-[10px] text-foreground/40">{t.studio.applies_now}</span>
+            <span className="typo-caption text-foreground/90">{t.studio.nudge_the_design}</span>
+            <span className="text-[10px] text-foreground/90">{t.studio.applies_now}</span>
           </div>
           <StudioDesignKnobs id={id} onApply={() => setOpen(false)} />
           <div className="my-2 border-t border-border/60" />
@@ -146,8 +146,8 @@ function Row({ label, hint, children }: { label: string; hint: string; children:
   return (
     <div className="mb-3 last:mb-0">
       <div className="mb-1 flex items-baseline justify-between">
-        <span className="typo-caption text-foreground/70">{label}</span>
-        <span className="text-[10px] text-foreground/40">{hint}</span>
+        <span className="typo-caption text-foreground/90">{label}</span>
+        <span className="text-[10px] text-foreground/90">{hint}</span>
       </div>
       <div className="flex flex-wrap gap-1">{children}</div>
     </div>
@@ -167,7 +167,7 @@ function Seg({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-interactive px-2 py-0.5 text-xs transition-colors ${
+      className={`rounded-interactive px-2 py-0.5 typo-label transition-colors ${
         active ? 'bg-primary/20 text-primary' : 'bg-secondary/40 text-foreground/60 hover:text-foreground'
       }`}
     >

@@ -846,5 +846,8 @@
   "remote_terminal_title": "터미널(읽기 전용)",
   "remote_terminal_waiting": "{device}의 출력을 기다리는 중",
   "remote_tile_aria": "{device}의 {title}, {state}. 원격 세션 열기",
-  "remote_wake": "깨우기"
+  "remote_wake": "깨우기",
+  "queue_origin_contest": "콘테스트",
+  "grid_column_contest_open": "콘테스트 페이지에서 {contest} 열기",
+  "grid_column_contest_unlinked": "{contest}은(는) 좌석이 프로젝트를 기록하기 전에 시작되어 여기서 열 수 없습니다"
 }

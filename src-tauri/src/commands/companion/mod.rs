@@ -15,7 +15,6 @@ pub mod chat_cards;
 pub mod connectors;
 pub mod consolidate;
 pub mod conversation;
-pub mod daily_goals;
 #[cfg(debug_assertions)]
 pub mod debug_export;
 pub mod decisions;
@@ -24,6 +23,7 @@ pub mod engine;
 pub mod feedback;
 pub mod fleet_bridge;
 pub mod jobs;
+pub mod layered_voice;
 pub mod mcp_bridge;
 pub mod observability;
 pub mod plugins;
@@ -630,6 +630,9 @@ async fn run_proactive_tick(
     proactive_engine::rollup::maybe_emit_daily_rollup(pool, &app_state.db, app);
     // F3: run the weekly behavioral profile-synthesis pass if due (gated).
     crate::companion::brain::profile_synthesis::maybe_run_synthesis(pool, &app_state.db, app).await;
+    // Layered voice: the weekly reply-register reflection (its own cadence,
+    // not gated by the synthesis toggle; it only files an approval card).
+    crate::companion::register::maybe_propose_register(pool, &app_state.db, app);
     // Night Shift v1 (gated, default off): evening plan-job enqueue, exited-
     // session review sweep, and the morning report at wake.
     crate::companion::night_shift::tick(pool, &app_state.db, app);

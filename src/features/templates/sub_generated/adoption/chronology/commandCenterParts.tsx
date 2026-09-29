@@ -2,8 +2,7 @@
  * commandCenterParts — shared test/promotion UI for the build flow.
  *
  * Extracted from the retired MatrixCommandCenterParts so the surviving
- * consumers (ChronologyCommandHub, GlyphFullLayout, GlyphPrototypeLayout)
- * don't reach into `gallery/matrix/`.
+ * consumers don't reach into `gallery/matrix/`.
  */
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';

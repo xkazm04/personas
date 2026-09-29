@@ -11,12 +11,13 @@ The app's sections are lazy routes that unmount fully on navigation, so
 "warm remount" is codified as law 4 of the loading doctrine
 (`docs/design/overview-loading.md`): *a view that fully unmounts on
 nav-away keeps its last fetch in a module-scoped cache keyed by entity so
-a remount paints warm, not a re-ghost.* Two precedents carry it:
+a remount paints warm, not a re-ghost.* Two precedents carried it; the
+first was retired with its surface and is kept here as the worked example:
 
-## CompetitionList — the keyed single slot
+## CompetitionList — the keyed single slot (Competition removed 2026-09-24)
 
-[`src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionList.tsx`](../../../../../src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionList.tsx)
-is the technique's "minimal honest form" — a single slot plus the key it
+`CompetitionList.tsx` (deleted with the Competition page on 2026-09-24; the
+shape below is quoted from its last version) was the technique's "minimal honest form" — a single slot plus the key it
 belongs to:
 
 ```ts

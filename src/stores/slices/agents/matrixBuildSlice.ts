@@ -64,6 +64,47 @@ export interface MatrixEditState {
   useCases?: Array<{ id: string; title: string; category: string }>;
 }
 
+// -- Provisional streaming preview ------------------------------------------
+
+/** A capability as a build turn's stream previews it. */
+export interface ProvisionalCapability {
+  id: string;
+  title: string;
+  /** Previewed field values, keyed by v3 field name (suggested_trigger, ...). */
+  fields: Record<string, unknown>;
+  /** The legacy cell each previewed field lights once confirmed, keyed by v3
+   *  field name. Decided by the backend and carried on the event
+   *  (`cell_key`); a field with no frame is absent. */
+  cells: Record<string, string>;
+}
+
+/**
+ * A build turn's streaming PREVIEW, held apart from confirmed state.
+ *
+ * The backend releases each finished capability_enumeration /
+ * capability_resolution mid-turn as a `provisional_*` event so the build sheet
+ * can show results developing instead of all at once. Nothing here is
+ * confirmed: it never feeds `capabilities`, `cellStates` or anything that
+ * counts as resolved or populated. Contract (provisional.rs): the
+ * authoritative pass fully REPLACES the preview. `provisional_settled` (sent
+ * after the turn's authoritative events) clears it whole, and so does a build
+ * error. It is never persisted, so hydration starts it empty. Any turn may
+ * stream one (the design work can land on turn 2 after a direction question);
+ * the backend scopes it to what is not yet confirmed, and the sheet only lets
+ * it develop a frame that has no confirmed value.
+ */
+export interface ProvisionalBuildState {
+  capabilities: Record<string, ProvisionalCapability>;
+  /** Preview order (enumeration order, then first-seen resolutions). */
+  order: string[];
+}
+
+export const EMPTY_PROVISIONAL: ProvisionalBuildState = { capabilities: {}, order: [] };
+
+function hasProvisional(p: ProvisionalBuildState): boolean {
+  return p.order.length > 0;
+}
+
 // -- Per-session build state ------------------------------------------------
 
 /**
@@ -130,6 +171,9 @@ export interface BuildSessionState {
     category?: string | null;
   } | null;
 
+  /** Streaming preview; see {@link ProvisionalBuildState}. */
+  provisional: ProvisionalBuildState;
+
   createdAt: number;
 }
 
@@ -182,6 +226,8 @@ export interface MatrixBuildSlice {
     question: string;
     options: string[] | null;
   } | null;
+  /** Mirror of the active session's streaming preview (never confirmed state). */
+  buildProvisional: ProvisionalBuildState;
 
   /** Read-only snapshot for MatrixTab viewing promoted agents. Isolated from
    * live build sessions so MatrixTab can't clobber an in-progress build. */
@@ -226,11 +272,17 @@ export interface MatrixBuildSlice {
     event: Extract<BuildEvent, { type: "clarifying_question_v3" }>,
   ) => void;
 
-  // v3 editing actions — invoked by BehaviorCoreEditor / CapabilityRowEditor
-  patchBehaviorCore: (partial: Partial<PersonaBehaviorCore>) => void;
-  patchCapability: (id: string, partial: Partial<CapabilityState>) => void;
-  addCapabilityDraft: (draft: CapabilityDraft) => void;
-  removeCapability: (id: string) => void;
+  // Provisional streaming preview handlers (never touch confirmed state)
+  handleProvisionalCapabilityEnumeration: (
+    event: Extract<BuildEvent, { type: "provisional_capability_enumeration" }>,
+  ) => void;
+  handleProvisionalCapabilityResolution: (
+    event: Extract<BuildEvent, { type: "provisional_capability_resolution" }>,
+  ) => void;
+  handleProvisionalSettled: (
+    event: Extract<BuildEvent, { type: "provisional_settled" }>,
+  ) => void;
+
   clearClarifyingQuestionV3: () => void;
 
   // Actions -- question management
@@ -342,6 +394,7 @@ function emptySessionState(personaId: string, sessionId: string): BuildSessionSt
     excludedCapabilityIds: [],
     personaResolution: {},
     clarifyingQuestionV3: null,
+    provisional: EMPTY_PROVISIONAL,
     createdAt: Date.now(),
   };
 }
@@ -355,7 +408,7 @@ type ScalarsProjection = Pick<MatrixBuildSlice,
   | 'buildTestError' | 'buildToolTestResults' | 'buildTestSummary' | 'buildTestConnectors'
   | 'buildEditState' | 'buildEditDirty' | 'editingCellKey'
   | 'buildBehaviorCore' | 'buildCapabilities' | 'buildCapabilityOrder'
-  | 'buildPersonaResolution' | 'buildClarifyingQuestionV3'>;
+  | 'buildPersonaResolution' | 'buildClarifyingQuestionV3' | 'buildProvisional'>;
 
 /**
  * Memoize the projection by session reference. Each `updater(existing)` returns
@@ -411,6 +464,7 @@ function scalarsFromSession(s: BuildSessionState | null): ScalarsProjection {
       buildCapabilityOrder: [],
       buildPersonaResolution: {},
       buildClarifyingQuestionV3: null,
+      buildProvisional: EMPTY_PROVISIONAL,
     };
     return nullScalarsCached;
   }
@@ -449,6 +503,7 @@ function scalarsFromSession(s: BuildSessionState | null): ScalarsProjection {
     buildCapabilityOrder: s.capabilityOrder,
     buildPersonaResolution: s.personaResolution,
     buildClarifyingQuestionV3: s.clarifyingQuestionV3,
+    buildProvisional: s.provisional,
   };
   scalarsCache.set(s, projection);
   return projection;
@@ -563,6 +618,7 @@ export const createMatrixBuildSlice: StateCreator<
   buildCapabilityOrder: [],
   buildPersonaResolution: {},
   buildClarifyingQuestionV3: null,
+  buildProvisional: EMPTY_PROVISIONAL,
 
   savedBuildSnapshot: null,
 
@@ -757,6 +813,8 @@ export const createMatrixBuildSlice: StateCreator<
       ...sess,
       error: event.message,
       phase: "failed",
+      // A failed turn never settles its preview; nothing provisional survives it.
+      provisional: EMPTY_PROVISIONAL,
     })));
   },
 
@@ -927,80 +985,63 @@ export const createMatrixBuildSlice: StateCreator<
     })));
   },
 
-  // -- v3 editing actions ---------------------------------------------------
+  // -- Provisional streaming preview ----------------------------------------
+  // Kept in `provisional` only. Nothing here reaches capabilities/cellStates,
+  // so no frame counts it as resolved or populated.
 
-  patchBehaviorCore: (partial) => {
-    set((state) => updateSessionInState(state, null, (sess) => {
-      const prev = sess.behaviorCore ?? {
-        mission: '',
-        identity: { role: '', description: '' },
-        voice: { style: '', output_format: '' },
-        principles: [],
-        constraints: [],
-      };
-      return {
-        ...sess,
-        behaviorCore: {
-          ...prev,
-          ...partial,
-          identity: { ...prev.identity, ...(partial.identity ?? {}) },
-          voice: { ...prev.voice, ...(partial.voice ?? {}) },
-        },
-        editDirty: true,
-      };
-    }));
-  },
-
-  patchCapability: (id, partial) => {
-    set((state) => updateSessionInState(state, null, (sess) => {
-      const cap = sess.capabilities[id];
-      if (!cap) return sess;
-      return {
-        ...sess,
-        capabilities: { ...sess.capabilities, [id]: { ...cap, ...partial } },
-        editDirty: true,
-      };
-    }));
-  },
-
-  addCapabilityDraft: (draft) => {
-    set((state) => updateSessionInState(state, null, (sess) => {
-      // Disambiguate colliding ids by appending _2, _3, ... rather than
-      // silently dropping the new draft (which would clobber user work).
-      let id = draft.id;
-      if (sess.capabilities[id]) {
-        let suffix = 2;
-        while (sess.capabilities[`${draft.id}_${suffix}`]) suffix += 1;
-        id = `${draft.id}_${suffix}`;
+  handleProvisionalCapabilityEnumeration: (event) => {
+    set((state) => updateSessionInState(state, event.session_id, (sess) => {
+      const payload = (event.data ?? {}) as { capabilities?: CapabilityDraft[] };
+      const caps: Record<string, ProvisionalCapability> = { ...sess.provisional.capabilities };
+      const order = [...sess.provisional.order];
+      for (const d of payload.capabilities ?? []) {
+        if (!d?.id) continue;
+        const prev = caps[d.id];
+        caps[d.id] = { id: d.id, title: d.title ?? prev?.title ?? d.id, fields: prev?.fields ?? {}, cells: prev?.cells ?? {} };
+        if (!prev) order.push(d.id);
       }
-      const cap: CapabilityState = {
-        id,
-        title: draft.title,
-        capability_summary: draft.capability_summary,
-        user_facing_goal: draft.user_facing_goal,
-        enabled_by_default: true,
-        resolvedFields: {},
+      if (order.length === 0) return sess;
+      return { ...sess, provisional: { capabilities: caps, order } };
+    }));
+  },
+
+  handleProvisionalCapabilityResolution: (event) => {
+    set((state) => updateSessionInState(state, event.session_id, (sess) => {
+      const { capability_id, field, value, cell_key } = event;
+      if (!capability_id || !field) return sess;
+      const prev = sess.provisional.capabilities[capability_id];
+      const cells = { ...(prev?.cells ?? {}) };
+      if (cell_key) cells[field] = cell_key;
+      else delete cells[field];
+      const cap: ProvisionalCapability = {
+        id: capability_id,
+        title: prev?.title ?? capability_id,
+        fields: { ...(prev?.fields ?? {}), [field]: value },
+        cells,
       };
       return {
         ...sess,
-        capabilities: { ...sess.capabilities, [id]: cap },
-        capabilityOrder: [...sess.capabilityOrder, id],
-        editDirty: true,
+        provisional: {
+          capabilities: { ...sess.provisional.capabilities, [capability_id]: cap },
+          order: prev ? sess.provisional.order : [...sess.provisional.order, capability_id],
+        },
       };
     }));
   },
 
-  removeCapability: (id) => {
-    set((state) => updateSessionInState(state, null, (sess) => {
-      if (!sess.capabilities[id]) return sess;
-      const { [id]: _removed, ...rest } = sess.capabilities;
-      return {
-        ...sess,
-        capabilities: rest,
-        capabilityOrder: sess.capabilityOrder.filter((x) => x !== id),
-        editDirty: true,
-      };
-    }));
+  handleProvisionalSettled: (event) => {
+    // The authoritative pass has already landed (the backend sends this after
+    // the turn's confirmed events), and it fully replaces the preview: drop it
+    // whole. The retraction lists are informational.
+    if (event.retracted_capability_ids.length || event.retracted_resolutions.length) {
+      console.debug('[matrixBuildSlice] provisional preview retracted', {
+        capabilities: event.retracted_capability_ids,
+        resolutions: event.retracted_resolutions,
+      });
+    }
+    set((state) => updateSessionInState(state, event.session_id, (sess) =>
+      hasProvisional(sess.provisional) ? { ...sess, provisional: EMPTY_PROVISIONAL } : sess,
+    ));
   },
 
   clearClarifyingQuestionV3: () => {
@@ -1446,6 +1487,10 @@ export const createMatrixBuildSlice: StateCreator<
         parserResultJson: state.buildParserResultJson,
         workflowName: state.buildWorkflowName,
         workflowPlatform: state.buildWorkflowPlatform,
+        // Keep the session's real creation time. emptySessionState stamps Date.now(),
+        // which made every re-hydrate look like a brand-new draft to anything that
+        // measures from createdAt (the build sheet's clock, newest-session policy).
+        createdAt: existing?.createdAt ?? (Date.parse(session.createdAt) || Date.now()),
         ...(existing ? {
           pendingAnswers: existing.pendingAnswers,
           testId: existing.testId,

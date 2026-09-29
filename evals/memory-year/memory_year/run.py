@@ -7,6 +7,7 @@ by simulated time, so a probe at day 90 sees exactly the history up to that inst
 from __future__ import annotations
 
 import json
+import subprocess
 import time
 import uuid
 from collections import defaultdict
@@ -26,6 +27,25 @@ from .world import World
 
 def load_scenario(path: Path) -> dict:
     return World.load(path)
+
+
+def harness_revision() -> dict:
+    """The harness's own revision: commit, and whether its tracked code was edited.
+
+    Two runs with identical headers were once two harnesses: raw-retrieval 12:55 and
+    13:10 on 2026-09-03 straddle the commit that stopped embedding rendered dates, and 17
+    of the 18 probes that split between them moved with the served context, not the
+    model. A pair is a rerun only when this stamp matches; otherwise it is a harness diff.
+    """
+    here = Path(__file__).resolve().parent.parent
+    try:
+        rev = subprocess.run(["git", "rev-parse", "HEAD"], cwd=here, capture_output=True,
+                             text=True, timeout=15).stdout.strip()
+        dirty = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no", "--", "."],
+                               cwd=here, capture_output=True, text=True, timeout=15).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return {"rev": None, "dirty": None}
+    return {"rev": rev or None, "dirty": bool(dirty) if rev else None}
 
 
 def served_stale(probe, context: str) -> bool:
@@ -113,6 +133,7 @@ def run(scenario_dir: Path, rung: str, consumer_model: str, judge_model: str | N
     write_ms = 0
     probes_done = 0
     t_run = time.time()
+    harness = harness_revision()  # at start: a commit landing mid-run must not relabel it
     for kind, day, minute, obj in timeline:
         clock = Clock(day, minute)
         if day != day_seen:
@@ -173,7 +194,7 @@ def run(scenario_dir: Path, rung: str, consumer_model: str, judge_model: str | N
     cost = backend.cost().as_dict()
     cost["write_ms"] = write_ms
     header = {
-        "run_id": run_id, "rung": rung, "backend": backend.describe(), "scenario": meta,
+        "run_id": run_id, "rung": rung, "harness": harness, "backend": backend.describe(), "scenario": meta,
         "consumer": consumer_model, "judge": judge_model or "deterministic-only", "judge_direction": "strict" if strict_judge else "lenient",
         "budget_tokens": budget_tokens, "elaboration": elaboration, "date": time.strftime("%Y-%m-%d"),
         "events_replayed": sum(1 for t in timeline if t[0] == "e"), "probes": probes_done, "screened": len(screened),
@@ -335,6 +356,7 @@ def rejudge(run_dir: Path, judge_model: str | None, strict: bool, out_root: Path
             a.verdict, a.note = judge_value(p, a.text, jllm)
             a.judge = "deterministic+assert" if needs_extraction(p, a.text) else "deterministic"
     header["rejudged"] = time.strftime("%Y-%m-%d %H:%M")
+    header["rejudged_harness"] = harness_revision()
     header["judge"] = judge_model or "deterministic-only"
     header["judge_direction"] = "strict" if strict else "lenient"
     (run_dir / "header.json").write_text(json.dumps(header, indent=1), encoding="utf-8")
@@ -345,8 +367,11 @@ def rejudge(run_dir: Path, judge_model: str | None, strict: bool, out_root: Path
 
 def compare(run_dirs: list[Path], out_root: Path | None = None) -> str:
     rows = []
+    harnesses = set()
     for d in run_dirs:
         h = json.loads((d / "header.json").read_text(encoding="utf-8"))
+        hv = h.get("harness") or {}
+        harnesses.add((hv.get("rev") or "unstamped")[:10] + ("+dirty" if hv.get("dirty") else ""))
         answers = json.loads((d / "answers.json").read_text(encoding="utf-8"))
         probes = {}
         try:
@@ -375,4 +400,7 @@ def compare(run_dirs: list[Path], out_root: Path | None = None) -> str:
         L.append(f"\nconsumer `{rows[0][8]}` · budget {rows[0][9]} · elaboration `{rows[0][10]}` - every row shares them or the table is not a ladder.")
         L.append("false fire and silent failure are a pair: a design can zero either one by "
                  "being louder or quieter than it should be, so neither is a score on its own.")
+    if len(harnesses) > 1 or "unstamped" in {x.split("+")[0] for x in harnesses}:
+        L.append(f"harness revisions: {', '.join(sorted(harnesses))} - rows from different or unstamped "
+                 "harnesses differ by the harness as well as the design; a split between them is not rerun noise.")
     return "\n".join(L)

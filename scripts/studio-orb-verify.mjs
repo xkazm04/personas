@@ -46,13 +46,13 @@ const CLEAR = `(()=>{const s=window.__studioStore;const id=window.__mkId;if(!s||
   let live = false;
   for (let i = 0; i < 72 && !live; i++) {
     await sleep(5000); await focus();
-    live = (await count('[data-testid="studio-tab"]')) >= 1 && (await count('iframe[title="preview"]')) >= 1;
+    live = (await count('[data-testid="studio-tab"]')) >= 1 && (await count('iframe[data-testid="studio-preview"]')) >= 1;
     if (i % 4 === 0) console.log(`  …mk live=${live} [t+${i * 5}s]`);
   }
   check('mk live with preview iframe', live);
   if (!live) process.exit(1);
   // Warm the home route (Next compiles lazily on first request) + let the agent mount.
-  await ev(`(()=>{const i=document.querySelector('iframe[title="preview"]');if(i)i.src=i.src;return 1})()`);
+  await ev(`(()=>{const i=document.querySelector('iframe[data-testid="studio-preview"]');if(i)i.src=i.src;return 1})()`);
   await sleep(15000);
 
   // 1) Agent injected into mk on disk

@@ -18,6 +18,7 @@ pub mod plan;
 pub mod preview_agent;
 pub mod project;
 pub mod routes;
+pub mod sketch;
 pub mod versions;
 
 pub use devserver::{DevServerRegistry, DevServerStatus};

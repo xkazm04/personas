@@ -5,7 +5,9 @@
  * Stage 1 (Project): folder path + name. Stage 2 (Source control): a
  * Team / Standalone switch, repo, main branch, and living-test-environment.
  * The old flat "Workspace" section is folded into stage 2 (team binding).
- * Phase 1 ships two stages; the rail + stage-component pattern grows by
+ * Stage 3 (Practice): the Lifecycle v2 preset, Solo (default) or Team. Create
+ * always records the choice as version 1 (author operator); edit switches it
+ * only when it changed. The rail + stage-component pattern grows by
  * appending a `PipelineStage` + an editor component.
  */
 import { useState, useEffect } from 'react';
@@ -14,7 +16,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import {
-  X, Plus, Pencil, Search, CheckCircle2, FolderKanban, GitBranch, ShieldCheck, ArrowLeft, ArrowRight,
+  X, Plus, Pencil, Search, CheckCircle2, FolderKanban, GitBranch, Route, ArrowLeft, ArrowRight,
 } from 'lucide-react';
 import {
   type ProjectType, type EditProjectData,
@@ -22,13 +24,13 @@ import {
 import { PipelineRail } from './pipeline/PipelineRail';
 import { ProjectStep } from './pipeline/ProjectStep';
 import { SourceControlStep } from './pipeline/SourceControlStep';
-import { StandardsStep } from './pipeline/StandardsStep';
-import { type StandardsConfig, defaultStandards, parseStandards, serializeStandards } from './pipeline/standardsConfig';
+import { PracticeStep } from './pipeline/PracticeStep';
+import { getLifecycle, setLifecyclePreset } from '@/api/devTools/lifecycle';
+import type { LifecyclePreset } from '@/lib/bindings/LifecyclePreset';
 import type { PipelineStage, SourceMode } from './pipeline/pipelineTypes';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useVaultStore } from '@/stores/vaultStore';
-import { useSystemStore } from '@/stores/systemStore';
 import { listCredentials } from '@/api/vault/credentials';
 
 type ModalPhase = 'form' | 'created';
@@ -82,7 +84,10 @@ export function ProjectModal({
   const [testEnvUrl, setTestEnvUrl] = useState('');
   const [testEnvBranch, setTestEnvBranch] = useState('');
   const [mainBranch, setMainBranch] = useState('');
-  const [standards, setStandards] = useState<StandardsConfig>(defaultStandards());
+  // Lifecycle preset (stage 3). `loadedPreset` is the edited project's stored
+  // preset (null until read, or when the read failed); edit writes only a change.
+  const [preset, setPreset] = useState<LifecyclePreset>('solo');
+  const [loadedPreset, setLoadedPreset] = useState<LifecyclePreset | null>(null);
   // Vault GitHub PAT credentials offered as the standalone source-control
   // connector (persisted as pr_credential_id — authorises PR / git ops).
   const [githubCreds, setGithubCreds] = useState<{ id: string; name: string }[]>([]);
@@ -120,14 +125,22 @@ export function ProjectModal({
       setTestEnvUrl(editProject.testEnvUrl ?? '');
       setTestEnvBranch(editProject.testEnvBranch ?? '');
       setMainBranch(editProject.mainBranch ?? '');
-      // Read-time parse defaults to all-false (nothing actually enforced);
-      // for a project with no stored config yet, pre-fill the editor with
-      // sensible starting values instead of silently showing "everything off".
-      setStandards(editProject.standardsConfig ? parseStandards(editProject.standardsConfig) : defaultStandards());
+      setPreset('solo');
+      setLoadedPreset(null);
+      let stale = false;
+      getLifecycle(editProject.id)
+        .then((snap) => {
+          if (stale) return;
+          setPreset(snap.preset);
+          setLoadedPreset(snap.preset);
+        })
+        .catch(silentCatch('ProjectModal:getLifecycle'));
       setSourceMode(editProject.teamId ? 'team' : 'standalone');
       setNameEdited(true);
       setStepIndex(0);
+      return () => { stale = true; };
     }
+    return undefined;
   }, [editProject]);
 
   const handleSelectFolder = async () => {
@@ -158,8 +171,8 @@ export function ProjectModal({
   const stages: PipelineStage[] = [
     { id: 'project', label: dp.pipeline_step_project, icon: FolderKanban, status: stepIndex === 0 ? 'active' : stage0Complete ? 'complete' : 'incomplete' },
     { id: 'source', label: dp.pipeline_step_source, icon: GitBranch, status: stepIndex === 1 ? 'active' : stage1Complete ? 'complete' : 'incomplete' },
-    // Standards is optional config (always valid via defaults) — never blocks submit.
-    { id: 'standards', label: dp.pipeline_step_standards, icon: ShieldCheck, status: stepIndex === 2 ? 'active' : 'complete' },
+    // Practice always has a valid choice (Solo by default), so it never blocks submit.
+    { id: 'practice', label: dp.pipeline_step_practice, icon: Route, status: stepIndex === 2 ? 'active' : 'complete' },
   ];
 
   // Mode is mutually exclusive at the data layer: team mode nulls the
@@ -188,7 +201,11 @@ export function ProjectModal({
       // `data` carries `path` too, but onUpdate's param omits it — the extra
       // key is harmless for a non-literal argument.
       await onUpdate(editProject.id, data);
-      await useSystemStore.getState().setStandardsConfig(editProject.id, serializeStandards(standards));
+      // Only a real switch appends a version; an unread preset (the read
+      // failed) is never overwritten by the form's default.
+      if (loadedPreset !== null && preset !== loadedPreset) {
+        await setLifecyclePreset(editProject.id, preset).catch(toastCatch('ProjectModal:setLifecyclePreset'));
+      }
       handleClose();
       return;
     }
@@ -216,8 +233,9 @@ export function ProjectModal({
         toastCatch('Failed to create Codebase connector')(err);
       }
     }
-    // Persist the standards & branching policy (Pipeline Stage 3).
-    await useSystemStore.getState().setStandardsConfig(result.id, serializeStandards(standards));
+    // Record the practice (Pipeline Stage 3) as version 1, Solo included, so
+    // the form's choice is authored by the operator rather than implied.
+    await setLifecyclePreset(result.id, preset).catch(toastCatch('ProjectModal:setLifecyclePreset'));
     setCreatedProject({ id: result.id, name: data.name, path: data.path });
     setPhase('created');
   };
@@ -235,7 +253,8 @@ export function ProjectModal({
     setTestEnvUrl('');
     setTestEnvBranch('');
     setMainBranch('');
-    setStandards(defaultStandards());
+    setPreset('solo');
+    setLoadedPreset(null);
     setNameEdited(false);
     setCreateConnector(true);
     setCreatedProject(null);
@@ -312,12 +331,7 @@ export function ProjectModal({
                   onTestEnvBranchChange={setTestEnvBranch}
                 />
               ) : (
-                <StandardsStep
-                  config={standards}
-                  onChange={setStandards}
-                  mainBranch={mainBranch}
-                  testEnvBranch={testEnvBranch}
-                />
+                <PracticeStep preset={preset} onChange={setPreset} />
               )}
             </div>
 

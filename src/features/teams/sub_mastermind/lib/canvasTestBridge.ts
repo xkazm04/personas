@@ -28,7 +28,7 @@ type BridgeWindow = typeof window & { __mmCanvas?: CanvasBridge };
 
 const STASH_TESTID = 'mm-action-result';
 
-/** Mounted by CanvasShell — the bridge exists exactly while a shell can answer. */
+/** Mounted by SoundingsView — the bridge exists exactly while a chart can answer. */
 export function useCanvasTestBridge(): void {
   useEffect(() => {
     if (!import.meta.env.DEV) return;

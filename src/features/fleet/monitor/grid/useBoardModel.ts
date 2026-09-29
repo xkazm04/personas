@@ -14,7 +14,7 @@ import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { PersonaCardModel } from '../monitorModel';
 import { groupFleet, tallyStates, type SquareState, type TeamGroup } from './fleetGridModel';
 import { filterCards, isBoardFilterActive, NO_BOARD_FILTER, type BoardFilter } from './boardFilter';
-import type { SessionGrouping } from './fleetSessionModel';
+import { contestOfGroupKey, type SessionGrouping } from './fleetSessionModel';
 import { columnRows, remoteRows, type ColumnRow } from './gridGeometry';
 import { deviceColumnId, NO_REMOTE, withOrphansOnDevices, type RemoteGrouping } from './remote/remoteBoardModel';
 
@@ -29,12 +29,33 @@ const EMPTY_SESSIONS: FleetSession[] = [];
 export interface BoardColumn extends TeamGroup {
   rows: ColumnRow[];
   /**
+   * The contest this column is the run group OF, or `null` for a team or
+   * workspace column. A contest column carries no personas, only that
+   * contest's seats; its `teamId` is the run-group key
+   * (`contest:<projectId>/<contestId>`) and its `teamName` the contest id —
+   * the header swaps in the title when the contest list cache knows it.
+   */
+  contestId: string | null;
+  /**
+   * The project whose arena holds that contest — the other half of its
+   * identity, and what lets the header open it. `null` for a team column,
+   * and for a contest whose seats were labelled before the project joined
+   * the run label.
+   */
+  contestProjectId: string | null;
+  /**
    * Set on an "On <device>" column: remote sessions no local project claims
    * (see `remote/remoteBoardModel`). It has no roster, no project switch and
    * no rail scope, so the board paints it with its own header.
    */
   remoteDevice?: { peerId: string; displayName: string };
 }
+
+/**
+ * The header rule of a contest column. Data, not a class: `TeamColumn` paints
+ * every column's rule from its `teamColor` through `colorWithAlpha`.
+ */
+export const CONTEST_COLUMN_COLOR = '#f59e0b';
 
 export interface BoardModel {
   columns: BoardColumn[];
@@ -122,8 +143,8 @@ export function useBoardModel(
   // REMOTE SESSIONS follow the local ones: into their project's column when a
   // local project shares the git remote, else into one trailing "On <device>"
   // column per device. No remote sessions = no extra column, ever.
-  const columns = useMemo(() => {
-    const own = ordered.map((g) => ({
+  const teamColumns = useMemo((): BoardColumn[] => {
+    const own: BoardColumn[] = ordered.map((g) => ({
       ...g,
       rows: columnRows(
         g.cards,
@@ -131,6 +152,8 @@ export function useBoardModel(
         g.teamName,
         filtered ? [] : (remote.byTeam.get(g.teamId) ?? []),
       ),
+      contestId: null,
+      contestProjectId: null,
     }));
     if (filtered || (remote.byTeam.size === 0 && remote.byDevice.length === 0)) return own;
     const devices = withOrphansOnDevices(remote, new Set(ordered.map((g) => g.teamId)));
@@ -141,10 +164,41 @@ export function useBoardModel(
       workspaceId: null,
       cards: [],
       rows: remoteRows(d.views),
+      contestId: null,
+      contestProjectId: null,
       remoteDevice: { peerId: d.peerId, displayName: d.displayName },
     }));
     return [...own, ...deviceColumns];
   }, [ordered, sessionGroups.byTeam, filtered, remote]);
+
+  // ONE COLUMN PER CONTEST, after the team columns. A contest's seats are one
+  // piece of work spread over several engines, so they read as a lane of their
+  // own rather than as strays in the tray. Like every other session, they are
+  // off the board while it is filtered.
+  const contestColumns = useMemo((): BoardColumn[] => {
+    if (filtered) return [];
+    const out: BoardColumn[] = [];
+    for (const [key, list] of sessionGroups.byRun) {
+      const contest = contestOfGroupKey(key);
+      if (!contest || list.length === 0) continue;
+      out.push({
+        teamId: key,
+        teamName: contest.contestId,
+        teamColor: CONTEST_COLUMN_COLOR,
+        workspaceId: null,
+        cards: [],
+        rows: columnRows([], list, null),
+        contestId: contest.contestId,
+        contestProjectId: contest.projectId,
+      });
+    }
+    return out;
+  }, [sessionGroups.byRun, filtered]);
+
+  const columns = useMemo(
+    () => (contestColumns.length === 0 ? teamColumns : [...teamColumns, ...contestColumns]),
+    [teamColumns, contestColumns],
+  );
 
   // `every` over an empty list is true, which is the pre-groups behaviour
   // verbatim: no columns + no tray = empty.

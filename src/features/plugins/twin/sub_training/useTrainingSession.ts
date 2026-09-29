@@ -23,20 +23,9 @@ export const TRAINING_GROUNDING_LIMIT = 12;
 /** How far back to read training communications when resolving topic tags. */
 export const TRAINING_TOPIC_WINDOW = 200;
 
-/**
- * The prompt strings shape the LLM's question-generation output, so
- * non-English locales need translated prompts to get questions in the
- * user's language. `promptKey` indexes into `t.twin.training.*` —
- * resolve at call time, not at module init.
- */
-export const TRAINING_TOPIC_PRESETS = [
-  { id: 'background', labelKey: 'topicBackground', promptKey: 'topicPromptBackground' },
-  { id: 'opinions', labelKey: 'topicOpinions', promptKey: 'topicPromptOpinions' },
-  { id: 'communication', labelKey: 'topicCommunication', promptKey: 'topicPromptCommunication' },
-  { id: 'values', labelKey: 'topicValues', promptKey: 'topicPromptValues' },
-  { id: 'expertise', labelKey: 'topicExpertise', promptKey: 'topicPromptExpertise' },
-  { id: 'personal', labelKey: 'topicPersonal', promptKey: 'topicPromptPersonal' },
-] as const;
+// Declared in its own module so `topicCoverage` can read it without an import
+// cycle back through this hook; re-exported here for every existing importer.
+export { TRAINING_TOPIC_PRESETS } from './topicPresets';
 
 function wordCount(s: string): number { return s.trim().split(/\s+/).filter(Boolean).length; }
 

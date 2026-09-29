@@ -4,6 +4,7 @@
 // hover AND on keyboard focus, before it is pressed.
 import { useEffect, useRef, useState, type FocusEvent, type MouseEvent } from 'react';
 
+import { Button } from '@/features/shared/components/buttons';
 import { interpolate as tx } from '@/i18n/useTranslation';
 
 import type { GalaxyEngine } from '../engine/GalaxyEngine';
@@ -80,22 +81,25 @@ export function HudCommands({ engine }: { engine: GalaxyEngine | null }) {
         {tx(f.mode_live, { name: s.modeName(mode) })}
       </div>
       <div className="fz-cmds" data-role="hud-commands">
-        <button className="cmd" type="button" data-role="hud-command" onClick={() => engine?.reframe()} {...sayOn(setSay, 'fit')}>
-          {f.cmd_fit} <kbd>F</kbd>
-        </button>
-        <button
+        {/* Skin from fused.css `.cmd` (label left, key right); Button brings
+            the focus ring and press response. */}
+        <Button variant="ghost" className="cmd" data-role="hud-command" iconRight={<kbd>F</kbd>} onClick={() => engine?.reframe()} {...sayOn(setSay, 'fit')}>
+          {f.cmd_fit}
+        </Button>
+        <Button
+          variant="ghost"
           className="cmd"
-          type="button"
           data-role="hud-command"
           aria-pressed={lensOn}
+          iconRight={<kbd>L</kbd>}
           onClick={() => setLensOn(!lensOn)}
           {...sayOn(setSay, 'lens')}
         >
-          {f.cmd_lens} <kbd>L</kbd>
-        </button>
-        <button className="cmd" type="button" data-role="hud-command" onClick={() => setFinderOpen(true)} {...sayOn(setSay, 'find')}>
-          {f.cmd_find} <kbd>/</kbd>
-        </button>
+          {f.cmd_lens}
+        </Button>
+        <Button variant="ghost" className="cmd" data-role="hud-command" iconRight={<kbd>/</kbd>} onClick={() => setFinderOpen(true)} {...sayOn(setSay, 'find')}>
+          {f.cmd_find}
+        </Button>
       </div>
       <div className="keys" data-role="hud-keys">
         <kbd>↑</kbd>

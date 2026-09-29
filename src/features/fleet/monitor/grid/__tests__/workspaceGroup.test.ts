@@ -44,7 +44,7 @@ const groupTeam = (id: string, workspaceId: string): PersonaTeam =>
   ({ id, name: id, color: '#fff', project_id: null, workspace_id: workspaceId } as unknown as PersonaTeam);
 
 const session = (id: string): FleetSession => ({ id, state: 'running' } as unknown as FleetSession);
-const NO_SESSIONS: SessionGrouping = { byTeam: new Map(), ungrouped: [] };
+const NO_SESSIONS: SessionGrouping = { byTeam: new Map(), byRun: new Map(), ungrouped: [] };
 
 describe('groupFleet and the workspace group', () => {
   it('normalises the binding\'s OPTIONAL workspace_id into a plain nullable', () => {
@@ -107,7 +107,7 @@ describe('useBoardModel emptiness', () => {
   });
 
   it('is not empty once a group carries a session, and the session leaves the tray', () => {
-    const groups: SessionGrouping = { byTeam: new Map([['g1', [session('s1')]]]), ungrouped: [] };
+    const groups: SessionGrouping = { byTeam: new Map([['g1', [session('s1')]]]), byRun: new Map(), ungrouped: [] };
     const { result } = renderHook(() =>
       useBoardModel([], [], [groupTeam('g1', 'ws-1')], groups));
     expect(result.current.empty).toBe(false);

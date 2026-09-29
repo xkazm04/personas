@@ -1319,10 +1319,11 @@ input[type="range"]:disabled::-moz-range-thumb {
       (--primary is cyan on the default theme). Combined with elevation-3 that
       is exactly the "thick outline" reading.
 
-   `.mm-chrome` already solved this relationship for canvas controls: on dark
-   themes chrome goes a step DARKER than the surface it floats over so it
-   recedes, and on light themes it comes forward as near-white. This applies
-   the same rule to the one overlay that never got it. The border is
+   The Mastermind canvas chrome (`.mm-chrome`, retired with that canvas on
+   2026-09-25) solved this relationship for canvas controls: on dark themes
+   chrome goes a step DARKER than the surface it floats over so it recedes,
+   and on light themes it comes forward as near-white. This applies the same
+   rule to the tooltip. The border is
    `--foreground`-tinted, so it stays a hairline in every palette instead of
    glowing in the accent colour.
 
@@ -5569,6 +5570,36 @@ html[data-motion="reduce"] .animate-fade-slide-in {
   padding: 0.05em 0.35em;
 }
 
+/* The Halo exchange transcript (chat/next/ExchangeTranscript.tsx) sets replies
+   at typo-body-lg on a 68ch reading measure, not the bubble's typo-body. The
+   bubble rhythm above (0.5rem gaps) reads cramped at that size, so here the
+   gaps scale with the text (em), headings sit flush when they open a reply,
+   and a long path or id in inline code breaks instead of overflowing the
+   column. Scoped to `.athena-exchange`, so the Current bubbles are untouched. */
+.athena-exchange .athena-chat-md p { margin-bottom: 0.7em; }
+.athena-exchange .athena-chat-md ul,
+.athena-exchange .athena-chat-md ol {
+  margin-bottom: 0.7em;
+  padding-left: 1.3em;
+}
+.athena-exchange .athena-chat-md li + li { margin-top: 0.3em; }
+.athena-exchange .athena-chat-md li > p { margin-bottom: 0.3em; }
+.athena-exchange .athena-chat-md.athena-chat-md h1,
+.athena-exchange .athena-chat-md.athena-chat-md h2,
+.athena-exchange .athena-chat-md.athena-chat-md h3,
+.athena-exchange .athena-chat-md.athena-chat-md h4 {
+  margin-top: 1.1em;
+  margin-bottom: 0.35em;
+}
+.athena-exchange .athena-chat-md > :first-child { margin-top: 0; }
+.athena-exchange .athena-chat-md > :last-child { margin-bottom: 0; }
+.athena-exchange .athena-chat-md :not(pre) > code {
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.athena-exchange .athena-chat-md table { margin-top: 0.4em; margin-bottom: 0.8em; }
+
 /* ---------------------------------------------------------------------------
    Athena chat — syntax highlighting tuned to the app palette, SCOPED to the
    chat bubbles. The global `@import github-dark-dimmed` (globals.css top) is a
@@ -5736,6 +5767,49 @@ html[data-motion="reduce"] .companion-autonomous {
   border-color: color-mix(in srgb, var(--primary) 45%, transparent);
 }
 
+/* Athena chat prototypes (two-layer) — the modal's state frame. The border is
+   a conic gradient built from the live workforce (one irregular arc per active
+   project, sized by its process count, coloured by its worst state), so the
+   frame itself is the fleet at a glance. A blurred copy of the same gradient
+   sits behind as the glow: it breathes only while Athena is working and flares
+   once when something new starts waiting. TODO(prototype, 2026-09-22):
+   consolidate with the chat switcher. */
+.athena-frame {
+  /* No `position` here: every framed surface is placed `absolute` by its owner. */
+  isolation: isolate;
+  padding: 1.5px;
+  background: var(--athena-frame, color-mix(in srgb, var(--foreground) 14%, transparent));
+}
+.athena-frame::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--athena-frame, transparent);
+  filter: blur(18px);
+  opacity: 0.28;
+  pointer-events: none;
+  transition: opacity 400ms ease;
+}
+.athena-frame[data-working="true"]::before {
+  animation: athena-frame-breathe 2.6s ease-in-out infinite;
+}
+.athena-frame[data-flare="true"]::before {
+  animation: athena-frame-flare 1.4s ease-out 1;
+}
+@keyframes athena-frame-breathe {
+  0%, 100% { opacity: 0.22; }
+  50% { opacity: 0.6; }
+}
+@keyframes athena-frame-flare {
+  0% { opacity: 0.9; filter: blur(8px); }
+  100% { opacity: 0.28; filter: blur(18px); }
+}
+html[data-motion="reduce"] .athena-frame::before {
+  animation: none;
+}
+
 /* Companion transcript — soft top/bottom scroll fades so messages dissolve
    into the panel chrome at the edges instead of hard-cutting. The 14px fade
    sits inside the scroll area's vertical padding, so message text isn't
@@ -5778,48 +5852,3 @@ html[data-motion="reduce"] .companion-typing-dot {
   opacity: 0.55;
 }
 
-/* ---------------------------------------------------------------------------
-   Mastermind canvas chrome (`.mm-chrome`)
-   ---------------------------------------------------------------------------
-   The canvas paints its own sea from `--background` + a `--secondary` rim (see
-   the `mm-sea` radial gradient in CanvasShell). Every floating control on top of
-   it used to be `bg-secondary/70`, which is the SAME token the sea's outer stop
-   is mixed from — so on every dark theme the chrome floated *lighter* than the
-   map it sits on, reading as content rather than as controls, and the panel
-   edges dissolved into the sea's rim.
-
-   `.mm-chrome` inverts that relationship the way the rest of the app's chrome
-   already works: on dark themes the panel is a step DARKER than the darkest
-   point of the sea, so controls recede and the islands stay the brightest thing
-   on screen. On light themes the same rule points the other way (chrome comes
-   forward as near-white over the soft gray canvas), which is what the light
-   palette's own tonal ladder does — hence the `[data-theme^="light"]` override
-   rather than one token that tries to serve both.
-
-   Declared in `@layer components` on purpose: callers still layer plain
-   Tailwind utilities on top (`hover:bg-primary/12`, `border-accent/45`), and
-   utilities outrank components in Tailwind 4's layer order. Unlayered rules
-   would beat them and silently kill every hover state on the chrome.
---------------------------------------------------------------------------- */
-@layer components {
-  .mm-chrome {
-    --mm-chrome-bg: color-mix(in srgb, #000 46%, var(--background));
-    --mm-chrome-border: color-mix(in srgb, var(--foreground) 13%, transparent);
-    background-color: color-mix(in srgb, var(--mm-chrome-bg) 92%, transparent);
-    border: 1px solid var(--mm-chrome-border);
-    box-shadow: var(--shadow-elevation-3);
-  }
-
-  /* Hairline divider inside a chrome cluster — reads against the panel, not
-     against the sea, so it has to track the panel's own border tone. */
-  .mm-chrome-rule {
-    background-color: var(--mm-chrome-border);
-  }
-
-  [data-theme^="light"] .mm-chrome {
-    --mm-chrome-bg: color-mix(in srgb, #fff 86%, var(--secondary));
-    --mm-chrome-border: color-mix(in srgb, var(--foreground) 15%, transparent);
-    background-color: color-mix(in srgb, var(--mm-chrome-bg) 95%, transparent);
-    box-shadow: var(--shadow-elevation-2);
-  }
-}

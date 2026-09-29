@@ -7,6 +7,7 @@
 // the inbox; right-clicking it switches the project (or opens the workspace
 // group's menu).
 
+import { Button } from '@/features/shared/components/buttons';
 import { memo, useCallback, useState, type MouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Filter, Landmark, Laptop, Power, PowerOff } from 'lucide-react';
@@ -85,15 +86,15 @@ export const Bay = memo(function Bay({
       data-workspace-group={workspaceId !== null || undefined}
     >
       <Tooltip content={hint} delay={500}>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           disabled={remote !== null}
           onClick={() => onScope(column)}
           onContextMenu={onContextMenu}
           aria-pressed={scoped}
           data-testid="fleet-grid-column-header"
           data-project-off={off || undefined}
-          className="ae-focus relative flex w-full min-w-0 items-center gap-2 py-2 pl-3.5 pr-2.5 text-left transition-colors hover:bg-secondary/30"
+          className="ae-focus relative w-full min-w-0 rounded-none py-2 pl-3.5 pr-2.5 text-left [&>span]:flex [&>span]:w-full [&>span]:min-w-0 [&>span]:items-center [&>span]:gap-2"
         >
           <span aria-hidden className="absolute inset-y-2 left-1 w-1 rounded-full" style={{ backgroundColor: colorWithAlpha(edge, 0.85), boxShadow: `0 0 10px ${colorWithAlpha(edge, 0.6)}` }} />
           {workspaceId !== null && <Landmark className="h-3.5 w-3.5 flex-shrink-0 text-primary" aria-label={m.grid_column_workspace_badge} />}
@@ -110,7 +111,7 @@ export const Bay = memo(function Bay({
           )}
           <span className="flex-shrink-0 typo-data tabular-nums text-foreground">{column.cards.length}</span>
           {!remote && <Lamp lamp={lamp} />}
-        </button>
+        </Button>
       </Tooltip>
       <ShareBar cards={column.cards} />
 

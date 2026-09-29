@@ -14,7 +14,9 @@ import { ConflictTiles, ModelTiles, EffortMeter } from "./ConfigTiles";
 import { ACCENT } from "./catalog";
 import type { PersonaCore } from "./types";
 
-export function PersonaCoreCodex({ core }: { core: PersonaCore }) {
+/** `fill`: the host (a stage-sized layer) owns the height, so the grid takes
+ *  all of it instead of capping at 64vh. */
+export function PersonaCoreCodex({ core, fill = false }: { core: PersonaCore; fill?: boolean }) {
   const { t, tx } = useTranslation();
   const { state } = core;
   // One scroller below lg, where the columns stack and scrolling them together
@@ -24,7 +26,7 @@ export function PersonaCoreCodex({ core }: { core: PersonaCore }) {
   // is load-bearing -- a flex child defaults to min-height:auto and would
   // refuse to shrink, so it would never overflow and never scroll.
   return (
-    <div className="flex flex-col lg:flex-row gap-6 max-h-[64vh] overflow-y-auto lg:overflow-hidden scrollbar-thin pr-1">
+    <div className={`flex flex-col lg:flex-row gap-6 ${fill ? "flex-1 min-h-0 lg:gap-10" : "max-h-[64vh]"} overflow-y-auto lg:overflow-hidden scrollbar-thin pr-1`}>
       {/* Mentality FIRST — a card seeds the conflict style and five dominant
           traits in one click (applyPreset). It used to sit third, so
           the reading order taught the modal backwards: a first-timer worked

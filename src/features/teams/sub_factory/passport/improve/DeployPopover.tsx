@@ -2,7 +2,7 @@
 // CLAUDE.md, tests, observability). Surfaces the applicable golden-standard
 // upgrade actions for a row: a context SCAN, or a Claude-Code TASK whose precise
 // prompt is previewable. Queue (safe, review-then-run) or Deploy now (runs the
-// CLI; auto-PRs on green). Portalled + anchored like the other improve popovers.
+// CLI). Portalled + anchored like the other improve popovers.
 //
 // The BODY lives in `ImproveClassicPanel` — the Database and Monitoring modals
 // carry the same content, and it must not exist twice. This file is now the

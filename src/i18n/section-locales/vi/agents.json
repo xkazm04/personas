@@ -573,6 +573,7 @@
   "core_disposition_high": "Táo bạo",
   "core_disposition_low": "Thận trọng",
   "core_effort_label": "Độ sâu suy luận",
+  "core_hint": "Tác nhân này thực chất là ai phía sau công việc: lối nghĩ, tính cách và mô hình vận hành nó. Những gì bạn không chỉnh sẽ do bản dựng tự suy ra.",
   "core_model_cost": "Chi phí tương đối: gấp {multiple}× bậc mô hình rẻ nhất",
   "core_model_label": "Mô hình",
   "core_reset": "Đặt lại mặc định",

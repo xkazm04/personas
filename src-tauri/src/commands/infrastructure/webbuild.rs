@@ -14,6 +14,119 @@ use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::webbuild::{self, DevServerStatus};
 use crate::AppState;
 
+/// The sketch lane (`webbuild::sketch`): a fast, stateless first reading of a
+/// new project's vision (pages and regions, draft goals, the questions only the
+/// owner can answer), run on the MICRO tier the moment the user submits, in
+/// parallel with the scaffold. Needs no project, no directory and no dev server,
+/// which is the point: it fills the setup wait with something true to draw and
+/// to ask. The seed turn still owns the real plan.
+#[tauri::command]
+pub async fn webbuild_sketch(
+    state: State<'_, Arc<AppState>>,
+    vision: String,
+) -> Result<webbuild::sketch::SiteSketch, AppError> {
+    require_auth(&state).await?;
+    personas_core::validation::require_non_empty("vision", &vision)?;
+    let (text, _turn_id) = crate::companion::athena_reaction::cli_text_tracked(
+        webbuild::sketch::sketch_prompt(&vision),
+        &state.user_db,
+        "studio_sketch",
+    )
+    .await?;
+    webbuild::sketch::parse_sketch(&text)
+}
+
+/// Check a new project's name before submit: the folder it becomes, whether it
+/// is taken (its folder exists, which the scaffold refuses on, or a registered
+/// project already has that name), and a free variant. The form asks on every
+/// edit, so the name is refused inline.
+#[tauri::command]
+pub async fn webbuild_check_name(
+    state: State<'_, Arc<AppState>>,
+    name: String,
+) -> Result<webbuild::project::ProjectNameCheck, AppError> {
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    let task = tokio::task::spawn_blocking(move || {
+        let registered: Vec<String> = repo::list_projects(&db, None)?
+            .into_iter()
+            .map(|p| p.name)
+            .collect();
+        let root = webbuild::project::projects_root()?;
+        Ok(webbuild::project::check_project_name(
+            &name,
+            |slug| root.join(slug).exists(),
+            &registered,
+        ))
+    });
+    match task.await {
+        Ok(result) => result,
+        Err(e) if e.is_panic() => Err(AppError::Internal(format!(
+            "webbuild_check_name panicked: {e}"
+        ))),
+        Err(e) => Err(AppError::Internal(format!("webbuild_check_name: {e}"))),
+    }
+}
+
+/// A project's stored plan (`webbuild_plans`): phases + sketch, or `None` for a
+/// project that has none yet. Read when a project opens, so the plan sheet can
+/// replay it while the dev server boots instead of showing a skeleton.
+#[tauri::command]
+pub async fn webbuild_get_plan(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<Option<webbuild::plan::StudioPlan>, AppError> {
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    let task = tokio::task::spawn_blocking(move || {
+        crate::db::repos::dev::webbuild_plans::get_webbuild_plan(&db, &project_id)?
+            .map(|row| webbuild::plan::StudioPlan::from_row(&row))
+            .transpose()
+    });
+    match task.await {
+        Ok(result) => result,
+        Err(e) if e.is_panic() => Err(AppError::Internal(format!(
+            "webbuild_get_plan panicked: {e}"
+        ))),
+        Err(e) => Err(AppError::Internal(format!("webbuild_get_plan: {e}"))),
+    }
+}
+
+/// Keep a project's plan with the project. Called after every turn with the
+/// current phases, and once with the sketch when it lands; `sketch = None`
+/// keeps a stored sketch.
+#[tauri::command]
+pub async fn webbuild_save_plan(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+    phases: Vec<webbuild::plan::WebBuildPhase>,
+    sketch: Option<webbuild::sketch::SiteSketch>,
+) -> Result<(), AppError> {
+    require_auth(&state).await?;
+    let phases_json = serde_json::to_string(&phases)
+        .map_err(|e| AppError::Internal(format!("webbuild_save_plan phases: {e}")))?;
+    let sketch_json = sketch
+        .map(|s| serde_json::to_string(&s))
+        .transpose()
+        .map_err(|e| AppError::Internal(format!("webbuild_save_plan sketch: {e}")))?;
+    let db = state.db.clone();
+    let task = tokio::task::spawn_blocking(move || {
+        crate::db::repos::dev::webbuild_plans::upsert_webbuild_plan(
+            &db,
+            &project_id,
+            &phases_json,
+            sketch_json.as_deref(),
+        )
+    });
+    match task.await {
+        Ok(result) => result,
+        Err(e) if e.is_panic() => Err(AppError::Internal(format!(
+            "webbuild_save_plan panicked: {e}"
+        ))),
+        Err(e) => Err(AppError::Internal(format!("webbuild_save_plan: {e}"))),
+    }
+}
+
 /// Scaffold a blank Next.js + TS + Tailwind app from a human project name and
 /// register it as a Dev Tools project. Returns the created project row.
 #[tauri::command]
@@ -91,15 +204,15 @@ pub async fn webbuild_dev_start(
     state.webbuild_servers.start(&project_id, &dir, port).await
 }
 
-/// Stop a project's Bun dev server (kills the whole process tree). Idempotent.
+/// Stop a project's Bun dev server (kills the whole process tree). Idempotent;
+/// an error means the server may still be running and holding its port.
 #[tauri::command]
 pub fn webbuild_dev_stop(
     state: State<'_, Arc<AppState>>,
     project_id: String,
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
-    state.webbuild_servers.stop(&project_id);
-    Ok(())
+    state.webbuild_servers.stop(&project_id)
 }
 
 /// Interrupt the in-flight build turn for a project — the Studio Stop button.

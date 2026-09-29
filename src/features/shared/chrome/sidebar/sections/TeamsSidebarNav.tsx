@@ -1,10 +1,13 @@
 import { useEffect, useMemo } from 'react';
-import { Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Radio, Gauge, Inbox, Factory, FolderKanban, GitBranch, Swords, Network, Layers, ShieldCheck, Globe } from 'lucide-react';
+import { Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Radio, Gauge, Inbox, Factory, FolderKanban, GitBranch, Trophy, Network, Layers, ShieldCheck, Globe, PenTool } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useImproveActivityStore, selectAnyImproveRunning } from '@/stores/improveActivityStore';
 import { isOngoing } from '@/features/teams/sub_goals/goalStatus';
+import { navSection, passesGates } from '@/lib/navigation/registry';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import type { TeamsTab, GoalsTab, KpisTab } from '@/lib/types/types';
 
 /**
@@ -20,7 +23,9 @@ import type { TeamsTab, GoalsTab, KpisTab } from '@/lib/types/types';
  * - **KPIs** — the outcome layer + its view submenu.
  * - **Development** — a label-only group holding the remaining project-engineering
  *   surfaces folded in from the retired Dev Tools tabs (Lifecycle / Factory /
- *   Competition / Mastermind). See DEV_ITEMS.
+ *   Contest / Mastermind), plus Studio, which is its own content section
+ *   (`sidebarSection: 'studio'`, nested under Projects in the nav registry)
+ *   rather than a Teams tab. See DEV_ITEMS.
  * - **Browser** — a label-only group for agent web-app control: the Whitelist of
  *   origins agents may drive, and the embedded Webview they drive them in. See
  *   BROWSER_ITEMS and docs/features/browser.md.
@@ -48,9 +53,9 @@ const KPI_VIEWS: Array<{ id: KpisTab; icon: typeof LayoutDashboard; labelKey: 'v
 // 'projects' (Manage) was promoted OUT of this group to the section's top
 // position — it is the landing page now, not a sub-surface.
 const DEV_ITEMS: Array<{
-  id: Extract<TeamsTab, 'lifecycle' | 'factory' | 'competition' | 'mastermind' | 'council' | 'features'>;
+  id: Extract<TeamsTab, 'lifecycle' | 'factory' | 'contest' | 'mastermind' | 'features'>;
   icon: typeof LayoutDashboard;
-  labelKey: 'lifecycle' | 'factory' | 'competition' | 'mastermind' | 'features';
+  labelKey: 'lifecycle' | 'factory' | 'contest' | 'mastermind' | 'features';
   testId: string;
   /**
    * Experimental: rendered only in a development build, and marked with a
@@ -66,7 +71,7 @@ const DEV_ITEMS: Array<{
 }> = [
   { id: 'lifecycle', icon: GitBranch, labelKey: 'lifecycle', testId: 'teams-lifecycle-nav' },
   { id: 'factory', icon: Factory, labelKey: 'factory', testId: 'teams-factory-nav' },
-  { id: 'competition', icon: Swords, labelKey: 'competition', testId: 'teams-competition-nav', devOnly: true },
+  { id: 'contest', icon: Trophy, labelKey: 'contest', testId: 'teams-contest-nav' },
   { id: 'mastermind', icon: Network, labelKey: 'mastermind', testId: 'teams-mastermind-nav' },
   { id: 'features', icon: Layers, labelKey: 'features', testId: 'teams-features-nav' },
 ];
@@ -85,9 +90,26 @@ const BROWSER_ITEMS: Array<{
   { id: 'webview', icon: Globe, labelKey: 'webview', testId: 'teams-webview-nav' },
 ];
 
+/** Surfaces whose first paint waits on the Mastermind data families. */
+const PREFETCH_ON_INTENT: ReadonlySet<TeamsTab> = new Set<TeamsTab>(['mastermind', 'factory']);
+
+/** Start loading the canvas's code and data before the click lands. Dynamic
+ *  import: the sidebar is in the main bundle, the canvas's data layer is not. */
+function prefetchMastermindIntent() {
+  void import('@/features/teams/sub_mastermind/lib/prefetchMastermind')
+    .then((m) => m.prefetchMastermind())
+    .catch(silentCatch('sidebar mastermind prefetch'));
+}
+
 export function TeamsSidebarNav() {
   const { t } = useTranslation();
   const teamsTab = useSystemStore((s) => s.teamsTab);
+  const sidebarSection = useSystemStore((s) => s.sidebarSection);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  // Studio's visibility is the registry's gate, resolved by the one resolver
+  // the rail and the palette use, so all three agree on who can reach it.
+  const { isVisible } = useTier();
+  const showStudio = passesGates(navSection('studio').gates, { isDev: import.meta.env.DEV, isTierVisible: isVisible });
   const setTeamsTab = useSystemStore((s) => s.setTeamsTab);
   const goalsTab = useSystemStore((s) => s.goalsTab);
   const kpiProposalCount = useSystemStore((s) => s.kpis.filter((k) => k.status === 'proposed').length);
@@ -105,6 +127,19 @@ export function TeamsSidebarNav() {
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
   // A golden-standard upgrade fired from the Factory readiness matrix is running.
   const factoryRunning = useImproveActivityStore(selectAnyImproveRunning);
+
+  // Entering the Projects section is intent for its canvases: warm them at idle
+  // so an open lands on final data (prefetchMastermind is throttled and cheap
+  // to repeat).
+  useEffect(() => {
+    const idle = typeof requestIdleCallback === 'function'
+      ? requestIdleCallback(prefetchMastermindIntent, { timeout: 3000 })
+      : window.setTimeout(prefetchMastermindIntent, 1500);
+    return () => {
+      if (typeof requestIdleCallback === 'function') cancelIdleCallback(idle as number);
+      else window.clearTimeout(idle as number);
+    };
+  }, []);
 
   // Teams are no longer listed here, but the store still backs the team detail
   // entered from a project row — keep it warm so that hop paints instantly.
@@ -131,6 +166,36 @@ export function TeamsSidebarNav() {
     setTeamsTab(tab);
     useSystemStore.getState().setIsCreatingPersona(false);
   };
+
+  // The Development rows: the Teams tabs, then Studio. Studio is a content
+  // section of its own rather than a Teams tab, so it switches `sidebarSection`
+  // instead of `teamsTab` (the registry nests it under Projects, which keeps
+  // Projects lit in the rail). It is experimental (registry `devOnly`), so it
+  // shares the rows' golden rail.
+  const devRows = [
+    ...DEV_ITEMS.filter((item) => !item.devOnly || import.meta.env.DEV).map((item) => ({
+      key: item.id as string,
+      icon: item.icon,
+      label: t.sidebar[item.labelKey],
+      testId: item.testId,
+      devOnly: item.devOnly === true,
+      active: teamsTab === item.id,
+      prefetch: PREFETCH_ON_INTENT.has(item.id),
+      onSelect: () => go(item.id),
+    })),
+    ...(showStudio
+      ? [{
+          key: 'studio',
+          icon: PenTool,
+          label: t.sidebar.studio,
+          testId: 'teams-studio-nav',
+          devOnly: true,
+          active: sidebarSection === 'studio',
+          prefetch: false,
+          onSelect: () => setSidebarSection('studio'),
+        }]
+      : []),
+  ];
 
   return (
     <nav className="space-y-1" aria-label={t.sidebar.teams}>
@@ -252,23 +317,25 @@ export function TeamsSidebarNav() {
       </div>
 
       {/* Development — the project-engineering surfaces folded in from Dev Tools
-          (Manage / Lifecycle / Factory / Competition). A label-only group: none
+          (Manage / Lifecycle / Factory / Contest). A label-only group: none
           of these is a landing page of its own, so the header doesn't navigate. */}
       <div className="mt-3 pt-3 border-t border-primary/10">
         <div className="px-3 pb-1 typo-caption uppercase tracking-wider text-foreground/50">
           {t.sidebar.development}
         </div>
         <div className="ml-3 pl-2 border-l border-primary/10 space-y-0.5">
-          {DEV_ITEMS.filter((item) => !item.devOnly || import.meta.env.DEV).map((item) => {
+          {devRows.map((item) => {
             const Icon = item.icon;
-            const active = teamsTab === item.id;
+            const active = item.active;
             return (
               <button
                 type="button"
-                key={item.id}
+                key={item.key}
                 data-testid={item.testId}
                 data-experimental={item.devOnly ? 'true' : undefined}
-                onClick={() => go(item.id)}
+                onClick={item.onSelect}
+                onPointerEnter={item.prefetch ? prefetchMastermindIntent : undefined}
+                onFocus={item.prefetch ? prefetchMastermindIntent : undefined}
                 aria-current={active ? 'page' : undefined}
                 // The golden rail is `border-l-2` ON THE ROW, drawn just inside
                 // the group's own grey rail, plus a squared left corner so the
@@ -285,13 +352,13 @@ export function TeamsSidebarNav() {
                 }`}
               >
                 <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${item.devOnly ? 'text-amber-400/80' : ''}`} />
-                <span className="truncate">{t.sidebar[item.labelKey]}</span>
+                <span className="truncate">{item.label}</span>
                 {/* The rail carries the meaning on screen and is `border`, so it
                     reaches no screen reader at all — this is the only thing
                     standing between the row and an experimental surface that
                     announces itself as a shipped one. */}
                 {item.devOnly && <span className="sr-only">{t.sidebar.experimental}</span>}
-                {item.id === 'factory' && factoryRunning && (
+                {item.key === 'factory' && factoryRunning && (
                   // Decorative pulse — the running state is announced by the
                   // 1st-level badge tooltip, so aria-hidden avoids double-reading.
                   <span className="ml-auto relative flex items-center justify-center w-2.5 h-2.5" aria-hidden>

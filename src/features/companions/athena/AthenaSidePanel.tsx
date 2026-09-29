@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export interface AthenaSidePanelProps {
@@ -59,8 +60,9 @@ export function AthenaSidePanel({
         open ? 'w-44' : 'w-9'
       }`}
     >
-      <button
-        type="button"
+      <Button
+        variant="secondary"
+        size="icon-sm"
         onClick={onToggleOpen}
         data-testid={`${rootTestId}-toggle`}
         aria-pressed={open}
@@ -70,10 +72,10 @@ export function AthenaSidePanel({
         title={
           open ? t.athena.side_panel_collapse : t.athena.side_panel_expand
         }
-        className="absolute left-0 top-3 -translate-x-1/2 z-30 inline-flex items-center justify-center w-5 h-5 rounded-full bg-secondary border border-foreground/20 text-foreground hover:bg-foreground/10 hover:border-foreground/35 shadow-elevation-3 transition-colors focus-ring"
+        className="absolute left-0 top-3 -translate-x-1/2 z-30 shadow-elevation-3"
       >
-        {open ? <ChevronLeft className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-      </button>
+        {open ? <ChevronLeft className="w-3 h-3" aria-hidden="true" /> : <ChevronRight className="w-3 h-3" aria-hidden="true" />}
+      </Button>
 
       {open ? (
         <div className="flex flex-col h-full min-h-0 overflow-hidden pt-3">

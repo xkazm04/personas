@@ -298,6 +298,80 @@
       "pinned": [],
       "expect": { "navigations": ["personas"], "noLeak": true, "noParseErrors": true },
       "_note": "Prose + an open_route op in one turn — the op line must strip cleanly from the display text."
+    },
+    {
+      "id": "layer-one-daily-brief",
+      "class": "layer_one",
+      "message": "What's my daily brief?",
+      "pinned": [],
+      "seedActivity": "- COMPLETED task (1h ago): \"Nightly review\" — 3 personas certified, 1 flagged.\n- Active goal: \"Ship mobile companion\" — 60% progress.\n- 2 approvals waiting: gmail send, dev goal update.",
+      "expect": { "reportCard": true, "replyShape": { "cap": 3 } },
+      "_note": "WP1/WP2 dependency: a daily brief is exactly the shape the contract calls a report (too much for layer one) — the reply should be a short pointer plus OP: show_report, not the brief inlined. reportCard checks for a companion_chat_card kind:\"report\" row; requires WP2's show_report op to be wired, so this scenario will read FAIL on reportCard until then — that is expected and is not this bench's regression."
+    },
+    {
+      "id": "layer-one-fleet-status-4-sessions",
+      "class": "layer_one",
+      "message": "What's fleet status right now?",
+      "pinned": [],
+      "seedActivity": "- RUNNING session \"pumper\" (project personas) — 60% through task 4/6, started 8m ago.\n- RUNNING session \"politicas\" (project ballot-app) — task 2/3, started 3m ago.\n- QUEUED session \"scan-sweep\" (project personas) — waiting on pumper.\n- IDLE session \"docs-pass\" (project personas-web) — awaiting review.",
+      "expect": { "replyShape": { "cap": 3 } },
+      "sample": "Four sessions in flight: [pumper](ref:session/sess_1a2b3c4d) is most of the way through, [politicas](ref:session/sess_9f8e7d6c) just started, scan-sweep is queued behind pumper, and docs-pass is waiting on your review.",
+      "_note": "Names the sessions and links two by ref instead of dumping ids; replyShape is soft so a non-conforming cell still scores on the other classes."
+    },
+    {
+      "id": "layer-one-findings-list-7-items",
+      "class": "layer_one",
+      "message": "What did the last codebase scan find?",
+      "pinned": [],
+      "seedActivity": "- COMPLETED task (5m ago): \"Codebase scan\" — 7 findings: 2 dead code paths, 1 missing test, 2 stale comments, 1 unused export, 1 census rule drift.",
+      "expect": { "reportCard": true, "replyShape": { "cap": 3 } },
+      "_note": "7 items is over any reasonable layer-one list cap; the right move is a short headline plus a report, mirroring layer-one-daily-brief's WP2 dependency note."
+    },
+    {
+      "id": "layer-one-decision-waiting",
+      "class": "layer_one",
+      "message": "Is there anything waiting on me?",
+      "pinned": ["gmail"],
+      "seedActivity": "- PENDING approval: send the deploy-finished email to jamie@example.com (use_connector gmail.send_message).",
+      "expect": { "noRejectedOps": true, "replyShape": { "cap": 3 } },
+      "sample": "One thing: [the deploy email to Jamie](ref:approval/appr_9f2a1c7e) is ready for your OK.",
+      "_note": "Expects a ref to the approval, not a restated description of what it does — the card already shows that. No structural predicate for \"described vs referenced\" exists yet; replyShape's bareIds=0 + a judge pass would confirm this once judging runs."
+    },
+    {
+      "id": "layer-one-what-changed-pumper-session",
+      "class": "layer_one",
+      "message": "What did the pumper session change?",
+      "pinned": [],
+      "seedActivity": "- COMPLETED session \"pumper\" (project personas, 12m ago) — 3 commits: notepad polish, i18n fix, census rule update.",
+      "expect": { "noSideEffects": true, "replyShape": { "cap": 3 } },
+      "sample": "[Pumper](ref:session/sess_4b1d0a92) landed three commits: notepad polish, an i18n fix, and a census rule update.",
+      "_note": "A session ref, no raw session id in the prose — the sample's handle sits inside the ref link so it is excluded from the bareId count by contract."
+    },
+    {
+      "id": "layer-one-long-explanation",
+      "class": "layer_one",
+      "message": "Can you explain in detail how the scheduler decides retry backoff?",
+      "pinned": [],
+      "expect": { "reportCard": true, "replyShape": { "cap": 2 } },
+      "_note": "Long explanation requests get a report plus a 1-2 sentence pointer reply — cap is 2, not the base 3, per the brief."
+    },
+    {
+      "id": "layer-one-smalltalk",
+      "class": "layer_one",
+      "message": "Good morning!",
+      "pinned": [],
+      "expect": { "noSideEffects": true, "noRejectedOps": true, "replyShape": { "cap": 1 }, "hardShape": true },
+      "sample": "Happy to help whenever you're ready.",
+      "_note": "The one layer_one scenario marked hardShape: true — small talk has no report/register escape hatch, so a >1-sentence reply here is a genuine layer-one miss, not a class the prompt hasn't been taught yet."
+    },
+    {
+      "id": "layer-one-adjust-register-more-detail",
+      "class": "layer_one",
+      "message": "Give me more detail from now on.",
+      "pinned": [],
+      "expect": { "noRejectedOps": true, "replyShape": { "cap": 2 } },
+      "sample": "Got it, I'll go deeper by default from here on.",
+      "_note": "Expects an adjust_register op (scope default) plus a one-sentence confirmation. No structural predicate exists for \"register was actually adjusted\" — that needs WP2's op wiring plus either a new validator field or a companion_reply_register read; noted as a follow-up rather than guessed at here."
     }
   ]
 }

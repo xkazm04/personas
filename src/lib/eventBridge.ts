@@ -472,6 +472,15 @@ const registry: EventRegistration[] = [
             case "clarifying_question_v3":
               store.handleClarifyingQuestionV3(payload as Parameters<typeof store.handleClarifyingQuestionV3>[0]);
               break;
+            case "provisional_capability_enumeration":
+              store.handleProvisionalCapabilityEnumeration(payload);
+              break;
+            case "provisional_capability_resolution":
+              store.handleProvisionalCapabilityResolution(payload);
+              break;
+            case "provisional_settled":
+              store.handleProvisionalSettled(payload);
+              break;
           }
         },
       );
@@ -925,6 +934,30 @@ const registry: EventRegistration[] = [
           debounceTimer = setTimeout(() => {
             debounceTimer = null;
             useDevToolsLiveStore.getState().markShipChanged();
+          }, EVENT_BRIDGE_TIMING.DEV_TOOLS_SHIP_DEBOUNCE_MS);
+        },
+      );
+      return [unlisten];
+    },
+  },
+
+  // -- Lifecycle-table write landed (CDC push) -------------------------------
+  //
+  // A version append (preset switch, standards edit, Athena proposal), an
+  // install task recorded on a version, or a finished task's evidence. Same
+  // pre-commit hazard as the Ship push, so the same trailing debounce.
+  {
+    event: EventName.DEV_TOOLS_LIFECYCLE_CHANGED,
+    setup: async () => {
+      let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+      const unlisten = await typedListen(
+        EventName.DEV_TOOLS_LIFECYCLE_CHANGED,
+        () => {
+          if (debounceTimer !== null) clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            debounceTimer = null;
+            useDevToolsLiveStore.getState().markLifecycleChanged();
           }, EVENT_BRIDGE_TIMING.DEV_TOOLS_SHIP_DEBOUNCE_MS);
         },
       );

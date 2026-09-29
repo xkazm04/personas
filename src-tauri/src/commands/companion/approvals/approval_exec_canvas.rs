@@ -318,7 +318,7 @@ mod tests {
                     description TEXT, status TEXT NOT NULL DEFAULT 'active',
                     tech_stack TEXT, github_url TEXT, monitoring_credential_id TEXT,
                     monitoring_project_slug TEXT, static_scan_config TEXT,
-                    auto_pr_on_success INTEGER NOT NULL DEFAULT 0, pr_credential_id TEXT,
+                    pr_credential_id TEXT,
                     llm_tracking_credential_id TEXT, support_credential_id TEXT,
                     data_links TEXT, test_env_url TEXT, test_env_branch TEXT,
                     main_branch TEXT, standards_config TEXT, team_id TEXT,

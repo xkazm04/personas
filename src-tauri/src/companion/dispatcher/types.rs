@@ -123,6 +123,22 @@ pub struct Dispatched {
     /// card's review entry is NOT here — it needs the chat card's id, which
     /// session.rs mints when it persists the card, so it is written there.
     pub note_comments: Vec<crate::db::models::NoteComment>,
+    /// Reports this reply minted (`show_report`), already persisted as
+    /// `companion_chat_card` rows (`kind = 'report'`, `status = 'unread'`) with
+    /// no episode yet: session.rs stamps the assistant episode onto them once
+    /// it exists. Each one also rides in [`Self::chat_cards`] as a `report`
+    /// card carrying its id.
+    pub reports: Vec<MintedReport>,
+    /// What the reference-link pass did to [`Self::cleaned_text`]: the links
+    /// kept (with `report/new` rewritten) and how many were turned back into
+    /// plain phrases. Feeds the turn ledger's `refLinks` / `refsDropped`.
+    pub refs: super::refs::RefScan,
+}
+
+/// One report a `show_report` op minted this turn.
+#[derive(Debug, Clone)]
+pub struct MintedReport {
+    pub id: String,
 }
 
 /// One note the dispatcher moved: its id and the status AFTER the write.

@@ -110,7 +110,6 @@
     "scan.ts": {"count":2,"sections":[],"lines":["337","385-411"],"contexts":["budget. `ascent` commits usage only on success — `scan.ts:337` `capturedUsage = attemptUsage; //"],"resolved":false},
     "scanQueueWorker.ts": {"count":2,"sections":[],"lines":["455"],"contexts":["exists at all**, so the `AbortController` built at `scanQueueWorker.ts:455` *explicitly to \"cancel"],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["Run against a private registry (never `scripts/census/rules.json`, per the contract's"]},
-    "session.rs": {"count":2,"sections":[0,7],"lines":["1270","1268-1270"],"contexts":["site**, `session.rs:1270`, on the interactive chat turn. In the live ledger it is populated for"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[],"contexts":["Sweep: all **963** non-generated Rust files under `src-tauri/` walked by the census engine and"],"resolved":false,"isDir":true},
     "src-tauri/core/src/models/agent_ir.rs": {
       "count": 1,
@@ -453,6 +452,14 @@
       "contexts": ["`engine/project_tracking/consolidator.rs`, `engine/team_assignment_matching.rs` (two sites), and"],
       "resolvedFrom": "suffix",
       "verbatim": "engine/team_assignment_matching.rs"
+    },
+    "src-tauri/src/engine/twin_setup/session.rs": {
+      "count": 2,
+      "sections": [0,7],
+      "lines": ["1270","1268-1270"],
+      "contexts": ["site**, `session.rs:1270`, on the interactive chat turn. In the live ledger it is populated for"],
+      "resolvedFrom": "basename",
+      "verbatim": "session.rs"
     },
     "src/": {"count":2,"sections":[],"contexts":["matches for any provider endpoint across `src/`, all ten API routes are Supabase CRUD)."],"resolved":false,"isDir":true},
     "src/commands/artist/mod.rs": {"count":1,"sections":[7],"lines":["676"],"contexts":["| `src/commands/artist/mod.rs:676` | `run_creative_cli` | headless creative job, `--model claude-sonnet-4-6` |"],"resolved":false},

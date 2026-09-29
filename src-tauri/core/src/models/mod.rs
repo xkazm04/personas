@@ -37,6 +37,8 @@ mod knowledge;
 #[cfg(feature = "ml")]
 mod knowledge_base;
 pub mod lab;
+mod lifecycle;
+mod lifecycle_proposal;
 mod llm_spend;
 mod memory;
 mod n8n_session;
@@ -80,6 +82,7 @@ mod tool_audit;
 mod tool_usage;
 mod trigger;
 mod twin;
+mod twin_setup;
 pub mod webhook_log;
 
 pub use agent_ir::*;
@@ -121,6 +124,8 @@ pub use knowledge::*;
 #[cfg(feature = "ml")]
 pub use knowledge_base::*;
 pub use lab::*;
+pub use lifecycle::*;
+pub use lifecycle_proposal::*;
 pub use llm_spend::*;
 pub use memory::*;
 pub use n8n_session::*;
@@ -163,3 +168,4 @@ pub use tool_audit::*;
 pub use tool_usage::*;
 pub use trigger::*;
 pub use twin::*;
+pub use twin_setup::*;

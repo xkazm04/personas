@@ -176,6 +176,10 @@ pub(super) fn shard(
         commands::infrastructure::dev_tools::dev_tools_delete_project,
         commands::infrastructure::dev_tools::dev_tools_get_active_project,
         commands::infrastructure::dev_tools::dev_tools_set_active_project,
+        // Dev Tools -- Lifecycle v2 (a project's development practice)
+        commands::infrastructure::lifecycle::dev_tools_get_lifecycle,
+        commands::infrastructure::lifecycle::dev_tools_set_lifecycle_preset,
+        commands::infrastructure::lifecycle::dev_tools_lifecycle_install,
         // Dev Tools -- Workspaces (a named grouping of dev projects)
         commands::infrastructure::dev_workspaces::dev_tools_workspace_list,
         commands::infrastructure::dev_workspaces::dev_tools_workspace_create,

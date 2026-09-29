@@ -86,6 +86,9 @@ pub enum DispatchOrigin {
     NightShift,
     FeedImpact,
     OrphanResume,
+    /// A /contest seat (participant or judge) the in-app Contest home queued
+    /// through `contest_seat::spawn_contest_seat`.
+    Contest,
     /// A paired device dispatched this session to this one as a
     /// `fleet_session` remote job. The row also carries `remote_job_id` and
     /// `origin_peer_id`.
@@ -105,7 +108,7 @@ impl DispatchOrigin {
     /// Exists so the round-trip test cannot be a hand-kept subset of the enum
     /// — which is what it was until 2026-09-24, when `Remote` had never been
     /// in it.
-    pub const ALL: [DispatchOrigin; 10] = [
+    pub const ALL: [DispatchOrigin; 11] = [
         DispatchOrigin::Manual,
         DispatchOrigin::DevRunner,
         DispatchOrigin::DispatchIdeas,
@@ -116,6 +119,7 @@ impl DispatchOrigin {
         DispatchOrigin::OrphanResume,
         DispatchOrigin::Remote,
         DispatchOrigin::Curator,
+        DispatchOrigin::Contest,
     ];
 
     /// The wire / row token — the same string `serde` writes.
@@ -129,6 +133,7 @@ impl DispatchOrigin {
             DispatchOrigin::NightShift => "night_shift",
             DispatchOrigin::FeedImpact => "feed_impact",
             DispatchOrigin::OrphanResume => "orphan_resume",
+            DispatchOrigin::Contest => "contest",
             DispatchOrigin::Remote => "remote",
             DispatchOrigin::Curator => "curator",
         }
@@ -209,12 +214,23 @@ impl Provenance {
 /// Never reaches the CLI — `split_headless_args` strips it.
 pub const TASK_ARG: &str = "--fleet-task";
 
-/// Marker pair in a headless dispatch's `args` naming the codex engine:
-/// `["--engine", "codex", "--model", <model>]` — the same `row_args` the codex
-/// worker already stamps on its row.
+/// Marker pair in a headless dispatch's `args` naming a non-claude engine:
+/// `["--engine", "codex"|"grok", "--model", <model>]` — the same `row_args`
+/// the codex worker already stamps on its row. Optional companions:
+/// `["--effort", <effort>]` and the bare [`ISOLATED_ARG`]. None of them
+/// reaches the CLI verbatim; the engine's own argv builder consumes them.
 const ENGINE_ARG: &str = "--engine";
 const MODEL_ARG: &str = "--model";
-const CODEX_EFFORT_ARG: &str = "--codex-effort";
+const EFFORT_ARG: &str = "--effort";
+/// Bare marker asking the engine lane for the contest isolation flags (no
+/// user config, no rules, no memory — see `headless::codex_isolation_args` /
+/// `headless::grok_exec_argv`). A marker rather than a run-label rule so a
+/// queued row carries it durably in its `args_json`.
+const ISOLATED_ARG: &str = "--isolated";
+/// The effort flag a codex-only build wrote (2026-09-24, before the engine
+/// marker generalised it to [`EFFORT_ARG`]). Still read, so a row queued by
+/// that build keeps its effort; never written.
+const LEGACY_CODEX_EFFORT_ARG: &str = "--codex-effort";
 
 /// Build the `args` for a headless dispatch: the task, then the CLI extras.
 pub fn headless_args(task: &str, extra: Vec<String>) -> Vec<String> {
@@ -227,16 +243,7 @@ pub fn headless_args(task: &str, extra: Vec<String>) -> Vec<String> {
 
 /// Build the `args` for a codex maintenance worker dispatch.
 pub fn codex_args(task: &str, model: &str, effort: Option<&str>) -> Vec<String> {
-    let mut extra = vec![
-        ENGINE_ARG.to_string(),
-        super::headless::CODEX_ENGINE.to_string(),
-        MODEL_ARG.to_string(),
-        model.to_string(),
-    ];
-    if let Some(effort) = effort {
-        extra.extend([CODEX_EFFORT_ARG.to_string(), effort.to_string()]);
-    }
-    headless_args(task, extra)
+    engine_args(task, super::headless::CODEX_ENGINE, model, effort, false)
 }
 
 /// `(task, extra_args)` from a headless dispatch's `args`. A dispatch that
@@ -259,30 +266,85 @@ fn split_headless_args(args: &[String]) -> Result<(String, Vec<String>), AppErro
     Ok((task.clone(), extra))
 }
 
-/// The codex model when `args` names the codex engine, else `None`.
-fn codex_model(args: &[String]) -> Option<String> {
-    let engine = args
-        .iter()
-        .position(|a| a == ENGINE_ARG)
-        .and_then(|i| args.get(i + 1))?;
-    if engine != super::headless::CODEX_ENGINE {
-        return None;
+/// Build the `args` for a headless dispatch on a non-claude engine (`codex`
+/// or `grok`): the task, then the engine marker, the effort when named and
+/// [`ISOLATED_ARG`] when the lane should drop the operator's own config.
+pub fn engine_args(
+    task: &str,
+    engine: &str,
+    model: &str,
+    effort: Option<&str>,
+    isolated: bool,
+) -> Vec<String> {
+    let mut extra = vec![
+        ENGINE_ARG.to_string(),
+        engine.to_string(),
+        MODEL_ARG.to_string(),
+        model.to_string(),
+    ];
+    if let Some(e) = effort.map(str::trim).filter(|e| !e.is_empty()) {
+        extra.push(EFFORT_ARG.to_string());
+        extra.push(e.to_string());
     }
-    args.iter()
-        .position(|a| a == MODEL_ARG)
-        .and_then(|i| args.get(i + 1))
-        .cloned()
+    if isolated {
+        extra.push(ISOLATED_ARG.to_string());
+    }
+    headless_args(task, extra)
 }
 
-fn codex_effort(args: &[String]) -> Option<String> {
-    args.iter()
-        .position(|a| a == CODEX_EFFORT_ARG)
-        .and_then(|i| args.get(i + 1))
-        .cloned()
+/// A headless dispatch's engine marker, read back from its extra args.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(super) struct EngineMarker {
+    /// `codex` | `grok` — never `claude`, which carries no marker.
+    pub engine: &'static str,
+    pub model: String,
+    pub effort: Option<String>,
+    pub isolated: bool,
 }
 
-fn is_codex_dispatch(req: &DispatchRequest) -> bool {
-    matches!(req.mode, FleetSessionMode::Headless) && codex_model(&req.args).is_some()
+/// The engine marker when `args` names a non-claude engine the fleet can
+/// drive, else `None` (a claude dispatch, or an engine token nobody knows —
+/// which then fails as a claude spawn would, loudly, rather than silently
+/// picking a lane).
+pub(super) fn engine_marker(args: &[String]) -> Option<EngineMarker> {
+    let value_of = |flag: &str| {
+        args.iter()
+            .position(|a| a == flag)
+            .and_then(|i| args.get(i + 1))
+    };
+    let engine = match value_of(ENGINE_ARG)?.as_str() {
+        e if e == super::headless::CODEX_ENGINE => super::headless::CODEX_ENGINE,
+        e if e == super::headless::GROK_ENGINE => super::headless::GROK_ENGINE,
+        _ => return None,
+    };
+    Some(EngineMarker {
+        engine,
+        model: value_of(MODEL_ARG)?.clone(),
+        effort: value_of(EFFORT_ARG)
+            .or_else(|| value_of(LEGACY_CODEX_EFFORT_ARG))
+            .cloned(),
+        isolated: args.iter().any(|a| a == ISOLATED_ARG),
+    })
+}
+
+/// What a dispatch costs the two budgets. The profile decides, with one
+/// engine rule on top: a `codex` or `grok` session spends no Claude plan, so
+/// its plan units are zero whatever the profile's effort band says — it is
+/// charged machine units only.
+pub(super) fn request_charge(req: &DispatchRequest) -> Charge {
+    let charge = Charge::from_profile(req.profile.as_ref());
+    if engine_marker(&req.args).is_some() {
+        Charge { plan: 0, ..charge }
+    } else {
+        charge
+    }
+}
+
+/// A headless dispatch on a non-claude engine (codex or grok). Such a
+/// session spends no Claude plan, so Claude's pace and window holds do not
+/// gate it (see [`without_claude_gauge`]); machine and memory still do.
+fn is_non_claude_dispatch(req: &DispatchRequest) -> bool {
+    matches!(req.mode, FleetSessionMode::Headless) && engine_marker(&req.args).is_some()
 }
 
 fn without_claude_gauge(mut inputs: BudgetInputs) -> BudgetInputs {
@@ -726,7 +788,7 @@ fn scan_queue(reg: &FleetRegistry, now: i64, inputs: &BudgetInputs, used: Used) 
             continue;
         }
         let entry_inputs =
-            if dispatch_of_session_in(reg, &id).is_some_and(|req| is_codex_dispatch(&req)) {
+            if dispatch_of_session_in(reg, &id).is_some_and(|req| is_non_claude_dispatch(&req)) {
                 without_claude_gauge(*inputs)
             } else {
                 *inputs
@@ -756,14 +818,14 @@ fn door_verdict(
     inputs: &BudgetInputs,
     used: Used,
 ) -> Door {
-    let effective = if is_codex_dispatch(req) {
+    let effective = if is_non_claude_dispatch(req) {
         without_claude_gauge(*inputs)
     } else {
         *inputs
     };
     door_verdict_for(
         reg,
-        Charge::from_profile(req.profile.as_ref()),
+        request_charge(req),
         req.not_before_ms,
         now,
         &effective,
@@ -870,7 +932,7 @@ pub fn admit_sync(app: &AppHandle, req: DispatchRequest) -> Result<Admission, Ap
     let (inputs, used, _) = budget_reading(registry(), cap, dynamic_budgets_via_app(app), now);
     let verdict = door_verdict(registry(), &req, now, &inputs, used);
     if let Door::Refuse = verdict {
-        let charge = Charge::from_profile(req.profile.as_ref());
+        let charge = request_charge(&req);
         super::debug_log::lifecycle(
             "-",
             "refused",
@@ -966,13 +1028,22 @@ fn spawn_now(
         .map(|(id, cli_name)| (id, cli_name.or_else(|| req.name.clone()))),
         FleetSessionMode::Headless => {
             let (task, extra) = split_headless_args(&req.args)?;
-            match codex_model(&extra) {
-                Some(model) => super::headless::spawn_codex_worker_with_identity(
+            match engine_marker(&extra) {
+                Some(marker) if marker.engine == super::headless::GROK_ENGINE => {
+                    super::headless::spawn_grok_worker_with_identity(
+                        app.clone(),
+                        cwd,
+                        task,
+                        marker,
+                        req.run_label.as_deref(),
+                        identity,
+                    )
+                }
+                Some(marker) => super::headless::spawn_codex_worker_with_identity(
                     app.clone(),
                     cwd,
                     task,
-                    model,
-                    codex_effort(&extra),
+                    marker,
                     req.run_label.as_deref(),
                     identity,
                 ),
@@ -1002,7 +1073,7 @@ fn spawn_now(
     // session that never queued (or was started over the budgets by the
     // operator) is counted in `used` like any other. A promoted row already
     // carries the charge it was admitted with; the stamp never overwrites it.
-    registry().stamp_charge(&id, Charge::from_profile(req.profile.as_ref()));
+    registry().stamp_charge(&id, request_charge(req));
     // Take the GPU token (a no-op unless this row is `gpu = exclusive` and the
     // token is free) and make the stamps durable.
     budget_live().used(registry());
@@ -1104,7 +1175,7 @@ fn queued_inner(
         cycle_index: req.cycle_index,
         // The verdict precedes the record, and the record carries the charge:
         // promotion and `used` both read it from the row.
-        admission: AdmissionFacts::charged(Charge::from_profile(req.profile.as_ref())),
+        admission: AdmissionFacts::charged(request_charge(req)),
         master: Mutex::new(None),
         writer: Mutex::new(None),
         hibernating: AtomicBool::new(false),
@@ -1638,12 +1709,13 @@ fn budget_view(
     if inputs.enabled {
         let mut head_seen = false;
         for (id, not_before, facts) in reg.queued_admissions_in_order() {
-            let entry_inputs =
-                if dispatch_of_session_in(reg, &id).is_some_and(|req| is_codex_dispatch(&req)) {
-                    without_claude_gauge(*inputs)
-                } else {
-                    *inputs
-                };
+            let entry_inputs = if dispatch_of_session_in(reg, &id)
+                .is_some_and(|req| is_non_claude_dispatch(&req))
+            {
+                without_claude_gauge(*inputs)
+            } else {
+                *inputs
+            };
             let entry_derived = budgets::budgets_from(&entry_inputs, used);
             let entry_hold = budgets::fits(facts.charge(), used, &entry_derived)
                 .err()
@@ -2278,13 +2350,95 @@ mod tests {
         let (task, extra) = split_headless_args(&args).unwrap();
         assert_eq!(task, "ship it");
         assert_eq!(extra, vec!["--model".to_string(), "opus".to_string()]);
-        assert_eq!(codex_model(&extra), None);
-        let codex = codex_args("refactor", "gpt-5-codex", Some("high"));
+        assert_eq!(engine_marker(&extra), None);
+        let codex = codex_args("refactor", "gpt-5-codex", None);
         let (_, extra) = split_headless_args(&codex).unwrap();
-        assert_eq!(codex_model(&extra).as_deref(), Some("gpt-5-codex"));
-        assert_eq!(codex_effort(&extra).as_deref(), Some("high"));
+        let marker = engine_marker(&extra).unwrap();
+        assert_eq!(marker.engine, "codex");
+        assert_eq!(marker.model, "gpt-5-codex");
+        assert_eq!((marker.effort, marker.isolated), (None, false));
         assert!(split_headless_args(&["--model".to_string()]).is_err());
         assert!(split_headless_args(&[TASK_ARG.to_string(), "  ".to_string()]).is_err());
+    }
+
+    #[test]
+    fn engine_args_carry_the_effort_and_the_isolation_marker_durably() {
+        let args = engine_args("build it", "grok", "grok-4.6", Some("high"), true);
+        let (task, extra) = split_headless_args(&args).unwrap();
+        assert_eq!(task, "build it");
+        let marker = engine_marker(&extra).unwrap();
+        assert_eq!(marker.engine, "grok");
+        assert_eq!(marker.model, "grok-4.6");
+        assert_eq!(marker.effort.as_deref(), Some("high"));
+        assert!(marker.isolated);
+        // A blank effort is no effort, and an unknown engine is no marker.
+        let (_, extra) =
+            split_headless_args(&engine_args("t", "codex", "m", Some(" "), false)).unwrap();
+        assert_eq!(engine_marker(&extra).unwrap().effort, None);
+        let bogus = vec![
+            "--engine".to_string(),
+            "llama".into(),
+            "--model".into(),
+            "x".into(),
+        ];
+        assert_eq!(engine_marker(&bogus), None);
+    }
+
+    #[test]
+    fn a_contest_seat_row_says_its_origin_label_and_contest_on_the_wire() {
+        let mut r = req("C:/arena/entries/seat-a");
+        r.origin = DispatchOrigin::Contest;
+        r.run_label = Some(super::super::contest_seat::contest_run_label(
+            "p1", "c1", "seat-a",
+        ));
+        let dto = queued_inner(&r, "q-contest".into(), "cc".into(), 1, 1, 1, 0).to_dto();
+        assert_eq!(dto.origin.as_deref(), Some("contest"));
+        assert_eq!(dto.run_label.as_deref(), Some("contest:p1/c1:seat-a"));
+        assert!(dto.run_id.is_some());
+        assert_eq!(dto.contest_id.as_deref(), Some("c1"));
+        assert_eq!(dto.contest_project_id.as_deref(), Some("p1"));
+        let wire = serde_json::to_value(&dto).unwrap();
+        assert_eq!(wire["runLabel"], "contest:p1/c1:seat-a");
+        assert_eq!(wire["contestId"], "c1");
+        assert_eq!(wire["contestProjectId"], "p1");
+        // A seat labelled before the project joined the label keeps its
+        // contest and reports no project.
+        r.run_label = Some("contest:c1:seat-a".into());
+        let old = queued_inner(&r, "q-old".into(), "cc".into(), 1, 1, 1, 0).to_dto();
+        assert_eq!(old.contest_id.as_deref(), Some("c1"));
+        assert_eq!(old.contest_project_id, None);
+        // Any other label carries no contest.
+        r.run_label = Some("app-master:p1".into());
+        let plain = queued_inner(&r, "q-plain".into(), "cc".into(), 1, 1, 1, 0).to_dto();
+        assert_eq!(plain.contest_id, None);
+        assert_eq!(plain.contest_project_id, None);
+    }
+
+    #[test]
+    fn codex_and_grok_dispatches_spend_no_claude_plan() {
+        use personas_core::models::{EffortBand, MachineLoad};
+        let profile = ResourceProfile {
+            machine: MachineLoad::Moderate,
+            effort: EffortBand::L,
+            ..ResourceProfile::default()
+        };
+        let mut claude = req("C:/repo/x");
+        claude.mode = FleetSessionMode::Headless;
+        claude.args = headless_args("t", vec!["--model".into(), "opus".into()]);
+        claude.profile = Some(profile.clone());
+        assert_eq!(
+            (
+                request_charge(&claude).machine,
+                request_charge(&claude).plan
+            ),
+            (2, 4)
+        );
+        for engine in ["codex", "grok"] {
+            let mut other = claude.clone();
+            other.args = engine_args("t", engine, "m", Some("high"), true);
+            let charge = request_charge(&other);
+            assert_eq!((charge.machine, charge.plan), (2, 0), "{engine}");
+        }
     }
 
     #[test]
@@ -2311,7 +2465,7 @@ mod tests {
             assert_eq!(wire, serde_json::Value::String(o.token().to_string()));
             assert_eq!(DispatchOrigin::parse(Some(o.token())), o);
         }
-        assert_eq!(DispatchOrigin::ALL.len(), 10);
+        assert_eq!(DispatchOrigin::ALL.len(), 11);
         // The trap this enum sets: an unrecognised token is NOT an unknown
         // state, it is the operator's own dispatch. A variant that reaches
         // only one of the three mirrors is invisible except as a wrong answer.

@@ -18,7 +18,7 @@ function mkProject(over: Partial<DevProject> = {}): DevProject {
     id: 'p1', name: 'Proj', root_path: 'C:/x', description: null, status: 'active',
     tech_stack: 'react', github_url: null, monitoring_credential_id: null,
     pr_credential_id: null, llm_tracking_credential_id: null, test_env_url: null,
-    standards_config: null, auto_pr_on_success: false, team_id: null,
+    standards_config: null, team_id: null,
     ...over,
   } as DevProject;
 }

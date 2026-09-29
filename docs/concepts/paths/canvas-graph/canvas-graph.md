@@ -10,15 +10,10 @@ techniques:
   - edge-management
   - canvas-accessibility
 evidence:
-  - src/features/teams/sub_mastermind/lib/CanvasShell.tsx        # canonical canvas shell: culling, memoized islands, stable callbacks, kb cursor
-  - src/features/teams/sub_mastermind/lib/useCanvasCamera.ts     # one transform authority: render-free pan, rAF-coalesced zoom-to-cursor, mid-pan commit
-  - src/features/teams/sub_mastermind/lib/useIslandDrag.ts       # gesture loan on a node drag: capture, 4px threshold, world conversion, commit-on-release
-  - src/features/teams/sub_mastermind/lib/tidyLayout.ts          # deterministic bounded auto-layout; user-pinned positions as fixed anchors
-  - src/features/teams/sub_mastermind/lib/layoutStore.ts         # one versioned layout document, v1→v2 migration, author (provenance) field
+  # (the Mastermind Hex Mosaic canvas — CanvasShell.tsx, useCanvasCamera.ts, useIslandDrag.ts, tidyLayout.ts, GroupLayer.tsx — was retired 2026-09-25 when Soundings, a fixed-geometry chart, replaced it; the files are recoverable from git history before that date)
   # (useGraphCanvas.ts / HierarchyNexus.tsx — the pattern-graph twin — were retired 2026-08-23 with the hierarchy-graph lane; their lessons survive in the viewport-transform application doc)
   - src/features/overview/sub_memories/components/MemoriesPageGraph.tsx  # shared node-position geometry for edges + nodes; cross-cluster (persona) edges surface only in the hovered dimension
 counter_evidence:
-  - src/features/teams/sub_mastermind/lib/GroupLayer.tsx         # group-body drag with no travel threshold — the click-vs-drag defect the standard names
 deviations:
   - w7-canvas-graph   # anchor in docs/concepts/golden-path-deferred-fixes.md
 ---

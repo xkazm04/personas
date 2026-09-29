@@ -1,7 +1,9 @@
+pub(crate) mod blocking;
 pub mod browser;
 pub mod communication;
 pub mod companion;
 pub mod companions;
+pub mod contest;
 pub mod core;
 pub mod credentials;
 pub mod curator;

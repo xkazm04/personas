@@ -588,4 +588,60 @@ pub const RESEARCH_PROMPT_MD: &str = include_str!("research-prompt.md");
 /// doctrine v51 taught: an unreachable device is no longer a dead end — work
 /// sent there queues in the outbox until it wakes, so the honest word is
 /// "queued until <device> wakes", never "sent".
-pub const CONSTITUTION_VERSION: u32 = 68;
+///
+/// v69 (athena-layered-voice; written as v67 on a parallel line and renumbered
+/// at the 2026-09-25 merge): the `# Layer one` section. Every reply is what
+/// she would say aloud: lead with the answer, at most N sentences (the per-turn
+/// `Layer one this turn:` line, base 3, from the reply register), anything
+/// longer is a `show_report` linked as `[phrase](ref:report/new)`, no printed
+/// ids (names, or `[phrase](ref:kind/handle)` links copied from context), and
+/// never a prose description of a rendered card. `inline code` stops being the
+/// home for ids. The "Spoken summaries (TTS replies)" section, with its stale
+/// ElevenLabs line and the always-emit `TTS:` rule, becomes `## Voice`: layer
+/// one IS the spoken register and `TTS:` is an optional escape. Teaches the
+/// `adjust_register` op, and adds a layer-one step to the pre-reply checklist.
+///
+/// v70 (lifecycle-v2; written as v68 on a parallel line and renumbered at the
+/// 2026-09-25 merge): the `### Lifecycle` section. A project's lifecycle (its
+/// development practice: steps before and after every dev task, their bindings
+/// and git evidence) is never edited by the user; Athena reads it with
+/// `describe_lifecycle` and proposes the FULL step list with
+/// `show_lifecycle_proposal` (an existing step may be a bare `{"id"}` to keep
+/// it). Teaches the id / label / preset / params rules the validator enforces,
+/// that the operator unticks changes on the card, and that confirm installs
+/// repo bindings through a Run Desk task (pending, then live).
+pub const CONSTITUTION_VERSION: u32 = 70;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_constitution_teaches_layer_one_at_v69() {
+        assert!(CONSTITUTION_VERSION >= 69);
+        assert!(CONSTITUTION_MD.contains("\n# Layer one\n"));
+        assert!(CONSTITUTION_MD.contains("Layer one this turn:"));
+        // Canonical `propose_action` envelope, as the op reference teaches.
+        assert!(CONSTITUTION_MD.contains("\"action\":\"adjust_register\""));
+        assert!(CONSTITUTION_MD.contains("\"action\":\"show_report\""));
+        assert!(!CONSTITUTION_MD.contains("\"op\":\"adjust_register\""));
+        assert!(!CONSTITUTION_MD.contains("\"op\":\"show_report\""));
+        assert!(
+            !CONSTITUTION_MD.contains("pipes the text to ElevenLabs"),
+            "the stale TTS-engine line survived"
+        );
+        assert!(
+            !CONSTITUTION_MD.contains("Use `inline code` for IDs"),
+            "the constitution still asks for ids in inline code"
+        );
+    }
+
+    #[test]
+    fn the_constitution_teaches_the_lifecycle_toolset_at_v70() {
+        assert_eq!(CONSTITUTION_VERSION, 70);
+        assert!(CONSTITUTION_MD.contains("\n### Lifecycle ("));
+        assert!(CONSTITUTION_MD.contains("\"action\": \"describe_lifecycle\""));
+        assert!(CONSTITUTION_MD.contains("\"action\": \"show_lifecycle_proposal\""));
+        assert!(CONSTITUTION_MD.contains("`describe_lifecycle` ALWAYS comes first"));
+    }
+}

@@ -43,6 +43,7 @@
     "DriveImageLightbox.tsx": {"count":1,"sections":[7],"contexts":["| `DriveImageLightbox.tsx` | pan-drag inside a centred lightbox — `modals.md`'s |"],"resolved":false},
     "EdgeDeleteTooltip.tsx": {"count":4,"sections":[5,7],"contexts":["lines) was deleted in `78e9bff68` as unreachable, so `EdgeDeleteTooltip.tsx` — the §7"],"resolved":false},
     "FabricSearch.tsx": {"count":2,"sections":[7,8],"lines":["42"],"contexts":["| dismissal press event: `pointerdown` | 1 (`FabricSearch.tsx:42`) |"],"resolved":false},
+    "FleetListPopover.tsx": {"count":1,"sections":[7],"contexts":["`NodeContextMenu.tsx` · `TeamToolbar.tsx` · `FleetListPopover.tsx` ·"],"resolved":false},
     "ModuleBadge.tsx": {"count":2,"sections":[],"lines":["18-42","73"],"contexts":["`ModuleBadge.tsx:18-42` and `DashboardScopeBar.tsx:42-50` are the same pair,"],"resolved":false},
     "NodeContextMenu.tsx": {"count":2,"sections":[7],"contexts":["`NodeContextMenu.tsx` · `TeamToolbar.tsx` · `FleetListPopover.tsx` ·"],"resolved":false},
     "ProjectFilter.tsx": {"count":1,"sections":[7],"contexts":["`HomeCustomizePopover.tsx` · `MetricHelpPopover.tsx` · `ProjectFilter.tsx` ·"],"resolved":false},
@@ -246,7 +247,6 @@
       "verbatim": "MastermindPage.tsx"
     },
     "src/features/teams/sub_mastermind/lib/DemoNotice.tsx": {"count":1,"sections":[7],"lines":["20-23"],"contexts":["(`DemoNotice.tsx:20-23` also carries `role=\"dialog\"` with no dismissal but is"],"resolvedFrom":"basename","verbatim":"DemoNotice.tsx"},
-    "src/features/teams/sub_mastermind/lib/FleetListPopover.tsx": {"count":1,"sections":[7],"contexts":["`NodeContextMenu.tsx` · `TeamToolbar.tsx` · `FleetListPopover.tsx` ·"],"resolvedFrom":"basename","verbatim":"FleetListPopover.tsx"},
     "src/features/teams/sub_mastermind/lib/IdeaScanPopover.tsx": {
       "count": 2,
       "sections": [7],

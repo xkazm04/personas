@@ -45,15 +45,15 @@ The shape of the new tree is the point:
 | **Hub** | Everything the twin has *learned or said* — one feed of pending memories, messages, distilled facts, reflections and people, plus the reply loop. |
 
 > **Setup is one surface; so is the Hub.**
-> Setup shipped four alternative renderers over the *same* `SetupSessionApi`,
-> the **Desk** won, and the other three were deleted with their switcher — a
-> pill strip over one renderer is scaffolding pretending to be a choice. The Hub
-> did the same over `HubFeedApi`: the Desk won there too, and River, Map and
-> Contacts were deleted with their switcher and with the `twin-variant:hub`
-> preference that remembered them. Only the presentation ever differed — the
-> session engine, the readiness maths and the feed are shared — and nothing
-> those three could reach left with them: each became a **lane** on the Desk
-> (see §3).
+> Setup went through two contests over the *same* `SetupSessionApi`. The first
+> (four renderers) was won by the Desk; the second (four takes on "create a
+> twin, then train it", 2026-09-21/24) was fused into the one card-table
+> experience under `experience/`, and everything else — the Desk, its shell and
+> switcher — was deleted (see `experience/FUSION.md`). The Hub did the same over
+> `HubFeedApi`: the Desk won there, and River, Map and Contacts were deleted with
+> their switcher and with the `twin-variant:hub` preference that remembered
+> them; nothing those three could reach left with them — each became a **lane**
+> on the Desk (see §3).
 
 ### 1. Profiles — manage twins
 
@@ -63,44 +63,110 @@ The shape of the new tree is the point:
 4. Along the bottom of each card sits the **slot strip**: Identity / Tone / Brain / Memories, one segment each. A segment carries its status as colour *and* as shape (a filled disc, a half disc, an empty ring) so it reads without colour. Pressing one activates that twin and opens the tab that owns the slot — Identity and Tone open **Setup**, Brain and Memories open **Hub**. That routing is declared once, in `shared/twinStatus.ts`.
 5. Whenever you close a milestone — the active twin's readiness score climbs — a brief **success toast** celebrates the progress, with a distinct "your twin is fully trained — 100% ready" message when the final milestone lands. (A short window after switching twins suppresses the toast so the initial data-load ramp isn't mistaken for progress.)
 
-### 2. Setup — the guided build
+### 2. Setup — the launch card, the table, and the plan behind it
 
-Setup replaces four of the old tabs with one conversation. The governing rule:
-**the generator proposes CONTENT; the flow owns STRUCTURE.** An LLM guide is
-free to ask anything and to draft anything, and it is never the authority on
-whether you are finished.
+Setup gathers everything you *tell* the twin through one planned interview.
+The governing rule: **the generator proposes CONTENT; the flow owns
+STRUCTURE.** An LLM writes the questions and drafts values, and it is never the
+authority on whether you are finished: **`deriveReadiness` is the only
+completion authority.** Goal coverage (below) only steers which question comes
+next, and a generator failure leaves a slot open rather than reading as done.
 
-**The permanent chrome** paints on the first frame and never disappears while
-the flow works — a turn in flight is a calm ghost where the question sits, never
-a spinner that replaces the page:
+**The Setup tab is a launch card, and nothing opens by itself.** However you
+arrive — the sidebar, a slot jump from Profiles, a retired-tab redirect, or an
+app restart that restores the tab — Setup shows one card: the twin's sigil,
+*"{name} is waiting"*, the readiness percentage, and two buttons, **Carry on
+setting up** and **Start a training round**. Only those two buttons (and
+creating a twin from Profiles) open the table. Until 2026-09-24 arriving on the
+tab opened the overlay on mount, so every visit — including a restart — dropped
+you into a fresh generator turn.
 
-- the **stage control** — *Guided setup* / *Training*;
-- the **readiness strip** — four segments (identity / tone / channels / memories), each with its status glyph and one short measured fact ("62 words", "2 of 4 channels"), then the 0–100 score printed once as a number plus a meter. Clicking a segment moves the flow to that slot **and asks it something**: in Guide it requests a fresh turn for that slot, keeping the trail so the switch stays legible and dropping the previous turn's cards before the call; in Fields it scrolls that slot's band into view and marks it briefly. Until 2026-09-16 the click only moved the highlight and nothing below it changed. **`deriveReadiness` is the single completion authority**; the model's own `doneHint` is advisory, and a generator failure leaves the slot open rather than reading as finished;
-- the **voice controls** (dictate · speak · hands-free);
-- the **view switch** — *Guide* / *Fields*, remembered per install. **Fields is a page, not a drawer** (it was one until 2026-09-16, which put the longest text in the product into a column narrower than a phone): one band per checklist slot in `SETUP_FOCUS_ORDER` across the full body width, each wearing the same glyph, status and measured fact as its strip segment. *Identity* puts name and role side by side and gives the biography a tall textarea with a running word count; *Tone* is one card per channel carrying **voice directives, examples, constraints and length hint** — the three parts the drawer never showed — laid out two-up where there is room. Examples and constraints are typed as blank-line separated blocks and stored as the JSON array the column has always held. A tone row is upserted whole, so each field names the part it sets and the session carries the other three over. *Channels* and *Memories* are read-only summaries that say where they are worked and jump there. It is deliberately independent of the generator: when the guide is broken you can still finish the twin here, and a failed write is reported at the field rather than only in a toast that has already gone.
+**The table** is a framed overlay: the question card, a fan of up to three
+answer cards (digit keys pick, `Enter` plays, `E` edits into the composer, `S`
+skips), a composer for your own words, the trail of what was played, and the
+readiness strip. A *write* question (a reply drill, "paste the last message you
+sent") shows the message you are replying to and has no cards: the answer is
+kept word for word as a writing sample. The stage control switches between
+*Setup* and *Training*; in Training, *What to train on* lists the topics with
+their coverage and you pick one. Voice is an overlay on the same flow: dictation fills
+the composer as a preview, hands-free reads the question aloud and submits
+finals.
 
-**A turn** is: the guide asks one question; it offers *suggestions* (positions, never silent defaults — picking one fills the composer and nothing is submitted until you send it); and it may attach **proposals** — typed values for a real field (a bio, a role, a tone for one channel), each on its own card with **Accept / Edit / Dismiss**. Nothing is written on silence: a card has no default action and no timer. A resolved card *stays* on the desk wearing its verdict until the next question arrives, and its verdict then survives in the trail, so the flow is an account of what was decided rather than a list of what is still pending. **Skip** records a question as declined; it never stores a value.
+**The plan is persisted.** Each twin has ONE plan (migration `e47`, five
+tables), owned by the Rust engine (`engine::twin_setup`):
 
-**Voice is an overlay on that flow, not a mode of its own.** Dictation puts *interim* transcript in the composer as a preview — visible, editable, and never acted on; only a final transcript answers. Hands-free reads the guide's question aloud and submits finals automatically. Where no speech engine exists the controls say so in one line instead of disappearing.
+- **goals per slot** — the slots are fixed in code: *identity, tone, channels,
+  memories* for setup, and one per training topic preset for training. The
+  model fills them with goals (a title, an intent, two to four criteria that say
+  what "covered" means; at most four per slot), each with a coverage reading;
+- **a queue generated ahead** — three questions queued for the current stage,
+  behind the live one, each pointing at a goal;
+- **the transcript** — every answered or skipped question, the offers each one
+  produced and their verdicts, and up to eight observations on how you answer.
 
-**The Desk** is the one surface Setup renders, and its proposition is that
-exactly one question is in front of you — with the thread that led there visible
-above it, so a question never arrives out of nowhere:
+Closing the overlay, switching tabs or restarting the app loses nothing:
+reopening reads the stored snapshot and makes **no LLM call** — the same live
+question, cards, offers and trail come back.
 
-- the **guide's turn** — the question is rendered as the guide *speaking*, with its mark beside it. On the first turn of a session the guide opens the conversation with one line naming what it will walk through (the slots still open);
-- the **trail** — the last two exchanges above the turn, each one question, the answer that came back (or *Skipped*), and a chip per proposal that was resolved in it ("Biography accepted"). Everything older folds into one **earlier** row you can open. It is deliberately not a transcript;
-- the **suggestions** — up to three equal-height cards, picked with the digit keys, `Enter` to answer with the picked one, `E` to edit it into the composer, `S` to skip. The key legend is always on screen, because a binding nobody can see is not a binding;
-- the **proposals** — the guide's typed values, under the turn, each with Accept / Edit / Dismiss;
-- the **buffer** — everything still open, at the left, with the slot being worked highlighted. A slot that is finished in the Hub rather than here (memories) carries the jump, so the buffer never dead-ends;
-- the **verdict motion** — an accepted answer rises off the top of the desk, a skipped one slides away, so the direction of what you did is visible without reading a word.
+**Answer → next question, instantly.** An answer is one database transaction:
+the question is recorded, the next queued question goes live, and both come
+back in the same call — nothing waits on a model. Only the live question can be
+answered, so a stale or doubled answer (a second click, hands-free voice) is a
+no-op. **Skip** records the question as declined and never stores a value. A
+training answer is saved as a message plus a pending memory tagged with its
+topic; a *write* answer becomes a tone-example offer in your own words.
 
-**The training stage.** Switching the stage control to *Training* turns the same
-conversation into an interview and adds **Batch studio** to the chrome — the
-board for authoring many Q&A pairs at once. The studio is a real capability with
-its own Rust commands and no equivalent in the guided flow, so the restructure
-kept it and reaches it from here.
+**Reconcile runs behind you.** After each answer two **Opus 5.5 calls at low
+effort run in parallel**: *assess* scores each goal's coverage against its
+criteria, offers any field value the answer supports, may queue one follow-up
+at the head of the queue, and may note an observation; *refill* tops the queue
+back up to three. The follow-up therefore shows one question later, not
+instead of the one already dealt. While it runs, the question card carries a
+quiet pulsing dot ("Reading your answer"), never a spinner. A goal stops
+receiving questions at 0.8 coverage or after three answers with no gain; a
+failed assessment is retried once and then let go, so a question never loops.
+
+**Deep re-plan.** An **Opus 5.5 pass at medium effort** writes the first plan
+the moment the table opens for a twin that has none — until it lands a
+code-written opener for the first open slot is live, so there is no wait — and
+revises the plan every ~5 answers, on a stage change, when a stage's queue
+cannot be refilled twice in a row, or when you press **Rebuild plan**. It may
+rewrite goal text and the question path; it never adds or removes a slot, and
+never touches a goal you dropped or pinned or the question in front of you. One
+job runs per twin at a time, and an idle twin costs nothing: work starts only on
+an open without a plan, an answer, a skip, a steer or a rebuild.
+
+**The Plan layer** is the first door off the table (the route icon): the plan's
+status (*building*, *ready*, or *failed* with **Try again**), what the last
+re-plan changed, the goals grouped by phase with a coverage bar, **pin /
+unpin**, **drop / restore** — the engine respects your moves — the next three
+questions under *Up next*, each with **Ask this next**, *What I have noticed*
+(the observations), and **Rebuild plan** — a fresh deep pass over everything on
+file that keeps the transcript and memories. The other doors are *What it
+knows*, *What to train on* (Training only), *Voice* (the style studio) and
+*Fields* — the typed editor, which works without the generator and is the way
+through when it is down.
+
+**Offers "from your last answer".** The values reconcile proposes (a bio, a
+role, a tone voice or rule for one channel) arrive live in the current
+question's offers under a *From your last answer* caption, each with **Accept /
+Edit / Dismiss**. Nothing is written until you keep it, nothing is written on
+silence, and the verdict is stored, so a resolved offer keeps its verdict across
+a reopen and never comes back.
+
+**Every twin LLM call is on the spend ledger.** The setup engine's three calls
+and the older twin generators (bio, simulated answers, drafts, the studio, the
+wiki, reflections, styles) all go through one logged, time-limited spawn that
+writes a `dev_llm_spend` row with `source = twin` and `trigger_kind` naming the
+call site (`setup_plan`, `setup_assess`, `setup_refill`, `generate_bio`, …).
+Only the setup engine runs on Opus 5.5; the older sites keep Sonnet at medium
+effort. First live measurement (2026-09-24): a first plan took 44 s and
+$0.59, one answer's reconcile ~10 s and ~$0.78 for its two calls — most of it
+CLI context, not the prompts.
 
 #### Studio mode (batch authoring, both sides)
+
+> **Not reachable at the moment.** `sub_training/TrainingStudio.tsx` and its `twin_studio_*` commands still exist, but nothing mounts the studio since the 2026-09-24 experience fusion deleted the shell that opened it. What follows describes the component as written.
 
 - **Directions + topic** at the top steer the whole batch ("focus on failure stories", "keep questions short"). The **bookmark** button next to Directions saves them as the twin's **persistent training style guide** (`training_directives`): once saved, those directions are seeded into the box every time you open the Studio for this twin *and* automatically prepended to every question and answer generation, so the studio learns your taste instead of you restating it each session. A per-request note (e.g. a regenerate comment) still layers on top of the saved style.
 - **Generate questions** runs a background batch (`twin_studio_generate_questions`) that fills the board with editable question rows (the "user simulation" side). Curate them inline — edit, add your own, or remove.
@@ -418,7 +484,12 @@ Per-persona overrides are wired: the resolution chain in `twin_get_active_profil
 | `twin_style_roll` | Roll 3 candidate communication styles (Rust-sampled anchors, pins held, seen styles avoided); preview only |
 | `twin_style_materialize` | Write voice directives, examples and constraints per channel for a chosen style; preview only |
 | `twin_style_apply` | Write the accepted per-channel drafts in one transaction, stamping each row's `style_json` |
-| `twin_setup_turn` | One turn of the guided Setup conversation: the next question, its suggestions, and any typed proposals for real fields, plus an advisory `doneHint` the flow never treats as authority |
+| `twin_setup_get` | The stored setup session snapshot (plan status, goals, live question, queue, transcript, offers, observations). A pure read |
+| `twin_setup_open` | Open or resume the setup session: ensures a plan (starts the deep pass if there is none, it failed, or its lease went stale) and a live question (the queue's head, else the code-written opener). No LLM call on the call path |
+| `twin_setup_answer` | Answer (or, with a null answer, decline) the LIVE question: records it, puts the next queued question live, returns at once, and schedules the background reconcile |
+| `twin_setup_steer` | Plan-layer and table moves: drop / pin / restore a goal, ask a queued question next, set the stage or training topic, focus a slot, enqueue handed-over questions, redeal |
+| `twin_setup_offer_verdict` | Record accepted / edited / dismissed for one stored offer (the field write itself stays on the existing twin commands) |
+| `twin_setup_rebuild` | A fresh deep pass over everything on file; transcript, memories and observations are kept |
 | `twin_generate_bio` | CLI-backed free-form completion (used for Setup bio generation, training Q generation, follow-ups, session summaries) |
 | `twin_draft_for_page` | Draft the comment the user would post into a Browser page input, in the twin's voice; page text is nonce-fenced as untrusted, returns `{ draft, toneChannel, kbGrounded }` |
 | `twin_ingest_url` | Scrape a URL and queue extracted facts as pending memories |
@@ -435,18 +506,21 @@ src/features/plugins/twin/
 ├── shared/twinStatus.ts                # ONE status + slot vocabulary, and the focus-to-slot join
 ├── shared/channels.ts · gender.ts      # channel metadata, pronoun/gender table
 ├── sub_profiles/                       # the roster: ProfilesPage, ProfilesAtelier, TwinCard, TwinSlotStrip
-├── setup/                              # the guided build
-│   ├── SetupPage.tsx                   # wiring only: session hook + voice hook + shell
-│   ├── SetupShell.tsx                  # permanent chrome: stage, view switch, readiness strip, voice, studio
-│   ├── setupContract.ts                # the wire contract the Desk renders against
-│   ├── useSetupSession.ts              # the flow engine behind `twin_setup_turn`
+├── experience/                         # the Setup surface: launch card + the card-table overlay (see FUSION.md)
+│   ├── ExperienceSetupPage.tsx         # the Setup tab: readiness % and the two CTAs; never opens the overlay itself
+│   ├── TwinExperienceHost.tsx · ExperienceBody.tsx · launcher.ts  # the overlay, its layout, the one way to open it
+│   ├── table/                          # CardTable · DealerCard · DecisionFan · ProposalFan · TableChrome (the doors) · TableComposer · TableTrail · useTurn
+│   ├── layers/                         # PlanLayer · PlanGoalRow · SheetLayer · DeckLayer · VoiceLayer · FieldsLayer · LayerFrame
+│   └── forge/                          # creating a twin: ForgePhase, the style fan and preset dialog
+├── setup/                              # the session engine client and the typed editor
+│   ├── setupContract.ts                # the render contract the table and layers consume
+│   ├── useSetupSession.ts              # a thin client over the persisted snapshot (`twin_setup_*`, `twin-setup-updated`)
 │   ├── useSetupVoice.ts                # dictation + speech overlay
-│   ├── SetupDesk.tsx                   # the one Setup surface: trail + guide turn + proposals + composer
-│   ├── SetupReadinessRow.tsx · SetupProposalRow.tsx · SetupGeneratorNotice.tsx · SetupVoiceControls.tsx
-│   ├── SetupFieldsPage.tsx · setupMode.ts  # the typed page and the remembered Guide/Fields choice
+│   ├── SetupReadinessRow.tsx · SetupProposalRow.tsx · SetupVoiceControls.tsx
+│   ├── SetupFieldsPage.tsx             # the typed editor behind the Fields door
 │   ├── fields/                         # IdentityFields · ToneFields · ToneChannelCard · SetupFieldsSection · SetupTextField · SlotSummary · toneParts.ts
 │   ├── style/                          # Style studio: stylePresets.ts (10 presets) · channelShift.ts · useStyleStudio · StylePanel and its gallery, candidates, preview
-│   └── desk/                           # DeskTrail · DeskTurn · DeskBuffer · trailModel.ts · useDeskProposals.ts
+│   └── desk/trailModel.ts              # maps the transcript onto the trail
 ├── hub/                                # the feed
 │   ├── HubPage.tsx · HubShell.tsx      # counts, sources strip, then the desk
 │   ├── HubDesk.tsx                     # the one Hub surface: the lane strip + the active lane
@@ -455,7 +529,7 @@ src/features/plugins/twin/
 │   ├── ReplyLane.tsx                   # composes sub_channels/{ReplyOutbox,SentReplies,ContactThread}
 │   └── desk/                           # laneModel.ts · QueueLane · QueueFrame · HistoryLane · KnowledgeLane · RepliesLane
 ├── sub_channels/                       # ReplyOutbox, SentReplies, ContactThread (composed by ReplyLane)
-└── sub_training/TrainingStudio.tsx     # the batch authoring board, opened from SetupShell
+└── sub_training/                      # topicPresets.ts · topicCoverage.ts (read by the table); TrainingStudio.tsx is no longer mounted since the experience fusion
 ```
 
 ```

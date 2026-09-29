@@ -243,6 +243,17 @@ export function useBuildSession(
         case "clarifying_question_v3":
           store.handleClarifyingQuestionV3(event);
           break;
+        // Streaming preview: held apart from confirmed state and dropped
+        // whole on provisional_settled (see matrixBuildSlice).
+        case "provisional_capability_enumeration":
+          store.handleProvisionalCapabilityEnumeration(event);
+          break;
+        case "provisional_capability_resolution":
+          store.handleProvisionalCapabilityResolution(event);
+          break;
+        case "provisional_settled":
+          store.handleProvisionalSettled(event);
+          break;
         default: {
           // Unknown variant — typically means backend has added or renamed
           // a BuildEvent after a schema drift. Surface it loudly so a user

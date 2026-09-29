@@ -112,6 +112,13 @@ function UnifiedTableRowImpl<T>({
   };
   return (
     <div
+      // The table's scroll container owns the single tab stop and moves
+      // `focused` with the arrow keys (Enter/Space activate), so a row is
+      // reached from the keyboard through that container, never as its own tab
+      // stop. -1 keeps it out of the tab order while making a clickable row a
+      // real focus target inside the composite, so a pointer click lands focus
+      // where the keyboard's arrow keys keep working (keydown bubbles up).
+      tabIndex={clickable ? -1 : undefined}
       onClick={() => onRowClick(row)}
       onAnimationEnd={entering ? (e) => {
         // Only our own fade, never a CSS animation bubbling up from a cell.

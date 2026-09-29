@@ -312,7 +312,7 @@ hand, and the values do not compose:
 
 | site | value passed | what is wrong with it |
 | --- | --- | --- |
-| `agents/sub_glyph/GlyphFullLayout.tsx:335` | `fixed inset-0 z-40 …` | **below** `Z_INDEX_BASE` (50) — any default modal paints over it |
+| ~~`agents/sub_glyph/GlyphFullLayout.tsx:335`~~ (deleted 2026-09-23 with the legacy build layouts) | `fixed inset-0 z-40 …` | **below** `Z_INDEX_BASE` (50) — any default modal paints over it |
 | `templates/…/gallery/modals/TemplateDetailModal.tsx:145` | **`absolute` inset-0 z-50 …** | not `fixed`; clipped to the nearest positioned ancestor |
 | `shared/components/overlays/FirstUseConsentModal.tsx:158` | `fixed inset-0 z-[9999] …` | ties with ResourcePicker; order decided by DOM |
 | `vault/…/picker/ResourcePicker.tsx:187` | `fixed inset-0 z-[9999] …` | ties with FirstUseConsentModal |

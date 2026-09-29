@@ -7,6 +7,7 @@
 // keyboard focus, so it does not sit on the glass.
 import type { RefObject } from 'react';
 
+import { Button } from '@/features/shared/components/buttons';
 import { interpolate as tx } from '@/i18n/useTranslation';
 import { formatCount } from '@/lib/utils/formatters';
 
@@ -51,28 +52,33 @@ export function DecisionsPanel({ decisions, fold, beaconRef }: Props) {
           stars: s.n(d.stars.length),
         });
         return (
-          <button
+          // fused.css `.dec` is a two-column grid: the title over its meta on
+          // the left (Button's label), the overall figure on the right (its
+          // iconRight). Button brings focus, press and the pressed state.
+          <Button
             key={d.subject.id}
+            variant="ghost"
             className={`dec${on ? ' on' : ''}`}
-            type="button"
             data-role="hud-decision"
             aria-pressed={on}
+            iconRight={
+              <span className="ds block">
+                {d.subject.overall == null ? (
+                  <b className="nmv">{f.not_measured}</b>
+                ) : (
+                  <b>{formatCount(d.subject.overall, { precision: 2 })}</b>
+                )}
+                {f.decision_overall}
+              </span>
+            }
             onClick={() => (on ? clearCouncilFocus() : focusCouncil(d.subject, null))}
           >
-            <span className="dt">{d.subject.title}</span>
-            <span className="ds">
-              {d.subject.overall == null ? (
-                <b className="nmv">{f.not_measured}</b>
-              ) : (
-                <b>{formatCount(d.subject.overall, { precision: 2 })}</b>
-              )}
-              {f.decision_overall}
-            </span>
-            <span className="dm">
+            <span className="dt block">{d.subject.title}</span>
+            <span className="dm block">
               {meta}
               {d.missing ? ` · ${tx(f.decision_missing, { count: d.missing })}` : ''}
             </span>
-          </button>
+          </Button>
         );
       })}
     </section>

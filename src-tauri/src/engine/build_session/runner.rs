@@ -42,6 +42,7 @@ use super::parser::{
     extract_result_usage, map_capability_field_to_legacy_dimension,
     map_persona_field_to_legacy_dimension, parse_build_line,
 };
+use super::provisional::{stream_delta_text, PreviewScope, ProvisionalTurn, StreamItem};
 use super::SessionHandle;
 
 const CANCEL_POLL_INTERVAL: Duration = Duration::from_millis(100);
@@ -169,86 +170,13 @@ async fn wait_for_cancel_flag(cancel_flag: Arc<AtomicBool>) {
     }
 }
 
-// ── B2 streaming helpers ────────────────────────────────────────────────────
+// ── Mid-turn streaming ──────────────────────────────────────────────────────
 //
 // With `--include-partial-messages` the CLI interleaves `stream_event` envelopes
-// carrying incremental `content_block_delta` text. These two helpers let the read
-// loop surface the `behavior_core` object to the frontend the moment it finishes
-// streaming, without waiting for the whole ~50-155s turn. Everything else stays on
-// the authoritative post-turn parse path.
-
-/// Pull the incremental text out of one CLI stream line, if it is a
-/// `content_block_delta` inside a `stream_event` envelope. Returns None for every
-/// other line type (system/assistant/result/etc.) — those go through the normal
-/// post-turn parse.
-fn stream_delta_text(line: &str) -> Option<String> {
-    let v: serde_json::Value = serde_json::from_str(line.trim()).ok()?;
-    if v.get("type").and_then(|t| t.as_str())? != "stream_event" {
-        return None;
-    }
-    let event = v.get("event")?;
-    if event.get("type").and_then(|t| t.as_str())? != "content_block_delta" {
-        return None;
-    }
-    let text = event.get("delta")?.get("text")?.as_str()?;
-    if text.is_empty() {
-        None
-    } else {
-        Some(text.to_string())
-    }
-}
-
-/// Scan the accumulated delta buffer for a complete top-level JSON object that
-/// carries a `behavior_core` key, and if found, parse it into BuildEvents via the
-/// same path the post-turn parser uses. Returns None until the object's braces
-/// balance (still streaming) or if no behavior_core is present yet. String-aware
-/// brace matching so braces inside JSON string values don't fool the scan.
-fn extract_early_behavior_core(buf: &str, session_id: &str) -> Option<Vec<BuildEvent>> {
-    let key_at = buf.find("\"behavior_core\"")?;
-    // The object opens at the last `{` before the key.
-    let open = buf[..key_at].rfind('{')?;
-    let bytes = buf.as_bytes();
-    let mut depth = 0usize;
-    let mut in_str = false;
-    let mut esc = false;
-    let mut end = None;
-    for (i, &c) in bytes.iter().enumerate().take(buf.len()).skip(open) {
-        if in_str {
-            if esc {
-                esc = false;
-            } else if c == b'\\' {
-                esc = true;
-            } else if c == b'"' {
-                in_str = false;
-            }
-        } else {
-            match c {
-                b'"' => in_str = true,
-                b'{' => depth += 1,
-                b'}' => {
-                    depth -= 1;
-                    if depth == 0 {
-                        end = Some(i);
-                        break;
-                    }
-                }
-                _ => {}
-            }
-        }
-    }
-    let end = end?; // braces not balanced yet — wait for more deltas
-    let obj = &buf[open..=end];
-    let events = parse_build_line(obj, session_id);
-    let has_core = events.iter().any(|e| {
-        matches!(e, BuildEvent::BehaviorCoreUpdate { .. })
-            || matches!(e, BuildEvent::CellUpdate { cell_key, .. } if cell_key == "behavior_core")
-    });
-    if has_core {
-        Some(events)
-    } else {
-        None
-    }
-}
+// carrying incremental `content_block_delta` text. `super::provisional` lifts
+// each finished `behavior_core` / `capability_enumeration` /
+// `capability_resolution` object out of that text the moment it closes; the
+// read loop below releases them (see its comment for the contract).
 
 /// Force-terminate this turn's CLI child and release its registry PID slot.
 ///
@@ -325,6 +253,30 @@ fn stalled_turn_reason(turn: usize) -> String {
 // =============================================================================
 // run_session -- the long-lived tokio task body
 // =============================================================================
+
+/// The gate ledger the mid-turn preview consults: the session's gates as they
+/// stand when the turn starts (answers already opened theirs), with every
+/// gate whose legacy cell was answered in the previous round opened too - the
+/// same defensive open the post-turn gate pass applies to a re-emitted
+/// resolution. A copy: the preview never writes the real ledger.
+fn preview_gate_ledger(
+    coverage: &HashMap<String, CapabilityGates>,
+    last_answered_cells: &[String],
+) -> HashMap<String, CapabilityGates> {
+    let mut ledger = coverage.clone();
+    let answered: Vec<&'static str> = last_answered_cells
+        .iter()
+        .filter_map(|cell| legacy_cell_to_v3_field(cell))
+        .collect();
+    for gates in ledger.values_mut() {
+        for field in &answered {
+            if !gates.is_gate_open(field) {
+                gates.mark_open(field);
+            }
+        }
+    }
+    ledger
+}
 
 #[allow(clippy::too_many_arguments)]
 pub(super) async fn run_session(
@@ -756,17 +708,45 @@ pub(super) async fn run_session(
         let mut turn_events: Vec<BuildEvent> = Vec::new();
         let mut turn_raw = String::new();
 
-        // B2 streaming: with --include-partial-messages the CLI emits
-        // content_block_delta events as the LLM types. We accumulate that delta
-        // text and, the moment a complete `behavior_core` object closes, emit it
-        // to the frontend mid-turn — so the Cinema loading view gets the real
-        // persona identity ~15-20s in instead of at the end of a 50-155s turn.
-        // Scoped to behavior_core ONLY (it's identity, not part of the capability
-        // gate state machine, so early emit can't corrupt gate logic). Purely
-        // additive: turn_raw still accumulates every line and the authoritative
-        // parse + gate-pass below is unchanged; dedup drops the duplicate core.
-        let mut early_delta_buf = String::new();
-        let mut early_core_emitted = false;
+        // Mid-turn streaming. With --include-partial-messages the CLI emits
+        // content_block_delta events as the LLM types; `ProvisionalTurn` lifts
+        // each finished object out of that text the instant its brace closes.
+        //
+        // * behavior_core (every turn): emitted as the ordinary
+        //   BehaviorCoreUpdate, so the sheet gets the persona identity
+        //   ~15-20 s in instead of at the end of a 50-155 s turn. Identity is
+        //   not part of the gate state machine, so this cannot contradict the
+        //   validator; the post-turn re-emit of the same core is idempotent.
+        // * capability_enumeration / capability_resolution (EVERY turn, scoped
+        //   to what is not yet confirmed - see `PreviewScope`): emitted as
+        //   PROVISIONAL events. They are a preview, never state: dual_emit
+        //   does not persist, the legacy CellUpdate mirror is not sent, and
+        //   the gate pass below stays the single authority. After the
+        //   authoritative events go out, one ProvisionalSettled closes the
+        //   preview and names what the validator dropped or changed.
+        //   Every turn, not just the first: on a vague intent turn 1 only asks
+        //   a design-direction question and the enumeration first lands on
+        //   turn 2 (observed 2026-09-26). Wiring turns after answers are
+        //   previewed too, but the scope withholds the enumeration once a
+        //   validated one has landed and any resolution whose cell is already
+        //   confirmed, so a preview only fills gaps and never regresses a
+        //   confirmed value.
+        // * questions are never streamed early.
+        //
+        // Purely additive: turn_raw still accumulates every line and the
+        // authoritative parse + gate pass below is unchanged. Later turns get
+        // the same `--include-partial-messages` as turn 0: `turn_args` above
+        // is `cli_args` (which carries it for interactive builds) + --continue.
+        let mut stream_turn =
+            ProvisionalTurn::new(PreviewScope::from_confirmed(resolved_cells.keys()));
+        // Scratch gate ledger mirroring what the gate pass below will decide:
+        // the session's real gates as they stand after the user's answers,
+        // plus the same answered-cell auto-open the gate pass applies. A
+        // resolution it would suppress for a question is never previewed, so
+        // the preview does not flash a value the user is about to be asked
+        // for. A clone: never merged back into `coverage`.
+        let mut preview_coverage = preview_gate_ledger(&coverage, &last_answered_cells);
+        let mut preview_titles: HashMap<String, String> = capability_titles.clone();
 
         if let Some(mut reader) = driver.take_stdout_reader() {
             let cancel_wait = wait_for_cancel_flag(cancel_flag.clone());
@@ -837,27 +817,66 @@ pub(super) async fn run_session(
                                     );
                                 }
 
-                                // Mid-turn: surface behavior_core the instant it completes.
-                                if !early_core_emitted {
-                                    if let Some(txt) = stream_delta_text(&line) {
-                                        early_delta_buf.push_str(&txt);
-                                        if let Some(core_events) =
-                                            extract_early_behavior_core(&early_delta_buf, &session_id)
-                                        {
-                                            for ev in core_events {
-                                                cancel_if_emit_dropped!(dual_emit(
-                                                    &pool,
-                                                    &channel,
-                                                    &app_handle,
-                                                    &ev
-                                                ));
+                                // Mid-turn: release each finished result the
+                                // instant it completes (see the contract above).
+                                if let Some(txt) = stream_delta_text(&line) {
+                                    for item in stream_turn.push(&txt, &session_id) {
+                                        match &item {
+                                            StreamItem::BehaviorCore(core_events) => {
+                                                for ev in core_events {
+                                                    cancel_if_emit_dropped!(dual_emit(
+                                                        &pool,
+                                                        &channel,
+                                                        &app_handle,
+                                                        ev
+                                                    ));
+                                                }
+                                                tracing::info!(
+                                                    session_id = %session_id,
+                                                    turn = turn + 1,
+                                                    "B2: streamed behavior_core to UI mid-turn"
+                                                );
+                                                continue;
                                             }
-                                            early_core_emitted = true;
-                                            tracing::info!(
-                                                session_id = %session_id,
-                                                turn = turn + 1,
-                                                "B2: streamed behavior_core to UI mid-turn"
-                                            );
+                                            StreamItem::Enumeration(data) => {
+                                                init_gates_from_enumeration_with_context(
+                                                    &mut preview_coverage,
+                                                    &mut preview_titles,
+                                                    data,
+                                                    &raw_user_intent,
+                                                    &registry_keywords,
+                                                    &ambiguous_services,
+                                                );
+                                            }
+                                            StreamItem::Resolution {
+                                                capability_id,
+                                                field,
+                                                ..
+                                            } => {
+                                                ensure_capability_in_coverage_with_context(
+                                                    &mut preview_coverage,
+                                                    capability_id,
+                                                    &raw_user_intent,
+                                                    &registry_keywords,
+                                                    &ambiguous_services,
+                                                );
+                                                let gate_open = preview_coverage
+                                                    .get(capability_id)
+                                                    .map(|g| g.is_gate_open(field))
+                                                    .unwrap_or(true);
+                                                if !gate_open && is_gated_field(field) && !one_shot {
+                                                    continue;
+                                                }
+                                            }
+                                        }
+                                        if let Some(ev) = item.provisional_event(&session_id) {
+                                            cancel_if_emit_dropped!(dual_emit(
+                                                &pool,
+                                                &channel,
+                                                &app_handle,
+                                                &ev
+                                            ));
+                                            stream_turn.mark_emitted(&item);
                                         }
                                     }
                                 }
@@ -1043,6 +1062,10 @@ pub(super) async fn run_session(
                     BuildEvent::Progress { .. } => "Progress",
                     BuildEvent::Error { .. } => "Error",
                     BuildEvent::SessionStatus { .. } => "Status",
+                    // Never produced by the parser; listed for exhaustiveness.
+                    BuildEvent::ProvisionalCapabilityEnumeration { .. }
+                    | BuildEvent::ProvisionalCapabilityResolution { .. }
+                    | BuildEvent::ProvisionalSettled { .. } => "Provisional",
                 })
                 .collect();
             tracing::info!(
@@ -1407,6 +1430,26 @@ pub(super) async fn run_session(
             kept
         };
 
+        // Close this turn's provisional preview against what the validator
+        // kept. Computed here (turn_events is the gate pass's output and is
+        // consumed below) and emitted AFTER the authoritative events, so a
+        // consumer that drops provisional state on it never shows a gap.
+        let provisional_settled = stream_turn.settle(&session_id, &turn_events);
+        if let Some(BuildEvent::ProvisionalSettled {
+            retracted_capability_ids,
+            retracted_resolutions,
+            ..
+        }) = &provisional_settled
+        {
+            tracing::info!(
+                session_id = %session_id,
+                turn = turn + 1,
+                retracted_capabilities = ?retracted_capability_ids,
+                retracted_resolutions = ?retracted_resolutions,
+                "Provisional preview settled against the validated turn"
+            );
+        }
+
         // Build assistant text for conversation history
         let assistant_text: String = turn_events
             .iter()
@@ -1531,6 +1574,10 @@ pub(super) async fn run_session(
                     dual_emit_or_cancel!(event);
                 }
             }
+        }
+
+        if let Some(settled) = provisional_settled {
+            dual_emit_or_cancel!(settled);
         }
 
         if resolved_cells_dirty {

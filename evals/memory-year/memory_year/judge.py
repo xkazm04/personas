@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 
-from .llm import LLM
+from .llm import LLM, SeatLimit
 from .model import Probe
 
 EMOJI_RE = re.compile("[\U0001F300-\U0001FAFF☀-➿]")
@@ -60,6 +60,25 @@ def contains_value(answer: str, value: str) -> bool:
     return len(head) >= 4 and head in a
 
 
+def names_old_value(answer: str, old: str, gold: str) -> bool:
+    """Whether a reply that states the current value ALSO names a superseded one.
+
+    The head-token tolerance in `contains_value` cannot tell an old value from the current
+    one when both start with the same word: gold "English" against the retired "English
+    with Czech summaries" read every correct "English" as naming both, and 14 of 15 rungs
+    were scored stale on it. A shared head is evidence of neither value, so only the old
+    value in full counts here.
+    """
+    o = strip_article(norm(old))
+    if not o or o in strip_article(norm(gold)):
+        return False
+    if o in norm(answer):
+        return True
+    if o.split(" ")[0] in strip_article(norm(gold)).split(" "):
+        return False
+    return contains_value(answer, old)
+
+
 ASSERT_SYSTEM = (
     "You extract, you never judge. You are given a question and a reply someone gave to it. "
     "Report only which value the reply asserts is CURRENT."
@@ -85,6 +104,8 @@ def asserted_value(llm: LLM, question: str, answer: str) -> str:
     )
     try:
         lines = llm.complete(prompt, system=ASSERT_SYSTEM).text.strip().splitlines()
+    except SeatLimit:
+        raise           # a refused seat judged nothing: stop, and --resume judges this probe after the reset
     except Exception:
         return None     # the judge failed, not the design: judge_value marks the verdict
     return lines[0][:120] if lines else None
@@ -152,7 +173,7 @@ def _judge_value(probe: Probe, answer: str) -> tuple[str, str]:
     if contains_value(answer, probe.gold):
         # an answer that names the old value alongside the new one has not superseded it
         for w in probe.wrong:
-            if contains_value(answer, w) and norm(w) not in norm(probe.gold):
+            if names_old_value(answer, w, probe.gold):
                 return "wrong-old", f"named both {probe.gold!r} and old {w!r}"
         return "correct", ""
     for w in probe.wrong:
@@ -164,13 +185,23 @@ def _judge_value(probe: Probe, answer: str) -> tuple[str, str]:
 def judge_form(probe: Probe, answer: str, llm: LLM | None, strict: bool = True) -> tuple[str, str, str]:
     """-> (verdict, note, judge-name). Deterministic where the form is checkable; model otherwise."""
     form = probe.form or ""
+    # A rule that forbids something is satisfied by saying nothing. The no-memory rung
+    # answered "UNKNOWN" to a status-update request and passed its no-emoji check - the
+    # only form pass it ever got - so a reply that did none of the asked work shows no
+    # compliance and is scored the way a value probe scores it: abstained.
+    if form in ("no-emoji", "no-em-dash") and is_abstention(answer):
+        return "abstained", "no reply to check the form against", "deterministic"
     if form == "no-emoji":
         return ("wrong" if EMOJI_RE.search(answer) else "correct"), "emoji check", "deterministic"
     if form == "no-em-dash":
         return ("wrong" if "—" in answer else "correct"), "em-dash check", "deterministic"
     if form == "asks-confirmation":
         t = norm(answer)
-        asks = "?" in answer and re.search(r"confirm|are you sure|proceed|go ahead|should i|do you want", t)
+        # a request for confirmation is not always punctuated as a question: "Please confirm"
+        # and "I need your confirmation before proceeding" were the only two rungs that did
+        # the right thing on p0134, and the question-mark requirement scored both wrong
+        asks = ("?" in answer and re.search(r"confirm|are you sure|proceed|go ahead|should i|do you want", t)) \
+            or re.search(r"please confirm|need your confirmation|confirm before i|awaiting your confirmation", t)
         return ("correct" if asks else "wrong"), "confirmation-question check", "deterministic"
     if form == "cite-source":
         t = norm(answer)

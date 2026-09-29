@@ -177,6 +177,25 @@ const guards: Record<SceneFamily, ReturnType<typeof createLatestWins>> = {
  *  answer depends on inputs and they are already interval-throttled). */
 const flights = createInFlightRegistry();
 
+/** A non-forced load of the same inputs within this window reuses what is in
+ *  the store. It exists for the prefetch path (prefetchMastermind): a nav hover
+ *  fills the families, and the page's own mount-time loads must not repeat the
+ *  whole fan-out a moment later. `fresh: true` always refetches. */
+const FAMILY_FRESH_MS = 30_000;
+const loadedAt: Record<'relations' | 'scans' | 'goals', { at: number; key: string }> = {
+  relations: { at: 0, key: '' },
+  scans: { at: 0, key: '' },
+  goals: { at: 0, key: '' },
+};
+const idsKey = (ids: readonly string[] | null | undefined) => (ids ? [...ids].sort().join('|') : '*');
+const stillFresh = (family: keyof typeof loadedAt, key: string) =>
+  loadedAt[family].key === key && Date.now() - loadedAt[family].at < FAMILY_FRESH_MS;
+
+/** Test hook: forget every family's freshness stamp. */
+export function __resetSceneFreshnessForTests(): void {
+  for (const f of Object.keys(loadedAt) as Array<keyof typeof loadedAt>) loadedAt[f] = { at: 0, key: '' };
+}
+
 /** One latest-wins slot PER PROJECT for scoped scan invalidations — keyed
  *  exactly like the write it protects (a per-project merge), so two
  *  invalidations for the same project supersede each other while distinct
@@ -197,21 +216,22 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
   llmSpend: new Map(),
   llmSpendStatus: 'idle',
 
-  loadMeta: () => flights.run('relations', async () => {
+  loadMeta: () => (get().metaStatus === 'loaded' && stillFresh('relations', '*') ? Promise.resolve() : flights.run('relations', async () => {
     const token = guards.relations.next();
     set({ metaStatus: 'loading' });
     try {
       const meta = await getCrossProjectMetadata();
       if (!guards.relations.isCurrent(token)) return;
       set({ meta, metaStatus: 'loaded' });
+      loadedAt.relations = { at: Date.now(), key: '*' };
     } catch (err) {
       silentCatch('mastermind sceneStore.loadMeta')(err);
       if (!guards.relations.isCurrent(token)) return;
       set((s) => ({ metaStatus: failStatus(s.metaStatus) }));
     }
-  }),
+  })),
 
-  loadScans: (opts) => flights.run('scans', async () => {
+  loadScans: (opts) => (!opts?.fresh && get().scansStatus === 'loaded' && stillFresh('scans', idsKey(opts?.projectIds ?? lastScanProjectIds)) ? Promise.resolve() : flights.run('scans', async () => {
     const token = guards.scans.next();
     set({ scansStatus: 'loading' });
     try {
@@ -230,12 +250,13 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
       }
       if (!guards.scans.isCurrent(token)) return;
       set({ scans: grouped, scansStatus: 'loaded' });
+      loadedAt.scans = { at: Date.now(), key: idsKey(ids) };
     } catch (err) {
       silentCatch('mastermind sceneStore.loadScans')(err);
       if (!guards.scans.isCurrent(token)) return;
       set((s) => ({ scansStatus: failStatus(s.scansStatus) }));
     }
-  }, opts?.fresh ? 'replace' : 'join'),
+  }, opts?.fresh ? 'replace' : 'join')),
 
   invalidateScans: async (projectId) => {
     // Keyed latest-wins: the slot is THIS project's scan rows. Minted
@@ -280,7 +301,7 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
     }
   },
 
-  loadGoals: (opts) => flights.run('goals', async () => {
+  loadGoals: (opts) => (!opts?.fresh && get().goalsStatus === 'loaded' && stillFresh('goals', idsKey(opts?.projectIds ?? lastGoalProjectIds)) ? Promise.resolve() : flights.run('goals', async () => {
     const token = guards.goals.next();
     set({ goalsStatus: 'loading' });
     try {
@@ -301,12 +322,13 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
       }
       if (!guards.goals.isCurrent(token)) return;
       if (!ids?.length) set({ goals: m, goalsStatus: 'loaded' });
+      loadedAt.goals = { at: Date.now(), key: idsKey(ids) };
     } catch (err) {
       silentCatch('mastermind sceneStore.loadGoals')(err);
       if (!guards.goals.isCurrent(token)) return;
       set((s) => ({ goalsStatus: failStatus(s.goalsStatus) }));
     }
-  }, opts?.fresh ? 'replace' : 'join'),
+  }, opts?.fresh ? 'replace' : 'join')),
 
   loadRunners: (opts) => flights.run('runners', async () => {
     const token = guards.runners.next();

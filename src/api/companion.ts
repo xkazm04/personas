@@ -1,7 +1,7 @@
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import { silentCatch } from '@/lib/silentCatch';
+import { EventName } from '@/lib/eventRegistry';
 import type { BrowserBridgeStatus } from '@/lib/bindings/BrowserBridgeStatus';
-import type { DailyGoalsState } from '@/lib/bindings/DailyGoalsState';
 import type { AthenaAdaptation } from '@/lib/bindings/AthenaAdaptation';
 import type { AthenaUsageDashboard } from '@/lib/bindings/AthenaUsageDashboard';
 import type { AthenaHealth } from '@/lib/bindings/AthenaHealth';
@@ -12,10 +12,14 @@ import type { ReembedResult } from '@/lib/bindings/ReembedResult';
 import type { SleepCycleTrigger } from '@/lib/bindings/SleepCycleTrigger';
 import type { SleepPressure } from '@/lib/bindings/SleepPressure';
 import type { AthenaEngineSettings } from '@/lib/bindings/AthenaEngineSettings';
+import type { CompanionReport } from '@/lib/bindings/CompanionReport';
+import type { ReplyRegisterRow } from '@/lib/bindings/ReplyRegisterRow';
+import type { ReplyShapeStats } from '@/lib/bindings/ReplyShapeStats';
 import type { EngineAvailability } from '@/lib/bindings/EngineAvailability';
 
 export type { CompanionTurnSidecar, ReembedResult, SleepCycleTrigger, SleepPressure };
 export type { AthenaEngineSettings, EngineAvailability };
+export type { CompanionReport, ReplyRegisterRow, ReplyShapeStats };
 
 /** Athena tier table (Settings > Engine > Athena tiers): engine + model + effort per turn class. */
 export async function companionGetEngineSettings(): Promise<AthenaEngineSettings> {
@@ -1284,8 +1288,9 @@ export async function companionRejectAction(
   return invoke<ApprovalOutcome>('companion_reject_action', { approvalId, reason });
 }
 
-/** Tauri event channel emitted when a turn produces new approval rows. */
-export const COMPANION_APPROVALS_EVENT = 'companion://approvals';
+/** Tauri event channel emitted when a turn produces new approval rows. The
+ *  registry is the one authority for the wire string. */
+export const COMPANION_APPROVALS_EVENT = EventName.COMPANION_APPROVALS;
 
 /**
  * A `ClientAction` from an approval that resolved WITHOUT a card — i.e. the
@@ -1490,6 +1495,28 @@ export async function companionCorrectIdentityClaim(section: string, bullet: str
 /** The active engagement budget modulations (F4) — what Athena adapts. */
 export async function companionGetAdaptations(): Promise<AthenaAdaptation[]> {
   return invoke<AthenaAdaptation[]>('companion_get_adaptations');
+}
+
+// ── Layered voice (docs/features/companion/layered-voice.md) ───────────
+
+/** One layer-two report, the target of a `ref:report/<id>` link. */
+export async function companionGetReport(id: string): Promise<CompanionReport> {
+  return invoke<CompanionReport>('companion_get_report', { id });
+}
+
+/** Mark a report read. Idempotent. */
+export async function companionMarkReportRead(id: string): Promise<void> {
+  return invoke<void>('companion_mark_report_read', { id });
+}
+
+/** Every reply-register row, `default` first. Empty means the base register (3). */
+export async function companionListReplyRegister(): Promise<ReplyRegisterRow[]> {
+  return invoke<ReplyRegisterRow[]>('companion_list_reply_register');
+}
+
+/** Reply-shape stats over the last `days` days. Absent measures are `null`, never 0. */
+export async function companionReplyShapeStats(days: number): Promise<ReplyShapeStats> {
+  return invoke<ReplyShapeStats>('companion_reply_shape_stats', { days });
 }
 
 // ── Phase C: consolidation + reflection ────────────────────────────────
@@ -2206,41 +2233,6 @@ export async function companionRunSleepCycle(force?: boolean): Promise<SleepCycl
  */
 export async function companionGetSleepPressure(): Promise<SleepPressure> {
   return invoke<SleepPressure>('companion_get_sleep_pressure');
-}
-
-// ── Daily goals (dev-only gamification ritual) ─────────────────────────
-
-export type { DailyGoalsState };
-export type { DailyGoal } from '@/lib/bindings/DailyGoal';
-
-export async function companionDailyGoalsState(): Promise<DailyGoalsState> {
-  return invoke<DailyGoalsState>('companion_daily_goals_state');
-}
-
-export async function companionDailyGoalsCreate(titles: string[]): Promise<DailyGoalsState> {
-  return invoke<DailyGoalsState>('companion_daily_goals_create', { titles });
-}
-
-/**
- * Rewrite the active set's goal texts. An entry with `id: null` and a
- * non-empty title appends a goal to the set; an existing goal may not be
- * emptied (mark it done or discard the set instead).
- */
-export async function companionDailyGoalsUpdate(
-  edits: { id: string | null; title: string }[],
-): Promise<DailyGoalsState> {
-  return invoke<DailyGoalsState>('companion_daily_goals_update', { edits });
-}
-
-export async function companionDailyGoalsToggle(
-  id: string,
-  done: boolean,
-): Promise<DailyGoalsState> {
-  return invoke<DailyGoalsState>('companion_daily_goals_toggle', { id, done });
-}
-
-export async function companionDailyGoalsDiscard(): Promise<DailyGoalsState> {
-  return invoke<DailyGoalsState>('companion_daily_goals_discard');
 }
 
 /** Tauri event channel for streaming Claude CLI lines into the panel. */

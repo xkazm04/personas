@@ -4,6 +4,7 @@
 // dock will get, before it is pressed.
 import type { FocusEvent, MouseEvent } from 'react';
 
+import { Button } from '@/features/shared/components/buttons';
 import { interpolate as tx } from '@/i18n/useTranslation';
 
 import type { SubjectNode } from '../engine/types';
@@ -37,10 +38,11 @@ export function DockHead({ all, careCount, scopeName, narrow, waitingStars }: Pr
   const count = (k: CareKind) => all.filter((x) => careKinds(x, waitingStars).includes(k)).length;
   const label = (k: CareKind) => (k === 'waiting' ? f.chip_waiting : k === 'pending' ? f.chip_pending : f.chip_rejected);
   const spreadBtn = (
-    <button
+    <Button
+      variant="ghost"
       className="cmd fz-spread-btn"
-      type="button"
       data-role="hud-spread"
+      iconRight={<kbd>S</kbd>}
       onClick={() => {
         setSay(null);
         setSpread(!spread);
@@ -50,8 +52,8 @@ export function DockHead({ all, careCount, scopeName, narrow, waitingStars }: Pr
       onMouseLeave={() => setSay(null)}
       onBlur={() => setSay(null)}
     >
-      {spread ? f.dock_fold : tx(f.dock_spread, { count: s.n(all.length) })} <kbd>S</kbd>
-    </button>
+      {spread ? f.dock_fold : tx(f.dock_spread, { count: s.n(all.length) })}
+    </Button>
   );
 
   if (spread) {
@@ -89,18 +91,20 @@ export function DockHead({ all, careCount, scopeName, narrow, waitingStars }: Pr
       </span>
       <span className="chips">
         {CHIPS.map(({ kind, tone }) => (
-          <button
+          // Skin from fused.css `.chip`; the swatch is Button's icon slot, a
+          // block so its 9px box holds inside the slot.
+          <Button
             key={kind}
+            variant="ghost"
             className="chip"
-            type="button"
             data-role="hud-chip"
             aria-pressed={filters[kind]}
             style={{ ['--c' as string]: tone }}
+            icon={<i className="block" />}
             onClick={() => toggleFilter(kind)}
           >
-            <i />
             {label(kind)} <b>{s.n(count(kind))}</b>
-          </button>
+          </Button>
         ))}
       </span>
       {spreadBtn}

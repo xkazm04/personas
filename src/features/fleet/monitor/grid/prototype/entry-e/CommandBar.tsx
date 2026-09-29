@@ -5,9 +5,10 @@
 // operator can see. Sessions are counted in the supply column, never here:
 // this band counts AGENTS, and says so.
 
+import type { ReactNode } from 'react';
 import { Activity, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { SegmentedTabs, segmentedTabPanelProps } from '@/features/shared/components/layout/SegmentedTabs';
 import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { SimulationToggle } from '../../simulation';
@@ -65,19 +66,20 @@ export function CommandBar({
             const total = c.agents + c.sessions;
             return (
               <Tooltip key={s} content={`${labels[s]}: ${tx(t.common.agent_count_other, { count: c.agents })} · ${c.sessions} ${c.sessions === 1 ? 'session' : 'sessions'}`}>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => onPick(s)}
                 aria-pressed={on}
                 aria-label={tx(m.grid_filter_state_aria, { state: labels[s] })}
                 data-testid={`fleet-grid-tally-${s}`}
-                className={`ae-win ae-focus flex items-center gap-2 rounded-input px-2.5 py-1 ${
+                className={`ae-win ae-focus rounded-input px-2.5 py-1 [&>span]:inline-flex [&>span]:items-center [&>span]:gap-2 ${
                   on ? 'is-selected' : ''} ${lamp.lit && total > 0 ? `is-lit ae-t-${lamp.tone}` : ''}`}
               >
                 <Lamp lamp={{ tone: lamp.tone, lit: lamp.lit && total > 0 }} />
                 <span className="typo-caption text-foreground">{labels[s]}</span>
                 <span className="typo-data tabular-nums text-foreground">{total}</span>
-              </button>
+              </Button>
               </Tooltip>
             );
           })}
@@ -131,5 +133,22 @@ export function FilterBanner({ filter, onClear }: { filter: PanelFilter; onClear
         {t.common.clear}
       </Button>
     </div>
+  );
+}
+
+/**
+ * The floor: the panel the layout switch above controls. It is declared here,
+ * beside the strip, so the ids the tabs point at and the region carrying them
+ * are built in one file; the entry only places it.
+ */
+export function CommandFloor({ layout, className, children }: {
+  layout: BoardVariant;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <main {...segmentedTabPanelProps(BOARD_TABS_PREFIX, layout)} role="tabpanel" className={className}>
+      {children}
+    </main>
   );
 }

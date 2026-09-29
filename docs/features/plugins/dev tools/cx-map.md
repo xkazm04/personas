@@ -45,7 +45,7 @@ take a position on.
 
 The 2026-07 IA consolidation moved these *out* of Dev Tools. `TeamsTab` union
 (code still says "teams"): `workspace · goals · kpis · factory · projects ·
-lifecycle · competition`.
+lifecycle · contest · mastermind · council · whitelist · webview`.
 
 | Tab | Question it answers | Central UI metaphor | Scope |
 | --- | --- | --- | --- |
@@ -55,7 +55,7 @@ lifecycle · competition`.
 | Factory | "can agents develop this? can I ship it?" | **passport wall** — readiness certificates as comparison columns, improve-cell ladders, golden gauge, plus the per-project **actions row** on the Compare view's Stack band: Onboard (Fleet-dispatched guided onboarding via the passport-onboard skill; live session = tinted terminal icon; writes the public-safe `app-passport.json` manifest) · **Populate project data** · Standards scan & fixes · Copy readiness report · Rescan (project-scoped) · Improve plan (project-scoped) — every action behind a consent popover that introduces it first | **fleet** (cross-project) |
 | Manage (`projects`) | project CRUD, bindings, archive | table + modals | fleet |
 | Lifecycle | Dev Clone setup | setup flow | per-project |
-| Competition | competitions on projects | boards | per-project |
+| Contest | "which seat's take on this brief wins?" — the `/contest` home: setup, seats in the fleet queue, gallery review (details land with the feature) | placeholder | per-project |
 
 ### Cross-cutting touchpoints (live elsewhere, animate this domain)
 

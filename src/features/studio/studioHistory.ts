@@ -56,7 +56,32 @@ interface StudioHistoryStore {
    */
   prune: (liveIds: readonly string[]) => void;
   setOpenTabs: (ids: string[], activeId: string | null) => void;
+  /**
+   * Which Studio layout renders: the current one or Guide.
+   * TODO(prototype, 2026-09-23): the switch exists until Guide reaches parity;
+   * then the current layout is descoped (docs/design/studio-guide.md).
+   */
+  layout: StudioLayout;
+  setLayout: (layout: StudioLayout) => void;
+  /**
+   * The last "Plan first" choice, which new projects start with. It is set
+   * from a project's build settings; without it the switch could never reach
+   * the first build, which runs the moment a project is created.
+   */
+  gatePlanDefault: boolean;
+  setGatePlanDefault: (on: boolean) => void;
+  /**
+   * How the plan sheet is drawn: the plan cards, or the drafting sheet
+   * (contest A/3 brought in as a second version).
+   * TODO(prototype, 2026-09-25): keep one once the owner has compared them.
+   */
+  sheetStyle: StudioSheetStyle;
+  setSheetStyle: (style: StudioSheetStyle) => void;
 }
+
+export type StudioSheetStyle = 'plan' | 'drafting';
+
+export type StudioLayout = 'current' | 'guide';
 
 export const useStudioHistory = create<StudioHistoryStore>()(
   persist(
@@ -64,6 +89,9 @@ export const useStudioHistory = create<StudioHistoryStore>()(
       byProject: {},
       openTabIds: [],
       activeTabId: null,
+      layout: 'guide',
+      gatePlanDefault: false,
+      sheetStyle: 'drafting',
       save: (id, entry) =>
         set((s) => ({
           byProject: {
@@ -102,6 +130,9 @@ export const useStudioHistory = create<StudioHistoryStore>()(
           };
         }),
       setOpenTabs: (ids, activeId) => set({ openTabIds: ids, activeTabId: activeId }),
+      setLayout: (layout) => set({ layout }),
+      setGatePlanDefault: (on) => set({ gatePlanDefault: on }),
+      setSheetStyle: (sheetStyle) => set({ sheetStyle }),
     }),
     { name: 'studio-history-v1' },
   ),

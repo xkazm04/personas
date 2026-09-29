@@ -846,5 +846,8 @@
   "remote_terminal_title": "终端（只读）",
   "remote_terminal_waiting": "等待来自 {device} 的输出",
   "remote_tile_aria": "{title}，位于 {device}，{state}。打开该远程会话",
-  "remote_wake": "唤醒"
+  "remote_wake": "唤醒",
+  "queue_origin_contest": "竞赛",
+  "grid_column_contest_open": "在竞赛页面打开 {contest}",
+  "grid_column_contest_unlinked": "{contest} 在其席位记录所属项目之前就已开始，因此无法从这里打开"
 }

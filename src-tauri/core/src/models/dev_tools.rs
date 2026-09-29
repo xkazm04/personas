@@ -95,13 +95,9 @@ pub struct DevProject {
     /// the `static_scan` runner spawns for this project. None disables the
     /// per-project sweep; the runner falls back to package-manager detection.
     pub static_scan_config: Option<String>,
-    /// When true and the task ran inside a worktree, `task_executor` pushes
-    /// the worktree branch and opens a PR after the task succeeds. Failures
-    /// are surfaced in the task log but do NOT mark the task as failed.
-    pub auto_pr_on_success: bool,
-    /// GitHub credential row id used to authorise the auto-PR call. Nullable;
-    /// when None and `auto_pr_on_success` is true the wiring emits a warning
-    /// and skips PR creation.
+    /// The project's GitHub connector: the credential row id that authorises
+    /// repo / PR / git operations (the Source-control step, the repo picker).
+    /// Nullable; set via `dev_tools_update_project`.
     pub pr_credential_id: Option<String>,
     /// Credential row id for the LLM-observability connector (Langfuse, Helicone,
     /// LangSmith, …). Distinct from `monitoring_credential_id` (app monitoring);
@@ -1855,60 +1851,6 @@ pub struct DevTask {
 /// rows to `queued`. Unknown values are warned about, never rejected: refusing
 /// a status write would strand a task mid-run.
 pub const TASK_STATUSES: [&str; 5] = ["queued", "running", "completed", "failed", "cancelled"];
-
-// ============================================================================
-// Dev Competitions (multi-clone parallel task execution)
-// ============================================================================
-
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
-pub struct DevCompetition {
-    pub id: String,
-    pub project_id: String,
-    pub task_title: String,
-    pub task_description: Option<String>,
-    pub source_idea_id: Option<String>,
-    pub source_goal_id: Option<String>,
-    pub slot_count: i32,
-    pub status: String, // 'running' | 'awaiting_review' | 'resolved' | 'cancelled'
-    pub winner_task_id: Option<String>,
-    pub winner_insight: Option<String>,
-    pub baseline_json: Option<String>,
-    pub reviewer_notes: Option<String>,
-    pub worktree_base_ref: Option<String>,
-    pub created_at: String,
-    pub resolved_at: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
-pub struct DevCompetitionSlot {
-    pub id: String,
-    pub competition_id: String,
-    pub task_id: String,
-    pub strategy_label: String,
-    pub strategy_prompt: Option<String>,
-    pub worktree_name: String,
-    pub branch_name: Option<String>,
-    pub slot_index: i32,
-    pub disqualified: bool,
-    pub disqualify_reason: Option<String>,
-    pub diff_hash: Option<String>,
-    pub diff_stats_json: Option<String>,
-    pub diff_analyzed_at: Option<String>,
-    pub created_at: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
-pub struct DevStrategyStats {
-    pub label: String,
-    pub wins: i32,
-    pub total: i32,
-    pub disqualified_count: i32,
-    pub win_rate: f64,
-    pub last_win_at: Option<String>,
-}
 
 // ============================================================================
 // Scan Agent Meta

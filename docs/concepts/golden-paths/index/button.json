@@ -176,14 +176,6 @@
       "resolvedFrom": "elided-suffix",
       "verbatim": ".../buttons/index.ts"
     },
-    "src/features/teams/sub_mastermind/lib/FleetListPopover.tsx": {
-      "count": 1,
-      "sections": [8],
-      "lines": ["52"],
-      "contexts": ["`teams/sub_mastermind/lib/FleetListPopover.tsx:52`) needs"],
-      "resolvedFrom": "suffix",
-      "verbatim": "teams/sub_mastermind/lib/FleetListPopover.tsx"
-    },
     "src/features/triggers/sub_smee_relay/SmeeRelayTab.tsx": {
       "count": 1,
       "sections": [7],
@@ -201,6 +193,7 @@
       "resolvedFrom": "basename",
       "verbatim": "globals.css"
     },
-    "src/test/eslint-rules/customRules.test.ts": {"count":1,"sections":[9],"contexts":["`src/test/eslint-rules/customRules.test.ts` (the existing harness, covering"]}
+    "src/test/eslint-rules/customRules.test.ts": {"count":1,"sections":[9],"contexts":["`src/test/eslint-rules/customRules.test.ts` (the existing harness, covering"]},
+    "teams/sub_mastermind/lib/FleetListPopover.tsx": {"count":1,"sections":[8],"lines":["52"],"contexts":["`teams/sub_mastermind/lib/FleetListPopover.tsx:52`) needs"],"resolved":false}
   }
 }

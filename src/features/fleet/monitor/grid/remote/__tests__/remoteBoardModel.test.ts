@@ -51,7 +51,7 @@ describe('useBoardModel with remote sessions', () => {
   const persona = (id: string, team: string) => ({ id, home_team_id: team } as unknown as Persona);
   const card = (id: string) => ({ personaId: id, square: 'idle' } as unknown as PersonaCardModel);
   const team = (id: string) => ({ id, name: id, color: '#fff' } as unknown as PersonaTeam);
-  const noSessions = { byTeam: new Map<string, FleetSession[]>(), ungrouped: [] as FleetSession[] };
+  const noSessions = { byTeam: new Map<string, FleetSession[]>(), byRun: new Map<string, FleetSession[]>(), ungrouped: [] as FleetSession[] };
 
   it('adds remote rows under the project column and a trailing device column', () => {
     const projects = [project({ id: 'p1', github_url: 'https://github.com/o/r', team_id: 'team-a' })];

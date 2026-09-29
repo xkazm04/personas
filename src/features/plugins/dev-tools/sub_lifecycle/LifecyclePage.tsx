@@ -1,128 +1,107 @@
-import { useState, useEffect, useCallback } from 'react';
-import {
-  GitBranch, Zap, RefreshCw,
-} from 'lucide-react';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { ActionRow } from '@/features/shared/components/layout/ActionRow';
-import { useTranslation } from '@/i18n/useTranslation';
+/**
+ * Lifecycle: the active project's development practice (Lifecycle v2). The
+ * header names the preset and version; the body is the interim journey
+ * (journey/LifecycleJourney), which the lifecycle-nextgen contest winner
+ * replaces. Actions: Install into repo (only while a repo binding is missing;
+ * dispatches a Run Desk task) and Ask Athena (she reads and changes the
+ * practice; the user never edits it here).
+ *
+ * Loading pattern v2: the header is permanent chrome; a cold first load ghosts
+ * the lanes under it; a warm remount paints from the module cache in
+ * useLifecycleSnapshot and revalidates; a failure shows an inline banner and
+ * keeps any warm snapshot on screen.
+ */
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Download, GitBranch, Sparkles } from 'lucide-react';
+
+import { installLifecycle } from '@/api/devTools/lifecycle';
+import { useAskAthena } from '@/features/companions/athena/useAskAthena';
 import { Button } from '@/features/shared/components/buttons';
+import { Banner } from '@/features/shared/components/feedback/Banner';
+import { ConfirmPopover } from '@/features/shared/components/feedback/ConfirmPopover';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { ActionRow } from '@/features/shared/components/layout/ActionRow';
+import { ContentBody, ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
+import { useTranslation } from '@/i18n/useTranslation';
+import { toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
-import { listPersonas } from '@/api/agents/personas';
-import { createTrigger, listTriggers, deleteTrigger } from '@/api/pipeline/triggers';
 import { useToastStore } from '@/stores/toastStore';
-import type { Persona } from '@/lib/bindings/Persona';
-import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
+
 import { LifecycleProjectPicker } from './LifecycleProjectPicker';
-import { SetupTab } from './tabs/SetupTab';
-import { FlowStepsGhost } from './setup/FlowSteps';
-import { silentCatch } from '@/lib/silentCatch';
-
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const REVIEW_APPROVED_EVENT = 'review_decision.approved';
-const REVIEW_REJECTED_EVENT = 'review_decision.rejected';
-
-// Module-scoped cache (docs/design/overview-loading.md, law 1: "data on
-// screen is sacred"). devClone/triggers are local useState, not store-backed,
-// so every fresh mount used to start genuinely cold. Stashing the last fetch
-// here lets a RETURN visit within the same session paint real content on
-// frame 1 and refresh silently behind it; only a truly first-ever visit (or
-// a fresh reload) sees the cold-load ghost.
-let cachedDevClone: Persona | null = null;
-let cachedTriggers: PersonaTrigger[] = [];
-let hasCachedData = false;
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function parseListenerConfig(trigger: PersonaTrigger, event: string): boolean {
-  if (trigger.trigger_type !== 'event_listener' || !trigger.config) return false;
-  try { return JSON.parse(trigger.config).listen_event_type === event; }
-  catch { return false; }
-}
-
-// ---------------------------------------------------------------------------
-// Main Page — thin shell with tab menu
-// ---------------------------------------------------------------------------
+import { JourneyGhost } from './journey/JourneyGhost';
+import { LifecycleJourney } from './journey/LifecycleJourney';
+import { authorLabel, bindingKindLabel, presetLabel, stepLabel } from './journey/journeyLabels';
+import { installInFlight, missingBindings, weakest } from './journey/journeyModel';
+import { useLifecycleSnapshot } from './journey/useLifecycleSnapshot';
 
 export default function LifecyclePage() {
   const { t, tx } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
-  const activeProject = useSystemStore((s) =>
-    s.projects.find((p) => p.id === s.activeProjectId),
-  );
-  const goals = useSystemStore((s) => s.goals);
-  const fetchGoals = useSystemStore((s) => s.fetchGoals);
+  const activeProject = useSystemStore((s) => s.projects.find((p) => p.id === s.activeProjectId));
   const addToast = useToastStore((s) => s.addToast);
+  const askAthena = useAskAthena();
+  const { snapshot, loading, error, refetch } = useLifecycleSnapshot(activeProjectId);
 
-  const [devClone, setDevClone] = useState<Persona | null>(cachedDevClone);
-  const [triggers, setTriggers] = useState<PersonaTrigger[]>(cachedTriggers);
-  // True while a (re)fetch is in flight — nothing more. It NEVER hides data
-  // already on screen; it only decides whether the cold-empty flow column
-  // shows a ghost (fetch running, no cached data yet) or real content.
-  const [isFetching, setIsFetching] = useState(true);
-  // Whether we've ever completed a fetch (this mount, or a cached one from an
-  // earlier visit this session). Gates the one-time cold-load ghost so a
-  // background refresh/poll never re-shows it.
-  const [everLoaded, setEverLoaded] = useState(hasCachedData);
-  const [configuring, setConfiguring] = useState(false);
+  // The install task id this page just dispatched; missing bindings read as
+  // pending until the refetched snapshot names that task (the backend then
+  // reports pending itself, and stops when the task ends).
+  const [dispatched, setDispatched] = useState<{ projectId: string; taskId: string } | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const installRef = useRef<HTMLButtonElement>(null);
 
-  const refresh = useCallback(async () => {
-    setIsFetching(true);
+  useEffect(() => {
+    if (dispatched && snapshot?.projectId === dispatched.projectId && snapshot.installTaskId === dispatched.taskId) {
+      setDispatched(null);
+    }
+  }, [dispatched, snapshot]);
+
+  const current = snapshot && snapshot.projectId === activeProjectId ? snapshot : null;
+  const forcePending = !!dispatched && dispatched.projectId === activeProjectId;
+  const missing = useMemo(() => (current ? missingBindings(current) : []), [current]);
+  const installing = forcePending || (current ? installInFlight(current) : false);
+
+  const subtitle = current
+    ? current.version === 0
+      ? tx(dl.lc_subtitle_default, { preset: presetLabel(dl, current.preset) })
+      : tx(dl.lc_subtitle_version, {
+          preset: presetLabel(dl, current.preset),
+          version: current.version,
+          author: authorLabel(dl, current.author) ?? '',
+        })
+    : activeProject?.root_path ?? '';
+
+  const missingText = missing
+    .map((m) => `${stepLabel(dl, m.stepId, m.label)} (${bindingKindLabel(dl, m.kind)})`)
+    .join(', ');
+
+  const handleInstall = async () => {
+    if (!activeProjectId) return;
     try {
-      const personas = await listPersonas();
-      const clone = personas.find((p) => {
-        const n = p.name.toLowerCase();
-        return n.includes('dev clone') || n.includes('dev-clone');
-      }) ?? null;
-      const trigs = clone ? await listTriggers(clone.id) : [];
-      setDevClone(clone);
-      setTriggers(trigs);
-      cachedDevClone = clone;
-      cachedTriggers = trigs;
-      hasCachedData = true;
-      setEverLoaded(true);
-    } catch (err) { silentCatch("features/plugins/dev-tools/sub_lifecycle/LifecyclePage:catch1")(err); }
-    finally { setIsFetching(false); }
-  }, []);
+      const taskId = await installLifecycle(activeProjectId);
+      if (taskId) {
+        setDispatched({ projectId: activeProjectId, taskId });
+        addToast(tx(dl.lc_install_started, { id: taskId }), 'success');
+      } else {
+        addToast(dl.lc_install_nothing, 'warning');
+      }
+      setConfirmOpen(false);
+      refetch();
+    } catch (err) {
+      toastCatch('lifecycle:install', dl.lc_install_failed)(err);
+    }
+  };
 
-  useEffect(() => { refresh(); }, [refresh]);
-  useEffect(() => { if (activeProjectId) fetchGoals(activeProjectId); }, [activeProjectId, fetchGoals]);
-
-  const hasApproved = triggers.some((tr) => parseListenerConfig(tr, REVIEW_APPROVED_EVENT));
-  const hasRejected = triggers.some((tr) => parseListenerConfig(tr, REVIEW_REJECTED_EVENT));
-  const hasSchedule = triggers.some((tr) => tr.trigger_type === 'schedule');
-  const allConfigured = Boolean(devClone && hasApproved && hasRejected && hasSchedule);
-
-  const handleAutoSetup = useCallback(async () => {
-    if (!devClone) { addToast(dl.adopt_first_period, 'error'); return; }
-    setConfiguring(true);
-    try {
-      let n = 0;
-      if (!hasApproved) { await createTrigger({ persona_id: devClone.id, trigger_type: 'event_listener', config: JSON.stringify({ listen_event_type: REVIEW_APPROVED_EVENT }), enabled: true, use_case_id: null }); n++; }
-      if (!hasRejected) { await createTrigger({ persona_id: devClone.id, trigger_type: 'event_listener', config: JSON.stringify({ listen_event_type: REVIEW_REJECTED_EVENT }), enabled: true, use_case_id: null }); n++; }
-      if (!hasSchedule) { await createTrigger({ persona_id: devClone.id, trigger_type: 'schedule', config: JSON.stringify({ cron: '0 * * * *', event_type: 'dev_clone.hourly_scan', payload: JSON.stringify({ mode: 'backlog_scan' }) }), enabled: true, use_case_id: null }); n++; }
-      addToast(tx(dl.auto_setup_complete, { n }), 'success');
-      await refresh();
-    } catch (err) { addToast(err instanceof Error ? err.message : dl.setup_failed, 'error'); }
-    finally { setConfiguring(false); }
-  }, [devClone, hasApproved, hasRejected, hasSchedule, addToast, refresh, dl, tx]);
-
-  const handleTeardown = useCallback(async () => {
-    if (!devClone) return;
-    setConfiguring(true);
-    try {
-      for (const tr of triggers) await deleteTrigger(tr.id, devClone.id);
-      addToast(dl.triggers_removed, 'success');
-      await refresh();
-    } catch (err) { addToast(err instanceof Error ? err.message : dl.teardown_failed, 'error'); }
-    finally { setConfiguring(false); }
-  }, [devClone, triggers, addToast, refresh, dl]);
+  const handleAskAthena = () => {
+    if (!activeProject) return;
+    const weak = current ? weakest(current) : null;
+    const text = weak
+      ? tx(dl.lc_ask_athena_prompt_weakest, {
+          name: activeProject.name, id: activeProject.id, step: stepLabel(dl, weak.node.id, weak.node.label),
+        })
+      : tx(dl.lc_ask_athena_prompt, { name: activeProject.name, id: activeProject.id });
+    askAthena('lifecycle', text);
+  };
 
   return (
     <ContentBox>
@@ -130,39 +109,74 @@ export default function LifecyclePage() {
         icon={<GitBranch className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
         title={t.plugins.dev_tools.lifecycle_title}
-        subtitle={activeProject?.root_path ?? '—'}
+        subtitle={subtitle}
         actions={<LifecycleProjectPicker />}
       />
 
       <ContentBody centered>
-        <ActionRow>
-          <Button variant="secondary" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={refresh} disabled={isFetching}>{t.common.refresh}</Button>
-          {allConfigured ? (
-            <Button variant="danger" size="sm" onClick={handleTeardown} loading={configuring}>{t.plugins.dev_tools.teardown}</Button>
-          ) : (
-            <Button variant="accent" tone="agent" size="sm" icon={<Zap className="w-3.5 h-3.5" />}
-              onClick={handleAutoSetup} loading={configuring} disabled={!devClone}
-              disabledReason={!devClone ? t.plugins.dev_tools.adopt_first : undefined}>{t.plugins.dev_tools.auto_setup}</Button>
-          )}
-        </ActionRow>
-
-        {/* Loading choreography (docs/design/overview-loading.md): the ghost
-            only ever covers a truly cold first-ever load (no cached data,
-            fetch in flight). A background refresh/poll re-delivering the
-            same devClone/triggers never re-shows it — SetupTab's own
-            settled-only states (missing persona, etc.) take over from here. */}
-        {isFetching && !everLoaded ? (
-          <FlowStepsGhost />
+        {!activeProjectId ? (
+          <EmptyState icon={GitBranch} title={dl.lc_empty_title} subtitle={dl.lc_empty_subtitle} />
         ) : (
-          <SetupTab
-            devClone={devClone} triggers={triggers}
-            activeProject={activeProject ? { name: activeProject.name, root_path: activeProject.root_path, github_url: activeProject.github_url } : null}
-            goalCount={goals.length}
-            hasApprovedListener={hasApproved} hasRejectedListener={hasRejected}
-            hasScheduleTrigger={hasSchedule} loading={isFetching} onRefresh={refresh}
-          />
+          <div className="space-y-6 pb-6">
+            <ActionRow
+              left={installing ? (
+                <span className="flex items-center gap-1.5 typo-caption text-status-warning" data-testid="lc-install-running">
+                  <span className="w-3 h-3 rounded-interactive border-2 border-dashed border-status-warning/80" aria-hidden />
+                  {dl.lc_install_running}
+                </span>
+              ) : undefined}
+            >
+              {current && missing.length > 0 && !installing && (
+                <Button
+                  ref={installRef}
+                  variant="secondary"
+                  size="sm"
+                  icon={<Download className="w-3.5 h-3.5" />}
+                  onClick={() => setConfirmOpen(true)}
+                  data-testid="lc-install"
+                >
+                  {dl.lc_install}
+                </Button>
+              )}
+              <Button
+                variant="accent"
+                tone="agent"
+                size="sm"
+                icon={<Sparkles className="w-3.5 h-3.5" />}
+                onClick={handleAskAthena}
+                disabled={!activeProject}
+                data-testid="lc-ask-athena"
+              >
+                {dl.lc_ask_athena}
+              </Button>
+            </ActionRow>
+
+            {error && (
+              <Banner severity="error" compact message={dl.lc_load_failed} cause={error} onRetry={refetch} />
+            )}
+
+            {current ? (
+              <LifecycleJourney snapshot={current} forcePending={forcePending} />
+            ) : loading ? (
+              <JourneyGhost />
+            ) : null}
+          </div>
         )}
       </ContentBody>
+
+      <ConfirmPopover
+        open={confirmOpen}
+        anchorRef={installRef}
+        title={dl.lc_install_title}
+        detail={tx(dl.lc_install_body, { items: missingText })}
+        confirmLabel={dl.lc_install_confirm}
+        confirmIcon={<Download className="w-3.5 h-3.5" />}
+        onConfirm={handleInstall}
+        onCancel={() => setConfirmOpen(false)}
+        width={380}
+        testId="lc-install-confirm"
+        confirmTestId="lc-install-confirm-go"
+      />
     </ContentBox>
   );
 }

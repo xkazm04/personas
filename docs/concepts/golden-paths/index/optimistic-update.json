@@ -36,6 +36,13 @@
   ],
   "citations": {
     ".github/workflows/ci.yml": {"count":1,"sections":[9],"contexts":["`ci.yml` is red on 10 pre-existing failures, so **a gate that only runs in CI runs nowhere**; the"],"resolvedFrom":"basename","verbatim":"ci.yml"},
+    "CompetitionCard.tsx": {
+      "count": 1,
+      "sections": [0],
+      "lines": ["141"],
+      "contexts": ["| — the rollback restores **nothing** | **6** | workspaceStore ×4, `usePresetAdoption.ts:183`, `CompetitionCard.tsx:141` |"],
+      "resolved": false
+    },
     "contextStore.ts": {
       "count": 1,
       "sections": [6],
@@ -208,14 +215,7 @@
       "resolvedFrom": "basename",
       "verbatim": "useDevToolsActions.ts"
     },
-    "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionCard.tsx": {
-      "count": 2,
-      "sections": [0,7],
-      "lines": ["141","138-153"],
-      "contexts": ["| — the rollback restores **nothing** | **6** | workspaceStore ×4, `usePresetAdoption.ts:183`, `CompetitionCard.tsx:141` |"],
-      "resolvedFrom": "basename",
-      "verbatim": "CompetitionCard.tsx"
-    },
+    "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionCard.tsx": {"count":1,"sections":[7],"lines":["138-153"],"contexts":["`src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionCard.tsx:138-153`:"],"resolved":false},
     "src/features/plugins/dev-tools/sub_workspaces/workspaceStore.ts": {"count":1,"sections":[7],"contexts":["`src/features/plugins/dev-tools/sub_workspaces/workspaceStore.ts` is a module-scoped store published"]},
     "src/features/plugins/obsidian-brain/sub_setup/SetupPanel.tsx": {
       "count": 1,

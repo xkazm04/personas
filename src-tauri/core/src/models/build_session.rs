@@ -253,6 +253,63 @@ pub enum BuildEvent {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         suggested: Vec<String>,
     },
+
+    // ------------------------------------------------------------------
+    // Provisional streaming preview (any turn, scoped to cells not yet confirmed)
+    //
+    // A build turn is one long CLI call (the first 50-155 s) whose output is validated
+    // (capability gates) only once the turn ends. These variants release
+    // each `capability_enumeration` / `capability_resolution` object the
+    // moment it is complete in the partial-message stream, so the build
+    // sheet can show it DEVELOPING. They are a preview, never state:
+    // never persisted, never mirrored to a legacy `CellUpdate`, and a
+    // consumer that does not know them loses nothing. The post-turn
+    // validator stays the single authority — its authoritative
+    // `capability_*_update` events follow as before, then ONE
+    // `ProvisionalSettled` closes the preview (see that variant).
+    // ------------------------------------------------------------------
+    /// A complete `capability_enumeration` seen mid-turn. Same `data` shape
+    /// as `CapabilityEnumerationUpdate`. Emitted at most once per distinct
+    /// payload per turn.
+    ProvisionalCapabilityEnumeration {
+        session_id: String,
+        data: serde_json::Value,
+    },
+
+    /// A complete `capability_resolution` (status `resolved`) seen mid-turn,
+    /// already pre-checked against the capability gates the validator will
+    /// apply, so a field that would be withheld for a question is never
+    /// previewed. Emitted at most once per (capability_id, field, value).
+    ProvisionalCapabilityResolution {
+        session_id: String,
+        capability_id: String,
+        field: String,
+        value: serde_json::Value,
+        /// The legacy cell (frame) this field lights once confirmed, decided
+        /// here by the same mapping the authoritative pass uses
+        /// (`parser::map_capability_field_to_legacy_dimension`) so the client
+        /// never re-derives it. `None` for a field with no frame.
+        cell_key: Option<String>,
+    },
+
+    /// Closes the provisional preview of a turn. Emitted AFTER that turn's
+    /// authoritative events, only when the turn previewed anything.
+    ///
+    /// Contract: the authoritative pass fully REPLACES provisional state — a
+    /// consumer drops every provisional item for the session on this event,
+    /// whatever the lists say. The lists name what the preview showed that
+    /// the validator did not confirm unchanged (dropped by a gate, or
+    /// re-emitted with a different value), so the retraction is explicit on
+    /// the wire and visible in logs.
+    ProvisionalSettled {
+        session_id: String,
+        /// Provisionally enumerated capability ids absent from the
+        /// authoritative enumeration.
+        retracted_capability_ids: Vec<String>,
+        /// Provisional `(capability_id, field)` resolutions the validator
+        /// dropped or changed.
+        retracted_resolutions: Vec<(String, String)>,
+    },
 }
 
 // ============================================================================

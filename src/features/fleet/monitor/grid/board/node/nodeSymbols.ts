@@ -26,7 +26,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   AlertTriangle, Bot, Check, CircleDashed, Clock, Hand, Hourglass, Laptop, Library, Lightbulb, MessageSquare, Moon,
-  Play, RotateCcw, Rss, Sparkles, Square,
+  Play, RotateCcw, Rss, Sparkles, Square, Trophy,
 } from 'lucide-react';
 import type { DispatchOrigin } from '@/lib/bindings/DispatchOrigin';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
@@ -146,6 +146,7 @@ export const ORIGIN_GLYPH: Record<DispatchOrigin, LucideIcon> = {
   night_shift: Moon,
   feed_impact: Rss,
   orphan_resume: RotateCcw,
+  contest: Trophy,
   // A paired device dispatched this session here.
   remote: Laptop,
   // Curator, draining the operator's request lane or acting on her plan.

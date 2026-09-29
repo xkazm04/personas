@@ -13,8 +13,6 @@ import type { TwinStudioSeed } from "@/lib/bindings/TwinStudioSeed";
 import type { TwinContact } from "@/lib/bindings/TwinContact";
 import type { TwinReflection } from "@/lib/bindings/TwinReflection";
 import type { TwinRecallBundle } from "@/lib/bindings/TwinRecallBundle";
-import type { SetupTurnMessage } from "@/lib/bindings/SetupTurnMessage";
-import type { SetupTurnResult } from "@/lib/bindings/SetupTurnResult";
 import type { StyleCandidate } from "@/lib/bindings/StyleCandidate";
 import type { StyleChannelTarget } from "@/lib/bindings/StyleChannelTarget";
 import type { StyleToneDraft } from "@/lib/bindings/StyleToneDraft";
@@ -372,41 +370,6 @@ export const draftForPage = (
   steer?: TwinSteer,
 ) =>
   invoke<TwinPageDraft>("twin_draft_for_page", { twinId, page, directions, steer });
-
-/**
- * Guided Setup — one turn of the setup conversation.
- *
- * Deliberately NOT `generateBio`: that wrapper frames every call as "write a
- * 2-3 sentence first-person bio", which is why the pre-v2 interview asked
- * bio-shaped questions no matter which slot it was working on. This command
- * carries its own prompt and returns a typed turn.
- *
- * The result is a proposal, never a commitment: `doneHint` is advisory and the
- * caller derives completion from readiness. A rejected promise here means the
- * slot stays OPEN — it must never be treated as a finished step.
- *
- * `locale` is the app's language code: the guide asks its question in it,
- * while suggested answers stay in the twin's own language. Omitted, the guide
- * speaks the twin's language.
- */
-export const setupTurn = (
-  twinId: string,
-  stage: "setup" | "training",
-  history: SetupTurnMessage[],
-  focus?: string,
-  topic?: string,
-  lastAnswer?: string,
-  locale?: string,
-) =>
-  invoke<SetupTurnResult>("twin_setup_turn", {
-    twinId,
-    stage,
-    focus,
-    topic,
-    history,
-    lastAnswer,
-    locale,
-  });
 
 // ============================================================================
 // Style studio (spark twin-presets)

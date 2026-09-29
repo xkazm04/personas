@@ -33,7 +33,7 @@
 //! - [`scene`] — the published canvas digest.
 //! - [`devices`] — the paired-devices roster (absent without a device link).
 //! - [`addenda`] — the conditional tails: language, voice, display, autonomy,
-//!   tools, delegation, progress, onboarding, the daily-goals ritual.
+//!   tools, delegation, progress, onboarding.
 //! - [`budget`] — what each named block may cost, and what it did cost.
 //!
 //! Everything stays reachable as `crate::companion::prompt::X`; the re-exports

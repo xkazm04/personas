@@ -28,12 +28,13 @@ use rand::rngs::StdRng;
 use rand::SeedableRng;
 use tauri::State;
 
-use crate::commands::infrastructure::twin::spawn_claude_with_prompt;
 use crate::db::models::{
     StyleCandidate, StyleChannelTarget, StyleToneDraft, TwinStyle, TwinStyleDims, TwinStylePins,
     TwinTone,
 };
 use crate::db::repos::twin as repo;
+use crate::db::DbPool;
+use crate::engine::twin_setup::llm::{spawn_claude_logged, TwinCall};
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::validation::contract::{check, ValidationError};
@@ -57,16 +58,18 @@ fn reject(operation: &str, errors: Vec<String>) -> Result<(), AppError> {
 /// Two failures is a generator that cannot hold the contract: that is the
 /// model's unusable output, so `External`, and nothing was written.
 async fn generate_with_repair<T>(
+    pool: &DbPool,
     operation: &str,
+    site: &'static str,
     build: impl Fn(Option<&str>) -> String,
     door: impl Fn(&str) -> Result<T, String>,
 ) -> Result<T, AppError> {
-    let raw = spawn_claude_with_prompt(build(None)).await?;
+    let raw = spawn_claude_logged(pool, TwinCall::legacy(site), build(None)).await?;
     let first = match door(&raw) {
         Ok(value) => return Ok(value),
         Err(e) => e,
     };
-    let repaired = spawn_claude_with_prompt(build(Some(&first))).await?;
+    let repaired = spawn_claude_logged(pool, TwinCall::legacy(site), build(Some(&first))).await?;
     door(&repaired).map_err(|second| {
         AppError::External(format!(
             "{operation}: the model returned unusable output twice ({first}; then {second}). Nothing was saved."
@@ -102,7 +105,9 @@ pub async fn twin_style_roll(
         sampler::sample_anchors(&mut StdRng::from_entropy(), &pins, current.as_ref(), &avoid);
     let person = PersonContext::from_twin(&profile, &channels);
     generate_with_repair(
+        &state.db,
         "twin_style_roll",
+        "style_roll",
         |repair| prompt::build_style_roll_prompt(&person, &draw, &pins, repair),
         |raw| door::roll_door(raw, &draw.anchors, &pins),
     )
@@ -126,7 +131,9 @@ pub async fn twin_style_materialize(
     let channels = repo::list_channels(&state.db, &twin_id)?;
     let person = PersonContext::from_twin(&profile, &channels);
     generate_with_repair(
+        &state.db,
         "twin_style_materialize",
+        "style_materialize",
         |repair| prompt::build_style_materialize_prompt(&person, &style, &targets, repair),
         |raw| door::materialize_door(raw, &targets),
     )

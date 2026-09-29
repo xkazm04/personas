@@ -214,5 +214,6 @@
   "dispatch_run_on_offline": "অফলাইন",
   "dispatch_run_on_queued_hint": "জেগে ওঠা পর্যন্ত সারিতে",
   "dispatch_run_on_stale": "সম্প্রতি দেখা যায়নি",
-  "dispatch_run_on_this_machine": "এই মেশিন"
+  "dispatch_run_on_this_machine": "এই মেশিন",
+  "md_spellcheck": "বানান ও ব্যাকরণ"
 }

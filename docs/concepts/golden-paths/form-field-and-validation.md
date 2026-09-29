@@ -111,8 +111,8 @@ those and they are the deviation, not the shortcut.
    after it can clobber `id` / `aria-describedby`.
 3. **Give the control its className from the tokens** —
    `className={inputFieldClass(!!error)}` for a field that can error,
-   `className={INPUT_FIELD}` otherwise. For a textarea append `resize-y` +
-   `min-h-*` (see `DailyGoalsModal.tsx:120`). For a secret, render
+   `className={INPUT_FIELD}` otherwise. For a textarea append `resize-y` and
+   size it with `rows` or `min-h-*` (see `SetupTextField.tsx:88-100`). For a secret, render
    `<PasswordToggleField {...p} …/>` instead of `<input>`.
 4. **Pick the validation shape.** Pure/synchronous rule → compute `error`
    yourself and pass it. Debounced rule over the value (URL shape, JSON parse,
@@ -236,10 +236,13 @@ Every other form primitive is worse: `FormErrorProvider`/`FormErrorSummary`,
 - `agents/sub_deployment/components/cloud/CloudConnectionForm.tsx:103-113` — the
   reference for a secret field: `PasswordToggleField` **inside** the render prop,
   receiving `{...inputProps}`.
-- `plugins/companion/DailyGoalsModal.tsx:102-129` — the reference for a
-  `<textarea>` field and for the char budget (`value` + `maxLength` on both the
-  `FormField` and the control), plus a submit predicate (`:75-77`) that is
-  genuinely derived from the drafts rather than invented at the button.
+- `plugins/twin/setup/fields/SetupTextField.tsx:81-114` — the reference for a
+  `<textarea>` field: one render prop that yields a textarea or an input, each
+  spreading `{...inputProps}` first, with the save outcome routed through
+  `helpText` / `error` rather than a sibling line. For a char budget,
+  `fleet/monitor/grid/board/WorkspaceGroup.tsx:179-189` puts `maxLength` on the
+  control inside the render prop. (The earlier reference, the Daily Goals modal,
+  was deleted with its feature on 2026-09-24.)
 - `overview/sub_patterns/graph/CreatePlaybookModal.tsx:90-122` — three fields in
   one modal, `hint` used correctly, `valid` at `:46` computed once and consumed
   once at `:157`.
@@ -289,7 +292,7 @@ Every other form primitive is worse: `FormErrorProvider`/`FormErrorSummary`,
 | `agents/sub_lab/use-cases/StructuredField.tsx:16,33` | `StructuredField` | Orphan `<label>` per branch next to `ThemedSelect` / `NumberStepper`; no id, no error. |
 | `templates/sub_generated/adoption/QuickAddCredentialModal.tsx:354` | `CredentialField` | Duplicates the vault's own `FieldCaptureRow` for the identical concept. |
 | `templates/sub_presets/PresetQuestionnaireForm.tsx:245` · `agents/quick-answer/triage/deck/QuestionPanel.tsx:61` | `QuestionField` ×2 | Two unrelated components with the same name. |
-| `agents/sub_new_persona/capabilityView/CapabilityAddModal.tsx:27` · `teams/sub_teamWorkspace/teamStudio/slackBridge/SlackBridgePickers.tsx:9` · `overview/sub_incidents/components/IncidentDetailModal.tsx:353` | `FieldRow` / `Field` / `Field` | Three more one-off wrappers. |
+| ~~`agents/sub_new_persona/capabilityView/CapabilityAddModal.tsx:27`~~ (deleted 2026-09-23 with the legacy build layouts) · `teams/sub_teamWorkspace/teamStudio/slackBridge/SlackBridgePickers.tsx:9` · `overview/sub_incidents/components/IncidentDetailModal.tsx:353` | `FieldRow` / `Field` / `Field` | Three more one-off wrappers. |
 | `plugins/artist/sub_media_studio/toolbar/fields.tsx:11,39` | `NumField` / `RangeField` | Local labelled-numeric wrappers. |
 
 ### Orphan labels — 120 occurrences across 49 files

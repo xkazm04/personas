@@ -22,7 +22,7 @@
 
 use std::sync::Arc;
 
-use rusqlite::{params, Connection};
+use rusqlite::{params, Connection, OptionalExtension};
 use serde::Serialize;
 use tauri::State;
 use ts_rs::TS;
@@ -39,11 +39,15 @@ use crate::AppState;
 /// it is not confirmed in one click, but its rows are ANSWERED one at a time
 /// over minutes, and the durable row is what keeps the un-answered ones alive
 /// across the send that would otherwise wipe them.
+/// `lifecycle_proposal` (Lifecycle v2) is confirmed by
+/// `companion_apply_lifecycle_proposal`, which reads the proposal back from this
+/// row by id: without the row there is nothing to apply.
 pub const ACTIONABLE_KINDS: &[&str] = &[
     "fleet_plan",
     "ship_milestone",
     "ship_goals",
     "note_suggestions",
+    crate::companion::lifecycle_ops::LIFECYCLE_PROPOSAL_KIND,
 ];
 
 /// Statuses a card row may hold. `pending` is the only actionable state.
@@ -174,6 +178,34 @@ pub fn list_cards(
         })?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(rows)
+}
+
+/// Read one card row by id. `NotFound` when there is no such row.
+pub fn get_card(pool: &UserDbPool, id: &str) -> Result<CompanionChatCard, AppError> {
+    let conn = pool.get()?;
+    conn.query_row(
+        "SELECT id, conversation_id, episode_id, kind, title, config_json, status,
+                result_json, created_at, resolved_at
+           FROM companion_chat_card
+          WHERE id = ?1",
+        params![id.trim()],
+        |r| {
+            Ok(CompanionChatCard {
+                id: r.get("id")?,
+                conversation_id: r.get("conversation_id")?,
+                episode_id: r.get("episode_id")?,
+                kind: r.get("kind")?,
+                title: r.get("title")?,
+                config_json: r.get("config_json")?,
+                status: r.get("status")?,
+                result_json: r.get("result_json")?,
+                created_at: r.get("created_at")?,
+                resolved_at: r.get("resolved_at")?,
+            })
+        },
+    )
+    .optional()?
+    .ok_or_else(|| AppError::NotFound(format!("chat card `{id}` not found")))
 }
 
 /// Resolve a card. Terminal statuses are sticky: once a card is `dispatched`
@@ -342,6 +374,7 @@ mod tests {
         assert!(is_actionable_kind("fleet_plan"));
         assert!(is_actionable_kind("ship_milestone"));
         assert!(is_actionable_kind("ship_goals"));
+        assert!(is_actionable_kind("lifecycle_proposal"));
         assert!(!is_actionable_kind("persona_overview"));
     }
 

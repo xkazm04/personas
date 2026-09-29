@@ -32,7 +32,39 @@ pub struct FleetEpisodeInput<'a> {
     pub claude_session_id: Option<&'a str>,
     pub project_label: &'a str,
     pub cwd: &'a str,
+    /// The session's human name (the operator's rename, or Athena's spawn
+    /// name), when it says more than the project label. Printed beside the
+    /// id in the prose line so a reader, and Athena's recall, can tell two
+    /// sessions on one project apart without decoding a uuid.
+    pub session_label: Option<&'a str>,
     pub kind: FleetEventKind<'a>,
+}
+
+/// The label to print beside a fleet session id, or `None` when the session
+/// has no name of its own (the registry falls back to the project label,
+/// which the row already carries). Never blocks: the registry lock may be
+/// held by the caller's own hot path, and a missed label only costs the
+/// reader a name. Quotes and line breaks are stripped so the label cannot
+/// break the one-line prose it sits in.
+pub fn session_label_for(session_id: &str, project_label: &str) -> Option<String> {
+    let label = crate::commands::fleet::registry::registry().try_lookup_label(session_id)?;
+    clean_label(&label, project_label)
+}
+
+/// The pure half of [`session_label_for`].
+fn clean_label(label: &str, project_label: &str) -> Option<String> {
+    let clean: String = label
+        .chars()
+        .filter(|c| !matches!(c, '"' | '\n' | '\r'))
+        .take(80)
+        .collect();
+    let clean = clean.trim();
+    (!clean.is_empty() && clean != project_label.trim()).then(|| clean.to_string())
+}
+
+/// ` "label"` for the prose line, or nothing.
+pub fn label_suffix(label: Option<&str>) -> String {
+    label.map(|l| format!(" \"{l}\"")).unwrap_or_default()
 }
 
 #[derive(Debug, Clone)]
@@ -89,14 +121,18 @@ fn format_episode_body(event: &FleetEpisodeInput<'_>) -> String {
         FleetEventKind::Spawned { athena_owned } => {
             let who = if *athena_owned { "Athena" } else { "the user" };
             s.push_str(&format!(
-                "Fleet session **{}** spawned by {} in `{}`.\n",
-                event.session_id, who, event.cwd
+                "Fleet session **{}**{} spawned by {} in `{}`.\n",
+                event.session_id,
+                label_suffix(event.session_label),
+                who,
+                event.cwd
             ));
         }
         FleetEventKind::StateChanged { state, reason } => {
             s.push_str(&format!(
-                "Fleet session **{}** ({}) → **{}**.",
+                "Fleet session **{}**{} ({}) → **{}**.",
                 event.session_id,
+                label_suffix(event.session_label),
                 event.project_label,
                 state_label(*state),
             ));
@@ -112,8 +148,11 @@ fn format_episode_body(event: &FleetEpisodeInput<'_>) -> String {
                 None => "exited unexpectedly (signal or crash)".to_string(),
             };
             s.push_str(&format!(
-                "Fleet session **{}** ({}) {}.\n",
-                event.session_id, event.project_label, summary
+                "Fleet session **{}**{} ({}) {}.\n",
+                event.session_id,
+                label_suffix(event.session_label),
+                event.project_label,
+                summary
             ));
         }
     }
@@ -145,5 +184,49 @@ fn state_label(s: FleetSessionState) -> &'static str {
         FleetSessionState::Finished => "task complete",
         FleetSessionState::Hibernated => "hibernated",
         FleetSessionState::Exited => "exited",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn exited(label: Option<&str>) -> String {
+        format_episode_body(&FleetEpisodeInput {
+            session_id: "5f0c7e1a-9d7b-4c3e-8a21-0b7e4f1d2c3a",
+            claude_session_id: None,
+            project_label: "pumper",
+            cwd: "C:/code/pumper",
+            session_label: label,
+            kind: FleetEventKind::Exited { exit_code: Some(0) },
+        })
+    }
+
+    #[test]
+    fn a_named_session_reads_by_its_name_beside_the_id() {
+        let body = exited(Some("auth sweep"));
+        // The marker line is unchanged: every reader keys on it.
+        assert!(body.starts_with(
+            "fleet-event session:5f0c7e1a-9d7b-4c3e-8a21-0b7e4f1d2c3a cc:- state:exited project:pumper\n\n"
+        ));
+        assert!(crate::companion::brain::episodic::is_machine_episode(&body));
+        assert!(body.contains(
+            "Fleet session **5f0c7e1a-9d7b-4c3e-8a21-0b7e4f1d2c3a** \"auth sweep\" (pumper) exited cleanly"
+        ));
+        // No name, no suffix: the row reads exactly as before.
+        assert!(exited(None)
+            .contains("Fleet session **5f0c7e1a-9d7b-4c3e-8a21-0b7e4f1d2c3a** (pumper) exited"));
+    }
+
+    #[test]
+    fn a_label_that_only_repeats_the_project_is_dropped_and_quotes_are_stripped() {
+        assert_eq!(clean_label("pumper", "pumper"), None);
+        assert_eq!(clean_label("  ", "pumper"), None);
+        assert_eq!(
+            clean_label("the \"big\"\nrefactor", "pumper").as_deref(),
+            Some("the bigrefactor")
+        );
+        assert_eq!(label_suffix(Some("x")), " \"x\"");
+        assert_eq!(label_suffix(None), "");
     }
 }

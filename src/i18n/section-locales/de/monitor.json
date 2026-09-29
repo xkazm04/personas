@@ -846,5 +846,8 @@
   "remote_terminal_title": "Terminal, schreibgeschützt",
   "remote_terminal_waiting": "Warte auf Ausgabe von {device}",
   "remote_tile_aria": "{title} auf {device}, {state}. Remote-Sitzung öffnen",
-  "remote_wake": "Aufwecken"
+  "remote_wake": "Aufwecken",
+  "queue_origin_contest": "Wettbewerb",
+  "grid_column_contest_open": "{contest} auf der Wettbewerbsseite öffnen",
+  "grid_column_contest_unlinked": "{contest} begann, bevor seine Plätze ihr Projekt erfassten, daher lässt es sich hier nicht öffnen"
 }

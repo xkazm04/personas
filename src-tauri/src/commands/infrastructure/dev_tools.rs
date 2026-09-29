@@ -1,8 +1,8 @@
+use crate::commands::blocking::run_blocking;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::State;
 
-mod competitions;
 pub mod contexts;
 /// Council read commands plus the ONE verdict door.
 pub mod council;
@@ -28,11 +28,10 @@ mod triage;
 pub mod triage_ingest;
 pub mod workspace;
 
-// Re-export competition + dev-server commands so lib.rs invoke_handler
-// references like `commands::infrastructure::dev_tools::dev_tools_start_competition`
+// Re-export the child modules' commands so lib.rs invoke_handler
+// references like `commands::infrastructure::dev_tools::dev_tools_list_goals`
 // continue to resolve after the split. See ADR
 // [[Architect/decisions/2026-05-10-dev-tools-split]].
-pub use competitions::*;
 pub use contexts::*;
 pub use council::*;
 pub use council_ingest::*;
@@ -179,20 +178,24 @@ pub fn dev_tools_update_project(
 }
 
 /// Set or clear the project's standards & branching policy (Pipeline Stage 3).
-/// `config` is the raw JSON envelope `{ precommit, branching }` (the shape is
-/// owned by the frontend; validated here only to be parseable). `None` clears it.
+/// `config` is the raw JSON envelope `{ precommit, branching }` (validated here
+/// only to be parseable). Since Lifecycle v2 the lifecycle document is the
+/// authority: the envelope is mapped onto the current document and appended as
+/// a new version (author `operator`), which rewrites `standards_config` through
+/// the projection. `None` maps to "nothing enabled".
 #[tauri::command]
-pub fn dev_tools_set_standards_config(
+pub async fn dev_tools_set_standards_config(
     state: State<'_, Arc<AppState>>,
     project_id: String,
     config: Option<String>,
 ) -> Result<DevProject, AppError> {
-    require_auth_sync(&state)?;
-    if let Some(ref json) = config {
-        serde_json::from_str::<serde_json::Value>(json)
-            .map_err(|e| AppError::Validation(format!("Invalid standards_config JSON: {e}")))?;
-    }
-    repo::update_standards_config(&state.db, &project_id, config.as_deref())
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    run_blocking("dev_tools_set_standards_config", move || {
+        crate::lifecycle::apply_standards_edit(&db, &project_id, config.as_deref())?;
+        repo::get_project_by_id(&db, &project_id)
+    })
+    .await
 }
 
 /// PR-test-merge protocol embedded into existing QA Guardian instances'
@@ -942,13 +945,17 @@ pub fn dev_tools_bulk_delete_ideas(
 // ============================================================================
 
 #[tauri::command]
-pub fn dev_tools_list_scans(
+pub async fn dev_tools_list_scans(
     state: State<'_, Arc<AppState>>,
     project_id: Option<String>,
     limit: Option<i64>,
 ) -> Result<Vec<DevScan>, AppError> {
     require_auth_sync(&state)?;
-    repo::list_scans(&state.db, project_id.as_deref(), limit)
+    let db = state.db.clone();
+    run_blocking("dev_tools_list_scans", move || {
+        repo::list_scans(&db, project_id.as_deref(), limit)
+    })
+    .await
 }
 
 #[tauri::command]
@@ -1721,6 +1728,19 @@ pub(crate) async fn drive_fleet_wave(
                     let text = personas_engine::unattended::unattended_worktree_task_text(
                         &recalled, &branch, &wt_str,
                     );
+                    // Lifecycle contract, unattended door (no Isolate/Land:
+                    // the guardrails above govern where to work and landing).
+                    let text = match d.project_id.as_deref() {
+                        Some(pid) => crate::lifecycle::contract::append_block(
+                            &text,
+                            &crate::lifecycle::contract_for_project(
+                                db,
+                                pid,
+                                crate::lifecycle::ContractContext::Unattended,
+                            ),
+                        ),
+                        None => text,
+                    };
                     d.worktree_path = Some(wt_str.clone());
                     d.branch = Some(branch);
                     (wt_str, text)
@@ -2029,13 +2049,17 @@ pub fn run_triage_rules_core(
 // ============================================================================
 
 #[tauri::command]
-pub fn dev_tools_list_kpis(
+pub async fn dev_tools_list_kpis(
     state: State<'_, Arc<AppState>>,
     project_id: String,
     status: Option<String>,
 ) -> Result<Vec<DevKpi>, AppError> {
     require_auth_sync(&state)?;
-    repo::list_kpis(&state.db, &project_id, status.as_deref())
+    let db = state.db.clone();
+    run_blocking("dev_tools_list_kpis", move || {
+        repo::list_kpis(&db, &project_id, status.as_deref())
+    })
+    .await
 }
 
 #[tauri::command]
@@ -2359,13 +2383,17 @@ pub fn dev_tools_kpi_list_bindings(
 // ============================================================================
 
 #[tauri::command]
-pub fn dev_tools_list_use_cases(
+pub async fn dev_tools_list_use_cases(
     state: State<'_, Arc<AppState>>,
     project_id: String,
     status: Option<String>,
 ) -> Result<Vec<DevUseCase>, AppError> {
     require_auth_sync(&state)?;
-    repo::list_use_cases(&state.db, &project_id, status.as_deref())
+    let db = state.db.clone();
+    run_blocking("dev_tools_list_use_cases", move || {
+        repo::list_use_cases(&db, &project_id, status.as_deref())
+    })
+    .await
 }
 
 #[tauri::command]
@@ -2805,13 +2833,22 @@ fn bounded_probe(root: &std::path::Path) -> (u32, bool, bool) {
     (test_count, has_mig, has_eval)
 }
 
+/// Filesystem probe of one repo (package.json, lockfiles, test dirs, ...), off
+/// the IPC worker: the Mastermind cold open runs it for every project at once.
 #[tauri::command]
-pub fn dev_tools_probe_repo_evidence(
+pub async fn dev_tools_probe_repo_evidence(
     state: State<'_, Arc<AppState>>,
     root_path: String,
 ) -> Result<RepoEvidence, AppError> {
     require_auth_sync(&state)?;
-    let root = std::path::Path::new(&root_path);
+    run_blocking("dev_tools_probe_repo_evidence", move || {
+        probe_repo_evidence(&root_path)
+    })
+    .await
+}
+
+fn probe_repo_evidence(root_path: &str) -> Result<RepoEvidence, AppError> {
+    let root = std::path::Path::new(root_path);
     let mut ev = RepoEvidence::default();
     if !root.is_dir() {
         return Ok(ev); // scanned stays false — honest "couldn't read it"
@@ -2973,7 +3010,7 @@ pub fn dev_tools_probe_repo_evidence(
     ev.has_migrations = has_mig;
     ev.has_eval = has_eval;
 
-    let (has_repo_memory, mem_files, mem_index, mem_age) = probe_agent_memory(root, &root_path);
+    let (has_repo_memory, mem_files, mem_index, mem_age) = probe_agent_memory(root, root_path);
     ev.has_repo_memory = has_repo_memory;
     ev.memory_file_count = mem_files;
     ev.memory_index_lines = mem_index;

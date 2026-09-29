@@ -1,22 +1,15 @@
-// Canvas focus target — the one place that says "this island is the subject
+// Canvas focus target — the one place that says "this project is the subject
 // right now" (WP3, 2026-08-04).
 //
-// Two things needed to drive focus from OUTSIDE the canvas: Athena composing a
-// panel for a project (which must route to Teams → Mastermind, aim the camera
-// and open the panel, from a listener that lives in the chat panel), and the
-// page itself restoring a stored panel when the user opens a project.
-// `fit()` / `onIslandFocus` live inside `CanvasShell`, so rather than lifting
-// the camera out of the shell (it is genuinely shell state), this module lifts
-// the REQUEST: an external store the shell subscribes to and answers.
+// Athena composing a panel for a project must route to Teams → Mastermind,
+// point the chart at that project and open the panel, from a listener that
+// lives outside the page (useCanvasPanelBridge). The chart's navigation state
+// is its own, so this module lifts the REQUEST, not the state: an external
+// store the page shows the panel from and SoundingsView travels to.
 //
-// Camera-driven on purpose. Off-screen islands are not in the DOM (viewport
-// culling + the mount/hydrate waves), so a focus implementation that looks for
-// a node would work only for islands that happen to already be visible. The
-// shell answers a request by moving the camera, which needs no node.
-//
-// FOCUS TARGET, not "focused slug": v1 targets a project island, but the panel
-// is modelled against a `CanvasFocusTarget` so anchoring it to something else
-// later (a group, a dimension cell) is a renderer change, not a rewrite.
+// FOCUS TARGET, not "focused slug": v1 targets a project, but the panel is
+// modelled against a `CanvasFocusTarget` so anchoring it to something else
+// later (a single reading) is a renderer change, not a rewrite.
 import { useSyncExternalStore } from 'react';
 
 /** What a panel / the camera is currently pointed at. `project` is the only

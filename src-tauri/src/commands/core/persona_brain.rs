@@ -30,16 +30,8 @@ use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
-/// Run a blocking brain read/write off the IPC worker.
-async fn blocking<T, F>(what: &'static str, f: F) -> Result<T, AppError>
-where
-    T: Send + 'static,
-    F: FnOnce() -> Result<T, AppError> + Send + 'static,
-{
-    tokio::task::spawn_blocking(f)
-        .await
-        .map_err(|e| AppError::Internal(format!("{what}: task failed: {e}")))?
-}
+/// Brain reads/writes run off the IPC worker.
+use crate::commands::blocking::run_blocking as blocking;
 
 /// A manifest write changed `personas.core_profile` (the mirror): drop the
 /// cached engine session so the next run assembles against the new text —

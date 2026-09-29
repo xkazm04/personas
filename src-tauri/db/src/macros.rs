@@ -1,3 +1,19 @@
+/// Paths the exported macros below expand to. Not API.
+///
+/// A `#[macro_export]` macro's body is resolved where it EXPANDS, not where it
+/// is written, so a bare `rusqlite::`, `Result` or `push_field!` in a body
+/// names whatever the calling module happens to have in scope. Everything a
+/// body needs that its invocation does not pass in is therefore spelled from a
+/// root: this crate's items and sibling macros through `$crate::`, third-party
+/// crates through this re-export, the standard library through `::std::`.
+/// The one deliberate exception is `crud_update!`, which calls the caller's
+/// `get_by_id` - it documents that obligation.
+#[doc(hidden)]
+pub mod __rt {
+    pub use ::chrono;
+    pub use ::rusqlite;
+}
+
 /// Build a dynamic SQL SET clause field-by-field.
 ///
 /// Checks if an `Option` value is `Some`, and if so, appends
@@ -16,7 +32,7 @@
 macro_rules! push_field {
     ($field:expr, $col:expr, $sets:expr, $param_idx:expr) => {
         if $field.is_some() {
-            $sets.push(format!("{} = ?{}", $col, $param_idx));
+            $sets.push(::std::format!("{} = ?{}", $col, $param_idx));
             $param_idx += 1;
         }
     };
@@ -43,31 +59,43 @@ macro_rules! push_field {
 #[macro_export]
 macro_rules! push_field_param {
     ($field:expr, $col:expr, $sets:expr, $param_idx:expr, $params:expr, clone) => {
-        if let Some(ref v) = $field {
-            $sets.push(format!("{} = ?{}", $col, $param_idx));
+        if let ::std::option::Option::Some(ref v) = $field {
+            $sets.push(::std::format!("{} = ?{}", $col, $param_idx));
             $param_idx += 1;
-            $params.push(Box::new(v.clone()) as Box<dyn rusqlite::types::ToSql>);
+            $params.push(::std::boxed::Box::new(v.clone())
+                as ::std::boxed::Box<
+                    dyn $crate::macros::__rt::rusqlite::types::ToSql,
+                >);
         }
     };
     ($field:expr, $col:expr, $sets:expr, $param_idx:expr, $params:expr, copy) => {
-        if let Some(ref v) = $field {
-            $sets.push(format!("{} = ?{}", $col, $param_idx));
+        if let ::std::option::Option::Some(ref v) = $field {
+            $sets.push(::std::format!("{} = ?{}", $col, $param_idx));
             $param_idx += 1;
-            $params.push(Box::new(*v) as Box<dyn rusqlite::types::ToSql>);
+            $params.push(::std::boxed::Box::new(*v)
+                as ::std::boxed::Box<
+                    dyn $crate::macros::__rt::rusqlite::types::ToSql,
+                >);
         }
     };
     ($field:expr, $col:expr, $sets:expr, $param_idx:expr, $params:expr, bool) => {
-        if let Some(ref v) = $field {
-            $sets.push(format!("{} = ?{}", $col, $param_idx));
+        if let ::std::option::Option::Some(ref v) = $field {
+            $sets.push(::std::format!("{} = ?{}", $col, $param_idx));
             $param_idx += 1;
-            $params.push(Box::new(*v as i32) as Box<dyn rusqlite::types::ToSql>);
+            $params.push(::std::boxed::Box::new(*v as i32)
+                as ::std::boxed::Box<
+                    dyn $crate::macros::__rt::rusqlite::types::ToSql,
+                >);
         }
     };
     ($field:expr, $col:expr, $sets:expr, $param_idx:expr, $params:expr, as_str) => {
-        if let Some(ref v) = $field {
-            $sets.push(format!("{} = ?{}", $col, $param_idx));
+        if let ::std::option::Option::Some(ref v) = $field {
+            $sets.push(::std::format!("{} = ?{}", $col, $param_idx));
             $param_idx += 1;
-            $params.push(Box::new(v.as_str().to_string()) as Box<dyn rusqlite::types::ToSql>);
+            $params.push(::std::boxed::Box::new(v.as_str().to_string())
+                as ::std::boxed::Box<
+                    dyn $crate::macros::__rt::rusqlite::types::ToSql,
+                >);
         }
     };
 }
@@ -101,29 +129,29 @@ macro_rules! row_mapper {
     ($fn_name:ident -> $model:ident {
         $( $field:ident $( [ $kind:ident ] )? ),* $(,)?
     }) => {
-        fn $fn_name(row: &rusqlite::Row) -> rusqlite::Result<$model> {
-            Ok($model {
-                $( $field: row_mapper!(@get row, $field $(, $kind )? ), )*
+        fn $fn_name(row: &$crate::macros::__rt::rusqlite::Row) -> $crate::macros::__rt::rusqlite::Result<$model> {
+            ::std::result::Result::Ok($model {
+                $( $field: $crate::row_mapper!(@get row, $field $(, $kind )? ), )*
             })
         }
     };
     (@get $row:ident, $field:ident) => {
-        $row.get(stringify!($field))?
+        $row.get(::std::stringify!($field))?
     };
     (@get $row:ident, $field:ident, bool) => {
-        $row.get::<_, i32>(stringify!($field))? != 0
+        $row.get::<_, i32>(::std::stringify!($field))? != 0
     };
     (@get $row:ident, $field:ident, opt) => {
-        $row.get(stringify!($field)).ok().flatten()
+        $row.get(::std::stringify!($field)).ok().flatten()
     };
     // Column may not exist yet (migration pending); fall back to a String default.
     (@get $row:ident, $field:ident, opt_str) => {
-        $row.get::<_, String>(stringify!($field))
+        $row.get::<_, ::std::string::String>(::std::stringify!($field))
             .unwrap_or_else(|_| "working".to_string())
     };
     // Column may not exist yet; fall back to 0i32.
     (@get $row:ident, $field:ident, opt_i32) => {
-        $row.get::<_, i32>(stringify!($field)).unwrap_or(0)
+        $row.get::<_, i32>(::std::stringify!($field)).unwrap_or(0)
     };
 }
 
@@ -143,23 +171,27 @@ macro_rules! crud_get_by_id {
         pub fn get_by_id(
             pool: &$crate::DbPool,
             id: &str,
-        ) -> Result<$model, $crate::personas_core::error::AppError> {
-            let _start = std::time::Instant::now();
+        ) -> ::std::result::Result<$model, $crate::personas_core::error::AppError> {
+            let _start = ::std::time::Instant::now();
             let conn = pool.get()?;
             let mut stmt =
-                conn.prepare_cached(concat!("SELECT * FROM ", $table, " WHERE id = ?1"))?;
+                conn.prepare_cached(::std::concat!("SELECT * FROM ", $table, " WHERE id = ?1"))?;
             let result = stmt
-                .query_row(rusqlite::params![id], $mapper)
+                .query_row($crate::macros::__rt::rusqlite::params![id], $mapper)
                 .map_err(|e| match e {
-                    rusqlite::Error::QueryReturnedNoRows => {
-                        $crate::personas_core::error::AppError::NotFound(format!(
-                            concat!($entity, " {}"),
+                    $crate::macros::__rt::rusqlite::Error::QueryReturnedNoRows => {
+                        $crate::personas_core::error::AppError::NotFound(::std::format!(
+                            ::std::concat!($entity, " {}"),
                             id
                         ))
                     }
                     other => $crate::personas_core::error::AppError::Database(other),
                 });
-            $crate::perf::record_query($table, concat!($table, "::get_by_id"), _start.elapsed());
+            $crate::perf::record_query(
+                $table,
+                ::std::concat!($table, "::get_by_id"),
+                _start.elapsed(),
+            );
             result
         }
     };
@@ -179,17 +211,26 @@ macro_rules! crud_get_all {
     ($model:ty, $table:literal, $mapper:ident, $order:literal) => {
         pub fn get_all(
             pool: &$crate::DbPool,
-        ) -> Result<Vec<$model>, $crate::personas_core::error::AppError> {
-            let _start = std::time::Instant::now();
+        ) -> ::std::result::Result<::std::vec::Vec<$model>, $crate::personas_core::error::AppError>
+        {
+            let _start = ::std::time::Instant::now();
             let conn = pool.get()?;
-            let mut stmt =
-                conn.prepare_cached(concat!("SELECT * FROM ", $table, " ORDER BY ", $order))?;
+            let mut stmt = conn.prepare_cached(::std::concat!(
+                "SELECT * FROM ",
+                $table,
+                " ORDER BY ",
+                $order
+            ))?;
             let rows = stmt.query_map([], $mapper)?;
-            let result = Ok($crate::repos::utils::collect_rows(
+            let result = ::std::result::Result::Ok($crate::repos::utils::collect_rows(
                 rows,
-                concat!($table, "::get_all"),
+                ::std::concat!($table, "::get_all"),
             ));
-            $crate::perf::record_query($table, concat!($table, "::get_all"), _start.elapsed());
+            $crate::perf::record_query(
+                $table,
+                ::std::concat!($table, "::get_all"),
+                _start.elapsed(),
+            );
             result
         }
     };
@@ -210,14 +251,18 @@ macro_rules! crud_delete {
         pub fn delete(
             pool: &$crate::DbPool,
             id: &str,
-        ) -> Result<bool, $crate::personas_core::error::AppError> {
-            let _start = std::time::Instant::now();
+        ) -> ::std::result::Result<bool, $crate::personas_core::error::AppError> {
+            let _start = ::std::time::Instant::now();
             let conn = pool.get()?;
             let mut stmt =
-                conn.prepare_cached(concat!("DELETE FROM ", $table, " WHERE id = ?1"))?;
-            let rows = stmt.execute(rusqlite::params![id])?;
-            $crate::perf::record_query($table, concat!($table, "::delete"), _start.elapsed());
-            Ok(rows > 0)
+                conn.prepare_cached(::std::concat!("DELETE FROM ", $table, " WHERE id = ?1"))?;
+            let rows = stmt.execute($crate::macros::__rt::rusqlite::params![id])?;
+            $crate::perf::record_query(
+                $table,
+                ::std::concat!($table, "::delete"),
+                _start.elapsed(),
+            );
+            ::std::result::Result::Ok(rows > 0)
         }
     };
 }
@@ -262,51 +307,51 @@ macro_rules! crud_update {
             pool: &$crate::DbPool,
             id: &str,
             input: $input_type,
-        ) -> Result<$model, $crate::personas_core::error::AppError> {
-            let _start = std::time::Instant::now();
+        ) -> ::std::result::Result<$model, $crate::personas_core::error::AppError> {
+            let _start = ::std::time::Instant::now();
             get_by_id(pool, id)?;
 
-            let now = chrono::Utc::now().to_rfc3339();
+            let now = $crate::macros::__rt::chrono::Utc::now().to_rfc3339();
             let conn = pool.get()?;
 
-            let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
+            let mut sets: ::std::vec::Vec<::std::string::String> = ::std::vec!["updated_at = ?1".into()];
             let mut param_idx = 2u32;
 
-            $( push_field!(input.$field, stringify!($field), sets, param_idx); )*
+            $( $crate::push_field!(input.$field, ::std::stringify!($field), sets, param_idx); )*
 
-            let sql = format!(
-                concat!("UPDATE ", $table, " SET {} WHERE id = ?{}"),
+            let sql = ::std::format!(
+                ::std::concat!("UPDATE ", $table, " SET {} WHERE id = ?{}"),
                 sets.join(", "),
                 param_idx
             );
 
-            let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
-            $( crud_update!(@push input.$field, param_values, $kind); )*
-            param_values.push(Box::new(id.to_string()));
+            let mut param_values: ::std::vec::Vec<::std::boxed::Box<dyn $crate::macros::__rt::rusqlite::types::ToSql>> = ::std::vec![::std::boxed::Box::new(now)];
+            $( $crate::crud_update!(@push input.$field, param_values, $kind); )*
+            param_values.push(::std::boxed::Box::new(id.to_string()));
 
-            let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+            let params_ref: ::std::vec::Vec<&dyn $crate::macros::__rt::rusqlite::types::ToSql> =
                 param_values.iter().map(|p| p.as_ref()).collect();
             conn.execute(&sql, params_ref.as_slice())?;
 
             let result = get_by_id(pool, id);
-            $crate::perf::record_query($table, concat!($table, "::update"), _start.elapsed());
+            $crate::perf::record_query($table, ::std::concat!($table, "::update"), _start.elapsed());
             result
         }
     };
 
     (@push $field:expr, $params:expr, clone) => {
-        if let Some(ref v) = $field {
-            $params.push(Box::new(v.clone()));
+        if let ::std::option::Option::Some(ref v) = $field {
+            $params.push(::std::boxed::Box::new(v.clone()));
         }
     };
     (@push $field:expr, $params:expr, copy) => {
-        if let Some(v) = $field {
-            $params.push(Box::new(v));
+        if let ::std::option::Option::Some(v) = $field {
+            $params.push(::std::boxed::Box::new(v));
         }
     };
     (@push $field:expr, $params:expr, bool) => {
-        if let Some(v) = $field {
-            $params.push(Box::new(v as i32));
+        if let ::std::option::Option::Some(v) = $field {
+            $params.push(::std::boxed::Box::new(v as i32));
         }
     };
 }
@@ -331,7 +376,7 @@ macro_rules! crud_update {
 #[macro_export]
 macro_rules! timed_query {
     ($table:expr, $operation:expr, $body:expr) => {{
-        let _tq_start = std::time::Instant::now();
+        let _tq_start = ::std::time::Instant::now();
         let _tq_result = $body;
         $crate::perf::record_query($table, $operation, _tq_start.elapsed());
         _tq_result
@@ -389,16 +434,16 @@ macro_rules! lab_crud {
         pub fn get_run_by_id(
             pool: &$crate::DbPool,
             id: &str,
-        ) -> Result<$run_type, $crate::personas_core::error::AppError> {
-            timed_query!($run_table, concat!($run_table, "::get_run_by_id"), {
+        ) -> ::std::result::Result<$run_type, $crate::personas_core::error::AppError> {
+            $crate::timed_query!($run_table, ::std::concat!($run_table, "::get_run_by_id"), {
                 let conn = pool.get()?;
                 let mut stmt =
-                    conn.prepare_cached(concat!("SELECT * FROM ", $run_table, " WHERE id = ?1"))?;
-                stmt.query_row(rusqlite::params![id], $run_mapper)
+                    conn.prepare_cached(::std::concat!("SELECT * FROM ", $run_table, " WHERE id = ?1"))?;
+                stmt.query_row($crate::macros::__rt::rusqlite::params![id], $run_mapper)
                     .map_err(|e| match e {
-                        rusqlite::Error::QueryReturnedNoRows => {
-                            $crate::personas_core::error::AppError::NotFound(format!(
-                                concat!($run_entity, " {}"),
+                        $crate::macros::__rt::rusqlite::Error::QueryReturnedNoRows => {
+                            $crate::personas_core::error::AppError::NotFound(::std::format!(
+                                ::std::concat!($run_entity, " {}"),
                                 id
                             ))
                         }
@@ -410,18 +455,18 @@ macro_rules! lab_crud {
         pub fn get_runs_by_persona(
             pool: &$crate::DbPool,
             persona_id: &str,
-            limit: Option<i64>,
-        ) -> Result<Vec<$run_type>, $crate::personas_core::error::AppError> {
-            timed_query!($run_table, concat!($run_table, "::get_runs_by_persona"), {
+            limit: ::std::option::Option<i64>,
+        ) -> ::std::result::Result<::std::vec::Vec<$run_type>, $crate::personas_core::error::AppError> {
+            $crate::timed_query!($run_table, ::std::concat!($run_table, "::get_runs_by_persona"), {
                 let limit = limit.unwrap_or(20);
                 let conn = pool.get()?;
-                let mut stmt = conn.prepare_cached(concat!(
+                let mut stmt = conn.prepare_cached(::std::concat!(
                     "SELECT * FROM ",
                     $run_table,
                     " WHERE persona_id = ?1 ORDER BY created_at DESC LIMIT ?2"
                 ))?;
-                let rows = stmt.query_map(rusqlite::params![persona_id, limit], $run_mapper)?;
-                rows.collect::<Result<Vec<_>, _>>()
+                let rows = stmt.query_map($crate::macros::__rt::rusqlite::params![persona_id, limit], $run_mapper)?;
+                rows.collect::<::std::result::Result<::std::vec::Vec<_>, _>>()
                     .map_err($crate::personas_core::error::AppError::Database)
             })
         }
@@ -430,23 +475,23 @@ macro_rules! lab_crud {
             pool: &$crate::DbPool,
             id: &str,
             status: $crate::models::LabRunStatus,
-            scenarios_count: Option<i32>,
-            summary: Option<&str>,
-            error: Option<&str>,
-            completed_at: Option<&str>,
-        ) -> Result<bool, $crate::personas_core::error::AppError> {
-            timed_query!($run_table, concat!($run_table, "::update_run_status"), {
+            scenarios_count: ::std::option::Option<i32>,
+            summary: ::std::option::Option<&str>,
+            error: ::std::option::Option<&str>,
+            completed_at: ::std::option::Option<&str>,
+        ) -> ::std::result::Result<bool, $crate::personas_core::error::AppError> {
+            $crate::timed_query!($run_table, ::std::concat!($run_table, "::update_run_status"), {
                 let conn = pool.get()?;
-                let current: String = conn
+                let current: ::std::string::String = conn
                     .query_row(
-                        concat!("SELECT status FROM ", $run_table, " WHERE id = ?1"),
-                        rusqlite::params![id],
+                        ::std::concat!("SELECT status FROM ", $run_table, " WHERE id = ?1"),
+                        $crate::macros::__rt::rusqlite::params![id],
                         |row| row.get(0),
                     )
                     .map_err(|e| match e {
-                        rusqlite::Error::QueryReturnedNoRows => {
-                            $crate::personas_core::error::AppError::NotFound(format!(
-                                concat!($run_entity, " {}"),
+                        $crate::macros::__rt::rusqlite::Error::QueryReturnedNoRows => {
+                            $crate::personas_core::error::AppError::NotFound(::std::format!(
+                                ::std::concat!($run_entity, " {}"),
                                 id
                             ))
                         }
@@ -460,7 +505,7 @@ macro_rules! lab_crud {
                 // SELECT above and this UPDATE (same spelling as
                 // repos/communication/events.rs::update_status).
                 let rows = conn.execute(
-                    concat!(
+                    ::std::concat!(
                         "UPDATE ",
                         $run_table,
                         " SET",
@@ -471,7 +516,7 @@ macro_rules! lab_crud {
                         " completed_at = COALESCE(?5, completed_at)",
                         " WHERE id = ?6 AND status = ?7"
                     ),
-                    rusqlite::params![
+                    $crate::macros::__rt::rusqlite::params![
                         status.as_str(),
                         scenarios_count,
                         summary,
@@ -484,15 +529,15 @@ macro_rules! lab_crud {
                 if rows == 0 {
                     // The row existed at SELECT time, so 0 rows means a
                     // concurrent transition — reject the stale write.
-                    return Err($crate::personas_core::error::AppError::Validation(format!(
-                        concat!(
+                    return ::std::result::Result::Err($crate::personas_core::error::AppError::Validation(::std::format!(
+                        ::std::concat!(
                             $run_entity,
                             " {} status changed concurrently (expected '{}')"
                         ),
                         id, current
                     )));
                 }
-                Ok(true)
+                ::std::result::Result::Ok(true)
             })
         }
 
@@ -500,56 +545,56 @@ macro_rules! lab_crud {
             pool: &$crate::DbPool,
             run_id: &str,
             progress_json: &str,
-        ) -> Result<(), $crate::personas_core::error::AppError> {
-            timed_query!($run_table, concat!($run_table, "::update_progress"), {
+        ) -> ::std::result::Result<(), $crate::personas_core::error::AppError> {
+            $crate::timed_query!($run_table, ::std::concat!($run_table, "::update_progress"), {
                 let conn = pool
                     .get()
                     .map_err(|e| $crate::personas_core::error::AppError::Internal(e.to_string()))?;
                 conn.execute(
-                    concat!(
+                    ::std::concat!(
                         "UPDATE ",
                         $run_table,
                         " SET progress_json = ?1 WHERE id = ?2"
                     ),
-                    rusqlite::params![progress_json, run_id],
+                    $crate::macros::__rt::rusqlite::params![progress_json, run_id],
                 )
                 .map_err(|e| $crate::personas_core::error::AppError::Internal(e.to_string()))?;
-                Ok(())
+                ::std::result::Result::Ok(())
             })
         }
 
         pub fn delete_run(
             pool: &$crate::DbPool,
             id: &str,
-        ) -> Result<bool, $crate::personas_core::error::AppError> {
-            timed_query!($run_table, concat!($run_table, "::delete_run"), {
+        ) -> ::std::result::Result<bool, $crate::personas_core::error::AppError> {
+            $crate::timed_query!($run_table, ::std::concat!($run_table, "::delete_run"), {
                 let conn = pool.get()?;
                 let rows = conn.execute(
-                    concat!("DELETE FROM ", $run_table, " WHERE id = ?1"),
-                    rusqlite::params![id],
+                    ::std::concat!("DELETE FROM ", $run_table, " WHERE id = ?1"),
+                    $crate::macros::__rt::rusqlite::params![id],
                 )?;
-                Ok(rows > 0)
+                ::std::result::Result::Ok(rows > 0)
             })
         }
 
         pub fn get_result_by_id(
             pool: &$crate::DbPool,
             id: &str,
-        ) -> Result<$result_type, $crate::personas_core::error::AppError> {
-            timed_query!(
+        ) -> ::std::result::Result<$result_type, $crate::personas_core::error::AppError> {
+            $crate::timed_query!(
                 $result_table,
-                concat!($result_table, "::get_result_by_id"),
+                ::std::concat!($result_table, "::get_result_by_id"),
                 {
                     let conn = pool.get()?;
                     conn.query_row(
-                        concat!("SELECT * FROM ", $result_table, " WHERE id = ?1"),
-                        rusqlite::params![id],
+                        ::std::concat!("SELECT * FROM ", $result_table, " WHERE id = ?1"),
+                        $crate::macros::__rt::rusqlite::params![id],
                         $result_mapper,
                     )
                     .map_err(|e| match e {
-                        rusqlite::Error::QueryReturnedNoRows => {
-                            $crate::personas_core::error::AppError::NotFound(format!(
-                                concat!($result_entity, " {}"),
+                        $crate::macros::__rt::rusqlite::Error::QueryReturnedNoRows => {
+                            $crate::personas_core::error::AppError::NotFound(::std::format!(
+                                ::std::concat!($result_entity, " {}"),
                                 id
                             ))
                         }
@@ -562,20 +607,20 @@ macro_rules! lab_crud {
         pub fn get_results_by_run(
             pool: &$crate::DbPool,
             run_id: &str,
-        ) -> Result<Vec<$result_type>, $crate::personas_core::error::AppError> {
-            timed_query!(
+        ) -> ::std::result::Result<::std::vec::Vec<$result_type>, $crate::personas_core::error::AppError> {
+            $crate::timed_query!(
                 $result_table,
-                concat!($result_table, "::get_results_by_run"),
+                ::std::concat!($result_table, "::get_results_by_run"),
                 {
                     let conn = pool.get()?;
-                    let mut stmt = conn.prepare_cached(concat!(
+                    let mut stmt = conn.prepare_cached(::std::concat!(
                         "SELECT * FROM ",
                         $result_table,
                         " WHERE run_id = ?1 ORDER BY ",
                         $result_order
                     ))?;
-                    let rows = stmt.query_map(rusqlite::params![run_id], $result_mapper)?;
-                    rows.collect::<Result<Vec<_>, _>>()
+                    let rows = stmt.query_map($crate::macros::__rt::rusqlite::params![run_id], $result_mapper)?;
+                    rows.collect::<::std::result::Result<::std::vec::Vec<_>, _>>()
                         .map_err($crate::personas_core::error::AppError::Database)
                 }
             )

@@ -388,6 +388,9 @@ mod tests {
                 BuildEvent::CapabilityResolutionUpdate { .. } => "cap_res",
                 BuildEvent::PersonaResolutionUpdate { .. } => "persona_res",
                 BuildEvent::ClarifyingQuestionV3 { .. } => "question_v3",
+                BuildEvent::ProvisionalCapabilityEnumeration { .. }
+                | BuildEvent::ProvisionalCapabilityResolution { .. }
+                | BuildEvent::ProvisionalSettled { .. } => "provisional",
             })
             .collect()
     }

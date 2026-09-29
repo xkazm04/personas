@@ -846,5 +846,8 @@
   "remote_terminal_title": "Терминал, только для чтения",
   "remote_terminal_waiting": "Ожидание вывода от {device}",
   "remote_tile_aria": "{title} на {device}, {state}. Открыть удалённую сессию",
-  "remote_wake": "Разбудить"
+  "remote_wake": "Разбудить",
+  "queue_origin_contest": "Конкурс",
+  "grid_column_contest_open": "Открыть {contest} на странице конкурса",
+  "grid_column_contest_unlinked": "{contest} начался до того, как его места стали записывать свой проект, поэтому его нельзя открыть отсюда"
 }

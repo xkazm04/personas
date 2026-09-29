@@ -194,13 +194,6 @@
       "resolvedFrom": "basename",
       "verbatim": "athena_bench_bin.rs"
     },
-    "src-tauri/src/commands/infrastructure/dev_tools/competitions.rs": {
-      "count": 1,
-      "sections": [7],
-      "contexts": ["| `src/commands/infrastructure/dev_tools/competitions.rs` | 13 |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "src/commands/infrastructure/dev_tools/competitions.rs"
-    },
     "src-tauri/src/daemon_bin.rs": {
       "count": 1,
       "sections": [6],
@@ -255,6 +248,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "mcp_server/install.rs"
     },
+    "src/commands/infrastructure/dev_tools/competitions.rs": {"count":1,"sections":[7],"contexts":["| `src/commands/infrastructure/dev_tools/competitions.rs` | 13 |"],"resolved":false},
     "src/engine/background.rs": {"count":2,"sections":[5,7],"contexts":["`src/engine/background.rs` 33, **`core/src/crypto.rs` 25** — the credential module is the third-worst"],"resolved":false},
     "src/lib.rs": {"count":4,"sections":[5,6,7],"lines":["511-517","3734"],"contexts":["and nothing can select \"the ones for persona X\". Worst concentrations: `src/lib.rs` 49,"],"resolved":false},
     "src/lib/debug/": {"count":1,"sections":[5],"contexts":["rolling file twice, once uncontrolled. (Honest scope: only **3** callers, all in `src/lib/debug/`,"],"resolved":false,"isDir":true},

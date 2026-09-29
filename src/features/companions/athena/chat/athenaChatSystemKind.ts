@@ -27,6 +27,8 @@
  * `AthenaChatSystemNote`.
  */
 
+import { shortenId } from './refs/idNet';
+
 export type SystemNoteKind = 'dispatcher' | 'fleet_op' | 'tagged' | 'plain';
 
 export interface SystemNote {
@@ -64,9 +66,9 @@ function correlators(line: string): string {
   for (const m of line.matchAll(/(\w+):(\S+)/g)) {
     const [, key, value] = m;
     if (!key || !value) continue;
-    // A uuid identifies; it is not meant to be read. Eight chars is enough to
-    // correlate against a log and short enough not to eat the line.
-    parts.push(`${key} ${OPAQUE_ID_RE.test(value) ? `${value.slice(0, 8)}…` : value}`);
+    // A uuid identifies; it is not meant to be read — the shared id net's
+    // shortening (also used on Athena's own prose) keeps enough to correlate.
+    parts.push(`${key} ${OPAQUE_ID_RE.test(value) ? shortenId(value) : value}`);
   }
   return parts.join(' · ');
 }

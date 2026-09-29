@@ -36,7 +36,19 @@ fn branch_name(run_id: &str) -> String {
 /// exactly one place; callers outside this module use it rather than spawning
 /// their own child (see the spawning-a-cli-subprocess golden path).
 pub async fn run_git(dir: &Path, args: &[&str]) -> Result<String, String> {
-    let out = Command::from(git_command(dir, args))
+    run_git_env(dir, args, &[]).await
+}
+
+/// [`run_git`] with extra environment for this one child: a private index
+/// (`GIT_INDEX_FILE`) or a commit identity. Same argv owner and hardening.
+pub async fn run_git_env(
+    dir: &Path,
+    args: &[&str],
+    env: &[(&str, &str)],
+) -> Result<String, String> {
+    let mut cmd = git_command(dir, args);
+    cmd.envs(env.iter().copied());
+    let out = Command::from(cmd)
         .output()
         .await
         .map_err(|e| format!("failed to run git {args:?}: {e}"))?;
@@ -80,6 +92,76 @@ fn git_result(args: &[&str], out: std::process::Output) -> Result<String, String
         ));
     }
     Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
+}
+
+/// The identity a [`snapshot_worktree`] commit carries. Snapshots are the
+/// app's, not the owner's, and must not fail in a repo with no identity set.
+const SNAPSHOT_IDENTITY: &[(&str, &str)] = &[
+    ("GIT_AUTHOR_NAME", "Athena"),
+    ("GIT_AUTHOR_EMAIL", "athena@personas.local"),
+    ("GIT_COMMITTER_NAME", "Athena"),
+    ("GIT_COMMITTER_EMAIL", "athena@personas.local"),
+];
+
+/// Commit the WHOLE working tree (untracked files included, ignored files
+/// not) onto `refname`, chaining on its previous tip, without touching HEAD,
+/// the branch, the owner's index or the working tree, and without running any
+/// hook (`commit-tree`). This is [`snapshot_stage`] without its tracked-only
+/// limitation: it builds the tree in a private index file seeded from the
+/// ref's last tree (or HEAD's, the first time). Returns `None` when the tree
+/// equals the tip's, so an unchanged turn adds nothing.
+///
+/// Untracked files that are not ignored do enter the snapshot object. It lives
+/// under `refname`, which no default push sends, so it stays on this machine.
+pub async fn snapshot_worktree(
+    dir: &Path,
+    refname: &str,
+    message: &str,
+) -> Result<Option<String>, String> {
+    let index = std::env::temp_dir().join(format!(
+        "personas-snapshot-{}.idx",
+        uuid::Uuid::new_v4().simple()
+    ));
+    let out = snapshot_with_index(dir, refname, message, &index).await;
+    // The private index is scratch; a leftover one is harmless but untidy.
+    let _ = std::fs::remove_file(&index);
+    out
+}
+
+async fn snapshot_with_index(
+    dir: &Path,
+    refname: &str,
+    message: &str,
+    index: &Path,
+) -> Result<Option<String>, String> {
+    let index = index.to_string_lossy().to_string();
+    let private: &[(&str, &str)] = &[("GIT_INDEX_FILE", index.as_str())];
+    let tip = format!("{refname}^{{commit}}");
+    let parent = match run_git(dir, &["rev-parse", "--verify", "--quiet", &tip]).await {
+        Ok(sha) => Some(sha),
+        Err(_) => run_git(dir, &["rev-parse", "--verify", "--quiet", "HEAD^{commit}"])
+            .await
+            .ok(),
+    };
+    match &parent {
+        Some(p) => run_git_env(dir, &["read-tree", p], private).await?,
+        None => run_git_env(dir, &["read-tree", "--empty"], private).await?,
+    };
+    run_git_env(dir, &["add", "-A"], private).await?;
+    let tree = run_git_env(dir, &["write-tree"], private).await?;
+    if let Some(p) = &parent {
+        if run_git(dir, &["rev-parse", &format!("{p}^{{tree}}")]).await? == tree {
+            return Ok(None);
+        }
+    }
+    let mut args = vec!["commit-tree", tree.as_str(), "-m", message];
+    if let Some(p) = &parent {
+        args.push("-p");
+        args.push(p);
+    }
+    let sha = run_git_env(dir, &args, SNAPSHOT_IDENTITY).await?;
+    run_git(dir, &["update-ref", refname, &sha]).await?;
+    Ok(Some(sha))
 }
 
 /// Commit the current working tree as a checkpoint on the run branch and return
@@ -239,6 +321,60 @@ mod tests {
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         d
+    }
+
+    #[tokio::test]
+    async fn a_worktree_snapshot_leaves_the_owners_branch_index_and_files_alone() {
+        let dir = temp_dir("worktree_snapshot");
+        init_repo(&dir).await;
+        let head_before = run_git(&dir, &["rev-parse", "HEAD"]).await.unwrap();
+        // The owner's own work in progress: one staged edit, one untracked file.
+        tokio::fs::write(dir.join("seed.txt"), "owner edit")
+            .await
+            .unwrap();
+        run_git(&dir, &["add", "seed.txt"]).await.unwrap();
+        tokio::fs::write(dir.join("new-page.tsx"), "page")
+            .await
+            .unwrap();
+        let staged_before = run_git(&dir, &["diff", "--cached", "--name-only"])
+            .await
+            .unwrap();
+
+        let snap = snapshot_worktree(&dir, "refs/athena/snapshots", "athena: turn 1")
+            .await
+            .unwrap()
+            .expect("a changed tree yields a snapshot");
+
+        assert_eq!(
+            run_git(&dir, &["rev-parse", "HEAD"]).await.unwrap(),
+            head_before
+        );
+        assert_eq!(
+            run_git(&dir, &["diff", "--cached", "--name-only"])
+                .await
+                .unwrap(),
+            staged_before
+        );
+        assert_eq!(
+            run_git(&dir, &["rev-parse", "refs/athena/snapshots"])
+                .await
+                .unwrap(),
+            snap
+        );
+        let files = run_git(&dir, &["ls-tree", "-r", "--name-only", &snap])
+            .await
+            .unwrap();
+        assert!(
+            files.contains("new-page.tsx"),
+            "untracked files are captured"
+        );
+        // Nothing changed since: no second snapshot.
+        assert_eq!(
+            snapshot_worktree(&dir, "refs/athena/snapshots", "athena: turn 2")
+                .await
+                .unwrap(),
+            None
+        );
     }
 
     #[tokio::test]

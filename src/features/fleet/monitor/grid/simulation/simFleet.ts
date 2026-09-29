@@ -63,7 +63,6 @@ function projectRow(i: number, name: string): DevProject {
     monitoring_credential_id: null,
     monitoring_project_slug: null,
     static_scan_config: null,
-    auto_pr_on_success: false,
     pr_credential_id: null,
     llm_tracking_credential_id: null,
     support_credential_id: null,

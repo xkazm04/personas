@@ -846,5 +846,8 @@
   "remote_terminal_title": "ターミナル（読み取り専用）",
   "remote_terminal_waiting": "{device} からの出力を待機中",
   "remote_tile_aria": "{device} 上の {title}、{state}。リモートセッションを開く",
-  "remote_wake": "起動"
+  "remote_wake": "起動",
+  "queue_origin_contest": "コンテスト",
+  "grid_column_contest_open": "コンテストページで {contest} を開く",
+  "grid_column_contest_unlinked": "{contest} は席がプロジェクトを記録する前に始まったため、ここからは開けません"
 }

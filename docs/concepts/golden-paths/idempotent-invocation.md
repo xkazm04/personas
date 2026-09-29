@@ -739,8 +739,7 @@ stops manufacturing a guarantee.
    dutifully prevents the duplicate *row* while the double-click still flips the
    state twice. The convergence sweep found this independently in `vibeman` (star)
    and `personas-web` (vote), **and neither repo noticed**. Personas' analogue is
-   `forms/AccessibleToggle` over `cascade_use_case_toggle` and
-   `daily_goals::toggle_goal`; nobody has audited it and this path does not claim
+   `forms/AccessibleToggle` over `cascade_use_case_toggle`; nobody has audited it and this path does not claim
    to have. **The correct client answer for a toggle is a target state, not a flip
    — send `enabled: false`, never `enabled: !enabled`.**
 7. **A provider id is not always unique per logical event.** `ascent` deletes

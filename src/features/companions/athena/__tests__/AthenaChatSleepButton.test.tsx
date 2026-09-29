@@ -36,6 +36,12 @@ function gauge(over: Partial<SleepPressure> = {}): SleepPressure {
   };
 }
 
+/** The key opens the shared ConfirmPopover; the cycle runs on its confirm. */
+function confirmRun() {
+  fireEvent.click(screen.getByTestId('companion-force-sleep-cycle'));
+  fireEvent.click(screen.getByTestId('companion-sleep-confirm-run'));
+}
+
 function toasts() {
   return useToastStore.getState().toasts.map((t) => t.message);
 }
@@ -60,7 +66,7 @@ describe('AthenaChatSleepButton', () => {
 
   it('forces a cycle and reports the new cycle id', async () => {
     render(<AthenaChatSleepButton />);
-    fireEvent.click(screen.getByTestId('companion-force-sleep-cycle'));
+    confirmRun();
 
     await waitFor(() => expect(api.run).toHaveBeenCalledWith(true));
     await waitFor(() => {
@@ -77,7 +83,7 @@ describe('AthenaChatSleepButton', () => {
       skippedReason: 'a sleep cycle is already running in this process',
     });
     render(<AthenaChatSleepButton />);
-    fireEvent.click(screen.getByTestId('companion-force-sleep-cycle'));
+    confirmRun();
 
     await waitFor(() => {
       expect(
@@ -89,7 +95,7 @@ describe('AthenaChatSleepButton', () => {
   it('surfaces a failure instead of looking like it worked', async () => {
     api.run.mockRejectedValue(new Error('ipc exploded'));
     render(<AthenaChatSleepButton />);
-    fireEvent.click(screen.getByTestId('companion-force-sleep-cycle'));
+    confirmRun();
 
     await waitFor(() => expect(toasts().length).toBeGreaterThan(0));
     expect(toasts().some((m) => m.toLowerCase().includes('sleep cycle'))).toBe(true);
@@ -117,6 +123,16 @@ describe('AthenaChatSleepButton', () => {
     const tip = await screen.findByRole('tooltip', {}, { timeout: 3000 });
     expect(tip.textContent).toBeTruthy();
     expect(tip).not.toHaveTextContent('/');
+  });
+
+  it('does not run on the key press alone: it asks first, and Cancel runs nothing', () => {
+    render(<AthenaChatSleepButton />);
+    fireEvent.click(screen.getByTestId('companion-force-sleep-cycle'));
+    expect(screen.getByTestId('companion-sleep-confirm')).toHaveAttribute('role', 'dialog');
+    expect(api.run).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText('Cancel'));
+    expect(screen.queryByTestId('companion-sleep-confirm')).toBeNull();
+    expect(api.run).not.toHaveBeenCalled();
   });
 
   it('does not stack gauge reads when hover and focus both fire', async () => {

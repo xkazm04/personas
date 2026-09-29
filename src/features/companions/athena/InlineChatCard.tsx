@@ -10,6 +10,8 @@ import { AthenaFleetPlanCard } from './fleet/AthenaFleetPlanCard';
 import { AthenaShipMilestoneCard } from './ship/AthenaShipMilestoneCard';
 import { AthenaShipGoalsCard } from './ship/AthenaShipGoalsCard';
 import { AthenaNoteSuggestionsCard } from './notepad/AthenaNoteSuggestionsCard';
+import { LifecycleProposalCard } from './lifecycle/LifecycleProposalCard';
+import { ReportCard } from './chat/refs/ReportCard';
 
 /**
  * Kinds for which "Pin to cockpit" makes sense. Dashboard-shaped widgets
@@ -43,6 +45,13 @@ export function InlineChatCard({ card }: { card: ChatCard }) {
   const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const [pinState, setPinState] = useState<'idle' | 'pinning' | 'pinned'>('idle');
+
+  // A `report` (layered voice, layer two) is a one-line link into the report
+  // reader, never a widget: the report's body is the thing to read, and it is
+  // read in the reader, not squeezed into a tile.
+  if (card.kind === 'report') {
+    return <ReportCard card={card} />;
+  }
 
   // `fleet_plan` is deliberately NOT a cockpit widget: it is an actionable
   // proposal that starts real CLI sessions on confirm, so it must never be
@@ -81,6 +90,13 @@ export function InlineChatCard({ card }: { card: ChatCard }) {
     return (
       <AthenaNoteSuggestionsCard config={card.config} title={card.title} cardId={card.id} />
     );
+  }
+
+  // `lifecycle_proposal` (Lifecycle v2) writes a new lifecycle version and can
+  // start a repo install on confirm, so it is chat-only like the cards above.
+  // Its confirm needs `cardId`: the backend reads the proposal back by id.
+  if (card.kind === 'lifecycle_proposal') {
+    return <LifecycleProposalCard config={card.config} title={card.title} cardId={card.id} />;
   }
 
   const Component = cockpitWidgetRegistry[card.kind];

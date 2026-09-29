@@ -46,12 +46,6 @@
     "provider_codex_cli": "Codex",
     "provider_global": "Глобальный"
   },
-  "competition": {
-    "awaiting_review": "Ожидает проверки",
-    "cancelled": "Отменено",
-    "resolved": "Решено",
-    "running": "Выполняется"
-  },
   "connector_status": {
     "failed": "Сбой",
     "no_credential": "Нет учётных данных",

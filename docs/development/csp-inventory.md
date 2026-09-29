@@ -38,6 +38,7 @@ separately if the entry is needed on Android.
 | `https://cdn.simpleicons.org` | shared | Connector / brand icons |
 | `https://lh3.googleusercontent.com` | OAuth (Google) | OAuth provider avatars |
 | `https://i.ytimg.com`, `https://yt3.ggpht.com` | radio (YouTube tracks) | Video thumbnails + channel avatars |
+| `http://127.0.0.1:*` | contest (visual-pass screenshots) | Screenshots under a contest arena's `runs/visual/`, served by the loopback preview route (see `frame-src`). **Security-sensitive, flagged for human review.** |
 
 ### `connect-src`
 
@@ -59,6 +60,7 @@ separately if the entry is needed on Android.
 |---|---|---|
 | `https://www.youtube.com` | radio (YouTube tracks) | IFrame Player embed origin |
 | `https://www.youtube-nocookie.com` | radio (YouTube tracks) | Privacy-enhanced YouTube embed origin |
+| `http://127.0.0.1:*` | contest (variant preview) | The Contest page previews LLM-written variants in an iframe served by the in-app loopback server (`local_http`, bound to `127.0.0.1` on a free port at or above 17400, hence the port wildcard): `GET /contest-preview/<per-boot token>/<projectId>/<contestId>/<path>` (`src-tauri/src/commands/contest/preview.rs`). The iframe is `sandbox="allow-scripts"` with NO `allow-same-origin`, so the variant runs in an opaque origin. The route is read-only, GET only, checks a per-boot random path token in constant time, and serves only files contained in that contest's arena (canonicalised, no `..`/symlink escape). **Security-sensitive, flagged for human review.** |
 
 ### `media-src`
 

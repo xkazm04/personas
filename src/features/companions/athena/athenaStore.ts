@@ -64,6 +64,9 @@ export const ACTIONABLE_CHAT_CARD_KINDS = [
   // and the durable row is what keeps the un-answered ones alive across the
   // send that would otherwise wipe them.
   'note_suggestions',
+  // Lifecycle v2: confirm appends a lifecycle version and reads the proposal
+  // back from the durable row by id.
+  'lifecycle_proposal',
 ] as const;
 
 /** True when a card is an unresolved actionable proposal worth preserving. */
@@ -344,6 +347,16 @@ interface AthenaStore {
   brainView: BrainViewState;
   setBrainView: (next: BrainViewState) => void;
 
+  /** Layered voice: the report open in the Current layout's reader overlay
+   *  (null = closed). The prototypes route reports through `useLayer` instead. */
+  reportViewId: string | null;
+  setReportViewId: (id: string | null) => void;
+
+  /** Activity tray fold state, lifted out of the tray so a `ref:job/…` link
+   *  can unfold it from anywhere in the transcript. */
+  activityTrayCollapsed: boolean;
+  setActivityTrayCollapsed: (collapsed: boolean) => void;
+
   // Dev mode availability (debug build?) — fetched once from
   // companion_beta_flags; gates the wrench toggle in the header.
   devModeAvailable: boolean;
@@ -454,6 +467,18 @@ interface AthenaStore {
    */
   messageReactionPulse: number;
   pulseMessageReaction: () => void;
+
+  /**
+   * Work and speech from other surfaces that should show on the one orb, keyed
+   * by source so each surface clears only its own (e.g. `studio` while a
+   * web-build turn runs, `studio-read` while Studio reads a reply aloud).
+   * Busy sources put her in the working posture with a task dot; speaking
+   * sources light the speaking glow while their clip plays.
+   */
+  orbBusySources: Record<string, true>;
+  orbSpeakingSources: Record<string, true>;
+  setOrbBusy: (source: string, on: boolean) => void;
+  setOrbSpeaking: (source: string, on: boolean) => void;
 
   /**
    * Screen-space center (viewport px) of the orb at the moment the user
@@ -807,6 +832,32 @@ function withQueue(
   return patch;
 }
 
+/**
+ * Rehydrate a persisted message queue as DRAFT text, never as a runnable queue.
+ *
+ * A queued message is intent the app has not acted on yet: the composer
+ * already cleared its draft, so if the queue were in-memory only, a restart
+ * would lose the text silently. Restoring it AS a queue is worse — the drain
+ * fires on the next turn completion, so a message written against a turn
+ * that no longer exists would reach the model without the user asking again.
+ * Folding it back into the conversation's draft keeps the text and hands the
+ * send decision back to the user. Queued text precedes any existing draft,
+ * in arrival order, because it was typed first.
+ */
+function restoreQueuedAsDrafts(persisted: unknown, current: AthenaStore): AthenaStore {
+  const p = (persisted ?? {}) as Partial<
+    Pick<AthenaStore, 'draftsByConversation' | 'queuedByConversation'>
+  >;
+  const drafts: Record<string, string> = { ...(p.draftsByConversation ?? {}) };
+  for (const [conversationId, queued] of Object.entries(p.queuedByConversation ?? {})) {
+    const texts = (queued ?? []).map((m) => m.text).filter((t) => t.trim());
+    if (texts.length === 0) continue;
+    const existing = drafts[conversationId];
+    drafts[conversationId] = [...texts, ...(existing ? [existing] : [])].join('\n\n');
+  }
+  return { ...current, draftsByConversation: drafts, queuedByConversation: {}, queuedMessages: [] };
+}
+
 export const useAthenaStore = create<AthenaStore>()(
   persist(
     (set, get) => ({
@@ -1005,6 +1056,12 @@ export const useAthenaStore = create<AthenaStore>()(
   brainView: { open: false, kind: null, id: null },
   setBrainView: (brainView) => set({ brainView }),
 
+  reportViewId: null,
+  setReportViewId: (reportViewId) => set({ reportViewId }),
+
+  activityTrayCollapsed: false,
+  setActivityTrayCollapsed: (activityTrayCollapsed) => set({ activityTrayCollapsed }),
+
   devModeAvailable: false,
   setDevModeAvailable: (devModeAvailable) => set({ devModeAvailable }),
 
@@ -1095,6 +1152,26 @@ export const useAthenaStore = create<AthenaStore>()(
   messageReactionPulse: 0,
   pulseMessageReaction: () =>
     set((s) => ({ messageReactionPulse: s.messageReactionPulse + 1 })),
+
+  orbBusySources: {},
+  orbSpeakingSources: {},
+  setOrbBusy: (source, on) =>
+    set((s) => {
+      // Unchanged keeps the same object: the orb subscribes on every screen.
+      if (!!s.orbBusySources[source] === on) return s;
+      const next = { ...s.orbBusySources };
+      if (on) next[source] = true;
+      else delete next[source];
+      return { orbBusySources: next };
+    }),
+  setOrbSpeaking: (source, on) =>
+    set((s) => {
+      if (!!s.orbSpeakingSources[source] === on) return s;
+      const next = { ...s.orbSpeakingSources };
+      if (on) next[source] = true;
+      else delete next[source];
+      return { orbSpeakingSources: next };
+    }),
 
   orbOpenOrigin: null,
   setOrbOpenOrigin: (orbOpenOrigin) => set({ orbOpenOrigin }),
@@ -1427,9 +1504,15 @@ export const useAthenaStore = create<AthenaStore>()(
     {
       name: 'companion-drafts',
       storage: createDedupedJSONStorage(),
-      // Only the composer draft map is durable — everything else here is
-      // live session/UI state that resets fine on a fresh app launch.
-      partialize: (state) => ({ draftsByConversation: state.draftsByConversation }),
+      // Durable: the composer draft map, and the mid-turn message queue —
+      // which is restored as draft text, never as a queue (see
+      // `restoreQueuedAsDrafts`). Everything else here is live session/UI
+      // state that resets on a fresh app launch.
+      partialize: (state) => ({
+        draftsByConversation: state.draftsByConversation,
+        queuedByConversation: state.queuedByConversation,
+      }),
+      merge: restoreQueuedAsDrafts,
     },
   ),
 );

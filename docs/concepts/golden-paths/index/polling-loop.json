@@ -52,6 +52,20 @@
       ],
       "resolved": false
     },
+    "agents/sub_glyph/GlyphCinemaLayout.tsx": {
+      "count": 1,
+      "sections": [9],
+      "lines": ["60"],
+      "contexts": ["- ~~`agents/sub_glyph/GlyphCinemaLayout.tsx:60`~~ (deleted 2026-09-23 with the legacy build layouts) — **false positive** (`return () => clearTimeout(h)` at `:63`)"],
+      "resolved": false
+    },
+    "agents/sub_glyph/GlyphDialogueCinemaLayout.tsx": {
+      "count": 1,
+      "sections": [9],
+      "lines": ["72"],
+      "contexts": ["- ~~`agents/sub_glyph/GlyphDialogueCinemaLayout.tsx:72`~~ (deleted 2026-09-23 with the legacy build layouts) — **false positive** (cleanup at `:74`)"],
+      "resolved": false
+    },
     "api_proxy.rs": {"count":2,"sections":[2,8],"contexts":["that stales it in the same commit that introduces it (`api_proxy.rs`'s"],"resolved":false},
     "check-polling-backoff.mjs": {
       "count": 1,
@@ -166,6 +180,15 @@
       "lines": ["33"],
       "contexts": [
         "**Steady-freshness polls that should be `usePolling` (remaining ~24):** `overview/sub_health/libs/useStatusPageData.ts:130` · `overview/sub_incidents/libs/useIncidentsData.ts:67` · `overview/sub_miss…"
+      ],
+      "resolved": false
+    },
+    "plugins/dev-tools/sub_lifecycle/competitions/CompetitionCard.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["92"],
+      "contexts": [
+        "**Terminal polls that should be `useBackgroundSnapshot` (9):** `hooks/database/useSchemaProposal.ts:103` · `vault/sub_databases/tabs/ChatTab.tsx:92` · `plugins/dev-tools/sub_context/useUseCases.ts:81…"
       ],
       "resolved": false
     },
@@ -663,22 +686,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_executions/components/CircuitBreakerIndicator.tsx"
     },
-    "src/features/agents/sub_glyph/GlyphCinemaLayout.tsx": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["60"],
-      "contexts": ["- `agents/sub_glyph/GlyphCinemaLayout.tsx:60` — **false positive** (`return () => clearTimeout(h)` at `:63`)"],
-      "resolvedFrom": "suffix",
-      "verbatim": "agents/sub_glyph/GlyphCinemaLayout.tsx"
-    },
-    "src/features/agents/sub_glyph/GlyphDialogueCinemaLayout.tsx": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["72"],
-      "contexts": ["- `agents/sub_glyph/GlyphDialogueCinemaLayout.tsx:72` — **false positive** (cleanup at `:74`)"],
-      "resolvedFrom": "suffix",
-      "verbatim": "agents/sub_glyph/GlyphDialogueCinemaLayout.tsx"
-    },
     "src/features/fleet/monitor/channels/ReviewsRail.tsx": {
       "count": 1,
       "sections": [7],
@@ -817,16 +824,6 @@
       "isDir": true
     },
     "src/features/plugins/dev-tools/sub_context/useUseCases.ts": {"count":2,"sections":[7],"lines":["81"],"contexts":["| `SystemLoadFooterIcon.tsx:86` · `useUseCases.ts:81` | 2 s | 5s | 2.5× slower |"],"resolvedFrom":"basename","verbatim":"useUseCases.ts"},
-    "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionCard.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["92"],
-      "contexts": [
-        "**Terminal polls that should be `useBackgroundSnapshot` (9):** `hooks/database/useSchemaProposal.ts:103` · `vault/sub_databases/tabs/ChatTab.tsx:92` · `plugins/dev-tools/sub_context/useUseCases.ts:81…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/dev-tools/sub_lifecycle/competitions/CompetitionCard.tsx"
-    },
     "src/features/plugins/fleet/relativeAgo.ts": {"count":1,"sections":[9],"contexts":["`src/hooks/utility/timing/relativeTimeTicker.ts` and `src/features/plugins/fleet/relativeAgo.ts`"]},
     "src/features/plugins/fleet/sub_grid/FleetTokenSummaryBar.tsx": {
       "count": 1,

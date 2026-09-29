@@ -350,6 +350,14 @@
       "marketingModule": "home"
     },
     {
+      "doc": "docs/features/companions/athena/layered-voice.md",
+      "sourceGlobs": [
+        "src-tauri/src/companion/register.rs",
+        "src-tauri/src/companion/reports.rs",
+        "src-tauri/src/commands/companion/layered_voice.rs"
+      ]
+    },
+    {
       "doc": "docs/features/onboarding.md",
       "sourceGlobs": [
         "src/features/onboarding/**",
@@ -398,10 +406,20 @@
       "doc": "docs/features/plugins/dev tools/dev-tools.md",
       "sourceGlobs": [
         "src/features/plugins/dev-tools/**",
-        "src-tauri/src/commands/infrastructure/dev_tools.rs"
+        "src-tauri/src/commands/infrastructure/dev_tools.rs",
+        "src-tauri/src/commands/infrastructure/lifecycle.rs",
+        "src-tauri/src/lifecycle/**"
       ],
       "onboardingFlows": [
         "plugin-dev-tools"
+      ],
+      "marketingModule": "plugins"
+    },
+    {
+      "doc": "docs/features/plugins/dev tools/dev-tools.md",
+      "sourceGlobs": [
+        "src/features/plugins/dev-tools/contest/**",
+        "src-tauri/src/commands/contest/**"
       ],
       "marketingModule": "plugins"
     },

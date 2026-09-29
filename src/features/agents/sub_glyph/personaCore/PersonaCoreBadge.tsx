@@ -3,7 +3,8 @@
  *  The intent textarea is the mandatory "what"; the persona core is one of the
  *  OPTIONAL dimensions beside it. So this renders as a sibling chip to the other
  *  dimension badges — icon + label, tinted when configured — and opens the
- *  configurator on click. View-only while a build is in flight.
+ *  configurator on click. View-only while a build is in flight. `onOpen` gets
+ *  the badge element, so a host can grow the configurator out of it.
  */
 import { motion } from "framer-motion";
 import { Atom } from "lucide-react";
@@ -14,7 +15,7 @@ import type { PersonaCore } from "./types";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-export function PersonaCoreBadge({ core, onOpen, locked = false, index = 0 }: { core: PersonaCore; onOpen: () => void; locked?: boolean; index?: number }) {
+export function PersonaCoreBadge({ core, onOpen, locked = false, index = 0 }: { core: PersonaCore; onOpen: (el: HTMLElement) => void; locked?: boolean; index?: number }) {
   const { t } = useTranslation();
   const { configured, preset } = core;
   const PresetIcon = preset ? coreIcon(preset.icon) : Atom;
@@ -26,7 +27,7 @@ export function PersonaCoreBadge({ core, onOpen, locked = false, index = 0 }: { 
   return (
     <motion.button
       type="button"
-      onClick={locked ? undefined : onOpen}
+      onClick={locked ? undefined : (e) => onOpen(e.currentTarget)}
       disabled={locked}
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
@@ -40,7 +41,7 @@ export function PersonaCoreBadge({ core, onOpen, locked = false, index = 0 }: { 
       // since the lint colour rules only inspect Tailwind class names.
       // Only the CONFIGURED skin stays inline: it is tinted from the
       // archetype's own runtime colour, which no class can express.
-      className={`inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-1.5 rounded-interactive border transition-colors ${locked ? "cursor-default" : "cursor-pointer hover:border-foreground/30"} ${configured ? "" : "border-card-border bg-secondary/20"}`}
+      className={`inline-flex shrink-0 max-w-[14rem] whitespace-nowrap items-center gap-1.5 pl-1.5 pr-2.5 py-1.5 rounded-interactive border transition-colors ${locked ? "cursor-default" : "cursor-pointer hover:border-foreground/30"} ${configured ? "" : "border-card-border bg-secondary/20"}`}
       style={configured ? {
         borderColor: colorWithAlpha(accent, 0.5),
         background: colorWithAlpha(accent, 0.14),
@@ -52,7 +53,10 @@ export function PersonaCoreBadge({ core, onOpen, locked = false, index = 0 }: { 
       >
         <PresetIcon className="w-3.5 h-3.5" style={{ color: configured ? accent : undefined }} />
       </span>
-      <span className="typo-caption text-foreground">{label}</span>
+      {/* One line, always (the compose row is flex-nowrap and the label wrapped
+          to two lines there): the chip never shrinks below its label, and a
+          long archetype name truncates at the cap instead of wrapping. */}
+      <span className="min-w-0 truncate typo-caption text-foreground">{label}</span>
     </motion.button>
   );
 }

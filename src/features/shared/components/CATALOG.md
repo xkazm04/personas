@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**166 reusable components** live under `src/features/shared/components/`.
+**167 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -115,6 +115,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `AthenaComposedBadge` | Provenance badge for anything Athena composed, diagnosed, or handled autonomously. |
 | `Banner` | _(add a `@catalog` tag)_ |
 | `ConfirmDialog` | Confirm/cancel dialog for destructive or irreversible actions. |
+| `ConfirmPopover` | Anchored confirm popover next to the control that asked: a title, an optional detail line, Cancel and an AsyncButton confirm with  |
 | `ConnectionStatusBadge` | _(add a `@catalog` tag)_ |
 | `DropZoneGlow` | rounded-card (8) / rounded-modal (12) so the SVG outline aligns. |
 | `ErrorBanner` | User-facing error display — inline / banner / panel variants with retry + dismiss. |
@@ -265,4 +266,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_166 components, 40 without a `@catalog` description._
+_167 components, 40 without a `@catalog` description._

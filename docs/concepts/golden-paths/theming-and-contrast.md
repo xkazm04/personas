@@ -212,7 +212,8 @@ CI on its ratio anyway (§7.A).
 ## 6. Evidence
 
 **The one site to copy — for a component:**
-`src/features/agents/components/matrix/SharedResourcesPanel.tsx`. 189 lines, **27 `typo-*` tiers,
+`src/features/agents/components/matrix/SharedResourcesPanel.tsx` (**deleted 2026-09-23** as an orphan
+of the legacy build layouts; read it with `git show 887a88876:src/features/agents/components/matrix/SharedResourcesPanel.tsx`). 189 lines, **27 `typo-*` tiers,
 25 semantic colour tokens, zero opacity-tinted text, zero palette classes.** Every text node is bare
 `text-foreground`; the whole visual hierarchy is `typo-label` / `typo-caption` / `typo-body-sm`, and
 the only alphas in the file are on *backgrounds* (`bg-secondary/40` on a chip, `:57`) where they
