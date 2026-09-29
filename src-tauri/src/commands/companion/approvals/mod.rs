@@ -179,6 +179,7 @@ mod approval_exec_ship;
 mod approval_headless;
 mod approval_lifecycle;
 mod approval_operator;
+mod approval_policy;
 
 // The App master hire module is private, but the kp reporter needs ONE thing
 // from it: how a seeded KPI's `measure_config` carries kp's `kpiKey`. Re-export
@@ -200,3 +201,4 @@ pub use approval_exec_ship::*;
 pub(crate) use approval_headless::*;
 pub use approval_lifecycle::*;
 pub(crate) use approval_operator::*;
+pub(crate) use approval_policy::*;

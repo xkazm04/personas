@@ -132,6 +132,48 @@ pub(crate) async fn approve_claimed(
     action: &str,
     params: &serde_json::Value,
 ) -> Result<ApprovalOutcome, AppError> {
+    let outcome = execute_claimed(state, app, approval_id, action, params).await?;
+
+    // The reported gap: after a manual Approve the action ran and a flat outcome
+    // line was appended, but Athena never reacted — the user had to send a NEW
+    // message to get any response. Spawn ONE brief system-initiated reaction turn
+    // so she responds automatically. Success only: a failed action keeps its
+    // inline error on the still-open card (the frontend doesn't resolve it), and
+    // the skip filter keeps fleet / navigation-only actions quiet.
+    //
+    // NOTE (auto-approve path): `auto_resolve_if_allowed` deliberately does NOT
+    // call this. That path is autonomous-mode-only and fires when Athena's own
+    // reasoning turn just proposed the action — her originating reply already
+    // spoke to the user, so a second "I saved that" turn would be redundant
+    // chatter, exactly what autonomous mode's restraint design avoids. The manual
+    // path is the genuine silence gap. Documented follow-up if that changes.
+    // The gig persona policy (`approval_policy`) does not call it either: nobody
+    // clicked, and a reaction turn per auto-approved gig hire is a hundred
+    // Athena turns that each say "I hired that".
+    if outcome.status == APPROVAL_STATUS_APPROVED {
+        spawn_action_reaction(
+            app,
+            state,
+            action,
+            &outcome.message,
+            outcome.client_action.as_ref(),
+        );
+    }
+    Ok(outcome)
+}
+
+/// The decision half of [`approve_claimed`], without Athena's reaction turn:
+/// run the claimed row's action through the one executor table, finalize the
+/// row (`approved` / `approved_failed`) and log the episode. The standing
+/// policy path (`approval_policy::policy_approve_kp_hire`) runs exactly this,
+/// so a policy approval executes what an Approve click executes.
+pub(crate) async fn execute_claimed(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    approval_id: String,
+    action: &str,
+    params: &serde_json::Value,
+) -> Result<ApprovalOutcome, AppError> {
     let (action, params) = (action.to_string(), params);
     let exec_result =
         execute_approval_action(state.clone(), app.clone(), &approval_id, &action, params).await;
@@ -154,23 +196,6 @@ pub(crate) async fn approve_claimed(
 
     finalize_approval(state, &approval_id, status_text)?;
     log_action_episode(state, &action, &embedder_log).await;
-
-    // The reported gap: after a manual Approve the action ran and a flat outcome
-    // line was appended, but Athena never reacted — the user had to send a NEW
-    // message to get any response. Spawn ONE brief system-initiated reaction turn
-    // so she responds automatically. Success only: a failed action keeps its
-    // inline error on the still-open card (the frontend doesn't resolve it), and
-    // the skip filter keeps fleet / navigation-only actions quiet.
-    //
-    // NOTE (auto-approve path): `auto_resolve_if_allowed` deliberately does NOT
-    // call this. That path is autonomous-mode-only and fires when Athena's own
-    // reasoning turn just proposed the action — her originating reply already
-    // spoke to the user, so a second "I saved that" turn would be redundant
-    // chatter, exactly what autonomous mode's restraint design avoids. The manual
-    // path is the genuine silence gap. Documented follow-up if that changes.
-    if status_text == APPROVAL_STATUS_APPROVED {
-        spawn_action_reaction(app, state, &action, &message, client_action.as_ref());
-    }
 
     Ok(ApprovalOutcome {
         id: approval_id,
