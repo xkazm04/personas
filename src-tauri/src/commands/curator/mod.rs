@@ -832,6 +832,7 @@ pub async fn curator_runtime_get(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use personas_core::models::CuratorDecisionLevel;
     use personas_db::init_test_db;
 
     /// Insert one plan run whose single item carries the given subject and
