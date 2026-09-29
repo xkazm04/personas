@@ -54,6 +54,11 @@ use crate::db::DbPool;
 use crate::error::AppError;
 use crate::ActiveProcessRegistry;
 
+/// Model and effort for the builder's own turns (not the runtime model the
+/// build recommends for each capability; that lives in `session_prompt`).
+const BUILD_MODEL: &str = "claude-sonnet-5";
+const BUILD_EFFORT: &str = "low";
+
 use super::prompt;
 
 // =============================================================================
@@ -225,10 +230,15 @@ impl BuildSessionManager {
             sessions.insert(session_id.clone(), handle);
         }
 
-        // Build CLI args — force Sonnet for build sessions
+        // Build CLI args: the builder runs on the current Sonnet at low effort.
+        // Measured live 2026-09-26 on claude-sonnet-4-6 at the CLI default effort,
+        // the first turn spent 57-201 s thinking before its first output; low
+        // effort trades depth the design pass rarely needs for time to first frame.
         let mut cli_args = prompt::build_cli_args(None, None);
         cli_args.args.push("--model".to_string());
-        cli_args.args.push("claude-sonnet-4-6".to_string());
+        cli_args.args.push(BUILD_MODEL.to_string());
+        cli_args.args.push("--effort".to_string());
+        cli_args.args.push(BUILD_EFFORT.to_string());
         // B2 streaming (interactive only): ask the CLI to emit incremental
         // content_block_delta events so the runner can surface the persona's
         // behavior_core to the Cinema loading view the moment the LLM finishes
