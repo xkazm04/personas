@@ -583,7 +583,16 @@ async fn report_tool_defect(
     };
 
     let (project_label, _cwd) = resolve_session_meta(fleet_session_id);
-    let state = app.state::<std::sync::Arc<crate::AppState>>();
+    // The `mcp` router is registered by `boot::services::start_local_http`,
+    // which binds the port ~100 lines before `app.manage(state_arc)` runs in
+    // `boot::setup`. A bare `state::<T>()` here panics `state() called before
+    // manage()` for a tool call that lands in that window. Absence is a
+    // retryable answer, not a crash.
+    let Some(state) = app.try_state::<std::sync::Arc<crate::AppState>>() else {
+        return Err(internal_error(
+            "the app is still booting: application state is not published yet -- retry",
+        ));
+    };
 
     // 1. The audit row — same table, same taxonomy, same insert helper an
     //    executed tool's failure uses.
@@ -744,4 +753,31 @@ mod tests {
     // handlers — constructing a real AppHandle in a unit test isn't
     // straightforward, and the empty-string validation they covered
     // is exercised end-to-end by the orchestration Playwright spec.
+
+    /// Static guarantee. The `mcp` router is registered by
+    /// `boot::services::start_local_http`, which binds the port ~100 lines
+    /// of `boot::setup` before `app.manage(state_arc)` runs — so a tool call
+    /// can arrive while `Arc<AppState>` is still absent from the state map.
+    /// A bare `state::<T>()` panics there; `try_state` turns it into a
+    /// JSON-RPC error the caller can retry.
+    ///
+    /// Source assertion for the reason the comment above gives: there is no
+    /// way to build an `AppHandle` without managed state in this crate.
+    #[test]
+    fn tool_handlers_never_read_app_state_with_a_panicking_accessor() {
+        let src = include_str!("handlers.rs");
+        let offenders: Vec<_> = src
+            .lines()
+            .enumerate()
+            .filter(|(_, l)| l.contains(".state::<") && !l.contains(".try_state::<"))
+            .filter(|(_, l)| !l.trim_start().starts_with("//"))
+            .map(|(i, l)| format!("line {}: {}", i + 1, l.trim()))
+            .collect();
+        assert!(
+            offenders.is_empty(),
+            "the Athena MCP router serves during the boot window, so every \
+             AppState read here must be `try_state`:\n{}",
+            offenders.join("\n")
+        );
+    }
 }

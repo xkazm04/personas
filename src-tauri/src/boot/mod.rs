@@ -10,7 +10,32 @@
 //! **Boot order is an invariant.** A reorder here is a startup bug that no test
 //! catches — it shows up as a machine behaving differently, weeks later. Add a
 //! phase where it belongs in the sequence, never "at the end because that
-//! compiles".
+//! compiles". The `tests` module at the foot of this file now catches the part
+//! of that a source assertion can: which subsystem starts must follow
+//! `app.manage(state_arc)`.
+//!
+//! ## Which `app.state::<Arc<AppState>>()` reads are safe, and why (2026-09-09)
+//!
+//! `grep -rn '[.]state::<' src-tauri/src/engine` returns eight bare reads. All
+//! eight were audited against this sequence and **none is reachable before
+//! `manage`** — do not "fix" them by reflex, and do not re-file them:
+//!
+//! - `background/lifecycle.rs:356,386` (subscription assembly) — every caller
+//!   of `start_loops` runs after `manage`: `finalize::spawn_scheduler_autostart`
+//!   (after a 2 s sleep), the `start_scheduler` command, the tray handler.
+//! - `smee_relay.rs:518` — sole caller is `lifecycle.rs`, inside `start_loops`.
+//! - `management_api.rs:4119` and `app_master_probation.rs:719,844` — the
+//!   management router is merged only in the `Some(registry)` branch of
+//!   `lifecycle.rs`, which exists only once a `try_state` poll has resolved
+//!   `AppState`. No resolve, no route, so no handler to panic in.
+//! - `build_session/runner.rs:505` and `build_session/oneshot.rs:94` — reachable
+//!   only through `BuildSessionManager::start_session`, and the manager is a
+//!   field *on* `AppState`; you cannot call it without already holding one.
+//!
+//! The reads that were genuinely exposed are the ones behind routers this file
+//! registers **before** `manage` — `dev_tools_http` and the Athena `mcp`
+//! handlers — and those now use `try_state` and degrade. That asymmetry is the
+//! whole lesson: the danger is not the accessor, it is being mounted early.
 
 mod data;
 mod deep_link;
@@ -312,4 +337,103 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     finalize::spawn_auth_session_restore(restore_handle, restore_state);
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    //! The header of this module says boot order is an invariant and that "a
+    //! reorder here is a startup bug that no test catches". These tests are
+    //! the part of it a test CAN catch.
+    //!
+    //! They read `setup`'s source rather than running it: driving `setup`
+    //! needs a real `tauri::App`, and this crate does not enable Tauri's
+    //! `test` feature, so no `AppHandle` — with or without managed state —
+    //! can be built in a unit test. Same shape as the source guards in
+    //! `commands/core/use_cases.rs`, `commands/fleet/hooks.rs` and
+    //! `commands/fleet/stale.rs`.
+
+    /// `setup`'s body, with this test module cut off — otherwise the marker
+    /// strings below would match their own literals here and a deleted call
+    /// would still "pass".
+    fn setup_src() -> &'static str {
+        let full = include_str!("mod.rs");
+        let cut = full
+            .find("#[cfg(test)]")
+            .expect("this test module is part of the file");
+        &full[..cut]
+    }
+
+    /// Byte offset of a call in `setup`, or a failure naming what vanished.
+    fn at(needle: &str) -> usize {
+        setup_src().find(needle).unwrap_or_else(|| {
+            panic!(
+                "`{needle}` is gone from boot::setup — if it was renamed, rename it here too; \
+                 this test is the only thing holding its position in the boot order"
+            )
+        })
+    }
+
+    const MANAGE: &str = "app.manage(state_arc.clone());";
+
+    /// The invariant behind every `app.state::<Arc<AppState>>()` in the
+    /// engine: each of these subsystems reads `Arc<AppState>` back out of
+    /// Tauri's state map, so starting one before `manage` publishes it makes
+    /// that read panic `state() called before manage()`.
+    ///
+    /// This is not hypothetical. The comment at the top of `setup` records
+    /// that spawning the durable-queue re-admission before `manage` made
+    /// every restart with work in flight fail that work — two App Master
+    /// wakes lost per restart, measured 2026-09-08.
+    #[test]
+    fn subsystems_that_read_app_state_start_after_manage() {
+        let manage = at(MANAGE);
+        for start in [
+            "workers::spawn_requeue_persisted(",
+            "commands::companion::start_proactive_scheduler(",
+            "test_bridge::start_test_automation_server(",
+            "finalize::spawn_scheduler_autostart(",
+        ] {
+            assert!(
+                at(start) > manage,
+                "`{start}` reads Arc<AppState> out of Tauri's state map, but it now runs \
+                 BEFORE `{MANAGE}` — every such read panics `state() called before manage()`"
+            );
+        }
+    }
+
+    /// `start_local_http` binds the port and begins accepting *before*
+    /// `manage`, which is why the routers it registers may not read
+    /// `Arc<AppState>` with the panicking accessor: a request can genuinely
+    /// land in the gap. If the bind ever moves after `manage`, the window
+    /// closes and this test steps aside rather than failing an improvement.
+    #[test]
+    fn routers_bound_before_manage_tolerate_absent_app_state() {
+        if at("services::start_local_http(") > at(MANAGE) {
+            return; // window closed — the guards below are now belt-and-braces
+        }
+        for (module, src) in [
+            (
+                "commands/infrastructure/dev_tools_http.rs",
+                include_str!("../commands/infrastructure/dev_tools_http.rs"),
+            ),
+            (
+                "companion/orchestration/mcp/handlers.rs",
+                include_str!("../companion/orchestration/mcp/handlers.rs"),
+            ),
+        ] {
+            let offenders: Vec<_> = src
+                .lines()
+                .enumerate()
+                .filter(|(_, l)| l.contains(".state::<") && !l.contains(".try_state::<"))
+                .filter(|(_, l)| !l.trim_start().starts_with("//"))
+                .map(|(i, l)| format!("  line {}: {}", i + 1, l.trim()))
+                .collect();
+            assert!(
+                offenders.is_empty(),
+                "{module} is served by a router registered before `{MANAGE}`, so it must read \
+                 AppState with `try_state` and degrade:\n{}",
+                offenders.join("\n")
+            );
+        }
+    }
 }

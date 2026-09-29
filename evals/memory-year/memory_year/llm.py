@@ -5,10 +5,18 @@ replaced system prompt, JSON output, no session persistence, no tools. That is t
 engine Athena ships with, so the consumer in a ladder is the consumer in production, and
 the arms differ only in what memory they were shown.
 
+"No tools" is enforced by ISOLATION, not by the empty working directory. Until 2026-09-27
+the argv said nothing about tools or settings, and a call from an empty directory still
+loaded the operator's user settings: 25 tools, 30 skills, a plugin, and three user hooks
+that posted every prompt to a local app - 23,277 input tokens for a 7-word prompt that
+costs 479 isolated. `py -m memory_year.checks.cli_isolation` reads what a call loaded.
+
 Model specs are `claude:<model>@<effort>`, e.g. `claude:claude-opus-4-8@low` (Athena's
-main turn), `claude:claude-sonnet-5@low`. Calls are cached by (spec, system, prompt) so a
-re-run, a re-judge or a second rung over the same probe costs nothing. The cache is
-process-shared and thread-safe; concurrent calls are the normal mode.
+main turn), `claude:claude-sonnet-5@low`. Calls are cached by (spec, CLI_PROFILE, system,
+prompt) so a re-run, a re-judge or a second rung over the same probe costs nothing. The
+profile is in the key because a reply cached under a different invocation is a replay of a
+different configuration, not a result of this one. The cache is process-shared and
+thread-safe; concurrent calls are the normal mode.
 """
 from __future__ import annotations
 
@@ -23,12 +31,73 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
+import re
 import shutil
 
 CLAUDE = shutil.which("claude") or "claude"   # the resolved shim, so no shell is needed and argv stays short
 
 DEFAULT_CONSUMER = "claude:claude-opus-4-8@medium"
 DEFAULT_JUDGE = "claude:claude-sonnet-5@low"
+
+# What a call must not inherit from the machine it runs on: built-in tools, the user,
+# project and local settings files (hooks, plugins, permissions, model settings), MCP
+# servers, and skills. Changing this list changes what the model reads, so bump
+# CLI_PROFILE with it - the profile is part of every cache key.
+ISOLATION = ["--tools", "", "--setting-sources", "", "--strict-mcp-config", "--disable-slash-commands"]
+CLI_PROFILE = "isolated-1"
+
+
+def cli_args(model: str, effort: str, system_file: Path, output_format: str = "json",
+             isolated: bool = True) -> list[str]:
+    """The argv of one headless call. `isolated=False` exists for the isolation check's control."""
+    args = [CLAUDE, "-p", "--no-session-persistence", "--output-format", output_format,
+            "--model", model, "--effort", effort, "--system-prompt-file", str(system_file)]
+    return args + ISOLATION if isolated else args
+
+
+class SeatLimit(RuntimeError):
+    """The seat refused: a session, weekly or per-model allowance is exhausted until a reset.
+
+    A refusal is not a result and not a failure to retry. Retrying into a closed window only
+    spends attempts and log lines, and a caller that swallows a generic error (the judge does,
+    by design) would store a degraded verdict for a probe that was never judged. So this is
+    raised on the first refusal, and callers that tolerate model failures let it through: the
+    run stops, and `--resume` redoes the refused probe after the reset the message names.
+    """
+
+
+# Fallback vocabulary, read only from the error text of an envelope that says it errored -
+# never from a successful reply, whose content may quote a limit message.
+_ALLOWANCE = re.compile(r"usage limit|session limit|weekly limit|hit your limit|rate limit|quota|out of (extra )?usage", re.I)
+_CAPACITY = re.compile(r"overloaded|at capacity|server is busy|temporarily unavailable", re.I)
+
+
+def failure_cause(data: dict | None) -> str:
+    """-> 'refused-allowance' | 'refused-capacity' | 'turn-cap' | 'spend-cap' | 'error'.
+
+    Structured fields first. The CLI has been observed returning `subtype: "success"` with
+    `is_error: true` and exit 0 on a rejected request, so neither the subtype nor the exit code
+    is read as the outcome; the forwarded API status is, where the CLI version carries it
+    (429 = your allowance, 529 = provider capacity). The text is the fallback.
+    """
+    if not data:
+        return "error"
+    status = data.get("api_error_status")
+    if status == 429:
+        return "refused-allowance"
+    if status == 529:
+        return "refused-capacity"
+    subtype = str(data.get("subtype") or "")
+    if subtype == "error_max_turns":
+        return "turn-cap"
+    if subtype == "error_max_budget_usd":
+        return "spend-cap"
+    text = str(data.get("result") or "")
+    if _ALLOWANCE.search(text):
+        return "refused-allowance"
+    if _CAPACITY.search(text):
+        return "refused-capacity"
+    return "error"
 
 
 @dataclass
@@ -67,9 +136,10 @@ class LLM:
         self.tokens_out = 0
         self.cache_hits = 0
         self.errors = 0
+        self.refusals = 0
 
     def _key(self, system: str, prompt: str) -> str:
-        return hashlib.sha256(json.dumps([self.spec, system, prompt]).encode()).hexdigest()
+        return hashlib.sha256(json.dumps([self.spec, CLI_PROFILE, system, prompt]).encode()).hexdigest()
 
     def complete(self, prompt: str, system: str = "") -> Reply:
         k = self._key(system, prompt)
@@ -84,8 +154,7 @@ class LLM:
         sys_path = self.workdir / f"system-{hashlib.sha256((system or 'x').encode()).hexdigest()[:12]}.txt"
         if not sys_path.exists():
             sys_path.write_text(system or "You are a helpful assistant.", encoding="utf-8")
-        args = [CLAUDE, "-p", "--no-session-persistence", "--output-format", "json",
-                "--model", self.model, "--effort", self.effort, "--system-prompt-file", str(sys_path)]
+        args = cli_args(self.model, self.effort, sys_path)
         env = dict(os.environ)
         env.pop("CLAUDECODE", None)   # allow a nested headless call from inside a Claude Code session
         t0 = time.time()
@@ -98,6 +167,10 @@ class LLM:
                 if data and not data.get("is_error"):
                     break
                 last_err = (data or {}).get("result") or out.stderr[-400:] or "empty output"
+                if data and failure_cause(data) == "refused-allowance":
+                    with self._lock:
+                        self.refusals += 1
+                    raise SeatLimit(f"claude CLI refused (allowance): {last_err}")
             except (subprocess.TimeoutExpired, json.JSONDecodeError, OSError) as exc:
                 last_err = repr(exc)
             time.sleep(5 * (attempt + 1))

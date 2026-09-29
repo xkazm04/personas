@@ -263,9 +263,13 @@ async function buildTurn(project, message) {
     timeoutMs: TURN_TIMEOUT_MS,
   });
   let result = '';
+  let isError = false;
+  let apiStatus = null;
   try {
     const obj = JSON.parse(out);
     result = obj.result || '';
+    isError = !!obj.is_error;
+    apiStatus = obj.api_error_status ?? null;
     if (obj.session_id) project.sessionId = obj.session_id;
     if (obj.is_error) log(project.slug, `turn is_error: ${result.slice(0, 200)}`);
   } catch {
@@ -273,7 +277,14 @@ async function buildTurn(project, message) {
   }
   const { reply, phases, question } = extractMarkers(result);
   if (phases) project.phases = phases;
-  const rateLimited = /rate limit|temporarily limiting|overloaded|too many request|\b429\b/i.test(result);
+  // A refusal is read from the envelope that says it errored - never from a real reply, which
+  // may well talk about rate limiting. The CLI reports a rejected request as subtype "success"
+  // with is_error true and exit 0; newer versions forward the API status (429 quota, 529 load).
+  const rateLimited =
+    isError &&
+    (apiStatus === 429 ||
+      apiStatus === 529 ||
+      /rate limit|session limit|usage limit|weekly limit|hit your limit|temporarily limiting|overloaded|too many request|\b429\b/i.test(result));
   return { reply, phases, question, raw: result, rateLimited };
 }
 

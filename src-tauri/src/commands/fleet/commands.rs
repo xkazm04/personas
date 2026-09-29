@@ -328,7 +328,7 @@ pub async fn fleet_wake_session(
     cols: Option<u16>,
     rows: Option<u16>,
 ) -> Result<String, String> {
-    let (claude_session_id, cwd) = registry()
+    let (claude_session_id, cwd, pinned) = registry()
         .resume_target(&session_id)
         .ok_or_else(|| format!("session not resumable: {session_id}"))?;
     // The resumed session is a CONTINUATION of this conversation, so the new
@@ -348,11 +348,17 @@ pub async fn fleet_wake_session(
             title: None,
             // The continuation prompt is REQUIRED — a bare `claude --resume <id>`
             // exits 1 ("provide a prompt to continue"). See RESUME_CONTINUATION_PROMPT.
-            args: vec![
-                "--resume".to_string(),
-                claude_session_id,
-                pty::RESUME_CONTINUATION_PROMPT.to_string(),
-            ],
+            // The sleeping row's `--model` / `--effort` go first: without them
+            // the resume re-resolves effort from the operator's settings and the
+            // plan's choice is lost, from the run and from its persisted row.
+            args: pinned
+                .into_iter()
+                .chain([
+                    "--resume".to_string(),
+                    claude_session_id,
+                    pty::RESUME_CONTINUATION_PROMPT.to_string(),
+                ])
+                .collect(),
             mode: FleetSessionMode::Interactive,
             run_label: None,
             origin: DispatchOrigin::OrphanResume,
