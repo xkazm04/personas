@@ -261,3 +261,12 @@ src/test/e2e/cli-e2e-report.json
 # Instruments, not product surface: they mount a real component against the
 # real stylesheet outside the app shell and are rebuilt from the contest data.
 .harness/
+
+# Stray local artifacts: alternate cargo targets, MSYS crash dumps, an unexpanded
+# shell variable that became a filename, and scratch dirs.
+target-v3/
+src-tauri/target-approval/
+*.stackdump
+/$DB_PATH
+.grok/
+/scratchpad/
