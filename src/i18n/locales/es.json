@@ -16082,6 +16082,7 @@
       "retire_reason_superseded": "Sustituida por una vinculación más reciente",
       "retire_result": "Retiradas {retired} de {total}.",
       "retire_title": "Retirar vinculaciones inválidas",
+      "gig_policy_budget_hint": "Déjalo vacío para no fijar un límite.",
       "gig_policy_budget_label": "Presupuesto máx. por contratación (USD)",
       "gig_policy_desc": "kp contrata un agente por encargo. Una solicitud de contratación de kp que cumpla todos los límites de abajo se aprueba en tu nombre; todo lo demás espera tu aprobación como siempre. Ninguna clave API puede cambiar este ajuste.",
       "gig_policy_enabled": "Aprobar automáticamente los agentes de encargo dentro de esta política",

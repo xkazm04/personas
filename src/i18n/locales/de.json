@@ -16082,6 +16082,7 @@
       "retire_reason_superseded": "Durch neuere Kopplung ersetzt",
       "retire_result": "{retired} von {total} entfernt.",
       "retire_title": "Ungültige Kopplungen entfernen",
+      "gig_policy_budget_hint": "Leer lassen, um keine Obergrenze festzulegen.",
       "gig_policy_budget_label": "Max. Budget pro Einstellung (USD)",
       "gig_policy_desc": "kp stellt pro jeden Auftrag einen Agenten ein. Eine Einstellungsanfrage von kp, die alle Grenzen unten einhält, wird in Ihrem Namen genehmigt; alles andere wartet wie gewohnt auf Ihre Genehmigung. Kein API-Schlüssel kann diese Einstellung ändern.",
       "gig_policy_enabled": "Auftragsagenten innerhalb dieser Richtlinie automatisch genehmigen",

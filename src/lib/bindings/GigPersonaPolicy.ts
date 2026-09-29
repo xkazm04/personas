@@ -6,4 +6,10 @@
  * an operator-typed security boundary, and a misspelled key silently ignored
  * would read as a bound that is not enforced.
  */
-export type GigPersonaPolicy = { enabled: boolean, maxBudgetUsd: number, allowedModels: Array<string>, rootPath: string, };
+export type GigPersonaPolicy = { enabled: boolean, 
+/**
+ * The per-hire budget cap in USD. `None` (`null` or an absent key) is
+ * NO CAP: the operator decided gig personas run unbudgeted, so a request
+ * needs no `spec.maxBudgetUsd` to be inside the policy.
+ */
+maxBudgetUsd: number | null, allowedModels: Array<string>, rootPath: string, };

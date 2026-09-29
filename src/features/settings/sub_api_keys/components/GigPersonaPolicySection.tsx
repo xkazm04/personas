@@ -4,9 +4,11 @@
  * kp hires one persona per gig. Approving each hire by hand stops scaling at a
  * few dozen open gigs, so the operator sets a bound here once: a kp hire
  * request that lies inside every condition (policy on, the gig-persona kind,
- * budget at or under the cap, an allowed model, a project inside the gig root)
- * is approved on the operator's behalf; anything else waits in the approval
- * inbox as before. The setting is operator-only: no API key can change it.
+ * budget at or under the cap when one is set, an allowed model, a project
+ * inside the gig root) is approved on the operator's behalf; anything else
+ * waits in the approval inbox as before. An empty budget field is NO CAP
+ * (`maxBudgetUsd: null`): the request's budget is then neither required nor
+ * compared. The setting is operator-only: no API key can change it.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, Check, ShieldCheck } from 'lucide-react';
@@ -25,6 +27,8 @@ import {
 interface Draft {
   enabled: boolean;
   maxBudgetUsd: string;
+  /** The number input holds text it cannot parse (its `value` then reads ''). */
+  budgetBadInput: boolean;
   allowedModels: string;
   rootPath: string;
 }
@@ -32,17 +36,36 @@ interface Draft {
 function toDraft(p: GigPersonaPolicy): Draft {
   return {
     enabled: p.enabled,
-    maxBudgetUsd: String(p.maxBudgetUsd),
+    // A stored `null` is no cap, shown as an empty field.
+    maxBudgetUsd: p.maxBudgetUsd === null ? '' : String(p.maxBudgetUsd),
+    budgetBadInput: false,
     allowedModels: p.allowedModels.join(', '),
     rootPath: p.rootPath,
   };
 }
 
+/** An empty budget field is no cap (`null`); anything else is the typed number. */
+function budgetFromDraft(raw: string): number | null {
+  const trimmed = raw.trim();
+  return trimmed === '' ? null : Number(trimmed);
+}
+
+/**
+ * A budget the field cannot read. Saving it is blocked rather than sent: a
+ * number input reports unparseable text (`5,5` in a `.`-decimal locale) as an
+ * EMPTY value, and NaN serializes to `null` — either way a typo would silently
+ * read as "no cap".
+ */
+function budgetUnreadable(d: Draft): boolean {
+  if (d.budgetBadInput) return true;
+  const budget = budgetFromDraft(d.maxBudgetUsd);
+  return budget !== null && !Number.isFinite(budget);
+}
+
 function fromDraft(d: Draft): GigPersonaPolicy {
-  const budget = Number(d.maxBudgetUsd);
   return {
     enabled: d.enabled,
-    maxBudgetUsd: Number.isFinite(budget) ? budget : 0,
+    maxBudgetUsd: budgetFromDraft(d.maxBudgetUsd),
     allowedModels: d.allowedModels
       .split(',')
       .map((m) => m.trim())
@@ -122,7 +145,7 @@ export function GigPersonaPolicySection() {
               <span className="typo-body text-foreground">{s.gig_policy_enabled}</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <FormField label={s.gig_policy_budget_label}>
+              <FormField label={s.gig_policy_budget_label} helpText={s.gig_policy_budget_hint}>
                 {(inputProps) => (
                   <input
                     {...inputProps}
@@ -130,7 +153,13 @@ export function GigPersonaPolicySection() {
                     min={0}
                     step="0.5"
                     value={draft.maxBudgetUsd}
-                    onChange={(e) => update({ maxBudgetUsd: e.target.value })}
+                    onChange={(e) =>
+                      update({
+                        maxBudgetUsd: e.target.value,
+                        budgetBadInput: e.target.validity.badInput,
+                      })
+                    }
+                    aria-invalid={budgetUnreadable(draft) || undefined}
                     className={INPUT_FIELD}
                     data-testid="gig-policy-budget"
                   />
@@ -167,6 +196,7 @@ export function GigPersonaPolicySection() {
                 size="sm"
                 loading={saving}
                 loadingLabel={t.common.saving}
+                disabled={budgetUnreadable(draft)}
                 onClick={() => void save()}
                 data-testid="gig-policy-save"
               >

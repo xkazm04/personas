@@ -228,6 +228,7 @@
     "retire_reason_superseded": "Nahrazeno novějším spárováním",
     "retire_result": "Vyřazeno {retired} z {total}.",
     "retire_title": "Vyřadit neplatná spárování",
+    "gig_policy_budget_hint": "Ponechte prázdné, pokud nechcete žádný limit.",
     "gig_policy_budget_label": "Max. rozpočet na nábor (USD)",
     "gig_policy_desc": "kp najímá jednoho agenta na každou zakázku. Žádost o nábor z kp, která splní všechny limity níže, se schválí vaším jménem; vše ostatní čeká na vaše schválení jako obvykle. Toto nastavení nemůže změnit žádný klíč API.",
     "gig_policy_enabled": "Automaticky schvalovat agenty zakázek v rámci této zásady",

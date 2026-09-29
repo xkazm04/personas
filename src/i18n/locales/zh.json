@@ -16082,6 +16082,7 @@
       "retire_reason_superseded": "已被较新配对取代",
       "retire_result": "已停用 {retired} 个，共 {total} 个。",
       "retire_title": "停用失效配对",
+      "gig_policy_budget_hint": "留空表示不设上限。",
       "gig_policy_budget_label": "每次雇用的最高预算（美元）",
       "gig_policy_desc": "kp 为每个零工项目雇用一个智能体。符合下方所有限制的 kp 雇用请求将代表您自动批准；其他请求照常等待您的批准。任何 API 密钥都无法更改此设置。",
       "gig_policy_enabled": "自动批准符合此策略的零工智能体",

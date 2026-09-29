@@ -347,7 +347,10 @@ paths:
         (`kp.gig_persona_policy`, set in Settings → API Keys, never over this
         API) is enabled and the request is inside EVERY bound — top-level
         `fit.kind == "kp.gig-persona.v1"`, `spec.maxBudgetUsd` present and ≤
-        the policy cap, `spec.modelProfile.model` on the allowed list,
+        the policy cap WHEN the policy sets one (a policy whose
+        `maxBudgetUsd` is `null` has no cap: the request's budget is then
+        neither required nor compared, so a gig hire may omit it),
+        `spec.modelProfile.model` on the allowed list,
         `placement.projectId` naming a project whose folder is strictly inside
         the policy's root — the request is approved on the operator's behalf
         on the spot, through the executor the Approve click runs (so the
@@ -1139,7 +1142,7 @@ components:
             mission: { type: string }
             systemPromptDraft: { type: [string, "null"] }
             connectors: { type: array, maxItems: 32, items: { type: string, description: "A `key` from /api/kp/connector-catalog" } }
-            maxBudgetUsd: { type: [number, "null"] }
+            maxBudgetUsd: { type: [number, "null"], description: "Optional. Under a gig persona policy with no cap (`maxBudgetUsd: null`) it is neither required nor compared; under a capped policy it must be present and <= the cap for auto-approval." }
             maxTurns: { type: [integer, "null"] }
             successMetrics:
               type: array

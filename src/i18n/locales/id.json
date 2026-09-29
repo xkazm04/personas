@@ -16082,6 +16082,7 @@
       "retire_reason_superseded": "Digantikan pemasangan lebih baru",
       "retire_result": "{retired} dari {total} dipensiunkan.",
       "retire_title": "Pensiunkan pemasangan mati",
+      "gig_policy_budget_hint": "Kosongkan agar tanpa batas.",
       "gig_policy_budget_label": "Anggaran maks. per perekrutan (USD)",
       "gig_policy_desc": "kp merekrut satu agen per gig. Permintaan rekrutmen kp yang memenuhi semua batas di bawah disetujui atas nama Anda; selebihnya menunggu persetujuan Anda seperti biasa. Tidak ada kunci API yang dapat mengubah pengaturan ini.",
       "gig_policy_enabled": "Setujui otomatis agen gig dalam kebijakan ini",

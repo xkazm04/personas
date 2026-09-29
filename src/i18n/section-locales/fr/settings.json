@@ -228,6 +228,7 @@
     "retire_reason_superseded": "Remplacé par un appairage plus récent",
     "retire_result": "{retired} sur {total} retirés.",
     "retire_title": "Retirer les appairages invalides",
+    "gig_policy_budget_hint": "Laissez vide pour ne fixer aucun plafond.",
     "gig_policy_budget_label": "Budget max. par embauche (USD)",
     "gig_policy_desc": "kp embauche un agent par mission. Une demande d'embauche de kp qui respecte toutes les limites ci-dessous est approuvée en votre nom ; tout le reste attend votre approbation comme d'habitude. Aucune clé API ne peut modifier ce réglage.",
     "gig_policy_enabled": "Approuver automatiquement les agents de mission conformes à cette règle",

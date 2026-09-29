@@ -122,7 +122,7 @@ mod tests {
         let dir = temp_dir("ok");
         let out = normalize(GigPersonaPolicy {
             enabled: true,
-            max_budget_usd: 5.0,
+            max_budget_usd: Some(5.0),
             allowed_models: vec![
                 format!(" {OPUS_5_5} "),
                 OPUS_5_5.to_ascii_uppercase(),
@@ -138,10 +138,29 @@ mod tests {
     }
 
     #[test]
+    fn no_cap_is_stored_as_no_cap_and_a_bad_cap_is_refused() {
+        let dir = temp_dir("nocap");
+        let base = GigPersonaPolicy {
+            enabled: true,
+            max_budget_usd: None,
+            allowed_models: vec!["m".into()],
+            root_path: dir.to_string_lossy().to_string(),
+        };
+        // No cap stays no cap — normalizing never invents a number.
+        assert_eq!(normalize(base.clone()).unwrap().max_budget_usd, None);
+        for bad in [-1.0, f64::NAN, f64::INFINITY, 10_000.5] {
+            let mut p = base.clone();
+            p.max_budget_usd = Some(bad);
+            assert!(normalize(p).is_err(), "{bad}");
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
     fn a_root_that_is_not_an_existing_absolute_folder_is_refused() {
         let base = GigPersonaPolicy {
             enabled: true,
-            max_budget_usd: 5.0,
+            max_budget_usd: Some(5.0),
             allowed_models: vec!["m".into()],
             root_path: String::new(),
         };

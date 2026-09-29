@@ -13387,6 +13387,7 @@ export type Translations = {
       gig_policy_desc: string;
       gig_policy_enabled: string;
       gig_policy_budget_label: string;
+      gig_policy_budget_hint: string;
       gig_policy_models_label: string;
       gig_policy_models_hint: string;
       gig_policy_root_label: string;

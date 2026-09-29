@@ -13,7 +13,10 @@
 //!
 //! 1. the policy is `enabled`;
 //! 2. the request's top-level `fit.kind` is [`FIT_KIND`];
-//! 3. `spec.maxBudgetUsd` is present and `<= maxBudgetUsd`;
+//! 3. when the policy names a `maxBudgetUsd` cap, `spec.maxBudgetUsd` is
+//!    present and `<=` it; a policy whose `maxBudgetUsd` is `null` (or absent)
+//!    has NO CAP — the request's budget is then neither required nor compared
+//!    (one that carries a budget is still inside);
 //! 4. `spec.modelProfile.model` is one of `allowedModels`;
 //! 5. `placement.projectId` names a project whose folder lies STRICTLY inside
 //!    `rootPath` (component-wise, both sides canonicalised — the same
@@ -57,7 +60,8 @@ pub const MAX_MODEL_CHARS: usize = 100;
 /// Longest `rootPath` accepted.
 pub const MAX_ROOT_PATH_CHARS: usize = 1024;
 /// The per-hire budget ceiling a policy may name. A sanity bound, not a
-/// recommendation: it only keeps a typo from reading as an open cheque.
+/// recommendation: it only keeps a typo from reading as an open cheque. A
+/// policy that wants no cap says so with `null`, never with a large number.
 pub const MAX_POLICY_BUDGET_USD: f64 = 10_000.0;
 
 /// The stored policy. Every field defaults, so the absent row is the disabled
@@ -70,8 +74,11 @@ pub const MAX_POLICY_BUDGET_USD: f64 = 10_000.0;
 pub struct GigPersonaPolicy {
     #[serde(default)]
     pub enabled: bool,
+    /// The per-hire budget cap in USD. `None` (`null` or an absent key) is
+    /// NO CAP: the operator decided gig personas run unbudgeted, so a request
+    /// needs no `spec.maxBudgetUsd` to be inside the policy.
     #[serde(default)]
-    pub max_budget_usd: f64,
+    pub max_budget_usd: Option<f64>,
     #[serde(default)]
     pub allowed_models: Vec<String>,
     #[serde(default)]
@@ -91,13 +98,12 @@ pub fn parse(raw: &str) -> Result<GigPersonaPolicy, String> {
 
 /// The shape rules every stored policy obeys.
 pub fn validate_shape(policy: &GigPersonaPolicy) -> Result<(), String> {
-    if !policy.max_budget_usd.is_finite()
-        || policy.max_budget_usd < 0.0
-        || policy.max_budget_usd > MAX_POLICY_BUDGET_USD
-    {
-        return Err(format!(
-            "`maxBudgetUsd` must be a number between 0 and {MAX_POLICY_BUDGET_USD}"
-        ));
+    if let Some(cap) = policy.max_budget_usd {
+        if !cap.is_finite() || !(0.0..=MAX_POLICY_BUDGET_USD).contains(&cap) {
+            return Err(format!(
+                "`maxBudgetUsd` must be null (no cap) or a number between 0 and {MAX_POLICY_BUDGET_USD}"
+            ));
+        }
     }
     if policy.allowed_models.len() > MAX_ALLOWED_MODELS {
         return Err(format!(
@@ -235,14 +241,14 @@ pub fn evaluate(
     if facts.fit_kind.as_deref() != Some(FIT_KIND) {
         return Err(PolicyMiss::FitKind);
     }
-    let Some(asked) = facts.max_budget_usd.filter(|b| b.is_finite()) else {
-        return Err(PolicyMiss::NoBudget);
-    };
-    if asked > policy.max_budget_usd {
-        return Err(PolicyMiss::OverBudget {
-            asked,
-            cap: policy.max_budget_usd,
-        });
+    // No cap: the request's budget is neither required nor compared.
+    if let Some(cap) = policy.max_budget_usd {
+        let Some(asked) = facts.max_budget_usd.filter(|b| b.is_finite()) else {
+            return Err(PolicyMiss::NoBudget);
+        };
+        if asked > cap {
+            return Err(PolicyMiss::OverBudget { asked, cap });
+        }
     }
     let Some(model) = facts.model.as_deref() else {
         return Err(PolicyMiss::NoModel);
@@ -323,7 +329,7 @@ mod tests {
     fn policy(root: &Path) -> GigPersonaPolicy {
         GigPersonaPolicy {
             enabled: true,
-            max_budget_usd: 5.0,
+            max_budget_usd: Some(5.0),
             allowed_models: vec![OPUS_5_5.into()],
             root_path: root.to_string_lossy().to_string(),
         }
@@ -415,6 +421,39 @@ mod tests {
     }
 
     #[test]
+    fn a_policy_with_no_cap_neither_requires_nor_compares_a_budget() {
+        let root = TempDir::new("nocap");
+        let project = root.child("web/gig");
+        let mut p = policy(&root.0);
+        p.max_budget_usd = None;
+
+        // No budget on the request: inside.
+        let mut f = facts();
+        f.max_budget_usd = None;
+        assert_eq!(evaluate(&p, &f, Some(&project)), Ok(()));
+        // Any budget on the request, however large: still inside.
+        for asked in [0.0, 3.0, 5.01, 9_999_999.0] {
+            let mut f = facts();
+            f.max_budget_usd = Some(asked);
+            assert_eq!(evaluate(&p, &f, Some(&project)), Ok(()), "{asked}");
+        }
+        // The other bounds still hold without a cap.
+        let mut f = facts();
+        f.max_budget_usd = None;
+        f.model = Some(SONNET_CURRENT.into());
+        assert_eq!(
+            evaluate(&p, &f, Some(&project)).unwrap_err().code(),
+            "model_not_allowed"
+        );
+        let mut off = p.clone();
+        off.enabled = false;
+        assert_eq!(
+            evaluate(&off, &facts(), Some(&project)),
+            Err(PolicyMiss::Disabled)
+        );
+    }
+
+    #[test]
     fn facts_are_read_off_the_wire_body() {
         let body = json!({
             "fit": {"kind": "kp.gig-persona.v1", "gigType": "security"},
@@ -448,6 +487,25 @@ mod tests {
         assert!(parse(r#"{"enabled":true,"maxBudgetUsd":5,"allowedModels":["m"]}"#).is_err());
         assert!(parse(r#"{"enabled":false,"maxBudget":5}"#).is_err());
         assert!(parse(r#"{"maxBudgetUsd":-1}"#).is_err());
+        assert!(parse(r#"{"maxBudgetUsd":10001}"#).is_err());
+        assert!(parse(r#"{"maxBudgetUsd":"5"}"#).is_err());
+        // `null` and an absent key are both NO CAP; a number is a cap.
+        assert_eq!(
+            parse(r#"{"maxBudgetUsd":null}"#).unwrap().max_budget_usd,
+            None
+        );
+        assert_eq!(parse(r#"{"enabled":false}"#).unwrap().max_budget_usd, None);
+        assert_eq!(
+            parse(r#"{"maxBudgetUsd":5}"#).unwrap().max_budget_usd,
+            Some(5.0)
+        );
+        assert!(parse(
+            r#"{"enabled":true,"maxBudgetUsd":null,"allowedModels":["m"],"rootPath":"/x"}"#
+        )
+        .is_ok());
+        // No cap round-trips as `null`, not as a dropped key or a zero.
+        let json = serde_json::to_value(GigPersonaPolicy::default()).unwrap();
+        assert_eq!(json["maxBudgetUsd"], Value::Null);
         assert!(parse(r#"{"allowedModels":["  "]}"#).is_err());
         let many: Vec<String> = (0..=MAX_ALLOWED_MODELS).map(|i| format!("m{i}")).collect();
         assert!(parse(&json!({"allowedModels": many}).to_string()).is_err());

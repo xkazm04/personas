@@ -1327,7 +1327,7 @@ design_context, the same way it re-injects `kpLink` and `devProjectId`.
 
 **The gig persona policy.** At a hundred open gigs the per-hire click is a hundred clicks,
 so the operator approves a bound once. `kp.gig_persona_policy` =
-`{enabled, maxBudgetUsd, allowedModels[], rootPath}`, default disabled, stored in the
+`{enabled, maxBudgetUsd: number | null, allowedModels[], rootPath}`, default disabled, stored in the
 shared database like `management.http_project_roots` and, like it, **operator-only**
 (`settings_keys::is_operator_only`): the generic writers refuse it, so no management-API
 route a kp key can reach moves it. Its one writer is the Tauri command
@@ -1339,7 +1339,14 @@ only when ALL hold (`kp_gig_policy::evaluate`, checked on the normalized request
 
 1. the policy is enabled;
 2. the top-level `fit.kind` is `kp.gig-persona.v1`;
-3. `spec.maxBudgetUsd` is present and `<= maxBudgetUsd`;
+3. when the policy names a cap, `spec.maxBudgetUsd` is present and `<= maxBudgetUsd`;
+   `maxBudgetUsd: null` (or an absent key) is **no cap** — the request's budget is then
+   neither required nor compared, and one that carries a budget is still inside. The
+   operator decided (2026-09-29) that gig personas run unbudgeted, and kp stopped sending
+   `spec.maxBudgetUsd` for them; a stored cap is range-checked (0 … 10 000) and a
+   number, never a large sentinel, is how a cap is expressed. The Settings field saves
+   empty as `null`, and refuses to save text it cannot read as a number (a typo must not
+   read as "no cap");
 4. `spec.modelProfile.model` is on `allowedModels` (ASCII case-insensitive);
 5. `placement.projectId` names a project whose folder is strictly inside `rootPath`
    (component-wise, both sides canonicalised — the containment the roots check uses).
@@ -1395,7 +1402,9 @@ nothing, and the golden intent section is byte-identical.
 **Tests.** `personas-db` `kp_gig_policy::tests` (every bound approves; each bound missed
 in turn — disabled, wrong/absent fit kind, no budget, over budget, model not allowed, no
 model, no project, unresolvable project, project outside the root, the root itself, a
-sibling prefix; the request read off the wire; the stored value's shape; fail-closed
+sibling prefix; a policy with no cap approving a request with no budget and with any
+budget; the request read off the wire; the stored value's shape, `null` and an absent
+`maxBudgetUsd` both parsing to no cap; fail-closed
 load; the generic writer refused), `execution_project::tests::a_hire_home_project_is_held_to_the_binding_boundary`;
 `personas-engine` `kp_execute_grant::tests::only_the_submitting_key_hired_the_persona`,
 `kp_requirements::tests::knowledge_entries_render_as_subjects_to_consult` /

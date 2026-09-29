@@ -16082,6 +16082,7 @@
       "retire_reason_superseded": "Đã bị thay bằng ghép nối mới hơn",
       "retire_result": "Đã gỡ {retired} trên {total}.",
       "retire_title": "Gỡ ghép nối không còn dùng",
+      "gig_policy_budget_hint": "Để trống nếu không muốn giới hạn.",
       "gig_policy_budget_label": "Ngân sách tối đa mỗi lần tuyển (USD)",
       "gig_policy_desc": "kp tuyển một tác tử cho mỗi gig. Yêu cầu tuyển từ kp nằm trong mọi giới hạn bên dưới sẽ được duyệt thay bạn; mọi yêu cầu khác vẫn chờ bạn duyệt như thường lệ. Không khóa API nào có thể thay đổi cài đặt này.",
       "gig_policy_enabled": "Tự động duyệt tác tử gig trong chính sách này",
