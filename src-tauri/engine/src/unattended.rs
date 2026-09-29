@@ -364,9 +364,36 @@ pub fn is_dev_runner_run(run_label: Option<&str>) -> bool {
         .unwrap_or(false)
 }
 
+/// Sentinel prefix stamped into a fleet session's `run_label` when Curator's
+/// loop (`commands::curator::tick::start`) dispatches a headless worker into the
+/// knowledge registry. The lane token (`queue`, `plan`, `refill`, `method`) is
+/// the tail.
+///
+/// Curator's workers are unattended but NOT one-shot: a `/research` or
+/// `/harvest` pass ends a turn while its background lanes run and takes the
+/// next turn when they report back, so they share the overnight lane's shape,
+/// never [`is_dev_runner_run`]'s. Until 2026-09-29 they borrowed the
+/// process-global run label instead (usually none), which hid them from every
+/// label-keyed sweep: 154 ended Curator sessions sat in the fleet, 106 of them
+/// `hibernated`, and every restart rehydrated all of them.
+pub const CURATOR_RUN_LABEL_PREFIX: &str = "curator:";
+
+/// The run label one Curator dispatch carries. No space after the colon, as
+/// [`app_master_run_label`] does it.
+pub fn curator_run_label(lane: &str) -> String {
+    format!("{CURATOR_RUN_LABEL_PREFIX}{}", lane.trim())
+}
+
+/// True when a fleet session's `run_label` says Curator's loop dispatched it.
+pub fn is_curator_run(run_label: Option<&str>) -> bool {
+    run_label
+        .map(|l| l.trim_start().starts_with(CURATOR_RUN_LABEL_PREFIX))
+        .unwrap_or(false)
+}
+
 /// True when **nobody is there to answer** this session: a machine dispatched
 /// it — as the Overnight Portfolio Engine's night work, as an App Master
-/// wake's charter, or as a Dev-runner task.
+/// wake's charter, as a Dev-runner task, or as a Curator worker.
 ///
 /// This is the predicate for every sweeper and slot decision whose reasoning is
 /// "a question asked here reaches an empty room". Decisions that are genuinely
@@ -374,7 +401,10 @@ pub fn is_dev_runner_run(run_label: Option<&str>) -> bool {
 /// nightly dispatch cap — stay on [`is_overnight_run`], because widening those
 /// would make an App Master wake spend the night's budget.
 pub fn is_unattended_run(run_label: Option<&str>) -> bool {
-    is_overnight_run(run_label) || is_app_master_run(run_label) || is_dev_runner_run(run_label)
+    is_overnight_run(run_label)
+        || is_app_master_run(run_label)
+        || is_dev_runner_run(run_label)
+        || is_curator_run(run_label)
 }
 
 /// How long an overnight-tagged session may sit in `awaiting_input` before
@@ -817,12 +847,33 @@ mod tests {
     }
 
     #[test]
+    fn curator_sessions_are_tagged_and_only_they_match() {
+        let label = curator_run_label("refill");
+        assert_eq!(label, "curator:refill");
+        assert!(is_curator_run(Some(&label)));
+        // An operator's own run is never swept as machine-dispatched.
+        assert!(!is_curator_run(Some("curator notes")));
+        assert!(!is_curator_run(None));
+        // The four tags do not bleed into each other.
+        assert!(!is_app_master_run(Some(&label)));
+        assert!(!is_overnight_run(Some(&label)));
+        assert!(!is_dev_runner_run(Some(&label)));
+        assert!(!is_curator_run(Some(&dev_runner_run_label("b1"))));
+    }
+
+    #[test]
     fn an_unattended_run_is_either_dispatcher_and_nothing_else() {
         assert!(is_unattended_run(Some(&overnight_run_label("kp"))));
         assert!(is_unattended_run(Some(&app_master_run_label("p1"))));
         assert!(is_unattended_run(Some(&dev_runner_run_label("b1"))));
+        assert!(is_unattended_run(Some(&curator_run_label("plan"))));
         // Everything a human could have named stays outside.
-        for human in ["overnight cleanup", "app master notes", "perfect round 9"] {
+        for human in [
+            "overnight cleanup",
+            "app master notes",
+            "perfect round 9",
+            "curator notes",
+        ] {
             assert!(!is_unattended_run(Some(human)), "{human}");
         }
         assert!(!is_unattended_run(None));

@@ -713,7 +713,10 @@ async fn start(
             // worker exits, and the slot comes back on its own. It is also
             // what the tree's two other unattended dispatchers use.
             mode: FleetSessionMode::Headless,
-            run_label: crate::commands::fleet::run::current_run_label(),
+            // Her own tag, never the process-global run: an unlabelled worker
+            // is invisible to every sweep that retires, prunes and skips ended
+            // machine sessions on restart, because those are keyed on the label.
+            run_label: Some(personas_engine::unattended::curator_run_label(lane)),
             origin: DispatchOrigin::Curator,
             persona_id: None,
             goal_id: None,
