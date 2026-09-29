@@ -56,7 +56,7 @@ use crate::ActiveProcessRegistry;
 
 /// Model and effort for the builder's own turns (not the runtime model the
 /// build recommends for each capability; that lives in `session_prompt`).
-const BUILD_MODEL: &str = "claude-sonnet-5";
+const BUILD_MODEL: &str = "claude-sonnet-5-5";
 const BUILD_EFFORT: &str = "low";
 
 use super::prompt;
