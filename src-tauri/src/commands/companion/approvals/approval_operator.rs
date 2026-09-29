@@ -97,7 +97,10 @@ pub(crate) fn stamp_decision(
     Ok(())
 }
 
-fn result_stamp(user_db: &crate::db::UserDbPool, approval_id: &str) -> Option<serde_json::Value> {
+pub(crate) fn result_stamp(
+    user_db: &crate::db::UserDbPool,
+    approval_id: &str,
+) -> Option<serde_json::Value> {
     let conn = user_db.get().ok()?;
     let payload: String = conn
         .query_row(

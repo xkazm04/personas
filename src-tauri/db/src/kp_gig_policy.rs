@@ -39,6 +39,8 @@ use ts_rs::TS;
 use crate::execution_project::is_strictly_inside;
 use crate::repos::dev::projects as project_repo;
 use crate::DbPool;
+#[cfg(test)]
+use personas_core::model_ids::{OPUS_5_5, SONNET_CURRENT};
 
 /// The `fit.kind` a request must carry to be considered at all.
 pub const FIT_KIND: &str = "kp.gig-persona.v1";
@@ -322,7 +324,7 @@ mod tests {
         GigPersonaPolicy {
             enabled: true,
             max_budget_usd: 5.0,
-            allowed_models: vec!["claude-opus-5-5".into()],
+            allowed_models: vec![OPUS_5_5.into()],
             root_path: root.to_string_lossy().to_string(),
         }
     }
@@ -331,7 +333,7 @@ mod tests {
         GigHireFacts {
             fit_kind: Some(FIT_KIND.into()),
             max_budget_usd: Some(3.0),
-            model: Some("claude-opus-5-5".into()),
+            model: Some(OPUS_5_5.into()),
             project_id: Some("p1".into()),
         }
     }
@@ -378,7 +380,7 @@ mod tests {
         );
 
         let mut f = facts();
-        f.model = Some("claude-sonnet-5".into());
+        f.model = Some(SONNET_CURRENT.into());
         assert_eq!(
             evaluate(&p, &f, Some(&project)).unwrap_err().code(),
             "model_not_allowed"
@@ -416,7 +418,7 @@ mod tests {
     fn facts_are_read_off_the_wire_body() {
         let body = json!({
             "fit": {"kind": "kp.gig-persona.v1", "gigType": "security"},
-            "spec": {"maxBudgetUsd": 4, "modelProfile": {"model": " claude-opus-5-5 ", "effort": "high"}},
+            "spec": {"maxBudgetUsd": 4, "modelProfile": {"model": format!(" {OPUS_5_5} "), "effort": "high"}},
             "placement": {"workspaceId": "w1", "projectId": "p9"}
         });
         assert_eq!(
@@ -424,7 +426,7 @@ mod tests {
             GigHireFacts {
                 fit_kind: Some(FIT_KIND.into()),
                 max_budget_usd: Some(4.0),
-                model: Some("claude-opus-5-5".into()),
+                model: Some(OPUS_5_5.into()),
                 project_id: Some("p9".into()),
             }
         );
@@ -472,5 +474,55 @@ mod tests {
             "{}"
         )
         .is_err());
+    }
+
+    /// The intake's call: the facts off the stored request body, the folder
+    /// off the project `placement.projectId` names.
+    #[test]
+    fn a_request_is_judged_against_the_named_projects_folder() {
+        let pool = crate::init_test_db().unwrap();
+        let root = TempDir::new("req");
+        let inside = root.child("security/2026-09-29-audit");
+        let outside = TempDir::new("req_out");
+        let reg = |dir: &Path, name: &str| {
+            crate::project_identity::register_project(
+                &pool,
+                name,
+                dir.to_str().unwrap(),
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            .unwrap()
+            .id
+        };
+        let in_id = reg(&inside, "inside");
+        let out_id = reg(&outside.0, "outside");
+        let body = |project: &str| {
+            json!({
+                "fit": {"kind": FIT_KIND},
+                "spec": {"maxBudgetUsd": 5, "modelProfile": {"model": OPUS_5_5, "effort": "high"}},
+                "placement": {"workspaceId": "w", "projectId": project}
+            })
+        };
+        let p = policy(&root.0);
+        assert_eq!(evaluate_request_with(&p, &pool, &body(&in_id)), Ok(()));
+        assert_eq!(
+            evaluate_request_with(&p, &pool, &body(&out_id)),
+            Err(PolicyMiss::ProjectOutsideRoot)
+        );
+        assert_eq!(
+            evaluate_request_with(&p, &pool, &body("no-such-project"))
+                .unwrap_err()
+                .code(),
+            "project_not_found"
+        );
+        // Nothing stored: the default policy is off, so nothing is approved.
+        assert_eq!(
+            evaluate_request(&pool, &body(&in_id)),
+            Err(PolicyMiss::Disabled)
+        );
     }
 }

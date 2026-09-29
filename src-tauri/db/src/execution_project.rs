@@ -305,6 +305,80 @@ pub fn resolve_bound_project_with_roots(
     project_id: &str,
     allowed_roots: &[PathBuf],
 ) -> Result<DevProject, ProjectBindingError> {
+    let project = check_project_folder(pool, project_id, allowed_roots)?;
+
+    let outside = || {
+        ProjectBindingError::OutsideWorkspace(format!(
+            "project {project_id} is not in the workspace this persona belongs to"
+        ))
+    };
+    let Some(workspace_id) = project.workspace_id.as_deref() else {
+        return Err(outside());
+    };
+    let group = crate::workspace_team::group_for_workspace(pool, workspace_id)
+        .map_err(ProjectBindingError::Store)?;
+    match (group, persona_home_team_id) {
+        (Some(g), Some(home)) if g.id == home => Ok(project),
+        _ => Err(outside()),
+    }
+}
+
+/// Resolve the project a kp hire names as the new persona's HOME
+/// (`placement.projectId` on `POST /api/kp/persona-requests`, written as
+/// `design_context.homeProjectId`) — checked at intake, before any persona
+/// exists.
+///
+/// A home project is the persona's default working directory
+/// (`runner::pick_exec_dir_lane`'s `HomeProject` lane), so it is held to the
+/// same boundary a per-run `_projectId` binding is: rules 1 and 2 of the module
+/// doc unchanged, and rule 3 read against the workspace the hire will be FILED
+/// in — `placement_workspace_id` when the request named one, else the
+/// project's own workspace (the caller then files the hire there). A project
+/// with no workspace, or one in a different workspace than the placement, is
+/// [`ProjectBindingError::OutsideWorkspace`]. The approval executor re-checks
+/// with [`resolve_bound_project`] against the persona's actual home team once
+/// it is filed, because the project can move or vanish while the request waits.
+pub fn resolve_hire_project(
+    pool: &DbPool,
+    placement_workspace_id: Option<&str>,
+    project_id: &str,
+) -> Result<DevProject, ProjectBindingError> {
+    resolve_hire_project_with_roots(
+        pool,
+        placement_workspace_id,
+        project_id,
+        &allowed_project_roots(pool),
+    )
+}
+
+/// [`resolve_hire_project`] against an explicit roots list.
+pub fn resolve_hire_project_with_roots(
+    pool: &DbPool,
+    placement_workspace_id: Option<&str>,
+    project_id: &str,
+    allowed_roots: &[PathBuf],
+) -> Result<DevProject, ProjectBindingError> {
+    let project = check_project_folder(pool, project_id, allowed_roots)?;
+    match (project.workspace_id.as_deref(), placement_workspace_id) {
+        (Some(own), Some(placed)) if own == placed => Ok(project),
+        (Some(_), None) => Ok(project),
+        (None, _) => Err(ProjectBindingError::OutsideWorkspace(format!(
+            "project {project_id} belongs to no workspace, so no hire can be filed beside it"
+        ))),
+        (Some(_), Some(placed)) => Err(ProjectBindingError::OutsideWorkspace(format!(
+            "project {project_id} is not in the placement workspace {placed}"
+        ))),
+    }
+}
+
+/// Rules 1 and 2 of the module doc: the project exists, is switched on, its
+/// folder is an existing directory, and that folder is strictly inside one of
+/// `allowed_roots`.
+fn check_project_folder(
+    pool: &DbPool,
+    project_id: &str,
+    allowed_roots: &[PathBuf],
+) -> Result<DevProject, ProjectBindingError> {
     let project = match project_repo::get_project_by_id(pool, project_id) {
         Ok(p) => p,
         Err(AppError::NotFound(_)) => {
@@ -341,21 +415,7 @@ pub fn resolve_bound_project_with_roots(
             },
         ));
     }
-
-    let outside = || {
-        ProjectBindingError::OutsideWorkspace(format!(
-            "project {project_id} is not in the workspace this persona belongs to"
-        ))
-    };
-    let Some(workspace_id) = project.workspace_id.as_deref() else {
-        return Err(outside());
-    };
-    let group = crate::workspace_team::group_for_workspace(pool, workspace_id)
-        .map_err(ProjectBindingError::Store)?;
-    match (group, persona_home_team_id) {
-        (Some(g), Some(home)) if g.id == home => Ok(project),
-        _ => Err(outside()),
-    }
+    Ok(project)
 }
 
 /// Both halves in one call: `Ok(None)` when the input carries no binding,
@@ -737,5 +797,47 @@ mod tests {
 
         // And the right group still binds.
         assert!(resolve_bound_project(&pool, Some(&group), &project.id).is_ok());
+    }
+
+    #[test]
+    fn a_hire_home_project_is_held_to_the_binding_boundary() {
+        let pool = init_test_db().unwrap();
+        let root = TempRoot::new("hire_home");
+        let (ws, _group, project) = fixture(&pool, &root);
+
+        // Named placement that matches, or no placement (the project's own
+        // workspace becomes the filing): accepted.
+        assert!(resolve_hire_project_with_roots(&pool, Some(&ws), &project.id, &roots()).is_ok());
+        assert!(resolve_hire_project_with_roots(&pool, None, &project.id, &roots()).is_ok());
+
+        // A different placement workspace: refused, never re-filed.
+        let other = ws_repo::create_workspace(&pool, "Other", None, None, false).unwrap();
+        let err = resolve_hire_project_with_roots(&pool, Some(&other.id), &project.id, &roots())
+            .unwrap_err();
+        assert_eq!(err.code(), "project_outside_persona_workspace");
+
+        // Outside the allowed roots, or with none configured: refused.
+        let err = resolve_hire_project_with_roots(&pool, Some(&ws), &project.id, &[]).unwrap_err();
+        assert_eq!(err.code(), "project_outside_allowed_roots");
+
+        // Unknown id.
+        let err = resolve_hire_project_with_roots(&pool, None, "nope", &roots()).unwrap_err();
+        assert_eq!(err.code(), "project_not_found");
+
+        // A project in no workspace cannot anchor a hire.
+        let loose_root = TempRoot::new("hire_loose");
+        let loose = crate::project_identity::register_project(
+            &pool,
+            "Loose",
+            loose_root.s(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let err = resolve_hire_project_with_roots(&pool, None, &loose.id, &roots()).unwrap_err();
+        assert_eq!(err.code(), "project_outside_persona_workspace");
     }
 }

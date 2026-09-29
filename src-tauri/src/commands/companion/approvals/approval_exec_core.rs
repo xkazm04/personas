@@ -1198,7 +1198,9 @@ pub(crate) fn kp_hire_intent(
 /// stays addressable (WP4's outbound reporter reads it from there).
 ///
 /// Deliberately NOT on `AUTOAPPROVE_ALLOWLIST` (approval_autopilot.rs) — like
-/// every build action, a KP hire always requires the human click.
+/// every build action, a KP hire requires the operator's decision: a click, the
+/// operator API, or the standing gig persona policy the operator set
+/// (`approval_policy`, bridge doc §10.14). Nothing a kp key sends can make it.
 ///
 /// `approval_id` is the `companion_approval` row being executed. Once the
 /// persona exists, the key recorded on that row as the submitter is granted
@@ -2395,10 +2397,12 @@ mod tests {
     /// contract existed — a regression here changes every kp hire's design.
     #[test]
     fn a_requested_model_profile_becomes_the_personas_model_profile() {
-        let params = serde_json::json!({"spec": {"modelProfile": {"model": "claude-opus-5-5", "effort": "high"}}});
+        use personas_core::model_ids::OPUS_5_5;
+        let params =
+            serde_json::json!({"spec": {"modelProfile": {"model": OPUS_5_5, "effort": "high"}}});
         let raw = kp_hire_model_profile(&params).expect("a profile");
         let parsed: crate::engine::types::ModelProfile = serde_json::from_str(&raw).unwrap();
-        assert_eq!(parsed.model.as_deref(), Some("claude-opus-5-5"));
+        assert_eq!(parsed.model.as_deref(), Some(OPUS_5_5));
         assert_eq!(parsed.effort.as_deref(), Some("high"));
         assert_eq!(parsed.base_url, None);
         assert_eq!(parsed.auth_token, None);

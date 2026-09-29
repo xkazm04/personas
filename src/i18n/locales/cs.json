@@ -16081,7 +16081,17 @@
       "retire_reason_expired": "Vypršelo",
       "retire_reason_superseded": "Nahrazeno novějším spárováním",
       "retire_result": "Vyřazeno {retired} z {total}.",
-      "retire_title": "Vyřadit neplatná spárování"
+      "retire_title": "Vyřadit neplatná spárování",
+      "gig_policy_budget_label": "Max. rozpočet na nábor (USD)",
+      "gig_policy_desc": "kp najímá jednoho agenta na každou zakázku. Žádost o nábor z kp, která splní všechny limity níže, se schválí vaším jménem; vše ostatní čeká na vaše schválení jako obvykle. Toto nastavení nemůže změnit žádný klíč API.",
+      "gig_policy_enabled": "Automaticky schvalovat agenty zakázek v rámci této zásady",
+      "gig_policy_models_hint": "ID modelů oddělená čárkou, např. claude-opus-5-5",
+      "gig_policy_models_label": "Povolené modely",
+      "gig_policy_root_hint": "Kvalifikují se jen projekty zakázek uvnitř této složky.",
+      "gig_policy_root_label": "Kořenová složka zakázek",
+      "gig_policy_save": "Uložit zásadu",
+      "gig_policy_saved": "Zásada uložena",
+      "gig_policy_title": "Zásada pro agenty zakázek"
     },
     "appearance_extra": {
       "dev": "Dev",

@@ -50,6 +50,10 @@ use crate::engine::types::EphemeralPersona;
 use crate::error::AppError;
 use crate::ActiveProcessRegistry;
 
+/// kp's one-persona-per-gig additions: `spec.modelProfile`,
+/// `placement.projectId`, the gig persona policy at intake, and
+/// `POST /api/kp/personas/{id}/retire`. See `kp_gig.rs`.
+mod kp_gig;
 /// `/api/approvals*` + `/api/pairings*` — the operator deciding approvals and
 /// pairings over HTTP (`personas:approve`). See `operator.rs`.
 mod operator;
@@ -157,6 +161,12 @@ pub fn management_router(state: ManagementState) -> Router {
         .route("/api/kp/persona-requests", post(kp_create_persona_request))
         .route("/api/kp/persona-requests/{id}", get(kp_get_persona_request))
         .route("/api/kp/connector-catalog", get(kp_connector_catalog))
+        // The key that hired a persona ends its tenure (archive + execute
+        // grant revoked). `personas:build`, like every `/api/kp/` write.
+        .route(
+            "/api/kp/personas/{persona_id}/retire",
+            post(kp_gig::retire_kp_persona),
+        )
         // -- Ship layer (management_api/ship.rs). Reads for any valid key;
         // writes demand `personas:build` (see `authorize`). No lifecycle and
         // no deletion routes by design — cutting and shipping are the
@@ -3332,6 +3342,26 @@ fn kp_hire_rationale(body: &KpPersonaRequestBody) -> String {
     )
 }
 
+/// The card's tail for the one-persona-per-gig fields: which model the persona
+/// will run on and which project it is homed in. Empty when neither was sent.
+fn with_gig_notes(
+    rationale: String,
+    model: Option<&kp_gig::HireModelProfile>,
+    project: Option<&kp_gig::HireProjectLink>,
+) -> String {
+    let mut out = rationale;
+    if let Some(m) = model {
+        match &m.effort {
+            Some(e) => out.push_str(&format!(" — runs on {} at {e} effort", m.model)),
+            None => out.push_str(&format!(" — runs on {}", m.model)),
+        }
+    }
+    if let Some(p) = project {
+        out.push_str(&format!(" — homed in project '{}'", p.project.name.trim()));
+    }
+    out
+}
+
 /// Insert the pending `companion_approval` row. Payload shape mirrors
 /// `dispatcher::insert_approval` / `backlog_triage::insert_triage_approval`
 /// exactly (`{action, params, rationale}` under kind `op_execute`), so
@@ -3412,6 +3442,26 @@ async fn kp_create_persona_request(
         Ok(p) => p,
         Err(e) => return e.into_response(),
     };
+    // Optional `spec.modelProfile: {model, effort?}` — the persona's model.
+    // Stored normalized (model + effort only), so nothing else kp might put in
+    // a model profile (an endpoint, a token) ever reaches the persona.
+    let model_profile = match kp_gig::validate_model_profile(&raw_body) {
+        Ok(m) => m,
+        Err(r) => return r.into_response(),
+    };
+    // Optional `placement.projectId` — the persona's home project. With no
+    // `placement.workspaceId`, the project's own workspace becomes the
+    // placement (written into the stored params below).
+    let project_link =
+        match kp_gig::validate_hire_project(&state.pool, &raw_body, placement.as_ref()) {
+            Ok(l) => l,
+            Err(r) => return r.into_response(),
+        };
+    let placement = placement.or_else(|| {
+        project_link
+            .as_ref()
+            .and_then(|l| l.derived_workspace.clone())
+    });
     let app_state: tauri::State<'_, Arc<crate::AppState>> = match state.app.try_state() {
         Some(s) => s,
         None => {
@@ -3429,9 +3479,39 @@ async fn kp_create_persona_request(
     if let Some(r) = requirements {
         params["spec"]["requirements"] = r;
     }
+    match &model_profile {
+        Some(m) => params["spec"]["modelProfile"] = m.to_value(),
+        None => {
+            if let Some(spec) = params.get_mut("spec").and_then(|s| s.as_object_mut()) {
+                spec.remove("modelProfile");
+            }
+        }
+    }
+    if let (Some(link), Some(ws)) = (&project_link, placement.as_ref()) {
+        params["placement"]["projectId"] = serde_json::Value::String(link.project.id.clone());
+        params["placement"]["workspaceId"] = serde_json::Value::String(ws.id.clone());
+    }
+    // The gig persona policy (`personas_db::kp_gig_policy`): a request inside
+    // every bound the operator set is approved on the operator's behalf below.
+    // Read against the NORMALIZED params, so what it approves is exactly what
+    // the executor will act on. The headless bridge (test mode) keeps its own
+    // path and is not consulted here.
+    let policy = if personas_engine::headless::enabled() {
+        Err(crate::db::kp_gig_policy::PolicyMiss::Disabled)
+    } else {
+        crate::db::kp_gig_policy::evaluate_request(&state.pool, &params)
+    };
     // The submitting key is recorded so approval can grant it
     // `personas:execute:persona:<new id>` — that key and no other (§10.8).
-    let rationale = with_placement_note(kp_hire_rationale(&body), placement.as_ref());
+    let rationale = with_gig_notes(
+        with_placement_note(kp_hire_rationale(&body), placement.as_ref()),
+        model_profile.as_ref(),
+        project_link.as_ref(),
+    );
+    let rationale = match kp_gig::policy_miss_note(&params, &policy) {
+        Some(note) => format!("{rationale}{note}"),
+        None => rationale,
+    };
     if let Err(e) = insert_kp_hire_approval(
         &app_state.user_db,
         &request_id,
@@ -3441,6 +3521,45 @@ async fn kp_create_persona_request(
     ) {
         return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response();
     }
+    // Inside the gig persona policy: decide it now, through the executor the
+    // operator's Approve reaches (`approvals::policy_approve_kp_hire`), and
+    // never show a card nobody needs to click.
+    if policy.is_ok() {
+        let app = state.app.clone();
+        // INVARIANT: same load-bearing move as the headless arm below —
+        // `tauri::State` is not `Send` and must not be held across the await.
+        #[allow(clippy::drop_non_drop)]
+        drop(app_state);
+        return match crate::commands::companion::approvals::policy_approve_kp_hire(
+            &app,
+            &request_id,
+        )
+        .await
+        {
+            Ok(outcome) => {
+                let persona_id = outcome
+                    .result
+                    .as_ref()
+                    .and_then(|r| r.get("personaId"))
+                    .cloned()
+                    .unwrap_or(serde_json::Value::Null);
+                ok_json(serde_json::json!({
+                    "requestId": request_id,
+                    // What the status GET reports for the same row right now:
+                    // `approved` (then `active` once the build promotes), or
+                    // `failed` when the executor could not create the hire.
+                    "status": if outcome.status == "approved" { "approved" } else { "failed" },
+                    "autoApproved": true,
+                    "approvedBy": crate::db::kp_gig_policy::POLICY_ACTOR,
+                    "personaId": persona_id,
+                    "message": outcome.message,
+                }))
+                .into_response()
+            }
+            Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
+        };
+    }
+
     // Announce the card so the orb / Athena chat shows it now. Without this a
     // kp hire only appeared after the next Athena turn or an app restart —
     // the inbox fetches once per session and on this event.
@@ -4390,6 +4509,35 @@ fn retire_persona_db(
     Ok((persona, plan, mandate.map(|(project_id, _)| project_id)))
 }
 
+/// End an App master mandate as `retired` through the shared probation
+/// carry-out — the one every retirement reaches (a human's `retire` click, the
+/// headless sweep, `POST /api/kp/test/retire`, `POST /api/kp/personas/{id}/retire`).
+/// Returns whether a decision was applied.
+fn carry_out_retired_mandate(
+    app_state: &tauri::State<'_, Arc<crate::AppState>>,
+    project_id: &str,
+    note: String,
+) -> bool {
+    crate::commands::design::reviews::apply_app_master_probation_decision(
+        app_state,
+        crate::commands::design::reviews::ProbationCarryOut {
+            project_id,
+            decision: "retired",
+            note: Some(note),
+            // Nothing about a bridge retirement is a probation extension, so
+            // the streak is left exactly as it stands.
+            headless_incomplete_streak: None,
+            // There deliberately is no review row: this decision was not
+            // raised, it was requested.
+            review_id: None,
+            // No backbone was read. `None` is written as *no verdict recorded*
+            // — never as a pass.
+            verdict: None,
+            unmeasured: &[],
+        },
+    )
+}
+
 /// `POST /api/kp/test/retire` — end one persona's tenure.
 ///
 /// Same gating as [`kp_test_tick`] and [`kp_test_seed_work`]: the route exists
@@ -4478,29 +4626,15 @@ async fn kp_test_retire(
     if plan.carry_out_mandate {
         if let Some(project_id) = mandate_project_id.as_deref() {
             let app_state = state.app.state::<Arc<crate::AppState>>();
-            mandate_carried_out =
-                crate::commands::design::reviews::apply_app_master_probation_decision(
-                    &app_state,
-                    crate::commands::design::reviews::ProbationCarryOut {
-                        project_id,
-                        decision: "retired",
-                        note: Some(format!(
-                        "retired over the headless test bridge by `{}`; autopilot off and cadence \
-                         triggers disabled",
-                        personas_engine::headless::ACTOR
-                    )),
-                        // Nothing about a bridge retirement is a probation
-                        // extension, so the streak is left exactly as it stands.
-                        headless_incomplete_streak: None,
-                        // There deliberately is no review row: this decision was
-                        // not raised, it was requested.
-                        review_id: None,
-                        // No backbone was read. `None` is written as *no verdict
-                        // recorded* — never as a pass.
-                        verdict: None,
-                        unmeasured: &[],
-                    },
-                );
+            mandate_carried_out = carry_out_retired_mandate(
+                &app_state,
+                project_id,
+                format!(
+                    "retired over the headless test bridge by `{}`; autopilot off and cadence \
+                     triggers disabled",
+                    personas_engine::headless::ACTOR
+                ),
+            );
         }
     }
 

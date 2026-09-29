@@ -13376,7 +13376,17 @@
       "retire_reason_superseded": "Replaced by a newer pairing",
       "retire_confirm": "Retire {count}",
       "retire_result": "Retired {retired} of {total}.",
-      "retire_failed_label": "Could not retire:"
+      "retire_failed_label": "Could not retire:",
+      "gig_policy_title": "Gig persona policy",
+      "gig_policy_desc": "kp hires one agent per gig. A kp hire request inside every bound below is approved on your behalf; anything outside it waits for your approval as usual. No API key can change this setting.",
+      "gig_policy_enabled": "Auto-approve gig agents inside this policy",
+      "gig_policy_budget_label": "Max budget per hire (USD)",
+      "gig_policy_models_label": "Allowed models",
+      "gig_policy_models_hint": "Comma-separated model ids, e.g. claude-opus-5-5",
+      "gig_policy_root_label": "Gig root folder",
+      "gig_policy_root_hint": "Only gig projects inside this folder qualify.",
+      "gig_policy_save": "Save policy",
+      "gig_policy_saved": "Policy saved"
     },
     "title": "Settings",
     "settings_saved": "Saved",

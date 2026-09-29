@@ -227,7 +227,17 @@
     "retire_reason_expired": "Abgelaufen",
     "retire_reason_superseded": "Durch neuere Kopplung ersetzt",
     "retire_result": "{retired} von {total} entfernt.",
-    "retire_title": "Ungültige Kopplungen entfernen"
+    "retire_title": "Ungültige Kopplungen entfernen",
+    "gig_policy_budget_label": "Max. Budget pro Einstellung (USD)",
+    "gig_policy_desc": "kp stellt pro jeden Auftrag einen Agenten ein. Eine Einstellungsanfrage von kp, die alle Grenzen unten einhält, wird in Ihrem Namen genehmigt; alles andere wartet wie gewohnt auf Ihre Genehmigung. Kein API-Schlüssel kann diese Einstellung ändern.",
+    "gig_policy_enabled": "Auftragsagenten innerhalb dieser Richtlinie automatisch genehmigen",
+    "gig_policy_models_hint": "Modell-IDs durch Kommas getrennt, z. B. claude-opus-5-5",
+    "gig_policy_models_label": "Erlaubte Modelle",
+    "gig_policy_root_hint": "Nur Auftragsprojekte in diesem Ordner kommen infrage.",
+    "gig_policy_root_label": "Stammordner für Aufträge",
+    "gig_policy_save": "Richtlinie speichern",
+    "gig_policy_saved": "Richtlinie gespeichert",
+    "gig_policy_title": "Richtlinie für Auftragsagenten"
   },
   "appearance_extra": {
     "dev": "Entwickler",

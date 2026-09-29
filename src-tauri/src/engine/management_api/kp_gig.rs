@@ -398,8 +398,9 @@ mod tests {
             validate_model_profile(&json!({"spec": {"modelProfile": null}})),
             Ok(None)
         );
+        use personas_core::model_ids::OPUS_5_5;
         let got = validate_model_profile(&json!({"spec": {"modelProfile": {
-            "model": " claude-opus-5-5 ", "effort": "high",
+            "model": format!(" {OPUS_5_5} "), "effort": "high",
             "base_url": "https://evil.example", "auth_token": "sk-x", "provider": "x"
         }}}))
         .unwrap()
@@ -407,13 +408,13 @@ mod tests {
         assert_eq!(
             got,
             HireModelProfile {
-                model: "claude-opus-5-5".into(),
+                model: OPUS_5_5.into(),
                 effort: Some("high".into())
             }
         );
         assert_eq!(
             got.to_value(),
-            json!({"model": "claude-opus-5-5", "effort": "high"}),
+            json!({"model": OPUS_5_5, "effort": "high"}),
             "an endpoint or token sent by kp is never stored"
         );
         for effort in MODEL_PROFILE_EFFORTS {
@@ -432,7 +433,7 @@ mod tests {
     #[test]
     fn a_bad_model_profile_is_refused_with_the_input_invalid_code() {
         for bad in [
-            json!("claude-opus-5-5"),
+            json!(personas_core::model_ids::OPUS_5_5),
             json!({"effort": "high"}),
             json!({"model": ""}),
             json!({"model": "   "}),
@@ -792,6 +793,111 @@ mod tests {
         assert_eq!(
             (e.status, e.code),
             (StatusCode::NOT_FOUND, "persona_not_found")
+        );
+    }
+
+    // ── the gig persona policy's approval (approvals::approval_policy) ──────
+
+    use crate::commands::companion::approvals::{
+        claim_for_policy, claim_pending, operator_actor, stamp_decision,
+    };
+    use personas_db::kp_gig_policy::POLICY_ACTOR;
+
+    fn policy_row(user_db: &crate::db::UserDbPool, id: &str, key: &str) {
+        super::super::insert_kp_hire_approval(
+            user_db,
+            id,
+            &json!({"requestId": id, "fit": {"kind": personas_db::kp_gig_policy::FIT_KIND}}),
+            "KP job 'gig' requests an AI hire",
+            Some(key),
+        )
+        .unwrap();
+    }
+
+    fn status_and_payload(user_db: &crate::db::UserDbPool, id: &str) -> (String, Value) {
+        let conn = user_db.get().unwrap();
+        let (status, payload): (String, String) = conn
+            .query_row(
+                "SELECT status, payload FROM companion_approval WHERE id = ?1",
+                rusqlite::params![id],
+                |r| Ok((r.get("status")?, r.get("payload")?)),
+            )
+            .unwrap();
+        (status, serde_json::from_str(&payload).unwrap())
+    }
+
+    #[test]
+    fn the_policy_claims_the_row_and_names_itself_as_the_decider() {
+        let pool = crate::db::init_test_db().unwrap();
+        let user_db = crate::db::init_test_user_db().unwrap();
+        let key = kp_key(&pool, "kp");
+        policy_row(&user_db, "appr_pol1", &key);
+
+        let (action, params) = claim_for_policy(&user_db, "appr_pol1").unwrap();
+        assert_eq!(action, "kp_hire_request");
+        assert_eq!(params["requestId"], "appr_pol1");
+        let (status, payload) = status_and_payload(&user_db, "appr_pol1");
+        assert_eq!(status, "running", "the same CAS every decision path takes");
+        assert_eq!(payload["decidedBy"], POLICY_ACTOR);
+        assert!(payload["decisionNote"]
+            .as_str()
+            .unwrap()
+            .contains("gig persona policy"));
+        // Exactly one decider wins: a click racing the policy loses the claim.
+        assert!(claim_for_policy(&user_db, "appr_pol1").is_err());
+        assert!(claim_pending(&user_db, "appr_pol1").is_err());
+    }
+
+    /// The executor grants through `grant_on_hire_approval(approval_id)`, which
+    /// reads the submitter off the row. The policy's claim and stamp leave that
+    /// column alone, so the grant is the one an operator approval issues: this
+    /// key, this persona, this exact scope.
+    #[test]
+    fn a_policy_approval_leads_to_the_same_execute_grant_as_an_operator_approval() {
+        use personas_engine::kp_execute_grant::{grant_on_hire_approval, HireGrant};
+        let pool = crate::db::init_test_db().unwrap();
+        let user_db = crate::db::init_test_user_db().unwrap();
+        let key = kp_key(&pool, "kp");
+
+        policy_row(&user_db, "appr_pol2", &key);
+        claim_for_policy(&user_db, "appr_pol2").unwrap();
+        assert_eq!(
+            grant_on_hire_approval(&pool, &user_db, "appr_pol2", "persona-gig-1"),
+            HireGrant::Granted {
+                key_id: key.clone(),
+                scope: "personas:execute:persona:persona-gig-1".into(),
+            }
+        );
+
+        // The operator API's claim + stamp on a sibling row: the identical grant.
+        policy_row(&user_db, "appr_op", &key);
+        claim_pending(&user_db, "appr_op").unwrap();
+        stamp_decision(&user_db, "appr_op", &operator_actor("op-key"), None).unwrap();
+        assert_eq!(
+            grant_on_hire_approval(&pool, &user_db, "appr_op", "persona-gig-2"),
+            HireGrant::Granted {
+                key_id: key,
+                scope: "personas:execute:persona:persona-gig-2".into(),
+            }
+        );
+    }
+
+    #[test]
+    fn the_policy_decides_kp_hire_requests_only() {
+        let user_db = crate::db::init_test_user_db().unwrap();
+        user_db
+            .get()
+            .unwrap()
+            .execute(
+                "INSERT INTO companion_approval (id, session_id, kind, payload, status, created_at)
+                 VALUES ('appr_other', 'default', 'op_execute', ?1, 'pending', datetime('now'))",
+                rusqlite::params![json!({"action": "run_persona", "params": {}}).to_string()],
+            )
+            .unwrap();
+        let err = claim_for_policy(&user_db, "appr_other").unwrap_err();
+        assert!(
+            err.to_string().contains("decides `kp_hire_request` only"),
+            "{err}"
         );
     }
 }

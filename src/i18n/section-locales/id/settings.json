@@ -227,7 +227,17 @@
     "retire_reason_expired": "Kedaluwarsa",
     "retire_reason_superseded": "Digantikan pemasangan lebih baru",
     "retire_result": "{retired} dari {total} dipensiunkan.",
-    "retire_title": "Pensiunkan pemasangan mati"
+    "retire_title": "Pensiunkan pemasangan mati",
+    "gig_policy_budget_label": "Anggaran maks. per perekrutan (USD)",
+    "gig_policy_desc": "kp merekrut satu agen per gig. Permintaan rekrutmen kp yang memenuhi semua batas di bawah disetujui atas nama Anda; selebihnya menunggu persetujuan Anda seperti biasa. Tidak ada kunci API yang dapat mengubah pengaturan ini.",
+    "gig_policy_enabled": "Setujui otomatis agen gig dalam kebijakan ini",
+    "gig_policy_models_hint": "ID model dipisahkan koma, mis. claude-opus-5-5",
+    "gig_policy_models_label": "Model yang diizinkan",
+    "gig_policy_root_hint": "Hanya proyek gig di dalam folder ini yang memenuhi syarat.",
+    "gig_policy_root_label": "Folder akar gig",
+    "gig_policy_save": "Simpan kebijakan",
+    "gig_policy_saved": "Kebijakan disimpan",
+    "gig_policy_title": "Kebijakan agen gig"
   },
   "appearance_extra": {
     "dev": "Dev",

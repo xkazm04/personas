@@ -227,7 +227,17 @@
     "retire_reason_expired": "समाप्त",
     "retire_reason_superseded": "नई पेयरिंग से बदली गई",
     "retire_result": "{total} में से {retired} हटाई गईं।",
-    "retire_title": "निष्क्रिय पेयरिंग हटाएँ"
+    "retire_title": "निष्क्रिय पेयरिंग हटाएँ",
+    "gig_policy_budget_label": "प्रति नियुक्ति अधिकतम बजट (USD)",
+    "gig_policy_desc": "kp हर गिग के लिए एक एजेंट नियुक्त करता है। नीचे की सभी सीमाओं के भीतर आने वाला kp नियुक्ति अनुरोध आपकी ओर से स्वीकृत हो जाता है; बाकी सब हमेशा की तरह आपकी स्वीकृति का इंतज़ार करते हैं। कोई भी API कुंजी यह सेटिंग नहीं बदल सकती।",
+    "gig_policy_enabled": "इस नीति के भीतर गिग एजेंटों को स्वतः स्वीकृत करें",
+    "gig_policy_models_hint": "कॉमा से अलग मॉडल ID, जैसे claude-opus-5-5",
+    "gig_policy_models_label": "अनुमत मॉडल",
+    "gig_policy_root_hint": "केवल इस फ़ोल्डर के भीतर के गिग प्रोजेक्ट योग्य हैं।",
+    "gig_policy_root_label": "गिग रूट फ़ोल्डर",
+    "gig_policy_save": "नीति सहेजें",
+    "gig_policy_saved": "नीति सहेजी गई",
+    "gig_policy_title": "गिग एजेंट नीति"
   },
   "appearance_extra": {
     "dev": "डेव",

@@ -16081,7 +16081,17 @@
       "retire_reason_expired": "منتهي الصلاحية",
       "retire_reason_superseded": "استُبدل باقتران أحدث",
       "retire_result": "تم إيقاف {retired} من {total}.",
-      "retire_title": "إيقاف الاقترانات غير الصالحة"
+      "retire_title": "إيقاف الاقترانات غير الصالحة",
+      "gig_policy_budget_label": "الحد الأقصى للميزانية لكل تعيين (USD)",
+      "gig_policy_desc": "يعيّن kp وكيلًا واحدًا لكل مهمة. يُعتمد طلب التعيين من kp الذي يقع ضمن جميع الحدود أدناه نيابةً عنك؛ وكل ما عدا ذلك ينتظر موافقتك كالمعتاد. لا يمكن لأي مفتاح API تغيير هذا الإعداد.",
+      "gig_policy_enabled": "الموافقة تلقائيًا على وكلاء المهام ضمن هذه السياسة",
+      "gig_policy_models_hint": "معرّفات النماذج مفصولة بفواصل، مثل claude-opus-5-5",
+      "gig_policy_models_label": "النماذج المسموح بها",
+      "gig_policy_root_hint": "تتأهل فقط مشاريع المهام الموجودة داخل هذا المجلد.",
+      "gig_policy_root_label": "المجلد الجذر للمهام",
+      "gig_policy_save": "حفظ السياسة",
+      "gig_policy_saved": "تم حفظ السياسة",
+      "gig_policy_title": "سياسة وكلاء المهام"
     },
     "appearance_extra": {
       "dev": "مطوّر",

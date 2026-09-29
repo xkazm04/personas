@@ -13383,6 +13383,16 @@ export type Translations = {
       retire_confirm: string;
       retire_result: string;
       retire_failed_label: string;
+      gig_policy_title: string;
+      gig_policy_desc: string;
+      gig_policy_enabled: string;
+      gig_policy_budget_label: string;
+      gig_policy_models_label: string;
+      gig_policy_models_hint: string;
+      gig_policy_root_label: string;
+      gig_policy_root_hint: string;
+      gig_policy_save: string;
+      gig_policy_saved: string;
     };
     title: string;
     settings_saved: string;

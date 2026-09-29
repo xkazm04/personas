@@ -597,6 +597,7 @@ export type { GatewayMember } from "./GatewayMember";
 export type { GenerateRecipeDraftInput } from "./GenerateRecipeDraftInput";
 export type { GenomeBreedingResult } from "./GenomeBreedingResult";
 export type { GenomeBreedingRun } from "./GenomeBreedingRun";
+export type { GigPersonaPolicy } from "./GigPersonaPolicy";
 export type { GitHubPermissions } from "./GitHubPermissions";
 export type { GitHubRepo } from "./GitHubRepo";
 export type { GitLabAgent } from "./GitLabAgent";

@@ -10,7 +10,7 @@
 use std::path::{Component, Path};
 use std::sync::Arc;
 
-use tauri::{AppHandle, State};
+use tauri::State;
 
 use crate::db::kp_gig_policy::{self, GigPersonaPolicy};
 use crate::db::settings_keys::KP_GIG_PERSONA_POLICY;
@@ -25,15 +25,18 @@ pub async fn kp_gig_persona_policy_get(
 ) -> Result<GigPersonaPolicy, AppError> {
     require_auth(&state).await?;
     let db = state.db.clone();
-    tokio::task::spawn_blocking(move || kp_gig_policy::load(&db))
-        .await
+    // The handle is bound and awaited: a panic in the read surfaces as this
+    // command's error instead of vanishing.
+    let read = tokio::task::spawn_blocking(move || kp_gig_policy::load(&db));
+    read.await
         .map_err(|e| AppError::Internal(format!("gig persona policy read: {e}")))
 }
 
-/// Validate, normalize and store the policy. Returns what was stored.
+/// Validate, normalize and store the policy. Returns what was stored — the
+/// Settings section renders that, so no change event is broadcast (nothing
+/// else in the app reads the key; the management API reads it per request).
 #[tauri::command]
 pub async fn kp_gig_persona_policy_set(
-    app: AppHandle,
     state: State<'_, Arc<AppState>>,
     policy: GigPersonaPolicy,
 ) -> Result<GigPersonaPolicy, AppError> {
@@ -42,18 +45,12 @@ pub async fn kp_gig_persona_policy_set(
     let json = serde_json::to_string(&policy)
         .map_err(|e| AppError::Internal(format!("gig persona policy encode: {e}")))?;
     let db = state.db.clone();
-    tokio::task::spawn_blocking(move || {
+    let write = tokio::task::spawn_blocking(move || {
         crate::db::repos::core::settings::set_operator_only(&db, KP_GIG_PERSONA_POLICY, &json)
-    })
-    .await
-    .map_err(|e| AppError::Internal(format!("gig persona policy write: {e}")))??;
-    use tauri::Emitter;
-    if let Err(e) = app.emit(
-        "settings-changed",
-        serde_json::json!({ "key": KP_GIG_PERSONA_POLICY }),
-    ) {
-        tracing::warn!(error = %e, "failed to emit settings-changed for the gig persona policy");
-    }
+    });
+    write
+        .await
+        .map_err(|e| AppError::Internal(format!("gig persona policy write: {e}")))??;
     Ok(policy)
 }
 
@@ -111,6 +108,7 @@ fn canonical_root(raw: &str) -> Result<String, AppError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use personas_core::model_ids::OPUS_5_5;
 
     fn temp_dir(tag: &str) -> std::path::PathBuf {
         let p =
@@ -126,14 +124,14 @@ mod tests {
             enabled: true,
             max_budget_usd: 5.0,
             allowed_models: vec![
-                " claude-opus-5-5 ".into(),
-                "CLAUDE-OPUS-5-5".into(),
-                "".into(),
+                format!(" {OPUS_5_5} "),
+                OPUS_5_5.to_ascii_uppercase(),
+                String::new(),
             ],
             root_path: dir.to_string_lossy().to_string(),
         })
         .unwrap();
-        assert_eq!(out.allowed_models, vec!["claude-opus-5-5".to_string()]);
+        assert_eq!(out.allowed_models, vec![OPUS_5_5.to_string()]);
         assert!(Path::new(&out.root_path).is_absolute());
         assert!(!out.root_path.starts_with(r"\\?\"));
         let _ = std::fs::remove_dir_all(&dir);

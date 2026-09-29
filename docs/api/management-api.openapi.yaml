@@ -318,21 +318,113 @@ paths:
         `requirements_string_too_long` (a string > 1000 chars). The approval
         card's rationale ends `designed from kp requirements (N constraint(s))`.
         Absent ⇒ the request takes exactly the path it took before.
+        `requirements.knowledge[]` (≤ 12) names the registry subjects the
+        persona must consult; see `KpAgentRequirements`.
+
+        **Model on hire (§10.14).** An optional `spec.modelProfile: {model,
+        effort?}` becomes the created persona's `model_profile`. `model` is
+        1..100 characters with no whitespace or control characters; `effort`,
+        when present, is one of `low`, `medium`, `high`, `xhigh`, `max`.
+        ONLY those two fields are stored — a `provider`, `base_url` or
+        `auth_token` sent alongside is dropped. A bad value is 400
+        `invalid_model_profile`. Promote keeps a kp hire's requested model
+        instead of seeding the design's solo-use-case recommendation.
+
+        **Project link (§10.14).** An optional `placement.projectId` (a
+        `dev_projects` id) becomes the persona's `design_context.homeProjectId`
+        — the persona → project link, and the persona's default working
+        directory. It is held to the boundary of a per-run `_projectId`
+        binding: the project exists, is on, its folder exists and lies strictly
+        inside the allowed HTTP project roots, and it is in
+        `placement.workspaceId` — or, when no `workspaceId` was sent, in some
+        workspace, which then becomes the placement (written into the stored
+        request). Refusals: 400 `invalid_placement`; 404 `project_not_found`;
+        403 `project_outside_allowed_roots` · `project_outside_persona_workspace`.
+        The approval executor re-checks against the persona's filed home team
+        and FAILS the hire (nothing created) if the project no longer passes.
+
+        **Gig persona policy (§10.14).** When the operator's policy
+        (`kp.gig_persona_policy`, set in Settings → API Keys, never over this
+        API) is enabled and the request is inside EVERY bound — top-level
+        `fit.kind == "kp.gig-persona.v1"`, `spec.maxBudgetUsd` present and ≤
+        the policy cap, `spec.modelProfile.model` on the allowed list,
+        `placement.projectId` naming a project whose folder is strictly inside
+        the policy's root — the request is approved on the operator's behalf
+        on the spot, through the executor the Approve click runs (so the
+        execute grant above is issued exactly as for a click). The row records
+        `decidedBy: "policy:kp.gig_persona_policy"`. The response is then
+        `{requestId, status: "approved", autoApproved: true, approvedBy:
+        "policy:kp.gig_persona_policy", personaId, message}` — `status` is
+        `"approved"` (what the status route reports for the row until the
+        build promotes, then `active`), or `"failed"` when the executor could
+        not create the hire. A request that misses any bound waits for the
+        operator exactly as before (`pending_approval`); when it named the
+        gig-persona `fit.kind`, the approval card says which bound it missed.
       requestBody:
         required: true
         content: { application/json: { schema: { $ref: "#/components/schemas/KpPersonaRequest" } } }
       responses:
         "200":
-          description: Request queued
+          description: Request queued — or, inside the gig persona policy (or under the headless bridge), decided on the spot
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   requestId: { type: string, examples: ["appr_a1b2c3d4e5f6"] }
-                  status: { type: string, const: pending_approval }
-        "400": { description: "Validation failure (`code` `workspace_not_found` / `invalid_placement` for a bad `placement`; `invalid_requirements` / `requirements_too_large` / `requirements_too_many_items` / `requirements_string_too_long` for a bad `spec.requirements`): empty/oversized field, non-http(s) kp.baseUrl, more than 32 connectors or metrics, or an appMaster block whose mandate.scopeRung is outside 0..2, whose mandate.forbiddenClasses leaves the closed vocabulary, whose app.repo carries neither a url nor a rootPath, or whose objective/trigger/tenure values leave their vocabularies or bounds" }
-        "403": { $ref: "#/components/responses/Forbidden" }
+                  status: { type: string, enum: [pending_approval, approved, failed], description: "`pending_approval` unless the request was auto-approved (`autoApproved: true`)" }
+                  autoApproved: { type: boolean, description: "Present and true only when the gig persona policy (or the headless bridge) decided the request" }
+                  approvedBy: { type: string, const: "policy:kp.gig_persona_policy", description: "Gig-policy approvals only" }
+                  personaId: { type: [string, "null"], description: "Gig-policy approvals only: the created persona" }
+                  message: { type: string }
+        "400": { description: "Validation failure (`code` `workspace_not_found` / `invalid_placement` for a bad `placement`; `invalid_model_profile` for a bad `spec.modelProfile`; `invalid_requirements` / `requirements_too_large` / `requirements_too_many_items` / `requirements_string_too_long` for a bad `spec.requirements`): empty/oversized field, non-http(s) kp.baseUrl, more than 32 connectors or metrics, or an appMaster block whose mandate.scopeRung is outside 0..2, whose mandate.forbiddenClasses leaves the closed vocabulary, whose app.repo carries neither a url nor a rootPath, or whose objective/trigger/tenure values leave their vocabularies or bounds" }
+        "403": { description: "Missing `personas:build`, or `placement.projectId` outside the allowed HTTP project roots (`project_outside_allowed_roots`) or the placement workspace (`project_outside_persona_workspace`)" }
+        "404": { description: "`project_not_found` — `placement.projectId` names no enabled project with an existing folder" }
+
+  /api/kp/personas/{personaId}/retire:
+    post:
+      summary: End the tenure of a persona this key hired
+      description: |
+        `personas:build` (the `/api/kp/` write tier). Only a persona created
+        from a `POST /api/kp/persona-requests` submitted by the SAME key may be
+        retired; ownership is read from the approval row's `result.personaId`
+        stamp and its `requested_by_key_id`, the record the execute grant
+        (§10.8) is issued from.
+
+        The persona is **archived**, not deleted (`personas::archive_persona`,
+        the function the Archive command and `/api/kp/test/retire` use):
+        `persona_executions` cascade on a hard delete, and the gig's past
+        executions — like its project, milestones and goals — are kept. The
+        key's `personas:execute:persona:<id>` grant is revoked (the
+        `revoke_on_retire` path `delete_persona` also runs). An App master
+        hired through kp additionally has its mandate ended through the shared
+        probation carry-out. In-flight executions are not cancelled.
+
+        Idempotent: a persona already archived, or already deleted by the
+        operator, that this key hired answers 200 with `already: true`.
+      parameters:
+        - { name: personaId, in: path, required: true, schema: { type: string, maxLength: 128 } }
+      responses:
+        "200":
+          description: Retired (or already retired)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  retired: { type: boolean, const: true }
+                  already: { type: boolean }
+                  personaId: { type: string }
+                  archived: { type: boolean, description: "The persona row exists, archived. false only when it was already deleted." }
+                  executeGrantsRevoked: { type: integer, description: "Keys that lost the per-persona execute grant just now (0 on a repeat)" }
+                  mandate:
+                    type: [object, "null"]
+                    properties:
+                      projectId: { type: string }
+                      carriedOut: { type: boolean }
+        "400": { description: "`invalid_persona_id` (empty or over 128 chars) · `persona_not_retirable` (a system persona)" }
+        "403": { description: "`persona_not_hired_by_this_key` — the persona exists but no request this key submitted produced it (or the key lacks `personas:build`)" }
+        "404": { description: "`persona_not_found` — no such persona, and none this key ever hired" }
 
   /api/kp/persona-requests/{requestId}:
     get:
@@ -1063,6 +1155,15 @@ components:
                 required: [key, label]
             requirements:
               $ref: "#/components/schemas/KpAgentRequirements"
+            modelProfile:
+              type: [object, "null"]
+              description: |
+                The model the persona runs on (§10.14). Becomes the persona's
+                `model_profile`; only `model` and `effort` are stored.
+              properties:
+                model: { type: string, minLength: 1, maxLength: 100, examples: ["claude-opus-5-5"], description: "No whitespace or control characters" }
+                effort: { type: [string, "null"], enum: [low, medium, high, xhigh, max, null] }
+              required: [model]
           required: [name, mission]
         reportToken:
           type: string
@@ -1071,10 +1172,21 @@ components:
           $ref: "#/components/schemas/AppMasterSpec"
         placement:
           type: [object, "null"]
-          description: Where the approved hire is filed — the workspace whose cross-project group becomes its home team.
+          description: |
+            Where the approved hire is filed — the workspace whose
+            cross-project group becomes its home team — and, optionally, the
+            project it is homed in (§10.14). At least one of the two.
           properties:
-            workspaceId: { type: string }
-          required: [workspaceId]
+            workspaceId: { type: string, description: "Optional when `projectId` is sent: the project's workspace is used" }
+            projectId: { type: string, maxLength: 128, description: "A `dev_projects` id → `design_context.homeProjectId`" }
+        fit:
+          type: [object, "null"]
+          description: |
+            kp's classification of the hire. Stored verbatim; Personas reads
+            only `kind`, and only for the gig persona policy — a request with
+            `kind: "kp.gig-persona.v1"` is a candidate for auto-approval.
+          properties:
+            kind: { type: string, examples: ["kp.gig-persona.v1"] }
       required: [kp, spec, reportToken]
 
     KpAgentRequirements:
@@ -1152,6 +1264,25 @@ components:
               connector: { type: string }
               why: { type: string }
         budgetUsdPerAttempt: { type: [number, "null"] }
+        knowledge:
+          type: array
+          maxItems: 12
+          description: |
+            The registry subjects the persona must consult — its areas of
+            expertise (§10.14). Rendered into the build intent beside the craft
+            as "Consult the registry subject `<bundle>/<subject>` (title)
+            before deciding anything in its area", with a standing instruction
+            in the intent's answers. An entry without `bundle` or `subject` is
+            kept on the persona and not rendered; absent ⇒ nothing rendered.
+            Over 12 entries is `requirements_too_many_items`.
+          items:
+            type: object
+            properties:
+              bundle: { type: string, examples: ["software-engineering"] }
+              subject: { type: string, examples: ["authorization"] }
+              title: { type: string }
+              path: { type: string, description: "The subject's golden-path file in the registry" }
+            required: [bundle, subject]
       required: [kind]
 
     AppMasterSpec:

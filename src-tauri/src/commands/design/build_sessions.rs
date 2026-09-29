@@ -2565,8 +2565,8 @@ fn update_persona_in_tx(
             rusqlite::params![persona_id],
             |r| {
                 Ok((
-                    r.get::<_, Option<String>>(0)?,
-                    r.get::<_, Option<String>>(1)?,
+                    r.get::<_, Option<String>>("model_profile")?,
+                    r.get::<_, Option<String>>("design_context")?,
                 ))
             },
         )
@@ -4429,13 +4429,15 @@ mod tests {
     async fn promote_keeps_a_kp_gig_personas_requested_model_and_home_project(
     ) -> Result<(), AppError> {
         let pool = crate::db::init_test_db().unwrap();
-        let requested = r#"{"model":"claude-opus-5-5","effort":"high"}"#;
+        use personas_core::model_ids::{OPUS_5_5, SONNET_CURRENT};
+        let requested = serde_json::json!({"model": OPUS_5_5, "effort": "high"}).to_string();
+        let requested = requested.as_str();
         // The design recommends another model for its only use case.
         let mut ir = kp_designed_ir();
         ir["use_cases"] = serde_json::json!([{
             "id": "uc_deliver",
             "title": "Deliver the gig",
-            "model_override": "claude-sonnet-5"
+            "model_override": SONNET_CURRENT
         }]);
 
         kp_hired_draft(&pool, "p_kpg", None)?;
@@ -4471,7 +4473,7 @@ mod tests {
             control
                 .model_profile
                 .as_deref()
-                .is_some_and(|m| m.contains("claude-sonnet-5")),
+                .is_some_and(|m| m.contains(SONNET_CURRENT)),
             "{:?}",
             control.model_profile
         );

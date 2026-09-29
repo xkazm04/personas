@@ -227,7 +227,17 @@
     "retire_reason_expired": "Expiré",
     "retire_reason_superseded": "Remplacé par un appairage plus récent",
     "retire_result": "{retired} sur {total} retirés.",
-    "retire_title": "Retirer les appairages invalides"
+    "retire_title": "Retirer les appairages invalides",
+    "gig_policy_budget_label": "Budget max. par embauche (USD)",
+    "gig_policy_desc": "kp embauche un agent par mission. Une demande d'embauche de kp qui respecte toutes les limites ci-dessous est approuvée en votre nom ; tout le reste attend votre approbation comme d'habitude. Aucune clé API ne peut modifier ce réglage.",
+    "gig_policy_enabled": "Approuver automatiquement les agents de mission conformes à cette règle",
+    "gig_policy_models_hint": "ID de modèles séparés par des virgules, p. ex. claude-opus-5-5",
+    "gig_policy_models_label": "Modèles autorisés",
+    "gig_policy_root_hint": "Seuls les projets de mission dans ce dossier sont admissibles.",
+    "gig_policy_root_label": "Dossier racine des missions",
+    "gig_policy_save": "Enregistrer la règle",
+    "gig_policy_saved": "Règle enregistrée",
+    "gig_policy_title": "Règle des agents de mission"
   },
   "appearance_extra": {
     "dev": "Dev",

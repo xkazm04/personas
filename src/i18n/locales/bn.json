@@ -16081,7 +16081,17 @@
       "retire_reason_expired": "মেয়াদোত্তীর্ণ",
       "retire_reason_superseded": "নতুন পেয়ারিং দিয়ে প্রতিস্থাপিত",
       "retire_result": "{total}-এর মধ্যে {retired}টি বাতিল হয়েছে।",
-      "retire_title": "অকেজো পেয়ারিং বাতিল করুন"
+      "retire_title": "অকেজো পেয়ারিং বাতিল করুন",
+      "gig_policy_budget_label": "প্রতি নিয়োগে সর্বোচ্চ বাজেট (USD)",
+      "gig_policy_desc": "kp প্রতিটি গিগের জন্য একটি এজেন্ট নিয়োগ করে। নিচের সব সীমার মধ্যে থাকা kp নিয়োগ অনুরোধ আপনার পক্ষ থেকে অনুমোদিত হয়; বাকি সব যথারীতি আপনার অনুমোদনের অপেক্ষায় থাকে। কোনো API কী এই সেটিং পরিবর্তন করতে পারে না।",
+      "gig_policy_enabled": "এই নীতির মধ্যে থাকা গিগ এজেন্টদের স্বয়ংক্রিয়ভাবে অনুমোদন করুন",
+      "gig_policy_models_hint": "কমা দিয়ে আলাদা মডেল ID, যেমন claude-opus-5-5",
+      "gig_policy_models_label": "অনুমোদিত মডেল",
+      "gig_policy_root_hint": "শুধু এই ফোল্ডারের ভেতরের গিগ প্রকল্পগুলো যোগ্য।",
+      "gig_policy_root_label": "গিগ রুট ফোল্ডার",
+      "gig_policy_save": "নীতি সংরক্ষণ করুন",
+      "gig_policy_saved": "নীতি সংরক্ষিত হয়েছে",
+      "gig_policy_title": "গিগ এজেন্ট নীতি"
     },
     "appearance_extra": {
       "dev": "ডেভ",

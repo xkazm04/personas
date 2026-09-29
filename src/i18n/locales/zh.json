@@ -16081,7 +16081,17 @@
       "retire_reason_expired": "已过期",
       "retire_reason_superseded": "已被较新配对取代",
       "retire_result": "已停用 {retired} 个，共 {total} 个。",
-      "retire_title": "停用失效配对"
+      "retire_title": "停用失效配对",
+      "gig_policy_budget_label": "每次雇用的最高预算（美元）",
+      "gig_policy_desc": "kp 为每个零工项目雇用一个智能体。符合下方所有限制的 kp 雇用请求将代表您自动批准；其他请求照常等待您的批准。任何 API 密钥都无法更改此设置。",
+      "gig_policy_enabled": "自动批准符合此策略的零工智能体",
+      "gig_policy_models_hint": "以逗号分隔的模型 ID，例如 claude-opus-5-5",
+      "gig_policy_models_label": "允许的模型",
+      "gig_policy_root_hint": "只有此文件夹内的零工项目才符合条件。",
+      "gig_policy_root_label": "零工根文件夹",
+      "gig_policy_save": "保存策略",
+      "gig_policy_saved": "策略已保存",
+      "gig_policy_title": "零工智能体策略"
     },
     "appearance_extra": {
       "dev": "开发",
