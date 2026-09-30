@@ -1,7 +1,7 @@
 # Golden path — Usage analytics
 
 > Situation node: `product-surfaces/monitoring-surfaces/usage-analytics` ·
-> [situation spine](../situation-spine.md) · recurrence 12 · risk **medium** ·
+> situation spine · recurrence 12 · risk **medium** ·
 > sides: **client** · convergence: **converged** ·
 > dimensions: **function · security · cost**
 > Composed 2026-08-17 against `master` @ `6c97502d3`; every figure re-verified at
@@ -19,7 +19,7 @@
 > block, and every nav-store slice under `src/stores/slices/`. Both usage
 > dashboards (`src/features/overview/sub_usage/`, `sub_analytics/`) and the
 > engine's `parser.rs` `result` arm. Denominators cited by id from
-> [`shared-facts.json`](../shared-facts.json): `frontend.tsFiles` **4,829**,
+> `shared-facts.json`: `frontend.tsFiles` **4,829**,
 > `frontend.tsxFiles` **2,104**, `rust.files` **963** — all three re-verified
 > here by running the recorded instrument
 > (`node scripts/docs/measure-shared-facts.mjs`, exit 0, **no `value` line

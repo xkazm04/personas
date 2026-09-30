@@ -1,6 +1,6 @@
 # Golden path — Long-running job progress
 
-> Situation node: `backend-runtime/job-coordination/long-running-job-progress` · [situation spine](../situation-spine.md)
+> Situation node: `backend-runtime/job-coordination/long-running-job-progress` · situation spine
 > Composed 2026-08-14 against `master` @ `2d168ac4c`. Ground-truth sweep: all 963
 > `src-tauri/**/*.rs` files walked by the census runner; `background_job.rs` read
 > in full; all **19** static `BackgroundJobManager` instances (18 files) and all **23**
@@ -10,7 +10,7 @@
 > enumerated; on the client, all **5** `useCorrelatedCliStream` call sites, all
 > **3** `useBackgroundSnapshot` call sites and all **8** hand-rolled job polls
 > read individually over 4,830 `src/**/*.{ts,tsx}` files. Corpus counts cite
-> [`shared-facts.json`](../shared-facts.json); command counts cite
+> `shared-facts.json`; command counts cite
 > [`polling-loop.md`](./polling-loop.md) (1,673). Every number below came from
 > reading source, not estimation.
 > This leaf is **two-sided and fused**: it absorbed a server-side
@@ -37,7 +37,7 @@ job is starting.
 
 *Three sentences, no repo path, no primitive name, no count — the layer a
 sibling repo on another stack can adopt as-is. Each clause is tagged with its
-warrant, per the [portability test](../research/portability-test.md)'s
+warrant, per the portability test's
 finding that unmarked local calibration is what gets a whole document
 discarded.*
 

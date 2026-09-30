@@ -1,7 +1,7 @@
 # Document signing
 
 > Situation node: `integrations-security` / `vault-security` / `document-signing` ·
-> [situation spine](../situation-spine.json)
+> situation spine
 > `sides: "client"` · `convergence: "converged"` · `twoSided: true` · `risk: high` ·
 > `recurrence: 4` · dimensions: security · function · ui
 > Spine's own framing: *"Signing a file, writing/importing a sidecar signature, and verifying it."*

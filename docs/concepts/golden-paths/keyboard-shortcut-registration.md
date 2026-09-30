@@ -1,6 +1,6 @@
 # Golden path — Keyboard shortcut registration
 
-> Situation node: `ui-system/chrome-and-feedback/keyboard-shortcut-registration` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/chrome-and-feedback/keyboard-shortcut-registration` · situation spine
 > recurrence **30** · risk **MEDIUM** · sides **client** · convergence **diverged**
 > dimensions: **function · ui · code-quality**
 > merged from *Keyboard shortcut registration*, *Keyboard shortcut ownership*.
@@ -156,7 +156,7 @@ mechanisms in this app, and no site gets all three.**
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and
+Per the portability test, the head is physically separated and
 each clause carries its warrant, so an adopting repo can tell physics from local calibration. No
 file path, primitive name or count appears below this line until the head ends.
 

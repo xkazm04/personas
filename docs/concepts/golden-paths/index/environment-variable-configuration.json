@@ -66,13 +66,6 @@
       "contexts": ["| **Machine gate on the contract** | **none** | **none** (no `.github/` at all) | **YES** — `deploy-test.yml:60-105` boots the whole stack from generated secrets | **none** |"],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {
-      "count": 2,
-      "sections": [9],
-      "contexts": ["`src-tauri/` (exactly `rust.files` in [`shared-facts.json`](../shared-facts.json)) · all **4,829**"],
-      "resolvedFrom": "basename",
-      "verbatim": "shared-facts.json"
-    },
     "env-contract.json": {"count":1,"sections":[9],"contexts":["- **Declare the contract.** A new committed `env-contract.json` (or a typed block in"],"resolved":false},
     "env.d.ts": {"count":1,"sections":[8],"contexts":["3. **Vite's `import.meta.env` is a string bag with no schema.** There is no `env.d.ts` declaring the"],"resolved":false},
     "first-boot.sh": {
@@ -119,7 +112,8 @@
     "scripts/memory/reflect-eval.mjs": {"count":1,"sections":[9],"lines":["28"],"contexts":["reads (`src/lib/constants/uiModes.ts:41`, `scripts/memory/reflect-eval.mjs:28`,"]},
     "scripts/test/browser-bridge-mock-extension.mjs": {"count":1,"sections":[9],"lines":["31"],"contexts":["`scripts/test/browser-bridge-mock-extension.mjs:31`, `scripts/verify-resource-scoping.mjs:188`)."]},
     "scripts/verify-resource-scoping.mjs": {"count":1,"sections":[9],"lines":["188"],"contexts":["`scripts/test/browser-bridge-mock-extension.mjs:31`, `scripts/verify-resource-scoping.mjs:188`)."]},
-    "src-tauri/": {"count":3,"sections":[8,9],"contexts":["`src-tauri/` (exactly `rust.files` in [`shared-facts.json`](../shared-facts.json)) · all **4,829**"],"resolved":false,"isDir":true},
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["`src-tauri/` (exactly `rust.files` in `shared-facts.json`) · all **4,829**"],"resolved":false},
+    "src-tauri/": {"count":3,"sections":[8,9],"contexts":["`src-tauri/` (exactly `rust.files` in `shared-facts.json`) · all **4,829**"],"resolved":false,"isDir":true},
     "src-tauri/build.rs": {"count":3,"sections":[3,6],"lines":["30-57","43-50"],"contexts":["`lefthook.yml` (**12** CI files) · every `package.json` script · `src-tauri/build.rs` ·"]},
     "src-tauri/core/src/crypto.rs": {
       "count": 2,

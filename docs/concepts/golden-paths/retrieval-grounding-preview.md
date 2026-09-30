@@ -1,7 +1,7 @@
 # Retrieval grounding preview
 
 > Situation node: `ai-and-agents/prompt-and-output/retrieval-grounding-preview` ·
-> [situation spine](../situation-spine.json) · `sides: "client"` (**contradicted
+> situation spine · `sides: "client"` (**contradicted
 > — §12.1**) · `twoSided: true` · recurrence 4 · risk low ·
 > `convergence: "converged"` (**contradicted — §12.2**) · dimensions: ui ·
 > function.

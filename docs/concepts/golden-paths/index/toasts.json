@@ -90,9 +90,9 @@
       "resolved": false
     },
     "artist/hooks/useBlenderMcp.ts": {"count":1,"sections":[7],"contexts":["`artist/hooks/useBlenderMcp.ts` 2 · 2 others."],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["Corpus counts cite [`shared-facts.json`](../shared-facts.json) rather than re-deriving them."],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "package.json": {"count":1,"sections":[],"contexts":["`notistack`, `@radix-ui/react-toast` in `package.json`) and instead grew **five independent"]},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["`scripts/census/rules.json`:"]},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["Corpus counts cite `shared-facts.json` rather than re-deriving them."],"resolved":false},
     "silentCatchMOVED.ts": {
       "count": 1,
       "sections": [9],

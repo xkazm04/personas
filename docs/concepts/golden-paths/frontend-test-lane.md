@@ -1,6 +1,6 @@
 # Golden path — Frontend test lane
 
-> Situation node: `platform-delivery/testing-and-workflow/frontend-test-lane` · [situation spine](../situation-spine.md)
+> Situation node: `platform-delivery/testing-and-workflow/frontend-test-lane` · situation spine
 > recurrence **6** · risk **LOW** · sides **server** · convergence **mixed** · `twoSided: true`
 > dimensions: **code-quality · cost**
 > Leaf definition: *"Which of the runner configurations a new test belongs to."*

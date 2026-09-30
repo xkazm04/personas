@@ -2,11 +2,11 @@
 
 > Situation node: `ui-system/chrome-and-feedback/drag-reorder` · recurrence 42 ·
 > `twoSided: true`, `fusedAcrossSides: true` · dimensions: **ui · function ·
-> resilience · code-quality** · [situation spine](../situation-spine.md)
+> resilience · code-quality** · situation spine
 >
 > Composed 2026-08-15 against `master` @ `5108ff978`. Sweep: **4,829 `.ts`/`.tsx`**
 > and **963 `.rs`** files (corpus totals cited from
-> [`shared-facts.json`](../shared-facts.json), not re-derived), classified by
+> `shared-facts.json`, not re-derived), classified by
 > **two independent implementations** that were reconciled against each other and
 > whose disagreement is reported below; **four executed experiments** — a
 > five-arm SQLite reproduction of this repo's own reorder loop, a tie-break

@@ -1,7 +1,7 @@
 # Golden path — Credential slot binding
 
 > **Topic path:** `integrations-security` › `credential-readiness` › `credential-slot-binding`
-> [situation spine](../situation-spine.md) · recurrence 12 · risk **medium** · sides: **client**
+> situation spine · recurrence 12 · risk **medium** · sides: **client**
 > (spine label — **see §12.2, it is inverted**) · `twoSided: true` (**holds**) ·
 > convergence: **mixed** (**see §12.3 — it holds, on a cohort of two**) ·
 > dimensions: **ui · function · security · code-quality**
@@ -282,7 +282,7 @@ unrecoverable, and the answer to *"what will it use tomorrow"* is *whichever row
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path, primitive
+Per the portability test the head carries no file path, primitive
 name or count. Each clause names its warrant so an adopting repo can tell physics from local
 calibration.
 

@@ -2,7 +2,7 @@
  "meta": {
   "generated_by": "scripts/census/build-paths-index.mjs",
   "source": "docs/concepts/paths/ (frontmatter only)",
-  "subjects": 105,
+  "subjects": 106,
   "techniques": 624,
   "applications": 236,
   "laws": 9,
@@ -940,16 +940,9 @@
     }
    ],
    "evidence": [
-    "src/features/teams/sub_mastermind/lib/CanvasShell.tsx",
-    "src/features/teams/sub_mastermind/lib/useCanvasCamera.ts",
-    "src/features/teams/sub_mastermind/lib/useIslandDrag.ts",
-    "src/features/teams/sub_mastermind/lib/tidyLayout.ts",
-    "src/features/teams/sub_mastermind/lib/layoutStore.ts",
     "src/features/overview/sub_memories/components/MemoriesPageGraph.tsx"
    ],
-   "counter_evidence": [
-    "src/features/teams/sub_mastermind/lib/GroupLayer.tsx"
-   ],
+   "counter_evidence": [],
    "deviations": [
     "w7-canvas-graph"
    ],
@@ -1199,7 +1192,6 @@
     "src/lib/async/createTtlValueCache.ts",
     "src/hooks/utility/data/useModuleSubscription.ts",
     "src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx",
-    "src/features/overview/sub_certification/useCertificationData.ts",
     "src/i18n/useTranslation.ts",
     "src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts",
     "src/features/agents/sub_deployment/components/cloud/CloudHistoryPanel.tsx"
@@ -2697,7 +2689,6 @@
    "evidence": [
     "src/features/shared/components/kanban/KanbanBoard.tsx",
     "src/features/plugins/dev-tools/sub_overview/ProjectOverviewPage.tsx",
-    "src/features/teams/sub_mastermind/lib/useIslandDrag.ts",
     "src/features/shared/components/display/DropIndicator.tsx"
    ],
    "counter_evidence": [],
@@ -4268,6 +4259,29 @@
     }
    ]
   },
+  "metric-gates": {
+   "category": "engineering-process",
+   "status": "forged",
+   "techniques": [
+    {
+     "slug": "ratchet-design",
+     "laws": [
+      "count-carries-predicate",
+      "derivation-names-recomputation",
+      "failure-not-empty-success"
+     ],
+     "shared_with": []
+    }
+   ],
+   "evidence": [
+    "scripts/census/rules.json",
+    "scripts/census/run-census.mjs",
+    "package.json"
+   ],
+   "counter_evidence": [],
+   "deviations": [],
+   "applications": []
+  },
   "metrics-rollups": {
    "category": "backend-platform",
    "status": "forged",
@@ -5521,15 +5535,6 @@
      "slug": "hook-hygiene",
      "laws": [
       "gate-sees-target",
-      "failure-not-empty-success"
-     ],
-     "shared_with": []
-    },
-    {
-     "slug": "ratchet-design",
-     "laws": [
-      "count-carries-predicate",
-      "derivation-names-recomputation",
       "failure-not-empty-success"
      ],
      "shared_with": []
@@ -6847,15 +6852,14 @@
    "evidence": [
     "src/i18n/tokenMaps.ts",
     "src/lib/design/statusTokens.ts",
+    "src/features/overview/sub_observability/libs/issueModel.ts",
     "src/lib/design/eventTokens.ts",
-    "src/features/overview/sub_certification/components/VerdictBadge.tsx",
     "src/features/shared/components/display/Numeric.tsx",
     "src/features/shared/components/display/RelativeTime.tsx",
     "src/lib/utils/formatters.ts",
     "src-tauri/db/src/migrations/incremental/"
    ],
    "counter_evidence": [
-    "src/features/overview/sub_observability/components/HealingIssueStatusBadge.tsx",
     "eslint-rules/prefer-numeric.cjs"
    ],
    "deviations": [
@@ -8580,7 +8584,6 @@
     "src/hooks/utility/data/usePersistedContext.ts"
    ],
    "counter_evidence": [
-    "src/features/shared/components/progress/WizardStepper.tsx",
     "src/features/scraper/ScrapeEditorWizard.tsx"
    ],
    "deviations": [

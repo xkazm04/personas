@@ -1,6 +1,6 @@
 # Golden path — Number and cost formatting
 
-> Situation node: `ui-system/copy-and-vocabulary/number-and-cost-formatting` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/copy-and-vocabulary/number-and-cost-formatting` · situation spine
 > Composed 2026-08-14. **Recurrence 176.**
 > Sweep: `src/lib/utils/formatters.ts` (480 lines) and `display/Numeric.tsx` read in full and then
 > **executed** — the real module was transpiled with the repo's own TypeScript and every formatter
@@ -17,7 +17,7 @@
 > **Settles:** who decides what a number looks like on screen — the call site or the number layer.
 >
 > Counts below were measured during composition. Where they touch
-> [`shared-facts.json`](../shared-facts.json) they reproduce it exactly (4,829 files, 1,135 warnings,
+> `shared-facts.json` they reproduce it exactly (4,829 files, 1,135 warnings,
 > 0 errors, 246 files with findings). **Two of the brief's three hypotheses failed and are corrected
 > in §7.0.** Deviations become `violating` cells.
 
@@ -25,7 +25,7 @@
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and
+Per the portability test, the head is physically separated and
 every clause carries its **warrant**, so an adopting repo can tell physics from local calibration.
 No file path, primitive name or count appears below this line until the head ends.
 
@@ -681,7 +681,7 @@ formatting test file (`slaFormat.test.ts`), and **no test asserts on money anywh
 
 ## 9. The missing gate
 
-**Manifestation layer.** Per [`golden-path-contract.md:34-60`](../golden-path-contract.md), what
+**Manifestation layer.** Per `golden-path-contract.md:34-60`, what
 follows is a *proxy* for a semantic condition, tuned to this repo's idiom. The conditions are stated
 first so an adopting repo re-derives its own proxy. The risk is concrete and measured here: the
 sibling that reinvented the `` `$${…}` `` idiom eleven times has **zero** `Intl.NumberFormat`, so a
@@ -896,8 +896,8 @@ hardcode en-US, and the reason is one line:
 language?: string;
 ```
 
-An optional prop with a silent default is the exact shape [the contract's *Prefer a type over a
-gate*](../golden-path-contract.md#prefer-a-type-over-a-gate--checked-three-times) names:
+An optional prop with a silent default is the exact shape the contract's *Prefer a type over a
+gate* names:
 `FacetedDecisionTable` makes `emptyTitle` **required** and gets 3/3 real copy where its
 optional-prop siblings fall through to `"No data"` 5 times in 20. Here the ratio is **9 in 215**.
 Two options, both making the wrong call unrepresentable:

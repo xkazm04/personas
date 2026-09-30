@@ -1,7 +1,7 @@
 # Golden path — Admission control
 
 > Situation node: `backend-runtime/job-coordination/admission-control` ·
-> [situation spine](../situation-spine.md) · recurrence 7 · risk **HIGH** ·
+> situation spine · recurrence 7 · risk **HIGH** ·
 > sides: **server** · convergence: **mixed** ·
 > dimensions: **function · resilience · performance · cost · code-quality**
 > Composed 2026-08-16 against `master` @ `95555f875`.
@@ -229,7 +229,7 @@ the *concurrency*. Only `personas-cloud` has anything comparable.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path, primitive
+Per the portability test the head carries no file path, primitive
 name or count, so an adopting repo can tell physics from local calibration. Each clause names its
 warrant.
 

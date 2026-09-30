@@ -1,7 +1,7 @@
 # Golden path — Adding a CI gate
 
 > Situation node: `platform-delivery/gates-and-conventions/adding-a-ci-gate` ·
-> [situation spine](../situation-spine.md) · recurrence 22 · risk **HIGH** ·
+> situation spine · recurrence 22 · risk **HIGH** ·
 > sides: **server** · convergence: **mixed** ·
 > dimensions: **resilience · code-quality · security · cost · function**
 > Composed 2026-08-15 against `master` @ `e611c326d`.

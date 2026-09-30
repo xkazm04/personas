@@ -1,7 +1,7 @@
 # Golden path — the IPC session token and its validity window
 
 > Situation node: `backend-runtime/command-authorization/ipc-session-token-race` ·
-> [situation spine](../situation-spine.md) · recurrence 8 · risk **HIGH** · sides **server**
+> situation spine · recurrence 8 · risk **HIGH** · sides **server**
 > (**corrected: two-sided — see §10.1**) · convergence **mixed** ·
 > dimensions: **security · resilience · function · code-quality**
 > Composed 2026-08-16 against `master` @ `629a914af`.
@@ -254,7 +254,7 @@ filled before the window existed. It is defence-in-depth against nothing.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head carries no file path,
+Per the portability test, the head carries no file path,
 primitive name or count, so an adopting repo can tell physics from local calibration.
 
 > **P1 — physics.** *A credential's existence and the proof that it was checked are two different

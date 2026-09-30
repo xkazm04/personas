@@ -1,7 +1,7 @@
 # Golden path — Selective per-item verdicts
 
 > Situation node: `ai-agents/human-review/selective-per-item-verdicts` ·
-> [situation spine](../situation-spine.md) · recurrence **10** · risk **HIGH** ·
+> situation spine · recurrence **10** · risk **HIGH** ·
 > sides: **client** (the spine also carries `twoSided: true` — see [§12.1](#12-corrections-to-the-brief)) ·
 > convergence: **diverged** · dimensions: **function · ui · resilience · cost**
 > Composed 2026-08-16 against `master` @ `2a874e692`.
@@ -169,7 +169,7 @@ verdict and has nowhere to put one.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path, primitive
+Per the portability test the head carries no file path, primitive
 name or count. Each clause names its warrant.
 
 > **P1 — physics, and everything else follows.** **If a human is shown N items and can decide them

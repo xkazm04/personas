@@ -114,7 +114,6 @@
     },
     "VitalsLedger.tsx": {"count":1,"sections":[7],"lines":["285"],"contexts":["Full share-of-total roster: `TeamCertCard.tsx:48` · `VitalsLedger.tsx:285` ·"],"resolved":false},
     "WorkspacePulse.tsx": {"count":1,"sections":[7],"lines":["55"],"contexts":["| `WorkspacePulse.tsx:55`, `FacetedDecisionTable.tsx:346`, `factoryPrimitives.tsx:58`/`:293`/`:300` | 2% | |"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[7],"contexts":["**Shared facts cited:** [`shared-facts.json`](../shared-facts.json) — 4,829 `.ts` files,"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "kpiPrimitives.tsx": {"count":2,"sections":[],"lines":["133"],"contexts":["| Shared bar primitive with adopters | **0** | **0** (one exists, `kpiPrimitives.tsx:133`, **0 call sites**) | **0** |"],"resolved":false},
     "llm_spend.rs": {"count":3,"sections":[7,8],"lines":["200-228","213","198"],"contexts":["real rows from the live database, replaying `llm_spend.rs:200-228`'s own SQL:"],"resolved":false},
     "metrics.rs": {
@@ -172,6 +171,7 @@
       "resolved": false
     },
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Checked first that it is not already gated.** `scripts/census/rules.json` held **81 rules**"]},
+    "shared-facts.json": {"count":2,"sections":[7],"contexts":["**Shared facts cited:** `shared-facts.json` — 4,829 `.ts` files,"],"resolved":false},
     "src-tauri/db/src/repos/llm_spend.rs": {"count":1,"sections":[],"lines":["200-228"],"contexts":["`group_by` SQL (`src-tauri/db/src/repos/llm_spend.rs:200-228`). Convergence measured"]},
     "src/features/agents/quick-answer/triage/deck/DeckTopBar.tsx": {"count":1,"sections":[3],"lines":["236"],"contexts":["progressing. Its 6 uses in the bar population (`DeckTopBar.tsx:236`,"],"resolvedFrom":"basename","verbatim":"DeckTopBar.tsx"},
     "src/features/agents/sub_executions/detail/inspector/CostBreakdownBar.tsx": {"count":1,"sections":[7],"lines":["66"],"contexts":["`CostBreakdownBar.tsx:66`, `:70` · `AthenaUsageSection.tsx:127` ·"],"resolvedFrom":"basename","verbatim":"CostBreakdownBar.tsx"},

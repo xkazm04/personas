@@ -1,7 +1,7 @@
 # Golden path — Alert rule editor
 
 > Situation node: `product-surfaces/monitoring-surfaces/alert-rule-editor` ·
-> [situation spine](../situation-spine.md) · recurrence **3** · risk **HIGH** ·
+> situation spine · recurrence **3** · risk **HIGH** ·
 > sides: **client** (**contradicted** — see [§12.1](#121--sides-client-contradicted-the-eighth-time)) ·
 > convergence: **mixed** (**not tested** — see [§12.6](#126--what-was-not-done)) ·
 > dimensions: **function · ui · resilience**

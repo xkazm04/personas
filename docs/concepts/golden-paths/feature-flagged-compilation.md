@@ -1,6 +1,6 @@
 # Golden path — Feature-flagged compilation
 
-> Situation node: `platform-delivery/build-profiles/feature-flagged-compilation` · [situation spine](../situation-spine.md)
+> Situation node: `platform-delivery/build-profiles/feature-flagged-compilation` · situation spine
 > `sides: server` · `twoSided: true` · recurrence **670** · risk **medium**.
 > Dimensions: **function · performance · cost · resilience**.
 > Composed 2026-08-14 against `master` @ `2a874e692` from a ground-truth sweep of all

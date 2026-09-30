@@ -1,7 +1,7 @@
 # Golden path — Node canvas
 
 > Situation node: `product-surfaces` › `canvas-and-media` › `node-canvas` ·
-> [situation spine](../situation-spine.md) · recurrence 20 · risk **medium** ·
+> situation spine · recurrence 20 · risk **medium** ·
 > sides: **client** — **CONTRADICTED**, and not in the usual direction (§12.1) ·
 > convergence: **mixed** — **UPHELD**, read per clause: physics on one, this repo ahead on two, the
 > fleet converged on the *disease* on three, and one sibling **independently reinvented this leaf's
@@ -73,7 +73,7 @@ the seams matter more here than usual, because three neighbours have already mea
   that is re-derived here.** This path starts where a single item's move ends: *which nodes are on
   the board, whether an edge between two of them is legal, what the camera does, and whether anything
   downstream reads the graph.* One correction is returned to it in §12.4.
-- [**`canvas-state-persistence`**](../situation-spine.md) (unwritten, recurrence 5, risk **high**)
+- **`canvas-state-persistence`** (unwritten, recurrence 5, risk **high**)
   **owns the document that outlives the process**; this owns the moment of editing. Settled here so
   the next composer inherits a boundary rather than a negotiation: **that leaf owns
   `mastermind.layout.v1` as a document** — its versioning, its `parseLayout` tolerate-and-drop, its
@@ -395,7 +395,7 @@ surface count on this leaf, because a canvas is a directory.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path, primitive
+Per the portability test the head carries no file path, primitive
 name or count. Each clause names its warrant.
 
 > **P1 — physics, and the leaf's centre.** **An edge is a claim, and the surface that lets a user
@@ -599,7 +599,7 @@ Every one of these exists today. The adopter counts are the finding.
 
 ### Can the type make the wrong call impossible? — asked before §9
 
-Held against the seven qualifications in [the doctrine](../golden-path-doctrine.md).
+Held against the seven qualifications in the doctrine.
 
 **T1 — YES, and it is the cheapest edit in this document: put identity into `BlueprintConnection`.**
 The bad state is a relation whose endpoints are positions in an array that is about to change.

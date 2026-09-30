@@ -1,7 +1,7 @@
 # Vector KB ingestion
 
 > Situation node: `integrations-security / external-and-host-surfaces /
-> vector-kb-ingestion` · [situation spine](../situation-spine.json)
+> vector-kb-ingestion` · situation spine
 > `sides: "client"` · `twoSided: true` · `fusedAcrossSides: false` ·
 > `recurrence: 7` · `risk: medium` · `convergence: "mixed"`.
 > Dimensions: **function · performance · ui · cost**.

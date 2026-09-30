@@ -1,11 +1,11 @@
 # Golden path — Secret display and transfer
 
-> Situation node: `integrations-security/vault-security/secret-display-and-transfer` · [situation spine](../situation-spine.md)
+> Situation node: `integrations-security/vault-security/secret-display-and-transfer` · situation spine
 > Composed 2026-08-14 against `master` @ `2a874e692`. Recurrence 27 — composed out of rank order
 > because two live credential leaks were confirmed in this repo within 24 hours and both of them
 > terminate in this leaf.
 > Sweep size: the whole Rust tree (**963 `.rs` files** — exactly `rust.files` in
-> [`shared-facts.json`](../shared-facts.json), and exactly what the census walker reports),
+> `shared-facts.json`, and exactly what the census walker reports),
 > **1,667 `#[tauri::command]` functions parsed brace-balanced** (signature + body, not grepped —
 > `shared-facts.json` records **1,661**; the 6-function delta is `#[cfg(test)]`-gated commands my
 > parser keeps and is noted rather than reconciled away) · `src/**` (**4,829 `.ts`/`.tsx`**,

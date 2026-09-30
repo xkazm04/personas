@@ -1,8 +1,8 @@
 # Golden path — HMR-safe singletons
 
-> Situation node: `client-runtime/state-management/hmr-safe-singletons` · [situation spine](../situation-spine.md)
+> Situation node: `client-runtime/state-management/hmr-safe-singletons` · situation spine
 > Composed 2026-08-14 against `master` @ `4d515e9ac`, from a TypeScript-AST pass over all
-> **4,829** `.ts`/`.tsx` files ([`shared-facts.json`](../shared-facts.json) `frontend.tsFiles`)
+> **4,829** `.ts`/`.tsx` files (`shared-facts.json` `frontend.tsFiles`)
 > classifying every module-scope binding by mutability, assignment direction and `globalThis`
 > residency; cross-checked by a second independent implementation (regex over whole-file
 > content, run through `scripts/census/lib/engine.mjs`) that agreed on **13 of 13**; plus ~45
@@ -401,7 +401,7 @@ key that a second caller reads. The value type is inferred from `create`, so
 `globalThis as Record<string, unknown>` — the cast behind 8 of 13 keys and all 4 naming
 conventions — has nowhere to appear. The reset hatch is part of the return value rather than an
 optional export, so Deviation D cannot recur. Heeding the contract's own warning about
-[gates that point at a broken destination](../golden-path-contract.md): the factory is only worth
+gates that point at a broken destination: the factory is only worth
 routing to if it is **correct by default**, so `Symbol.for` keying and the reset hatch must be
 non-optional — not a `{ symbol?: true }` option that 96% of callers will omit. The sibling repo's
 measured result supports the mechanism: **2 of 2** of its slots use `Symbol.for` keying, because
@@ -645,6 +645,6 @@ The census rule is a **ratchet, not a lint rule**, and this path does not argue 
 anywhere. Per `.claude/CLAUDE.md`, `npm run check` runs `eslint src/` with no `--max-warnings` and
 the pre-commit hook runs `--quiet`, so **a warn-level rule enforces nothing at either gate, at any
 warning count** — an argument about how the gates are built, not about volume. The 1,135-warning
-baseline ([`shared-facts.json`](../shared-facts.json) `lint.warnings`) is evidence for neither
+baseline (`shared-facts.json` `lint.warnings`) is evidence for neither
 side. `npm run census:check` is a separate exit-1 gate and is where this belongs. The two
 must-never-happen conditions above belong in the Vitest suite, which is also exit-1.

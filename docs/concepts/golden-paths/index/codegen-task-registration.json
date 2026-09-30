@@ -72,7 +72,7 @@
     },
     "crates/brainiac-server/src/openapi.rs": {"count":1,"sections":[4],"lines":["425"],"contexts":["`crates/brainiac-server/src/openapi.rs:425` `committed_document_is_current` (§ Convergence)."],"resolved":false},
     "docs/": {"count":1,"sections":[9],"contexts":["`src/`, `src-tauri/`, `docs/` or `.claude/` is a value in `TASKS` **or** carries an allowlist entry"],"resolved":false,"isDir":true},
-    "docs/concepts/shared-facts.json": {"count":4,"sections":[4,7],"contexts":["`catalog-curation.md`, `.claude/codebase-context.md`, `shared-facts.json`,"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
+    "docs/concepts/shared-facts.json": {"count":3,"sections":[7],"contexts":["| `scripts/docs/measure-shared-facts.mjs` | `docs/concepts/shared-facts.json` | **nothing** | **STALE** |"],"resolved":false},
     "lefthook.yml": {"count":3,"sections":[7,9],"contexts":["**four** `tauri.*.conf.json`, `package.json`'s 84 scripts, `lefthook.yml`, `.github/workflows/ci.yml`."]},
     "openapi.json": {"count":4,"sections":[],"contexts":["(`openapi.json`) is verified by a unit test, and hop 2 (`console/src/lib/api-schema.d.ts`, generated"],"resolved":false},
     "package.json": {"count":9,"sections":[0,4,6,7],"contexts":["**four** `tauri.*.conf.json`, `package.json`'s 84 scripts, `lefthook.yml`, `.github/workflows/ci.yml`."]},
@@ -253,6 +253,7 @@
       "verbatim": "sync-system-skills.mjs"
     },
     "scripts/vendored-glyph-manifest.json": {"count":1,"sections":[],"contexts":["pins a `sha256` per artifact in `scripts/vendored-glyph-manifest.json` and fails on a"]},
+    "shared-facts.json": {"count":1,"sections":[4],"contexts":["`catalog-curation.md`, `.claude/codebase-context.md`, `shared-facts.json`,"],"resolved":false},
     "src-tauri/": {"count":4,"sections":[1,9],"contexts":["`src/lib/bindings/`, all **963** `.rs` under `src-tauri/`, `run-codegen.mjs`, `vite.config.ts`, all"],"resolved":false,"isDir":true},
     "src-tauri/db/src/builtin_connectors.rs": {
       "count": 2,

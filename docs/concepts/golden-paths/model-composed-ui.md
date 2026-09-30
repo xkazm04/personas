@@ -7,7 +7,7 @@
 > grammar + renderer + its 2 consumers, `webbuild/plan.rs`, `applyClientAction`, the companion
 > dispatcher's 54-verb action table and 9-verb read table, and all 15 hand-rolled model-JSON
 > extractors across 963 Rust files. Tree-wide counts over 4,829 TS/TSX and 963 Rust files cite
-> [`shared-facts.json`](../shared-facts.json) (commit `211d519bb`); the census numbers below were
+> `shared-facts.json` (commit `211d519bb`); the census numbers below were
 > re-derived here by **two independent implementations that agree exactly**.
 > **Four fixtures were executed, not read** — truncated model output was fed through the real
 > renderers under Vitest/jsdom, and that is where three of this document's four sharpest findings
@@ -80,7 +80,7 @@ to two of its five model-composed surfaces. The other three are where every devi
 
 *Three sentences, no repo path, no primitive name, no count — the layer a sibling repo on another
 stack can adopt as-is. Each clause carries its warrant, per the
-[portability test](../research/portability-test.md)'s finding that unmarked local calibration is
+portability test's finding that unmarked local calibration is
 what gets a whole document discarded.*
 
 > **(physics)** Everything a model may name — a component, an action, a route, an id — comes from a

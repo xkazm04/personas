@@ -1,12 +1,12 @@
 # Golden path — Foreign-key policy
 
 > Situation node: `data-persistence/schema-design/foreign-key-policy` ·
-> [situation spine](../situation-spine.md) · recurrence 87 ·
+> situation spine · recurrence 87 ·
 > dimensions: **function · resilience · performance · code-quality**
 > Composed 2026-08-14 against `master` @ `4d515e9ac`.
 >
 > **Sweep size.** 963 `.rs` files parsed (exactly `rust.files` in
-> [`shared-facts.json`](../shared-facts.json)) with a comment-stripping,
+> `shared-facts.json`) with a comment-stripping,
 > brace-and-paren-balancing DDL parser: **410 `CREATE TABLE` statements** over
 > **43 files**, **199 production `REFERENCES` clauses**, **299 bare `*_id`
 > columns**, every `PRAGMA foreign_keys` site classified production-vs-test.
@@ -645,7 +645,7 @@ audit tables that must survive from the ~34 that are leaks.
 
 ## Prefer a type over a gate — the answer for this leaf
 
-Per the [contract](../golden-path-contract.md), answered explicitly. **For this
+Per the contract, answered explicitly. **For this
 leaf: yes for the declaration, no for the enforcement — and the split is the
 whole point.**
 
@@ -694,7 +694,7 @@ for the half that *is* shapeable.
 
 ### The semantic conditions, stated first
 
-Three, each stack-free. Per the [portability test](../research/portability-test.md),
+Three, each stack-free. Per the portability test,
 what follows are **one repo's proxies**; an adopting repo inherits the sentences
 and re-derives its own signals.
 
@@ -768,7 +768,7 @@ suppression cannot accumulate.
 **`floor: 900`** matches the other `src-tauri`-rooted rules deliberately —
 several rules over one root must not hold several opinions about what "the Rust
 tree is intact" means. The walk reports **963**, exactly `rust.files` in
-[`shared-facts.json`](../shared-facts.json): two independently derived counts
+`shared-facts.json`: two independently derived counts
 agreeing, which is the only reason to trust either.
 
 ### Validated standalone, before publishing

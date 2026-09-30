@@ -1,7 +1,7 @@
 # Golden path — Bounded parallel fan-out
 
 > Situation node: `backend-runtime/job-coordination/bounded-parallel-fan-out` ·
-> [situation spine](../situation-spine.md) · recurrence 13 · risk **HIGH** ·
+> situation spine · recurrence 13 · risk **HIGH** ·
 > sides: **both** · convergence: **mixed** ·
 > dimensions: **function · performance · resilience · cost**
 > Composed 2026-08-16 against `master` @ `c81519610`.
@@ -226,7 +226,7 @@ GitLab" cannot be expressed.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path, primitive
+Per the portability test the head carries no file path, primitive
 name or count, so an adopting repo can tell physics from local calibration. Each clause names its
 warrant.
 

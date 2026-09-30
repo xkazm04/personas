@@ -44,13 +44,6 @@
     },
     "dev_tools.rs": {"count":1,"sections":[5],"contexts":["- **Spreading a patch struct back into positional arguments.** `dev_tools.rs` `update_project` takes"],"resolved":false},
     "dev_workspaces.rs": {"count":2,"sections":[9],"lines":["330-343"],"contexts":["(`dev_workspaces.rs:330-343`) is the working precedent *in this repo*, and it also fixes the"],"resolved":false},
-    "docs/concepts/shared-facts.json": {
-      "count": 1,
-      "sections": [],
-      "contexts": ["cited from [`shared-facts.json`](../shared-facts.json), not re-derived. **No `cargo` was run** — every"],
-      "resolvedFrom": "basename",
-      "verbatim": "shared-facts.json"
-    },
     "library/standards.rs": {"count":1,"sections":[6],"lines":["287-297"],"contexts":["(`library/standards.rs:287-297`) is plain `Option<T>` fields merged in Rust with"],"resolved":false},
     "packages/orchestrator/src/db.ts": {"count":1,"sections":[6],"lines":["572"],"contexts":["`packages/orchestrator/src/db.ts:572` and `:1178`:"],"resolved":false},
     "packages/orchestrator/src/schemas.ts": {"count":1,"sections":[6],"lines":["124-141"],"contexts":["`personas-cloud`'s `PersonaUpdateSchema` (`packages/orchestrator/src/schemas.ts:124-141`) marks"],"resolved":false},
@@ -94,6 +87,7 @@
     "scripts/census/": {"count":1,"sections":[9],"contexts":["mechanism already exists at [`scripts/census/`](../../../scripts/census/). This path publishes **one**"],"resolved":false,"isDir":true},
     "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["All rules in `scripts/census/rules.json` were read (**41 at the start of composition, 42 at final"]},
     "server/src/library.rs": {"count":1,"sections":[6],"lines":["968-984"],"contexts":["before it can be asked (`server/src/library.rs:968-984`, bare `Option<String>`)."],"resolved":false},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["cited from `shared-facts.json`, not re-derived. **No `cargo` was run** — every"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[],"contexts":["**Sweep size.** Every `.rs` file under `src-tauri/` (**963**, `target/` and `.claude/worktrees/`"],"resolved":false,"isDir":true},
     "src-tauri/core/src/models/build_session.rs": {
       "count": 1,

@@ -1,6 +1,6 @@
 # Golden path — Shared component boundary
 
-> Situation node: `platform-delivery/testing-and-workflow/shared-component-boundary` · [situation spine](../situation-spine.md)
+> Situation node: `platform-delivery/testing-and-workflow/shared-component-boundary` · situation spine
 > recurrence **3** · risk **LOW** · sides **server** · convergence **converged** · `twoSided: true`
 > dimensions: **ui · code-quality**
 > Leaf definition: *"Whether a new primitive belongs in the shared catalog, chrome, or its feature."*

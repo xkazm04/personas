@@ -1,6 +1,6 @@
 # Golden path — Boot migration step
 
-> Situation node: `data-persistence/migrations/boot-migration-step` · [situation spine](../situation-spine.md)
+> Situation node: `data-persistence/migrations/boot-migration-step` · situation spine
 > Composed 2026-08-13 from a ground-truth sweep of the boot path (~45 tool calls,
 > 14 files read in full or in part, 6 counting scripts, 3 empirical SQLite probes),
 > against `master` @ `2a874e692`. `.claude/worktrees/**` excluded from all counts.

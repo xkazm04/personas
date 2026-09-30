@@ -1,6 +1,6 @@
 # Golden path — Form field and validation
 
-> Situation node: `ui-system/controls-and-forms/form-field-and-validation` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/controls-and-forms/form-field-and-validation` · situation spine
 > Composed 2026-08-13 from a repo-wide ground-truth sweep (~55 direct tool calls
 > plus two parallel corpus sweeps — the raw-field frontend corpus and the
 > Rust/IPC validation-authority corpus), against `master` @ `f7676ab82`.

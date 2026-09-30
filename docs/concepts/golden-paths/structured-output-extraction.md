@@ -1,6 +1,6 @@
 # Golden path — structured output extraction
 
-> Situation node: `ai-agents/prompt-and-output/structured-output-extraction` · [situation spine](../situation-spine.md)
+> Situation node: `ai-agents/prompt-and-output/structured-output-extraction` · situation spine
 > Composed 2026-08-16 against `master` @ `bbb1a8864`. **Recurrence 17 · risk HIGH · sides: server · convergence: mixed.**
 > Sweep: **963** non-generated Rust files walked by the census engine and by two further scanners written
 > for this path. Every model-reply parser in the tree enumerated and hand-classified; `engine/src/safe_json.rs`,
@@ -69,7 +69,7 @@ the same bytes in the same row.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and every clause
+Per the portability test, the head is physically separated and every clause
 carries its warrant. No file path, primitive name or count appears below this line until the head ends.
 
 > **P1 — physics.** Extraction is a *measurement of a paid artifact*, and every measurement has three outcomes,

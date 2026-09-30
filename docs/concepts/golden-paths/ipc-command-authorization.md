@@ -4,11 +4,11 @@
 > (`REVIEW-wave1.md`). Command counts across the corpus disagreed (1,649 /
 > 1,657 / 1,661 / 1,666) because each composer counted with a slightly
 > different grep; the authoritative figure, measured once with
-> `grep -rn --include=*.rs -o '#\[tauri::command' src-tauri | wc -l`, is
+> `grep -rn --include=*.rs -o '#\tauri::command' src-tauri | wc -l`, is
 > **1,673**, and every occurrence below now reads that. Any §9 floor
 > assertion seeded from the old number must be re-derived from 1,673.
 
-> Situation node: `backend-runtime/command-authorization/ipc-command-authorization` · [situation spine](../situation-spine.md)
+> Situation node: `backend-runtime/command-authorization/ipc-command-authorization` · [situation spine
 > Composed 2026-08-13 from a ground-truth sweep of all 564 `.rs` files under
 > `src-tauri/src/` (236 of them defining commands) plus the frontend IPC wrapper,
 > against `master` @ `7bb572e2b`. Every count below was produced by parsing the

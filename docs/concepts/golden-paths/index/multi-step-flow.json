@@ -42,7 +42,6 @@
     "TourContext.tsx": {"count":2,"sections":[2,5],"lines":["136-141"],"contexts":["personas-web: `tour-script.ts` × `TourContext.tsx`); the guard written **twice**, on the"],"resolved":false},
     "app/guide/[category]/[topic]/page.tsx": {"count":1,"sections":[2],"lines":["109-110"],"contexts":["`app/guide/[category]/[topic]/page.tsx:109-110`) and it is a *reading* sequence with no state"],"resolved":false},
     "background.rs": {"count":1,"sections":[6],"lines":["3151"],"contexts":["never touches a draft's live build. Ships **on** (`background.rs:3151`)."],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["under `src/` (counts cited from [`shared-facts.json`](../shared-facts.json), not re-derived):"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "e2e/tour.spec.ts": {"count":1,"sections":[5],"lines":["55-60"],"contexts":["(`e2e/tour.spec.ts:55-60`)."],"resolved":false},
     "features/shared/components/progress/WizardStepper.tsx": {
       "count": 1,
@@ -66,6 +65,7 @@
       ],
       "resolved": false
     },
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["under `src/` (counts cited from `shared-facts.json`, not re-derived):"],"resolved":false},
     "shared/components/progress/WizardStepper.tsx": {
       "count": 1,
       "sections": [8],
@@ -112,7 +112,7 @@
       "verbatim": "db/src/settings_keys.rs"
     },
     "src-tauri/src/lib.rs": {"count":1,"sections":[6],"lines":["803"],"contexts":["called from `src-tauri/src/lib.rs:803`"]},
-    "src/": {"count":2,"sections":[7],"contexts":["under `src/` (counts cited from [`shared-facts.json`](../shared-facts.json), not re-derived):"],"resolved":false,"isDir":true},
+    "src/": {"count":2,"sections":[7],"contexts":["under `src/` (counts cited from `shared-facts.json`, not re-derived):"],"resolved":false,"isDir":true},
     "src/contexts/TourContext.tsx": {"count":1,"sections":[2],"lines":["75"],"contexts":["context `useState` (`src/contexts/TourContext.tsx:75`); localStorage holds a *seen* boolean"],"resolved":false},
     "src/features/agents/components/allPersonas/PersonaOverviewColumns.tsx": {
       "count": 1,

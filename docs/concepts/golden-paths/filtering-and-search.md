@@ -1,6 +1,6 @@
 # Golden path — Filtering and search
 
-> Situation node: `product-surfaces/lists-and-tables/filtering-and-search` · [situation spine](../situation-spine.md)
+> Situation node: `product-surfaces/lists-and-tables/filtering-and-search` · situation spine
 > Composed 2026-08-14 against `master` @ `2a874e692`. Ground-truth sweep: every
 > `useState` binding under `src/**` whose name carries a filter/search sense
 > (**158 bindings in 116 files**, enumerated by a TypeScript-AST pass that
@@ -13,7 +13,7 @@
 > **20 surfaces traced from their filter predicate back to the `limit` on their
 > own fetch** — plus a convergence pass over `personas-web` and
 > `brainiac/console`. Repo-level denominators are cited from
-> [`shared-facts.json`](../shared-facts.json) (**4,829** `src/**/*.{ts,tsx}`),
+> `shared-facts.json` (**4,829** `src/**/*.{ts,tsx}`),
 > not re-derived. `.claude/worktrees/**` excluded from every count.
 > Dimensions: **function · ui · performance · code-quality · resilience**.
 > The **Deviations** section is a fix backlog; it migrates to `violating` cells in
@@ -284,7 +284,7 @@ there is no shared `hasFilters` to guard on.
 
 ## 8. Gaps in the primitive
 
-1. **There is no shared text matcher, and the closest thing to one is already wrong by default.** `searchItems` (`facetedTableModel.ts:102-104`) is `query.trim().toLowerCase()` against `f.toLowerCase().includes(q)` — no `toLocaleLowerCase`, no NFD diacritic folding, no multi-term handling, no field weighting. Routing the 121 call sites to it today would change nothing about the defect. **This is the [contract](../golden-path-contract.md#why-a-gate-is-required-at-all)'s fifth failure mode reproduced exactly** — the `Numeric`-locale shape, found here by an independent route: a gate that verifies you *arrived* at a primitive is worth only as much as that primitive's defaults. The fix is `matchesQuery(haystack: string[], query: string)` with correct-by-construction normalization, and it must land **before** any ratchet on category C means anything.
+1. **There is no shared text matcher, and the closest thing to one is already wrong by default.** `searchItems` (`facetedTableModel.ts:102-104`) is `query.trim().toLowerCase()` against `f.toLowerCase().includes(q)` — no `toLocaleLowerCase`, no NFD diacritic folding, no multi-term handling, no field weighting. Routing the 121 call sites to it today would change nothing about the defect. **This is the contract's fifth failure mode reproduced exactly** — the `Numeric`-locale shape, found here by an independent route: a gate that verifies you *arrived* at a primitive is worth only as much as that primitive's defaults. The fix is `matchesQuery(haystack: string[], query: string)` with correct-by-construction normalization, and it must land **before** any ratchet on category C means anything.
 2. **`useFilteredCollection`'s signature makes the wrong call the default.** Its memo key is the `spec` object (`:57`), and the ergonomic call — an inline literal — silently disables the only thing it does. 4 of 4 call sites. A signature taking the matchers as positional arguments, or accepting an explicit `deps` array, makes the mistake unrepresentable. One edit at the primitive corrects 100% of its adoption; no gate would move a single site.
 3. **No table primitive filters its own data, and none says so.** `UnifiedTable` sorts (`:498-512`) and never filters; `DataGrid` pages (`:227-231`) and never filters. Both expose six independent optional filter props on `TableColumn`, so *rendering a filter* and *applying a filter* are separate acts a caller can get out of step — which is how `filterOptions` without `onFilterChange` renders a dropdown that does nothing, and how `FacetedDecisionTable` ends up owning a search box whose page it cannot reset. The props should be one required discriminated union: `filter?: { kind: 'client', predicate } | { kind: 'server', value, onChange }` — which would also make the boundary decision of §1 a **compiler-checked** property of every filtered column.
 4. **Dead configuration.** `UnifiedTable`'s `searchable` column search: 0 call sites, ~30 lines of chrome. Either give it a consumer or delete it; today it is a third search idiom a developer can discover and adopt into an already-fragmented surface.
@@ -297,7 +297,7 @@ there is no shared `hasFilters` to guard on.
 
 ## 9. Prefer a type over a gate — the answer for this leaf
 
-**Answered explicitly, as the [contract](../golden-path-contract.md#prefer-a-type-over-a-gate--checked-three-times) requires. Yes for three of the four defect classes, and no for the most severe one — and saying so is the finding.**
+**Answered explicitly, as the contract requires. Yes for three of the four defect classes, and no for the most severe one — and saying so is the finding.**
 
 1. **`useFilteredCollection`'s memo key — yes, and it is a one-line signature change.** Take the matchers positionally (or accept `deps`) and the inline-literal mistake becomes unrepresentable. This is the `FacetedDecisionTable`-required-`emptyTitle` precedent applied to a hook: 4 of 4 call sites corrected by one edit at the primitive, and no ratchet would have moved one of them.
 2. **The filter/pagination reset — yes.** Make `TableColumn`'s filter surface a required discriminated union (Gap 3) and give `DataGrid` a `resetPageKey`. A `{ kind: 'server' }` column then *cannot* be declared without the value that both drives the fetch and remounts the pager, so "filtered but still on page 3" stops being expressible. Today it is six optional props and six broken callers.
@@ -394,7 +394,7 @@ a selector and an API wrapper; no regex and no single-file AST rule can decide
 it. A rule keyed on "a `.filter()` in a component" matches all 79 CLIENT
 bindings, of which 66 are correct — 84% false positives, which is exactly the
 "keys on the markup, not the condition" failure the
-[contract](../golden-path-contract.md#section-9-is-manifestation-layer-not-principle-layer)
+contract
 warns against. Three things carry that half instead: the type fix one layer down
 (§9 item 4), the disclosure pattern (§4 step 9), and the review obligation that
 **a new `.filter()` over data fetched with a `limit` gets a human read** — the

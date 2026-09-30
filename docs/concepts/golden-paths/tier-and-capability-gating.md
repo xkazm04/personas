@@ -1,11 +1,11 @@
 # Golden path — Tier and capability gating
 
-> Situation node: `backend-runtime/command-authorization/tier-and-capability-gating` · [situation spine](../situation-spine.md)
+> Situation node: `backend-runtime/command-authorization/tier-and-capability-gating` · situation spine
 > `sides: both` · `twoSided: true` · recurrence **154** · risk **high** · convergence **mixed**.
 > Dimensions: **function · security · ui · cost**.
 > Composed 2026-08-14 against `master` @ `73ba613b9` from a ground-truth sweep of every
 > `minTier` / `devOnly` / `useTier()` / `VITE_APP_TIER` site in the **4,829** `.ts`/`.tsx`
-> files under `src/` ([`shared-facts.json`](../shared-facts.json); independently
+> files under `src/` (`shared-facts.json`; independently
 > re-walked at 4,829 by this composition's own file walker), the navigation registry and
 > all six catalogs derived from or competing with it, the four L2 content routers,
 > `scripts/check-tiers.mjs`, `package.json`, `vite.config.ts`, all 7 GitHub workflows,

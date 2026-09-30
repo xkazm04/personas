@@ -1,7 +1,7 @@
 # Golden path — Error boundary
 
 > Situation node: `client-runtime/client-errors/error-boundary` ·
-> [situation spine](../situation-spine.md) · recurrence 23 · risk **medium** ·
+> situation spine · recurrence 23 · risk **medium** ·
 > sides: **client** · convergence: **mixed** ·
 > dimensions: **resilience · ui · function**
 > Composed 2026-08-16 against `master` @ `b4a05049e`.
@@ -171,7 +171,7 @@ the one whose entire purpose is to be pasted somewhere else.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path, primitive
+Per the portability test the head carries no file path, primitive
 name or count. Each clause names its warrant.
 
 > **P1 — physics. A boundary is a latch, not a filter: it has memory, and its memory outlives the

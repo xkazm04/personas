@@ -37,7 +37,6 @@
     "db.ts": {"count":2,"sections":[],"lines":["805","786"],"contexts":["`db.ts:805`, `connection.ts:386`), **9 of 9 periodic ticks with none**. brainiac:"],"resolved":false},
     "dispatcher.ts": {"count":1,"sections":[],"lines":["1433"],"contexts":["repos.** personas-cloud: 3 work-retry paths exponential (`dispatcher.ts:1433`,"],"resolved":false},
     "docs/": {"count":1,"sections":[9],"contexts":["`PeriodicTask` appear in no `docs/` page. **A developer following every documented rule"],"resolved":false,"isDir":true},
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[9],"contexts":["[`shared-facts.json`](../shared-facts.json) `rust.files: 963`); every `loop` and"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "health.rs": {
       "count": 1,
       "sections": [7],
@@ -70,6 +69,7 @@
     "scratchpad/rules-background-loop.json": {"count":1,"sections":[9],"contexts":["at `scratchpad/rules-background-loop.json` and a standalone driver over"],"resolved":false},
     "scripts/census/lib/engine.mjs": {"count":1,"sections":[9],"contexts":["`scripts/census/lib/engine.mjs`."]},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["Do **not** paste this into `scripts/census/rules.json` yourself — the orchestrator"]},
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["`shared-facts.json` `rust.files: 963`); every `loop` and"],"resolved":false},
     "smee_relay.rs": {
       "count": 4,
       "sections": [5,7,9],

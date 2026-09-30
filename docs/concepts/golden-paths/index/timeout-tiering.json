@@ -70,7 +70,6 @@
     "db.ts": {"count":1,"sections":[],"lines":["244"],"contexts":["`schemas.ts:97` accepts up to 600,000; `db.ts:244` defaults 300,000;"],"resolved":false},
     "desktop_bridges.rs": {"count":1,"sections":[9],"contexts":["`desktop_bridges.rs` (3) + `build_session/fix_pass.rs` (3) = **20 of 61 in four"],"resolved":false},
     "dispatcher.ts": {"count":1,"sections":[],"lines":["1352"],"contexts":["(`:1347`, `:1634`) and **`dispatcher.ts:1352` applies no clamp at all**. So the"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["exactly with `rust.files` in [`shared-facts.json`](../shared-facts.json), reached"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "engine/src/test_runner.rs": {"count":1,"sections":[9],"lines":["3046,3058"],"contexts":["(`engine/src/test_runner.rs:3046,3058` · `commands/execution/tests.rs:490,499` ·"],"resolved":false},
     "executions.rs": {
       "count": 5,
@@ -105,14 +104,9 @@
     "schemas.ts": {"count":1,"sections":[],"lines":["97"],"contexts":["`schemas.ts:97` accepts up to 600,000; `db.ts:244` defaults 300,000;"],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Mechanism: a census rule** (`scripts/census/rules.json`). **It executes in"]},
     "scripts/census/run-census.mjs": {"count":1,"sections":[],"contexts":["(`scripts/census/run-census.mjs`) before being written down, then re-extracted"]},
-    "scripts/check-csp-hosts.mjs": {
-      "count": 1,
-      "sections": [12],
-      "contexts": ["[the doctrine documents for `check-csp-hosts.mjs`](../golden-path-doctrine.md#2-measurement-rules)."],
-      "resolvedFrom": "basename",
-      "verbatim": "check-csp-hosts.mjs"
-    },
+    "scripts/check-csp-hosts.mjs": {"count":1,"sections":[12],"contexts":["the doctrine documents for `check-csp-hosts.mjs`."],"resolvedFrom":"basename","verbatim":"check-csp-hosts.mjs"},
     "scripts/generate-command-names.mjs": {"count":1,"sections":[8],"contexts":["*could* exist is a generated table — `scripts/generate-command-names.mjs`"]},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["exactly with `rust.files` in `shared-facts.json`, reached"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[],"contexts":["**Sweep size.** All **963** non-generated `.rs` files under `src-tauri/` (agrees"],"resolved":false,"isDir":true},
     "src-tauri/build.rs": {"count":1,"sections":[9],"contexts":["~20 lines in `src-tauri/build.rs` plus a generated file, and it is the only fix"]},
     "src-tauri/core/src/error_taxonomy.rs": {

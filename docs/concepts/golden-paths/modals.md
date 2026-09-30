@@ -5,7 +5,7 @@
 > its topic path was never re-pointed. Old address `frontend/surfaces/modals` names a domain that
 > no longer exists. Corrected above. The document's content was not affected.
 
-> Situation node: `ui-system/overlays/modal-dialog` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/overlays/modal-dialog` · situation spine
 > Hand-authored 2026-08-13 from a repo-wide ground-truth sweep (46 tool calls).
 > The **Deviations** section is a fix backlog; it migrates to `violating` cells
 > in `workspace_practice_context_state` when this path is ingested.

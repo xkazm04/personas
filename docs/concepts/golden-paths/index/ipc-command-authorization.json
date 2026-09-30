@@ -4,7 +4,7 @@
   "leaf": "ipc-command-authorization",
   "doc": "docs/concepts/golden-paths/ipc-command-authorization.md",
   "file": "index/ipc-command-authorization.json",
-  "headline": "Corrections pass — 2026-08-13. Applied after the wave-1 expert review (REVIEW-wave1.md). Command counts across the corpus disagreed (1,649 / 1,657 / 1,661 / 1,666) because each composer counted with a slightly different grep; the authoritative figure, measured once with grep -rn --include=*.rs -o '#\\[tauri::command' src-tauri | wc -l, is 1,673, and every occurrence below now reads that. Any §9 fl…",
+  "headline": "Corrections pass — 2026-08-13. Applied after the wave-1 expert review (REVIEW-wave1.md). Command counts across the corpus disagreed (1,649 / 1,657 / 1,661 / 1,666) because each composer counted with a slightly different grep; the authoritative figure, measured once with grep -rn --include=*.rs -o '#\\tauri::command' src-tauri | wc -l, is 1,673, and every occurrence below now reads that. Any §9 flo…",
   "oneWay": "Classify every new command before you write its body, and record the classification in both places in the same commit, because neither one alone enforces anything for every command shape. Default to Privileged for anything that writes, deletes, spawns a process, touches a caller-supplied filesystem…",
   "deviations": [
     "A. Annotated privileged, absent from PRIVILEGED_COMMANDS — zero enforcement (40; 32 undocumented)",
@@ -51,7 +51,6 @@
       ]
     },
     "data_portability.rs": {"count":1,"sections":[7],"lines":["9556"],"contexts":["(`data_portability.rs:9556`)**, which calls `cred_repo::get_decrypted_fields`"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[3],"contexts":["Related count discipline: `shared-facts.json`'s `requiresCloud: 56` is the"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "eslint.config.js": {"count":1,"sections":[3],"lines":["73-81"],"contexts":["(`eslint.config.js:73-81`)."]},
     "lib.rs": {
       "count": 7,
@@ -70,6 +69,7 @@
     "scripts/check-command-contract.mjs": {"count":3,"sections":[3,8,9],"lines":["38"],"contexts":["- **`scripts/check-command-contract.mjs`** (`npm run check:contracts`, inside"]},
     "scripts/check-literal-parity.mjs": {"count":2,"sections":[5,7],"contexts":["bug `scripts/check-literal-parity.mjs` was written to audit, and that script is"]},
     "scripts/generate-command-names.mjs": {"count":2,"sections":[9],"lines":["21"],"contexts":["`generate-command-names.mjs:21`)."],"resolvedFrom":"basename","verbatim":"generate-command-names.mjs"},
+    "shared-facts.json": {"count":1,"sections":[3],"contexts":["Related count discipline: `shared-facts.json`'s `requiresCloud: 56` is the"],"resolved":false},
     "src-tauri/capabilities/default.json": {"count":1,"sections":[8],"contexts":["8. **Tauri 2's own ACL is unused for commands.** `capabilities/default.json` lists"],"resolvedFrom":"suffix","verbatim":"capabilities/default.json"},
     "src-tauri/core/src/error.rs": {"count":2,"sections":[7],"lines":["51","196"],"contexts":["(`src-tauri/core/src/error.rs:51`), which falls into the generic `'Forbidden'`"]},
     "src-tauri/macros/src/lib.rs": {"count":2,"sections":[3],"lines":["57","80-82"],"contexts":["- **`src-tauri/macros/src/lib.rs:57` — `#[requires(level)]`.** The only correct"]},

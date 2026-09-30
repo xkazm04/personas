@@ -1,7 +1,7 @@
 # Golden path — Partial-failure read envelope
 
 > Situation node: `client-runtime/data-fetching/partial-failure-read-envelope` ·
-> [situation spine](../situation-spine.md) · recurrence 10 · risk **HIGH** ·
+> situation spine · recurrence 10 · risk **HIGH** ·
 > sides: **client** (spine also carries `twoSided: true` — see §12.1) · convergence: **diverged** ·
 > dimensions: **resilience · function · ui**
 > Composed 2026-08-16 against `master` @ `629a914af`.
@@ -242,7 +242,7 @@ reconciliation is one clause, and the fan-out path already names the primitive t
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path,
+Per the portability test the head carries no file path,
 primitive name or count. Each clause names its warrant.
 
 > **P1 — physics.** **A read that touches more than one source has more than two outcomes.**

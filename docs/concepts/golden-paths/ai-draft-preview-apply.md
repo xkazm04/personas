@@ -1,7 +1,7 @@
 # Golden path — AI draft, preview, apply
 
 > **Topic path:** `ai-agents` › `agent-ux` › `ai-draft-preview-apply`
-> [situation spine](../situation-spine.md) · recurrence **24** · risk **medium** ·
+> situation spine · recurrence **24** · risk **medium** ·
 > sides: **client** (the spine also carries `twoSided: true` in the same node — see
 > [§12.1](#121--sides-client-is-wrong-and-the-spine-contradicts-it-in-the-same-node)) ·
 > convergence: **mixed** · dimensions: **ui · function · cost · resilience**
@@ -36,7 +36,7 @@
 > `ascent`** — all five present, all five opened. It **cut the effective cohort from 5 to 3**
 > (§6), produced the sharpest quote in this document from a repo that fixed this exact bug, and
 > **the spine's `convergence: mixed` label survived** — which, per
-> [doctrine §5](../golden-path-doctrine.md#5-the-convergence-oracle), is worth reporting as
+> doctrine §5, is worth reporting as
 > loudly as a failure.
 >
 > **Settles:** what a preview may claim, whether the artifact that gets written is the artifact
@@ -231,7 +231,7 @@ mechanism — and it is the brief's third primed lead, confirmed.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path,
+Per the portability test the head carries no file path,
 primitive name or count. Each clause names its warrant.
 
 > **P1 — physics, and everything else follows.** **A preview is a promise, and the apply must be
@@ -463,7 +463,7 @@ surface **cannot** render a preview from copy A and commit copy B, because there
 the wire.
 
 Held against the seven qualifications
-([doctrine §1](../golden-path-doctrine.md#1-prefer-a-type-over-a-gate--and-the-seven-qualifications)):
+(doctrine §1):
 
 - **Q1 — a type carries only what it encodes.** Honest limit: `DraftRef` encodes *that the server
   re-reads its own copy at a version the client saw*. It does **not** encode that the preview
@@ -600,7 +600,7 @@ Read-only sweep of `../personas-web`, `../brainiac`, `../personas-cloud`, `../vi
 `../ascent`. All five exist; all five were opened; none was modified. Searched by **name**
 (`draft`, `preview`, `proposal`, `suggest`, `generate`, `apply`, `accept`, `staged`, `candidate`,
 `dryRun`) **and** by **mechanism** (a model call whose result is held in state and persisted by a
-separate user action), per [doctrine §5](../golden-path-doctrine.md#5-the-convergence-oracle).
+separate user action), per doctrine §5.
 
 **Establish the cohort first.** Two of the five have **zero** surfaces of this shape:
 
@@ -1081,7 +1081,7 @@ importance:
 
 ## 12. Corrections to the brief
 
-Recorded per [doctrine §7](../golden-path-doctrine.md#7-corrections-are-the-deliverable), because a
+Recorded per doctrine §7, because a
 brief is a hypothesis and refuting it is part of the job.
 
 ### 12.1 — `sides: "client"` is wrong, and the spine contradicts it in the same node

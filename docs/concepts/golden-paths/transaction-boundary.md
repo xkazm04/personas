@@ -1,7 +1,7 @@
 # Golden path — Transaction boundary
 
 > Situation node: `data-persistence/repository-access/transaction-boundary` ·
-> [situation spine](../situation-spine.md) · recurrence ~106 · dimensions:
+> situation spine · recurrence ~106 · dimensions:
 > resilience · function · performance
 > Composed 2026-08-14 from a ground-truth sweep of the Rust data layer against
 > `master` @ `eafabdc6d` — **963 `.rs` files walked**, ~55 tool calls, two
@@ -10,7 +10,7 @@
 > `STANDARD_PRAGMAS`) whose result is the substance of §2. `target/**` and
 > `.claude/worktrees/**` excluded from every count; `#[cfg(test)] mod tests`
 > bodies excluded unless stated. Shared counts cited from
-> [`shared-facts.json`](../shared-facts.json), not re-derived.
+> `shared-facts.json`, not re-derived.
 >
 > **Sibling leaves, read them for their halves:**
 > [`schema-change.md`](./schema-change.md) owns *designing* a migration,
@@ -28,7 +28,7 @@
 > the storage engine or of concurrency itself), **[ergonomics]** (a design that
 > makes the physics hard to get wrong), or **[local]** (calibration to this
 > repo). Only the first two travel. This tagging is
-> [`research/portability-test.md`](../research/portability-test.md)
+> `research/portability-test.md`
 > recommendation #2, applied.*
 
 1. **A transaction is a property of one connection, not of a pool.** A helper

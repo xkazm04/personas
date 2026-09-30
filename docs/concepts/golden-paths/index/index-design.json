@@ -51,13 +51,6 @@
     },
     "db.ts": {"count":1,"sections":[6],"lines":["402"],"contexts":["lines above (`db.ts:402` vs `:390`), and six genuinely unindexed hot paths including"],"resolved":false},
     "db/src/migrations/incremental.rs": {"count":3,"sections":[3,6,7],"lines":["1466-1512","1881"],"contexts":["- **`db/src/migrations/incremental.rs:1466-1512`** — the **reference band**, and the one site to copy."],"resolved":false},
-    "docs/concepts/shared-facts.json": {
-      "count": 2,
-      "sections": [9],
-      "contexts": ["Sweep size: **963 `.rs` files** (exactly `rust.files` in [`shared-facts.json`](../shared-facts.json)) ·"],
-      "resolvedFrom": "basename",
-      "verbatim": "shared-facts.json"
-    },
     "incremental.rs": {
       "count": 13,
       "sections": [2,4,5,7,8],
@@ -70,6 +63,7 @@
     "migrations/0033_list_indexes.sql": {"count":1,"sections":[6],"lines":["9-13"],"contexts":["`migrations/0033_list_indexes.sql:9-13`: *\"The archive orders by (created_at DESC, id) and pages"],"resolved":false},
     "migrations/0046_contradiction_sibling_lookup.sql": {"count":1,"sections":[6],"lines":["18-25"],"contexts":["10k.\"* `migrations/0046_contradiction_sibling_lookup.sql:18-25` goes further than anything in this"],"resolved":false},
     "scripts/check-event-registry.mjs": {"count":1,"sections":[9],"contexts":["two-source parity check modelled on `scripts/check-event-registry.mjs`, and it would have caught"]},
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["Sweep size: **963 `.rs` files** (exactly `rust.files` in `shared-facts.json`) ·"],"resolved":false},
     "src-tauri/**": {"count":1,"sections":[],"contexts":["Composed 2026-08-14 from a ground-truth sweep of `src-tauri/**` against `master`."],"resolved":false,"isDir":true},
     "src-tauri/db/src/lib.rs": {
       "count": 6,

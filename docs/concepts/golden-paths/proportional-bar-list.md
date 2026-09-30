@@ -10,7 +10,7 @@
 > `group_by` SQL (`src-tauri/db/src/repos/llm_spend.rs:200-228`). Convergence measured
 > against `../personas-web` (30 data bars) and `../brainiac/console` (7), each classified
 > by denominator, accessibility, degenerate-input guard and truncation scope.
-> **Shared facts cited:** [`shared-facts.json`](../shared-facts.json) — 4,829 `.ts` files,
+> **Shared facts cited:** `shared-facts.json` — 4,829 `.ts` files,
 > 2,104 `.tsx` files, 1,135 lint warnings / 0 errors at `211d519bb`.
 
 ---
@@ -172,7 +172,7 @@ So the mandated list is a list of what to *compose*, and one shape to copy:
 ### Can the primitive's signature make the wrong call impossible?
 
 **The contract requires this answered before §9
-([`golden-path-contract.md:165-184`](../golden-path-contract.md)). Answer: partly — and
+(`golden-path-contract.md:165-184`). Answer: partly — and
 this repo already contains the experiment that shows exactly how far a type gets, because
 someone already made the required-prop move and it did not carry the property.**
 
@@ -292,7 +292,7 @@ Secondary exemplars, each for one property:
 ## 7. Deviations
 
 Every item below shipped under a green `npm run check` (0 errors, 1,135 warnings —
-[`shared-facts.json`](../shared-facts.json)).
+`shared-facts.json`).
 
 ### D0 — A premise of this path's brief is wrong, and the executed arithmetic is the finding
 
@@ -633,7 +633,7 @@ this repo happens to use: a `max`-prefixed `const` bound to `[0]`. A repo spelli
 defect as `rows.at(0)`, `const [first] = rows`, `sorted.shift()`, `head(rows)`, or a
 backend-supplied `max_cost` column will match nothing while the condition is present at
 scale — the exact portability failure
-[`golden-path-contract.md:34-60`](../golden-path-contract.md) documents. It is also blind to
+`golden-path-contract.md:34-60` documents. It is also blind to
 the same defect under a different variable name (`peak`, `top`, `biggest`); widening the name
 class was measured and admits false positives from `const topRow = rows[0]` used for
 display. **An adopting repo must re-derive its own proxy for the condition, and should check

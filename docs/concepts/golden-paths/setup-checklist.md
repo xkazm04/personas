@@ -1,7 +1,7 @@
 # Setup checklist
 
 > Situation node: `client-runtime/flows-and-onboarding/setup-checklist` ·
-> [situation spine](../situation-spine.md) · recurrence **9** · risk **low** ·
+> situation spine · recurrence **9** · risk **low** ·
 > sides `client` · convergence `mixed` · dimensions function · ui · performance ·
 > `twoSided: false` · mergedFrom *"Adoption checklist probes"* + *"Readiness
 > completion score"*

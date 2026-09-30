@@ -86,7 +86,6 @@
       ],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json) rather than re-deriving them."],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "eslint-rules/": {"count":1,"sections":[9],"contexts":["- **Mechanism.** A third rule in `eslint-rules/`, reusing `async-catch-requires-helper.cjs`'s"],"resolved":false,"isDir":true},
     "eslint-rules/async-catch-requires-helper.cjs": {"count":3,"sections":[3,6,9],"lines":["29-41"],"contexts":["- **`eslint-rules/async-catch-requires-helper.cjs`** — `\"warn\"` (`eslint.config.js:114`). Requires a"]},
     "eslint-rules/no-silent-catch.cjs": {"count":1,"sections":[3],"contexts":["- **`eslint-rules/no-silent-catch.cjs`** — `\"error\"` (`eslint.config.js:104`). Flags a catch body with"]},
@@ -111,6 +110,7 @@
       "resolved": false
     },
     "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["**Publish-only; do NOT edit `scripts/census/rules.json` — the orchestrator merges this block.**"]},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["`shared-facts.json` rather than re-deriving them."],"resolved":false},
     "src-tauri/clippy.toml": {"count":1,"sections":[7],"contexts":["There is **no gate**: no `[lints]` table in any of the 5 `Cargo.toml`, no `clippy.toml`, no"],"resolvedFrom":"basename","verbatim":"clippy.toml"},
     "src-tauri/engine/src/event_registry.rs": {
       "count": 1,

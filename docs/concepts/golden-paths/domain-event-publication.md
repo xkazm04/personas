@@ -1,13 +1,13 @@
 # Golden path — Domain event publication
 
 > Situation node: `backend-runtime/eventing/domain-event-publication` ·
-> [situation spine](../situation-spine.md) · recurrence 25 · risk **MEDIUM** ·
+> situation spine · recurrence 25 · risk **MEDIUM** ·
 > sides: **server** · convergence: **mixed** ·
 > dimensions: **function · ui · code-quality · resilience**
 > Composed 2026-08-16 against `master` @ `b4a05049e`.
 >
 > **Sweep.** All **963** `.rs` files under `src-tauri` and all **4,828**
-> `.ts`/`.tsx` under `src/` ([`shared-facts.json`](../shared-facts.json)). Read
+> `.ts`/`.tsx` under `src/` (`shared-facts.json`). Read
 > in full: `db/src/repos/communication/events.rs` (3,231 lines),
 > `engine/src/bus.rs`, `engine/src/event_vocabulary.rs`,
 > `engine/src/team_handoff.rs`, `core/src/models/event.rs`,
@@ -313,7 +313,7 @@ The **Deviations** section is a fix backlog and contains **one live P0** (D1) an
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head carries no
+Per the portability test, the head carries no
 file path, primitive name or count, so an adopting repo can tell physics from
 local calibration. Each clause names its warrant.
 

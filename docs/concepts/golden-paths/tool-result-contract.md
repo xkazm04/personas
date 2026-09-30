@@ -1,7 +1,7 @@
 # Tool result contract
 
 > Situation node: `ai-and-agents/prompt-and-output/tool-result-contract` ·
-> [situation spine](../situation-spine.json) · `sides: "server"` (**contradicted —
+> situation spine · `sides: "server"` (**contradicted —
 > see §12.1**) · `twoSided: true` · `fusedAcrossSides: false` ·
 > recurrence 4 · risk medium · `convergence: "converged"` (**contradicted — see
 > §12.2**) · dimensions: function · ui · code-quality · resilience.
@@ -13,7 +13,7 @@
 > independent implementations and a hand-verified precision.
 >
 > Composed 2026-08-17 against `master @ 2a874e692`. Sweep: all 963 `.rs` files
-> under `src-tauri/` ([`shared-facts.json#rust.files`](../shared-facts.json)),
+> under `src-tauri/` (`shared-facts.json#rust.files`),
 > the four `tool_audit_log::insert` call sites, the 33-handler MCP server, and
 > a read-only copy of the **2026-08-17 purge backup**
 > (`%APPDATA%\com.personas.desktop\purge-backup-2026-08-17\personas.db`).

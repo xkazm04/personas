@@ -1,7 +1,7 @@
 # Golden path — Schedule calendar
 
 > Situation node: `backend-runtime` › `scheduling-and-triggers` › `schedule-calendar` ·
-> [situation spine](../situation-spine.md) · recurrence **3** · risk **high** ·
+> situation spine · recurrence **3** · risk **high** ·
 > sides: **client** (**upheld** — see [§12.1](#121--sides-client-holds-and-the-mechanism-is-worth-naming)) ·
 > convergence: **converged** (tested — **fails**, see [§10](#10-convergence)) ·
 > dimensions: **ui · function · performance · resilience**

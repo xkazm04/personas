@@ -1,7 +1,7 @@
 # Golden path — the credential capture form
 
 > Situation node: `integrations-security/credential-capture/credential-capture-form` ·
-> [situation spine](../situation-spine.md) · recurrence 13 · risk **HIGH** ·
+> situation spine · recurrence 13 · risk **HIGH** ·
 > sides **client** · convergence **mixed** ·
 > dimensions: **security · ui · function · code-quality · resilience**
 > Composed 2026-08-16 against `master` @ `ec1bf0359`.
@@ -195,7 +195,7 @@ about that is that the containment was measured and holds.
 
 **One of those rows is the sharpest design in this leaf and deserves naming.** The IPC read
 type for credential fields carries the sensitivity verdict and **not** the value. That is
-[doctrine Q5](../golden-path-doctrine.md#1--prefer-a-type-over-a-gate--and-the-seven-qualifications)
+doctrine Q5
 — withholding beats requiring — implemented at the wire. `ascent` has the same feature and
 made the other choice: `AlertsControl.tsx:104-108` fetches a stored Slack webhook URL back
 and re-displays it in an unmasked `type="url"` field. **Personas cannot commit that bug,
@@ -227,7 +227,7 @@ thing is the secret:
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head carries no file path,
+Per the portability test, the head carries no file path,
 primitive name or count, and each clause carries its warrant so an adopting repo can tell
 physics from local calibration.
 

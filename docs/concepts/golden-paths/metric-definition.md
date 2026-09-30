@@ -10,7 +10,7 @@
 > live 347 MB `personas.db` (2,188 executions, 2026-06-03 → 06-26), replaying each definition's
 > own SQL side by side. Convergence measured against `../personas-web`, `../brainiac` and
 > `../personas-cloud`.
-> **Shared facts cited:** [`shared-facts.json`](../shared-facts.json) — 963 Rust files, 4,829
+> **Shared facts cited:** `shared-facts.json` — 963 Rust files, 4,829
 > `.ts`, 2,104 `.tsx`, 1,135 lint warnings / 0 errors at `211d519bb`.
 
 ---
@@ -181,7 +181,7 @@ Never invent a name here. These exist today, and their adopter counts are the fi
 ### Can the primitive's signature make the wrong call impossible?
 
 **The contract requires this answered before §9
-([`golden-path-contract.md:165-184`](../golden-path-contract.md)). Answer: for the absence half,
+(`golden-path-contract.md:165-184`). Answer: for the absence half,
 yes — decisively, and three of four repos independently made the same type change. For the
 denominator and window halves, no — and the corpus's own qualifications explain exactly why, with
 a controlled experiment inside one file to prove it.**
@@ -333,7 +333,7 @@ Secondary exemplars, each for one property:
 ## 7. Deviations
 
 Every item below shipped under a green `npm run check` (0 errors, 1,135 warnings —
-[`shared-facts.json`](../shared-facts.json)) and a green `cargo test`. Live figures are from a
+`shared-facts.json`) and a green `cargo test`. Live figures are from a
 read-only copy of `personas.db` (2,188 executions: 1,928 completed, 238 failed, 20 incomplete,
 2 cancelled).
 
@@ -724,7 +724,7 @@ captured:
 defect as `checked_div().unwrap_or(0.0)`, as a `match` on a count, as TypeScript's `: 0` /
 `?? 0` / `Math.max(1, n)` (Gap 6 — roughly 20 sites here that this rule cannot see), or as SQL's
 `COALESCE(x / NULLIF(y, 0), 0)` will match nothing while the condition is present at scale — the
-exact portability failure [`golden-path-contract.md:34-60`](../golden-path-contract.md) documents.
+exact portability failure `golden-path-contract.md:34-60` documents.
 **An adopting repo must re-derive its own proxy, and should check the positive control's population
 before trusting a green run.**
 

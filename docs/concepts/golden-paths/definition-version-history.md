@@ -1,7 +1,7 @@
 # Definition version history
 
 > Situation node: `product-surfaces/authoring-and-catalogs/definition-version-history` ·
-> [situation spine](../situation-spine.md) · recurrence 3 · risk **high** ·
+> situation spine · recurrence 3 · risk **high** ·
 > dimensions: ui · function · resilience · `sides: "client"` · `twoSided: true` ·
 > `convergence: "mixed"`
 >

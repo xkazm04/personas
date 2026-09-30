@@ -27,7 +27,7 @@
         "| **A written rule for which form to reach for** | **nobody has one — this document is the first** | 0 of 3 siblings. `brainiac`'s `CLAUDE.md`: zero matches for upsert / on conflict / idempoten. `vib…"
       ]
     },
-    ".claude/worktrees/": {"count":1,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json); `target/` and `.claude/worktrees/` excluded) parsed with"],"resolved":false,"isDir":true},
+    ".claude/worktrees/": {"count":1,"sections":[],"contexts":["`shared-facts.json`; `target/` and `.claude/worktrees/` excluded) parsed with"],"resolved":false,"isDir":true},
     ".github/workflows/ci.yml": {"count":1,"sections":[9],"lines":["275"],"contexts":["`ci.yml:275` runs `--workspace` and the lane is live."],"resolvedFrom":"basename","verbatim":"ci.yml"},
     "brainiac/crates/brainiac-store/src/retrieval_events.rs": {"count":1,"sections":[6],"lines":["499"],"contexts":["`brainiac/crates/brainiac-store/src/retrieval_events.rs:499` `RETURNING (xmax = 0) AS inserted`,"],"resolved":false},
     "brainiac/identities.rs": {
@@ -73,13 +73,6 @@
       ],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {
-      "count": 2,
-      "sections": [9],
-      "contexts": ["[`shared-facts.json`](../shared-facts.json); `target/` and `.claude/worktrees/` excluded) parsed with"],
-      "resolvedFrom": "basename",
-      "verbatim": "shared-facts.json"
-    },
     "execution/healing.rs": {"count":1,"sections":[5],"lines":["638"],"contexts":["`execution/healing.rs:638` `upsert_knowledge` (`UPDATE`, then `INSERT` if 0 rows) over a table that"],"resolved":false},
     "executions.rs": {"count":4,"sections":[0,2,4,8],"lines":["564","547"],"contexts":["| `ON CONFLICT DO NOTHING` — 7 | **5** | 2 Rust comments (`executions.rs:564`, `exposure.rs:134`) |"],"resolved":false},
     "exposure.rs": {"count":3,"sections":[0,4,9],"lines":["134","153-157"],"contexts":["| `ON CONFLICT DO NOTHING` — 7 | **5** | 2 Rust comments (`executions.rs:564`, `exposure.rs:134`) |"],"resolved":false},
@@ -118,6 +111,7 @@
     "retrieval_events.rs": {"count":1,"sections":[8],"lines":["499"],"contexts":["(`retrieval_events.rs:499`), which has no SQLite analogue. So a caller that must distinguish"],"resolved":false},
     "scripts/census/": {"count":1,"sections":[9],"contexts":["mechanism already exists at [`scripts/census/`](../../../scripts/census/). This path publishes **one**"],"resolved":false,"isDir":true},
     "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["All **44** rules in `scripts/census/rules.json` were read. **None keys on a conflict clause, an"]},
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["`shared-facts.json`; `target/` and `.claude/worktrees/` excluded) parsed with"],"resolved":false},
     "src-tauri/": {"count":2,"sections":[8],"contexts":["**Sweep size.** All **963 `.rs` files under `src-tauri/`** (exactly `rust.files` in"],"resolved":false,"isDir":true},
     "src-tauri/**.rs": {"count":1,"sections":[6],"contexts":["**Distribution — all 143 conflict-handling `INSERT` statements in `src-tauri/**.rs`.**"],"resolved":false},
     "src-tauri/db/src/lib.rs": {

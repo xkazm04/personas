@@ -1,6 +1,6 @@
 # Golden path — Toasts
 
-> Situation node: `ui-system/chrome-and-feedback/toasts` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/chrome-and-feedback/toasts` · situation spine
 > Composed 2026-08-14 against `master` @ `4c40fe2f1`. **Recurrence 752.**
 > Sweep: `toastStore.ts`, `ToastContainer.tsx`, `useToastTimer.ts`, `AriaLiveProvider.tsx`,
 > `AlertToastContainer.tsx`, `HealingToast.tsx`, `useSettingsSaveToast.ts`, `silentCatch.ts`,
@@ -15,7 +15,7 @@
 > **Settles:** when a transient notification is the right surface, which tone it wears, how long it
 > lives, what it is allowed to say, and what belongs somewhere else.
 >
-> Corpus counts cite [`shared-facts.json`](../shared-facts.json) rather than re-deriving them.
+> Corpus counts cite `shared-facts.json` rather than re-deriving them.
 > **Two of this leaf's stated premises are wrong**; both corrections are in §0 and §7.0.
 
 ---
@@ -62,7 +62,7 @@ healthier on this axis than its sibling's. Say so.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and
+Per the portability test, the head is physically separated and
 every clause carries its **warrant**, so an adopting repo can tell physics from local calibration.
 No file path, primitive name or count appears below this line until the head ends.
 
@@ -640,7 +640,7 @@ loses nothing.
 
 ## 9. The missing gate
 
-**Manifestation layer.** Per [`golden-path-contract.md:34-60`](../golden-path-contract.md), what
+**Manifestation layer.** Per `golden-path-contract.md:34-60`, what
 follows is a **proxy** for a semantic condition, tuned to this repo's idiom — and for this leaf the
 warning must be unusually loud, because **the convergence check found no toast gate anywhere.**
 `personas-web` ships five bespoke ESLint AST rules and points none at toasts, has zero unit or e2e

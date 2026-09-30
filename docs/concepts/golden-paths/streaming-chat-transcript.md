@@ -1,7 +1,7 @@
 # Golden path — Streaming chat transcript
 
 > Situation node: `product-surfaces` › `canvas-and-media` › `streaming-chat-transcript` ·
-> [situation spine](../situation-spine.md) · recurrence 3 · risk **high** ·
+> situation spine · recurrence 3 · risk **high** ·
 > sides: **client** — **upheld**, and for the structural reason the ledger records
 > (§12.1: the whole leaf is about where a DOM node's scroll offset is, and the server
 > never sees the DOM) ·

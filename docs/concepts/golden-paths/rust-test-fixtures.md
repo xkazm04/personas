@@ -1,12 +1,12 @@
 # Golden path — Rust test fixtures
 
 > Situation node: `platform-delivery/testing-and-workflow/rust-test-fixtures` ·
-> [situation spine](../situation-spine.md) · recurrence **60** ·
+> situation spine · recurrence **60** ·
 > dimensions: **function · code-quality · resilience · performance**
 > Composed 2026-08-14 against `master` @ `e76646f7d`.
 >
 > **Sweep size.** All **963** `.rs` files under `src-tauri/` — exactly `rust.files` in
-> [`shared-facts.json`](../shared-facts.json) — parsed **twice, by two independent
+> `shared-facts.json` — parsed **twice, by two independent
 > implementations**: (A) a character-level Rust scanner that blanks comments without
 > touching string literals, resolves `#[cfg(test)]` regions by brace matching, and
 > extracts every `CREATE TABLE` with a paren-balanced column body; (B) a
@@ -254,7 +254,7 @@ you are on the line above. Everything else is this path's backlog.
 
 ### Can the primitive's signature make the wrong call impossible? — answered
 
-Per the [contract](../golden-path-contract.md), answered here, before §9. **Yes — and for
+Per the contract, answered here, before §9. **Yes — and for
 this leaf the answer is a shared constant, not a newtype, because the live defect is a
 copied *list*, not a confused *handle*.**
 
@@ -462,7 +462,7 @@ Three consequences, in ascending order of importance:
    cannot serve the write path you need is a fixture you route around, and the
    route-arounds are where the 239 dropped `NOT NULL`s live. The user-database half of
    this backlog is downstream of this defect.
-3. **It is the [contract](../golden-path-contract.md)'s fifth §9 failure mode,
+3. **It is the contract's fifth §9 failure mode,
    instantiated.** `hand-rolled-fixture-ddl` fires correctly and routes people to
    `init_test_user_db()` — *"a gate on reaching a destination is only as good as the
    destination's defaults."* The destination is four columns short and the gate is green.
@@ -603,7 +603,7 @@ Three items: one census rule (validated below, with a positive control), one Rus
 
 ### The semantic conditions, stated first
 
-Per the [portability test](../research/portability-test.md), what follows are **one
+Per the portability test, what follows are **one
 repo's proxies**. An adopting repo inherits the sentences and derives its own signals.
 
 > **(A)** A test is given a structure carrying the production structure's *name* but not
@@ -677,7 +677,7 @@ still watches.** Excluding `ai_helpers.rs` and `schema_vocabulary.rs` here remov
 
 `floor: 900` matches every other `src-tauri`-rooted rule deliberately — several rules over
 one root must not hold several opinions about what "the Rust tree is intact" means. The
-walk reports **963**, exactly `rust.files` in [`shared-facts.json`](../shared-facts.json).
+walk reports **963**, exactly `rust.files` in `shared-facts.json`.
 
 #### Validated standalone, before publishing
 
@@ -1001,5 +1001,5 @@ clause to export, not the regex.**
   (9 pragma-less connections) are two sides of one defect.
 - [Persisted model struct](./persisted-model-struct.md) — the 30 schema-violating INSERTs
   that §7 A1's dropped `NOT NULL`s make invisible.
-- [Golden-path contract](../golden-path-contract.md) — §9's fifth failure mode ("a gate
+- Golden-path contract — §9's fifth failure mode ("a gate
   that points at a broken destination") is instantiated by §7 A2 and should cite it.

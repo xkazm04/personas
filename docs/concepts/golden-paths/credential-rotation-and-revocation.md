@@ -1,7 +1,7 @@
 # Golden path — Credential rotation and revocation
 
 > **Topic path:** `integrations-security` › `credential-capture` › `credential-rotation-and-revocation`
-> [situation spine](../situation-spine.md) · recurrence 8 · risk **HIGH** · sides: **client**
+> situation spine · recurrence 8 · risk **HIGH** · sides: **client**
 > (spine label — **see §12.1, it does not hold**) · `twoSided: true` (**holds**) ·
 > convergence: **converged** (**see §12.2 — it fails, in the tenth way**) ·
 > dimensions: **security · ui · function**
@@ -237,7 +237,7 @@ single external consumer. Live: 0 rows, so this is latent.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path,
+Per the portability test the head carries no file path,
 primitive name or count. Each clause names its warrant, so an adopting repo can tell physics from
 local calibration.
 

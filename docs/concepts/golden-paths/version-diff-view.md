@@ -1,7 +1,7 @@
 # Version diff view
 
 > Situation node: `product-surfaces/authoring-and-catalogs/version-diff-view` ·
-> [situation spine](../situation-spine.md) · recurrence 8 · risk **medium** ·
+> situation spine · recurrence 8 · risk **medium** ·
 > dimensions: ui · performance · function · `sides: "client"` ·
 > `twoSided: false` · `convergence: "mixed"`
 >

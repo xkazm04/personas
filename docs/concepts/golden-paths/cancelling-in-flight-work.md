@@ -1,6 +1,6 @@
 # Golden path — Cancelling in-flight work
 
-> Situation node: `backend-runtime/background-work/cancelling-in-flight-work` · [situation spine](../situation-spine.md)
+> Situation node: `backend-runtime/background-work/cancelling-in-flight-work` · situation spine
 > Composed 2026-08-14 against `master` @ `cf14b9832`. Ground-truth sweep: all **963**
 > `src-tauri/**/*.rs` files walked by the census runner; `ActiveProcessRegistry`
 > (`lib.rs:100-365`), `process_session.rs` (673 lines), `background_job.rs`'s cancel
@@ -11,7 +11,7 @@
 > hand; all **18** `impl Drop` blocks enumerated; on the client, **26** real Stop
 > affordances, **14** `AbortController` constructions and all **5**
 > `useCorrelatedCliStream` consumers read individually over 4,829 `.ts` + 2,104
-> `.tsx` files. Corpus totals cite [`shared-facts.json`](../shared-facts.json).
+> `.tsx` files. Corpus totals cite `shared-facts.json`.
 > Every number below came from reading source, not estimation.
 > This leaf is **two-sided**: the Stop affordance and the backend teardown are one
 > act. Both halves and the contract between them are stated.
@@ -38,7 +38,7 @@ signal, never the proof.
 
 *Three sentences, no repo path, no primitive name, no count — the layer a sibling
 repo on another stack can adopt as-is. Each clause carries its warrant, per the
-[portability test](../research/portability-test.md)'s finding that unmarked local
+portability test's finding that unmarked local
 calibration is what gets a whole document discarded.*
 
 > **(physics)** Stopping is not one act but three, and all three have to be

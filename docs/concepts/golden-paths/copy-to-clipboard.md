@@ -1,10 +1,10 @@
 # Golden path — Copy to clipboard
 
 > Situation node: `ui-system/chrome-and-feedback/copy-to-clipboard` (recurrence 67) ·
-> [situation spine](../situation-spine.md)
+> situation spine
 > Composed 2026-08-14 against `master` @ `2a874e692`. Sweep: **4,829 `.ts`/`.tsx` files**
 > walked by the census engine itself — exactly `frontend.tsFiles` in
-> [`shared-facts.json`](../shared-facts.json). (An intermediate run reported 4,830; the
+> `shared-facts.json`. (An intermediate run reported 4,830; the
 > tree gained and lost a file mid-composition. The published figure is the one the
 > re-extraction produced from this document's own rule blocks.) · full reads of
 > `CopyButton`, `useCopyToClipboard`, `useKeyedCopyFlag`,
@@ -20,7 +20,7 @@
 > clipboard, what tells them it worked, what happens when it didn't, and who is allowed
 > to hear any of it.
 >
-> Corpus counts cite [`shared-facts.json`](../shared-facts.json); everything else was
+> Corpus counts cite `shared-facts.json`; everything else was
 > measured during composition. Deviations become `violating` cells.
 >
 > **The brief's three inherited findings, re-checked at the working tree — all three
@@ -39,7 +39,7 @@
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically
+Per the portability test, the head is physically
 separated and each clause carries its warrant, so an adopting repo can tell physics from
 local calibration. No file path, primitive name or count appears below this line until
 the head ends.

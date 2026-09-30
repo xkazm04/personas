@@ -1,6 +1,6 @@
 # Golden path — model and effort selection
 
-> Situation node: `ai-agents/model-invocation/model-and-effort-selection` · [situation spine](../situation-spine.md)
+> Situation node: `ai-agents/model-invocation/model-and-effort-selection` · situation spine
 > Composed 2026-08-17 against `master` @ `2a874e692`. **Recurrence 15 · risk medium · sides: client · convergence: mixed.**
 > Sweep: all **963** non-generated Rust files under `src-tauri/` and all **3,793** `.ts`/`.tsx` files under `src/`
 > (4,336 counted together for the catalogue scan, tests excluded), walked by the census engine and re-walked by
@@ -131,7 +131,7 @@ were built by different hands and neither knows the other exists.**
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and every
+Per the portability test, the head is physically separated and every
 clause carries its warrant, so an adopting repo can tell physics from local calibration. No file path,
 primitive name or count appears below this line until the head ends.
 
@@ -959,7 +959,7 @@ line on the client vocabulary at 20 while moves 1–3 land on the server.
 
 ## 9. The missing gate
 
-**Manifestation layer** ([`golden-path-contract.md:43-69`](../golden-path-contract.md)). The warning must
+**Manifestation layer** (`golden-path-contract.md:43-69`). The warning must
 be loud: **no sibling repo gates anything in this document, and two of them cannot.** `brainiac` and
 `personas-cloud` have no model/effort UI at all; `ascent` and `vibeman` ship ESLint configs that say
 nothing about model vocabularies; `personas-web` has i18n gates and its own model list evades them by

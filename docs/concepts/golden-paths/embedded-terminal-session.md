@@ -1,7 +1,7 @@
 # Golden path — Embedded terminal session
 
 > Situation node: `backend-runtime/subprocess-and-io/embedded-terminal-session` ·
-> [situation spine](../situation-spine.md) · recurrence **9** · risk **HIGH** ·
+> situation spine · recurrence **9** · risk **HIGH** ·
 > sides: **client** · `twoSided: true` · convergence: **spine says `converged`;
 > measured **SILENCE 5/5** — see §12.1** · dimensions:
 > **performance · function · resilience · ui**
@@ -220,7 +220,7 @@ transport.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head is
+Per the portability test the head is
 physically separated and each clause carries its warrant, so an adopting repo can
 tell physics from local calibration. **No sibling in the fleet has an embedded
 terminal at all (§12.1), so every clause below is warranted from this repo's own

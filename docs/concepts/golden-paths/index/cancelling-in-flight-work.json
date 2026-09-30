@@ -84,7 +84,6 @@
       "resolved": false,
       "isDir": true
     },
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[9],"contexts":["`.tsx` files. Corpus totals cite [`shared-facts.json`](../shared-facts.json)."],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "engine/background.rs": {"count":2,"sections":[2,5],"lines":["908-920"],"contexts":["abort its task at all (`engine/background.rs:908-920` states this in the repo's own"],"resolved":false},
     "engine/persist.rs": {"count":1,"sections":[2],"lines":["109"],"contexts":["`engine/persist.rs:109`, which returns `bool`), (3) kill the child **tree** by PID"],"resolved":false},
     "ffmpeg.rs": {"count":6,"sections":[4,5,7],"lines":["589","924-931","961","950"],"contexts":["vocabulary, `ffmpeg.rs`'s `\"encoding\"` literal, `evict_stale` — that path states the"],"resolved":false},
@@ -124,6 +123,7 @@
       "resolved": false
     },
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["Do **not** paste this into `scripts/census/rules.json` yourself — the orchestrator"]},
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["`.tsx` files. Corpus totals cite `shared-facts.json`."],"resolved":false},
     "src-tauri/**/*.rs": {"count":1,"sections":[],"contexts":["`src-tauri/**/*.rs` files walked by the census runner; `ActiveProcessRegistry`"],"resolved":false},
     "src-tauri/engine/": {"count":1,"sections":[9],"contexts":["`src-tauri/src/` and not the extracted `src-tauri/engine/` crate. Two implementations,"],"resolved":false,"isDir":true},
     "src-tauri/engine/src/cli_process.rs": {

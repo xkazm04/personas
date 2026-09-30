@@ -1,6 +1,6 @@
 # Golden path — Motion and reduced motion
 
-> Situation node: `ui-system/motion-and-accessibility/motion-and-reduced-motion` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/motion-and-accessibility/motion-and-reduced-motion` · situation spine
 > Composed 2026-08-14 at `c90a7e731`. Sweep: all **4,829** `src/**` `.ts`/`.tsx` files walked by the
 > census engine, plus full reads of `useMotion.ts`, `App.tsx`, `globals.css` (all 8
 > reduced-motion blocks + all 65 `@keyframes`), `typography.css`, `themeStore.ts`,
@@ -14,7 +14,7 @@
 > Dimensions: **ui · function · code-quality · performance**.
 > **Settles:** whether a piece of motion is allowed to move for a user who asked for less of it — and which of the four layers is responsible for stopping it.
 >
-> Shared counts are cited from [`shared-facts.json`](../shared-facts.json); everything else was
+> Shared counts are cited from `shared-facts.json`; everything else was
 > measured during composition. Deviations become `violating` cells.
 
 ---
@@ -44,7 +44,7 @@ token is not a reduced-motion mechanism (§Boundaries).
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and
+Per the portability test, the head is physically separated and
 every clause carries its **warrant**, so an adopting repo can tell physics from local
 calibration. No file path, primitive name or count appears below this line until the head ends.
 
@@ -237,7 +237,7 @@ you. For a row cascade, use `RevealItem` + `useRevealTracker` and stop; they alr
 ### Can the primitive's signature make the wrong call impossible? — the type-over-gate question, answered up front
 
 **Partly, and the two available type moves are worth more than any gate in §9.** See
-[the contract's "Prefer a type over a gate"](../golden-path-contract.md#prefer-a-type-over-a-gate--checked-three-times).
+the contract's "Prefer a type over a gate".
 
 - **Type move 1 — make the wrong hook unimportable.** `eslint.config.js:73` already runs
   `no-restricted-imports` at **`"error"`** (it is how raw `invoke` is banned). Adding

@@ -1,7 +1,7 @@
 # Golden path — handling the master key
 
 > Situation node: `integrations-security/vault-security/vault-key-handling` ·
-> [situation spine](../situation-spine.md) · recurrence 9 · risk **HIGH** · sides **server** ·
+> situation spine · recurrence 9 · risk **HIGH** · sides **server** ·
 > spine label **convergence: CONVERGED** — **see §12.1; it holds on 3 clauses of 7, is
 > INVERTED on one, and the clause carrying this document's headline is a 5/5 silence** ·
 > dimensions: **security · resilience · function · code-quality**
@@ -134,7 +134,7 @@ producer's fail-closed policy is not inherited by its consumers.**
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head is physically separated and
+Per the portability test the head is physically separated and
 every clause carries its warrant, so an adopting repo can tell physics from local calibration. No
 file path, primitive name or count appears below this line until the head ends.
 

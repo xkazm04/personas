@@ -1,6 +1,6 @@
 # Golden path — Parallel session coordination
 
-> Situation node: `platform-delivery/testing-and-workflow/parallel-session-coordination` · [situation spine](../situation-spine.md)
+> Situation node: `platform-delivery/testing-and-workflow/parallel-session-coordination` · situation spine
 > recurrence **4** · risk **HIGH** · sides **server** · convergence **converged** · `twoSided: false`
 > dimensions: **resilience · code-quality**
 > Leaf definition: *"Several agents sharing one checkout without clobbering each other's work."*

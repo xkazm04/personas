@@ -1,7 +1,7 @@
 # Golden-path campaign runbook
 
-How the corpus gets built. The [contract](./golden-path-contract.md) says what a
-path must contain; the [doctrine](./golden-path-doctrine.md) says what a composer
+How the corpus gets built. The contract says what a
+path must contain; the doctrine says what a composer
 must know; this says how the orchestrator runs the loop.
 
 Written 2026-08-16 because the operator asked for the batches to run without a

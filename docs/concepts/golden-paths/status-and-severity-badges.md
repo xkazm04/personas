@@ -1,6 +1,6 @@
 # Golden path — Status token vocabulary: from column to badge
 
-> Situation node: `ui-system/copy-and-vocabulary/status-and-severity-badges` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/copy-and-vocabulary/status-and-severity-badges` · situation spine
 > Composed 2026-08-14. **Two-sided** — this leaf was fused during the seam pass from a backend
 > `closed-vocabulary-column` leaf and a frontend badge leaf, because the SQLite `CHECK` constraint,
 > the IPC token, the `en.json` label and the rendered pill are one chain and every defect below
@@ -10,7 +10,7 @@
 > 184 distinct tokens), **88 ts-rs string-literal union types**, **26 `status_tokens` categories /
 > 156 labels**, **80 feature-local token→presentation maps across 70 files**, and a
 > **convergence check against `personas-web` and `brainiac`** (two stacks, no shared document).
-> Repo denominators come from [`shared-facts.json`](../shared-facts.json) — 2,104 `.tsx` of the
+> Repo denominators come from `shared-facts.json` — 2,104 `.tsx` of the
 > 4,829 TypeScript files under `src`, and 963 Rust files — rather than being re-derived here.
 >
 > **Scope split.** [`typed-error-contract.md`](./typed-error-contract.md) owns codes that describe a
@@ -47,7 +47,7 @@ unrecognised token degrades: **toward the value that demands attention, never to
 a token you do not know is a token you cannot vouch for, and rendering it green or rendering its raw
 snake_case is the same lie told two ways.
 
-**Warrant tags** (per the [portability test](../research/portability-test.md), so an adopting repo can
+**Warrant tags** (per the portability test, so an adopting repo can
 sort physics from local habit):
 
 - *Physics* — the badge API takes the **token**, not a colour (both siblings converged on this

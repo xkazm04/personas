@@ -1,6 +1,6 @@
 # Golden path — Agent dispatch
 
-> Situation node: `ai-agents/agent-ux/agent-dispatch` · [situation spine](../situation-spine.md)
+> Situation node: `ai-agents/agent-ux/agent-dispatch` · situation spine
 > recurrence **15** · risk **HIGH** · sides **client** · `twoSided: true` · convergence **diverged**
 > dimensions: **function · resilience · cost · security**
 > merged from *Agent session dispatch*, *Dispatching work to an agent*.
@@ -160,7 +160,7 @@ And the Fleet lane is the one that runs `--dangerously-skip-permissions` as a ha
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and
+Per the portability test, the head is physically separated and
 each clause carries its warrant, so an adopting repo can tell physics from local calibration. No
 file path, primitive name or count appears below this line until the head ends.
 

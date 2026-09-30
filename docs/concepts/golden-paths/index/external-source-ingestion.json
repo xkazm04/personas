@@ -64,7 +64,6 @@
     "brainiac/crates/brainiac-server/src/mcp.rs": {"count":1,"sections":[],"lines":["339"],"contexts":["`brainiac/crates/brainiac-server/src/mcp.rs:339` (`.take(MAX_FRAME_BYTES)`). Two of the three"],"resolved":false},
     "brainiac/http.rs": {"count":4,"sections":[3,4,5],"lines":["129-132","118-126"],"contexts":["`brainiac/http.rs:129-132` (§6)."],"resolved":false},
     "crossrefClient.ts": {"count":1,"sections":[7],"lines":["90"],"contexts":["`arxivClient.ts:80` and `crossrefClient.ts:90` are the two `fetch()` calls in `src/` that reach a"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[12],"contexts":["census engine walks **963** (matching `shared-facts.json` and"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "engine/src/prompt/{mod,runtime_safety}.rs": {"count":1,"sections":[],"contexts":["`engine/src/prompt/{mod,runtime_safety}.rs`, `commands/design/n8n_transform/prompt_sanitizer.rs`,"],"resolved":false},
     "extract.rs": {"count":1,"sections":[],"lines":["67-78"],"contexts":["**retryable**, and `extract.rs:67-78` documents that partial salvage was built, measured"],"resolved":false},
     "graph.rs": {"count":3,"sections":[3,5,7],"contexts":["`obsidian_brain/vault_fs.rs:77`. The first says *\"Keep behaviour in sync with `graph.rs` if it"],"resolved":false},
@@ -100,6 +99,7 @@
       "resolved": false
     },
     "scripts/census/rules.json": {"count":2,"sections":[9,12],"contexts":["All **135** rules in `scripts/census/rules.json` were read; every `src-tauri`-rooted `.rs` rule was **run**"]},
+    "shared-facts.json": {"count":1,"sections":[12],"contexts":["census engine walks **963** (matching `shared-facts.json` and"],"resolved":false},
     "smee_relay.rs": {"count":2,"sections":[2,7],"lines":["341","376"],"contexts":["total on a stream (`smee_relay.rs:341`'s 1 MiB SSE buffer) rather than `.text()`, a `metadata().len()`"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[],"contexts":["**Sweep.** All **946** non-generated `.rs` files under `src-tauri/` (`bindings/`, `tests/`, `*_test.rs`,"],"resolved":false,"isDir":true},
     "src-tauri/core/src/validation/trigger.rs": {

@@ -1,7 +1,7 @@
 # Golden path — Audit trail: recorded and read back
 
 > **Topic path:** `product-surfaces` › `monitoring-surfaces` › `audit-trail-view`
-> [situation spine](../situation-spine.md) · recurrence **23** · risk **medium** ·
+> situation spine · recurrence **23** · risk **medium** ·
 > sides: **client** (the spine also carries `twoSided: true` **and**
 > `fusedAcrossSides: true` in the same node — see [§12.1](#12-corrections-to-the-brief)) ·
 > convergence: **mixed** · dimensions: **ui · security · function**
@@ -200,7 +200,7 @@ looks like it does is measuring something else.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path,
+Per the portability test the head carries no file path,
 primitive name or count. Each clause names its warrant.
 
 > **P1 — physics, and the one everything else follows from.** **An audit view may only

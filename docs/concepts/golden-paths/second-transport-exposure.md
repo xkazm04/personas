@@ -1,7 +1,7 @@
 # Golden path — exposing behaviour on a second transport
 
 > Situation node: `backend-runtime/command-definition/second-transport-exposure` ·
-> [situation spine](../situation-spine.md) · recurrence 12 · risk **HIGH** · sides **server** ·
+> situation spine · recurrence 12 · risk **HIGH** · sides **server** ·
 > convergence **diverged** · dimensions: **security · function · code-quality · resilience**
 > Composed 2026-08-16 against `master` @ `d74fae3c9`.
 >
@@ -152,7 +152,7 @@ runs a full-op-set Athena turn whose only gate is an `owned_devices` row
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and
+Per the portability test, the head is physically separated and
 every clause carries its warrant, so an adopting repo can tell physics from local calibration. No
 file path, primitive name or count appears below this line until the head ends.
 

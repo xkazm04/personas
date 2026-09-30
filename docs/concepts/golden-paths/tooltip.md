@@ -1,6 +1,6 @@
 # Golden path — Tooltip
 
-> Situation node: `ui-system/overlays/tooltip` (recurrence 120) · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/overlays/tooltip` (recurrence 120) · situation spine
 > Composed 2026-08-14 at `2a874e692`. Sweep: **2,104 `.tsx` files** walked and parsed
 > (44,315 JSX opening tags read through a brace/quote-aware tag scanner, not grepped),
 > plus full reads of `Tooltip`, `TruncateWithTooltip`, `FieldHint`, `Button`,
@@ -13,7 +13,7 @@
 > and who can reach it.
 >
 > Corpus counts (`.tsx` file totals, lint baseline) are cited from
-> [`shared-facts.json`](../shared-facts.json); everything else was measured during
+> `shared-facts.json`; everything else was measured during
 > composition. Deviations become `violating` cells.
 
 > **Post-publication note — 2026-08-17.** Of the two live sites named in §2 as sitting on
@@ -26,7 +26,7 @@
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md)'s recommendations #1 and #2,
+Per the portability test's recommendations #1 and #2,
 the head is physically separated and every clause carries its **warrant**, so an
 adopting repo can tell physics from local calibration. No file path, primitive name or
 count appears below this line until the head ends.
@@ -376,7 +376,7 @@ translated, no `title`, no positioning, no delay literal — four lines.
 ## 7. Deviations found
 
 Everything below shipped under a green `npm run check`. The lint baseline is
-**1,135 warnings / 0 errors** ([`shared-facts.json`](../shared-facts.json)); none of them
+**1,135 warnings / 0 errors** (`shared-facts.json`); none of them
 is about a tooltip, because no rule in the repo is.
 
 ### A. The `title` channel — **1,197 native tooltips across 596 files**
@@ -724,7 +724,7 @@ content.
 
 ## 9. The missing gate
 
-**Manifestation layer.** Per [`golden-path-contract.md:34-60`](../golden-path-contract.md),
+**Manifestation layer.** Per `golden-path-contract.md:34-60`,
 what follows is a *proxy* for a semantic condition, tuned to this repo's idiom. The
 condition is stated first so an adopting repo can re-derive its own proxy rather than
 inherit this one — the portability test measured four ported signals at **zero** true
@@ -907,7 +907,7 @@ contract (`run-census.mjs:19-38`) was exercised against this exact rule:
 | a stale `exclude` path | **1** | `[structural] exclude "…" matched no file. The exemption is stale` |
 
 `floor` is set at 2,000 against an observed walk of **2,104 `.tsx` files**
-([`shared-facts.json`](../shared-facts.json) `frontend.tsxFiles`), consistent with
+(`shared-facts.json` `frontend.tsxFiles`), consistent with
 `unfocusable-click-target`, which uses the same root and extension.
 
 **On severity.** This is a census rule, not an ESLint rule, so the warn/error question

@@ -89,7 +89,6 @@
       ],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["(agrees exactly with `rust.files` in [`shared-facts.json`](../shared-facts.json),"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "errorClassifier.ts": {
       "count": 3,
       "sections": [],
@@ -178,6 +177,7 @@
       ],
       "resolved": false
     },
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["(agrees exactly with `rust.files` in `shared-facts.json`,"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[],"contexts":["**Sweep size.** All **963** non-generated `.rs` files under `src-tauri/`"],"resolved":false,"isDir":true},
     "src-tauri/core/src/error.rs": {
       "count": 4,

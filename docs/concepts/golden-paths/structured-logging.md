@@ -1,12 +1,12 @@
 # Golden path — Structured logging
 
-> Situation node: `backend-runtime/backend-observability/structured-logging` · [situation spine](../situation-spine.md)
+> Situation node: `backend-runtime/backend-observability/structured-logging` · situation spine
 > Recurrence **105** · dimensions: **code-quality · security · resilience · cost**.
 > Composed 2026-08-14 against `master`. Sweep: **963 `.rs` files** walked; **2,653 `tracing` macro
 > calls** parsed by a string/comment-aware argument splitter and classified by shape; **70
 > print-family calls** classified by compilation context; **five separate redaction layers** read in
 > full; the subscriber, the Sentry client options and the `EnvFilter` default; and the sibling
-> `ExecutionLogger`. Corpus counts cite [`shared-facts.json`](../shared-facts.json).
+> `ExecutionLogger`. Corpus counts cite `shared-facts.json`.
 >
 > **A large part of this path is measured against RUNNING SOFTWARE.** The operator's real log
 > directory (`%APPDATA%/com.personas.desktop/logs/`) was read in full — **2,999 files, 410.5 MB** —
@@ -385,7 +385,7 @@ Two specific consequences worth naming:
   file gets the raw message, for all 21 variants — including `AuthorizationRequired`, whose `Display`
   (`error.rs:74`) embeds a full `authorize_url`.
 - **`SecureString` is essentially unadopted.** 26 constructions across 4 files, against 1,661 Tauri
-  commands ([`shared-facts.json`](../shared-facts.json)) and an entire vault subsystem.
+  commands (`shared-facts.json`) and an entire vault subsystem.
 
 ### P2 — the default filter enables debug logging for a crate that emits none
 
@@ -509,7 +509,7 @@ file a future reader will copy from when writing credential code.
 
 ## Prefer a type over a gate — the answer for this leaf
 
-Per the [contract](../golden-path-contract.md) this must be answered explicitly, above §9.
+Per the contract this must be answered explicitly, above §9.
 
 **The answer is YES for the security half and NO for the shape half, and both halves matter.**
 
@@ -565,7 +565,7 @@ Three, each stack-free:
 > without passing through redaction.
 > **(C)** A durable record store grows without bound, so the cost of (B) compounds forever.
 
-Per the [portability test](../research/portability-test.md), what follows is **one repo's proxy for
+Per the portability test, what follows is **one repo's proxy for
 (A)**. An adopting repo inherits the three sentences and re-derives its own signal against its own
 logging API — and a repo whose logger takes only a formatted string has (A) designed *in* and needs a
 different instrument entirely.
@@ -613,7 +613,7 @@ against `rules.json`):
 ```
 
 `963 walked` is every `.rs` file under `src-tauri`, matching `rust.files` in
-[`shared-facts.json`](../shared-facts.json) exactly. `floor: 700` sits well below it — tight enough
+`shared-facts.json` exactly. `floor: 700` sits well below it — tight enough
 that a crate reorganisation fails loudly, loose enough to survive a crate being split out.
 `commentMatchesSkipped` is **0**, so the multiline comment-rewind path (`lib/engine.mjs:192-211`) is
 never exercised by this rule; every match also *starts* at a macro name, which is never on a

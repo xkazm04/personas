@@ -1,8 +1,8 @@
 # Golden path — Persisted model struct
 
-> Situation node: `data-persistence/data-modeling/persisted-model-struct` · [situation spine](../situation-spine.md)
+> Situation node: `data-persistence/data-modeling/persisted-model-struct` · situation spine
 > Composed 2026-08-14 from a ground-truth sweep of the whole Rust tree against `master`.
-> Sweep size: **963 `.rs` files** (exactly `rust.files` in [`shared-facts.json`](../shared-facts.json)) ·
+> Sweep size: **963 `.rs` files** (exactly `rust.files` in `shared-facts.json`) ·
 > **2,217 struct declarations** and **264 enums** parsed with their attribute blocks ·
 > **308 tables / 3,105 columns** parsed from every `CREATE TABLE` and `ALTER TABLE … ADD COLUMN`
 > in the tree · **1,033 generated binding files** under `src/lib/bindings/`. **358 structs were
@@ -95,8 +95,8 @@ carries two different "this may be absent" idioms and the consumer must know whi
 
 ### Which clauses are physics, which are this house
 
-Per the [contract](../golden-path-contract.md) and the
-[portability test](../research/portability-test.md), a prescription only travels if something else
+Per the contract and the
+portability test, a prescription only travels if something else
 reinvented it. A read-only sweep of `brainiac` (Rust · sqlx · Postgres · `utoipa` → `openapi-typescript`
 console — the strong oracle, same problem shape), `personas-cloud` (TS · better-sqlite3) and
 `personas-web` (TS · Supabase) was run 2026-08-14 to sort them. **It contradicted two clauses this
@@ -278,7 +278,7 @@ tight, closable backlog. The 43 concentrate: 6 in `persona_automations`, 6 in `d
 
 ## Prefer a type over a gate — the answer for this leaf
 
-Per the [contract](../golden-path-contract.md), this must be answered explicitly before §9 is
+Per the contract, this must be answered explicitly before §9 is
 written. **For this leaf the answer is yes, twice, and both type-level fixes are cheaper than the
 gates that would police them.**
 
@@ -313,7 +313,7 @@ Three, each stack-free:
 > chose.
 
 What follows are **one repo's proxies** for these. Per the
-[portability test](../research/portability-test.md) a proxy does not travel: an adopting repo
+portability test a proxy does not travel: an adopting repo
 inherits the three sentences and re-derives its own signals against its own generator, its own DDL
 dialect and its own casing convention. Each rule below states the precondition its proxy depends on.
 
@@ -351,7 +351,7 @@ with a serde container attribute.
 
 ### Mechanism — census rules, not scripts
 
-Per the [contract](../golden-path-contract.md) §"Don't write a script", the ratcheting-baseline
+Per the contract §"Don't write a script", the ratcheting-baseline
 mechanism already exists at [`scripts/census/`](../../../scripts/census/). This path publishes three
 entries for `scripts/census/rules.json` (merged by the orchestrator via
 `scripts/census/merge-published-rules.mjs`, never edited here directly):
@@ -417,7 +417,7 @@ entries for `scripts/census/rules.json` (merged by the orchestrator via
 ```
 
 `963 walked` for the `src-tauri` root is exactly `rust.files` in
-[`shared-facts.json`](../shared-facts.json) — two independently derived counts agreeing, which is the
+`shared-facts.json` — two independently derived counts agreeing, which is the
 only reason to trust either. `floor: 900` matches the other three `src-tauri`-rooted rules
 deliberately: two rules over one root must not hold two opinions about what "the Rust tree is intact"
 means. For `src/lib/bindings` the walk sees 1,034 files and the floor is 900; that directory only ever

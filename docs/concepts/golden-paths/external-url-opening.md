@@ -1,14 +1,14 @@
 # Golden path — opening an external URL
 
 > Situation node: `integrations-security/external-and-host-surfaces/external-url-opening` ·
-> [situation spine](../situation-spine.md) · recurrence 14 · risk **HIGH** ·
+> situation spine · recurrence 14 · risk **HIGH** ·
 > sides **client** · convergence **mixed** ·
 > dimensions: **security · function** (composed against **ui · resilience · code-quality** too)
 > Composed 2026-08-16 against `master` @ `c81519610`.
 >
 > **Sweep.** All **4,829** `.ts`/`.tsx` files under `src/` (the census engine's own `walked`
 > count) and all **963** non-generated `.rs` files under `src-tauri/` (`rust.files` in
-> [`shared-facts.json`](../shared-facts.json)). Every `<a>` opening tag in the tree parsed as a
+> `shared-facts.json`). Every `<a>` opening tag in the tree parsed as a
 > tag (not a line); every `window.open`, every `@tauri-apps/plugin-shell` import, every
 > `open::that`, every `Command::new` that reaches a file manager, both `WebviewUrl::External`
 > sites, and the whole `personas://` inbound handler read in full. Vendored runtime sources read
@@ -191,7 +191,7 @@ product.** The only thing standing between "normal output" and "opened" is which
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and
+Per the portability test, the head is physically separated and
 each clause carries its warrant, so an adopting repo can tell physics from local calibration. No
 file path, primitive name or count appears below this line until the head ends.
 

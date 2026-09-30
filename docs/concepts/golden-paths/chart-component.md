@@ -7,7 +7,7 @@
 > `recharts@3.8.1` library source read for four defaults; series palettes scored
 > with an executable CIEDE2000 + colour-vision-deficiency audit; convergence
 > measured against `../personas-web` and `../brainiac/console`.
-> **Shared facts cited:** [`shared-facts.json`](../shared-facts.json) — 4,829 `.ts`
+> **Shared facts cited:** `shared-facts.json` — 4,829 `.ts`
 > files, 2,104 `.tsx` files, 1,135 lint warnings / 0 errors at `211d519bb`.
 
 ---
@@ -198,7 +198,7 @@ Never invent a name here. These exist today.
 ### Can the primitive's signature make the wrong call impossible?
 
 **The contract requires this question be answered before §9 is written
-([`golden-path-contract.md:165-184`](../golden-path-contract.md)). Yes — twice,
+(`golden-path-contract.md:165-184`). Yes — twice,
 and this repo contains its own controlled experiment proving it.**
 
 Two sibling chart primitives, same feature area, same era, differing in exactly one
@@ -213,7 +213,7 @@ respect — whether the prop that prevents the defect is required:
 
 Same file, same authors, same week. The required prop is universal; every
 optional one is a minority. This is the exact shape of
-[`golden-path-contract.md:98-107`](../golden-path-contract.md)'s fifth failure
+`golden-path-contract.md:98-107`'s fifth failure
 mode — *"a gate on reaching a destination is only as good as the destination's
 defaults"* — and the exact shape of `<Numeric language>`, where 206 of 215 call
 sites took a wrong default.
@@ -306,7 +306,7 @@ Secondary exemplars, each for one property:
 ## 7. Deviations
 
 Fifteen chart-bearing files were read in full. Every item below shipped under a
-green `npm run check` (0 errors, 1,135 warnings — [`shared-facts.json`](../shared-facts.json)).
+green `npm run check` (0 errors, 1,135 warnings — `shared-facts.json`).
 
 ### D1 — Seven plots anchor their scale to the sample's own minimum · **7 files, 7 statements**
 
@@ -518,7 +518,7 @@ redefined in four theme blocks). **Series colours are not**: 30 hex literals acr
 6 of 8 recharts files, versus 13 `var(--…)` uses in the two KPI files. And because
 they are SVG `fill`/`stroke` values rather than `text-*` classes, they are invisible
 to both `check-themes.mjs` and `custom/no-low-contrast-text-classes` — the rule that
-accounts for 705 of the repo's 1,135 warnings ([`shared-facts.json`](../shared-facts.json))
+accounts for 705 of the repo's 1,135 warnings (`shared-facts.json`)
 cannot see a single chart pixel. `theming-and-contrast.md` explicitly scopes itself
 to *text* colour (`:17`) and hands hues to other paths, so this is not its gap; it
 is unowned. D4's light-theme contrast failures (3/8 and 3/8 below 3:1) are the

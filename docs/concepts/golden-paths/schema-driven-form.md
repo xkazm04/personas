@@ -1,6 +1,6 @@
 # Golden path — the schema-driven form
 
-> Situation node: `ui-system/controls-and-forms/schema-driven-form` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/controls-and-forms/schema-driven-form` · situation spine
 > recurrence **16** · risk **medium** · sides **client** (**contradicted — §12.2**) · convergence **diverged**
 > (**contradicted, and in the doctrine's tenth mode — §12.3**)
 > dimensions: **ui · function · code-quality · resilience · security**
@@ -287,7 +287,7 @@ Everything in §7 is a place where the vocabulary is hand-maintained beside the 
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and
+Per the portability test, the head is physically separated and
 every clause carries its warrant. No file path, primitive name or count appears below this line until
 the head ends.
 

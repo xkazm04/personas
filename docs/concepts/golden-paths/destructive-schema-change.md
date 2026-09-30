@@ -1,13 +1,13 @@
 # Golden path — Destructive schema change
 
 > Situation node: `data-persistence/migrations/destructive-schema-change` ·
-> [situation spine](../situation-spine.md) · recurrence 19 · risk **HIGH** ·
+> situation spine · recurrence 19 · risk **HIGH** ·
 > sides: **server** · convergence: **diverged** ·
 > dimensions: **resilience · function · code-quality · performance · cost**
 > Composed 2026-08-15 against `master` @ `e611c326d`.
 >
 > **Sweep size.** All **963** `.rs` files under `src-tauri` (exactly `rust.files`
-> in [`shared-facts.json`](../shared-facts.json)), lexed rather than grepped:
+> in `shared-facts.json`), lexed rather than grepped:
 > **83,764** string literals extracted with a string/comment-aware Rust
 > tokenizer, **5,639** of them holding SQL — **4,718** production and **921**
 > inside **brace-matched** `#[cfg(test)]` ranges, never a line threshold. Every

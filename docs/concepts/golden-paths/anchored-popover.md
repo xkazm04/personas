@@ -2,7 +2,7 @@
 
 > Situation node: `ui-system/overlays/anchored-popover` (recurrence 74,
 > `mergedFrom: ["Anchored popovers", "Click-outside dismissal"]`) ·
-> [situation spine](../situation-spine.md)
+> situation spine
 > Composed 2026-08-14 at `2a874e692`. Sweep: **2,104 `.tsx` files** walked and
 > **47,545 JSX opening tags** read through a brace/quote-aware tag scanner (not
 > grepped), plus full reads of `QuickEditPopover`, `ListPopover`, `useClickOutside`,
@@ -17,7 +17,7 @@
 > and announced — and who owns each of those four decisions.
 >
 > Corpus counts (`.tsx` file totals, lint baseline) are cited from
-> [`shared-facts.json`](../shared-facts.json); everything else was measured during
+> `shared-facts.json`; everything else was measured during
 > composition. Deviations become `violating` cells.
 
 > **Post-publication note — 2026-08-17.** The `teams/sub_canvas/` tree (29 files, 3,200
@@ -61,7 +61,7 @@ reported where they belong rather than softened:
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md)'s recommendations #1
+Per the portability test's recommendations #1
 and #2, the head is physically separated and every clause carries its **warrant**,
 so an adopting repo can tell physics from local calibration. No file path,
 primitive name or count appears below this line until the head ends.
@@ -505,7 +505,7 @@ everything else here; those are Gaps, not call-site defects.
 ## 7. Deviations found
 
 Everything below shipped under a green `npm run check`. The lint baseline is
-**1,135 warnings / 0 errors** ([`shared-facts.json`](../shared-facts.json)); the
+**1,135 warnings / 0 errors** (`shared-facts.json`); the
 only rule that touches this corpus at all is `custom/enforce-base-modal`, and all
 eight of its firings here are **false positives** where migration would be wrong
 (`modals.md:111`).
@@ -965,7 +965,7 @@ evidence that people wanted to do the right thing and had no import to do it wit
 
 ## 9. The missing gate
 
-**Manifestation layer.** Per [`golden-path-contract.md:34-60`](../golden-path-contract.md),
+**Manifestation layer.** Per `golden-path-contract.md:34-60`,
 what follows is a *proxy* for a semantic condition, tuned to this repo's idiom.
 The condition is stated first so an adopting repo can re-derive its own proxy
 rather than inherit this one — the portability test measured four ported signals
@@ -1184,7 +1184,7 @@ the destination the rule exists to route people to. A gate whose destination has
 vanished must not report green.
 
 `floor` is set at 4,000 against an observed walk of **4,829 `.ts` + `.tsx` files**
-([`shared-facts.json`](../shared-facts.json) `frontend.tsFiles`), consistent with
+(`shared-facts.json` `frontend.tsFiles`), consistent with
 `unregistered-key-handler` and `raw-select`, which use the same roots and
 extensions.
 

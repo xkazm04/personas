@@ -121,7 +121,6 @@
       "resolved": false,
       "isDir": true
     },
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json), not re-derived."],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "governance.rs": {
       "count": 2,
       "sections": [],
@@ -183,6 +182,7 @@
       "resolved": false
     },
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["An entry in [`scripts/census/rules.json`](../../../scripts/census/rules.json)."]},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["`shared-facts.json`, not re-derived."],"resolved":false},
     "src-tauri/": {
       "count": 2,
       "sections": [3,8],

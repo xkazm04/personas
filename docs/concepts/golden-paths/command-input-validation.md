@@ -1,6 +1,6 @@
 # Golden path — Command input validation
 
-> Situation node: `backend-runtime/contract-and-validation/command-input-validation` · [situation spine](../situation-spine.md)
+> Situation node: `backend-runtime/contract-and-validation/command-input-validation` · situation spine
 > Recurrence **49**. Dimensions: **function · security · code-quality · resilience · ui**.
 > Composed 2026-08-15 against `master` @ `19120c277`. Sweep: **963 git-tracked `.rs` files**,
 > every one of the **1,661** `#[tauri::command]` attribute sites parsed into
@@ -26,7 +26,7 @@
 > The **Deviations** section is a fix backlog; it migrates to `violating` cells in
 > `workspace_practice_context_state` when this path is ingested.
 
-Shared counts cited from [`shared-facts.json`](../shared-facts.json) @ `211d519bb`: 963 Rust
+Shared counts cited from `shared-facts.json` @ `211d519bb`: 963 Rust
 files, 4,829 `.ts`/`.tsx` files under `src`, 1,135 lint warnings / 0 errors. The command count
 is cited in its **corrected** form — **1,661 attribute sites → 1,658 unique command functions**,
 per [`new-ipc-command.md`](./new-ipc-command.md)'s correction block, which my own parser

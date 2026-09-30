@@ -92,7 +92,6 @@
       "resolved": false,
       "isDir": true
     },
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[9],"contexts":["[`shared-facts.json`](../shared-facts.json); command counts cite"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "engine/background.rs": {
       "count": 2,
       "sections": [5,7],
@@ -160,6 +159,7 @@
       "isDir": true
     },
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["Do **not** paste this into `scripts/census/rules.json` yourself — the"]},
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["`shared-facts.json`; command counts cite"],"resolved":false},
     "src-tauri/**/*.rs": {"count":1,"sections":[],"contexts":["`src-tauri/**/*.rs` files walked by the census runner; `background_job.rs` read"],"resolved":false},
     "src-tauri/core/src/types.rs": {
       "count": 1,

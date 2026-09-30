@@ -1,7 +1,7 @@
 # Cross-cutting laws
 
 Nine convergences, each measured ≥3 independent times during the 2026 composition
-campaign, reclassified by [`knowledge-hierarchy-plan.md`](../knowledge-hierarchy-plan.md)
+campaign, reclassified by `knowledge-hierarchy-plan.md`
 §2 from Golden-Path candidates to **laws that Techniques cite**. They are not subjects —
 no folder, no techniques of their own. Cite them from a Technique's `laws:` frontmatter
 by anchor id. The doctrine's transferable sections migrate here in the closing pass;

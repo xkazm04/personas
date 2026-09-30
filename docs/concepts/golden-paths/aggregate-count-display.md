@@ -1,7 +1,7 @@
 # Golden path — Aggregate count display
 
 > **Topic path:** `ui-system` › `chrome-and-feedback` › `aggregate-count-display`
-> [situation spine](../situation-spine.md) · recurrence 27 · risk **MEDIUM** · sides: **client**
+> situation spine · recurrence 27 · risk **MEDIUM** · sides: **client**
 > (spine also carries `twoSided: true` — see §12.1) · convergence: **mixed** ·
 > dimensions: **function · ui · performance**
 > `mergedFrom`: *Summary count strip* + *Attention counts and badges* + *Attention badge registry*
@@ -33,7 +33,7 @@
 > found a sibling that had already written this path's headline defect down in a comment (§6
 > clause 3).
 >
-> **Shared facts cited:** [`shared-facts.json`](../shared-facts.json) — 963 Rust files, 4,829
+> **Shared facts cited:** `shared-facts.json` — 963 Rust files, 4,829
 > `.ts`, 2,104 `.tsx`, 1,135 lint warnings / 0 errors.
 >
 > **Settles:** where the number in the badge comes from, and whether it agrees with the list it
@@ -206,7 +206,7 @@ of the rows, silently.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path,
+Per the portability test the head carries no file path,
 primitive name or count. Each clause names its warrant.
 
 > **P1 — physics.** **A count is a claim about a set, so name the set before you name the number.**
@@ -461,7 +461,7 @@ summary?: { shown: number; total: number | null; scope?: string };
 
 Now the two halves cross the boundary as data, `total: null` is spellable for "we did not ask", the
 component owns the i18n key, and the *pairing* becomes the thing a reviewer can see. **This is the
-[contract's fifth §9 failure mode](../golden-path-contract.md) in the good direction**: fix the
+contract's fifth §9 failure mode in the good direction**: fix the
 destination before ratcheting the callers — one edit at `FilterBar` reaches all 7 surfaces, and no
 ratchet would have moved a single one.
 
@@ -604,7 +604,7 @@ rows, its §0 case). Stated here so nobody ships a `scope` pill instead of a cou
 
 Every entry is live on `master` @ `e3c5e0d7f`, verified by reading the file and — where a number is
 quoted — by replay against a read-only copy of the operator's database. All shipped under a green
-`npm run check` (0 errors, 1,135 warnings — [`shared-facts.json`](../shared-facts.json)).
+`npm run check` (0 errors, 1,135 warnings — `shared-facts.json`).
 
 ### D1 — The Memories page: a delete confirmation and a KPI strip, both counting the page · **executed**
 

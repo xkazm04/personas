@@ -1,6 +1,6 @@
 # Golden path — Schema change (adding a table or column)
 
-> Situation node: `data-persistence/schema-design/schema-change` · [situation spine](../situation-spine.md)
+> Situation node: `data-persistence/schema-design/schema-change` · situation spine
 > Composed 2026-08-13 from a ground-truth sweep of the migration chain (~135 tool
 > calls incl. two sub-sweeps), against `master` @ `7bb572e2b`. `.claude/worktrees/**`
 > excluded from all counts. Every number below was counted, not estimated.

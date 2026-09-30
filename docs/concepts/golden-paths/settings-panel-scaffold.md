@@ -1,6 +1,6 @@
 # Golden path — Settings panel scaffold
 
-> Situation node: `ui-system/layout-and-navigation/settings-panel-scaffold` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/layout-and-navigation/settings-panel-scaffold` · situation spine
 > recurrence **18** · risk **LOW** · sides **client** · convergence **mixed** · `twoSided: true`
 > dimensions: **ui · code-quality · performance · function**
 > Leaf definition: *"the multi-section settings tab shape, including a persisted toggle+bound card."*

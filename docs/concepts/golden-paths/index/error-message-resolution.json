@@ -41,7 +41,6 @@
     "data_portability.rs": {"count":1,"sections":[7],"lines":["4975"],"contexts":["| 37 | `invalid_bundle` | 1 (`data_portability.rs:4975`) | `Validation` |"],"resolved":false},
     "db/chain.rs": {"count":1,"sections":[7],"lines":["913,976"],"contexts":["| 28 | `circular_chain` | 2 (`db/chain.rs:913,976`) | `Validation` |"],"resolved":false},
     "docs/[slug]/actions.ts": {"count":1,"sections":[],"contexts":["(`app/console/modules/{reviews,standards,skills,disputes}/actions.ts`, `docs/[slug]/actions.ts`)."],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["Shared counts cited from [`shared-facts.json`](../shared-facts.json) @ `211d519bb`:"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "http.rs": {"count":3,"sections":[],"lines":["1885-1902","1909","1950"],"contexts":["**`brainiac` emits a machine discriminant and its own client throws it away.** `http.rs:1885-1902`"],"resolved":false},
     "mcp.rs": {"count":2,"sections":[],"lines":["97-107","747-764"],"contexts":["blanket `From` impls land on `Internal`** (`mcp.rs:97-107`), so a bare `?` on any DB or `anyhow`"],"resolved":false},
     "openapi.json": {"count":1,"sections":[],"contexts":["`openapi.json` — and `console/src/lib/api.ts:114-131` parses `parsed.error` and **discards `code`**."],"resolved":false},
@@ -49,6 +48,7 @@
     "personas-web/src/lib/api.ts": {"count":1,"sections":[],"lines":["120"],"contexts":["`personas-web/src/lib/api.ts:120` is worse: `await res.text()` on the unparsed body, so the cloud's"],"resolved":false},
     "scripts/check-error-resolution.mjs": {"count":1,"sections":[9],"contexts":["### 9.2 Gate 1 (primary) — `scripts/check-error-resolution.mjs`: the reachability test"],"resolved":false},
     "scripts/i18n/check-error-registry-parity.mjs": {"count":4,"sections":[3,6,9],"contexts":["`en.json`, CI-gated for key presence by `scripts/i18n/check-error-registry-parity.mjs`."]},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["Shared counts cited from `shared-facts.json` @ `211d519bb`:"],"resolved":false},
     "src-tauri/core/src/error.rs": {
       "count": 7,
       "sections": [2,6,7,9],

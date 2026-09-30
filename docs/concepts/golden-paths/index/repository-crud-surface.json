@@ -53,7 +53,6 @@
       "resolved": false
     },
     "dev_workspaces.rs": {"count":1,"sections":[9],"lines":["1067"],"contexts":["- `dev_workspaces.rs:1067` `sync_harvest_scopes` — `DELETE … WHERE project_id = ?1`, a scope-keyed"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["paths are cited from [`shared-facts.json`](../shared-facts.json), not re-derived. `target/**` and"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "documents.rs": {"count":1,"sections":[6],"lines":["707"],"contexts":["UPDATE*. But three of its UPDATEs discard the count and return `Ok(())` (`documents.rs:707`,"],"resolved":false},
     "execution/executions.rs": {"count":1,"sections":[5],"lines":["709"],"contexts":["`execution/executions.rs:709` `set_claude_session_id` is"],"resolved":false},
     "execution/knowledge.rs": {
@@ -131,6 +130,7 @@
     },
     "scripts/census/merge-published-rules.mjs": {"count":1,"sections":[9],"contexts":["entry, merged by the orchestrator via `scripts/census/merge-published-rules.mjs` — never edited into"]},
     "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["All 37 rules in `scripts/census/rules.json` were read. Four are adjacent and **none covers this"]},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["paths are cited from `shared-facts.json`, not re-derived. `target/**` and"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[8],"contexts":["8. **No enforcement reaches `src-tauri/` for any of this.** `npm run check` is TypeScript + ESLint"],"resolved":false,"isDir":true},
     "src-tauri/**": {"count":1,"sections":[],"contexts":["names** in the tree joined to every `INSERT`/`UPDATE`/`DELETE` statement in `src-tauri/**` to"],"resolved":false,"isDir":true},
     "src-tauri/core/src/error.rs": {

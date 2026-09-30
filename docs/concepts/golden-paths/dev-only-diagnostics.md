@@ -1,7 +1,7 @@
 # Golden path — Dev-only diagnostics
 
 > Situation node: `product-surfaces/monitoring-surfaces/dev-only-diagnostics` ·
-> [situation spine](../situation-spine.md) · recurrence 12 · risk **medium** ·
+> situation spine · recurrence 12 · risk **medium** ·
 > sides: **client** · convergence: **converged** ·
 > dimensions: **code-quality · performance · security**
 > Composed 2026-08-17 against `master` @ `6c97502d3`, and **every count
@@ -18,7 +18,7 @@
 > **Sweep.** Every `import.meta.env.{DEV,PROD,MODE}` site in `src/`
 > (`frontend.tsFiles` **4,829**, of which `frontend.tsxFiles` **2,104** at
 > `6c97502d3` and **2,083** at `c7c153b57` — both cited from
-> [`shared-facts.json`](../shared-facts.json) and re-verified by running the
+> `shared-facts.json` and re-verified by running the
 > recorded instrument, exit 0, no `value` changed). Every
 > `debug_assertions` site under `src-tauri/` (`rust.files` **963**). All **5**
 > git-tracked Tauri config files. `src/App.tsx` (dev-gate cluster of 9),

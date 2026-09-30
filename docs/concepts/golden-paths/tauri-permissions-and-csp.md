@@ -1,7 +1,7 @@
 # Golden path — Tauri permissions and the Content-Security-Policy
 
 > Situation node: `platform-delivery/packaging-and-release/tauri-permissions-and-csp` ·
-> [situation spine](../situation-spine.md) · recurrence 4 · risk **HIGH** · sides **server**
+> situation spine · recurrence 4 · risk **HIGH** · sides **server**
 > (refuted — §12.1) · convergence **mixed** (refuted — §12.2) · dimensions: **security · function ·
 > code-quality · cost**
 > Composed 2026-08-17 against `master` @ `9fdede67c`.
@@ -486,7 +486,7 @@ separately.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head is physically separated and every
+Per the portability test the head is physically separated and every
 clause carries its warrant. No file path, primitive name or count appears below this line until the
 head ends.
 

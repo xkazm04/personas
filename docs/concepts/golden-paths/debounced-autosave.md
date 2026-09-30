@@ -1,7 +1,7 @@
 # Golden path — Debounced autosave
 
 > Situation node: `client-runtime/mutations-and-editing/debounced-autosave` ·
-> [situation spine](../situation-spine.md) · recurrence **16** · risk high ·
+> situation spine · recurrence **16** · risk high ·
 > dimensions **function · resilience · ui · code-quality** · sides **client**.
 > Composed 2026-08-16 from a ground-truth sweep against `master`.
 >
@@ -521,7 +521,7 @@ not more care at the call site. It is to stop giving the call site a timer.
 
 ## Prefer a type over a gate — the answer for this leaf
 
-Per the [contract](../golden-path-contract.md), answered before §9 is written, and held against all
+Per the contract, answered before §9 is written, and held against all
 seven qualifications.
 
 **Measured answer: no type reaches this condition, and saying so is the finding.**
@@ -721,7 +721,7 @@ per doctrine §4.
 
 ## Corrections to the brief that composed this path
 
-Recorded per [doctrine §7](../golden-path-doctrine.md#7-corrections-are-the-deliverable), because a
+Recorded per doctrine §7, because a
 brief is a hypothesis and refuting it is part of the job.
 
 1. **"Lazy routes fully unmount on nav-away, so a pending debounce timer dies with them."** True for

@@ -1,7 +1,7 @@
 # Golden path — Member roster
 
 > Situation node: `product-surfaces/lists-and-tables/member-roster` (recurrence 6, risk medium) ·
-> [situation spine](../situation-spine.md)
+> situation spine
 > **Short form** per the [runbook](../golden-path-runbook.md) §"Mode 2" tiering (medium risk,
 > recurrence < 9): spine header, §0 headline, §2 the-one-way, §7 deviations, §9 rule-or-decline,
 > §12 corrections. The quality core — two implementations of every count, positive control,

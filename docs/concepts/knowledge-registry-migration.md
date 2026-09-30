@@ -1,6 +1,6 @@
 # Knowledge registry migration — impact analysis & phased plan (v0)
 
-**Status:** analysis, 2026-08-18. Extends [`domain-knowledge-plan.md`](./domain-knowledge-plan.md)
+**Status:** analysis, 2026-08-18. Extends `domain-knowledge-plan.md`
 after the operator ratified its direction and extended scope with four decisions:
 
 1. **Reuse `github.com/xkazm04/ai-registry`** (ascent's test registry, near-empty synthetic

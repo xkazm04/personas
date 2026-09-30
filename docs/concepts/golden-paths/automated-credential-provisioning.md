@@ -1,7 +1,7 @@
 # Golden path — automated credential provisioning
 
 > Situation node: `integrations-security/credential-capture/automated-credential-provisioning` ·
-> [situation spine](../situation-spine.md) · recurrence 14 · risk **HIGH** ·
+> situation spine · recurrence 14 · risk **HIGH** ·
 > sides **client** (spine label; **see §12.6 — the leaf is overwhelmingly server-side**) ·
 > convergence **mixed** ·
 > dimensions: **security · function · resilience · code-quality · ui**
@@ -263,7 +263,7 @@ So the field is inert, and both halves of that are findings:
   requested and no probe run, so it enters the vault in the `unverifiable` state while its
   author believed it entered `verified`.
 
-This is [doctrine Q1](../golden-path-doctrine.md#1--prefer-a-type-over-a-gate--and-the-seven-qualifications)
+This is doctrine Q1
 in its purest form: `CreateCredentialInput.healthcheck_passed: Option<bool>` sits on a
 *persistence-input* struct and encodes a *command-level* request. Three of its four constructors
 set it or omit it into the void.
@@ -272,7 +272,7 @@ set it or omit it into the void.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head carries no file path,
+Per the portability test, the head carries no file path,
 primitive name or count, and each clause carries its warrant so an adopting repo can tell
 physics from local calibration.
 

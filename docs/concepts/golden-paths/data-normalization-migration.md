@@ -1,14 +1,14 @@
 # Golden path — Data normalization migration
 
 > Situation node: `data-persistence/migrations/data-normalization-migration` ·
-> [situation spine](../situation-spine.md) · recurrence 9 · risk **HIGH** ·
+> situation spine · recurrence 9 · risk **HIGH** ·
 > sides: **server** · `twoSided: true` · convergence: **mixed** ·
 > dimensions: function · resilience · performance ·
 > merged from *Closed-vocabulary value migration* · *Dedupe then add a unique index*
 > Composed 2026-08-16 against `master` @ `c47cd36fa`.
 >
 > **Sweep size.** All **963** `.rs` files under `src-tauri` (exactly `rust.files`
-> in [`shared-facts.json`](../shared-facts.json)). Every `run_step` in the
+> in `shared-facts.json`). Every `run_step` in the
 > migration chain was enumerated and its guard classified (**122** steps); every
 > row-rewriting statement in the chain was enumerated and located
 > (**67**: 30 `UPDATE`, 18 `INSERT … SELECT`, 19 `DELETE`); every `INSERT` site

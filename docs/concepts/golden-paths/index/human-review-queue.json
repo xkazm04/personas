@@ -84,7 +84,6 @@
       ],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json) where it has them (4,829"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "mod.rs": {
       "count": 1,
       "sections": [7],
@@ -147,6 +146,7 @@
       "resolved": false
     },
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["- **Mechanism.** A `scripts/census/rules.json` entry — no new script. `npm run census` reports, `npm run census:check` gates."]},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["`shared-facts.json` where it has them (4,829"],"resolved":false},
     "src-tauri/core/src/models/review.rs": {
       "count": 2,
       "sections": [2,3],

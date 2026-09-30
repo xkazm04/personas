@@ -1,8 +1,8 @@
 # Golden path — Index design
 
-> Situation node: `data-persistence/query-performance/index-design` · [situation spine](../situation-spine.md)
+> Situation node: `data-persistence/query-performance/index-design` · situation spine
 > Composed 2026-08-14 from a ground-truth sweep of `src-tauri/**` against `master`.
-> Sweep size: **963 `.rs` files** (exactly `rust.files` in [`shared-facts.json`](../shared-facts.json)) ·
+> Sweep size: **963 `.rs` files** (exactly `rust.files` in `shared-facts.json`) ·
 > **583 `CREATE INDEX` statements** and **408 `CREATE TABLE` statements over 313 distinct table names**
 > parsed with a balanced-paren DDL parser · **1,655 SQL string literals** extracted from non-migration
 > Rust, of which **1,441** resolve to a known table, yielding **1,498 predicate / sort / join checks**
@@ -82,8 +82,8 @@ per-table index audit, no speculative index for a query nobody has written.
 
 ### Which clauses are physics, which are this house
 
-Per the [contract](../golden-path-contract.md) and the
-[portability test](../research/portability-test.md), a clause travels only if something else
+Per the contract and the
+portability test, a clause travels only if something else
 reinvented it. Measured 2026-08-14 against `brainiac` and `personas-cloud`. Detail in §6.
 
 | Clause | Warrant | Evidence |
@@ -549,7 +549,7 @@ unindexed `JOIN` key in the whole tree is `dev_ideas.context_id` (`db/src/repos/
 
 ## Prefer a type over a gate — the answer for this leaf
 
-Per the [contract](../golden-path-contract.md) this must be answered explicitly. **For this leaf the
+Per the contract this must be answered explicitly. **For this leaf the
 answer is "on one axis, yes; in general, no" — and the general no is a real finding, not a
 concession.**
 
@@ -591,7 +591,7 @@ Three, each stack-free:
 > and never read.
 > **(C)** A query filters or sorts on a key no index can serve, so its cost grows with the table.
 
-Per the [portability test](../research/portability-test.md), what follows are **one repo's proxies**.
+Per the portability test, what follows are **one repo's proxies**.
 An adopting repo inherits the three sentences and re-derives its own signals against its own DDL
 dialect and its own tooling.
 
@@ -641,7 +641,7 @@ same vocabulary in the tree, `idx_owned_devices_single_home ON owned_devices(is_
   census OK — 1 rule(s), 963 file-visits, 20 surviving violation(s) across 4 file(s).
 ```
 
-`963 walked` is exactly `rust.files` in [`shared-facts.json`](../shared-facts.json) — two
+`963 walked` is exactly `rust.files` in `shared-facts.json` — two
 independently derived counts agreeing, which is the only reason to trust either. `floor: 900` matches
 the four other `src-tauri`-rooted rules deliberately: several rules over one root must not hold
 several opinions about what "the Rust tree is intact" means.

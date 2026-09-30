@@ -1,12 +1,12 @@
 # Golden path — Environment-variable configuration
 
-> Situation node: `platform-delivery/build-profiles/environment-variable-configuration` · [situation spine](../situation-spine.md)
+> Situation node: `platform-delivery/build-profiles/environment-variable-configuration` · situation spine
 > `sides: server` · `twoSided: false` · recurrence **40** · risk **high**.
 > Dimensions: **function · security · code-quality**.
 > Spine's own framing: *"Adding a runtime env escape hatch that is documented, typed and not a backdoor."*
 >
 > Composed 2026-08-15 against `master` @ `02fe37134`. Sweep: all **963** `.rs` files under
-> `src-tauri/` (exactly `rust.files` in [`shared-facts.json`](../shared-facts.json)) · all **4,829**
+> `src-tauri/` (exactly `rust.files` in `shared-facts.json`) · all **4,829**
 > `.ts`/`.tsx` under `src/` (`frontend.tsFiles`) · `vite.config.ts` · every file under `scripts/`
 > (**4,982** files walked for the JS lane) · all **7** GitHub workflows plus `.gitlab-ci.yml` and
 > `lefthook.yml` (**12** CI files) · every `package.json` script · `src-tauri/build.rs` ·
@@ -236,7 +236,7 @@ invents. §4 says which to build first.**
 
 ### Can the primitive's signature make the wrong call impossible? — answered, and the answer is yes twice
 
-The [contract](../golden-path-contract.md) requires this before §9. **For this leaf there are two
+The contract requires this before §9. **For this leaf there are two
 type-level fixes, and one of them is already in the repo working correctly on a different variable —
 which is the strongest possible evidence it is obtainable rather than a wish.**
 
@@ -694,13 +694,13 @@ Three, each stack-free:
 > and the pipeline that feeds it exists only in a developer's memory.
 
 What follows are **one repo's proxies** for (A) and (B), and an explicit **refusal** for (C). Per the
-[portability test](../research/portability-test.md), a proxy does not travel: an adopting repo
+portability test, a proxy does not travel: an adopting repo
 inherits the three sentences and re-derives its own signals against its own configuration idiom. Each
 rule states the precondition its proxy depends on.
 
 ### Mechanism — census rules, not scripts
 
-Per the [contract](../golden-path-contract.md) §"Don't write a script", the ratcheting-baseline
+Per the contract §"Don't write a script", the ratcheting-baseline
 mechanism lives once at [`scripts/census/`](../../../scripts/census/), and `npm run census:check` is
 already inside `npm run check`, so this lane is live with no new wiring.
 
@@ -782,7 +782,7 @@ from a scratchpad filename unique to this composition (per the shared-scratchpad
   census OK — 3 rule(s), 10927 file-visits, 66 surviving violation(s) across 37 file(s).
 ```
 
-`963 walked` is exactly `rust.files` in [`shared-facts.json`](../shared-facts.json) and `4,829` of
+`963 walked` is exactly `rust.files` in `shared-facts.json` and `4,829` of
 the 4,982 JS-lane files are `frontend.tsFiles` — independently derived counts agreeing, which is the
 only reason to trust either. Exit 0, identical on repeat. **The two populations are disjoint and the
 separation is large**: 4 matches of the violating operator against **51 of the compliant one**, over

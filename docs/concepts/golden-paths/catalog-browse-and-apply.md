@@ -1,7 +1,7 @@
 # Golden path — Catalog browse and apply
 
 > Situation node: `product-surfaces` › `authoring-and-catalogs` › `catalog-browse-and-apply` ·
-> [situation spine](../situation-spine.md) · recurrence **19** · risk **medium** ·
+> situation spine · recurrence **19** · risk **medium** ·
 > sides: **client** (contradicted by measurement — see [§12.1](#121--sides-client-is-wrong-for-the-fifth-time-and-this-time-the-answer-is-in-a-build-script)) ·
 > convergence: **mixed** · dimensions: **ui · function · resilience · security**
 > Composed 2026-08-17 against `master` @ `2a874e692`.
@@ -302,7 +302,7 @@ Three live subscriptions sit at `last_cursor = '0'` with `events_relayed = 0`. T
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path, primitive
+Per the portability test the head carries no file path, primitive
 name or count. Each clause names its warrant.
 
 > **P1 — physics, and everything else is downstream of it.** **A catalog entry and an installed copy
@@ -511,11 +511,11 @@ pub fn increment_adoption_count(pool: &DbPool, entry: &CatalogEntryId, persona_i
 ```
 
 Held against the seven qualifications
-([doctrine §1](../golden-path-doctrine.md#1-prefer-a-type-over-a-gate--and-the-seven-qualifications)):
+(doctrine §1):
 
 - **Q1 — a type carries only what it encodes.** Honest limit, and it is the sharp one: `CatalogEntryId`
   makes the *argument* unmistakable and does **nothing** about the `WHERE test_case_name = ?` inside
-  the SQL string. That is [doctrine §1's "inside a SQL string literal"](../golden-path-doctrine.md#where-types-cannot-reach)
+  the SQL string. That is doctrine §1's "inside a SQL string literal"
   exactly. The type moves the error from *"the caller passed the wrong thing"* to *"the query joins
   on the wrong column"*, which is a smaller and more visible bug — but it does not delete it. **The
   column change is the fix; the newtype is what stops it coming back.**
@@ -1100,7 +1100,7 @@ walked against a floor of **4,000**, and `--check` exits **0** at the declared b
 The gate counts one shape in one language. Four things it cannot reach, in descending importance:
 
 - **The join key is not a type at all where it matters.** `WHERE test_case_name = ?` is a word inside
-  a SQL string literal ([doctrine §1](../golden-path-doctrine.md#where-types-cannot-reach), item 1).
+  a SQL string literal (doctrine §1, item 1).
   The `CatalogEntryId` newtype in §4 makes the *argument* unmistakable and leaves the *column* alone.
   **Change the column; add the newtype so it cannot drift back.**
 - **The version default is a one-line `Option` change and it unblocks two catalogs.**
@@ -1118,7 +1118,7 @@ The gate counts one shape in one language. Four things it cannot reach, in desce
 
 ## 12. Corrections to the brief
 
-Recorded per [doctrine §7](../golden-path-doctrine.md#7-corrections-are-the-deliverable).
+Recorded per doctrine §7.
 
 ### 12.1 — `sides: "client"` is wrong for the fifth time, and this time the answer is in a build script
 

@@ -1,10 +1,10 @@
 # Golden path — Cloud-auth degraded mode
 
-> Situation node: `backend-runtime/command-authorization/cloud-auth-degraded-mode` · [situation spine](../situation-spine.md)
+> Situation node: `backend-runtime/command-authorization/cloud-auth-degraded-mode` · situation spine
 > `sides: both` · recurrence **54** · dimensions: **resilience · security · function · ui · cost**.
 > Composed 2026-08-14 against `master` @ `2a874e692` from a ground-truth sweep of all **963**
 > `.rs` files under `src-tauri/` (**1,661** `#[tauri::command]` definitions parsed, not grepped —
-> the walk independently reproduces every figure in [`shared-facts.json`](../shared-facts.json)),
+> the walk independently reproduces every figure in `shared-facts.json`),
 > the whole identity/cloud corpus (`ipc_auth.rs`, `commands/infrastructure/auth.rs`,
 > `.../cloud.rs`, `.../cloud_sync.rs`, `.../gitlab.rs`, `cloud/{client,runner,config}.rs`,
 > `cloud/sync/**`, `cloud/remote_commands.rs`, `engine/{oauth_refresh,connector_strategy,api_proxy}.rs`,

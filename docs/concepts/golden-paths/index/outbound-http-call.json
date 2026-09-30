@@ -59,7 +59,6 @@
     "console/src/security/csp.ts": {"count":2,"sections":[7],"lines":["63-73"],"contexts":["(`console/src/security/csp.ts:63-73`), plus a `CSP_REPORT_ONLY` escape hatch at"],"resolved":false},
     "crossrefClient.ts": {"count":3,"sections":[0,6,7],"lines":["90"],"contexts":["`crossrefClient.ts:90` fetches `https://api.crossref.org`. `connect-src` in"],"resolved":false},
     "desktop_bridges.rs": {"count":5,"sections":[2,7],"lines":["800-826","800-809","828","841"],"contexts":["guards in the same function (`desktop_bridges.rs:800-826`)."],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[9],"contexts":["`rust.files` in [`shared-facts.json`](../shared-facts.json)) and all **4,829**"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "http_clients.rs": {
       "count": 5,
       "sections": [0,4,6],
@@ -81,6 +80,7 @@
     "providers/mod.rs": {"count":2,"sections":[],"lines":["28","49"],"contexts":["near-identical prose explaining why — `providers/mod.rs:28` *\"reqwest applies NO"],"resolved":false},
     "rules-outbound-http-call-probe.json": {"count":1,"sections":[9],"contexts":["composer (`rules-outbound-http-call-probe.json`) and run through the **real"],"resolved":false},
     "scripts/check-csp-hosts.mjs": {"count":1,"sections":[9],"contexts":["**`scripts/check-csp-hosts.mjs`** — parse `connect-src` out of `csp` and `devCsp`"]},
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["`rust.files` in `shared-facts.json`) and all **4,829**"],"resolved":false},
     "smee_relay.rs": {"count":4,"sections":[7,8],"lines":["272","322"],"contexts":["| redirect policy only (has the resolver) | 1 | `smee_relay.rs:272` |"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[],"contexts":["**Sweep size.** All **963** non-generated `.rs` files under `src-tauri/` (exactly"],"resolved":false,"isDir":true},
     "src-tauri/Cargo.toml": {"count":2,"sections":[],"lines":["153"],"contexts":["**three** of the workspace's five crates — `src-tauri/Cargo.toml:153`,"]},
