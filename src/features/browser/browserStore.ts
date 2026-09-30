@@ -25,6 +25,7 @@ import type { UnlistenFn } from '@tauri-apps/api/event';
 
 import * as browserApi from '@/api/browser';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 import type { BrowserSite, BrowserTab } from './types';
 
@@ -105,6 +106,13 @@ const EMPTY: BrowserSnapshot = {
 
 let state: BrowserSnapshot = EMPTY;
 
+/**
+ * A list result is dropped when a newer list, a live event, a local write,
+ * or a reset has minted since it started. Same guard as the twin lane.
+ */
+const tabsWins = createLatestWins();
+const sitesWins = createLatestWins();
+
 type Listener = () => void;
 const listeners = new Set<Listener>();
 
@@ -128,6 +136,8 @@ function commit(next: BrowserSnapshot): void {
 
 /** Test-only reset hatch — a module singleton with no way back is untestable. */
 export function resetBrowserStore(): void {
+  tabsWins.next();
+  sitesWins.next();
   stopScanPoll();
   void teardownTabs();
   state = EMPTY;
@@ -137,12 +147,15 @@ export function resetBrowserStore(): void {
 // --- sites --------------------------------------------------------------------
 
 export async function refreshSites(): Promise<void> {
+  const token = sitesWins.next();
   if (!state.sitesLoaded) commit({ ...state, sitesLoading: true });
   try {
     const rows = await browserApi.listSites();
+    if (!sitesWins.isCurrent(token)) return;
     commit(adoptSites(state, rows));
     syncScanPoll();
   } catch (err) {
+    if (!sitesWins.isCurrent(token)) return;
     commit({ ...state, sitesLoading: false, sitesLoaded: true });
     silentCatch('browser sites refresh')(err);
   }
@@ -150,12 +163,16 @@ export async function refreshSites(): Promise<void> {
 
 /** Adopt a row a mutating command answered with — no refetch round-trip. */
 export function putSite(row: BrowserSite): void {
-  commit(adoptSite(state, row));
+  sitesWins.next();
+  // Drop the loading flag a superseded list raised, or the first load stays
+  // spinning after the list result is discarded.
+  commit({ ...adoptSite(state, row), sitesLoading: false });
   syncScanPoll();
 }
 
 export function forgetSite(origin: string): void {
-  commit(dropSite(state, origin));
+  sitesWins.next();
+  commit({ ...dropSite(state, origin), sitesLoading: false });
   syncScanPoll();
 }
 
@@ -186,13 +203,16 @@ function stopScanPoll(): void {
 let tabsUnlisten: Promise<UnlistenFn> | null = null;
 
 export async function refreshTabs(): Promise<void> {
+  const token = tabsWins.next();
   commit({ ...state, tabsLoading: state.tabs.length === 0 });
   try {
     const tabs = await browserApi.listTabs();
+    if (!tabsWins.isCurrent(token)) return;
     commit(adoptTabs(state, tabs));
   } catch (err) {
-    commit({ ...state, tabsLoading: false });
+    if (!tabsWins.isCurrent(token)) return;
     silentCatch('browser tabs refresh')(err);
+    commit({ ...state, tabsLoading: false });
   }
 }
 
@@ -205,6 +225,7 @@ export async function refreshTabs(): Promise<void> {
 export async function initTabs(): Promise<void> {
   if (!tabsUnlisten) {
     tabsUnlisten = browserApi.listenTabs((tabs) => {
+      tabsWins.next();
       commit(adoptTabs(state, tabs));
     });
     tabsUnlisten.catch(silentCatch('browser tabs listen'));
