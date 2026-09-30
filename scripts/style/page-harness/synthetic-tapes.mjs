@@ -301,6 +301,10 @@ const BUILDERS = {
   ...Object.fromEntries(['tone/health-cards', 'tone/n8n-footer', 'tone/query-toolbar'].map((id) => [
     id, () => ({ version: 1, module: id, source: 'synthetic', recordedAt: RECORDED_AT, note: 'Synthetic props, no IPC.', calls: [] }),
   ])),
+  // Voice Studio v2 phase 1 (athenaTableSurfaces.tsx): the engine is a prop, no IPC.
+  ...Object.fromEntries(['athena/table/intro', 'athena/table/reach', 'athena/table/voice', 'athena/table/stt', 'athena/stage/reach', 'athena/stage/voice'].map((id) => [
+    id, () => ({ version: 1, module: id, source: 'synthetic', recordedAt: RECORDED_AT, note: 'Hand-built engine states, no IPC.', calls: [] }),
+  ])),
   // shoot.mjs --self-test probes: no data needed.
   '__selftest/empty': () => ({ version: 1, source: 'synthetic', recordedAt: RECORDED_AT, calls: [] }),
   '__selftest/console-error': () => ({ version: 1, source: 'synthetic', recordedAt: RECORDED_AT, calls: [] }),

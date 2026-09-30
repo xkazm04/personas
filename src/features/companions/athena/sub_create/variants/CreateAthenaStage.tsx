@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { TRANSITION_NORMAL, TRANSITION_SLOW } from '@/lib/utils/animation/animationPresets';
 import type { CreateAthenaVariantProps } from '../engine/createAthenaTypes';
 import { TypedLine } from '../shared/TypedLine';
+import { useLineDone } from '../shared/useLineDone';
 import { StageRail } from './stage/StageRail';
 import { StageCard } from './stage/StageCard';
 
@@ -16,24 +16,6 @@ import { StageCard } from './stage/StageCard';
  * done; on step change both fade out together (250 ms) before the next line
  * starts typing — `AnimatePresence mode="wait"` keyed on `line.id`.
  */
-const TYPING_CHARS_PER_S = 28;
-const REVEAL_FALLBACK_CAP_MS = 8_000;
-
-/**
- * `true` once the current line is fully visible. `TypedLine.onDone` is the
- * real signal; the timer is a belt-and-braces reveal for a line that never
- * reports (the WP0 stub) so the card can never be stranded behind a caption.
- */
-function useLineDone(lineId: string, text: string): [boolean, () => void] {
-  const [doneFor, setDoneFor] = useState<string | null>(null);
-  useEffect(() => {
-    const ms = Math.min(REVEAL_FALLBACK_CAP_MS, (text.length / TYPING_CHARS_PER_S) * 1000 + 500);
-    const timer = setTimeout(() => setDoneFor(lineId), ms);
-    return () => clearTimeout(timer);
-  }, [lineId, text]);
-  return [doneFor === lineId, () => setDoneFor(lineId)];
-}
-
 export default function CreateAthenaStage({ engine }: CreateAthenaVariantProps) {
   const { shouldAnimate } = useMotion();
   const { line, card } = engine;

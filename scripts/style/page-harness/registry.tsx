@@ -24,6 +24,7 @@ import { HOME_WELCOME_MODULES } from './homeWelcomeSurfaces';
 import { HOME_LEARNING_MODULES } from './homeLearningSurfaces';
 import { HOME_COCKPIT_MODULES } from './homeCockpitSurfaces';
 import { KIT_TILES_MODULES } from './kitTiles';
+import { ATHENA_TABLE_MODULES } from './athenaTableSurfaces';
 
 type Wrap = (children: ReactNode) => ReactNode;
 
@@ -81,6 +82,8 @@ export const MODULES: Record<string, HarnessModule> = {
   ...KIT_OVERVIEW_MODULES,
   // Kit grow-3: the dashboard tile on the recomposed Cockpit (kitTiles.tsx).
   ...KIT_TILES_MODULES,
+  // Voice Studio v2 phase 1: the Create Athena Table shell beside Stage (athenaTableSurfaces.tsx).
+  ...ATHENA_TABLE_MODULES,
   // Probes for `shoot.mjs --self-test`: each must make the shooter exit non-zero.
   '__selftest/empty': {
     load: async () => ({ default: () => <div /> }),

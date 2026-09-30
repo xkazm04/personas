@@ -44,7 +44,7 @@ Port the winner's look and layout as `variants/CreateAthenaTable.tsx` + `variant
 rendering the **existing** cards. No engine change.
 
 - **Switch:** `CreateAthenaPanel` gains a Stage | Table switch; **Stage stays the default**. The
-  choice is a per-viewer convenience (local storage, wrapped in try/catch).
+  choice is session state (in memory, resets to Stage on restart).
 - **Beats (left rail):** Hello (`intro`) -> Where I live (`footer_icon`, `orb`, `orb_place`,
   `chime`) -> Her voice (`voice_engine`, `voice_install`, `voice_pick`) -> Your voice (`stt`) ->
   Ready (`handoff`). A beat opens into its steps; done beats are a way back (`goTo`).
