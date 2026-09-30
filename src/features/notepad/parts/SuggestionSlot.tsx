@@ -55,7 +55,7 @@ function SuggestionBlock({ row, readOnly }: { row: NoteSuggestion; readOnly: boo
   const [editing, setEditing] = useState<string | null>(null);
   const [answer, setAnswer] = useState('');
 
-  const resolve = async (outcome: 'accepted' | 'rejected' | 'edited', bodyMd?: string) => {
+  const resolve = async (outcome: 'accepted' | 'rejected' | 'edited', bodyMd?: string): Promise<boolean> => {
     try {
       const next = await resolveNoteSuggestion(row.cardId, row.rowId, outcome, bodyMd);
       // The card's config is what decides which rows are still open, so the
@@ -64,19 +64,25 @@ function SuggestionBlock({ row, readOnly }: { row: NoteSuggestion; readOnly: boo
       markRowResolvedLocally(row.cardId, row.rowId, outcome);
       void refetchNote(next.id);
       setEditing(null);
+      return true;
     } catch (e) {
       toastCatch('notepad resolve suggestion')(e);
+      return false;
     }
   };
 
   const answerHer = async () => {
     const text = answer.trim();
     if (!text) return;
+    // The chat prompt is the answer leaving the pad. Queue it only after the
+    // row is actually accepted, or a failed write still injects the text and
+    // a retry injects it again.
+    const accepted = await resolve('accepted');
+    if (!accepted) return;
     useAthenaStore.getState().setPendingChatPrompt({
       text: `About the note suggestion "${row.bodyMd}" — ${text}`,
       source: 'notepad',
     });
-    await resolve('accepted');
   };
 
   return (
