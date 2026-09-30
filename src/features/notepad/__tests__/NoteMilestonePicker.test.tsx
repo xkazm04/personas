@@ -11,9 +11,25 @@ import type { DevMilestone } from '@/lib/bindings/DevMilestone';
 
 import { NoteMilestonePicker } from '../parts/NoteMilestonePicker';
 
-const { listMilestones } = vi.hoisted(() => ({ listMilestones: vi.fn() }));
+const { listMilestones, briefs } = vi.hoisted(() => ({
+  listMilestones: vi.fn(),
+  briefs: {
+    stale: false,
+    summaries: {} as Record<string, { milestoneId: string }>,
+  },
+}));
 
 vi.mock('@/api/devTools/milestones', () => ({ listMilestones }));
+
+vi.mock('../useNotepad', () => ({
+  useNotepadPlanSummaries: () => briefs.summaries,
+  useNotepadStatus: () => ({
+    loading: false,
+    loaded: true,
+    planSummariesStale: briefs.stale,
+    loadError: null,
+  }),
+}));
 
 const milestone = (projectId: string): DevMilestone => ({
   id: `m-${projectId}`,
@@ -44,6 +60,8 @@ function picker(projectId: string | null) {
 describe('NoteMilestonePicker', () => {
   beforeEach(() => {
     listMilestones.mockReset();
+    briefs.stale = false;
+    briefs.summaries = {};
   });
 
   it('says the list failed instead of claiming every milestone is taken, and asks again', async () => {
@@ -65,6 +83,18 @@ describe('NoteMilestonePicker', () => {
     expect(await screen.findByText('Mile p1')).toBeInTheDocument();
     expect(listMilestones).toHaveBeenCalledTimes(2);
     expect(screen.queryByText(/Could not list this project's milestones/)).toBeNull();
+  });
+
+  it('hides milestones when the brief index is stale instead of offering them as free', async () => {
+    briefs.stale = true;
+    listMilestones.mockResolvedValue([milestone('p1')]);
+    render(picker('p1'));
+    fireEvent.click(screen.getByTestId('notepad-milestone-picker'));
+
+    expect(await screen.findByText(/Which milestones already have a brief is out of date/)).toBeInTheDocument();
+    expect(screen.queryByText('Mile p1')).toBeNull();
+    expect(screen.queryByText(/Every open milestone already has a brief/)).toBeNull();
+    expect(screen.getByTestId('notepad-milestone-new')).toBeInTheDocument();
   });
 
   it('says none are free when the list really is empty', async () => {

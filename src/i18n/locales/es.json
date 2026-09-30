@@ -23411,7 +23411,8 @@
     "desk_key_open_project": "Abrir el proyecto",
     "desk_lane_brainstorm": "Carril Brainstorm",
     "desk_lane_plan": "Carril Plan",
-    "desk_room_back": "Escritorio"
+    "desk_room_back": "Escritorio",
+    "milestone_briefs_stale": "Está desactualizado qué hitos ya tienen un resumen, así que están ocultos. Aun así puedes crear uno desde esta nota."
   },
   "browser": {
     "webview": {

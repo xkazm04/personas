@@ -23411,7 +23411,8 @@
     "desk_key_open_project": "افتح المشروع",
     "desk_lane_brainstorm": "مسار العصف الذهني",
     "desk_lane_plan": "مسار الخطة",
-    "desk_room_back": "المكتب"
+    "desk_room_back": "المكتب",
+    "milestone_briefs_stale": "معرفة أي معلم لديه موجز بالفعل قديمة، لذا أُخفيت تلك المعالم. لا يزال بإمكانك بدء معلم من هذه الملاحظة."
   },
   "browser": {
     "webview": {

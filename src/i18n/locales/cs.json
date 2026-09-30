@@ -23411,7 +23411,8 @@
     "desk_key_open_project": "Otevřít projekt",
     "desk_lane_brainstorm": "Kolej Brainstorm",
     "desk_lane_plan": "Kolej Plán",
-    "desk_room_back": "Stůl"
+    "desk_room_back": "Stůl",
+    "milestone_briefs_stale": "Přehled toho, které milníky už mají zadání, je zastaralý, proto jsou skryté. Z této poznámky můžete i tak jeden založit."
   },
   "browser": {
     "webview": {

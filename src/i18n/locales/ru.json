@@ -23411,7 +23411,8 @@
     "desk_key_open_project": "Открыть проект",
     "desk_lane_brainstorm": "Дорожка мозгового штурма",
     "desk_lane_plan": "Дорожка плана",
-    "desk_room_back": "Стол"
+    "desk_room_back": "Стол",
+    "milestone_briefs_stale": "Сведения о том, у каких вех уже есть бриф, устарели, поэтому вехи скрыты. Вы всё равно можете начать одну из этой заметки."
   },
   "browser": {
     "webview": {

@@ -23968,6 +23968,7 @@ export type Translations = {
     milestone_unlink: string;
     milestone_unlink_blocked: string;
     milestone_list_failed: string;
+    milestone_briefs_stale: string;
     link_needs_project: string;
     certify_cut: string;
     ship: string;

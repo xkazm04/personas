@@ -221,5 +221,6 @@
   "desk_key_open_project": "プロジェクトを開く",
   "desk_lane_brainstorm": "アイデアレール",
   "desk_lane_plan": "プランレール",
-  "desk_room_back": "デスク"
+  "desk_room_back": "デスク",
+  "milestone_briefs_stale": "どのマイルストーンにすでにブリーフがあるかは古くなっているため、それらのマイルストーンは非表示になっています。このノートから新しく始めることはできます。"
 }

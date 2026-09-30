@@ -221,5 +221,6 @@
   "desk_key_open_project": "Projekt öffnen",
   "desk_lane_brainstorm": "Brainstorm-Schiene",
   "desk_lane_plan": "Plan-Schiene",
-  "desk_room_back": "Schreibtisch"
+  "desk_room_back": "Schreibtisch",
+  "milestone_briefs_stale": "Welche Meilensteine bereits ein Briefing haben, ist veraltet, daher sind sie ausgeblendet. Aus dieser Notiz kannst du trotzdem einen anlegen."
 }

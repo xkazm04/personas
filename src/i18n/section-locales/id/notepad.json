@@ -221,5 +221,6 @@
   "desk_key_open_project": "Buka proyek",
   "desk_lane_brainstorm": "Jalur brainstorming",
   "desk_lane_plan": "Jalur rencana",
-  "desk_room_back": "Meja"
+  "desk_room_back": "Meja",
+  "milestone_briefs_stale": "Milestone mana yang sudah punya ringkasan sudah usang, jadi mereka disembunyikan. Anda tetap bisa memulai satu dari catatan ini."
 }

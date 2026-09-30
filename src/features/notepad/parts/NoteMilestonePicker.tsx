@@ -24,7 +24,7 @@ import type { DevMilestone } from '@/lib/bindings/DevMilestone';
 import { silentCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
 
-import { useNotepadPlanSummaries } from '../useNotepad';
+import { useNotepadPlanSummaries, useNotepadStatus } from '../useNotepad';
 
 export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
   /** Null when the note has no project — the caller renders the blocked
@@ -38,6 +38,7 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
 }) {
   const { t } = useTranslation();
   const planSummaries = useNotepadPlanSummaries();
+  const { planSummariesStale } = useNotepadStatus();
   const [rows, setRows] = useState<DevMilestone[] | null>(null);
   // "The list could not be read" and "the project has no milestones" are two
   // different pickers: the first still offers "New milestone" but SAYS the
@@ -56,8 +57,13 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
 
   // Which milestones are already somebody's brief. Read from the store's plan
   // join rather than re-queried: it is the same fact and it is already live.
+  // A failed join keeps the last map and sets the stale flag. Filtering with
+  // that map would offer a milestone that gained a brief since the failure.
+  // The quest log already refuses a stale map; this menu does too.
   const linked = new Set(Object.values(planSummaries).map((s) => s.milestoneId));
-  const open = (rows ?? []).filter((m) => m.status !== 'shipped' && !linked.has(m.id));
+  const open = planSummariesStale
+    ? []
+    : (rows ?? []).filter((m) => m.status !== 'shipped' && !linked.has(m.id));
 
   const fetchRows = useCallback(() => {
     if (!projectId || rows) return;
@@ -117,6 +123,11 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
               {t.notepad.milestone_list_failed}
             </p>
           )}
+          {planSummariesStale && rows !== null && !listFailed && (
+            <p className="px-3 py-2 typo-caption text-status-warning">
+              {t.notepad.milestone_briefs_stale}
+            </p>
+          )}
           {open.map((m, i) => (
             <button
               key={m.id}
@@ -135,7 +146,7 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
           {/* An empty list is a real answer — every open milestone already has a
               brief, or the project has none — and it says so rather than
               leaving a menu with one row and no explanation. */}
-          {rows !== null && !listFailed && open.length === 0 && (
+          {rows !== null && !listFailed && !planSummariesStale && open.length === 0 && (
             <p className="px-3 py-2 typo-caption text-foreground/60">{t.notepad.milestone_none_free}</p>
           )}
         </div>
