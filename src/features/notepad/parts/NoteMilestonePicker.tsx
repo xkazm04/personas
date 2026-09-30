@@ -14,7 +14,7 @@
 // The list is fetched when the popover OPENS, not on mount. A pad full of
 // brainstorm notes should cost no milestone IPC at all, and the picker is the
 // one control that needs this data.
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Check, Plus, Target } from 'lucide-react';
 
 import { listMilestones } from '@/api/devTools/milestones';
@@ -22,6 +22,7 @@ import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DevMilestone } from '@/lib/bindings/DevMilestone';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 import { useNotepadPlanSummaries } from '../useNotepad';
 
@@ -40,8 +41,18 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
   const [rows, setRows] = useState<DevMilestone[] | null>(null);
   // "The list could not be read" and "the project has no milestones" are two
   // different pickers: the first still offers "New milestone" but SAYS the
-  // rest is missing, the second is simply short.
+  // rest is missing, the second is simply short. A failure leaves `rows` null
+  // so the empty-catalog sentence stays hidden and the next open asks again.
   const [listFailed, setListFailed] = useState(false);
+  const [wins] = useState(() => createLatestWins());
+
+  // The cache is the list for THIS project. Changing projects (or a list that
+  // resolves after that change) must not keep the previous project's rows.
+  useEffect(() => {
+    setRows(null);
+    setListFailed(false);
+    wins.next();
+  }, [projectId, wins]);
 
   // Which milestones are already somebody's brief. Read from the store's plan
   // join rather than re-queried: it is the same fact and it is already live.
@@ -50,13 +61,23 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
 
   const fetchRows = useCallback(() => {
     if (!projectId || rows) return;
+    const token = wins.next();
     listMilestones(projectId)
-      .then((list) => { setRows(list); setListFailed(false); })
+      .then((list) => {
+        if (!wins.isCurrent(token)) return;
+        setRows(list);
+        setListFailed(false);
+      })
       // A picker that could not list is not a failed dispatch — it still offers
       // "New milestone", which is the row that needs no list at all — but the
-      // failure is recorded so the empty list is never mistaken for "none".
-      .catch((e) => { silentCatch('notepad milestone picker')(e); setRows([]); setListFailed(true); });
-  }, [projectId, rows]);
+      // failure is recorded so it is never mistaken for "none", and `rows`
+      // stays unset so the next open tries again.
+      .catch((e) => {
+        if (!wins.isCurrent(token)) return;
+        silentCatch('notepad milestone picker')(e);
+        setListFailed(true);
+      });
+  }, [projectId, rows, wins]);
 
   return (
     <Listbox
@@ -68,7 +89,7 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
           type="button"
           disabled={disabled}
           aria-expanded={isOpen}
-          onClick={() => { fetchRows(); toggle(); }}
+          onClick={() => { if (!isOpen) fetchRows(); toggle(); }}
           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption border border-primary/20 text-foreground/80 transition-colors hover:bg-secondary/40 focus-ring disabled:is-disabled"
           data-testid="notepad-milestone-picker"
         >
@@ -114,7 +135,7 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
           {/* An empty list is a real answer — every open milestone already has a
               brief, or the project has none — and it says so rather than
               leaving a menu with one row and no explanation. */}
-          {rows !== null && open.length === 0 && (
+          {rows !== null && !listFailed && open.length === 0 && (
             <p className="px-3 py-2 typo-caption text-foreground/60">{t.notepad.milestone_none_free}</p>
           )}
         </div>
