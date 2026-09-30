@@ -41,7 +41,7 @@ import type { NoteStatus } from '@/lib/bindings/NoteStatus';
 import { mapWithConcurrency } from '@/lib/concurrency';
 import { EventName, typedListen } from '@/lib/eventRegistry';
 import { safeLocalGet, safeLocalRemove, safeLocalSet } from '@/lib/safeLocalStorage';
-import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
 
 import { noteOccupiesSlot } from './noteStatusMeta';
 import { emitGoalBanner, type GoalBannerKind } from './notifications/goalBanner';
@@ -80,6 +80,9 @@ let order: string[] = [];
 let saveStates: Record<string, NoteSaveState> = {};
 let loading = false;
 let loaded = false;
+/** Set when the note list itself failed and memory is still empty. Cleared
+ *  when a read lands, including a read that truly found nothing. */
+let loadError: string | null = null;
 /**
  * The milestone side of every LINKED note, keyed by note id.
  *
@@ -103,6 +106,7 @@ export interface NotepadStatus {
   loading: boolean;
   loaded: boolean;
   planSummariesStale: boolean;
+  loadError: string | null;
 }
 
 /** Pending debounce timer per note id. */
@@ -141,7 +145,7 @@ export const orderSnapshot = (): readonly string[] => (cache.order ??= [...order
 export const saveStatesSnapshot = (): Readonly<Record<string, NoteSaveState>> =>
   (cache.saveStates ??= { ...saveStates });
 export const statusSnapshot = (): Readonly<NotepadStatus> =>
-  (cache.status ??= { loading, loaded, planSummariesStale });
+  (cache.status ??= { loading, loaded, planSummariesStale, loadError });
 export const planSummariesSnapshot = (): Readonly<Record<string, NotePlanSummary>> =>
   (cache.planSummaries ??= { ...planSummaries });
 
@@ -448,6 +452,7 @@ export async function load(): Promise<void> {
     saveStates = Object.fromEntries(recovered.map((id) => [id, 'dirty' as NoteSaveState]));
     loading = false;
     loaded = true;
+    loadError = null;
     emit();
 
     // Push the recovered text back to SQLite immediately — recovery that only
@@ -455,7 +460,13 @@ export async function load(): Promise<void> {
     for (const id of recovered) void runSave(id);
   } catch (e) {
     loading = false;
-    loaded = true;
+    // A failed first read is not an empty pad. `loaded` stays false until a
+    // list actually lands, and the host offers retry instead of "Start a note".
+    // Notes already in memory are left where they are.
+    if (order.length === 0) {
+      loaded = false;
+      loadError = extractMessage(e);
+    }
     emit();
     toastCatch('notepad load')(e);
   }
@@ -773,6 +784,7 @@ export function __resetNotepadStoreForTests(): void {
   planSummariesStale = false;
   loading = false;
   loaded = false;
+  loadError = null;
   const flag = listenerFlag();
   flag.started = false;
   flag.unlisten = [];

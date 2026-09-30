@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { ArrowLeft, ChevronRight, NotepadText } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ChevronRight, NotepadText } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
@@ -130,7 +130,7 @@ export default function NotepadOverlayHost() {
   // revision, not per surface that reads it.
   useNotepadPlanLive();
   const saveStates = useNotepadSaveStates();
-  const { loading, loaded } = useNotepadStatus();
+  const { loading, loaded, loadError } = useNotepadStatus();
 
   const [projects, setProjects] = useState<DevProject[]>([]);
   const [archiveOpen, setArchiveOpen] = useState(false);
@@ -376,7 +376,17 @@ export default function NotepadOverlayHost() {
 
   const atCap = atCapNow();
   const showGhost = loading && notes.length === 0;
-  const showEmpty = loaded && !loading && notes.length === 0;
+  const showLoadError = !loading && notes.length === 0 && loadError != null;
+  const showEmpty = loaded && !loading && notes.length === 0 && !showLoadError;
+  const loadFailed = showLoadError ? (
+    <div className="flex-1 flex items-center justify-center">
+      <EmptyState
+        icon={AlertCircle}
+        title={loadError ?? ''}
+        action={{ label: t.common.retry, onClick: () => void load() }}
+      />
+    </div>
+  ) : null;
 
   const withPlan = (children: ReactNode) =>
     planNote ? (
@@ -483,7 +493,9 @@ export default function NotepadOverlayHost() {
       {withPlan(
         <>
       {view === 'overview' ? (
-        showEmpty ? (
+        showLoadError ? (
+          loadFailed
+        ) : showEmpty ? (
           <div className="flex-1 flex items-center justify-center">
             <EmptyState
               icon={NotepadText}
@@ -545,7 +557,9 @@ export default function NotepadOverlayHost() {
         ) : null
       )}
 
-      {view === 'overview' ? null : showEmpty ? (
+      {view === 'overview' ? null : showLoadError ? (
+        loadFailed
+      ) : showEmpty ? (
         <div className="flex-1 flex items-center justify-center">
           <EmptyState
             icon={NotepadText}

@@ -15,6 +15,7 @@ import {
   statusSnapshot,
   subscribeNotepad,
   type NoteSaveState,
+  type NotepadStatus,
 } from './notepadStore';
 import { useShipLiveRevision } from './plan/useShipLive';
 
@@ -39,7 +40,7 @@ export function useNotepadSaveStates(): Readonly<Record<string, NoteSaveState>> 
   return useSyncExternalStore(subscribeNotepad, saveStatesSnapshot, saveStatesSnapshot);
 }
 
-export function useNotepadStatus(): Readonly<{ loading: boolean; loaded: boolean; planSummariesStale: boolean }> {
+export function useNotepadStatus(): Readonly<NotepadStatus> {
   return useSyncExternalStore(subscribeNotepad, statusSnapshot, statusSnapshot);
 }
 

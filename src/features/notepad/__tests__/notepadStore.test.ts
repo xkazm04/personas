@@ -237,6 +237,27 @@ describe('load — shadow reconciliation', () => {
 
     expect(getNote('n1')?.bodyMd).toBe('from db');
   });
+
+  it('does not report a failed first load as an empty pad', async () => {
+    mocked.mockImplementation(async () => {
+      throw new Error('db down');
+    });
+    await load();
+
+    expect(openNotes()).toHaveLength(0);
+    expect(statusSnapshot().loading).toBe(false);
+    expect(statusSnapshot().loaded).toBe(false);
+    expect(statusSnapshot().loadError).toBe('db down');
+
+    rows = [note({ id: 'n1' })];
+    installIpc();
+    _clearAutoDedupForTests();
+    await load();
+
+    expect(statusSnapshot().loaded).toBe(true);
+    expect(statusSnapshot().loadError).toBeNull();
+    expect(openNotes()).toHaveLength(1);
+  });
 });
 
 describe('cap', () => {
