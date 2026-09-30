@@ -16,7 +16,7 @@
  * See `docs/features/browser.md`.
  */
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
-import { Globe } from 'lucide-react';
+import { AlertCircle, Globe } from 'lucide-react';
 
 import * as browserApi from '@/api/browser';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
@@ -206,6 +206,7 @@ export default function WebviewPage() {
                   value={address}
                   refusal={refusal}
                   sites={state.sites}
+                  emptyLabel={state.sitesError ? twinLane.messageOf(state.sitesError) : undefined}
                   onSelectSuggestion={goTo}
                   onSuggestionsOpenChange={setSuggestOpen}
                   onChange={(next) => {
@@ -263,7 +264,15 @@ export default function WebviewPage() {
         ) : null}
         <PendingApprovalBar tabId={state.activeTabId} />
         {state.tabs.length === 0 && !state.tabsLoading ? (
-          <EmptyState icon={Globe} title={v.empty_title} description={v.empty_description} />
+          state.tabsError ? (
+            <EmptyState
+              icon={AlertCircle}
+              title={twinLane.messageOf(state.tabsError)}
+              action={{ label: t.common.retry, onClick: () => void refreshTabs() }}
+            />
+          ) : (
+            <EmptyState icon={Globe} title={v.empty_title} description={v.empty_description} />
+          )
         ) : null}
         <PageSlot hasTab={state.tabs.length > 0} />
       </div>

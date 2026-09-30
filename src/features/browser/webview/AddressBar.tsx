@@ -34,6 +34,8 @@ interface AddressBarProps {
   refusal: string | null;
   /** The whitelist, as the store holds it — the only source of suggestions. */
   sites: readonly BrowserSite[];
+  /** Replaces the "nothing matched" line when the whitelist itself failed to load. */
+  emptyLabel?: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
   /** A suggestion was picked: fill the field AND navigate, in one act. */
@@ -49,6 +51,7 @@ export default function AddressBar({
   value,
   refusal,
   sites,
+  emptyLabel,
   onChange,
   onSubmit,
   onSelectSuggestion,
@@ -131,6 +134,7 @@ export default function AddressBar({
           {box.open && (
             <AddressSuggestions
               suggestions={box.suggestions}
+              emptyLabel={emptyLabel}
               activeIndex={box.activeIndex}
               listboxId={box.listboxId}
               optionId={box.optionId}

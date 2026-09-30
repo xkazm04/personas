@@ -24,7 +24,7 @@
 import type { UnlistenFn } from '@tauri-apps/api/event';
 
 import * as browserApi from '@/api/browser';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
 
 import type { BrowserSite, BrowserTab } from './types';
@@ -37,8 +37,12 @@ export interface BrowserSnapshot {
   sites: readonly BrowserSite[];
   sitesLoading: boolean;
   sitesLoaded: boolean;
+  /** Set when the last site list failed. Absent means the list succeeded or has not been asked. */
+  sitesError: string | null;
   tabs: readonly BrowserTab[];
   tabsLoading: boolean;
+  /** Set when the last tab list failed. A failed first load must not look like "no tabs". */
+  tabsError: string | null;
   /** The tab the address bar and page controls act on. */
   activeTabId: number | null;
 }
@@ -61,7 +65,7 @@ export function adoptTabs(prev: BrowserSnapshot, tabs: readonly BrowserTab[]): B
   const focused = tabs.find((tab) => tab.focused);
   const kept = tabs.some((tab) => tab.id === prev.activeTabId) ? prev.activeTabId : null;
   const activeTabId = focused?.id ?? kept ?? tabs[0]?.id ?? null;
-  return { ...prev, tabs, tabsLoading: false, activeTabId };
+  return { ...prev, tabs, tabsLoading: false, tabsError: null, activeTabId };
 }
 
 /** Replace one row in place (a command answered with the updated row). */
@@ -80,7 +84,7 @@ export function dropSite(prev: BrowserSnapshot, origin: string): BrowserSnapshot
 
 /** Adopt a freshly fetched list, newest server truth wins wholesale. */
 export function adoptSites(prev: BrowserSnapshot, sites: readonly BrowserSite[]): BrowserSnapshot {
-  return { ...prev, sites, sitesLoading: false, sitesLoaded: true };
+  return { ...prev, sites, sitesLoading: false, sitesLoaded: true, sitesError: null };
 }
 
 /** True while any row has a scan in flight — what drives the poll. */
@@ -99,8 +103,10 @@ const EMPTY: BrowserSnapshot = {
   sites: [],
   sitesLoading: false,
   sitesLoaded: false,
+  sitesError: null,
   tabs: [],
   tabsLoading: false,
+  tabsError: null,
   activeTabId: null,
 };
 
@@ -156,7 +162,9 @@ export async function refreshSites(): Promise<void> {
     syncScanPoll();
   } catch (err) {
     if (!sitesWins.isCurrent(token)) return;
-    commit({ ...state, sitesLoading: false, sitesLoaded: true });
+    // A failed list is not an empty whitelist. Leave sitesLoaded false so the
+    // next refresh still counts as a first load, and keep whatever rows we had.
+    commit({ ...state, sitesLoading: false, sitesError: extractMessage(err) });
     silentCatch('browser sites refresh')(err);
   }
 }
@@ -166,7 +174,7 @@ export function putSite(row: BrowserSite): void {
   sitesWins.next();
   // Drop the loading flag a superseded list raised, or the first load stays
   // spinning after the list result is discarded.
-  commit({ ...adoptSite(state, row), sitesLoading: false });
+  commit({ ...adoptSite(state, row), sitesLoading: false, sitesError: null });
   syncScanPoll();
 }
 
@@ -212,7 +220,7 @@ export async function refreshTabs(): Promise<void> {
   } catch (err) {
     if (!tabsWins.isCurrent(token)) return;
     silentCatch('browser tabs refresh')(err);
-    commit({ ...state, tabsLoading: false });
+    commit({ ...state, tabsLoading: false, tabsError: extractMessage(err) });
   }
 }
 

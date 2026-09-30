@@ -21,6 +21,8 @@ import type { OriginSuggestion } from './suggestOrigins';
 interface AddressSuggestionsProps {
   /** Empty means "nothing matched" — the popup then carries one dead line. */
   suggestions: readonly OriginSuggestion[];
+  /** When the site list failed, this replaces the "not on the whitelist" line. */
+  emptyLabel?: string;
   /** Which line `aria-activedescendant` points at, or -1 for none. */
   activeIndex: number;
   listboxId: string;
@@ -31,6 +33,7 @@ interface AddressSuggestionsProps {
 
 export default function AddressSuggestions({
   suggestions,
+  emptyLabel,
   activeIndex,
   listboxId,
   optionId,
@@ -56,7 +59,7 @@ export default function AddressSuggestions({
           className="px-3 py-2 typo-caption text-foreground"
           data-testid="webview-suggestion-none"
         >
-          {v.suggestions_none}
+          {emptyLabel ?? v.suggestions_none}
         </li>
       ) : (
         suggestions.map((suggestion, index) => (

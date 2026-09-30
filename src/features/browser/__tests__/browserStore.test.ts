@@ -15,8 +15,10 @@ const EMPTY: BrowserSnapshot = {
   sites: [],
   sitesLoading: false,
   sitesLoaded: false,
+  sitesError: null,
   tabs: [],
   tabsLoading: true,
+  tabsError: null,
   activeTabId: null,
 };
 

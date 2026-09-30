@@ -80,6 +80,11 @@ describe('Webview host visibility', () => {
     expect(app).toMatch(/<BrowserHostVisibility \/>/);
   });
 
+  it('a failed tab list is not painted as the no-tabs empty state', () => {
+    expect(page).toMatch(/tabsError/);
+    expect(page).toMatch(/t\.common\.retry/);
+  });
+
   it('routes a navigation refusal through messageOf', () => {
     expect(page).toMatch(/messageOf\(/);
     expect(page).not.toMatch(/String\(err\)/);

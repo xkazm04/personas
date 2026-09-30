@@ -167,6 +167,16 @@ describe('AddressBar combobox', () => {
     expect(onSuggestionsOpenChange).toHaveBeenLastCalledWith(false);
   });
 
+  it('replaces the dead line when the site list failed to load', () => {
+    const props = baseProps();
+    render(<Harness {...props} sites={[]} emptyLabel="Could not load the whitelist." />);
+    const input = screen.getByTestId('webview-address');
+    fireEvent.change(input, { target: { value: 'https://example.com' } });
+    expect(screen.getByTestId('webview-suggestion-none').textContent).toBe(
+      'Could not load the whitelist.',
+    );
+  });
+
   it('carries one dead line, not an empty popup, when nothing matches', () => {
     const { input } = setup('zzzznotasite');
     expect(screen.getByTestId('webview-suggestions')).toBeTruthy();
