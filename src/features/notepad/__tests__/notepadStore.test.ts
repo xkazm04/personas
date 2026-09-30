@@ -461,6 +461,48 @@ describe('refetchNote — the goal-implemented title card', () => {
     expect(getNote('n1')?.status).toBe('in_progress');
     expect(saveStateOf('n1')).toBe('dirty');
   });
+
+  it('adopts the sweeper row when the first read fails and the next one lands', async () => {
+    rows = [note({ id: 'n1', title: 'Ship the dock', status: 'in_progress' })];
+    await load();
+    let lists = 0;
+    mocked.mockImplementation(async (cmd: string) => {
+      if (cmd === 'notepad_list_notes') {
+        lists += 1;
+        if (lists === 1) throw new Error('list down');
+        return [note({ id: 'n1', title: 'Ship the dock', status: 'completed' })];
+      }
+      if (cmd === 'notepad_list_plan_summaries') return planRows;
+      return undefined;
+    });
+    _clearAutoDedupForTests();
+    await refetchNote('n1');
+
+    expect(lists).toBe(2);
+    expect(getNote('n1')?.status).toBe('completed');
+    expect(events).toHaveLength(1);
+    expect(events[0]?.kind).toBe('goal');
+  });
+
+  it('leaves the note when the sweeper read fails twice', async () => {
+    rows = [note({ id: 'n1', status: 'in_progress' })];
+    await load();
+    let lists = 0;
+    mocked.mockImplementation(async (cmd: string) => {
+      if (cmd === 'notepad_list_notes') {
+        lists += 1;
+        throw new Error('list down');
+      }
+      if (cmd === 'notepad_list_plan_summaries') return planRows;
+      return undefined;
+    });
+    _clearAutoDedupForTests();
+    await refetchNote('n1');
+
+    expect(lists).toBe(2);
+    expect(getNote('n1')?.status).toBe('in_progress');
+    expect(events).toHaveLength(0);
+  });
 });
 
 /**
