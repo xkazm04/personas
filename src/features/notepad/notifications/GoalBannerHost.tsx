@@ -41,18 +41,27 @@ const HEADLINE: Record<GoalBannerKind, (t: Translations) => string> = {
 export function GoalBannerHost() {
   const { t } = useTranslation();
   const reduced = useReducedMotion() ?? false;
-  const [current, setCurrent] = useState<GoalBannerEvent | null>(null);
+  // A sweep can cross two notes before the first card finishes. Replacing the
+  // visible event dropped the earlier ceremony and its status announcement.
+  // Append is pure, so a Strict Mode updater replay cannot enqueue twice; the
+  // index only moves from the hold timer, by a closed-over step.
+  const [events, setEvents] = useState<GoalBannerEvent[]>([]);
+  const [index, setIndex] = useState(0);
+  const current = events[index] ?? null;
   // Defensive lookup, like `noteStatusMeta`: the kind arrived on an event and a
   // build that has never heard of it must still render a headline.
   const title = current ? (HEADLINE[current.kind] ?? HEADLINE.goal)(t) : '';
 
-  useEffect(() => onGoalBanner(setCurrent), []);
+  useEffect(() => onGoalBanner((event) => {
+    setEvents((q) => [...q, event]);
+  }), []);
 
   useEffect(() => {
     if (!current) return;
-    const id = window.setTimeout(() => setCurrent(null), HOLD_MS);
+    const shown = index;
+    const id = window.setTimeout(() => setIndex(shown + 1), HOLD_MS);
     return () => window.clearTimeout(id);
-  }, [current]);
+  }, [current, index]);
 
   return (
     <>
