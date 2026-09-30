@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link2Off, ListChecks, Rocket, Sparkles, SquareTerminal, Target } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
@@ -123,7 +123,7 @@ export function NoteDispatchBar({
 
   /** Wrap a disabled control so the tooltip still surfaces — a disabled button
    *  fires no pointer events of its own (see `Tooltip.triggerFocusable`). */
-  const gated = (node: React.ReactNode, blocked: boolean, hint: string) =>
+  const gated = (node: ReactNode, blocked: boolean, hint: string) =>
     blocked ? (
       <Tooltip content={hint} triggerFocusable triggerClassName="inline-flex">
         <span className="pointer-events-none inline-flex">{node}</span>
@@ -131,6 +131,13 @@ export function NoteDispatchBar({
     ) : (
       node
     );
+
+  // Decompose, run, and cut all need the milestone view-model. While it is
+  // absent they are disabled, and a disabled button does not surface a tooltip
+  // on its own — Ship already explains this; these three were silent.
+  const planNotLoaded = !plan?.vm;
+  const planGate = (node: ReactNode) =>
+    gated(node, planNotLoaded, t.notepad.ship_blocked_criteria_none);
 
   // The cut's gate. `nogo` is the one verdict that refuses outright; `warn` and
   // `setup` are readings the operator is allowed to overrule, and the badge
@@ -240,47 +247,51 @@ export function NoteDispatchBar({
         {/* --- the plan rail: this note IS a milestone's brief --- */}
         {onPlan && (
           <>
-            <AsyncButton
-              variant="secondary"
-              size="sm"
-              disabled={!plan?.vm}
-              icon={<ListChecks className="w-3.5 h-3.5" />}
-              data-testid="notepad-decompose"
-              onClick={async () => plan?.decompose()}
-            >
-              {t.notepad.decompose_brief}
-            </AsyncButton>
-
-            <Tooltip content={t.notepad.execute_milestone_hint}>
-              <AsyncButton
-                variant="primary"
-                size="sm"
-                disabled={!plan?.vm}
-                isLoading={plan?.executing ?? false}
-                icon={<SquareTerminal className="w-3.5 h-3.5" />}
-                data-testid="notepad-execute-milestone"
-                // `plan.execute()` not `void plan.execute()`: AsyncButton
-                // disarms double-submit by awaiting the promise its onClick
-                // returns, and `void` throws that promise away.
-                onClick={() => plan?.execute() ?? Promise.resolve()}
-              >
-                {t.notepad.execute}
-              </AsyncButton>
-            </Tooltip>
-
-            {/* Cutting FREEZES the scope; it is never gated on the criteria,
-                which are measured AGAINST the cut. Shipping is the gated act. */}
-            {scoped && (
+            {planGate(
               <AsyncButton
                 variant="secondary"
                 size="sm"
-                disabled={!plan?.vm}
+                disabled={planNotLoaded}
+                icon={<ListChecks className="w-3.5 h-3.5" />}
+                data-testid="notepad-decompose"
+                onClick={async () => plan?.decompose()}
+              >
+                {t.notepad.decompose_brief}
+              </AsyncButton>,
+            )}
+
+            {planGate(
+              <Tooltip content={t.notepad.execute_milestone_hint}>
+                <AsyncButton
+                  variant="primary"
+                  size="sm"
+                  disabled={planNotLoaded}
+                  isLoading={plan?.executing ?? false}
+                  icon={<SquareTerminal className="w-3.5 h-3.5" />}
+                  data-testid="notepad-execute-milestone"
+                  // `plan.execute()` not `void plan.execute()`: AsyncButton
+                  // disarms double-submit by awaiting the promise its onClick
+                  // returns, and `void` throws that promise away.
+                  onClick={() => plan?.execute() ?? Promise.resolve()}
+                >
+                  {t.notepad.execute}
+                </AsyncButton>
+              </Tooltip>,
+            )}
+
+            {/* Cutting FREEZES the scope; it is never gated on the criteria,
+                which are measured AGAINST the cut. Shipping is the gated act. */}
+            {scoped && planGate(
+              <AsyncButton
+                variant="secondary"
+                size="sm"
+                disabled={planNotLoaded}
                 icon={<Rocket className="w-3.5 h-3.5" />}
                 data-testid="notepad-certify-cut"
                 onClick={async () => plan?.openCertify()}
               >
                 {t.notepad.certify_cut}
-              </AsyncButton>
+              </AsyncButton>,
             )}
 
             {cut && gated(

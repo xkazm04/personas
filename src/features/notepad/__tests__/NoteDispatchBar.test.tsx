@@ -203,6 +203,19 @@ describe('NoteDispatchBar — the verbs each state offers', () => {
     expect(screen.queryByTestId('notepad-unlink')).toBeNull();
   });
 
+  it('scoped: a plan verb that cannot run yet says the plan has not loaded', async () => {
+    bar({ note: planNote('scoped') });
+    for (const id of ['notepad-decompose', 'notepad-execute-milestone', 'notepad-certify-cut']) {
+      const button = screen.getByTestId(id);
+      expect(button).toBeDisabled();
+      const wrapper = button.closest('[aria-disabled="true"]');
+      expect(wrapper).not.toBeNull();
+      fireEvent.focus(wrapper!);
+      expect(await screen.findByText('The plan has not loaded yet.')).toBeInTheDocument();
+      fireEvent.blur(wrapper!);
+    }
+  });
+
   it('cut: Ship is refused while the plan has not loaded a verdict', () => {
     bar({ note: planNote('cut') });
     // No provider here means no milestone and therefore no verdict — and the
