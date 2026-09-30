@@ -230,6 +230,13 @@ export function listenTabs(handler: (tabs: BrowserTab[]) => void): Promise<Unlis
   return typedListen(EventName.BROWSER_TABS, handler);
 }
 
+/** One origin's controllability scan moved. The row list stays authoritative. */
+export function listenScan(
+  handler: (payload: { origin: string; status: string; tier: number | null }) => void,
+): Promise<UnlistenFn> {
+  return typedListen(EventName.BROWSER_SCAN, handler);
+}
+
 // --- refusals ---------------------------------------------------------------
 
 /**

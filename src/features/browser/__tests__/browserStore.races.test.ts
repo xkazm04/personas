@@ -11,6 +11,7 @@ vi.mock('@/api/browser', () => ({
   listSites: vi.fn(),
   listTabs: vi.fn(),
   listenTabs: vi.fn(),
+  listenScan: vi.fn(() => Promise.resolve(() => undefined)),
 }));
 
 vi.mock('@/lib/silentCatch', () => ({

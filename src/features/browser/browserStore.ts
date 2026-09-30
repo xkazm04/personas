@@ -14,13 +14,12 @@
 // not closing anybody's page. A module singleton keeps the last event payload
 // so a remount paints warm instead of re-ghosting (loading pattern v2, law 4).
 //
-// THE SCAN LANE POLLS, AND SAYS SO. WP3 had not landed `EventName.BROWSER_SCAN`
-// when this was written, so there is no event to subscribe to. While ANY row
-// reads `scan_status === 'running'` the store re-reads `browser_sites_list` on
-// a 2.5s tick and stops the moment none does. `browser_sites_list` is
-// authoritative for status, report and tier, so this is correct — just chattier
-// than the event will be. When the event lands, delete `startScanPoll` and
-// subscribe instead.
+// THE SCAN LANE LISTENS, AND POLLS SLOWLY AS A BACKSTOP. `browser-scan` fires
+// when a row moves. A failed emit only logs, and the row stays authoritative,
+// so while ANY row reads `scan_status === 'running'` the store still re-reads
+// `browser_sites_list` — on a 15s tick, not the old 2.5s one. The subscription
+// is opened on the first refresh, not only after a running row is already
+// visible, or the transition that finishes the scan is the one we miss.
 import type { UnlistenFn } from '@tauri-apps/api/event';
 
 import * as browserApi from '@/api/browser';
@@ -29,8 +28,8 @@ import { createLatestWins } from '@/stores/util/latestWins';
 
 import type { BrowserSite, BrowserTab } from './types';
 
-/** How often the scan lane re-reads rows while a scan is running. */
-export const SCAN_POLL_MS = 2500;
+/** Backstop while a scan is running. The `browser-scan` event is the fast path. */
+export const SCAN_POLL_MS = 15_000;
 
 /** The whole readable state. Snapshots hand back frozen-by-convention copies. */
 export interface BrowserSnapshot {
@@ -146,6 +145,7 @@ export function resetBrowserStore(): void {
   sitesWins.next();
   stopScanPoll();
   void teardownTabs();
+  teardownScan();
   state = EMPTY;
   for (const listener of [...listeners]) listener();
 }
@@ -153,6 +153,7 @@ export function resetBrowserStore(): void {
 // --- sites --------------------------------------------------------------------
 
 export async function refreshSites(): Promise<void> {
+  ensureScanListener();
   const token = sitesWins.next();
   if (!state.sitesLoaded) commit({ ...state, sitesLoading: true });
   try {
@@ -184,9 +185,31 @@ export function forgetSite(origin: string): void {
   syncScanPoll();
 }
 
-// --- scan poll ----------------------------------------------------------------
+// --- scan lane ----------------------------------------------------------------
 
 let scanTimer: ReturnType<typeof setInterval> | null = null;
+let scanUnlisten: Promise<UnlistenFn> | null = null;
+
+function ensureScanListener(): void {
+  if (scanUnlisten) return;
+  const pending = browserApi.listenScan(() => {
+    void refreshSites();
+  });
+  scanUnlisten = pending;
+  pending.catch((err: unknown) => {
+    silentCatch('browser scan listen')(err);
+    if (scanUnlisten === pending) scanUnlisten = null;
+  });
+}
+
+function teardownScan(): void {
+  const pending = scanUnlisten;
+  scanUnlisten = null;
+  if (!pending) return;
+  pending.then((unlisten) => unlisten()).catch((err: unknown) => {
+    silentCatch('browser scan unlisten')(err);
+  });
+}
 
 function syncScanPoll(): void {
   if (hasRunningScan(state.sites)) startScanPoll();
