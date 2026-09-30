@@ -66,8 +66,8 @@
         }
       ],
       "baseline": {
-        "files": 70,
-        "matches": 171
+        "files": 69,
+        "matches": 169
       },
       "floor": 4000
     },
@@ -103,8 +103,8 @@
         }
       ],
       "baseline": {
-        "files": 130,
-        "matches": 181
+        "files": 122,
+        "matches": 168
       },
       "floor": 2500
     },
@@ -132,8 +132,8 @@
         }
       ],
       "baseline": {
-        "files": 33,
-        "matches": 48
+        "files": 29,
+        "matches": 41
       },
       "floor": 4000
     },
@@ -316,8 +316,8 @@
         }
       ],
       "baseline": {
-        "files": 47,
-        "matches": 47
+        "files": 46,
+        "matches": 46
       },
       "floor": 4000
     },
@@ -344,8 +344,8 @@
         }
       ],
       "baseline": {
-        "files": 20,
-        "matches": 23
+        "files": 19,
+        "matches": 22
       },
       "floor": 2000
     },
@@ -384,8 +384,8 @@
         }
       ],
       "baseline": {
-        "files": 32,
-        "matches": 70
+        "files": 33,
+        "matches": 71
       },
       "floor": 900
     },
@@ -441,8 +441,8 @@
         }
       ],
       "baseline": {
-        "files": 37,
-        "matches": 55
+        "files": 36,
+        "matches": 54
       },
       "floor": 4000
     },
@@ -519,8 +519,8 @@
         }
       ],
       "baseline": {
-        "files": 37,
-        "matches": 43
+        "files": 36,
+        "matches": 42
       },
       "floor": 4000
     },
@@ -564,8 +564,8 @@
         "note": "RE-BASELINED 2026-09-24 by the style-unification Director on a git-archive HEAD export after c57032963: 731/1754 -> 12/15, every removed match traced to 937854f7d (dead-override codemod, 977 files). The remaining 15 are live overrides, most in src/features/fleet/monitor/grid/prototype/ (committed by another session in 96bbd8b20 while the codemod skipped it as dirty)."
       },
       "baseline": {
-        "files": 9,
-        "matches": 12
+        "files": 8,
+        "matches": 10
       },
       "floor": 2000
     },
@@ -593,8 +593,8 @@
         }
       ],
       "baseline": {
-        "files": 277,
-        "matches": 607
+        "files": 259,
+        "matches": 565
       },
       "floor": 4000
     },
@@ -634,8 +634,8 @@
         }
       ],
       "baseline": {
-        "files": 65,
-        "matches": 102
+        "files": 61,
+        "matches": 95
       },
       "floor": 4000
     },
@@ -685,8 +685,8 @@
         }
       ],
       "baseline": {
-        "files": 44,
-        "matches": 79
+        "files": 40,
+        "matches": 72
       },
       "floor": 4000
     },
@@ -727,8 +727,8 @@
         }
       ],
       "baseline": {
-        "files": 56,
-        "matches": 760
+        "files": 57,
+        "matches": 762
       },
       "floor": 1500
     },
@@ -749,8 +749,8 @@
         "description": "a connection-pool checkout (`state.db.get()`, `state.user_db.get()`, `user_db.get()`) inside src-tauri/src/commands/**. PROXY FOR the stack-free condition \"the transport/adapter layer acquires a persistence handle directly instead of delegating to the layer that owns data access\". The compliant shape is one line -- `repo::get_all_lean(&state.db)` (commands/core/personas.rs:44) -- which passes the POOL to the repository and never checks a connection out; the violating shape is `let conn = state.user_db.get()?;` followed by inline SQL (commands/companion/observability.rs:84-88). Measured in this repo: 134 checkouts across 46 of 299 command files; 88.1% are followed by a SQL literal or a rusqlite call within 900 chars; only 13.4% sit inside a #[cfg(test)] module; and 1,096 compliant repo:: delegations exist across 86 files, so the correct alternative is present and dominant. Convergence: all four repos in this fleet independently built this boundary and all four leak it (personas-web 6/11 routes, brainiac 20/42 SQL files outside its store crate, personas-cloud 1/8 routers) -- the condition is physics, not local taste. PRECONDITION: this proxy works because Personas' persistence handle is an r2d2 pool whose checkout is spelled `.get()` on a field ending in `db`. A repo using sqlx (`&pool` passed everywhere), an ORM session, or a DI-injected repository interface has the same condition wearing different markup and must re-derive its own proxy -- key on whatever the layer-crossing token is there, not on `.get()`. Legal destination: a function in src-tauri/db/ (the personas-db crate, 117 of 143 files already carry the SQL) called with `&state.db`."
       },
       "baseline": {
-        "files": 53,
-        "matches": 134
+        "files": 54,
+        "matches": 136
       },
       "floor": 200
     },
@@ -771,8 +771,8 @@
         "description": "a ts-rs-generated field typed `bigint`. PROXY FOR the stack-free condition \"a generated wire type declares a value the transport cannot carry\". ts-rs v10 maps i64/u64/CORRECTED 2026-08-14 (this sentence previously claimed usize/isize also map to bigint, which is FALSE and would rewrite correct fields): ts-rs maps i64 and u64 to bigint, but usize maps to number (verified: LedgerAnomalyScore.sample_count is `number`) and isize does not appear in any exported type.parse (which cannot produce a bigint). Verified from the workaround rather than assumed - src/api/companion.ts:744 guards with `typeof raw.totalSignalsCaptured === 'bigint'`, a branch that can never be taken at runtime, and its comment at :722-726 states the coercion exists because the binding uses bigint; src/features/agents/sub_deployment/components/cloud/CloudExecutionRow.tsx:31 writes Number(exec.durationMs) for the same reason. Precision is 100% by construction: every match was emitted by the generator and the argument applies to all of them identically. 288 are field declarations; the balance are tuple positions such as Array<[string, bigint]>, which are the same defect. PRECONDITION (must be re-derived per repo): this repo generates frontend types with ts-rs v10. A repo whose generator emits number or string for 64-bit integers, or which hand-authors its types, has this condition wearing different markup and scores zero here. LEGAL FIX, in order: (1) narrow the Rust field to i32/f64 where the value provably fits, which is the honest fix; (2) `#[ts(type = \"number\")]` where the Rust type must stay 64-bit and the value stays under 2^53 - 314 such pins already exist, core/src/models/execution.rs:36,38,43,46,55 being the densest; (3) for a value that genuinely exceeds 2^53, change the Rust field to String, because JSON has no other honest carrier. Never hand-author a shadowing TypeScript interface - src/api/companion.ts:705-714 is what that costs."
       },
       "baseline": {
-        "files": 134,
-        "matches": 280
+        "files": 135,
+        "matches": 281
       },
       "floor": 900
     },
@@ -914,8 +914,8 @@
         }
       ],
       "baseline": {
-        "files": 37,
-        "matches": 92
+        "files": 38,
+        "matches": 95
       },
       "floor": 900
     },
@@ -965,8 +965,8 @@
         }
       ],
       "baseline": {
-        "files": 19,
-        "matches": 20
+        "files": 18,
+        "matches": 19
       },
       "floor": 4000
     },
@@ -1158,7 +1158,7 @@
       },
       "baseline": {
         "files": 36,
-        "matches": 72
+        "matches": 73
       },
       "floor": 100
     },
@@ -1180,8 +1180,8 @@
         "description": "a literal `$` glyph immediately followed by an interpolation (`` `$${x.toFixed(2)}` ``) or by the shared <Numeric> primitive (`$<Numeric value={x} precision={4}/>`). PROXY FOR the stack-free condition: a monetary amount is composed at the call site out of a hard-coded currency glyph plus a number that was rounded by whoever wrote that line, so (a) the rounding contract is re-decided per call site, (b) the glyph cannot move to the position the locale requires, and (c) no currency other than USD can ever be represented. Precision measured 50/50 on a full read of every match: every one is a real money render, zero test-fixture or non-money hits. Two of the 50 are non-UI destinations (analyticsMiddleware.ts:33 writes a Sentry breadcrumb; knowledgeMiddleware.ts:33 builds an LLM prompt) and are left in deliberately — the rounding argument applies to them too and excluding two lines would cost more than it buys. Measured consequences in this repo: of the 40 `$${…}` sites, 22 round a sub-cent amount to a displayed `$0.00` (or `$0` at toFixed(0)) — FactoryOverviewTab.tsx:284 renders per-project spend at toFixed(0), so $0.49 of real spend reads as `$0`; and the 5 distinct precisions in flight (0,1,2,3,4 decimals) mean the same cost_usd field renders differently on two screens. The 10 `$<Numeric …>` sites are the sharper shape: the primitive IS imported, and the caller still hand-rolls the currency semantics around it (LlmTrackingCell.tsx:72 re-derives formatCost's 'auto' precision inline as `precision={spend >= 1 ? 2 : 4}`). PRECONDITION (measured, must be re-derived per repo): this repo denominates all money in USD, stores it as a float, and spells a currency render as a template literal starting with `$`. A repo that formats through Intl currency style, or uses a non-`$` symbol, or stores integer cents, scores zero while the condition is present — and the sibling personas-web, which has the identical idiom 11 times, ALSO has 0 `Intl.NumberFormat`, so the condition is convergent while this exact proxy is not portable to a repo that had adopted Intl. LEGAL FIX: `formatCost(usd, { language })` from @/lib/utils/formatters, or `<Numeric value={usd} unit=\"usd\" language={language} />` — both emit the currency glyph through Intl, so it lands where the locale puts it (`$1,234.50` en / `1.234,50 $` de / `US$1.234,50` id), and both carry the `<$0.01` sub-cent guard the hand-rolled sites lack."
       },
       "baseline": {
-        "files": 35,
-        "matches": 44
+        "files": 32,
+        "matches": 41
       },
       "floor": 4000
     },
@@ -1209,8 +1209,8 @@
         }
       ],
       "baseline": {
-        "files": 40,
-        "matches": 56
+        "files": 36,
+        "matches": 51
       },
       "floor": 4000
     },
@@ -1231,8 +1231,8 @@
         "description": "Every React escape-hatch into raw HTML. Proxy for: a string reaches the DOM as markup rather than as a text node. The population is small and fully enumerable (4 files), so this is pinned near zero as a review trigger, not a migration ratchet -- any new occurrence must be justified in review against the golden path."
       },
       "baseline": {
-        "files": 4,
-        "matches": 5
+        "files": 3,
+        "matches": 4
       },
       "floor": 4000
     },
@@ -1336,8 +1336,8 @@
         "description": "RECALL FIX 2026-08-14: the original pattern required toLocale(Date|Time)String, so a bare `new Date(x).toLocaleString()` was invisible — including RelativeTime.tsx:38, which renders the tooltip behind ~100 <RelativeTime> tags and is the most-rendered date in the app. Found by the tooltip composer critiquing a rule another path had already shipped. The fix is a date-specific alternative, NOT a relaxed (?:Date|Time)? — measured: 26 bare .toLocaleString() sites, only 12 are dates; the rest are token counts and KPI numbers owned by the numeric rules, and relaxing would have imported 14 false positives into a date rule. STILL INVISIBLE, stated rather than hidden: a Date held in a variable (`date.toLocaleString()`) cannot be distinguished from a number by any regex — that residue needs type information. a date/time formatting call whose locale argument is absent, `undefined`, or `[]` — three spellings of \"use whatever locale the operating system is set to\". PROXY FOR the stack-free condition: a moment is projected into a calendar and a clock using the locale of the machine the code runs on rather than the language the user chose in the application, so a user who set this app to Japanese on an en-US laptop reads `5/24/26` and a user who set it to English on a German laptop reads `24.05.26`. Verified against the app's own machinery: useTranslation() (src/i18n/useTranslation.ts:325) returns `{ t, tx, language }` over 14 shipped locales and i18nStore.ts:94 even mirrors the chosen language into the Rust backend — so the correct value is available at every one of these call sites and reaches exactly ONE of them (LiveRoadmapStatusPill.tsx:38). Measured population: a balanced-paren census of every toLocale*String / Intl.DateTimeFormat / Intl.RelativeTimeFormat first argument in all 4,829 src .ts+.tsx found 84 date-locale decisions — 76 host-OS, 6 hardcoded 'en-US', 1 parameterised-but-never-passed, 1 correct. This pattern covers 55 of the 76: `.toLocaleString(` is deliberately EXCLUDED because it is ambiguous between a Date and a number and would collide with number-and-cost-formatting.md's territory, which costs ~20 date sites of recall and buys 100% precision. Precision 55/55 on a full read of every match: every one is a date or time formatted for a locale the app did not choose. Two matches are non-product destinations (LabVersionsTable.tsx:298,312 stamp an exported comparison report; run-harness.ts:56 prints a harness console line) and are carried in the baseline rather than excluded, because a directory-level exemption for two lines adds a stale-exclude failure mode worth more than it saves. PRECONDITION (measured, must be re-derived per repo): this repo owns an app-level language, exposes it through one hook, and spells a date render as a toLocale*String method or an Intl constructor. A repo with no i18n system has the condition and no fix — brainiac/console has 3 such calls, zero locale channel, and nothing to wire; a repo that pins a literal locale instead scores zero here while being equally locale-blind — personas-web spells 4 of its 12 date-locale calls as 'en-US' and this pattern declines all four. LEGAL FIX: <RelativeTime timestamp={x}/> for elapsed, <AbsoluteTime timestamp={x} variant=\"datetime|date|time|compact\"/> for a fixed moment, or — for a raw Intl call that must stay raw — the `language` from useTranslation(), as LiveRoadmapStatusPill.tsx:38 does. NOTE THE DESTINATION IS NOT YET CORRECT BY DEFAULT: both primitives resolve their own locale from the host OS today (AbsoluteTime.tsx:51, RelativeTime.tsx:38), so routing a call site there buys correctness of instant, cadence and style and defers the language until §8 Gap 1 lands. Sequence Gap 1 before burning this baseline."
       },
       "baseline": {
-        "files": 40,
-        "matches": 51
+        "files": 36,
+        "matches": 46
       },
       "floor": 4000
     },
@@ -1359,8 +1359,8 @@
         "description": "a string interpolation closed by an English elapsed suffix and the word `ago`, or a bare `return 'just now'`. PROXY FOR the stack-free condition: the closed, universal vocabulary of elapsed time — a set every locale already has a canonical form for, including its plural rules and word order — is authored per call site in one natural language, so it can be neither translated nor made consistent with the other places that authored it. The interpolation anchor is load-bearing: it restricts matches to a LADDER RUNG (a computed count plus a unit) rather than to prose containing the word `ago`; dropping it to a bare \\bago\\b admits 11 more files of comments and sentences (measured). Measured population: 28 independent elapsed ladders exist in this repo, every one located and read — 12 hardcoded English (including lib/utils/formatters.ts:41, the SHARED one behind 100 <RelativeTime> tags and 69 direct calls), 4 unit-letter-only, 2 partly translated, 7 fully translated each with its OWN key namespace, and 3 using Intl.RelativeTimeFormat of which one passes the app language. The catalog side is the receipt: 48 rung strings across 14 namespaces, fully translated into all 13 non-English locales (611 strings for one four-rung vocabulary), spelled with 9 different placeholder names, ALREADY DRIFTED per locale (Czech `před {n}min` in plugins.fleet vs `před {minutes}m` in common.staleness), and 11 of the keys have no code consumer at all — 143 translated strings that render nowhere, invisible to check-coverage.mjs because they are present in every locale. Precision 47/47 on a full read: all 47 are English elapsed phrases. 45 of the 47 are ladder rungs whose fix is this path's; 2 (provenance.ts:78, populateDispatch.ts:124) are English sentences that happen to contain an elapsed phrase, whose fix is i18n-string-authoring.md's — recorded rather than excluded because both readings agree the string is wrong. Deliberately NOT matched: the English fallbacks behind a translated lookup (`t?.x ?? 'just now'`), because those render only when a key is missing. PRECONDITION (measured, must be re-derived per repo): this repo writes an elapsed label as a template literal ending in `ago` and its lowest rung as the literal `just now`. A repo whose ladder returns `il y a {n} min`, or spells the rung `Ns`/`Nm` with no word at all (this repo already has 4 such, and brainiac/console has 2 of 7), scores zero while the condition is present — which is why this rule is the SECOND of the two and not the first. LEGAL FIX, in order: (1) replace lib/utils/formatters.ts:41's ladder body with `new Intl.RelativeTimeFormat(activeLanguage(), { numeric: 'auto', style: 'narrow' })`, which retires 47 catalog keys across 14 locales and gets plural categories and word order right in languages nobody here speaks — LiveRoadmapStatusPill.tsx:30 is the working precedent and it also clamps the future, which 2 of these ladders fail to do (`-45s ago` at PersonaHealthDashboard.tsx:74 and StatusPageView.tsx:45); (2) then delete each local ladder in favour of <RelativeTime> or formatRelativeTime. Doing (2) first consolidates 28 English ladders into 1 English ladder, which is progress but not a fix."
       },
       "baseline": {
-        "files": 9,
-        "matches": 23
+        "files": 8,
+        "matches": 19
       },
       "floor": 4000
     },
@@ -1426,8 +1426,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 441,
-        "matches": 813
+        "files": 409,
+        "matches": 759
       },
       "floor": 2000
     },
@@ -1499,8 +1499,8 @@
         }
       ],
       "baseline": {
-        "files": 34,
-        "matches": 34
+        "files": 35,
+        "matches": 35
       },
       "floor": 4000
     },
@@ -1707,8 +1707,8 @@
         }
       ],
       "baseline": {
-        "files": 48,
-        "matches": 105
+        "files": 47,
+        "matches": 99
       },
       "floor": 4000
     },
@@ -1756,8 +1756,8 @@
         "description": "an identifier naming a monetary quantity (cost/Cost/spend/Spend) collapsed to the literal 0 by a zero-default operator (`unwrap_or(0`, `unwrap_or_default()`, `?? 0`, `|| 0`). PROXY FOR the stack-free condition: *unknown* and *free* are rendered as the same value, so a total that omits a call is indistinguishable from one that includes a free call, and any ceiling computed from that total silently rises. Precision measured 25/25 on a full read of every match. The two highest-severity are engine/background.rs:2510 and engine/mod.rs:2778, both `get_monthly_spend(...).unwrap_or(0.0)` — a database error there reads as '$0 spent this month' and OPENS the monthly budget cap, so the failure mode of the measurement becomes a bypass of the control. Seven more are DB row-mappers (`row.get::<_, Option<f64>>(\"cost_usd\")?.unwrap_or(0.0)`) that destroy a NULL the nullable column was holding correctly; the remainder are TS reducers and adapters where a span, day-bucket or dashboard field of unknown cost contributes 0 to a displayed or gated total (ChainSpanRow/useChainTrace feed the chain-cost accumulator that CHAIN_MAX_COST_USD gates). CASE-SENSITIVITY IS LOAD-BEARING: an `i` flag matches `haSPENDing`, admitting six `hasPending = (x?.length ?? 0)` false positives in src/features/agents/sub_glyph — do not add it. PRECONDITION (measured, must be re-derived per repo): this repo names money with the tokens cost/spend, expresses absence as Rust `Option` or TS `null|undefined`, and spells the collapse with `unwrap_or`/`??`/`||`. A repo naming money `amount`/`price`/`charge`, or using a Money newtype with a total function, scores zero while the condition is present — and the sibling `personas-cloud` has the identical defect spelled `costUsd: msg.totalCostUsd ?? 0` (dispatcher.ts:461) feeding its own budget gate, while `brainiac` refuses it in a comment (providers/openai.rs:196) and has no dollar field to falsify. LEGAL FIX: keep the money `Option<f64>` / `number | null` from the parse site to the column (both ends already are — it is the carrier struct in between that destroys it), and make the consumer handle absence explicitly. For a spend read that gates a budget, fail CLOSED: propagate the error rather than substituting 0."
       },
       "baseline": {
-        "files": 16,
-        "matches": 18
+        "files": 15,
+        "matches": 17
       },
       "floor": 4000
     },
@@ -1810,8 +1810,8 @@
         }
       ],
       "baseline": {
-        "files": 6,
-        "matches": 13
+        "files": 7,
+        "matches": 15
       },
       "floor": 900
     },
@@ -1851,8 +1851,8 @@
         }
       ],
       "baseline": {
-        "files": 78,
-        "matches": 111
+        "files": 76,
+        "matches": 109
       },
       "floor": 4000
     },
@@ -1874,8 +1874,8 @@
         "description": "A `copyText(...)` call in STATEMENT position — it begins its line (after optional indentation, `await`, `void`, or an inline `try {`) — so the `Promise<boolean>` it returns is bound to nothing and the caller cannot distinguish a completed copy from a refused one. PROXY FOR the stack-free condition \"a copy affordance decides what to tell the user without knowing whether the write succeeded, so the confirmation is causally downstream of the click rather than of the result\". WHY THIS IS THE CONDITION AND NOT PEDANTRY, executed rather than reasoned: `copyText` (useCopyToClipboard.ts:11-19) catches internally and NEVER REJECTS. Run under Vitest+jsdom with navigator.clipboard.writeText stubbed to throw NotAllowedError, `copyText` did not throw and resolved `false`; with navigator.clipboard set to undefined (the non-secure-context case) it caught the synchronous TypeError and resolved `false`. Consequently `await copyText(x).then(f).catch(g)` runs f and NEVER g — measured handler order on failure is exactly [\"THEN-RAN\"] — so every try/catch and every .catch() written around a copyText call in this repo is UNREACHABLE code that reads as failure handling. 18 of the 32 matched sites go on to claim success (setCopied(true), addToast(...,'success'), or PrBridge's markDone() advancing a workflow checkpoint) on a clipboard that may be empty. LEGAL DESTINATIONS, all three of which this pattern leaves unmatched: (1) `<CopyButton text={...} />` — the component gates its flash on the resolved boolean (CopyButton.tsx:62-67 plus useCopyToClipboard.ts:42-47); (2) `useCopyToClipboard()` / `useKeyedCopyFlag()` — both write `.then((ok) => { if (!ok) return; ... })`; (3) a bound direct call, `const ok = await copyText(x); if (!ok) return;` (ChatMessageContent.tsx:70-74, DevInspector.tsx:45-46). NO EXCLUDE LIST BY DESIGN: the two primitives that legitimately call copyText are spared by the negative lookahead because their `.then` callbacks DECLARE a parameter — i.e. they are spared for reading the boolean, not for their filename. Deleting `ok` from either callback would make it match, which is the correct behaviour and is the proof the matcher keys on the condition rather than on a token. TWO INDEPENDENT IMPLEMENTATIONS RECONCILE: a prefix-context classifier and a statement-shape scanner over the same corpus disagreed on exactly 4 sites, all four `.then(() => ...)` chains with a zero-arity callback; hand-adjudication ruled all 4 as DISCARDED (a zero-arity `.then` cannot read the boolean) and both implementations now agree at 32. PRECISION on the stated condition is 32/32 — every match is a call whose boolean is bound to nothing. Four of the 32 are clipboard WIPES rather than copies (BundleExportDialog.tsx:30,44 and FieldCaptureHelpers.tsx:105,113, all `copyText('')`); they are reported as true positives, not exempted, because not knowing whether a secret wipe landed is the same defect pointed the other way. PRECONDITION (must be re-derived per repo): this repo HAS a clipboard chokepoint named `copyText`, enforced by custom/prefer-shared-clipboard at eslint.config.js:109 — 2 production navigator.clipboard.writeText calls in 4,830 files. A repo without a chokepoint wears the identical condition on raw `navigator.clipboard.writeText(...)` calls and scores ZERO here while being fully affected: measured, personas-web has 11 raw write sites, 0 helpers, and 2 confirmed optimistic-success paths plus 4 silent-failure paths; brainiac/console has 4 raw sites and 0 helpers. Such a repo should re-key this signal on its own raw API call in statement position. Do NOT silence a match by adding a try/catch — that is the defect, not the fix; bind the result, or take the type change in the golden path's §9."
       },
       "baseline": {
-        "files": 17,
-        "matches": 27
+        "files": 16,
+        "matches": 26
       },
       "floor": 4000
     },
@@ -1943,8 +1943,8 @@
         "description": "a `loop {` whose FIRST statement is a bare, un-raced time wait — an Interval tick, a tokio sleep, or a blocking thread::sleep awaited on its own rather than inside a `tokio::select!` that also arms a stop signal. For the whole interval nothing can reach the loop: app exit, a scheduler stop, a cancellation token and a user Stop all wait the timer out. PROXY FOR the stack-free condition 'a repeating unit of work no stop can reach'; the compliant form in this stack opens with `tokio::select!` racing the wait against a cancellation token, a shutdown receiver or an OS signal (`daemon_bin.rs:167`, `p2p/periodic.rs:94`)"
       },
       "baseline": {
-        "files": 12,
-        "matches": 13
+        "files": 13,
+        "matches": 14
       },
       "floor": 900
     },
@@ -2117,8 +2117,8 @@
         "$comment": "Recall is deliberately partial: it cannot see a toggle whose button lives in a child component while the state lives in the parent, nor a non-button disclosure. Both are stated in the golden path rather than papered over."
       },
       "baseline": {
-        "files": 47,
-        "matches": 50
+        "files": 40,
+        "matches": 42
       },
       "floor": 2000
     },
@@ -2140,8 +2140,8 @@
         "description": "The semantic body-text token composited toward the canvas at 45% alpha or less. PROXY FOR the stack-free condition: TEXT HIERARCHY EXPRESSED AS ALPHA ON THE BODY-TEXT TOKEN, TUNED ON ONE THEME FAMILY AND SHIPPED TO ALL OF THEM. Computed, not asserted: on the three light themes this repo ships, text-foreground at 45% alpha measures 2.65-2.93:1 across every configuration the app can be in (canvas and card surfaces, all three brightness levels of the Appearance setting) - below the 3:1 AA-large floor as well as the 4.5:1 AA floor, so no font size rescues it. The same class measures 4.52-4.94:1 on all eight dark themes, which is why it was authored and why it survives review. 45 is the highest alpha at which the failure is unconditional; 50-60 also fail AA on every light configuration but can clear 3:1 for large text, so they are excluded to keep precision at 100% of the WCAG floor that applies. Measured precision 94.0% (23 of 385 are aria-hidden decorative marks, WCAG-exempt but still 2.4:1). PRECONDITION: this repo expresses alpha with Tailwind's /N modifier on a CSS-variable-backed colour token, and renders light themes through a global brightness(0.82) filter that lowers their contrast further. A repo whose light theme is a separate stylesheet, or that has no light theme, must re-derive the proxy - the condition is the alpha, not the slash. The legal fix is bare text-foreground with hierarchy carried by the typo-* scale, per Design.md principle 4."
       },
       "baseline": {
-        "files": 146,
-        "matches": 312
+        "files": 140,
+        "matches": 291
       },
       "floor": 4000
     },
@@ -2288,8 +2288,8 @@
         "description": "a binding NAMED max* assigned the FIRST ELEMENT of a collection, AND (backreference) that same binding used as a divisor within ~2500 chars. The consequent is required so the match is a DENOMINATOR and not any first row: `const topRow = rows[0]` taken for display cannot match. The name+index mismatch is the defect — the binding claims an extremum and holds an ordinal, so the bar's geometry is correct only while an ORDER BY the component never sees keeps holding (llm_spend.rs:213, metrics.rs:1383, FactoryObservabilityTab.tsx:95 — only the last is in the same file). Measured against the live database with that order inverted, one row computes width 454%, which overflow-hidden clips to an ordinary full bar with no error anywhere. Math.max(1, ...rows.map(f)) is unconditionally correct and one line. Condition proxied: the denominator is an ordinal, not an extremum. An adopting repo must re-derive this proxy for its own idiom (rows.at(0), const [first] = rows, sorted.shift(), head(rows), a backend-supplied max column)."
       },
       "baseline": {
-        "files": 4,
-        "matches": 4
+        "files": 3,
+        "matches": 3
       },
       "floor": 4000
     },
@@ -2443,8 +2443,8 @@
         "description": "an update*(...) call whose INLINE object-literal argument carries two or more properties whose entire value is the literal `null`. PROXY FOR the stack-free condition: a client sends a stored field a value it did not get from the user - a placeholder invented to satisfy a type that requires every field - so the payload is a record of the client's state rather than a diff of the user's edits. TWO is the discriminating threshold and is not arbitrary: one null is a plausible deliberate clear, two or more is blank-filling. EXECUTED, not argued: replaying serde_util.rs:24-30 (double_option) and macros.rs:45-51 (push_field_param!(.., clone)) against a real 18-key metadata blob from a read-only copy of the live database shows `metadata: null` clears all 18 keys (including oauth_token_expires_at, whose absence reintroduces the daily-401 documented at commands/credentials/crud.rs:124-127) while the same payload with the key OMITTED loses zero; and replaying triggers.rs:425-432 + 449-450 shows `next_trigger_at: null` writes SQL NULL *and* defeats the recompute guard, because that guard tests input.next_trigger_at.is_none() and an explicit null deserializes to Some(None), whose is_none() is false - after which get_due (triggers.rs:1590-1596, the only source of scheduler work, with no repair sweep anywhere) can never select the row again. Measured 2026-08-15 at HEAD: 12 matches across 9 files, ALL TWELVE OPENED AND CONFIRMED (precision 12/12), commentMatchesSkipped 0, over 4829 files walked. Reconciles with two independent AST/text implementations that agreed exactly on the 7 sites nulling a double_option field. TWO FALSE-POSITIVE FAMILIES ARE EXCLUDED BY CONSTRUCTION rather than by allowlist: (a) local React state setters - updateStatus(name, {testing: true, result: null}) at features/agents/sub_connectors/libs/useConnectorStatuses.ts:109,241, where result: null is a real value - are removed by tempering the pre-brace span with [^;{}>], which refuses an arrow-function body (`=> {`) and also removes updateSessionInState(state, id, (sess) => {..}) in stores/slices/agents/matrixBuildSlice.ts (3 matches); (b) ternary else-branches - `targetValue: typeof tv === 'number' ? tv : null` at features/teams/sub_kpis/KpiSimSuggestions.tsx:109 reads as `tv : null` to a naive matcher - are removed by requiring every null property to be delimited by the object's `{` or a `,`, which a ternary's `?` is not. NOT EVERY MATCH IS A LIVE BUG AND THE RULE DOES NOT CLAIM SO. The 12 break down exactly: SIX null a field carrying #[serde(default, deserialize_with = \"double_option\")] and destroy data today - useCredentialRename.ts:48, SchemaManagerModal.tsx:58 and credentialSlice.ts:189 clear persona_credentials.metadata; useScheduleActions.ts:112, useScheduleActions.ts:134 and useAutomationSuggestions.ts:85 clear persona_triggers.next_trigger_at. TWO are the lost-update sites - useCredentialTags.ts:26 and PlaygroundHeader.tsx:39 null only plain Option<T> fields (harmless) but round-trip the metadata blob from a stale client copy, which the type widening does NOT fix (see the golden path's P1-1; replay loses 3 of 18 keys). FOUR are latent - useScheduleActions.ts:195 and :229 null only plain-Option fields, and RecipeInputSection.tsx:54 (names 15 of 15 fields to change one) and WebhookSubscriptionsPanel.tsx:138 (names 7 of 7 to toggle a boolean) target types with ZERO double_option fields, so every null is read as skip. Those four are one serde attribute away from being data-loss bugs, and whoever adds that attribute will be editing a Rust file and will not see these call sites. 6 + 2 + 4 = 12. It is a RATCHET on a construction that is removable in every case. DISCLOSED RECALL GAPS, both structural: (1) 12 of the 40 production call sites hoist the payload into a variable and pass the identifier - recipes/sub_editor/components/RecipeEditor.tsx:108 is a blank-filled payload spelled exactly that way - and no call-site-anchored signal can see them, a ~30% blind spot that needs type information to close; (2) a placeholder spelled as an expression rather than a bare literal is invisible - stores/slices/pipeline/triggerSlice.ts:152-157 is a LIVE data-loss site with only one bare null (`next_trigger_at: null`) beside `?? null` and `? : null` siblings, and loosening the threshold to one null recovers it only at 88% precision (2 FPs of 17), which is worse than no gate. PRECONDITION (must be re-derived per repo): this repo names its mutation functions update<Entity>, passes a plain object literal as the payload argument, and generates required-everything update types via ts-rs, so the blank-filling is visible as text. A repo that takes one request body per endpoint, spells the tri-state as zod .nullable().optional(), or patches through an ORM has the SAME condition wearing markup this pattern cannot see and scores a structural zero. POSITIVE CONTROL: the identical anchors pointed at the COMPLIANT form (an update* payload literal containing no null at all) match 105 times across 56 files, so the rule discriminates on the blank-filling shape rather than on the token `update` - 10.3% of inline update payloads are blank-filled and 89.7% are not. LEGAL FIX, in order: (1) widen the api adapter to Partial<Update*Input> - src/api/agents/automations.ts:55 and src/api/pipeline/teams.ts:40 are the shape to copy, and their doc comments explain why omission is the only correct spelling of leave-alone - then delete the placeholder keys at the call site; (2) for a JSON blob column do NOT round-trip it from the client, send a patch and let the server merge in a transaction - src/api/vault/credentials.ts:29-30 -> db/src/repos/resources/credentials.rs:743-759 is the primitive and features/vault/shared/hooks/health/useCredentialHealth.ts:183 its only consumer; (3) the durable fix is an operation union so an intent carries only its own fields - src/api/agents/personas.ts:320-333, whose surface has 13 double_option fields, ~39 call sites and ZERO deviations. Do NOT silence a match by hoisting the same object into a variable (that hides it from the rule without fixing it) or by replacing `null` with `undefined` (JSON.stringify drops it, which happens to be correct, but the next author will read the two as interchangeable and they are not). END OF LIFE: this rule is designed to reach zero - all 12 are removable. When it does the runner fails structurally on zero-matches BY DESIGN: DELETE the rule then, do not baseline it at 0."
       },
       "baseline": {
-        "files": 2,
-        "matches": 2
+        "files": 1,
+        "matches": 1
       },
       "floor": 3000
     },
@@ -3025,8 +3025,8 @@
         "description": "An outbound-URL affordance routed through a door this build does not implement: `target=\"_blank\"` and `window.open()` are both suppressed because no `on_new_window` handler is installed (wry-0.55.1 src/webview2/mod.rs:781 sets SetHandled(true) with no new window; measured live: window.open -> null), and `@tauri-apps/plugin-shell` has no Rust crate in Cargo.lock and no `shell:` permission in capabilities/. The only wired doors are the `open_external_url` / `open_local_path` IPC commands."
       },
       "baseline": {
-        "files": 32,
-        "matches": 37
+        "files": 30,
+        "matches": 35
       },
       "floor": 4000
     },
@@ -3048,8 +3048,8 @@
         "description": "JSON.parse of a blob field on an entity or IPC record, asserted straight into a named type — the cast IS the validation. PROXY FOR the stack-free condition: a definition the app did not author becomes app state without being reconstructed against a closed vocabulary. Measured 2026-08-16 at 629a914af: 16 matches / 15 files, against 26 matches / 25 files for the compliant form (`: unknown = JSON.parse(`) — same anchor, disjoint by construction, 319 JSON.parse occurrences total in 4,829 files. PRECISION 15/16 hand-read (each parses a model-composed spec, an imported definition, an outside-CLI ingest blob, or a persona design_context; the one borderline is useEngineCapabilities.ts:60). RECALL is deliberately partial: requiring a MEMBER-EXPRESSION argument excludes the localStorage-hydration arm by construction (0 file overlap with raw-web-storage, verified) at the cost of missing the three n8n file/paste/URL import hooks, which bind the text to a local first. Widening to any expression gives 68 matches at ~44% precision. THE ARGUMENT MATCH MUST NOT BE A CONSUMING WILDCARD: a `[\\s\\S]{0,300}?` window slid across statement boundaries and flagged lib/channel/teamBridge.ts:42 — the exemplar of the COMPLIANT pattern — as a violation. CORRECT END STATE is 0, at which point DELETE this rule rather than baselining it at zero. PRECONDITION (re-derive per repo, do NOT port): this repo spells the defect as a TS type assertion on a parsed JSON blob column. In Rust it wears serde_json::Value + .get(), in Python a Pydantic model never fed the body, in Next.js `(await res.json()) as T` — this pattern scores ZERO on all three."
       },
       "baseline": {
-        "files": 13,
-        "matches": 13
+        "files": 12,
+        "matches": 12
       },
       "floor": 4000
     },
@@ -3479,8 +3479,8 @@
         "description": "A spawn-family call in STATEMENT POSITION (preceded by ; { or }, so its JoinHandle is created and destroyed in the same statement) whose body is an INLINE async block or closure, and which contains no panic boundary (AssertUnwindSafe / catch_unwind / is_panic) within 2500 characters. PROXY FOR the stack-free condition: the only object that can report a task's abrupt death is discarded at the moment the task is created, so 'finished', 'crashed' and 'cancelled' become one observable — nothing. MEASURED 2026-08-16 at 17d059b1f over 963 .rs files: 169 matches across 86 files, commentMatchesSkipped 0. TWO INDEPENDENT IMPLEMENTATIONS — a comment/string-blanking Rust scanner with paren matching and brace-matched #[cfg(test)] exclusion, and the census engine — agree on 211 of 211 sites (ZERO membership disagreement) and on 210 of 211 classifications. AUDIT OF THE 169: 159 true production violations, 9 #[cfg(test)] sites the engine cannot exclude by range (subscription.rs:3325,3379,3393,3407 / cli_process.rs:852,882,902 / test_runner.rs:3042 / deliberation.rs:471 — carried in the baseline exactly as outcomeless-tick carries 2 and silent-row-skip carries 4), and 1 false positive (engine/mod.rs:3461, genuinely guarded 4619 chars into a 16324-char body, past the window; left in rather than excluded because an exclusion would be a claim about a body length, not about a file). PRECISION 159/169 = 94.1%; against the population the engine can reach, 159/160 = 99.4%. TWO FALSE NEGATIVES where the window spilled past a short body: db/src/embedder.rs:92, and companion/remote_jobs.rs:109 where the spill is SEMANTICALLY CORRECT — that dispatcher's callee holds the boundary (a call-graph fact no textual signal can follow; see the path's Gap 7, so any count here over-counts by however many sites push the boundary into a helper). test_automation.rs:1488 is counted as PRODUCTION (pub mod at lib.rs:43, shipped behind a cargo feature) — the first scanner's /(^|\\/)test_/ filename heuristic mis-filed it, the mirror image of the dev_tools_backlog_tests.rs hazard. CONSEQUENCE, MEASURED AGAINST THE OPERATOR'S OWN crash_logs/ DIRECTORY AND READ-ONLY COPIES OF THE LIVE DATABASES: 274 production spawn sites, 210 statement-position, 165 carrying no boundary at all (the [;{}] anchor reaches 161 of the 165 — the other 4 are spelled `let _ = spawn(..)`, listed in the path's Section 9); JoinError::is_panic() appears 3 times in 963 files and only ONE of those converts the panic into a value a caller can act on (companion/remote_jobs.rs:145, whose comment says 'instead of a task that vanishes and a job that never finishes'); 40 sites flatten the JoinError with .map_err and 7 with .ok(); ZERO use .await.unwrap(), .await.expect() or .await?. 20 persona_executions rows carry 'Internal error (panic):' — 7.8% of all 258 failed+incomplete — all with 0 tokens, 0 cost, 0 duration, 0 output. All 20 crash reports on disk are on a tokio-rt-worker thread and all 20 are panics the app SURVIVED, despite lib.rs:804 describing the hook as writing 'before aborting' (Cargo.toml:316 is panic = \"unwind\"). The 20 executions map to only 12 crash files — 8 reports (40%) lost to a one-second-resolution filename plus a truncating fs::write — and 17 of the 20 files contain zero application frames. commands/fleet/wait.rs:176 slices a String at a computed byte index and panicked 3 times inside the DETACHED task at commands/fleet/registry.rs:753, silently skipping the Enter-submit confirmation; the same defect class was closed in eval.rs by 6734382bf seven weeks earlier and this site was never enumerated. POSITIVE CONTROL: unobservable-detached-task-positive-control, the IDENTICAL anchor with the negative lookahead inverted, matches 30 files / 42 sites with ZERO overlap; 169 + 42 = 211 accounts for EVERY statement-position spawn with an inline body in the tree, so the partition is exact rather than a ratio. FAULT-INJECTED 18 WAYS, all correct, including a bound handle, handles.push(...), a `fn spawn(` definition, Command::new(..).spawn(), a function-call body, spawn_local, async { without move, CRLF, an interposed // comment, and a guard placed 3000 chars in (correctly NOT excluded). BACKTRACKING: the fill is a bounded [\\s\\S]{0,2500}? inside a ZERO-WIDTH lookahead — no nesting, no variable-length lookbehind; full 963-file run of rule + control 319 ms. OVERLAP-CHECKED against 469 match sites of the ten nearest rules (unraced-loop-wait, outcomeless-tick, unbound-child-lifetime, unpinned-billing-account-spawn, unowned-inflight-state-sweep, unverified-effect-dispatch, anonymous-deadline, silent-row-skip, unswept-job-registry-read, start-marker-before-admission): ONE collision, test_automation.rs:1486, shared with unverified-effect-dispatch (an app.emit on the line above the spawn); outcomeless-tick shares 4 files and 0 lines. LEGAL FIX: bind the handle and match on JoinError::is_panic(); or wrap the body in AssertUnwindSafe(..).catch_unwind() with a DURABLE Err arm; or move a periodic task into the subscription registry (background.rs::start_loops) and inherit run_single's boundary. Do NOT silence a match with `let _ = tokio::spawn(..)` (same discard, anchor still fires), by hoisting the body into a helper async fn so the call site has no inline block (the match disappears, the defect does not), or by adding an unused AssertUnwindSafe import near the top of the body. PRECONDITION (must be re-derived per repo): this repo spells detached work as tokio::spawn / tauri::async_runtime::spawn with an inline `async move {`. A TypeScript repo spells the identical condition as an unawaited promise, and all four TS siblings score a structural ZERO against this pattern while the condition is present at scale (vibeman 114 detached units vs 27 observed; ascent 50 vs 9). END OF LIFE: this rule is expected to FALL, not to reach zero — a population of deliberately detached tasks is correct (principle P8). If it ever does reach zero the runner fails structurally, BY DESIGN — DELETE the rule then, do not baseline it at 0."
       },
       "baseline": {
-        "files": 91,
-        "matches": 169
+        "files": 92,
+        "matches": 172
       },
       "floor": 900,
       "exclude": [
@@ -3509,8 +3509,8 @@
         "$measured": "2026-08-16 @ 17d059b1f — 4,829 files walked; validated standalone in a scratch registry unique to this composer (rules-live-log-stream-view-probe.json), then re-extracted from this finished document and re-run through the real runner: 13/13 both times; 0.718 s for rule and control together."
       },
       "baseline": {
-        "files": 12,
-        "matches": 12
+        "files": 13,
+        "matches": 13
       },
       "floor": 3000
     },
@@ -3594,8 +3594,8 @@
         }
       ],
       "baseline": {
-        "files": 17,
-        "matches": 17
+        "files": 16,
+        "matches": 16
       },
       "floor": 1500
     },
@@ -3758,7 +3758,7 @@
         }
       ],
       "baseline": {
-        "files": 23,
+        "files": 24,
         "matches": 32
       },
       "floor": 2000
@@ -3780,8 +3780,8 @@
         "description": "a wire buffer (an HTTP response body, an inbound webhook body, an MCP server reply, a foreign file) decoded with bare serde_json instead of engine::safe_json. PROXY FOR the stack-free condition: bytes that arrived from outside the process are decoded into an in-memory structure without any statement of how many bytes are acceptable, neither at the read nor at the decode, while a bounded decoder exists in the same tree. THE COMPLIANT DOOR: engine/src/safe_json.rs:83 from_str / :89 from_str_as run validate_limits (:37) BEFORE serde allocates - MAX_INPUT_BYTES 16 MiB (:26) and MAX_NESTING_DEPTH 128 (:31). The depth check duplicates serde_json's own default recursion limit; the SIZE cap is the load-bearing contribution. NOTE that safe_json bounds the AMPLIFICATION (a bounded text becoming a multi-hundred-MB Value), not the INTAKE - the String already exists by then. The intake half is outbound-http-call.md signal (C), measured at 144 matches and DELIBERATELY REFUSED there because a regex cannot recover the receiver's type; its named mechanism is a Clippy disallowed_methods entry on reqwest::Response::{text,json,bytes}. This rule gates the next statement, which IS expressible. MEASURED 2026-08-16 at b4a05049e: 21 matches / 9 files against 7 matches / 2 files for the bounded door (7 of 667 JSON decode sites in the tree = 1.05% adoption; the other 639 are DB columns, config files and literals, not this rule's population). PRECISION 19/21 hand-verified - the inbound webhook body (webhook.rs:469), an external MCP server's SSE reply (mcp_tools.rs:1607,:1632), the Discord and Slack API replies (discord_poller.rs:505, slack_poller.rs:1012), the Gemini OCR reply (ocr/mod.rs:283), a trigger test-fire reply (triggers.rs:1822), eleven connector-API replies (companion/jobs/connector_use.rs), and a package.json from a user-picked directory (webbuild/project.rs:77). THE TWO FALSE POSITIVES ARE #[cfg(test)] FIXTURES THE ENGINE CANNOT EXCLUDE (commands/fleet/companion_api.rs:637,:645) and they are the assertions proving CompanionAct's CLOSED ENUM refuses unknown verbs - i.e. the rule's only false positives certify the compliant pattern. They are NOT suppressed by a file-level exclude on purpose: companion_api.rs is itself a genuine ingress (it binds 0.0.0.0:17500) and an exclusion would hide a future real match there. RECALL IS DELIBERATELY PARTIAL AND MEASURED: the identifier vocabulary omits `text` and `raw`, missing 3 real sites (kpi_binding.rs:331, platforms/n8n.rs:259, mcp_server/tools.rs:243) - and `text` is the SECOND most common name this repo binds a response body to (11 of 80 .text().await bindings). Adding them takes the rule to 70 matches / 50 files at ~27% precision by pulling in the whole database-column-parse population (core/src/models/persona.rs:676,:718,:740, db/src/chain.rs:149,:434, ...). The narrow form was chosen; extend the alternation deliberately and re-measure BOTH halves. TWO INDEPENDENT IMPLEMENTATIONS AGREED ON 17 MEMBERS AND DISAGREED ON 5: a dataflow scan (identifiers bound from .text().await or declared as an axum Bytes extractor) returned 20/9, this vocabulary regex returned 19/8 with #[cfg(test)] stripped; neither sees the union of 22. LEGAL FIX, in order: (1) bound the READ - a resp.chunk() running total, the shape api_proxy.rs:957-968 already implements; (2) decode through safe_json::from_str / from_str_as; (3) better than both, decode into a CLOSED ENUM the way commands/fleet/companion_api.rs:422-443 does, where an unknown shape is a deserialization failure rather than a runtime check. DO NOT 'fix' this by renaming the identifier. END OF LIFE: designed to reach zero; the runner fails structurally on zero matches BY DESIGN - DELETE the rule then, do not baseline it at 0. PRECONDITION (re-derive per repo, do NOT port): in a Next.js repo this condition wears JSON.parse(await req.text()) or a bare await request.json() (177 such sites in the vibeman sibling); in Python it wears resp.json() with only a timeout. This pattern scores ZERO on both."
       },
       "baseline": {
-        "files": 9,
-        "matches": 21
+        "files": 10,
+        "matches": 22
       },
       "floor": 900
     },
@@ -4157,8 +4157,8 @@
         }
       ],
       "baseline": {
-        "files": 11,
-        "matches": 17
+        "files": 10,
+        "matches": 15
       },
       "floor": 3000
     },
@@ -4203,8 +4203,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 31,
-        "matches": 35
+        "files": 28,
+        "matches": 32
       },
       "floor": 3000
     },
@@ -4384,8 +4384,8 @@
         }
       ],
       "baseline": {
-        "files": 10,
-        "matches": 10
+        "files": 8,
+        "matches": 8
       },
       "floor": 1500
     },
@@ -4515,8 +4515,8 @@
         "description": "A schema-driven form picks its control by === against a control-kind literal. PROXY FOR the stack-free condition: the set of field types a renderer recognises is written by hand next to the renderer, not derived from the declaration, so declaration and renderer drift in both directions and an unrecognised type falls silently into the chain's last arm. Measured 2026-08-17 at 50d736f6c: 13 files / 42 matches / 37 distinct sites, against 4 files / 4 matches for the exhaustive-switch form on the same anchor. Vocabulary DERIVED FROM THE TREE (the union members of the 13 field-declaration types + the 11 declared type tokens in the 594-field seeded recipe catalog), never invented. RECEIVER LIST is also derived, from the `.map((X) =>` bindings over declared field arrays; `entry`/`item`/`answer` were in the first draft FROM IMAGINATION and produced the only false positives (BrowserLogEntry, ReasoningTrace, execution-summary rows are log records, not declarations) and were dropped, taking precision to 13/13 files hand-read. SITE overlap with data-decided-secret-masking (credential-capture-form) is 2 of 37 (5.4% of mine, 50% of theirs), at EditFormFields.tsx:44 and AutoCredReview.tsx:107, where one expression chooses both the widget and the masking; the conditions differ (masking-decided-by-data vs vocabulary-not-derived) and neither subsumes the other. All 73 src-rooted rules were run site-by-site against the final pattern; the other 72 overlap at zero sites. RECALL is deliberately partial: a chain over a LOCAL copy of the declared type (`const propType = (prop.type as string) || 'string'` then `propType === 'boolean'`, McpToolInputForm.tsx:41,:63) is invisible, as is a switch whose default arm is a silent fallback (StructuredField.tsx:62) and an `includes` form (:43). Widening the receiver to any identifier gives 31 files / 97 matches at under 50% precision. CORRECT END STATE is 0, at which point DELETE this rule rather than baselining it at zero. PRECONDITION (re-derive per repo, do NOT port): this repo spells the defect as a TS `===` against a control-kind literal. In Rust it wears `match raw_type { _ => None }` (engine/src/recipe_parameters.rs:66-77); in a JSON-Schema renderer `(prop.type as string) || 'string'`; in vibeman an if-chain ending `return null` (PropsControl.tsx:43). This pattern scores ZERO on all three."
       },
       "baseline": {
-        "files": 13,
-        "matches": 42
+        "files": 12,
+        "matches": 39
       },
       "floor": 4000
     },
@@ -4816,8 +4816,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 14,
-        "matches": 17
+        "files": 13,
+        "matches": 16
       },
       "floor": 1500
     },
@@ -5003,8 +5003,8 @@
         "description": "A full-viewport dimming layer painted directly on the `fixed inset-0` element — the hand-rolled modal backdrop. BaseModal never emits this shape (its container carries no paint; the scrim is a separate `absolute inset-0` child), so a match is an overlay built outside the modal host: no stack depth, no Escape arbitration, no focus trap, no focus restore."
       },
       "baseline": {
-        "files": 11,
-        "matches": 12
+        "files": 9,
+        "matches": 10
       },
       "floor": 1800
     },
@@ -5099,8 +5099,8 @@
         "description": "A control's busy state rendered as <LoadingSpinner/> in the consequent of a ternary whose alternate is another element — almost always an icon. feedback/LoadingSpinner renders null (it emits only an sr-only role=status when passed a label), so the icon vanishes and nothing takes its place while the action is in flight. Use buttons/AsyncButton (returns-a-promise onClick) or buttons/Button loading={flag}, whose spinners are real (Button.tsx:230,237; AsyncButton.tsx:85). Doctrine: inline-busy-state.md."
       },
       "baseline": {
-        "files": 36,
-        "matches": 48
+        "files": 33,
+        "matches": 45
       },
       "floor": 4000
     },
@@ -5222,8 +5222,8 @@
         }
       ],
       "baseline": {
-        "files": 23,
-        "matches": 37
+        "files": 22,
+        "matches": 36
       },
       "floor": 4000
     },
@@ -5453,8 +5453,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 93,
-        "matches": 786
+        "files": 97,
+        "matches": 796
       },
       "floor": 100
     },
@@ -5477,7 +5477,7 @@
       "exclude": [],
       "baseline": {
         "files": 63,
-        "matches": 280
+        "matches": 281
       },
       "floor": 100
     },
@@ -5498,8 +5498,8 @@
         "description": "A no-argument .get() followed by .unwrap() or .expect( -- an r2d2 pool checkout whose failure is converted into a panic. PROXY FOR the stack-free condition: the one operation in a persistence layer that is EXPECTED to fail under load -- waiting for a free connection -- is written as if it cannot, so the system's response to saturation is a crash rather than backpressure or an error the caller can report. CONCRETELY HERE this is the second half of clause 2(f): POOL_ACQUIRE_TIMEOUT (db/src/lib.rs:94) is 5s and IS set on all three production pools (:315, :385, :511), so r2d2's get() returns Err rather than hanging -- and then 323 call sites turn that Err into a panic inside whatever thread reached it, which defeats the clause without touching the pool configuration the clause is about. COMPLIANT SHAPE, present and dominant: 1650 propagating checkouts across 246 files (`pool.get()?`, `.map_err(`, `.await`), e.g. every repo function in db/src/repos. VIOLATING SHAPE: `let conn = pool.get().unwrap();` -- commands/core/data_portability.rs:10659, companion/turn_ledger.rs:753, db/src/repos/execution/policy_evidence.rs:148 (`.expect(\"conn\")`). THE NAMED PRIMITIVE IS A GHOST, and this is the finding the count sits on: this document's clause 2(f) called it `pool_get_logged`, which does not exist in 963 .rs files; the real symbol is `acquire_logged` (db/src/lib.rs:113), it carries #[allow(dead_code)], and its ONLY caller is db/src/vector_store.rs:127 behind the `ml` feature -- dead in a default build. MEASURED 2026-08-21 at b7fba447f: 323 matches across 92 of 963 files. PRECISION 27/27 hand-verified: the receiver vocabulary was enumerated EXHAUSTIVELY rather than sampled -- exactly seven identifiers ever appear (pool 293, target 17, target_user 5, user_db 3, sys 2, p 2, source 1) -- and all 13 non-pool sites were opened individually plus a 14-site systematic sample of the pool population; every one is `let conn = X.get().unwrap()` on a database pool. The EMPTY ARGUMENT LIST is the whole discriminator and is what keeps collections out: Map::get and Vec::get always take a key. KNOWN FALSE-POSITIVE SURFACE, stated rather than papered over: OnceLock::get().unwrap() and Cell::get().unwrap() have the same shape and would count; neither appears in this tree today, and if one arrives the honest response is to anchor the receiver list, not to raise the baseline. 10 of the 92 files are named *_tests.rs; they are counted, because a fixture that panics on acquire hides the same saturation the product would. TWO INDEPENDENT IMPLEMENTATIONS agree at 92/323 -- the census engine and a hand-written walker with its own recursion, comment filter and line mapping. A THIRD, line-oriented grep scores 266, 57 fewer, and the entire gap is chains split across lines (pool.get() newline .unwrap()), which a line-oriented tool cannot see and this whole-file matcher can; that ~18% invisible fraction is the reason the engine matches whole files. HISTORY: an earlier measurement recorded 327 at f0bed7a96; 6c54af125 fixed two sites and 4bf1845d7 removed two more (and took the walk from 969 to 963), which accounts for the delta exactly. PRECONDITION (must be re-derived per repo): this repo checks connections out of an r2d2 pool by hand at the call site. A repo whose handler is HANDED an already-checked-out connection, or whose checkout lives inside one wrapper, has the condition designed out and scores zero. LEGAL FIX, in order: (1) propagate -- pool.get()? with From<r2d2::Error> for the local error type; (2) call acquire_logged(&pool, \"label\") so a slow or failed acquire is observable, and delete its #[allow(dead_code)] once it has more than one caller; (3) best, take the checkout out of the call site entirely and hand callers a connection the layer already owns. Do NOT silence a match with unwrap_or_else(|_| panic!(..)) -- same outcome, and the anchor stops firing."
       },
       "baseline": {
-        "files": 104,
-        "matches": 356
+        "files": 110,
+        "matches": 370
       },
       "floor": 900
     },
@@ -5565,8 +5565,8 @@
         }
       ],
       "baseline": {
-        "files": 194,
-        "matches": 528
+        "files": 175,
+        "matches": 479
       },
       "floor": 5000
     },
@@ -5616,8 +5616,8 @@
         }
       ],
       "baseline": {
-        "files": 944,
-        "matches": 4402
+        "files": 858,
+        "matches": 4017
       },
       "floor": 5000
     },
@@ -5655,8 +5655,8 @@
         }
       ],
       "baseline": {
-        "files": 299,
-        "matches": 626
+        "files": 283,
+        "matches": 589
       },
       "floor": 5000
     },
@@ -5694,8 +5694,8 @@
         }
       ],
       "baseline": {
-        "files": 83,
-        "matches": 225
+        "files": 82,
+        "matches": 223
       },
       "floor": 5000
     },
@@ -5732,8 +5732,8 @@
         }
       ],
       "baseline": {
-        "files": 1076,
-        "matches": 2461
+        "files": 1004,
+        "matches": 2286
       },
       "floor": 2200
     },
