@@ -282,3 +282,4 @@
 {"ts":"2026-09-25T13:45:44Z","bundle":"software-engineering","subjects":["ui-controls","accessibility","design-tokens"],"techniques":["variant-discipline","composition-contracts","control-inventory-and-discovery","name-and-description-wiring","keyboard-navigation-models"],"deviations":0,"from":"kit@0.1.0"}
 {"ts":"2026-09-28T09:46:31Z","bundle":"software-engineering","subjects":["ui-controls","accessibility"],"techniques":["variant-discipline","composition-contracts","call-site-ownership","name-and-description-wiring"],"deviations":1}
 {"ts":"2026-09-30T18:59:05.011Z","bundle":"software-engineering","subjects":["agent-browser-control"],"techniques":["agent-actionable-errors","write-freshness-gate","effect-classed-commands"],"deviations":3,"from":"scan-sweep@4.3.0"}
+{"ts":"2026-09-30T19:42:05.949Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["durable-store-failure-posture","recall-injection"],"deviations":3,"from":"scan-sweep@4.3.0"}
