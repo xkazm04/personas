@@ -22,7 +22,6 @@ import * as browserApi from '@/api/browser';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useTranslation } from '@/i18n/useTranslation';
-import { resolveError } from '@/lib/errors/errorRegistry';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
@@ -125,9 +124,10 @@ export default function WebviewPage() {
       setRefusal(null);
     } catch (err) {
       // Inline, not a toast: leaving the whitelist is an ordinary event and a
-      // toast per refusal is a storm. The registry owns the copy; the `kind`
-      // decides nothing here beyond "this was a refusal we can explain".
-      setRefusal(resolveError(err instanceof Error ? err.message : String(err)).message);
+      // toast per refusal is a storm. Same door as the twin lane, so a Tauri
+      // envelope is read as its hint instead of being stringified.
+      silentCatch('browser navigate')(err);
+      setRefusal(twinLane.messageOf(err));
     } finally {
       void refreshTabs();
     }
@@ -149,7 +149,13 @@ export default function WebviewPage() {
     (direction: 'back' | 'forward') => {
       if (!tab) return;
       const call = direction === 'back' ? browserApi.tabBack : browserApi.tabForward;
-      call(tab.id).catch(silentCatch(`browser ${direction}`)).finally(() => void refreshTabs());
+      call(tab.id)
+        .then(() => setRefusal(null))
+        .catch((err: unknown) => {
+          silentCatch(`browser ${direction}`)(err);
+          setRefusal(twinLane.messageOf(err));
+        })
+        .finally(() => void refreshTabs());
     },
     [tab],
   );
@@ -162,8 +168,13 @@ export default function WebviewPage() {
   }, [v.close_failed]);
 
   const focusTab = useCallback((id: number) => {
-    selectTab(id);
-    browserApi.focusTab(id).catch(silentCatch('browser focus tab'));
+    // No optimistic select. A failed focus does not announce, so painting the
+    // address bar onto `id` first would show a tab the host is not showing.
+    // Success announces `browser-tabs` and `adoptTabs` follows `focused`.
+    browserApi.focusTab(id).catch((err: unknown) => {
+      silentCatch('browser focus tab')(err);
+      setRefusal(twinLane.messageOf(err));
+    });
   }, []);
 
   const revoke = useCallback(async () => {

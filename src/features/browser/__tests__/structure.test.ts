@@ -80,6 +80,11 @@ describe('Webview host visibility', () => {
     expect(app).toMatch(/<BrowserHostVisibility \/>/);
   });
 
+  it('routes a navigation refusal through messageOf', () => {
+    expect(page).toMatch(/messageOf\(/);
+    expect(page).not.toMatch(/String\(err\)/);
+  });
+
   it('opens no modal of its own, because a modal would render behind the page', () => {
     // The JSX element, not the word — the file's own header explains WHY it
     // must not render one, and a naive substring match would fail on the

@@ -33,7 +33,7 @@ import type { PickedTarget } from '@/lib/bindings/PickedTarget';
 import type { TwinPageContext } from '@/lib/bindings/TwinPageContext';
 import type { TwinSteer } from '@/lib/bindings/TwinSteer';
 import { resolveError } from '@/lib/errors/errorRegistry';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { isTauriError } from '@/lib/types/tauriError';
 
@@ -147,10 +147,30 @@ export function contactHandleOf(url: string): string {
   }
 }
 
-/** The registry-resolved message for any rejection — structured `AppError`, `Error` or a bare string. */
+/**
+ * The text an operator should read for any rejection.
+ *
+ * A structured `AppError` carries the Rust hint in `error`. The registry
+ * rewrites strings it knows and answers everything else with the generic
+ * fallback (`unclassified`). That fallback would hide the hint, so an
+ * unclassified resolution keeps the raw text. A value that survived as the
+ * literal "[object Object]" is not text — it takes the fallback.
+ */
 export function messageOf(err: unknown): string {
-  const raw = isTauriError(err) ? err.error : err instanceof Error ? err.message : String(err);
-  return resolveError(raw).message;
+  const raw = isTauriError(err)
+    ? err.error
+    : err instanceof Error
+      ? err.message
+      : extractMessage(err);
+  const friendly = resolveError(raw);
+  if (
+    friendly.category === 'unclassified' &&
+    raw.length > 0 &&
+    !raw.includes('[object Object]')
+  ) {
+    return raw;
+  }
+  return friendly.message;
 }
 
 // --- module singleton ---------------------------------------------------------
