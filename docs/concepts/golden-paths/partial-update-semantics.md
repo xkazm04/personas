@@ -1,7 +1,7 @@
 # Golden path — Partial update semantics
 
 > Situation node: `data-persistence/repository-access/partial-update-semantics` ·
-> [situation spine](../situation-spine.md) · recurrence **149** · risk high ·
+> situation spine · recurrence **149** · risk high ·
 > dimensions **function · code-quality · resilience** · **two-sided** (the wire shape and the SQL shape
 > are one decision seen from two ends).
 > Composed 2026-08-14 from a ground-truth sweep against `master`.
@@ -14,7 +14,7 @@
 > deserializer and its 42 field uses; both `crud_update!` invocations and all 66 `push_field_param!`
 > calls that carry a nested option; the ts-rs bindings the 10 patch structs generate; and Tauri
 > 2.11.2's own `CommandItem` deserializer, read from the vendored crate source. Shared numbers are
-> cited from [`shared-facts.json`](../shared-facts.json), not re-derived. **No `cargo` was run** — every
+> cited from `shared-facts.json`, not re-derived. **No `cargo` was run** — every
 > claim below is static and traceable to a file read during composition.
 >
 > **A convergence sweep** ran read-only against `brainiac` (Rust · sqlx · Postgres), `vibeman`
@@ -137,8 +137,8 @@ place the hook can be attached.
 
 ### Which clauses are physics, which are this house
 
-Per the [contract](../golden-path-contract.md) and the
-[portability test](../research/portability-test.md), a clause travels only if something else
+Per the contract and the
+portability test, a clause travels only if something else
 reinvented it. Measured 2026-08-14 against three siblings; detail and citations in §6.
 
 | Clause | Warrant | Evidence |
@@ -550,7 +550,7 @@ rules: the missing gate is not a missing check, it is a missing character in a g
 
 ## Prefer a type over a gate — the answer for this leaf
 
-Per the [contract](../golden-path-contract.md), answered explicitly before §9 is written.
+Per the contract, answered explicitly before §9 is written.
 **Yes — and the primary answer is one attribute on 42 fields, which is the cheapest fix proposed in
 any golden path so far.**
 
@@ -589,7 +589,7 @@ any golden path so far.**
 
 Stack-free: every stack that transmits a partial update has exactly two encodings available (absent,
 null) for three intents, and must therefore choose a discriminator. Per the
-[portability test](../research/portability-test.md) the *proxy* below does **not** travel — an
+portability test the *proxy* below does **not** travel — an
 adopting repo re-derives its own signal against its own idiom: a Zod `.optional()` that should be
 `.nullable().optional()`, an `Object.entries(patch).filter(v => v != null)`, a
 `COALESCE($n, nullable_col)`, an ORM patch type that drops undefined keys. All three siblings have
@@ -664,7 +664,7 @@ in markup this pattern cannot see** and scores zero — as all three siblings do
 
 ### Mechanism — a census rule, not a script
 
-Per the [contract](../golden-path-contract.md) §"Don't write a script", the ratcheting-baseline
+Per the contract §"Don't write a script", the ratcheting-baseline
 mechanism already exists at [`scripts/census/`](../../../scripts/census/). This path publishes **one**
 entry, merged by the orchestrator — never edited into `rules.json` here:
 

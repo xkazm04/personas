@@ -41,6 +41,13 @@
       "contexts": ["| `.../tools.rs:1844-1852` `personas_knowledge_search` | three `SELECT *` forms over `execution_knowledge`. |"],
       "resolved": false
     },
+    ".../useCreateTemplateSnapshot.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["47"],
+      "contexts": ["| `.../useCreateTemplateSnapshot.ts:47` | Its output goes to `scope.setExtra('result_json_excerpt', excerpt)` — a field `beforeSend` does not visit, which is *why* the local pass exists. |"],
+      "resolved": false
+    },
     ".github/workflows/ci.yml": {"count":1,"sections":[9],"contexts":["`golden-path-census` pre-push job. **Not `ci.yml`**, which is red on 10"],"resolvedFrom":"basename","verbatim":"ci.yml"},
     ".github/workflows/release.yml": {"count":1,"sections":[0],"lines":["195-196,304-305"],"contexts":["`VITE_SENTRY_DSN`; only `.github/workflows/release.yml:195-196,304-305` supplies"]},
     ".mcp.json": {"count":1,"sections":[0],"contexts":["`~/.cursor/mcp.json` and a project `.mcp.json` are all absent on this machine, so"],"resolved":false},
@@ -120,12 +127,13 @@
       "verbatim": "ErrorBoundary.tsx"
     },
     "src/features/templates/sub_generated/generation/useCreateTemplateSnapshot.ts": {
-      "count": 4,
-      "sections": [5,7],
-      "lines": ["26-29","47","26"],
-      "contexts": ["bug. `useCreateTemplateSnapshot.ts:26-29` uses `(?:…)` and then references"],
-      "resolvedFrom": "basename",
-      "verbatim": "useCreateTemplateSnapshot.ts"
+      "count": 1,
+      "sections": [7],
+      "lines": ["26-29"],
+      "contexts": [
+        "| `src/features/templates/sub_generated/generation/useCreateTemplateSnapshot.ts:26-29` (deleted 2026-09-25) | `.replace(/\"(?:api_key\\|password\\|secret\\|token\\|authorization)\"\\s*:\\s*\"[^\"]*\"/gi, '\"$1\":…"
+      ],
+      "resolved": false
     },
     "src/features/vault/sub_credentials/components/features/CredentialScopeSection.tsx": {"count":1,"sections":[9],"lines":["64"],"contexts":["`CredentialScopeSection.tsx:64`, is an unrelated index access). An"],"resolvedFrom":"basename","verbatim":"CredentialScopeSection.tsx"},
     "src/hooks/execution/useExecutionScope.ts": {"count":2,"sections":[0,8],"lines":["31-32","31"],"contexts":["nothing filters: `useExecutionScope.ts:31-32` sets `execution_id` and"],"resolvedFrom":"basename","verbatim":"useExecutionScope.ts"},
@@ -159,6 +167,7 @@
       "verbatim": ".../sanitizeErrorForDisplay.ts"
     },
     "src/main.tsx": {"count":2,"sections":[7],"lines":["304-307"],"contexts":["`src/lib/log.ts`, `ErrorBoundary.tsx`'s report half, `src/main.tsx`,"]},
+    "useCreateTemplateSnapshot.ts": {"count":2,"sections":[5],"lines":["26-29","26"],"contexts":["bug. `useCreateTemplateSnapshot.ts:26-29` uses `(?:…)` and then references"],"resolved":false},
     "~/.claude/mcp.json": {"count":1,"sections":[0],"contexts":["**The door is unlocked and currently unopened.** `~/.claude/mcp.json`,"],"resolved":false},
     "~/.cursor/mcp.json": {"count":1,"sections":[0],"contexts":["`~/.cursor/mcp.json` and a project `.mcp.json` are all absent on this machine, so"],"resolved":false}
   }

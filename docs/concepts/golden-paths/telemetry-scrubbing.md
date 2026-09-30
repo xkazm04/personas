@@ -1,7 +1,7 @@
 # Golden path — Telemetry scrubbing at the egress boundary
 
 > Situation node: `backend-runtime/backend-observability/telemetry-scrubbing` ·
-> [situation spine](../situation-spine.md) · recurrence 5 · risk **HIGH** ·
+> situation spine · recurrence 5 · risk **HIGH** ·
 > sides: **server** (refuted — §12.1) · convergence: **converged** (refuted — §12.2) ·
 > dimensions: **security · resilience**
 > Composed 2026-08-17 against `master` @ `2a874e692`.
@@ -788,7 +788,7 @@ offered upward because its census rule has `roots: ["src"]` and cannot see this.
 
 | Path | What's wrong |
 | --- | --- |
-| `src/features/templates/sub_generated/generation/useCreateTemplateSnapshot.ts:26-29` | `.replace(/"(?:api_key\|password\|secret\|token\|authorization)"\s*:\s*"[^"]*"/gi, '"$1":"[redacted]"')` — the group is **non-capturing**, so `$1` is emitted literally and the key name becomes `"$1"`. Executed: `{"api_key":"…"}` → `{"$1":"[redacted]"}`. |
+| `src/features/templates/sub_generated/generation/useCreateTemplateSnapshot.ts:26-29` (deleted 2026-09-25) | `.replace(/"(?:api_key\|password\|secret\|token\|authorization)"\s*:\s*"[^"]*"/gi, '"$1":"[redacted]"')` — the group is **non-capturing**, so `$1` is emitted literally and the key name becomes `"$1"`. Executed: `{"api_key":"…"}` → `{"$1":"[redacted]"}`. |
 | same | It also misses `github_token`, camelCase `apiKey`, and every bare token — verified by replay. |
 | `.../useCreateTemplateSnapshot.ts:47` | Its output goes to `scope.setExtra('result_json_excerpt', excerpt)` — a field `beforeSend` does not visit, which is *why* the local pass exists. |
 

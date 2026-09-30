@@ -60,6 +60,7 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "share": {},
     "design_subtabs": {},
     "manifest": {},
+    "kp_requirements": {},
     "parameters_card": {},
     "editor_empty": {},
     "glyph_dim_label": {},
@@ -76,7 +77,6 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "lab": {},
     "design": {},
     "connectors": {},
-    "model_config": {},
     "use_cases": {},
     "chat_thread": {},
     "matrix_entry": {},
@@ -275,7 +275,6 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     },
     "memory_review": {},
     "sla": {},
-    "knowledge": {},
     "dashboard": {},
     "provenance": {},
     "review": {
@@ -293,7 +292,6 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "athena": {},
     "activity": {},
     "analytics_dashboard": {},
-    "cron": {},
     "sla_card": {},
     "realtime_page": {},
     "memory_form": {},
@@ -314,9 +312,6 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "burn_rate_extra": {},
     "cascade": {},
     "predictive_alerts_extra": {},
-    "annotate_modal": {},
-    "knowledge_row": {},
-    "knowledge_graph": {},
     "focused_decision": {},
     "review_focus": {},
     "memory_card": {},
@@ -533,16 +528,8 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
   "explore": {},
   "foundry": {},
   "recipes": {
-    "editor": {
-      "categories": {}
-    },
-    "schema": {
-      "field_types": {},
-      "placeholders": {}
-    },
     "composer_suggestion": {}
   },
-  "recipe_shared": {},
   "agent_lab": {},
   "execution_status": {},
   "status_tokens": {
@@ -802,6 +789,11 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
         "lane": {},
         "request_state": {},
         "lane_tag": {}
+      },
+      "gaps": {
+        "growth_verdict": {},
+        "metric": {},
+        "kind": {}
       }
     },
     "process": {}

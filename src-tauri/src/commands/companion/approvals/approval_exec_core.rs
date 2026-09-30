@@ -99,6 +99,154 @@ fn file_under_active_workspace(db: &crate::db::DbPool, persona_id: &str) {
     }
 }
 
+/// An explicit placement on a kp hire: the workspace the request named and
+/// the cross-project group the new persona is filed under.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct HirePlacement {
+    pub(crate) workspace_id: String,
+    pub(crate) workspace_name: String,
+    pub(crate) group_team_id: String,
+}
+
+/// Read `placement.workspaceId` off a kp hire's stored params and resolve it
+/// to that workspace's cross-project group.
+///
+/// `Ok(None)` when the request carried no placement (or `null`) — the hire
+/// then takes today's path, [`file_under_active_workspace`], unchanged.
+///
+/// Intake already refused an unknown workspace, but the payload sat in the
+/// inbox until a human clicked and the workspace may have been deleted since.
+/// That is an ERROR here, never a fallback: kp asked for this workspace
+/// explicitly, and filing the hire under whatever the operator happens to be
+/// looking at would put it where its project-bound runs are refused
+/// (`project_outside_persona_workspace`). The group is ensured rather than
+/// merely read, so a pre-e42 workspace with no group heals instead of failing.
+pub(crate) fn resolve_hire_placement(
+    db: &crate::db::DbPool,
+    params: &serde_json::Value,
+) -> Result<Option<HirePlacement>, AppError> {
+    let placement = match params.get("placement") {
+        None | Some(serde_json::Value::Null) => return Ok(None),
+        Some(p) => p,
+    };
+    let workspace_id = placement
+        .get("workspaceId")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .ok_or_else(|| {
+            AppError::Validation(
+                "kp_hire_request: `placement` must carry a string `workspaceId`".into(),
+            )
+        })?;
+    let ws = match crate::db::repos::workspaces::org::get_workspace_by_id(db, workspace_id) {
+        Ok(ws) => ws,
+        Err(AppError::NotFound(_)) => {
+            return Err(AppError::NotFound(format!(
+                "kp_hire_request: placement workspace {workspace_id} no longer exists — the hire was not created"
+            )))
+        }
+        Err(e) => return Err(e),
+    };
+    let group_team_id = crate::db::workspace_team::ensure_workspace_team(db, &ws.id, &ws.name)?;
+    Ok(Some(HirePlacement {
+        workspace_id: ws.id,
+        workspace_name: ws.name,
+        group_team_id,
+    }))
+}
+
+/// File a just-created kp hire: under the explicit placement's group when the
+/// request named one (an error here fails the hire — see the caller), else
+/// where the operator is standing, best-effort, exactly as before placement
+/// existed.
+pub(crate) fn file_new_hire(
+    db: &crate::db::DbPool,
+    persona_id: &str,
+    placement: Option<&HirePlacement>,
+) -> Result<(), AppError> {
+    match placement {
+        Some(p) => {
+            crate::db::repos::core::personas::set_home_team(db, persona_id, &p.group_team_id)
+        }
+        None => {
+            file_under_active_workspace(db, persona_id);
+            Ok(())
+        }
+    }
+}
+
+/// The `model_profile` JSON a kp hire asked for (`spec.modelProfile`,
+/// normalized at intake to `{model, effort?}`), or `None` when it named none —
+/// every hire before the field existed, and every hire that still omits it.
+///
+/// Only `model` and `effort` are ever read: the stored params hold nothing
+/// else by construction, and reading two fields here keeps it that way should
+/// a row written by some other door carry more.
+pub(crate) fn kp_hire_model_profile(params: &serde_json::Value) -> Option<String> {
+    let mp = params.pointer("/spec/modelProfile")?;
+    let model = mp
+        .get("model")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|m| !m.is_empty())?;
+    let effort = mp
+        .get("effort")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|e| !e.is_empty())
+        .map(str::to_string);
+    serde_json::to_string(&crate::engine::types::ModelProfile {
+        model: Some(model.to_string()),
+        effort,
+        ..Default::default()
+    })
+    .ok()
+}
+
+/// The home project a kp hire asked for (`placement.projectId`), re-checked
+/// now that the hire is about to be filed: the project must still pass the
+/// per-run binding rule (`execution_project::resolve_bound_project`) for a
+/// persona homed in the placement's group — inside the allowed HTTP project
+/// roots, in that workspace. The project may have been switched off, moved
+/// or deleted while the request waited; that fails the hire (nothing is
+/// created yet) rather than homing a persona in a folder kp may no longer use.
+///
+/// `Ok(None)` when the request named no project.
+pub(crate) fn resolve_hire_home_project(
+    db: &crate::db::DbPool,
+    params: &serde_json::Value,
+    placement: Option<&HirePlacement>,
+) -> Result<Option<String>, AppError> {
+    let Some(project_id) = params
+        .pointer("/placement/projectId")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    else {
+        return Ok(None);
+    };
+    let Some(placement) = placement else {
+        // Intake writes the project's workspace into the placement, so a
+        // project with no placement is a row no current intake produced.
+        return Err(AppError::Validation(format!(
+            "kp_hire_request: `placement.projectId` {project_id} names no workspace to file the hire in — the hire was not created"
+        )));
+    };
+    crate::db::execution_project::resolve_bound_project(
+        db,
+        Some(&placement.group_team_id),
+        project_id,
+    )
+    .map(|p| Some(p.id))
+    .map_err(|e| {
+        AppError::Validation(format!(
+            "kp_hire_request: home project refused ({}): {} — the hire was not created",
+            e.code(),
+            e.message()
+        ))
+    })
+}
+
 // ── action executors ────────────────────────────────────────────────────
 
 pub(crate) async fn execute_run_persona(
@@ -984,6 +1132,62 @@ pub(crate) async fn execute_build_oneshot(
     })
 }
 
+/// The one-shot build intent for a kp hire. Pure — unit-tested below.
+///
+/// The mission plus enough hiring context for the design pass to pick sensible
+/// connectors and use cases. An App master gets the full mission + objectives +
+/// mandate + cadence instead — the design pass has to know the line before it
+/// picks the tools. A requirement-driven hire (`spec.requirements`,
+/// kp.agent-requirements.v1) gets the authoritative "Requirements from kp"
+/// section appended; without one the intent is byte-identical to what it was
+/// before the contract existed.
+pub(crate) fn kp_hire_intent(
+    params: &serde_json::Value,
+    mission: &str,
+    job_title: &str,
+    job_id: &str,
+    app_master: Option<&serde_json::Value>,
+    connectors: &[String],
+    requirements: Option<&personas_engine::kp_requirements::KpAgentRequirements>,
+) -> String {
+    let mut intent = match app_master {
+        Some(am) => super::app_master_hire::app_master_intent(mission, job_title, job_id, am),
+        None => format!(
+            "{mission}\n\nThis persona is an AI hire for the external KP job '{job_title}' (job id {job_id})."
+        ),
+    };
+    if !connectors.is_empty() {
+        intent.push_str(&format!(
+            "\nPreferred connectors: {}.",
+            connectors.join(", ")
+        ));
+    }
+    if let Some(metrics) = params
+        .get("spec")
+        .and_then(|s| s.get("successMetrics"))
+        .and_then(|v| v.as_array())
+        .filter(|a| !a.is_empty())
+    {
+        let lines: Vec<String> = metrics
+            .iter()
+            .filter_map(|m| m.get("label").and_then(|l| l.as_str()))
+            .map(|l| format!("- {l}"))
+            .collect();
+        if !lines.is_empty() {
+            intent.push_str(&format!("\nSuccess metrics:\n{}", lines.join("\n")));
+        }
+    }
+    // Requirements from kp — the authoritative brief the design pass designs
+    // from. Appended last so it reads as the specification the mission
+    // sentence above summarises; it says so itself, and that it wins where
+    // the two differ. Absent ⇒ the intent is byte-identical to before.
+    if let Some(r) = requirements {
+        intent.push_str("\n\n");
+        intent.push_str(&personas_engine::kp_requirements::render_intent_section(r));
+    }
+    intent
+}
+
 /// KP bridge (WP3) — approve an external KP hiring app's persona hire request.
 ///
 /// The pending row is inserted by `POST /api/kp/persona-requests`
@@ -994,7 +1198,9 @@ pub(crate) async fn execute_build_oneshot(
 /// stays addressable (WP4's outbound reporter reads it from there).
 ///
 /// Deliberately NOT on `AUTOAPPROVE_ALLOWLIST` (approval_autopilot.rs) — like
-/// every build action, a KP hire always requires the human click.
+/// every build action, a KP hire requires the operator's decision: a click, the
+/// operator API, or the standing gig persona policy the operator set
+/// (`approval_policy`, bridge doc §10.14). Nothing a kp key sends can make it.
 ///
 /// `approval_id` is the `companion_approval` row being executed. Once the
 /// persona exists, the key recorded on that row as the submitter is granted
@@ -1050,16 +1256,51 @@ pub(crate) async fn execute_kp_hire_request(
     let job_title = str_field(params, &["kp", "jobTitle"], "kp.jobTitle")?.to_string();
     let base_url = str_field(params, &["kp", "baseUrl"], "kp.baseUrl")?.to_string();
     let report_token = str_field(params, &["reportToken"], "reportToken")?.to_string();
+    // `spec.requirements` (kp.agent-requirements.v1): a requirement-driven hire
+    // sends research-derived requirements INSTEAD of a prompt. Stored as the
+    // intake-normalized JSON on the link; parsed through the tolerant typed
+    // view for the intent. A payload whose requirements no longer parse (it
+    // sat in the DB between intake and this click) is refused rather than
+    // silently built from the mission alone — the operator was shown a card
+    // promising a requirements-driven design.
+    let requirements_json: Option<serde_json::Value> = params
+        .get("spec")
+        .and_then(|s| s.get("requirements"))
+        .filter(|v| !v.is_null())
+        .cloned();
+    let requirements = match &requirements_json {
+        None => None,
+        Some(v) => Some(
+            personas_engine::kp_requirements::KpAgentRequirements::from_value(v).ok_or_else(
+                || {
+                    AppError::Internal(
+                        "kp_hire_request: `spec.requirements` is not a kp.agent-requirements.v1 object"
+                            .into(),
+                    )
+                },
+            )?,
+        ),
+    };
     let system_prompt = params
         .get("spec")
         .and_then(|s| s.get("systemPromptDraft"))
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty())
-        // Same minimal fallback as the build_oneshot draft stub — the one-shot
-        // build's design pass replaces it once the agent_ir resolves.
-        .unwrap_or("You are a helpful AI assistant.")
-        .to_string();
+        .map(str::to_string)
+        // A requirement-driven hire has no draft: the placeholder names the
+        // role instead of the generic stub, so the draft row reads as what it
+        // is while the design pass runs. Either way the design pass replaces
+        // it once the agent_ir resolves.
+        .or_else(|| {
+            requirements
+                .as_ref()
+                .map(|r| r.role.trim())
+                .filter(|r| !r.is_empty())
+                .map(|r| format!("You are a {r}, being designed from kp's requirements."))
+        })
+        // Same minimal fallback as the build_oneshot draft stub.
+        .unwrap_or_else(|| "You are a helpful AI assistant.".to_string());
     let connectors: Vec<String> = params
         .get("spec")
         .and_then(|s| s.get("connectors"))
@@ -1093,36 +1334,16 @@ pub(crate) async fn execute_kp_hire_request(
         super::app_master_hire::app_master_block(params).cloned();
 
     // Build intent: the mission plus enough hiring context for the one-shot
-    // design pass to pick sensible connectors and use cases. An App master
-    // gets the full mission + objectives + mandate + cadence instead — the
-    // design pass has to know the line before it picks the tools.
-    let mut intent = match &app_master {
-        Some(am) => super::app_master_hire::app_master_intent(&mission, &job_title, &job_id, am),
-        None => format!(
-            "{mission}\n\nThis persona is an AI hire for the external KP job '{job_title}' (job id {job_id})."
-        ),
-    };
-    if !connectors.is_empty() {
-        intent.push_str(&format!(
-            "\nPreferred connectors: {}.",
-            connectors.join(", ")
-        ));
-    }
-    if let Some(metrics) = params
-        .get("spec")
-        .and_then(|s| s.get("successMetrics"))
-        .and_then(|v| v.as_array())
-        .filter(|a| !a.is_empty())
-    {
-        let lines: Vec<String> = metrics
-            .iter()
-            .filter_map(|m| m.get("label").and_then(|l| l.as_str()))
-            .map(|l| format!("- {l}"))
-            .collect();
-        if !lines.is_empty() {
-            intent.push_str(&format!("\nSuccess metrics:\n{}", lines.join("\n")));
-        }
-    }
+    // design pass (see [`kp_hire_intent`]).
+    let intent = kp_hire_intent(
+        params,
+        &mission,
+        &job_title,
+        &job_id,
+        app_master.as_ref(),
+        &connectors,
+        requirements.as_ref(),
+    );
 
     // The mandate's `approvalGates` are shell commands the App master must run
     // before it may propose a diff (`npm run test:unit`, …). Gates present ⇒ a
@@ -1150,9 +1371,28 @@ pub(crate) async fn execute_kp_hire_request(
             report_token,
             requested_connectors: connectors.clone(),
             runs_commands,
+            // Carried inside the link so promote's design_context rebuild,
+            // which re-injects `kpLink` whole, keeps it — and so the app can
+            // show the operator why the agent was designed the way it was.
+            requirements: requirements_json,
         }),
         ..Default::default()
     };
+
+    // Explicit placement (`placement.workspaceId`), resolved BEFORE the
+    // persona exists: a placement that can no longer be honoured fails the
+    // hire with nothing to roll back.
+    let placement = resolve_hire_placement(&state.db, params)?;
+    // The home project (`placement.projectId`) → `design_context.homeProjectId`,
+    // the persona → project link. Re-checked against the placement's group
+    // for the same reason, before anything exists.
+    let home_project_id = resolve_hire_home_project(&state.db, params, placement.as_ref())?;
+    let design_context = crate::db::models::DesignContextData {
+        home_project_id,
+        ..design_context
+    };
+    // The model kp asked this persona to run on (`spec.modelProfile`).
+    let model_profile = kp_hire_model_profile(params);
 
     // G17 (2026-09-08): no capacity gate here. This door used to refuse a hire
     // when the enabled roster was at `max_active_personas`, on the reasoning
@@ -1176,7 +1416,7 @@ pub(crate) async fn execute_kp_hire_request(
             enabled: Some(true),
             max_concurrent: None,
             timeout_ms: None,
-            model_profile: None,
+            model_profile,
             max_budget_usd,
             max_turns,
             design_context: Some(design_context.to_json_string()),
@@ -1187,12 +1427,29 @@ pub(crate) async fn execute_kp_hire_request(
         },
     )?;
 
-    // 1b. File it where the operator is standing, exactly like build_oneshot.
-    //     A KP hire that carries an App master is re-filed under its project's
-    //     team by `bind_app_master` further down — the specific home wins by
-    //     running last. A hire that carries none keeps this one instead of
-    //     landing in the Monitor's ungrouped tray.
-    file_under_active_workspace(&state.db, &persona.id);
+    // 1b. File it: under the requested placement's group when the request
+    //     named a workspace, otherwise where the operator is standing, exactly
+    //     like build_oneshot. A KP hire that carries an App master is re-filed
+    //     under its project's team by `bind_app_master` further down — the
+    //     specific home wins by running last. A hire that carries neither keeps
+    //     the active workspace's group instead of landing in the Monitor's
+    //     ungrouped tray. A placement that cannot be stamped fails the hire:
+    //     the persona would otherwise live outside the workspace kp will bind
+    //     its runs to.
+    if let Err(e) = file_new_hire(&state.db, &persona.id, placement.as_ref()) {
+        if let Err(cleanup_err) = crate::db::repos::core::personas::delete(&state.db, &persona.id) {
+            tracing::error!(
+                persona_id = %persona.id,
+                error = %cleanup_err,
+                "Failed to roll back draft persona after kp_hire_request placement failure"
+            );
+        }
+        return Err(e);
+    }
+    let placement_summary = placement
+        .as_ref()
+        .map(|p| format!(" Filed under workspace '{}'.", p.workspace_name))
+        .unwrap_or_default();
 
     // 2. Start the one-shot build headlessly, exactly like build_oneshot.
     let session_id = uuid::Uuid::new_v4().to_string();
@@ -1338,7 +1595,7 @@ pub(crate) async fn execute_kp_hire_request(
     );
 
     Ok(ExecuteResult::message(format!(
-        "Hired '{persona_name}' for KP job '{job_title}' — created a draft persona and started an autonomous build.{app_master_summary}{execute_grant_summary}",
+        "Hired '{persona_name}' for KP job '{job_title}' — created a draft persona and started an autonomous build.{placement_summary}{app_master_summary}{execute_grant_summary}",
         persona_name = persona.name,
     )))
 }
@@ -1954,6 +2211,113 @@ mod tests {
         assert_eq!(active_workspace_group(&pool), None);
     }
 
+    fn draft_persona(pool: &crate::db::DbPool, name: &str) -> crate::db::models::Persona {
+        personas_db::repos::core::personas::create(
+            pool,
+            personas_db::models::CreatePersonaInput {
+                name: name.to_string(),
+                system_prompt: "You are a helpful AI assistant.".to_string(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: Some("draft".to_string()),
+            },
+        )
+        .expect("create persona")
+    }
+
+    fn home_of(pool: &crate::db::DbPool, id: &str) -> Option<String> {
+        personas_db::repos::core::personas::get_by_id(pool, id)
+            .unwrap()
+            .home_team_id
+    }
+
+    /// Placement: an explicit `placement.workspaceId` files the hire under
+    /// THAT workspace's group — even while the operator stands in another.
+    #[test]
+    fn an_explicit_placement_wins_over_the_active_workspace() {
+        let pool = init_test_db().expect("test db");
+        let freelance =
+            workspaces_repo::create_workspace(&pool, "Freelance", None, None, false).unwrap();
+        let bank = workspaces_repo::create_workspace(&pool, "Bank", None, None, false).unwrap();
+        settings_repo::set(&pool, DEVTOOLS_ACTIVE_WORKSPACE, &bank.id).unwrap();
+        let freelance_group =
+            personas_db::workspace_team::group_for_workspace(&pool, &freelance.id)
+                .unwrap()
+                .unwrap();
+
+        let params = serde_json::json!({
+            "spec": {"name": "Gig specialist"},
+            "placement": {"workspaceId": freelance.id},
+        });
+        let placement = resolve_hire_placement(&pool, &params)
+            .unwrap()
+            .expect("placed");
+        assert_eq!(placement.workspace_id, freelance.id);
+        assert_eq!(placement.workspace_name, "Freelance");
+        assert_eq!(placement.group_team_id, freelance_group.id);
+
+        let hire = draft_persona(&pool, "Gig specialist");
+        file_new_hire(&pool, &hire.id, Some(&placement)).unwrap();
+        assert_eq!(
+            home_of(&pool, &hire.id).as_deref(),
+            Some(freelance_group.id.as_str())
+        );
+    }
+
+    /// Absent placement = today's behaviour: the active workspace's group.
+    #[test]
+    fn no_placement_keeps_the_active_workspace_filing() {
+        let pool = init_test_db().expect("test db");
+        let bank = workspaces_repo::create_workspace(&pool, "Bank", None, None, false).unwrap();
+        let bank_group = personas_db::workspace_team::group_for_workspace(&pool, &bank.id)
+            .unwrap()
+            .unwrap();
+        settings_repo::set(&pool, DEVTOOLS_ACTIVE_WORKSPACE, &bank.id).unwrap();
+
+        for params in [
+            serde_json::json!({"spec": {"name": "x"}}),
+            serde_json::json!({"spec": {"name": "x"}, "placement": null}),
+        ] {
+            assert_eq!(resolve_hire_placement(&pool, &params).unwrap(), None);
+        }
+        let hire = draft_persona(&pool, "Unplaced");
+        file_new_hire(&pool, &hire.id, None).unwrap();
+        assert_eq!(
+            home_of(&pool, &hire.id).as_deref(),
+            Some(bank_group.id.as_str())
+        );
+    }
+
+    /// A placement whose workspace was deleted while the request sat in the
+    /// inbox fails the hire — it never falls back to the active workspace.
+    #[test]
+    fn a_placement_that_can_no_longer_be_honoured_is_an_error() {
+        let pool = init_test_db().expect("test db");
+        let gone = workspaces_repo::create_workspace(&pool, "Gone", None, None, false).unwrap();
+        workspaces_repo::delete_workspace(&pool, &gone.id).unwrap();
+        let err = resolve_hire_placement(
+            &pool,
+            &serde_json::json!({"placement": {"workspaceId": gone.id}}),
+        )
+        .unwrap_err();
+        assert!(matches!(err, AppError::NotFound(_)), "{err}");
+
+        let err =
+            resolve_hire_placement(&pool, &serde_json::json!({"placement": {"x": 1}})).unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)), "{err}");
+    }
+
     /// The stamp itself, and its refusal: with a mirror the persona gets a
     /// home, without one it keeps the NULL it had.
     #[test]
@@ -2010,5 +2374,191 @@ mod tests {
                 .as_deref(),
             Some(group.id.as_str())
         );
+    }
+
+    // ---- kp hire intent: spec.requirements ---------------------------------
+
+    fn kp_params(requirements: Option<serde_json::Value>) -> serde_json::Value {
+        let mut p = serde_json::json!({
+            "spec": {
+                "name": "Freelance specialist - web development",
+                "mission": "Answer web-development gig briefs.",
+                "connectors": ["research"],
+                "successMetrics": [{"key": "k", "label": "Briefs answered"}]
+            }
+        });
+        if let Some(r) = requirements {
+            p["spec"]["requirements"] = r;
+        }
+        p
+    }
+
+    /// Without requirements the intent is exactly what it was before the
+    /// contract existed — a regression here changes every kp hire's design.
+    #[test]
+    fn a_requested_model_profile_becomes_the_personas_model_profile() {
+        use personas_core::model_ids::OPUS_5_5;
+        let params =
+            serde_json::json!({"spec": {"modelProfile": {"model": OPUS_5_5, "effort": "high"}}});
+        let raw = kp_hire_model_profile(&params).expect("a profile");
+        let parsed: crate::engine::types::ModelProfile = serde_json::from_str(&raw).unwrap();
+        assert_eq!(parsed.model.as_deref(), Some(OPUS_5_5));
+        assert_eq!(parsed.effort.as_deref(), Some("high"));
+        assert_eq!(parsed.base_url, None);
+        assert_eq!(parsed.auth_token, None);
+        assert_eq!(
+            parsed.provider, None,
+            "an unset provider is the Anthropic default"
+        );
+
+        // Without one the hire keeps today's `None`.
+        assert_eq!(
+            kp_hire_model_profile(&serde_json::json!({"spec": {}})),
+            None
+        );
+        assert_eq!(
+            kp_hire_model_profile(&serde_json::json!({"spec": {"modelProfile": {"model": " "}}})),
+            None
+        );
+        // Effort is optional.
+        let raw =
+            kp_hire_model_profile(&serde_json::json!({"spec": {"modelProfile": {"model": "m"}}}))
+                .unwrap();
+        let parsed: crate::engine::types::ModelProfile = serde_json::from_str(&raw).unwrap();
+        assert_eq!(parsed.effort, None);
+    }
+
+    #[test]
+    fn a_placement_project_becomes_the_home_project_only_inside_the_boundary() {
+        // The env override would shadow the setting this test writes.
+        if std::env::var_os(crate::db::execution_project::HTTP_PROJECT_ROOTS_ENV).is_some() {
+            return;
+        }
+        let pool = crate::db::init_test_db().unwrap();
+        let roots = serde_json::to_string(&vec![std::fs::canonicalize(std::env::temp_dir())
+            .unwrap()
+            .to_string_lossy()
+            .to_string()])
+        .unwrap();
+        crate::db::repos::core::settings::set_operator_only(
+            &pool,
+            crate::db::settings_keys::MANAGEMENT_HTTP_PROJECT_ROOTS,
+            &roots,
+        )
+        .unwrap();
+        let dir = std::env::temp_dir().join(format!("kp_home_project_{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let ws =
+            crate::db::repos::workspaces::org::create_workspace(&pool, "Gigs", None, None, false)
+                .unwrap();
+        let project = crate::db::project_identity::register_project(
+            &pool,
+            "gig",
+            dir.to_str().unwrap(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        crate::db::repos::workspaces::org::assign_project(&pool, &project.id, Some(&ws.id))
+            .unwrap();
+        let params =
+            serde_json::json!({"placement": {"workspaceId": ws.id, "projectId": project.id}});
+        let placement = resolve_hire_placement(&pool, &params).unwrap();
+
+        assert_eq!(
+            resolve_hire_home_project(&pool, &params, placement.as_ref()).unwrap(),
+            Some(project.id.clone()),
+            "placement.projectId sets the home project"
+        );
+        // No project named: no home project, today's behaviour.
+        let bare = serde_json::json!({"placement": {"workspaceId": ws.id}});
+        assert_eq!(
+            resolve_hire_home_project(&pool, &bare, placement.as_ref()).unwrap(),
+            None
+        );
+        // A project with no placement to file beside is refused.
+        assert!(resolve_hire_home_project(&pool, &params, None).is_err());
+        // Another workspace's group: refused, nothing created.
+        let other =
+            crate::db::repos::workspaces::org::create_workspace(&pool, "Other", None, None, false)
+                .unwrap();
+        let other_placement = resolve_hire_placement(
+            &pool,
+            &serde_json::json!({"placement": {"workspaceId": other.id}}),
+        )
+        .unwrap();
+        let err = resolve_hire_home_project(&pool, &params, other_placement.as_ref()).unwrap_err();
+        assert!(
+            err.to_string()
+                .contains("project_outside_persona_workspace"),
+            "{err}"
+        );
+
+        // The DesignContextData key it lands in is `homeProjectId`.
+        let dc = crate::db::models::DesignContextData {
+            home_project_id: Some(project.id.clone()),
+            ..Default::default()
+        };
+        assert_eq!(
+            personas_engine::design_context::home_project_id(Some(&dc.to_json_string())),
+            Some(project.id)
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn kp_hire_intent_without_requirements_is_unchanged() {
+        let intent = kp_hire_intent(
+            &kp_params(None),
+            "Answer web-development gig briefs.",
+            "Landing page fix",
+            "gig-7",
+            None,
+            &["research".to_string()],
+            None,
+        );
+        assert_eq!(
+            intent,
+            "Answer web-development gig briefs.\n\nThis persona is an AI hire for the external KP job \
+             'Landing page fix' (job id gig-7).\nPreferred connectors: research.\nSuccess metrics:\n- Briefs answered"
+        );
+    }
+
+    #[test]
+    fn kp_hire_intent_appends_the_requirements_section_last() {
+        let reqs = serde_json::json!({
+            "kind": "kp.agent-requirements.v1",
+            "role": "Freelance specialist - web development",
+            "outputs": {"handoffFile": "kp-deliverable.json"},
+            "constraints": ["Never send anything; the operator sends."]
+        });
+        let parsed = personas_engine::kp_requirements::KpAgentRequirements::from_value(&reqs)
+            .expect("parses");
+        let base = kp_hire_intent(
+            &kp_params(None),
+            "m",
+            "t",
+            "j",
+            None,
+            &["research".to_string()],
+            None,
+        );
+        let intent = kp_hire_intent(
+            &kp_params(Some(reqs)),
+            "m",
+            "t",
+            "j",
+            None,
+            &["research".to_string()],
+            Some(&parsed),
+        );
+        let section = personas_engine::kp_requirements::render_intent_section(&parsed);
+        assert_eq!(intent, format!("{base}\n\n{section}"));
+        assert!(intent.contains("1. Never send anything; the operator sends."));
+        assert!(intent.contains("So there is NO commit, push"));
+        assert!(intent.contains("- Trigger: `manual` for every capability."));
     }
 }

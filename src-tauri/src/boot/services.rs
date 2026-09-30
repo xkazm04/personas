@@ -70,6 +70,47 @@ pub fn init_browser_bridge_pairing_token(pool: &DbPool) {
     }
 }
 
+// The local operator key (`operator-local`, scope `personas:approve`): reuse
+// or re-mint it and deliver its token to `<app data dir>/operator-api-key`.
+// Default ON because that file sits beside personas.db and master.key —
+// whoever can read it already controls this install, so it widens nothing
+// (full argument in `db::operator_key`). `PERSONAS_OPERATOR_KEY=0` opts out.
+// Best-effort: a failure here costs the operator API, never the boot. Logs
+// ids and prefixes only — never the token.
+pub fn ensure_operator_api_key(pool: &DbPool, app_data_dir: &std::path::Path) {
+    let enabled = db::operator_key::operator_key_enabled();
+    match db::operator_key::ensure_operator_key(pool, app_data_dir, enabled) {
+        Ok(db::operator_key::OperatorKeyOutcome::Reused {
+            key_id,
+            revoked_duplicates,
+        }) => {
+            tracing::info!(%key_id, revoked_duplicates, "operator api key: reused");
+        }
+        Ok(db::operator_key::OperatorKeyOutcome::Minted {
+            key_id,
+            key_prefix,
+            revoked,
+        }) => {
+            tracing::info!(
+                %key_id,
+                %key_prefix,
+                revoked,
+                file = %db::operator_key::operator_key_path(app_data_dir).display(),
+                "operator api key: minted and written"
+            );
+        }
+        Ok(db::operator_key::OperatorKeyOutcome::Disabled { revoked }) => {
+            tracing::info!(
+                revoked,
+                "operator api key: disabled by PERSONAS_OPERATOR_KEY"
+            );
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "operator api key: could not be ensured — the operator approval API has no key this boot");
+        }
+    }
+}
+
 // Start the in-app HTTP server (binds 127.0.0.1, free port at-or
 // above 17400). Hosts authenticated-redirect routes for the
 // user's default browser. Register routers BEFORE starting;

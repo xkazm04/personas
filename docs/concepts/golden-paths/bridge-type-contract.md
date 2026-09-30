@@ -1,6 +1,6 @@
 # Golden path — Bridge type contract
 
-> Situation node: `backend-runtime/contract-and-validation/bridge-type-contract` · [situation spine](../situation-spine.md)
+> Situation node: `backend-runtime/contract-and-validation/bridge-type-contract` · situation spine
 > `sides: server` · `twoSided: true`, `fusedAcrossSides: false` · recurrence **456** · risk **medium** · convergence **mixed**.
 > Merged from `ts-rs binding export` + `IPC payload field naming`.
 > Dimensions: **code-quality · ui · function**.
@@ -132,7 +132,7 @@ now drift silently, when narrowing `pub total_signals_captured: u64` to `u32` in
 
 ### Which clauses are physics, and which are this house
 
-Per the [contract](../golden-path-contract.md) and the [portability test](../research/portability-test.md),
+Per the contract and the portability test,
 a prescription only travels if something else reinvented it. Read-only sweep of `brainiac` (Rust · utoipa →
 `openapi-typescript` — the strong oracle, same problem shape), `personas-cloud` (FastAPI facade + Node
 orchestrator) and `personas-web` (Next.js) run 2026-08-14. Details in §6.
@@ -607,7 +607,7 @@ same conclusion.
 
 ## Prefer a type over a gate — the answer for this leaf
 
-Per the [contract](../golden-path-contract.md) this is answered explicitly, before §9.
+Per the contract this is answered explicitly, before §9.
 
 **Yes for two of the three defect classes, and both fixes are smaller than the gates that would police
 them.**
@@ -634,7 +634,7 @@ them.**
 
 ### The semantic conditions, stated first
 
-Three, each stack-free. Per the [portability test](../research/portability-test.md), **these travel and
+Three, each stack-free. Per the portability test, **these travel and
 the proxies below do not** — an adopting repo inherits the sentences and re-derives its own signals.
 
 > **(A)** A value crosses a serialization boundary without the type generator producing anything that
@@ -689,7 +689,7 @@ rule from a generically-named file:
   census OK — 1 rule(s), 4829 file-visits, 52 surviving violation(s) across 12 file(s).
 ```
 
-`4829 walked` is exactly `frontend.tsFiles` in [`shared-facts.json`](../shared-facts.json) — two
+`4829 walked` is exactly `frontend.tsFiles` in `shared-facts.json` — two
 independently derived counts agreeing, which is the only reason to trust either. `floor: 4000` matches
 every other `src`-rooted rule in the registry deliberately: two rules over one root must not hold two
 opinions about what "the frontend tree is intact" means.

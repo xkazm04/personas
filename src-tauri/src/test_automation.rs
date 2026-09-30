@@ -11,6 +11,31 @@
 //! Architecture:
 //!   MCP Server ──HTTP──▶ this module ──eval()──▶ WebView bridge (window.__TEST__)
 //!                                     ◀──invoke──┘ (result via __test_respond command)
+//!
+//! ## Curator's plan, headless
+//!
+//! `curator_plan_refresh` runs the registry's own instrument and lands a
+//! superseding plan run. Until these two routes existed the only way to reach
+//! it was to press a button on the Blueprint page, so an agent asked to
+//! populate the ledger could not - and `curator_plan_run` sat at zero rows,
+//! which a reader cannot tell apart from "ran and found nothing" without
+//! asking.
+//!
+//! ```bash
+//! # Is there a plan at all, and how old is the corpus it was read from?
+//! curl -s http://127.0.0.1:17320/curator/plan-status
+//! #   never run        -> {"success":true,"hasPlan":false}
+//! #   ran, found none  -> {"success":true,"hasPlan":true,"itemCount":0,...}
+//!
+//! # Run the instrument and land a plan. ~11 s warm, minutes cold.
+//! curl -s -X POST http://127.0.0.1:17320/curator/plan-refresh
+//! ```
+//!
+//! **This door exists only under `--features test-automation`** (the whole
+//! module does), i.e. `npm run tauri:dev:test`. It is never in a shipped
+//! build, and it calls the app's real Tauri commands rather than
+//! re-implementing the projection in a script - there is one instrument and
+//! one projection, and this is a second caller of them, not a second copy.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -128,6 +153,20 @@ const BRIDGE_TIMEOUT_WAIT_MAX: u64 = 300;
 /// long-running scenario helpers (startBuildFromIntent, waitForBuildPhase,
 /// waitForPersonaExecution) without forcing every caller to pass timeout_secs.
 const BRIDGE_TIMEOUT_LONG_METHOD: u64 = 180;
+/// Ceiling for `curator_plan_refresh`, which is a mutation with a subprocess
+/// fan-out behind it: the instrument spawns up to four node processes over the
+/// registry's twelve consumer checkouts, measured ~11 s warm, and its OWN
+/// ceilings (60 s scan + 90 s map + 30 s currency + 30 s fleet, run serially
+/// under one mutex) are what this has to clear. `BRIDGE_TIMEOUT_MUTATION`'s
+/// 30 s would expire mid-scan, and because a gateway timeout is RETRIED twice
+/// it would then start a second and a third instrument run behind the first -
+/// a caller would see a failure that is not one, three times over.
+const BRIDGE_TIMEOUT_CURATOR_REFRESH: u64 = 240;
+/// What the JS dispatcher is told to allow, in milliseconds. Five seconds
+/// SHORT of the HTTP ceiling on purpose: `__exec__` then gives up first and
+/// answers with a named bridge error, instead of the Rust side timing out into
+/// a retry of an 11-second instrument run.
+const CURATOR_REFRESH_JS_BUDGET_MS: u64 = (BRIDGE_TIMEOUT_CURATOR_REFRESH - 5) * 1000;
 
 async fn eval_bridge_method(
     state: &ServerState,
@@ -966,6 +1005,43 @@ async fn handle_cli_capture_run(
     .await
 }
 
+// ── Curator's plan — the headless door onto her instrument ──────────────────
+//
+// See the module header for the curl invocations. Both go through the frontend
+// bridge to the real Tauri command, so the projection has exactly one
+// implementation and this door cannot drift from what the Blueprint page shows.
+
+/// Run the instrument and land a superseding plan run.
+async fn handle_curator_plan_refresh(
+    AxumState(state): AxumState<ServerState>,
+) -> Result<String, (StatusCode, String)> {
+    eval_bridge_method_with_timeout(
+        &state,
+        "curatorPlanRefresh",
+        // `__exec__` reads `timeoutMs` off the params of ANY method to size its
+        // own cap, which defaults to 25 s - shorter than the instrument itself.
+        &serde_json::json!({ "timeoutMs": CURATOR_REFRESH_JS_BUDGET_MS }),
+        BRIDGE_TIMEOUT_CURATOR_REFRESH,
+    )
+    .await
+}
+
+/// Whether a plan exists at all, and what it is - a pure read that never runs
+/// the instrument. `hasPlan: false` is "nobody has ever run it", which is a
+/// different answer from a plan whose `itemCount` is 0, and telling those two
+/// apart is the whole point of this route.
+async fn handle_curator_plan_status(
+    AxumState(state): AxumState<ServerState>,
+) -> Result<String, (StatusCode, String)> {
+    eval_bridge_method_with_timeout(
+        &state,
+        "curatorPlanStatus",
+        &serde_json::json!({}),
+        BRIDGE_TIMEOUT_DEFAULT,
+    )
+    .await
+}
+
 async fn handle_health() -> &'static str {
     r#"{"status":"ok","server":"personas-test-automation","version":"0.2.0"}"#
 }
@@ -1429,6 +1505,9 @@ fn build_router(state: ServerState) -> Router {
         .route("/list-credentials", get(handle_list_credentials))
         .route("/list-cli-capturable", get(handle_list_cli_capturable))
         .route("/cli-capture-run", post(handle_cli_capture_run))
+        // Curator's plan — the headless door onto her instrument.
+        .route("/curator/plan-refresh", post(handle_curator_plan_refresh))
+        .route("/curator/plan-status", get(handle_curator_plan_status))
         // Build session — direct Tauri-command wrappers for headless drivers
         // (build-mcp, e2e harness). See `handle_build_*` for the contract.
         .route("/build/start", post(handle_build_start))

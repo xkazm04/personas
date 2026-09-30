@@ -41,6 +41,7 @@
     ".claude/skills": {"count":2,"sections":[7],"contexts":["`i18n-translate`, `ship-milestone`, plus the `scan-*` dirs discovered from `.claude/skills`, of which"],"resolved":false,"isDir":true},
     ".claude/skills/scan-sweep": {"count":1,"sections":[12],"contexts":["`.claude/skills/scan-sweep` — one skill, currently fresh in every respect that matters. The 22"],"resolved":false,"isDir":true},
     ".github/workflows/ci.yml": {"count":1,"sections":[9],"contexts":["**`golden-path-census` pre-push job** in `lefthook.yml`. Per this batch's calibration `ci.yml` is red"],"resolvedFrom":"basename","verbatim":"ci.yml"},
+    "RecipeCard.tsx": {"count":1,"sections":[0],"lines":["115-146"],"contexts":["`commands/recipes/crud.rs:108-137`, **no `is_builtin` guard**, and `RecipeCard.tsx:115-146` offers"],"resolved":false},
     "build_sessions.rs": {"count":1,"sections":[7],"lines":["1278-1323"],"contexts":["(`build_sessions.rs:1278-1323`)."],"resolved":false},
     "lefthook.yml": {"count":1,"sections":[9],"contexts":["**`golden-path-census` pre-push job** in `lefthook.yml`. Per this batch's calibration `ci.yml` is red"]},
     "lib.rs": {"count":1,"sections":[7],"lines":["1797-1800"],"contexts":["- Retirement is one hand-written `DELETE` for one id (`lib.rs:1797-1800`, `builtin-local-scraper`,"],"resolved":false},
@@ -274,14 +275,6 @@
       "contexts": [
         "| `src/features/plugins/fleet/sub_skills/SkillInstallModal.tsx:79-92` | **the caller that reads the install outcome** — `if (result.installed) … else if (result.reason === 'exists') { warn; setOverwr…"
       ]
-    },
-    "src/features/recipes/sub_list/components/RecipeCard.tsx": {
-      "count": 1,
-      "sections": [0],
-      "lines": ["115-146"],
-      "contexts": ["`commands/recipes/crud.rs:108-137`, **no `is_builtin` guard**, and `RecipeCard.tsx:115-146` offers"],
-      "resolvedFrom": "basename",
-      "verbatim": "RecipeCard.tsx"
     },
     "src/features/teams/sub_factory/passport/PassportActionsRow.tsx": {
       "count": 1,

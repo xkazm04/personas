@@ -464,7 +464,7 @@ dominant variants are semantically empty, no frontend policy can be better than 
 
 ## 9. The missing gate
 
-**Manifestation layer** ([`golden-path-contract.md:34-60`](../golden-path-contract.md)). The warning
+**Manifestation layer** (`golden-path-contract.md:34-60`). The warning
 must be loud here: the convergence oracle found **zero** lint or CI gates on error-surfacing policy in
 any of the three siblings — `personas-web` ships five bespoke ESLint AST rules and points none at
 errors (and sets `caughtErrorsIgnorePattern: "^_"`, actively permitting discard); `brainiac` ships a

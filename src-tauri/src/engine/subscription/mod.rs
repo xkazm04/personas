@@ -33,6 +33,9 @@
 //!   [`autonomy_coaching`], [`autonomy_kpi`].
 //! - [`attention`] — the living-agent attention loop (WP5): one dispatched
 //!   lane per tick for personas holding attention-enabled charters.
+//! - [`autonomy_admission`] — the one "may this persona run autonomously on
+//!   Claude now?" gate (quota stop, memory stop, enabled, codex_mode,
+//!   concurrency cap) for every autonomous spender outside the attention loop.
 //! - [`watchdogs`] — the always-on, spend-free stall detectors.
 //!
 //! Everything stays reachable as `crate::engine::subscription::X`; the glob
@@ -40,6 +43,12 @@
 
 mod attention;
 mod attention_decide;
+/// `pub(crate)`, not glob-re-exported: the G55 admission gate every
+/// autonomous Claude spender outside the attention loop asks before it starts
+/// work (goal advance, assignment resume, orchestrator steps, boot recovery,
+/// channel delegation, incident continuation). Reached by path so its
+/// `Admission` never collides with the attention loop's own.
+pub(crate) mod autonomy_admission;
 mod autonomy_backlog;
 mod autonomy_coaching;
 mod autonomy_goals;

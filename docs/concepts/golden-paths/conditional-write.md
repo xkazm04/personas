@@ -1,7 +1,7 @@
 # Golden path — Conditional write
 
 > Situation node: `data-persistence/repository-access/conditional-write` ·
-> [situation spine](../situation-spine.md) · recurrence 18 · risk **HIGH** ·
+> situation spine · recurrence 18 · risk **HIGH** ·
 > sides: **server** · convergence: **diverged**
 > Composed 2026-08-15 against `master` @ `2a874e692`.
 >

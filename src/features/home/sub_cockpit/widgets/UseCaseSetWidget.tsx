@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { CircleSlash, Layers, Sparkles, Target } from 'lucide-react';
+import { ChipRow, Hint, ListRow, Rows, Tile, type Tone } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
@@ -9,23 +9,30 @@ interface UseCase {
   description: string;
 }
 
+type Role = 'golden' | 'variant' | 'out_of_scope';
+
+/** The role's place in the reading order and its tone: golden first, what to refuse last. */
+const ROLES: ReadonlyArray<{ role: Role; tone: Tone }> = [
+  { role: 'golden', tone: 'success' },
+  { role: 'variant', tone: 'info' },
+  { role: 'out_of_scope', tone: 'neutral' },
+];
+
+function roleOf(role: string): Role {
+  return role === 'golden' || role === 'out_of_scope' ? role : 'variant';
+}
+
 /**
- * Inline chat-card Athena emits via `show_use_case_set { intent, use_cases }`.
- * Renders 3-5 proposed use cases tagged Golden / Variant / Out-of-scope,
- * applying the use-case decomposition rules from the persona-design
- * best-practices doctrine.
+ * Inline chat-card Athena emits via `show_use_case_set { intent, use_cases }`: 3-5 proposed use
+ * cases tagged Golden / Variant / Out-of-scope (the persona-design doctrine's decomposition;
+ * a set with only golden cases breaks on its first edge-case input).
  *
- * Golden = the most common, most-valued input class (airtight).
- * Variant = known input shapes needing different handling.
- * Out-of-scope = inputs the persona should explicitly refuse.
- *
- * The set should cover all three roles — a persona with only Golden
- * cases breaks on its first edge-case input.
+ * One kit Tile. The roles are a count strip under the head (the tile's parent layer: how the set
+ * splits), each case is one row whose mark carries its role, sorted golden, variant, out of
+ * scope. The intent is not repeated here: the surface shows it once.
  */
-export function UseCaseSetWidget({ config, title }: CockpitWidgetProps) {
+export function UseCaseSetWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
   const { t } = useTranslation();
-  const intent =
-    typeof config?.intent === 'string' ? (config.intent as string).trim() : '';
   const useCases = useMemo<UseCase[]>(() => {
     const raw = config?.use_cases;
     if (!Array.isArray(raw)) return [];
@@ -39,97 +46,49 @@ export function UseCaseSetWidget({ config, title }: CockpitWidgetProps) {
       .filter((u) => u.label.length > 0);
   }, [config]);
 
-  if (useCases.length === 0) {
-    return (
-      <div className="rounded-card border border-foreground/10 bg-secondary/40 p-3 typo-caption text-foreground">
-        {t.athena.use_case_set_empty}
-      </div>
-    );
-  }
-
-  // Sort golden → variant → out_of_scope so the card reads from "most
-  // important to handle" down to "must refuse cleanly".
-  const ordered = [...useCases].sort(
-    (a, b) => roleRank(a.role) - roleRank(b.role),
-  );
+  const roleLabel: Record<Role, string> = {
+    golden: t.athena.use_case_set_role_golden,
+    variant: t.athena.use_case_set_role_variant,
+    out_of_scope: t.athena.use_case_set_role_out_of_scope,
+  };
+  const heading = title || t.athena.use_case_set_title;
+  const rank = (r: string) => ROLES.findIndex((x) => x.role === roleOf(r));
+  const ordered = [...useCases].sort((a, b) => rank(a.role) - rank(b.role));
+  const chips = ROLES.map(({ role, tone }) => ({
+    id: role,
+    label: <span className="k-cap inline-block">{roleLabel[role]}</span>,
+    count: useCases.filter((u) => roleOf(u.role) === role).length,
+    tone,
+    glyph: 'soft' as const,
+  })).filter((c) => c.count > 0);
 
   return (
-    <div
-      className="rounded-card border border-amber-500/30 bg-amber-500/[0.04] p-4 space-y-3"
-      data-testid="companion-use-case-set-widget"
+    <Tile
+      span={span}
+      title={heading}
+      count={useCases.length || undefined}
+      actions={actions}
+      footer={footer}
+      state={useCases.length === 0 ? 'empty' : undefined}
+      empty={{ title: t.athena.use_case_set_empty }}
+      testId="companion-use-case-set-widget"
     >
-      <header className="flex items-baseline gap-2 typo-caption text-amber-300/85">
-        <Layers className="w-3.5 h-3.5" />
-        <span className="font-medium">
-          {title || t.athena.use_case_set_title}
-        </span>
-        {intent && (
-          <span className="text-foreground truncate" title={intent}>
-            · {intent}
-          </span>
-        )}
-      </header>
-      <ul className="space-y-2">
+      <ChipRow chips={chips} label={heading} emptyLabel={t.athena.use_case_set_empty} />
+      <Rows count={ordered.length} empty={{ title: t.athena.use_case_set_empty }}>
         {ordered.map((uc, i) => {
-          const { Icon, roleLabel, accent } = roleVisuals(uc.role, t);
+          const role = roleOf(uc.role);
+          const tone = ROLES.find((x) => x.role === role)?.tone ?? 'info';
           return (
-            <li
+            <ListRow
               key={`${uc.role}-${i}-${uc.label}`}
-              className={`rounded-card border ${accent} p-3 space-y-1`}
-            >
-              <div className="flex items-center gap-2">
-                <Icon className="w-3.5 h-3.5 shrink-0" />
-                <span className="typo-body text-foreground/95 flex-1">
-                  {uc.label}
-                </span>
-                <span className="typo-caption text-foreground shrink-0">
-                  {roleLabel}
-                </span>
-              </div>
-              {uc.description && (
-                <p className="typo-caption text-foreground pl-5">
-                  {uc.description}
-                </p>
-              )}
-            </li>
+              size="s"
+              name={uc.label}
+              mark={{ tone, glyph: 'soft', label: roleLabel[role] }}
+              meta={uc.description ? <Hint content={uc.description}><span className="k-ellipsis">{uc.description}</span></Hint> : undefined}
+            />
           );
         })}
-      </ul>
-    </div>
+      </Rows>
+    </Tile>
   );
-}
-
-function roleRank(role: string): number {
-  if (role === 'golden') return 0;
-  if (role === 'variant') return 1;
-  return 2;
-}
-
-function roleVisuals(
-  role: string,
-  t: ReturnType<typeof useTranslation>['t'],
-): {
-  Icon: typeof Target;
-  roleLabel: string;
-  accent: string;
-} {
-  if (role === 'golden') {
-    return {
-      Icon: Target,
-      roleLabel: t.athena.use_case_set_role_golden,
-      accent: 'border-emerald-500/30 bg-emerald-500/[0.05]',
-    };
-  }
-  if (role === 'out_of_scope') {
-    return {
-      Icon: CircleSlash,
-      roleLabel: t.athena.use_case_set_role_out_of_scope,
-      accent: 'border-rose-500/30 bg-rose-500/[0.05]',
-    };
-  }
-  return {
-    Icon: Sparkles,
-    roleLabel: t.athena.use_case_set_role_variant,
-    accent: 'border-violet-500/30 bg-violet-500/[0.05]',
-  };
 }

@@ -1,6 +1,6 @@
 # Golden path — JSON blob column
 
-> Situation node: `data-persistence/data-modeling/json-blob-column` · [situation spine](../situation-spine.md)
+> Situation node: `data-persistence/data-modeling/json-blob-column` · situation spine
 > Composed 2026-08-13 from a ground-truth sweep of the Rust tree (`src-tauri/{src,db,core,engine,data,macros}` —
 > 954 `.rs` files), the four migration files (253 tables / 2,959 columns parsed), `src/**` (318 `JSON.parse`
 > sites / 231 files), and `src/lib/bindings/`, against `master` @ `d5a7ead13`. `target/` and
@@ -142,7 +142,7 @@ Eight independent corruption policies on the same bytes, spanning both sides of 
 | `src/engine/runner/mod.rs:159,172` | …**then `to_string(..).unwrap_or_default()`** re-assigns it, so all non-cascade fields are dropped |
 | `src/features/agents/sub_editor/libs/PersonaDraft.ts:89,151` | **warn + suppress autosave** (correct) |
 | `src/features/agents/components/QuickEditPanel.tsx:14-22` | **silent `return ''`**, then `:37-43` diffs against it and calls `onSave` |
-| `teams/.../useTeamStudioData.ts:64` · `agents/sub_use_cases/libs/useCaseDetailHelpers.ts:108` · `templates/draft-editor/DraftSettingsTab.tsx:17` | three further hand-rolled decodes |
+| `teams/.../useTeamStudioData.ts:64` · `agents/sub_use_cases/libs/useCaseDetailHelpers.ts:108` · `templates/draft-editor/DraftSettingsTab.tsx:17` (deleted 2026-09-25) | three further hand-rolled decodes |
 
 The frontend's careful `suppressModelSave` gate protects the column from the editor — and `QuickEditPanel`, a different component on the same screen family, writes to it with no gate at all.
 

@@ -73,7 +73,7 @@ pub struct AdoptArchitectInput {
     #[serde(default)]
     pub recipes: Vec<AppMasterRecipeRequest>,
     /// A tier slug (`haiku` | `sonnet` | `opus`) or a full `claude-*` model
-    /// id. Defaults to `opus`.
+    /// id. Defaults to `sonnet`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub model: Option<String>,

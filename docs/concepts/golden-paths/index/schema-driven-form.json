@@ -35,6 +35,9 @@
     ".github/workflows/ci.yml": {"count":1,"sections":[9],"contexts":["(`lefthook.yml`, `golden-path-census`). Per the brief's calibration, `ci.yml` is red on pre-existing"],"resolvedFrom":"basename","verbatim":"ci.yml"},
     "CreateVisual.tsx": {"count":1,"sections":[],"lines":["12"],"contexts":["descriptor arrays (`CreateVisual.tsx:12`, `TileValue.tsx:84`) render `<div>`s and `<span>`s, not"],"resolved":false},
     "PropsControl.tsx": {"count":2,"sections":[9,12],"lines":["43"],"contexts":["ending `return null` (`PropsControl.tsx:43`) and a `default: return false`"],"resolved":false},
+    "RecipeEditor.tsx": {"count":1,"sections":[],"contexts":["`RecipeInputSection.tsx`, `RecipeEditor.tsx`, `SchemaFieldBuilder.tsx`, `parameterCoverage.ts`,"],"resolved":false},
+    "RecipeInputSection.tsx": {"count":1,"sections":[],"contexts":["`RecipeInputSection.tsx`, `RecipeEditor.tsx`, `SchemaFieldBuilder.tsx`, `parameterCoverage.ts`,"],"resolved":false},
+    "SchemaFieldBuilder.tsx": {"count":1,"sections":[],"contexts":["`RecipeInputSection.tsx`, `RecipeEditor.tsx`, `SchemaFieldBuilder.tsx`, `parameterCoverage.ts`,"],"resolved":false},
     "TileValue.tsx": {"count":1,"sections":[],"lines":["84"],"contexts":["descriptor arrays (`CreateVisual.tsx:12`, `TileValue.tsx:84`) render `<div>`s and `<span>`s, not"],"resolved":false},
     "_dev-inspector/devLocate.ts": {"count":1,"sections":[12],"contexts":["module (`_dev-inspector/devLocate.ts`, ~75% textually identical to `personas/src/lib/dev/"],"resolved":false},
     "console/app/console/modules/memories/archive-data.ts": {"count":1,"sections":[],"lines":["47-48"],"contexts":["from one `as const` array (`console/app/console/modules/memories/archive-data.ts:47-48`) and then"],"resolved":false},
@@ -135,25 +138,22 @@
       "resolvedFrom": "basename",
       "verbatim": "TriageRulesPanel.tsx"
     },
-    "src/features/recipes/shared/recipeParseUtils.ts": {"count":1,"sections":[7],"lines":["45"],"contexts":["(`src/features/recipes/shared/recipeParseUtils.ts:45` and"]},
-    "src/features/recipes/sub_editor/components/RecipeEditor.tsx": {"count":1,"sections":[],"contexts":["`RecipeInputSection.tsx`, `RecipeEditor.tsx`, `SchemaFieldBuilder.tsx`, `parameterCoverage.ts`,"],"resolvedFrom":"basename","verbatim":"RecipeEditor.tsx"},
+    "src/features/recipes/shared/recipeParseUtils.ts": {"count":1,"sections":[7],"lines":["45"],"contexts":["(`src/features/recipes/shared/recipeParseUtils.ts:45` and"],"resolved":false},
     "src/features/recipes/sub_editor/components/SchemaFieldBuilder.tsx": {
-      "count": 2,
+      "count": 1,
       "sections": [7],
       "lines": ["18"],
-      "contexts": ["`RecipeInputSection.tsx`, `RecipeEditor.tsx`, `SchemaFieldBuilder.tsx`, `parameterCoverage.ts`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "SchemaFieldBuilder.tsx"
+      "contexts": ["| `src/features/recipes/sub_editor/components/SchemaFieldBuilder.tsx:18` | `const FIELD_TYPES = ['text','number','boolean','select','textarea','json'];` — a `string[]`, **not `as const`** |"],
+      "resolved": false
     },
     "src/features/recipes/sub_playground/tabs/RecipeInputSection.tsx": {
-      "count": 2,
+      "count": 1,
       "sections": [7],
       "lines": ["124-158"],
-      "contexts": ["`RecipeInputSection.tsx`, `RecipeEditor.tsx`, `SchemaFieldBuilder.tsx`, `parameterCoverage.ts`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "RecipeInputSection.tsx"
+      "contexts": ["| `src/features/recipes/sub_playground/tabs/RecipeInputSection.tsx:124-158` | recognises `select`, `boolean`, `number`; everything else → `<input type=\"text\">` |"],
+      "resolved": false
     },
-    "src/features/recipes/sub_playground/tabs/recipeTestHelpers.ts": {"count":1,"sections":[7],"lines":["15"],"contexts":["`src/features/recipes/sub_playground/tabs/recipeTestHelpers.ts:15`), and both are"]},
+    "src/features/recipes/sub_playground/tabs/recipeTestHelpers.ts": {"count":1,"sections":[7],"lines":["15"],"contexts":["`src/features/recipes/sub_playground/tabs/recipeTestHelpers.ts:15`), and both are"],"resolved":false},
     "src/features/shared/components/forms/": {
       "count": 1,
       "sections": [3],

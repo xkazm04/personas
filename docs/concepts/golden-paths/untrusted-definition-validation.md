@@ -1,6 +1,6 @@
 # Golden path — validating an untrusted definition
 
-> Situation node: `ai-agents/agent-ux/untrusted-definition-validation` · [situation spine](../situation-spine.md)
+> Situation node: `ai-agents/agent-ux/untrusted-definition-validation` · situation spine
 > recurrence **10** · risk **HIGH** · sides **client** · `twoSided: true` · convergence **mixed**
 > dimensions: **function · resilience · security · code-quality**
 > Composed 2026-08-16 against `master` @ `629a914af`.
@@ -155,7 +155,7 @@ Everything in §7 is a place where the app filters, casts, or does nothing, inst
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and every
+Per the portability test, the head is physically separated and every
 clause carries its warrant, so an adopting repo can tell physics from local calibration. No file path,
 primitive name or count appears below this line until the head ends.
 

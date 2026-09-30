@@ -143,6 +143,24 @@ fn hire_submitter_keys(user_db: &UserDbPool, persona_id: &str) -> Result<Vec<Str
     Ok(rows.collect::<Result<Vec<_>, _>>()?)
 }
 
+/// Did `key_id` submit a kp hire that produced `persona_id`? The ownership
+/// test of `POST /api/kp/personas/{id}/retire`: a key may end only the tenure
+/// of a persona it asked for. Read from the same result stamp
+/// [`revoke_on_retire`] reads, so "who may retire it" and "whose grant a
+/// retirement removes" are one answer. It survives the persona row itself —
+/// the approval row lives in the user database — which is what lets a repeat
+/// retire of an already-deleted persona tell "yours, already gone" from
+/// "never heard of it".
+pub fn key_hired_persona(
+    user_db: &UserDbPool,
+    key_id: &str,
+    persona_id: &str,
+) -> Result<bool, AppError> {
+    Ok(hire_submitter_keys(user_db, persona_id)?
+        .iter()
+        .any(|k| k == key_id))
+}
+
 /// Remove `personas:execute:persona:<persona_id>` from the key(s) that hired
 /// this persona through kp. Returns the ids of the keys it was actually
 /// removed from. Never fails; problems are logged and the retirement goes on.
@@ -337,6 +355,17 @@ mod tests {
             vec!["personas:execute:persona:p1".to_string()],
             "only the key that hired the persona loses the grant"
         );
+    }
+
+    #[test]
+    fn only_the_submitting_key_hired_the_persona() {
+        let (pool, user_db) = pools();
+        let key = kp_key(&pool);
+        let other = kp_key(&pool);
+        hire_row(&user_db, "appr_1", Some(&key), "p1");
+        assert!(key_hired_persona(&user_db, &key, "p1").unwrap());
+        assert!(!key_hired_persona(&user_db, &other, "p1").unwrap());
+        assert!(!key_hired_persona(&user_db, &key, "p2").unwrap());
     }
 
     #[test]

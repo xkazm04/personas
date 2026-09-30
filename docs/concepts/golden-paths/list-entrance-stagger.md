@@ -1,6 +1,6 @@
 # Golden path — List entrance stagger
 
-> Situation node: `ui-system/motion-and-accessibility/list-entrance-stagger` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/motion-and-accessibility/list-entrance-stagger` · situation spine
 > Composed 2026-08-15 at `0a5b7fcaf`. Sweep: all **4,829** `src/**` `.ts`/`.tsx` files walked by the
 > census engine (six independent passes), plus full reads of `RevealItem.tsx`,
 > `useProgressiveReveal.ts`, `useMotion.ts`, `UnifiedTable.tsx`, `DataGrid.tsx`,
@@ -15,7 +15,7 @@
 > **Settles:** when a list is allowed to animate in, when it must not, and what stops the same
 > rows animating twice.
 >
-> Shared counts cited from [`shared-facts.json`](../shared-facts.json); everything else was
+> Shared counts cited from `shared-facts.json`; everything else was
 > measured during composition. Deviations become `violating` cells.
 
 ---
@@ -53,7 +53,7 @@ which is a different path's territory.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head carries no file path,
+Per the portability test, the head carries no file path,
 primitive name or count, and every clause carries its **warrant** so an adopting repo can tell
 physics from local calibration.
 
@@ -246,7 +246,7 @@ row is clickable from frame one whether you like it or not.
 
 ### Can the primitive's signature make the wrong call impossible? — answered before §9
 
-Per [the contract's "Prefer a type over a gate"](../golden-path-contract.md#prefer-a-type-over-a-gate--checked-three-times).
+Per the contract's "Prefer a type over a gate".
 **Yes for one property, already shipped and already perfect. No for the property that is
 actually broken — and the corpus's own two distinctions explain exactly why.**
 

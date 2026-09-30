@@ -26,6 +26,8 @@ const MemoriesPageGraph = lazyRetry(() => import('@/features/overview/sub_memori
 // The former Reliability (SLA), Health and Leaderboard tabs were consolidated
 // into Mission Control (2026-08-25) — their best sections render there now.
 const IncidentsInbox = lazyRetry(() => import('@/features/overview/sub_incidents'));
+// Routed 2026-09-25 after sitting unimported since a March 2026 refactor.
+const ObservabilityDashboard = lazyRetry(() => import('@/features/overview/sub_observability'));
 
 /**
  * Suspense fallback while a tab's lazy chunk loads (hard refresh / first visit).
@@ -66,6 +68,7 @@ function OverviewContent() {
         <Suspense fallback={<OverviewRouteSkeleton />}>
           {overviewTab === 'home' ? <DashboardWithSubtabs /> :
           overviewTab === 'incidents' ? <IncidentsInbox /> :
+          overviewTab === 'observability' ? <ObservabilityDashboard /> :
           overviewTab === 'executions' ? <ExecutionsWithSubtabs /> :
           overviewTab === 'manual-review' ? <ManualReviewList /> :
           overviewTab === 'messages' ? <ReportList /> :

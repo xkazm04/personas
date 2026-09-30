@@ -1,6 +1,6 @@
 # Golden path — Command placement: which module owns the command
 
-> Situation node: `backend-runtime/command-definition/command-naming-placement` · [situation spine](../situation-spine.md)
+> Situation node: `backend-runtime/command-definition/command-naming-placement` · situation spine
 > `sides: server` · recurrence **1,650** · risk **low**. Dimensions: **code-quality · function**.
 > Composed 2026-08-14 against `master` @ `e1a39e38a` from a ground-truth sweep of all **963**
 > `.rs` files under `src-tauri/` — the **1,661** `#[tauri::command]` attribute sites, the **299**

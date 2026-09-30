@@ -25,6 +25,7 @@
   "citations": {
     "ExecutionListRow.tsx": {"count":2,"sections":[0,7],"lines":["77"],"contexts":["bindings, a UI badge (`ExecutionListRow.tsx:77`), a list filter"],"resolved":false},
     "MemoryHeaderActions.tsx": {"count":1,"sections":[],"lines":["29"],"contexts":["`MemoryHeaderActions.tsx:29`. All six replace a visible `lucide-react` icon with"],"resolved":false},
+    "RecipeVersionsTab.tsx": {"count":1,"sections":[],"lines":["209"],"contexts":["`SweepButton.tsx:90`, `RecipeVersionsTab.tsx:209`,"],"resolved":false},
     "UseCaseDetailPanel.tsx": {"count":1,"sections":[7],"lines":["152-160"],"contexts":["(`UseCaseDetailPanel.tsx:152-160`) and the **Run now** button (`:167-182`, which"],"resolved":false},
     "UseCaseRow.tsx": {"count":1,"sections":[7],"lines":["191-209"],"contexts":["(`UseCaseRow.tsx:191-209`) carries the tooltip *\"Simulate — real API calls, no"],"resolved":false},
     "automations.rs": {"count":1,"sections":[7],"lines":["155"],"contexts":["`trigger_automation` (`automations.rs:155`) checks `is_runnable()` at `:164`"],"resolved":false},
@@ -98,7 +99,6 @@
     },
     "src/features/overview/sub_events/components/EventLogList.tsx": {"count":1,"sections":[],"lines":["249"],"contexts":["- The 4 A-only sites (`EventLogList.tsx:249`, `ConnectorsSection.tsx:218`,"],"resolvedFrom":"basename","verbatim":"EventLogList.tsx"},
     "src/features/plugins/dev-tools/sub_triage/findings/SweepButton.tsx": {"count":1,"sections":[],"lines":["90"],"contexts":["`SweepButton.tsx:90`, `RecipeVersionsTab.tsx:209`,"],"resolvedFrom":"basename","verbatim":"SweepButton.tsx"},
-    "src/features/recipes/sub_playground/tabs/RecipeVersionsTab.tsx": {"count":1,"sections":[],"lines":["209"],"contexts":["`SweepButton.tsx:90`, `RecipeVersionsTab.tsx:209`,"],"resolvedFrom":"basename","verbatim":"RecipeVersionsTab.tsx"},
     "src/features/settings/sub_portability/components/ExportSection.tsx": {"count":1,"sections":[],"lines":["112"],"contexts":["`WebhookRequestInspector.tsx:126`, `ExportSection.tsx:112`,"],"resolvedFrom":"basename","verbatim":"ExportSection.tsx"},
     "src/features/shared/components/buttons/AsyncButton.tsx": {"count":1,"sections":[],"lines":["85"],"contexts":["(`Button.tsx:230,:237`, `AsyncButton.tsx:85`) — and returns **66 matches / 52"],"resolvedFrom":"basename","verbatim":"AsyncButton.tsx"},
     "src/features/teams/sub_teamMemory/components/panel/MemoryPanelList.tsx": {"count":1,"sections":[],"lines":["137"],"contexts":["- The 1 B-only site (`MemoryPanelList.tsx:137`) wraps the consequent in a"],"resolvedFrom":"basename","verbatim":"MemoryPanelList.tsx"},

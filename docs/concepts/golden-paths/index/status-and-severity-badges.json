@@ -23,7 +23,7 @@
   "ruleIds": ["untranslatable-token-label"],
   "ruleIdsFrom": "section-9",
   "sections": [1,2,3,4,5,6,7,8,9],
-  "citationCount": 97,
+  "citationCount": 100,
   "triggers": [
     "\"I'm adding a new status to this table — where do I put the badge colour?\"",
     "\"This chip is showing `dead_letter` / `auto_fix_pending` instead of English.\"",
@@ -36,6 +36,7 @@
   ],
   "citations": {
     "EventsListColumns.tsx": {"count":2,"sections":[5],"lines":["10","85"],"contexts":["mistake — `personas-web` has 4 (`HealthIssueRow.tsx:6`, `EventsListColumns.tsx:10`, …), `brainiac`"],"resolved":false},
+    "HealingIssueStatusBadge.tsx": {"count":2,"sections":[4,7],"lines":["33","70,100"],"contexts":["prop and keep the branch logic in one component — `HealingIssueStatusBadge.tsx:33` was the repo's"],"resolved":false},
     "HealthIssueRow.tsx": {"count":2,"sections":[5],"lines":["6","15"],"contexts":["mistake — `personas-web` has 4 (`HealthIssueRow.tsx:6`, `EventsListColumns.tsx:10`, …), `brainiac`"],"resolved":false},
     "PracticeRolloutModal.tsx": {"count":1,"sections":[7],"lines":["129"],"contexts":["`ScheduleRow.tsx:120`, `STATE_ICON` at `PracticeRolloutModal.tsx:129`, `STATUS_DOT`-alikes elsewhere."],"resolved":false},
     "ScheduleRow.tsx": {"count":2,"sections":[7],"lines":["66","120"],"contexts":["`HEALTH_CONFIG` at `ScheduleRow.tsx:66` and again at `ConnectorReadiness.tsx:30`, `SEVERITY_CONFIG`"],"resolved":false},
@@ -47,13 +48,13 @@
     "console/src/docs/facets.ts": {"count":2,"sections":[4],"lines":["10-16"],"contexts":["`brainiac`'s `console/src/docs/facets.ts:10-16` argues this explicitly — an unknown policy"],"resolved":false},
     "dev_workspaces.rs": {"count":1,"sections":[7],"contexts":["all in `dev_workspaces.rs`, against 66 vocabularies. Everywhere else, an invalid token reaches SQLite"],"resolved":false},
     "displayUseCase.ts": {"count":1,"sections":[8],"lines":["101"],"contexts":["cannot supply — hence `STATE_HEX` (`displayUseCase.ts:101`), `HEALTH_HEX` (`GraphCanvas.tsx:29`)"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["Repo denominators come from [`shared-facts.json`](../shared-facts.json) — 2,104 `.tsx` of the"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "incremental.rs": {"count":1,"sections":[7],"lines":["4423"],"contexts":["coverage.** The 49 include `verdict = helpful|wrong|outdated` (`incremental.rs:4423`),"],"resolved":false},
     "library.rs": {"count":1,"sections":[8],"lines":["4-6"],"contexts":["convention. `brainiac` documents the same convention at `library.rs:4-6` (*\"every enum mirrors a"],"resolved":false},
     "library/primitives.tsx": {"count":1,"sections":[],"lines":["41"],"contexts":["private to the file; `brainiac`'s `Stamp({status: Status})` (`library/primitives.tsx:41`) is the"],"resolved":false},
     "openapi.json": {"count":2,"sections":[],"contexts":["codegen pipeline (`openapi-typescript` from a server-emitted `openapi.json`) and then defeated it:"],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["Do not add this to `scripts/census/rules.json` from this document; the orchestrator merges it."]},
     "scripts/i18n/gen-types.mjs": {"count":1,"sections":[9],"contexts":["Precondition on the type check itself: it depends on `scripts/i18n/gen-types.mjs` continuing to emit"]},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["Repo denominators come from `shared-facts.json` — 2,104 `.tsx` of the"],"resolved":false},
     "src-tauri/db/src/chain.rs": {"count":1,"sections":[7],"lines":["45-81"],"contexts":["`src-tauri/db/src/chain.rs:45-81`, written after `healing_capped` shipped as a raw token) and"]},
     "src-tauri/db/src/migrations/incremental.rs": {"count":1,"sections":[3],"contexts":["`src-tauri/db/src/migrations/incremental.rs` and siblings, covering 66 unique vocabularies. It is a"],"resolved":false},
     "src-tauri/db/src/repos/dev_workspaces.rs": {"count":2,"sections":[3,6],"lines":["260","260-269"],"contexts":["- **`validate_one_of(value, allowed, label)`** (`src-tauri/db/src/repos/dev_workspaces.rs:260`) — the"]},
@@ -142,17 +143,21 @@
       "count": 1,
       "sections": [7],
       "lines": ["190"],
-      "contexts": ["`HealingIssueStatusBadge.tsx:70,100` and `HealingIssueModal.tsx:190` render `{issue.severity}`;"],
+      "contexts": [
+        "`HealingIssueStatusBadge.tsx:70,100` and `HealingIssueModal.tsx:190` rendered `{issue.severity}` when measured (deleted 2026-09-25 in `a21c66544`: its state ladder now lives in `sub_observability/lib…"
+      ],
       "resolvedFrom": "basename",
       "verbatim": "HealingIssueModal.tsx"
     },
-    "src/features/overview/sub_observability/components/HealingIssueStatusBadge.tsx": {
+    "src/features/overview/sub_observability/components/HealingIssueStatusBadge.tsx": {"count":1,"sections":[6],"lines":["8-20,33"],"contexts":["- `src/features/overview/sub_observability/components/HealingIssueStatusBadge.tsx:8-20,33` — the"],"resolved":false},
+    "src/features/overview/sub_observability/libs/issueModel.ts": {
       "count": 3,
       "sections": [4,6,7],
-      "lines": ["33","8-20,33","70,100"],
-      "contexts": ["prop and keep the branch logic in one component — `HealingIssueStatusBadge.tsx:33` is the repo's"],
-      "resolvedFrom": "basename",
-      "verbatim": "HealingIssueStatusBadge.tsx"
+      "contexts": [
+        "only instance of this move and its docstring explained it (deleted 2026-09-25 in `a21c66544`: its state ladder now lives in `sub_observability/libs/issueModel.ts` `issueState`, a closed union rendere…"
+      ],
+      "resolvedFrom": "suffix",
+      "verbatim": "sub_observability/libs/issueModel.ts"
     },
     "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx": {
       "count": 1,

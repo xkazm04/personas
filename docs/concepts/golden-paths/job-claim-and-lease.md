@@ -1,14 +1,14 @@
 # Golden path — Job claim and lease
 
 > Situation node: `backend-runtime/job-coordination/job-claim-and-lease` ·
-> [situation spine](../situation-spine.md) · recurrence 13 · risk **HIGH** ·
+> situation spine · recurrence 13 · risk **HIGH** ·
 > sides: **server** · convergence: **mixed** ·
 > dimensions: **function · resilience · cost**
 > merged from *Idempotent claim and lease*, *Atomic job claim*.
 > Composed 2026-08-15 against `master` @ `bbb1a8864`.
 >
 > **Sweep size.** All **963** `.rs` files under `src-tauri` (agrees with
-> [`shared-facts.json`](../shared-facts.json) `rust.files`), lexed with a
+> `shared-facts.json` `rust.files`), lexed with a
 > string/comment-aware Rust tokenizer rather than grepped: **83,759** string
 > literals — byte-identical to the count
 > [terminal-state-and-recovery](./terminal-state-and-recovery.md) reported, which

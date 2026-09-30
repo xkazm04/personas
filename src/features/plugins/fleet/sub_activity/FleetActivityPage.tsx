@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Activity, RefreshCw, AlertCircle } from 'lucide-react';
+import { Activity } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { Button } from '@/features/shared/components/buttons';
 import { recentTranscripts } from '@/api/fleet/fleet';
 import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -9,9 +8,8 @@ import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { FleetSessionInsights } from '../sub_grid/FleetSessionInsights';
-import { FleetSearchField } from '../sub_grid/FleetSearchField';
 import { resolveActivityTarget, projectLabel } from './activityTarget';
-import { FleetActivityRow } from './FleetActivityRow';
+import { FleetActivitySurface } from './FleetActivitySurface';
 
 /**
  * Cross-session activity feed (F2 / P2.2). Lists the most recently-active
@@ -25,6 +23,9 @@ import { FleetActivityRow } from './FleetActivityRow';
  * by, so a click goes to the registry's session when it has one and to the
  * transcript's own rollup when it does not — a finished run stays readable
  * rather than becoming a dead row.
+ *
+ * The body is composed from the composition kit (FleetActivitySurface): a row
+ * click selects and shows the detail, Enter or the detail's action is the door.
  */
 export default function FleetActivityPage({ onOpenSessions }: {
   /** Switch the Fleet plugin to its Sessions tab. Absent = stay put. */
@@ -39,6 +40,10 @@ export default function FleetActivityPage({ onOpenSessions }: {
   const sessions = useSystemStore((st) => st.fleetSessions);
   const setActiveSession = useSystemStore((st) => st.fleetSetActiveSession);
   const [insights, setInsights] = useState<string | null>(null);
+  const liveSessionIds = useMemo(
+    () => new Set(sessions.map((s) => s.claudeSessionId).filter((id): id is string => !!id)),
+    [sessions],
+  );
 
   const openRow = useCallback((r: FleetTranscriptSummary) => {
     const target = resolveActivityTarget(r, sessions);
@@ -83,50 +88,17 @@ export default function FleetActivityPage({ onOpenSessions }: {
         subtitle={tx(rows.length === 1 ? f.activity_subtitle_one : f.activity_subtitle_other, { count: rows.length })}
       />
       <ContentBody>
-        {/* A dense tool surface: compact type density (typography.css). */}
-        <div data-type-density="compact">
-          {/* Filter and refresh share one row: the Refresh button stood alone on a band of its own. */}
-          <div className="flex items-center gap-2 mb-3">
-            <FleetSearchField
-              className="flex-1"
-              data-testid="fleet-activity-search"
-              value={query}
-              onChange={setQuery}
-              placeholder={f.activity_search_placeholder}
-            />
-            <Button variant="secondary" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={load} loading={loading}>
-              {t.common.refresh}
-            </Button>
-          </div>
-
-          {loading && rows.length === 0 ? (
-            <div className="space-y-2" aria-busy="true" aria-label={f.activity_loading}>
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  key={i}
-                  aria-hidden
-                  className="rounded-card border border-primary/10 bg-card/30 h-[100px] 2xl:h-[72px] animate-fade-in"
-                  style={{ animationDelay: '150ms' }}
-                />
-              ))}
-            </div>
-          ) : failed ? (
-            <div className="text-center py-10">
-              <AlertCircle className="w-7 h-7 text-status-warning mx-auto mb-2" aria-hidden="true" />
-              <p className="typo-caption text-foreground">{f.activity_error}</p>
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="text-center py-10 typo-caption text-foreground" data-testid="fleet-activity-empty">
-              {rows.length === 0 ? f.activity_empty : f.activity_no_matches}
-            </div>
-          ) : (
-            <div className="space-y-2" data-testid="fleet-activity-list">
-              {filtered.map((r) => (
-                <FleetActivityRow key={r.path} row={r} query={q} onOpen={openRow} />
-              ))}
-            </div>
-          )}
-        </div>
+        <FleetActivitySurface
+          rows={rows}
+          filtered={filtered}
+          loading={loading}
+          failed={failed}
+          query={query}
+          setQuery={setQuery}
+          onRefresh={load}
+          onOpen={openRow}
+          liveSessionIds={liveSessionIds}
+        />
       </ContentBody>
 
       <BaseModal

@@ -35,7 +35,6 @@
     "CompanionFooterIcon.tsx": {"count":1,"sections":[9],"lines":["204"],"contexts":["regex does not (`CompanionFooterIcon.tsx:204`, `AthenaOrbCornerActions.tsx:49`,"],"resolved":false},
     "CompetitionSlotRow.tsx": {"count":3,"sections":[5,9,12],"lines":["81-93","82-93"],"contexts":["(`CompetitionSlotRow.tsx:81-93`). A 2-site population cannot carry a doctrine clause on"],"resolved":false},
     "ComplianceRow.tsx": {"count":3,"sections":[4],"lines":["37","34-38"],"contexts":["`SLABreachRow.tsx:57`, `IncidentList.tsx:79`, `ComplianceRow.tsx:37`,"],"resolved":false},
-    "DataTable.tsx": {"count":3,"sections":[7],"lines":["97","85"],"contexts":["`DataTable.tsx` takes a `keyExtractor` (`:16`), holds `expandedId: string | null`"],"resolved":false},
     "DebuggerControls.tsx": {"count":2,"sections":[9],"lines":["106"],"contexts":["`DebuggerControls.tsx:106` (`onExpandInspector`) and `DebuggerVariables.tsx:38`"],"resolved":false},
     "DebuggerVariables.tsx": {"count":2,"sections":[9],"lines":["38"],"contexts":["`DebuggerControls.tsx:106` (`onExpandInspector`) and `DebuggerVariables.tsx:38`"],"resolved":false},
     "IncidentList.tsx": {"count":1,"sections":[],"lines":["79"],"contexts":["`SLABreachRow.tsx:57`, `IncidentList.tsx:79`, `ComplianceRow.tsx:37`,"],"resolved":false},
@@ -44,7 +43,6 @@
     "SecurityFAQItem.tsx": {"count":2,"sections":[],"lines":["24","21-25"],"contexts":["`SecurityFAQItem.tsx:24`). Three teams, two stacks, no shared document."],"resolved":false},
     "SkillsCatalog.tsx": {"count":3,"sections":[7],"lines":["236","124","270"],"contexts":["`SkillsCatalog.tsx:236` holds `openId` seeded from `ranked[0]?.id` and compares"],"resolved":false},
     "ToneConsole.tsx": {"count":6,"sections":[4,5,7,8,9],"lines":["158-241","159-167","159"],"contexts":["with the summary row in a `<Fragment key={row.id}>` — `ToneConsole.tsx:158-241` and"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":3,"sections":[7,9],"contexts":["[`shared-facts.json`](../shared-facts.json); everything else was measured during"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "eslint.config.js": {"count":1,"sections":[9],"contexts":["deliberate and is the reason to put it here rather than in `eslint.config.js` — as"]},
     "overview/sub_director/components/PersonaDetailModal.tsx": {"count":1,"sections":[7],"contexts":["- `overview/sub_director/components/PersonaDetailModal.tsx` — the **row** disclosure at"],"resolved":false},
     "personas-web/src/components/dashboard/DataTable.tsx": {"count":1,"sections":[8],"contexts":["exists, in a sibling repo:** `personas-web/src/components/dashboard/DataTable.tsx` —"],"resolved":false},
@@ -68,6 +66,7 @@
       "verbatim": "engine.mjs"
     },
     "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["All **75** rules in `scripts/census/rules.json` were read. Three are adjacent and none"]},
+    "shared-facts.json": {"count":3,"sections":[7,9],"contexts":["`shared-facts.json`; everything else was measured during"],"resolved":false},
     "src/features/agents/components/allPersonas/PersonaConfigPanel.tsx": {
       "count": 2,
       "sections": [4,6],
@@ -231,6 +230,7 @@
       "resolvedFrom": "basename",
       "verbatim": "SortableColumnHeader.tsx"
     },
+    "src/features/shared/components/kit/DataTable.tsx": {"count":3,"sections":[7],"lines":["97","85"],"contexts":["`DataTable.tsx` takes a `keyExtractor` (`:16`), holds `expandedId: string | null`"],"resolvedFrom":"basename","verbatim":"DataTable.tsx"},
     "src/features/shared/components/terminal/TerminalStrip.tsx": {"count":2,"sections":[5,7],"lines":["89"],"contexts":["(`'Hide prompt'` / `'View prompt'`), `TerminalStrip.tsx:89` + `:92`"],"resolvedFrom":"basename","verbatim":"TerminalStrip.tsx"},
     "src/features/studio/StudioChatInput.tsx": {
       "count": 2,

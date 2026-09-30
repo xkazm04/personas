@@ -1,310 +1,159 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Stethoscope, CheckCircle, CheckCircle2, AlertTriangle, X, List, GitBranch, FileWarning, ChevronDown, ChevronRight } from 'lucide-react';
+/**
+ * Observability (composition kit): the Health Issues section. Toolbar (state filter, list or
+ * timeline, Run analysis), then a Split: the issues (or the healing chains) on the left, the
+ * picked one's detail in the side pane when the surface has room and in the drawer when it has
+ * not (as Fleet Activity). The audit log closes the section as a collapsed level-2 Section.
+ */
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { useAppKeyboard, ROUTE_DECISION_PRIORITY } from '@/lib/keyboard/AppKeyboardProvider';
+import { Dot, Drawer, KitButton, Section, Segmented, Split, Toolbar } from '@/features/shared/components/kit';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import type { HealingTimelineEvent } from '@/lib/bindings/HealingTimelineEvent';
-import type { HealingAuditEntry } from '@/lib/bindings/HealingAuditEntry';
-import { listHealingAuditLog } from '@/api/overview/healing';
+import type { HealingViewMode as ViewMode } from '@/lib/constants/uiModes';
+import type { ObservabilityWords } from '../libs/useObservabilityWords';
 import { HealingIssueSummary } from './HealingIssueSummary';
 import { IssuesList } from './IssuesList';
-import { HealingTimeline } from './HealingTimeline';
-import { ErrorRecoveryBanner } from '@/features/shared/components/feedback/ErrorRecoveryBanner';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { silentCatch } from '@/lib/silentCatch';
-import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
-import { useTranslation } from '@/i18n/useTranslation';
-import type { HealingViewMode as ViewMode } from '@/lib/constants/uiModes';
+import { HealingIssueDetail } from './HealingIssueDetail';
+import { HealingTimeline, useChains } from './HealingTimeline';
+import { HealingChainDetail } from './HealingChainDetail';
+import { HealingAuditLog } from './HealingAuditLog';
 
-interface HealingIssuesPanelProps {
+type Filter = 'all' | 'open' | 'auto-fixed';
+
+export interface HealingIssuesPanelProps {
   healingIssues: PersonaHealingIssue[];
   healingRunning: boolean;
   handleRunAnalysis: () => void;
   resolveHealingIssue: (id: string) => void;
+  /** Opens the full issue (HealingIssueModal). */
   setSelectedIssue: (issue: PersonaHealingIssue) => void;
-  issueFilter: 'all' | 'open' | 'auto-fixed';
-  setIssueFilter: (f: 'all' | 'open' | 'auto-fixed') => void;
+  issueFilter: Filter;
+  setIssueFilter: (f: Filter) => void;
   issueCounts: { all: number; open: number; autoFixed: number };
   sortedFilteredIssues: PersonaHealingIssue[];
   analysisResult: { failures_analyzed: number; issues_created: number; auto_fixed: number } | null;
   setAnalysisResult: (r: null) => void;
   analysisError: string | null;
   setAnalysisError: (e: null) => void;
-  // Timeline props
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
   timelineEvents: HealingTimelineEvent[];
   timelineLoading: boolean;
   selectedPersonaId?: string | null;
+  personas: ReadonlyArray<{ id: string; name: string }>;
+  w: ObservabilityWords;
 }
 
-const AUDIT_EVENT_LABELS: Record<string, string> = {
-  knowledge_parse_error: 'Parse error',
-  knowledge_persist_error: 'Persist error',
-  ai_heal_section_missing: 'Section missing',
-  ai_heal_unknown_target: 'Unknown target',
-  ai_heal_unknown_fix_type: 'Unknown fix type',
-  ai_heal_parse_failed: 'Fix parse failed',
-  dedup_skipped: 'Duplicate skipped',
-};
+export function HealingIssuesPanel(p: HealingIssuesPanelProps) {
+  const { w } = p;
+  const { o, ad } = w;
+  const [pickedIssue, setPickedIssue] = useState<string | null>(null);
+  const [pickedChain, setPickedChain] = useState<string | null>(null);
+  const [drawer, setDrawer] = useState(false);
+  const paneRef = useRef<HTMLElement>(null);
+  const { chains, knowledge } = useChains(p.timelineEvents);
+  const names = useMemo(() => new Map(p.personas.map((x) => [x.id, x.name])), [p.personas]);
+  const personaName = useCallback((id: string) => names.get(id) ?? null, [names]);
 
-export function HealingIssuesPanel({
-  healingIssues, healingRunning, handleRunAnalysis,
-  resolveHealingIssue, setSelectedIssue,
-  issueFilter, setIssueFilter, issueCounts, sortedFilteredIssues,
-  analysisResult, setAnalysisResult, analysisError, setAnalysisError,
-  viewMode, setViewMode, timelineEvents, timelineLoading,
-  selectedPersonaId,
-}: HealingIssuesPanelProps) {
-  const { t, tx } = useTranslation();
-  const handleTimelineSelectIssue = (issueId: string) => {
-    const issue = healingIssues.find(i => i.id === issueId);
-    if (issue) setSelectedIssue(issue);
+  const timeline = p.viewMode === 'timeline';
+  // The first row is picked on arrival, so the detail pane is never blank (as Fleet Activity).
+  const issue = p.sortedFilteredIssues.find((i) => i.id === pickedIssue) ?? p.sortedFilteredIssues[0] ?? null;
+  const chain = chains.find((c) => c.chainId === pickedChain) ?? chains[0] ?? null;
+  const pick = useCallback((set: (id: string) => void) => (id: string) => {
+    set(id);
+    // No room for the side pane: the detail opens in the drawer.
+    if (paneRef.current && paneRef.current.offsetWidth === 0) setDrawer(true);
+  }, []);
+  const openIssueById = (id: string) => {
+    const found = p.healingIssues.find((i) => i.id === id);
+    if (found) p.setSelectedIssue(found);
   };
 
-  // Audit log state with 30-second cache to avoid duplicate API calls on toggle
-  const [auditExpanded, setAuditExpanded] = useState(false);
-  const [auditEntries, setAuditEntries] = useState<HealingAuditEntry[]>([]);
-  const [auditLoading, setAuditLoading] = useState(false);
-  const [auditError, setAuditError] = useState<string | null>(null);
-  const auditCacheRef = useRef<{ personaId: string | null; ts: number }>({ personaId: null, ts: 0 });
+  useAppKeyboard((e) => {
+    if (e.key !== 'Escape') return false;
+    setDrawer(false);
+    return true;
+  }, { priority: ROUTE_DECISION_PRIORITY, enabled: drawer });
 
-  const fetchAudit = useCallback(async () => {
-    const cacheKey = selectedPersonaId ?? null;
-    const now = Date.now();
-    if (auditCacheRef.current.personaId === cacheKey && now - auditCacheRef.current.ts < 30_000) {
-      return;
-    }
-    setAuditLoading(true);
-    setAuditError(null);
-    try {
-      const entries = await listHealingAuditLog(selectedPersonaId ?? undefined, 50);
-      setAuditEntries(entries);
-      auditCacheRef.current = { personaId: cacheKey, ts: Date.now() };
-    } catch (err) {
-      silentCatch('HealingIssuesPanel:fetchAudit')(err);
-      setAuditError(t.overview.errorRecovery.audit_fetch_failed);
-    } finally {
-      setAuditLoading(false);
-    }
-  }, [selectedPersonaId, t.overview.errorRecovery.audit_fetch_failed]);
-
-  useEffect(() => {
-    if (auditExpanded) fetchAudit();
-  }, [auditExpanded, fetchAudit]);
-
+  const detail = timeline
+    ? <HealingChainDetail chain={chain} onOpenIssue={openIssueById} w={w} />
+    : <HealingIssueDetail issue={issue} personaName={personaName} onOpen={p.setSelectedIssue} onResolve={p.resolveHealingIssue} w={w} />;
+  const r = p.analysisResult;
   return (
-    <div className="rounded-modal border border-primary/10 bg-secondary/20 shadow-elevation-1 overflow-hidden flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-primary/5 bg-gradient-to-r from-secondary/40 to-transparent">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-modal bg-cyan-500/10 border border-cyan-500/20 shadow-inner flex items-center justify-center">
-            <Stethoscope className="w-4 h-4 text-cyan-400" />
-          </div>
-          <h3 className="typo-heading text-foreground/90 uppercase">{t.overview.healing_issues_panel.title}</h3>
-          {healingIssues.length > 0 && (
-            <StatusBadge variant="warning" className="typo-body tracking-wide rounded-card shadow-elevation-1">
-              {healingIssues.length}
-            </StatusBadge>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {/* View mode toggle */}
-          <div className="flex items-center rounded-card border border-primary/15 overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              className={`p-1.5 transition-colors ${viewMode === 'list' ? 'bg-primary/10 text-foreground' : 'text-foreground hover:text-muted-foreground'}`}
-              title={"list_view"}
-            >
-              <List className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('timeline')}
-              className={`p-1.5 transition-colors ${viewMode === 'timeline' ? 'bg-primary/10 text-foreground' : 'text-foreground hover:text-muted-foreground'}`}
-              title={"timeline_view"}
-            >
-              <GitBranch className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          <button
-            type="button"
-            onClick={handleRunAnalysis}
-            disabled={healingRunning}
-            aria-label={healingRunning ? 'Analysis in progress' : 'Run healing analysis'}
-            className="flex items-center gap-2 px-4 py-2 typo-heading rounded-modal bg-gradient-to-br from-cyan-500/15 to-transparent border border-cyan-500/20 text-cyan-300 hover:from-cyan-500/25 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-elevation-1 focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
-          >
-            {healingRunning ? (
-              <>
-                <LoadingSpinner size="sm" className="text-cyan-400" />
-                {t.overview.healing_issues_panel.analyzing}
-              </>
-            ) : (
-              <>
-                <Stethoscope className="w-4 h-4" />
-                {t.overview.healing_issues_panel.run_analysis}
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Analysis Result Summary */}
-      {analysisResult && !healingRunning && (
-        <div className="flex items-center justify-between px-4 py-2.5 bg-cyan-500/10 border-b border-cyan-500/20">
-          <div className="flex items-center gap-2">
-            <CheckCircle className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="typo-body text-cyan-300">
-              {t.overview.healing_issues_panel.analysis_complete_prefix}{' '}
-              {tx(analysisResult.issues_created !== 1 ? t.overview.analytics_dashboard.issues_found : t.overview.analytics_dashboard.issues_found_one, { count: analysisResult.issues_created })}
-              {analysisResult.auto_fixed > 0 && ` (${analysisResult.auto_fixed} ${t.overview.analytics_dashboard.auto_fixed})`}
-              {', '}{tx(analysisResult.failures_analyzed !== 1 ? t.overview.analytics_dashboard.executions_scanned : t.overview.analytics_dashboard.executions_scanned_one, { count: analysisResult.failures_analyzed })}
-            </span>
-          </div>
-          <button type="button" onClick={() => setAnalysisResult(null)} className="p-1 rounded hover:bg-cyan-500/20 text-cyan-400/50 hover:text-cyan-300 transition-colors">
-            <X className="w-3 h-3" />
-          </button>
-        </div>
-      )}
-
-      {analysisError && !healingRunning && (
-        <div className="flex items-center justify-between px-4 py-2.5 bg-red-500/10 border-b border-red-500/20">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
-            <span className="typo-body text-red-300">{analysisError}</span>
-          </div>
-          <button type="button" onClick={() => setAnalysisError(null)} className="p-1 rounded hover:bg-red-500/20 text-red-400/50 hover:text-red-300 transition-colors">
-            <X className="w-3 h-3" />
-          </button>
-        </div>
-      )}
-
-      {/* Issues Summary */}
-      {healingIssues.length > 0 && <HealingIssueSummary issues={healingIssues} />}
-
-      {/* Filter Chips */}
-      {healingIssues.length > 0 && (
-        <div className="px-4 py-2.5 border-b border-primary/10 flex items-center gap-1" role="tablist">
-          {([
-            { key: 'all' as const, label: 'All', count: issueCounts.all },
-            { key: 'open' as const, label: 'Open', count: issueCounts.open },
-            { key: 'auto-fixed' as const, label: 'Auto-fixed', count: issueCounts.autoFixed },
-          ]).map((chip) => (
-            <button
-              key={chip.key}
-              type="button"
-              role="tab"
-              aria-selected={issueFilter === chip.key}
-              onClick={() => setIssueFilter(chip.key)}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-modal typo-heading transition-all focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background ${
-                issueFilter === chip.key
-                  ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20'
-                  : 'text-foreground hover:text-foreground/80'
-              }`}
-            >
-              {chip.label}
-              <span className={`px-1.5 py-0.5 typo-heading rounded-full ${
-                issueFilter === chip.key
-                  ? 'bg-primary/15 text-foreground/90'
-                  : 'bg-secondary/60 text-foreground'
-              }`}>
-                {chip.count}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Content: List or Timeline */}
-      {viewMode === 'timeline' ? (
-        <HealingTimeline
-          events={timelineEvents}
-          loading={timelineLoading}
-          onSelectIssue={handleTimelineSelectIssue}
+    <Section
+      id="s-obs-health"
+      eyebrow={w.eyebrow}
+      title={o.healing_issues_panel.title}
+      count={p.healingIssues.length}
+      meta={p.healingIssues.length > 0 ? <HealingIssueSummary issues={p.healingIssues} w={w} /> : undefined}
+      actions={
+        <KitButton onClick={p.handleRunAnalysis} loading={p.healingRunning} testId="obs-run-analysis">
+          {p.healingRunning ? o.healing_issues_panel.analyzing : o.healing_issues_panel.run_analysis}
+        </KitButton>
+      }
+    >
+      <Toolbar label={o.healing_issues_panel.title}>
+        <Segmented<Filter>
+          label={o.healing_issues_panel.title}
+          value={p.issueFilter}
+          onChange={p.setIssueFilter}
+          options={[
+            { v: 'all', label: ad.filter_all, count: p.issueCounts.all },
+            { v: 'open', label: ad.filter_open, count: p.issueCounts.open, tone: 'warning', glyph: 'soft' },
+            { v: 'auto-fixed', label: ad.filter_auto_fixed, count: p.issueCounts.autoFixed, tone: 'success', glyph: 'hollow' },
+          ]}
         />
-      ) : healingIssues.length === 0 ? (
-        <div className="flex items-center justify-center py-10">
-          <div className="text-center flex flex-col items-center">
-            <div className="w-14 h-14 rounded-modal bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
-              <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-            </div>
-            <p className="typo-heading text-foreground">{t.overview.healing_issues_panel.no_open_issues}</p>
-            <p className="typo-body text-foreground mt-1">{t.overview.healing_issues_panel.run_analysis_hint}</p>
-          </div>
-        </div>
-      ) : (
-        <IssuesList
-          issues={sortedFilteredIssues}
-          onSelectIssue={setSelectedIssue}
-          onResolve={resolveHealingIssue}
-        />
+        <span data-testid="obs-view" className="contents">
+          <Segmented<ViewMode>
+            label={o.observability_extra.healing_view_timeline}
+            value={p.viewMode}
+            onChange={p.setViewMode}
+            options={[
+              { v: 'list', label: o.observability_extra.healing_view_list },
+              { v: 'timeline', label: o.observability_extra.healing_view_timeline },
+            ]}
+          />
+        </span>
+      </Toolbar>
+      {r && !p.healingRunning && (
+        <p className="k-in typo-caption flex items-center gap-2" style={{ margin: '0 0 12px' }}>
+          <Dot tone="success" />
+          {o.healing_issues_panel.analysis_complete_prefix}{' '}
+          {w.tx(r.issues_created !== 1 ? ad.issues_found : ad.issues_found_one, { count: r.issues_created })}
+          {r.auto_fixed > 0 && ` (${r.auto_fixed} ${ad.auto_fixed})`}
+          {', '}{w.tx(r.failures_analyzed !== 1 ? ad.executions_scanned : ad.executions_scanned_one, { count: r.failures_analyzed })}
+          <KitButton quiet onClick={() => p.setAnalysisResult(null)}>{w.t.common.dismiss}</KitButton>
+        </p>
       )}
-
-      {/* Healing Audit Log (silent failures) */}
-      <div className="border-t border-primary/10">
-        <button
-          type="button"
-          onClick={() => setAuditExpanded(!auditExpanded)}
-          className="flex items-center gap-2 w-full px-4 py-2.5 text-left hover:bg-secondary/30 transition-colors"
-        >
-          {auditExpanded ? <ChevronDown className="w-3.5 h-3.5 text-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-foreground" />}
-          <FileWarning className="w-3.5 h-3.5 text-amber-400/70" />
-          <span className="typo-body typo-heading text-foreground">{t.overview.healing_issues_panel.healing_audit_log}</span>
-          {auditEntries.length > 0 && auditExpanded && (
-            <span className="px-1.5 py-0.5 typo-caption rounded-full bg-amber-500/10 text-amber-400/80 border border-amber-500/15">
-              {auditEntries.length}
-            </span>
+      {p.analysisError && !p.healingRunning && (
+        <p className="k-in typo-caption flex items-center gap-2" style={{ margin: '0 0 12px' }}>
+          <Dot tone="error" />{p.analysisError}
+          <KitButton quiet onClick={() => p.setAnalysisError(null)}>{w.t.common.dismiss}</KitButton>
+        </p>
+      )}
+      <Split
+        paneRef={paneRef}
+        paneLabel={o.observability_extra.issue_details}
+        pane={detail}
+        main={timeline
+          ? <HealingTimeline chains={chains} knowledge={knowledge} loading={p.timelineLoading} selectedId={chain?.chainId ?? null} onSelect={pick(setPickedChain)} w={w} />
+          : (
+            <IssuesList
+              issues={p.sortedFilteredIssues}
+              selectedId={issue?.id ?? null}
+              onSelect={pick(setPickedIssue)}
+              onOpen={p.setSelectedIssue}
+              onResolve={p.resolveHealingIssue}
+              personaName={personaName}
+              empty={{ title: o.healing_issues_panel.no_open_issues, hint: o.healing_issues_panel.run_analysis_hint, tone: 'success' }}
+              w={w}
+            />
           )}
-        </button>
-
-        {auditExpanded && (
-          <div className="px-4 pb-3 max-h-64 overflow-y-auto">
-            {auditError ? (
-              <div className="py-2">
-                <ErrorRecoveryBanner
-                  severity="warning"
-                  message={auditError}
-                  cause={t.overview.errorRecovery.audit_fetch_cause}
-                  actionType="retry"
-                  actionLabel={t.overview.errorRecovery.action_retry}
-                  onAction={() => { auditCacheRef.current = { personaId: null, ts: 0 }; fetchAudit(); }}
-                  compact
-                />
-              </div>
-            ) : auditLoading ? (
-              <div className="flex items-center justify-center py-4">
-                <LoadingSpinner size="sm" className="text-amber-400" />
-              </div>
-            ) : auditEntries.length === 0 ? (
-              <p className="typo-body text-foreground py-3 text-center">{t.overview.healing_issues_panel.no_silent_failures}</p>
-            ) : (
-              <div className="space-y-1">
-                {auditEntries.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="flex items-start gap-2 px-2.5 py-1.5 rounded-card bg-secondary/30 border border-primary/5 typo-body"
-                  >
-                    <span className="shrink-0 px-1.5 py-0.5 typo-caption rounded bg-amber-500/10 text-amber-400/90 border border-amber-500/15 mt-0.5">
-                      {AUDIT_EVENT_LABELS[entry.eventType] ?? entry.eventType}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-foreground truncate">{entry.message}</p>
-                      {entry.detail && (
-                        <p className="text-foreground typo-caption truncate mt-0.5">{entry.detail}</p>
-                      )}
-                    </div>
-                    <span className="shrink-0 typo-caption text-foreground mt-0.5">
-                      {entry.subsystem}
-                    </span>
-                    <span className="shrink-0 typo-caption text-foreground mt-0.5">
-                      {new Date(entry.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
+      />
+      <HealingAuditLog personaId={p.selectedPersonaId ?? null} w={w} />
+      <Drawer open={drawer} onClose={() => setDrawer(false)} closeLabel={w.t.common.close} label={o.observability_extra.issue_details}>
+        {detail}
+      </Drawer>
+    </Section>
   );
 }

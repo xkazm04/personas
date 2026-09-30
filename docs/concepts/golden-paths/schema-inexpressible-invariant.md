@@ -1,7 +1,7 @@
 # Golden path — Schema-inexpressible invariant
 
 > Situation node: `data-persistence/schema-design/schema-inexpressible-invariant` ·
-> [situation spine](../situation-spine.md) · recurrence 10 · risk **medium** ·
+> situation spine · recurrence 10 · risk **medium** ·
 > sides: **server** · convergence: **diverged**
 > Composed 2026-08-17 against `master` @ `2edb8d694`. Mode 2 batch
 > (`data-persistence/schema-design`), full contract.

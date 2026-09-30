@@ -8,16 +8,30 @@ use super::*;
 
 // ── Tauri commands ──────────────────────────────────────────────────────
 
-#[tauri::command]
-pub fn companion_list_pending_approvals(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Vec<PendingApproval>, AppError> {
-    ipc_auth::require_auth_sync(&state)?;
-    let conn = state.user_db.get()?;
+/// One pending, fresh, well-formed approval row — the shared read behind the
+/// inbox command and the operator API's list (`GET /api/approvals`), so the
+/// two can never disagree about what is actionable.
+#[derive(Debug, Clone)]
+pub(crate) struct PendingApprovalRow {
+    pub(crate) id: String,
+    pub(crate) action: String,
+    pub(crate) rationale: String,
+    pub(crate) params: serde_json::Value,
+    pub(crate) human_review_id: Option<String>,
+    /// SQLite `datetime('now')` text, UTC.
+    pub(crate) created_at: String,
+    /// The `external_api_keys.id` that queued it (HTTP-originated rows only).
+    pub(crate) requested_by_key_id: Option<String>,
+}
+
+pub(crate) fn pending_approval_rows(
+    user_db: &crate::db::UserDbPool,
+) -> Result<Vec<PendingApprovalRow>, AppError> {
+    let conn = user_db.get()?;
     // Only surface approvals within the consent-freshness window — a pending
     // approval older than this is stale and must not be presented as actionable.
     let mut stmt = conn.prepare(
-        "SELECT id, payload, human_review_id, created_at
+        "SELECT id, payload, human_review_id, created_at, requested_by_key_id
          FROM companion_approval
          WHERE status = 'pending' AND created_at >= datetime('now', ?1)
          ORDER BY created_at DESC
@@ -30,12 +44,13 @@ pub fn companion_list_pending_approvals(
                 row.get::<_, String>(1)?,
                 row.get::<_, Option<String>>(2)?,
                 row.get::<_, String>(3)?,
+                row.get::<_, Option<String>>(4)?,
             ))
         })?
         .collect::<Result<Vec<_>, _>>()?;
 
     let mut out = Vec::with_capacity(rows.len());
-    for (id, payload, human_review_id, created_at) in rows {
+    for (id, payload, human_review_id, created_at, requested_by_key_id) in rows {
         // Skip corrupt/empty payloads instead of unwrap_or_default()-ing them
         // into a card with a blank action — that rendered an *actionable*
         // approval (the user can click Approve) whose action is "", a consent
@@ -56,7 +71,7 @@ pub fn companion_list_pending_approvals(
             tracing::warn!(approval_id = %id, "skipping approval with no action (would render a blank actionable card)");
             continue;
         }
-        out.push(PendingApproval {
+        out.push(PendingApprovalRow {
             id,
             action: action.to_string(),
             rationale: v
@@ -64,15 +79,34 @@ pub fn companion_list_pending_approvals(
                 .and_then(|x| x.as_str())
                 .unwrap_or("")
                 .into(),
-            params_json: v
+            params: v
                 .get("params")
-                .map(|p| p.to_string())
-                .unwrap_or_else(|| "{}".into()),
+                .cloned()
+                .unwrap_or_else(|| serde_json::json!({})),
             human_review_id,
             created_at,
+            requested_by_key_id,
         });
     }
     Ok(out)
+}
+
+#[tauri::command]
+pub fn companion_list_pending_approvals(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<PendingApproval>, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    Ok(pending_approval_rows(&state.user_db)?
+        .into_iter()
+        .map(|r| PendingApproval {
+            id: r.id,
+            action: r.action,
+            rationale: r.rationale,
+            params_json: r.params.to_string(),
+            human_review_id: r.human_review_id,
+            created_at: r.created_at,
+        })
+        .collect())
 }
 
 #[tauri::command]
@@ -83,8 +117,66 @@ pub async fn companion_approve_action(
 ) -> Result<ApprovalOutcome, AppError> {
     ipc_auth::require_auth(&state).await?;
     let (action, params) = load_pending(&state, &approval_id)?;
+    approve_claimed(&state, &app, approval_id, &action, &params).await
+}
+
+/// Everything the Approve click does AFTER the row was claimed
+/// (`pending` → `running`): run the action through the one executor table,
+/// finalize the row, log the episode, and spawn Athena's reaction. Shared by
+/// the Tauri command above and the operator API
+/// (`approval_operator::operator_approve`) so the two cannot diverge.
+pub(crate) async fn approve_claimed(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    approval_id: String,
+    action: &str,
+    params: &serde_json::Value,
+) -> Result<ApprovalOutcome, AppError> {
+    let outcome = execute_claimed(state, app, approval_id, action, params).await?;
+
+    // The reported gap: after a manual Approve the action ran and a flat outcome
+    // line was appended, but Athena never reacted — the user had to send a NEW
+    // message to get any response. Spawn ONE brief system-initiated reaction turn
+    // so she responds automatically. Success only: a failed action keeps its
+    // inline error on the still-open card (the frontend doesn't resolve it), and
+    // the skip filter keeps fleet / navigation-only actions quiet.
+    //
+    // NOTE (auto-approve path): `auto_resolve_if_allowed` deliberately does NOT
+    // call this. That path is autonomous-mode-only and fires when Athena's own
+    // reasoning turn just proposed the action — her originating reply already
+    // spoke to the user, so a second "I saved that" turn would be redundant
+    // chatter, exactly what autonomous mode's restraint design avoids. The manual
+    // path is the genuine silence gap. Documented follow-up if that changes.
+    // The gig persona policy (`approval_policy`) does not call it either: nobody
+    // clicked, and a reaction turn per auto-approved gig hire is a hundred
+    // Athena turns that each say "I hired that".
+    if outcome.status == APPROVAL_STATUS_APPROVED {
+        spawn_action_reaction(
+            app,
+            state,
+            action,
+            &outcome.message,
+            outcome.client_action.as_ref(),
+        );
+    }
+    Ok(outcome)
+}
+
+/// The decision half of [`approve_claimed`], without Athena's reaction turn:
+/// run the claimed row's action through the one executor table, finalize the
+/// row (`approved` / `approved_failed`) and log the episode. The standing
+/// policy path (`approval_policy::policy_approve_kp_hire`) runs exactly this,
+/// so a policy approval executes what an Approve click executes.
+pub(crate) async fn execute_claimed(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    approval_id: String,
+    action: &str,
+    params: &serde_json::Value,
+) -> Result<ApprovalOutcome, AppError> {
+    let (action, params) = (action.to_string(), params);
     let exec_result =
-        execute_approval_action(state.clone(), app.clone(), &approval_id, &action, &params).await;
+        execute_approval_action(state.clone(), app.clone(), &approval_id, &action, params).await;
 
     // Both the outcome shown on the approval card (`message`) and the persisted
     // chat episode (`embedder_log`) carry the plain, humanized result — no
@@ -102,25 +194,8 @@ pub async fn companion_approve_action(
         }
     };
 
-    finalize_approval(&state, &approval_id, status_text)?;
-    log_action_episode(&state, &action, &embedder_log).await;
-
-    // The reported gap: after a manual Approve the action ran and a flat outcome
-    // line was appended, but Athena never reacted — the user had to send a NEW
-    // message to get any response. Spawn ONE brief system-initiated reaction turn
-    // so she responds automatically. Success only: a failed action keeps its
-    // inline error on the still-open card (the frontend doesn't resolve it), and
-    // the skip filter keeps fleet / navigation-only actions quiet.
-    //
-    // NOTE (auto-approve path): `auto_resolve_if_allowed` deliberately does NOT
-    // call this. That path is autonomous-mode-only and fires when Athena's own
-    // reasoning turn just proposed the action — her originating reply already
-    // spoke to the user, so a second "I saved that" turn would be redundant
-    // chatter, exactly what autonomous mode's restraint design avoids. The manual
-    // path is the genuine silence gap. Documented follow-up if that changes.
-    if status_text == APPROVAL_STATUS_APPROVED {
-        spawn_action_reaction(&app, &state, &action, &message, client_action.as_ref());
-    }
+    finalize_approval(state, &approval_id, status_text)?;
+    log_action_episode(state, &action, &embedder_log).await;
 
     Ok(ApprovalOutcome {
         id: approval_id,
@@ -306,15 +381,27 @@ pub async fn companion_reject_action(
 ) -> Result<ApprovalOutcome, AppError> {
     ipc_auth::require_auth(&state).await?;
     let (action, params) = load_pending(&state, &approval_id)?;
-    finalize_approval(&state, &approval_id, APPROVAL_STATUS_REJECTED)?;
+    reject_claimed(&state, approval_id, &action, &params, reason).await
+}
+
+/// Everything the Reject click does AFTER the row was claimed. Shared by the
+/// Tauri command above and `approval_operator::operator_reject`.
+pub(crate) async fn reject_claimed(
+    state: &State<'_, Arc<AppState>>,
+    approval_id: String,
+    action: &str,
+    params: &serde_json::Value,
+    reason: Option<String>,
+) -> Result<ApprovalOutcome, AppError> {
+    finalize_approval(state, &approval_id, APPROVAL_STATUS_REJECTED)?;
     let reason = reason.unwrap_or_else(|| "no reason given".into());
     // KP bridge (WP3): tell the originating KP app its hire request was turned
     // down. Best-effort fire-and-forget — a dead KP app never blocks the reject.
     if action == "kp_hire_request" {
-        notify_kp_lifecycle(&params, "rejected", Some(reason.clone()), None);
+        notify_kp_lifecycle(params, "rejected", Some(reason.clone()), None);
     }
     let log = format!("[Athena action rejected] {action}\n\nReason: {reason}");
-    log_action_episode(&state, &action, &log).await;
+    log_action_episode(state, action, &log).await;
     Ok(ApprovalOutcome {
         id: approval_id,
         status: APPROVAL_STATUS_REJECTED.into(),
@@ -325,11 +412,34 @@ pub async fn companion_reject_action(
 
 // ── helpers ─────────────────────────────────────────────────────────────
 
-pub(crate) fn load_pending(
-    state: &State<'_, Arc<AppState>>,
+/// Why a row could not be claimed. Typed so the operator API can answer 404 /
+/// 409 without reading error prose; [`load_pending`] maps it back onto the
+/// exact errors the inbox has always shown.
+#[derive(Debug)]
+pub(crate) enum ClaimError {
+    NotFound,
+    /// Already decided or in flight — carries the row's current status.
+    NotPending(String),
+    /// Pending, but beyond the consent-freshness window.
+    Expired,
+    Corrupt(String),
+    Store(AppError),
+}
+
+impl From<rusqlite::Error> for ClaimError {
+    fn from(e: rusqlite::Error) -> Self {
+        Self::Store(e.into())
+    }
+}
+
+/// Claim a pending approval: the atomic `pending` → `running` compare-and-swap
+/// every decision path goes through (UI click, headless bridge, operator API).
+/// Exactly one caller can win it; the loser gets `NotPending`.
+pub(crate) fn claim_pending(
+    user_db: &crate::db::UserDbPool,
     approval_id: &str,
-) -> Result<(String, serde_json::Value), AppError> {
-    let conn = state.user_db.get()?;
+) -> Result<(String, serde_json::Value), ClaimError> {
+    let conn = user_db.get().map_err(|e| ClaimError::Store(e.into()))?;
     let row: Option<(String, String, bool)> = conn
         .query_row(
             "SELECT status, payload, created_at >= datetime('now', ?2)
@@ -344,26 +454,21 @@ pub(crate) fn load_pending(
             },
         )
         .optional()?;
-    let (status, payload, fresh) =
-        row.ok_or_else(|| AppError::Internal(format!("approval `{approval_id}` not found")))?;
+    let (status, payload, fresh) = row.ok_or(ClaimError::NotFound)?;
     if status != "pending" {
-        return Err(AppError::Internal(format!(
-            "approval `{approval_id}` is `{status}`, not pending"
-        )));
+        return Err(ClaimError::NotPending(status));
     }
     // Consent freshness: refuse to act on a stale approval whose target may no
     // longer exist. The user must re-issue the request.
     if !fresh {
-        return Err(AppError::Validation(format!(
-            "Approval `{approval_id}` has expired (pending beyond the consent-freshness window). Dismiss it and re-issue the request."
-        )));
+        return Err(ClaimError::Expired);
     }
     let v: serde_json::Value = serde_json::from_str(&payload)
-        .map_err(|e| AppError::Internal(format!("payload parse: {e}")))?;
+        .map_err(|e| ClaimError::Corrupt(format!("payload parse: {e}")))?;
     let action = v
         .get("action")
         .and_then(|x| x.as_str())
-        .ok_or_else(|| AppError::Internal("payload missing `action`".into()))?
+        .ok_or_else(|| ClaimError::Corrupt("payload missing `action`".into()))?
         .to_string();
     let params = v.get("params").cloned().unwrap_or(serde_json::json!({}));
     let changed = conn.execute(
@@ -381,11 +486,26 @@ pub(crate) fn load_pending(
             )
             .optional()?
             .unwrap_or_else(|| "missing".to_string());
-        return Err(AppError::Internal(format!(
-            "approval `{approval_id}` is `{latest}`, not pending"
-        )));
+        return Err(ClaimError::NotPending(latest));
     }
     Ok((action, params))
+}
+
+pub(crate) fn load_pending(
+    state: &State<'_, Arc<AppState>>,
+    approval_id: &str,
+) -> Result<(String, serde_json::Value), AppError> {
+    claim_pending(&state.user_db, approval_id).map_err(|e| match e {
+        ClaimError::NotFound => AppError::Internal(format!("approval `{approval_id}` not found")),
+        ClaimError::NotPending(status) => AppError::Internal(format!(
+            "approval `{approval_id}` is `{status}`, not pending"
+        )),
+        ClaimError::Expired => AppError::Validation(format!(
+            "Approval `{approval_id}` has expired (pending beyond the consent-freshness window). Dismiss it and re-issue the request."
+        )),
+        ClaimError::Corrupt(m) => AppError::Internal(m),
+        ClaimError::Store(e) => e,
+    })
 }
 
 pub(crate) fn finalize_approval(

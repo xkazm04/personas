@@ -1,0 +1,535 @@
+/* The app's composition kit (Spine & Lens, chosen at Gate K on 2026-09-25 from the style-kit
+ * contest entry A/3, .contest/arena/style-kit/entries/claude-opus_xhigh/variant-3/kit.css), in the
+ * form the entry wrote it. Colour only through app tokens, type only through .typo-* recipes, no
+ * font-size anywhere. Doctrine: docs/design/style-mastery/doctrine.md, "Composition kit".
+ *
+ * Changes from the entry, all structural:
+ * - Scoped to .k-host (the variant owned the whole page, so its variables sat on :root and its
+ *   focus and reduced-motion rules were global). Nothing here reaches outside a kit surface.
+ * - The side pane follows the surface's own width (a container query at the variant's breakpoint
+ *   measured as surface width) instead of the viewport, because the app nests it in panels.
+ * - The drawer is fixed under the app titlebar instead of absolute in the variant's stage.
+ * - Only the compositions Fleet Activity renders are here; the Lens, SettingRow and the
+ *   specimen styles stay in the variant.
+ * Unlayered on purpose, like the variant: kit rules sit over the product's layered utilities. */
+
+/* ============ kit variables ============ */
+.k-host {
+  --spine-x: 14px;          /* where the spine line runs, from a surface's left edge */
+  --gutter: 40px;           /* the reading line: every name starts here, on every surface */
+  --spine-c: color-mix(in srgb, var(--primary) 30%, transparent);
+  --quiet: color-mix(in srgb, var(--foreground) 64%, transparent);
+  --glow: color-mix(in srgb, var(--primary) 60%, transparent);
+  /* fallbacks: plain token mixes */
+  --band-alt: color-mix(in srgb, var(--foreground) 3%, transparent);
+  --band-hover: color-mix(in srgb, var(--primary) 6%, transparent);
+  --band-sel: color-mix(in srgb, var(--primary) 9%, transparent);
+  --rule: color-mix(in srgb, var(--foreground) 9%, transparent);
+  --line: color-mix(in srgb, var(--foreground) 14%, transparent);
+  --ghost: color-mix(in srgb, var(--foreground) 8%, transparent);
+  position: relative; color: var(--foreground); min-width: 0;
+  container: kit / inline-size;
+}
+/* Surface steps: the background stepped by LIGHTNESS toward the middle. The app renders
+ * through brightness(1.25), which erases any faint tint on a light background; a step
+ * that scales with the background's own lightness is subtle on dark themes and still
+ * visible on light ones - one rule, every theme, no per-theme code. */
+@supports (color: oklch(from red l c h)) {
+  .k-host {
+    --band-alt: oklch(from var(--background) calc(l + 0.026 - 0.18 * l * l) c h);
+    --band-hover: color-mix(in srgb, var(--primary) 5%, oklch(from var(--background) calc(l + 0.03 - 0.19 * l * l) c h));
+    --band-sel: color-mix(in srgb, var(--primary) 15%, oklch(from var(--background) calc(l + 0.04 - 0.2 * l * l) c h));
+    --rule: oklch(from var(--background) calc(l + 0.075 - 0.27 * l * l) c h);
+    --line: oklch(from var(--background) calc(l + 0.14 - 0.38 * l * l) c h);
+    --ghost: oklch(from var(--background) calc(l + 0.06 - 0.26 * l * l) c h);
+  }
+}
+
+/* Light themes (grow-3 gate: "Yes, lighten them"): the lightness step above lands about 0.14 below
+ * a light background, so lists read as dark stripes and bands as grey slabs. On a light theme the
+ * alternating band (and the card and tile band built on it) is a small fixed step instead: still
+ * a perceptible rhythm (Gate 2b), no longer a stripe. Dark themes keep the step above. */
+@supports (color: oklch(from red l c h)) {
+  :is([data-theme^="light"], [data-brightness^="light"]) .k-host {
+    --band-alt: oklch(from var(--background) calc(l - 0.035) c h);
+  }
+  :is([data-theme^="light"], [data-brightness^="light"]) .k-dtile::before { background: color-mix(in srgb, var(--primary) 60%, transparent); }
+}
+
+/* ============ modifiers ============ */
+.k-strong { font-weight: 600; }
+.k-medium { font-weight: 500; }
+.k-regular { font-weight: 400; }
+.k-quiet { color: var(--quiet); }
+.k-tint { color: var(--primary); }
+.k-cap::first-letter { text-transform: uppercase; }
+.k-nowrap { white-space: nowrap; }
+.k-ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* tones: every glyph reads --tone */
+.t-primary { --tone: var(--primary); }
+.t-success { --tone: var(--status-success); }
+.t-warning { --tone: var(--status-warning); }
+.t-error { --tone: var(--status-error); }
+.t-info { --tone: var(--status-info); }
+.t-neutral { --tone: var(--status-neutral); }
+.t-pending { --tone: var(--status-pending); }
+.t-agent { --tone: var(--role-agent); }
+.t-human { --tone: var(--role-human); }
+.t-external { --tone: var(--role-external); }
+.t-highlight { --tone: var(--role-highlight); }
+.k-toned { color: var(--tone); }
+
+.k-kbd {
+  display: inline-grid; place-items: center; min-width: 1.6em; padding: 0 5px; border-radius: 4px;
+  border: 1px solid var(--line); color: var(--quiet); line-height: 1.35;
+}
+
+/* ============ surface: every part hangs from one vertical spine ============ */
+.k-surface { position: relative; max-width: 1560px; }
+.k-surface--dense { max-width: 1320px; }
+.k-surface::before {
+  content: ""; position: absolute; left: var(--spine-x); top: 10px; bottom: 0; width: 1px; background: var(--spine-c);
+}
+
+/* ============ Section ============ */
+.k-section { position: relative; padding-bottom: 36px; scroll-margin-top: 16px; }
+.k-section__head {
+  position: relative; display: flex; align-items: flex-end; flex-wrap: wrap; gap: 6px 16px;
+  padding: 0 12px 12px var(--gutter); min-height: 40px;
+}
+.k-section__titles { min-width: 0; display: flex; flex-direction: column; }
+.k-section__title { position: relative; display: flex; align-items: baseline; gap: 10px; margin: 0; }
+.k-node {
+  position: absolute; left: calc(var(--spine-x) - var(--gutter) - 6.5px); top: 50%; margin-top: -6.5px;
+  width: 13px; height: 13px; border-radius: 50%; background: var(--background);
+  box-shadow: inset 0 0 0 2px var(--primary), 0 0 0 3px var(--background), 0 0 12px color-mix(in srgb, var(--primary) 35%, transparent);
+  transition: background-color var(--duration-normal), box-shadow var(--duration-normal);
+}
+.k-section.is-current > .k-section__head .k-node,
+.k-section.is-selected > .k-section__head .k-node {
+  background: var(--primary);
+  box-shadow: inset 0 0 0 2px var(--primary), 0 0 0 3px var(--background), 0 0 16px var(--glow);
+}
+.k-section--l2 { padding-bottom: 20px; }
+.k-section--l2 > .k-section__head { min-height: 32px; padding-bottom: 6px; }
+.k-section--l2 .k-node {
+  width: 9px; height: 9px; margin-top: -4.5px; left: calc(var(--spine-x) - var(--gutter) - 4.5px);
+  background: color-mix(in srgb, var(--primary) 55%, var(--background));
+  box-shadow: 0 0 0 3px var(--background);
+}
+.k-section__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; padding-bottom: 2px; }
+.k-section__actions { margin-left: auto; display: flex; align-items: center; gap: 8px; padding-bottom: 2px; }
+.k-section.is-hover > .k-section__head,
+.k-section > .k-section__head:hover { background: linear-gradient(to right, transparent calc(var(--spine-x) + 8px), var(--band-hover) calc(var(--spine-x) + 8px)); }
+.k-section.is-muted > .k-section__head, .k-section.is-muted > .k-section__body { opacity: .55; }
+.k-section__desc { padding: 0 12px 10px var(--gutter); max-width: 76ch; }
+.k-count { color: var(--quiet); }
+.k-in { padding-left: var(--gutter); padding-right: 12px; }
+.k-sep { opacity: .6; }
+
+/* ============ glyphs: mark + unit share one vocabulary ============ */
+:where(.k-mark, .k-u) { --tone: var(--status-neutral); }
+.g-solid { background: var(--tone); }
+.g-soft { background: color-mix(in srgb, var(--tone) 42%, transparent); }
+.g-hollow { background: transparent; box-shadow: inset 0 0 0 1.5px var(--tone); }
+.g-empty { background: var(--rule); }
+.g-live { background: var(--primary); animation: k-breathe 2.8s ease-in-out infinite; }
+@keyframes k-breathe {
+  0%, 100% { box-shadow: 0 0 2px 0 color-mix(in srgb, var(--primary) 50%, transparent); }
+  50% { box-shadow: 0 0 10px 3px color-mix(in srgb, var(--primary) 65%, transparent); }
+}
+.k-mark {
+  position: absolute; z-index: 2; left: calc(var(--spine-x) - 4.5px); top: var(--mark-y, 50%); margin-top: -4.5px;
+  width: 10px; height: 10px; border-radius: 50%; outline: 3px solid var(--background);
+}
+.k-mark.g-hollow { background: var(--background); box-shadow: inset 0 0 0 2px var(--tone); }
+.k-mark.g-live { outline-color: var(--background); }
+.k-dot { position: static; display: inline-block; flex: none; width: 9px; height: 9px; border-radius: 50%; outline: 0; margin: 0; }
+.k-dot.g-hollow { background: transparent; }
+
+/* ============ UnitStrip ============ */
+.k-units {
+  --u: 6px; --uw: var(--u); --uh: var(--u); --ug: 2px;
+  display: inline-grid; grid-auto-flow: column; grid-template-rows: repeat(var(--rows, 1), var(--uh));
+  grid-auto-columns: var(--uw); gap: var(--ug); vertical-align: middle; flex: none;
+}
+.k-u { display: block; width: var(--uw); height: var(--uh); border-radius: 1.5px; }
+.k-u.is-part { background: linear-gradient(to right, var(--tone) var(--part), color-mix(in srgb, var(--tone) 16%, transparent) var(--part)); }
+.k-units--s { --u: 5px; --ug: 1px; }
+.k-units--m { --u: 7px; --ug: 2px; }
+.k-units--l { --u: 12px; --ug: 3px; }
+.k-units--l .k-u { border-radius: 3px; }
+.k-units--pip { --uw: 3px; --uh: 12px; --ug: 2px; }
+.k-units.is-muted { opacity: .5; }
+.k-units.is-empty .k-u { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+/* A strip with a legend (grow-2) carries its quantum in a Hint: it sits above a pressable card's
+ * stretched press so the pointer reaches it, and it is a tab stop so the keyboard does too. */
+.k-units.k-units--hint { position: relative; z-index: 1; }
+
+/* ============ ListRow ============ */
+.k-rows { display: flex; flex-direction: column; }
+.k-row {
+  --band: transparent; --row-h: 56px;
+  position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 24px;
+  height: var(--row-h); padding: 0 12px 0 var(--gutter); outline-offset: -2px;
+  background: linear-gradient(to right, transparent calc(var(--spine-x) + 8px), var(--band) calc(var(--spine-x) + 8px));
+  border-radius: 0 var(--radius-interactive) var(--radius-interactive) 0;
+}
+.k-rows > .k-row:nth-child(even) { --band: var(--band-alt); }
+.k-row[data-nav], .k-table tr[data-nav] { cursor: pointer; }
+.k-row:hover, .k-row.is-hover { --band: var(--band-hover); }
+.k-row.is-selected { --band: var(--band-sel); }
+.k-row.is-selected::after, .k-table tr.is-selected > td:first-child::after {
+  content: ""; position: absolute; left: calc(var(--spine-x) - 1px); top: 3px; bottom: 3px; width: 3px; border-radius: 2px;
+  background: var(--primary); box-shadow: 0 0 12px var(--glow); z-index: 1;
+}
+.k-row.is-live::before, .k-table tr.is-live > td:first-child::before {
+  content: ""; position: absolute; left: var(--spine-x); top: 0; bottom: 0; width: 1px;
+  background: var(--primary); box-shadow: 0 0 8px var(--glow);
+}
+.k-row.is-muted .k-row__main, .k-row.is-muted .k-row__trail { opacity: .56; }
+.k-row--s { --row-h: 48px; }
+.k-row--line { --row-h: 40px; }
+.k-row--l { --row-h: 64px; }
+.k-row__main { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+.k-row__name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.k-row__meta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; display: flex; align-items: center; gap: 6px; }
+.k-row__trail { display: flex; align-items: center; gap: 20px; }
+/* A pressable row (grow-2): the name is the row's one button, its hit area stretched over the
+ * row as a pressable card's title is; trail controls sit above it, the focus ring is the row's. */
+.k-row.is-pressable { cursor: pointer; }
+.k-row.is-pressable > .k-mark { pointer-events: none; }
+.k-row__press { display: block; width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.k-row__press::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.k-row__press:focus-visible { outline: 0; }
+.k-row.is-pressable:has(.k-row__press:focus-visible) { outline: 2px solid var(--focus-ring-color); outline-offset: -2px; }
+.k-row.is-pressable .k-row__trail :is(button, a, [tabindex]) { position: relative; z-index: 1; }
+.k-fig { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; white-space: nowrap; }
+.k-time { min-width: 2.6em; text-align: right; white-space: nowrap; }
+
+/* ============ StatStrip ============ */
+.k-stats { display: flex; flex-wrap: wrap; gap: 4px 8px; padding: 0 12px 4px var(--gutter); }
+.k-tile {
+  position: relative; display: flex; flex-direction: column; gap: 6px; min-width: 0;
+  padding: 10px 14px 12px 12px; border-radius: var(--radius-interactive); transition: background-color var(--duration-fast);
+  flex: 1 1 140px;
+}
+.k-tile:hover, .k-tile.is-hover { background: var(--band-hover); }
+.k-tile.is-selected { background: var(--band-sel); }
+.k-tile.is-muted { opacity: .55; }
+.k-tile__fig { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+.k-tile__draw { min-height: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* ============ KeyValueGrid ============ */
+.k-kv {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--kv-min, 150px), 1fr)); gap: 12px 24px;
+  margin: 0; padding: 4px 12px 8px var(--gutter);
+}
+.k-kv__item { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 4px 8px 6px 0; border-radius: var(--radius-interactive); }
+.k-kv__item:hover, .k-kv__item.is-hover { background: var(--band-hover); }
+.k-kv__item.is-muted { opacity: .55; }
+.k-kv dt { color: var(--quiet); }
+.k-kv dd { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
+
+/* ============ ChipRow ============ */
+.k-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 12px 6px var(--gutter); align-items: center; }
+.k-chip {
+  position: relative; display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 10px; overflow: hidden;
+  border-radius: var(--radius-interactive); border: 1px solid var(--line); background: transparent; color: inherit;
+  transition: border-color var(--duration-fast), background-color var(--duration-fast), box-shadow var(--duration-fast);
+}
+button.k-chip:hover, .k-chip.is-hover { border-color: color-mix(in srgb, var(--primary) 50%, transparent); background: var(--band-hover); }
+.k-chip.is-selected {
+  border-color: var(--primary); background: color-mix(in srgb, var(--primary) 13%, transparent);
+  box-shadow: 0 0 14px -4px var(--glow);
+}
+.k-chip.is-muted { border-style: dashed; }
+.k-chip.is-muted > :not(.k-dot) { opacity: .62; }
+.k-chip__share { position: absolute; left: 0; bottom: 0; height: 2px; width: calc(var(--share) * 100%); /* --share is a 0..1 fraction */ background: color-mix(in srgb, var(--primary) 70%, transparent); }
+.k-chip__count { color: var(--quiet); }
+
+/* ============ Toolbar ============ */
+.k-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 0 12px 12px var(--gutter); }
+.k-seg { display: inline-flex; flex-wrap: wrap; padding: 3px; gap: 2px; border-radius: var(--radius-input); background: var(--band-alt); }
+.k-seg__opt {
+  display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 0; border-radius: var(--radius-interactive);
+  background: transparent; color: var(--quiet); white-space: nowrap; transition: background-color var(--duration-fast), color var(--duration-fast);
+}
+.k-seg__opt:hover, .k-seg__opt.is-hover { color: var(--foreground); background: var(--band-hover); }
+.k-seg__opt[aria-pressed="true"] {
+  color: var(--foreground); background: color-mix(in srgb, var(--primary) 16%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 55%, transparent);
+}
+.k-seg__opt:disabled { opacity: .45; cursor: default; }
+/* RangePicker (added at Gate 4): the Segmented look; the caller's date picking opens under it. */
+.k-range { position: relative; display: inline-flex; }
+.k-seg__opt.is-open { color: var(--foreground); background: var(--band-hover); }
+.k-range__cal { width: 10px; height: 9px; border-radius: 2px; box-shadow: inset 0 0 0 1.5px currentColor; border-top: 2px solid currentColor; flex: none; }
+.k-search {
+  display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 8px 0 10px; min-width: 180px; flex: 0 1 300px;
+  border-radius: var(--radius-input); border: 1px solid var(--line); background: color-mix(in srgb, var(--background) 60%, transparent);
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
+}
+.k-search:focus-within { border-color: color-mix(in srgb, var(--primary) 60%, transparent); box-shadow: 0 0 0 2px var(--focus-ring-color); }
+.k-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: inherit; }
+.k-search input::placeholder { color: var(--quiet); }
+.k-search__glyph { width: 11px; height: 11px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--quiet); flex: none; }
+.k-btn {
+  display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; white-space: nowrap;
+  border-radius: var(--radius-interactive); border: 1px solid var(--line); background: transparent; color: inherit;
+  transition: border-color var(--duration-fast), background-color var(--duration-fast);
+}
+/* KitButton renders the shared Button for its real busy spinner, and the Button sizes its label
+ * by --type-control (the row step on a compact surface). The variant's buttons are typo-label,
+ * so here the control step is the label step. */
+.k-btn { --type-control: calc(var(--type-0) * var(--type-f)); }
+.k-btn:hover, .k-btn.is-hover { border-color: color-mix(in srgb, var(--primary) 50%, transparent); background: var(--band-hover); }
+.k-btn--quiet { border-color: transparent; color: var(--quiet); }
+/* Primary (grow-2, gradient at the grow-2 gate; primary -> brand purple was tried in round 3 and
+ * the owner kept this one, "A (round 2)"): the surface's one call to action, filled with
+ * the theme's primary -> accent gradient (the hero banner's hue family) with the kit's primary
+ * glow and the shared Button's ink. Each stop keeps its theme hue and chroma and caps its OKLCH
+ * lightness (0.45 and 0.52) so the white ink holds 4.5:1 at both ends in every theme (measured
+ * 4.80 worst, dark-matrix accent end). Without relative colour it is the shared primary fill. */
+.k-btn.k-btn--primary {
+  border-color: transparent; background: var(--btn-primary); color: var(--btn-primary-fg); font-weight: 500;
+  box-shadow: 0 0 14px -4px var(--glow);
+}
+.k-btn.k-btn--primary:hover, .k-btn.k-btn--primary.is-hover {
+  background: color-mix(in srgb, var(--btn-primary) 86%, var(--btn-primary-fg)); box-shadow: 0 0 16px -2px var(--glow);
+}
+@supports (color: oklch(from red l c h)) {
+  .k-btn.k-btn--primary, .k-btn.k-btn--primary:hover, .k-btn.k-btn--primary.is-hover {
+    background: linear-gradient(135deg, oklch(from var(--primary) min(l, 0.45) c h), oklch(from var(--accent) min(l, 0.52) c h));
+  }
+  .k-btn.k-btn--primary:hover, .k-btn.k-btn--primary.is-hover {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent), 0 0 18px -2px var(--glow);
+  }
+}
+/* A leading icon (grow-2): its own flex item at a fixed glyph size, so it never wraps the label. */
+.k-btn__icon { display: inline-flex; }
+.k-btn__icon > svg { width: 14px; height: 14px; flex: none; }
+.k-btn[aria-pressed="true"] { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, transparent); box-shadow: 0 0 12px -4px var(--glow); }
+.k-btn:disabled { opacity: .45; cursor: default; }
+.k-legend-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+.k-legend-row > span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+
+/* ============ DataTable ============ */
+.k-tablewrap { position: relative; }
+.k-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: auto; }
+.k-table th {
+  text-align: left; white-space: nowrap; padding: 0 12px 8px; color: var(--quiet); vertical-align: bottom;
+  border-bottom: 1px solid var(--rule);
+}
+.k-table th:first-child { padding-left: var(--gutter); }
+.k-table tr { --band: transparent; }
+.k-table tbody tr:nth-child(even) { --band: var(--band-alt); }
+.k-table tbody tr:hover, .k-table tbody tr.is-hover { --band: var(--band-hover); }
+.k-table tbody tr.is-selected { --band: var(--band-sel); }
+.k-table td { height: 56px; padding: 0 12px; vertical-align: middle; background: var(--band); }
+.k-table td:first-child {
+  position: relative; padding-left: var(--gutter); width: 99%; max-width: 0;
+  background: linear-gradient(to right, transparent calc(var(--spine-x) + 8px), var(--band) calc(var(--spine-x) + 8px));
+}
+.k-table td:last-child { border-radius: 0 var(--radius-interactive) var(--radius-interactive) 0; }
+.k-table .k-num { text-align: right; white-space: nowrap; }
+.k-table th.k-num { text-align: right; }
+.k-table tr.is-muted td > * { opacity: .56; }
+.k-table tr.is-muted td > .k-mark { opacity: 1; }
+.k-cell2 { display: flex; flex-direction: column; min-width: 0; }
+/* Sortable head (added at Gate 4): the shared SortableHeader in the kit's head look. Its button
+ * fills the head and keeps the head's padding, so a sortable column lines up with a plain one. */
+.k-table th.k-th-sort { padding: 0 0 0 0; }
+.k-table th.k-th-sort:first-child .k-th-sort__btn { padding-left: var(--gutter); }
+.k-th-sort__btn { padding: 0 12px 8px; color: var(--quiet); border-radius: var(--radius-interactive); }
+.k-th-sort__btn:hover { color: var(--foreground); }
+.k-table th[aria-sort="ascending"] .k-th-sort__btn, .k-table th[aria-sort="descending"] .k-th-sort__btn { color: var(--foreground); }
+.k-pager { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 6px 12px 0 var(--gutter); }
+
+/* ============ ChartFrame: a chart's plot on the reading line (added for Observability, Gate 4) ============ */
+.k-chart { margin: 0; padding: 0 12px 4px var(--gutter); min-width: 0; }
+.k-chart.is-empty { padding: 0; }
+.k-chart__plot { height: var(--chart-h); min-width: 0; }
+
+/* ============ Empty + Ghost ============ */
+.k-empty {
+  position: relative; display: flex; align-items: center; gap: 20px; min-height: 80px; padding: 14px 12px 14px var(--gutter);
+}
+.k-empty::before {
+  content: ""; position: absolute; left: calc(var(--spine-x) + 8px); right: 0; top: 4px; bottom: 4px; border-radius: var(--radius-card);
+  border: 1px dashed var(--line); background: var(--band-alt);
+}
+.k-empty > * { position: relative; }
+.k-empty > .k-mark { position: absolute; }
+.k-empty__text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.k-ghost {
+  display: block; height: 10px; border-radius: 4px; background-color: var(--ghost);
+  background-image: linear-gradient(90deg, transparent 0%, var(--band-alt) 50%, transparent 100%);
+  background-size: 220% 100%; background-repeat: no-repeat; animation: k-shimmer 4.2s linear infinite;
+}
+@keyframes k-shimmer { from { background-position: 160% 0; } to { background-position: -60% 0; } }
+.k-row.is-loading { cursor: default; }
+.k-row.is-loading .k-mark, .k-table tr.is-loading .k-mark { background: var(--ghost); }
+
+/* ============ Drawer (nested detail layer, narrow surfaces) ============ */
+.k-drawer {
+  position: fixed; top: 48px; /* under the app titlebar (globals.css .titlebar) */
+  right: 0; bottom: 0; width: min(460px, 92vw); z-index: 30; display: flex; flex-direction: column;
+  background: var(--background); border-left: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+  box-shadow: var(--shadow-elevation-4); transform: translateX(104%); visibility: hidden;
+  transition: transform var(--duration-slow) cubic-bezier(.2, .8, .2, 1), visibility 0s linear var(--duration-slow);
+}
+.k-drawer.is-open { transform: none; visibility: visible; transition: transform var(--duration-slow) cubic-bezier(.2, .8, .2, 1); }
+.k-drawer__scroll { overflow: auto; flex: 1; padding: 20px 8px 60px 4px; }
+.k-drawer__close { position: absolute; top: 12px; right: 14px; z-index: 2; }
+
+/* Fleet activity: side pane when the surface has room (the variant's 1320px viewport = 1272px of surface) */
+.k-split { display: grid; grid-template-columns: minmax(0, 1fr) clamp(360px, 27vw, 440px); gap: 28px; align-items: start; }
+.k-pane {
+  position: sticky; top: 0; max-height: calc(100vh - 150px); overflow: auto; padding: 4px 0 24px;
+  border-left: 1px solid var(--rule);
+}
+.k-pane .k-surface::before { top: 6px; }
+@container kit (max-width: 1271px) {
+  .k-split { grid-template-columns: minmax(0, 1fr); }
+  .k-pane { display: none; }
+}
+
+/* ============ focus + motion ============ */
+:where(.k-host) :where(button, select, input, [tabindex]):focus-visible { outline: 2px solid var(--focus-ring-color); outline-offset: 2px; }
+.k-row:focus-visible, .k-table tr:focus-visible { outline: 2px solid var(--focus-ring-color); outline-offset: -2px; }
+@media (prefers-reduced-motion: reduce) {
+  .k-host *, .k-host *::before, .k-host *::after { animation: none !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
+}
+
+/* ============ dense tool surfaces: the working list is on screen at arrival ============ */
+.k-surface--dense .k-section { padding-bottom: 22px; }
+.k-surface--dense .k-section__head { padding-bottom: 8px; }
+.k-surface--dense .k-stats { flex-wrap: wrap; gap: 2px 4px; }
+.k-surface--dense .k-tile { flex: 1 1 auto; padding: 6px 14px 8px 12px; gap: 3px; }
+.k-surface--dense .k-tile__fig { line-height: 1.15; }
+.k-surface--dense .k-tile__draw { min-height: 0; }
+.k-surface--dense .k-search { flex: 0 1 240px; }
+
+/* ============ Crumbs (added at kit grow-1): the trail in a Section's eyebrow ============ */
+.k-crumbs ol { display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px; margin: 0; padding: 0; list-style: none; }
+.k-crumbs li { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.k-crumb { color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; white-space: nowrap; }
+/* A door: the eyebrow's own text, a 24px hit area won by padding and given back by margin. */
+/* A door reads as one at rest: a quiet underline, lit in the primary on hover. */
+button.k-crumb {
+  padding: 3px 4px; margin: -3px -4px; border: 0; border-radius: var(--radius-interactive); background: transparent; cursor: pointer;
+  text-decoration: underline; text-decoration-color: var(--line); text-decoration-thickness: 1px; text-underline-offset: 3px;
+  transition: color var(--duration-fast), background-color var(--duration-fast), text-decoration-color var(--duration-fast);
+}
+button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); background: var(--band-hover); text-decoration-color: currentColor; }
+.k-crumb.is-current { color: var(--foreground); }
+
+/* ============ ContextCard (added at kit grow-1): a band with a primary rail, not a box ============ */
+.k-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--card-min, 240px), 1fr)); gap: 12px;
+  padding: 4px 12px 8px var(--gutter);
+}
+.k-card {
+  --rail: var(--spine-c); --card-band: var(--band-alt);
+  position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 104px;
+  padding: 12px 14px 12px 20px; border-radius: 0 var(--radius-card) var(--radius-card) 0;
+  background: linear-gradient(to right, color-mix(in srgb, var(--primary) 7%, var(--card-band)), var(--card-band) 55%);
+  transition: background-color var(--duration-fast);
+}
+.k-card::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; border-radius: 1px; background: var(--rail);
+  transition: background-color var(--duration-fast), box-shadow var(--duration-fast);
+}
+.k-card:hover, .k-card.is-hover { --card-band: var(--band-hover); --rail: color-mix(in srgb, var(--primary) 60%, transparent); }
+.k-card.is-selected { --card-band: var(--band-sel); --rail: var(--primary); }
+.k-card.is-selected::before { width: 3px; box-shadow: 0 0 12px var(--glow); }
+.k-card.is-live::before { background: var(--primary); animation: k-breathe 2.8s ease-in-out infinite; }
+.k-card.is-muted > :not(.k-mark) { opacity: .56; }
+.k-card.is-empty { background: transparent; }
+.k-card.is-empty::after { content: ""; position: absolute; inset: 0; border: 1px dashed var(--line); border-left: 0; border-radius: inherit; pointer-events: none; }
+.k-card.is-loading { cursor: default; }
+.k-card > .k-mark { left: -4px; top: 21px; margin-top: -4.5px; outline-color: var(--background); }
+.k-card.is-loading > .k-mark { background: var(--ghost); }
+/* One layout for every card: head at the top (actions at its top-right), foot pinned to the bottom edge. */
+.k-card__head { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
+.k-card__titles { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+.k-card__title { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; }
+.k-card__press { padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; }
+/* The title button's hit area is the whole card; actions and foot controls sit above it. */
+.k-card__press::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.k-card__press:focus-visible { outline: 0; }
+.k-card:has(.k-card__press:focus-visible) { outline: 2px solid var(--focus-ring-color); outline-offset: 2px; }
+.k-card__meta { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; }
+/* Art (grow-2): the head's decoration, top-right, beside the actions when both are present (the
+ * actions keep the corner). It paints under the stretched press and never catches a pointer. */
+.k-card__art { flex: none; display: flex; align-items: center; margin: -6px -6px 0 0; pointer-events: none; }
+.k-card__art:has(+ .k-card__actions) { margin-right: 0; }
+.k-card__actions { position: relative; z-index: 1; flex: none; display: flex; align-items: center; gap: 6px; margin: -6px -6px 0 0; }
+.k-card__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; min-height: 20px; margin-top: auto; padding-top: 10px; }
+.k-card__foot > :is(button, a) { position: relative; z-index: 1; }
+
+/* ============ ContextGroups (added at kit grow-1): level 1 over many contexts ============ */
+.k-groups { display: flex; flex-direction: column; }
+.k-grp {
+  --band: transparent;
+  position: relative; display: grid; align-items: center; column-gap: 20px; width: 100%; height: 56px;
+  grid-template-columns: minmax(10rem, 16rem) 3rem minmax(0, 1fr) repeat(var(--grp-figs, 0), 6.5rem);
+  padding: 0 12px 0 var(--gutter); border: 0; color: inherit; text-align: left; cursor: pointer; outline-offset: -2px;
+  background: linear-gradient(to right, transparent calc(var(--spine-x) + 8px), var(--band) calc(var(--spine-x) + 8px));
+  border-radius: 0 var(--radius-interactive) var(--radius-interactive) 0;
+}
+.k-grp__item:nth-child(even) > .k-grp { --band: var(--band-alt); }
+.k-grp:hover, .k-grp.is-hover { --band: var(--band-hover); }
+.k-grp.is-selected { --band: var(--band-sel); }
+.k-grp.is-muted > :not(.k-mark) { opacity: .56; }
+.k-grp:focus-visible { outline: 2px solid var(--focus-ring-color); }
+.k-grp--head { height: 28px; cursor: default; align-items: end; padding-bottom: 6px; border-bottom: 1px solid var(--rule); border-radius: 0; }
+.k-grp__name { display: flex; flex-direction: column; min-width: 0; }
+.k-grp__count { text-align: right; color: var(--quiet); }
+.k-grp__units { min-width: 0; overflow: hidden; display: flex; align-items: center; }
+.k-grp__fig { text-align: right; white-space: nowrap; }
+@container kit (max-width: 900px) {
+  .k-grp { grid-template-columns: minmax(8rem, 12rem) 2.5rem minmax(0, 1fr) repeat(var(--grp-figs, 0), 5rem); column-gap: 12px; }
+}
+
+/* ============ Tiles / Tile (added at kit grow-3): the dashboard grid ============ */
+/* Rows are content-sized and a row's tiles stretch to its tallest, so heads align at the top and
+ * footers pin to the bottom; nothing clips or scrolls inside a tile. The grid is its own size
+ * container: spans collapse by the room the grid has, not by the window. */
+.k-dtiles {
+  container: tiles / inline-size;
+  display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: auto; align-items: stretch; gap: 12px;
+}
+.k-dtiles--stack { grid-template-columns: minmax(0, 1fr); }
+.k-dtile { grid-column: span var(--span, 12); position: relative; display: flex; flex-direction: column; min-width: 0; }
+.k-dtiles--stack > .k-dtile { grid-column: 1 / -1; }
+@container tiles (max-width: 1099px) {
+  .k-dtiles:not(.k-dtiles--stack) > .k-dtile:is([data-span="1"], [data-span="2"], [data-span="3"]) { grid-column: span 6; }
+}
+@container tiles (max-width: 719px) {
+  .k-dtiles:not(.k-dtiles--stack) > .k-dtile { grid-column: 1 / -1; }
+}
+.k-dtile__head { position: relative; display: flex; align-items: flex-end; flex-wrap: wrap; gap: 6px 16px; min-height: 32px; padding: 0 12px 8px var(--gutter); }
+.k-dtile__titles { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.k-dtile__title { position: relative; display: flex; align-items: baseline; gap: 10px; margin: 0; min-width: 0; }
+.k-dtile__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.k-dtile__actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.k-dtile__body { flex: 1 0 auto; display: flex; flex-direction: column; min-width: 0; }
+.k-dtile__foot { margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 12px 0 var(--gutter); }
+
+/* The look (owner, grow-3 gate: "B Band"; a grid of mixed tiles keeps card feel): ContextCard's
+ * band, the stepped background with a faint primary wash from a 2px rail on its left edge and a
+ * right-only radius. No spine runs through a band, so a mark needs no background ring cutting it. */
+.k-dtile {
+  --card-band: var(--band-alt);
+  padding: 12px 0; border-radius: 0 var(--radius-card) var(--radius-card) 0;
+  background: linear-gradient(to right, color-mix(in srgb, var(--primary) 7%, var(--card-band)), var(--card-band) 55%);
+}
+.k-dtile::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; border-radius: 1px; background: var(--spine-c); }
+.k-dtile .k-rows > .k-row:nth-child(even) { --band: color-mix(in srgb, var(--foreground) 4%, transparent); }
+.k-dtile .k-mark { outline-color: transparent; }
+/* A short list beside a long one: the body fills the stretched tile and its pager ("Show all")
+ * sits on the tile's foot, so the height reads as the tile's own, not a gap under the rows. */
+.k-dtile__body > .k-pager { margin-top: auto; }

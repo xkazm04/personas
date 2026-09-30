@@ -1,25 +1,42 @@
 import { useEffect, useState } from 'react';
-import { Brain, Star } from 'lucide-react';
 
 import { listMemoriesByExecution } from '@/api/overview/memories';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { silentCatch } from '@/lib/silentCatch';
-import { RevealItem } from '@/features/shared/components/display/RevealItem';
-import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { Hint, ListRow, Meta, Rows, Tile, UnitStrip, type Glyph, type Tone } from '@/features/shared/components/kit';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
+/** Rows shown before "Show all" (home-2 contract). */
+const CAP = 6;
+/** PersonaMemory.importance is 1-5 (MEMORY CONTRACT (4)). */
+const IMPORTANCE_MAX = 5;
+
+/** A memory's tier on the row's Mark: pinned core solid, the scored hot set soft, the rest hollow. */
+const TIER_MARK: Record<string, { tone: Tone; glyph: Glyph }> = {
+  core: { tone: 'primary', glyph: 'solid' },
+  active: { tone: 'primary', glyph: 'soft' },
+  working: { tone: 'neutral', glyph: 'soft' },
+  archive: { tone: 'neutral', glyph: 'hollow' },
+};
+
 /**
- * Linked memories — persona memories stamped with `source_execution_id`
+ * Linked memories - persona memories stamped with `source_execution_id`
  * matching the contextual message's execution. Lets the user see what
  * the agent retained from this run alongside its message + decisions.
+ *
+ * One kit Tile of rows with ONE emphasis each, the memory's title: its tier is
+ * the row's Mark, its category leads the quiet meta line, its importance is
+ * drawn as five units in the trail.
  *
  * Config:
  *   { executionId: string }
  */
-export function LinkedMemoriesWidget({ config, title }: CockpitWidgetProps) {
-  const { t } = useTranslation();
+export function LinkedMemoriesWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
+  const { t, tx } = useTranslation();
+  const c = t.overview.cockpit;
   const executionId = (config?.executionId as string | undefined) ?? '';
 
   const [memories, setMemories] = useState<PersonaMemory[]>([]);
@@ -42,80 +59,40 @@ export function LinkedMemoriesWidget({ config, title }: CockpitWidgetProps) {
     return () => { cancelled = true; };
   }, [executionId]);
 
-  // One-shot row cascade, latched for the widget's lifetime (no resetKey) —
-  // memories already on screen never replay their entrance.
-  const enter = useRevealTracker();
-
+  const heading = title ?? c.linked_memories_title;
   return (
-    <div
-      data-testid="cockpit-widget-linked_memories"
-      className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col min-h-0"
+    <Tile
+      span={span}
+      title={heading}
+      count={loading ? undefined : memories.length}
+      actions={actions}
+      footer={footer}
+      testId="cockpit-widget-linked_memories"
+      state={loading ? 'loading' : undefined}
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className="typo-caption text-foreground uppercase tracking-wide flex items-center gap-1.5">
-          <Brain className="w-3 h-3 text-foreground" />
-          {title ?? t.overview.cockpit.linked_memories_title}
-        </div>
-        {!loading && (
-          <span className="typo-caption text-foreground">{memories.length}</span>
-        )}
-      </div>
-
-      {loading ? (
-        <div className="flex-1 grid grid-cols-1 gap-2" aria-hidden="true">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="rounded-input bg-foreground/[0.04] h-12 animate-fade-in"
-              style={{ animationDelay: `${120 + i * 35}ms` }}
-            />
-          ))}
-        </div>
-      ) : memories.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center typo-caption text-foreground italic">
-          {t.overview.cockpit.linked_memories_empty}
-        </div>
-      ) : (
-        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2 overflow-y-auto min-h-0 auto-rows-min">
-          {memories.map((m, index) => (
-            <RevealItem
+      <Rows count={memories.length} cap={CAP} label={heading} empty={{ title: c.linked_memories_empty }}>
+        {memories.map((m) => {
+          const tier = TIER_MARK[m.tier] ?? TIER_MARK.working!;
+          // A row without a score draws no strip rather than five empty units.
+          const importance = Number.isFinite(m.importance) ? Math.min(IMPORTANCE_MAX, Math.max(0, Math.round(m.importance))) : null;
+          return (
+            <ListRow
               key={m.id}
-              revealId={m.id}
-              order={index}
-              hasEntered={enter.hasEntered}
-              markEntered={enter.markEntered}
-              className="rounded-input border border-foreground/10 bg-background/40 px-3 py-2 min-w-0"
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <CategoryBadge category={m.category} />
-                <ImportancePip importance={m.importance} />
-                <span className="ml-auto typo-caption text-foreground uppercase tracking-wide">
-                  {m.tier}
-                </span>
-              </div>
-              <p className="typo-body text-foreground/90 truncate">{m.title}</p>
-              <p className="typo-caption text-foreground line-clamp-2">{m.content}</p>
-            </RevealItem>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function CategoryBadge({ category }: { category: string }) {
-  return (
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded-input typo-caption text-foreground bg-foreground/[0.06] border border-foreground/10 uppercase tracking-wide">
-      {category}
-    </span>
-  );
-}
-
-function ImportancePip({ importance }: { importance: number }) {
-  return (
-    <span className="inline-flex items-center gap-0.5 typo-caption text-amber-300/85">
-      <Star className="w-3 h-3 fill-amber-300/85" />
-      {importance}
-    </span>
+              size="s"
+              name={m.title}
+              mark={{ ...tier, label: tokenLabel(t, 'memory_tier', m.tier) }}
+              meta={<Meta parts={[tokenLabel(t, 'memory_category', m.category), <Hint key="c" content={m.content}><span className="k-ellipsis">{m.content}</span></Hint>]} />}
+              figures={importance == null ? undefined : (
+                <UnitStrip
+                  size="s"
+                  label={tx(c.linked_memories_importance, { value: importance, max: IMPORTANCE_MAX })}
+                  segments={[{ n: importance, tone: 'primary' }, { n: IMPORTANCE_MAX - importance, tone: 'neutral', glyph: 'empty' }]}
+                />
+              )}
+            />
+          );
+        })}
+      </Rows>
+    </Tile>
   );
 }

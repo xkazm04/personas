@@ -1,6 +1,6 @@
 # Golden path — Codegen task registration
 
-> Situation node: `platform-delivery/build-profiles/codegen-task-registration` · [situation spine](../situation-spine.md)
+> Situation node: `platform-delivery/build-profiles/codegen-task-registration` · situation spine
 > `sides: server` · recurrence **20** · risk **medium** · spine label `convergence: mixed`.
 > Dimensions: **function · code-quality · resilience**.
 > Spine's own framing: *a generator that writes a committed artifact, and the registration that makes it run.*
@@ -123,7 +123,7 @@ sites the guard can never fire. The repo has the mechanism, deployed twice, aime
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path or count.
+Per the portability test the head carries no file path or count.
 Each clause names its warrant.
 
 > **P1 — physics. A generated artifact is only as fresh as its weakest trigger, and the trigger is
@@ -571,7 +571,7 @@ done. `npm run check:catalog-boundary` runs `classify-shared.mjs --check`, which
 over `shared/components/`** (it exits **1** today with 3 offenders under
 `modals/ExecutionDetailModal/`) and never compares the artifact to fresh output. A flag named
 `--check` on the generator, pointing at a different condition than the file the generator writes, is
-[the contract's fifth failure mode](../golden-path-contract.md) — the gate that points at a broken
+the contract's fifth failure mode — the gate that points at a broken
 destination — one layer further out.
 
 ### E. Cleared claims — recorded because a cleared claim is worth as much as a confirmed one
@@ -645,7 +645,7 @@ Two, both stack-free:
 
 What follows is **one repo's proxy for (A)**, an explicit **refusal for (B)** with the numbers that
 force it, and the instrument (B) actually needs. Per the
-[portability test](../research/portability-test.md) a proxy does not travel: an adopting repo
+portability test a proxy does not travel: an adopting repo
 inherits the two sentences and re-derives its own signal.
 
 ### Rules checked first, and why none of the 146 covers this

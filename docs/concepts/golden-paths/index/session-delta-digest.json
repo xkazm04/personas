@@ -29,6 +29,7 @@
     "features/plugins/companion/sub_setup/SetupPanel.tsx": {"count":1,"sections":[],"contexts":["`src/api/companion/projectTracking.ts`, `features/plugins/companion/sub_setup/SetupPanel.tsx`"],"resolved":false},
     "lib.rs": {"count":1,"sections":[7],"lines":["2996-3001"],"contexts":["All six Tauri commands are registered (`lib.rs:2996-3001`), all six are"],"resolved":false},
     "mod.rs": {"count":4,"sections":[0,7,9],"lines":["63","46-50","89"],"contexts":["(182), `events.rs` (109), `mod.rs` (102), `watchers/{git,ledger,obsidian}.rs`"],"resolved":false},
+    "pulse.rs": {"count":1,"sections":[],"contexts":["`push.rs` (324), `scheduler.rs` (193), `subscription.rs` (236), `pulse.rs`"],"resolved":false},
     "scheduler.rs": {"count":5,"sections":[0,7],"lines":["38","61","173-179","66-70"],"contexts":["`push.rs` (324), `scheduler.rs` (193), `subscription.rs` (236), `pulse.rs`"],"resolved":false},
     "scripts/check-csp-hosts.mjs": {"count":1,"sections":[9],"contexts":["tradition of `check-csp-hosts.mjs`."],"resolvedFrom":"basename","verbatim":"check-csp-hosts.mjs"},
     "scripts/check-durable-toggles.mjs": {"count":1,"sections":[9],"contexts":["**`scripts/check-durable-toggles.mjs`**"],"resolved":false},
@@ -61,7 +62,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "engine/project_tracking/mod.rs"
     },
-    "src-tauri/src/engine/project_tracking/pulse.rs": {"count":1,"sections":[],"contexts":["`push.rs` (324), `scheduler.rs` (193), `subscription.rs` (236), `pulse.rs`"],"resolvedFrom":"basename","verbatim":"pulse.rs"},
     "src-tauri/src/engine/project_tracking/push.rs": {
       "count": 11,
       "sections": [0,7,12],

@@ -23,6 +23,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
+import { readEvidence } from '../registry/lib/evidence-home.mjs';
 
 const ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '../..');
 // Corpus source and output dir are parameterized so the index can be built from
@@ -122,14 +123,17 @@ for (const slug of subjectDirs) {
     }
   }
 
-  const evidence = Array.isArray(gp.evidence) ? gp.evidence : [];
+  // The consumer-side layer lives in docs/evidence/<slug>.md; a corpus that still carries it in
+  // frontmatter (the frozen paths/ mirror) is the fallback, a registry clone never does.
+  const home = readEvidence(slug);
+  const evidence = home ? home.evidence : Array.isArray(gp.evidence) ? gp.evidence : [];
   subjectIndex[slug] = {
     category: catOf[slug] || 'uncategorized',
     status: gp.status || 'unknown',
     techniques,
     evidence,
-    counter_evidence: Array.isArray(gp.counter_evidence) ? gp.counter_evidence : [],
-    deviations: Array.isArray(gp.deviations) ? gp.deviations : [],
+    counter_evidence: home ? home.counter_evidence : Array.isArray(gp.counter_evidence) ? gp.counter_evidence : [],
+    deviations: home ? home.deviations : Array.isArray(gp.deviations) ? gp.deviations : [],
     applications,
   };
 

@@ -82,7 +82,7 @@ const APP_MASTER_NAME_PREFIX: &str = "App Master";
 pub(crate) const ARCHITECT_NAME_PREFIX: &str = "Architect";
 
 /// Default model tier when the body names none.
-const DEFAULT_MODEL_SLUG: &str = "opus";
+const DEFAULT_MODEL_SLUG: &str = "sonnet";
 
 /// Default parallel session ceiling for an App Master.
 const DEFAULT_MAX_CONCURRENT: i32 = 2;
@@ -116,7 +116,7 @@ pub struct AdoptAppMasterInput {
     #[serde(default)]
     pub recipes: Vec<AppMasterRecipeRequest>,
     /// A tier slug (`haiku` | `sonnet` | `opus`) or a full `claude-*` model
-    /// id. Defaults to `opus`.
+    /// id. Defaults to `sonnet`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub model: Option<String>,
@@ -1854,7 +1854,7 @@ mod tests {
     fn an_unknown_model_is_refused_and_a_tier_slug_resolves() {
         assert_eq!(
             resolve_model_id(None).expect("default"),
-            personas_core::model_ids::OPUS_CURRENT
+            personas_core::model_ids::SONNET_CURRENT
         );
         assert_eq!(
             resolve_model_id(Some("sonnet")).expect("slug"),

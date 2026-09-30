@@ -1,0 +1,36 @@
+<!doctype html>
+<!--
+  The Blueprint, on its own, at a viewport a driver names.
+
+  `<Blueprint>` is a presentational primitive: data and words come in as props
+  and it reaches no IPC, which is the whole reason it can be mounted here. What
+  a harness buys that a jsdom test cannot is the two things this page is judged
+  on and jsdom has no opinion about - whether the ledger's rows are REACHABLE
+  at 1000x640, and whether every ink survives both themes.
+
+  Served by the dev server at
+  /src/features/companions/curator/blueprint/__shots__/harness.html
+      ?theme=dark|light       the app's real theme, through the theme store
+      &rows=16                how many subjects the plan carries
+      &queue=filled|empty|unread   which of the lane's three readings to draw
+      &plan=0                 no projection at all - the unmeasured page
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blueprint - shot harness</title>
+    <style>
+      html,
+      body,
+      #root {
+        height: 100%;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./harness.tsx"></script>
+  </body>
+</html>

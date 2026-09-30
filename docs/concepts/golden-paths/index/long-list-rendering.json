@@ -136,6 +136,7 @@
     "overview/sub_memories/components/{MemoriesPage,MemoriesPageDense}.tsx": {"count":1,"sections":[],"contexts":["`overview/sub_memories/components/{MemoriesPage,MemoriesPageDense}.tsx`,"],"resolved":false},
     "package.json": {"count":2,"sections":[0,6],"lines":["45"],"contexts":["| virtualization libraries in `package.json` | **1** (`@tanstack/react-virtual ^3.13.24`, resolved 3.13.26) |"]},
     "packages/orchestrator/src/db.ts": {"count":1,"sections":[6],"lines":["770"],"contexts":["files** — its paging is server SQL only (`packages/orchestrator/src/db.ts:770`, `MAX_LIMIT = 1000` at"],"resolved":false},
+    "recipes/sub_playground/tabs/RecipeOverviewTab.tsx": {"count":1,"sections":[7],"lines":["63"],"contexts":["| `recipes/sub_playground/tabs/RecipeOverviewTab.tsx:63` | `inputs` | a recipe's input schema — bounded by construction |"],"resolved":false},
     "scans-audit.test.ts": {
       "count": 1,
       "sections": [6],
@@ -293,14 +294,6 @@
       "contexts": ["| `plugins/dev-tools/sub_projects/ProjectManagerPage.tsx:490` | `projects` | 14 dev projects |"],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/dev-tools/sub_projects/ProjectManagerPage.tsx"
-    },
-    "src/features/recipes/sub_playground/tabs/RecipeOverviewTab.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["63"],
-      "contexts": ["| `recipes/sub_playground/tabs/RecipeOverviewTab.tsx:63` | `inputs` | a recipe's input schema — bounded by construction |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "recipes/sub_playground/tabs/RecipeOverviewTab.tsx"
     },
     "src/features/settings/sub_byom/components/ByomAuditLog.tsx": {
       "count": 3,

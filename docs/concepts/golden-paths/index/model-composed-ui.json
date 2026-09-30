@@ -46,7 +46,6 @@
       "contexts": ["| Dispatcher | `dispatcher.rs:718-736` auto-fires on \"is `widgets` a non-empty array\" and nothing else |"],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json) (commit `211d519bb`); the census numbers below were"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "extract.rs": {"count":2,"sections":[5],"lines":["410","310"],"contexts":["it explicitly (`extract.rs:410`): it *requires* the `memories` key to be present so a"],"resolved":false},
     "facets.ts": {"count":1,"sections":[],"lines":["24-30"],"contexts":["(`facets.ts:24-30`) coerces an unknown policy to `needs_review`, **never** `auto_published`."],"resolved":false},
     "faithfulness.rs": {"count":2,"sections":[9],"lines":["133"],"contexts":["model-JSON call sites — and one straggler at `faithfulness.rs:133` that reimplements it as"],"resolved":false},
@@ -66,6 +65,7 @@
     "runner.rs": {"count":1,"sections":[8],"lines":["188-215"],"contexts":["*if it has finished arriving*\" — `runner.rs:188-215`'s `extract_early_behavior_core` scans a"],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Not already gated.** All **65** rules in `scripts/census/rules.json` were read: none concerns"]},
     "scripts/docs/check-doc-sync.mjs": {"count":1,"sections":[9],"contexts":["The right host is a check script beside `scripts/docs/check-doc-sync.mjs`, wired into `npm run check`."]},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["`shared-facts.json` (commit `211d519bb`); the census numbers below were"],"resolved":false},
     "src-tauri/engine/src/safe_json.rs": {"count":1,"sections":[7],"lines":["175,191"],"contexts":["- `src-tauri/engine/src/safe_json.rs:175,191` — `lenient_from_str` / `lenient_from_str_as` **are** a"]},
     "src-tauri/src/": {
       "count": 1,

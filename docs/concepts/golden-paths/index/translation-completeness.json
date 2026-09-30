@@ -35,6 +35,7 @@
     "GuideCategoryGrid.tsx": {"count":2,"sections":[9],"lines":["89","21-22"],"contexts":["`GuideCategoryGrid.tsx:89` (`{labels.categories[category.id] ?? category.name}`); and its coverage"],"resolved":false},
     "LiteratureSearchPanelWorkbench.tsx": {"count":1,"sections":[9],"lines":["309"],"contexts":["`SystemTraceViewer.tsx:251`, `LiteratureSearchPanelWorkbench.tsx:309`). The rest index icon,"],"resolved":false},
     "PermalinkPage.tsx": {"count":1,"sections":[],"lines":["185"],"contexts":["(`PermalinkPage.tsx:185`, `TrailFinder.tsx:264`, `VariantTrasy.tsx:110,:189`,"],"resolved":false},
+    "SchemaParseErrorBanner.tsx": {"count":1,"sections":[7],"lines":["10"],"contexts":["`SchemaParseErrorBanner.tsx:10`). Dropping the trailing-token requirement — the section name is"],"resolved":false},
     "TrailFinder.tsx": {"count":1,"sections":[],"lines":["264"],"contexts":["(`PermalinkPage.tsx:185`, `TrailFinder.tsx:264`, `VariantTrasy.tsx:110,:189`,"],"resolved":false},
     "VerdictBadge.test.tsx": {"count":1,"sections":[7],"lines":["12-16"],"contexts":["`VerdictBadge.test.tsx:12-16` is a *second* parity test in the repo and does not close the gap: it"],"resolved":false},
     "VerdictBadge.tsx": {"count":1,"sections":[7],"lines":["41"],"contexts":["asserts a **frontend** map against the catalog, while `VerdictBadge.tsx:41` falls back past that map"],"resolved":false},
@@ -307,15 +308,6 @@
       "resolvedFrom": "basename",
       "verbatim": "ChartErrorBoundary.tsx"
     },
-    "src/features/recipes/shared/SchemaParseErrorBanner.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["10"],
-      "contexts": ["`SchemaParseErrorBanner.tsx:10`). Dropping the trailing-token requirement — the section name is"],
-      "resolvedFrom": "basename",
-      "verbatim": "SchemaParseErrorBanner.tsx"
-    },
-    "src/features/recipes/sub_editor/components/RecipeEditor.tsx": {"count":1,"sections":[7],"contexts":["| `recipes` | `events` | 14 | `sub_editor/components/RecipeEditor.tsx` |"],"resolvedFrom":"suffix","verbatim":"sub_editor/components/RecipeEditor.tsx"},
     "src/features/shared/components/feedback/ErrorBoundary.tsx": {
       "count": 2,
       "sections": [8,9],
@@ -480,6 +472,7 @@
       "contexts": ["| `warning`, `error` | severity | `engine/director.rs:432` → `manual_reviews.rs:57-62` | `sub_director/PersonaDetailModal.tsx:278` |"],
       "resolved": false
     },
+    "sub_editor/components/RecipeEditor.tsx": {"count":1,"sections":[7],"contexts":["| `recipes` | `events` | 14 | `sub_editor/components/RecipeEditor.tsx` |"],"resolved":false},
     "sub_patterns/KnowledgeLibrary.tsx": {"count":1,"sections":[7],"lines":["46"],"contexts":["| `plugins` | `overview` | 17 | e.g. `sub_patterns/KnowledgeLibrary.tsx:46` |"],"resolved":false},
     "tokens.ts": {"count":1,"sections":[9],"lines":["101,117,130"],"contexts":["Measured: **25 matches / 19 files**, of which only ~6 resolve a *label* (`tokens.ts:101,117,130`,"],"resolved":false},
     "votetrack/messages.test.ts": {"count":1,"sections":[],"lines":["628-636"],"contexts":["(`votetrack/messages.test.ts:628-636` walks `PAGE_SECTIONS`) plus a runtime existence guard"],"resolved":false}

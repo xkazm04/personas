@@ -113,7 +113,7 @@ async function adopt(h, projects) {
   const out = [];
   for (const p of projects) {
     const r = await bridgeFetch(h, '/app-master/adopt', {
-      project: p.id, recipes: RECIPES, model: 'opus', maxConcurrent: 2, scopeRung: 2, enabled: false,
+      project: p.id, recipes: RECIPES, model: 'sonnet', maxConcurrent: 2, scopeRung: 2, enabled: false,
     });
     out.push({ project: p.name, ...r });
     console.log(`adopted ${p.name}: persona ${r.personaId} (${r.created ? 'created' : 'updated'}), charters ${r.charters?.length}, suspended ${r.suspended?.length ?? 0}${r.notes?.length ? ' notes: ' + r.notes.join(' | ') : ''}`);

@@ -1,7 +1,7 @@
 # External operation explorer
 
 > Situation node: `integrations-security / external-and-host-surfaces /
-> external-operation-explorer` · [situation spine](../situation-spine.json)
+> external-operation-explorer` · situation spine
 > `sides: "client"` · `twoSided: true` · `fusedAcrossSides: false` ·
 > `recurrence: 15` · `risk: medium` · `convergence: "mixed"`.
 > Dimensions: **function · security · ui · cost**.

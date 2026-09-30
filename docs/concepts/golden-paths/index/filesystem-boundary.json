@@ -4,7 +4,7 @@
   "leaf": "filesystem-boundary",
   "doc": "docs/concepts/golden-paths/filesystem-boundary.md",
   "file": "index/filesystem-boundary.json",
-  "headline": "Corrections pass — 2026-08-13. Applied after the wave-1 expert review (REVIEW-wave1.md). Command counts across the corpus disagreed (1,649 / 1,657 / 1,661 / 1,666) because each composer counted with a slightly different grep; the authoritative figure, measured once with grep -rn --include=*.rs -o '#\\[tauri::command' src-tauri | wc -l, is 1,673, and every occurrence below now reads that. Any §9 fl…",
+  "headline": "Corrections pass — 2026-08-13. Applied after the wave-1 expert review (REVIEW-wave1.md). Command counts across the corpus disagreed (1,649 / 1,657 / 1,661 / 1,666) because each composer counted with a slightly different grep; the authoritative figure, measured once with grep -rn --include=*.rs -o '#\\tauri::command' src-tauri | wc -l, is 1,673, and every occurrence below now reads that. Any §9 flo…",
   "oneWay": "The app owns the root; the caller supplies a fragment; the guard returns the resolved path and you use only what it returned. Take the boundary root from app state (managed_root(&app), the DB config row, app_data_dir()) — never from a parameter — then pass the caller's relative fragment through a r…",
   "deviations": [
     "A. Path-taking commands with no validation at all (51)",

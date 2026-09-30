@@ -1,6 +1,6 @@
 # Golden path — Focus management
 
-> Situation node: `ui-system/motion-and-accessibility/focus-management` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/motion-and-accessibility/focus-management` · situation spine
 > Composed 2026-08-14. Sweep: 6,933 file-visits across `src/**` (4,829 `.ts` + 2,104 `.tsx`),
 > plus a full read of `BaseModal`, `AppKeyboardProvider`, `useDeckDialog`, `Listbox`,
 > `UnifiedTable`, `PanelTabBar`, `SegmentedTabs`, `IssuesList`, `useRovingTabIndex`,
@@ -9,14 +9,14 @@
 > Dimensions: **ui · function · code-quality**.
 > **Settles:** where keyboard focus goes when a surface opens, closes, or changes — and who owns it.
 >
-> Shared counts are cited from [`shared-facts.json`](../shared-facts.json); everything
+> Shared counts are cited from `shared-facts.json`; everything
 > else was measured during composition. Deviations become `violating` cells.
 
 ---
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md)'s recommendations #1 and #2,
+Per the portability test's recommendations #1 and #2,
 the head is physically separated and every clause carries its **warrant**, so an
 adopting repo can tell physics from local calibration. No file path, primitive name
 or count appears below this line until the head ends.
@@ -402,7 +402,7 @@ Against **16** production `useAppKeyboard` adopters, exactly **1** of which sets
 
 **13 `role="tablist"` surfaces — 6 have arrow keys, 7 manage roving `tabIndex`:**
 
-- **`templates/draft-editor/DraftEditStep.tsx:119,129` — the single most severe
+- **`templates/draft-editor/DraftEditStep.tsx:119,129` (deleted 2026-09-25) — the single most severe
   deviation in this document.** Roving `tabIndex={activeTab === tab.id ? 0 : -1}` with
   **no `onKeyDown` anywhere in the file**: every non-active tab is removed from the tab
   order and nothing replaces it, so the tab bar cannot be operated by keyboard at all.
@@ -598,7 +598,7 @@ should make a prop.
 
 ## 9. The missing gate
 
-**Manifestation layer.** Per [`golden-path-contract.md:34-60`](../golden-path-contract.md),
+**Manifestation layer.** Per `golden-path-contract.md:34-60`,
 what follows is a *proxy* for a semantic condition, tuned to this repo's idiom. The
 conditions are stated first so an adopting repo can re-derive its own proxies rather
 than inherit these — the portability test measured four ported signals at **zero** true

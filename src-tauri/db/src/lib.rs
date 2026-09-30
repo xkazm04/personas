@@ -59,10 +59,16 @@ pub mod chain;
 pub mod credential_fields;
 #[cfg(feature = "ml")]
 pub mod embedder;
+/// `_projectId` — binding one execution to a project in the persona's workspace.
+pub mod execution_project;
+/// `kp.gig_persona_policy` — the operator's standing approval for kp gig personas.
+pub mod kp_gig_policy;
 pub mod memory_recall;
 #[allow(dead_code)] // Functions used by Tauri commands in Phase 3
 pub mod migrations;
 pub mod model_routing;
+/// The file-delivered `operator-local` API key (`personas:approve`).
+pub mod operator_key;
 pub mod policy_tuning;
 pub mod project_identity;
 pub mod project_team;

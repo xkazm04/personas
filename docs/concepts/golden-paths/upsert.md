@@ -1,12 +1,12 @@
 # Golden path — Upsert
 
 > Situation node: `data-persistence/repository-access/upsert` ·
-> [situation spine](../situation-spine.md) · recurrence **106** · convergence `mixed` · risk medium ·
+> situation spine · recurrence **106** · convergence `mixed` · risk medium ·
 > dimensions **function · code-quality** · sides **server** (not two-sided).
 > Composed 2026-08-14 from a ground-truth sweep against `master`.
 >
 > **Sweep size.** All **963 `.rs` files under `src-tauri/`** (exactly `rust.files` in
-> [`shared-facts.json`](../shared-facts.json); `target/` and `.claude/worktrees/` excluded) parsed with
+> `shared-facts.json`; `target/` and `.claude/worktrees/` excluded) parsed with
 > a Rust string-literal extractor that handles raw strings, escapes and comments, then split into
 > **779 `INSERT` statements**, of which **143 carry conflict handling**. Every one was classified by
 > form, target table, conflict target, whether its affected-row count is bound, and whether it returns
@@ -148,8 +148,8 @@ none inside a transaction (§7).
 
 ### Which clauses are physics, which are this house
 
-Per the [contract](../golden-path-contract.md) and the
-[portability test](../research/portability-test.md), a clause travels only if something else
+Per the contract and the
+portability test, a clause travels only if something else
 reinvented it. Measured 2026-08-14 against three siblings; detail and citations in §6.
 
 | Clause | Warrant | Evidence |
@@ -623,7 +623,7 @@ gate* below is unusually cheap, is that **this leaf's primitive already exists �
 
 ## Prefer a type over a gate — the answer for this leaf
 
-Per the [contract](../golden-path-contract.md), answered explicitly before §9 is written.
+Per the contract, answered explicitly before §9 is written.
 **Yes — and unusually, the type already exists and costs nothing to adopt: it is the SQL dialect's
 own targeted conflict clause.**
 
@@ -666,7 +666,7 @@ own targeted conflict clause.**
 
 Stack-free: every store that resolves write conflicts offers both a broad, unnamed resolution and a
 targeted one keyed to a specific constraint, and only the targeted one can be verified. Per the
-[portability test](../research/portability-test.md) the *proxy* below does **not** travel — an
+portability test the *proxy* below does **not** travel — an
 adopting repo re-derives its own signal against its own dialect: a MySQL
 `INSERT IGNORE`/`REPLACE INTO`, a Postgres `ON CONFLICT DO NOTHING` with the target omitted, a Prisma
 `upsert` whose `where` is not a unique input, a Mongo `replaceOne` with `upsert: true`. **In Postgres
@@ -730,7 +730,7 @@ SQL as Rust string literals, so both constructions are visible as text. A Postgr
 
 ### Mechanism — a census rule, not a script
 
-Per the [contract](../golden-path-contract.md) §"Don't write a script", the ratcheting-baseline
+Per the contract §"Don't write a script", the ratcheting-baseline
 mechanism already exists at [`scripts/census/`](../../../scripts/census/). This path publishes **one**
 entry, merged by the orchestrator — **never edited into `rules.json` here**:
 
@@ -766,7 +766,7 @@ entry, merged by the orchestrator — **never edited into `rules.json` here**:
 ```
 
 `963 walked` is every `.rs` file under `src-tauri` and is exactly `rust.files` in
-[`shared-facts.json`](../shared-facts.json). `floor: 900` matches the seven other rules rooted at
+`shared-facts.json`. `floor: 900` matches the seven other rules rooted at
 `src-tauri` (`deferred-read-then-write`, `silent-row-skip`, `nullable-default-column`,
 `boolean-column-index`, `truncated-uuid-id`, `nullable-text-primary-key`, `hand-rolled-fixture-ddl`),
 so no two rules over one root hold different opinions about whether that tree is intact. **Merged

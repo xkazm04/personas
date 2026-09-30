@@ -27,11 +27,11 @@ use super::queue::{BudgetHold, RamGate};
 /// Close the promotion gate when used RAM reaches this percent. The same
 /// figure as `engine::resource_governor::MEM_PAUSE_PCT` (85): memory is the
 /// signal that does not heal on its own, so its bar sits high.
-pub const RAM_GATE_CLOSE_PCT: f64 = 85.0;
+pub const RAM_GATE_CLOSE_PCT: f64 = 90.0;
 /// Reopen only at or below this percent - `resource_governor::MEM_RESUME_PCT`
 /// (70). The 15-point gap is the hysteresis: reopening must mean "room for
 /// one more session", not "a rounding error under the line".
-pub const RAM_GATE_REOPEN_PCT: f64 = 70.0;
+pub const RAM_GATE_REOPEN_PCT: f64 = 88.0;
 /// Samples the gate must have seen before it may act. The first reading is
 /// never acted on (`load-aware-admission`: "Warm-up ... Skip it, and say so").
 pub const RAM_GATE_WARMUP_SAMPLES: u32 = 2;
@@ -626,31 +626,31 @@ mod tests {
     }
 
     #[test]
-    fn the_ram_gate_warms_up_closes_at_85_and_reopens_only_at_70() {
+    fn the_ram_gate_warms_up_closes_at_90_and_reopens_only_at_88() {
         // The first sample is never acted on, whatever it reads.
         assert_eq!(
             next_ram_gate(RamGate::Open, Some(99.0), 1),
             RamGate::Warming
         );
         assert_eq!(
-            next_ram_gate(RamGate::Warming, Some(84.9), 2),
+            next_ram_gate(RamGate::Warming, Some(89.9), 2),
             RamGate::Open
         );
         assert_eq!(
             next_ram_gate(RamGate::Warming, Some(99.0), 2),
             RamGate::Closed
         );
-        assert_eq!(next_ram_gate(RamGate::Open, Some(85.0), 3), RamGate::Closed);
+        assert_eq!(next_ram_gate(RamGate::Open, Some(90.0), 3), RamGate::Closed);
         // Hysteresis: between the marks the gate keeps its state.
         assert_eq!(
-            next_ram_gate(RamGate::Closed, Some(84.0), 4),
+            next_ram_gate(RamGate::Closed, Some(89.0), 4),
             RamGate::Closed
         );
         assert_eq!(
-            next_ram_gate(RamGate::Closed, Some(70.1), 5),
+            next_ram_gate(RamGate::Closed, Some(88.1), 5),
             RamGate::Closed
         );
-        assert_eq!(next_ram_gate(RamGate::Closed, Some(70.0), 6), RamGate::Open);
+        assert_eq!(next_ram_gate(RamGate::Closed, Some(88.0), 6), RamGate::Open);
         assert_eq!(next_ram_gate(RamGate::Open, Some(84.0), 7), RamGate::Open);
         // An unreadable probe fails open, out loud at the call site.
         assert_eq!(next_ram_gate(RamGate::Closed, None, 8), RamGate::Open);

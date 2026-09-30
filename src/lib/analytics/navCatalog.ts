@@ -69,20 +69,20 @@ export const SECTIONS: readonly SidebarSection[] = NAV_SECTIONS.map((e) => e.id)
 const exact = <T extends string>(map: Record<T, true>): readonly T[] => Object.keys(map) as T[];
 
 const HOME_TABS = exact<HomeTab>({ welcome: true, cockpit: true, roadmap: true, 'system-check': true, learning: true });
-// `observability` was removed from OverviewTab — it had no OverviewPage router
-// case, so tracking it inflated the "ignored" denominator with an unreachable tab.
+// ROUTED 2026-09-25: `observability` is an OverviewTab again, with an
+// OverviewPage router case (lazy chunk beside Incidents) and a sidebar row in
+// the Operations group, so it is tracked here like every other reachable tab.
 //
-// CORRECTED 2026-08-14: this comment used to add "(the ObservabilityDashboard
-// component is mounted elsewhere)". It is not mounted anywhere —
-// `ObservabilityDashboard` is imported by no file in `src/`. That makes
-// `IpcPerformancePanel` (255 lines, finished, p50/p95/p99, translated) and the
-// backend's `getDbPerformance` both unreachable: the same instrument was built
-// twice, once by discipline in Rust and once structurally in TypeScript, and
-// both are missing the same last mile — one import. Nothing in the pipeline
-// fails when a completed observability surface is never mounted, so a comment
-// asserting it is mounted is the only thing standing where the check should be.
+// History, kept because it is the lesson: the tab was removed from OverviewTab
+// around March 2026 because it had no router case, and tracking it inflated
+// the "ignored" denominator with an unreachable tab. A 2026-08-14 correction
+// then recorded that `ObservabilityDashboard` was imported by no file in `src/`
+// (so `IpcPerformancePanel` and the backend's `getDbPerformance` were both
+// unreachable), and that nothing in the pipeline fails when a finished surface
+// is never mounted. The route-ladder test in
+// src/features/overview/components/dashboard/__tests__/ now mounts it.
 // See docs/concepts/golden-paths/query-latency-instrumentation.md.
-const OVERVIEW_TABS = exact<OverviewTab>({ home: true, incidents: true, executions: true, 'manual-review': true, messages: true, events: true, memories: true, patterns: true, 'memory-graph': true });
+const OVERVIEW_TABS = exact<OverviewTab>({ home: true, incidents: true, observability: true, executions: true, 'manual-review': true, messages: true, events: true, memories: true, patterns: true, 'memory-graph': true });
 const TEAMS_TABS = exact<TeamsTab>({ workspace: true, goals: true, kpis: true, factory: true, projects: true, lifecycle: true, contest: true, mastermind: true, features: true, whitelist: true, webview: true });
 const GOALS_TABS = exact<GoalsTab>({ board: true, timeline: true, progress: true, missions: true });
 const TEMPLATE_TABS = exact<TemplateTab>({ n8n: true, generated: true, explore: true, recipes: true, presets: true });

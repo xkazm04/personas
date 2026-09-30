@@ -1,7 +1,7 @@
 # Golden path — Secret and PII redaction
 
 > Situation node: `integrations-security/vault-security/secret-and-pii-redaction` ·
-> [situation spine](../situation-spine.md) · recurrence 12 · risk **HIGH** ·
+> situation spine · recurrence 12 · risk **HIGH** ·
 > sides: **server** · convergence: **diverged** ·
 > dimensions: **security · resilience · code-quality · function**
 > Composed 2026-08-16 against `master` @ `bbb1a8864`.

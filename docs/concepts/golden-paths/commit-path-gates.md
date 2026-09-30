@@ -1,7 +1,7 @@
 # Golden path — Commit-path gates
 
 > Situation node: `platform-delivery/gates-and-conventions/commit-path-gates` ·
-> [situation spine](../situation-spine.md) · recurrence 10 · risk **medium** ·
+> situation spine · recurrence 10 · risk **medium** ·
 > sides: **server** · convergence: **converged** ·
 > dimensions: **code-quality · resilience · performance** ·
 > `twoSided: false` · merged from *"Git hook design"* + *"Conventional commit format"*.
@@ -24,7 +24,7 @@
 > **Measured by execution.** Nothing here is inferred from reading a config.
 > The ESLint gate was **fault-injected three ways** to find out what actually
 > disarms it — and the answer contradicts what
-> [`golden-path-doctrine.md` §3](../golden-path-doctrine.md#3-the-severity-fact)
+> `golden-path-doctrine.md` §3
 > has been telling five golden paths (§12.1). `cargo` was not run.
 > `npm run census` / `census:check` was **not** run, per the doctrine's
 > prohibition on a composer running the full registry.
@@ -336,7 +336,7 @@ prefix stripped by a regex that was written to strip a *different* prefix
 
 **Writing a bespoke script for "count must not rise".** *Failure mode:* the
 460th such script. That mechanism is `scripts/census/`; see
-[the contract](../golden-path-contract.md#dont-write-a-script--add-a-census-rule).
+the contract.
 
 ---
 
@@ -839,7 +839,7 @@ is false for every git worktree, where `.git` is a file. Reported, not edited.
 
 ## 11. Cross-check against the neighbours' prescriptions
 
-Per [doctrine §6](../golden-path-doctrine.md#6-check-your-prescription-against-your-neighbours),
+Per doctrine §6,
 what happens to someone who follows this path *and* an adjacent one.
 
 - **With [`adding-a-ci-gate`](./adding-a-ci-gate.md)**: no conflict, and a
@@ -878,7 +878,7 @@ what happens to someone who follows this path *and* an adjacent one.
 
 ### 12.1 — The doctrine's §3 is wrong about the mechanism, and five paths cite it
 
-[`golden-path-doctrine.md` §3](../golden-path-doctrine.md#3-the-severity-fact)
+`golden-path-doctrine.md` §3
 states: *"The pre-commit hook runs `--quiet --max-warnings 99999`, and
 `--quiet` suppresses warnings **before** they can be counted."*
 

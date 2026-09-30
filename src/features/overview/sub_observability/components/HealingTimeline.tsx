@@ -1,302 +1,101 @@
-import { useMemo, useState } from 'react';
-import {
-  Zap, RefreshCw, CheckCircle, BookOpen,
-  ChevronDown, ChevronRight, Shield,
-} from 'lucide-react';
-import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
+/**
+ * Observability (composition kit): the healing timeline. Each resilience chain is a DataTable
+ * row whose Mark is its outcome (a running retry glows); picking one hangs its steps on the
+ * detail pane's spine (HealingChainDetail). The patterns healing learned are Rows in a level-2
+ * Section under the chains.
+ */
+import { useMemo } from 'react';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { DataTable, ListRow, Meta, Rows, Section, UnitStrip, type KitState, type TableRow } from '@/features/shared/components/kit';
 import type { HealingTimelineEvent } from '@/lib/bindings/HealingTimelineEvent';
-import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS, badgeClass, formatRelativeTime } from '@/lib/utils/formatters';
-import { outcomeToHealth, healthScale } from '@/lib/design/statusTokens';
-import { HEALING_EVENT_COLORS, resolveHealingEventVisual } from '@/features/overview/shared/eventVisuals';
-import { useTranslation } from '@/i18n/useTranslation';
+import { chainMark, groupChains, type ChainGroup } from '../libs/issueModel';
+import type { ObservabilityWords } from '../libs/useObservabilityWords';
 
-interface HealingTimelineProps {
-  events: HealingTimelineEvent[];
+type Col = 'chain' | 'steps' | 'age';
+
+export function useChains(events: readonly HealingTimelineEvent[]) {
+  return useMemo(() => groupChains(events), [events]);
+}
+
+export function HealingTimeline({ chains, knowledge, loading, selectedId, onSelect, w }: {
+  chains: readonly ChainGroup[];
+  knowledge: readonly HealingTimelineEvent[];
   loading: boolean;
-  onSelectIssue?: (issueId: string) => void;
-}
-
-// Group events by chain_id into resilience narratives
-interface ChainGroup {
-  chainId: string;
-  events: HealingTimelineEvent[];
-  trigger: HealingTimelineEvent | undefined;
-  outcome: HealingTimelineEvent | undefined;
-}
-
-function getOutcomeColors(status: string | null) {
-  const scale = healthScale(outcomeToHealth(status));
-  return { dot: scale.dot, bg: scale.bg, text: scale.text };
-}
-
-function ChainCard({ group, onSelectIssue }: { group: ChainGroup; onSelectIssue?: (id: string) => void }) {
-  const [expanded, setExpanded] = useState(false);
-  const { t, tx } = useTranslation();
-
-  const outcomeStatus = group.outcome?.status ?? 'open';
-  const outcomeStyle = getOutcomeColors(outcomeStatus);
-  const triggerSev = group.trigger?.severity ?? 'medium';
-  const sevBadge = SEVERITY_COLORS[triggerSev] ?? SEVERITY_COLORS.medium!;
-  const retryCount = group.events.filter(e => e.eventType === 'retry').length;
-  const catColor = HEALING_CATEGORY_COLORS[group.trigger?.category ?? ''];
-
-  return (
-    <div className="rounded-modal border border-primary/10 bg-secondary/10 overflow-hidden transition-all">
-      {/* Chain Header */}
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-foreground/[0.02] transition-colors text-left"
-      >
-        {expanded
-          ? <ChevronDown className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
-          : <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
-        }
-        {/* Status dot */}
-        <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${outcomeStyle.dot} ${
-          outcomeStatus === 'retrying' ? 'animate-pulse' : ''
-        }`} />
-
-        {/* Title */}
-        <span className="flex-1 typo-body text-foreground truncate min-w-0">
-          {group.trigger?.title ?? group.chainId}
-        </span>
-
-        {/* Badges */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          {group.trigger?.isCircuitBreaker && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono uppercase rounded-input border bg-red-500/15 text-red-400 border-red-500/25">
-              <Zap className="w-2.5 h-2.5" /> breaker
+  selectedId: string | null;
+  onSelect: (chainId: string) => void;
+  w: ObservabilityWords;
+}) {
+  const { o, t } = w;
+  const rows: Array<TableRow<Col>> = chains.map((g) => {
+    const retries = g.events.filter((e) => e.eventType === 'retry').length;
+    const m = chainMark(g);
+    const state: KitState[] = [];
+    if (g.chainId === selectedId) state.push('selected');
+    if (m.glyph === 'live') state.push('live');
+    if (g.outcome?.autoFixed || g.outcome?.status === 'resolved') state.push('muted');
+    return {
+      id: g.chainId,
+      state,
+      mark: { ...m, label: g.outcome?.title ?? g.trigger?.title ?? g.chainId },
+      cells: {
+        chain: (
+          <div className="k-cell2">
+            <span className="k-row__name typo-body k-strong">{g.trigger?.title ?? g.chainId}</span>
+            <span className="k-row__meta typo-caption">
+              <Meta parts={[
+                g.trigger?.isCircuitBreaker ? o.healing_issues_panel.circuit_breaker_label : null,
+                g.trigger?.severity, g.trigger?.category,
+                retries > 0 ? w.tx(o.healing_timeline.retry_badge, { count: retries }) : null,
+                g.outcome?.title,
+              ]} />
             </span>
-          )}
-          {retryCount > 0 && (
-            <StatusBadge accent="cyan" size="sm" icon={<RefreshCw className="w-2.5 h-2.5" />} className="font-mono rounded-input">
-              {retryCount}
-            </StatusBadge>
-          )}
-          <span className={`inline-flex px-1.5 py-0.5 text-[10px] font-mono uppercase rounded-input ${badgeClass(sevBadge)}`}>
-            {triggerSev}
-          </span>
-          {catColor && (
-            <span className={`inline-flex px-1.5 py-0.5 text-[10px] font-mono uppercase rounded-input border ${catColor.bg} ${catColor.text} ${catColor.border}`}>
-              {group.trigger?.category}
-            </span>
-          )}
-          <span className="text-[10px] text-foreground ml-1">
-            {group.trigger ? formatRelativeTime(group.trigger.timestamp) : ''}
-          </span>
-        </div>
-      </button>
-
-      {/* Expanded Timeline */}
-      {expanded && (
-        <div className="px-4 pb-4">
-          <div className="relative ml-5">
-            {/* Vertical timeline line */}
-            <div className="absolute left-[5px] top-0 bottom-0 w-px bg-primary/10" />
-
-            {group.events.map((event) => {
-              const visual = resolveHealingEventVisual(event.eventType);
-              const colors = event.eventType === 'outcome'
-                ? { ...HEALING_EVENT_COLORS.outcome, ...getOutcomeColors(event.status) }
-                : visual.colors;
-              const Icon = visual.icon;
-
-              return (
-                <div key={event.id} className="relative flex gap-3 pb-3 last:pb-0">
-                  {/* Timeline dot */}
-                  <div className="relative flex-shrink-0 z-10">
-                    <div className={`w-[11px] h-[11px] rounded-full border-2 border-background ${colors.dot} ${
-                      event.eventType === 'retry' && event.status === 'running' ? 'animate-pulse' : ''
-                    }`} />
-                  </div>
-
-                  {/* Content — interactive (opens the issue) only for trigger
-                      events with an attached issue; keyboard-reachable so the
-                      timeline isn't mouse-only. */}
-                  {(() => {
-                    const selectable = Boolean(event.issueId && event.eventType === 'trigger' && onSelectIssue);
-                    const select = selectable ? () => onSelectIssue!(event.issueId!) : undefined;
-                    return (
-                  <div className={`flex-1 min-w-0 rounded-card px-3 py-2 ${colors.bg} transition-colors ${
-                    selectable ? 'cursor-pointer hover:brightness-110 focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:outline-none' : ''
-                  }`}
-                    role={selectable ? 'button' : undefined}
-                    tabIndex={selectable ? 0 : undefined}
-                    onClick={select}
-                    onKeyDown={selectable
-                      ? (e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            select!();
-                          }
-                        }
-                      : undefined
-                    }
-                  >
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <Icon className={`w-3 h-3 flex-shrink-0 ${colors.text}`} />
-                      <span className={`typo-code uppercase ${colors.text}`}>
-                        {event.eventType.replace('_', ' ')}
-                      </span>
-                      <span className="text-[10px] text-foreground ml-auto">
-                        {formatRelativeTime(event.timestamp)}
-                      </span>
-                    </div>
-                    <p className="typo-body text-foreground">{event.title}</p>
-                    {event.description !== event.title && (
-                      <p className="typo-caption text-foreground mt-0.5 line-clamp-2">{event.description}</p>
-                    )}
-                    {event.suggestedFix && (
-                      <div className="mt-1.5 px-2 py-1.5 rounded-input bg-emerald-500/10 border border-emerald-500/15">
-                        <p className="typo-caption text-emerald-400/80">{event.suggestedFix}</p>
-                      </div>
-                    )}
-                    {event.retryCount != null && event.retryCount > 0 && (
-                      <span className="inline-flex items-center gap-1 mt-1 text-[10px] text-cyan-400/70">
-                        <RefreshCw className="w-2.5 h-2.5" /> {tx(t.overview.healing_timeline.retry_badge, { count: event.retryCount })}
-                      </span>
-                    )}
-                  </div>
-                    );
-                  })()}
-                </div>
-              );
-            })}
           </div>
-        </div>
-      )}
-    </div>
-  );
-}
+        ),
+        steps: (
+          <span className="k-fig">
+            <UnitStrip size="pip" label={t.agents.executions.tab_chain} segments={[{ n: g.events.length, tone: 'primary', glyph: 'soft' }]} />
+            <span className="typo-data k-regular">{g.events.length}</span>
+          </span>
+        ),
+        age: g.trigger
+          ? <span className="typo-data k-regular k-quiet"><RelativeTime timestamp={g.trigger.timestamp} format="elapsed" showTooltip={false} /></span>
+          : null,
+      },
+    };
+  });
 
-function KnowledgeCard({ events }: { events: HealingTimelineEvent[] }) {
-  const { t } = useTranslation();
-  const [expanded, setExpanded] = useState(false);
-
-  if (events.length === 0) return null;
-
+  // One element: this is the Split's main column, and a fragment would spill into the pane's.
   return (
-    <div className="rounded-modal border border-blue-500/15 bg-blue-500/5 overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-500/5 transition-colors text-left"
-      >
-        {expanded
-          ? <ChevronDown className="w-3.5 h-3.5 text-blue-400/70 flex-shrink-0" />
-          : <ChevronRight className="w-3.5 h-3.5 text-blue-400/70 flex-shrink-0" />
-        }
-        <BookOpen className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
-        <span className="typo-heading text-blue-300">{t.overview.healing_timeline.knowledge_base}</span>
-        <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-500/15 text-blue-400 ml-1">
-          {events.length}
-        </span>
-        <span className="typo-caption text-blue-400/50 ml-auto">
-          {t.overview.healing_timeline.patterns_hint}
-        </span>
-      </button>
-      {expanded && (
-        <div className="px-4 pb-3 space-y-2">
-          {events.map((event) => (
-            <div key={event.id} className="flex items-start gap-2.5 px-3 py-2 rounded-card bg-blue-500/5">
-              <Shield className="w-3 h-3 text-blue-400/60 mt-0.5 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="typo-body text-foreground">{event.title}</p>
-                <p className="typo-caption text-foreground mt-0.5">{event.description}</p>
-                {event.suggestedFix && (
-                  <p className="typo-caption text-blue-400/60 mt-0.5">{event.suggestedFix}</p>
-                )}
-              </div>
-              <span className="text-[10px] text-foreground flex-shrink-0">
-                {formatRelativeTime(event.timestamp)}
-              </span>
-            </div>
-          ))}
-        </div>
+    <div className="min-w-0">
+      <DataTable<Col>
+        label={o.observability_extra.healing_view_timeline}
+        loading={loading && chains.length === 0}
+        onRowClick={onSelect}
+        rowTestId="obs-chain-row"
+        cols={[
+          { key: 'chain', label: t.agents.executions.tab_chain },
+          { key: 'steps', label: t.agents.executions.trace, num: true },
+          { key: 'age', label: o.incidents.ledger.col_age, num: true },
+        ]}
+        rows={rows}
+        empty={{ title: o.healing_timeline.no_events, hint: o.healing_timeline.no_events_hint, tone: 'success' }}
+      />
+      {knowledge.length > 0 && (
+        <Section level={2} title={o.healing_timeline.knowledge_base} count={knowledge.length} desc={o.healing_timeline.patterns_hint}>
+          <Rows count={knowledge.length} empty={{ title: '' }}>
+            {knowledge.map((e) => (
+              <ListRow
+                key={e.id}
+                size="s"
+                name={e.title}
+                meta={e.suggestedFix ?? e.description}
+                mark={{ tone: 'info', glyph: 'soft', label: o.healing_timeline.knowledge_base }}
+                time={<RelativeTime timestamp={e.timestamp} format="elapsed" showTooltip={false} />}
+              />
+            ))}
+          </Rows>
+        </Section>
       )}
-    </div>
-  );
-}
-
-export function HealingTimeline({ events, loading, onSelectIssue }: HealingTimelineProps) {
-  const { t } = useTranslation();
-  const { chains, knowledgeEvents } = useMemo(() => {
-    const knowledgeEvents = events.filter(e => e.eventType === 'knowledge');
-    const issueEvents = events.filter(e => e.eventType !== 'knowledge');
-
-    // Group by chainId
-    const chainMap = new Map<string, HealingTimelineEvent[]>();
-    for (const event of issueEvents) {
-      const group = chainMap.get(event.chainId);
-      if (group) group.push(event);
-      else chainMap.set(event.chainId, [event]);
-    }
-
-    // Build chain groups sorted by timestamp of trigger
-    const chains: ChainGroup[] = [];
-    for (const [chainId, chainEvents] of chainMap) {
-      // Sort events within chain: trigger -> classify -> retry(s) -> outcome
-      const order: Record<string, number> = { trigger: 0, classify: 1, retry: 2, ai_heal: 3, outcome: 4 };
-      chainEvents.sort((a, b) => {
-        const oa = order[a.eventType] ?? 2;
-        const ob = order[b.eventType] ?? 2;
-        if (oa !== ob) return oa - ob;
-        return a.timestamp.localeCompare(b.timestamp);
-      });
-
-      chains.push({
-        chainId,
-        events: chainEvents,
-        trigger: chainEvents.find(e => e.eventType === 'trigger'),
-        outcome: chainEvents.find(e => e.eventType === 'outcome'),
-      });
-    }
-
-    // Sort chains: most recent trigger first
-    chains.sort((a, b) => {
-      const ta = a.trigger?.timestamp ?? '';
-      const tb = b.trigger?.timestamp ?? '';
-      return tb.localeCompare(ta);
-    });
-
-    return { chains, knowledgeEvents };
-  }, [events]);
-
-  if (loading && chains.length === 0 && knowledgeEvents.length === 0) {
-    return (
-      <div className="space-y-2 py-2" aria-hidden="true">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div
-            key={i}
-            className="h-14 rounded-modal bg-primary/[0.06] animate-fade-in"
-            style={{ animationDelay: `${120 + i * 35}ms` }}
-          />
-        ))}
-      </div>
-    );
-  }
-
-  if (chains.length === 0 && knowledgeEvents.length === 0) {
-    return (
-      <div className="flex items-center justify-center py-10">
-        <div className="text-center flex flex-col items-center">
-          <div className="w-14 h-14 rounded-modal bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
-            <CheckCircle className="w-6 h-6 text-emerald-400" />
-          </div>
-          <p className="typo-heading text-foreground">{t.overview.healing_timeline.no_events}</p>
-          <p className="typo-body text-foreground mt-1">{t.overview.healing_timeline.no_events_hint}</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2 py-2">
-      {chains.map((group) => (
-        <ChainCard key={group.chainId} group={group} onSelectIssue={onSelectIssue} />
-      ))}
-      <KnowledgeCard events={knowledgeEvents} />
     </div>
   );
 }

@@ -4,7 +4,9 @@
 //! `kp_hire_request` is deliberately NOT autopilot-eligible
 //! (`approval_autopilot`): an external app must never be able to create a
 //! persona without a human click. This module is the one, loudly-gated
-//! exception, for the unattended test loop described in
+//! test-mode exception (the operator's standing gig persona policy,
+//! `approval_policy`, is the other, and is not a test mode), for the
+//! unattended test loop described in
 //! `docs/architecture/cloud-integration-bridge.md` §13. It runs **only** while
 //! `personas_engine::headless::enabled()` — a latched read of
 //! `PERSONAS_HEADLESS_BRIDGE=1` at process start.

@@ -1,6 +1,6 @@
 # Golden path — View-state persistence
 
-> Situation node: `client-runtime/state-management/view-state-persistence` · [situation spine](../situation-spine.md)
+> Situation node: `client-runtime/state-management/view-state-persistence` · situation spine
 > recurrence **16** · risk **medium** · sides **client** (spine also carries `twoSided: true`) ·
 > convergence **diverged** (label tested — §12.5, it holds on one half and fails on the other)
 > dimensions: **ui · function · code-quality**
@@ -228,7 +228,7 @@ month. §4 says what separates them and it is not the type.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head is physically separated and each
+Per the portability test the head is physically separated and each
 clause carries its warrant. No file path, primitive name or count appears below this line until the
 head ends.
 

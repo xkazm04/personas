@@ -1,7 +1,7 @@
 # Golden path — Installer acceptance testing
 
 > Situation node: `platform-delivery/packaging-and-release/installer-acceptance-testing` ·
-> [situation spine](../situation-spine.md)
+> situation spine
 > `sides: server` · `twoSided: false` · recurrence **3** · risk **medium** ·
 > spine label `convergence: mixed`.
 > Dimensions: **resilience · function**.

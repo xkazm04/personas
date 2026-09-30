@@ -1308,6 +1308,12 @@ fn plan_tick_with_mode(
             }
             LaneWork::Improve => {
                 counts.dispatched.get_or_insert(LANE_IMPROVE);
+                // The brief is built BEFORE this pass opens its own row
+                // (2cc79b6a): its period block reads the newest improve row as
+                // "your previous self-review", and built after `insert_started`
+                // it found the row opened a microsecond earlier and told every
+                // self-review its window was "just now".
+                let task = build_improve_task(pool, pid, persona_charters);
                 let ledger_id = attention_ledger::insert_started(
                     pool,
                     pid,
@@ -1319,9 +1325,7 @@ fn plan_tick_with_mode(
                     persona_id: pid.to_string(),
                     persona_name: persona.name.clone(),
                     ledger_id,
-                    work: DispatchWork::Improve {
-                        task: build_improve_task(pool, pid, persona_charters),
-                    },
+                    work: DispatchWork::Improve { task },
                 });
             }
         }
@@ -2106,7 +2110,10 @@ fn build_decision_context_with_mode(
         p.unmerged_branches = read_unmerged_branches(pool, &p.project_id, &branch_charters);
     }
 
-    let open_asks = list_open_asks(pool, &persona.id)
+    let open_ask_records = list_open_asks(pool, &persona.id);
+    // What aged out unanswered (71c28238) — minus anything asked again since.
+    let expired_reviews = list_expired_reviews(pool, &persona.id, &open_ask_records);
+    let open_asks = open_ask_records
         .into_iter()
         .map(|r| attention_decide::OpenAsk {
             age_minutes: minutes_since_ts(&r.created_at),
@@ -2181,6 +2188,23 @@ fn build_decision_context_with_mode(
                 },
             );
 
+    // The end of the newest COMPLETED pass of any lane (e90e189a) - the same
+    // ledger read the briefs take, from the history already in hand. A refusal
+    // is not a pass (2cc79b6a): it lands already completed, so counting it let
+    // an interval-floor refusal five minutes ago hide a three-day gap behind
+    // "your last pass ended 5m ago".
+    let now_utc = chrono::Utc::now().to_rfc3339();
+    let last_pass_ended_at = history
+        .iter()
+        .find(|r| r.completed_at.is_some() && r.verdict != "refused")
+        .and_then(|r| r.completed_at.clone());
+    // ...and whether the operator had the loop switched off inside that gap
+    // (97dc6b94).
+    let loop_off = last_pass_ended_at
+        .as_deref()
+        .map(|since| read_loop_off_windows(pool, since, &now_utc))
+        .unwrap_or_default();
+
     Ok(attention_decide::DecisionContext {
         persona_id: persona.id.clone(),
         persona_name: persona.name.clone(),
@@ -2198,7 +2222,7 @@ fn build_decision_context_with_mode(
         active_personas: personas_engine::active_persona_cap::active_persona_headroom(pool).ok(),
         // The clock is read HERE, not inside the renderer, so the prompt stays
         // a pure function of the context it was handed.
-        now_utc: chrono::Utc::now().to_rfc3339(),
+        now_utc,
         model: codex_mode.map_or_else(
             || decision_model(persona, charters, cascade.as_ref()),
             |m| m.model.clone(),
@@ -2208,13 +2232,10 @@ fn build_decision_context_with_mode(
         projects,
         open_asks,
         answered_reviews,
+        expired_reviews,
         loop_hold,
-        // The end of the newest COMPLETED pass of any lane (e90e189a) — the
-        // same ledger read the briefs take, from the history already in hand.
-        last_pass_ended_at: history
-            .iter()
-            .find(|r| r.completed_at.is_some())
-            .and_then(|r| r.completed_at.clone()),
+        last_pass_ended_at,
+        loop_off,
         channel,
         peers,
         may_direct,
@@ -2592,6 +2613,13 @@ pub(crate) fn list_answered_reviews(
         }
     };
     rows.into_iter()
+        // A row the review GC closed was answered by nobody (71c28238); it is
+        // carried by `list_expired_reviews` instead, never as an answer.
+        .filter(|r| {
+            !crate::db::repos::communication::manual_reviews::is_gc_expired(
+                r.reviewer_notes.as_deref(),
+            )
+        })
         .filter(|r| match (since, r.resolved_at.as_deref()) {
             // Answered before this persona last decided: it has already had
             // the chance to act on it, and repeating it every wake would read
@@ -2626,6 +2654,71 @@ pub(crate) fn list_answered_reviews(
             notes: r.reviewer_notes.map(|n| bound_summary(&n)),
             resolved_at: r.resolved_at,
         })
+        .collect()
+}
+
+/// The reviews of this persona's that the review GC closed with nobody having
+/// read them, newest first (71c28238).
+///
+/// Such a row ends `status = 'resolved'` like an answer, so before this it was
+/// shown to the decision as ANSWERED and, being no longer pending, dropped out
+/// of the open asks: an unanswered question read back as decided. Carried on
+/// its own list so the prompt can say what it is.
+///
+/// An expired ask the persona has since asked again (a pending ask with the
+/// same title, in `open`) is left out: that question is open, not expired.
+/// Bounded by the same lookback as the answered reviews; best-effort likewise.
+pub(crate) fn list_expired_reviews(
+    pool: &DbPool,
+    persona_id: &str,
+    open: &[OpenAskRecord],
+) -> Vec<attention_decide::ExpiredReview> {
+    use crate::db::repos::communication::manual_reviews;
+    let rows = match manual_reviews::get_recent_resolved(
+        pool,
+        persona_id,
+        ANSWERED_REVIEW_LOOKBACK_DAYS,
+        (attention_decide::MAX_EXPIRED_REVIEWS as i64) * 4,
+    ) {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e,
+                "persona_attention: could not read the expired reviews — this wake \
+                 sees none");
+            return Vec::new();
+        }
+    };
+    rows.into_iter()
+        .filter(|r| manual_reviews::is_gc_expired(r.reviewer_notes.as_deref()))
+        .filter_map(|r| {
+            let ctx = r
+                .context_data
+                .as_deref()
+                .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok());
+            let ask = ctx.as_ref().filter(|v| {
+                v.get("source").and_then(|s| s.as_str()) == Some(attention_decide::ASK_SOURCE)
+            });
+            // An ask renders under its own title — the one the duplicate check
+            // and the open-asks list compare on — not the row's display title.
+            let title = ask
+                .and_then(|v| v.get("askTitle").and_then(|t| t.as_str()))
+                .unwrap_or(&r.title)
+                .to_string();
+            if ask.is_some() && open.iter().any(|o| o.title == title) {
+                return None;
+            }
+            Some(attention_decide::ExpiredReview {
+                ask_kind: ask.map(|v| {
+                    v.get("kind")
+                        .and_then(|k| k.as_str())
+                        .unwrap_or(attention_decide::ASK_DECISION)
+                        .to_string()
+                }),
+                title,
+                expired_at: r.resolved_at,
+            })
+        })
+        .take(attention_decide::MAX_EXPIRED_REVIEWS)
         .collect()
 }
 
@@ -3458,12 +3551,46 @@ fn wall_clock_header(pool: &DbPool, persona_id: &str) -> String {
                      quiet. Nothing ran for you in it, so it is not evidence that nothing \
                      needed doing.\n",
                 );
+                s.push_str(&attention_decide::loop_off_lines(
+                    &read_loop_off_windows(pool, ended, &now),
+                    &now,
+                ));
             }
         }
         None => s.push_str("You have no completed pass on record — this is your first.\n"),
     }
     s.push('\n');
     s
+}
+
+/// When the operator had the attention loop's switch off inside
+/// `[since, now]` (97dc6b94), read from the settings audit trail - the switch
+/// opens no loop hold, so the audit log is the only record of it.
+///
+/// Best-effort like every brief read: an unreadable log names no window, which
+/// is the behaviour before this existed. The newest 1,000 autonomy-category
+/// rows are far more than one gap's worth of toggles.
+fn read_loop_off_windows(
+    pool: &DbPool,
+    since: &str,
+    now: &str,
+) -> Vec<attention_decide::LoopOffWindow> {
+    use crate::db::repos::resources::settings_audit_log;
+    let key = settings_keys::AUTONOMOUS_ATTENTION_LOOP;
+    let Some(category) = settings_keys::audit_category(key) else {
+        return Vec::new();
+    };
+    let rows = settings_audit_log::list(pool, 1000, Some(category)).unwrap_or_else(|e| {
+        tracing::warn!(error = %e,
+            "persona_attention: settings audit read failed - no loop-off window is named");
+        Vec::new()
+    });
+    let changes: Vec<(String, Option<String>)> = rows
+        .into_iter()
+        .filter(|r| r.setting_key == key)
+        .map(|r| (r.created_at, r.after_value))
+        .collect();
+    attention_decide::loop_off_windows(&changes, since, now)
 }
 
 /// The advance lane's bounded work brief: charter title, ONE outcome with its
@@ -3594,11 +3721,18 @@ fn improve_period_block(
                     "persona_attention: improve-period ledger read failed");
             Vec::new()
         });
-    // The window is "since the previous improve pass" — this one has not
-    // opened a row yet, so the newest improve row IS the previous pass.
+    // The window is "since the previous improve pass". `plan_tick` builds this
+    // brief before opening the pass's own row, and an open or refused improve
+    // row is skipped regardless (2cc79b6a): read after `insert_started`, the
+    // newest improve row was THIS pass, and every self-review was told its
+    // previous one had happened "just now".
     let since = rows
         .iter()
-        .find(|r| r.lane.as_deref() == Some(LANE_IMPROVE))
+        .find(|r| {
+            r.lane.as_deref() == Some(LANE_IMPROVE)
+                && r.completed_at.is_some()
+                && r.verdict != "refused"
+        })
         .map(|r| r.started_at.clone());
 
     let mut s = String::from("--- The period you are reviewing ---\n");
@@ -3626,7 +3760,11 @@ fn improve_period_block(
                 .map(str::trim)
                 .filter(|t| !t.is_empty());
             match last.and_then(|t| attention_decide::age_phrase(&now, t)) {
-                Some(age) => s.push_str(&format!("- {}: last dispatched {age}\n", c.title)),
+                Some(age) => s.push_str(&format!(
+                    "- {}: last dispatched {age}{}\n",
+                    c.title,
+                    last_dispatch_outcome_note(pool, &rows, &c.id)
+                )),
                 None => s.push_str(&format!(
                     "- {}: never dispatched{}\n",
                     c.title,
@@ -3683,6 +3821,44 @@ fn improve_period_block(
     }
     s.push('\n');
     s
+}
+
+/// How a charter's newest dispatch ENDED, as a suffix for the improve brief's
+/// "last dispatched <age>" line (96c0f9d3) — empty when it finished or is
+/// still running.
+///
+/// The age alone counts a dead attempt exactly like a clean one, so a
+/// self-review read "last dispatched 8h 41m ago" about a run that stalled and
+/// was swept, and could not tell unfinished work from done work. The decide
+/// lane already follows the worker ([`resolve_last_dispatch`]); this reuses it
+/// on the rows the period block already holds, so it costs no ledger read.
+/// Only a failure or a lost record is worth the words.
+fn last_dispatch_outcome_note(
+    pool: &DbPool,
+    rows: &[crate::db::models::AttentionLedgerEntry],
+    charter_id: &str,
+) -> String {
+    let Some(row) = rows.iter().find(|r| {
+        r.responsibility_id.as_deref() == Some(charter_id)
+            && r.verdict != "refused"
+            && r.stats_json.is_some()
+    }) else {
+        return String::new();
+    };
+    match resolve_last_dispatch(pool, row) {
+        Some(d) if d.state == attention_decide::DISPATCH_FAILED => format!(
+            " — that dispatch FAILED{}; its work is unfinished, not done",
+            d.summary
+                .as_deref()
+                .filter(|x| !x.trim().is_empty())
+                .map(|x| format!(" ({x})"))
+                .unwrap_or_default()
+        ),
+        Some(d) if d.state == attention_decide::DISPATCH_UNKNOWN => {
+            " — how that dispatch ended is UNKNOWN (its worker record is gone)".to_string()
+        }
+        _ => String::new(),
+    }
 }
 
 /// How many charters the improve brief period block names. More than this and
@@ -8841,6 +9017,155 @@ mod attention_tests {
         );
     }
 
+    /// 2cc79b6a: the self-review brief names the PREVIOUS self-review. Built
+    /// after the pass opened its own row, it found that row and told every
+    /// self-review its window was "just now".
+    #[test]
+    fn an_improve_brief_names_the_previous_self_review_not_the_one_it_opens() {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        seed_persona(&pool, "p1").unwrap();
+        seed_charter(&pool, "p1", "Charter A", &one_outcome());
+        let yesterday = (chrono::Utc::now() - chrono::Duration::hours(26)).to_rfc3339();
+        let prev =
+            attention_ledger::insert_started(&pool, "p1", None, KIND_ATTENTION, Some(LANE_IMPROVE))
+                .unwrap();
+        attention_ledger::complete(&pool, &prev, "dispatched", "", None, None, None).unwrap();
+        pool.get()
+            .unwrap()
+            .execute(
+                "UPDATE persona_attention_ledger SET started_at = ?1, completed_at = ?1 \
+                 WHERE id = ?2",
+                params![yesterday, prev],
+            )
+            .unwrap();
+
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        assert_eq!(counts.dispatched, Some(LANE_IMPROVE));
+        let plan = dispatch.expect("improve planned");
+        let DispatchWork::Improve { task } = &plan.work else {
+            panic!("expected improve work");
+        };
+        assert!(
+            task.contains(&format!("Since your previous self-review at {yesterday}")),
+            "{task}"
+        );
+        assert!(task.contains("(1d 2h ago)"), "{task}");
+        assert!(!task.contains("just now"), "{task}");
+
+        // Belt and braces: even a brief built while this pass's own row is
+        // open reads past it to the completed one.
+        let brief = build_improve_task(&pool, "p1", &[]);
+        assert!(
+            brief.contains(&format!("Since your previous self-review at {yesterday}")),
+            "{brief}"
+        );
+    }
+
+    /// 2cc79b6a / e4bedd2f: a refusal is not a pass. An interval-floor refusal
+    /// five minutes ago must not stand in for a real pass three days back.
+    #[test]
+    fn a_recent_refusal_does_not_hide_a_long_gap() {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1").unwrap();
+        let three_days = (chrono::Utc::now() - chrono::Duration::days(3)).to_rfc3339();
+        let pass =
+            attention_ledger::insert_started(&pool, "p1", None, KIND_ATTENTION, Some(LANE_DECIDE))
+                .unwrap();
+        attention_ledger::complete(&pool, &pass, "dispatched", "", None, None, None).unwrap();
+        pool.get()
+            .unwrap()
+            .execute(
+                "UPDATE persona_attention_ledger SET started_at = ?1, completed_at = ?1 \
+                 WHERE id = ?2",
+                params![three_days, pass],
+            )
+            .unwrap();
+        attention_ledger::insert_refusal(
+            &pool,
+            "p1",
+            None,
+            KIND_ATTENTION,
+            None,
+            r#"{"kind":"interval_floor"}"#,
+        )
+        .unwrap();
+
+        let header = wall_clock_header(&pool, "p1");
+        assert!(
+            header.contains(&format!(
+                "Your last completed pass ended {three_days} (3d 0h ago)"
+            )),
+            "{header}"
+        );
+        assert!(header.contains("UNOBSERVED"), "{header}");
+    }
+
+    /// 96c0f9d3: the self-review sees how a charter's last dispatch ENDED, the
+    /// way the decide lane does. An age alone reads a dead attempt as done.
+    #[test]
+    fn a_failed_last_dispatch_renders_as_failed_in_the_improve_brief() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let failed_id = seed_charter(&pool, "p1", "Carry decisions", &one_outcome());
+        let clean_id = seed_charter(&pool, "p1", "Keep docs honest", &one_outcome());
+        decide_row(
+            &pool,
+            "p1",
+            &failed_id,
+            serde_json::json!({ "charterId": failed_id, "executionId": "exec-dead" }),
+        );
+        decide_row(
+            &pool,
+            "p1",
+            &clean_id,
+            serde_json::json!({ "charterId": clean_id, "executionId": "exec-done" }),
+        );
+        pool.get()?.execute(
+            "INSERT INTO persona_executions (id, persona_id, status, error_message, created_at)
+             VALUES ('exec-dead', 'p1', 'failed', 'Engine safety ceiling exceeded (20m)',
+                     datetime('now')),
+                    ('exec-done', 'p1', 'completed', NULL, datetime('now'))",
+            [],
+        )?;
+        let dispatched = |id: &str, title: &str| {
+            let mut c = charter_fixture(id);
+            c.title = title.into();
+            c.spec.pacing = Some(personas_core::models::ResponsibilityPacing {
+                last_dispatched_at: Some(
+                    (chrono::Utc::now() - chrono::Duration::hours(8)).to_rfc3339(),
+                ),
+                ..Default::default()
+            });
+            c
+        };
+        let failed = dispatched(&failed_id, "Carry decisions");
+        let clean = dispatched(&clean_id, "Keep docs honest");
+
+        let brief = build_improve_task(&pool, "p1", &[&failed, &clean]);
+        let line = |title: &str| {
+            brief
+                .lines()
+                .find(|l| l.starts_with(&format!("- {title}:")))
+                .unwrap_or_default()
+                .to_string()
+        };
+        let failed_line = line("Carry decisions");
+        assert!(failed_line.contains("last dispatched 8h 0m ago"), "{brief}");
+        assert!(failed_line.contains("FAILED"), "{failed_line}");
+        assert!(
+            failed_line.contains("Engine safety ceiling exceeded (20m)"),
+            "{failed_line}"
+        );
+        let clean_line = line("Keep docs honest");
+        assert!(clean_line.contains("last dispatched 8h 0m ago"), "{brief}");
+        assert!(
+            !clean_line.contains("FAILED") && !clean_line.contains("UNKNOWN"),
+            "a finished dispatch carries no failure note: {clean_line}"
+        );
+        Ok(())
+    }
+
     #[test]
     fn open_row_refuses_in_flight_and_failed_outcome_closes_it() {
         let pool = init_test_db().unwrap();
@@ -12311,6 +12636,55 @@ mod attention_tests {
             list_answered_reviews(&pool, "p2", None).is_empty(),
             "another persona's answers are not this one's"
         );
+        Ok(())
+    }
+
+    /// 71c28238: an ask the review GC closed unanswered is not an answer. It
+    /// stays visible to the persona as EXPIRED — until it is asked again, when
+    /// it is simply open.
+    #[test]
+    fn a_gc_expired_ask_is_expired_not_answered() -> Result<(), AppError> {
+        use crate::db::repos::communication::manual_reviews;
+
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+        crate::db::repos::execution::executions::create(&pool, "p1", None, None, None, None)?;
+        let project = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "Ascent",
+            "C:/repos/ascent",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        let ctx = ask_context("p1", &project.id);
+        raise_asks(&pool, &ctx, &[accept_ask(vec![])]);
+        assert_eq!(list_open_asks(&pool, "p1").len(), 1);
+
+        let cutoff = (chrono::Utc::now() + chrono::Duration::minutes(1)).to_rfc3339();
+        assert_eq!(manual_reviews::gc_stale_pending(&pool, &cutoff)?.len(), 1);
+
+        assert!(list_open_asks(&pool, "p1").is_empty(), "no longer pending");
+        assert!(
+            list_answered_reviews(&pool, "p1", None).is_empty(),
+            "an expired ask is never an answer"
+        );
+        let expired = list_expired_reviews(&pool, "p1", &list_open_asks(&pool, "p1"));
+        assert_eq!(expired.len(), 1, "{expired:?}");
+        assert_eq!(expired[0].title, "27 ideas are waiting on your triage");
+        assert_eq!(
+            expired[0].ask_kind.as_deref(),
+            Some(attention_decide::ASK_ACCEPT_IDEAS)
+        );
+        assert!(expired[0].expired_at.is_some());
+
+        // Asked again: the question is open, not expired, and not doubled.
+        raise_asks(&pool, &ctx, &[accept_ask(vec![])]);
+        let open = list_open_asks(&pool, "p1");
+        assert_eq!(open.len(), 1, "{open:?}");
+        assert!(list_expired_reviews(&pool, "p1", &open).is_empty());
         Ok(())
     }
 

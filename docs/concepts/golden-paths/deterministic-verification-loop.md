@@ -1,7 +1,7 @@
 # Deterministic verification loop
 
 > Situation node: `ai-and-agents/prompt-and-output/deterministic-verification-loop` ·
-> [situation spine](../situation-spine.json) · `sides: "server"` (**upheld —
+> situation spine · `sides: "server"` (**upheld —
 > mechanism named in §12.1**) · `twoSided: false` · recurrence 4 · risk medium ·
 > `convergence: "converged"` (**contradicted — §12.2**) · dimensions: function ·
 > cost · resilience.
@@ -15,7 +15,7 @@
 > Composed 2026-08-17 against `master @ 2a874e692`. Sweep: the three verification
 > loops in the tree (`src/engine/build_session/oneshot.rs`,
 > `src-tauri/engine/src/fix_loop.rs`, `evals/`), all 963 `.rs` files
-> ([`shared-facts.json#rust.files`](../shared-facts.json)), 4,727 `.rs`/`.ts`/`.tsx`
+> (`shared-facts.json#rust.files`), 4,727 `.rs`/`.ts`/`.tsx`
 > files for model identifiers, and a read-only copy of the **2026-08-17 purge
 > backup**. Row counts are historical as of 2026-08-17.
 

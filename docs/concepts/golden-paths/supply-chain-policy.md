@@ -1,7 +1,7 @@
 # Golden path — Supply-chain policy
 
 > Situation node: `platform-delivery/gates-and-conventions/supply-chain-policy` ·
-> [situation spine](../situation-spine.md) · recurrence 5 · risk **medium** ·
+> situation spine · recurrence 5 · risk **medium** ·
 > sides **server** (**upheld — §12.4**) · convergence **converged**
 > (**failed, and inverted — §12.3**) · dimensions: **security · cost** ·
 > `twoSided: false` · spine's own framing: *"License, advisory and registry

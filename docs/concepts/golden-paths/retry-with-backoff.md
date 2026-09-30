@@ -1,13 +1,13 @@
 # Golden path — Retry with backoff
 
 > Situation node: `backend-runtime/resilience-policies/retry-with-backoff` ·
-> [situation spine](../situation-spine.md) · recurrence 10 · risk **HIGH** ·
+> situation spine · recurrence 10 · risk **HIGH** ·
 > sides **server** · convergence **diverged** ·
 > dimensions: **resilience · function · cost · code-quality**
 > Composed 2026-08-16 against `master` @ `d74fae3c9`.
 >
 > **Sweep size.** All **963** non-generated `.rs` files under `src-tauri/` (agrees
-> exactly with `rust.files` in [`shared-facts.json`](../shared-facts.json), reached
+> exactly with `rust.files` in `shared-facts.json`, reached
 > by an independent walk) and all **4,824** `.ts`/`.tsx` under `src/` (**4,423**
 > after removing tests). `#[cfg(test)]` was removed by a **brace-matched,
 > string/comment-aware range**, never a line threshold; string literals were
@@ -207,7 +207,7 @@ retry's `created_at`:
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is
+Per the portability test, the head is
 physically separated and each clause carries its warrant, so an adopting repo can
 tell physics from local calibration. No file path, primitive name or count
 appears below this line until the head ends.
@@ -1019,12 +1019,12 @@ convention, not a migration with no destination.
 3. **The census cannot assert any of this leaf's three biggest findings**, because
    all three are *absences*: "no schedule anywhere adds jitter" (D9), "no code
    reads `Retry-After`" (D8), "this retry has no terminal state" (D2). Per the
-   [doctrine](../golden-path-doctrine.md#4-census-rules) the engine ratchets a
+   doctrine the engine ratchets a
    presence. Two of the three are gateable by a *different* instrument and §9
    specifies it.
 4. **Rust cannot express "this runtime counter must stay below 64" in a type.**
    `consecutive_failures` arrives from a `COUNT(*)` through a struct field, which
-   is [where types cannot reach](../golden-path-doctrine.md#where-types-cannot-reach)
+   is where types cannot reach
    case 2. The reachable answer is `checked_shl` at the point of use plus a clamp
    at the query — strictly weaker than unrepresentable, and worth saying rather
    than pretending the type closes it.
@@ -1047,7 +1047,7 @@ convention, not a migration with no destination.
 
 ### The semantic conditions, stated first
 
-Per the [portability test](../research/portability-test.md), what follows are
+Per the portability test, what follows are
 **one repo's proxies**. An adopting repo inherits the sentences and re-derives
 its own signals.
 
@@ -1322,7 +1322,7 @@ type must be the only door that sleeps, and §9's ratchet must hold the budget l
 until it is.
 
 **Where it does not reach** (per
-[where types cannot reach](../golden-path-doctrine.md#where-types-cannot-reach)):
+where types cannot reach):
 
 - **Into the exponent.** `1 << consecutive_failures` (D5) is arithmetic on a value
   that arrives from a `COUNT(*)` through a struct field. `Schedule::delay_for`

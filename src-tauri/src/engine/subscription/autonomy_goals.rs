@@ -86,12 +86,23 @@ pub(crate) fn quota_cooldown_active(pool: &DbPool) -> bool {
 /// Returns `(team_id, goal_id, project_id)` triples — the project id lets the
 /// caller apply each project's autopilot mode. The cooldown via `created_at`
 /// (2h for the soak test, default 30m) prevents stampede + failure-retry loops.
-fn find_goal_advance_candidates(
+///
+/// **Cycle goals are not candidates (G55).** A goal whose description opens
+/// with the `[cycle:<persona>:<n>]` marker belongs to the attention loop: it
+/// claims, runs and closes it through `cycle_goals`. Advancing it here ran a
+/// second engine on the same row — 203 opus executions for six App Masters on
+/// 2026-09-25 while the attention loop was switched off — and the
+/// orchestrator's `mark_goal_in_progress` then blocked `claim_cycle_goal` from
+/// re-claiming it. The marker is parsed in Rust by the repo's own parser,
+/// never matched with `LIKE`, so the two cannot disagree about what a cycle is.
+pub(crate) fn find_goal_advance_candidates(
     pool: &DbPool,
 ) -> Result<Vec<(String, String, String)>, crate::error::AppError> {
+    use crate::db::repos::dev::cycle_goals::parse_cycle_marker;
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
-        "SELECT dp.team_id, g.id, dp.id
+        "SELECT dp.team_id AS team_id, g.id AS goal_id, dp.id AS project_id,
+                g.description AS description
          FROM dev_goals g
          JOIN dev_projects dp ON dp.id = g.project_id
          WHERE dp.team_id IS NOT NULL
@@ -113,15 +124,25 @@ fn find_goal_advance_candidates(
     let rows = stmt
         .query_map([], |r| {
             Ok((
-                r.get::<_, String>(0)?,
-                r.get::<_, String>(1)?,
-                r.get::<_, String>(2)?,
+                r.get::<_, String>("team_id")?,
+                r.get::<_, String>("goal_id")?,
+                r.get::<_, String>("project_id")?,
+                r.get::<_, Option<String>>("description")?,
             ))
         })?
         .filter_map(Result::ok)
+        .filter(|(_, _, _, description)| parse_cycle_marker(description.as_deref()).is_none())
+        .map(|(team_id, goal_id, project_id, _)| (team_id, goal_id, project_id))
         .collect();
     Ok(rows)
 }
+
+/// Once-per-transition flags for the goal-advance tick's holds (G55).
+static GOAL_ADVANCE_HELD: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+static GOAL_ADVANCE_MANDATE_REFUSED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+static ASSIGNMENT_RESUME_HELD: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
 
 #[async_trait::async_trait]
 impl ReactiveSubscription for GoalAdvanceSubscription {
@@ -160,6 +181,19 @@ impl ReactiveSubscription for GoalAdvanceSubscription {
             tracing::info!("goal_advance: quota cooldown active — skipping tick");
             return;
         }
+        // G55: the operator's switches (quota stop, memory stop) govern this
+        // engine too. Checked before any assignment is created; a refused tick
+        // creates nothing. Per-persona switches (enabled, codex_mode, the
+        // concurrency cap) are held at each step by the orchestrator.
+        {
+            use super::autonomy_admission as admission;
+            let state = admission::app_state(&self.app);
+            let verdict = admission::admit_global(&self.pool, state.as_deref()).await;
+            admission::log_transition(&GOAL_ADVANCE_HELD, "goal_advance", &verdict);
+            if !verdict.is_go() {
+                return;
+            }
+        }
 
         // Candidate query is sync rusqlite — offload off the async worker.
         let pool = self.pool.clone();
@@ -172,6 +206,12 @@ impl ReactiveSubscription for GoalAdvanceSubscription {
                 }
                 Err(_) => return,
             };
+
+        // The App master mandate is the second gate (`autonomy::mandate_permits`):
+        // a mandated project whose rung does not reach goal advancement is not
+        // advanced. Unmandated projects pass unchanged. Loaded once per tick.
+        let mandates = autonomy::load_mandates(&self.pool);
+        let mut mandate_refused = false;
 
         let mut started = 0usize;
         // X2 fairness: advance AT MOST ONE goal per team per tick (breadth over
@@ -188,6 +228,22 @@ impl ReactiveSubscription for GoalAdvanceSubscription {
             // Only `full`-mode projects auto-advance (or legacy global-on
             // projects with no explicit mode).
             if !autonomy::is_allowed(&modes, &project_id, global, Action::GoalAdvancement) {
+                continue;
+            }
+            if let Err(refusal) =
+                autonomy::mandate_permits(&mandates, &project_id, Action::GoalAdvancement)
+            {
+                if !mandate_refused
+                    && !GOAL_ADVANCE_MANDATE_REFUSED
+                        .swap(true, std::sync::atomic::Ordering::Relaxed)
+                {
+                    tracing::info!(
+                        project_id = %project_id,
+                        refusal = ?refusal,
+                        "goal_advance: the project's App master mandate does not permit goal advancement — skipped"
+                    );
+                }
+                mandate_refused = true;
                 continue;
             }
             if !seen_teams.insert(team_id.clone()) {
@@ -212,6 +268,9 @@ impl ReactiveSubscription for GoalAdvanceSubscription {
                     tracing::warn!(team_id = %team_id, goal_id = %goal_id, error = %e, "goal_advance: advance failed");
                 }
             }
+        }
+        if !mandate_refused {
+            GOAL_ADVANCE_MANDATE_REFUSED.store(false, std::sync::atomic::Ordering::Relaxed);
         }
         if started > 0 {
             tracing::info!(
@@ -386,6 +445,20 @@ impl ReactiveSubscription for AssignmentAutoResumeSubscription {
             tracing::info!("assignment_auto_resume: quota cooldown active — skipping tick");
             return;
         }
+        // G55: the quota stop and the memory stop govern the retry loop too —
+        // a retry into a stopped gauge is exactly the spend the operator
+        // switched off. Refused → nothing is resumed this tick.
+        use super::autonomy_admission as admission;
+        let state = admission::app_state(&self.app);
+        let global_verdict = admission::admit_global(&self.pool, state.as_deref()).await;
+        admission::log_transition(
+            &ASSIGNMENT_RESUME_HELD,
+            "assignment_auto_resume",
+            &global_verdict,
+        );
+        if !global_verdict.is_go() {
+            return;
+        }
 
         // SQL filter + retryable-classification + per-persona gate, all on the
         // blocking pool (sync rusqlite). Result groups retryable step ids by
@@ -393,7 +466,7 @@ impl ReactiveSubscription for AssignmentAutoResumeSubscription {
         let pool = self.pool.clone();
         let by_assignment = match tokio::task::spawn_blocking(move || {
             let cands = find_assignment_retry_candidates(&pool)?;
-            let mut grouped: std::collections::BTreeMap<String, Vec<String>> =
+            let mut grouped: std::collections::BTreeMap<String, (Vec<String>, Vec<String>)> =
                 std::collections::BTreeMap::new();
             for c in cands {
                 if !step_failure_is_retryable(
@@ -406,7 +479,13 @@ impl ReactiveSubscription for AssignmentAutoResumeSubscription {
                 if !persona_repeats_on_failure(&pool, c.persona_id.as_deref()) {
                     continue;
                 }
-                grouped.entry(c.assignment_id).or_default().push(c.step_id);
+                let entry = grouped.entry(c.assignment_id).or_default();
+                entry.0.push(c.step_id);
+                if let Some(pid) = c.persona_id {
+                    if !entry.1.contains(&pid) {
+                        entry.1.push(pid);
+                    }
+                }
             }
             Ok::<_, crate::error::AppError>(grouped)
         })
@@ -421,10 +500,27 @@ impl ReactiveSubscription for AssignmentAutoResumeSubscription {
         };
 
         let mut resumed = 0usize;
-        for (assignment_id, step_ids) in by_assignment
+        'assignments: for (assignment_id, (step_ids, persona_ids)) in by_assignment
             .into_iter()
             .take(ASSIGNMENT_AUTO_RESUME_MAX_PER_TICK)
         {
+            // Per-persona half (enabled, codex_mode, concurrency cap): an
+            // assignment whose retried step would run a persona the operator
+            // has held is left `awaiting_review` — resuming it would only flip
+            // it to `running` for the orchestrator to hold, and would spend a
+            // retry on nothing.
+            for pid in &persona_ids {
+                let verdict = admission::admit_autonomous(&self.pool, state.as_deref(), pid).await;
+                if let admission::Admission::Defer(reason) = verdict {
+                    tracing::debug!(
+                        assignment_id = %assignment_id,
+                        persona_id = %pid,
+                        reason = reason.code(),
+                        "assignment_auto_resume: persona held by autonomy admission — not resumed"
+                    );
+                    continue 'assignments;
+                }
+            }
             match crate::engine::team_assignment_orchestrator::auto_resume_retryable_steps(
                 Arc::new(self.pool.clone()),
                 self.app.clone(),
@@ -448,5 +544,157 @@ impl ReactiveSubscription for AssignmentAutoResumeSubscription {
                 "assignment_auto_resume: resumed {resumed} assignment(s)"
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::init_test_db;
+    use crate::db::models::{
+        CreatePersonaInput, CreateTeamAssignmentInput, CreateTeamAssignmentStepInput,
+        CreateTeamInput,
+    };
+    use crate::db::repos::core::personas as persona_repo;
+    use crate::db::repos::dev::{cycle_goals, goals as goal_repo, projects as project_repo};
+    use crate::db::repos::orchestration::team_assignments as assignment_repo;
+    use crate::db::repos::resources::teams as team_repo;
+    use crate::error::AppError;
+
+    fn team_project(pool: &DbPool, name: &str) -> Result<(String, String), AppError> {
+        let team = team_repo::create(
+            pool,
+            CreateTeamInput {
+                name: format!("{name} team"),
+                project_id: None,
+                parent_team_id: None,
+                description: None,
+                canvas_data: None,
+                team_config: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+            },
+        )?;
+        let project = project_repo::create_project(
+            pool,
+            name,
+            &format!("C:/tmp/{name}"),
+            None,
+            None,
+            None,
+            None,
+            Some(&team.id),
+        )?;
+        Ok((team.id, project.id))
+    }
+
+    /// G55: a cycle goal is the attention loop's row. The goal-advance tick
+    /// must not pick it up (it did — 203 opus runs on 2026-09-25), while an
+    /// ordinary goal in the same project stays a candidate.
+    #[test]
+    fn goal_advance_candidates_exclude_cycle_goals_and_keep_normal_ones() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let (team_id, project_id) = team_project(&pool, "g55-app")?;
+
+        let normal = goal_repo::create_goal(
+            &pool,
+            &project_id,
+            "Ship the ledger",
+            Some("an ordinary goal"),
+            None,
+            None,
+            None,
+            None,
+        )?;
+        let (cycle, _) =
+            cycle_goals::claim_cycle_goal(&pool, "persona-a", "Master A", &project_id, "plan")?;
+        // A leading-whitespace marker is still a cycle (the parser is lenient
+        // about it), so it must be excluded too.
+        let spaced = goal_repo::create_goal(
+            &pool,
+            &project_id,
+            "Master B · cycle 1",
+            Some("  [cycle:persona-b:1]\nplan"),
+            None,
+            None,
+            None,
+            None,
+        )?;
+
+        let found = find_goal_advance_candidates(&pool)?;
+        let ids: Vec<&str> = found.iter().map(|(_, g, _)| g.as_str()).collect();
+        assert!(
+            ids.contains(&normal.id.as_str()),
+            "the ordinary goal stays a candidate: {ids:?}"
+        );
+        assert!(
+            !ids.contains(&cycle.id.as_str()),
+            "a claimed cycle goal is the attention loop's: {ids:?}"
+        );
+        assert!(
+            !ids.contains(&spaced.id.as_str()),
+            "a whitespace-led marker is still a cycle: {ids:?}"
+        );
+        assert!(found
+            .iter()
+            .all(|(t, _, p)| t == &team_id && p == &project_id));
+
+        // A live (queued/running) assignment whose steps the orchestrator is
+        // HOLDING (G55 admission) still owns its goal past the 2h cooldown —
+        // a hold must not turn into a duplicate assignment for the same goal.
+        let worker = persona_repo::create(
+            &pool,
+            CreatePersonaInput {
+                name: "Worker".into(),
+                system_prompt: "You are a test agent.".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )?
+        .id;
+        let assignment = assignment_repo::create(
+            &pool,
+            CreateTeamAssignmentInput {
+                team_id: team_id.clone(),
+                title: "Held work".into(),
+                goal: "Ship the ledger".into(),
+                match_strategy: None,
+                max_parallel_steps: None,
+                source: None,
+                companion_op_id: None,
+                goal_id: Some(normal.id.clone()),
+                steps: vec![CreateTeamAssignmentStepInput {
+                    title: "Build".into(),
+                    description: None,
+                    assigned_persona_id: Some(worker),
+                    assigned_use_case_id: None,
+                    depends_on_indices: None,
+                }],
+            },
+        )?;
+        // Backdate past the 2h cooldown so only the status keeps it out.
+        pool.get()?.execute(
+            "UPDATE team_assignments SET created_at = datetime('now', '-1 day') WHERE id = ?1",
+            rusqlite::params![assignment.id],
+        )?;
+        let after = find_goal_advance_candidates(&pool)?;
+        assert!(
+            !after.iter().any(|(_, g, _)| g == &normal.id),
+            "a goal whose held assignment is still live is not re-advanced"
+        );
+        Ok(())
     }
 }

@@ -1,6 +1,6 @@
 # Golden path — the headless model call
 
-> Situation node: `ai-agents/model-invocation/headless-model-call` · [situation spine](../situation-spine.md)
+> Situation node: `ai-agents/model-invocation/headless-model-call` · situation spine
 > Composed 2026-08-15 against `master` @ `f2e002f7b`. **Recurrence 28 · risk HIGH · sides: server · convergence: diverged.**
 > Sweep: all **963** non-generated Rust files under `src-tauri/` walked by the census engine and
 > re-walked by two independent scanners written for this path. Every `Command::new` in the tree
@@ -65,7 +65,7 @@ is watching, they are the ceiling — and this app has no other one.**
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and every
+Per the portability test, the head is physically separated and every
 clause carries its warrant, so an adopting repo can tell physics from local calibration. No file path,
 primitive name or count appears below this line until the head ends.
 
@@ -853,7 +853,7 @@ environment*, not of the request — and it holds the line at 5 while moves 1–
 
 ## 9. The missing gate
 
-**Manifestation layer** ([`golden-path-contract.md:34-60`](../golden-path-contract.md)). The warning
+**Manifestation layer** (`golden-path-contract.md:34-60`). The warning
 must be loud: **no sibling repo gates anything in this document.** `brainiac` ships a workspace-wide
 clippy gate aimed at panics; `ascent` and `vibeman` ship ESLint configs that say nothing about model
 calls; `personas-cloud` has no custom lint at all. Nobody has independently invented gating headless

@@ -75,7 +75,7 @@ complete presentation table.
 - **Raw tokens on screen:** 79 sites in 55 files render `{row.status}` /
   `{issue.severity}` directly — including the structurally exemplary
   `HealingIssueStatusBadge.tsx` (`:70`, `:100`), whose `variant`-prop
-  shape is worth copying and whose body is not. And
+  shape was worth copying and whose body was not (deleted 2026-09-25 in `a21c66544`: its state ladder now lives in `sub_observability/libs/issueModel.ts` `issueState`, a closed union rendered through the composition kit's `Mark`, with severity text from translation keys). And
   `VerdictBadge.test.tsx:26-30` asserts the raw-token render of an
   unknown verdict — the defect enshrined as specified behavior.
 

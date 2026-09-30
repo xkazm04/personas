@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**154 reusable components** live under `src/features/shared/components/`.
+**167 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -177,6 +177,30 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `KanbanBoard` | Generic Kanban board — buckets items into status columns, movable by |
 | `useKanbanKeyboardMove` | Announced on pick-up; also the per-card instruction. |
 
+## kit — Composition kit (Spine & Lens): compose a surface from these. Import from @/features/shared/components/kit
+
+| Component | What it's for |
+|---|---|
+| `ChartFrame` | ChartFrame - a chart's plot area on the reading line, fixed height, with its loading ghost and empty band. Kit. |
+| `ChipRow` | ChipRow - 30px chips with count and share bar, a chip with onPress is a filter; ChipView is one chip (toolbar filter). Kit. |
+| `ContextCard` | ContextCard - one of few peers as a tile: a band on a rail, head on top (art top-right), figures on the foot; ContextCards grids t |
+| `ContextGroups` | ContextGroups - level 1 over many contexts: a row per group (worst mark, size, units by state, figures). Kit. |
+| `ContextOverview` | ContextOverview - parent layer over many contexts: groups + search, then one group as cards or a table. Kit. |
+| `Crumbs` | Crumbs - the trail above a drilled surface (Section eyebrow): onPress makes a door up; a last plain crumb is current. Kit. |
+| `DataTable` | DataTable - column heads over ListRow-family rows (band, mark, selection), pager under the last row, sortable, widths. Kit. |
+| `Hint` | Hint - the kit tip on a mark, figure or unit strip: shared Tooltip plus an always-present description. Kit. |
+| `KeyValueGrid` | KeyValueGrid - quiet keys over regular values in auto-fill columns; null renders honestly. Kit. |
+| `ListRow` | ListRow - fixed-height row: one emphasised name, quiet meta, status mark on the spine, figures; onPress makes the name the row's o |
+| `Mark` | Mark - the status node on the spine (Tone x Glyph); Dot is the same glyph inline. Kit. |
+| `RangePicker` | RangePicker - a time-window control: preset segments plus an optional Custom segment that opens the caller's date picking. Kit. |
+| `Section` | Section - a titled part of a surface, bounded by a node on the spine (eyebrow, title, count, meta, actions; empty/loading states). |
+| `sortRows` | sortRows - the kit's stable table order: typed compare, absent values last, row id breaks ties. Kit. |
+| `StatStrip` | StatStrip - stat tiles (glowing label, figure, drawn quantity); a lone tile is a strip of one. Kit. |
+| `Surface` | Kit surface family: KitHost (root, compact tier), Surface (a region on one spine), Split (detail pane when roomy), Drawer (narrow  |
+| `Tiles` | Tiles - the dashboard grid: 12 columns, content-sized rows, spans collapse by the grid's own width; cols={1} stacks. Kit. |
+| `Toolbar` | Toolbar - a surface filter bar (Segmented, SearchField, KitButton), 30/36px controls. Kit. |
+| `UnitStrip` | UnitStrip - a quantity as countable units of a fixed quantum, coloured by claim, its quantum stated by legend (apportion, quantumF |
+
 ## layout — Page/section structure, headers, tab bars, content shells
 
 | Component | What it's for |
@@ -222,14 +246,8 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 
 | Component | What it's for |
 |---|---|
-| `AnalysisModeView` | _(add a `@catalog` tag)_ |
 | `ContentLoader` | _(add a `@catalog` tag)_ |
 | `EstimatedProgressBar` | if (progress < 75) return 'hsl(var(primary) / 0. |
-| `TerminalBody` | _(add a `@catalog` tag)_ |
-| `TransformModeView` | _(add a `@catalog` tag)_ |
-| `TransformProgress` | _(add a `@catalog` tag)_ |
-| `TransformStatusPanels` | _(add a `@catalog` tag)_ |
-| `WizardStepper` | _(add a `@catalog` tag)_ |
 
 ## surface
 
@@ -248,4 +266,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_154 components, 46 without a `@catalog` description._
+_167 components, 40 without a `@catalog` description._

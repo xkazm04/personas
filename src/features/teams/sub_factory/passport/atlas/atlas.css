@@ -1,0 +1,118 @@
+/* Passport Atlas: ported from the /contest passport-wall-r2 winner (Signal Atlas).
+ * Kit variables (--band-*, --rule, --quiet, --spine-x, --glow) come from kit.css on .k-host.
+ * Layout follows the surface's own width (the kit container), never the viewport:
+ * the page lives in the app's main column, not the window. Type and colour stay tokenised. */
+
+/* ---- the six states: a kit Dot plus a non-colour cue each ---- */
+.atlas-ink { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+.atlas-ink .k-dot { width: 10px; height: 10px; }
+.atlas-ink[data-ink='warn'] .k-dot { background: linear-gradient(to top, var(--tone) 50%, transparent 50%); box-shadow: inset 0 0 0 1.5px var(--tone); }
+.atlas-ink[data-ink='setup'] .k-dot { background: transparent; box-shadow: inset 0 0 0 1.5px var(--status-info); border-radius: 2px; }
+.atlas-ink[data-ink='info'] .k-dot { width: 5px; height: 5px; margin: 0 2.5px; background: var(--status-neutral); }
+.atlas-ink[data-ink='unknown'] .k-dot { background: transparent; box-shadow: none; outline: 1.5px dashed var(--status-neutral); outline-offset: -1.5px; }
+
+/* ---- portfolio ---- */
+.atlas-portfolio { display: flex; flex-direction: column; gap: 8px; padding: 4px 0 16px; }
+.atlas-portfolio > .k-stats, .atlas-portfolio > .k-toolbar, .atlas-legend, .atlas-readout, .atlas-empty { padding-left: var(--gutter); }
+.atlas-portfolio .k-toolbar { flex-wrap: wrap; gap: 8px; }
+.atlas-portfolio .k-search { flex: 1 1 180px; min-width: 140px; max-width: 260px; }
+.atlas-legend { display: flex; flex-wrap: wrap; gap: 4px 18px; color: var(--quiet); }
+.atlas-legend__item { display: inline-flex; align-items: center; gap: 6px; }
+.atlas-empty { display: flex; align-items: center; gap: 12px; min-height: 64px; }
+
+/* ---- the matrix (proposed kit part: SpineMatrix) ---- */
+.atlas-matrix { --name: 248px; --score: 44px; overflow-x: auto; scrollbar-width: thin; }
+.atlas-matrix__head, .atlas-matrix__row {
+  display: grid; align-items: stretch;
+  grid-template-columns: var(--name) var(--score) var(--score) repeat(var(--cols), minmax(56px, 1fr));
+}
+.atlas-matrix__head { min-height: 56px; position: sticky; top: 0; z-index: 3; background: var(--background); }
+.atlas-matrix__name-head { display: flex; align-items: flex-end; gap: 6px; padding: 0 10px 8px var(--gutter); }
+.atlas-matrix__gaps-head { margin-left: auto; }
+.atlas-matrix__score-head { display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px; }
+.atlas-matrix__dim {
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px;
+  padding: 0 3px 6px; border-bottom: 2px solid var(--rule); text-align: center; line-height: 1.2; min-width: 0;
+}
+.atlas-matrix__dim.is-current { color: var(--primary); border-bottom-color: var(--primary); }
+.atlas-matrix__dim-label { cursor: help; }
+.atlas-matrix__row { height: 32px; position: relative; --band: transparent; }
+.atlas-matrix__row:nth-child(even) { --band: var(--band-alt); }
+.atlas-matrix__row:hover { --band: var(--band-hover); }
+.atlas-matrix__row.is-selected { --band: var(--band-sel); }
+.atlas-matrix__row > * { min-width: 0; background: var(--band); }
+.atlas-matrix__row > :first-child { background: linear-gradient(to right, transparent 22px, var(--band) 22px); }
+.atlas-matrix__row.is-selected::after {
+  content: ''; position: absolute; left: 13px; top: 2px; bottom: 2px; width: 3px; border-radius: 2px;
+  background: var(--primary); box-shadow: 0 0 12px var(--glow); pointer-events: none;
+}
+.atlas-matrix__project { display: flex; align-items: center; gap: 8px; padding: 0 10px 0 16px; }
+.atlas-matrix__name.k-btn, .atlas-matrix__name {
+  height: 100%; min-width: 0; flex: 1; justify-content: flex-start; gap: 6px; padding: 0 4px;
+  background: transparent; border: 0; font-weight: 600; white-space: nowrap;
+}
+.atlas-matrix__name:hover { color: var(--primary); }
+.atlas-matrix__gaps { width: 22px; text-align: right; flex: none; }
+.atlas-matrix__score { display: flex; align-items: center; justify-content: center; color: var(--quiet); }
+.atlas-matrix__cell { display: flex; align-items: center; justify-content: center; cursor: pointer; outline-offset: -2px; }
+.atlas-matrix__cell.is-column { background: color-mix(in srgb, var(--primary) 5%, var(--band)); }
+.atlas-matrix__cell:hover { background: var(--band-sel); }
+.atlas-matrix__cell:focus-visible { outline: 2px solid var(--primary); }
+
+.atlas-readout { display: flex; align-items: center; gap: 10px; min-height: 36px; background: var(--band-alt); padding-right: 12px; }
+.atlas-readout strong { font-weight: 600; white-space: nowrap; }
+.atlas-readout__keys { margin-left: auto; white-space: nowrap; }
+
+/* ---- one dimension (drawer and passport) ---- */
+.atlas-dim { display: grid; grid-template-columns: minmax(160px, 200px) minmax(0, 1fr) auto; gap: 8px 20px; align-items: start; }
+.atlas-dim__head { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.atlas-dim__label { margin: 0; cursor: help; width: fit-content; }
+.atlas-dim__state { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.atlas-dim__live { display: inline-flex; align-items: center; gap: 6px; color: var(--primary); }
+.atlas-dim__value { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.atlas-dim__value .k-chips, .atlas-dim__value .k-kv { padding-left: 0; padding-right: 0; }
+.atlas-dim__sub { margin: 0; color: var(--quiet); }
+.atlas-dim__door { padding-top: 2px; }
+.atlas-pips { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.atlas-pip { display: inline-flex; align-items: center; gap: 6px; }
+
+.atlas-ladder { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; margin: 4px 0 0; padding: 0; list-style: none; }
+.atlas-ladder li { color: var(--quiet); line-height: 1.35; overflow-wrap: normal; min-width: 0; }
+.atlas-ladder__line { display: block; height: 6px; margin-bottom: 6px; background: var(--rule); border-radius: 1px; }
+.atlas-ladder .is-passed .atlas-ladder__line { background: color-mix(in srgb, var(--primary) 45%, transparent); }
+.atlas-ladder .is-current { color: var(--foreground); }
+.atlas-ladder .is-current .atlas-ladder__line { background: var(--primary); box-shadow: 0 0 10px color-mix(in srgb, var(--primary) 30%, transparent); }
+.atlas-ladder.is-unverified .atlas-ladder__line { background: var(--rule); box-shadow: none; }
+.atlas-ladder.is-unverified .is-current .atlas-ladder__line { outline: 1px dashed var(--quiet); outline-offset: -1px; }
+
+/* drawer: one column, the ladder under the value */
+.atlas-drawer-body { padding: 4px 12px 16px var(--gutter); }
+.atlas-drawer-body .atlas-dim { grid-template-columns: minmax(0, 1fr); }
+.atlas-drawer-body__foot { padding-top: 20px; }
+
+/* ---- passport ---- */
+.atlas-passport__bar { display: flex; align-items: center; gap: 8px; padding: 4px 0 12px var(--gutter); flex-wrap: wrap; }
+.atlas-doc .k-stats { padding-left: var(--gutter); }
+.atlas-notice { margin: 4px 12px 12px var(--gutter); padding: 12px 14px; border: 1px dashed var(--line); border-radius: var(--radius-card, 8px); }
+.atlas-actions-row { padding: 4px 12px 12px var(--gutter); }
+.atlas-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.atlas-ladders { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 8px 12px 8px var(--gutter); }
+.atlas-blockers { margin: 0; padding: 0 12px 0 var(--gutter); list-style: none; }
+.atlas-blockers li { display: flex; align-items: center; gap: 10px; min-height: 40px; }
+.atlas-blockers li:nth-child(odd) { background: linear-gradient(to right, transparent 0, var(--band-alt) 0); }
+.atlas-dims__row { padding: 16px 12px 16px var(--gutter); scroll-margin-top: 16px; }
+.atlas-dims__row:nth-child(odd) { background: linear-gradient(to right, transparent calc(var(--spine-x) + 8px), var(--band-alt) calc(var(--spine-x) + 8px)); }
+.atlas-toc { display: flex; flex-direction: column; gap: 2px; padding: 4px 8px 16px var(--gutter); }
+.atlas-toc__group { display: flex; flex-direction: column; gap: 0; padding-top: 10px; }
+.atlas-toc__section { color: var(--primary); padding: 4px 0; }
+.atlas-toc .k-btn { justify-content: flex-start; gap: 8px; height: 28px; }
+
+/* ---- narrow surface (the 1280 window's ~950px column) ---- */
+@container kit (max-width: 1100px) {
+  .atlas-matrix { --name: 200px; --score: 36px; }
+  .atlas-matrix__head, .atlas-matrix__row { grid-template-columns: var(--name) var(--score) var(--score) repeat(var(--cols), minmax(44px, 1fr)); }
+  .atlas-matrix__dim-count { display: none; }
+  .atlas-readout__keys { display: none; }
+  .atlas-dim { grid-template-columns: minmax(0, 1fr) auto; }
+  .atlas-dim__value { grid-column: 1 / -1; grid-row: 2; }
+}

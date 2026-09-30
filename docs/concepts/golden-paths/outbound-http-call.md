@@ -1,13 +1,13 @@
 # Golden path — the outbound HTTP call
 
 > Situation node: `integrations-security/external-and-host-surfaces/outbound-http-call` ·
-> [situation spine](../situation-spine.md) · recurrence 23 · risk **HIGH** ·
+> situation spine · recurrence 23 · risk **HIGH** ·
 > sides **both** · convergence **mixed** ·
 > dimensions: **security · resilience · function · cost · code-quality**
 > Composed 2026-08-15 against `master` @ `0b9418d32`.
 >
 > **Sweep size.** All **963** non-generated `.rs` files under `src-tauri/` (exactly
-> `rust.files` in [`shared-facts.json`](../shared-facts.json)) and all **4,829**
+> `rust.files` in `shared-facts.json`) and all **4,829**
 > `.ts`/`.tsx` files under `src/`. `#[cfg(test)]` was removed by a **brace-matched
 > range** with a string/comment-aware scanner, never a line threshold; comments were
 > blanked offset-preserving so line numbers survive. Every headline count was taken
@@ -170,7 +170,7 @@ the second one did not, and nothing told them.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically
+Per the portability test, the head is physically
 separated and each clause carries its warrant, so an adopting repo can tell physics
 from local calibration. No file path, primitive name or count appears below this
 line until the head ends.
@@ -1003,7 +1003,7 @@ Four things the brief or the obvious reading predicts, which the measurement ref
 
 ## Prefer a type over a gate — the answer for this leaf
 
-Per the [contract](../golden-path-contract.md), answered against all seven
+Per the contract, answered against all seven
 qualifications this corpus has earned.
 
 **The obvious candidate is a `Url` newtype that carries provenance —
@@ -1109,7 +1109,7 @@ not fix.
 
 ### The semantic conditions, stated first
 
-Per the [portability test](../research/portability-test.md), what follows are **one
+Per the portability test, what follows are **one
 repo's proxies**. An adopting repo inherits the sentences and re-derives its own
 signals.
 
@@ -1251,7 +1251,7 @@ first: that fix moves the count.
 **`floor: 900`** matches every other `src-tauri`-rooted rule deliberately; several
 rules over one root must not hold several opinions about what "the Rust tree is
 intact" means. The walk reports **963**, exactly `rust.files` in
-[`shared-facts.json`](../shared-facts.json).
+`shared-facts.json`.
 
 **On severity.** The census mechanism's own semantics are the severity: drift is
 fatal under `npm run census:check`, reporting-only under `npm run census`. No

@@ -227,7 +227,18 @@
     "retire_reason_expired": "期限切れ",
     "retire_reason_superseded": "新しいペアリングに置き換え済み",
     "retire_result": "{total} 件中 {retired} 件を破棄しました。",
-    "retire_title": "無効なペアリングを破棄"
+    "retire_title": "無効なペアリングを破棄",
+    "gig_policy_budget_hint": "上限を設けない場合は空欄のままにします。",
+    "gig_policy_budget_label": "採用ごとの最大予算（USD）",
+    "gig_policy_desc": "kp は案件ごとに 1 体のエージェントを採用します。以下のすべての上限内に収まる kp の採用リクエストは、あなたに代わって承認されます。それ以外は通常どおりあなたの承認を待ちます。この設定はどの API キーからも変更できません。",
+    "gig_policy_enabled": "このポリシー内の案件エージェントを自動承認する",
+    "gig_policy_models_hint": "カンマ区切りのモデル ID（例: claude-opus-5-5）",
+    "gig_policy_models_label": "許可するモデル",
+    "gig_policy_root_hint": "このフォルダー内の案件プロジェクトのみが対象です。",
+    "gig_policy_root_label": "案件のルートフォルダー",
+    "gig_policy_save": "ポリシーを保存",
+    "gig_policy_saved": "ポリシーを保存しました",
+    "gig_policy_title": "案件エージェントのポリシー"
   },
   "appearance_extra": {
     "dev": "開発者",

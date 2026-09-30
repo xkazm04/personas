@@ -1,6 +1,6 @@
 # Golden path — Scroll and resize affordances
 
-> Situation node: `ui-system/layout-and-navigation/scroll-and-resize-affordances` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/layout-and-navigation/scroll-and-resize-affordances` · situation spine
 > recurrence **18** · risk **LOW** · sides **client** · convergence **mixed** · `twoSided: false`
 > dimensions: **ui · performance · function**
 > Leaf definition: *"edge shadows, scroll restoration and a bounded draggable splitter."*

@@ -197,7 +197,11 @@ pub fn list_by_persona(
 
 /// The most recent COMPLETED pass of `kind` — the scheduler reads its
 /// `consumed_through` watermark to resume, and its `completed_at` to space
-/// the next run. Open ('started', un-completed) rows are invisible here.
+/// the next run. Open ('started', un-completed) rows are invisible here, and
+/// so are refusals: [`insert_refusal`] stamps `completed_at` at insert, and a
+/// refused pass never ran. Counted, an interval-floor refusal five minutes ago
+/// told a persona its "last completed pass" had just ended and hid a three-day
+/// gap behind it (2cc79b6a / e4bedd2f).
 pub fn last_completed(
     pool: &DbPool,
     persona_id: &str,
@@ -211,6 +215,7 @@ pub fn last_completed(
             let mut stmt = conn.prepare_cached(&format!(
                 "SELECT {COLUMNS} FROM persona_attention_ledger
              WHERE persona_id = ?1 AND kind = ?2 AND completed_at IS NOT NULL
+               AND verdict != 'refused'
              ORDER BY started_at DESC, id DESC
              LIMIT 1"
             ))?;
@@ -226,7 +231,8 @@ pub fn last_completed(
 /// so a pass that merely answered a channel message does not postpone the
 /// pass that decides: measured 2026-09-14, an App Master whose operator wrote
 /// every twenty minutes never reached its decision lane again, because each
-/// `arrivals` reply restarted the floor.
+/// `arrivals` reply restarted the floor. Refusals are excluded for the same
+/// reason [`last_completed`] excludes them: a refusal is not a pass.
 pub fn last_completed_excluding_lane(
     pool: &DbPool,
     persona_id: &str,
@@ -242,6 +248,7 @@ pub fn last_completed_excluding_lane(
                 "SELECT {COLUMNS} FROM persona_attention_ledger
              WHERE persona_id = ?1 AND kind = ?2 AND completed_at IS NOT NULL
                AND (lane IS NULL OR lane <> ?3)
+               AND verdict != 'refused'
              ORDER BY started_at DESC, id DESC
              LIMIT 1"
             ))?;
@@ -905,6 +912,39 @@ mod tests {
         assert!(list_open(&pool, "p1", "attention")?.is_empty());
         let refusal = insert_refusal(&pool, "p1", None, "attention", None, "quiet")?;
         assert_eq!(last_row(&pool, "p1", "attention")?.unwrap().id, refusal);
+        Ok(())
+    }
+
+    /// 2cc79b6a: a refusal lands already completed, and it is still not a
+    /// pass. Both completed-pass reads skip it.
+    #[test]
+    fn the_completed_pass_reads_skip_a_newer_refusal() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        insert_persona(&pool, "p1")?;
+        let pass = insert_started(&pool, "p1", None, "attention", Some("decide"))?;
+        complete(&pool, &pass, "dispatched", "", None, None, None)?;
+        pool.get()?.execute(
+            "UPDATE persona_attention_ledger
+             SET started_at = '2026-01-01T00:00:00Z', completed_at = '2026-01-01T00:10:00Z'
+             WHERE id = ?1",
+            params![pass],
+        )?;
+        insert_refusal(
+            &pool,
+            "p1",
+            None,
+            "attention",
+            Some("decide"),
+            "interval_floor",
+        )?;
+
+        assert_eq!(last_completed(&pool, "p1", "attention")?.unwrap().id, pass);
+        assert_eq!(
+            last_completed_excluding_lane(&pool, "p1", "attention", "arrivals")?
+                .unwrap()
+                .id,
+            pass
+        );
         Ok(())
     }
 

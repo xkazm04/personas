@@ -390,7 +390,8 @@ back to kp.
 
 | Route | Scope | What it does |
 | --- | --- | --- |
-| `POST /api/kp/persona-requests` | `personas:build` | Validates the body, inserts a `kp_hire_request` row in the companion approval inbox — recording the authenticating key's id in `companion_approval.requested_by_key_id` (§10.8) — and returns `{requestId, status: "pending_approval"}`. Builds nothing. |
+| `POST /api/kp/persona-requests` | `personas:build` | Validates the body, inserts a `kp_hire_request` row in the companion approval inbox — recording the authenticating key's id in `companion_approval.requested_by_key_id` (§10.8) — and returns `{requestId, status: "pending_approval"}`. Builds nothing. An optional top-level `placement: {workspaceId}` files the approved hire under that workspace's cross-project group; an unknown workspace is refused at intake (§10.9). An optional `spec.requirements` (`kp.agent-requirements.v1`) replaces `systemPromptDraft` for a requirement-driven hire and is refused with a `code` when out of contract (§10.12). Optional `spec.modelProfile` and `placement.projectId` set the persona's model and home project, and a request inside the operator's gig persona policy is approved on the spot (`status: "approved"`, `autoApproved: true`) (§10.14). |
+| `POST /api/kp/personas/{personaId}/retire` | `personas:build` | The key that hired a persona ends its tenure: archive (never a hard delete — executions cascade on delete), execute grant revoked. 403 for another key's persona, 404 for an unknown id, idempotent (§10.14). |
 | `GET /api/kp/persona-requests/{id}` | any valid key | Derived status: `pending` \| `approved` \| `rejected` \| `failed` \| `expired`, plus `personaId` / `personaName` / `buildPhase` once the executor has stamped them, and `buildFailureReason` when the build session ended `failed` (§10.7). 404s for any approval row that is not a KP hire request, so it cannot enumerate the inbox. |
 | `GET /api/kp/connector-catalog` | any valid key | `{key, name, description}` per compiled-in builtin connector — the picker payload for kp's hire form. No DB read. |
 
@@ -407,7 +408,9 @@ build session. Wire schemas are in
 (`commands/companion/approvals/approval_lifecycle.rs`), executed by
 `execute_kp_hire_request` (`approval_exec_core.rs`). It is modeled on `build_oneshot`
 and is deliberately **not autopilot-eligible** — an external app must never be able to
-create a persona without a human click. It reaches Personas through the management API,
+create a persona without a human click. The one standing exception is the operator's own: a request
+inside the gig persona policy the operator set in Settings is approved on their behalf
+through the same executor (§10.14); a kp key can neither set nor widen that policy. It reaches Personas through the management API,
 not through Athena's grammar. Rejection calls `notify_kp_lifecycle(..., "rejected", ...)`
 so the recruiter learns the outcome; the notify is best-effort and a dead kp app never
 blocks the reject.
@@ -455,9 +458,11 @@ shapes and the §39 route counts predate the test surface):
 
 | Surface | Routes | Extra gate | Described in |
 | --- | --- | --- | --- |
-| KP hiring bridge | `POST /api/kp/persona-requests` · `GET /api/kp/persona-requests/{id}` · `GET /api/kp/connector-catalog` | `personas:build` scope on the mutating POST; GETs follow the any-valid-key read rule | §10.1 |
+| KP hiring bridge | `POST /api/kp/persona-requests` · `GET /api/kp/persona-requests/{id}` · `GET /api/kp/connector-catalog` · `POST /api/kp/personas/{id}/retire` | `personas:build` scope on the mutating POSTs; GETs follow the any-valid-key read rule; retire additionally checks the persona was hired by THIS key | §10.1 · §10.14 |
 | Device pairing | `POST /pair/request` · `POST /pair/claim` | outside the api-key middleware — the nonce + human-approval ceremony is the gate (auto-approved only in headless mode, §13.3) | §4.2 |
 | Gate audit write door | `POST /api/app-master/gate-runs` | a mutating `/api/*` route, so `authorize` demands the broad `personas:execute` scope; the body names gate outcomes (`passed` / `failed` / `did_not_run`, at most 64 per call) and never a table or a statement — the repo half is `app_master_gates::record_gate_audit`, which files the rows under the named branch or `(working tree)` and attributes them to the project's mandate holder when no persona is named | `management_api::record_gate_runs` |
+| Operator approval API | `GET /api/approvals` · `POST /api/approvals/{id}/approve` · `POST /api/approvals/{id}/reject` · `GET /api/pairings/pending` · `POST /api/pairings/{nonce}/approve` · `POST /api/pairings/{nonce}/reject` · `PUT /api/settings/http-project-roots` (its `GET` is any valid key) | `personas:approve`, on every method, reads included — held only by the file-delivered `operator-local` key, never pairable, never implied | §10.10 |
+| Workspaces + projects | `POST /api/dev/workspaces` · `POST /api/dev/projects` (beside the Ship layer's `GET /api/dev/projects`) | writes under `/api/dev/`, so `authorize` demands `personas:build` | §10.9 |
 | Headless test surface | `POST /api/kp/test/tick` · `POST /api/kp/test/seed-work` | routes are **added** only while `PERSONAS_HEADLESS_BRIDGE=1` (§13.1) — with the mode off they 404 rather than 403 — and `authorize` demands `personas:test` for the whole `/api/kp/test/` prefix | §13.6 (tick) · §13.9 (seed-work) |
 
 The port itself is still `PERSONAS_WEBHOOK_PORT` or 9420 (`webhook::webhook_port`).
@@ -796,7 +801,7 @@ removed automatically — `personas_engine::kp_execute_grant`.
 | --- | --- | --- |
 | Intake | the `external_api_keys.id` the auth middleware resolved (`AuthedApiKey`) is stored in `companion_approval.requested_by_key_id` — its own column, never inside `params`, which is the caller-written body | `management_api::kp_create_persona_request` → `insert_kp_hire_approval` |
 | Approval | after the persona exists and its build has spawned, and **before** the `approved` push to kp, the submitting key gains `personas:execute:persona:<new id>` — exactly that scope | `execute_kp_hire_request` → `kp_execute_grant::grant_on_hire_approval` → `external_api_keys::grant_scope` |
-| Retirement | the grant is removed from the key(s) that submitted a hire whose stamped `result.personaId` is this persona — and from no other key, so a per-persona grant an operator minted by hand in the API-keys UI survives | `kp_test_retire`, the probation carry-out on `retired` (`reviews::apply_app_master_probation_decision`, human click and headless sweep alike), and `delete_persona` (the path that pushes `retired` to kp) → `kp_execute_grant::revoke_on_retire` → `external_api_keys::revoke_scope` |
+| Retirement | the grant is removed from the key(s) that submitted a hire whose stamped `result.personaId` is this persona — and from no other key, so a per-persona grant an operator minted by hand in the API-keys UI survives | `kp_test_retire`, `POST /api/kp/personas/{id}/retire` (§10.14), the probation carry-out on `retired` (`reviews::apply_app_master_probation_decision`, human click and headless sweep alike), and `delete_persona` (the path that pushes `retired` to kp) → `kp_execute_grant::revoke_on_retire` → `external_api_keys::revoke_scope` |
 
 Rules the code holds:
 
@@ -833,6 +838,588 @@ submitters are skipped), `personas-db` (`external_api_keys::tests`, 4 more), and
 `management_api::tests` (the submitter lands in its column and not in the payload;
 `authorize_a_kp_key_after_a_hire_executes_only_the_hired_persona`).
 
+### 10.9 Gig workspaces, gig projects and project-bound runs (2026-09-25)
+
+kp's **Gigs** module hires "gig specialist" personas and runs them on real freelance
+work: one Personas **workspace** for the specialists, one Personas **project per gig**
+(the gig's folder on disk), the specialist filed in that workspace, and every run of it
+executing **in** the gig's folder. Workspaces and projects used to be Tauri-command-only,
+a hire landed in whatever workspace was active, and `/api/execute` could not choose a
+working directory (runs landed in `%TEMP%/personas-workspace/<persona_id>`). Four
+additions close that, all additive on the wire.
+
+Every refusal below carries a snake_case `code` beside `error` in the usual envelope
+(`{success:false, error, code}`). `code` is new on `ApiResult` and absent on every
+response that predates it.
+
+| Route / field | Scope | Behaviour | Codes |
+| --- | --- | --- | --- |
+| `POST /api/dev/workspaces` `{name, description?, color?}` | `personas:build` | `name` trimmed, 1..80 chars; `description` ≤ 500; `color` ≤ 32. **Idempotent by name** (trimmed, Unicode case-insensitive): an existing workspace comes back **unmodified** with `created:false`. A new one goes through `dev_workspaces::create_workspace`, the Tauri command's door, so it owns its cross-project group from birth (rolled back if the group cannot be made). Returns `{id, name, groupTeamId, created}`. | 400 `invalid_body` · `invalid_name` · `invalid_description` · `invalid_color` |
+| `POST /api/dev/projects` `{name, rootPath, description?, techStack?, workspaceId?}` | `personas:build` | `rootPath` must be absolute and contain no `..` component, then is canonicalised (Windows `\\?\` prefix stripped) and must be an existing directory that is not a filesystem/drive root, **and must lie strictly inside one of the allowed HTTP project roots** (below). Registers through `project_identity::register_project` — idempotent on the folder (an existing project comes back `created:false`, not renamed), gives the project its own team, writes `.personas/project.json` **into the folder**. With `workspaceId`: the workspace must exist (checked before anything is registered); a project with no workspace is assigned to it; a project already in a **different** workspace is refused, never moved. Returns `{id, name, rootPath, workspaceId, created}`. | 400 `invalid_body` · `invalid_name` · `invalid_description` · `invalid_tech_stack` · `invalid_workspace_id` · `invalid_root_path` · `root_path_not_found` · `root_path_not_a_directory` · `root_path_is_filesystem_root`; 403 `project_roots_not_configured` · `root_path_outside_allowed_roots`; 404 `workspace_not_found`; 409 `project_in_other_workspace` · `project_identity_conflict` (the folder's marker names a project still registered elsewhere) |
+| `placement: {workspaceId}` on `POST /api/kp/persona-requests` | `personas:build` | Optional, top level. Validated at intake (nothing is queued on a refusal); the raw body is still stored verbatim. The approval card's rationale gains "— filed under workspace '<name>'". On approval — the human click **and** the headless auto-exec, which run the same executor — the new persona is filed under that workspace's group (`resolve_hire_placement` + `file_new_hire` in `approval_exec_core.rs`) instead of the active workspace's. A workspace deleted between intake and approval **fails** the hire (`approved_failed`, nothing created) rather than falling back. Absent ⇒ today's active-workspace filing, unchanged. An `appMaster` block still re-files the persona under its project's team afterwards (the specific home wins by running last). | 400 `workspace_not_found` · `invalid_placement` |
+| `input_data._projectId` on `POST /api/execute/{persona_id}` | `personas:execute` or `personas:execute:persona:<id>` | Optional top-level string. Checked **synchronously before queueing** by `personas_db::execution_project::bound_project_for_input`. On success the run's working directory is the project's `root_path`, and `CODEBASE_ROOT_PATH` / `CODEBASE_PROJECT_NAME` / `CODEBASE_TECH_STACK` / `CODEBASE_PROJECT_ID` plus the personas-mcp sidecar's project pin describe that project, exactly as for a `devProjectId` pin. | 400 `invalid_project_id` (present but not a non-empty string); 404 `project_not_found` (no such project, switched off, or its folder is not an existing directory); 403 `project_outside_allowed_roots` (its folder is not strictly inside an allowed HTTP project root — also when no root is configured) · `project_outside_persona_workspace` |
+
+**Allowed HTTP project roots — fail-closed, persisted, operator-set.** Projects may
+live only under the operator's roots. Resolution, at every check (the project route,
+the `_projectId` route check, and the runner's re-validation):
+
+1. `PERSONAS_HTTP_PROJECT_ROOTS` when set and non-empty **in this process** — an
+   explicit per-process override (a platform path list, `;` on Windows / `:`
+   elsewhere, `std::env::split_paths`). Even if none of its entries exist it is not
+   silently replaced by the setting.
+2. else the persisted app setting **`management.http_project_roots`** (a JSON array of
+   absolute directory paths) in the shared database;
+3. else nothing — `POST /api/dev/projects` answers 403 `project_roots_not_configured`
+   and every `_projectId` binding 403 `project_outside_allowed_roots`.
+
+Each entry is canonicalised at check time; entries that no longer exist are ignored,
+and a malformed setting is no roots at all.
+
+**Why a setting and not only the env var (2026-09-25).** Two desktop instances ran on
+one database: the one serving :9420 had the variable, the other did not. kp's
+executions passed the first instance's route check and were then run by the second
+instance's runner, whose re-validation refused them — fail-closed held, but a
+per-process variable cannot give instances sharing a database one answer. The setting
+is read from that database by every instance. (How a second instance comes to run an
+execution: `requeue_persisted_executions` re-admits every `queued` row at each boot,
+in every instance, not leader-gated — §10.11.)
+
+**Who may set it: the operator only.** `management.http_project_roots` is an
+**operator-only** settings key (`settings_keys::is_operator_only`): the generic
+writers — `settings::set` / `settings::delete`, and therefore `set_app_setting`, the
+Athena import, and the management API's `/api/settings/auto-optimize|health-watch`
+routes (which name their own `auto_optimize:` / `health_watch:` keys anyway) — refuse
+it. The one writer is `settings::set_operator_only`, reached only from:
+
+| Route | Scope | Behaviour |
+| --- | --- | --- |
+| `GET /api/settings/http-project-roots` | any valid key (a read) | `{roots, effectiveRoots, source: "env"\|"setting"\|"none", envOverride}` — `roots` is what the database holds (every instance), `effectiveRoots` what THIS process enforces now, canonical. |
+| `PUT /api/settings/http-project-roots` `{roots: string[]}` | **`personas:approve`** (the operator key; `personas:execute`, kp's `read + build` and a hire's `execute:persona:<id>` get 403) | Each entry must be absolute, contain no `..`, and canonicalise to an existing directory that is not a filesystem/drive root; at most 32, deduplicated, stored canonical. `[]` clears the setting (nothing may be registered or bound). Answers the same view as the GET. 400 `invalid_body` · `invalid_root_path` · `root_path_not_found` · `root_path_not_a_directory` · `root_path_is_filesystem_root`. Audited in Settings → History under "security". |
+
+Set it with the operator key file (§10.10):
+
+```bash
+curl -s -X PUT http://127.0.0.1:9420/api/settings/http-project-roots \
+  -H "Authorization: Bearer $(cat "$APPDATA/com.personas.desktop/operator-api-key")" \
+  -H "Content-Type: application/json" \
+  -d '{"roots":["C:\\Users\\me\\gigs"]}'
+```
+
+The containment itself:
+
+- A folder is accepted only when its canonical path is **strictly inside** a root: a
+  root itself is not a project, and containment is compared **component-wise**
+  (`is_strictly_inside`; case-insensitive on Windows), never by string prefix — root
+  `C:\gigs` does not admit `C:\gigs2`. Both sides are canonicalised first, so `..`
+  and symlinks cannot fake containment.
+- The same check runs on every `_projectId` binding, at the route and again in the
+  runner. A project someone assigned to the gig workspace **through the UI** — this
+  checkout, say — therefore still cannot become a skip-permissions working directory
+  for a kp key unless its folder lives under a gig root.
+
+**The containment rule is the security boundary.** A run executes the Claude CLI with
+permissions skipped, so a binding is write access to a folder. A key allowed to run
+persona P may point P only at a project whose folder is inside an allowed root **and**
+whose `workspace_id` is set **and** whose workspace's cross-project group is P's
+`home_team_id`. A project with no workspace, in
+another workspace, or a persona homed anywhere else (its project's own team included)
+is refused with 403. That check is what stops a gig key steering a run into an
+arbitrary registered repository.
+
+**The runner checks again.** `run_execution` re-resolves the binding before it picks a
+working directory, because the project can be deleted, switched off or moved between
+queue and run. A binding that no longer holds **fails** the execution with
+`Project binding refused (<code>): <reason>`; it never falls back to the scratch dir.
+
+**Working-directory precedence** is one pure function, `pick_exec_dir_lane`
+(`engine/runner/mod.rs`): `_projectId` → per-execution worktree of a `devProjectId`
+pin → a team step's `_worktree` envelope → `homeProjectId` → the per-persona scratch
+dir. A bound run skips worktree isolation (isolation stays a `devProjectId`-pin
+behaviour), ignores a step envelope and the home project, and is never swept by the
+scratch-dir GC, which now runs only on the scratch lane.
+
+**What a bound run leaves in the gig folder.** The runner writes into whatever
+directory it runs in, and a bound run's directory is the gig folder. Recorded, not
+changed:
+
+| Path in the run dir | Written when | Cleaned up |
+| --- | --- | --- |
+| `.claude/personas-mcp-config.json` (system API key, delegate key) | always, when the personas-mcp binary is found | yes — explicit scrub before finalize plus a Drop guard; a force-kill leaves it until the next run's pre-sweep |
+| `.claude/skills/personas-connector-<slug>/SKILL.md` | `skills_sidecar_enabled` (default **ON**) and the persona has connector usage hints | never |
+| `.claude/browser-mcp-config.json` (bridge session token, revoked on drop) | the persona binds the `browser` connector | on Drop at the end of the run |
+| `.claude/settings.json` (hooks) | `PERSONAS_HOOKS_SIDECAR=1` (default off) — **overwrites** an existing file | never |
+| `.personas/session_queue.jsonl` | same env | truncated, not deleted |
+| `.claude/persona-memory.md` + an `@.claude/persona-memory.md` line appended to `CLAUDE.md` | `PERSONAS_CLAUDE_MD_PROJECTION=1` (default off) | never |
+| `.claude/delegate-audit.jsonl` | mixed / local-first engine mode | never |
+| `.personas/project.json` | written by `register_project`, not the runner | never (it is the folder's identity marker) |
+| anything the agent writes | always | never |
+
+**What a `personas:build` key can and cannot do.** It can register a project only under
+an allowed root, and adopt into its workspace only a pre-existing project whose folder
+is under one; it can bind its personas' runs only to projects under an allowed root in
+their own workspace. The roots are the operator's — the `personas:approve`-only route
+or a process-level env override — and nothing a kp key can send widens them.
+
+Tested in `personas-db` (`execution_project::tests` — 12: input parsing, valid, unknown,
+switched off, folder gone, no workspace, other workspace / project team / unhomed, roots
+list parsing (separators, missing entries), env-over-setting resolution and the
+setting read from the database, strict component-wise containment incl. the
+sibling-prefix trick and the root itself, case-insensitivity on Windows, `..` escape
+after canonicalisation, a binding outside the roots / with no roots / at the root;
+`workspaces::org::tests::ensure_workspace_is_idempotent_by_name_and_does_not_modify`)
+and `app_lib` (`management_api::workspaces::tests` — workspace create/idempotency/
+validation, root-path checks, allowed roots (unset ⇒ nothing registered, outside,
+sibling prefix, root itself, valid descendant), project idempotency, workspace placement + 404 + 409 +
+adoption, placement intake validation; `approval_exec_core::tests` — explicit placement
+wins over the active workspace, absent placement keeps today's filing, a deleted
+placement workspace errors; `runner::exec_dir_lane_tests`).
+
+### 10.10 The operator approval API — deciding without the desktop UI (2026-09-25)
+
+The human gate on a kp hire (and on a cloud pairing) is a click in the desktop app.
+That stays true, but the click no longer has to happen *in the window*: the local
+operator can decide over HTTP, with a key no external app can ever hold.
+
+**Where the click lives in the UI**, since that is what the operator could not find.
+There is no inbox page. A pending kp hire is an Athena approval:
+
+1. **The Athena orb** (on by default, floating over every page). Its decision bubble
+   reads "Kp Hire Request: <rationale>" with **Approve** / **Reject**. With the bubble
+   showing, press `;` then `1` (approve) or `2` (reject).
+2. **The Athena chat panel.** Tap the orb, or, when the orb is off, the Athena avatar in
+   the footer's right cluster ("Open Athena"). The card sits below the transcript:
+   "Athena proposes" · chip "Kp Hire Request" · rationale · collapsed "Parameters"
+   (raw JSON) · **Approve** / **Reject**.
+3. Home → Cockpit's briefing shows the newest approval once per session (only when
+   there is a previous session to compare with). The Home "Decisions" widget and the
+   unified inbox do **not** list these — they read manual reviews.
+
+Only pending rows from the last 24 h are listed, newest 50. Until 2026-09-25 a new kp
+hire did not appear **live**: the intake inserted the row and emitted nothing, and the
+frontend fetches approvals once per session and on `companion://approvals`. The intake
+now emits `companion://approvals` for the new card (`kp_create_persona_request`), so it
+shows up without a restart or an Athena turn.
+
+**The scope: `personas:approve`** (`personas_db::operator_key::APPROVE_SCOPE`).
+
+- **Never pairable.** It is not in the pairing lane's ceiling
+  (`pairing::PAIRABLE_EXACT`), so a pairing request naming it is never offered it,
+  and `approve_pairing_core` refuses to mint it (tested:
+  `pairing::tests::a_pairing_request_never_receives_the_approve_scope`,
+  `operator::tests::operator_pairing_approval_stays_under_the_ceiling`).
+- **Never implied.** `authorize` checks the exact string for every method on
+  `/api/approvals*` and `/api/pairings*`, reads included (the list shows who asked for
+  what). kp's `read + build` key, a key holding a hire's `execute:persona:<id>`, broad
+  `personas:execute`, `proxy` and `personas:test` all get 403
+  (`authorize_operator_routes_need_the_exact_approve_scope`). The operator key in turn
+  reaches no mutating route besides these.
+
+**The key: `operator-local`, delivered as a file.** At every desktop boot
+(`boot::services::ensure_operator_api_key` → `personas_db::operator_key::ensure_operator_key`)
+one external API key named `operator-local` with scopes
+`["personas:read","personas:approve"]` is reconciled with the file
+**`<app data dir>/operator-api-key`** — on Windows
+`%APPDATA%\com.personas.desktop\operator-api-key` (or `$PERSONAS_DATA_DIR/operator-api-key`),
+beside `personas.db` and `master.key`.
+
+- **Reuse** when the file's token still resolves to an active `operator-local` key with
+  exactly those scopes (stray active duplicates are revoked).
+- **Re-mint** otherwise — file missing, unreadable, garbled, or holding another key's
+  token. The table stores only a hash, so an existing key whose token is not in the file
+  is unreachable: every active `operator-local` key is revoked first, then a fresh one is
+  minted and written. If the write fails, the new key is revoked too.
+- The write is atomic (a sibling temp file renamed over the target). On Unix the file is
+  `0600`. **On Windows it relies on the ACL it inherits**: the directory is under the
+  user profile, and `init_db` restricts it to the current user
+  (`restrict_dir_permissions`, inheritable). No `icacls` call is made for the file.
+- The token is never logged — boot logs the key id, prefix and file path only.
+- **Why this is default-ON.** Whoever can read that directory already controls the
+  install: the database, `master.key` and every credential it decrypts are there. A
+  token readable only by them grants nothing they did not already have. The key has no
+  expiry and no origin binding; revoke it in Settings → API Keys and it is re-minted
+  (with a new token in the file) at the next boot.
+- **Opt out:** `PERSONAS_OPERATOR_KEY=0` (`false`/`off`/`no`) at launch revokes every
+  active `operator-local` key and deletes the file.
+
+**Routes** (all 403 without `personas:approve`; refusals carry a snake_case `code`):
+
+| Route | Does | Answers |
+| --- | --- | --- |
+| `GET /api/approvals?status=pending&action=<optional>` | The inbox's own read (`pending_approval_rows`, shared with `companion_list_pending_approvals`): fresh pending rows, newest 50, optionally one action. | `{approvals:[{id, action, createdAt, expiresAt, rationale, summary, requestedBy:{keyId,keyName}\|null}]}`; `summary` for `kp_hire_request` = `{personaName, jobTitle, jobId, placementWorkspaceId, placementWorkspaceName, maxBudgetUsd, connectors, appMaster}`, else `null`. 400 `unsupported_status` for any status but `pending`. |
+| `POST /api/approvals/{id}/approve` `{note?}` | Claims the row with the same `pending`→`running` CAS the click uses (`claim_pending`), stamps the actor, then runs **the same function the Approve button runs** (`approve_claimed`: executor table, finalize, episode log, Athena's reaction turn). A kp hire therefore creates the draft persona, grants kp `execute:persona:<id>`, starts the build and pushes `approved` to kp. | `{id, action, status: approved\|approved_failed, message, decidedBy, personaId, buildSessionId, building}` — `building` is true for an approved kp hire whose one-shot build started; poll `GET /api/kp/persona-requests/{id}` for `active`. 404 `approval_not_found`; 409 `approval_not_pending` (decided, in flight, or past the 24 h window); 400 `invalid_body` / `invalid_note`; 500 `approval_execution_failed`. |
+| `POST /api/approvals/{id}/reject` `{reason?}` | Same claim, then **the Reject button's function** (`reject_claimed`; a kp hire's requester is notified `rejected` with the reason). | `{id, action, status: rejected, message, decidedBy}`; same 404/409/400 codes (`invalid_reason`). |
+| `GET /api/pairings/pending` | `pairing::list_views()` — what the pairing modal shows. | `{pairings:[{nonce, origin, appName, requestedScopes}]}` (scopes already moulded to the ceiling). |
+| `POST /api/pairings/{nonce}/approve` `{scopes?, expiresInDays?}` | **The Tauri command's code** (`approve_pairing_core`): mints the origin-bound key, adds the CORS origin, stashes the token for `/pair/claim`. `scopes` defaults to the request's pairable scopes. | `{nonce, status: approved, origin, keyId, scopes, decidedBy}`; 404 `pairing_not_found`; 400 `scope_not_pairable` (e.g. `personas:approve`, `proxy`), `no_scopes`, `invalid_body` (`expiresInDays` 1..3650). |
+| `POST /api/pairings/{nonce}/reject` | `pairing::set_rejected`, as the Tauri command. | `{nonce, status: rejected, origin, decidedBy}`; 404 `pairing_not_found`. |
+
+**The actor.** `companion_approval` has no `decided_by` column and the UI click records
+no actor. Like the headless bridge (§13.2), an operator decision is merged into the
+row's payload as `decidedBy: "operator-api:<key id>"`, `decidedAt`, and `decisionNote`
+(the note or reason), stamped after the claim and before the executor runs. A row with
+no `decidedBy` was a human click. Pairing decisions write `operator-api:<key id>` as the
+`settings_audit_log` source where the UI writes `ui`.
+
+**What it does not do.** It creates no approvals and has no auto-approve; nothing
+decides unless a caller holding the operator key asks. The headless bridge
+(`PERSONAS_HEADLESS_BRIDGE=1`, §13) is unchanged and separate.
+
+Tested in `personas-db` (`operator_key::tests` — first boot mints and the token lives
+only in the file, a second boot reuses it untouched, missing/garbled file revokes and
+re-mints, a file holding another key's token is not reused, opt-out revokes and
+removes, the env switch is default-on), `personas-engine`
+(`pairing::tests::a_pairing_request_never_receives_the_approve_scope`) and `app_lib`
+(`approval_operator::tests` — the CAS lets exactly one claim win, decided/expired rows
+are not pending, the actor stamp, the shared pending read carries the requesting key;
+`management_api::operator::tests` — timestamps, the kp summary, the pairing ceiling;
+`management_api::tests::authorize_operator_routes_need_the_exact_approve_scope`).
+
+### 10.11 Two desktop instances on one database — who runs an execution (recorded, not changed)
+
+Measured from the code on 2026-09-25, after a live run in which one instance accepted
+kp's executions and another ran them:
+
+- `POST /api/execute/{id}` inserts the execution row as `queued`
+  (`management_api::execute_persona` → `executions::create`) and calls
+  `start_execution` on **the serving process's own engine**. With a free slot in that
+  process's in-memory tracker it spawns the run in-process at once
+  (`src/engine/execution.rs`, `start_execution` / `spawn_execution_task`); without
+  one, the context is held only in that process's memory (`queued_contexts`) and the
+  row stays `queued`.
+- **Re-admission is per boot, per instance, not leader-gated.**
+  `requeue_persisted_executions` selects every `status='queued'` row and starts each on
+  the booting process's engine (`execution.rs`, spawned from `boot/mod.rs` /
+  `boot/workers.rs`) — before, and independent of, `start_engine_leadership`. A second
+  instance booting while a row is still `queued` therefore runs it on **its** runner.
+  There is no periodic cross-process drain.
+- **The claim is not atomic on those paths**: `running` is written with an
+  unconditional `update_status`. A compare-and-swap exists only for promoting a run
+  that waited in the same process's memory (`executions::promote_if_queued`);
+  `executions::claim_for_instance` (CAS with a TTL) has no production caller.
+- **The engine-leader lock gates background loops**, not executions: subscription loops
+  are leader-only by default (one opts out), and persona-jobs, the curation scheduler,
+  workspace GC, the Discord/Slack pollers and cloud sync check `is_leader()`. A second
+  instance fails `try_acquire`, runs as a follower and retries leadership on each
+  heartbeat; `PERSONAS_FOLLOWER=1` pins it a follower. Crash recovery is skipped on a
+  follower; queue re-admission is not.
+
+Consequence for this bridge: every check a runner repeats must read shared state, not
+process state — which is why the allowed roots moved into the database (§10.9).
+
+### 10.12 Requirement-driven hires — kp sends requirements, Personas designs (2026-09-25)
+
+Operator decision, verbatim: *"KP should not create prompts, KP should extract
+requirements for agent based on research. Personas should create agent in alignment
+with its design to execute it, so we are able to overview and manage in the app."*
+
+The live finding behind it: for kp gig hires the one-shot design pass wrote its own
+`structured_prompt` — which `prompt::assemble` renders **instead of** the system prompt,
+so kp's `systemPromptDraft` never reached a run — and, reading only a mission sentence
+and a connector list, it invented a GitHub-commit phase from the `source_control`
+connector for an agent whose outputs are local files. (Build-prompt rule 11 appends a
+"commit after each green cycle" TDD cycle to any code-flavoured persona; nothing told
+the design pass that did not apply.)
+
+**Wire.** `spec.requirements` (`kp.agent-requirements.v1`, schema `KpAgentRequirements`
+in the OpenAPI file) replaces `spec.systemPromptDraft`, which is simply omitted — it has
+always been optional. Other kp hires (recruiting, App master) are unchanged.
+
+| Step | Where | What |
+| --- | --- | --- |
+| Intake | `management_api::validate_kp_requirements` → `personas_engine::kp_requirements::normalize` | `kind` must be `kp.agent-requirements.v1`; serialized ≤ 32 KB, arrays ≤ 30, strings ≤ 1000 chars after trimming; known fields must parse. Refusals are 400 **with a code** (`invalid_requirements`, `requirements_too_large`, `requirements_too_many_items`, `requirements_string_too_long`). The approval payload stores the NORMALIZED object (strings trimmed, unknown keys verbatim). The card's rationale gains `designed from kp requirements (N constraint(s))`. |
+| Intent | `approval_exec_core::kp_hire_intent` → `kp_requirements::render_intent_section` | The unchanged intent (mission, job, preferred connectors, success metrics) plus a **"Requirements from kp — AUTHORITATIVE"** section. It opens with **how to resolve this hire** — an ANSWER, in the pass's own vocabulary, for every dimension it must fill: capabilities = the Responsibilities and nothing else; trigger = `manual` (one run per `inputs.assignment`); connectors and tools = exactly the Tools list, by name; with local-file outputs, output destination = the working folder with *no commit / push / PR / publish / post / send / bid / message / notify step and no connector for one* (a platform default such as a test-driven commit cycle does not apply) and review policy = `never`; every other field a safe default with no clarifying question; every MUST constraint into the behavior core's `constraints` and `structured_prompt.instructions` (and `errorHandling` where it governs a failure); keep the design compact. Then role/purpose, the numbered MUST constraints, tools with their why, outputs, budget, and an informational tail (responsibilities, craft, research, inputs). The requirements win over the mission sentence where they differ. |
+| Store | `KpLink.requirements` (`core/src/models/persona.rs`) | Carried **inside** `design_context.kpLink`, so `promote_build_draft`'s design_context rebuild — which re-injects `kpLink` whole (§10.5, the app-master-p4 trap) — keeps it by construction. `None` serializes exactly as before. The draft persona's placeholder system prompt names the role instead of the generic stub. |
+| Verify | `prepare_promote` → `build_session::apply_kp_requirement_constraints` → `kp_requirements::pin_constraints` | See below. |
+| Show | Design → Manifest tab (`sub_design/components/KpRequirementsPanel.tsx`) | A "Requirements from kp" section above the manifest: purpose, role/arena/niche/budget and every MUST constraint always visible; responsibilities, craft, research, inputs, outputs and tools behind one disclosure. Renders nothing for any other persona. |
+
+**Length.** The design pass has no hard cap on the intent — it is written to the CLI
+over stdin, not argv, and the build prompt around it is already a large rule set for a
+200K-context model. The intent does also drive the keyword template match and the gate
+heuristics, and the sibling channel for user reference context is clipped at 8 000
+chars, so the section is capped at `MAX_INTENT_SECTION_CHARS` (8 000, the same as that
+channel). The binding head (answers, role, constraints, tools, outputs, budget) is always
+rendered in full; only the informational tail is clipped, with a visible marker, and its
+lists are capped first (research lists 6, success criteria 5, lessons 3) — the full object
+stays on the persona and in the panel. A maximal 30-constraint object keeps
+every constraint (`kp_requirements::tests`).
+
+**The first live hires stalled — and why (2026-09-25).** The first two requirement-driven
+hires (sessions `658fd89a…`, `a0d97843…`) failed `design_pass_stalled`: three turns, zero
+resolutions, $7.50 and 20 minutes spent. The CLI transcripts
+(`~/.claude/projects/…build-session-*/…jsonl`) show two failure shapes, neither of them
+the design being wrong:
+
+1. **The reply outgrew the line cap.** A one-shot pass writes its whole event stream in one
+   reply, which the CLI delivers as ONE stream-json `assistant` line (and again in the
+   `result` line). With requirements the replies were 78-82 KB (82-86 KB as envelopes); the
+   build runner read stdout through the shared `cli_process::MAX_LINE_BYTES` of 64 KB, got a
+   clipped prefix, parsed nothing from it (`events=["Progress", …]`), and the stall detector
+   fired. It was latent before: a no-requirements hire's first reply (62 KB, a 66 KB envelope)
+   was lost the same way and only its SECOND, shorter reply got through. Fix: the runner
+   reads through `read_line_within_capped_oob` with `BUILD_STREAM_MAX_LINE_BYTES` (4 MB), and
+   a line that still hits the cap is logged at warn and reported into the build's own event
+   stream instead of passing as "no progress".
+2. **The events were emitted through a tool.** In `658fd89a` the model wrote every event as a
+   Bash `cat <<'JSONSTREAM'` heredoc or a Python script's `print` — 27 Bash calls, 3 file
+   writes — and replied with a 3.5 KB summary. The runner reads only the reply text, so the
+   events never existed for it. Fix: the build prompt's Output Format now says to write every
+   event directly in the reply and never through a tool, and why.
+
+The intent was reworded at the same time (answers instead of prohibitions, lists capped,
+8 000-char ceiling) so the pass has less to restate; the size of the requirement was a
+contributor, not the defect. Regressions: `runner::long_reply_tests`,
+`cli_process::tests::a_caller_chosen_cap_returns_a_line_over_the_default_whole`,
+`kp_requirements::tests::every_dimension_the_pass_resolves_has_an_answer` /
+`tail_lists_are_capped`.
+
+**The constraint check — pin, then report.** A key-term match can confirm that a
+constraint's words are in the designed prompt but not that the rule survived: "avoid
+sending" shares every key term with "never send". So the guarantee is structural, and the
+match is only a report:
+
+1. Before touching anything, each constraint is checked against the design's own words
+   (every `structured_prompt` section, `system_prompt`, and the v3 persona block): it
+   counts as *reflected* when ≥ 60% of its content-word stems (6-char stems, stopwords
+   out) appear.
+2. A marker-delimited block (`### Constraints from kp — MUST hold on every run` …
+   `(end of kp constraints)`) listing **every** constraint verbatim is **prepended** to
+   `structured_prompt.instructions` — the section the runtime renders — replacing any
+   earlier copy. No structured prompt ⇒ appended to `system_prompt`; neither ⇒ a new
+   structured prompt holding just the block.
+3. Constraints missing from the v3 persona block's `constraints[]` are appended there, so
+   `last_design_result.persona` agrees with the prompt.
+4. The outcome goes to `setup_detail.notes` beside the surface-trim notes —
+   `kp requirements: K of N constraint(s) were reflected by the design pass in its own
+   words; all N are pinned verbatim …` plus one line per constraint the design omitted.
+
+Nothing is ever dropped silently: a stored object that no longer parses is logged at warn
+and leaves the IR untouched rather than pinning half a set; an executor payload whose
+requirements no longer parse fails the hire rather than building from the mission alone.
+
+**The manifest seam.** Seeding a persona's `manifest.md` (opening the Manifest tab, the
+growth/sleep cycles) switches prompt assembly from the structured prompt — where the block
+was pinned — to the manifest. `persona_brain::manifest::render_law_seed` therefore writes
+each requirement constraint into `# Boundaries` as `- (kp requirement) …`, once each (a
+legacy-core constraint with the same text is not repeated).
+
+**Tests.** `personas-engine` `kp_requirements::tests` (intake bounds and codes, trimming,
+unknown keys, the golden intent section for the contract example, clipping that keeps every
+constraint, the pin/report pair, idempotent re-pin, the no-structured-prompt paths);
+`personas-core` `kp_link_tests` (verbatim round trip, no key when absent); `app_lib`
+`management_api::tests::kp_requirements_*` / `kp_hire_without_requirements_is_unchanged`,
+`approval_exec_core::tests::kp_hire_intent_*` (byte-identical intent without requirements),
+`build_sessions::tests::promote_reinjects_kp_requirements_and_pins_every_constraint` /
+`promote_of_a_kp_hire_without_requirements_is_unchanged`,
+`manifest::tests::kp_requirement_constraints_are_seeded_into_boundaries`; vitest
+`sub_design/libs/__tests__/kpRequirements.test.ts` and
+`sub_design/components/__tests__/KpRequirementsPanel.test.tsx`.
+
+**Known gaps.** The intent section is guidance to a model: a design pass can still add a
+phase the requirements did not ask for, and only the tool/connector half of that is
+enforced (§10.5's surface trim, driven by `spec.connectors`). The constraint block is
+enforced; an invented *phase* is not detected. The panel reads `design_context` directly
+because `parseDesignContext` (`sub_lab/use-cases/UseCasesList.tsx`) rebuilds a
+`kpLink`-only envelope without the link.
+
+### 10.13 A restart never orphans a hire's build (2026-09-25)
+
+**What was true.** A build session's state is the `build_sessions` row
+(`db/src/repos/core/build_sessions.rs`); its progress is one tokio task in the process
+that started it (`BuildSessionManager::start_session`, `engine/build_session/mod.rs`),
+with the CLI child and the answer channel held only in that process's memory. `analyzing`
+means "the design pass is running turns" and is written once when the run starts; the row
+is next written at the end of a turn (up to ~15 minutes later). Nothing at boot read
+`build_sessions`: `boot::recovery::recover_interrupted_work` classifies executions and
+fails n8n / pipeline / lab runs, and skips entirely when another instance leads. The only
+thing that ever settled a dead session was the cleanup tick's 24 h sweeper
+(`expire_stale_non_terminal`). The claim columns migration e07 added to
+`build_sessions` (`claimed_by_instance`, `claim_expires_at`) had never been written. So
+when another session's instance restarted the app at 19:14 local, both gig hires in
+flight (build sessions `3532ed2b…`, `75c5f399…`) read `approved` / `analyzing` /
+`buildFailureReason: null` to kp's poller, and would have for a day.
+
+**Ownership.** Each process's `BuildSessionManager` has an owner id (a fresh UUID per
+launch). `start_session` claims the row it creates (`claimed_by_instance`,
+`claim_expires_at = now + 180 s`), and the runner task refreshes the claim every 30 s for
+as long as it is alive (`build_sessions::heartbeat`, which only lands for the claiming
+owner on a non-terminal row). The engine-leader lease is deliberately not the signal: a
+follower runs its own builds in-process, so who leads says nothing about who runs a
+session.
+
+**Recovery at boot** (`engine::build_session::restart::recover_after_restart`, spawned
+from `boot::mod` right after the durable execution queue is re-admitted;
+`build_sessions::recover_orphans` holds the data half). Not leader-gated, because the
+claim is per session. A session is an **orphan** when it is non-terminal and either its
+claim has lapsed, or it carries no claim at all (a build started by code older than this,
+like the two above) and has not been written for an hour — a live build writes at least
+once per turn, and a turn is bounded by the 10-minute CLI silence watchdog. Interactive
+sessions count only in phases where a process was working (`initializing`, `analyzing`,
+`resolving`, `testing`); one parked on a person (`awaiting_input`, `draft_ready`,
+`test_complete`) is not in flight and keeps waiting. Each orphan is then:
+
+| Case | Outcome |
+| --- | --- |
+| a **kp hire's one-shot build** (persona carries `kpLink`), last written within 2 h, never resumed before | **resumed in place**: the same row, so kp's stamped `buildSessionId` still points at it, reset to `initializing` (cells, question, agent_ir, error and pid cleared), claimed by the recovering process, and recorded as `{"phase":"resumed_after_restart","from_phase":…}` in `phase_timings_json`; its runner starts again from the persisted intent, mode, workflow/parser inputs and companion link |
+| already resumed once (the ledger shows it) | **failed**: `interrupted_by_restart: … it had already been resumed once after an earlier restart. Start the build again.` — so a crash loop buys at most one extra design pass |
+| a kp hire's one-shot build last written more than 2 h ago | **failed**: `interrupted_by_restart: … more than 2 hours before it could be resumed, so it was not rebuilt.` — kp's poller gives a hire minutes, and a rebuild nobody waits for spends a design pass on a persona a rehire has likely replaced |
+| anything else (other one-shot doors, interactive) | **failed**: `interrupted_by_restart: … It could not be resumed automatically; start the build again.` Those doors may have passed `language` / `context`, which the row does not persist, so a rerun could not be faithful |
+
+Every write is a compare-and-set on the orphan predicate, so two instances booting together
+settle a row once, and a session a live instance claims in between is left alone. A failed
+session is terminal, so `GET /api/kp/persona-requests/{id}` answers `status: "failed"` with
+the reason as `buildFailureReason` (§10.1), and kp's poller settles. A resume whose runner
+cannot start is failed with the same prefix rather than left looking in flight.
+
+**Tests.** `personas-db` `build_sessions::tests` — an orphan is resumed once in place; a
+second restart fails it instead; a session a live instance owns (fresh claim, or an
+unclaimed row written moments ago) is left alone and only its owner's heartbeat lands;
+terminal sessions are untouched; a silent unclaimed session that cannot resume is failed
+with the reason; a resumable orphan past the window is failed; interactive sessions are
+recovered only in working phases. `app_lib`
+`build_session::restart::tests::only_a_kp_hires_one_shot_build_is_resumable`.
+
+**Known gaps.** Recovery runs at boot only: when one instance dies and another stays up,
+the survivor settles the dead one's sessions at its own next boot (the 24 h sweeper still
+catches them if it never restarts). A resume reruns the whole design, including for a
+session interrupted at `testing` / `test_complete` whose agent_ir was already written.
+
+### 10.14 One persona per gig — model on hire, project link, gig persona policy, retire (2026-09-29)
+
+kp's gig desk moved from one reusable "niche specialist" persona serving dozens of gigs
+to **one persona per gig**: hired when the operator accepts a gig's plan, retired when
+the gig ends. Five additive changes carry that; kp builds against them (WP3 of kp's
+gig-mastery spark). Everything a request did before is unchanged when it sends none of
+the new fields.
+
+| Change | Wire | Where |
+| --- | --- | --- |
+| Model on hire | `spec.modelProfile: {model, effort?}` → the persona's `model_profile` | intake `kp_gig::validate_model_profile`; executor `approval_exec_core::kp_hire_model_profile` |
+| Project link | `placement.projectId` → `design_context.homeProjectId` | intake `kp_gig::validate_hire_project` → `execution_project::resolve_hire_project`; executor `resolve_hire_home_project` |
+| Gig persona policy | operator setting `kp.gig_persona_policy`; request `fit.kind` | `personas_db::kp_gig_policy`; `approvals::policy_approve_kp_hire`; UI Settings → API Keys |
+| Retire | `POST /api/kp/personas/{personaId}/retire` | `kp_gig::retire_kp_persona` |
+| Knowledge in requirements | `spec.requirements.knowledge[]` | `kp_requirements::render_intent_section` |
+
+**Model on hire.** `model` is 1..100 characters with no whitespace or control characters
+(it becomes one `--model` argv token); `effort`, when present, one of `low`, `medium`,
+`high`, `xhigh`, `max` — the CLI's vocabulary, one wider than `model_routing::EFFORT_LEVELS`
+(which lacks `max`). Anything else is 400 `invalid_model_profile`. **Only `model` and
+`effort` are stored**: a `provider`, `base_url` or `auth_token` in the same object is
+dropped at intake, because those two fields decide where a persona's prompt is sent and
+with which credential, and no kp key may choose that. Promote keeps it: a kp-linked draft
+that already carries a `model_profile` is not re-seeded with the design pass's solo
+use-case model (`build_sessions::kp_requested_model_is_pinned`); a kp hire that named no
+model takes the seed as before. *Recorded, not changed:* a charter's `modelOverride` or
+declared difficulty still outranks the persona profile on a charter-focused run (Q15,
+`prompt::resolve_charter_model_choice`). A plain `POST /api/execute/{id}` run — how kp
+dispatches — resolves no use case and runs on the persona's profile.
+
+**Project link.** A home project is the persona's default working directory
+(`runner::pick_exec_dir_lane`'s `HomeProject` lane) and the persona → project link the
+Monitor reads, so it is held to the per-run `_projectId` boundary (§10.9): the project
+exists, is on, its folder exists and lies strictly inside the allowed HTTP project roots,
+and it is in `placement.workspaceId`. With no `workspaceId`, the project's own workspace
+becomes the placement (written into the stored request, and named on the card); a
+project in no workspace, or in a different one, is 403 `project_outside_persona_workspace`.
+Other refusals: 400 `invalid_placement`, 404 `project_not_found`, 403
+`project_outside_allowed_roots`. The executor re-checks with `resolve_bound_project`
+against the placement's group before the persona exists and **fails** the hire if the
+project no longer passes. Promote re-injects `homeProjectId` into the rebuilt
+design_context, the same way it re-injects `kpLink` and `devProjectId`.
+
+**The gig persona policy.** At a hundred open gigs the per-hire click is a hundred clicks,
+so the operator approves a bound once. `kp.gig_persona_policy` =
+`{enabled, maxBudgetUsd: number | null, allowedModels[], rootPath}`, default disabled, stored in the
+shared database like `management.http_project_roots` and, like it, **operator-only**
+(`settings_keys::is_operator_only`): the generic writers refuse it, so no management-API
+route a kp key can reach moves it. Its one writer is the Tauri command
+`kp_gig_persona_policy_set` behind the desktop session — Settings → API Keys → "Gig persona
+policy" — which trims and de-duplicates the models and stores `rootPath` canonical (an
+absolute existing directory, no `..`, not a drive root; an enabled policy needs one). A
+malformed stored value reads as disabled. A request is approved on the operator's behalf
+only when ALL hold (`kp_gig_policy::evaluate`, checked on the normalized request):
+
+1. the policy is enabled;
+2. the top-level `fit.kind` is `kp.gig-persona.v1`;
+3. when the policy names a cap, `spec.maxBudgetUsd` is present and `<= maxBudgetUsd`;
+   `maxBudgetUsd: null` (or an absent key) is **no cap** — the request's budget is then
+   neither required nor compared, and one that carries a budget is still inside. The
+   operator decided (2026-09-29) that gig personas run unbudgeted, and kp stopped sending
+   `spec.maxBudgetUsd` for them; a stored cap is range-checked (0 … 10 000) and a
+   number, never a large sentinel, is how a cap is expressed. The Settings field saves
+   empty as `null`, and refuses to save text it cannot read as a number (a typo must not
+   read as "no cap");
+4. `spec.modelProfile.model` is on `allowedModels` (ASCII case-insensitive);
+5. `placement.projectId` names a project whose folder is strictly inside `rootPath`
+   (component-wise, both sides canonicalised — the containment the roots check uses).
+
+On a match the intake inserts the row as always, then `approvals::policy_approve_kp_hire`
+claims it through the same `pending` → `running` CAS every decision path takes, stamps
+`decidedBy: "policy:kp.gig_persona_policy"` (+ `decidedAt`, `decisionNote`), and runs
+`execute_claimed` — the executor table, finalize and episode log the Approve click runs
+(`approve_claimed` is now that plus Athena's reaction turn). So the draft persona, the
+build, the placement filing and the per-persona execute grant (§10.8, read off the row's
+`requested_by_key_id`) are exactly what an operator approval produces. Left out on
+purpose: Athena's reaction turn and the approval-card event (nobody needs to click). The
+response is `{requestId, status, autoApproved: true, approvedBy:
+"policy:kp.gig_persona_policy", personaId, message}` where **`status` is `"approved"`** —
+the value the status GET reports for the same row until the build promotes (then
+`active`) — or `"failed"` when the executor could not create the hire (the row is
+`approved_failed`). A request that misses a bound waits for the operator exactly as
+before; when it named the gig-persona `fit.kind`, its card says which bound it missed
+(`— gig persona policy did not apply: …`). The headless bridge (§13) keeps its own path
+and is not consulted.
+
+**Retire.** `POST /api/kp/personas/{personaId}/retire` (`personas:build`). Ownership is
+the approval record: a persona is this key's only when a `kp_hire_request` row with
+`requested_by_key_id` = this key carries `result.personaId` = that persona
+(`kp_execute_grant::key_hired_persona`, the same record the grant is issued from). Another
+key's persona — or one no kp request produced — is 403 `persona_not_hired_by_this_key`;
+an id this key never hired and nobody has is 404 `persona_not_found`.
+
+The persona is **archived, not deleted**, and that is a deliberate reading of the brief
+rather than a shortcut: `persona_executions.persona_id` is `ON DELETE CASCADE`
+(`migrations/schema.rs`), so the hard delete `delete_persona` performs would destroy the
+gig's past executions, which the contract keeps. The archive is
+`personas::archive_persona` (the Archive command's and `/api/kp/test/retire`'s function):
+lifecycle `archived`, nothing cascades — executions, the project, its milestones and goals
+stay. The access half is the one `delete_persona` performs: `revoke_on_retire` removes the
+key's `personas:execute:persona:<id>`. An App master hired through kp also has its mandate
+ended through the shared probation carry-out (`carry_out_retired_mandate`, now shared with
+`/api/kp/test/retire`). Answers `{retired: true, already, personaId, archived,
+executeGrantsRevoked, mandate}`; a persona already archived, or already deleted by the
+operator, that this key hired answers 200 with `already: true`. In-flight executions are
+not cancelled, and no `retired` lifecycle push is sent (kp asked).
+
+**Knowledge in requirements.** `spec.requirements.knowledge: [{bundle, subject, title?,
+path?}]` (≤ 12, else `requirements_too_many_items`) names the registry subjects the
+persona must consult. The intent's answers gain "Expertise: the instructions name every
+registry subject under Knowledge below as a source the agent consults before it decides
+anything in that area", and a `### Knowledge` list — "Consult the registry subject
+`<bundle>/<subject>` (title) before deciding anything in its area — `path`." — sits
+beside the craft, early in the tail so the 8 000-char cap clips research and inputs first.
+An entry without `bundle` or `subject` is kept on the persona and not rendered; absent ⇒
+nothing, and the golden intent section is byte-identical.
+
+**Tests.** `personas-db` `kp_gig_policy::tests` (every bound approves; each bound missed
+in turn — disabled, wrong/absent fit kind, no budget, over budget, model not allowed, no
+model, no project, unresolvable project, project outside the root, the root itself, a
+sibling prefix; a policy with no cap approving a request with no budget and with any
+budget; the request read off the wire; the stored value's shape, `null` and an absent
+`maxBudgetUsd` both parsing to no cap; fail-closed
+load; the generic writer refused), `execution_project::tests::a_hire_home_project_is_held_to_the_binding_boundary`;
+`personas-engine` `kp_execute_grant::tests::only_the_submitting_key_hired_the_persona`,
+`kp_requirements::tests::knowledge_entries_render_as_subjects_to_consult` /
+`absent_or_unknown_knowledge_renders_nothing_and_the_bound_is_twelve`; `app_lib`
+`management_api::kp_gig::tests` (model profile bounds and the dropped endpoint/token,
+placement project + derived workspace, the policy-miss card note, retire: own persona
+archived with grant revoked and project + milestone + executions kept, repeat and
+already-deleted answer `already`, another key's persona 403, a manual persona 403, unknown
+404), `approval_policy::tests` (the policy's claim and actor stamp, one decider wins, the
+execute grant equals an operator approval's, other actions refused),
+`approval_exec_core::tests::a_requested_model_profile_becomes_the_personas_model_profile` /
+`a_placement_project_becomes_the_home_project_only_inside_the_boundary`,
+`build_sessions::tests::promote_keeps_a_kp_gig_personas_requested_model_and_home_project`,
+`kp_gig_policy::tests` (the write command's normalization).
+
 ---
 
 ## 11. App master (P4) — the mandated hire
@@ -847,6 +1434,12 @@ kp can hire an **App master** — the single accountable owner of one
 application — instead of an ordinary persona. The difference is that the hire
 carries an application: a repository, a value ledger, a mandate that says how
 far the holder may go, a cadence, and a probation window.
+
+
+**From a terminal.** `node scripts/operator-approvals.mjs list | approve <id> [note] | reject <id> [reason] | pair-approve <nonce> | pair-reject <nonce>`
+reads the token from the key file itself (never printed, never passed on the command line) and
+prints one line per decision. It is the operator's tool; an agent uses it only when the operator
+asked it to decide on their behalf.
 
 ### 11.1 The wire (v2, additive)
 

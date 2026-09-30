@@ -78,6 +78,7 @@ mod e49_curator_plan;
 mod e50_curator_quiet;
 mod e51_curator_request;
 mod e52_curator_dispatch;
+mod e53_curator_method;
 mod e53_drop_auto_pr_columns;
 mod e54_dev_lifecycle;
 
@@ -154,6 +155,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e46_webbuild_plans::run(conn)?;
     e47_twin_setup_plan::run(conn)?;
     e48_retire_competitions::run(conn)?;
+    e53_curator_method::run(conn)?;
     e53_drop_auto_pr_columns::run(conn)?;
     e54_dev_lifecycle::run(conn)?;
 

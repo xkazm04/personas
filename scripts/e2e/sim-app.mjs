@@ -113,6 +113,22 @@ async function up() {
   // only: the sim-app branch carries nothing of its own, and a refusal here means a
   // sibling committed on it, which the orchestrator wants to see rather than merge over.
   if (ROOT !== MAIN_ROOT) {
+    // The previous launch's predev codegen rewrites these files in the app checkout, and a
+    // dirty file under them blocks the fast-forward below (2026-09-28: the app came up on
+    // week-old code with every fix of the day missing). Nobody edits them there by hand, so
+    // they are restored; any other dirty path is left alone and named.
+    const CODEGEN_OUTPUT = ['docs/concepts/golden-paths/', 'src/features/shared/components/CATALOG.md'];
+    try {
+      const dirty = execSync('git status --porcelain', { cwd: ROOT, encoding: 'utf8' })
+        .split(String.fromCharCode(10)).filter(Boolean).map((l) => ({ code: l.slice(0, 2), file: l.slice(3) }));
+      const generated = dirty.filter((d) => d.code === ' M' && CODEGEN_OUTPUT.some((p) => d.file.startsWith(p)));
+      if (generated.length) {
+        execSync(`git checkout -- ${generated.map((d) => JSON.stringify(d.file)).join(' ')}`, { cwd: ROOT, stdio: 'ignore' });
+        log(`restored ${generated.length} codegen output file(s) in the app checkout`);
+      }
+      const foreign = dirty.filter((d) => !generated.includes(d));
+      if (foreign.length) log(`app checkout has ${foreign.length} other dirty path(s): ${foreign.slice(0, 5).map((d) => d.file).join(', ')}`);
+    } catch { /* the fast-forward below reports what still blocks it */ }
     try {
       const before = execSync('git rev-parse --short HEAD', { cwd: ROOT, encoding: 'utf8' }).trim();
       execSync('git merge --ff-only master', { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
@@ -120,7 +136,9 @@ async function up() {
       log(`app checkout ${ROOT} at ${after}${before !== after ? ` (fast-forwarded from ${before})` : ''}`);
     } catch (e) {
       const first = String(e.stderr || e.message).trim().split(String.fromCharCode(10))[0].trim();
-      log(`could not fast-forward the app checkout to master: ${first}; launching what is there`);
+      let behind = '?';
+      try { behind = execSync('git rev-list --count HEAD..master', { cwd: ROOT, encoding: 'utf8' }).trim(); } catch { /* unknown distance */ }
+      log(`STALE: could not fast-forward the app checkout to master (${behind} commit(s) behind): ${first}; launching what is there`);
     }
   }
   const env = { ...process.env, PERSONAS_HEADLESS_BRIDGE: '1' };

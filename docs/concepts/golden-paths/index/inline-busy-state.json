@@ -85,6 +85,24 @@
       ],
       "resolved": false
     },
+    "recipes/sub_editor/components/RecipeEditor.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["156"],
+      "contexts": [
+        "| `agents/sub_tool_runner/components/ToolInvocationCard.tsx:156` · `recipes/sub_editor/components/RecipeEditor.tsx:156` · `sub_playground/tabs/RecipeVersionsTab.tsx:209` · `schedules/components/Sched…"
+      ],
+      "resolved": false
+    },
+    "recipes/sub_manager/components/RecipeManager.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["88"],
+      "contexts": [
+        "`agents/sub_use_cases/components/core/EventRenameModal.tsx:318` (`'Saving…'`) · `overview/sub_memories/components/MemoriesPageDense.tsx:216` · `MemoriesPageGraph.tsx:119` · `MemoryHeaderActions.tsx:3…"
+      ],
+      "resolved": false
+    },
     "schedules/components/ScheduleRow.tsx": {
       "count": 1,
       "sections": [7],
@@ -414,36 +432,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "sub_graph/GraphPanel.tsx"
-    },
-    "src/features/recipes/sub_editor/components/RecipeEditor.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["156"],
-      "contexts": [
-        "| `agents/sub_tool_runner/components/ToolInvocationCard.tsx:156` · `recipes/sub_editor/components/RecipeEditor.tsx:156` · `sub_playground/tabs/RecipeVersionsTab.tsx:209` · `schedules/components/Sched…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "recipes/sub_editor/components/RecipeEditor.tsx"
-    },
-    "src/features/recipes/sub_manager/components/RecipeManager.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["88"],
-      "contexts": [
-        "`agents/sub_use_cases/components/core/EventRenameModal.tsx:318` (`'Saving…'`) · `overview/sub_memories/components/MemoriesPageDense.tsx:216` · `MemoriesPageGraph.tsx:119` · `MemoryHeaderActions.tsx:3…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "recipes/sub_manager/components/RecipeManager.tsx"
-    },
-    "src/features/recipes/sub_playground/tabs/RecipeVersionsTab.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["209"],
-      "contexts": [
-        "| `agents/sub_tool_runner/components/ToolInvocationCard.tsx:156` · `recipes/sub_editor/components/RecipeEditor.tsx:156` · `sub_playground/tabs/RecipeVersionsTab.tsx:209` · `schedules/components/Sched…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "sub_playground/tabs/RecipeVersionsTab.tsx"
     },
     "src/features/scraper/EditorSteps.tsx": {
       "count": 1,
@@ -831,6 +819,15 @@
       "contexts": [
         "3. **The rule still matches its own corpus.** Ship it with `RuleTester` cases in `src/test/eslint-rules/customRules.test.ts` (the existing harness, 12 of 21 rules covered) — one `invalid` case per `m…"
       ]
+    },
+    "sub_playground/tabs/RecipeVersionsTab.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["209"],
+      "contexts": [
+        "| `agents/sub_tool_runner/components/ToolInvocationCard.tsx:156` · `recipes/sub_editor/components/RecipeEditor.tsx:156` · `sub_playground/tabs/RecipeVersionsTab.tsx:209` · `schedules/components/Sched…"
+      ],
+      "resolved": false
     },
     "teams/sub_kpis/{KPIConnectWizard,KpiDetailModal,KPIProposalModal,KPIsPage}.tsx": {
       "count": 1,

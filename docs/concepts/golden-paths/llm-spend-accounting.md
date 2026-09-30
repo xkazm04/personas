@@ -1,6 +1,6 @@
 # Golden path — LLM spend accounting
 
-> Situation node: `ai-agents/cost-and-budget/llm-spend-accounting` · [situation spine](../situation-spine.md)
+> Situation node: `ai-agents/cost-and-budget/llm-spend-accounting` · situation spine
 > Composed 2026-08-14. **Recurrence 37.**
 > Sweep: both of this repo's price tables (`engine/src/cost.rs`, `src/engine/http_engine/config.rs`) read in
 > full; the CLI stream parser (`engine/src/parser.rs`) and the two independent `result`-event readers
@@ -9,7 +9,7 @@
 > `engine/background.rs:2475-2528`, `db/src/chain.rs`'s cascade cost ceiling, `engine/deliberation.rs`'s
 > cost floor, and `stores/slices/agents/budgetEnforcementSlice.ts` read in full. Plus: a parse of every
 > money-typed DDL column in all **963** Rust files (matching
-> [`shared-facts.json`](../shared-facts.json) exactly); a census of every `SUM(cost)` re-aggregation vs
+> `shared-facts.json` exactly); a census of every `SUM(cost)` re-aggregation vs
 > every running money accumulator across `src` + `src-tauri`; **a read-only copy of the operator's live
 > database** (`personas-20260814-202519-00.db`, 347 MB, 2,193 executions / 4,001 audit rows / $3,682 of
 > real spend) queried for aggregate shapes only; and **293 real Claude-CLI `result` events** grepped out
@@ -25,7 +25,7 @@
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and every
+Per the portability test, the head is physically separated and every
 clause carries its **warrant**, so an adopting repo can tell physics from local calibration. No file path,
 primitive name or count appears below this line until the head ends.
 
@@ -431,7 +431,7 @@ one.**
 **The test is the reason nobody noticed.** `parser.rs:1095` hand-writes a fixture containing
 `"total_input_tokens":1500` at the top level, and `:1110` asserts the parser extracts it. The fixture is a
 shape the vendor has never emitted. It is a green gate over a dead field — the exact failure the
-[contract](../golden-path-contract.md#why-a-gate-is-required-at-all) names, in a unit test rather than in CI.
+contract names, in a unit test rather than in CI.
 
 **Consequence for accounting:** the recorded cost is *unverifiable by construction*. You cannot recompute
 $2,044 from tokens, because the tokens are zero. And the quantitative case against ever trying is in the
@@ -680,7 +680,7 @@ the same field is simultaneously the monthly cap, which is the collision in one 
 
 ## 9. The missing gate
 
-**Manifestation layer.** Per [`golden-path-contract.md:34-60`](../golden-path-contract.md), what follows is
+**Manifestation layer.** Per `golden-path-contract.md:34-60`, what follows is
 a *proxy* for a semantic condition, tuned to this repo's idiom. The condition is stated stack-free first
 so an adopting repo re-derives its own proxy. Everything in §7 shipped under a green `npm run check`, a
 green `cargo test`, and — in §7.B's case — under a *passing unit test that asserts the defect*.

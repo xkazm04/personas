@@ -1,7 +1,7 @@
 # Golden path — Session delta digest
 
 > Situation node: `product-surfaces/monitoring-surfaces/session-delta-digest` ·
-> [situation spine](../situation-spine.md) · recurrence 4 · risk **medium** ·
+> situation spine · recurrence 4 · risk **medium** ·
 > sides: **client** · convergence: **converged** ·
 > dimensions: **function · ui**
 > Composed 2026-08-17 against `master` @ `6c97502d3`, re-verified at `c7c153b57`.

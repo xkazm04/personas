@@ -45,7 +45,6 @@
       "resolved": false
     },
     "dev_tools/competitions.rs": {"count":1,"sections":[7],"lines":["679-693"],"contexts":["`drive/mod.rs:1437`/`:1445` and `dev_tools/competitions.rs:679-693` reveal a folder via"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json)). Every `<a>` opening tag in the tree parsed as a"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "ideas_cmds.rs": {"count":1,"sections":[],"lines":["36-167"],"contexts":["Personas has an OS handler to hand it to. `vibeman`'s `ideas_cmds.rs:36-167` is the closest"],"resolved":false},
     "lefthook.yml": {"count":1,"sections":[9],"contexts":["`lefthook.yml` and **not** in any `.github/workflows/*.yml`, which per the brief's calibration is"]},
     "lib.rs": {
@@ -58,6 +57,7 @@
     "node_modules/@tauri-apps/plugin-shell/dist-js/index.js": {"count":1,"sections":[0],"lines":["440"],"contexts":["`open()` invokes `plugin:shell|open` (`node_modules/@tauri-apps/plugin-shell/dist-js/index.js:440`)"],"resolved":false},
     "package.json": {"count":2,"sections":[0,9],"contexts":["`package.json` since `ce97b4e14`, the initial commit. **`tauri-plugin-shell` has never appeared in"]},
     "personas-web/src/lib/url.ts": {"count":1,"sections":[],"lines":["10"],"contexts":["name.** `personas-web/src/lib/url.ts:10` exports **`sanitizeExternalUrl`**, the same identifier,"],"resolved":false},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["`shared-facts.json`). Every `<a>` opening tag in the tree parsed as a"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[],"contexts":["count) and all **963** non-generated `.rs` files under `src-tauri/` (`rust.files` in"],"resolved":false,"isDir":true},
     "src-tauri/Cargo.toml": {"count":2,"sections":[0,7],"lines":["162"],"contexts":["`src-tauri/Cargo.toml` in the entire git history**, is absent from `Cargo.lock`, and neither"]},
     "src-tauri/capabilities/default.json": {

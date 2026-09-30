@@ -227,7 +227,18 @@
     "retire_reason_expired": "만료됨",
     "retire_reason_superseded": "새 페어링으로 대체됨",
     "retire_result": "{total}개 중 {retired}개 정리됨.",
-    "retire_title": "무효 페어링 정리"
+    "retire_title": "무효 페어링 정리",
+    "gig_policy_budget_hint": "상한을 두지 않으려면 비워 두세요.",
+    "gig_policy_budget_label": "채용당 최대 예산(USD)",
+    "gig_policy_desc": "kp는 긱마다 에이전트를 하나씩 채용합니다. 아래 모든 한도 안에 있는 kp 채용 요청은 사용자를 대신해 승인되며, 그 밖의 요청은 평소처럼 사용자의 승인을 기다립니다. 어떤 API 키도 이 설정을 변경할 수 없습니다.",
+    "gig_policy_enabled": "이 정책 안의 긱 에이전트 자동 승인",
+    "gig_policy_models_hint": "쉼표로 구분한 모델 ID(예: claude-opus-5-5)",
+    "gig_policy_models_label": "허용 모델",
+    "gig_policy_root_hint": "이 폴더 안의 긱 프로젝트만 해당됩니다.",
+    "gig_policy_root_label": "긱 루트 폴더",
+    "gig_policy_save": "정책 저장",
+    "gig_policy_saved": "정책이 저장되었습니다",
+    "gig_policy_title": "긱 에이전트 정책"
   },
   "appearance_extra": {
     "dev": "Dev",

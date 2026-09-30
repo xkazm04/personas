@@ -435,14 +435,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "features/teams/sub_factory/passport/improve/StandardsScan.tsx"
     },
-    "src/features/templates/sub_generated/generation/useCreateTemplateSnapshot.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["163"],
-      "contexts": ["`useContextScanBackground.ts:76`, `useCreateTemplateSnapshot.ts:163`, `FleetGridPage.tsx:191`"],
-      "resolvedFrom": "basename",
-      "verbatim": "useCreateTemplateSnapshot.ts"
-    },
     "src/features/vault/shared/vector/ingest/IngestProgressBar.tsx": {
       "count": 2,
       "sections": [4,7],
@@ -514,6 +506,7 @@
       ],
       "resolved": false
     },
+    "useCreateTemplateSnapshot.ts": {"count":1,"sections":[7],"lines":["163"],"contexts":["`useContextScanBackground.ts:76`, `useCreateTemplateSnapshot.ts:163`, `FleetGridPage.tsx:191`"],"resolved":false},
     "useIngestFeed.ts": {
       "count": 1,
       "sections": [2],

@@ -31,11 +31,11 @@ Reference: **`.claude/Design.md`**. Primitives: **`src/features/shared/component
 | a surface loading its data | ghost under permanent chrome: `display/UnifiedTable` (`isLoading` + `data`), `layout/RouteChunkSkeleton` as Suspense fallback |
 | styled `<button>` | `buttons/Button` (icon sizes for icon-only); a tinted one is `variant="accent" tone="success\|error\|agent\|..."`, never a hue |
 | modal, backdrop, confirm | `modals/BaseModal`, `feedback/ConfirmDialog` |
-| `title=` or a custom tooltip | `display/Tooltip` |
-| time, numbers, clipboard | `display/RelativeTime`, `display/Numeric`, `buttons/CopyButton` |
+| `title=`/tooltip; time, numbers, clipboard | `display/Tooltip`; `display/RelativeTime`, `display/Numeric`, `buttons/CopyButton` |
 | switch, select, label+input+error | `forms/AccessibleToggle`, `forms/Listbox`, `forms/FormField` |
 | tab strip; "no data" | `layout/PanelTabBar`, `layout/SegmentedTabs`; `feedback/ScenarioEmptyState` |
 | row or tile entrance | `display/RevealItem` + `useRevealTracker` |
+| section head, trail, stat tile, key-value, chip strip, filter bar, list or table row, tile, detail pane, hint on a mark, unit quantum | the composition kit `@/features/shared/components/kit` (Section, Crumbs, StatStrip, KeyValueGrid, ChipRow, Toolbar/KitButton, Rows/DataTable, ContextCard (few) / ContextOverview (many), Tiles/Tile (dashboard), Split/Drawer, Hint, quantumFor; props: ContextCard `art`, KitButton `tone`/`icon`, UnitStrip `legend`, ListRow `onPress`, Rows `cap`); a one-off duplicate is a finding (doctrine 6b) |
 
 **Spinner boundary:** a spinner is banned for a surface loading its data and required on a control the user just pressed. `feedback/LoadingSpinner` renders `null`: it is neither.
 **Loading pattern v2:** `docs/design/overview-loading.md` (chrome always renders; a fetch never hides

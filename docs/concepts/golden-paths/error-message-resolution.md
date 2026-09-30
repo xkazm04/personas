@@ -1,6 +1,6 @@
 # Golden path — Error message resolution
 
-> Situation node: `client-runtime/client-errors/error-message-resolution` · [situation spine](../situation-spine.md)
+> Situation node: `client-runtime/client-errors/error-message-resolution` · situation spine
 > Recurrence **47**. Dimensions: **ui · function · code-quality · resilience**.
 > Composed 2026-08-14 against `master` @ `e76646f7d`. Sweep: ~50 tool calls, 42 files read,
 > plus two programmatic corpora — **3,539** `AppError::X(..)` constructions and **47**
@@ -11,7 +11,7 @@
 > Every number below was produced by **two independent implementations** that agree — see §9.
 > **Deviations** is a fix backlog; it migrates to `violating` cells when this path is ingested.
 
-Shared counts cited from [`shared-facts.json`](../shared-facts.json) @ `211d519bb`:
+Shared counts cited from `shared-facts.json` @ `211d519bb`:
 963 Rust files, 4,829 `.ts`/`.tsx` files under `src`, 1,135 lint warnings / 0 errors.
 
 ---

@@ -23,6 +23,15 @@
     "*.test.tsx": {"count":1,"sections":[9],"contexts":["- `*.test.tsx` / `*.stories.tsx`."],"resolved":false},
     ".claude/conventions.json": {"count":1,"sections":[],"contexts":["`.claude/conventions.json`, and all 21 custom ESLint rules."]},
     ".github/workflows/ci.yml": {"count":1,"sections":[9],"contexts":["failure mode `ci.yml` is already a museum of."],"resolvedFrom":"basename","verbatim":"ci.yml"},
+    "RecipeManager.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["96"],
+      "contexts": [
+        "| D7 | **Dead size presets** | 3 uses / 2 files | `globals.css:1272-1296` `.btn-sm/.btn-md/.btn-lg`, advertised at `Design.md:316`, unused by `Button.tsx`, used 3 times app-wide (`AutomationSetupModa…"
+      ],
+      "resolved": false
+    },
     "eslint-rules/no-raw-radius-classes.cjs": {"count":2,"sections":[7],"contexts":["- `eslint-rules/no-raw-radius-classes.cjs` docstring — same: \"rounded-interactive — buttons, toggles, chips (6px)\"."]},
     "eslint-rules/prefer-button-primitive.cjs": {"count":1,"sections":[9],"contexts":["One rule file, **`eslint-rules/prefer-button-primitive.cjs`**, registered in"],"resolved":false},
     "eslint-rules/prefer-status-badge.cjs": {"count":2,"sections":[9],"contexts":["primitive\" rules, and `prefer-status-badge.cjs` already demonstrates the design"],"resolvedFrom":"basename","verbatim":"prefer-status-badge.cjs"},
@@ -138,16 +147,6 @@
         "| X1 | **Icon-only control with no accessible name** | **844 elements** | Neither `aria-label` nor `title` nor text. WCAG 4.1.2. `src/features/plugins/twin/sub_channels/ChannelsAtelier.tsx:293` has `…"
       ],
       "resolved": false
-    },
-    "src/features/recipes/sub_manager/components/RecipeManager.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["96"],
-      "contexts": [
-        "| D7 | **Dead size presets** | 3 uses / 2 files | `globals.css:1272-1296` `.btn-sm/.btn-md/.btn-lg`, advertised at `Design.md:316`, unused by `Button.tsx`, used 3 times app-wide (`AutomationSetupModa…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "RecipeManager.tsx"
     },
     "src/features/settings/sub_engine/components/PolicyProposalsSection.tsx": {
       "count": 1,

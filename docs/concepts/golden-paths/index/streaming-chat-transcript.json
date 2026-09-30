@@ -48,6 +48,7 @@
       "resolved": false
     },
     "scripts/analysis/orphan-modules.mjs": {"count":1,"sections":[],"contexts":["- `npm run orphans` (`scripts/analysis/orphan-modules.mjs`) — 758 orphans — plus"]},
+    "shared/components/progress/TerminalBody.tsx": {"count":1,"sections":[12],"lines":["29-45"],"contexts":["description does not mention: `shared/components/progress/TerminalBody.tsx:29-45` (deleted 2026-09-25)"],"resolved":false},
     "src-tauri/core/src/retrieval/mod.rs": {
       "count": 1,
       "sections": [],
@@ -199,14 +200,6 @@
       "contexts": ["(`LoadingSpinner.tsx:12-21`), or an `sr-only` `<span role=\"status\">` when given a"],
       "resolvedFrom": "basename",
       "verbatim": "LoadingSpinner.tsx"
-    },
-    "src/features/shared/components/progress/TerminalBody.tsx": {
-      "count": 1,
-      "sections": [12],
-      "lines": ["29-45"],
-      "contexts": ["description does not mention: `shared/components/progress/TerminalBody.tsx:29-45`"],
-      "resolvedFrom": "suffix",
-      "verbatim": "shared/components/progress/TerminalBody.tsx"
     },
     "src/features/shared/components/terminal/TerminalBody.tsx": {
       "count": 1,

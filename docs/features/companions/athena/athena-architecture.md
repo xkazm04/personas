@@ -86,7 +86,7 @@ skill reads and writes the same brain from a terminal when the app is closed.
 | UI | React 19, TypeScript, Zustand 5, Tailwind 4, Framer Motion | `src/features/plugins/companion/` |
 | IPC | Tauri commands (about 150 `companion_*`) and `companion://` / `athena://` events | `src-tauri/src/commands/companion/`, `src/api/companion.ts` |
 | Model | Claude Code CLI as a child process, `--output-format stream-json` | `src-tauri/src/companion/session/cli.rs` |
-| Model tiers | `claude-opus-4-8` at low effort for conversation; `claude-sonnet-5` for maintenance and headless decisions | `src-tauri/src/companion/model_routing.rs` |
+| Model tiers | `claude-sonnet-5-5` at low effort for conversation; `claude-sonnet-5` for maintenance and headless decisions | `src-tauri/src/companion/model_routing.rs` |
 | Memory store | Markdown + YAML frontmatter on disk; SQLite (`personas_data.db`) index; FTS5 keyword index; `sqlite-vec` vec0 vector index | `src-tauri/src/companion/brain/`, `src-tauri/db/src/lib.rs` |
 | Embeddings | `fastembed` (AllMiniLML6V2Q, 384 dims) over `ort` ONNX Runtime, behind the `ml` cargo feature | `src-tauri/src/companion/brain/embeddings.rs`, `src-tauri/db/src/embedder.rs` |
 | Local HTTP | axum on 127.0.0.1, port scanned from 17400, shared-secret guard | `src-tauri/src/local_http/` |
@@ -210,7 +210,7 @@ stream events, only the side-effect events.
 
 | Tier | Default engine | Default model | Effort | Used for |
 |---|---|---|---|---|
-| `MAIN` | claude | `claude-opus-5` | low | conversation turns, full op grammar |
+| `MAIN` | claude | `claude-sonnet-5-5` | low | conversation turns, full op grammar |
 | `ASIDE` | claude | `claude-sonnet-5` | medium | sleep-cycle legs, briefings, tour composition |
 | `MICRO` | claude | `claude-sonnet-5` | low | headless decisions: titling, triage, channel reactions. Deliberately receives no constitution |
 

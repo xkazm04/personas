@@ -1,7 +1,7 @@
 # Golden path — Modal stacking and hosting
 
 > Situation node: `ui-system/overlays/modal-stacking` ·
-> [situation spine](../situation-spine.md) · recurrence 11 · risk **medium** ·
+> situation spine · recurrence 11 · risk **medium** ·
 > sides: **client** · convergence: **mixed** ·
 > dimensions: **ui · function · code-quality · resilience** ·
 > `twoSided: false` · merged from *"Nested modal stacking"* + *"Multi-modal
@@ -379,7 +379,7 @@ with props.
 Four independent failures in one 84-line rule:
 
 1. **Severity.** `eslint.config.js:95` sets it to `"warn"`. Per
-   [doctrine §3](../golden-path-doctrine.md#3-the-severity-fact), a warn-level
+   doctrine §3, a warn-level
    rule enforces nothing at either gate, at any count. `.claude/CLAUDE.md`
    describes this rule as *"enforced by `custom/enforce-base-modal`"* — the word
    is wrong (§12.1).
@@ -504,7 +504,7 @@ State that explicitly for the next repo: **the signal is a proxy for "an overlay
 painted its own backdrop", and it is keyed on this repo's Tailwind idiom.** A
 codebase using styled-components, CSS modules or a `Backdrop` component must
 re-derive a different proxy for the same condition. The four §9 signals the
-[portability test](../research/portability-test.md) killed all failed by
+portability test killed all failed by
 travelling as markup.
 
 ### The rule

@@ -1,7 +1,7 @@
 # Golden path — a surface where a query string is typed and executed
 
 > Situation node: `integrations-security/external-and-host-surfaces/sql-console` ·
-> [situation spine](../situation-spine.md) · recurrence **8** · risk **HIGH** · sides **client** ·
+> situation spine · recurrence **8** · risk **HIGH** · sides **client** ·
 > `twoSided: true` · convergence **converged** — **tested and REFUTED, see §12.1** ·
 > dimensions: **ui · function · security · performance**
 > Composed 2026-08-17 against `master` @ `f432a4ef3`.
@@ -152,7 +152,7 @@ Read-only copies, 2026-08-17:
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and
+Per the portability test, the head is physically separated and
 every clause carries its warrant, so an adopting repo can tell physics from local calibration. No
 file path, primitive name or count appears below this line until the head ends.
 

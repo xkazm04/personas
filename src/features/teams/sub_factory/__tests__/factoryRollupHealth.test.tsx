@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { rollup, STATUS_COLOR, type MockKpi } from '../factoryModel';
-// The matrix's own colour ramp — asserted directly so the `null` branch cannot
+import { rollup, type MockKpi } from '../factoryModel';
+// The matrix's own tone ramp, asserted directly so the `null` branch cannot
 // be re-broken without this test failing.
-import { hc } from '../ContextMatrix';
+import { healthMark, KPI_STATUS_MARK } from '../factoryTone';
 
 function kpi(over: Partial<MockKpi>): MockKpi {
   return {
@@ -19,8 +19,8 @@ describe('rollup health for unmeasured KPIs', () => {
     const r = rollup([kpi({ id: 'a' }), kpi({ id: 'b', tier: 'north_star' })]);
     expect(r.unmeasured).toBe(2);
     expect(r.health).toBeNull();
-    expect(hc(r.health)).toBe(STATUS_COLOR.unmeasured);
-    expect(hc(r.health)).not.toBe(STATUS_COLOR.crit);
+    expect(healthMark(r.health)).toEqual(KPI_STATUS_MARK.unmeasured);
+    expect(healthMark(r.health).tone).not.toBe(KPI_STATUS_MARK.crit.tone);
   });
 
   it('mixed: health is computed over the measured rows only', () => {
@@ -29,7 +29,7 @@ describe('rollup health for unmeasured KPIs', () => {
     expect(r.met).toBe(1);
     expect(r.unmeasured).toBe(1);
     expect(r.health).toBe(100);
-    expect(hc(r.health)).toBe(STATUS_COLOR.met);
+    expect(healthMark(r.health).tone).toBe(KPI_STATUS_MARK.met.tone);
   });
 
   it('all met: health 100', () => {
@@ -41,6 +41,6 @@ describe('rollup health for unmeasured KPIs', () => {
     const r = rollup([kpi({ id: 'a', current: 5 })]);
     expect(r.crit).toBe(1);
     expect(r.health).toBe(0);
-    expect(hc(r.health)).toBe(STATUS_COLOR.crit);
+    expect(healthMark(r.health)).toEqual(KPI_STATUS_MARK.crit);
   });
 });

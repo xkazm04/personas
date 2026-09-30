@@ -1,7 +1,7 @@
 # Golden path — Long list rendering
 
 > Situation node: `product-surfaces` › `lists-and-tables` › `long-list-rendering` ·
-> [situation spine](../situation-spine.md) · recurrence 18 · risk **medium** ·
+> situation spine · recurrence 18 · risk **medium** ·
 > sides: **client** (upheld with one qualification — §12.1) ·
 > convergence: **mixed** (upheld: 2 physics / 2 Personas-alone / 2 silence — §12.2) ·
 > dimensions: **performance · ui · function**
@@ -128,7 +128,7 @@ DOM, with no scroll container of its own. `DataGrid` is the same shape one door 
 
 **Both shared list primitives default to unbounded, and the bound is an optional number whose absent
 value is the dangerous one.** This is the contract's fifth §9 failure mode
-([`golden-path-contract.md`](../golden-path-contract.md): *"a primitive with a mandatory-but-forgettable
+(`golden-path-contract.md`: *"a primitive with a mandatory-but-forgettable
 argument does not concentrate a concern — it relocates it, and hides it behind a green check"*),
 reproduced at a second primitive, and at a worse ratio than the `<Numeric>` case that earned it.
 
@@ -292,7 +292,7 @@ containers can be told how many rows to render at all.**
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path, primitive
+Per the portability test the head carries no file path, primitive
 name or count. Each clause names its warrant.
 
 > **P1 — physics, and the leaf's centre.** **A list container must be told how many rows it may
@@ -469,7 +469,7 @@ Every one of these exists today. The adopter counts are the finding.
 ### Can the type make the wrong call impossible? — asked before §9
 
 **Yes, and the strongest form of it is a default change, not a new type.** Held against the seven
-qualifications in [the doctrine](../golden-path-doctrine.md):
+qualifications in the doctrine:
 
 **T1 — invert the default, and make omission mean "bounded".** The bad state is `rowHeight = 0` at
 `UnifiedTable.tsx:446` and `pageSize = 0` at `DataGrid.tsx:155`. Both are numbers whose *absent* value

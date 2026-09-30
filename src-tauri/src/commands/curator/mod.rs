@@ -35,9 +35,26 @@
 //! convenience for the consult lane, and it carries no stat.
 
 pub mod dispatch;
-pub mod instrument;
+/// Whether the ecosystem of projects is growing, sampled once per projection.
+/// Her goal signal - see [`growth`].
+pub mod growth;
+/// **Why an engine of her plan cannot be dispatched, counted and ranked.** The
+/// input to her method lane, and the one place that decides whether a gap is
+/// hers to close or the operator's to hear about - see [`impediment`].
+mod impediment;
+/// The registry's instruments and the projection, now owned by
+/// `personas-engine`.
+///
+/// Moved there 2026-09-28: neither used a line of Tauri, the repo's rule is the
+/// lowest crate whose reach closes, and the headless re-projection binary needs
+/// them without the Tauri dependency tree. Re-exported under their old names, so
+/// every `super::instrument::…` and `super::projection::…` in this module
+/// resolves unchanged - the move was a move, not an API change.
+pub use personas_engine::curator::{instrument, projection};
 pub mod process;
-pub mod projection;
+/// What she announces. One event, six kinds, and her whole runtime on every
+/// one of them - see [`pulse`].
+pub mod pulse;
 pub mod sleep;
 /// Her standing lane: `/harvest auto` to drain the registry's source queue,
 /// `/harvest research` to refill it, and the measurement that picks between
@@ -55,9 +72,13 @@ use crate::ipc_auth::require_auth;
 use crate::AppState;
 
 use personas_core::models::{
-    curator_lane, CuratorConsentState, CuratorDecisionLevel, CuratorPlan, CuratorPolicy,
-    CuratorProject, CuratorRequest, CuratorRuntime, CuratorSkill,
+    curator_lane, CuratorAttrition, CuratorConsentState, CuratorGrowthReading, CuratorImpediment,
+    CuratorPlan, CuratorPolicy, CuratorProject, CuratorQuietRun, CuratorRefresh, CuratorRequest,
+    CuratorRuntime, CuratorSkill,
 };
+
+use crate::commands::fleet::queue::DispatchOrigin;
+use crate::commands::fleet::types::{state_to_token, FleetSessionState};
 
 /// Run a blocking read/write off the IPC worker. The curator lane touches
 /// rusqlite AND the filesystem, so a sync command here would block it.
@@ -81,72 +102,19 @@ fn registry_root(state: &Arc<AppState>) -> Result<std::path::PathBuf, AppError> 
     registry_root_of(&state.db)
 }
 
-/// [`registry_root`] for a caller that holds a pool rather than the whole app
-/// state - her loop, which never sees an `AppState`.
-pub(super) fn registry_root_of(db: &crate::db::DbPool) -> Result<std::path::PathBuf, AppError> {
-    crate::commands::companions::curator_registry(db)
-        .map(|r| std::path::PathBuf::from(r.clone_path))
-        .ok_or_else(|| {
-            AppError::Validation(
-                "Curator has no registry to curate: map a knowledge registry in Dev Tools > \
-                 Workspaces, and make sure its checkout is on this disk"
-                    .into(),
-            )
-        })
-}
-
-// ---------------------------------------------------------------------------
-// The policy
-// ---------------------------------------------------------------------------
-
-/// Read a setting, treating blank as ABSENT - which is how every optional
-/// setting in this file is written and cleared.
-fn setting(db: &crate::db::DbPool, key: &str) -> Option<String> {
-    crate::db::repos::core::settings::get(db, key)
-        .ok()
-        .flatten()
-        .map(|v| v.trim().to_string())
-        .filter(|v| !v.is_empty())
-}
-
-fn level(db: &crate::db::DbPool, key: &str) -> CuratorDecisionLevel {
-    setting(db, key)
-        .and_then(|v| CuratorDecisionLevel::parse(&v))
-        // A value the validator would have refused can only arrive by a
-        // hand-edited database. `L0` is the reading that claims least: always
-        // ask, never a permission nobody gave.
-        .unwrap_or(CuratorDecisionLevel::L0)
-}
-
-/// The nine settings keys, as one typed value with the defaults resolved.
+/// The registry she curates, her policy, and the settings reader behind both -
+/// all three now owned by `personas-engine`.
 ///
-/// The four caps stay `None` when unset, which is NOT zero: `None` means the
-/// operator has declared no ceiling, and a `0` would say she may never run.
-pub fn load_policy(db: &crate::db::DbPool) -> CuratorPolicy {
-    let defaults = CuratorPolicy::default();
-    CuratorPolicy {
-        level_research: level(db, settings_keys::CURATOR_LEVEL_RESEARCH),
-        level_forge: level(db, settings_keys::CURATOR_LEVEL_FORGE),
-        level_conform: level(db, settings_keys::CURATOR_LEVEL_CONFORM),
-        level_sweep: level(db, settings_keys::CURATOR_LEVEL_SWEEP),
-        daily_budget_usd: setting(db, settings_keys::CURATOR_DAILY_BUDGET_USD)
-            .and_then(|v| v.parse::<f64>().ok())
-            .filter(|v| v.is_finite() && *v >= 0.0),
-        daily_run_cap: setting(db, settings_keys::CURATOR_DAILY_RUN_CAP)
-            .and_then(|v| v.parse::<u32>().ok()),
-        daily_commit_cap: setting(db, settings_keys::CURATOR_DAILY_COMMIT_CAP)
-            .and_then(|v| v.parse::<u32>().ok()),
-        quiet_hours: setting(db, settings_keys::CURATOR_QUIET_HOURS),
-        backpressure_n: setting(db, settings_keys::CURATOR_BACKPRESSURE_N)
-            .and_then(|v| v.parse::<u32>().ok())
-            .filter(|v| *v >= 1)
-            .unwrap_or(defaults.backpressure_n),
-        worker_cap: setting(db, settings_keys::CURATOR_WORKER_CAP)
-            .and_then(|v| v.parse::<u32>().ok())
-            .filter(|v| *v >= 1)
-            .unwrap_or(defaults.worker_cap),
-    }
-}
+/// Moved there 2026-09-28 with `instrument` and `projection`, for the same
+/// reason: none of them touches Tauri, and the headless re-projection binary
+/// needs them without linking this crate. Re-exported so every
+/// `super::setting(…)` here and in `tick` resolves unchanged.
+///
+/// `registry_root_of`'s failure semantics moved with it verbatim, including the
+/// deliberate one: a failed read reports "no registry" rather than propagating,
+/// because neither answer is established by a read that did not happen and
+/// "blocked" is the one that claims least.
+pub use personas_engine::curator::policy::{load_policy, registry_root_of, setting};
 
 /// Curator's standing policy, typed, with defaults resolved.
 ///
@@ -287,10 +255,12 @@ pub async fn curator_plan_current(
 #[tauri::command]
 pub async fn curator_plan_refresh(
     state: State<'_, Arc<AppState>>,
-) -> Result<CuratorPlan, AppError> {
+) -> Result<CuratorRefresh, AppError> {
     require_auth(&state).await?;
     let root = registry_root(state.inner())?;
     let reading = instrument::read(&root).await?;
+    let from_cache = reading.from_cache;
+    let reading = reading.value;
     let db = state.db.clone();
     let now = chrono::Utc::now().to_rfc3339();
     let run_id = uuid::Uuid::new_v4().to_string();
@@ -316,9 +286,227 @@ pub async fn curator_plan_refresh(
             );
         }
 
-        repo::insert_plan(&db, &run_id, &projected.run, &projected.items)
+        // One growth sample per projection, from the SAME reading the plan was
+        // built from. Logged and swallowed rather than propagated: a lost sample
+        // costs one interval of trend resolution, while failing the refresh over
+        // it would cost the operator their plan.
+        //
+        // Taken before the plan is written, so the sample's clock and the run's
+        // are the same `now` - a trend whose samples were timestamped after a
+        // variable amount of DB work would have a jittered x-axis.
+        if let Err(err) = growth::record(&db, &reading, &now) {
+            tracing::warn!(
+                error = %err,
+                "curator: this projection's growth sample was not recorded, so her trend is one \
+                 interval coarser than it should be"
+            );
+        }
+
+        // Read BEFORE the insert supersedes it. The comparison is against the
+        // run this one replaces, which is the only comparison that answers
+        // "did anything move" - not against whatever a page happens to hold.
+        let standing = repo::current_plan(&db);
+        let plan = repo::insert_plan(&db, &run_id, &projected.run, &projected.items)?;
+        let changed = match standing {
+            Ok(Some(before)) => {
+                Some(projection_fingerprint(&before) != projection_fingerprint(&plan))
+            }
+            // Nothing stood before this run. There was no plan and now there is
+            // one, which is a change by any reading.
+            Ok(None) => Some(true),
+            Err(err) => {
+                tracing::warn!(
+                    error = %err,
+                    "curator: the standing plan could not be read, so whether this projection \
+                     differs from it is UNKNOWN - it is reported as unknown rather than as \
+                     unchanged"
+                );
+                None
+            }
+        };
+        Ok(CuratorRefresh {
+            plan,
+            from_cache,
+            changed,
+        })
     })
     .await
+}
+
+/// **Is the ecosystem of projects growing?** Her goal signal, over the newest
+/// [`growth::WINDOW`] samples.
+///
+/// Sync and cheap: it reads rows her projections already wrote and runs no
+/// script. `verdict: unknown` with `samples: 1` is the honest answer on a fresh
+/// install, and it is not the same answer as `flat`.
+#[tauri::command]
+pub async fn curator_growth_get(
+    state: State<'_, Arc<AppState>>,
+) -> Result<CuratorGrowthReading, AppError> {
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    blocking("curator_growth_get", move || growth::read(&db)).await
+}
+
+/// **What stops her, counted and ranked.** Worst first, with the ones she may
+/// close herself flagged and the rest carrying the reason they are not hers.
+///
+/// An empty answer means her standing plan has no undispatchable engine in it -
+/// which is a real and good state, and distinguishable from a missing plan,
+/// because a missing plan errors instead.
+#[tauri::command]
+pub async fn curator_impediments_get(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<CuratorImpediment>, AppError> {
+    require_auth(&state).await?;
+    let root = registry_root(state.inner())?;
+    let db = state.db.clone();
+    blocking("curator_impediments_get", move || {
+        // Both halves are blocking work: `read_skills` walks the registry's two
+        // skill lanes on disk and `current_plan` is rusqlite. Neither belongs on
+        // the IPC worker, which is what this module's header is about.
+        let skills = instrument::read_skills(&root)?;
+        let Some(plan) = repo::current_plan(&db)? else {
+            return Ok(Vec::new());
+        };
+        Ok(impediment::measure(&plan.items, &skills))
+    })
+    .await
+}
+
+/// **The work of hers that stopped reporting.** What her running cost, beside
+/// what it produced.
+///
+/// The operator saw this before any surface did: 18 of her sessions sitting in
+/// `stale`, all carrying `No log growth for 6 min`, several marked `restored
+/// after restart` - which is why they reappear at every launch. Until now the
+/// only way to know was to open the database.
+///
+/// Read from the fleet registry her own loop reads (`list_dto`), not from the
+/// `fleet_sessions` table, so the panel and her tick can never disagree about
+/// which of her runs is alive.
+#[tauri::command]
+pub async fn curator_attrition_get(
+    state: State<'_, Arc<AppState>>,
+) -> Result<CuratorAttrition, AppError> {
+    require_auth(&state).await?;
+    let db = state.db.clone();
+
+    // Taken BEFORE the blocking hop, on the IPC thread, because the registry is
+    // an in-memory mutex and not database work - and because the quiet clock
+    // must be measured against the same instant for every row.
+    let now_ms = chrono::Utc::now().timestamp_millis();
+    let sessions: Vec<_> = crate::commands::fleet::registry::registry()
+        .list_dto()
+        .into_iter()
+        .filter(|s| s.origin.as_deref() == Some(DispatchOrigin::Curator.token()))
+        .collect();
+
+    blocking("curator_attrition_get", move || {
+        let open = repo::open_dispatches(&db)?;
+        // Every dispatch, so a quiet session can be named by the work it was
+        // given rather than by a terminal title. Cheap: the table is bounded by
+        // her run cap.
+        let all = repo::all_dispatches(&db)?;
+
+        let runs: Vec<CuratorQuietRun> = sessions
+            .iter()
+            // Neither working nor finished. `Stale` is the state the operator is
+            // looking at; `Hibernated` is the other one that is not terminal and
+            // not alive. A `Finished` or `Exited` session is an outcome, however
+            // it ended, and does not belong in a list about work in limbo.
+            .filter(|s| {
+                matches!(
+                    s.state,
+                    FleetSessionState::Stale | FleetSessionState::Hibernated
+                )
+            })
+            .map(|s| {
+                let row = all.iter().find(|d| d.session_id == s.id);
+                CuratorQuietRun {
+                    session_id: s.id.clone(),
+                    lane: row.map(|d| d.lane.clone()),
+                    skill: row.map(|d| d.skill.clone()),
+                    argument: row.and_then(|d| d.argument.clone()),
+                    state: state_to_token(s.state).to_string(),
+                    reason: s.state_reason.clone(),
+                    started_at: ms_to_rfc3339(s.created_at_ms),
+                    // `None` rather than `0` when the clock reads backwards or
+                    // the stamp is absent: a row claiming "quiet for 0 minutes"
+                    // would read as a session active this second, which is the
+                    // opposite of why it is in this list.
+                    quiet_minutes: (s.last_activity_ms > 0 && now_ms >= s.last_activity_ms)
+                        .then(|| ((now_ms - s.last_activity_ms) / 60_000) as u32),
+                    settled: row.is_some_and(|d| !open.iter().any(|o| o.id == d.id)),
+                }
+            })
+            .collect();
+
+        // A dispatch with no settle and no live session behind it. This is the
+        // leak, and it is a different fact from a quiet run: the run above may
+        // be tidily settled in her ledger while nobody knows what it did, and
+        // this one is not recorded as ended at all.
+        let live: Vec<&str> = sessions
+            .iter()
+            .filter(|s| crate::commands::fleet::registry::is_live_state(s.state))
+            .map(|s| s.id.as_str())
+            .collect();
+        let abandoned = open
+            .iter()
+            .filter(|d| !live.contains(&d.session_id.as_str()))
+            .count() as u32;
+
+        Ok(CuratorAttrition {
+            runs,
+            written_off: repo::written_off_in_standing_plan(&db)?,
+            abandoned,
+            // From the fleet's own constant. Written down here it would be a
+            // second copy of a number that has already moved once.
+            stale_after_secs: crate::commands::fleet::stale::STALE_AFTER_SECS.max(0) as u32,
+        })
+    })
+    .await
+}
+
+/// A fleet millisecond stamp as an RFC 3339 string, or `None`.
+///
+/// `None` for a zero or un-representable stamp rather than the epoch: 1970 on a
+/// surface about what happened today is worse than an absence, because a reader
+/// will try to explain it.
+fn ms_to_rfc3339(ms: i64) -> Option<String> {
+    if ms <= 0 {
+        return None;
+    }
+    chrono::DateTime::from_timestamp_millis(ms).map(|dt| dt.to_rfc3339())
+}
+
+/// Record separator inside [`projection_fingerprint`]. Neither can occur in a
+/// subject id or in a debug-formatted enum, so no two distinct plans can
+/// fingerprint alike by running their fields together.
+const FINGERPRINT_FIELD_SEP: char = '\u{1f}';
+const FINGERPRINT_ITEM_SEP: char = '\u{1e}';
+
+/// What "the same projection" means, as one comparable string.
+///
+/// The ranked list of subjects with the three facts that make a projection what
+/// it is: the points that ranked each one, the engine that would answer it and
+/// the clause that dominated. Deliberately NOT the item ids (a new run mints
+/// fresh ones every time), NOT the states (those move as her workers land, and
+/// a plan whose items she has since dispatched is still the same plan) and NOT
+/// any timestamp.
+fn projection_fingerprint(plan: &CuratorPlan) -> String {
+    use std::fmt::Write as _;
+    let mut out = String::with_capacity(plan.items.len() * 48);
+    for item in &plan.items {
+        // `write!` into a String cannot fail; the result is discarded rather
+        // than unwrapped so a fingerprint can never panic a refresh.
+        let _ = write!(
+            out,
+            "{}{FINGERPRINT_FIELD_SEP}{}{FINGERPRINT_FIELD_SEP}{:?}{FINGERPRINT_FIELD_SEP}{:?}{FINGERPRINT_ITEM_SEP}",
+            item.subject_id, item.points, item.engine, item.dominant_reason
+        );
+    }
+    out
 }
 
 // ---------------------------------------------------------------------------
@@ -574,11 +762,12 @@ fn fanned_out(running: u32) -> Option<u32> {
 /// `lane` is computed rather than stored, and the precedence it expresses is
 /// the operator's own rule: she drains his lane before her own plan, and when
 /// both are empty she goes to her standing lane rather than idling.
-#[tauri::command]
-pub async fn curator_runtime_get(
-    state: State<'_, Arc<AppState>>,
-) -> Result<CuratorRuntime, AppError> {
-    require_auth(&state).await?;
+///
+/// Extracted from the command in 2026-09 so [`pulse`] can take the SAME
+/// reading. Two ways of answering "what is she doing" is how a loop that is
+/// working and a console that says it is not come to coexist, which is exactly
+/// the state this was pulled out of.
+pub(crate) fn runtime_snapshot(db: &crate::db::DbPool) -> Result<CuratorRuntime, AppError> {
     // The in-memory registry, not a row read: it is the admission authority
     // while the app runs, and it needs no pool.
     let running = crate::commands::fleet::queue::live_count_for_origin(
@@ -586,58 +775,142 @@ pub async fn curator_runtime_get(
     );
     let harvesting = tick::harvest_in_flight();
     let sleeping = sleep::is_sleeping();
-    let db = state.db.clone();
-    blocking("curator_runtime_get", move || {
-        let policy = load_policy(&db);
-        let brakes = tick::read_brakes(&db)?;
-        // She drains the operator's lane before her own plan, so an open
-        // request IS the lane she is serving. Open, not queued: a dispatched
-        // request is one she is still carrying out.
-        let open_requests = repo::list_requests(&db, REQUEST_PAGE)?
-            .into_iter()
-            .any(|r| !r.state.is_settled());
-        Ok(CuratorRuntime {
-            enabled: brakes.enabled,
-            running,
-            worker_cap: policy.worker_cap,
-            fanned_out: fanned_out(running),
-            // Reported in the order the loop itself resolves them, except that
-            // the sleep wins: a reconcile holds the whole pass, so while it
-            // runs it IS what she is doing.
-            lane: if sleeping {
-                curator_lane::SLEEP.into()
-            } else if open_requests {
-                curator_lane::QUEUE.into()
-            // Her standing lane, whichever of its two rungs is out: the lane
-            // token is one for both, and the dispatch row's `skill` and
-            // `argument` are where a drain is told from a refill.
-            } else if harvesting {
-                curator_lane::REFILL.into()
-            } else {
-                curator_lane::PLAN.into()
-            },
-            halted_reason: halted_reason(&brakes, &policy),
-            spent_today_usd: brakes.spent_today_usd,
-            // **Nullable since 2026-09-24**, and the policy's own values are
-            // what travel: an undeclared ceiling is `None` here exactly as it
-            // is there. The `0` this wire used to carry could not be told
-            // apart from a declared ceiling of zero, which the validator
-            // accepts and which means the opposite.
-            daily_budget_usd: policy.daily_budget_usd,
-            runs_today: brakes.runs_today,
-            daily_run_cap: policy.daily_run_cap,
-            commits_today: brakes.commits_today,
-            daily_commit_cap: policy.daily_commit_cap,
-            last_sleep_at: setting(&db, settings_keys::CURATOR_LAST_SLEEP_AT),
-        })
+    let policy = load_policy(db);
+    let brakes = tick::read_brakes(db)?;
+    // She drains the operator's lane before her own plan, so an open request IS
+    // the lane she is serving. Open, not queued: a dispatched request is one
+    // she is still carrying out.
+    let open_requests = repo::list_requests(db, REQUEST_PAGE)?
+        .into_iter()
+        .any(|r| !r.state.is_settled());
+    Ok(CuratorRuntime {
+        enabled: brakes.enabled,
+        running,
+        worker_cap: policy.worker_cap,
+        fanned_out: fanned_out(running),
+        // Reported in the order the loop itself resolves them, except that
+        // the sleep wins: a reconcile holds the whole pass, so while it
+        // runs it IS what she is doing.
+        lane: if sleeping {
+            curator_lane::SLEEP.into()
+        } else if open_requests {
+            curator_lane::QUEUE.into()
+        // Her standing lane, whichever of its two rungs is out: the lane
+        // token is one for both, and the dispatch row's `skill` and
+        // `argument` are where a drain is told from a refill.
+        } else if harvesting {
+            curator_lane::REFILL.into()
+        } else {
+            curator_lane::PLAN.into()
+        },
+        halted_reason: halted_reason(&brakes, &policy),
+        spent_today_usd: brakes.spent_today_usd,
+        // **Nullable since 2026-09-24**, and the policy's own values are
+        // what travel: an undeclared ceiling is `None` here exactly as it
+        // is there. The `0` this wire used to carry could not be told
+        // apart from a declared ceiling of zero, which the validator
+        // accepts and which means the opposite.
+        daily_budget_usd: policy.daily_budget_usd,
+        runs_today: brakes.runs_today,
+        daily_run_cap: policy.daily_run_cap,
+        commits_today: brakes.commits_today,
+        daily_commit_cap: policy.daily_commit_cap,
+        last_sleep_at: setting(db, settings_keys::CURATOR_LAST_SLEEP_AT),
     })
-    .await
+}
+
+/// What her loop is doing right now, and every brake on it.
+#[tauri::command]
+pub async fn curator_runtime_get(
+    state: State<'_, Arc<AppState>>,
+) -> Result<CuratorRuntime, AppError> {
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    blocking("curator_runtime_get", move || runtime_snapshot(&db)).await
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use personas_core::models::CuratorDecisionLevel;
     use personas_db::init_test_db;
+
+    /// Insert one plan run whose single item carries the given subject and
+    /// points, and read it back exactly as `curator_plan_refresh` would.
+    fn seed_plan(pool: &crate::db::DbPool, subject: &str, points: u32) -> CuratorPlan {
+        use crate::db::repos::curator::{PlanItemInput, PlanRunInput};
+        use personas_core::models::{CuratorEngine, CuratorReasonCode};
+        let now = chrono::Utc::now().to_rfc3339();
+        let run = PlanRunInput {
+            created_at: now.clone(),
+            scan_generated_at: now,
+            registry_head_sha: Some("abc1234".into()),
+            corpus: Default::default(),
+            consumers: Default::default(),
+            policy: CuratorPolicy::default(),
+            quiet: Vec::new(),
+        };
+        let items = vec![PlanItemInput {
+            subject_id: subject.into(),
+            domain: "localization".into(),
+            at: "european/czech".into(),
+            points,
+            reasons: Vec::new(),
+            dominant_reason: CuratorReasonCode::ExpiredApplication,
+            engine: CuratorEngine::Conform,
+            techniques: 3,
+            applications: 1,
+            stacks: Vec::new(),
+            demand: None,
+            last_swept: None,
+            registry_dry_streak: 0,
+            suppressed_by_saturation: false,
+            has_applied_row: None,
+        }];
+        repo::insert_plan(pool, &uuid::Uuid::new_v4().to_string(), &run, &items).unwrap()
+    }
+
+    /// **The measurement behind "same projection".**
+    ///
+    /// Two runs against an unmoved registry produce identical projections -
+    /// which is exactly what the operator hit, twice, and could not tell from a
+    /// dead button. The fingerprint has to call those the same while calling a
+    /// projection that actually moved different, or the refresh's answer is
+    /// noise.
+    #[test]
+    fn two_runs_over_an_unmoved_corpus_fingerprint_alike() {
+        let pool = init_test_db().unwrap();
+        let first = seed_plan(&pool, "localization/czech", 12);
+        let second = seed_plan(&pool, "localization/czech", 12);
+        // Different run ids, different item ids, different timestamps - and the
+        // same projection, which is the only thing the operator is asking about.
+        assert_ne!(first.run.id, second.run.id);
+        assert_ne!(first.items[0].id, second.items[0].id);
+        assert_eq!(
+            projection_fingerprint(&first),
+            projection_fingerprint(&second)
+        );
+    }
+
+    /// The other direction, and it is the one a broken matcher would fail
+    /// silently: a projection that moved must not report as unchanged.
+    #[test]
+    fn a_moved_projection_fingerprints_differently() {
+        let pool = init_test_db().unwrap();
+        let base = seed_plan(&pool, "localization/czech", 12);
+        // The same subject, re-scored.
+        let rescored = seed_plan(&pool, "localization/czech", 19);
+        assert_ne!(
+            projection_fingerprint(&base),
+            projection_fingerprint(&rescored)
+        );
+        // A different subject at the same score.
+        let elsewhere = seed_plan(&pool, "localization/german", 12);
+        assert_ne!(
+            projection_fingerprint(&base),
+            projection_fingerprint(&elsewhere)
+        );
+    }
 
     /// An untouched install reads as "ask me about everything, no ceilings
     /// declared". Nothing here may default to a permission or to a zero.
@@ -736,6 +1009,11 @@ mod tests {
             invocation_documented: runs_bare.is_some(),
             runs_bare,
             argument_hint: hint.map(str::to_string),
+            lessons_path: None,
+            lessons_bytes: None,
+            lessons_modified_at: None,
+            lessons_latest_entry: None,
+            lessons_latest_at: None,
         }
     }
 

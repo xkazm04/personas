@@ -222,7 +222,7 @@ git commit -m "chore(triage): <category> — <n> items
 
 <idea-ids and one-liners>
 
-Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 ```
 
 Delete each successfully implemented idea file from `.claude/commands/` and include the deletion in that group's commit. Agent crash: log pending items, continue with other groups.

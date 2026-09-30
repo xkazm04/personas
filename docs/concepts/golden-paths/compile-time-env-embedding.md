@@ -1,6 +1,6 @@
 # Golden path — Compile-time env embedding
 
-> Situation node: `platform-delivery/build-profiles/compile-time-env-embedding` · [situation spine](../situation-spine.md)
+> Situation node: `platform-delivery/build-profiles/compile-time-env-embedding` · situation spine
 > `sides: server` · `twoSided: false` · recurrence **9** · risk **high** · spine label `convergence: converged`.
 > Dimensions: **security · function**.
 > Spine's own framing: *"Baking a build-time constant in without shipping a secret."*
@@ -11,7 +11,7 @@
 > `src-tauri/target/release/personas-desktop.exe` (**137.6 MiB**), `target/debug/personas-desktop.exe`
 > (110.7 MiB), `target/release/personas-mcp.exe` (7.1 MiB), and the real `dist/` frontend bundle
 > (**1,399 `.js` chunks, 30.9 MiB**) — all already on disk. Source sweep: all **963** `.rs` files under
-> `src-tauri/` (`rust.files` in [`shared-facts.json`](../shared-facts.json)), all `.ts`/`.tsx` under
+> `src-tauri/` (`rust.files` in `shared-facts.json`), all `.ts`/`.tsx` under
 > `src/`, `src-tauri/build.rs`, `vite.config.ts`, `scripts/run-codegen.mjs` and all **13** codegen
 > tasks it drives, the **34** committed files carrying a generated header, every `package.json`
 > script, the four `tauri.*.conf.json` files, and `ci.yml`. Convergence: five sibling repos.
@@ -243,7 +243,7 @@ explain.
 
 ### Can the primitive's signature make the wrong call impossible? — yes, once, and it subsumes almost every deviation below
 
-The [contract](../golden-path-contract.md) requires this before §9. The second pass over §7 found
+The contract requires this before §9. The second pass over §7 found
 that **thirteen of the fourteen deviations are the same missing value**, so there is one answer, not
 a list:
 
@@ -596,7 +596,7 @@ Two, both stack-free:
 
 What follows is **one repo's proxy for (A)**, an explicit **refusal for (B)** with the numbers that
 forced it, and a second refusal plus the instrument that does work. Per the
-[portability test](../research/portability-test.md), a proxy does not travel: an adopting repo
+portability test, a proxy does not travel: an adopting repo
 inherits the two sentences and re-derives its own signal against its own idiom.
 
 ### Rules checked first, and why none of the 140 covers this
@@ -684,7 +684,7 @@ re-run.** Filename unique to this composition per the shared-scratchpad collisio
 
 Exit 0, byte-identical on repeat, and identical again when the JSON block above was extracted from
 this document and re-run. `963 walked` is exactly `rust.files` in
-[`shared-facts.json`](../shared-facts.json) — an independently derived count agreeing, which is the
+`shared-facts.json` — an independently derived count agreeing, which is the
 only reason to trust the walk. Whole run ≈ 4 s; no lookbehind, every quantifier forward-anchored and
 bounded (`{0,200}?`), so neither pattern can backtrack across a file.
 
@@ -803,7 +803,7 @@ count.** The census is a different mechanism: `census:check` exits 1 on drift an
 
 ## Does "across a build boundary" belong in the doctrine's list? YES — with the qualification that makes it useful
 
-The [doctrine §1](../golden-path-doctrine.md) names three places a type cannot reach — inside a SQL
+The doctrine §1 names three places a type cannot reach — inside a SQL
 string literal, through a `OnceLock`, in an ambient environment variable — and a fourth was added
 later: across a JSON boundary before the type exists. The brief asked whether a fifth belongs.
 

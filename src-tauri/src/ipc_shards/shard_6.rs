@@ -50,6 +50,8 @@ pub(super) fn shard(
         commands::infrastructure::project_scaffold::create_project_repository,
         commands::infrastructure::architect_adopt::adopt_architect,
         commands::infrastructure::kp_hire::request_hire_from_kp,
+        commands::infrastructure::kp_gig_policy::kp_gig_persona_policy_get,
+        commands::infrastructure::kp_gig_policy::kp_gig_persona_policy_set,
         // Dev Tools -- KPIs (outcome layer above goals)
         commands::infrastructure::dev_tools::dev_tools_list_kpis,
         commands::infrastructure::dev_tools::dev_tools_get_kpi,

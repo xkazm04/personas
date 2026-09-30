@@ -1,7 +1,7 @@
 # Design variant switcher
 
 > Situation node: `ui-system/design-tokens-theming/design-variant-switcher` ·
-> [situation spine](../situation-spine.md) · recurrence 8 · risk **medium** ·
+> situation spine · recurrence 8 · risk **medium** ·
 > dimensions: ui · code-quality · performance · `sides: "client"` ·
 > `twoSided: false` · `convergence: "mixed"` ·
 > merged from *"Shipped design variants"* + *"Design variant tab switcher"*
@@ -341,7 +341,7 @@ Two independent causes, both structural:
 - `Prototype` **is** a `JSXText` node and is still exempted, by
   `no-hardcoded-jsx-text.cjs:83` — `/^[a-zA-Z_][a-zA-Z0-9_]*$/` with
   `length <= 20` returns *non-translatable*. This is
-  [doctrine §5](../golden-path-doctrine.md)'s symmetry problem exactly: **a
+  doctrine §5's symmetry problem exactly: **a
   proper noun and an untranslated one-word label are the same bytes.** See §12.4
   for the corpus cross-check and the number this replicates.
 
@@ -433,7 +433,7 @@ is §9.
 ## §9 The missing gate — **declined, with the numbers that refused three
 ## candidate rules**
 
-Per the [contract](../golden-path-contract.md), a reasoned decline with
+Per the contract, a reasoned decline with
 measurements is a better §9 than a weak rule. This leaf produced three
 candidates and all three failed measurement in different, informative ways.
 
@@ -454,7 +454,7 @@ tree on 2026-08-17:
   match **none** of it.
 
 **Precision 0/8. Recall 0/7. The signal and the condition are disjoint.** This is
-[doctrine §2](../golden-path-doctrine.md)'s vocabulary-bounded-recall warning in
+doctrine §2's vocabulary-bounded-recall warning in
 its strongest measured form — not "the word list misses the interesting cases"
 but "the word list and the condition have empty intersection" — and it happens
 for a reason that is structural rather than sloppy: **the convention is applied
@@ -492,7 +492,7 @@ unrelated — a throwaway buffer in `audioToReferenceWav.ts`, a throwaway object
 drawer note. **Precision 2/7 = 29%**, and tightening to *"throwaway" AND
 ("scaffolding" | "variant" | "prototype")* gives 2/2 — at which point the rule
 matches two files and **the correct end state is zero**, which
-[doctrine §4](../golden-path-doctrine.md) says the census cannot express: a rule
+doctrine §4 says the census cannot express: a rule
 matching nothing fails structurally, so the moment the operator does the right
 thing the gate breaks.
 
@@ -510,7 +510,7 @@ re-derive it:
 - **Mechanism.** `scripts/check-scaffolding-expiry.mjs`, run in
   `npm run check`. Exit 1 past the date; print days remaining otherwise.
 - **How it fails loudly when its own precondition is absent** — the requirement
-  [`ci.yml` is a museum of gates that missed](../golden-path-contract.md). Two
+  `ci.yml` is a museum of gates that missed. Two
   guards: **exit 2 if the walk sees fewer than 4,000 files** (the matcher is
   broken, not the tree clean), and **exit 2 if it finds zero markers while
   `PrototypeTabs.tsx`-shaped scaffolding exists** — concretely, if any file
@@ -570,7 +570,7 @@ one of these surfaces was designed against a fixture org of a dozen items and
 quietly falls apart at organizational scale — so each variant must be inspectable
 at both sizes, on demand, without a database."* That is a **cost observation** —
 a sibling paying a measured price and building a mechanism to stop paying it —
-which [doctrine §5](../golden-path-doctrine.md) ranks among the strongest signals
+which doctrine §5 ranks among the strongest signals
 the oracle produces, and far above agreement. **It is added to §2 as clause (f)'s
 neighbour and it is a gap in Personas, not a nicety.**
 
@@ -744,7 +744,7 @@ the split is stated rather than smoothed. The general lesson, and the reason thi
 is in §12 rather than a footnote: **`--follow` and a single-stream walk answer
 different questions, and both answers are shaped like the one you asked for.** A
 composer that ran only one of them would have published a confident number with
-no signal that anything was wrong — which is [doctrine §2](../golden-path-doctrine.md)'s
+no signal that anything was wrong — which is doctrine §2's
 "two passes can agree because both searched the same wrong place", in the mirror.
 
 ### 12.6 What this path deliberately does **not** claim

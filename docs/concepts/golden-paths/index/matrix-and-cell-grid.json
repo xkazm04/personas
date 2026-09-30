@@ -126,7 +126,6 @@
       ],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[12],"contexts":["**Denominator note.** [`shared-facts.json`](../shared-facts.json) records"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "overview/sub_messages/components/MessageList.tsx": {
       "count": 1,
       "sections": [],
@@ -136,6 +135,7 @@
       ],
       "resolved": false
     },
+    "shared-facts.json": {"count":2,"sections":[12],"contexts":["**Denominator note.** `shared-facts.json` records"],"resolved":false},
     "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx": {
       "count": 3,
       "sections": [0,12],

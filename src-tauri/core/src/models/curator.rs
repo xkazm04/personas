@@ -419,6 +419,15 @@ pub struct CuratorPolicy {
     pub level_forge: CuratorDecisionLevel,
     pub level_conform: CuratorDecisionLevel,
     pub level_sweep: CuratorDecisionLevel,
+    /// Authority for editing the registry's own METHOD files - the skills that
+    /// say how every other lane runs.
+    ///
+    /// A fifth level rather than a reuse of [`Self::level_sweep`] because the
+    /// blast radius is categorically different: a sweep changes what the corpus
+    /// says, a method edit changes what every future worker is told to do. The
+    /// level is recorded, never a gate; the permission itself is the dated
+    /// standing authorization the dispatch package carries.
+    pub level_method: CuratorDecisionLevel,
     /// Dollars per day. `None` = no ceiling declared.
     pub daily_budget_usd: Option<f64>,
     /// Dispatches per day. `None` = no cap declared.
@@ -452,6 +461,7 @@ impl Default for CuratorPolicy {
             level_forge: CuratorDecisionLevel::L0,
             level_conform: CuratorDecisionLevel::L0,
             level_sweep: CuratorDecisionLevel::L0,
+            level_method: CuratorDecisionLevel::L0,
             daily_budget_usd: None,
             daily_run_cap: None,
             daily_commit_cap: None,
@@ -701,8 +711,12 @@ pub struct CuratorQuietBundle {
     pub demand_known: bool,
 }
 
-/// A plan run with its items - what `curator_plan_current` and
-/// `curator_plan_refresh` both return.
+/// A plan run with its items.
+///
+/// What `curator_plan_current` returns, and what [`CuratorRefresh`] carries
+/// back from `curator_plan_refresh` - that command wraps this rather than
+/// returning it bare since 2026-09-25, because the plan alone cannot say
+/// whether the projection moved or where the reading came from.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
@@ -713,6 +727,39 @@ pub struct CuratorPlan {
     /// only for a subject that scores, so these 170 have no row anywhere - and
     /// `table` scores 0 while holding 16 stale verdicts across 6 projects.
     pub quiet: Vec<CuratorQuietBundle>,
+}
+
+/// One run of the instrument, and the two things about it a person cannot see
+/// by looking at the plan it produced.
+///
+/// **Measured 2026-09-25, and it is the whole reason this type exists:** the
+/// operator pressed the run control twice against an unmoved registry HEAD.
+/// The first press took about eleven seconds and the second about two, and
+/// BOTH produced a projection identical to the one already on screen - so the
+/// page could not change, the control snapped back, and a working instrument
+/// was indistinguishable from a dead button. Neither fact was on the wire:
+/// `curator_plan_refresh` returned a `CuratorPlan` and nothing else.
+///
+/// Both fields are measurements taken by the side that can take them. The
+/// client cannot honestly derive either - a stopwatch around the IPC is a
+/// guess at the cache, and comparing against whatever the page happens to hold
+/// is not comparing against the run that was superseded.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CuratorRefresh {
+    /// The projection that now stands.
+    pub plan: CuratorPlan,
+    /// True when the five-minute reading cache answered and no instrument ran.
+    /// A 2-second answer and an 11-second answer are different events and the
+    /// surface must not hide which one it gave.
+    pub from_cache: bool,
+    /// Whether this projection differs from the one it superseded. `None` when
+    /// the standing run could not be READ to compare against - which is not the
+    /// same as "it did not change", and must not be drawn as if it were. A run
+    /// with nothing standing before it is `Some(true)`: there was no plan and
+    /// now there is one.
+    pub changed: Option<bool>,
 }
 
 // ---------------------------------------------------------------------------
@@ -873,6 +920,37 @@ pub struct CuratorSkill {
     pub runs_bare: Option<bool>,
     /// The argument line as the file states it, verbatim, or null.
     pub argument_hint: Option<String>,
+    // -- What the skill has LEARNED. Read from its `LESSONS.md`, which is the
+    // append-only log each skill keeps in its own voice. Nothing here parses
+    // that prose into structure: the point is that the plan can SEE which
+    // engines are still moving and which have gone quiet, and every one of the
+    // five is `None` when the skill keeps no such file - never a zero, which
+    // would claim a measurement nobody made. Measured 2026-09-25: 43 of the
+    // 44 skills the two lanes report keep one (`llm-bench` is the exception),
+    // 1.58 MB in total.
+    /// Repo-relative path of the skill's `LESSONS.md`, when it keeps one.
+    pub lessons_path: Option<String>,
+    /// That file's size in bytes. `None` is "there is no such file"; `Some(0)`
+    /// would be a file that exists and says nothing, which is a different fact.
+    /// u64 because a file size is; pinned to `number` on the wire because a
+    /// markdown log stays many orders under 2^53 and `bigint` would be a lie
+    /// about what `JSON.parse` hands back.
+    #[ts(type = "number | null")]
+    pub lessons_bytes: Option<u64>,
+    /// Its last-modified time, RFC3339. `None` when there is no file, or when
+    /// this filesystem does not report one - both are unknown, not "never".
+    pub lessons_modified_at: Option<String>,
+    /// The `##` heading of the newest DATED entry, verbatim and unparsed.
+    /// `None` when the file carries no dated heading at all: measured
+    /// 2026-09-25, `assay` still holds the template's
+    /// `## <version used> - <YYYY-MM-DD> - <source slug>` and has recorded
+    /// nothing, which must never read as a date.
+    pub lessons_latest_entry: Option<String>,
+    /// That entry's `YYYY-MM-DD`, lifted out of the heading as a substring so
+    /// a surface can sort and age it. It is the MAXIMUM date in the file, not
+    /// the topmost heading - see `instrument::newest_lesson` for why the two
+    /// differ.
+    pub lessons_latest_at: Option<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -939,7 +1017,416 @@ pub struct CuratorRuntime {
     pub last_sleep_at: Option<String>,
 }
 
-/// The four lanes [`CuratorRuntime::lane`] names.
+// ---------------------------------------------------------------------------
+// What stops her, as data
+// ---------------------------------------------------------------------------
+
+/// **Why a whole engine of her plan cannot be dispatched.**
+///
+/// This existed as a table in a doc comment until 2026-09-26, and the cost of
+/// that was measured the same day: her loop ran against a 314-item plan of which
+/// **312 were undispatchable**, dispatched nothing after 20:46, and no surface
+/// could say why - because the reason was a comment in `dispatch.rs` that a
+/// human had to be reading at the time. An impediment a program cannot
+/// enumerate is an impediment nobody fixes.
+///
+/// The kinds are split by ONE question, and it is the question that bounds her
+/// authority: **is the missing thing in the registry, or in this app?** A
+/// missing invocation is a gap in a method file she may edit. A plan item that
+/// cannot carry a technique's name is a gap in *Personas'* projection, and she
+/// may not rewrite Personas - that stays a report for the operator.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum CuratorImpedimentKind {
+    /// The answering skill's `SKILL.md` documents no invocation at all, so
+    /// `runs_bare` is unknown and there is no command line to write. **Hers to
+    /// fix**: the gap is a heading in a file the registry owns.
+    UndocumentedInvocation,
+    /// The skill documents an invocation the plan item cannot fill - `apply`
+    /// wants a technique's NAME and the item carries a count; `conform` judges a
+    /// consumer repo and the item names no project. **Not hers**: the missing
+    /// field is in this app's projection.
+    ItemLacksArgument,
+    /// The route names a skill the registry does not carry at all. **Not
+    /// hers**: writing a new skill is not documenting an existing one.
+    SkillMissing,
+}
+
+impl CuratorImpedimentKind {
+    /// Whether she may dispatch a worker to close this herself.
+    ///
+    /// Exactly one kind is true, and the asymmetry is the whole safety story:
+    /// the fix for an undocumented invocation is bounded (one file, one section,
+    /// a version bump and a lesson), reviewable as a diff, and its blast radius
+    /// is the registry's own lane. The other two would have her editing the app
+    /// that runs her, which is a different act wearing the same word.
+    pub fn self_fixable(self) -> bool {
+        matches!(self, Self::UndocumentedInvocation)
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::UndocumentedInvocation => "undocumented_invocation",
+            Self::ItemLacksArgument => "item_lacks_argument",
+            Self::SkillMissing => "skill_missing",
+        }
+    }
+}
+
+/// One measured impediment, ranked by how much of her plan it frees.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CuratorImpediment {
+    /// Stable across ticks, so a fix already attempted is not re-attempted:
+    /// `<kind>:<skill>`.
+    pub id: String,
+    pub kind: CuratorImpedimentKind,
+    /// The engine whose items it blocks.
+    pub engine: CuratorEngine,
+    /// The registry skill that would answer that engine.
+    pub skill: String,
+    /// **Standing plan items this impediment holds, right now.** Counted from
+    /// the plan rows in front of her, never guessed.
+    pub blocks: u32,
+    /// **Of those, how many closing it would actually release.** The rank, and
+    /// deliberately not [`Self::blocks`].
+    ///
+    /// Measured 2026-09-26 against the live plan, which is what forced the two
+    /// fields apart: `conform` documents its invocation only inside a prose
+    /// sentence in its `description:` frontmatter, so it reads as undocumented
+    /// and holds **99** items - and documenting it properly would free **none**
+    /// of them, because a `conform` plan item also cannot carry the project that
+    /// invocation needs. Two different things are missing and only one of them is
+    /// in the registry.
+    ///
+    /// Ranking on `blocks` would therefore have sent her to fix the largest
+    /// number on the board and unblocked nothing - the eight-refill-passes waste
+    /// in a new costume. `frees` is `blocks` only when the engine can already
+    /// carry its own argument, so the skill's side is genuinely the last thing
+    /// missing.
+    pub frees: u32,
+    /// The file that would have to change, as the registry states its path.
+    /// `None` when there is no such file, which is what `SkillMissing` means.
+    pub file: Option<String>,
+    /// One line naming what is absent. Written for the worker's brief, so it
+    /// says what to add, not merely what is wrong.
+    pub summary: String,
+    /// `true` only for [`CuratorImpedimentKind::self_fixable`].
+    pub self_fixable: bool,
+    /// Why it is not hers, when it is not. `None` when it is.
+    pub refusal: Option<String>,
+}
+
+// ---------------------------------------------------------------------------
+// Whether the ecosystem is growing
+// ---------------------------------------------------------------------------
+
+/// **One sample of the ecosystem's size.** Her goal signal, and the operator's
+/// question in one row: is the fleet of projects growing, or is she only busy?
+///
+/// Every field is `Option` and none of them defaults to zero. That is not
+/// decoration - it is the rule this module has already been bitten by three
+/// times (`registry_dry_streak` reading `0` for "nobody increments it",
+/// `CuratorRuntime`'s caps rendering `0` for "no ceiling declared", and
+/// `ScanSubject::dry_streak` failing a whole document on one bad field). A
+/// metric that could not be read must not report as a metric that measured
+/// nothing.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CuratorGrowth {
+    pub measured_at: String,
+    /// Consumer projects the registry's map joins. **The numerator of the
+    /// operator's question**: the ecosystem is projects, not subjects.
+    pub projects: Option<u32>,
+    /// Context-to-subject pairs carrying any verdict at all.
+    pub judged_pairs: Option<u32>,
+    /// Judged pairs whose subject has since moved, so the verdict is a claim
+    /// about a document that no longer exists in that form. **Down is growth
+    /// here** - see [`CuratorGrowthMetric::higher_is_better`].
+    pub stale_verdicts: Option<u32>,
+    /// Distinct subjects `librarian/applied.md` says reached a project. The
+    /// only metric that proves knowledge left the registry.
+    pub applied_subjects: Option<u32>,
+    pub subjects: Option<u32>,
+    pub techniques: Option<u32>,
+    pub applications: Option<u32>,
+}
+
+/// The metrics a trend is computed over, each with its own direction.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum CuratorGrowthMetric {
+    Projects,
+    JudgedPairs,
+    StaleVerdicts,
+    AppliedSubjects,
+    Subjects,
+    Techniques,
+    Applications,
+}
+
+impl CuratorGrowthMetric {
+    pub const ALL: [Self; 7] = [
+        Self::Projects,
+        Self::JudgedPairs,
+        Self::StaleVerdicts,
+        Self::AppliedSubjects,
+        Self::Subjects,
+        Self::Techniques,
+        Self::Applications,
+    ];
+
+    /// **`stale_verdicts` is the one that improves by falling.** A trend that
+    /// summed raw deltas would read a wave of re-judging - the most valuable
+    /// work in the corpus - as shrinkage.
+    pub fn higher_is_better(self) -> bool {
+        !matches!(self, Self::StaleVerdicts)
+    }
+
+    pub fn read(self, of: &CuratorGrowth) -> Option<u32> {
+        match self {
+            Self::Projects => of.projects,
+            Self::JudgedPairs => of.judged_pairs,
+            Self::StaleVerdicts => of.stale_verdicts,
+            Self::AppliedSubjects => of.applied_subjects,
+            Self::Subjects => of.subjects,
+            Self::Techniques => of.techniques,
+            Self::Applications => of.applications,
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Projects => "projects",
+            Self::JudgedPairs => "judged_pairs",
+            Self::StaleVerdicts => "stale_verdicts",
+            Self::AppliedSubjects => "applied_subjects",
+            Self::Subjects => "subjects",
+            Self::Techniques => "techniques",
+            Self::Applications => "applications",
+        }
+    }
+}
+
+/// Which way one metric, or the ecosystem as a whole, has moved.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum CuratorTrend {
+    Grew,
+    Flat,
+    Shrank,
+    /// Either sample could not read this metric, or there is only one sample.
+    /// **Never folded into `Flat`**: "it did not move" and "nobody could tell"
+    /// are the two answers this whole struct exists to keep apart.
+    Unknown,
+}
+
+impl CuratorTrend {
+    /// The direction between two readings of one metric.
+    pub fn between(metric: CuratorGrowthMetric, then: &CuratorGrowth, now: &CuratorGrowth) -> Self {
+        let (Some(a), Some(b)) = (metric.read(then), metric.read(now)) else {
+            return Self::Unknown;
+        };
+        if a == b {
+            return Self::Flat;
+        }
+        if (b > a) == metric.higher_is_better() {
+            Self::Grew
+        } else {
+            Self::Shrank
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Grew => "grew",
+            Self::Flat => "flat",
+            Self::Shrank => "shrank",
+            Self::Unknown => "unknown",
+        }
+    }
+}
+
+/// One metric's movement between the two newest samples.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CuratorGrowthDelta {
+    pub metric: CuratorGrowthMetric,
+    pub trend: CuratorTrend,
+    /// `now - then`, in the metric's own raw direction. `None` when either
+    /// reading is absent.
+    pub change: Option<i64>,
+}
+
+/// **The answer to "is the ecosystem growing?", with its evidence.**
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CuratorGrowthReading {
+    pub latest: Option<CuratorGrowth>,
+    pub previous: Option<CuratorGrowth>,
+    pub deltas: Vec<CuratorGrowthDelta>,
+    /// `Shrank` if any metric went backwards; else `Grew` if any grew; else
+    /// `Flat` when every readable metric held; `Unknown` with nothing readable
+    /// or fewer than two samples.
+    ///
+    /// A mixed sample reads `Shrank` on purpose. She is not scoring herself -
+    /// she is deciding whether to keep doing what she is doing, and a metric
+    /// going backwards is the one thing that should stop her.
+    pub verdict: CuratorTrend,
+    /// Consecutive sample pairs in which nothing grew. **The operator's actual
+    /// question**: a loop that spends money and moves no number is the failure
+    /// this field makes visible without anybody reading a database.
+    pub flat_streak: u32,
+    pub samples: u32,
+}
+
+impl CuratorGrowthReading {
+    /// Build the reading from her samples, newest FIRST.
+    pub fn from_samples(newest_first: &[CuratorGrowth]) -> Self {
+        let latest = newest_first.first().cloned();
+        let previous = newest_first.get(1).cloned();
+        let samples = newest_first.len() as u32;
+        let (Some(now), Some(then)) = (&latest, &previous) else {
+            return Self {
+                latest,
+                previous,
+                deltas: Vec::new(),
+                verdict: CuratorTrend::Unknown,
+                flat_streak: 0,
+                samples,
+            };
+        };
+        let deltas: Vec<_> = CuratorGrowthMetric::ALL
+            .into_iter()
+            .map(|metric| CuratorGrowthDelta {
+                metric,
+                trend: CuratorTrend::between(metric, then, now),
+                change: metric
+                    .read(now)
+                    .zip(metric.read(then))
+                    .map(|(b, a)| i64::from(b) - i64::from(a)),
+            })
+            .collect();
+        let verdict = if deltas.iter().any(|d| d.trend == CuratorTrend::Shrank) {
+            CuratorTrend::Shrank
+        } else if deltas.iter().any(|d| d.trend == CuratorTrend::Grew) {
+            CuratorTrend::Grew
+        } else if deltas.iter().any(|d| d.trend == CuratorTrend::Flat) {
+            CuratorTrend::Flat
+        } else {
+            CuratorTrend::Unknown
+        };
+        Self {
+            latest,
+            previous,
+            deltas,
+            verdict,
+            flat_streak: Self::flat_streak(newest_first),
+            samples,
+        }
+    }
+
+    /// Walk BACK through consecutive pairs while none of them grew.
+    ///
+    /// A pair nobody could read breaks the streak rather than extending it: an
+    /// unreadable sample is not evidence of stagnation, and a streak that grew
+    /// on missing data would brake her for a reason that never happened.
+    fn flat_streak(newest_first: &[CuratorGrowth]) -> u32 {
+        let mut streak = 0;
+        for pair in newest_first.windows(2) {
+            let mut any_grew = false;
+            let mut any_known = false;
+            for metric in CuratorGrowthMetric::ALL {
+                match CuratorTrend::between(metric, &pair[1], &pair[0]) {
+                    CuratorTrend::Grew => {
+                        any_grew = true;
+                        any_known = true;
+                    }
+                    CuratorTrend::Unknown => {}
+                    _ => any_known = true,
+                }
+            }
+            if any_grew || !any_known {
+                break;
+            }
+            streak += 1;
+        }
+        streak
+    }
+}
+
+// ---------------------------------------------------------------------------
+// The work that stopped reporting
+// ---------------------------------------------------------------------------
+
+/// **One run of hers that went quiet.**
+///
+/// Measured 2026-09-26, and this type exists because the operator saw it before
+/// any surface did: **18 of her sessions sitting in `stale`**, every one of them
+/// carrying the same reason - `No log growth for 6 min` - and several marked
+/// `restored after restart`, which is why they come back after every launch.
+///
+/// The fleet's staleness rule is fleet-wide and its own doc says what it assumes:
+/// "No hook activity AND no JSONL writes for `STALE_AFTER_SECS`. Likely user
+/// walked away or session hung." A **headless** worker has no user to walk away,
+/// and a research pass legitimately thinks for longer than six minutes without
+/// writing a line - so `stale` on one of her workers is a claim about the
+/// tracker at least as often as about the worker. Nothing here changes that
+/// rule; this reports what it did, so the question stops being invisible.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CuratorQuietRun {
+    pub session_id: String,
+    /// From her own dispatch row, so the run is named by the work rather than by
+    /// a terminal title somebody's naming lane may have rewritten. `None` when
+    /// no dispatch row points at this session.
+    pub lane: Option<String>,
+    pub skill: Option<String>,
+    pub argument: Option<String>,
+    /// The fleet's state token, as the fleet spells it.
+    pub state: String,
+    /// The fleet's own sentence for why - the evidence, carried verbatim.
+    pub reason: Option<String>,
+    pub started_at: Option<String>,
+    /// Minutes since its last activity. `None` when the clock could not be read
+    /// - never `0`, which would read as "active this second".
+    pub quiet_minutes: Option<u32>,
+    /// Whether her ledger has settled the dispatch this session was started for.
+    /// A settled row with a quiet session is tidy bookkeeping over a run nobody
+    /// knows the outcome of; an unsettled one is a leak.
+    pub settled: bool,
+}
+
+/// **What her running has cost, as opposed to what it produced.**
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CuratorAttrition {
+    /// Her runs that stopped reporting, newest first.
+    pub runs: Vec<CuratorQuietRun>,
+    /// Items of the STANDING plan that were dispatched and then written off.
+    ///
+    /// Not a permanent loss and the surface must not imply one: a projection
+    /// supersedes its predecessor, so a written-off subject returns to `planned`
+    /// on the next run. The cost is one cycle of that subject, per occurrence.
+    pub written_off: u32,
+    /// Her dispatches with no settle and no live session behind them.
+    pub abandoned: u32,
+    /// The fleet's staleness threshold, read from the constant rather than
+    /// written down here, so this surface cannot quote a number the fleet has
+    /// since changed.
+    pub stale_after_secs: u32,
+}
+
+/// The five lanes [`CuratorRuntime::lane`] names.
 ///
 /// The field is a `String` on the wire rather than an enum, so a surface can
 /// fall back rather than fail on a lane it does not know - but the vocabulary
@@ -957,6 +1444,18 @@ pub mod curator_lane {
     pub const REFILL: &str = "refill";
     /// Her reconcile sleep.
     pub const SLEEP: &str = "sleep";
+    /// **The lane that widens what the other lanes can do.** She dispatches a
+    /// worker at a gap in the registry's own METHOD files - a skill that
+    /// documents no invocation, so nothing may call it - rather than at a
+    /// subject. Added 2026-09-26, when 103 of her 314 standing plan items were
+    /// undispatchable because one `SKILL.md` was missing one heading.
+    ///
+    /// It is its own token and not folded into [`PLAN`] deliberately: this is
+    /// the most privileged thing she does, because a method file governs every
+    /// future run rather than one subject's content, and an audit that could not
+    /// tell it from ordinary plan work would be hiding exactly the row a
+    /// reviewer came for.
+    pub const METHOD: &str = "method";
 }
 
 /// The `dev_llm_spend.source` every Curator dispatch is recorded under.

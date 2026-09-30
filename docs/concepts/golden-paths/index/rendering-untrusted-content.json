@@ -31,7 +31,6 @@
     ".github/workflows/ci.yml": {"count":1,"sections":[9],"contexts":["calls non-optional, and the one `ci.yml`'s museum of no-op gates keeps violating: the check"],"resolvedFrom":"basename","verbatim":"ci.yml"},
     "Cargo.toml": {"count":1,"sections":[3],"contexts":["`tauri-plugin-shell` crate is absent from `Cargo.toml` and no capability grants `shell:`."],"resolved":false},
     "auth.rs": {"count":1,"sections":[7],"lines":["459,586"],"contexts":["`on_navigation` guard on the main window — `auth.rs:459,586` install one only on the two OAuth"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json), commit `211d519bb`), the two sibling"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "eslint.config.js": {"count":2,"sections":[7,9],"contexts":["Cargo feature existence — it never reads `csp` or `devCsp`. `eslint.config.js` has no"]},
     "node_modules/react-markdown/lib/index.js": {"count":1,"sections":[6],"lines":["124,320,382,421"],"contexts":["(`node_modules/react-markdown/lib/index.js:124,320,382,421`). `javascript:`, `data:` and"],"resolved":false},
     "package.json": {"count":2,"sections":[3,7],"contexts":["Do **not** reach for `@tauri-apps/plugin-shell`'s `open()`. It is in `package.json` but the"]},
@@ -41,6 +40,7 @@
     "plugins/twin/shared/WikiFreshnessPill.tsx": {"count":1,"sections":[7],"lines":["108"],"contexts":["| `plugins/twin/shared/WikiFreshnessPill.tsx:108` | \"Open folder\" |"],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Not already gated.** All 41 existing rules in `scripts/census/rules.json` were checked; none"]},
     "scripts/check-tauri-configs.mjs": {"count":4,"sections":[7,8,9],"contexts":["`scripts/check-tauri-configs.mjs` validates `$schema` drift, overlay key surface, and"]},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["`shared-facts.json`, commit `211d519bb`), the two sibling"],"resolved":false},
     "src-tauri/Cargo.toml": {"count":1,"sections":[7],"contexts":["from `src-tauri/Cargo.toml` and neither `capabilities/default.json` nor `mobile.json` grants"]},
     "src-tauri/capabilities/default.json": {
       "count": 1,

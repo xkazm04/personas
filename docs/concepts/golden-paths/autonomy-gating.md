@@ -1,6 +1,6 @@
 # Golden path — autonomy gating
 
-> Situation node: `ai-agents/cost-governance/autonomy-gating` · [situation spine](../situation-spine.md)
+> Situation node: `ai-agents/cost-governance/autonomy-gating` · situation spine
 > Composed 2026-08-15 against `master` @ `7bd14eb9c`. **Recurrence 20 · risk HIGH · sides: server (the
 > spine also marks it `twoSided`, and the client half is real — see §7.K) · convergence: converged.**
 > Sweep: all **963** non-generated Rust files under `src-tauri/` walked by the census engine and
@@ -83,7 +83,7 @@ through it too, and to fix the asymmetry in §0's first table.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and
+Per the portability test, the head is physically separated and
 every clause carries its warrant, so an adopting repo can tell physics from local calibration. No
 file path, primitive name or count appears below this line until the head ends.
 
@@ -917,7 +917,7 @@ rather than at the next audit.
 
 ## 9. The missing gate
 
-**Manifestation layer** ([`golden-path-contract.md:43-69`](../golden-path-contract.md)). The warning
+**Manifestation layer** (`golden-path-contract.md:43-69`). The warning
 must be loud: **no sibling repo gates anything in this document**, and four of the five have no
 autonomy chokepoint for a gate to key on. The conditions below travel; the signal does not — an
 adopting repo must re-derive its own proxy for "an autonomy verdict computed away from the one place

@@ -111,7 +111,7 @@ and wait for typed input). Rules:
 ### Phase 3 — Execute (parallel subagent waves)
 
 Run accepted work as **parallel subagents — use the strongest available model
-(Opus-class) for builders** since each task is a real engineering change.
+(Sonnet 5.5) for builders** since each task is a real engineering change.
 Rules:
 
 - **Waves respect dependencies, agents within a wave are parallel.** Wave 1:

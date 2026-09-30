@@ -1,7 +1,7 @@
 # Golden path — Translation completeness
 
 > Situation node: `ui-system/copy-and-vocabulary/translation-completeness` ·
-> [situation spine](../situation-spine.md) · recurrence 9 · risk **high** ·
+> situation spine · recurrence 9 · risk **high** ·
 > sides: **client** · convergence: **mixed** ·
 > dimensions: **function · ui · code-quality**
 > Composed 2026-08-16 against `master` @ `2a874e692`.
@@ -38,7 +38,7 @@
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and
+Per the portability test, the head is physically separated and
 every clause carries its warrant. No file path, primitive name or count appears below this line
 until the head ends.
 
@@ -483,7 +483,7 @@ render — `EventReasonView.tsx:16` only labels tokens that first pass the 9-mem
 14 locales, and it would fail a naive parity test while a containment test would miss it.** It is the
 argument for `toEqual` in one line.
 
-> **Neighbour interaction, per [doctrine §6](../golden-path-doctrine.md#6-check-your-prescription-against-your-neighbours).**
+> **Neighbour interaction, per doctrine §6.**
 > [`status-and-severity-badges.md:277`](./status-and-severity-badges.md) already publishes a
 > category → union pairing table, and it is **wrong on at least two rows** — it pairs
 > `healing_status` with `IncidentStatus` and `deployment` with `AutomationDeployStatus`. That
@@ -677,7 +677,7 @@ free-form list beside it is not**, which is the ordinary shape of this class of 
 
 ## 9. The missing gate
 
-**Manifestation layer.** Per [`golden-path-contract.md:43-69`](../golden-path-contract.md), what
+**Manifestation layer.** Per `golden-path-contract.md:43-69`, what
 follows is a proxy for a semantic condition, tuned to this repo's idiom. The risk is acute here:
 four of five canonical siblings have no i18n at all, and the one that does has neither
 `tokenLabel` nor `ROUTE_SECTIONS` — **every signal below would score zero in `personas-web` while

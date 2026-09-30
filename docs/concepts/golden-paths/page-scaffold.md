@@ -1,11 +1,11 @@
 # Golden path — Page scaffold
 
-> Situation node: `ui-system/layout-and-navigation/page-scaffold` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/layout-and-navigation/page-scaffold` · situation spine
 > `sides: client` · `risk: medium` · recurrence **81** · convergence **mixed**.
 > Dimensions: **ui · code-quality**. Absorbs the retired topic *Page and section scaffolding*.
 >
 > Composed 2026-08-14 against `master` from a ground-truth sweep: the **4,829**
-> `.ts`/`.tsx` files under `src/` ([`shared-facts.json`](../shared-facts.json)),
+> `.ts`/`.tsx` files under `src/` (`shared-facts.json`),
 > of which the **2,104** `.tsx` files were walked **five times by a TypeScript
 > compiler JSX parser** — not grep — counting real element instantiations,
 > attribute values, JSX-subtree containment and per-function return shapes. Read

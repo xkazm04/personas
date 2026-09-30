@@ -1,7 +1,7 @@
 # Golden path — Connection pool and pragmas
 
 > Situation node: `data-persistence/schema-design/connection-pool-pragmas` ·
-> [situation spine](../situation-spine.md) · recurrence 5 · risk **medium** ·
+> situation spine · recurrence 5 · risk **medium** ·
 > sides: **server** · convergence: **converged**
 > Composed 2026-08-17 against `master` @ `2edb8d694`. Mode 2 batch
 > (`data-persistence/schema-design`), **short form** — §0, §2, §7, §9, §12.
@@ -496,7 +496,7 @@ that adds up.
 ```
 
 **Floor rationale, and why it is 900 again.** The walk reports **963** `.rs`
-files, matching `rust.files` in [`shared-facts.json`](../shared-facts.json).
+files, matching `rust.files` in `shared-facts.json`.
 `floor: 900` is what all the other `src-tauri`-rooted rules use, including
 `uncustomized-connection-pool` directly above; two rules over one root must not
 hold two opinions about what "the Rust tree is intact" means.

@@ -170,15 +170,11 @@ Page-level layout shells, section primitives, sidebar, footer, theme provider. `
 
 ### shared-progress-terminal
 
-Progress, terminal, and use-case primitives. Progress: `WizardStepper`, `EstimatedProgressBar`, `ContentLoader` (skeleton), `TransformProgress`/`TransformModeView`/`TransformStatusPanels`, `AnalysisModeView`, `ConfigureStep`, plus phase-detection helpers (`detectTransformPhase`, `detectAnalysisPhase`). Terminal: `TerminalBody` (ANSI-aware), `TerminalHeader`, `TerminalSearchBar` + `useTerminalFilter`, `TerminalStrip`, `CliOutputPanel`. Use-cases: `UseCasesList`, `UseCaseRow`, `UseCaseHistory`, `UseCaseExecutionPanel`, `MockModePanel`, `useUseCaseExecution`. Editors: `JsonEditor`, `MarkdownRenderer`, draft-editor sub-system.
+Progress, terminal, and use-case primitives. Progress: `EstimatedProgressBar`, `ContentLoader` (skeleton), `ConfigureStep`. (`WizardStepper`, the `TransformProgress` family, `AnalysisModeView` and the phase-detection helpers were never mounted and were deleted 2026-09-25.) Terminal: `TerminalBody` (ANSI-aware), `TerminalHeader`, `TerminalSearchBar` + `useTerminalFilter`, `TerminalStrip`, `CliOutputPanel`. Use-cases: `UseCasesList`, `UseCaseRow`, `UseCaseHistory`, `UseCaseExecutionPanel`, `MockModePanel`, `useUseCaseExecution`. Editors: `JsonEditor`, `MarkdownRenderer`.
 
 **Files:**
-- `src/features/shared/components/progress/WizardStepper.tsx`
 - `src/features/shared/components/progress/EstimatedProgressBar.tsx`
 - `src/features/shared/components/progress/ContentLoader.tsx`
-- `src/features/shared/components/progress/TransformProgress.tsx`
-- `src/features/shared/components/progress/AnalysisModeView.tsx`
-- `src/features/shared/components/progress/phaseDetection.ts`
 - `src/features/shared/components/terminal/TerminalBody.tsx`
 - `src/features/shared/components/terminal/TerminalHeader.tsx`
 - `src/features/shared/components/terminal/TerminalSearchBar.tsx`

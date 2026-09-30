@@ -101,6 +101,45 @@ pub fn create_workspace(
     Ok(workspace)
 }
 
+/// The workspace whose name equals `name`, trimmed and compared
+/// case-insensitively (Unicode lowercase, so `Š` and `š` match — SQLite's
+/// `NOCASE` folds ASCII only). `None` when there is none; the oldest when a
+/// hand-made duplicate exists, so the answer is stable.
+pub fn find_workspace_by_name(pool: &DbPool, name: &str) -> Result<Option<DevWorkspace>, AppError> {
+    let wanted = name.trim().to_lowercase();
+    if wanted.is_empty() {
+        return Ok(None);
+    }
+    let mut matches: Vec<DevWorkspace> = list_workspaces(pool)?
+        .into_iter()
+        .filter(|w| w.name.trim().to_lowercase() == wanted)
+        .collect();
+    matches.sort_by(|a, b| a.created_at.cmp(&b.created_at).then(a.id.cmp(&b.id)));
+    Ok(matches.into_iter().next())
+}
+
+/// Idempotent create by name: an existing workspace of that name (see
+/// [`find_workspace_by_name`]) is returned UNMODIFIED with `false`; otherwise
+/// a new one goes through [`create_workspace`] — the same door the Tauri
+/// command uses, so it owns its cross-project group from birth — and comes
+/// back with `true`.
+///
+/// Not atomic against a concurrent create of the same name (there is no
+/// unique index on `name`, and adding one would refuse rows installs already
+/// hold); the management API is the only caller and a paired client creates
+/// its workspace once.
+pub fn ensure_workspace(
+    pool: &DbPool,
+    name: &str,
+    color: Option<&str>,
+    description: Option<&str>,
+) -> Result<(DevWorkspace, bool), AppError> {
+    if let Some(existing) = find_workspace_by_name(pool, name)? {
+        return Ok((existing, false));
+    }
+    create_workspace(pool, name, color, description, false).map(|w| (w, true))
+}
+
 /// Undo a just-created workspace whose group could not be created.
 ///
 /// Deliberately a raw DELETE rather than [`delete_workspace`]: the row is
@@ -432,6 +471,41 @@ mod tests {
                 .id,
             legacy.id
         );
+    }
+
+    /// `ensure_workspace` is idempotent by trimmed, case-insensitive name, and
+    /// an existing workspace comes back untouched (no second group either).
+    #[test]
+    fn ensure_workspace_is_idempotent_by_name_and_does_not_modify() {
+        let pool = init_test_db().unwrap();
+        let before = team_count(&pool);
+        let (first, created) =
+            ensure_workspace(&pool, "  Freelance ", Some("#10b981"), Some("gigs")).unwrap();
+        assert!(created);
+        assert_eq!(first.name, "Freelance");
+        assert_eq!(
+            team_count(&pool),
+            before + 1,
+            "one group, from the real door"
+        );
+
+        let (again, created) =
+            ensure_workspace(&pool, "freelance", Some("#ef4444"), Some("other")).unwrap();
+        assert!(!created);
+        assert_eq!(again.id, first.id);
+        assert_eq!(again.color.as_deref(), Some("#10b981"), "not modified");
+        assert_eq!(again.description.as_deref(), Some("gigs"), "not modified");
+        assert_eq!(team_count(&pool), before + 1, "no second group");
+
+        // Unicode case folding, which SQLite NOCASE would miss.
+        let (cz, created) = ensure_workspace(&pool, "Šablony", None, None).unwrap();
+        assert!(created);
+        let (cz_again, created) = ensure_workspace(&pool, "šablony", None, None).unwrap();
+        assert!(!created);
+        assert_eq!(cz_again.id, cz.id);
+
+        assert!(find_workspace_by_name(&pool, "   ").unwrap().is_none());
+        assert!(find_workspace_by_name(&pool, "Nope").unwrap().is_none());
     }
 
     /// The import path funnels through `create_workspace`, so imported

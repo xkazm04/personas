@@ -1,13 +1,13 @@
 # Golden path — Stall watchdog
 
 > Situation node: `backend-runtime/backend-observability/stall-watchdog` ·
-> [situation spine](../situation-spine.md) · recurrence 6 · risk **HIGH** ·
+> situation spine · recurrence 6 · risk **HIGH** ·
 > sides: **server** · convergence: **diverged** ·
 > dimensions: **resilience · function · code-quality · cost**
 > Composed 2026-08-16 against `master` @ `cd9d094d9`.
 >
 > **Sweep.** All **963** `.rs` files under `src-tauri` and all **4,828** `.ts`/`.tsx`
-> under `src/` ([`shared-facts.json`](../shared-facts.json)). All **41**
+> under `src/` (`shared-facts.json`). All **41**
 > `ReactiveSubscription` implementations (39 production, 2 test) opened by name;
 > all **50** `fn tick(` definitions in the tree classified twice. **244 tables**
 > in `personas.db` and **71** in `personas_data.db` enumerated for a timestamp
@@ -199,7 +199,7 @@
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head carries no
+Per the portability test, the head carries no
 file path, primitive name or count, so an adopting repo can tell physics from
 local calibration. Each clause names its warrant.
 

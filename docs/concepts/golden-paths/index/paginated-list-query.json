@@ -4,7 +4,7 @@
   "leaf": "paginated-list-query",
   "doc": "docs/concepts/golden-paths/paginated-list-query.md",
   "file": "index/paginated-list-query.json",
-  "headline": "Corrections pass — 2026-08-13. Applied after the wave-1 expert review (REVIEW-wave1.md). Command counts across the corpus disagreed (1,649 / 1,657 / 1,661 / 1,666) because each composer counted with a slightly different grep; the authoritative figure, measured once with grep -rn --include=*.rs -o '#\\[tauri::command' src-tauri | wc -l, is 1,673, and every occurrence below now reads that. Any §9 fl…",
+  "headline": "Corrections pass — 2026-08-13. Applied after the wave-1 expert review (REVIEW-wave1.md). Command counts across the corpus disagreed (1,649 / 1,657 / 1,661 / 1,666) because each composer counted with a slightly different grep; the authoritative figure, measured once with grep -rn --include=*.rs -o '#\\tauri::command' src-tauri | wc -l, is 1,673, and every occurrence below now reads that. Any §9 flo…",
   "oneWay": "Bound the query at the database, not in the client. Add two commands per entity: a cheap get_<entity>_counts(filters) -> <Entity>Counts (one GROUP BY, no row data) and a keyset page list_<entity>_page(filters, cursor: Option<String>, limit: Option<i64>) -> <Entity>Page, where <Entity>Page is a #[de…",
   "deviations": [
     "P0 — the shared-layer root causes (fix first; upstream of everything below)",

@@ -1,7 +1,7 @@
 # Golden path — Shared fetch cache
 
 > Situation node: `client-runtime/data-fetching/shared-fetch-cache` ·
-> [situation spine](../situation-spine.md) · recurrence 29 · risk **medium** ·
+> situation spine · recurrence 29 · risk **medium** ·
 > sides: **client** · convergence: **mixed** ·
 > dimensions: **performance · function · cost · code-quality**
 > Composed 2026-08-16 against `master` @ `17d059b1f`.
@@ -222,7 +222,7 @@ anyway and skipped on the cache that persists.**
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path,
+Per the portability test the head carries no file path,
 primitive name or count. Each clause names its warrant.
 
 > **P1 — physics.** **A cache key must contain every input the value depends on, or the cache is a

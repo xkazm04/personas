@@ -58,17 +58,18 @@
     "crates/brainiac-server/src/openapi.rs": {"count":1,"sections":[6],"lines":["425"],"contexts":["*first* hop of its chain — `crates/brainiac-server/src/openapi.rs:425`'s"],"resolved":false},
     "dev_tools.rs": {"count":1,"sections":[4],"lines":["1163-1168"],"contexts":["and withhold `#[ts(export)]` **with a comment saying why** — `dev_tools.rs:1163-1168` is the one"],"resolved":false},
     "docs.rs": {"count":1,"sections":[6],"lines":["134"],"contexts":["(`crates/brainiac-server/src/http.rs:1784`, `docs.rs:134`) produce"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[9],"contexts":["`4829 walked` is exactly `frontend.tsFiles` in [`shared-facts.json`](../shared-facts.json) — two"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "engine/src/ambient_context.rs": {"count":1,"sections":[2],"contexts":["`engine/src/ambient_context.rs` would have fixed it for everyone, permanently, in one word."],"resolved":false},
     "index.ts": {"count":3,"sections":[4,8],"lines":["2"],"contexts":["3. **\"86 of 1,032 binding files are missing from `index.ts`\" is true, current at 87 of 1,033 — and"],"resolved":false},
     "knip.json": {"count":3,"sections":[7],"lines":["18"],"contexts":["(plus `serde_json/JsonValue.ts` and the barrel), `ci.yml`, `knip.json`, and the two checkers that guard"]},
     "openapi.json": {"count":3,"sections":[6],"contexts":["Read-only sweep 2026-08-14 against `../brainiac` (Rust · utoipa → `openapi.json` → `openapi-typescript`),"],"resolved":false},
     "openapi.rs": {"count":1,"sections":[6],"lines":["437"],"contexts":["the chain is enforced by a sentence inside an assert message** (`openapi.rs:437`: \"…and re-run"],"resolved":false},
+    "overview/sub_cron_agents/components/CronAgentCard.tsx": {"count":1,"sections":[7],"contexts":["`fleet/monitor/monitorModel.ts`, `overview/sub_cron_agents/components/CronAgentCard.tsx` and 30+ other"],"resolved":false},
     "package.json": {"count":1,"sections":[3],"contexts":["- **`npm run census:check`** — inside `npm run check` (`package.json`). Hosts `bigint-binding-field`,"]},
     "personas-cloud/packages/shared/src/types.ts": {"count":2,"sections":[6],"lines":["5","2"],"contexts":["(exact) → **20** in `personas-cloud/packages/shared/src/types.ts:5` → **18** in"],"resolved":false},
     "personas-web/src/lib/types.ts": {"count":2,"sections":[6],"lines":["5","2"],"contexts":["`personas-web/src/lib/types.ts:5`. The two fields lost at the last hop are `permissionPolicy` and"],"resolved":false},
     "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["(`scripts/census/rules.json`, owned by [persisted-model-struct](./persisted-model-struct.md))"]},
     "scripts/check-unused-bindings.sh": {"count":8,"sections":[3,5,7,8,9],"lines":["17"],"contexts":["- **`scripts/check-unused-bindings.sh`** (`ci.yml:179`, `if: always()`, no `continue-on-error`) — asks"]},
+    "shared-facts.json": {"count":1,"sections":[9],"contexts":["`4829 walked` is exactly `frontend.tsFiles` in `shared-facts.json` — two"],"resolved":false},
     "src-tauri/": {"count":3,"sections":[8,9],"contexts":["under `src-tauri/`, the **4,829** `.ts`/`.tsx` files under `src/`, all **1,033** generated binding files"],"resolved":false,"isDir":true},
     "src-tauri/.cargo/config.toml": {
       "count": 1,
@@ -223,13 +224,6 @@
       "sections": [7],
       "lines": ["9"],
       "contexts": ["| `typeof x === 'bigint'` guards — branches that cannot execute | **6** (`src/api/companion.ts:745,794,795,865,867`; `src/features/overview/components/health/LogDiskUsageSection.tsx:9`) |"]
-    },
-    "src/features/overview/sub_cron_agents/components/CronAgentCard.tsx": {
-      "count": 1,
-      "sections": [7],
-      "contexts": ["`fleet/monitor/monitorModel.ts`, `overview/sub_cron_agents/components/CronAgentCard.tsx` and 30+ other"],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/sub_cron_agents/components/CronAgentCard.tsx"
     },
     "src/features/overview/sub_health/libs/compositeHealthScore.test.ts": {"count":3,"sections":[5,7],"lines":["20-23"],"contexts":["- **Writing test fixtures against `bigint`.** `src/features/overview/sub_health/libs/compositeHealthScore.test.ts:20-23`"]},
     "src/lib/bindings/": {

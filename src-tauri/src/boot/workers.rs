@@ -34,6 +34,18 @@ pub fn spawn_requeue_persisted(
     }
 }
 
+// Settle build sessions an earlier process left mid-flight (see
+// `engine::build_session::restart`). Spawned so it never blocks startup; the
+// work is a handful of compare-and-set writes plus, per resumed kp hire, one
+// runner task.
+pub fn spawn_build_session_recovery(app: &tauri::App, state_arc: &Arc<AppState>) {
+    let state = state_arc.clone();
+    let handle = app.handle().clone();
+    tauri::async_runtime::spawn(async move {
+        engine::build_session::recover_after_restart(&state, &handle);
+    });
+}
+
 // Side effects the engine fires into the shell. Registered here
 // because every target — tray, notifications, the companion's
 // proactive lane — sits above the engine. Unregistered, they are

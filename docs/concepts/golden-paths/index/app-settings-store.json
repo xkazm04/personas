@@ -111,7 +111,6 @@
       "resolved": false
     },
     "director.rs": {"count":1,"sections":[5],"lines":["118"],"contexts":["`DIRECTOR_BRAIN_ENABLED` are read with `== \"true\"` (`director.rs:118`, `director_brain.rs:61`) but"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[9],"contexts":["[`shared-facts.json`](../shared-facts.json), and exactly what the census walker reports) ·"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "external_api_keys.rs": {
       "count": 1,
       "sections": [7],
@@ -203,6 +202,7 @@
       "resolved": false
     },
     "settings.rs": {"count":7,"sections":[4,5,7,8],"lines":["209-239","96","21","45-49","187-194","91-94","35-39"],"contexts":["exists and is idempotent (`settings.rs:209-239`)."],"resolved":false},
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["`shared-facts.json`, and exactly what the census walker reports) ·"],"resolved":false},
     "src-tauri/core/src/models/settings_audit_log.rs": {
       "count": 1,
       "sections": [],

@@ -1,7 +1,7 @@
 # Golden path — Release pipeline
 
 > Situation node: `platform-delivery/packaging-and-release/release-pipeline` ·
-> [situation spine](../situation-spine.md)
+> situation spine
 > `sides: server` · `twoSided: false` · recurrence **4** · risk **HIGH** ·
 > spine label `convergence: converged`.
 > Dimensions: **resilience · function**.

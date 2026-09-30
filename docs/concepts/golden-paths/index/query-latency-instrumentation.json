@@ -60,13 +60,6 @@
     "db/src/repos/research_lab.rs": {"count":1,"sections":[7],"contexts":["| `db/src/repos/research_lab.rs` | **25** | 25 |"],"resolved":false},
     "dev_tools.rs": {"count":1,"sections":[4],"lines":["6943"],"contexts":["paired with `op=\"dev_kpis::list_kpi_measurements\"`, `dev_tools.rs:6943`) — harmless for the table"],"resolved":false},
     "dev_workspaces.rs": {"count":2,"sections":[7],"lines":["568"],"contexts":["(`dev_workspaces.rs`) appears in the warn distribution at all."],"resolved":false},
-    "docs/concepts/shared-facts.json": {
-      "count": 1,
-      "sections": [],
-      "contexts": ["[`shared-facts.json`](../shared-facts.json)) · **1,280 `pub`-visible fn declarations** parsed with a"],
-      "resolvedFrom": "basename",
-      "verbatim": "shared-facts.json"
-    },
     "events.rs": {"count":2,"sections":[4,7],"contexts":["25, `orchestration/team_assignments.rs` 24 of 24, while `executions.rs`, `events.rs` and"],"resolved":false},
     "executions.rs": {"count":2,"sections":[4,7],"contexts":["25, `orchestration/team_assignments.rs` 24 of 24, while `executions.rs`, `events.rs` and"],"resolved":false},
     "http.rs": {"count":1,"sections":[5],"lines":["373"],"contexts":["of its timed sites (`http.rs:373`→`:458` spans an embedding model call, a reranker, and four DB"],"resolved":false},
@@ -113,6 +106,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "lib/engine.mjs"
     },
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["`shared-facts.json`) · **1,280 `pub`-visible fn declarations** parsed with a"],"resolved":false},
     "src-tauri/**": {"count":1,"sections":[],"contexts":["Composed 2026-08-14 from a ground-truth sweep of `src-tauri/**` and `src/lib/**` against `master`."],"resolved":false,"isDir":true},
     "src-tauri/db/src/lib.rs": {
       "count": 4,

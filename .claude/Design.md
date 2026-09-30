@@ -333,6 +333,8 @@ formatting → `display/Numeric`; switch → `forms/AccessibleToggle`; dropdown 
 `layout/PanelTabBar`/`SegmentedTabs`; table + its skeleton/empty/stagger →
 `display/UnifiedTable` (pass `isLoading` + `data`).
 
+**Surfaces are composed from the composition kit** (`@/features/shared/components/kit`, Spine & Lens, Gate K 2026-09-25): Section, StatStrip, KeyValueGrid, ChipRow, Toolbar, Rows/DataTable, UnitStrip, Mark, and Split/Drawer for a detail layer; a local one-off that duplicates a kit part is a finding (doctrine section 6b, reference page Fleet Activity).
+
 **Loading is deliberately absent from that list, because there is no single
 answer — there are two opposite ones.** A **surface** fetching its data gets a
 calm delayed ghost under permanent chrome and **never** a spinner

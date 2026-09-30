@@ -1,8 +1,11 @@
 import { ExternalLink } from 'lucide-react';
 
+import { openExternalUrl } from '@/api/system/system';
+import { ListRow, Rows, Tile } from '@/features/shared/components/kit';
+import { toastCatch } from '@/lib/silentCatch';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
-import { debtText } from '@/i18n/DebtText';
-
+import { intentTone, toneLabel } from './intentColors';
 
 /**
  * `issue_list` — generic bulleted list of items with optional severity
@@ -11,8 +14,14 @@ import { debtText } from '@/i18n/DebtText';
  * surface in a focused widget instead of a chat-bubble list.
  *
  * No backend fetching — items are populated from Athena's prior
- * connector_use result (or her memory). Click on an item's href opens
- * the link in the user's default browser via `window.open`.
+ * connector_use result (or her memory). An item with an href is a pressable row: pressing its
+ * name opens the link in the user's default browser through the app's outbound URL door
+ * (`openExternalUrl`, the `open_external_url` command).
+ *
+ * Rendered as one kit Tile of kit rows: severity is the row's Mark on the spine, the name spans
+ * the tile's width, and a long list is capped (`ISSUE_CAP`) with "Show all N" expanding in
+ * place. Cap + Show all rather than a grouped parent layer: the realistic count is 5-15 items
+ * already sorted by Athena, and severity is readable from the marks at a glance.
  *
  * Config:
  *   {
@@ -22,7 +31,7 @@ import { debtText } from '@/i18n/DebtText';
  *         "title": "...",           // required
  *         "sublabel": "...",        // optional, smaller line below
  *         "severity": "warn",       // optional: "info"|"good"|"warn"|"bad"
- *         "href": "https://..."     // optional, renders ↗ icon
+ *         "href": "https://..."     // optional, the row opens it
  *       }
  *     ],
  *     "empty_label": "Nothing to show"   // optional fallback
@@ -36,66 +45,33 @@ interface IssueItem {
   href?: string;
 }
 
-export function IssueListWidget({ config, title }: CockpitWidgetProps) {
-  const items = (config?.items as IssueItem[] | undefined) ?? [];
-  const emptyLabel =
-    (config?.empty_label as string | undefined) ?? 'No items.';
+const ISSUE_CAP = 6;
 
+export function IssueListWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
+  const { t } = useTranslation();
+  const items = Array.isArray(config?.items) ? (config.items as IssueItem[]) : [];
+  const emptyLabel = (config?.empty_label as string | undefined) ?? t.overview.cockpit.widget_empty;
+  // One row height for the whole list (row rhythm): two lines when any item has a sublabel.
+  const size = items.some((i) => i.sublabel) ? 's' : 'line';
   return (
-    <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col min-h-0">
-      {title ? (
-        <div className="typo-caption text-foreground uppercase tracking-wide mb-3">
-          {title}
-        </div>
-      ) : null}
-      {items.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center text-foreground typo-caption">
-          {emptyLabel}
-        </div>
-      ) : (
-        <ul className="flex-1 space-y-1.5 overflow-y-auto">
-          {items.map((item) => (
-            <li
+    <Tile span={span} title={title} count={title && items.length > 0 ? items.length : undefined} actions={actions} footer={footer} testId="cockpit-issue-list">
+      <Rows count={items.length} cap={ISSUE_CAP} empty={{ title: emptyLabel }} label={title}>
+        {items.map((item) => {
+          const tone = intentTone(item.severity);
+          const href = item.href;
+          return (
+            <ListRow
               key={item.id}
-              className="flex items-start gap-2 rounded-input px-2 py-1.5 hover:bg-foreground/[0.04] transition-colors"
-            >
-              <SeverityDot severity={item.severity} />
-              <div className="flex-1 min-w-0">
-                <div className="typo-body text-foreground/90 truncate">
-                  {item.title}
-                </div>
-                {item.sublabel ? (
-                  <div className="typo-caption text-foreground truncate">
-                    {item.sublabel}
-                  </div>
-                ) : null}
-              </div>
-              {item.href ? (
-                <button
-                  type="button"
-                  onClick={() => window.open(item.href, '_blank', 'noopener')}
-                  className="text-foreground hover:text-foreground/80 transition-colors shrink-0"
-                  aria-label={debtText("auto_open_in_browser_052269b2")}
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </button>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+              size={size}
+              name={item.title}
+              meta={item.sublabel}
+              mark={{ tone, glyph: tone === 'neutral' ? 'hollow' : 'solid', label: toneLabel(t, tone) }}
+              figures={href ? <ExternalLink className="w-3.5 h-3.5 k-quiet" aria-hidden /> : undefined}
+              onPress={href ? () => { openExternalUrl(href).catch(toastCatch('IssueListWidget:openHref')); } : undefined}
+            />
+          );
+        })}
+      </Rows>
+    </Tile>
   );
-}
-
-function SeverityDot({ severity }: { severity?: IssueItem['severity'] }) {
-  const color =
-    severity === 'bad'
-      ? 'bg-rose-400'
-      : severity === 'warn'
-        ? 'bg-amber-400'
-        : severity === 'good'
-          ? 'bg-emerald-400'
-          : 'bg-foreground/30';
-  return <span className={`mt-1.5 w-1.5 h-1.5 rounded-full ${color} shrink-0`} aria-hidden />;
 }

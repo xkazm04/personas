@@ -1,11 +1,11 @@
 # Golden path — Secret display and transfer
 
-> Situation node: `integrations-security/vault-security/secret-display-and-transfer` · [situation spine](../situation-spine.md)
+> Situation node: `integrations-security/vault-security/secret-display-and-transfer` · situation spine
 > Composed 2026-08-14 against `master` @ `2a874e692`. Recurrence 27 — composed out of rank order
 > because two live credential leaks were confirmed in this repo within 24 hours and both of them
 > terminate in this leaf.
 > Sweep size: the whole Rust tree (**963 `.rs` files** — exactly `rust.files` in
-> [`shared-facts.json`](../shared-facts.json), and exactly what the census walker reports),
+> `shared-facts.json`, and exactly what the census walker reports),
 > **1,667 `#[tauri::command]` functions parsed brace-balanced** (signature + body, not grepped —
 > `shared-facts.json` records **1,661**; the 6-function delta is `#[cfg(test)]`-gated commands my
 > parser keeps and is noted rather than reconciled away) · `src/**` (**4,829 `.ts`/`.tsx`**,
@@ -285,7 +285,7 @@ Other exemplary sites, each for one specific move:
 | `src/engine/runner/credentials.rs:51-84` | `ZeroizingFields` — the newtype that bounds plaintext lifetime on the hot path. |
 | `src/commands/core/data_portability.rs:9239-9273` | `seal_sensitive_sections` — always-encrypted sections that fail rather than downgrade. |
 | `src/features/shared/components/forms/PasswordToggleField.tsx:61-94` | Auto-revert with a focus-aware timer — the mitigation that actually bounds screenshot/screen-share exposure. |
-| `src/features/agents/sub_model_config/components/EffectiveConfigPanel.tsx:24,:108` | A constant-width mask for a read-only field. |
+| `src/features/agents/sub_model_config/components/EffectiveConfigPanel.tsx:24,:108` (deleted 2026-09-25) | A constant-width mask for a read-only field. |
 
 **Convergence — measured, and it does not say what a security document wants it to say.**
 

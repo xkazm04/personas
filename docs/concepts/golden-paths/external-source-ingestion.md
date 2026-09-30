@@ -1,6 +1,6 @@
 # Golden path — ingesting from an external source
 
-> Situation node: `backend-runtime/eventing/external-source-ingestion` · [situation spine](../situation-spine.md)
+> Situation node: `backend-runtime/eventing/external-source-ingestion` · situation spine
 > recurrence **9** · risk **HIGH** · sides **server** · `twoSided: true` · convergence **diverged**
 > dimensions: **function · resilience · security · cost**
 > Composed 2026-08-16 against `master` @ `b4a05049e`.
@@ -152,7 +152,7 @@ wherever somebody was thinking about guards, and the traffic is wherever nobody 
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and every
+Per the portability test, the head is physically separated and every
 clause carries its warrant, so an adopting repo can tell physics from local calibration. No file path,
 primitive name or count appears below this line until the head ends.
 

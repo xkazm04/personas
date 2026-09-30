@@ -45,13 +45,6 @@
     "TrajectoryChart.tsx": {"count":1,"sections":[7],"lines":["10"],"contexts":["`TrajectoryChart.tsx:10`, `ValueRollupSection.tsx:65`, `ExecutionMetricsDashboard.tsx:94`,"],"resolved":false},
     "artist/utils/format.ts": {"count":1,"sections":[7],"lines":["3"],"contexts":["`LogDiskUsageSection.tsx:11`, `artist/utils/format.ts:3`, `FleetProcessRow.tsx:8`,"],"resolved":false},
     "db.ts": {"count":2,"sections":[7],"lines":["246,362,412"],"contexts":["renders and 0 duration formatting. Money is `REAL` float in SQLite (`db.ts:246,362,412`), returned"],"resolved":false},
-    "docs/concepts/shared-facts.json": {
-      "count": 2,
-      "sections": [7],
-      "contexts": ["[`shared-facts.json`](../shared-facts.json) they reproduce it exactly (4,829 files, 1,135 warnings,"],
-      "resolvedFrom": "basename",
-      "verbatim": "shared-facts.json"
-    },
     "eslint-rules/prefer-numeric.cjs": {"count":4,"sections":[3,7,9],"lines":["78-80","80"],"contexts":["`RelativeTime`, `AbsoluteTime`, `useFormattedDate`, `eslint-rules/prefer-numeric.cjs` and both"]},
     "incremental.rs": {"count":1,"sections":[7],"lines":["763,1453,5108,6380"],"contexts":["(`incremental.rs:763,1453,5108,6380`), `number` in all **23** `cost_usd`-bearing ts-rs bindings,"],"resolved":false},
     "knowledgeDenseFormat.ts": {"count":2,"sections":[],"lines":["20","13"],"contexts":["**five** precisions (`format.ts:12` 4dp, `knowledgeDenseFormat.ts:20` 3dp,"],"resolved":false},
@@ -66,6 +59,7 @@
       "verbatim": "lib/engine.mjs"
     },
     "scripts/report-hardcoded-ui-strings.mjs": {"count":1,"sections":[7],"contexts":["`scripts/report-hardcoded-ui-strings.mjs` gates on `hasLetters(value)`, so a literal `%` or `$` can"],"resolved":false},
+    "shared-facts.json": {"count":2,"sections":[7],"contexts":["`shared-facts.json` they reproduce it exactly (4,829 files, 1,135 warnings,"],"resolved":false},
     "slaFormat.test.ts": {"count":1,"sections":[7],"contexts":["formatting test file (`slaFormat.test.ts`), and **no test asserts on money anywhere.**"],"resolved":false},
     "slaFormat.ts": {"count":1,"sections":[],"lines":["39"],"contexts":["competing duration ladders (`format.ts:1`, `knowledgeDenseFormat.ts:13`, `slaFormat.ts:39`,"],"resolved":false},
     "src-tauri/db/src/builtin_connectors.rs": {

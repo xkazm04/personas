@@ -1,7 +1,7 @@
 # Golden path — prompt assembly
 
 > **Topic path:** `ai-agents` › `prompt-and-output` › `prompt-assembly`
-> [situation spine](../situation-spine.md) · recurrence **17** · risk **medium** ·
+> situation spine · recurrence **17** · risk **medium** ·
 > sides: **client** (contradicted by measurement — see [§12.1](#121--sides-client-is-wrong-again-and-this-is-the-seventh)) ·
 > convergence: **mixed** (fails — see [§12.2](#122--convergence-mixed-fails-and-it-fails-in-the-rarest-way)) ·
 > dimensions: **function · security · cost · code-quality**

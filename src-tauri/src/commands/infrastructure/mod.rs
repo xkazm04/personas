@@ -34,6 +34,7 @@ pub mod gitlab;
 pub mod hierarchy_read;
 pub mod idea_scanner;
 pub mod incremental_scan;
+pub mod kp_gig_policy;
 pub mod kp_hire;
 pub mod kpi_compose;
 pub mod kpi_scan;

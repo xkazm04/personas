@@ -3,7 +3,7 @@
 > **Leaf:** `ui-system / copy-and-vocabulary / rendering-untrusted-content` · recurrence 103
 > **Composed:** 2026-08-14 · **Sweep:** ~30 files read in full, plus tree-wide scans over
 > 4,829 TS/TSX files and 963 Rust files (counts from
-> [`shared-facts.json`](../shared-facts.json), commit `211d519bb`), the two sibling
+> `shared-facts.json`, commit `211d519bb`), the two sibling
 > repos `../personas-web` and `../brainiac/console`, and the installed
 > `react-markdown@10.1.0` source in `node_modules`.
 

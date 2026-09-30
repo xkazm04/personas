@@ -1,6 +1,6 @@
 # Golden path — Theming and contrast
 
-> Situation node: `ui-system/design-tokens-theming/theming-and-contrast` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/design-tokens-theming/theming-and-contrast` · situation spine
 > Composed 2026-08-15. **Recurrence 62.**
 > Sweep: every file under `src/**` — **4,829 files (2,725 `.ts` + 2,104 `.tsx`)** — walked twice by
 > two independent implementations (a whole-file regex census and a `@typescript-eslint/parser` AST
@@ -15,14 +15,14 @@
 > Dimensions: **ui · code-quality · function**.
 > **Settles:** how a text colour is chosen so it stays legible in every theme the app can be in.
 >
-> Shared counts cited from [`shared-facts.json`](../shared-facts.json) @ `211d519bb`; its
+> Shared counts cited from `shared-facts.json` @ `211d519bb`; its
 > `lint` block reproduces exactly here (1,135 warnings, 705 for the contrast rule).
 
 ---
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and
+Per the portability test, the head is physically separated and
 each clause carries its warrant. No file path, class name or count appears below this line until
 the head ends.
 
@@ -619,7 +619,7 @@ and you can refuse to apply one that has not been measured.
 
 ## 9. The missing gate
 
-**Manifestation layer.** Per [`golden-path-contract.md:34-60`](../golden-path-contract.md), what
+**Manifestation layer.** Per `golden-path-contract.md:34-60`, what
 follows is a *proxy* for a semantic condition, tuned to this repo's idiom. The risk is acute for this
 leaf and is no longer hypothetical: `personas-web` wrote a rule for exactly this condition, and
 running its regex against `brainiac/console` showed it would see **30 of 167** opacity-tinted text

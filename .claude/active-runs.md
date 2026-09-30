@@ -10,6 +10,69 @@
 - **Paths:** `src/features/plugins/dev-tools/contest/**` · `src-tauri/src/commands/contest/**` · `src/i18n/locales/**` · `src/lib/bindings/Contest*`
 - **Status:** started
 
+- **[2026-09-29 12:48]**
+- **Paths:** `src-tauri/engine/src/unattended.rs` · `src-tauri/src/commands/fleet/stale.rs` · `src-tauri/src/commands/curator/tick.rs`
+- **Status:** started
+
+- **[2026-09-28 16:35]**
+- **Paths:** `src/features/shared/components/kit/**` · `scripts/style/page-harness/kitSpecimen.tsx`
+- **Status:** started
+
+- **[2026-09-28 15:49]**
+- **Paths:** `src/features/home/sub_cockpit/**` · `scripts/style/page-harness/**`
+- **Status:** started
+
+### grande-g55-platform — /grande platform lane: G55 autonomy admission + attention platform escalations
+- **[2026-09-28 12:47]**
+- **Paths:** `src-tauri/src/engine/subscription/**` · `src-tauri/src/engine/team_assignment_orchestrator.rs` · `src-tauri/src/engine/incident_continuation.rs` · `src-tauri/src/commands/teams/team_channel.rs` · `src-tauri/src/runner/**` · `src-tauri/db/src/repos/core/attention_ledger.rs` · `src-tauri/db/src/repos/**/manual_reviews.rs`
+- **Status:** started
+
+- **[2026-09-28 11:46]**
+- **Paths:** `src/features/shared/components/kit/**` · `src/features/home/sub_welcome/**` · `src/features/home/sub_learning/**` · `scripts/style/page-harness/kitSpecimen.tsx`
+- **Status:** started
+
+- **[2026-09-28 11:41]**
+- **Paths:** `.claude/skills/curator/**`
+- **Status:** started
+
+- **[2026-09-26 13:07]**
+- **Paths:** `src/features/companions/curator/blueprint/**` · `src-tauri/src/commands/curator/**` · `src/i18n/locales/**`
+- **Status:** started
+
+- **[2026-09-26 11:02]**
+- **Paths:** `src-tauri/src/commands/curator/**` · `src-tauri/core/src/models/curator.rs` · `src-tauri/db/src/migrations/incremental/**`
+- **Status:** started
+
+- **[2026-09-25 18:05]**
+- **Paths:** `src/features/home/sub_welcome/**` · `src/features/home/sub_learning/**` · `src/features/home/components/**`
+- **Status:** started
+
+- **[2026-09-25 17:01]**
+- **Paths:** `src/features/teams/sub_factory/passport/atlas/**` · `src/features/teams/sub_factory/ProjectsLayer.tsx` · `src/features/teams/sub_factory/FactoryPage.tsx` · `src/features/teams/sub_factory/passport/passportModel.ts` · `src/features/teams/sub_factory/passport/passportDerive.ts`
+- **Status:** started
+
+- **[2026-09-25 16:38]**
+- **Paths:** `src-tauri/src/engine/management_api.rs` · `src-tauri/src/commands/companion/approvals/approval_exec_core.rs` · `src-tauri/core/src/models/persona.rs` · `src-tauri/src/commands/design/build_sessions.rs` · `src/features/agents/**` · `docs/**/cloud-integration-bridge.md`
+- **Status:** started
+
+- **[2026-09-25 15:48]**
+- **Paths:** `src/features/shared/components/kit/**` · `src/features/teams/sub_factory/**` · `scripts/style/page-harness/**` · `src/features/overview/sub_observability/libs/quantum.ts` · `docs/design/style-mastery/doctrine.md` · `.claude/rules/ui.md`
+- **Status:** started
+
+- **[2026-09-25 12:23]**
+- **Paths:** `src-tauri/src/engine/management_api.rs` · `src-tauri/src/engine/management_api/**` · `src-tauri/src/engine/runner/mod.rs` · `src-tauri/src/commands/companion/approvals/**` · `src-tauri/db/src/repos/workspaces/**` · `docs/architecture/cloud-integration-bridge.md`
+- **Status:** started
+
+- **[2026-09-24 18:21]**
+- **Paths:** `src-tauri/src/engine/subscription/attention.rs` · `src-tauri/src/engine/subscription/usage_governor.rs` · `src-tauri/src/engine/subscription/usage_pacing.rs` · `src-tauri/src/commands/fleet/headless.rs` · `src-tauri/src/commands/fleet/queue.rs` · `src-tauri/src/commands/fleet/commands.rs` · `src-tauri/src/companion/brain/oneshot.rs` · `src-tauri/core/src/model_ids.rs` · `src-tauri/db/src/settings_keys.rs` · `src-tauri/src/commands/infrastructure/app_master_adopt.rs`
+- **Status:** started
+
+### prototype-process-lanes — /prototype: 3 side-by-side lane variants for Curator Process (Rivers, Transit, Instruments)
+- **[2026-09-24 15:26]**
+- **Paths:** `src/features/companions/curator/process/**`
+- **Status:** started
+
+### contest-arena-restyle — /contest Opus xhigh vs Opus max: 6 static redesign variants of the Contest page on a baseline copy
 - **[2026-09-25 16:33]**
 - **Paths:** `.contest/staging/contest-arena-restyle/**` · `.contest/arena/contest-arena-restyle/**`
 - **Status:** started
@@ -122,6 +185,42 @@
 
 - **[2026-09-24 12:06]**
 - **Paths:** `src-tauri/**` · `src/lib/bindings/**` · `src/features/fleet/monitor/grid/board/queue/originLabel.ts` · `src/features/fleet/monitor/grid/board/queue/useQueueModel.ts`
+### prototype-activity-surface — /prototype: three design-language variants of the Monitor Activity surface (FleetGridView) behind a switcher
+- **[2026-09-24 11:23]**
+- **Paths:** `src/features/fleet/monitor/grid/FleetGridView.tsx` · `src/features/fleet/monitor/grid/prototype/**` · `src/features/fleet/monitor/grid/board/AutopilotSwitch.tsx`
+- **Status:** started
+
+- **[2026-09-24 10:53]**
+- **Paths:** `src/features/shared/components/**` · `src/styles/**` · `.claude/Design.md` · `.claude/CLAUDE.md` · `scripts/census/rules.json` · `docs/design/**`
+- **Status:** started
+
+- **[2026-09-23 23:25]**
+- **Paths:** `src/features/triggers/sub_studio/**` · `src/hooks/design/**` · `src/features/settings/sub_notifications/**` · `src/features/settings/sub_api_keys/**` · `src/features/agents/components/matrix/**` · `src-tauri/engine/src/parser.rs` · `src-tauri/src/commands/design/build_sessions.rs` · `src/i18n/locales/*.json` · `CHANGELOG.md`
+- **Status:** started
+
+- **[2026-09-23 19:25]**
+- **Paths:** `src/features/companions/**` · `src/api/curator/**` · `src-tauri/src/commands/curator/**` · `src/i18n/**`
+- **Status:** started
+
+- **[2026-09-23 16:31]**
+- **Paths:** `src/features/teams/sub_features/**` · `src/features/companions/curator/council/**` · `src/i18n/**`
+- **Status:** started
+
+- **[2026-09-23 11:17]**
+- **Paths:** `src-tauri/engine/src/p2p/**` · `src-tauri/db/src/repos/resources/remote_jobs.rs` · `src-tauri/db/src/repos/resources/owned_devices.rs`
+- **Status:** started
+
+- **[2026-09-23 09:58]**
+- **Paths:** `src-tauri/src/p2p/**` · `src-tauri/src/commands/infrastructure/network*` · `src/features/fleet/**` · `docs/features/p2p*`
+- **Status:** started
+
+### spark-companions-s2 — spark: Companions stage 2 - Curator on the shared runtime seam (three minds, wire split, registry link, her plan + loop + Blueprint)
+- **[2026-09-23 00:16]**
+- **Paths:** `src-tauri/src/companion/**` · `src-tauri/src/commands/companions/**` · `src/features/companions/curator/**` · `src/features/companions/status/**`
+- **Status:** started
+
+- **[2026-09-22 17:51]**
+- **Paths:** `src/features/plugins/companion/**` · `src/features/overview/sub_director/**` · `src/features/teams/sub_council/**` · `src/features/shared/chrome/**` · `docs/features/companion/**` · `src/features/companions/**`
 - **Status:** started
 
 ### questlog-port — /prototype: port Quest Log into NoteOverview behind an A/B switcher
@@ -1146,6 +1245,33 @@
 ### build-stream-and-parallel-tests — Build sheet: release finished first-turn results mid-turn (provisional frames) + parallel scripted connector tests by default
 
 ### studio-nav — Studio: reopened sheet load motion; Studio moved under Projects
+### curator-fleet-hygiene — Curator fleet workers: explicit curator: run label so the machine-worker retire/prune lanes see them; hibernated counts as ended
+
+### kit-home-2 — kit home-2: Home Cockpit composed from the kit (look phase: harness views + BEFORE shots)
+
+### kit-grow-3 — kit grow-3: Tiles/Tile dashboard part, two looks for the owner, before home-2 builders
+
+### kit-grow-2 — kit grow-2: 5 proposed kit parts (ContextCard art, KitButton primary+icon, UnitStrip legend, ListRow onPress) + adoption in home
+
+### curator-cli-skill — /curator skill: headless infinite queue from the CLI, no app
+
+### curator-gaps-panel — Gaps drawer: impediments, growth and the runs that went quiet
+
+### curator-autonomy — deepen invocation in the registry + Curator's method lane and growth signal
+
+### spark-style-unification — Style unification: shared primitives + typography mastery + registry sync, context by context with human gates
+
+### kit-home-1 — kit batch home-1: Home welcome + shell + learning composed from the kit
+
+### kp-hire-requirements — P3: kp hire designed from spec.requirements (intake, intent, design_context store, constraint check, Requirements panel)
+
+### passport-atlas-port — Port the Passport Atlas contest winner (fused) beside the passport wall behind a tab switcher
+
+### kit-grow-1-R — kit grow-1: six proposed kit parts + Factory adoption + kit/specimen harness view
+
+### kp-freelance-bridge — Personas bridge: workspace/project HTTP routes, hire placement, project-bound executions (for kp gigs)
+
+### grande-codex-mode — /grande: codex_mode routing (decide + code dispatch on codex gpt-6-sol high for listed personas)
 
 ### triage-contest-5 — Contest triage: blind judging, judge parity, overlay focus, rerun wording, auto-PR toggle removal
 
@@ -1195,6 +1321,17 @@
 ### curator-runtime-spine — Curator stage 2b spine: DispatchOrigin::Curator, e51 request lane, skill discovery, runtime read
 
 ### curator-loop-ui — Curator loop UI: run the instrument, the human request lane, her setup brakes
+### scan-sweep-challenge-2026-09-23 — scan-sweep --challenge: 12 cards over 6 contexts, 4 build waves on master
+
+### curator-process-spine — Curator Process page: the Spine strategic layer over dev sessions (contest process-strategic winner B/1)
+
+### promote-contest-2026-09-23 — promote the Cadastre Features page and the fused Council HUD as switchable variants (contest winners)
+
+### spark-two-machines — spark: two machines, one operator - P2P dispatch + capability sync (fusion of contest variants A/1, C/3, D/1)
+
+### spark-two-machines-wp1 — WP1: p2p lane carries a peer (outbox, liveness, protocol v4, loopback test)
+
+### spark-companions — spark: Companions module - Athena + Overseer (Director) + Curator (Librarian) as a first-level category; design waves first
 
 ### spark-features-board — /spark Features page: features + council state + context-map mirror + scenarios; delete sub_certification
 

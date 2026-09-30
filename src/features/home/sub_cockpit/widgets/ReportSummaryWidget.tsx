@@ -1,19 +1,23 @@
 import { useMemo } from 'react';
-import { ExternalLink, MessageSquare } from 'lucide-react';
 
 import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { formatRelativeTime } from '@/lib/utils/formatters';
+import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { KitButton, Meta, Tile } from '@/features/shared/components/kit';
 import type { PersonaReport } from '@/lib/types/types';
 
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
+/** The summary reads the report's opening blocks up to about this many characters. */
+const EXCERPT_CHARS = 600;
+
 /**
- * Message summary — contextual cockpit hero.
- *
- * Renders the persona, title, and a content excerpt for a specific message.
+ * Message summary - contextual cockpit hero, as one kit Tile: the message's own
+ * title is the tile title (persona and age in its meta line, "Open in Reports"
+ * top-right), the body is the report's opening rendered as markdown by the
+ * app's shared renderer (never printed raw).
  * The originating "Play in chat" handler passes the full `PersonaReport`
  * via `config.snapshot` (it already has the row in scope) so we render
  * synchronously without an extra fetch.
@@ -21,24 +25,19 @@ import type { CockpitWidgetProps } from '../widgetRegistry';
  * Config:
  *   { messageId: string, snapshot?: PersonaReport }
  */
-export function ReportSummaryWidget({ config, title }: CockpitWidgetProps) {
+export function ReportSummaryWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
   const { t } = useTranslation();
+  const c = t.overview.cockpit;
   const messageId = (config?.messageId as string | undefined) ?? '';
   const snapshot = config?.snapshot as PersonaReport | undefined;
 
-  // Fallback path — if the widget is mounted without snapshot (future
+  // Fallback path - if the widget is mounted without snapshot (future
   // surfaces composing this widget), pick the message from the overview
   // store cache. We do not fetch from the backend; the cockpit grid cell
   // should never block on IPC for a header card.
   const fromStore = useOverviewStore((s) => s.reports.find((m) => m.id === messageId));
   const msg = snapshot ?? fromStore;
-
-  const personaName = msg?.persona_name ?? t.overview.reports_view.unknown_persona;
-  const excerpt = useMemo(() => {
-    const raw = msg?.content ?? '';
-    const stripped = raw.replace(/```[\s\S]*?```/g, '').replace(/\s+/g, ' ').trim();
-    return stripped.length > 280 ? `${stripped.slice(0, 280)}…` : stripped;
-  }, [msg?.content]);
+  const excerpt = useMemo(() => openingBlocks(msg?.content ?? ''), [msg?.content]);
 
   const openMessages = () => {
     useSystemStore.getState().setSidebarSection('overview');
@@ -49,52 +48,49 @@ export function ReportSummaryWidget({ config, title }: CockpitWidgetProps) {
 
   if (!msg) {
     return (
-      <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col items-center justify-center gap-2 text-foreground">
-        <MessageSquare className="w-5 h-5" />
-        <div className="typo-caption">{t.overview.cockpit.report_unavailable}</div>
-      </div>
+      <Tile
+        span={span}
+        title={title ?? c.report_summary_title}
+        actions={actions}
+        footer={footer}
+        testId="cockpit-widget-message_summary"
+        state="empty"
+        empty={{ title: c.report_unavailable }}
+      />
     );
   }
 
   return (
-    <div
-      data-testid="cockpit-widget-message_summary"
-      className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col min-h-0"
+    <Tile
+      span={span}
+      title={title ?? (msg.title || t.overview.reports_view.report_label)}
+      meta={<Meta parts={[msg.persona_name ?? t.overview.reports_view.unknown_persona, formatRelativeTime(msg.created_at)]} />}
+      actions={<><KitButton tone="quiet" onClick={openMessages}>{c.open_in_reports}</KitButton>{actions}</>}
+      footer={footer}
+      testId="cockpit-widget-message_summary"
+      state={excerpt ? undefined : 'empty'}
+      empty={{ title: c.report_empty }}
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className="typo-caption text-foreground uppercase tracking-wide">
-          {title ?? t.overview.cockpit.report_summary_title}
-        </div>
-        <button
-          type="button"
-          onClick={openMessages}
-          className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground/85 transition-colors"
-        >
-          {t.overview.cockpit.open_in_reports}
-          <ExternalLink className="w-3 h-3" />
-        </button>
+      <div className="k-in">
+        <MarkdownRenderer content={excerpt} variant="card" />
       </div>
-
-      <div className="flex items-start gap-3 mb-3">
-        <PersonaIcon
-          icon={msg.persona_icon ?? null}
-          color={msg.persona_color ?? null}
-          display="framed"
-          frameSize="md"
-        />
-        <div className="min-w-0 flex-1">
-          <p className="typo-body-lg text-foreground/95 truncate">
-            {msg.title || t.overview.reports_view.report_label}
-          </p>
-          <p className="typo-caption text-foreground mt-0.5">
-            {personaName} · {formatRelativeTime(msg.created_at)}
-          </p>
-        </div>
-      </div>
-
-      <p className="typo-body text-foreground flex-1 overflow-y-auto min-h-0">
-        {excerpt || <span className="italic text-foreground">{t.overview.cockpit.report_empty}</span>}
-      </p>
-    </div>
+    </Tile>
   );
+}
+
+/**
+ * The report's opening: code fences dropped (a summary is prose), then whole
+ * markdown blocks until about EXCERPT_CHARS, so a heading, list or bold span is
+ * never cut in half; the full report is one press away in Reports.
+ */
+function openingBlocks(raw: string): string {
+  const blocks = raw.replace(/```[\s\S]*?```/g, '').split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+  const kept: string[] = [];
+  let size = 0;
+  for (const block of blocks) {
+    if (kept.length > 0 && size + block.length > EXCERPT_CHARS) break;
+    kept.push(block);
+    size += block.length;
+  }
+  return kept.join('\n\n');
 }

@@ -137,6 +137,12 @@ struct SeedSource {
     notification_channels: Option<String>,
     core_profile: Option<String>,
     mandate_titles: Vec<String>,
+    /// A requirement-driven kp hire's MUST constraints
+    /// (`design_context.kpLink.requirements.constraints`). Seeding the
+    /// manifest switches prompt assembly from the structured prompt — where
+    /// promote pinned these — to the manifest, so they are carried into
+    /// `# Boundaries` here or they would stop reaching the model.
+    kp_constraints: Vec<String>,
 }
 
 fn seed_source(pool: &DbPool, persona_id: &str) -> Result<SeedSource, AppError> {
@@ -149,7 +155,16 @@ fn seed_source(pool: &DbPool, persona_id: &str) -> Result<SeedSource, AppError> 
         })
         .map(|r| r.title)
         .collect();
+    let kp_constraints = persona
+        .parsed_design_context()
+        .kp_link
+        .and_then(|l| l.requirements)
+        .as_ref()
+        .and_then(personas_engine::kp_requirements::KpAgentRequirements::from_value)
+        .map(|r| r.constraint_list())
+        .unwrap_or_default();
     Ok(SeedSource {
+        kp_constraints,
         name: persona.name,
         description: persona.description,
         notification_channels: persona.notification_channels,
@@ -246,6 +261,15 @@ fn render_law_seed(src: &SeedSource, legacy_core: Option<&serde_json::Value>) ->
     {
         for item in items.iter().filter_map(|i| i.as_str()) {
             out.push_str(&format!("- {item}\n"));
+            wrote_boundary = true;
+        }
+    }
+    // kp requirement constraints, verbatim, each once (a legacy core that
+    // already carries one word-for-word does not get it twice).
+    for c in &src.kp_constraints {
+        let tagged = format!("- (kp requirement) {c}\n");
+        if !out.contains(&format!("- {c}\n")) && !out.contains(&tagged) {
+            out.push_str(&tagged);
             wrote_boundary = true;
         }
     }
@@ -857,6 +881,52 @@ mod tests {
         assert!(core_profile_of(&pool, "p1")
             .unwrap()
             .starts_with("---\ntype: manifest"));
+        Ok(())
+    }
+
+    /// Seeding the manifest stops the structured prompt — where promote pinned
+    /// a kp hire's requirement constraints — from rendering, so the seed must
+    /// carry them into `# Boundaries`, once each.
+    #[test]
+    fn kp_requirement_constraints_are_seeded_into_boundaries() -> Result<(), AppError> {
+        let _home = crate::companion::brain::test_home::TestHome::new("persona_manifest_kp");
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let dc = serde_json::json!({
+            "kpLink": {
+                "jobId": "gig-1", "jobTitle": "t", "baseUrl": "http://x", "reportToken": "tok",
+                "requirements": {
+                    "kind": "kp.agent-requirements.v1",
+                    "constraints": [
+                        "Never send, submit, post, bid, message or contact anyone; the operator sends.",
+                        "never push to main"
+                    ]
+                }
+            }
+        });
+        pool.get()?.execute(
+            r#"UPDATE personas SET design_context = ?1,
+               core_profile = '{"motivation":"m","constraints":["never push to main"]}'
+               WHERE id = 'p1'"#,
+            rusqlite::params![dc.to_string()],
+        )?;
+
+        let v = view(&pool, "p1")?;
+        let boundaries = v
+            .content
+            .split("# Boundaries")
+            .nth(1)
+            .and_then(|b| b.split("# Operation defaults").next())
+            .expect("boundaries section");
+        assert!(boundaries.contains(
+            "- (kp requirement) Never send, submit, post, bid, message or contact anyone; the operator sends."
+        ));
+        assert_eq!(
+            boundaries.matches("never push to main").count(),
+            1,
+            "a constraint the legacy core already carries is not repeated: {boundaries}"
+        );
+        assert!(!boundaries.contains("nothing recorded yet"));
         Ok(())
     }
 

@@ -30,6 +30,7 @@ export interface Silence {
 
 /** A log parsed once: the text of each line and, where present, its recorded offset. */
 export interface ParsedLog {
+  /** Display text, with the timestamp prefix removed where one was parsed. */
   texts: string[];
   /** Offset in ms from the first prefixed line; null where the line has no prefix. */
   offsets: (number | null)[];
@@ -217,12 +218,18 @@ const LOG_TIMESTAMP_RE = /^\[(\d{4}-\d{2}-\d{2}T[0-9:.]+(?:Z|[+-]\d{2}:?\d{2}))\
  */
 export function parseLogTimestamps(logContent: string | string[] | null): ParsedLog {
   if (logContent == null || logContent === '') return { texts: [], offsets: [], recordedSpanMs: null };
-  const texts = Array.isArray(logContent) ? logContent : logContent.split('\n');
-  const epochs: (number | null)[] = texts.map((text) => {
+  const raw = Array.isArray(logContent) ? logContent : logContent.split('\n');
+  const texts: string[] = new Array(raw.length);
+  const epochs: (number | null)[] = raw.map((text, i) => {
     const m = LOG_TIMESTAMP_RE.exec(text);
-    if (!m) return null;
-    const parsed = Date.parse(m[1]!);
-    return Number.isNaN(parsed) ? null : parsed;
+    const parsed = m ? Date.parse(m[1]!) : NaN;
+    if (!m || Number.isNaN(parsed)) {
+      texts[i] = text;
+      return null;
+    }
+    // The stamp is timing, not content: the live terminal never showed it.
+    texts[i] = text.slice(m[0].length).replace(/^ /, '');
+    return parsed;
   });
 
   let first: number | null = null;

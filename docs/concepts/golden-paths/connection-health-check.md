@@ -1,7 +1,7 @@
 # Golden path — the connection health check
 
 > Situation node: `integrations-security/credential-readiness/connection-health-check` ·
-> [situation spine](../situation-spine.md) · recurrence 20 · risk **HIGH** ·
+> situation spine · recurrence 20 · risk **HIGH** ·
 > sides **client** (`twoSided: true`, `fusedAcrossSides: false`) · convergence **mixed** ·
 > dimensions: **function · resilience · ui · performance**
 > Composed 2026-08-15 against `master` @ `7bd14eb9c`.
@@ -224,7 +224,7 @@ The **Deviations** section is a fix backlog.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head carries no file
+Per the portability test, the head carries no file
 path, primitive name or count, and each clause carries its warrant so an adopting repo
 can tell physics from local calibration.
 

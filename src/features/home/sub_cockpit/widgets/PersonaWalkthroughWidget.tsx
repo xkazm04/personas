@@ -1,6 +1,7 @@
-import { Rocket, Sparkles } from 'lucide-react';
+import { Rocket } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useTranslation } from '@/i18n/useTranslation';
+import { KitButton, Tile } from '@/features/shared/components/kit';
 import { useSystemStore } from '@/stores/systemStore';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
@@ -11,62 +12,46 @@ import type { CockpitWidgetProps } from '../widgetRegistry';
  * triggers — pulled from the persona-design best-practices doctrine.
  *
  * Unlike the dashboard-style widgets (persona_overview, decisions_panel,
- * etc.) this widget is meant to be READ, not glanced at. InlineChatCard
- * relaxes its height clamp for this kind so the walkthrough flows
- * naturally in the chat transcript instead of being scroll-trapped in a
- * 260px box.
+ * etc.) this widget is meant to be READ, not glanced at: one kit Tile whose
+ * height is its content (the page scrolls, never the card), the intent once
+ * in the head's meta, and one primary "Build from this" in the footer.
  */
-export function PersonaWalkthroughWidget({ config, title }: CockpitWidgetProps) {
+export function PersonaWalkthroughWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
   const { t } = useTranslation();
   const intent =
     typeof config?.intent === 'string' ? (config.intent as string).trim() : '';
   const content =
     typeof config?.content === 'string' ? (config.content as string).trim() : '';
+  const heading = title || t.athena.walkthrough_title;
 
   if (!content) {
-    return (
-      <div className="rounded-card border border-foreground/10 bg-secondary/40 p-4 typo-caption text-foreground">
-        {t.athena.walkthrough_empty}
-      </div>
-    );
+    return <Tile span={span} title={heading} actions={actions} footer={footer} state="empty" empty={{ title: t.athena.walkthrough_empty }} />;
   }
 
   return (
-    <div
-      className="rounded-card border border-violet-500/30 bg-violet-500/[0.04] p-4 space-y-3"
-      data-testid="companion-walkthrough-widget"
+    <Tile
+      span={span}
+      title={heading}
+      meta={intent || undefined}
+      testId="companion-walkthrough-widget"
+      actions={actions}
+      footer={
+        intent || footer ? (
+          <>
+            {intent && (
+              <KitButton tone="primary" icon={<Rocket />} onClick={() => commitWalkthroughToBuild(intent)} testId="companion-walkthrough-commit">
+                {t.athena.walkthrough_commit_button}
+              </KitButton>
+            )}
+            {footer}
+          </>
+        ) : undefined
+      }
     >
-      <header className="flex items-baseline gap-2 typo-caption text-violet-300/85">
-        <Sparkles className="w-3.5 h-3.5" />
-        <span className="font-medium">
-          {title || t.athena.walkthrough_title}
-        </span>
-        {intent && (
-          <span className="text-foreground truncate" title={intent}>
-            · {intent}
-          </span>
-        )}
-      </header>
-      <div className="typo-body text-foreground/90 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-0.5 [&_p]:my-2 [&_code]:rounded-sm [&_code]:bg-foreground/10 [&_code]:px-1">
+      <div className="k-in typo-body [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-0.5 [&_p]:my-2">
         <MarkdownRenderer content={content} />
       </div>
-      {intent && (
-        <footer className="flex items-center justify-between gap-2 pt-1">
-          <span className="typo-caption text-foreground">
-            {t.athena.walkthrough_commit_hint}
-          </span>
-          <button
-            type="button"
-            onClick={() => commitWalkthroughToBuild(intent)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption hover:opacity-90 focus-ring"
-            data-testid="companion-walkthrough-commit"
-          >
-            <Rocket className="w-3.5 h-3.5" />
-            <span>{t.athena.walkthrough_commit_button}</span>
-          </button>
-        </footer>
-      )}
-    </div>
+    </Tile>
   );
 }
 

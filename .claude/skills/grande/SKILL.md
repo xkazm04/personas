@@ -27,7 +27,7 @@ arises between finishing an act quickly and learning something true about one of
 learning wins: this runs over many days and many sessions, quality over quantity.
 
 Rules that never bend: no paid cloud; the bank runs on this machine; at most 10 active personas
-app-wide; every agent may run Opus, the orchestrator stays on Fable; the workspace's last working
+app-wide; every agent runs Sonnet 5.5, the orchestrator too; the workspace's last working
 version is never deleted; the machine keeps headroom (stop dispatching at 60% memory). The
 operator's decisions on the plan's section 5 are accepted as proposed and are not reopened.
 
@@ -116,7 +116,7 @@ Entry: `act0` passed. Steps: switch the simulation settings on with
 the risk-below-3 triage rule per project); create the workspace "Bank" and protect it
 (`POST /dev-tools/projects/create` creates both, `POST /dev-tools/workspaces/{id}/protect` tags
 it); adopt the Architect (`POST /dev-tools/architect/adopt`) with the five Architect recipes and
-the explicit model id `claude-opus-5` (the `opus` tier slug resolves to `claude-opus-4-8`, G14);
+the explicit model id `claude-sonnet-5-5` (the `sonnet` tier slug resolves to it, G14);
 enable it; give it the owner's brief through its persona channel
 (`post_persona_channel_message`: goal, domains, the reference digest path, the accepted envelope,
 constraints, where the design lives) since a cold Architect otherwise designs against an assumed
@@ -154,7 +154,7 @@ above zero, and again before `end`.
 1. **Export and cluster.** Dump pending Personas ideas (id, scan_type, title, description,
    reasoning) to the scratchpad, cluster them by defect from the titles, and fold in the platform-
    shaped asks from Approvals (a persona asking the operator to change Personas).
-2. **Verify.** One read-only Opus agent per 1-3 clusters checks every premise against current
+2. **Verify.** One read-only Sonnet agent per 1-3 clusters checks every premise against current
    code: `valid` / `fixed` / `invalid` / `not-platform`, a canonical id per defect, duplicates,
    `file:line` evidence, a fix plan with the files it touches. Output JSON to the scratchpad.
 3. **Record verdicts through the door.** `dev_tools_update_idea` over the bridge: accept the
@@ -163,7 +163,7 @@ above zero, and again before `end`.
 4. **Waves.** Group valid defects into lanes whose WRITE SETS are disjoint (one lane owns
    `attention.rs`, one the runner, one the idea/goal doors, one templates and MCP, one frontend);
    a defect that needs another lane's file moves to that lane or to the next wave. Dispatch one
-   Opus builder per lane, in parallel, on the main checkout (operator rule 2026-09-15: no extra
+   Sonnet builder per lane, in parallel, on the main checkout (operator rule 2026-09-15: no extra
    Personas worktrees). Every lane snapshots foreign-dirty files before editing and commits only
    its own hunks through an isolated index; every cargo/test:rust call goes through one session-
    wide lock, so exactly one compile runs at a time. One defect, one commit, naming its idea id.

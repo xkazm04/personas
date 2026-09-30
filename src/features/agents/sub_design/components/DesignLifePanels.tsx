@@ -2,6 +2,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { ManifestTab } from '@/features/agents/sub_manifest';
 import { ResponsibilitiesTab } from '@/features/agents/sub_responsibilities';
 import { BrainSection } from '@/features/agents/sub_life/BrainSection';
+import { KpRequirementsPanel } from './KpRequirementsPanel';
 
 /**
  * The Design hub's living-agent sub-tab panels — thin store-reading wrappers
@@ -13,11 +14,23 @@ import { BrainSection } from '@/features/agents/sub_life/BrainSection';
  * a transient state between selections, not a state to explain.
  */
 
-/** Manifest — the two-author core document (operator law + agent self-model). */
+/**
+ * Manifest — the two-author core document (operator law + agent self-model).
+ *
+ * A persona hired from kp requirements (`design_context.kpLink.requirements`)
+ * shows its brief above the manifest: the manifest is what the agent IS, the
+ * requirements are why it was designed that way. Renders nothing extra for
+ * every other persona.
+ */
 export function DesignManifestPanel() {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   if (!selectedPersona) return null;
-  return <ManifestTab personaId={selectedPersona.id} />;
+  return (
+    <div className="space-y-6">
+      <KpRequirementsPanel designContext={selectedPersona.design_context} />
+      <ManifestTab personaId={selectedPersona.id} />
+    </div>
+  );
 }
 
 /**

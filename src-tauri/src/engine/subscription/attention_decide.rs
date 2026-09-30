@@ -138,12 +138,12 @@ pub(crate) const MAX_GOAL_STATUS_CHARS: usize = 32;
 /// nobody reviewed.
 ///
 /// The TIER, not a dated id. `resolve_model_id` in the adoption door accepts
-/// either, and a literal `claude-opus-<n>` here would be a vendor-scheduled
+/// either, and a literal `claude-sonnet-<n>` here would be a vendor-scheduled
 /// fact spelled at a call site — the `bare-model-id-literal` census rule's
 /// whole subject, and the reason the retired `*-20250514` ids outlived their
 /// retirement in the failover ladder. Naming the tier lets the one door that
-/// owns model ids decide which opus that is today.
-pub(crate) const ADOPTED_APP_MASTER_MODEL: &str = personas_core::model_ids::ALIAS_OPUS;
+/// owns model ids decide which sonnet that is today.
+pub(crate) const ADOPTED_APP_MASTER_MODEL: &str = personas_core::model_ids::ALIAS_SONNET;
 
 /// Does this roster license the three authority verbs?
 ///
@@ -735,6 +735,28 @@ pub(crate) struct AnsweredReview {
 /// counted, like every other capped list in this prompt.
 pub(crate) const MAX_ANSWERED_REVIEWS: usize = 8;
 
+/// A review of this persona's that the review GC closed with nobody having
+/// read it (71c28238).
+///
+/// It ends `status = 'resolved'` exactly like an answered row, so it used to
+/// reach this prompt as an ANSWER and drop out of the open asks at the same
+/// time: the persona's question aged out and read back as decided. Carried
+/// separately so it is rendered as what it is, a question still unanswered.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct ExpiredReview {
+    /// The ask's own title (`context_data.askTitle`) for an ask, else the
+    /// review's title.
+    pub title: String,
+    /// The ask kind for this persona's own ask; `None` for a review somebody
+    /// filed about its work.
+    pub ask_kind: Option<String>,
+    /// When the GC closed it.
+    pub expired_at: Option<String>,
+}
+
+/// How many expired reviews one wake is shown.
+pub(crate) const MAX_EXPIRED_REVIEWS: usize = 8;
+
 /// A window in which the LOOP ITSELF was stopped, as a prompt is told it.
 ///
 /// The App Master's own reading of a silent stretch is "nothing happened", and
@@ -749,6 +771,105 @@ pub(crate) struct LoopHoldNote {
     /// `None` = the hold is still on as this prompt is written.
     pub ended_at: Option<String>,
     pub detail: String,
+}
+
+/// A stretch in which the operator had the attention loop switched OFF, as the
+/// settings audit trail records it (97dc6b94).
+///
+/// The loop's own switch opens no [`LoopHoldNote`], so after 2026-09-16..24 -
+/// eight days with the switch off and nothing dispatched for anyone - every
+/// wake was told its gap was "UNOBSERVED" and nothing about why. This is the
+/// one fact that separates "the app was switched off" from "you were not
+/// chosen", read from the audit log rather than from a new hold record.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct LoopOffWindow {
+    pub from: String,
+    /// `None` = still off when the prompt was written.
+    pub to: Option<String>,
+}
+
+/// How many switched-off windows a prompt names; the rest are counted.
+pub(crate) const MAX_LOOP_OFF_WINDOWS: usize = 3;
+
+/// The windows inside `[since, now]` in which the attention loop's switch was
+/// off, from its audit trail: `(created_at, after_value)` per change, in any
+/// order. `after_value` other than `"true"` (including a deleted row, `None`)
+/// is OFF - the switch defaults off.
+///
+/// The state at `since` is the last change at or before it; with none on
+/// record the loop is taken as ON, because `since` is the end of a pass the
+/// loop ran. Pure; unparseable instants are skipped, never guessed.
+pub(crate) fn loop_off_windows(
+    changes: &[(String, Option<String>)],
+    since: &str,
+    now: &str,
+) -> Vec<LoopOffWindow> {
+    let parse = |t: &str| chrono::DateTime::parse_from_rfc3339(t.trim()).ok();
+    let (Some(since_t), Some(now_t)) = (parse(since), parse(now)) else {
+        return Vec::new();
+    };
+    let mut timed: Vec<(chrono::DateTime<chrono::FixedOffset>, &str, bool)> = changes
+        .iter()
+        .filter_map(|(at, after)| {
+            let on = after.as_deref().map(str::trim) == Some("true");
+            parse(at).map(|t| (t, at.as_str(), on))
+        })
+        .collect();
+    timed.sort_by_key(|(t, _, _)| *t);
+
+    let mut off_since: Option<String> = timed
+        .iter()
+        .rev()
+        .find(|(t, _, _)| *t <= since_t)
+        .filter(|(_, _, on)| !on)
+        .map(|_| since.trim().to_string());
+    let mut out = Vec::new();
+    for (_, at, on) in timed.iter().filter(|(t, _, _)| *t > since_t && *t <= now_t) {
+        match (&off_since, on) {
+            (None, false) => off_since = Some((*at).to_string()),
+            (Some(from), true) => {
+                out.push(LoopOffWindow {
+                    from: from.clone(),
+                    to: Some((*at).to_string()),
+                });
+                off_since = None;
+            }
+            _ => {}
+        }
+    }
+    if let Some(from) = off_since {
+        out.push(LoopOffWindow { from, to: None });
+    }
+    out
+}
+
+/// The switched-off windows as prompt lines, or empty. Printed only after a
+/// long gap, beside the UNOBSERVED line it explains.
+pub(crate) fn loop_off_lines(windows: &[LoopOffWindow], now: &str) -> String {
+    let mut s = String::new();
+    for w in windows.iter().take(MAX_LOOP_OFF_WINDOWS) {
+        let end = w.to.as_deref().unwrap_or(now);
+        let length = minutes_between(end, &w.from)
+            .map(|m| format!(" ({})", duration_phrase(m)))
+            .unwrap_or_default();
+        s.push_str(&format!(
+            "The attention loop itself was SWITCHED OFF by its operator setting from {} {}{length}. \
+             Nothing was dispatched for ANY persona in that stretch: that part of your gap is \
+             the switch, not your charters.\n",
+            w.from,
+            match w.to.as_deref() {
+                Some(to) => format!("to {to}"),
+                None => "and it is still off".to_string(),
+            },
+        ));
+    }
+    if windows.len() > MAX_LOOP_OFF_WINDOWS {
+        s.push_str(&format!(
+            "...and it was switched off {} more time(s) in the same gap.\n",
+            windows.len() - MAX_LOOP_OFF_WINDOWS
+        ));
+    }
+    s
 }
 
 /// How long ago `then` was, measured from `now` — "3d 4h ago", "45m ago".
@@ -846,6 +967,9 @@ pub(crate) struct DecisionContext {
     /// Reviews of this persona's that were ANSWERED since its last decide pass
     /// (9ef19a00), newest first, at most [`MAX_ANSWERED_REVIEWS`].
     pub answered_reviews: Vec<AnsweredReview>,
+    /// Reviews of this persona's the GC closed unanswered (71c28238), newest
+    /// first, at most [`MAX_EXPIRED_REVIEWS`]. Never among `answered_reviews`.
+    pub expired_reviews: Vec<ExpiredReview>,
     /// The loop-wide hold that overlapped the time since this persona's last
     /// decide, when there was one (fed0339f). `None` is the ordinary case and
     /// renders nothing.
@@ -854,6 +978,10 @@ pub(crate) struct DecisionContext {
     /// (e90e189a). Printed beside the clock so the wake knows how long it has
     /// been away; `None` for a persona that has never completed one.
     pub last_pass_ended_at: Option<String>,
+    /// When the operator had the loop's own switch off between
+    /// `last_pass_ended_at` and now (97dc6b94), oldest first. Rendered only
+    /// beside the long-gap line it explains.
+    pub loop_off: Vec<LoopOffWindow>,
     /// What was said in the channels this persona can hear, newest first, at
     /// most [`MAX_CHANNEL_LINES`].
     pub channel: Vec<ChannelLine>,
@@ -2506,6 +2634,7 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
                 "That is a long gap: treat the interval behind you as UNOBSERVED rather \
                  than quiet.\n",
             );
+            s.push_str(&loop_off_lines(&ctx.loop_off, now));
         }
     }
     if let Some(minutes) = chosen_sleep {
@@ -2747,6 +2876,34 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
              policy clearing a routine queue: it is not a person's decision and it \
              answers no question you asked. A rejection is a constraint, not a \
              failure — do not re-raise the same ask.\n\n",
+        );
+    }
+
+    // --- What aged out unanswered (71c28238) ---
+    //
+    // Beside the answers and deliberately NOT among them: the review GC closes
+    // a row with the same status an answer gets, and read as an answer an
+    // expired question became a decision nobody made.
+    if !ctx.expired_reviews.is_empty() {
+        s.push_str("EXPIRED UNANSWERED (nobody read these; they are NOT answers)\n");
+        for r in &ctx.expired_reviews {
+            s.push_str(&format!(
+                "- [{}] {}{}\n",
+                match r.ask_kind.as_deref() {
+                    Some(kind) => format!("your ask · {kind}"),
+                    None => "review of your work".to_string(),
+                },
+                r.title,
+                r.expired_at
+                    .as_deref()
+                    .map(|t| format!(" — expired {t}"))
+                    .unwrap_or_default(),
+            ));
+        }
+        s.push_str(
+            "These aged out of the operator's queue with no answer. Nothing in them was \
+             approved or rejected, so do not act on them as decisions. An ask here is \
+             no longer with the operator: if it still blocks you, ask it again.\n\n",
         );
     }
 
@@ -4078,8 +4235,10 @@ mod tests {
             // Nothing came back since the last wake either: the 9ef19a00 test
             // supplies its own answers.
             answered_reviews: Vec::new(),
+            expired_reviews: Vec::new(),
             loop_hold: None,
             last_pass_ended_at: None,
+            loop_off: Vec::new(),
             // The channel is empty in the base fixture on purpose: every
             // prompt assertion written before G3 must keep holding for a
             // persona nobody has spoken to.
@@ -4473,6 +4632,129 @@ mod tests {
         ctx.answered_reviews.clear();
         let p = render_decision_prompt(&ctx);
         assert!(!p.contains("ANSWERED SINCE YOUR LAST WAKE"), "{p}");
+    }
+
+    /// 97dc6b94: the audit trail of the loop's own switch becomes the windows
+    /// it was off inside the gap - the real 2026-09-16..24 stop, then a later
+    /// flicker - and a window still open at `now` stays open.
+    #[test]
+    fn loop_off_windows_are_read_from_the_switch_trail() {
+        let change = |at: &str, v: Option<&str>| (at.to_string(), v.map(str::to_string));
+        let trail = vec![
+            // Before the gap: switched on, so the gap opens with the loop ON.
+            change("2026-09-10T08:00:00+00:00", Some("true")),
+            change("2026-09-16T09:15:03+00:00", Some("false")),
+            change("2026-09-24T17:53:34+00:00", Some("true")),
+            change("2026-09-24T18:09:00+00:00", Some("false")),
+            // A second OFF while off is no new window.
+            change("2026-09-24T18:10:00+00:00", None),
+            change("2026-09-24T20:32:00+00:00", Some("true")),
+        ];
+        let since = "2026-09-16T08:23:16+00:00";
+        let now = "2026-09-24T22:37:55+00:00";
+        let w = loop_off_windows(&trail, since, now);
+        assert_eq!(
+            w,
+            vec![
+                LoopOffWindow {
+                    from: "2026-09-16T09:15:03+00:00".into(),
+                    to: Some("2026-09-24T17:53:34+00:00".into()),
+                },
+                LoopOffWindow {
+                    from: "2026-09-24T18:09:00+00:00".into(),
+                    to: Some("2026-09-24T20:32:00+00:00".into()),
+                },
+            ]
+        );
+        let lines = loop_off_lines(&w, now);
+        assert!(
+            lines.contains(
+                "SWITCHED OFF by its operator setting from 2026-09-16T09:15:03+00:00 \
+                 to 2026-09-24T17:53:34+00:00 (8d 8h)"
+            ),
+            "{lines}"
+        );
+
+        // Already off when the gap opened, still off now: one open window
+        // from the start of the gap.
+        let off = vec![change("2026-09-15T00:00:00+00:00", Some("false"))];
+        let w = loop_off_windows(&off, since, now);
+        assert_eq!(
+            w,
+            vec![LoopOffWindow {
+                from: since.into(),
+                to: None
+            }]
+        );
+        assert!(loop_off_lines(&w, now).contains("and it is still off"));
+
+        // Nothing switched: nothing to say.
+        assert!(loop_off_windows(&trail[..1], since, now).is_empty());
+        assert!(loop_off_lines(&[], now).is_empty());
+    }
+
+    /// 97dc6b94: after a long gap the decide prompt names the switch-off; a
+    /// short gap prints nothing about it.
+    #[test]
+    fn a_long_gap_names_the_loop_switch_off() {
+        let mut ctx = ctx_fixture();
+        ctx.now_utc = "2026-09-24T22:37:55+00:00".into();
+        ctx.last_pass_ended_at = Some("2026-09-16T08:23:16+00:00".into());
+        ctx.loop_off = vec![LoopOffWindow {
+            from: "2026-09-16T09:15:03+00:00".into(),
+            to: Some("2026-09-24T17:53:34+00:00".into()),
+        }];
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("That is a long gap"), "{p}");
+        assert!(
+            p.contains("from 2026-09-16T09:15:03+00:00 to 2026-09-24T17:53:34+00:00 (8d 8h)"),
+            "{p}"
+        );
+        assert!(p.contains("Nothing was dispatched for ANY persona"), "{p}");
+
+        ctx.last_pass_ended_at = Some("2026-09-24T22:07:55+00:00".into());
+        let p = render_decision_prompt(&ctx);
+        assert!(!p.contains("SWITCHED OFF"), "a 30-minute gap: {p}");
+    }
+
+    /// 71c28238: a question the review GC closed unanswered renders as EXPIRED,
+    /// never as an answer, and tells the persona it is no longer with anyone.
+    #[test]
+    fn expired_reviews_render_as_unanswered_not_as_answers() {
+        let mut ctx = ctx_fixture();
+        ctx.expired_reviews = vec![
+            ExpiredReview {
+                title: "May I merge PR #57?".into(),
+                ask_kind: Some(ASK_DECISION.into()),
+                expired_at: Some("2026-09-23T04:00:00+00:00".into()),
+            },
+            ExpiredReview {
+                title: "Check the output".into(),
+                ask_kind: None,
+                expired_at: None,
+            },
+        ];
+        let p = render_decision_prompt(&ctx);
+        assert!(
+            p.contains("EXPIRED UNANSWERED (nobody read these; they are NOT answers)"),
+            "{p}"
+        );
+        assert!(
+            p.contains(&format!(
+                "- [your ask · {ASK_DECISION}] May I merge PR #57? — expired 2026-09-23T04:00:00+00:00"
+            )),
+            "{p}"
+        );
+        assert!(
+            p.contains("- [review of your work] Check the output\n"),
+            "{p}"
+        );
+        assert!(p.contains("if it still blocks you, ask it again"), "{p}");
+        assert!(!p.contains("ANSWERED SINCE YOUR LAST WAKE"), "{p}");
+
+        ctx.expired_reviews.clear();
+        let p = render_decision_prompt(&ctx);
+        assert!(!p.contains("EXPIRED UNANSWERED"), "{p}");
     }
 
     /// 733b83b5: branches the persona's own workers authored and nobody merged

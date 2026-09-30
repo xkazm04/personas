@@ -296,6 +296,25 @@ pub async fn read_line_within_oob<R: tokio::io::AsyncBufRead + Unpin>(
     reader: &mut R,
     silence_timeout: std::time::Duration,
 ) -> std::io::Result<(LineRead, Option<Clip>)> {
+    read_line_within_capped_oob(reader, silence_timeout, MAX_LINE_BYTES).await
+}
+
+/// [`read_line_within_oob`] with a caller-chosen byte cap instead of
+/// [`MAX_LINE_BYTES`].
+///
+/// For a PARSING sink whose protocol legitimately carries one very long line:
+/// the build session's stream-json `assistant` / `result` envelopes hold the
+/// model's whole reply on a single line, and a one-shot design pass routinely
+/// writes 60-90 KB of events in one reply. At the 64 KB default that line came
+/// back as a clipped prefix, failed to parse, and the turn's every event was
+/// lost — the build then "made no progress" and stalled (2026-09-25, kp
+/// requirement-driven hires). The cap is still a cap: pick the largest line
+/// the protocol can honestly produce, not "unbounded".
+pub async fn read_line_within_capped_oob<R: tokio::io::AsyncBufRead + Unpin>(
+    reader: &mut R,
+    silence_timeout: std::time::Duration,
+    max_line_bytes: usize,
+) -> std::io::Result<(LineRead, Option<Clip>)> {
     let mut line_buf = Vec::with_capacity(4096);
     let mut truncated = false;
 
@@ -335,11 +354,11 @@ pub async fn read_line_within_oob<R: tokio::io::AsyncBufRead + Unpin>(
             if let Some(nl_pos) = available.iter().position(|&b| b == b'\n') {
                 // Copy up to newline (excluding the newline itself)
                 let take = nl_pos;
-                if !truncated && line_buf.len() + take <= MAX_LINE_BYTES {
+                if !truncated && line_buf.len() + take <= max_line_bytes {
                     line_buf.extend_from_slice(&available[..take]);
                 } else if !truncated {
                     // Partial fit -- fill up to the limit
-                    let remaining = MAX_LINE_BYTES - line_buf.len();
+                    let remaining = max_line_bytes - line_buf.len();
                     line_buf.extend_from_slice(&available[..remaining]);
                     truncated = true;
                 }
@@ -347,10 +366,10 @@ pub async fn read_line_within_oob<R: tokio::io::AsyncBufRead + Unpin>(
             } else {
                 // No newline found -- take the whole buffer
                 let take = available.len();
-                if !truncated && line_buf.len() + take <= MAX_LINE_BYTES {
+                if !truncated && line_buf.len() + take <= max_line_bytes {
                     line_buf.extend_from_slice(available);
                 } else if !truncated {
-                    let remaining = MAX_LINE_BYTES.saturating_sub(line_buf.len());
+                    let remaining = max_line_bytes.saturating_sub(line_buf.len());
                     if remaining > 0 {
                         line_buf.extend_from_slice(&available[..remaining]);
                     }
@@ -1359,6 +1378,42 @@ mod tests {
             }
             other => panic!("expected the prefix back, got {other:?}"),
         }
+    }
+
+    /// A parsing sink that picked a larger cap gets a line over the 64 KB
+    /// default back WHOLE — the build session's 80 KB stream-json envelope
+    /// case — and the cap it picked still fires above that.
+    #[tokio::test]
+    async fn a_caller_chosen_cap_returns_a_line_over_the_default_whole() {
+        let long = "z".repeat(MAX_LINE_BYTES + 20_000);
+        let expected = long.clone();
+        let (client, server) = tokio::io::duplex(8192);
+        tokio::spawn(async move {
+            let mut server = server;
+            let _ = server.write_all(long.as_bytes()).await;
+            let _ = server.write_all(b"\n").await;
+            let _ = server.write_all("w".repeat(2048).as_bytes()).await;
+            let _ = server.write_all(b"\n").await;
+            let _ = server.flush().await;
+            std::future::pending::<()>().await;
+        });
+        let mut reader = BufReader::new(client);
+        let (out, clip) =
+            read_line_within_capped_oob(&mut reader, TEST_SILENCE, 4 * MAX_LINE_BYTES)
+                .await
+                .unwrap();
+        assert!(
+            clip.is_none(),
+            "a line under the chosen cap must not be clipped"
+        );
+        match out {
+            LineRead::Line(s) => assert_eq!(s, expected),
+            other => panic!("expected the whole line, got {other:?}"),
+        }
+        let (_, clip) = read_line_within_capped_oob(&mut reader, TEST_SILENCE, 1024)
+            .await
+            .unwrap();
+        assert_eq!(clip, Some(Clip::SizeCap { at_bytes: 1024 }));
     }
 
     /// TARGET T1, the silence half of the reader.

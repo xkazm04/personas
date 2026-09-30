@@ -133,7 +133,6 @@
       ],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["under `src/` ([`shared-facts.json`](../shared-facts.json)). All **41**"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "engine/background.rs": {"count":1,"sections":[],"contexts":["`engine/background.rs` `SchedulerState` + `SubscriptionHealth` + `SchedulerStats`,"],"resolved":false},
     "engine/subscription.rs": {"count":2,"sections":[0],"lines":["2946"],"contexts":["column and a newest row. Read in full: `engine/subscription.rs` (3,436 lines),"],"resolved":false},
     "health.rs": {"count":3,"sections":[5,7,9],"lines":["715-770","715"],"contexts":["**Measured: `health.rs:715-770` is a four-arm classifier — dead / unstable /"],"resolved":false},
@@ -196,6 +195,7 @@
     },
     "scripts/check-csp-hosts.mjs": {"count":1,"sections":[9],"contexts":["instrument**, in the shape of `scripts/check-csp-hosts.mjs` (which exists"]},
     "scripts/check-loop-liveness.mjs": {"count":1,"sections":[9],"contexts":["**`scripts/check-loop-liveness.mjs`** — a dev-time probe, run against a"],"resolved":false},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["under `src/` (`shared-facts.json`). All **41**"],"resolved":false},
     "shared/src/protocol.ts": {
       "count": 1,
       "sections": [6],
@@ -316,7 +316,7 @@
     "src-tauri/src/engine/team_slack_relay.rs": {"count":1,"sections":[],"lines":["336"],"contexts":["`team_slack_relay.rs:336`, `webhook_notifier.rs:600` — already return"],"resolvedFrom":"basename","verbatim":"team_slack_relay.rs"},
     "src-tauri/src/engine/webhook_notifier.rs": {"count":1,"sections":[],"lines":["600"],"contexts":["`team_slack_relay.rs:336`, `webhook_notifier.rs:600` — already return"],"resolvedFrom":"basename","verbatim":"webhook_notifier.rs"},
     "src-tauri/src/logging.rs": {"count":3,"sections":[3,8],"lines":["121"],"contexts":["`commands/execution/alert_evaluator.rs`, `src/logging.rs`."],"resolvedFrom":"suffix","verbatim":"src/logging.rs"},
-    "src/": {"count":3,"sections":[0,12],"contexts":["under `src/` ([`shared-facts.json`](../shared-facts.json)). All **41**"],"resolved":false,"isDir":true},
+    "src/": {"count":3,"sections":[0,12],"contexts":["under `src/` (`shared-facts.json`). All **41**"],"resolved":false,"isDir":true},
     "src/api/pipeline/scheduler.ts": {"count":1,"sections":[7],"lines":["21"],"contexts":["`getSubscriptionHealth()` (`src/api/pipeline/scheduler.ts:21`) — the whole"]},
     "src/engine/background.rs": {
       "count": 2,

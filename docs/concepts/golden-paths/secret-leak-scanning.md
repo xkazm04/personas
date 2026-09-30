@@ -1,7 +1,7 @@
 # Golden path — Secret-leak scanning
 
 > Situation node: `platform-delivery/gates-and-conventions/secret-leak-scanning` ·
-> [situation spine](../situation-spine.md) · recurrence 3 · risk **HIGH** ·
+> situation spine · recurrence 3 · risk **HIGH** ·
 > sides **server** (incomplete — §12.2) · convergence **converged**
 > (**refuted** — §12.1) · dimensions: **security** · `twoSided: false` ·
 > spine's own framing: *"Staged changes checked for credentials before they

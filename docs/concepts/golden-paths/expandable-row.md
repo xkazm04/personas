@@ -1,7 +1,7 @@
 # Golden path — Expandable row
 
 > Situation node: `product-surfaces/lists-and-tables/expandable-row` (recurrence 58) ·
-> [situation spine](../situation-spine.md)
+> situation spine
 > Composed 2026-08-15 at `94efa9c0d`. Sweep: all **4,829 `.ts`/`.tsx`** files walked
 > by four purpose-built scanners (state-shape, cross-file per-item render, fetch-on-toggle,
 > and a brace-aware JSX opening-tag parser) — not grepped; plus full reads of
@@ -17,7 +17,7 @@
 > a sort, and what the control tells a screen reader.
 >
 > Corpus totals (`.tsx` file counts, lint baseline) are cited from
-> [`shared-facts.json`](../shared-facts.json); everything else was measured during
+> `shared-facts.json`; everything else was measured during
 > composition. Deviations become `violating` cells.
 
 ---
@@ -71,7 +71,7 @@ belong:
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head carries no file
+Per the portability test, the head carries no file
 path, primitive name or count, and every clause carries its **warrant** so an adopting
 repo can tell physics from local calibration.
 
@@ -470,7 +470,7 @@ paginated, filterable list whose detail is fetched).
 ## 7. Deviations found
 
 Everything below shipped under a green `npm run check`. The lint baseline is **1,135
-warnings / 0 errors** ([`shared-facts.json`](../shared-facts.json)); **no ESLint rule and
+warnings / 0 errors** (`shared-facts.json`); **no ESLint rule and
 none of the 75 census rules touches this situation.**
 
 ### The corpus, defined so it can be audited
@@ -786,7 +786,7 @@ with a live population of two, this is a doctrine clause, not an enforcement tar
 
 ## 9. The missing gate
 
-**Manifestation layer.** Per [`golden-path-contract.md:34-60`](../golden-path-contract.md),
+**Manifestation layer.** Per `golden-path-contract.md:34-60`,
 what follows is a *proxy* for a semantic condition, tuned to this repo's idiom. The
 condition is stated first so an adopting repo can re-derive its own proxy rather than
 inherit this one — the portability test measured four ported signals at **zero** true
@@ -1044,7 +1044,7 @@ Each failure mode was **induced and observed**, not assumed:
 | an `exclude` pointing at a missing file | **1** | `[structural] exclude "…" matched no file. The exemption is stale` |
 
 `floor` is set at 2,000 against an observed walk of **2,104 `.tsx` files**
-([`shared-facts.json`](../shared-facts.json) `frontend.tsxFiles`), consistent with
+(`shared-facts.json` `frontend.tsxFiles`), consistent with
 `unfocusable-click-target` and `live-region-born-with-its-message`, which use the same
 roots and extension.
 

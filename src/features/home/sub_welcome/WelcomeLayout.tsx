@@ -1,26 +1,16 @@
 import { lazy, Suspense } from 'react';
-import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import { HeroMesh } from '@/features/shared/components/display/HeroMesh';
 import { DeferUntilIdle } from '@/features/shared/components/layout/DeferUntilIdle';
+import { GhostRows, KitHost, Section, Surface } from '@/features/shared/components/kit';
 import HeroHeader from './HeroHeader';
-import WelcomeGetStarted from './WelcomeGetStarted';
+import GetStartedSection from './GetStartedSection';
 import NavigationGrid, { type NavCard } from './NavigationGrid';
 import type { NavStatChip } from './lib/useNavCardStatus';
-import ResumeBanner from './ResumeBanner';
+import ResumeSection from './ResumeSection';
 import SinceYouLeftBriefing from './SinceYouLeftBriefing';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const LanguageCards = lazy(() => import('./LanguageSwitcher').then(m => ({ default: m.LanguageCardGrid })));
-
-function SectionDivider({ label }: { label: string }) {
-  return (
-    <div className="animate-fade-slide-in motion-reduce:animate-none motion-reduce:opacity-100 motion-reduce:translate-y-0 flex items-center gap-3">
-      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
-      <span className="typo-section-title">{label}</span>
-      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
-    </div>
-  );
-}
 
 interface WelcomeLayoutProps {
   greeting: string;
@@ -32,6 +22,11 @@ interface WelcomeLayoutProps {
   onCardClick: (id: string) => void;
 }
 
+/**
+ * The Welcome surface, composed from the kit: the hero greeting opens the page, then one calm
+ * spine carries what happened since the last visit, the continue pointer, the first-run entry,
+ * the modules and the language picker. A showcase surface: the default type tier, not compact.
+ */
 export default function WelcomeLayout({
   greeting,
   displayName,
@@ -48,25 +43,38 @@ export default function WelcomeLayout({
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
       <HeroMesh preset="welcome" />
       <div className="flex-1 overflow-y-auto relative z-10">
-        <div className="w-full px-6 py-4 space-y-4">
-          <SinceYouLeftBriefing />
-          <ResumeBanner />
-          <HeroHeader greeting={greeting} displayName={displayName} />
-          <WelcomeGetStarted />
+        <KitHost testId="home-welcome">
+          <div className="w-full px-6 pt-4 pb-8">
+            <HeroHeader greeting={greeting} displayName={displayName} />
+            <Surface>
+              <SinceYouLeftBriefing />
+              <ResumeSection />
+              <GetStartedSection />
 
-          {/* Below-fold content deferred to keep initial DOM small. WebView2
-              hangs when too many nodes commit at once; `next-frame` runs as
-              soon as the first paint is on screen. */}
-          <DeferUntilIdle priority="next-frame">
-            <SectionDivider label={quickNavLabel} />
-            <NavigationGrid cards={navCards} translations={navTranslations} status={navStatus} onCardClick={onCardClick} />
-
-            <SectionDivider label={wl.language} />
-            <Suspense fallback={<SuspenseFallback />}>
-              <LanguageCards />
-            </Suspense>
-          </DeferUntilIdle>
-        </div>
+              {/* Below-fold content deferred to keep initial DOM small. WebView2
+                  hangs when too many nodes commit at once; `next-frame` runs as
+                  soon as the first paint is on screen. */}
+              <DeferUntilIdle priority="next-frame">
+                <Section title={quickNavLabel}>
+                  <NavigationGrid
+                    cards={navCards}
+                    translations={navTranslations}
+                    status={navStatus}
+                    onCardClick={onCardClick}
+                    label={quickNavLabel}
+                  />
+                </Section>
+                <Section title={wl.language}>
+                  <Suspense fallback={<GhostRows count={2} />}>
+                    <div className="k-in">
+                      <LanguageCards />
+                    </div>
+                  </Suspense>
+                </Section>
+              </DeferUntilIdle>
+            </Surface>
+          </div>
+        </KitHost>
       </div>
     </div>
   );

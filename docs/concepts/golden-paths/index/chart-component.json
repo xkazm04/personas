@@ -132,7 +132,6 @@
       ],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {"count":3,"sections":[7,8],"contexts":["**Shared facts cited:** [`shared-facts.json`](../shared-facts.json) — 4,829 `.ts`"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "eslint-rules/prefer-numeric.cjs": {"count":1,"sections":[7],"lines":["78-80"],"contexts":["because `prefer-numeric.cjs:78-80` returns on any enclosing"],"resolvedFrom":"basename","verbatim":"prefer-numeric.cjs"},
     "illustrations.tsx": {"count":1,"sections":[],"lines":["49-50"],"contexts":["figures with `role=\"img\"` + descriptive `aria-label` (`illustrations.tsx:49-50`"],"resolved":false},
     "keyboardEventsMiddleware.js": {"count":1,"sections":[7],"lines":["42-43"],"contexts":["(`keyboardEventsMiddleware.js:42-43`, `:153-154`, `:179-180`). These two files are"],"resolved":false},
@@ -181,6 +180,7 @@
       ],
       "resolved": false
     },
+    "shared-facts.json": {"count":3,"sections":[7,8],"contexts":["**Shared facts cited:** `shared-facts.json` — 4,829 `.ts`"],"resolved":false},
     "src/features/agents/sub_deployment/components/DeploymentHealthSparkline.tsx": {
       "count": 1,
       "sections": [7],

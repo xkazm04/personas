@@ -1,7 +1,7 @@
 # Golden path — OS process reconciliation
 
 > Situation node: `backend-runtime/subprocess-and-io/os-process-reconciliation` ·
-> [situation spine](../situation-spine.md) · recurrence **2** · risk **HIGH** ·
+> situation spine · recurrence **2** · risk **HIGH** ·
 > `twoSided: true` · sides: **client** (**inverted** — see [§12.1](#121--sidesclient-is-inverted-not-incomplete)) ·
 > convergence: **converged** (**not tested** — see [§12.6](#126--what-was-not-done)) ·
 > dimensions: **security · resilience · function**

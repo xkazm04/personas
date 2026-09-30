@@ -25,4 +25,36 @@ runsBare: boolean | null,
 /**
  * The argument line as the file states it, verbatim, or null.
  */
-argumentHint: string | null, };
+argumentHint: string | null, 
+/**
+ * Repo-relative path of the skill's `LESSONS.md`, when it keeps one.
+ */
+lessonsPath: string | null, 
+/**
+ * That file's size in bytes. `None` is "there is no such file"; `Some(0)`
+ * would be a file that exists and says nothing, which is a different fact.
+ * u64 because a file size is; pinned to `number` on the wire because a
+ * markdown log stays many orders under 2^53 and `bigint` would be a lie
+ * about what `JSON.parse` hands back.
+ */
+lessonsBytes: number | null, 
+/**
+ * Its last-modified time, RFC3339. `None` when there is no file, or when
+ * this filesystem does not report one - both are unknown, not "never".
+ */
+lessonsModifiedAt: string | null, 
+/**
+ * The `##` heading of the newest DATED entry, verbatim and unparsed.
+ * `None` when the file carries no dated heading at all: measured
+ * 2026-09-25, `assay` still holds the template's
+ * `## <version used> - <YYYY-MM-DD> - <source slug>` and has recorded
+ * nothing, which must never read as a date.
+ */
+lessonsLatestEntry: string | null, 
+/**
+ * That entry's `YYYY-MM-DD`, lifted out of the heading as a substring so
+ * a surface can sort and age it. It is the MAXIMUM date in the file, not
+ * the topmost heading - see `instrument::newest_lesson` for why the two
+ * differ.
+ */
+lessonsLatestAt: string | null, };

@@ -48,6 +48,7 @@
     },
     "GenerateHypothesesModal.tsx": {"count":2,"sections":[7],"lines":["111","114"],"contexts":["`GenerateHypothesesModal.tsx:111`, `ReplyOutbox.tsx:177`, `IdentityAtelier.tsx:68`,"],"resolved":false},
     "IdentityAtelier.tsx": {"count":1,"sections":[7],"lines":["68"],"contexts":["`GenerateHypothesesModal.tsx:111`, `ReplyOutbox.tsx:177`, `IdentityAtelier.tsx:68`,"],"resolved":false},
+    "RecipeVersionsTab.tsx": {"count":1,"sections":[7],"lines":["78"],"contexts":["`ScrapeEditorModal.tsx:30`, `applyDesignResult.ts:87,94`, `RecipeVersionsTab.tsx:78`,"],"resolved":false},
     "TriageControls.tsx": {
       "count": 1,
       "sections": [6],
@@ -340,14 +341,6 @@
       "resolvedFrom": "basename",
       "verbatim": "TrainingStudio.tsx"
     },
-    "src/features/recipes/sub_playground/tabs/RecipeVersionsTab.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["78"],
-      "contexts": ["`ScrapeEditorModal.tsx:30`, `applyDesignResult.ts:87,94`, `RecipeVersionsTab.tsx:78`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "RecipeVersionsTab.tsx"
-    },
     "src/features/scraper/ScrapeEditorModal.tsx": {
       "count": 1,
       "sections": [7],
@@ -451,22 +444,6 @@
       "resolvedFrom": "basename",
       "verbatim": "ChronologyAdoptionView.tsx"
     },
-    "src/features/templates/sub_generated/generation/useCreateTemplateActions.ts": {
-      "count": 3,
-      "sections": [7],
-      "lines": ["101","89","147"],
-      "contexts": ["(`confirmN8nPersonaDraft(payloadJson, sessionId)`), `useCreateTemplateActions.ts:101`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "useCreateTemplateActions.ts"
-    },
-    "src/features/templates/sub_generated/generation/useCreateTemplateSnapshot.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["114"],
-      "contexts": ["and on the snapshot-recovery path (`useCreateTemplateSnapshot.ts:114`) `designResultJson` is"],
-      "resolvedFrom": "basename",
-      "verbatim": "useCreateTemplateSnapshot.ts"
-    },
     "src/features/templates/sub_generated/shared/TeamSynthesisPanel.tsx": {
       "count": 2,
       "sections": [5,7],
@@ -542,14 +519,6 @@
       "resolvedFrom": "basename",
       "verbatim": "useCredentialDesign.ts"
     },
-    "src/hooks/useWizardReducer.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["75-77"],
-      "contexts": ["`updateDraft` (`useWizardReducer.ts:75-77`) writes `draft` and `draftJson`, **not**"],
-      "resolvedFrom": "basename",
-      "verbatim": "useWizardReducer.ts"
-    },
     "src/i18n/tokenMaps.ts": {"count":1,"sections":[8],"contexts":["4. **`tokenMaps.ts` has no category for an origin.** Its ten categories are execution, event,"],"resolvedFrom":"basename","verbatim":"tokenMaps.ts"},
     "src/lib/harness/executor.ts": {
       "count": 1,
@@ -575,6 +544,8 @@
       "resolvedFrom": "basename",
       "verbatim": "devToolsContextSlice.ts"
     },
+    "useCreateTemplateActions.ts": {"count":3,"sections":[7],"lines":["101","89","147"],"contexts":["(`confirmN8nPersonaDraft(payloadJson, sessionId)`), `useCreateTemplateActions.ts:101`,"],"resolved":false},
+    "useCreateTemplateSnapshot.ts": {"count":1,"sections":[7],"lines":["114"],"contexts":["and on the snapshot-recovery path (`useCreateTemplateSnapshot.ts:114`) `designResultJson` is"],"resolved":false},
     "useDevCloneAdoption.ts": {
       "count": 1,
       "sections": [7],
@@ -582,6 +553,7 @@
       "contexts": ["| `useDevCloneAdoption.ts:33` `instantAdoptTemplate('Dev Clone', …)` | a full persona. Deliberate no-preview shortcut, documented. |"],
       "resolved": false
     },
+    "useWizardReducer.ts": {"count":1,"sections":[7],"lines":["75-77"],"contexts":["`updateDraft` (`useWizardReducer.ts:75-77`) writes `draft` and `draftJson`, **not**"],"resolved":false},
     "vibeman/src/lib/ideas/ideaAcceptanceWorkflow.ts": {
       "count": 1,
       "sections": [6],

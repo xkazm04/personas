@@ -1,7 +1,7 @@
 # Golden path — Client rule mirroring
 
 > **Topic path:** `client-runtime` › `state-management` › `client-rule-mirroring`
-> [situation spine](../situation-spine.md) · recurrence 11 · risk **HIGH** · sides: **client**
+> situation spine · recurrence 11 · risk **HIGH** · sides: **client**
 > (spine also carries `twoSided: true`, `fusedAcrossSides: false`) · convergence: **diverged**
 > (label tested — see [§12.1](#12-corrections-to-the-brief)) ·
 > dimensions: **function · resilience · code-quality · ui**
@@ -146,7 +146,7 @@ single refactor invalidated a third of them at once.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path, primitive
+Per the portability test the head carries no file path, primitive
 name or count. Each clause names its warrant.
 
 > **P1 — physics, and the clause everything else follows from. Send the verdict, don't send the
@@ -534,7 +534,7 @@ untranslatable token label at the render site. §0's 4,972 raw tokens would not 
 because the render site is correct — it calls `tokenLabel` exactly as prescribed — and the *table* is
 short. **The clause: a gate on reaching the label helper is only as good as the helper's table, and
 the table is a mirror of a Rust enum with nothing linking the two.** (This is
-[`golden-path-contract.md`](../golden-path-contract.md)'s fifth failure mode — the gate that points
+`golden-path-contract.md`'s fifth failure mode — the gate that points
 at a broken destination — appearing again, one layer further out.)
 
 ---

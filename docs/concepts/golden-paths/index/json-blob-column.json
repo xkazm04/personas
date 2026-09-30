@@ -43,7 +43,9 @@
       "count": 1,
       "sections": [7],
       "lines": ["108"],
-      "contexts": ["| `teams/.../useTeamStudioData.ts:64` · `agents/sub_use_cases/libs/useCaseDetailHelpers.ts:108` · `templates/draft-editor/DraftSettingsTab.tsx:17` | three further hand-rolled decodes |"],
+      "contexts": [
+        "| `teams/.../useTeamStudioData.ts:64` · `agents/sub_use_cases/libs/useCaseDetailHelpers.ts:108` · `templates/draft-editor/DraftSettingsTab.tsx:17` (deleted 2026-09-25) | three further hand-rolled dec…"
+      ],
       "resolved": false
     },
     "audit_log.rs": {
@@ -391,17 +393,11 @@
       "count": 1,
       "sections": [7],
       "lines": ["64"],
-      "contexts": ["| `teams/.../useTeamStudioData.ts:64` · `agents/sub_use_cases/libs/useCaseDetailHelpers.ts:108` · `templates/draft-editor/DraftSettingsTab.tsx:17` | three further hand-rolled decodes |"],
+      "contexts": [
+        "| `teams/.../useTeamStudioData.ts:64` · `agents/sub_use_cases/libs/useCaseDetailHelpers.ts:108` · `templates/draft-editor/DraftSettingsTab.tsx:17` (deleted 2026-09-25) | three further hand-rolled dec…"
+      ],
       "resolvedFrom": "elided-suffix",
       "verbatim": "teams/.../useTeamStudioData.ts"
-    },
-    "src/features/templates/draft-editor/DraftSettingsTab.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["17"],
-      "contexts": ["| `teams/.../useTeamStudioData.ts:64` · `agents/sub_use_cases/libs/useCaseDetailHelpers.ts:108` · `templates/draft-editor/DraftSettingsTab.tsx:17` | three further hand-rolled decodes |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "templates/draft-editor/DraftSettingsTab.tsx"
     },
     "src/features/templates/sub_diagrams/NodePopover.tsx": {
       "count": 1,
@@ -520,6 +516,15 @@
       ],
       "resolved": false,
       "isDir": true
+    },
+    "templates/draft-editor/DraftSettingsTab.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["17"],
+      "contexts": [
+        "| `teams/.../useTeamStudioData.ts:64` · `agents/sub_use_cases/libs/useCaseDetailHelpers.ts:108` · `templates/draft-editor/DraftSettingsTab.tsx:17` (deleted 2026-09-25) | three further hand-rolled dec…"
+      ],
+      "resolved": false
     },
     "test_runner.rs": {
       "count": 1,

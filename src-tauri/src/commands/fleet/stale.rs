@@ -239,10 +239,12 @@ pub fn app_master_awaiting_cutoff_ms() -> i64 {
 /// as long as it took nobody to notice they were two separate reads of the same
 /// run label. `None` is an operator's own session: untouchable at any age.
 fn unattended_awaiting_cutoff_ms(run_label: Option<&str>) -> Option<i64> {
-    use personas_engine::unattended::{is_app_master_run, is_overnight_run};
+    use personas_engine::unattended::{is_app_master_run, is_curator_run, is_overnight_run};
     if is_app_master_run(run_label) {
         Some(app_master_awaiting_cutoff_ms())
-    } else if is_overnight_run(run_label) {
+    } else if is_overnight_run(run_label) || is_curator_run(run_label) {
+        // Curator's workers are multi-turn like the night's, so they get the
+        // night's longer window rather than the one-shot charter's.
         Some(overnight_awaiting_cutoff_ms())
     } else {
         None
@@ -1094,16 +1096,19 @@ const ONE_SHOT_IDLE_REAP_SECS: i64 = 10 * 60;
 /// session outside the app-master label.
 const OVERNIGHT_FINISHED_REAP_SECS: i64 = 60 * 60;
 
-/// True when an overnight session has declared itself done (`Finished` /
-/// `Exited`) and has been silent for [`OVERNIGHT_FINISHED_REAP_SECS`]. Pure,
-/// so the rule can be tested without a registry.
-fn overnight_worker_done_for_good(
+/// True when a multi-turn unattended session (overnight, or a Curator worker,
+/// whose `/research` and `/harvest` passes take further turns as background
+/// lanes report back) has declared itself done (`Finished` / `Exited`) and has
+/// been silent for [`OVERNIGHT_FINISHED_REAP_SECS`]. Pure, so the rule can be
+/// tested without a registry.
+fn multi_turn_worker_done_for_good(
     run_label: Option<&str>,
     state: FleetSessionState,
     last_activity_ms: i64,
     now: i64,
 ) -> bool {
-    personas_engine::unattended::is_overnight_run(run_label)
+    (personas_engine::unattended::is_overnight_run(run_label)
+        || personas_engine::unattended::is_curator_run(run_label))
         && matches!(
             state,
             FleetSessionState::Finished | FleetSessionState::Exited
@@ -1138,7 +1143,7 @@ fn one_shot_worker_reap_pass(app: &AppHandle, now: i64) {
         map.values()
             .filter(|s| {
                 (is_one_shot_worker_label(s.run_label.as_deref())
-                    || overnight_worker_done_for_good(
+                    || multi_turn_worker_done_for_good(
                         s.run_label.as_deref(),
                         s.state,
                         s.last_activity_ms,
@@ -1253,8 +1258,11 @@ pub(crate) const MACHINE_WORKER_ROW_RETENTION_MS: i64 = 14 * 24 * 60 * 60 * 1000
 ///
 /// `Stale` counts as ended here even though it is not terminal for an
 /// operator's session: a machine worker has nobody coming back to it, and the
-/// dispatch sweep already reads `stale` as an end. `Hibernated` does not; it is
-/// a resumable sleep.
+/// dispatch sweep already reads `stale` as an end. So does `Hibernated`, for
+/// the same reason: for an operator it is a resumable sleep, but the sleep a
+/// machine worker gets is `auto_hibernate_pass` freeing a quiet process, and
+/// nothing ever wakes it. Measured 2026-09-29: 106 hibernated Curator workers,
+/// up to three days old, rehydrated as tiles on every restart.
 pub(crate) fn machine_worker_ended_for(
     run_label: Option<&str>,
     state: FleetSessionState,
@@ -1266,7 +1274,10 @@ pub(crate) fn machine_worker_ended_for(
         || super::contest_seat::is_contest_run_label(run_label))
         && matches!(
             state,
-            FleetSessionState::Finished | FleetSessionState::Stale | FleetSessionState::Exited
+            FleetSessionState::Finished
+                | FleetSessionState::Stale
+                | FleetSessionState::Exited
+                | FleetSessionState::Hibernated
         )
         && now - last_activity_ms >= after_ms
 }
@@ -2095,13 +2106,23 @@ mod tests {
     fn an_ended_machine_worker_retires_after_its_window_and_nothing_else_does() {
         use super::{machine_worker_ended_for, MACHINE_WORKER_RETIRE_MS as W};
         use crate::commands::fleet::types::FleetSessionState as S;
-        use personas_engine::unattended::{app_master_run_label, overnight_run_label};
+        use personas_engine::unattended::{
+            app_master_run_label, curator_run_label, overnight_run_label,
+        };
         const NOW: i64 = 1_700_000_000_000;
         let am = app_master_run_label("p1");
         let night = overnight_run_label("bank");
+        let curator = curator_run_label("plan");
         let seat = crate::commands::fleet::contest_seat::contest_run_label("p1", "c1", "seat-a");
-        for state in [S::Finished, S::Stale, S::Exited] {
+        for state in [S::Finished, S::Stale, S::Exited, S::Hibernated] {
             assert!(machine_worker_ended_for(Some(&am), state, NOW - W, NOW, W));
+            assert!(machine_worker_ended_for(
+                Some(&curator),
+                state,
+                NOW - W,
+                NOW,
+                W
+            ));
             assert!(machine_worker_ended_for(
                 Some(&seat),
                 state,
@@ -2134,13 +2155,7 @@ mod tests {
                 W
             ));
         }
-        for state in [
-            S::Running,
-            S::AwaitingInput,
-            S::Idle,
-            S::Spawning,
-            S::Hibernated,
-        ] {
+        for state in [S::Running, S::AwaitingInput, S::Idle, S::Spawning] {
             assert!(!machine_worker_ended_for(Some(&am), state, 0, NOW, W));
         }
     }
@@ -2162,44 +2177,56 @@ mod tests {
         assert_eq!(seed_grew_ms(NOW, NOW), NOW);
     }
 
-    /// The overnight reap rule: label, declared end, and an hour of silence —
+    /// The multi-turn reap rule: label, declared end, and an hour of silence —
     /// all three, or the process stays (a night may still send a turn).
     #[test]
     fn a_finished_overnight_worker_is_reaped_only_after_an_hour_of_silence() {
-        use super::{overnight_worker_done_for_good, OVERNIGHT_FINISHED_REAP_SECS};
+        use super::{multi_turn_worker_done_for_good, OVERNIGHT_FINISHED_REAP_SECS};
         use crate::commands::fleet::types::FleetSessionState as S;
         let hour = OVERNIGHT_FINISHED_REAP_SECS * 1000;
         let now = 10 * hour;
         let label = Some("overnight: bank-edge");
-        assert!(overnight_worker_done_for_good(
+        assert!(multi_turn_worker_done_for_good(
             label,
             S::Finished,
             now - hour,
             now
         ));
-        assert!(overnight_worker_done_for_good(
+        assert!(multi_turn_worker_done_for_good(
             label,
             S::Exited,
             now - 2 * hour,
             now
         ));
         assert!(
-            !overnight_worker_done_for_good(label, S::Finished, now - hour + 1, now),
+            !multi_turn_worker_done_for_good(label, S::Finished, now - hour + 1, now),
             "a minute short of the hour is not the hour"
         );
         assert!(
-            !overnight_worker_done_for_good(label, S::Running, now - 3 * hour, now),
+            !multi_turn_worker_done_for_good(label, S::Running, now - 3 * hour, now),
             "a running night is never reaped by this rule"
         );
         assert!(
-            !overnight_worker_done_for_good(label, S::Idle, now - 3 * hour, now),
+            !multi_turn_worker_done_for_good(label, S::Idle, now - 3 * hour, now),
             "idle between turns is the overnight lane's normal state"
         );
+        // Curator's workers are the same multi-turn shape.
+        let curator = personas_engine::unattended::curator_run_label("refill");
+        assert!(multi_turn_worker_done_for_good(
+            Some(&curator),
+            S::Finished,
+            now - hour,
+            now
+        ));
         assert!(
-            !overnight_worker_done_for_good(Some("app-master:x"), S::Finished, now - hour, now),
+            !multi_turn_worker_done_for_good(Some(&curator), S::Idle, now - 3 * hour, now),
+            "idle between turns is also a Curator worker's normal state"
+        );
+        assert!(
+            !multi_turn_worker_done_for_good(Some("app-master:x"), S::Finished, now - hour, now),
             "the one-shot lane has its own rule"
         );
-        assert!(!overnight_worker_done_for_good(
+        assert!(!multi_turn_worker_done_for_good(
             None,
             S::Finished,
             now - hour,
@@ -2755,7 +2782,9 @@ mod tests {
 
     #[test]
     fn only_a_machine_dispatched_run_is_ever_swept() {
-        use personas_engine::unattended::{app_master_run_label, overnight_run_label};
+        use personas_engine::unattended::{
+            app_master_run_label, curator_run_label, overnight_run_label,
+        };
         // Both dispatchers are in scope, each with its own cutoff.
         assert_eq!(
             unattended_awaiting_cutoff_ms(Some(&app_master_run_label("p-web-master"))),
@@ -2763,6 +2792,10 @@ mod tests {
         );
         assert_eq!(
             unattended_awaiting_cutoff_ms(Some(&overnight_run_label("kp"))),
+            Some(overnight_awaiting_cutoff_ms()),
+        );
+        assert_eq!(
+            unattended_awaiting_cutoff_ms(Some(&curator_run_label("plan"))),
             Some(overnight_awaiting_cutoff_ms()),
         );
         // An operator's own run is untouchable at any age — including the two
@@ -2783,6 +2816,7 @@ mod tests {
         let labels = [
             Some(app_master_run_label("p1")),
             Some(overnight_run_label("kp")),
+            Some(curator_run_label("refill")),
             Some("app master notes".to_string()),
             Some("overnight cleanup".to_string()),
             Some(String::new()),

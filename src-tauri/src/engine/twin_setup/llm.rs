@@ -15,7 +15,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
 
-use personas_core::model_ids::{OPUS_5_5, SONNET_CURRENT};
+use personas_core::model_ids::SONNET_CURRENT;
 
 use crate::db::repos::llm_spend::{self, SpendCtx};
 use crate::db::DbPool;
@@ -59,21 +59,21 @@ impl TwinCall {
 
     pub(crate) const SETUP_ASSESS: Self = Self {
         site: "setup_assess",
-        model: OPUS_5_5,
+        model: SONNET_CURRENT,
         effort: "low",
         timeout: RECONCILE_TIMEOUT,
     };
 
     pub(crate) const SETUP_REFILL: Self = Self {
         site: "setup_refill",
-        model: OPUS_5_5,
+        model: SONNET_CURRENT,
         effort: "low",
         timeout: RECONCILE_TIMEOUT,
     };
 
     pub(crate) const SETUP_PLAN: Self = Self {
         site: "setup_plan",
-        model: OPUS_5_5,
+        model: SONNET_CURRENT,
         effort: "medium",
         timeout: PLAN_TIMEOUT,
     };
@@ -233,11 +233,11 @@ mod tests {
 
     #[test]
     fn twin_setup_tiers_are_the_designed_ones() {
-        assert_eq!(TwinCall::SETUP_PLAN.model, OPUS_5_5);
+        assert_eq!(TwinCall::SETUP_PLAN.model, SONNET_CURRENT);
         assert_eq!(TwinCall::SETUP_PLAN.effort, "medium");
         assert_eq!(TwinCall::SETUP_PLAN.timeout, Duration::from_secs(240));
         for low in [TwinCall::SETUP_ASSESS, TwinCall::SETUP_REFILL] {
-            assert_eq!((low.model, low.effort), (OPUS_5_5, "low"));
+            assert_eq!((low.model, low.effort), (SONNET_CURRENT, "low"));
             assert_eq!(low.timeout, Duration::from_secs(120));
         }
         let legacy = TwinCall::legacy("reflect");

@@ -567,6 +567,29 @@ pub struct StaleReviewResolution {
     pub created_at: String,
 }
 
+/// The reviewer note [`gc_stale_pending`] writes onto a row nobody answered.
+///
+/// One constant for the writer and for [`is_gc_expired`], because the note is
+/// the ONLY thing that tells an aged-out row from a decided one: both end
+/// `status = 'resolved'`. Read without it, a question that expired unanswered
+/// reached the next run as "Prior Human Feedback - Apply These Decisions ...
+/// These decisions override your defaults" (71c28238, three App Master asks
+/// on 2026-09-22/23).
+pub const GC_AUTO_RESOLVED_NOTE: &str = "Auto-resolved: stale > GC threshold";
+
+/// The same note as a suffix, for a row that already carried reviewer notes.
+const GC_AUTO_RESOLVED_SUFFIX: &str = " (auto-resolved: stale > GC threshold)";
+
+/// Whether a review was closed by [`gc_stale_pending`] rather than by anyone
+/// reading it. Matches both spellings the writer uses (a whole note, or a
+/// suffix on earlier notes), case-insensitively.
+pub fn is_gc_expired(reviewer_notes: Option<&str>) -> bool {
+    reviewer_notes.is_some_and(|n| {
+        n.to_ascii_lowercase()
+            .contains(&GC_AUTO_RESOLVED_NOTE.to_ascii_lowercase())
+    })
+}
+
 /// A-grade Phase 8 — auto-resolve `pending` reviews older than `cutoff`.
 ///
 /// Returns the rows that were resolved so callers can emit audit
@@ -576,8 +599,8 @@ pub struct StaleReviewResolution {
 /// (we don't do it inline so the repo stays free of policy_events
 /// dependency — that's a higher-level concern).
 ///
-/// Reviewer notes are set to a sentinel string the UI can detect to
-/// label the row as auto-resolved rather than user-actioned.
+/// Reviewer notes are set to [`GC_AUTO_RESOLVED_NOTE`], which
+/// [`is_gc_expired`] detects so no reader mistakes the row for a decision.
 pub fn gc_stale_pending(
     pool: &DbPool,
     cutoff_iso: &str,
@@ -619,13 +642,18 @@ pub fn gc_stale_pending(
              SET status = 'resolved',
                  reviewer_notes = COALESCE(reviewer_notes, '') ||
                                   CASE WHEN COALESCE(reviewer_notes, '') = ''
-                                       THEN 'Auto-resolved: stale > GC threshold'
-                                       ELSE ' (auto-resolved: stale > GC threshold)'
+                                       THEN ?3
+                                       ELSE ?4
                                   END,
                  resolved_at = ?1,
                  updated_at = ?1
              WHERE status = 'pending' AND created_at < ?2",
-            params![now, cutoff_iso],
+            params![
+                now,
+                cutoff_iso,
+                GC_AUTO_RESOLVED_NOTE,
+                GC_AUTO_RESOLVED_SUFFIX
+            ],
         )?;
 
         tx.commit()?;
@@ -1215,6 +1243,44 @@ mod tests {
         // Nothing to say is not a write.
         assert!(!append_reviewer_note(&pool, &id, "   ").unwrap());
         assert!(!append_reviewer_note(&pool, "nonexistent", "x").unwrap());
+    }
+
+    /// 71c28238: a row the GC closed is recognisable as expired, never as a
+    /// decision, in both spellings the writer uses - and a decided row is not.
+    #[test]
+    fn a_gc_closed_review_reads_as_expired_not_decided() {
+        let pool = init_test_db().unwrap();
+        let (persona_id, execution_id) = setup_persona_and_execution(&pool);
+        let bare = create_pending_review(&pool, &persona_id, &execution_id);
+        let noted = create_pending_review(&pool, &persona_id, &execution_id);
+        assert!(append_reviewer_note(&pool, &noted, "looked at it once").unwrap());
+        let decided = create_pending_review(&pool, &persona_id, &execution_id);
+        update_status(
+            &pool,
+            &decided,
+            ManualReviewStatus::Approved,
+            Some("ship it".into()),
+        )
+        .unwrap();
+
+        let cutoff = (chrono::Utc::now() + chrono::Duration::minutes(1)).to_rfc3339();
+        let closed = gc_stale_pending(&pool, &cutoff).unwrap();
+        assert_eq!(closed.len(), 2, "only the two pending rows age out");
+
+        let bare = get_by_id(&pool, &bare).unwrap();
+        assert_eq!(bare.status, ManualReviewStatus::Resolved);
+        assert_eq!(bare.reviewer_notes.as_deref(), Some(GC_AUTO_RESOLVED_NOTE));
+        assert!(is_gc_expired(bare.reviewer_notes.as_deref()));
+        let noted = get_by_id(&pool, &noted).unwrap();
+        assert!(noted
+            .reviewer_notes
+            .as_deref()
+            .unwrap()
+            .starts_with("looked at it once"));
+        assert!(is_gc_expired(noted.reviewer_notes.as_deref()));
+        let decided = get_by_id(&pool, &decided).unwrap();
+        assert!(!is_gc_expired(decided.reviewer_notes.as_deref()));
+        assert!(!is_gc_expired(None));
     }
 
     #[test]

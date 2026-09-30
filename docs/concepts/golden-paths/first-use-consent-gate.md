@@ -1,6 +1,6 @@
 # Golden path — the first-use consent gate
 
-> Situation node: `client-runtime/flows-and-onboarding/first-use-consent-gate` · [situation spine](../situation-spine.md)
+> Situation node: `client-runtime/flows-and-onboarding/first-use-consent-gate` · situation spine
 > recurrence **11** · risk **HIGH** · sides **client** · convergence **converged (label REFUTED — see §12.1)**
 > dimensions: **ui · security · function**
 > Composed 2026-08-16 against `master` @ `e3c5e0d7f`.
@@ -50,7 +50,7 @@
 > **mirror** pattern.
 > [**app-settings-store**](./app-settings-store.md) owns the backend key registry — including the
 > `<KEY>_DEFAULT` convention this leaf must deliberately violate (§8.2).
-> [**first-run-onboarding**](../situation-spine.md) (unwritten) owns the *sequence* that lands a new
+> **first-run-onboarding** (unwritten) owns the *sequence* that lands a new
 > user on a working state; this path owns only the latch that says the sequence is over.
 > [**tier-and-capability-gating**](./tier-and-capability-gating.md) owns "may this build do X"; this
 > path owns "did this human agree to X, once, at the start".
@@ -189,7 +189,7 @@ reasoning at `:16-21`. That is the tri-state discipline the telemetry key does n
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and
+Per the portability test, the head is physically separated and
 every clause carries its warrant, so an adopting repo can tell physics from local calibration. No
 file path, primitive name or count appears below this line until the head ends.
 

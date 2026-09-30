@@ -9,6 +9,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fleetTapes } from './fleetTapes.mjs';
+import { observabilityTapes } from './observabilityTapes.mjs';
+import { factoryTapes } from './factoryTapes.mjs';
+import { homeWelcomeTapes } from './homeWelcomeTapes.mjs';
+import { homeLearningTapes } from './homeLearningTapes.mjs';
+import { homeCockpitTapes } from './homeCockpitTapes.mjs';
 
 export const RECORDED_AT = '2026-09-22T15:40:00.000Z';
 const T0 = Date.parse(RECORDED_AT);
@@ -245,6 +250,23 @@ function subTriage() {
   };
 }
 
+function kitTilesTape(id) {
+  const b = homeCockpitTapes({ RECORDED_AT }).builders;
+  const seedOf = (m) => b[m]().calls.find((c) => c.cmd === '__harness_seed')?.response ?? {};
+  const base = b['home/cockpit/composed-a']();
+  const seed = {
+    ...seedOf('home/cockpit/composed-a'),
+    briefing: seedOf('home/cockpit/contextual-briefing').contextual,
+    chatCards: seedOf('athena/inline-cards').chatCards,
+    seat: seedOf('curator/evidence-well').seat,
+  };
+  return {
+    ...base, module: id,
+    note: 'Synthetic: the home/cockpit/composed-a tape plus the briefing, chat-card and council-seat seeds, recomposed from kit parts.',
+    calls: [...base.calls.filter((c) => c.cmd !== '__harness_seed'), { cmd: '__harness_seed', response: seed }],
+  };
+}
+
 const BUILDERS = {
   'overview/sub_events': () => subEvents(),
   'plugins/dev-tools/sub_triage': () => subTriage(),
@@ -258,9 +280,30 @@ const BUILDERS = {
   'home/sub_releases': (repoRoot) => subReleases(repoRoot),
   // Module 3, the Fleet cluster (fleetSurfaces.tsx, fleetTapes.mjs).
   ...fleetTapes({ RECORDED_AT }).builders,
+  // Module 4, Overview > Observability (observabilitySurfaces.tsx, observabilityTapes.mjs).
+  ...observabilityTapes({ RECORDED_AT, PERSONAS }).builders,
+  // Module 5, Teams > Factory (factorySurfaces.tsx, factoryTapes.mjs).
+  ...factoryTapes({ RECORDED_AT }).builders,
+  // Kit batch home-1, Home > Welcome (homeWelcomeSurfaces.tsx, homeWelcomeTapes.mjs).
+  ...homeWelcomeTapes({ RECORDED_AT, PERSONAS, EVENTS }).builders,
+  // Kit batch home-1, Home > Learning (homeLearningSurfaces.tsx, homeLearningTapes.mjs).
+  ...homeLearningTapes({ RECORDED_AT }).builders,
+  // Kit batch home-2, Home > Cockpit + Athena chat cards + council evidence well (homeCockpitSurfaces.tsx, homeCockpitTapes.mjs).
+  ...homeCockpitTapes({ RECORDED_AT }).builders,
+  // Kit grow-3 (kitTiles.tsx): the composed-a Cockpit tape, its seed joined by the briefing,
+  // chat-card and council-seat seeds the recomposed stacks read.
+  ...Object.fromEntries(['kit/tiles'].map((id) => [id, () => kitTilesTape(id)])),
+  // The kit specimen (kitSpecimen.tsx): synthetic props, no IPC.
+  ...Object.fromEntries(['kit/specimen', 'kit/specimen/grow-2', 'kit/overview', 'kit/overview-flat'].map((id) => [
+    id, () => ({ version: 1, module: id, source: 'synthetic', recordedAt: RECORDED_AT, note: 'Synthetic props, no IPC: kit parts in their states.', calls: [] }),
+  ])),
   // WP4b tone surfaces (toneSurfaces.tsx): props are synthetic, no IPC.
   ...Object.fromEntries(['tone/health-cards', 'tone/n8n-footer', 'tone/query-toolbar'].map((id) => [
     id, () => ({ version: 1, module: id, source: 'synthetic', recordedAt: RECORDED_AT, note: 'Synthetic props, no IPC.', calls: [] }),
+  ])),
+  // Voice Studio v2 phase 1 (athenaTableSurfaces.tsx): the engine is a prop, no IPC.
+  ...Object.fromEntries(['athena/table/intro', 'athena/table/reach', 'athena/table/voice', 'athena/table/stt', 'athena/stage/reach', 'athena/stage/voice'].map((id) => [
+    id, () => ({ version: 1, module: id, source: 'synthetic', recordedAt: RECORDED_AT, note: 'Hand-built engine states, no IPC.', calls: [] }),
   ])),
   // shoot.mjs --self-test probes: no data needed.
   '__selftest/empty': () => ({ version: 1, source: 'synthetic', recordedAt: RECORDED_AT, calls: [] }),

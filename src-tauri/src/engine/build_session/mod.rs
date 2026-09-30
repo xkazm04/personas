@@ -27,12 +27,14 @@ mod orchestrator;
 mod parser;
 mod provisional;
 pub mod reference;
+mod restart;
 mod runner;
 mod session_prompt;
 mod templates;
 mod tool_tests;
 
-pub(crate) use kp_surface::apply_kp_tool_surface;
+pub(crate) use kp_surface::{apply_kp_requirement_constraints, apply_kp_tool_surface};
+pub(crate) use restart::recover_after_restart;
 pub use tool_tests::run_tool_tests;
 
 use session_prompt::build_session_prompt;
@@ -105,6 +107,11 @@ impl Drop for HandleDropGuard {
 pub struct BuildSessionManager {
     sessions: Arc<Mutex<HashMap<String, SessionHandle>>>,
     next_generation: AtomicU64,
+    /// This process's owner id on the `build_sessions` rows it runs
+    /// (`claimed_by_instance`). Fresh per launch, so a restart is a different
+    /// owner and a session the dead process held reads as orphaned once its
+    /// claim lapses (see `build_session_repo::recover_orphans`).
+    owner_id: String,
 }
 
 impl BuildSessionManager {
@@ -112,7 +119,50 @@ impl BuildSessionManager {
         Self {
             sessions: Arc::new(Mutex::new(HashMap::new())),
             next_generation: AtomicU64::new(1),
+            owner_id: uuid::Uuid::new_v4().to_string(),
         }
+    }
+
+    /// The id this process claims build sessions under.
+    pub fn owner_id(&self) -> &str {
+        &self.owner_id
+    }
+
+    /// Re-run a session restart recovery reset and claimed for this process
+    /// (`build_session_repo::recover_orphans` → `OrphanOutcome::Resumed`).
+    ///
+    /// The row already exists, so nothing is inserted: the session runs under
+    /// its ORIGINAL id, which is what every pointer to it (kp's stamped
+    /// `buildSessionId`, the persona's active-session lookup) already holds.
+    /// Inputs come from the row — intent, mode, workflow/parser JSON, the
+    /// companion link. `language` and `context` are not persisted, so they are
+    /// `None` here; the caller only resumes sessions whose door never passes
+    /// them (a kp hire's one-shot build).
+    pub fn resume_session(
+        &self,
+        session: BuildSession,
+        pool: DbPool,
+        registry: Arc<ActiveProcessRegistry>,
+        app_handle: tauri::AppHandle,
+    ) -> Result<String, AppError> {
+        let channel: Channel<Value> = Channel::new(|_response| Ok(()));
+        self.launch(
+            session.id,
+            session.persona_id,
+            session.intent,
+            channel,
+            pool,
+            registry,
+            session.workflow_json,
+            session.parser_result_json,
+            app_handle,
+            None,
+            session.mode,
+            session.companion_session_id,
+            None,
+            None,
+            false,
+        )
     }
 
     /// Start a new build session. Creates the DB row, spawns a tokio task,
@@ -150,6 +200,46 @@ impl BuildSessionManager {
         // Phases 3-4) — it only tags resolution events with a lane so the switch
         // is observable end-to-end and does not change the built persona.
         orchestration: Option<String>,
+    ) -> Result<String, AppError> {
+        self.launch(
+            session_id,
+            persona_id,
+            intent,
+            channel,
+            pool,
+            registry,
+            workflow_json,
+            parser_result_json,
+            app_handle,
+            language,
+            mode,
+            companion_session_id,
+            context,
+            orchestration,
+            true,
+        )
+    }
+
+    /// `start_session`'s body. `create_row` is false only for a resume, whose
+    /// row (and claim) restart recovery already wrote.
+    #[allow(clippy::too_many_arguments)]
+    fn launch(
+        &self,
+        session_id: String,
+        persona_id: String,
+        intent: String,
+        channel: Channel<Value>,
+        pool: DbPool,
+        registry: Arc<ActiveProcessRegistry>,
+        workflow_json: Option<String>,
+        parser_result_json: Option<String>,
+        app_handle: tauri::AppHandle,
+        language: Option<String>,
+        mode: Option<String>,
+        companion_session_id: Option<String>,
+        context: Option<String>,
+        orchestration: Option<String>,
+        create_row: bool,
     ) -> Result<String, AppError> {
         let (input_tx, input_rx) = mpsc::channel::<UserAnswer>(32);
         let cancel_flag = Arc::new(AtomicBool::new(false));
@@ -216,7 +306,21 @@ impl BuildSessionManager {
             created_at: now.clone(),
             updated_at: now,
         };
-        build_session_repo::create(&pool, &session)?;
+        if create_row {
+            build_session_repo::create(&pool, &session)?;
+            // Ownership: this process runs the session, and says so on the row
+            // until the runner task ends (heartbeat below). A failed claim does
+            // not fail the build — it only means a restart would see the row as
+            // unclaimed and apply the legacy grace instead of the TTL.
+            if let Err(e) = build_session_repo::claim(
+                &pool,
+                &session_id,
+                &self.owner_id,
+                build_session_repo::BUILD_CLAIM_TTL_SECS,
+            ) {
+                tracing::warn!(session_id = %session_id, error = %e, "build session claim failed");
+            }
+        }
 
         // Insert the session handle
         let handle = SessionHandle {
@@ -324,13 +428,36 @@ impl BuildSessionManager {
         let guard_sid = session_id.clone();
         let sid = session_id.clone();
         let raw_user_intent = intent.clone();
+        let hb_pool = pool.clone();
+        let hb_sid = session_id.clone();
+        let hb_owner = self.owner_id.clone();
         tokio::spawn(async move {
             let _handle_guard = HandleDropGuard {
                 sessions: guard_map,
                 session_id: guard_sid,
                 generation,
             };
-            runner::run_session(
+            // Keep this process's claim fresh for exactly as long as the runner
+            // task is alive. When the task ends (terminal phase, cancel, or a
+            // parked interactive draft) the heartbeat stops with it; when the
+            // PROCESS ends, the claim lapses and the next boot's recovery sees
+            // an orphan instead of a session that looks forever in flight.
+            let heartbeat = async move {
+                let every =
+                    std::time::Duration::from_secs(build_session_repo::BUILD_CLAIM_HEARTBEAT_SECS);
+                loop {
+                    tokio::time::sleep(every).await;
+                    if let Err(e) = build_session_repo::heartbeat(
+                        &hb_pool,
+                        &hb_sid,
+                        &hb_owner,
+                        build_session_repo::BUILD_CLAIM_TTL_SECS,
+                    ) {
+                        tracing::warn!(session_id = %hb_sid, error = %e, "build session heartbeat failed");
+                    }
+                }
+            };
+            let run = runner::run_session(
                 sid,
                 persona_id,
                 system_prompt, // Use the full system prompt, not raw intent
@@ -348,8 +475,11 @@ impl BuildSessionManager {
                 is_one_shot,
                 orchestration,
                 generation,
-            )
-            .await;
+            );
+            tokio::select! {
+                _ = run => {}
+                _ = heartbeat => {}
+            }
         });
 
         Ok(session_id)

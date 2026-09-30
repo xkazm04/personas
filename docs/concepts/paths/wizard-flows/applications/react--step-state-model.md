@@ -74,9 +74,9 @@ shows the derived-predicate half of the technique:
   `ungatable-step-transition` (9 sites, precision 9/9) gates exactly this
   shape.
 - **The shared primitives are not the destination.** `useWizardReducer.ts`
-  has zero live consumers and its `goToStep` has no precondition hook;
-  `WizardStepper.tsx`'s two render sites are both inside a modal imported
-  nowhere. The legacy golden path's Gap 2 measured all three candidates;
+  had zero live consumers and its `goToStep` had no precondition hook;
+  `WizardStepper.tsx`'s two render sites were both inside a modal imported
+  nowhere. All three were deleted on 2026-09-25. The legacy golden path's Gap 2 measured all three candidates;
   the reusable artifact here is the navigationReducer *shape*, not a
   component — which is the technique's cross-codebase observation landing
   in this repo.

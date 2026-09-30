@@ -39,6 +39,15 @@
         "7. **Zero automated enforcement today.** No ESLint rule, no check script, and no test asserts any condition split; `ScenarioEmptyState` has no test file. `.claude/conventions.json` lists no empty-sta…"
       ]
     },
+    "CronAgentsPage.tsx": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["42-44"],
+      "contexts": [
+        "- `EventLogList.tsx:303-306`, `CronAgentsPage.tsx:42-44`, `MessageList.tsx:279-281`, `KnowledgeGraphDashboard.tsx:193-195`, `ManualReviewList.tsx:367-369` — all five seed buttons gated on `import.met…"
+      ],
+      "resolved": false
+    },
     "DashboardNavbar.tsx": {
       "count": 1,
       "sections": [],
@@ -90,6 +99,15 @@
       "lines": ["196"],
       "contexts": [
         "The primitive layer is 100% of the problem: **all 23 `UnifiedTable`/`DataGrid`/`FacetedDecisionTable` call sites** are in files with no error affordance of any kind, because none of the three primiti…"
+      ],
+      "resolved": false
+    },
+    "KnowledgeGraphDashboard.tsx": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["193-195"],
+      "contexts": [
+        "- `EventLogList.tsx:303-306`, `CronAgentsPage.tsx:42-44`, `MessageList.tsx:279-281`, `KnowledgeGraphDashboard.tsx:193-195`, `ManualReviewList.tsx:367-369` — all five seed buttons gated on `import.met…"
       ],
       "resolved": false
     },
@@ -153,7 +171,6 @@
       "contexts": ["- `agents/sub_executions/components/list/ExecutionListRow.tsx:77-82` — `FlaskConical` + `SIMULATED` pill + tooltip *\"This run was a simulation — notifications were not sent.\"*"],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["Repo-level denominators come from [`shared-facts.json`](../shared-facts.json) —"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "executions/page.tsx": {
       "count": 2,
       "sections": [4],
@@ -215,6 +232,14 @@
       "resolved": false
     },
     "overview/sub_director/components/AddToScopeModal.tsx": {
+      "count": 1,
+      "sections": [7],
+      "contexts": [
+        "`agents/components/PersonaSelector.tsx` · `agents/components/PersonaSelectorModal.tsx` · `fleet/monitor/channels/Stream.tsx` · `overview/sub_director/components/AddToScopeModal.tsx` · `overview/sub_k…"
+      ],
+      "resolved": false
+    },
+    "overview/sub_knowledge/components/KnowledgeGraphDashboard.tsx": {
       "count": 1,
       "sections": [7],
       "contexts": [
@@ -299,6 +324,16 @@
       ],
       "resolved": false
     },
+    "recipes/sub_list/components/RecipePicker.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["77"],
+      "contexts": [
+        "`agents/components/PersonaSelector.tsx` · `agents/components/PersonaSelectorModal.tsx` · `fleet/monitor/channels/Stream.tsx` · `overview/sub_director/components/AddToScopeModal.tsx` · `overview/sub_k…"
+      ],
+      "resolved": false
+    },
+    "recipes/sub_playground/tabs/RecipeOverviewTab.tsx": {"count":1,"sections":[7],"lines":["63"],"contexts":["| `recipes/sub_playground/tabs/RecipeOverviewTab.tsx:63` | Same |"],"resolved":false},
     "scripts/docs/gen-shared-catalog.mjs": {
       "count": 1,
       "sections": [7],
@@ -306,6 +341,7 @@
         "- `shared/components/CATALOG.md:42,50,55,99` — **all four shared empty-state components are listed with `_(add a @catalog tag)_` and no description**: `ChartEmptyState`, `EmptyIllustration`, `Illustr…"
       ]
     },
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["Repo-level denominators come from `shared-facts.json` —"],"resolved":false},
     "src/features": {"count":2,"sections":[9],"contexts":["Composed 2026-08-14 from a repo-wide ground-truth sweep of **3,137 files under `src/features`**,"],"resolved":false,"isDir":true},
     "src/features/**": {
       "count": 1,
@@ -463,16 +499,6 @@
       "resolvedFrom": "basename",
       "verbatim": "DashboardEmptyState.tsx"
     },
-    "src/features/overview/sub_cron_agents/components/CronAgentsPage.tsx": {
-      "count": 1,
-      "sections": [6],
-      "lines": ["42-44"],
-      "contexts": [
-        "- `EventLogList.tsx:303-306`, `CronAgentsPage.tsx:42-44`, `MessageList.tsx:279-281`, `KnowledgeGraphDashboard.tsx:193-195`, `ManualReviewList.tsx:367-369` — all five seed buttons gated on `import.met…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "CronAgentsPage.tsx"
-    },
     "src/features/overview/sub_events/components/EventLogList.tsx": {
       "count": 5,
       "sections": [4,6,9],
@@ -490,16 +516,6 @@
       "contexts": ["- `overview/sub_incidents/components/IncidentsInbox.tsx:521` — the sole `InboxZero` call site."],
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_incidents/components/IncidentsInbox.tsx"
-    },
-    "src/features/overview/sub_knowledge/components/KnowledgeGraphDashboard.tsx": {
-      "count": 2,
-      "sections": [6,7],
-      "lines": ["193-195"],
-      "contexts": [
-        "- `EventLogList.tsx:303-306`, `CronAgentsPage.tsx:42-44`, `MessageList.tsx:279-281`, `KnowledgeGraphDashboard.tsx:193-195`, `ManualReviewList.tsx:367-369` — all five seed buttons gated on `import.met…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "KnowledgeGraphDashboard.tsx"
     },
     "src/features/overview/sub_manual-review/components/ManualReviewList.tsx": {
       "count": 1,
@@ -623,24 +639,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/obsidian-brain/sub_graph/GraphPanel.tsx"
-    },
-    "src/features/recipes/sub_list/components/RecipePicker.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["77"],
-      "contexts": [
-        "`agents/components/PersonaSelector.tsx` · `agents/components/PersonaSelectorModal.tsx` · `fleet/monitor/channels/Stream.tsx` · `overview/sub_director/components/AddToScopeModal.tsx` · `overview/sub_k…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "recipes/sub_list/components/RecipePicker.tsx"
-    },
-    "src/features/recipes/sub_playground/tabs/RecipeOverviewTab.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["63"],
-      "contexts": ["| `recipes/sub_playground/tabs/RecipeOverviewTab.tsx:63` | Same |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "recipes/sub_playground/tabs/RecipeOverviewTab.tsx"
     },
     "src/features/scraper/ScraperControlRoom.tsx": {
       "count": 1,

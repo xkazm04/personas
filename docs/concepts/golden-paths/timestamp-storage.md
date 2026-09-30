@@ -1,6 +1,6 @@
 # Golden path — Timestamp storage
 
-> Situation node: `data-persistence/data-modeling/timestamp-storage` · [situation spine](../situation-spine.md)
+> Situation node: `data-persistence/data-modeling/timestamp-storage` · situation spine
 > Composed 2026-08-13 from a ground-truth sweep of the Rust tree (`src-tauri/{src,db,core,engine,data}`),
 > the four migration files, and `src/**`, against `master` @ `7bb572e2b`. `.claude/worktrees/**` and
 > `target/` excluded from every count. Every number below was measured, not estimated; the SQLite

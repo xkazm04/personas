@@ -39,6 +39,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use chrono::{DateTime, Duration as ChronoDuration, Utc};
 
+use personas_core::events::curator_pulse;
 use personas_core::models::{CuratorPlanItem, CuratorPlanItemState};
 
 use crate::db::repos::curator as repo;
@@ -186,7 +187,7 @@ pub(super) fn is_sleeping() -> bool {
 }
 
 /// Run the pass if it is due. Called at the end of every tick.
-pub(super) async fn maybe_reconcile(pool: &DbPool, root: &Path) {
+pub(super) async fn maybe_reconcile(app: &tauri::AppHandle, pool: &DbPool, root: &Path) {
     if SLEEPING
         .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
         .is_err()
@@ -207,6 +208,13 @@ pub(super) async fn maybe_reconcile(pool: &DbPool, root: &Path) {
                 planned = report.planned,
                 "curator: reconciled her plan against the registry"
             );
+            // A completed pass ALWAYS supersedes the standing run - projecting
+            // and inserting is step 4 of it, and a pass that does not reach
+            // step 4 returns `Err` and announces nothing. So one kind covers
+            // both "she slept" and "a plan run superseded another": they are
+            // the same event here, and two names for it would be two ways to
+            // describe one row.
+            super::pulse::emit(app, pool, curator_pulse::SLEPT);
         }
         Ok(None) => {}
         Err(err) => {
@@ -236,7 +244,7 @@ async fn reconcile_if_due(
     // (1) The caches go first, so the reading below is taken after whatever
     // her workers have just committed.
     instrument::invalidate();
-    let reading = instrument::read(root).await?;
+    let reading = instrument::read(root).await?.value;
 
     let db = pool.clone();
     let now = Utc::now().to_rfc3339();

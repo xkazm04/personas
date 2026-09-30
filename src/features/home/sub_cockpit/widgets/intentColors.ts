@@ -1,48 +1,75 @@
+import type { Tone } from '@/features/shared/components/kit';
+import type { Translations } from '@/i18n/en';
+
 /**
- * Shared intent/trend -> text-color mapping for cockpit widgets.
- *
- * The `good -> emerald-400 / warn -> amber-400 / bad -> rose-400` palette
- * (plus a neutral default/info shade) was re-implemented as an inline
- * ternary or Record in MetricSparkWidget, StatGridWidget,
- * ComparisonCardsWidget, and VerdictWidget. Centralizing it here means a
- * future palette tweak (e.g. the `text-status-*` token migration
- * BrowserTestReportWidget already adopted) only has to change one file.
+ * Tone by meaning (home-2, contract item 4): the cockpit's one map from Athena's free-form
+ * `intent` / `severity` / `status` words to the kit's closed `Tone` vocabulary. A colour here is
+ * chosen by what a figure MEANS (spend up = warning, issues up = error, a success rate slipping =
+ * warning), never by which way it moved. Draw a tone with the kit: `<Mark tone>`, `<Dot tone>`,
+ * a row's `mark`, or `toneText(tone)` on a text span (`k-toned t-<tone>`, the variable a Mark reads).
  */
 export type CockpitIntent = 'default' | 'info' | 'good' | 'warn' | 'bad';
 
-const INTENT_TEXT_CLASS: Record<CockpitIntent, string> = {
-  default: 'text-foreground',
-  info: 'text-primary',
-  good: 'text-emerald-400',
-  warn: 'text-amber-400',
-  bad: 'text-rose-400',
+const INTENT_TONE: Record<string, Tone> = {
+  default: 'neutral',
+  info: 'info',
+  good: 'success',
+  warn: 'warning',
+  bad: 'error',
+  // severity words Athena and connectors also use
+  critical: 'error',
+  high: 'error',
+  medium: 'warning',
+  med: 'warning',
+  low: 'info',
 };
 
-/**
- * Resolve an intent string (free-form config from Athena) to its text-color
- * class. `fallback` picks the neutral shade for an unrecognized/missing
- * intent — widgets that default to a plain foreground pass `'default'`,
- * widgets that default to the primary accent pass `'info'`.
- */
-export function intentTextClass(
-  intent: string | undefined,
-  fallback: 'default' | 'info' = 'default',
-): string {
-  if (intent && intent in INTENT_TEXT_CLASS) {
-    return INTENT_TEXT_CLASS[intent as CockpitIntent];
-  }
-  return INTENT_TEXT_CLASS[fallback];
+/** A widget intent or severity word as a kit Tone; unknown or missing words take `fallback`. */
+export function intentTone(intent: unknown, fallback: Tone = 'neutral'): Tone {
+  return typeof intent === 'string' && intent in INTENT_TONE ? INTENT_TONE[intent]! : fallback;
+}
+
+/** What a figure says about itself: the fields a delta's tone is read from. */
+export interface FigureMeaning {
+  /** How the figure reads now: `good` | `warn` | `bad` | `info` | `default`. */
+  intent?: unknown;
+  /** Which way it moved: `up` | `down` | `flat`. */
+  trend?: unknown;
+  /** Athena's explicit tone for the delta; wins over everything else. */
+  delta_intent?: unknown;
+  /** Which direction is better for this figure (`up` for a success rate, `down` for spend). */
+  better?: unknown;
 }
 
 /**
- * Resolve an up/down trend to its text-color class. `neutralClass` covers
- * `'flat'`/missing trend — callers that want no color override pass `''`.
+ * The tone of a figure's delta, by meaning:
+ * 1. `delta_intent` given: that.
+ * 2. `better` given: a move that way is success; the other way wears the figure's concern
+ *    (error when the figure is `bad`, else warning); flat is neutral.
+ * 3. Otherwise the figure's intent decides: a `warn`/`bad` figure's delta is part of the concern
+ *    (spend +38% warning, issues +3 error); a `good` figure moving up stays success and slipping
+ *    down is warning (success rate -1.2); a `default`/`info` figure's delta stays neutral, since
+ *    nothing says whether more is better (runs +212 is not automatically good news).
  */
-export function intentTrendClass(
-  trend: string | undefined,
-  neutralClass = 'text-foreground',
-): string {
-  if (trend === 'up') return 'text-emerald-400';
-  if (trend === 'down') return 'text-rose-400';
-  return neutralClass;
+export function deltaTone(f: FigureMeaning): Tone {
+  if (typeof f.delta_intent === 'string' && f.delta_intent in INTENT_TONE) return INTENT_TONE[f.delta_intent]!;
+  const concern: Tone = f.intent === 'bad' ? 'error' : 'warning';
+  if (f.better === 'up' || f.better === 'down') {
+    if (f.trend !== 'up' && f.trend !== 'down') return 'neutral';
+    return f.trend === f.better ? 'success' : concern;
+  }
+  if (f.intent === 'bad' || f.intent === 'warn') return concern;
+  if (f.intent === 'good') return f.trend === 'down' ? 'warning' : 'success';
+  return 'neutral';
+}
+
+/** Classes that colour a text span in a tone (neutral stays the ink it sits in). */
+export function toneText(tone: Tone): string {
+  return tone === 'neutral' ? '' : `k-toned t-${tone}`;
+}
+
+/** The accessible name of a tone drawn as a Mark (a row's meaning, not a status word on screen). */
+export function toneLabel(t: Translations, tone: Tone): string {
+  const c = t.overview.cockpit;
+  return tone === 'success' ? c.tone_good : tone === 'warning' ? c.tone_warn : tone === 'error' ? c.tone_bad : c.tone_info;
 }

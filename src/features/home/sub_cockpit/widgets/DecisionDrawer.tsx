@@ -1,20 +1,28 @@
-import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { useId, useState } from 'react';
 
 import { useTranslation } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/generated/types';
+import { debtText } from '@/i18n/DebtText';
 import { toastCatch } from '@/lib/silentCatch';
-import { useInboxActions } from '@/features/companions/athena/inbox/hooks/useInboxActions';
+import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import { BaseModal } from '@/features/shared/components/modals';
+import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { FormField } from '@/features/shared/components/forms/FormField';
+import { Dot, KitButton, KitHost, Meta, Section, Surface } from '@/features/shared/components/kit';
+import { useInboxActions, type InboxActionLabelKey } from '@/features/companions/athena/inbox/hooks/useInboxActions';
 import { formatRelativeTime } from '@/features/companions/athena/inbox/utils/formatRelativeTime';
-import { inboxKindIcon } from '@/features/companions/athena/inbox/_shared/inboxKindIcon';
 import type { UnifiedInboxItem } from '@/features/companions/athena/inbox/types';
-import { DebtText } from '@/i18n/DebtText';
 
+import { inboxMark } from './decisionMarks';
+
+type Slot = 'primary' | 'secondary' | 'tertiary';
 
 /**
- * Drawer opened from DecisionsPanelWidget when the user clicks a row. Shows
- * the full body + per-kind primary/secondary/tertiary action buttons. Closes
- * automatically once the primary action resolves so the underlying list
- * filters the item out without an explicit close.
+ * Drawer opened from DecisionsPanelWidget when the user presses a row: the shared BaseModal as a
+ * right drawer (Esc, backdrop, focus trap), the item as a kit Section (its Mark, persona and age
+ * in the meta line, the body rendered as markdown) and the per-kind actions as KitButtons, the
+ * primary one the surface's single call to action. Closes once an action resolves, so the list
+ * underneath drops the item without an explicit close.
  */
 export interface DecisionDrawerProps {
   item: UnifiedInboxItem;
@@ -23,19 +31,13 @@ export interface DecisionDrawerProps {
 
 export function DecisionDrawer({ item, onClose }: DecisionDrawerProps) {
   const { t } = useTranslation();
+  const titleId = useId();
   const actions = useInboxActions(item);
-  const [busy, setBusy] = useState<null | 'primary' | 'secondary' | 'tertiary'>(null);
+  const [busy, setBusy] = useState<null | Slot>(null);
   const [notes, setNotes] = useState('');
+  const mark = inboxMark(item, t);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
-  const run = async (slot: 'primary' | 'secondary' | 'tertiary') => {
+  const run = async (slot: Slot) => {
     const action = actions[slot];
     if (!action || busy !== null) return;
     setBusy(slot);
@@ -49,122 +51,57 @@ export function DecisionDrawer({ item, onClose }: DecisionDrawerProps) {
     }
   };
 
+  const button = (slot: Slot, tone: 'primary' | 'default' | 'quiet') => {
+    const action = actions[slot];
+    if (!action) return null;
+    return (
+      <KitButton tone={tone} onClick={() => run(slot)} loading={busy === slot} disabled={busy !== null && busy !== slot}>
+        {actionLabel(action.labelKey, t)}
+      </KitButton>
+    );
+  };
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-xl max-h-[80vh] flex flex-col rounded-modal border border-foreground/15 bg-background shadow-elevation-3"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-start gap-3 p-5 border-b border-foreground/10">
-          <KindBadge kind={item.kind} />
-          <div className="flex-1 min-w-0">
-            <div className="typo-body text-foreground truncate">{item.title}</div>
-            <div className="typo-caption text-foreground flex items-center gap-2 mt-0.5">
-              <span className="truncate">{item.personaName}</span>
-              <span>·</span>
-              <span>{formatRelativeTime(item.createdAt, t)}</span>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 rounded-input text-foreground hover:text-foreground/85 hover:bg-foreground/[0.06] transition-colors"
-            aria-label="Close"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-5 typo-body text-foreground/85 whitespace-pre-wrap break-words">
-          {item.body}
-        </div>
-
-        {item.kind === 'approval' && (
-          <div className="px-5 pb-3">
-            <label className="block">
-              <span className="typo-label text-foreground block mb-1.5">
-                <DebtText k="auto_notes_optional_4d56ca9b" />
-              </span>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={2}
-                className="w-full rounded-input border border-foreground/10 bg-background/60 px-3 py-2 typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-foreground/30 resize-none"
-              />
-            </label>
-          </div>
-        )}
-
-        <div className="flex items-center justify-end gap-2 p-4 border-t border-foreground/10">
-          {actions.tertiary && (
-            <button
-              type="button"
-              onClick={() => void run('tertiary')}
-              disabled={busy !== null}
-              className="px-3 py-1.5 rounded-input typo-caption text-foreground hover:text-foreground hover:bg-foreground/[0.06] transition-colors disabled:opacity-50"
+    <BaseModal isOpen onClose={onClose} titleId={titleId} placement="right-drawer" portal staggerChildren={false}>
+      <div className="flex-1 min-h-0 overflow-y-auto pt-5">
+        <KitHost compact>
+          <Surface>
+            <Section
+              level={2}
+              title={<span id={titleId}>{item.title}</span>}
+              meta={<Meta parts={[<span key="k" className="inline-flex items-center gap-1.5"><Dot tone={mark.tone} glyph={mark.glyph} />{mark.label}</span>, item.personaName, formatRelativeTime(item.createdAt, t)]} />}
+              actions={<KitButton tone="quiet" hint="Esc" onClick={onClose}>{t.common.close}</KitButton>}
             >
-              {actionLabel(actions.tertiary.labelKey)}
-            </button>
-          )}
-          {actions.secondary && (
-            <button
-              type="button"
-              onClick={() => void run('secondary')}
-              disabled={busy !== null}
-              className="px-3 py-1.5 rounded-input typo-caption text-foreground hover:text-foreground hover:bg-foreground/[0.06] transition-colors disabled:opacity-50"
-            >
-              {actionLabel(actions.secondary.labelKey)}
-            </button>
-          )}
-          {actions.primary && (
-            <button
-              type="button"
-              onClick={() => void run('primary')}
-              disabled={busy !== null}
-              className="px-4 py-1.5 rounded-input typo-caption bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
-            >
-              {busy === 'primary' ? 'Working…' : actionLabel(actions.primary.labelKey)}
-            </button>
-          )}
-        </div>
+              <div className="k-in flex flex-col gap-4 break-words">
+                <MarkdownRenderer content={item.body} />
+                {item.kind === 'approval' && (
+                  <FormField label={debtText('auto_notes_optional_4d56ca9b')}>
+                    {(p) => <textarea {...p} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={`${INPUT_FIELD} resize-none`} />}
+                  </FormField>
+                )}
+              </div>
+            </Section>
+          </Surface>
+        </KitHost>
       </div>
-    </div>
+      <KitHost compact>
+        <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-foreground/10">
+          {button('tertiary', 'quiet')}
+          {button('secondary', 'default')}
+          {button('primary', 'primary')}
+        </div>
+      </KitHost>
+    </BaseModal>
   );
 }
 
-function KindBadge({ kind }: { kind: UnifiedInboxItem['kind'] }) {
-  const clsMap = {
-    approval: 'bg-amber-500/15 text-amber-300',
-    message: 'bg-violet-500/15 text-violet-300',
-    health: 'bg-rose-500/15 text-rose-300',
-    output: 'bg-emerald-500/15 text-emerald-300',
-  } as const;
-  const Icon = inboxKindIcon(kind);
-  return (
-    <span className={`inline-flex items-center justify-center w-7 h-7 rounded-input shrink-0 ${clsMap[kind]}`}>
-      <Icon className="w-3.5 h-3.5" />
-    </span>
-  );
-}
-
-function actionLabel(
-  key:
-    | 'action_approve'
-    | 'action_reject'
-    | 'action_defer'
-    | 'action_resolve'
-    | 'action_dismiss'
-    | 'action_mark_read',
-): string {
+function actionLabel(key: InboxActionLabelKey, t: Translations): string {
   switch (key) {
-    case 'action_approve': return 'Approve';
-    case 'action_reject': return 'Reject';
-    case 'action_defer': return 'Defer';
-    case 'action_resolve': return 'Resolve';
-    case 'action_dismiss': return 'Dismiss';
-    case 'action_mark_read': return 'Mark read';
+    case 'action_approve': return t.athena.decision_approve;
+    case 'action_reject': return t.athena.decision_reject;
+    case 'action_defer': return t.athena.decision_later;
+    case 'action_resolve': return t.athena.decision_resolve;
+    case 'action_dismiss': return t.common.dismiss;
+    case 'action_mark_read': return t.athena.decision_mark_read;
   }
 }

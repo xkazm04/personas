@@ -11,7 +11,8 @@ persona's live `{{param.*}}` parameters.
 > *not* reachable from any UI — it is inventoried in
 > [Dead code](#dead-code--reachable-from-no-ui) rather than described as if it
 > ran. An earlier revision of this file documented that dead path as the main
-> surface; if you are looking for `RecipeManager`, start there.
+> surface; if you are looking for `RecipeManager`, it was never mounted and was
+> deleted on 2026-09-25 (see Dead code).
 
 ## The pipeline that actually ships
 
@@ -223,7 +224,8 @@ Registered Tauri commands, annotated by whether any live UI can reach them.
 > `list_recipe_suggestion_events`. By *mount reachability* — the metric this
 > table uses, and the one that matters to a user — most of the write, execution
 > and versioning families are dead, because their only callers live inside the
-> orphaned `src/features/recipes/**` tree. A grep for the command name will tell
+> `src/features/recipes/**` tree, which was never mounted and was deleted on
+> 2026-09-25. A grep for the command name will tell
 > you the first number and quietly mislead you about the second.
 
 | Family | Commands | Reachable from UI? |
@@ -235,10 +237,10 @@ Registered Tauri commands, annotated by whether any live UI can reach them.
 | Parameter sync | `sync_capability_parameters` (persona params family) | **Yes** — `useAdoption` adopt + remove |
 | Parameter coverage | `get_recipe_parameter_coverage` | **Yes** — `useAdoption` adopt (post-adopt gap notice) |
 | Outcome attribution | `get_recipe_outcome_tallies` | Backend only — registered, no UI surface yet |
-| CRUD (write) | `create_recipe`, `update_recipe`, `delete_recipe` | **No** — only `features/recipes/sub_editor`, `sub_manager` |
-| Persona links | `link_recipe_to_persona`, `unlink_recipe_from_persona`, `get_persona_recipes` | **No** — only `features/recipes/sub_list/LinkedRecipesSection` |
-| Execution | `execute_recipe`, `start_recipe_execution`, `cancel_recipe_execution` | **No** — only `features/recipes/sub_playground` |
-| Versioning | `get_recipe_versions`, `start_recipe_versioning`, `cancel_recipe_versioning`, `accept_recipe_version`, `revert_recipe_version` | **No** — only `features/recipes/sub_playground/tabs/RecipeVersionsTab` |
+| CRUD (write) | `create_recipe`, `update_recipe`, `delete_recipe` | **No** (its only callers were `features/recipes/sub_editor`, `sub_manager`, deleted 2026-09-25) |
+| Persona links | `link_recipe_to_persona`, `unlink_recipe_from_persona`, `get_persona_recipes` | **No** (its only caller was `features/recipes/sub_list/LinkedRecipesSection`, deleted 2026-09-25) |
+| Execution | `execute_recipe`, `start_recipe_execution`, `cancel_recipe_execution` | **No** (its only caller was `features/recipes/sub_playground`, deleted 2026-09-25) |
+| Versioning | `get_recipe_versions`, `start_recipe_versioning`, `cancel_recipe_versioning`, `accept_recipe_version`, `revert_recipe_version` | **No** (its only caller was `features/recipes/sub_playground/tabs/RecipeVersionsTab`, deleted 2026-09-25) |
 | Generation | `get_credential_recipes`, `start_recipe_generation`, `cancel_recipe_generation` | **No** — `RecipeCreateFlow.tsx` has zero consumers |
 | Use-case generation | `get_use_case_recipes` | **No** — zero references in `src/` |
 | Derivation | `derive_recipes_from_template`, `list_recipes_by_template` | **No** — dev/migration-time only, zero `src/` callers |
@@ -253,16 +255,22 @@ side — it simply has no live caller today.
 ## Dead code — reachable from no UI
 
 Named explicitly so the next reader does not mistake volume for aliveness. **A
-deletion direction is backlogged; do not delete piecemeal.**
+deletion direction is backlogged; do not delete piecemeal.** Item 1 was deleted
+by owner decision on 2026-09-25; items 2 and 3 still stand.
 
-### 1. `src/features/recipes/**` — the superseded recipe manager
+### 1. `src/features/recipes/**`: the superseded recipe manager (DELETED 2026-09-25)
 
-28 files, ~2,629 LOC, **zero JSX consumers outside its own subtree** and **zero
-`data-testid` anywhere in it**. `RecipeManager` is exported from
-`sub_manager/index.ts` and imported by nothing. The tree contains the recipe
-list, editor (`SchemaFieldBuilder`, `TagChipInput`), playground modal with its
-tabs, the `useRecipeViewFSM` state machine, and `LinkedRecipesSection`. It was
-superseded by `src/features/templates/sub_recipes/` (the catalog above).
+29 files, 2,797 LOC, **zero JSX consumers outside its own subtree** and **zero
+`data-testid` anywhere in it**. `RecipeManager` was exported from
+`sub_manager/index.ts` and imported by nothing. The tree held the recipe list,
+editor (`SchemaFieldBuilder`, `TagChipInput`), playground modal with its tabs,
+the `useRecipeViewFSM` state machine, and `LinkedRecipesSection`. It was
+superseded by `src/features/templates/sub_recipes/` (the catalog above), and
+`node scripts/style/reachability.mjs` confirmed no import path from
+`src/main.tsx` reached it before it was removed with its i18n keys
+(`recipes.*` except `yes`, `no`, `composer_suggestion` and the already-unread
+`no_executions`; the `recipe_shared`
+section). The `src/api` recipe wrappers and the Rust commands were left in place.
 
 Consequences: every write-side, execution, versioning and linking command is
 unreachable, and the mode-2 "Run now" handoff has no landing site.

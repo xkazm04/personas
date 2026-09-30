@@ -16,13 +16,14 @@
 public/illustrations/logo-v1-geometric-nobg.png   NAMED-BY-RUST src-tauri/db/src/builtin_connectors.rs + scripts/connectors/builtin/{local-drive,twin}.json icon_url; also TitleBar/Sidebar/HeroHeader/CredentialPickerCards
 
 # ── QUALITY ──
-public/illustrations/recipe-puzzle.png     QUALITY 31.55 dB @q80, 33.74 dB @q90 (alpha line art) — src/features/recipes/shared/PuzzlePieceIllustration.tsx
-public/illustrations/recipe-versions.png   QUALITY 32.29 dB @q80, 34.75 dB @q90 (alpha line art) — src/features/recipes/shared/VersionTimelineIllustration.tsx
+# (none since 2026-09-25; the two recipe PNGs moved to UNREFERENCED when their only user was deleted)
 
 # ── UNREFERENCED ──
 public/illustrations/empty-template-gallery.png      UNREFERENCED
 public/illustrations/leo-empty-state.png             UNREFERENCED (byte-identical size to public/empty-states/leo-empty-state.png, also unreferenced)
 public/illustrations/logo-v1-geometric.png           UNREFERENCED (only the -nobg variant is used)
+public/illustrations/recipe-puzzle.png               UNREFERENCED since 2026-09-25: its only user, the unreachable src/features/recipes tree, was deleted (was QUALITY 33.74 dB @q90)
+public/illustrations/recipe-versions.png             UNREFERENCED same (was QUALITY 34.75 dB @q90)
 public/illustrations/roadmap-empty-state.png         UNREFERENCED
 public/illustrations/roadmap-empty-state-nobg.png    UNREFERENCED
 public/illustrations/languages/lang-ar-light.png     UNREFERENCED LanguageSwitcher.tsx only builds the dark `lang-<code>` name

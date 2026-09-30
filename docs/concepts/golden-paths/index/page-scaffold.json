@@ -87,7 +87,6 @@
     "app/console/page.tsx": {"count":1,"sections":[],"lines":["49-58"],"contexts":["one-route `?m=` console (`app/console/page.tsx:49-58` documents the trade), and"],"resolved":false},
     "census-pagescaffold-9c3e7f.json": {"count":1,"sections":[9],"contexts":["composition (`census-pagescaffold-9c3e7f.json`, patterns in a file, never in bash"],"resolved":false},
     "dashboard/layout.tsx": {"count":1,"sections":[],"lines":["50"],"contexts":["`<main>` in `dashboard/layout.tsx:50`, below the navbar and sidebar — nobody had"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[9],"contexts":["`.ts`/`.tsx` files under `src/` ([`shared-facts.json`](../shared-facts.json)),"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "error.tsx": {"count":1,"sections":[],"contexts":["control: it deliberately gave up per-segment `error.tsx`/`loading.tsx` for a"],"resolved":false},
     "knowledge/page.tsx": {
       "count": 1,
@@ -119,8 +118,9 @@
     "scripts/census/lib/engine.mjs": {"count":1,"sections":[9],"lines":["147-239"],"contexts":["— and `scanRule` (`scripts/census/lib/engine.mjs:147-239`) reads one file at a"]},
     "scripts/census/run-census.mjs": {"count":1,"sections":[9],"contexts":["`run-census.mjs`'s report loop, which crashed after printing FAIL and **exited"],"resolvedFrom":"basename","verbatim":"run-census.mjs"},
     "scripts/docs/gen-shared-catalog.mjs": {"count":1,"sections":[8],"contexts":["`scripts/docs/gen-shared-catalog.mjs`, not by a tag), and even"]},
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["`.ts`/`.tsx` files under `src/` (`shared-facts.json`),"],"resolved":false},
     "src-tauri/src/ipc_auth.rs": {"count":1,"sections":[9],"lines":["971-976"],"contexts":["shape this repo already treats as the model (`ipc_auth.rs:971-976`):"],"resolvedFrom":"basename","verbatim":"ipc_auth.rs"},
-    "src/": {"count":1,"sections":[],"contexts":["`.ts`/`.tsx` files under `src/` ([`shared-facts.json`](../shared-facts.json)),"],"resolved":false,"isDir":true},
+    "src/": {"count":1,"sections":[],"contexts":["`.ts`/`.tsx` files under `src/` (`shared-facts.json`),"],"resolved":false,"isDir":true},
     "src/App.tsx": {"count":4,"sections":[2,5,7],"lines":["323"],"contexts":["give a page a viewport-relative height — `App.tsx:323` is the only `h-screen` in"],"resolvedFrom":"basename","verbatim":"App.tsx"},
     "src/features/agents/sub_deployment/components/UnifiedDeploymentDashboard.tsx": {"count":1,"sections":[7],"lines":["222"],"contexts":["`PresetLibraryPage.tsx:69` · `UnifiedDeploymentDashboard.tsx:222` ·"],"resolvedFrom":"basename","verbatim":"UnifiedDeploymentDashboard.tsx"},
     "src/features/agents/sub_deployment/components/cloud/CloudDeployPanel.tsx": {"count":3,"sections":[3,4,7],"lines":["192"],"contexts":["(`CloudDeployPanel.tsx:192`, `GitLabPanel.tsx:122`). Read §8 gap 4 before"],"resolvedFrom":"basename","verbatim":"CloudDeployPanel.tsx"},

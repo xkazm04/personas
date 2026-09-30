@@ -52,13 +52,6 @@
     "crypto.rs": {"count":1,"sections":[6],"lines":["464"],"contexts":["read — `crypto.rs:464` `std::env::var(...)` — so it belongs to"],"resolved":false},
     "dist/assets/*.js": {"count":3,"sections":[6,7],"contexts":["- **`vite.config.ts:222-224` + `dist/assets/*.js`** — the frontend's one un-absent build value, and"],"resolved":false},
     "dist/index.html": {"count":1,"sections":[7],"contexts":["`dist/index.html` (1,974 bytes) contains no version, no tier and no date, and the only other files at"],"resolved":false},
-    "docs/concepts/shared-facts.json": {
-      "count": 2,
-      "sections": [9],
-      "contexts": ["`src-tauri/` (`rust.files` in [`shared-facts.json`](../shared-facts.json)), all `.ts`/`.tsx` under"],
-      "resolvedFrom": "basename",
-      "verbatim": "shared-facts.json"
-    },
     "env.d.ts": {"count":2,"sections":[8],"contexts":["4. **Vite's `import.meta.env` is an untyped string bag.** There is no `env.d.ts` declaring the"],"resolved":false},
     "lefthook.yml": {"count":1,"sections":[9],"lines":["20"],"contexts":["pre-commit hook runs `--quiet --max-warnings 99999` (`lefthook.yml:20`), where `--quiet` discards"]},
     "openapi.json": {"count":2,"sections":[],"contexts":["test**, that the committed `openapi.json` equals what the code generates — EOL-insensitive, failing"],"resolved":false},
@@ -143,8 +136,9 @@
       "resolvedFrom": "suffix",
       "verbatim": "skills/gen-scan-match-rules.mjs"
     },
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["`src-tauri/` (`rust.files` in `shared-facts.json`), all `.ts`/`.tsx` under"],"resolved":false},
     "sql.js": {"count":1,"sections":[9],"contexts":["matches are all vendored `sql.js` inside `scripts/mcp-server/node_modules/`)."],"resolved":false},
-    "src-tauri/": {"count":2,"sections":[9],"contexts":["`src-tauri/` (`rust.files` in [`shared-facts.json`](../shared-facts.json)), all `.ts`/`.tsx` under"],"resolved":false,"isDir":true},
+    "src-tauri/": {"count":2,"sections":[9],"contexts":["`src-tauri/` (`rust.files` in `shared-facts.json`), all `.ts`/`.tsx` under"],"resolved":false,"isDir":true},
     "src-tauri/.cargo/config.toml": {
       "count": 2,
       "sections": [3,7],

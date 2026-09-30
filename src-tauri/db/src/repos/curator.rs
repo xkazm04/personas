@@ -29,9 +29,9 @@ use rusqlite::{params, OptionalExtension, Row};
 
 use crate::models::{
     CuratorConsentState, CuratorConsumers, CuratorCorpus, CuratorDecisionLevel, CuratorDemand,
-    CuratorEngine, CuratorPlan, CuratorPlanItem, CuratorPlanItemState, CuratorPolicy,
-    CuratorProject, CuratorQuietBundle, CuratorReason, CuratorReasonCode, CuratorRequest,
-    CuratorRequestState, CURATOR_SATURATION_THRESHOLD,
+    CuratorEngine, CuratorGrowth, CuratorPlan, CuratorPlanItem, CuratorPlanItemState,
+    CuratorPolicy, CuratorProject, CuratorQuietBundle, CuratorReason, CuratorReasonCode,
+    CuratorRequest, CuratorRequestState, CURATOR_SATURATION_THRESHOLD,
 };
 use crate::DbPool;
 use personas_core::error::AppError;
@@ -1159,6 +1159,119 @@ pub fn record_commit(
     })
 }
 
+/// Every dispatch she has ever recorded, newest first.
+///
+/// Bounded by her run cap and read whole on purpose: the attrition surface names
+/// a quiet session by the WORK it was given, and the work lives on the dispatch
+/// row. Matching by session id against a list is cheaper and more honest than a
+/// per-session query that would answer `None` for a row that exists.
+pub fn all_dispatches(pool: &DbPool) -> Result<Vec<CuratorDispatchRow>, AppError> {
+    timed_query!("curator_dispatch", "curator::all_dispatches", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {DISPATCH_COLUMNS} FROM curator_dispatch ORDER BY created_at DESC, id DESC"
+        ))?;
+        let rows = stmt.query_map([], row_to_dispatch)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
+/// Items of the STANDING plan that were dispatched and then written off.
+///
+/// `dispatched_run_id IS NOT NULL` is what separates this from the other reason
+/// an item is `blocked` - "this app could not derive an invocation", which is a
+/// fact about the app and was never given to a worker. Only a subject a worker
+/// actually went at and did not settle belongs in a figure about attrition.
+pub fn written_off_in_standing_plan(pool: &DbPool) -> Result<u32, AppError> {
+    timed_query!(
+        "curator_plan_item",
+        "curator::written_off_in_standing_plan",
+        {
+            let conn = pool.get()?;
+            let n: i64 = conn.query_row(
+                "SELECT COUNT(*) FROM curator_plan_item
+              WHERE plan_run_id = (SELECT id FROM curator_plan_run WHERE superseded_by IS NULL)
+                AND state = 'blocked'
+                AND dispatched_run_id IS NOT NULL",
+                [],
+                |r| r.get(0),
+            )?;
+            Ok(n.max(0) as u32)
+        }
+    )
+}
+
+// ---------------------------------------------------------------------------
+// Growth samples
+// ---------------------------------------------------------------------------
+
+/// The seven metrics, in the order the reader binds them.
+const GROWTH_COLUMNS: &str = "measured_at, projects, judged_pairs, stale_verdicts, \
+                              applied_subjects, subjects, techniques, applications";
+
+/// Record one sample of the ecosystem's size.
+///
+/// Append-only and never upserted: two samples taken in the same second by two
+/// of her terminals are two observations, and collapsing them on a timestamp
+/// would silently drop one.
+pub fn insert_growth(pool: &DbPool, sample: &CuratorGrowth) -> Result<(), AppError> {
+    timed_query!("curator_growth", "curator::insert_growth", {
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO curator_growth
+                (measured_at, projects, judged_pairs, stale_verdicts,
+                 applied_subjects, subjects, techniques, applications)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            params![
+                sample.measured_at,
+                sample.projects,
+                sample.judged_pairs,
+                sample.stale_verdicts,
+                sample.applied_subjects,
+                sample.subjects,
+                sample.techniques,
+                sample.applications,
+            ],
+        )?;
+        Ok(())
+    })
+}
+
+/// Her newest `limit` samples, **newest first** - which is the order
+/// `CuratorGrowthReading::from_samples` is specified against.
+pub fn recent_growth(pool: &DbPool, limit: u32) -> Result<Vec<CuratorGrowth>, AppError> {
+    timed_query!("curator_growth", "curator::recent_growth", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {GROWTH_COLUMNS} FROM curator_growth
+              ORDER BY measured_at DESC, id DESC
+              LIMIT ?1"
+        ))?;
+        let rows = stmt.query_map(params![limit], growth_from_row)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
+/// A NULL column reads as `None`, never as `0`.
+///
+/// The whole point of the nullable columns: `0` projects is a collapsed
+/// ecosystem and `NULL` projects is a report nobody could read, and this is the
+/// one function where the two could be confused.
+fn growth_from_row(row: &Row<'_>) -> rusqlite::Result<CuratorGrowth> {
+    Ok(CuratorGrowth {
+        measured_at: row.get("measured_at")?,
+        projects: row.get("projects")?,
+        judged_pairs: row.get("judged_pairs")?,
+        stale_verdicts: row.get("stale_verdicts")?,
+        applied_subjects: row.get("applied_subjects")?,
+        subjects: row.get("subjects")?,
+        techniques: row.get("techniques")?,
+        applications: row.get("applications")?,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1529,10 +1642,29 @@ mod tests {
         Ok(())
     }
 
+    /// **Never run and ran-and-found-nothing are two different answers**, and
+    /// this read is what keeps them apart. `None` means no projection has ever
+    /// been made; `Some` whose `item_count` is 0 means the instrument walked
+    /// the corpus and scored no subject. A read that collapsed them would
+    /// leave every caller - the Blueprint page and the headless
+    /// `/curator/plan-status` door alike - showing an empty ledger for a
+    /// registry nobody has ever looked at.
     #[test]
-    fn no_projection_reads_back_as_none_rather_than_an_empty_plan() {
+    fn no_projection_is_none_and_an_empty_projection_is_still_a_plan() {
         let pool = init_test_db().unwrap();
-        assert!(current_plan(&pool).unwrap().is_none());
+        assert!(
+            current_plan(&pool).unwrap().is_none(),
+            "nothing has ever run, which is not the same as a run that found nothing"
+        );
+
+        insert_plan(&pool, "run-empty", &run_input("2026-09-25T09:00:00Z"), &[]).unwrap();
+
+        let plan = current_plan(&pool)
+            .unwrap()
+            .expect("the run happened, so there IS a plan");
+        assert_eq!(plan.run.id, "run-empty");
+        assert_eq!(plan.run.item_count, 0, "and it found nothing");
+        assert!(plan.items.is_empty());
     }
 
     /// Everything a plan item carries must survive the round trip, and the
@@ -2369,5 +2501,270 @@ mod tests {
             2,
             "two commits, three attempts - the brake counts commits, not writes"
         );
+    }
+
+    // -----------------------------------------------------------------------
+    // Growth samples
+    // -----------------------------------------------------------------------
+
+    /// **A NULL metric comes back as `None`, never as `0`.**
+    ///
+    /// The single most important assertion about this table. Every metric column
+    /// is nullable so that "the map check could not be read" and "there are no
+    /// consumer projects" stay different facts - and a reader that coerced NULL
+    /// to zero would make an unreadable report look like a collapsed ecosystem,
+    /// which is the exact mistake this feature has already made three times in
+    /// other columns.
+    #[test]
+    fn a_metric_that_could_not_be_read_round_trips_as_none_and_not_as_zero() {
+        let pool = init_test_db().unwrap();
+        let unreadable = CuratorGrowth {
+            measured_at: "2026-09-26T10:00:00Z".into(),
+            projects: None,
+            judged_pairs: None,
+            stale_verdicts: None,
+            applied_subjects: None,
+            subjects: None,
+            techniques: None,
+            applications: None,
+        };
+        // ... beside a sample that genuinely measured nothing, which is the
+        // reading it must not be confused with.
+        let genuinely_empty = CuratorGrowth {
+            measured_at: "2026-09-26T11:00:00Z".into(),
+            projects: Some(0),
+            judged_pairs: Some(0),
+            stale_verdicts: Some(0),
+            applied_subjects: Some(0),
+            subjects: Some(0),
+            techniques: Some(0),
+            applications: Some(0),
+        };
+        insert_growth(&pool, &unreadable).unwrap();
+        insert_growth(&pool, &genuinely_empty).unwrap();
+
+        let back = recent_growth(&pool, 10).unwrap();
+        assert_eq!(back.len(), 2);
+        // Newest first.
+        assert_eq!(back[0], genuinely_empty);
+        assert_eq!(back[1], unreadable);
+        assert_eq!(
+            back[0].projects,
+            Some(0),
+            "measured zero stays a measurement"
+        );
+        assert_eq!(back[1].projects, None, "unread stays unread");
+    }
+
+    /// Every one of the seven metrics is bound to its own column.
+    ///
+    /// A single transposed pair in an eight-placeholder INSERT is invisible to a
+    /// test that writes the same number everywhere, so each metric here carries
+    /// a distinct value and is read back by name.
+    #[test]
+    fn every_metric_lands_in_its_own_column() {
+        let pool = init_test_db().unwrap();
+        let sample = CuratorGrowth {
+            measured_at: "2026-09-26T12:00:00Z".into(),
+            projects: Some(12),
+            judged_pairs: Some(287),
+            stale_verdicts: Some(40),
+            applied_subjects: Some(7),
+            subjects: Some(475),
+            techniques: Some(3274),
+            applications: Some(1825),
+        };
+        insert_growth(&pool, &sample).unwrap();
+        assert_eq!(recent_growth(&pool, 1).unwrap(), vec![sample]);
+    }
+
+    /// **Two samples in the same second are two observations.** Her worker cap
+    /// is two terminals, so a collision is reachable - and collapsing them on a
+    /// timestamp would silently drop one, which is data loss dressed as
+    /// de-duplication.
+    #[test]
+    fn two_samples_at_the_same_instant_are_both_kept_newest_first() {
+        let pool = init_test_db().unwrap();
+        let at = "2026-09-26T13:00:00Z";
+        for projects in [11u32, 12] {
+            insert_growth(
+                &pool,
+                &CuratorGrowth {
+                    measured_at: at.into(),
+                    projects: Some(projects),
+                    ..CuratorGrowth::default()
+                },
+            )
+            .unwrap();
+        }
+        let back = recent_growth(&pool, 10).unwrap();
+        assert_eq!(back.len(), 2, "neither was collapsed into the other");
+        assert_eq!(
+            back[0].projects,
+            Some(12),
+            "the tie breaks on insertion order, so the later write reads as newer"
+        );
+    }
+
+    /// The window is a LIMIT, and it takes the newest end.
+    #[test]
+    fn the_window_keeps_the_newest_samples_and_not_the_first_ones() {
+        let pool = init_test_db().unwrap();
+        for day in 20..=26u32 {
+            insert_growth(
+                &pool,
+                &CuratorGrowth {
+                    measured_at: format!("2026-09-{day:02}T00:00:00Z"),
+                    projects: Some(day),
+                    ..CuratorGrowth::default()
+                },
+            )
+            .unwrap();
+        }
+        let back = recent_growth(&pool, 3).unwrap();
+        assert_eq!(
+            back.iter().map(|g| g.projects).collect::<Vec<_>>(),
+            vec![Some(26), Some(25), Some(24)]
+        );
+    }
+
+    /// **A dispatch in her method lane is accepted, and one outside the set is
+    /// still refused.** The widened CHECK has to widen by exactly one token.
+    #[test]
+    fn the_store_accepts_the_method_lane_and_still_refuses_an_invented_one() {
+        let pool = init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        for lane in ["queue", "plan", "refill", "method"] {
+            conn.execute(
+                "INSERT INTO curator_dispatch
+                    (id, lane, session_id, skill, level_that_authorised, repo_path, created_at)
+                 VALUES (?1, ?2, 's', 'x', ?3, '/tmp', '2026-09-26T00:00:00Z')",
+                params![format!("ok-{lane}"), lane, "L0"],
+            )
+            .unwrap_or_else(|e| panic!("{lane} is a real lane: {e}"));
+        }
+        assert!(
+            conn.execute(
+                "INSERT INTO curator_dispatch
+                    (id, lane, session_id, skill, level_that_authorised, repo_path, created_at)
+                 VALUES ('no', 'sleep', 's', 'x', 'L0', '/tmp', '2026-09-26T00:00:00Z')",
+                [],
+            )
+            .is_err(),
+            "`sleep` is a real lane of HERS and deliberately not a DISPATCH lane"
+        );
+    }
+
+    // -----------------------------------------------------------------------
+    // Attrition
+    // -----------------------------------------------------------------------
+
+    /// **Only a subject a WORKER went at counts as written off.**
+    ///
+    /// `blocked` has two causes and they are not the same fact: a worker was
+    /// dispatched and never settled it, or this app could not derive an
+    /// invocation for the engine in the first place. The second never left the
+    /// building, so counting it as attrition would blame her running for a gap
+    /// in her grammar. `dispatched_run_id IS NOT NULL` is the discriminator.
+    #[test]
+    fn only_a_blocked_item_a_worker_went_at_counts_as_written_off() {
+        let pool = init_test_db().unwrap();
+        assert_eq!(
+            written_off_in_standing_plan(&pool).unwrap(),
+            0,
+            "no plan yet"
+        );
+
+        // One item, dispatched, then written off - the real shape.
+        let dispatched = seed_plan_item(&pool, CuratorEngine::Reconcile, false);
+        claim_next_plan_item(&pool, &[CuratorEngine::Reconcile], "2026-09-26T13:00:00Z").unwrap();
+        bind_plan_item_session(&pool, &dispatched, "session-1").unwrap();
+        settle_plan_item(
+            &pool,
+            &dispatched,
+            CuratorPlanItemState::Blocked,
+            "the worker went quiet and the fleet called it stale",
+            "2026-09-26T13:30:00Z",
+        )
+        .unwrap();
+        assert_eq!(written_off_in_standing_plan(&pool).unwrap(), 1);
+
+        // A SECOND projection supersedes it, and the figure returns to zero -
+        // which is the fact the surface must not overstate: a written-off
+        // subject is one lost cycle, never a permanent loss.
+        insert_plan(
+            &pool,
+            "run-next",
+            &run_input("2026-09-26T14:00:00Z"),
+            &[item("software-engineering/table")],
+        )
+        .unwrap();
+        assert_eq!(
+            written_off_in_standing_plan(&pool).unwrap(),
+            0,
+            "the next projection returns it to planned"
+        );
+    }
+
+    /// A blocked item nobody dispatched is NOT attrition.
+    #[test]
+    fn a_blocked_item_no_worker_ever_saw_is_not_attrition() {
+        let pool = init_test_db().unwrap();
+        let id = seed_plan_item(&pool, CuratorEngine::Reconcile, false);
+        // Claimed, so the state may move, but never bound to a session: this is
+        // the "no invocation derivable" path, which settles without dispatching.
+        claim_next_plan_item(&pool, &[CuratorEngine::Reconcile], "2026-09-26T13:00:00Z").unwrap();
+        settle_plan_item(
+            &pool,
+            &id,
+            CuratorPlanItemState::Blocked,
+            "this app could not derive an invocation",
+            "2026-09-26T13:01:00Z",
+        )
+        .unwrap();
+        assert_eq!(
+            written_off_in_standing_plan(&pool).unwrap(),
+            0,
+            "it never left the building, so her running did not cost it"
+        );
+    }
+
+    /// Every dispatch, newest first - and the settled ones are still there,
+    /// because a quiet session needs its name whether or not it was closed.
+    #[test]
+    fn all_dispatches_carries_the_settled_ones_too_newest_first() {
+        let pool = init_test_db().unwrap();
+        for (id, at) in [
+            ("d1", "2026-09-26T10:00:00Z"),
+            ("d2", "2026-09-26T11:00:00Z"),
+        ] {
+            record_dispatch(
+                &pool,
+                id,
+                &CuratorDispatchInput {
+                    lane: "plan",
+                    request_id: None,
+                    plan_item_id: None,
+                    session_id: &format!("session-{id}"),
+                    skill: "deepen",
+                    argument: Some("agent-operations/agent-run-budgeting"),
+                    level_that_authorised: CuratorDecisionLevel::L0,
+                    repo_path: "/tmp",
+                    head_at_dispatch: Some("abc1234"),
+                    created_at: at,
+                },
+            )
+            .unwrap();
+        }
+        settle_dispatch(&pool, "d1", "2026-09-26T10:30:00Z").unwrap();
+
+        let all = all_dispatches(&pool).unwrap();
+        assert_eq!(all.len(), 2, "a settled dispatch is still a dispatch");
+        assert_eq!(all[0].id, "d2", "newest first");
+        // ... while the OPEN read shows only the one nothing has closed, which
+        // is what separates a quiet-but-settled run from the leak.
+        let open = open_dispatches(&pool).unwrap();
+        assert_eq!(open.len(), 1);
+        assert_eq!(open[0].id, "d2");
     }
 }

@@ -1,9 +1,9 @@
 # Golden path — App settings store
 
-> Situation node: `data-persistence/data-modeling/app-settings-store` · [situation spine](../situation-spine.md)
+> Situation node: `data-persistence/data-modeling/app-settings-store` · situation spine
 > Composed 2026-08-14 against `master` @ `2a874e692`.
 > Sweep size: the whole Rust tree (**963 `.rs` files** — exactly `rust.files` in
-> [`shared-facts.json`](../shared-facts.json), and exactly what the census walker reports) ·
+> `shared-facts.json`, and exactly what the census walker reports) ·
 > `src/**` (**4,829 `.ts`/`.tsx`**, `frontend.tsFiles`) · the 1,569-line key registry parsed
 > attribute-by-attribute · **147 settings call sites across 52 files**, resolved by reading each
 > file's `use` statements rather than by grepping an alias (a naive `repo::` grep returns 211 and
@@ -277,7 +277,7 @@ Run 2026-08-14, read-only. **The headline is a null result, and it is load-beari
 
 **No sibling has a key/value settings table, and no sibling has a key registry.** Not one. So the
 central prescription of this document — *one central allow-list of legal key names, with per-key
-value validation* — was **reinvented nowhere**, and by the [contract](../golden-path-contract.md)'s
+value validation* — was **reinvented nowhere**, and by the contract's
 own rule that makes it a **house convention rather than doctrine**. It must be marked as such, and it
 is. But mark it with the lesson attached: **convergence measures discoverability, not whether a
 requirement is real.** A key registry is what you get from reading the threat model of an IPC command
@@ -466,7 +466,7 @@ is invisible to either.
 
 ## Prefer a type over a gate — the answer for this leaf
 
-Per the [contract](../golden-path-contract.md), this must be answered before §9 is written.
+Per the contract, this must be answered before §9 is written.
 **For this leaf the answer is an emphatic yes, and the type fix is strictly better than every gate
 below — it makes four of the five deviation classes unrepresentable rather than counted.**
 
@@ -533,13 +533,13 @@ Three, each stack-free:
 > registry can disagree without anything noticing.
 
 What follows are **one repo's proxies** for these. Per the
-[portability test](../research/portability-test.md) a proxy does not travel: an adopting repo
+portability test a proxy does not travel: an adopting repo
 inherits the three sentences and re-derives its own signals against its own key-declaration idiom.
 Each rule states the precondition its proxy depends on.
 
 ### Mechanism — census rules, not scripts
 
-Per the [contract](../golden-path-contract.md) §"Don't write a script", the ratcheting-baseline
+Per the contract §"Don't write a script", the ratcheting-baseline
 mechanism already exists at [`scripts/census/`](../../../scripts/census/) and **`npm run census:check`
 is already inside `npm run check`**, so this lane is live with no new wiring. **Checked first that
 none of the 51 existing rules covers this condition** — `raw-web-storage` is the nearest and it
@@ -640,7 +640,7 @@ Validated with `node scripts/census/run-census.mjs --rules <scratch>/census-app-
 ```
 
 Run twice; **identical both times, exit 0**. `963 walked` is exactly `rust.files` in
-[`shared-facts.json`](../shared-facts.json) — two independently derived counts agreeing, which is the
+`shared-facts.json` — two independently derived counts agreeing, which is the
 only reason to trust either. `floor: 900` matches the other four `src-tauri`-rooted rules
 deliberately: five rules over one root must not hold five opinions about what "the Rust tree is
 intact" means. Whole run: **1.9 s** — no lookbehind anywhere, every quantifier forward-anchored and

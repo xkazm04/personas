@@ -92,6 +92,7 @@
       ],
       "resolved": false
     },
+    "RecipePicker.tsx": {"count":1,"sections":[7],"lines":["75"],"contexts":["is not merely mislabelled, it is invisible). `RecipePicker.tsx:75` is a fourth variety: it computes"],"resolved":false},
     "ScanComparePicker.tsx": {
       "count": 1,
       "sections": [6],
@@ -538,14 +539,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "useRadioState.ts"
-    },
-    "src/features/recipes/sub_list/components/RecipePicker.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["75"],
-      "contexts": ["is not merely mislabelled, it is invisible). `RecipePicker.tsx:75` is a fourth variety: it computes"],
-      "resolvedFrom": "basename",
-      "verbatim": "RecipePicker.tsx"
     },
     "src/features/settings/sub_api_keys/components/ExecutePersonaPicker.tsx": {
       "count": 3,

@@ -1,103 +1,60 @@
-import { DollarSign, Zap, CheckCircle, TrendingUp, Stethoscope, RefreshCw, Bell, Activity, CheckCircle2, AlertCircle } from 'lucide-react';
-import { useTranslation } from '@/i18n/useTranslation';
-import { useAiHealingStream } from '@/hooks/execution/useAiHealingStream';
-import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
-import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
-import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
-import { useState, useMemo, useCallback, useEffect } from 'react';
+/**
+ * Overview > Observability, composed from the composition kit (`@/features/shared/components/kit`,
+ * Spine & Lens, Gate K) the way Fleet Activity is: one KitHost on the compact tier, one dense
+ * Surface, every part a Section on the spine. Order: Overview (filters and headline figures),
+ * the alert rules and history when toggled, Health Issues (the working list, with its detail
+ * pane), the trend charts and per-persona split, IPC and tool performance, system traces,
+ * Athena's health and spend.
+ *
+ * Routed since 2026-09-25 as an Overview tab: `overviewTab === 'observability'` in
+ * src/features/overview/components/dashboard/OverviewPage.tsx (commit 0239ccde9). It was
+ * unmounted before; the style page harness still shoots it (scripts/style/page-harness,
+ * observability/*).
+ */
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Stethoscope } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { DayRangePicker } from '@/features/overview/sub_usage/components/DayRangePicker';
-import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
-import { MetricsCharts } from './MetricsCharts';
-import { KpiTile } from '@/features/overview/components/shared/KpiTile';
-import IpcPerformancePanel from './IpcPerformancePanel';
-import { ToolPerformancePanel } from '@/features/overview/sub_usage/components/ToolPerformancePanel';
-import HealingIssueModal from './HealingIssueModal';
-import { HealingIssuesPanel } from './HealingIssuesPanel';
-import { AiHealingStreamOverlay } from './AiHealingStreamOverlay';
-import { AlertRulesPanel } from './AlertRulesPanel';
-import { AlertHistoryPanel } from './AlertHistoryPanel';
-import { AthenaHealthPanel } from './AthenaHealthPanel';
+import { KitHost, Surface } from '@/features/shared/components/kit';
+import { useAiHealingStream } from '@/hooks/execution/useAiHealingStream';
+import { useOverviewStore } from '@/stores/overviewStore';
+import { useAttention } from '@/hooks/useAttention';
+import type { MetricAnomaly } from '@/lib/bindings/MetricAnomaly';
 import { useObservabilityData } from '../libs/useObservabilityData';
 import { useHealingPanelState } from '../libs/useHealingPanelState';
 import { useAnomalyDrilldown } from '../libs/useAnomalyDrilldown';
-import { useOverviewStore } from '@/stores/overviewStore';
-import { useAttention } from '@/hooks/useAttention';
-import AnomalyDrilldownPanel from './AnomalyDrilldownPanel';
+import { useObservabilityWords } from '../libs/useObservabilityWords';
+import { ObservabilityOverview } from './ObservabilityOverview';
+import { AlertRulesPanel } from './AlertRulesPanel';
+import { AlertHistoryPanel } from './AlertHistoryPanel';
+import { HealingIssuesPanel } from './HealingIssuesPanel';
+import { MetricsCharts } from './MetricsCharts';
+import IpcPerformancePanel from './IpcPerformancePanel';
+import { ToolPerformanceSection } from './ToolPerformanceSection';
 import SystemTraceViewer from './SystemTraceViewer';
+import { AthenaHealthPanel } from './AthenaHealthPanel';
+import { AiHealingStreamOverlay } from './AiHealingStreamOverlay';
+import HealingIssueModal from './HealingIssueModal';
+import AnomalyDrilldownPanel from './AnomalyDrilldownPanel';
 
-const PANEL_SOURCES = [
-  { key: 'observabilityMetrics', label: 'Metrics' },
-  { key: 'alertRules', label: 'Alerts' },
-  { key: 'alertHistory', label: 'Alert History' },
-  { key: 'healingIssues', label: 'Health' },
-] as const;
-
-function PanelStatusChips({ pipelineErrors, pipelineFetchedAt, errorRecovery }: {
-  pipelineErrors: Record<string, string>;
-  pipelineFetchedAt: Record<string, number>;
-  errorRecovery: { panel_loaded: string; panel_failed: string; panel_stale: string };
-}) {
-  const hasAnyIssue = PANEL_SOURCES.some(s => pipelineErrors[s.key] || !pipelineFetchedAt[s.key]);
-  if (!hasAnyIssue) return null;
-
-  return (
-    <div className="flex items-center gap-2 flex-wrap px-4 md:px-6 xl:px-8 py-2 border-b border-primary/10 bg-secondary/10">
-      {PANEL_SOURCES.map(({ key, label }) => {
-        const hasError = !!pipelineErrors[key];
-        const hasFetched = !!pipelineFetchedAt[key];
-        const isStale = hasFetched && (Date.now() - pipelineFetchedAt[key]!) > 300_000;
-
-        if (hasError) {
-          return (
-            <StatusBadge key={key} variant="error" icon={<AlertCircle className="w-3 h-3" />}>
-              {label}: {errorRecovery.panel_failed}
-            </StatusBadge>
-          );
-        }
-        if (isStale) {
-          return (
-            <StatusBadge key={key} variant="warning" icon={<AlertCircle className="w-3 h-3" />}>
-              {label}: {errorRecovery.panel_stale}
-            </StatusBadge>
-          );
-        }
-        if (hasFetched) {
-          return (
-            <StatusBadge key={key} variant="success" icon={<CheckCircle2 className="w-3 h-3" />}>
-              {label}
-            </StatusBadge>
-          );
-        }
-        return null;
-      })}
-    </div>
-  );
-}
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export default function ObservabilityDashboard() {
-  const { t, language } = useTranslation();
+  const w = useObservabilityWords();
   const d = useObservabilityData();
   const [showAlerts, setShowAlerts] = useState(false);
-  const activeAlertCount = useAttention("observability").counts.active_alerts;
-  // 2026-05-07 — wrap in useShallow. Inline-object selector returned a new
-  // ref on every snapshot, triggering "getSnapshot should be cached" →
-  // re-render loop on any overviewStore update.
+  const activeAlertCount = useAttention('observability').counts.active_alerts;
+  // useShallow: an inline-object selector returned a new ref per snapshot (getSnapshot loop).
   const { pipelineErrors, pipelineFetchedAt } = useOverviewStore(useShallow((s) => ({
     pipelineErrors: s.pipelineErrors,
     pipelineFetchedAt: s.pipelineFetchedAt,
   })));
-
   const drilldown = useAnomalyDrilldown();
 
-  // AI healing live stream. On the default "All personas" filter
-  // (selectedPersonaId null) the healing analysis runs against personas[0], so
-  // the stream must subscribe to the SAME persona — otherwise it listened on ''
-  // and never surfaced the healing that was actually running.
+  // On "All personas" the healing analysis runs against personas[0], so the stream subscribes
+  // to the same persona (it listened on '' and never surfaced the running healing).
   const aiHealing = useAiHealingStream(d.selectedPersonaId ?? d.personas[0]?.id ?? '');
   const [healingDismissed, setHealingDismissed] = useState(false);
-  // Reset dismissed state when a new healing session starts
   const showHealingOverlay = aiHealing.phase !== 'idle' && !healingDismissed;
   useEffect(() => {
     if (aiHealing.phase === 'started') setHealingDismissed(false);
@@ -111,215 +68,83 @@ export default function ObservabilityDashboard() {
     fetchHealingTimeline: d.fetchHealingTimeline,
   });
 
-  // --- Memoized sparkline data (stable references prevent SummaryCard rerenders) ---
-  const sparklineCost = useMemo(() => d.chartData.slice(-7).map((p) => p.cost), [d.chartData]);
-  const sparklineExec = useMemo(() => d.chartData.slice(-7).map((p) => p.executions), [d.chartData]);
-  const sparklineSuccess = useMemo(() => d.chartData.slice(-7).map((p) => {
-    const total = p.success + p.failed;
-    return total > 0 ? (p.success / total) * 100 : 0;
-  }), [d.chartData]);
-  const sparklinePersonas = useMemo(() => d.chartData.slice(-7).map((p) => p.active_personas), [d.chartData]);
-
-  // Stable callback so MetricsCharts memo isn't defeated by inline arrow
   const handleFailureBarClick = useCallback((date: string) => {
     d.setFailureDrilldownDate(date);
-    // The Extracted tab (the drilldown's former destination) was retired
-    // 2026-08-26; the failed runs themselves live on the Activity tab.
+    // The failed runs live on the Activity tab (the Extracted tab was retired 2026-08-26).
     d.setOverviewTab('executions');
   }, [d]);
-
-  const handleAnomalyClick = useCallback((anomaly: import('@/lib/bindings/MetricAnomaly').MetricAnomaly) => {
+  const handleAnomalyClick = useCallback((anomaly: MetricAnomaly) => {
     drilldown.openDrilldown(anomaly, d.selectedPersonaId);
   }, [drilldown, d.selectedPersonaId]);
+  // Memoised: a fresh ISO string per render re-ran the tool fetch on every render.
+  const since = useMemo(() => new Date(Date.now() - d.days * DAY_MS).toISOString(), [d.days]);
+  const eyebrow = w.eyebrow;
 
   return (
     <ContentBox>
       <ContentHeader
-        icon={<Stethoscope className="w-5 h-5 text-cyan-400" />}
-        iconColor="cyan"
-        title={t.overview.observability.title}
-        subtitle={t.overview.observability.subtitle}
-        actions={
-          <>
-            <button
-              type="button"
-              onClick={() => setShowAlerts(!showAlerts)}
-              className={`relative p-1.5 rounded-card border transition-colors ${
-                showAlerts ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' : 'border-primary/15 text-foreground hover:bg-secondary/50'
-              }`}
-              title={t.overview.observability.alert_rules}
-            >
-              <Bell className="w-3.5 h-3.5" />
-              {activeAlertCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-500 text-[9px] font-bold text-foreground flex items-center justify-center">
-                  {activeAlertCount > 9 ? '9+' : activeAlertCount}
-                </span>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={d.refreshAll}
-              className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
-              title={t.overview.observability.refresh_metrics}
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => d.setAutoRefresh(!d.autoRefresh)}
-              className={`p-1.5 rounded-card border transition-colors ${
-                d.autoRefresh ? 'border-primary/30 bg-primary/10 text-primary' : 'border-primary/15 text-foreground'
-              }`}
-              title={d.autoRefresh ? t.overview.observability_extra.auto_refresh_on : t.overview.observability_extra.auto_refresh_off}
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${d.autoRefresh ? 'animate-spin motion-reduce:animate-none' : ''}`} style={d.autoRefresh ? { animationDuration: '3s' } : {}} />
-            </button>
-          </>
-        }
+        icon={<Stethoscope className="w-5 h-5 text-primary" />}
+        title={w.o.observability.title}
+        subtitle={w.o.observability.subtitle}
       />
-
-      {/* Filter bar */}
-      <div className="px-4 md:px-6 xl:px-8 py-3 border-b border-primary/10 flex items-center gap-4 flex-wrap flex-shrink-0">
-        <PersonaSelect value={d.selectedPersonaId} onChange={d.setSelectedPersonaId} personas={d.personas} />
-        <DayRangePicker value={d.days} onChange={d.setDays} customDateRange={d.customDateRange} onCustomDateRangeChange={d.setCustomDateRange} />
-      </div>
-
-      {/* Per-panel status chips for partial failures */}
-      <PanelStatusChips
-        pipelineErrors={pipelineErrors}
-        pipelineFetchedAt={pipelineFetchedAt}
-        errorRecovery={t.overview.observability.error_recovery}
-      />
-
       <ContentBody>
-      <div className="space-y-4">
-
-      {/* Metrics Fetch Error Banner */}
-      {d.observabilityError && (
-        <InlineErrorBanner
-          severity="error"
-          title={t.overview.observability.metrics_unavailable}
-          message={d.observabilityError}
-          onRetry={d.refreshAll}
-          actions={
-            <StalenessIndicator
-              fetchedAt={pipelineFetchedAt.observabilityMetrics}
-              hasError
-              label="Observability metrics"
+        <KitHost compact testId="observability-surface">
+          <Surface dense>
+            <ObservabilityOverview
+              d={d} w={w}
+              showAlerts={showAlerts} onToggleAlerts={() => setShowAlerts((v) => !v)} activeAlertCount={activeAlertCount}
+              pipelineErrors={pipelineErrors} pipelineFetchedAt={pipelineFetchedAt}
             />
-          }
-        />
-      )}
-
-      {/* Summary Cards — each sparkline declares its scale. `auto` (fit the
-          sample) is the wrong default in a row of four: it made a 99.1 -> 99.3
-          success-rate wiggle fill the same 16px as a real cost climb. Cost and
-          counts are zero-anchored so height means magnitude; the percentage
-          reads on its own 0-100 axis. */}
-      <div className="grid grid-cols-2 md:grid-cols-4 2xl:grid-cols-4 gap-4">
-        <KpiTile density="card-rich" icon={DollarSign} label={t.overview.observability_extra.total_cost} numericValue={d.summary?.totalCostUsd || 0} format={(n) => `$${n.toFixed(2)}`} color="emerald" trend={d.trends.cost} sparklineData={sparklineCost} sparkScale="zero" />
-        <KpiTile density="card-rich" icon={Zap} label={t.overview.observability_extra.executions_label} numericValue={d.summary?.totalExecutions || 0} compact language={language} color="blue" trend={d.trends.executions} sparklineData={sparklineExec} sparkScale="zero" />
-        <KpiTile density="card-rich" icon={CheckCircle} label={t.overview.observability_extra.success_rate} numericValue={parseFloat(d.successRate)} format={(n) => `${n.toFixed(1)}%`} color="green" trend={d.trends.successRate} sparklineData={sparklineSuccess} sparkScale={{ min: 0, max: 100 }} />
-        <KpiTile density="card-rich" icon={TrendingUp} label={t.overview.observability_extra.active_personas} numericValue={d.summary?.activePersonas || 0} format={(n) => String(Math.round(n))} color="purple" trend={d.trends.personas} sparklineData={sparklinePersonas} sparkScale="zero" />
-      </div>
-
-      {/* Alert Rules & History */}
-      {showAlerts && (
-          <div className="animate-fade-slide-in motion-reduce:opacity-100"
-            key="alerts-panel"
-            style={{ overflow: "hidden" }}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 rounded-modal border border-primary/10 bg-secondary/20">
-                <div className="flex items-center justify-end mb-2">
-                  <StalenessIndicator fetchedAt={pipelineFetchedAt.alertRules} hasError={!!pipelineErrors.alertRules} label="Alert rules" />
-                </div>
-                <AlertRulesPanel />
-              </div>
-              <div className="p-4 rounded-modal border border-primary/10 bg-secondary/20">
-                <div className="flex items-center justify-end mb-2">
-                  <StalenessIndicator fetchedAt={pipelineFetchedAt.alertHistory} hasError={!!pipelineErrors.alertHistory} label="Alert history" />
-                </div>
-                <AlertHistoryPanel />
-              </div>
-            </div>
-          </div>
-        )}
-
-      {/* Charts */}
-      <MetricsCharts
-        chartData={d.chartData}
-        pieData={d.pieData}
-        anomalies={d.chartAnomalies}
-        annotations={d.chartAnnotations}
-        onFailureBarClick={handleFailureBarClick}
-        onAnomalyClick={handleAnomalyClick}
-      />
-
-      {/* IPC Performance */}
-      <IpcPerformancePanel />
-
-      {/* Tool Performance — latency + error rate per tool from tool_execution_audit_log */}
-      <ToolPerformancePanel
-        since={new Date(Date.now() - d.days * 24 * 60 * 60 * 1000).toISOString()}
-        personaId={d.selectedPersonaId ?? undefined}
-      />
-
-      {/* System Trace Timeline */}
-      <div className="p-4 rounded-modal border border-primary/10 bg-secondary/20 space-y-3">
-        <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-cyan-400" />
-          <h3 className="typo-heading text-foreground/90">{t.overview.observability_extra.system_trace}</h3>
-        </div>
-        <SystemTraceViewer />
-      </div>
-
-      {/* AI Healing Live Stream */}
-      {showHealingOverlay && (
-        <AiHealingStreamOverlay
-          healing={aiHealing}
-          onDismiss={() => setHealingDismissed(true)}
-        />
-      )}
-
-      {/* Health Issues Section */}
-      <HealingIssuesPanel
-        healingIssues={d.healingIssues}
-        healingRunning={d.healingRunning}
-        handleRunAnalysis={healing.handleRunAnalysis}
-        resolveHealingIssue={d.resolveHealingIssue}
-        setSelectedIssue={healing.setSelectedIssue}
-        issueFilter={healing.issueFilter}
-        setIssueFilter={healing.setIssueFilter}
-        issueCounts={healing.issueCounts}
-        sortedFilteredIssues={healing.sortedFilteredIssues}
-        analysisResult={healing.analysisResult}
-        setAnalysisResult={() => healing.setAnalysisResult(null)}
-        analysisError={healing.analysisError}
-        setAnalysisError={() => healing.setAnalysisError(null)}
-        viewMode={healing.healingViewMode}
-        setViewMode={healing.setHealingViewMode}
-        timelineEvents={d.healingTimeline}
-        timelineLoading={d.healingTimelineLoading}
-        selectedPersonaId={d.selectedPersonaId}
-      />
-
-      {/* Athena operational health — triage funnel, proactive economy, jobs */}
-      <AthenaHealthPanel />
-      </div>
-
+            {showAlerts && (
+              <>
+                <AlertRulesPanel eyebrow={eyebrow} />
+                <AlertHistoryPanel eyebrow={eyebrow} />
+              </>
+            )}
+            <HealingIssuesPanel
+              healingIssues={d.healingIssues}
+              healingRunning={d.healingRunning}
+              handleRunAnalysis={healing.handleRunAnalysis}
+              resolveHealingIssue={d.resolveHealingIssue}
+              setSelectedIssue={healing.setSelectedIssue}
+              issueFilter={healing.issueFilter}
+              setIssueFilter={healing.setIssueFilter}
+              issueCounts={healing.issueCounts}
+              sortedFilteredIssues={healing.sortedFilteredIssues}
+              analysisResult={healing.analysisResult}
+              setAnalysisResult={() => healing.setAnalysisResult(null)}
+              analysisError={healing.analysisError}
+              setAnalysisError={() => healing.setAnalysisError(null)}
+              viewMode={healing.healingViewMode}
+              setViewMode={healing.setHealingViewMode}
+              timelineEvents={d.healingTimeline}
+              timelineLoading={d.healingTimelineLoading}
+              selectedPersonaId={d.selectedPersonaId}
+              personas={d.personas}
+              w={w}
+            />
+            <MetricsCharts
+              eyebrow={eyebrow}
+              loading={!d.summary && !d.observabilityError}
+              chartData={d.chartData}
+              pieData={d.pieData}
+              anomalies={d.chartAnomalies}
+              annotations={d.chartAnnotations}
+              onFailureBarClick={handleFailureBarClick}
+              onAnomalyClick={handleAnomalyClick}
+            />
+            <IpcPerformancePanel eyebrow={eyebrow} />
+            <ToolPerformanceSection since={since} personaId={d.selectedPersonaId ?? undefined} eyebrow={eyebrow} />
+            <SystemTraceViewer eyebrow={eyebrow} />
+            <AthenaHealthPanel eyebrow={eyebrow} />
+          </Surface>
+        </KitHost>
+        {showHealingOverlay && <AiHealingStreamOverlay healing={aiHealing} onDismiss={() => setHealingDismissed(true)} />}
       </ContentBody>
 
-      {/* Healing Issue Detail Modal */}
       {healing.selectedIssue && (
-        <HealingIssueModal
-          issue={healing.selectedIssue}
-          onResolve={(id) => d.resolveHealingIssue(id)}
-          onClose={() => healing.setSelectedIssue(null)}
-        />
+        <HealingIssueModal issue={healing.selectedIssue} onResolve={(id) => d.resolveHealingIssue(id)} onClose={() => healing.setSelectedIssue(null)} />
       )}
-
-      {/* Anomaly Drill-Down Modal */}
       {drilldown.selectedAnomaly && (
         <AnomalyDrilldownPanel
           anomaly={drilldown.selectedAnomaly}

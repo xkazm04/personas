@@ -189,15 +189,15 @@ pub fn format_briefing_section(b: &Briefing) -> String {
 /// this wrapper owns only the synthesis-specific model choice and typed
 /// envelope parsing.
 ///
-/// Default to opus for synthesis quality; the call is rare (only fires
-/// above the budget threshold) and a poor synthesis worse than raw
-/// chunks. If costs are a concern, swap to sonnet here.
+/// Default to the strong tier (Sonnet 5.5) for synthesis quality; the call is
+/// rare (only fires above the budget threshold) and a poor synthesis worse
+/// than raw chunks.
 #[cfg(feature = "ml")]
 async fn call_claude_oneshot(pool: &UserDbPool, prompt: &str) -> Result<Briefing, AppError> {
     let text = call_claude_text(
         pool,
         prompt,
-        personas_core::model_ids::OPUS_CURRENT,
+        personas_core::model_ids::DEFAULT_STRONG,
         oneshot::leg::RECALL_SYNTHESIS,
         SYNTHESIS_TIMEOUT,
     )

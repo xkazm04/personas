@@ -5,11 +5,12 @@
  * returns null and the panel would show only a "talk to Athena" CTA. That
  * leaves a 32-widget registry earning nothing for users who never open chat.
  *
- * `composeDefaultCockpit` builds a sensible starter layout (orientation
- * callout · fleet vitals · persona roster · needs-attention triage) purely
- * from data already reachable client-side (personas + the metrics summary).
- * Athena's composed spec always takes PRECEDENCE when present — this is the
- * fallback, and the panel labels it as such.
+ * `composeDefaultCockpit` builds a sensible starter layout (fleet vitals,
+ * needs-attention triage, persona roster) purely from data already reachable
+ * client-side (personas + the metrics summary). Athena's composed spec always
+ * takes PRECEDENCE when present; this is the fallback, and the panel's header
+ * says so (its explanation is the heading's Hint, not a callout tile: home-2
+ * took the page-explaining scaffolding off the surface).
  *
  * Pure + framework-free so it can be unit-tested: all user-facing strings are
  * passed in via {@link DefaultCockpitLabels} (already localized by the caller),
@@ -27,7 +28,6 @@ import { fleetSuccessRatePct } from '../sub_welcome/lib/fleetHealth';
 export interface DefaultCockpitLabels {
   /** Grid title (also used for the header). */
   title: string;
-  callout: { title: string; body: string };
   vitalsTitle: string;
   rosterTitle: string;
   attentionTitle: string;
@@ -54,16 +54,15 @@ function successIntent(rate: number | null): 'default' | 'good' | 'warn' | 'bad'
   return 'bad';
 }
 
-/** Max attention rows surfaced in the triage widget. */
-const ATTENTION_LIMIT = 6;
-
 /**
  * Compose the deterministic default cockpit body from fleet state.
  *
- * Returns a 4-widget layout: an orientation callout, a fleet-vitals stat grid,
- * the persona-overview hero (which self-fetches its own persona data), and a
- * needs-attention issue list. Widget ids are stable so React reconciles across
- * re-composes without remounting.
+ * Returns a 3-widget layout: a fleet-vitals stat grid, the needs-attention
+ * issue list (every flagged persona: the widget's capped rows show the first
+ * few and expand in place, so a fleet of 40 is not silently cut at six), and
+ * the persona-overview roster (which self-fetches its own persona data). The
+ * list that asks for action sits above the roster. Widget ids are stable so
+ * React reconciles across re-composes without remounting.
  */
 export function composeDefaultCockpit(
   personas: Persona[],
@@ -91,13 +90,6 @@ export function composeDefaultCockpit(
 
   const widgets: CompanionCockpitWidget[] = [
     {
-      id: 'default-callout',
-      kind: 'text_callout',
-      title: labels.callout.title,
-      span: 12,
-      config: { body: labels.callout.body, intent: 'info' },
-    },
-    {
       id: 'default-vitals',
       kind: 'stat_grid',
       title: labels.vitalsTitle,
@@ -122,26 +114,26 @@ export function composeDefaultCockpit(
       },
     },
     {
-      id: 'default-roster',
-      kind: 'persona_overview',
-      title: labels.rosterTitle,
-      span: 12,
-      config: { limit: 6, filter: 'active' },
-    },
-    {
       id: 'default-attention',
       kind: 'issue_list',
       title: labels.attentionTitle,
       span: 12,
       config: {
         empty_label: labels.attentionEmpty,
-        items: attention.slice(0, ATTENTION_LIMIT).map(({ p, flag }) => ({
+        items: attention.map(({ p, flag }) => ({
           id: p.id,
           title: p.name,
           sublabel: reasonLabel(flag.kind),
           severity: flag.tone === 'bad' ? 'bad' : 'warn',
         })),
       },
+    },
+    {
+      id: 'default-roster',
+      kind: 'persona_overview',
+      title: labels.rosterTitle,
+      span: 12,
+      config: { limit: 6, filter: 'active' },
     },
   ];
 

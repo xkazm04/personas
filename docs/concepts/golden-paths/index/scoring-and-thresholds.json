@@ -109,13 +109,6 @@
       "resolved": false
     },
     "dev_tools.rs": {"count":1,"sections":[8],"lines":["5928"],"contexts":["`healing.rs:268` / `dev_tools.rs:5928`. The rule's population is 52; the honest population of \"a"],"resolved":false},
-    "docs/concepts/shared-facts.json": {
-      "count": 2,
-      "sections": [7],
-      "contexts": ["**Shared facts cited:** [`shared-facts.json`](../shared-facts.json) — 963 Rust files, 4,828 `.ts`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "shared-facts.json"
-    },
     "engine.ts": {
       "count": 1,
       "sections": [6],
@@ -209,6 +202,7 @@
     "scoring/engine.ts": {"count":1,"sections":[12],"contexts":["which the brief did not anticipate.** `ascent/src/lib/maturity/model.ts` + `scoring/engine.ts` own"],"resolved":false},
     "scripts/census/lib/engine.mjs": {"count":1,"sections":[9],"contexts":["`lib/engine.mjs`."],"resolvedFrom":"suffix","verbatim":"lib/engine.mjs"},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Checked first that it is not already gated.** `scripts/census/rules.json` holds **135 rules**. None"]},
+    "shared-facts.json": {"count":2,"sections":[7],"contexts":["**Shared facts cited:** `shared-facts.json` — 963 Rust files, 4,828 `.ts`,"],"resolved":false},
     "src-tauri/core/src/score_weights.rs": {
       "count": 3,
       "sections": [3,7],

@@ -28,9 +28,9 @@ const CPU_PAUSE_PCT: f32 = 70.0;
 /// Resume admitting once CPU drops below this (hysteresis vs `CPU_PAUSE_PCT`).
 const CPU_RESUME_PCT: f32 = 55.0;
 /// Pause new admissions when used RAM ≥ this percent.
-const MEM_PAUSE_PCT: f32 = 85.0;
+const MEM_PAUSE_PCT: f32 = 90.0;
 /// Resume admitting once used RAM drops below this (hysteresis vs `MEM_PAUSE_PCT`).
-const MEM_RESUME_PCT: f32 = 70.0;
+const MEM_RESUME_PCT: f32 = 88.0;
 /// How often to sample host load. Cheap (no process enumeration).
 const SAMPLE_INTERVAL: Duration = Duration::from_secs(3);
 

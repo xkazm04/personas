@@ -50,8 +50,18 @@ use crate::engine::types::EphemeralPersona;
 use crate::error::AppError;
 use crate::ActiveProcessRegistry;
 
+/// kp's one-persona-per-gig additions: `spec.modelProfile`,
+/// `placement.projectId`, the gig persona policy at intake, and
+/// `POST /api/kp/personas/{id}/retire`. See `kp_gig.rs`.
+mod kp_gig;
+/// `/api/approvals*` + `/api/pairings*` — the operator deciding approvals and
+/// pairings over HTTP (`personas:approve`). See `operator.rs`.
+mod operator;
 /// `/api/dev/*` — the Ship layer (milestones, goals, scope). See `ship.rs`.
 mod ship;
+/// `/api/dev/workspaces`, `POST /api/dev/projects`, and the hire `placement`
+/// check — workspaces and projects over HTTP. See `workspaces.rs`.
+mod workspaces;
 
 // =============================================================================
 // Shared state for the management API
@@ -151,11 +161,24 @@ pub fn management_router(state: ManagementState) -> Router {
         .route("/api/kp/persona-requests", post(kp_create_persona_request))
         .route("/api/kp/persona-requests/{id}", get(kp_get_persona_request))
         .route("/api/kp/connector-catalog", get(kp_connector_catalog))
+        // The key that hired a persona ends its tenure (archive + execute
+        // grant revoked). `personas:build`, like every `/api/kp/` write.
+        .route(
+            "/api/kp/personas/{persona_id}/retire",
+            post(kp_gig::retire_kp_persona),
+        )
         // -- Ship layer (management_api/ship.rs). Reads for any valid key;
         // writes demand `personas:build` (see `authorize`). No lifecycle and
         // no deletion routes by design — cutting and shipping are the
         // operator's, in the Ship tab or through Athena's approval-gated op.
-        .route("/api/dev/projects", get(ship::list_projects))
+        // Workspaces + projects over HTTP (management_api/workspaces.rs):
+        // create-or-return by name, and register-or-return by folder with an
+        // optional workspace placement. Writes, so `personas:build`.
+        .route("/api/dev/workspaces", post(workspaces::post_workspace))
+        .route(
+            "/api/dev/projects",
+            get(ship::list_projects).post(workspaces::post_project),
+        )
         .route(
             "/api/dev/projects/{project_id}/ship",
             get(ship::get_project_ship),
@@ -180,7 +203,37 @@ pub fn management_router(state: ManagementState) -> Router {
             "/api/dev/milestones/{milestone_id}/scope",
             post(ship::post_milestone_scope),
         )
-        .route("/api/dev/goals/{goal_id}", post(ship::post_goal_patch));
+        .route("/api/dev/goals/{goal_id}", post(ship::post_goal_patch))
+        // Operator approval API (management_api/operator.rs) — `personas:approve`
+        // only, a scope held by the file-delivered `operator-local` key and
+        // never grantable through pairing (see `authorize`).
+        .route("/api/approvals", get(operator::list_approvals))
+        .route(
+            "/api/approvals/{id}/approve",
+            post(operator::approve_approval),
+        )
+        .route(
+            "/api/approvals/{id}/reject",
+            post(operator::reject_approval),
+        )
+        .route(
+            "/api/pairings/pending",
+            get(operator::list_pending_pairings),
+        )
+        .route(
+            "/api/pairings/{nonce}/approve",
+            post(operator::approve_pairing),
+        )
+        .route(
+            "/api/pairings/{nonce}/reject",
+            post(operator::reject_pairing),
+        )
+        // The persisted HTTP project roots (`management.http_project_roots`):
+        // readable by any valid key, writable only with `personas:approve`.
+        .route(
+            "/api/settings/http-project-roots",
+            get(operator::get_http_project_roots).put(operator::put_http_project_roots),
+        );
 
     // Headless bridge test mode (§13). The route is ADDED, not merely refused,
     // so with the mode off it 404s: "there is nothing there" and "you may not
@@ -334,6 +387,11 @@ const SCOPE_TEST: &str = personas_engine::headless::TEST_SCOPE;
 const SCOPE_EXECUTE_PERSONA_PREFIX: &str =
     personas_engine::kp_execute_grant::EXECUTE_PERSONA_SCOPE_PREFIX;
 const SCOPE_PROXY_CREDENTIAL_PREFIX: &str = "proxy:credential:";
+/// Operator approval scope. Held only by the file-delivered `operator-local`
+/// key (`personas_db::operator_key`); never pairable
+/// (`pairing::is_pairable_scope`), never implied by any other scope — the arm
+/// in [`authorize`] checks this exact string and nothing else satisfies it.
+const SCOPE_APPROVE: &str = crate::db::operator_key::APPROVE_SCOPE;
 
 /// Per-key rate limit: max requests per window, keyed by the API key's id.
 /// Generous for interactive/dashboard use — the loopback API is single-user.
@@ -495,6 +553,31 @@ fn authorize(method: &Method, path: &str, scopes: &[String]) -> Result<(), &'sta
 
     if path.starts_with("/a2a/") || path.starts_with("/agent-card/") {
         return Ok(());
+    }
+    if path == "/api/approvals"
+        || path.starts_with("/api/approvals/")
+        || path == "/api/pairings"
+        || path.starts_with("/api/pairings/")
+    {
+        // The operator's decisions — reads included, because the list shows
+        // who asked for what. Exact scope, every method: no broad scope, no
+        // build or execute grant, and no paired key can reach these.
+        return if has(SCOPE_APPROVE) {
+            Ok(())
+        } else {
+            Err("api key lacks the personas:approve scope")
+        };
+    }
+    if path == "/api/settings/http-project-roots" {
+        // The containment boundary of every project-bound run. Reading it is a
+        // read; moving it is the operator's alone — `personas:execute` (which
+        // the generic `/api/settings/*` writes need) is NOT enough, so a kp key
+        // can never widen its own containment.
+        return match *method {
+            Method::GET | Method::HEAD | Method::OPTIONS => Ok(()),
+            _ if has(SCOPE_APPROVE) => Ok(()),
+            _ => Err("api key lacks the personas:approve scope"),
+        };
     }
     if path.starts_with("/api/build") {
         return if has(SCOPE_BUILD) {
@@ -846,6 +929,12 @@ struct ApiResult {
     data: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     error: Option<String>,
+    /// A stable snake_case refusal code (`workspace_not_found`,
+    /// `project_outside_persona_workspace`, …) for the routes that promise one,
+    /// so a client branches on the code and never on `error`'s prose. Absent
+    /// on every response that predates it — additive on the wire.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    code: Option<String>,
 }
 
 fn ok_json(data: impl Serialize) -> impl IntoResponse {
@@ -853,6 +942,7 @@ fn ok_json(data: impl Serialize) -> impl IntoResponse {
         success: true,
         data: serde_json::to_value(data).ok(),
         error: None,
+        code: None,
     })
 }
 
@@ -863,6 +953,20 @@ fn err_json(status: StatusCode, msg: &str) -> (StatusCode, Json<ApiResult>) {
             success: false,
             data: None,
             error: Some(msg.to_string()),
+            code: None,
+        }),
+    )
+}
+
+/// `err_json` plus a snake_case `code` — see [`ApiResult::code`].
+fn err_code(status: StatusCode, code: &str, msg: &str) -> (StatusCode, Json<ApiResult>) {
+    (
+        status,
+        Json(ApiResult {
+            success: false,
+            data: None,
+            error: Some(msg.to_string()),
+            code: Some(code.to_string()),
         }),
     )
 }
@@ -1100,6 +1204,21 @@ async fn execute_persona(
 
     if !persona.enabled {
         return err_json(StatusCode::BAD_REQUEST, "Persona is disabled").into_response();
+    }
+
+    // Project-bound execution: `input_data._projectId` names the folder this
+    // run executes in. Checked synchronously, BEFORE anything is queued — the
+    // key that may run this persona may only point it at a project in the
+    // persona's own workspace (`personas_db::execution_project`). The runner
+    // re-checks before it picks the working directory.
+    if let Err(e) = crate::db::execution_project::bound_project_for_input(
+        &state.pool,
+        persona.home_team_id.as_deref(),
+        input.input_data.as_ref(),
+    ) {
+        let status =
+            StatusCode::from_u16(e.http_status()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        return err_code(status, e.code(), &e.message()).into_response();
     }
 
     // Create execution record
@@ -2713,6 +2832,15 @@ struct KpPersonaSpec {
     max_turns: Option<i64>,
     #[serde(default)]
     success_metrics: Vec<KpSuccessMetric>,
+    /// `kp.agent-requirements.v1` — the structured brief a requirement-driven
+    /// hire (the freelance gig specialist) sends INSTEAD of
+    /// `systemPromptDraft`, which is then simply absent (it has always been
+    /// optional). Kept as raw JSON here: kp owns the schema and the contract
+    /// keeps unknown keys, so the typed shape check and the bounds live in
+    /// `personas_engine::kp_requirements::normalize`, run by
+    /// [`validate_kp_requirements`] with a refusal CODE rather than prose.
+    #[serde(default)]
+    requirements: Option<serde_json::Value>,
 }
 
 // --- App master (P4) -------------------------------------------------------
@@ -2970,6 +3098,21 @@ fn validate_kp_persona_request(body: &KpPersonaRequestBody) -> Result<(), String
     Ok(())
 }
 
+/// Validate + normalize `spec.requirements` (`kp.agent-requirements.v1`).
+/// Pure — unit-tested below. `Ok(None)` when the hire sent none (every hire
+/// that predates the contract takes exactly its old path). A JSON `null` is
+/// treated as absent. On refusal the error carries the stable code the route
+/// answers with (`invalid_requirements`, `requirements_too_large`,
+/// `requirements_too_many_items`, `requirements_string_too_long`).
+fn validate_kp_requirements(
+    body: &KpPersonaRequestBody,
+) -> Result<Option<serde_json::Value>, personas_engine::kp_requirements::RequirementsError> {
+    match &body.spec.requirements {
+        None | Some(serde_json::Value::Null) => Ok(None),
+        Some(raw) => personas_engine::kp_requirements::normalize(raw).map(Some),
+    }
+}
+
 /// Validate the `appMaster` block. Pure — unit-tested below.
 ///
 /// Two of these checks are the whole reason this function exists rather than a
@@ -3131,6 +3274,16 @@ fn validate_kp_app_master(am: &KpAppMasterSpec) -> Result<(), String> {
     Ok(())
 }
 
+/// The approval card renders the rationale and the raw params; the params
+/// carry only `placement.workspaceId`, so the workspace's NAME goes into the
+/// sentence the human reads before deciding where the hire will live.
+fn with_placement_note(rationale: String, placement: Option<&DevWorkspace>) -> String {
+    match placement {
+        Some(ws) => format!("{rationale} — filed under workspace '{}'", ws.name.trim()),
+        None => rationale,
+    }
+}
+
 /// One-line rationale for the approval card — this is the sentence the human
 /// reads before deciding, so it names the job, the hire, and the budget.
 fn kp_hire_rationale(body: &KpPersonaRequestBody) -> String {
@@ -3164,13 +3317,49 @@ fn kp_hire_rationale(body: &KpPersonaRequestBody) -> String {
             budget
         );
     }
+    // A requirement-driven hire sends no prompt: the card says the persona
+    // will be designed here from kp's requirements, and how many MUST
+    // constraints the human is agreeing to have pinned into it.
+    let requirements = body
+        .spec
+        .requirements
+        .as_ref()
+        .and_then(personas_engine::kp_requirements::KpAgentRequirements::from_value)
+        .map(|r| {
+            format!(
+                ", designed from kp requirements ({} constraint(s))",
+                r.constraint_list().len()
+            )
+        })
+        .unwrap_or_default();
     format!(
-        "KP job '{}' requests an AI hire: {} — {} connector(s){}",
+        "KP job '{}' requests an AI hire: {} — {} connector(s){}{}",
         body.kp.job_title.trim(),
         body.spec.name.trim(),
         body.spec.connectors.len(),
-        budget
+        budget,
+        requirements
     )
+}
+
+/// The card's tail for the one-persona-per-gig fields: which model the persona
+/// will run on and which project it is homed in. Empty when neither was sent.
+fn with_gig_notes(
+    rationale: String,
+    model: Option<&kp_gig::HireModelProfile>,
+    project: Option<&kp_gig::HireProjectLink>,
+) -> String {
+    let mut out = rationale;
+    if let Some(m) = model {
+        match &m.effort {
+            Some(e) => out.push_str(&format!(" — runs on {} at {e} effort", m.model)),
+            None => out.push_str(&format!(" — runs on {}", m.model)),
+        }
+    }
+    if let Some(p) = project {
+        out.push_str(&format!(" — homed in project '{}'", p.project.name.trim()));
+    }
+    out
 }
 
 /// Insert the pending `companion_approval` row. Payload shape mirrors
@@ -3236,6 +3425,43 @@ async fn kp_create_persona_request(
     if let Err(msg) = validate_kp_persona_request(&body) {
         return err_json(StatusCode::BAD_REQUEST, &msg).into_response();
     }
+    // `spec.requirements` answers with a CODE (kp branches on it), and what is
+    // stored is the NORMALIZED object — trimmed, bounds-checked — so every
+    // reader downstream (executor, promote, the app's panel) sees one shape.
+    let requirements = match validate_kp_requirements(&body) {
+        Ok(r) => r,
+        Err(e) => {
+            return err_code(StatusCode::BAD_REQUEST, e.code, &e.message).into_response();
+        }
+    };
+    // Optional `placement: { workspaceId }` — the workspace whose
+    // cross-project group the approved hire is filed under. Checked HERE so an
+    // unknown workspace is refused before anything is queued; the executor
+    // re-checks on approval (`approval_exec_core::resolve_hire_placement`).
+    let placement = match workspaces::validate_hire_placement(&state.pool, &raw_body) {
+        Ok(p) => p,
+        Err(e) => return e.into_response(),
+    };
+    // Optional `spec.modelProfile: {model, effort?}` — the persona's model.
+    // Stored normalized (model + effort only), so nothing else kp might put in
+    // a model profile (an endpoint, a token) ever reaches the persona.
+    let model_profile = match kp_gig::validate_model_profile(&raw_body) {
+        Ok(m) => m,
+        Err(r) => return r.into_response(),
+    };
+    // Optional `placement.projectId` — the persona's home project. With no
+    // `placement.workspaceId`, the project's own workspace becomes the
+    // placement (written into the stored params below).
+    let project_link =
+        match kp_gig::validate_hire_project(&state.pool, &raw_body, placement.as_ref()) {
+            Ok(l) => l,
+            Err(r) => return r.into_response(),
+        };
+    let placement = placement.or_else(|| {
+        project_link
+            .as_ref()
+            .and_then(|l| l.derived_workspace.clone())
+    });
     let app_state: tauri::State<'_, Arc<crate::AppState>> = match state.app.try_state() {
         Some(s) => s,
         None => {
@@ -3250,16 +3476,106 @@ async fn kp_create_persona_request(
     // The RAW body (see above) — every field kp sent, modeled here or not.
     let mut params = raw_body;
     params["requestId"] = serde_json::Value::String(request_id.clone());
+    if let Some(r) = requirements {
+        params["spec"]["requirements"] = r;
+    }
+    match &model_profile {
+        Some(m) => params["spec"]["modelProfile"] = m.to_value(),
+        None => {
+            if let Some(spec) = params.get_mut("spec").and_then(|s| s.as_object_mut()) {
+                spec.remove("modelProfile");
+            }
+        }
+    }
+    if let (Some(link), Some(ws)) = (&project_link, placement.as_ref()) {
+        params["placement"]["projectId"] = serde_json::Value::String(link.project.id.clone());
+        params["placement"]["workspaceId"] = serde_json::Value::String(ws.id.clone());
+    }
+    // The gig persona policy (`personas_db::kp_gig_policy`): a request inside
+    // every bound the operator set is approved on the operator's behalf below.
+    // Read against the NORMALIZED params, so what it approves is exactly what
+    // the executor will act on. The headless bridge (test mode) keeps its own
+    // path and is not consulted here.
+    let policy = if personas_engine::headless::enabled() {
+        Err(crate::db::kp_gig_policy::PolicyMiss::Disabled)
+    } else {
+        crate::db::kp_gig_policy::evaluate_request(&state.pool, &params)
+    };
     // The submitting key is recorded so approval can grant it
     // `personas:execute:persona:<new id>` — that key and no other (§10.8).
+    let rationale = with_gig_notes(
+        with_placement_note(kp_hire_rationale(&body), placement.as_ref()),
+        model_profile.as_ref(),
+        project_link.as_ref(),
+    );
+    let rationale = match kp_gig::policy_miss_note(&params, &policy) {
+        Some(note) => format!("{rationale}{note}"),
+        None => rationale,
+    };
     if let Err(e) = insert_kp_hire_approval(
         &app_state.user_db,
         &request_id,
         &params,
-        &kp_hire_rationale(&body),
+        &rationale,
         Some(&submitter.id),
     ) {
         return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response();
+    }
+    // Inside the gig persona policy: decide it now, through the executor the
+    // operator's Approve reaches (`approvals::policy_approve_kp_hire`), and
+    // never show a card nobody needs to click.
+    if policy.is_ok() {
+        let app = state.app.clone();
+        // INVARIANT: same load-bearing move as the headless arm below —
+        // `tauri::State` is not `Send` and must not be held across the await.
+        #[allow(clippy::drop_non_drop)]
+        drop(app_state);
+        return match crate::commands::companion::approvals::policy_approve_kp_hire(
+            &app,
+            &request_id,
+        )
+        .await
+        {
+            Ok(outcome) => {
+                let persona_id = outcome
+                    .result
+                    .as_ref()
+                    .and_then(|r| r.get("personaId"))
+                    .cloned()
+                    .unwrap_or(serde_json::Value::Null);
+                ok_json(serde_json::json!({
+                    "requestId": request_id,
+                    // What the status GET reports for the same row right now:
+                    // `approved` (then `active` once the build promotes), or
+                    // `failed` when the executor could not create the hire.
+                    "status": if outcome.status == "approved" { "approved" } else { "failed" },
+                    "autoApproved": true,
+                    "approvedBy": crate::db::kp_gig_policy::POLICY_ACTOR,
+                    "personaId": persona_id,
+                    "message": outcome.message,
+                }))
+                .into_response()
+            }
+            Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
+        };
+    }
+
+    // Announce the card so the orb / Athena chat shows it now. Without this a
+    // kp hire only appeared after the next Athena turn or an app restart —
+    // the inbox fetches once per session and on this event.
+    if !personas_engine::headless::enabled() {
+        use tauri::Emitter;
+        if let Err(e) = state.app.emit(
+            crate::companion::session::APPROVALS_EVENT,
+            vec![crate::companion::dispatcher::CreatedApproval {
+                id: request_id.clone(),
+                action: "kp_hire_request".into(),
+                params_json: params.to_string(),
+                rationale: rationale.clone(),
+            }],
+        ) {
+            tracing::warn!(error = %e, "kp intake: approvals event emit failed");
+        }
     }
 
     // Headless bridge (§13): execute the hire NOW, through the same executor
@@ -4193,6 +4509,35 @@ fn retire_persona_db(
     Ok((persona, plan, mandate.map(|(project_id, _)| project_id)))
 }
 
+/// End an App master mandate as `retired` through the shared probation
+/// carry-out — the one every retirement reaches (a human's `retire` click, the
+/// headless sweep, `POST /api/kp/test/retire`, `POST /api/kp/personas/{id}/retire`).
+/// Returns whether a decision was applied.
+fn carry_out_retired_mandate(
+    app_state: &tauri::State<'_, Arc<crate::AppState>>,
+    project_id: &str,
+    note: String,
+) -> bool {
+    crate::commands::design::reviews::apply_app_master_probation_decision(
+        app_state,
+        crate::commands::design::reviews::ProbationCarryOut {
+            project_id,
+            decision: "retired",
+            note: Some(note),
+            // Nothing about a bridge retirement is a probation extension, so
+            // the streak is left exactly as it stands.
+            headless_incomplete_streak: None,
+            // There deliberately is no review row: this decision was not
+            // raised, it was requested.
+            review_id: None,
+            // No backbone was read. `None` is written as *no verdict recorded*
+            // — never as a pass.
+            verdict: None,
+            unmeasured: &[],
+        },
+    )
+}
+
 /// `POST /api/kp/test/retire` — end one persona's tenure.
 ///
 /// Same gating as [`kp_test_tick`] and [`kp_test_seed_work`]: the route exists
@@ -4281,29 +4626,15 @@ async fn kp_test_retire(
     if plan.carry_out_mandate {
         if let Some(project_id) = mandate_project_id.as_deref() {
             let app_state = state.app.state::<Arc<crate::AppState>>();
-            mandate_carried_out =
-                crate::commands::design::reviews::apply_app_master_probation_decision(
-                    &app_state,
-                    crate::commands::design::reviews::ProbationCarryOut {
-                        project_id,
-                        decision: "retired",
-                        note: Some(format!(
-                        "retired over the headless test bridge by `{}`; autopilot off and cadence \
-                         triggers disabled",
-                        personas_engine::headless::ACTOR
-                    )),
-                        // Nothing about a bridge retirement is a probation
-                        // extension, so the streak is left exactly as it stands.
-                        headless_incomplete_streak: None,
-                        // There deliberately is no review row: this decision was
-                        // not raised, it was requested.
-                        review_id: None,
-                        // No backbone was read. `None` is written as *no verdict
-                        // recorded* — never as a pass.
-                        verdict: None,
-                        unmeasured: &[],
-                    },
-                );
+            mandate_carried_out = carry_out_retired_mandate(
+                &app_state,
+                project_id,
+                format!(
+                    "retired over the headless test bridge by `{}`; autopilot off and cadence \
+                     triggers disabled",
+                    personas_engine::headless::ACTOR
+                ),
+            );
         }
     }
 
@@ -4613,6 +4944,117 @@ mod tests {
         assert!(validate_kp_persona_request(&b)
             .unwrap_err()
             .contains("reportToken"));
+    }
+
+    // ---- spec.requirements (kp.agent-requirements.v1) ----------------------
+
+    /// A requirement-driven hire: no `systemPromptDraft`, a requirements object.
+    fn kp_requirements_body(requirements: serde_json::Value) -> KpPersonaRequestBody {
+        serde_json::from_value(serde_json::json!({
+            "kp": {"baseUrl": "http://localhost:3001", "jobId": "gig-7", "jobTitle": "Landing page fix"},
+            "spec": {
+                "name": "Freelance specialist - web development",
+                "mission": "Answer web-development gig briefs with a verified deliverable.",
+                "connectors": ["research"],
+                "maxBudgetUsd": 3,
+                "requirements": requirements
+            },
+            "reportToken": "tok"
+        }))
+        .expect("requirements body")
+    }
+
+    fn kp_requirements_json() -> serde_json::Value {
+        serde_json::json!({
+            "kind": "kp.agent-requirements.v1",
+            "role": "  Freelance specialist - web development  ",
+            "constraints": [
+                "Never send, submit, post, bid, message or contact anyone; the operator sends.",
+                "Disclose AI assistance in what goes out."
+            ],
+            "tools": [{"connector": "research", "why": "check vendor facts"}],
+            "futureKey": {"kept": true}
+        })
+    }
+
+    #[test]
+    fn kp_requirements_hire_needs_no_system_prompt_draft() {
+        let b = kp_requirements_body(kp_requirements_json());
+        assert!(b.spec.system_prompt_draft.is_none());
+        assert_eq!(validate_kp_persona_request(&b), Ok(()));
+        let stored = validate_kp_requirements(&b)
+            .expect("valid requirements")
+            .expect("present");
+        // Normalized: trimmed, unknown keys kept.
+        assert_eq!(stored["role"], "Freelance specialist - web development");
+        assert_eq!(stored["futureKey"], serde_json::json!({"kept": true}));
+    }
+
+    #[test]
+    fn kp_hire_without_requirements_is_unchanged() {
+        let b = kp_body();
+        assert!(b.spec.requirements.is_none());
+        assert_eq!(validate_kp_requirements(&b), Ok(None));
+        // JSON null reads as absent, not as a malformed object.
+        let b = kp_requirements_body(serde_json::Value::Null);
+        assert_eq!(validate_kp_requirements(&b), Ok(None));
+        // The approval card sentence is byte-identical to what it was.
+        assert_eq!(
+            kp_hire_rationale(&kp_body()),
+            "KP job 'Senior Rust Engineer' requests an AI hire: Rust Sourcing Scout — 2 connector(s), budget $25/mo"
+        );
+    }
+
+    #[test]
+    fn kp_requirements_refusals_carry_codes() {
+        use personas_engine::kp_requirements::RequirementsError as E;
+        let mut wrong_kind = kp_requirements_json();
+        wrong_kind["kind"] = "kp.agent-requirements.v9".into();
+        let e = validate_kp_requirements(&kp_requirements_body(wrong_kind)).unwrap_err();
+        assert_eq!(e.code, "invalid_requirements");
+        assert_eq!(e.code, E::INVALID);
+
+        let mut too_big = kp_requirements_json();
+        too_big["padding"] = "x".repeat(33 * 1024).into();
+        assert_eq!(
+            validate_kp_requirements(&kp_requirements_body(too_big))
+                .unwrap_err()
+                .code,
+            E::TOO_LARGE
+        );
+
+        let mut too_long = kp_requirements_json();
+        too_long["purpose"] = "p".repeat(1001).into();
+        assert_eq!(
+            validate_kp_requirements(&kp_requirements_body(too_long))
+                .unwrap_err()
+                .code,
+            E::STRING_TOO_LONG
+        );
+
+        let mut too_many = kp_requirements_json();
+        too_many["constraints"] = serde_json::json!(vec!["c"; 31]);
+        assert_eq!(
+            validate_kp_requirements(&kp_requirements_body(too_many))
+                .unwrap_err()
+                .code,
+            E::TOO_MANY_ITEMS
+        );
+
+        let not_object = kp_requirements_body(serde_json::json!(["x"]));
+        assert_eq!(
+            validate_kp_requirements(&not_object).unwrap_err().code,
+            E::INVALID
+        );
+    }
+
+    #[test]
+    fn kp_requirements_hire_rationale_names_the_design_source() {
+        let r = kp_hire_rationale(&kp_requirements_body(kp_requirements_json()));
+        assert!(
+            r.ends_with(", budget $3/mo, designed from kp requirements (2 constraint(s))"),
+            "{r}"
+        );
     }
 
     // ---- App master block (P4) ---------------------------------------------
@@ -4999,6 +5441,84 @@ mod tests {
         // Before the grant (and after retirement removes it) execute is refused.
         let paired_only = scopes(&["personas:read", "personas:build"]);
         assert!(authorize(&Method::POST, "/api/execute/p1", &paired_only).is_err());
+    }
+
+    /// The operator routes demand `personas:approve` exactly, on every method.
+    /// No other scope — broad or resource-scoped, kp's paired key, a key after
+    /// a hire, the proxy-holding system shape — reaches them.
+    #[test]
+    fn authorize_operator_routes_need_the_exact_approve_scope() {
+        let routes: [(Method, &str); 6] = [
+            (Method::GET, "/api/approvals"),
+            (Method::POST, "/api/approvals/appr_1/approve"),
+            (Method::POST, "/api/approvals/appr_1/reject"),
+            (Method::GET, "/api/pairings/pending"),
+            (Method::POST, "/api/pairings/nonce123/approve"),
+            (Method::POST, "/api/pairings/nonce123/reject"),
+        ];
+        let without: [Vec<String>; 6] = [
+            scopes(&["personas:read", "personas:build"]),
+            vec![
+                "personas:read".to_string(),
+                "personas:build".to_string(),
+                personas_engine::kp_execute_grant::execute_scope_for("p1"),
+            ],
+            scopes(&["personas:execute"]),
+            scopes(&[
+                "personas:execute",
+                "personas:build",
+                "proxy",
+                "personas:test",
+            ]),
+            scopes(&["personas:approve:extra", "approve", "personas:*"]),
+            scopes(&[]),
+        ];
+        for (m, path) in &routes {
+            for s in &without {
+                assert!(
+                    authorize(m, path, s).is_err(),
+                    "{m} {path} must refuse {s:?}"
+                );
+            }
+            assert!(
+                authorize(m, path, &scopes(&["personas:read", "personas:approve"])).is_ok(),
+                "{m} {path}"
+            );
+        }
+        // The roots setting: readable by any key, written only by the operator.
+        let kp_after_hire = vec![
+            "personas:read".to_string(),
+            "personas:build".to_string(),
+            personas_engine::kp_execute_grant::execute_scope_for("p1"),
+        ];
+        let roots = "/api/settings/http-project-roots";
+        assert!(authorize(&Method::GET, roots, &kp_after_hire).is_ok());
+        for m in [Method::PUT, Method::POST, Method::DELETE, Method::PATCH] {
+            assert!(authorize(&m, roots, &kp_after_hire).is_err(), "{m}");
+            assert!(
+                authorize(&m, roots, &scopes(&["personas:execute"])).is_err(),
+                "{m}"
+            );
+            assert!(authorize(&m, roots, &scopes(&["personas:read", "personas:approve"])).is_ok());
+        }
+        // The generic settings writes a broad execute key CAN reach name their
+        // own prefixed keys, which can never equal an operator-only key (and
+        // `settings::set` refuses operator-only keys regardless).
+        for prefix in [
+            crate::db::settings_keys::AUTO_OPTIMIZE_PREFIX,
+            crate::db::settings_keys::HEALTH_WATCH_PREFIX,
+        ] {
+            assert!(!crate::db::settings_keys::MANAGEMENT_HTTP_PROJECT_ROOTS.starts_with(prefix));
+        }
+
+        // The operator key reaches nothing that mutates besides its own routes.
+        let operator = scopes(&["personas:read", "personas:approve"]);
+        assert!(authorize(&Method::POST, "/api/execute/p1", &operator).is_err());
+        assert!(authorize(&Method::POST, "/api/build", &operator).is_err());
+        assert!(authorize(&Method::POST, "/api/kp/persona-requests", &operator).is_err());
+        assert!(authorize(&Method::POST, "/api/dev/projects", &operator).is_err());
+        assert!(authorize(&Method::POST, "/api/proxy/cred-1", &operator).is_err());
+        assert!(authorize(&Method::POST, "/api/broker/mint/cred-1", &operator).is_err());
     }
 
     #[test]

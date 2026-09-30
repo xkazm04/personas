@@ -1,7 +1,7 @@
 # Golden path — Ownership verification
 
 > Situation node: `backend-runtime/command-authorization/ownership-verification` ·
-> [situation spine](../situation-spine.md) · recurrence 10 · risk **HIGH** ·
+> situation spine · recurrence 10 · risk **HIGH** ·
 > sides: **server** · convergence: **mixed** ·
 > dimensions: **security · function · code-quality · resilience**
 > Composed 2026-08-16 against `master` @ `f1b61ad73`; §7 D2 re-verified at

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 
 const companionMatchTemplates = vi.fn();
 const setSidebarSection = vi.fn();
@@ -102,7 +102,9 @@ describe('TemplateSuggestionsWidget', () => {
       expect(screen.getByTestId('template-suggestion-t_42')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByTestId('template-suggestion-t_42'));
+    // The row's name is its one button (kit ListRow onPress), its hit area
+    // stretched over the row.
+    fireEvent.click(within(screen.getByTestId('template-suggestion-t_42')).getByRole('button', { name: 'Inbox Triage Buddy' }));
 
     expect(setPendingTemplateId).toHaveBeenCalledWith('t_42');
     expect(setTemplateTab).toHaveBeenCalledWith('generated');

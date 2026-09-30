@@ -337,6 +337,24 @@
       ],
       "resolved": false
     },
+    "recipes/sub_list/components/RecipeCard.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["65"],
+      "contexts": [
+        "Plus 10 files with a local `confirm<X>` state + `setTimeout`: `triggers/hooks/useTriggerDetail.ts:136` (3000) · `plugins/dev-tools/sub_projects/ProjectManagerParts.tsx:53` (3000) · `overview/sub_mess…"
+      ],
+      "resolved": false
+    },
+    "recipes/sub_manager/components/RecipeManager.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["68"],
+      "contexts": [
+        "| `recipes/sub_manager/components/RecipeManager.tsx:68` · `agents/sub_settings/components/PersonaAssertionsSection.tsx:78` · `vault/sub_credentials/components/gateway/GatewayMembersModal.tsx:176` · `…"
+      ],
+      "resolved": false
+    },
     "repos/resources/artist.rs": {
       "count": 1,
       "sections": [7],
@@ -875,26 +893,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "FleetSettingsPage.tsx"
-    },
-    "src/features/recipes/sub_list/components/RecipeCard.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["65"],
-      "contexts": [
-        "Plus 10 files with a local `confirm<X>` state + `setTimeout`: `triggers/hooks/useTriggerDetail.ts:136` (3000) · `plugins/dev-tools/sub_projects/ProjectManagerParts.tsx:53` (3000) · `overview/sub_mess…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "recipes/sub_list/components/RecipeCard.tsx"
-    },
-    "src/features/recipes/sub_manager/components/RecipeManager.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["68"],
-      "contexts": [
-        "| `recipes/sub_manager/components/RecipeManager.tsx:68` · `agents/sub_settings/components/PersonaAssertionsSection.tsx:78` · `vault/sub_credentials/components/gateway/GatewayMembersModal.tsx:176` · `…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "recipes/sub_manager/components/RecipeManager.tsx"
     },
     "src/features/scraper/useScraperData.ts": {
       "count": 1,

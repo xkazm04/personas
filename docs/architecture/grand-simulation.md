@@ -19,7 +19,7 @@
    describes the need and composes a job description; Personas turns it into an agent through
    adoption, with new responsibilities or existing recipes. kp itself may be changed for gaps.
 4. App Masters can request responsibility adjustments or new responsibilities. The simulation's
-   orchestrator (this session's Director, on Fable) may extend Personas in any capacity.
+   orchestrator (this session's Director, on Sonnet 5.5) may extend Personas in any capacity.
 5. The Architect makes sure the solution design is fulfilled: creates Goals, speaks in
    Conversation Channels as an authority; App Masters and other roles listen and reflect the
    channel in their own responsibilities.
@@ -28,7 +28,7 @@
 7. "One million users" is the stress-test definition that forces enterprise-grade architecture
    (queues, async integration) and code quality; languages are free (Rust, Python, TypeScript);
    the project should not consume all machine resources.
-8. Every agent may run Opus; only the orchestrator stays on Fable.
+8. Every agent runs Sonnet 5.5, the orchestrator included.
 9. At most 10 active personas at once, app-wide: find the threshold, check it works, apply it.
 10. Never delete data Personas considers the "last working version" in the workspace; it becomes a
     close-to-real ecosystem for future agent and responsibility tests.
@@ -190,7 +190,7 @@ where the work is one of the obligations the reference digest names.
    (`attention.rs`) becomes a one-line read of `settings_keys::MAX_ACTIVE_PERSONAS`.
 4. **Channel authority and persona wake** (G3, G11).
 5. **Outbound hire** (G2): Personas side first with kp's existing routes; then the one-call kp route.
-6. **Simulation switches**: headless bridge on, Opus for all agents, cap 10, autopilot `full` for
+6. **Simulation switches**: headless bridge on, Sonnet for all agents, cap 10, autopilot `full` for
    the six projects with triage rules that auto-accept low-risk items (the first day's ceiling).
 7. **The skill** `/grand-sim` with acts as modes (`design | hire | build | load | reflect | status`),
    state under `.claude/grand-sim/`, and an Obsidian folder `Grand Simulation/` for the map.

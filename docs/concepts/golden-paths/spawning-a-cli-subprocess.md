@@ -1,8 +1,8 @@
 # Golden path — Spawning a CLI subprocess
 
-> Situation node: `backend-runtime/process-execution/spawning-a-cli-subprocess` · [situation spine](../situation-spine.md)
+> Situation node: `backend-runtime/process-execution/spawning-a-cli-subprocess` · situation spine
 > Composed 2026-08-15 against `master` @ `02fe37134`. Ground-truth sweep: all **963**
-> `src-tauri/**/*.rs` files (matches [`shared-facts.json`](../shared-facts.json)
+> `src-tauri/**/*.rs` files (matches `shared-facts.json`
 > `rust.files: 963`) walked by **three independent matchers** — a block-scoped
 > builder-chain extractor, a line-window classifier, and a brace-matched
 > `#[cfg(test)]`-range classifier — which disagreed three times, and every
@@ -60,7 +60,7 @@ at the boundary."** This document is that statement.
 
 *Three sentences, no repo path, no primitive name, no count — the layer a sibling
 repo on another stack can adopt as-is. Each clause carries its warrant, per the
-[portability test](../research/portability-test.md)'s finding that unmarked local
+portability test's finding that unmarked local
 calibration is what gets a whole document discarded.*
 
 > **(physics)** A child is created from four inheritances — its argument vector, its

@@ -1,9 +1,10 @@
 import { X, Play, RotateCcw, Check, Compass } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
+import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { TourDef } from '@/stores/slices/system/tourSlice';
-import { TOUR_ICONS, getColors } from './data';
+import { TOUR_ICONS } from './data';
 import { getTourIllustration } from './illustrations';
 
 interface TourDetailModalProps {
@@ -29,14 +30,13 @@ export function TourDetailModal({
   const { t, tx } = useTranslation();
   const ht = t.home.learning;
   const Icon = TOUR_ICONS[tour.icon] ?? Compass;
-  const colors = getColors(tour.color);
   const illustration = getTourIllustration(tour.id);
 
   return (
     <BaseModal isOpen onClose={onClose} titleId={`tour-modal-${tour.id}`} maxWidthClass="max-w-2xl" portal>
       <div
         data-testid={`tour-modal-${tour.id}`}
-        className="relative isolate bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col max-h-[85vh]"
+        className="relative isolate bg-background border border-primary/15 rounded-modal shadow-elevation-4 overflow-hidden flex flex-col max-h-[85vh]"
       >
         {/* Tour-specific decorative background illustration (Leonardo). A faint
             themed wash behind the content — mix-blend-screen drops the
@@ -59,14 +59,14 @@ export function TourDetailModal({
         {/* Header */}
         <div className="relative z-10 flex items-start justify-between px-6 py-5 border-b border-primary/10 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className={`w-11 h-11 rounded-modal ${colors.bg} border ${colors.border} flex items-center justify-center shadow-elevation-1`}>
-              <Icon className={`w-5 h-5 ${colors.text}`} />
+            <div className="w-11 h-11 rounded-modal bg-primary/10 border border-primary/20 flex items-center justify-center shadow-elevation-1">
+              <Icon className="w-5 h-5 text-primary" />
             </div>
             <div className="space-y-0.5">
               {/* Carries the id BaseModal points `aria-labelledby` at — without
                   it the dialog announces as unlabeled. */}
               <h3 id={`tour-modal-${tour.id}`} className="typo-heading text-foreground">{tour.title}</h3>
-              <span className={`text-[11px] font-medium ${colors.text}`}>{tx(ht.steps_count, { count: tour.steps.length })}</span>
+              <span className="typo-caption">{tx(ht.steps_count, { count: tour.steps.length })}</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -75,14 +75,7 @@ export function TourDetailModal({
                 {ht.done}
               </StatusBadge>
             )}
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label={t.common.close}
-              className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <Button size="icon-sm" variant="ghost" onClick={onClose} aria-label={t.common.close} icon={<X className="w-4 h-4" />} />
           </div>
         </div>
 
@@ -91,19 +84,19 @@ export function TourDetailModal({
           <p className="typo-body text-foreground">{tour.description}</p>
 
           <div className="space-y-3">
-            <span className={`typo-label ${colors.text}`}>{ht.tour_steps_label}</span>
+            <span className="typo-eyebrow text-primary">{ht.tour_steps_label}</span>
             <ol className="space-y-1">
               {tour.steps.map((step, i) => (
                 <li
                   key={step.id}
                   className="flex items-start gap-3 rounded-card px-2.5 py-2 -mx-2.5 transition-colors hover:bg-secondary/40"
                 >
-                  <span className={`flex-shrink-0 w-6 h-6 rounded-full ${colors.bg} border ${colors.border} ${colors.text} flex items-center justify-center text-[11px] font-mono font-semibold mt-0.5`}>
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center justify-center typo-data mt-0.5">
                     {i + 1}
                   </span>
                   <div className="min-w-0">
-                    <p className={`typo-body ${colors.text}`}>{step.title}</p>
-                    <p className="text-[13px] text-foreground leading-relaxed">{step.description}</p>
+                    <p className="typo-title">{step.title}</p>
+                    <p className="typo-caption">{step.description}</p>
                   </div>
                 </li>
               ))}
@@ -113,20 +106,18 @@ export function TourDetailModal({
 
         {/* Footer */}
         <div className="relative z-10 flex items-center justify-end px-6 py-4 border-t border-primary/10 flex-shrink-0">
-          <button
-            type="button"
+          <Button
+            variant="primary"
             onClick={onStart}
             data-testid={`tour-modal-start-${tour.id}`}
-            className={`flex items-center gap-2 px-5 py-2 typo-heading rounded-modal ${colors.btnBg} ${colors.btnText} border ${colors.btnBorder} hover:brightness-125 transition-all`}
+            icon={isCompleted ? <RotateCcw className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
           >
-            {isCompleted ? (
-              <><RotateCcw className="w-3.5 h-3.5" /> {ht.restart}</>
-            ) : completedSteps > 0 ? (
-              <><Play className="w-3.5 h-3.5" /> {tx(ht.tour_continue, { completed: completedSteps, total: tour.steps.length })}</>
-            ) : (
-              <><Play className="w-3.5 h-3.5" /> {ht.start_tour}</>
-            )}
-          </button>
+            {isCompleted
+              ? ht.restart
+              : completedSteps > 0
+                ? tx(ht.tour_continue, { completed: completedSteps, total: tour.steps.length })
+                : ht.start_tour}
+          </Button>
         </div>
       </div>
     </BaseModal>

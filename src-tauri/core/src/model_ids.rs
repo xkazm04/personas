@@ -29,7 +29,7 @@ pub const ALIAS_OPUS: &str = "opus";
 /// Current dated ids per family. These are what the CLI resolves the aliases
 /// to today; bump them here when the vendor ships a successor.
 pub const HAIKU_CURRENT: &str = "claude-haiku-4-5-20251001";
-pub const SONNET_CURRENT: &str = "claude-sonnet-4-6";
+pub const SONNET_CURRENT: &str = "claude-sonnet-5-5";
 pub const OPUS_CURRENT: &str = "claude-opus-5";
 
 /// Opus 5.5, pinned by id for the twin setup engine (planner + reconciler).
@@ -46,9 +46,11 @@ pub const OPUS_5_5: &str = "claude-opus-5-5";
 /// - `DEFAULT_BALANCED`: the default judge / evaluator / capability tier
 ///   ("null = sonnet default" in the recipe-bundle tiering doctrine).
 /// - `DEFAULT_STRONG`: synthesis and anything the operator explicitly pays for.
+///   Sonnet 5.5 fills it (operator decision 2026-09-29: capable enough to
+///   replace Opus as the default). Opus stays available by explicit choice.
 pub const DEFAULT_FAST: &str = HAIKU_CURRENT;
 pub const DEFAULT_BALANCED: &str = SONNET_CURRENT;
-pub const DEFAULT_STRONG: &str = OPUS_CURRENT;
+pub const DEFAULT_STRONG: &str = SONNET_CURRENT;
 
 /// The codex maintenance and attention model (operator decision 2026-09-24).
 /// `gpt-6-sol` was verified with a CLI probe. It does not enter the Claude

@@ -21,6 +21,10 @@ info:
     - `personas:build` — the `/api/build*` flow.
     - `proxy` / `proxy:credential:<id>` — the credential proxy (NOT covered by
       `personas:execute`).
+    - `personas:approve` — the operator approval API (`/api/approvals*`,
+      `/api/pairings*`), every method. Held only by the file-delivered
+      `operator-local` key (`<app data dir>/operator-api-key`); never pairable,
+      never implied by another scope.
     - `personas:test` — the headless bridge test surface (`/api/kp/test/*`).
       Minted only by the mode's own auto-pairing; the routes it gates exist
       only while `PERSONAS_HEADLESS_BRIDGE=1`.
@@ -99,6 +103,20 @@ paths:
       description: |
         Requires `personas:execute` OR `personas:execute:persona:{personaId}`.
         Returns immediately with an `executionId`; poll `/api/executions/{id}`.
+
+        **Project-bound run.** `input_data` may carry a top-level string
+        `_projectId` naming a registered project. It is checked before anything
+        is queued: the project must exist, be switched on and have an existing
+        folder (else 404 `project_not_found`), and it must be in the workspace
+        whose cross-project group is the persona's home team (else 403
+        `project_outside_persona_workspace`), and its folder must lie strictly
+        inside an allowed HTTP project root (`PERSONAS_HTTP_PROJECT_ROOTS` in
+        the running process, else the `management.http_project_roots` setting)
+        (else 403 `project_outside_allowed_roots`, also when no root is
+        configured). A valid binding runs the persona
+        IN the project's folder with the `CODEBASE_*` env of that project; the
+        runner re-checks and fails the execution if the binding stopped holding.
+        See `docs/architecture/cloud-integration-bridge.md` §10.9.
       parameters: [{ $ref: "#/components/parameters/PersonaId" }]
       requestBody:
         content:
@@ -109,9 +127,93 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ExecuteResult" }
+        "400": { description: "`invalid_project_id` — `_projectId` present but not a non-empty string" }
         "401": { $ref: "#/components/responses/Unauthorized" }
-        "403": { $ref: "#/components/responses/Forbidden" }
+        "403": { description: "Key lacks the execute scope for this persona, or `project_outside_allowed_roots` / `project_outside_persona_workspace`" }
+        "404": { description: "Persona not found, or `project_not_found`" }
         "429": { $ref: "#/components/responses/RateLimited" }
+
+  /api/dev/workspaces:
+    post:
+      summary: Create a workspace, or return the one with this name
+      description: |
+        Requires `personas:build`. Idempotent by name (trimmed, case-insensitive):
+        an existing workspace is returned unmodified with `created: false`. A new
+        workspace owns its cross-project group (`groupTeamId`) from birth.
+        See `docs/architecture/cloud-integration-bridge.md` §10.9.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, minLength: 1, maxLength: 80 }
+                description: { type: [string, "null"], maxLength: 500 }
+                color: { type: [string, "null"], maxLength: 32 }
+              required: [name]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string }
+                  name: { type: string }
+                  groupTeamId: { type: [string, "null"] }
+                  created: { type: boolean }
+        "400": { description: "`code`: invalid_body | invalid_name | invalid_description | invalid_color" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/dev/projects:
+    post:
+      summary: Register a project folder, or return the one already there
+      description: |
+        Requires `personas:build`. `rootPath` must be absolute, contain no `..`,
+        and canonicalise to an existing directory that is not a filesystem or
+        drive root. **Fail-closed allowed roots:** the canonical folder must lie
+        STRICTLY inside one of the allowed roots: the env var
+        `PERSONAS_HTTP_PROJECT_ROOTS` in the running process when set (a platform
+        path list — `;` on Windows, `:` elsewhere), else the persisted setting
+        written by `PUT /api/settings/http-project-roots`; read per request,
+        entries that do not exist are ignored. Neither ⇒ 403
+        `project_roots_not_configured`, nothing registered; outside every root, or
+        the root itself ⇒ 403 `root_path_outside_allowed_roots`. Containment is
+        component-wise (case-insensitive on Windows), so root `C:\gigs` does not
+        admit `C:\gigs2`. Idempotent on the folder (`created: false`, not renamed).
+        Writes `.personas/project.json` into the folder. With `workspaceId`: an
+        unassigned project is placed in that workspace; one already in another
+        workspace is refused (409), never moved.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, minLength: 1, maxLength: 120 }
+                rootPath: { type: string }
+                description: { type: [string, "null"], maxLength: 2000 }
+                techStack: { type: [string, "null"], maxLength: 200 }
+                workspaceId: { type: [string, "null"] }
+              required: [name, rootPath]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string }
+                  name: { type: string }
+                  rootPath: { type: string }
+                  workspaceId: { type: [string, "null"] }
+                  created: { type: boolean }
+        "400": { description: "`code`: invalid_body | invalid_name | invalid_description | invalid_tech_stack | invalid_workspace_id | invalid_root_path | root_path_not_found | root_path_not_a_directory | root_path_is_filesystem_root" }
+        "403": { description: "Key lacks `personas:build`, or `code`: project_roots_not_configured | root_path_outside_allowed_roots" }
+        "404": { description: "`code`: workspace_not_found" }
+        "409": { description: "`code`: project_in_other_workspace | project_identity_conflict" }
 
   /api/executions:
     get:
@@ -197,21 +299,135 @@ paths:
         sets the project's autopilot to `suggest` (probation) and persists the
         mandate + tenure. Absent ⇒ the request takes exactly the pre-P4 path.
         See `docs/architecture/cloud-integration-bridge.md` §11.
+
+        **Placement (§10.9).** An optional top-level `placement: {workspaceId}`
+        files the approved hire under that workspace's cross-project group
+        instead of the active workspace's (human click and headless auto-exec
+        alike). An unknown workspace is refused here with 400
+        `workspace_not_found`; nothing is queued.
+
+        **Requirement-driven hire (§10.12).** An optional `spec.requirements`
+        (`kp.agent-requirements.v1`) replaces `spec.systemPromptDraft`, which is
+        then simply omitted: kp sends what its research says the agent must do,
+        receive, produce and never do, and Personas designs the agent from it.
+        Validated and normalized here (strings trimmed, unknown keys kept);
+        refusals are 400 with a `code` — `invalid_requirements` (wrong `kind`,
+        not an object, a known field of the wrong type),
+        `requirements_too_large` (> 32 KB serialized),
+        `requirements_too_many_items` (an array > 30 items),
+        `requirements_string_too_long` (a string > 1000 chars). The approval
+        card's rationale ends `designed from kp requirements (N constraint(s))`.
+        Absent ⇒ the request takes exactly the path it took before.
+        `requirements.knowledge[]` (≤ 12) names the registry subjects the
+        persona must consult; see `KpAgentRequirements`.
+
+        **Model on hire (§10.14).** An optional `spec.modelProfile: {model,
+        effort?}` becomes the created persona's `model_profile`. `model` is
+        1..100 characters with no whitespace or control characters; `effort`,
+        when present, is one of `low`, `medium`, `high`, `xhigh`, `max`.
+        ONLY those two fields are stored — a `provider`, `base_url` or
+        `auth_token` sent alongside is dropped. A bad value is 400
+        `invalid_model_profile`. Promote keeps a kp hire's requested model
+        instead of seeding the design's solo-use-case recommendation.
+
+        **Project link (§10.14).** An optional `placement.projectId` (a
+        `dev_projects` id) becomes the persona's `design_context.homeProjectId`
+        — the persona → project link, and the persona's default working
+        directory. It is held to the boundary of a per-run `_projectId`
+        binding: the project exists, is on, its folder exists and lies strictly
+        inside the allowed HTTP project roots, and it is in
+        `placement.workspaceId` — or, when no `workspaceId` was sent, in some
+        workspace, which then becomes the placement (written into the stored
+        request). Refusals: 400 `invalid_placement`; 404 `project_not_found`;
+        403 `project_outside_allowed_roots` · `project_outside_persona_workspace`.
+        The approval executor re-checks against the persona's filed home team
+        and FAILS the hire (nothing created) if the project no longer passes.
+
+        **Gig persona policy (§10.14).** When the operator's policy
+        (`kp.gig_persona_policy`, set in Settings → API Keys, never over this
+        API) is enabled and the request is inside EVERY bound — top-level
+        `fit.kind == "kp.gig-persona.v1"`, `spec.maxBudgetUsd` present and ≤
+        the policy cap WHEN the policy sets one (a policy whose
+        `maxBudgetUsd` is `null` has no cap: the request's budget is then
+        neither required nor compared, so a gig hire may omit it),
+        `spec.modelProfile.model` on the allowed list,
+        `placement.projectId` naming a project whose folder is strictly inside
+        the policy's root — the request is approved on the operator's behalf
+        on the spot, through the executor the Approve click runs (so the
+        execute grant above is issued exactly as for a click). The row records
+        `decidedBy: "policy:kp.gig_persona_policy"`. The response is then
+        `{requestId, status: "approved", autoApproved: true, approvedBy:
+        "policy:kp.gig_persona_policy", personaId, message}` — `status` is
+        `"approved"` (what the status route reports for the row until the
+        build promotes, then `active`), or `"failed"` when the executor could
+        not create the hire. A request that misses any bound waits for the
+        operator exactly as before (`pending_approval`); when it named the
+        gig-persona `fit.kind`, the approval card says which bound it missed.
       requestBody:
         required: true
         content: { application/json: { schema: { $ref: "#/components/schemas/KpPersonaRequest" } } }
       responses:
         "200":
-          description: Request queued
+          description: Request queued — or, inside the gig persona policy (or under the headless bridge), decided on the spot
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   requestId: { type: string, examples: ["appr_a1b2c3d4e5f6"] }
-                  status: { type: string, const: pending_approval }
-        "400": { description: "Validation failure: empty/oversized field, non-http(s) kp.baseUrl, more than 32 connectors or metrics, or an appMaster block whose mandate.scopeRung is outside 0..2, whose mandate.forbiddenClasses leaves the closed vocabulary, whose app.repo carries neither a url nor a rootPath, or whose objective/trigger/tenure values leave their vocabularies or bounds" }
-        "403": { $ref: "#/components/responses/Forbidden" }
+                  status: { type: string, enum: [pending_approval, approved, failed], description: "`pending_approval` unless the request was auto-approved (`autoApproved: true`)" }
+                  autoApproved: { type: boolean, description: "Present and true only when the gig persona policy (or the headless bridge) decided the request" }
+                  approvedBy: { type: string, const: "policy:kp.gig_persona_policy", description: "Gig-policy approvals only" }
+                  personaId: { type: [string, "null"], description: "Gig-policy approvals only: the created persona" }
+                  message: { type: string }
+        "400": { description: "Validation failure (`code` `workspace_not_found` / `invalid_placement` for a bad `placement`; `invalid_model_profile` for a bad `spec.modelProfile`; `invalid_requirements` / `requirements_too_large` / `requirements_too_many_items` / `requirements_string_too_long` for a bad `spec.requirements`): empty/oversized field, non-http(s) kp.baseUrl, more than 32 connectors or metrics, or an appMaster block whose mandate.scopeRung is outside 0..2, whose mandate.forbiddenClasses leaves the closed vocabulary, whose app.repo carries neither a url nor a rootPath, or whose objective/trigger/tenure values leave their vocabularies or bounds" }
+        "403": { description: "Missing `personas:build`, or `placement.projectId` outside the allowed HTTP project roots (`project_outside_allowed_roots`) or the placement workspace (`project_outside_persona_workspace`)" }
+        "404": { description: "`project_not_found` — `placement.projectId` names no enabled project with an existing folder" }
+
+  /api/kp/personas/{personaId}/retire:
+    post:
+      summary: End the tenure of a persona this key hired
+      description: |
+        `personas:build` (the `/api/kp/` write tier). Only a persona created
+        from a `POST /api/kp/persona-requests` submitted by the SAME key may be
+        retired; ownership is read from the approval row's `result.personaId`
+        stamp and its `requested_by_key_id`, the record the execute grant
+        (§10.8) is issued from.
+
+        The persona is **archived**, not deleted (`personas::archive_persona`,
+        the function the Archive command and `/api/kp/test/retire` use):
+        `persona_executions` cascade on a hard delete, and the gig's past
+        executions — like its project, milestones and goals — are kept. The
+        key's `personas:execute:persona:<id>` grant is revoked (the
+        `revoke_on_retire` path `delete_persona` also runs). An App master
+        hired through kp additionally has its mandate ended through the shared
+        probation carry-out. In-flight executions are not cancelled.
+
+        Idempotent: a persona already archived, or already deleted by the
+        operator, that this key hired answers 200 with `already: true`.
+      parameters:
+        - { name: personaId, in: path, required: true, schema: { type: string, maxLength: 128 } }
+      responses:
+        "200":
+          description: Retired (or already retired)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  retired: { type: boolean, const: true }
+                  already: { type: boolean }
+                  personaId: { type: string }
+                  archived: { type: boolean, description: "The persona row exists, archived. false only when it was already deleted." }
+                  executeGrantsRevoked: { type: integer, description: "Keys that lost the per-persona execute grant just now (0 on a repeat)" }
+                  mandate:
+                    type: [object, "null"]
+                    properties:
+                      projectId: { type: string }
+                      carriedOut: { type: boolean }
+        "400": { description: "`invalid_persona_id` (empty or over 128 chars) · `persona_not_retirable` (a system persona)" }
+        "403": { description: "`persona_not_hired_by_this_key` — the persona exists but no request this key submitted produced it (or the key lacks `personas:build`)" }
+        "404": { description: "`persona_not_found` — no such persona, and none this key ever hired" }
 
   /api/kp/persona-requests/{requestId}:
     get:
@@ -595,6 +811,177 @@ paths:
         "403": { description: "The key lacks the personas:test scope" }
         "404": { description: "The mode is off, or no persona carries that id" }
 
+  /api/approvals:
+    get:
+      summary: "Operator: list pending approvals"
+      description: |
+        Requires `personas:approve`. The inbox's own read — fresh pending rows
+        (24 h consent window), newest 50. `summary` is filled for
+        `kp_hire_request` (persona name, job, placement workspace, budget);
+        `null` otherwise. See cloud-integration-bridge.md §10.10.
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [pending] } }
+        - { name: action, in: query, schema: { type: string, examples: [kp_hire_request] } }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  approvals:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        action: { type: string }
+                        createdAt: { type: string }
+                        expiresAt: { type: [string, "null"] }
+                        rationale: { type: string }
+                        summary: { type: [object, "null"] }
+                        requestedBy:
+                          type: [object, "null"]
+                          properties:
+                            keyId: { type: string }
+                            keyName: { type: [string, "null"] }
+        "400": { description: "`code`: unsupported_status" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/approvals/{approvalId}/approve:
+    post:
+      summary: "Operator: approve a pending approval"
+      description: |
+        Requires `personas:approve`. Claims the row with the same
+        pending→running compare-and-swap the desktop Approve button uses and
+        runs the same function. Records `decidedBy: "operator-api:<key id>"`
+        in the row's payload. For a kp hire: creates the draft persona, grants
+        the requesting key execute rights on it, starts the build.
+      parameters:
+        - { name: approvalId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { note: { type: string, maxLength: 2000 } } }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string }
+                  action: { type: string }
+                  status: { type: string, enum: [approved, approved_failed] }
+                  message: { type: string }
+                  decidedBy: { type: string }
+                  personaId: { type: [string, "null"] }
+                  buildSessionId: { type: [string, "null"] }
+                  building: { type: boolean }
+        "400": { description: "`code`: invalid_body | invalid_note" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "`code`: approval_not_found" }
+        "409": { description: "`code`: approval_not_pending — decided, in flight, or past the 24 h window" }
+        "500": { description: "`code`: approval_execution_failed" }
+
+  /api/approvals/{approvalId}/reject:
+    post:
+      summary: "Operator: reject a pending approval"
+      description: Requires `personas:approve`. Same claim, then the desktop Reject button's function (a kp hire's requester is notified).
+      parameters:
+        - { name: approvalId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { reason: { type: string, maxLength: 2000 } } }
+      responses:
+        "200": { description: "`{id, action, status: rejected, message, decidedBy}`" }
+        "400": { description: "`code`: invalid_body | invalid_reason" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "`code`: approval_not_found" }
+        "409": { description: "`code`: approval_not_pending" }
+
+  /api/pairings/pending:
+    get:
+      summary: "Operator: list pending cloud pairings"
+      description: Requires `personas:approve`. `requestedScopes` are already moulded to the pairing lane's ceiling.
+      responses:
+        "200": { description: "`{pairings: [{nonce, origin, appName, requestedScopes}]}`" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/pairings/{nonce}/approve:
+    post:
+      summary: "Operator: approve a pending pairing"
+      description: |
+        Requires `personas:approve`. The same code as the desktop pairing
+        modal: mints an origin-bound key for the requesting origin. `scopes`
+        defaults to the request's pairable scopes; any scope outside the
+        pairing ceiling (e.g. `personas:approve`, `proxy`) is refused.
+      parameters:
+        - { name: nonce, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                scopes: { type: array, items: { type: string } }
+                expiresInDays: { type: integer, minimum: 1, maximum: 3650 }
+      responses:
+        "200": { description: "`{nonce, status: approved, origin, keyId, scopes, decidedBy}`" }
+        "400": { description: "`code`: scope_not_pairable | no_scopes | invalid_body" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "`code`: pairing_not_found" }
+
+  /api/pairings/{nonce}/reject:
+    post:
+      summary: "Operator: reject a pending pairing"
+      parameters:
+        - { name: nonce, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: "`{nonce, status: rejected, origin, decidedBy}`" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "`code`: pairing_not_found" }
+
+  /api/settings/http-project-roots:
+    get:
+      summary: Read the allowed HTTP project roots
+      description: |
+        Any valid key. `roots` = the persisted setting (shared by every desktop
+        instance on this database); `effectiveRoots` = what this process
+        enforces now, after the env override (`source`: env | setting | none).
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  roots: { type: array, items: { type: string } }
+                  effectiveRoots: { type: array, items: { type: string } }
+                  source: { type: string, enum: [env, setting, none] }
+                  envOverride: { type: boolean }
+    put:
+      summary: "Operator: set the allowed HTTP project roots"
+      description: |
+        Requires `personas:approve` (the operator key). The generic settings
+        writers cannot write this key. Each root must be absolute, contain no
+        `..`, and be an existing directory that is not a filesystem or drive
+        root; at most 32, stored canonical. `[]` clears it (fail-closed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                roots: { type: array, maxItems: 32, items: { type: string } }
+              required: [roots]
+      responses:
+        "200": { description: Same view as the GET }
+        "400": { description: "`code`: invalid_body | invalid_root_path | root_path_not_found | root_path_not_a_directory | root_path_is_filesystem_root" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
   /api/kp/connector-catalog:
     get:
       summary: Connectors a KP hire form may offer
@@ -709,6 +1096,7 @@ components:
         success: { type: boolean }
         data: {}
         error: { type: string }
+        code: { type: string, description: "snake_case refusal code, on the routes that promise one (absent otherwise)" }
       required: [success]
     ExecuteInput:
       type: object
@@ -754,7 +1142,7 @@ components:
             mission: { type: string }
             systemPromptDraft: { type: [string, "null"] }
             connectors: { type: array, maxItems: 32, items: { type: string, description: "A `key` from /api/kp/connector-catalog" } }
-            maxBudgetUsd: { type: [number, "null"] }
+            maxBudgetUsd: { type: [number, "null"], description: "Optional. Under a gig persona policy with no cap (`maxBudgetUsd: null`) it is neither required nor compared; under a capped policy it must be present and <= the cap for auto-approval." }
             maxTurns: { type: [integer, "null"] }
             successMetrics:
               type: array
@@ -768,13 +1156,137 @@ components:
                   unit: { type: [string, "null"] }
                   direction: { type: [string, "null"] }
                 required: [key, label]
+            requirements:
+              $ref: "#/components/schemas/KpAgentRequirements"
+            modelProfile:
+              type: [object, "null"]
+              description: |
+                The model the persona runs on (§10.14). Becomes the persona's
+                `model_profile`; only `model` and `effort` are stored.
+              properties:
+                model: { type: string, minLength: 1, maxLength: 100, examples: ["claude-opus-5-5"], description: "No whitespace or control characters" }
+                effort: { type: [string, "null"], enum: [low, medium, high, xhigh, max, null] }
+              required: [model]
           required: [name, mission]
         reportToken:
           type: string
           description: Capability token the persona's counter rollups are reported back with.
         appMaster:
           $ref: "#/components/schemas/AppMasterSpec"
+        placement:
+          type: [object, "null"]
+          description: |
+            Where the approved hire is filed — the workspace whose
+            cross-project group becomes its home team — and, optionally, the
+            project it is homed in (§10.14). At least one of the two.
+          properties:
+            workspaceId: { type: string, description: "Optional when `projectId` is sent: the project's workspace is used" }
+            projectId: { type: string, maxLength: 128, description: "A `dev_projects` id → `design_context.homeProjectId`" }
+        fit:
+          type: [object, "null"]
+          description: |
+            kp's classification of the hire. Stored verbatim; Personas reads
+            only `kind`, and only for the gig persona policy — a request with
+            `kind: "kp.gig-persona.v1"` is a candidate for auto-approval.
+          properties:
+            kind: { type: string, examples: ["kp.gig-persona.v1"] }
       required: [kp, spec, reportToken]
+
+    KpAgentRequirements:
+      type: [object, "null"]
+      description: |
+        `kp.agent-requirements.v1` — a requirement-driven hire's brief, sent
+        INSTEAD of `spec.systemPromptDraft` (operator decision 2026-09-25: kp
+        extracts requirements from research; Personas designs the agent).
+        Validated by `personas_engine::kp_requirements::normalize`: the
+        serialized object ≤ 32 KB, every array ≤ 30 items, every string ≤ 1000
+        chars (after trimming). Unknown keys are kept verbatim
+        (forward-compatible) but only the fields below are rendered.
+        Personas renders it into the build intent as an authoritative
+        "Requirements from kp" section, stores it on
+        `design_context.kpLink.requirements`, pins every `constraints[]` item
+        verbatim into the promoted persona's instructions, and shows it on the
+        persona's Design → Manifest tab.
+      properties:
+        kind: { type: string, const: kp.agent-requirements.v1 }
+        role: { type: string }
+        arena: { type: string }
+        niche: { type: string }
+        purpose: { type: string }
+        responsibilities: { type: array, maxItems: 30, items: { type: string } }
+        craft:
+          type: array
+          maxItems: 30
+          items:
+            type: object
+            properties:
+              recipe: { type: string, examples: ["freelance-brief-delivery@0.1.0"] }
+              title: { type: string }
+              need: { type: string }
+              coreAction: { type: string }
+              successCriteria: { type: array, maxItems: 30, items: { type: string } }
+              lessons: { type: array, maxItems: 30, items: { type: string } }
+        research:
+          type: [object, "null"]
+          properties:
+            gigsResearched: { type: [integer, "null"] }
+            categories: { type: array, maxItems: 30, items: { type: string } }
+            commonAsks: { type: array, maxItems: 30, items: { type: string } }
+            commonChallenges: { type: array, maxItems: 30, items: { type: string } }
+            typicalEffortHours:
+              type: [object, "null"]
+              description: null when unknown — rendered as absent, never as zero.
+              properties:
+                min: { type: [number, "null"] }
+                max: { type: [number, "null"] }
+            asOf: { type: string }
+        inputs:
+          type: [object, "null"]
+          properties:
+            assignment: { type: string, examples: ["kp.gig.v1"] }
+            fields: { type: array, maxItems: 30, items: { type: string } }
+        outputs:
+          type: [object, "null"]
+          properties:
+            contract: { type: string, examples: ["kp-deliverable.v1"] }
+            handoffFile: { type: string, examples: ["kp-deliverable.json"] }
+            clientFilesDir: { type: string, examples: ["deliverable/"] }
+            processLog: { type: string, examples: ["NOTES.md"] }
+            reviewChecklist: { type: array, maxItems: 30, items: { type: string } }
+        constraints:
+          type: array
+          maxItems: 30
+          description: MUST hold on every run. Each is pinned verbatim into the promoted persona's `structured_prompt.instructions`.
+          items: { type: string }
+        tools:
+          type: array
+          maxItems: 30
+          items:
+            type: object
+            properties:
+              connector: { type: string }
+              why: { type: string }
+        budgetUsdPerAttempt: { type: [number, "null"] }
+        knowledge:
+          type: array
+          maxItems: 12
+          description: |
+            The registry subjects the persona must consult — its areas of
+            expertise (§10.14). Rendered into the build intent beside the craft
+            as "Consult the registry subject `<bundle>/<subject>` (title)
+            before deciding anything in its area", with a standing instruction
+            in the intent's answers. An entry without `bundle` or `subject` is
+            kept on the persona and not rendered; absent ⇒ nothing rendered.
+            Over 12 entries is `requirements_too_many_items`.
+          items:
+            type: object
+            properties:
+              bundle: { type: string, examples: ["software-engineering"] }
+              subject: { type: string, examples: ["authorization"] }
+              title: { type: string }
+              path: { type: string, description: "The subject's golden-path file in the registry" }
+            required: [bundle, subject]
+      required: [kind]
 
     AppMasterSpec:
       type: object

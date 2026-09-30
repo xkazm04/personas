@@ -31,9 +31,9 @@ const read = (f) => JSON.parse(readFileSync(`${ROOT}/${f}`, 'utf8'));
 const STALL_LIMIT = 3;
 const MAX_TURNS_PER_TICK = 3;
 const MAX_ROUNDS = 6;
-// Mirror the engine: the (parent-level) moderator runs on Opus. A single linear
+// Mirror the engine: the (parent-level) moderator runs on Sonnet 5.5. A single linear
 // cert deliberation is top-level, so it grades the real production moderator.
-const MOD_MODEL = 'claude-opus-4-8';
+const MOD_MODEL = 'claude-sonnet-5-5';
 const TURN_MODEL = 'claude-sonnet-4-6';
 
 // ── Roster (real SDLC cores) ───────────────────────────────────────────────

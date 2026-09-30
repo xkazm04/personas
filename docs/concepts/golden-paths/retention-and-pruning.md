@@ -1,7 +1,7 @@
 # Golden path — Retention and pruning
 
 > Situation node: `data-persistence/query-performance/retention-and-pruning` ·
-> [situation spine](../situation-spine.md) · recurrence 22 · risk **HIGH** ·
+> situation spine · recurrence 22 · risk **HIGH** ·
 > sides: **server** · convergence: **diverged** ·
 > dimensions: **performance · function · cost · resilience · security**
 > Composed 2026-08-15 against `master` @ `2a874e692`.

@@ -1,5 +1,0 @@
-{
-  "schema_parse_error": "Impossible de lire les champs de saisie de cette recette — le schéma stocké est invalide.",
-  "schema_parse_error_detail": "Erreur : {error}",
-  "schema_parse_error_hint": "Régénérez la recette ou modifiez manuellement le schéma de saisie pour corriger ce problème."
-}

@@ -30,7 +30,6 @@
   "citations": {
     "app/console/modules/*/Module.tsx": {"count":1,"sections":[],"contexts":["**server**: 14 `app/console/modules/*/Module.tsx` are async server components, none carrying"],"resolved":false},
     "brainiac/console/src/design/focus-contract.test.ts": {"count":1,"sections":[],"lines":["1-61"],"contexts":["`brainiac/console/src/design/focus-contract.test.ts:1-61` is a source-scanning conformance"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[],"contexts":["([`shared-facts.json`](../shared-facts.json) `frontend.tsFiles`) classifying every store"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "memories/Module.tsx": {"count":1,"sections":[],"lines":["38"],"contexts":["(`memories/Module.tsx:38`) states the doctrine: *\"The URL is the single source of truth.\"*"],"resolved":false},
     "package.json": {"count":1,"sections":[3],"lines":["138"],"contexts":["(`package.json:138`). The 4-parameter `StateCreator` form is the slice contract: parameter"]},
     "personas-web/src/lib/clearUserCaches.ts": {"count":1,"sections":[],"lines":["27-40"],"contexts":["`personas-web/src/lib/clearUserCaches.ts:27-40` is a hand-maintained list of 6 stores to reset,"],"resolved":false},
@@ -43,6 +42,7 @@
     "scripts/census/": {"count":1,"sections":[9],"contexts":["the ratcheting-baseline mechanism this needs is exactly what `scripts/census/` already"],"resolved":false,"isDir":true},
     "scripts/census/lib/engine.mjs": {"count":1,"sections":[9],"contexts":["**Validation performed.** Run standalone against the engine (`scripts/census/lib/engine.mjs`)"]},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Not already covered.** All 41 rules in `scripts/census/rules.json` were checked: none touches"]},
+    "shared-facts.json": {"count":2,"sections":[],"contexts":["(`shared-facts.json` `frontend.tsFiles`) classifying every store"],"resolved":false},
     "src/": {"count":1,"sections":[],"contexts":["`StateCreator` returns **0 matches** across its entire `src/`. Every store is flat and"],"resolved":false,"isDir":true},
     "src/features/": {"count":3,"sections":[5,6,7],"contexts":["- **A new `create<>()` store in `src/features/` for state more than one feature reads.** It"],"resolved":false,"isDir":true},
     "src/features/agents/sub_deployment/hooks/useCloudHealthMonitor.ts": {

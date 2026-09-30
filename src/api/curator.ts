@@ -7,8 +7,14 @@
 // `curator_decisions_list` is absent because the command is: nothing writes a
 // `curator_decision` yet, so a read would only ever return `[]`. The package
 // that raises the first decision adds the wrapper with it.
+import { EventName } from "@/lib/eventRegistry";
+
+import type { CuratorAttrition } from "@/lib/bindings/CuratorAttrition";
+import type { CuratorGrowthReading } from "@/lib/bindings/CuratorGrowthReading";
+import type { CuratorImpediment } from "@/lib/bindings/CuratorImpediment";
 import type { CuratorPlan } from "@/lib/bindings/CuratorPlan";
 import type { CuratorPolicy } from "@/lib/bindings/CuratorPolicy";
+import type { CuratorRefresh } from "@/lib/bindings/CuratorRefresh";
 import type { CuratorProject } from "@/lib/bindings/CuratorProject";
 import type { CuratorRequest } from "@/lib/bindings/CuratorRequest";
 import type { CuratorRuntime } from "@/lib/bindings/CuratorRuntime";
@@ -26,9 +32,18 @@ export async function curatorPlanCurrent(): Promise<CuratorPlan | null> {
   return invoke<CuratorPlan | null>("curator_plan_current");
 }
 
-/** Re-read the instrument and supersede the current projection. */
-export async function curatorPlanRefresh(): Promise<CuratorPlan> {
-  return invoke<CuratorPlan>("curator_plan_refresh");
+/**
+ * Re-read the instrument and supersede the current projection.
+ *
+ * Answers with more than the plan, because the plan alone cannot tell the
+ * operator what happened: an identical projection returned from the five-minute
+ * cache looks exactly like a control that did nothing. `fromCache` and
+ * `changed` are measurements only the backend can take - a stopwatch around
+ * this call is a guess at the cache, and comparing against whatever the page
+ * holds is not comparing against the run that was superseded.
+ */
+export async function curatorPlanRefresh(): Promise<CuratorRefresh> {
+  return invoke<CuratorRefresh>("curator_plan_refresh");
 }
 
 /** The operator's standing settings, with the unset caps left as `null`. */
@@ -60,8 +75,11 @@ export async function curatorRequestsList(): Promise<CuratorRequest[]> {
  *
  * `argument` is `null` only for a skill that DOCUMENTS running bare. A skill
  * whose invocation is undocumented (`runsBare === null`) is not bare-runnable -
- * it is unknown, and the composer makes the operator state the argument rather
- * than letting the UI guess one. See `blueprint/console/skillInvocation.ts`.
+ * it is unknown, and whatever composes a request must make the operator state
+ * the argument rather than letting the UI guess a command the skill's own file
+ * never promised. The Blueprint's composer, which held that rule, moved out to
+ * the app-wide console; the rule travels with it and lives here in the
+ * meantime.
  */
 export async function curatorRequestCreate(input: {
   skill: string;
@@ -95,3 +113,53 @@ export async function curatorSkillsList(): Promise<CuratorSkill[]> {
 export async function curatorRuntimeGet(): Promise<CuratorRuntime> {
   return invoke<CuratorRuntime>("curator_runtime_get");
 }
+
+/**
+ * What blocks her plan, counted and ranked worst first.
+ *
+ * `blocks` is what an impediment HOLDS; `frees` is what closing it would
+ * release, and they are different numbers whenever two things are missing at
+ * once - a surface that drew only the first would rank the biggest number on the
+ * board ahead of the one that actually unblocks her.
+ *
+ * `[]` is a real and good answer: her plan has no undispatchable engine in it.
+ * A missing plan errors instead, so the two cannot be confused.
+ */
+export async function curatorImpedimentsGet(): Promise<CuratorImpediment[]> {
+  return invoke<CuratorImpediment[]>("curator_impediments_get");
+}
+
+/**
+ * Is the ecosystem of projects growing, over her newest samples.
+ *
+ * Every metric is nullable because unknown is not zero, and `verdict: "unknown"`
+ * with `samples: 1` is the honest answer on a fresh install - which is NOT the
+ * same answer as `flat`. `flatStreak` is the figure the owner actually asks for:
+ * how many consecutive passes moved nothing at all.
+ */
+export async function curatorGrowthGet(): Promise<CuratorGrowthReading> {
+  return invoke<CuratorGrowthReading>("curator_growth_get");
+}
+
+/**
+ * Her runs that stopped reporting, and what that cost.
+ *
+ * The fleet marks a session `stale` after `staleAfterSecs` of no log growth, a
+ * rule written for an interactive session that a person walked away from. Her
+ * workers are headless and a research pass thinks for longer than that, so a
+ * quiet run here is a claim about the tracker at least as often as about the
+ * worker - which is exactly why the reason travels verbatim instead of being
+ * summarised into a status.
+ */
+export async function curatorAttritionGet(): Promise<CuratorAttrition> {
+  return invoke<CuratorAttrition>("curator_attrition_get");
+}
+
+/**
+ * The event her loop fires whenever its observable state moves.
+ *
+ * The literal comes FROM the registry rather than being repeated here: the name
+ * crosses the Rust -> JS boundary, and two copies of a string is one typo away
+ * from a surface that listens to nothing and says nothing about it.
+ */
+export const CURATOR_PULSE_EVENT = EventName.CURATOR_PULSE;

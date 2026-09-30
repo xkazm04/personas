@@ -931,6 +931,35 @@ async fn run_summon_followup(
         })
         .unwrap_or_default();
 
+    // G55: a persona-to-persona hop (depth > 0) is autonomous spend — nobody
+    // typed it — so it asks autonomy admission like every other autonomous
+    // engine. A human-posted directive (depth 0) is the operator's own word
+    // and stays ungated. Refused → a short held reply in the thread, and the
+    // chain ends here (no execution, so no further delegation).
+    if depth > 0 {
+        use crate::engine::subscription::autonomy_admission::{admit_autonomous, Admission};
+        if let Admission::Defer(reason) =
+            admit_autonomous(&state.db, Some(state.as_ref()), &persona_id).await
+        {
+            tracing::info!(
+                team_id = %team_id,
+                persona_id = %persona_id,
+                depth,
+                reason = reason.code(),
+                "team channel: delegation held by autonomy admission"
+            );
+            insert_summon_reply(
+                &state.db,
+                &team_id,
+                &persona_id,
+                &persona_name,
+                &message_id,
+                &format!("_(held, not run: {reason}. The delegation chain stops here; a human can pick it up.)_"),
+            );
+            return;
+        }
+    }
+
     let execution = crate::commands::execution::executions::execute_persona_inner(
         &state,
         app.clone(),

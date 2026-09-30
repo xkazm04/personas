@@ -47,13 +47,6 @@
     "cloud/{client,runner,config}.rs": {"count":1,"sections":[],"contexts":["`.../cloud.rs`, `.../cloud_sync.rs`, `.../gitlab.rs`, `cloud/{client,runner,config}.rs`,"],"resolved":false},
     "demo-fallback.ts": {"count":2,"sections":[],"lines":["16-20","32"],"contexts":["(`demo-fallback.ts:16-20`) — and every page rendering `live: false` **must** render a"],"resolved":false},
     "dispatcher.ts": {"count":2,"sections":[],"lines":["1272","1271-1273"],"contexts":["visible in one string at `dispatcher.ts:1272` — `'No Claude token available (OAuth expired or"],"resolved":false},
-    "docs/concepts/shared-facts.json": {
-      "count": 3,
-      "sections": [9,12],
-      "contexts": ["the walk independently reproduces every figure in [`shared-facts.json`](../shared-facts.json)),"],
-      "resolvedFrom": "basename",
-      "verbatim": "shared-facts.json"
-    },
     "engine/{oauth_refresh,connector_strategy,api_proxy}.rs": {"count":1,"sections":[],"contexts":["`cloud/sync/**`, `cloud/remote_commands.rs`, `engine/{oauth_refresh,connector_strategy,api_proxy}.rs`,"],"resolved":false},
     "gitlab.rs": {"count":5,"sections":[7,9,12],"lines":["157","446","1223"],"contexts":["Measured by parsing both: **56 annotations** (35 in `cloud.rs`, 18 in `gitlab.rs`, 2 in"],"resolved":false},
     "httpApi.ts": {
@@ -80,6 +73,7 @@
       "verbatim": "engine.mjs"
     },
     "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["**Checked against the existing registry first.** `scripts/census/rules.json` holds **56** rules."]},
+    "shared-facts.json": {"count":3,"sections":[9,12],"contexts":["the walk independently reproduces every figure in `shared-facts.json`),"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[],"contexts":["`.rs` files under `src-tauri/` (**1,661** `#[tauri::command]` definitions parsed, not grepped —"],"resolved":false,"isDir":true},
     "src-tauri/core/src/error.rs": {
       "count": 4,

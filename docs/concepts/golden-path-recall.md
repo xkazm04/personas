@@ -6,9 +6,9 @@ path is found by someone remembering it exists. This file describes the tooling
 that closes that loop: an index, a router, a Stop hook, a fact ledger, and a
 library of instruments that have already been wrong once each.
 
-> **Pointers from [`golden-path-doctrine.md`](./golden-path-doctrine.md),
+> **Pointers from `golden-path-doctrine.md`,
 > [`golden-path-runbook.md`](./golden-path-runbook.md) and
-> [`golden-path-contract.md`](./golden-path-contract.md) into this file are a
+> `golden-path-contract.md` into this file are a
 > deliberate follow-up, not an oversight.** All three were being edited by the
 > live composition wave when this was built, and adding a line to a file another
 > session is writing is how a wave loses a paragraph. Add the pointers when the
@@ -227,7 +227,7 @@ the live wave.
 
 ## 6. The fact ledger
 
-[`shared-facts.json`](./shared-facts.json) is **schema 2**. Every fact carries
+`shared-facts.json` is **schema 2**. Every fact carries
 the instrument that reproduces it, the commit it was measured at, and a
 `verify` level (`cheap` / `db` / `manual`).
 

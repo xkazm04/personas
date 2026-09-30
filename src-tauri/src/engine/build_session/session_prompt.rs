@@ -437,6 +437,8 @@ The app's promote pipeline normalizes v3 → flat legacy shape automatically, so
 
 RAW JSON only — one object per line, no markdown, no code fences, no commentary.
 
+Write every event directly in your reply text. Do NOT emit events through a tool — no `cat`/`echo` heredoc in Bash, no script that prints them, no file you write them to: the build reads ONLY your reply text, so an event printed by a tool is never seen and the build fails as "no progress". Do not use tools to draft, validate or store the design either; answer in text.
+
 Allowed event types in order of appearance:
 1. `{{"behavior_core": {{...}}}}` — Phase A (exactly one)
 2. `{{"capability_enumeration": {{"capabilities": [...]}}}}` — Phase B (exactly one, unless user adds capabilities via the UI later)

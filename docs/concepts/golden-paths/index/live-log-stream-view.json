@@ -45,6 +45,7 @@
       "resolved": false
     },
     ".github/workflows/ci.yml": {"count":2,"sections":[7,9],"contexts":["- **`ci.yml` remains red on pre-existing failures**, so §9 does not depend on it."],"resolvedFrom":"basename","verbatim":"ci.yml"},
+    "AnalysisModeView.tsx": {"count":1,"sections":[7],"contexts":["`AnalysisModeView.tsx`, `TransformModeView.tsx`, `CliOutputPanel.tsx`. Those"],"resolved":false},
     "CompactTerminal.tsx": {"count":2,"sections":[6,7],"lines":["244-249,1074-1086","70-71,274-297"],"contexts":["(`ExecutionOutput.tsx:53-56,125-141` vs `CompactTerminal.tsx:244-249,1074-1086`)."],"resolved":false},
     "ExecutionOutput.tsx": {"count":1,"sections":[6],"lines":["53-56,125-141"],"contexts":["(`ExecutionOutput.tsx:53-56,125-141` vs `CompactTerminal.tsx:244-249,1074-1086`)."],"resolved":false},
     "NoteLayer.tsx": {
@@ -56,9 +57,17 @@
       "resolved": false
     },
     "ReportClientStatus.tsx": {"count":1,"sections":[7],"lines":["78-92"],"contexts":["(`ReportClientStatus.tsx:78-92`) as the zero-heartbeat fallback, and put it in"],"resolved":false},
+    "SectionEditor.tsx": {
+      "count": 1,
+      "sections": [9],
+      "contexts": [
+        "| **an unbounded `.map` over a stream-ish array in JSX** (`{lines.map(`, `{output.map(`, …) | 15 files / 15 | 8 files / 8 (`X.slice(-N)`) | The partition looks clean and the precision is not: hand-re…"
+      ],
+      "resolved": false
+    },
+    "TransformModeView.tsx": {"count":1,"sections":[7],"contexts":["`AnalysisModeView.tsx`, `TransformModeView.tsx`, `CliOutputPanel.tsx`. Those"],"resolved":false},
     "dispatch.rs": {"count":1,"sections":[7],"contexts":["actually emits — the prefixes are enumerable from `dispatch.rs` and"],"resolved":false},
     "dispatcher.ts": {"count":1,"sections":[6],"lines":["970"],"contexts":["wire (`dispatcher.ts:970`, `httpApi.ts:1674`) and no consumer renders it either."],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["count, matching [`shared-facts.json`](../shared-facts.json) `frontend.tsFiles`"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "executions.rs": {"count":2,"sections":[0,12],"lines":["672-727","658,703,716"],"contexts":["`get_execution_log_lines` (`executions.rs:672-727`) is the reload path."],"resolved":false},
     "features/plugins/companion/useChatScroll.ts": {"count":1,"sections":[7],"contexts":["**Fix:** extract `useChatScroll` (`features/plugins/companion/useChatScroll.ts`)"],"resolved":false},
     "httpApi.ts": {"count":2,"sections":[6],"lines":["1422","1674"],"contexts":["`personas-cloud`'s `redactDeployment` (`httpApi.ts:1422`), `personas-web`'s"],"resolved":false},
@@ -66,6 +75,7 @@
     "package.json": {"count":1,"sections":[9],"lines":["52"],"contexts":["(`package.json:52`). **Not CI** — `ci.yml` is red on pre-existing failures, so"]},
     "packages/orchestrator/src/httpApi.ts": {"count":1,"sections":[6],"lines":["1723-1730"],"contexts":["before any live frame (`packages/orchestrator/src/httpApi.ts:1723-1730`);"],"resolved":false},
     "parser.rs": {"count":3,"sections":[6,12],"lines":["56-60"],"contexts":["defect against `parser.rs`."],"resolved":false},
+    "progress/TerminalBody.tsx": {"count":1,"sections":[],"contexts":["`progress/TerminalBody.tsx` (deleted 2026-09-25), `background_job.rs`, `fleet/registry.rs`'s"],"resolved":false},
     "registry.rs": {"count":1,"sections":[6],"lines":["133"],"contexts":["(`registry.rs:133`) is replayed on attach (`:1015`) so a re-focused terminal"],"resolved":false},
     "scripts/census/": {"count":1,"sections":[3],"contexts":["| `scripts/census/` | the ratchet mechanism. §9 |"],"resolved":false,"isDir":true},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["I read all **125** rules in `scripts/census/rules.json` before authoring (a"]},
@@ -76,6 +86,8 @@
         "| **a line-bearing event with no frontend subscriber** | 13 of 26 channels | 13 | Not expressible: it is a relationship between two trees (a Rust emit and the absence of a TypeScript subscribe), and…"
       ]
     },
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["count, matching `shared-facts.json` `frontend.tsFiles`"],"resolved":false},
+    "shared/components/progress/TerminalBody.tsx": {"count":2,"sections":[3,7],"contexts":["`shared/components/progress/TerminalBody.tsx` (deleted 2026-09-25) (plain `.map`, its own"],"resolved":false},
     "src-tauri/**/*.rs": {"count":1,"sections":[],"contexts":["+ generated) and **963** `src-tauri/**/*.rs`. Every one of the **26**"],"resolved":false},
     "src-tauri/core/src/redact.rs": {"count":1,"sections":[8],"contexts":["makes exactly this argument for why `redact.rs` is applied at persistence and"],"resolvedFrom":"basename","verbatim":"redact.rs"},
     "src-tauri/engine/src/cli_process.rs": {
@@ -99,7 +111,7 @@
       "count": 13,
       "sections": [0,2,3,6,7,8,12],
       "lines": ["339","318","300","300-316","44-53","20-24"],
-      "contexts": ["`progress/TerminalBody.tsx`, `background_job.rs`, `fleet/registry.rs`'s"],
+      "contexts": ["`progress/TerminalBody.tsx` (deleted 2026-09-25), `background_job.rs`, `fleet/registry.rs`'s"],
       "resolvedFrom": "basename",
       "verbatim": "background_job.rs"
     },
@@ -119,7 +131,14 @@
       "resolvedFrom": "suffix",
       "verbatim": "fleet/pty.rs"
     },
-    "src-tauri/src/commands/fleet/registry.rs": {"count":4,"sections":[2,3,6],"lines":["33,41"],"contexts":["`progress/TerminalBody.tsx`, `background_job.rs`, `fleet/registry.rs`'s"],"resolvedFrom":"suffix","verbatim":"fleet/registry.rs"},
+    "src-tauri/src/commands/fleet/registry.rs": {
+      "count": 4,
+      "sections": [2,3,6],
+      "lines": ["33,41"],
+      "contexts": ["`progress/TerminalBody.tsx` (deleted 2026-09-25), `background_job.rs`, `fleet/registry.rs`'s"],
+      "resolvedFrom": "suffix",
+      "verbatim": "fleet/registry.rs"
+    },
     "src-tauri/src/engine/runner/mod.rs": {
       "count": 15,
       "sections": [0,5,7,12],
@@ -297,9 +316,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "feedback/LoadingSpinner.tsx"
     },
-    "src/features/shared/components/progress/AnalysisModeView.tsx": {"count":1,"sections":[7],"contexts":["`AnalysisModeView.tsx`, `TransformModeView.tsx`, `CliOutputPanel.tsx`. Those"],"resolvedFrom":"basename","verbatim":"AnalysisModeView.tsx"},
-    "src/features/shared/components/progress/TerminalBody.tsx": {"count":3,"sections":[3,7],"contexts":["`progress/TerminalBody.tsx`, `background_job.rs`, `fleet/registry.rs`'s"],"resolvedFrom":"suffix","verbatim":"progress/TerminalBody.tsx"},
-    "src/features/shared/components/progress/TransformModeView.tsx": {"count":1,"sections":[7],"contexts":["`AnalysisModeView.tsx`, `TransformModeView.tsx`, `CliOutputPanel.tsx`. Those"],"resolvedFrom":"basename","verbatim":"TransformModeView.tsx"},
     "src/features/shared/components/terminal/": {"count":1,"sections":[7],"contexts":["into `src/features/shared/components/terminal/` and route all 13 through it. It"],"resolved":false,"isDir":true},
     "src/features/shared/components/terminal/CliOutputPanel.tsx": {"count":1,"sections":[7],"contexts":["`AnalysisModeView.tsx`, `TransformModeView.tsx`, `CliOutputPanel.tsx`. Those"],"resolvedFrom":"basename","verbatim":"CliOutputPanel.tsx"},
     "src/features/shared/components/terminal/TerminalBody.tsx": {
@@ -317,15 +333,6 @@
       "contexts": ["The worst placement is `shared/components/terminal/TerminalStrip.tsx:57-61`"],
       "resolvedFrom": "suffix",
       "verbatim": "shared/components/terminal/TerminalStrip.tsx"
-    },
-    "src/features/templates/draft-editor/SectionEditor.tsx": {
-      "count": 1,
-      "sections": [9],
-      "contexts": [
-        "| **an unbounded `.map` over a stream-ish array in JSX** (`{lines.map(`, `{output.map(`, …) | 15 files / 15 | 8 files / 8 (`X.slice(-N)`) | The partition looks clean and the precision is not: hand-re…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "SectionEditor.tsx"
     },
     "src/features/templates/sub_generated/adoption/chronology/commandCenterParts.tsx": {
       "count": 1,

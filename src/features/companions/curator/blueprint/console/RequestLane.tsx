@@ -1,5 +1,7 @@
 /**
- * The human lane - every request the operator filed, oldest first.
+ * The human lane - every request the operator filed, oldest first. It is drawn
+ * in the QUEUE DRAWER, beside the docket; the drawer's head carries the title,
+ * so this head carries only what the drawer's cannot - the note and the count.
  *
  * Chronological in the order they WROTE it, not re-sorted by state: she drains
  * the lane in that order, so a reader scanning top to bottom is reading the
@@ -38,7 +40,6 @@ export function RequestLane({ requests, onCancel }: {
   return (
     <div className="cb-lane" data-role="cb-lane" data-state={requests.length ? 'filled' : 'empty'}>
       <div className="cb-lane-head typo-caption">
-        <b className="typo-eyebrow">{w.console.lane_title}</b>
         <i>{w.console.lane_note}</i>
         <span className="cb-sp" />
         {requests.length > 0 && (

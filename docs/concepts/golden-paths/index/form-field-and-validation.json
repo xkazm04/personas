@@ -92,6 +92,14 @@
       ],
       "resolved": false
     },
+    "recipes/sub_editor/components/RecipeEditor.tsx": {
+      "count": 1,
+      "sections": [7],
+      "contexts": [
+        "| `settings/sub_network/components/ExposureManager.tsx` · `recipes/sub_editor/components/RecipeEditor.tsx` · `overview/sub_memories/components/CreateMemoryForm.tsx` · `agents/sub_settings/components/…"
+      ],
+      "resolved": false
+    },
     "research-lab/shared/FormField.tsx": {"count":2,"sections":[5,9],"lines":["3"],"contexts":["`research-lab/shared/FormField.tsx:3` (`FIELD_CLASS`, `rounded-card`),"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[7],"contexts":["honestly without this. Verified against `src-tauri/`:"],"resolved":false,"isDir":true},
     "src-tauri/core/src/validation/": {"count":1,"sections":[7],"contexts":["adoption.** `src-tauri/core/src/validation/` (mod 266 lines, persona 569,"],"resolved":false,"isDir":true},
@@ -224,15 +232,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "sub_channels/ReplyOutbox.tsx"
-    },
-    "src/features/recipes/sub_editor/components/RecipeEditor.tsx": {
-      "count": 1,
-      "sections": [7],
-      "contexts": [
-        "| `settings/sub_network/components/ExposureManager.tsx` · `recipes/sub_editor/components/RecipeEditor.tsx` · `overview/sub_memories/components/CreateMemoryForm.tsx` · `agents/sub_settings/components/…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "recipes/sub_editor/components/RecipeEditor.tsx"
     },
     "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx": {
       "count": 6,
@@ -397,16 +396,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "teams/sub_teamWorkspace/teamStudio/slackBridge/SlackBridgePickers.tsx"
-    },
-    "src/features/templates/draft-editor/DraftIdentityTab.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["55,73","17-19,95"],
-      "contexts": [
-        "| `agents/sub_deployment/components/cloud/CreateTriggerForm.tsx:52,67,99` · `vault/sub_credentials/components/import/ImportSyncConfig.tsx:41,56` · `teams/sub_goals/GoalEditorModal.tsx:189,234` · `tem…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "templates/draft-editor/DraftIdentityTab.tsx"
     },
     "src/features/templates/sub_generated/adoption/QuickAddCredentialModal.tsx": {
       "count": 1,
@@ -582,6 +571,15 @@
       "lines": ["294"],
       "contexts": [
         "| `plugins/twin/sub_identity/IdentityAtelier.tsx:311` · `sub_tone/ToneConsole.tsx:294` · `sub_channels/ChannelsAtelier.tsx:381` · `sub_channels/ReplyOutbox.tsx:372` | `Field` / `FieldCell` / `FieldGr…"
+      ],
+      "resolved": false
+    },
+    "templates/draft-editor/DraftIdentityTab.tsx": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["55,73","17-19,95"],
+      "contexts": [
+        "| `agents/sub_deployment/components/cloud/CreateTriggerForm.tsx:52,67,99` · `vault/sub_credentials/components/import/ImportSyncConfig.tsx:41,56` · `teams/sub_goals/GoalEditorModal.tsx:189,234` · `tem…"
       ],
       "resolved": false
     },

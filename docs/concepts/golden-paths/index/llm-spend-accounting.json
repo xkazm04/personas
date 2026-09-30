@@ -54,13 +54,6 @@
       "resolved": false
     },
     "dispatcher.ts": {"count":3,"sections":[7],"lines":["461","474"],"contexts":["line that feeds its budget gate: `costUsd: msg.totalCostUsd ?? 0` (`dispatcher.ts:461`). The repo with"],"resolved":false},
-    "docs/concepts/shared-facts.json": {
-      "count": 1,
-      "sections": [],
-      "contexts": ["[`shared-facts.json`](../shared-facts.json) exactly); a census of every `SUM(cost)` re-aggregation vs"],
-      "resolvedFrom": "basename",
-      "verbatim": "shared-facts.json"
-    },
     "engine/background.rs": {"count":2,"sections":[6],"lines":["2475-2528"],"contexts":["`engine/background.rs:2475-2528`, `db/src/chain.rs`'s cascade cost ceiling, `engine/deliberation.rs`'s"],"resolved":false},
     "engine/prompt/cli_args.rs": {"count":1,"sections":[7],"lines":["132-136"],"contexts":["- a **per-spawn ceiling in dollars-per-call** — `engine/prompt/cli_args.rs:132-136` passes the identical"],"resolved":false},
     "incremental.rs": {"count":2,"sections":[7],"lines":["1453"],"contexts":["field **is** `Option<f64>`, into a column (`cost_usd REAL`, `incremental.rs:1453`, `:6380`) that **is**"],"resolved":false},
@@ -94,6 +87,7 @@
       "resolvedFrom": "basename",
       "verbatim": "run-census.mjs"
     },
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["`shared-facts.json` exactly); a census of every `SUM(cost)` re-aggregation vs"],"resolved":false},
     "src-tauri/core/src/models/build_session.rs": {
       "count": 1,
       "sections": [7],

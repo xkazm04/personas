@@ -1,10 +1,8 @@
-import { Info, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
-
+import { Dot, Tile } from '@/features/shared/components/kit';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
-
+import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
-import { DebtText } from '@/i18n/DebtText';
-
+import { intentTone } from './intentColors';
 
 /**
  * `text_callout` — narrative panel with markdown body and an intent
@@ -14,73 +12,36 @@ import { DebtText } from '@/i18n/DebtText';
  * week: traffic to the OAuth callback is up 40%, and three Sentry
  * issues land on the new persona endpoint."
  *
+ * Rendered as one kit Tile whose height is the text's (no dead card under three lines): the
+ * body is the shared MarkdownRenderer at card density, held to a readable measure; a non-info
+ * intent is a Dot before the title (the tile keeps the kit band, not a raw-palette wash).
+ *
  * Config:
  *   {
  *     "body": "Markdown text. Supports **bold**, lists, etc.",
  *     "intent": "info"   // "info" | "good" | "warn" | "bad"
  *   }
  */
-export function TextCalloutWidget({ config, title }: CockpitWidgetProps) {
+export function TextCalloutWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
+  const { t } = useTranslation();
   const body = (config?.body as string | undefined) ?? '';
-  const intent = (config?.intent as string | undefined) ?? 'info';
-
-  const accent = INTENT_STYLES[intent] ?? INTENT_STYLES.info!;
-  const Icon = accent.icon;
-
+  const tone = intentTone(config?.intent, 'info');
+  const heading = title && tone !== 'info' && tone !== 'neutral'
+    ? <><Dot tone={tone} glyph="solid" /><span>{title}</span></>
+    : title;
   return (
-    <div
-      className={`rounded-card border ${accent.border} ${accent.bg} p-4 h-full flex flex-col min-h-0 gap-2`}
+    <Tile
+      span={span}
+      title={heading}
+      actions={actions}
+      footer={footer}
+      state={body ? undefined : 'empty'}
+      empty={{ title: t.overview.cockpit.widget_empty }}
+      testId="cockpit-text-callout"
     >
-      <div className="flex items-center gap-2">
-        <Icon className={`w-4 h-4 ${accent.iconColor} shrink-0`} />
-        {title ? (
-          <div className="typo-caption text-foreground uppercase tracking-wide">
-            {title}
-          </div>
-        ) : null}
+      <div className="k-in max-w-[96ch]">
+        <MarkdownRenderer content={body} variant="card" />
       </div>
-      <div className="flex-1 overflow-y-auto typo-body text-foreground/85">
-        {body ? (
-          <MarkdownRenderer content={body} />
-        ) : (
-          <span className="text-foreground"><DebtText k="auto_no_content_0c3fd88e" /></span>
-        )}
-      </div>
-    </div>
+    </Tile>
   );
 }
-
-const INTENT_STYLES: Record<
-  string,
-  {
-    border: string;
-    bg: string;
-    icon: typeof Info;
-    iconColor: string;
-  }
-> = {
-  info: {
-    border: 'border-foreground/10',
-    bg: 'bg-foreground/[0.02]',
-    icon: Info,
-    iconColor: 'text-foreground',
-  },
-  good: {
-    border: 'border-emerald-500/20',
-    bg: 'bg-emerald-500/5',
-    icon: CheckCircle2,
-    iconColor: 'text-emerald-400',
-  },
-  warn: {
-    border: 'border-amber-500/30',
-    bg: 'bg-amber-500/5',
-    icon: AlertTriangle,
-    iconColor: 'text-amber-400',
-  },
-  bad: {
-    border: 'border-rose-500/30',
-    bg: 'bg-rose-500/5',
-    icon: XCircle,
-    iconColor: 'text-rose-400',
-  },
-};

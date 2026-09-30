@@ -32,6 +32,7 @@ for the specimen. Worklist: `migration-map.md`.
 | - | Phantoms mapped, inert `[&_x]:typo-*` variants deleted, `typo-eyebrow` defined | **KEPT** (eyebrow composites migrate per module) | `5e5cd9ca5` |
 | - | Dead overrides deleted, tokens moved into `@layer components` | **KEPT** (D6 steps 1-2) | `937854f7d`, `266c05551` |
 | - | Gate 1: highlight's hue shifts off status-info; roles graded against every status and role | **KEPT** (WP4c) | `7103b5c27`, `658e6196c` |
+| K | Composition kit: A/3 Spine & Lens over A/1 Ledger, judged on Fleet Activity | **KEPT**: `shared/components/kit/`, section 6b | `26c19f6a5`, `9acfd7aea` |
 
 Sections below describe what was decided. Where a proposal was rejected it stays
 visible, marked "considered, rejected at Gate 0".
@@ -252,6 +253,92 @@ the factory passport) keeps its composition, geometry and motion. Its font-size,
 font-family and text or accent colour come from `var(--...)` or a `.typo-*` token.
 SVG and illustration art is exempt by a named exclusion. The census counts literals
 in `src/features/**/*.css` (WP2).
+
+## 6b. Composition kit (Gate K, 2026-09-25)
+
+The owner ran a contest for the building blocks one level above buttons, shortlisted
+A/1 "Ledger" and A/3 "Spine & Lens", saw both ported onto Fleet Activity with real
+data, and chose **Spine & Lens**. It lives in `@/features/shared/components/kit`
+(catalogued under `kit` in `CATALOG.md`); its look is `kit/kit.css`, the contest
+entry's own stylesheet, token-only. Fleet Activity is the reference page.
+
+**The rule: a surface is composed from the kit. A local one-off composition that
+duplicates a kit part (a hand-built section head, stat tile, key-value grid, chip
+strip, filter bar or table row) is a finding**, fixed by composing the kit part,
+or by extending the kit when the need is real and shared.
+
+The idea in one paragraph: every part of a surface hangs from one vertical spine. A
+section head is a node on it, a row's status is a Mark on it, a selected row lights
+its segment in the theme's primary glow, a working (live) row glows. No card
+backgrounds and no row hairlines: rows are fixed heights on an 8px grid with a faint
+alternating band, and every name starts on one reading line (40px). One emphasised
+name per row; figures and meta at regular weight. Quantities are drawn as countable
+units of a stated quantum, coloured by who claims them. Bands are the background
+stepped by its own lightness, so light themes keep them without per-theme code.
+
+| Part | What it is for | API (one line) |
+|---|---|---|
+| `KitHost` | root of any kit surface: kit variables, the compact tier, the container the side pane measures | `<KitHost compact? testId?>` |
+| `Surface` | a region whose parts hang from the spine; `dense` for tool surfaces | `<Surface dense?>` |
+| `Split` | work area plus a sticky detail pane, shown only when the surface has room (container query) | `<Split main pane paneLabel paneRef?>` |
+| `Drawer` | the same detail on a narrow surface; Esc closes | `<Drawer open onClose closeLabel label>` |
+| `Section` | a titled part of a surface; level 1 or 2; owns empty and loading states | `<Section title eyebrow? count? meta? actions? level? state? empty?>` |
+| `Crumbs` | the trail of levels above a drilled surface, in a Section's `eyebrow`; a crumb with `onPress` is a text button back up; a last crumb without one is `aria-current="page"`, so a surface whose title names the current level passes only the levels above (grow-1) | `<Crumbs label items={[{label, onPress?, testId?}]}>` |
+| `ListRow` / `Rows` | a list of fixed-height rows (name, meta, mark, figures, time) with its ghost and empty band; with `onPress` the name is the row's one button, its hit area stretched over the row (trail controls stay pressable above it, focus ring on the row, a selected row is `aria-current`, height unchanged) (grow-2) | `<ListRow name meta? mark? figures? size? state? onPress? testId?>`, `<Rows count empty loading? pager? cap?>`; `cap` shows the first N rows and a "Show all N" control that expands in place and announces the count (grow-3) |
+| `DataTable` | the same row family under column heads, with a pager under the last row; rows select; a column opts in to sorting (head is a button with `aria-sort`, absent values last, row id breaks ties) | `<DataTable cols rows label empty loading? pager? onRowClick? sort?/defaultSort? onSortChange? locale?>`, col `sortable: 'asc'\|'desc'`, col `width: '8rem'` (a CSS length through a colgroup; a table column, not a grid track), row `sort: {key: value}` |
+| `StatStrip` | headline figures; a lone tile is a strip of one; `draw` shows the quantity | `<StatStrip tiles={[{label, value, unit?, draw?, note?}]} state?>` |
+| `KeyValueGrid` | facts about one thing; a null value renders its `none` text, muted | `<KeyValueGrid items={[{k, v, draw?, none?}]} min?>` |
+| `ChipRow` / `ChipView` | a set of named counts; a chip with `onPress` is a filter | `<ChipRow chips={[{id, label, count?, share?, onPress?}]} label emptyLabel>` |
+| `Toolbar` | a surface filter bar: `Segmented`, `SearchField` (with `/`), `KitButton` | `<Toolbar label>...</Toolbar>` |
+| `KitButton` | the kit's 32px button over the shared Button: real busy spinner; `disabled` is the Button's (native, out of the tab order) with an optional reason; `stopPropagation` for an action inside a selectable row or card (grow-1). `tone` is one closed set named for meaning: `default`, `quiet` (a secondary action), `primary` (the surface's one call to action: the theme's primary -> accent gradient, each stop keeping its hue and chroma with OKLCH lightness capped at 0.45 / 0.52 so the white ink holds 4.5:1 at both ends in every theme, plus the primary glow, over the shared Button's primary variant; owner, grow-2 gate: "Theme gradient"); `quiet` the boolean is a deprecated alias of `tone="quiet"`. `icon` sits before the label as its own flex item, hidden from the tree, so it never wraps; a busy spinner takes its place (grow-2) | `<KitButton onClick tone?=default\|quiet\|primary icon? loading? pressed? expanded? hint? label? disabled? disabledReason? stopPropagation?>` |
+| `RangePicker` | a time window: preset segments plus an optional Custom segment that opens the caller's own date picking | `<RangePicker label presets={[{v, label}]} value onChange custom?={{label, active, render(close)}}>` |
+| `ChartFrame` | a chart's plot area on the reading line, fixed height, with its ghost and empty band; `toneColor(tone)` colours its series | `<ChartFrame height label state? empty?>{chart}</ChartFrame>` |
+| `UnitStrip` | a quantity as units of a fixed quantum; `apportion()` splits a total by claim; `legend` states the quantum when it is above one: what one unit stands for in the caller's noun ("5 runs"), nothing drawn (owner, grow-2 gate: "Hover only"): the strip becomes its own Hint, "1 unit = 5 runs" on hover and keyboard focus (a tab stop, above a pressable card's press), and the same sentence is its description; no `auto`, because only the caller knows the noun (grow-2) | `<UnitStrip segments={[{n, tone, glyph?}]} size rows? label legend?>` |
+| `quantumFor` | the unit quantum: the smallest 1-2-5 step at or above `min` that keeps a strip at or under `maxUnits`; state it in the legend (grow-1) | `quantumFor(total, maxUnits = 60, min = 1) -> number` |
+| `Mark` / `Dot` | status as Tone x Glyph, on the spine or inline | `<Mark tone glyph label>`, `<Dot tone glyph>` |
+| `Hint` | the explanation on a mark, figure or unit strip: the shared Tooltip plus an always-present hidden description the trigger points at (`aria-describedby`); `focusable` only for a standalone trigger, never per mark in a row (grow-1) | `<Hint content focusable? placement?>{one element}</Hint>` |
+| `ContextCard` / `ContextCards` | one peer as a tile when the peers are FEW (a level-2 group of at most 12): a band, not a box; the stepped band with a primary wash from a 2px rail, its Mark on the rail, selected lights the rail, live breathes. One layout whatever it carries: head (title, meta) at the top with actions at its top-right, figures pinned to the foot, so every figure line in a row aligns; ghost and dashed-empty states; a pressable card's title is its one button (grow-1). `art` is the head's decoration at the top-right: hidden from the tree, never catches a pointer (a press on it lands on the card), never on the foot; beside actions it sits to their left and the actions keep the corner; not drawn while loading (grow-2) | `<ContextCard title meta? figures? actions? art? mark? state? empty? onPress?>`, `<ContextCards label min?>` |
+| `Tiles` / `Tile` | a dashboard (the Home Cockpit): a 12-column grid whose rows are CONTENT-SIZED (a row's tiles stretch to its tallest; nothing clips or scrolls inside a tile, the page scrolls), spans collapse by the grid's own width (1-3 become 6 under 1100px, all full under 720px), `cols={1}` stacks tiles for a chat column or an evidence well; a Tile is ContextCard's band on a rail (owner, grow-3 gate: "B Band": a grid of mixed tiles keeps card feel) and owns the chrome, the head (one emphasis: the title; count and meta regular; actions top-right), the body and a footer for the tile's actions, loading ghost rows, empty and error bands; no row span; a long list inside is `Rows cap`, whose pager sits on the tile's foot when the tile is stretched beside a taller one (grow-3) | `<Tiles label cols?>`, `<Tile span? title? count? meta? actions? footer? state? empty? error? ghostRows? testId?>` |
+| `ContextOverview` / `ContextGroups` | the parent layer over MANY contexts: level 1 is one 56px row per group (worst state as the Mark, size, its contexts as units by state at one quantum for every row, fixed figure columns; one roving tab stop) under a search that reaches every context (at most `MATCH_CAP` = 50 matches mounted); a row opens level 2, a level-2 Section with Crumbs back up whose body is cards up to `CARD_LEVEL_MAX` = 12 and a DataTable past it (`contextLevel(n)`). One level mounted at a time: 320 contexts in 22 groups mount 22 rows (grow-1) | `<ContextOverview label rootLabel groups={[{id, name, meta?, count, mark, states, figures?, contexts}]} open onOpen query onQuery searchPlaceholder match renderGroup(g, level) renderMatches(matches, total) unitLabel legend? figureHeads? toolbar? loading? empty>` |
+
+When to use which: a list the operator scans and picks from is a `DataTable` when
+its figures line up in columns, `Rows` when each row is a name and a sentence. Facts
+about the selection go in a `KeyValueGrid` inside a level-2 `Section` in the `Split`
+pane (narrow: `Drawer`). Headline numbers are a `StatStrip` at the top; a count of
+named things (tools, tags) is a `ChipRow`. State is a `Mark`, never a trailing
+status word. Tone is closed (`primary`, the status names, the role names) and Glyph
+is closed (`solid`, `soft`, `hollow`, `empty`, `live`): a state gets one Tone x Glyph
+and keeps it on every surface.
+
+Decided with the kit:
+- **Stat label size follows the product's compact tier** (14.4px at the default
+  scale), not the entry's 13.4px: the compact tier (`ec6ca0516`) puts
+  `typo-card-label` on the row step and the kit does not override the type scale.
+  `kit.css` declares no font size anywhere.
+- **Busy controls use the product's spinner.** `KitButton` renders the shared
+  `Button` in the kit's look; kit.css sets `--type-control` so its label is the
+  label step, as in the entry.
+- **Status tones take the brightness compensation** the app applies to every
+  status colour (the entry's page had none), so a neutral mark is darker in the
+  product than in the entry. That is the product's rule, not a kit deviation.
+- **Cards are for a level where the count is small; a surface that can hold many entities
+  gets a parent layer first** (owner, grow-1: "projects will have hundreds of contexts").
+  `ContextOverview` is that layer for contexts: groups at level 1, one group at level 2, cards
+  only up to 12. Measured on its 320-context specimen: level 1 mounts 507 DOM nodes (React
+  first commit 23 ms) where a flat grid of the same contexts mounts 2,241 (74 ms).
+- **ContextCard is the one tile, and it is a band** (kit grow-1). The owner kept card
+  surfaces at Gate 1 and the Factory turned context cards into tables for lack of a kit
+  card, so the kit gained one, drawn from the spine idea rather than a boxed surface: the
+  row's stepped band and right-only radius, a 2px rail as the card's own spine. It is for
+  peers that read as tiles; a list the operator scans stays `Rows` / `DataTable`.
+- **Light themes step the band by a small fixed amount** (grow-3 gate: "Yes, lighten them").
+  The lightness formula lands about 0.14 below a light background, so lists read as dark
+  stripes and cards and tiles as grey slabs; on a light theme `--band-alt` is the background
+  minus 0.035 OKLCH lightness instead (rows, tables, cards and tiles alike), still a
+  perceptible rhythm. Dark themes keep the formula.
+- Not carried from the entry: its Lens overlay (outline and count every part),
+  its specimen page and SettingRow. Every composition root still carries
+  `data-kit` / `data-kit-state`, so a Lens can be added without touching parts.
 
 ## 7. How it landed (D6, as decided at Gate 0)
 

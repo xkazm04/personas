@@ -9,7 +9,7 @@
 
 
 > Situation node: `integrations-security/vault-security/column-encryption-at-rest` ·
-> [situation spine](../situation-spine.md) · recurrence 19 · risk **HIGH** ·
+> situation spine · recurrence 19 · risk **HIGH** ·
 > sides: **server** · convergence: **mixed** ·
 > dimensions: **security · resilience · function · code-quality**
 > Composed 2026-08-15 against `master` @ `e611c326d`.

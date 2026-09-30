@@ -1,140 +1,120 @@
-// L2 — the sophisticated context × KPI matrix (round-4).
-//   · one row  = one context (contexts wrapped into context-group sections)
-//   · one col  = one KPI category (Technical / Quality / Traffic / Value)
-//   · one cell = that context's KPI(s) of that category, very compact
-// So every context's KPIs sit on a single dense row (comfortably ~5 across).
-// Parameterised by `cell` so the three round-4 variants explore the cell look:
-//   'chip' (status chip + value) · 'heat' (filled tile) · 'spark' (trendline).
-// Click a cell's KPI → its console; click a context/group name → its table.
+// L2 KPI matrix, composed from the kit (Gate 5). One level-2 Section per
+// context group (its domain, a Dot legend of its KPI states and its rollup
+// score in the meta; "KPIs" opens the group's table, L3), over a DataTable:
+// one row per context, one column per KPI category, and a score column. A
+// row's Mark is its rollup health; a row click opens that context's table. Each
+// KPI in a cell is a button (its sparkline and value, in its status tone) that
+// opens its console (L4). Only the 'spark' cell look is routed (TrendVariant);
+// the unrouted 'chip' and 'heat' looks were dropped with the port.
+import { DataTable, Dot, KitButton, Meta, Section, toneColor, type TableRow } from '@/features/shared/components/kit';
 import {
   KPI_CATEGORIES,
   CATEGORY_LABEL,
   DOMAIN_LABEL,
-  STATUS_COLOR,
   kpiStatus,
   rollup,
   contextKpis,
   groupKpis,
+  type KpiStatus,
   type MockKpi,
   type MockProject,
 } from './factoryModel';
-import { Sparkline, TrafficTally } from './factoryPrimitives';
+import { Sparkline } from './factoryPrimitives';
+import { healthMark, KPI_STATUS_MARK } from './factoryTone';
+import { useFactoryWords, type FactoryWords } from './useFactoryWords';
 
-const COLS = 'minmax(140px,1.5fr) repeat(4, minmax(76px,1fr)) 46px';
-// `null` = nothing measured here yet. It gets the unmeasured tone, NOT crit:
-// crit is reserved for a reading that is actually failing.
-export const hc = (v: number | null) =>
-  v == null ? STATUS_COLOR.unmeasured : v >= 70 ? STATUS_COLOR.met : v >= 40 ? STATUS_COLOR.warn : STATUS_COLOR.crit;
-/** Score cell text — same placeholder the KPI cells use for a missing reading. */
-const hv = (v: number | null) => (v == null ? '—' : v);
+type Col = 'context' | 'technical' | 'quality' | 'traffic' | 'value' | 'score';
+const TALLY: KpiStatus[] = ['crit', 'warn', 'ok', 'unmeasured'];
+// Fixed tracks so the columns of every group's table line up down the page:
+// a category cell holds its KPI buttons in at least 112px, the score 48px
+// (widths are border-box, so each adds the cell's 24px of padding).
+const CAT_W = '136px';
+const SCORE_W = '72px';
 
-export type MatrixCellStyle = 'chip' | 'heat' | 'spark';
+export type MatrixCellStyle = 'spark';
 
-export function ContextMatrix({
-  project,
-  ed,
-  openKpi,
-  openGroup,
-  cell,
-}: {
-  project: MockProject;
-  ed: (k: MockKpi) => MockKpi;
-  openKpi: (groupId: string, kpiId: string) => void;
-  openGroup: (groupId: string, contextId: string | null) => void;
-  cell: MatrixCellStyle;
-}) {
+function Tally({ kpis, w }: { kpis: MockKpi[]; w: FactoryWords }) {
+  const n: Record<KpiStatus, number> = { met: 0, ok: 0, warn: 0, crit: 0, unmeasured: 0 };
+  for (const k of kpis) n[kpiStatus(k) === 'met' ? 'ok' : kpiStatus(k)] += 1;
   return (
-    <div className="rounded-card border border-primary/10 overflow-hidden">
-      {/* column header */}
-      <div className="grid items-center gap-2 px-3 py-2 bg-secondary/20 border-b border-primary/10" style={{ gridTemplateColumns: COLS }}>
-        <span className="typo-label text-foreground/60">Context</span>
-        {KPI_CATEGORIES.map((c) => (
-          <span key={c} className="typo-label text-foreground/50 text-center truncate">{CATEGORY_LABEL[c]}</span>
-        ))}
-        <span className="typo-label text-foreground/50 text-right">Score</span>
-      </div>
-
-      {project.groups.map((g) => {
-        const gr = rollup(groupKpis(g).map(ed));
-        return (
-          <div key={g.id}>
-            {/* group section band — click to open the group's KPI table */}
-            <button type="button" onClick={() => openGroup(g.id, null)} className="w-full flex items-center gap-2 px-3 py-1.5 bg-secondary/10 hover:bg-secondary/25 transition-colors border-b border-primary/5 text-left">
-              <span className="w-2.5 h-2.5 rounded-full" style={{ background: g.color }} />
-              <span className="typo-title">{g.name}</span>
-              <span className="typo-caption">{DOMAIN_LABEL[g.domain]}</span>
-              <span className="flex-1" />
-              <TrafficTally kpis={groupKpis(g).map(ed)} size={6} />
-              <span className="typo-data ml-2 w-7 text-right" style={{ color: hc(gr.health) }}>{hv(gr.health)}</span>
-            </button>
-
-            {/* one row per context */}
-            <div className="divide-y divide-primary/5">
-              {g.contexts.map((c) => {
-                const ck = contextKpis(c).map(ed);
-                const cr = rollup(ck);
-                return (
-                  <div key={c.id} className="grid items-stretch gap-2 px-3 py-1 hover:bg-secondary/10 transition-colors" style={{ gridTemplateColumns: COLS }}>
-                    <button type="button" onClick={() => openGroup(g.id, c.id)} className="typo-title truncate text-left self-center">{c.name}</button>
-                    {KPI_CATEGORIES.map((cat) => (
-                      <MatrixCell key={cat} kpis={ck.filter((k) => k.category === cat)} cell={cell} onOpen={(kid) => openKpi(g.id, kid)} />
-                    ))}
-                    <span className="typo-data text-right self-center" style={{ color: hc(cr.health) }}>{hv(cr.health)}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function MatrixCell({ kpis, cell, onOpen }: { kpis: MockKpi[]; cell: MatrixCellStyle; onOpen: (id: string) => void }) {
-  if (kpis.length === 0) return <span className="flex items-center justify-center typo-caption text-foreground/25">·</span>;
-  return (
-    <span className="flex flex-wrap items-center justify-center gap-1 py-0.5">
-      {kpis.map((k) => <CellKpi key={k.id} kpi={k} cell={cell} onOpen={onOpen} />)}
+    <span className="k-legend-row">
+      {TALLY.filter((s) => n[s] > 0).map((s) => (
+        <span key={s}><Dot {...KPI_STATUS_MARK[s]} /> {n[s]} {w.status[s].toLowerCase()}</span>
+      ))}
     </span>
   );
 }
 
-function CellKpi({ kpi, cell, onOpen }: { kpi: MockKpi; cell: MatrixCellStyle; onOpen: (id: string) => void }) {
-  const color = STATUS_COLOR[kpiStatus(kpi)];
-  const label = `${kpi.name}: ${kpi.current ?? '—'} / ${kpi.target}${kpi.unit}`;
-  if (cell === 'heat') {
-    return (
-      <button
-        type="button"
-        onClick={() => onOpen(kpi.id)}
-        title={label}
-        className="rounded px-1.5 py-1 min-w-[2.4rem] text-center transition-transform hover:scale-105"
-        style={{ background: `color-mix(in srgb, ${color} 28%, transparent)`, border: `1px solid color-mix(in srgb, ${color} 55%, transparent)` }}
-      >
-        <span className="typo-data" style={{ color, fontWeight: 400 }}>{kpi.current ?? '—'}</span>
-      </button>
-    );
-  }
-  if (cell === 'spark') {
-    return (
-      <button type="button" onClick={() => onOpen(kpi.id)} title={label} className="flex flex-col items-center rounded px-1 py-0.5 hover:bg-secondary/30 transition-colors">
-        <Sparkline series={kpi.series} color={color} width={40} height={12} />
-        <span className="typo-caption tabular-nums" style={{ color, fontWeight: 400 }}>{kpi.current ?? '—'}</span>
-      </button>
-    );
-  }
-  // chip
+function CellKpi({ kpi, onOpen }: { kpi: MockKpi; onOpen: (id: string) => void }) {
+  const tone = KPI_STATUS_MARK[kpiStatus(kpi)].tone;
   return (
-    <button
-      type="button"
+    <KitButton
+      quiet
+      label={`${kpi.name}: ${kpi.current ?? '-'} / ${kpi.target}${kpi.unit}`}
+      testId={`factory-open-kpi-${kpi.id}`}
+      // The row opens the context's table; this opens the KPI's console instead.
+      stopPropagation
       onClick={() => onOpen(kpi.id)}
-      title={label}
-      className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 hover:scale-105 transition-transform"
-      style={{ background: `color-mix(in srgb, ${color} 14%, transparent)` }}
     >
-      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: color }} />
-      <span className="typo-caption tabular-nums" style={{ color, fontWeight: 400 }}>{kpi.current ?? '—'}</span>
-    </button>
+      <span className="inline-flex items-center gap-2">
+        {kpi.series.length > 1 && <Sparkline series={kpi.series} color={toneColor(tone)} width={40} height={12} />}
+        <span className="typo-data k-regular">{kpi.current ?? '-'}</span>
+      </span>
+    </KitButton>
+  );
+}
+
+export function ContextMatrix({ project, ed, openKpi, openGroup }: {
+  project: MockProject;
+  ed: (k: MockKpi) => MockKpi;
+  openKpi: (groupId: string, kpiId: string) => void;
+  openGroup: (groupId: string, contextId: string | null) => void;
+  cell?: MatrixCellStyle;
+}) {
+  const w = useFactoryWords();
+  const cols = [
+    { key: 'context' as const, label: w.context },
+    ...KPI_CATEGORIES.map((c) => ({ key: c, label: CATEGORY_LABEL[c], num: true, width: CAT_W })),
+    { key: 'score' as const, label: w.L.score, num: true, width: SCORE_W },
+  ];
+  return (
+    <div data-testid="factory-matrix">
+      {project.groups.map((g) => {
+        const gk = groupKpis(g).map(ed);
+        const gr = rollup(gk);
+        const gm = healthMark(gr.health);
+        const rows: Array<TableRow<Col>> = g.contexts.map((c) => {
+          const ck = contextKpis(c).map(ed);
+          const cr = rollup(ck);
+          const cells: TableRow<Col>['cells'] = {
+            context: <span className="k-row__name typo-body k-strong">{c.name}</span>,
+            score: <span className={cr.health == null ? 'typo-data k-regular k-quiet' : 'typo-data k-regular'}>{cr.health ?? '-'}</span>,
+          };
+          for (const cat of KPI_CATEGORIES) {
+            const ks = ck.filter((k) => k.category === cat);
+            cells[cat] = (
+              <span className="inline-flex items-center justify-end gap-1">
+                {ks.length === 0
+                  ? <span className="typo-data k-quiet">·</span>
+                  : ks.map((k) => <CellKpi key={k.id} kpi={k} onOpen={(kid) => openKpi(g.id, kid)} />)}
+              </span>
+            );
+          }
+          return { id: c.id, mark: { ...healthMark(cr.health), label: `${w.L.score} ${cr.health ?? '-'}` }, cells };
+        });
+        return (
+          <Section
+            key={g.id}
+            level={2}
+            title={g.name}
+            count={g.contexts.length}
+            meta={<Meta parts={[DOMAIN_LABEL[g.domain], <Tally key="t" kpis={gk} w={w} />, <span key="s" className="inline-flex items-center gap-2"><Dot {...gm} />{w.L.score} {gr.health ?? '-'}</span>]} />}
+            actions={<KitButton onClick={() => openGroup(g.id, null)} testId={`factory-open-group-${g.id}`}>{w.kpis}</KitButton>}
+          >
+            <DataTable<Col> label={g.name} cols={cols} rows={rows} empty={{ title: w.L.noContexts }} onRowClick={(id) => openGroup(g.id, id)} />
+          </Section>
+        );
+      })}
+    </div>
   );
 }

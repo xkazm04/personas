@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Film, ImageOff } from 'lucide-react';
-
+import { Tile } from '@/features/shared/components/kit';
 import { readCouncilMedia } from '@/api/devTools/council';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -29,11 +28,13 @@ import type { CockpitWidgetProps } from '../widgetRegistry';
  *
  * The bytes come back over IPC and become an object URL, exactly as
  * `drive/finder/quicklook/useEntryMedia.ts:78-91` does it, revoked on
- * cleanup. A file the run recorded but that is not on disk renders a
- * labelled placeholder frame, never a broken image.
+ * cleanup. One kit Tile: the frame takes the media's own aspect at the
+ * tile's width (no letterbox), a read in flight is the tile's ghost, and a
+ * file the run recorded but that is not on disk is the tile's empty band
+ * naming the path, never a broken image.
  */
-export function CouncilMediaWidget({ config, title }: CockpitWidgetProps) {
-  const { t } = useTranslation();
+export function CouncilMediaWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
+  const { t, tx } = useTranslation();
   const e = t.council.evidence;
   const runId = typeof config?.runId === 'string' ? config.runId : null;
   const relPath = typeof config?.relPath === 'string' ? config.relPath : null;
@@ -79,57 +80,37 @@ export function CouncilMediaWidget({ config, title }: CockpitWidgetProps) {
     };
   }, [runId, relPath]);
 
+  const heading = title ?? e.media_title;
+  // The evidence well titles a media tile with its caption: say it once.
+  const showCaption = caption && caption !== heading;
   return (
-    <figure className="m-0 flex h-full min-h-0 flex-col gap-2 rounded-card border border-foreground/10 bg-foreground/[0.02] p-4">
-      <figcaption className="typo-caption uppercase tracking-wide text-foreground">
-        {title ?? e.media_title}
-      </figcaption>
-      <div className="min-h-0 flex-1 overflow-hidden rounded-input">
-        {state === 'ready' && url ? (
-          isVideo ? (
+    <Tile
+      span={span}
+      title={heading}
+      actions={actions}
+      footer={footer}
+      state={state === 'loading' ? 'loading' : state === 'missing' ? 'empty' : undefined}
+      ghostRows={2}
+      empty={{
+        title: e.media_missing,
+        hint: relPath ? <span className="typo-code break-all">{relPath}</span> : undefined,
+        markLabel: e.media_missing,
+      }}
+      testId="cockpit-council-media"
+    >
+      {url && (
+        <figure className="k-in m-0 flex flex-col gap-2">
+          {isVideo ? (
             // Keyed on the src: a swapped source on a live media element keeps
             // the old buffer otherwise (census `media-element-src-without-remount-key`).
-            <video key={url} src={url} controls className="h-full w-full object-contain" />
+            <video key={url} src={url} controls className="block h-auto w-full rounded-input" />
           ) : (
-            <img key={url} src={url} alt={caption || e.media_title} className="h-full w-full object-contain" />
-          )
-        ) : (
-          <Placeholder
-            loading={state === 'loading'}
-            isVideo={isVideo}
-            loadingLabel={e.media_loading}
-            missingLabel={e.media_missing}
-            path={relPath ?? ''}
-          />
-        )}
-      </div>
-      {caption ? <p className="m-0 typo-caption text-muted">{caption}</p> : null}
-    </figure>
-  );
-}
-
-function Placeholder({
-  loading,
-  isVideo,
-  loadingLabel,
-  missingLabel,
-  path,
-}: {
-  loading: boolean;
-  isVideo: boolean;
-  loadingLabel: string;
-  missingLabel: string;
-  path: string;
-}) {
-  const Icon = isVideo ? Film : ImageOff;
-  return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 rounded-input border border-dashed border-border bg-[repeating-linear-gradient(135deg,var(--card-bg)_0_10px,transparent_10px_20px)] px-3 text-center">
-      <Icon className="h-6 w-6 text-muted-dark" aria-hidden="true" />
-      <span className="typo-caption text-muted">{loading ? loadingLabel : missingLabel}</span>
-      {!loading && path ? (
-        <span className="font-mono typo-caption text-muted-dark break-all">{path}</span>
-      ) : null}
-    </div>
+            <img key={url} src={url} alt={caption ? tx(e.media_alt, { caption }) : e.media_title} className="block h-auto w-full rounded-input" />
+          )}
+          {showCaption ? <figcaption className="typo-caption">{caption}</figcaption> : null}
+        </figure>
+      )}
+    </Tile>
   );
 }
 

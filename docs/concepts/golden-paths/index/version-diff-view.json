@@ -26,6 +26,7 @@
     "Cargo.toml": {"count":2,"sections":[0],"contexts":["(4,801 `.ts`/`.tsx`), `src-tauri/` (963 `.rs`), both `Cargo.toml` sets and"],"resolved":false},
     "CompetitionSlotRow.tsx": {"count":1,"sections":[7],"lines":["290-292"],"contexts":["`<pre>` (`CompetitionSlotRow.tsx:290-292`) with no `+`/`-` colouring at all."],"resolved":false},
     "PromptDiffModal.tsx": {"count":3,"sections":[2,7],"lines":["34","36-37"],"contexts":["ceiling; `PromptDiffModal.tsx:34` says exactly that and allocates an"],"resolved":false},
+    "RecipeVersionsTab.tsx": {"count":1,"sections":[7],"contexts":["`RecipeVersionsTab.tsx` renders `version.changes_summary` — an LLM-authored"],"resolved":false},
     "commands/infrastructure/dev_tools/competitions.rs": {"count":1,"sections":[7],"lines":["490"],"contexts":["(`commands/infrastructure/dev_tools/competitions.rs:490` → `compute_slot_diff`"],"resolved":false},
     "package.json": {"count":2,"sections":[0],"contexts":["`package.json`, plus **executed replays** of four diff kernels transcribed"]},
     "parameterEditing.tsx": {"count":2,"sections":[7],"lines":["101","102"],"contexts":["| `parameterEditing.tsx:101` | per-parameter `isDirty` | spurious dirty |"],"resolved":false},
@@ -125,7 +126,6 @@
       "resolvedFrom": "basename",
       "verbatim": "conflictDiff.ts"
     },
-    "src/features/recipes/sub_playground/tabs/RecipeVersionsTab.tsx": {"count":1,"sections":[7],"contexts":["`RecipeVersionsTab.tsx` renders `version.changes_summary` — an LLM-authored"],"resolvedFrom":"basename","verbatim":"RecipeVersionsTab.tsx"},
     "src/features/settings/sub_appearance/components/CustomThemeCreator.tsx": {
       "count": 1,
       "sections": [7],

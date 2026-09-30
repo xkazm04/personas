@@ -1,6 +1,6 @@
 # Golden path — process-global command state
 
-> Situation node: `backend-runtime/command-definition/process-global-command-state` · [situation spine](../situation-spine.md)
+> Situation node: `backend-runtime/command-definition/process-global-command-state` · situation spine
 > Composed 2026-08-15 against the `master` **working tree** (HEAD moved `2a874e692` -> `85528c35b`
 > under parallel composers during the sweep; every count below was read from files, not git objects,
 > and the census rule was re-validated at `85528c35b`), from a brace-matched statement walk over all
@@ -9,7 +9,7 @@
 > mutability; a second, independent scope-resolving pass over the same corpus for lock lifetimes and
 > lock ordering; a census-engine regex as the third implementation; plus ~40 files opened directly
 > and two sibling-repo convergence oracles.
-> Command and file totals cited from [`shared-facts.json`](../shared-facts.json)
+> Command and file totals cited from `shared-facts.json`
 > (`rust.tauriCommands` 1,661 · `rust.files` 963).
 > Dimensions: **resilience · security · code-quality · function · performance**.
 > The **Deviations** section is a fix backlog; it migrates to `violating` cells in
@@ -259,7 +259,7 @@ have a one- or two-letter name.
 
 **Command surface**, measured per `#[tauri::command]` function by brace-matched scan of
 `src-tauri/src` with `#[cfg(test)]` items removed — **1,661 commands, exactly matching
-[`shared-facts.json`](../shared-facts.json) `rust.tauriCommands`** (a raw attribute grep returns
+`shared-facts.json` `rust.tauriCommands`** (a raw attribute grep returns
 1,666; the extra 5 are inside test modules):
 
 | State extracted | Commands |
@@ -567,7 +567,7 @@ three are its only callers: `ActiveProcessRegistry` (`lib.rs:122`), `CompositeSt
 prune_threshold)` treats `0` as "disable pruning" (`keyed_pool.rs:62-63`), and **2 of its 3 callers
 pass `new(0, 0)`**. The single feature that distinguishes it from a hand-rolled `Mutex<HashMap>` is
 off in two thirds of its adoption — a textbook instance of the
-[golden-path contract's fifth failure mode](../golden-path-contract.md): routing callers to a
+golden-path contract's fifth failure mode: routing callers to a
 primitive is only worth as much as the primitive's defaults.
 
 ### J — 13 of 19 write-once initialisations discard the "already set" result
@@ -905,7 +905,7 @@ The census rule is a **ratchet, not a lint rule**, and this path does not argue 
 anywhere. Per `.claude/CLAUDE.md`, `npm run check` runs `eslint src/` with no `--max-warnings` and
 the pre-commit hook runs `--quiet`, so a warn-level rule enforces nothing at either gate at any
 warning count — an argument about how the gates are built, not about volume. The 1,135-warning
-baseline ([`shared-facts.json`](../shared-facts.json) `lint.warnings`) is evidence for neither side,
+baseline (`shared-facts.json` `lint.warnings`) is evidence for neither side,
 and in any case does not reach `src-tauri/` at all. `npm run census:check` is a separate exit-1 gate
 and is where this belongs. The one must-never-happen condition (§Deviations G) belongs in the Rust
 test suite, which `cargo test` already fails on.

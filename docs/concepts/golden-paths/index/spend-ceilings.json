@@ -38,6 +38,7 @@
   "citations": {
     ".github/workflows/ci.yml": {"count":1,"sections":[9],"contexts":["and from the repo's pre-push hook.** As of composition, `ci.yml` runs its Rust tests but is red on **10"],"resolvedFrom":"basename","verbatim":"ci.yml"},
     "AllotmentPanel.tsx": {"count":1,"sections":[],"lines":["29-36"],"contexts":["(`usageDashboard.tsx:110` → `AllotmentPanel.tsx:29-36`). If a team that writes"],"resolved":false},
+    "EffectiveConfigPanel.tsx": {"count":1,"sections":[7],"lines":["109"],"contexts":["\"effective config\" (`EffectiveConfigPanel.tsx:109`) displays a number that three of the four consumers"],"resolved":false},
     "alerts.ts": {"count":1,"sections":[],"lines":["322-327"],"contexts":["`public-scan-quota.ts:50-53,61-65`, `alerts.ts:322-327` with *\"A blank/missing var means 'default',"],"resolved":false},
     "ascent/pool.ts": {"count":1,"sections":[],"lines":["37"],"contexts":["physics — 4 of 4 cap fan-out, and three independently chose the literal number 4** (`ascent/pool.ts:37`,"],"resolved":false},
     "background.rs": {
@@ -346,14 +347,6 @@
       "contexts": ["`PersonaDraft.ts:130` binds `maxBudget: persona.max_budget_usd ?? ''` and `useEditorSave.ts:74` writes"],
       "resolvedFrom": "basename",
       "verbatim": "useEditorSave.ts"
-    },
-    "src/features/agents/sub_model_config/components/EffectiveConfigPanel.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["109"],
-      "contexts": ["\"effective config\" (`EffectiveConfigPanel.tsx:109`) displays a number that three of the four consumers"],
-      "resolvedFrom": "basename",
-      "verbatim": "EffectiveConfigPanel.tsx"
     },
     "src/features/fleet/monitor/channels/ConversationCards.tsx": {
       "count": 3,

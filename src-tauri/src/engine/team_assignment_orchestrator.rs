@@ -49,6 +49,7 @@ use crate::db::repos::resources::teams as team_repo;
 use crate::db::repos::resources::tools as tools_repo;
 use crate::db::DbPool;
 use crate::engine::event_registry::event_name;
+use crate::engine::subscription::autonomy_admission::{self, Admission, DeferReason};
 use crate::engine::team_assignment_matching::{
     self as matching, MatchResult, EMBEDDING_FALLBACK_CONFIDENCE,
 };
@@ -91,6 +92,12 @@ const STEP_EXECUTION_TIMEOUT_TICKS: u64 = 600;
 /// loop already exits on terminal status; this protects against pathological
 /// no-progress hangs (e.g. a step stuck in 'matching' forever due to a bug).
 const ASSIGNMENT_MAX_TICKS: u64 = 7200; // 2 hours
+
+/// How long a step held by autonomy admission (G55) waits before it is asked
+/// again, and the loop's cadence while every runnable step is held. A hold is
+/// the operator's switch or a gauge at its stop — neither clears in a second,
+/// and re-reading the gauges every second would only add noise.
+const HELD_RECHECK_INTERVAL: Duration = Duration::from_secs(30);
 
 // ----------------------------------------------------------------------------
 // Public entry — kick off an assignment
@@ -511,6 +518,14 @@ pub fn recover_orphaned_assignments(
             restored_skipped = restored,
             "assignment orphan-recovery: re-attaching tick task"
         );
+        // G55: boot is not consent — but the hold does not live here. The
+        // re-attached tick loop asks autonomy admission before it claims
+        // each step (`admit_step`), so a switched-off organisation that is
+        // restarted re-attaches its orphans and then HOLDS every step
+        // `pending` without spending. Parking the assignment `paused` instead
+        // is not possible: the `team_assignments.status` CHECK
+        // (c02_dev_goals_and_kpis) does not admit 'paused', so that write
+        // fails and would strand the assignment `running` with no ticker.
         run_assignment(
             pool.clone(),
             app.clone(),
@@ -518,6 +533,61 @@ pub fn recover_orphaned_assignments(
             embedding_manager.clone(),
             a.id,
         );
+    }
+}
+
+/// G55: may `step` start now? The step's own persona when the composer
+/// named one; the persona-less (global) half when matching will pick it.
+async fn admit_step(
+    pool: &DbPool,
+    state: Option<&crate::AppState>,
+    step: &TeamAssignmentStep,
+) -> Admission {
+    match step.assigned_persona_id.as_deref() {
+        Some(pid) => autonomy_admission::admit_autonomous(pool, state, pid).await,
+        None => autonomy_admission::admit_global(pool, state).await,
+    }
+}
+
+/// G55: leave a held step exactly where it is — `pending`, never `failed`
+/// (a failure would cascade-skip every dependent) — and record the hold as a
+/// `step_held` event once per reason, not once per re-check. `held` is the
+/// tick loop's memory of what it last recorded for each step.
+fn hold_step(
+    pool: &DbPool,
+    step: &TeamAssignmentStep,
+    reason: &DeferReason,
+    held: &mut HashMap<String, (&'static str, std::time::Instant)>,
+) {
+    let code = reason.code();
+    let changed = held.get(&step.id).map(|(c, _)| *c) != Some(code);
+    held.insert(step.id.clone(), (code, std::time::Instant::now()));
+    if !changed {
+        return;
+    }
+    tracing::info!(
+        step_id = %step.id,
+        assignment_id = %step.assignment_id,
+        persona_id = step.assigned_persona_id.as_deref().unwrap_or(""),
+        reason = code,
+        detail = %reason,
+        "team assignment: step held by autonomy admission — left pending"
+    );
+    let payload = json!({
+        "step_id": step.id,
+        "persona_id": step.assigned_persona_id,
+        "reason": code,
+        "detail": reason.to_string(),
+    })
+    .to_string();
+    if let Err(e) = assignment_repo::insert_event(
+        pool,
+        &step.assignment_id,
+        Some(&step.id),
+        "step_held",
+        Some(&payload),
+    ) {
+        tracing::warn!(step_id = %step.id, error = %e, "team assignment: could not record step hold");
     }
 }
 
@@ -573,6 +643,10 @@ async fn tick_loop(deps: &OrchestratorDeps, assignment_id: &str) -> Result<(), A
 
     let mut in_flight: HashMap<String, tokio::task::JoinHandle<()>> = HashMap::new();
     let mut ticks: u64 = 0;
+    // G55: the steps autonomy admission is holding, with the reason last
+    // recorded and when it was last asked.
+    let admission_state = autonomy_admission::app_state(app);
+    let mut held_steps: HashMap<String, (&'static str, std::time::Instant)> = HashMap::new();
 
     loop {
         ticks += 1;
@@ -720,6 +794,8 @@ async fn tick_loop(deps: &OrchestratorDeps, assignment_id: &str) -> Result<(), A
             .collect();
         let running_count = in_flight.len() as i32;
         let budget = (assignment.max_parallel_steps - running_count).max(0);
+        let mut held_now = 0usize;
+        let mut launched_now = 0i32;
 
         if budget > 0 {
             let mut launched = 0i32;
@@ -733,6 +809,32 @@ async fn tick_loop(deps: &OrchestratorDeps, assignment_id: &str) -> Result<(), A
                 let step_deps = parse_depends_on(step.depends_on.as_deref());
                 if !step_deps.iter().all(|d| done_ids.contains(d)) {
                     continue;
+                }
+                // G55: the operator's switches govern this engine too. A
+                // recently held step is not re-asked until the recheck
+                // interval passes; a refused step stays `pending`.
+                if held_steps
+                    .get(&step.id)
+                    .is_some_and(|(_, at)| at.elapsed() < HELD_RECHECK_INTERVAL)
+                {
+                    held_now += 1;
+                    continue;
+                }
+                match admit_step(pool, admission_state.as_deref(), step).await {
+                    Admission::Go => {
+                        if held_steps.remove(&step.id).is_some() {
+                            tracing::info!(
+                                step_id = %step.id,
+                                assignment_id = %assignment_id,
+                                "team assignment: step released by autonomy admission"
+                            );
+                        }
+                    }
+                    Admission::Defer(reason) => {
+                        hold_step(pool, step, &reason, &mut held_steps);
+                        held_now += 1;
+                        continue;
+                    }
                 }
                 // Claim the row before spawning. `pending` above is this loop's
                 // snapshot; a resume, orphan-recovery or a second loop may hold
@@ -820,6 +922,17 @@ async fn tick_loop(deps: &OrchestratorDeps, assignment_id: &str) -> Result<(), A
                 in_flight.insert(step.id.clone(), handle);
                 launched += 1;
             }
+            launched_now = launched;
+        }
+
+        // G55: a tick where every runnable step is held and nothing runs is
+        // not work — it does not spend the loop's 2h no-progress budget (a
+        // hold can outlast it, and exhausting it FAILS the assignment), and
+        // the loop re-checks at the hold cadence instead of every second.
+        if held_now > 0 && launched_now == 0 && in_flight.is_empty() {
+            ticks = ticks.saturating_sub(1);
+            sleep(HELD_RECHECK_INTERVAL).await;
+            continue;
         }
 
         sleep(TICK_INTERVAL).await;
@@ -2503,6 +2616,87 @@ mod tests {
             after.len(),
             1,
             "a member with no semantic role must not start posting",
+        );
+    }
+
+    /// G55: a step refused by autonomy admission is left `pending` — never
+    /// `failed`, which would cascade-skip its dependents — the hold is
+    /// recorded once per reason rather than once per re-check, and the step
+    /// is still claimable the moment admission lets it go.
+    #[test]
+    fn a_held_step_stays_pending_and_records_one_hold_per_reason() {
+        let pool = Arc::new(init_test_db().expect("init test db"));
+        let team = team_repo::create(
+            &pool,
+            CreateTeamInput {
+                name: "Held Squad".into(),
+                project_id: None,
+                parent_team_id: None,
+                description: None,
+                canvas_data: None,
+                team_config: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+            },
+        )
+        .expect("create team");
+        let worker = mk_persona(&pool, "Held Worker");
+        let mut review = mk_step_input("Review", &worker);
+        review.depends_on_indices = Some(vec![0]);
+        let assignment = assignment_repo::create(
+            &pool,
+            CreateTeamAssignmentInput {
+                team_id: team.id.clone(),
+                title: "Held assignment".into(),
+                goal: "Prove a hold leaves the DAG intact".into(),
+                match_strategy: None,
+                max_parallel_steps: None,
+                source: None,
+                companion_op_id: None,
+                goal_id: None,
+                steps: vec![mk_step_input("Build", &worker), review],
+            },
+        )
+        .expect("create assignment");
+        let steps = assignment_repo::list_steps(&pool, &assignment.id).expect("list steps");
+
+        let mut held = HashMap::new();
+        hold_step(&pool, &steps[0], &DeferReason::CodexMode, &mut held);
+        hold_step(&pool, &steps[0], &DeferReason::CodexMode, &mut held);
+        hold_step(
+            &pool,
+            &steps[0],
+            &DeferReason::UsageStop {
+                summary: "five_hour at 97% of 97% stop".into(),
+            },
+            &mut held,
+        );
+
+        let after = assignment_repo::list_steps(&pool, &assignment.id).expect("list steps");
+        assert!(
+            after.iter().all(|s| s.status == "pending"),
+            "a hold changes no step status: {:?}",
+            after.iter().map(|s| &s.status).collect::<Vec<_>>()
+        );
+        let holds: Vec<_> = assignment_repo::list_events(&pool, &assignment.id, None)
+            .expect("list events")
+            .into_iter()
+            .filter(|e| e.kind == "step_held")
+            .collect();
+        assert_eq!(
+            holds.len(),
+            2,
+            "one event per reason transition, not per re-check"
+        );
+        assert!(holds.iter().any(|e| e
+            .payload
+            .as_deref()
+            .is_some_and(|p| p.contains("codex_mode"))));
+
+        assert!(
+            assignment_repo::claim_step(&pool, &steps[0].id).expect("claim"),
+            "a held step is still claimable once admission lets it go"
         );
     }
 

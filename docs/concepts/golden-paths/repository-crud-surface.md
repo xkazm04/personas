@@ -1,7 +1,7 @@
 # Golden path — Repository CRUD surface
 
 > Situation node: `data-persistence/repository-access/repository-crud-surface` ·
-> [situation spine](../situation-spine.md) · recurrence **184** · convergence `mixed` · risk medium ·
+> situation spine · recurrence **184** · convergence `mixed` · risk medium ·
 > dimensions **code-quality · function · ui** · **two-sided** (`mergedFrom`: *Repository read/write
 > functions* + *Error mapping at the repo boundary*).
 > Composed 2026-08-14 from a ground-truth sweep against `master`.
@@ -13,7 +13,7 @@
 > names** in the tree joined to every `INSERT`/`UPDATE`/`DELETE` statement in `src-tauri/**` to
 > establish table ownership; the `AppError` definition and its `Serialize` impl; the five CRUD macros
 > in `db/src/macros.rs`; **1,806 `&state.db` call sites across 191 files**. Numbers shared with other
-> paths are cited from [`shared-facts.json`](../shared-facts.json), not re-derived. `target/**` and
+> paths are cited from `shared-facts.json`, not re-derived. `target/**` and
 > `.claude/worktrees/**` excluded throughout. **Two independent parses agree on 308 tables** — mine
 > and [persisted-model-struct](./persisted-model-struct.md)'s — which is the only reason to trust
 > either.
@@ -132,8 +132,8 @@ chosen type.
 
 ### Which clauses are physics, which are this house
 
-Per the [contract](../golden-path-contract.md) and the
-[portability test](../research/portability-test.md), a clause travels only if something else
+Per the contract and the
+portability test, a clause travels only if something else
 reinvented it. Measured 2026-08-14 against five siblings; detail and citations in §6.
 
 | Clause | Warrant | Evidence |
@@ -253,7 +253,7 @@ reinvented it. Measured 2026-08-14 against five siblings; detail and citations i
   `execution/executions.rs:709` `set_claude_session_id` is
   `UPDATE persona_executions SET claude_session_id = ?1 WHERE id = ?2 AND status = 'running'` →
   `Ok(())`. The `AND status = 'running'` is a compare-and-swap; its result is the entire point and it
-  is dropped. (The CAS *design* is [conditional-write](../situation-spine.md)'s leaf, unwritten; the
+  is dropped. (The CAS *design* is conditional-write's leaf, unwritten; the
   **return type** is this path's.)
 - **Five return types for one verb.** `delete_*`: `bool` ×56, `()` ×22, `usize` ×7, `u32` ×4, `i64`
   ×3. A caller cannot learn from the codebase what a delete returns; it must read each one. `update_*`
@@ -563,7 +563,7 @@ argues for a factory rather than for more rules.
    or skip it. This is why the macro sits at 15 uses.
 3. **`crud_update!` cannot express set-to-NULL, and `push_field!` cannot either.** Both key on
    `Option::is_some`, so `None` always means *leave alone*. This is the whole subject of
-   [`partial-update-semantics`](../situation-spine.md) and the reason the tree carries three
+   `partial-update-semantics` and the reason the tree carries three
    incompatible workarounds (§1). Naming it here so the seam is visible rather than silent.
 4. **Nothing makes the repository layer a boundary.** `AppState.db` is `pub` (`src/lib.rs:370`),
    `DbPool` is `Clone`, and `conn.prepare` is free — so 79 tables were written without a repository
@@ -589,7 +589,7 @@ argues for a factory rather than for more rules.
 
 ## Prefer a type over a gate — the answer for this leaf
 
-Per the [contract](../golden-path-contract.md), answered explicitly before §9 is written.
+Per the contract, answered explicitly before §9 is written.
 **Yes, three times, and two of the three already exist in working form outside this repo.**
 
 1. **The write's return type is the type fix, and it is the one that matters.** A PK-targeted write
@@ -634,7 +634,7 @@ elsewhere.
 
 Stack-free: every storage engine that reports an affected-row count can express it, and every
 language can decide what "reporting" means (a non-void return, a thrown conflict, a typed outcome).
-Per the [portability test](../research/portability-test.md) the *proxy* below does **not** travel;
+Per the portability test the *proxy* below does **not** travel;
 an adopting repo inherits the sentence and re-derives its own signal against its own driver —
 better-sqlite3's `result.changes`, Prisma's `count`, sqlx's `rows_affected()`, an ORM that raises.
 A repo whose data layer already returns the updated row, or whose ORM throws on a zero-row update
@@ -686,7 +686,7 @@ markup this pattern cannot see and scores zero.
 
 ### Mechanism — a census rule, not a script
 
-Per the [contract](../golden-path-contract.md) §"Don't write a script", the ratcheting-baseline
+Per the contract §"Don't write a script", the ratcheting-baseline
 mechanism already exists at [`scripts/census/`](../../../scripts/census/). This path publishes **one**
 entry, merged by the orchestrator via `scripts/census/merge-published-rules.mjs` — never edited into
 `rules.json` here:

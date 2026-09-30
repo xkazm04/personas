@@ -50,7 +50,6 @@
       "resolved": false,
       "isDir": true
     },
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json) (4,829 `src/**/*.{ts,tsx}` files),"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "executionStore.ts": {"count":1,"sections":[],"lines":["13"],"contexts":["counters** (`executionStore.ts:13`, `reviewStore.ts:17`) that are line-for-line"],"resolved":false},
     "overview/sub_manual-review/components/dispatch/DispatchPanel.tsx": {"count":1,"sections":[7],"lines":["141"],"contexts":["`overview/sub_manual-review/components/dispatch/DispatchPanel.tsx:141` ·"],"resolved":false},
     "overview/sub_patterns/ExtractionMenu.tsx": {"count":1,"sections":[7],"lines":["186"],"contexts":["`overview/sub_patterns/ExtractionMenu.tsx:186`,`:200` ·"],"resolved":false},
@@ -78,8 +77,9 @@
     "reviewStore.ts": {"count":1,"sections":[],"lines":["17"],"contexts":["counters** (`executionStore.ts:13`, `reviewStore.ts:17`) that are line-for-line"],"resolved":false},
     "scripts/census/": {"count":1,"sections":[9],"contexts":["Inherited from [`scripts/census/`](../../../scripts/census/) and **verified by"],"resolved":false,"isDir":true},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["Do **not** paste this into `scripts/census/rules.json` from this document by"]},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["`shared-facts.json` (4,829 `src/**/*.{ts,tsx}` files),"],"resolved":false},
     "src/": {"count":2,"sections":[9],"contexts":["`let cancelled|active|alive|stale|mounted|aborted = <bool>` site under `src/`"],"resolved":false,"isDir":true},
-    "src/**/*.{ts,tsx}": {"count":1,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json) (4,829 `src/**/*.{ts,tsx}` files),"],"resolved":false,"isDir":true},
+    "src/**/*.{ts,tsx}": {"count":1,"sections":[],"contexts":["`shared-facts.json` (4,829 `src/**/*.{ts,tsx}` files),"],"resolved":false,"isDir":true},
     "src/features/agents/components/allPersonas/PersonaConfigPanel.tsx": {"count":1,"sections":[7],"lines":["306"],"contexts":["`personaSlice.ts:185,210` · `PersonaConfigPanel.tsx:306` ·"],"resolvedFrom":"basename","verbatim":"PersonaConfigPanel.tsx"},
     "src/features/agents/components/create/useTemplateIntentMatch.ts": {"count":1,"sections":[7],"lines":["34"],"contexts":["`useTemplateIntentMatch.ts:34` · `useCloudHealthMonitor.ts:136` ·"],"resolvedFrom":"basename","verbatim":"useTemplateIntentMatch.ts"},
     "src/features/agents/components/matrix/UnifiedBuildEntry.tsx": {"count":1,"sections":[7],"lines":["291"],"contexts":["`useContextRuntime.ts:130`,`:158` · `UnifiedBuildEntry.tsx:291`"],"resolvedFrom":"basename","verbatim":"UnifiedBuildEntry.tsx"},
@@ -181,7 +181,6 @@
       "verbatim": "ScenarioDetailPanel.tsx"
     },
     "src/features/agents/sub_lab/use-cases/UseCaseHistory.tsx": {"count":1,"sections":[7],"lines":["40"],"contexts":["`useRecipeStarters.ts:29` · `useHealthCheck.ts:376` · `UseCaseHistory.tsx:40` ·"],"resolvedFrom":"basename","verbatim":"UseCaseHistory.tsx"},
-    "src/features/agents/sub_model_config/hooks/useEffectiveConfig.ts": {"count":1,"sections":[7],"lines":["20"],"contexts":["`useEffectiveConfig.ts:20` (`[personaId, refreshKey]`) ·"],"resolvedFrom":"basename","verbatim":"useEffectiveConfig.ts"},
     "src/features/agents/sub_tool_runner/libs/useToolRunner.ts": {
       "count": 3,
       "sections": [6],
@@ -335,14 +334,6 @@
       "contexts": ["`plugins/twin/sub_training/TrainingStudio.tsx:147` (row *content* at `:143` is"],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/twin/sub_training/TrainingStudio.tsx"
-    },
-    "src/features/recipes/sub_playground/libs/useRecipeTestRunner.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["41"],
-      "contexts": ["`useDrive.ts:414` · `useRecipeTestRunner.ts:41` · `useFieldValidation.ts:63` ·"],
-      "resolvedFrom": "basename",
-      "verbatim": "useRecipeTestRunner.ts"
     },
     "src/features/schedules/libs/useCronPreview.ts": {"count":1,"sections":[7],"lines":["90,306"],"contexts":["`overviewSlice.ts:215,358,410` · `useCronPreview.ts:90,306` ·"],"resolvedFrom":"basename","verbatim":"useCronPreview.ts"},
     "src/features/scraper/useScraperData.ts": {"count":1,"sections":[7],"lines":["114"],"contexts":["`scraper/useScraperData.ts:114`."],"resolvedFrom":"suffix","verbatim":"scraper/useScraperData.ts"},
@@ -703,7 +694,9 @@
         "- **`src/stores/util/latestWins.ts` — `createLatestWins()`** → `{ next(): number, isCurrent(token): boolean }`. 13 lines, module-scope closure counter. `next()` mints and increments (`:35-37`); `isCu…"
       ]
     },
+    "useEffectiveConfig.ts": {"count":1,"sections":[7],"lines":["20"],"contexts":["`useEffectiveConfig.ts:20` (`[personaId, refreshKey]`) ·"],"resolved":false},
     "useExecutionPolling.ts": {"count":1,"sections":[],"lines":["44-53"],"contexts":["(`useExecutionPolling.ts:44-53`) that appends execution A's stdout into execution"],"resolved":false},
+    "useRecipeTestRunner.ts": {"count":1,"sections":[7],"lines":["41"],"contexts":["`useDrive.ts:414` · `useRecipeTestRunner.ts:41` · `useFieldValidation.ts:63` ·"],"resolved":false},
     "useRenderPlan.ts": {"count":1,"sections":[7],"lines":["34"],"contexts":["`useAthenaHealth.ts:24` · `useRenderPlan.ts:34` · `useLocalDictation.ts:257` ·"],"resolved":false}
   }
 }

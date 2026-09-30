@@ -152,7 +152,22 @@ pub fn approve_pairing(
     scopes: Vec<String>,
     expires_in_days: Option<u32>,
 ) -> Result<(), AppError> {
-    let (origin, app_name) = pairing::pending_origin(&nonce).ok_or_else(|| {
+    approve_pairing_core(&state.db, &nonce, scopes, expires_in_days, "ui").map(|_| ())
+}
+
+/// The approve half of the pairing ceremony, shared by the Tauri command above
+/// and the operator API (`POST /api/pairings/{nonce}/approve`). The ceiling
+/// check lives HERE, so no caller can mint a scope the pairing lane may not
+/// grant — `personas:approve` included. `source` is the audit actor (`"ui"`
+/// or `"operator-api:<key id>"`). Returns the minted key's id + scopes.
+pub(crate) fn approve_pairing_core(
+    db: &crate::db::DbPool,
+    nonce: &str,
+    scopes: Vec<String>,
+    expires_in_days: Option<u32>,
+    source: &str,
+) -> Result<(String, Vec<String>), AppError> {
+    let (origin, app_name) = pairing::pending_origin(nonce).ok_or_else(|| {
         AppError::NotFound("pending pairing (expired or already resolved)".into())
     })?;
 
@@ -173,7 +188,7 @@ pub fn approve_pairing(
         .map(|days| (chrono::Utc::now() + chrono::Duration::days(days as i64)).to_rfc3339());
     let label = format!("Paired: {origin}");
     let resp = repo::create(
-        &state.db,
+        db,
         &app_name,
         scopes,
         expires_at,
@@ -184,7 +199,7 @@ pub fn approve_pairing(
     // Make the origin's browser fetches pass CORS immediately, then hand the
     // plaintext to the single-use claim keyed by the nonce.
     management_api::add_paired_origin(&origin);
-    pairing::set_approved(&nonce, resp.plaintext_token).map_err(AppError::Internal)?;
+    pairing::set_approved(nonce, resp.plaintext_token).map_err(AppError::Internal)?;
 
     tracing::info!(
         prefix = %resp.record.key_prefix,
@@ -198,15 +213,15 @@ pub fn approve_pairing(
     })
     .to_string();
     let _ = settings_audit_log::insert(
-        &state.db,
+        db,
         "api_keys",
         &resp.record.name,
         "pair",
         None,
         Some(&after),
-        Some("ui"),
+        Some(source),
     );
-    Ok(())
+    Ok((resp.record.id.clone(), resp.record.parsed_scopes()))
 }
 
 /// Reject a pending pairing — the cloud app's claim then returns 403.

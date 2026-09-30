@@ -53,7 +53,6 @@
     "agents/sub_deployment/cloud/DailyBreakdownChart.tsx": {"count":1,"sections":[7],"lines":["101"],"contexts":["| `agents/sub_deployment/cloud/DailyBreakdownChart.tsx:101` | justified-shaped (SVG `<rect>`), but no `role`, no focus |"],"resolved":false},
     "artist/sub_media_studio/TimelineClip.tsx": {"count":1,"sections":[7],"lines":["152"],"contexts":["`artist/sub_media_studio/TimelineClip.tsx:152`, `TriggerSchedulePreview.tsx:85`. A gate"],"resolved":false},
     "designTokens.ts": {"count":3,"sections":[7,8],"lines":["47","45-48"],"contexts":["`designTokens.ts`, all 21 custom ESLint rules, all 48 census rules, and a"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":3,"sections":[7,9],"contexts":["[`shared-facts.json`](../shared-facts.json); everything else was measured during"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "eslint-rules/no-hardcoded-jsx-text.cjs": {
       "count": 1,
       "sections": [7],
@@ -75,6 +74,7 @@
     "plugins/companion/Bubble.tsx": {"count":1,"sections":[7],"lines":["215"],"contexts":["`FleetStatusLegend.tsx:40`, `plugins/companion/Bubble.tsx:215`,"],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**The positive control is deliberately NOT proposed for `rules.json`.** A census baseline"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "scripts/census/run-census.mjs": {"count":1,"sections":[9],"lines":["19-38"],"contexts":["contract (`run-census.mjs:19-38`) was exercised against this exact rule:"],"resolvedFrom":"basename","verbatim":"run-census.mjs"},
+    "shared-facts.json": {"count":3,"sections":[7,9],"contexts":["`shared-facts.json`; everything else was measured during"],"resolved":false},
     "src/**/*.tsx": {"count":1,"sections":[7],"contexts":["Parsed, not grepped. Every JSX opening tag in `src/**/*.tsx` was read with a"],"resolved":false},
     "src/design/focus-contract.test.ts": {"count":1,"sections":[7],"lines":["29-60"],"contexts":["(`src/design/focus-contract.test.ts:29-60`) — the mechanism a tooltip contract needs,"],"resolved":false},
     "src/features/agents/components/allPersonas/PersonaOverviewCells.tsx": {

@@ -1,7 +1,7 @@
 # Billing-account auth
 
 > Situation node: `ai-agents` / `cost-governance` / `billing-account-auth` ·
-> [situation spine](../situation-spine.json)
+> situation spine
 > `sides: "server"` · `convergence: "mixed"` · `twoSided: false` · `risk: high` ·
 > `recurrence: 4` · dimensions: cost · security · function
 > Spine's own framing: *"Every spawned model process authenticating against the

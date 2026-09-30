@@ -1,0 +1,645 @@
+{
+  "generated_at": "2026-09-21T21:06:40.905768800+00:00",
+  "library_commit": null,
+  "library_kind": "home",
+  "library_path": "C:/Users/kazda/.claude/skills",
+  "library_remote": null,
+  "note": "Snapshot written by the Personas app; may be up to one scan old. Compare `version` fields (major.minor; null = unversioned, treat as 1.0) to judge staleness — not hashes. `library: null` means the skill is not in the workspace library. See docs/skill-standard.md for the reflection and sync contract that consumes this file.",
+  "project": {
+    "id": "b0c1541f-af08-4912-818e-19ca94f7b6e9",
+    "name": "personas",
+    "root_path": "C:/Users/kazda/kiro/personas"
+  },
+  "skills": [
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "add-credential",
+      "siblings": [],
+      "sync_state": "local_only",
+      "version": null
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "add-template",
+      "siblings": [],
+      "sync_state": "local_only",
+      "version": null
+    },
+    {
+      "invokes_30d": 1,
+      "library": null,
+      "name": "architect",
+      "siblings": [
+        {
+          "invokes_30d": 0,
+          "project": "Adamant",
+          "root_path": "C:/Users/kazda/kiro/systedo-case",
+          "version": "1.8"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "CandiDate",
+          "root_path": "C:/Users/kazda/kiro/kp",
+          "version": "1.8"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "ascent",
+          "root_path": "C:/Users/kazda/kiro/ascent",
+          "version": "1.8"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "personas-web",
+          "root_path": "C:/Users/kazda/kiro/personas-web",
+          "version": "1.8"
+        }
+      ],
+      "sync_state": "in_sync",
+      "version": "1.8"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "athena",
+      "siblings": [],
+      "sync_state": "local_only",
+      "version": null
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "code-review",
+      "siblings": [],
+      "sync_state": "local_only",
+      "version": null
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "codebase-init",
+      "siblings": [],
+      "sync_state": "local_only",
+      "version": null
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "conform",
+      "siblings": [
+        {
+          "invokes_30d": 0,
+          "project": "Adamant",
+          "root_path": "C:/Users/kazda/kiro/systedo-case",
+          "version": "1.7"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "CandiDate",
+          "root_path": "C:/Users/kazda/kiro/kp",
+          "version": "1.7"
+        },
+        {
+          "invokes_30d": 1,
+          "project": "ascent",
+          "root_path": "C:/Users/kazda/kiro/ascent",
+          "version": "1.7"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "personas-web",
+          "root_path": "C:/Users/kazda/kiro/personas-web",
+          "version": "1.7"
+        }
+      ],
+      "sync_state": "in_sync",
+      "version": "1.7"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "consult",
+      "siblings": [
+        {
+          "invokes_30d": 0,
+          "project": "Adamant",
+          "root_path": "C:/Users/kazda/kiro/systedo-case",
+          "version": "1.5"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "CandiDate",
+          "root_path": "C:/Users/kazda/kiro/kp",
+          "version": "1.5"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "ascent",
+          "root_path": "C:/Users/kazda/kiro/ascent",
+          "version": "1.5"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "personas-web",
+          "root_path": "C:/Users/kazda/kiro/personas-web",
+          "version": "1.5"
+        }
+      ],
+      "sync_state": "in_sync",
+      "version": "1.5"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "contest",
+      "siblings": [
+        {
+          "invokes_30d": 0,
+          "project": "CandiDate",
+          "root_path": "C:/Users/kazda/kiro/kp",
+          "version": "1.1"
+        }
+      ],
+      "sync_state": "in_sync",
+      "version": "1.1"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "council",
+      "siblings": [],
+      "sync_state": "in_sync",
+      "version": "0.1"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "explorer",
+      "siblings": [
+        {
+          "invokes_30d": 0,
+          "project": "Adamant",
+          "root_path": "C:/Users/kazda/kiro/systedo-case",
+          "version": "2.4"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "CandiDate",
+          "root_path": "C:/Users/kazda/kiro/kp",
+          "version": "2.4"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "ascent",
+          "root_path": "C:/Users/kazda/kiro/ascent",
+          "version": "2.4"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "personas-web",
+          "root_path": "C:/Users/kazda/kiro/personas-web",
+          "version": "2.4"
+        }
+      ],
+      "sync_state": "in_sync",
+      "version": "2.4"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "friend",
+      "siblings": [
+        {
+          "invokes_30d": 0,
+          "project": "personas-web",
+          "root_path": "C:/Users/kazda/kiro/personas-web",
+          "version": "1.4"
+        }
+      ],
+      "sync_state": "in_sync",
+      "version": "1.4"
+    },
+    {
+      "invokes_30d": 3,
+      "library": null,
+      "name": "grande",
+      "siblings": [],
+      "sync_state": "local_only",
+      "version": "0.4"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "guide-sync",
+      "siblings": [],
+      "sync_state": "local_only",
+      "version": null
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "i18n-translate",
+      "siblings": [
+        {
+          "invokes_30d": 0,
+          "project": "Adamant",
+          "root_path": "C:/Users/kazda/kiro/systedo-case",
+          "version": "1.5"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "CandiDate",
+          "root_path": "C:/Users/kazda/kiro/kp",
+          "version": "1.5"
+        }
+      ],
+      "sync_state": "in_sync",
+      "version": "1.5"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "idea-run",
+      "siblings": [],
+      "sync_state": "local_only",
+      "version": null
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "kpi-sim",
+      "siblings": [],
+      "sync_state": "in_sync",
+      "version": "1.2"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "leonardo",
+      "siblings": [
+        {
+          "invokes_30d": 0,
+          "project": "personas-web",
+          "root_path": "C:/Users/kazda/kiro/personas-web",
+          "version": "1.4"
+        }
+      ],
+      "sync_state": "in_sync",
+      "version": "1.4"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "master",
+      "siblings": [],
+      "sync_state": "local_only",
+      "version": "0.1"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "motionize",
+      "siblings": [
+        {
+          "invokes_30d": 0,
+          "project": "CandiDate",
+          "root_path": "C:/Users/kazda/kiro/kp",
+          "version": "1.1"
+        }
+      ],
+      "sync_state": "in_sync",
+      "version": "1.3"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "mvp",
+      "siblings": [],
+      "sync_state": "in_sync",
+      "version": "1.2"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "note-task",
+      "siblings": [],
+      "sync_state": "local_only",
+      "version": null
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "passport-onboard",
+      "siblings": [],
+      "sync_state": "local_only",
+      "version": null
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "perfect",
+      "siblings": [
+        {
+          "invokes_30d": 0,
+          "project": "Adamant",
+          "root_path": "C:/Users/kazda/kiro/systedo-case",
+          "version": "2.6"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "CandiDate",
+          "root_path": "C:/Users/kazda/kiro/kp",
+          "version": "2.6"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "ascent",
+          "root_path": "C:/Users/kazda/kiro/ascent",
+          "version": "2.6"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "personas-web",
+          "root_path": "C:/Users/kazda/kiro/personas-web",
+          "version": "2.6"
+        }
+      ],
+      "sync_state": "in_sync",
+      "version": "2.6"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "practice-harvest",
+      "siblings": [],
+      "sync_state": "local_only",
+      "version": null
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "prime",
+      "siblings": [],
+      "sync_state": "local_only",
+      "version": null
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "project-populate",
+      "siblings": [
+        {
+          "invokes_30d": 0,
+          "project": "Adamant",
+          "root_path": "C:/Users/kazda/kiro/systedo-case",
+          "version": "1.3"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "CandiDate",
+          "root_path": "C:/Users/kazda/kiro/kp",
+          "version": "1.3"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "ascent",
+          "root_path": "C:/Users/kazda/kiro/ascent",
+          "version": "1.3"
+        }
+      ],
+      "sync_state": "in_sync",
+      "version": "1.3"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "promote",
+      "siblings": [],
+      "sync_state": "in_sync",
+      "version": "1.2"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "prototype",
+      "siblings": [
+        {
+          "invokes_30d": 0,
+          "project": "Adamant",
+          "root_path": "C:/Users/kazda/kiro/systedo-case",
+          "version": null
+        },
+        {
+          "invokes_30d": 0,
+          "project": "CandiDate",
+          "root_path": "C:/Users/kazda/kiro/kp",
+          "version": null
+        },
+        {
+          "invokes_30d": 0,
+          "project": "ascent",
+          "root_path": "C:/Users/kazda/kiro/ascent",
+          "version": null
+        }
+      ],
+      "sync_state": "local_only",
+      "version": null
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "record-demo",
+      "siblings": [],
+      "sync_state": "local_only",
+      "version": null
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "reflect",
+      "siblings": [],
+      "sync_state": "local_only",
+      "version": null
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "reflect-me",
+      "siblings": [],
+      "sync_state": "local_only",
+      "version": null
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "refresh-context",
+      "siblings": [],
+      "sync_state": "local_only",
+      "version": null
+    },
+    {
+      "invokes_30d": 0,
+      "library": {
+        "version": "1.18"
+      },
+      "name": "research",
+      "siblings": [],
+      "sync_state": "in_sync",
+      "version": "1.11"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "scan-sweep",
+      "siblings": [
+        {
+          "invokes_30d": 0,
+          "project": "Adamant",
+          "root_path": "C:/Users/kazda/kiro/systedo-case",
+          "version": "3.3"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "CandiDate",
+          "root_path": "C:/Users/kazda/kiro/kp",
+          "version": "3.3"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "ascent",
+          "root_path": "C:/Users/kazda/kiro/ascent",
+          "version": "3.3"
+        }
+      ],
+      "sync_state": "in_sync",
+      "version": "3.3"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "sentry",
+      "siblings": [],
+      "sync_state": "local_only",
+      "version": "1.0"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "ship-loop",
+      "siblings": [
+        {
+          "invokes_30d": 0,
+          "project": "CandiDate",
+          "root_path": "C:/Users/kazda/kiro/kp",
+          "version": "2.3"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "ascent",
+          "root_path": "C:/Users/kazda/kiro/ascent",
+          "version": "2.3"
+        }
+      ],
+      "sync_state": "in_sync",
+      "version": "2.3"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "ship-milestone",
+      "siblings": [],
+      "sync_state": "local_only",
+      "version": null
+    },
+    {
+      "invokes_30d": 4,
+      "library": null,
+      "name": "spark",
+      "siblings": [
+        {
+          "invokes_30d": 0,
+          "project": "CandiDate",
+          "root_path": "C:/Users/kazda/kiro/kp",
+          "version": "1.5"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "ascent",
+          "root_path": "C:/Users/kazda/kiro/ascent",
+          "version": "1.5"
+        }
+      ],
+      "sync_state": "in_sync",
+      "version": "1.5"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "tiger",
+      "siblings": [
+        {
+          "invokes_30d": 0,
+          "project": "Adamant",
+          "root_path": "C:/Users/kazda/kiro/systedo-case",
+          "version": "2.4"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "CandiDate",
+          "root_path": "C:/Users/kazda/kiro/kp",
+          "version": "2.4"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "ascent",
+          "root_path": "C:/Users/kazda/kiro/ascent",
+          "version": "2.4"
+        }
+      ],
+      "sync_state": "in_sync",
+      "version": "2.4"
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "triage-backlog",
+      "siblings": [],
+      "sync_state": "local_only",
+      "version": null
+    },
+    {
+      "invokes_30d": 0,
+      "library": null,
+      "name": "uat",
+      "siblings": [
+        {
+          "invokes_30d": 0,
+          "project": "Adamant",
+          "root_path": "C:/Users/kazda/kiro/systedo-case",
+          "version": "1.10"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "CandiDate",
+          "root_path": "C:/Users/kazda/kiro/kp",
+          "version": "1.10"
+        },
+        {
+          "invokes_30d": 0,
+          "project": "ascent",
+          "root_path": "C:/Users/kazda/kiro/ascent",
+          "version": "1.10"
+        }
+      ],
+      "sync_state": "in_sync",
+      "version": "1.10"
+    }
+  ],
+  "version": 1,
+  "workspace": {
+    "id": "b7b73910-d948-459a-a34a-c165a925ec44",
+    "name": "Core"
+  }
+}

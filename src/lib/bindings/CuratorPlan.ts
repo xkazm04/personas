@@ -4,8 +4,12 @@ import type { CuratorPlanRun } from "./CuratorPlanRun";
 import type { CuratorQuietBundle } from "./CuratorQuietBundle";
 
 /**
- * A plan run with its items - what `curator_plan_current` and
- * `curator_plan_refresh` both return.
+ * A plan run with its items.
+ *
+ * What `curator_plan_current` returns, and what [`CuratorRefresh`] carries
+ * back from `curator_plan_refresh` - that command wraps this rather than
+ * returning it bare since 2026-09-25, because the plan alone cannot say
+ * whether the projection moved or where the reading came from.
  */
 export type CuratorPlan = { run: CuratorPlanRun, items: Array<CuratorPlanItem>, 
 /**

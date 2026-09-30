@@ -1,7 +1,7 @@
 # Golden path — the portable export bundle
 
 > Situation node: `integrations-security/vault-security/portable-export-bundle` ·
-> [situation spine](../situation-spine.md) · recurrence 7 · risk **HIGH** ·
+> situation spine · recurrence 7 · risk **HIGH** ·
 > sides **client** (**corrected: two-sided, and the client half is the only half that refuses — see §0.1**) ·
 > convergence **mixed** · dimensions: **security · function · resilience · code-quality**
 > Composed 2026-08-16 against `master` @ `cd9d094d9`.
@@ -226,7 +226,7 @@ every one has `entity_results = '[]'`.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head carries no file path,
+Per the portability test, the head carries no file path,
 primitive name or count, so an adopting repo can tell physics from local calibration.
 
 > **P1 — physics, and the subject.** *An artifact is a second implementation of your schema, written

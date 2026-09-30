@@ -1,7 +1,7 @@
 # OCR extraction
 
 > Situation node: `integrations-security / external-and-host-surfaces /
-> ocr-extraction` · [situation spine](../situation-spine.json)
+> ocr-extraction` · situation spine
 > `sides: "client"` · `twoSided: true` · `fusedAcrossSides: false` ·
 > `recurrence: 2` · `risk: medium` · `convergence: "converged"`.
 > Dimensions: **function · cost · ui · resilience**.

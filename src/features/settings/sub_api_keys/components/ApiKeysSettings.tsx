@@ -45,6 +45,7 @@ import { CreateApiKeyDialog } from './CreateApiKeyDialog';
 import { CreatedKeyDialog } from './CreatedKeyDialog';
 import { ApiKeyAuditDrawer } from './ApiKeyAuditDrawer';
 import { ConnectedAppsSection } from './ConnectedAppsSection';
+import { GigPersonaPolicySection } from './GigPersonaPolicySection';
 import { expiryInfo, isStaleKey, keyState, liveCount } from '../libs/keyLifecycle';
 
 const HIDDEN_KEY_NAMES = new Set(['system']);
@@ -245,6 +246,8 @@ export default function ApiKeysSettings() {
           onAudit={setAuditTarget}
           onRetired={() => void load()}
         />
+
+        <GigPersonaPolicySection />
       </ContentBody>
 
       {showCreate && (

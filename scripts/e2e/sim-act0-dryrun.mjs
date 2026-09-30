@@ -65,12 +65,12 @@ console.log(`   listed: ${mine ? `protected=${mine.protected} projects=${mine.pr
 
 // 3. App Master on the project (existing door), disabled
 const am = step('app-master/adopt', await call(h, 'POST', '/app-master/adopt', {
-  project: projectId, recipes: [{ slug: 'project-kpi-stewardship', priority: 1 }, { slug: 'accepted-idea-delivery', priority: 2 }], model: 'opus', maxConcurrent: 2, enabled: false,
+  project: projectId, recipes: [{ slug: 'project-kpi-stewardship', priority: 1 }, { slug: 'accepted-idea-delivery', priority: 2 }], model: 'sonnet', maxConcurrent: 2, enabled: false,
 }));
 
 // 4. Architect on the workspace (door built by G1; tolerated absent)
 const arch = step('architect/adopt', await call(h, 'POST', '/architect/adopt', {
-  workspace: workspaceId, recipes: [{ slug: 'enterprise-solution-design', priority: 1 }, { slug: 'project-portfolio-composition', priority: 2 }, { slug: 'goal-direction-and-authority', priority: 3 }], model: 'opus', enabled: false,
+  workspace: workspaceId, recipes: [{ slug: 'enterprise-solution-design', priority: 1 }, { slug: 'project-portfolio-composition', priority: 2 }, { slug: 'goal-direction-and-authority', priority: 3 }], model: 'sonnet', enabled: false,
 }));
 if (arch.status === 404) console.log('   (architect door not present yet: G1 pending)');
 

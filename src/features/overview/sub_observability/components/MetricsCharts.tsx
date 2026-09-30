@@ -1,55 +1,29 @@
-import { memo, useMemo, useCallback } from 'react';
+/**
+ * Observability (composition kit): the trend charts. Each chart is a Section whose plot is a
+ * ChartFrame on the reading line; series colours are kit tones (toneColor), so cost reads in
+ * the theme's primary, success and failure in the status tones a Mark uses, and the legend is
+ * the kit's Dot row in the section meta instead of recharts' own. The per-persona split is a
+ * DataTable (PersonaBreakdownTable): its names were clipped as pie labels.
+ */
+import { memo, useCallback, useMemo, type ReactElement } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
-import { CHART_COLORS_PURPLE, CHART_GRAD, getGridStroke, getAxisTickFill } from '@/features/overview/sub_usage/libs/chartConstants';
+import { getGridStroke, getAxisTickFill } from '@/features/overview/sub_usage/libs/chartConstants';
 import { useScaledFontSize } from '@/stores/themeStore';
 import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTooltip';
-import { MetricChart } from '@/features/overview/sub_usage/components/MetricChart';
-import type { RechartsModule } from '@/features/shared/charts/RechartsWrapper';
-import { IllustratedEmptyState as EmptyState } from '@/features/shared/components/display/IllustratedEmptyState';
+import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/ChartErrorBoundary';
+import { LazyChart, type RechartsModule } from '@/features/shared/charts/RechartsWrapper';
+import { ChartFrame, Dot, Section, toneColor } from '@/features/shared/components/kit';
 import type { MetricsChartPoint } from '@/lib/bindings/MetricsChartPoint';
 import type { MetricAnomaly } from '@/lib/bindings/MetricAnomaly';
 import type { ChartAnnotationRecord } from '../libs/chartAnnotations';
-import { getAnnotationColor } from '../libs/chartAnnotations';
+import { renderAnnotationLines, renderAnomalyMarkers } from './chartMarkers';
+import { PersonaBreakdownTable } from './PersonaBreakdownTable';
 
-// Stable tooltip elements — Recharts compares prop identity in its internal
-// shouldComponentUpdate. Hoisting keeps reference equal across renders.
+// Stable tooltip element: Recharts compares prop identity.
 const TOOLTIP_CONTENT = <ChartTooltip />;
-const COST_AXIS_FORMATTER = (v: number) => `$${v}`;
-const DATE_AXIS_FORMATTER = (v: string) =>
-  new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-
-/**
- * Renders the shared annotation marker for a chart's `visibleAnnotations`:
- * a dashed `ReferenceLine` whose label is a small dot with a hover title
- * ("label · formatted timestamp"). Extracted because the cost `AreaChart`
- * and health `BarChart` below rendered an identical block verbatim, only
- * differing in the React `key` prefix.
- */
-function renderAnnotationReferenceLines(
-  R: RechartsModule,
-  annotations: ChartAnnotationRecord[],
-  keyPrefix: string,
-) {
-  return annotations.map((annotation, index) => (
-    <R.ReferenceLine
-      key={`${keyPrefix}-annotation-${annotation.date}-${annotation.type}-${index}`}
-      x={annotation.date}
-      stroke={getAnnotationColor(annotation.type, annotation.color)}
-      strokeDasharray="4 4"
-      strokeOpacity={0.65}
-      label={({ viewBox }) => {
-        if (!viewBox) return null;
-        return (
-          <g>
-            <title>{`${annotation.label} · ${Number.isFinite(Date.parse(annotation.timestamp)) ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(Date.parse(annotation.timestamp)) : annotation.timestamp}`}</title>
-            <circle cx={viewBox.x} cy={viewBox.y - 6} r={2.2} fill={getAnnotationColor(annotation.type, annotation.color)} />
-          </g>
-        );
-      }}
-    />
-  ));
-}
+const PLOT_MARGIN = { top: 16, right: 8, bottom: 0, left: 0 };
+const HEIGHT = 220;
 
 export interface PieDataPoint {
   name: string;
@@ -62,153 +36,119 @@ export interface MetricsChartsProps {
   pieData: PieDataPoint[];
   anomalies?: MetricAnomaly[];
   annotations?: ChartAnnotationRecord[];
+  /** Section eyebrow (the page's). */
+  eyebrow?: string;
+  loading?: boolean;
   /** Called when a failure bar is clicked with the date string (YYYY-MM-DD). */
   onFailureBarClick?: (date: string) => void;
   /** Called when an anomaly marker is clicked. */
   onAnomalyClick?: (anomaly: MetricAnomaly) => void;
 }
 
-export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, anomalies = [], annotations = [], onFailureBarClick, onAnomalyClick }: MetricsChartsProps) {
-  const { t, tx } = useTranslation();
+function Plot({ render, resetKey }: { render: (R: RechartsModule) => ReactElement; resetKey: string }) {
+  return (
+    // New data remounts the boundary, so a chart that failed on one window renders the next.
+    <ChartErrorBoundary key={resetKey}>
+      <LazyChart
+        fallback={<div style={{ height: HEIGHT }} />}
+        render={(R) => <R.ResponsiveContainer width="100%" height={HEIGHT}>{render(R)}</R.ResponsiveContainer>}
+      />
+    </ChartErrorBoundary>
+  );
+}
+
+export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, anomalies = [], annotations = [], eyebrow, loading, onFailureBarClick, onAnomalyClick }: MetricsChartsProps) {
+  const { t, tx, language } = useTranslation();
+  const c = t.overview.observability_charts;
   const sf = useScaledFontSize();
   const { shouldAnimate } = useMotion();
-  const visibleAnnotations = useMemo(() => {
-    const chartDates = new Set(chartData.map((point) => point.date));
-    return annotations.filter((annotation) => chartDates.has(annotation.date));
+  const dateTick = useMemo(() => {
+    const fmt = new Intl.DateTimeFormat(language, { month: 'short', day: 'numeric' });
+    return (v: string) => fmt.format(new Date(v));
+  }, [language]);
+  const costTick = useMemo(() => {
+    const fmt = new Intl.NumberFormat(language, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+    return (v: number) => fmt.format(v);
+  }, [language]);
+  const visible = useMemo(() => {
+    const dates = new Set(chartData.map((p) => p.date));
+    return annotations.filter((a) => dates.has(a.date));
   }, [chartData, annotations]);
-
   const costAnomalies = useMemo(() => anomalies.filter((a) => a.metric === 'cost'), [anomalies]);
-
-  const handleAnomalyMarkerClick = useCallback((date: string) => {
-    if (!onAnomalyClick) return;
-    const anomaly = costAnomalies.find((a) => a.date === date);
-    if (anomaly) onAnomalyClick(anomaly);
+  const anomalyLabel = useCallback((a: MetricAnomaly) => {
+    const x = t.overview.anomaly_drilldown_extra;
+    const usd = new Intl.NumberFormat(language, { style: 'currency', currency: 'USD' });
+    return `${x.title} · ${x.value_label} ${usd.format(a.value)} · ${x.baseline_label} ${usd.format(a.baseline)}`;
+  }, [t, language]);
+  const onMarker = useCallback((date: string) => {
+    const a = costAnomalies.find((x) => x.date === date);
+    if (a && onAnomalyClick) onAnomalyClick(a);
   }, [onAnomalyClick, costAnomalies]);
 
-  const axisTickSm = useMemo(() => ({ fontSize: sf(10), fill: getAxisTickFill() }), [sf]);
-  const legendStyle = useMemo(() => ({ fontSize: sf(11) }), [sf]);
-  const gridStroke = getGridStroke();
+  const tick = useMemo(() => ({ fontSize: sf(10), fill: getAxisTickFill() }), [sf]);
+  const grid = getGridStroke();
+  const resetKey = `${chartData.length}:${chartData[0]?.date ?? ''}:${chartData[chartData.length - 1]?.date ?? ''}`;
+  const state = loading ? 'loading' : chartData.length === 0 ? 'empty' : undefined;
+  const empty = { title: t.overview.analytics_dashboard.no_execution_data };
+  const anomalyMeta = costAnomalies.length > 0 ? (
+    <span className="k-legend-row typo-caption">
+      <span><Dot tone="error" />{tx(costAnomalies.length === 1 ? c.anomaly_detected : c.anomalies_detected, { count: costAnomalies.length })}</span>
+      <span>{c.anomaly_click_hint}</span>
+    </span>
+  ) : undefined;
 
   return (
-    <div className="space-y-6">
-      {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Cost Over Time */}
-        <MetricChart
-          title={t.overview.observability_charts.cost_over_time}
-          height={240}
-          chart={(R) => (
-            <R.AreaChart data={chartData}>
-              <R.CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
-              <R.XAxis dataKey="date" tick={axisTickSm} tickFormatter={DATE_AXIS_FORMATTER} />
-              <R.YAxis tick={axisTickSm} tickFormatter={COST_AXIS_FORMATTER} />
+    <>
+      <Section id="s-obs-cost" eyebrow={eyebrow} title={c.cost_over_time} meta={anomalyMeta}>
+        <ChartFrame height={HEIGHT} label={c.cost_over_time} state={state} empty={empty}>
+          <Plot resetKey={resetKey} render={(R) => (
+            <R.AreaChart data={chartData} margin={PLOT_MARGIN}>
+              <R.CartesianGrid strokeDasharray="3 3" stroke={grid} vertical={false} />
+              <R.XAxis dataKey="date" tick={tick} tickFormatter={dateTick} />
+              <R.YAxis tick={tick} tickFormatter={costTick} width={48} />
               <R.Tooltip content={TOOLTIP_CONTENT} />
-              <R.Area type="monotone" dataKey="cost" stroke="#6366f1" fill={`url(#${CHART_GRAD.cost})`} strokeWidth={2} />
-              {renderAnnotationReferenceLines(R, visibleAnnotations, 'cost')}
-              {/* Anomaly markers — clickable pulsing diamonds */}
-              {costAnomalies.map((anomaly) => (
-                <R.ReferenceLine
-                  key={`anomaly-${anomaly.date}`}
-                  x={anomaly.date}
-                  stroke="#ef4444"
-                  strokeDasharray="2 3"
-                  strokeOpacity={0.5}
-                  label={({ viewBox }) => {
-                    if (!viewBox) return null;
-                    const cx = viewBox.x ?? 0;
-                    const cy = (viewBox.y ?? 0) - 10;
-                    return (
-                      <g
-                        style={{ cursor: onAnomalyClick ? 'pointer' : undefined }}
-                        onClick={() => handleAnomalyMarkerClick(anomaly.date)}
-                      >
-                        {/* eslint-disable-next-line custom/prefer-numeric -- SVG title string */}
-                        <title>{`Anomaly: cost +${anomaly.deviation_pct.toFixed(0)}% vs baseline — click to drill down`}</title>
-                        {/* Pulse ring — static when reduced motion preferred */}
-                        {shouldAnimate ? (
-                          <circle cx={cx} cy={cy} r={6} fill="none" stroke="#ef4444" strokeWidth={1} opacity={0.3}>
-                            <animate attributeName="r" values="4;8;4" dur="2s" repeatCount="indefinite" />
-                            <animate attributeName="opacity" values="0.4;0.1;0.4" dur="2s" repeatCount="indefinite" />
-                          </circle>
-                        ) : (
-                          <circle cx={cx} cy={cy} r={6} fill="none" stroke="#ef4444" strokeWidth={1} opacity={0.3} />
-                        )}
-                        {/* Diamond marker */}
-                        <polygon
-                          points={`${cx},${cy - 4} ${cx + 4},${cy} ${cx},${cy + 4} ${cx - 4},${cy}`}
-                          fill="#ef4444"
-                          stroke="#fff"
-                          strokeWidth={0.5}
-                        />
-                      </g>
-                    );
-                  }}
-                />
-              ))}
+              <R.Area type="monotone" dataKey="cost" stroke={toneColor('primary')} fill={toneColor('primary')} fillOpacity={0.12} strokeWidth={2} />
+              {renderAnnotationLines(R, visible, 'cost')}
+              {renderAnomalyMarkers(R, costAnomalies, { animate: shouldAnimate, onClick: onAnomalyClick ? onMarker : undefined, label: anomalyLabel })}
             </R.AreaChart>
-          )}
-        />
-
-        {/* Execution Distribution */}
-        <MetricChart
-          title={t.overview.observability_charts.executions_by_persona}
-          height={240}
-          emptySlot={
-            pieData.length === 0 ? (
-              <EmptyState variant="metrics" className="h-[240px] py-0" />
-            ) : undefined
-          }
-          chart={(R) => (
-            <R.PieChart>
-              <R.Pie data={pieData} dataKey="executions" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${String(name ?? '')} ${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}>
-                {pieData.map((_, i) => (
-                  <R.Cell key={i} fill={CHART_COLORS_PURPLE[i % CHART_COLORS_PURPLE.length]} />
-                ))}
-              </R.Pie>
-              <R.Tooltip content={TOOLTIP_CONTENT} />
-            </R.PieChart>
-          )}
-        />
-      </div>
-
-      {/* Anomaly summary strip */}
-      {costAnomalies.length > 0 && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-card border border-amber-500/20 bg-amber-500/5">
-          <span className="typo-caption text-amber-400/80">
-            {costAnomalies.length === 1 ? tx(t.overview.observability_charts.anomaly_detected, { count: 1 }) : tx(t.overview.observability_charts.anomalies_detected, { count: costAnomalies.length })}
+          )} />
+        </ChartFrame>
+      </Section>
+      <Section
+        id="s-obs-health-chart"
+        eyebrow={eyebrow}
+        title={c.execution_health}
+        meta={
+          <span className="k-legend-row typo-caption">
+            <span><Dot tone="success" />{c.successful}</span>
+            <span><Dot tone="error" />{c.failed}</span>
           </span>
-          <span className="text-[10px] text-foreground">
-            {t.overview.observability_charts.anomaly_click_hint}
-          </span>
-        </div>
-      )}
-
-      {/* Charts Row 2 */}
-      <MetricChart
-        title={t.overview.observability_charts.execution_health}
-        height={240}
-        chart={(R) => (
-          <R.BarChart data={chartData}>
-            <R.CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
-            <R.XAxis dataKey="date" tick={axisTickSm} tickFormatter={DATE_AXIS_FORMATTER} />
-            <R.YAxis tick={axisTickSm} />
-            <R.Tooltip content={TOOLTIP_CONTENT} cursor={false} />
-            <R.Legend wrapperStyle={legendStyle} />
-            <R.Bar dataKey="success" name={t.overview.observability_charts.successful} fill="#22c55e" radius={[2, 2, 0, 0]} />
-            <R.Bar
-              dataKey="failed"
-              name={t.overview.observability_charts.failed}
-              fill="#ef4444"
-              radius={[2, 2, 0, 0]}
-              cursor={onFailureBarClick ? 'pointer' : undefined}
-              onClick={onFailureBarClick ? (data: { payload?: MetricsChartPoint }) => {
-                if (data.payload?.date && data.payload.failed > 0) onFailureBarClick(data.payload.date);
-              } : undefined}
-            />
-            {renderAnnotationReferenceLines(R, visibleAnnotations, 'health')}
-          </R.BarChart>
-        )}
-      />
-    </div>
+        }
+      >
+        <ChartFrame height={HEIGHT} label={c.execution_health} state={state} empty={empty}>
+          <Plot resetKey={resetKey} render={(R) => (
+            <R.BarChart data={chartData} margin={PLOT_MARGIN}>
+              <R.CartesianGrid strokeDasharray="3 3" stroke={grid} vertical={false} />
+              <R.XAxis dataKey="date" tick={tick} tickFormatter={dateTick} />
+              <R.YAxis tick={tick} width={48} />
+              <R.Tooltip content={TOOLTIP_CONTENT} cursor={false} />
+              <R.Bar dataKey="success" name={c.successful} fill={toneColor('success')} radius={[2, 2, 0, 0]} />
+              <R.Bar
+                dataKey="failed"
+                name={c.failed}
+                fill={toneColor('error')}
+                radius={[2, 2, 0, 0]}
+                cursor={onFailureBarClick ? 'pointer' : undefined}
+                onClick={onFailureBarClick ? (data: { payload?: MetricsChartPoint }) => {
+                  if (data.payload?.date && data.payload.failed > 0) onFailureBarClick(data.payload.date);
+                } : undefined}
+              />
+              {renderAnnotationLines(R, visible, 'health')}
+            </R.BarChart>
+          )} />
+        </ChartFrame>
+      </Section>
+      <PersonaBreakdownTable rows={pieData} eyebrow={eyebrow} loading={loading} />
+    </>
   );
 });

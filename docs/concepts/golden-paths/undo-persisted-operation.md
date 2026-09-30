@@ -1,7 +1,7 @@
 # Undo of a persisted operation
 
 > Situation node: `client-runtime / mutations-and-editing /
-> undo-persisted-operation` · [situation spine](../situation-spine.json)
+> undo-persisted-operation` · situation spine
 > `sides: "client"` · `twoSided: true` · `fusedAcrossSides: false` ·
 > `recurrence: 2` · `risk: high` · `convergence: "converged"`.
 > Dimensions: **function · resilience · ui**.

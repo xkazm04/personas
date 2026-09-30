@@ -1,7 +1,7 @@
 # Golden path — Bundling native assets
 
 > Situation node: `platform-delivery/packaging-and-release/bundling-native-assets` ·
-> [situation spine](../situation-spine.md)
+> situation spine
 > `sides: server` · `twoSided: false` · recurrence **4** · risk **medium** ·
 > spine label `convergence: mixed`.
 > Dimensions: **function · resilience · cost**.

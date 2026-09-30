@@ -1,6 +1,6 @@
 # The knowledge graph — design contract (v2, session N+1)
 
-**Status:** designed fresh 2026-08-18 per [`knowledge-hierarchy-plan.md`](../knowledge-hierarchy-plan.md) §5,
+**Status:** designed fresh 2026-08-18 per `knowledge-hierarchy-plan.md` §5,
 which made this document the session's first deliverable and explicitly freed it from the
 old shapes. What it may not overrule — and does not — are the four layers, their §2
 acceptance tests, and the gated boundary.

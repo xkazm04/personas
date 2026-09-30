@@ -24,6 +24,7 @@ import type { RadioState } from '@/lib/bindings/RadioState';
 import type { KbExtractionProgress } from '@/lib/bindings/KbExtractionProgress';
 import type { ContestChangedPayload } from '@/lib/bindings/ContestChangedPayload';
 import type { CompanionsStatusDto } from '@/lib/bindings/CompanionsStatusDto';
+import type { CuratorPulsePayload } from '@/lib/bindings/CuratorPulsePayload';
 import type { CircuitTransitionEvent } from '@/lib/bindings/CircuitTransitionEvent';
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
 import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
@@ -347,6 +348,9 @@ export const EventName = {
   ORCHESTRATION_DIGEST_CHANGED: 'athena://orchestration/digest-changed',
   FLEET_AUTO_DECIDED: 'athena://fleet/auto-decided',
   COMPANIONS_STATUS_CHANGED: 'companions://status-changed',
+  // Curator's loop, every time her observable state moves. See the payload
+  // entry below for why the whole runtime rides on it.
+  CURATOR_PULSE: 'curator://pulse',
   STANDARDS_SCAN_STATUS: 'dev_tools_standards_scan_status',
   RADIO_STATE: 'radio:state',
   KB_EXTRACTION_PROGRESS: 'kb-extraction-progress',
@@ -1261,6 +1265,12 @@ export interface EventPayloadMap {
   // to read back. Typed as the generated DTO so a field that moves in Rust
   // breaks here rather than at the surface that draws it.
   [EventName.COMPANIONS_STATUS_CHANGED]: CompanionsStatusDto;
+  // Curator's whole runtime travels ON her pulse, for the same reason the
+  // companions status does: the listener never has to read back for the thing
+  // that moved. `runtime` is nullable and the null arm is load-bearing - it
+  // means the backend could not measure her, NOT that she is idle, and the
+  // client re-reads rather than being handed a zero.
+  [EventName.CURATOR_PULSE]: CuratorPulsePayload;
   [EventName.STANDARDS_SCAN_STATUS]: { project_id?: string; status?: string };
   [EventName.RADIO_STATE]: RadioState;
   [EventName.KB_EXTRACTION_PROGRESS]: KbExtractionProgress;

@@ -1129,7 +1129,7 @@ flagship authoring path.
 
 **Where:** `db/src/repos/dev_tools.rs:1254-1261` (`goal_summary`);
 `TeamSynthesisPanel.tsx:28` → `team_synthesis.rs:581,619`;
-`useCreateTemplateActions.ts:89`; `TrainingStudio.tsx:111,:160`.
+`useCreateTemplateActions.ts:89` (deleted 2026-09-25 with the never-mounted Create Template flow); `TrainingStudio.tsx:111,:160`.
 
 **What is measured:** across the whole schema — **78 personas (at least 73
 model-drafted) with `trust_origin='builtin'` on 77; 351 triggers, 44 of them
@@ -1146,7 +1146,7 @@ model-authored, 0 of 2 showing it.
 **Six "generate is apply" surfaces have no gate at all.** `TeamSynthesisPanel`
 creates a team **and N live personas** from one prompt with no preview step.
 
-**Two smaller ones worth not losing:** `useCreateTemplateActions.ts:89`
+**Two smaller ones worth not losing:** `useCreateTemplateActions.ts:89` (moot since 2026-09-25: the file was deleted, unmounted)
 **silently discards the user's edits** on the snapshot-recovery path — `updateDraft`
 writes `draft` while the save reads `designResultJson`. And
 `TrainingStudio.tsx:111` computes `aiDrafted: true`, then `:160` persists the
@@ -1278,7 +1278,7 @@ today.
 ## 33. 21 of 21 tab strips ship a dangling `aria-controls`
 
 **Where:** `SegmentedTabs.tsx:124,:41,:176-182` vs `PanelTabBar.tsx:86`;
-`DraftEditStep.tsx:129`; `PrototypeTabs.tsx`, `TwinVariantTabs.tsx`.
+`DraftEditStep.tsx:129` (deleted 2026-09-25, never mounted); `PrototypeTabs.tsx`, `TwinVariantTabs.tsx`.
 
 **What is measured:** two tab-strip primitives sit in one folder, differ on one
 line, and score **2/2 versus 0/21**. `PanelTabBar` **withholds**
@@ -1293,7 +1293,7 @@ cleanest in-repo controlled experiment for *withholding beats requiring*.
 `role="tabpanel"` appears **4 times in the entire tree** against 34 tab strips.
 
 **A keyboard trap, and it is the only one in six repos:**
-`DraftEditStep.tsx:129` uses a roving `tabIndex` with **no arrow-key handler**,
+`DraftEditStep.tsx:129` (deleted 2026-09-25, never mounted) used a roving `tabIndex` with **no arrow-key handler**,
 leaving **2 of 3 tabs unreachable from the keyboard.** Four sibling repos have
 zero.
 
@@ -5199,7 +5199,7 @@ Plural selection is caller-side `count === 1` at hundreds of sites (457 plural-s
 `resolveMetricPercent` returns 0 for missing denominator/non-finite — "never measured" renders as "0%" (`metricIdentity.ts:48-58`) · kpiMath.ts ↔ kpi_derivation.rs and DimensionRadial ↔ score_design_result are comment-coupled mirrors with zero shared fixtures · sample-anchored sparkline scales at 32 call sites (`KpiTile.tsx:104`), with two same-named `sparklinePoints()` exports carrying opposite doctrine · hardcoded hex outside tokens (`ConfidenceArc.tsx:47-61`); `ChartEmptyState` has 0 render call sites · series stroke keyed on status makes legend swatches identical (`KPIDashboard.tsx:339`) · two exported `LazyChart` components with different jobs · no chart carries a text equivalent.
 
 ### <a id="w3-wizard-flows"></a> wizard-flows
-Shared `WizardStepper` is two-state, non-interactive, and has zero live render paths (both call sites in the never-imported `CreateTemplateModal`) · `ScrapeEditorWizard.tsx:42,:88` rail/next unguarded — saved only by the modal's terminal re-check · training interview state fully ephemeral; unanswered generated questions die with the surface · corrupt persisted context removed silently (`usePersistedContext.ts:74-77`) · `n8n_transform_sessions` has no reaper; `sweep_stale_drafts` default-off · questionnaire/training keyed by array index while entities carry minted ids.
+Shared `WizardStepper` was two-state, non-interactive, and had zero live render paths (both call sites in the never-imported `CreateTemplateModal`); both were deleted 2026-09-25, so the repo has no shared stepper at all · `ScrapeEditorWizard.tsx:42,:88` rail/next unguarded — saved only by the modal's terminal re-check · training interview state fully ephemeral; unanswered generated questions die with the surface · corrupt persisted context removed silently (`usePersistedContext.ts:74-77`) · `n8n_transform_sessions` has no reaper; `sweep_stale_drafts` default-off · questionnaire/training keyed by array index while entities carry minted ids.
 
 ### <a id="w3-toasts-notifications"></a> toasts-notifications
 No persistence tier — every toast auto-dismisses; action-required messages evaporate (`toastStore.ts:131`) · toast and notification ledger are disjoint populations with no shared identity — no toast has a durable twin · double live-region announcement (container aria-live + store announceImperative), error toasts announce raw copy then display friendly copy · hover-only timer pause — keyboard focus doesn't hold a toast (`useToastTimer.ts:68-76`) · OS tier is an unconditional focus-blind mirror with five delivery doors and 52/57 hardcoded-English strings (`notifications.rs:1543`) · second forked toast stack (`AlertToastContainer.tsx`: own vocabulary, fixed dwell, silent drop past 5, no live region) · no coalescing; ledger retention cap-only.

@@ -501,7 +501,14 @@ pub const CURATOR_LEVEL_FORGE: &str = "curator_level_forge";
 pub const CURATOR_LEVEL_CONFORM: &str = "curator_level_conform";
 /// Authority level for a maintenance sweep over the corpus.
 pub const CURATOR_LEVEL_SWEEP: &str = "curator_level_sweep";
-/// Default for all four levels — `L0`, always ask.
+/// Authority level for editing the registry's own METHOD files - the skills
+/// that say how every other lane runs.
+///
+/// Distinct from [`CURATOR_LEVEL_SWEEP`] because the blast radius is: a sweep
+/// changes what the corpus says, a method edit changes what every future worker
+/// is told to do. Added 2026-09-26 with the `method` lane.
+pub const CURATOR_LEVEL_METHOD: &str = "curator_level_method";
+/// Default for all five levels — `L0`, always ask.
 ///
 /// An autonomy setting that has never been touched must not be read as
 /// permission, which is the same call [`CURATOR_ENABLED_DEFAULT`] makes.
@@ -585,6 +592,14 @@ pub const CURATOR_HARVEST_DRAIN_MARK: &str = "curator_harvest_drain_mark";
 /// nothing about whether the gap list has a source worth fetching - and because
 /// two rungs sharing one mark would let either silence the other.
 pub const CURATOR_HARVEST_REFILL_MARK: &str = "curator_harvest_refill_mark";
+/// The one method fix she last dispatched, as `<impediment-id>@<registry-head>`.
+///
+/// The same shape and the same job as the two harvest marks above: it stops her
+/// dispatching the same repair against inputs that have not moved. Keyed on the
+/// registry HEAD rather than on a fingerprint of the file, because the evidence
+/// that a method fix landed is a COMMIT - and any commit to the registry, hers
+/// or anybody's, is reason enough to look again.
+pub const CURATOR_METHOD_MARK: &str = "curator_method_mark";
 
 /// Whether `spec` is a window Curator's tick and the attention loop will both
 /// honour. Delegates to the ONE parser
@@ -1238,10 +1253,50 @@ pub const PLATFORM_PROJECT_ID: &str = "platform_project_id";
 /// which is worse than leaving it in the tray.
 pub const DEVTOOLS_ACTIVE_WORKSPACE: &str = "devtools.active_workspace";
 
+/// The folders an HTTP-registered or `_projectId`-bound project must live under
+/// (`personas_db::execution_project`). JSON array of absolute directory paths.
+///
+/// Persisted rather than per-process because every desktop instance sharing
+/// this database must answer the containment question the same way: with an
+/// env-only list, one instance accepted a binding at its route and a second
+/// instance's runner, launched without the variable, claimed the execution and
+/// refused it. `PERSONAS_HTTP_PROJECT_ROOTS` still wins when set (an explicit
+/// per-process override); otherwise every instance reads this row at check
+/// time.
+///
+/// **Operator-only** ([`is_operator_only`]): the generic writers
+/// (`settings::set` / `delete`, hence `set_app_setting`, the Athena import, the
+/// management API's settings routes) refuse it. The one writer is
+/// `PUT /api/settings/http-project-roots`, which demands `personas:approve` —
+/// a kp key can never widen its own containment.
+pub const MANAGEMENT_HTTP_PROJECT_ROOTS: &str = "management.http_project_roots";
+
+/// The gig persona policy (`personas_db::kp_gig_policy`): the operator's
+/// standing approval for kp's one-persona-per-gig hires. JSON object
+/// `{enabled, maxBudgetUsd, allowedModels, rootPath}`; absent = disabled.
+///
+/// **Operator-only** for the same reason as [`MANAGEMENT_HTTP_PROJECT_ROOTS`]:
+/// it decides which persona requests a kp key gets approved WITHOUT a human
+/// click, so a kp key must never be able to widen it. Written only by the
+/// `kp_gig_persona_policy_set` Tauri command (Settings → API Keys).
+pub const KP_GIG_PERSONA_POLICY: &str = "kp.gig_persona_policy";
+
+/// Keys the generic settings writers refuse. They carry a security boundary
+/// the operator alone may move, so they are written only through
+/// `repos::core::settings::set_operator_only`.
+const OPERATOR_ONLY_KEYS: &[&str] = &[MANAGEMENT_HTTP_PROJECT_ROOTS, KP_GIG_PERSONA_POLICY];
+
+/// Whether `key` may be written only through the operator path.
+pub fn is_operator_only(key: &str) -> bool {
+    OPERATOR_ONLY_KEYS.contains(&key)
+}
+
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
     PLATFORM_PROJECT_ID,
     DEVTOOLS_ACTIVE_WORKSPACE,
+    MANAGEMENT_HTTP_PROJECT_ROOTS,
+    KP_GIG_PERSONA_POLICY,
     EXECUTIONS_FTS_STALE,
     MIGRATION_E31_NOTES_ADOPT_MILESTONES,
     OLLAMA_API_KEY,
@@ -1314,11 +1369,12 @@ const ALLOWED_KEYS: &[&str] = &[
     ATHENA_ONBOARDED_AT,
     OVERSEER_ENABLED,
     CURATOR_ENABLED,
-    // Curator's policy — the nine keys `CuratorPolicy` is projected from.
+    // Curator's policy — the ten keys `CuratorPolicy` is projected from.
     CURATOR_LEVEL_RESEARCH,
     CURATOR_LEVEL_FORGE,
     CURATOR_LEVEL_CONFORM,
     CURATOR_LEVEL_SWEEP,
+    CURATOR_LEVEL_METHOD,
     CURATOR_DAILY_BUDGET_USD,
     CURATOR_DAILY_RUN_CAP,
     CURATOR_DAILY_COMMIT_CAP,
@@ -1328,6 +1384,7 @@ const ALLOWED_KEYS: &[&str] = &[
     CURATOR_LAST_SLEEP_AT,
     CURATOR_HARVEST_DRAIN_MARK,
     CURATOR_HARVEST_REFILL_MARK,
+    CURATOR_METHOD_MARK,
     MONTHLY_COST_CEILING_USD,
     AUTONOMOUS_GOAL_ADVANCEMENT,
     AUTONOMOUS_ATTENTION_LOOP,
@@ -1451,6 +1508,21 @@ pub fn validate_key(key: &str) -> Result<(), String> {
 /// - `SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR` → positive integer (u32 range)
 /// - `FILE_WATCHER_DEBOUNCE_MS` → non-negative integer (u32 range, milliseconds)
 pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
+    // A JSON array of strings; the path checks (absolute, existing directory,
+    // not a root) live at the write route, which can touch the filesystem.
+    // The gig persona policy's shape; the root folder's existence is checked
+    // by the operator's write command, which can touch the filesystem.
+    if key == KP_GIG_PERSONA_POLICY {
+        return crate::kp_gig_policy::parse(value).map(|_| ());
+    }
+    if key == MANAGEMENT_HTTP_PROJECT_ROOTS {
+        return match serde_json::from_str::<Vec<String>>(value) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!(
+                "value for '{key}' must be a JSON array of path strings: {e}"
+            )),
+        };
+    }
     // Per-project autopilot mode (prefix key) — constrained enum value.
     if key.starts_with(AUTOPILOT_MODE_PREFIX) {
         return match value {
@@ -2024,6 +2096,8 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
     let category = match key {
         // Secrets / credentials.
         OLLAMA_API_KEY | LITELLM_MASTER_KEY | BROWSER_BRIDGE_PAIRING_TOKEN => "api_keys",
+        // The management API's containment boundary.
+        MANAGEMENT_HTTP_PROJECT_ROOTS | KP_GIG_PERSONA_POLICY => "security",
         // Engine wiring: which CLI/remote engine, routing, capabilities, concurrency.
         CLI_ENGINE
         | QWEN_BASE_URL

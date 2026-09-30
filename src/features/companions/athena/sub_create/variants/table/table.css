@@ -1,0 +1,278 @@
+/*
+ * Create Athena "Table" shell - ported from the contest winner "Across the Table"
+ * (athena-voice-studio-ui B/1, 2026-09-30) in the form it was written: a stylesheet for
+ * the layered gradients, the path, the receipts and the cards. Type is carried by typo-*
+ * classes on the elements; every colour is a theme token or color-mix() over one, so
+ * each theme repaints it. Layout decisions use container queries: the setup lives in a
+ * panel, not a viewport.
+ */
+.athena-table {
+  --tb-fg: var(--foreground);
+  --tb-fg2: color-mix(in srgb, var(--foreground) 84%, transparent);
+  --tb-fg3: color-mix(in srgb, var(--foreground) 70%, transparent);
+  --tb-line: color-mix(in srgb, var(--foreground) 9%, transparent);
+  --tb-line2: color-mix(in srgb, var(--foreground) 16%, transparent);
+  --tb-card: color-mix(in srgb, var(--foreground) 4%, transparent);
+  --tb-card2: color-mix(in srgb, var(--foreground) 7%, transparent);
+  --tb-accent: var(--primary);
+  --tb-agent: var(--role-agent);
+  --tb-human: var(--role-human);
+  --tb-first: var(--status-warning);
+  --tb-second: var(--status-success);
+  --tb-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  container-type: inline-size;
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  color: var(--tb-fg);
+  border: 1px solid var(--tb-line);
+  border-radius: var(--radius-card);
+  background:
+    radial-gradient(1200px 600px at 50% -10%, color-mix(in srgb, var(--role-agent) 8%, transparent), transparent 60%),
+    radial-gradient(900px 500px at 50% 110%, color-mix(in srgb, var(--primary) 6%, transparent), transparent 60%),
+    var(--background);
+}
+.athena-table .tb-frame {
+  height: 100%;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-columns: clamp(200px, 19cqw, 280px) minmax(0, 1fr) clamp(250px, 24cqw, 360px);
+}
+/* ---------- rails ---------- */
+.athena-table .tb-rail {
+  border-right: 1px solid var(--tb-line); padding: 22px 18px; overflow: auto;
+  display: flex; flex-direction: column; gap: 18px; min-width: 0;
+}
+.athena-table .tb-rail.right { border-right: 0; border-left: 1px solid var(--tb-line); }
+.athena-table .tb-eyebrow { color: var(--tb-fg3); letter-spacing: 0.02em; }
+
+/* path: an altitude line with beats on it */
+.athena-table .tb-path { list-style: none; margin: 0; padding: 0; position: relative; }
+.athena-table .tb-path::before {
+  content: ""; position: absolute; left: 10px; top: 12px; bottom: 12px; width: 2px; background: var(--tb-line);
+}
+.athena-table .tb-path-fill {
+  position: absolute; left: 10px; top: 12px; width: 2px; height: 0;
+  background: linear-gradient(var(--tb-agent), var(--tb-accent));
+  transition: height 0.6s var(--tb-ease);
+}
+.athena-table .tb-beat { position: relative; padding: 6px 0 6px 32px; }
+.athena-table .tb-beat-label { all: unset; display: block; color: var(--tb-fg3); line-height: 1.35; }
+.athena-table button.tb-beat-label { cursor: pointer; }
+.athena-table .tb-beat-label:focus-visible { outline: 2px solid var(--tb-accent); outline-offset: 3px; border-radius: var(--radius-sm); }
+.athena-table .tb-beat-dot {
+  position: absolute; left: 4px; top: 10px; width: 14px; height: 14px; border-radius: var(--radius-pill);
+  background: var(--background); border: 2px solid var(--tb-line2); transition: all 0.3s;
+}
+.athena-table .tb-beat .typo-heading { font-weight: 600; }
+.athena-table .tb-beat.done .tb-beat-dot { border-color: var(--tb-agent); background: var(--tb-agent); }
+.athena-table .tb-beat.done .tb-beat-label { color: var(--tb-fg2); }
+.athena-table .tb-beat.now .tb-beat-dot { border-color: var(--tb-accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--tb-accent) 16%, transparent); }
+.athena-table .tb-beat.now .tb-beat-label { color: var(--tb-fg); }
+.athena-table .tb-sub { list-style: none; margin: 6px 0 2px; padding: 0; }
+.athena-table .tb-sub li { color: var(--tb-fg3); padding: 2px 0; display: flex; gap: 8px; align-items: baseline; }
+.athena-table .tb-sub li .m { width: 14px; text-align: center; flex: none; }
+.athena-table .tb-sub li.done { color: var(--tb-fg2); }
+.athena-table .tb-sub li.done .m { color: var(--tb-agent); }
+.athena-table .tb-sub li.current { color: var(--tb-fg); }
+.athena-table .tb-sub li.current .m { color: var(--tb-accent); }
+.athena-table .tb-sub li.skipped { text-decoration: line-through; text-decoration-color: var(--tb-line2); }
+.athena-table .tb-rail-foot { margin-top: auto; color: var(--tb-fg3); display: flex; flex-direction: column; gap: 8px; }
+.athena-table .tb-link { all: unset; cursor: pointer; display: flex; gap: 8px; align-items: center; color: var(--tb-fg2); }
+.athena-table .tb-link:hover { color: var(--tb-fg); }
+.athena-table .tb-link:focus-visible { outline: 2px solid var(--tb-accent); outline-offset: 2px; border-radius: var(--radius-sm); }
+
+/* ---------- centre ---------- */
+.athena-table .tb-centre { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-width: 0; min-height: 0; height: 100%; position: relative; }
+.athena-table .tb-presence {
+  display: flex; align-items: center; gap: 18px; padding: 18px 28px 12px;
+  border-bottom: 1px solid var(--tb-line); position: relative; z-index: 2;
+}
+.athena-table .tb-orb { --lvl: 0; --progress: 0; position: relative; width: 88px; height: 88px; flex: none; border-radius: var(--radius-pill); }
+.athena-table .tb-orb-ring {
+  position: absolute; inset: 0; border-radius: var(--radius-pill);
+  background: conic-gradient(var(--tb-accent) calc(var(--progress) * 1turn), var(--tb-line) 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), black calc(100% - 2px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), black calc(100% - 2px));
+}
+.athena-table .tb-orb-glow {
+  position: absolute; inset: 6px; border-radius: var(--radius-pill);
+  background: radial-gradient(circle at 38% 30%, color-mix(in srgb, var(--tb-agent) 55%, transparent), color-mix(in srgb, var(--tb-accent) 22%, transparent) 55%, transparent 76%);
+  box-shadow: 0 0 calc(12px + var(--lvl) * 48px) calc(var(--lvl) * 6px) color-mix(in srgb, var(--tb-accent) 45%, transparent);
+  transform: scale(calc(1 + var(--lvl) * 0.06));
+  transition: box-shadow 80ms linear, transform 80ms linear;
+}
+.athena-table .tb-orb-face { position: absolute; inset: 16px; border-radius: var(--radius-pill); overflow: hidden; background: var(--tb-card2); }
+.athena-table .tb-who { min-width: 0; }
+.athena-table .tb-status { color: var(--tb-fg2); min-height: 1.6em; }
+.athena-table .tb-presence-end { margin-left: auto; display: flex; align-items: center; gap: 10px; color: var(--tb-fg3); }
+
+.athena-table .tb-thread { overflow: auto; padding: 22px 28px 30px; min-height: 0; }
+.athena-table .tb-thread-inner { max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.athena-table .tb-msg-her {
+  align-self: flex-start; max-width: 88%; line-height: 1.6; padding-left: 14px;
+  border-left: 2px solid color-mix(in srgb, var(--tb-agent) 55%, transparent);
+  animation: tb-rise 0.35s var(--tb-ease) both;
+}
+.athena-table .tb-msg-her.speaking { border-left-color: var(--tb-accent); }
+.athena-table .tb-msg-who { color: var(--tb-agent); margin-bottom: 2px; }
+@keyframes tb-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.athena-table .tb-receipt {
+  align-self: stretch; display: flex; align-items: center; gap: 10px; color: var(--tb-fg2);
+  padding: 6px 12px; border-radius: var(--radius-input);
+  background: color-mix(in srgb, var(--foreground) 2.5%, transparent);
+  border: 1px dashed var(--tb-line); animation: tb-rise 0.3s var(--tb-ease) both;
+}
+.athena-table .tb-receipt .ok { color: var(--tb-agent); flex: none; }
+.athena-table .tb-receipt b { color: var(--tb-fg); font-weight: 600; }
+.athena-table .tb-receipt.skipped { color: var(--tb-fg3); }
+.athena-table .tb-receipt-change { all: unset; margin-left: auto; cursor: pointer; color: var(--tb-accent); flex: none; }
+.athena-table .tb-receipt-change:focus-visible { outline: 2px solid var(--tb-accent); border-radius: var(--radius-sm); }
+
+.athena-table .tb-card {
+  align-self: stretch; position: relative; padding: 16px 18px;
+  background: var(--tb-card); border: 1px solid color-mix(in srgb, var(--tb-accent) 35%, transparent);
+  border-radius: var(--radius-card);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--tb-accent) 8%, transparent), var(--shadow-elevation-3);
+  animation: tb-rise 0.4s var(--tb-ease) both;
+}
+.athena-table .tb-card-head { display: flex; align-items: center; gap: 10px; margin: 0 0 4px; color: var(--tb-fg2); }
+.athena-table .tb-card-step { margin-left: auto; color: var(--tb-fg3); }
+.athena-table .tb-card-hint { color: var(--tb-fg3); margin-top: 10px; }
+
+.athena-table .tb-opts { display: grid; gap: 10px; margin-top: 12px; }
+.athena-table .tb-opts.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.athena-table .tb-opt {
+  all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px;
+  align-items: start; min-width: 0; padding: 12px 14px; border-radius: var(--radius-input);
+  border: 1px solid var(--tb-line); background: color-mix(in srgb, var(--foreground) 2%, transparent);
+  transition: border-color 0.2s, background 0.2s;
+}
+/* The shared Button wraps its children in one span: let the children take part in the
+   control's own layout, and carry type on inner spans (an unlayered reset outranks a
+   typo-* class on the button itself). */
+.athena-table :is(.tb-opt, .tb-act, .tb-sc-line, .tb-receipt-change, .tb-link, .tb-beat-label) > span { display: contents; }
+.athena-table .tb-opt:hover { border-color: var(--tb-line2); background: color-mix(in srgb, var(--foreground) 5%, transparent); }
+.athena-table .tb-opt:focus-visible { outline: 2px solid var(--tb-accent); }
+.athena-table .tb-opt[aria-checked="true"], .athena-table .tb-opt[aria-pressed="true"] {
+  border-color: var(--tb-accent); background: color-mix(in srgb, var(--tb-accent) 8%, transparent);
+}
+.athena-table .tb-opt-d { grid-column: 2; color: var(--tb-fg2); }
+.athena-table .tb-opt-tag { grid-column: 2; color: var(--tb-accent); }
+
+.athena-table .tb-toggle {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px; margin-top: 12px;
+  border-radius: var(--radius-input); border: 1px solid var(--tb-line);
+}
+.athena-table .tb-toggle > :last-child { margin-left: auto; }
+
+/* takes: tiles with a colour of their own (first / second / solo) */
+.athena-table .tb-takes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 12px; }
+.athena-table .tb-takes.one { grid-template-columns: 1fr; }
+.athena-table .tb-take {
+  --c: var(--tb-accent); position: relative; min-width: 0; border: 1px solid var(--tb-line); border-radius: var(--radius-card);
+  padding: 14px 14px 12px; background: color-mix(in srgb, var(--foreground) 2%, transparent);
+  display: flex; flex-direction: column; gap: 8px;
+  transition: border-color 0.25s, background 0.25s, transform 0.25s var(--tb-ease);
+}
+.athena-table .tb-take.first { --c: var(--tb-first); }
+.athena-table .tb-take.second { --c: var(--tb-second); }
+.athena-table .tb-take-lab { display: flex; align-items: center; gap: 8px; }
+.athena-table .tb-take-lab i { width: 10px; height: 10px; border-radius: var(--radius-pill); background: var(--c); display: inline-block; flex: none; }
+.athena-table .tb-take-body { color: var(--tb-fg2); line-height: 1.45; }
+.athena-table .tb-take-row { display: flex; align-items: center; gap: 10px; color: var(--tb-fg3); }
+.athena-table .tb-take.playing { border-color: color-mix(in srgb, var(--c) 70%, transparent); background: color-mix(in srgb, var(--c) 6%, transparent); }
+.athena-table .tb-take.picked { border-color: color-mix(in srgb, var(--c) 85%, transparent); transform: translateY(-2px); }
+.athena-table .tb-take.muted { opacity: 0.55; }
+
+.athena-table .tb-progress { height: 6px; border-radius: var(--radius-pill); background: var(--tb-line); overflow: hidden; margin-top: 12px; }
+.athena-table .tb-progress > span { display: block; height: 100%; border-radius: var(--radius-pill); background: linear-gradient(90deg, var(--tb-agent), var(--tb-accent)); transition: width 0.3s var(--tb-ease); }
+
+/* dock */
+.athena-table .tb-dock {
+  border-top: 1px solid var(--tb-line); padding: 12px 28px 14px; position: relative; z-index: 2;
+  background: color-mix(in srgb, var(--background) 92%, transparent);
+}
+.athena-table .tb-dock-inner { max-width: 780px; margin: 0 auto; display: flex; flex-wrap: nowrap; gap: 8px; min-height: 40px; align-items: center; }
+.athena-table .tb-dock-sp { flex: 1; min-width: 0; }
+.athena-table .tb-act {
+  all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; flex: none; white-space: nowrap; align-items: center; gap: 9px; padding: 8px 12px;
+  border-radius: var(--radius-interactive); border: 1px solid var(--tb-line2); background: var(--tb-card);
+  color: var(--tb-fg); transition: border-color 0.15s, background 0.15s;
+}
+.athena-table .tb-act:hover { border-color: var(--tb-fg3); background: var(--tb-card2); }
+.athena-table .tb-act:focus-visible { outline: 2px solid var(--tb-accent); }
+.athena-table .tb-act.primary {
+  border-color: color-mix(in srgb, var(--tb-accent) 55%, transparent);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 16%, transparent), color-mix(in srgb, var(--accent) 16%, transparent));
+}
+.athena-table .tb-act[aria-disabled="true"] { opacity: var(--disabled-opacity, 0.45); pointer-events: none; }
+
+/* style card rail */
+.athena-table .tb-sc {
+  border: 1px solid var(--tb-line); border-radius: var(--radius-card); padding: 16px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tb-agent) 7%, transparent), color-mix(in srgb, var(--foreground) 2%, transparent));
+}
+.athena-table .tb-sc-head { display: flex; align-items: center; gap: 12px; }
+.athena-table .tb-sc-seal {
+  width: 44px; height: 44px; flex: none; border-radius: var(--radius-pill);
+  background: conic-gradient(var(--tb-agent) calc(var(--filled, 0) * 1turn), var(--tb-line) 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), black calc(100% - 3px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), black calc(100% - 3px));
+}
+.athena-table .tb-sc-sub { color: var(--tb-fg3); }
+.athena-table .tb-sc-h { margin: 14px 0 6px; color: var(--tb-fg3); letter-spacing: 0.02em; }
+.athena-table .tb-sc ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.athena-table .tb-sc-line {
+  all: unset; box-sizing: border-box; display: flex; gap: 10px; align-items: baseline; width: calc(100% + 12px);
+  padding: 4px 6px; margin: 0 -6px; border-radius: var(--radius-sm); line-height: 1.45; color: var(--tb-fg);
+}
+button.tb-sc-line { cursor: pointer; }
+.athena-table button.tb-sc-line:hover, .athena-table button.tb-sc-line:focus-visible { background: var(--tb-card2); outline: none; }
+.athena-table button.tb-sc-line:focus-visible { box-shadow: 0 0 0 2px color-mix(in srgb, var(--tb-accent) 60%, transparent); }
+.athena-table .tb-sc-line { position: relative; }
+.athena-table .tb-sc-ch { position: absolute; right: 6px; top: 4px; padding-left: 8px; color: var(--tb-accent); opacity: 0; background: var(--tb-card2); border-radius: var(--radius-sm); }
+.athena-table button.tb-sc-line:hover .tb-sc-ch, .athena-table button.tb-sc-line:focus-visible .tb-sc-ch { opacity: 1; }
+.athena-table .tb-sc-line.pending { color: var(--tb-fg3); }
+.athena-table .tb-sc-line.fresh { animation: tb-flash 1.2s var(--tb-ease); }
+@keyframes tb-flash { 0% { background: color-mix(in srgb, var(--tb-accent) 22%, transparent); } 100% { background: transparent; } }
+.athena-table .tb-sc-fixed { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--tb-line); color: var(--tb-fg3); line-height: 1.5; }
+.athena-table .tb-sc-fixed b { color: var(--tb-fg2); font-weight: 600; }
+
+.tb-keys-sheet { padding: 22px 26px; }
+.tb-keys-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.tb-keys { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 26px; }
+.tb-keys > div { display: flex; gap: 12px; align-items: center; padding: 5px 0; border-bottom: 1px solid color-mix(in srgb, var(--foreground) 9%, transparent); }
+.tb-keys > div > span:first-child { min-width: 110px; display: flex; gap: 4px; }
+.athena-table kbd, .tb-keys-sheet kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.6em; height: 1.6em; padding: 0 0.4em;
+  border: 1px solid color-mix(in srgb, var(--foreground) 16%, transparent); border-bottom-width: 2px; border-radius: var(--radius-sm);
+  font-family: var(--font-mono); color: color-mix(in srgb, var(--foreground) 84%, transparent);
+  background: color-mix(in srgb, var(--foreground) 4%, transparent);
+}
+
+/* ---------- narrow containers ---------- */
+@container (max-width: 1080px) {
+  .athena-table .tb-frame { grid-template-columns: 200px minmax(0, 1fr) 250px; }
+  .athena-table .tb-thread, .athena-table .tb-dock { padding-left: 20px; padding-right: 20px; }
+}
+@container (max-width: 980px) {
+  .athena-table .tb-frame { grid-template-columns: 184px minmax(0, 1fr) 232px; }
+  .athena-table .tb-thread, .athena-table .tb-dock { padding-left: 16px; padding-right: 16px; }
+  .athena-table .tb-presence { padding-left: 18px; padding-right: 18px; }
+  .athena-table .tb-rail { padding: 18px 14px; }
+}
+@container (max-width: 860px) {
+  .athena-table .tb-frame { grid-template-columns: minmax(0, 1fr); }
+  .athena-table .tb-rail { display: none; }
+  .athena-table .tb-opts.two, .athena-table .tb-takes { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .athena-table *, .athena-table *::before { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+html[data-motion="reduce"] .athena-table *, html[data-motion="reduce"] .athena-table *::before {
+  animation-duration: 0.01ms !important; transition-duration: 0.01ms !important;
+}

@@ -1,6 +1,6 @@
 # Golden path — i18n string authoring
 
-> Situation node: `ui-system/copy-and-vocabulary/i18n-string-authoring` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/copy-and-vocabulary/i18n-string-authoring` · situation spine
 > Composed 2026-08-14. **Recurrence 1,454.**
 > Sweep: `src/i18n/**` read in full (`useTranslation.ts`, `useTranslatedError.ts`, `tokenMaps.ts`,
 > `CONTRACT.md`, `DebtText.tsx`, `pseudoLocale.ts`, `en.ts`); `errorRegistry.ts` / `errorPipeline.ts` /
@@ -17,7 +17,7 @@
 > user in their own language.
 >
 > Counts below were measured during composition. Where they touch
-> [`shared-facts.json`](../shared-facts.json) they agree with it exactly (1,135 warnings / 226 for
+> `shared-facts.json` they agree with it exactly (1,135 warnings / 226 for
 > `custom/no-hardcoded-jsx-text` / 0 errors / 246 files, reproduced). One number the brief supplied
 > is **corrected** in §7.0. Deviations become `violating` cells.
 
@@ -25,7 +25,7 @@
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and
+Per the portability test, the head is physically separated and
 every clause carries its **warrant**, so an adopting repo can tell physics from local calibration.
 No file path, primitive name or count appears below this line until the head ends.
 
@@ -578,7 +578,7 @@ of P2: a green board measured the catalog it knew about.
 
 ## 9. The missing gate
 
-**Manifestation layer.** Per [`golden-path-contract.md:34-60`](../golden-path-contract.md), what
+**Manifestation layer.** Per `golden-path-contract.md:34-60`, what
 follows is a *proxy* for a semantic condition, tuned to this repo's idiom. The conditions are stated
 first so an adopting repo re-derives its own proxy — and the risk is acute for this leaf: the
 sibling that reinvented this doctrine has no `toastCatch`, no `addToast`, and its copy constants

@@ -14,7 +14,10 @@ import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
 import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import { silentCatch } from '@/lib/silentCatch';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { KitHost, Meta, Section, Segmented, Surface } from '@/features/shared/components/kit';
 import { ProjectsPassportWall } from './passport';
+import { PassportAtlas } from './passport/atlas/PassportAtlas';
+import { ATLAS_WORDS } from './passport/atlas/atlasWords';
 import { buildCoverRoadmap, type CoverRoadmapVM } from './passport/CoverRoadmap';
 import type { WarningItem } from './passport/WarningBadge';
 import { ImproveProvider } from './passport/improve/ImproveContext';
@@ -23,6 +26,8 @@ import { mapWithConcurrency, usePassportData } from './passport/usePassportData'
 import { useAutoRescanOnFleetExit } from './passport/useAutoRescanOnFleetExit';
 import { useFactoryData } from './factoryData';
 import { collectKpiAttention } from './factoryModel';
+import { PassportWallGhost } from './PassportWallGhost';
+import { useFactoryWords } from './useFactoryWords';
 
 /** root_path → favicon data URL (null = probed, none found). Module scope —
  *  repo favicons don't change mid-session; remounts must not re-probe N repos.
@@ -42,6 +47,10 @@ export function ProjectsLayer({
   onOpenShip?: (id: string) => void;
   onJumpKpi?: (projectId: string, groupId: string, kpiId: string) => void;
 }) {
+  const w = useFactoryWords();
+  // The Passport Atlas (contest winner, 2026-09-25) runs beside the legacy wall
+  // until it has been perfected; the wall is then descoped.
+  const [view, setView] = useState<'atlas' | 'wall'>('atlas');
   const { passports, rawByProject, loading, error, generatedAt, rescanningProject, rescanProject, reload } = usePassportData();
   // R22 — a finished `passport:*` dispatch auto-verifies via scoped rescan.
   useAutoRescanOnFleetExit(rescanProject);
@@ -132,36 +141,49 @@ export function ProjectsLayer({
     return m;
   }, [factoryProjects]);
 
+  // The head is a kit Section; the wall below keeps its own type tier (it is
+  // out of the Gate 5 port) so it sits after the compact KitHost, on the same
+  // reading line. // style-deviation: passport wall tier, Gate 5.
+  const failed = !!error && passports.length === 0;
+  const empty = !failed && !loading && passports.length === 0;
   return (
     <div>
-      <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
-        <div className="flex items-center gap-2 min-w-0 flex-wrap">
-          <h2 className="typo-section-title">Project readiness</h2>
-          {passports.length > 0 && <span className="typo-body-lg text-foreground/55">{passports.length} projects</span>}
-          {generatedAt && (
-            <span className="typo-body-lg text-foreground/55 inline-flex items-center gap-1">
-              · scanned <RelativeTime timestamp={generatedAt} className="tabular-nums" />
-            </span>
-          )}
-        </div>
-        {/* Rescan + Improve plan moved into the wall's per-project actions row
-            (Stack group header line) — scoped per project, consent-gated. */}
-      </div>
-
-      {error && passports.length === 0 ? (
-        <div className="rounded-card border border-[var(--destructive)]/30 bg-[var(--destructive)]/5 p-4">
-          <p className="typo-title-lg mb-1">Couldn't build project passports</p>
-          <p className="typo-body-lg text-foreground/60">{error}</p>
-        </div>
-      ) : loading && passports.length === 0 ? (
+      <KitHost compact testId="factory-landing">
+        <Surface dense>
+          <Section
+            id="s-fac-readiness"
+            eyebrow={w.eyebrow}
+            title={w.L.readiness}
+            count={passports.length > 0 ? passports.length : undefined}
+            meta={generatedAt ? <Meta parts={[<span key="s">{w.L.scanned} <RelativeTime timestamp={generatedAt} className="tabular-nums" /></span>]} /> : undefined}
+            actions={passports.length > 0 ? (
+              <Segmented
+                label={ATLAS_WORDS.tabsLabel}
+                value={view}
+                onChange={setView}
+                options={[{ v: 'atlas', label: ATLAS_WORDS.tabAtlas }, { v: 'wall', label: ATLAS_WORDS.tabWall }]}
+              />
+            ) : undefined}
+            state={failed || empty ? 'empty' : undefined}
+            empty={failed
+              ? { title: w.L.passportsFailed, hint: error, tone: 'error' }
+              : { title: w.L.noProjects, hint: w.L.noProjectsHint, tone: 'info' }}
+          />
+        </Surface>
+      </KitHost>
+      {/* Rescan + Improve plan live in the wall's per-project actions row. */}
+      {loading && passports.length === 0 ? (
         <PassportWallGhost />
-      ) : passports.length === 0 ? (
-        <div className="rounded-card border border-primary/15 bg-secondary/10 p-8 text-center">
-          <p className="typo-title-lg mb-1">No projects to compare yet</p>
-          <p className="typo-body-lg text-foreground/60">Register a project in Dev-Tools and scan its context map, then Rescan to build its readiness passport.</p>
-        </div>
-      ) : (
+      ) : passports.length > 0 && (
         <ImproveProvider value={improve}>
+          {view === 'atlas' ? (
+            <PassportAtlas
+              passports={passports}
+              onOpen={onOpen}
+              rescanningProject={rescanningProject}
+              onRescanProject={rescanProject}
+            />
+          ) : (
           <ProjectsPassportWall
             passports={passports}
             openSlugs={openSlugs}
@@ -175,105 +197,9 @@ export function ProjectsLayer({
             rescanningProject={rescanningProject}
             onRescanProject={rescanProject}
           />
+          )}
         </ImproveProvider>
       )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// PassportWallGhost — calm delayed ghost of the passport WALL (loading
-// choreography v2, docs/design/overview-loading.md). Cold loads (no cached
-// snapshot yet — see usePassportData's module-scope cachedSnapshot) show this
-// instead of a whole-region spinner; warm remounts skip it entirely since
-// `loading` is already false.
-//
-// Geometry mirrors WallCompareTable, which is the wall's ONLY view since the
-// Overview grid was removed (2026-08-27): the bordered matrix shell, a sticky
-// 190px label rail, and N 236px cover columns above a band of dimension rows.
-// It used to mirror the grid's 2/3-column tiles, so it ghosted a shape the
-// settled render could no longer produce — the one way a ghost lies.
-//
-// `animate-fade-in` + a >=120ms staggered delay keeps it invisible on a fast
-// load (law 3); no `animate-pulse`.
-// ---------------------------------------------------------------------------
-
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
-/** Cover columns drawn. Four is what fits a desk window before the matrix
- *  scrolls horizontally — past that the ghost would draw off-screen. */
-const GHOST_COL_COUNT = 4;
-/** Dimension rows drawn under the covers. Enough to read as a matrix; the real
- *  table has ~40 and ghosting all of them is paint nobody sees. */
-const GHOST_ROW_COUNT = 6;
-
-/** The compare table's own rail/column widths — kept literal here rather than
- *  imported, because these are the ghost's geometry contract and a shared
- *  constant would invite the table to change them without a ghost to match. */
-const GHOST_RAIL = 'w-[190px] min-w-[190px]';
-const GHOST_COL = 'w-[236px] min-w-[236px]';
-
-function PassportWallGhost() {
-  const cols = Array.from({ length: GHOST_COL_COUNT });
-  return (
-    <div
-      className="overflow-hidden rounded-modal border border-primary/[0.08] bg-secondary/[0.03] shadow-elevation-1"
-      aria-hidden="true"
-    >
-      {/* cover header band — one silhouette per project column */}
-      <div className="flex border-b-2 border-primary/15">
-        <div className={`${GHOST_RAIL} px-3 py-3`}>
-          <span className={`block h-2.5 w-16 ${GHOST_BAR}`} />
-        </div>
-        {cols.map((_, i) => (
-          <div
-            key={i}
-            className={`${GHOST_COL} animate-fade-in border-l border-primary/[0.08] px-3 py-3`}
-            style={{ borderTop: '2px solid rgba(148,163,184,.14)', animationDelay: `${120 + i * 35}ms` }}
-          >
-            {/* identity row: status dot + name + stack strip */}
-            <div className="flex min-w-0 items-center gap-1.5">
-              <span className="h-2 w-2 shrink-0 rounded-full bg-primary/[0.10]" />
-              <span className={`h-3.5 w-20 ${GHOST_BAR}`} />
-              <span className="ml-auto flex shrink-0 items-center gap-1.5">
-                {Array.from({ length: 3 }).map((__, j) => (
-                  <span key={j} className="h-3.5 w-3.5 rounded-[3px] bg-primary/[0.05]" />
-                ))}
-              </span>
-            </div>
-            {/* statband: 5 labeled cells */}
-            <div
-              className="mt-2.5 flex items-center justify-between rounded-card px-2.5 py-1.5"
-              style={{ background: 'rgba(148,163,184,.05)', border: '1px solid rgba(148,163,184,.10)' }}
-            >
-              {Array.from({ length: 5 }).map((__, j) => (
-                <span key={j} className="flex min-w-0 flex-col items-center gap-1">
-                  <span className={`h-2.5 w-5 ${GHOST_BAR}`} />
-                  <span className="h-1.5 w-4 rounded bg-primary/[0.04]" />
-                </span>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* dimension rows — a section band, then labelled rows across the columns */}
-      <div className="animate-fade-in" style={{ animationDelay: '260ms' }}>
-        <div className="border-t border-primary/10 bg-primary/[0.03] px-3 py-1.5">
-          <span className={`block h-2.5 w-24 ${GHOST_BAR}`} />
-        </div>
-        {Array.from({ length: GHOST_ROW_COUNT }).map((_, r) => (
-          <div key={r} className="flex border-t border-primary/[0.06]">
-            <div className={`${GHOST_RAIL} px-3 py-2`}>
-              <span className={`block h-2.5 w-28 ${GHOST_BAR}`} />
-            </div>
-            {cols.map((__, i) => (
-              <div key={i} className={`${GHOST_COL} border-l border-primary/[0.08] px-3 py-2`}>
-                <span className="block h-2.5 w-16 rounded bg-primary/[0.04]" />
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

@@ -36,6 +36,7 @@
     "BrainAtelier.tsx": {"count":1,"sections":[7],"lines":["324"],"contexts":["`ResearchProjectListCartograph.tsx:216`, `BrainAtelier.tsx:324`, `ChannelsAtelier.tsx:389`,"],"resolved":false},
     "CapabilityChip.tsx": {"count":1,"sections":[9],"lines":["5"],"contexts":["(rate-limit **window options**), and `CapabilityChip.tsx:5` (which *can* express absence, via"],"resolved":false},
     "ChannelsAtelier.tsx": {"count":1,"sections":[7],"lines":["389"],"contexts":["`ResearchProjectListCartograph.tsx:216`, `BrainAtelier.tsx:324`, `ChannelsAtelier.tsx:389`,"],"resolved":false},
+    "CompareMetrics.tsx": {"count":1,"sections":[0],"lines":["49-50"],"contexts":["| `CompareMetrics.tsx:49-50` | Tokens in, Tokens out | 2 per model comparison |"],"resolved":false},
     "CostAnalyticsPanel.tsx": {
       "count": 1,
       "sections": [6],
@@ -160,6 +161,7 @@
       "resolved": false
     },
     "agents/sub_executions/detail/inspector/{inspectorShared,TraceSummary,CostBreakdownBar}.tsx": {"count":1,"sections":[],"contexts":["`agents/sub_executions/detail/inspector/{inspectorShared,TraceSummary,CostBreakdownBar}.tsx`,"],"resolved":false},
+    "agents/sub_model_config/components/compare/CompareMetrics.tsx": {"count":1,"sections":[],"contexts":["`agents/sub_model_config/components/compare/CompareMetrics.tsx`, `lib/utils/formatters.ts`,"],"resolved":false},
     "api-schema.d.ts": {"count":1,"sections":[9],"contexts":["| `brainiac` | 411 | **5** (3 of them generated `api-schema.d.ts` — see caveat) | 0 |"],"resolved":false},
     "app/org/[slug]/loading.tsx": {
       "count": 1,
@@ -230,13 +232,7 @@
       ],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {
-      "count": 2,
-      "sections": [7],
-      "contexts": ["**Shared facts cited:** [`shared-facts.json`](../shared-facts.json) — 963 Rust files, 4,828 `.ts`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "shared-facts.json"
-    },
+    "knowledgeHelpers.ts": {"count":1,"sections":[7],"lines":["36"],"contexts":["`knowledgeHelpers.ts:36`), and two independent hand-rolls that both render zero as a small positive"],"resolved":false},
     "lefthook.yml": {"count":1,"sections":[9],"contexts":["**`golden-path-census` pre-push job** in `lefthook.yml`. That matters: per the §9 calibration,"]},
     "lib/metrics/doraMetricsEngine.ts": {
       "count": 1,
@@ -265,6 +261,7 @@
     "personas-web/src/components/dashboard/MetricCard.tsx": {"count":1,"sections":[9],"lines":["25"],"contexts":["- `personas-web/src/components/dashboard/MetricCard.tsx:25` — clause 4's worst case, `value: string`"],"resolved":false},
     "plugins/twin/shared/TwinStat.tsx": {"count":1,"sections":[7],"lines":["30"],"contexts":["(`plugins/twin/shared/TwinStat.tsx:30`) with **zero** of them importing it."],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["against the shared `rules.json`; **the full registry was not run** (doctrine §4). Re-extracted from"],"resolvedFrom":"basename","verbatim":"rules.json"},
+    "shared-facts.json": {"count":2,"sections":[7],"contexts":["**Shared facts cited:** `shared-facts.json` — 963 Rust files, 4,828 `.ts`,"],"resolved":false},
     "shared/components/display/{StatCard,Numeric}.tsx": {"count":1,"sections":[],"contexts":["rather than one reconciled number. Read in full: `shared/components/display/{StatCard,Numeric}.tsx`,"],"resolved":false},
     "sla.rs": {"count":2,"sections":[7,12],"lines":["508-511"],"contexts":["**default**. `SLADashboard.tsx:138`, backend fallback at `sla.rs:508-511`."],"resolved":false},
     "src-tauri/db/src/repos/communication/sla.rs": {
@@ -356,14 +353,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_lab/components/versions_table/LabVersionsTable.tsx"
     },
-    "src/features/agents/sub_model_config/components/compare/CompareMetrics.tsx": {
-      "count": 2,
-      "sections": [0],
-      "lines": ["49-50"],
-      "contexts": ["`agents/sub_model_config/components/compare/CompareMetrics.tsx`, `lib/utils/formatters.ts`,"],
-      "resolvedFrom": "suffix",
-      "verbatim": "agents/sub_model_config/components/compare/CompareMetrics.tsx"
-    },
     "src/features/companions/overseer/components/CampaignReportPanel.tsx": {
       "count": 1,
       "sections": [7],
@@ -431,14 +420,6 @@
       "verbatim": "overview/sub_activity/libs/executionMetricsHelpers.ts"
     },
     "src/features/overview/sub_health/components/heartbeats/HealingEffectivenessPanel.tsx": {"count":1,"sections":[7],"lines":["142"],"contexts":["`HealingEffectivenessPanel.tsx:142`, `AthenaHealthPanel.tsx:19`,"],"resolvedFrom":"basename","verbatim":"HealingEffectivenessPanel.tsx"},
-    "src/features/overview/sub_knowledge/libs/knowledgeHelpers.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["36"],
-      "contexts": ["`knowledgeHelpers.ts:36`), and two independent hand-rolls that both render zero as a small positive"],
-      "resolvedFrom": "basename",
-      "verbatim": "knowledgeHelpers.ts"
-    },
     "src/features/overview/sub_observability/components/AthenaHealthPanel.tsx": {"count":1,"sections":[7],"lines":["19"],"contexts":["`HealingEffectivenessPanel.tsx:142`, `AthenaHealthPanel.tsx:19`,"],"resolvedFrom":"basename","verbatim":"AthenaHealthPanel.tsx"},
     "src/features/overview/sub_observability/components/ObservabilityDashboard.tsx": {
       "count": 9,

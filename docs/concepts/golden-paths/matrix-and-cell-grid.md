@@ -1,7 +1,7 @@
 # Golden path — Matrix and cell grid
 
 > Situation node: `product-surfaces/lists-and-tables/matrix-and-cell-grid` (recurrence 14, risk medium) ·
-> [situation spine](../situation-spine.md)
+> situation spine
 > Composed 2026-08-17 at `de274d14d`. Sweep: **2,083 `.tsx`** files walked twice by two
 > purpose-built scanners with *different anchors* — (A) a brace/paren-matched nested-`.map`
 > walker that finds a `.map` whose callback body contains another `.map` emitting JSX, and
@@ -18,7 +18,7 @@
 > its per-cell identity — and what a cell must carry so that the thing under the cursor is the
 > thing the user thinks it is.
 >
-> **Denominator note.** [`shared-facts.json`](../shared-facts.json) records
+> **Denominator note.** `shared-facts.json` records
 > `frontend.tsxFiles = 2,104` and `frontend.tsFiles = 4,829` at `2ee130c3e`. At HEAD
 > (`de274d14d`, 27 commits later) four independent instruments — this composer's walker, the
 > census engine's own walk, `find`, and `git ls-files` — all return **2,083** and **4,801**.
@@ -129,7 +129,7 @@ it is what found it, and [`long-list-rendering.md`](./long-list-rendering.md)'s 
 
 ## §1 — Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head carries no file path,
+Per the portability test, the head carries no file path,
 primitive name or count, and each clause carries the warrant that lets an adopting repo tell
 physics from local taste.
 
@@ -685,7 +685,7 @@ different grounds; the recomputed-column-set hazard is **1 of 16**, not a class;
 selection-by-position hazard is **0 of 16** — a cleared claim; and the `isLoading`-without-`data`
 question is **unrepresentable**, because `data` is a required prop.
 
-**To [`shared-facts.json`](../shared-facts.json)** — `frontend.tsxFiles` and
+**To `shared-facts.json`** — `frontend.tsxFiles` and
 `frontend.tsFiles`. Recorded as 2,104 / 4,829 at `2ee130c3e` (2026-08-17). At HEAD
 `de274d14d` the values are **2,083 / 4,801**, confirmed by four independent instruments; the
 recorded values reproduce exactly at `2ee130c3e` via `git ls-tree`, and

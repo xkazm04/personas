@@ -46,6 +46,8 @@ export interface PassportIdentity {
   slug: string;
   purpose: string;
   repo?: string;
+  /** The checkout on disk, as registered (tells same-named projects apart). */
+  root?: string;
   owner?: string;
   archetype: Archetype;
   lifecycle: Lifecycle;
@@ -236,6 +238,13 @@ export interface AppPassport {
    * not a fast paint.
    */
   provisional?: boolean;
+  /**
+   * The evidence probe ran and could not read the checkout (the path is gone).
+   * Every repository-derived value on this passport is then a derivation from
+   * nothing, not a measurement: read it as unknown, not as absent. Database
+   * configuration (bound connectors, team, standards) is still known.
+   */
+  repoUnreadable?: boolean;
 }
 
 // -- ordinal scales (index = escalating rank, for sort + heatmap position) -----

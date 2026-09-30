@@ -1,7 +1,7 @@
 # Golden path — cross-device pairing and dispatch
 
 > Situation node: `integrations-security/external-and-host-surfaces/cross-device-pairing` ·
-> [situation spine](../situation-spine.md) · recurrence 7 · risk **HIGH** · sides **both** ·
+> situation spine · recurrence 7 · risk **HIGH** · sides **both** ·
 > convergence **converged — tested and REFUTED, see §12.1** · dimensions: **security · function ·
 > resilience · ui**
 > Composed 2026-08-17 against `master` @ `5d55d6a4a`.
@@ -261,7 +261,7 @@ that permanently admits a machine to the device group.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and
+Per the portability test, the head is physically separated and
 every clause carries its warrant, so an adopting repo can tell physics from local calibration. No file
 path, primitive name or count appears below this line until the head ends.
 

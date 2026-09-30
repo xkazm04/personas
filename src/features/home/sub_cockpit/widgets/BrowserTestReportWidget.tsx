@@ -1,47 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Check, Globe, ShieldAlert, ShieldCheck, X } from 'lucide-react';
-import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
+import { KitButton, Meta, Tile } from '@/features/shared/components/kit';
 import { companionFileBrowserDefects } from '@/api/companion';
 import { completeGoalUat } from '@/api/devTools/devTools';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
-
-interface ReportStep {
-  label?: string;
-  result?: string;
-  evidence?: string;
-}
-interface ReportDefect {
-  title?: string;
-  severity?: string;
-  detail?: string;
-  fix?: string;
-}
-
-const RESULT_ICON: Record<string, typeof Check> = {
-  pass: Check,
-  fail: X,
-  warn: AlertTriangle,
-};
-const RESULT_TONE: Record<string, string> = {
-  pass: 'text-status-success',
-  fail: 'text-status-error',
-  warn: 'text-status-warning',
-};
-const SEVERITY_TONE: Record<string, string> = {
-  high: 'border-status-error/40 bg-status-error/[0.05]',
-  medium: 'border-status-warning/40 bg-status-warning/[0.05]',
-  low: 'border-foreground/10 bg-secondary/40',
-};
+import { BrowserReportSections, type ReportDefect, type ReportStep } from './BrowserReportSections';
 
 /**
  * Structured verdict card a browser-test turn ends with
  * (`show_browser_test_report`): steps with observed evidence, defects with
  * severity + suggested fix, verbatim console errors, and security notes.
- * Unclamped in InlineChatCard — a report is meant to be read.
+ * One kit Tile, as tall as the report (a report is meant to be read): the
+ * URL and the UAT outcome in the head's meta, the sections as rows, "File as
+ * ideas" on the tile's foot.
  */
-export function BrowserTestReportWidget({ config, title }: CockpitWidgetProps) {
+export function BrowserTestReportWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
   const { t, tx } = useTranslation();
   const c = t.athena;
   const [filed, setFiled] = useState<number | null>(null);
@@ -82,14 +56,6 @@ export function BrowserTestReportWidget({ config, title }: CockpitWidgetProps) {
     }
   }, [goalId, allPass, closeAttemptedStorageKey]);
 
-  if (steps.length === 0) {
-    return (
-      <div className="rounded-card border border-foreground/10 bg-secondary/40 p-4 typo-caption text-foreground">
-        {c.browser_report_empty}
-      </div>
-    );
-  }
-
   const fileDefects = async () => {
     setFiling(true);
     try {
@@ -102,95 +68,31 @@ export function BrowserTestReportWidget({ config, title }: CockpitWidgetProps) {
     }
   };
 
+  const empty = steps.length === 0;
+  const uatDone = !!goalId && uatClosed;
+  const fileAction = defects.length > 0 && !empty
+    ? filed === null
+      ? <KitButton loading={filing} onClick={fileDefects} testId="browser-report-file-ideas">{c.browser_report_file_ideas}</KitButton>
+      : <span className="typo-caption k-toned t-success">{tx(c.browser_report_filed, { count: filed })}</span>
+    : null;
+
   return (
-    <div
-      className="rounded-card border border-sky-500/30 bg-sky-500/[0.04] p-4 space-y-3"
-      data-testid="companion-browser-test-report"
+    <Tile
+      span={span}
+      title={title || c.browser_report_title}
+      meta={empty || (!url && !uatDone) ? undefined : (
+        <Meta parts={[
+          url ? <span className="k-ellipsis">{url}</span> : null,
+          uatDone ? <span className="k-toned t-success" data-testid="browser-report-uat-passed">{c.browser_report_uat_passed}</span> : null,
+        ]} />
+      )}
+      actions={actions}
+      footer={fileAction || footer ? <>{fileAction}{footer}</> : undefined}
+      state={empty ? 'empty' : undefined}
+      empty={{ title: c.browser_report_empty }}
+      testId={empty ? 'companion-browser-test-report-empty' : 'companion-browser-test-report'}
     >
-      <header className="flex items-center gap-2 typo-caption text-sky-300/85">
-        <Globe className="w-3.5 h-3.5" />
-        <span className="font-medium">{title || c.browser_report_title}</span>
-        {url && <span className="truncate text-foreground/60">{url}</span>}
-      </header>
-
-      {goalId && uatClosed && (
-        <div
-          className="flex items-center gap-2 rounded-interactive border border-status-success/40 bg-status-success/[0.06] px-2.5 py-1.5"
-          data-testid="browser-report-uat-passed"
-        >
-          <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-status-success" />
-          <span className="typo-caption text-status-success">{c.browser_report_uat_passed}</span>
-        </div>
-      )}
-
-      <ul className="space-y-1.5">
-        {steps.map((s, i) => {
-          const Icon = RESULT_ICON[s.result ?? ''] ?? AlertTriangle;
-          return (
-            <li key={i} className="flex items-start gap-2">
-              <Icon
-                className={`mt-0.5 w-3.5 h-3.5 shrink-0 ${RESULT_TONE[s.result ?? ''] ?? 'text-foreground'}`}
-              />
-              <div className="min-w-0">
-                <span className="typo-body">{s.label}</span>
-                {s.evidence && (
-                  <p className="typo-caption text-foreground/70">{s.evidence}</p>
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-
-      {defects.length > 0 && (
-        <section className="space-y-1.5">
-          <h4 className="typo-caption">{c.browser_report_defects}</h4>
-          {defects.map((d, i) => (
-            <div
-              key={i}
-              className={`rounded-interactive border p-2 ${SEVERITY_TONE[d.severity ?? 'low'] ?? SEVERITY_TONE.low}`}
-            >
-              <p className="typo-body">{d.title}</p>
-              {d.detail && <p className="typo-caption">{d.detail}</p>}
-              {d.fix && <p className="typo-caption text-foreground/70">{d.fix}</p>}
-            </div>
-          ))}
-          {filed === null ? (
-            <AsyncButton
-              size="sm"
-              variant="secondary"
-              isLoading={filing}
-              onClick={fileDefects}
-              data-testid="browser-report-file-ideas"
-            >
-              {c.browser_report_file_ideas}
-            </AsyncButton>
-          ) : (
-            <p className="typo-caption text-status-success">
-              {tx(c.browser_report_filed, { count: filed })}
-            </p>
-          )}
-        </section>
-      )}
-
-      {consoleErrors.length > 0 && (
-        <section>
-          <h4 className="typo-caption">{c.browser_report_console}</h4>
-          <pre className="mt-1 rounded-interactive bg-secondary/60 p-2 typo-caption whitespace-pre-wrap break-all">
-            {consoleErrors.join('\n')}
-          </pre>
-        </section>
-      )}
-
-      {securityNotes.length > 0 && (
-        <section className="flex items-start gap-2 rounded-interactive border border-status-warning/40 bg-status-warning/[0.05] p-2">
-          <ShieldAlert className="mt-0.5 w-3.5 h-3.5 shrink-0 text-status-warning" />
-          <div className="typo-caption">
-            <span className="font-medium">{c.browser_report_security}: </span>
-            {securityNotes.join(' · ')}
-          </div>
-        </section>
-      )}
-    </div>
+      <BrowserReportSections steps={steps} defects={defects} consoleErrors={consoleErrors} securityNotes={securityNotes} />
+    </Tile>
   );
 }

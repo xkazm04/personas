@@ -51,7 +51,6 @@
       ],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[9],"contexts":["in [`shared-facts.json`](../shared-facts.json)) and the `.ts/.tsx` tree. Every"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "documents.rs": {
       "count": 1,
       "sections": [6],
@@ -157,6 +156,7 @@
       ],
       "resolved": false
     },
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["in `shared-facts.json`) and the `.ts/.tsx` tree. Every"],"resolved":false},
     "source.test.ts": {
       "count": 1,
       "sections": [6],

@@ -30,7 +30,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { splitDoc, listValues, hasKey } from './lib/frontmatter.mjs';
+import { spawnSync } from 'node:child_process';
+
+import { splitDoc, hasKey } from './lib/frontmatter.mjs';
+import { EVIDENCE_DIR, evidenceSlugs, readEvidence } from './lib/evidence-home.mjs';
 
 const ROOT = path.resolve(fileURLToPath(new URL('.', import.meta.url)), '..', '..');
 const CORPUS = path.join(ROOT, 'docs/concepts/paths');
@@ -165,18 +168,22 @@ const subjectsOf = (dirs) => [...dirs.keys()].sort();
 //    "clean" when it means "blind" — this repo has been bitten by exactly that.
 // ---------------------------------------------------------------------------
 
-if (!fs.existsSync(CORPUS)) {
+if (!fs.existsSync(EVIDENCE_DIR)) {
   fatal(
-    `no corpus at ${path.relative(ROOT, CORPUS)}. If the authority has already moved to the ` +
-      `registry, this script needs its evidence source re-pointed (migration plan P3/P4) — ` +
-      `not deleting.`,
+    `no evidence home at ${path.relative(ROOT, EVIDENCE_DIR)}. It is the tracked archive of the ` +
+      `consumer-side layer (evidence, counter_evidence, deviations); create it with ` +
+      `scripts/registry/extract-evidence.mjs.`,
   );
 }
-const corpusDirs = subjectDirsOf(CORPUS, ROOT);
-const corpusSubjects = subjectsOf(corpusDirs);
+const corpusSubjects = evidenceSlugs();
 if (corpusSubjects.length === 0) {
-  fatal(`${path.relative(ROOT, CORPUS)} contains no subject folders.`);
+  fatal(`${path.relative(ROOT, EVIDENCE_DIR)} contains no subject files.`);
 }
+// The frozen mirror, while it exists, still supplies the technique/application sets for the
+// parity check and is compared value-for-value against the evidence home (below). Once
+// paths/ is deleted (migration P4) both are skipped: the registry owns techniques and
+// applications, and there is nothing left to drift from.
+const corpusDirs = fs.existsSync(CORPUS) ? subjectDirsOf(CORPUS, ROOT) : new Map();
 
 // ---------------------------------------------------------------------------
 // 1. Evidence resolution — the consumer-side half of the corpus gate.
@@ -188,16 +195,16 @@ const corpusTechniques = new Set();
 const corpusApplications = new Set();
 
 for (const slug of corpusSubjects) {
-  const dir = corpusDirs.get(slug);
-  const rel = path.relative(ROOT, path.join(dir, `${slug}.md`)).replace(/\\/g, '/');
-  const fm = readFm(path.join(dir, `${slug}.md`));
-  if (!fm) {
+  const rel = `docs/evidence/${slug}.md`;
+  const home = readEvidence(slug);
+  if (!home) {
     fail(`${rel}: no frontmatter block`);
     continue;
   }
+  if (home.subject !== slug) fail(`${rel}: subject "${home.subject}" does not match the file name`);
 
-  const evidence = listValues(fm, 'evidence');
-  const counter = listValues(fm, 'counter_evidence');
+  const evidence = home.evidence;
+  const counter = home.counter_evidence;
   if (evidence.length === 0) {
     subjectsWithoutEvidence += 1;
     fail(`${rel}: zero evidence links — a standard with no witness`);
@@ -217,11 +224,24 @@ for (const slug of corpusSubjects) {
     }
   }
 
-  for (const f of mdFiles(path.join(dir, 'techniques'))) {
-    corpusTechniques.add(`${slug}/${f}`);
+  const dir = corpusDirs.get(slug);
+  if (dir) {
+    for (const f of mdFiles(path.join(dir, 'techniques'))) corpusTechniques.add(`${slug}/${f}`);
+    for (const f of mdFiles(path.join(dir, 'applications'))) corpusApplications.add(`${slug}/${f}`);
   }
-  for (const f of mdFiles(path.join(dir, 'applications'))) {
-    corpusApplications.add(`${slug}/${f}`);
+}
+
+// While the frozen mirror exists, the evidence home must agree with it value-for-value, or two
+// copies of the same pointers fork silently. extract-evidence --check is the one comparison.
+if (fs.existsSync(CORPUS)) {
+  const cmp = spawnSync(process.execPath, [path.join(ROOT, 'scripts/registry/extract-evidence.mjs'), '--check'], {
+    encoding: 'utf8',
+  });
+  if (cmp.status !== 0) {
+    fail(
+      'docs/evidence differs from docs/concepts/paths (or the comparison could not run): ' +
+        `${cmp.stdout || ''}${cmp.stderr || ''}`.trim().split('\n').slice(-4).join(' | '),
+    );
   }
 }
 
@@ -318,17 +338,11 @@ if (!fs.existsSync(BUNDLE)) {
   if (aMissing.length) fail(`mirror parity: ${aMissing.length} application(s) in the corpus but NOT the bundle, first: ${aMissing.slice(0, 5).join(', ')}`);
   if (aAhead.length) note(`registry is ahead by ${aAhead.length} application(s)`);
 
-  // A subject that exists only in the registry has no local evidence yet BY
-  // DEFINITION — nothing in this tree has been cited for it. Counting it as a
-  // partial mirror would make forging in the registry look like a mirror bug.
-  const overlaysExpected = sidecarsMissing.filter((slug) => corpusSubjects.includes(slug));
-  if (sidecarsFound > 0 && overlaysExpected.length > 0) {
-    fail(
-      `evidence overlays are partial: ${sidecarsFound} present, ${overlaysExpected.length} missing ` +
-        `(${overlaysExpected.slice(0, 5).join(', ')}). Re-run scripts/registry/mirror-paths.mjs.`,
-    );
-  }
-  const overlaysPending = sidecarsMissing.filter((slug) => !corpusSubjects.includes(slug));
+  // The registry clone's gitignored sidecars (.evidence.local.md) are a local
+  // convenience, not the archive - docs/evidence is - so their completeness is no
+  // longer a gate. A subject that exists only in the registry has no evidence file
+  // here BY DEFINITION: nothing in this tree has been cited for it.
+  const overlaysPending = bundleSubjects.filter((slug) => !corpusSubjects.includes(slug));
   if (overlaysPending.length > 0) {
     note(
       `${overlaysPending.length} registry-only subject(s) carry no local evidence yet ` +
@@ -343,7 +357,7 @@ if (!fs.existsSync(BUNDLE)) {
 
 const summary = {
   corpus: {
-    root: 'docs/concepts/paths',
+    root: 'docs/evidence',
     subjects: corpusSubjects.length,
     techniques: corpusTechniques.size,
     applications: corpusApplications.size,

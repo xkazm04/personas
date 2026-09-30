@@ -57,6 +57,7 @@
       ],
       "resolved": false
     },
+    "RecipeManager.tsx": {"count":3,"sections":[3,7],"lines":["44-51","44"],"contexts":["- **`RecipeManager.tsx:44-51` — the existence check.** `const exists = recipes.some(r => r.id ==="],"resolved":false},
     "ReviewWorklist.tsx": {
       "count": 1,
       "sections": [0],
@@ -116,7 +117,6 @@
       "resolved": false
     },
     "census-crosssurface-9a3f1c.json": {"count":1,"sections":[9],"contexts":["(`census-crosssurface-9a3f1c.json`; the pattern lives in a file, never in bash argv, and contains no"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[9],"contexts":["`.ts`/`.tsx` files under `src/` ([`shared-facts.json`](../shared-facts.json), independently"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "flow-composer/components/FlowCTA.tsx": {
       "count": 1,
       "sections": [0],
@@ -164,8 +164,9 @@
     "scripts/census/lib/engine.mjs": {"count":1,"sections":[9],"lines":["147-239"],"contexts":["(`scripts/census/lib/engine.mjs:147-239`) opens one source, applies one regex, counts."]},
     "scripts/check-guide-content.mjs": {"count":1,"sections":[0],"contexts":["`personas-web`'s single slug-resolution gate (`scripts/check-guide-content.mjs`, whose header names"],"resolved":false},
     "sections/DownloadCTA.tsx": {"count":2,"sections":[0],"lines":["40","92"],"contexts":["`app/api/download/route.ts:73`). `id=\"download\"` lives at `sections/DownloadCTA.tsx:40`, **inside"],"resolved":false},
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["`.ts`/`.tsx` files under `src/` (`shared-facts.json`, independently"],"resolved":false},
     "src-tauri/src/ipc_auth.rs": {"count":1,"sections":[9],"lines":["971-976"],"contexts":["already treats as the model (`ipc_auth.rs:971-976`): assert"],"resolvedFrom":"basename","verbatim":"ipc_auth.rs"},
-    "src/": {"count":3,"sections":[7],"contexts":["`.ts`/`.tsx` files under `src/` ([`shared-facts.json`](../shared-facts.json), independently"],"resolved":false,"isDir":true},
+    "src/": {"count":3,"sections":[7],"contexts":["`.ts`/`.tsx` files under `src/` (`shared-facts.json`, independently"],"resolved":false,"isDir":true},
     "src/api/companion.ts": {
       "count": 1,
       "sections": [7],
@@ -331,14 +332,7 @@
       "resolvedFrom": "basename",
       "verbatim": "RunDeskPage.tsx"
     },
-    "src/features/recipes/sub_manager/components/RecipeManager.tsx": {
-      "count": 4,
-      "sections": [3,6,7],
-      "lines": ["44-51","44"],
-      "contexts": ["- **`RecipeManager.tsx:44-51` — the existence check.** `const exists = recipes.some(r => r.id ==="],
-      "resolvedFrom": "basename",
-      "verbatim": "RecipeManager.tsx"
-    },
+    "src/features/recipes/sub_manager/components/RecipeManager.tsx": {"count":1,"sections":[6],"lines":["44-51"],"contexts":["- `src/features/recipes/sub_manager/components/RecipeManager.tsx:44-51` — three lines that test the"],"resolved":false},
     "src/features/shared/chrome/CommandPalette.tsx": {"count":1,"sections":[7],"lines":["207"],"contexts":["(`CommandPalette.tsx:207`, `TriggersPage.tsx:64`, `QuickStatsBar.tsx:94`,"],"resolvedFrom":"basename","verbatim":"CommandPalette.tsx"},
     "src/features/shared/chrome/ToastContainer.tsx": {
       "count": 1,

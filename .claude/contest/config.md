@@ -2,7 +2,7 @@
 vault: ["C:/Users/kazda/kiro/personas/.contest"]
 vault_subdir: Contest
 arena: .contest/arena
-participants: "claude:opus@xhigh,grok:grok-4.6@high"
+participants: "claude:sonnet@xhigh,grok:grok-4.6@high"
 judges: "codex:gpt-5.6-sol@high,grok:grok-4.6@high"
 variants: 3
 timeout_min: 60
@@ -78,6 +78,13 @@ recorded under 2026-09-21 below.
 
 ## Skill improvement log
 
+- 2026-09-23 (process-strategic) - **A brief with a hidden answer key measures the finding
+  engine, not only the picture.** The projected dataset carried 7 planted structural truths in a
+  host-only file; a headless text scrape of each variant's findings scored them (4 / 3 / 3 of 7),
+  and the three that no seat found became the analytical skill's backlog. Also: `visual-pass.py`
+  captures only the default state, so a two-dataset brief needs a second capture per dataset (the
+  host scripted it; C-seat variants switch on `d`, not `2`).
+
 - 2026-09-21 (kpi-descent) - **A brief that ASSIGNS the three variants fights the rendered
   participant brief, which says the opposite.** `references/participant-brief.md` hard-codes
   "each a genuinely different answer to the idea - a different metaphor", and this contest
@@ -145,3 +152,10 @@ recorded under 2026-09-21 below.
   and the Twin experience all resolve to the 40px fallback while `.titlebar` renders 48px.
   Found while measuring the shell for the frame mock. Not fixed here.
 - 2026-09-25 (contest-arena-restyle) - **A redesign "on top of the baseline" needs the baseline frozen, not described.** The staging rendered today's page per state through the stubbed harness and saved each as static HTML: the serialized DOM, the compiled stylesheet linked once, iframes swapped for stills. It also shipped the seats a `data/tools/measure.mjs` (screenshots at both widths plus a font-size census). Every variant cleared the typography bars with no host rework. **Two seats of one model blind nothing:** collect redacted about 200 real seat names out of the staged data, so the host reviewed `entries/`, not `judging/`. Max effort cost 2x xhigh (60 vs 27 min, $37.5 vs $18) and reached the same three concepts.
+- 2026-09-29 (athena-voice-studio) - **Redaction mangles a research report.** A bare vendor word
+  is always redacted, so reports that survey cloud TTS vendors and cite the app's own chat CLIs
+  lost 24 legitimate mentions ("[redacted] custom voices", "[redacted] Code CLI"). For a brief
+  whose subject IS providers, point the owner at `gallery.html` as well as the blinded router,
+  or stage a vendor list in `data/` so the compound-identifier exemption can keep them.
+  Also: the arena sits inside this repo, and a codex seat ran `npm run gate`/`check` against the
+  host tree from its workspace (nothing was written, verified by `git status`).

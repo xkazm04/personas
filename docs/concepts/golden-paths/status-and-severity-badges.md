@@ -1,6 +1,6 @@
 # Golden path — Status token vocabulary: from column to badge
 
-> Situation node: `ui-system/copy-and-vocabulary/status-and-severity-badges` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/copy-and-vocabulary/status-and-severity-badges` · situation spine
 > Composed 2026-08-14. **Two-sided** — this leaf was fused during the seam pass from a backend
 > `closed-vocabulary-column` leaf and a frontend badge leaf, because the SQLite `CHECK` constraint,
 > the IPC token, the `en.json` label and the rendered pill are one chain and every defect below
@@ -10,7 +10,7 @@
 > 184 distinct tokens), **88 ts-rs string-literal union types**, **26 `status_tokens` categories /
 > 156 labels**, **80 feature-local token→presentation maps across 70 files**, and a
 > **convergence check against `personas-web` and `brainiac`** (two stacks, no shared document).
-> Repo denominators come from [`shared-facts.json`](../shared-facts.json) — 2,104 `.tsx` of the
+> Repo denominators come from `shared-facts.json` — 2,104 `.tsx` of the
 > 4,829 TypeScript files under `src`, and 963 Rust files — rather than being re-derived here.
 >
 > **Scope split.** [`typed-error-contract.md`](./typed-error-contract.md) owns codes that describe a
@@ -47,7 +47,7 @@ unrecognised token degrades: **toward the value that demands attention, never to
 a token you do not know is a token you cannot vouch for, and rendering it green or rendering its raw
 snake_case is the same lie told two ways.
 
-**Warrant tags** (per the [portability test](../research/portability-test.md), so an adopting repo can
+**Warrant tags** (per the portability test, so an adopting repo can
 sort physics from local habit):
 
 - *Physics* — the badge API takes the **token**, not a colour (both siblings converged on this
@@ -175,8 +175,8 @@ thing. That absence is the root cause of most of section 7; see Gaps 1.
     UI claim a revision published itself when a human is in fact still owed a decision." Copy the
     reasoning, not just the fallback.
 11. **If the surface genuinely needs a different visual density**, parameterise with a `variant`
-    prop and keep the branch logic in one component — `HealingIssueStatusBadge.tsx:33` is the repo's
-    only instance of this move and its docstring explains it. Do **not** fork the component.
+    prop and keep the branch logic in one component — `HealingIssueStatusBadge.tsx:33` was the repo's
+    only instance of this move and its docstring explained it (deleted 2026-09-25 in `a21c66544`: its state ladder now lives in `sub_observability/libs/issueModel.ts` `issueState`, a closed union rendered through the composition kit's `Mark`, with severity text from translation keys). Do **not** fork the component.
 
 ## Anti-patterns
 
@@ -238,7 +238,7 @@ Also worth reading:
   `DEFAULT_STATUS_ENTRY`, with the fallback deliberately grey and commented *"(gray badge, not
   red)"*. Correct unknown discipline; English labels.
 - `src/features/overview/sub_observability/components/HealingIssueStatusBadge.tsx:8-20,33` — the
-  `variant` move: shared four-way branch logic, per-surface density as a prop rather than a fork.
+  `variant` move: shared four-way branch logic, per-surface density as a prop rather than a fork (deleted 2026-09-25 in `a21c66544`: its state ladder now lives in `sub_observability/libs/issueModel.ts` `issueState`, a closed union rendered through the composition kit's `Mark`, with severity text from translation keys).
   **The shape is exemplary and the content is not** — it hardcodes seven English strings and renders
   `{issue.severity}` raw at `:70` and `:100`. Take the structure, not the body.
 - `src/lib/design/statusTokens.ts:26-105` — `as const satisfies Record<string, StatusToken>`, which
@@ -318,7 +318,7 @@ in one object literal. Concentrations: `traceHelpers.ts` (36) and `traceInspecto
 chart labels rather than status tokens — the status-token subset is the 241 above.
 
 **I. Raw machine text on screen: 79 sites in 55 files.** Including the exemplar —
-`HealingIssueStatusBadge.tsx:70,100` and `HealingIssueModal.tsx:190` render `{issue.severity}`;
+`HealingIssueStatusBadge.tsx:70,100` and `HealingIssueModal.tsx:190` rendered `{issue.severity}` when measured (deleted 2026-09-25 in `a21c66544`: its state ladder now lives in `sub_observability/libs/issueModel.ts` `issueState`, a closed union rendered through the composition kit's `Mark`, with severity text from translation keys);
 `ActivityList.tsx:145,148`, `DeploymentCard.tsx:69-70`, `StandardsScanCard.tsx:91`,
 `ProjectTeamPreviewModal.tsx:386-387`, `CloudExecutionRow.tsx:40`, `EventLogList.tsx:251`,
 `PipelineRow.tsx:27`.

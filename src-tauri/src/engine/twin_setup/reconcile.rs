@@ -1,6 +1,6 @@
 //! Per-answer reconcile: ASSESS (coverage, offers, one follow-up, an
 //! observation) and REFILL (top the queue up) run CONCURRENTLY on
-//! OPUS_5_5 @ low, then both results are applied in one transaction.
+//! SONNET_CURRENT @ low, then both results are applied in one transaction.
 //!
 //! Failure policy: an assessment that fails bumps the step's
 //! `reconcile_attempts`; the second failure marks it reconciled with no offers,

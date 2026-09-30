@@ -126,7 +126,6 @@
       "resolved": false,
       "isDir": true
     },
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[7],"contexts":["**Shared facts cited:** [`shared-facts.json`](../shared-facts.json) — 963 Rust files, 4,829"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "executions.rs": {"count":3,"sections":[7],"lines":["919","1665"],"contexts":["| `COUNT(*)`, no status filter | 4 | `digest.rs:314,320` · `executions.rs:919` · `optimizer.rs:83` |"],"resolved":false},
     "groupByDay.ts": {"count":1,"sections":[7],"lines":["29"],"contexts":["(`grouping.ts:39`, `groupByDay.ts:29`, `calendarHelpers.ts:71`) compare with `.getTime()` in the"],"resolved":false},
     "healing.rs": {"count":1,"sections":[7],"lines":["916"],"contexts":["| A doc comment within 20 lines above the ratio | **2 of 34** (`digest.rs:150-152`, and `healing.rs:916`'s one-liner) |"],"resolved":false},
@@ -162,6 +161,7 @@
     "protocol.ts": {"count":1,"sections":[4],"lines":["88"],"contexts":["`number | null` all the way to the wire at `protocol.ts:88`. And this repo already has it once,"],"resolved":false},
     "scripts/census/lib/engine.mjs": {"count":2,"sections":[9],"contexts":["`rules.json` (84 rules) and `lib/engine.mjs` read for overlap and fail-loud semantics."],"resolvedFrom":"suffix","verbatim":"lib/engine.mjs"},
     "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["`rules.json` (84 rules) and `lib/engine.mjs` read for overlap and fail-loud semantics."],"resolvedFrom":"basename","verbatim":"rules.json"},
+    "shared-facts.json": {"count":2,"sections":[7],"contexts":["**Shared facts cited:** `shared-facts.json` — 963 Rust files, 4,829"],"resolved":false},
     "sla.rs": {
       "count": 22,
       "sections": [1,2,3,4,5,7,8],

@@ -273,16 +273,6 @@
       "resolvedFrom": "basename",
       "verbatim": "TemplateVirtualList.tsx"
     },
-    "src/features/templates/sub_generated/generation/useCreateTemplateActions.ts": {
-      "count": 1,
-      "sections": [3],
-      "lines": ["27"],
-      "contexts": [
-        "| **`hooks/utility/data/usePersistedContext.ts` — `usePersistedContext<T>({ key, maxAge, validate, getSavedAt, onRestore, enabled? })`** | **The type answer, already built.** `validate` and `maxAge`…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "useCreateTemplateActions.ts"
-    },
     "src/features/templates/sub_n8n/hooks/useN8nTransform.ts": {
       "count": 1,
       "sections": [3],
@@ -394,6 +384,15 @@
     "src/stores/util/dedupedStorage.ts": {"count":2,"sections":[3],"contexts":["`stores/agentStore.ts`, `stores/themeStore.ts`, `stores/util/dedupedStorage.ts`,"],"resolvedFrom":"suffix","verbatim":"stores/util/dedupedStorage.ts"},
     "studio/{studioHistory,studioStore}.ts": {"count":1,"sections":[],"contexts":["`studio/{studioHistory,studioStore}.ts`, `plugins/drive/hooks/useDrive.ts`,"],"resolved":false},
     "types.ts": {"count":1,"sections":[7],"lines":["416"],"contexts":["— and **`'use-cases'` is a legal member of `EditorTab` today** (`types.ts:416`). It is unreachable in"],"resolved":false},
+    "useCreateTemplateActions.ts": {
+      "count": 1,
+      "sections": [3],
+      "lines": ["27"],
+      "contexts": [
+        "| **`hooks/utility/data/usePersistedContext.ts` — `usePersistedContext<T>({ key, maxAge, validate, getSavedAt, onRestore, enabled? })`** | **The type answer, already built.** `validate` and `maxAge`…"
+      ],
+      "resolved": false
+    },
     "vibeman/src/stores/utils/persistence.ts": {"count":2,"sections":[7],"lines":["99-155"],"contexts":["`migrate`: **1 of 4** (`vibeman`). And it is not a token effort — `vibeman/src/stores/utils/persistence.ts:99-155`"],"resolved":false}
   }
 }

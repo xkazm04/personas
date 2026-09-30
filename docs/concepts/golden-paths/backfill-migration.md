@@ -1,7 +1,7 @@
 # Golden path — Backfill migration
 
 > Situation node: `data-persistence` › `migrations` › `backfill-migration` ·
-> [situation spine](../situation-spine.md) · recurrence **21** · risk **medium** ·
+> situation spine · recurrence **21** · risk **medium** ·
 > sides: **server** (upheld, with a caveat — see [§12.1](#121--sides-server-holds-and-it-is-the-third-upholding-but-the-clause-that-decides-the-leaf-is-a-string-in-enjson)) ·
 > convergence: **diverged** (tested — see [§10](#10-convergence)) ·
 > dimensions: **function · resilience · cost · ui**
@@ -197,7 +197,7 @@ sentence in the same document that generalised it too far, and what the measurem
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) this head carries no file path,
+Per the portability test this head carries no file path,
 primitive name or count, so a sibling project on another stack can adopt it. Each clause names its
 warrant.
 

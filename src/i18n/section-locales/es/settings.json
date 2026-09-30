@@ -227,7 +227,18 @@
     "retire_reason_expired": "Caducada",
     "retire_reason_superseded": "Sustituida por una vinculación más reciente",
     "retire_result": "Retiradas {retired} de {total}.",
-    "retire_title": "Retirar vinculaciones inválidas"
+    "retire_title": "Retirar vinculaciones inválidas",
+    "gig_policy_budget_hint": "Déjalo vacío para no fijar un límite.",
+    "gig_policy_budget_label": "Presupuesto máx. por contratación (USD)",
+    "gig_policy_desc": "kp contrata un agente por encargo. Una solicitud de contratación de kp que cumpla todos los límites de abajo se aprueba en tu nombre; todo lo demás espera tu aprobación como siempre. Ninguna clave API puede cambiar este ajuste.",
+    "gig_policy_enabled": "Aprobar automáticamente los agentes de encargo dentro de esta política",
+    "gig_policy_models_hint": "ID de modelos separados por comas, p. ej. claude-opus-5-5",
+    "gig_policy_models_label": "Modelos permitidos",
+    "gig_policy_root_hint": "Solo califican los proyectos de encargo dentro de esta carpeta.",
+    "gig_policy_root_label": "Carpeta raíz de encargos",
+    "gig_policy_save": "Guardar política",
+    "gig_policy_saved": "Política guardada",
+    "gig_policy_title": "Política de agentes de encargo"
   },
   "appearance_extra": {
     "dev": "Dev",

@@ -1,7 +1,7 @@
 # Golden path — Optimistic update
 
 > Situation node: `client-runtime/mutations-and-editing/optimistic-update` ·
-> [situation spine](../situation-spine.md) · recurrence **11** · risk **HIGH** · sides **client** ·
+> situation spine · recurrence **11** · risk **HIGH** · sides **client** ·
 > convergence **diverged** · dimensions **function · resilience · ui · code-quality**.
 > Composed 2026-08-16 against `master` @ `17d059b1f`.
 >
@@ -140,7 +140,7 @@ cleanup issue"*, which describes a tidy-up problem, not a cancellation that did 
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path, primitive
+Per the portability test the head carries no file path, primitive
 name or count. Each clause names its warrant.
 
 > **P1 — physics.** **An optimistic paint is a claim about the future, and you must be able to
@@ -308,7 +308,7 @@ an un-awaited write (§7 D3); a second "did it work" boolean beside the paint.
 
 The dangerous state is *"the screen asserts something the server has not confirmed, and nothing is
 obliged to withdraw it."* The obligation is the thing to type. Held against the seven qualifications
-([doctrine §1](../golden-path-doctrine.md#1-prefer-a-type-over-a-gate--and-the-seven-qualifications)):
+(doctrine §1):
 
 1. **Q1 — a required prop carries only what it encodes.** A required `onRollback` would encode *"a
    rollback function was supplied"*, not *"it undoes the right thing"*. Decisive here: **all nine of
@@ -426,7 +426,7 @@ Other sites worth reading, each for one thing:
 Read-only sweep of `personas-web`, `brainiac`, `personas-cloud`, `vibeman`, `ascent`. All five exist;
 all five were opened; none was modified. The sweep searched by **name** (`optimistic`, `rollback`,
 `revert`, `snapshot`, `previous`, `onMutate`, `setQueryData`, `useOptimistic`) **and** by mechanism
-(state written before an awaited write), per [doctrine §5](../golden-path-doctrine.md#5-the-convergence-oracle).
+(state written before an awaited write), per doctrine §5.
 
 | # | clause | verdict | evidence |
 |---|---|---|---|
@@ -694,7 +694,7 @@ nothing withdraws the assertion or the withdrawal takes back more than it put in
 
 **What a signal cannot see, and why that decides the gate.** Half of this leaf's damage is an
 **absence** — no rollback, no clear, no refetch — and the census **cannot assert an absence**
-([doctrine §4](../golden-path-doctrine.md#4-census-rules)). It cannot say "no code puts this row
+(doctrine §4). It cannot say "no code puts this row
 back", "this latch is never set to false", or "this store never re-reads". Those are §7 D1 and D2, the
 two P0s, and they are ungateable by counting; they must be fixed by hand and held by review.
 
@@ -822,7 +822,7 @@ control, over 4,829 files walked and 4,829 scanned against a floor of 3,000, wit
 
 ## 12. Corrections to the brief
 
-Recorded per [doctrine §7](../golden-path-doctrine.md#7-corrections-are-the-deliverable), because a
+Recorded per doctrine §7, because a
 brief is a hypothesis and refuting it is part of the job.
 
 **12.1 — "The store pattern is Zustand slices with `set((state) => ...)`; several actions replace an

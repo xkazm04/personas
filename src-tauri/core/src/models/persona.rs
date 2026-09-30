@@ -502,6 +502,27 @@ pub struct KpLink {
     /// every ordinary (non-App-master) kp hire.
     #[serde(default)]
     pub runs_commands: bool,
+    /// `spec.requirements` from the hire request (`kp.agent-requirements.v1`):
+    /// what kp's research says this agent must do, receive, produce and never
+    /// do — sent INSTEAD of a system prompt for requirement-driven hires (the
+    /// freelance gig specialist). Personas designs the persona from it (the
+    /// build intent renders it as an authoritative section), pins its
+    /// `constraints[]` into the promoted prompt, and shows it on the persona
+    /// so the operator can see why the agent was designed the way it was.
+    ///
+    /// Stored as the intake-normalized JSON (strings trimmed, bounds checked by
+    /// `personas_engine::kp_requirements::normalize`) rather than a typed
+    /// struct because kp owns the schema and the contract keeps unknown keys
+    /// verbatim; `personas_engine::kp_requirements::KpAgentRequirements` is
+    /// the tolerant typed view every reader parses through.
+    ///
+    /// Carried INSIDE the link so every door that already preserves `kpLink`
+    /// — above all `promote_build_draft`, which rebuilds `design_context` and
+    /// re-injects the link — preserves the requirements with it. `None` for
+    /// every hire that sent none, which serializes exactly as before.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub requirements: Option<serde_json::Value>,
 }
 
 /// Typed record of an **App master** hire (kp `docs/concepts/app-master.md`
@@ -1130,6 +1151,7 @@ mod kp_link_tests {
                 report_token: "tok_abc123".into(),
                 requested_connectors: vec!["github".into()],
                 runs_commands: true,
+                requirements: None,
             }),
             ..Default::default()
         };
@@ -1170,5 +1192,55 @@ mod kp_link_tests {
         let link = legacy.kp_link.expect("kp_link present");
         assert!(link.requested_connectors.is_empty());
         assert!(!link.runs_commands);
+        assert!(link.requirements.is_none());
+    }
+
+    /// `kpLink.requirements` (kp.agent-requirements.v1) is kept verbatim —
+    /// including keys this build does not model — through a full
+    /// serialize/parse round-trip, and an envelope carrying ONLY a kpLink with
+    /// requirements still parses as the typed envelope (not the legacy path,
+    /// which would drop it).
+    #[test]
+    fn kp_link_requirements_round_trip_verbatim() {
+        let reqs = serde_json::json!({
+            "kind": "kp.agent-requirements.v1",
+            "role": "Freelance specialist - web development",
+            "constraints": ["Never send anything; the operator sends."],
+            "futureField": {"nested": [1, 2, 3]}
+        });
+        let dc = DesignContextData {
+            kp_link: Some(KpLink {
+                job_id: "gig-1".into(),
+                job_title: "t".into(),
+                base_url: "http://localhost:3001".into(),
+                report_token: "tok".into(),
+                requested_connectors: vec!["research".into()],
+                runs_commands: false,
+                requirements: Some(reqs.clone()),
+            }),
+            ..Default::default()
+        };
+        let json = dc.to_json_string();
+        assert!(json.contains("\"requirements\""), "camelCase key in {json}");
+        let back = parse_design_context(Some(&json));
+        let link = back.kp_link.expect("kp_link survives");
+        assert_eq!(link.requirements, Some(reqs));
+    }
+
+    /// A link without requirements serializes exactly as it did before the
+    /// field existed — no `requirements` key at all.
+    #[test]
+    fn kp_link_without_requirements_serializes_unchanged() {
+        let link = KpLink {
+            job_id: "j".into(),
+            job_title: "t".into(),
+            base_url: "http://x".into(),
+            report_token: "tok".into(),
+            requested_connectors: vec![],
+            runs_commands: false,
+            requirements: None,
+        };
+        let json = serde_json::to_string(&link).unwrap();
+        assert!(!json.contains("requirements"), "{json}");
     }
 }
