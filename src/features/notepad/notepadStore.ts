@@ -474,10 +474,16 @@ export async function refreshPlanSummaries(): Promise<void> {
   try {
     const summaries = await notepadApi.listPlanSummaries();
     planSummaries = Object.fromEntries(summaries.map((s) => [s.noteId, s]));
+    // A later success is a current reading again. Leaving the flag set would
+    // keep the desk treating a fresh join as unreachable.
+    planSummariesStale = false;
     emit();
   } catch (e) {
-    // Background read behind a surface that is already painted — a toast here
-    // would fire on every ship-table write the app could not reach.
+    // Same contract as `load()`: keep the last good map and say it is stale.
+    // A toast here would fire on every ship-table write the app could not
+    // reach, so the failure stays on the flag the desk already reads.
+    planSummariesStale = true;
+    emit();
     silentCatch('notepad plan summaries')(e);
   }
 }

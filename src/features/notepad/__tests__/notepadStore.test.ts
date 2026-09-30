@@ -32,6 +32,7 @@ import {
   saveStateOf,
   shadowKey,
   shippedNotes,
+  statusSnapshot,
 } from '../notepadStore';
 import { onGoalBanner, type GoalBannerEvent } from '../notifications/goalBanner';
 
@@ -541,6 +542,34 @@ describe('plan summaries', () => {
     await refreshPlanSummaries();
 
     expect(planSummaryOf('n1')?.cutAt).toBe('2026-09-15T10:00:00.000Z');
+    expect(planSummaryOf('n1')?.goalsDone).toBe(2);
+  });
+
+  it('marks the last plan reading stale when a refresh fails, and clears that when one lands', async () => {
+    rows = [note({ id: 'n1' })];
+    planRows = [summary({ noteId: 'n1', goalsDone: 1 })];
+    await load();
+    expect(statusSnapshot().planSummariesStale).toBe(false);
+
+    mocked.mockImplementation(async (cmd: string) => {
+      if (cmd === 'notepad_list_notes') return rows;
+      if (cmd === 'notepad_list_plan_summaries') throw new Error('join unavailable');
+      return undefined;
+    });
+    _clearAutoDedupForTests();
+    await refreshPlanSummaries();
+
+    // The last good join stays on screen. What must change is the claim that
+    // it is current — a failed refresh used to leave the flag false.
+    expect(planSummaryOf('n1')?.goalsDone).toBe(1);
+    expect(statusSnapshot().planSummariesStale).toBe(true);
+
+    planRows = [summary({ noteId: 'n1', goalsDone: 2 })];
+    installIpc();
+    _clearAutoDedupForTests();
+    await refreshPlanSummaries();
+
+    expect(statusSnapshot().planSummariesStale).toBe(false);
     expect(planSummaryOf('n1')?.goalsDone).toBe(2);
   });
 });
