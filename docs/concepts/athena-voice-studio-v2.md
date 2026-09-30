@@ -1,6 +1,6 @@
 # Athena Voice Studio v2 - implementation plan
 
-Status: **phase 1 in progress** (2026-09-30). The current Stage setup stays the default until the
+Status: **phase 1 landed** (`931ed78fd`, 2026-09-30), awaiting the owner's acceptance. Stage stays the default until the
 owner accepts the port; the new shell ships behind a switch beside it.
 
 ## Where this comes from
