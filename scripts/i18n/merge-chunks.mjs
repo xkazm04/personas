@@ -148,10 +148,15 @@ function deepSet(obj, dotted, value) {
   let cur = obj;
   for (let i = 0; i < parts.length - 1; i++) {
     const p = parts[i];
+    // Inline comparisons, not only the UNSAFE_KEYS pre-check above: CodeQL's
+    // js/prototype-pollution-utility only treats a per-key comparison as a guard.
+    if (p === '__proto__' || p === 'constructor' || p === 'prototype') return;
     if (typeof cur[p] !== 'object' || cur[p] === null || Array.isArray(cur[p])) cur[p] = {};
     cur = cur[p];
   }
-  cur[parts[parts.length - 1]] = value;
+  const last = parts[parts.length - 1];
+  if (last === '__proto__' || last === 'constructor' || last === 'prototype') return;
+  cur[last] = value;
 }
 
 for (const [lang, map] of Object.entries(accepted)) {
