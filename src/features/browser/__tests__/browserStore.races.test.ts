@@ -115,6 +115,14 @@ describe('tab list freshness', () => {
     expect(browserSnapshot().tabs.map((row) => row.id)).toEqual([2]);
   });
 
+  it('subscribes again after listenTabs rejects', async () => {
+    listTabs.mockResolvedValue([]);
+    listenTabs.mockRejectedValueOnce(new Error('listen failed'));
+    await initTabs();
+    await initTabs();
+    expect(listenTabs).toHaveBeenCalledTimes(2);
+  });
+
   it('a list that resolves after reset does not repaint the store', async () => {
     const listed = deferred<BrowserTab[]>();
     listTabs.mockImplementationOnce(() => listed.promise);

@@ -232,11 +232,16 @@ export async function refreshTabs(): Promise<void> {
  */
 export async function initTabs(): Promise<void> {
   if (!tabsUnlisten) {
-    tabsUnlisten = browserApi.listenTabs((tabs) => {
+    const pending = browserApi.listenTabs((tabs) => {
       tabsWins.next();
       commit(adoptTabs(state, tabs));
     });
-    tabsUnlisten.catch(silentCatch('browser tabs listen'));
+    tabsUnlisten = pending;
+    // A rejected subscribe must not latch, or the next mount never retries.
+    pending.catch((err: unknown) => {
+      silentCatch('browser tabs listen')(err);
+      if (tabsUnlisten === pending) tabsUnlisten = null;
+    });
   }
   await refreshTabs();
 }
