@@ -520,9 +520,21 @@ export async function refetchNote(noteId: string): Promise<void> {
       drop(noteId);
       return;
     }
-    adopt(row);
+    // The sweeper's row is the last SAVED copy. Adopting it wholesale while a
+    // keystroke is still dirty replaces the editor with that older text, and
+    // the save already in flight then persists the replacement and clears the
+    // shadow. Status (and every other server field) still moves; the editable
+    // fields stay what memory holds until that save settles.
+    const local = notes[noteId];
+    const state = local ? (saveStates[noteId] ?? 'clean') : 'clean';
+    const unsaved = state === 'dirty' || state === 'saving' || state === 'error';
+    const merged: DevNote =
+      unsaved && local
+        ? { ...row, title: local.title, bodyMd: local.bodyMd, projectId: local.projectId }
+        : row;
+    adopt(merged);
     const crossed = BANNER_TRANSITIONS.find((x) => x.from === before && x.to === row.status);
-    if (crossed) emitGoalBanner(row.title.trim() || null, crossed.kind);
+    if (crossed) emitGoalBanner(merged.title.trim() || null, crossed.kind);
   } catch (e) {
     silentCatch('notepad refetch')(e);
   }

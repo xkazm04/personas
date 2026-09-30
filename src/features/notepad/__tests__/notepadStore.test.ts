@@ -424,6 +424,22 @@ describe('refetchNote — the goal-implemented title card', () => {
     await refetchNote('run');
     expect(events[0]?.kind).toBe('goal');
   });
+
+  it('keeps unsaved text when the sweeper returns the older row', async () => {
+    rows = [note({ id: 'n1', title: 'T', bodyMd: 'server', status: 'draft' })];
+    await load();
+    patchNote('n1', { bodyMd: 'local typing', title: 'T2' });
+    expect(updates).toHaveLength(0);
+
+    rows = [note({ id: 'n1', title: 'T', bodyMd: 'server', status: 'in_progress' })];
+    _clearAutoDedupForTests();
+    await refetchNote('n1');
+
+    expect(getNote('n1')?.bodyMd).toBe('local typing');
+    expect(getNote('n1')?.title).toBe('T2');
+    expect(getNote('n1')?.status).toBe('in_progress');
+    expect(saveStateOf('n1')).toBe('dirty');
+  });
 });
 
 /**
