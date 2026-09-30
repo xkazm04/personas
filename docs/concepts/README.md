@@ -23,6 +23,7 @@ or partially-built forward work.
 | `mobile.md` *(pruned in efc57998c)* | Proposal — Strategy A vs B undecided; ~30% Strategy B scaffolded; LLM HTTP client + ForegroundService missing |
 | `per-persona-claude-code-skills.md` *(pruned in efc57998c)* | Connector `skills_sidecar` variant live; domain-skills generalization unbuilt |
 | persona-design-best-practices.md | Operationalized in Athena doctrine + chat ops; retained as the design-guidance doctrine source |
+| [build-sheet-live-blueprint.md](build-sheet-live-blueprint.md) | Proposal, unbuilt (2026-09-30): replace the build sheet's timer-driven casting animation with a live blueprint (Brief, Capabilities, Wiring, Checks, Ready) fed by launch analysis, the stream heartbeat, provisional events and an optional sketch lane; phases P0-P5 |
 | persona-execution-image-attachments.md | Proposal — greenfield, unbuilt |
 | `requires-macro-migration.md` *(pruned in efc57998c)* | In-flight — ~983 commands left to migrate to `#[requires(level)]` |
 | subscription-pty-execution.md | **Contingency — unbuilt.** Standby execution path: drive interactive `claude` in a PTY + tail the transcript JSONL + use hooks, so executions stay on the monthly subscription if Anthropic ever moves `claude -p` off subscription rate limits. Spike-gated; activate only on trigger |
