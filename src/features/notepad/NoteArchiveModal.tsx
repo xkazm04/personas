@@ -1,9 +1,11 @@
-import { useId } from 'react';
+import { useId, type ReactNode } from 'react';
 import { Copy, Trash2, Undo2 } from 'lucide-react';
 
+import { NOTE_CAP } from '@/api/notepad';
 import { useTranslation } from '@/i18n/useTranslation';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import type { DevNote } from '@/lib/bindings/DevNote';
@@ -56,6 +58,17 @@ export function NoteArchiveModal({
 }: NoteArchiveModalProps) {
   const { t, tx } = useTranslation();
   const titleId = useId();
+  const capHint = tx(t.notepad.cap_reached, { count: NOTE_CAP });
+  // A disabled button fires no pointer events, so the cap reason has to live
+  // on a focusable wrapper or Restore / Fork are just dead.
+  const atCapGate = (node: ReactNode) =>
+    atCap ? (
+      <Tooltip content={capHint} triggerFocusable triggerClassName="inline-flex">
+        <span className="pointer-events-none inline-flex">{node}</span>
+      </Tooltip>
+    ) : (
+      node
+    );
 
   return (
     <BaseModal isOpen onClose={onClose} titleId={titleId} size="md" portal>
@@ -85,15 +98,17 @@ export function NoteArchiveModal({
                         <span className="typo-body text-foreground/90 truncate">{note.title}</span>
                         <RelativeTime timestamp={note.archivedAt} className="typo-caption text-foreground/60" />
                       </div>
-                      <AsyncButton
-                        variant="secondary"
-                        size="xs"
-                        disabled={atCap}
-                        icon={<Undo2 className="w-3 h-3" />}
-                        onClick={() => onRestore(note.id)}
-                      >
-                        {t.notepad.restore}
-                      </AsyncButton>
+                      {atCapGate(
+                        <AsyncButton
+                          variant="secondary"
+                          size="xs"
+                          disabled={atCap}
+                          icon={<Undo2 className="w-3 h-3" />}
+                          onClick={() => onRestore(note.id)}
+                        >
+                          {t.notepad.restore}
+                        </AsyncButton>,
+                      )}
                       <button
                         type="button"
                         onClick={() => onDelete(note)}
@@ -138,15 +153,17 @@ export function NoteArchiveModal({
                             )}
                           </span>
                         </div>
-                        <AsyncButton
-                          variant="secondary"
-                          size="xs"
-                          disabled={atCap}
-                          icon={<Copy className="w-3 h-3" />}
-                          onClick={() => onFork(note.id)}
-                        >
-                          {t.notepad.fork}
-                        </AsyncButton>
+                        {atCapGate(
+                          <AsyncButton
+                            variant="secondary"
+                            size="xs"
+                            disabled={atCap}
+                            icon={<Copy className="w-3 h-3" />}
+                            onClick={() => onFork(note.id)}
+                          >
+                            {t.notepad.fork}
+                          </AsyncButton>,
+                        )}
                       </li>
                     );
                   })}

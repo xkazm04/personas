@@ -5,7 +5,7 @@
 // put aside and can come back, the other is the record of a milestone that
 // landed and must not. A Restore button on a shipped note would rewrite a record
 // through a drawer, and it would look perfectly reasonable on screen.
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { DevNote } from '@/lib/bindings/DevNote';
@@ -115,5 +115,24 @@ describe('NoteArchiveModal', () => {
     drawer({ notes: [] });
     expect(screen.queryByText('Nothing archived yet.')).toBeNull();
     expect(screen.getByTestId('notepad-shipped-landed')).toBeInTheDocument();
+  });
+
+  // Restore and Fork create a live note, so the cap disables them. A disabled
+  // control fires no events of its own; the reason has to live on the wrapper
+  // or the button is just dead.
+  it('explains why restore and fork are disabled when the pad is full', async () => {
+    drawer({ atCap: true });
+    expect(screen.getByRole('button', { name: 'Delete permanently' })).toBeEnabled();
+
+    for (const name of ['Restore', 'Fork to new draft']) {
+      const button = screen.getByRole('button', { name });
+      expect(button).toBeDisabled();
+      const wrapper = button.closest('[aria-disabled="true"]');
+      expect(wrapper).not.toBeNull();
+      wrapper?.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+      fireEvent.focus(wrapper!);
+      expect(await screen.findByText(/You can keep 10 notes open at once/)).toBeInTheDocument();
+      fireEvent.blur(wrapper!);
+    }
   });
 });
