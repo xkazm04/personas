@@ -731,34 +731,57 @@ export async function forkNote(id: string): Promise<DevNote | null> {
 
 // --- live wiring --------------------------------------------------------------
 
+/** Gap before a rejected sweeper subscribe is tried again. */
+export const SWEEP_LISTEN_RETRY_MS = 2_000;
+
+/** A listen that keeps failing stops here. The next `startNotepadListeners` tries again. */
+export const SWEEP_LISTEN_RETRY_LIMIT = 4;
+
 // Module-level latch so the sweeper listener and the unload flush attach
 // exactly once per app process regardless of how many surfaces mount. Kept on
 // globalThis so an HMR reload of this module doesn't double-register — same
 // reasoning (and the same shape) as `__personasFleetSessionListeners`.
+//
+// The sweep subscribe is its own slot. Latching it before `typedListen`
+// resolves left a rejected listen attached for the process: the layer calls
+// this once, and a note finishing while the pad is shut never refetches.
 const LISTENER_KEY = '__personasNotepadListeners';
 interface ListenerFlag {
   started: boolean;
   unlisten: UnlistenFn[];
+  sweep: Promise<UnlistenFn> | null;
+  retry: ReturnType<typeof setTimeout> | null;
+  sweepTries: number;
+}
+/** What an older module may have left on globalThis: the sweep slot was added later. */
+interface LegacyListenerFlag {
+  started: boolean;
+  unlisten: UnlistenFn[];
+  sweep?: Promise<UnlistenFn> | null;
+  retry?: ReturnType<typeof setTimeout> | null;
+  sweepTries?: number;
 }
 const listenerFlag = (): ListenerFlag => {
-  const g = globalThis as unknown as Record<string, ListenerFlag | undefined>;
-  return (g[LISTENER_KEY] ??= { started: false, unlisten: [] });
+  const g = globalThis as unknown as Record<string, LegacyListenerFlag | undefined>;
+  const existing = g[LISTENER_KEY];
+  if (!existing) {
+    const created: ListenerFlag = { started: false, unlisten: [], sweep: null, retry: null, sweepTries: 0 };
+    g[LISTENER_KEY] = created;
+    return created;
+  }
+  // An already-resolved subscribe must not be opened a second time after HMR.
+  if (existing.sweep === undefined) {
+    existing.sweep = existing.unlisten.length > 0 ? Promise.resolve(() => undefined) : null;
+  }
+  existing.retry ??= null;
+  existing.sweepTries ??= 0;
+  // INVARIANT: sweep, retry and sweepTries were assigned on this object just above.
+  return existing as ListenerFlag;
 };
 
-/** Attach the sweeper listener + the unload flush. Idempotent. */
-export function startNotepadListeners(): void {
-  const flag = listenerFlag();
+function attachUnloadFlush(flag: ListenerFlag): void {
   if (flag.started) return;
   flag.started = true;
-
-  void typedListen(EventName.NOTEPAD_NOTE_CHANGED, (payload) => {
-    void refetchNote(payload.noteId);
-    // A note change can BE a plan change — the Rust mirror moves a linked note
-    // to `cut`/`shipped` when its milestone's status moves, and the stamps that
-    // drives the timeline live on the milestone, not the note row.
-    void refreshPlanSummaries();
-  }).then((un) => flag.unlisten.push(un));
-
   // Last line of defence for the debounce window. `pagehide` fires on the
   // WebView teardown path where `beforeunload` sometimes does not; both are
   // registered because neither is reliable alone.
@@ -767,6 +790,50 @@ export function startNotepadListeners(): void {
   };
   window.addEventListener('beforeunload', onUnload);
   window.addEventListener('pagehide', onUnload);
+}
+
+function attachSweepListener(flag: ListenerFlag): void {
+  if (flag.sweep) return;
+  const pending = typedListen(EventName.NOTEPAD_NOTE_CHANGED, (payload) => {
+    void refetchNote(payload.noteId);
+    // A note change can BE a plan change — the Rust mirror moves a linked note
+    // to `cut`/`shipped` when its milestone's status moves, and the stamps that
+    // drives the timeline live on the milestone, not the note row.
+    void refreshPlanSummaries();
+  });
+  flag.sweep = pending;
+  pending.then(
+    (un) => {
+      if (flag.sweep !== pending) {
+        try {
+          un();
+        } catch (err) {
+          silentCatch('notepad sweep unlisten')(err);
+        }
+        return;
+      }
+      flag.unlisten.push(un);
+      flag.sweepTries = 0;
+    },
+    (err: unknown) => {
+      silentCatch('notepad sweep listen')(err);
+      if (flag.sweep !== pending) return;
+      flag.sweep = null;
+      flag.sweepTries += 1;
+      if (flag.sweepTries >= SWEEP_LISTEN_RETRY_LIMIT || flag.retry != null) return;
+      flag.retry = setTimeout(() => {
+        flag.retry = null;
+        attachSweepListener(flag);
+      }, SWEEP_LISTEN_RETRY_MS);
+    },
+  );
+}
+
+/** Attach the sweeper listener + the unload flush. Idempotent. */
+export function startNotepadListeners(): void {
+  const flag = listenerFlag();
+  attachUnloadFlush(flag);
+  attachSweepListener(flag);
 }
 
 // --- test hatch ---------------------------------------------------------------
@@ -786,7 +853,13 @@ export function __resetNotepadStoreForTests(): void {
   loaded = false;
   loadError = null;
   const flag = listenerFlag();
+  if (flag.retry != null) {
+    clearTimeout(flag.retry);
+    flag.retry = null;
+  }
   flag.started = false;
+  flag.sweep = null;
+  flag.sweepTries = 0;
   flag.unlisten = [];
   emit();
 }
