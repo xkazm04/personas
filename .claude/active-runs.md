@@ -2,22 +2,26 @@
 
 ## Active
 
-### contest-arena-restyle — /contest Opus xhigh vs Opus max: 6 static redesign variants of the Contest page on a baseline copy
+- **[2026-09-28 11:56]**
+- **Paths:** `src-tauri/src/engine/build_session/**` · `src/features/agents/sub_glyph/contactSheet/**` · `src/features/agents/components/matrix/UnifiedBuildEntry.tsx` · `src/features/agents/components/matrix/BuildTemplateSuggestion.tsx`
+- **Status:** started
+
+- **[2026-09-25 18:33]**
+- **Paths:** `src/features/plugins/dev-tools/contest/**` · `src-tauri/src/commands/contest/**` · `src/i18n/locales/**` · `src/lib/bindings/Contest*`
+- **Status:** started
+
 - **[2026-09-25 16:33]**
 - **Paths:** `.contest/staging/contest-arena-restyle/**` · `.contest/arena/contest-arena-restyle/**`
 - **Status:** started
 
-### studio-nav — Studio: reopened sheet load motion; Studio moved under Projects
 - **[2026-09-25 16:24]**
 - **Paths:** `src/features/studio/**` · `src/features/shared/chrome/sidebar/**` · `src/lib/navigation/**`
 - **Status:** started
 
-### build-stream-and-parallel-tests — Build sheet: release finished first-turn results mid-turn (provisional frames) + parallel scripted connector tests by default
 - **[2026-09-25 15:06]**
 - **Paths:** `src-tauri/src/engine/build_session/**` · `src/features/agents/sub_glyph/contactSheet/cinema/**` · `src/stores/slices/agents/matrixBuildSlice.ts` · `src/features/agents/components/matrix/useBuildSession.ts`
 - **Status:** started
 
-### spark-lifecycle-v2 — /spark lifecycle-v2: dev practice pipeline presets + contest UI + Athena toolset
 - **[2026-09-25 15:03]**
 - **Paths:** `src/features/plugins/dev-tools/sub_lifecycle/**`
 - **Status:** started
@@ -1130,6 +1134,18 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### build-sheet-live-fixes — Build sheet live-check fixes: template card in centre panel, scripted-test routing, provisional on the work turn, compose label/scrollbar
+
+### contest-ledger-port — Port /contest winner A/3 Season Ledger into the Contest page, replacing the Arena
+
+### spark-lifecycle-v2 — /spark lifecycle-v2: dev practice pipeline presets + contest UI + Athena toolset
+
+### contest-arena-restyle — /contest Opus xhigh vs Opus max: 6 static redesign variants of the Contest page on a baseline copy
+
+### build-stream-and-parallel-tests — Build sheet: release finished first-turn results mid-turn (provisional frames) + parallel scripted connector tests by default
+
+### studio-nav — Studio: reopened sheet load motion; Studio moved under Projects
 
 ### triage-contest-5 — Contest triage: blind judging, judge parity, overlay focus, rerun wording, auto-PR toggle removal
 
