@@ -30,6 +30,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { findPhantoms } from '../style/typo-allowlist.mjs';
+import { readEvidence } from '../registry/lib/evidence-home.mjs';
 
 // Derived from this file's own location, NOT hardcoded.
 //
@@ -269,10 +270,14 @@ if (fs.existsSync(HIER_DIR)) {
     if (!gp) continue;
     if (gp.subject !== slug) fail(`paths/${slug}/${slug}.md: subject "${gp.subject}" ≠ folder "${slug}"`);
 
-    const evidence = Array.isArray(gp.evidence) ? gp.evidence : [];
-    if (evidence.length === 0) fail(`paths/${slug}/${slug}.md: zero evidence links — a standard with no witness`);
-    for (const ev of [...evidence, ...(Array.isArray(gp.counter_evidence) ? gp.counter_evidence : [])]) {
-      if (!fs.existsSync(path.join(ROOT, ev))) fail(`paths/${slug}/${slug}.md: evidence "${ev}" does not exist`);
+    // Evidence lives in docs/evidence/<slug>.md (scripts/registry/lib/evidence-home.mjs), not in
+    // the golden path's frontmatter: the standard publishes, the witness set stays here.
+    const home = readEvidence(slug);
+    if (!home) fail(`paths/${slug}/${slug}.md: no docs/evidence/${slug}.md - the subject has no evidence home`);
+    const evidence = home ? home.evidence : [];
+    if (home && evidence.length === 0) fail(`docs/evidence/${slug}.md: zero evidence links — a standard with no witness`);
+    for (const ev of [...evidence, ...(home ? home.counter_evidence : [])]) {
+      if (!fs.existsSync(path.join(ROOT, ev.split('#')[0].trim()))) fail(`docs/evidence/${slug}.md: evidence "${ev}" does not exist`);
     }
 
     // techniques: frontmatter list ↔ files on disk, identical sets. Entries with an
