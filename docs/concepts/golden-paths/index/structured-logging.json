@@ -70,7 +70,6 @@
       "contexts": ["| `SecureString` `Debug`/`Display` → `[REDACTED]` (`crypto.rs:250-260`) | anything formatted | **5 files** |"],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {"count":3,"sections":[7,9],"contexts":["`ExecutionLogger`. Corpus counts cite [`shared-facts.json`](../shared-facts.json)."],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "engine/src/ambient_context.rs": {"count":1,"sections":[3],"lines":["965"],"contexts":["- **`engine/src/ambient_context.rs:965` `redact_clipboard_content`** / **`:1046`"],"resolved":false},
     "engine/src/test_runner.rs": {"count":1,"sections":[7],"contexts":["| `engine/src/test_runner.rs` | 9 |"],"resolved":false},
     "lib/sentry-pii.ts": {
@@ -120,6 +119,7 @@
       ],
       "resolved": false
     },
+    "shared-facts.json": {"count":3,"sections":[7,9],"contexts":["`ExecutionLogger`. Corpus counts cite `shared-facts.json`."],"resolved":false},
     "shared/prompt.ts": {
       "count": 1,
       "sections": [2],

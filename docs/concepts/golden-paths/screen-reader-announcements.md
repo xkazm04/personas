@@ -1,7 +1,7 @@
 # Golden path — Screen-reader announcements
 
 > Situation node: `ui-system/motion-and-accessibility/screen-reader-announcements`
-> (recurrence 64, convergence `diverged`, risk `high`) · [situation spine](../situation-spine.md)
+> (recurrence 64, convergence `diverged`, risk `high`) · situation spine
 > Composed 2026-08-14 at `80c27811d`. Sweep: **2,104 `.tsx` files** walked and parsed
 > with a brace/quote-aware JSX opening-tag scanner (not grepped) and every
 > `aria-live` / `aria-atomic` / `aria-relevant` / `aria-busy` / `aria-label` /
@@ -18,7 +18,7 @@
 > **Settles:** what the product says out loud when something changes on its own — which
 > surface says it, how urgently, how often, and in whose language.
 >
-> Corpus counts are cited from [`shared-facts.json`](../shared-facts.json); everything
+> Corpus counts are cited from `shared-facts.json`; everything
 > else was measured during composition. Deviations become `violating` cells.
 
 ---
@@ -80,7 +80,7 @@ Two further seams, stated so they are not re-litigated:
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md)'s recommendations #1 and #2,
+Per the portability test's recommendations #1 and #2,
 the head is physically separated and every clause carries its **warrant**, so an adopting
 repo can tell physics from local calibration. No file path, primitive name or count
 appears below this line until the head ends.
@@ -454,7 +454,7 @@ assistant reply land"*) and why it is a separate component.
 ## 7. Deviations found
 
 Everything below shipped under a green `npm run check`, a green CI and a green suite.
-The lint baseline is **1,135 warnings / 0 errors** ([`shared-facts.json`](../shared-facts.json));
+The lint baseline is **1,135 warnings / 0 errors** (`shared-facts.json`);
 **none of them is about an announcement, because no rule in the repo is.** There is no
 `eslint-plugin-jsx-a11y` in `eslint.config.js`; of the 21 custom rules exactly one touches
 ARIA (`role-button-requires-keydown`), and [`focus-management.md`](./focus-management.md)
@@ -936,7 +936,7 @@ make, which is why §9 gates one class of seventeen and refuses five larger ones
 
 ## 9. The missing gate
 
-**Manifestation layer.** Per [`golden-path-contract.md:34-60`](../golden-path-contract.md),
+**Manifestation layer.** Per `golden-path-contract.md:34-60`,
 what follows is a **proxy** for a semantic condition, tuned to this repo's idiom — and for
 this leaf the warning must be loud, because **the convergence check found no announcement
 gate anywhere.** `personas-web` ships 5 bespoke ESLint AST rules and points none at ARIA,
@@ -1165,7 +1165,7 @@ counts by exactly 1 and failed the gate; reverting returned the tree to exit 0 w
 `git status --porcelain` clean for that path.
 
 `floor` is 2,000 against an observed walk of **2,104 `.tsx` files**
-([`shared-facts.json`](../shared-facts.json) `frontend.tsxFiles`), consistent with
+(`shared-facts.json` `frontend.tsxFiles`), consistent with
 `unfocusable-click-target` and `native-title-tooltip`, which use the same root and
 extension.
 

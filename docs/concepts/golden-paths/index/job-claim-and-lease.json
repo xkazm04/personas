@@ -78,7 +78,6 @@
       ],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json) `rust.files`), lexed with a"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "eventProcessor.ts": {"count":1,"sections":[6],"lines":["12"],"contexts":["(`eventProcessor.ts:12`, 60 s) and its job lane got a boot-only one.** Two lanes,"],"resolved":false},
     "events.rs": {
       "count": 4,
@@ -149,6 +148,7 @@
     "registry-job-claim-lease-composer.json": {"count":1,"sections":[9],"contexts":["(`registry-job-claim-lease-composer.json` — a filename unique to this composer,"],"resolved":false},
     "scanQueue.core.repository.ts": {"count":1,"sections":[5],"lines":["97-111"],"contexts":["`vibeman` `scanQueue.core.repository.ts:97-111` gets this right with a"],"resolved":false},
     "scripts/connectors/builtin/vercel.json": {"count":1,"sections":[12],"contexts":["invariant; (b) `vercel.json` runs the cron **daily**, so \"re-qualifies on the"],"resolvedFrom":"basename","verbatim":"vercel.json"},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["`shared-facts.json` `rust.files`), lexed with a"],"resolved":false},
     "src-tauri/db/src/repos": {
       "count": 1,
       "sections": [9],

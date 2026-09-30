@@ -5,7 +5,7 @@
 > against the live modules (vitest harness over the real `src/`, not re-implementations);
 > 4,829 `.ts`/`.tsx` files walked by the census runner; 2 sibling repos
 > (`personas-web`, `brainiac/console`) measured as a convergence oracle.
-> Shared counts cited from [`shared-facts.json`](../shared-facts.json) @ `211d519bb`.
+> Shared counts cited from `shared-facts.json` @ `211d519bb`.
 
 ---
 
@@ -608,7 +608,7 @@ halves are in different files and each is individually correct.
 That is the condition. It is stack-independent — any language with UTF-16 strings
 (JS, Java, C#, Dart) has it. The *proxy* below is JavaScript-shaped and does **not**
 travel; an adopting repo re-derives its own from the same condition. (This is the
-portability lesson from [`golden-path-contract.md`](../golden-path-contract.md) §"Section 9
+portability lesson from `golden-path-contract.md` §"Section 9
 is MANIFESTATION-layer": four wave-1 signals scored zero true positives in a sibling
 because they keyed on the markup a deviation happened to wear.)
 

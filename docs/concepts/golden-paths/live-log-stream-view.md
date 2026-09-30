@@ -1,7 +1,7 @@
 # Golden path — Live log stream view
 
 > Situation node: `backend-runtime/subprocess-and-io/live-log-stream-view` ·
-> [situation spine](../situation-spine.md) · recurrence 33 · risk **medium** ·
+> situation spine · recurrence 33 · risk **medium** ·
 > sides: **client** · `twoSided: true` · convergence: **mixed** ·
 > dimensions: **ui · performance · function**
 > merged from *Log tail viewer*, *Live log stream surface*, *Streaming CLI output*,
@@ -9,7 +9,7 @@
 > Composed 2026-08-16 against `master` @ `17d059b1f`.
 >
 > **Sweep size.** All **4,829** `src/**/*.{ts,tsx}` files (the census walk's own
-> count, matching [`shared-facts.json`](../shared-facts.json) `frontend.tsFiles`
+> count, matching `shared-facts.json` `frontend.tsFiles`
 > + generated) and **963** `src-tauri/**/*.rs`. Every one of the **26**
 > line-bearing Tauri event channels enumerated from `eventRegistry.ts`'s payload
 > map and traced to its subscribers on both sides. `executionSink.ts`,

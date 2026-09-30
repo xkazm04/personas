@@ -50,7 +50,6 @@
       ],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["in [`shared-facts.json`](../shared-facts.json)). Every `run_step` in the"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "helpers.rs": {
       "count": 17,
       "sections": [0,3,6,7,8,12],
@@ -77,6 +76,7 @@
     "scripts/check-csp-hosts.mjs": {"count":1,"sections":[8],"contexts":["`check-csp-hosts.mjs` — see §9's second instrument. `conditional-write.md`"],"resolvedFrom":"basename","verbatim":"check-csp-hosts.mjs"},
     "scripts/i18n/translate-merge.mjs": {"count":1,"sections":[4],"contexts":["`translate-merge.mjs`), and make the lookup exhaustive — a"],"resolvedFrom":"basename","verbatim":"translate-merge.mjs"},
     "scripts/setup-voting-db.sql": {"count":1,"sections":[10],"lines":["56-71"],"contexts":["constraint the backfill installs** (`scripts/setup-voting-db.sql:56-71`:"],"resolved":false},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["in `shared-facts.json`). Every `run_step` in the"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[12],"contexts":["literal `tool_steps` appears **zero** times in `src-tauri/`. This is already"],"resolved":false,"isDir":true},
     "src-tauri/core/src/lifecycle.rs": {
       "count": 3,

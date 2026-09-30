@@ -1,7 +1,7 @@
 # Golden path — The findings triage queue
 
 > Situation node: `ai-agents/human-review/findings-triage-queue` ·
-> [situation spine](../situation-spine.md) · recurrence **6** · risk **HIGH** ·
+> situation spine · recurrence **6** · risk **HIGH** ·
 > sides: **client** (contradicted — see [§12.1](#121--sides-client-is-wrong-again-the-seventh-data-point-and-here-the-client-half-is-absent)) ·
 > convergence: **CONVERGED** (tested and failed — see [§12.2](#122--the-converged-label-failed-for-the-fourteenth-time-in-the-mode-the-doctrine-calls-the-fleet-converged-on-the-disease)) ·
 > dimensions: **function · resilience · ui · cost**
@@ -213,7 +213,7 @@ rather than diffing against what was already refused.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path, primitive
+Per the portability test the head carries no file path, primitive
 name or count. Each clause names its warrant.
 
 > **P1 — physics, and the one everything else follows from.** **A queue's depth is a measurement, and

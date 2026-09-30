@@ -1,7 +1,7 @@
 # Golden path — Metric tile
 
 > **Topic path:** `product-surfaces` › `metrics-and-charts` › `metric-tile`
-> [situation spine](../situation-spine.md) · recurrence **32 — the second-most recurrent leaf in the
+> situation spine · recurrence **32 — the second-most recurrent leaf in the
 > 247-leaf spine** · risk **low** · sides: **client** (contradicted — §12.1) · convergence: **mixed**
 > · dimensions: **ui · function · code-quality**
 > Leaf definition: *"one number on a card: a label, a value, often a delta and a sparkline."*
@@ -40,7 +40,7 @@
 > and it landed on the exact files the convergence sweep had independently named as the cohort's best
 > and worst answers. §9 reports the caveats it did not verify.
 >
-> **Shared facts cited:** [`shared-facts.json`](../shared-facts.json) — 963 Rust files, 4,828 `.ts`,
+> **Shared facts cited:** `shared-facts.json` — 963 Rust files, 4,828 `.ts`,
 > 2,104 `.tsx`, 1,135 lint warnings / 0 errors.
 >
 > **Settles:** what a tile is allowed to print when the thing it measures was never measured.
@@ -204,7 +204,7 @@ card in the app, the one primitive in the shared catalog covers one site in twen
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path, primitive
+Per the portability test the head carries no file path, primitive
 name or count, so an adopting repo can tell physics from local calibration. Each clause names its
 warrant.
 
@@ -592,7 +592,7 @@ each part** — whether the composite is a weighted score or a row of four cards
 
 Every entry is live on `master` @ `5d55d6a4a`, verified by reading the file and — where a number is
 quoted — by replay against a read-only copy of the operator's database. All shipped under a green
-`npm run check` (0 errors, 1,135 warnings — [`shared-facts.json`](../shared-facts.json)).
+`npm run check` (0 errors, 1,135 warnings — `shared-facts.json`).
 **None applied**: every one changes what a number on screen says.
 
 ### D1 — Two dashboards, one metric, opposite answers on an empty window · **executed**
@@ -831,7 +831,7 @@ deviation here**.
 **`golden-path-census` pre-push job** in `lefthook.yml`. That matters: per the §9 calibration,
 `ci.yml` is red on 10 pre-existing failures, so a gate that only runs in CI runs nowhere. This one
 runs on the developer's machine before the branch leaves it. `custom/*` ESLint rules are warn-level
-and, per [doctrine §3](../golden-path-doctrine.md), **enforce nothing at either gate at any count** —
+and, per doctrine §3, **enforce nothing at either gate at any count** —
 no argument from warning volume is made here.
 
 **Existing rules checked for overlap before proposing this one — file overlap re-measured by running
@@ -932,7 +932,7 @@ against the shared `rules.json`; **the full registry was not run** (doctrine §4
 this finished document and re-run: **identical — 55/48 and 6/6 over 9,658 file-visits, 3.1 s wall.**
 
 **Portability — the signal was tested against the four sibling repos, and unlike the four §9 signals
-the [contract](../golden-path-contract.md) reports, it did not score zero.** Run read-only, verbatim,
+the contract reports, it did not score zero.** Run read-only, verbatim,
 with the engine's comment semantics:
 
 | repo | `.ts`/`.tsx` | violating rule | positive control |

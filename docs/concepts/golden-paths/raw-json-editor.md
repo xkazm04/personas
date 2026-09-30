@@ -1,7 +1,7 @@
 # Raw JSON editor
 
 > Situation node: `ui-system/controls-and-forms/raw-json-editor` ·
-> [situation spine](../situation-spine.md) · recurrence 9 · risk **medium** ·
+> situation spine · recurrence 9 · risk **medium** ·
 > dimensions: ui · function · resilience · security · `sides: "client"` ·
 > `twoSided: false` · `convergence: "diverged"` ·
 > merged from *"Freeform JSON payload editor"* + *"Raw definition JSON editor"*
@@ -395,7 +395,7 @@ strings.** Note which lint rule sees them: `custom/no-hardcoded-jsx-text` is
 warn-level and only visits JSX text, so **6 of the 9 — the ones inside handlers
 and template literals — are invisible to it entirely**, and the other 3 are
 warnings under a gate that runs `eslint src/` with no `--max-warnings`
-([doctrine §3](../golden-path-doctrine.md#3-the-severity-fact)).
+(doctrine §3).
 
 **D9 — P3. Six JSON syntax highlighters, three of them in editors.** Enumerated:
 `JsonEditor.tokenizeJson` (hand-written scanner, `:15-105`);
@@ -668,7 +668,7 @@ different checks. This one is twelve doors, of which several have no check at al
 ### time this label has been tested
 
 The spine's `convergence` field has failed thirteen consecutive tests
-([doctrine §5](../golden-path-doctrine.md)), all of them on the value
+(doctrine §5), all of them on the value
 `"converged"`. This leaf carries `"diverged"` and **the label is correct on both
 halves, for two different reasons** — and the two reasons are why a single enum
 is nearly always the wrong shape:

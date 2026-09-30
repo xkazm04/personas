@@ -1,7 +1,7 @@
 # Golden path — Agent workspace isolation
 
 > Situation node: `backend-runtime/subprocess-and-io/agent-workspace-isolation` ·
-> [situation spine](../situation-spine.md) · recurrence **5** · risk **MEDIUM** ·
+> situation spine · recurrence **5** · risk **MEDIUM** ·
 > sides: **server** (**upheld, with one qualification** — see [§12.1](#121--sidesserver-upheld-and-the-qualification-is-that-there-is-no-client-half-at-all)) ·
 > convergence: **mixed** (**not tested against the sibling cohort** — see [§12.5](#125--what-was-not-done)) ·
 > dimensions: **security · function · resilience**
@@ -75,7 +75,7 @@ $ node scripts/worktree-gc.mjs --include-orphans
 `removable` requires `INCLUDE_ORPHANS` (`scripts/worktree-gc.mjs:43`, `:188-195`), `package.json:81`
 passes no flags, and `.claude/CLAUDE.md:275` — the only place a session is told the script exists —
 names it without them.** This is the contract's fifth gate failure mode
-([`golden-path-contract.md`](../golden-path-contract.md), "the gate that points at a broken
+(`golden-path-contract.md`, "the gate that points at a broken
 destination") in a form the contract had not yet recorded: the gate reaches the right destination,
 reports the truth on screen, and then its own default flags exclude the entire population it just
 found. "Nothing to remove" is printed **directly underneath 19.79 GB of removable data**.

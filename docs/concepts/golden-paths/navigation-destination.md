@@ -1,11 +1,11 @@
 # Golden path — Navigation destination
 
-> Situation node: `ui-system/layout-and-navigation/navigation-destination` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/layout-and-navigation/navigation-destination` · situation spine
 > `sides: client` (with one Rust allow-list) · `risk: high` · recurrence **63**.
 > Dimensions: **function · ui · code-quality · resilience**.
 >
 > Composed 2026-08-15 against `master` from a ground-truth sweep of the **4,829**
-> `.ts`/`.tsx` files under `src/` ([`shared-facts.json`](../shared-facts.json), independently
+> `.ts`/`.tsx` files under `src/` (`shared-facts.json`, independently
 > re-walked at 4,829 by this composition's own walker) and the **564** `.rs` files under
 > `src-tauri/src/`. Everything below was **measured by execution**, not by reading:
 > a TypeScript-compiler AST pass over every array / object / switch literal in the repo;
@@ -809,7 +809,7 @@ which is §4's type answer with a test as its ratchet until the type change land
 ### On severity, if any of this ships as an ESLint rule
 
 Ship it at `"error"`. **Not because warnings drown in a large baseline** — the baseline is 1,135
-([`shared-facts.json`](../shared-facts.json)) and the volume argument is not available at any
+(`shared-facts.json`) and the volume argument is not available at any
 count. The count-independent argument is the only one that holds: `npm run check` runs
 `eslint src/` with **no `--max-warnings`** (`package.json:51`), and the pre-commit hook runs
 `--quiet --max-warnings 99999`, where `--quiet` discards warnings before they can be counted.

@@ -51,7 +51,6 @@
     "crates/brainiac-store/src/test_support.rs": {"count":1,"sections":[],"lines":["38,49,54,81"],"contexts":["(`crates/brainiac-store/src/test_support.rs:38,49,54,81`), adopted uniformly — 89"],"resolved":false},
     "crates/brainiac-store/tests/store_pg.rs": {"count":1,"sections":[],"lines":["33-37"],"contexts":["(`crates/brainiac-store/tests/store_pg.rs:33-37`), so a local `cargo test --workspace`"],"resolved":false},
     "desktop_bridges.rs": {"count":1,"sections":[7],"contexts":["`desktop_bridges.rs` — so the module is half-alive, which is why nobody noticed the other"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[9],"contexts":["**1,135** ([`shared-facts.json`](../shared-facts.json)). The count-independent argument is"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "external_api_keys.rs": {"count":1,"sections":[7],"lines":["240"],"contexts":["three files (`external_api_keys.rs:240`, `api_key_audit.rs:104`, `broker_edges.rs:208,219,228`)"],"resolved":false},
     "lefthook.yml": {"count":2,"sections":[9],"lines":["20"],"contexts":["`lefthook.yml` and `package.json`."]},
     "migrations/*.sql": {"count":2,"sections":[9],"contexts":["files (`brainiac`: **zero** `CREATE TABLE` in any `.rs`, all 46 in `migrations/*.sql`), or"],"resolved":false},
@@ -74,6 +73,7 @@
     },
     "scripts/check-cargo-invocations.mjs": {"count":1,"sections":[9],"contexts":["specifies a ~50-line `scripts/check-cargo-invocations.mjs` that reads cargo invocations as"],"resolved":false},
     "scripts/install-daemon-task.ps1": {"count":2,"sections":[7,9],"lines":["48"],"contexts":["`scripts/install-daemon-task.ps1:48`, which is a `build`, not a `test`. These tests have"]},
+    "shared-facts.json": {"count":1,"sections":[9],"contexts":["**1,135** (`shared-facts.json`). The count-independent argument is"],"resolved":false},
     "sqlite_master.sql": {"count":1,"sections":[8],"contexts":["`PRAGMA table_info` and `sqlite_master.sql`, and the repo already has"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[],"contexts":["**963** `.rs` files under `src-tauri/` — every `#[test]` / `#[tokio::test]` attribute"],"resolved":false,"isDir":true},
     "src-tauri/capabilities/default.json": {

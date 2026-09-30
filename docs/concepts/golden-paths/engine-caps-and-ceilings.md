@@ -1,7 +1,7 @@
 # Golden path — Engine caps and ceilings
 
 > Situation node: `backend-runtime/resilience-policies/engine-caps-and-ceilings` ·
-> [situation spine](../situation-spine.md) · recurrence 8 · risk **MEDIUM** ·
+> situation spine · recurrence 8 · risk **MEDIUM** ·
 > sides: **server** · convergence: **converged** ·
 > dimensions: **resilience · cost · performance**
 > Composed 2026-08-17 against `master` @ `2a874e692`. **Short form** (Mode 2 tiering:

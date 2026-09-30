@@ -79,7 +79,6 @@
       "resolved": false
     },
     "disputes/actions.ts": {"count":1,"sections":[10],"lines":["32-35"],"contexts":["— `disputes/actions.ts:32-35`"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json), not re-derived); **two independent"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "documents.rs": {"count":1,"sections":[10],"lines":["389,555-558"],"contexts":["(`documents.rs:389,555-558`) — an outbox in effect, with no outbox table."],"resolved":false},
     "eventProcessor.ts": {"count":4,"sections":[5,10,11],"lines":["711","164-167,343-347","610-616"],"contexts":["`eventProcessor.ts:711` calls `dispatchMatch` from inside"],"resolved":false},
     "features/overview/sub_director/useDirector.ts": {"count":1,"sections":[7],"lines":["146-158"],"contexts":["`features/overview/sub_director/useDirector.ts:146-158`: `setPersonaStarred`"],"resolved":false},
@@ -105,6 +104,7 @@
     "packages/orchestrator/src/eventProcessor.ts": {"count":1,"sections":[4],"lines":["164-167"],"contexts":["`AuditRecorder` (`packages/orchestrator/src/eventProcessor.ts:164-167`)"],"resolved":false},
     "reviews/actions.ts": {"count":1,"sections":[10],"lines":["56-60"],"contexts":["— `reviews/actions.ts:56-60`"],"resolved":false},
     "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["- **Mechanism** — a `scripts/census/rules.json` entry, ratcheting. Not a new"]},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["`shared-facts.json`, not re-derived); **two independent"],"resolved":false},
     "sla.rs": {"count":4,"sections":[2,6,7,11],"lines":["636-664","614-621"],"contexts":["`sla.rs:636-664`); and if the derived table is deliberately allowed to outlive"],"resolved":false},
     "src-tauri/**.rs": {"count":1,"sections":[6],"contexts":["| Transaction openers in `src-tauri/**.rs` | **153** across 65 files | both implementations agree |"],"resolved":false},
     "src-tauri/core/src/events.rs": {"count":1,"sections":[3],"contexts":["- **`core/src/events.rs` — `event_name::*`.** Every event name, one registry."],"resolvedFrom":"suffix","verbatim":"core/src/events.rs"},

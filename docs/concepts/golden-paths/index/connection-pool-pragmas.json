@@ -23,7 +23,6 @@
   "triggers": [],
   "citations": {
     "../vibeman/src/app/db/drivers/sqlite.driver.ts": {"count":1,"sections":[0],"lines":["102-118"],"contexts":["(`../vibeman/src/app/db/drivers/sqlite.driver.ts:102-118`). Its comment is the"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[9,12],"contexts":["files, matching `rust.files` in [`shared-facts.json`](../shared-facts.json)."],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "lib.rs": {
       "count": 8,
       "sections": [0,2,7,12],
@@ -33,6 +32,7 @@
     },
     "scripts/census/lib/": {"count":1,"sections":[9],"contexts":["`scripts/census/lib/`. The recovered-from-history figure was **327**; the"],"resolved":false,"isDir":true},
     "scripts/census/lib/instruments/stripCfgTest.mjs": {"count":1,"sections":[],"contexts":["`scripts/census/lib/instruments/stripCfgTest.mjs` (line-preserving) so a"]},
+    "shared-facts.json": {"count":2,"sections":[9,12],"contexts":["files, matching `rust.files` in `shared-facts.json`."],"resolved":false},
     "src-tauri/db/src/cdc.rs": {"count":1,"sections":[7],"lines":["648"],"contexts":["`cdc.rs:648` and `change_journal.rs:605`. This corroborates"],"resolvedFrom":"basename","verbatim":"cdc.rs"},
     "src-tauri/db/src/lib.rs": {
       "count": 3,

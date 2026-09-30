@@ -35,7 +35,6 @@
     "db/src/migrations/incremental.rs": {"count":1,"sections":[3],"contexts":["- **`db/src/migrations/incremental.rs` ~`:9240`"],"resolved":false},
     "dev_tools_backlog_tests.rs": {"count":1,"sections":[7],"lines":["23"],"contexts":["`dev_memories_tests.rs:20`, `dev_tools_backlog_tests.rs:23`,"],"resolved":false},
     "dev_tools_page_tests.rs": {"count":1,"sections":[7],"lines":["26"],"contexts":["`dev_tools_page_tests.rs:26`, which an in-file `#[cfg(test)]` scan misclassifies"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[9],"contexts":["[`shared-facts.json`](../shared-facts.json)) with a comment-stripping,"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "incremental.rs": {
       "count": 10,
       "sections": [6,7,9],
@@ -56,6 +55,7 @@
     "render_plan/invariants.rs": {"count":1,"sections":[9],"contexts":["strings (`engine/src/design.rs`, `companion/prompt.rs`, `render_plan/invariants.rs`"],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["this into `rules.json`:**"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "scripts/test/clean-env.cjs": {"count":5,"sections":[5,7,9],"lines":["57"],"contexts":["data. `scripts/test/clean-env.cjs:57` sets `foreign_keys = OFF`, deletes 17"]},
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["`shared-facts.json`) with a comment-stripping,"],"resolved":false},
     "sqlite.driver.ts": {
       "count": 2,
       "sections": [6,9],

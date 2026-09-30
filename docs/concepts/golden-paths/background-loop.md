@@ -1,9 +1,9 @@
 # Golden path — Background loop
 
-> Situation node: `backend-runtime/scheduling-and-loops/background-loop` · [situation spine](../situation-spine.md)
+> Situation node: `backend-runtime/scheduling-and-loops/background-loop` · situation spine
 > Composed 2026-08-15 against `master` @ `a385c159d`. Ground-truth sweep: all **963**
 > `src-tauri/**/*.rs` files walked by the census runner (matches
-> [`shared-facts.json`](../shared-facts.json) `rust.files: 963`); every `loop` and
+> `shared-facts.json` `rust.files: 963`); every `loop` and
 > `while` in the tree brace-matched by two independent tools after blanking
 > comments and string literals, yielding **51 production time-driven loops**, each
 > read by hand; all **203** task-spawn sites (`tokio::spawn` /
@@ -45,7 +45,7 @@ this path owns the rule that a `tracing::warn!` is not a report.
 
 *Three sentences, no repo path, no primitive name, no count — the layer a sibling
 repo on another stack can adopt as-is. Each clause carries its warrant, per the
-[portability test](../research/portability-test.md)'s finding that unmarked local
+portability test's finding that unmarked local
 calibration is what gets a whole document discarded.*
 
 > **(physics)** A loop's wait must be raced against its stop signal, not merely

@@ -1,6 +1,6 @@
 # Golden path — Inline busy state
 
-> Situation node: `ui-system/empty-and-loading/inline-busy-state` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/empty-and-loading/inline-busy-state` · situation spine
 > Hand-authored 2026-08-13 from a repo-wide ground-truth sweep (38 tool calls),
 > against `master` @ `f7676ab82`. `.claude/worktrees/**` excluded from all counts.
 > Dimensions: ui · function · code-quality · performance.

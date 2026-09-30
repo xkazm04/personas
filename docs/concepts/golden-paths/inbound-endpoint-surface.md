@@ -1,7 +1,7 @@
 # Golden path — the inbound endpoint surface (the route table)
 
 > Situation node: `backend-runtime/eventing/inbound-endpoint-surface` ·
-> [situation spine](../situation-spine.md) · recurrence 6 · risk **HIGH** · sides **client**
+> situation spine · recurrence 6 · risk **HIGH** · sides **client**
 > (refuted — §12.1) · convergence **diverged** · dimensions: **security · function · resilience ·
 > code-quality**
 > Composed 2026-08-17 against `master` @ `5d55d6a4a`.
@@ -283,7 +283,7 @@ units, and no table in which they could be laid side by side.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head is physically separated and
+Per the portability test the head is physically separated and
 every clause carries its warrant, so an adopting repo can tell physics from local calibration. No
 file path, primitive name or count appears below this line until the head ends.
 

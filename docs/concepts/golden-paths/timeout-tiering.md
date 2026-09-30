@@ -1,18 +1,18 @@
 # Golden path — Timeout tiering
 
 > Situation node: `backend-runtime/resilience-policies/timeout-tiering` ·
-> [situation spine](../situation-spine.md) · recurrence 15 · risk **HIGH** ·
+> situation spine · recurrence 15 · risk **HIGH** ·
 > sides **server** · convergence **diverged** ·
 > dimensions: **resilience · function · cost · code-quality**
 > Composed 2026-08-16 against `master` @ `46b882a31`.
 >
 > **Sweep size.** All **963** non-generated `.rs` files under `src-tauri/` (agrees
-> exactly with `rust.files` in [`shared-facts.json`](../shared-facts.json), reached
+> exactly with `rust.files` in `shared-facts.json`, reached
 > by an independent walk) and all `.ts`/`.tsx` under `src/`. `#[cfg(test)]` was
 > removed by a **brace-matched, string/comment-aware range**, never a line
 > threshold. The comment stripper was rewritten mid-composition after it ate
 > `https://` and manufactured three phantom "derived constants" — the exact trap
-> [the doctrine names](../golden-path-doctrine.md#2-measurement-rules), committed
+> the doctrine names, committed
 > and caught. Every headline count was taken twice; where the two disagreed, the
 > disagreement is reported and resolved (§6).
 >
@@ -175,7 +175,7 @@ the sum of the others — live in prose, in a comment, or nowhere.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is
+Per the portability test, the head is
 physically separated and each clause carries its warrant, so an adopting repo can
 tell physics from local calibration. No file path, primitive name or count
 appears below this line until the head ends.
@@ -385,7 +385,7 @@ monorepo + Python facade), `vibeman` (Next.js + Tauri), `personas-web` (Next.js)
   (`fetchWithTimeout(url, init, ms, signal?)`, positional and required);
   `personas-cloud` makes `ExecAssign.config.timeoutMs` **non-optional on the wire
   protocol** — *and then defaults it at all four producers*, so the type is
-  required and never forces a decision, which is [Q3](../golden-path-doctrine.md#1-prefer-a-type-over-a-gate--and-the-seven-qualifications)
+  required and never forces a decision, which is Q3
   in the wild; `vibeman` 0; `personas-web` 0. **Personas has one:
   `build_ssrf_safe_client(timeout: Duration)`.**
 
@@ -932,7 +932,7 @@ same five times with `from_secs(10)`.
    type.** `persona.timeout_ms` is `i32` from the database; no newtype reaches it
    without a validated constructor at every read, and it crosses a `Persona`
    struct field, not a parameter — which is
-   [where types cannot reach](../golden-path-doctrine.md#where-types-cannot-reach)
+   where types cannot reach
    case 2 in a different costume. The reachable answer is a clamp at the point of
    application (D1c) plus a `const { assert! }` on the constant pair, and that is
    strictly weaker than making it unrepresentable. **Say so; do not pretend the
@@ -1067,7 +1067,7 @@ precondition for everything in §2.
 condition in D2 — one ceiling declared in four places, in two languages, with a
 comment asserting they agree — is an *absence* (`no second declaration of this
 value exists`), and the census
-[cannot assert an absence](../golden-path-doctrine.md#4-census-rules). The right
+cannot assert an absence. The right
 instrument is an extension to the existing ts-rs / command-name codegen: emit
 `ENGINE_MAX_EXECUTION_MS` (and the `TIMEOUT_MS_MIN`/`MAX` pair) into a generated
 TS module, and make `PersonaDraft.ts` import it. That converts a four-way drift
@@ -1140,7 +1140,7 @@ relationship is a fact about two constants, so it should fail the build, not a
 test run."*
 
 **Where it does not reach, and what to do instead** (per
-[where types cannot reach](../golden-path-doctrine.md#where-types-cannot-reach)):
+where types cannot reach):
 
 - **Across the Rust/TS boundary** (D2). `const { assert! }` cannot see
   `PersonaDraft.ts`. Fix by *generating* the constant into TS — §9's second
@@ -1239,7 +1239,7 @@ and three of these are genuinely fleet-leading:
 8. **A measurement error I made and caught.** My first "derived constants" pass
    reported **8**, three of which were phantoms produced by a comment stripper
    that ate `https://` — the exact failure
-   [the doctrine documents for `check-csp-hosts.mjs`](../golden-path-doctrine.md#2-measurement-rules).
+   the doctrine documents for `check-csp-hosts.mjs`.
    The corrected string-aware stripper returns **5**. Recorded because the wrong
    number was plausible, the count moved by 60%, and nothing but re-reading the
    five hits would have caught it.

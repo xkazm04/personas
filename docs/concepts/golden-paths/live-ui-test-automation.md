@@ -1,6 +1,6 @@
 # Golden path — Live UI test automation
 
-> Situation node: `platform-delivery/testing-and-workflow/live-ui-test-automation` · [situation spine](../situation-spine.md)
+> Situation node: `platform-delivery/testing-and-workflow/live-ui-test-automation` · situation spine
 > `sides: both` · `twoSided` · `fusedAcrossSides` · recurrence **588** (the highest remaining leaf) ·
 > convergence **mixed** · risk **medium** · Dimensions: **code-quality · function · resilience**.
 > *"The identifiers a surface exposes and the driver that clicks the real app."*
@@ -664,7 +664,7 @@ Two changes are worth more than either gate above and neither needs new machiner
 ### On severity, if any of this ships as an ESLint rule
 
 Ship it at `"error"`. Not because warnings drown in a large baseline — the baseline is
-**1,135** ([`shared-facts.json`](../shared-facts.json)). The count-independent argument is the
+**1,135** (`shared-facts.json`). The count-independent argument is the
 only one that holds: `npm run check` runs `eslint src/` with **no `--max-warnings`**
 (`package.json:51`) and the pre-commit hook runs `--quiet --max-warnings 99999`, where
 `--quiet` discards warnings before they can be counted. **A warn-level rule enforces nothing

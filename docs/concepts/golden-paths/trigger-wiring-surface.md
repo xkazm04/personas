@@ -2,7 +2,7 @@
 
 > Situation node: `backend-runtime/scheduling-and-triggers/trigger-wiring-surface`
 > ("Event subscription: armed in the UI, matched in the engine") ·
-> [situation spine](../situation-spine.md) · recurrence **14** · risk **medium** ·
+> situation spine · recurrence **14** · risk **medium** ·
 > sides **client** (**tested — inverted at the point of damage, §12.1**) ·
 > convergence **mixed** (**tested — UPHELD, and the fleet converged on the disease, §12.2**) ·
 > dimensions: **function · ui · resilience**
@@ -416,7 +416,7 @@ The **Deviations** section is a fix backlog and contains **two P0s** (D1, D2).
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path, primitive
+Per the portability test the head carries no file path, primitive
 name or count, so an adopting repo can tell physics from local calibration. Each clause names its
 warrant.
 

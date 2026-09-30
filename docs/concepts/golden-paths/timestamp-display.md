@@ -1,6 +1,6 @@
 # Golden path — Timestamp display
 
-> Situation node: `ui-system/copy-and-vocabulary/timestamp-display` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/copy-and-vocabulary/timestamp-display` · situation spine
 > Composed 2026-08-14 against `master` @ `58d82e608`. **Recurrence 141.**
 > Sweep: `display/RelativeTime.tsx`, `display/AbsoluteTime.tsx`, `hooks/utility/data/useFormattedDate.ts`,
 > `hooks/utility/timing/relativeTimeTicker.ts`, `lib/utils/formatters.ts` and `display/grouping.ts` read in
@@ -15,7 +15,7 @@
 > **Settles:** who decides what a *moment* looks like on screen — the call site, the host operating system,
 > or the app.
 >
-> Counts reproduce [`shared-facts.json`](../shared-facts.json) where they touch it (4,829 files). Where this
+> Counts reproduce `shared-facts.json` where they touch it (4,829 files). Where this
 > document contradicts a sibling path or a claim handed to it, it says so in **§7.0**. Deviations become
 > `violating` cells.
 
@@ -23,7 +23,7 @@
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and each
+Per the portability test, the head is physically separated and each
 clause carries its **warrant**, so an adopting repo can tell physics from local calibration. No file path,
 primitive name or count appears below this line until the head ends.
 
@@ -563,7 +563,7 @@ dense ones: 6 table/list surfaces and 3 detail drawers. `LiveRoadmapStatusPill.t
 
 ## 9. The missing gate
 
-**Manifestation layer.** Per [`golden-path-contract.md:34-60`](../golden-path-contract.md), what follows is a
+**Manifestation layer.** Per `golden-path-contract.md:34-60`, what follows is a
 *proxy* for a semantic condition tuned to this repo's idiom. The conditions are stated first so an adopting
 repo re-derives its own. The portability risk is measured and concrete: `brainiac/console` has the
 locale-blindness condition at full scale with **no i18n system at all**, so C1's proxy would fire there
@@ -725,7 +725,7 @@ each contain both the ladder and its own export/fallback.
 ### The gate that points at a broken destination — named, per the contract's fifth failure mode
 
 `host-locale-date-render`'s mechanism is *"use the shared primitive"*, and
-[`golden-path-contract.md:84-107`](../golden-path-contract.md) requires stating what makes the primitive
+`golden-path-contract.md:84-107` requires stating what makes the primitive
 correct by default. **It does not, yet.** `<AbsoluteTime>` resolves its label's locale from the host OS
 (`:51`) and its tooltip's language from a hardcoded English ladder (`:55`); `<RelativeTime>` does the
 reverse. So this rule, satisfied fully, would move 55 call sites from *host-OS locale* to *host-OS locale

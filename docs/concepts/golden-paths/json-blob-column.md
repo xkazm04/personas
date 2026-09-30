@@ -1,6 +1,6 @@
 # Golden path — JSON blob column
 
-> Situation node: `data-persistence/data-modeling/json-blob-column` · [situation spine](../situation-spine.md)
+> Situation node: `data-persistence/data-modeling/json-blob-column` · situation spine
 > Composed 2026-08-13 from a ground-truth sweep of the Rust tree (`src-tauri/{src,db,core,engine,data,macros}` —
 > 954 `.rs` files), the four migration files (253 tables / 2,959 columns parsed), `src/**` (318 `JSON.parse`
 > sites / 231 files), and `src/lib/bindings/`, against `master` @ `d5a7ead13`. `target/` and

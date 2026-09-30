@@ -76,13 +76,6 @@
       ],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {
-      "count": 2,
-      "sections": [9],
-      "contexts": ["`frontend.tsFiles` in [`shared-facts.json`](../shared-facts.json)) · **398 `CREATE TABLE` statements"],
-      "resolvedFrom": "basename",
-      "verbatim": "shared-facts.json"
-    },
     "external_api_keys.rs": {
       "count": 2,
       "sections": [2,5],
@@ -155,6 +148,7 @@
       "resolved": false
     },
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Neither rule duplicates an existing one, checked against all 31 entries in `rules.json` before"],"resolvedFrom":"basename","verbatim":"rules.json"},
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["`frontend.tsFiles` in `shared-facts.json`) · **398 `CREATE TABLE` statements"],"resolved":false},
     "src-tauri/core/src/models/tool.rs": {
       "count": 1,
       "sections": [6],

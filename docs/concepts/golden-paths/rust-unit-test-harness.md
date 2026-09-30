@@ -1,6 +1,6 @@
 # Golden path — Rust unit test harness
 
-> Situation node: `platform-delivery/testing-and-workflow/rust-unit-test-harness` · [situation spine](../situation-spine.md)
+> Situation node: `platform-delivery/testing-and-workflow/rust-unit-test-harness` · situation spine
 > `sides: server` · recurrence **514** · Dimensions: **function · code-quality · resilience · performance · cost**.
 > Composed 2026-08-14 against `master` @ `2a874e692` from a ground-truth sweep of all
 > **963** `.rs` files under `src-tauri/` — every `#[test]` / `#[tokio::test]` attribute
@@ -705,7 +705,7 @@ this category becomes self-enforcing.
 ### On severity, if any of this ships as an ESLint rule
 
 Ship it at `"error"`. Not because warnings drown in a large baseline — the baseline is
-**1,135** ([`shared-facts.json`](../shared-facts.json)). The count-independent argument is
+**1,135** (`shared-facts.json`). The count-independent argument is
 the only one that holds: `npm run check` runs `eslint src/` with **no `--max-warnings`**
 (`package.json:51`), and the pre-commit hook runs `--quiet --max-warnings 99999`
 (`lefthook.yml:20`), where `--quiet` discards warnings before they can be counted. **A

@@ -1,7 +1,7 @@
 # Golden path — Failure recovery strategy
 
 > Situation node: `ai-agents/model-invocation/failure-recovery-strategy` ·
-> [situation spine](../situation-spine.md) · recurrence 10 · risk **HIGH** ·
+> situation spine · recurrence 10 · risk **HIGH** ·
 > sides **server** · `twoSided: true` · spine convergence **converged**
 > (**refuted — see §12**) ·
 > dimensions: **function · resilience · cost · ui** ·
@@ -9,7 +9,7 @@
 > Composed 2026-08-16 against `master` @ `2a874e692`.
 >
 > **Sweep size.** All **963** non-generated `.rs` files under `src-tauri/`
-> (agrees exactly with `rust.files` in [`shared-facts.json`](../shared-facts.json),
+> (agrees exactly with `rust.files` in `shared-facts.json`,
 > reached by an independent walk and by the census runner) and all **4,828**
 > `.ts`/`.tsx` under `src/`. `#[cfg(test)]` removed by a **brace-matched,
 > string/comment-aware range** — never a line threshold; the first draft of the
@@ -415,7 +415,7 @@ down, and it is worth quoting because it is this whole document in two lines:
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is
+Per the portability test, the head is
 physically separated and each clause carries its warrant, so an adopting repo can
 tell physics from local calibration. No file path, primitive name or count
 appears below this line until the head ends.
@@ -975,7 +975,7 @@ overwrite it, the same precedence `llm_spend::parse_result_line` uses.
    despite being documented in the file itself. Budget for the four-file change.
 3. **The census cannot assert this leaf's central condition**, which is an
    absence: *"no error string this repo mints falls through its own classifier"*.
-   Per the [doctrine](../golden-path-doctrine.md#4-census-rules) the engine
+   Per the doctrine the engine
    ratchets a presence. §9 specifies a **test** for it instead, with an
    assert-the-instrument precondition.
 4. **Nothing can tell whether a recovery mechanism is unreachable or merely
@@ -999,7 +999,7 @@ overwrite it, the same precedence `llm_spend::parse_result_line` uses.
 
 ### The semantic conditions, stated first
 
-Per the [portability test](../research/portability-test.md), what follows are
+Per the portability test, what follows are
 **one repo's proxies**. An adopting repo inherits the sentences and re-derives its
 own signals.
 
@@ -1240,7 +1240,7 @@ failure, and a rule pinned at 0 is a gate that can never fire.
 **Yes, and the reachable version is narrower than the obvious one.**
 
 The obvious move — "make `ErrorCategory` required everywhere" — fails
-[Q2](../golden-path-doctrine.md#1-prefer-a-type-over-a-gate--and-the-seven-qualifications):
+Q2:
 requiredness is not closedness, and `ErrorCategory` is *already* closed and
 *already* required at `HealingContext.category`. The bad state is not a missing
 category; it is a category **derived from the wrong input**.

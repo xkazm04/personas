@@ -34,7 +34,6 @@
     "RevealItem.test.tsx": {"count":1,"sections":[9],"contexts":["5. **Land the four probes** from this composition as `RevealItem.test.tsx` /"],"resolved":false},
     "ToneConsole.tsx": {"count":1,"sections":[7],"lines":["280"],"contexts":["`ScraperControlRoom.tsx:347`, `ToneConsole.tsx:280`) — these are placeholders, not entrances;"],"resolved":false},
     "UnifiedTable.reveal.test.tsx": {"count":1,"sections":[9],"contexts":["`UnifiedTable.reveal.test.tsx`: the delay cap, the reduced-motion short-circuit, the"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[9],"contexts":["Shared counts cited from [`shared-facts.json`](../shared-facts.json); everything else was"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "lib/useStaggeredReveal.ts": {
       "count": 1,
       "sections": [],
@@ -70,6 +69,7 @@
     "scripts/census/lib/engine.mjs": {"count":1,"sections":[9],"contexts":["Validated standalone against the real engine (`scripts/census/lib/engine.mjs`) through a"]},
     "scripts/census/merge-published-rules.mjs": {"count":1,"sections":[9],"contexts":["with `scripts/census/merge-published-rules.mjs`."]},
     "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["All **81** rules in `scripts/census/rules.json` were read. None matches `animationDelay`,"]},
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["Shared counts cited from `shared-facts.json`; everything else was"],"resolved":false},
     "src/": {"count":1,"sections":[9],"contexts":["means a restructured `src/`, a renamed extension or a mis-pointed walk exits 1 saying the matcher"],"resolved":false,"isDir":true},
     "src/**": {"count":1,"sections":[],"contexts":["Composed 2026-08-15 at `0a5b7fcaf`. Sweep: all **4,829** `src/**` `.ts`/`.tsx` files walked by the"],"resolved":false,"isDir":true},
     "src/features/agents/sub_deployment/components/DeploymentTable.tsx": {

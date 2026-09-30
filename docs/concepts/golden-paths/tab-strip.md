@@ -1,6 +1,6 @@
 # Golden path — Tab strip
 
-> Situation node: `ui-system/layout-and-navigation/tab-strip` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/layout-and-navigation/tab-strip` · situation spine
 > recurrence **36 — the single most recurrent leaf in the 247-leaf spine** · risk **LOW** · sides **client** · convergence **mixed**
 > dimensions: **ui · function · code-quality · performance**
 > Leaf definition: *"a row of tabs and the panel below it."*
@@ -196,7 +196,7 @@ E5  the same COMPONENT TYPE at both arms of a ternary chain
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and each
+Per the portability test, the head is physically separated and each
 clause carries its warrant, so an adopting repo can tell physics from local calibration. No file path,
 primitive name or count appears below this line until the head ends.
 

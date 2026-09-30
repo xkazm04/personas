@@ -1,7 +1,7 @@
 # Golden path — Documentation sync
 
 > Situation node: `platform-delivery/gates-and-conventions/documentation-sync` ·
-> [situation spine](../situation-spine.md) · recurrence 6 · risk **low** ·
+> situation spine · recurrence 6 · risk **low** ·
 > sides **server** (**contradicted — §12.2**) · convergence **converged**
 > (**failed — §12.3**) · dimensions: **code-quality** · `twoSided: true` ·
 > merged from *"Documentation sync enforcement"* + *"Agent-facing repo contract"* ·

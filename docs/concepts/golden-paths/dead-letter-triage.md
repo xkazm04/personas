@@ -1,7 +1,7 @@
 # Dead-letter triage
 
 > Situation node: `ai-agents / human-review / dead-letter-triage` ·
-> [situation spine](../situation-spine.json)
+> situation spine
 > `sides: "client"` · `twoSided: true` · `fusedAcrossSides: false` ·
 > `recurrence: 2` · `risk: high` · `convergence: "converged"`.
 > Dimensions: **ui · function · resilience**.

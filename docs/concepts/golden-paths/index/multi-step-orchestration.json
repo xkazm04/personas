@@ -174,7 +174,6 @@
       "resolved": false,
       "isDir": true
     },
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[9],"contexts":["([`shared-facts.json`](../shared-facts.json)). Read in full:"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "eventProcessor.ts": {
       "count": 2,
       "sections": [6],
@@ -233,6 +232,7 @@
     },
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["All **162** rules in `scripts/census/rules.json` were enumerated; these eight were opened and read in"]},
     "scripts/check-job-invariants.mjs": {"count":1,"sections":[9],"contexts":["**`scripts/check-job-invariants.mjs`** — a dev-time probe over **read-only copies** of the local"],"resolved":false},
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["(`shared-facts.json`). Read in full:"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[],"contexts":["**Sweep.** All **963** `.rs` files under `src-tauri/` and all **4,828** `.ts`/`.tsx` under `src/`"],"resolved":false,"isDir":true},
     "src-tauri/core/src/models/team_assignment.rs": {
       "count": 4,

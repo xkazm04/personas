@@ -197,7 +197,6 @@
       "resolved": false
     },
     "display/KpiTile.tsx": {"count":1,"sections":[3],"contexts":["- **`display/KpiTile.tsx` (32 sites).** `subtitle` exists only at `card-rich` density and is not a"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["**Shared facts cited:** [`shared-facts.json`](../shared-facts.json)."],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "engine/ai_healing.rs": {"count":1,"sections":[7],"lines":["560"],"contexts":["`engine/ai_healing.rs:560` writes `suggested_fix = NULL`, so on exactly the LLM-authored rows the"],"resolved":false},
     "incremental.rs": {"count":2,"sections":[6,7],"lines":["8247-8254","8232"],"contexts":["rebuild if the DDL is not what it was written against (`incremental.rs:8247-8254`); (3) a **second,"],"resolved":false},
     "memories.rs": {"count":1,"sections":[7],"lines":["1797-1815"],"contexts":["(`memories.rs:1797-1815`) silently **drops** KNN hits produced by a stale model. A recall can be"],"resolved":false},
@@ -267,6 +266,7 @@
     "scripts/census/lib/engine.mjs": {"count":1,"sections":[9],"contexts":["annotation head, and classifies the pair — importing nothing from `lib/engine.mjs` and using no"],"resolvedFrom":"suffix","verbatim":"lib/engine.mjs"},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Checked first that it is not already gated.** `scripts/census/rules.json` holds **113** rules."]},
     "scripts/check-csp-hosts.mjs": {"count":1,"sections":[9],"contexts":["express by construction — the same reason `check-csp-hosts.mjs` exists as a script."],"resolvedFrom":"basename","verbatim":"check-csp-hosts.mjs"},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["**Shared facts cited:** `shared-facts.json`."],"resolved":false},
     "sla.rs": {
       "count": 6,
       "sections": [0,7],

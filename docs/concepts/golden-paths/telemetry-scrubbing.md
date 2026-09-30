@@ -1,7 +1,7 @@
 # Golden path — Telemetry scrubbing at the egress boundary
 
 > Situation node: `backend-runtime/backend-observability/telemetry-scrubbing` ·
-> [situation spine](../situation-spine.md) · recurrence 5 · risk **HIGH** ·
+> situation spine · recurrence 5 · risk **HIGH** ·
 > sides: **server** (refuted — §12.1) · convergence: **converged** (refuted — §12.2) ·
 > dimensions: **security · resilience**
 > Composed 2026-08-17 against `master` @ `2a874e692`.

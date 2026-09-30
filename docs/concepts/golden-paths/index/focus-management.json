@@ -77,7 +77,6 @@
     "TwinVariantTabs.tsx": {"count":1,"sections":[7],"contexts":["`AuthMethodTabs.tsx` · `TwinVariantTabs.tsx` · `PrototypeTabs.tsx`."],"resolved":false},
     "UseCaseChannelDropdown.tsx": {"count":1,"sections":[8],"lines":["15"],"contexts":["(`AddChannelButton.tsx:22`, `UseCaseChannelDropdown.tsx:15`,"],"resolved":false},
     "UseCaseDetailPanel.tsx": {"count":1,"sections":[7],"lines":["237"],"contexts":["`FixtureDropdownList.tsx:32` · `UseCaseDetailPanel.tsx:237` ·"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["Shared counts are cited from [`shared-facts.json`](../shared-facts.json); everything"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "eslint-rules/role-button-requires-keydown.cjs": {"count":3,"sections":[3,8,9],"lines":["47-63"],"contexts":["- **`eslint-rules/role-button-requires-keydown.cjs`** — registered at **error** in"]},
     "eslint.config.js": {"count":2,"sections":[3,8],"lines":["106"],"contexts":["`eslint.config.js:106`. Currently the only machine check touching this situation. It"]},
     "scripts/census/run-census.mjs": {
@@ -88,6 +87,7 @@
       "resolvedFrom": "basename",
       "verbatim": "run-census.mjs"
     },
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["Shared counts are cited from `shared-facts.json`; everything"],"resolved":false},
     "src/**": {"count":2,"sections":[8],"contexts":["Composed 2026-08-14. Sweep: 6,933 file-visits across `src/**` (4,829 `.ts` + 2,104 `.tsx`),"],"resolved":false,"isDir":true},
     "src/**/*.tsx": {"count":1,"sections":[7],"contexts":["Measured over `src/**/*.tsx` (tests excluded), counting native focusables plus"],"resolved":false},
     "src/features/agents/components/PersonaSelector.tsx": {"count":1,"sections":[7],"lines":["103"],"contexts":["`CapabilityRowHeader.tsx:32,39` · `PersonaSelector.tsx:103` ·"],"resolvedFrom":"basename","verbatim":"PersonaSelector.tsx"},

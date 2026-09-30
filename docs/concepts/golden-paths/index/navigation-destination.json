@@ -52,7 +52,6 @@
       ],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[9],"contexts":["`.ts`/`.tsx` files under `src/` ([`shared-facts.json`](../shared-facts.json), independently"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "layout.tsx": {"count":1,"sections":[],"contexts":["`route.ts`, 10 `layout.tsx`) and `../brainiac/console` (Next.js, 14 modules on one `?m=` route)."],"resolved":false},
     "main.tsx": {"count":4,"sections":[4,7],"lines":["167","161-171"],"contexts":["`partialize` + rehydrate block, and `main.tsx`'s boot read."],"resolved":false},
     "package.json": {"count":1,"sections":[9],"lines":["51"],"contexts":["`eslint src/` with **no `--max-warnings`** (`package.json:51`), and the pre-commit hook runs"]},
@@ -69,6 +68,7 @@
     "routes.ts": {"count":2,"sections":[4],"lines":["125-128"],"contexts":["and falls back to `'home'` — brainiac's `parseModule` (`routes.ts:125-128`), reinvented"],"resolved":false},
     "scripts/census/lib/engine.mjs": {"count":1,"sections":[9],"lines":["147-239"],"contexts":["`scanRule` (`scripts/census/lib/engine.mjs:147-239`) opens one source, applies one regex,"]},
     "scripts/i18n/check-route-sections.mjs": {"count":1,"sections":[9],"contexts":["`scripts/i18n/check-route-sections.mjs` *is* a route-section gate — for **i18n chunk coverage**,"]},
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["`.ts`/`.tsx` files under `src/` (`shared-facts.json`, independently"],"resolved":false},
     "sitemap.ts": {
       "count": 1,
       "sections": [],
@@ -88,7 +88,7 @@
       "verbatim": "approvals/mod.rs"
     },
     "src-tauri/src/ipc_auth.rs": {"count":1,"sections":[9],"lines":["971-976"],"contexts":["repo already treats as the model (`ipc_auth.rs:971-976`):"],"resolvedFrom":"basename","verbatim":"ipc_auth.rs"},
-    "src/": {"count":2,"sections":[7],"contexts":["`.ts`/`.tsx` files under `src/` ([`shared-facts.json`](../shared-facts.json), independently"],"resolved":false,"isDir":true},
+    "src/": {"count":2,"sections":[7],"contexts":["`.ts`/`.tsx` files under `src/` (`shared-facts.json`, independently"],"resolved":false,"isDir":true},
     "src/api/companion.ts": {
       "count": 1,
       "sections": [8],

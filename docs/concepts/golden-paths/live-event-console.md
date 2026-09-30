@@ -1,7 +1,7 @@
 # Golden path — Live event console
 
 > Situation node: `product-surfaces/monitoring-surfaces/live-event-console` ·
-> [situation spine](../situation-spine.md) · recurrence **3** · risk **MEDIUM** ·
+> situation spine · recurrence **3** · risk **MEDIUM** ·
 > sides: **client** (**upheld**, and for a structural reason — see [§12.1](#121--sidesclient-upheld-the-third-time-and-the-mechanism-is-worth-naming)) ·
 > convergence: **converged** (**not tested against the siblings** — but see [§12.2](#122--convergence-converged-untested-across-repos-and-confirmed-inside-this-one) for a stronger result) ·
 > dimensions: **ui · performance · resilience**

@@ -86,7 +86,6 @@
     },
     "crypto.rs": {"count":2,"sections":[9],"contexts":["`personas-core` had two `icacls` spawns — `crypto.rs`'s `restrict_file_permissions`"],"resolved":false},
     "data_portability.rs": {"count":1,"sections":[7],"lines":["6394"],"contexts":["Claude CLI composition pass, and `data_portability.rs:6394` creates them from an"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["`src-tauri/**/*.rs` files (matches [`shared-facts.json`](../shared-facts.json)"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "executeCommand.ts": {
       "count": 1,
       "sections": [],
@@ -182,6 +181,7 @@
     "scripts/census/lib/engine.mjs": {"count":1,"sections":[9],"lines":["264-273"],"contexts":["job object / process group must be zero\"*, and `scripts/census/lib/engine.mjs:264-273`"]},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["Do **not** paste these into `scripts/census/rules.json` yourself — the orchestrator"]},
     "scripts/census/run-census.mjs": {"count":1,"sections":[9],"contexts":["merges them. Validated standalone against `scripts/census/run-census.mjs` at"]},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["`src-tauri/**/*.rs` files (matches `shared-facts.json`"],"resolved":false},
     "shared/prompt.ts": {
       "count": 2,
       "sections": [],
@@ -191,7 +191,7 @@
       ],
       "resolved": false
     },
-    "src-tauri/**/*.rs": {"count":1,"sections":[],"contexts":["`src-tauri/**/*.rs` files (matches [`shared-facts.json`](../shared-facts.json)"],"resolved":false},
+    "src-tauri/**/*.rs": {"count":1,"sections":[],"contexts":["`src-tauri/**/*.rs` files (matches `shared-facts.json`"],"resolved":false},
     "src-tauri/core/src/fs_private.rs": {"count":2,"sections":[9],"contexts":["`run_icacls` in the new `core/src/fs_private.rs`, so `crypto.rs` leaves the"],"resolvedFrom":"suffix","verbatim":"core/src/fs_private.rs"},
     "src-tauri/core/src/types.rs": {
       "count": 1,

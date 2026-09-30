@@ -1,9 +1,9 @@
 # Golden path — Query latency instrumentation
 
-> Situation node: `data-persistence/query-performance/query-latency-instrumentation` · [situation spine](../situation-spine.md)
+> Situation node: `data-persistence/query-performance/query-latency-instrumentation` · situation spine
 > Composed 2026-08-14 from a ground-truth sweep of `src-tauri/**` and `src/lib/**` against `master`.
 > Sweep size: **116 `.rs` files in `src-tauri/db/src/repos/`** (of the **963** in `rust.files`,
-> [`shared-facts.json`](../shared-facts.json)) · **1,280 `pub`-visible fn declarations** parsed with a
+> `shared-facts.json`) · **1,280 `pub`-visible fn declarations** parsed with a
 > brace-matching scanner · **922 `timed_query!` blocks** · **4,027 rusqlite statement calls**
 > (`query_row` / `query_map` / `execute` / `execute_batch` / `prepare` / `prepare_cached`, migrations
 > excluded) each tested for whether it lies inside a timing wrapper · the frontend's parallel
@@ -91,8 +91,8 @@ can experience. The fix is not a discipline; it is a signature (see *Prefer a ty
 
 ### Which clauses are physics, which are this house
 
-Per the [contract](../golden-path-contract.md) and the
-[portability test](../research/portability-test.md), a clause travels only if something else
+Per the contract and the
+portability test, a clause travels only if something else
 reinvented it. Measured 2026-08-14 against `brainiac`, `personas-cloud` and `personas-web`.
 Detail in §6.
 
@@ -548,7 +548,7 @@ immediately below the matched `pub fn`.
 
 ## Prefer a type over a gate — the answer for this leaf
 
-Per the [contract](../golden-path-contract.md) this must be answered explicitly. **For this leaf the
+Per the contract this must be answered explicitly. **For this leaf the
 answer is an unqualified YES — and it is the strongest type-over-gate case the corpus has produced so
 far, because the type is not hypothetical: three sibling codebases and this repo's own frontend have
 each independently built its shape, and the one that built it completely has 100 % coverage that
@@ -623,7 +623,7 @@ Three, each stack-free:
 > **(C)** A mechanism that exists once is re-implemented beside itself, so the guarantees of the
 > original (throttling, aggregation, a single threshold) do not apply to the copy.
 
-Per the [portability test](../research/portability-test.md), what follows is **one repo's proxy** for
+Per the portability test, what follows is **one repo's proxy** for
 (A). An adopting repo inherits the three sentences and re-derives its own signal against its own
 driver and idiom — and a repo that has already made (A) unrepresentable, as this repo's frontend has,
 needs no rule at all.

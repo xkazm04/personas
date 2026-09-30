@@ -1,7 +1,7 @@
 # Golden path — Entity picker
 
 > Situation node: `ui-system` › `overlays` › `entity-picker` ·
-> [situation spine](../situation-spine.md) · recurrence 17 · risk **medium** ·
+> situation spine · recurrence 17 · risk **medium** ·
 > sides: **client** (upheld, and for a reason worth naming — §12.1) ·
 > convergence: **diverged** (upheld on 3 of 6 clauses, inverted on 2, and the fleet
 > converged on the *disease* on the sixth — §6) ·
@@ -322,7 +322,7 @@ you apply it. One of fifty-five.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path, primitive
+Per the portability test the head carries no file path, primitive
 name or count. Each clause names its warrant.
 
 > **P1 — physics, and the leaf's centre.** **A chooser may only leave out an option that would fail
@@ -525,7 +525,7 @@ Every one of these exists today. The adopter counts are the finding.
 
 ### Can the type make the wrong call impossible? — asked before §9
 
-Held against the seven qualifications in [the doctrine](../golden-path-doctrine.md).
+Held against the seven qualifications in the doctrine.
 
 **T1 — withhold the pre-filtered array. Make the picker take the collection plus a verdict function.**
 The bad state is a call site handing a chooser an array from which records have already been removed.

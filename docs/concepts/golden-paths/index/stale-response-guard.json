@@ -50,7 +50,6 @@
       "resolved": false,
       "isDir": true
     },
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json) (4,829 `src/**/*.{ts,tsx}` files),"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "executionStore.ts": {"count":1,"sections":[],"lines":["13"],"contexts":["counters** (`executionStore.ts:13`, `reviewStore.ts:17`) that are line-for-line"],"resolved":false},
     "overview/sub_manual-review/components/dispatch/DispatchPanel.tsx": {"count":1,"sections":[7],"lines":["141"],"contexts":["`overview/sub_manual-review/components/dispatch/DispatchPanel.tsx:141` ·"],"resolved":false},
     "overview/sub_patterns/ExtractionMenu.tsx": {"count":1,"sections":[7],"lines":["186"],"contexts":["`overview/sub_patterns/ExtractionMenu.tsx:186`,`:200` ·"],"resolved":false},
@@ -78,8 +77,9 @@
     "reviewStore.ts": {"count":1,"sections":[],"lines":["17"],"contexts":["counters** (`executionStore.ts:13`, `reviewStore.ts:17`) that are line-for-line"],"resolved":false},
     "scripts/census/": {"count":1,"sections":[9],"contexts":["Inherited from [`scripts/census/`](../../../scripts/census/) and **verified by"],"resolved":false,"isDir":true},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["Do **not** paste this into `scripts/census/rules.json` from this document by"]},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["`shared-facts.json` (4,829 `src/**/*.{ts,tsx}` files),"],"resolved":false},
     "src/": {"count":2,"sections":[9],"contexts":["`let cancelled|active|alive|stale|mounted|aborted = <bool>` site under `src/`"],"resolved":false,"isDir":true},
-    "src/**/*.{ts,tsx}": {"count":1,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json) (4,829 `src/**/*.{ts,tsx}` files),"],"resolved":false,"isDir":true},
+    "src/**/*.{ts,tsx}": {"count":1,"sections":[],"contexts":["`shared-facts.json` (4,829 `src/**/*.{ts,tsx}` files),"],"resolved":false,"isDir":true},
     "src/features/agents/components/allPersonas/PersonaConfigPanel.tsx": {"count":1,"sections":[7],"lines":["306"],"contexts":["`personaSlice.ts:185,210` · `PersonaConfigPanel.tsx:306` ·"],"resolvedFrom":"basename","verbatim":"PersonaConfigPanel.tsx"},
     "src/features/agents/components/create/useTemplateIntentMatch.ts": {"count":1,"sections":[7],"lines":["34"],"contexts":["`useTemplateIntentMatch.ts:34` · `useCloudHealthMonitor.ts:136` ·"],"resolvedFrom":"basename","verbatim":"useTemplateIntentMatch.ts"},
     "src/features/agents/components/matrix/UnifiedBuildEntry.tsx": {"count":1,"sections":[7],"lines":["291"],"contexts":["`useContextRuntime.ts:130`,`:158` · `UnifiedBuildEntry.tsx:291`"],"resolvedFrom":"basename","verbatim":"UnifiedBuildEntry.tsx"},

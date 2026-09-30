@@ -1,7 +1,7 @@
 # Golden path — Least-privilege scope grant
 
 > **Topic path:** `integrations-security` › `credential-capture` › `least-privilege-scope-grant`
-> [situation spine](../situation-spine.md) · recurrence 6 · risk **HIGH** · sides: **client**
+> situation spine · recurrence 6 · risk **HIGH** · sides: **client**
 > (spine label — **see §12.1, it inverts**) · convergence: **mixed**
 > (**see §12.2 — the half that holds is a unanimous absence, and Personas is *ahead* on the other half**) ·
 > dimensions: **security · function · code-quality · ui**
@@ -268,7 +268,7 @@ because the other four are not settings.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path,
+Per the portability test the head carries no file path,
 primitive name or count. Each clause names its warrant so an adopting repo can tell physics from
 local calibration.
 

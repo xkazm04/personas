@@ -1,7 +1,7 @@
 # Golden path — Bulk selection actions
 
 > Situation node: `client-runtime` › `mutations-and-editing` › `bulk-selection-actions` ·
-> [situation spine](../situation-spine.md) · recurrence 20 · risk **medium** ·
+> situation spine · recurrence 20 · risk **medium** ·
 > sides: **client** (upheld — see §12.1, the first leaf in this batch where it holds) ·
 > convergence: **mixed** (upheld, 3 physics / 2 alone / 1 silence) ·
 > dimensions: **ui · function · resilience**
@@ -224,7 +224,7 @@ the kind.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path, primitive
+Per the portability test the head carries no file path, primitive
 name or count. Each clause names its warrant.
 
 > **P1 — physics, and the leaf's centre.** **A selection is a claim about rows, and rows move. The

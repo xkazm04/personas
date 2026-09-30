@@ -1,7 +1,7 @@
 # Golden path — Entity draft editing
 
 > Situation node: `client-runtime/mutations-and-editing/entity-draft-editing` ·
-> [situation spine](../situation-spine.md) · recurrence **27** · risk high ·
+> situation spine · recurrence **27** · risk high ·
 > dimensions **function · resilience · ui · code-quality** · sides **client**.
 > Composed 2026-08-15 from a ground-truth sweep against `master`.
 >
@@ -584,7 +584,7 @@ like it needs a baseline, because it does not feel like it is editing a record. 
 
 ## Prefer a type over a gate — the answer for this leaf
 
-Per the [contract](../golden-path-contract.md), answered before §9 is written, and held against all
+Per the contract, answered before §9 is written, and held against all
 six qualifications.
 
 **The brief asked whether `Partial<T>` is the right type. Measured answer: it is necessary, it is not

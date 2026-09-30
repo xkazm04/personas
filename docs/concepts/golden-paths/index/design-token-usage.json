@@ -48,7 +48,6 @@
       "contexts": ["twelve token axes; plus full reads of `globals.css`, `typography.css`, `designTokens.ts`,"],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[7],"contexts":["[`shared-facts.json`](../shared-facts.json) they agree with it, with one correction"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "eslint-rules/no-direct-white-colors.cjs": {
       "count": 1,
       "sections": [9],
@@ -93,6 +92,7 @@
     },
     "scripts/census/self-test.mjs": {"count":1,"sections":[9],"contexts":["token to use instead in `signal.fix`, and is seeded red in `scripts/census/self-test.mjs`."]},
     "scripts/style/typo-allowlist.mjs": {"count":1,"sections":[9],"contexts":["condition moved to `scripts/style/typo-allowlist.mjs`, run by `check-corpus-integrity.mjs`"]},
+    "shared-facts.json": {"count":2,"sections":[7],"contexts":["`shared-facts.json` they agree with it, with one correction"],"resolved":false},
     "shared/components/*.tsx": {"count":1,"sections":[8],"contexts":["**126 of 129** `shared/components/*.tsx` files reference `className`; **63** declare"],"resolved":false},
     "src/**": {"count":3,"sections":[7],"contexts":["Sweep: every file under `src/**` — **4,829 files (2,725 `.ts` + 2,104 `.tsx`)** — parsed for"],"resolved":false,"isDir":true},
     "src/**/*.css": {"count":1,"sections":[9],"contexts":["selectors in `src/**/*.css` at run time and floors that fail a walk that saw nothing."],"resolved":false},

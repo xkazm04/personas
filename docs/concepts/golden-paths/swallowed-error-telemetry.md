@@ -1,12 +1,12 @@
 # Golden path — Swallowed error telemetry
 
-> Situation node: `client-runtime/client-errors/swallowed-error-telemetry` · [situation spine](../situation-spine.md)
+> Situation node: `client-runtime/client-errors/swallowed-error-telemetry` · situation spine
 > One-sided (`sides: client`, `twoSided: false`) · recurrence **1,875** — the highest-recurrence unwritten leaf.
 > Dimensions: **resilience · code-quality · function**.
 > Composed 2026-08-14 against `master` @ `a53561963`. Sweep: 4,829 `.ts`/`.tsx` files walked, 2,752
 > production catch sites classified by a brace-matching analyzer, cross-validated against the census
 > engine (both counted **1,985** raw `catch` clauses, agreeing to zero). Corpus counts cite
-> [`shared-facts.json`](../shared-facts.json) rather than re-deriving them.
+> `shared-facts.json` rather than re-deriving them.
 > The **Deviations** section is a fix backlog; it migrates to `violating` cells when this path is ingested.
 
 > **Three of this leaf's stated premises are wrong, and the corrections are the most useful thing here.**

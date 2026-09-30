@@ -1,7 +1,7 @@
 # Golden path — Execution trace instrumentation
 
 > Situation node: `backend-runtime/backend-observability/execution-trace-instrumentation` ·
-> [situation spine](../situation-spine.md) · recurrence **21** · risk **low** ·
+> situation spine · recurrence **21** · risk **low** ·
 > `sides: server` but **`twoSided: true`, `fusedAcrossSides: true`** — the spine carries an explicit
 > `clientHalf` and `serverHalf`, so this document has both (§12 correction 1).
 > Dimensions: **performance · cost · ui**.
@@ -15,7 +15,7 @@
 > `db/src/repos/execution/executions.rs`, and the whole client inspector
 > (`sub_executions/detail/inspector/`, 13 files / 1,384 lines) plus `PipelineDots.tsx` and
 > `lib/execution/pipeline.ts`. Corpus counts (963 `.rs`, 4,828 `.ts`) cite
-> [`shared-facts.json`](../shared-facts.json).
+> `shared-facts.json`.
 >
 > **Measured by executing, not by reading — three independent instruments:**
 >
@@ -228,7 +228,7 @@ measures stopped, and neither could say so.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head carries no file path, primitive
+Per the portability test, the head carries no file path, primitive
 name or count, so an adopting repo can tell physics from local calibration. Each clause names its
 warrant.
 
@@ -765,7 +765,7 @@ reads the `init` line, which does).
 
 ## Prefer a type over a gate
 
-Per the [contract](../golden-path-contract.md), answered explicitly before §9.
+Per the contract, answered explicitly before §9.
 
 **The answer is YES, and it is not the type I first reached for.**
 
@@ -878,7 +878,7 @@ Three, none of which is a count of anything present:
 > **(C)** A record about an external process is populated by reading named fields out of that
 > process's output, and nothing asserts the field was found.
 
-Per the [portability test](../research/portability-test.md), an adopting repo inherits these three
+Per the portability test, an adopting repo inherits these three
 sentences and re-derives its own instrument. What follows is a **reasoned decline** on the census,
 with the numbers that forced each refusal, and the specification for the instrument that *can*
 express all three.
@@ -930,7 +930,7 @@ above. Disagreement was the useful part.
   census OK — 5 rule(s), 4815 file-visits, 55 surviving violation(s) across 28 file(s).   exit 0
 ```
 
-`963 walked` is exactly `rust.files` in [`shared-facts.json`](../shared-facts.json) — an
+`963 walked` is exactly `rust.files` in `shared-facts.json` — an
 independently derived count agreeing, which is the only reason to trust the walk. **None of these
 five is proposed for merge.** They are published as the evidence behind the refusals; the registry
 copy was deleted, and so were the database copies.
@@ -1041,7 +1041,7 @@ prescribes for deployment properties.
    `"twoSided": true`, `"fusedAcrossSides": true`, an explicit `clientHalf` (*"Rendering nested spans
    and related events as one collapsible duration narrative with drill-down"*) and a
    `mergedFrom` list naming **"Trace waterfall viewer"** and **"Event chain timeline"**. Per the
-   [contract](../golden-path-contract.md) (*"Two-sided situations get one document with both halves
+   contract (*"Two-sided situations get one document with both halves
    … half a path is worse than none"*), the client half is in scope and this document has it. **It
    was worth the correction: four of the fourteen deviations (D7, D11, D13, and half of D14) are
    client-side, and D11 — a component with 112 translated strings that has never rendered — is only

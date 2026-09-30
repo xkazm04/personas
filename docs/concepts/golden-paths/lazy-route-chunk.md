@@ -1,6 +1,6 @@
 # Golden path — Lazy route chunk
 
-> Situation node: `ui-system/empty-and-loading/lazy-route-chunk` · [situation spine](../situation-spine.json)
+> Situation node: `ui-system/empty-and-loading/lazy-route-chunk` · situation spine
 > `sides: client` · `risk: high` · `recurrence: 147` · dimensions: performance, resilience, ui, function
 > Absorbs the retired topics *Route and chunk splitting*, *Route chunk loading*,
 > *Route chunk prefetch*, *Deferred and idle work*.
@@ -58,7 +58,7 @@ chunk never paints a pixel of it. Splitting is not deferring — if the cost is
 and the two compose. Then stop: do not hand-roll a retry, a fallback skeleton, an
 idle scheduler, or a module-scope import cache; all four already exist.
 
-**Warrant of each clause** (per [`research/portability-test.md`](../research/portability-test.md)
+**Warrant of each clause** (per `research/portability-test.md`
 recommendation 2 — a reader in another repo must be able to sort physics from
 local calibration):
 

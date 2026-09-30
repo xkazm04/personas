@@ -14,18 +14,18 @@ or partially-built forward work.
 | Concept | Status |
 | --- | --- |
 | `ambient-context-fusion.md` *(pruned in efc57998c)* | **Largely shipped** — Fix A + Fix B/Case 2 live; **Case 1 (build-time connector gate seeding) shipped 2026-06-12** (`dc89c407b`). Cases 3/4 + daemon cross-process injection deferred |
-| [capability-audit.md](capability-audit.md) | Phase A (`#[requires]` macro) in-flight (~17%); Phase B (tier-sync CI check) still valid & unbuilt |
-| [empirical-model-tiering-harness.md](empirical-model-tiering-harness.md) | Proposal / hand-off — autonomous Template→Persona→Execution→Lab sweep to set per-capability model tiers empirically; documents Lab arena measurement-validity gaps (2026-06-13) |
+| capability-audit.md | Phase A (`#[requires]` macro) in-flight (~17%); Phase B (tier-sync CI check) still valid & unbuilt |
+| empirical-model-tiering-harness.md | Proposal / hand-off — autonomous Template→Persona→Execution→Lab sweep to set per-capability model tiers empirically; documents Lab arena measurement-validity gaps (2026-06-13) |
 | `glyph-consolidation.md` *(pruned in efc57998c)* | Still valid & unbuilt — consolidate 5 sigil renderers into one parametric `<Sigil>` + `ConsolidatedGlyphLayout`. High-risk, design iteration pending |
 | `goals-direction-hub.md` *(pruned in efc57998c)* | Phases 1-3 shipped; Phase 4 (Athena propose/react) blocked on dispatcher refactor |
 | [invisible-apps-p2p.md](invisible-apps-p2p.md) | **Phases 1-2 shipped** → see [`features/sharing/README.md`](../features/sharing/README.md). Retained as Phase 3+ (internet P2P, dynamic UI) design archive |
-| [local-first-middle-model.md](local-first-middle-model.md) | Plumbing shipped; composer/validator hypothesis unresolved — awaiting a 12-32B model/hardware round |
+| local-first-middle-model.md | Plumbing shipped; composer/validator hypothesis unresolved — awaiting a 12-32B model/hardware round |
 | `mobile.md` *(pruned in efc57998c)* | Proposal — Strategy A vs B undecided; ~30% Strategy B scaffolded; LLM HTTP client + ForegroundService missing |
 | `per-persona-claude-code-skills.md` *(pruned in efc57998c)* | Connector `skills_sidecar` variant live; domain-skills generalization unbuilt |
-| [persona-design-best-practices.md](persona-design-best-practices.md) | Operationalized in Athena doctrine + chat ops; retained as the design-guidance doctrine source |
-| [persona-execution-image-attachments.md](persona-execution-image-attachments.md) | Proposal — greenfield, unbuilt |
+| persona-design-best-practices.md | Operationalized in Athena doctrine + chat ops; retained as the design-guidance doctrine source |
+| persona-execution-image-attachments.md | Proposal — greenfield, unbuilt |
 | `requires-macro-migration.md` *(pruned in efc57998c)* | In-flight — ~983 commands left to migrate to `#[requires(level)]` |
-| [subscription-pty-execution.md](subscription-pty-execution.md) | **Contingency — unbuilt.** Standby execution path: drive interactive `claude` in a PTY + tail the transcript JSONL + use hooks, so executions stay on the monthly subscription if Anthropic ever moves `claude -p` off subscription rate limits. Spike-gated; activate only on trigger |
+| subscription-pty-execution.md | **Contingency — unbuilt.** Standby execution path: drive interactive `claude` in a PTY + tail the transcript JSONL + use hooks, so executions stay on the monthly subscription if Anthropic ever moves `claude -p` off subscription rate limits. Spike-gated; activate only on trigger |
 
 ## Removed (2026-06-12 re-audit)
 

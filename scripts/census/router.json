@@ -1,6 +1,6 @@
 {
  "meta": {
-  "entries": 700
+  "entries": 701
  },
  "routes": [
   {
@@ -6959,6 +6959,18 @@
   },
   {
    "glob": "src/lib/design/statusTokens.ts",
+   "subject": "status-vocabulary",
+   "laws": [
+    "gate-sees-target",
+    "one-authority-per-vocabulary",
+    "failure-not-empty-success",
+    "one-validation-door",
+    "identity-survives-reuse",
+    "deletion-is-not-repair"
+   ]
+  },
+  {
+   "glob": "src/features/overview/sub_observability/libs/issueModel.ts",
    "subject": "status-vocabulary",
    "laws": [
     "gate-sees-target",

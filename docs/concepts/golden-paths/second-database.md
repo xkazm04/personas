@@ -1,12 +1,12 @@
 # Golden path — The second database
 
 > Situation node: `data-persistence/storage-topology/second-database` ·
-> [situation spine](../situation-spine.md) · recurrence 28 ·
+> situation spine · recurrence 28 ·
 > dimensions: **function · resilience · security · code-quality · cost**
 > Composed 2026-08-15 against `master` @ `5108ff978`.
 >
 > **Sweep size.** 963 `.rs` files (exactly `rust.files` in
-> [`shared-facts.json`](../shared-facts.json)). The load-bearing counts were
+> `shared-facts.json`). The load-bearing counts were
 > taken by **two independent implementations** and are reported only where the
 > two agreed: a comment-stripping, brace-balancing signature parser and a
 > whole-file regex census both returned **47** functions carrying both pool
@@ -775,7 +775,7 @@ has 524 call sites and is built from the real chain.
 
 ## Prefer a type over a gate — the answer for this leaf
 
-Per the [contract](../golden-path-contract.md), answered explicitly, and tested
+Per the contract, answered explicitly, and tested
 against the five qualifications this corpus has earned. **The obvious candidate
 is distinct newtypes for the two pool handles — `AppDb` and `UserDb` — so
 passing the wrong one cannot compile. My answer is: do it, it is cheap, and it
@@ -849,7 +849,7 @@ fixture work in (1) makes possible; (4) keep §9's ratchet until (3) lands.
 
 ### The semantic conditions, stated first
 
-Three, each stack-free. Per the [portability test](../research/portability-test.md),
+Three, each stack-free. Per the portability test,
 what follows are **one repo's proxies**; an adopting repo inherits the sentences
 and re-derives its own signals.
 
@@ -957,7 +957,7 @@ and a stale suppression cannot accumulate.
 **`floor: 900`** matches the other `src-tauri`-rooted rules deliberately —
 several rules over one root must not hold several opinions about what "the Rust
 tree is intact" means. The walk reports **963**, exactly `rust.files` in
-[`shared-facts.json`](../shared-facts.json).
+`shared-facts.json`.
 
 **On severity.** The census mechanism's own semantics are the severity: drift is
 fatal under `npm run census:check` and reporting-only under `npm run census`.

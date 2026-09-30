@@ -1,7 +1,7 @@
 # Golden path — Panic isolation
 
 > Situation node: `backend-runtime/background-work/panic-isolation` ·
-> [situation spine](../situation-spine.md) · recurrence 29 · risk **MEDIUM** ·
+> situation spine · recurrence 29 · risk **MEDIUM** ·
 > sides: **server** · convergence: **diverged — and §6 says the spine is right,
 > but for a reason the label does not carry (§12.1)** ·
 > dimensions: **resilience · ui · code-quality**
@@ -308,7 +308,7 @@ unobservable tasks** (D4).
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head carries no
+Per the portability test, the head carries no
 file path, primitive name or count. Each clause names its warrant, and the
 warrants come from the six-repo sweep in §6.
 

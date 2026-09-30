@@ -4,11 +4,11 @@
 > (`REVIEW-wave1.md`). Command counts across the corpus disagreed (1,649 /
 > 1,657 / 1,661 / 1,666) because each composer counted with a slightly
 > different grep; the authoritative figure, measured once with
-> `grep -rn --include=*.rs -o '#\[tauri::command' src-tauri | wc -l`, is
+> `grep -rn --include=*.rs -o '#\tauri::command' src-tauri | wc -l`, is
 > **1,673**, and every occurrence below now reads that. Any §9 floor
 > assertion seeded from the old number must be re-derived from 1,673.
 
-> Situation node: `data-persistence/query-performance/paginated-list-query` · [situation spine](../situation-spine.md)
+> Situation node: `data-persistence/query-performance/paginated-list-query` · [situation spine
 > Composed 2026-08-13 from a ground-truth sweep of `src-tauri/{src,db,core}` and `src/**`,
 > against `master` @ `f7676ab82`. `.claude/worktrees/**` and `target/` excluded from every count.
 > Every number below was measured over the tree — by script for the command surface, by reading
@@ -41,7 +41,7 @@ If you are about to type `-> Result<Vec<T>, AppError>` on a `#[tauri::command]`,
 `.slice(page * PAGE_SIZE`, or a `total` you intend to render above a list — you are in this situation.
 
 **Not this path:** bounding the *DOM* (how many rows render) is
-[`long-list-rendering`](../situation-spine.md) — `UnifiedTable`'s `rowHeight` virtualization. This path
+`long-list-rendering` — `UnifiedTable`'s `rowHeight` virtualization. This path
 bounds the *fetch*. They compose and neither substitutes for the other; the decision rule is in **See also**.
 
 ## The one way

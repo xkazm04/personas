@@ -30,6 +30,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { findPhantoms } from '../style/typo-allowlist.mjs';
+import { readEvidence } from '../registry/lib/evidence-home.mjs';
 
 // Derived from this file's own location, NOT hardcoded.
 //
@@ -42,7 +43,6 @@ import { findPhantoms } from '../style/typo-allowlist.mjs';
 // paragraph telling everyone else to assert their instruments.
 const ROOT = path.resolve(fileURLToPath(new URL('.', import.meta.url)), '..', '..');
 const PATHS_DIR = path.join(ROOT, 'docs/concepts/golden-paths');
-const SPINE = path.join(ROOT, 'docs/concepts/situation-spine.json');
 const RULES = path.join(ROOT, 'scripts/census/rules.json');
 const CONCEPTS = path.join(ROOT, 'docs/concepts');
 
@@ -56,27 +56,12 @@ const failures = [];
 const fail = (msg) => failures.push(msg);
 
 // ---------------------------------------------------------------- inputs
-for (const p of [PATHS_DIR, SPINE, RULES]) {
+for (const p of [PATHS_DIR, RULES]) {
   if (!fs.existsSync(p)) {
     console.error(`FATAL: required input missing: ${p}`);
     console.error('This checker cannot run. Failing loudly rather than reporting a green tree.');
     process.exit(2);
   }
-}
-
-const spine = JSON.parse(fs.readFileSync(SPINE, 'utf8'));
-const leaves = [];
-const walkSpine = (n) => {
-  const kids = n.children || n.subdomains || n.situations || n.leaves;
-  if (Array.isArray(kids) && kids.length) kids.forEach(walkSpine);
-  else leaves.push(n);
-};
-(spine.domains || spine.children || (Array.isArray(spine) ? spine : [])).forEach(walkSpine);
-
-if (leaves.length < 200) {
-  console.error(`FATAL: spine yielded ${leaves.length} leaves; expected ~247.`);
-  console.error('THE WALKER IS BROKEN, NOT THE SPINE. Refusing to report on a tree it cannot read.');
-  process.exit(2);
 }
 
 const pathFiles = fs.readdirSync(PATHS_DIR).filter((f) => f.endsWith('.md'));
@@ -85,40 +70,11 @@ if (pathFiles.length === 0) {
   process.exit(2);
 }
 
-// ------------------------------------------- 1. every file maps to a leaf
-// A leaf claims a file by slug, or explicitly via a `doc` field when the
-// filename predates the slug (the modals/tables/page-loading case).
-const byDoc = new Map();
-const slugs = new Set();
-for (const l of leaves) {
-  const slug = l.slug || l.id;
-  if (slug) slugs.add(slug);
-  if (l.doc) {
-    if (byDoc.has(l.doc)) fail(`two leaves claim the same doc "${l.doc}": ${byDoc.get(l.doc)} and ${slug}`);
-    byDoc.set(l.doc, slug);
-  }
-}
-
-const written = new Set();
-for (const f of pathFiles) {
-  if (NOT_A_PATH[f]) continue;
-  const stem = f.replace(/\.md$/, '');
-  if (slugs.has(stem)) { written.add(stem); continue; }
-  if (byDoc.has(f)) { written.add(byDoc.get(f)); continue; }
-  fail(
-    `golden-paths/${f} matches no spine leaf.\n` +
-    `      Either the filename should equal a leaf slug, or that leaf needs "doc": "${f}".\n` +
-    `      Until then the leaf counts as UNWRITTEN and may be composed a second time.`,
-  );
-}
-
-// A leaf that points at a file that does not exist is the inverse error, and
-// the more dangerous one: it reports work as done that was never written.
-for (const [doc, slug] of byDoc) {
-  if (!fs.existsSync(path.join(PATHS_DIR, doc))) {
-    fail(`spine leaf "${slug}" declares doc "${doc}", which does not exist. A leaf cannot claim a file that is not there.`);
-  }
-}
+// ------------------------------------------------ 1. the corpus is readable
+// The situation spine (docs/concepts/situation-spine.json) that once mapped each
+// file to a leaf slug was retired 2026-09-30 with the leaf-composition campaign;
+// a file is now a golden path by being in golden-paths/. Forward references to
+// leaves that were never written therefore fail as dead links like any other.
 
 // ------------------------------------- 2. every relative doc link resolves
 // This is the portability-test class: a path cited by name that was never
@@ -150,7 +106,6 @@ const stripCode = (s) =>
     .replace(/`[^`\n]*`/g, '');
 
 let linksChecked = 0;
-const pendingLinks = [];
 for (const f of mdFiles) {
   const src = stripCode(fs.readFileSync(f, 'utf8'));
   for (const m of src.matchAll(/\[[^\]]*\]\(([^)\s]+)\)/g)) {
@@ -161,22 +116,6 @@ for (const f of mdFiles) {
     linksChecked++;
     const resolved = path.resolve(path.dirname(f), target);
     if (!fs.existsSync(resolved)) {
-      // A link to a golden path that is a REAL spine leaf but is not written
-      // yet is a forward reference, not a dead link. The corpus is being built
-      // one leaf at a time out of 247, so a composer naming the neighbour that
-      // owns a condition is doing exactly what the doctrine asks — and the
-      // neighbour may be written next week.
-      //
-      // Distinguished rather than tolerated: the target must correspond to a
-      // slug the spine actually declares. A typo'd or invented filename still
-      // fails, which is the case this check exists for.
-      const slug = path.basename(target).replace(/\.md$/, '');
-      const isPendingLeaf =
-        resolved.startsWith(PATHS_DIR) && (slugs.has(slug) || byDoc.has(`${slug}.md`));
-      if (isPendingLeaf) {
-        pendingLinks.push(`${path.relative(ROOT, f)} -> ${slug} (leaf not written yet)`);
-        continue;
-      }
       fail(`${path.relative(ROOT, f)} links to "${m[1]}", which does not exist`);
     }
   }
@@ -331,10 +270,14 @@ if (fs.existsSync(HIER_DIR)) {
     if (!gp) continue;
     if (gp.subject !== slug) fail(`paths/${slug}/${slug}.md: subject "${gp.subject}" ≠ folder "${slug}"`);
 
-    const evidence = Array.isArray(gp.evidence) ? gp.evidence : [];
-    if (evidence.length === 0) fail(`paths/${slug}/${slug}.md: zero evidence links — a standard with no witness`);
-    for (const ev of [...evidence, ...(Array.isArray(gp.counter_evidence) ? gp.counter_evidence : [])]) {
-      if (!fs.existsSync(path.join(ROOT, ev))) fail(`paths/${slug}/${slug}.md: evidence "${ev}" does not exist`);
+    // Evidence lives in docs/evidence/<slug>.md (scripts/registry/lib/evidence-home.mjs), not in
+    // the golden path's frontmatter: the standard publishes, the witness set stays here.
+    const home = readEvidence(slug);
+    if (!home) fail(`paths/${slug}/${slug}.md: no docs/evidence/${slug}.md - the subject has no evidence home`);
+    const evidence = home ? home.evidence : [];
+    if (home && evidence.length === 0) fail(`docs/evidence/${slug}.md: zero evidence links — a standard with no witness`);
+    for (const ev of [...evidence, ...(home ? home.counter_evidence : [])]) {
+      if (!fs.existsSync(path.join(ROOT, ev.split('#')[0].trim()))) fail(`docs/evidence/${slug}.md: evidence "${ev}" does not exist`);
     }
 
     // techniques: frontmatter list ↔ files on disk, identical sets. Entries with an
@@ -461,8 +404,7 @@ try {
 
 // ---------------------------------------------------------------- report
 console.log(
-  `corpus: ${pathFiles.length - Object.keys(NOT_A_PATH).length} paths / ${leaves.length} leaves ` +
-  `(${written.size} written, ${leaves.length - written.size} remaining) · ` +
+  `corpus: ${pathFiles.length - Object.keys(NOT_A_PATH).length} paths · ` +
   `${linksChecked} links · ${rules.length} census rules`,
 );
 if (fs.existsSync(HIER_DIR)) {
@@ -477,13 +419,5 @@ if (failures.length) {
   console.error(`\ncorpus integrity FAILED — ${failures.length} problem(s):\n`);
   for (const f of failures) console.error(`  - ${f}`);
   process.exit(1);
-}
-if (pendingLinks.length) {
-  // Printed, never silent. A tolerated exception that nobody can see is how an
-  // allowlist becomes the bug — and these resolve themselves as leaves land.
-  console.log(
-    `  ${pendingLinks.length} forward reference(s) to spine leaves not yet written:`,
-  );
-  for (const l of pendingLinks) console.log(`    - ${l}`);
 }
 console.log('corpus integrity OK');

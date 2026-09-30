@@ -95,7 +95,6 @@
       "resolved": false
     },
     "dispatch.rs": {"count":9,"sections":[0,2,4,7,9],"lines":["370","308","357-369","309","373"],"contexts":["LLM-emitted path the module was written for — `dispatch.rs:370`, the"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["`.ts`/`.tsx` under `src/` ([`shared-facts.json`](../shared-facts.json)). Read"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "domainEmitters.ts": {
       "count": 2,
       "sections": [6],
@@ -146,6 +145,7 @@
     "scans-recommendations.ts": {"count":1,"sections":[6],"lines":["128-130"],"contexts":["`ascent`'s comment at `scans-recommendations.ts:128-130` is a repo that *was* in"],"resolved":false},
     "scheduler.rs": {"count":1,"sections":[9],"lines":["282"],"contexts":["`event_name::` constant), `chain.rs:706` and `scheduler.rs:282` (the name read"],"resolved":false},
     "scraper.rs": {"count":1,"sections":[0],"lines":["633"],"contexts":["| `scraper.rs:633` | `format!(\"shared:{}\", …)` | **no** | 0 | no |"],"resolved":false},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["`.ts`/`.tsx` under `src/` (`shared-facts.json`). Read"],"resolved":false},
     "src-tauri/core/src/events.rs": {"count":3,"sections":[2,7,12],"contexts":["(`core/src/events.rs`), or a small `fn <thing>_event_type(…) -> String` beside"],"resolvedFrom":"suffix","verbatim":"core/src/events.rs"},
     "src-tauri/core/src/models/event.rs": {"count":5,"sections":[0,3,7],"lines":["25","16"],"contexts":["`engine/src/team_handoff.rs`, `core/src/models/event.rs`,"],"resolvedFrom":"suffix","verbatim":"core/src/models/event.rs"},
     "src-tauri/core/src/models/trigger.rs": {
@@ -256,7 +256,7 @@
       ],
       "resolved": false
     },
-    "src/": {"count":1,"sections":[],"contexts":["`.ts`/`.tsx` under `src/` ([`shared-facts.json`](../shared-facts.json)). Read"],"resolved":false,"isDir":true},
+    "src/": {"count":1,"sections":[],"contexts":["`.ts`/`.tsx` under `src/` (`shared-facts.json`). Read"],"resolved":false,"isDir":true},
     "src/api/overview/events.ts": {
       "count": 1,
       "sections": [3],

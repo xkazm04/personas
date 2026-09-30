@@ -54,7 +54,6 @@
     "artist-bridge.ts": {"count":1,"sections":[7],"lines":["22"],"contexts":["`artist-bridge.ts:22`, `perf-nav-walk.spec.ts:30`, `preset-questionnaire.spec.ts:51`,"],"resolved":false},
     "bus.test.ts": {"count":2,"sections":[],"contexts":["the suite stayed green while proving nothing.\"* personas-cloud's `bus.test.ts` is 406"],"resolved":false},
     "discord-twin-*.spec.ts": {"count":1,"sections":[7],"contexts":["`template-marathon-bridge.ts:11`, `discord-twin-*.spec.ts`). A third set of `.mjs` drivers"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[9],"contexts":["**1,135** ([`shared-facts.json`](../shared-facts.json)). The count-independent argument is the"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "lefthook.yml": {"count":2,"sections":[7],"contexts":["`playwright.config.ts`, `vitest.config.ts`, `lefthook.yml`, `package.json`,"]},
     "lib.rs": {"count":7,"sections":[5,7,8],"lines":["1533-1541","43","1538-1565"],"contexts":["`lib.rs:1533-1541` documents parallel instances as a *supported* workflow. So the realistic"],"resolved":false},
     "package.json": {"count":8,"sections":[4,7,9],"lines":["51"],"contexts":["`playwright.config.ts`, `vitest.config.ts`, `lefthook.yml`, `package.json`,"]},
@@ -68,6 +67,7 @@
     "scripts/test/": {"count":1,"sections":[],"contexts":["(**93 files**), `scripts/test/`, `uat/driver/`, all **7** GitHub workflows,"],"resolved":false,"isDir":true},
     "scripts/test/launch-isolated.mjs": {"count":3,"sections":[2,3,6],"lines":["142","1-50"],"contexts":["(`scripts/test/launch-isolated.mjs:142`) — it boots its own instance on shifted ports with a"]},
     "scripts/test/run-tours-fresh.mjs": {"count":1,"sections":[3],"lines":["71"],"contexts":["test prove the wrong thing. **2 consumers** (`run-tours-fresh.mjs:71`,"],"resolvedFrom":"basename","verbatim":"run-tours-fresh.mjs"},
+    "shared-facts.json": {"count":1,"sections":[9],"contexts":["**1,135** (`shared-facts.json`). The count-independent argument is the"],"resolved":false},
     "src-tauri/Cargo.toml": {"count":1,"sections":[],"contexts":["`src-tauri/Cargo.toml`, both Tauri configs, `docs/development/test-automation.md`"]},
     "src-tauri/capabilities/default.json": {
       "count": 3,

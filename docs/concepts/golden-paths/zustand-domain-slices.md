@@ -1,9 +1,9 @@
 # Golden path — Zustand domain slices
 
-> Situation node: `client-runtime/state-management/zustand-domain-slices` · [situation spine](../situation-spine.md)
+> Situation node: `client-runtime/state-management/zustand-domain-slices` · situation spine
 > Composed 2026-08-14 against `master` @ `2a874e692`, from a ground-truth sweep of the
 > whole frontend: a TypeScript-AST pass over all **4,829** `.ts`/`.tsx` files
-> ([`shared-facts.json`](../shared-facts.json) `frontend.tsFiles`) classifying every store
+> (`shared-facts.json` `frontend.tsFiles`) classifying every store
 > subscription by return shape, cross-checked against an independent regex pass, plus ~30
 > files opened directly and two sibling-repo convergence oracles.
 > Dimensions: **performance · code-quality · function · resilience**.
@@ -93,7 +93,7 @@ The root store registers one name, not five. Copy this when a slice would otherw
 
 1. **Pick the root store by domain**, not by feature folder: agents / system / overview /
    pipeline / vault. If it fits none, it is probably view state — see
-   [`view-state-persistence`](../situation-spine.md) — not store state.
+   `view-state-persistence` — not store state.
 2. **Write `export interface YourSlice`** in `src/stores/slices/<domain>/yourSlice.ts`, with a
    doc comment per non-obvious field. Fields first, actions after.
 3. **Write `export const createYourSlice: StateCreator<RootStore, [], [], YourSlice> = (set, get) => ({ ... })`.**
@@ -547,5 +547,5 @@ not argue for `"error"` anywhere. Per `.claude/CLAUDE.md`, `npm run check` runs 
 with no `--max-warnings` and the pre-commit hook runs `--quiet`, so **a warn-level rule
 enforces nothing at either gate, at any warning count**. That is an argument about the gates'
 construction, not about volume — the 1,135-warning baseline
-([`shared-facts.json`](../shared-facts.json) `lint.warnings`) is not evidence for or against any
+(`shared-facts.json` `lint.warnings`) is not evidence for or against any
 severity. `npm run census:check` is a separate exit-1 gate and is where this belongs.

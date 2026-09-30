@@ -1,7 +1,7 @@
 # Golden path — Anomaly marker
 
 > Situation node: `product-surfaces/monitoring-surfaces/anomaly-marker` ·
-> [situation spine](../situation-spine.md) · recurrence **8** · risk **MEDIUM** ·
+> situation spine · recurrence **8** · risk **MEDIUM** ·
 > sides: **client** (**contradicted** — see [§12.1](#121--sidesclient-contradicted-again-and-the-marker-is-the-only-client-part)) ·
 > convergence: **mixed** (**not tested** — see [§12.5](#125--what-was-not-done)) ·
 > dimensions: **ui · function · performance**

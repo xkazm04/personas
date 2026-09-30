@@ -1,6 +1,6 @@
 # Golden path — Stale response guard
 
-> Situation node: `client-runtime/data-fetching/stale-response-guard` · [situation spine](../situation-spine.md)
+> Situation node: `client-runtime/data-fetching/stale-response-guard` · situation spine
 > Composed 2026-08-14 against `master` @ `cf14b9832`. Ground-truth sweep: every
 > `let cancelled|active|alive|stale|mounted|aborted = <bool>` site under `src/`
 > (**246 sites in 215 files**, enumerated by the census runner; ~30 read
@@ -16,7 +16,7 @@
 > Every count below was produced by reading or by a validated census run, not
 > estimated. `.claude/worktrees/**` excluded.
 > Shared corpus figures are cited from
-> [`shared-facts.json`](../shared-facts.json) (4,829 `src/**/*.{ts,tsx}` files),
+> `shared-facts.json` (4,829 `src/**/*.{ts,tsx}` files),
 > not re-derived.
 > The **Deviations** section is a fix backlog; it migrates to `violating` cells
 > in `workspace_practice_context_state` when this path is ingested.
@@ -442,7 +442,7 @@ The pattern is wrong in exactly the two positions named under Anti-patterns
 (outside an effect — 8 sites, and no flag is even writable there; id missing from
 deps — 1 site, `IncidentsInbox.tsx:155`). **A gate that flagged all 215 files
 would be exactly the "keys on the markup, not the condition" failure the**
-[contract](../golden-path-contract.md#section-9-is-manifestation-layer-not-principle-layer)
+contract
 **warns about** — 214 false positives for 1 true one — which is why the census
 rule below does not.
 
@@ -562,7 +562,7 @@ function containing an `await` followed by a state setter, with no currency
 identifier in scope" was designed and rejected: `setLoading(false)` after an
 await appears in hundreds of legitimate places and the precision would be
 unusable. **Recording it as unenforceable is the finding**, per the
-[contract](../golden-path-contract.md#why-a-gate-is-required-at-all) — the
+contract — the
 alternative is a check that pretends to verify it.
 
 Two things carry that half instead:

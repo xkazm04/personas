@@ -1,6 +1,6 @@
 # Golden path — Writing a custom lint rule
 
-> Situation node: `platform-delivery/testing-and-workflow/custom-lint-rule` · [situation spine](../situation-spine.md)
+> Situation node: `platform-delivery/testing-and-workflow/custom-lint-rule` · situation spine
 > `sides: client` · recurrence **42** · risk **medium**.
 > Dimensions: **code-quality · function · resilience · cost**.
 > Composed 2026-08-14 against `master` @ `09c2d482f`. Ground truth: a full
@@ -258,7 +258,7 @@ Two supporting exemplars, each for one property:
 ## 7. Deviations
 
 Counts are from the JSON ESLint run at `09c2d482f`, matching
-[`shared-facts.json`](../shared-facts.json) `lint` exactly (1,135 warnings /
+`shared-facts.json` `lint` exactly (1,135 warnings /
 0 errors / 246 of 4,829 files).
 
 ### A. Nine of 21 rules have no test — and five of those report zero

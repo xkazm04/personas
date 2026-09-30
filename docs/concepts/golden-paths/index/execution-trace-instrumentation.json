@@ -130,7 +130,6 @@
       ],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[9],"contexts":["[`shared-facts.json`](../shared-facts.json)."],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "executions.rs": {"count":3,"sections":[3,7],"lines":["1475","731"],"contexts":["(`executions.rs:1475`), injected into the child CLI's env (`runner/mod.rs:1602`,"],"resolved":false},
     "incremental.rs": {"count":4,"sections":[0,6,7],"lines":["448-459","853","841-850"],"contexts":["(a `foreign_keys = OFF` table rebuild, `incremental.rs:448-459`) and belongs to"],"resolved":false},
     "mcp_tools.rs": {"count":2,"sections":[3,7],"lines":["1231"],"contexts":["`prompt/cli_args.rs:78,:275`) and into MCP `tools/call` `_meta` (`mcp_tools.rs:1231`) — and there"],"resolved":false},
@@ -181,6 +180,7 @@
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["All **145** rules in `scripts/census/rules.json` were enumerated; these seven were opened and read in"]},
     "scripts/check-csp-hosts.mjs": {"count":1,"sections":[9],"contexts":["specification for a different instrument, in the shape of `scripts/check-csp-hosts.mjs` and"]},
     "scripts/check-trace-reconstructability.mjs": {"count":1,"sections":[9],"contexts":["**`scripts/check-trace-reconstructability.mjs`** — a dev-time probe over a **read-only copy** of the"],"resolved":false},
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["`shared-facts.json`."],"resolved":false},
     "shared/types.ts": {
       "count": 1,
       "sections": [6],

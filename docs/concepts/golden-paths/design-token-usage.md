@@ -1,6 +1,6 @@
 # Golden path — Design token usage
 
-> Situation node: `ui-system/design-tokens-theming/design-token-usage` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/design-tokens-theming/design-token-usage` · situation spine
 > Composed 2026-08-14. **Recurrence 2,104 — the widest leaf in the corpus.**
 > Sweep: every file under `src/**` — **4,829 files (2,725 `.ts` + 2,104 `.tsx`)** — parsed for
 > twelve token axes; plus full reads of `globals.css`, `typography.css`, `designTokens.ts`,
@@ -11,14 +11,14 @@
 > **Settles:** which vocabulary a visual decision is written in, and who is allowed to spell it out by hand.
 >
 > Counts below were measured during composition. Where they touch
-> [`shared-facts.json`](../shared-facts.json) they agree with it, with one correction
+> `shared-facts.json` they agree with it, with one correction
 > noted in §7.0. Deviations become `violating` cells.
 
 ---
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated
+Per the portability test, the head is physically separated
 and every clause carries its **warrant**, so an adopting repo can tell physics from local
 calibration. No file path, primitive name or count appears below this line until the head ends.
 
@@ -327,7 +327,7 @@ Two variables, and their relative weight is unambiguous:
 > it was wired** — not by how the token is delivered. P6 is demoted from predictor
 > to ergonomic preference: a class is still nicer to reach for than an import, but
 > it does not buy adoption. Full working in
-> [`../research/convergence-politicas-design-display.md`](../research/convergence-politicas-design-display.md).
+> `../research/convergence-politicas-design-display.md`.
 
 So delivery format matters (P6) but enforcement dominates. And `personas-web` supplies the
 counterfactual for the top row: **the same `typo-*` layer, with no lint rule, has zero
@@ -610,7 +610,7 @@ and the reason Gap 5 is worth acting on: it exposes no `className` prop at all.
 
 ## 9. The missing gate
 
-**Manifestation layer.** Per [`golden-path-contract.md:34-60`](../golden-path-contract.md),
+**Manifestation layer.** Per `golden-path-contract.md:34-60`,
 what follows is a *proxy* for a semantic condition, tuned to this repo's idiom. The
 conditions are stated first so an adopting repo re-derives its own proxy rather than
 inheriting these — the portability test measured four ported signals at **zero** true

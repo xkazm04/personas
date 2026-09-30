@@ -1,7 +1,7 @@
 # Golden path — Rate limiting
 
 > Situation node: `backend-runtime/resilience-policies/rate-limiting` ·
-> [situation spine](../situation-spine.md) · recurrence 11 · risk **MEDIUM** ·
+> situation spine · recurrence 11 · risk **MEDIUM** ·
 > sides: **both** (`twoSided: true`, `fusedAcrossSides: true`) · convergence: **mixed** ·
 > dimensions: **resilience · cost · performance · security**
 > Composed 2026-08-17 against `master` @ `2a874e692`.

@@ -1,7 +1,7 @@
 # Golden path — Alert dedupe and cooldown
 
 > Situation node: `backend-runtime/scheduling-and-triggers/alert-dedupe-and-cooldown` ·
-> [situation spine](../situation-spine.md) · recurrence **12** · risk **MEDIUM** ·
+> situation spine · recurrence **12** · risk **MEDIUM** ·
 > sides: **server** (incomplete — see [§12.1](#121--sides-server-is-incomplete-the-first-time-that-label-has-failed)) ·
 > convergence: **DIVERGED** (tested and **UPHELD** — see [§12.2](#122--convergence-diverged-held-and-it-held-for-a-reason-worth-keeping)) ·
 > dimensions: **resilience · function · cost · ui**
@@ -197,7 +197,7 @@ day is the flat per-kind cap, and nothing anywhere records that a card was refus
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path, primitive
+Per the portability test the head carries no file path, primitive
 name or count. Each clause names its warrant.
 
 > **P1 — physics, and everything else is downstream.** **An alarm's identity is the problem, never

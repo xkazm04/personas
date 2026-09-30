@@ -1,6 +1,6 @@
 # Knowledge registry migration — impact analysis & phased plan (v0)
 
-**Status:** analysis, 2026-08-18. Extends [`domain-knowledge-plan.md`](./domain-knowledge-plan.md)
+**Status:** analysis, 2026-08-18. Extends `domain-knowledge-plan.md`
 after the operator ratified its direction and extended scope with four decisions:
 
 1. **Reuse `github.com/xkazm04/ai-registry`** (ascent's test registry, near-empty synthetic
@@ -319,6 +319,17 @@ the mirror script reverses (registry → personas) or is retired outright.
 > per-workspace: pairing a registry in the app makes `corpusRootFor` hand the clone to the
 > reader (that seam shipped in P2/patterns-v2). P4's six gates remain open — notably
 > evidence still needs its tracked home here before `paths/` may be deleted.
+>
+> **✅ Evidence home landed 2026-09-30 (`docs/evidence/<slug>.md`, 106 subjects).** 701 evidence,
+> 100 counter-evidence and 156 deviation pointers were extracted mechanically from `paths/` by
+> `scripts/registry/extract-evidence.mjs` and counted independently on both sides (awk over the
+> raw files: 701 / 100 / 156 each). `evidence-check`, `check-corpus-integrity` and
+> `build-paths-index` now read the home; while `paths/` exists `extract-evidence --check` fails
+> the gate on any value drift (fault-injected: a dropped pointer exits 1), and the regenerated
+> subject-index and router are byte-identical to the pre-move ones. **Still open before deletion:**
+> the Overview -> Patterns UI reads evidence through `hierarchy_read.rs` from the corpus
+> frontmatter, so it must be re-pointed at the home (the registry clone carries none by design),
+> and gates 1-5 below still need real registry PRs and a second consumer - none was fabricated.
 
 **P4 — Verification gates, then delete.** The operator's "verified… without harm
 (adoption, improvements, new items)" made checkable — ALL of:

@@ -1,7 +1,7 @@
 # Golden path — Chronological feed
 
 > Situation node: `product-surfaces/lists-and-tables/chronological-feed` (recurrence 9, risk medium) ·
-> [situation spine](../situation-spine.md)
+> situation spine
 > Composed 2026-08-17 at `de274d14d`. Sweep: **4,801 `.ts`/`.tsx`** walked by a brace/paren-matched
 > `.sort()` comparator extractor (structural) and again by a flat regex (the census-rule shape);
 > **963 `.rs`** walked twice for SQL ordering keys — once through

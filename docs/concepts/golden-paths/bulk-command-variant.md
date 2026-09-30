@@ -1,7 +1,7 @@
 # Golden path — Bulk command variant
 
 > Situation node: `backend-runtime/command-definition/bulk-command-variant` ·
-> [situation spine](../situation-spine.md) · recurrence 31 · risk **medium** ·
+> situation spine · recurrence 31 · risk **medium** ·
 > sides: **server** (the spine also carries `twoSided: true` **and**
 > `fusedAcrossSides: true` — see §12.1) · convergence: **mixed** ·
 > dimensions: **performance · ui · function**
@@ -179,7 +179,7 @@ resolution, it is one `const`, and it is the answer §2 mandates.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path,
+Per the portability test the head carries no file path,
 primitive name or count. Each clause names its warrant.
 
 > **P1 — physics, and the clause everything else follows from.** **A bulk operation is N
@@ -294,7 +294,7 @@ You are also not in it for a command that *starts one job* over N inputs (`lab_s
   defect with two owners.
 - [**`transaction-boundary`**](./transaction-boundary.md) owns **`tx` vs `conn`**. This path owns
   the case where the answer is *both*: P8's shared-statement construction.
-- [**`bulk-selection-actions`**](../situation-spine.md) (client leaf, recurrence 20) owns the
+- **`bulk-selection-actions`** (client leaf, recurrence 20) owns the
   checkbox strip and the action bar. This path owns what happens after the button is pressed.
 
 ## 2. The one way

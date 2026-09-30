@@ -1,9 +1,9 @@
 # Golden path — ID generation
 
-> Situation node: `data-persistence/data-modeling/id-generation` · [situation spine](../situation-spine.md)
+> Situation node: `data-persistence/data-modeling/id-generation` · situation spine
 > Composed 2026-08-14 from a ground-truth sweep of `master`.
 > Sweep size: **963 `.rs` files** and **4,829 `.ts`/`.tsx` files** (exactly `rust.files` and
-> `frontend.tsFiles` in [`shared-facts.json`](../shared-facts.json)) · **398 `CREATE TABLE` statements
+> `frontend.tsFiles` in `shared-facts.json`) · **398 `CREATE TABLE` statements
 > over 307 distinct table names** parsed with a balanced-paren DDL parser and every primary-key clause
 > classified · **1,530 Rust struct id fields** typed · **1,058 id fields across 502 of the 1,032
 > non-barrel generated binding files** · **456 `Uuid::new_v4()` call sites in 207 files**.
@@ -106,8 +106,8 @@ never sort by it, never infer a type from its prefix.
 
 ### Which clauses are physics, which are this house
 
-Per the [contract](../golden-path-contract.md) and the
-[portability test](../research/portability-test.md), a clause travels only if something else
+Per the contract and the
+portability test, a clause travels only if something else
 reinvented it. Measured 2026-08-14. Detail in §6.
 
 | Clause | Warrant | Evidence |
@@ -508,7 +508,7 @@ Run 2026-08-14, read-only, against `brainiac` (Rust · sqlx · Postgres · 148 `
 
 ## Prefer a type over a gate — the answer for this leaf
 
-Per the [contract](../golden-path-contract.md) this must be answered explicitly, **and it must be
+Per the contract this must be answered explicitly, **and it must be
 answered before §9.** For this leaf the answer is **yes twice — and an emphatic no to the type
 everyone reaches for first.**
 
@@ -557,7 +557,7 @@ Two, each stack-free:
 > **(A)** An identifier is minted with less entropy than its collision domain requires.
 > **(B)** A row's identity column can be absent.
 
-Per the [portability test](../research/portability-test.md), what follows are **one repo's proxies**.
+Per the portability test, what follows are **one repo's proxies**.
 An adopting repo inherits the two sentences and re-derives its own signals against its own id
 generator and its own DDL dialect. Condition (B) in particular **cannot exist** in a Postgres
 sibling — the standard makes `PRIMARY KEY` imply `NOT NULL` — so a repo adopting this path must ask
@@ -648,7 +648,7 @@ appears). A merged dry-run of all 33 rules runs green.
   census OK — 2 rule(s), 1926 file-visits, 333 surviving violation(s) across 57 file(s).
 ```
 
-`963 walked` is exactly `rust.files` in [`shared-facts.json`](../shared-facts.json) — two
+`963 walked` is exactly `rust.files` in `shared-facts.json` — two
 independently derived counts agreeing, which is the only reason to trust either. `floor: 900` matches
 every other `src-tauri`-rooted rule deliberately: several rules over one root must not hold several
 opinions about what "the Rust tree is intact" means.

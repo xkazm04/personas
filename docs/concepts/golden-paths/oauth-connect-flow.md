@@ -1,7 +1,7 @@
 # Golden path — connecting a third-party account (the OAuth connect flow)
 
 > Situation node: `integrations-security/credential-capture/oauth-connect-flow` ·
-> [situation spine](../situation-spine.md) · recurrence 8 · risk **HIGH** ·
+> situation spine · recurrence 8 · risk **HIGH** ·
 > sides **client** (spine label; **see §12.1 — the leaf is two-sided and predominantly
 > server**) · convergence **CONVERGED** (spine label; **see §12.2 — it does not hold**) ·
 > dimensions: **security · function · resilience · ui · code-quality**
@@ -18,7 +18,7 @@
 > `sub_credentials/components/forms/OAuthSection.tsx` / `OAuthProgressRing.tsx`,
 > `sub_credentials/components/card/banners/ReauthBanner.tsx`,
 > `sub_credentials/manager/useCatalogHandlers.ts`. Census walk: **963** non-generated `.rs`
-> files (the runner's own `walked`, matching [`shared-facts.json`](../shared-facts.json)).
+> files (the runner's own `walked`, matching `shared-facts.json`).
 > Data: **read-only copies** of the operator's `personas.db` (347 MB) and `personas_data.db`
 > (17.5 MB), copied 2026-08-16.
 >
@@ -312,7 +312,7 @@ user goes and finds it in the provider's own account settings. `OidcDiscovery`
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head carries no file path,
+Per the portability test, the head carries no file path,
 primitive name or count, and each clause carries its warrant so an adopting repo can tell
 physics from local calibration.
 

@@ -1,7 +1,7 @@
 # Golden path — Cross-artifact drift gate
 
 > Situation node: `platform-delivery/gates-and-conventions/cross-artifact-drift-gate` ·
-> [situation spine](../situation-spine.md) · recurrence 6 · risk **medium** ·
+> situation spine · recurrence 6 · risk **medium** ·
 > sides **server** · convergence **mixed** (**partially upheld** — §12.1) ·
 > dimensions: **code-quality · resilience** · `twoSided: true` ·
 > spine's own framing: *"Machine-proving two artifacts that must agree still

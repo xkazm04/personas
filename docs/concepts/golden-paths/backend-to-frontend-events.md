@@ -1,6 +1,6 @@
 # Golden path — Backend-to-frontend events
 
-> Situation node: `backend-runtime/eventing/backend-to-frontend-events` · [situation spine](../situation-spine.json)
+> Situation node: `backend-runtime/eventing/backend-to-frontend-events` · situation spine
 > `sides: both` · `twoSided: true` · `convergence: diverged` · `risk: medium` ·
 > **`recurrence: 365` — the highest in the corpus** · dimensions: ui, function, performance, code-quality
 > Fuses the retired topics *Streaming to the frontend*, *Emitting to the frontend*,
@@ -17,7 +17,7 @@
 > SSE + Kafka + WS + an in-process bus) used as a portability oracle.
 >
 > **Sibling leaves — cross-referenced, not absorbed.**
-> [`snapshot-plus-stream`](../situation-spine.json) owns *reconciling* a pushed
+> `snapshot-plus-stream` owns *reconciling* a pushed
 > stream against a fetched snapshot (the id-keyed dedupe-merge at
 > `useEventLog.ts:227-230`, and the CDC startup replay that depends on it). This
 > path owns the *transport*: which name, which payload, which channel, and who
@@ -68,7 +68,7 @@ navigated-away case (`build_session/events.rs:237,258` does both, deliberately).
 stop: do not write a second event-name const, a second subscription manager, a second
 idle/debounce scheduler, or a hand-rolled payload interface — all four already exist.
 
-**Warrant of each clause** (per [`research/portability-test.md`](../research/portability-test.md)
+**Warrant of each clause** (per `research/portability-test.md`
 recommendation 2 — a reader in another repo must be able to sort physics from local
 calibration). Convergence evidence is from the two sibling repos named in the header.
 

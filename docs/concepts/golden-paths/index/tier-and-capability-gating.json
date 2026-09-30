@@ -66,7 +66,6 @@
     "crates/brainiac-server/src/mcp.rs": {"count":1,"sections":[],"lines":["246-248"],"contexts":["unrecognised MCP tool to `\"admin\"` — `crates/brainiac-server/src/mcp.rs:246-248`, *\"so a"],"resolved":false},
     "data/guide/types.ts": {"count":1,"sections":[4],"lines":["20-28"],"contexts":["(`data/guide/types.ts:20-28` + `lib/guide-utils.ts:37`) are the same invention twice more."],"resolved":false},
     "dist/index.html": {"count":1,"sections":[5],"contexts":["READ (`dist/index.html` exists, at least one of its `<script src>` refs resolves to a"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":3,"sections":[9],"contexts":["files under `src/` ([`shared-facts.json`](../shared-facts.json); independently"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "docs/development/build-ledger.jsonl": {"count":1,"sections":[5],"contexts":["`one-build-plus-matrix`, `docs/development/build-ledger.jsonl`)."],"isDir":true},
     "homeJsonLd.ts": {"count":1,"sections":[],"lines":["21-24"],"contexts":["JSON-LD publishes `price: \"0\"` (`homeJsonLd.ts:21-24`). So there is **no revenue to"],"resolved":false},
     "httpApi.ts": {"count":3,"sections":[4],"lines":["419-439","418-440","1388"],"contexts":["two arrays cannot drift (`httpApi.ts:419-439`)\" — REFUTED as stated.** That location"],"resolved":false},
@@ -93,6 +92,7 @@
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["`scripts/census/rules.json` holds 34 rules and none touches the frontend tier axis; the"]},
     "scripts/check-tier-sync.mjs": {"count":1,"sections":[6],"contexts":["`scripts/check-tier-sync.mjs` as Ticket B. **It was never built**, and the finding has not"],"resolved":false},
     "scripts/check-tiers.mjs": {"count":4,"sections":[5,8,9],"lines":["34-44"],"contexts":["`scripts/check-tiers.mjs`, `package.json`, `vite.config.ts`, all 7 GitHub workflows,"]},
+    "shared-facts.json": {"count":3,"sections":[9],"contexts":["files under `src/` (`shared-facts.json`; independently"],"resolved":false},
     "src-tauri/Cargo.toml": {"count":1,"sections":[],"lines":["110"],"contexts":["— TRUE IN DEV, FALSE IN A RELEASE INSTALLER.** `src-tauri/Cargo.toml:110` declares"]},
     "src-tauri/engine/src/tier.rs": {"count":2,"sections":[1,8],"contexts":["Rust tree and **none** of them is a product tier: `engine/src/tier.rs`'s `TierConfig` is"],"resolvedFrom":"suffix","verbatim":"engine/src/tier.rs"},
     "src-tauri/src": {"count":1,"sections":[],"contexts":["`devtools` feature** — and `open_devtools` appears **zero** times in `src-tauri/src`."],"resolved":false,"isDir":true},
@@ -121,7 +121,7 @@
       "resolvedFrom": "basename",
       "verbatim": "tauri.conf.json"
     },
-    "src/": {"count":2,"sections":[7],"contexts":["files under `src/` ([`shared-facts.json`](../shared-facts.json); independently"],"resolved":false,"isDir":true},
+    "src/": {"count":2,"sections":[7],"contexts":["files under `src/` (`shared-facts.json`; independently"],"resolved":false,"isDir":true},
     "src/api/auth/auth.ts": {"count":1,"sections":[],"lines":["19-24"],"contexts":["(`auth.ts:19-24`); `brainiac` has an 8-element `SCOPES` string array and no billing;"],"resolvedFrom":"basename","verbatim":"auth.ts"},
     "src/api/vault/credentials.ts": {
       "count": 1,

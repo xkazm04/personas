@@ -118,13 +118,6 @@
       "resolved": false
     },
     "disputes-data.ts": {"count":2,"sections":[],"lines":["166"],"contexts":["(`audit-data.ts:80` takes an ISO string, `disputes-data.ts:166` takes seconds) — and a comment at"],"resolved":false},
-    "docs/concepts/shared-facts.json": {
-      "count": 2,
-      "sections": [9],
-      "contexts": ["Counts reproduce [`shared-facts.json`](../shared-facts.json) where they touch it (4,829 files). Where this"],
-      "resolvedFrom": "basename",
-      "verbatim": "shared-facts.json"
-    },
     "feature-voting/data.ts": {"count":1,"sections":[],"lines":["176"],"contexts":["`feature-voting/data.ts:176`, plus one catalog-driven); `brainiac/console` has **7**, all hardcoded English,"],"resolved":false},
     "format-date.test.ts": {"count":1,"sections":[],"contexts":["comment naming the exact off-by-one hazard, and has a regression test at `format-date.test.ts`. This repo"],"resolved":false},
     "knowledgeDenseFormat.ts": {"count":1,"sections":[],"lines":["3"],"contexts":["**5** independent ladders (`src/lib/format.ts:31`, `knowledgeDenseFormat.ts:3`, `HealthIssueRow.tsx:17`,"],"resolved":false},
@@ -142,6 +135,7 @@
       "resolvedFrom": "basename",
       "verbatim": "check-coverage.mjs"
     },
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["Counts reproduce `shared-facts.json` where they touch it (4,829 files). Where this"],"resolved":false},
     "sla-page/slaFormat.ts": {"count":1,"sections":[],"lines":["66"],"contexts":["(`src/lib/format-date.ts:15,27`, `src/lib/format.ts:58`, `sla-page/slaFormat.ts:66`). It even owns an"],"resolved":false},
     "src/features/agents/components/allPersonas/PersonaOverviewColumns.tsx": {
       "count": 2,

@@ -1,7 +1,7 @@
 # Golden path — Loop ownership and restart
 
 > Situation node: `backend-runtime/background-work/loop-ownership-and-restart` ·
-> [situation spine](../situation-spine.md) · recurrence 8 · risk **HIGH** ·
+> situation spine · recurrence 8 · risk **HIGH** ·
 > sides: **server** · convergence: **spine says CONVERGED — see §12.1, it does not hold** ·
 > dimensions: **resilience · function · code-quality · cost**
 > Composed 2026-08-16 against `master` @ `ec1bf0359`.
@@ -270,7 +270,7 @@
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head carries no
+Per the portability test, the head carries no
 file path, primitive name or count. Each clause names its warrant, and the
 warrants come from the six-repo sweep in §6 — which **inverted the spine's
 `converged` label** (§12.1).
@@ -1111,7 +1111,7 @@ rule it belongs in `cargo test` where the protocol lives:
 
 It is ~25 lines, needs no new dependency (`tempfile` is already used at
 `leadership.rs:221`), and it fails on `master` today — which is the property the
-[contract](../golden-path-contract.md) asks of a gate and the reason a passing
+contract asks of a gate and the reason a passing
 suite is currently evidence of nothing on this leaf. Note the calibration
 honestly: `cargo test` here runs via `npm run test:rust`, which is not in
 `npm run check` and not in the pre-push hook, so **this test's home is weaker

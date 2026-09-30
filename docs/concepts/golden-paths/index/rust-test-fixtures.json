@@ -37,7 +37,6 @@
     "crates/brainiac-store/src/lib.rs": {"count":1,"sections":[],"lines":["46-59"],"contexts":["directory (`crates/brainiac-store/src/lib.rs:46-59`), called from **43 of the 43"],"resolved":false},
     "crates/brainiac-store/src/test_support.rs": {"count":1,"sections":[],"contexts":["`crates/brainiac-store/src/test_support.rs` exists. SQLite is the opposite: `:memory:` and"],"resolved":false},
     "db/src/migrations/incremental.rs": {"count":1,"sections":[9],"lines":["4511"],"contexts":["(`db/src/migrations/incremental.rs:4511`, `dev_auto_runs`) is production DDL in which no"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[9],"contexts":["[`shared-facts.json`](../shared-facts.json) — parsed **twice, by two independent"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "external_api_keys.rs": {"count":2,"sections":[5,7],"lines":["216-223"],"contexts":["ones exist (`external_api_keys.rs`, `api_key_audit.rs`, `broker_edges.rs`,"],"resolved":false},
     "incremental.rs": {"count":3,"sections":[7,9,12],"lines":["8870","4211-4240"],"contexts":["(`fk_hygiene.rs:947`, `incremental.rs:8870`, `:8943`, `:9360`) — i.e. **no fixture"],"resolved":false},
     "lefthook.yml": {"count":1,"sections":[9],"lines":["20"],"contexts":["`--quiet --max-warnings 99999` (`lefthook.yml:20`), where `--quiet` discards warnings"]},
@@ -62,6 +61,7 @@
       "resolvedFrom": "basename",
       "verbatim": "run-census.mjs"
     },
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["`shared-facts.json` — parsed **twice, by two independent"],"resolved":false},
     "sqlite_master.sql": {"count":2,"sections":[3,7],"contexts":["exposes `PRAGMA table_info` and `sqlite_master.sql`; `companion_schema_for_test()`"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[],"contexts":["**Sweep size.** All **963** `.rs` files under `src-tauri/` — exactly `rust.files` in"],"resolved":false,"isDir":true},
     "src-tauri/core/src/pool.rs": {"count":1,"sections":[8],"lines":["14"],"contexts":["3. **`DbPool` and `UserDbPool` are `pub type` aliases** (`core/src/pool.rs:14`,"],"resolvedFrom":"suffix","verbatim":"core/src/pool.rs"},

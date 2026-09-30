@@ -1,7 +1,7 @@
 # Golden path — Derived index sync
 
 > **Topic path:** `data-persistence` › `query-performance` › `derived-index-sync`
-> [situation spine](../situation-spine.md) · recurrence **5** · risk **HIGH** ·
+> situation spine · recurrence **5** · risk **HIGH** ·
 > sides: **server** (upheld — see [§12.1](#121--sidesserver-upheld-and-the-mechanism-is-worth-naming)) ·
 > convergence: **diverged** (tested — see [§10](#10-convergence)) ·
 > dimensions: **function · performance · resilience · cost · ui**
@@ -74,7 +74,7 @@ fixed defect *and* the `<`-instead-of-`!=` one its neighbour's comment specifica
 about. Its own comment claims it "only rebuilds when the FTS row count is short of
 `kb_chunks`", which is a behaviour that cannot occur. It is harmless today only because both
 tables are empty. **The fix was applied to the instance that failed and not to the class** —
-which is [doctrine §2](../golden-path-doctrine.md)'s *"fixing every instance of a defect is
+which is doctrine §2's *"fixing every instance of a defect is
 not the same as covering every place that needs the behaviour"*, committed by the fix itself.
 
 Everything else in the table below is maintained by hand and audited by nothing.
@@ -202,7 +202,7 @@ source?* — is not merely unanswered but **unanswerable**, in principle, from t
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) this head carries no file path,
+Per the portability test this head carries no file path,
 primitive name or count, so a sibling project on another stack can adopt it. Each clause
 names its warrant.
 
@@ -702,7 +702,7 @@ Real limits, not laziness.
    session, and the operator's sessions last days.
 7. **`COUNT(*)` on an external-content FTS5 table is not a lie the type system can prevent.**
    It is valid SQL returning a correct answer to a different question. Nothing in Rust, ts-rs
-   or the query builder can see inside the string. This is [doctrine §1 case 1](../golden-path-doctrine.md)
+   or the query builder can see inside the string. This is doctrine §1 case 1
    — *inside a SQL string literal* — and it is why the reconciler needs a **test that removes
    the triggers**, which this repo has and which is the only reason the defect was ever found.
 
@@ -712,7 +712,7 @@ Real limits, not laziness.
 
 ### The semantic conditions, stated first
 
-Per the [contract](../golden-path-contract.md), §9 is a **manifestation**. What follows are
+Per the contract, §9 is a **manifestation**. What follows are
 this repo's proxies; an adopting repo inherits the sentences and derives its own signals.
 
 > **(A)** A structure that must agree with another one is kept in step by statements the

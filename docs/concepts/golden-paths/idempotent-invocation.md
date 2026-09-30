@@ -1,7 +1,7 @@
 # Golden path — Idempotent invocation
 
 > Situation node: `backend-runtime/command-definition/idempotent-invocation` ·
-> [situation spine](../situation-spine.md) · recurrence 14 · risk **HIGH** ·
+> situation spine · recurrence 14 · risk **HIGH** ·
 > sides: **both** · convergence: **diverged** ·
 > dimensions: **function · resilience · cost · code-quality**
 > Composed 2026-08-16 against `master` @ `19884e1f0`.

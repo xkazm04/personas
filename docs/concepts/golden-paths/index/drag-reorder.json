@@ -69,7 +69,6 @@
     "devTools.rs": {"count":1,"sections":[],"contexts":["`GroupLayer`, `useIslandDrag`, `artistSlice`, `devTools.rs`, the census engine"],"resolved":false},
     "dev_tools.rs": {"count":5,"sections":[7,8,9],"lines":["861","698-711","7936","864,1033,2984"],"contexts":["(`rules.json`, which names `dev_tools.rs:861` explicitly) for a *different*"],"resolved":false},
     "dev_workspaces.rs": {"count":1,"sections":[9],"contexts":["`dev_workspaces.rs`, `team_assignments.rs`, `research_lab.rs`, `credentials.rs`,"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json), not re-derived), classified by"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "lib.rs": {"count":1,"sections":[7],"contexts":["`scripts/check-command-contract.mjs` verifies command *names* against `lib.rs`"],"resolved":false},
     "package.json": {"count":3,"sections":[3,5,11],"lines":["105"],"contexts":["**Do not reach for `@dnd-kit`.** It is declared at `package.json:105`"]},
     "personas-web/src/components/flow-composer/use-flow-composer.ts": {"count":1,"sections":[11],"lines":["104-112"],"contexts":["- `personas-web/src/components/flow-composer/use-flow-composer.ts:104-112` throttles"],"resolved":false},
@@ -79,6 +78,7 @@
     "scripts/census/lib/engine.mjs": {"count":1,"sections":[9],"contexts":["**Validated standalone** against `scripts/census/lib/engine.mjs` (`validateRule`"]},
     "scripts/census/rules.json": {"count":1,"sections":[7],"contexts":["(`rules.json`, which names `dev_tools.rs:861` explicitly) for a *different*"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "scripts/check-command-contract.mjs": {"count":1,"sections":[7],"contexts":["`scripts/check-command-contract.mjs` verifies command *names* against `lib.rs`"]},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["`shared-facts.json`, not re-derived), classified by"],"resolved":false},
     "src-tauri/db/src/repos/dev_tools.rs": {
       "count": 2,
       "sections": [6,7],

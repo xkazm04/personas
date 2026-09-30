@@ -1,6 +1,6 @@
 # Golden path — Plugin surface shell
 
-> Situation node: `ui-system/layout-and-navigation/plugin-surface-shell` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/layout-and-navigation/plugin-surface-shell` · situation spine
 > recurrence **8** · risk **MEDIUM** · sides **client** · convergence **mixed** · `twoSided: true`
 > dimensions: **ui · performance · code-quality · function**
 > Leaf definition: *"framing a plugin's tabs and reflecting its on/off state in sidebar and nav."*

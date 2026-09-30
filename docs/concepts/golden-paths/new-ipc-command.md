@@ -1,6 +1,6 @@
 # Golden path — New IPC command
 
-> Situation node: `backend-runtime/command-definition/new-ipc-command` · [situation spine](../situation-spine.md)
+> Situation node: `backend-runtime/command-definition/new-ipc-command` · situation spine
 > Two-sided (`sides: both`, `fusedAcrossSides: true`) · recurrence **1,790** · risk **high**.
 > Dimensions: **function · code-quality · security · resilience**.
 > Composed 2026-08-14 against `master` @ `c97500c2d` from a ground-truth sweep of all

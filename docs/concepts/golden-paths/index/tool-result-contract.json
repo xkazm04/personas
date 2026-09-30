@@ -45,7 +45,7 @@
     "scripts/census/lib/instruments/stripCfgTest.mjs": {"count":1,"sections":[9],"contexts":["`src-tauri/**/*.rs` using `scripts/census/lib/instruments/stripCfgTest.mjs`, and"]},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["were intersected against every `.rs`-scoped rule in `scripts/census/rules.json`"]},
     "scripts/check-csp-hosts.mjs": {"count":1,"sections":[9],"contexts":["`scripts/check-csp-hosts.mjs`, not a ratchet. That is specified here and not"]},
-    "src-tauri/": {"count":1,"sections":[],"contexts":["under `src-tauri/` ([`shared-facts.json#rust.files`](../shared-facts.json)),"],"resolved":false,"isDir":true},
+    "src-tauri/": {"count":1,"sections":[],"contexts":["under `src-tauri/` (`shared-facts.json#rust.files`),"],"resolved":false,"isDir":true},
     "src-tauri/**/*.rs": {"count":1,"sections":[9],"contexts":["`src-tauri/**/*.rs` using `scripts/census/lib/instruments/stripCfgTest.mjs`, and"],"resolved":false},
     "src-tauri/core/src/redact.rs": {"count":1,"sections":[0],"contexts":["order is backwards, and the backup proves it.** Replaying `redact.rs`'s own"],"resolvedFrom":"basename","verbatim":"redact.rs"},
     "src-tauri/core/src/types.rs": {"count":2,"sections":[7,9],"lines":["335"],"contexts":["`ToolCallStep` (`core/src/types.rs`) has no place to put one, so the omission"],"resolvedFrom":"suffix","verbatim":"core/src/types.rs"},

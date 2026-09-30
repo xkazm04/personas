@@ -1,12 +1,12 @@
 # Golden path — Post-write side effects
 
 > Situation node: `data-persistence/write-consequences/post-write-side-effects` ·
-> [situation spine](../situation-spine.md) · recurrence 41 · dimensions:
+> situation spine · recurrence 41 · dimensions:
 > function · resilience · code-quality · performance
 >
 > Composed 2026-08-15 against `master` @ `a385c159d`. Sweep: **963 `.rs` files**
 > and **4,829 `.ts`/`.tsx` files** (counts cited from
-> [`shared-facts.json`](../shared-facts.json), not re-derived); **two independent
+> `shared-facts.json`, not re-derived); **two independent
 > implementations** of the transaction-span scan reconciled against each other;
 > **a 3-arm controlled experiment executed on SQLite 3.53.0** (the version this
 > repo links); and **four read-only queries against the operator's live
@@ -58,7 +58,7 @@ notification, and the distinction is the whole design.
 > storage engine, of concurrency, or of causality itself), **[ergonomics]** (a
 > design that makes the physics hard to get wrong), or **[local]** (calibration
 > to this repo). Only the first two travel. Tagging is
-> [`research/portability-test.md`](../research/portability-test.md)
+> `research/portability-test.md`
 > recommendation #2, applied — and the tags below were checked against three
 > sibling repos, not asserted (see [§10](#10-convergence-what-three-siblings-independently-rediscovered)).*
 

@@ -1,7 +1,7 @@
 # Maintenance affordances
 
 > Situation node: `client-runtime / mutations-and-editing /
-> maintenance-affordances` · [situation spine](../situation-spine.json)
+> maintenance-affordances` · situation spine
 > `sides: "client"` · `twoSided: true` · `fusedAcrossSides: false` ·
 > `recurrence: 4` · `risk: low` · `convergence: "mixed"`.
 > Dimensions: **function · ui · code-quality**.

@@ -1,7 +1,7 @@
 # Golden path — handing a credential to a child process
 
 > Situation node: `backend-runtime/subprocess-and-io/credential-injection-into-child` ·
-> [situation spine](../situation-spine.md) · recurrence 6 · risk **HIGH** · sides **server** ·
+> situation spine · recurrence 6 · risk **HIGH** · sides **server** ·
 > spine label **convergence: CONVERGED** — **see §12.1; it holds on 2 clauses of 5, and the
 > clause carrying this document's headline is an invention** ·
 > dimensions: **security · resilience · code-quality · function**
@@ -162,7 +162,7 @@ inheritance, which no call site chose.**
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head is physically separated and
+Per the portability test the head is physically separated and
 every clause carries its warrant, so an adopting repo can tell physics from local calibration.
 No file path, primitive name or count appears below this line until the head ends.
 

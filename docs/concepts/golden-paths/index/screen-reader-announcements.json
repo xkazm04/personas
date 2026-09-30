@@ -77,7 +77,6 @@
       ],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {"count":3,"sections":[7,9],"contexts":["Corpus counts are cited from [`shared-facts.json`](../shared-facts.json); everything"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "eslint-rules/no-hardcoded-jsx-text.cjs": {
       "count": 4,
       "sections": [7,9],
@@ -114,6 +113,7 @@
       ],
       "resolved": false
     },
+    "shared-facts.json": {"count":3,"sections":[7,9],"contexts":["Corpus counts are cited from `shared-facts.json`; everything"],"resolved":false},
     "src/**/*.tsx": {"count":1,"sections":[7],"contexts":["Every JSX opening tag in `src/**/*.tsx` (2,104 files, tests excluded) was read with a"],"resolved":false},
     "src/App.tsx": {
       "count": 3,

@@ -1,11 +1,11 @@
 # Golden path — Cross-surface deep link
 
-> Situation node: `ui-system/layout-and-navigation/cross-surface-deep-link` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/layout-and-navigation/cross-surface-deep-link` · situation spine
 > `sides: client` (with one OS-level and one Rust-originated entry point) · `risk: high` · recurrence **42**.
 > Dimensions: **function · resilience · ui · code-quality**.
 >
 > Composed 2026-08-15 against `master` from a ground-truth sweep of the **4,829**
-> `.ts`/`.tsx` files under `src/` ([`shared-facts.json`](../shared-facts.json), independently
+> `.ts`/`.tsx` files under `src/` (`shared-facts.json`, independently
 > re-walked at 4,829 by three separate walkers used in this composition). The headline
 > results were **produced by execution, not by reading**:
 > a **Vitest run against the real `registry.ts` / `sectionRouter.tsx` / `storeBus.ts` /
@@ -893,7 +893,7 @@ cleanly is the cast, which is item 1.
 ### On severity, if any of this ships as an ESLint rule
 
 Ship it at `"error"`. **Not because warnings drown in a large baseline** — the baseline is 1,135
-([`shared-facts.json`](../shared-facts.json)) and the volume argument is not available at any count.
+(`shared-facts.json`) and the volume argument is not available at any count.
 The count-independent argument is the only one that holds: `npm run check` runs `eslint src/` with
 **no `--max-warnings`** (`package.json:51`), and the pre-commit hook runs `--quiet --max-warnings
 99999`, where `--quiet` discards warnings before they can be counted. **A warn-level rule enforces

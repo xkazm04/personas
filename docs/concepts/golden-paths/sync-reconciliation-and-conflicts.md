@@ -1,7 +1,7 @@
 # Golden path — Sync reconciliation and conflicts
 
 > Situation node: `integrations-security/vault-security/sync-reconciliation-and-conflicts` ·
-> [situation spine](../situation-spine.md) · recurrence 10 · risk **HIGH** ·
+> situation spine · recurrence 10 · risk **HIGH** ·
 > sides: **client** · `twoSided: true` · convergence: **mixed** ·
 > dimensions: function · resilience · ui · security ·
 > merged from *External vault sync and conflict* · *Import conflict resolution* ·
@@ -9,7 +9,7 @@
 > Composed 2026-08-16 against `master` @ `2a874e692`.
 >
 > **Sweep size.** All **963** `.rs` files under `src-tauri` (exactly `rust.files`
-> in [`shared-facts.json`](../shared-facts.json)) and the `.ts/.tsx` tree. Every
+> in `shared-facts.json`) and the `.ts/.tsx` tree. Every
 > reconciliation surface in the repo was enumerated and read, not sampled: the
 > cloud-sync writer (`src/cloud/sync/**`, 4 files), the remote-command reader
 > (`src/cloud/remote_commands.rs`), the Obsidian vault bridge
@@ -991,7 +991,7 @@ accumulate.
 **`floor: 900`** matches every other `src-tauri`-rooted rule deliberately;
 several rules over one root must not hold several opinions about what "the Rust
 tree is intact" means. The walk reports **963**, exactly `rust.files` in
-[`shared-facts.json`](../shared-facts.json).
+`shared-facts.json`.
 
 **On severity.** The census mechanism's own semantics are the severity: drift is
 fatal under `npm run census:check`, which runs pre-push and inside
@@ -1031,7 +1031,7 @@ never written. Counting occurrences of a bad shape cannot express "this table ha
 no `INSERT`", because there is no bad shape — there is a missing statement, in a
 file that has no other reason to mention the table. The census "cannot assert an
 ABSENCE" limit
-([doctrine §4](../golden-path-doctrine.md#4-census-rules)) applies exactly.
+(doctrine §4) applies exactly.
 
 **The right instrument is a Rust test, and it is cheap:**
 

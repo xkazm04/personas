@@ -1,7 +1,7 @@
 # Golden path — Multi-step orchestration
 
 > Situation node: `backend-runtime/job-coordination/multi-step-orchestration` ·
-> [situation spine](../situation-spine.md) · recurrence **5** · risk **HIGH** ·
+> situation spine · recurrence **5** · risk **HIGH** ·
 > `sides: server` but **`twoSided: true`** (with `fusedAcrossSides: false` and **no `clientHalf`
 > declared** — §12 correction 2) · convergence **diverged**.
 > Dimensions: **function · ui · resilience · cost**.
@@ -11,7 +11,7 @@
 > Composed 2026-08-17 against `master` @ `50d736f6c`.
 >
 > **Sweep.** All **963** `.rs` files under `src-tauri/` and all **4,828** `.ts`/`.tsx` under `src/`
-> ([`shared-facts.json`](../shared-facts.json)). Read in full:
+> (`shared-facts.json`). Read in full:
 > `src/engine/team_assignment_orchestrator.rs` (1,936 lines),
 > `db/src/repos/orchestration/team_assignments.rs` (826),
 > `engine/src/team_handoff.rs` (242), `src/engine/build_session/orchestrator.rs` (161),
@@ -310,7 +310,7 @@ advance** — and §6 reports the corpus's cleanest pairing result on top of it.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path, primitive
+Per the portability test the head carries no file path, primitive
 name or count, so an adopting repo can tell physics from local calibration. Each clause names its
 warrant.
 
@@ -877,7 +877,7 @@ column that no query joins.
 
 ## Prefer a type over a gate
 
-Per the [contract](../golden-path-contract.md), answered explicitly before §9.
+Per the contract, answered explicitly before §9.
 
 **The answer is YES, it is the strongest type-over-gate result the corpus has measured on this
 repo, and it required no design work at all: the type already exists.**
@@ -961,7 +961,7 @@ Three, and only the first is a count of something present:
 > admits — the comparison happens once, at runtime, on the write.
 > **(C)** A job's aggregate status can reach a terminal value while one of its steps has not.
 
-Per the [portability test](../research/portability-test.md), an adopting repo inherits these three
+Per the portability test, an adopting repo inherits these three
 sentences and re-derives its own instrument. What follows is **one census rule** for (A), plus the
 specification for the check that covers (B) and (C), which the census cannot express.
 
@@ -1066,7 +1066,7 @@ then **re-extracted from this finished document and re-run**; identical:
   census OK — 2 rule(s), 1926 file-visits, 224 surviving violation(s) across 50 file(s).  exit 0
 ```
 
-`963 walked` is exactly `rust.files` in [`shared-facts.json`](../shared-facts.json) — an
+`963 walked` is exactly `rust.files` in `shared-facts.json` — an
 independently derived count agreeing, which is the only reason to trust the walk. **The full registry
 was NOT run**, per the doctrine; the orchestrator runs it on merge.
 

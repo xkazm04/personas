@@ -71,8 +71,6 @@
     },
     "db/src/repos/resources/triggers.rs": {"count":1,"sections":[7],"lines":["1621"],"contexts":["`db/src/repos/resources/triggers.rs:1621` ·"],"resolved":false},
     "dev_tools_backlog_tests.rs": {"count":1,"sections":[],"contexts":["`*_tests.rs` matched by filename because `dev_tools_backlog_tests.rs` carries"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json) `rust.files`), lexed with a"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
-    "docs/concepts/situation-spine.json": {"count":1,"sections":[12],"lines":["1015"],"contexts":["9. **The leaf is `twoSided: true`** in `situation-spine.json:1015`, though"],"resolvedFrom":"basename","verbatim":"situation-spine.json"},
     "executions.rs": {
       "count": 14,
       "sections": [0,7,8,9,12],
@@ -139,6 +137,8 @@
       ],
       "resolved": false
     },
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["`shared-facts.json` `rust.files`), lexed with a"],"resolved":false},
+    "situation-spine.json": {"count":1,"sections":[12],"lines":["1015"],"contexts":["9. **The leaf is `twoSided: true`** in `situation-spine.json:1015`, though"],"resolved":false},
     "sla.rs": {"count":10,"sections":[0,7],"lines":["64","109","344","376","651","764","983"],"contexts":["| per-persona success rate | `sla.rs:64` | `('completed','failed')` |"],"resolved":false},
     "src-tauri/core/src/events.rs": {"count":1,"sections":[7],"lines":["220"],"contexts":["The event is declared in `core/src/events.rs:220` and typed in"],"resolvedFrom":"suffix","verbatim":"core/src/events.rs"},
     "src-tauri/core/src/lifecycle.rs": {

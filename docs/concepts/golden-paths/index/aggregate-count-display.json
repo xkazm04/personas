@@ -194,7 +194,6 @@
     },
     "companion/attention/useAttentionCounts.ts": {"count":1,"sections":[],"contexts":["`companion/attention/useAttentionCounts.ts` and the four `count_*` repo functions read in full."],"resolved":false},
     "digest.rs": {"count":1,"sections":[7],"lines":["314"],"contexts":["[`metric-definition`](./metric-definition.md) found with `digest.rs:314` sitting 160 lines below"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[7],"contexts":["**Shared facts cited:** [`shared-facts.json`](../shared-facts.json) — 963 Rust files, 4,829"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "executions.rs": {"count":1,"sections":[7],"lines":["337-388"],"contexts":["`count_all_global` (`executions.rs:337-388`) increments `total` for **every** status row and buckets"],"resolved":false},
     "lefthook.yml": {"count":1,"sections":[9],"contexts":["the **`golden-path-census` pre-push job** in `lefthook.yml`, whose own comment records why it was"]},
     "lib.rs": {"count":2,"sections":[0],"contexts":["doors and their SQL. Every `#[tauri::command]` registration in `lib.rs` (**1,588** lines)"],"resolved":false},
@@ -271,6 +270,7 @@
       "resolved": false
     },
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["never against the shared `rules.json`; **the full registry was not run** (doctrine §4)."],"resolvedFrom":"basename","verbatim":"rules.json"},
+    "shared-facts.json": {"count":2,"sections":[7],"contexts":["**Shared facts cited:** `shared-facts.json` — 963 Rust files, 4,829"],"resolved":false},
     "src-tauri/**": {
       "count": 1,
       "sections": [9],

@@ -1,7 +1,7 @@
 # Golden path — Bundle size budget
 
 > Situation node: `platform-delivery/gates-and-conventions/bundle-size-budget` ·
-> [situation spine](../situation-spine.md) · recurrence 4 · risk **low** ·
+> situation spine · recurrence 4 · risk **low** ·
 > sides **server** (**contradicted — §12.4**) · convergence **converged**
 > (**failed, split by clause — §12.3**) · dimensions: **performance · cost** ·
 > `twoSided: true` · spine's own framing: *"A declared ceiling the shipped

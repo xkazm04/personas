@@ -49,10 +49,10 @@
       "resolved": false
     },
     "dispatcher.rs": {"count":5,"sections":[5,7,9],"lines":["589","2944","594,2944"],"contexts":["reason, and `dispatcher.rs:589` says so outright: *\"`sys_db: None` … the bench"],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[9],"contexts":["[`shared-facts.json`](../shared-facts.json)). The load-bearing counts were"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "incremental.rs": {"count":2,"sections":[5,6],"lines":["7189"],"contexts":["to `run_incremental` (`incremental.rs:7189`, so `personas.db`) on 2026-07-30"],"resolved":false},
     "memories.rs": {"count":6,"sections":[4,5,6,7],"lines":["1686","1928","1707","1026","1937","275"],"contexts":["lazily at first use (`memories.rs:1686`, `companion/brain/embeddings.rs`) —"],"resolved":false},
     "observability.repository.ts": {"count":1,"sections":[6],"lines":["618"],"contexts":["`observability.repository.ts:618` carries the identical comment shape —"],"resolved":false},
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["`shared-facts.json`). The load-bearing counts were"],"resolved":false},
     "src-tauri/core/src/pool.rs": {"count":1,"sections":[3],"lines":["14"],"contexts":["- **`db/src/lib.rs:157` `UserDbPool` / `core/src/pool.rs:14` `DbPool`** — the two"],"resolvedFrom":"suffix","verbatim":"core/src/pool.rs"},
     "src-tauri/db/src/lib.rs": {
       "count": 17,

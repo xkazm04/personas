@@ -1,7 +1,7 @@
 # Golden path — Scoring and thresholds
 
 > **Topic path:** `product-surfaces` › `metrics-and-charts` › `scoring-and-thresholds`
-> [situation spine](../situation-spine.md) · recurrence 27 · risk **MEDIUM** · sides: **client**
+> situation spine · recurrence 27 · risk **MEDIUM** · sides: **client**
 > (spine also carries `twoSided: true` — see §12.1) · convergence: **mixed** ·
 > dimensions: **function · code-quality · ui**
 > `mergedFrom`: *Weighted composite score* + *Entity health grading* + *Grade and tier banding* +
@@ -31,7 +31,7 @@
 > `ascent`** — all five present, all five opened. It found **one sibling meaningfully ahead of this
 > repo** (§6) and inverted two clauses of the brief (§12).
 >
-> **Shared facts cited:** [`shared-facts.json`](../shared-facts.json) — 963 Rust files, 4,828 `.ts`,
+> **Shared facts cited:** `shared-facts.json` — 963 Rust files, 4,828 `.ts`,
 > 2,104 `.tsx`, 1,135 lint warnings / 0 errors.
 >
 > **Settles:** what a number has to earn before it is allowed to become a verdict.
@@ -180,7 +180,7 @@ verdict or a stale good one. It is never stored as *unknown*.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path,
+Per the portability test the head carries no file path,
 primitive name or count. Each clause names its warrant.
 
 > **P1 — physics, and the clause everything else follows from.** **A score must be able to say "I
@@ -602,7 +602,7 @@ can be enforced.*
 
 Every entry is live on `master` @ `b4a05049e`, verified by reading the file and — where a number is
 quoted — by replay against a read-only copy of the operator's database. All shipped under a green
-`npm run check` (0 errors, 1,135 warnings — [`shared-facts.json`](../shared-facts.json)) and a green
+`npm run check` (0 errors, 1,135 warnings — `shared-facts.json`) and a green
 census. **Per the campaign's no-destructive-applies rule, nothing here was applied; each entry is
 written so someone can act later.**
 
@@ -989,7 +989,7 @@ its own URL-safe comment stripper and its own regex assembly, importing nothing 
 - **The census's line-oriented sibling reported 46 / 32; the file-content walker reported 54 / 38.**
   The eight extra are ladders whose `:` falls on the **next line** after the first arm — Prettier
   splits a long `className` ternary across lines, and a line-oriented matcher cannot see the second
-  boundary. This is [`golden-path-contract.md:160-163`](../golden-path-contract.md)'s
+  boundary. This is `golden-path-contract.md:160-163`'s
   "match whole file content, never line-by-line" arriving from the opposite direction: there the
   line-oriented matcher **undercounted 63 of 67**, here it undercounts **8 of 54**, and in both cases
   the miss reads as a clean codebase. The census engine matches whole-file content, so the shipped
@@ -1031,7 +1031,7 @@ automatically."*
 chained conditional expression with two numeric literals and quoted string arms. A repo that spells
 the same defect as an `if/else if` chain, a `switch`, a lookup array walked with `.find()`, a
 `match` in Rust, or CSS-in-JS breakpoints will match nothing while the condition is present at scale
-— the exact portability failure [`golden-path-contract.md:34-60`](../golden-path-contract.md)
+— the exact portability failure `golden-path-contract.md:34-60`
 documents. **An adopting repo must re-derive its own proxy, and should check the positive control's
 population before trusting a green run.** Gap 6 lists the four spellings this rule is blind to here.
 

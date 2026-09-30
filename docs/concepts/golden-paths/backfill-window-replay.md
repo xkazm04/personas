@@ -1,7 +1,7 @@
 # Golden path — Backfill window replay
 
 > Situation node: `backend-runtime` › `scheduling-and-triggers` › `backfill-window-replay` ·
-> [situation spine](../situation-spine.md) · recurrence **3** · risk **high** ·
+> situation spine · recurrence **3** · risk **high** ·
 > sides: **client** (contradicted — see [§12.1](#121--sides-client-is-inverted-the-entire-decision-surface-is-server-side)) ·
 > convergence: **mixed** (tested — see [§10](#10-convergence)) ·
 > dimensions: **ui · function · cost · resilience**

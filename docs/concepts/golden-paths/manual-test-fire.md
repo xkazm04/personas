@@ -1,7 +1,7 @@
 # Manual test fire
 
 > Situation node: `product-surfaces/authoring-and-catalogs/manual-test-fire` ·
-> [situation spine](../situation-spine.md) · recurrence 5 · risk **medium** ·
+> situation spine · recurrence 5 · risk **medium** ·
 > dimensions: ui · function · cost · resilience · `sides: "client"` ·
 > `twoSided: true` · `convergence: "mixed"`
 >

@@ -1,7 +1,7 @@
 # Golden path — Desktop notification
 
 > Situation node: `ui-system/chrome-and-feedback/desktop-notification` ·
-> [situation spine](../situation-spine.md) · recurrence 11 · risk **medium** ·
+> situation spine · recurrence 11 · risk **medium** ·
 > sides: **client** · convergence: **mixed** ·
 > dimensions: **function · ui · resilience** ·
 > **`twoSided: true`** · merged from *"OS notifications"* +

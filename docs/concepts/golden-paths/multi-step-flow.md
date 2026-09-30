@@ -1,14 +1,14 @@
 # Golden path — Multi-step flow
 
 > Situation node: `client-runtime/flows-and-onboarding/multi-step-flow` ·
-> [situation spine](../situation-spine.md) · recurrence **39** ·
+> situation spine · recurrence **39** ·
 > dimensions **ui · function · resilience · code-quality · cost** · `twoSided: false`
 > (the flow is a client construct — but its *residue* is a backend row, and §"The one way"
 > is mostly about that seam).
 > Composed 2026-08-15 from a ground-truth sweep against `master` @ `2a874e692`.
 >
 > **Sweep size.** Two independent detectors over all **2,104 `.tsx` / 4,829 `.ts`** files
-> under `src/` (counts cited from [`shared-facts.json`](../shared-facts.json), not re-derived):
+> under `src/` (counts cited from `shared-facts.json`, not re-derived):
 > detector A anchors on the *step pointer* and its transitions, detector B on the *ordered
 > sequence declaration*. **13 flows were then read end-to-end by hand** (steps, pointer home,
 > unmount behaviour, mid-flow writes, back semantics, guard placement, resume) — every claim

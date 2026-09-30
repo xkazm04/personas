@@ -1,7 +1,7 @@
 # Guided tour step
 
 > Situation node: `client-runtime/flows-and-onboarding/guided-tour-step` ·
-> [situation spine](../situation-spine.md) · recurrence **6** · risk **medium** ·
+> situation spine · recurrence **6** · risk **medium** ·
 > sides `client` · convergence `converged` · dimensions ui · function · code-quality ·
 > `twoSided: false`
 >

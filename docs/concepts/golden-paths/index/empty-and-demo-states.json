@@ -171,7 +171,6 @@
       "contexts": ["- `agents/sub_executions/components/list/ExecutionListRow.tsx:77-82` — `FlaskConical` + `SIMULATED` pill + tooltip *\"This run was a simulation — notifications were not sent.\"*"],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["Repo-level denominators come from [`shared-facts.json`](../shared-facts.json) —"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "executions/page.tsx": {
       "count": 2,
       "sections": [4],
@@ -342,6 +341,7 @@
         "- `shared/components/CATALOG.md:42,50,55,99` — **all four shared empty-state components are listed with `_(add a @catalog tag)_` and no description**: `ChartEmptyState`, `EmptyIllustration`, `Illustr…"
       ]
     },
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["Repo-level denominators come from `shared-facts.json` —"],"resolved":false},
     "src/features": {"count":2,"sections":[9],"contexts":["Composed 2026-08-14 from a repo-wide ground-truth sweep of **3,137 files under `src/features`**,"],"resolved":false,"isDir":true},
     "src/features/**": {
       "count": 1,

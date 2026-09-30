@@ -68,7 +68,6 @@
     "TransformModeView.tsx": {"count":1,"sections":[7],"contexts":["`AnalysisModeView.tsx`, `TransformModeView.tsx`, `CliOutputPanel.tsx`. Those"],"resolved":false},
     "dispatch.rs": {"count":1,"sections":[7],"contexts":["actually emits — the prefixes are enumerable from `dispatch.rs` and"],"resolved":false},
     "dispatcher.ts": {"count":1,"sections":[6],"lines":["970"],"contexts":["wire (`dispatcher.ts:970`, `httpApi.ts:1674`) and no consumer renders it either."],"resolved":false},
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["count, matching [`shared-facts.json`](../shared-facts.json) `frontend.tsFiles`"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "executions.rs": {"count":2,"sections":[0,12],"lines":["672-727","658,703,716"],"contexts":["`get_execution_log_lines` (`executions.rs:672-727`) is the reload path."],"resolved":false},
     "features/plugins/companion/useChatScroll.ts": {"count":1,"sections":[7],"contexts":["**Fix:** extract `useChatScroll` (`features/plugins/companion/useChatScroll.ts`)"],"resolved":false},
     "httpApi.ts": {"count":2,"sections":[6],"lines":["1422","1674"],"contexts":["`personas-cloud`'s `redactDeployment` (`httpApi.ts:1422`), `personas-web`'s"],"resolved":false},
@@ -87,6 +86,7 @@
         "| **a line-bearing event with no frontend subscriber** | 13 of 26 channels | 13 | Not expressible: it is a relationship between two trees (a Rust emit and the absence of a TypeScript subscribe), and…"
       ]
     },
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["count, matching `shared-facts.json` `frontend.tsFiles`"],"resolved":false},
     "shared/components/progress/TerminalBody.tsx": {"count":2,"sections":[3,7],"contexts":["`shared/components/progress/TerminalBody.tsx` (deleted 2026-09-25) (plain `.map`, its own"],"resolved":false},
     "src-tauri/**/*.rs": {"count":1,"sections":[],"contexts":["+ generated) and **963** `src-tauri/**/*.rs`. Every one of the **26**"],"resolved":false},
     "src-tauri/core/src/redact.rs": {"count":1,"sections":[8],"contexts":["makes exactly this argument for why `redact.rs` is applied at persistence and"],"resolvedFrom":"basename","verbatim":"redact.rs"},

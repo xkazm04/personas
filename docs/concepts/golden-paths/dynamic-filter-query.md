@@ -1,12 +1,12 @@
 # Golden path — Dynamic filter query
 
 > Situation node: `data-persistence/query-composition/dynamic-filter-query` ·
-> [situation spine](../situation-spine.md) · recurrence **59** · dimensions
+> situation spine · recurrence **59** · dimensions
 > **function · performance · security · code-quality · resilience**.
 > Composed 2026-08-14 against `master`.
 >
 > **Sweep size.** All **963 `.rs` files** under `src-tauri/**` (exactly `rust.files` in
-> [`shared-facts.json`](../shared-facts.json) — two independent walks agreeing, which is the only
+> `shared-facts.json` — two independent walks agreeing, which is the only
 > reason to trust either) parsed with a comment-stripping, string-literal-aware, raw-string-aware
 > scanner rather than grepped. From that parse: **475 `format!` calls whose literal contains SQL**,
 > and every one of the **886 `{}` placeholders inside them** classified by its position in the
@@ -14,7 +14,7 @@
 > and **24 carry both a `WHERE` and a runtime placeholder**; **129 SQL literals containing `LIKE`**
 > (163 `LIKE` occurrences) of which **10 carry `ESCAPE`**; **22 LIKE-pattern constructions**;
 > **1,660** of the **1,661** `#[tauri::command]` fns (`tauriCommands` in
-> [`shared-facts.json`](../shared-facts.json) — no new command count is minted here) parsed with
+> `shared-facts.json` — no new command count is minted here) parsed with
 > full parameter lists. Every dynamic-filter function named below was opened and read. `target/` and
 > `.claude/worktrees/**` excluded throughout.
 >
@@ -516,7 +516,7 @@ through `validate_sql_identifier` (`:1134-1146`) to `[A-Za-z0-9_.]`.
 
 1. **`where_like_any` exists.** `QueryBuilder` ships two spellings of one predicate whose only
    difference is that one omits `ESCAPE '\'`. Nothing marks the safe one as safe; the names sort
-   adjacently and the unsafe one is shorter. **This is the [contract](../golden-path-contract.md)'s
+   adjacently and the unsafe one is shorter. **This is the contract's
    fifth failure mode with a twist** — the destination is not merely mis-defaulted, the destination
    *contains* the wrong answer. A gate routing callers to `QueryBuilder`'s LIKE helpers would be
    satisfied by the broken one. **Delete it and its single caller** before ratcheting anything.
@@ -563,7 +563,7 @@ through `validate_sql_identifier` (`:1134-1146`) to `[A-Za-z0-9_.]`.
 
 ## Prefer a type over a gate — the answer for this leaf
 
-Per the [contract](../golden-path-contract.md) this is answered explicitly and **above** §9.
+Per the contract this is answered explicitly and **above** §9.
 **Yes, four times — and one of the four is the highest-value change in this document.**
 
 1. **Make a filtered query own its count. This is the one.** The P0 and both "not shared" rows in
@@ -612,7 +612,7 @@ Two, both stack-free:
 > independently written predicates, so the number above the list can describe a different set than
 > the list.
 
-Per the [portability test](../research/portability-test.md), what follows is **one repo's proxy for
+Per the portability test, what follows is **one repo's proxy for
 (A)**. An adopting repo inherits the sentence and re-derives its own signal — `brainiac`'s shape is
 `'%' || $1 || '%'` concatenated in SQL and would score **zero** against this pattern while being
 0-for-15 on the condition; `vibeman`'s is `escapeLikePattern(x)` in TypeScript and is 11-for-11.
@@ -676,7 +676,7 @@ re-extracted from this finished document and re-run):
   census OK — 1 rule(s), 963 file-visits, 12 surviving violation(s) across 10 file(s).
 ```
 
-`963 walked` is exactly `rust.files` in [`shared-facts.json`](../shared-facts.json) — two
+`963 walked` is exactly `rust.files` in `shared-facts.json` — two
 independently derived counts agreeing, which is the only reason to trust either. `floor: 900`
 matches every other `src-tauri`-rooted rule deliberately: several rules over one root must not hold
 several opinions about what "the Rust tree is intact" means. Runtime **0.69 s** for the full
@@ -735,7 +735,7 @@ fault table proves it does not.
 A correctly shaped positive control therefore crashes the runner with
 `TypeError: Cannot read properties of undefined (reading 'files')` — **after** the FAIL line is
 printed and **before** the exit-code path runs, so **the process exits 0**. That is precisely the
-"gate that manufactures confidence" the [contract](../golden-path-contract.md) names.
+"gate that manufactures confidence" the contract names.
 
 This brief stated the baseline-free shape "is now supported end to end (merger, validator and
 asserter were each fixed in turn this week)". **It is not.** `report()` is a fourth layer, and it

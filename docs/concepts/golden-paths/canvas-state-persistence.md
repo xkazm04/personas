@@ -1,7 +1,7 @@
 # Golden path — Canvas state persistence
 
 > Situation node: `product-surfaces` › `canvas-and-media` › `canvas-state-persistence` ·
-> [situation spine](../situation-spine.md) · recurrence 5 · risk **high** ·
+> situation spine · recurrence 5 · risk **high** ·
 > sides: **client** — **contradicted** (§12.1: the persisted document has a *Rust
 > reader* that is the second half of the contract, and the sharpest defect in this
 > leaf lives entirely on that side) ·
@@ -732,7 +732,7 @@ messages contain **6 user messages**"*. Replayed against the operator's real bra
 
 **12.9 — ⚠ A rule published in this same wave will be silently lost, and the contract
 document is why.** I published my §9 fence as ` ```jsonc `, following
-[`golden-path-contract.md`](../golden-path-contract.md)`:131`, which shows the census
+`golden-path-contract.md``:131`, which shows the census
 rule block in exactly that language. **The merger cannot see it.**
 `scripts/census/lib/instruments/extractFences.mjs:53-57` matches the info string
 **exactly** and says so in a comment — *"a prefix match would make a `json5` or

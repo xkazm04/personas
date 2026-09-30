@@ -1,7 +1,7 @@
 # Golden path — Status transition rules
 
 > Situation node: `data-persistence/schema-design/status-transition-rules` ·
-> [situation spine](../situation-spine.md) · recurrence 8 · risk **medium** ·
+> situation spine · recurrence 8 · risk **medium** ·
 > sides: **server** · convergence: **diverged**
 > Composed 2026-08-17 against `master` @ `2edb8d694`. Mode 2 batch
 > (`data-persistence/schema-design`), full contract.

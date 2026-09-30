@@ -1,7 +1,7 @@
 # Golden path — Credential-readiness resolution
 
 > Situation node: `integrations-security/credential-lifecycle/credential-readiness-resolution` ·
-> [situation spine](../situation-spine.md)
+> situation spine
 > `sides: both` · recurrence **31** · dimensions: **function · resilience · security · ui · code-quality**.
 > Composed 2026-08-15 against `master` @ `145dbc908`. Ground-truth sweep: the whole readiness
 > module (`commands/design/connector_readiness.rs`, 1,922 lines, read end to end), the healthcheck

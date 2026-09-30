@@ -1,6 +1,6 @@
 # Golden path — spend ceilings
 
-> Situation node: `ai-agents/cost-governance/spend-ceilings` · [situation spine](../situation-spine.md)
+> Situation node: `ai-agents/cost-governance/spend-ceilings` · situation spine
 > Composed 2026-08-16 against `master` @ `19884e1f0`. **Recurrence 11 · risk HIGH · sides: both · convergence: diverged.**
 > Sweep: all **963** non-generated Rust files under `src-tauri/` walked by the census engine and re-walked
 > by two independent scanners written for this path; every `*_DEFAULT` in `db/src/settings_keys.rs`
@@ -102,7 +102,7 @@ setting, and never lifted it out of the file.** §6 is about that function.
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md), the head is physically separated and every
+Per the portability test, the head is physically separated and every
 clause carries its warrant, so an adopting repo can tell physics from local calibration. No file path,
 primitive name or count appears below this line until the head ends.
 
@@ -874,7 +874,7 @@ the ninth spelling visible on the day it lands.
 
 ## 9. The missing gate
 
-**Manifestation layer** ([`golden-path-contract.md:43-69`](../golden-path-contract.md)). The warning must
+**Manifestation layer** (`golden-path-contract.md:43-69`). The warning must
 be loud: **no sibling repo gates anything in this document**, and two of the four billable ones have no
 dollar ceiling for a gate to key on. The condition below travels; the signal does not. An adopting repo
 must re-derive its own proxy for *"the code decides whether a money limit applies by asking whether the

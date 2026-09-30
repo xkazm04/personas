@@ -1,7 +1,7 @@
 # First-run onboarding
 
 > Situation node: `client-runtime/flows-and-onboarding/first-run-onboarding` ·
-> [situation spine](../situation-spine.md) · recurrence **5** · risk **high** ·
+> situation spine · recurrence **5** · risk **high** ·
 > sides `client` · convergence `converged` · dimensions ui · function · resilience ·
 > `twoSided: false`
 >

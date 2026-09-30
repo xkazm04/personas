@@ -1,6 +1,6 @@
 # Golden path — Dropdown and select
 
-> Situation node: `ui-system/controls-and-forms/dropdown-and-select` · [situation spine](../situation-spine.md)
+> Situation node: `ui-system/controls-and-forms/dropdown-and-select` · situation spine
 > Composed 2026-08-13 from a repo-wide ground-truth sweep (~35 direct tool calls
 > plus three parallel corpus sweeps — the raw-`<select>` corpus, the hand-rolled
 > anchored-menu corpus, and the keyboard/async-options corpus — 143 further tool

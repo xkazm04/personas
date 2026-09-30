@@ -1,7 +1,7 @@
 # Golden path — The human review gate: queue, verdict, resume
 
 > Situation node: `ai-agents/human-review/human-review-queue` ·
-> [situation spine](../situation-spine.md) · recurrence ~72 · dimensions:
+> situation spine · recurrence ~72 · dimensions:
 > ui · function · resilience
 > **Two-sided leaf.** It fused seven discovery entries on the client (verdict
 > rows, proposal queues, keyboard nav, prev/next modal, unread state) with a
@@ -11,7 +11,7 @@
 > three passes (client verdict surfaces + shared primitives; Rust pause/resume
 > surfaces and every CAS implementation; a convergence read of
 > `../brainiac` and `../personas-web`). Repo-wide counts come from
-> [`shared-facts.json`](../shared-facts.json) where it has them (4,829
+> `shared-facts.json` where it has them (4,829
 > `src/**/*.{ts,tsx}` files, 1,666 Tauri commands) and state their own query
 > otherwise. `.claude/worktrees/**` excluded throughout.
 > Cross-reference, not overlap: the **destructive-confirm idiom** (eight

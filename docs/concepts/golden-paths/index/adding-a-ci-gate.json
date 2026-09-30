@@ -98,6 +98,7 @@
       ],
       "resolved": false
     },
+    "measure-shared-facts.mjs": {"count":1,"sections":[9],"lines":["18"],"contexts":["`measure-shared-facts.mjs:18`); 3 × `const MK = 'C:/Users/kazda/kiro/mk'`"],"resolved":false},
     "package-lock.json": {"count":2,"sections":[0,7],"contexts":["reading `package-lock.json`); it was last committed **2026-07-30**. The"]},
     "package.json": {"count":5,"sections":[1,8],"contexts":["in `package.json`'s `check` script, or add an entry to"]},
     "scripts/": {"count":3,"sections":[9],"contexts":["(`catch {…process.exit(0)}` in `scripts/` + `.ai/`): **1 file, 1 match.** Too"],"resolved":false,"isDir":true},
@@ -155,7 +156,7 @@
     "scripts/docs/check-doc-map-paths.mjs": {"count":3,"sections":[0,7,9],"lines":["17"],"contexts":["`scripts/docs/check-doc-map-paths.mjs:17` is byte-identical. Replayed with"]},
     "scripts/docs/check-doc-sync.mjs": {"count":3,"sections":[7,9],"lines":["117"],"contexts":["`scripts/docs/check-doc-sync.mjs:117` exits 0 when the transcript yields no"]},
     "scripts/docs/feature-doc-map.json": {"count":1,"sections":[7],"contexts":["`feature-doc-map.json` will not parse. Its satisfaction condition is *any*"],"resolvedFrom":"basename","verbatim":"feature-doc-map.json"},
-    "scripts/docs/measure-shared-facts.mjs": {"count":2,"sections":[7,9],"lines":["18"],"contexts":["`scripts/docs/measure-shared-facts.mjs:18`), plus six machine-specific paths"]},
+    "scripts/docs/measure-shared-facts.mjs": {"count":1,"sections":[7],"lines":["18"],"contexts":["`scripts/docs/measure-shared-facts.mjs:18`), plus six machine-specific paths"],"resolved":false},
     "scripts/generate-connectors.mjs": {"count":1,"sections":[],"lines":["19,147"],"contexts":["recurs.** `personas-web` holds 3 (`scripts/generate-connectors.mjs:19,147`,"],"resolved":false},
     "scripts/i18n/check-coverage.mjs": {"count":1,"sections":[],"contexts":["`check-coverage.mjs`, `check-untranslated.mjs`, `check-error-registry-parity.mjs`,"],"resolvedFrom":"basename","verbatim":"check-coverage.mjs"},
     "scripts/i18n/check-error-registry-parity.mjs": {"count":1,"sections":[],"contexts":["`check-coverage.mjs`, `check-untranslated.mjs`, `check-error-registry-parity.mjs`,"],"resolvedFrom":"basename","verbatim":"check-error-registry-parity.mjs"},

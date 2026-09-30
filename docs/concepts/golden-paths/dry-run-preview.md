@@ -1,7 +1,7 @@
 # Golden path — Dry-run preview
 
 > Situation node: `product-surfaces` › `authoring-and-catalogs` › `dry-run-preview` ·
-> [situation spine](../situation-spine.md) · recurrence 6 · risk **HIGH** ·
+> situation spine · recurrence 6 · risk **HIGH** ·
 > sides: **client** (the spine also carries `twoSided: true` — both labels are wrong, see §12.1) ·
 > convergence: **mixed** · dimensions: **ui · function · resilience**
 > Composed 2026-08-17 against `master` @ `2a874e692`.
@@ -151,7 +151,7 @@ tests it by name (§6 clause 5).
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path,
+Per the portability test the head carries no file path,
 primitive name or count. Each clause names its warrant.
 
 > **P1 — physics, and the leaf's centre.** **A preview that is computed by different code than the

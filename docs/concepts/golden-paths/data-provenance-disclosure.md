@@ -1,7 +1,7 @@
 # Golden path — Data provenance disclosure
 
 > **Topic path:** `product-surfaces` › `metrics-and-charts` › `data-provenance-disclosure`
-> [situation spine](../situation-spine.md) · recurrence 14 · risk **HIGH** · sides: **client**
+> situation spine · recurrence 14 · risk **HIGH** · sides: **client**
 > (spine also carries `twoSided: true` — see §12.1) · convergence: **mixed** ·
 > dimensions: **ui · function · resilience · code-quality**
 > `mergedFrom`: *Data provenance disclosure* + ***Machine-decision provenance*** — the second half
@@ -35,7 +35,7 @@
 > confident claim** (§12.2) and inverted a clause of a sibling golden path composed hours earlier
 > (§12.3).
 >
-> **Shared facts cited:** [`shared-facts.json`](../shared-facts.json).
+> **Shared facts cited:** `shared-facts.json`.
 >
 > **Settles:** whether the pixel says how the number was made.
 
@@ -141,7 +141,7 @@ Every labelled-number primitive in the app, with the disclosure props its call s
 fills.** 4/4 carry a tooltip; 2/4 carry a `scope` pill reading *"All-time"* on the two cards that do
 **not** move with the window picker. The two *shared* tiles have **64 call sites between them and
 zero tooltips**. That is `FacetedDecisionTable.emptyTitle` again
-([contract](../golden-path-contract.md#prefer-a-type-over-a-gate--checked-three-times)), on a
+(contract), on a
 different prop, with the same result.
 
 And the whole disclosure surface, counted three ways:
@@ -160,7 +160,7 @@ And the whole disclosure surface, counted three ways:
 
 ## Principle (stack-free head)
 
-Per the [portability test](../research/portability-test.md) the head carries no file path, primitive
+Per the portability test the head carries no file path, primitive
 name or count. Each clause names its warrant.
 
 > **P1 — physics.** **A number's provenance is part of the number.** How it was produced —

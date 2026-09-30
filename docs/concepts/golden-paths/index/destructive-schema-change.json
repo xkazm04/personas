@@ -41,7 +41,6 @@
       "contexts": ["| 7 | a guard against an older build opening a newer DB | none | **yes**, inherited from sqlx | **explicit proceed** (`db.ts:202-205`) | none | none | **rare** (1/5) |"],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["in [`shared-facts.json`](../shared-facts.json)), lexed rather than grepped:"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "engine/team_preset_loader.rs": {"count":1,"sections":[3],"lines":["63"],"contexts":["`engine/team_preset_loader.rs:63` (which *errors* on a newer"],"resolved":false},
     "httpApi.ts": {"count":1,"sections":[6],"lines":["1294"],"contexts":["(`db.ts:1403`, `:1453`, `:1465`, `httpApi.ts:1294`) read columns that migration"],"resolved":false},
     "incremental.rs": {
@@ -69,6 +68,7 @@
     "scripts/census/lib/engine.mjs": {"count":1,"sections":[9],"contexts":["I read all **93** rules in `scripts/census/rules.json` and `lib/engine.mjs`"],"resolvedFrom":"suffix","verbatim":"lib/engine.mjs"},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["I read all **93** rules in `scripts/census/rules.json` and `lib/engine.mjs`"]},
     "scripts/check-migration-steps.mjs": {"count":1,"sections":[9],"contexts":["`scripts/check-migration-steps.mjs` and a `Connection::authorizer` boot-work"],"resolved":false},
+    "shared-facts.json": {"count":1,"sections":[],"contexts":["in `shared-facts.json`), lexed rather than grepped:"],"resolved":false},
     "src-tauri/": {"count":2,"sections":[3,12],"contexts":["`src-tauri/`**. The module doc (`backup.rs:8-10`) describes recovery as"],"resolved":false,"isDir":true},
     "src-tauri/db/src/backup.rs": {
       "count": 6,

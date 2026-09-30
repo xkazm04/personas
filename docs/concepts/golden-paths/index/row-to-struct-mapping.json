@@ -123,7 +123,6 @@
       ],
       "resolved": false
     },
-    "docs/concepts/shared-facts.json": {"count":2,"sections":[9],"contexts":["[`shared-facts.json`](../shared-facts.json)) · **793 `query_map` call sites** · **169 named row"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "documents.rs": {
       "count": 2,
       "sections": [5,6],
@@ -300,7 +299,7 @@
       "count": 1,
       "sections": [9],
       "contexts": [
-        "Per the [contract](../golden-path-contract.md) §\"Don't write a script\", the ratcheting-baseline mechanism already exists at [`scripts/census/`](../../../scripts/census/). This path adds **one entry**…"
+        "Per the contract §\"Don't write a script\", the ratcheting-baseline mechanism already exists at [`scripts/census/`](../../../scripts/census/). This path adds **one entry** to `scripts/census/rules.json…"
       ],
       "resolved": false,
       "isDir": true
@@ -310,9 +309,10 @@
       "count": 1,
       "sections": [9],
       "contexts": [
-        "Per the [contract](../golden-path-contract.md) §\"Don't write a script\", the ratcheting-baseline mechanism already exists at [`scripts/census/`](../../../scripts/census/). This path adds **one entry**…"
+        "Per the contract §\"Don't write a script\", the ratcheting-baseline mechanism already exists at [`scripts/census/`](../../../scripts/census/). This path adds **one entry** to `scripts/census/rules.json…"
       ]
     },
+    "shared-facts.json": {"count":2,"sections":[9],"contexts":["`shared-facts.json`) · **793 `query_map` call sites** · **169 named row"],"resolved":false},
     "sla.rs": {
       "count": 1,
       "sections": [7],

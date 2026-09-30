@@ -1,7 +1,7 @@
 # Golden path — Scheduled trigger firing
 
 > Situation node: `backend-runtime/scheduling-and-triggers/scheduled-trigger-firing` ·
-> [situation spine](../situation-spine.md) · recurrence 26 · risk **HIGH** ·
+> situation spine · recurrence 26 · risk **HIGH** ·
 > sides: **server** · dimensions: **function · resilience · cost · code-quality · security**
 > Composed 2026-08-15 against `master` @ `f2e002f7b`.
 >

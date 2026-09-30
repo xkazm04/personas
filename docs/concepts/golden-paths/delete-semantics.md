@@ -1,7 +1,7 @@
 # Golden path — Entity deletion: cascade, blast radius, confirm
 
 > Situation node: `data-persistence/data-modeling/delete-semantics` ·
-> [situation spine](../situation-spine.md) · recurrence 202 · dimensions:
+> situation spine · recurrence 202 · dimensions:
 > function · resilience · security
 > **Two-sided leaf, fused during the seam pass.** The client half (one confirm
 > that names what breaks and how many things it touches) and the server half

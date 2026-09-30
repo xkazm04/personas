@@ -1,7 +1,7 @@
 # Golden path — Snapshot plus stream
 
 > Situation node: `client-runtime/data-fetching/snapshot-plus-stream` ·
-> [situation spine](../situation-spine.md) · recurrence **5** · risk **HIGH** ·
+> situation spine · recurrence **5** · risk **HIGH** ·
 > `twoSided: true` · sides: **client** (**contradicted** — see [§12.1](#121--sidesclient-contradicted-the-only-gapless-implementation-in-the-app-is-a-rust-function)) ·
 > convergence: **diverged** (**not tested** — see [§12.7](#127--what-was-not-done)) ·
 > dimensions: **function · resilience · performance**

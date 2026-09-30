@@ -1,14 +1,14 @@
 # Golden path — Terminal state and recovery
 
 > Situation node: `backend-runtime/background-work/terminal-state-and-recovery` ·
-> [situation spine](../situation-spine.md) · recurrence 15 · risk **HIGH** ·
+> situation spine · recurrence 15 · risk **HIGH** ·
 > sides: **server** · `twoSided: true` · convergence: **mixed** ·
 > dimensions: **function · resilience · ui**
 > merged from *Reaping stranded work*, *Boot crash recovery*, *Durable terminal-state persistence*.
 > Composed 2026-08-15 against `master` @ `8766c6c41`.
 >
 > **Sweep size.** All **963** `.rs` files under `src-tauri` (matches
-> [`shared-facts.json`](../shared-facts.json) `rust.files`), lexed with a
+> `shared-facts.json` `rust.files`), lexed with a
 > string/comment-aware Rust tokenizer rather than grepped: **83,759** string
 > literals, **5,229** of them SQL (**4,371** production, **858** inside
 > **brace-matched** `#[cfg(test)]` ranges — never a line threshold, and
