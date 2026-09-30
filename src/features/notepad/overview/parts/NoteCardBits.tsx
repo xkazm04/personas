@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { FolderGit2, Gauge, Maximize2 } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 import { Badge } from '@/features/shared/components/display/Badge';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -9,7 +10,7 @@ import type { DevNote } from '@/lib/bindings/DevNote';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { NotePlanSummary } from '@/lib/bindings/NotePlanSummary';
 
-import type { NoteSaveState } from '../../notepadStore';
+import { retrySave, type NoteSaveState } from '../../notepadStore';
 import { noteStatusMeta } from '../../noteStatusMeta';
 import { CARD_TEXT_LIMIT, visibleLength } from '../../noteText';
 import { SaveDot } from '../../parts/SaveDot';
@@ -185,7 +186,7 @@ export function NoteCardFooter({
             aria-hidden={rail && railShown ? true : undefined}
           >
             <RelativeTime timestamp={note.updatedAt} format="elapsed" />
-            <SaveDot state={saveState} />
+            {saveState !== 'error' && <SaveDot state={saveState} />}
             {note.status === 'draft' && (
               <>
                 <span aria-hidden>·</span>
@@ -200,6 +201,17 @@ export function NoteCardFooter({
           </span>
           {rail}
         </div>
+        {saveState === 'error' && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t.notepad.save_error}
+            data-testid={`notepad-save-retry-${note.id}`}
+            onClick={() => retrySave(note.id)}
+          >
+            <SaveDot state="error" />
+          </Button>
+        )}
         <Tooltip content={t.notepad.overview_open}>
           <button
             type="button"
