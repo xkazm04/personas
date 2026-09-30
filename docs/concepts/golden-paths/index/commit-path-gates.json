@@ -130,7 +130,7 @@
     "scripts/dev-inspector/inject-source-loc.cjs": {"count":1,"sections":[10],"contexts":["byte-identical dev-inspector scripts (`scripts/dev-inspector/inject-source-loc.cjs`,"],"resolved":false},
     "scripts/docs/check-doc-sync.mjs": {"count":3,"sections":[4,5,7],"lines":["132-135"],"contexts":["`scripts/docs/check-doc-sync.mjs:132-135`."]},
     "scripts/docs/check-golden-path-touch.mjs": {"count":5,"sections":[4,5,7,9],"lines":["117-124","126-129","128"],"contexts":["`scripts/docs/check-golden-path-touch.mjs:117-124` does — a paragraph"]},
-    "scripts/docs/measure-shared-facts.mjs": {"count":1,"sections":[9],"lines":["26"],"contexts":["`scripts/docs/measure-shared-facts.mjs:26` skips"]},
+    "scripts/docs/measure-shared-facts.mjs": {"count":1,"sections":[9],"lines":["26"],"contexts":["`scripts/docs/measure-shared-facts.mjs:26` skips"],"resolved":false},
     "scripts/ensure-ort-cache.mjs": {"count":2,"sections":[9],"lines":["309"],"contexts":["3 files** — `scripts/secret-scan.mjs:23`, `scripts/ensure-ort-cache.mjs:309`,"]},
     "scripts/generate-changelog.mjs": {"count":4,"sections":[3,4,7],"lines":["17"],"contexts":["`scripts/generate-changelog.mjs` and `scripts/bump-version.mjs`."]},
     "scripts/i18n/check-coverage.mjs": {

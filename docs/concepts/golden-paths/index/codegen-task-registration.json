@@ -73,7 +73,9 @@
     "crates/brainiac-server/src/openapi.rs": {"count":1,"sections":[4],"lines":["425"],"contexts":["`crates/brainiac-server/src/openapi.rs:425` `committed_document_is_current` (§ Convergence)."],"resolved":false},
     "docs/": {"count":1,"sections":[9],"contexts":["`src/`, `src-tauri/`, `docs/` or `.claude/` is a value in `TASKS` **or** carries an allowlist entry"],"resolved":false,"isDir":true},
     "docs/concepts/shared-facts.json": {"count":3,"sections":[7],"contexts":["| `scripts/docs/measure-shared-facts.mjs` | `docs/concepts/shared-facts.json` | **nothing** | **STALE** |"],"resolved":false},
+    "docs/measure-shared-facts.mjs": {"count":1,"sections":[],"contexts":["| **`docs/concepts/shared-facts.json`** | `docs/measure-shared-facts.mjs` | **nothing** | **STALE — `tsFiles` 4828 vs 4829** |"],"resolved":false},
     "lefthook.yml": {"count":3,"sections":[7,9],"contexts":["**four** `tauri.*.conf.json`, `package.json`'s 84 scripts, `lefthook.yml`, `.github/workflows/ci.yml`."]},
+    "measure-shared-facts.mjs": {"count":1,"sections":[7],"contexts":["`measuredAt: 2026-08-15 / commit 1e714f817`; re-running `measure-shared-facts.mjs` gives"],"resolved":false},
     "openapi.json": {"count":4,"sections":[],"contexts":["(`openapi.json`) is verified by a unit test, and hop 2 (`console/src/lib/api-schema.d.ts`, generated"],"resolved":false},
     "package.json": {"count":9,"sections":[0,4,6,7],"contexts":["**four** `tauri.*.conf.json`, `package.json`'s 84 scripts, `lefthook.yml`, `.github/workflows/ci.yml`."]},
     "personas-web/src/lib/review-voice-data.ts": {"count":1,"sections":[],"contexts":["`personas-web/src/lib/review-voice-data.ts` carries"],"resolved":false},
@@ -113,7 +115,7 @@
       ]
     },
     "scripts/docs/gen-tour-anchors.mjs": {"count":10,"sections":[0,4,6,7,9,12],"lines":["116"],"contexts":["`scripts/docs/gen-tour-anchors.mjs` emits a JSON manifest and a Rust allow-list *\"both generated from"]},
-    "scripts/docs/measure-shared-facts.mjs": {"count":3,"sections":[7],"contexts":["| `scripts/docs/measure-shared-facts.mjs` | `docs/concepts/shared-facts.json` | **nothing** | **STALE** |"]},
+    "scripts/docs/measure-shared-facts.mjs": {"count":1,"sections":[7],"contexts":["| `scripts/docs/measure-shared-facts.mjs` | `docs/concepts/shared-facts.json` | **nothing** | **STALE** |"],"resolved":false},
     "scripts/events/connector-docs.manifest.json": {
       "count": 2,
       "sections": [4],

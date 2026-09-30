@@ -35,11 +35,11 @@
     "gp-msurf-scratch-rules2.json": {"count":1,"sections":[9],"contexts":["(`gp-msurf-scratch-rules2.json`), full registry not run:"],"resolved":false},
     "index.ts": {"count":9,"sections":[0,3,5,7],"lines":["149","162","14-16","79-100","70"],"contexts":["(`index.ts` 186, `sink.ts` 118, `activation.ts` 186, `navCatalog.ts` 130,"],"resolved":false},
     "main.tsx": {"count":5,"sections":[5,7,12],"lines":["304","306"],"contexts":["boot (`main.tsx:304`) and a swappable object consulted at emit are two different"],"resolved":false},
+    "measure-shared-facts.mjs": {"count":1,"sections":[],"contexts":["`measure-shared-facts.mjs` rather than trusting either number — this is the"],"resolved":false},
     "parser.rs": {"count":4,"sections":[6,7,12],"lines":["340-341","339"],"contexts":["engine's `parser.rs` `result` arm. Denominators cited by id from"],"resolved":false},
     "researchLabSlice.ts": {"count":2,"sections":[7,9],"contexts":["`researchLabSlice.ts`, `storeTypes.ts`."],"resolved":false},
     "scripts/check-csp-hosts.mjs": {"count":2,"sections":[9],"contexts":["different instrument**, in the tradition of `check-csp-hosts.mjs`:"],"resolvedFrom":"basename","verbatim":"check-csp-hosts.mjs"},
     "scripts/check-nav-analytics-coverage.mjs": {"count":1,"sections":[9],"contexts":["**`scripts/check-nav-analytics-coverage.mjs`**"],"resolved":false},
-    "scripts/docs/measure-shared-facts.mjs": {"count":1,"sections":[],"contexts":["`measure-shared-facts.mjs` rather than trusting either number — this is the"],"resolvedFrom":"basename","verbatim":"measure-shared-facts.mjs"},
     "scripts/run-codegen.mjs": {"count":1,"sections":[9],"contexts":["- **Mechanism.** A node script in `scripts/run-codegen.mjs`'s `prebuild` preset"]},
     "shared-facts.json": {"count":1,"sections":[],"contexts":["`shared-facts.json`: `frontend.tsFiles` **4,829**,"],"resolved":false},
     "src-tauri/src/engine/project_tracking/push.rs": {
