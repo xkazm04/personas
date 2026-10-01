@@ -1,10 +1,11 @@
 import { Plus } from 'lucide-react';
-import { IconTwin } from '@/features/plugins/PluginIcons';
+import { getBrandTokens } from '@/lib/connectors/brandTokens';
 import { useSystemStore } from '@/stores/systemStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { LucideIcon } from 'lucide-react';
+import { TwinGlyph } from './TwinGlyph';
 
 /**
  * Shared empty state for Twin sub-tabs when no twin is active.
@@ -13,6 +14,7 @@ import type { LucideIcon } from 'lucide-react';
 export function TwinEmptyState({ icon: Icon, title }: { icon: LucideIcon; title: string }) {
   const t = useTranslation().t.twin;
   const setTwinTab = useSystemStore((s) => s.setTwinTab);
+  const brand = getBrandTokens('twin');
 
   return (
     <ContentBox>
@@ -24,8 +26,8 @@ export function TwinEmptyState({ icon: Icon, title }: { icon: LucideIcon; title:
       />
       <ContentBody centered>
         <div className="flex flex-col items-center justify-center py-16">
-          <div className="w-16 h-16 rounded-card bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-4">
-            <IconTwin className="w-8 h-8 text-violet-400/50" />
+          <div className={`w-16 h-16 rounded-card border ${brand.badgeBg} ${brand.badgeBorder} flex items-center justify-center mb-4`}>
+            <TwinGlyph className={`w-8 h-8 ${brand.icon}`} />
           </div>
           <p className="typo-body text-primary mb-1">{t.emptyState.noTwinSelected}</p>
           <p className="typo-caption text-foreground mb-4">{t.emptyState.createFirstTwin}</p>

@@ -1,23 +1,26 @@
-import { Sparkles, User, Brain, Radio, Plus, ExternalLink } from 'lucide-react';
+import { User, Brain, Radio, Plus, ExternalLink, FileUp } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import type { LucideIcon } from 'lucide-react';
+import { getBrandTokens } from '@/lib/connectors/brandTokens';
+import { TwinGlyph } from '../TwinGlyph';
 
 /**
  * First-run empty state (Direction 4). Rendered by ProfilesPage when no
  * twin profiles exist. Replaces the previous "No twins yet" inline state
  * with a three-panel explainer + primary CTA into the creation wizard.
  */
-export function TwinHero({ onCreate }: { onCreate: () => void }) {
+export function TwinHero({ onCreate, onImport }: { onCreate: () => void; onImport?: () => void }) {
   const t = useTranslation().t.twin;
+  const brand = getBrandTokens('twin');
 
   return (
     <div className="h-full w-full flex flex-col items-center justify-center px-6 py-12 overflow-y-auto">
       <div className="max-w-3xl w-full">
         {/* Eyebrow + title */}
         <div className="flex items-center justify-center gap-2 mb-2">
-          <Sparkles className="w-4 h-4 text-violet-400" />
-          <span className="typo-caption uppercase tracking-wider text-violet-400">{t.hero.eyebrow}</span>
+          <TwinGlyph className={`w-4 h-4 ${brand.icon}`} />
+          <span className={`typo-caption uppercase tracking-wider ${brand.icon}`}>{t.hero.eyebrow}</span>
         </div>
         <h1 className="typo-section-title text-center mb-2">{t.hero.title}</h1>
         <p className="typo-body text-foreground text-center mb-10">{t.hero.tagline}</p>
@@ -35,6 +38,11 @@ export function TwinHero({ onCreate }: { onCreate: () => void }) {
             <Plus className="w-4 h-4 mr-1.5" />
             {t.hero.primaryCta}
           </Button>
+          {onImport && (
+            <Button onClick={onImport} variant="secondary" icon={<FileUp className="w-4 h-4" />} data-testid="twin-hero-import">
+              {t.detail.import}
+            </Button>
+          )}
           <a
             href="https://personas.dev/guide/twin"
             target="_blank"

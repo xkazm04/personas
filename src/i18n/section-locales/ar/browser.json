@@ -193,7 +193,8 @@
       "nothing_selected": "حدّد جزءًا من كتابتك أو انسخه أولًا",
       "open_hub": "فتح المحور",
       "refused": "لم يتم التعلّم: {reason}",
-      "teach": "تعليم {name}"
+      "teach": "تعليم {name}",
+      "refused_unknown": "لم يتعلّم توأمك من تلك العيّنة"
     }
   }
 }

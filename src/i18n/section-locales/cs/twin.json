@@ -930,7 +930,14 @@
         "heroLabel": "Dosje dvojníka"
       },
       "drafting": {
-        "sheetTitle": "Plán dvojníka"
+        "sheetTitle": "Plán dvojníka",
+        "detailOf": "Detail: {section}",
+        "fullAt": "Maximum při {count}",
+        "moreChannels": "Další: +{count}",
+        "notes": "Poznámky",
+        "origin": "Původ",
+        "target": "Cíl",
+        "targetOf": "Cíl: {count} zn."
       },
       "radial": {
         "centerHint": "Vyberte výseč"
@@ -982,7 +989,8 @@
     "signatureUnsigned": "Nepodepsáno",
     "signatureValid": "Podepsáno",
     "unsignedNote": "Uloženo bez podpisu: není k dispozici identita zařízení.",
-    "unsupported": "Tato karta používá verzi {version}, kterou tato aplikace neumí číst."
+    "unsupported": "Tato karta používá verzi {version}, kterou tato aplikace neumí číst.",
+    "sealedPart": "Zapečetěno"
   },
   "detail": {
     "export": "Exportovat",
@@ -990,7 +998,13 @@
     "noTwin": "Zatím žádný dvojník",
     "proposals_many": "{count} ke kontrole",
     "proposals_one": "1 ke kontrole",
-    "tabLabel": "Detail"
+    "tabLabel": "Detail",
+    "criteria": "Co se považuje za pokryté",
+    "lastAnswers": "Poslední odpovědi",
+    "latestMemories": "Nejnovější schválené vzpomínky",
+    "lengthHint": "Délka",
+    "noDirectives": "Zatím nejsou napsány žádné pokyny",
+    "role": "Role"
   },
   "samples": {
     "analyzing": "Čtení vzorku",
@@ -1008,6 +1022,7 @@
     "kindLength": "Délka",
     "kindVoice": "Pravidlo hlasu",
     "laneTitle": "Naučeno ze vzorků",
-    "refused": "Nenaučeno: {reason}"
+    "refused": "Nenaučeno: {reason}",
+    "memoryOrigin": "Ze vzorku textu"
   }
 }

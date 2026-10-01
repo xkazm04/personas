@@ -930,7 +930,14 @@
         "heroLabel": "ツインの人物ファイル"
       },
       "drafting": {
-        "sheetTitle": "ツインの設計図"
+        "sheetTitle": "ツインの設計図",
+        "detailOf": "{section}の詳細",
+        "fullAt": "{count}で満杯",
+        "moreChannels": "ほか {count} 件",
+        "notes": "注記",
+        "origin": "由来",
+        "target": "目標",
+        "targetOf": "目標: {count} 文字"
       },
       "radial": {
         "centerHint": "セグメントを選択"
@@ -982,7 +989,8 @@
     "signatureUnsigned": "署名なし",
     "signatureValid": "署名済み",
     "unsignedNote": "デバイスIDがないため、署名なしで保存しました。",
-    "unsupported": "このカードはバージョン {version} で、このアプリでは読み取れません。"
+    "unsupported": "このカードはバージョン {version} で、このアプリでは読み取れません。",
+    "sealedPart": "暗号化済み"
   },
   "detail": {
     "export": "エクスポート",
@@ -990,7 +998,13 @@
     "noTwin": "ツインはまだありません",
     "proposals_many": "確認待ち {count} 件",
     "proposals_one": "確認待ち 1 件",
-    "tabLabel": "詳細"
+    "tabLabel": "詳細",
+    "criteria": "カバー済みとみなす基準",
+    "lastAnswers": "直近の回答",
+    "latestMemories": "最新の承認済み記憶",
+    "lengthHint": "長さ",
+    "noDirectives": "指示はまだ書かれていません",
+    "role": "役割"
   },
   "samples": {
     "analyzing": "サンプルを読み取り中",
@@ -1008,6 +1022,7 @@
     "kindLength": "長さ",
     "kindVoice": "口調ルール",
     "laneTitle": "サンプルからの学習",
-    "refused": "学習しませんでした: {reason}"
+    "refused": "学習しませんでした: {reason}",
+    "memoryOrigin": "文章サンプルから"
   }
 }

@@ -14,6 +14,8 @@ import type { TwinCommunication } from '@/lib/bindings/TwinCommunication';
 import type { TwinDistilledFact } from '@/lib/bindings/TwinDistilledFact';
 import type { TwinReflection } from '@/lib/bindings/TwinReflection';
 import type { TwinContact } from '@/lib/bindings/TwinContact';
+import type { TwinSample } from '@/lib/bindings/TwinSample';
+import type { TwinSampleProposal } from '@/lib/bindings/TwinSampleProposal';
 
 /** Every row kind the Hub can show. Drives glyph + colour role, never text. */
 export type HubEntryKind = 'memory' | 'message' | 'fact' | 'reflection' | 'audit';
@@ -109,6 +111,42 @@ export interface HubFeedApi {
   unbindKnowledgeBase: () => Promise<void>;
   /** Per-entry busy key, so one press never lights a sibling's spinner. */
   busyId: string | null;
+  /** Open proposals from writing samples, reviewed in the queue beside the pending memories. */
+  samples: HubSampleProposals;
+}
+
+/**
+ * The pending-memory channel a writing sample's self-facts are filed under.
+ * Those rows are reviewed in the queue like any memory; the channel chip names
+ * their origin instead of showing the bare token.
+ */
+export const SAMPLE_MEMORY_CHANNEL = 'sample';
+
+/** The channel chip's text: the token as-is, except a sample's facts, which say where they came from. */
+export function channelChipText(channel: string, sampleOrigin: string): string {
+  return channel === SAMPLE_MEMORY_CHANNEL ? sampleOrigin : channel;
+}
+
+/**
+ * One open proposal a writing sample produced, with the sample it came from
+ * (null when the sample row was not in the load) so the card can name its
+ * source. Spark twin-portable-blueprint.
+ */
+export interface HubSampleProposal {
+  proposal: TwinSampleProposal;
+  sample: TwinSample | null;
+}
+
+/** The queue lane's sample proposals: open only, newest first, resolved one at a time. */
+export interface HubSampleProposals {
+  items: HubSampleProposal[];
+  /** The proposal whose Keep / Dismiss is in flight. */
+  busyId: string | null;
+  /** Per-proposal inline error after a failed resolve, keyed by proposal id. */
+  errors: Record<string, string>;
+  /** Keep (`accept`, optionally with an edited value) or dismiss one proposal. */
+  resolve: (proposalId: string, verdict: 'accept' | 'dismiss', editedValue?: string | null) => Promise<void>;
+  refresh: () => Promise<void>;
 }
 
 /** What the desk and every lane under it render against. */

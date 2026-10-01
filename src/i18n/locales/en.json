@@ -22264,7 +22264,14 @@
       },
       "variantCopy": {
         "drafting": {
-          "sheetTitle": "Twin plan"
+          "sheetTitle": "Twin plan",
+          "target": "Target",
+          "targetOf": "Target: {count} characters",
+          "moreChannels": "+{count} more",
+          "origin": "Origin",
+          "fullAt": "Full at {count}",
+          "detailOf": "Detail of {section}",
+          "notes": "Notes"
         },
         "strata": {
           "plateHint": "Click a plate to lift it"
@@ -22283,7 +22290,13 @@
       "proposals_many": "{count} to review",
       "export": "Export",
       "import": "Import twin",
-      "noTwin": "No twin yet"
+      "noTwin": "No twin yet",
+      "role": "Role",
+      "lengthHint": "Length",
+      "noDirectives": "No directives written yet",
+      "latestMemories": "Latest approved memories",
+      "criteria": "What counts as covered",
+      "lastAnswers": "Last answers"
     },
     "card": {
       "exportTitle": "Export twin",
@@ -22320,7 +22333,8 @@
       "conflictSkip": "Skip",
       "importAction": "Import",
       "imported": "Imported {name}",
-      "hashMismatch": "The {part} part was changed after export"
+      "hashMismatch": "The {part} part was changed after export",
+      "sealedPart": "Sealed"
     },
     "samples": {
       "laneTitle": "Learned from samples",
@@ -22338,7 +22352,8 @@
       "dismiss": "Dismiss",
       "analyzing": "Reading the sample",
       "failed": "Could not read the sample",
-      "refused": "Not learned: {reason}"
+      "refused": "Not learned: {reason}",
+      "memoryOrigin": "From a writing sample"
     }
   },
   "radio": {
@@ -24456,7 +24471,8 @@
         "open_hub": "Open Hub",
         "nothing_selected": "Select or copy some of your own writing first",
         "failed": "Could not read the selection. Copy the text and press Learn again.",
-        "refused": "Not learned: {reason}"
+        "refused": "Not learned: {reason}",
+        "refused_unknown": "Your twin did not learn from that sample"
       }
     }
   },

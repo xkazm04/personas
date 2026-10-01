@@ -39,7 +39,7 @@ export function HubDesk({ feed }: HubDeskProps) {
 
   const tabs = HUB_LANES.map((id) => {
     const Icon = LANE_ICON[id];
-    const count = laneCount(id, feed.counts);
+    const count = laneCount(id, feed.counts, feed.samples.items.length);
     return {
       id,
       ariaLabel: t.lanes[id],

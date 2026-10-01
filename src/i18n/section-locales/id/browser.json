@@ -193,7 +193,8 @@
       "nothing_selected": "Pilih atau salin dulu sebagian tulisan Anda sendiri",
       "open_hub": "Buka Hub",
       "refused": "Tidak dipelajari: {reason}",
-      "teach": "Ajari {name}"
+      "teach": "Ajari {name}",
+      "refused_unknown": "Twin Anda tidak belajar apa pun dari sampel itu"
     }
   }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { FileUp, Plus } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { Button } from '@/features/shared/components/buttons';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
@@ -10,6 +10,7 @@ import { TWIN_SLOTS, type TwinSlotId } from '../shared/twinStatus';
 import { openTwinExperience } from '../experience';
 import { TwinCard } from './TwinCard';
 import { TwinHero } from './TwinHero';
+import { TwinCardImportDialog } from '../card/TwinCardImportDialog';
 
 /**
  * Profiles — the roster, and nothing else.
@@ -33,6 +34,8 @@ export default function ProfilesAtelier() {
   const setTwinTab = useSystemStore((s) => s.setTwinTab);
 
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+  const [importing, setImporting] = useState(false);
+  const importDialog = importing ? <TwinCardImportDialog onClose={() => setImporting(false)} /> : null;
 
   useEffect(() => {
     void fetchTwinProfiles();
@@ -60,7 +63,12 @@ export default function ProfilesAtelier() {
 
   // First run: no roster to show, so the explainer IS the page.
   if (!twinProfilesLoading && sorted.length === 0) {
-    return <TwinHero onCreate={() => openTwinExperience({ mode: 'create' })} />;
+    return (
+      <>
+        <TwinHero onCreate={() => openTwinExperience({ mode: 'create' })} onImport={() => setImporting(true)} />
+        {importDialog}
+      </>
+    );
   }
 
   return (
@@ -72,10 +80,16 @@ export default function ProfilesAtelier() {
           <h1 className="typo-heading-lg truncate">{twin.profiles.title}</h1>
           <p className="typo-caption">{twin.profiles.subtitle}</p>
         </div>
-        <Button onClick={() => openTwinExperience({ mode: 'create' })} variant="accent" tone="agent" className="shrink-0">
-          <Plus className="w-4 h-4 mr-1.5" />
-          {twin.profiles.newTwin}
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button onClick={() => setImporting(true)} variant="secondary" icon={<FileUp className="w-4 h-4" />}
+            data-testid="twin-profiles-import">
+            {twin.detail.import}
+          </Button>
+          <Button onClick={() => openTwinExperience({ mode: 'create' })} variant="accent" tone="agent">
+            <Plus className="w-4 h-4 mr-1.5" />
+            {twin.profiles.newTwin}
+          </Button>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -112,6 +126,7 @@ export default function ProfilesAtelier() {
           onCancel={() => setConfirmDelete(null)}
         />
       )}
+      {importDialog}
     </div>
   );
 }

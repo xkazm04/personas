@@ -193,7 +193,8 @@
       "nothing_selected": "Sélectionnez ou copiez d’abord un peu de votre propre texte",
       "open_hub": "Ouvrir le Hub",
       "refused": "Non appris : {reason}",
-      "teach": "Entraîner {name}"
+      "teach": "Entraîner {name}",
+      "refused_unknown": "Votre twin n’a rien appris de cet échantillon"
     }
   }
 }

@@ -4062,5 +4062,8 @@
   "id:twin.blueprint.variants.dossier",
   "id:twin.blueprint.variants.radial",
   "id:twin.detail.tabLabel",
-  "id:twin.card.formatLabel"
+  "id:twin.card.formatLabel",
+  "cs:twin.detail.role",
+  "fr:twin.blueprint.variantCopy.drafting.notes",
+  "id:twin.blueprint.variantCopy.drafting.target"
 ]

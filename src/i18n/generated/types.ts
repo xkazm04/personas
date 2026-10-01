@@ -22271,6 +22271,13 @@ export type Translations = {
       variantCopy: {
         drafting: {
           sheetTitle: string;
+          target: string;
+          targetOf: string;
+          moreChannels: string;
+          origin: string;
+          fullAt: string;
+          detailOf: string;
+          notes: string;
         };
         strata: {
           plateHint: string;
@@ -22290,6 +22297,12 @@ export type Translations = {
       export: string;
       import: string;
       noTwin: string;
+      role: string;
+      lengthHint: string;
+      noDirectives: string;
+      latestMemories: string;
+      criteria: string;
+      lastAnswers: string;
     };
     card: {
       exportTitle: string;
@@ -22327,6 +22340,7 @@ export type Translations = {
       importAction: string;
       imported: string;
       hashMismatch: string;
+      sealedPart: string;
     };
     samples: {
       laneTitle: string;
@@ -22345,6 +22359,7 @@ export type Translations = {
       analyzing: string;
       failed: string;
       refused: string;
+      memoryOrigin: string;
     };
   };
   radio: {
@@ -24463,6 +24478,7 @@ export type Translations = {
         nothing_selected: string;
         failed: string;
         refused: string;
+        refused_unknown: string;
       };
     };
   };

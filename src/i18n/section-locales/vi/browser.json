@@ -193,7 +193,8 @@
       "nothing_selected": "Hãy chọn hoặc sao chép một đoạn do chính bạn viết trước",
       "open_hub": "Mở Trung tâm",
       "refused": "Không học: {reason}",
-      "teach": "Dạy {name}"
+      "teach": "Dạy {name}",
+      "refused_unknown": "Twin của bạn không học được gì từ đoạn mẫu đó"
     }
   }
 }

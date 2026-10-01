@@ -930,7 +930,14 @@
         "heroLabel": "ملف التوأم التفصيلي"
       },
       "drafting": {
-        "sheetTitle": "مخطط التوأم"
+        "sheetTitle": "مخطط التوأم",
+        "detailOf": "تفاصيل {section}",
+        "fullAt": "ممتلئ عند {count}",
+        "moreChannels": "+{count} أخرى",
+        "notes": "ملاحظات",
+        "origin": "المصدر",
+        "target": "الهدف",
+        "targetOf": "الهدف: {count} حرف"
       },
       "radial": {
         "centerHint": "اختر قطاعًا"
@@ -982,7 +989,8 @@
     "signatureUnsigned": "غير موقّع",
     "signatureValid": "موقّع",
     "unsignedNote": "تم الحفظ بدون توقيع: لا تتوفر هوية للجهاز.",
-    "unsupported": "تستخدم هذه البطاقة الإصدار {version}، ولا يستطيع هذا التطبيق قراءته."
+    "unsupported": "تستخدم هذه البطاقة الإصدار {version}، ولا يستطيع هذا التطبيق قراءته.",
+    "sealedPart": "مختوم"
   },
   "detail": {
     "export": "تصدير",
@@ -990,7 +998,13 @@
     "noTwin": "لا يوجد توأم بعد",
     "proposals_many": "للمراجعة: {count}",
     "proposals_one": "للمراجعة: 1",
-    "tabLabel": "التفاصيل"
+    "tabLabel": "التفاصيل",
+    "criteria": "ما يُعدّ مغطّى",
+    "lastAnswers": "آخر الإجابات",
+    "latestMemories": "أحدث الذكريات المعتمدة",
+    "lengthHint": "الطول",
+    "noDirectives": "لم تُكتب أي توجيهات بعد",
+    "role": "الدور"
   },
   "samples": {
     "analyzing": "جارٍ قراءة العيّنة",
@@ -1008,6 +1022,7 @@
     "kindLength": "الطول",
     "kindVoice": "قاعدة الصوت",
     "laneTitle": "ما تعلّمه من العيّنات",
-    "refused": "لم يتم التعلّم: {reason}"
+    "refused": "لم يتم التعلّم: {reason}",
+    "memoryOrigin": "من عيّنة كتابة"
   }
 }

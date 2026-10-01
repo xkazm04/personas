@@ -13,11 +13,12 @@
  *  - dev-tools     → developer terminal console + prompt
  *  - obsidian-brain→ faceted obsidian crystal holding a neural network
  *  - drive         → stacked storage platters with an orbiting data ring
- *  - twin          → two mirrored android heads across a reflection seam
+ *  - twin          → two profiles facing each other across a gap (`TwinGlyph`)
  *  - companion     → a glowing companion orb with a halo + spark
  */
 import React from 'react';
 import type { PluginTab } from '@/lib/types/types';
+import { TWIN_GLYPH_PATHS } from './twin/TwinGlyph';
 
 function a(cls: string, active: boolean) { return active ? cls : ''; }
 
@@ -79,19 +80,30 @@ export function IconDrive({ active = false, className = '' }: IconProps) {
 }
 
 // -- Twin: two mirrored android heads across a reflection seam ------------
+// The paths are the brand glyph's own (`TwinGlyph`), drawn at FULL ink: the
+// previous mark stacked 0.2-0.6 opacities on a 1.3 stroke and read as a smudge
+// at sidebar size, which is the readability bug the redraw exists to fix.
 export function IconTwin({ active = false, className = '' }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      {/* Reflection seam */}
-      <line x1="12" y1="2.5" x2="12" y2="21.5" stroke="currentColor" strokeWidth="0.9" strokeDasharray="1.5 2" className={a('pi-pulse', active)} opacity={active ? 0.45 : 0.2} />
-      {/* Left head */}
-      <circle cx="9.5" cy="7.5" r="2.4" stroke="currentColor" strokeWidth="1.3" opacity={active ? 0.6 : 0.42} />
-      <path d="M4.7 19c0-3 2-5 4.8-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" opacity={active ? 0.6 : 0.42} />
-      <circle cx="9.5" cy="7.5" r="0.9" fill="currentColor" className={a('pi-pulse', active)} opacity={active ? undefined : 0.4} />
-      {/* Right head (mirror) */}
-      <circle cx="14.5" cy="7.5" r="2.4" stroke="currentColor" strokeWidth="1.3" opacity={active ? 0.6 : 0.42} />
-      <path d="M19.3 19c0-3-2-5-4.8-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" opacity={active ? 0.6 : 0.42} />
-      <circle cx="14.5" cy="7.5" r="0.9" fill="currentColor" className={a('pi-pulse-d', active)} opacity={active ? undefined : 0.4} />
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      {TWIN_GLYPH_PATHS.map((d) => <path key={d} d={d} />)}
+      {/* The gap is the conversation: while the plugin is open a voice tick
+          pulses between the two mouths, one face answering the other. CSS
+          loop only, so the global reduced-motion gate stills it. */}
+      {active && (
+        <>
+          <path d="M11.3 12.5v0.9" strokeWidth="1.1" className="pi-pulse" />
+          <path d="M12.7 12.5v0.9" strokeWidth="1.1" className="pi-pulse-d" />
+        </>
+      )}
     </svg>
   );
 }

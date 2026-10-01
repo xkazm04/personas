@@ -21,6 +21,7 @@ import { useMotionVariants } from '@/hooks/utility/interaction/useMotion';
 import { GENDERS, type Gender } from '../../shared/gender';
 import type { StyleStart } from '../../setup/style/styleContract';
 import { FORGE_ITEM, FORGE_STAGGER } from '../cardMotion';
+import { useTwinExperienceRequest } from '../launcher';
 import { ForgeStyleFan } from './ForgeStyleFan';
 import { useCreateTwin } from './useCreateTwin';
 
@@ -35,6 +36,9 @@ export function ForgePhase({ onClose, onCreated }: ForgePhaseProps) {
   const tx = t.twin.experience;
   const identity = t.twin.identity;
   const create = useCreateTwin();
+  // A forge opened from Browser > Learn carries the sample; the new twin learns from it once created.
+  const request = useTwinExperienceRequest();
+  const seedSample = request?.mode === 'create' ? request.seedSample ?? null : null;
 
   const [name, setName] = useState('');
   const [gender, setGender] = useState<Gender>('neutral');
@@ -50,7 +54,7 @@ export function ForgePhase({ onClose, onCreated }: ForgePhaseProps) {
     setLanguages((live) => (live.includes(code) ? live.filter((c) => c !== code) : [...live, code]));
 
   const submit = async () => {
-    const profile = await create({ name, gender, languages, style: styleStart });
+    const profile = await create({ name, gender, languages, style: styleStart, seedSample });
     if (profile) onCreated({ withStyle: Boolean(styleStart) });
   };
 

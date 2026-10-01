@@ -32,6 +32,7 @@ import type { TwinWikiStatus } from '@/lib/bindings/TwinWikiStatus';
 import type {
   HubCounts, HubEntry, HubFeedApi, HubRejectReason, HubReviewStatus, HubSources,
 } from './hubContract';
+import { useSampleProposals } from './useSampleProposals';
 
 /** Newest N communications. The river caps what it RENDERS separately. */
 const COMMUNICATION_LIMIT = 200;
@@ -148,6 +149,9 @@ export function useHubFeed(): HubFeed {
   const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBase[]>([]);
   // One latest-wins slot per hook instance: a refresh racing an older one drops the stale write.
   const [latestWins] = useState(createLatestWins);
+  // Sample proposals are their own source (they are not feed entries) and own
+  // their refetch on `twin-sample-updated`; the queue lane renders them.
+  const samples = useSampleProposals(twinId);
 
   const refresh = useCallback(async () => {
     if (!twinId) { setLoad({ snap: null, error: null, pending: 0 }); return; }
@@ -355,7 +359,7 @@ export function useHubFeed(): HubFeed {
     error: load.error,
     refresh, approve, reject, digDeeper, saveAsFact, deleteFact, deleteReflection, reflect,
     compileWiki, auditWiki, ingestDoctrine, bindKnowledgeBase, unbindKnowledgeBase,
-    busyId,
+    busyId, samples,
     twinId, twinName: activeTwin?.name ?? null,
     knowledgeBases, loadKnowledgeBases, createBoundKnowledgeBase,
   };

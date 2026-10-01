@@ -18,7 +18,7 @@
  * Sub-tab ids are namespaced (`<plugin>:<tab>`) because several plugins reuse
  * the same tab id (`setup`, `graph`, `knowledge`) and they now share one nav.
  */
-import { Puzzle, Brain, Wrench, HardDrive, Sparkles, Globe, type LucideIcon } from 'lucide-react';
+import { Puzzle, Brain, Wrench, HardDrive, Globe, type LucideIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
 import type { DevToolsTab, TwinTab, PluginTab, ObsidianBrainTab } from '@/lib/types/types';
@@ -29,6 +29,7 @@ import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useTranslation } from '@/i18n/useTranslation';
 import { debtText } from '@/i18n/DebtText';
 import { PLUGIN_ICONS } from '@/features/plugins/PluginIcons';
+import { TwinGlyph } from '@/features/plugins/twin/TwinGlyph';
 
 interface PluginMeta {
   id: PluginTab;
@@ -78,7 +79,7 @@ export function PluginsSidebarNav() {
     { id: 'dev-tools',       label: t.shared.sidebar_extra.dev_tools_label, icon: Wrench },
     { id: 'obsidian-brain',  label: t.shared.sidebar_extra.obsidian_brain,  icon: Brain },
     { id: 'drive',           label: 'Drive',                               icon: HardDrive },
-    { id: 'twin',            label: 'Twin',                                icon: Sparkles },
+    { id: 'twin',            label: 'Twin',                                icon: TwinGlyph },
     { id: 'scraper',         label: 'Scraper',                             icon: Globe,     devOnly: true },
   ], [t]);
 
@@ -218,6 +219,12 @@ export function PluginsSidebarNav() {
     };
   });
 
+  // Twin's `setup` tab is the Detail page now (spark twin-portable-blueprint).
+  // The id stays `setup` (no routing churn), so the label is overridden here by
+  // its namespaced row id rather than by changing the shared `setup` wording
+  // every other plugin's row still uses.
+  const labelOverrides = useMemo(() => ({ 'twin:setup': t.twin.detail.tabLabel }), [t]);
+
   const activeId = pluginTab === 'browse'
     ? 'browse'
     : activeSubTab(pluginTab)
@@ -237,6 +244,7 @@ export function PluginsSidebarNav() {
           }}
           groups={groups}
           activeId={activeId}
+          labelOverrides={labelOverrides}
           onSelect={() => {}}
         />
       </div>

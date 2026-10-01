@@ -10,10 +10,11 @@
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
 import { HUB_KIND_META } from '../HubEntryActions';
-import type { HubEntry } from '../hubContract';
+import { channelChipText, type HubEntry } from '../hubContract';
 
 export function QueueEntryHeader({ entry }: { entry: HubEntry }) {
-  const t = useTranslation().t.twin.hub;
+  const { t: tRoot } = useTranslation();
+  const t = tRoot.twin.hub;
   const meta = HUB_KIND_META[entry.kind];
   return (
     <header className="flex-shrink-0 px-4 md:px-8 pt-4 pb-3 border-b border-border flex items-center gap-2 flex-wrap">
@@ -23,7 +24,7 @@ export function QueueEntryHeader({ entry }: { entry: HubEntry }) {
       </span>
       {entry.channel && (
         <span className="px-2 py-0.5 rounded-full border border-border bg-secondary/40 typo-label text-foreground">
-          {entry.channel}
+          {channelChipText(entry.channel, tRoot.twin.samples.memoryOrigin)}
         </span>
       )}
       {entry.contactHandle && <span className="typo-caption text-foreground truncate">{entry.contactHandle}</span>}

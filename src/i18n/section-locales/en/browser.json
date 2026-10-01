@@ -193,7 +193,8 @@
       "open_hub": "Open Hub",
       "nothing_selected": "Select or copy some of your own writing first",
       "failed": "Could not read the selection. Copy the text and press Learn again.",
-      "refused": "Not learned: {reason}"
+      "refused": "Not learned: {reason}",
+      "refused_unknown": "Your twin did not learn from that sample"
     }
   }
 }

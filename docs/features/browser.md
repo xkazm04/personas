@@ -93,7 +93,9 @@ Two consequences are worth knowing:
   same pages, still where you left them.
 - Nothing can be drawn on top of the page, so this route opens no dialogs of
   its own. Everything that needs one — adding a site, editing policy — lives on
-  the Whitelist.
+  the Whitelist. The one exception is the twin forge that Learn's **New twin**
+  opens: while it is up the page steps aside, exactly as it does for the
+  address suggestions, and comes back when the forge closes.
 
 The address bar suggests as you type. The list is the Whitelist and nothing
 else — no history, no search — ranked by how well what you typed matches the
@@ -130,6 +132,31 @@ into the same box. Nothing is sent until you send it; the pick itself changes
 nothing on the page, and Cancel disarms it. The toolbar runs as you, through
 the same gate the address bar does: a paused site or a tab an agent holds
 refuses it.
+
+The toolbar's third icon, **Learn**, teaches your twin from your own writing.
+Highlight something you wrote on the page (a sent mail, a post, a comment) and
+press Learn. The twin reads the selection; when the page cannot be read (a
+strict mail client blocks the page channel, the site is not whitelisted) or
+nothing is selected, it reads what you last copied instead, once, because you
+pressed the icon. The clipboard is never watched. Samples are capped at 8,000
+characters. The line under the address bar then says how many words it has and
+from where ("120 words from mail.example.com" or "from the clipboard") and
+offers three choices:
+
+- **Teach <your twin>** (shown when a twin is active) stores the sample and
+  analyses it in the background. The line says "Learning in the background",
+  then "3 proposals waiting" with **Open Hub**, or why nothing was learned. The
+  twin refuses a sample that is one of its own placed drafts.
+- **New twin** opens the twin forge on top of the app with the sample attached;
+  once you name and create the twin, it learns from the sample right away.
+- **Cancel** drops the sample.
+
+Learning changes nothing by itself. The analysis files proposals (a writing
+sample for the channel, a voice rule, a do or don't, a length hint, a style
+setting) that wait in Twin > Hub's queue for Keep, Edit or Dismiss, and any
+facts about you it noticed join the queue as memories to review. If both the
+page and the clipboard come back empty the line says so; if the page could not
+be read, it asks you to copy the text and press Learn again.
 
 ## How agents reach it
 

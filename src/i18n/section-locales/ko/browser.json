@@ -193,7 +193,8 @@
       "nothing_selected": "먼저 직접 쓴 글을 선택하거나 복사하세요",
       "open_hub": "허브 열기",
       "refused": "학습하지 않음: {reason}",
-      "teach": "{name}에게 가르치기"
+      "teach": "{name}에게 가르치기",
+      "refused_unknown": "트윈이 해당 샘플에서 아무것도 학습하지 않았습니다"
     }
   }
 }

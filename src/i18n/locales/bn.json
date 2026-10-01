@@ -21487,7 +21487,14 @@
           "heroLabel": "টুইন ডসিয়ার"
         },
         "drafting": {
-          "sheetTitle": "টুইনের নকশা"
+          "sheetTitle": "টুইনের নকশা",
+          "detailOf": "{section}-এর বিবরণ",
+          "fullAt": "{count}-এ পূর্ণ",
+          "moreChannels": "আরও {count}টি",
+          "notes": "নোট",
+          "origin": "উৎস",
+          "target": "লক্ষ্যমাত্রা",
+          "targetOf": "লক্ষ্যমাত্রা: {count}টি অক্ষর"
         },
         "radial": {
           "centerHint": "একটি অংশ বেছে নিন"
@@ -21539,7 +21546,8 @@
       "signatureUnsigned": "স্বাক্ষরবিহীন",
       "signatureValid": "স্বাক্ষরিত",
       "unsignedNote": "স্বাক্ষর ছাড়াই সংরক্ষিত: কোনো ডিভাইস পরিচয় পাওয়া যায়নি।",
-      "unsupported": "এই কার্ডটি {version} সংস্করণ ব্যবহার করে, যা এই অ্যাপ পড়তে পারে না।"
+      "unsupported": "এই কার্ডটি {version} সংস্করণ ব্যবহার করে, যা এই অ্যাপ পড়তে পারে না।",
+      "sealedPart": "সিল করা"
     },
     "detail": {
       "export": "রফতানি করুন",
@@ -21547,7 +21555,13 @@
       "noTwin": "এখনো কোনো টুইন নেই",
       "proposals_many": "{count}টি পর্যালোচনা বাকি",
       "proposals_one": "১টি পর্যালোচনা বাকি",
-      "tabLabel": "বিস্তারিত"
+      "tabLabel": "বিস্তারিত",
+      "criteria": "যা কভার হয়েছে বলে গণ্য হয়",
+      "lastAnswers": "সর্বশেষ উত্তর",
+      "latestMemories": "সর্বশেষ অনুমোদিত স্মৃতি",
+      "lengthHint": "দৈর্ঘ্য",
+      "noDirectives": "এখনো কোনো নির্দেশনা লেখা হয়নি",
+      "role": "ভূমিকা"
     },
     "samples": {
       "analyzing": "নমুনা পড়া হচ্ছে",
@@ -21565,7 +21579,8 @@
       "kindLength": "দৈর্ঘ্য",
       "kindVoice": "ভয়েস নিয়ম",
       "laneTitle": "নমুনা থেকে শেখা",
-      "refused": "শেখা হয়নি: {reason}"
+      "refused": "শেখা হয়নি: {reason}",
+      "memoryOrigin": "লেখার নমুনা থেকে"
     }
   },
   "vault": {
@@ -23776,7 +23791,8 @@
         "nothing_selected": "আগে আপনার নিজের লেখার কিছু অংশ নির্বাচন বা কপি করুন",
         "open_hub": "হাব খুলুন",
         "refused": "শেখা হয়নি: {reason}",
-        "teach": "{name}-কে শেখান"
+        "teach": "{name}-কে শেখান",
+        "refused_unknown": "আপনার টুইন ওই নমুনা থেকে কিছু শেখেনি"
       }
     }
   },

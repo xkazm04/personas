@@ -21487,7 +21487,14 @@
           "heroLabel": "트윈 인물 파일"
         },
         "drafting": {
-          "sheetTitle": "트윈 설계도"
+          "sheetTitle": "트윈 설계도",
+          "detailOf": "{section} 상세",
+          "fullAt": "{count}에서 가득 참",
+          "moreChannels": "+{count}개 더",
+          "notes": "메모",
+          "origin": "출처",
+          "target": "목표",
+          "targetOf": "목표: {count}자"
         },
         "radial": {
           "centerHint": "구간을 선택하세요"
@@ -21539,7 +21546,8 @@
       "signatureUnsigned": "서명 없음",
       "signatureValid": "서명됨",
       "unsignedNote": "기기 ID가 없어 서명 없이 저장했습니다.",
-      "unsupported": "이 카드는 {version} 버전이라 이 앱에서 읽을 수 없습니다."
+      "unsupported": "이 카드는 {version} 버전이라 이 앱에서 읽을 수 없습니다.",
+      "sealedPart": "암호화됨"
     },
     "detail": {
       "export": "내보내기",
@@ -21547,7 +21555,13 @@
       "noTwin": "아직 트윈이 없습니다",
       "proposals_many": "{count}건 검토 필요",
       "proposals_one": "1건 검토 필요",
-      "tabLabel": "상세"
+      "tabLabel": "상세",
+      "criteria": "다룬 것으로 보는 기준",
+      "lastAnswers": "최근 답변",
+      "latestMemories": "최근 승인된 기억",
+      "lengthHint": "길이",
+      "noDirectives": "아직 작성된 지시가 없습니다",
+      "role": "역할"
     },
     "samples": {
       "analyzing": "샘플을 읽는 중",
@@ -21565,7 +21579,8 @@
       "kindLength": "길이",
       "kindVoice": "말투 규칙",
       "laneTitle": "샘플에서 학습한 내용",
-      "refused": "학습하지 않음: {reason}"
+      "refused": "학습하지 않음: {reason}",
+      "memoryOrigin": "글쓰기 샘플에서"
     }
   },
   "vault": {
@@ -23776,7 +23791,8 @@
         "nothing_selected": "먼저 직접 쓴 글을 선택하거나 복사하세요",
         "open_hub": "허브 열기",
         "refused": "학습하지 않음: {reason}",
-        "teach": "{name}에게 가르치기"
+        "teach": "{name}에게 가르치기",
+        "refused_unknown": "트윈이 해당 샘플에서 아무것도 학습하지 않았습니다"
       }
     }
   },

@@ -22,6 +22,7 @@ import { HUB_KIND_META, HubRejectChips } from '../HubEntryActions';
 import { HUB_REJECT_REASONS, type HubDeskProps } from '../hubContract';
 import { queueEntries } from './laneModel';
 import { QueueEntryHeader, QueueGhost } from './QueueFrame';
+import { SampleProposalList } from './SampleProposalList';
 
 export function QueueLane({ feed }: HubDeskProps) {
   const { t: tRoot, tx } = useTranslation();
@@ -35,6 +36,7 @@ export function QueueLane({ feed }: HubDeskProps) {
   const at = Math.min(index, Math.max(0, queue.length - 1));
   const current = queue[at] ?? null;
   const busy = !!current && feed.busyId === current.id;
+  const proposals = feed.samples.items.length;
 
   const file = useCallback((dir: number, fn: () => Promise<void>) => {
     setExitDir(dir);
@@ -99,16 +101,21 @@ export function QueueLane({ feed }: HubDeskProps) {
 
       {/* ── Frame ──────────────────────────────────────────────────── */}
       <section className="flex flex-col min-h-0">
-        {feed.loading && queue.length === 0 ? (
+        {/* Sample proposals sit above the framed memory (spark twin-portable-blueprint). */}
+        <SampleProposalList samples={feed.samples} fill={!current} />
+        {feed.loading && queue.length === 0 && proposals === 0 ? (
           <QueueGhost />
         ) : !current ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-2 px-6 text-center">
-            <Inbox className="w-9 h-9 text-status-success" />
-            <p className="typo-body-lg text-foreground">{t.desk.emptyTitle}</p>
-            <p className="typo-caption text-foreground max-w-sm">
-              {feed.counts.approved + feed.counts.rejected > 0 ? t.desk.emptyReviewed : t.desk.emptyNothingCaptured}
-            </p>
-          </div>
+          // Nothing framed: the proposals band (when there is one) IS the work.
+          proposals > 0 ? null : (
+            <div className="flex-1 flex flex-col items-center justify-center gap-2 px-6 text-center">
+              <Inbox className="w-9 h-9 text-status-success" />
+              <p className="typo-body-lg text-foreground">{t.desk.emptyTitle}</p>
+              <p className="typo-caption text-foreground max-w-sm">
+                {feed.counts.approved + feed.counts.rejected > 0 ? t.desk.emptyReviewed : t.desk.emptyNothingCaptured}
+              </p>
+            </div>
+          )
         ) : (
           <AnimatePresence mode="wait" initial={false}>
             <motion.article

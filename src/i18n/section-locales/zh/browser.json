@@ -193,7 +193,8 @@
       "nothing_selected": "请先选中或复制一段自己写的文字",
       "open_hub": "打开中心",
       "refused": "未学习：{reason}",
-      "teach": "教导{name}"
+      "teach": "教导{name}",
+      "refused_unknown": "您的分身没有从该样本中学到任何内容"
     }
   }
 }

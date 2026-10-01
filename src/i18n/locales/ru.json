@@ -21487,7 +21487,14 @@
           "heroLabel": "Досье двойника"
         },
         "drafting": {
-          "sheetTitle": "План двойника"
+          "sheetTitle": "План двойника",
+          "detailOf": "Деталь: {section}",
+          "fullAt": "Максимум при {count}",
+          "moreChannels": "+{count} ещё",
+          "notes": "Примечания",
+          "origin": "Источник",
+          "target": "Цель",
+          "targetOf": "Цель: {count} симв."
         },
         "radial": {
           "centerHint": "Выберите сегмент"
@@ -21539,7 +21546,8 @@
       "signatureUnsigned": "Без подписи",
       "signatureValid": "Подписано",
       "unsignedNote": "Сохранено без подписи: удостоверение устройства недоступно.",
-      "unsupported": "Эта карта использует версию {version}, которую приложение не может прочитать."
+      "unsupported": "Эта карта использует версию {version}, которую приложение не может прочитать.",
+      "sealedPart": "Запечатано"
     },
     "detail": {
       "export": "Экспорт",
@@ -21547,7 +21555,13 @@
       "noTwin": "Двойника пока нет",
       "proposals_many": "На проверку: {count}",
       "proposals_one": "1 на проверку",
-      "tabLabel": "Детали"
+      "tabLabel": "Детали",
+      "criteria": "Что считается охваченным",
+      "lastAnswers": "Последние ответы",
+      "latestMemories": "Последние одобренные воспоминания",
+      "lengthHint": "Длина",
+      "noDirectives": "Инструкции пока не написаны",
+      "role": "Роль"
     },
     "samples": {
       "analyzing": "Чтение образца",
@@ -21565,7 +21579,8 @@
       "kindLength": "Длина",
       "kindVoice": "Правило голоса",
       "laneTitle": "Усвоено из образцов",
-      "refused": "Не усвоено: {reason}"
+      "refused": "Не усвоено: {reason}",
+      "memoryOrigin": "Из образца текста"
     }
   },
   "vault": {
@@ -23776,7 +23791,8 @@
         "nothing_selected": "Сначала выделите или скопируйте что-нибудь из своих текстов",
         "open_hub": "Открыть хаб",
         "refused": "Не усвоено: {reason}",
-        "teach": "Обучить {name}"
+        "teach": "Обучить {name}",
+        "refused_unknown": "Ваш двойник ничему не научился из этого образца"
       }
     }
   },

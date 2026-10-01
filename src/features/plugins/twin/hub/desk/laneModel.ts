@@ -65,11 +65,13 @@ export function knowledgeEntries(entries: HubEntry[]): HubEntry[] {
  * underlying number is read ONCE, in `useHubFeed`, and never recounted here.
  * Replies has no badge: its rows come from the channels slice, so any number
  * this function could invent would be a claim about data it has not seen.
+ * `openProposals` is the queue's other work (sample proposals, spark
+ * twin-portable-blueprint), read once in `useSampleProposals`.
  */
-export function laneCount(lane: HubLaneId, counts: HubCounts): number | null {
+export function laneCount(lane: HubLaneId, counts: HubCounts, openProposals = 0): number | null {
   switch (lane) {
     case 'queue':
-      return counts.pending;
+      return counts.pending + openProposals;
     case 'history':
       return counts.approved + counts.rejected + counts.messages;
     case 'knowledge':

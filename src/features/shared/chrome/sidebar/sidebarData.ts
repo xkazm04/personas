@@ -5,6 +5,7 @@ import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
 import type { SubNavItem } from '@/features/shared/chrome/sidebar/SidebarSubNav';
 import { type Tier, TIERS, isTierVisible } from '@/lib/constants/uiModes';
 import { SIDEBAR_SECTIONS } from '@/lib/navigation/registry';
+import { TwinGlyph } from '@/features/plugins/twin/TwinGlyph';
 
 export interface SectionDef {
   id: SidebarSection;
@@ -158,7 +159,8 @@ export const devToolsItems: SubNavItem[] = [
 // compiler, so clicking it set an unhandled tab and rendered a blank page.
 // TTS voice selection is Companion → Voice.
 export const twinItems: SubNavItem[] = [
-  { id: 'profiles', label: 'Profiles', icon: Sparkles },
+  // The roster row wears the twin brand glyph (spark twin-portable-blueprint).
+  { id: 'profiles', label: 'Profiles', icon: TwinGlyph },
   { id: 'setup', label: 'Setup', icon: Wand2 },
   { id: 'hub', label: 'Hub', icon: Brain },
 ];

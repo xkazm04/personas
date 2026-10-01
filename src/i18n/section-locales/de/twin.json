@@ -930,7 +930,14 @@
         "heroLabel": "Twin-Dossier"
       },
       "drafting": {
-        "sheetTitle": "Twin-Plan"
+        "sheetTitle": "Twin-Plan",
+        "detailOf": "Detail zu {section}",
+        "fullAt": "Voll bei {count}",
+        "moreChannels": "+{count} weitere",
+        "notes": "Notizen",
+        "origin": "Herkunft",
+        "target": "Ziel",
+        "targetOf": "Ziel: {count} Zeichen"
       },
       "radial": {
         "centerHint": "Segment wählen"
@@ -982,7 +989,8 @@
     "signatureUnsigned": "Nicht signiert",
     "signatureValid": "Signiert",
     "unsignedNote": "Ohne Signatur gespeichert: Es ist keine Geräteidentität verfügbar.",
-    "unsupported": "Diese Karte verwendet Version {version}, die diese App nicht lesen kann."
+    "unsupported": "Diese Karte verwendet Version {version}, die diese App nicht lesen kann.",
+    "sealedPart": "Versiegelt"
   },
   "detail": {
     "export": "Exportieren",
@@ -990,7 +998,13 @@
     "noTwin": "Noch kein Twin",
     "proposals_many": "{count} zu prüfen",
     "proposals_one": "1 zu prüfen",
-    "tabLabel": "Details"
+    "tabLabel": "Details",
+    "criteria": "Was als abgedeckt gilt",
+    "lastAnswers": "Letzte Antworten",
+    "latestMemories": "Neueste genehmigte Erinnerungen",
+    "lengthHint": "Länge",
+    "noDirectives": "Noch keine Anweisungen verfasst",
+    "role": "Rolle"
   },
   "samples": {
     "analyzing": "Textprobe wird gelesen",
@@ -1008,6 +1022,7 @@
     "kindLength": "Länge",
     "kindVoice": "Stimmregel",
     "laneTitle": "Aus Textproben gelernt",
-    "refused": "Nicht gelernt: {reason}"
+    "refused": "Nicht gelernt: {reason}",
+    "memoryOrigin": "Aus einer Textprobe"
   }
 }

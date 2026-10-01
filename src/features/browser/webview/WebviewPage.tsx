@@ -11,7 +11,10 @@
  *      test pins that split.
  *   2. No modal opens from here. A `BaseModal` on this route would render
  *      behind the page. Whitelist writes live on the Whitelist route, which
- *      has no page host.
+ *      has no page host. The ONE exception is the Twin experience overlay that
+ *      Learn > "New twin" summons (the forge, seeded with the sample): while
+ *      it is up the host steps aside through `suspendHost`, the refcount the
+ *      address-bar popup already uses, so nothing renders behind the page.
  *
  * See `docs/features/browser.md`.
  */
@@ -35,6 +38,10 @@ import {
   subscribeBrowser,
 } from '../browserStore';
 import * as twinLane from '../twinDraftLane';
+import * as learnLane from '../twinLearnLane';
+import { TwinExperienceHost } from '@/features/plugins/twin/experience/TwinExperienceHost';
+import { useTwinExperienceRequest } from '@/features/plugins/twin/experience/launcher';
+import { arriveAtPlugin } from '@/features/plugins/pluginArrival';
 import { resumeHost, suspendHost } from './hostVisibility';
 import AddressBar from './AddressBar';
 import LeaseBadge from './LeaseBadge';
@@ -58,9 +65,34 @@ export default function WebviewPage() {
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const fetchTwinProfiles = useSystemStore((s) => s.fetchTwinProfiles);
   const lane = useSyncExternalStore(twinLane.subscribeTwinDraft, twinLane.twinDraftSnapshot);
+  const learn = useSyncExternalStore(learnLane.subscribeTwinLearn, learnLane.twinLearnSnapshot);
+  // Teach needs a twin that EXISTS: an active id whose row is gone (deleted
+  // elsewhere, roster not loaded yet) must not be taught, so it hides Teach the
+  // same way no active twin does; New twin stays available either way.
+  const activeTwin = useSystemStore((s) => s.twinProfiles.find((p) => p.id === s.activeTwinId));
+  const activeTwinName = activeTwinId !== null && activeTwin !== undefined ? activeTwin.name : null;
   useEffect(() => {
     if (twinEnabled) void fetchTwinProfiles();
   }, [twinEnabled, fetchTwinProfiles]);
+
+  // Learn > "New twin" opens the forge as an overlay ON this route; the host
+  // window would paint over it, so it steps aside for as long as it is up.
+  const experienceOpen = useTwinExperienceRequest() !== null;
+  useEffect(() => {
+    if (!experienceOpen) return;
+    suspendHost();
+    return () => resumeHost();
+  }, [experienceOpen]);
+
+  const learnTwin = useCallback(() => void learnLane.capture(tab?.id ?? null), [tab]);
+  const teachTwin = useCallback(async () => {
+    if (activeTwinId) await learnLane.teach(activeTwinId);
+  }, [activeTwinId]);
+  const openTwinHub = useCallback(() => {
+    learnLane.dismissLearn();
+    // Through the one gated arrival door: a Twin plugin switched off refuses.
+    if (arriveAtPlugin('twin')) useSystemStore.getState().setTwinTab('hub');
+  }, []);
 
   const armTwin = useCallback(() => {
     if (!tab || !activeTwinId) return;
@@ -226,6 +258,8 @@ export default function WebviewPage() {
                   onArm={armTwin}
                   onCancel={cancelTwin}
                   onSubmit={twinLane.requestSubmit}
+                  learnPhase={learn.phase}
+                  onLearn={learnTwin}
                 />
               ) : null}
               <div className="shrink-0 flex items-center gap-2">
@@ -253,6 +287,12 @@ export default function WebviewPage() {
               lane={lane}
               onConfirmSubmit={confirmTwinSubmit}
               onDismissSubmit={twinLane.dismissSubmit}
+              learn={learn}
+              activeTwinName={activeTwinName}
+              onTeach={teachTwin}
+              onNewTwin={learnLane.newTwin}
+              onDismissLearn={learnLane.dismissLearn}
+              onOpenHub={openTwinHub}
             />
             <TwinSteerRow
               lane={lane}
@@ -276,6 +316,7 @@ export default function WebviewPage() {
         ) : null}
         <PageSlot hasTab={state.tabs.length > 0} />
       </div>
+      {twinEnabled ? <TwinExperienceHost /> : null}
     </ContentBox>
   );
 }

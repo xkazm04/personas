@@ -8,15 +8,24 @@
  *    FIRST twin, and training somebody else's twin is the worst landing;
  * 3. `setPendingStyleStart` — a starting voice is RECORDED, never run here:
  *    running it needs the twin to exist, and its drafts belong in the stage's
- *    voice layer, which takes the record exactly once.
+ *    voice layer, which takes the record exactly once;
+ * 4. `learnFromSample` — when the forge was opened from Browser > Learn > "New
+ *    twin" with a writing sample, the new twin learns from it right away. The
+ *    sample is recorded with source kind `forge` (where it was first captured
+ *    rides in `sourceHost`), fire-and-forget: the analysis runs in the
+ *    background and its proposals wait in the Hub, so a failure here is
+ *    telemetry, never a reason to fail the create.
  */
 
 import { useCallback } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
+import { learnFromSample } from '@/api/twin/twinSample';
+import { silentCatch } from '@/lib/silentCatch';
 import type { TwinProfile } from '@/lib/bindings/TwinProfile';
 import { pronounsFromGender, type Gender } from '../../shared/gender';
 import { setPendingStyleStart } from '../../setup/style/pendingStyleStart';
 import type { StyleStart } from '../../setup/style/styleContract';
+import type { ExperienceSeedSample } from '../launcher';
 
 export interface MirrorDraft {
   name: string;
@@ -24,6 +33,8 @@ export interface MirrorDraft {
   /** Language codes, primary first. Empty leaves the backend default. */
   languages: string[];
   style: StyleStart | null;
+  /** A writing sample to learn from once the twin exists (Browser > Learn > New twin). */
+  seedSample?: ExperienceSeedSample | null;
 }
 
 export function useCreateTwin(): (draft: MirrorDraft) => Promise<TwinProfile | null> {
@@ -31,7 +42,7 @@ export function useCreateTwin(): (draft: MirrorDraft) => Promise<TwinProfile | n
   const setActiveTwin = useSystemStore((s) => s.setActiveTwin);
 
   return useCallback(
-    async ({ name, gender, languages, style }: MirrorDraft) => {
+    async ({ name, gender, languages, style, seedSample }: MirrorDraft) => {
       const trimmed = name.trim();
       if (!trimmed) return null;
       const profile = await createTwinProfile(
@@ -44,6 +55,11 @@ export function useCreateTwin(): (draft: MirrorDraft) => Promise<TwinProfile | n
       );
       await setActiveTwin(profile.id);
       if (style) setPendingStyleStart(profile.id, style);
+      if (seedSample?.text.trim()) {
+        learnFromSample(profile.id, seedSample.text, 'forge', seedSample.sourceHost).catch(
+          silentCatch('twin forge learn from seed sample'),
+        );
+      }
       return profile;
     },
     [createTwinProfile, setActiveTwin],

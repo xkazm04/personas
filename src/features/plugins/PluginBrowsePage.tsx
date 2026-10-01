@@ -1,4 +1,4 @@
-import { Wrench, Brain, HardDrive, Sparkles, type LucideIcon } from 'lucide-react';
+import { Wrench, Brain, HardDrive, type LucideIcon } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import type { PluginTab } from '@/lib/types/types';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -6,6 +6,7 @@ import { Puzzle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getBrandTokens } from '@/lib/connectors/brandTokens';
 import { PLUGIN_ICONS } from './PluginIcons';
+import { TwinGlyph } from './twin/TwinGlyph';
 
 interface PluginDef {
   id: PluginTab;
@@ -29,7 +30,7 @@ export default function PluginBrowsePage() {
     { id: 'dev-tools', label: t.plugins.dev_tools_label, description: t.plugins.dev_tools_desc, icon: Wrench },
     { id: 'obsidian-brain', label: t.plugins.obsidian_brain_label, description: t.plugins.obsidian_brain_desc, icon: Brain },
     { id: 'drive', label: t.plugins.drive_label, description: t.plugins.drive_desc, icon: HardDrive },
-    { id: 'twin', label: t.plugins.twin_label, description: t.plugins.twin_desc, icon: Sparkles },
+    { id: 'twin', label: t.plugins.twin_label, description: t.plugins.twin_desc, icon: TwinGlyph },
   ] satisfies PluginDef[]).slice().sort((a, b) => a.label.localeCompare(b.label));
   const enabledPlugins = useSystemStore((s) => s.enabledPlugins);
   const togglePlugin = useSystemStore((s) => s.togglePlugin);

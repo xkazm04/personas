@@ -193,7 +193,8 @@
       "nothing_selected": "Nejprve vyberte nebo zkopírujte část svého vlastního textu",
       "open_hub": "Otevřít centrum",
       "refused": "Nenaučeno: {reason}",
-      "teach": "Učit dvojníka {name}"
+      "teach": "Učit dvojníka {name}",
+      "refused_unknown": "Váš dvojník se z tohoto vzorku nic nenaučil"
     }
   }
 }

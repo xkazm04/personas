@@ -13,7 +13,7 @@ import { RevealItem, type RevealItemProps } from '@/features/shared/components/d
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { HUB_KIND_META, HUB_STATUS_META, HubEntryActions } from './HubEntryActions';
-import type { HubEntry, HubFeedApi } from './hubContract';
+import { channelChipText, type HubEntry, type HubFeedApi } from './hubContract';
 
 /** The per-id entrance guard from `useRevealTracker`, passed through verbatim. */
 export type HubRevealTracker = Pick<RevealItemProps, 'hasEntered' | 'markEntered'>;
@@ -54,7 +54,7 @@ export function HubEntryRow({ entry, feed, order, enter }: {
           )}
           {entry.channel && (
             <span className="px-1.5 rounded-full border border-border bg-secondary/40 typo-label text-foreground">
-              {entry.channel}
+              {channelChipText(entry.channel, tRoot.twin.samples.memoryOrigin)}
             </span>
           )}
           <RelativeTime timestamp={entry.at} className="typo-caption text-foreground tabular-nums" />

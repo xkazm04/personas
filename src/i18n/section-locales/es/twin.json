@@ -930,7 +930,14 @@
         "heroLabel": "Dosier del gemelo"
       },
       "drafting": {
-        "sheetTitle": "Plano del gemelo"
+        "sheetTitle": "Plano del gemelo",
+        "detailOf": "Detalle de {section}",
+        "fullAt": "Lleno en {count}",
+        "moreChannels": "+{count} más",
+        "notes": "Notas",
+        "origin": "Origen",
+        "target": "Objetivo",
+        "targetOf": "Objetivo: {count} caracteres"
       },
       "radial": {
         "centerHint": "Elija un segmento"
@@ -982,7 +989,8 @@
     "signatureUnsigned": "Sin firmar",
     "signatureValid": "Firmado",
     "unsignedNote": "Guardado sin firma: no hay ninguna identidad de dispositivo disponible.",
-    "unsupported": "Esta tarjeta usa la versión {version}, que esta aplicación no puede leer."
+    "unsupported": "Esta tarjeta usa la versión {version}, que esta aplicación no puede leer.",
+    "sealedPart": "Sellado"
   },
   "detail": {
     "export": "Exportar",
@@ -990,7 +998,13 @@
     "noTwin": "Aún no hay gemelo",
     "proposals_many": "{count} por revisar",
     "proposals_one": "1 por revisar",
-    "tabLabel": "Detalle"
+    "tabLabel": "Detalle",
+    "criteria": "Qué se considera cubierto",
+    "lastAnswers": "Últimas respuestas",
+    "latestMemories": "Últimos recuerdos aprobados",
+    "lengthHint": "Longitud",
+    "noDirectives": "Aún no se han escrito directrices",
+    "role": "Rol"
   },
   "samples": {
     "analyzing": "Leyendo la muestra",
@@ -1008,6 +1022,7 @@
     "kindLength": "Longitud",
     "kindVoice": "Regla de voz",
     "laneTitle": "Aprendido de muestras",
-    "refused": "No aprendido: {reason}"
+    "refused": "No aprendido: {reason}",
+    "memoryOrigin": "De una muestra de escritura"
   }
 }

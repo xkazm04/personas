@@ -21487,7 +21487,14 @@
           "heroLabel": "Dossier du twin"
         },
         "drafting": {
-          "sheetTitle": "Plan du twin"
+          "sheetTitle": "Plan du twin",
+          "detailOf": "Détail : {section}",
+          "fullAt": "Plein à {count}",
+          "moreChannels": "+{count} autres",
+          "notes": "Notes",
+          "origin": "Origine",
+          "target": "Cible",
+          "targetOf": "Cible : {count} caractères"
         },
         "radial": {
           "centerHint": "Choisissez un segment"
@@ -21539,7 +21546,8 @@
       "signatureUnsigned": "Non signé",
       "signatureValid": "Signé",
       "unsignedNote": "Enregistré sans signature : aucune identité d’appareil n’est disponible.",
-      "unsupported": "Cette carte utilise la version {version}, que cette application ne peut pas lire."
+      "unsupported": "Cette carte utilise la version {version}, que cette application ne peut pas lire.",
+      "sealedPart": "Scellé"
     },
     "detail": {
       "export": "Exporter",
@@ -21547,7 +21555,13 @@
       "noTwin": "Pas encore de twin",
       "proposals_many": "{count} à examiner",
       "proposals_one": "1 à examiner",
-      "tabLabel": "Détail"
+      "tabLabel": "Détail",
+      "criteria": "Ce qui compte comme couvert",
+      "lastAnswers": "Dernières réponses",
+      "latestMemories": "Derniers souvenirs approuvés",
+      "lengthHint": "Longueur",
+      "noDirectives": "Aucune consigne rédigée pour l’instant",
+      "role": "Rôle"
     },
     "samples": {
       "analyzing": "Lecture de l’échantillon",
@@ -21565,7 +21579,8 @@
       "kindLength": "Longueur",
       "kindVoice": "Règle de voix",
       "laneTitle": "Appris des échantillons",
-      "refused": "Non appris : {reason}"
+      "refused": "Non appris : {reason}",
+      "memoryOrigin": "D’un échantillon d’écriture"
     }
   },
   "vault": {
@@ -23776,7 +23791,8 @@
         "nothing_selected": "Sélectionnez ou copiez d’abord un peu de votre propre texte",
         "open_hub": "Ouvrir le Hub",
         "refused": "Non appris : {reason}",
-        "teach": "Entraîner {name}"
+        "teach": "Entraîner {name}",
+        "refused_unknown": "Votre twin n’a rien appris de cet échantillon"
       }
     }
   },

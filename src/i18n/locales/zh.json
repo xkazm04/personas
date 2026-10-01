@@ -21487,7 +21487,14 @@
           "heroLabel": "分身卷宗"
         },
         "drafting": {
-          "sheetTitle": "分身设计图"
+          "sheetTitle": "分身设计图",
+          "detailOf": "{section}详情",
+          "fullAt": "{count} 时已满",
+          "moreChannels": "还有 {count} 个",
+          "notes": "备注",
+          "origin": "来源",
+          "target": "目标",
+          "targetOf": "目标：{count} 个字符"
         },
         "radial": {
           "centerHint": "选择一个扇区"
@@ -21539,7 +21546,8 @@
       "signatureUnsigned": "未签名",
       "signatureValid": "已签名",
       "unsignedNote": "没有可用的设备身份，已在未签名的情况下保存。",
-      "unsupported": "此卡片使用版本 {version}，本应用无法读取。"
+      "unsupported": "此卡片使用版本 {version}，本应用无法读取。",
+      "sealedPart": "已加密"
     },
     "detail": {
       "export": "导出",
@@ -21547,7 +21555,13 @@
       "noTwin": "暂无分身",
       "proposals_many": "{count} 项待确认",
       "proposals_one": "1 项待确认",
-      "tabLabel": "详情"
+      "tabLabel": "详情",
+      "criteria": "什么算作已覆盖",
+      "lastAnswers": "最近的回答",
+      "latestMemories": "最新已批准的记忆",
+      "lengthHint": "长度",
+      "noDirectives": "尚未编写任何指令",
+      "role": "角色"
     },
     "samples": {
       "analyzing": "正在读取样本",
@@ -21565,7 +21579,8 @@
       "kindLength": "长度",
       "kindVoice": "语气规则",
       "laneTitle": "从样本中学习",
-      "refused": "未学习：{reason}"
+      "refused": "未学习：{reason}",
+      "memoryOrigin": "来自写作样本"
     }
   },
   "vault": {
@@ -23776,7 +23791,8 @@
         "nothing_selected": "请先选中或复制一段自己写的文字",
         "open_hub": "打开中心",
         "refused": "未学习：{reason}",
-        "teach": "教导{name}"
+        "teach": "教导{name}",
+        "refused_unknown": "您的分身没有从该样本中学到任何内容"
       }
     }
   },

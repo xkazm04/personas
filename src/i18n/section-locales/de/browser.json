@@ -193,7 +193,8 @@
       "nothing_selected": "Wählen oder kopieren Sie zuerst etwas von Ihren eigenen Texten",
       "open_hub": "Hub öffnen",
       "refused": "Nicht gelernt: {reason}",
-      "teach": "{name} anlernen"
+      "teach": "{name} anlernen",
+      "refused_unknown": "Ihr Twin hat aus dieser Textprobe nichts gelernt"
     }
   }
 }

@@ -930,7 +930,14 @@
         "heroLabel": "Dossier twin"
       },
       "drafting": {
-        "sheetTitle": "Rancangan twin"
+        "sheetTitle": "Rancangan twin",
+        "detailOf": "Detail {section}",
+        "fullAt": "Penuh pada {count}",
+        "moreChannels": "+{count} lagi",
+        "notes": "Catatan",
+        "origin": "Asal",
+        "target": "Target",
+        "targetOf": "Target: {count} karakter"
       },
       "radial": {
         "centerHint": "Pilih satu segmen"
@@ -982,7 +989,8 @@
     "signatureUnsigned": "Tidak ditandatangani",
     "signatureValid": "Ditandatangani",
     "unsignedNote": "Disimpan tanpa tanda tangan: identitas perangkat tidak tersedia.",
-    "unsupported": "Kartu ini menggunakan versi {version}, yang tidak dapat dibaca aplikasi ini."
+    "unsupported": "Kartu ini menggunakan versi {version}, yang tidak dapat dibaca aplikasi ini.",
+    "sealedPart": "Disegel"
   },
   "detail": {
     "export": "Ekspor",
@@ -990,7 +998,13 @@
     "noTwin": "Belum ada twin",
     "proposals_many": "{count} perlu ditinjau",
     "proposals_one": "1 perlu ditinjau",
-    "tabLabel": "Detail"
+    "tabLabel": "Detail",
+    "criteria": "Apa yang dianggap tercakup",
+    "lastAnswers": "Jawaban terakhir",
+    "latestMemories": "Memori disetujui terbaru",
+    "lengthHint": "Panjang",
+    "noDirectives": "Belum ada arahan yang ditulis",
+    "role": "Peran"
   },
   "samples": {
     "analyzing": "Membaca sampel",
@@ -1008,6 +1022,7 @@
     "kindLength": "Panjang",
     "kindVoice": "Aturan suara",
     "laneTitle": "Dipelajari dari sampel",
-    "refused": "Tidak dipelajari: {reason}"
+    "refused": "Tidak dipelajari: {reason}",
+    "memoryOrigin": "Dari sampel tulisan"
   }
 }

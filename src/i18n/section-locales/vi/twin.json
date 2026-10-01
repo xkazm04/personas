@@ -930,7 +930,14 @@
         "heroLabel": "Dossier của twin"
       },
       "drafting": {
-        "sheetTitle": "Bản vẽ twin"
+        "sheetTitle": "Bản vẽ twin",
+        "detailOf": "Chi tiết {section}",
+        "fullAt": "Đầy tại {count}",
+        "moreChannels": "+{count} nữa",
+        "notes": "Ghi chú",
+        "origin": "Nguồn gốc",
+        "target": "Mục tiêu",
+        "targetOf": "Mục tiêu: {count} ký tự"
       },
       "radial": {
         "centerHint": "Chọn một phần"
@@ -982,7 +989,8 @@
     "signatureUnsigned": "Chưa ký",
     "signatureValid": "Đã ký",
     "unsignedNote": "Đã lưu không có chữ ký: không có danh tính thiết bị khả dụng.",
-    "unsupported": "Thẻ này dùng phiên bản {version}, ứng dụng này không đọc được."
+    "unsupported": "Thẻ này dùng phiên bản {version}, ứng dụng này không đọc được.",
+    "sealedPart": "Đã niêm phong"
   },
   "detail": {
     "export": "Xuất",
@@ -990,7 +998,13 @@
     "noTwin": "Chưa có twin",
     "proposals_many": "{count} cần đánh giá",
     "proposals_one": "1 cần đánh giá",
-    "tabLabel": "Chi tiết"
+    "tabLabel": "Chi tiết",
+    "criteria": "Những gì được tính là đã phủ",
+    "lastAnswers": "Các câu trả lời gần nhất",
+    "latestMemories": "Ký ức đã duyệt gần nhất",
+    "lengthHint": "Độ dài",
+    "noDirectives": "Chưa có chỉ dẫn nào được viết",
+    "role": "Vai trò"
   },
   "samples": {
     "analyzing": "Đang đọc đoạn mẫu",
@@ -1008,6 +1022,7 @@
     "kindLength": "Độ dài",
     "kindVoice": "Quy tắc giọng nói",
     "laneTitle": "Học từ đoạn mẫu",
-    "refused": "Không học: {reason}"
+    "refused": "Không học: {reason}",
+    "memoryOrigin": "Từ đoạn viết mẫu"
   }
 }

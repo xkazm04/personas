@@ -193,7 +193,8 @@
       "nothing_selected": "Primero seleccione o copie algún texto escrito por usted",
       "open_hub": "Abrir Hub",
       "refused": "No aprendido: {reason}",
-      "teach": "Enseñar a {name}"
+      "teach": "Enseñar a {name}",
+      "refused_unknown": "Su gemelo no aprendió de esa muestra"
     }
   }
 }
