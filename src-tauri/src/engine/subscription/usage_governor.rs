@@ -21,18 +21,20 @@
 //! leaving the last sliver of the quota for whatever is already running and
 //! for the operator's own session.
 //!
-//! # Why it does not switch accounts instead
+//! # How it composes with account rotation
 //!
 //! [`crate::commands::fleet::claude_accounts::rotate`] can switch to a cooler
-//! stored login, and its machinery is sound — it stashes the live credential,
-//! refreshes the target's OAuth token under the CLI lock, and rewrites what
-//! the CLI reads. But on this install `claude_accounts` holds **zero rows**
-//! and `claude_accounts.auto_rotate` is unset, so there is nothing to rotate
-//! to and the setting lookup logs an unknown key on every subscription tick.
-//! Rotation is therefore not a path this governor can rely on; when a second
-//! login is captured, the two compose (rotate first, stop only if every stored
-//! account is spent). Until then the stop is the whole mechanism and the
-//! switch is the operator's.
+//! stored login. The governor does not own that decision, it defers to it:
+//! when [`verdict`] is about to block because the live login crossed the stop
+//! and auto-rotate is enabled, it first asks
+//! [`rotate::try_rotate_now`](crate::commands::fleet::claude_accounts::rotate::try_rotate_now)
+//! to switch (same cooldown, same eligibility), then re-reads the gauge for the
+//! NEW live login. It blocks only when no rotation happened, so the loop stops
+//! only when every stored plan is spent. With zero stored rows, or auto-rotate
+//! off (its default), nothing is attempted and the stop is the whole mechanism
+//! as before. The rotation attempt runs only on the blocking path, never on a
+//! passing tick, so the hot path stays a cached read. The fleet-worker start
+//! line ([`fleet_worker_verdict`]) deliberately does not rotate.
 //!
 //! # Failing open, deliberately
 //!
@@ -46,6 +48,7 @@
 use std::sync::{Mutex, OnceLock};
 use std::time::Instant;
 
+use crate::commands::fleet::claude_accounts::rotate;
 use crate::commands::fleet::claude_usage::{cached_snapshot, ClaudeUsageSnapshot};
 use crate::db::repos::core::settings;
 use crate::db::DbPool;
@@ -204,10 +207,40 @@ fn project(key: &str, pct: f64, stop_pct: f64, now: Instant) -> Option<i64> {
 }
 
 /// Read the live gauge and decide whether the loop may dispatch this tick.
+///
+/// When the live login is over the stop, rotation gets the first word: see the
+/// module doc. The gauge is re-read after a switch (the switch clears the usage
+/// cache), so the verdict describes the login that will actually run.
 pub(crate) async fn verdict(pool: &DbPool) -> UsageVerdict {
     let stop = stop_pct(pool);
-    let snap = cached_snapshot().await;
-    verdict_from(&snap, stop, Instant::now())
+    resolve(
+        stop,
+        || async { cached_snapshot().await },
+        || async {
+            matches!(
+                rotate::try_rotate_now(pool).await,
+                rotate::RotateOutcome::Rotated(_)
+            )
+        },
+    )
+    .await
+}
+
+/// Verdict with a rotate-before-block step. `read` yields the live gauge,
+/// `rotate` returns true when it switched the live login. Injected so the
+/// composition is testable without the network or the CLI's credential files.
+async fn resolve<R, RF, S, SF>(stop: f64, read: R, rotate: S) -> UsageVerdict
+where
+    R: Fn() -> RF,
+    RF: std::future::Future<Output = ClaudeUsageSnapshot>,
+    S: FnOnce() -> SF,
+    SF: std::future::Future<Output = bool>,
+{
+    let first = verdict_from(&read().await, stop, Instant::now());
+    if !first.blocked || !rotate().await {
+        return first;
+    }
+    verdict_from(&read().await, stop, Instant::now())
 }
 
 /// Read the live gauge and decide whether a headless FLEET WORKER may be
@@ -429,5 +462,61 @@ mod tests {
         let f = project(&fast, 90.0, 97.0, t0 + Duration::from_secs(600)).unwrap();
         let s = project(&slow, 60.0, 97.0, t0 + Duration::from_secs(600)).unwrap();
         assert!(f < s, "the faster window stops the loop first ({f} vs {s})");
+    }
+
+    #[tokio::test]
+    async fn rotates_before_stopping_and_re_reads_the_new_login() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+        let switched = AtomicBool::new(false);
+        let v = resolve(
+            97.0,
+            || async {
+                if switched.load(Ordering::SeqCst) {
+                    snap(vec![("five_hour", 10.0, None), ("seven_day", 20.0, None)])
+                } else {
+                    snap(vec![("five_hour", 98.0, None)])
+                }
+            },
+            || async {
+                switched.store(true, Ordering::SeqCst);
+                true
+            },
+        )
+        .await;
+        assert!(!v.blocked, "the new login has headroom");
+        assert_eq!(v.worst_pct, 20.0);
+    }
+
+    #[tokio::test]
+    async fn blocks_when_no_target_can_take_over() {
+        let v = resolve(
+            97.0,
+            || async { snap(vec![("five_hour", 98.0, None)]) },
+            || async { false },
+        )
+        .await;
+        assert!(v.blocked);
+    }
+
+    #[tokio::test]
+    async fn a_passing_tick_never_asks_rotation() {
+        let v = resolve(
+            97.0,
+            || async { snap(vec![("five_hour", 50.0, None)]) },
+            || async { panic!("rotation must not run on a passing tick") },
+        )
+        .await;
+        assert!(!v.blocked);
+    }
+
+    /// The real wiring with the default (disabled) policy: blocked stays
+    /// blocked because `try_rotate_now` skips without touching anything.
+    #[tokio::test]
+    async fn disabled_policy_is_a_skip_not_a_switch() {
+        let pool = crate::db::init_test_db().expect("test db");
+        assert_eq!(
+            rotate::try_rotate_now(&pool).await,
+            rotate::RotateOutcome::Skipped(rotate::RotateSkip::Disabled)
+        );
     }
 }
