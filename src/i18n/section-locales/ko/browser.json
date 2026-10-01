@@ -174,6 +174,26 @@
     "steer_label": "빠른 조정",
     "submit": "제출",
     "submit_form": "양식 제출",
-    "untitled_box": "이 입력란"
+    "untitled_box": "이 입력란",
+    "learn": {
+      "cancel": "취소",
+      "capturing": "선택 영역을 읽는 중",
+      "choose_clipboard_many": "클립보드에서 {count}단어",
+      "choose_clipboard_one": "클립보드에서 1단어",
+      "choose_selection_many": "{host}에서 {count}단어",
+      "choose_selection_one": "{host}에서 1단어",
+      "done_many": "대기 중인 제안 {count}건",
+      "done_none": "이 샘플에서 새로 배울 내용이 없습니다",
+      "done_one": "대기 중인 제안 1건",
+      "failed": "선택 영역을 읽지 못했습니다. 텍스트를 복사한 뒤 \"학습\"을 다시 누르세요.",
+      "learn": "선택 영역에서 학습",
+      "learn_no_twin": "먼저 트윈 → 프로필에서 트윈을 선택하세요",
+      "learning": "백그라운드에서 학습 중",
+      "new_twin": "새 트윈",
+      "nothing_selected": "먼저 직접 쓴 글을 선택하거나 복사하세요",
+      "open_hub": "허브 열기",
+      "refused": "학습하지 않음: {reason}",
+      "teach": "{name}에게 가르치기"
+    }
   }
 }

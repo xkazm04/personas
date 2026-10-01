@@ -844,5 +844,170 @@
       "unpin": "ألغِ تثبيت هذا الهدف",
       "upNext": "التالي"
     }
+  },
+  "blueprint": {
+    "delta": {
+      "dealing": "السؤال التالي",
+      "gain": "التغطية +{gain}",
+      "recorded": "تم تسجيل الإجابة",
+      "scoring": "جارٍ تقييم إجابتك",
+      "why": "سبب احتسابها"
+    },
+    "kinds": {
+      "fact": "حقيقة",
+      "opinion": "رأي",
+      "preference": "تفضيل",
+      "reply_drill": "تدريب على الرد",
+      "rule": "قاعدة",
+      "scene": "مشهد"
+    },
+    "metrics": {
+      "answers": "الإجابات",
+      "approved": "معتمدة",
+      "awaiting": "بانتظار المراجعة",
+      "bio": "السيرة",
+      "channels": "القنوات",
+      "coverage": "التغطية",
+      "directives": "التوجيهات",
+      "facts": "الحقائق",
+      "goals": "الأهداف",
+      "kbBound": "مرتبطة",
+      "kbUnbound": "غير مرتبطة",
+      "kinds": "أنواع الأسئلة",
+      "knowledgeBase": "قاعدة المعرفة",
+      "languages": "اللغات",
+      "lastTrained": "آخر تدريب",
+      "memories": "الذكريات",
+      "neverTrained": "لم يُدرَّب بعد",
+      "noLanguages": "لم تُحدَّد لغات",
+      "noStyle": "لا أسلوب محفوظ",
+      "observations": "الملاحظات",
+      "originLearned": "تعلّمه من كتابتك",
+      "originManual": "كُتب يدويًا",
+      "originPreset": "من إعداد مسبق",
+      "originRolled": "اختير عشوائيًا",
+      "readiness": "الجاهزية",
+      "rejected": "مرفوضة",
+      "rules": "القواعد",
+      "samples": "العيّنات",
+      "samplesOpen": "للمراجعة",
+      "style": "الأسلوب",
+      "topics": "المواضيع"
+    },
+    "nav": {
+      "back": "العودة إلى النظرة العامة",
+      "editInSetup": "تعديل في الإعداد",
+      "openDetail": "التفاصيل الكاملة",
+      "zoomInto": "فتح {section}"
+    },
+    "sectionHints": {
+      "identity": "من هو التوأم",
+      "knowledge": "ما يعرفه عنك",
+      "training": "ما غطّاه التدريب",
+      "voice": "كيف يكتب على كل قناة"
+    },
+    "sections": {
+      "identity": "الهوية",
+      "knowledge": "المعرفة",
+      "training": "التدريب",
+      "voice": "الصوت"
+    },
+    "states": {
+      "emptyKnowledge": "لم يتعلّم شيئًا بعد",
+      "emptyTraining": "لا تدريب بعد",
+      "emptyVoice": "لا صوت لأي قناة بعد",
+      "notDrawn": "لم يُرسم بعد",
+      "notMeasured": "غير مقاس",
+      "working": "جارٍ قراءة إجاباتك"
+    },
+    "tiers": {
+      "covered": "مغطّى",
+      "some": "جزئي",
+      "thin": "ضئيل"
+    },
+    "variantCopy": {
+      "dossier": {
+        "heroLabel": "ملف التوأم التفصيلي"
+      },
+      "drafting": {
+        "sheetTitle": "مخطط التوأم"
+      },
+      "radial": {
+        "centerHint": "اختر قطاعًا"
+      },
+      "strata": {
+        "plateHint": "انقر على طبقة لرفعها"
+      }
+    },
+    "variants": {
+      "dossier": "ملف تفصيلي",
+      "drafting": "ورقة الرسم",
+      "label": "نمط المخطط",
+      "radial": "شعاعي",
+      "strata": "الطبقات"
+    }
+  },
+  "card": {
+    "conflictDuplicate": "استيراد كنسخة",
+    "conflictReplace": "استبداله",
+    "conflictSkip": "تخطّي",
+    "conflictTitle": "يوجد توأم باسم «{name}» بالفعل",
+    "exportAction": "تصدير",
+    "exportTitle": "تصدير التوأم",
+    "exported": "تم التصدير إلى {path}",
+    "formatCcv3": "Character Card V3",
+    "formatLabel": "الصيغة",
+    "formatTwinCard": "Twin Card",
+    "hashMismatch": "تم تغيير جزء «{part}» بعد التصدير",
+    "importAction": "استيراد",
+    "importPick": "اختر ملف Twin Card",
+    "importTitle": "استيراد توأم",
+    "imported": "تم استيراد {name}",
+    "inspecting": "جارٍ قراءة البطاقة",
+    "invalid": "هذا الملف ليس ملف Twin Card صالحًا.",
+    "partEvidence": "الأدلة",
+    "partEvidenceHint": "أعداد وتغطية يمكن لأداة أخرى استخدامها لتقييم التوأم",
+    "partKnowledge": "المعرفة الذاتية",
+    "partKnowledgeHint": "الذكريات المعتمدة والحقائق عنك",
+    "partTraining": "سجل التدريب",
+    "partTrainingHint": "إجاباتك وأهدافك وتغطيتك، ليتمكّن التدريب من المتابعة في مكان آخر",
+    "partVoice": "الصوت والهوية",
+    "partVoiceHint": "مضمّن دائمًا: كيف يكتب على كل قناة",
+    "partitionsLabel": "ما يتم تضمينه",
+    "passphrase": "عبارة المرور",
+    "passphraseHint": "8 أحرف على الأقل. بدونها لا يمكن فتح الأجزاء المختومة.",
+    "sealLabel": "ختم الأجزاء الشخصية بعبارة مرور",
+    "sealedNeedsPass": "بعض الأجزاء مختومة. أدخل عبارة المرور لاستيرادها.",
+    "signatureInvalid": "التوقيع غير مطابق",
+    "signatureUnsigned": "غير موقّع",
+    "signatureValid": "موقّع",
+    "unsignedNote": "تم الحفظ بدون توقيع: لا تتوفر هوية للجهاز.",
+    "unsupported": "تستخدم هذه البطاقة الإصدار {version}، ولا يستطيع هذا التطبيق قراءته."
+  },
+  "detail": {
+    "export": "تصدير",
+    "import": "استيراد توأم",
+    "noTwin": "لا يوجد توأم بعد",
+    "proposals_many": "للمراجعة: {count}",
+    "proposals_one": "للمراجعة: 1",
+    "tabLabel": "التفاصيل"
+  },
+  "samples": {
+    "analyzing": "جارٍ قراءة العيّنة",
+    "dismiss": "تجاهل",
+    "edit": "تعديل",
+    "failed": "تعذّرت قراءة العيّنة",
+    "forChannel": "لقناة {channel}",
+    "fromClipboard": "من عيّنة منسوخة",
+    "fromForge": "من العيّنة التي أُنشئ بها التوأم",
+    "fromHost": "من عيّنة على {host}",
+    "keep": "إبقاء",
+    "kindConstraint": "افعل أو لا تفعل",
+    "kindDims": "الأسلوب",
+    "kindExemplar": "عيّنة كتابة",
+    "kindLength": "الطول",
+    "kindVoice": "قاعدة الصوت",
+    "laneTitle": "ما تعلّمه من العيّنات",
+    "refused": "لم يتم التعلّم: {reason}"
   }
 }

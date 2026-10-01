@@ -174,6 +174,8 @@ fn row_to_goal(row: &rusqlite::Row) -> rusqlite::Result<SetupGoal> {
         coverage: raw.coverage,
         position: raw.position,
         answered: raw.answered,
+        // WP1 (spark twin-portable-blueprint) selects `last_why`.
+        last_why: None,
     })
 }
 
@@ -220,6 +222,8 @@ fn row_to_step(row: &rusqlite::Row) -> rusqlite::Result<SetupStep> {
         asked_at: raw.asked_at,
         answered_at: raw.answered_at,
         reconciled: raw.reconciled,
+        // WP1 (spark twin-portable-blueprint) selects `coverage_gain`.
+        coverage_gain: None,
     })
 }
 

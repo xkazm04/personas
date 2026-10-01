@@ -21401,6 +21401,171 @@
         "unpin": "Bỏ ghim mục tiêu này",
         "upNext": "Sắp tới"
       }
+    },
+    "blueprint": {
+      "delta": {
+        "dealing": "Câu hỏi tiếp theo",
+        "gain": "Độ phủ +{gain}",
+        "recorded": "Đã ghi nhận câu trả lời",
+        "scoring": "Đang chấm điểm câu trả lời của bạn",
+        "why": "Vì sao được tính"
+      },
+      "kinds": {
+        "fact": "Sự thật",
+        "opinion": "Quan điểm",
+        "preference": "Sở thích",
+        "reply_drill": "Luyện trả lời",
+        "rule": "Quy tắc",
+        "scene": "Tình huống"
+      },
+      "metrics": {
+        "answers": "Câu trả lời",
+        "approved": "Đã duyệt",
+        "awaiting": "Chờ đánh giá",
+        "bio": "Tiểu sử",
+        "channels": "Kênh",
+        "coverage": "Độ phủ",
+        "directives": "Chỉ dẫn",
+        "facts": "Sự thật",
+        "goals": "Mục tiêu",
+        "kbBound": "Đã liên kết",
+        "kbUnbound": "Chưa liên kết",
+        "kinds": "Loại câu hỏi",
+        "knowledgeBase": "Cơ sở tri thức",
+        "languages": "Ngôn ngữ",
+        "lastTrained": "Huấn luyện gần nhất",
+        "memories": "Ký ức",
+        "neverTrained": "Chưa được huấn luyện",
+        "noLanguages": "Chưa đặt ngôn ngữ nào",
+        "noStyle": "Chưa lưu phong cách nào",
+        "observations": "Quan sát",
+        "originLearned": "Học từ bài viết của bạn",
+        "originManual": "Viết thủ công",
+        "originPreset": "Từ thiết lập sẵn",
+        "originRolled": "Tạo ngẫu nhiên",
+        "readiness": "Sẵn sàng",
+        "rejected": "Đã từ chối",
+        "rules": "Quy tắc",
+        "samples": "Đoạn mẫu",
+        "samplesOpen": "Cần đánh giá",
+        "style": "Phong cách",
+        "topics": "Chủ đề"
+      },
+      "nav": {
+        "back": "Quay lại tổng quan",
+        "editInSetup": "Sửa trong Thiết lập",
+        "openDetail": "Chi tiết đầy đủ",
+        "zoomInto": "Mở {section}"
+      },
+      "sectionHints": {
+        "identity": "Twin là ai",
+        "knowledge": "Những gì nó biết về bạn",
+        "training": "Những gì huấn luyện đã bao quát",
+        "voice": "Cách nó viết trên từng kênh"
+      },
+      "sections": {
+        "identity": "Danh tính",
+        "knowledge": "Tri thức",
+        "training": "Huấn luyện",
+        "voice": "Giọng nói"
+      },
+      "states": {
+        "emptyKnowledge": "Chưa học được gì",
+        "emptyTraining": "Chưa có huấn luyện nào",
+        "emptyVoice": "Chưa kênh nào có giọng nói",
+        "notDrawn": "Chưa được vẽ",
+        "notMeasured": "Chưa đo",
+        "working": "Đang đọc câu trả lời của bạn"
+      },
+      "tiers": {
+        "covered": "Đã phủ",
+        "some": "Một phần",
+        "thin": "Mỏng"
+      },
+      "variantCopy": {
+        "dossier": {
+          "heroLabel": "Dossier của twin"
+        },
+        "drafting": {
+          "sheetTitle": "Bản vẽ twin"
+        },
+        "radial": {
+          "centerHint": "Chọn một phần"
+        },
+        "strata": {
+          "plateHint": "Nhấp vào một lớp để nhấc nó lên"
+        }
+      },
+      "variants": {
+        "dossier": "Hồ sơ tổng hợp",
+        "drafting": "Bản vẽ kỹ thuật",
+        "label": "Kiểu bản thiết kế",
+        "radial": "Hướng tâm",
+        "strata": "Địa tầng"
+      }
+    },
+    "card": {
+      "conflictDuplicate": "Nhập dưới dạng bản sao",
+      "conflictReplace": "Thay thế bản hiện có",
+      "conflictSkip": "Bỏ qua",
+      "conflictTitle": "Đã có một twin tên {name}",
+      "exportAction": "Xuất",
+      "exportTitle": "Xuất twin",
+      "exported": "Đã xuất tới {path}",
+      "formatCcv3": "Character Card V3",
+      "formatLabel": "Định dạng",
+      "formatTwinCard": "Twin Card",
+      "hashMismatch": "Phần {part} đã bị thay đổi sau khi xuất",
+      "importAction": "Nhập",
+      "importPick": "Chọn tệp Twin Card",
+      "importTitle": "Nhập twin",
+      "imported": "Đã nhập {name}",
+      "inspecting": "Đang đọc thẻ",
+      "invalid": "Tệp này không phải Twin Card hợp lệ.",
+      "partEvidence": "Bằng chứng",
+      "partEvidenceHint": "Số liệu và độ phủ mà công cụ khác có thể dùng để đánh giá twin",
+      "partKnowledge": "Tri thức về bản thân",
+      "partKnowledgeHint": "Ký ức đã duyệt và sự thật về bạn",
+      "partTraining": "Bản ghi huấn luyện",
+      "partTrainingHint": "Câu trả lời, mục tiêu và độ phủ của bạn, để có thể tiếp tục huấn luyện ở nơi khác",
+      "partVoice": "Giọng nói và danh tính",
+      "partVoiceHint": "Luôn được đưa vào: cách nó viết trên từng kênh",
+      "partitionsLabel": "Nội dung đưa vào",
+      "passphrase": "Cụm mật khẩu",
+      "passphraseHint": "Tối thiểu 8 ký tự. Không có nó, các phần đã niêm phong sẽ không thể mở được.",
+      "sealLabel": "Niêm phong các phần cá nhân bằng cụm mật khẩu",
+      "sealedNeedsPass": "Một số phần đã được niêm phong. Hãy điền cụm mật khẩu để nhập các phần đó.",
+      "signatureInvalid": "Chữ ký không khớp",
+      "signatureUnsigned": "Chưa ký",
+      "signatureValid": "Đã ký",
+      "unsignedNote": "Đã lưu không có chữ ký: không có danh tính thiết bị khả dụng.",
+      "unsupported": "Thẻ này dùng phiên bản {version}, ứng dụng này không đọc được."
+    },
+    "detail": {
+      "export": "Xuất",
+      "import": "Nhập twin",
+      "noTwin": "Chưa có twin",
+      "proposals_many": "{count} cần đánh giá",
+      "proposals_one": "1 cần đánh giá",
+      "tabLabel": "Chi tiết"
+    },
+    "samples": {
+      "analyzing": "Đang đọc đoạn mẫu",
+      "dismiss": "Bỏ qua",
+      "edit": "Chỉnh sửa",
+      "failed": "Không thể đọc đoạn mẫu",
+      "forChannel": "Cho {channel}",
+      "fromClipboard": "Từ đoạn mẫu đã sao chép",
+      "fromForge": "Từ đoạn mẫu dùng khi tạo twin",
+      "fromHost": "Từ một đoạn mẫu trên {host}",
+      "keep": "Giữ",
+      "kindConstraint": "Nên và không nên",
+      "kindDims": "Phong cách",
+      "kindExemplar": "Đoạn viết mẫu",
+      "kindLength": "Độ dài",
+      "kindVoice": "Quy tắc giọng nói",
+      "laneTitle": "Học từ đoạn mẫu",
+      "refused": "Không học: {reason}"
     }
   },
   "vault": {
@@ -23592,7 +23757,27 @@
       "steer_label": "Chỉnh nhanh",
       "submit": "Gửi",
       "submit_form": "Gửi biểu mẫu",
-      "untitled_box": "ô này"
+      "untitled_box": "ô này",
+      "learn": {
+        "cancel": "Hủy",
+        "capturing": "Đang đọc phần bạn đã chọn",
+        "choose_clipboard_many": "{count} từ trong bộ nhớ tạm",
+        "choose_clipboard_one": "1 từ trong bộ nhớ tạm",
+        "choose_selection_many": "{count} từ trên {host}",
+        "choose_selection_one": "1 từ trên {host}",
+        "done_many": "{count} đề xuất đang chờ",
+        "done_none": "Không có gì mới để học từ đoạn mẫu đó",
+        "done_one": "1 đề xuất đang chờ",
+        "failed": "Không thể đọc phần đã chọn. Hãy sao chép văn bản rồi nhấn \"Học\" lần nữa.",
+        "learn": "Học từ phần đã chọn",
+        "learn_no_twin": "Trước tiên hãy chọn một twin trong Twin, Hồ sơ",
+        "learning": "Đang học trong nền",
+        "new_twin": "Twin mới",
+        "nothing_selected": "Hãy chọn hoặc sao chép một đoạn do chính bạn viết trước",
+        "open_hub": "Mở Trung tâm",
+        "refused": "Không học: {reason}",
+        "teach": "Dạy {name}"
+      }
     }
   },
   "council": {

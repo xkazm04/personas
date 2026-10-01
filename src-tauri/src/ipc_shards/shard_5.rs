@@ -237,6 +237,8 @@ pub(super) fn shard(
         commands::browser::webview::browser_webview_pick_cancel,
         commands::browser::webview::browser_webview_fill,
         commands::browser::webview::browser_webview_submit,
+        // Twin Learn (spark twin-portable-blueprint): read the tab's selection
+        commands::browser::webview::browser_webview_capture_selection,
         commands::infrastructure::dev_tools::notepad_link_milestone,
         commands::infrastructure::dev_tools::notepad_promote_note,
         commands::infrastructure::dev_tools::notepad_list_plan_summaries,

@@ -70,6 +70,10 @@ pub mod system_ops;
 pub mod task_executor;
 pub mod tier_usage;
 pub mod twin;
+/// Twin Card v1.0: export / inspect / import a portable twin (spark twin-portable-blueprint).
+pub mod twin_card;
+/// Twin learn-from-sample: captured writing samples and their proposals (spark twin-portable-blueprint).
+pub mod twin_sample;
 /// The twin setup plan: a durable, planned guided setup (spark twin-setup-plan).
 pub mod twin_setup;
 pub mod twin_style;

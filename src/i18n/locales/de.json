@@ -21401,6 +21401,171 @@
         "unpin": "Dieses Ziel loslösen",
         "upNext": "Als Nächstes"
       }
+    },
+    "blueprint": {
+      "delta": {
+        "dealing": "Nächste Frage",
+        "gain": "Abdeckung +{gain}",
+        "recorded": "Antwort erfasst",
+        "scoring": "Ihre Antwort wird bewertet",
+        "why": "Warum es zählte"
+      },
+      "kinds": {
+        "fact": "Fakt",
+        "opinion": "Meinung",
+        "preference": "Vorliebe",
+        "reply_drill": "Antwortübung",
+        "rule": "Regel",
+        "scene": "Szene"
+      },
+      "metrics": {
+        "answers": "Antworten",
+        "approved": "Genehmigt",
+        "awaiting": "Wartet auf Prüfung",
+        "bio": "Biografie",
+        "channels": "Kanäle",
+        "coverage": "Abdeckung",
+        "directives": "Anweisungen",
+        "facts": "Fakten",
+        "goals": "Ziele",
+        "kbBound": "Verknüpft",
+        "kbUnbound": "Nicht verknüpft",
+        "kinds": "Fragearten",
+        "knowledgeBase": "Wissensdatenbank",
+        "languages": "Sprachen",
+        "lastTrained": "Zuletzt trainiert",
+        "memories": "Erinnerungen",
+        "neverTrained": "Noch nicht trainiert",
+        "noLanguages": "Keine Sprachen festgelegt",
+        "noStyle": "Kein Stil gespeichert",
+        "observations": "Beobachtungen",
+        "originLearned": "Aus Ihren Texten gelernt",
+        "originManual": "Von Hand geschrieben",
+        "originPreset": "Aus einer Voreinstellung",
+        "originRolled": "Gewürfelt",
+        "readiness": "Bereitschaft",
+        "rejected": "Abgelehnt",
+        "rules": "Regeln",
+        "samples": "Textproben",
+        "samplesOpen": "Zu prüfen",
+        "style": "Stil",
+        "topics": "Themen"
+      },
+      "nav": {
+        "back": "Zurück zur Übersicht",
+        "editInSetup": "In der Einrichtung bearbeiten",
+        "openDetail": "Alle Details",
+        "zoomInto": "{section} öffnen"
+      },
+      "sectionHints": {
+        "identity": "Wer der Twin ist",
+        "knowledge": "Was er über Sie weiß",
+        "training": "Was das Training abgedeckt hat",
+        "voice": "Wie er auf jedem Kanal schreibt"
+      },
+      "sections": {
+        "identity": "Identität",
+        "knowledge": "Wissen",
+        "training": "Training",
+        "voice": "Stimme"
+      },
+      "states": {
+        "emptyKnowledge": "Noch nichts gelernt",
+        "emptyTraining": "Noch kein Training",
+        "emptyVoice": "Noch kein Kanal hat eine Stimme",
+        "notDrawn": "Noch nicht gezeichnet",
+        "notMeasured": "Nicht gemessen",
+        "working": "Ihre Antworten werden gelesen"
+      },
+      "tiers": {
+        "covered": "Abgedeckt",
+        "some": "Teilweise",
+        "thin": "Dünn"
+      },
+      "variantCopy": {
+        "dossier": {
+          "heroLabel": "Twin-Dossier"
+        },
+        "drafting": {
+          "sheetTitle": "Twin-Plan"
+        },
+        "radial": {
+          "centerHint": "Segment wählen"
+        },
+        "strata": {
+          "plateHint": "Auf eine Schicht klicken, um sie anzuheben"
+        }
+      },
+      "variants": {
+        "dossier": "Dossier",
+        "drafting": "Zeichenblatt",
+        "label": "Blueprint-Stil",
+        "radial": "Radial",
+        "strata": "Schichten"
+      }
+    },
+    "card": {
+      "conflictDuplicate": "Als Kopie importieren",
+      "conflictReplace": "Ersetzen",
+      "conflictSkip": "Überspringen",
+      "conflictTitle": "Ein Twin namens {name} existiert bereits",
+      "exportAction": "Exportieren",
+      "exportTitle": "Twin exportieren",
+      "exported": "Exportiert nach {path}",
+      "formatCcv3": "Character Card V3",
+      "formatLabel": "Format",
+      "formatTwinCard": "Twin Card",
+      "hashMismatch": "Der Teil {part} wurde nach dem Export geändert",
+      "importAction": "Importieren",
+      "importPick": "Twin-Card-Datei auswählen",
+      "importTitle": "Twin importieren",
+      "imported": "{name} importiert",
+      "inspecting": "Karte wird gelesen",
+      "invalid": "Diese Datei ist keine gültige Twin Card.",
+      "partEvidence": "Nachweise",
+      "partEvidenceHint": "Zahlen und Abdeckung, anhand derer ein anderes Tool den Twin beurteilen kann",
+      "partKnowledge": "Persönliches Wissen",
+      "partKnowledgeHint": "Genehmigte Erinnerungen und Fakten über Sie",
+      "partTraining": "Trainingsprotokoll",
+      "partTrainingHint": "Ihre Antworten, Ziele und die Abdeckung, damit das Training anderswo weitergehen kann",
+      "partVoice": "Stimme und Identität",
+      "partVoiceHint": "Immer enthalten: wie er auf jedem Kanal schreibt",
+      "partitionsLabel": "Was enthalten sein soll",
+      "passphrase": "Passphrase",
+      "passphraseHint": "Mindestens 8 Zeichen. Ohne sie lassen sich die versiegelten Teile nicht öffnen.",
+      "sealLabel": "Persönliche Teile mit einer Passphrase versiegeln",
+      "sealedNeedsPass": "Einige Teile sind versiegelt. Geben Sie die Passphrase ein, um sie zu importieren.",
+      "signatureInvalid": "Signatur stimmt nicht überein",
+      "signatureUnsigned": "Nicht signiert",
+      "signatureValid": "Signiert",
+      "unsignedNote": "Ohne Signatur gespeichert: Es ist keine Geräteidentität verfügbar.",
+      "unsupported": "Diese Karte verwendet Version {version}, die diese App nicht lesen kann."
+    },
+    "detail": {
+      "export": "Exportieren",
+      "import": "Twin importieren",
+      "noTwin": "Noch kein Twin",
+      "proposals_many": "{count} zu prüfen",
+      "proposals_one": "1 zu prüfen",
+      "tabLabel": "Details"
+    },
+    "samples": {
+      "analyzing": "Textprobe wird gelesen",
+      "dismiss": "Verwerfen",
+      "edit": "Bearbeiten",
+      "failed": "Die Textprobe konnte nicht gelesen werden",
+      "forChannel": "Für {channel}",
+      "fromClipboard": "Aus einer kopierten Textprobe",
+      "fromForge": "Aus der Textprobe, mit der der Twin erstellt wurde",
+      "fromHost": "Aus einer Textprobe auf {host}",
+      "keep": "Behalten",
+      "kindConstraint": "Gebot oder Verbot",
+      "kindDims": "Stil",
+      "kindExemplar": "Schreibbeispiel",
+      "kindLength": "Länge",
+      "kindVoice": "Stimmregel",
+      "laneTitle": "Aus Textproben gelernt",
+      "refused": "Nicht gelernt: {reason}"
     }
   },
   "vault": {
@@ -23592,7 +23757,27 @@
       "steer_label": "Schnell-Steuerung",
       "submit": "Absenden",
       "submit_form": "Formular absenden",
-      "untitled_box": "dieses Feld"
+      "untitled_box": "dieses Feld",
+      "learn": {
+        "cancel": "Abbrechen",
+        "capturing": "Ihre Auswahl wird gelesen",
+        "choose_clipboard_many": "{count} Wörter aus der Zwischenablage",
+        "choose_clipboard_one": "1 Wort aus der Zwischenablage",
+        "choose_selection_many": "{count} Wörter von {host}",
+        "choose_selection_one": "1 Wort von {host}",
+        "done_many": "{count} Vorschläge warten",
+        "done_none": "Aus dieser Textprobe gibt es nichts Neues zu lernen",
+        "done_one": "1 Vorschlag wartet",
+        "failed": "Die Auswahl konnte nicht gelesen werden. Kopieren Sie den Text und klicken Sie erneut auf Lernen.",
+        "learn": "Aus Auswahl lernen",
+        "learn_no_twin": "Wählen Sie zuerst unter Twin, Profile einen Twin",
+        "learning": "Lernt im Hintergrund",
+        "new_twin": "Neuer Twin",
+        "nothing_selected": "Wählen oder kopieren Sie zuerst etwas von Ihren eigenen Texten",
+        "open_hub": "Hub öffnen",
+        "refused": "Nicht gelernt: {reason}",
+        "teach": "{name} anlernen"
+      }
     }
   },
   "council": {

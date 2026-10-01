@@ -844,5 +844,170 @@
       "unpin": "এই লক্ষ্যের পিন সরান",
       "upNext": "পরবর্তী"
     }
+  },
+  "blueprint": {
+    "delta": {
+      "dealing": "পরবর্তী প্রশ্ন",
+      "gain": "কভারেজ +{gain}",
+      "recorded": "উত্তর রেকর্ড করা হয়েছে",
+      "scoring": "আপনার উত্তর মূল্যায়ন করা হচ্ছে",
+      "why": "কেন গণ্য হলো"
+    },
+    "kinds": {
+      "fact": "তথ্য",
+      "opinion": "মতামত",
+      "preference": "পছন্দ",
+      "reply_drill": "উত্তর অনুশীলন",
+      "rule": "নিয়ম",
+      "scene": "দৃশ্য"
+    },
+    "metrics": {
+      "answers": "উত্তর",
+      "approved": "অনুমোদিত",
+      "awaiting": "পর্যালোচনার অপেক্ষায়",
+      "bio": "জীবনী",
+      "channels": "চ্যানেল",
+      "coverage": "কভারেজ",
+      "directives": "নির্দেশনা",
+      "facts": "তথ্য",
+      "goals": "লক্ষ্য",
+      "kbBound": "সংযুক্ত",
+      "kbUnbound": "সংযুক্ত নয়",
+      "kinds": "প্রশ্নের ধরন",
+      "knowledgeBase": "জ্ঞানভাণ্ডার",
+      "languages": "ভাষা",
+      "lastTrained": "সর্বশেষ প্রশিক্ষণ",
+      "memories": "স্মৃতি",
+      "neverTrained": "এখনো প্রশিক্ষণ হয়নি",
+      "noLanguages": "কোনো ভাষা নির্ধারণ করা হয়নি",
+      "noStyle": "কোনো শৈলী সংরক্ষিত নেই",
+      "observations": "পর্যবেক্ষণ",
+      "originLearned": "আপনার লেখা থেকে শেখা",
+      "originManual": "হাতে লেখা",
+      "originPreset": "প্রিসেট থেকে",
+      "originRolled": "এলোমেলোভাবে তৈরি",
+      "readiness": "প্রস্তুতি",
+      "rejected": "প্রত্যাখ্যাত",
+      "rules": "নিয়ম",
+      "samples": "নমুনা",
+      "samplesOpen": "পর্যালোচনা বাকি",
+      "style": "শৈলী",
+      "topics": "বিষয়"
+    },
+    "nav": {
+      "back": "সারসংক্ষেপে ফিরে যান",
+      "editInSetup": "সেটআপে সম্পাদনা করুন",
+      "openDetail": "পূর্ণ বিবরণ",
+      "zoomInto": "{section} খুলুন"
+    },
+    "sectionHints": {
+      "identity": "টুইন আসলে কে",
+      "knowledge": "আপনার সম্পর্কে এটি কী জানে",
+      "training": "প্রশিক্ষণে কী কী কভার হয়েছে",
+      "voice": "প্রতিটি চ্যানেলে এটি কীভাবে লেখে"
+    },
+    "sections": {
+      "identity": "পরিচয়",
+      "knowledge": "জ্ঞান",
+      "training": "প্রশিক্ষণ",
+      "voice": "ভয়েস"
+    },
+    "states": {
+      "emptyKnowledge": "এখনো কিছু শেখা হয়নি",
+      "emptyTraining": "এখনো কোনো প্রশিক্ষণ নেই",
+      "emptyVoice": "কোনো চ্যানেলে এখনো ভয়েস নেই",
+      "notDrawn": "এখনো আঁকা হয়নি",
+      "notMeasured": "পরিমাপ করা হয়নি",
+      "working": "আপনার উত্তর পড়া হচ্ছে"
+    },
+    "tiers": {
+      "covered": "পর্যাপ্ত",
+      "some": "কিছুটা",
+      "thin": "অল্প"
+    },
+    "variantCopy": {
+      "dossier": {
+        "heroLabel": "টুইন ডসিয়ার"
+      },
+      "drafting": {
+        "sheetTitle": "টুইনের নকশা"
+      },
+      "radial": {
+        "centerHint": "একটি অংশ বেছে নিন"
+      },
+      "strata": {
+        "plateHint": "একটি স্তর তুলতে সেটিতে ক্লিক করুন"
+      }
+    },
+    "variants": {
+      "dossier": "ডসিয়ার",
+      "drafting": "নকশার শিট",
+      "label": "ব্লুপ্রিন্টের শৈলী",
+      "radial": "রেডিয়াল",
+      "strata": "স্তরবিন্যাস"
+    }
+  },
+  "card": {
+    "conflictDuplicate": "কপি হিসেবে আমদানি করুন",
+    "conflictReplace": "এটি প্রতিস্থাপন করুন",
+    "conflictSkip": "এড়িয়ে যান",
+    "conflictTitle": "{name} নামে একটি টুইন আগে থেকেই আছে",
+    "exportAction": "রফতানি করুন",
+    "exportTitle": "টুইন রফতানি করুন",
+    "exported": "{path}-এ রফতানি করা হয়েছে",
+    "formatCcv3": "Character Card V3",
+    "formatLabel": "ফরম্যাট",
+    "formatTwinCard": "Twin Card",
+    "hashMismatch": "রফতানির পরে {part} অংশটি বদলানো হয়েছে",
+    "importAction": "আমদানি করুন",
+    "importPick": "একটি Twin Card ফাইল বেছে নিন",
+    "importTitle": "টুইন আমদানি করুন",
+    "imported": "{name} আমদানি করা হয়েছে",
+    "inspecting": "কার্ড পড়া হচ্ছে",
+    "invalid": "এই ফাইলটি বৈধ Twin Card নয়।",
+    "partEvidence": "প্রমাণ",
+    "partEvidenceHint": "সংখ্যা ও কভারেজ, যা দেখে অন্য টুল টুইনটিকে যাচাই করতে পারে",
+    "partKnowledge": "নিজের সম্পর্কে জ্ঞান",
+    "partKnowledgeHint": "অনুমোদিত স্মৃতি এবং আপনার সম্পর্কে তথ্য",
+    "partTraining": "প্রশিক্ষণের রেকর্ড",
+    "partTrainingHint": "আপনার উত্তর, লক্ষ্য ও কভারেজ, যাতে অন্য কোথাও প্রশিক্ষণ চালিয়ে যাওয়া যায়",
+    "partVoice": "ভয়েস ও পরিচয়",
+    "partVoiceHint": "সবসময় অন্তর্ভুক্ত: প্রতিটি চ্যানেলে এটি কীভাবে লেখে",
+    "partitionsLabel": "যা যা অন্তর্ভুক্ত করবেন",
+    "passphrase": "পাসফ্রেজ",
+    "passphraseHint": "কমপক্ষে ৮ অক্ষর। এটি ছাড়া সিল করা অংশগুলো খোলা যাবে না।",
+    "sealLabel": "ব্যক্তিগত অংশ পাসফ্রেজ দিয়ে সিল করুন",
+    "sealedNeedsPass": "কিছু অংশ সিল করা আছে। সেগুলো আমদানি করতে পাসফ্রেজ দিন।",
+    "signatureInvalid": "স্বাক্ষর মিলছে না",
+    "signatureUnsigned": "স্বাক্ষরবিহীন",
+    "signatureValid": "স্বাক্ষরিত",
+    "unsignedNote": "স্বাক্ষর ছাড়াই সংরক্ষিত: কোনো ডিভাইস পরিচয় পাওয়া যায়নি।",
+    "unsupported": "এই কার্ডটি {version} সংস্করণ ব্যবহার করে, যা এই অ্যাপ পড়তে পারে না।"
+  },
+  "detail": {
+    "export": "রফতানি করুন",
+    "import": "টুইন আমদানি করুন",
+    "noTwin": "এখনো কোনো টুইন নেই",
+    "proposals_many": "{count}টি পর্যালোচনা বাকি",
+    "proposals_one": "১টি পর্যালোচনা বাকি",
+    "tabLabel": "বিস্তারিত"
+  },
+  "samples": {
+    "analyzing": "নমুনা পড়া হচ্ছে",
+    "dismiss": "খারিজ করুন",
+    "edit": "সম্পাদনা",
+    "failed": "নমুনা পড়া যায়নি",
+    "forChannel": "{channel}-এর জন্য",
+    "fromClipboard": "কপি করা নমুনা থেকে",
+    "fromForge": "টুইন তৈরির সময় দেওয়া নমুনা থেকে",
+    "fromHost": "{host}-এ থাকা নমুনা থেকে",
+    "keep": "রাখুন",
+    "kindConstraint": "করণীয় ও বর্জনীয়",
+    "kindDims": "শৈলী",
+    "kindExemplar": "লেখার নমুনা",
+    "kindLength": "দৈর্ঘ্য",
+    "kindVoice": "ভয়েস নিয়ম",
+    "laneTitle": "নমুনা থেকে শেখা",
+    "refused": "শেখা হয়নি: {reason}"
   }
 }

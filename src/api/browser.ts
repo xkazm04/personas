@@ -20,6 +20,7 @@ import { EventName, typedListen } from '@/lib/eventRegistry';
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import { isTauriError, type TauriErrorKind } from '@/lib/types/tauriError';
 import type { PickedTarget } from '@/lib/bindings/PickedTarget';
+import type { PageSelection } from '@/lib/bindings/PageSelection';
 import type {
   BrowserScanStatus,
   BrowserSite,
@@ -247,4 +248,15 @@ export function listenScan(
  */
 export function browserErrorKind(err: unknown): TauriErrorKind | null {
   return isTauriError(err) ? err.kind : null;
+}
+
+/**
+ * What the user has highlighted on tab `id`, for the twin to learn from
+ * (spark twin-portable-blueprint). Same gate as `pickTarget`: an enabled
+ * whitelisted origin, a tab no agent holds. `text` is `""` when nothing is
+ * selected; a strict page CSP can block the page channel, in which case this
+ * rejects and the caller falls back to the clipboard.
+ */
+export async function captureSelection(id: number): Promise<PageSelection> {
+  return invoke<PageSelection>('browser_webview_capture_selection', { id });
 }

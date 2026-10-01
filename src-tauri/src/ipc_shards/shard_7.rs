@@ -54,6 +54,17 @@ pub(super) fn shard(
         commands::infrastructure::twin_style::twin_style_roll,
         commands::infrastructure::twin_style::twin_style_materialize,
         commands::infrastructure::twin_style::twin_style_apply,
+        // Twin plugin -- learn-from-sample (spark twin-portable-blueprint):
+        // samples analysed in the background into reviewed proposals
+        commands::infrastructure::twin_sample::twin_learn_from_sample,
+        commands::infrastructure::twin_sample::twin_sample_list,
+        commands::infrastructure::twin_sample::twin_sample_proposals,
+        commands::infrastructure::twin_sample::twin_sample_resolve,
+        commands::infrastructure::twin_sample::twin_clipboard_text,
+        // Twin plugin -- Twin Card v1.0 (spark twin-portable-blueprint)
+        commands::infrastructure::twin_card::twin_card_export,
+        commands::infrastructure::twin_card::twin_card_inspect,
+        commands::infrastructure::twin_card::twin_card_import,
         // Twin plugin -- Channels outbox: draft a channel-appropriate reply
         commands::infrastructure::twin::twin_draft_reply,
         // Twin plugin -- Browser toolbar: draft a page comment in the twin's voice

@@ -730,7 +730,27 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
       "launch": {},
       "plan": {},
       "openers": {}
-    }
+    },
+    "blueprint": {
+      "sections": {},
+      "sectionHints": {},
+      "variants": {},
+      "metrics": {},
+      "tiers": {},
+      "kinds": {},
+      "states": {},
+      "delta": {},
+      "nav": {},
+      "variantCopy": {
+        "drafting": {},
+        "strata": {},
+        "dossier": {},
+        "radial": {}
+      }
+    },
+    "detail": {},
+    "card": {},
+    "samples": {}
   },
   "radio": {},
   "cockpit": {
@@ -765,7 +785,9 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "scan_report": {},
     "detail": {},
     "webview": {},
-    "twin": {}
+    "twin": {
+      "learn": {}
+    }
   },
   "companions": {
     "nav": {},

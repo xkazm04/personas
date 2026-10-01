@@ -174,6 +174,26 @@
     "steer_label": "Rychlé doladění",
     "submit": "Odeslat",
     "submit_form": "Odeslat formulář",
-    "untitled_box": "toto pole"
+    "untitled_box": "toto pole",
+    "learn": {
+      "cancel": "Zrušit",
+      "capturing": "Čtení vašeho výběru",
+      "choose_clipboard_many": "{count} slov ze schránky",
+      "choose_clipboard_one": "1 slovo ze schránky",
+      "choose_selection_many": "{count} slov z {host}",
+      "choose_selection_one": "1 slovo z {host}",
+      "done_many": "Čekající návrhy: {count}",
+      "done_none": "Z tohoto vzorku se nedá naučit nic nového",
+      "done_one": "1 čekající návrh",
+      "failed": "Výběr se nepodařilo přečíst. Zkopírujte text a znovu stiskněte Učit se.",
+      "learn": "Učit se z výběru",
+      "learn_no_twin": "Nejprve vyberte dvojníka v Dvojník, Profily",
+      "learning": "Učení na pozadí",
+      "new_twin": "Nový dvojník",
+      "nothing_selected": "Nejprve vyberte nebo zkopírujte část svého vlastního textu",
+      "open_hub": "Otevřít centrum",
+      "refused": "Nenaučeno: {reason}",
+      "teach": "Učit dvojníka {name}"
+    }
   }
 }

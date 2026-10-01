@@ -81,6 +81,7 @@ mod e52_curator_dispatch;
 mod e53_curator_method;
 mod e53_drop_auto_pr_columns;
 mod e54_dev_lifecycle;
+mod e55_twin_samples;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -158,6 +159,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e53_curator_method::run(conn)?;
     e53_drop_auto_pr_columns::run(conn)?;
     e54_dev_lifecycle::run(conn)?;
+    e55_twin_samples::run(conn)?;
 
     Ok(())
 }

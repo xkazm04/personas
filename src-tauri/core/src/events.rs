@@ -253,6 +253,10 @@ event_names! {
     // payload `SetupUpdatedEvent`, the client refetches the snapshot)
     TWIN_SETUP_UPDATED         => "twin-setup-updated",
 
+    // Twin learn-from-sample (a captured sample's analysis changed state;
+    // payload `TwinSampleUpdatedEvent`, no sample text; spark twin-portable-blueprint)
+    TWIN_SAMPLE_UPDATED        => "twin-sample-updated",
+
     // Auto-run scheduler (drains backlog respecting goal-DAG)
     AUTO_RUN_STATUS            => "auto-run-status",
     AUTO_RUN_COMPLETE          => "auto-run-complete",

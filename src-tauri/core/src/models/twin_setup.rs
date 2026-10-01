@@ -42,6 +42,9 @@ pub struct SetupGoal {
     /// Steps answered against this goal.
     #[ts(type = "number")]
     pub answered: i64,
+    /// The assess pass's one-line reason for the goal's latest coverage move
+    /// (`twin_setup_goals.last_why`); `null` until an answer moved it.
+    pub last_why: Option<String>,
 }
 
 /// One question in the plan — queued, live, or in the transcript.
@@ -75,6 +78,11 @@ pub struct SetupStep {
     pub answered_at: Option<String>,
     /// The engine has folded this answer into offers and observations.
     pub reconciled: bool,
+    /// How much this answer moved its goal's coverage (0.0 - 1.0), written by
+    /// the reconcile pass (`twin_setup_steps.coverage_gain`); `null` until
+    /// reconciled, or when the step was not answered.
+    #[ts(type = "number | null")]
+    pub coverage_gain: Option<f64>,
 }
 
 /// A typed value proposed for a real field. Nothing writes the field until the
@@ -314,6 +322,7 @@ mod tests {
             asked_at: None,
             answered_at: None,
             reconciled: false,
+            coverage_gain: None,
         })?;
         assert!(opener.get("goalId").is_some_and(|v| v.is_null()));
         assert!(opener.get("answeredAt").is_some_and(|v| v.is_null()));

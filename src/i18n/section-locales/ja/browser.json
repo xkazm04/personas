@@ -174,6 +174,26 @@
     "steer_label": "クイック調整",
     "submit": "送信",
     "submit_form": "フォームを送信",
-    "untitled_box": "この入力欄"
+    "untitled_box": "この入力欄",
+    "learn": {
+      "cancel": "キャンセル",
+      "capturing": "選択範囲を読み取り中",
+      "choose_clipboard_many": "クリップボードから {count} 語",
+      "choose_clipboard_one": "クリップボードから 1 語",
+      "choose_selection_many": "{host}から {count} 語",
+      "choose_selection_one": "{host}から 1 語",
+      "done_many": "確認待ちの提案 {count} 件",
+      "done_none": "このサンプルから新しく学べることはありません",
+      "done_one": "確認待ちの提案 1 件",
+      "failed": "選択範囲を読み取れませんでした。テキストをコピーして、もう一度「学習」を押してください。",
+      "learn": "選択範囲から学習",
+      "learn_no_twin": "先にツイン → プロファイルでツインを選択してください",
+      "learning": "バックグラウンドで学習中",
+      "new_twin": "新規ツイン",
+      "nothing_selected": "先に自分の文章を選択またはコピーしてください",
+      "open_hub": "ハブを開く",
+      "refused": "学習しませんでした: {reason}",
+      "teach": "{name}に教える"
+    }
   }
 }

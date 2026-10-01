@@ -844,5 +844,170 @@
       "unpin": "Lepas sematan sasaran ini",
       "upNext": "Berikutnya"
     }
+  },
+  "blueprint": {
+    "delta": {
+      "dealing": "Pertanyaan berikutnya",
+      "gain": "Cakupan +{gain}",
+      "recorded": "Jawaban dicatat",
+      "scoring": "Menilai jawaban Anda",
+      "why": "Mengapa dihitung"
+    },
+    "kinds": {
+      "fact": "Fakta",
+      "opinion": "Opini",
+      "preference": "Preferensi",
+      "reply_drill": "Latihan membalas",
+      "rule": "Aturan",
+      "scene": "Adegan"
+    },
+    "metrics": {
+      "answers": "Jawaban",
+      "approved": "Disetujui",
+      "awaiting": "Menunggu tinjauan",
+      "bio": "Bio",
+      "channels": "Saluran",
+      "coverage": "Cakupan",
+      "directives": "Arahan",
+      "facts": "Fakta",
+      "goals": "Tujuan",
+      "kbBound": "Terhubung",
+      "kbUnbound": "Belum terhubung",
+      "kinds": "Jenis pertanyaan",
+      "knowledgeBase": "Basis pengetahuan",
+      "languages": "Bahasa",
+      "lastTrained": "Terakhir dilatih",
+      "memories": "Memori",
+      "neverTrained": "Belum dilatih",
+      "noLanguages": "Belum ada bahasa yang diatur",
+      "noStyle": "Belum ada gaya tersimpan",
+      "observations": "Pengamatan",
+      "originLearned": "Dipelajari dari tulisan Anda",
+      "originManual": "Ditulis manual",
+      "originPreset": "Dari preset",
+      "originRolled": "Diacak",
+      "readiness": "Kesiapan",
+      "rejected": "Ditolak",
+      "rules": "Aturan",
+      "samples": "Sampel",
+      "samplesOpen": "Perlu ditinjau",
+      "style": "Gaya",
+      "topics": "Topik"
+    },
+    "nav": {
+      "back": "Kembali ke ringkasan",
+      "editInSetup": "Edit di Penyiapan",
+      "openDetail": "Detail lengkap",
+      "zoomInto": "Buka {section}"
+    },
+    "sectionHints": {
+      "identity": "Siapa twin ini",
+      "knowledge": "Apa yang diketahuinya tentang Anda",
+      "training": "Apa yang sudah dicakup pelatihan",
+      "voice": "Cara menulisnya di setiap saluran"
+    },
+    "sections": {
+      "identity": "Identitas",
+      "knowledge": "Pengetahuan",
+      "training": "Pelatihan",
+      "voice": "Suara"
+    },
+    "states": {
+      "emptyKnowledge": "Belum ada yang dipelajari",
+      "emptyTraining": "Belum ada pelatihan",
+      "emptyVoice": "Belum ada saluran yang punya suara",
+      "notDrawn": "Belum digambar",
+      "notMeasured": "Belum diukur",
+      "working": "Membaca jawaban Anda"
+    },
+    "tiers": {
+      "covered": "Tercakup",
+      "some": "Sebagian",
+      "thin": "Minim"
+    },
+    "variantCopy": {
+      "dossier": {
+        "heroLabel": "Dossier twin"
+      },
+      "drafting": {
+        "sheetTitle": "Rancangan twin"
+      },
+      "radial": {
+        "centerHint": "Pilih satu segmen"
+      },
+      "strata": {
+        "plateHint": "Klik sebuah lapisan untuk mengangkatnya"
+      }
+    },
+    "variants": {
+      "dossier": "Dossier",
+      "drafting": "Lembar gambar teknik",
+      "label": "Gaya cetak biru",
+      "radial": "Radial",
+      "strata": "Strata"
+    }
+  },
+  "card": {
+    "conflictDuplicate": "Impor sebagai salinan",
+    "conflictReplace": "Ganti yang sudah ada",
+    "conflictSkip": "Lewati",
+    "conflictTitle": "Twin bernama {name} sudah ada",
+    "exportAction": "Ekspor",
+    "exportTitle": "Ekspor twin",
+    "exported": "Diekspor ke {path}",
+    "formatCcv3": "Character Card V3",
+    "formatLabel": "Format",
+    "formatTwinCard": "Twin Card",
+    "hashMismatch": "Bagian {part} diubah setelah ekspor",
+    "importAction": "Impor",
+    "importPick": "Pilih berkas Twin Card",
+    "importTitle": "Impor twin",
+    "imported": "{name} diimpor",
+    "inspecting": "Membaca kartu",
+    "invalid": "Berkas ini bukan Twin Card yang valid.",
+    "partEvidence": "Bukti",
+    "partEvidenceHint": "Jumlah dan cakupan yang dapat dipakai alat lain untuk menilai twin",
+    "partKnowledge": "Pengetahuan diri",
+    "partKnowledgeHint": "Memori yang disetujui dan fakta tentang Anda",
+    "partTraining": "Catatan pelatihan",
+    "partTrainingHint": "Jawaban, tujuan, dan cakupan Anda, agar pelatihan dapat dilanjutkan di tempat lain",
+    "partVoice": "Suara dan identitas",
+    "partVoiceHint": "Selalu disertakan: cara menulisnya di setiap saluran",
+    "partitionsLabel": "Yang akan disertakan",
+    "passphrase": "Frasa sandi",
+    "passphraseHint": "Minimal 8 karakter. Tanpanya, bagian yang disegel tidak dapat dibuka.",
+    "sealLabel": "Segel bagian pribadi dengan passphrase",
+    "sealedNeedsPass": "Beberapa bagian disegel. Masukkan passphrase untuk mengimpornya.",
+    "signatureInvalid": "Tanda tangan tidak cocok",
+    "signatureUnsigned": "Tidak ditandatangani",
+    "signatureValid": "Ditandatangani",
+    "unsignedNote": "Disimpan tanpa tanda tangan: identitas perangkat tidak tersedia.",
+    "unsupported": "Kartu ini menggunakan versi {version}, yang tidak dapat dibaca aplikasi ini."
+  },
+  "detail": {
+    "export": "Ekspor",
+    "import": "Impor twin",
+    "noTwin": "Belum ada twin",
+    "proposals_many": "{count} perlu ditinjau",
+    "proposals_one": "1 perlu ditinjau",
+    "tabLabel": "Detail"
+  },
+  "samples": {
+    "analyzing": "Membaca sampel",
+    "dismiss": "Abaikan",
+    "edit": "Ubah",
+    "failed": "Tidak dapat membaca sampel",
+    "forChannel": "Untuk {channel}",
+    "fromClipboard": "Dari sampel yang disalin",
+    "fromForge": "Dari sampel yang digunakan saat twin dibuat",
+    "fromHost": "Dari sampel di {host}",
+    "keep": "Simpan",
+    "kindConstraint": "Lakukan atau jangan",
+    "kindDims": "Gaya",
+    "kindExemplar": "Sampel tulisan",
+    "kindLength": "Panjang",
+    "kindVoice": "Aturan suara",
+    "laneTitle": "Dipelajari dari sampel",
+    "refused": "Tidak dipelajari: {reason}"
   }
 }

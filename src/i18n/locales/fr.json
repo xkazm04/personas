@@ -21401,6 +21401,171 @@
         "unpin": "Désépingler cet objectif",
         "upNext": "À suivre"
       }
+    },
+    "blueprint": {
+      "delta": {
+        "dealing": "Question suivante",
+        "gain": "Couverture +{gain}",
+        "recorded": "Réponse enregistrée",
+        "scoring": "Évaluation de votre réponse",
+        "why": "Pourquoi elle a compté"
+      },
+      "kinds": {
+        "fact": "Fait",
+        "opinion": "Opinion",
+        "preference": "Préférence",
+        "reply_drill": "Exercice de réponse",
+        "rule": "Règle",
+        "scene": "Scène"
+      },
+      "metrics": {
+        "answers": "Réponses",
+        "approved": "Approuvé",
+        "awaiting": "En attente de révision",
+        "bio": "Biographie",
+        "channels": "Canaux",
+        "coverage": "Couverture",
+        "directives": "Consignes",
+        "facts": "Faits",
+        "goals": "Objectifs",
+        "kbBound": "Liée",
+        "kbUnbound": "Non liée",
+        "kinds": "Types de questions",
+        "knowledgeBase": "Base de connaissances",
+        "languages": "Langues",
+        "lastTrained": "Dernier entraînement",
+        "memories": "Souvenirs",
+        "neverTrained": "Pas encore entraîné",
+        "noLanguages": "Aucune langue définie",
+        "noStyle": "Aucun style enregistré",
+        "observations": "Observations",
+        "originLearned": "Appris de vos textes",
+        "originManual": "Écrit à la main",
+        "originPreset": "Depuis un préréglage",
+        "originRolled": "Tiré au hasard",
+        "readiness": "Préparation",
+        "rejected": "Rejeté",
+        "rules": "Règles",
+        "samples": "Échantillons",
+        "samplesOpen": "À examiner",
+        "style": "Style",
+        "topics": "Sujets"
+      },
+      "nav": {
+        "back": "Retour à la vue d’ensemble",
+        "editInSetup": "Modifier dans la configuration",
+        "openDetail": "Détail complet",
+        "zoomInto": "Ouvrir {section}"
+      },
+      "sectionHints": {
+        "identity": "Qui est le twin",
+        "knowledge": "Ce qu’il sait de vous",
+        "training": "Ce que l’entraînement a couvert",
+        "voice": "Comment il écrit sur chaque canal"
+      },
+      "sections": {
+        "identity": "Identité",
+        "knowledge": "Connaissances",
+        "training": "Entraînement",
+        "voice": "Voix"
+      },
+      "states": {
+        "emptyKnowledge": "Rien d’appris pour l’instant",
+        "emptyTraining": "Pas encore d’entraînement",
+        "emptyVoice": "Aucun canal n’a encore de voix",
+        "notDrawn": "Pas encore tracé",
+        "notMeasured": "Non mesuré",
+        "working": "Lecture de vos réponses"
+      },
+      "tiers": {
+        "covered": "Couvert",
+        "some": "Partiel",
+        "thin": "Faible"
+      },
+      "variantCopy": {
+        "dossier": {
+          "heroLabel": "Dossier du twin"
+        },
+        "drafting": {
+          "sheetTitle": "Plan du twin"
+        },
+        "radial": {
+          "centerHint": "Choisissez un segment"
+        },
+        "strata": {
+          "plateHint": "Cliquez sur une couche pour la soulever"
+        }
+      },
+      "variants": {
+        "dossier": "Dossier",
+        "drafting": "Plan technique",
+        "label": "Style de plan",
+        "radial": "Radial",
+        "strata": "Strates"
+      }
+    },
+    "card": {
+      "conflictDuplicate": "Importer comme copie",
+      "conflictReplace": "Remplacer",
+      "conflictSkip": "Passer",
+      "conflictTitle": "Un twin nommé {name} existe déjà",
+      "exportAction": "Exporter",
+      "exportTitle": "Exporter le twin",
+      "exported": "Exporté vers {path}",
+      "formatCcv3": "Character Card V3",
+      "formatLabel": "Format",
+      "formatTwinCard": "Twin Card",
+      "hashMismatch": "La partie {part} a été modifiée après l’export",
+      "importAction": "Importer",
+      "importPick": "Choisissez un fichier Twin Card",
+      "importTitle": "Importer un twin",
+      "imported": "{name} importé",
+      "inspecting": "Lecture de la carte",
+      "invalid": "Ce fichier n’est pas une Twin Card valide.",
+      "partEvidence": "Preuves",
+      "partEvidenceHint": "Effectifs et couverture qu’un autre outil peut utiliser pour évaluer le twin",
+      "partKnowledge": "Connaissances personnelles",
+      "partKnowledgeHint": "Souvenirs approuvés et faits vous concernant",
+      "partTraining": "Historique d’entraînement",
+      "partTrainingHint": "Vos réponses, objectifs et couverture, pour poursuivre l’entraînement ailleurs",
+      "partVoice": "Voix et identité",
+      "partVoiceHint": "Toujours inclus : comment il écrit sur chaque canal",
+      "partitionsLabel": "À inclure",
+      "passphrase": "Phrase secrète",
+      "passphraseHint": "Au moins 8 caractères. Sans elle, les parties scellées ne peuvent pas être ouvertes.",
+      "sealLabel": "Sceller les parties personnelles avec une phrase secrète",
+      "sealedNeedsPass": "Certaines parties sont scellées. Saisissez la phrase secrète pour les importer.",
+      "signatureInvalid": "La signature ne correspond pas",
+      "signatureUnsigned": "Non signé",
+      "signatureValid": "Signé",
+      "unsignedNote": "Enregistré sans signature : aucune identité d’appareil n’est disponible.",
+      "unsupported": "Cette carte utilise la version {version}, que cette application ne peut pas lire."
+    },
+    "detail": {
+      "export": "Exporter",
+      "import": "Importer un twin",
+      "noTwin": "Pas encore de twin",
+      "proposals_many": "{count} à examiner",
+      "proposals_one": "1 à examiner",
+      "tabLabel": "Détail"
+    },
+    "samples": {
+      "analyzing": "Lecture de l’échantillon",
+      "dismiss": "Ignorer",
+      "edit": "Modifier",
+      "failed": "Impossible de lire l’échantillon",
+      "forChannel": "Pour {channel}",
+      "fromClipboard": "D’un échantillon copié",
+      "fromForge": "De l’échantillon avec lequel le twin a été créé",
+      "fromHost": "D’un échantillon sur {host}",
+      "keep": "Conserver",
+      "kindConstraint": "À faire ou à éviter",
+      "kindDims": "Style",
+      "kindExemplar": "Exemple d’écriture",
+      "kindLength": "Longueur",
+      "kindVoice": "Règle de voix",
+      "laneTitle": "Appris des échantillons",
+      "refused": "Non appris : {reason}"
     }
   },
   "vault": {
@@ -23592,7 +23757,27 @@
       "steer_label": "Ajustement rapide",
       "submit": "Envoyer",
       "submit_form": "Envoyer le formulaire",
-      "untitled_box": "ce champ"
+      "untitled_box": "ce champ",
+      "learn": {
+        "cancel": "Annuler",
+        "capturing": "Lecture de votre sélection",
+        "choose_clipboard_many": "{count} mots du presse-papiers",
+        "choose_clipboard_one": "1 mot du presse-papiers",
+        "choose_selection_many": "{count} mots de {host}",
+        "choose_selection_one": "1 mot de {host}",
+        "done_many": "{count} propositions en attente",
+        "done_none": "Rien de nouveau à apprendre de cet échantillon",
+        "done_one": "1 proposition en attente",
+        "failed": "Impossible de lire la sélection. Copiez le texte et cliquez de nouveau sur Apprendre.",
+        "learn": "Apprendre de la sélection",
+        "learn_no_twin": "Choisissez d’abord un twin dans Twin, Profils",
+        "learning": "Apprentissage en arrière-plan",
+        "new_twin": "Nouveau twin",
+        "nothing_selected": "Sélectionnez ou copiez d’abord un peu de votre propre texte",
+        "open_hub": "Ouvrir le Hub",
+        "refused": "Non appris : {reason}",
+        "teach": "Entraîner {name}"
+      }
     }
   },
   "council": {

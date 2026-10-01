@@ -239,6 +239,7 @@ mod tests {
             coverage,
             position: 0,
             answered: 0,
+            last_why: None,
         }
     }
 

@@ -13,12 +13,24 @@
 
 import { useSyncExternalStore } from 'react';
 import type { SetupStage } from '../setup/setupContract';
+import type { ExperienceDoor } from './table/TableChrome';
+
+/**
+ * A writing sample the new twin should learn from right after it is forged
+ * (Browser Learn > "New twin", spark twin-portable-blueprint). The forge
+ * creates the twin, then hands this to `learnFromSample` on the new id.
+ */
+export interface ExperienceSeedSample {
+  text: string;
+  sourceKind: 'selection' | 'clipboard';
+  sourceHost: string | null;
+}
 
 export type ExperienceRequest =
-  /** Name a new twin, then deal the first hand without leaving. */
-  | { mode: 'create' }
-  /** Train the active twin, optionally opening on a given stage. */
-  | { mode: 'train'; stage?: SetupStage };
+  /** Name a new twin, then deal the first hand without leaving; optionally seeded with a sample to learn from. */
+  | { mode: 'create'; seedSample?: ExperienceSeedSample }
+  /** Train the active twin, optionally opening on a given stage, with a door (layer) already open. */
+  | { mode: 'train'; stage?: SetupStage; door?: ExperienceDoor };
 
 let request: ExperienceRequest | null = null;
 const listeners = new Set<() => void>();

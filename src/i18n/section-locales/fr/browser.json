@@ -174,6 +174,26 @@
     "steer_label": "Ajustement rapide",
     "submit": "Envoyer",
     "submit_form": "Envoyer le formulaire",
-    "untitled_box": "ce champ"
+    "untitled_box": "ce champ",
+    "learn": {
+      "cancel": "Annuler",
+      "capturing": "Lecture de votre sélection",
+      "choose_clipboard_many": "{count} mots du presse-papiers",
+      "choose_clipboard_one": "1 mot du presse-papiers",
+      "choose_selection_many": "{count} mots de {host}",
+      "choose_selection_one": "1 mot de {host}",
+      "done_many": "{count} propositions en attente",
+      "done_none": "Rien de nouveau à apprendre de cet échantillon",
+      "done_one": "1 proposition en attente",
+      "failed": "Impossible de lire la sélection. Copiez le texte et cliquez de nouveau sur Apprendre.",
+      "learn": "Apprendre de la sélection",
+      "learn_no_twin": "Choisissez d’abord un twin dans Twin, Profils",
+      "learning": "Apprentissage en arrière-plan",
+      "new_twin": "Nouveau twin",
+      "nothing_selected": "Sélectionnez ou copiez d’abord un peu de votre propre texte",
+      "open_hub": "Ouvrir le Hub",
+      "refused": "Non appris : {reason}",
+      "teach": "Entraîner {name}"
+    }
   }
 }

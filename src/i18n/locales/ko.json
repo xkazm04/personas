@@ -21401,6 +21401,171 @@
         "unpin": "이 목표 고정 해제하기",
         "upNext": "다음 순서"
       }
+    },
+    "blueprint": {
+      "delta": {
+        "dealing": "다음 질문",
+        "gain": "커버리지 +{gain}",
+        "recorded": "답변이 기록되었습니다",
+        "scoring": "답변을 평가하는 중",
+        "why": "반영된 이유"
+      },
+      "kinds": {
+        "fact": "사실",
+        "opinion": "의견",
+        "preference": "선호",
+        "reply_drill": "답장 연습",
+        "rule": "규칙",
+        "scene": "상황"
+      },
+      "metrics": {
+        "answers": "답변",
+        "approved": "승인됨",
+        "awaiting": "검토 대기",
+        "bio": "자기소개",
+        "channels": "채널",
+        "coverage": "커버리지",
+        "directives": "지시",
+        "facts": "사실",
+        "goals": "목표",
+        "kbBound": "연결됨",
+        "kbUnbound": "연결 안 됨",
+        "kinds": "질문 유형",
+        "knowledgeBase": "지식 기반",
+        "languages": "언어",
+        "lastTrained": "마지막 학습",
+        "memories": "기억",
+        "neverTrained": "아직 학습하지 않음",
+        "noLanguages": "설정된 언어 없음",
+        "noStyle": "저장된 스타일 없음",
+        "observations": "관찰 결과",
+        "originLearned": "내 글에서 학습함",
+        "originManual": "직접 작성",
+        "originPreset": "프리셋에서",
+        "originRolled": "생성됨",
+        "readiness": "준비도",
+        "rejected": "거부됨",
+        "rules": "규칙",
+        "samples": "샘플",
+        "samplesOpen": "검토 필요",
+        "style": "스타일",
+        "topics": "주제"
+      },
+      "nav": {
+        "back": "개요로 돌아가기",
+        "editInSetup": "설정에서 편집",
+        "openDetail": "자세히 보기",
+        "zoomInto": "{section} 열기"
+      },
+      "sectionHints": {
+        "identity": "트윈이 누구인지",
+        "knowledge": "나에 대해 알고 있는 내용",
+        "training": "학습에서 다룬 내용",
+        "voice": "채널별 글쓰기 방식"
+      },
+      "sections": {
+        "identity": "정체성",
+        "knowledge": "지식",
+        "training": "학습",
+        "voice": "말투"
+      },
+      "states": {
+        "emptyKnowledge": "아직 학습한 내용 없음",
+        "emptyTraining": "아직 학습 기록 없음",
+        "emptyVoice": "말투가 설정된 채널이 아직 없음",
+        "notDrawn": "아직 그려지지 않음",
+        "notMeasured": "측정 안 됨",
+        "working": "답변을 읽는 중"
+      },
+      "tiers": {
+        "covered": "충분히 포함",
+        "some": "일부 포함",
+        "thin": "정보 부족"
+      },
+      "variantCopy": {
+        "dossier": {
+          "heroLabel": "트윈 인물 파일"
+        },
+        "drafting": {
+          "sheetTitle": "트윈 설계도"
+        },
+        "radial": {
+          "centerHint": "구간을 선택하세요"
+        },
+        "strata": {
+          "plateHint": "층을 클릭해 들어 올리세요"
+        }
+      },
+      "variants": {
+        "dossier": "인물 파일",
+        "drafting": "도면",
+        "label": "블루프린트 스타일",
+        "radial": "방사형",
+        "strata": "지층"
+      }
+    },
+    "card": {
+      "conflictDuplicate": "사본으로 가져오기",
+      "conflictReplace": "교체",
+      "conflictSkip": "건너뛰기",
+      "conflictTitle": "\"{name}\" 트윈이 이미 있습니다",
+      "exportAction": "내보내기",
+      "exportTitle": "트윈 내보내기",
+      "exported": "{path}(으)로 내보냈습니다",
+      "formatCcv3": "Character Card V3",
+      "formatLabel": "형식",
+      "formatTwinCard": "Twin Card",
+      "hashMismatch": "내보낸 후 \"{part}\" 부분이 변경되었습니다",
+      "importAction": "가져오기",
+      "importPick": "Twin Card 파일 선택",
+      "importTitle": "트윈 가져오기",
+      "imported": "{name}을(를) 가져왔습니다",
+      "inspecting": "카드를 읽는 중",
+      "invalid": "이 파일은 올바른 Twin Card가 아닙니다.",
+      "partEvidence": "근거",
+      "partEvidenceHint": "다른 도구가 트윈을 평가하는 데 사용할 수 있는 개수와 커버리지",
+      "partKnowledge": "자기 지식",
+      "partKnowledgeHint": "승인된 기억과 나에 관한 사실",
+      "partTraining": "학습 기록",
+      "partTrainingHint": "내 답변, 목표, 커버리지가 담겨 다른 곳에서도 학습을 이어갈 수 있습니다",
+      "partVoice": "말투와 정체성",
+      "partVoiceHint": "항상 포함됨: 채널별 글쓰기 방식",
+      "partitionsLabel": "포함할 항목",
+      "passphrase": "암호 문구",
+      "passphraseHint": "8자 이상. 암호 문구가 없으면 암호화된 부분을 열 수 없습니다.",
+      "sealLabel": "개인 정보 부분을 암호 문구로 암호화",
+      "sealedNeedsPass": "일부는 암호화되어 있습니다. 가져오려면 암호 문구를 입력하세요.",
+      "signatureInvalid": "서명이 일치하지 않습니다",
+      "signatureUnsigned": "서명 없음",
+      "signatureValid": "서명됨",
+      "unsignedNote": "기기 ID가 없어 서명 없이 저장했습니다.",
+      "unsupported": "이 카드는 {version} 버전이라 이 앱에서 읽을 수 없습니다."
+    },
+    "detail": {
+      "export": "내보내기",
+      "import": "트윈 가져오기",
+      "noTwin": "아직 트윈이 없습니다",
+      "proposals_many": "{count}건 검토 필요",
+      "proposals_one": "1건 검토 필요",
+      "tabLabel": "상세"
+    },
+    "samples": {
+      "analyzing": "샘플을 읽는 중",
+      "dismiss": "무시",
+      "edit": "편집",
+      "failed": "샘플을 읽지 못했습니다",
+      "forChannel": "{channel}용",
+      "fromClipboard": "복사한 샘플에서",
+      "fromForge": "트윈을 만들 때 사용한 샘플에서",
+      "fromHost": "{host}의 샘플에서",
+      "keep": "유지",
+      "kindConstraint": "해야 할 것·하지 말 것",
+      "kindDims": "스타일",
+      "kindExemplar": "글쓰기 샘플",
+      "kindLength": "길이",
+      "kindVoice": "말투 규칙",
+      "laneTitle": "샘플에서 학습한 내용",
+      "refused": "학습하지 않음: {reason}"
     }
   },
   "vault": {
@@ -23592,7 +23757,27 @@
       "steer_label": "빠른 조정",
       "submit": "제출",
       "submit_form": "양식 제출",
-      "untitled_box": "이 입력란"
+      "untitled_box": "이 입력란",
+      "learn": {
+        "cancel": "취소",
+        "capturing": "선택 영역을 읽는 중",
+        "choose_clipboard_many": "클립보드에서 {count}단어",
+        "choose_clipboard_one": "클립보드에서 1단어",
+        "choose_selection_many": "{host}에서 {count}단어",
+        "choose_selection_one": "{host}에서 1단어",
+        "done_many": "대기 중인 제안 {count}건",
+        "done_none": "이 샘플에서 새로 배울 내용이 없습니다",
+        "done_one": "대기 중인 제안 1건",
+        "failed": "선택 영역을 읽지 못했습니다. 텍스트를 복사한 뒤 \"학습\"을 다시 누르세요.",
+        "learn": "선택 영역에서 학습",
+        "learn_no_twin": "먼저 트윈 → 프로필에서 트윈을 선택하세요",
+        "learning": "백그라운드에서 학습 중",
+        "new_twin": "새 트윈",
+        "nothing_selected": "먼저 직접 쓴 글을 선택하거나 복사하세요",
+        "open_hub": "허브 열기",
+        "refused": "학습하지 않음: {reason}",
+        "teach": "{name}에게 가르치기"
+      }
     }
   },
   "council": {

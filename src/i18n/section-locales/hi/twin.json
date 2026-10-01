@@ -844,5 +844,170 @@
       "unpin": "इस लक्ष्य का पिन हटाएँ",
       "upNext": "आगे"
     }
+  },
+  "blueprint": {
+    "delta": {
+      "dealing": "अगला प्रश्न",
+      "gain": "कवरेज +{gain}",
+      "recorded": "उत्तर दर्ज किया गया",
+      "scoring": "आपके उत्तर का मूल्यांकन हो रहा है",
+      "why": "यह क्यों गिना गया"
+    },
+    "kinds": {
+      "fact": "तथ्य",
+      "opinion": "राय",
+      "preference": "पसंद",
+      "reply_drill": "जवाब का अभ्यास",
+      "rule": "नियम",
+      "scene": "दृश्य"
+    },
+    "metrics": {
+      "answers": "उत्तर",
+      "approved": "स्वीकृत",
+      "awaiting": "समीक्षा की प्रतीक्षा में",
+      "bio": "बायो",
+      "channels": "चैनल",
+      "coverage": "कवरेज",
+      "directives": "निर्देश",
+      "facts": "तथ्य",
+      "goals": "लक्ष्य",
+      "kbBound": "जुड़ा हुआ",
+      "kbUnbound": "जुड़ा नहीं",
+      "kinds": "प्रश्नों के प्रकार",
+      "knowledgeBase": "नॉलेज बेस",
+      "languages": "भाषाएँ",
+      "lastTrained": "आख़िरी प्रशिक्षण",
+      "memories": "स्मृतियाँ",
+      "neverTrained": "अभी प्रशिक्षित नहीं",
+      "noLanguages": "कोई भाषा सेट नहीं",
+      "noStyle": "कोई शैली सहेजी नहीं गई",
+      "observations": "अवलोकन",
+      "originLearned": "आपके लेखन से सीखा",
+      "originManual": "हाथ से लिखा",
+      "originPreset": "प्रीसेट से",
+      "originRolled": "यादृच्छिक रूप से चुना",
+      "readiness": "तत्परता",
+      "rejected": "अस्वीकृत",
+      "rules": "नियम",
+      "samples": "नमूने",
+      "samplesOpen": "समीक्षा के लिए",
+      "style": "शैली",
+      "topics": "विषय"
+    },
+    "nav": {
+      "back": "अवलोकन पर वापस जाएँ",
+      "editInSetup": "सेटअप में संपादित करें",
+      "openDetail": "पूरा विवरण",
+      "zoomInto": "{section} खोलें"
+    },
+    "sectionHints": {
+      "identity": "ट्विन कौन है",
+      "knowledge": "यह आपके बारे में क्या जानता है",
+      "training": "प्रशिक्षण में अब तक क्या-क्या हुआ",
+      "voice": "यह हर चैनल पर कैसे लिखता है"
+    },
+    "sections": {
+      "identity": "पहचान",
+      "knowledge": "नॉलेज",
+      "training": "प्रशिक्षण",
+      "voice": "आवाज़"
+    },
+    "states": {
+      "emptyKnowledge": "अभी कुछ सीखा नहीं गया",
+      "emptyTraining": "अभी कोई प्रशिक्षण नहीं",
+      "emptyVoice": "किसी चैनल की अभी कोई आवाज़ नहीं",
+      "notDrawn": "अभी बनाया नहीं गया",
+      "notMeasured": "मापा नहीं गया",
+      "working": "आपके उत्तर पढ़े जा रहे हैं"
+    },
+    "tiers": {
+      "covered": "कवर हुआ",
+      "some": "कुछ",
+      "thin": "कम"
+    },
+    "variantCopy": {
+      "dossier": {
+        "heroLabel": "ट्विन डोज़ियर"
+      },
+      "drafting": {
+        "sheetTitle": "ट्विन का नक्शा"
+      },
+      "radial": {
+        "centerHint": "एक खंड चुनें"
+      },
+      "strata": {
+        "plateHint": "परत को उठाने के लिए उस पर क्लिक करें"
+      }
+    },
+    "variants": {
+      "dossier": "डोज़ियर",
+      "drafting": "ड्राइंग शीट",
+      "label": "ब्लूप्रिंट शैली",
+      "radial": "रेडियल",
+      "strata": "परतें"
+    }
+  },
+  "card": {
+    "conflictDuplicate": "कॉपी के रूप में आयात करें",
+    "conflictReplace": "इसे बदलें",
+    "conflictSkip": "छोड़ें",
+    "conflictTitle": "\"{name}\" नाम का ट्विन पहले से मौजूद है",
+    "exportAction": "निर्यात करें",
+    "exportTitle": "ट्विन निर्यात करें",
+    "exported": "{path} में निर्यात किया गया",
+    "formatCcv3": "Character Card V3",
+    "formatLabel": "फ़ॉर्मेट",
+    "formatTwinCard": "Twin Card",
+    "hashMismatch": "निर्यात के बाद \"{part}\" भाग बदल दिया गया था",
+    "importAction": "आयात करें",
+    "importPick": "Twin Card फ़ाइल चुनें",
+    "importTitle": "ट्विन आयात करें",
+    "imported": "{name} आयात किया गया",
+    "inspecting": "कार्ड पढ़ा जा रहा है",
+    "invalid": "यह फ़ाइल मान्य Twin Card नहीं है।",
+    "partEvidence": "प्रमाण",
+    "partEvidenceHint": "गिनती और कवरेज, जिनसे कोई दूसरा टूल ट्विन का आकलन कर सके",
+    "partKnowledge": "आत्म-ज्ञान",
+    "partKnowledgeHint": "स्वीकृत स्मृतियाँ और आपके बारे में तथ्य",
+    "partTraining": "प्रशिक्षण रिकॉर्ड",
+    "partTrainingHint": "आपके उत्तर, लक्ष्य और कवरेज, ताकि प्रशिक्षण कहीं और जारी रह सके",
+    "partVoice": "आवाज़ और पहचान",
+    "partVoiceHint": "हमेशा शामिल: यह हर चैनल पर कैसे लिखता है",
+    "partitionsLabel": "क्या शामिल करें",
+    "passphrase": "पासफ़्रेज़",
+    "passphraseHint": "कम से कम 8 अक्षर। इसके बिना सीलबंद भाग खोले नहीं जा सकते।",
+    "sealLabel": "निजी भागों को पासफ़्रेज़ से सील करें",
+    "sealedNeedsPass": "कुछ भाग सीलबंद हैं। उन्हें आयात करने के लिए पासफ़्रेज़ दर्ज करें।",
+    "signatureInvalid": "हस्ताक्षर मेल नहीं खाता",
+    "signatureUnsigned": "हस्ताक्षर रहित",
+    "signatureValid": "हस्ताक्षरित",
+    "unsignedNote": "हस्ताक्षर के बिना सहेजा गया: कोई डिवाइस पहचान उपलब्ध नहीं है।",
+    "unsupported": "यह कार्ड संस्करण {version} का उपयोग करता है, जिसे यह ऐप नहीं पढ़ सकता।"
+  },
+  "detail": {
+    "export": "निर्यात करें",
+    "import": "ट्विन आयात करें",
+    "noTwin": "अभी कोई ट्विन नहीं",
+    "proposals_many": "समीक्षा के लिए {count}",
+    "proposals_one": "समीक्षा के लिए 1",
+    "tabLabel": "विवरण"
+  },
+  "samples": {
+    "analyzing": "नमूना पढ़ा जा रहा है",
+    "dismiss": "खारिज करें",
+    "edit": "संपादित करें",
+    "failed": "नमूना पढ़ा नहीं जा सका",
+    "forChannel": "{channel} के लिए",
+    "fromClipboard": "कॉपी किए गए नमूने से",
+    "fromForge": "उस नमूने से जिससे ट्विन बनाया गया था",
+    "fromHost": "{host} के एक नमूने से",
+    "keep": "रखें",
+    "kindConstraint": "क्या करें, क्या न करें",
+    "kindDims": "शैली",
+    "kindExemplar": "लेखन नमूना",
+    "kindLength": "लंबाई",
+    "kindVoice": "आवाज़ का नियम",
+    "laneTitle": "नमूनों से सीखा",
+    "refused": "सीखा नहीं गया: {reason}"
   }
 }

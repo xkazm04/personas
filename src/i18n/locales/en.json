@@ -22174,6 +22174,171 @@
         "channels": "Where do you do most of your writing: email, chat, or somewhere else?",
         "memories": "What is a story you find yourself telling again and again?"
       }
+    },
+    "blueprint": {
+      "sections": {
+        "identity": "Identity",
+        "voice": "Voice",
+        "knowledge": "Knowledge",
+        "training": "Training"
+      },
+      "sectionHints": {
+        "identity": "Who the twin is",
+        "voice": "How it writes on each channel",
+        "knowledge": "What it knows about you",
+        "training": "What training has covered"
+      },
+      "variants": {
+        "label": "Blueprint style",
+        "drafting": "Drafting sheet",
+        "strata": "Strata",
+        "dossier": "Dossier",
+        "radial": "Radial"
+      },
+      "metrics": {
+        "bio": "Bio",
+        "languages": "Languages",
+        "noLanguages": "No languages set",
+        "channels": "Channels",
+        "samples": "Samples",
+        "rules": "Rules",
+        "directives": "Directives",
+        "style": "Style",
+        "noStyle": "No style stored",
+        "originPreset": "From a preset",
+        "originRolled": "Rolled",
+        "originLearned": "Learned from your writing",
+        "originManual": "Written by hand",
+        "memories": "Memories",
+        "approved": "Approved",
+        "awaiting": "Awaiting review",
+        "rejected": "Rejected",
+        "facts": "Facts",
+        "knowledgeBase": "Knowledge base",
+        "kbBound": "Bound",
+        "kbUnbound": "Not bound",
+        "answers": "Answers",
+        "goals": "Goals",
+        "coverage": "Coverage",
+        "observations": "Observations",
+        "topics": "Topics",
+        "kinds": "Question kinds",
+        "lastTrained": "Last trained",
+        "neverTrained": "Not trained yet",
+        "readiness": "Readiness",
+        "samplesOpen": "To review"
+      },
+      "tiers": {
+        "thin": "Thin",
+        "some": "Some",
+        "covered": "Covered"
+      },
+      "kinds": {
+        "scene": "Scene",
+        "opinion": "Opinion",
+        "reply_drill": "Reply drill",
+        "fact": "Fact",
+        "rule": "Rule",
+        "preference": "Preference"
+      },
+      "states": {
+        "notDrawn": "Not drawn yet",
+        "notMeasured": "Not measured",
+        "working": "Reading your answers",
+        "emptyVoice": "No channel has a voice yet",
+        "emptyTraining": "No training yet",
+        "emptyKnowledge": "Nothing learned yet"
+      },
+      "delta": {
+        "recorded": "Answer recorded",
+        "scoring": "Scoring your answer",
+        "gain": "Coverage +{gain}",
+        "why": "Why it counted",
+        "dealing": "Next question"
+      },
+      "nav": {
+        "back": "Back to overview",
+        "openDetail": "Full detail",
+        "editInSetup": "Edit in setup",
+        "zoomInto": "Open {section}"
+      },
+      "variantCopy": {
+        "drafting": {
+          "sheetTitle": "Twin plan"
+        },
+        "strata": {
+          "plateHint": "Click a plate to lift it"
+        },
+        "dossier": {
+          "heroLabel": "Twin dossier"
+        },
+        "radial": {
+          "centerHint": "Pick a segment"
+        }
+      }
+    },
+    "detail": {
+      "tabLabel": "Detail",
+      "proposals_one": "1 to review",
+      "proposals_many": "{count} to review",
+      "export": "Export",
+      "import": "Import twin",
+      "noTwin": "No twin yet"
+    },
+    "card": {
+      "exportTitle": "Export twin",
+      "partitionsLabel": "What to include",
+      "partVoice": "Voice and identity",
+      "partVoiceHint": "Always included: how it writes on each channel",
+      "partKnowledge": "Self-knowledge",
+      "partKnowledgeHint": "Approved memories and facts about you",
+      "partTraining": "Training record",
+      "partTrainingHint": "Your answers, goals and coverage, so training can continue elsewhere",
+      "partEvidence": "Evidence",
+      "partEvidenceHint": "Counts and coverage another tool can use to judge the twin",
+      "sealLabel": "Seal personal parts with a passphrase",
+      "passphrase": "Passphrase",
+      "passphraseHint": "At least 8 characters. Without it, the sealed parts cannot be opened.",
+      "formatLabel": "Format",
+      "formatTwinCard": "Twin Card",
+      "formatCcv3": "Character Card V3",
+      "exportAction": "Export",
+      "exported": "Exported to {path}",
+      "unsignedNote": "Saved without a signature: no device identity is available.",
+      "importTitle": "Import twin",
+      "importPick": "Choose a Twin Card file",
+      "inspecting": "Reading the card",
+      "unsupported": "This card uses version {version}, which this app cannot read.",
+      "invalid": "This file is not a valid Twin Card.",
+      "signatureValid": "Signed",
+      "signatureInvalid": "Signature does not match",
+      "signatureUnsigned": "Unsigned",
+      "sealedNeedsPass": "Some parts are sealed. Enter the passphrase to import them.",
+      "conflictTitle": "A twin named {name} already exists",
+      "conflictDuplicate": "Import as a copy",
+      "conflictReplace": "Replace it",
+      "conflictSkip": "Skip",
+      "importAction": "Import",
+      "imported": "Imported {name}",
+      "hashMismatch": "The {part} part was changed after export"
+    },
+    "samples": {
+      "laneTitle": "Learned from samples",
+      "kindExemplar": "Writing sample",
+      "kindVoice": "Voice rule",
+      "kindConstraint": "Do or don't",
+      "kindLength": "Length",
+      "kindDims": "Style",
+      "fromHost": "From a sample on {host}",
+      "fromClipboard": "From a copied sample",
+      "fromForge": "From the sample the twin was created with",
+      "forChannel": "For {channel}",
+      "keep": "Keep",
+      "edit": "Edit",
+      "dismiss": "Dismiss",
+      "analyzing": "Reading the sample",
+      "failed": "Could not read the sample",
+      "refused": "Not learned: {reason}"
     }
   },
   "radio": {
@@ -24272,7 +24437,27 @@
       "chip_warmer": "Warmer",
       "chip_formal": "More formal",
       "chip_question": "End with a question",
-      "untitled_box": "this box"
+      "untitled_box": "this box",
+      "learn": {
+        "learn": "Learn from selection",
+        "learn_no_twin": "Pick a twin in Twin, Profiles first",
+        "capturing": "Reading your selection",
+        "choose_selection_one": "1 word from {host}",
+        "choose_selection_many": "{count} words from {host}",
+        "choose_clipboard_one": "1 word from the clipboard",
+        "choose_clipboard_many": "{count} words from the clipboard",
+        "teach": "Teach {name}",
+        "new_twin": "New twin",
+        "cancel": "Cancel",
+        "learning": "Learning in the background",
+        "done_one": "1 proposal waiting",
+        "done_many": "{count} proposals waiting",
+        "done_none": "Nothing new to learn from that sample",
+        "open_hub": "Open Hub",
+        "nothing_selected": "Select or copy some of your own writing first",
+        "failed": "Could not read the selection. Copy the text and press Learn again.",
+        "refused": "Not learned: {reason}"
+      }
     }
   },
   "companions": {

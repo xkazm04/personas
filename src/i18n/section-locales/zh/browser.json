@@ -174,6 +174,26 @@
     "steer_label": "快速调整",
     "submit": "提交",
     "submit_form": "提交表单",
-    "untitled_box": "此输入框"
+    "untitled_box": "此输入框",
+    "learn": {
+      "cancel": "取消",
+      "capturing": "正在读取所选内容",
+      "choose_clipboard_many": "剪贴板中的 {count} 个词",
+      "choose_clipboard_one": "剪贴板中的 1 个词",
+      "choose_selection_many": "来自 {host} 的 {count} 个词",
+      "choose_selection_one": "来自 {host} 的 1 个词",
+      "done_many": "{count} 条提案待处理",
+      "done_none": "此样本中没有可学习的新内容",
+      "done_one": "1 条提案待处理",
+      "failed": "无法读取所选内容。请复制文本后再次点击「学习」。",
+      "learn": "从所选内容学习",
+      "learn_no_twin": "请先在 分身 → 档案 中选择一个分身",
+      "learning": "正在后台学习",
+      "new_twin": "新建分身",
+      "nothing_selected": "请先选中或复制一段自己写的文字",
+      "open_hub": "打开中心",
+      "refused": "未学习：{reason}",
+      "teach": "教导{name}"
+    }
   }
 }

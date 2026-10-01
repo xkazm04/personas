@@ -844,5 +844,170 @@
       "unpin": "Открепить эту цель",
       "upNext": "Дальше"
     }
+  },
+  "blueprint": {
+    "delta": {
+      "dealing": "Следующий вопрос",
+      "gain": "Покрытие +{gain}",
+      "recorded": "Ответ записан",
+      "scoring": "Оценка вашего ответа",
+      "why": "Почему это засчитано"
+    },
+    "kinds": {
+      "fact": "Факт",
+      "opinion": "Мнение",
+      "preference": "Предпочтение",
+      "reply_drill": "Тренировка ответа",
+      "rule": "Правило",
+      "scene": "Сцена"
+    },
+    "metrics": {
+      "answers": "Ответы",
+      "approved": "Одобрено",
+      "awaiting": "Ждут проверки",
+      "bio": "Био",
+      "channels": "Каналы",
+      "coverage": "Покрытие",
+      "directives": "Инструкции",
+      "facts": "Факты",
+      "goals": "Цели",
+      "kbBound": "Привязана",
+      "kbUnbound": "Не привязана",
+      "kinds": "Типы вопросов",
+      "knowledgeBase": "База знаний",
+      "languages": "Языки",
+      "lastTrained": "Последнее обучение",
+      "memories": "Воспоминания",
+      "neverTrained": "Ещё не обучен",
+      "noLanguages": "Языки не заданы",
+      "noStyle": "Стиль не сохранён",
+      "observations": "Наблюдения",
+      "originLearned": "Усвоено из ваших текстов",
+      "originManual": "Написано вручную",
+      "originPreset": "Из пресета",
+      "originRolled": "Выпало случайно",
+      "readiness": "Готовность",
+      "rejected": "Отклонено",
+      "rules": "Правила",
+      "samples": "Образцы",
+      "samplesOpen": "На проверку",
+      "style": "Стиль",
+      "topics": "Темы"
+    },
+    "nav": {
+      "back": "Назад к обзору",
+      "editInSetup": "Изменить в настройке",
+      "openDetail": "Полные сведения",
+      "zoomInto": "Открыть {section}"
+    },
+    "sectionHints": {
+      "identity": "Кто такой двойник",
+      "knowledge": "Что он знает о вас",
+      "training": "Что охватило обучение",
+      "voice": "Как он пишет в каждом канале"
+    },
+    "sections": {
+      "identity": "Личность",
+      "knowledge": "Знания",
+      "training": "Обучение",
+      "voice": "Голос"
+    },
+    "states": {
+      "emptyKnowledge": "Пока ничего не усвоено",
+      "emptyTraining": "Обучения ещё не было",
+      "emptyVoice": "Ни у одного канала пока нет голоса",
+      "notDrawn": "Ещё не нарисовано",
+      "notMeasured": "Не измерено",
+      "working": "Чтение ваших ответов"
+    },
+    "tiers": {
+      "covered": "Охвачено",
+      "some": "Частично",
+      "thin": "Мало"
+    },
+    "variantCopy": {
+      "dossier": {
+        "heroLabel": "Досье двойника"
+      },
+      "drafting": {
+        "sheetTitle": "План двойника"
+      },
+      "radial": {
+        "centerHint": "Выберите сегмент"
+      },
+      "strata": {
+        "plateHint": "Нажмите на слой, чтобы приподнять его"
+      }
+    },
+    "variants": {
+      "dossier": "Досье",
+      "drafting": "Чертёжный лист",
+      "label": "Стиль схемы",
+      "radial": "Радиальный",
+      "strata": "Слои"
+    }
+  },
+  "card": {
+    "conflictDuplicate": "Импортировать как копию",
+    "conflictReplace": "Заменить",
+    "conflictSkip": "Пропустить",
+    "conflictTitle": "Двойник «{name}» уже существует",
+    "exportAction": "Экспорт",
+    "exportTitle": "Экспорт двойника",
+    "exported": "Экспортировано в {path}",
+    "formatCcv3": "Character Card V3",
+    "formatLabel": "Формат",
+    "formatTwinCard": "Twin Card",
+    "hashMismatch": "Часть «{part}» изменена после экспорта",
+    "importAction": "Импорт",
+    "importPick": "Выберите файл Twin Card",
+    "importTitle": "Импорт двойника",
+    "imported": "Импортирован: {name}",
+    "inspecting": "Чтение карты",
+    "invalid": "Этот файл не является допустимым файлом Twin Card.",
+    "partEvidence": "Доказательства",
+    "partEvidenceHint": "Количества и покрытие, по которым другой инструмент может оценить двойника",
+    "partKnowledge": "Знание о себе",
+    "partKnowledgeHint": "Одобренные воспоминания и факты о вас",
+    "partTraining": "История обучения",
+    "partTrainingHint": "Ваши ответы, цели и покрытие, чтобы обучение можно было продолжить в другом месте",
+    "partVoice": "Голос и личность",
+    "partVoiceHint": "Включено всегда: как двойник пишет в каждом канале",
+    "partitionsLabel": "Что включить",
+    "passphrase": "Парольная фраза",
+    "passphraseHint": "Не менее 8 символов. Без неё запечатанные части не открыть.",
+    "sealLabel": "Запечатать личные части парольной фразой",
+    "sealedNeedsPass": "Некоторые части запечатаны. Введите парольную фразу, чтобы их импортировать.",
+    "signatureInvalid": "Подпись не совпадает",
+    "signatureUnsigned": "Без подписи",
+    "signatureValid": "Подписано",
+    "unsignedNote": "Сохранено без подписи: удостоверение устройства недоступно.",
+    "unsupported": "Эта карта использует версию {version}, которую приложение не может прочитать."
+  },
+  "detail": {
+    "export": "Экспорт",
+    "import": "Импорт двойника",
+    "noTwin": "Двойника пока нет",
+    "proposals_many": "На проверку: {count}",
+    "proposals_one": "1 на проверку",
+    "tabLabel": "Детали"
+  },
+  "samples": {
+    "analyzing": "Чтение образца",
+    "dismiss": "Отклонить",
+    "edit": "Изменить",
+    "failed": "Не удалось прочитать образец",
+    "forChannel": "Для канала {channel}",
+    "fromClipboard": "Из скопированного образца",
+    "fromForge": "Из образца, с которым создавался двойник",
+    "fromHost": "Из образца на {host}",
+    "keep": "Оставить",
+    "kindConstraint": "Можно и нельзя",
+    "kindDims": "Стиль",
+    "kindExemplar": "Образец текста",
+    "kindLength": "Длина",
+    "kindVoice": "Правило голоса",
+    "laneTitle": "Усвоено из образцов",
+    "refused": "Не усвоено: {reason}"
   }
 }

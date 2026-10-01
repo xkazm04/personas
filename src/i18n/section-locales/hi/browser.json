@@ -174,6 +174,26 @@
     "steer_label": "त्वरित निर्देश",
     "submit": "सबमिट करें",
     "submit_form": "फ़ॉर्म सबमिट करें",
-    "untitled_box": "यह बॉक्स"
+    "untitled_box": "यह बॉक्स",
+    "learn": {
+      "cancel": "रद्द करें",
+      "capturing": "आपका चयन पढ़ा जा रहा है",
+      "choose_clipboard_many": "क्लिपबोर्ड से {count} शब्द",
+      "choose_clipboard_one": "क्लिपबोर्ड से 1 शब्द",
+      "choose_selection_many": "{host} से {count} शब्द",
+      "choose_selection_one": "{host} से 1 शब्द",
+      "done_many": "{count} सुझाव प्रतीक्षा में",
+      "done_none": "उस नमूने से सीखने के लिए कुछ नया नहीं है",
+      "done_one": "1 सुझाव प्रतीक्षा में",
+      "failed": "चयन पढ़ा नहीं जा सका। टेक्स्ट कॉपी करें और फिर से \"सीखें\" दबाएँ।",
+      "learn": "चयन से सीखें",
+      "learn_no_twin": "पहले ट्विन → प्रोफ़ाइल में एक ट्विन चुनें",
+      "learning": "पृष्ठभूमि में सीखना जारी है",
+      "new_twin": "नया ट्विन",
+      "nothing_selected": "पहले अपना लिखा कुछ टेक्स्ट चुनें या कॉपी करें",
+      "open_hub": "हब खोलें",
+      "refused": "सीखा नहीं गया: {reason}",
+      "teach": "{name} को सिखाएँ"
+    }
   }
 }

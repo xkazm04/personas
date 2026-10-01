@@ -174,6 +174,26 @@
     "steer_label": "Schnell-Steuerung",
     "submit": "Absenden",
     "submit_form": "Formular absenden",
-    "untitled_box": "dieses Feld"
+    "untitled_box": "dieses Feld",
+    "learn": {
+      "cancel": "Abbrechen",
+      "capturing": "Ihre Auswahl wird gelesen",
+      "choose_clipboard_many": "{count} Wörter aus der Zwischenablage",
+      "choose_clipboard_one": "1 Wort aus der Zwischenablage",
+      "choose_selection_many": "{count} Wörter von {host}",
+      "choose_selection_one": "1 Wort von {host}",
+      "done_many": "{count} Vorschläge warten",
+      "done_none": "Aus dieser Textprobe gibt es nichts Neues zu lernen",
+      "done_one": "1 Vorschlag wartet",
+      "failed": "Die Auswahl konnte nicht gelesen werden. Kopieren Sie den Text und klicken Sie erneut auf Lernen.",
+      "learn": "Aus Auswahl lernen",
+      "learn_no_twin": "Wählen Sie zuerst unter Twin, Profile einen Twin",
+      "learning": "Lernt im Hintergrund",
+      "new_twin": "Neuer Twin",
+      "nothing_selected": "Wählen oder kopieren Sie zuerst etwas von Ihren eigenen Texten",
+      "open_hub": "Hub öffnen",
+      "refused": "Nicht gelernt: {reason}",
+      "teach": "{name} anlernen"
+    }
   }
 }

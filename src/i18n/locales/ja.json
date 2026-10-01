@@ -21401,6 +21401,171 @@
         "unpin": "この目標のピン留めを外す",
         "upNext": "次の予定"
       }
+    },
+    "blueprint": {
+      "delta": {
+        "dealing": "次の質問",
+        "gain": "カバレッジ +{gain}",
+        "recorded": "回答を記録しました",
+        "scoring": "回答を評価中",
+        "why": "加算された理由"
+      },
+      "kinds": {
+        "fact": "事実",
+        "opinion": "意見",
+        "preference": "好み",
+        "reply_drill": "返信ドリル",
+        "rule": "ルール",
+        "scene": "シーン"
+      },
+      "metrics": {
+        "answers": "回答",
+        "approved": "承認済み",
+        "awaiting": "レビュー待ち",
+        "bio": "プロフィール",
+        "channels": "チャンネル",
+        "coverage": "カバレッジ",
+        "directives": "指示",
+        "facts": "事実",
+        "goals": "目標",
+        "kbBound": "紐づけ済み",
+        "kbUnbound": "未紐づけ",
+        "kinds": "質問の種類",
+        "knowledgeBase": "ナレッジベース",
+        "languages": "言語",
+        "lastTrained": "最終トレーニング",
+        "memories": "記憶",
+        "neverTrained": "まだトレーニングされていません",
+        "noLanguages": "言語が未設定",
+        "noStyle": "保存されたスタイルなし",
+        "observations": "観察結果",
+        "originLearned": "書いた文章から学習",
+        "originManual": "手動で入力",
+        "originPreset": "プリセットから",
+        "originRolled": "生成",
+        "readiness": "準備状況",
+        "rejected": "却下済み",
+        "rules": "ルール",
+        "samples": "サンプル",
+        "samplesOpen": "確認待ち",
+        "style": "スタイル",
+        "topics": "トピック"
+      },
+      "nav": {
+        "back": "概要に戻る",
+        "editInSetup": "セットアップで編集",
+        "openDetail": "詳細をすべて表示",
+        "zoomInto": "{section}を開く"
+      },
+      "sectionHints": {
+        "identity": "ツインがどんな人物か",
+        "knowledge": "あなたについて知っていること",
+        "training": "トレーニングで扱った内容",
+        "voice": "各チャンネルでの書き方"
+      },
+      "sections": {
+        "identity": "アイデンティティ",
+        "knowledge": "ナレッジ",
+        "training": "トレーニング",
+        "voice": "口調"
+      },
+      "states": {
+        "emptyKnowledge": "まだ何も学習していません",
+        "emptyTraining": "トレーニングはまだありません",
+        "emptyVoice": "口調が設定されたチャンネルはまだありません",
+        "notDrawn": "まだ描画されていません",
+        "notMeasured": "未計測",
+        "working": "回答を読み取り中"
+      },
+      "tiers": {
+        "covered": "十分にカバー",
+        "some": "ある程度カバー",
+        "thin": "情報が少なめ"
+      },
+      "variantCopy": {
+        "dossier": {
+          "heroLabel": "ツインの人物ファイル"
+        },
+        "drafting": {
+          "sheetTitle": "ツインの設計図"
+        },
+        "radial": {
+          "centerHint": "セグメントを選択"
+        },
+        "strata": {
+          "plateHint": "層をクリックして持ち上げます"
+        }
+      },
+      "variants": {
+        "dossier": "人物ファイル",
+        "drafting": "製図シート",
+        "label": "ブループリントのスタイル",
+        "radial": "放射状",
+        "strata": "地層"
+      }
+    },
+    "card": {
+      "conflictDuplicate": "コピーとして取り込む",
+      "conflictReplace": "置き換える",
+      "conflictSkip": "スキップ",
+      "conflictTitle": "「{name}」というツインはすでに存在します",
+      "exportAction": "エクスポート",
+      "exportTitle": "ツインをエクスポート",
+      "exported": "{path} にエクスポートしました",
+      "formatCcv3": "Character Card V3",
+      "formatLabel": "形式",
+      "formatTwinCard": "Twin Card",
+      "hashMismatch": "エクスポート後に「{part}」の部分が変更されました",
+      "importAction": "インポート",
+      "importPick": "Twin Cardファイルを選択",
+      "importTitle": "ツインをインポート",
+      "imported": "{name}をインポートしました",
+      "inspecting": "カードを読み取り中",
+      "invalid": "このファイルは有効なTwin Cardではありません。",
+      "partEvidence": "根拠",
+      "partEvidenceHint": "他のツールがツインを評価するために使える件数とカバレッジ",
+      "partKnowledge": "自己知識",
+      "partKnowledgeHint": "承認済みの記憶と、あなたに関する事実",
+      "partTraining": "トレーニング記録",
+      "partTrainingHint": "回答、目標、カバレッジ。ほかの場所でもトレーニングを続けられます",
+      "partVoice": "口調とアイデンティティ",
+      "partVoiceHint": "常に含まれます: 各チャンネルでの書き方",
+      "partitionsLabel": "含める内容",
+      "passphrase": "パスフレーズ",
+      "passphraseHint": "8文字以上。パスフレーズがないと、暗号化された部分は開けません。",
+      "sealLabel": "個人的な部分をパスフレーズで暗号化",
+      "sealedNeedsPass": "一部が暗号化されています。インポートするにはパスフレーズを入力してください。",
+      "signatureInvalid": "署名が一致しません",
+      "signatureUnsigned": "署名なし",
+      "signatureValid": "署名済み",
+      "unsignedNote": "デバイスIDがないため、署名なしで保存しました。",
+      "unsupported": "このカードはバージョン {version} で、このアプリでは読み取れません。"
+    },
+    "detail": {
+      "export": "エクスポート",
+      "import": "ツインをインポート",
+      "noTwin": "ツインはまだありません",
+      "proposals_many": "確認待ち {count} 件",
+      "proposals_one": "確認待ち 1 件",
+      "tabLabel": "詳細"
+    },
+    "samples": {
+      "analyzing": "サンプルを読み取り中",
+      "dismiss": "却下",
+      "edit": "編集",
+      "failed": "サンプルを読み取れませんでした",
+      "forChannel": "{channel}向け",
+      "fromClipboard": "コピーしたサンプルから",
+      "fromForge": "ツインの作成時に使ったサンプルから",
+      "fromHost": "{host} 上のサンプルから",
+      "keep": "保持",
+      "kindConstraint": "やること・やらないこと",
+      "kindDims": "スタイル",
+      "kindExemplar": "文章サンプル",
+      "kindLength": "長さ",
+      "kindVoice": "口調ルール",
+      "laneTitle": "サンプルからの学習",
+      "refused": "学習しませんでした: {reason}"
     }
   },
   "vault": {
@@ -23592,7 +23757,27 @@
       "steer_label": "クイック調整",
       "submit": "送信",
       "submit_form": "フォームを送信",
-      "untitled_box": "この入力欄"
+      "untitled_box": "この入力欄",
+      "learn": {
+        "cancel": "キャンセル",
+        "capturing": "選択範囲を読み取り中",
+        "choose_clipboard_many": "クリップボードから {count} 語",
+        "choose_clipboard_one": "クリップボードから 1 語",
+        "choose_selection_many": "{host}から {count} 語",
+        "choose_selection_one": "{host}から 1 語",
+        "done_many": "確認待ちの提案 {count} 件",
+        "done_none": "このサンプルから新しく学べることはありません",
+        "done_one": "確認待ちの提案 1 件",
+        "failed": "選択範囲を読み取れませんでした。テキストをコピーして、もう一度「学習」を押してください。",
+        "learn": "選択範囲から学習",
+        "learn_no_twin": "先にツイン → プロファイルでツインを選択してください",
+        "learning": "バックグラウンドで学習中",
+        "new_twin": "新規ツイン",
+        "nothing_selected": "先に自分の文章を選択またはコピーしてください",
+        "open_hub": "ハブを開く",
+        "refused": "学習しませんでした: {reason}",
+        "teach": "{name}に教える"
+      }
     }
   },
   "council": {

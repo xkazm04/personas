@@ -305,6 +305,10 @@ const BUILDERS = {
   ...Object.fromEntries(['athena/table/intro', 'athena/table/reach', 'athena/table/voice', 'athena/table/stt', 'athena/stage/reach', 'athena/stage/voice'].map((id) => [
     id, () => ({ version: 1, module: id, source: 'synthetic', recordedAt: RECORDED_AT, note: 'Hand-built engine states, no IPC.', calls: [] }),
   ])),
+  // Twin blueprint variants (twinBlueprintSurfaces.tsx): fixture models, no IPC.
+  ...Object.fromEntries(['detail', 'detail-empty', 'detail-rich', 'detail-focus', 'stage', 'stage-working'].map((k) => [
+    `twin/blueprint/${k}`, () => ({ version: 1, module: `twin/blueprint/${k}`, source: 'synthetic', recordedAt: RECORDED_AT, note: 'Fixture blueprint models, no IPC.', calls: [] }),
+  ])),
   // shoot.mjs --self-test probes: no data needed.
   '__selftest/empty': () => ({ version: 1, source: 'synthetic', recordedAt: RECORDED_AT, calls: [] }),
   '__selftest/console-error': () => ({ version: 1, source: 'synthetic', recordedAt: RECORDED_AT, calls: [] }),

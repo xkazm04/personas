@@ -21401,6 +21401,171 @@
         "unpin": "Odepnout tento cíl",
         "upNext": "Na řadě"
       }
+    },
+    "blueprint": {
+      "delta": {
+        "dealing": "Další otázka",
+        "gain": "Pokrytí +{gain}",
+        "recorded": "Odpověď zaznamenána",
+        "scoring": "Hodnocení vaší odpovědi",
+        "why": "Proč se to započítalo"
+      },
+      "kinds": {
+        "fact": "Fakt",
+        "opinion": "Názor",
+        "preference": "Preference",
+        "reply_drill": "Nácvik odpovědí",
+        "rule": "Pravidlo",
+        "scene": "Scéna"
+      },
+      "metrics": {
+        "answers": "Odpovědi",
+        "approved": "Schváleno",
+        "awaiting": "Čeká na kontrolu",
+        "bio": "Životopis",
+        "channels": "Kanály",
+        "coverage": "Pokrytí",
+        "directives": "Pokyny",
+        "facts": "Fakta",
+        "goals": "Cíle",
+        "kbBound": "Propojeno",
+        "kbUnbound": "Nepropojeno",
+        "kinds": "Druhy otázek",
+        "knowledgeBase": "Znalostní báze",
+        "languages": "Jazyky",
+        "lastTrained": "Naposledy trénováno",
+        "memories": "Vzpomínky",
+        "neverTrained": "Zatím netrénováno",
+        "noLanguages": "Žádný jazyk není nastaven",
+        "noStyle": "Žádný styl není uložen",
+        "observations": "Pozorování",
+        "originLearned": "Naučeno z vašich textů",
+        "originManual": "Napsáno ručně",
+        "originPreset": "Z předvolby",
+        "originRolled": "Vylosováno",
+        "readiness": "Připravenost",
+        "rejected": "Zamítnuto",
+        "rules": "Pravidla",
+        "samples": "Vzorky",
+        "samplesOpen": "Ke kontrole",
+        "style": "Styl",
+        "topics": "Témata"
+      },
+      "nav": {
+        "back": "Zpět na přehled",
+        "editInSetup": "Upravit v Nastavení",
+        "openDetail": "Celý detail",
+        "zoomInto": "Otevřít {section}"
+      },
+      "sectionHints": {
+        "identity": "Kdo dvojník je",
+        "knowledge": "Co o vás ví",
+        "training": "Co už trénování pokrylo",
+        "voice": "Jak píše na jednotlivých kanálech"
+      },
+      "sections": {
+        "identity": "Identita",
+        "knowledge": "Znalosti",
+        "training": "Trénování",
+        "voice": "Hlas"
+      },
+      "states": {
+        "emptyKnowledge": "Zatím se nic nenaučil",
+        "emptyTraining": "Zatím žádné trénování",
+        "emptyVoice": "Žádný kanál zatím nemá hlas",
+        "notDrawn": "Zatím nenakresleno",
+        "notMeasured": "Neměřeno",
+        "working": "Čtení vašich odpovědí"
+      },
+      "tiers": {
+        "covered": "Pokryto",
+        "some": "Částečně",
+        "thin": "Málo"
+      },
+      "variantCopy": {
+        "dossier": {
+          "heroLabel": "Dosje dvojníka"
+        },
+        "drafting": {
+          "sheetTitle": "Plán dvojníka"
+        },
+        "radial": {
+          "centerHint": "Vyberte výseč"
+        },
+        "strata": {
+          "plateHint": "Kliknutím vrstvu nadzvednete"
+        }
+      },
+      "variants": {
+        "dossier": "Dosje",
+        "drafting": "Technický výkres",
+        "label": "Styl plánu",
+        "radial": "Radiální",
+        "strata": "Vrstvy"
+      }
+    },
+    "card": {
+      "conflictDuplicate": "Importovat jako kopii",
+      "conflictReplace": "Nahradit",
+      "conflictSkip": "Přeskočit",
+      "conflictTitle": "Dvojník s názvem {name} již existuje",
+      "exportAction": "Exportovat",
+      "exportTitle": "Export dvojníka",
+      "exported": "Exportováno do {path}",
+      "formatCcv3": "Character Card V3",
+      "formatLabel": "Formát",
+      "formatTwinCard": "Twin Card",
+      "hashMismatch": "Část {part} byla po exportu změněna",
+      "importAction": "Importovat",
+      "importPick": "Vyberte soubor Twin Card",
+      "importTitle": "Import dvojníka",
+      "imported": "Importováno: {name}",
+      "inspecting": "Čtení karty",
+      "invalid": "Tento soubor není platná karta Twin Card.",
+      "partEvidence": "Důkazy",
+      "partEvidenceHint": "Počty a pokrytí, podle kterých může dvojníka posoudit jiný nástroj",
+      "partKnowledge": "Znalosti o sobě",
+      "partKnowledgeHint": "Schválené vzpomínky a fakta o vás",
+      "partTraining": "Záznam o trénování",
+      "partTrainingHint": "Vaše odpovědi, cíle a pokrytí, aby mohlo trénování pokračovat jinde",
+      "partVoice": "Hlas a identita",
+      "partVoiceHint": "Vždy zahrnuto: jak píše na jednotlivých kanálech",
+      "partitionsLabel": "Co zahrnout",
+      "passphrase": "Heslová fráze",
+      "passphraseHint": "Alespoň 8 znaků. Bez ní nelze zapečetěné části otevřít.",
+      "sealLabel": "Zapečetit osobní části heslovou frází",
+      "sealedNeedsPass": "Některé části jsou zapečetěné. Pro jejich import zadejte heslovou frázi.",
+      "signatureInvalid": "Podpis nesouhlasí",
+      "signatureUnsigned": "Nepodepsáno",
+      "signatureValid": "Podepsáno",
+      "unsignedNote": "Uloženo bez podpisu: není k dispozici identita zařízení.",
+      "unsupported": "Tato karta používá verzi {version}, kterou tato aplikace neumí číst."
+    },
+    "detail": {
+      "export": "Exportovat",
+      "import": "Importovat dvojníka",
+      "noTwin": "Zatím žádný dvojník",
+      "proposals_many": "{count} ke kontrole",
+      "proposals_one": "1 ke kontrole",
+      "tabLabel": "Detail"
+    },
+    "samples": {
+      "analyzing": "Čtení vzorku",
+      "dismiss": "Zamítnout",
+      "edit": "Upravit",
+      "failed": "Vzorek se nepodařilo přečíst",
+      "forChannel": "Pro {channel}",
+      "fromClipboard": "Ze zkopírovaného vzorku",
+      "fromForge": "Ze vzorku, se kterým byl dvojník vytvořen",
+      "fromHost": "Ze vzorku na {host}",
+      "keep": "Ponechat",
+      "kindConstraint": "Dělat či nedělat",
+      "kindDims": "Styl",
+      "kindExemplar": "Vzorek textu",
+      "kindLength": "Délka",
+      "kindVoice": "Pravidlo hlasu",
+      "laneTitle": "Naučeno ze vzorků",
+      "refused": "Nenaučeno: {reason}"
     }
   },
   "vault": {
@@ -23592,7 +23757,27 @@
       "steer_label": "Rychlé doladění",
       "submit": "Odeslat",
       "submit_form": "Odeslat formulář",
-      "untitled_box": "toto pole"
+      "untitled_box": "toto pole",
+      "learn": {
+        "cancel": "Zrušit",
+        "capturing": "Čtení vašeho výběru",
+        "choose_clipboard_many": "{count} slov ze schránky",
+        "choose_clipboard_one": "1 slovo ze schránky",
+        "choose_selection_many": "{count} slov z {host}",
+        "choose_selection_one": "1 slovo z {host}",
+        "done_many": "Čekající návrhy: {count}",
+        "done_none": "Z tohoto vzorku se nedá naučit nic nového",
+        "done_one": "1 čekající návrh",
+        "failed": "Výběr se nepodařilo přečíst. Zkopírujte text a znovu stiskněte Učit se.",
+        "learn": "Učit se z výběru",
+        "learn_no_twin": "Nejprve vyberte dvojníka v Dvojník, Profily",
+        "learning": "Učení na pozadí",
+        "new_twin": "Nový dvojník",
+        "nothing_selected": "Nejprve vyberte nebo zkopírujte část svého vlastního textu",
+        "open_hub": "Otevřít centrum",
+        "refused": "Nenaučeno: {reason}",
+        "teach": "Učit dvojníka {name}"
+      }
     }
   },
   "council": {

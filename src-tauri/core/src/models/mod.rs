@@ -82,6 +82,8 @@ mod tool_audit;
 mod tool_usage;
 mod trigger;
 mod twin;
+mod twin_card;
+mod twin_sample;
 mod twin_setup;
 pub mod webhook_log;
 
@@ -168,4 +170,6 @@ pub use tool_audit::*;
 pub use tool_usage::*;
 pub use trigger::*;
 pub use twin::*;
+pub use twin_card::*;
+pub use twin_sample::*;
 pub use twin_setup::*;

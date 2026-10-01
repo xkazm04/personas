@@ -627,6 +627,7 @@ mod tests {
             asked_at: None,
             answered_at: None,
             reconciled: false,
+            coverage_gain: None,
         }
     }
 

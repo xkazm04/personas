@@ -31,4 +31,9 @@ coverage: number, position: number,
 /**
  * Steps answered against this goal.
  */
-answered: number, };
+answered: number, 
+/**
+ * The assess pass's one-line reason for the goal's latest coverage move
+ * (`twin_setup_goals.last_why`); `null` until an answer moved it.
+ */
+lastWhy: string | null, };

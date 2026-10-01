@@ -54,7 +54,7 @@ use crate::browser_bridge::backend::{CallContext, Principal, Refusal, RefusalCod
 use crate::browser_bridge::policy::{self, AllowPolicy};
 use crate::browser_bridge::webview::hands::{self, HandResult};
 use crate::browser_bridge::webview::{layout, refusal_from, tabs};
-use crate::db::models::PickedTarget;
+use crate::db::models::{PageSelection, PickedTarget};
 
 /// One refusal as the frontend's typed error.
 ///
@@ -289,6 +289,25 @@ pub async fn browser_webview_submit(
     admit(&app, id)?;
     let input = json!({ "ref": r#ref });
     settled(hands::call(&app, id, "page_submit", input).await).map(|_| ())
+}
+
+/// Read what the user has highlighted on a tab, for the twin to learn from
+/// (spark twin-portable-blueprint, Browser Learn). The same gate as the draft
+/// lane: an operator's hand, on a whitelisted origin, on a tab no agent holds.
+/// Answers `text: ""` when nothing is selected; the frontend then falls back
+/// to `twin_clipboard_text`.
+///
+/// CONTRACT STUB (WP0): the `page_selection` hand lands in WP3.
+#[tauri::command]
+pub async fn browser_webview_capture_selection(
+    app: AppHandle,
+    id: u32,
+) -> Result<PageSelection, AppError> {
+    admit(&app, id)?;
+    Err(AppError::Internal(
+        "browser_webview_capture_selection is not built yet (spark twin-portable-blueprint WP3)"
+            .into(),
+    ))
 }
 
 #[cfg(test)]

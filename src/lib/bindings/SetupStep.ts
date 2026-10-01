@@ -37,4 +37,10 @@ status: string, answer: string | null, position: number, askedAt: string | null,
 /**
  * The engine has folded this answer into offers and observations.
  */
-reconciled: boolean, };
+reconciled: boolean, 
+/**
+ * How much this answer moved its goal's coverage (0.0 - 1.0), written by
+ * the reconcile pass (`twin_setup_steps.coverage_gain`); `null` until
+ * reconciled, or when the step was not answered.
+ */
+coverageGain: number | null, };

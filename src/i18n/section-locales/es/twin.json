@@ -844,5 +844,170 @@
       "unpin": "Desfijar este objetivo",
       "upNext": "A continuación"
     }
+  },
+  "blueprint": {
+    "delta": {
+      "dealing": "Siguiente pregunta",
+      "gain": "Cobertura +{gain}",
+      "recorded": "Respuesta registrada",
+      "scoring": "Evaluando su respuesta",
+      "why": "Por qué contó"
+    },
+    "kinds": {
+      "fact": "Hecho",
+      "opinion": "Opinión",
+      "preference": "Preferencia",
+      "reply_drill": "Ejercicio de respuesta",
+      "rule": "Regla",
+      "scene": "Escena"
+    },
+    "metrics": {
+      "answers": "Respuestas",
+      "approved": "Aprobado",
+      "awaiting": "Pendiente de revisión",
+      "bio": "Biografía",
+      "channels": "Canales",
+      "coverage": "Cobertura",
+      "directives": "Directrices",
+      "facts": "Hechos",
+      "goals": "Objetivos",
+      "kbBound": "Vinculada",
+      "kbUnbound": "Sin vincular",
+      "kinds": "Tipos de pregunta",
+      "knowledgeBase": "Base de conocimiento",
+      "languages": "Idiomas",
+      "lastTrained": "Último entrenamiento",
+      "memories": "Recuerdos",
+      "neverTrained": "Aún sin entrenar",
+      "noLanguages": "Sin idiomas definidos",
+      "noStyle": "Sin estilo guardado",
+      "observations": "Observaciones",
+      "originLearned": "Aprendido de su escritura",
+      "originManual": "Escrito a mano",
+      "originPreset": "De un preajuste",
+      "originRolled": "Al azar",
+      "readiness": "Preparación",
+      "rejected": "Rechazado",
+      "rules": "Reglas",
+      "samples": "Muestras",
+      "samplesOpen": "Por revisar",
+      "style": "Estilo",
+      "topics": "Temas"
+    },
+    "nav": {
+      "back": "Volver al resumen",
+      "editInSetup": "Editar en Configuración",
+      "openDetail": "Detalle completo",
+      "zoomInto": "Abrir {section}"
+    },
+    "sectionHints": {
+      "identity": "Quién es el gemelo",
+      "knowledge": "Lo que sabe de usted",
+      "training": "Lo que ha cubierto el entrenamiento",
+      "voice": "Cómo escribe en cada canal"
+    },
+    "sections": {
+      "identity": "Identidad",
+      "knowledge": "Conocimiento",
+      "training": "Entrenamiento",
+      "voice": "Voz"
+    },
+    "states": {
+      "emptyKnowledge": "Aún no ha aprendido nada",
+      "emptyTraining": "Aún sin entrenamiento",
+      "emptyVoice": "Ningún canal tiene voz todavía",
+      "notDrawn": "Aún sin dibujar",
+      "notMeasured": "Sin medir",
+      "working": "Leyendo sus respuestas"
+    },
+    "tiers": {
+      "covered": "Cubierto",
+      "some": "Parcial",
+      "thin": "Escaso"
+    },
+    "variantCopy": {
+      "dossier": {
+        "heroLabel": "Dosier del gemelo"
+      },
+      "drafting": {
+        "sheetTitle": "Plano del gemelo"
+      },
+      "radial": {
+        "centerHint": "Elija un segmento"
+      },
+      "strata": {
+        "plateHint": "Haga clic en un estrato para levantarlo"
+      }
+    },
+    "variants": {
+      "dossier": "Dosier",
+      "drafting": "Plano técnico",
+      "label": "Estilo de plano",
+      "radial": "Radial",
+      "strata": "Estratos"
+    }
+  },
+  "card": {
+    "conflictDuplicate": "Importar como copia",
+    "conflictReplace": "Reemplazar",
+    "conflictSkip": "Omitir",
+    "conflictTitle": "Ya existe un gemelo llamado {name}",
+    "exportAction": "Exportar",
+    "exportTitle": "Exportar gemelo",
+    "exported": "Exportado a {path}",
+    "formatCcv3": "Character Card V3",
+    "formatLabel": "Formato",
+    "formatTwinCard": "Twin Card",
+    "hashMismatch": "La parte {part} se modificó después de la exportación",
+    "importAction": "Importar",
+    "importPick": "Elija un archivo Twin Card",
+    "importTitle": "Importar gemelo",
+    "imported": "{name} importado",
+    "inspecting": "Leyendo la tarjeta",
+    "invalid": "Este archivo no es una Twin Card válida.",
+    "partEvidence": "Evidencia",
+    "partEvidenceHint": "Recuentos y cobertura que otra herramienta puede usar para evaluar al gemelo",
+    "partKnowledge": "Conocimiento personal",
+    "partKnowledgeHint": "Recuerdos aprobados y hechos sobre usted",
+    "partTraining": "Registro de entrenamiento",
+    "partTrainingHint": "Sus respuestas, objetivos y cobertura, para que el entrenamiento pueda continuar en otro lugar",
+    "partVoice": "Voz e identidad",
+    "partVoiceHint": "Siempre incluido: cómo escribe en cada canal",
+    "partitionsLabel": "Qué incluir",
+    "passphrase": "Frase de contraseña",
+    "passphraseHint": "Al menos 8 caracteres. Sin ella, las partes selladas no se pueden abrir.",
+    "sealLabel": "Sellar las partes personales con una frase de contraseña",
+    "sealedNeedsPass": "Algunas partes están selladas. Introduzca la frase de contraseña para importarlas.",
+    "signatureInvalid": "La firma no coincide",
+    "signatureUnsigned": "Sin firmar",
+    "signatureValid": "Firmado",
+    "unsignedNote": "Guardado sin firma: no hay ninguna identidad de dispositivo disponible.",
+    "unsupported": "Esta tarjeta usa la versión {version}, que esta aplicación no puede leer."
+  },
+  "detail": {
+    "export": "Exportar",
+    "import": "Importar gemelo",
+    "noTwin": "Aún no hay gemelo",
+    "proposals_many": "{count} por revisar",
+    "proposals_one": "1 por revisar",
+    "tabLabel": "Detalle"
+  },
+  "samples": {
+    "analyzing": "Leyendo la muestra",
+    "dismiss": "Descartar",
+    "edit": "Editar",
+    "failed": "No se pudo leer la muestra",
+    "forChannel": "Para {channel}",
+    "fromClipboard": "De una muestra copiada",
+    "fromForge": "De la muestra con la que se creó el gemelo",
+    "fromHost": "De una muestra en {host}",
+    "keep": "Conservar",
+    "kindConstraint": "Hacer o evitar",
+    "kindDims": "Estilo",
+    "kindExemplar": "Muestra de escritura",
+    "kindLength": "Longitud",
+    "kindVoice": "Regla de voz",
+    "laneTitle": "Aprendido de muestras",
+    "refused": "No aprendido: {reason}"
   }
 }

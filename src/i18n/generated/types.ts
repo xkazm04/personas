@@ -22181,6 +22181,171 @@ export type Translations = {
         memories: string;
       };
     };
+    blueprint: {
+      sections: {
+        identity: string;
+        voice: string;
+        knowledge: string;
+        training: string;
+      };
+      sectionHints: {
+        identity: string;
+        voice: string;
+        knowledge: string;
+        training: string;
+      };
+      variants: {
+        label: string;
+        drafting: string;
+        strata: string;
+        dossier: string;
+        radial: string;
+      };
+      metrics: {
+        bio: string;
+        languages: string;
+        noLanguages: string;
+        channels: string;
+        samples: string;
+        rules: string;
+        directives: string;
+        style: string;
+        noStyle: string;
+        originPreset: string;
+        originRolled: string;
+        originLearned: string;
+        originManual: string;
+        memories: string;
+        approved: string;
+        awaiting: string;
+        rejected: string;
+        facts: string;
+        knowledgeBase: string;
+        kbBound: string;
+        kbUnbound: string;
+        answers: string;
+        goals: string;
+        coverage: string;
+        observations: string;
+        topics: string;
+        kinds: string;
+        lastTrained: string;
+        neverTrained: string;
+        readiness: string;
+        samplesOpen: string;
+      };
+      tiers: {
+        thin: string;
+        some: string;
+        covered: string;
+      };
+      kinds: {
+        scene: string;
+        opinion: string;
+        reply_drill: string;
+        fact: string;
+        rule: string;
+        preference: string;
+      };
+      states: {
+        notDrawn: string;
+        notMeasured: string;
+        working: string;
+        emptyVoice: string;
+        emptyTraining: string;
+        emptyKnowledge: string;
+      };
+      delta: {
+        recorded: string;
+        scoring: string;
+        gain: string;
+        why: string;
+        dealing: string;
+      };
+      nav: {
+        back: string;
+        openDetail: string;
+        editInSetup: string;
+        zoomInto: string;
+      };
+      variantCopy: {
+        drafting: {
+          sheetTitle: string;
+        };
+        strata: {
+          plateHint: string;
+        };
+        dossier: {
+          heroLabel: string;
+        };
+        radial: {
+          centerHint: string;
+        };
+      };
+    };
+    detail: {
+      tabLabel: string;
+      proposals_one: string;
+      proposals_many: string;
+      export: string;
+      import: string;
+      noTwin: string;
+    };
+    card: {
+      exportTitle: string;
+      partitionsLabel: string;
+      partVoice: string;
+      partVoiceHint: string;
+      partKnowledge: string;
+      partKnowledgeHint: string;
+      partTraining: string;
+      partTrainingHint: string;
+      partEvidence: string;
+      partEvidenceHint: string;
+      sealLabel: string;
+      passphrase: string;
+      passphraseHint: string;
+      formatLabel: string;
+      formatTwinCard: string;
+      formatCcv3: string;
+      exportAction: string;
+      exported: string;
+      unsignedNote: string;
+      importTitle: string;
+      importPick: string;
+      inspecting: string;
+      unsupported: string;
+      invalid: string;
+      signatureValid: string;
+      signatureInvalid: string;
+      signatureUnsigned: string;
+      sealedNeedsPass: string;
+      conflictTitle: string;
+      conflictDuplicate: string;
+      conflictReplace: string;
+      conflictSkip: string;
+      importAction: string;
+      imported: string;
+      hashMismatch: string;
+    };
+    samples: {
+      laneTitle: string;
+      kindExemplar: string;
+      kindVoice: string;
+      kindConstraint: string;
+      kindLength: string;
+      kindDims: string;
+      fromHost: string;
+      fromClipboard: string;
+      fromForge: string;
+      forChannel: string;
+      keep: string;
+      edit: string;
+      dismiss: string;
+      analyzing: string;
+      failed: string;
+      refused: string;
+    };
   };
   radio: {
     footer_label: string;
@@ -24279,6 +24444,26 @@ export type Translations = {
       chip_formal: string;
       chip_question: string;
       untitled_box: string;
+      learn: {
+        learn: string;
+        learn_no_twin: string;
+        capturing: string;
+        choose_selection_one: string;
+        choose_selection_many: string;
+        choose_clipboard_one: string;
+        choose_clipboard_many: string;
+        teach: string;
+        new_twin: string;
+        cancel: string;
+        learning: string;
+        done_one: string;
+        done_many: string;
+        done_none: string;
+        open_hub: string;
+        nothing_selected: string;
+        failed: string;
+        refused: string;
+      };
     };
   };
   companions: {
