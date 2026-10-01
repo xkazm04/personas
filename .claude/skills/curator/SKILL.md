@@ -30,6 +30,19 @@ queue before her plan. Two situations need it and both have happened: the app is
 owns the standing lane, or her plan is still the one projected from an older checkout and
 only the queue file is current.
 
+`next --terminal-owns` waives ONLY the `curator_enabled` brake, for when the operator switched
+the app's tick off precisely so this terminal drives her (quiet hours and backpressure still
+hold, and the waiver is printed). `work` sets `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`: the
+CLI's default 600 s background ceiling killed a `harvest auto` mid fan-out, so `--timeout-min`
+is the only bound.
+
+Plan items of engine `apply` and `conform` are dispatchable: the item cannot carry its own
+argument, so `loop.py` derives it at claim time. `apply` becomes `/intake apply <technique>`
+with the first technique in the subject's index entry that has no application row (none left
+= the item is skipped, never guessed). `conform` becomes `/conform --subject <slug>` and runs
+in THIS repo, whose `.ai/registry-map.json` it writes; that worker is told not to commit or
+push, so the operator reads and commits the map diff.
+
 There is **no bare worker form**: every pass goes through the ladder, because a run that
 picked its own subject would be a person using her credentials rather than her loop.
 

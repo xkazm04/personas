@@ -90,7 +90,13 @@ QUEUE_REL = pathlib.Path("librarian") / "harvest" / "queue.md"
 # The engines her plan can turn into a command, and the skill that answers each.
 # Mirrors `dispatch.rs::PLAN_ROUTES` - two, and the list is short because the
 # honest answer is short.
-PLAN_ROUTES = {"reconcile": "reconcile", "deepen": "deepen"}
+PLAN_ROUTES = {"reconcile": "reconcile", "deepen": "deepen", "apply": "intake", "conform": "conform"}
+# Engines whose argument is DERIVED at claim time rather than read off the item: the
+# item carries a COUNT of techniques (apply) or no project (conform), and the command
+# needs a name. Derivation can come back empty, and then the item is skipped, not
+# dispatched with a guess.
+DERIVED_ROUTES = {"apply", "conform"}
+PERSONAS_ROOT = pathlib.Path(__file__).resolve().parents[3]
 # Every engine and the skill that WOULD answer it, whether or not a command can
 # be written today. Mirrors `impediment.rs::ENGINE_SKILL`.
 ENGINE_SKILL = {
@@ -512,6 +518,32 @@ def method_authorization() -> str:
     )
 
 
+def derive_plan_argument(row, root: pathlib.Path) -> tuple[str, str | None] | None:
+    """(argument, cwd override) for an engine whose item cannot carry its own, else None.
+
+    `apply`: `/intake apply <technique>` wants a NAME. The first technique in the
+    subject's own index entry that has no application row is the one that still needs
+    applying; when every technique has one there is nothing to apply and the item is
+    skipped rather than sent with an invented name.
+    `conform`: `/conform --subject <slug>` judges that subject's pairs wherever the
+    consumer's registry map lists them. The consumer is THIS repo (it owns
+    `.ai/registry-map.json`), so the worker runs here, not in the registry.
+    """
+    slug = row["subject_id"].split("/")[-1]
+    if row["engine"] == "conform":
+        return f"--subject {slug}", str(PERSONAS_ROOT)
+    index = root / "knowledge" / row["domain"] / "index.json"
+    try:
+        entry = json.loads(index.read_text(encoding="utf-8"))["subjects"][slug]
+    except (OSError, ValueError, KeyError):
+        return None
+    applied = {a.get("technique") for a in entry.get("applications", [])}
+    for t in entry.get("techniques", []):
+        if t["slug"] not in applied:
+            return f"apply {t['slug']}", None
+    return None
+
+
 def compose(claim: dict) -> str:
     lane = claim["lane"]
     out = []
@@ -571,7 +603,17 @@ def compose(claim: dict) -> str:
         )
     if claim.get("note"):
         out.append(f"\nThe operator wrote, verbatim:\n{claim['note']}\n")
-    out.append("\n" + authorization())
+    if claim["skill"] == "conform":
+        # Runs in the CONSUMER repo (Personas), whose own rules forbid pushing and whose
+        # working tree other sessions share, so the registry-side authorization is replaced.
+        out.append(
+            "\nYou are running inside the consumer repository, not the registry. Write verdicts "
+            "to `.ai/registry-map.json` only and change no other file. Do NOT commit, push, "
+            "stash, or touch any file you did not write; the operator reads the diff and "
+            "commits it."
+        )
+    else:
+        out.append("\n" + authorization())
     out.append(
         "\n\nRun the skill named on the first line and nothing else. If the skill's own "
         "instrument reports that there is no work, say so and stop - a pass that honestly found "
@@ -651,12 +693,20 @@ def take_next(
     engines = [e for e, s in PLAN_ROUTES.items() if vet_autonomous(skills, s, "probe") is None]
     if engines and want("plan"):
         ph = ",".join("?" for _ in engines)
-        row = c.execute(
+        rows = c.execute(
             f"SELECT i.* FROM curator_plan_item i JOIN curator_plan_run r ON r.id = i.plan_run_id "
             f" WHERE r.superseded_by IS NULL AND i.state='planned' AND i.suppressed_by_saturation=0 "
-            f"   AND i.engine IN ({ph}) ORDER BY i.points DESC, i.subject_id ASC LIMIT 1",
+            f"   AND i.engine IN ({ph}) ORDER BY i.points DESC, i.subject_id ASC",
             engines,
-        ).fetchone()
+        ).fetchall()
+        row, derived = None, None
+        for cand in rows:
+            if cand["engine"] in DERIVED_ROUTES:
+                derived = derive_plan_argument(cand, root)
+                if derived is None:
+                    continue  # nothing derivable: leave it planned, never guess
+            row = cand
+            break
         if row:
             session = f"cli:{uuid.uuid4()}"
             if not dry:
@@ -667,12 +717,12 @@ def take_next(
                 ).rowcount
                 if n != 1:
                     return None
-            reasons = json.loads(row["reasons"] or "[]") if "reasons" in row.keys() else []
+            reasons = json.loads(row["reasons_json"] or "[]")
             finding = reasons[0].get("detail") if reasons and isinstance(reasons[0], dict) else None
             # `reconcile` takes the bundle; `deepen` takes the subject ADDRESS,
             # which is the item's own id and is never rebuilt from its parts.
             arg = row["domain"] if row["engine"] == "reconcile" else row["subject_id"]
-            return {
+            out = {
                 "lane": "plan",
                 "lane_sentence": LANE_SENTENCE["plan"],
                 "item_id": row["id"],
@@ -682,6 +732,11 @@ def take_next(
                 "subject": row["subject_id"],
                 "finding": finding,
             }
+            if derived:
+                out["argument"], cwd = derived
+                if cwd:
+                    out["cwd"] = cwd
+            return out
 
     # 3. The method lane - widen what she can dispatch. Eligibility is what an
     #    impediment HOLDS; the rank is what closing it would free.
@@ -1309,6 +1364,10 @@ def run_worker(c: sqlite3.Connection, claim: dict, timeout_min: int) -> int:
     env = {k: v for k, v in os.environ.items()
            if k not in SUBSCRIPTION_RESERVED_ENV and k not in CLAUDE_NESTING_ENV}
     env["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = "1"
+    # 0 = wait for background tasks indefinitely. The default 600 s ceiling killed a
+    # `harvest auto` mid fan-out (6 of 7 lanes returned, edit uncommitted); the work
+    # timeout (--timeout-min) is the real bound.
+    env["CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS"] = "0"
     argv = [claude, "--print", "--dangerously-skip-permissions", claim["brief"]]
     # `--print` buffers the whole run, so there is no progress until it exits. The
     # pid is printed first and written beside the claim so the driving session can
@@ -1363,6 +1422,7 @@ def main() -> int:
     p = sub.add_parser("next")
     p.add_argument("--dry", action="store_true")
     p.add_argument("--allow-stale", action="store_true", help="dispatch even from a stale corpus")
+    p.add_argument("--terminal-owns", action="store_true", help="the operator switched the APP's tick off so this terminal drives her: waive ONLY the curator_enabled brake (quiet hours and backpressure still hold)")
     p.add_argument("--fetch", action="store_true", help="git fetch before measuring the lag")
     p.add_argument("--lane", help="restrict the ladder to these lanes, comma separated "
                                   "(queue,plan,method,refill); the order never changes")
@@ -1417,6 +1477,13 @@ def main() -> int:
 
     if a.cmd == "next":
         b = brakes(c)
+        if a.terminal_owns and not b["enabled"]:
+            # The flag gates the APP's tick. Switching it off is how the operator hands the
+            # standing lane to this terminal, so refusing on it would make that handover
+            # impossible. Only this brake is waived, and the waiver is reported.
+            b["held_by"] = [h for h in b["held_by"] if not h.startswith("curator_enabled")]
+            b["may_start"] = not b["held_by"]
+            b["waived"] = "curator_enabled (--terminal-owns)"
         if not b["may_start"] and not a.dry:
             print(json.dumps({"ok": True, "claim": None, "held_by": b["held_by"]}, indent=2))
             return 0
@@ -1466,7 +1533,7 @@ def main() -> int:
             claim["head"] = claim.get("head") or git_head(root)
             claim["dispatch_id"] = record_dispatch(c, claim, root)
             claim["brief"] = compose(claim)
-            claim["cwd"] = str(root)
+            claim["cwd"] = claim.get("cwd") or str(root)
         print(json.dumps({"ok": True, "claim": claim}, indent=2, default=str))
         return 0
 
