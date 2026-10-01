@@ -22247,8 +22247,9 @@ export type Translations = {
         label: string;
         drafting: string;
         strata: string;
-        dossier: string;
-        radial: string;
+        draftingTint: string;
+        draftingSurface: string;
+        draftingNative: string;
       };
       metrics: {
         bio: string;
@@ -22330,43 +22331,6 @@ export type Translations = {
         };
         strata: {
           plateHint: string;
-        };
-        dossier: {
-          heroLabel: string;
-          moreChannels: string;
-          ofTarget: string;
-          charUnit: string;
-          bioAria: string;
-          styleAria: string;
-          dimValue: string;
-          samplesOf: string;
-          rulesOf: string;
-          memoriesAria: string;
-          memoryUnit: string;
-          answerUnit: string;
-          topicAria: string;
-          goalAria: string;
-          goalsAria: string;
-          kindsAria: string;
-          coverageAria: string;
-          fullAt: string;
-          coveredAt: string;
-          dropped: string;
-          answered: string;
-          directivesWritten: string;
-          slotSet: string;
-          slotPartial: string;
-          slotEmpty: string;
-        };
-        radial: {
-          centerHint: string;
-          fullAt: string;
-          coveredAt: string;
-          target: string;
-          dropped: string;
-          slotSet: string;
-          slotPartial: string;
-          slotEmpty: string;
         };
       };
     };

@@ -21532,33 +21532,6 @@
         "thin": "Escaso"
       },
       "variantCopy": {
-        "dossier": {
-          "heroLabel": "Dosier del gemelo",
-          "answerUnit": "Respuestas: {count}",
-          "answered": "Respondidas: {count}",
-          "bioAria": "Biografía: {count} de {target} caracteres",
-          "charUnit": "Caracteres: {count}",
-          "coverageAria": "Cobertura de {section}: {pct}",
-          "coveredAt": "Cubierto en {count}",
-          "dimValue": "{label} {value} de {max}",
-          "directivesWritten": "Directrices redactadas",
-          "dropped": "Descartado",
-          "fullAt": "Lleno en {count}",
-          "goalAria": "{title}: {pct} cubierto",
-          "goalsAria": "Objetivos por cobertura: {count}",
-          "kindsAria": "Respuestas por tipo: {count}",
-          "memoriesAria": "{approved} aprobados, {pending} pendientes de revisión, {rejected} rechazados",
-          "memoryUnit": "Recuerdos: {count}",
-          "moreChannels": "+{count} más",
-          "ofTarget": "de {count}",
-          "rulesOf": "{count} de {max} reglas",
-          "samplesOf": "{count} de {max} muestras",
-          "slotEmpty": "Sin definir",
-          "slotPartial": "Definido en parte",
-          "slotSet": "Definido",
-          "styleAria": "Estilo en {channel}: {dims}",
-          "topicAria": "{topic}: {approved} aprobados, {awaiting} pendientes de revisión"
-        },
         "drafting": {
           "sheetTitle": "Plano del gemelo",
           "detailOf": "Detalle de {section}",
@@ -21569,26 +21542,17 @@
           "target": "Objetivo",
           "targetOf": "Objetivo: {count} caracteres"
         },
-        "radial": {
-          "centerHint": "Elija un segmento",
-          "coveredAt": "Cubierto en {count}",
-          "dropped": "Descartado",
-          "fullAt": "Lleno en {count}",
-          "slotEmpty": "Sin definir",
-          "slotPartial": "Definido en parte",
-          "slotSet": "Definido",
-          "target": "Objetivo {count}"
-        },
         "strata": {
           "plateHint": "Haga clic en un estrato para levantarlo"
         }
       },
       "variants": {
-        "dossier": "Dosier",
         "drafting": "Plano técnico",
         "label": "Estilo de plano",
-        "radial": "Radial",
-        "strata": "Estratos"
+        "strata": "Estratos",
+        "draftingNative": "Plano nativo",
+        "draftingSurface": "Página entintada",
+        "draftingTint": "Plano tintado"
       }
     },
     "card": {

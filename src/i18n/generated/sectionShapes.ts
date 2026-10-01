@@ -743,9 +743,7 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
       "nav": {},
       "variantCopy": {
         "drafting": {},
-        "strata": {},
-        "dossier": {},
-        "radial": {}
+        "strata": {}
       }
     },
     "detail": {},

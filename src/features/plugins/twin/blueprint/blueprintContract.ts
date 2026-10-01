@@ -21,9 +21,23 @@ import type { TRAINING_TOPIC_PRESETS } from '../sub_training/topicPresets';
 export type SectionId = 'identity' | 'voice' | 'knowledge' | 'training';
 export const SECTION_IDS: readonly SectionId[] = ['identity', 'voice', 'knowledge', 'training'];
 
-/** The prototype directions behind the Detail page's switcher. */
-export type BlueprintVariantId = 'drafting' | 'strata' | 'dossier' | 'radial';
-export const BLUEPRINT_VARIANT_IDS: readonly BlueprintVariantId[] = ['drafting', 'strata', 'dossier', 'radial'];
+/**
+ * The directions behind the Detail page's switcher. Round 2 (2026-10-01): the
+ * owner kept the drafting sheet and asked for three versions of it that sit
+ * more naturally in the Personas theme, subtle to major (`draftingTint`,
+ * `draftingSurface`, `draftingNative`); Strata stays while its layer one is
+ * considered for another module; Dossier and Radial were deleted. The ids are
+ * i18n keys under `twin.blueprint.variants` (hence camelCase) and persisted
+ * values (a stored id that no longer exists falls back to the default).
+ */
+export type BlueprintVariantId = 'drafting' | 'draftingTint' | 'draftingSurface' | 'draftingNative' | 'strata';
+export const BLUEPRINT_VARIANT_IDS: readonly BlueprintVariantId[] = [
+  'drafting',
+  'draftingTint',
+  'draftingSurface',
+  'draftingNative',
+  'strata',
+];
 
 /** `detail` = the Detail page (L1 overview, L2 section zoom); `stage` = the training overlay's base layer. */
 export type BlueprintMode = 'detail' | 'stage';

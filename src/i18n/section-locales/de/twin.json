@@ -926,33 +926,6 @@
       "thin": "Dünn"
     },
     "variantCopy": {
-      "dossier": {
-        "heroLabel": "Twin-Dossier",
-        "answerUnit": "Antworten: {count}",
-        "answered": "{count} beantwortet",
-        "bioAria": "Bio: {count} von {target} Zeichen",
-        "charUnit": "Zeichen: {count}",
-        "coverageAria": "Abdeckung {section}: {pct}",
-        "coveredAt": "Abgedeckt bei {count}",
-        "dimValue": "{label} {value} von {max}",
-        "directivesWritten": "Verfasste Anweisungen",
-        "dropped": "Verworfen",
-        "fullAt": "Voll bei {count}",
-        "goalAria": "{title}: {pct} abgedeckt",
-        "goalsAria": "Ziele nach Abdeckung: {count}",
-        "kindsAria": "Antworten nach Art: {count}",
-        "memoriesAria": "{approved} genehmigt, {pending} warten auf Prüfung, {rejected} abgelehnt",
-        "memoryUnit": "Erinnerungen: {count}",
-        "moreChannels": "+{count} weitere",
-        "ofTarget": "von {count}",
-        "rulesOf": "{count} von {max} Regeln",
-        "samplesOf": "{count} von {max} Textproben",
-        "slotEmpty": "Nicht festgelegt",
-        "slotPartial": "Teilweise festgelegt",
-        "slotSet": "Festgelegt",
-        "styleAria": "Stil für {channel}: {dims}",
-        "topicAria": "{topic}: {approved} genehmigt, {awaiting} warten auf Prüfung"
-      },
       "drafting": {
         "sheetTitle": "Twin-Plan",
         "detailOf": "Detail zu {section}",
@@ -963,26 +936,17 @@
         "target": "Ziel",
         "targetOf": "Ziel: {count} Zeichen"
       },
-      "radial": {
-        "centerHint": "Segment wählen",
-        "coveredAt": "Abgedeckt bei {count}",
-        "dropped": "Verworfen",
-        "fullAt": "Voll bei {count}",
-        "slotEmpty": "Nicht festgelegt",
-        "slotPartial": "Teilweise festgelegt",
-        "slotSet": "Festgelegt",
-        "target": "Ziel {count}"
-      },
       "strata": {
         "plateHint": "Auf eine Schicht klicken, um sie anzuheben"
       }
     },
     "variants": {
-      "dossier": "Dossier",
       "drafting": "Zeichenblatt",
       "label": "Blueprint-Stil",
-      "radial": "Radial",
-      "strata": "Schichten"
+      "strata": "Schichten",
+      "draftingNative": "Natives Zeichenblatt",
+      "draftingSurface": "Gezeichnete Seite",
+      "draftingTint": "Getöntes Blatt"
     }
   },
   "card": {

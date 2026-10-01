@@ -21532,33 +21532,6 @@
         "thin": "Faible"
       },
       "variantCopy": {
-        "dossier": {
-          "heroLabel": "Dossier du twin",
-          "answerUnit": "Réponses : {count}",
-          "answered": "Réponses données : {count}",
-          "bioAria": "Bio : {count} sur {target} caractères",
-          "charUnit": "Caractères : {count}",
-          "coverageAria": "{section} : couverture {pct}",
-          "coveredAt": "Couvert à {count}",
-          "dimValue": "{label} {value} sur {max}",
-          "directivesWritten": "Consignes rédigées",
-          "dropped": "Abandonné",
-          "fullAt": "Plein à {count}",
-          "goalAria": "{title} : {pct} couvert",
-          "goalsAria": "Objectifs par couverture : {count}",
-          "kindsAria": "Réponses par type : {count}",
-          "memoriesAria": "{approved} approuvés, {pending} en attente de révision, {rejected} rejetés",
-          "memoryUnit": "Souvenirs : {count}",
-          "moreChannels": "+{count} autres",
-          "ofTarget": "sur {count}",
-          "rulesOf": "{count} règles sur {max}",
-          "samplesOf": "{count} échantillons sur {max}",
-          "slotEmpty": "Non défini",
-          "slotPartial": "Partiellement défini",
-          "slotSet": "Défini",
-          "styleAria": "Style sur {channel} : {dims}",
-          "topicAria": "{topic} : {approved} approuvés, {awaiting} en attente de révision"
-        },
         "drafting": {
           "sheetTitle": "Plan du twin",
           "detailOf": "Détail : {section}",
@@ -21569,26 +21542,17 @@
           "target": "Cible",
           "targetOf": "Cible : {count} caractères"
         },
-        "radial": {
-          "centerHint": "Choisissez un segment",
-          "coveredAt": "Couvert à {count}",
-          "dropped": "Abandonné",
-          "fullAt": "Plein à {count}",
-          "slotEmpty": "Non défini",
-          "slotPartial": "Partiellement défini",
-          "slotSet": "Défini",
-          "target": "Cible {count}"
-        },
         "strata": {
           "plateHint": "Cliquez sur une couche pour la soulever"
         }
       },
       "variants": {
-        "dossier": "Dossier",
         "drafting": "Plan technique",
         "label": "Style de plan",
-        "radial": "Radial",
-        "strata": "Strates"
+        "strata": "Strates",
+        "draftingNative": "Plan natif",
+        "draftingSurface": "Page encrée",
+        "draftingTint": "Plan teinté"
       }
     },
     "card": {

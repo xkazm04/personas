@@ -926,33 +926,6 @@
       "thin": "कम"
     },
     "variantCopy": {
-      "dossier": {
-        "heroLabel": "ट्विन डोज़ियर",
-        "answerUnit": "उत्तर: {count}",
-        "answered": "उत्तर दिए गए: {count}",
-        "bioAria": "बायो: {target} में से {count} अक्षर",
-        "charUnit": "अक्षर: {count}",
-        "coverageAria": "{section} कवरेज {pct}",
-        "coveredAt": "{count} पर कवर",
-        "dimValue": "{label} {max} में से {value}",
-        "directivesWritten": "लिखे गए निर्देश",
-        "dropped": "हटाया गया",
-        "fullAt": "{count} पर पूर्ण",
-        "goalAria": "{title}: {pct} कवर",
-        "goalsAria": "कवरेज के अनुसार लक्ष्य: {count}",
-        "kindsAria": "प्रकार के अनुसार उत्तर: {count}",
-        "memoriesAria": "{approved} स्वीकृत, {pending} समीक्षा की प्रतीक्षा में, {rejected} अस्वीकृत",
-        "memoryUnit": "स्मृतियाँ: {count}",
-        "moreChannels": "+{count} और",
-        "ofTarget": "{count} में से",
-        "rulesOf": "{max} में से {count} नियम",
-        "samplesOf": "{max} में से {count} नमूने",
-        "slotEmpty": "सेट नहीं",
-        "slotPartial": "आंशिक रूप से सेट",
-        "slotSet": "सेट",
-        "styleAria": "{channel} की शैली: {dims}",
-        "topicAria": "{topic}: {approved} स्वीकृत, {awaiting} समीक्षा की प्रतीक्षा में"
-      },
       "drafting": {
         "sheetTitle": "ट्विन का नक्शा",
         "detailOf": "विवरण: {section}",
@@ -963,26 +936,17 @@
         "target": "लक्ष्य",
         "targetOf": "लक्ष्य: {count} अक्षर"
       },
-      "radial": {
-        "centerHint": "एक खंड चुनें",
-        "coveredAt": "{count} पर कवर",
-        "dropped": "हटाया गया",
-        "fullAt": "{count} पर पूर्ण",
-        "slotEmpty": "सेट नहीं",
-        "slotPartial": "आंशिक रूप से सेट",
-        "slotSet": "सेट",
-        "target": "लक्ष्य {count}"
-      },
       "strata": {
         "plateHint": "परत को उठाने के लिए उस पर क्लिक करें"
       }
     },
     "variants": {
-      "dossier": "डोज़ियर",
       "drafting": "ड्राइंग शीट",
       "label": "ब्लूप्रिंट शैली",
-      "radial": "रेडियल",
-      "strata": "परतें"
+      "strata": "परतें",
+      "draftingNative": "मूल ड्राइंग",
+      "draftingSurface": "स्याही से बना पेज",
+      "draftingTint": "रंगी हुई शीट"
     }
   },
   "card": {

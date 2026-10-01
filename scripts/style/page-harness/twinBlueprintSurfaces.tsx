@@ -2,7 +2,8 @@
  * Twin blueprint variants (spark twin-portable-blueprint) on fixture models,
  * no IPC: the variant renderers take the model as a prop, so a variant can be
  * shot before the Detail page that feeds it exists. `?kit=<variant>` picks the
- * renderer (`drafting` | `strata` | `dossier` | `radial`, default `drafting`).
+ * renderer (`drafting` | `draftingTint` | `draftingSurface` | `draftingNative` |
+ * `strata`, default `drafting`).
  *
  *   twin/blueprint/detail         L1, the one-channel twin
  *   twin/blueprint/detail-empty   L1, a just-forged twin (every "not yet drawn" state)

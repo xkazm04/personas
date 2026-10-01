@@ -926,33 +926,6 @@
       "thin": "ضئيل"
     },
     "variantCopy": {
-      "dossier": {
-        "heroLabel": "ملف التوأم التفصيلي",
-        "answerUnit": "الإجابات: {count}",
-        "answered": "تمت الإجابة عن {count}",
-        "bioAria": "السيرة الذاتية: {count} من {target} حرف",
-        "charUnit": "الأحرف: {count}",
-        "coverageAria": "تغطية {section}: {pct}",
-        "coveredAt": "مغطّى عند {count}",
-        "dimValue": "{label} {value} من {max}",
-        "directivesWritten": "التوجيهات المكتوبة",
-        "dropped": "مُستبعَد",
-        "fullAt": "ممتلئ عند {count}",
-        "goalAria": "{title}: مغطّى بنسبة {pct}",
-        "goalsAria": "الأهداف حسب التغطية: {count}",
-        "kindsAria": "الإجابات حسب النوع: {count}",
-        "memoriesAria": "{approved} معتمدة، {pending} بانتظار المراجعة، {rejected} مرفوضة",
-        "memoryUnit": "الذكريات: {count}",
-        "moreChannels": "+{count} أخرى",
-        "ofTarget": "من {count}",
-        "rulesOf": "القواعد: {count} من {max}",
-        "samplesOf": "العيّنات: {count} من {max}",
-        "slotEmpty": "غير مضبوط",
-        "slotPartial": "مضبوط جزئيًا",
-        "slotSet": "مضبوط",
-        "styleAria": "أسلوب {channel}: {dims}",
-        "topicAria": "{topic}: {approved} معتمدة، {awaiting} بانتظار المراجعة"
-      },
       "drafting": {
         "sheetTitle": "مخطط التوأم",
         "detailOf": "تفاصيل {section}",
@@ -963,26 +936,17 @@
         "target": "الهدف",
         "targetOf": "الهدف: {count} حرف"
       },
-      "radial": {
-        "centerHint": "اختر قطاعًا",
-        "coveredAt": "مغطّى عند {count}",
-        "dropped": "مُستبعَد",
-        "fullAt": "ممتلئ عند {count}",
-        "slotEmpty": "غير مضبوط",
-        "slotPartial": "مضبوط جزئيًا",
-        "slotSet": "مضبوط",
-        "target": "الهدف {count}"
-      },
       "strata": {
         "plateHint": "انقر على طبقة لرفعها"
       }
     },
     "variants": {
-      "dossier": "ملف تفصيلي",
       "drafting": "ورقة الرسم",
       "label": "نمط المخطط",
-      "radial": "شعاعي",
-      "strata": "الطبقات"
+      "strata": "الطبقات",
+      "draftingNative": "رسم أصلي",
+      "draftingSurface": "صفحة مرسومة بالحبر",
+      "draftingTint": "ورقة ملوّنة"
     }
   },
   "card": {

@@ -926,33 +926,6 @@
       "thin": "覆盖较少"
     },
     "variantCopy": {
-      "dossier": {
-        "heroLabel": "分身卷宗",
-        "answerUnit": "{count} 条回答",
-        "answered": "已回答 {count} 条",
-        "bioAria": "简介：{count} 个字符，目标 {target} 个",
-        "charUnit": "{count} 个字符",
-        "coverageAria": "{section}覆盖度 {pct}",
-        "coveredAt": "{count} 时已覆盖",
-        "dimValue": "{label} {value} / {max}",
-        "directivesWritten": "已编写的指令",
-        "dropped": "已放弃",
-        "fullAt": "{count} 时已满",
-        "goalAria": "{title}：已覆盖 {pct}",
-        "goalsAria": "按覆盖度划分的 {count} 个目标",
-        "kindsAria": "按类型划分的 {count} 条回答",
-        "memoriesAria": "已批准 {approved} 条，待审核 {pending} 条，已拒绝 {rejected} 条",
-        "memoryUnit": "{count} 条记忆",
-        "moreChannels": "还有 {count} 个",
-        "ofTarget": "/ {count}",
-        "rulesOf": "{max} 条规则中的 {count} 条",
-        "samplesOf": "{max} 个样本中的 {count} 个",
-        "slotEmpty": "未设置",
-        "slotPartial": "部分已设置",
-        "slotSet": "已设置",
-        "styleAria": "{channel} 风格：{dims}",
-        "topicAria": "{topic}：已批准 {approved} 条，待审核 {awaiting} 条"
-      },
       "drafting": {
         "sheetTitle": "分身设计图",
         "detailOf": "{section}详情",
@@ -963,26 +936,17 @@
         "target": "目标",
         "targetOf": "目标：{count} 个字符"
       },
-      "radial": {
-        "centerHint": "选择一个扇区",
-        "coveredAt": "{count} 时已覆盖",
-        "dropped": "已放弃",
-        "fullAt": "{count} 时已满",
-        "slotEmpty": "未设置",
-        "slotPartial": "部分已设置",
-        "slotSet": "已设置",
-        "target": "目标 {count}"
-      },
       "strata": {
         "plateHint": "点击一层即可将其抬起"
       }
     },
     "variants": {
-      "dossier": "卷宗",
       "drafting": "工程图纸",
       "label": "蓝图样式",
-      "radial": "放射式",
-      "strata": "地层"
+      "strata": "地层",
+      "draftingNative": "原生图纸",
+      "draftingSurface": "页面墨绘",
+      "draftingTint": "着色图纸"
     }
   },
   "card": {

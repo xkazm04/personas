@@ -407,14 +407,20 @@ while it reads. The page re-reads when the engine reports progress
 attached through the buffered singleton listener), and when the experience
 overlay closes over it.
 
-### Four prototype variants
+### The prototype variants
 
-Four renderers compete behind the switcher, each a lazy chunk implementing the
-same props: **Drafting sheet**, **Strata**, **Dossier** and **Radial**. The pick
-is persisted (`twin-blueprint-variant`) and the training overlay reads the same
-pick, so judging a variant judges both surfaces at once. This is a prototype
-round (`TODO(prototype, 2026-10-01)`): the owner picks or fuses from the running
-app, and the losing variants and the switcher are deleted in that round.
+The renderers behind the switcher are lazy chunks implementing the same props;
+the pick is persisted (`twin-blueprint-variant`) and the training overlay reads
+the same pick, so judging a variant judges both surfaces at once. Round one
+(2026-10-01) built four directions; the owner kept the **Drafting sheet**,
+kept **Strata** while its layer one is considered for another module, and
+deleted Dossier and Radial. Round two adds three versions of the drafting sheet
+that sit progressively closer to the Personas theme, subtle to major:
+**Tinted sheet**, **Inked page** and **Native drafting** (`variants/drafting/themes/`),
+and redraws every drafting sheet the way a draughtsman would: frames first, in
+parallel at each level, then each frame's content in order. Still a prototype
+round (`TODO(prototype, 2026-10-01)`): the losing versions and the switcher are
+deleted once one is picked.
 
 ### The training overlay
 
@@ -708,8 +714,8 @@ src/features/plugins/twin/
 │   ├── useTwinBlueprint.ts · blueprintModel.ts · blueprintVoice.ts  # reads (store + setupGet + counts) -> TwinBlueprintModel
 │   ├── blueprintDelta.ts · useAnswerBeat.ts · beatMotion.ts  # what an answer changed, and the beat that plays it
 │   ├── BlueprintStage.tsx · StageHand.tsx · useStageBlueprint.ts  # the training overlay's base layer and the hand over it
-│   ├── variantRegistry.ts · blueprintVariant.ts  # the four renderers (lazy chunks) and the persisted pick
-│   └── variants/{drafting,strata,dossier,radial}/  # the four prototype renderers
+│   ├── variantRegistry.ts · blueprintVariant.ts  # the renderers (lazy chunks) and the persisted pick
+│   └── variants/{drafting,strata}/  # the drafting sheet (+ themes/tint|surface|native) and Strata
 ├── experience/                         # the card-table overlay (see FUSION.md)
 │   ├── TwinExperienceHost.tsx · ExperienceBody.tsx · launcher.ts  # the overlay, its layout, the one way to open it (`door` opens a layer on arrival)
 │   ├── table/                          # CardTable · DealerCard · DecisionFan · ProposalFan · TableChrome (the doors) · TableComposer · TableTrail · useTurn

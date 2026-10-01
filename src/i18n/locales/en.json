@@ -22241,8 +22241,9 @@
         "label": "Blueprint style",
         "drafting": "Drafting sheet",
         "strata": "Strata",
-        "dossier": "Dossier",
-        "radial": "Radial"
+        "draftingTint": "Tinted sheet",
+        "draftingSurface": "Inked page",
+        "draftingNative": "Native drafting"
       },
       "metrics": {
         "bio": "Bio",
@@ -22324,43 +22325,6 @@
         },
         "strata": {
           "plateHint": "Click a plate to lift it"
-        },
-        "dossier": {
-          "heroLabel": "Twin dossier",
-          "moreChannels": "+{count} more",
-          "ofTarget": "of {count}",
-          "charUnit": "{count} characters",
-          "bioAria": "Bio: {count} of {target} characters",
-          "styleAria": "{channel} style: {dims}",
-          "dimValue": "{label} {value} of {max}",
-          "samplesOf": "{count} of {max} samples",
-          "rulesOf": "{count} of {max} rules",
-          "memoriesAria": "{approved} approved, {pending} awaiting review, {rejected} rejected",
-          "memoryUnit": "{count} memories",
-          "answerUnit": "{count} answers",
-          "topicAria": "{topic}: {approved} approved, {awaiting} awaiting review",
-          "goalAria": "{title}: {pct} covered",
-          "goalsAria": "{count} goals by coverage",
-          "kindsAria": "{count} answers by kind",
-          "coverageAria": "{section} coverage {pct}",
-          "fullAt": "Full at {count}",
-          "coveredAt": "Covered at {count}",
-          "dropped": "Dropped",
-          "answered": "{count} answered",
-          "directivesWritten": "Directives written",
-          "slotSet": "Set",
-          "slotPartial": "Partly set",
-          "slotEmpty": "Not set"
-        },
-        "radial": {
-          "centerHint": "Pick a segment",
-          "fullAt": "Full at {count}",
-          "coveredAt": "Covered at {count}",
-          "target": "Target {count}",
-          "dropped": "Dropped",
-          "slotSet": "Set",
-          "slotPartial": "Partly set",
-          "slotEmpty": "Not set"
         }
       }
     },

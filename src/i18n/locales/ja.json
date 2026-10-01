@@ -21532,33 +21532,6 @@
         "thin": "情報が少なめ"
       },
       "variantCopy": {
-        "dossier": {
-          "heroLabel": "ツインの人物ファイル",
-          "answerUnit": "回答 {count} 件",
-          "answered": "{count} 件回答済み",
-          "bioAria": "プロフィール: {target} 文字中 {count} 文字",
-          "charUnit": "{count} 文字",
-          "coverageAria": "{section}のカバレッジ {pct}",
-          "coveredAt": "{count}でカバー済み",
-          "dimValue": "{label} {value} / {max}",
-          "directivesWritten": "記述済みの指示",
-          "dropped": "除外済み",
-          "fullAt": "{count}で満杯",
-          "goalAria": "{title}: {pct} カバー済み",
-          "goalsAria": "カバレッジ別の目標 {count} 件",
-          "kindsAria": "種類別の回答 {count} 件",
-          "memoriesAria": "承認済み {approved} 件、レビュー待ち {pending} 件、却下 {rejected} 件",
-          "memoryUnit": "記憶 {count} 件",
-          "moreChannels": "ほか {count} 件",
-          "ofTarget": "/ {count}",
-          "rulesOf": "ルール {max} 件中 {count} 件",
-          "samplesOf": "サンプル {max} 件中 {count} 件",
-          "slotEmpty": "未設定",
-          "slotPartial": "一部設定済み",
-          "slotSet": "設定済み",
-          "styleAria": "{channel}のスタイル: {dims}",
-          "topicAria": "{topic}: 承認済み {approved} 件、レビュー待ち {awaiting} 件"
-        },
         "drafting": {
           "sheetTitle": "ツインの設計図",
           "detailOf": "{section}の詳細",
@@ -21569,26 +21542,17 @@
           "target": "目標",
           "targetOf": "目標: {count} 文字"
         },
-        "radial": {
-          "centerHint": "セグメントを選択",
-          "coveredAt": "{count}でカバー済み",
-          "dropped": "除外済み",
-          "fullAt": "{count}で満杯",
-          "slotEmpty": "未設定",
-          "slotPartial": "一部設定済み",
-          "slotSet": "設定済み",
-          "target": "目標 {count}"
-        },
         "strata": {
           "plateHint": "層をクリックして持ち上げます"
         }
       },
       "variants": {
-        "dossier": "人物ファイル",
         "drafting": "製図シート",
         "label": "ブループリントのスタイル",
-        "radial": "放射状",
-        "strata": "地層"
+        "strata": "地層",
+        "draftingNative": "ネイティブ製図",
+        "draftingSurface": "ページに描画",
+        "draftingTint": "色付きシート"
       }
     },
     "card": {

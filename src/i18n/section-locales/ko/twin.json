@@ -926,33 +926,6 @@
       "thin": "정보 부족"
     },
     "variantCopy": {
-      "dossier": {
-        "heroLabel": "트윈 인물 파일",
-        "answerUnit": "답변 {count}개",
-        "answered": "{count}개 답변함",
-        "bioAria": "자기소개: {target}자 중 {count}자",
-        "charUnit": "{count}자",
-        "coverageAria": "{section} 커버리지 {pct}",
-        "coveredAt": "{count}에서 다룸",
-        "dimValue": "{label} {max} 중 {value}",
-        "directivesWritten": "작성된 지시",
-        "dropped": "제외됨",
-        "fullAt": "{count}에서 가득 참",
-        "goalAria": "{title}: 커버리지 {pct}",
-        "goalsAria": "커버리지별 목표 {count}개",
-        "kindsAria": "유형별 답변 {count}개",
-        "memoriesAria": "승인됨 {approved}개, 검토 대기 {pending}개, 거부됨 {rejected}개",
-        "memoryUnit": "기억 {count}개",
-        "moreChannels": "+{count}개 더",
-        "ofTarget": "/ {count}",
-        "rulesOf": "규칙 {max}개 중 {count}개",
-        "samplesOf": "샘플 {max}개 중 {count}개",
-        "slotEmpty": "설정 안 됨",
-        "slotPartial": "일부 설정됨",
-        "slotSet": "설정됨",
-        "styleAria": "{channel} 스타일: {dims}",
-        "topicAria": "{topic}: 승인됨 {approved}개, 검토 대기 {awaiting}개"
-      },
       "drafting": {
         "sheetTitle": "트윈 설계도",
         "detailOf": "{section} 상세",
@@ -963,26 +936,17 @@
         "target": "목표",
         "targetOf": "목표: {count}자"
       },
-      "radial": {
-        "centerHint": "구간을 선택하세요",
-        "coveredAt": "{count}에서 다룸",
-        "dropped": "제외됨",
-        "fullAt": "{count}에서 가득 참",
-        "slotEmpty": "설정 안 됨",
-        "slotPartial": "일부 설정됨",
-        "slotSet": "설정됨",
-        "target": "목표 {count}"
-      },
       "strata": {
         "plateHint": "층을 클릭해 들어 올리세요"
       }
     },
     "variants": {
-      "dossier": "인물 파일",
       "drafting": "도면",
       "label": "블루프린트 스타일",
-      "radial": "방사형",
-      "strata": "지층"
+      "strata": "지층",
+      "draftingNative": "네이티브 도면",
+      "draftingSurface": "페이지에 그린 도면",
+      "draftingTint": "색조 도면"
     }
   },
   "card": {
