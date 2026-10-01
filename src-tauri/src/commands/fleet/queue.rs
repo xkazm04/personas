@@ -2839,9 +2839,12 @@ mod tests {
             (RamGate::Warming, RamGate::Warming)
         );
         assert_eq!(door(&mut measured), Door::Start { passed: vec![] });
-        // Second sample at the high-water mark: closed.
+        // Second sample at the high-water mark: closed. The marks are read from
+        // the constants: the gate was retuned 85/70 -> 90/88 on 2026-09-26.
+        let close = budgets::RAM_GATE_CLOSE_PCT;
+        let reopen = budgets::RAM_GATE_REOPEN_PCT;
         assert_eq!(
-            measured.note_ram(Some(85.0)),
+            measured.note_ram(Some(close)),
             (RamGate::Warming, RamGate::Closed)
         );
         assert_eq!(
@@ -2854,14 +2857,17 @@ mod tests {
         assert_eq!(scan_queue(&reg, 2_000, &inputs, used).pick, None);
         let snap = build_snapshot_with(&reg, &[], 2_000, &inputs, used, None);
         assert_eq!(snap.budgets.ram_gate, RamGate::Closed);
-        assert_eq!(snap.budgets.ram_pct, Some(85.0));
+        assert_eq!(snap.budgets.ram_pct, Some(close));
         assert_eq!(snap.budgets.hold, Some(BudgetHold::RamHighWater));
         // The gate defers promotion ONLY: the live session is untouched.
         assert_eq!(reg.session_state("a"), Some(S::Running));
         assert_eq!(reg.live_count(), 1);
-        // Between the marks it stays closed; it reopens only at 70.
-        assert_eq!(measured.note_ram(Some(75.0)).1, RamGate::Closed);
-        assert_eq!(measured.note_ram(Some(70.0)).1, RamGate::Open);
+        // Between the marks it stays closed; it reopens only at the low mark.
+        assert_eq!(
+            measured.note_ram(Some((close + reopen) / 2.0)).1,
+            RamGate::Closed
+        );
+        assert_eq!(measured.note_ram(Some(reopen)).1, RamGate::Open);
         let inputs = measured.inputs(10, true, 1_000);
         assert_eq!(
             scan_queue(&reg, 3_000, &inputs, used).pick.as_deref(),
@@ -2869,7 +2875,7 @@ mod tests {
         );
         // With an empty queue the snapshot still names a closed gate.
         let empty = FleetRegistry::default();
-        measured.note_ram(Some(90.0));
+        measured.note_ram(Some(close));
         let snap = build_snapshot_with(
             &empty,
             &[],

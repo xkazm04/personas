@@ -603,9 +603,9 @@ mod tests {
             .write(true)
             .open(&adhoc)
             .unwrap()
-            .set_modified(
-                std::time::SystemTime::now() - std::time::Duration::from_secs(16 * 24 * 60 * 60),
-            )
+            // A fixed instant before the boot set's 2026-09-14 stamp. It was
+            // `now - 16 days`, which stopped being older than that stamp on 2026-09-30.
+            .set_modified(std::time::UNIX_EPOCH + std::time::Duration::from_secs(1_788_000_000))
             .unwrap();
 
         let sets = list_backup_sets(&data_dir);
