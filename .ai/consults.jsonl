@@ -286,3 +286,4 @@
 {"ts":"2026-09-30T20:18:35.990Z","bundle":"software-engineering","subjects":["markdown-vault"],"techniques":["editor-interop"],"deviations":0,"from":"scan-sweep@4.3.0"}
 {"ts":"2026-09-30T21:01:30.636Z","bundle":"software-engineering","subjects":["markdown-vault"],"techniques":["editor-interop"],"deviations":0,"from":"scan-sweep@4.3.0"}
 {"ts":"2026-10-01T08:26:10.958Z","bundle":"software-engineering","subjects":["test-harness"],"techniques":[],"deviations":0,"from":"scan-sweep@4.3.0"}
+{"ts": "2026-10-01T10:10:53.000Z", "bundle": "software-engineering", "subjects": ["test-harness"], "techniques": ["negative-control-tests", "unreached-decisions-pin-nothing", "gate-scope-is-not-report-scope"], "deviations": 3}
