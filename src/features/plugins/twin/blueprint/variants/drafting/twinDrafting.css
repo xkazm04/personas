@@ -1,0 +1,169 @@
+/* The twin's drafting sheet (spark twin-portable-blueprint, WP7).
+
+   It sits on Studio's cyanotype paper: the root carries `.drafting-root`
+   (src/features/studio/guide/drafting/drafting.css), which owns the paper,
+   the grid, the double frame and every ink colour (--paper, --ink,
+   --ink-strong, --ink-dim, --ink-faint), all mixed from the theme's
+   --primary. This file adds only what a twin drawing needs on top: the
+   hatches, the section linings that tell the question kinds apart, the
+   region hover, and the container queries that move optional rows out of
+   layer one instead of shrinking them. No colour is authored here: every
+   value is one of the ink variables. */
+
+.twd-sheet {
+  container-type: size;
+  container-name: twd-sheet;
+}
+
+/* "Not measured": a hatch, never an empty bar. */
+.twd-hatch {
+  background-image: repeating-linear-gradient(135deg, var(--ink-dim) 0 1px, transparent 1px 7px);
+}
+/* "Awaiting review": a denser hatch in full ink, so it reads as a quantity. */
+.twd-hatch-ink {
+  background-image: repeating-linear-gradient(135deg, var(--ink) 0 1.5px, transparent 1.5px 5px);
+}
+
+/* The section linings: one pattern per question kind, as a drawing marks
+   materials. Read with the legend in L2. */
+.twd-lining-scene { background-image: repeating-linear-gradient(45deg, var(--ink) 0 1.5px, transparent 1.5px 6px); }
+.twd-lining-opinion { background-image: repeating-linear-gradient(-45deg, var(--ink) 0 1.5px, transparent 1.5px 6px); }
+.twd-lining-reply_drill {
+  background-image:
+    repeating-linear-gradient(45deg, var(--ink) 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(-45deg, var(--ink) 0 1px, transparent 1px 7px);
+}
+.twd-lining-fact { background-image: repeating-linear-gradient(0deg, var(--ink) 0 1.5px, transparent 1.5px 5px); }
+.twd-lining-rule { background-image: repeating-linear-gradient(90deg, var(--ink) 0 1.5px, transparent 1.5px 5px); }
+.twd-lining-preference {
+  background-image: radial-gradient(circle, var(--ink) 0 1.5px, transparent 2px);
+  background-size: 6px 6px;
+}
+
+/* A topic's figures sit on its name's line where the column is wide, and
+   beside its bar where it is narrow (beside the card), so the name always
+   keeps a whole line at full size. */
+.twd-topics {
+  container-type: inline-size;
+  container-name: twd-topics;
+}
+.twd-fig-wide { display: none; }
+.twd-fig-narrow { display: flex; }
+@container twd-topics (min-width: 13rem) {
+  .twd-fig-wide { display: flex; }
+  .twd-fig-narrow { display: none; }
+}
+
+/* A region on layer one is the door to its zoom. */
+.twd-region[role="button"] {
+  cursor: pointer;
+  transition: background-color var(--duration-fast, 150ms) ease-out, box-shadow var(--duration-fast, 150ms) ease-out;
+}
+.twd-region[role="button"]:hover {
+  background-color: color-mix(in srgb, var(--ink) 5%, transparent);
+  box-shadow: 0 0 28px color-mix(in srgb, var(--primary) 14%, transparent);
+}
+
+/* The mark the last answer landed on: inked and lit. */
+.twd-target {
+  background-color: color-mix(in srgb, var(--ink) 9%, transparent);
+  box-shadow: 0 0 0 1px var(--ink), 0 0 24px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+/* The frame's ink traces around the perimeter as far as the section is drawn. */
+.twd-ink-trace {
+  transition: stroke-dasharray 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.twd-sheet[data-reduced="true"] .twd-ink-trace {
+  transition: none;
+}
+
+/* Stage mode: the card is dealt into the middle of the sheet, so the middle
+   column is open paper a card wide. The title block sits above it and the
+   notes below it; the regions stand in the columns either side. On a wide,
+   short sheet the bands would run under the card, so the title block and the
+   notes drop to the foot of the side columns instead. */
+.twd-stage {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 520px) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "left title right"
+    "left well right"
+    "left notes right";
+}
+.twd-stage > [data-area="left"] { grid-area: left; }
+.twd-stage > [data-area="right"] { grid-area: right; }
+.twd-stage > [data-area="title"] { grid-area: title; }
+.twd-stage > [data-area="well"] { grid-area: well; }
+.twd-stage > [data-area="notes"] { grid-area: notes; }
+@container twd-sheet (min-width: 1000px) and (max-height: 640px) {
+  .twd-stage {
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "left well right"
+      "title well notes";
+  }
+}
+
+/* L2 opens out of the region it came from: a clip that grows from the
+   region's box (set per zoom as --twd-zoom-from) to the whole sheet. Nothing is
+   scaled, so no word is ever drawn small on the way. Opened from outside, or
+   under reduced motion, the zoom fades in. */
+.twd-zoom-in {
+  animation: twd-zoom-in 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.twd-fade-in {
+  animation: twd-fade-in 250ms ease-out both;
+}
+@keyframes twd-zoom-in {
+  from { clip-path: var(--twd-zoom-from); }
+  to { clip-path: inset(0); }
+}
+@keyframes twd-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* The waiting surface: the plan in miniature, each frame traced by the pen in
+   turn, over and over. */
+.twd-trace-loop g rect:last-child {
+  stroke-dasharray: 100 100;
+  stroke-dashoffset: 100;
+  animation: twd-trace 4.8s ease-in-out infinite;
+}
+.twd-trace-loop g:nth-child(2) rect:last-child { animation-delay: 0.6s; }
+.twd-trace-loop g:nth-child(3) rect:last-child { animation-delay: 1.2s; }
+.twd-trace-loop g:nth-child(4) rect:last-child { animation-delay: 1.8s; }
+.twd-trace-loop g:nth-child(5) rect:last-child { animation-delay: 2.4s; }
+@keyframes twd-trace {
+  0% { stroke-dashoffset: 100; }
+  35%, 75% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -100; }
+}
+
+/* Layer one moves rows to layer two when the sheet is short, rather than
+   shrinking them (the anti-shrink rule): first the kind mix, then the goal
+   gauges, then the lettered row heads, last the facts row. Each one is drawn
+   in full in its zoom. Heights are the sheet's content box. */
+@container twd-sheet (max-height: 760px) {
+  .twd-roomy-only { display: none; }
+}
+@container twd-sheet (max-height: 640px) {
+  .twd-goals-l1 { display: none; }
+}
+@container twd-sheet (max-height: 600px) {
+  .twd-head-l1 { display: none; }
+}
+@container twd-sheet (max-height: 540px) {
+  .twd-tall-only { display: none; }
+}
+@container twd-sheet (max-height: 500px) {
+  .twd-facts-l1 { display: none; }
+}
+/* A wide, short stage keeps the two regions answers land in (voice and
+   training); identity and knowledge wait in the Detail page. */
+@container twd-sheet (min-width: 1000px) and (max-height: 640px) {
+  .twd-stage-secondary { display: none; }
+}
