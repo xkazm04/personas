@@ -1,0 +1,272 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personas.app/schemas/twin-card/1.0/twin-card.schema.json",
+  "title": "Twin Card 1.0",
+  "description": "A portable description of how one person writes. Normative prose: SPEC.md beside this file.",
+  "type": "object",
+  "required": ["$schema", "spec", "spec_version", "card_id", "created_at", "exported_at", "generator", "identity", "voice", "integrity"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "spec": { "const": "twin-card" },
+    "spec_version": { "type": "string", "pattern": "^1\\.[0-9]+$" },
+    "card_id": { "type": "string", "pattern": "^[0-9a-fA-F-]{36}$" },
+    "created_at": { "$ref": "#/$defs/timestamp" },
+    "exported_at": { "$ref": "#/$defs/timestamp" },
+    "generator": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": { "name": { "type": "string", "minLength": 1 }, "version": { "type": "string", "minLength": 1 } }
+    },
+    "identity": { "$ref": "#/$defs/identity" },
+    "voice": { "$ref": "#/$defs/voice" },
+    "knowledge": { "oneOf": [{ "$ref": "#/$defs/knowledge" }, { "$ref": "#/$defs/sealedPart" }] },
+    "training": { "oneOf": [{ "$ref": "#/$defs/training" }, { "$ref": "#/$defs/sealedPart" }] },
+    "evidence": { "$ref": "#/$defs/evidence" },
+    "integrity": { "$ref": "#/$defs/integrity" },
+    "signature": { "$ref": "#/$defs/signature" },
+    "extensions": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[a-z0-9-]+(\\.[a-z0-9-]+)+$" }
+    }
+  },
+  "$defs": {
+    "timestamp": { "type": "string", "format": "date-time" },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "level": { "type": "integer", "minimum": 1, "maximum": 5 },
+    "permille": { "type": ["integer", "null"], "minimum": 0, "maximum": 1000 },
+    "count": { "type": "integer", "minimum": 0 },
+    "identity": {
+      "type": "object",
+      "required": ["name", "languages"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "role": { "type": ["string", "null"], "maxLength": 300 },
+        "bio": { "type": ["string", "null"], "maxLength": 5000 },
+        "languages": { "type": "array", "items": { "type": "string", "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$" }, "uniqueItems": true },
+        "grammatical_gender": { "enum": ["masculine", "feminine", "neutral", null] }
+      }
+    },
+    "dims": {
+      "type": "object",
+      "required": ["formality", "warmth", "humor", "energy", "length", "directness", "expressiveness", "detail"],
+      "additionalProperties": false,
+      "properties": {
+        "formality": { "$ref": "#/$defs/level" },
+        "warmth": { "$ref": "#/$defs/level" },
+        "humor": { "$ref": "#/$defs/level" },
+        "energy": { "$ref": "#/$defs/level" },
+        "length": { "$ref": "#/$defs/level" },
+        "directness": { "$ref": "#/$defs/level" },
+        "expressiveness": { "$ref": "#/$defs/level" },
+        "detail": { "$ref": "#/$defs/level" }
+      }
+    },
+    "style": {
+      "type": ["object", "null"],
+      "required": ["dims", "origin"],
+      "properties": {
+        "dims": { "$ref": "#/$defs/dims" },
+        "origin": {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": { "enum": ["preset", "rolled", "learned", "manual"] },
+            "preset_id": { "type": ["string", "null"] }
+          }
+        }
+      }
+    },
+    "exemplar": {
+      "type": "object",
+      "required": ["text"],
+      "properties": {
+        "text": { "type": "string", "minLength": 1, "maxLength": 8000 },
+        "source": { "enum": ["sample", "training", "manual", "unknown"] }
+      }
+    },
+    "channel": {
+      "type": "object",
+      "required": ["channel", "directives", "constraints", "exemplars"],
+      "properties": {
+        "channel": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,39}$" },
+        "style": { "$ref": "#/$defs/style" },
+        "directives": { "type": "string", "maxLength": 4000 },
+        "length_hint": { "type": ["string", "null"], "maxLength": 200 },
+        "constraints": { "type": "array", "items": { "type": "string", "maxLength": 500 }, "maxItems": 100 },
+        "exemplars": { "type": "array", "items": { "$ref": "#/$defs/exemplar" }, "maxItems": 200 },
+        "provenance": {
+          "type": "object",
+          "properties": { "derived_by": { "type": "string" }, "derived_at": { "$ref": "#/$defs/timestamp" } }
+        }
+      }
+    },
+    "voice": {
+      "type": "object",
+      "required": ["scale", "default_channel", "quality_rules", "channels"],
+      "properties": {
+        "scale": { "const": "twin-card.style/1" },
+        "default_channel": { "type": "string" },
+        "standing_directions": { "type": ["string", "null"], "maxLength": 4000 },
+        "quality_rules": {
+          "type": "object",
+          "required": ["profile", "register", "avoid_phrases", "filler_openers", "dash_policy"],
+          "properties": {
+            "profile": { "type": "string" },
+            "register": { "type": "string" },
+            "avoid_phrases": { "type": "array", "items": { "type": "string" } },
+            "filler_openers": { "type": "array", "items": { "type": "string" } },
+            "dash_policy": { "enum": ["avoid", "allow"] }
+          }
+        },
+        "channels": { "type": "array", "items": { "$ref": "#/$defs/channel" }, "minItems": 1, "maxItems": 50 }
+      }
+    },
+    "knowledge": {
+      "type": "object",
+      "required": ["memories", "facts"],
+      "properties": {
+        "memories": {
+          "type": "array",
+          "maxItems": 5000,
+          "items": {
+            "type": "object",
+            "required": ["content", "observed_at", "importance"],
+            "properties": {
+              "title": { "type": ["string", "null"], "maxLength": 300 },
+              "content": { "type": "string", "minLength": 1, "maxLength": 8000 },
+              "observed_at": { "$ref": "#/$defs/timestamp" },
+              "source": { "type": ["string", "null"] },
+              "importance": { "$ref": "#/$defs/level" }
+            }
+          }
+        },
+        "facts": {
+          "type": "array",
+          "maxItems": 2000,
+          "items": {
+            "type": "object",
+            "required": ["content", "importance"],
+            "properties": {
+              "content": { "type": "string", "minLength": 1, "maxLength": 2000 },
+              "importance": { "$ref": "#/$defs/level" }
+            }
+          }
+        }
+      }
+    },
+    "training": {
+      "type": "object",
+      "required": ["goals", "qa", "observations"],
+      "properties": {
+        "goals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["slot", "title", "criteria", "state", "coverage_permille", "answered"],
+            "properties": {
+              "slot": { "type": "string", "pattern": "^(identity|tone|channels|memories|training:[a-z_]+)$" },
+              "title": { "type": "string" },
+              "intent": { "type": ["string", "null"] },
+              "criteria": { "type": "array", "items": { "type": "string" } },
+              "state": { "enum": ["open", "covered", "dropped"] },
+              "coverage_permille": { "type": "integer", "minimum": 0, "maximum": 1000 },
+              "answered": { "$ref": "#/$defs/count" }
+            }
+          }
+        },
+        "qa": {
+          "type": "array",
+          "maxItems": 5000,
+          "items": {
+            "type": "object",
+            "required": ["question", "answer", "answered_at"],
+            "properties": {
+              "question": { "type": "string" },
+              "answer": { "type": "string" },
+              "kind": { "enum": ["scene", "opinion", "reply_drill", "fact", "rule", "preference", null] },
+              "slot": { "type": ["string", "null"] },
+              "incoming": { "type": ["string", "null"] },
+              "answered_at": { "$ref": "#/$defs/timestamp" }
+            }
+          }
+        },
+        "observations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["text", "evidence"],
+            "properties": { "text": { "type": "string" }, "evidence": { "$ref": "#/$defs/count" } }
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "exemplars_per_channel": { "type": "object", "additionalProperties": { "$ref": "#/$defs/count" } },
+        "coverage_permille": {
+          "type": "object",
+          "properties": {
+            "identity": { "$ref": "#/$defs/permille" },
+            "voice": { "$ref": "#/$defs/permille" },
+            "knowledge": { "$ref": "#/$defs/permille" },
+            "training": { "$ref": "#/$defs/permille" }
+          }
+        },
+        "readiness_percent": { "type": ["integer", "null"], "minimum": 0, "maximum": 100 },
+        "answers": { "$ref": "#/$defs/count" },
+        "last_trained_at": { "type": ["string", "null"], "format": "date-time" },
+        "renderer": { "type": "string" }
+      }
+    },
+    "sealedPart": {
+      "type": "object",
+      "required": ["sealed"],
+      "additionalProperties": false,
+      "properties": {
+        "sealed": {
+          "type": "object",
+          "required": ["alg", "kdf", "iterations", "salt", "nonce", "ciphertext"],
+          "properties": {
+            "alg": { "const": "AES-256-GCM" },
+            "kdf": { "const": "PBKDF2-HMAC-SHA256" },
+            "iterations": { "type": "integer", "minimum": 100000 },
+            "salt": { "type": "string" },
+            "nonce": { "type": "string" },
+            "ciphertext": { "type": "string" }
+          }
+        }
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "required": ["alg", "canonicalization", "parts"],
+      "properties": {
+        "alg": { "const": "sha256" },
+        "canonicalization": { "const": "rfc8785" },
+        "parts": {
+          "type": "object",
+          "required": ["identity", "voice"],
+          "additionalProperties": false,
+          "properties": {
+            "identity": { "$ref": "#/$defs/sha256" },
+            "voice": { "$ref": "#/$defs/sha256" },
+            "knowledge": { "$ref": "#/$defs/sha256" },
+            "training": { "$ref": "#/$defs/sha256" },
+            "evidence": { "$ref": "#/$defs/sha256" }
+          }
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "required": ["alg", "key_id", "public_key", "value"],
+      "properties": {
+        "alg": { "const": "Ed25519" },
+        "key_id": { "type": "string" },
+        "public_key": { "type": "string" },
+        "value": { "type": "string" }
+      }
+    }
+  }
+}
