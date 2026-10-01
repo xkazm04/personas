@@ -6,10 +6,16 @@
  * score, and the same labels the Training Room uses, so the vocabulary does
  * not fork. Each carries how thin it is: three pips and a count, which is what
  * makes the deck a decision rather than a list.
+ *
+ * The header figure is the number of answers on the plan's goals (the setup
+ * snapshot's own count, spark twin-portable-blueprint). It used to read
+ * "rounds" from `session_summary` rows that only the retired interview ever
+ * wrote, so it said 0 for every twin trained on this table.
  */
 
 import { Check } from 'lucide-react';
 import { Layers } from 'lucide-react';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CoverageTier, TopicCoverage } from '../../sub_training/topicCoverage';
 import { TRAINING_TOPIC_PRESETS } from '../../sub_training/useTrainingSession';
@@ -22,11 +28,12 @@ interface DeckLayerProps {
   onClose: () => void;
   topicPreset: string | null;
   coverage: TopicCoverage[];
-  rounds: number;
+  /** Answers on the plan's goals; `null` until the snapshot is read. */
+  answered: number | null;
   onPick: (prompt: string, presetId: string) => void;
 }
 
-export function DeckLayer({ open, onClose, topicPreset, coverage, rounds, onPick }: DeckLayerProps) {
+export function DeckLayer({ open, onClose, topicPreset, coverage, answered, onPick }: DeckLayerProps) {
   const { t, tx: fmt } = useTranslation();
   const tx = t.twin.experience.deck;
   const tt = t.twin.training;
@@ -39,7 +46,12 @@ export function DeckLayer({ open, onClose, topicPreset, coverage, rounds, onPick
       icon={<Layers className="w-4 h-4" />}
       title={tx.title}
       hint={tx.hint}
-      aside={<span className="typo-caption tabular-nums">{fmt(tx.rounds, { count: rounds })}</span>}
+      aside={
+        <span className="typo-caption flex items-baseline gap-1.5" data-testid="mr-deck-answered">
+          {t.twin.blueprint.metrics.answers}
+          <Numeric value={answered} className="typo-data text-foreground" />
+        </span>
+      }
       testId="mr-deck"
     >
       <ul className="px-5 py-4 space-y-1.5">

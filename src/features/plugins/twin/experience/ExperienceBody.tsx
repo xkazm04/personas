@@ -7,38 +7,46 @@
  * "one act at a time" is structural rather than remembered.
  *
  * A `train` request opens straight on the table for the active twin; with no
- * twin active there is nothing to train, so it opens on the forge instead.
+ * twin active there is nothing to train, so it opens on the forge instead. A
+ * request that names a `door` opens with that layer already up.
+ *
+ * The table is played ON the blueprint (spark twin-portable-blueprint): the
+ * selected variant fills the play area in stage mode and the hand floats over
+ * it. The blueprint replaced the felt and the readiness strip; readiness is one
+ * of the things it draws.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SegmentedTabs, segmentedTabPanelProps } from '@/features/shared/components/layout/SegmentedTabs';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import type { SetupFocus, SetupStage } from '../setup/setupContract';
 import { useSetupSession } from '../setup/useSetupSession';
 import { useSetupVoice } from '../setup/useSetupVoice';
-import { useTrainingMomentum } from '../sub_training/useTrainingMomentum';
-import { TRAINING_TOPIC_PRESETS } from '../sub_training/useTrainingSession';
+import { scoreTopicCoverage, type TopicCoverage } from '../sub_training/topicCoverage';
 import type { TwinSlotId } from '../shared/twinStatus';
+import { BlueprintStage } from '../blueprint/BlueprintStage';
+import { SECTION_DOOR } from '../blueprint/sectionDoors';
+import { StageHand } from '../blueprint/StageHand';
+import { useStageBlueprint } from '../blueprint/useStageBlueprint';
 import type { ExperienceRequest } from './launcher';
 import { EXPERIENCE_TITLE_ID } from './experienceIds';
 import { ForgePhase } from './forge/ForgePhase';
-import { CardTable } from './table/CardTable';
 import { TableChrome, type ExperienceDoor } from './table/TableChrome';
-import { TableProgress } from './table/TableProgress';
-import { CompleteNotice, GuideDownNotice, TrainingInvite } from './table/Notices';
 import { useTurn } from './table/useTurn';
 import { DeckLayer } from './layers/DeckLayer';
 import { FieldsLayer } from './layers/FieldsLayer';
 import { PlanLayer } from './layers/PlanLayer';
 import { SheetLayer } from './layers/SheetLayer';
 import { VoiceLayer } from './layers/VoiceLayer';
-import { useCoverage } from './layers/useCoverage';
 import { useVoiceDock } from './layers/useVoiceDock';
 import './experience.css';
 
 /** The stage strip's id prefix, shared by the strip and the panel it controls. */
 const STAGE_TABS_ID = 'twin-experience-stage';
+
+/** Every topic thin, until the blueprint's first read lands. */
+const NO_COVERAGE: TopicCoverage[] = scoreTopicCoverage([]);
 
 interface ExperienceBodyProps {
   request: ExperienceRequest;
@@ -56,15 +64,19 @@ export default function ExperienceBody({ request, onClose, onOpenHub }: Experien
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const profile = useSystemStore((s) => s.twinProfiles.find((p) => p.id === s.activeTwinId) ?? null);
   const dock = useVoiceDock(activeTwinId, session.toneChannels);
-  // Only the training deck reads these; the setup stage does not pay for them.
-  const training = session.stage === 'training';
-  const coverage = useCoverage(training ? activeTwinId : null, session.history.length);
-  const momentum = useTrainingMomentum(training ? activeTwinId : null, session.history.length);
+  const stage = useStageBlueprint(activeTwinId, session, turn.verdict);
+  // The deck's per-topic counts are the blueprint's: one read, not two.
+  const coverage = useMemo<TopicCoverage[]>(
+    () => stage.model?.training.topics.map((tp) => ({ id: tp.id, count: tp.approved, tier: tp.tier })) ?? NO_COVERAGE,
+    [stage.model],
+  );
 
   const [phase, setPhase] = useState<'forge' | 'play'>(() =>
     request.mode === 'create' || !activeTwinId ? 'forge' : 'play',
   );
-  const [door, setDoor] = useState<ExperienceDoor | null>(null);
+  const [door, setDoor] = useState<ExperienceDoor | null>(() =>
+    request.mode === 'train' ? (request.door ?? null) : null,
+  );
 
   const { chooseStage } = turn;
   useEffect(() => {
@@ -88,17 +100,11 @@ export default function ExperienceBody({ request, onClose, onOpenHub }: Experien
     [session],
   );
 
-  const topicKey = TRAINING_TOPIC_PRESETS.find((p) => p.id === session.topicPreset)?.labelKey ?? null;
   const title =
     phase === 'forge' ? tx.title : profile?.name ? fmt(tx.trainTitle, { name: profile.name }) : tx.title;
   // The readiness jump inside the fields editor names a Hub slot; this surface
   // has one Hub and no deep link into it, so every slot lands in the same place.
   const openHubSlot = (_slot: TwinSlotId) => onOpenHub();
-
-  // Every slot set, by readiness. Not `score >= 100`: the score also counts the
-  // Brain, which no question on this table fills.
-  const setupDone = session.stage === 'setup' && session.checklist.every((c) => c.status === 'set');
-  const memoriesInSetup = session.stage === 'setup' && session.focus === 'memories' && !setupDone;
 
   if (phase === 'forge') {
     return (
@@ -114,7 +120,7 @@ export default function ExperienceBody({ request, onClose, onOpenHub }: Experien
   }
 
   return (
-    <div className="tx-felt relative flex-1 min-h-0 flex flex-col" data-testid="twin-setup-page">
+    <div className="relative flex-1 min-h-0 flex flex-col" data-testid="twin-setup-page">
       <TableChrome
         title={title}
         stage={session.stage}
@@ -139,52 +145,28 @@ export default function ExperienceBody({ request, onClose, onOpenHub }: Experien
         onClose={onClose}
       />
 
-      <TableProgress
-        checklist={session.checklist}
-        score={session.score}
-        focus={session.focus}
-        onFocus={session.focusOn}
-      />
-
       <div
-        className="flex-1 min-h-0 flex flex-col"
+        className="relative flex-1 min-h-0 flex flex-col"
         data-testid="setup-body"
         {...segmentedTabPanelProps(STAGE_TABS_ID, session.stage)}
         role="tabpanel"
       >
-        {session.generatorError && (
-          <div className="flex-shrink-0 px-4 md:px-8 pt-4">
-            <GuideDownNotice
-              // A failed plan is retried by building it again; anything else
-              // by dealing again from the plan that exists.
-              onRetry={() => {
-                if (session.plan?.status === 'failed') void session.rebuild();
-                else session.redeal();
-              }}
-              onFields={() => setDoor('fields')}
-            />
-          </div>
-        )}
-        {setupDone ? (
-          <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-8 py-6">
-            <CompleteNotice
-              name={profile?.name ?? tx.unnamed}
-              onTrain={() => turn.chooseStage('training')}
-              onClose={onClose}
-            />
-          </div>
-        ) : memoriesInSetup ? (
-          <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-8 py-6">
-            <TrainingInvite onStart={() => turn.chooseStage('training')} />
-          </div>
-        ) : (
-          <CardTable
-            session={session}
-            voice={voice}
-            turn={turn}
-            topicLabel={topicKey ? t.twin.training[topicKey] : null}
-          />
-        )}
+        <BlueprintStage
+          model={stage.model}
+          delta={stage.delta}
+          working={stage.working}
+          reduced={stage.reduced}
+          onSection={(section) => setDoor(SECTION_DOOR[section])}
+        />
+        <StageHand
+          session={session}
+          voice={voice}
+          turn={turn}
+          holding={stage.holding}
+          name={profile?.name ?? tx.unnamed}
+          onClose={onClose}
+          onFields={() => setDoor('fields')}
+        />
       </div>
 
       <PlanLayer open={door === 'plan'} onClose={() => setDoor(null)} session={session} />
@@ -200,7 +182,7 @@ export default function ExperienceBody({ request, onClose, onOpenHub }: Experien
         onClose={() => setDoor(null)}
         topicPreset={session.topicPreset}
         coverage={coverage}
-        rounds={momentum.sessions}
+        answered={stage.model?.training.answered ?? null}
         onPick={turn.chooseTopic}
       />
       <VoiceLayer open={door === 'studio'} onClose={() => setDoor(null)} dock={dock} />

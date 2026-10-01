@@ -41,7 +41,7 @@ The shape of the new tree is the point:
 | Tab | What it is |
 |---|---|
 | **Profiles** | The roster. Which twins exist, which one is active, and how complete each one is. |
-| **Setup** | Everything you *tell* the twin — identity, tone per channel, channels, memories — gathered by a guided conversation with a typed escape hatch behind it. |
+| **Detail** (tab id `setup`) | Where the twin stands, drawn as a **blueprint** (see [The Twin Detail page and the blueprint](#the-twin-detail-page-and-the-blueprint)), and the two ways into the table where everything you *tell* the twin — identity, tone per channel, channels, memories — is gathered by a guided conversation with a typed escape hatch behind it. The id stayed `setup` so no route, persisted tab or slot jump changed; the label reads **Detail** (2026-10-01). |
 | **Hub** | Everything the twin has *learned or said* — one feed of pending memories, messages, distilled facts, reflections and people, plus the reply loop. |
 
 > **Setup is one surface; so is the Hub.**
@@ -63,7 +63,7 @@ The shape of the new tree is the point:
 4. Along the bottom of each card sits the **slot strip**: Identity / Tone / Brain / Memories, one segment each. A segment carries its status as colour *and* as shape (a filled disc, a half disc, an empty ring) so it reads without colour. Pressing one activates that twin and opens the tab that owns the slot — Identity and Tone open **Setup**, Brain and Memories open **Hub**. That routing is declared once, in `shared/twinStatus.ts`.
 5. Whenever you close a milestone — the active twin's readiness score climbs — a brief **success toast** celebrates the progress, with a distinct "your twin is fully trained — 100% ready" message when the final milestone lands. (A short window after switching twins suppresses the toast so the initial data-load ramp isn't mistaken for progress.)
 
-### 2. Setup — the launch card, the table, and the plan behind it
+### 2. Detail — the blueprint, the table, and the plan behind it
 
 Setup gathers everything you *tell* the twin through one planned interview.
 The governing rule: **the generator proposes CONTENT; the flow owns
@@ -72,25 +72,36 @@ authority on whether you are finished: **`deriveReadiness` is the only
 completion authority.** Goal coverage (below) only steers which question comes
 next, and a generator failure leaves a slot open rather than reading as done.
 
-**The Setup tab is a launch card, and nothing opens by itself.** However you
-arrive — the sidebar, a slot jump from Profiles, a retired-tab redirect, or an
-app restart that restores the tab — Setup shows one card: the twin's sigil,
-*"{name} is waiting"*, the readiness percentage, and two buttons, **Carry on
-setting up** and **Start a training round**. Only those two buttons (and
-creating a twin from Profiles) open the table. Until 2026-09-24 arriving on the
-tab opened the overlay on mount, so every visit — including a restart — dropped
-you into a fresh generator turn.
+**The Detail tab is the twin's blueprint, and nothing opens by itself.**
+However you arrive — the sidebar, a slot jump from Profiles, a retired-tab
+redirect, or an app restart that restores the tab — Detail shows the twin
+drawn as a blueprint under a header with its sigil, name, role and readiness
+percentage, and two buttons, **Carry on setting up** and **Start a training
+round**. Only those two buttons, **Edit in setup** in a section's detail drawer
+(and creating a twin from Profiles) open the table. The page reads, it never
+opens a setup session: a visit cannot start a paid plan. Until 2026-09-24
+arriving on the tab opened the overlay on mount, so every visit — including a
+restart — dropped you into a fresh generator turn; from then until 2026-10-01
+the tab was a single launch card with the readiness percentage and the two
+buttons. The page itself is described in
+[The Twin Detail page and the blueprint](#the-twin-detail-page-and-the-blueprint).
 
-**The table** is a framed overlay: the question card, a fan of up to three
-answer cards (digit keys pick, `Enter` plays, `E` edits into the composer, `S`
-skips), a composer for your own words, the trail of what was played, and the
-readiness strip. A *write* question (a reply drill, "paste the last message you
-sent") shows the message you are replying to and has no cards: the answer is
-kept word for word as a writing sample. The stage control switches between
-*Setup* and *Training*; in Training, *What to train on* lists the topics with
-their coverage and you pick one. Voice is an overlay on the same flow: dictation fills
-the composer as a preview, hands-free reads the question aloud and submits
-finals.
+**The table** is a framed overlay played **on the twin's blueprint**: the
+selected blueprint variant fills the play area (it replaced the felt and the
+readiness strip, and draws readiness itself), and the hand floats over it — the
+question card, a fan of up to three answer cards (digit keys pick, `Enter`
+plays, `E` edits into the composer, `S` skips), the offers, a composer for your
+own words, and the trail of what was played. While no question is live, no card
+is dealt: the blueprint is the waiting surface. Each answer plays a short
+**beat** on the blueprint before the next card (see
+[The answer beat](#the-answer-beat)). Pressing a section of the blueprint opens
+the door that edits it. A *write* question (a reply drill, "paste the last
+message you sent") shows the message you are replying to and has no cards: the
+answer is kept word for word as a writing sample. The stage control switches
+between *Setup* and *Training*; in Training, *What to train on* lists the
+topics with their coverage and the number of answers on the plan, and you pick
+one. Voice is an overlay on the same flow: dictation fills the composer as a
+preview, hands-free reads the question aloud and submits finals.
 
 **The plan is persisted.** Each twin has ONE plan (migration `e47`, five
 tables), owned by the Rust engine (`engine::twin_setup`):
@@ -324,6 +335,112 @@ Every layer is independent: you can run a twin with just a bio and no KB; you ca
 
 ---
 
+## The Twin Detail page and the blueprint
+
+> Spark `twin-portable-blueprint`, 2026-10-01 (WP6: the page shell, the model,
+> the training overlay and the beat). The four renderers are their own work
+> packages; the engine, sample and Twin Card parts of the same spark are
+> documented in their own sections.
+
+The **Detail** tab (id `setup`) shows the active twin as a **blueprint**: four
+hardcoded sections, **Identity**, **Voice**, **Knowledge** and **Training**,
+with readiness folded in, drawn as graphs and quantities rather than text. The
+same blueprint is the base layer of the training overlay, so the picture you
+read on the page is the one your answers move.
+
+### Three layers
+
+| Layer | What it is | How you get there and back |
+|---|---|---|
+| **L1** | The blueprint overview, at full type size. A section that has nothing to measure yet draws its hatched *not drawn yet* state; a new twin is never a blank page. | Arriving on the tab. |
+| **L2** | One section zoomed inside the variant's own metaphor. | Press a section. **Escape** (or the variant's back control) returns to L1. |
+| **L3** | A right-hand drawer with the section's full, read-only detail: Identity (name, role, languages, the bio), Voice (per channel: where the voice came from, directives, length, the writing samples and do/don't rules, the eight style dimensions), Knowledge (memories by review state, the latest approved by title, self-facts, the knowledge base), Training (answers, last trained, the plan's goals with what counts as covered, coverage and the last reason, topics with approved and awaiting answers, question kinds, observations, the last answers). It ends with **Edit in setup**, which opens the table at the door that edits the section: Identity the sheet, Voice the style studio, Knowledge the fields editor, Training the plan. | Asked for by the blueprint (a section's detail control, or an item in it: a channel, a topic, a goal, shown first). **Escape** closes the drawer first; a second Escape leaves L2. |
+
+The header carries the sigil, name, role, readiness percentage, the two CTAs
+(**Carry on setting up**, **Start a training round**), a **"N to review"** chip
+when learn-from-sample proposals are open (it opens the Hub; hidden while the
+count is unknown or zero), the **Export** menu (Twin Card / Character Card V3),
+and the **blueprint style** switcher.
+
+### Where the numbers come from
+
+`blueprint/useTwinBlueprint.ts` builds one `TwinBlueprintModel`
+(`blueprintContract.ts`) from what the app already holds and a handful of pure
+reads:
+
+- the store's profile, tones, bound channels and approved memories (readiness
+  is `deriveReadiness`, the same number every Twin surface shows);
+- the setup snapshot through **`twin_setup_get`**, a pure read. The page never
+  calls `twin_setup_open` and never mounts `useSetupSession`, because an open can
+  start a paid deep plan;
+- memories by status, distilled facts (self-facts only: a fact about a contact
+  is about someone else), the tagged training answers (topic coverage, approved
+  versus awaiting review), and the open sample proposals.
+
+A read that fails leaves its count `null`, drawn as *not measured*, never as
+`0`; the sample commands answer "not built" until the learn-from-sample backend
+is in, which the page treats as absent. A refresh keeps the drawing on screen
+while it reads. The page re-reads when the engine reports progress
+(`twin-setup-updated`), when a sample is analysed (`twin-sample-updated`, both
+attached through the buffered singleton listener), and when the experience
+overlay closes over it.
+
+### Four prototype variants
+
+Four renderers compete behind the switcher, each a lazy chunk implementing the
+same props: **Drafting sheet**, **Strata**, **Dossier** and **Radial**. The pick
+is persisted (`twin-blueprint-variant`) and the training overlay reads the same
+pick, so judging a variant judges both surfaces at once. This is a prototype
+round (`TODO(prototype, 2026-10-01)`): the owner picks or fuses from the running
+app, and the losing variants and the switcher are deleted in that round.
+
+### The training overlay
+
+In both stages, *Setup* and *Training*, the play area is the blueprint in
+`stage` mode (`BlueprintStage`) and the hand floats over it (`StageHand`,
+`CardTable`): the question card, the fan, the offers and the composer in one
+centred column on a soft band of background, so the drawing never runs through
+the question and stays readable to either side. Clicks outside the column reach
+the blueprint; pressing a section opens its door. While no question is live the
+hand is not dealt at all and the blueprint is the waiting surface; there is no
+ghost card. The table keeps its one always-mounted status region.
+
+The overlay's blueprint keeps its own copy of the setup snapshot through
+`twin_setup_get`, re-read on every signal the session exposes (a new question,
+a reconcile starting or finishing, a new plan, a stage switch): the session's
+snapshot itself is private to `useSetupSession`. Each is one local read.
+
+A request to open the overlay can name a **door** (`openTwinExperience({ mode:
+'train', stage, door })`); the overlay opens with that layer already up. The
+*What to train on* layer's header figure is the number of answers on the
+plan's goals; it used to count `session_summary` rows that only the retired
+interview wrote, so it read 0 for every twin trained on the table.
+
+### The answer beat
+
+On an answer the hand lifts off the table, the blueprint plays what that answer
+changed (the topic, the question kind, the goal and the channel, known at once)
+for about **two seconds**, and only then is the next card dealt; **any key**
+during the beat deals at once (Escape, Tab and lone modifiers excepted, and the
+key never plays the card it reveals). When the reconcile pass later scores the
+answer (the step's coverage gain and the goal's reason, on the wire once the
+engine sends them), the blueprint animates that in place around whatever card
+is up, and replays it at the start of the next lift, before the new answer's
+own delta. With reduced motion the hand fades instead of travelling, nothing is
+replayed, and the beat is 600 ms. A skip is not a beat.
+
+### Seeing it without the app
+
+The page harness mounts the real route on synthetic data:
+`node scripts/style/shoot.mjs --module twin/detail --tape synthetic` (the
+Detail page) and `--module twin/stage` (the overlay on the training stage, the
+live card played by the surface so the hand lifts over the scored answer); add
+`--kit <variant>` for a variant other than Drafting sheet. The fixture-only
+renderer surfaces are `twin/blueprint/*`. Shots and their README:
+`docs/design/twin-blueprint/`.
+
+---
+
 ## Carrying a twin to another device
 
 A twin is portable. **Settings → Data → Export Workspace** has a **Twins** scope: tick the twins you want and they ride along in the workspace bundle, one selectable row each. Importing the bundle on the target machine recreates them. The full portability surface (bundle format, import result, conflict panel) is documented in [`settings/README.md`](../settings/README.md#data-portability).
@@ -506,9 +623,18 @@ src/features/plugins/twin/
 ├── shared/twinStatus.ts                # ONE status + slot vocabulary, and the focus-to-slot join
 ├── shared/channels.ts · gender.ts      # channel metadata, pronoun/gender table
 ├── sub_profiles/                       # the roster: ProfilesPage, ProfilesAtelier, TwinCard, TwinSlotStrip
-├── experience/                         # the Setup surface: launch card + the card-table overlay (see FUSION.md)
-│   ├── ExperienceSetupPage.tsx         # the Setup tab: readiness % and the two CTAs; never opens the overlay itself
-│   ├── TwinExperienceHost.tsx · ExperienceBody.tsx · launcher.ts  # the overlay, its layout, the one way to open it
+├── blueprint/                          # the Detail tab and the blueprint (spark twin-portable-blueprint)
+│   ├── TwinDetailPage.tsx              # the `setup` tab: header, variant switcher, the blueprint at L1/L2, the L3 drawer; never opens the overlay or a session
+│   ├── DetailHeader.tsx                # sigil, name, role, readiness, the two CTAs, proposals chip, Twin Card export menu
+│   ├── SectionDetailDrawer.tsx · detail/  # L3: one section's full read-only detail + "Edit in setup"
+│   ├── blueprintContract.ts            # the model + variant props every renderer builds against (frozen)
+│   ├── useTwinBlueprint.ts · blueprintModel.ts · blueprintVoice.ts  # reads (store + setupGet + counts) -> TwinBlueprintModel
+│   ├── blueprintDelta.ts · useAnswerBeat.ts · beatMotion.ts  # what an answer changed, and the beat that plays it
+│   ├── BlueprintStage.tsx · StageHand.tsx · useStageBlueprint.ts  # the training overlay's base layer and the hand over it
+│   ├── variantRegistry.ts · blueprintVariant.ts  # the four renderers (lazy chunks) and the persisted pick
+│   └── variants/{drafting,strata,dossier,radial}/  # the four prototype renderers
+├── experience/                         # the card-table overlay (see FUSION.md)
+│   ├── TwinExperienceHost.tsx · ExperienceBody.tsx · launcher.ts  # the overlay, its layout, the one way to open it (`door` opens a layer on arrival)
 │   ├── table/                          # CardTable · DealerCard · DecisionFan · ProposalFan · TableChrome (the doors) · TableComposer · TableTrail · useTurn
 │   ├── layers/                         # PlanLayer · PlanGoalRow · SheetLayer · DeckLayer · VoiceLayer · FieldsLayer · LayerFrame
 │   └── forge/                          # creating a twin: ForgePhase, the style fan and preset dialog

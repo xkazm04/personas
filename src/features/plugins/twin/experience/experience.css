@@ -17,6 +17,9 @@
  * weave. Carried over from the card-table variant at HALF the visibility it
  * had there — it is a texture the cards sit on, not a thing to look at, and at
  * full strength it competed with the question for attention.
+ *
+ * Only the forge is played on it now: the table itself is played on the twin's
+ * blueprint (spark twin-portable-blueprint, `.tx-hand` below).
  */
 .tx-felt {
   background:
@@ -25,6 +28,27 @@
     repeating-linear-gradient(45deg, color-mix(in oklab, var(--foreground) 1.25%, transparent) 0 1px, transparent 1px 22px),
     repeating-linear-gradient(-45deg, color-mix(in oklab, var(--foreground) 1.25%, transparent) 0 1px, transparent 1px 22px),
     var(--background);
+}
+
+/*
+ * The hand over the blueprint: a column centred on the table that takes the
+ * clicks its layer lets through (the layer itself is pointer-events: none, so
+ * the blueprint around the column stays pressable), on a soft band of the
+ * background so the drawing never runs through the question. The band fades
+ * out at the column's edges, so the blueprint reads right up to the cards.
+ */
+.tx-hand {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 60rem;
+  margin-inline: auto;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--background) 95%, transparent) 3rem,
+    color-mix(in oklab, var(--background) 95%, transparent) calc(100% - 3rem),
+    transparent
+  );
 }
 
 /*

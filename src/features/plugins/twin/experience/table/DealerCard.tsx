@@ -11,8 +11,9 @@
  * message itself. That answer is kept verbatim as a writing sample, so the
  * person should be replying to something rather than describing a reply.
  *
- * While the next turn is in flight the card holds a calm ghost of itself — the
- * geometry of a question, never a spinner (loading pattern v2). While the
+ * While the next turn is in flight there is no card at all: the table does not
+ * deal one, and the blueprint underneath is the waiting surface (spark
+ * twin-portable-blueprint; the ghost card this used to hold is gone). While the
  * engine is reading the last answer (or drawing up the plan) behind a question
  * that is already here, the corner carries a quiet pulsing dot beside the rank
  * — it says work is happening without taking the question away.
@@ -41,7 +42,6 @@ interface DealerCardProps {
   question: string;
   answerMode: SetupAnswerMode;
   incoming: string | null;
-  busy: boolean;
   /** The engine is reading an answer or (re)building the plan in the background. */
   working: boolean;
 }
@@ -55,7 +55,6 @@ export function DealerCard({
   question,
   answerMode,
   incoming,
-  busy,
   working,
 }: DealerCardProps) {
   const { t, tx: fmt } = useTranslation();
@@ -87,44 +86,35 @@ export function DealerCard({
           <Icon className="w-5 h-5" />
         </span>
         <div className="min-w-0 flex-1">
-          {busy ? (
-            <>
-              <span aria-hidden className="block h-4 w-36 rounded-interactive bg-secondary/50" />
-              <span aria-hidden className="mt-3 block h-7 w-2/3 rounded-card bg-secondary/40" />
-            </>
-          ) : (
-            <>
-              {greeting && (
-                <p className="typo-body text-foreground leading-relaxed" data-testid="setup-desk-greeting">
-                  {greeting}
-                </p>
-              )}
-              <p className={`flex items-center gap-2 typo-label text-primary ${greeting ? 'mt-3' : ''}`}>
-                {eyebrow}
-                {toneChannel && (
-                  <span className="px-2 py-0.5 rounded-pill border border-primary/20 typo-caption">
-                    {channelName(toneChannel, tx.table.everywhere)}
-                  </span>
-                )}
-              </p>
-              {hint && <p className="typo-caption mt-0.5">{hint}</p>}
-              <h2 className="mt-2 typo-heading-lg text-foreground" data-testid="setup-desk-question">
-                {question}
-              </h2>
-              {answerMode === 'write' && (
-                <div className="mt-3 space-y-2" data-testid="setup-desk-incoming">
-                  {incoming && (
-                    <div className="max-w-xl rounded-card rounded-bl-none border border-primary/20 bg-secondary/60 px-4 py-3">
-                      <p className="typo-label text-primary">
-                        {namedChannel ? fmt(tx.table.incomingFrom, { channel: namedChannel }) : tx.table.incoming}
-                      </p>
-                      <p className="typo-body-lg text-foreground whitespace-pre-wrap">{incoming}</p>
-                    </div>
-                  )}
-                  <p className="typo-caption">{tx.table.writeHint}</p>
+          {greeting && (
+            <p className="typo-body text-foreground leading-relaxed" data-testid="setup-desk-greeting">
+              {greeting}
+            </p>
+          )}
+          <p className={`flex items-center gap-2 typo-label text-primary ${greeting ? 'mt-3' : ''}`}>
+            {eyebrow}
+            {toneChannel && (
+              <span className="px-2 py-0.5 rounded-pill border border-primary/20 typo-caption">
+                {channelName(toneChannel, tx.table.everywhere)}
+              </span>
+            )}
+          </p>
+          {hint && <p className="typo-caption mt-0.5">{hint}</p>}
+          <h2 className="mt-2 typo-heading-lg text-foreground" data-testid="setup-desk-question">
+            {question}
+          </h2>
+          {answerMode === 'write' && (
+            <div className="mt-3 space-y-2" data-testid="setup-desk-incoming">
+              {incoming && (
+                <div className="max-w-xl rounded-card rounded-bl-none border border-primary/20 bg-secondary/60 px-4 py-3">
+                  <p className="typo-label text-primary">
+                    {namedChannel ? fmt(tx.table.incomingFrom, { channel: namedChannel }) : tx.table.incoming}
+                  </p>
+                  <p className="typo-body-lg text-foreground whitespace-pre-wrap">{incoming}</p>
                 </div>
               )}
-            </>
+              <p className="typo-caption">{tx.table.writeHint}</p>
+            </div>
           )}
         </div>
         <span aria-hidden className="self-start flex items-center gap-1.5">

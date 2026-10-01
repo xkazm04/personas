@@ -10,6 +10,12 @@
  * Only the middle band scrolls. The composer is pinned below it, so the hand
  * you play from does not slide off the bottom of the table.
  *
+ * The hand floats over the blueprint (spark twin-portable-blueprint): while no
+ * question is live (`busy`) it is not dealt at all, so the blueprint under it
+ * is the waiting surface and no ghost card stands in for it; and while the
+ * answer beat `holding` it, the hand lifts away so the blueprint can show what
+ * the answer changed, and is dealt back when the beat ends.
+ *
  * Every rule about WHEN a turn may be answered lives in `useTurn`, not here.
  */
 
@@ -19,6 +25,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useMotionVariants } from '@/hooks/utility/interaction/useMotion';
 import type { SetupSessionApi, SetupVoiceApi } from '../../setup/setupContract';
 import { deriveDeskTrail } from '../../setup/desk/trailModel';
+import { useHandVariants } from '../../blueprint/beatMotion';
 import { DEALER_VARIANTS } from '../cardMotion';
 import { DealerCard } from './DealerCard';
 import { DecisionFan } from './DecisionFan';
@@ -34,13 +41,17 @@ interface CardTableProps {
   turn: Turn;
   /** The training topic's label, already translated. */
   topicLabel: string | null;
+  /** The answer beat holds the hand off the table. Absent: the hand is dealt whenever a question is live. */
+  holding?: boolean;
 }
 
-export function CardTable({ session, voice, turn, topicLabel }: CardTableProps) {
+export function CardTable({ session, voice, turn, topicLabel, holding = false }: CardTableProps) {
   const { t, tx: fmt, language } = useTranslation();
   const tx = t.twin.experience;
   const tableRef = useRef<HTMLDivElement>(null);
   const exitVariants = useMotionVariants(DEALER_VARIANTS);
+  const handVariants = useHandVariants();
+  const dealt = !session.busy && !holding;
 
   // A `write` turn deals no cards by contract: its answer has to be typed,
   // because it becomes a writing sample in the person's own words.
@@ -65,9 +76,15 @@ export function CardTable({ session, voice, turn, topicLabel }: CardTableProps) 
         })
       : null;
 
+  // Focus the table whenever the hand is dealt, unless the person has moved
+  // focus somewhere else on purpose: a composer that left with the hand drops
+  // focus to the body, and the keys have to work on the card that replaced it.
   useEffect(() => {
-    tableRef.current?.focus();
-  }, []);
+    if (!dealt) return;
+    const table = tableRef.current;
+    const active = document.activeElement;
+    if (table && (!active || active === document.body || table.contains(active))) table.focus();
+  }, [dealt]);
 
   const edit = useCallback(
     (index: number) => {
@@ -79,20 +96,32 @@ export function CardTable({ session, voice, turn, topicLabel }: CardTableProps) 
     [cards, turn],
   );
 
-  const onKeyDown = tableKeyHandler({
-    count: cards.length,
-    picked: turn.picked,
-    setPicked: turn.setPicked,
-    play: (i) => {
-      const card = cards[i];
-      if (card) turn.play(card.text);
-    },
-    edit,
-    skip: turn.skip,
-  });
+  // No keys reach a hand that is not on the table: during the beat a press
+  // deals early (the beat owns that), and must not also play the card it is
+  // about to reveal.
+  const onKeyDown = dealt
+    ? tableKeyHandler({
+        count: cards.length,
+        picked: turn.picked,
+        setPicked: turn.setPicked,
+        play: (i) => {
+          const card = cards[i];
+          if (card) turn.play(card.text);
+        },
+        edit,
+        skip: turn.skip,
+      })
+    : undefined;
 
   // Reading an answer, or drawing up the plan, behind a question already here.
   const working = session.reconciling || session.planning;
+  const status = holding
+    ? t.twin.blueprint.delta.recorded
+    : session.busy
+      ? tx.table.thinking
+      : working
+        ? tx.table.reconciling
+        : '';
 
   const exitKey =
     turn.verdict === 'played' ? 'exitAccept' : turn.verdict === 'skipped' ? 'exitSkip' : 'exitNone';
@@ -105,52 +134,65 @@ export function CardTable({ session, voice, turn, topicLabel }: CardTableProps) 
       data-testid="setup-desk"
       className="flex-1 min-h-0 flex flex-col outline-none"
     >
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-8 py-5">
-        <TableTrail history={session.history} question={session.question} />
-        {/* The table's one status region. It lives OUTSIDE the keyed deal so it
-            exists before its text does — a region remounted with each card is
-            born with its message and never announces it (census
-            `live-region-born-with-its-message`). */}
-        <span className="sr-only" role="status" data-testid="setup-desk-status">
-          {session.busy ? tx.table.thinking : working ? tx.table.reconciling : ''}
-        </span>
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div key={session.question ?? 'idle'} variants={exitVariants} initial="hidden" animate="show" exit={exitKey}>
-            <DealerCard
-              stage={session.stage}
-              focus={session.focus}
-              topicLabel={topicLabel}
-              toneChannel={session.toneChannel}
-              greeting={greeting}
-              question={session.question ?? tx.table.noQuestion}
-              answerMode={session.answerMode}
-              incoming={session.incoming}
-              busy={session.busy}
-              working={working}
-            />
-            <DecisionFan
-              cards={cards}
-              picked={turn.picked}
-              busy={session.busy}
-              focus={session.focus}
-              onPick={turn.setPicked}
-              onCommit={(text) => turn.play(text)}
-            />
+      {/* The table's one status region. It lives OUTSIDE the hand and the keyed
+          deal so it exists before its text does: a region remounted with each
+          card is born with its message and never announces it (census
+          `live-region-born-with-its-message`). */}
+      <span className="sr-only" role="status" data-testid="setup-desk-status">
+        {status}
+      </span>
+      <AnimatePresence initial={false}>
+        {dealt && (
+          <motion.div
+            key="hand"
+            variants={handVariants}
+            initial="hidden"
+            animate="show"
+            exit="exitAccept"
+            className="tx-hand flex-1 min-h-0 flex flex-col"
+            data-testid="setup-desk-hand"
+          >
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-8 py-5">
+              <TableTrail history={session.history} question={session.question} />
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div key={session.question ?? 'idle'} variants={exitVariants} initial="hidden" animate="show" exit={exitKey}>
+                  <DealerCard
+                    stage={session.stage}
+                    focus={session.focus}
+                    topicLabel={topicLabel}
+                    toneChannel={session.toneChannel}
+                    greeting={greeting}
+                    question={session.question ?? tx.table.noQuestion}
+                    answerMode={session.answerMode}
+                    incoming={session.incoming}
+                    working={working}
+                  />
+                  <DecisionFan
+                    cards={cards}
+                    picked={turn.picked}
+                    busy={session.busy}
+                    focus={session.focus}
+                    onPick={turn.setPicked}
+                    onCommit={(text) => turn.play(text)}
+                  />
+                </motion.div>
+              </AnimatePresence>
+              <ProposalFan session={session} intoComposer={turn.setDraft} />
+            </div>
+            <div className="flex-shrink-0 border-t border-primary/15 bg-background/70 px-4 md:px-8 py-3">
+              <TableComposer
+                draft={turn.draft}
+                onDraft={turn.setDraft}
+                onSubmit={() => turn.play(turn.draft)}
+                onSkip={turn.skip}
+                answerMode={session.answerMode}
+                busy={session.busy}
+                voice={voice}
+              />
+            </div>
           </motion.div>
-        </AnimatePresence>
-        <ProposalFan session={session} intoComposer={turn.setDraft} />
-      </div>
-      <div className="flex-shrink-0 border-t border-primary/15 bg-background/70 px-4 md:px-8 py-3">
-        <TableComposer
-          draft={turn.draft}
-          onDraft={turn.setDraft}
-          onSubmit={() => turn.play(turn.draft)}
-          onSkip={turn.skip}
-          answerMode={session.answerMode}
-          busy={session.busy}
-          voice={voice}
-        />
-      </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

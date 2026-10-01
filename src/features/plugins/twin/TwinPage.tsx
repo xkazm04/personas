@@ -17,7 +17,10 @@ const TWIN_PAGE_MIN_WIDTH = IS_MOBILE
   : 'min-w-[640px] md:min-w-[800px] xl:min-w-[920px] 2xl:min-w-[1180px] 3xl:min-w-[1560px] 4xl:min-w-[2200px]';
 
 const ProfilesPage = lazyRetry(() => import('./sub_profiles/ProfilesPage'));
-const SetupPage = lazyRetry(() => import('./experience/ExperienceSetupPage'));
+// The `setup` tab id outlived its page: it is the Twin Detail page now (spark
+// twin-portable-blueprint), kept under the old id so no route, persisted tab or
+// slot jump has to change.
+const DetailPage = lazyRetry(() => import('./blueprint/TwinDetailPage'));
 const HubPage = lazyRetry(() => import('./hub/HubPage'));
 
 /** The three tabs this page renders. Anything else is redirected, never shown. */
@@ -98,7 +101,7 @@ export default function TwinPage() {
       >
         <Suspense fallback={<RouteChunkSkeleton />}>
           {twinTab === 'profiles' && <ProfilesPage />}
-          {twinTab === 'setup' && <SetupPage />}
+          {twinTab === 'setup' && <DetailPage />}
           {twinTab === 'hub' && <HubPage />}
         </Suspense>
       </div>

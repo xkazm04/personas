@@ -14,6 +14,7 @@ import { factoryTapes } from './factoryTapes.mjs';
 import { homeWelcomeTapes } from './homeWelcomeTapes.mjs';
 import { homeLearningTapes } from './homeLearningTapes.mjs';
 import { homeCockpitTapes } from './homeCockpitTapes.mjs';
+import { twinDetailTapes } from './twinDetailTapes.mjs';
 
 export const RECORDED_AT = '2026-09-22T15:40:00.000Z';
 const T0 = Date.parse(RECORDED_AT);
@@ -309,6 +310,8 @@ const BUILDERS = {
   ...Object.fromEntries(['detail', 'detail-empty', 'detail-rich', 'detail-focus', 'stage', 'stage-working'].map((k) => [
     `twin/blueprint/${k}`, () => ({ version: 1, module: `twin/blueprint/${k}`, source: 'synthetic', recordedAt: RECORDED_AT, note: 'Fixture blueprint models, no IPC.', calls: [] }),
   ])),
+  // The integrated Twin Detail page and training overlay (twinDetailSurfaces.tsx, twinDetailTapes.mjs).
+  ...twinDetailTapes({ RECORDED_AT }).builders,
   // shoot.mjs --self-test probes: no data needed.
   '__selftest/empty': () => ({ version: 1, source: 'synthetic', recordedAt: RECORDED_AT, calls: [] }),
   '__selftest/console-error': () => ({ version: 1, source: 'synthetic', recordedAt: RECORDED_AT, calls: [] }),

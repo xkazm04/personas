@@ -26,6 +26,7 @@ import { HOME_COCKPIT_MODULES } from './homeCockpitSurfaces';
 import { KIT_TILES_MODULES } from './kitTiles';
 import { ATHENA_TABLE_MODULES } from './athenaTableSurfaces';
 import { TWIN_BLUEPRINT_MODULES } from './twinBlueprintSurfaces';
+import { TWIN_DETAIL_MODULES } from './twinDetailSurfaces';
 
 type Wrap = (children: ReactNode) => ReactNode;
 
@@ -86,6 +87,8 @@ export const MODULES: Record<string, HarnessModule> = {
   // Voice Studio v2 phase 1: the Create Athena Table shell beside Stage (athenaTableSurfaces.tsx).
   ...ATHENA_TABLE_MODULES,
   ...TWIN_BLUEPRINT_MODULES,
+  // The integrated Twin Detail page and training overlay (twinDetailSurfaces.tsx, twinDetailTapes.mjs).
+  ...TWIN_DETAIL_MODULES,
   // Probes for `shoot.mjs --self-test`: each must make the shooter exit non-zero.
   '__selftest/empty': {
     load: async () => ({ default: () => <div /> }),

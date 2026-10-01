@@ -508,7 +508,7 @@ const PLUGINS_EXPLORER_STEPS: TourStepDef[] = [
     highlightTestId: "twin-page",
     subSteps: [
       { id: "twin-profiles", label: "Profiles", hint: "Each profile is a distinct identity — \"work me\", \"weekend me\". Agents can pick which one to channel." },
-      { id: "twin-setup", label: "Setup", hint: "The tab shows how ready the twin is and never opens on its own. Carry on setting up opens a table of questions it plans ahead and remembers; it proposes values, you accept, edit or dismiss. The Fields door lets you type any of it directly." },
+      { id: "twin-setup", label: "Detail", hint: "The tab draws the twin as a blueprint: identity, voice, knowledge and training at a glance, a section's full detail one click deeper. Nothing opens on its own. Carry on setting up opens a table of questions it plans ahead and remembers, played over the same blueprint; it proposes values, you accept, edit or dismiss. The Fields door lets you type any of it directly." },
       { id: "twin-hub", label: "Hub", hint: "One feed of everything the twin has learned or said — approve or reject pending memories, review messages and facts, and draft replies as you." },
     ],
   },
