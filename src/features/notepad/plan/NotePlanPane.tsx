@@ -14,6 +14,7 @@
 // record of one.
 import { useEffect, useState } from 'react';
 
+import Button from '@/features/shared/components/buttons/Button';
 import { MarkdownMiniEditor } from '@/features/shared/components/editors/MarkdownMiniEditor';
 import { Badge } from '@/features/shared/components/display/Badge';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
@@ -167,12 +168,13 @@ export function NotePlanPane({ note, onPatch, readOnly }: NoteBodyProps) {
           idPrefix="note-plan"
         />
 
-        {/* THREE STATES, in the doctrine's order: ghost only while nothing has
-            painted; the "gone" reading when the link outlived its milestone;
-            otherwise the tab. The region is the PANEL the tablist above
-            controls — ids match `SegmentedTabs`' `${idPrefix}-tab-…` /
-            `${idPrefix}-panel-…` scheme, so the relationship the strip
-            advertises exists in the tree and not only in the layout. */}
+        {/* Ghost only while nothing has painted. A failed first fetch is not
+            "the milestone is gone": the link may still be valid, and the gone
+            sentence is only a load that succeeded and did not contain this id.
+            The region is the PANEL the tablist above controls — ids match
+            `SegmentedTabs`' `${idPrefix}-tab-…` / `${idPrefix}-panel-…`
+            scheme, so the relationship the strip advertises exists in the
+            tree and not only in the layout. */}
         <div
           role="tabpanel"
           id={`note-plan-panel-${tab}`}
@@ -181,6 +183,19 @@ export function NotePlanPane({ note, onPatch, readOnly }: NoteBodyProps) {
         >
         {plan?.loading ? (
           <ScopeGhost />
+        ) : !vm && plan?.ship.loadError ? (
+          <div
+            className="flex flex-col items-center gap-3 rounded-card border border-dashed border-status-warning/30 px-3 py-4"
+            data-testid="note-plan-load-error"
+            role="alert"
+          >
+            <p className="typo-caption text-status-warning text-center">
+              {t.notepad.plan_milestone_load_failed}
+            </p>
+            <Button variant="secondary" size="sm" onClick={() => plan?.ship.reload()}>
+              {t.common.retry}
+            </Button>
+          </div>
         ) : !vm || !plan ? (
           <p className="typo-caption text-status-warning/80 rounded-card border border-dashed border-status-warning/30 px-3 py-4 text-center" data-testid="note-plan-missing">
             {t.notepad.plan_milestone_missing}

@@ -23983,6 +23983,7 @@ export type Translations = {
     plan_shipped_notice: string;
     plan_milestone_loading: string;
     plan_milestone_missing: string;
+    plan_milestone_load_failed: string;
     plan_verdict_badge: string;
     runs_empty: string;
     run_kind_note_task: string;

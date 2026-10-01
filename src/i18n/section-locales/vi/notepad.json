@@ -222,5 +222,6 @@
   "desk_lane_brainstorm": "Làn ý tưởng",
   "desk_lane_plan": "Làn kế hoạch",
   "desk_room_back": "Bàn làm việc",
-  "milestone_briefs_stale": "Thông tin milestone nào đã có bản tóm tắt đã lỗi thời, nên chúng bị ẩn. Bạn vẫn có thể bắt đầu một milestone từ ghi chú này."
+  "milestone_briefs_stale": "Thông tin milestone nào đã có bản tóm tắt đã lỗi thời, nên chúng bị ẩn. Bạn vẫn có thể bắt đầu một milestone từ ghi chú này.",
+  "plan_milestone_load_failed": "Không tải được cột mốc này. Liên kết có thể vẫn còn hiệu lực."
 }

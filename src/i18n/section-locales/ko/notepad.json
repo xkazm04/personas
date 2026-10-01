@@ -222,5 +222,6 @@
   "desk_lane_brainstorm": "구상 레일",
   "desk_lane_plan": "계획 레일",
   "desk_room_back": "데스크",
-  "milestone_briefs_stale": "어떤 마일스톤에 이미 브리프가 있는지가 오래되어 그 마일스톤은 숨겨져 있습니다. 이 노트에서 새로 시작할 수는 있습니다."
+  "milestone_briefs_stale": "어떤 마일스톤에 이미 브리프가 있는지가 오래되어 그 마일스톤은 숨겨져 있습니다. 이 노트에서 새로 시작할 수는 있습니다.",
+  "plan_milestone_load_failed": "이 마일스톤을 불러오지 못했습니다. 연결은 아직 유효할 수 있습니다."
 }

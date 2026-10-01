@@ -23977,6 +23977,7 @@
     "plan_shipped_notice": "This milestone has shipped, so its brief is the record of what was done. Fork it to start something new.",
     "plan_milestone_loading": "Loading the milestone…",
     "plan_milestone_missing": "This note is linked to a milestone that no longer exists. Unlink it, or restore the milestone.",
+    "plan_milestone_load_failed": "Could not load this milestone. The link may still be valid.",
     "plan_verdict_badge": "{met}/{total} criteria met",
     "runs_empty": "Nothing has been run against this note yet.",
     "run_kind_note_task": "Note task",

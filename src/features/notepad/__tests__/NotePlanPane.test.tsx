@@ -220,6 +220,22 @@ describe('NotePlanPane', () => {
     pane();
 
     expect(screen.getByTestId('note-plan-missing')).toBeInTheDocument();
+    expect(screen.queryByTestId('note-plan-load-error')).toBeNull();
     expect(screen.queryByTestId('note-plan-ledger')).toBeNull();
+  });
+
+  it('says the plan failed to load instead of calling the milestone gone', () => {
+    const value = planValue({ loading: false, vm: null });
+    value.ship = { ...value.ship, loadError: true } as NotePlanValue['ship'];
+    current = value;
+    pane();
+
+    const failed = screen.getByTestId('note-plan-load-error');
+    expect(failed).toHaveTextContent('Could not load this milestone. The link may still be valid.');
+    expect(screen.queryByTestId('note-plan-missing')).toBeNull();
+    expect(screen.queryByText(/no longer exists/)).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(value.ship.reload).toHaveBeenCalledTimes(1);
   });
 });

@@ -23412,7 +23412,8 @@
     "desk_lane_brainstorm": "Voie Brainstorm",
     "desk_lane_plan": "Voie Plan",
     "desk_room_back": "Bureau",
-    "milestone_briefs_stale": "La liste des jalons qui ont déjà un brief n’est plus à jour, ils sont donc masqués. Vous pouvez tout de même en créer un depuis cette note."
+    "milestone_briefs_stale": "La liste des jalons qui ont déjà un brief n’est plus à jour, ils sont donc masqués. Vous pouvez tout de même en créer un depuis cette note.",
+    "plan_milestone_load_failed": "Impossible de charger ce jalon. Le lien est peut-être encore valide."
   },
   "browser": {
     "webview": {

@@ -72,6 +72,13 @@ export interface ShipData {
     annotations?: { description?: string | null; rating?: number | null },
   ) => void;
   removeItem: (milestoneId: string, kind: MilestoneItemKind, itemId: string) => void;
+  /**
+   * The last milestone fetch rejected. Cleared when a later fetch succeeds.
+   * A roadmap that has already painted is left in place: the pane reads this
+   * only when nothing has painted, so a failed refresh does not replace a
+   * plan the operator can still read.
+   */
+  loadError: boolean;
 }
 
 const dateLabel = (iso: string | null) => (iso ? iso.slice(0, 10) : null);
@@ -97,6 +104,7 @@ export function useProjectPlan(projectId: string): ShipData {
   // and the criterion reports it as `setup`, never as a failure.
   const [skillPairs, setSkillPairs] = useState<SkillContextPair[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [nonce, setNonce] = useState(0);
   const reload = useCallback(() => setNonce((n) => n + 1), []);
   // Writes made OUTSIDE this tab (background agents, Athena, Fleet, CLI ingest)
@@ -134,11 +142,16 @@ export function useProjectPlan(projectId: string): ShipData {
         setDevGoals(gs);
         setSkillPairs(pairs);
         paintedProject.current = loadedProjectId;
+        setLoadError(false);
         setLoading(false);
       })
       .catch((e) => {
         silentCatch('useProjectPlan:load')(e);
-        if (alive) setLoading(false);
+        if (!alive) return;
+        // Do not clear milestones. A first rejection stays an empty roadmap
+        // with loadError set; a later rejection keeps the last paint.
+        setLoadError(true);
+        setLoading(false);
       });
     return () => { alive = false; };
   }, [loadedProjectId, nonce, liveRevision]);
@@ -362,6 +375,7 @@ export function useProjectPlan(projectId: string): ShipData {
 
   return {
     loading: loading || data.loading,
+    loadError,
     project: data.project,
     roadmap, contexts, groups, features, goals, reload,
     setStatus, setGoal, setItem, removeItem,
