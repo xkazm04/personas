@@ -2,19 +2,37 @@
 //! guard that guarantees a launched Chrome never outlives its owner.
 
 use std::path::{Component, Path, PathBuf};
-use std::process::Stdio;
 use std::time::Duration;
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
-use tokio::process::{Child, Command};
 use tokio::time::timeout;
+
+use personas_core::types::CliArgs;
 
 use super::{LaneError, LaneMode};
 use crate::commands::fleet::claude_accounts::relogin::ReloginReason;
-
 #[cfg(windows)]
-const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+use crate::engine::cli_process::capture_output;
+use crate::engine::cli_process::CliProcessDriver;
+
+/// Tier 1 (innermost): one `reg query` probe. Chrome discovery runs it up to
+/// twice before launch, so it must be short; a hung `reg` just means "no
+/// registry candidate" and discovery falls through to the next source.
+#[cfg(windows)]
+const REG_QUERY_TIMEOUT: Duration = Duration::from_secs(5);
+
+/// Tier 1: one DevTools HTTP GET on loopback. Sits well inside the launch cap
+/// (`session::LAUNCH_CAP`), which polls this call in a loop.
+const DEVTOOLS_HTTP_TIMEOUT: Duration = Duration::from_secs(3);
+
+/// Tier 1: reaping the main Chrome process after the tree kill.
+const REAP_TIMEOUT: Duration = Duration::from_secs(5);
+
+/// Upper bound on a DevTools HTTP body. `/json/list` for one profile is a few
+/// KiB; a Content-Length above this is not Chrome, so it is refused before any
+/// of the body is read (external-source-ingestion: bound the read).
+const DEVTOOLS_BODY_MAX_BYTES: usize = 1024 * 1024;
 
 /// Where candidate Chrome binaries come from, injected so discovery order is
 /// testable without touching the machine.
@@ -85,14 +103,17 @@ async fn registry_chrome_paths() -> Vec<PathBuf> {
     let mut out = Vec::new();
     for hive in ["HKLM", "HKCU"] {
         let key = format!(r"{hive}\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe");
-        let run = Command::new("reg")
-            .args(["query", &key, "/ve"])
-            .stdin(Stdio::null())
-            .stderr(Stdio::null())
-            .creation_flags(CREATE_NO_WINDOW)
-            .output();
-        if let Ok(Ok(o)) = timeout(Duration::from_secs(5), run).await {
-            if let Some(p) = parse_reg_default(&String::from_utf8_lossy(&o.stdout)) {
+        // The cli_process probe door: argv array, scrubbed env, CREATE_NO_WINDOW,
+        // kill_on_drop and the deadline all live there.
+        let cli = CliArgs {
+            command: "reg".to_string(),
+            args: vec!["query".to_string(), key, "/ve".to_string()],
+            env_overrides: Vec::new(),
+            env_removals: Vec::new(),
+            cwd: None,
+        };
+        if let Ok(o) = capture_output(&cli, REG_QUERY_TIMEOUT).await {
+            if let Some(p) = parse_reg_default(&o.stdout) {
                 out.push(p);
             }
         }
@@ -216,30 +237,37 @@ pub fn chrome_args(profile_dir: &Path, port: u16, mode: LaneMode) -> Vec<String>
 
 /// A launched Chrome. Dropping it kills the whole process tree, so a panic or
 /// an early `?` never leaves a browser running.
+///
+/// Spawned through [`CliProcessDriver`] (argv array, `CREATE_NO_WINDOW`,
+/// `kill_on_drop`, PID capture). Chrome is a long-lived child whose helper
+/// processes outlive a single-PID kill, so teardown additionally runs the
+/// repo's tree-kill, `engine::kill_process` (`taskkill /F /T` on Windows).
 pub struct ChromeProcess {
-    child: Child,
+    drv: CliProcessDriver,
     pid: u32,
     live: bool,
 }
 
 impl ChromeProcess {
     pub fn spawn(exe: &Path, args: &[String]) -> Result<Self, LaneError> {
-        let mut cmd = Command::new(exe);
-        cmd.args(args)
-            .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .kill_on_drop(true);
-        #[cfg(windows)]
-        cmd.creation_flags(CREATE_NO_WINDOW);
-        let child = cmd
-            .spawn()
+        let cli = CliArgs {
+            command: exe.to_string_lossy().into_owned(),
+            args: args.to_vec(),
+            env_overrides: Vec::new(),
+            env_removals: Vec::new(),
+            cwd: None,
+        };
+        let mut drv = CliProcessDriver::spawn(&cli, std::env::temp_dir())
             .map_err(|e| LaneError::new(ReloginReason::ChromeMissing, format!("spawn: {e}")))?;
-        let pid = child
-            .id()
+        // Nobody talks to Chrome over stdio (DevTools is on the loopback
+        // socket); close our ends so no pipe can fill and stall it.
+        drop(drv.child.stdin.take());
+        drop(drv.child.stdout.take());
+        let pid = drv
+            .pid()
             .ok_or_else(|| LaneError::new(ReloginReason::Other, "chrome exited at spawn"))?;
         Ok(Self {
-            child,
+            drv,
             pid,
             live: true,
         })
@@ -251,12 +279,12 @@ impl ChromeProcess {
 
     /// Has the main process already exited (e.g. the profile was in use)?
     pub fn exited(&mut self) -> bool {
-        !matches!(self.child.try_wait(), Ok(None))
+        !matches!(self.drv.child.try_wait(), Ok(None))
     }
 
     /// Wait up to `within` for a graceful exit; true if it exited.
     pub async fn wait_exit(&mut self, within: Duration) -> bool {
-        let done = timeout(within, self.child.wait()).await.is_ok();
+        let done = timeout(within, self.drv.wait()).await.is_ok();
         if done {
             self.live = false;
         }
@@ -269,19 +297,9 @@ impl ChromeProcess {
             return;
         }
         self.live = false;
-        #[cfg(windows)]
-        {
-            let _ = Command::new("taskkill")
-                .args(["/T", "/F", "/PID", &self.pid.to_string()])
-                .stdin(Stdio::null())
-                .stdout(Stdio::null())
-                .stderr(Stdio::null())
-                .creation_flags(CREATE_NO_WINDOW)
-                .status()
-                .await;
-        }
-        let _ = self.child.start_kill();
-        let _ = timeout(Duration::from_secs(5), self.child.wait()).await;
+        crate::engine::kill_process(self.pid);
+        let _ = self.drv.child.start_kill();
+        let _ = timeout(REAP_TIMEOUT, self.drv.wait()).await;
     }
 }
 
@@ -290,18 +308,8 @@ impl Drop for ChromeProcess {
         if !self.live {
             return;
         }
-        #[cfg(windows)]
-        {
-            use std::os::windows::process::CommandExt;
-            let _ = std::process::Command::new("taskkill")
-                .args(["/T", "/F", "/PID", &self.pid.to_string()])
-                .stdin(Stdio::null())
-                .stdout(Stdio::null())
-                .stderr(Stdio::null())
-                .creation_flags(CREATE_NO_WINDOW)
-                .status();
-        }
-        let _ = self.child.start_kill();
+        crate::engine::kill_process(self.pid);
+        let _ = self.drv.child.start_kill();
     }
 }
 
@@ -339,6 +347,9 @@ pub async fn devtools_http_get(port: u16, path: &str) -> Result<String, LaneErro
                             .flatten()
                     })
                     .ok_or_else(|| fail("devtools: no content-length".into()))?;
+                if want > DEVTOOLS_BODY_MAX_BYTES {
+                    return Err(fail("devtools: body over the size cap".into()));
+                }
                 if buf.len() >= end + 4 + want {
                     break;
                 }
@@ -358,7 +369,7 @@ pub async fn devtools_http_get(port: u16, path: &str) -> Result<String, LaneErro
             .ok_or_else(|| fail("devtools: malformed response".into()))?;
         Ok(body.to_string())
     };
-    timeout(Duration::from_secs(3), run)
+    timeout(DEVTOOLS_HTTP_TIMEOUT, run)
         .await
         .map_err(|_| LaneError::new(ReloginReason::Timeout, "devtools http timed out"))?
 }

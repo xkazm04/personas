@@ -54,22 +54,31 @@ fn serve(mut s: TcpStream, port: u16) {
     let _ = s.write_all(resp.as_bytes());
 }
 
+/// Accept loop on its own thread. The loop never ends by design (the process
+/// exiting is its shutdown), so there is nothing to join; instead a panic in
+/// `serve` is caught and reported, so a dead fixture server shows up as a
+/// named failure rather than as a mysterious connect error in the test.
+fn serve_in_background(l: TcpListener, port: u16) {
+    std::thread::spawn(move || {
+        let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            for s in l.incoming().flatten() {
+                serve(s, port);
+            }
+        }));
+        if outcome.is_err() {
+            eprintln!("lane test fixture server on port {port} panicked");
+        }
+    });
+}
+
 /// Serve on 127.0.0.1:0 (and, best effort, the same port on 127.0.0.2 so the
 /// redirect test lands on a real off-list origin). Returns the port.
 fn spawn_server() -> u16 {
     let l = TcpListener::bind("127.0.0.1:0").expect("bind");
     let port = l.local_addr().expect("addr").port();
-    std::thread::spawn(move || {
-        for s in l.incoming().flatten() {
-            serve(s, port);
-        }
-    });
+    serve_in_background(l, port);
     if let Ok(l2) = TcpListener::bind(("127.0.0.2", port)) {
-        std::thread::spawn(move || {
-            for s in l2.incoming().flatten() {
-                serve(s, port);
-            }
-        });
+        serve_in_background(l2, port);
     }
     port
 }
@@ -80,11 +89,15 @@ fn url(port: u16, path: &str) -> String {
 
 /// Count chrome.exe processes whose command line mentions `marker`.
 fn chrome_procs(marker: &str) -> usize {
-    let ps = format!(
-        "(Get-CimInstance Win32_Process -Filter \"Name='chrome.exe'\" | Where-Object {{ $_.CommandLine -like '*{marker}*' }} | Measure-Object).Count"
-    );
+    // The marker travels in the environment, never spliced into the script
+    // text, so the shell vehicle's argument is a literal.
     let out = std::process::Command::new("powershell")
-        .args(["-NoProfile", "-Command", &ps])
+        .args([
+            "-NoProfile",
+            "-Command",
+            "(Get-CimInstance Win32_Process -Filter \"Name='chrome.exe'\" | Where-Object { $_.CommandLine -like ('*' + $env:LANE_MARKER + '*') } | Measure-Object).Count",
+        ])
+        .env("LANE_MARKER", marker)
         .output()
         .expect("powershell");
     String::from_utf8_lossy(&out.stdout)

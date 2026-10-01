@@ -18,7 +18,15 @@ use tokio_tungstenite::{client_async, WebSocketStream};
 use super::LaneError;
 use crate::commands::fleet::claude_accounts::relogin::ReloginReason;
 
+/// Tier 1: one CDP command round trip.
 pub(super) const CALL_TIMEOUT: Duration = Duration::from_secs(15);
+
+/// Tier 1: loopback TCP connect to Chrome's DevTools port. Loopback either
+/// connects at once or is refused, so this only bounds a wedged listener.
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(5);
+
+/// Tier 1: WebSocket upgrade on an established loopback socket.
+const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(5);
 
 pub(super) struct Cdp {
     ws: WebSocketStream<TcpStream>,
@@ -39,15 +47,12 @@ impl Cdp {
     /// Connect to `path` (e.g. `/devtools/page/<id>`) on 127.0.0.1:`port`. Only
     /// the path is taken from Chrome's advertised URL; the host is always ours.
     pub(super) async fn connect(port: u16, path: &str) -> Result<Self, LaneError> {
-        let tcp = timeout(
-            Duration::from_secs(5),
-            TcpStream::connect(("127.0.0.1", port)),
-        )
-        .await
-        .map_err(|_| timed_out("cdp tcp connect"))?
-        .map_err(|e| other(format!("cdp tcp connect: {e}")))?;
+        let tcp = timeout(CONNECT_TIMEOUT, TcpStream::connect(("127.0.0.1", port)))
+            .await
+            .map_err(|_| timed_out("cdp tcp connect"))?
+            .map_err(|e| other(format!("cdp tcp connect: {e}")))?;
         let url = format!("ws://127.0.0.1:{port}{path}");
-        let (ws, _) = timeout(Duration::from_secs(5), client_async(url, tcp))
+        let (ws, _) = timeout(HANDSHAKE_TIMEOUT, client_async(url, tcp))
             .await
             .map_err(|_| timed_out("cdp handshake"))?
             .map_err(|e| other(format!("cdp handshake: {e}")))?;

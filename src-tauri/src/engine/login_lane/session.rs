@@ -101,7 +101,7 @@ async fn attach(proc: &mut ChromeProcess, port: u16) -> Result<Cdp, LaneError> {
 
 async fn first_page_path(port: u16) -> Option<String> {
     let body = devtools_http_get(port, "/json/list").await.ok()?;
-    let list: Vec<Value> = serde_json::from_str(&body).ok()?;
+    let list: Vec<Value> = crate::engine::safe_json::from_str_as(&body).ok()?;
     let ws = list
         .iter()
         .find(|t| t.get("type").and_then(Value::as_str) == Some("page"))?
@@ -158,7 +158,7 @@ impl ChromeSession {
         let Ok(body) = devtools_http_get(self.port, "/json/version").await else {
             return;
         };
-        let Some(path) = serde_json::from_str::<Value>(&body)
+        let Some(path) = crate::engine::safe_json::from_str(&body)
             .ok()
             .and_then(|v| {
                 v.get("webSocketDebuggerUrl")
