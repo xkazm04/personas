@@ -12,10 +12,11 @@
 //! temp dir. The live `~/.claude` login is never touched.
 
 use std::collections::HashMap;
+use std::path::Path;
 use std::sync::{Arc, Mutex, OnceLock};
 
 use serde::{Deserialize, Serialize};
-use tauri::State;
+use tauri::{AppHandle, State};
 use ts_rs::TS;
 
 use crate::db::repos::fleet_claude_login as repo;
@@ -24,6 +25,19 @@ use crate::ipc_auth::require_auth;
 use crate::AppState;
 
 use super::{build_snapshot, ClaudeAccountsSnapshot};
+
+mod cli;
+mod flows;
+mod headed;
+mod lane;
+mod orchestrator;
+#[cfg(test)]
+mod tests;
+
+use orchestrator::{Begin, ReloginEnv};
+
+/// `ReloginState.trigger` of a click.
+const TRIGGER_MANUAL: &str = "manual";
 
 /// Why a run stopped needing a human, or failed. Snake-case strings on the wire;
 /// the strip maps each to a locale string. Add a variant only with its string.
@@ -132,6 +146,14 @@ pub fn state_of(account_id: &str) -> Option<ReloginState> {
     states().lock().ok()?.get(account_id).cloned()
 }
 
+/// Forget every run state (tests share the process-wide map).
+#[cfg(test)]
+pub fn reset_states() {
+    if let Ok(mut g) = states().lock() {
+        g.clear();
+    }
+}
+
 pub fn set_state(state: ReloginState) {
     if let Ok(mut g) = states().lock() {
         g.insert(state.account_id.clone(), state);
@@ -164,21 +186,74 @@ pub fn link_view(row: &repo::AccountLinkRow) -> AccountLoginLink {
     }
 }
 
-// ── Commands (WP0 signatures; WP1b replaces the stub bodies) ────────────────
+// ── Plain functions the commands adapt ──────────────────────────────────────
+
+fn list_profile_views(db: &crate::db::DbPool) -> Result<Vec<LoginProfileView>, AppError> {
+    Ok(repo::list_profiles(db)?.iter().map(profile_view).collect())
+}
+
+/// Validate, derive the directory, upsert, return the list.
+fn save_profile(
+    db: &crate::db::DbPool,
+    app_data: &Path,
+    key: &str,
+    label: &str,
+    vault_credential_id: Option<&str>,
+) -> Result<Vec<LoginProfileView>, AppError> {
+    personas_core::validation::require_non_empty("label", label)?;
+    let dir = lane::profile_dir(app_data, key).map_err(headed::lane_to_app)?;
+    repo::upsert_profile(
+        db,
+        key,
+        label.trim(),
+        &dir.to_string_lossy(),
+        vault_credential_id,
+    )?;
+    list_profile_views(db)
+}
+
+/// Begin a run and, when it starts, spawn it under a panic boundary.
+fn start_relogin(
+    app: &AppHandle,
+    db: &crate::db::DbPool,
+    account_id: &str,
+    trigger: &str,
+) -> Result<ReloginState, AppError> {
+    let env = orchestrator::production_env(app, db.clone())?;
+    match orchestrator::begin(db, account_id, trigger)? {
+        Begin::Refused(state) => {
+            (env.emit)(&state);
+            Ok(state)
+        }
+        Begin::Started(cx) => {
+            let state = orchestrator::running_state(&cx);
+            (env.emit)(&state);
+            spawn_run(env, cx);
+            Ok(state)
+        }
+    }
+}
+
+/// The run task. `run_supervised` catches a panic and settles it durably (audit
+/// row, state, event), so the handle is not what reports a death.
+fn spawn_run(env: ReloginEnv<lane::ChromeLauncher>, cx: orchestrator::RunCtx) {
+    let _handle = tokio::spawn(async move { orchestrator::run_supervised(&env, &cx).await });
+}
+
+// ── Commands ────────────────────────────────────────────────────────────────
 
 /// Start a re-login for one stored account. Returns the state at the moment it
-/// started; progress arrives as `fleet-claude-relogin-progress` events and the
-/// final state on the next snapshot.
+/// started (or the refusal: busy, rate limited, no profile linked); progress
+/// arrives as `fleet-claude-relogin-progress` events and the final state on
+/// the next snapshot.
 #[tauri::command]
 pub async fn fleet_claude_relogin(
     state: State<'_, Arc<AppState>>,
+    app: AppHandle,
     account_id: String,
 ) -> Result<ReloginState, AppError> {
     require_auth(&state).await?;
-    let _ = account_id;
-    Err(AppError::Validation(
-        "re-login is not implemented yet (spark claude-plan-switch WP1b)".into(),
-    ))
+    start_relogin(&app, &state.db, &account_id, TRIGGER_MANUAL)
 }
 
 #[tauri::command]
@@ -186,10 +261,7 @@ pub async fn fleet_claude_profile_list(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<LoginProfileView>, AppError> {
     require_auth(&state).await?;
-    Ok(repo::list_profiles(&state.db)?
-        .iter()
-        .map(profile_view)
-        .collect())
+    list_profile_views(&state.db)
 }
 
 /// Create or update a profile. The directory is derived by the backend
@@ -197,28 +269,35 @@ pub async fn fleet_claude_profile_list(
 #[tauri::command]
 pub async fn fleet_claude_profile_save(
     state: State<'_, Arc<AppState>>,
+    app: AppHandle,
     key: String,
     label: String,
     vault_credential_id: Option<String>,
 ) -> Result<Vec<LoginProfileView>, AppError> {
     require_auth(&state).await?;
-    let _ = (key, label, vault_credential_id);
-    Err(AppError::Validation(
-        "profile save is not implemented yet (spark claude-plan-switch WP1b)".into(),
-    ))
+    let app_data = orchestrator::app_data_dir(&app)?;
+    save_profile(
+        &state.db,
+        &app_data,
+        &key,
+        &label,
+        vault_credential_id.as_deref(),
+    )
 }
 
-/// Open the profile in a VISIBLE Chrome for a hand sign-in.
+/// Open the profile in a VISIBLE Chrome for a hand sign-in. Returns at once;
+/// the window is closed by the human, or after 20 minutes.
 #[tauri::command]
 pub async fn fleet_claude_profile_open_headed(
     state: State<'_, Arc<AppState>>,
+    app: AppHandle,
     key: String,
 ) -> Result<(), AppError> {
     require_auth(&state).await?;
-    let _ = key;
-    Err(AppError::Validation(
-        "opening a profile is not implemented yet (spark claude-plan-switch WP1b)".into(),
-    ))
+    if repo::get_profile(&state.db, &key)?.is_none() {
+        return Err(AppError::NotFound(format!("browser profile {key}")));
+    }
+    headed::open_headed(&orchestrator::app_data_dir(&app)?, &key).await
 }
 
 /// Link an account to its sign-in profile, its code inbox, and the unattended flag.

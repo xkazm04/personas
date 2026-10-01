@@ -418,15 +418,37 @@ pub async fn fleet_claude_account_capture(
     let live = live::read_live().ok_or_else(|| {
         AppError::NotFound("no Claude Code login on this machine — run `claude login` first".into())
     })?;
+    check_not_expired(&live)?;
+    let identity = live::read_identity();
+    // Identity from the profile endpoint, falling back to what the CLI wrote
+    // into ~/.claude.json — the two agree on a healthy install.
+    let profile = oauth::profile(&live.creds.access_token).await.ok();
+    ingest_credentials(pool, &live, &identity, profile)?;
+    build_snapshot(pool).await
+}
+
+fn check_not_expired(live: &LiveCredentials) -> Result<(), AppError> {
     if live.creds.expires_at_ms.is_some_and(|e| e < now_ms()) {
         return Err(AppError::OAuthRevoked(
             "the live Claude Code login has expired — run `claude` once to refresh it".into(),
         ));
     }
-    let identity = live::read_identity();
-    // Identity from the profile endpoint, falling back to what the CLI wrote
-    // into ~/.claude.json — the two agree on a healthy install.
-    let profile = oauth::profile(&live.creds.access_token).await.ok();
+    Ok(())
+}
+
+/// Store one credentials document as a stored account, replacing any stored
+/// copy of the same account and clearing its quarantine. Shared by
+/// `fleet_claude_account_capture` (the live file) and the re-login flow (a
+/// temp config dir), so both land a login the same way. `profile` is the
+/// profile-endpoint answer for the token when the caller already has it;
+/// `identity` is the fallback. Returns the stored account's id.
+fn ingest_credentials(
+    pool: &DbPool,
+    live: &LiveCredentials,
+    identity: &LiveIdentity,
+    profile: Option<oauth::Profile>,
+) -> Result<String, AppError> {
+    check_not_expired(live)?;
     let account_uuid = profile
         .as_ref()
         .map(|p| p.account_uuid.clone())
@@ -446,7 +468,7 @@ pub async fn fleet_claude_account_capture(
     repo::upsert(
         pool,
         &repo::ClaudeAccountRow {
-            id: account_uuid,
+            id: account_uuid.clone(),
             email,
             display_name: profile
                 .as_ref()
@@ -481,7 +503,7 @@ pub async fn fleet_claude_account_capture(
         },
     )?;
     clear_usage_cache();
-    build_snapshot(pool).await
+    Ok(account_uuid)
 }
 
 /// Make a stored login the CLI's live one.
