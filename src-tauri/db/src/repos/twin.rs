@@ -1499,6 +1499,234 @@ pub(crate) fn upsert_styled_tone_in(
     Ok(())
 }
 
+// ============================================================================
+// Twin Card import doors (spark twin-portable-blueprint, WP4)
+//
+// A Twin Card lands as ONE transaction, so every write below takes the
+// caller's connection (or transaction) and none opens its own. Each keeps a
+// value the card carries (a memory's observed time, a fact's order) that the
+// interactive writers would restamp with "now": re-exporting an imported twin
+// must reproduce the card it came from.
+// ============================================================================
+
+/// The source token a fact imported from a Twin Card cites in `sources_json`
+/// instead of a communication id: `twin-card:<card_id>`. A communication id
+/// is a bare uuid and never contains `:`, so the two cannot be confused. The
+/// provenance contract ("never without a citation") still holds: the citation
+/// is the card the person confirmed the fact in.
+pub const TWIN_CARD_SOURCE_PREFIX: &str = "twin-card:";
+
+/// [`list_profiles`] on a caller's connection (or transaction), same order.
+pub fn list_profiles_on(conn: &rusqlite::Connection) -> Result<Vec<TwinProfile>, AppError> {
+    timed_query!("twin_profiles", "twin::list_profiles_on", {
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {PROFILE_COLUMNS} FROM twin_profiles ORDER BY is_active DESC, updated_at DESC, id"
+        ))?;
+        let rows = stmt.query_map([], row_to_twin_profile)?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    })
+}
+
+/// A whole profile row an importer writes. The id, slug, vault subpath and
+/// both timestamps are minted by [`insert_profile_on`].
+#[derive(Debug, Clone)]
+pub struct NewTwinProfile<'a> {
+    pub name: &'a str,
+    pub bio: Option<&'a str>,
+    pub role: Option<&'a str>,
+    /// JSON array of language codes, or `None`.
+    pub languages: Option<&'a str>,
+    pub pronouns: Option<&'a str>,
+    pub training_directives: Option<&'a str>,
+    pub is_active: bool,
+}
+
+/// Insert a profile on the caller's connection (or transaction) with a fresh
+/// id and a slug unique on that same connection ([`unique_slug_on`]: rows the
+/// transaction already wrote are visible to it). `is_active` is written as
+/// given; the caller decides it.
+pub fn insert_profile_on(
+    conn: &rusqlite::Connection,
+    profile: &NewTwinProfile<'_>,
+) -> Result<TwinProfile, AppError> {
+    timed_query!("twin_profiles", "twin::insert_profile_on", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let slug = unique_slug_on(conn, &slugify(profile.name))?;
+        let obsidian_subpath = format!("personas/twins/{slug}");
+        conn.execute(
+            "INSERT INTO twin_profiles \
+                (id, name, slug, bio, role, languages, pronouns, obsidian_subpath, is_active, \
+                 training_directives, created_at, updated_at) \
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?11)",
+            params![
+                id,
+                profile.name,
+                slug,
+                profile.bio,
+                profile.role,
+                profile.languages,
+                profile.pronouns,
+                obsidian_subpath,
+                i32::from(profile.is_active),
+                profile.training_directives,
+                now
+            ],
+        )?;
+        conn.query_row(
+            &format!("SELECT {PROFILE_COLUMNS} FROM twin_profiles WHERE id = ?1"),
+            params![id],
+            row_to_twin_profile,
+        )
+        .map_err(AppError::Database)
+    })
+}
+
+/// [`delete_profile`] on the caller's connection (or transaction): every twin
+/// table cascades from the profile row. `false` when no such twin.
+pub fn delete_profile_on(conn: &rusqlite::Connection, id: &str) -> Result<bool, AppError> {
+    timed_query!("twin_profiles", "twin::delete_profile_on", {
+        let rows = conn.execute("DELETE FROM twin_profiles WHERE id = ?1", params![id])?;
+        Ok(rows > 0)
+    })
+}
+
+/// One approved memory an importer writes, with the time it was observed.
+#[derive(Debug, Clone)]
+pub struct ImportedMemory<'a> {
+    /// Where it was learned (`training`, `sample`, ...): the `channel` column.
+    pub channel: Option<&'a str>,
+    pub content: &'a str,
+    pub title: Option<&'a str>,
+    /// Clamped to 1-5.
+    pub importance: i32,
+    /// Written verbatim as `created_at`, so the memory keeps its place in the
+    /// newest-first order every reader uses.
+    pub observed_at: &'a str,
+}
+
+/// Insert an APPROVED memory on the caller's connection (or transaction).
+/// Unlike [`create_pending_memory_on`] it skips the review inbox: a memory
+/// arriving in a Twin Card was already approved by the person whose card it
+/// is (a card carries approved items only).
+pub fn insert_approved_memory_on(
+    conn: &rusqlite::Connection,
+    twin_id: &str,
+    memory: &ImportedMemory<'_>,
+) -> Result<String, AppError> {
+    timed_query!(
+        "twin_pending_memories",
+        "twin::insert_approved_memory_on",
+        {
+            let id = uuid::Uuid::new_v4().to_string();
+            conn.execute(
+            "INSERT INTO twin_pending_memories \
+                (id, twin_id, channel, content, title, importance, status, created_at, reviewed_at) \
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'approved', ?7, ?8)",
+            params![
+                id,
+                twin_id,
+                memory.channel,
+                memory.content,
+                memory.title,
+                memory.importance.clamp(1, 5),
+                memory.observed_at,
+                chrono::Utc::now().to_rfc3339()
+            ],
+        )?;
+            Ok(id)
+        }
+    )
+}
+
+/// Insert a self-fact (no contact scope) that arrived in a Twin Card, on the
+/// caller's connection (or transaction). It cites the card
+/// (`twin-card:<card_id>`, [`TWIN_CARD_SOURCE_PREFIX`]) because a card carries
+/// no communications to cite: they are other people's data and never travel
+/// in one. `stamp` is written as both `created_at` and `last_seen_at`, which
+/// is what orders facts of equal importance, so an importer passes
+/// decreasing stamps to keep the card's order.
+pub fn insert_card_fact_on(
+    conn: &rusqlite::Connection,
+    twin_id: &str,
+    content: &str,
+    importance: i32,
+    card_id: &str,
+    stamp: &str,
+) -> Result<String, AppError> {
+    timed_query!("twin_distilled_facts", "twin::insert_card_fact_on", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let sources_json = serde_json::to_string(&[format!("{TWIN_CARD_SOURCE_PREFIX}{card_id}")])
+            .map_err(|e| AppError::Internal(format!("encode sources_json: {e}")))?;
+        conn.execute(
+            "INSERT INTO twin_distilled_facts \
+                (id, twin_id, contact_handle, content, importance, sources_json, created_at, last_seen_at) \
+             VALUES (?1, ?2, NULL, ?3, ?4, ?5, ?6, ?6)",
+            params![
+                id,
+                twin_id,
+                content.trim(),
+                importance.clamp(1, 5),
+                sources_json,
+                stamp
+            ],
+        )?;
+        Ok(id)
+    })
+}
+
+/// Record one training answer the way the legacy Training Studio did (channel
+/// `training`, direction `out`, no contact, `Training Q&A: <question>` as the
+/// summary), on the caller's connection, at the time it was given and WITHOUT
+/// queueing a pending memory: an imported answer is part of a record, not a
+/// new interaction to review.
+pub fn insert_training_answer_on(
+    conn: &rusqlite::Connection,
+    twin_id: &str,
+    question: &str,
+    answer: &str,
+    key_facts_json: &str,
+    occurred_at: &str,
+) -> Result<String, AppError> {
+    timed_query!("twin_communications", "twin::insert_training_answer_on", {
+        let id = uuid::Uuid::new_v4().to_string();
+        conn.execute(
+            "INSERT INTO twin_communications \
+                (id, twin_id, channel, direction, contact_handle, content, summary, key_facts_json, \
+                 occurred_at, created_at) \
+             VALUES (?1, ?2, 'training', 'out', NULL, ?3, ?4, ?5, ?6, ?7)",
+            params![
+                id,
+                twin_id,
+                answer,
+                format!("Training Q&A: {question}"),
+                key_facts_json,
+                occurred_at,
+                chrono::Utc::now().to_rfc3339()
+            ],
+        )?;
+        Ok(id)
+    })
+}
+
+/// Ids of the twin's APPROVED memories that were queued from a communication
+/// with someone else: an inbound message, or any message with a contact
+/// handle. Their titles and bodies quote that person, so a Twin Card (which
+/// carries the owner's data only) leaves them out.
+pub fn third_party_memory_ids(pool: &DbPool, twin_id: &str) -> Result<Vec<String>, AppError> {
+    timed_query!("twin_pending_memories", "twin::third_party_memory_ids", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT m.id AS id FROM twin_pending_memories m \
+               JOIN twin_communications c ON c.id = m.source_communication_id \
+              WHERE m.twin_id = ?1 AND m.status = 'approved' \
+                AND (c.direction = 'in' OR TRIM(COALESCE(c.contact_handle, '')) <> '')",
+        )?;
+        let rows = stmt.query_map(params![twin_id], |row| row.get::<_, String>("id"))?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

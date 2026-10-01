@@ -1292,6 +1292,154 @@ pub fn snapshot(pool: &DbPool, twin_id: &str) -> Result<SetupSessionSnapshot, Ap
     })
 }
 
+// ============================================================================
+// Twin Card import doors (spark twin-portable-blueprint, WP4)
+//
+// A Twin Card's training record lands under a fresh `ready` plan in ONE
+// transaction: goals with their coverage, the person's answers as answered
+// and already-reconciled steps (so the engine never re-reads them as new
+// work), and the observations. The interactive writers above stamp "now" and
+// start at zero; these keep what the card carries.
+// ============================================================================
+
+/// A goal as a Twin Card carries it.
+#[derive(Debug, Clone)]
+pub struct ImportedGoal<'a> {
+    pub slot: &'a str,
+    pub title: &'a str,
+    pub intent: &'a str,
+    pub criteria: &'a [String],
+    /// `open` | `covered` | `dropped` (CHECKed).
+    pub state: &'a str,
+    /// 0.0 - 1.0.
+    pub coverage: f64,
+    pub answered: i64,
+}
+
+/// Append a goal with its state, coverage and answered count, at the twin's
+/// next free position. Returns the new id.
+pub fn insert_imported_goal_on(
+    conn: &Connection,
+    twin_id: &str,
+    goal: &ImportedGoal<'_>,
+) -> Result<String, AppError> {
+    timed_query!(
+        "twin_setup_goals",
+        "twin_setup_goals::insert_imported_goal_on",
+        {
+            let id = uuid::Uuid::new_v4().to_string();
+            conn.execute(
+                "INSERT INTO twin_setup_goals
+                    (id, twin_id, slot, title, intent, criteria_json, state, coverage, answered,
+                     position)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9,
+                     (SELECT COALESCE(MAX(position), -1) + 1 FROM twin_setup_goals WHERE twin_id = ?2))",
+                params![
+                    id,
+                    twin_id,
+                    goal.slot,
+                    goal.title,
+                    goal.intent,
+                    Json(goal.criteria),
+                    goal.state,
+                    goal.coverage.clamp(0.0, 1.0),
+                    goal.answered.max(0),
+                ],
+            )?;
+            Ok(id)
+        }
+    )
+}
+
+/// An answer as a Twin Card carries it.
+#[derive(Debug, Clone)]
+pub struct AnsweredStep<'a> {
+    pub goal_id: Option<&'a str>,
+    /// `setup` | `training`.
+    pub stage: &'a str,
+    /// `scene` | `opinion` | `reply_drill` | `fact` | `rule` | `preference`.
+    pub kind: &'a str,
+    pub question: &'a str,
+    pub answer: &'a str,
+    /// The message a reply drill answered.
+    pub incoming: Option<&'a str>,
+    /// SQLite `datetime` text (`YYYY-MM-DD HH:MM:SS`, UTC), like every other
+    /// timestamp in these tables.
+    pub answered_at: &'a str,
+    pub plan_version: i64,
+}
+
+/// Append an ANSWERED, already-reconciled step (origin `handoff`: a question
+/// asked elsewhere, kept verbatim) at the twin's tail. A reply drill is a
+/// `write` step, everything else `pick`. Returns the new id.
+pub fn insert_answered_step_on(
+    conn: &Connection,
+    twin_id: &str,
+    step: &AnsweredStep<'_>,
+) -> Result<String, AppError> {
+    timed_query!(
+        "twin_setup_steps",
+        "twin_setup_steps::insert_answered_step_on",
+        {
+            let id = uuid::Uuid::new_v4().to_string();
+            let answer_mode = if step.kind == "reply_drill" {
+                "write"
+            } else {
+                "pick"
+            };
+            conn.execute(
+                "INSERT INTO twin_setup_steps
+                    (id, twin_id, goal_id, stage, origin, kind, question, answer_mode, incoming,
+                     suggestions_json, status, answer, position, plan_version, reconciled,
+                     answered_at)
+                 VALUES (?1, ?2, ?3, ?4, 'handoff', ?5, ?6, ?7, ?8, '[]', 'answered', ?9,
+                     (SELECT COALESCE(MAX(position), -1) + 1 FROM twin_setup_steps WHERE twin_id = ?2),
+                     ?10, 1, ?11)",
+                params![
+                    id,
+                    twin_id,
+                    step.goal_id,
+                    step.stage,
+                    step.kind,
+                    step.question,
+                    answer_mode,
+                    step.incoming,
+                    step.answer,
+                    step.plan_version,
+                    step.answered_at,
+                ],
+            )?;
+            Ok(id)
+        }
+    )
+}
+
+/// Append an observation with its evidence count. `stamp` (SQLite `datetime`
+/// text) is written as both timestamps: an importer passes ONE stamp for the
+/// whole record, so observations of equal evidence keep the order they were
+/// inserted in (the list reads `evidence DESC, updated_at DESC, rowid ASC`).
+pub fn insert_observation_on(
+    conn: &Connection,
+    twin_id: &str,
+    text: &str,
+    evidence: i64,
+    stamp: &str,
+) -> Result<String, AppError> {
+    timed_query!(
+        "twin_setup_observations",
+        "twin_setup_observations::insert_observation_on",
+        {
+            let id = uuid::Uuid::new_v4().to_string();
+            conn.execute(
+                "INSERT INTO twin_setup_observations (id, twin_id, text, evidence, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?5)",
+                params![id, twin_id, text, evidence.max(0), stamp],
+            )?;
+            Ok(id)
+        }
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

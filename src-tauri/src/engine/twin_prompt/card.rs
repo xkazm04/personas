@@ -5,16 +5,11 @@
 //! twin-card.schema.json`), so a whole card deserializes straight into
 //! [`CardVoiceView`]: every member it does not name (the envelope, `training`,
 //! `evidence`, `integrity`, `signature`, `extensions`, a channel's
-//! `provenance`) is ignored. The full card types belong to the Twin Card
-//! package (`commands/infrastructure/twin_card`); this is the read-only view
-//! they map onto, and the one place a card turns into prompt input.
-//!
-//! Nothing in the app imports a card yet, so outside tests this file is dead
-//! until the Twin Card import (spark twin-portable-blueprint, WP4) calls
-//! [`TwinPromptInput::from_card`]. Delete the allow below in that change.
-//! (`#[expect]` would retire itself, but it needs Rust 1.81 and the
-//! workspace MSRV is 1.80.)
-#![cfg_attr(not(test), allow(dead_code))]
+//! `provenance`) is ignored. The Twin Card package
+//! (`commands/infrastructure/twin_card`) builds and applies the identity,
+//! voice and knowledge parts through these same types, and renders a
+//! Character Card V3's `system_prompt` through [`TwinPromptInput::from_card`]:
+//! this is the one place a card turns into prompt input.
 
 use serde::{Deserialize, Serialize};
 

@@ -158,6 +158,8 @@ Counts a consumer can use to judge the twin before trusting it. Integers only.
 
 Signs the RFC 8785 canonical form of the WHOLE card with the `signature` member removed. A consumer reports one of three states: **valid**, **invalid** (present and wrong; the file was altered), or **unsigned** (absent). Unsigned is not invalid. A signature proves which key wrote the file, not who the person is.
 
+A consumer that cannot verify signatures at all (it lacks Ed25519) reports a present signature as **unsigned** and MUST say, alongside, that a signature is present but was not checked. It MUST NOT report such a card as valid or invalid.
+
 ## 11. Sealing
 
 A sealed part keeps its name and replaces its value with:

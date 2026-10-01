@@ -485,6 +485,39 @@ characters that seals self-knowledge and training, and the format (Twin Card or
 Character Card V3), and says when the file was saved without a signature. The
 format is specified in `docs/standards/twin-card/1.0/`.
 
+**Under the hood: learning from a sample.** `twin_learn_from_sample` stores the
+sample (trimmed, at most 8,000 characters, source `selection`, `clipboard` or
+`forge`) as `analyzing` and returns at once. A per-twin single-flight lane
+(`engine::twin_sample`) analyses it in the background and announces every
+change with `twin-sample-updated`, sent to the main window only and never
+carrying sample text. Before any model call, a sample that matches text the
+twin wrote itself (a browser placement or an approved outbox reply; exact after
+whitespace and case are normalized, or one containing the other when the
+shorter side has at least 20 characters) is refused: a twin never learns from
+its own output. The analysis is one `TwinCall::SAMPLE_LEARN` call (Sonnet 5.5,
+low effort, lean CLI, 120 s) through the setup engine's repair door, prompted
+with the twin's core block from the prompt compiler, the voice on file, the
+channel vocabulary and the eight-dimension scale, with the sample fenced as
+data. A sample the model judges is not the person's own writing is refused
+with its reason. Otherwise, in one transaction, the sample becomes `ready` and
+files open proposals for its channel, skipping what the channel already holds:
+the sample word for word as an exemplar (unless it was cut), replacement voice
+notes, up to four new rules, a length line, and the eight style dimensions
+(dropped if incoherent). Self-facts go to the pending-memory queue (channel
+`sample`). Nothing changes until a proposal is resolved: accepting writes
+exactly one column of the channel's tone row (creating the row if needed) in
+the same transaction as the verdict, and accepted dimensions are stored as a
+style whose source is `learned`. `twin_clipboard_text` reads the clipboard once
+per press; `browser_webview_capture_selection` reads the highlight through the
+operator-only `page_selection` hand, on whitelisted origins only.
+
+**Under the hood: Twin Card export and import.** `twin_card_export`, `twin_card_inspect` and `twin_card_import` (`commands/infrastructure/twin_card/`) implement Twin Card 1.0 as specified in `docs/standards/twin-card/1.0/`. **Export** builds the card from the database: identity (name, role, bio, languages, grammatical gender from the pronouns token; "neutral" travels as `null`), voice (one channel per tone row, with its style, directions, length hint, do-and-don't rules and writing samples newest first; the quality rules with this person's own dash and filler-opener allowances; the standing directions), and on request knowledge (approved memories and self-facts), training (goals with coverage in per-mille, every answered setup question of both stages plus answers the old Training Studio recorded, observations) and evidence (sample counts per channel, coverage per section using the blueprint's formulas, readiness, answer count, last trained). No other person's data ever enters a card: no contacts, no inbound messages, no facts about a contact, and no approved memory that was queued from a conversation with someone else. A field longer than the schema allows stops the export and names what to shorten; an over-long item in a list (one sample, one memory) is left out with a warning. Every part is hashed (SHA-256 over RFC 8785 canonical JSON) before anything else happens. With a passphrase of at least 8 characters, knowledge and training are sealed (AES-256-GCM, PBKDF2-HMAC-SHA256 at 600,000 iterations, a fresh salt and nonce per part); identity, voice and evidence never are. The card is then signed with the device's Ed25519 identity (the key the `.persona` bundle uses) in builds that have one; a build without P2P writes the card unsigned, and the export says so. The file is written next to its destination and renamed into place, so a failed export leaves no partial file. The **Character Card V3** format wraps the same card under `data.extensions["twin-card"]` and adds a name, description, personality (the generic channel's style in the scale's words), example messages and a `system_prompt` rendered by the twin prompt compiler; a sealed knowledge part contributes no facts to that plaintext prompt. **Inspect** reads a card (or the card inside a Character Card V3) without writing anything: version support (major 1; a newer major is reported as unsupported, not invalid), validity against the schema compiled into the app, each part's hash (a sealed part only when the passphrase is given), and the signature (valid, invalid, or unsigned; a build without P2P cannot check a signature and shows it as unsigned with a note). **Import** refuses an unsupported or invalid card, unseals every sealed part first (a wrong or missing passphrase fails before anything is written), refuses the whole card when its identity was changed, and otherwise skips any part whose hash no longer matches, with a warning. It then writes the twin in one transaction under a fresh id and slug: the profile, the channel voices, the approved memories (keeping when they were observed), the self-facts (citing the card they came from), and the training record under a ready plan (answers stored as already-reconciled steps, so nothing is re-analysed). A name already in use (ignoring case) is resolved by the choice made in the dialog: a copy named "Name (2)", a replacement (the old twin and everything under it is deleted; the new one takes over its active flag), or skip. An imported twin becomes active only when it replaces the active twin or is the first twin there is. What Personas cannot store is dropped with a warning rather than approximated: a hand-set style, where each sample came from, a channel's provenance. Exporting an imported twin reproduces the identity, voice, knowledge and training parts of the card it came from byte for byte.
+
+The Settings workspace bundle (below) keeps its own sealed twin format; a twin
+imported from a card and later carried in a workspace bundle loses the facts
+that cite the card (`twin-card:<id>`), because the bundle remaps fact sources to
+communications. Known follow-up.
+
 ## Carrying a twin to another device
 
 A twin is portable. **Settings → Data → Export Workspace** has a **Twins** scope: tick the twins you want and they ride along in the workspace bundle, one selectable row each. Importing the bundle on the target machine recreates them. The full portability surface (bundle format, import result, conflict panel) is documented in [`settings/README.md`](../settings/README.md#data-portability).
