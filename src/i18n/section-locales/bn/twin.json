@@ -927,7 +927,31 @@
     },
     "variantCopy": {
       "dossier": {
-        "heroLabel": "টুইন ডসিয়ার"
+        "heroLabel": "টুইন ডসিয়ার",
+        "answerUnit": "{count}টি উত্তর",
+        "answered": "{count}টির উত্তর দেওয়া হয়েছে",
+        "bioAria": "জীবনী: {target}টি অক্ষরের মধ্যে {count}টি",
+        "charUnit": "{count}টি অক্ষর",
+        "coverageAria": "{section}-এর কভারেজ {pct}",
+        "coveredAt": "{count}-এ কভার হয়েছে বলে গণ্য",
+        "dimValue": "{label} {max}-এর মধ্যে {value}",
+        "directivesWritten": "লেখা নির্দেশনা",
+        "dropped": "বাদ দেওয়া হয়েছে",
+        "fullAt": "{count}-এ পূর্ণ",
+        "goalAria": "{title}: {pct} কভার হয়েছে",
+        "goalsAria": "কভারেজ অনুযায়ী {count}টি লক্ষ্য",
+        "kindsAria": "ধরন অনুযায়ী {count}টি উত্তর",
+        "memoriesAria": "{approved}টি অনুমোদিত, {pending}টি পর্যালোচনার অপেক্ষায়, {rejected}টি প্রত্যাখ্যাত",
+        "memoryUnit": "{count}টি স্মৃতি",
+        "moreChannels": "আরও {count}টি",
+        "ofTarget": "/ {count}",
+        "rulesOf": "{max}টি নিয়মের মধ্যে {count}টি",
+        "samplesOf": "{max}টি নমুনার মধ্যে {count}টি",
+        "slotEmpty": "সেট করা নেই",
+        "slotPartial": "আংশিক সেট করা",
+        "slotSet": "সেট করা আছে",
+        "styleAria": "{channel}-এর শৈলী: {dims}",
+        "topicAria": "{topic}: {approved}টি অনুমোদিত, {awaiting}টি পর্যালোচনার অপেক্ষায়"
       },
       "drafting": {
         "sheetTitle": "টুইনের নকশা",
@@ -940,7 +964,14 @@
         "targetOf": "লক্ষ্যমাত্রা: {count}টি অক্ষর"
       },
       "radial": {
-        "centerHint": "একটি অংশ বেছে নিন"
+        "centerHint": "একটি অংশ বেছে নিন",
+        "coveredAt": "{count}-এ কভার হয়েছে বলে গণ্য",
+        "dropped": "বাদ দেওয়া হয়েছে",
+        "fullAt": "{count}-এ পূর্ণ",
+        "slotEmpty": "সেট করা নেই",
+        "slotPartial": "আংশিক সেট করা",
+        "slotSet": "সেট করা আছে",
+        "target": "লক্ষ্যমাত্রা {count}"
       },
       "strata": {
         "plateHint": "একটি স্তর তুলতে সেটিতে ক্লিক করুন"

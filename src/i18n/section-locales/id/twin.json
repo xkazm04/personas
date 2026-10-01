@@ -927,7 +927,31 @@
     },
     "variantCopy": {
       "dossier": {
-        "heroLabel": "Dossier twin"
+        "heroLabel": "Dossier twin",
+        "answerUnit": "{count} jawaban",
+        "answered": "{count} dijawab",
+        "bioAria": "Bio: {count} dari {target} karakter",
+        "charUnit": "{count} karakter",
+        "coverageAria": "Cakupan {section} {pct}",
+        "coveredAt": "Tercakup pada {count}",
+        "dimValue": "{label} {value} dari {max}",
+        "directivesWritten": "Arahan yang ditulis",
+        "dropped": "Disingkirkan",
+        "fullAt": "Penuh pada {count}",
+        "goalAria": "{title}: {pct} tercakup",
+        "goalsAria": "{count} tujuan berdasarkan cakupan",
+        "kindsAria": "{count} jawaban berdasarkan jenis",
+        "memoriesAria": "{approved} disetujui, {pending} menunggu tinjauan, {rejected} ditolak",
+        "memoryUnit": "{count} memori",
+        "moreChannels": "+{count} lagi",
+        "ofTarget": "dari {count}",
+        "rulesOf": "{count} dari {max} aturan",
+        "samplesOf": "{count} dari {max} sampel",
+        "slotEmpty": "Belum diatur",
+        "slotPartial": "Sebagian diatur",
+        "slotSet": "Diatur",
+        "styleAria": "Gaya {channel}: {dims}",
+        "topicAria": "{topic}: {approved} disetujui, {awaiting} menunggu tinjauan"
       },
       "drafting": {
         "sheetTitle": "Rancangan twin",
@@ -940,7 +964,14 @@
         "targetOf": "Target: {count} karakter"
       },
       "radial": {
-        "centerHint": "Pilih satu segmen"
+        "centerHint": "Pilih satu segmen",
+        "coveredAt": "Tercakup pada {count}",
+        "dropped": "Disingkirkan",
+        "fullAt": "Penuh pada {count}",
+        "slotEmpty": "Belum diatur",
+        "slotPartial": "Sebagian diatur",
+        "slotSet": "Diatur",
+        "target": "Target {count}"
       },
       "strata": {
         "plateHint": "Klik sebuah lapisan untuk mengangkatnya"

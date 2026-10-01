@@ -927,7 +927,31 @@
     },
     "variantCopy": {
       "dossier": {
-        "heroLabel": "Dosje dvojníka"
+        "heroLabel": "Dosje dvojníka",
+        "answerUnit": "Odpovědí: {count}",
+        "answered": "Zodpovězeno: {count}",
+        "bioAria": "Bio: {count} z {target} znaků",
+        "charUnit": "Znaků: {count}",
+        "coverageAria": "{section}: pokrytí {pct}",
+        "coveredAt": "Pokryto při {count}",
+        "dimValue": "{label} {value} z {max}",
+        "directivesWritten": "Napsané pokyny",
+        "dropped": "Vyřazeno",
+        "fullAt": "Maximum při {count}",
+        "goalAria": "{title}: pokryto {pct}",
+        "goalsAria": "Cíle podle pokrytí: {count}",
+        "kindsAria": "Odpovědi podle druhu: {count}",
+        "memoriesAria": "{approved} schváleno, {pending} čeká na kontrolu, {rejected} zamítnuto",
+        "memoryUnit": "Vzpomínek: {count}",
+        "moreChannels": "+{count} dalších",
+        "ofTarget": "z {count}",
+        "rulesOf": "{count} z {max} pravidel",
+        "samplesOf": "{count} z {max} vzorků",
+        "slotEmpty": "Nenastaveno",
+        "slotPartial": "Částečně nastaveno",
+        "slotSet": "Nastaveno",
+        "styleAria": "Styl kanálu {channel}: {dims}",
+        "topicAria": "{topic}: {approved} schváleno, {awaiting} čeká na kontrolu"
       },
       "drafting": {
         "sheetTitle": "Plán dvojníka",
@@ -940,7 +964,14 @@
         "targetOf": "Cíl: {count} zn."
       },
       "radial": {
-        "centerHint": "Vyberte výseč"
+        "centerHint": "Vyberte výseč",
+        "coveredAt": "Pokryto při {count}",
+        "dropped": "Vyřazeno",
+        "fullAt": "Maximum při {count}",
+        "slotEmpty": "Nenastaveno",
+        "slotPartial": "Částečně nastaveno",
+        "slotSet": "Nastaveno",
+        "target": "Cíl {count}"
       },
       "strata": {
         "plateHint": "Kliknutím vrstvu nadzvednete"

@@ -1,0 +1,123 @@
+/* Radial anatomy, part two (spark twin-portable-blueprint, WP10): the L2
+   focus layout and its panel, the stage overlay and readout, and the
+   reduced-motion rules. Tokens (--r-*) are declared on .rd-root in radial.css.
+   Type: typo-* classes on the elements; no font-size is declared here. */
+
+/* ---------- L2 ---------- */
+.rd-focus {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 16px 16px;
+}
+.rd-focus-head { display: flex; align-items: center; gap: 16px; min-height: 48px; }
+.rd-focus-title { flex: 1 1 auto; min-width: 0; display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 12px; }
+.rd-focus-body { flex: 1 1 auto; min-height: 0; display: flex; gap: 16px; }
+.rd-focus-stage { position: relative; flex: 1 1 auto; min-width: 0; min-height: 0; }
+.rd-focus-figure { position: absolute; inset: 0; }
+.rd-focus-hub {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  pointer-events: none;
+}
+.rd-lang-code { position: absolute; transform: translate(-50%, -50%); pointer-events: none; }
+.rd-focus-panel {
+  flex: 0 0 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 4px 4px 8px;
+}
+.rd-panel-group { display: flex; flex-direction: column; gap: 4px; }
+.rd-panel-head { display: flex; align-items: baseline; gap: 12px; padding-right: 11px; }
+.rd-panel-head > h4 { flex: 1 1 auto; min-width: 0; }
+.rd-col { flex: 0 0 56px; display: inline-flex; justify-content: flex-end; align-items: center; text-align: right; }
+.rd-legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px; }
+.rd-legend.is-column { grid-template-columns: minmax(0, 1fr); }
+.rd-legend-key { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.rd-legend-key > .typo-caption { flex: 1 1 auto; min-width: 0; }
+.rd-swatch { flex: 0 0 auto; overflow: visible; }
+.rd-stat-line { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.rd-slot-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.rd-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 3px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-interactive);
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+.rd-row:hover,
+.rd-row[data-hot="true"] { background: var(--r-row-hot); border-color: var(--r-line-soft); }
+.rd-row-glyph { flex: 0 0 auto; overflow: visible; }
+.rd-row-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+
+/* ---------- stage ---------- */
+.rd-stage { position: absolute; inset: 0; }
+.rd-stage:not([data-lead]) .rd-seg { opacity: 0.66; }
+.rd-stage .rd-seg[data-dim="true"] { opacity: 0.36; }
+.rd-stage[data-behind="true"] .rd-svg { opacity: 0.4; }
+.rd-stage[data-compact="true"] :is(.rd-chevrons, .rd-guide-tick, .rd-star-frame, .rd-spoke-track) { display: none; }
+/* Stroke widths come from the ring size (inline); these set paint only. */
+.rd-goal-track { fill: none; stroke: var(--r-track); }
+.rd-goal { fill: none; stroke: var(--r-ink-soft); }
+.rd-gain { fill: none; stroke: var(--r-ink); filter: drop-shadow(0 0 7px var(--r-ink)); }
+.rd-lit {
+  fill: none;
+  stroke: var(--r-ink);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px var(--r-ink));
+  animation: rd-lit 1.2s var(--r-ease) both;
+}
+.rd-orbit { transform-box: view-box; animation: rd-orbit 9s linear infinite; }
+.rd-orbit-tail { fill: none; stroke: var(--r-ink-soft); stroke-width: 2.5; stroke-linecap: round; }
+.rd-orbit-dot { fill: var(--r-ink); filter: drop-shadow(0 0 6px var(--r-ink)); }
+
+.rd-readout {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  padding-left: 14px;
+  border-left: 2px solid var(--r-line);
+}
+.rd-readout-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.rd-gain-line { display: inline-flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px; }
+.rd-why { display: flex; flex-direction: column; gap: 4px; padding-top: 4px; }
+.rd-dots[data-loop="dots"]::after {
+  content: "...";
+  display: inline-block;
+  width: 0;
+  overflow: hidden;
+  vertical-align: bottom;
+  animation: rd-dots 1.6s steps(4, end) infinite;
+}
+
+@keyframes rd-orbit { to { transform: rotate(360deg); } }
+@keyframes rd-dots { to { width: 1.3em; } }
+@keyframes rd-lit {
+  0% { opacity: 0; stroke-width: 11; }
+  35% { opacity: 1; }
+  100% { opacity: 1; stroke-width: 3.5; }
+}
+@keyframes rd-fade { from { opacity: 0; } }
+
+/* ---------- reduced motion: fades only, no loops ---------- */
+.rd-root[data-motion="reduced"] .rd-lit { animation: rd-fade 260ms ease both; }
+.rd-root[data-motion="reduced"] .rd-orbit { display: none; animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .rd-l1 { transition: opacity 260ms ease; }
+  .rd-orbit,
+  .rd-dots::after { animation: none; }
+  .rd-lit { animation: rd-fade 260ms ease both; }
+}

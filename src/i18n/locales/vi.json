@@ -21484,7 +21484,31 @@
       },
       "variantCopy": {
         "dossier": {
-          "heroLabel": "Dossier của twin"
+          "heroLabel": "Dossier của twin",
+          "answerUnit": "{count} câu trả lời",
+          "answered": "Đã trả lời {count}",
+          "bioAria": "Tiểu sử: {count} trên {target} ký tự",
+          "charUnit": "{count} ký tự",
+          "coverageAria": "Độ phủ {section} {pct}",
+          "coveredAt": "Đã phủ tại {count}",
+          "dimValue": "{label} {value} trên {max}",
+          "directivesWritten": "Chỉ dẫn đã viết",
+          "dropped": "Đã bỏ",
+          "fullAt": "Đầy tại {count}",
+          "goalAria": "{title}: đã phủ {pct}",
+          "goalsAria": "{count} mục tiêu theo độ phủ",
+          "kindsAria": "{count} câu trả lời theo loại",
+          "memoriesAria": "{approved} đã duyệt, {pending} chờ đánh giá, {rejected} đã từ chối",
+          "memoryUnit": "{count} ký ức",
+          "moreChannels": "+{count} nữa",
+          "ofTarget": "trên {count}",
+          "rulesOf": "{count} trên {max} quy tắc",
+          "samplesOf": "{count} trên {max} đoạn mẫu",
+          "slotEmpty": "Chưa thiết lập",
+          "slotPartial": "Thiết lập một phần",
+          "slotSet": "Đã thiết lập",
+          "styleAria": "Phong cách {channel}: {dims}",
+          "topicAria": "{topic}: {approved} đã duyệt, {awaiting} chờ đánh giá"
         },
         "drafting": {
           "sheetTitle": "Bản vẽ twin",
@@ -21497,7 +21521,14 @@
           "targetOf": "Mục tiêu: {count} ký tự"
         },
         "radial": {
-          "centerHint": "Chọn một phần"
+          "centerHint": "Chọn một phần",
+          "coveredAt": "Đã phủ tại {count}",
+          "dropped": "Đã bỏ",
+          "fullAt": "Đầy tại {count}",
+          "slotEmpty": "Chưa thiết lập",
+          "slotPartial": "Thiết lập một phần",
+          "slotSet": "Đã thiết lập",
+          "target": "Mục tiêu {count}"
         },
         "strata": {
           "plateHint": "Nhấp vào một lớp để nhấc nó lên"

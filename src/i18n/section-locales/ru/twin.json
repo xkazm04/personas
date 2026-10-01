@@ -927,7 +927,31 @@
     },
     "variantCopy": {
       "dossier": {
-        "heroLabel": "Досье двойника"
+        "heroLabel": "Досье двойника",
+        "answerUnit": "Ответов: {count}",
+        "answered": "Отвечено: {count}",
+        "bioAria": "Био: {count} из {target} символов",
+        "charUnit": "Символов: {count}",
+        "coverageAria": "{section}: покрытие {pct}",
+        "coveredAt": "Охвачено при {count}",
+        "dimValue": "{label} {value} из {max}",
+        "directivesWritten": "Написанные инструкции",
+        "dropped": "Исключено",
+        "fullAt": "Максимум при {count}",
+        "goalAria": "{title}: охвачено {pct}",
+        "goalsAria": "Цели по покрытию: {count}",
+        "kindsAria": "Ответы по типам: {count}",
+        "memoriesAria": "Одобрено: {approved}, ждут проверки: {pending}, отклонено: {rejected}",
+        "memoryUnit": "Воспоминаний: {count}",
+        "moreChannels": "+{count} ещё",
+        "ofTarget": "из {count}",
+        "rulesOf": "{count} из {max} правил",
+        "samplesOf": "{count} из {max} образцов",
+        "slotEmpty": "Не задано",
+        "slotPartial": "Задано частично",
+        "slotSet": "Задано",
+        "styleAria": "Стиль в канале {channel}: {dims}",
+        "topicAria": "{topic}: одобрено {approved}, ждут проверки {awaiting}"
       },
       "drafting": {
         "sheetTitle": "План двойника",
@@ -940,7 +964,14 @@
         "targetOf": "Цель: {count} симв."
       },
       "radial": {
-        "centerHint": "Выберите сегмент"
+        "centerHint": "Выберите сегмент",
+        "coveredAt": "Охвачено при {count}",
+        "dropped": "Исключено",
+        "fullAt": "Максимум при {count}",
+        "slotEmpty": "Не задано",
+        "slotPartial": "Задано частично",
+        "slotSet": "Задано",
+        "target": "Цель {count}"
       },
       "strata": {
         "plateHint": "Нажмите на слой, чтобы приподнять его"
