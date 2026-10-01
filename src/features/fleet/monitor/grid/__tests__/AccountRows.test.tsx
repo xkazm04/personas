@@ -10,6 +10,8 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import type { ClaudeAccountView } from '@/lib/bindings/ClaudeAccountView';
 import type { ClaudeAccountsSnapshot } from '@/lib/bindings/ClaudeAccountsSnapshot';
 import { AccountRows } from '../AccountRows';
+import type { ReloginActs } from '../usage/reloginActs';
+import { useToastStore } from '@/stores/toastStore';
 import { buildResourceModel, type ResourceInputs } from '../usage/useResourceModel';
 import { buildSimAccountsSnapshot, buildSimCliUsage } from '../simulation/simPlans';
 import { USAGE_ERROR_AT, USAGE_WARN_AT } from '../usageModel';
@@ -28,11 +30,22 @@ function model(over: Partial<ResourceInputs> = {}) {
   });
 }
 
-function renderRows(over: Partial<ResourceInputs> = {}) {
+function acts() {
+  return {
+    profiles: buildSimAccountsSnapshot(NOW).profiles,
+    relogin: vi.fn((_id: string) => Promise.resolve()),
+    openSignIn: vi.fn((_key: string) => Promise.resolve()),
+    saveProfile: vi.fn(() => Promise.resolve()),
+    setProfile: vi.fn(() => Promise.resolve()),
+    listVaultLogins: vi.fn(() => Promise.resolve([])),
+  } satisfies ReloginActs;
+}
+
+function renderRows(over: Partial<ResourceInputs> = {}, relogin: ReloginActs = acts()) {
   const onSwitch = vi.fn(() => Promise.resolve());
   const onRemove = vi.fn(() => Promise.resolve());
-  render(<AccountRows model={model(over)} onSwitch={onSwitch} onRemove={onRemove} />);
-  return { onSwitch, onRemove };
+  render(<AccountRows model={model(over)} onSwitch={onSwitch} onRemove={onRemove} relogin={relogin} now={NOW} />);
+  return { onSwitch, onRemove, relogin };
 }
 
 const row = (id: string) =>
@@ -55,8 +68,8 @@ describe('AccountRows', () => {
   it('renders one row per account across every provider, plus a worded row for an empty provider', () => {
     renderRows();
     const rows = screen.getAllByTestId('fleet-usage-account');
-    // Five Claude plans + the one Codex plan; Grok (not installed) is the empty row.
-    expect(rows.map((r) => r.getAttribute('data-provider'))).toEqual(['claude', 'claude', 'claude', 'claude', 'claude', 'codex']);
+    // Seven Claude plans + the one Codex plan; Grok (not installed) is the empty row.
+    expect(rows.map((r) => r.getAttribute('data-provider'))).toEqual(['claude', 'claude', 'claude', 'claude', 'claude', 'claude', 'claude', 'codex']);
     const empty = screen.getByTestId('fleet-usage-empty');
     expect(empty).toHaveAttribute('data-provider', 'grok');
     expect(empty).toHaveAttribute('data-reason', 'not_installed');
@@ -81,7 +94,7 @@ describe('AccountRows', () => {
     // a pace glyph per cluster. Nothing else — no check, no dot, no shield, no history glyph.
     const svgs = Array.from(live.querySelectorAll('svg'));
     const paces = within(live).queryAllByTestId('fleet-usage-pace').length;
-    expect(svgs).toHaveLength(1 + 2 + paces);
+    expect(svgs).toHaveLength(1 + 2 + paces + 1); // + the hover-revealed sign-in settings act
     // The old card's status/marker testids are gone for good.
     for (const gone of ['fleet-usage-meter', 'fleet-usage-projected', 'fleet-usage-remaining', 'fleet-usage-live', 'fleet-usage-empty-slot']) {
       expect(screen.queryByTestId(gone)).toBeNull();
@@ -178,12 +191,21 @@ describe('AccountRows', () => {
     const unreadable = row('sim-plan-4');
     expect(within(unreadable).getByTestId('fleet-usage-trouble')).toHaveTextContent('Usage unavailable');
     expect(within(unreadable).queryByTestId('fleet-usage-window')).toBeNull();
-    expect(unreadable.querySelectorAll('svg')).toHaveLength(2); // the provider mark + the Forget action
+    expect(unreadable.querySelectorAll('svg')).toHaveLength(3); // the provider mark + sign-in settings + the Forget action
+  });
+
+  it('says "Needs login" for a dead plan nothing has tried to revive, and offers Re-login', () => {
+    const base = buildSimAccountsSnapshot(NOW);
+    renderRows({ accounts: { ...base, accounts: base.accounts.map((a) => ({ ...a, relogin: null })) } });
     const quarantined = row('sim-plan-5');
+    expect(quarantined).toHaveAttribute('data-relogin', 'idle');
     expect(within(quarantined).getByTestId('fleet-usage-trouble')).toHaveTextContent('Needs login');
+    expect(within(quarantined).getByTestId('fleet-usage-relogin')).toBeEnabled();
     // A quarantined plan cannot be switched to; it can be forgotten.
     expect(within(quarantined).queryByTestId('fleet-usage-switch')).toBeNull();
     expect(within(quarantined).getByTestId('fleet-usage-remove')).toBeInTheDocument();
+    fireEvent.click(quarantined);
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('keeps read-only providers read-only: no switch, no forget, no click', () => {
@@ -284,5 +306,103 @@ describe('AccountRows', () => {
     expect(live).toHaveAttribute('data-active', 'true');
     expect(within(live).getByTestId('fleet-usage-name')).toHaveTextContent(empty.liveEmail!);
     expect(within(live).getByTestId('fleet-usage-week-fill')).toHaveAttribute('data-tone', 'warning');
+  });
+});
+
+describe('AccountRows: re-login states', () => {
+  it('a running re-login shows its step beside the name and spins only the Re-login control', () => {
+    renderRows();
+    const running = row('sim-plan-6');
+    expect(running).toHaveAttribute('data-relogin', 'running');
+    expect(within(running).getByTestId('fleet-usage-relogin-step')).toHaveTextContent('Waiting for code');
+    expect(within(running).queryByTestId('fleet-usage-trouble')).toBeNull();
+    const button = within(running).getByTestId('fleet-usage-relogin');
+    expect(button).toBeDisabled();
+    // The spinner is on the control and nowhere else on the row.
+    expect(button).toHaveAttribute('aria-busy', 'true');
+    expect(running.querySelectorAll('[aria-busy="true"]')).toHaveLength(1);
+    expect(within(running).queryByTestId('fleet-usage-open-window')).toBeNull();
+  });
+
+  it.each([
+    ['sim-plan-5', 'profile_cold', 'Sign in by hand once'],
+    ['sim-plan-7', 'proton_second_factor', 'Proton wants its second factor'],
+  ])('%s needs you (%s): the reason in words, Re-login, and Open sign-in window', (id, reason, words) => {
+    renderRows();
+    const r = row(id);
+    expect(r).toHaveAttribute('data-relogin', 'needs_you');
+    expect(within(r).getByTestId('fleet-usage-relogin-reason')).toHaveTextContent(words);
+    expect(within(r).getByTestId('fleet-usage-relogin-reason')).toHaveAttribute('data-reason', reason);
+    expect(within(r).getByTestId('fleet-usage-relogin')).toBeEnabled();
+    expect(within(r).getByTestId('fleet-usage-open-window')).toBeEnabled();
+    // Still not switchable while the plan is dead.
+    expect(within(r).queryByTestId('fleet-usage-switch')).toBeNull();
+    expect(r.className).toContain('col-span-2');
+  });
+
+  it('a done re-login says "Signed in again" and keeps the plan\'s meters', () => {
+    renderRows();
+    const done = row('sim-plan-2');
+    expect(done).toHaveAttribute('data-relogin', 'done');
+    expect(within(done).getByTestId('fleet-usage-relogin-done')).toHaveTextContent('Signed in again');
+    expect(within(done).getAllByTestId('fleet-usage-window')).toHaveLength(2);
+    expect(within(done).queryByTestId('fleet-usage-relogin')).toBeNull();
+  });
+
+  it('a done re-login is not shown once it is old', () => {
+    const base = buildSimAccountsSnapshot(NOW);
+    const accounts = {
+      ...base,
+      accounts: base.accounts.map((a) => (a.relogin?.phase === 'done' ? { ...a, relogin: { ...a.relogin, startedAtMs: NOW - 10 * 60_000 } } : a)),
+    };
+    renderRows({ accounts });
+    expect(row('sim-plan-2')).toHaveAttribute('data-relogin', 'none');
+    expect(screen.queryByTestId('fleet-usage-relogin-done')).toBeNull();
+  });
+
+  it('Re-login runs the act for that account without opening a switch', () => {
+    const { relogin, onSwitch } = renderRows();
+    fireEvent.click(within(row('sim-plan-5')).getByTestId('fleet-usage-relogin'));
+    expect(relogin.relogin).toHaveBeenCalledWith('sim-plan-5');
+    expect(onSwitch).not.toHaveBeenCalled();
+  });
+
+  it('Open sign-in window opens the linked profile', () => {
+    const { relogin } = renderRows();
+    fireEvent.click(within(row('sim-plan-7')).getByTestId('fleet-usage-open-window'));
+    expect(relogin.openSignIn).toHaveBeenCalledWith('work-chrome');
+  });
+
+  it('Open sign-in window is disabled when no profile is linked; Re-login stays available', () => {
+    const base = buildSimAccountsSnapshot(NOW);
+    const accounts = {
+      ...base,
+      accounts: base.accounts.map((a) => (a.id === 'sim-plan-5' ? { ...a, login: null } : a)),
+    };
+    const { relogin } = renderRows({ accounts });
+    const open = within(row('sim-plan-5')).getByTestId('fleet-usage-open-window');
+    expect(open).toBeDisabled();
+    fireEvent.click(open);
+    expect(relogin.openSignIn).not.toHaveBeenCalled();
+    expect(within(row('sim-plan-5')).getByTestId('fleet-usage-relogin')).toBeEnabled();
+  });
+
+  it('never raises a toast for a needs-you state', () => {
+    const add = vi.spyOn(useToastStore.getState(), 'addToast');
+    const before = useToastStore.getState().toasts.length;
+    renderRows();
+    expect(add).not.toHaveBeenCalled();
+    expect(useToastStore.getState().toasts).toHaveLength(before);
+    add.mockRestore();
+  });
+
+  it('offers the sign-in settings on a Claude plan, and not on a read-only provider', () => {
+    renderRows();
+    expect(within(row('sim-plan-5')).getByTestId('fleet-usage-settings')).toHaveAttribute(
+      'aria-label', 'Sign-in settings for fleet.five@simulated.test',
+    );
+    expect(within(row('codex')).queryByTestId('fleet-usage-settings')).toBeNull();
+    fireEvent.click(within(row('sim-plan-5')).getByTestId('fleet-usage-settings'));
+    expect(screen.getByTestId('fleet-usage-profile-dialog')).toBeInTheDocument();
   });
 });

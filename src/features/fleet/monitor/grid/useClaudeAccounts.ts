@@ -15,12 +15,18 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePolling } from '@/hooks/utility/timing/usePolling';
 import { silentCatch } from '@/lib/silentCatch';
 import {
-  captureClaudeAccount, listClaudeAccounts, removeClaudeAccount, setClaudeAutoRotate, switchClaudeAccount,
+  captureClaudeAccount, listClaudeAccounts, openClaudeProfileHeaded, reloginClaudeAccount,
+  removeClaudeAccount, saveClaudeLoginProfile, setClaudeAccountProfile, setClaudeAutoRotate, switchClaudeAccount,
 } from '@/api/fleet/claudeAccounts';
 import type { ClaudeAccountsSnapshot } from '@/lib/bindings/ClaudeAccountsSnapshot';
 import type { ClaudeAutoRotateConfig } from '@/lib/bindings/ClaudeAutoRotateConfig';
 import type { ClaudeRotationEvent } from '@/lib/bindings/ClaudeRotationEvent';
+import type { ReloginState } from '@/lib/bindings/ReloginState';
 import { USAGE_CACHE_MS } from './useClaudeUsage';
+import { useReloginProgress } from './usage/useReloginProgress';
+
+/** While a re-login runs, the snapshot is re-read this often (the event is the fast path, this is the net). */
+const RELOGIN_POLL_MS = 4_000;
 
 let warmSnapshot: ClaudeAccountsSnapshot | null = null;
 let warmAt: number | null = null;
@@ -35,6 +41,13 @@ export interface ClaudeAccountsState {
   switchTo: (id: string) => Promise<ClaudeAccountsSnapshot>;
   remove: (id: string) => Promise<ClaudeAccountsSnapshot>;
   setAutoRotate: (config: ClaudeAutoRotateConfig) => Promise<ClaudeAutoRotateConfig>;
+  /** Run a re-login for one stored plan; the snapshot carries the outcome. */
+  relogin: (accountId: string) => Promise<void>;
+  openSignIn: (profileKey: string) => Promise<void>;
+  saveProfile: (key: string, label: string, vaultCredentialId: string | null) => Promise<void>;
+  setProfile: (
+    accountId: string, profileKey: string | null, codeInboxProfileKey: string | null, unattended: boolean,
+  ) => Promise<void>;
 }
 
 export function useClaudeAccounts(
@@ -103,7 +116,54 @@ export function useClaudeAccounts(
     [],
   );
 
-  return { snapshot, ipcFailed, fetchedAt, canRefresh, refresh, capture, switchTo, remove, setAutoRotate };
+  // Re-login ------------------------------------------------------------
+  const applyRelogin = useCallback((state: ReloginState) => {
+    setSnapshot((prev) => {
+      if (!prev) return prev;
+      const next = {
+        ...prev,
+        accounts: prev.accounts.map((a) => (a.id === state.accountId ? { ...a, relogin: state } : a)),
+      };
+      warmSnapshot = next;
+      return next;
+    });
+  }, []);
+  useReloginProgress(enabled, applyRelogin);
+
+  const reloginRunning = snapshot?.accounts.some((a) => a.relogin?.phase === 'running') ?? false;
+  const reloginPoll = useCallback(() => read(true), [read]);
+  usePolling(reloginPoll, { interval: RELOGIN_POLL_MS, enabled: enabled && reloginRunning, name: 'monitor:reloginRun' });
+
+  const relogin = useCallback(
+    async (accountId: string) => {
+      // The command resolves when the run ends; the event carries the steps in between.
+      try {
+        applyRelogin(await reloginClaudeAccount(accountId));
+      } finally {
+        await read(true);
+      }
+    },
+    [applyRelogin, read],
+  );
+  const openSignIn = useCallback((profileKey: string) => openClaudeProfileHeaded(profileKey), []);
+  const saveProfile = useCallback(
+    async (key: string, label: string, vaultCredentialId: string | null) => {
+      const profiles = await saveClaudeLoginProfile(key, label, vaultCredentialId);
+      setSnapshot((prev) => (prev ? { ...prev, profiles } : prev));
+    },
+    [],
+  );
+  const setProfile = useCallback(
+    async (accountId: string, profileKey: string | null, codeInboxProfileKey: string | null, unattended: boolean) => {
+      accept(await setClaudeAccountProfile(accountId, profileKey, codeInboxProfileKey, unattended));
+    },
+    [accept],
+  );
+
+  return {
+    snapshot, ipcFailed, fetchedAt, canRefresh, refresh, capture, switchTo, remove, setAutoRotate,
+    relogin, openSignIn, saveProfile, setProfile,
+  };
 }
 
 /** Test hatch — the warm cache is module state. */

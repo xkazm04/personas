@@ -75,7 +75,7 @@ export function StripFrame({
             className="inline-flex flex-shrink-0 items-center rounded-full border border-border bg-secondary/20 px-2 py-0.5 tabular-nums"
             data-testid="fleet-usage-plan-count"
           >
-            {tx(t.monitor.usage_plan_count, { count: planCount, max: PLAN_SLOTS })}
+            {tx(t.monitor.usage_plan_count, { count: planCount, max: Math.max(PLAN_SLOTS, planCount) })}
           </span>
         )}
         <span className="ml-auto inline-flex min-w-0 items-center gap-3">

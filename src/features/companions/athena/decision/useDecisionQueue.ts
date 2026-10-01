@@ -19,6 +19,8 @@ import {
   type ProactiveMessage,
 } from '@/api/companion';
 import { listManualReviewsPage } from '@/api/overview/reviews';
+import { listClaudeAccounts } from '@/api/fleet/claudeAccounts';
+import { EventName, typedListen } from '@/lib/eventRegistry';
 import { resolveReviewRow, dispatchReviewRowAction } from '@/lib/decisions/rowWrites';
 import { markReportRead } from '@/api/overview/reports';
 import { companionEngageProactive } from '@/api/companion';
@@ -29,6 +31,7 @@ import { actionLabel } from '../athenaLabels';
 import { applyClientAction } from '../applyClientAction';
 import { actionRisk } from './actionRisk';
 import { isDecisionDeferred } from './decisionDeferral';
+import { needsYouAccounts, reloginToDecision } from './reloginDecision';
 import type { DecisionOption, PendingDecision } from './types';
 
 /**
@@ -426,9 +429,9 @@ function credentialReauthToDecision(message: ProactiveMessage): PendingDecision 
 }
 
 /**
- * Build the current FIFO of decisions across all four sources. Approvals first
- * (most actionable), then blocking incidents, then human reviews, then
- * attention messages.
+ * Build the current FIFO of decisions across all sources. Approvals first
+ * (most actionable), then blocking incidents, then a Claude plan waiting on a
+ * re-login, then human reviews, then attention messages.
  *
  * Anything the operator skipped or snoozed is filtered out at the end (see
  * `./decisionDeferral`): the ledger is consulted HERE, once, rather than at the
@@ -460,6 +463,15 @@ async function buildQueue(): Promise<PendingDecision[]> {
     }
   } catch (err) {
     silentCatch('companion/decision:list-proactive')(err);
+  }
+
+  try {
+    // A Claude plan whose re-login needs the operator: ONE quick decision on
+    // the orb, never a toast (see ./reloginDecision).
+    const snapshot = await listClaudeAccounts();
+    for (const a of needsYouAccounts(snapshot?.accounts ?? [])) queue.push(reloginToDecision(a));
+  } catch (err) {
+    silentCatch('companion/decision:list-relogin')(err);
   }
 
   try {
@@ -539,7 +551,14 @@ export function useDecisionQueue() {
     const unlistenProactive = listen(COMPANION_PROACTIVE_EVENT, () => {
       void pump();
     });
+    // A re-login run moved (it may have stopped at "needs you"): look again.
+    const unlistenRelogin = typedListen(EventName.FLEET_CLAUDE_RELOGIN_PROGRESS, () => {
+      void pump();
+    });
     return () => {
+      unlistenRelogin
+        .then((f) => f())
+        .catch(silentCatch('companion/decision:unlisten'));
       unlistenApprovals
         .then((f) => f())
         .catch(silentCatch('companion/decision:unlisten'));

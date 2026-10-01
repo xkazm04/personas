@@ -37,17 +37,17 @@ pub struct ReloginRunRow {
     pub reason: Option<String>,
 }
 
-fn map_profile(r: &rusqlite::Row<'_>) -> rusqlite::Result<LoginProfileRow> {
-    Ok(LoginProfileRow {
-        key: r.get(0)?,
-        label: r.get(1)?,
-        dir: r.get(2)?,
-        vault_credential_id: r.get(3)?,
-        last_warm_at_ms: r.get(4)?,
-        last_result: r.get(5)?,
-        created_at_ms: r.get(6)?,
-    })
-}
+row_mapper!(map_profile -> LoginProfileRow {
+    key, label, dir, vault_credential_id, last_warm_at_ms, last_result, created_at_ms,
+});
+
+row_mapper!(map_link -> AccountLinkRow {
+    account_id, profile_key, code_inbox_profile_key, relogin_unattended [bool],
+});
+
+row_mapper!(map_run -> ReloginRunRow {
+    id, account_id, trigger, started_at_ms, finished_at_ms, outcome, reason,
+});
 
 const PROFILE_COLS: &str =
     "key, label, dir, vault_credential_id, last_warm_at_ms, last_result, created_at_ms";
@@ -59,7 +59,7 @@ pub fn list_profiles(pool: &DbPool) -> Result<Vec<LoginProfileRow>, AppError> {
             "SELECT {PROFILE_COLS} FROM claude_login_profiles ORDER BY created_at_ms ASC"
         ))?;
         let rows = stmt.query_map([], map_profile)?;
-        Ok(rows.filter_map(Result::ok).collect())
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
     })
 }
 
@@ -151,15 +151,8 @@ pub fn list_links(pool: &DbPool) -> Result<Vec<AccountLinkRow>, AppError> {
                 "SELECT account_id, profile_key, code_inbox_profile_key, relogin_unattended
                FROM claude_account_login_links",
             )?;
-            let rows = stmt.query_map([], |r| {
-                Ok(AccountLinkRow {
-                    account_id: r.get(0)?,
-                    profile_key: r.get(1)?,
-                    code_inbox_profile_key: r.get(2)?,
-                    relogin_unattended: r.get::<_, i64>(3)? != 0,
-                })
-            })?;
-            Ok(rows.filter_map(Result::ok).collect())
+            let rows = stmt.query_map([], map_link)?;
+            Ok(rows.collect::<Result<Vec<_>, _>>()?)
         }
     )
 }
@@ -219,10 +212,13 @@ pub fn finish_run(
 ) -> Result<(), AppError> {
     timed_query!("claude_relogin_runs", "claude_relogin_runs::finish", {
         let conn = pool.get()?;
-        conn.execute(
+        let n = conn.execute(
             "UPDATE claude_relogin_runs SET finished_at_ms = ?2, outcome = ?3, reason = ?4 WHERE id = ?1",
             params![id, personas_core::utils::now_ms(), outcome, reason],
         )?;
+        if n == 0 {
+            return Err(AppError::NotFound(format!("claude relogin run {id}")));
+        }
         Ok(())
     })
 }
@@ -232,9 +228,9 @@ pub fn count_runs_since(pool: &DbPool, account_id: &str, since_ms: i64) -> Resul
     timed_query!("claude_relogin_runs", "claude_relogin_runs::count_since", {
         let conn = pool.get()?;
         Ok(conn.query_row(
-            "SELECT COUNT(*) FROM claude_relogin_runs WHERE account_id = ?1 AND started_at_ms >= ?2",
+            "SELECT COUNT(*) AS n FROM claude_relogin_runs WHERE account_id = ?1 AND started_at_ms >= ?2",
             params![account_id, since_ms],
-            |r| r.get(0),
+            |r| r.get::<_, i64>("n"),
         )?)
     })
 }
@@ -251,17 +247,7 @@ pub fn recent_runs(
                FROM claude_relogin_runs WHERE account_id = ?1
               ORDER BY started_at_ms DESC LIMIT ?2",
         )?;
-        let rows = stmt.query_map(params![account_id, limit], |r| {
-            Ok(ReloginRunRow {
-                id: r.get(0)?,
-                account_id: r.get(1)?,
-                trigger: r.get(2)?,
-                started_at_ms: r.get(3)?,
-                finished_at_ms: r.get(4)?,
-                outcome: r.get(5)?,
-                reason: r.get(6)?,
-            })
-        })?;
-        Ok(rows.filter_map(Result::ok).collect())
+        let rows = stmt.query_map(params![account_id, limit], map_run)?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
     })
 }

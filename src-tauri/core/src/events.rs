@@ -378,6 +378,7 @@ event_names! {
     FLEET_SESSION_STATE        => "fleet-session-state",
     FLEET_SESSION_EXITED       => "fleet-session-exited",
     FLEET_REGISTRY_CHANGED     => "fleet-registry-changed",
+    FLEET_CLAUDE_RELOGIN_PROGRESS => "fleet-claude-relogin-progress",
     // The dispatch queue moved: a row was enqueued / promoted / reordered /
     // cancelled, or the live-session cap changed. Payload: `QueueChangedPayload`.
     FLEET_QUEUE_CHANGED        => "fleet-queue-changed",

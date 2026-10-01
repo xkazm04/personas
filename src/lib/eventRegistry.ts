@@ -23,6 +23,7 @@ import type { PendingPairingView } from '@/lib/bindings/PendingPairingView';
 import type { RadioState } from '@/lib/bindings/RadioState';
 import type { KbExtractionProgress } from '@/lib/bindings/KbExtractionProgress';
 import type { ContestChangedPayload } from '@/lib/bindings/ContestChangedPayload';
+import type { ReloginState } from '@/lib/bindings/ReloginState';
 import type { CompanionsStatusDto } from '@/lib/bindings/CompanionsStatusDto';
 import type { CuratorPulsePayload } from '@/lib/bindings/CuratorPulsePayload';
 import type { CircuitTransitionEvent } from '@/lib/bindings/CircuitTransitionEvent';
@@ -341,6 +342,8 @@ export const EventName = {
   FLEET_SESSION_EXITED: 'fleet-session-exited',
   FLEET_REGISTRY_CHANGED: 'fleet-registry-changed',
   FLEET_QUEUE_CHANGED: 'fleet-queue-changed',
+  // Claude plan re-login progress (spark claude-plan-switch); payload = ReloginState.
+  FLEET_CLAUDE_RELOGIN_PROGRESS: 'fleet-claude-relogin-progress',
 
   // Contest plugin: a seat changed state or an autopilot chain step moved.
   CONTEST_CHANGED: 'contest-changed',
@@ -1257,6 +1260,7 @@ export interface EventPayloadMap {
   [EventName.FLEET_REGISTRY_CHANGED]: { kind: 'added' | 'removed' | 'updated'; session_id: string };
   // Rust: personas_core::events::QueueChangedPayload (camelCase) — see src/lib/bindings/QueueChangedPayload.ts.
   [EventName.FLEET_QUEUE_CHANGED]: { kind: 'enqueued' | 'promoted' | 'reordered' | 'cancelled' | 'cap_changed'; sessionId: string | null };
+  [EventName.FLEET_CLAUDE_RELOGIN_PROGRESS]: ReloginState;
 
   // Contest plugin. Rust: commands::contest::types::ContestChangedPayload (camelCase).
   [EventName.CONTEST_CHANGED]: ContestChangedPayload;

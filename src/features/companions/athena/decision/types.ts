@@ -31,6 +31,7 @@ export type DecisionSource =
   | 'incident'
   | 'message_attention'
   | 'credential_reauth'
+  | 'claude_relogin'
   | 'adhoc';
 
 /**

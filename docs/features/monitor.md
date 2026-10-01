@@ -318,6 +318,57 @@ that is under the threshold on both windows. The last automatic rotation is
 shown in the strip and toasted when it happens. macOS keeps its token in the
 Keychain, which this switcher does not reach; it is a Windows / Linux feature.
 
+#### Re-login a dead plan
+
+A stored plan whose refresh token died used to say *Needs login* and wait for
+you to run `claude login` by hand. The strip can now sign it in again. The run
+spawns `claude auth login` in a throwaway config directory, drives that plan's
+own real Chrome profile through the sign-in page (Google single sign-on, or an
+emailed code that deterministic code reads from a Proton inbox in another
+profile), checks the credentials that came back belong to the *same* account,
+and stores them. Your live `~/.claude` login is never touched. Signing in this
+way is automation of a consumer login, which Anthropic's terms may not allow;
+the feature is off until you link a profile and is yours to judge.
+
+What the row shows, in words and never as a toast:
+
+- **Needs login** with **Re-login** - nothing has run yet.
+- A **step chip** - *Opening profile*, *Waiting for code*, *Authorising*,
+  *Saving* - while a run is in flight. The Re-login control is the only thing
+  that spins; the rest of the row stays still.
+- **A reason and two acts** - when a person is needed: **Re-login** to try
+  again and **Open sign-in window** to open the plan's profile visibly and
+  finish by hand. The reason is one of: Chrome is not installed; no sign-in
+  profile linked; sign in by hand once (the profile is cold); Google asked for a
+  check; Cloudflare check; a captcha; no code inbox linked; the code did not
+  arrive; Proton is signed out; Proton wants its second factor; the sign-in page
+  changed; signed in as a different account; the CLI did not finish; timed out;
+  3 re-logins per hour reached; another re-login is running.
+- **Signed in again** - for a few minutes after a run succeeds, then gone.
+
+A plan that needs you is also offered once on Athena's orb as a quick decision
+(*email: reason*, **Re-login** / **Dismiss**); the chat window carries the full
+story. Dismiss holds it back for the session. Nothing about it is a toast or a
+popup.
+
+**Sign-in settings** are behind the small gear that appears on a Claude plan's
+row on hover. Per plan you choose the *sign-in profile* (or create one by name),
+the optional *code inbox profile* (the profile whose Proton mailbox receives the
+emailed code) with the *vault login* that fills that mailbox's form, and
+*Re-login unattended when the profile is signed in* (off by default: with it on,
+the app revives a dying plan by itself when its profile is already signed in).
+
+**The first sign-in of every profile is by hand.** Open sign-in window, sign in
+to claude.ai (and to Proton for an inbox profile) once; the profile keeps the
+session and later runs reuse it. The app never types a Google password, solves a
+captcha or answers a second factor; when a page asks for one, the run stops and
+says so. At most **3 re-logins per hour per plan** run; the fourth stops at
+*3 re-logins per hour reached*. One re-login runs at a time.
+
+In the simulated strip (Monitor, simulation toggle) every state above is
+rendered from fixtures and the acts land in the simulated plans, so the flow can
+be walked without a backend.
+
 **Tiles speak (2026-09-05).** When a persona posts in its team channel, its
 latest line slides in over its tile as a speech bubble and fades on its own
 after ten seconds; a small chat mark with a count stays on the tile until the

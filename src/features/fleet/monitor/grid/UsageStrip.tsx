@@ -51,7 +51,8 @@ import { StripFrame } from './UsageStripShell';
 import { UsageStripControls } from './UsageStripControls';
 import { useUsageActions } from './usageStripActions';
 import { useUsageClock } from './usageBits';
-import { useSimPlans } from './simulation';
+import { SIM_VAULT_LOGINS, useSimPlans } from './simulation';
+import type { ReloginActs } from './usage/reloginActs';
 import { useCliUsage } from './usage/useCliUsage';
 import { useResourceModel } from './usage/useResourceModel';
 
@@ -99,6 +100,22 @@ export const UsageStrip = memo(function UsageStrip({
       }
     },
     [simulated, sim, actions],
+  );
+
+  // The re-login acts: the backend's, or — simulated — ones that land in the
+  // simulated state, so every row state and the settings dialog walk offline.
+  const reloginActs = useMemo<ReloginActs>(
+    () => simulated
+      ? {
+        profiles: sim.snapshot?.profiles ?? [],
+        relogin: async (id) => sim.relogin(id),
+        openSignIn: () => Promise.resolve(),
+        saveProfile: async (key, label, cred) => sim.saveProfile(key, label, cred),
+        setProfile: async (id, key, inbox, unattended) => sim.setProfile(id, key, inbox, unattended),
+        listVaultLogins: () => Promise.resolve(SIM_VAULT_LOGINS),
+      }
+      : actions.relogin,
+    [simulated, sim, actions.relogin],
   );
 
   // WHAT CAPTURE ACTUALLY NEEDS: `livePresent` is the backend saying "there is
@@ -166,7 +183,7 @@ export const UsageStrip = memo(function UsageStrip({
 
   return (
     <StripFrame planCount={stored.length} titleRight={titleRight} controls={controls}>
-      <AccountRows model={model} onSwitch={onSwitch} onRemove={onRemove} />
+      <AccountRows model={model} onSwitch={onSwitch} onRemove={onRemove} relogin={reloginActs} now={now} />
     </StripFrame>
   );
 });

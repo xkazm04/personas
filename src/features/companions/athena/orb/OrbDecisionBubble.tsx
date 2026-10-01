@@ -19,6 +19,7 @@ const SOURCE_ICON: Record<DecisionSource, LucideIcon> = {
   incident: TriangleAlert,
   message_attention: Mail,
   credential_reauth: KeyRound,
+  claude_relogin: KeyRound,
   adhoc: Sparkles,
 };
 

@@ -10,6 +10,8 @@
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import type { ClaudeAccountsSnapshot } from '@/lib/bindings/ClaudeAccountsSnapshot';
 import type { ClaudeAutoRotateConfig } from '@/lib/bindings/ClaudeAutoRotateConfig';
+import type { LoginProfileView } from '@/lib/bindings/LoginProfileView';
+import type { ReloginState } from '@/lib/bindings/ReloginState';
 
 const SWITCH_TIMEOUT_MS = 45_000;
 
@@ -32,3 +34,31 @@ export const removeClaudeAccount = (id: string) =>
 /** Set the auto-rotate policy. */
 export const setClaudeAutoRotate = (config: ClaudeAutoRotateConfig) =>
   invoke<ClaudeAutoRotateConfig>('fleet_claude_auto_rotate_set', { config });
+
+// ── Re-login a dead plan (spark claude-plan-switch) ──────────────────────────
+
+/** The run opens a real Chrome profile and waits for a code: slow by design. */
+const RELOGIN_TIMEOUT_MS = 120_000;
+
+/** Run a re-login for one stored plan. Resolves with the run's final state. */
+export const reloginClaudeAccount = (accountId: string) =>
+  invoke<ReloginState>('fleet_claude_relogin', { accountId }, { timeoutMs: RELOGIN_TIMEOUT_MS });
+
+export const listClaudeLoginProfiles = () =>
+  invoke<LoginProfileView[]>('fleet_claude_profile_list');
+
+/** Create or update a browser profile; `vaultCredentialId` binds the Proton mailbox login. */
+export const saveClaudeLoginProfile = (key: string, label: string, vaultCredentialId: string | null) =>
+  invoke<LoginProfileView[]>('fleet_claude_profile_save', { key, label, vaultCredentialId });
+
+/** Open the profile in a visible window so the operator can sign in by hand. */
+export const openClaudeProfileHeaded = (key: string) =>
+  invoke<void>('fleet_claude_profile_open_headed', { key });
+
+/** Point an account at its sign-in profile, code inbox profile and the unattended switch. */
+export const setClaudeAccountProfile = (
+  accountId: string, profileKey: string | null, codeInboxProfileKey: string | null, reloginUnattended: boolean,
+) =>
+  invoke<ClaudeAccountsSnapshot>('fleet_claude_account_profile_set', {
+    accountId, profileKey, codeInboxProfileKey, reloginUnattended,
+  });

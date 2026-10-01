@@ -50,11 +50,11 @@ describe('buildResourceModel', () => {
 
   it('carries each plan state: projected, unreadable and quarantined plans, and which acts each offers', () => {
     const plans = buildResourceModel(inputs()).providers[0]!.plans;
-    expect(plans.map((p) => p.state)).toEqual(['ok', 'ok', 'projected', 'unreadable', 'quarantined']);
+    expect(plans.map((p) => p.state)).toEqual(['ok', 'ok', 'projected', 'unreadable', 'quarantined', 'quarantined', 'quarantined']);
     expect(plans[2]!.windows.every((w) => w.projected)).toBe(true);
     expect(plans[3]!.windows).toEqual([]);
-    expect(plans.map((p) => p.canSwitch)).toEqual([false, true, true, true, false]);
-    expect(plans.map((p) => p.canRemove)).toEqual([false, false, false, true, true]);
+    expect(plans.map((p) => p.canSwitch)).toEqual([false, true, true, true, false, false, false]);
+    expect(plans.map((p) => p.canRemove)).toEqual([false, false, false, true, true, true, true]);
   });
 
   it('keeps a stale codex read stale: its own as-of stamp, one weekly window, no invented 5h', () => {

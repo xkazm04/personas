@@ -26,7 +26,9 @@ import { groupSessions, type SessionGrouping } from '../fleetSessionModel';
 import { buildSimCards } from './simCards';
 import { buildSimRoster, type SimRoster } from './simFleet';
 import { buildSimQueueSnapshot, buildSimSessions } from './simSessions';
-import { buildSimAccountsSnapshot, simRemoveAccount, simSwitchActive } from './simPlans';
+import {
+  buildSimAccountsSnapshot, simRelogin, simRemoveAccount, simSaveProfile, simSetProfile, simSwitchActive,
+} from './simPlans';
 import type { PersonaCardModel } from '../../monitorModel';
 
 export interface SimWorld {
@@ -118,6 +120,10 @@ export interface SimPlans {
   switchTo: (id: string) => void;
   remove: (id: string) => void;
   setAutoRotate: (config: ClaudeAutoRotateConfig) => void;
+  /** The re-login half: a run answered in the same call, links and profiles edited in place. */
+  relogin: (id: string) => void;
+  setProfile: (id: string, profileKey: string | null, inbox: string | null, unattended: boolean) => void;
+  saveProfile: (key: string, label: string, vaultCredentialId: string | null) => void;
 }
 
 /**
@@ -156,9 +162,20 @@ export function useSimPlans(enabled: boolean): SimPlans {
     [edit],
   );
 
+  const relogin = useCallback((id: string) => edit((s) => simRelogin(s, id)), [edit]);
+  const setProfile = useCallback(
+    (id: string, profileKey: string | null, inbox: string | null, unattended: boolean) =>
+      edit((s) => simSetProfile(s, id, profileKey, inbox, unattended)),
+    [edit],
+  );
+  const saveProfile = useCallback(
+    (key: string, label: string, vaultCredentialId: string | null) => edit((s) => simSaveProfile(s, key, label, vaultCredentialId)),
+    [edit],
+  );
+
   return useMemo(
-    () => ({ snapshot, switchTo, remove, setAutoRotate }),
-    [snapshot, switchTo, remove, setAutoRotate],
+    () => ({ snapshot, switchTo, remove, setAutoRotate, relogin, setProfile, saveProfile }),
+    [snapshot, switchTo, remove, setAutoRotate, relogin, setProfile, saveProfile],
   );
 }
 

@@ -20,7 +20,7 @@ import { buildSimCards } from '../simCards';
 import {
   buildSimQueueSnapshot, buildSimSessions, LONG_TITLES, SHORT_TITLES, SIM_LIVE_SESSIONS, SIM_QUEUE_CAP, SIM_QUEUED_SESSIONS,
 } from '../simSessions';
-import { buildSimAccountsSnapshot } from '../simPlans';
+import { buildSimAccountsSnapshot, simRelogin, simSaveProfile, simSetProfile } from '../simPlans';
 import { buildSimRail } from '../simRail';
 import { groupSessions } from '../../fleetSessionModel';
 import {
@@ -177,13 +177,56 @@ describe('the simulated sessions', () => {
 });
 
 describe('the simulated plans', () => {
-  it('fill the strip\'s five slots and cover its four card branches', () => {
-    const snap = buildSimAccountsSnapshot(1_700_000_000_000);
-    expect(snap.accounts).toHaveLength(5);
+  const NOW = 1_700_000_000_000;
+
+  it("fills the strip's seven slots and covers its card branches", () => {
+    const snap = buildSimAccountsSnapshot(NOW);
+    expect(snap.accounts).toHaveLength(7);
     expect(snap.accounts.filter((a) => a.isActive)).toHaveLength(1);
     expect(snap.accounts.some((a) => a.usageProjectedFromMs !== null)).toBe(true);
     expect(snap.accounts.some((a) => a.quarantineReason !== null)).toBe(true);
     expect(snap.accounts.some((a) => a.usageReason !== null && a.quarantineReason === null)).toBe(true);
+  });
+
+  it('cover every re-login state: running, needs you (two reasons) and done', () => {
+    const { accounts } = buildSimAccountsSnapshot(NOW);
+    const seen = accounts.flatMap((a) => (a.relogin ? [`${a.relogin.phase}:${a.relogin.step ?? a.relogin.reason ?? ''}`] : []));
+    expect(seen.sort()).toEqual([
+      'done:', 'needs_you:profile_cold', 'needs_you:proton_second_factor', 'running:waiting_for_code',
+    ]);
+    // Every run belongs to the account that carries it.
+    expect(accounts.every((a) => a.relogin === null || a.relogin.accountId === a.id)).toBe(true);
+  });
+
+  it('ships the profiles the plans are linked to', () => {
+    const snap = buildSimAccountsSnapshot(NOW);
+    const keys = snap.profiles.map((p) => p.key);
+    const linked = snap.accounts.flatMap((a) => [a.login?.profileKey, a.login?.codeInboxProfileKey]).filter(Boolean);
+    expect(linked.every((k) => keys.includes(k as string))).toBe(true);
+  });
+
+  it('a simulated re-login revives a linked plan and stops at profile_not_linked for an unlinked one', () => {
+    const snap = buildSimAccountsSnapshot(NOW);
+    const revived = simRelogin(snap, 'sim-plan-5', NOW).accounts.find((a) => a.id === 'sim-plan-5')!;
+    expect(revived.quarantineReason).toBeNull();
+    expect(revived.relogin).toMatchObject({ phase: 'done', startedAtMs: NOW });
+    const unlinked = simRelogin(simSetProfile(snap, 'sim-plan-5', null, null, false), 'sim-plan-5', NOW)
+      .accounts.find((a) => a.id === 'sim-plan-5')!;
+    expect(unlinked.quarantineReason).not.toBeNull();
+    expect(unlinked.relogin).toMatchObject({ phase: 'needs_you', reason: 'profile_not_linked' });
+  });
+
+  it('saves and links profiles in place', () => {
+    const snap = buildSimAccountsSnapshot(NOW);
+    const made = simSaveProfile(snap, 'home', 'Home', null);
+    expect(made.profiles.map((p) => p.key)).toContain('home');
+    const bound = simSaveProfile(made, 'home', 'Home', 'sim-vault-proton');
+    expect(bound.profiles.filter((p) => p.key === 'home')).toHaveLength(1);
+    expect(bound.profiles.find((p) => p.key === 'home')!.vaultCredentialId).toBe('sim-vault-proton');
+    const linked = simSetProfile(bound, 'sim-plan-4', 'home', 'proton-inbox', true);
+    expect(linked.accounts.find((a) => a.id === 'sim-plan-4')!.login).toEqual({
+      profileKey: 'home', codeInboxProfileKey: 'proton-inbox', reloginUnattended: true,
+    });
   });
 });
 

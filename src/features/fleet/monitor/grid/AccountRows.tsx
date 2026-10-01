@@ -29,293 +29,53 @@
 // A PROVIDER WITH NOTHING TO METER IS STILL ONE ROW: its mark, and the reason in
 // words ("Not installed", "No sessions yet") where the account would be. Never a
 // zeroed meter — 0% is a reading, and "not installed" is not.
+//
+// A DEAD CLAUDE PLAN IS NOT A DEAD END. A quarantined row says why in words and
+// offers Re-login; while a run is in flight it shows the step; when a human is
+// needed it says what for, in words (never a toast: the orb carries the quick
+// decision, this row the detail); a plan's sign-in settings live behind a
+// hover-revealed act. The row itself is `usage/PlanRow`; this file owns what
+// several rows share: the two confirms and the settings dialog.
 
-import { useCallback, useState, type MouseEvent } from 'react';
-import { CalendarDays, Timer, Trash2 } from 'lucide-react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
-import { Numeric } from '@/features/shared/components/display/Numeric';
-import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { GhostRow, ROW_ACTIVE, ROW_BOX, ROW_REST } from './UsageStripShell';
-import {
-  FILL, PACE_ICON, PACE_TONE, TONE_TEXT, cliReasonHint, cliReasonLabel, providerName, reasonLabel, windowSentence,
-} from './usageBits';
-import { ProviderIcon } from './usage/ProviderIcon';
-import {
-  windowIn, type PlanModel, type ProviderModel, type ResourceModel, type WindowModel,
-} from './usage/useResourceModel';
+import { GhostRow } from './UsageStripShell';
+import { EmptyProviderRow } from './usage/RowParts';
+import { PlanRow } from './usage/PlanRow';
+import { ProfileSettings } from './usage/ProfileSettings';
+import type { ReloginActs } from './usage/reloginActs';
+import type { PlanModel, ResourceModel } from './usage/useResourceModel';
 
 interface Props {
   model: ResourceModel;
   onSwitch: (id: string) => Promise<unknown>;
   onRemove: (id: string) => Promise<unknown>;
+  /** The re-login acts; the strip passes the real ones or the simulation's. */
+  relogin?: ReloginActs;
+  /** The strip's clock (a done re-login decays against it). */
+  now?: number;
 }
 
 type Pending = { kind: 'switch' | 'remove'; plan: PlanModel } | null;
 
-/** The provider's mark, named: "OpenAI Codex 0.41.0", plus — for an observed CLI — that it is read-only and how fresh. */
-function ProviderMark({ provider }: { provider: ProviderModel }) {
-  const { t } = useTranslation();
-  const name = providerName(t, provider.id);
-  const label = provider.version ? `${name} ${provider.version}` : name;
-  const tip = provider.readOnly ? (
-    <span className="flex max-w-xs flex-col gap-0.5">
-      <span>{label}</span>
-      <span className="opacity-70">{t.monitor.usage_read_only_hint}</span>
-      {provider.plans.length > 0 && (
-        <span className="opacity-70">
-          {provider.asOfMs === null
-            ? t.monitor.usage_cli_never_reported
-            : <>{t.monitor.usage_cli_reported} <RelativeTime timestamp={provider.asOfMs} /></>}
-        </span>
-      )}
-    </span>
-  ) : label;
-  return (
-    <Tooltip content={tip}>
-      <span role="img" aria-label={label} className="inline-flex flex-shrink-0 items-center text-foreground" data-testid="fleet-usage-provider">
-        <ProviderIcon provider={provider.id} />
-      </span>
-    </Tooltip>
-  );
-}
+/** No profiles, no acts: a strip that does not wire re-login still renders every row. */
+const NO_ACTS: ReloginActs = {
+  profiles: [],
+  relogin: () => Promise.resolve(),
+  openSignIn: () => Promise.resolve(),
+  saveProfile: () => Promise.resolve(),
+  setProfile: () => Promise.resolve(),
+  listVaultLogins: () => Promise.resolve([]),
+};
 
-// A cluster is exactly as wide as its glyphs — no fixed width, no spacer — so
-// the email keeps every pixel the stats do not use. Two slots stay fixed so the
-// rows of one column still line up: the figure (`FIGURE_BOX`, 3ch of tabular
-// digits — "99%" fits, "100%" overflows it by one character, which only a
-// capped window ever shows) and the pace slot (`PACE_BOX`, the glyph's own size,
-// held even when there is no pace so a paceless row does not shift).
-const CLUSTER_BOX = 'inline-flex flex-shrink-0 items-center gap-0.5 typo-caption';
-const FIGURE_BOX = 'inline-flex min-w-[3ch] items-baseline justify-end tabular-nums';
-const PACE_BOX = 'inline-flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center';
-/** The row's right-hand group: both clusters and the Forget act, packed tight against the row's right edge. */
-const STATS_GROUP = 'ml-auto flex flex-shrink-0 items-center gap-1.5';
-
-/** One window as three glyphs: its icon, the percent in its tone, the pace. No bar. */
-function WindowCluster({
-  w, slot, projectedHint,
-}: {
-  w: WindowModel | null;
-  slot: 'short' | 'long';
-  /** Why the figure is an estimate, when it is one. */
-  projectedHint: string | null;
-}) {
-  const { t, tx } = useTranslation();
-  const Icon = slot === 'short' ? Timer : CalendarDays;
-  if (!w) {
-    // The plan has no such window (Codex reports one, not two): the same
-    // compact shape as a read cluster, so the rows stay aligned, and it says so
-    // rather than "0%".
-    return (
-      <Tooltip content={t.monitor.usage_window_none}>
-        <span
-          role="img"
-          aria-label={t.monitor.usage_window_none}
-          className={`${CLUSTER_BOX} text-foreground opacity-40`}
-          data-testid="fleet-usage-window"
-          data-window={slot}
-          data-empty
-        >
-          <Icon className="h-3 w-3 flex-shrink-0" aria-hidden />
-          <span aria-hidden className={FIGURE_BOX}>—</span>
-          <span aria-hidden className={PACE_BOX} />
-        </span>
-      </Tooltip>
-    );
-  }
-  const sentence = windowSentence(t, tx, w);
-  const Pace = w.pace ? PACE_ICON[w.pace] : null;
-  return (
-    <Tooltip
-      content={w.projected && projectedHint ? (
-        <span className="flex max-w-xs flex-col gap-0.5">
-          <span>{sentence}</span>
-          <span className="opacity-70">{projectedHint}</span>
-        </span>
-      ) : sentence}
-    >
-      <span
-        role="img"
-        aria-label={sentence}
-        className={`${CLUSTER_BOX} text-foreground`}
-        data-testid="fleet-usage-window"
-        data-window={slot}
-        data-tone={w.tone}
-        data-approx={w.projected || undefined}
-      >
-        <Icon className="h-3 w-3 flex-shrink-0 opacity-60" aria-hidden />
-        <span
-          className={`${FIGURE_BOX} ${TONE_TEXT[w.tone]} ${w.projected ? 'opacity-70' : ''}`}
-          data-testid="fleet-usage-percent"
-        >
-          {w.projected && <span aria-hidden>≈</span>}
-          <Numeric value={w.usedPct} unit="percent" precision={0} />
-        </span>
-        <span className={`${PACE_BOX} ${w.pace ? PACE_TONE[w.pace] : ''}`}>
-          {Pace && <Pace className="h-3.5 w-3.5" aria-hidden data-testid="fleet-usage-pace" data-pace={w.pace} />}
-        </span>
-      </span>
-    </Tooltip>
-  );
-}
-
-/** The row's bottom border: the 7-day window as a 2px fill. An empty track when the plan has none. */
-function WeekBorder({ w }: { w: WindowModel | null }) {
-  return (
-    <span
-      aria-hidden
-      className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 overflow-hidden bg-border/40"
-      data-testid="fleet-usage-week-track"
-    >
-      {w && (
-        <span
-          className={`block h-full transition-[width] duration-500 motion-reduce:transition-none ${FILL[w.tone]} ${w.projected ? 'opacity-50' : ''}`}
-          style={{ width: `${w.usedPct}%` }}
-          data-testid="fleet-usage-week-fill"
-          data-tone={w.tone}
-        />
-      )}
-    </span>
-  );
-}
-
-function PlanRow({
-  provider, plan, recede, ask,
-}: {
-  provider: ProviderModel;
-  plan: PlanModel;
-  /** A standby plan beside a known live one — sit back until looked at. */
-  recede: boolean;
-  ask: (kind: 'switch' | 'remove', plan: PlanModel) => void;
-}) {
-  const { t, tx, language } = useTranslation();
-  const short = windowIn(plan, 'short');
-  const long = windowIn(plan, 'long');
-  const name = plan.name ?? (provider.readOnly ? providerName(t, provider.id) : t.monitor.usage_plan_live_login);
-  const trouble = plan.state === 'quarantined' || plan.state === 'unreadable';
-  const troubleLabel = plan.state === 'quarantined' ? t.monitor.usage_accounts_quarantined : t.monitor.usage_unavailable;
-  const troubleHint = plan.state === 'quarantined' ? t.monitor.usage_accounts_quarantined_hint : reasonLabel(t, plan.reason);
-  const projectedHint = plan.state !== 'projected'
-    ? null
-    : provider.readOnly
-      ? t.monitor.usage_cli_projected_hint
-      // The app's language, not the host OS locale (timestamp-display).
-      : tx(t.monitor.usage_projected_hint, { time: new Date(plan.asOfMs ?? 0).toLocaleString(language) });
-  const canSwitch = !provider.readOnly && plan.canSwitch;
-  const canRemove = !provider.readOnly && plan.canRemove;
-  const nameClass = `min-w-0 truncate text-left typo-body text-foreground ${plan.isActive ? 'font-medium' : ''}`;
-
-  const onSwitch = (e: MouseEvent) => {
-    e.stopPropagation();
-    ask('switch', plan);
-  };
-
-  return (
-    <div
-      role="group"
-      aria-label={[providerName(t, provider.id), name, trouble ? troubleLabel : null].filter(Boolean).join(' · ')}
-      // Pointer convenience only: the whole row is the target. The keyboard's
-      // door is the account-name <button> inside it, which carries the act's name.
-      onClick={canSwitch ? onSwitch : undefined}
-      className={`${ROW_BOX} ${plan.isActive ? ROW_ACTIVE : ROW_REST} group/row transition-[opacity,background-color] ${
-        recede ? 'opacity-60 hover:opacity-100 focus-within:opacity-100' : ''
-      } ${canSwitch ? 'cursor-pointer hover:bg-black/30' : ''}`}
-      data-testid="fleet-usage-account"
-      data-provider={provider.id}
-      data-account={plan.id}
-      data-active={plan.isActive}
-      data-state={plan.state}
-    >
-      <ProviderMark provider={provider} />
-      <span className="flex min-w-0 flex-1 items-center gap-1.5">
-        <Tooltip content={canSwitch ? `${name} · ${t.monitor.usage_accounts_switch}` : name}>
-          {canSwitch ? (
-            <button
-              type="button"
-              onClick={onSwitch}
-              aria-label={tx(t.monitor.usage_accounts_switch_aria, { email: name })}
-              className={`focus-ring rounded-interactive ${nameClass}`}
-              data-testid="fleet-usage-switch"
-            >
-              {name}
-            </button>
-          ) : (
-            <span className={nameClass} data-testid="fleet-usage-name">{name}</span>
-          )}
-        </Tooltip>
-        {trouble && (
-          <Tooltip content={troubleHint}>
-            <span className="flex-shrink-0 whitespace-nowrap typo-caption text-status-warning" data-testid="fleet-usage-trouble">
-              {troubleLabel}
-            </span>
-          </Tooltip>
-        )}
-      </span>
-      {(!trouble || canRemove) && (
-        <span className={STATS_GROUP} data-testid="fleet-usage-stats">
-          {!trouble && (
-            <>
-              <WindowCluster w={short} slot="short" projectedHint={projectedHint} />
-              <WindowCluster w={long} slot="long" projectedHint={projectedHint} />
-            </>
-          )}
-          {canRemove && (
-            <Tooltip content={t.monitor.usage_accounts_remove_hint}>
-              {/* Hidden, it takes NO width — the email gets it back. It opens on
-                  row hover and on focus anywhere in the row; tabbing onto the
-                  button is itself focus-within, so it is never a zero-width
-                  focus target. */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  ask('remove', plan);
-                }}
-                aria-label={tx(t.monitor.usage_accounts_remove_aria, { email: name })}
-                className="focus-ring inline-flex h-5 w-0 flex-shrink-0 items-center justify-center overflow-hidden rounded-interactive text-foreground opacity-0 hover:text-status-error focus-visible:w-5 focus-visible:opacity-100 group-hover/row:w-5 group-hover/row:opacity-70 group-focus-within/row:w-5 group-focus-within/row:opacity-70"
-                data-testid="fleet-usage-remove"
-              >
-                <Trash2 className="h-3 w-3 flex-shrink-0" aria-hidden />
-              </button>
-            </Tooltip>
-          )}
-        </span>
-      )}
-      <WeekBorder w={long} />
-    </div>
-  );
-}
-
-/** A provider with nothing to meter: its mark, and why, in words. Still one row. */
-function EmptyProviderRow({ provider }: { provider: ProviderModel }) {
-  const { t } = useTranslation();
-  const reason = provider.emptyReason ?? 'unreadable';
-  const label = cliReasonLabel(t, reason);
-  return (
-    <div
-      role="group"
-      aria-label={`${providerName(t, provider.id)} · ${label}`}
-      className={`${ROW_BOX} ${ROW_REST}`}
-      data-testid="fleet-usage-empty"
-      data-provider={provider.id}
-      data-reason={reason}
-    >
-      <ProviderMark provider={provider} />
-      <Tooltip content={cliReasonHint(t, reason)}>
-        <span className="min-w-0 flex-1 truncate typo-body text-foreground opacity-60">{label}</span>
-      </Tooltip>
-      <WeekBorder w={null} />
-    </div>
-  );
-}
-
-export function AccountRows({ model, onSwitch, onRemove }: Props) {
+export function AccountRows({ model, onSwitch, onRemove, relogin = NO_ACTS, now = Date.now() }: Props) {
   const { t, tx } = useTranslation();
   const [pending, setPending] = useState<Pending>(null);
+  const [settings, setSettings] = useState<PlanModel | null>(null);
   const cancel = useCallback(() => setPending(null), []);
   const ask = useCallback((kind: 'switch' | 'remove', plan: PlanModel) => setPending({ kind, plan }), []);
+  const closeSettings = useCallback(() => setSettings(null), []);
 
   const confirm = useCallback(async () => {
     if (!pending) return;
@@ -332,12 +92,12 @@ export function AccountRows({ model, onSwitch, onRemove }: Props) {
   return (
     <>
       {model.providers.map((provider) => {
-        // A read that has not settled: a ghost row under the permanent header — never a spinner.
+        // A read that has not settled: a ghost row under the permanent header, never a spinner.
         if (provider.pending) return <GhostRow key={provider.id} />;
         if (provider.plans.length === 0) return <EmptyProviderRow key={provider.id} provider={provider} />;
         // Receding exists to make the LIVE plan stand out. Where no plan is known
         // to be live (an install whose CLI never wrote an account uuid; a read-only
-        // CLI, which has no such notion) nothing recedes — dimming every row would
+        // CLI, which has no such notion) nothing recedes: dimming every row would
         // read as "every plan is stale" rather than "we cannot tell which is live".
         const hasActive = provider.plans.some((p) => p.isActive);
         return provider.plans.map((plan) => (
@@ -347,6 +107,9 @@ export function AccountRows({ model, onSwitch, onRemove }: Props) {
             plan={plan}
             recede={hasActive && !plan.isActive}
             ask={ask}
+            acts={relogin}
+            now={now}
+            onSettings={setSettings}
           />
         ));
       })}
@@ -371,6 +134,7 @@ export function AccountRows({ model, onSwitch, onRemove }: Props) {
           onCancel={cancel}
         />
       )}
+      {settings && <ProfileSettings plan={settings} acts={relogin} onClose={closeSettings} />}
     </>
   );
 }

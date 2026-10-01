@@ -22,6 +22,7 @@
 
 import { useMemo } from 'react';
 import type { ClaudeAccountsSnapshot } from '@/lib/bindings/ClaudeAccountsSnapshot';
+import type { AccountLoginLink } from '@/lib/bindings/AccountLoginLink';
 import type { ClaudeAccountView } from '@/lib/bindings/ClaudeAccountView';
 import type { ClaudeUsageSnapshot } from '@/lib/bindings/ClaudeUsageSnapshot';
 import type { ClaudeUsageWindow } from '@/lib/bindings/ClaudeUsageWindow';
@@ -29,6 +30,7 @@ import type { CliProvider } from '@/lib/bindings/CliProvider';
 import type { CliProviderUsage } from '@/lib/bindings/CliProviderUsage';
 import type { CliUsageReason } from '@/lib/bindings/CliUsageReason';
 import type { CliUsageSnapshot } from '@/lib/bindings/CliUsageSnapshot';
+import type { ReloginState } from '@/lib/bindings/ReloginState';
 import { meterTone, orderWindows, pace, windowProgress, type MeterTone, type Pace } from '../usageModel';
 import { CLI_PROVIDERS } from './cliProviders';
 
@@ -73,6 +75,9 @@ export interface PlanModel {
   /** Claude only: the plan is not live and not quarantined / nothing could be read for it. */
   canSwitch: boolean;
   canRemove: boolean;
+  /** Claude only: which browser profile signs the plan in, and the latest re-login run. */
+  login: AccountLoginLink | null;
+  relogin: ReloginState | null;
 }
 
 export interface ProviderModel {
@@ -161,6 +166,8 @@ function claudePlan(a: ClaudeAccountView, now: number): PlanModel {
     asOfMs,
     canSwitch: !a.isActive && !quarantined,
     canRemove: unreadable && !a.isActive,
+    login: a.login,
+    relogin: a.relogin,
   };
 }
 
@@ -182,11 +189,13 @@ function claudeProvider(inputs: ResourceInputs): ProviderModel {
       asOfMs: single.fetchedAtMs,
       canSwitch: false,
       canRemove: false,
+      login: null,
+      relogin: null,
     }];
   } else if (inputs.claudeFailed) {
     plans = [{
       id: 'live', name: accounts?.liveEmail ?? null, slot: null, isActive: true, state: 'unreadable',
-      reason: 'ipc', windows: [], asOfMs: null, canSwitch: false, canRemove: false,
+      reason: 'ipc', windows: [], asOfMs: null, canSwitch: false, canRemove: false, login: null, relogin: null,
     }];
   }
   return {
@@ -234,6 +243,8 @@ function cliProvider(id: CliProvider, usage: CliProviderUsage | undefined, settl
       asOfMs: usage.asOfMs,
       canSwitch: false,
       canRemove: false,
+      login: null,
+      relogin: null,
     }],
   };
 }

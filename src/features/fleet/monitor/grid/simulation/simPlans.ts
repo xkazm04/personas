@@ -10,8 +10,12 @@
 //            half-strength bottom border;
 //   slot 4 — a plan the endpoint refused (`usageReason`, no projection) —
 //            the unreadable branch, which is the only one that offers Forget;
-//   slot 5 — a QUARANTINED plan (dead refresh token): says "Needs login" in
-//            words, and offers no switch.
+//   slot 5 — a QUARANTINED plan (dead refresh token) whose last re-login stopped
+//            at NEEDS YOU / profile_cold: the reason in words, Re-login and Open
+//            sign-in window, and no switch;
+//   slot 6 — a quarantined plan with a re-login RUNNING (waiting for the code);
+//   slot 7 — a quarantined plan at NEEDS YOU / proton_second_factor;
+//   slot 2 also carries a DONE re-login ("Signed in again", which decays).
 //
 // The auto-rotate row and a last-rotation stamp come along with it, because
 // `UsageStrip` renders its auto-rotate controls only in multi-plan mode and they,
@@ -21,6 +25,9 @@ import type { ClaudeAccountsSnapshot } from '@/lib/bindings/ClaudeAccountsSnapsh
 import type { ClaudeAccountView } from '@/lib/bindings/ClaudeAccountView';
 import type { ClaudeUsageWindow } from '@/lib/bindings/ClaudeUsageWindow';
 import type { CliUsageSnapshot } from '@/lib/bindings/CliUsageSnapshot';
+import type { LoginProfileView } from '@/lib/bindings/LoginProfileView';
+import type { ReloginReason } from '@/lib/bindings/ReloginReason';
+import type { ReloginState } from '@/lib/bindings/ReloginState';
 
 const HOUR_MS = 3_600_000;
 const FIVE_HOUR_MS = 5 * HOUR_MS;
@@ -53,11 +60,34 @@ function account(view: Partial<ClaudeAccountView> & Pick<ClaudeAccountView, 'id'
     usageFetchedAtMs: null,
     usageProjectedFromMs: null,
     lastSwitchedAtMs: null,
+    login: null,
+    relogin: null,
     ...view,
   };
 }
 
-/** The five plans, in slot order. */
+function relogin(
+  accountId: string, now: number, phase: ReloginState['phase'],
+  extra: Partial<Pick<ReloginState, 'step' | 'reason'>> = {},
+): ReloginState {
+  return { accountId, phase, step: null, reason: null, trigger: 'manual', startedAtMs: now - 20_000, ...extra };
+}
+
+/** The browser profiles the simulated plans are linked to. */
+export function buildSimProfiles(now = Date.now()): LoginProfileView[] {
+  return [
+    { key: 'work-chrome', label: 'Work Chrome', vaultCredentialId: null, lastWarmAtMs: now - 3 * HOUR_MS, lastResult: 'ok' },
+    { key: 'proton-inbox', label: 'Proton inbox', vaultCredentialId: 'sim-vault-proton', lastWarmAtMs: now - 26 * HOUR_MS, lastResult: 'ok' },
+  ];
+}
+
+/** The simulated vault logins the settings dialog can bind to a Proton profile. */
+export const SIM_VAULT_LOGINS = [
+  { id: 'sim-vault-proton', name: 'Proton mailbox (simulated)' },
+  { id: 'sim-vault-other', name: 'Second mailbox (simulated)' },
+];
+
+/** The seven plans, in slot order. */
 export function buildSimAccounts(now = Date.now()): ClaudeAccountView[] {
   return [
     account({
@@ -78,6 +108,8 @@ export function buildSimAccounts(now = Date.now()): ClaudeAccountView[] {
       id: 'sim-plan-2', email: 'fleet.two@simulated.test', slot: 2,
       usage: windows(now, 81, 63, 1.1 * HOUR_MS),
       usageFetchedAtMs: now - 120_000,
+      login: { profileKey: 'work-chrome', codeInboxProfileKey: null, reloginUnattended: false },
+      relogin: relogin('sim-plan-2', now, 'done'),
     }),
     account({
       id: 'sim-plan-3', email: 'fleet.three@simulated.test', slot: 3,
@@ -95,6 +127,24 @@ export function buildSimAccounts(now = Date.now()): ClaudeAccountView[] {
       quarantineReason: 'refresh_failed',
       usageReason: 'oauth',
       usageFetchedAtMs: now - 600_000,
+      login: { profileKey: 'work-chrome', codeInboxProfileKey: null, reloginUnattended: false },
+      relogin: relogin('sim-plan-5', now, 'needs_you', { reason: 'profile_cold' }),
+    }),
+    account({
+      id: 'sim-plan-6', email: 'fleet.six@simulated.test', slot: 6,
+      quarantineReason: 'refresh_failed',
+      usageReason: 'oauth',
+      usageFetchedAtMs: now - 700_000,
+      login: { profileKey: 'work-chrome', codeInboxProfileKey: 'proton-inbox', reloginUnattended: true },
+      relogin: relogin('sim-plan-6', now, 'running', { step: 'waiting_for_code' }),
+    }),
+    account({
+      id: 'sim-plan-7', email: 'fleet.seven@simulated.test', slot: 7,
+      quarantineReason: 'invalid_grant',
+      usageReason: 'oauth',
+      usageFetchedAtMs: now - 800_000,
+      login: { profileKey: 'work-chrome', codeInboxProfileKey: 'proton-inbox', reloginUnattended: false },
+      relogin: relogin('sim-plan-7', now, 'needs_you', { reason: 'proton_second_factor' }),
     }),
   ];
 }
@@ -107,6 +157,7 @@ export function buildSimAccountsSnapshot(now = Date.now()): ClaudeAccountsSnapsh
     liveCaptured: true,
     livePresent: true,
     accounts,
+    profiles: buildSimProfiles(now),
     autoRotate: { enabled: true, thresholdPct: 80, cooldownSecs: 900 },
     lastRotation: {
       atMs: now - 37 * 60_000,
@@ -140,6 +191,56 @@ export function simSwitchActive(snapshot: ClaudeAccountsSnapshot, id: string): C
 /** Forget a plan. Slots are NOT renumbered — the real backend does not either. */
 export function simRemoveAccount(snapshot: ClaudeAccountsSnapshot, id: string): ClaudeAccountsSnapshot {
   return { ...snapshot, accounts: snapshot.accounts.filter((a) => a.id !== id) };
+}
+
+/**
+ * A simulated re-login, resolved the way a real one would end for the account's
+ * link: a plan with a linked profile comes back ("Signed in again", usage read
+ * again); one with none stops at needs-you / `profile_not_linked`. No timers: the
+ * run ends in the same call, so a click is always answered.
+ */
+export function simRelogin(snapshot: ClaudeAccountsSnapshot, id: string, now = Date.now()): ClaudeAccountsSnapshot {
+  const linked = snapshot.accounts.find((a) => a.id === id)?.login?.profileKey != null;
+  const reason: ReloginReason = 'profile_not_linked';
+  return {
+    ...snapshot,
+    accounts: snapshot.accounts.map((a) => {
+      if (a.id !== id) return a;
+      if (!linked) return { ...a, relogin: { ...relogin(id, now, 'needs_you', { reason }), startedAtMs: now } };
+      return {
+        ...a,
+        quarantineReason: null,
+        usageReason: null,
+        usage: windows(now, 9, 14, 4 * HOUR_MS),
+        usageFetchedAtMs: now,
+        relogin: { ...relogin(id, now, 'done'), startedAtMs: now },
+      };
+    }),
+  };
+}
+
+/** Link a plan to its profiles, as `fleet_claude_account_profile_set` would. */
+export function simSetProfile(
+  snapshot: ClaudeAccountsSnapshot, id: string, profileKey: string | null, codeInboxProfileKey: string | null,
+  reloginUnattended: boolean,
+): ClaudeAccountsSnapshot {
+  return {
+    ...snapshot,
+    accounts: snapshot.accounts.map((a) =>
+      a.id === id ? { ...a, login: { profileKey, codeInboxProfileKey, reloginUnattended } } : a),
+  };
+}
+
+/** Create or update a profile, as `fleet_claude_profile_save` would. */
+export function simSaveProfile(
+  snapshot: ClaudeAccountsSnapshot, key: string, label: string, vaultCredentialId: string | null,
+): ClaudeAccountsSnapshot {
+  const next: LoginProfileView = { key, label, vaultCredentialId, lastWarmAtMs: null, lastResult: null };
+  const exists = snapshot.profiles.some((p) => p.key === key);
+  return {
+    ...snapshot,
+    profiles: exists ? snapshot.profiles.map((p) => (p.key === key ? { ...p, label, vaultCredentialId } : p)) : [...snapshot.profiles, next],
+  };
 }
 
 // ── The other CLIs ───────────────────────────────────────────────────────────
