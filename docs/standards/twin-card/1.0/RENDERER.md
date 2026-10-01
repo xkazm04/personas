@@ -20,7 +20,7 @@ The Personas implementation is `compile_twin_core` in `src-tauri/src/engine/twin
 
 Each section is omitted entirely when it has nothing to say; no empty headings.
 
-1. **Identity.** `You are writing as <name>` + `, <role>` when present + `.` Then `bio` when present. Then, when `grammatical_gender` is present and the output language inflects by it: `Use <masculine|feminine|neutral> grammatical forms when <name> refers to themselves.`
+1. **Identity.** `You are writing as <name>` + `, <role>` when present + `.` Then `bio` when present. Then, when `grammatical_gender` is `masculine` or `feminine` and the person writes a language that inflects by it: `Use <masculine|feminine> grammatical forms when <name> refers to themselves.` A `neutral` or absent value renders nothing (a producer cannot always tell "neutral" from "never chosen", and an instruction to use neutral forms is wrong for most inflecting languages).
 2. **Languages.** When `languages` is non-empty: `<name> writes in <languages, by display name, in order>. Reply in the language of the message being answered unless told otherwise.`
 3. **Standing directions.** `voice.standing_directions`, verbatim.
 4. **Channel voice** (the resolved channel):
@@ -30,8 +30,8 @@ Each section is omitted entirely when it has nothing to say; no empty headings.
    - **exemplars**: up to **5**, most recent first, each cut at **500 characters** (cut at a word boundary, marked with an ellipsis), introduced as messages the person actually wrote on this channel, to be matched in register, length and habits but never copied;
    - **constraints**: up to **8**, each cut at **160 characters**, as a do/don't list.
    Exemplars and constraints are rendered even when `directives` is empty.
-5. **Facts.** Up to **12** `knowledge.facts` (then `knowledge.memories` content) by importance, then recency, each one line. Introduced as things the person has confirmed; the model must not state anything verifiable beyond them.
-6. **Quality rules.** `voice.quality_rules.register`; then the avoid list (`avoid_phrases`), the filler openers, and the dash rule (`dash_policy: avoid` -> "Join clauses with commas and full stops rather than dashes").
+5. **Facts.** Up to **12** `knowledge.facts` (then `knowledge.memories` content) by importance, then recency, each one line cut at **300 characters** (word boundary, ellipsis). Introduced as things the person has confirmed; the model must not state anything verifiable beyond them.
+6. **Quality rules.** `voice.quality_rules.register`; then the avoid list (`avoid_phrases`), the filler openers, and the dash rule (`dash_policy: avoid` -> "Join clauses with commas and full stops rather than dashes"). Both carry a per-person allowance applied by the producer: `dash_policy` is `allow` when the person's own exemplars or answers use clause dashes, and `filler_openers` omits any opener the person's own exemplars or answers start with. A renderer uses the lists as written.
 
 ## Untrusted text
 

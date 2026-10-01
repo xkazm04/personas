@@ -14,10 +14,11 @@ use crate::commands::infrastructure::twin::{
 };
 use crate::db::models::{
     SetupGoal, SetupKindStat, SetupObservation, SetupReadiness, SetupStep, TwinChannel,
-    TwinPendingMemory, TwinProfile, TwinTone,
+    TwinPendingMemory, TwinTone,
 };
 use crate::db::repos::twin as twin_repo;
 use crate::db::DbPool;
+use crate::engine::twin_prompt::{compile_twin_core, TwinPromptInput, DEFAULT_CHANNEL};
 use crate::error::AppError;
 use personas_core::utils::text::truncate_on_char_boundary;
 
@@ -27,14 +28,14 @@ use super::skeleton;
 const MEMORY_LIMIT: usize = 8;
 /// Preview length for a memory line.
 const PREVIEW_CHARS: usize = 200;
-/// Bio length in the compact (assess / refill) context.
-const COMPACT_BIO_CHARS: usize = 300;
 /// A question or answer as replayed in a transcript.
 const EXCHANGE_Q_CHARS: usize = 160;
 const EXCHANGE_A_CHARS: usize = 240;
 /// The deep pass sees this many transcript steps; the per-answer calls fewer.
 pub(crate) const PLAN_TRANSCRIPT: i64 = 30;
 pub(crate) const RECENT_EXCHANGES: usize = 6;
+/// The on-file Bio line when a bio exists: its text is in the twin brief.
+const BIO_IN_BRIEF: &str = "written (quoted in the brief under Voice)";
 
 /// What is on file for the twin, read once per job.
 pub(crate) struct OnFile {
@@ -48,6 +49,10 @@ pub(crate) struct OnFile {
     pub memory_count: usize,
     pub memory_block: String,
     pub tone_channels: Vec<String>,
+    /// The twin core every draft in their voice gets (`engine::twin_prompt`,
+    /// default channel). A suggested answer is such a draft, so the question
+    /// rules hand it to the guide.
+    pub voice_core: String,
 }
 
 impl OnFile {
@@ -56,23 +61,27 @@ impl OnFile {
         twin_id: &str,
         locale: Option<&str>,
     ) -> Result<Self, AppError> {
-        let profile = twin_repo::get_profile_by_id(pool, twin_id)?;
+        let input = TwinPromptInput::from_db(pool, twin_id, DEFAULT_CHANNEL)?;
         let tones = twin_repo::list_tones(pool, twin_id)?;
         let channels = twin_repo::list_channels(pool, twin_id)?;
         let memories = twin_repo::list_pending_memories(pool, twin_id, Some("approved"), None)?;
         Ok(Self::from_parts(
-            &profile, &tones, &channels, &memories, locale,
+            &input, &tones, &channels, &memories, locale,
         ))
     }
 
+    /// The setup guide's own status report (what is set, what is missing, how
+    /// many samples back each channel), with identity read through the same
+    /// view the drafting lanes use.
     pub(crate) fn from_parts(
-        profile: &TwinProfile,
+        input: &TwinPromptInput,
         tones: &[TwinTone],
         channels: &[TwinChannel],
         memories: &[TwinPendingMemory],
         locale: Option<&str>,
     ) -> Self {
-        let (guide_language, twin_language) = setup_languages(profile, locale);
+        let identity = &input.identity;
+        let (guide_language, twin_language) = setup_languages(&identity.languages, locale);
         let text_or = |v: Option<&str>, fallback: &str| {
             v.map(str::trim)
                 .filter(|s| !s.is_empty())
@@ -111,10 +120,20 @@ impl OnFile {
             })
             .collect::<Vec<_>>()
             .join("\n");
+        // The bio is rendered once, by the compiler, inside the brief the
+        // question rules carry; the status line only says whether it exists.
+        let bio_written = identity
+            .bio
+            .as_deref()
+            .is_some_and(|b| !b.trim().is_empty());
         Self {
-            name: profile.name.trim().to_string(),
-            role: text_or(profile.role.as_deref(), "not given"),
-            bio: text_or(profile.bio.as_deref(), "nothing written yet"),
+            name: identity.name.trim().to_string(),
+            role: text_or(identity.role.as_deref(), "not given"),
+            bio: if bio_written {
+                BIO_IN_BRIEF.to_string()
+            } else {
+                "nothing written yet".to_string()
+            },
             guide_language,
             twin_language,
             tone_block: setup_tone_block(tones),
@@ -122,6 +141,7 @@ impl OnFile {
             memory_count: memories.len(),
             memory_block,
             tone_channels: setup_tone_channels(channels, tones),
+            voice_core: compile_twin_core(input),
         }
     }
 
@@ -147,7 +167,7 @@ impl OnFile {
             "Name: {}\nRole: {}\nBio: {}\nWrites in: {}\n{}\n{}\nApproved memories: {}",
             self.name,
             self.role,
-            truncate_on_char_boundary(&self.bio, COMPACT_BIO_CHARS),
+            self.bio,
             self.twin_language,
             self.tone_block,
             self.channel_block,
@@ -308,7 +328,7 @@ fn question_rules(on_file: &OnFile) -> String {
          to null, and offer two or three suggestions.\n\n\
          A suggestion is an answer they could send back as it is. Make the options genuinely different from \
          each other (different choices, not one answer reworded), keep each as short as their real answer would \
-         be, and write it the way {name} would, using what's on file. Never write one as an assistant would. \
+         be, and write it the way {name} would, from the brief under Voice. Never write one as an assistant would. \
          Give each a \"reason\" of a few words saying what picking it tells the twin. At most 3.\n\n\
          \"kind\" is one of: scene (take me to a moment), opinion, reply_drill (a write step answering \
          \"incoming\"), fact, rule (an Always / Never), preference (a choice between concrete variants). \
@@ -316,11 +336,15 @@ fn question_rules(on_file: &OnFile) -> String {
          Language\n\
          Write \"question\" and \"incoming\" in {guide}. Write every suggestion and every proposed value in \
          {twin}, the way {name} writes. Write natively in each language instead of translating from English.\n\n\
-         Voice\n{plain}",
+         Voice\n\
+         Write the question and the incoming message plainly, in the register the closing rules of the brief \
+         below describe. Every suggestion and every proposed value is a draft in {name}'s voice: write it from \
+         this brief, the same one every draft in their voice gets.\n\
+         <twin-brief>\n{core}\n</twin-brief>",
         channels = on_file.tone_channels.join(", "),
         guide = on_file.guide_language,
         twin = on_file.twin_language,
-        plain = crate::commands::infrastructure::twin_voice::plain_voice(),
+        core = on_file.voice_core,
     )
 }
 
@@ -593,12 +617,45 @@ pub(crate) fn build_refill_prompt(input: &RefillInput, repair: Option<&str>) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::db::models::TwinProfile;
+    use crate::engine::twin_prompt::fixture;
+
+    fn ada() -> TwinProfile {
+        TwinProfile {
+            id: "t".into(),
+            name: "Ada".into(),
+            slug: "ada".into(),
+            bio: Some("b".repeat(2000)),
+            role: Some("Engineer".into()),
+            languages: Some(r#"["cs"]"#.into()),
+            pronouns: None,
+            obsidian_subpath: "personas/twins/ada".into(),
+            is_active: true,
+            knowledge_base_id: None,
+            training_directives: None,
+            created_at: String::new(),
+            updated_at: String::new(),
+        }
+    }
+
+    /// What this test has always carried on file (Ada, an engineer, a
+    /// 2000-char bio, writes Czech), now rendered once, by the compiler.
+    fn fixture_core() -> String {
+        compile_twin_core(&TwinPromptInput::from_rows(
+            &ada(),
+            &[],
+            &[],
+            &[],
+            &[],
+            DEFAULT_CHANNEL,
+        ))
+    }
 
     fn on_file() -> OnFile {
         OnFile {
             name: "Ada".into(),
             role: "Engineer".into(),
-            bio: "b".repeat(2000),
+            bio: BIO_IN_BRIEF.into(),
             guide_language: "English".into(),
             twin_language: "Czech".into(),
             tone_block: "Tone per channel: nothing on file yet.".into(),
@@ -606,6 +663,7 @@ mod tests {
             memory_count: 0,
             memory_block: String::new(),
             tone_channels: vec!["generic".into(), "slack".into()],
+            voice_core: fixture_core(),
         }
     }
 
@@ -631,18 +689,15 @@ mod tests {
         }
     }
 
-    /// Every prompt carries the language, voice and write-mode rules and the
-    /// transcript; all stay far under the ~6k-token budget (~24k chars).
-    #[test]
-    fn twin_setup_prompts_carry_the_rules_and_stay_small() {
-        let file = on_file();
+    /// Plan, assess and refill over the longest transcript the engine feeds.
+    fn worst_case_prompts(file: &OnFile) -> [(&'static str, String); 3] {
         let transcript: Vec<SetupStep> = (0..30)
             .map(|i| step(&format!("s{i}"), &"q".repeat(400), Some(&"a".repeat(900))))
             .collect();
         let stalls = HashMap::new();
         let plan = build_plan_prompt(
             &PlanInput {
-                on_file: &file,
+                on_file: file,
                 readiness: None,
                 stage: "setup",
                 topic: None,
@@ -660,7 +715,7 @@ mod tests {
         let answered = step("x", "Where do you work?", None);
         let assess = build_assess_prompt(
             &AssessInput {
-                on_file: &file,
+                on_file: file,
                 readiness: None,
                 goals: &[],
                 step: &answered,
@@ -670,7 +725,7 @@ mod tests {
         );
         let refill = build_refill_prompt(
             &RefillInput {
-                on_file: &file,
+                on_file: file,
                 readiness: None,
                 goals: &[],
                 stalls: &stalls,
@@ -687,13 +742,24 @@ mod tests {
             },
             None,
         );
-        for p in [&plan, &assess, &refill] {
+        [("plan", plan), ("assess", assess), ("refill", refill)]
+    }
+
+    /// Every prompt carries the language, voice and write-mode rules and the
+    /// transcript; all stay far under the ~6k-token budget (~24k chars).
+    #[test]
+    fn twin_setup_prompts_carry_the_rules_and_stay_small() {
+        let file = on_file();
+        let prompts = worst_case_prompts(&file);
+        for (name, p) in &prompts {
             assert!(p.contains("\"answerMode\" to \"write\""));
             assert!(p.contains("in Czech"));
             assert!(p.contains("Voice\n"));
             assert!(p.contains("Never ask anything already answered or declined"));
-            assert!(p.len() < 24_000, "prompt is {} chars", p.len());
+            assert!(p.contains(&format!("<twin-brief>\n{}\n</twin-brief>", file.voice_core)));
+            assert!(p.len() < 24_000, "{name} prompt is {} chars", p.len());
         }
+        let [(_, plan), (_, assess), (_, refill)] = prompts;
         assert!(
             plan.contains("missing key"),
             "the repair reason reaches the retry"
@@ -702,4 +768,99 @@ mod tests {
         assert!(assess.contains("A: (declined)"));
         assert!(refill.contains("Training topic chosen: values"));
     }
+
+    /// The setup lane reads identity through the compiler's view and hands
+    /// the guide the same core every drafting lane embeds. The golden is the
+    /// question rules (the setup framing around the core); the plan, assess
+    /// and refill prompts each carry it verbatim. The rest of those prompts
+    /// is the setup engine's own and is pinned by the test above.
+    #[test]
+    fn the_setup_lane_embeds_the_twin_core() {
+        let pool = crate::db::init_test_db().unwrap();
+        let twin = fixture::seed_marek(&pool);
+        let file = OnFile::load(&pool, &twin, Some("en")).unwrap();
+        let input = TwinPromptInput::from_db(&pool, &twin, DEFAULT_CHANNEL).unwrap();
+        assert_eq!(file.voice_core, compile_twin_core(&input));
+        assert_eq!(
+            file.bio, BIO_IN_BRIEF,
+            "the bio is quoted once, in the core"
+        );
+        assert_eq!(file.twin_language, "Czech (cs)");
+        assert!(file.render_full().contains(&format!("Bio: {BIO_IN_BRIEF}")));
+
+        let rules = question_rules(&file);
+        assert_eq!(
+            rules, GOLDEN_SETUP_RULES,
+            "the setup rules drifted from their golden"
+        );
+
+        let stalls = HashMap::new();
+        let plan = build_plan_prompt(
+            &PlanInput {
+                on_file: &file,
+                readiness: None,
+                stage: "setup",
+                topic: None,
+                topic_prompt: None,
+                focus: None,
+                goals: &[],
+                stalls: &stalls,
+                transcript: &[],
+                offer_verdicts: "",
+                observations: &[],
+                kind_stats: &[],
+            },
+            None,
+        );
+        assert!(plan.contains(&rules));
+        assert!(!plan.contains("Jana runs QA"), "third-party data stays out");
+    }
+
+    const GOLDEN_SETUP_RULES: &str = r#"How to ask
+One question about one thing, in a sentence if you can (a reply drill may need two), under 30 words. Open with the question itself: no greeting, no thanks, no comment on their last answer. Never ask anything already answered or declined in the conversation below; after a decline, take a different angle. When the question is about one channel, put its id in "toneChannel" (one of: generic, email, or a plain lowercase name for a channel they mentioned).
+
+Set "answerMode" to "write" when their answer will itself be a writing sample, like a reply drill or "paste the last message you sent your team". Put the message they're replying to in "incoming", written exactly as it would arrive, and return "suggestions": [], because a sample you wrote would teach the twin your voice instead of theirs. Otherwise set "answerMode" to "pick", set "incoming" to null, and offer two or three suggestions.
+
+A suggestion is an answer they could send back as it is. Make the options genuinely different from each other (different choices, not one answer reworded), keep each as short as their real answer would be, and write it the way Marek Dvořák would, from the brief under Voice. Never write one as an assistant would. Give each a "reason" of a few words saying what picking it tells the twin. At most 3.
+
+"kind" is one of: scene (take me to a moment), opinion, reply_drill (a write step answering "incoming"), fact, rule (an Always / Never), preference (a choice between concrete variants). Use the kind table below: kinds people skip a lot, or that rarely move coverage, deserve fewer turns.
+
+Language
+Write "question" and "incoming" in English (en). Write every suggestion and every proposed value in Czech (cs), the way Marek Dvořák writes. Write natively in each language instead of translating from English.
+
+Voice
+Write the question and the incoming message plainly, in the register the closing rules of the brief below describe. Every suggestion and every proposed value is a draft in Marek Dvořák's voice: write it from this brief, the same one every draft in their voice gets.
+<twin-brief>
+You are writing as Marek Dvořák, Engineering lead.
+Runs the desktop team, ships weekly, mentors two juniors. Writes short, direct messages and uses humour sparingly.
+Use masculine grammatical forms when Marek Dvořák refers to themselves.
+
+Marek Dvořák writes in Czech (cs) and English (en). Reply in the language of the message being answered unless told otherwise.
+
+Standing directions from Marek Dvořák, for every draft:
+Never promise a date I do not control. Answer the question asked first.
+
+How Marek Dvořák writes:
+Plain and direct. Leads with the answer, adds one reason, stops.
+Length: One or two sentences
+Messages Marek Dvořák actually wrote. Match their register, length and habits, but never copy them:
+---
+shipping thursday unless QA finds something. will confirm by noon
+---
+who's blocked and on what? let's take it to a thread, not the channel
+---
+Do and don't:
+- No exclamation marks
+- Never open with a greeting in a reply thread
+
+What Marek Dvořák has confirmed about themselves. Stay consistent with it, and state nothing verifiable that neither this nor the material you are given supports:
+- Leads a team of five on the desktop app.
+- Prefers async updates over status meetings.
+- Ships the desktop app every week on Thursday.
+
+Write the way a thoughtful person types to someone they know: plain words, short sentences, contractions where they'd use them. Say the thing directly and stop. Keep praise, thanks and recaps of what was just said out of it, and don't group things in threes for rhythm.
+Leave out the words and constructions people now read as machine-written: "delve", "tapestry", "testament", "vibrant", "seamless", "leverage", "elevate", "unlock", "journey", "realm", "crucial", "navigate", "not just x, but y".
+Never open with filler that carries nothing, like "great", "awesome", "perfect", "love that", "love it", "nice", "got it", "thank you", "wonderful", "fantastic", "amazing", "absolutely", "that's great", "that's helpful", "that helps", "interesting", "excellent", "cool", "okay", "ok", "understood".
+Join clauses with commas and full stops rather than dashes.
+</twin-brief>"#;
 }

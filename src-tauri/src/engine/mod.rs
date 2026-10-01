@@ -123,6 +123,8 @@ pub mod team_assignment_orchestrator;
 pub mod team_preset_adopter;
 pub mod team_slack_relay;
 pub mod tool_runner;
+/// The one twin prompt compiler every drafting lane embeds (Twin Card renderer).
+pub mod twin_prompt;
 /// The twin setup plan: persisted interview, background plan + reconcile.
 pub mod twin_setup;
 // F8 deterministic-verification primitive; consumed by the F7 fix-loop.

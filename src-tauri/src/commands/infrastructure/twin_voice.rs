@@ -22,10 +22,34 @@
 //!   dashes gets suggestions that may use them too.
 
 /// How the guide and the bio are told to sound. Positive: it names the
-/// register to write in, not the one to avoid.
-const PLAIN_REGISTER: &str = "Write the way a thoughtful person types to someone they know: plain \
+/// register to write in, not the one to avoid. Also the `register` of the
+/// quality rules every twin draft carries (`engine::twin_prompt`).
+pub(crate) const PLAIN_REGISTER: &str = "Write the way a thoughtful person types to someone they know: plain \
 words, short sentences, contractions where they'd use them. Say the thing directly and stop. Keep \
 praise, thanks and recaps of what was just said out of it, and don't group things in threes for rhythm.";
+
+/// The dash half of [`MACHINE_TELLS`], on its own: the twin prompt compiler
+/// renders it only when the person's own words carry no clause dash.
+pub(crate) const DASH_RULE: &str = "Join clauses with commas and full stops rather than dashes.";
+
+/// The vocabulary half of [`MACHINE_TELLS`] as data, lowercase, for the
+/// compiler's avoid list (`voice.quality_rules.avoid_phrases`). A test keeps
+/// the two in step.
+pub(crate) const MACHINE_WORDS: [&str; 13] = [
+    "delve",
+    "tapestry",
+    "testament",
+    "vibrant",
+    "seamless",
+    "leverage",
+    "elevate",
+    "unlock",
+    "journey",
+    "realm",
+    "crucial",
+    "navigate",
+    "not just x, but y",
+];
 
 /// The tells that hold in every register, including a style that is meant to
 /// be loud or long. The closing vocabulary list is the one place a negative
@@ -42,8 +66,9 @@ pub(crate) fn plain_voice() -> String {
 
 /// Openers that carry no question and mark a turn as generated. Compared
 /// case-insensitively and only as a whole word, so "Nicely" or "Coolant"
-/// never match "nice" or "cool".
-const FILLER_OPENERS: [&str; 22] = [
+/// never match "nice" or "cool". Also the compiler's
+/// `voice.quality_rules.filler_openers`.
+pub(crate) const FILLER_OPENERS: [&str; 22] = [
     "great",
     "awesome",
     "perfect",
@@ -144,15 +169,7 @@ pub(crate) fn soften_dashes(text: &str) -> String {
 /// returned trimmed and otherwise untouched.
 pub(crate) fn strip_filler_opener(question: &str) -> String {
     let trimmed = question.trim();
-    let Some(opener) = FILLER_OPENERS.iter().find(|o| {
-        trimmed.len() >= o.len()
-            && trimmed.is_char_boundary(o.len())
-            && trimmed[..o.len()].eq_ignore_ascii_case(o)
-            && !trimmed[o.len()..]
-                .chars()
-                .next()
-                .is_some_and(|n| n.is_alphanumeric())
-    }) else {
+    let Some(opener) = FILLER_OPENERS.iter().find(|o| opens_with_word(trimmed, o)) else {
         return trimmed.to_string();
     };
 
@@ -184,6 +201,22 @@ pub(crate) fn strip_filler_opener(question: &str) -> String {
         Some(first) => first.to_uppercase().chain(chars).collect(),
         None => trimmed.to_string(),
     }
+}
+
+/// True when `text` opens with `opener` as a whole word, compared
+/// case-insensitively: "Thanks, Jana" opens with "thanks", "Thanksgiving"
+/// does not. The one matcher shared by the setup filter
+/// ([`strip_filler_opener`]) and the twin compiler's filler allowance (a
+/// person who opens their own messages with "Thanks" is not told never to).
+pub(crate) fn opens_with_word(text: &str, opener: &str) -> bool {
+    let text = text.trim_start();
+    text.len() >= opener.len()
+        && text.is_char_boundary(opener.len())
+        && text[..opener.len()].eq_ignore_ascii_case(opener)
+        && !text[opener.len()..]
+            .chars()
+            .next()
+            .is_some_and(char::is_alphanumeric)
 }
 
 /// True when a suggested answer reads as written by an assistant.
@@ -257,6 +290,28 @@ mod tests {
         );
         // Nothing to keep after the filler: leave it rather than empty it.
         assert_eq!(strip_filler_opener("Great!"), "Great!");
+    }
+
+    #[test]
+    fn an_opener_matches_only_as_a_whole_word() {
+        assert!(opens_with_word("Thanks, Jana", "thanks"));
+        assert!(opens_with_word("  OK sure", "ok"));
+        assert!(!opens_with_word("Thanksgiving plans", "thanks"));
+        assert!(!opens_with_word("Okay", "ok"));
+        assert!(!opens_with_word("ok", "okay"));
+    }
+
+    #[test]
+    fn the_tells_as_data_match_the_tells_as_prose() {
+        // The compiler renders MACHINE_WORDS and DASH_RULE; the bio, guide and
+        // style prompts render MACHINE_TELLS. Neither may drift from the other.
+        let prose = MACHINE_TELLS.to_lowercase();
+        assert!(MACHINE_TELLS.starts_with(DASH_RULE));
+        for word in MACHINE_WORDS {
+            assert_eq!(word, word.to_lowercase(), "avoid phrases are lowercase");
+            assert!(prose.contains(word), "{word} is missing from MACHINE_TELLS");
+        }
+        assert!(plain_voice().starts_with(PLAIN_REGISTER));
     }
 
     #[test]
