@@ -127,25 +127,30 @@ no-op. **Skip** records the question as declined and never stores a value. A
 training answer is saved as a message plus a pending memory tagged with its
 topic; a *write* answer becomes a tone-example offer in your own words.
 
-**Reconcile runs behind you.** After each answer two **Opus 5.5 calls at low
-effort run in parallel**: *assess* scores each goal's coverage against its
-criteria, offers any field value the answer supports, may queue one follow-up
-at the head of the queue, and may note an observation; *refill* tops the queue
-back up to three. The follow-up therefore shows one question later, not
-instead of the one already dealt. While it runs, the question card carries a
-quiet pulsing dot ("Reading your answer"), never a spinner. A goal stops
-receiving questions at 0.8 coverage or after three answers with no gain; a
-failed assessment is retried once and then let go, so a question never loops.
+**Reconcile runs behind you.** After each answer two **Sonnet 5.5 calls at
+low effort run in parallel**, and each is applied the moment it returns:
+*refill* tops the queue back up to three, so its question can go live before
+*assess* lands; *assess* scores each goal's coverage against its criteria,
+offers any field value the answer supports, may queue one follow-up at the head
+of the queue, may note an observation, and stores its few-word reason per goal
+(the step's `coverageGain`, the goal's `lastWhy`, which the blueprint shows
+after the answer). The follow-up therefore shows one question later, not
+instead of the one already dealt. A goal stops receiving questions at 0.8
+coverage or after three answers with no gain; a failed assessment is retried
+once and then let go, so a question never loops.
 
-**Deep re-plan.** An **Opus 5.5 pass at medium effort** writes the first plan
-the moment the table opens for a twin that has none — until it lands a
-code-written opener for the first open slot is live, so there is no wait — and
-revises the plan every ~5 answers, on a stage change, when a stage's queue
-cannot be refilled twice in a row, or when you press **Rebuild plan**. It may
-rewrite goal text and the question path; it never adds or removes a slot, and
-never touches a goal you dropped or pinned or the question in front of you. One
-job runs per twin at a time, and an idle twin costs nothing: work starts only on
-an open without a plan, an answer, a skip, a steer or a rebuild.
+**Deep re-plan.** A **Sonnet 5.5 pass at low effort** writes the first plan
+and revises it every ~5 answers, on a stage change, when a stage's queue cannot
+be refilled twice in a row, or when you press **Rebuild plan**. Low is for one
+effort across the whole engine, not for speed: a 2026-10-01 bench measured no
+gain from medium, because output volume dominates. It runs in its own lane, so
+answers keep being assessed and refilled beside it, and whenever a stage has
+nothing to ask while a deep pass is starting or running, a one-question call
+(`setup_first`) puts a question up within seconds. A later plan may retire a
+question it finds redundant. It may rewrite goal text and the question path; it
+never adds or removes a slot, and never touches a goal you dropped or pinned or
+the question in front of you. An idle twin costs nothing: work starts only on an
+open without a plan, an answer, a skip, a steer or a rebuild.
 
 **The Plan layer** is the first door off the table (the route icon): the plan's
 status (*building*, *ready*, or *failed* with **Try again**), what the last
@@ -170,10 +175,27 @@ and the older twin generators (bio, simulated answers, drafts, the studio, the
 wiki, reflections, styles) all go through one logged, time-limited spawn that
 writes a `dev_llm_spend` row with `source = twin` and `trigger_kind` naming the
 call site (`setup_plan`, `setup_assess`, `setup_refill`, `generate_bio`, …).
-Only the setup engine runs on Opus 5.5; the older sites keep Sonnet at medium
-effort. First live measurement (2026-09-24): a first plan took 44 s and
-$0.59, one answer's reconcile ~10 s and ~$0.78 for its two calls — most of it
-CLI context, not the prompts.
+**Every twin LLM call runs lean**: `--tools "" --strict-mcp-config
+--disable-slash-commands`, in an empty working directory, because a twin call is
+one prompt in and one text reply out. Measured 2026-10-01 on a refill-sized
+prompt: 8.6 s to 6.5 s wall, 27k to 5k context tokens, 4-8x cheaper; the CLI
+loads 0 tools, 0 MCP servers and 0 skills instead of 37 / 1 / 68. The setup
+engine runs on Sonnet 5.5 at low; the older sites keep Sonnet at medium.
+
+**One prompt compiler.** Every drafting lane (reply drafts, browser page drafts,
+training answer simulation and the setup guide's suggested answers) embeds the
+same core block, built by `compile_twin_core` in
+`src-tauri/src/engine/twin_prompt/`: who the person is, the languages they
+write, their standing directions, their voice on the resolved channel (the
+channel asked for, else `generic`, else the first; up to five of their own
+newest messages and up to eight do/don't rules), what they have confirmed about
+themselves, and the plain-voice quality rules (with per-person allowances: a
+person who uses clause dashes, or opens with "Thanks", is not told not to).
+Each lane keeps only its own framing around it: the thread being answered, the
+fenced page, or the question. Drafts therefore see exemplars and rules on the
+page lane too, follow the quality rules in replies and page comments, and never
+treat a fact about a contact as a fact about the person. The same compiler is
+the reference renderer of Twin Card 1.0 (`docs/standards/twin-card/1.0/RENDERER.md`).
 
 #### Studio mode (batch authoring, both sides)
 
@@ -440,6 +462,28 @@ renderer surfaces are `twin/blueprint/*`. Shots and their README:
 `docs/design/twin-blueprint/`.
 
 ---
+
+## Learning from your own writing, and carrying a twin as a file
+
+**Learn, review, carry.** In Browser > Webview, the Twin toolbar's **Learn**
+icon reads your highlighted text, or the clipboard once if the page cannot be
+read or nothing is selected, capped at 8,000 characters. You then choose
+**Teach <twin>**, **New twin** (opens the forge with the sample; the new twin
+learns from it right after creation, recorded as a `forge` sample), or
+**Cancel**. The analysis never writes anything directly. It files proposals (a
+writing sample, a voice rule, a do or don't, a length hint, style settings)
+that appear in **Hub > Queue** under "Learned from samples", each labelled with
+its channel and where the sample came from, with **Keep / Edit / Dismiss**.
+Facts about you arrive in the same queue as memories marked "From a writing
+sample". **Import twin** (Profiles, beside New twin) inspects a Twin Card before
+writing anything: version, validity, signature (signed, unsigned, or not
+matching), and each part (sealed, or changed since export). It asks for the
+passphrase when a part is sealed and asks what to do when the name already
+exists (import as a copy, replace, or skip). **Export** (Detail header) chooses
+the parts (voice is always included), an optional passphrase of at least 8
+characters that seals self-knowledge and training, and the format (Twin Card or
+Character Card V3), and says when the file was saved without a signature. The
+format is specified in `docs/standards/twin-card/1.0/`.
 
 ## Carrying a twin to another device
 

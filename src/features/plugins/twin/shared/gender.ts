@@ -30,8 +30,9 @@ const NEUTRAL_DEF = GENDERS[2]!;
 export function genderFromPronouns(pronouns: string | null): Gender {
   if (!pronouns) return 'neutral';
   const p = pronouns.toLowerCase();
-  if (p.includes('he/') || p === 'male') return 'male';
+  // `she/` first: 'she/her' contains 'he/' and read as male until 2026-10-01.
   if (p.includes('she/') || p === 'female') return 'female';
+  if (p.includes('he/') || p === 'male') return 'male';
   return 'neutral';
 }
 

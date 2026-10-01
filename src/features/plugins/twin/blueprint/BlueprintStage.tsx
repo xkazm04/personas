@@ -1,8 +1,11 @@
 /**
  * The blueprint as the training overlay's base layer (spark
  * twin-portable-blueprint): the variant the Detail page's switcher picked, in
- * `stage` mode, filling the table behind the hand. Pressing a section opens
- * the door that edits it, the same doors the chrome carries.
+ * `stage` mode, filling the table behind the hand. A variant MAY route a
+ * section press to `onOpenDetail`, which opens the door that edits it (the
+ * same doors the chrome carries); the four prototypes keep stage inert
+ * because the hand above owns the keyboard. TODO(prototype, 2026-10-01):
+ * settle this at the fusion round.
  *
  * It renders under everything else in the play area and takes no focus of its
  * own; the hand above it owns the keyboard.
