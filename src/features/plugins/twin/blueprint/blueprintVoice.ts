@@ -5,10 +5,9 @@
 import type { TwinChannel } from '@/lib/bindings/TwinChannel';
 import type { TwinStyleDims } from '@/lib/bindings/TwinStyleDims';
 import type { TwinTone } from '@/lib/bindings/TwinTone';
-import { safeJsonParse } from '@/lib/utils/parseJson';
 
 import { countItems } from '../experience/channels';
-import { parseToneStyle, STYLE_DIMENSIONS } from '../setup/style/styleContract';
+import { parseToneStyle } from '../setup/style/styleContract';
 import type { BlueprintChannel, VoiceOrigin } from './blueprintContract';
 
 interface StoredStyle {
@@ -17,23 +16,12 @@ interface StoredStyle {
 }
 
 /**
- * A `learned` style (written by the learn-from-sample accept door, WP3). The
- * shared `parseToneStyle` guard admits only `preset` and `rolled`, so without
- * this a learned channel would read as hand-written.
+ * The style a tone row stores (`preset`, `rolled`, or `learned` by the
+ * learn-from-sample accept door), or null for a hand-written row.
  */
-function isLearnedStyle(value: unknown): value is { source: 'learned'; dims: TwinStyleDims } {
-  if (!value || typeof value !== 'object') return false;
-  const v = value as Record<string, unknown>;
-  const dims = v.dims as Record<string, unknown> | null | undefined;
-  return v.source === 'learned' && !!dims && typeof dims === 'object' && STYLE_DIMENSIONS.every((d) => typeof dims[d] === 'number');
-}
-
-/** The style a tone row stores, or null for a hand-written row. */
 export function storedStyleOf(styleJson: string | null): StoredStyle | null {
   const style = parseToneStyle(styleJson);
-  if (style) return { source: style.source === 'rolled' ? 'rolled' : 'preset', dims: style.dims };
-  const [learned] = safeJsonParse(styleJson, isLearnedStyle);
-  return learned ? { source: 'learned', dims: learned.dims } : null;
+  return style ? { source: style.source, dims: style.dims } : null;
 }
 
 function channelOf(channel: string, tone: TwinTone | undefined): BlueprintChannel {

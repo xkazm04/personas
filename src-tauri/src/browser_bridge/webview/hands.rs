@@ -27,6 +27,11 @@
 //!   its own deadline ([`PICK_TIMEOUT`], via [`call_with_timeout`]) rather than
 //!   the relay's 35 s. Reversible and side-effect free: picking changes nothing
 //!   on the page — the fill and submit that follow are the hands they always were.
+//! - A twelfth hand, `page_selection` (spark twin-portable-blueprint): the text
+//!   the OPERATOR has highlighted (the focused text field's selected range, else
+//!   the document selection), capped at [`SELECTION_CAP`], so the twin can learn
+//!   from their own writing. Read-only and operator-only, like `page_pick`: the
+//!   agent MCP surface (`browser_bridge::mcp`) never offers it.
 //!
 //! **A hand never rejects.** [`call`] returns a [`HandResult`] on every path,
 //! including the ones where nothing ran: no such tab, no such hand, the page
@@ -78,8 +83,8 @@ pub struct Hand {
     pub runner: Runner,
 }
 
-/// The eleven, in the order a person would use them: look, then act, then show
-/// what was seen — and last, the one the operator answers.
+/// The twelve, in the order a person would use them: look, then act, then show
+/// what was seen — and last, the two only the operator asks for.
 pub const HANDS: &[Hand] = &[
     Hand {
         name: READ,
@@ -164,6 +169,16 @@ pub const HANDS: &[Hand] = &[
         side_effects: "none",
         runner: Runner::Page,
     },
+    Hand {
+        name: SELECTION,
+        description:
+            "The text the operator has highlighted on the page, for the twin to learn from.",
+        // Reading a selection changes nothing on the page, not even the
+        // selection itself.
+        reversible: true,
+        side_effects: "none",
+        runner: Runner::Page,
+    },
 ];
 
 /// The one hand the shell answers. Named once, because three places ask for it.
@@ -174,6 +189,12 @@ pub const PICK: &str = "page_pick";
 /// gives up. A person reading a page before choosing a box is the normal case,
 /// not the slow one, so this is minutes and not the relay's 35 s.
 pub const PICK_TIMEOUT: Duration = Duration::from_secs(180);
+/// The hand the twin toolbar's Learn reads the operator's selection through.
+pub const SELECTION: &str = "page_selection";
+/// The most characters (Unicode scalar values) `page_selection` answers with;
+/// a longer selection is cut and says so in `truncated`. `hands.js` declares
+/// the same number, and the twin's sample cap is the same again.
+pub const SELECTION_CAP: usize = 8000;
 /// The hand the chat turn's page capture reads through (`webview::page`).
 pub const READ: &str = "page_read";
 /// The hand `browser_snapshot` is built out of.
@@ -284,6 +305,9 @@ fn schema_for(name: &str) -> Value {
             "properties": { "mode": { "type": "string", "enum": ["arm", "cancel"] } },
             "required": ["mode"],
         }),
+        // No parameters: the selection is whatever the operator highlighted,
+        // and there is nothing about it for a caller to choose.
+        SELECTION => json!({ "type": "object", "properties": {} }),
         _ => json!({
             "type": "object",
             "properties": { "ref": ref_param },
@@ -498,14 +522,14 @@ mod tests {
     }
 
     #[test]
-    fn there_are_eleven_hands_and_every_name_is_distinct() {
+    fn there_are_twelve_hands_and_every_name_is_distinct() {
         let names: std::collections::BTreeSet<_> = HANDS.iter().map(|h| h.name).collect();
         assert_eq!(names.len(), HANDS.len());
-        assert_eq!(HANDS.len(), 11);
+        assert_eq!(HANDS.len(), 12);
     }
 
     #[test]
-    fn ten_hands_are_the_pages_and_the_screenshot_is_the_shells() {
+    fn eleven_hands_are_the_pages_and_the_screenshot_is_the_shells() {
         // Not a count for its own sake: the split is what `call` dispatches on,
         // and a hand that drifted to the wrong runner would either be asked of
         // a page that cannot answer it or answered by the shell for a page that
@@ -518,7 +542,28 @@ mod tests {
         assert_eq!(shell, [SCREENSHOT]);
         assert_eq!(
             HANDS.iter().filter(|h| h.runner == Runner::Page).count(),
-            10
+            11
+        );
+    }
+
+    #[test]
+    fn the_selection_is_the_pages_read_only_and_takes_nothing() {
+        // Reading what the operator highlighted changes nothing on the page,
+        // so it must not land in `gated` on a surface that classifies by
+        // these flags, and there is nothing for a caller to choose.
+        let selection = hand(SELECTION).expect("page_selection is catalogued");
+        assert_eq!(selection.runner, Runner::Page);
+        assert!(selection.reversible);
+        assert_eq!(selection.side_effects, "none");
+        assert_eq!(schema_for(SELECTION)["properties"], json!({}));
+        assert!(schema_for(SELECTION).get("required").is_none());
+    }
+
+    #[test]
+    fn the_script_caps_the_selection_at_the_same_number() {
+        assert!(
+            script().contains(&format!("const SELECTION_CAP = {SELECTION_CAP};")),
+            "hands.js must declare SELECTION_CAP = {SELECTION_CAP}"
         );
     }
 

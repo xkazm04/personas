@@ -44,7 +44,14 @@ export const STYLE_DIMENSIONS: readonly StyleDimension[] = [
 export const STYLE_MIN = 1;
 export const STYLE_MAX = 5;
 
-export type StyleSource = 'preset' | 'rolled';
+/**
+ * Where a stored style came from: a curated preset, a rolled candidate, or
+ * `learned` (measured from a writing sample the person kept in the Hub; no
+ * preset id, and its `name` may be empty).
+ */
+export type StyleSource = 'preset' | 'rolled' | 'learned';
+
+const STYLE_SOURCES: readonly StyleSource[] = ['preset', 'rolled', 'learned'];
 
 /** The ten curated presets. Ids are stable wire values (stored in style_json). */
 export type StylePresetId =
@@ -117,23 +124,27 @@ export interface StyleStudioApi {
  */
 export type StyleStart = { kind: 'preset'; presetId: StylePresetId } | { kind: 'roll' };
 
+/** A stored style whose `source` is narrowed to the known vocabulary. */
+export type StoredTwinStyle = TwinStyle & { source: StyleSource };
+
 /** Shape check for a stored style: every wire field present, source a known value. */
-function isTwinStyle(value: unknown): value is TwinStyle {
+function isTwinStyle(value: unknown): value is StoredTwinStyle {
   if (!value || typeof value !== 'object') return false;
   const v = value as Record<string, unknown>;
   if (typeof v.name !== 'string') return false;
-  if (v.source !== 'preset' && v.source !== 'rolled') return false;
+  if (!STYLE_SOURCES.includes(v.source as StyleSource)) return false;
   const dims = v.dims as Record<string, unknown> | null | undefined;
   if (!dims || typeof dims !== 'object') return false;
   return STYLE_DIMENSIONS.every((d) => typeof dims[d] === 'number');
 }
 
 /** Parse a tone row's `style_json`. Returns null for hand-written or malformed rows. */
-export function parseToneStyle(styleJson: string | null | undefined): TwinStyle | null {
+export function parseToneStyle(styleJson: string | null | undefined): StoredTwinStyle | null {
   // `safeJsonParse` rather than a try/catch: a hand-written row carries no
   // style and a malformed one is an expected input, not a failure to report.
-  // INVARIANT: style_json is only ever written by twin_style_apply from a
-  // serialized TwinStyle; the guard rejects anything else.
+  // INVARIANT: style_json is only ever written from a serialized TwinStyle,
+  // by twin_style_apply or by the learn-from-sample accept door (`learned`);
+  // the guard rejects anything else.
   const [parsed] = safeJsonParse(styleJson, isTwinStyle);
   return parsed;
 }

@@ -116,6 +116,16 @@ impl TwinCall {
         effort: "low",
         timeout: RECONCILE_TIMEOUT,
     };
+
+    /// The learn-from-sample analysis (`engine::twin_sample`): one sample in,
+    /// one JSON object of proposals out, in the background. A per-answer-sized
+    /// call, so the per-answer tier.
+    pub(crate) const SAMPLE_LEARN: Self = Self {
+        site: "sample_learn",
+        model: SONNET_CURRENT,
+        effort: "low",
+        timeout: RECONCILE_TIMEOUT,
+    };
 }
 
 /// A boxed LLM reply future.

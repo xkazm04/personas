@@ -291,23 +291,36 @@ pub async fn browser_webview_submit(
     settled(hands::call(&app, id, "page_submit", input).await).map(|_| ())
 }
 
+/// What `page_selection` answered, as the typed selection — or why there is
+/// none. Parsed like [`picked_from`]: the page is untrusted, so an answer that
+/// does not parse as [`PageSelection`] is `Validation` naming the field serde
+/// tripped on, and the text is capped again here at `hands::SELECTION_CAP`
+/// (the page caps too; this is the one that holds).
+fn selection_from(result: HandResult) -> Result<PageSelection, AppError> {
+    let extra = settled(result)?.extra.unwrap_or(Value::Null);
+    let raw = extra.get("selection").cloned().unwrap_or(Value::Null);
+    let mut selection: PageSelection = serde_json::from_value(raw).map_err(|e| {
+        AppError::Validation(format!("the page's selection answer is malformed: {e}"))
+    })?;
+    if let Some((at, _)) = selection.text.char_indices().nth(hands::SELECTION_CAP) {
+        selection.text.truncate(at);
+        selection.truncated = true;
+    }
+    Ok(selection)
+}
+
 /// Read what the user has highlighted on a tab, for the twin to learn from
 /// (spark twin-portable-blueprint, Browser Learn). The same gate as the draft
 /// lane: an operator's hand, on a whitelisted origin, on a tab no agent holds.
 /// Answers `text: ""` when nothing is selected; the frontend then falls back
 /// to `twin_clipboard_text`.
-///
-/// CONTRACT STUB (WP0): the `page_selection` hand lands in WP3.
 #[tauri::command]
 pub async fn browser_webview_capture_selection(
     app: AppHandle,
     id: u32,
 ) -> Result<PageSelection, AppError> {
     admit(&app, id)?;
-    Err(AppError::Internal(
-        "browser_webview_capture_selection is not built yet (spark twin-portable-blueprint WP3)"
-            .into(),
-    ))
+    selection_from(hands::call(&app, id, hands::SELECTION, json!({})).await)
 }
 
 #[cfg(test)]
@@ -466,6 +479,70 @@ mod tests {
             picked_from(answered(json!({}))),
             Err(AppError::Validation(_))
         ));
+    }
+
+    // ---- Browser Learn's selection (spark twin-portable-blueprint) ---------
+
+    fn selection() -> Value {
+        json!({
+            "text": "Hi Jo,\nThursday works.",
+            "title": "Inbox",
+            "url": "https://mail.example.com/inbox",
+            "host": "mail.example.com",
+            "truncated": false,
+        })
+    }
+
+    #[test]
+    fn a_well_shaped_selection_is_the_typed_selection() {
+        let got = selection_from(answered(json!({ "selection": selection() }))).expect("parses");
+        assert_eq!(got.text, "Hi Jo,\nThursday works.");
+        assert_eq!(got.host.as_deref(), Some("mail.example.com"));
+        assert_eq!(got.title.as_deref(), Some("Inbox"));
+        assert!(!got.truncated);
+
+        // Nothing selected is an answer, not an error: the frontend falls back
+        // to the clipboard on an empty text.
+        let mut empty = selection();
+        empty["text"] = json!("");
+        empty["title"] = Value::Null;
+        let got = selection_from(answered(json!({ "selection": empty }))).expect("parses");
+        assert_eq!((got.text.as_str(), got.title), ("", None));
+    }
+
+    #[test]
+    fn a_half_shaped_selection_is_validation_naming_the_field() {
+        let mut partial = selection();
+        partial.as_object_mut().expect("object").remove("truncated");
+        let error = selection_from(answered(json!({ "selection": partial })));
+        assert!(
+            matches!(&error, Err(AppError::Validation(m)) if m.contains("truncated")),
+            "{error:?}"
+        );
+        let mut no_text = selection();
+        no_text.as_object_mut().expect("object").remove("text");
+        let error = selection_from(answered(json!({ "selection": no_text })));
+        assert!(
+            matches!(&error, Err(AppError::Validation(m)) if m.contains("text")),
+            "{error:?}"
+        );
+        assert!(matches!(
+            selection_from(answered(json!({}))),
+            Err(AppError::Validation(_))
+        ));
+        // A refusal from the page keeps its cause (CSP / no hand: the relay
+        // never reached the tab).
+        let gone = HandResult::refused(RefusalCode::UnknownRef, "tab gone", 1);
+        assert!(matches!(selection_from(gone), Err(AppError::NotFound(_))));
+    }
+
+    #[test]
+    fn an_over_long_selection_is_cut_here_and_says_so() {
+        let mut long = selection();
+        long["text"] = json!("é".repeat(hands::SELECTION_CAP + 10));
+        let got = selection_from(answered(json!({ "selection": long }))).expect("parses");
+        assert_eq!(got.text.chars().count(), hands::SELECTION_CAP);
+        assert!(got.truncated);
     }
 
     #[test]

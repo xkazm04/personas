@@ -1,11 +1,13 @@
 /**
- * Where a tone row's voice came from: "Based on <preset>" or "Rolled: <name>",
+ * Where a tone row's voice came from: "Based on <preset>", "Rolled: <name>"
+ * or "Learned from your writing" (a style measured from a sample the person
+ * kept in the Hub; it has no name of its own),
  * plus the dimensions THIS channel resolved to. Renders nothing for a
  * hand-written row. A preset's name is re-translated from its id, so the
  * label follows the UI language rather than the language it was applied in.
  */
 
-import { Dices, Palette } from 'lucide-react';
+import { Dices, Feather, Palette } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DimensionChips } from './DimensionChips';
 import { parseToneStyle } from './styleContract';
@@ -18,10 +20,13 @@ export function StyleOrigin({ styleJson }: { styleJson: string | null | undefine
   if (!style) return null;
 
   const preset = style.source === 'preset' ? presetById(style.presetId) : null;
+  const learned = style.source === 'learned';
   const label = preset
     ? tx(ts.origin.preset, { name: ts.presets[preset.id]?.name ?? style.name })
-    : tx(ts.origin.rolled, { name: style.name });
-  const Icon = preset ? Palette : Dices;
+    : learned
+      ? t.twin.blueprint.metrics.originLearned
+      : tx(ts.origin.rolled, { name: style.name });
+  const Icon = preset ? Palette : learned ? Feather : Dices;
 
   return (
     <div className="space-y-2 rounded-input bg-secondary/20 px-3 py-2" data-testid="style-origin">

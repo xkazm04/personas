@@ -125,6 +125,8 @@ pub mod team_slack_relay;
 pub mod tool_runner;
 /// The one twin prompt compiler every drafting lane embeds (Twin Card renderer).
 pub mod twin_prompt;
+/// Twin learn-from-sample: stored samples, background analysis, proposals.
+pub mod twin_sample;
 /// The twin setup plan: persisted interview, background plan + reconcile.
 pub mod twin_setup;
 // F8 deterministic-verification primitive; consumed by the F7 fix-loop.

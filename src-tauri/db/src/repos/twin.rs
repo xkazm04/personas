@@ -1309,16 +1309,100 @@ pub fn get_tone_optional(
     channel: &str,
 ) -> Result<Option<TwinTone>, AppError> {
     let conn = pool.get()?;
-    let result = conn.query_row(
-        &format!("SELECT {TONE_COLUMNS} FROM twin_tones WHERE twin_id = ?1 AND channel = ?2"),
-        params![twin_id, channel],
-        row_to_tone,
-    );
-    match result {
-        Ok(t) => Ok(Some(t)),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(AppError::Database(e)),
+    get_tone_optional_on(&conn, twin_id, channel)
+}
+
+/// [`get_tone_optional`] on a caller's connection (or transaction): the exact
+/// channel's row, no `generic` fallback.
+pub fn get_tone_optional_on(
+    conn: &rusqlite::Connection,
+    twin_id: &str,
+    channel: &str,
+) -> Result<Option<TwinTone>, AppError> {
+    timed_query!("twin_tones", "twin::get_tone_optional", {
+        let result = conn.query_row(
+            &format!("SELECT {TONE_COLUMNS} FROM twin_tones WHERE twin_id = ?1 AND channel = ?2"),
+            params![twin_id, channel],
+            row_to_tone,
+        );
+        match result {
+            Ok(t) => Ok(Some(t)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(AppError::Database(e)),
+        }
+    })
+}
+
+// ============================================================================
+// One tone column (spark twin-portable-blueprint, learn-from-sample accept)
+// ============================================================================
+
+/// One `twin_tones` column the learn-from-sample accept door writes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ToneField {
+    /// `voice_directives` (NOT NULL: a `None` value writes `''`).
+    Directives,
+    /// `examples_json`, a JSON array of strings.
+    Examples,
+    /// `constraints_json`, a JSON array of strings.
+    Constraints,
+    /// `length_hint`.
+    LengthHint,
+    /// `style_json`, a serialized `TwinStyle`.
+    Style,
+}
+
+impl ToneField {
+    /// The column name. A closed match, so the name interpolated into the SQL
+    /// below can never come from a caller.
+    fn column(self) -> &'static str {
+        match self {
+            Self::Directives => "voice_directives",
+            Self::Examples => "examples_json",
+            Self::Constraints => "constraints_json",
+            Self::LengthHint => "length_hint",
+            Self::Style => "style_json",
+        }
     }
+}
+
+/// Write ONE column of the (twin, channel) tone row on the caller's
+/// connection (or transaction), creating the row when the channel has none
+/// (every other column then takes its schema default). Every other column of
+/// an existing row is left exactly as it is, which the whole-row writers
+/// ([`upsert_tone`], [`apply_styled_tones`]) cannot promise: they rewrite the
+/// row from values the caller read earlier, on another connection.
+pub fn set_tone_field_on(
+    conn: &rusqlite::Connection,
+    twin_id: &str,
+    channel: &str,
+    field: ToneField,
+    value: Option<&str>,
+) -> Result<(), AppError> {
+    let column = field.column();
+    let value = match field {
+        ToneField::Directives => Some(value.unwrap_or("")),
+        _ => value,
+    };
+    timed_query!("twin_tones", "twin::set_tone_field", {
+        conn.execute(
+            &format!(
+                "INSERT INTO twin_tones (id, twin_id, channel, {column}, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5)
+                 ON CONFLICT(twin_id, channel) DO UPDATE SET
+                   {column}   = excluded.{column},
+                   updated_at = excluded.updated_at"
+            ),
+            params![
+                uuid::Uuid::new_v4().to_string(),
+                twin_id,
+                channel,
+                value,
+                chrono::Utc::now().to_rfc3339()
+            ],
+        )?;
+        Ok(())
+    })
 }
 
 // ============================================================================
@@ -1381,8 +1465,9 @@ pub fn apply_styled_tones(
 }
 
 /// Upsert one whole styled tone row inside the caller's transaction. Unlike
-/// [`upsert_tone`], this DOES set `style_json`: it is the only writer of that
-/// column.
+/// [`upsert_tone`], this DOES set `style_json`: it is one of its two writers,
+/// beside [`set_tone_field_on`], which the learn-from-sample accept door uses
+/// to store a `learned` style without rewriting the rest of the row.
 pub(crate) fn upsert_styled_tone_in(
     tx: &rusqlite::Transaction<'_>,
     twin_id: &str,

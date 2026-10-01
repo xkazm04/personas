@@ -355,9 +355,10 @@ pub struct TwinStylePins {
     pub detail: Option<u8>,
 }
 
-/// A chosen style. `source` is `"preset"` (curated core, `preset_id` set) or
-/// `"rolled"` (generated tail, `preset_id` None) - the two stay visibly
-/// distinct in the UI.
+/// A chosen style. `source` is `"preset"` (curated core, `preset_id` set),
+/// `"rolled"` (generated tail, `preset_id` None) or `"learned"` (measured from
+/// a writing sample the person kept in the Hub, `preset_id` None, `name` may
+/// be empty) - the three stay visibly distinct in the UI.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]

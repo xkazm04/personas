@@ -98,15 +98,24 @@ pub(crate) fn validate_style(style: &TwinStyle) -> Vec<String> {
         "preset" if preset_id.is_none() => {
             errors.push("style.presetId: required when source is \"preset\"".to_string())
         }
-        "rolled" if preset_id.is_some() => {
-            errors.push("style.presetId: must be empty when source is \"rolled\"".to_string())
-        }
-        "preset" | "rolled" => {}
+        source @ ("rolled" | "learned") if preset_id.is_some() => errors.push(format!(
+            "style.presetId: must be empty when source is \"{source}\""
+        )),
+        "preset" | "rolled" | "learned" => {}
         other => errors.push(format!(
-            "style.source: \"{other}\" is not \"preset\" or \"rolled\""
+            "style.source: \"{other}\" is not \"preset\", \"rolled\" or \"learned\""
         )),
     }
-    text_errors("style.name", &style.name, STYLE_NAME_MAX, &mut errors);
+    if style.source == "learned" {
+        // A learned style (the learn-from-sample accept door) is measured from
+        // the person's own writing, not picked from a catalog or a roll, so it
+        // has no name of its own: the UI labels it. The cap still holds.
+        if char_len(style.name.trim()) > STYLE_NAME_MAX {
+            errors.push(format!("style.name: exceeds {STYLE_NAME_MAX} chars"));
+        }
+    } else {
+        text_errors("style.name", &style.name, STYLE_NAME_MAX, &mut errors);
+    }
     if char_len(style.summary.trim()) > STYLE_BLURB_MAX {
         errors.push(format!("style.summary: exceeds {STYLE_BLURB_MAX} chars"));
     }
@@ -923,6 +932,27 @@ mod tests {
             .any(|e| e.starts_with("style.source")));
         style.source = "rolled".into();
         assert!(validate_style(&style).is_empty());
+
+        // `learned` (learn-from-sample): no preset id, and no name required.
+        style.source = "learned".into();
+        style.name = String::new();
+        assert!(
+            validate_style(&style).is_empty(),
+            "{:?}",
+            validate_style(&style)
+        );
+        style.preset_id = Some("warm-helpful".into());
+        assert!(validate_style(&style)
+            .iter()
+            .any(|e| e == "style.presetId: must be empty when source is \"learned\""));
+        style.preset_id = None;
+        style.dims = d([5, 3, 3, 3, 3, 3, 5, 3]);
+        assert!(
+            validate_style(&style)
+                .iter()
+                .any(|e| e.starts_with("style.dims:")),
+            "a learned style holds the pair rules too"
+        );
 
         let draft = StyleToneDraft {
             channel: "generic".into(),

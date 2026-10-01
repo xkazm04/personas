@@ -2,8 +2,9 @@
 import type { TwinStyleDims } from "./TwinStyleDims";
 
 /**
- * A chosen style. `source` is `"preset"` (curated core, `preset_id` set) or
- * `"rolled"` (generated tail, `preset_id` None) - the two stay visibly
- * distinct in the UI.
+ * A chosen style. `source` is `"preset"` (curated core, `preset_id` set),
+ * `"rolled"` (generated tail, `preset_id` None) or `"learned"` (measured from
+ * a writing sample the person kept in the Hub, `preset_id` None, `name` may
+ * be empty) - the three stay visibly distinct in the UI.
  */
 export type TwinStyle = { source: string, presetId: string | null, name: string, summary: string, avoid: string, dims: TwinStyleDims, };

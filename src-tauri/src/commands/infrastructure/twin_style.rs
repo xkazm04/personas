@@ -18,9 +18,12 @@
 //! prompts), `door` (reply doors + inbound payload validation). The commands
 //! below are adapters over them.
 
-mod door;
+// `door` and `sampler` are crate-visible for the learn-from-sample engine
+// (`engine::twin_sample`), which validates a learned style through the same
+// door and shows the model the same scale text.
+pub(crate) mod door;
 pub(crate) mod prompt;
-mod sampler;
+pub(crate) mod sampler;
 
 use std::sync::Arc;
 

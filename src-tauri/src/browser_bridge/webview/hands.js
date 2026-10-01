@@ -14,6 +14,10 @@
  *      OPERATOR clicks a writable box on the page and the pending request answers with a ref for
  *      it plus the context around it. The only hand a person answers rather than the page — it
  *      is the operator's, never a model's, and it changes nothing on the page.
+ *   5. a twelfth hand, `page_selection` (spark twin-portable-blueprint), answers with the text the
+ *      OPERATOR has highlighted (the focused text field's selected range, else the document
+ *      selection), capped at {@link SELECTION_CAP} characters, so their twin can learn from
+ *      their own writing. The operator's, like `page_pick`, and it changes nothing on the page.
  *
  * Tier 1 is what a page chose to offer. This is what an agent can do on a page that offered
  * nothing, which is nearly every page: read it, find things in it, and operate the things it
@@ -61,6 +65,11 @@
   const FIND_CAP = 20;
   /** The longest a label may be in a find result, so one heading cannot fill the answer. */
   const LABEL_CAP = 120;
+  /**
+   * PERSONAS: the most characters `page_selection` answers with. Counted in Unicode code points,
+   * as `hands.rs` (`SELECTION_CAP`) counts them, and never cut inside a surrogate pair.
+   */
+  const SELECTION_CAP = 8000;
 
   /** Elements whose text is markup, not content. */
   const NOT_TEXT = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "SVG", "HEAD"]);
@@ -317,6 +326,7 @@
     page_submit: "Submit the form the ref sits in.",
     page_console: "The console lines this page has produced since it loaded.",
     page_pick: "Arm pick mode: the operator clicks a writable box and gets a ref plus its context.",
+    page_selection: "The text the operator has highlighted on the page, for the twin to learn from.",
   };
 
   const ok = (output, extra) => ({ ok: true, output: String(output ?? ""), ...extra });
@@ -543,6 +553,44 @@
         document.addEventListener("mouseover", onPickHover, true);
         document.addEventListener("mouseout", onPickLeave, true);
         document.addEventListener("click", onPickClick, true);
+      });
+    },
+
+    /**
+     * PERSONAS: the text the operator has highlighted, for their twin to learn from.
+     *
+     * A selection inside a text field is not part of the document selection on every engine, so
+     * the focused field's own selected range is read first, then the document selection. The text
+     * keeps its line breaks (a paragraph's shape is part of how someone writes) and is cut at
+     * {@link SELECTION_CAP} code points, saying so in `truncated`; nothing is appended to it. The
+     * selected text never rides in `output`, which is a summary line and may be logged.
+     */
+    page_selection() {
+      let text = "";
+      try {
+        const el = document.activeElement;
+        const field =
+          el && (el.tagName === "TEXTAREA" ||
+            (el.tagName === "INPUT" && !NOT_WRITABLE_INPUT.has((el.type || "text").toLowerCase())));
+        if (field && typeof el.selectionStart === "number" && typeof el.selectionEnd === "number") {
+          text = String(el.value ?? "").slice(el.selectionStart, el.selectionEnd);
+        }
+        if (!text.trim()) text = String(getSelection()?.toString() ?? "");
+      } catch {
+        // A page that overrides getSelection, or an input type without a selection API, is not
+        // ours to break: it reads as nothing selected.
+      }
+      const points = Array.from(text.trim());
+      const truncated = points.length > SELECTION_CAP;
+      const kept = truncated ? points.slice(0, SELECTION_CAP).join("") : points.join("");
+      return ok(kept ? `${points.length} characters selected` : "nothing is selected", {
+        selection: {
+          text: kept,
+          title: document.title || null,
+          url: location.href || null,
+          host: location.host || null,
+          truncated,
+        },
       });
     },
   };
@@ -833,6 +881,7 @@
     page_submit: [false, "internal"],
     page_console: [true, "none"],
     page_pick: [true, "none"],
+    page_selection: [true, "none"],
   };
 
   /**
