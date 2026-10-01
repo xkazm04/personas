@@ -1,5 +1,6 @@
-//! The deep pass: SONNET_CURRENT @ medium writes (or revises) the goals, the
-//! observations and the first stretch of the question path.
+//! The deep pass: SONNET_CURRENT @ low writes (or revises) the goals, the
+//! observations and the first stretch of the question path. It runs in its
+//! own lane (`jobs`): answers keep being reconciled and refilled beside it.
 //!
 //! Code owns the skeleton. An out-of-skeleton slot is rejected, a slot keeps
 //! at most [`MAX_GOALS_PER_SLOT`] live goals, dropped and pinned goals are the
@@ -178,7 +179,7 @@ async fn fail(ctx: &JobCtx, twin_id: &str, reason: &str) {
 
 /// Resolve a drafted step's goal reference: an existing id, `new:<n>` (the
 /// n-th goal of this pass), or a slot name (its first askable goal).
-fn resolve_goal<'g>(
+pub(crate) fn resolve_goal<'g>(
     goal_ref: Option<&str>,
     goals: &'g [SetupGoal],
     new_ids: &[Option<String>],

@@ -14,9 +14,16 @@ use crate::commands::infrastructure::twin_voice::{
     reads_as_assistant, soften_dashes, strip_filler_opener,
 };
 use crate::db::models::SetupSuggestion;
+use personas_core::utils::text::truncate_on_char_boundary;
 
 /// The most suggestions a step carries (the table deals three cards).
 pub(crate) const SUGGESTIONS_MAX: usize = 3;
+
+/// The longest assessor `why` kept, in bytes, cut on a character boundary.
+/// The prompt asks for "a few words", so the cap only bites on a runaway
+/// reply; the value is a display line (`SetupGoal.last_why`) that nothing
+/// parses, so the cut loses nothing a reader relies on.
+pub(crate) const WHY_MAX_BYTES: usize = 240;
 
 /// The step kinds (mirrors the `kind` CHECK in `e47_twin_setup_plan`).
 pub(crate) const KINDS: [&str; 6] = [
@@ -56,6 +63,7 @@ struct RawStep {
 struct RawCoverage {
     goal_id: String,
     coverage: f64,
+    why: Option<String>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -143,10 +151,20 @@ pub(crate) struct DraftOffer {
     pub reason: String,
 }
 
+/// The assessor's reading of one goal.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct CoverageReading {
+    pub goal_id: String,
+    /// Clamped to 0..=1.
+    pub coverage: f64,
+    /// Its few-word reason, dashes softened and capped at [`WHY_MAX_BYTES`];
+    /// `None` when it gave none.
+    pub why: Option<String>,
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct AssessOut {
-    /// `(goal id, coverage)`, coverage clamped to 0..=1.
-    pub coverage: Vec<(String, f64)>,
+    pub coverage: Vec<CoverageReading>,
     pub offers: Vec<DraftOffer>,
     pub follow_up: Option<DraftStep>,
     pub observation: Option<String>,
@@ -193,7 +211,15 @@ pub(crate) fn parse_assess(raw: &str, dashes_are_theirs: bool) -> Result<AssessO
         .coverage
         .into_iter()
         .filter(|c| !c.goal_id.trim().is_empty() && c.coverage.is_finite())
-        .map(|c| (c.goal_id.trim().to_string(), c.coverage.clamp(0.0, 1.0)))
+        .map(|c| CoverageReading {
+            goal_id: c.goal_id.trim().to_string(),
+            coverage: c.coverage.clamp(0.0, 1.0),
+            why: c
+                .why
+                .map(|w| soften_dashes(w.trim()))
+                .map(|w| truncate_on_char_boundary(w.trim(), WHY_MAX_BYTES).to_string())
+                .filter(|w| !w.is_empty()),
+        })
         .collect();
     let offers = parsed
         .offers
@@ -433,7 +459,18 @@ mod tests {
         let out = parse_assess(raw, false)?;
         assert_eq!(
             out.coverage,
-            [("g1".to_string(), 1.0), ("g2".to_string(), 0.0)]
+            [
+                CoverageReading {
+                    goal_id: "g1".into(),
+                    coverage: 1.0,
+                    why: Some("x".into()),
+                },
+                CoverageReading {
+                    goal_id: "g2".into(),
+                    coverage: 0.0,
+                    why: None,
+                },
+            ]
         );
         assert_eq!(
             out.offers.len(),
@@ -452,6 +489,28 @@ mod tests {
             "dedupe + assistant-speak dropped"
         );
         assert_eq!(out.observation.as_deref(), Some("Writes short."));
+        Ok(())
+    }
+
+    /// The per-goal `why` is kept: trimmed, dashes softened, a blank one read
+    /// as absent, a runaway one capped on a character boundary.
+    #[test]
+    fn twin_setup_parse_assess_keeps_a_capped_why() -> Result<(), String> {
+        let long = "ä".repeat(400);
+        let raw = format!(
+            r#"{{"coverage":[
+                {{"goalId":"g1","coverage":0.5,"why":"  Named the team — and the deadline  "}},
+                {{"goalId":"g2","coverage":0.2,"why":"   "}},
+                {{"goalId":"g3","coverage":0.9,"why":"{long}"}}
+              ],"offers":[],"followUp":null,"observation":null}}"#
+        );
+        let out = parse_assess(&raw, false)?;
+        let why: Vec<Option<&str>> = out.coverage.iter().map(|c| c.why.as_deref()).collect();
+        assert_eq!(why[0], Some("Named the team, and the deadline"));
+        assert_eq!(why[1], None, "a blank why is no why");
+        let capped = why[2].ok_or("long why kept")?;
+        assert!(capped.len() <= WHY_MAX_BYTES && !capped.is_empty());
+        assert!(capped.chars().all(|c| c == 'ä'), "cut on a char boundary");
         Ok(())
     }
 

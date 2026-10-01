@@ -40,10 +40,34 @@ pub(crate) struct TwinCall {
 /// Legacy sites had no backend timeout at all; this one is generous so none of
 /// them fails sooner than its frontend already gives up.
 const LEGACY_TIMEOUT: Duration = Duration::from_secs(300);
-/// The setup engine's per-answer calls (assess, refill).
+/// The setup engine's per-answer calls (assess, refill, the first question).
 const RECONCILE_TIMEOUT: Duration = Duration::from_secs(120);
 /// The setup engine's deep pass.
 const PLAN_TIMEOUT: Duration = Duration::from_secs(240);
+
+/// The CLI flags every twin call carries after `--model`: no built-in tools,
+/// no MCP server beyond the (absent) `--mcp-config`, no skills.
+///
+/// A twin call is one prompt in, one text reply out; it never reads a file,
+/// runs a command or calls a tool, so the default roster and the user's MCP
+/// servers and skills were pure context the CLI paid to load on every call.
+/// Measured 2026-10-01 on Sonnet 5.5 with a refill-sized prompt (5.8 KB,
+/// 3 runs per config, interleaved): wall p50 8.6 s -> 6.5 s, context 27k ->
+/// 5k tokens, 4-8x cheaper per call. `--tools` is variadic (`<tools...>`), so
+/// its empty value is followed by another flag here, never by a bare word it
+/// could swallow. Passed through `extra_args`, which `headless_claude_args`
+/// appends after the one `--effort` and the one `--model` it emits itself.
+pub(crate) const LEAN_ARGS: [&str; 4] = [
+    "--tools",
+    "",
+    "--strict-mcp-config",
+    "--disable-slash-commands",
+];
+
+/// [`LEAN_ARGS`] as the owned `extra_args` the spawn takes.
+fn lean_args() -> Vec<String> {
+    LEAN_ARGS.iter().map(|a| (*a).to_string()).collect()
+}
 
 impl TwinCall {
     /// A pre-existing twin call site: `SONNET_CURRENT` at `medium`, as before
@@ -71,11 +95,26 @@ impl TwinCall {
         timeout: RECONCILE_TIMEOUT,
     };
 
+    /// The deep pass. `low`, like every other setup call, for ONE effort
+    /// engine-wide, NOT for speed: the 2026-10-01 bench (a plan-shaped prompt,
+    /// 2 runs per config) measured medium 25-31 s against low 31-41 s, i.e. no
+    /// gain. Output volume dominates the deep pass (3-6k tokens is ~30 s);
+    /// one low run returned malformed JSON, which the repair door retries.
     pub(crate) const SETUP_PLAN: Self = Self {
         site: "setup_plan",
         model: SONNET_CURRENT,
-        effort: "medium",
+        effort: "low",
         timeout: PLAN_TIMEOUT,
+    };
+
+    /// The fast first question: a one-question refill dispatched while a deep
+    /// pass is starting or running and the stage has nothing to ask, so the
+    /// person never waits out the plan (`reconcile::first_question`).
+    pub(crate) const SETUP_FIRST: Self = Self {
+        site: "setup_first",
+        model: SONNET_CURRENT,
+        effort: "low",
+        timeout: RECONCILE_TIMEOUT,
     };
 }
 
@@ -117,8 +156,8 @@ fn neutral_cwd() -> Option<std::path::PathBuf> {
     }
 }
 
-/// Spawn the Claude CLI on `call`'s tier, wait at most `call.timeout`, record
-/// the spend row, and return the assistant's text.
+/// Spawn the Claude CLI on `call`'s tier with [`LEAN_ARGS`], wait at most
+/// `call.timeout`, record the spend row, and return the assistant's text.
 ///
 /// On timeout the child is killed explicitly (`start_kill` + reap) before the
 /// error returns — `kill_on_drop` is set on the spawn as a second line, but an
@@ -133,7 +172,7 @@ pub(crate) async fn spawn_claude_logged(
         prompt,
         call.model,
         call.effort,
-        &[],
+        &lean_args(),
         dir.as_deref(),
         false,
     )?;
@@ -234,13 +273,66 @@ mod tests {
     #[test]
     fn twin_setup_tiers_are_the_designed_ones() {
         assert_eq!(TwinCall::SETUP_PLAN.model, SONNET_CURRENT);
-        assert_eq!(TwinCall::SETUP_PLAN.effort, "medium");
+        assert_eq!(TwinCall::SETUP_PLAN.effort, "low");
         assert_eq!(TwinCall::SETUP_PLAN.timeout, Duration::from_secs(240));
-        for low in [TwinCall::SETUP_ASSESS, TwinCall::SETUP_REFILL] {
+        for low in [
+            TwinCall::SETUP_ASSESS,
+            TwinCall::SETUP_REFILL,
+            TwinCall::SETUP_FIRST,
+        ] {
             assert_eq!((low.model, low.effort), (SONNET_CURRENT, "low"));
             assert_eq!(low.timeout, Duration::from_secs(120));
         }
+        assert_eq!(TwinCall::SETUP_FIRST.site, "setup_first");
         let legacy = TwinCall::legacy("reflect");
         assert_eq!((legacy.model, legacy.effort), (SONNET_CURRENT, "medium"));
+    }
+
+    /// Every twin call's argv, built exactly as `spawn_claude_logged` builds
+    /// it, carries each lean flag once (`--tools` with the empty value, then a
+    /// flag, so the variadic swallows nothing) and still exactly one
+    /// `--effort` and one `--model`, with the tier's values.
+    #[test]
+    fn twin_cli_argv_is_lean_with_one_effort_and_one_model() {
+        let count = |args: &[String], flag: &str| args.iter().filter(|a| *a == flag).count();
+        let value_after = |args: &[String], flag: &str| -> Option<String> {
+            let at = args.iter().position(|a| a == flag)?;
+            args.get(at + 1).cloned()
+        };
+        for call in [
+            TwinCall::SETUP_ASSESS,
+            TwinCall::SETUP_REFILL,
+            TwinCall::SETUP_PLAN,
+            TwinCall::SETUP_FIRST,
+            TwinCall::legacy("draft_reply"),
+        ] {
+            let args = crate::engine::cli_process::headless_claude_args(
+                call.model,
+                call.effort,
+                &lean_args(),
+            )
+            .args;
+            for flag in ["--tools", "--strict-mcp-config", "--disable-slash-commands"] {
+                assert_eq!(count(&args, flag), 1, "{}: {flag} exactly once", call.site);
+            }
+            let tools_at = args.iter().position(|a| a == "--tools");
+            let tools_value = tools_at.and_then(|i| args.get(i + 1));
+            assert_eq!(
+                tools_value.map(String::as_str),
+                Some(""),
+                "{}: --tools \"\"",
+                call.site
+            );
+            let after_value = tools_at.and_then(|i| args.get(i + 2));
+            assert!(
+                after_value.map_or(true, |a| a.starts_with("--")),
+                "{}: nothing bare follows the variadic --tools",
+                call.site
+            );
+            assert_eq!(count(&args, "--effort"), 1, "{}: one --effort", call.site);
+            assert_eq!(count(&args, "--model"), 1, "{}: one --model", call.site);
+            assert_eq!(value_after(&args, "--effort").as_deref(), Some(call.effort));
+            assert_eq!(value_after(&args, "--model").as_deref(), Some(call.model));
+        }
     }
 }

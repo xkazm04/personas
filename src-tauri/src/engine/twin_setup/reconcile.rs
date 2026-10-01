@@ -1,12 +1,19 @@
 //! Per-answer reconcile: ASSESS (coverage, offers, one follow-up, an
 //! observation) and REFILL (top the queue up) run CONCURRENTLY on
-//! SONNET_CURRENT @ low, then both results are applied in one transaction.
+//! SONNET_CURRENT @ low, and each is applied in its own transaction the
+//! moment it returns: a fast refill puts the next question up without waiting
+//! for the assessment, which lands (and announces `reconciled`) on its own.
+//!
+//! Also the fast first question ([`first_question`]): ONE question, written
+//! with the refill prompt on `TwinCall::SETUP_FIRST`, for a stage that has
+//! nothing to ask while a deep pass is starting or running.
 //!
 //! Failure policy: an assessment that fails bumps the step's
 //! `reconcile_attempts`; the second failure marks it reconciled with no offers,
 //! so a step can never loop. A refill that fails twice in a row wants a deep
 //! pass instead. A declined step is assessed without an LLM (coverage
-//! unchanged, no offers) and still reconciled.
+//! unchanged, no offers) and still reconciled. A failed first question is
+//! only logged: the deep pass it stands in for is already coming.
 
 use std::collections::{HashMap, HashSet};
 
@@ -20,20 +27,27 @@ use crate::db::repos::twin_setup::{
 use crate::db::DbPool;
 use crate::error::AppError;
 
-use super::jobs::{call_with_repair, db, note_refill, JobCtx};
+use super::jobs::{call_with_repair, db, note_refill, schedule, JobCtx};
 use super::llm::TwinCall;
 use super::parse::{parse_assess, parse_refill, AssessOut, RefillOut};
-use super::plan::{insert_drafts, OBSERVATIONS_MAX};
+use super::plan::{insert_drafts, resolve_goal, OBSERVATIONS_MAX};
 use super::prompts::{
     build_assess_prompt, build_refill_prompt, AssessInput, OnFile, RefillInput, RECENT_EXCHANGES,
 };
 use super::queue;
-use super::skeleton::{COVERED_AT, QUEUE_DEPTH, STALL_GAIN, STALL_LIMIT};
+use super::session::Want;
+use super::skeleton::{self, COVERED_AT, QUEUE_DEPTH, STALL_GAIN, STALL_LIMIT};
 
 /// An assessment gets this many tries before the step is let go.
 const ASSESS_ATTEMPTS: i64 = 2;
-/// Goals a refill is asked to write for.
+/// Goals a refill (and the first question) is asked to write for.
 const REFILL_TARGETS: usize = 3;
+/// The first question is one question: output volume is what the person
+/// waits on (the 2026-10-01 bench), so it asks for exactly one.
+const FIRST_NEED: i64 = 1;
+/// A reading this close to the stored coverage did not move the goal (a 0.4
+/// written back as 0.4, float noise), so it leaves `last_why` alone.
+const COVERAGE_MOVED: f64 = 1e-6;
 
 /// What one reconcile iteration reads.
 struct ReconcileData {
@@ -47,6 +61,8 @@ struct ReconcileData {
     earlier: Vec<SetupStep>,
     /// Up to six exchanges including the step, oldest first.
     recent: Vec<SetupStep>,
+    /// Some step is live right now.
+    live: bool,
     queue: Vec<SetupStep>,
     targets: Vec<SetupGoal>,
     need: i64,
@@ -99,6 +115,7 @@ fn gather(
         .iter()
         .map(|s| (*s).clone())
         .collect();
+    let live = repo::live_step_on(&conn, twin_id)?.is_some();
     let queue: Vec<SetupStep> =
         repo::list_steps_on(&conn, twin_id, &["queued"], StepOrder::Position, 20)?
             .into_iter()
@@ -118,6 +135,7 @@ fn gather(
         step,
         earlier,
         recent,
+        live,
         queue,
         targets,
         need,
@@ -151,7 +169,20 @@ fn refill_due(data: &ReconcileData) -> bool {
     data.need > 0 && !data.targets.is_empty()
 }
 
+/// Log and count a refill outcome. The second failure in a row hands over to
+/// a deep pass, scheduled on its own lane (a flag alone would not start it).
+fn settle_refill<T>(ctx: &JobCtx, twin_id: &str, result: &Result<T, String>) {
+    if let Err(reason) = result {
+        tracing::warn!(twin_id = %twin_id, %reason, "twin setup refill failed");
+    }
+    if note_refill(twin_id, result.is_ok()) {
+        schedule(ctx, twin_id, &[Want::Plan]);
+    }
+}
+
 /// Reconcile every answered or skipped step not yet folded in, oldest first.
+/// Per step, assess and refill run side by side and each applies on its own
+/// return (see the module doc).
 pub(crate) async fn run(ctx: &JobCtx, twin_id: &str) -> Result<(), AppError> {
     let mut skip: HashSet<String> = HashSet::new();
     loop {
@@ -166,75 +197,94 @@ pub(crate) async fn run(ctx: &JobCtx, twin_id: &str) -> Result<(), AppError> {
         };
         let topic_prompt = super::jobs::topic_prompt(twin_id);
         let dashes = uses_dashes(data.recent.iter().filter_map(|s| s.answer.as_deref()));
-        let answered = step.status == "answered";
 
-        let assess = async {
-            if !answered {
-                return None;
-            }
-            let input = AssessInput {
-                on_file: &data.on_file,
-                readiness: data.plan.readiness.as_ref(),
-                goals: &data.goals,
-                step: &step,
-                recent: &data.earlier,
-            };
-            Some(
-                call_with_repair(
-                    ctx,
-                    TwinCall::SETUP_ASSESS,
-                    |repair| build_assess_prompt(&input, repair),
-                    |raw| parse_assess(raw, dashes),
-                )
-                .await,
-            )
-        };
-        let refill = async {
-            if !refill_due(&data) {
-                return None;
-            }
-            let input = refill_input(&data, topic_prompt.as_deref());
-            Some(
-                call_with_repair(
-                    ctx,
-                    TwinCall::SETUP_REFILL,
-                    |repair| build_refill_prompt(&input, repair),
-                    |raw| parse_refill(raw, dashes),
-                )
-                .await,
-            )
-        };
-        let (assess, refill) = tokio::join!(assess, refill);
-
-        let assess_failed = matches!(assess, Some(Err(_)));
-        if let Some(Err(reason)) = &assess {
-            tracing::warn!(twin_id = %twin_id, step_id = %step.id, %reason, "twin setup assess failed");
-        }
-        if let Some(result) = &refill {
-            if let Err(reason) = result {
-                tracing::warn!(twin_id = %twin_id, %reason, "twin setup refill failed");
-            }
-            note_refill(twin_id, result.is_ok());
-        }
-
-        let id = twin_id.to_string();
-        let applied_step = step.clone();
-        let reconciled = db(&ctx.pool, move |pool| {
-            apply(
-                pool,
-                &id,
-                Some(&applied_step),
-                assess,
-                refill.and_then(Result::ok),
-            )
-        })
-        .await?;
-        if assess_failed && !reconciled {
+        let (assessed, refilled) = tokio::join!(
+            assess_and_apply(ctx, twin_id, &data, &step, dashes),
+            refill_and_apply(ctx, twin_id, &data, topic_prompt.as_deref(), dashes),
+        );
+        let retry_later = assessed?;
+        refilled?;
+        if retry_later {
             // Retried on the next job loop, not in this one.
             skip.insert(step.id.clone());
         }
-        ctx.announce(twin_id, "reconciled", data.plan.version);
     }
+}
+
+/// Assess `step` (a declined one needs no model) and apply the result in its
+/// own transaction the moment it is in, announcing `reconciled`. Returns
+/// whether the step should sit out the rest of this job (a first failure).
+async fn assess_and_apply(
+    ctx: &JobCtx,
+    twin_id: &str,
+    data: &ReconcileData,
+    step: &SetupStep,
+    dashes: bool,
+) -> Result<bool, AppError> {
+    let assess = if step.status == "answered" {
+        let input = AssessInput {
+            on_file: &data.on_file,
+            readiness: data.plan.readiness.as_ref(),
+            goals: &data.goals,
+            step,
+            recent: &data.earlier,
+        };
+        let result = call_with_repair(
+            ctx,
+            TwinCall::SETUP_ASSESS,
+            |repair| build_assess_prompt(&input, repair),
+            |raw| parse_assess(raw, dashes),
+        )
+        .await;
+        if let Err(reason) = &result {
+            tracing::warn!(twin_id = %twin_id, step_id = %step.id, %reason, "twin setup assess failed");
+        }
+        Some(result)
+    } else {
+        None
+    };
+    let failed = matches!(assess, Some(Err(_)));
+    let id = twin_id.to_string();
+    let applied_step = step.clone();
+    let reconciled = db(&ctx.pool, move |pool| {
+        apply(pool, &id, Some(&applied_step), assess, None)
+    })
+    .await?;
+    ctx.announce(twin_id, "reconciled", data.plan.version);
+    Ok(failed && !reconciled)
+}
+
+/// Refill the queue when it is due and apply the new steps in their own
+/// transaction the moment they are in (the next question goes live then),
+/// announcing `refilled`.
+async fn refill_and_apply(
+    ctx: &JobCtx,
+    twin_id: &str,
+    data: &ReconcileData,
+    topic_prompt: Option<&str>,
+    dashes: bool,
+) -> Result<(), AppError> {
+    if !refill_due(data) {
+        return Ok(());
+    }
+    let input = refill_input(data, topic_prompt);
+    let result = call_with_repair(
+        ctx,
+        TwinCall::SETUP_REFILL,
+        |repair| build_refill_prompt(&input, repair),
+        |raw| parse_refill(raw, dashes),
+    )
+    .await;
+    settle_refill(ctx, twin_id, &result);
+    if let Ok(out) = result {
+        let id = twin_id.to_string();
+        db(&ctx.pool, move |pool| {
+            apply(pool, &id, None, None, Some(out))
+        })
+        .await?;
+        ctx.announce(twin_id, "refilled", data.plan.version);
+    }
+    Ok(())
 }
 
 /// Top the current stage's queue up without an answer to reconcile (after a
@@ -265,10 +315,7 @@ pub(crate) async fn refill_only(ctx: &JobCtx, twin_id: &str) -> Result<(), AppEr
         |raw| parse_refill(raw, dashes),
     )
     .await;
-    if let Err(reason) = &result {
-        tracing::warn!(twin_id = %twin_id, %reason, "twin setup refill failed");
-    }
-    note_refill(twin_id, result.is_ok());
+    settle_refill(ctx, twin_id, &result);
     let id = twin_id.to_string();
     db(&ctx.pool, move |pool| {
         apply(pool, &id, None, None, result.ok())
@@ -276,6 +323,146 @@ pub(crate) async fn refill_only(ctx: &JobCtx, twin_id: &str) -> Result<(), AppEr
     .await?;
     ctx.announce(twin_id, "refilled", data.plan.version);
     Ok(())
+}
+
+/// The fast first question: ONE question for a stage with nothing live and
+/// nothing queued while a deep pass is starting or running, so nobody waits
+/// out the plan. It goes live the moment it lands, unless the queue moved on
+/// meanwhile (the plan landed first, a steer changed the stage): then it is
+/// dropped rather than doubled ([`apply_first`]).
+pub(crate) async fn first_question(ctx: &JobCtx, twin_id: &str) -> Result<(), AppError> {
+    let id = twin_id.to_string();
+    let Some(mut data) = db(&ctx.pool, move |pool| {
+        gather(pool, &id, &HashSet::new(), false)
+    })
+    .await?
+    else {
+        return Ok(());
+    };
+    if data.live || !data.queue.is_empty() {
+        // Something to ask already: nothing to wait out, no call to pay for.
+        return Ok(());
+    }
+    data.targets = queue::first_targets(&data.plan, &data.goals, &data.stalls, REFILL_TARGETS);
+    if data.targets.is_empty() {
+        // Every goal of the stage is covered, dropped or stalled.
+        return Ok(());
+    }
+    data.need = FIRST_NEED;
+    // Before the stage has goals, the stand-ins ARE the goals on file.
+    let stand_ins = !data
+        .goals
+        .iter()
+        .any(|g| skeleton::stage_of_slot(&g.slot) == data.plan.stage);
+    let topic_prompt = super::jobs::topic_prompt(twin_id);
+    let dashes = uses_dashes(data.recent.iter().filter_map(|s| s.answer.as_deref()));
+    let base = refill_input(&data, topic_prompt.as_deref());
+    let input = RefillInput {
+        goals: if stand_ins {
+            &data.targets
+        } else {
+            &data.goals
+        },
+        ..base
+    };
+    let result = call_with_repair(
+        ctx,
+        TwinCall::SETUP_FIRST,
+        |repair| build_refill_prompt(&input, repair),
+        |raw| parse_refill(raw, dashes),
+    )
+    .await;
+    let out = match result {
+        Ok(out) => out,
+        Err(reason) => {
+            tracing::warn!(twin_id = %twin_id, %reason, "twin setup first question failed");
+            return Ok(());
+        }
+    };
+    let id = twin_id.to_string();
+    let stage = data.plan.stage.clone();
+    if db(&ctx.pool, move |pool| apply_first(pool, &id, &stage, &out)).await? {
+        ctx.announce(twin_id, "refilled", data.plan.version);
+    }
+    Ok(())
+}
+
+/// Land a first question in one transaction, and only while the plan still
+/// runs the `stage` it was written for and that stage still has nothing live
+/// or queued; it then goes live through the ordinary promotion. Returns
+/// whether a question landed.
+pub(crate) fn apply_first(
+    pool: &DbPool,
+    twin_id: &str,
+    stage: &str,
+    out: &RefillOut,
+) -> Result<bool, AppError> {
+    let mut conn = pool.get()?;
+    let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+    let landed = insert_first(&tx, twin_id, stage, out)?;
+    tx.commit()?;
+    Ok(landed)
+}
+
+fn insert_first(
+    conn: &Connection,
+    twin_id: &str,
+    stage: &str,
+    out: &RefillOut,
+) -> Result<bool, AppError> {
+    let Some(plan) = repo::get_plan_on(conn, twin_id)? else {
+        return Ok(false);
+    };
+    if plan.stage != stage
+        || repo::live_step_on(conn, twin_id)?.is_some()
+        || repo::count_queued_on(conn, twin_id, stage)? > 0
+    {
+        return Ok(false);
+    }
+    let goals = repo::list_goals_on(conn, twin_id)?;
+    let stalls = repo::goal_stalls_on(conn, twin_id)?;
+    let stage_has_goals = goals
+        .iter()
+        .any(|g| skeleton::stage_of_slot(&g.slot) == stage);
+    for draft in &out.steps {
+        let goal_id = match resolve_goal(draft.goal_ref.as_deref(), &goals, &[], &stalls) {
+            Some(g) if queue::askable(g, &stalls) && skeleton::stage_of_slot(&g.slot) == stage => {
+                Some(g.id.as_str())
+            }
+            // Another stage's goal, or one that takes no more questions.
+            Some(_) => continue,
+            // Written for a stand-in: the stage had no goal to point at.
+            None if !stage_has_goals => None,
+            None => continue,
+        };
+        if repo::question_seen_on(conn, twin_id, &draft.question)? {
+            continue;
+        }
+        repo::insert_step_on(
+            conn,
+            twin_id,
+            &NewStep {
+                goal_id,
+                stage,
+                // Goal-less it is what an opener is: a question asked before
+                // the plan exists (the vocabulary is the migration's CHECK).
+                origin: if goal_id.is_some() { "plan" } else { "opener" },
+                kind: &draft.kind,
+                question: &draft.question,
+                answer_mode: &draft.answer_mode,
+                incoming: draft.incoming.as_deref(),
+                tone_channel: draft.tone_channel.as_deref(),
+                suggestions: &draft.suggestions,
+                plan_version: plan.version,
+            },
+            "queued",
+            Placement::Head,
+        )?;
+        // One question, whatever the model wrote; live on arrival.
+        queue::ensure_live(conn, twin_id)?;
+        return Ok(true);
+    }
+    Ok(false)
 }
 
 /// Apply one iteration in one transaction. Returns whether `step` ended
@@ -344,18 +531,23 @@ fn apply_assess(
     };
 
     // Coverage: absolute readings, clamped by the door; `covered` is a
-    // steering state only and never touches readiness.
+    // steering state only and never touches readiness. A reading that MOVES
+    // a goal also stores the assessor's reason for it (`last_why`), so the
+    // client can say why an answer counted.
     let mut gain: Option<f64> = None;
     let mut own_state: Option<(String, i64)> =
         own_goal.map(|g| (g.state.clone(), stalls.get(&g.id).copied().unwrap_or(0)));
-    for (goal_id, coverage) in &out.coverage {
-        let Some(goal) = goals.iter().find(|g| &g.id == goal_id) else {
+    for reading in &out.coverage {
+        let Some(goal) = goals.iter().find(|g| g.id == reading.goal_id) else {
             continue;
         };
         if goal.state == "dropped" {
             continue;
         }
-        let coverage = coverage.clamp(0.0, 1.0);
+        let coverage = reading.coverage.clamp(0.0, 1.0);
+        if (coverage - goal.coverage).abs() > COVERAGE_MOVED {
+            repo::set_goal_last_why_on(conn, twin_id, &goal.id, reading.why.as_deref())?;
+        }
         let state = if coverage >= COVERED_AT {
             "covered"
         } else {

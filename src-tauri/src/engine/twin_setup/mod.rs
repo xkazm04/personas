@@ -3,17 +3,20 @@
 //! The guided setup as a planned, persisted interview. Each twin has a plan
 //! (goals per code-owned slot, coverage, a queue of questions written ahead),
 //! so an answer shows the next question at once while the background worker
-//! reconciles it — ASSESS ∥ REFILL on SONNET_CURRENT @ low — and a periodic deep
-//! pass on SONNET_CURRENT @ medium sharpens the plan. Readiness (computed in TS and
-//! sent with every call) stays the only completion authority: goal coverage
-//! only steers which question comes next.
+//! reconciles it — ASSESS ∥ REFILL on SONNET_CURRENT @ low, each applied on its
+//! own return — and a periodic deep pass (also SONNET_CURRENT @ low, in a lane
+//! of its own that nothing waits on) sharpens the plan. When a stage has
+//! nothing to ask while a deep pass is starting or running, a one-question
+//! call (`SETUP_FIRST`) fills the gap. Readiness (computed in TS and sent with
+//! every call) stays the only completion authority: goal coverage only steers
+//! which question comes next.
 //!
 //! Layout: [`session`] (the six operations — database only, no LLM),
-//! [`jobs`] (per-twin single flight + `twin-setup-updated`), [`plan`] (deep
-//! pass), [`reconcile`] (assess ∥ refill), [`prompts`], [`parse`] (the three
-//! reply doors), [`queue`] (promotion + steering rules), [`skeleton`] (the
-//! slots), [`llm`] (the one logged, tiered, time-limited CLI door every twin
-//! call goes through).
+//! [`jobs`] (per-twin plan lane + question lane, `twin-setup-updated`),
+//! [`plan`] (deep pass), [`reconcile`] (first question, assess ∥ refill),
+//! [`prompts`], [`parse`] (the three reply doors), [`queue`] (promotion +
+//! steering rules), [`skeleton`] (the slots), [`llm`] (the one logged, tiered,
+//! time-limited, lean CLI door every twin call goes through).
 
 pub(crate) mod jobs;
 pub(crate) mod llm;
@@ -52,7 +55,7 @@ pub(crate) async fn open(
     readiness: SetupReadiness,
     opener: Option<SetupOpener>,
 ) -> Result<SetupSessionSnapshot, AppError> {
-    let running = jobs::is_running(&twin_id);
+    let running = jobs::plan_running(&twin_id);
     let id = twin_id.clone();
     run_op(ctx, &twin_id, move |pool| {
         session::open(pool, &id, locale.as_deref(), readiness, opener, running)

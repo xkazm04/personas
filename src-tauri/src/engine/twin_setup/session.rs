@@ -25,8 +25,11 @@ pub(crate) const DEEP_PASS_EVERY: i64 = 5;
 /// Background work an operation asks for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Want {
-    /// The deep pass (exclusive).
+    /// The deep pass. It runs in its own lane: nothing below waits for it.
     Plan,
+    /// One question for a stage that has nothing to ask while a deep pass is
+    /// starting or running (`TwinCall::SETUP_FIRST`), live on arrival.
+    First,
     /// Assess ∥ refill for every unreconciled step.
     Reconcile,
     /// Top the current stage's queue up.
@@ -84,26 +87,53 @@ fn start_plan(conn: &Connection, twin_id: &str, wants: &mut Vec<Want>) -> Result
     Ok(())
 }
 
-/// After a steer changed what should be asked: promote a fitting step, or ask
-/// for a refill when nothing fits (unless a deep pass is already coming).
+/// What to ask for when the stage has nothing live and nothing fitting to
+/// promote: the fast first question while a deep pass is starting (`Plan`
+/// already wanted) or running (`building`), else a refill.
+fn feed_starved(wants: &mut Vec<Want>, plan_building: bool) {
+    if plan_building || wants.contains(&Want::Plan) {
+        push(wants, Want::First);
+    } else {
+        push(wants, Want::Refill);
+    }
+}
+
+/// After a steer changed what should be asked: promote a fitting step, or
+/// feed the starved stage ([`feed_starved`]).
 fn promote_or_refill(
     conn: &Connection,
     twin_id: &str,
+    plan_building: bool,
     wants: &mut Vec<Want>,
 ) -> Result<(), AppError> {
-    if queue::ensure_live(conn, twin_id)? == LiveState::Starved && !wants.contains(&Want::Plan) {
-        push(wants, Want::Refill);
+    if queue::ensure_live(conn, twin_id)? == LiveState::Starved {
+        feed_starved(wants, plan_building);
     }
     Ok(())
+}
+
+/// No live step and no queued step of `stage` (nothing promoted).
+fn stage_starved(conn: &Connection, twin_id: &str, stage: &str) -> Result<bool, AppError> {
+    Ok(repo::live_step_on(conn, twin_id)?.is_none()
+        && repo::count_queued_on(conn, twin_id, stage)? == 0)
 }
 
 // ============================================================================
 // open
 // ============================================================================
 
-/// Open (or resume) the session. `worker_running` is whether a job worker is
-/// alive for this twin in this process: a `building` plan with no worker was
-/// orphaned by a restart and is rebuilt without waiting out the lease.
+/// Open (or resume) the session. `worker_running` is whether a deep-pass
+/// worker is alive for this twin in this process: a `building` plan with no
+/// worker was orphaned by a restart and is rebuilt without waiting out the
+/// lease.
+///
+/// A starved queue gets the fast first question when a deep pass is starting
+/// or running, EXCEPT on the very first open of a twin (no plan row yet)
+/// without an opener: that is the client opening a training round, whose
+/// `setStage` steer follows at once and dispatches the first question for the
+/// right stage. One dispatched here would be written for `setup` (a fresh
+/// plan's stage) and thrown away when it lands, costing a call and making the
+/// training question wait behind it.
 pub(crate) fn open(
     pool: &DbPool,
     twin_id: &str,
@@ -119,6 +149,8 @@ pub(crate) fn open(
             || plan.status == "failed"
             || (plan.status == "building"
                 && (!worker_running || repo::lease_is_stale_on(conn, twin_id, LEASE_STALE_SECS)?));
+        // `building` and not rebuilt here: a live worker holds a fresh lease.
+        let plan_running = plan.status == "building" && !needs_plan;
         store_context(&mut plan, locale, readiness);
         repo::upsert_plan_on(conn, &plan)?;
         if needs_plan {
@@ -156,7 +188,9 @@ pub(crate) fn open(
                         Placement::Tail,
                     )?;
                 }
-                _ if !wants.contains(&Want::Plan) => push(&mut wants, Want::Refill),
+                _ if existed => feed_starved(&mut wants, plan_running),
+                // First open, no opener (see above): the deep pass is starting
+                // and the stage steer that follows feeds the queue.
                 _ => {}
             }
         }
@@ -296,10 +330,18 @@ pub(crate) fn answer(
             }
         }
 
-        queue::ensure_live(conn, twin_id)?;
+        let live = queue::ensure_live(conn, twin_id)?;
         push(&mut wants, Want::Reconcile);
         if plan.answers_since_deep >= DEEP_PASS_EVERY && plan.status != "building" {
             start_plan(conn, twin_id, &mut wants)?;
+        }
+        // The queue ran dry under a deep pass (the opener answered while the
+        // first plan is still being written, say): one question lands sooner
+        // than the reconcile's three, and on a first plan that refill has no
+        // goals to write for at all.
+        if live == LiveState::Starved && (plan.status == "building" || wants.contains(&Want::Plan))
+        {
+            push(&mut wants, Want::First);
         }
         Ok(wants)
     })
@@ -367,8 +409,11 @@ pub(crate) fn steer(
 ) -> Result<Outcome, AppError> {
     in_tx(pool, twin_id, |conn| {
         let mut wants = Vec::new();
-        let (mut plan, _) = plan_or_fresh(conn, twin_id)?;
+        let (mut plan, existed) = plan_or_fresh(conn, twin_id)?;
         store_context(&mut plan, locale, readiness);
+        // A deep pass is running (a fresh row only READS `building`): a
+        // starved stage gets the first question.
+        let building = existed && plan.status == "building";
 
         match steer {
             SetupSteer::DropGoal { goal_id } => {
@@ -417,7 +462,8 @@ pub(crate) fn steer(
                     if plan.status != "building" {
                         start_plan(conn, twin_id, &mut wants)?;
                     }
-                    promote_or_refill(conn, twin_id, &mut wants)?;
+                    // The new stage's first question never waits for the plan.
+                    promote_or_refill(conn, twin_id, building, &mut wants)?;
                 }
             }
             SetupSteer::SetTopic { preset_id, prompt } => {
@@ -439,7 +485,7 @@ pub(crate) fn steer(
                 );
                 if plan.stage == "training" {
                     queue::requeue_if_off_target(conn, twin_id)?;
-                    promote_or_refill(conn, twin_id, &mut wants)?;
+                    promote_or_refill(conn, twin_id, building, &mut wants)?;
                 }
             }
             SetupSteer::FocusSlot { slot } => {
@@ -453,7 +499,7 @@ pub(crate) fn steer(
                 repo::upsert_plan_on(conn, &plan)?;
                 if plan.stage == "setup" {
                     queue::requeue_if_off_target(conn, twin_id)?;
-                    promote_or_refill(conn, twin_id, &mut wants)?;
+                    promote_or_refill(conn, twin_id, building, &mut wants)?;
                 }
             }
             SetupSteer::EnqueueHandoff { questions } => {
@@ -471,7 +517,9 @@ pub(crate) fn steer(
                 if let Some(live) = repo::live_step_on(conn, twin_id)? {
                     repo::obsolete_step_on(conn, twin_id, &live.id)?;
                 }
-                queue::ensure_live(conn, twin_id)?;
+                if queue::ensure_live(conn, twin_id)? == LiveState::Starved && building {
+                    push(&mut wants, Want::First);
+                }
                 push(&mut wants, Want::Refill);
             }
         }
@@ -515,6 +563,9 @@ pub(crate) fn rebuild(
         store_context(&mut plan, locale, readiness);
         repo::upsert_plan_on(conn, &plan)?;
         start_plan(conn, twin_id, &mut wants)?;
+        if stage_starved(conn, twin_id, &plan.stage)? {
+            push(&mut wants, Want::First);
+        }
         Ok(wants)
     })
 }

@@ -223,6 +223,66 @@ pub(crate) fn refill_targets(
     targets
 }
 
+/// The goals the fast first question writes for. When the plan's stage
+/// already has goals, the refill's own choice ([`refill_targets`]). When it
+/// has none yet (the first plan is still being written), stand-ins built from
+/// the skeleton's default goals for the stage's slots, steered like a refill:
+/// the focus slot or chosen topic alone, else unset slots first. A stand-in's
+/// `id` IS its slot name, which the apply side resolves to a real goal of
+/// that slot if the plan has landed meanwhile, else asks goal-less.
+pub(crate) fn first_targets(
+    plan: &PlanRow,
+    goals: &[SetupGoal],
+    stalls: &HashMap<String, i64>,
+    limit: usize,
+) -> Vec<SetupGoal> {
+    if goals
+        .iter()
+        .any(|g| skeleton::stage_of_slot(&g.slot) == plan.stage)
+    {
+        return refill_targets(plan, goals, stalls, limit);
+    }
+    let steered: Option<String> = match plan.stage.as_str() {
+        "setup" => plan.focus_slot.clone(),
+        _ => plan
+            .topic_preset
+            .as_deref()
+            .filter(|t| skeleton::is_topic(t))
+            .map(skeleton::training_slot),
+    };
+    let mut slots: Vec<String> = match steered {
+        Some(slot) => vec![slot],
+        None => skeleton::all_slots()
+            .into_iter()
+            .filter(|s| skeleton::stage_of_slot(s) == plan.stage)
+            .collect(),
+    };
+    // Stable: unset slots first, skeleton order within each group.
+    let readiness = plan.readiness.as_ref();
+    slots.sort_by_key(|s| slot_is_set(readiness, s));
+    slots
+        .into_iter()
+        .take(limit)
+        .enumerate()
+        .map(|(i, slot)| {
+            let d = skeleton::default_goal(&slot);
+            SetupGoal {
+                id: slot.clone(),
+                slot,
+                title: d.title.to_string(),
+                intent: d.intent.to_string(),
+                criteria: d.criteria.iter().map(|c| (*c).to_string()).collect(),
+                state: "open".to_string(),
+                pinned: false,
+                coverage: 0.0,
+                position: i as i64,
+                answered: 0,
+                last_why: None,
+            }
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -274,6 +334,55 @@ mod tests {
             .map(|g| g.id)
             .collect();
         assert_eq!(ids, ["tone"], "a focus narrows the targets to its slot");
+    }
+
+    /// No goals for the stage yet: skeleton stand-ins, steered and ordered
+    /// like a refill. Real goals for the stage: the refill's own targets.
+    #[test]
+    fn twin_setup_first_targets_stand_in_for_a_plan_not_yet_written() {
+        let mut plan = PlanRow::fresh("t");
+        plan.readiness = Some(SetupReadiness {
+            identity: "set".into(),
+            tone: "empty".into(),
+            channels: "partial".into(),
+            memories: "empty".into(),
+        });
+        let none = HashMap::new();
+        let ids = |targets: Vec<SetupGoal>| -> Vec<String> {
+            targets.into_iter().map(|g| g.id).collect()
+        };
+        assert_eq!(
+            ids(first_targets(&plan, &[], &none, 3)),
+            ["tone", "channels", "memories"],
+            "unset slots first, identity (set) last"
+        );
+        let stand_in = first_targets(&plan, &[], &none, 1).remove(0);
+        assert_eq!(
+            (stand_in.slot.as_str(), stand_in.state.as_str()),
+            ("tone", "open")
+        );
+        assert!(
+            !stand_in.criteria.is_empty(),
+            "the skeleton's criteria ride along"
+        );
+
+        plan.stage = "training".into();
+        plan.topic_preset = Some("values".into());
+        assert_eq!(
+            ids(first_targets(&plan, &[], &none, 3)),
+            ["training:values"]
+        );
+        plan.topic_preset = None;
+        assert_eq!(
+            ids(first_targets(&plan, &[], &none, 2)),
+            ["training:background", "training:opinions"]
+        );
+
+        // A setup goal does not count for the training stage; a training one does.
+        let setup_only = [goal("id", "identity", 0.1, false, "open")];
+        assert_eq!(first_targets(&plan, &setup_only, &none, 3).len(), 3);
+        let with_training = [goal("v", "training:values", 0.2, false, "open")];
+        assert_eq!(ids(first_targets(&plan, &with_training, &none, 3)), ["v"]);
     }
 
     #[test]

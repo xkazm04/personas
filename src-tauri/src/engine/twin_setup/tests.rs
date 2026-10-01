@@ -4,14 +4,14 @@ use std::sync::{Arc, Mutex};
 
 use tokio::sync::Notify;
 
-use crate::db::models::{SetupOpener, SetupReadiness, SetupSteer, SetupUpdatedEvent};
+use crate::db::models::{SetupOpener, SetupReadiness, SetupSteer, SetupStep, SetupUpdatedEvent};
 use crate::db::repos::twin_setup::{self as repo, NewGoal, NewStep, Placement, PlanRow};
 use crate::db::DbPool;
 use crate::error::AppError;
 
 use super::jobs::{self, JobCtx};
 use super::llm::{LlmFn, TwinCall};
-use super::parse::{parse_assess, parse_refill, PlanOut};
+use super::parse::{parse_assess, parse_refill, PlanOut, RefillOut};
 use super::session::{self, Want};
 use super::{plan, reconcile};
 
@@ -130,6 +130,16 @@ fn scripted_ctx(
     reply: impl Fn(&'static str, &str) -> Result<String, AppError> + Send + Sync + 'static,
     gate: Option<Arc<Notify>>,
 ) -> (JobCtx, CallLog, Events) {
+    scripted_ctx_gated(pool, reply, "setup_plan", gate)
+}
+
+/// [`scripted_ctx`] holding every `gated_site` call instead.
+fn scripted_ctx_gated(
+    pool: &DbPool,
+    reply: impl Fn(&'static str, &str) -> Result<String, AppError> + Send + Sync + 'static,
+    gated_site: &'static str,
+    gate: Option<Arc<Notify>>,
+) -> (JobCtx, CallLog, Events) {
     let log: CallLog = Arc::new(Mutex::new(Vec::new()));
     let events: Events = Arc::new(Mutex::new(Vec::new()));
     let reply = Arc::new(reply);
@@ -139,7 +149,7 @@ fn scripted_ctx(
         let log = log_in.clone();
         let gate = gate.clone();
         Box::pin(async move {
-            if call.site == "setup_plan" {
+            if call.site == gated_site {
                 if let Some(gate) = gate {
                     gate.notified().await;
                 }
@@ -165,6 +175,60 @@ const PLAN_JSON: &str = r#"{"goals":[{"id":null,"slot":"identity","title":"What 
  "steps":[{"goalId":"new:0","kind":"fact","question":"What do you do for work?","answerMode":"pick",
            "suggestions":[{"text":"I build tools","reason":"sets the bio"}]}],
  "changeNote":"First plan."}"#;
+
+const EMPTY_REFILL: &str = r#"{"steps":[],"obsolete":[]}"#;
+
+/// Await every lane one `schedule` call started.
+async fn settle(started: jobs::Started) -> Result<(), AppError> {
+    for handle in [started.plan, started.questions].into_iter().flatten() {
+        handle
+            .await
+            .map_err(|e| AppError::Internal(format!("lane: {e}")))?;
+    }
+    Ok(())
+}
+
+/// How long a lane may take while the scripted deep pass is held at its
+/// gate. A lane that waited on the plan would never finish; this turns that
+/// hang into a failure.
+const HELD_LANE_DEADLINE: std::time::Duration = std::time::Duration::from_secs(20);
+
+async fn finish_while_plan_held(
+    handle: Option<tauri::async_runtime::JoinHandle<()>>,
+) -> Result<(), AppError> {
+    let handle =
+        handle.ok_or_else(|| AppError::Internal("the question lane was not started".into()))?;
+    tokio::time::timeout(HELD_LANE_DEADLINE, handle)
+        .await
+        .map_err(|_| AppError::Internal("the question lane waited on the held deep pass".into()))?
+        .map_err(|e| AppError::Internal(format!("question lane: {e}")))
+}
+
+fn sites(log: &CallLog) -> Vec<&'static str> {
+    log.lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .iter()
+        .map(|(site, _)| *site)
+        .collect()
+}
+
+fn reasons(events: &Events) -> Vec<String> {
+    events
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .iter()
+        .map(|e| e.reason.clone())
+        .collect()
+}
+
+fn live_count(pool: &DbPool, twin_id: &str) -> Result<i64, AppError> {
+    let conn = pool.get()?;
+    Ok(conn.query_row(
+        "SELECT COUNT(id) AS n FROM twin_setup_steps WHERE twin_id = ?1 AND status = 'live'",
+        rusqlite::params![twin_id],
+        |r| r.get("n"),
+    )?)
+}
 
 // ---------------------------------------------------------------------------
 // Operations
@@ -625,6 +689,10 @@ fn twin_setup_stage_and_focus_steers_retarget_the_live_step() -> Result<(), AppE
         out.wants.contains(&Want::Plan),
         "a stage change wants a deep pass"
     );
+    assert!(
+        out.wants.contains(&Want::First),
+        "the new stage's first question does not wait for it"
+    );
     assert!(out.snapshot.live.is_none(), "no training step queued yet");
     assert!(matches!(
         session::steer(
@@ -651,6 +719,66 @@ fn twin_setup_stage_and_focus_steers_retarget_the_live_step() -> Result<(), AppE
         ),
         Err(AppError::Validation(_))
     ));
+    Ok(())
+}
+
+/// Who wants the fast first question: a starved stage while a deep pass is
+/// starting or running. Not the very first open without an opener (the
+/// client's stage steer follows and feeds the right stage), and not when no
+/// deep pass is coming (a refill's job, as before).
+#[test]
+fn twin_setup_first_question_is_wanted_while_a_deep_pass_runs() -> Result<(), AppError> {
+    let (pool, twin) = twin()?;
+    let opened = session::open(&pool, &twin, None, readiness(), None, false)?;
+    assert_eq!(opened.wants, [Want::Plan], "first open, no opener");
+    let steered = session::steer(
+        &pool,
+        &twin,
+        SetupSteer::SetStage {
+            stage: "training".into(),
+        },
+        None,
+        readiness(),
+    )?;
+    assert_eq!(
+        steered.wants,
+        [Want::First],
+        "the stage steer feeds the stage beside the plan already building"
+    );
+    let reopened = session::open(&pool, &twin, None, readiness(), None, true)?;
+    assert_eq!(
+        reopened.wants,
+        [Want::First],
+        "reopened mid-pass on an empty stage: the first question, not a refill"
+    );
+    let rebuilt = session::rebuild(&pool, &twin, None, readiness())?;
+    assert_eq!(rebuilt.wants, [Want::Plan, Want::First]);
+
+    set_plan(&pool, &twin, |p| p.status = "ready".into())?;
+    let idle = session::open(&pool, &twin, None, readiness(), None, false)?;
+    assert_eq!(idle.wants, [Want::Refill], "no deep pass coming");
+
+    // The opener answered while the first plan is still being written.
+    let (pool, twin) = self::twin()?;
+    let opener = SetupOpener {
+        slot: "identity".into(),
+        question: "What do you do?".into(),
+    };
+    let out = session::open(&pool, &twin, None, readiness(), Some(opener), false)?;
+    assert_eq!(out.wants, [Want::Plan]);
+    let live = out
+        .snapshot
+        .live
+        .ok_or_else(|| AppError::NotFound("opener live".into()))?;
+    let answered = session::answer(
+        &pool,
+        &twin,
+        &live.id,
+        Some("I build tools"),
+        None,
+        readiness(),
+    )?;
+    assert_eq!(answered.wants, [Want::Reconcile, Want::First]);
     Ok(())
 }
 
@@ -874,12 +1002,180 @@ fn twin_setup_refill_never_exceeds_three_queued() -> Result<(), AppError> {
     Ok(())
 }
 
+fn answered_step(pool: &DbPool, twin_id: &str, step_id: &str) -> Result<SetupStep, AppError> {
+    let conn = pool.get()?;
+    repo::step_on(&conn, twin_id, step_id)?.ok_or_else(|| AppError::NotFound("step".into()))
+}
+
+/// The per-answer delta reaches the snapshot: the step's `coverage_gain`,
+/// and for a goal the reading MOVED, the assessor's `why` as `last_why`. A
+/// reading that leaves a goal where it was keeps its earlier reason; a move
+/// with no reason clears it rather than leaving a stale one beside it.
+#[test]
+fn twin_setup_reconcile_puts_the_delta_on_the_wire() -> Result<(), AppError> {
+    let (pool, twin) = twin()?;
+    set_plan(&pool, &twin, |p| p.status = "ready".into())?;
+    let g = goal(&pool, &twin, "identity", "Who")?;
+    let other = goal(&pool, &twin, "tone", "How")?;
+    let conn = pool.get()?;
+    repo::set_goal_progress_on(&conn, &twin, &g, 0.2, "open", 0)?;
+    repo::set_goal_progress_on(&conn, &twin, &other, 0.5, "open", 0)?;
+    repo::set_goal_last_why_on(&conn, &twin, &other, Some("earlier reason"))?;
+    drop(conn);
+
+    let first = step(
+        &pool,
+        &twin,
+        StepSpec::live(Some(g.as_str()), "What do you build?"),
+    )?;
+    session::answer(
+        &pool,
+        &twin,
+        &first,
+        Some("Tools for hardware teams"),
+        None,
+        readiness(),
+    )?;
+    let raw = format!(
+        r#"{{"coverage":[
+            {{"goalId":"{g}","coverage":0.55,"why":"Named what they build and for whom"}},
+            {{"goalId":"{other}","coverage":0.5,"why":"unchanged"}}
+          ],"offers":[],"followUp":null,"observation":null}}"#
+    );
+    let assess = parse_assess(&raw, false).map_err(AppError::Validation)?;
+    let s = answered_step(&pool, &twin, &first)?;
+    reconcile::apply(&pool, &twin, Some(&s), Some(Ok(assess)), None)?;
+
+    let snap = repo::snapshot(&pool, &twin)?;
+    let gain = snap
+        .transcript
+        .iter()
+        .find(|x| x.id == first)
+        .and_then(|x| x.coverage_gain);
+    assert!(
+        gain.is_some_and(|x| (x - 0.35).abs() < 1e-9),
+        "gain {gain:?}"
+    );
+    let why = |snap: &crate::db::models::SetupSessionSnapshot, id: &str| {
+        snap.goals
+            .iter()
+            .find(|x| x.id == id)
+            .and_then(|x| x.last_why.clone())
+    };
+    assert_eq!(
+        why(&snap, &g).as_deref(),
+        Some("Named what they build and for whom")
+    );
+    assert_eq!(
+        why(&snap, &other).as_deref(),
+        Some("earlier reason"),
+        "no move, no new reason"
+    );
+
+    let second = step(
+        &pool,
+        &twin,
+        StepSpec::live(Some(other.as_str()), "How do you sign off?"),
+    )?;
+    session::answer(&pool, &twin, &second, Some("cheers"), None, readiness())?;
+    let raw = format!(
+        r#"{{"coverage":[{{"goalId":"{other}","coverage":0.7}}],"offers":[],"followUp":null,"observation":null}}"#
+    );
+    let assess = parse_assess(&raw, false).map_err(AppError::Validation)?;
+    let s = answered_step(&pool, &twin, &second)?;
+    reconcile::apply(&pool, &twin, Some(&s), Some(Ok(assess)), None)?;
+    let snap = repo::snapshot(&pool, &twin)?;
+    assert_eq!(
+        why(&snap, &other),
+        None,
+        "a move with no reason clears the old one"
+    );
+    Ok(())
+}
+
+fn first_reply(question: &str, goal_ref: &str) -> Result<RefillOut, AppError> {
+    parse_refill(
+        &format!(
+            r#"{{"steps":[{{"goalId":"{goal_ref}","kind":"scene","question":"{question}","answerMode":"pick"}}],"obsolete":[]}}"#
+        ),
+        false,
+    )
+    .map_err(AppError::Validation)
+}
+
+/// A first question lands only on the stage it was written for, only while
+/// that stage has nothing live or queued, and goes live at once: goal-less
+/// (an `opener`) before the stage has goals, on the real goal after.
+#[test]
+fn twin_setup_first_question_lands_only_on_a_starved_stage() -> Result<(), AppError> {
+    let (pool, twin) = twin()?;
+    set_plan(&pool, &twin, |p| p.stage = "training".into())?;
+
+    assert!(
+        !reconcile::apply_first(
+            &pool,
+            &twin,
+            "setup",
+            &first_reply("Old stage?", "identity")?
+        )?,
+        "written for a stage the plan no longer runs"
+    );
+    assert!(reconcile::apply_first(
+        &pool,
+        &twin,
+        "training",
+        &first_reply("Which first job made you proud?", "training:background")?
+    )?);
+    let live = repo::snapshot(&pool, &twin)?
+        .live
+        .ok_or_else(|| AppError::NotFound("first question live".into()))?;
+    assert_eq!(
+        (
+            live.origin.as_str(),
+            live.goal_id.as_deref(),
+            live.stage.as_str()
+        ),
+        ("opener", None, "training")
+    );
+    assert!(
+        !reconcile::apply_first(
+            &pool,
+            &twin,
+            "training",
+            &first_reply("Another?", "training:background")?
+        )?,
+        "the stage is fed: dropped, not doubled"
+    );
+    assert_eq!(live_count(&pool, &twin)?, 1);
+
+    // The stage has a goal now (the plan landed): the stand-in slot resolves.
+    let g = goal(&pool, &twin, "training:values", "Values")?;
+    session::answer(&pool, &twin, &live.id, None, None, readiness())?;
+    assert!(reconcile::apply_first(
+        &pool,
+        &twin,
+        "training",
+        &first_reply("What will you not compromise on?", "training:values")?
+    )?);
+    let live = repo::snapshot(&pool, &twin)?
+        .live
+        .ok_or_else(|| AppError::NotFound("second first question live".into()))?;
+    assert_eq!(
+        (live.origin.as_str(), live.goal_id.as_deref()),
+        ("plan", Some(g.as_str()))
+    );
+    Ok(())
+}
+
 // ---------------------------------------------------------------------------
 // Jobs
 // ---------------------------------------------------------------------------
 
+/// The two lanes: a reconcile wanted while the deep pass runs starts its own
+/// lane at once and finishes while the plan is still held; a want for a
+/// running lane joins it instead of starting a second one.
 #[tokio::test]
-async fn twin_setup_single_flight_runs_both_phases_on_one_worker() -> Result<(), AppError> {
+async fn twin_setup_lanes_run_side_by_side_and_each_is_single_flight() -> Result<(), AppError> {
     let (pool, twin) = twin()?;
     // An answered, unreconciled step for the reconcile phase to find.
     set_plan(&pool, &twin, |p| p.status = "building".into())?;
@@ -901,52 +1197,316 @@ async fn twin_setup_single_flight_runs_both_phases_on_one_worker() -> Result<(),
                 "setup_assess" => format!(
                     r#"{{"coverage":[{{"goalId":"{g_for_reply}","coverage":0.4}}],"offers":[],"followUp":null,"observation":null}}"#
                 ),
-                _ => r#"{"steps":[],"obsolete":[]}"#.to_string(),
+                _ => EMPTY_REFILL.to_string(),
             })
         },
         Some(gate.clone()),
     );
 
-    let handle = jobs::schedule(&ctx, &twin, &[Want::Plan])
-        .ok_or_else(|| AppError::Internal("first schedule starts a worker".into()))?;
-    assert!(jobs::is_running(&twin));
+    let first = jobs::schedule(&ctx, &twin, &[Want::Plan]);
+    assert!(first.plan.is_some() && first.questions.is_none());
+    assert!(jobs::is_running(&twin) && jobs::plan_running(&twin));
+    let second = jobs::schedule(&ctx, &twin, &[Want::Reconcile]);
+    assert!(second.plan.is_none(), "the plan lane is already running");
     assert!(
-        jobs::schedule(&ctx, &twin, &[Want::Reconcile]).is_none(),
-        "a second schedule joins the running worker"
+        second.questions.is_some(),
+        "the question lane starts beside the plan"
     );
-    gate.notify_one();
-    handle
-        .await
-        .map_err(|e| AppError::Internal(format!("worker: {e}")))?;
-    assert!(!jobs::is_running(&twin));
+    let joined = jobs::schedule(&ctx, &twin, &[Want::Refill]);
+    assert!(
+        joined.plan.is_none() && joined.questions.is_none(),
+        "a want for a running lane joins it"
+    );
 
-    let sites: Vec<&str> = log
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .iter()
-        .map(|(site, _)| *site)
-        .collect();
-    assert_eq!(
-        sites.first(),
-        Some(&"setup_plan"),
-        "the deep pass runs first and alone"
-    );
+    finish_while_plan_held(second.questions).await?;
+    let held = sites(&log);
     assert!(
-        sites.contains(&"setup_assess"),
-        "the reconcile wanted mid-plan still ran"
+        held.contains(&"setup_assess") && !held.contains(&"setup_plan"),
+        "reconciled while the deep pass is still held: {held:?}"
     );
-    let reasons: Vec<String> = events
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .iter()
-        .map(|e| e.reason.clone())
-        .collect();
-    assert_eq!(reasons.first().map(String::as_str), Some("plan_ready"));
-    assert!(reasons.iter().any(|r| r == "reconciled"));
+    let snap = repo::snapshot(&pool, &twin)?;
+    assert!(snap.planning && !snap.reconciling);
+    assert!(reasons(&events).iter().any(|r| r == "reconciled"));
+
+    gate.notify_one();
+    settle(first).await?;
+    assert!(!jobs::is_running(&twin));
+    assert!(sites(&log).contains(&"setup_plan"));
+    assert_eq!(
+        reasons(&events).last().map(String::as_str),
+        Some("plan_ready")
+    );
 
     let snap = repo::snapshot(&pool, &twin)?;
     assert_eq!((snap.plan_status.as_str(), snap.plan_version), ("ready", 1));
     assert!(!snap.reconciling);
+    Ok(())
+}
+
+const FIRST_QUESTION: &str = "Which first job are you still proud of?";
+
+/// ACCEPTANCE (WP1 #2): a cold training open, the client's real sequence
+/// (open with no opener, then the stage steer), puts a question from
+/// `SETUP_FIRST` live while the scripted deep pass is still held; the plan
+/// then lands around it and never over it.
+#[tokio::test]
+async fn twin_setup_cold_training_open_asks_before_the_plan_returns() -> Result<(), AppError> {
+    let (pool, twin) = twin()?;
+    let gate = Arc::new(Notify::new());
+    let (ctx, log, _events) = scripted_ctx(
+        &pool,
+        |site, _| {
+            Ok(match site {
+                "setup_plan" => PLAN_JSON.to_string(),
+                "setup_first" => format!(
+                    r#"{{"steps":[{{"goalId":"training:background","kind":"scene","question":"{FIRST_QUESTION}",
+                        "answerMode":"pick","suggestions":[{{"text":"My first shop job","reason":"a real start"}}]}}],
+                        "obsolete":[]}}"#
+                ),
+                _ => EMPTY_REFILL.to_string(),
+            })
+        },
+        Some(gate.clone()),
+    );
+
+    let opened = session::open(&pool, &twin, Some("en"), readiness(), None, false)?;
+    let plan_lane = jobs::schedule(&ctx, &twin, &opened.wants);
+    assert!(plan_lane.plan.is_some() && plan_lane.questions.is_none());
+    let steered = session::steer(
+        &pool,
+        &twin,
+        SetupSteer::SetStage {
+            stage: "training".into(),
+        },
+        None,
+        readiness(),
+    )?;
+    let started = jobs::schedule(&ctx, &twin, &steered.wants);
+    assert!(started.plan.is_none(), "the deep pass is already running");
+    finish_while_plan_held(started.questions).await?;
+
+    let snap = repo::snapshot(&pool, &twin)?;
+    assert!(snap.planning, "the deep pass has not returned");
+    assert_eq!(snap.plan_version, 0);
+    let live = snap
+        .live
+        .ok_or_else(|| AppError::NotFound("a live question before the plan".into()))?;
+    assert_eq!(live.question, FIRST_QUESTION);
+    assert_eq!(
+        (live.stage.as_str(), live.origin.as_str()),
+        ("training", "opener")
+    );
+    let calls = log.lock().unwrap_or_else(|e| e.into_inner()).clone();
+    assert!(
+        !calls.iter().any(|(site, _)| *site == "setup_plan"),
+        "still held"
+    );
+    let first_prompt = calls
+        .iter()
+        .find(|(site, _)| *site == "setup_first")
+        .map(|(_, p)| p.clone())
+        .ok_or_else(|| AppError::NotFound("a setup_first call".into()))?;
+    assert!(first_prompt.contains("must hold 1 more question"));
+    assert!(
+        first_prompt.contains("training:background"),
+        "no goals yet: the skeleton stand-ins are the targets"
+    );
+
+    gate.notify_one();
+    settle(plan_lane).await?;
+    let snap = repo::snapshot(&pool, &twin)?;
+    assert_eq!(snap.plan_status, "ready");
+    assert_eq!(
+        snap.live.map(|s| s.id),
+        Some(live.id),
+        "the plan never touches the live question"
+    );
+    assert_eq!(live_count(&pool, &twin)?, 1);
+    Ok(())
+}
+
+/// ACCEPTANCE (WP1 #3): the 5th answer wants a deep pass AND a reconcile;
+/// the refill (and the assessment, with its delta) are applied while the
+/// deep pass is still in flight. The plan that lands later may retire the
+/// refill's queued questions: the operator-accepted risk.
+#[tokio::test]
+async fn twin_setup_fifth_answer_refills_while_the_deep_pass_runs() -> Result<(), AppError> {
+    let (pool, twin) = twin()?;
+    set_plan(&pool, &twin, |p| {
+        p.status = "ready".into();
+        p.answers_since_deep = session::DEEP_PASS_EVERY - 1;
+    })?;
+    let g = goal(&pool, &twin, "identity", "Who")?;
+    let live = step(
+        &pool,
+        &twin,
+        StepSpec::live(Some(g.as_str()), "What do you do?"),
+    )?;
+    step(
+        &pool,
+        &twin,
+        StepSpec::queued(Some(g.as_str()), "Who is it for?"),
+    )?;
+    let answered = session::answer(
+        &pool,
+        &twin,
+        &live,
+        Some("I build tools"),
+        None,
+        readiness(),
+    )?;
+    assert!(answered.wants.contains(&Want::Plan) && answered.wants.contains(&Want::Reconcile));
+    assert!(
+        !answered.wants.contains(&Want::First),
+        "the queue was not starved"
+    );
+
+    let gate = Arc::new(Notify::new());
+    let g_reply = g.clone();
+    let (ctx, log, events) = scripted_ctx(
+        &pool,
+        move |site, _| {
+            Ok(match site {
+                "setup_plan" => PLAN_JSON.to_string(),
+                "setup_assess" => format!(
+                    r#"{{"coverage":[{{"goalId":"{g_reply}","coverage":0.4,"why":"Said what they make"}}],
+                        "offers":[],"followUp":null,"observation":null}}"#
+                ),
+                "setup_refill" => format!(
+                    r#"{{"steps":[
+                        {{"goalId":"{g_reply}","kind":"fact","question":"Refilled one?","answerMode":"pick"}},
+                        {{"goalId":"{g_reply}","kind":"fact","question":"Refilled two?","answerMode":"pick"}}
+                      ],"obsolete":[]}}"#
+                ),
+                _ => EMPTY_REFILL.to_string(),
+            })
+        },
+        Some(gate.clone()),
+    );
+    let started = jobs::schedule(&ctx, &twin, &answered.wants);
+    let plan_lane = jobs::Started {
+        plan: started.plan,
+        questions: None,
+    };
+    assert!(
+        plan_lane.plan.is_some(),
+        "the 5th answer starts a deep pass"
+    );
+    finish_while_plan_held(started.questions).await?;
+
+    let snap = repo::snapshot(&pool, &twin)?;
+    assert!(snap.planning, "the deep pass is still in flight");
+    let upcoming: Vec<&str> = snap.upcoming.iter().map(|s| s.question.as_str()).collect();
+    assert_eq!(
+        upcoming,
+        ["Refilled one?", "Refilled two?"],
+        "refill applied"
+    );
+    assert!(!snap.reconciling, "the assessment applied too");
+    let gain = snap
+        .transcript
+        .iter()
+        .find(|s| s.id == live)
+        .and_then(|s| s.coverage_gain);
+    assert!(gain.is_some_and(|x| (x - 0.4).abs() < 1e-9));
+    let why = snap
+        .goals
+        .iter()
+        .find(|x| x.id == g)
+        .and_then(|x| x.last_why.clone());
+    assert_eq!(why.as_deref(), Some("Said what they make"));
+    assert!(!sites(&log).contains(&"setup_plan"), "still held");
+    let announced = reasons(&events);
+    assert!(
+        announced.iter().any(|r| r == "refilled") && announced.iter().any(|r| r == "reconciled")
+    );
+
+    gate.notify_one();
+    settle(plan_lane).await?;
+    let snap = repo::snapshot(&pool, &twin)?;
+    assert_eq!((snap.plan_status.as_str(), snap.plan_version), ("ready", 1));
+    assert!(
+        !snap
+            .upcoming
+            .iter()
+            .any(|s| s.question.starts_with("Refilled")),
+        "the new plan retired the refill written against the old one"
+    );
+    assert_eq!(live_count(&pool, &twin)?, 1);
+    Ok(())
+}
+
+/// Assess and refill no longer apply together: with the assessment held,
+/// the refill lands and its question goes live; the assessment applies on
+/// its own return.
+#[tokio::test]
+async fn twin_setup_refill_lands_before_a_slow_assessment() -> Result<(), AppError> {
+    const POLL: std::time::Duration = std::time::Duration::from_millis(20);
+    let (pool, twin) = twin()?;
+    set_plan(&pool, &twin, |p| p.status = "ready".into())?;
+    let g = goal(&pool, &twin, "identity", "Who")?;
+    let live = step(
+        &pool,
+        &twin,
+        StepSpec::live(Some(g.as_str()), "What do you do?"),
+    )?;
+    let answered = session::answer(
+        &pool,
+        &twin,
+        &live,
+        Some("I build tools"),
+        None,
+        readiness(),
+    )?;
+    assert_eq!(
+        answered.wants,
+        [Want::Reconcile],
+        "no deep pass: no first question"
+    );
+    assert!(answered.snapshot.live.is_none(), "the queue ran dry");
+
+    let gate = Arc::new(Notify::new());
+    let g_reply = g.clone();
+    let (ctx, _log, events) = scripted_ctx_gated(
+        &pool,
+        move |site, _| {
+            Ok(match site {
+                "setup_assess" => format!(
+                    r#"{{"coverage":[{{"goalId":"{g_reply}","coverage":0.3}}],"offers":[],"followUp":null,"observation":null}}"#
+                ),
+                "setup_refill" => format!(
+                    r#"{{"steps":[{{"goalId":"{g_reply}","kind":"fact","question":"Who is it for?","answerMode":"pick"}}],"obsolete":[]}}"#
+                ),
+                _ => EMPTY_REFILL.to_string(),
+            })
+        },
+        "setup_assess",
+        Some(gate.clone()),
+    );
+    let started = jobs::schedule(&ctx, &twin, &answered.wants);
+    tokio::time::timeout(HELD_LANE_DEADLINE, async {
+        while !reasons(&events).iter().any(|r| r == "refilled") {
+            tokio::time::sleep(POLL).await;
+        }
+    })
+    .await
+    .map_err(|_| AppError::Internal("the refill waited on the held assessment".into()))?;
+    let snap = repo::snapshot(&pool, &twin)?;
+    assert_eq!(
+        snap.live.map(|s| s.question).as_deref(),
+        Some("Who is it for?"),
+        "the refill's question is live before the assessment lands"
+    );
+    assert!(snap.reconciling, "the assessment is still out");
+
+    gate.notify_one();
+    settle(started).await?;
+    let snap = repo::snapshot(&pool, &twin)?;
+    assert!(!snap.reconciling);
+    assert_eq!(
+        reasons(&events).last().map(String::as_str),
+        Some("reconciled")
+    );
     Ok(())
 }
 
@@ -955,11 +1515,9 @@ async fn twin_setup_plan_failure_is_recorded_after_one_repair() -> Result<(), Ap
     let (pool, twin) = twin()?;
     set_plan(&pool, &twin, |_| {})?;
     let (ctx, log, events) = scripted_ctx(&pool, |_, _| Ok("not json".to_string()), None);
-    let handle = jobs::schedule(&ctx, &twin, &[Want::Plan])
-        .ok_or_else(|| AppError::Internal("worker".into()))?;
-    handle
-        .await
-        .map_err(|e| AppError::Internal(format!("worker: {e}")))?;
+    let started = jobs::schedule(&ctx, &twin, &[Want::Plan]);
+    assert!(started.plan.is_some(), "a plan want starts the plan lane");
+    settle(started).await?;
     let prompts: Vec<String> = log
         .lock()
         .unwrap_or_else(|e| e.into_inner())
@@ -1169,17 +1727,13 @@ async fn live_opus_round_trip() -> Result<(), AppError> {
         }
     };
 
-    // 1. First open, no plan: the deep pass (SONNET_CURRENT @ medium).
+    // 1. First open, no plan: the deep pass (SONNET_CURRENT @ low).
     let opened = session::open(&pool, &twin, Some("en"), readiness(), None, false)?;
     assert!(
         opened.wants.contains(&Want::Plan),
         "a twin with no plan wants one"
     );
-    let handle = jobs::schedule(&ctx, &twin, &opened.wants)
-        .ok_or_else(|| AppError::Internal("open starts a worker".into()))?;
-    handle
-        .await
-        .map_err(|e| AppError::Internal(format!("plan worker: {e}")))?;
+    settle(jobs::schedule(&ctx, &twin, &opened.wants)).await?;
     first_parse("setup_plan", &|raw| parse_plan(raw, false).map(|_| ()));
 
     let snap = repo::snapshot(&pool, &twin)?;
@@ -1267,11 +1821,7 @@ async fn live_opus_round_trip() -> Result<(), AppError> {
     )?;
     let queued_before = answered.snapshot.upcoming.len();
     assert!(answered.wants.contains(&Want::Reconcile));
-    let handle = jobs::schedule(&ctx, &twin, &answered.wants)
-        .ok_or_else(|| AppError::Internal("answer starts a worker".into()))?;
-    handle
-        .await
-        .map_err(|e| AppError::Internal(format!("reconcile worker: {e}")))?;
+    settle(jobs::schedule(&ctx, &twin, &answered.wants)).await?;
     first_parse("setup_assess", &|raw| parse_assess(raw, false).map(|_| ()));
     first_parse("setup_refill", &|raw| parse_refill(raw, false).map(|_| ()));
 
@@ -1293,7 +1843,7 @@ async fn live_opus_round_trip() -> Result<(), AppError> {
         );
     }
     assert!(
-        assess.coverage.iter().any(|(id, _)| id == &goal_id),
+        assess.coverage.iter().any(|c| c.goal_id == goal_id),
         "assess gave no coverage for the answered goal {goal_id}"
     );
 

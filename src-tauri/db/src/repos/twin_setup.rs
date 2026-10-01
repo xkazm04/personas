@@ -37,10 +37,12 @@ const PLAN_COLUMNS: &str = "twin_id, status, version, stage, topic_preset, focus
      last_deep_at";
 
 const GOAL_COLUMNS: &str =
-    "id, slot, title, intent, criteria_json, state, pinned, coverage, position, answered";
+    "id, slot, title, intent, criteria_json, state, pinned, coverage, position, \
+     answered, last_why";
 
 const STEP_COLUMNS: &str = "id, goal_id, stage, origin, kind, question, answer_mode, incoming, \
-     tone_channel, suggestions_json, status, answer, position, asked_at, answered_at, reconciled";
+     tone_channel, suggestions_json, status, answer, position, asked_at, answered_at, reconciled, \
+     coverage_gain";
 
 const OFFER_COLUMNS: &str =
     "id, step_id, origin, kind, part, channel, value, length_hint, reason, status";
@@ -155,10 +157,12 @@ struct GoalRow {
     coverage: f64,
     position: i64,
     answered: i64,
+    last_why: Option<String>,
 }
 
 row_mapper!(row_to_goal_raw -> GoalRow {
     id, slot, title, intent, criteria_json, state, pinned[bool], coverage, position, answered,
+    last_why,
 });
 
 fn row_to_goal(row: &rusqlite::Row) -> rusqlite::Result<SetupGoal> {
@@ -174,8 +178,7 @@ fn row_to_goal(row: &rusqlite::Row) -> rusqlite::Result<SetupGoal> {
         coverage: raw.coverage,
         position: raw.position,
         answered: raw.answered,
-        // WP1 (spark twin-portable-blueprint) selects `last_why`.
-        last_why: None,
+        last_why: raw.last_why,
     })
 }
 
@@ -196,11 +199,13 @@ struct StepRow {
     asked_at: Option<String>,
     answered_at: Option<String>,
     reconciled: bool,
+    coverage_gain: Option<f64>,
 }
 
 row_mapper!(row_to_step_raw -> StepRow {
     id, goal_id, stage, origin, kind, question, answer_mode, incoming, tone_channel,
     suggestions_json, status, answer, position, asked_at, answered_at, reconciled[bool],
+    coverage_gain,
 });
 
 fn row_to_step(row: &rusqlite::Row) -> rusqlite::Result<SetupStep> {
@@ -222,8 +227,7 @@ fn row_to_step(row: &rusqlite::Row) -> rusqlite::Result<SetupStep> {
         asked_at: raw.asked_at,
         answered_at: raw.answered_at,
         reconciled: raw.reconciled,
-        // WP1 (spark twin-portable-blueprint) selects `coverage_gain`.
-        coverage_gain: None,
+        coverage_gain: raw.coverage_gain,
     })
 }
 
@@ -725,6 +729,28 @@ pub fn set_goal_progress_on(
                 SET coverage = ?3, state = ?4, stall = ?5, updated_at = datetime('now')
               WHERE twin_id = ?1 AND id = ?2",
                 params![twin_id, goal_id, coverage, state, stall],
+            )? > 0)
+        }
+    )
+}
+
+/// The assessor's reason for the goal's latest coverage move. `None` clears
+/// it: a move the assessor gave no reason for must not keep the previous
+/// move's reason beside it. `false` when no such goal.
+pub fn set_goal_last_why_on(
+    conn: &Connection,
+    twin_id: &str,
+    goal_id: &str,
+    why: Option<&str>,
+) -> Result<bool, AppError> {
+    timed_query!(
+        "twin_setup_goals",
+        "twin_setup_goals::set_goal_last_why_on",
+        {
+            Ok(conn.execute(
+                "UPDATE twin_setup_goals SET last_why = ?3, updated_at = datetime('now')
+              WHERE twin_id = ?1 AND id = ?2",
+                params![twin_id, goal_id, why],
             )? > 0)
         }
     )
@@ -1358,6 +1384,13 @@ mod tests {
         let transcript: Vec<&str> = snap.transcript.iter().map(|s| s.id.as_str()).collect();
         assert_eq!(transcript, ["a1", "a2", "a3"], "history oldest first");
         assert_eq!(snap.transcript[2].suggestions[0].text, "Hi");
+        let gains: Vec<Option<f64>> = snap.transcript.iter().map(|s| s.coverage_gain).collect();
+        assert_eq!(
+            gains,
+            [Some(0.4), None, Some(0.2)],
+            "coverage_gain on the wire"
+        );
+        assert_eq!(snap.goals[0].last_why, None, "no move recorded yet");
 
         // o1 was resolved before the live step was asked; o3 after it.
         let offers: Vec<&str> = snap.offers.iter().map(|o| o.id.as_str()).collect();
@@ -1375,6 +1408,31 @@ mod tests {
         plan.status = "building".into();
         upsert_plan(&pool, &plan)?;
         assert!(snapshot(&pool, "t1")?.planning);
+
+        // last_why: written, read back, cleared.
+        let conn = pool.get()?;
+        assert!(set_goal_last_why_on(
+            &conn,
+            "t1",
+            "g1",
+            Some("named the role")
+        )?);
+        assert!(!set_goal_last_why_on(&conn, "t1", "nope", Some("x"))?);
+        drop(conn);
+        let goal = |snap: &SetupSessionSnapshot| {
+            snap.goals
+                .iter()
+                .find(|g| g.id == "g1")
+                .and_then(|g| g.last_why.clone())
+        };
+        assert_eq!(
+            goal(&snapshot(&pool, "t1")?).as_deref(),
+            Some("named the role")
+        );
+        let conn = pool.get()?;
+        set_goal_last_why_on(&conn, "t1", "g1", None)?;
+        drop(conn);
+        assert_eq!(goal(&snapshot(&pool, "t1")?), None);
         Ok(())
     }
 
