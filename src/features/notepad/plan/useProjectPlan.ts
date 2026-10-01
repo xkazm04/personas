@@ -56,7 +56,9 @@ export interface ShipData {
   /** The full active use-case pool through the Ship lens. */
   features: ShipFeature[];
   goals: ShipGoal[];
-  setStatus: (id: string, status: MilestoneStatus) => void;
+  /** Resolves when the status write and its refetch have settled. Rejects
+   *  after the toast, so a certify dialog can stay open and be retried. */
+  setStatus: (id: string, status: MilestoneStatus) => Promise<void>;
   /** Rename the milestone's objective TITLE (the `goal` column). */
   setGoal: (id: string, goal: string) => void;
   /**
@@ -342,7 +344,10 @@ export function useProjectPlan(projectId: string): ShipData {
   // `set_brief_from_note` on every note write. Leaving them here would be two
   // untested paths writing the column the note already owns.
   const setStatus = useCallback((id: string, status: MilestoneStatus) => {
-    void updateMilestone(id, { status }).then(reload).catch(toastCatch('ship milestone status'));
+    return updateMilestone(id, { status }).then(reload).catch((e: unknown) => {
+      toastCatch('ship milestone status')(e);
+      throw e;
+    });
   }, [reload]);
 
   const setGoal = useCallback((id: string, goal: string) => {

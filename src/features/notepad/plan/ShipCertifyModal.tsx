@@ -16,15 +16,19 @@
 // cannot be fired twice by a double-click or an impatient retry. The version
 // this replaces reimplemented the panel, the button pair and the spacing — and
 // did not reimplement that guard.
+import { useRef } from 'react';
+
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 
 import type { ShipMilestoneVM } from '@/lib/milestone/shipModel';
 
 export function ShipCertifyModal({ vm, onCertify, onClose }: {
   vm: ShipMilestoneVM;
-  /** Advance the lifecycle: planned → active (cut), active → shipped. */
-  onCertify: () => void;
+  /** Advance the lifecycle: planned → active (cut), active → shipped.
+   *  Return the write so the dialog can stay up until it settles. */
+  onCertify: () => void | Promise<void>;
   onClose: () => void;
 }) {
   const { t, tx } = useTranslation();
@@ -34,6 +38,11 @@ export function ShipCertifyModal({ vm, onCertify, onClose }: {
   // cut, so they cannot be a precondition for making one.
   const cutting = vm.status === 'planned';
   const met = vm.criteria.filter((c) => c.state === 'go').length;
+  // ConfirmDialog disables its buttons from React state, which paints after
+  // the click. A second confirm in that same turn would start another write,
+  // so the latch is a ref. The dialog closes only after the write resolves;
+  // a rejection leaves it up for a retry.
+  const started = useRef(false);
 
   return (
     <ConfirmDialog
@@ -44,7 +53,17 @@ export function ShipCertifyModal({ vm, onCertify, onClose }: {
       // page under this dialog.
       body={`${cutting ? t.ship.certify_cut_intro : t.ship.certify_ship_intro} ${tx(t.ship.certify_criteria_summary, { met, total: vm.criteria.length })}`}
       confirmLabel={cutting ? t.ship.certify_cut : t.ship.certify_ship}
-      onConfirm={() => { onCertify(); onClose(); }}
+      onConfirm={async () => {
+        if (started.current) return;
+        started.current = true;
+        try {
+          await onCertify();
+          onClose();
+        } catch (e) {
+          started.current = false;
+          silentCatch('ship certify')(e);
+        }
+      }}
       onCancel={onClose}
     />
   );
