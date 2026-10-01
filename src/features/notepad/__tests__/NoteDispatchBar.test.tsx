@@ -134,12 +134,26 @@ describe('NoteDispatchBar — the reaction to a press', () => {
     expect(screen.getByTestId('project-dropdown')).toHaveAttribute('data-show-path', 'false');
   });
 
+  // The title promised a reason and the body only checked `disabled`, and the
+  // `not.toHaveBeenCalled` below it was green on a bar nobody had pressed. Each
+  // control is now pressed, and its tooltip must say WHY — "already left", not
+  // the missing-project sentence the same wrapper shows for the other refusal.
   it('refuses every dispatch on a note that has already left, and says which reason', async () => {
     const { actions } = bar({ note: note({ status: 'published' }) });
-    expect(screen.getByTestId('notepad-publish-fleet')).toBeDisabled();
-    expect(screen.getByTestId('notepad-to-goals')).toBeDisabled();
-    expect(screen.getByTestId('notepad-ask-athena')).toBeDisabled();
+    for (const id of ['notepad-publish-fleet', 'notepad-to-goals', 'notepad-ask-athena']) {
+      const button = screen.getByTestId(id);
+      expect(button).toBeDisabled();
+      fireEvent.click(button);
+      const wrapper = button.closest('[aria-disabled="true"]');
+      expect(wrapper).not.toBeNull();
+      fireEvent.focus(wrapper!);
+      expect(await screen.findByText(/This note has already left/)).toBeInTheDocument();
+      expect(screen.queryByText(/Pick a project first/)).toBeNull();
+      fireEvent.blur(wrapper!);
+    }
     expect(actions.publishFleet).not.toHaveBeenCalled();
+    expect(actions.toGoals).not.toHaveBeenCalled();
+    expect(actions.askAthena).not.toHaveBeenCalled();
   });
 });
 
