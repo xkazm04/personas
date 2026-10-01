@@ -1,0 +1,159 @@
+/* Strata, the flat surfaces around the stack: L1 callouts, the stage readout
+   and delta chip, and the CSS loops (breathe, scan, dots). Type is always a
+   typo-* class on the element; colour only from the scene's --s-* tints
+   (strata.css) or theme tokens. */
+
+/* ---------- L1 callouts ---------- */
+.strata-callout {
+  position: absolute;
+  left: calc(var(--cx) + var(--W) * 0.5728);
+  top: calc(var(--top) + var(--i) * var(--gap) - var(--W) * 0.0672);
+  width: min(640px, calc(97cqw - var(--cx) - var(--W) * 0.5728));
+  translate: 0 -50%;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: opacity 300ms ease;
+}
+.strata-scene:not([data-layout="overview"]) .strata-callout {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 180ms ease, visibility 0s linear 180ms;
+}
+.strata-leader {
+  position: relative;
+  flex: 0 0 clamp(20px, 3.5cqw, 56px);
+  height: 1px;
+  background: var(--s-line);
+  transition: background-color 200ms ease;
+}
+.strata-leader::before {
+  content: "";
+  position: absolute;
+  left: -3px;
+  top: -3px;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  background: var(--s-ink);
+  box-shadow: 0 0 8px var(--s-glow);
+}
+.strata-callout-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 14px;
+  border-left: 2px solid var(--s-line-soft);
+  border-radius: 0 var(--radius-card) var(--radius-card) 0;
+  transition: background-color 200ms ease, border-color 200ms ease;
+}
+.strata-callout[data-hot="true"] .strata-leader { background: var(--s-ink); }
+.strata-callout[data-hot="true"] .strata-callout-body {
+  border-left-color: var(--s-ink);
+  background: color-mix(in srgb, var(--primary) 7%, transparent);
+}
+.strata-hint {
+  position: absolute;
+  right: 3cqw;
+  bottom: 1.5cqh;
+  margin: 0;
+}
+
+/* ---------- stage ---------- */
+.strata-readout {
+  position: absolute;
+  left: 1.5cqw;
+  top: calc(var(--top) + 3.35 * var(--gap) + var(--W) * 0.2864 + 18px);
+  max-height: calc(97cqh - var(--top) - 3.35 * var(--gap) - var(--W) * 0.2864 - 18px);
+  width: max(160px, min(400px, calc(50cqw - 276px)));
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 14px;
+  border-left: 2px solid var(--s-line-soft);
+}
+.strata-chip-anchor {
+  position: absolute;
+  left: var(--pcx);
+  top: var(--pcy);
+  translate: -50% -50%;
+  z-index: 2;
+  pointer-events: none;
+}
+.strata-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 12px;
+  white-space: nowrap;
+  color: var(--background);
+  background: var(--primary);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 22%, transparent), 0 8px 22px -6px var(--s-glow);
+}
+.strata-scan {
+  --scan-travel: calc(3 * var(--gap) + var(--W) * 0.5728);
+  position: absolute;
+  left: 0;
+  top: calc(var(--top) - var(--W) * 0.2864);
+  width: calc(var(--cx) + var(--W) * 0.5728 + 1.5cqw);
+  height: 2px;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--s-ink) 25%, var(--s-ink) 75%, transparent);
+  box-shadow: 0 0 14px 2px var(--s-glow);
+  animation: strata-scan 4.4s linear infinite;
+}
+
+/* ---------- loops (CSS on purpose: reduced motion reaches them) ---------- */
+.strata-lane[data-breathe="on"] {
+  animation: strata-breathe 6.5s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -0.45s);
+}
+.strata-scene[data-working="true"][data-motion="full"][data-layout="stage"] .strata-face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--primary) 22%, transparent);
+  opacity: 0;
+  animation: strata-face-pulse 4.4s linear infinite;
+  animation-delay: calc(var(--i) * 0.95s + 0.35s);
+}
+.strata-dots[data-loop="dots"]::after {
+  content: "...";
+  display: inline-block;
+  width: 0;
+  overflow: hidden;
+  vertical-align: bottom;
+  animation: strata-dots 1.6s steps(4, end) infinite;
+}
+@keyframes strata-breathe {
+  50% { translate: 0 calc((var(--i) - 1.5) * 6px); }
+}
+@keyframes strata-scan {
+  0% { translate: 0 0; opacity: 0; }
+  8%, 92% { opacity: 1; }
+  100% { translate: 0 var(--scan-travel); opacity: 0; }
+}
+@keyframes strata-face-pulse {
+  0%, 14%, 100% { opacity: 0; }
+  6% { opacity: 1; }
+}
+@keyframes strata-dots {
+  to { width: 1.3em; }
+}
+
+/* ---------- reduced motion: fades only ---------- */
+.strata-scene[data-motion="reduced"] { animation: strata-fade 260ms ease both; }
+@keyframes strata-fade {
+  from { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .strata-scene .strata-plate { transition: none; }
+  .strata-lane[data-breathe],
+  .strata-dots::after,
+  .strata-face::after { animation: none; }
+  .strata-scan { display: none; }
+}

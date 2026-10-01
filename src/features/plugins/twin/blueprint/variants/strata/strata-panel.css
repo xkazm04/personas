@@ -1,0 +1,301 @@
+/* Strata L2: the panel that sits on the lifted plate and its charts (meters,
+   voice rows, ledger, waffle, ring, topic tiles, goal table). Type is always a
+   typo-* class on the element; colour only from the scene's --s-* tints
+   (strata.css) or theme tokens. */
+
+/* ---------- L2 panel ---------- */
+.strata-panel {
+  position: absolute;
+  left: 24cqw;
+  top: 3cqh;
+  width: 74cqw;
+  height: 94cqh;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 20px 14px;
+}
+.strata-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.strata-panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 2px 4px;
+}
+.strata-two {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px 28px;
+  align-items: start;
+}
+.strata-three {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.strata-row {
+  min-width: 0;
+  cursor: pointer;
+  border-radius: var(--radius-input);
+  transition: background-color 150ms ease;
+}
+.strata-row:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
+.strata-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--s-line-soft);
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--primary) 4%, transparent);
+}
+
+/* Meters: a bar on a declared domain. */
+.strata-meter {
+  position: relative;
+  display: block;
+  height: 8px;
+  min-width: 40px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--s-free);
+  box-shadow: inset 0 0 0 1px var(--s-line-soft);
+}
+.strata-meter--lg { height: 12px; }
+.strata-meter-solid {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--solid) * 100%);
+  background: var(--s-ink);
+  border-radius: inherit;
+}
+.strata-meter-extra {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--solid) * 100%);
+  width: calc(var(--extra) * 100%);
+  background-image: repeating-linear-gradient(135deg, var(--s-ink-soft) 0 2px, transparent 2px 5px);
+}
+.strata-meter.is-unmeasured {
+  background: repeating-linear-gradient(135deg, var(--s-line-soft) 0 1px, transparent 1px 6px);
+  box-shadow: none;
+  outline: 1px dashed var(--s-line-soft);
+  outline-offset: -1px;
+}
+.strata-meter.is-dashed {
+  background: transparent;
+  box-shadow: none;
+  outline: 1px dashed var(--s-line-soft);
+  outline-offset: -1px;
+}
+.strata-meter[data-overflow="true"]::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  top: 50%;
+  translate: 0 -50%;
+  border-left: 5px solid var(--background);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+}
+.strata-meter-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.strata-meter-cell .strata-meter { flex: 1 1 auto; }
+
+/* Voice rows. */
+.strata-voice { display: flex; flex-direction: column; gap: 2px; }
+.strata-voice-row {
+  display: grid;
+  grid-template-columns: minmax(84px, 200px) minmax(96px, 240px) minmax(96px, 240px) 84px minmax(80px, 140px) 32px;
+  align-items: center;
+  gap: 12px clamp(12px, 2cqw, 32px);
+  padding: clamp(6px, 1.1cqh, 14px) 10px;
+}
+.strata-voice-head {
+  padding-top: 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--s-line-soft);
+}
+.strata-mark,
+.strata-origin {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  color: var(--primary);
+  border-radius: var(--radius-interactive);
+}
+.strata-mark[data-on="true"],
+.strata-origin:not([data-origin="none"]) {
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  box-shadow: inset 0 0 0 1px var(--s-line);
+}
+.strata-mark[data-on="false"],
+.strata-origin[data-origin="none"] { outline: 1px dashed var(--s-line-soft); outline-offset: -1px; }
+.strata-dims {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 26px;
+}
+.strata-dims i {
+  display: block;
+  flex: 1 1 0;
+  max-width: 8px;
+  background: var(--s-ink);
+  border-radius: 2px 2px 0 0;
+}
+.strata-dims[data-measured="false"] i {
+  background: repeating-linear-gradient(135deg, var(--s-line-soft) 0 1px, transparent 1px 4px);
+  outline: 1px dashed var(--s-line-soft);
+  outline-offset: -1px;
+}
+
+/* Knowledge ledger, share bars, ticks. */
+.strata-ledger {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.strata-swatch {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--s-ink);
+}
+.strata-share {
+  display: flex;
+  gap: 2px;
+  height: 14px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+}
+.strata-share i { flex: var(--part) 1 0%; min-width: 3px; background: var(--s-ink); }
+:is(.strata-swatch, .strata-share i).is-pending {
+  background: repeating-linear-gradient(135deg, var(--s-ink) 0 2px, transparent 2px 5px);
+  box-shadow: inset 0 0 0 1px var(--s-ink-soft);
+}
+:is(.strata-swatch, .strata-share i).is-rejected {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--s-ink-soft);
+}
+:is(.strata-swatch, .strata-share i)[data-kind="opinion"] { background: color-mix(in srgb, var(--primary) 80%, transparent); }
+:is(.strata-swatch, .strata-share i)[data-kind="reply_drill"] { background: color-mix(in srgb, var(--primary) 62%, transparent); }
+:is(.strata-swatch, .strata-share i)[data-kind="fact"] { background: color-mix(in srgb, var(--primary) 46%, transparent); }
+:is(.strata-swatch, .strata-share i)[data-kind="rule"] { background: color-mix(in srgb, var(--primary) 32%, transparent); }
+:is(.strata-swatch, .strata-share i)[data-kind="preference"] { background: color-mix(in srgb, var(--primary) 20%, transparent); }
+.strata-ticks { display: flex; gap: 3px; height: 18px; }
+.strata-ticks i { width: 4px; background: var(--s-ink); border-radius: 1px; }
+.strata-ticks[data-overflow="true"]::after {
+  content: "";
+  align-self: center;
+  margin-left: 3px;
+  border-left: 6px solid var(--s-ink);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+.strata-chip-lang {
+  padding: 2px 10px;
+  color: var(--foreground);
+  border: 1px solid var(--s-line);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+/* Training: topic tiles, the goal table. */
+.strata-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1px solid var(--s-line-soft);
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--primary) 4%, transparent);
+}
+.strata-tile-meter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+}
+.strata-scene [data-tier="covered"] { color: var(--primary); }
+.strata-scene :is([data-tier="some"], [data-tier="thin"]) { color: var(--foreground); }
+.strata-goal-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(64px, 112px) 48px 56px;
+  align-items: center;
+  gap: 12px;
+  padding: 1px 8px;
+}
+.strata-goal-head {
+  padding-bottom: 5px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--s-line-soft);
+}
+.strata-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 24px;
+  padding: 10px 8px 0;
+  border-top: 1px solid var(--s-line-soft);
+}
+
+/* Identity readiness ring, knowledge waffle. */
+.strata-ring {
+  position: relative;
+  flex: 0 0 auto;
+  width: 112px;
+  height: 112px;
+}
+.strata-ring svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  rotate: -90deg;
+}
+.strata-ring-track,
+.strata-ring-arc {
+  fill: none;
+  stroke-width: 10;
+}
+.strata-ring-track { stroke: var(--s-free); }
+.strata-ring-arc {
+  stroke: var(--s-ink);
+  stroke-linecap: round;
+}
+.strata-ring-figure {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.strata-waffle {
+  display: grid;
+  grid-template-columns: repeat(25, minmax(0, 1fr));
+  gap: 3px;
+}
+.strata-waffle .strata-swatch {
+  width: auto;
+  height: auto;
+  aspect-ratio: 1;
+}

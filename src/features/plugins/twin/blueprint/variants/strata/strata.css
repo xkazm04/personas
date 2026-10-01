@@ -1,0 +1,276 @@
+/* Strata: the twin as an exploded stack of translucent plates (spark
+   twin-portable-blueprint, WP8).
+
+   Geometry is pure CSS on container units, so nothing is measured in script:
+   the scene is a size container, its `data-layout` (overview | focus | stage)
+   sets the stack's plate width --W, centre line --cx, first-plate centre --top
+   and spacing --gap, and each lane's `data-role` (stack | lead | rail) turns
+   those into one plate's box (--pcx, --pcy, --w, --h) and its isometric tilt
+   (--rx, --rz). A plate travels between layouts by transitioning the real
+   properties those variables feed.
+
+   Isometric constants for a W x 0.62W plate under rotateX(60deg) rotateZ(-45deg),
+   orthographic: half the projected width is 0.5728W, the side corners sit
+   0.0672W off the centre line, half the projected height is 0.2864W.
+
+   Colour: every tint derives from --primary / --background / --foreground. */
+
+.strata-root {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.strata-scene {
+  --iso-x: 60deg;
+  --iso-z: -45deg;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --travel: 760ms;
+  --s-glass: color-mix(in srgb, var(--primary) 5%, transparent);
+  --s-glass-lead: color-mix(in srgb, var(--primary) 7%, var(--background));
+  --s-line: color-mix(in srgb, var(--primary) 58%, transparent);
+  --s-line-soft: color-mix(in srgb, var(--primary) 28%, transparent);
+  --s-fill: color-mix(in srgb, var(--primary) 24%, transparent);
+  --s-ink: var(--primary);
+  --s-ink-soft: color-mix(in srgb, var(--primary) 52%, transparent);
+  --s-edge: color-mix(in srgb, var(--primary) 34%, var(--background));
+  --s-glow: color-mix(in srgb, var(--primary) 42%, transparent);
+  --s-free: color-mix(in srgb, var(--primary) 9%, transparent);
+
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  container-type: size;
+}
+
+[data-theme^="light"] .strata-scene {
+  --s-glass: color-mix(in srgb, var(--primary) 6%, color-mix(in srgb, var(--background) 75%, transparent));
+  --s-glass-lead: color-mix(in srgb, var(--primary) 3%, var(--background));
+  --s-line: color-mix(in srgb, var(--primary) 72%, transparent);
+  --s-line-soft: color-mix(in srgb, var(--primary) 36%, transparent);
+  --s-fill: color-mix(in srgb, var(--primary) 17%, transparent);
+  --s-edge: color-mix(in srgb, var(--primary) 26%, var(--background));
+  --s-glow: color-mix(in srgb, var(--primary) 24%, transparent);
+  --s-free: color-mix(in srgb, var(--primary) 6%, transparent);
+}
+
+/* ---------- layouts ---------- */
+.strata-scene[data-layout="overview"] {
+  --W: min(38cqw, 46cqh);
+  --cx: max(27cqw, calc(50cqw - 300px));
+  --gap: calc(var(--W) * 0.42);
+  --top: calc(50cqh - 1.675 * var(--gap));
+}
+/* Stage: compressed into the rail left of a centred ~520px question card. */
+.strata-scene[data-layout="stage"] {
+  --W: max(110px, min(calc((50cqw - 276px) / 1.2), 26cqh));
+  --cx: calc(1.5cqw + var(--W) * 0.5728 + 4px);
+  --gap: calc(var(--W) * 0.4);
+  --top: calc(3cqh + var(--W) * 0.2864);
+}
+/* Focus: the three receded plates form a rail; the lead takes the rest. */
+.strata-scene[data-layout="focus"] {
+  --W: min(16cqw, 22cqh);
+  --cx: 11cqw;
+  --gap: calc(var(--W) * 0.72);
+  --top: calc(50cqh - var(--gap));
+}
+
+/* ---------- lanes and plates ---------- */
+.strata-lane,
+.strata-lift {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.strata-lane {
+  --w: var(--W);
+  --h: calc(var(--W) * 0.62);
+  --pcx: var(--cx);
+  --pcy: calc(var(--top) + var(--i) * var(--gap));
+  --rx: var(--iso-x);
+  --rz: var(--iso-z);
+  --t: max(3px, calc(var(--w) * 0.024));
+}
+.strata-scene[data-layout="focus"] .strata-lane[data-role="rail"] {
+  --pcy: calc(var(--top) + var(--k) * var(--gap));
+}
+.strata-scene[data-layout="focus"] .strata-lane[data-role="lead"] {
+  --w: 74cqw;
+  --h: 94cqh;
+  --pcx: 61cqw;
+  --pcy: 50cqh;
+  --rx: 0deg;
+  --rz: 0deg;
+  z-index: 2;
+}
+
+.strata-plate {
+  --dim: 1;
+  position: absolute;
+  left: calc(var(--pcx) - var(--w) / 2);
+  top: calc(var(--pcy) - var(--h) / 2);
+  width: var(--w);
+  height: var(--h);
+  transform: rotateX(var(--rx)) rotateZ(var(--rz));
+  transform-style: preserve-3d;
+  pointer-events: auto;
+  cursor: pointer;
+  outline-offset: 5px;
+}
+.strata-plate[aria-hidden="true"] {
+  cursor: default;
+  pointer-events: none;
+}
+.strata-scene[data-motion="full"] .strata-plate {
+  transition:
+    left var(--travel) var(--ease), top var(--travel) var(--ease),
+    width var(--travel) var(--ease), height var(--travel) var(--ease),
+    transform var(--travel) var(--ease), translate 220ms var(--ease);
+}
+.strata-scene[data-layout="overview"] .strata-plate[data-hot="true"] {
+  translate: 0 -8px;
+}
+.strata-scene[data-layout="focus"] .strata-lane[data-role="rail"] .strata-plate { --dim: 0.5; }
+.strata-scene[data-layout="focus"] .strata-lane[data-role="rail"] .strata-plate:is(:hover, :focus-visible) { --dim: 0.9; }
+.strata-scene[data-layout="stage"] .strata-plate { --dim: 0.58; }
+.strata-scene[data-layout="stage"] .strata-plate[data-hot="true"] { --dim: 1; }
+
+/* Opacity lives on the children: on the plate it would flatten its 3D edges. */
+.strata-face,
+.strata-edge {
+  opacity: var(--dim);
+  transition: opacity 400ms ease;
+}
+
+.strata-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--s-glass);
+  border: 1px solid var(--s-line);
+  box-shadow: inset 0 0 28px -10px var(--s-glow);
+  transition: opacity 400ms ease, background-color 400ms ease, border-radius var(--travel) var(--ease),
+    box-shadow 300ms ease, border-color 300ms ease;
+}
+.strata-plate[data-measured="false"] .strata-face { border-style: dashed; }
+.strata-plate[data-hot="true"] .strata-face {
+  border-color: var(--s-ink);
+  box-shadow: inset 0 0 32px -6px var(--s-glow), 0 0 0 1px var(--s-ink), 0 0 30px -6px var(--s-glow);
+}
+.strata-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--cov) * 100%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 14%, transparent), var(--s-fill) 70%);
+  border-right: 2px solid var(--s-ink);
+  box-shadow: 6px 0 14px -6px var(--s-glow);
+}
+.strata-plate[data-measured="false"] .strata-fill { display: none; }
+.strata-hatch {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(135deg, var(--s-free) 0 1px, transparent 1px 7px);
+}
+.strata-chart {
+  position: absolute;
+  inset: 6% 5%;
+  transition: opacity 260ms ease;
+}
+.strata-face-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* The lead plate is L2's glass: opaque enough to read on, chart handed to the panel. */
+.strata-lane[data-role="lead"] .strata-face {
+  background: var(--s-glass-lead);
+  border-color: var(--s-line-soft);
+  border-radius: var(--radius-modal);
+  box-shadow: var(--shadow-elevation-3), 0 0 60px -20px var(--s-glow);
+}
+.strata-lane[data-role="lead"] .strata-chart { opacity: 0; }
+.strata-lane[data-role="lead"] :is(.strata-fill, .strata-hatch) { opacity: 0; }
+.strata-fill,
+.strata-hatch { transition: opacity 300ms ease; }
+
+/* Slab thickness: the two front edges hang below the top face. */
+.strata-edge {
+  position: absolute;
+  background: var(--s-edge);
+  pointer-events: none;
+}
+.strata-edge--left {
+  right: 100%;
+  top: 0;
+  width: var(--t);
+  height: 100%;
+  transform-origin: 100% 50%;
+  transform: rotateY(-90deg);
+}
+.strata-edge--bottom {
+  left: 0;
+  top: 100%;
+  width: 100%;
+  height: var(--t);
+  transform-origin: 50% 0;
+  transform: rotateX(-90deg);
+}
+
+/* ---------- face drawing ---------- */
+.sf-ink { fill: var(--s-ink); }
+.sf-soft { fill: var(--s-ink-soft); }
+.sf-free { fill: var(--s-free); }
+.sf-hatch-line { fill: var(--s-ink-soft); }
+.sf-track,
+.sf-dash,
+.sf-axis {
+  fill: none;
+  stroke: var(--s-line);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.sf-dash { stroke-dasharray: 3 2; }
+.sf-axis { stroke: var(--s-line-soft); }
+.sf-hot .sf-ink,
+.sf-hot.sf-ink { fill: color-mix(in srgb, var(--primary) 70%, var(--foreground)); }
+.sf-hot .sf-track { stroke: var(--s-ink); stroke-width: 2; }
+
+/* ---------- floor and assembly lines ---------- */
+.strata-floor,
+.strata-axis {
+  position: absolute;
+  pointer-events: none;
+  transition: opacity 300ms ease;
+}
+.strata-floor {
+  left: calc(var(--cx) - var(--W) / 2);
+  top: calc(var(--top) + 3.35 * var(--gap) - var(--W) * 0.31);
+  width: var(--W);
+  height: calc(var(--W) * 0.62);
+  transform: rotateX(var(--iso-x)) rotateZ(var(--iso-z));
+  border: 1px dashed var(--s-line-soft);
+  border-radius: 3px;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--primary) 12%, transparent), transparent);
+}
+.strata-axis {
+  width: 0;
+  height: calc(3.35 * var(--gap));
+  border-left: 1px dashed var(--s-line-soft);
+}
+.strata-axis--right {
+  left: calc(var(--cx) + var(--W) * 0.5728);
+  top: calc(var(--top) - var(--W) * 0.0672);
+}
+.strata-axis--left {
+  left: calc(var(--cx) - var(--W) * 0.5728);
+  top: calc(var(--top) + var(--W) * 0.0672);
+}
+.strata-scene[data-layout="focus"] :is(.strata-floor, .strata-axis) { opacity: 0; }
