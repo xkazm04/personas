@@ -1,5 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { LETTERING } from '@/features/studio/guide/drafting/draftingModel';
+import DrawFrame from './draw/DrawFrame';
+import Write from './draw/Write';
 
 // Studio's drafting lettering (mono, upper case, spaced), borrowed for its
 // voice only: LETTERING fixes a 12 px size, and this sheet keeps every word on
@@ -11,6 +13,7 @@ export const LETTER_STYLE: CSSProperties = {
   fontFamily: 'var(--font-mono)',
 };
 
+/** Drafting lettering; a plain string is lettered in when the sheet draws itself. */
 export function Letter({
   children,
   strong = false,
@@ -22,31 +25,36 @@ export function Letter({
 }) {
   return (
     <span className={`typo-label ${className}`} style={{ ...LETTER_STYLE, color: strong ? 'var(--ink-strong)' : 'var(--ink)' }}>
-      {children}
+      {typeof children === 'string' ? <Write text={children} /> : children}
     </span>
   );
 }
 
 /**
- * A drawing's balloon: a numbered circle. Inked once there is something to
- * show; a dashed outline while the part is still pending.
+ * A drawing's balloon: a numbered circle, drawn as its container's content
+ * (the circle, then, once inked, the ink filling it, then the number). Inked
+ * once there is something to show; a dashed outline while the part is still
+ * pending.
  */
-export function Balloon({ children, inked, size = 28 }: { children: ReactNode; inked: boolean; size?: number }) {
+export function Balloon({ number, inked, size = 28 }: { number: number; inked: boolean; size?: number }) {
   return (
     <span
       aria-hidden
-      className="typo-label inline-flex shrink-0 items-center justify-center rounded-full"
+      className="typo-label relative inline-flex shrink-0 items-center justify-center rounded-full"
       style={{
         ...LETTER_STYLE,
         letterSpacing: 0,
         width: size,
         height: size,
-        border: `1px ${inked ? 'solid' : 'dashed'} ${inked ? 'var(--ink)' : 'var(--ink-dim)'}`,
-        background: inked ? 'var(--ink)' : 'transparent',
+        border: '1px solid transparent',
         color: inked ? 'var(--paper)' : 'var(--ink-strong)',
       }}
     >
-      {children}
+      <DrawFrame shape="circle" kind="stroke" stroke={inked ? 'var(--ink)' : 'var(--ink-dim)'} dash={inked ? undefined : '3 2'} />
+      {inked && <span data-draw="rise" className="absolute inset-0 rounded-full" style={{ background: 'var(--ink)' }} />}
+      <span className="relative">
+        <Write text={String(number)} />
+      </span>
     </span>
   );
 }
@@ -61,12 +69,14 @@ export function BreakMark({ height = 16 }: { height?: number }) {
         fill="none"
         stroke="var(--ink-strong)"
         strokeWidth={1.25}
+        pathLength={100}
+        data-draw="stroke"
       />
     </svg>
   );
 }
 
-/** The "not measured" patch: hatched, never an empty bar. */
+/** The "not measured" patch: hatched, never an empty bar; the hatch sweeps in. */
 export function Unmeasured({ className = '', style }: { className?: string; style?: CSSProperties }) {
-  return <span aria-hidden data-measured="false" className={`twd-hatch block ${className}`} style={style} />;
+  return <span aria-hidden data-measured="false" data-draw="sweep" className={`twd-hatch block ${className}`} style={style} />;
 }

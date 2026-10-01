@@ -33,14 +33,13 @@ export function useMarkRegistry() {
 const VISIT_MS = 2400;
 
 /**
- * Where the pen is: at the part just drawn while the sheet builds up; at the
- * mark the last answer landed on; touring the regions while the engine works;
- * otherwise lifted off the sheet. Never under reduced motion.
+ * Where the pen is: wherever the sheet is drawing (`drawAt`, the draw-in's
+ * waypoints); otherwise at the mark the last answer landed on; touring the
+ * regions while the engine works; otherwise lifted off the sheet. Never under
+ * reduced motion.
  */
 export function useSheetPen({
-  order,
-  drawn,
-  building,
+  drawAt,
   targetKey,
   targetSection,
   working,
@@ -48,19 +47,17 @@ export function useSheetPen({
   reduced,
   find,
 }: {
-  order: readonly string[];
-  drawn: number;
-  building: boolean;
+  drawAt: HTMLElement | null;
   targetKey: string | null;
   targetSection: string | null;
   working: boolean;
-  /** The pen belongs on this view (L1 build-up or stage); false in a zoom. */
+  /** The pen belongs on this view once it is drawn (stage); a drawing's own waypoints bring it to any view. */
   active: boolean;
   reduced: boolean;
   find: (key: string | null) => HTMLElement | null;
 }): HTMLElement | null {
   const [visit, setVisit] = useState(0);
-  const touring = active && !reduced && working && !building && !targetKey;
+  const touring = active && !reduced && !drawAt && working && !targetKey;
   useEffect(() => {
     if (!touring) return;
     const timer = window.setInterval(() => setVisit((v) => v + 1), VISIT_MS);
@@ -69,13 +66,11 @@ export function useSheetPen({
 
   const key = !active || reduced
     ? null
-    : building
-      ? (order[drawn - 1] ?? null)
-      : targetKey
-        ? targetKey
-        : touring
-          ? `region:${SECTION_IDS[visit % SECTION_IDS.length]}`
-          : null;
+    : targetKey
+      ? targetKey
+      : touring
+        ? `region:${SECTION_IDS[visit % SECTION_IDS.length]}`
+        : null;
   const fallback = targetSection ? `region:${targetSection}` : null;
 
   const [el, setEl] = useState<HTMLElement | null>(null);
@@ -83,13 +78,15 @@ export function useSheetPen({
     // A mark may name a finer place for the nib (`pen:<key>`), clear of its words.
     setEl(find(key ? `pen:${key}` : null) ?? find(key) ?? (key === targetKey ? find(fallback) : null));
   }, [find, key, fallback, targetKey]);
-  return el;
+  if (reduced) return null;
+  return drawAt ?? el;
 }
 
 /** The two ends of the stage leader: the notes cell and the mark the answer landed on. */
 export function useLeaderEnds(
   targetKey: string | null,
-  drawn: number,
+  /** The sheet stands drawn: the marks are where they will stay. */
+  drawn: boolean,
   find: (key: string | null) => HTMLElement | null,
 ): { from: HTMLElement | null; to: HTMLElement | null } {
   const [ends, setEnds] = useState<{ from: HTMLElement | null; to: HTMLElement | null }>({ from: null, to: null });

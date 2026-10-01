@@ -1,11 +1,14 @@
+import { useMemo } from 'react';
 import type { SectionId, TwinBlueprintModel } from '../../blueprintContract';
 import { sectionCoverage } from '../../sectionMetrics';
 import IdentityDrawing from './IdentityDrawing';
 import KnowledgeDrawing from './KnowledgeDrawing';
+import SheetBorder from './SheetBorder';
 import SheetRegion from './SheetRegion';
 import TrainingDrawing from './TrainingDrawing';
 import TwinTitleBlock from './TwinTitleBlock';
 import VoiceDrawing from './VoiceDrawing';
+import DrawSheet, { type DrawSheetProps } from './draw/DrawSheet';
 import { useTranslation } from '@/i18n/useTranslation';
 
 /** The sheet's plan: four regions sharing walls, the title block in the bottom-right corner. */
@@ -15,46 +18,51 @@ const PLAN = {
   gridTemplateAreas: '"identity voice training" "knowledge voice training" "knowledge title title"',
 } as const;
 
+/** What the variant hands each drawing: whether it draws itself in, and who listens. */
+export type SheetDraw = Pick<DrawSheetProps, 'instant' | 'onPlan' | 'onDone' | 'onLeave'>;
+
 /**
  * Layer one of the Detail page: the twin drawn as a plan. Each region is a
- * small drawing of its quantities and the door to its zoom. `drawn` counts
- * how far the build-up has come (identity, voice, knowledge, training, then
- * the title block), so the first visit draws the sheet part by part.
+ * small drawing of its quantities and the door to its zoom. The plan is one
+ * drawing (`DrawSheet`): on the first visit it draws itself in, frames level
+ * by level, then every container's content in reading order; back from a
+ * zoom it is simply there.
  */
 export default function OverviewSheet({
   model,
-  drawn,
-  reduced,
   roomy,
+  reduced,
+  draw,
   onFocus,
   register,
 }: {
   model: TwinBlueprintModel;
-  drawn: number;
   reduced: boolean;
   /** A large sheet: identity letters its scale and names its languages. */
   roomy: boolean;
+  draw: SheetDraw;
   onFocus: (section: SectionId) => void;
   register: (key: string) => (el: HTMLElement | null) => void;
 }) {
   const { t } = useTranslation();
   const states = t.twin.blueprint.states;
   const cov = sectionCoverage(model);
+  // Rows a resize moves in or out, or a refreshed model, are re-read while the plan still draws.
+  const replanKey = useMemo(() => ({ roomy, model }), [roomy, model]);
   const region = (section: SectionId, index: number) => ({
     section,
     number: index + 1,
     coverage: cov[section],
-    drawn: drawn > index,
-    reduced,
     onActivate: () => onFocus(section),
     regionRef: register(`region:${section}`),
     style: { gridArea: section },
   });
 
   return (
-    <div className="grid h-full min-h-0 gap-4" style={PLAN}>
+    <DrawSheet {...draw} replanKey={replanKey} data-testid="twd-overview" className="grid h-full min-h-0 gap-4" style={PLAN}>
+      <SheetBorder />
       <SheetRegion {...region('identity', 0)} unmeasuredLabel={states.notDrawn}>
-        <IdentityDrawing identity={model.identity} detailed={roomy} drawn={drawn > 0} reduced={reduced} />
+        <IdentityDrawing identity={model.identity} detailed={roomy} />
       </SheetRegion>
       <SheetRegion {...region('voice', 1)} unmeasuredLabel={states.emptyVoice}>
         <VoiceDrawing voice={model.voice} />
@@ -66,8 +74,8 @@ export default function OverviewSheet({
         <TrainingDrawing training={model.training} reduced={reduced} />
       </SheetRegion>
       <div style={{ gridArea: 'title' }} ref={register('title')} className="min-w-0">
-        <TwinTitleBlock model={model} drawn={drawn > 4} reduced={reduced} />
+        <TwinTitleBlock model={model} />
       </div>
-    </div>
+    </DrawSheet>
   );
 }

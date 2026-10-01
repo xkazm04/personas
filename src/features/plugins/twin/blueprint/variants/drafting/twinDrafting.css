@@ -14,6 +14,12 @@
   container-type: size;
   container-name: twd-sheet;
 }
+/* The sheet's border is drawn (SheetBorder traces it with the first wave of
+   frames), so Studio's static outline would stand there before the plan
+   draws it. The paper's inner edge (the inset shadow) stays: it is the paper. */
+.twd-sheet.drafting-root {
+  outline: none;
+}
 
 /* "Not measured": a hatch, never an empty bar. */
 .twd-hatch {
@@ -70,7 +76,8 @@
   box-shadow: 0 0 0 1px var(--ink), 0 0 24px color-mix(in srgb, var(--primary) 22%, transparent);
 }
 
-/* The frame's ink traces around the perimeter as far as the section is drawn. */
+/* The frame's ink traces around the perimeter as far as the section is
+   drawn; once the sheet stands, a change in the share runs along it too. */
 .twd-ink-trace {
   transition: stroke-dasharray 900ms cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -124,23 +131,6 @@
 @keyframes twd-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
-}
-
-/* The waiting surface: the plan in miniature, each frame traced by the pen in
-   turn, over and over. */
-.twd-trace-loop g rect:last-child {
-  stroke-dasharray: 100 100;
-  stroke-dashoffset: 100;
-  animation: twd-trace 4.8s ease-in-out infinite;
-}
-.twd-trace-loop g:nth-child(2) rect:last-child { animation-delay: 0.6s; }
-.twd-trace-loop g:nth-child(3) rect:last-child { animation-delay: 1.2s; }
-.twd-trace-loop g:nth-child(4) rect:last-child { animation-delay: 1.8s; }
-.twd-trace-loop g:nth-child(5) rect:last-child { animation-delay: 2.4s; }
-@keyframes twd-trace {
-  0% { stroke-dashoffset: 100; }
-  35%, 75% { stroke-dashoffset: 0; }
-  100% { stroke-dashoffset: -100; }
 }
 
 /* Layer one moves rows to layer two when the sheet is short, rather than

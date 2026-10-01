@@ -3,13 +3,14 @@
  * region is a keyboard-reachable control named by its section, L2 opens L3
  * through `onOpenDetail`, unmeasured numbers render as "not measured"
  * (asserted on data attributes, never on pixels), stage mode plays both delta
- * phases, and reduced motion drops the pen, the loops and the build-up.
+ * phases on the drawn sheet, and reduced motion drops the pen, the loops and
+ * the draw-in (its schedule is asserted in drawSchedule.test.tsx).
  *
  * The i18n layer is NOT mocked: the real catalog fails the moment a seeded key
  * the variant reads does not exist.
  */
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { afterEach, describe, it, expect, vi } from 'vitest';
+import { act, render, screen, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import type { BlueprintVariantProps, SectionId, TwinBlueprintModel } from '../../../blueprintContract';
@@ -155,9 +156,19 @@ describe('null renders as not measured, never as zero', () => {
   });
 });
 
+/** Lets the stage finish drawing itself in, so the delta plays on the drawn sheet. */
+const drawIn = () =>
+  act(() => {
+    vi.advanceTimersByTime(30_000);
+  });
+
 describe('stage plays the delta', () => {
+  afterEach(() => vi.useRealTimers());
+
   it('instant: the answered topic is the target and the notes say it is recorded', () => {
+    vi.useFakeTimers();
     setup({ mode: 'stage', delta: FIXTURE_DELTA_INSTANT });
+    drawIn();
     expect(document.querySelector('[data-topic="opinions"]')).toHaveAttribute('data-delta-target', 'true');
     expect(document.querySelector('[data-goal="g5"]')).toHaveAttribute('data-delta-target', 'true');
     const notes = screen.getByTestId('twd-notes');
@@ -167,7 +178,9 @@ describe('stage plays the delta', () => {
   });
 
   it('reconciled: the gain and the reason land in the notes', () => {
+    vi.useFakeTimers();
     setup({ mode: 'stage', delta: FIXTURE_DELTA_RECONCILED });
+    drawIn();
     const notes = screen.getByTestId('twd-notes');
     expect(notes).toHaveTextContent('Coverage +12%');
     expect(notes).toHaveTextContent(FIXTURE_DELTA_RECONCILED.why ?? '');
@@ -191,7 +204,8 @@ describe('reduced motion: fades only', () => {
     expect(root()).toHaveAttribute('data-reduced', 'true');
     expect(screen.queryByTestId('twd-pen')).toBeNull();
     expect(document.querySelectorAll('[data-live="true"]')).toHaveLength(0);
-    for (const s of SECTIONS) expect(screen.getByTestId(`twd-region-${s}`)).toHaveAttribute('data-drawn', 'true');
+    for (const r of document.querySelectorAll('[data-draw-root]')) expect(r).toHaveAttribute('data-draw-state', 'instant');
+    expect(document.querySelectorAll('[data-draw-at]')).toHaveLength(0);
     expect(hasMotionTransform()).toBe(false);
   });
 
@@ -204,6 +218,7 @@ describe('reduced motion: fades only', () => {
   it('the same stage with motion on does loop and builds up (the assertions above can fail)', () => {
     setup({ mode: 'stage', working: true, reduced: false });
     expect(document.querySelectorAll('[data-live="true"]').length).toBeGreaterThan(0);
-    expect(screen.getByTestId('twd-region-voice')).toHaveAttribute('data-drawn', 'false');
+    expect(screen.getByTestId('twd-region-voice').closest('[data-draw-root]')).toHaveAttribute('data-draw-state', 'drawing');
+    expect(screen.getByTestId('twd-region-voice').querySelector('[data-draw="frame"]')).toHaveAttribute('data-draw-at', '0');
   });
 });

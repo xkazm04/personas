@@ -1,0 +1,126 @@
+/* The draw-in engine's CSS (spark twin-portable-blueprint, round 2).
+
+   The planner (drawPlan.ts) writes each part's moment and length onto it once
+   per mount, as unitless ms in --draw-at / --draw-for; these rules turn them
+   into one CSS animation per part. The rules match only while the part's
+   drawing is in state `drawing`: once it is `done` or `instant` nothing here
+   applies and every part shows as it is authored. Each animation fills
+   BACKWARDS only, so a part is undrawn until its moment and, after it, exactly
+   its authored self: switching the rules off at the end changes no pixel.
+
+   Colour-free on purpose: the engine is shared by the drafting sheet and its
+   theme versions, which change paper and ink but keep the drawing. */
+
+[data-draw-state='drawing'] [data-draw-at] {
+  animation-delay: calc(var(--draw-at) * 1ms);
+  animation-duration: calc(var(--draw-for) * 1ms);
+  animation-fill-mode: backwards;
+  animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1);
+}
+
+/* Frames and strokes trace along their own path (pathLength 100). */
+[data-draw-state='drawing'] :is([data-draw='frame'], [data-draw='stroke'], [data-draw='tick'])[data-draw-at] {
+  animation-name: twd-draw-trace;
+}
+/* A straight frame drawn in HTML (a ruled line) traces as a wipe along it. */
+[data-draw-state='drawing'] [data-draw-wipe='x'][data-draw-at] {
+  animation-name: twd-draw-extend;
+}
+[data-draw-state='drawing'] [data-draw-wipe='y'][data-draw-at] {
+  animation-name: twd-draw-drop;
+}
+/* Ink over an authored dash: the coverage trace runs from nothing to its share. */
+[data-draw-state='drawing'] [data-draw='ink'][data-draw-at] {
+  animation-name: twd-draw-ink;
+}
+[data-draw-state='drawing'] [data-draw='extend'][data-draw-at] {
+  animation-name: twd-draw-extend;
+}
+[data-draw-state='drawing'] [data-draw='sweep'][data-draw-at] {
+  animation-name: twd-draw-extend;
+  animation-timing-function: linear;
+}
+[data-draw-state='drawing'] [data-draw='rise'][data-draw-at] {
+  animation-name: twd-draw-rise;
+}
+[data-draw-state='drawing'] [data-draw='drop'][data-draw-at] {
+  animation-name: twd-draw-drop;
+}
+/* A dashed stroke cannot trace (its dash is the pattern): it is struck at its moment. */
+[data-draw-state='drawing'] [data-draw='mark'][data-draw-at] {
+  animation-name: twd-draw-appear;
+  animation-timing-function: step-end;
+}
+/* Lettering. Split text (<Write>) letters one character at a time; an
+   unsplit run (a live time) is wiped on in one step per letter. */
+[data-draw-state='drawing'] [data-draw='write']:not([data-split])[data-draw-at] {
+  animation-name: twd-draw-extend;
+  animation-timing-function: steps(var(--draw-letters), end);
+}
+[data-draw-state='drawing'] [data-split][data-draw-at] [data-ch] {
+  animation: twd-draw-appear 1ms step-end backwards;
+  animation-delay: calc((var(--draw-at) + var(--ch) * var(--draw-letter)) * 1ms);
+}
+[data-draw-state='drawing'] [data-draw='press'][data-draw-at] {
+  animation-name: twd-draw-press;
+  animation-timing-function: cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+
+/* The gap is longer than the path and the undrawn state sits in its middle:
+   `100 100` offset 100 leaves a hairline dash at the closing point, because a
+   pathLength of 100 is only 100 up to rounding. */
+@keyframes twd-draw-trace {
+  from { stroke-dasharray: 100 110; stroke-dashoffset: 105; }
+  to { stroke-dasharray: 100 110; stroke-dashoffset: 0; }
+}
+@keyframes twd-draw-ink {
+  from { stroke-dasharray: 0 100; }
+}
+@keyframes twd-draw-extend {
+  from { clip-path: inset(-4px calc(100% + 4px) -4px -4px); }
+  to { clip-path: inset(-4px -4px -4px -4px); }
+}
+@keyframes twd-draw-rise {
+  from { clip-path: inset(calc(100% + 4px) -4px -4px -4px); }
+  to { clip-path: inset(-4px -4px -4px -4px); }
+}
+@keyframes twd-draw-drop {
+  from { clip-path: inset(-4px -4px calc(100% + 4px) -4px); }
+  to { clip-path: inset(-4px -4px -4px -4px); }
+}
+@keyframes twd-draw-appear {
+  from { visibility: hidden; }
+  to { visibility: hidden; }
+}
+@keyframes twd-draw-press {
+  0% { opacity: 0; scale: 2.4; }
+  55% { opacity: 1; scale: 0.94; }
+  78% { scale: 1.04; }
+  100% { opacity: 1; scale: 1; }
+}
+
+/* The loop (the working miniature): the same plan, drawn, held and lifted
+   away over and over. Every part shares one cycle and is offset by its own
+   moment, so the chronology holds in every turn. CSS on purpose: the app's
+   reduced-motion reset can stop it (a script loop it could not see). */
+[data-draw-state='loop'] [data-loop-at] {
+  animation: twd-draw-loop calc(var(--draw-cycle) * 1ms) ease-in-out infinite backwards;
+  animation-delay: calc(var(--draw-at) * 1ms);
+}
+@keyframes twd-draw-loop {
+  0% { stroke-dasharray: 100 110; stroke-dashoffset: 105; }
+  12%, 62% { stroke-dasharray: 100 110; stroke-dashoffset: 0; }
+  78%, 100% { stroke-dasharray: 100 110; stroke-dashoffset: -105; }
+}
+
+/* Reduced motion, however it is asked for: the sheet is simply drawn. (The
+   `reduced` prop already plans nothing; this holds if the two ever disagree,
+   since the app's global reset shortens animations but keeps their delays.) */
+@media (prefers-reduced-motion: reduce) {
+  [data-draw-root] :is([data-draw-at], [data-ch], [data-loop-at]) {
+    animation: none !important;
+  }
+}
+html[data-motion='reduce'] [data-draw-root] :is([data-draw-at], [data-ch], [data-loop-at]) {
+  animation: none !important;
+}

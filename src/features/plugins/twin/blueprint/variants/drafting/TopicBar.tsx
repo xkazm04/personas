@@ -5,6 +5,8 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import type { BlueprintTopic } from '../../blueprintContract';
 import { BreakMark } from './Lettering';
 import { TOPIC_SCALE_MAX, TOPIC_TIER_MARKS, onScale } from './draftingTwinModel';
+import DrawFrame from './draw/DrawFrame';
+import Write, { WriteNumber } from './draw/Write';
 
 /**
  * One training topic as a scale bar: approved answers in ink, those awaiting
@@ -15,7 +17,9 @@ import { TOPIC_SCALE_MAX, TOPIC_TIER_MARKS, onScale } from './draftingTwinModel'
  * beside the bar so the name keeps the whole line (container query on
  * `.twd-topics`, both copies rendered, one shown). When the last answer
  * landed here the fill is drawn in again (`playKey`), the way the pen inks a
- * part.
+ * part. In the draw-in the topic is a container: its scale is a frame (the
+ * tier marks a frame inside it), then the name and the figures are lettered,
+ * the bar runs out and the hatch sweeps after it.
  */
 export default function TopicBar({
   topic,
@@ -50,21 +54,22 @@ export default function TopicBar({
       data-topic={topic.id}
       data-tier={topic.tier}
       data-delta-target={targeted || undefined}
+      data-draw-scope=""
       className={`flex min-w-0 flex-col gap-0.5 rounded-interactive px-1 py-0.5 ${targeted ? 'twd-target' : ''}`}
     >
       <div className="flex min-w-0 items-baseline gap-3">
-        <span className="min-w-0 flex-1 typo-body text-foreground">{label}</span>
-        {detailed && <span className="shrink-0 typo-caption">{t.twin.blueprint.tiers[topic.tier]}</span>}
+        <span className="min-w-0 flex-1 typo-body text-foreground">
+          <Write text={label} />
+        </span>
+        {detailed && <Write text={t.twin.blueprint.tiers[topic.tier]} className="shrink-0 typo-caption" />}
         <Figures topic={topic} className="twd-fig-wide" />
       </div>
       <div className="relative flex items-center gap-2">
         {/* The pen's anchor: just past the end of this line, so the nib and its
             barrel sit in the margin rather than over the name or the figures. */}
         <span ref={penRef} aria-hidden className="pointer-events-none absolute -right-3.5 top-full h-2 w-7" />
-        <div
-          className="relative h-2.5 min-w-0 flex-1"
-          style={{ border: `1px ${topic.tier === 'thin' ? 'dashed' : 'solid'} ${topic.tier === 'covered' ? 'var(--ink)' : 'var(--ink-dim)'}` }}
-        >
+        <div className="relative h-2.5 min-w-0 flex-1" style={{ border: '1px solid transparent' }}>
+          <DrawFrame stroke={topic.tier === 'covered' ? 'var(--ink)' : 'var(--ink-dim)'} dash={topic.tier === 'thin' ? '4 3' : undefined} />
           <motion.div
             key={replay ? playKey : 'still'}
             aria-hidden
@@ -74,13 +79,15 @@ export default function TopicBar({
             animate={replay ? { scaleX: 1 } : undefined}
             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.35 }}
           >
-            <span className="h-full" style={{ width: total.share ? `${(approved.share / total.share) * 100}%` : 0, background: 'var(--ink)' }} />
-            {awaitingShare > 0 && <span className="twd-hatch-ink h-full flex-1" />}
+            <span data-draw="extend" className="h-full" style={{ width: total.share ? `${(approved.share / total.share) * 100}%` : 0, background: 'var(--ink)' }} />
+            {awaitingShare > 0 && <span data-draw="sweep" className="twd-hatch-ink h-full flex-1" />}
           </motion.div>
           {TOPIC_TIER_MARKS.map((n) => (
             <i
               key={n}
               aria-hidden
+              data-draw="frame"
+              data-draw-wipe="y"
               className="absolute -top-1 h-[calc(100%+0.5rem)] w-px"
               style={{ left: `${(n / TOPIC_SCALE_MAX) * 100}%`, background: 'var(--ink-dim)' }}
             />
@@ -97,8 +104,12 @@ export default function TopicBar({
 function Figures({ topic, className }: { topic: BlueprintTopic; className: string }) {
   return (
     <span className={`shrink-0 items-baseline gap-1 ${className}`}>
-      <Numeric value={topic.approved} className="typo-data text-foreground" />
-      {topic.awaiting > 0 && <Numeric className="typo-caption">{`+${topic.awaiting}`}</Numeric>}
+      <WriteNumber value={topic.approved} className="typo-data text-foreground" />
+      {topic.awaiting > 0 && (
+        <Numeric className="typo-caption">
+          <Write text={`+${topic.awaiting}`} />
+        </Numeric>
+      )}
     </span>
   );
 }

@@ -4,12 +4,15 @@ import type { TwinBlueprintModel } from '../../blueprintContract';
 import ChannelGlyph from './ChannelGlyph';
 import { channelLabel } from './channelLabel';
 import { VOICE_L1_CELLS, voiceColumns } from './draftingTwinModel';
+import DrawFrame from './draw/DrawFrame';
+import Write from './draw/Write';
 
 /**
  * Voice on layer one: one elevation glyph per channel in a grid of up to
  * nine; a tenth channel and beyond are counted in the last cell and drawn in
  * the zoom. Stage mode lists the channels one per line beside a short
- * elevation, so the column stays narrow beside the card.
+ * elevation, so the column stays narrow beside the card. Each glyph draws
+ * itself as its own container; the overflow cell is a frame with its count.
  */
 export default function VoiceDrawing({
   voice,
@@ -29,7 +32,11 @@ export default function VoiceDrawing({
   const unvoiced = channels.every((c) => c.origin === null);
 
   if (channels.length === 0) {
-    return <p className="typo-caption">{t.twin.blueprint.states.emptyVoice}</p>;
+    return (
+      <p className="typo-caption">
+        <Write text={t.twin.blueprint.states.emptyVoice} />
+      </p>
+    );
   }
 
   if (compact) {
@@ -60,14 +67,19 @@ export default function VoiceDrawing({
           <ChannelGlyph key={c.channel} channel={c} name={channelLabel(c.channel, everywhere)} tall={cols === 1} />
         ))}
         {overflow && (
-          <div className="flex items-center justify-center p-1" style={{ border: '1px dashed var(--ink-dim)' }}>
+          <div className="relative flex items-center justify-center p-1" style={{ border: '1px solid transparent' }} data-draw-scope="">
+            <DrawFrame stroke="var(--ink-dim)" dash="4 3" />
             <Numeric className="typo-body text-foreground">
-              {tx(t.twin.blueprint.variantCopy.drafting.moreChannels, { count: channels.length - shown.length })}
+              <Write text={tx(t.twin.blueprint.variantCopy.drafting.moreChannels, { count: channels.length - shown.length })} />
             </Numeric>
           </div>
         )}
       </div>
-      {unvoiced && <p className="typo-caption">{t.twin.blueprint.states.emptyVoice}</p>}
+      {unvoiced && (
+        <p className="typo-caption">
+          <Write text={t.twin.blueprint.states.emptyVoice} />
+        </p>
+      )}
     </div>
   );
 }
