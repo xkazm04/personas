@@ -15,14 +15,32 @@ import { buildNoteGoalsPrompt } from '../athena/buildNoteGoalsPrompt';
  * in the prompt is stale before the turn starts.
  */
 const NOTE_ID = 'note-1234';
-const BODY = 'The operator wrote this paragraph and it must never appear here.';
+
+/**
+ * "Pastes no body" has to be a claim the builder could break. These builders
+ * take an id (and the operator's own focus), not a note, so a body string the
+ * test invents can never reach them and `not.toContain(body)` is green by
+ * construction. What a pointer CAN be held to is this: the text is a function
+ * of the ids it names and of nothing else. Take the id out and what is left is
+ * the same for every id — a builder that looked the note up, counted its
+ * suggestions or quoted its status by id would leave something different behind.
+ */
+const idInvariant = (build: (id: string) => string): boolean =>
+  build('AAAA-1').replaceAll('AAAA-1', '<id>') === build('BBBBBB-22').replaceAll('BBBBBB-22', '<id>');
+
+describe('idInvariant — the check the pointer tests below lean on', () => {
+  it('can fail: a builder whose text depends on more than the id is caught', () => {
+    expect(idInvariant((id) => `read ${id} (${id.length} characters)`)).toBe(false);
+    expect(idInvariant((id) => `read ${id}`)).toBe(true);
+  });
+});
 
 describe('buildNoteAskPrompt', () => {
-  it('names the read op and the note id, and pastes no body', () => {
+  it('names the read op and the note id, and is a function of the id alone', () => {
     const out = buildNoteAskPrompt(NOTE_ID);
     expect(out).toContain('describe_note');
     expect(out).toContain(NOTE_ID);
-    expect(out).not.toContain(BODY);
+    expect(idInvariant((id) => buildNoteAskPrompt(id))).toBe(true);
   });
 
   it('names the answering op so she has a verb, not just a reading', () => {
@@ -69,9 +87,9 @@ describe('buildNoteAskPrompt', () => {
 
     /** Rule 1 applies to the SECOND pointer exactly as it does to the first:
      *  the cut, the criteria and the verdict are things she goes and reads. */
-    it('still pastes nothing — no body, no verdict value, no criteria roll-up', () => {
+    it('still pastes nothing — nothing id-derived, no verdict value, no criteria roll-up', () => {
       const out = buildNoteAskPrompt(NOTE_ID, undefined, MS_ID);
-      expect(out).not.toContain(BODY);
+      expect(idInvariant((id) => buildNoteAskPrompt(id, undefined, `${id}-ms`))).toBe(true);
       expect(out).not.toMatch(/verdict is/i);
       expect(out).not.toMatch(/\*\*(go|warn|nogo|setup)\*\*/i);
       expect(out).not.toMatch(/unmet criteria/i);
@@ -112,8 +130,6 @@ describe('buildNoteGoalsPrompt', () => {
  * read op and the answering op, and carries neither his comment nor a script.
  */
 describe('buildNoteCommentPrompt', () => {
-  const COMMENT = 'Please also cover the offline case.';
-
   it('names describe_note and the note id', () => {
     const out = buildNoteCommentPrompt(NOTE_ID);
     expect(out).toContain('describe_note');
@@ -124,9 +140,9 @@ describe('buildNoteCommentPrompt', () => {
     expect(buildNoteCommentPrompt(NOTE_ID)).toContain(`comment_on_note\` (note_id: \`${NOTE_ID}\``);
   });
 
-  it('pastes neither the note body nor his comment — she reads both from the note', () => {
-    const out = buildNoteCommentPrompt(NOTE_ID);
-    expect(out).not.toContain(BODY);
-    expect(out).not.toContain(COMMENT);
+  // The builder takes the id and nothing else, so neither his comment nor the
+  // note body has anywhere to enter: she reads both from the note.
+  it('is a function of the note id alone', () => {
+    expect(idInvariant(buildNoteCommentPrompt)).toBe(true);
   });
 });
