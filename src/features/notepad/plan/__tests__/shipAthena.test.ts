@@ -43,8 +43,10 @@ function vm(over: Partial<ShipMilestoneVM> = {}): ShipMilestoneVM {
     status: 'planned',
     targetLabel: null,
     members: [member(feature('f1', 'login', [auth]))],
+    goalMembers: [],
     boundGoals: [],
     footprint: [auth, dark],
+    skillCoverage: [],
     criteria: [crit()],
     progress: 42.4,
     duality: { rated: 0, unrated: 1, agree: 0, disagree: 0, conflicts: [] },
@@ -162,9 +164,9 @@ describe('buildReadinessPayload', () => {
     const doc = buildReadinessPayload([vm(), vm({ id: 'ms-2', criteria: [crit({ state: 'go', done: 1 })] })]);
     expect(doc.version).toBe(SHIP_READINESS_DOC_VERSION);
     expect(doc.milestones.map((m) => m.id)).toEqual(['ms-1', 'ms-2']);
-    expect(doc.milestones[0].verdict).toBe('nogo');
-    expect(doc.milestones[1].verdict).toBe('go');
-    expect(doc.milestones[0].criteria[0]).toEqual({
+    expect(doc.milestones[0]!.verdict).toBe('nogo');
+    expect(doc.milestones[1]!.verdict).toBe('go');
+    expect(doc.milestones[0]!.criteria[0]).toEqual({
       label: 'Objective bound',
       state: 'nogo',
       evidence: 'no goal bound to this milestone',
@@ -174,11 +176,11 @@ describe('buildReadinessPayload', () => {
   });
 
   it('rounds progress — the Rust contract reads it as an integer', () => {
-    expect(buildReadinessPayload([vm()]).milestones[0].progress).toBe(42);
+    expect(buildReadinessPayload([vm()]).milestones[0]!.progress).toBe(42);
   });
 
   it('preserves `errors: null` as null — not wired is not zero', () => {
-    const contexts = buildReadinessPayload([vm()]).milestones[0].contexts;
+    const contexts = buildReadinessPayload([vm()]).milestones[0]!.contexts;
     expect(contexts.find((c) => c.name === 'auth')?.errors).toBe(0);
     expect(contexts.find((c) => c.name === 'ingest')?.errors).toBeNull();
   });

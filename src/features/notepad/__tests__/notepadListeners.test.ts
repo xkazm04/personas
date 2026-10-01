@@ -1,7 +1,7 @@
 // The sweeper subscription is process-lifetime and attached once, from a mount
 // effect that does not run again. A rejected listen used to latch that once,
 // so a note finishing while the pad was shut never refetched.
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 
 import * as eventRegistry from '@/lib/eventRegistry';
 
@@ -12,7 +12,7 @@ import {
   startNotepadListeners,
 } from '../notepadStore';
 
-let typedListen: ReturnType<typeof vi.spyOn<typeof eventRegistry, 'typedListen'>>;
+let typedListen: MockInstance<typeof eventRegistry.typedListen>;
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
