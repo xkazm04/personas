@@ -9,9 +9,13 @@
 //!
 //! THIS FILE IS THE CONTRACT. WP0 froze the trait and the error type so the
 //! re-login orchestrator (`commands/fleet/claude_accounts/relogin`) can be
-//! built and tested against a fake `LaneSession` while the Chrome/CDP
-//! implementation (WP1a) lands in the sibling modules. `launch` is a stub until
-//! then and answers `ChromeMissing`.
+//! built and tested against a fake `LaneSession`; the Chrome/CDP implementation
+//! lives in the sibling modules (`chrome`, `cdp`, `session`) and `challenge`
+//! holds the interstitial detector.
+//!
+//! Until WP1b wires `relogin` to `launch`, `chrome::profile_dir_for` and
+//! `challenge::detect_challenge`, the whole module reports dead-code (the crate's `engine`
+//! mod is private); that is expected and clears with that wiring.
 //!
 //! SAFETY LAW (not negotiable, enforced here rather than by callers):
 //! - every navigation is checked against `origin_allowed` and refused otherwise;
@@ -21,6 +25,15 @@
 //!   on `close` AND on drop).
 
 use std::path::Path;
+
+mod cdp;
+pub mod challenge;
+pub mod chrome;
+mod session;
+#[cfg(test)]
+mod tests_chrome;
+
+pub use session::ChromeSession;
 
 use crate::commands::fleet::claude_accounts::relogin::ReloginReason;
 
@@ -96,41 +109,14 @@ pub trait LaneSession: Send {
     async fn close(self) -> Result<(), LaneError>;
 }
 
-/// Launch Chrome on `profile_dir`. WP1a replaces this stub with the real
-/// launcher (binary discovery, free loopback port, CDP attach); the return type
-/// then becomes the concrete session type behind this alias.
-pub async fn launch(_profile_dir: &Path, _mode: LaneMode) -> Result<StubSession, LaneError> {
-    Err(LaneError::new(
-        ReloginReason::ChromeMissing,
-        "login lane not implemented yet (WP1a)",
-    ))
-}
-
-/// Placeholder concrete session so the stub `launch` has a type. WP1a deletes it.
-pub struct StubSession;
-
-impl LaneSession for StubSession {
-    async fn navigate(&mut self, _url: &str) -> Result<(), LaneError> {
-        Err(LaneError::new(ReloginReason::ChromeMissing, "stub"))
-    }
-    async fn current_url(&mut self) -> Result<String, LaneError> {
-        Err(LaneError::new(ReloginReason::ChromeMissing, "stub"))
-    }
-    async fn page_text(&mut self) -> Result<String, LaneError> {
-        Err(LaneError::new(ReloginReason::ChromeMissing, "stub"))
-    }
-    async fn click_text(&mut self, _text: &str) -> Result<bool, LaneError> {
-        Err(LaneError::new(ReloginReason::ChromeMissing, "stub"))
-    }
-    async fn fill(&mut self, _selector: &str, _value: &str) -> Result<bool, LaneError> {
-        Err(LaneError::new(ReloginReason::ChromeMissing, "stub"))
-    }
-    async fn wait_for_text(&mut self, _needle: &str, _timeout_ms: u64) -> Result<bool, LaneError> {
-        Err(LaneError::new(ReloginReason::ChromeMissing, "stub"))
-    }
-    async fn close(self) -> Result<(), LaneError> {
-        Ok(())
-    }
+/// Launch Chrome on `profile_dir` and attach to its first page.
+///
+/// `profile_dir` must be a dedicated lane profile (see [`chrome::profile_dir_for`]),
+/// NEVER the user's real Chrome profile: a path equal to or inside
+/// `%LOCALAPPDATA%\Google\Chrome\User Data` is refused. (Chrome 136+ also
+/// refuses remote debugging on the default profile dir.)
+pub async fn launch(profile_dir: &Path, mode: LaneMode) -> Result<ChromeSession, LaneError> {
+    session::launch(profile_dir, mode).await
 }
 
 #[cfg(test)]

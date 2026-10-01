@@ -349,6 +349,9 @@ serde_yaml = { workspace = true }
 toml = "0.8"
 tokio = { workspace = true }
 tokio-util = { workspace = true }
+# Loopback CDP client for the login lane (engine/login_lane). Already in the lockfile via axum;
+# `handshake` only (we use `client_async` over our own TcpStream), so no new lock entries.
+tokio-tungstenite = { version = "0.28", default-features = false, features = ["handshake"] }
 tracing = { workspace = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 tracing-appender = "0.2"
