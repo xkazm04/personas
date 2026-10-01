@@ -1,32 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { DevNote } from '@/lib/bindings/DevNote';
-
 import { CARD_TEXT_LIMIT, canQuickWrite, resultSummary, titleFromText } from '../noteText';
-
-function note(overrides: Partial<DevNote>): DevNote {
-  return {
-    id: 'n1',
-    projectId: null,
-    milestoneId: null,
-    title: 'Note',
-    bodyMd: '',
-    status: 'draft',
-    orderIndex: 0,
-    dispatchTarget: null,
-    dispatchKey: null,
-    fleetSessionId: null,
-    agentId: null,
-    resultJson: null,
-    publishedAt: null,
-    startedAt: null,
-    completedAt: null,
-    archivedAt: null,
-    createdAt: '2026-09-14T00:00:00Z',
-    updatedAt: '2026-09-14T00:00:00Z',
-    ...overrides,
-  };
-}
+import { makeNote as note } from '../testing/devNoteFixture';
 
 describe('canQuickWrite', () => {
   it('allows a draft at exactly the limit and refuses one past it', () => {

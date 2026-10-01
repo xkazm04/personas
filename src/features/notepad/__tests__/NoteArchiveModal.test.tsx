@@ -13,30 +13,20 @@ import type { NotePlanSummary } from '@/lib/bindings/NotePlanSummary';
 import type { NoteStatus } from '@/lib/bindings/NoteStatus';
 
 import { NoteArchiveModal } from '../NoteArchiveModal';
+import { makeNote } from '../testing/devNoteFixture';
 import { expectReason, useSteppedTimers } from './disabledReason';
 
 const note = (id: string, status: NoteStatus, over: Partial<DevNote> = {}): DevNote =>
-  ({
+  makeNote({
     id,
     projectId: 'p1',
-    milestoneId: null,
     title: `Note ${id}`,
-    bodyMd: '',
     status,
-    orderIndex: 0,
-    dispatchTarget: null,
-    dispatchKey: null,
-    fleetSessionId: null,
-    agentId: null,
-    resultJson: null,
-    publishedAt: null,
-    startedAt: null,
-    completedAt: null,
     archivedAt: '2026-09-10T00:00:00.000Z',
     createdAt: '2026-09-01T00:00:00.000Z',
     updatedAt: '2026-09-10T00:00:00.000Z',
     ...over,
-  }) as DevNote;
+  });
 
 const summary = (noteId: string, over: Partial<NotePlanSummary> = {}): NotePlanSummary => ({
   noteId,

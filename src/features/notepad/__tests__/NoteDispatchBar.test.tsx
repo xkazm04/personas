@@ -12,6 +12,7 @@ import type { DevNote } from '@/lib/bindings/DevNote';
 import { __resetNoteAskStateForTests } from '../notepadAskState';
 import { expectReason, useSteppedTimers } from './disabledReason';
 import { NoteDispatchBar } from '../parts/NoteDispatchBar';
+import { makeNote } from '../testing/devNoteFixture';
 
 const addToast = vi.fn();
 vi.mock('@/stores/toastStore', () => ({
@@ -33,27 +34,14 @@ vi.mock('@/api/devTools/milestones', () => ({
 }));
 
 const note = (over: Partial<DevNote> = {}): DevNote =>
-  ({
-    id: 'n1',
+  makeNote({
     projectId: 'p1',
-    milestoneId: null,
     title: 'A note',
     bodyMd: 'body',
-    status: 'draft',
-    orderIndex: 0,
-    dispatchTarget: null,
-    dispatchKey: null,
-    fleetSessionId: null,
-    agentId: null,
-    resultJson: null,
-    publishedAt: null,
-    startedAt: null,
-    completedAt: null,
-    archivedAt: null,
     createdAt: '2026-09-05T00:00:00Z',
     updatedAt: '2026-09-05T00:00:00Z',
     ...over,
-  }) as DevNote;
+  });
 
 const project = { id: 'p1', name: 'personas', root_path: '/repo' } as never;
 

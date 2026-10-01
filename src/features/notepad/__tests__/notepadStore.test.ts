@@ -35,31 +35,11 @@ import {
   statusSnapshot,
 } from '../notepadStore';
 import { onGoalBanner, type GoalBannerEvent } from '../notifications/goalBanner';
+import { makeNote } from '../testing/devNoteFixture';
 
 const mocked = vi.mocked(invoke);
 
-function note(over: Partial<DevNote> & { id: string }): DevNote {
-  return {
-    projectId: null,
-    milestoneId: null,
-    title: 'Note',
-    bodyMd: '',
-    status: 'draft' as NoteStatus,
-    orderIndex: 0,
-    dispatchTarget: null,
-    dispatchKey: null,
-    fleetSessionId: null,
-    agentId: null,
-    resultJson: null,
-    publishedAt: null,
-    startedAt: null,
-    completedAt: null,
-    archivedAt: null,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
-    ...over,
-  };
-}
+const note = (over: Partial<DevNote> & { id: string }): DevNote => makeNote(over);
 
 /** Rows the fake `notepad_list_notes` returns, and every update it received. */
 let rows: DevNote[] = [];

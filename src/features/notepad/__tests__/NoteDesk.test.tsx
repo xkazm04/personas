@@ -12,11 +12,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DevNote } from '@/lib/bindings/DevNote';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { NotePlanSummary } from '@/lib/bindings/NotePlanSummary';
-import type { NoteStatus } from '@/lib/bindings/NoteStatus';
 
 import { deskForecasts } from '../overview/deskForecast';
 import { NoteDeskCard } from '../overview/NoteDeskCard';
 import { NoteOverview } from '../overview/NoteOverview';
+import { makeNote } from '../testing/devNoteFixture';
 
 // The journal derives its forecasts in ONE place and hands them to a row that
 // does not draw them today, so the DOM cannot tell a stale desk from a fresh
@@ -55,27 +55,15 @@ vi.mock('../useNotepad', () => ({
 }));
 
 const note = (id: string, over: Partial<DevNote> = {}): DevNote =>
-  ({
+  makeNote({
     id,
     projectId: 'p1',
-    milestoneId: null,
     title: `Note ${id}`,
     bodyMd: 'body',
-    status: 'draft' as NoteStatus,
-    orderIndex: 0,
-    dispatchTarget: null,
-    dispatchKey: null,
-    fleetSessionId: null,
-    agentId: null,
-    resultJson: null,
-    publishedAt: null,
-    startedAt: null,
-    completedAt: null,
-    archivedAt: null,
     createdAt: '2026-09-15T00:00:00Z',
     updatedAt: '2026-09-15T00:00:00Z',
     ...over,
-  }) as DevNote;
+  });
 
 const summary = (noteId: string, over: Partial<NotePlanSummary> = {}): NotePlanSummary => ({
   noteId,

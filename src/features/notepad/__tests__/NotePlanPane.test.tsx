@@ -16,6 +16,7 @@ import { ctx, feature, member, milestone } from '@/lib/milestone/__tests__/shipF
 import type { NotePlanValue, PlanTab } from '../plan/NotePlanContext';
 import { NotePlanPane } from '../plan/NotePlanPane';
 import type { NoteActions } from '../notepadActions';
+import { makeNote } from '../testing/devNoteFixture';
 
 const auth = ctx('c-auth', 'auth', 'ok', 2, 0);
 
@@ -108,27 +109,16 @@ vi.mock('../plan/NotePlanRuns', () => ({
 }));
 
 const note = (over: Partial<DevNote> = {}): DevNote =>
-  ({
-    id: 'n1',
+  makeNote({
     projectId: 'p1',
     milestoneId: 'ms-1',
     title: 'The dock',
     bodyMd: '# Brief\n\nShip the dock.',
     status: 'scoped',
-    orderIndex: 0,
-    dispatchTarget: null,
-    dispatchKey: null,
-    fleetSessionId: null,
-    agentId: null,
-    resultJson: null,
-    publishedAt: null,
-    startedAt: null,
-    completedAt: null,
-    archivedAt: null,
     createdAt: '2026-09-15T00:00:00Z',
     updatedAt: '2026-09-15T00:00:00Z',
     ...over,
-  }) as DevNote;
+  });
 
 /** Stands in for `NotepadOverlayHost`, which owns the plan tab so `Ctrl+1/2/3`
  *  can move it. Publishing the pair during render is enough here: the pane's
