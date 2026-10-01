@@ -18,6 +18,21 @@ import { deskForecasts } from '../overview/deskForecast';
 import { NoteDeskCard } from '../overview/NoteDeskCard';
 import { NoteOverview } from '../overview/NoteOverview';
 
+// The journal derives its forecasts in ONE place and hands them to a row that
+// does not draw them today, so the DOM cannot tell a stale desk from a fresh
+// one. The guard is pinned where it IS observable: whether the derivation runs.
+const forecastCalls = vi.hoisted(() => ({ n: 0 }));
+vi.mock('../overview/deskForecast', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../overview/deskForecast')>();
+  return {
+    ...actual,
+    deskForecasts: (...args: Parameters<typeof actual.deskForecasts>) => {
+      forecastCalls.n += 1;
+      return actual.deskForecasts(...args);
+    },
+  };
+});
+
 // The picker opens a Listbox over the workspace's projects and the quick-write
 // surface is a contentEditable with its own input rules. Neither is what this
 // file is about; both have their own homes.
@@ -120,6 +135,7 @@ const onRailIds = (all: DevNote[]) =>
 const reveal = { hasEntered: () => true, markEntered: vi.fn() };
 
 beforeEach(() => {
+  forecastCalls.n = 0;
   summaries = {};
   stale = false;
   localStorage.clear();
@@ -163,11 +179,18 @@ describe('NoteOverview — the status lens', () => {
     expect(visibleIds(all)).toEqual(['draft', 'published', 'done', 'scoped', 'cut']);
   });
 
+  // The journal stamps `data-goal-id` on every goal it draws and emits no
+  // `notepad-card-<id>` testid at all (that belongs to NoteDeskCard, which only
+  // the interlayer mounts) — the query this test used to make could not match
+  // ANY goal, so it passed whatever the lens admitted. The draft is the control
+  // on the same selector: found under every lens, so a miss on `shipped` is a
+  // fact about the desk and not about the query.
   it('never shows a shipped note, under any lens', () => {
     desk(all);
     for (const label of ['Drafts', 'Scoped']) {
       fireEvent.click(screen.getByRole('tab', { name: label }));
-      expect(screen.queryByTestId('notepad-card-shipped')).toBeNull();
+      expect(document.querySelector('[data-goal-id="draft"]')).not.toBeNull();
+      expect(document.querySelector('[data-goal-id="shipped"]')).toBeNull();
     }
   });
 
@@ -281,8 +304,8 @@ describe('the desk forecast', () => {
   };
 
   // Tested on the function rather than through a card: the forecast is a
-  // reading the desk DERIVES, and every surface that shows it — the journal's
-  // second row, the interlayer's cards — reads this same map.
+  // reading the desk DERIVES, and every surface that is meant to show it reads
+  // this same map.
   it('appears once the project has enough observed cycles', () => {
     const out = deskForecasts(withHistory, historySummaries);
     // Four-day median from 2026-03-01.
@@ -297,13 +320,22 @@ describe('the desk forecast', () => {
 
   // A stale map is the LAST GOOD reading, not the current one. A median built
   // on it is a guess on a guess, and "unknown" is the honest rendering. The
-  // journal's first port dropped this guard; this test is why it came back.
-  it('is suppressed entirely while the plan join is stale', async () => {
+  // journal's first port dropped this guard. The old assertion here read the
+  // text of `.rw-detail, .ql-detail` for a date, but `.ql-detail` matched the
+  // rail legend ("DraftScopedCutShipped") and the second row draws no forecast,
+  // so it was green for a fresh desk too; the control below is what shows the
+  // observation can fail.
+  it('is not derived at all while the plan join is stale', () => {
     summaries = historySummaries;
     stale = true;
     desk(withHistory);
-    fireEvent.keyDown(window, { key: 'x' });
-    await waitFor(() => expect(document.querySelector('.rw-detail, .ql-detail')).not.toBeNull());
-    expect(document.querySelector('.rw-detail, .ql-detail')?.textContent ?? '').not.toContain('2026-03-05');
+    expect(forecastCalls.n).toBe(0);
+  });
+
+  it('is derived from the same props once the join is fresh', () => {
+    summaries = historySummaries;
+    stale = false;
+    desk(withHistory);
+    expect(forecastCalls.n).toBeGreaterThan(0);
   });
 });
