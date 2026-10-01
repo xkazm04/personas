@@ -10,6 +10,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { DevNote } from '@/lib/bindings/DevNote';
 
 import { __resetNoteAskStateForTests } from '../notepadAskState';
+import { expectReason, useSteppedTimers } from './disabledReason';
 import { NoteDispatchBar } from '../parts/NoteDispatchBar';
 
 const addToast = vi.fn();
@@ -139,21 +140,22 @@ describe('NoteDispatchBar — the reaction to a press', () => {
   // control is now pressed, and its tooltip must say WHY — "already left", not
   // the missing-project sentence the same wrapper shows for the other refusal.
   it('refuses every dispatch on a note that has already left, and says which reason', async () => {
-    const { actions } = bar({ note: note({ status: 'published' }) });
-    for (const id of ['notepad-publish-fleet', 'notepad-to-goals', 'notepad-ask-athena']) {
-      const button = screen.getByTestId(id);
-      expect(button).toBeDisabled();
-      fireEvent.click(button);
-      const wrapper = button.closest('[aria-disabled="true"]');
-      expect(wrapper).not.toBeNull();
-      fireEvent.focus(wrapper!);
-      expect(await screen.findByText(/This note has already left/)).toBeInTheDocument();
-      expect(screen.queryByText(/Pick a project first/)).toBeNull();
-      fireEvent.blur(wrapper!);
+    useSteppedTimers();
+    try {
+      const { actions } = bar({ note: note({ status: 'published' }) });
+      for (const id of ['notepad-publish-fleet', 'notepad-to-goals', 'notepad-ask-athena']) {
+        const button = screen.getByTestId(id);
+        expect(button).toBeDisabled();
+        fireEvent.click(button);
+        await expectReason(button, /This note has already left/);
+        expect(screen.queryByText(/Pick a project first/)).toBeNull();
+      }
+      expect(actions.publishFleet).not.toHaveBeenCalled();
+      expect(actions.toGoals).not.toHaveBeenCalled();
+      expect(actions.askAthena).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
     }
-    expect(actions.publishFleet).not.toHaveBeenCalled();
-    expect(actions.toGoals).not.toHaveBeenCalled();
-    expect(actions.askAthena).not.toHaveBeenCalled();
   });
 });
 
@@ -218,15 +220,16 @@ describe('NoteDispatchBar — the verbs each state offers', () => {
   });
 
   it('scoped: a plan verb that cannot run yet says the plan has not loaded', async () => {
-    bar({ note: planNote('scoped') });
-    for (const id of ['notepad-decompose', 'notepad-execute-milestone', 'notepad-certify-cut']) {
-      const button = screen.getByTestId(id);
-      expect(button).toBeDisabled();
-      const wrapper = button.closest('[aria-disabled="true"]');
-      expect(wrapper).not.toBeNull();
-      fireEvent.focus(wrapper!);
-      expect(await screen.findByText('The plan has not loaded yet.')).toBeInTheDocument();
-      fireEvent.blur(wrapper!);
+    useSteppedTimers();
+    try {
+      bar({ note: planNote('scoped') });
+      for (const id of ['notepad-decompose', 'notepad-execute-milestone', 'notepad-certify-cut']) {
+        const button = screen.getByTestId(id);
+        expect(button).toBeDisabled();
+        await expectReason(button, 'The plan has not loaded yet.');
+      }
+    } finally {
+      vi.useRealTimers();
     }
   });
 
