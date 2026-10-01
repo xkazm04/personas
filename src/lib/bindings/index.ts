@@ -4,6 +4,7 @@
 // Verified by: node scripts/generate-bindings-index.mjs --check (npm run check).
 
 export type { AccessLevel } from "./AccessLevel";
+export type { AccountLoginLink } from "./AccountLoginLink";
 export type { ActiveChain } from "./ActiveChain";
 export type { ActivePersonaHeadroom } from "./ActivePersonaHeadroom";
 export type { Admission } from "./Admission";
@@ -757,6 +758,7 @@ export type { LlmSpendTotals } from "./LlmSpendTotals";
 export type { LlmUsageHint } from "./LlmUsageHint";
 export type { LocalIdentity } from "./LocalIdentity";
 export type { LogDirectoryStats } from "./LogDirectoryStats";
+export type { LoginProfileView } from "./LoginProfileView";
 export type { MachineLoad } from "./MachineLoad";
 export type { ManifestSyncMetrics } from "./ManifestSyncMetrics";
 export type { ManualReviewCounts } from "./ManualReviewCounts";
@@ -998,6 +1000,10 @@ export type { RegistryOnlyProject } from "./RegistryOnlyProject";
 export type { RegistryPairingState } from "./RegistryPairingState";
 export type { RegistryProbe } from "./RegistryProbe";
 export type { RegistrySync } from "./RegistrySync";
+export type { ReloginPhase } from "./ReloginPhase";
+export type { ReloginReason } from "./ReloginReason";
+export type { ReloginState } from "./ReloginState";
+export type { ReloginStep } from "./ReloginStep";
 export type { Remediation } from "./Remediation";
 export type { RemoteCommand } from "./RemoteCommand";
 export type { RemoteJob } from "./RemoteJob";

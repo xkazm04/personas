@@ -2,6 +2,7 @@
 import type { ClaudeAccountView } from "./ClaudeAccountView";
 import type { ClaudeAutoRotateConfig } from "./ClaudeAutoRotateConfig";
 import type { ClaudeRotationEvent } from "./ClaudeRotationEvent";
+import type { LoginProfileView } from "./LoginProfileView";
 
 /**
  * Everything the strip's multi-plan mode renders, in one read.
@@ -33,4 +34,8 @@ liveCaptured: boolean,
  * button's precondition must be what the command needs, not a stricter
  * fact that happens to be nearby.
  */
-livePresent: boolean, accounts: Array<ClaudeAccountView>, autoRotate: ClaudeAutoRotateConfig, lastRotation: ClaudeRotationEvent | null, };
+livePresent: boolean, accounts: Array<ClaudeAccountView>, autoRotate: ClaudeAutoRotateConfig, lastRotation: ClaudeRotationEvent | null, 
+/**
+ * Every browser profile a plan can be signed in through.
+ */
+profiles: Array<LoginProfileView>, };

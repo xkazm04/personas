@@ -19,6 +19,7 @@
 pub mod live;
 pub mod oauth;
 pub mod projection;
+pub mod relogin;
 pub mod rotate;
 
 use std::collections::HashMap;
@@ -31,6 +32,7 @@ use tauri::State;
 use ts_rs::TS;
 
 use crate::db::repos::fleet_claude_accounts as repo;
+use crate::db::repos::fleet_claude_login as login_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
@@ -80,6 +82,10 @@ pub struct ClaudeAccountView {
     pub usage_projected_from_ms: Option<i64>,
     #[ts(type = "number | null")]
     pub last_switched_at_ms: Option<i64>,
+    /// Which browser profile signs this plan in (spark claude-plan-switch), or null.
+    pub login: Option<relogin::AccountLoginLink>,
+    /// The latest re-login run since the app started, or null.
+    pub relogin: Option<relogin::ReloginState>,
 }
 
 /// Everything the strip's multi-plan mode renders, in one read.
@@ -109,6 +115,8 @@ pub struct ClaudeAccountsSnapshot {
     pub accounts: Vec<ClaudeAccountView>,
     pub auto_rotate: ClaudeAutoRotateConfig,
     pub last_rotation: Option<ClaudeRotationEvent>,
+    /// Every browser profile a plan can be signed in through.
+    pub profiles: Vec<relogin::LoginProfileView>,
 }
 
 type UsageResult = Result<Vec<ClaudeUsageWindow>, String>;
@@ -237,6 +245,7 @@ pub(super) async fn build_snapshot(pool: &DbPool) -> Result<ClaudeAccountsSnapsh
         rows
     };
 
+    let links = login_repo::list_links(pool).unwrap_or_default();
     let mut accounts = Vec::with_capacity(rows.len());
     for row in &rows {
         let is_active = active_id.as_deref() == Some(row.id.as_str());
@@ -314,6 +323,11 @@ pub(super) async fn build_snapshot(pool: &DbPool) -> Result<ClaudeAccountsSnapsh
             usage_fetched_at_ms: fetched,
             usage_projected_from_ms: projected_from,
             last_switched_at_ms: row.last_switched_at_ms,
+            login: links
+                .iter()
+                .find(|l| l.account_id == row.id)
+                .map(relogin::link_view),
+            relogin: relogin::state_of(&row.id),
         });
     }
 
@@ -328,6 +342,11 @@ pub(super) async fn build_snapshot(pool: &DbPool) -> Result<ClaudeAccountsSnapsh
         accounts,
         auto_rotate: rotate::read_config(pool),
         last_rotation: rotate::read_last(pool),
+        profiles: login_repo::list_profiles(pool)
+            .unwrap_or_default()
+            .iter()
+            .map(relogin::profile_view)
+            .collect(),
     })
 }
 

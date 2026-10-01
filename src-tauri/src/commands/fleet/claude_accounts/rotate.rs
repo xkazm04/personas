@@ -225,6 +225,8 @@ mod tests {
             usage_fetched_at_ms: None,
             usage_projected_from_ms: None,
             last_switched_at_ms: None,
+            login: None,
+            relogin: None,
         }
     }
 

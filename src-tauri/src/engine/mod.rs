@@ -84,6 +84,7 @@ pub mod kp_hire_request;
 pub mod kp_reporter;
 pub mod leadership;
 pub mod llm_topology;
+pub mod login_lane;
 pub mod management_api;
 pub mod mcp_tools;
 pub mod memory_reflection;
