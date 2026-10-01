@@ -23980,6 +23980,7 @@
     "plan_milestone_load_failed": "Could not load this milestone. The link may still be valid.",
     "plan_verdict_badge": "{met}/{total} criteria met",
     "runs_empty": "Nothing has been run against this note yet.",
+    "runs_list_failed": "Could not list what has been run against this note.",
     "run_kind_note_task": "Note task",
     "run_kind_ship_milestone": "Milestone run",
     "run_kind_athena_goals": "Goals from Athena",

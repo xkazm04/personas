@@ -23413,7 +23413,8 @@
     "desk_lane_plan": "Kolej Plán",
     "desk_room_back": "Stůl",
     "milestone_briefs_stale": "Přehled toho, které milníky už mají zadání, je zastaralý, proto jsou skryté. Z této poznámky můžete i tak jeden založit.",
-    "plan_milestone_load_failed": "Tento milník se nepodařilo načíst. Propojení může být stále platné."
+    "plan_milestone_load_failed": "Tento milník se nepodařilo načíst. Propojení může být stále platné.",
+    "runs_list_failed": "Nepodařilo se vypsat, co proti této poznámce běželo."
   },
   "browser": {
     "webview": {

@@ -23986,6 +23986,7 @@ export type Translations = {
     plan_milestone_load_failed: string;
     plan_verdict_badge: string;
     runs_empty: string;
+    runs_list_failed: string;
     run_kind_note_task: string;
     run_kind_ship_milestone: string;
     run_kind_athena_goals: string;

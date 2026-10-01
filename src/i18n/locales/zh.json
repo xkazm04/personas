@@ -23413,7 +23413,8 @@
     "desk_lane_plan": "计划轨道",
     "desk_room_back": "工作台",
     "milestone_briefs_stale": "哪些里程碑已经有简报的记录已过期，因此这些里程碑已隐藏。你仍可以从这条笔记新建一个。",
-    "plan_milestone_load_failed": "无法加载此里程碑。关联可能仍然有效。"
+    "plan_milestone_load_failed": "无法加载此里程碑。关联可能仍然有效。",
+    "runs_list_failed": "无法列出此笔记已运行的内容。"
   },
   "browser": {
     "webview": {

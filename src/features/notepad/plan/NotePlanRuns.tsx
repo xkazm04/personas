@@ -5,10 +5,11 @@
 // only if you pressed Ingest yourself. `dev_note_runs` is append-only and the
 // ticker writes to it, so the pad can answer "what has happened to this?"
 // without the operator having pressed anything.
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PencilRuler, Rocket, SquareTerminal, Target } from 'lucide-react';
 
 import { listNoteRuns } from '@/api/notepad';
+import Button from '@/features/shared/components/buttons/Button';
 import { Badge } from '@/features/shared/components/display/Badge';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -126,24 +127,36 @@ export function NotePlanRuns({ noteId, onCompose }: {
   const { t } = useTranslation();
   const [runs, setRuns] = useState<DevNoteRun[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  // The note whose rows are on screen. A change clears them before the next
+  // fetch, so a failed load of the next note cannot keep the previous one's.
+  const loadedNote = useRef<string | null>(null);
 
-  const load = useCallback(() => {
+  useEffect(() => {
     let alive = true;
+    if (loadedNote.current !== noteId) {
+      loadedNote.current = noteId;
+      setRuns([]);
+      setLoading(true);
+      setLoadError(false);
+    }
     listNoteRuns(noteId)
       .then((rows) => {
         if (!alive) return;
         // Newest first is THIS surface's decision, not the command's ordering.
         setRuns([...rows].sort((a, b) => b.startedAt.localeCompare(a.startedAt)));
+        setLoadError(false);
         setLoading(false);
       })
       .catch((e) => {
         silentCatch('notepad list runs')(e);
-        if (alive) setLoading(false);
+        if (!alive) return;
+        setLoadError(true);
+        setLoading(false);
       });
     return () => { alive = false; };
-  }, [noteId]);
-
-  useEffect(load, [load]);
+  }, [noteId, attempt]);
 
   // Ghost UNDER nothing — this tab has no permanent chrome of its own, so the
   // ghost IS the geometry of the rows it replaces, and only while there is
@@ -158,9 +171,24 @@ export function NotePlanRuns({ noteId, onCompose }: {
     );
   }
 
+  if (loadError && runs.length === 0) {
+    return (
+      <div
+        className="flex flex-col items-center gap-3 rounded-card border border-dashed border-status-warning/30 px-3 py-4"
+        data-testid="note-runs-load-error"
+        role="alert"
+      >
+        <p className="typo-caption text-status-warning text-center">{t.notepad.runs_list_failed}</p>
+        <Button variant="secondary" size="sm" onClick={() => setAttempt((n) => n + 1)}>
+          {t.common.retry}
+        </Button>
+      </div>
+    );
+  }
+
   if (runs.length === 0) {
     return (
-      <p className="typo-caption text-foreground/60 rounded-card border border-dashed border-primary/15 px-3 py-4 text-center" data-testid="note-runs-empty">
+      <p className="typo-caption text-foreground rounded-card border border-dashed border-primary/15 px-3 py-4 text-center" data-testid="note-runs-empty">
         {t.notepad.runs_empty}
       </p>
     );

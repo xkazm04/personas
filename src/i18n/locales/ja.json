@@ -23413,7 +23413,8 @@
     "desk_lane_plan": "プランレール",
     "desk_room_back": "デスク",
     "milestone_briefs_stale": "どのマイルストーンにすでにブリーフがあるかは古くなっているため、それらのマイルストーンは非表示になっています。このノートから新しく始めることはできます。",
-    "plan_milestone_load_failed": "このマイルストーンを読み込めませんでした。リンクはまだ有効な可能性があります。"
+    "plan_milestone_load_failed": "このマイルストーンを読み込めませんでした。リンクはまだ有効な可能性があります。",
+    "runs_list_failed": "このメモに対して実行された内容を一覧できませんでした。"
   },
   "browser": {
     "webview": {
