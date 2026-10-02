@@ -57,7 +57,7 @@ export function Elevation({ channel, state, className }: { channel: BlueprintCha
   const dims = channel.dims;
   const stroke = state === 'voiced' ? 'var(--ink)' : state === 'unvoiced' ? 'var(--ink-faint)' : 'var(--ink-dim)';
   return (
-    <div className={`relative flex items-end gap-0.5 p-0.5 ${className}`} style={{ border: '1px solid transparent' }} data-measured={dims ? 'true' : 'false'}>
+    <div className={`twd-elev relative flex items-end gap-0.5 p-0.5 ${className}`} style={{ border: '1px solid transparent' }} data-measured={dims ? 'true' : 'false'}>
       <DrawFrame stroke={stroke} dash={state === 'voiced' ? undefined : '4 3'} />
       {dims ? (
         DIM_KEYS.map((key) => (

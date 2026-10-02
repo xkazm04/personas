@@ -62,7 +62,7 @@ export default function VoiceDrawing({
   const cols = voiceColumns(channels.length);
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
-      <div className="grid min-h-0 flex-1 gap-x-4 gap-y-3" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gridAutoRows: 'minmax(0, 1fr)' }}>
+      <div className="twd-voice-grid grid min-h-0 flex-1 gap-x-4 gap-y-3" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gridAutoRows: 'minmax(0, 1fr)' }}>
         {shown.map((c) => (
           <ChannelGlyph key={c.channel} channel={c} name={channelLabel(c.channel, everywhere)} tall={cols === 1} />
         ))}

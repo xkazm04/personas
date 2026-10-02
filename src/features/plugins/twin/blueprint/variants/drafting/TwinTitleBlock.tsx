@@ -2,10 +2,12 @@ import type { ReactNode } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import type { TwinBlueprintModel } from '../../blueprintContract';
-import { LETTER_STYLE } from './Lettering';
+import { Letter } from './Lettering';
 import ReadinessSlots from './ReadinessSlots';
+import TitleCard from './TitleCard';
 import DrawFrame from './draw/DrawFrame';
 import Write from './draw/Write';
+import { isPaperless, useDraftingTheme } from './draftingTheme';
 
 /**
  * The plan's title block, in the corner where a drafter puts it (the idiom of
@@ -13,7 +15,8 @@ import Write from './draw/Write';
  * twin's): the twin's name and role, and readiness as a stamp beside its four
  * slots. In the draw-in the block and its cells are frames (depth 0 and 1),
  * each cell letters its own words, and the readiness stamp is pressed last,
- * once every other part of the sheet is drawn.
+ * once every other part of the sheet is drawn. Off paper (the inked page,
+ * the native version) it is a card instead: `TitleCard`.
  */
 export default function TwinTitleBlock({
   model,
@@ -24,8 +27,10 @@ export default function TwinTitleBlock({
   slots?: boolean;
 }) {
   const { t } = useTranslation();
+  const theme = useDraftingTheme();
   const b = t.twin.blueprint;
   const { identity, readiness } = model;
+  if (isPaperless(theme)) return <TitleCard model={model} slots={slots} />;
 
   return (
     <div
@@ -71,9 +76,7 @@ function Cell({ label, children, grow = false }: { label: string; children: Reac
       data-draw-scope=""
     >
       <DrawFrame stroke="var(--ink-faint)" />
-      <span className="typo-label" style={{ ...LETTER_STYLE, color: 'var(--ink)' }}>
-        <Write text={label} />
-      </span>
+      <Letter>{label}</Letter>
       {children}
     </div>
   );

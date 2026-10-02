@@ -41,7 +41,7 @@ export default function GoalGauges({
           <li key={g.id} ref={register?.(`goal:${g.id}`)} data-goal={g.id} data-state={g.state} data-delta-target={targeted || undefined} data-draw-scope="">
             <Tooltip content={g.title}>
               <span className={`flex flex-col items-center gap-1 rounded-interactive px-0.5 pt-1 ${targeted ? 'twd-target' : ''}`}>
-                <span className="relative block h-10 w-4" style={{ border: '1px solid transparent' }}>
+                <span className="twd-gauge relative block h-10 w-4" style={{ border: '1px solid transparent' }}>
                   <DrawFrame stroke={stroke} dash={solid ? undefined : '3 2'} />
                   {!dropped && (
                     <motion.span

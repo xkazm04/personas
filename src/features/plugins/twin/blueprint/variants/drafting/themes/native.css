@@ -1,0 +1,177 @@
+/* The drafting sheet, version "native" ("Native drafting", spark
+   twin-portable-blueprint round 2 WP-C, major). The twin as a Personas page:
+   section cards lit with the theme's gradient and glow, each named by its
+   icon in a lit chip (the brand glyph on Identity) and a glowing card label,
+   and every state told in the app's status roles:
+
+     done ........... --status-success (the ink round the card, the tick, a
+                      covered topic or goal, a complete readiness ring)
+     in progress .... --primary with its glow (the operator keeps the
+                      primary-glow in-progress border, Spark config notes)
+     awaiting review  --status-pending (the hatch after a topic's answers, the
+                      memories waiting)
+     rejected ....... --status-error
+     not measured ... --status-neutral (the hatch)
+
+   States are re-inked by rebinding --ink in the subtree that holds the state,
+   so the drawing components are the baseline's own. Drafting survives in the
+   draw-in itself and in two signatures: the bio's dimension line and the
+   hatch. Card mechanics: paperless.css. No literals. */
+
+.twd-themed[data-drafting-theme='native'] {
+  --paper: var(--background);
+  --ink: var(--primary);
+  --ink-strong: color-mix(in srgb, var(--primary) 50%, var(--foreground));
+  --ink-dim: color-mix(in srgb, var(--primary) 45%, transparent);
+  --ink-faint: color-mix(in srgb, var(--primary) 18%, transparent);
+
+  --twd-card-radius: var(--radius-card);
+  --twd-card-bg:
+    linear-gradient(158deg, color-mix(in srgb, var(--primary) 12%, transparent) 0%, color-mix(in srgb, var(--primary) 3%, transparent) 48%, transparent 100%),
+    var(--card-bg);
+  --twd-card-line: color-mix(in srgb, var(--primary) 28%, transparent);
+  --twd-card-shadow:
+    var(--shadow-elevation-2),
+    0 0 34px -12px color-mix(in srgb, var(--primary) 45%, transparent);
+  --twd-card-shadow-hover:
+    var(--shadow-elevation-3),
+    0 0 40px -8px color-mix(in srgb, var(--primary) 55%, transparent);
+  --twd-icon-line: color-mix(in srgb, var(--primary) 45%, transparent);
+  --twd-ring-track: color-mix(in srgb, var(--primary) 16%, transparent);
+  --twd-glow: drop-shadow(0 0 4px color-mix(in srgb, var(--primary) 55%, transparent));
+  --twd-glow-done: drop-shadow(0 0 4px color-mix(in srgb, var(--status-success) 55%, transparent));
+  --twd-rejected-fill: color-mix(in srgb, var(--status-error) 45%, transparent);
+
+  /* The page's own glow, a radial wash from the top, as Personas surfaces carry. */
+  background: radial-gradient(90% 70% at 50% -10%, color-mix(in srgb, var(--primary) 8%, transparent), transparent 70%);
+}
+
+/* Light themes: no back-lighting (it reads as smudge on white). */
+[data-theme^='light'] .twd-themed[data-drafting-theme='native'] {
+  --ink-strong: color-mix(in srgb, var(--primary) 70%, var(--foreground));
+  --ink-dim: color-mix(in srgb, var(--primary) 55%, transparent);
+  --ink-faint: color-mix(in srgb, var(--primary) 22%, transparent);
+  --twd-card-bg:
+    linear-gradient(158deg, color-mix(in srgb, var(--primary) 7%, transparent) 0%, transparent 55%),
+    var(--card-bg);
+  --twd-card-line: color-mix(in srgb, var(--primary) 22%, var(--card-border));
+  --twd-card-shadow: var(--shadow-elevation-2);
+  --twd-card-shadow-hover: var(--shadow-elevation-3);
+  --twd-glow: none;
+  --twd-glow-done: none;
+  background: none;
+}
+
+/* ---------- type ---------- */
+.twd-themed[data-drafting-theme='native'] .twd-eyebrow {
+  color: var(--muted-foreground);
+}
+
+/* ---------- the section chip ---------- */
+.twd-themed[data-drafting-theme='native'] .twd-icon {
+  color: var(--primary);
+}
+.twd-themed[data-drafting-theme='native'] .twd-icon > svg[data-draw-svg='outline'] rect {
+  rx: var(--radius-interactive);
+}
+.twd-themed[data-drafting-theme='native'] .twd-icon-fill {
+  background: linear-gradient(140deg, color-mix(in srgb, var(--primary) 28%, transparent), color-mix(in srgb, var(--primary) 8%, transparent));
+  box-shadow: 0 0 16px -3px color-mix(in srgb, var(--primary) 50%, transparent);
+}
+[data-theme^='light'] .twd-themed[data-drafting-theme='native'] .twd-icon-fill {
+  box-shadow: none;
+}
+
+/* ---------- a section's ink round its card: in progress lit, done in success ---------- */
+.twd-themed[data-drafting-theme='native'] .twd-ink-trace {
+  stroke: var(--primary);
+  stroke-width: 2px;
+  filter: var(--twd-glow);
+}
+.twd-themed[data-drafting-theme='native'] .twd-region[data-ink='done'] .twd-ink-trace,
+.twd-themed[data-drafting-theme='native'] .twd-region[data-ink='done'] .twd-done-tick path {
+  stroke: var(--status-success);
+  filter: var(--twd-glow-done);
+}
+
+/* ---------- not measured: the hatch, in the neutral role ---------- */
+.twd-themed[data-drafting-theme='native'] .twd-hatch {
+  --ink-dim: color-mix(in srgb, var(--status-neutral) 60%, transparent);
+}
+
+/* ---------- training: covered in success, awaiting review in pending ---------- */
+.twd-themed[data-drafting-theme='native'] [data-topic][data-tier='covered'],
+.twd-themed[data-drafting-theme='native'] [data-goal][data-state='covered'] {
+  --ink: var(--status-success);
+  --ink-strong: var(--status-success);
+}
+.twd-themed[data-drafting-theme='native'] [data-topic] .twd-hatch-ink {
+  --ink: var(--status-pending);
+}
+/* Meters, not rules: a topic's track and a goal's gauge are rounded. */
+.twd-themed[data-drafting-theme='native'] .twd-track > svg rect {
+  rx: 4px;
+}
+.twd-themed[data-drafting-theme='native'] .twd-track [data-draw='extend'],
+.twd-themed[data-drafting-theme='native'] .twd-track .twd-hatch-ink {
+  border-radius: 4px;
+}
+.twd-themed[data-drafting-theme='native'] .twd-gauge > svg rect {
+  rx: 4px;
+}
+.twd-themed[data-drafting-theme='native'] .twd-gauge > [data-draw='rise'] {
+  border-radius: 3px;
+}
+
+/* ---------- voice: each elevation a small rounded chart ---------- */
+.twd-themed[data-drafting-theme='native'] .twd-elev > svg rect {
+  rx: 6px;
+}
+.twd-themed[data-drafting-theme='native'] .twd-elev > [data-draw='rise'] {
+  border-radius: 2px 2px 0 0;
+}
+
+/* ---------- knowledge: memories in their roles ---------- */
+.twd-themed[data-drafting-theme='native'] [data-tally='approved'],
+.twd-themed[data-drafting-theme='native'] [data-part='approved'] {
+  --ink: var(--status-success);
+  --ink-strong: var(--status-success);
+}
+.twd-themed[data-drafting-theme='native'] [data-tally='awaiting'],
+.twd-themed[data-drafting-theme='native'] [data-part='awaiting'] {
+  --ink: var(--status-pending);
+  --ink-strong: var(--status-pending);
+}
+.twd-themed[data-drafting-theme='native'] [data-tally='rejected'],
+.twd-themed[data-drafting-theme='native'] [data-part='rejected'] {
+  --ink: var(--status-error);
+  --ink-strong: var(--status-error);
+  --ink-dim: color-mix(in srgb, var(--status-error) 60%, transparent);
+}
+
+/* ---------- readiness: a ring, lit while short of complete ---------- */
+.twd-themed[data-drafting-theme='native'] .twd-ring {
+  stroke: var(--primary);
+  filter: var(--twd-glow);
+}
+.twd-themed[data-drafting-theme='native'] [data-complete='true'] .twd-ring {
+  stroke: var(--status-success);
+  filter: var(--twd-glow-done);
+}
+
+/* ---------- a section's head: the share as a lead figure, set solid so the
+   head is no taller than on paper (the anti-shrink rule holds at 1280x800) ---------- */
+.twd-themed[data-drafting-theme='native'] .twd-share {
+  line-height: 1;
+}
+
+/* ---------- the identity card: its brand mark steps out of a narrow card
+   (the overlay's corner) instead of squeezing the name ---------- */
+.twd-themed[data-drafting-theme='native'] .twd-title {
+  container: twd-title / inline-size;
+}
+@container twd-title (max-width: 26rem) {
+  .twd-title-mark {
+    display: none;
+  }
+}

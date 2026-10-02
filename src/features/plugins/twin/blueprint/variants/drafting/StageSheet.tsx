@@ -2,9 +2,10 @@ import { useMemo, type ReactNode } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { BlueprintDelta, SectionId, TwinBlueprintModel } from '../../blueprintContract';
 import { sectionCoverage } from '../../sectionMetrics';
+import BoxFrame, { useCardBox } from './BoxFrame';
 import IdentityDrawing from './IdentityDrawing';
 import KnowledgeDrawing from './KnowledgeDrawing';
-import { LETTER_STYLE } from './Lettering';
+import { Letter } from './Lettering';
 import type { SheetDraw } from './OverviewSheet';
 import SheetBorder from './SheetBorder';
 import SheetRegion from './SheetRegion';
@@ -15,7 +16,6 @@ import WorkingPlan from './WorkingPlan';
 import type { DeltaTarget } from './draftingTwinModel';
 import DrawFrame from './draw/DrawFrame';
 import DrawSheet from './draw/DrawSheet';
-import Write from './draw/Write';
 
 /** The stage's regions, numbered in the plan's order. */
 export const STAGE_ORDER = ['identity', 'voice', 'knowledge', 'training'] as const;
@@ -59,6 +59,7 @@ export default function StageSheet({
   const { t } = useTranslation();
   const b = t.twin.blueprint;
   const cov = sectionCoverage(model);
+  const card = useCardBox();
   const replanKey = useMemo(() => ({ roomy, model }), [roomy, model]);
   const region = (section: SectionId) => ({
     section,
@@ -94,13 +95,11 @@ export default function StageSheet({
         ref={register('notes')}
         data-testid="twd-notes"
         data-draw-scope=""
-        className="relative flex min-w-0 flex-col gap-1 px-3 py-2"
-        style={{ border: '1px solid transparent', background: 'color-mix(in srgb, var(--paper) 92%, transparent)' }}
+        className={`${card} relative flex min-w-0 flex-col gap-1 px-3 py-2`}
+        style={card ? undefined : { border: '1px solid transparent', background: 'color-mix(in srgb, var(--paper) 92%, transparent)' }}
       >
-        <DrawFrame stroke="var(--ink)" />
-        <span className="typo-label" style={{ ...LETTER_STYLE, color: 'var(--ink)' }}>
-          <Write text={b.variantCopy.drafting.notes} />
-        </span>
+        <BoxFrame paper={<DrawFrame stroke="var(--ink)" />} />
+        <Letter>{b.variantCopy.drafting.notes}</Letter>
         {notes}
       </div>
       <div data-area="right" className="flex min-h-0 min-w-0 flex-col">

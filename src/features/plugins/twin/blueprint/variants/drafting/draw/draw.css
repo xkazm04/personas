@@ -29,6 +29,11 @@
 [data-draw-state='drawing'] [data-draw-wipe='y'][data-draw-at] {
   animation-name: twd-draw-drop;
 }
+/* A surface laid in under the frame that bounds it (a card's fill, round 2
+   WP-C): it fades in with the next wave, as the inner frames trace. */
+[data-draw-state='drawing'] [data-draw-wipe='fade'][data-draw-at] {
+  animation-name: twd-draw-fade;
+}
 /* Ink over an authored dash: the coverage trace runs from nothing to its share. */
 [data-draw-state='drawing'] [data-draw='ink'][data-draw-at] {
   animation-name: twd-draw-ink;
@@ -87,6 +92,9 @@
 @keyframes twd-draw-drop {
   from { clip-path: inset(-4px -4px calc(100% + 4px) -4px); }
   to { clip-path: inset(-4px -4px -4px -4px); }
+}
+@keyframes twd-draw-fade {
+  from { opacity: 0; }
 }
 @keyframes twd-draw-appear {
   from { visibility: hidden; }

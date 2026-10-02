@@ -2,8 +2,11 @@ import type { CSSProperties, KeyboardEvent, ReactNode, Ref } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { SectionId } from '../../blueprintContract';
+import BoxFrame, { useCardBox } from './BoxFrame';
 import { RegionInk, RegionOutline } from './InkFrame';
-import { Balloon, Letter, Unmeasured } from './Lettering';
+import { Unmeasured } from './Lettering';
+import { SectionMark, SectionName } from './SectionHead';
+import { useDraftingTheme } from './draftingTheme';
 import { inkOf } from './draftingTwinModel';
 import DrawFrame from './draw/DrawFrame';
 import { WriteNumber } from './draw/Write';
@@ -19,6 +22,8 @@ import { WriteNumber } from './draw/Write';
  * and a container: after every frame on the sheet has traced, it writes its
  * own parts in order (balloon, name, share, the ink running out to the share,
  * the tick), while each drawing inside it writes its own parts alongside.
+ * The theme versions (round 2 WP-C) change only its frame (a card off paper),
+ * its section mark and the type of its name and share.
  */
 export default function SheetRegion({
   section,
@@ -50,6 +55,8 @@ export default function SheetRegion({
   children: ReactNode;
 }) {
   const { t } = useTranslation();
+  const theme = useDraftingTheme();
+  const card = useCardBox();
   const name = t.twin.blueprint.sections[section];
   const ink = inkOf(coverage);
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -71,15 +78,13 @@ export default function SheetRegion({
       data-ink={ink}
       data-measured={coverage === null ? 'false' : 'true'}
       data-draw-scope=""
-      className={`twd-region focus-ring relative flex min-h-0 min-w-0 flex-col ${dense ? 'gap-2 px-2.5 pb-3 pt-2' : 'gap-3 px-4 pb-4 pt-3'} ${targeted ? 'twd-target' : ''} ${className}`}
+      className={`twd-region ${card} focus-ring relative flex min-h-0 min-w-0 flex-col ${dense ? 'gap-2 px-2.5 pb-3 pt-2' : 'gap-3 px-4 pb-4 pt-3'} ${targeted ? 'twd-target' : ''} ${className}`}
       style={style}
     >
-      <RegionOutline />
+      <BoxFrame paper={<RegionOutline />} />
       <header className="flex min-w-0 items-center gap-2.5">
-        <Balloon number={number} inked={ink !== 'pending' && ink !== 'unmeasured'} />
-        <Letter strong className="min-w-0 truncate">
-          {name}
-        </Letter>
+        <SectionMark section={section} number={number} inked={ink !== 'pending' && ink !== 'unmeasured'} />
+        <SectionName section={section} className="min-w-0 truncate" />
         {/* Beside the card (dense) the inked frame alone draws the share; the figure needs the width. */}
         <span className="ml-auto flex shrink-0 items-center gap-2">
           {coverage === null && (
@@ -91,7 +96,9 @@ export default function SheetRegion({
               </span>
             </Tooltip>
           )}
-          {coverage !== null && !dense && <WriteNumber value={coverage} unit="ratio" precision={0} className="typo-data text-foreground" />}
+          {coverage !== null && !dense && (
+            <WriteNumber value={coverage} unit="ratio" precision={0} className={`${theme === 'native' ? 'twd-share typo-data-lg' : 'typo-data'} text-foreground`} />
+          )}
         </span>
       </header>
       <RegionInk coverage={coverage} ink={ink} />

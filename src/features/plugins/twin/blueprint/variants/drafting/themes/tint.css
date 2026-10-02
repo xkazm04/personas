@@ -1,0 +1,86 @@
+/* The drafting sheet, version "tint" (spark twin-portable-blueprint, round 2
+   WP-C, subtle). The same sheet as the baseline, with two changes:
+
+   1. Paper and ink from the ACTIVE THEME ONLY. Studio's cyanotype mixes every
+      colour with a fixed blue (its --drafting-blue, and a fixed light or deep
+      blue in the ink), so in a warm theme it is a blue slab. Here the paper is the app's
+      background tinted toward --primary, the ink is --primary leaned toward
+      --foreground, and the grid is about half as loud. The root does not
+      carry .drafting-root, so none of Studio's anchored values reach it.
+   2. The sheet's edge is a Personas card: card radius, a primary border,
+      elevation and (dark themes) the theme's glow, inset from the page by the
+      density padding so the edge can be seen. The drawn border stays, rounded
+      to sit inside the card like a mat.
+
+   Every value derives from var(--*) through color-mix(); no literals. */
+
+.twd-themed[data-drafting-theme='tint'] {
+  --paper: color-mix(in srgb, var(--primary) 6%, var(--background));
+  --paper-deep: color-mix(in srgb, var(--primary) 11%, var(--background));
+  --ink: color-mix(in srgb, var(--primary) 82%, var(--foreground));
+  --ink-strong: color-mix(in srgb, var(--ink) 45%, var(--foreground));
+  --ink-dim: color-mix(in srgb, var(--ink) 48%, transparent);
+  --ink-faint: color-mix(in srgb, var(--ink) 22%, transparent);
+  --grid-fine: color-mix(in srgb, var(--ink) 4%, transparent);
+  --grid-major: color-mix(in srgb, var(--ink) 8%, transparent);
+
+  /* Inset from the page so the card's edge can be seen; the gutters inside it
+     are tighter by as much, so layer one keeps the baseline's working widths
+     (nothing truncates or wraps that does not on the cyanotype). */
+  margin: 0.75rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
+  border-radius: var(--radius-card);
+  box-shadow:
+    var(--shadow-elevation-2),
+    0 0 40px -14px color-mix(in srgb, var(--primary) 40%, transparent);
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(130% 90% at 0% 0%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 60%),
+    linear-gradient(var(--grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
+    linear-gradient(var(--grid-fine) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-fine) 1px, transparent 1px);
+  background-size: 100% 100%, 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+}
+
+/* Light themes: the paper is the app's card tinted toward the theme, the ink
+   a step darker against it, and the glow goes (back-lighting reads as smudge
+   on white, as in globals.css .hud-bloom). */
+[data-theme^='light'] .twd-themed[data-drafting-theme='tint'] {
+  --paper: color-mix(in srgb, var(--primary) 4%, var(--card-bg));
+  --paper-deep: color-mix(in srgb, var(--primary) 8%, var(--card-bg));
+  --ink: color-mix(in srgb, var(--primary) 85%, var(--foreground));
+  --ink-strong: color-mix(in srgb, var(--ink) 60%, var(--foreground));
+  --ink-dim: color-mix(in srgb, var(--ink) 55%, transparent);
+  --ink-faint: color-mix(in srgb, var(--ink) 25%, transparent);
+  --grid-fine: color-mix(in srgb, var(--ink) 5%, transparent);
+  --grid-major: color-mix(in srgb, var(--ink) 10%, transparent);
+  box-shadow: var(--shadow-elevation-2);
+}
+
+/* The drawn border, 8px in from the card's edge, runs round its corners. */
+.twd-themed[data-drafting-theme='tint'] .twd-sheet-border {
+  inset: -0.5rem;
+}
+.twd-themed[data-drafting-theme='tint'] .twd-sheet-border rect {
+  rx: 5px;
+}
+
+/* The width the margin took back, returned by the gutters between parts. */
+.twd-themed[data-drafting-theme='tint'] .twd-plan {
+  gap: 0.75rem;
+}
+.twd-themed[data-drafting-theme='tint'] .twd-voice-grid {
+  column-gap: 0.75rem;
+}
+.twd-themed[data-drafting-theme='tint'] .twd-facts-l1 {
+  column-gap: 1.5rem;
+}
+
+/* In the training overlay the table already frames the sheet: no margin, so
+   the sheet is never shorter than the cyanotype there and the rows that move
+   to layer two move at the same sizes. */
+.twd-themed[data-drafting-theme='tint'][data-mode='stage'] {
+  margin: 0;
+}

@@ -1,0 +1,50 @@
+/* Paperless drafting (spark twin-portable-blueprint, round 2 WP-C): the
+   mechanics the inked page (surface.css) and the native version (native.css)
+   share. There is no sheet: the root draws nothing of its own, and every
+   region-sized box is a card (`.twd-card`, BoxFrame.tsx) made of three parts
+   the draw-in schedules like any other:
+
+   - its frame, a traced outline (depth n) running round the card's radius;
+   - its fill (`.twd-card-fill`, depth n+1), laid in under the content as the
+     inner frames trace, carrying the card's background and elevation;
+   - its content, drawn in reading order once every frame stands.
+
+   Each version sets the card's look through five variables: --twd-card-radius,
+   --twd-card-bg (a background, gradients allowed), --twd-card-line,
+   --twd-card-shadow and --twd-card-shadow-hover. */
+
+.twd-themed:is([data-drafting-theme='surface'], [data-drafting-theme='native']) {
+  background: none;
+}
+
+.twd-themed .twd-card {
+  /* The fill sits under the card's content, never under the page. */
+  isolation: isolate;
+  border-radius: var(--twd-card-radius);
+}
+.twd-themed .twd-card-fill {
+  z-index: -1;
+  border-radius: var(--twd-card-radius);
+  background: var(--twd-card-bg);
+  box-shadow: var(--twd-card-shadow);
+  transition: box-shadow var(--duration-fast, 150ms) ease-out;
+}
+/* The frame and the section's ink run round the card's own corners. */
+.twd-themed .twd-card > svg[data-draw-svg='outline'] rect,
+.twd-themed .twd-card > svg > rect.twd-ink-trace {
+  rx: var(--twd-card-radius);
+}
+
+/* A region on layer one is still the door to its zoom: the card lifts. */
+.twd-themed .twd-region.twd-card[role='button']:hover {
+  background-color: transparent;
+  box-shadow: none;
+}
+.twd-themed .twd-region.twd-card[role='button']:hover > .twd-card-fill {
+  box-shadow: var(--twd-card-shadow-hover);
+}
+
+/* The ruled divider between the title card's two cells. */
+.twd-themed .twd-title-rule {
+  background: var(--twd-card-line);
+}

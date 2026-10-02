@@ -40,6 +40,7 @@ export default function KnowledgeMix({ knowledge }: { knowledge: Knowledge }) {
               p.n ? (
                 <span
                   key={p.part}
+                  data-part={p.part}
                   data-draw={p.part === 'awaiting' ? 'sweep' : 'extend'}
                   className={FILL[p.part]}
                   style={{ width: `${(p.n / whole) * 100}%`, ...swatch(p.part) }}
@@ -50,7 +51,7 @@ export default function KnowledgeMix({ knowledge }: { knowledge: Knowledge }) {
       )}
       <ul className="flex flex-wrap gap-x-4 gap-y-1">
         {parts.map((p) => (
-          <li key={p.part} className="flex items-center gap-1.5" data-measured={p.n === null ? 'false' : 'true'} data-draw-scope="">
+          <li key={p.part} className="flex items-center gap-1.5" data-part={p.part} data-measured={p.n === null ? 'false' : 'true'} data-draw-scope="">
             <span aria-hidden className="relative h-3 w-3 shrink-0" style={{ border: '1px solid transparent' }}>
               <DrawFrame stroke="var(--ink)" />
               <span data-draw="sweep" className={`absolute inset-0 ${FILL[p.part]}`} style={swatch(p.part)} />
@@ -72,8 +73,9 @@ export default function KnowledgeMix({ knowledge }: { knowledge: Knowledge }) {
   );
 }
 
+/** A theme version may lay a fill into the rejected share (`--twd-rejected-fill`); on paper it is left open. */
 function swatch(part: Part) {
   if (part === 'approved') return { background: 'var(--ink)' };
-  if (part === 'rejected') return { background: 'transparent', borderRight: '1px solid var(--ink-dim)' };
+  if (part === 'rejected') return { background: 'var(--twd-rejected-fill, transparent)', borderRight: '1px solid var(--ink-dim)' };
   return {};
 }

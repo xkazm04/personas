@@ -13,6 +13,11 @@
  * variant switch) and is simply there back from a zoom; every zoom draws
  * itself; the stage draws once when the overlay opens, and an answer's delta
  * plays on the drawn sheet.
+ *
+ * Round 2 / WP-C: the same renderer draws four looks (`theme`, see
+ * `draftingTheme.ts`): the baseline cyanotype and three versions that sit
+ * progressively closer to the Personas theme. The draw-in, the layout and the
+ * contract are the same in all four.
  */
 import { useEffect, useRef, useState } from 'react';
 import '@/features/studio/guide/drafting/drafting.css';
@@ -24,13 +29,24 @@ import SheetPen, { type SheetPenHandle } from './SheetPen';
 import StageNotes from './StageNotes';
 import StageSheet from './StageSheet';
 import { deltaTarget } from './draftingTwinModel';
+import { DraftingThemeContext, type DraftingTheme } from './draftingTheme';
 import LeaderLine from './LeaderLine';
 import { useLeaderEnds, useMarkRegistry } from './useSheetPen';
 import { useRoomySheet } from './useRoomySheet';
 import { insetsWithin, type Insets } from './zoomOrigin';
 import './twinDrafting.css';
 
-export default function DraftingBlueprint({ model, mode, focus, onFocus, onOpenDetail, delta, working, reduced }: BlueprintVariantProps) {
+export default function DraftingBlueprint({
+  model,
+  mode,
+  focus,
+  onFocus,
+  onOpenDetail,
+  delta,
+  working,
+  reduced,
+  theme = 'cyanotype',
+}: BlueprintVariantProps & { theme?: DraftingTheme }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<HTMLDivElement>(null);
   const pen = useRef<SheetPenHandle>(null);
@@ -74,71 +90,77 @@ export default function DraftingBlueprint({ model, mode, focus, onFocus, onOpenD
     lastZoom.current = zoom;
   }, [zoom, find]);
 
+  // The baseline sits on Studio's cyanotype paper; a theme version draws its own (themes/<theme>.css).
+  const paper = theme === 'cyanotype' ? 'drafting-root' : 'twd-themed';
+
   return (
-    <div
-      ref={rootRef}
-      className="drafting-root twd-sheet relative flex min-h-0 flex-1 flex-col overflow-hidden px-5 pb-5 pt-5"
-      data-testid="twin-blueprint-drafting"
-      data-mode={mode}
-      data-focus={zoom ?? 'overview'}
-      data-reduced={reduced}
-      data-working={stage && working}
-    >
-      {/* Before the drawing on purpose: its handle must be attached when the
-          drawing's layout effect hands it the plan (siblings commit in order).
-          It paints above the sheet by its own z-index. */}
-      <SheetPen
-        handle={pen}
-        rootRef={rootRef}
-        find={find}
-        targetKey={target?.key ?? null}
-        targetSection={target?.section ?? null}
-        working={stage && working}
-        busy={stage && (working || shown !== null)}
-        active={stage && (reduced || stageDrawn)}
-        reduced={reduced}
-      />
-      <div ref={viewRef} className="relative flex h-full min-h-0 flex-col">
-        {stage ? (
-          <StageSheet
-            model={model}
-            reduced={reduced}
-            roomy={roomy}
-            working={working}
-            delta={shown}
-            target={target}
-            draw={{
-              ...draw,
-              onDone: () => {
-                pen.current?.lift();
-                setStageDrawn(true);
-              },
-            }}
-            finish={finish}
-            register={register}
-            notes={<StageNotes model={model} delta={shown} target={target} reduced={reduced} />}
-          />
-        ) : zoom === null ? (
-          <div key="overview" className="twd-fade-in flex h-full min-h-0 flex-col">
-            <OverviewSheet model={model} roomy={roomy} reduced={reduced} draw={{ ...draw, instant: reduced || zoomed }} onFocus={zoomInto} register={register} />
-          </div>
-        ) : (
-          <>
-            <SheetBorder draw={false} />
-            <FocusSheet
-              key={zoom}
+    <DraftingThemeContext.Provider value={theme}>
+      <div
+        ref={rootRef}
+        className={`${paper} twd-sheet relative flex min-h-0 flex-1 flex-col overflow-hidden px-5 pb-5 pt-5`}
+        data-testid="twin-blueprint-drafting"
+        data-drafting-theme={theme}
+        data-mode={mode}
+        data-focus={zoom ?? 'overview'}
+        data-reduced={reduced}
+        data-working={stage && working}
+      >
+        {/* Before the drawing on purpose: its handle must be attached when the
+            drawing's layout effect hands it the plan (siblings commit in order).
+            It paints above the sheet by its own z-index. */}
+        <SheetPen
+          handle={pen}
+          rootRef={rootRef}
+          find={find}
+          targetKey={target?.key ?? null}
+          targetSection={target?.section ?? null}
+          working={stage && working}
+          busy={stage && (working || shown !== null)}
+          active={stage && (reduced || stageDrawn)}
+          reduced={reduced}
+        />
+        <div ref={viewRef} className="relative flex h-full min-h-0 flex-col">
+          {stage ? (
+            <StageSheet
               model={model}
-              section={zoom}
               reduced={reduced}
-              draw={draw}
-              origin={origin?.section === zoom ? origin.box : null}
-              onBack={() => onFocus(null)}
-              onOpenDetail={onOpenDetail}
+              roomy={roomy}
+              working={working}
+              delta={shown}
+              target={target}
+              draw={{
+                ...draw,
+                onDone: () => {
+                  pen.current?.lift();
+                  setStageDrawn(true);
+                },
+              }}
+              finish={finish}
+              register={register}
+              notes={<StageNotes model={model} delta={shown} target={target} reduced={reduced} />}
             />
-          </>
-        )}
+          ) : zoom === null ? (
+            <div key="overview" className="twd-fade-in flex h-full min-h-0 flex-col">
+              <OverviewSheet model={model} roomy={roomy} reduced={reduced} draw={{ ...draw, instant: reduced || zoomed }} onFocus={zoomInto} register={register} />
+            </div>
+          ) : (
+            <>
+              <SheetBorder draw={false} />
+              <FocusSheet
+                key={zoom}
+                model={model}
+                section={zoom}
+                reduced={reduced}
+                draw={draw}
+                origin={origin?.section === zoom ? origin.box : null}
+                onBack={() => onFocus(null)}
+                onOpenDetail={onOpenDetail}
+              />
+            </>
+          )}
+        </div>
+        {stage && <LeaderLine rootRef={rootRef} from={leader.from} to={leader.to} playKey={target ? playKey : null} reduced={reduced} />}
       </div>
-      {stage && <LeaderLine rootRef={rootRef} from={leader.from} to={leader.to} playKey={target ? playKey : null} reduced={reduced} />}
-    </div>
+    </DraftingThemeContext.Provider>
   );
 }

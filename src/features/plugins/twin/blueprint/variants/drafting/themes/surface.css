@@ -1,0 +1,51 @@
+/* The drafting sheet, version "surface" ("Inked page", spark
+   twin-portable-blueprint round 2 WP-C, moderate). No paper: the drawing is
+   inked straight onto the app's content surface. The regions are Personas
+   cards (the app's card background, card radius, a primary border, elevation
+   one, lifting on hover) whose frames the draw-in traces; drafting stays as
+   accents only: crop marks at each card's corners, the bio's dimension line,
+   dashed pending frames and the hatch for "not measured". Labels are the
+   app's eyebrows and titles (Lettering.tsx), the title block a Personas strip
+   (TitleCard.tsx). The ink is the theme's primary leaned toward the
+   foreground. Card mechanics: paperless.css. No literals. */
+
+.twd-themed[data-drafting-theme='surface'] {
+  --paper: var(--background);
+  --ink: color-mix(in srgb, var(--primary) 80%, var(--foreground));
+  --ink-strong: color-mix(in srgb, var(--ink) 40%, var(--foreground));
+  --ink-dim: color-mix(in srgb, var(--ink) 45%, transparent);
+  --ink-faint: color-mix(in srgb, var(--ink) 20%, transparent);
+
+  --twd-card-radius: var(--radius-card);
+  --twd-card-bg: var(--card-bg);
+  --twd-card-line: color-mix(in srgb, var(--primary) 24%, transparent);
+  --twd-card-shadow: var(--shadow-elevation-1);
+  --twd-card-shadow-hover:
+    var(--shadow-elevation-2),
+    0 0 26px -8px color-mix(in srgb, var(--primary) 40%, transparent);
+}
+
+[data-theme^='light'] .twd-themed[data-drafting-theme='surface'] {
+  --ink: color-mix(in srgb, var(--primary) 85%, var(--foreground));
+  --ink-strong: color-mix(in srgb, var(--ink) 60%, var(--foreground));
+  --ink-dim: color-mix(in srgb, var(--ink) 55%, transparent);
+  --ink-faint: color-mix(in srgb, var(--ink) 25%, transparent);
+  --twd-card-line: color-mix(in srgb, var(--primary) 20%, var(--card-border));
+  --twd-card-shadow-hover: var(--shadow-elevation-2);
+}
+
+/* Eyebrows: the quiet structural label of the app, over the regular ink. */
+.twd-themed[data-drafting-theme='surface'] .twd-eyebrow {
+  color: var(--muted-foreground);
+}
+
+/* Readiness, pressed last: the figure in a lit, level frame (no stamp's tilt). */
+.twd-themed[data-drafting-theme='surface'] .twd-stamp {
+  border: 1.5px solid color-mix(in srgb, var(--primary) 55%, transparent);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--primary) 22%, transparent);
+  color: var(--foreground);
+}
+[data-theme^='light'] .twd-themed[data-drafting-theme='surface'] .twd-stamp {
+  box-shadow: none;
+}

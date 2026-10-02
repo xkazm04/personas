@@ -59,7 +59,7 @@ export default function OverviewSheet({
   });
 
   return (
-    <DrawSheet {...draw} replanKey={replanKey} data-testid="twd-overview" className="grid h-full min-h-0 gap-4" style={PLAN}>
+    <DrawSheet {...draw} replanKey={replanKey} data-testid="twd-overview" className="twd-plan grid h-full min-h-0 gap-4" style={PLAN}>
       <SheetBorder />
       <SheetRegion {...region('identity', 0)} unmeasuredLabel={states.notDrawn}>
         <IdentityDrawing identity={model.identity} detailed={roomy} />

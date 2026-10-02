@@ -4,11 +4,13 @@ import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 import { SECTION_IDS, type SectionId, type TwinBlueprintModel } from '../../blueprintContract';
 import { sectionCoverage } from '../../sectionMetrics';
+import BoxFrame, { useCardBox } from './BoxFrame';
 import IdentityDrawing from './IdentityDrawing';
 import KnowledgeDrawing from './KnowledgeDrawing';
-import { Balloon, Letter } from './Lettering';
+import { Letter } from './Lettering';
 import type { SheetDraw } from './OverviewSheet';
 import ReadinessSlots from './ReadinessSlots';
+import { SectionMark, SectionName } from './SectionHead';
 import TrainingDetail from './TrainingDetail';
 import VoiceSchedule from './VoiceSchedule';
 import DrawFrame from './draw/DrawFrame';
@@ -25,6 +27,8 @@ import { clipTo, type Insets } from './zoomOrigin';
  * itself in on the paper as it opens, the same way the plan did: its frame,
  * the frames inside it level by level, then every row in reading order. The
  * buttons are there from the start. Reduced motion: a fade, drawn at once.
+ * Off paper (round 2 WP-C) the detail is drawn on a card, under the
+ * section's own head.
  */
 export default function FocusSheet({
   model,
@@ -48,6 +52,7 @@ export default function FocusSheet({
   const b = t.twin.blueprint;
   const number = SECTION_IDS.indexOf(section) + 1;
   const coverage = sectionCoverage(model)[section];
+  const card = useCardBox();
   const backRef = useRef<HTMLButtonElement>(null);
   useEffect(() => backRef.current?.focus({ preventScroll: true }), [section]);
   // A CSS animation, not a script one: the compositor runs it, and the app's
@@ -70,10 +75,8 @@ export default function FocusSheet({
         <Button ref={backRef} variant="ghost" size="sm" icon={<ArrowLeft className="h-4 w-4" />} onClick={onBack}>
           {b.nav.back}
         </Button>
-        <Balloon number={number} inked size={32} />
-        <Letter strong className="shrink-0">
-          {tx(b.variantCopy.drafting.detailOf, { section: b.sections[section] })}
-        </Letter>
+        <SectionMark section={section} number={number} inked size={32} />
+        <SectionName section={section} text={tx(b.variantCopy.drafting.detailOf, { section: b.sections[section] })} className="shrink-0" />
         <Write text={b.sectionHints[section]} className="min-w-0 truncate typo-caption" />
         <span className="ml-auto shrink-0">
           {coverage === null ? (
@@ -86,9 +89,15 @@ export default function FocusSheet({
           {b.nav.openDetail}
         </Button>
       </header>
-      <div className="relative flex min-h-0 flex-1 flex-col px-6 py-5" style={{ border: '1px solid transparent' }}>
-        <DrawFrame stroke="var(--ink-faint)" width={3} edge={4} />
-        <DrawFrame stroke="var(--ink)" />
+      <div className={`${card} relative flex min-h-0 flex-1 flex-col px-6 py-5`} style={{ border: '1px solid transparent' }}>
+        <BoxFrame
+          paper={
+            <>
+              <DrawFrame stroke="var(--ink-faint)" width={3} edge={4} />
+              <DrawFrame stroke="var(--ink)" />
+            </>
+          }
+        />
         {section === 'identity' && (
           <div className="flex min-h-0 flex-col gap-10">
             <IdentityDrawing identity={model.identity} detailed />

@@ -6,7 +6,10 @@
  * each container's content strictly one part after another in document
  * (reading) order, the stamp last; reduced motion plans nothing; a zoom opened
  * mid-draw draws itself; the stage's delta waits for the drawn sheet; the
- * working miniature loops in CSS.
+ * working miniature loops in CSS. Round 2 WP-C: the invariants hold for every
+ * theme version of the sheet (the planner reads the rendered page, so a theme
+ * that turns a frame into a card moves its parts in the schedule with it);
+ * the theme-specific structure is in draftingThemes.test.tsx.
  */
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -17,15 +20,19 @@ import {
   FIXTURE_DELTA_INSTANT, FIXTURE_DELTA_RECONCILED, FIXTURE_EMPTY, FIXTURE_ONE_CHANNEL, FIXTURE_RICH,
 } from '../../../__fixtures__/blueprintFixtures';
 import { DRAW_TIMING, LOOP_LAST_START_SHARE, LOOP_MIN_CYCLE } from '../draw/drawTiming';
+import type { DraftingTheme } from '../draftingTheme';
 import DraftingBlueprint from '../index';
 
-function setup(over: Partial<BlueprintVariantProps> = {}) {
+function setup(over: Partial<BlueprintVariantProps> = {}, theme: DraftingTheme = 'cyanotype') {
   const props: BlueprintVariantProps = {
     model: FIXTURE_RICH, mode: 'detail', focus: null, onFocus: vi.fn(), onOpenDetail: vi.fn(),
     delta: null, working: false, reduced: false, ...over,
   };
-  return { ...render(<DraftingBlueprint {...props} />), props };
+  return { ...render(<DraftingBlueprint {...props} theme={theme} />), props };
 }
+
+/** The baseline and the three theme versions of round 2 WP-C. */
+const THEMES: DraftingTheme[] = ['cyanotype', 'tint', 'surface', 'native'];
 
 interface Planned { el: Element; kind: string; at: number; dur: number; depth: number | null; scope: Element }
 
@@ -99,17 +106,17 @@ const kindsIn = (scope: Element) =>
 const FIXTURES: Array<[string, TwinBlueprintModel]> = [['empty', FIXTURE_EMPTY], ['one channel', FIXTURE_ONE_CHANNEL], ['rich', FIXTURE_RICH]];
 const SECTIONS: SectionId[] = ['identity', 'voice', 'knowledge', 'training'];
 
-describe('every sheet keeps the draughtsman\'s order', () => {
+describe.each(THEMES)('every sheet keeps the draughtsman\'s order: %s', (theme) => {
   it.each(FIXTURES)('%s: L1, every L2 and the stage', (_name, model) => {
-    const l1 = setup({ model });
+    const l1 = setup({ model }, theme);
     expectSchedule(drawing());
     l1.unmount();
     for (const focus of SECTIONS) {
-      const l2 = setup({ model, focus });
+      const l2 = setup({ model, focus }, theme);
       expectSchedule(drawing());
       l2.unmount();
     }
-    const st = setup({ model, mode: 'stage' });
+    const st = setup({ model, mode: 'stage' }, theme);
     expectSchedule(drawing());
     st.unmount();
   });

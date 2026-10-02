@@ -68,7 +68,7 @@ export default function TopicBar({
         {/* The pen's anchor: just past the end of this line, so the nib and its
             barrel sit in the margin rather than over the name or the figures. */}
         <span ref={penRef} aria-hidden className="pointer-events-none absolute -right-3.5 top-full h-2 w-7" />
-        <div className="relative h-2.5 min-w-0 flex-1" style={{ border: '1px solid transparent' }}>
+        <div className="twd-track relative h-2.5 min-w-0 flex-1" style={{ border: '1px solid transparent' }}>
           <DrawFrame stroke={topic.tier === 'covered' ? 'var(--ink)' : 'var(--ink-dim)'} dash={topic.tier === 'thin' ? '4 3' : undefined} />
           <motion.div
             key={replay ? playKey : 'still'}

@@ -97,7 +97,11 @@ export function DetailHeader({ profile, samplesOpen, switcher }: DetailHeaderPro
               })}
             </Button>
           )}
-          <div className="ml-auto flex-1 min-w-[20rem] max-w-[30rem]">{switcher}</div>
+          {/* Natural width, labels never wrap: the toolbar row is flex-wrap, so when
+              the role and readiness leave too little room the whole switcher drops
+              to its own line (round 2 has five variants; a capped width broke every
+              label onto two lines at 1280). */}
+          <div className="ml-auto shrink-0 whitespace-nowrap">{switcher}</div>
         </>
       }
     />

@@ -43,7 +43,7 @@ export function RegionInk({ coverage, ink }: { coverage: number | null; ink: Ink
         </svg>
       )}
       {ink === 'done' && (
-        <svg aria-hidden width={14} height={11} className="pointer-events-none absolute bottom-2.5 right-3 overflow-visible">
+        <svg aria-hidden width={14} height={11} className="twd-done-tick pointer-events-none absolute bottom-2.5 right-3 overflow-visible">
           <path d="M1 6 L5 10 L13 1" fill="none" stroke="var(--ink-strong)" strokeWidth={1.75} pathLength={100} data-draw="stroke" />
         </svg>
       )}

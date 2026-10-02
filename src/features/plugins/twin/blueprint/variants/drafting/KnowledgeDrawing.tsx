@@ -6,6 +6,7 @@ import { Letter } from './Lettering';
 import TallyRow from './TallyRow';
 import DrawFrame from './draw/DrawFrame';
 import Write, { WriteNumber } from './draw/Write';
+import { useDraftingTheme } from './draftingTheme';
 
 type Knowledge = TwinBlueprintModel['knowledge'];
 
@@ -16,7 +17,9 @@ type Knowledge = TwinBlueprintModel['knowledge'];
  * composition bar, so the column beside the card stays short; the zoom (L2)
  * runs the tallies longer and adds the facts tally and the samples to review.
  * Each tally, the facts figure and the knowledge base are their own
- * containers, so their marks are struck side by side.
+ * containers, so their marks are struck side by side. The native version
+ * (round 2 WP-C) draws layer one's memories as the composition bar in the
+ * status roles instead of tallies; its zoom keeps the tallies.
  */
 export default function KnowledgeDrawing({
   knowledge,
@@ -28,6 +31,7 @@ export default function KnowledgeDrawing({
   size: 'compact' | 'l1' | 'l2';
 }) {
   const { t, tx } = useTranslation();
+  const theme = useDraftingTheme();
   const b = t.twin.blueprint;
   const m = b.metrics;
   const { approved, pending, rejected } = knowledge.memories;
@@ -39,9 +43,15 @@ export default function KnowledgeDrawing({
     return (
       <div className="flex min-h-0 flex-col gap-3">
         <Letter className="twd-head-l1">{m.memories}</Letter>
-        <TallyRow label={m.approved} count={approved} kind="approved" gates={6} notMeasured={notMeasured} />
-        <TallyRow label={m.awaiting} count={pending} kind="awaiting" gates={6} notMeasured={notMeasured} />
-        <TallyRow label={m.rejected} count={rejected} kind="rejected" gates={6} notMeasured={notMeasured} />
+        {theme === 'native' ? (
+          <KnowledgeMix knowledge={knowledge} />
+        ) : (
+          <>
+            <TallyRow label={m.approved} count={approved} kind="approved" gates={6} notMeasured={notMeasured} />
+            <TallyRow label={m.awaiting} count={pending} kind="awaiting" gates={6} notMeasured={notMeasured} />
+            <TallyRow label={m.rejected} count={rejected} kind="rejected" gates={6} notMeasured={notMeasured} />
+          </>
+        )}
         <div className="twd-facts-l1 flex flex-wrap items-start gap-x-8 gap-y-2 pt-1">
           <Figure label={m.facts} value={knowledge.facts} />
           <span className="flex flex-col gap-1" data-draw-scope="">

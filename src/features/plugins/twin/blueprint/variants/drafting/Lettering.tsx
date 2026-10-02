@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { LETTERING } from '@/features/studio/guide/drafting/draftingModel';
 import DrawFrame from './draw/DrawFrame';
 import Write from './draw/Write';
+import { isPaperless, useDraftingTheme } from './draftingTheme';
 
 // Studio's drafting lettering (mono, upper case, spaced), borrowed for its
 // voice only: LETTERING fixes a 12 px size, and this sheet keeps every word on
@@ -13,7 +14,12 @@ export const LETTER_STYLE: CSSProperties = {
   fontFamily: 'var(--font-mono)',
 };
 
-/** Drafting lettering; a plain string is lettered in when the sheet draws itself. */
+/**
+ * Drafting lettering; a plain string is lettered in when the sheet draws
+ * itself. Where a theme inks onto the app's own surface (round 2 WP-C) the
+ * same label speaks the app's type instead: an eyebrow, or a title when
+ * `strong`, so a label and its figures meet on one type ramp.
+ */
 export function Letter({
   children,
   strong = false,
@@ -23,9 +29,12 @@ export function Letter({
   strong?: boolean;
   className?: string;
 }) {
+  const theme = useDraftingTheme();
+  const text = typeof children === 'string' ? <Write text={children} /> : children;
+  if (isPaperless(theme)) return <span className={`${strong ? 'typo-title' : 'typo-eyebrow twd-eyebrow'} ${className}`}>{text}</span>;
   return (
     <span className={`typo-label ${className}`} style={{ ...LETTER_STYLE, color: strong ? 'var(--ink-strong)' : 'var(--ink)' }}>
-      {typeof children === 'string' ? <Write text={children} /> : children}
+      {text}
     </span>
   );
 }
