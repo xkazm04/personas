@@ -1,8 +1,18 @@
-/* The drafting sheet, version "native" ("Native drafting", spark
-   twin-portable-blueprint round 2 WP-C, major). The twin as a Personas page:
-   section cards lit with the theme's gradient and glow, each named by its
-   icon in a lit chip (the brand glyph on Identity) and a glowing card label,
-   and every state told in the app's status roles:
+/* Level 3, "Personas blueprint" (draftingNative; spark twin-portable-blueprint,
+   round 3 WP-D, major): Personas eats the blueprint and makes it its own. No
+   foreign blue is left (this level carries no --twd-cyanotype), yet every
+   blueprint pattern survives at full presence, re-cast in the THEME's colour:
+
+   - the paper is the theme's background tinted toward its primary, and the
+     80/16 px grid is a texture of it in the primary (sheet.css draws it);
+   - the double sheet frame, the hatches ("not measured" included), the
+     dimension lines and the construction lines past each card's corners are
+     drawn in the primary;
+   - the regions are Personas cards with the theme's glow and gradient, each
+     named by its icon in a lit chip, the title block the twin's identity card
+     with its brand glyph and a readiness ring; the labels are the app's
+     eyebrows and the figures its type ramp;
+   - every state is told in the app's status roles:
 
      done ........... --status-success (the ink round the card, the tick, a
                       covered topic or goal, a complete readiness ring)
@@ -11,55 +21,65 @@
      awaiting review  --status-pending (the hatch after a topic's answers, the
                       memories waiting)
      rejected ....... --status-error
-     not measured ... --status-neutral (the hatch)
 
    States are re-inked by rebinding --ink in the subtree that holds the state,
-   so the drawing components are the baseline's own. Drafting survives in the
-   draw-in itself and in two signatures: the bio's dimension line and the
-   hatch. Card mechanics: paperless.css. No literals. */
+   so the drawing components are the baseline's own. Midnight draws a blue
+   blueprint, Bronze a copper one, Pink a rose one, a light theme ink on paper
+   in its own hue. No literals. */
 
 .twd-themed[data-drafting-theme='native'] {
-  --paper: var(--background);
+  --paper: color-mix(in srgb, var(--primary) 9%, var(--background));
   --ink: var(--primary);
   --ink-strong: color-mix(in srgb, var(--primary) 50%, var(--foreground));
-  --ink-dim: color-mix(in srgb, var(--primary) 45%, transparent);
-  --ink-faint: color-mix(in srgb, var(--primary) 18%, transparent);
+  --ink-dim: color-mix(in srgb, var(--primary) 50%, transparent);
+  --ink-faint: color-mix(in srgb, var(--primary) 22%, transparent);
+  --grid-major: color-mix(in srgb, var(--primary) 18%, transparent);
+  --grid-fine: color-mix(in srgb, var(--primary) 8%, transparent);
+  /* The page's own glow, a radial wash from the top, as Personas surfaces carry. */
+  --twd-paper-glow: radial-gradient(90% 70% at 50% -10%, color-mix(in srgb, var(--primary) 14%, transparent), transparent 70%);
+
+  --twd-edge-line: color-mix(in srgb, var(--primary) 40%, transparent);
+  --twd-edge-shadow: var(--shadow-elevation-3), 0 0 48px -12px color-mix(in srgb, var(--primary) 55%, transparent);
 
   --twd-card-radius: var(--radius-card);
+  /* Mostly opaque over the textured paper, so the figures sit on the card and the grid only shimmers through. */
   --twd-card-bg:
-    linear-gradient(158deg, color-mix(in srgb, var(--primary) 12%, transparent) 0%, color-mix(in srgb, var(--primary) 3%, transparent) 48%, transparent 100%),
-    var(--card-bg);
-  --twd-card-line: color-mix(in srgb, var(--primary) 28%, transparent);
+    linear-gradient(158deg, color-mix(in srgb, var(--primary) 16%, transparent) 0%, color-mix(in srgb, var(--primary) 4%, transparent) 48%, transparent 100%),
+    var(--card-bg),
+    color-mix(in srgb, var(--background) 84%, transparent);
+  --twd-card-line: color-mix(in srgb, var(--primary) 34%, transparent);
   --twd-card-shadow:
     var(--shadow-elevation-2),
-    0 0 34px -12px color-mix(in srgb, var(--primary) 45%, transparent);
+    0 0 34px -12px color-mix(in srgb, var(--primary) 50%, transparent);
   --twd-card-shadow-hover:
     var(--shadow-elevation-3),
-    0 0 40px -8px color-mix(in srgb, var(--primary) 55%, transparent);
+    0 0 40px -8px color-mix(in srgb, var(--primary) 60%, transparent);
+  --twd-construction: var(--ink-dim);
   --twd-icon-line: color-mix(in srgb, var(--primary) 45%, transparent);
   --twd-ring-track: color-mix(in srgb, var(--primary) 16%, transparent);
   --twd-glow: drop-shadow(0 0 4px color-mix(in srgb, var(--primary) 55%, transparent));
   --twd-glow-done: drop-shadow(0 0 4px color-mix(in srgb, var(--status-success) 55%, transparent));
   --twd-rejected-fill: color-mix(in srgb, var(--status-error) 45%, transparent);
-
-  /* The page's own glow, a radial wash from the top, as Personas surfaces carry. */
-  background: radial-gradient(90% 70% at 50% -10%, color-mix(in srgb, var(--primary) 8%, transparent), transparent 70%);
 }
 
-/* Light themes: no back-lighting (it reads as smudge on white). */
+/* Light themes: ink on paper in the theme's hue; no back-lighting (it reads as smudge on white). */
 [data-theme^='light'] .twd-themed[data-drafting-theme='native'] {
+  --paper: color-mix(in srgb, var(--primary) 5%, var(--background));
   --ink-strong: color-mix(in srgb, var(--primary) 70%, var(--foreground));
   --ink-dim: color-mix(in srgb, var(--primary) 55%, transparent);
-  --ink-faint: color-mix(in srgb, var(--primary) 22%, transparent);
+  --ink-faint: color-mix(in srgb, var(--primary) 24%, transparent);
+  --grid-major: color-mix(in srgb, var(--primary) 20%, transparent);
+  --grid-fine: color-mix(in srgb, var(--primary) 9%, transparent);
+  --twd-paper-glow: linear-gradient(transparent, transparent);
+  --twd-edge-shadow: var(--shadow-elevation-2);
   --twd-card-bg:
-    linear-gradient(158deg, color-mix(in srgb, var(--primary) 7%, transparent) 0%, transparent 55%),
-    var(--card-bg);
-  --twd-card-line: color-mix(in srgb, var(--primary) 22%, var(--card-border));
+    linear-gradient(158deg, color-mix(in srgb, var(--primary) 8%, transparent) 0%, transparent 55%),
+    color-mix(in srgb, var(--card-bg) 90%, transparent);
+  --twd-card-line: color-mix(in srgb, var(--primary) 26%, var(--card-border));
   --twd-card-shadow: var(--shadow-elevation-2);
   --twd-card-shadow-hover: var(--shadow-elevation-3);
   --twd-glow: none;
   --twd-glow-done: none;
-  background: none;
 }
 
 /* ---------- type ---------- */
@@ -92,11 +112,6 @@
 .twd-themed[data-drafting-theme='native'] .twd-region[data-ink='done'] .twd-done-tick path {
   stroke: var(--status-success);
   filter: var(--twd-glow-done);
-}
-
-/* ---------- not measured: the hatch, in the neutral role ---------- */
-.twd-themed[data-drafting-theme='native'] .twd-hatch {
-  --ink-dim: color-mix(in srgb, var(--status-neutral) 60%, transparent);
 }
 
 /* ---------- training: covered in success, awaiting review in pending ---------- */

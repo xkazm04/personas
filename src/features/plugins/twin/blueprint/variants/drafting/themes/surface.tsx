@@ -1,16 +1,16 @@
 /**
- * The drafting sheet, version "surface" (moderate; round 2 of spark
- * twin-portable-blueprint): no paper slab. The drawing is inked straight onto
- * the app's content surface; each region is a Personas card whose frame the
- * draw-in traces and then fills, with drafting marks kept as accents only
- * (crop marks at its corners, the bio's dimension line, dashed pending
- * frames, the hatch for "not measured"). Labels are the app's eyebrows and
- * titles, the title block is a Personas strip. No drawn sheet border: there is
- * no sheet. Shared card mechanics: `paperless.css`; the look: `surface.css`.
+ * The drafting sheet, level 2 "Half and half" (round 3 of spark
+ * twin-portable-blueprint, the middle): the blueprint's paper and ink half
+ * cyanotype and half theme, its patterns at full strength, and Personas glass
+ * cards laid on it for every region and the title block, with the drafting
+ * marks (balloons, lettering, hatches, dimension and construction lines) drawn
+ * on top of them. Sheet and cards: `sheet.css`; the blue: `cyanotype.css`;
+ * the blend: `surface.css`.
  */
 import type { BlueprintVariantProps } from '../../../blueprintContract';
 import DraftingBlueprint from '../index';
-import './paperless.css';
+import './sheet.css';
+import './cyanotype.css';
 import './surface.css';
 
 export default function DraftingSurface(props: BlueprintVariantProps) {

@@ -17,8 +17,8 @@ type Knowledge = TwinBlueprintModel['knowledge'];
  * composition bar, so the column beside the card stays short; the zoom (L2)
  * runs the tallies longer and adds the facts tally and the samples to review.
  * Each tally, the facts figure and the knowledge base are their own
- * containers, so their marks are struck side by side. The native version
- * (round 2 WP-C) draws layer one's memories as the composition bar in the
+ * containers, so their marks are struck side by side. The "Personas
+ * blueprint" level (round 3 WP-D) draws layer one's memories as the composition bar in the
  * status roles instead of tallies; its zoom keeps the tallies.
  */
 export default function KnowledgeDrawing({

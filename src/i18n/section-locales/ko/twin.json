@@ -944,9 +944,9 @@
       "drafting": "도면",
       "label": "블루프린트 스타일",
       "strata": "지층",
-      "draftingNative": "네이티브 도면",
-      "draftingSurface": "페이지에 그린 도면",
-      "draftingTint": "색조 도면"
+      "draftingNative": "Personas 청사진",
+      "draftingSurface": "반반",
+      "draftingTint": "Personas 터치"
     }
   },
   "card": {

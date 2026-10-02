@@ -14,10 +14,10 @@
  * itself; the stage draws once when the overlay opens, and an answer's delta
  * plays on the drawn sheet.
  *
- * Round 2 / WP-C: the same renderer draws four looks (`theme`, see
- * `draftingTheme.ts`): the baseline cyanotype and three versions that sit
- * progressively closer to the Personas theme. The draw-in, the layout and the
- * contract are the same in all four.
+ * Round 3 / WP-D: the same renderer draws four looks (`theme`, see
+ * `draftingTheme.ts`): the baseline cyanotype and three levels of Personas
+ * absorbing the blueprint, from a touch to a blueprint of its own. The
+ * draw-in, the layout and the contract are the same in all four.
  */
 import { useEffect, useRef, useState } from 'react';
 import '@/features/studio/guide/drafting/drafting.css';
@@ -90,7 +90,7 @@ export default function DraftingBlueprint({
     lastZoom.current = zoom;
   }, [zoom, find]);
 
-  // The baseline sits on Studio's cyanotype paper; a theme version draws its own (themes/<theme>.css).
+  // The baseline sits on Studio's cyanotype paper; a theme level draws its own (themes/sheet.css + themes/<theme>.css).
   const paper = theme === 'cyanotype' ? 'drafting-root' : 'twd-themed';
 
   return (

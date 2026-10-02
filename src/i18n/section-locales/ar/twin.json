@@ -944,9 +944,9 @@
       "drafting": "ورقة الرسم",
       "label": "نمط المخطط",
       "strata": "الطبقات",
-      "draftingNative": "رسم أصلي",
-      "draftingSurface": "صفحة مرسومة بالحبر",
-      "draftingTint": "ورقة ملوّنة"
+      "draftingNative": "مخطط Personas",
+      "draftingSurface": "نصف ونصف",
+      "draftingTint": "لمسة Personas"
     }
   },
   "card": {

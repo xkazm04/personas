@@ -7,7 +7,7 @@ import ReadinessSlots from './ReadinessSlots';
 import TitleCard from './TitleCard';
 import DrawFrame from './draw/DrawFrame';
 import Write from './draw/Write';
-import { isPaperless, useDraftingTheme } from './draftingTheme';
+import { hasCards, useDraftingTheme } from './draftingTheme';
 
 /**
  * The plan's title block, in the corner where a drafter puts it (the idiom of
@@ -15,8 +15,9 @@ import { isPaperless, useDraftingTheme } from './draftingTheme';
  * twin's): the twin's name and role, and readiness as a stamp beside its four
  * slots. In the draw-in the block and its cells are frames (depth 0 and 1),
  * each cell letters its own words, and the readiness stamp is pressed last,
- * once every other part of the sheet is drawn. Off paper (the inked page,
- * the native version) it is a card instead: `TitleCard`.
+ * once every other part of the sheet is drawn. Where the regions are
+ * Personas cards ("Half and half", "Personas blueprint") it is a card too:
+ * `TitleCard`.
  */
 export default function TwinTitleBlock({
   model,
@@ -30,7 +31,7 @@ export default function TwinTitleBlock({
   const theme = useDraftingTheme();
   const b = t.twin.blueprint;
   const { identity, readiness } = model;
-  if (isPaperless(theme)) return <TitleCard model={model} slots={slots} />;
+  if (hasCards(theme)) return <TitleCard model={model} slots={slots} />;
 
   return (
     <div

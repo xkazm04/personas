@@ -862,9 +862,9 @@
       "label": "Blueprint style",
       "drafting": "Drafting sheet",
       "strata": "Strata",
-      "draftingTint": "Tinted sheet",
-      "draftingSurface": "Inked page",
-      "draftingNative": "Native drafting"
+      "draftingTint": "Personas touch",
+      "draftingSurface": "Half and half",
+      "draftingNative": "Personas blueprint"
     },
     "metrics": {
       "bio": "Bio",

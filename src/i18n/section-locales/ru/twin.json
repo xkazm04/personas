@@ -944,9 +944,9 @@
       "drafting": "Чертёжный лист",
       "label": "Стиль схемы",
       "strata": "Слои",
-      "draftingNative": "Нативный чертёж",
-      "draftingSurface": "Чертёж на странице",
-      "draftingTint": "Тонированный лист"
+      "draftingNative": "Чертёж Personas",
+      "draftingSurface": "Пополам",
+      "draftingTint": "Штрих Personas"
     }
   },
   "card": {

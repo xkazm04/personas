@@ -944,9 +944,9 @@
       "drafting": "Plano técnico",
       "label": "Estilo de plano",
       "strata": "Estratos",
-      "draftingNative": "Plano nativo",
-      "draftingSurface": "Página entintada",
-      "draftingTint": "Plano tintado"
+      "draftingNative": "Plano Personas",
+      "draftingSurface": "Mitad y mitad",
+      "draftingTint": "Toque Personas"
     }
   },
   "card": {

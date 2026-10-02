@@ -22,7 +22,7 @@ import { WriteNumber } from './draw/Write';
  * and a container: after every frame on the sheet has traced, it writes its
  * own parts in order (balloon, name, share, the ink running out to the share,
  * the tick), while each drawing inside it writes its own parts alongside.
- * The theme versions (round 2 WP-C) change only its frame (a card off paper),
+ * The theme levels (round 3 WP-D) change only its frame (a card on the paper),
  * its section mark and the type of its name and share.
  */
 export default function SheetRegion({

@@ -1,102 +1,85 @@
-# Twin blueprint: drafting sheet theme versions (round 2 / WP-C)
+# Twin blueprint: three levels of Personas absorbing the blueprint (round 3 / WP-D)
 
-The owner, verbatim: "One flaw of the blueprints are theming differences from personas, create three variants with current blueprint as baseline with subtle to major attempts to play with the theme and design to both styles cooperate more naturally together."
+The owner rejected round 2's direction (its three versions moved away from the blueprint: the subtle one dropped the cyanotype blue, the others dropped the paper and became plain cards) and asked, verbatim:
 
-The diagnosis: the baseline sheet is a cyanotype slab. Studio's `drafting.css` mixes every colour with a fixed blue, so in a warm or pink theme it is a blue rectangle inside a non-blue app. It also ignores the app's card and glow surfaces, and its drafting lettering meets the app's figures without a hierarchy.
+> "I really need to prototype 3 variants inside the app combining the two layers: 1. blueprint with strong background patterns and blue color 2. personas with more clear design, color per theme...I need to see there 3 levels of personas absorbing the blueprint, one very subtle up to Personas theming eating the blueprint making it its own"
 
-## The four, subtle to major
+So in every level the blueprint is a strong, kept layer (the paper with its 80/16 px grid, the double sheet frame, the hatches, the dimension lines, the balloons or chips, the draw-in), and Personas takes over more of it at each step. The baseline drafting sheet stays in the switcher as the reference.
 
-| Switcher label (id) | The idea |
-|---|---|
-| **Drafting sheet** (`drafting`) | The baseline, unchanged (WP-B's draw-in included). Kept in the switcher for comparison. |
-| **Tinted sheet** (`draftingTint`), subtle | The same sheet, lettering and drawing, but the paper and ink are mixed from the active theme only, so a bronze app gets a sepia sheet and a pink app a rose one. The sheet's edge is a Personas card (card radius, primary border, elevation, the theme's glow), and the drawn border stays inside it like a mat. |
-| **Inked page** (`draftingSurface`), moderate | No paper: the drawing is inked straight onto the app's content surface, and each region is a Personas card whose frame the pen traces before its fill lays in. Drafting stays only as accents (crop marks at each card's corners, the bio's dimension line, dashed pending frames, the hatch); labels use the app's eyebrows and titles, and the title block is a Personas strip. |
-| **Native drafting** (`draftingNative`), major | The twin as a native Personas page: glowing gradient section cards named by the app's own twin slot icons, every state in the app's status roles, readiness as a ring with the twin status dots, and the twin's brand glyph as the identity mark on the title card. At rest it reads as a Personas page; while it draws, the same draw-in traces every card, inks every part and letters every word, and the bio's dimension line and the hatch remain as drafting signatures. |
+## The four, in the switcher's order
 
-## What changes, layer by layer
+| Switcher label (id) | What the blueprint keeps | What Personas takes |
+|---|---|---|
+| **Drafting sheet** (`drafting`) | Everything: Studio's cyanotype, unchanged (WP-B's draw-in included). | Nothing; the reference. |
+| **Personas touch** (`draftingTint`), level 1 | The cyanotype intact: the same blue paper and pale ink in every theme, the grid, every drafting pattern at full strength and the drafting lettering on every label. | Only a touch: the sheet sits on a Personas card edge (radius, elevation, a primary hairline), the figures are the app's, and the theme's primary is the accent ink of live things (the ink a section has run round its frame, the done tick, the readiness stamp, the region under the pointer, the mark the last answer landed on, the pen). A Bronze user sees a blue blueprint with copper accents. |
+| **Half and half** (`draftingSurface`), level 2 | Its patterns at full strength (grid, sheet frame, balloons, lettering on labels, hatches, dimension lines) drawn on top of the cards, and its blue in the paper and the ink. | Half of every colour: paper and ink are a color-mix of the cyanotype and the theme, and every region and the title block is a Personas glass card laid on the paper (theme hairline, gradient, elevation, glow on hover and on the mark an answer landed on), with the app's titles for section names. Construction lines run on past each card's corners. |
+| **Personas blueprint** (`draftingNative`), level 3 | Every pattern at full presence: the grid, the double sheet frame, the hatches, the dimension lines, the construction lines and the whole draw-in. It still reads as a blueprint drawing itself. | All the colour and the type: no foreign blue, the grid a texture of the theme's background in its primary, the regions glowing Personas cards named by their icons, the title block the twin's identity card with a readiness ring, the labels the app's eyebrows and every state in the app's status roles. Midnight draws a cyan-blue blueprint, Bronze a copper one, Pink a rose one, a light theme ink on paper in its own hue. |
 
-| | Drafting sheet | Tinted sheet | Inked page | Native drafting |
+Labels were shortened to fit the switcher (each under 22 characters): the brief's "Blueprint, Personas touch" and "Blueprint meets Personas" became "Personas touch" and "Half and half".
+
+## Layer by layer
+
+| | Drafting sheet | Personas touch | Half and half | Personas blueprint |
 |---|---|---|---|---|
-| Paper | Studio cyanotype (fixed blue anchor) | theme background tinted toward `--primary`; grid about half as loud; a faint primary glow top-left | none (the app's content surface) | none; a faint radial primary glow from the top |
-| Ink | primary mixed with a fixed light or deep blue | `--primary` leaned toward `--foreground` | `--primary` leaned toward `--foreground` | `--primary` itself; states re-inked in status roles |
-| Sheet edge / drawn border | drawn border 8px in | Personas card edge (radius, primary border, elevation, glow, inset 12px from the page); drawn border kept, rounded, 8px in | no sheet, no border | no sheet, no border |
-| Region | dashed pencil outline, inked round to the share | same as baseline | card: traced frame, then the card fill (elevation 1); crop marks; ink runs round the card to the share | glowing gradient card (elevation 2 plus glow); in-progress ink in the primary glow, done in success with a success tick |
-| Section mark and name | numbered balloon, drafting lettering | same as baseline | the name as `typo-title` | slot icon in a lit chip (`BookUser`, `MessagesSquare`, `Brain`, `GraduationCap`) and `typo-title`; the share as a lead figure |
-| Labels | drafting lettering (mono, spaced capitals) | same as baseline | `typo-eyebrow`, muted foreground | `typo-eyebrow`, muted foreground |
-| Title block | drafting title block, rotated readiness stamp | same as baseline | Personas strip: two cells under eyebrows, ruled divider, readiness in a lit level frame (pressed last) | identity card: the twin's brand glyph (traced), name, role; readiness as a ring inked to the score, figure pressed last |
-| Readiness slots | inked squares | same | same | kit `Dot`s in the twin status roles (set success, partial warning, empty neutral hollow) |
-| Knowledge on L1 | tallies | tallies | tallies | composition bar in the status roles (approved success, awaiting pending, rejected error) |
-| Training | scale bars and gauges in ink | same | same | rounded meters; covered in success, awaiting in pending |
-| L2 | the zoom grows out of the region | same | the detail on a card, under the section's own head | the detail on a glowing card, under the chip and the name; the tallies stay (the counting signature) |
-| Stage | the overlay's base layer | same, without the page margin (the table already frames it) | cards around the open middle | glowing cards around the open middle; the brand mark steps out of a narrow title card |
-| Pen | Studio's drafting pen | kept | kept | kept (the motion is where drafting survives) |
+| Paper | Studio cyanotype (its anchor mixed with the theme) | the cyanotype paper, fixed in every theme | cyanotype and theme paper mixed in oklab (about 3:1 toward the blue in dark themes, even in light themes) | the theme background tinted toward its primary, plus the theme's radial glow |
+| Grid (80/16 px) | ink at 14% / 7% | cyanotype ink at 17% / 8% | blended ink at 16% / 8% | primary at 18% / 8% |
+| Ink | primary mixed with a fixed light or deep blue | the cyanotype's pale ink | cyanotype ink and theme ink, half each | the primary; states re-inked in the status roles |
+| Sheet edge | none (drawn border 8px in) | Personas card edge (radius, hairline, elevation, glow), drawn border kept inside it | same, glow in the theme | same, stronger elevation and glow |
+| Regions | dashed pencil frame, inked round to the share | same | glass card on the paper (traced frame, then the fill); construction lines past the corners | glowing gradient card; construction lines past the corners |
+| Section mark and name | balloon, lettering | balloon, lettering | balloon, `typo-title` | icon chip, `typo-title`, the share as a lead figure |
+| Labels | drafting lettering | drafting lettering | drafting lettering | `typo-eyebrow` |
+| Title block | drafting title block, tilted stamp | same, stamp in the accent | card: lettered cells, stamp in a lit frame | identity card: brand glyph, readiness ring |
+| Live accent | ink | the theme's primary | the theme's primary (glow, titles, card lines) | everything is the theme |
+| Text on the sheet | theme foreground | the sheet's ink (the foreground tokens are rebound, so a light theme still reads on blue paper) | theme foreground on the cards | theme foreground |
 
 ## Architecture: one renderer, a `theme`
 
-`DraftingBlueprint` (`variants/drafting/index.tsx`) takes `theme: 'cyanotype' | 'tint' | 'surface' | 'native'`, puts it on its root as `data-drafting-theme` and in a context (`draftingTheme.ts`). The three switcher modules are one line each (`themes/tint.tsx`, `surface.tsx`, `native.tsx`), each importing its stylesheet. Colour and shape live in the stylesheets, scoped under `[data-drafting-theme]`. The context is read only where a theme changes structure:
+Unchanged from round 2: `DraftingBlueprint` (`variants/drafting/index.tsx`) takes `theme: 'cyanotype' | 'tint' | 'surface' | 'native'`, puts it on its root as `data-drafting-theme` and in a context (`draftingTheme.ts`). The three switcher modules are one line each (`themes/tint.tsx`, `surface.tsx`, `native.tsx`). Colour and shape live in the stylesheets:
 
-- `BoxFrame.tsx`: a region-sized box's outline. It is the drafting frame on paper and a card off paper (frame, fill, and crop marks on the inked page).
-- `SectionHead.tsx`: the section mark (balloon, none, or icon chip), the section name, and `TwinMark` (the brand glyph, traced).
-- `Lettering.tsx` `Letter`: drafting lettering on paper, an eyebrow or a title off paper.
-- `TitleCard.tsx`: the title block off paper (the strip, or the identity card with the readiness ring).
-- `ReadinessSlots.tsx`: kit dots in the native version. `KnowledgeDrawing.tsx`: native L1 memories as the composition bar. `SheetBorder.tsx`: no border off paper.
+- `themes/sheet.css` (all three levels): the sheet on its card edge, the 80/16 px grid drawn from the level's `--grid-major` / `--grid-fine`, the rounded drawn border, the region-card mechanics, and the gutters that pay for the card edge's margin.
+- `themes/cyanotype.css` (levels 1 and 2 only): `--twd-cyanotype`, the one blue anchor, and its paper and inks mixed with black and white.
+- `themes/tint.css`, `surface.css`, `native.css`: each level's paper, ink, grid, edge and card colours.
 
-The themed root does not carry Studio's `.drafting-root`, so none of the cyanotype's anchored values ever reach it. Studio's `drafting.css` is untouched.
+The context is read only where a level changes structure: `hasCards` (levels 2 and 3: `BoxFrame` makes a card with construction lines, `TwinTitleBlock` hands over to `TitleCard`), `appHeadings` (levels 2 and 3: `SectionName` is a title), `appLabels` (level 3: `Letter` is an eyebrow), and the level-3 branches of `SectionMark`, `TitleCard`, `ReadinessSlots`, `KnowledgeDrawing` and the region's share. `SheetBorder` no longer reads the theme: every level keeps the sheet. Round 2's paperless stylesheet, its crop marks and `isPaperless` are gone. The themed root does not carry Studio's `.drafting-root`; Studio's `drafting.css` is untouched.
 
-**Keeping a pick is cheap.** The engine and the drawing components need no change; only the branches the pick does not take go:
+**The cyanotype anchor.** The brief asked for the blue to be derived from an existing token if one exists. None does: the status `-raw` tokens are re-synced to each theme's status colours at runtime (`themeStore.applyBrightness`; Bronze's info colour is a gold, so a first attempt drew a brown "blueprint"), and Tailwind's palette variables exist only while some utility uses them (census `raw-palette-text-colour` is retiring those uses). So `cyanotype.css` declares exactly one hex anchor (`--twd-cyanotype: #3b74c4`) and everything else is `color-mix()` over it. It is the one `feature-css-type-literal` match these stylesheets add.
 
-- **Tinted sheet:** delete `themes/surface.*`, `themes/native.*`, `themes/paperless.css`, `TitleCard.tsx`, `BoxFrame`'s card branch, `SectionHead`'s chip and `TwinMark`, `Letter`'s eyebrow branch, the native branches of `ReadinessSlots` and `KnowledgeDrawing`.
-- **Inked page:** delete `themes/tint.*`, `themes/native.*`, `SectionHead`'s chip and `TwinMark`, `TitleCard`'s ring, the native branches of `ReadinessSlots` and `KnowledgeDrawing`.
-- **Native drafting:** delete `themes/tint.*`, `themes/surface.*`, `BoxFrame`'s crop marks and `TitleCard`'s level stamp.
-- If the baseline goes too, `theme` collapses to the pick and `draftingTheme.ts` and its reads go with it.
+**Keeping a pick.** Keeping level 1 deletes `themes/surface.*`, `themes/native.*`, `TitleCard.tsx`, the card branch of `BoxFrame` and the level-3 branches. Keeping level 2 deletes `themes/tint.*`, `themes/native.*` and the level-3 branches (chip, `TwinMark`, ring, dots, composition bar). Keeping level 3 deletes `themes/tint.*`, `themes/surface.*`, `cyanotype.css` and `TitleCard`'s stamp.
 
-## The draw-in, per version
+## The draw-in, per level
 
-WP-B's engine is untouched apart from one colour-free kind: `data-draw-wipe="fade"`, a surface laid in under its frame. The engine reads the rendered page, so every version gets the schedule from its own DOM:
+WP-B's engine is untouched; each level gets its schedule from its own DOM (frames by depth, then each container's content in reading order, readiness pressed last, L1 not redrawn back from a zoom, reduced motion instant). Levels 2 and 3 now keep the sheet border, so six frames stand at depth 0 in all three (the border, four regions, the title block); a card's fill and its four construction-line pairs trace at depth 1.
 
-- **Frames first, level by level.** On paper this is the border, the four regions and the title block, then what they frame. Off paper there is no border: a card's frame traces at depth n, its fill lays in at depth n+1 (as the inner frames trace), and the inked page's crop marks trace with the fill.
-- **Then each container's content in reading order.** Inked page: name, share, then the ink round the card. Native: the chip's outline, its glow, the icon, the name, the share, the ink. The native title card traces the brand glyph's two profiles stroke by stroke.
-- **Readiness pressed last** in all four (stamp, lit frame, or the ring's figure).
-- L1 does not redraw when returning from a zoom (Director decision, kept). Reduced motion draws everything at once in all four.
+Measured in the page harness (Vite dev build, system Chrome, 1280x800, `twin/blueprint/detail-rich`), planned against measured from `drawing` to `done`:
 
-`__tests__/drawSchedule.test.tsx` runs every schedule invariant for all four themes (3 fixtures x L1, every L2, and the stage). `__tests__/draftingThemes.test.tsx` pins each version's structure and its place in the schedule.
+| Level | Theme | Planned | Measured | Parts / frames / letters | Long tasks while drawing |
+|---|---|---|---|---|---|
+| Personas touch | dark-midnight | 5490 ms | 5433 ms | 350 / 74 / 474 | none |
+| Half and half | dark-midnight | 5490 ms | 5436 ms | 374 / 98 / 474 | none |
+| Personas blueprint | dark-midnight | 4996 ms | 4934 ms | 323 / 88 / 470 | none |
+| Personas blueprint | dark-bronze | 4996 ms | 4924 ms | 323 / 88 / 470 | none |
 
-Measured in the page harness (Vite dev build, system Chrome, 1280x800, `twin/blueprint/detail-rich`, dark-midnight), planned length against the length measured from the `drawing` to the `done` state:
+Level 3 is shorter because its layer-one memories are one composition bar instead of three rows of tally strokes.
 
-| Version | Planned | Measured | Parts / frames / letters | Long tasks while drawing |
-|---|---|---|---|---|
-| Drafting sheet (baseline, measured by WP-B) | 5490 ms | 5441 ms | 350 / 74 / 474 | none |
-| Tinted sheet | 5490 ms | 5432 ms | 350 / 74 / 474 | none |
-| Inked page | 5490 ms | 5433 ms | 361 / 97 / 470 | none |
-| Native drafting | 4996 ms | 4943 ms | 302 / 67 / 470 | none |
+## Tests
 
-The inked page has more frames (each card's fill and four crop marks). The native version is shorter because its layer-one memories are one composition bar instead of three rows of tally strokes; the frame waves are the same three.
+- `__tests__/drawSchedule.test.tsx`: every schedule invariant for all four themes (3 fixtures x L1, every L2, the stage).
+- `__tests__/draftingThemes.test.tsx`: each id renders its level in L1, every L2 and the stage; the structure each level changes and where it lands in the draw-in; the real stylesheets injected into jsdom and read back from the rendered root, in a dark and a light theme: the 80/16 px grid and the sheet border are present in all three, levels 1 and 2 carry `--twd-cyanotype` (level 1's paper and ink are the cyanotype alone, level 2's mix the cyanotype with the theme), level 3 carries none and its paper and ink read the primary. A text check pins that the five stylesheets name no colour except the one anchor, and that `native.css` never reads the cyanotype.
 
-## Theme-derived end to end (acceptance 2)
+## Anti-shrink
 
-- **Stylesheet assertion** (`draftingThemes.test.tsx`): every declaration in `tint.css`, `paperless.css`, `surface.css` and `native.css`, stripped of `var(--*)`, numbers, and the colour and gradient functions, has nothing left that could name a colour. The check proves itself on a planted hex, a named colour and the cyanotype anchor. Each version's `--paper` and `--ink*` read only `--primary`, `--background`, `--foreground`, `--card-bg` and the status tokens. A render assertion confirms no `.drafting-root` anywhere in a version's tree.
-- **Computed values in Chrome** (all 11 shipped themes, harness `twin/blueprint/detail-rich`): Chrome resolves `var()` inside a custom property but leaves `color-mix()` as text, so the colour literals left in the computed `--paper` / `--ink*` are exactly what they are made of. The baseline is flagged in 9 of the 11 themes (`#0b2447` and `#7fd3f7`, or `#1d4ed8` on light-news). It reads clean only on light and light-ice, where its fixed deep blue happens to equal the theme's own primary. All three versions name only their theme's own tokens in all 11 themes, and none of them defines `--drafting-blue`.
-
-## Anti-shrink (acceptance 4)
-
-Probed in the harness at 1280x800 for all four versions on `twin/detail`, `twin/stage-dealt`, `twin/stage` and every `twin/blueprint/*` surface. The probe looks for a visible part drawn outside its region, title block, notes box or zoom; a label cut by an ellipsis; and a clamped line that overflows. Result: no spill, no cut label, no overflowing clamp, in any version. Three fixes came out of the probe:
-
-- The native section head is no taller than the baseline's (the share is a solid lead figure, and the chip is the balloon's size). Before that fix, Identity's language balloons sat 2px outside the card on the Detail page.
-- The native title card's brand mark steps out of a narrow card (a container query; nothing shrinks), and the readiness ring sits beside its label. Before that fix, Training's goals overflowed by 22px in the overlay's wide, short layout.
-- The tinted sheet pays for its page margin with tighter gutters inside the card, so layer one keeps the baseline's working widths, and it drops the margin in the overlay. Before that fix, the knowledge facts row wrapped out of its region, and the overlay with a delta note overflowed by 7px.
-
-One finding is common to all four versions, the baseline included: the L2 header's lead figure sits 2px above the zoom's box (its line box). It is not visible.
+Probed in the harness at 1280x800 for all three levels on `twin/detail`, `twin/stage`, `twin/stage-dealt` and every `twin/blueprint/*` surface (a visible part outside its box, a label cut by an ellipsis, a clamped line that overflows): none. One fix came out of it: the title card used its own cell layout, which wrapped the role onto a second line and pushed Identity's languages 5 to 6px out of their region on the integrated Detail page; it now uses the paper title block's cell layout (label over the figure and the slots). The L2 header's lead figure still sits 2px above the zoom's box (its line box) in all four, the baseline included, as in round 2; it is not visible.
 
 ## Review artifacts
 
 | File | What it shows |
 |---|---|
-| `compare-dark-midnight.png`, `compare-dark-bronze.png`, `compare-dark-pink.png`, `compare-light.png` | One board per theme: the four versions side by side (subtle to major), rows L1, L2 Voice and the stage. |
-| `<version>/detail-rich-<theme>.png` | L1, the rich twin (9 channels, full plan), 1280x800. |
-| `<version>/detail-focus-<theme>.png` | L2, Voice zoom. |
-| `<version>/stage-<theme>.png` | The stage with the reconciled delta played. |
-| `<version>/integrated-detail-<theme>.png` | The real Detail page (`twin/detail`), dark-midnight and light. |
-| `draw-in-tint.webm`, `draw-in-surface.webm`, `draw-in-native.webm` | Each version's L1 draw-in, rich twin, dark-midnight. |
-| `draw-in-filmstrip-dark-midnight.png` | The four versions' draw-in at the same six moments (every animation seeked to the same time; the pen is hidden). |
+| `compare-dark-midnight.png`, `compare-dark-bronze.png`, `compare-dark-pink.png`, `compare-light.png` | One board per theme: baseline, level 1, level 2, level 3 side by side; rows L1, L2 Voice and the stage. |
+| `<level>/detail-rich-<theme>.png` | L1, the rich twin, 1280x800. |
+| `<level>/detail-focus-<theme>.png` | L2, Voice zoom. |
+| `<level>/stage-<theme>.png` | The stage with the reconciled delta played. |
+| `<level>/integrated-detail-<theme>.png` | The real Detail page (`twin/detail`), dark-midnight and light. |
+| `draw-in-level-1-touch.webm`, `draw-in-level-2-half.webm`, `draw-in-level-3-personas.webm` | Each level's L1 draw-in, rich twin, dark-midnight. |
+| `draw-in-level-3-personas-dark-bronze.webm` | Level 3 in dark-bronze: the copper blueprint drawing itself. |
 
-`<version>` is `baseline`, `tint`, `surface` or `native`. Themes: dark-midnight, dark-bronze, dark-pink, light. Light shots use the harness's default brightness (the store default a fresh profile gets, 0.82 on light themes), which is why they look grey-washed; the same applies to every earlier light shot of this spark.
+`<level>` is `baseline`, `level-1-touch`, `level-2-half` or `level-3-personas`. Themes: dark-midnight, dark-bronze, dark-pink, light. The harness's dark-midnight draws with the app's default cyan primary. Light shots use the harness's default brightness (0.82 on light themes), which is why they look grey-washed. The integrated shots' variant switcher still shows round 2's labels: the harness reads the split section locales, which are regenerated with the 13 translations at the Director's i18n step.

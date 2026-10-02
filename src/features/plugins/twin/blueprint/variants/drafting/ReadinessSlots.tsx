@@ -11,7 +11,7 @@ const SLOTS: readonly ReadinessSlot[] = ['identity', 'tone', 'channels', 'memori
  * The four readiness slots as drawing marks: a set slot is a solid square, a
  * partial one half inked over a hatch, an empty one a dashed outline. Each
  * slot is a frame and a container: its fill goes in, then its name. The
- * native version (round 2 WP-C) says it in the app's own vocabulary instead:
+ * "Personas blueprint" level (round 3 WP-D) says it in the app's own vocabulary instead:
  * the kit's status dot in the twin status roles (set success filled, partial
  * warning, empty neutral hollow; `shared/twinStatus.ts`), set down in turn.
  */

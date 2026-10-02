@@ -1,18 +1,16 @@
 /**
- * The drafting sheet, version "native" (major; round 2 of spark
- * twin-portable-blueprint): the twin drawn in Personas' own language. Section
- * cards carry the theme's glow and gradient and a section icon (the twin's
- * brand glyph on Identity), state is told with the app's status tokens (done
- * in success, in progress in the primary glow, awaiting review in pending,
- * rejected in error, not measured in neutral) and readiness with the twin
- * status vocabulary. Drafting survives in the motion (frames traced, ink run
- * round each card, lettering, the pen) and in two signatures: the bio's
- * dimension line and the hatch. No drawn sheet border: there is no sheet.
- * Shared card mechanics: `paperless.css`; the look: `native.css`.
+ * The drafting sheet, level 3 "Personas blueprint" (round 3 of spark
+ * twin-portable-blueprint, major): Personas eats the blueprint and makes it
+ * its own. No foreign blue: the paper, the grid, the sheet frame, the hatches,
+ * the dimension and construction lines are all in the theme's colour, the
+ * regions glowing Personas cards named by their icons, the title block the
+ * twin's identity card, every state in the app's status roles. It still draws
+ * itself in as a blueprint. Sheet and cards: `sheet.css`; the look:
+ * `native.css`.
  */
 import type { BlueprintVariantProps } from '../../../blueprintContract';
 import DraftingBlueprint from '../index';
-import './paperless.css';
+import './sheet.css';
 import './native.css';
 
 export default function DraftingNative(props: BlueprintVariantProps) {

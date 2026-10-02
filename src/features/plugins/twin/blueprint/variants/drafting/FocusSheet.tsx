@@ -27,7 +27,8 @@ import { clipTo, type Insets } from './zoomOrigin';
  * itself in on the paper as it opens, the same way the plan did: its frame,
  * the frames inside it level by level, then every row in reading order. The
  * buttons are there from the start. Reduced motion: a fade, drawn at once.
- * Off paper (round 2 WP-C) the detail is drawn on a card, under the
+ * Where the regions are Personas cards (round 3 WP-D: "Half and half",
+ * "Personas blueprint") the detail is drawn on a card on the paper, under the
  * section's own head.
  */
 export default function FocusSheet({

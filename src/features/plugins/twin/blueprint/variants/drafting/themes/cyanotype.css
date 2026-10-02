@@ -1,0 +1,24 @@
+/* The cyanotype: the blueprint's own blue, kept as a deliberate design
+   constant in "Personas touch" (tint.css) and "Half and half" (surface.css),
+   round 3 WP-D of spark twin-portable-blueprint. The owner: "blueprint with
+   strong background patterns and blue color".
+
+   ONE anchor, the hex below, on purpose: no app token is the same blue in
+   every theme. The status "-raw" tokens are re-synced to each theme's status
+   colours at runtime (themeStore.applyBrightness: Bronze's info is a gold),
+   and Tailwind's palette variables exist only while some utility uses them
+   (census raw-palette-text-colour is retiring those uses). So the blue is
+   declared once here, and paper and ink are color-mix() over it with black and
+   white. It is the one feature-css-type-literal match these stylesheets add.
+   Studio's drafting.css keeps its own anchor and is untouched.
+
+   "Personas blueprint" (native.css) carries none of these: no foreign blue. */
+
+.twd-themed:is([data-drafting-theme='tint'], [data-drafting-theme='surface']) {
+  /* The blueprint blue itself (the anchor). */
+  --twd-cyanotype: #3b74c4;
+  /* Its paper: the blue, deep. Its ink: the blue, bleached almost white. */
+  --twd-cyan-paper: color-mix(in srgb, var(--twd-cyanotype) 60%, black);
+  --twd-cyan-ink: color-mix(in srgb, var(--twd-cyanotype) 34%, white);
+  --twd-cyan-ink-strong: color-mix(in srgb, var(--twd-cyanotype) 12%, white);
+}

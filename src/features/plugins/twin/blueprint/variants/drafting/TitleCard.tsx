@@ -9,11 +9,12 @@ import Write from './draw/Write';
 import { useDraftingTheme } from './draftingTheme';
 
 /**
- * The title block off paper (round 2 WP-C): on the inked page a Personas
- * strip (a card with two cells under eyebrows, a ruled divider between them,
- * readiness as a lit figure); natively the twin's identity card (its brand
- * glyph, name and role; readiness as a ring). The readiness figure is still
- * pressed last, after every other part of the sheet.
+ * The title block as a card (round 3 WP-D): in "Half and half" a Personas
+ * strip on the paper (two cells under drafting labels, a ruled divider
+ * between them, readiness stamped); in the "Personas blueprint" the twin's
+ * identity card (its brand glyph, name and role; readiness as a ring). The
+ * readiness figure is still pressed last, after every other part of the
+ * sheet.
  */
 export default function TitleCard({ model, slots }: { model: TwinBlueprintModel; slots: boolean }) {
   const { t } = useTranslation();
@@ -24,7 +25,7 @@ export default function TitleCard({ model, slots }: { model: TwinBlueprintModel;
   return (
     <div data-testid="twd-title-block" data-title="card" className="twd-card twd-title relative flex min-w-0 flex-wrap items-stretch">
       <BoxFrame paper={null} />
-      <div className="flex min-w-0 flex-1 basis-56 items-center gap-3 px-4 py-2.5" data-draw-scope="">
+      <div className="flex min-w-0 flex-1 basis-56 items-center gap-3 px-3 py-2" data-draw-scope="">
         {/* Steps out of a narrow card (the overlay's corner) rather than squeeze the name: native.css. */}
         {theme === 'native' && (
           <span className="twd-title-mark contents">
@@ -41,19 +42,21 @@ export default function TitleCard({ model, slots }: { model: TwinBlueprintModel;
           </p>
         </div>
       </div>
-      <div className="relative flex min-w-0 items-center gap-4 px-4 py-2.5" data-draw-scope="">
+      {/* The paper title block's cell layout (label over the figure and the slots), so the
+          name and role keep the same width on a card and layer one keeps its row heights. */}
+      <div className="relative flex min-w-0 flex-col justify-center gap-1 px-3 py-2" data-draw-scope="">
         <i aria-hidden data-draw="frame" data-draw-wipe="y" className="twd-title-rule pointer-events-none absolute inset-y-3 left-0 w-px" />
-        <div className={theme === 'native' ? 'flex items-center gap-3' : 'flex flex-col items-start gap-1'}>
-          <Letter>{b.metrics.readiness}</Letter>
+        <Letter>{b.metrics.readiness}</Letter>
+        <div className="flex items-center gap-4">
           {theme === 'native' ? <ReadinessRing score={readiness.score} /> : <Stamp score={readiness.score} />}
+          {slots && <ReadinessSlots slots={readiness.slots} />}
         </div>
-        {slots && <ReadinessSlots slots={readiness.slots} />}
       </div>
     </div>
   );
 }
 
-/** The inked page's readiness: the figure in a lit frame, pressed last (no stamp's tilt). */
+/** "Half and half"'s readiness: the figure stamped in a lit frame, pressed last. */
 function Stamp({ score }: { score: number }) {
   return (
     <span data-draw="press" data-readiness={score} className="twd-stamp inline-flex shrink-0 items-baseline rounded-interactive px-2.5">
@@ -63,14 +66,14 @@ function Stamp({ score }: { score: number }) {
 }
 
 /**
- * The native readiness: a ring on the score's own scale (0..100), its track a
+ * The "Personas blueprint" readiness: a ring on the score's own scale (0..100), its track a
  * frame, its arc inked out to the score, the figure pressed into its middle
  * last. Complete is the success ink; anything short of it the theme's own.
  */
 function ReadinessRing({ score }: { score: number }) {
   const pct = Math.min(100, Math.max(0, Math.round(score)));
   return (
-    <span className="relative inline-flex h-12 w-12 shrink-0 items-center justify-center" data-readiness={score} data-complete={pct >= 100}>
+    <span className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center" data-readiness={score} data-complete={pct >= 100}>
       <svg aria-hidden viewBox="0 0 48 48" className="absolute inset-0 h-full w-full overflow-visible" style={{ rotate: '-90deg' }}>
         <circle cx={24} cy={24} r={21} fill="none" stroke="var(--twd-ring-track)" strokeWidth={3.5} pathLength={100} data-draw="frame" />
         {pct > 0 && (

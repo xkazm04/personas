@@ -1,5 +1,4 @@
 import DrawFrame from './draw/DrawFrame';
-import { isPaperless, useDraftingTheme } from './draftingTheme';
 
 /**
  * The sheet's border, 8px in from the paper's edge where Studio's sheet draws
@@ -8,13 +7,11 @@ import { isPaperless, useDraftingTheme } from './draftingTheme';
  * which the variant's root insets 20px, hence -12px. `draw` false: the sheet
  * is already drawn (a zoom keeps the border it was drawn with).
  *
- * Round 2 WP-C: the tinted sheet keeps it (rounded by tint.css to sit inside
- * its card edge); the inked page and the native version have no sheet, so no
- * border.
+ * Round 3 WP-D: every theme level keeps the sheet and its double frame (the
+ * blueprint is the kept layer); the levels' stylesheets round it to sit inside
+ * the sheet's card edge and ink it in their own colour.
  */
 export default function SheetBorder({ draw = true }: { draw?: boolean }) {
-  const theme = useDraftingTheme();
-  if (isPaperless(theme)) return null;
   return (
     <div aria-hidden className="twd-sheet-border pointer-events-none absolute -inset-3">
       <DrawFrame stroke="var(--ink-dim)" edge={0} draw={draw} />

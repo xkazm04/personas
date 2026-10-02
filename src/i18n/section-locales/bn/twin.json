@@ -944,9 +944,9 @@
       "drafting": "নকশার শিট",
       "label": "ব্লুপ্রিন্টের শৈলী",
       "strata": "স্তরবিন্যাস",
-      "draftingNative": "মূল ড্রইং",
-      "draftingSurface": "কালিতে আঁকা পাতা",
-      "draftingTint": "রঙিন শিট"
+      "draftingNative": "Personas ব্লুপ্রিন্ট",
+      "draftingSurface": "আধাআধি",
+      "draftingTint": "Personas-এর ছোঁয়া"
     }
   },
   "card": {

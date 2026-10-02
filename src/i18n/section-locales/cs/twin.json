@@ -944,9 +944,9 @@
       "drafting": "Technický výkres",
       "label": "Styl plánu",
       "strata": "Vrstvy",
-      "draftingNative": "Nativní výkres",
-      "draftingSurface": "Kresba na stránce",
-      "draftingTint": "Tónovaný výkres"
+      "draftingNative": "Výkres Personas",
+      "draftingSurface": "Napůl a napůl",
+      "draftingTint": "Dotek Personas"
     }
   },
   "card": {

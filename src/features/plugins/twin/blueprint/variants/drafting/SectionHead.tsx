@@ -6,10 +6,10 @@ import type { SectionId } from '../../blueprintContract';
 import { Balloon, Letter } from './Lettering';
 import DrawFrame from './draw/DrawFrame';
 import Write from './draw/Write';
-import { useDraftingTheme } from './draftingTheme';
+import { appHeadings, useDraftingTheme } from './draftingTheme';
 
 /**
- * The native version's section icons: the app's own twin slot icons
+ * The "Personas blueprint" level's section icons: the app's own twin slot icons
  * (`shared/twinStatus.ts`: identity, tone, brain) and the training CTA's.
  * The twin's brand glyph is the title card's identity mark (`TwinMark`).
  */
@@ -21,14 +21,14 @@ const ICONS: Record<SectionId, LucideIcon> = {
 };
 
 /**
- * The mark a section is named by, by theme (round 2 WP-C): a numbered balloon
- * on paper; none on the inked page (its name is its head); natively the
- * section's icon in a lit chip. Drawn as its container's first content: the
- * chip's outline, its glow, then the icon.
+ * The mark a section is named by, by theme level (round 3 WP-D): a drafting
+ * balloon on the blueprint (the cyanotype, "Personas touch", and on the cards
+ * of "Half and half"); in the "Personas blueprint" the section's icon in a lit
+ * chip. Drawn as its container's first content: the chip's outline, its glow,
+ * then the icon.
  */
 export function SectionMark({ section, number, inked, size = 28 }: { section: SectionId; number: number; inked: boolean; size?: number }) {
   const theme = useDraftingTheme();
-  if (theme === 'surface') return null;
   if (theme !== 'native') return <Balloon number={number} inked={inked} size={size} />;
   const Icon = ICONS[section];
   return (
@@ -79,15 +79,16 @@ function Chip({ size, section, children }: { size: number; section: SectionId; c
 }
 
 /**
- * A section's name: drafting lettering on paper, the app's (primary-tinted)
- * title on the inked page and natively. `text` replaces the bare name on
- * paper (L2 says "Detail of ..." there, as a drawing names a detail).
+ * A section's name: drafting lettering on the cyanotype and in "Personas
+ * touch", the app's (primary-tinted) title from "Half and half" on. `text`
+ * replaces the bare name in lettering (L2 says "Detail of ..." there, as a
+ * drawing names a detail).
  */
 export function SectionName({ section, text, className = '' }: { section: SectionId; text?: string; className?: string }) {
   const theme = useDraftingTheme();
   const { t } = useTranslation();
   const name = text ?? t.twin.blueprint.sections[section];
-  if (theme === 'cyanotype' || theme === 'tint') {
+  if (!appHeadings(theme)) {
     return (
       <Letter strong className={className}>
         {name}

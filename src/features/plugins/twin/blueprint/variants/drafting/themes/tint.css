@@ -1,86 +1,77 @@
-/* The drafting sheet, version "tint" (spark twin-portable-blueprint, round 2
-   WP-C, subtle). The same sheet as the baseline, with two changes:
+/* Level 1, "Personas touch" (draftingTint; spark twin-portable-blueprint,
+   round 3 WP-D, very subtle). The blueprint stays essentially intact: the
+   cyanotype paper and its pale ink in EVERY theme (cyanotype.css), the grid
+   and every drafting pattern at full strength, the drafting lettering on every
+   label. Personas enters only as a touch:
 
-   1. Paper and ink from the ACTIVE THEME ONLY. Studio's cyanotype mixes every
-      colour with a fixed blue (its --drafting-blue, and a fixed light or deep
-      blue in the ink), so in a warm theme it is a blue slab. Here the paper is the app's
-      background tinted toward --primary, the ink is --primary leaned toward
-      --foreground, and the grid is about half as loud. The root does not
-      carry .drafting-root, so none of Studio's anchored values reach it.
-   2. The sheet's edge is a Personas card: card radius, a primary border,
-      elevation and (dark themes) the theme's glow, inset from the page by the
-      density padding so the edge can be seen. The drawn border stays, rounded
-      to sit inside the card like a mat.
+   - the sheet sits on a Personas card edge (radius, elevation, a primary
+     hairline; sheet.css);
+   - the figures are the app's (Numeric, the typo-* ramp; unchanged
+     components);
+   - the theme's --primary is the accent ink of LIVE things only: the ink a
+     section has run round its frame, the done tick, the readiness stamp, the
+     region under the pointer, the mark the last answer landed on, the pen and
+     its leader line. A bronze user still sees a blue blueprint, with bronze
+     accents.
 
-   Every value derives from var(--*) through color-mix(); no literals. */
+   On blue paper the app's foreground would be dark in a light theme, so the
+   sheet rebinds the foreground tokens to its own ink. No literals. */
 
 .twd-themed[data-drafting-theme='tint'] {
-  --paper: color-mix(in srgb, var(--primary) 6%, var(--background));
-  --paper-deep: color-mix(in srgb, var(--primary) 11%, var(--background));
-  --ink: color-mix(in srgb, var(--primary) 82%, var(--foreground));
-  --ink-strong: color-mix(in srgb, var(--ink) 45%, var(--foreground));
-  --ink-dim: color-mix(in srgb, var(--ink) 48%, transparent);
-  --ink-faint: color-mix(in srgb, var(--ink) 22%, transparent);
-  --grid-fine: color-mix(in srgb, var(--ink) 4%, transparent);
-  --grid-major: color-mix(in srgb, var(--ink) 8%, transparent);
+  --paper: var(--twd-cyan-paper);
+  --paper-deep: color-mix(in srgb, var(--twd-cyan-paper) 80%, black);
+  --ink: var(--twd-cyan-ink);
+  --ink-strong: var(--twd-cyan-ink-strong);
+  --ink-dim: color-mix(in srgb, var(--twd-cyan-ink) 50%, transparent);
+  --ink-faint: color-mix(in srgb, var(--twd-cyan-ink) 24%, transparent);
+  --grid-major: color-mix(in srgb, var(--twd-cyan-ink) 17%, transparent);
+  --grid-fine: color-mix(in srgb, var(--twd-cyan-ink) 8%, transparent);
 
-  /* Inset from the page so the card's edge can be seen; the gutters inside it
-     are tighter by as much, so layer one keeps the baseline's working widths
-     (nothing truncates or wraps that does not on the cyanotype). */
-  margin: 0.75rem;
-  padding: 1rem;
-  border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
-  border-radius: var(--radius-card);
-  box-shadow:
-    var(--shadow-elevation-2),
-    0 0 40px -14px color-mix(in srgb, var(--primary) 40%, transparent);
-  background-color: var(--paper);
-  background-image:
-    radial-gradient(130% 90% at 0% 0%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 60%),
-    linear-gradient(var(--grid-major) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
-    linear-gradient(var(--grid-fine) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-fine) 1px, transparent 1px);
-  background-size: 100% 100%, 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+  /* The live accent: the theme's primary, lifted so it reads on the deep blue. */
+  --twd-accent: color-mix(in srgb, var(--primary) 82%, white);
+  --twd-accent-glow: color-mix(in srgb, var(--primary) 45%, transparent);
+
+  --twd-edge-line: color-mix(in srgb, var(--primary) 30%, transparent);
+  --twd-edge-shadow: var(--shadow-elevation-2), 0 0 36px -14px var(--twd-accent-glow);
+
+  /* Text on the blue paper reads in the sheet's ink, in every theme. */
+  --foreground: var(--twd-cyan-ink-strong);
+  --muted-foreground: color-mix(in srgb, var(--twd-cyan-ink) 80%, transparent);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
 }
 
-/* Light themes: the paper is the app's card tinted toward the theme, the ink
-   a step darker against it, and the glow goes (back-lighting reads as smudge
-   on white, as in globals.css .hud-bloom). */
+/* Light themes: the primary is deep, so the accent lifts further; no glow on the edge. */
 [data-theme^='light'] .twd-themed[data-drafting-theme='tint'] {
-  --paper: color-mix(in srgb, var(--primary) 4%, var(--card-bg));
-  --paper-deep: color-mix(in srgb, var(--primary) 8%, var(--card-bg));
-  --ink: color-mix(in srgb, var(--primary) 85%, var(--foreground));
-  --ink-strong: color-mix(in srgb, var(--ink) 60%, var(--foreground));
-  --ink-dim: color-mix(in srgb, var(--ink) 55%, transparent);
-  --ink-faint: color-mix(in srgb, var(--ink) 25%, transparent);
-  --grid-fine: color-mix(in srgb, var(--ink) 5%, transparent);
-  --grid-major: color-mix(in srgb, var(--ink) 10%, transparent);
-  box-shadow: var(--shadow-elevation-2);
+  --twd-accent: color-mix(in srgb, var(--primary) 50%, white);
+  --twd-edge-shadow: var(--shadow-elevation-2);
 }
 
-/* The drawn border, 8px in from the card's edge, runs round its corners. */
-.twd-themed[data-drafting-theme='tint'] .twd-sheet-border {
-  inset: -0.5rem;
+/* ---------- the accent ink of live things ---------- */
+.twd-themed[data-drafting-theme='tint'] .twd-ink-trace {
+  stroke: var(--twd-accent);
+  filter: drop-shadow(0 0 3px var(--twd-accent-glow));
 }
-.twd-themed[data-drafting-theme='tint'] .twd-sheet-border rect {
-  rx: 5px;
+.twd-themed[data-drafting-theme='tint'] .twd-done-tick path {
+  stroke: var(--twd-accent);
 }
-
-/* The width the margin took back, returned by the gutters between parts. */
-.twd-themed[data-drafting-theme='tint'] .twd-plan {
-  gap: 0.75rem;
+/* The readiness stamp: its inline border reads --ink-strong. */
+.twd-themed[data-drafting-theme='tint'] [data-draw='press'][data-readiness] {
+  --ink-strong: var(--twd-accent);
+  color: var(--twd-accent);
 }
-.twd-themed[data-drafting-theme='tint'] .twd-voice-grid {
-  column-gap: 0.75rem;
+.twd-themed[data-drafting-theme='tint'] .twd-region[role='button']:hover,
+.twd-themed[data-drafting-theme='tint'] .twd-region[role='button']:focus-visible {
+  background-color: color-mix(in srgb, var(--twd-accent) 6%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--twd-accent) 55%, transparent), 0 0 28px var(--twd-accent-glow);
 }
-.twd-themed[data-drafting-theme='tint'] .twd-facts-l1 {
-  column-gap: 1.5rem;
+.twd-themed[data-drafting-theme='tint'] .twd-target {
+  background-color: color-mix(in srgb, var(--twd-accent) 12%, transparent);
+  box-shadow: 0 0 0 1px var(--twd-accent), 0 0 24px var(--twd-accent-glow);
 }
-
-/* In the training overlay the table already frames the sheet: no margin, so
-   the sheet is never shorter than the cyanotype there and the rows that move
-   to layer two move at the same sizes. */
-.twd-themed[data-drafting-theme='tint'][data-mode='stage'] {
-  margin: 0;
+/* The pen and the stage's leader line draw in the accent (both read --ink and --ink-strong). */
+.twd-themed[data-drafting-theme='tint'] [data-testid='twd-pen'],
+.twd-themed[data-drafting-theme='tint'] [data-leader] {
+  --ink: var(--twd-accent);
+  --ink-strong: var(--twd-accent);
 }

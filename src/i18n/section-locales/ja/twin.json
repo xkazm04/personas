@@ -944,9 +944,9 @@
       "drafting": "製図シート",
       "label": "ブループリントのスタイル",
       "strata": "地層",
-      "draftingNative": "ネイティブ製図",
-      "draftingSurface": "ページに描画",
-      "draftingTint": "色付きシート"
+      "draftingNative": "Personasの青写真",
+      "draftingSurface": "半分ずつ",
+      "draftingTint": "Personasの一筆"
     }
   },
   "card": {

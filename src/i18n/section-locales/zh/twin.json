@@ -944,9 +944,9 @@
       "drafting": "工程图纸",
       "label": "蓝图样式",
       "strata": "地层",
-      "draftingNative": "原生图纸",
-      "draftingSurface": "页面墨绘",
-      "draftingTint": "着色图纸"
+      "draftingNative": "Personas 蓝图",
+      "draftingSurface": "各占一半",
+      "draftingTint": "Personas 点缀"
     }
   },
   "card": {

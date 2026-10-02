@@ -1,23 +1,27 @@
 /**
- * The drafting sheet's theme versions (spark twin-portable-blueprint, round 2
- * WP-C): `draftingTint`, `draftingSurface` and `draftingNative` are ONE
- * renderer with a `theme`, and the baseline is untouched. Asserted on the DOM
- * the versions render and on their stylesheets, never on pixels:
+ * The drafting sheet's theme levels (spark twin-portable-blueprint; round 3
+ * WP-D reworked round 2's versions): `draftingTint` ("Personas touch"),
+ * `draftingSurface` ("Half and half") and `draftingNative` ("Personas
+ * blueprint") are ONE renderer with a `theme`, and the baseline is untouched.
+ * Asserted on the DOM the levels render and on their stylesheets, never on
+ * pixels:
  *
- * - each id renders its own version in L1, every L2 and the stage, and keeps
+ * - each id renders its own level in L1, every L2 and the stage, and keeps
  *   the contract's behaviour (section controls, "not measured" states,
  *   reduced motion);
- * - each version is theme-derived end to end: no Studio cyanotype root in its
- *   tree, and every colour its stylesheets declare is mixed from the app's
- *   tokens (no literal, no fixed anchor);
- * - what each version changes in the drawing's structure, and where that puts
+ * - the blueprint is kept in every level: the drafting grid and the drawn
+ *   sheet border; levels 1 and 2 carry the cyanotype blue, level 3 none
+ *   (computed from the real stylesheets);
+ * - every colour the stylesheets declare is mixed from the app's tokens,
+ *   except the one documented cyanotype anchor;
+ * - what each level changes in the drawing's structure, and where that puts
  *   the parts in the draw-in (the schedule's invariants for every theme are in
  *   drawSchedule.test.tsx).
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { ComponentType } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 
 import type { BlueprintVariantProps, SectionId, TwinBlueprintModel } from '../../../blueprintContract';
@@ -114,8 +118,8 @@ describe('the baseline is unchanged', () => {
   });
 });
 
-describe('what each version changes, and where it lands in the draw-in', () => {
-  it('tint: the same sheet, drawing and lettering; only its paper, ink and edge change (CSS)', () => {
+describe('what each level changes, and where it lands in the draw-in', () => {
+  it('tint: the same sheet, drawing and lettering; only its paper, ink, accent and edge change (CSS)', () => {
     render(<DraftingTint {...props()} />);
     const frames = Array.from(drawing().querySelectorAll('[data-draw-depth="0"]'));
     // The border, four regions and the title block, exactly as on the cyanotype.
@@ -126,10 +130,10 @@ describe('what each version changes, and where it lands in the draw-in', () => {
   });
 
   it.each([['surface', DraftingSurface], ['native', DraftingNative]] as const)(
-    '%s: no sheet; every region and the title block is a card, framed first and filled with the next wave',
+    '%s: the sheet and its border stay; every region and the title block is a card laid on it, framed first and filled with the next wave',
     (theme, Version) => {
       render(<Version {...props()} />);
-      expect(document.querySelector('.twd-sheet-border')).toBeNull();
+      expect(document.querySelector('.twd-sheet-border')).not.toBeNull();
       const cards = [...SECTIONS.map((s) => screen.getByTestId(`twd-region-${s}`)), screen.getByTestId('twd-title-block')];
       for (const card of cards) {
         expect(card).toHaveClass('twd-card');
@@ -137,22 +141,30 @@ describe('what each version changes, and where it lands in the draw-in', () => {
         const fill = card.querySelector(':scope > .twd-card-fill');
         expect(fill).toHaveAttribute('data-draw-wipe', 'fade');
         expect(depth(fill)).toBe('1');
-        // Crop marks, the inked page's drafting accent, are traced with the fill.
-        const crops = card.querySelectorAll(':scope > svg.twd-crop [data-draw="frame"]');
-        expect(crops).toHaveLength(theme === 'surface' ? 4 : 0);
-        crops.forEach((c) => expect(depth(c)).toBe('1'));
+        // Construction lines run on past each corner, traced with the fill.
+        const lines = card.querySelectorAll(':scope > svg.twd-construction [data-draw="frame"]');
+        expect(lines).toHaveLength(4);
+        lines.forEach((c) => expect(depth(c)).toBe('1'));
       }
-      // Five frames stand at depth 0: four regions and the title block.
-      expect(drawing().querySelectorAll('[data-draw-depth="0"]')).toHaveLength(5);
-      // Labels speak the app's type: eyebrows, never the drafting lettering's spaced capitals.
-      expect(document.querySelectorAll('.typo-eyebrow').length).toBeGreaterThan(5);
-      expect(document.querySelector('[style*="letter-spacing: 0.1em"]')).toBeNull();
+      // Six frames stand at depth 0: the sheet border, four regions and the title block.
+      expect(drawing().querySelectorAll('[data-draw-depth="0"]')).toHaveLength(6);
+      // Section names are the app's titles from level 2 on.
+      for (const s of SECTIONS) expect(screen.getByTestId(`twd-region-${s}`).querySelector('header .typo-title')).not.toBeNull();
+      if (theme === 'surface') {
+        // Labels keep the drafting lettering (spaced capitals), never the app's eyebrows.
+        expect(document.querySelector('.typo-eyebrow')).toBeNull();
+        expect(document.querySelectorAll('[style*="letter-spacing: 0.1em"]').length).toBeGreaterThan(5);
+      } else {
+        // Personas has taken the type: eyebrows, never the lettering's spaced capitals.
+        expect(document.querySelectorAll('.typo-eyebrow').length).toBeGreaterThan(5);
+        expect(document.querySelector('[style*="letter-spacing: 0.1em"]')).toBeNull();
+      }
     },
   );
 
-  it('surface: a region writes its name, its share, then runs its ink round the card', () => {
+  it('surface: a region writes its balloon, its name, its share, then runs its ink round the card', () => {
     render(<DraftingSurface {...props()} />);
-    expect(kindsIn(screen.getByTestId('twd-region-voice'))).toEqual(['write', 'write', 'ink']);
+    expect(kindsIn(screen.getByTestId('twd-region-voice')).slice(0, 6)).toEqual(['stroke', 'rise', 'write', 'write', 'write', 'ink']);
     // Readiness is still pressed last.
     const stamp = document.querySelector('.twd-stamp')!;
     expect(stamp).toHaveAttribute('data-draw', 'press');
@@ -184,28 +196,91 @@ describe('what each version changes, and where it lands in the draw-in', () => {
 });
 
 /**
- * The versions' stylesheets, read as text: every value is mixed from the app's
- * tokens. Stripped of comments, `var(--*)`, numbers with units, the colour and
- * gradient functions and their keywords, a declaration has nothing left that
- * could name a colour, so no literal (hex, rgb, a named colour) and no fixed
- * anchor can reach the versions' paper and ink.
+ * The levels' real stylesheets, injected into the document so jsdom cascades
+ * them onto the rendered root (it resolves custom properties to their declared
+ * text, which is what is asserted: what each value is MADE of).
  */
-describe('the versions are theme-derived end to end', () => {
-  const DIR = resolve(process.cwd(), 'src/features/plugins/twin/blueprint/variants/drafting/themes');
-  const SHEETS = ['tint.css', 'paperless.css', 'surface.css', 'native.css'];
+const THEMES_DIR = resolve(process.cwd(), 'src/features/plugins/twin/blueprint/variants/drafting/themes');
+const STYLESHEETS: Record<string, string[]> = {
+  tint: ['sheet.css', 'cyanotype.css', 'tint.css'],
+  surface: ['sheet.css', 'cyanotype.css', 'surface.css'],
+  native: ['sheet.css', 'native.css'],
+};
+
+describe.each(VERSIONS)('%s keeps the blueprint (computed from its stylesheets)', (_id, Version, theme) => {
+  let style: HTMLStyleElement;
+  beforeEach(() => {
+    style = document.createElement('style');
+    style.textContent = STYLESHEETS[theme]!.map((f) => readFileSync(resolve(THEMES_DIR, f), 'utf8')).join('\n');
+    document.head.appendChild(style);
+  });
+  afterEach(() => {
+    style.remove();
+    document.documentElement.removeAttribute('data-theme');
+  });
+
+  it.each([['dark', null], ['light', 'light']] as const)('%s theme: the drafting grid, the sheet border, and the cyanotype only below level 3', (_mode, dataTheme) => {
+    if (dataTheme) document.documentElement.setAttribute('data-theme', dataTheme);
+    render(<Version {...props()} />);
+    const cs = getComputedStyle(root());
+    // The 80/16 px drafting grid, drawn from the level's own grid inks.
+    expect(cs.backgroundSize).toContain('80px 80px, 80px 80px, 16px 16px, 16px 16px');
+    expect(cs.backgroundImage.match(/linear-gradient\((?:90deg, )?var\(--grid-(?:major|fine)\) 1px, transparent 1px\)/g)).toHaveLength(4);
+    expect(cs.getPropertyValue('--grid-major').trim()).not.toBe('');
+    expect(cs.getPropertyValue('--grid-fine').trim()).not.toBe('');
+    expect(cs.backgroundColor).toBe('var(--paper)');
+    expect(document.querySelector('.twd-sheet-border')).not.toBeNull();
+
+    const cyanotype = cs.getPropertyValue('--twd-cyanotype').trim();
+    const paper = cs.getPropertyValue('--paper');
+    const ink = cs.getPropertyValue('--ink');
+    if (theme === 'native') {
+      // No foreign blue: the paper and the ink are the theme's own.
+      expect(cyanotype).toBe('');
+      expect(`${paper} ${ink}`).not.toMatch(/--twd-cyan/);
+      expect(paper).toContain('--primary');
+      expect(ink).toContain('--primary');
+    } else {
+      expect(cyanotype).toMatch(/^#[0-9a-f]{6}$/i);
+      if (theme === 'tint') {
+        // The cyanotype intact: its paper and ink alone, in every theme.
+        expect(paper.trim()).toBe('var(--twd-cyan-paper)');
+        expect(ink.trim()).toBe('var(--twd-cyan-ink)');
+      } else {
+        // Half and half: the cyanotype's paper mixed with the theme's.
+        expect(paper).toMatch(/--twd-cyan-paper/);
+        expect(paper).toMatch(/--twd-theme-paper/);
+        expect(ink).toMatch(/--twd-cyan-(?:ink|paper)/);
+        expect(ink).toMatch(/--twd-theme-ink/);
+      }
+    }
+  });
+});
+
+/**
+ * The levels' stylesheets, read as text: every value is mixed from the app's
+ * tokens, except the one documented cyanotype anchor. Stripped of comments,
+ * `var(--*)`, numbers with units, the colour and gradient functions and their
+ * keywords, a declaration has nothing left that could name a colour.
+ */
+describe('the levels name no colour of their own but the cyanotype anchor', () => {
+  const SHEETS = ['sheet.css', 'cyanotype.css', 'tint.css', 'surface.css', 'native.css'];
   const KEYWORDS = new Set([
-    'color-mix', 'in', 'srgb', 'transparent', 'currentColor', 'none', 'linear-gradient', 'radial-gradient', 'drop-shadow',
-    'at', 'deg', 'inset', 'solid', 'ease-out', 'isolate', 'calc', 'box-shadow',
+    'color-mix', 'in', 'srgb', 'oklab', 'transparent', 'currentColor', 'none', 'linear-gradient', 'radial-gradient', 'drop-shadow',
+    'at', 'deg', 'inset', 'solid', 'ease-out', 'isolate', 'calc', 'box-shadow', 'black', 'white',
   ]);
   /** Every `prop: value;` in a stylesheet, however deeply its rule is nested (`@container`). */
   const parse = (css: string) =>
     [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([\w-]+)\s*:\s*([^;{}]+);/g)].map(([, prop, value]) => ({ prop: prop!, value: value!.trim() }));
   /** Properties that can carry a colour; custom properties always can. */
   const COLOURED = /^(--|background|color|border|box-shadow|fill|stroke|filter|outline|text-shadow|caret-color|accent-color|column-rule)/;
-  const declarations = (file: string) => parse(readFileSync(resolve(DIR, file), 'utf8'));
+  const LITERAL = /#[0-9a-f]{3,8}\b|\brgba?\(|\bhsla?\(|\boklch\(|--drafting-blue/i;
+  const declarations = (file: string) => parse(readFileSync(resolve(THEMES_DIR, file), 'utf8'));
+  /** The anchor: the cyanotype blue, declared once. */
+  const isAnchor = (file: string, prop: string) => file === 'cyanotype.css' && prop === '--twd-cyanotype';
   /** What could name a colour in a value: a literal, an anchor, or any word that is not a token, a number or a known keyword. */
   const ownColours = (value: string): string[] => {
-    const literal = value.match(/#[0-9a-f]{3,8}\b|\brgba?\(|\bhsla?\(|\boklch\(|--drafting-blue/gi) ?? [];
+    const literal = value.match(new RegExp(LITERAL.source, 'gi')) ?? [];
     const words = value
       .replace(/var\(--[\w-]+(?:,[^()]*)?\)/g, ' ')
       .replace(/-?\d*\.?\d+(?:px|rem|em|%|deg|ms)?/g, ' ')
@@ -215,7 +290,7 @@ describe('the versions are theme-derived end to end', () => {
     return [...literal, ...words];
   };
 
-  it('the check itself finds a planted literal, a named colour and the cyanotype anchor', () => {
+  it('the check itself finds a planted literal, a named colour and the studio anchor', () => {
     const planted = parse('.x { --ink: color-mix(in srgb, var(--primary) 70%, #7fd3f7); color: blue; --paper: var(--drafting-blue); }');
     const [hex, named, anchor] = planted.map((d) => ownColours(d.value));
     expect(hex).toContain('#7fd3f7');
@@ -225,17 +300,30 @@ describe('the versions are theme-derived end to end', () => {
 
   it.each(SHEETS)('%s names no colour of its own', (file) => {
     const found = declarations(file);
-    expect(found.length).toBeGreaterThan(10);
+    expect(found.length).toBeGreaterThan(3);
     for (const { prop, value } of found) {
-      expect(value, `${prop}: ${value}`).not.toMatch(/#[0-9a-f]{3,8}\b|\brgba?\(|\bhsla?\(|\boklch\(|--drafting-blue/i);
+      if (isAnchor(file, prop)) continue;
+      expect(value, `${prop}: ${value}`).not.toMatch(LITERAL);
       if (COLOURED.test(prop)) expect(ownColours(value), `${prop}: ${value}`).toEqual([]);
     }
   });
 
-  it.each(['tint.css', 'surface.css', 'native.css'])('%s draws its own paper and ink from --primary, --background, --foreground and the card', (file) => {
+  it('the cyanotype is ONE anchor, declared once, and only levels 1 and 2 read it', () => {
+    const anchors = SHEETS.flatMap((f) => declarations(f).filter((d) => LITERAL.test(d.value)).map((d) => `${f} ${d.prop}`));
+    expect(anchors).toEqual(['cyanotype.css --twd-cyanotype']);
+    expect(readFileSync(resolve(THEMES_DIR, 'native.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')).not.toMatch(/--twd-cyan/);
+  });
+
+  it.each([
+    ['tint.css', ['--paper', '--paper-deep', '--ink', '--ink-strong', '--ink-dim', '--ink-faint']],
+    ['surface.css', ['--paper', '--ink', '--ink-strong', '--ink-dim', '--ink-faint']],
+    ['native.css', ['--paper', '--ink', '--ink-strong', '--ink-dim', '--ink-faint']],
+  ])('%s draws its paper and ink (and re-inks its states) from the cyanotype and the theme tokens only', (file, inkProps) => {
     const inks = declarations(file).filter((d) => /^--(paper|ink)(-|$)/.test(d.prop));
-    expect(new Set(inks.map((d) => d.prop))).toEqual(new Set(['--paper', '--ink', '--ink-strong', '--ink-dim', '--ink-faint', ...(file === 'tint.css' ? ['--paper-deep'] : [])]));
-    const allowed = new Set(['--primary', '--background', '--foreground', '--card-bg', '--ink', '--status-neutral', '--status-success', '--status-pending', '--status-error']);
+    expect(new Set(inks.map((d) => d.prop))).toEqual(new Set(inkProps));
+    const allowed = new Set(['--primary', '--background', '--foreground', '--card-bg', '--ink', '--twd-cyan-paper', '--twd-cyan-ink', '--twd-cyan-ink-strong', '--twd-theme-paper', '--twd-theme-ink',
+      // State re-inks: level 1's live accent; level 3's status roles.
+      '--twd-accent', '--status-success', '--status-pending', '--status-error']);
     for (const { prop, value } of inks) {
       for (const [, name] of value.matchAll(/var\((--[\w-]+)/g)) expect(allowed, `${prop} reads ${name}`).toContain(name);
     }

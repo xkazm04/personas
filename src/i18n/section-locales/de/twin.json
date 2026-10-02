@@ -944,9 +944,9 @@
       "drafting": "Zeichenblatt",
       "label": "Blueprint-Stil",
       "strata": "Schichten",
-      "draftingNative": "Natives Zeichenblatt",
-      "draftingSurface": "Gezeichnete Seite",
-      "draftingTint": "Getöntes Blatt"
+      "draftingNative": "Personas-Blaupause",
+      "draftingSurface": "Halb und halb",
+      "draftingTint": "Personas-Note"
     }
   },
   "card": {

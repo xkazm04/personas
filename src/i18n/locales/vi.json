@@ -21550,9 +21550,9 @@
         "drafting": "Bản vẽ kỹ thuật",
         "label": "Kiểu bản thiết kế",
         "strata": "Địa tầng",
-        "draftingNative": "Bản vẽ gốc",
-        "draftingSurface": "Trang vẽ mực",
-        "draftingTint": "Bản vẽ phủ màu"
+        "draftingNative": "Bản thiết kế Personas",
+        "draftingSurface": "Nửa nọ nửa kia",
+        "draftingTint": "Nét Personas"
       }
     },
     "card": {

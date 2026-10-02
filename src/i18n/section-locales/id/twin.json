@@ -944,9 +944,9 @@
       "drafting": "Lembar gambar teknik",
       "label": "Gaya cetak biru",
       "strata": "Strata",
-      "draftingNative": "Gambar teknik bawaan",
-      "draftingSurface": "Halaman bertinta",
-      "draftingTint": "Lembar berwarna"
+      "draftingNative": "Cetak biru Personas",
+      "draftingSurface": "Setengah-setengah",
+      "draftingTint": "Sentuhan Personas"
     }
   },
   "card": {
