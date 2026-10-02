@@ -928,7 +928,6 @@
     "variantCopy": {
       "drafting": {
         "sheetTitle": "ツインの設計図",
-        "detailOf": "{section}の詳細",
         "fullAt": "{count}で満杯",
         "moreChannels": "ほか {count} 件",
         "notes": "注記",
@@ -941,12 +940,9 @@
       }
     },
     "variants": {
-      "drafting": "製図シート",
+      "drafting": "Personasの青写真",
       "label": "ブループリントのスタイル",
-      "strata": "地層",
-      "draftingNative": "Personasの青写真",
-      "draftingSurface": "半分ずつ",
-      "draftingTint": "Personasの一筆"
+      "strata": "地層"
     }
   },
   "card": {

@@ -21534,7 +21534,6 @@
       "variantCopy": {
         "drafting": {
           "sheetTitle": "টুইনের নকশা",
-          "detailOf": "{section}-এর বিবরণ",
           "fullAt": "{count}-এ পূর্ণ",
           "moreChannels": "আরও {count}টি",
           "notes": "নোট",
@@ -21547,12 +21546,9 @@
         }
       },
       "variants": {
-        "drafting": "নকশার শিট",
+        "drafting": "Personas ব্লুপ্রিন্ট",
         "label": "ব্লুপ্রিন্টের শৈলী",
-        "strata": "স্তরবিন্যাস",
-        "draftingNative": "Personas ব্লুপ্রিন্ট",
-        "draftingSurface": "আধাআধি",
-        "draftingTint": "Personas-এর ছোঁয়া"
+        "strata": "স্তরবিন্যাস"
       }
     },
     "card": {

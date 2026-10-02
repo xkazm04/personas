@@ -8,8 +8,8 @@
    BACKWARDS only, so a part is undrawn until its moment and, after it, exactly
    its authored self: switching the rules off at the end changes no pixel.
 
-   Colour-free on purpose: the engine is shared by the drafting sheet and its
-   theme versions, which change paper and ink but keep the drawing. */
+   Colour-free on purpose: paper and ink belong to the sheet (sheet.css); the
+   engine only times the drawing. */
 
 [data-draw-state='drawing'] [data-draw-at] {
   animation-delay: calc(var(--draw-at) * 1ms);

@@ -928,7 +928,6 @@
     "variantCopy": {
       "drafting": {
         "sheetTitle": "مخطط التوأم",
-        "detailOf": "تفاصيل {section}",
         "fullAt": "ممتلئ عند {count}",
         "moreChannels": "+{count} أخرى",
         "notes": "ملاحظات",
@@ -941,12 +940,9 @@
       }
     },
     "variants": {
-      "drafting": "ورقة الرسم",
+      "drafting": "مخطط Personas",
       "label": "نمط المخطط",
-      "strata": "الطبقات",
-      "draftingNative": "مخطط Personas",
-      "draftingSurface": "نصف ونصف",
-      "draftingTint": "لمسة Personas"
+      "strata": "الطبقات"
     }
   },
   "card": {

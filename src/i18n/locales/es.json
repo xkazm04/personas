@@ -21534,7 +21534,6 @@
       "variantCopy": {
         "drafting": {
           "sheetTitle": "Plano del gemelo",
-          "detailOf": "Detalle de {section}",
           "fullAt": "Lleno en {count}",
           "moreChannels": "+{count} más",
           "notes": "Notas",
@@ -21547,12 +21546,9 @@
         }
       },
       "variants": {
-        "drafting": "Plano técnico",
+        "drafting": "Plano Personas",
         "label": "Estilo de plano",
-        "strata": "Estratos",
-        "draftingNative": "Plano Personas",
-        "draftingSurface": "Mitad y mitad",
-        "draftingTint": "Toque Personas"
+        "strata": "Estratos"
       }
     },
     "card": {

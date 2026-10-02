@@ -21534,7 +21534,6 @@
       "variantCopy": {
         "drafting": {
           "sheetTitle": "План двойника",
-          "detailOf": "Деталь: {section}",
           "fullAt": "Максимум при {count}",
           "moreChannels": "+{count} ещё",
           "notes": "Примечания",
@@ -21547,12 +21546,9 @@
         }
       },
       "variants": {
-        "drafting": "Чертёжный лист",
+        "drafting": "Чертёж Personas",
         "label": "Стиль схемы",
-        "strata": "Слои",
-        "draftingNative": "Чертёж Personas",
-        "draftingSurface": "Пополам",
-        "draftingTint": "Штрих Personas"
+        "strata": "Слои"
       }
     },
     "card": {

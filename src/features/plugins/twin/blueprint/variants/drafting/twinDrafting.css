@@ -1,24 +1,16 @@
 /* The twin's drafting sheet (spark twin-portable-blueprint, WP7).
 
-   It sits on Studio's cyanotype paper: the root carries `.drafting-root`
-   (src/features/studio/guide/drafting/drafting.css), which owns the paper,
-   the grid, the double frame and every ink colour (--paper, --ink,
-   --ink-strong, --ink-dim, --ink-faint), all mixed from the theme's
-   --primary. This file adds only what a twin drawing needs on top: the
-   hatches, the section linings that tell the question kinds apart, the
-   region hover, and the container queries that move optional rows out of
-   layer one instead of shrinking them. No colour is authored here: every
-   value is one of the ink variables. */
+   The paper, the grid, the double frame, the cards and every ink colour
+   (--paper, --ink, --ink-strong, --ink-dim, --ink-faint) live in sheet.css,
+   all mixed from the theme's tokens. This file adds what a twin drawing
+   needs on top: the hatches, the section linings that tell the question
+   kinds apart, the region door, the stage layout, the zoom, and the container
+   queries that move optional rows out of layer one instead of shrinking them.
+   No colour is authored here: every value is one of the ink variables. */
 
 .twd-sheet {
   container-type: size;
   container-name: twd-sheet;
-}
-/* The sheet's border is drawn (SheetBorder traces it with the first wave of
-   frames), so Studio's static outline would stand there before the plan
-   draws it. The paper's inner edge (the inset shadow) stays: it is the paper. */
-.twd-sheet.drafting-root {
-  outline: none;
 }
 
 /* "Not measured": a hatch, never an empty bar. */
@@ -60,14 +52,9 @@
   .twd-fig-narrow { display: none; }
 }
 
-/* A region on layer one is the door to its zoom. */
+/* A region on layer one is the door to its zoom (its card lifts on hover: sheet.css). */
 .twd-region[role="button"] {
   cursor: pointer;
-  transition: background-color var(--duration-fast, 150ms) ease-out, box-shadow var(--duration-fast, 150ms) ease-out;
-}
-.twd-region[role="button"]:hover {
-  background-color: color-mix(in srgb, var(--ink) 5%, transparent);
-  box-shadow: 0 0 28px color-mix(in srgb, var(--primary) 14%, transparent);
 }
 
 /* The mark the last answer landed on: inked and lit. */

@@ -49,9 +49,8 @@ export default function OverviewSheet({
   const cov = sectionCoverage(model);
   // Rows a resize moves in or out, or a refreshed model, are re-read while the plan still draws.
   const replanKey = useMemo(() => ({ roomy, model }), [roomy, model]);
-  const region = (section: SectionId, index: number) => ({
+  const region = (section: SectionId) => ({
     section,
-    number: index + 1,
     coverage: cov[section],
     onActivate: () => onFocus(section),
     regionRef: register(`region:${section}`),
@@ -61,16 +60,16 @@ export default function OverviewSheet({
   return (
     <DrawSheet {...draw} replanKey={replanKey} data-testid="twd-overview" className="twd-plan grid h-full min-h-0 gap-4" style={PLAN}>
       <SheetBorder />
-      <SheetRegion {...region('identity', 0)} unmeasuredLabel={states.notDrawn}>
+      <SheetRegion {...region('identity')} unmeasuredLabel={states.notDrawn}>
         <IdentityDrawing identity={model.identity} detailed={roomy} />
       </SheetRegion>
-      <SheetRegion {...region('voice', 1)} unmeasuredLabel={states.emptyVoice}>
+      <SheetRegion {...region('voice')} unmeasuredLabel={states.emptyVoice}>
         <VoiceDrawing voice={model.voice} />
       </SheetRegion>
-      <SheetRegion {...region('knowledge', 2)} unmeasuredLabel={states.notMeasured}>
+      <SheetRegion {...region('knowledge')} unmeasuredLabel={states.notMeasured}>
         <KnowledgeDrawing knowledge={model.knowledge} size="l1" />
       </SheetRegion>
-      <SheetRegion {...region('training', 3)} unmeasuredLabel={states.emptyTraining}>
+      <SheetRegion {...region('training')} unmeasuredLabel={states.emptyTraining}>
         <TrainingDrawing training={model.training} reduced={reduced} />
       </SheetRegion>
       <div style={{ gridArea: 'title' }} ref={register('title')} className="min-w-0">

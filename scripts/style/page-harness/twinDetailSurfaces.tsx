@@ -19,7 +19,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { safeLocalSet } from '@/lib/safeLocalStorage';
 import type { HarnessModule } from './registry';
 
-const VARIANTS = ['drafting', 'draftingTint', 'draftingSurface', 'draftingNative', 'strata'];
+const VARIANTS = ['drafting', 'strata'];
 /** `blueprintVariant.ts` VARIANT_KEY: the switcher's persisted pick. */
 const VARIANT_KEY = 'twin-blueprint-variant';
 

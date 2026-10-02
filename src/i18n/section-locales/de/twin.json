@@ -928,7 +928,6 @@
     "variantCopy": {
       "drafting": {
         "sheetTitle": "Twin-Plan",
-        "detailOf": "Detail zu {section}",
         "fullAt": "Voll bei {count}",
         "moreChannels": "+{count} weitere",
         "notes": "Notizen",
@@ -941,12 +940,9 @@
       }
     },
     "variants": {
-      "drafting": "Zeichenblatt",
+      "drafting": "Personas-Blaupause",
       "label": "Blueprint-Stil",
-      "strata": "Schichten",
-      "draftingNative": "Personas-Blaupause",
-      "draftingSurface": "Halb und halb",
-      "draftingTint": "Personas-Note"
+      "strata": "Schichten"
     }
   },
   "card": {

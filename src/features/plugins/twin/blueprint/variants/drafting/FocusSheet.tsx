@@ -2,9 +2,9 @@ import { useEffect, useRef, type CSSProperties } from 'react';
 import { ArrowLeft, ArrowUpRight } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
-import { SECTION_IDS, type SectionId, type TwinBlueprintModel } from '../../blueprintContract';
+import type { SectionId, TwinBlueprintModel } from '../../blueprintContract';
 import { sectionCoverage } from '../../sectionMetrics';
-import BoxFrame, { useCardBox } from './BoxFrame';
+import BoxFrame from './BoxFrame';
 import IdentityDrawing from './IdentityDrawing';
 import KnowledgeDrawing from './KnowledgeDrawing';
 import { Letter } from './Lettering';
@@ -13,7 +13,6 @@ import ReadinessSlots from './ReadinessSlots';
 import { SectionMark, SectionName } from './SectionHead';
 import TrainingDetail from './TrainingDetail';
 import VoiceSchedule from './VoiceSchedule';
-import DrawFrame from './draw/DrawFrame';
 import DrawSheet from './draw/DrawSheet';
 import { DRAW_TIMING } from './draw/drawTiming';
 import Write, { WriteNumber } from './draw/Write';
@@ -27,9 +26,7 @@ import { clipTo, type Insets } from './zoomOrigin';
  * itself in on the paper as it opens, the same way the plan did: its frame,
  * the frames inside it level by level, then every row in reading order. The
  * buttons are there from the start. Reduced motion: a fade, drawn at once.
- * Where the regions are Personas cards (round 3 WP-D: "Half and half",
- * "Personas blueprint") the detail is drawn on a card on the paper, under the
- * section's own head.
+ * The detail is drawn on a card on the paper, under the section's own head.
  */
 export default function FocusSheet({
   model,
@@ -49,11 +46,9 @@ export default function FocusSheet({
   onBack: () => void;
   onOpenDetail: (section: SectionId, itemKey?: string) => void;
 }) {
-  const { t, tx } = useTranslation();
+  const { t } = useTranslation();
   const b = t.twin.blueprint;
-  const number = SECTION_IDS.indexOf(section) + 1;
   const coverage = sectionCoverage(model)[section];
-  const card = useCardBox();
   const backRef = useRef<HTMLButtonElement>(null);
   useEffect(() => backRef.current?.focus({ preventScroll: true }), [section]);
   // A CSS animation, not a script one: the compositor runs it, and the app's
@@ -76,8 +71,8 @@ export default function FocusSheet({
         <Button ref={backRef} variant="ghost" size="sm" icon={<ArrowLeft className="h-4 w-4" />} onClick={onBack}>
           {b.nav.back}
         </Button>
-        <SectionMark section={section} number={number} inked size={32} />
-        <SectionName section={section} text={tx(b.variantCopy.drafting.detailOf, { section: b.sections[section] })} className="shrink-0" />
+        <SectionMark section={section} size={32} />
+        <SectionName section={section} className="shrink-0" />
         <Write text={b.sectionHints[section]} className="min-w-0 truncate typo-caption" />
         <span className="ml-auto shrink-0">
           {coverage === null ? (
@@ -90,15 +85,8 @@ export default function FocusSheet({
           {b.nav.openDetail}
         </Button>
       </header>
-      <div className={`${card} relative flex min-h-0 flex-1 flex-col px-6 py-5`} style={{ border: '1px solid transparent' }}>
-        <BoxFrame
-          paper={
-            <>
-              <DrawFrame stroke="var(--ink-faint)" width={3} edge={4} />
-              <DrawFrame stroke="var(--ink)" />
-            </>
-          }
-        />
+      <div className="twd-card relative flex min-h-0 flex-1 flex-col px-6 py-5" style={{ border: '1px solid transparent' }}>
+        <BoxFrame />
         {section === 'identity' && (
           <div className="flex min-h-0 flex-col gap-10">
             <IdentityDrawing identity={model.identity} detailed />

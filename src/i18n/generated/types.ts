@@ -22247,9 +22247,6 @@ export type Translations = {
         label: string;
         drafting: string;
         strata: string;
-        draftingTint: string;
-        draftingSurface: string;
-        draftingNative: string;
       };
       metrics: {
         bio: string;
@@ -22326,7 +22323,6 @@ export type Translations = {
           moreChannels: string;
           origin: string;
           fullAt: string;
-          detailOf: string;
           notes: string;
         };
         strata: {

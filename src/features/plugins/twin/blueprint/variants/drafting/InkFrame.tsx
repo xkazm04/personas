@@ -1,16 +1,7 @@
 import type { Ink } from './draftingTwinModel';
-import DrawFrame from './draw/DrawFrame';
 
 /**
- * A region's outline in pencil: dashed all round, traced with the first wave
- * of frames (depth 0). The region is the box this frame makes.
- */
-export function RegionOutline() {
-  return <DrawFrame stroke="var(--ink-dim)" dash="5 4" edge={0} />;
-}
-
-/**
- * The same outline inked over in solid ink, clockwise from the top-left
+ * A region's card inked round in solid ink, clockwise from the top-left
  * corner, as far as the section is drawn (its `sectionCoverage`), so a
  * half-drawn section carries half an inked frame and a finished one a solid
  * frame and a tick. It is the region's CONTENT, drawn right after its share is

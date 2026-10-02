@@ -928,7 +928,6 @@
     "variantCopy": {
       "drafting": {
         "sheetTitle": "Plán dvojníka",
-        "detailOf": "Detail: {section}",
         "fullAt": "Maximum při {count}",
         "moreChannels": "Další: +{count}",
         "notes": "Poznámky",
@@ -941,12 +940,9 @@
       }
     },
     "variants": {
-      "drafting": "Technický výkres",
+      "drafting": "Výkres Personas",
       "label": "Styl plánu",
-      "strata": "Vrstvy",
-      "draftingNative": "Výkres Personas",
-      "draftingSurface": "Napůl a napůl",
-      "draftingTint": "Dotek Personas"
+      "strata": "Vrstvy"
     }
   },
   "card": {

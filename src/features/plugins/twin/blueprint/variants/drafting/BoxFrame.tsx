@@ -1,21 +1,15 @@
-import type { ReactNode } from 'react';
 import DrawFrame from './draw/DrawFrame';
-import { hasCards, useDraftingTheme } from './draftingTheme';
 
 /**
- * A region-sized box's outline, by theme level (round 3 WP-D). On the
- * cyanotype and in "Personas touch" it is the drafting frame the caller hands
- * in, unchanged. From "Half and half" on the box is a Personas card laid on
- * the paper: its frame traces with its wave (a stroke, never a fade), its fill
- * lays in with the next wave under it (`data-draw-wipe="fade"`), and
- * construction lines run on past its corners, traced with the fill, so the
- * card stays a thing drawn on the blueprint. The box itself carries
- * `useCardBox()`'s class, which the level's stylesheet rounds, isolates (so
- * the fill sits under the content) and colours.
+ * A region-sized box drawn as a Personas card laid on the paper (round 3 WP-D;
+ * the only look since round 4): its frame traces with its wave (a stroke,
+ * never a fade), its fill lays in with the next wave under it
+ * (`data-draw-wipe="fade"`), and construction lines run on past its corners,
+ * traced with the fill, so the card stays a thing drawn on the blueprint. The
+ * box itself carries `.twd-card`, which `sheet.css` rounds, isolates (so the
+ * fill sits under the content) and colours.
  */
-export default function BoxFrame({ paper }: { paper: ReactNode }) {
-  const theme = useDraftingTheme();
-  if (!hasCards(theme)) return <>{paper}</>;
+export default function BoxFrame() {
   return (
     <>
       <span aria-hidden data-draw="frame" data-draw-wipe="fade" className="twd-card-fill pointer-events-none absolute inset-0" />
@@ -23,11 +17,6 @@ export default function BoxFrame({ paper }: { paper: ReactNode }) {
       <ConstructionLines />
     </>
   );
-}
-
-/** The class a box that may become a card carries (empty on paper). */
-export function useCardBox(): string {
-  return hasCards(useDraftingTheme()) ? 'twd-card' : '';
 }
 
 /** Past the corner by this much, into the gutter (narrower than the gutter, so neighbours never touch). */

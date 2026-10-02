@@ -133,8 +133,10 @@ describe('null renders as not measured, never as zero', () => {
     expect(screen.getByTestId('twd-region-training')).toHaveAttribute('data-measured', 'false');
     // A measured share stays measured.
     expect(screen.getByTestId('twd-region-identity')).toHaveAttribute('data-measured', 'true');
+    // Layer one's memories: the composition bar hatched, each key line flagged.
+    const knowledge = screen.getByTestId('twd-region-knowledge');
     for (const kind of ['approved', 'awaiting', 'rejected']) {
-      expect(document.querySelector(`[data-tally="${kind}"]`)).toHaveAttribute('data-measured', 'false');
+      expect(knowledge.querySelector(`li[data-part="${kind}"]`)).toHaveAttribute('data-measured', 'false');
     }
     const identity = screen.getByTestId('twd-region-identity');
     expect(identity.querySelector('[data-measured="false"]')).not.toBeNull();
@@ -219,6 +221,6 @@ describe('reduced motion: fades only', () => {
     setup({ mode: 'stage', working: true, reduced: false });
     expect(document.querySelectorAll('[data-live="true"]').length).toBeGreaterThan(0);
     expect(screen.getByTestId('twd-region-voice').closest('[data-draw-root]')).toHaveAttribute('data-draw-state', 'drawing');
-    expect(screen.getByTestId('twd-region-voice').querySelector('[data-draw="frame"]')).toHaveAttribute('data-draw-at', '0');
+    expect(screen.getByTestId('twd-region-voice').querySelector(':scope > svg[data-draw-svg="outline"] [data-draw="frame"]')).toHaveAttribute('data-draw-at', '0');
   });
 });

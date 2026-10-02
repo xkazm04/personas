@@ -2,7 +2,7 @@ import { useMemo, type ReactNode } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { BlueprintDelta, SectionId, TwinBlueprintModel } from '../../blueprintContract';
 import { sectionCoverage } from '../../sectionMetrics';
-import BoxFrame, { useCardBox } from './BoxFrame';
+import BoxFrame from './BoxFrame';
 import IdentityDrawing from './IdentityDrawing';
 import KnowledgeDrawing from './KnowledgeDrawing';
 import { Letter } from './Lettering';
@@ -14,11 +14,7 @@ import TwinTitleBlock from './TwinTitleBlock';
 import VoiceDrawing from './VoiceDrawing';
 import WorkingPlan from './WorkingPlan';
 import type { DeltaTarget } from './draftingTwinModel';
-import DrawFrame from './draw/DrawFrame';
 import DrawSheet from './draw/DrawSheet';
-
-/** The stage's regions, numbered in the plan's order. */
-export const STAGE_ORDER = ['identity', 'voice', 'knowledge', 'training'] as const;
 
 /**
  * The training overlay's base layer (the layout lives in `.twd-stage`). The
@@ -59,11 +55,9 @@ export default function StageSheet({
   const { t } = useTranslation();
   const b = t.twin.blueprint;
   const cov = sectionCoverage(model);
-  const card = useCardBox();
   const replanKey = useMemo(() => ({ roomy, model }), [roomy, model]);
   const region = (section: SectionId) => ({
     section,
-    number: STAGE_ORDER.indexOf(section) + 1,
     coverage: cov[section],
     dense: true,
     targeted: target?.key === `region:${section}`,
@@ -95,10 +89,9 @@ export default function StageSheet({
         ref={register('notes')}
         data-testid="twd-notes"
         data-draw-scope=""
-        className={`${card} relative flex min-w-0 flex-col gap-1 px-3 py-2`}
-        style={card ? undefined : { border: '1px solid transparent', background: 'color-mix(in srgb, var(--paper) 92%, transparent)' }}
+        className="twd-card relative flex min-w-0 flex-col gap-1 px-3 py-2"
       >
-        <BoxFrame paper={<DrawFrame stroke="var(--ink)" />} />
+        <BoxFrame />
         <Letter>{b.variantCopy.drafting.notes}</Letter>
         {notes}
       </div>

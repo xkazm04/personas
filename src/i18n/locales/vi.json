@@ -21534,7 +21534,6 @@
       "variantCopy": {
         "drafting": {
           "sheetTitle": "Bản vẽ twin",
-          "detailOf": "Chi tiết {section}",
           "fullAt": "Đầy tại {count}",
           "moreChannels": "+{count} nữa",
           "notes": "Ghi chú",
@@ -21547,12 +21546,9 @@
         }
       },
       "variants": {
-        "drafting": "Bản vẽ kỹ thuật",
+        "drafting": "Bản thiết kế Personas",
         "label": "Kiểu bản thiết kế",
-        "strata": "Địa tầng",
-        "draftingNative": "Bản thiết kế Personas",
-        "draftingSurface": "Nửa nọ nửa kia",
-        "draftingTint": "Nét Personas"
+        "strata": "Địa tầng"
       }
     },
     "card": {

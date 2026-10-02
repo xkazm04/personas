@@ -15,7 +15,7 @@
  *
  * Why the DOM and not React props: the tree IS the component structure, so
  * the depth of a frame and the container of a part are read from where they
- * actually render, and a theme that moves a part moves its place in the
+ * actually render, and a component that moves a part moves its place in the
  * schedule with it. Nothing re-renders per step: the plan is written onto the
  * parts as CSS custom properties (`--draw-at`, `--draw-for`) once, and CSS
  * animations do the rest (draw.css). This is a computed schedule, not a list

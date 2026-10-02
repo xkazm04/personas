@@ -928,7 +928,6 @@
     "variantCopy": {
       "drafting": {
         "sheetTitle": "ट्विन का नक्शा",
-        "detailOf": "विवरण: {section}",
         "fullAt": "{count} पर पूर्ण",
         "moreChannels": "+{count} और",
         "notes": "टिप्पणियाँ",
@@ -941,12 +940,9 @@
       }
     },
     "variants": {
-      "drafting": "ड्राइंग शीट",
+      "drafting": "Personas ब्लूप्रिंट",
       "label": "ब्लूप्रिंट शैली",
-      "strata": "परतें",
-      "draftingNative": "Personas ब्लूप्रिंट",
-      "draftingSurface": "आधा-आधा",
-      "draftingTint": "Personas का स्पर्श"
+      "strata": "परतें"
     }
   },
   "card": {

@@ -2,12 +2,12 @@ import type { CSSProperties, ReactNode } from 'react';
 import { LETTERING } from '@/features/studio/guide/drafting/draftingModel';
 import DrawFrame from './draw/DrawFrame';
 import Write from './draw/Write';
-import { appLabels, useDraftingTheme } from './draftingTheme';
 
 // Studio's drafting lettering (mono, upper case, spaced), borrowed for its
-// voice only: LETTERING fixes a 12 px size, and this sheet keeps every word on
-// the type ramp, so the size comes from `typo-label` (the ramp's floor) and the
-// spacing and case from LETTERING.
+// voice only, where a drawing still letters a mark (a balloon, a language):
+// LETTERING fixes a 12 px size, and this sheet keeps every word on the type
+// ramp, so the size comes from `typo-label` (the ramp's floor) and the spacing
+// and case from LETTERING.
 export const LETTER_STYLE: CSSProperties = {
   letterSpacing: LETTERING.letterSpacing,
   textTransform: LETTERING.textTransform,
@@ -15,11 +15,10 @@ export const LETTER_STYLE: CSSProperties = {
 };
 
 /**
- * Drafting lettering; a plain string is lettered in when the sheet draws
- * itself. In the "Personas blueprint" level (round 3 WP-D) Personas has taken
- * the type: the same label speaks the app's eyebrow, or a title when
- * `strong`, so a label and its figures meet on one type ramp. Every other
- * level keeps the lettering.
+ * A drawing's label in the app's type: Personas has taken the lettering, so a
+ * label speaks the app's eyebrow, or a title when `strong`, and a label and
+ * its figures meet on one type ramp. A plain string is lettered in when the
+ * sheet draws itself.
  */
 export function Letter({
   children,
@@ -30,14 +29,8 @@ export function Letter({
   strong?: boolean;
   className?: string;
 }) {
-  const theme = useDraftingTheme();
   const text = typeof children === 'string' ? <Write text={children} /> : children;
-  if (appLabels(theme)) return <span className={`${strong ? 'typo-title' : 'typo-eyebrow twd-eyebrow'} ${className}`}>{text}</span>;
-  return (
-    <span className={`typo-label ${className}`} style={{ ...LETTER_STYLE, color: strong ? 'var(--ink-strong)' : 'var(--ink)' }}>
-      {text}
-    </span>
-  );
+  return <span className={`${strong ? 'typo-title' : 'typo-eyebrow twd-eyebrow'} ${className}`}>{text}</span>;
 }
 
 /**

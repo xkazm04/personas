@@ -1,19 +1,22 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { Dot, type Glyph, type Tone } from '@/features/shared/components/kit';
 import type { ReadinessSlot, ReadinessStatus, TwinBlueprintModel } from '../../blueprintContract';
-import DrawFrame from './draw/DrawFrame';
 import Write from './draw/Write';
-import { useDraftingTheme } from './draftingTheme';
 
 const SLOTS: readonly ReadinessSlot[] = ['identity', 'tone', 'channels', 'memories'];
 
+/** The twin status vocabulary's roles and shapes, as kit glyphs. */
+const SLOT_DOT: Record<ReadinessStatus, { tone: Tone; glyph: Glyph }> = {
+  set: { tone: 'success', glyph: 'solid' },
+  partial: { tone: 'warning', glyph: 'soft' },
+  empty: { tone: 'neutral', glyph: 'hollow' },
+};
+
 /**
- * The four readiness slots as drawing marks: a set slot is a solid square, a
- * partial one half inked over a hatch, an empty one a dashed outline. Each
- * slot is a frame and a container: its fill goes in, then its name. The
- * "Personas blueprint" level (round 3 WP-D) says it in the app's own vocabulary instead:
- * the kit's status dot in the twin status roles (set success filled, partial
- * warning, empty neutral hollow; `shared/twinStatus.ts`), set down in turn.
+ * The four readiness slots in the app's own vocabulary: the kit's status dot
+ * in the twin status roles (set success filled, partial warning, empty
+ * neutral hollow; `shared/twinStatus.ts`). Each slot is a container: its dot
+ * rises, then its name is written.
  */
 export default function ReadinessSlots({
   slots,
@@ -33,7 +36,9 @@ export default function ReadinessSlots({
     <ul className={`grid w-fit grid-cols-2 ${large ? 'gap-x-10 gap-y-3' : 'gap-x-4 gap-y-1'}`}>
       {SLOTS.map((s) => (
         <li key={s} className="flex min-w-0 items-center gap-2" data-slot={s} data-status={slots[s]} data-draw-scope="">
-          <SlotMark status={slots[s]} size={large ? 20 : 14} />
+          <span aria-hidden data-draw="rise" className="inline-flex shrink-0">
+            <Dot {...SLOT_DOT[slots[s]]} />
+          </span>
           <Write
             text={label[s]}
             className={`min-w-0 truncate ${large ? 'typo-body text-foreground' : 'typo-label'}`}
@@ -42,35 +47,5 @@ export default function ReadinessSlots({
         </li>
       ))}
     </ul>
-  );
-}
-
-/** The twin status vocabulary's roles and shapes, as kit glyphs. */
-const NATIVE: Record<ReadinessStatus, { tone: Tone; glyph: Glyph }> = {
-  set: { tone: 'success', glyph: 'solid' },
-  partial: { tone: 'warning', glyph: 'soft' },
-  empty: { tone: 'neutral', glyph: 'hollow' },
-};
-
-function SlotMark({ status, size }: { status: ReadinessStatus; size: number }) {
-  const theme = useDraftingTheme();
-  if (theme === 'native') {
-    return (
-      <span aria-hidden data-draw="rise" className="inline-flex shrink-0">
-        <Dot {...NATIVE[status]} />
-      </span>
-    );
-  }
-  return (
-    <span aria-hidden className="relative block shrink-0" style={{ width: size, height: size, border: '1.5px solid transparent' }}>
-      <DrawFrame stroke={status === 'empty' ? 'var(--ink-dim)' : 'var(--ink)'} width={1.5} edge={1.5} dash={status === 'empty' ? '3 2' : undefined} />
-      {status === 'set' && <span data-draw="sweep" className="absolute inset-0" style={{ background: 'var(--ink)' }} />}
-      {status === 'partial' && (
-        <>
-          <span data-draw="sweep" className="twd-hatch absolute inset-0" />
-          <span data-draw="extend" className="absolute inset-y-0 left-0 w-1/2" style={{ background: 'var(--ink)' }} />
-        </>
-      )}
-    </span>
   );
 }

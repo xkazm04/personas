@@ -21534,7 +21534,6 @@
       "variantCopy": {
         "drafting": {
           "sheetTitle": "트윈 설계도",
-          "detailOf": "{section} 상세",
           "fullAt": "{count}에서 가득 참",
           "moreChannels": "+{count}개 더",
           "notes": "메모",
@@ -21547,12 +21546,9 @@
         }
       },
       "variants": {
-        "drafting": "도면",
+        "drafting": "Personas 청사진",
         "label": "블루프린트 스타일",
-        "strata": "지층",
-        "draftingNative": "Personas 청사진",
-        "draftingSurface": "반반",
-        "draftingTint": "Personas 터치"
+        "strata": "지층"
       }
     },
     "card": {

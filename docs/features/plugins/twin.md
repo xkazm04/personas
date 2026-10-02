@@ -407,20 +407,20 @@ while it reads. The page re-reads when the engine reports progress
 attached through the buffered singleton listener), and when the experience
 overlay closes over it.
 
-### The prototype variants
+### The blueprint variants
 
-The renderers behind the switcher are lazy chunks implementing the same props;
-the pick is persisted (`twin-blueprint-variant`) and the training overlay reads
-the same pick, so judging a variant judges both surfaces at once. Round one
-(2026-10-01) built four directions; the owner kept the **Drafting sheet**,
-kept **Strata** while its layer one is considered for another module, and
-deleted Dossier and Radial. Round two adds three versions of the drafting sheet
-that sit progressively closer to the Personas theme, subtle to major:
-**Tinted sheet**, **Inked page** and **Native drafting** (`variants/drafting/themes/`),
-and redraws every drafting sheet the way a draughtsman would: frames first, in
-parallel at each level, then each frame's content in order. Still a prototype
-round (`TODO(prototype, 2026-10-01)`): the losing versions and the switcher are
-deleted once one is picked.
+The Detail page offers two renderers behind its switcher (lazy chunks, the pick
+persisted as `twin-blueprint-variant`; the training overlay reads the same
+pick): **Personas blueprint** (`drafting`, the default) and **Strata**. The
+Personas blueprint is the outcome of three review rounds (2026-10-01/02): of
+four first directions the owner kept the drafting sheet; its cyanotype was then
+absorbed by the Personas theme in three levels and the owner kept the deepest -
+the blueprint's grid, hatches and construction lines redrawn in the active
+theme's colour on glowing Personas cards, no fixed blue. It draws itself in:
+every frame traces first, wave by nesting depth, then each container writes its
+content in reading order (`variants/drafting/draw/`). Strata stays while its
+layer one is considered for another module. Dossier, Radial, the cyanotype
+sheet and the two intermediate levels were deleted.
 
 ### The training overlay
 
@@ -715,7 +715,7 @@ src/features/plugins/twin/
 │   ├── blueprintDelta.ts · useAnswerBeat.ts · beatMotion.ts  # what an answer changed, and the beat that plays it
 │   ├── BlueprintStage.tsx · StageHand.tsx · useStageBlueprint.ts  # the training overlay's base layer and the hand over it
 │   ├── variantRegistry.ts · blueprintVariant.ts  # the renderers (lazy chunks) and the persisted pick
-│   └── variants/{drafting,strata}/  # the drafting sheet (+ themes/tint|surface|native) and Strata
+│   └── variants/{drafting,strata}/  # the Personas blueprint (with its draw-in engine) and Strata
 ├── experience/                         # the card-table overlay (see FUSION.md)
 │   ├── TwinExperienceHost.tsx · ExperienceBody.tsx · launcher.ts  # the overlay, its layout, the one way to open it (`door` opens a layer on arrival)
 │   ├── table/                          # CardTable · DealerCard · DecisionFan · ProposalFan · TableChrome (the doors) · TableComposer · TableTrail · useTurn

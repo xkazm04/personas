@@ -1,0 +1,279 @@
+/* The Personas blueprint's paper, ink and cards (spark twin-portable-blueprint;
+   round 4 kept round 3's level 3 as THE drafting sheet). Personas has taken
+   the blueprint and made it its own: no foreign blue, yet every blueprint
+   pattern stands at full presence in the THEME's colour:
+
+   - the paper is the theme's background tinted toward its primary, with the
+     80/16 px drafting grid as a texture of it in the primary;
+   - the double sheet frame (the drawn SheetBorder plus the paper's inner
+     edge), the hatches ("not measured" included), the dimension lines and the
+     construction lines past each card's corners are drawn in the primary;
+   - the regions and the title block are Personas cards with the theme's glow
+     and gradient, each section named by its icon in a lit chip; the labels are
+     the app's eyebrows and the figures its type ramp;
+   - every state is told in the app's status roles:
+
+     done ........... --status-success (the ink round the card, the tick, a
+                      covered topic or goal, a complete readiness ring)
+     in progress .... --primary with its glow
+     awaiting review  --status-pending (the hatch after a topic's answers, the
+                      memories waiting)
+     rejected ....... --status-error
+
+   States are re-inked by rebinding --ink in the subtree that holds the state,
+   so the drawing components stay colour-free. Midnight draws a blue
+   blueprint, Bronze a copper one, Pink a rose one, a light theme ink on paper
+   in its own hue. No colour literal anywhere: every value is a token or a
+   color-mix() over tokens. The drawing's own patterns, hover and layout rules
+   live in twinDrafting.css.
+
+     --paper, --ink, --ink-strong, --ink-dim, --ink-faint ... paper and ink
+     --grid-major, --grid-fine ............................. the drafting grid
+     --twd-paper-glow ...................................... a wash over the paper
+     --twd-edge-line, --twd-edge-shadow ...................... the sheet's card edge
+     --twd-card-* ........................................... the region cards
+     --twd-construction ..................................... construction lines */
+
+.twd-sheet {
+  --paper: color-mix(in srgb, var(--primary) 9%, var(--background));
+  --ink: var(--primary);
+  --ink-strong: color-mix(in srgb, var(--primary) 50%, var(--foreground));
+  --ink-dim: color-mix(in srgb, var(--primary) 50%, transparent);
+  --ink-faint: color-mix(in srgb, var(--primary) 22%, transparent);
+  --grid-major: color-mix(in srgb, var(--primary) 18%, transparent);
+  --grid-fine: color-mix(in srgb, var(--primary) 8%, transparent);
+  /* The page's own glow, a radial wash from the top, as Personas surfaces carry. */
+  --twd-paper-glow: radial-gradient(90% 70% at 50% -10%, color-mix(in srgb, var(--primary) 14%, transparent), transparent 70%);
+
+  --twd-edge-line: color-mix(in srgb, var(--primary) 40%, transparent);
+  --twd-edge-shadow: var(--shadow-elevation-3), 0 0 48px -12px color-mix(in srgb, var(--primary) 55%, transparent);
+
+  --twd-card-radius: var(--radius-card);
+  /* Mostly opaque over the textured paper, so the figures sit on the card and the grid only shimmers through. */
+  --twd-card-bg:
+    linear-gradient(158deg, color-mix(in srgb, var(--primary) 16%, transparent) 0%, color-mix(in srgb, var(--primary) 4%, transparent) 48%, transparent 100%),
+    var(--card-bg),
+    color-mix(in srgb, var(--background) 84%, transparent);
+  --twd-card-line: color-mix(in srgb, var(--primary) 34%, transparent);
+  --twd-card-shadow:
+    var(--shadow-elevation-2),
+    0 0 34px -12px color-mix(in srgb, var(--primary) 50%, transparent);
+  --twd-card-shadow-hover:
+    var(--shadow-elevation-3),
+    0 0 40px -8px color-mix(in srgb, var(--primary) 60%, transparent);
+  --twd-construction: var(--ink-dim);
+  --twd-icon-line: color-mix(in srgb, var(--primary) 45%, transparent);
+  --twd-ring-track: color-mix(in srgb, var(--primary) 16%, transparent);
+  --twd-glow: drop-shadow(0 0 4px color-mix(in srgb, var(--primary) 55%, transparent));
+  --twd-glow-done: drop-shadow(0 0 4px color-mix(in srgb, var(--status-success) 55%, transparent));
+  --twd-rejected-fill: color-mix(in srgb, var(--status-error) 45%, transparent);
+
+  /* The sheet sits on a Personas card edge, inset from the page so the edge
+     can be seen; the gutters inside it are tighter by as much, so layer one
+     keeps its working widths. */
+  margin: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--twd-edge-line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--twd-edge-shadow), inset 0 0 0 2px var(--ink-faint);
+  background-color: var(--paper);
+  background-image:
+    var(--twd-paper-glow),
+    linear-gradient(var(--grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
+    linear-gradient(var(--grid-fine) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-fine) 1px, transparent 1px);
+  background-size: 100% 100%, 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+}
+
+/* Light themes: ink on paper in the theme's hue; no back-lighting (it reads as smudge on white). */
+[data-theme^='light'] .twd-sheet {
+  --paper: color-mix(in srgb, var(--primary) 5%, var(--background));
+  --ink-strong: color-mix(in srgb, var(--primary) 70%, var(--foreground));
+  --ink-dim: color-mix(in srgb, var(--primary) 55%, transparent);
+  --ink-faint: color-mix(in srgb, var(--primary) 24%, transparent);
+  --grid-major: color-mix(in srgb, var(--primary) 20%, transparent);
+  --grid-fine: color-mix(in srgb, var(--primary) 9%, transparent);
+  --twd-paper-glow: linear-gradient(transparent, transparent);
+  --twd-edge-shadow: var(--shadow-elevation-2);
+  --twd-card-bg:
+    linear-gradient(158deg, color-mix(in srgb, var(--primary) 8%, transparent) 0%, transparent 55%),
+    color-mix(in srgb, var(--card-bg) 90%, transparent);
+  --twd-card-line: color-mix(in srgb, var(--primary) 26%, var(--card-border));
+  --twd-card-shadow: var(--shadow-elevation-2);
+  --twd-card-shadow-hover: var(--shadow-elevation-3);
+  --twd-glow: none;
+  --twd-glow-done: none;
+}
+
+/* In the training overlay the table already frames the sheet: no margin, so
+   the rows that move to layer two move at the same sizes. */
+.twd-sheet[data-mode='stage'] {
+  margin: 0;
+}
+
+/* The drawn border, 8px in from the card's edge, runs round its corners. */
+.twd-sheet .twd-sheet-border rect {
+  rx: 5px;
+}
+
+/* The width the margin took back, returned by the gutters between parts. */
+.twd-sheet .twd-plan {
+  gap: 0.75rem;
+}
+.twd-sheet .twd-voice-grid {
+  column-gap: 0.75rem;
+}
+.twd-sheet .twd-facts-l1 {
+  column-gap: 1.5rem;
+}
+
+/* ---------- the region cards ----------
+   Every region-sized box is a card (`.twd-card`, BoxFrame.tsx) made of three
+   parts the draw-in schedules like any other: its traced frame (depth n), its
+   fill (`.twd-card-fill`, depth n+1, laid in as the inner frames trace,
+   carrying the card's surface and elevation) and its content, drawn in reading
+   order once every frame stands. Construction lines run on past its corners,
+   traced with the fill. */
+.twd-sheet .twd-card {
+  /* The fill sits under the card's content, never under the paper. */
+  isolation: isolate;
+  border-radius: var(--twd-card-radius);
+}
+.twd-sheet .twd-card-fill {
+  z-index: -1;
+  border-radius: var(--twd-card-radius);
+  background: var(--twd-card-bg);
+  box-shadow: var(--twd-card-shadow);
+  transition: box-shadow var(--duration-fast, 150ms) ease-out;
+}
+/* The frame and the section's ink run round the card's own corners. */
+.twd-sheet .twd-card > svg[data-draw-svg='outline'] rect,
+.twd-sheet .twd-card > svg > rect.twd-ink-trace {
+  rx: var(--twd-card-radius);
+}
+/* A region on layer one is the door to its zoom: the card lifts and glows. */
+.twd-sheet .twd-region.twd-card[role='button']:hover > .twd-card-fill {
+  box-shadow: var(--twd-card-shadow-hover);
+}
+/* The mark the last answer landed on, when it is a whole card: lit from the fill. */
+.twd-sheet .twd-card.twd-target {
+  background-color: transparent;
+  box-shadow: none;
+}
+.twd-sheet .twd-card.twd-target > .twd-card-fill {
+  box-shadow: var(--twd-card-shadow-hover);
+}
+/* The ruled divider between the title card's two cells. */
+.twd-sheet .twd-title-rule {
+  background: var(--twd-card-line);
+}
+
+/* ---------- type ---------- */
+.twd-sheet .twd-eyebrow {
+  color: var(--muted-foreground);
+}
+
+/* ---------- the section chip ---------- */
+.twd-sheet .twd-icon {
+  color: var(--primary);
+}
+.twd-sheet .twd-icon > svg[data-draw-svg='outline'] rect {
+  rx: var(--radius-interactive);
+}
+.twd-sheet .twd-icon-fill {
+  background: linear-gradient(140deg, color-mix(in srgb, var(--primary) 28%, transparent), color-mix(in srgb, var(--primary) 8%, transparent));
+  box-shadow: 0 0 16px -3px color-mix(in srgb, var(--primary) 50%, transparent);
+}
+[data-theme^='light'] .twd-sheet .twd-icon-fill {
+  box-shadow: none;
+}
+
+/* ---------- a section's ink round its card: in progress lit, done in success ---------- */
+.twd-sheet .twd-ink-trace {
+  stroke: var(--primary);
+  stroke-width: 2px;
+  filter: var(--twd-glow);
+}
+.twd-sheet .twd-region[data-ink='done'] .twd-ink-trace,
+.twd-sheet .twd-region[data-ink='done'] .twd-done-tick path {
+  stroke: var(--status-success);
+  filter: var(--twd-glow-done);
+}
+
+/* ---------- training: covered in success, awaiting review in pending ---------- */
+.twd-sheet [data-topic][data-tier='covered'],
+.twd-sheet [data-goal][data-state='covered'] {
+  --ink: var(--status-success);
+  --ink-strong: var(--status-success);
+}
+.twd-sheet [data-topic] .twd-hatch-ink {
+  --ink: var(--status-pending);
+}
+/* Meters, not rules: a topic's track and a goal's gauge are rounded. */
+.twd-sheet .twd-track > svg rect {
+  rx: 4px;
+}
+.twd-sheet .twd-track [data-draw='extend'],
+.twd-sheet .twd-track .twd-hatch-ink {
+  border-radius: 4px;
+}
+.twd-sheet .twd-gauge > svg rect {
+  rx: 4px;
+}
+.twd-sheet .twd-gauge > [data-draw='rise'] {
+  border-radius: 3px;
+}
+
+/* ---------- voice: each elevation a small rounded chart ---------- */
+.twd-sheet .twd-elev > svg rect {
+  rx: 6px;
+}
+.twd-sheet .twd-elev > [data-draw='rise'] {
+  border-radius: 2px 2px 0 0;
+}
+
+/* ---------- knowledge: memories in their roles ---------- */
+.twd-sheet [data-tally='approved'],
+.twd-sheet [data-part='approved'] {
+  --ink: var(--status-success);
+  --ink-strong: var(--status-success);
+}
+.twd-sheet [data-tally='awaiting'],
+.twd-sheet [data-part='awaiting'] {
+  --ink: var(--status-pending);
+  --ink-strong: var(--status-pending);
+}
+.twd-sheet [data-tally='rejected'],
+.twd-sheet [data-part='rejected'] {
+  --ink: var(--status-error);
+  --ink-strong: var(--status-error);
+  --ink-dim: color-mix(in srgb, var(--status-error) 60%, transparent);
+}
+
+/* ---------- readiness: a ring, lit while short of complete ---------- */
+.twd-sheet .twd-ring {
+  stroke: var(--primary);
+  filter: var(--twd-glow);
+}
+.twd-sheet [data-complete='true'] .twd-ring {
+  stroke: var(--status-success);
+  filter: var(--twd-glow-done);
+}
+
+/* ---------- a section's head: the share as a lead figure, set solid so the
+   head stays no taller than the chip (the anti-shrink rule holds at 1280x800) ---------- */
+.twd-sheet .twd-share {
+  line-height: 1;
+}
+
+/* ---------- the identity card: its brand mark steps out of a narrow card
+   (the overlay's corner) instead of squeezing the name ---------- */
+.twd-sheet .twd-title {
+  container: twd-title / inline-size;
+}
+@container twd-title (max-width: 26rem) {
+  .twd-title-mark {
+    display: none;
+  }
+}

@@ -1,9 +1,10 @@
 // Which blueprint the Twin shows (spark twin-portable-blueprint, 2026-10-01).
-// Four prototype directions compete behind one persisted switch on the Detail
-// page; the training overlay reads the same pick, so judging a variant judges
-// both surfaces at once.
-// TODO(prototype, 2026-10-01): the owner picks or fuses from the running app;
-// the losing variants and this switch are deleted in that round.
+// The kept directions sit behind one persisted switch on the Detail page; the
+// training overlay reads the same pick, so judging a variant judges both
+// surfaces at once. Round 4 (2026-10-02) kept "Personas blueprint"
+// (`drafting`) and parked Strata for a possible use in another module.
+// TODO(prototype, 2026-10-01): once Strata's future is decided, this switch
+// goes with it.
 import { useCallback, useState } from 'react';
 
 import { safeLocalGet, safeLocalSet } from '@/lib/safeLocalStorage';

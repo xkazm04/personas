@@ -928,7 +928,6 @@
     "variantCopy": {
       "drafting": {
         "sheetTitle": "Rancangan twin",
-        "detailOf": "Detail {section}",
         "fullAt": "Penuh pada {count}",
         "moreChannels": "+{count} lagi",
         "notes": "Catatan",
@@ -941,12 +940,9 @@
       }
     },
     "variants": {
-      "drafting": "Lembar gambar teknik",
+      "drafting": "Cetak biru Personas",
       "label": "Gaya cetak biru",
-      "strata": "Strata",
-      "draftingNative": "Cetak biru Personas",
-      "draftingSurface": "Setengah-setengah",
-      "draftingTint": "Sentuhan Personas"
+      "strata": "Strata"
     }
   },
   "card": {

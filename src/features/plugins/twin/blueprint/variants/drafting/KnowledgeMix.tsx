@@ -10,7 +10,7 @@ type Part = 'approved' | 'awaiting' | 'rejected';
 const FILL: Record<Part, string> = { approved: '', awaiting: 'twd-hatch-ink', rejected: '' };
 
 /**
- * Stage mode's knowledge: the three memory counts as one composition bar
+ * Layer one's (and the stage's) knowledge: the three memory counts as one composition bar
  * (shares of all memories, a part of a whole) with a key line per count. A
  * count the source could not read hatches the whole bar and says so. The bar
  * is a frame its segments are laid into one after another; each key line is
@@ -73,9 +73,9 @@ export default function KnowledgeMix({ knowledge }: { knowledge: Knowledge }) {
   );
 }
 
-/** A theme version may lay a fill into the rejected share (`--twd-rejected-fill`); on paper it is left open. */
+/** The rejected share is laid in its role's fill (`--twd-rejected-fill`, sheet.css). */
 function swatch(part: Part) {
   if (part === 'approved') return { background: 'var(--ink)' };
-  if (part === 'rejected') return { background: 'var(--twd-rejected-fill, transparent)', borderRight: '1px solid var(--ink-dim)' };
+  if (part === 'rejected') return { background: 'var(--twd-rejected-fill)', borderRight: '1px solid var(--ink-dim)' };
   return {};
 }

@@ -47,9 +47,6 @@ function ProbeVariant({ mode, focus, onFocus, onOpenDetail }: BlueprintVariantPr
 vi.mock('../variantRegistry', () => ({
   BLUEPRINT_VARIANTS: {
     drafting: ProbeVariant,
-    draftingTint: ProbeVariant,
-    draftingSurface: ProbeVariant,
-    draftingNative: ProbeVariant,
     strata: ProbeVariant,
   },
 }));

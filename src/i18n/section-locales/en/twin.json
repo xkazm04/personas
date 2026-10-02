@@ -860,11 +860,8 @@
     },
     "variants": {
       "label": "Blueprint style",
-      "drafting": "Drafting sheet",
-      "strata": "Strata",
-      "draftingTint": "Personas touch",
-      "draftingSurface": "Half and half",
-      "draftingNative": "Personas blueprint"
+      "drafting": "Personas blueprint",
+      "strata": "Strata"
     },
     "metrics": {
       "bio": "Bio",
@@ -941,7 +938,6 @@
         "moreChannels": "+{count} more",
         "origin": "Origin",
         "fullAt": "Full at {count}",
-        "detailOf": "Detail of {section}",
         "notes": "Notes"
       },
       "strata": {

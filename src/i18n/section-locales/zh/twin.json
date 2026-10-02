@@ -928,7 +928,6 @@
     "variantCopy": {
       "drafting": {
         "sheetTitle": "分身设计图",
-        "detailOf": "{section}详情",
         "fullAt": "{count} 时已满",
         "moreChannels": "还有 {count} 个",
         "notes": "备注",
@@ -941,12 +940,9 @@
       }
     },
     "variants": {
-      "drafting": "工程图纸",
+      "drafting": "Personas 蓝图",
       "label": "蓝图样式",
-      "strata": "地层",
-      "draftingNative": "Personas 蓝图",
-      "draftingSurface": "各占一半",
-      "draftingTint": "Personas 点缀"
+      "strata": "地层"
     }
   },
   "card": {

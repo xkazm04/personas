@@ -1,47 +1,49 @@
-# Twin blueprint: Drafting sheet (WP7, round 2 draw-in)
+# Twin blueprint: "Personas blueprint" (`drafting`)
 
-The twin is drawn as a technical drawing on Studio's cyanotype sheet (`.drafting-root`). Four regions sit on the sheet like rooms on a plan, with a title block in the bottom-right corner. Each region is an inked drawing of its quantities, and its outline is inked clockwise as far as the section is drawn. Dashed means pending, solid ink means done, hatched means not measured.
+Spark `twin-portable-blueprint`, round 4 (2026-10-02). The owner kept round 3's level 3 ("very nice, keep Personas blueprint variant, remove Half and Half, Personas Touch, Drafting sheet"). It is now the only look of the `drafting` variant. The switcher offers two: **Personas blueprint** (`drafting`, the default) and **Strata** (parked for a possible use in another module).
 
-## The draw-in (round 2)
+The look: the twin drawn as a technical drawing that Personas has made its own. There is no foreign blue. The paper is the theme's background tinted toward its primary, with the 80/16 px drafting grid as a texture of it. The double sheet frame, the hatches, the dimension lines and the construction lines past each card's corners are in the primary. The regions are glowing Personas cards, each named by its icon in a lit chip. The title block is the twin's identity card, with the traced brand glyph and a readiness ring. Labels are the app's eyebrows, figures use the app's type ramp, and every state uses the app's status roles. Midnight draws a blue blueprint, Bronze a copper one, Pink a rose one, and a light theme draws ink on paper in its own hue. The sheet still draws itself in like a blueprint: frames by depth, then each container's content in reading order, with readiness pressed last.
 
-Every sheet draws itself in the way a draughtsman would. The engine lives in `src/features/plugins/twin/blueprint/variants/drafting/draw/`, and its schedule tree is written at the top of `DrawSheet.tsx`.
-1. **Frames first, level by level, all in parallel.** Depth 0 traces first: the sheet border, the four region outlines and the title block (plus the notes box on the stage). Depth 1 traces only once depth 0 has finished: each channel's elevation box and tick baseline, the topic tracks, the goal gauges, the language balloons, the tally gate rules, the bio scale and extension lines, the title block cells. Depth 2 comes next: the tier marks in each track and the readiness slots in their cell. Every frame is a stroke (`pathLength` 100 and `stroke-dashoffset`). Dashed frames are revealed through a solid mask that traces, so nothing fades in.
-2. **Then content, in reading order inside every container.** Every container (a region, a channel, a tally, a topic, a gauge, a title block cell, a schedule row) writes its own parts one after another. Containers write side by side, all starting the moment the last frame has traced. Bars extend, stations rise one by one, ticks and tally strokes are struck one at a time, hatches sweep, and words and figures are lettered one character at a time. A region's balloon, name and share are its own content; the ink then runs round its outline to the share, and a tick follows.
-3. **The readiness stamp is pressed last**, after every other part of the sheet.
+## Code
 
-Where it plays: L1 on the first look of a mount (a visit to the Detail page, or a variant switch; back from a zoom, L1 is simply there). L2 every time a region zooms open; it draws while the zoom grows. The stage plays once when the overlay opens, and an answer's delta plays on the drawn sheet; an answer that arrives mid-draw finishes the drawing first. The `working` miniature uses the same engine in a CSS loop. Reduced motion draws everything at once: nothing is planned, nothing is lettered, the pen stays off. The pen (Studio's `DraftingPen`) sets down on the largest frame of each wave, then on a container that is writing, then on the stamp. It leaves early, so it arrives with the ink.
-
-Mechanics: the planner reads each drawing's DOM once at mount (depth = framed boxes above a frame; container = nearest `[data-draw-scope]`) and writes `--draw-at` / `--draw-for` onto the parts. One CSS animation per part does the rest. Nothing re-renders per step. The engine keeps its own animation events away from React's root listener. Timing constants are in `draw/drawTiming.ts`: 550 ms per frame wave, 28 ms per letter, 90-220 ms per content part.
+- `variants/drafting/index.tsx`: the renderer. It has no theme prop and no theme context.
+- `variants/drafting/sheet.css`: paper, ink, grid, sheet edge, cards, chips and status re-inks. It has no colour literal: every value is a token or a `color-mix()` over tokens.
+- `variants/drafting/twinDrafting.css`: hatches, linings, the stage layout, the zoom and the container queries that move rows to layer two.
+- `variants/drafting/draw/`: the draw-in engine, unchanged.
+- Studio's `drafting.css` is still imported, only for its live hatch loop (`.drafting-hatch`, the delta note).
 
 ## Review artifacts
 
+All files come from the page harness (Vite dev build, system Chrome).
+
 | File | What it shows |
 |---|---|
-| `draw-in-detail-rich-dark-midnight.webm` | L1, rich twin (9 channels, full plan), 1280x800. |
-| `draw-in-detail-focus-light.webm` | L2 Voice opened directly (it fades in and draws itself), light theme. |
-| `draw-in-zoom-middraw-dark-midnight.webm` | L1 drawing, Voice pressed 2.3 s in: the zoom grows out of the region and draws itself. |
-| `draw-in-integrated-detail-dark-midnight.webm` | The real Detail page (`twin/detail`), 1280x800. |
-| `draw-in-integrated-stage-dark-midnight.webm` | The training overlay opening (`twin/stage-dealt`): the stage draws itself under the dealt card, stamp last. |
-| `draw-in-integrated-stage-answer-dark-midnight.webm` | `twin/stage`: the harness answers the card at once, which finishes the drawing; the delta then plays on the drawn sheet. |
-| `draw-in-detail-rich-filmstrip.png`, `draw-in-detail-focus-filmstrip.png` | 8 frames at fixed times, every animation seeked to the same moment (the pen is hidden in the strips because script motion cannot be seeked). |
+| `<state>-<size>-<theme>.png` | The six fixture states: `detail` (L1, one channel), `detail-empty` (L1, a just-forged twin), `detail-rich` (L1, nine channels and a full plan), `detail-focus` (L2, Voice), `stage` (the reconciled delta played), `stage-working` (the empty twin while the engine works). Sizes `1280x800` and `1920x1080`, themes `dark-midnight` and `light`. |
+| `integrated-detail-1280x800-<theme>.png` | The real Twin Detail page (`twin/detail`, synthetic tape). |
+| `integrated-stage-1280x800-<theme>.png` | The training overlay over it (`twin/stage`), after the answer is played. |
+| `draw-in-detail-rich-dark-midnight.webm` | The L1 draw-in, rich twin, dark-midnight. |
+| `draw-in-detail-rich-dark-bronze.webm` | The same in dark-bronze: the copper blueprint drawing itself. |
+| `draw-in-filmstrip-dark-midnight.png` | The L1 draw-in at 0.3, 0.7, 1.3, 2.2, 3.4 and 6.0 s (planned 5.0 s: 323 parts, 88 frames, 3 depths, 470 letters; the pen is hidden). |
 
-Measured in the page harness (Vite dev build, system Chrome, 1280x800), with the planned length against the length measured from the `drawing` to the `done` state:
+The two videos are round 3's level-3 recordings, moved here. Round 4 left the draw-in schedule unchanged: the schedule written on the DOM (every part's kind, moment, length and depth) is identical before and after the collapse for `detail-rich`, `detail-focus`, `stage` and `detail-empty`.
 
-| Surface | Planned | Measured | Parts / letters |
-|---|---|---|---|
-| L1 rich | 5490 ms | 5441 ms | 350 / 474 |
-| L2 Voice (rich) | 3620 ms | 3592 ms | 207 / 271 |
-| Integrated Detail (L1) | 4066 ms | 4053 ms | 180 / 429 |
-| Integrated stage (opening) | 4066 ms | 4138 ms | 122 / 335 |
+Comparison with round 3: every fixture still was shot before the collapse (`?kit=draftingNative`) and after it (`?kit=drafting`) at the same sizes and themes, then diffed pixel by pixel. 17 of 24 are identical. Three (`detail-rich` light at 1280, and both themes at 1920) differ in 9 to 19 pixels with a maximum channel delta of 2. That is anti-aliasing noise; round 3's own committed still differs from a re-shoot of itself in the same 16 pixels. The four `stage-working` stills differ only where the pen stands (about 23x39 px): the pen moves under script control, so its position at the moment of the shot varies. The before shots themselves match round 3's committed `level-3-personas` stills (L2 and stage pixel-identical, L1 within a channel delta of 4).
 
-## Final-state stills
+The integrated Detail page is laid out differently from round 3, and the look itself has not changed. With two options instead of five, the switcher fits on the header's line, so the blueprint is about 45 px taller and Knowledge shows its facts row.
 
-The stills were re-shot after the draw-in with `shoot.mjs --settle 9000`. The only visible change from round 1 is the faint rule under each tally gate, which is now the gate's frame.
-- `detail-*`: L1, one-channel twin. Identity is the bio as a dimension line against its target, plus language balloons. Voice is one 8-station elevation per channel, with sample ticks above a baseline and rule ticks below. Knowledge is tallies (approved inked, awaiting dashed, rejected crossed). Training is six topic scale bars, goal gauges and the kind-mix linings.
-- `detail-empty-*`: a just-forged twin. Every part is dashed or hatched, never blank and never 0.
-- `detail-rich-*`: nine channels and a full plan, the overflow test. Rows that do not fit move to L2 through container queries; nothing shrinks.
-- `detail-focus-*`: L2 Voice, a drawing schedule (channels x the 8 dimensions, samples, rules, directives, origin symbols). `focus-identity|knowledge|training-*` show the other three zooms (pressed from L1, shot once drawn).
-- `stage-*`: the training base layer with the reconciled delta played on the drawn sheet: the answered topic and goal lit and re-inked, a leader down the gutter to the notes, and the notes carrying the gain and the model's why.
-- `stage-working-*`: the engine working with no question. The open middle shows the plan in miniature, drawn, held and lifted away in a loop.
-- `integrated-*`: the variant inside the real Detail page and the training overlay (WP6 shell), at 1280x800.
-Sizes 1280x800 and 1920x1080, themes dark-midnight and light. Source: `src/features/plugins/twin/blueprint/variants/drafting/`.
+Light shots use the harness's default brightness (0.82 on light themes), which makes them look grey-washed. The integrated shots' switcher still reads "Drafting sheet": the harness reads the split section locales, which the Director regenerates with the translations.
+
+Anti-shrink, probed on every shot (a visible part outside its box, a label cut by an ellipsis, a clamped line that overflows): nothing on any surface. One exception, unchanged since round 2: in L2, the header's lead figure sits 2 px above the zoom's box (its line box), which is not visible.
+
+Re-shoot a still:
+
+```
+node scripts/style/shoot.mjs --module twin/blueprint/detail-rich --tape synthetic --kit drafting --sizes 1280x800,1920x1080 --themes dark-midnight,light --out docs/design/twin-blueprint/drafting --label detail-rich
+node scripts/style/shoot.mjs --module twin/detail --tape synthetic --sizes 1280x800 --themes dark-midnight,light --out docs/design/twin-blueprint/drafting --label integrated-detail
+```
+
+## Tests
+
+- `__tests__/draftingSheet.test.tsx`: renders on its own paper in L1, every L2 and the stage, with no theme attribute. Every region, the title block, the zoom and the notes are cards: frame at depth 0, then fill and construction lines at depth 1. It also covers app titles and eyebrows, icon chips, the traced brand glyph, the readiness ring pressed last, slots as kit status dots, and the layer-one composition bar (the zoom keeps the tallies). The real stylesheet is injected into jsdom for a dark and a light theme: the 80/16 px grid and the sheet border are present, and paper and ink read the primary. A text check shows that `sheet.css`, `twinDrafting.css` and `draw/draw.css` name no colour at all, with a planted-literal self-check.
+- `__tests__/drawSchedule.test.tsx`: the draw-in schedule's invariants for 3 fixtures x L1, every L2 and the stage, the nesting, reading order, reduced motion, a zoom pressed mid-draw, and stage deltas.
+- `__tests__/blueprintVariant.test.ts` (one level up): the two ids, and the fallback to `drafting` for a stored retired id (`draftingTint`, `draftingSurface`, `draftingNative`, `dossier`, `radial`) or an unknown one.

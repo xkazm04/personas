@@ -6,10 +6,9 @@
  * each container's content strictly one part after another in document
  * (reading) order, the stamp last; reduced motion plans nothing; a zoom opened
  * mid-draw draws itself; the stage's delta waits for the drawn sheet; the
- * working miniature loops in CSS. Round 2 WP-C: the invariants hold for every
- * theme version of the sheet (the planner reads the rendered page, so a theme
- * that turns a frame into a card moves its parts in the schedule with it);
- * the theme-specific structure is in draftingThemes.test.tsx.
+ * working miniature loops in CSS. The planner reads the rendered page, so a
+ * card's fill and construction lines take their place in the schedule as the
+ * wave inside its frame; the look itself is in draftingSheet.test.tsx.
  */
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -20,19 +19,15 @@ import {
   FIXTURE_DELTA_INSTANT, FIXTURE_DELTA_RECONCILED, FIXTURE_EMPTY, FIXTURE_ONE_CHANNEL, FIXTURE_RICH,
 } from '../../../__fixtures__/blueprintFixtures';
 import { DRAW_TIMING, LOOP_LAST_START_SHARE, LOOP_MIN_CYCLE } from '../draw/drawTiming';
-import type { DraftingTheme } from '../draftingTheme';
 import DraftingBlueprint from '../index';
 
-function setup(over: Partial<BlueprintVariantProps> = {}, theme: DraftingTheme = 'cyanotype') {
+function setup(over: Partial<BlueprintVariantProps> = {}) {
   const props: BlueprintVariantProps = {
     model: FIXTURE_RICH, mode: 'detail', focus: null, onFocus: vi.fn(), onOpenDetail: vi.fn(),
     delta: null, working: false, reduced: false, ...over,
   };
-  return { ...render(<DraftingBlueprint {...props} theme={theme} />), props };
+  return { ...render(<DraftingBlueprint {...props} />), props };
 }
-
-/** The baseline and the three theme versions of round 2 WP-C. */
-const THEMES: DraftingTheme[] = ['cyanotype', 'tint', 'surface', 'native'];
 
 interface Planned { el: Element; kind: string; at: number; dur: number; depth: number | null; scope: Element }
 
@@ -106,17 +101,17 @@ const kindsIn = (scope: Element) =>
 const FIXTURES: Array<[string, TwinBlueprintModel]> = [['empty', FIXTURE_EMPTY], ['one channel', FIXTURE_ONE_CHANNEL], ['rich', FIXTURE_RICH]];
 const SECTIONS: SectionId[] = ['identity', 'voice', 'knowledge', 'training'];
 
-describe.each(THEMES)('every sheet keeps the draughtsman\'s order: %s', (theme) => {
+describe('every sheet keeps the draughtsman\'s order', () => {
   it.each(FIXTURES)('%s: L1, every L2 and the stage', (_name, model) => {
-    const l1 = setup({ model }, theme);
+    const l1 = setup({ model });
     expectSchedule(drawing());
     l1.unmount();
     for (const focus of SECTIONS) {
-      const l2 = setup({ model, focus }, theme);
+      const l2 = setup({ model, focus });
       expectSchedule(drawing());
       l2.unmount();
     }
-    const st = setup({ model, mode: 'stage' }, theme);
+    const st = setup({ model, mode: 'stage' });
     expectSchedule(drawing());
     st.unmount();
   });
@@ -129,20 +124,23 @@ describe('the nesting is the component structure', () => {
     expect(items.filter((i) => i.depth === 0)).toHaveLength(6);
     for (const s of SECTIONS) expect(depthOf(screen.getByTestId(`twd-region-${s}`))).toBe('0');
     expect(depthOf(screen.getByTestId('twd-title-block'))).toBe('0');
-    // Depth 1: a channel's elevation, a topic's track, a gauge, a title block cell.
+    // Depth 1: a card's fill and its construction lines, a channel's elevation, a topic's track, a gauge, the title card's divider.
+    const voice = screen.getByTestId('twd-region-voice');
+    expect(voice.querySelector(':scope > .twd-card-fill')).toHaveAttribute('data-draw-depth', '1');
+    voice.querySelectorAll(':scope > svg.twd-construction [data-draw="frame"]').forEach((c) => expect(c).toHaveAttribute('data-draw-depth', '1'));
+    expect(screen.getByTestId('twd-title-block').querySelector('.twd-title-rule')).toHaveAttribute('data-draw-depth', '1');
     expect(depthOf(document.querySelector('[data-channel="email"] [data-measured]'))).toBe('1');
     expect(depthOf(document.querySelector('[data-topic="opinions"] .relative.h-2\\.5'))).toBe('1');
     expect(depthOf(document.querySelector('[data-goal="g2"] .relative.block'))).toBe('1');
-    // Depth 2: the tier marks in a track and the readiness slots in their cell.
+    // Depth 2: the tier marks in a track.
     expect(document.querySelector('[data-topic="opinions"] i[data-draw="frame"]')).toHaveAttribute('data-draw-depth', '2');
-    expect(depthOf(document.querySelector('[data-slot="tone"] span'))).toBe('2');
     expect(byScope.size).toBeGreaterThan(30);
   });
 
-  it('a region writes its own parts in reading order: balloon, number, name, share, the ink out to it', () => {
+  it('a region writes its own parts in reading order: the chip and its glow, the icon, the name, the share, the ink out to it', () => {
     setup();
     const voice = screen.getByTestId('twd-region-voice');
-    expect(kindsIn(voice).slice(0, 6)).toEqual(['stroke', 'rise', 'write', 'write', 'write', 'ink']);
+    expect(kindsIn(voice).slice(0, 6)).toEqual(['stroke', 'rise', 'mark', 'write', 'write', 'ink']);
   });
 
   it('a channel letters its name, raises its eight stations one by one, then strikes its ticks', () => {
@@ -155,13 +153,13 @@ describe('the nesting is the component structure', () => {
     expect(kinds.slice(9)).toEqual(Array(15).fill('tick'));
   });
 
-  it('a tally letters its label and count, then strikes every stroke in turn', () => {
-    setup();
-    const approved = document.querySelector('[data-tally="approved"]')!;
+  it('a tally (the zoom keeps them) letters its label and count, then strikes every stroke in turn', () => {
+    setup({ focus: 'knowledge' });
+    const approved = screen.getByTestId('twd-focus-knowledge').querySelector('[data-tally="approved"]')!;
     const kinds = kindsIn(approved);
     expect(kinds.slice(0, 2)).toEqual(['write', 'write']);
-    // 57 approved on six gates: 30 strokes, then the break mark.
-    expect(kinds.slice(2)).toEqual([...Array(30).fill('tick'), 'stroke']);
+    // 57 approved on ten gates: 50 strokes, then the break mark.
+    expect(kinds.slice(2)).toEqual([...Array(50).fill('tick'), 'stroke']);
   });
 
   it('containers draw side by side: every one starts its content at the same moment', () => {

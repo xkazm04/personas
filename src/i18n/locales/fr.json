@@ -21534,7 +21534,6 @@
       "variantCopy": {
         "drafting": {
           "sheetTitle": "Plan du twin",
-          "detailOf": "Détail : {section}",
           "fullAt": "Plein à {count}",
           "moreChannels": "+{count} autres",
           "notes": "Notes",
@@ -21547,12 +21546,9 @@
         }
       },
       "variants": {
-        "drafting": "Plan technique",
+        "drafting": "Plan Personas",
         "label": "Style de plan",
-        "strata": "Strates",
-        "draftingNative": "Plan Personas",
-        "draftingSurface": "Moitié-moitié",
-        "draftingTint": "Touche Personas"
+        "strata": "Strates"
       }
     },
     "card": {
