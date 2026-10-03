@@ -70,7 +70,11 @@ export function HealthBoardA({ board, deps }: { board: HealthBoard; deps: Health
                 empty={{ title: s.section_unavailable, tone: 'error', markLabel: s.section_unavailable }}
                 mark={sec.items.length ? statusMark(t, worstStatus(sec.items)) : undefined}
                 figure={sec.items.length ? `${counts.ok}/${counts.total}` : undefined}
-                fill={counts.total ? { value: counts.ok / counts.total, tone: 'success' } : undefined}
+                // The fill is the share of checks that pass, drawn in the theme's own `primary`
+                // rather than in `success`: it is a PROGRESS quantity (grow-4's precedent is the
+                // tour card's progress), and a success-green slab reads far louder on a light
+                // theme than on a dark one. The status itself stays on the rail as the Mark.
+                fill={counts.total ? { value: counts.ok / counts.total, tone: 'primary' } : undefined}
                 onPress={sec.items.length ? () => { setOpen(sec.id); setPicked(null); } : undefined}
                 figures={sec.items.length
                   ? <UnitStrip size="m" label={tx(s.unit_label, { section: name })} segments={statusSegments(sec.items)} />
