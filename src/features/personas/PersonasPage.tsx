@@ -129,42 +129,66 @@ export default function PersonasPage() {
   // Prevents showing UnifiedBuildEntry before the first load completes.
   const [personasFetched, setPersonasFetched] = useState(false);
 
+  // ONE fan-out at mount, not two awaited waves.
+  //
+  // What this is NOT: a speed-up. `invokeWithTimeout` has no concurrency
+  // limiter and folds duplicate concurrent reads into one round-trip
+  // (`tauriInvoke.ts:161`, 250ms post-settle TTL), and the repo's own nav-walk
+  // harness recorded 1,406 ms of summed IPC inside a 1,321 ms wall-clock
+  // window — these calls genuinely overlap, so settling over N costs
+  // max(latency), not sum(latency). Starting them together does not make
+  // startup finish sooner.
+  //
+  // What it IS: time-to-first-useful-paint. Previously four stores' data
+  // queued behind the personas round-trip plus a 100 ms yield, so a surface
+  // that reads credentials / recipes / teams could not retire its own
+  // placeholder until a fetch it never reads had come back. The shell now
+  // awaits only what decides WHAT to render; everything else is a prewarm
+  // that lets each region paint when its own data lands.
   const runStartup = useCallback(async () => {
-    // Staggered startup: fetch personas first (critical for first paint),
-    // then secondary data in a second wave to avoid IPC stampede.
     setError(null);
-    const failed: string[] = [];
 
-    // Wave 1: Personas — needed for initial render
-    markStartupPhase('data:personas');
-    try {
-      await fetchPersonas();
-    } catch (err) {
-      silentCatch('PersonasPage:fetchPersonas')(err);
-      failed.push('personas');
-    }
+    markStartupPhase('data:fanout');
+    const personasFetch = fetchPersonas();
+    // Prewarms. Nothing in this shell's router reads any of them, and the
+    // landing section is persisted (`uiSlice.ts:423` defaults to `home`), so
+    // on most cold starts these four were filling stores for a surface that
+    // was not even mounted while they waited behind wave 1.
+    const prewarm: ReadonlyArray<readonly [string, Promise<unknown>]> = [
+      ['tools', fetchToolDefinitions()],
+      ['credentials', import("@/stores/vaultStore").then(m => m.useVaultStore.getState().fetchCredentials())],
+      ['recipes', import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchRecipes())],
+      ['teams', import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchTeams())],
+    ];
+    // Subscribe in THIS turn: the await below suspends, and a prewarm that
+    // rejects before `allSettled` has attached would be an unhandled rejection.
+    const settled = Promise.allSettled([personasFetch, ...prewarm.map(([, p]) => p)]);
+
+    // The shell awaits exactly ONE fetch. `fetchPersonas` is the only startup
+    // call that decides WHAT to render: `personasFetched` gates the
+    // CreatePersonaEntry empty state below, and showing that wizard to an
+    // operator who already has agents is a wrong screen, not a late one.
+    // Nothing else queues behind this await any more.
+    await personasFetch.catch(silentCatch('PersonasPage:fetchPersonas'));
     setPersonasFetched(true);
+    markStartupPhase('data:personas-settled');
 
-    // Yield to browser — let React paint before loading secondary data
-    await new Promise(r => setTimeout(r, 100));
-
-    // Wave 2: Secondary data — single-mode app loads the full set.
-    markStartupPhase('data:secondary');
-    const secondaryResults = await Promise.allSettled([
-      fetchToolDefinitions(),
-      import("@/stores/vaultStore").then(m => m.useVaultStore.getState().fetchCredentials()),
-      import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchRecipes()),
-      import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchTeams()),
-    ]);
-    const SECONDARY_LABELS = ['tools', 'credentials', 'recipes', 'teams'] as const;
-    secondaryResults.forEach((r, i) => {
-      if (r.status === 'rejected' && SECONDARY_LABELS[i]) failed.push(SECONDARY_LABELS[i]);
-    });
-
+    // Error banner only — an error surface, not frame-1 content, so it is
+    // allowed to arrive when the slowest prewarm settles.
+    const results = await settled;
+    const labels = ['personas', ...prewarm.map(([name]) => name)];
+    const failed = labels.filter((_, i) => results[i]?.status === 'rejected');
     if (failed.length > 0) {
       setError(`Startup failed -- ${failed.join(', ')} could not be loaded`);
     }
-    // Auto-reconnect GitLab if a vault credential exists (non-blocking)
+    markStartupPhase('data:settled');
+    // Auto-reconnect GitLab if a vault credential exists (non-blocking).
+    // DELIBERATELY still last, and deliberately NOT chained to the credentials
+    // prewarm alone: `gitlabSlice.ts:185` reads the vault credentials through
+    // the store bus, and `:187` silently SKIPS auto-connect when that accessor
+    // is not registered yet (storeBusWiring loads async). "After everything
+    // settles" satisfies both conditions; "after credentials settle" satisfies
+    // only the first. So this one keeps the ordering it had.
     void useSystemStore.getState().gitlabInitialize();
   }, [fetchPersonas, fetchToolDefinitions, setError]);
 
@@ -179,7 +203,7 @@ export default function PersonasPage() {
     }
   }, [fetchDetail, selectedPersonaId]);
 
-  // Prefetch likely next routes after initial load settles.
+  // Prefetch likely next routes once the shell has mounted.
   // Speculative -- drained one chunk per idle slice (see idlePrefetch) so the
   // route chunks don't evaluate in a burst alongside the overlay prefetch and
   // first-load work. Section primaries go through `prefetchSection`, the same
@@ -188,8 +212,17 @@ export default function PersonasPage() {
   // Agents list, then the editor it opens), then the dashboards and the daily
   // sections, then the rarer primaries, then the Projects sub-tabs with
   // FactoryPage last (broadest module graph). Failures are logged, not shown.
+  //
+  // This effect used to open with `if (!personasFetched) return;`, and that
+  // dependency was incidental, not real. Chunk prefetch is `import()`
+  // resolution — pure main-thread work with no relationship to persona data.
+  // The one thing it must not do is evaluate chunks while the first content
+  // paint is still happening, and `initialDelayMs: 1500` is what guarantees
+  // that; the gate added the personas IPC latency on top of it on every cold
+  // start, and dragged the Projects prewarm below along for the same ride.
+  // Both timers are now anchored to mount, which is what their comments
+  // always claimed.
   useEffect(() => {
-    if (!personasFetched) return;
     const cancelPrefetch = idlePrefetch([
       () => prefetchSection('personas') ?? Promise.resolve(),
       () => import('@/features/agents/sub_editor'),
@@ -219,8 +252,12 @@ export default function PersonasPage() {
     // Warm the projects list once, off the startup critical path. Every
     // dev-tools Projects submodule (Manage / Lifecycle / Contest / Factory)
     // and the Goals/KPIs shells gate their first paint on it, and it is not in
-    // the runStartup waves. Delayed so it doesn't join the wave-2 IPC stampede;
-    // the ghost-under-chrome still covers a click that beats this.
+    // the runStartup fan-out. Kept as a separate delayed call rather than
+    // folded into that fan-out: its own comment states the separation is
+    // deliberate, and nothing in this repo has measured a seventh concurrent
+    // startup call, so the conservative reading wins. The delay is now
+    // measured from mount instead of from the personas round-trip, so the
+    // fan-out it is staying clear of has had the full 2 s to settle.
     const projectsWarm = setTimeout(() => {
       void useSystemStore.getState().fetchProjects?.().catch(silentCatch('PersonasPage:prewarmProjects'));
     }, 2000);
@@ -228,7 +265,7 @@ export default function PersonasPage() {
       cancelPrefetch();
       clearTimeout(projectsWarm);
     };
-  }, [personasFetched]);
+  }, []);
 
   // Auto-resume active build when returning to personas from another section.
   // Uses a ref to prevent the infinite loop: only resumes ONCE per navigation event.
