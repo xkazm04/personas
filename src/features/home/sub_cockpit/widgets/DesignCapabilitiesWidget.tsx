@@ -1,4 +1,4 @@
-import { Hint, ListRow, Rows, Tile } from '@/features/shared/components/kit';
+import { Hint, ListRow, Rows, Stack, Tile, type RowColumn } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
@@ -18,14 +18,17 @@ function capText(a: Athena, cap: (typeof CAPS)[number]): { label: string; behavi
  * the dispatcher, so the user gets a true picture of "what can you help me design?" instead of a
  * model-generated capability list. Mirror CAPS when adding a design-family op.
  *
- * One kit Tile: the intro as its lead line, one row per capability with the name as the one
- * emphasis and the prompt that triggers it as the meta ("Try: ..."); what the op does is the
- * explanation, so it lives in the name's Hint (explanations off the surface).
+ * One kit Tile: the intro and the list are two regions of a kit Stack, and one row per capability
+ * with the name as the one emphasis and the prompt that triggers it in a declared Detail column
+ * beside it (kit grow-4) rather than stacked under it; what the op does is the explanation, so it
+ * lives in the name's Hint (explanations off the surface). The list draws no name head: the tile's
+ * own title already says what its rows are.
  */
 export function DesignCapabilitiesWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
   const { t } = useTranslation();
   const a = t.athena;
   const intro = typeof config?.intro === 'string' ? config.intro.trim() : '';
+  const columns: RowColumn[] = [{ head: t.overview.cockpit.col_detail, width: '1.6fr' }];
 
   return (
     <Tile
@@ -35,22 +38,24 @@ export function DesignCapabilitiesWidget({ config, title, span, actions, footer 
       footer={footer}
       testId="companion-design-capabilities-widget"
     >
-      {intro && <p className="k-in typo-body pb-2" data-testid="design-capabilities-intro">{intro}</p>}
-      <Rows count={CAPS.length} empty={{ title: '' }}>
-        {CAPS.map((cap) => {
-          const row = capText(a, cap);
-          const example = `${a.design_cap_example_prefix} ${row.example}`;
-          return (
-            <ListRow
-              key={cap}
-              size="s"
-              testId={`design-capability-${cap}`}
-              name={<Hint content={row.behavior}><span>{row.label}</span></Hint>}
-              meta={<Hint content={example}><span className="k-ellipsis">{example}</span></Hint>}
-            />
-          );
-        })}
-      </Rows>
+      <Stack gap="s">
+        {intro && <p className="k-in typo-body m-0" data-testid="design-capabilities-intro">{intro}</p>}
+        <Rows count={CAPS.length} empty={{ title: '' }} columns={columns}>
+          {CAPS.map((cap) => {
+            const row = capText(a, cap);
+            const example = `${a.design_cap_example_prefix} ${row.example}`;
+            return (
+              <ListRow
+                key={cap}
+                size="line"
+                testId={`design-capability-${cap}`}
+                name={<Hint content={row.behavior}><span>{row.label}</span></Hint>}
+                cells={[<Hint key="e" content={example}><span>{example}</span></Hint>]}
+              />
+            );
+          })}
+        </Rows>
+      </Stack>
     </Tile>
   );
 }
