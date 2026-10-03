@@ -10,7 +10,49 @@ import { batchDeleteTeamMemories, createTeamMemory, deleteTeamMemory, getTeamMem
 import { addTeamMember, cloneTeam, createTeam, createTeamConnection, deleteTeam, deleteTeamConnection, getTeamCounts, listTeamConnections, listTeamMembers, listTeams, removeTeamMember, updateTeamConnection } from "@/api/pipeline/teams";
 
 import { storeBus } from "@/lib/storeBus";
+import { createCachedFetch } from "@/lib/async/createCachedFetch";
 import { reportError } from "../../storeTypes";
+
+/**
+ * `fetchTeams` dedup + freshness via the shared `createCachedFetch` primitive
+ * (`src/lib/async/createCachedFetch.ts`) — the same adoption `credentialSlice`
+ * made for `fetchCredentials`.
+ *
+ * Why the slice seam and not `deduplicateFetch`: the OTHER sibling
+ * (`budgetEnforcementSlice`) wraps its fetch in `deduplicateFetch`, which
+ * collapses only CONCURRENT callers and then releases the key the moment the
+ * promise settles. `invokeWithTimeout` already does exactly that for
+ * `list_teams` / `get_team_counts` — both are read-shaped with no mutation
+ * verb, so the transport folds duplicates and holds the entry 250ms past
+ * settle (`tauriInvoke.ts` `AUTO_DEDUP_TTL_MS`). A slice-level in-flight
+ * collapse is therefore strictly weaker than what is already in place and
+ * would remove nothing. A freshness WINDOW is the only thing that collapses
+ * callers which arrive after the previous pair has already landed, which is
+ * what the mount-effect pile-up actually is: `PersonasPage.runStartup`
+ * prewarms teams in its data fan-out, and then a dozen surfaces call
+ * `fetchTeams()` from an unconditional mount effect
+ * (`PersonaGroupDropRail`, `SidebarLevel2`, `TeamsSidebarNav`,
+ * `useNavCardStatus`, `StudioPatchbay`, `ProjectManagerPage`, …), each
+ * re-issuing the pair the shell already paid for.
+ *
+ * Why 3s and not the 30s the two existing adopters use: `fetchTeams()` is
+ * also the post-write refresh door for writes this slice cannot see — a
+ * caller that `await updateTeam(...)` or `await adoptTeamPreset(...)` and then
+ * `await fetchTeams()` is relying on a real round-trip to make its change
+ * visible. The in-slice writes below force past the window explicitly, but an
+ * out-of-slice one cannot, so the window is sized to absorb a mount burst and
+ * nothing a human drives: every such caller is at least a click plus an
+ * awaited mutating IPC past the last read. 30s would have made a renamed team
+ * keep its old label, and a freshly adopted preset team stay invisible, for
+ * half a minute.
+ */
+const TEAMS_CACHE_TTL_MS = 3_000;
+const TEAMS_KEY = "teams";
+// `rethrow: false` (the default) is deliberate and differs from
+// `credentialSlice`: `fetchTeams` reports through `reportError` and resolves,
+// and its callers (e.g. `TeamList`'s try/finally ghost gate) are written
+// against a promise that never rejects.
+const teamsFetch = createCachedFetch({ ttlMs: TEAMS_CACHE_TTL_MS });
 
 export interface TeamSlice {
   // State
@@ -34,7 +76,9 @@ export interface TeamSlice {
   presetFlowOpen: boolean;
 
   // Actions
-  fetchTeams: () => Promise<void>;
+  /** Pass `{ force: true }` after a write this slice did not perform, to
+   *  bypass the freshness window above. */
+  fetchTeams: (opts?: { force?: boolean }) => Promise<void>;
   selectTeam: (teamId: string | null) => void;
   /** Open / close the in-app preset-adoption flow. */
   setPresetFlowOpen: (open: boolean) => void;
@@ -92,17 +136,23 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
 
   setPresetFlowOpen: (open) => set({ presetFlowOpen: open }),
 
-  fetchTeams: async () => {
-    try {
-      const [teams, counts] = await Promise.all([listTeams(), getTeamCounts()]);
-      const countsMap: Record<string, { members: number; connections: number }> = {};
-      for (const c of counts) {
-        countsMap[c.team_id] = { members: c.member_count, connections: c.connection_count };
+  fetchTeams: async (opts) => {
+    if (opts?.force) teamsFetch.invalidate(TEAMS_KEY);
+    // No `onHit`: the cache IS the slice state (`teams` / `teamCounts`), so a
+    // freshness hit needs nothing restored — the same reasoning credentialSlice
+    // records above its own controller.
+    return teamsFetch.run(TEAMS_KEY, async () => {
+      try {
+        const [teams, counts] = await Promise.all([listTeams(), getTeamCounts()]);
+        const countsMap: Record<string, { members: number; connections: number }> = {};
+        for (const c of counts) {
+          countsMap[c.team_id] = { members: c.member_count, connections: c.connection_count };
+        }
+        set({ teams, teamCounts: countsMap });
+      } catch (err) {
+        reportError(err, "Failed to load teams", set);
       }
-      set({ teams, teamCounts: countsMap });
-    } catch (err) {
-      reportError(err, "Failed to load teams", set);
-    }
+    });
   },
 
   selectTeam: (teamId) => {
@@ -140,7 +190,7 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
         color: data.color ?? null,
         enabled: null,
       });
-      await get().fetchTeams();
+      await get().fetchTeams({ force: true });
       return team;
     } catch (err) {
       reportError(err, "Failed to create team", set);
@@ -151,7 +201,7 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
   cloneTeam: async (sourceTeamId) => {
     try {
       const team = await cloneTeam(sourceTeamId);
-      await get().fetchTeams();
+      await get().fetchTeams({ force: true });
       storeBus.emit('toast', { message: 'Team forked successfully', type: 'success' });
       return team;
     } catch (err) {
@@ -164,7 +214,7 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
     try {
       await deleteTeam(teamId);
       if (get().selectedTeamId === teamId) set({ selectedTeamId: null, ...teamDetailReset() });
-      await get().fetchTeams();
+      await get().fetchTeams({ force: true });
     } catch (err) {
       reportError(err, "Failed to delete team", set);
     }
