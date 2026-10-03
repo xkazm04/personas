@@ -113,3 +113,46 @@ describe('the two gaps home-2 recorded (grow-4 part 7)', () => {
     expect(screen.getByRole('button', { name: 'Act' }).getAttribute('aria-describedby')?.split(' ')).toHaveLength(2);
   });
 });
+
+describe('ContextCard collapses to what it carries (grow-4 part 6)', () => {
+  it('fill paints the quantity as the card background and figure states it in the corner', () => {
+    const { container } = render(<ContextCard title="Getting Started" fill={{ value: 0.5, tone: 'success' }} figure="2/4" />);
+    const card = container.querySelector('.k-card') as HTMLElement;
+    expect(card.className).toContain('k-card--fill');
+    expect(card.className).toContain('t-success');
+    expect(card.style.getPropertyValue('--fill')).toBe('50%');
+    expect(container.querySelector('.k-card__figure')?.textContent).toBe('2/4');
+  });
+
+  it('a fill is clamped to 0..1 and defaults to the primary tone', () => {
+    const { container, rerender } = render(<ContextCard title="a" fill={{ value: 4 }} />);
+    expect((container.querySelector('.k-card') as HTMLElement).style.getPropertyValue('--fill')).toBe('100%');
+    expect((container.querySelector('.k-card') as HTMLElement).className).toContain('t-primary');
+    rerender(<ContextCard title="a" fill={{ value: -2 }} />);
+    expect((container.querySelector('.k-card') as HTMLElement).style.getPropertyValue('--fill')).toBe('0%');
+  });
+
+  it('no meta and no figures: the card is head only - the always-empty rows are gone', () => {
+    const { container } = render(<ContextCard title="Getting Started" fill={{ value: 1 }} figure="4/4" />);
+    expect(container.querySelector('.k-card__meta')).toBeNull();
+    expect(container.querySelector('.k-card__foot')).toBeNull();
+  });
+
+  it('figures still get their foot, so grow-1 keeps its bottom-pinned figure line', () => {
+    const { container } = render(<ContextCard title="a" figures={<span>12</span>} />);
+    expect(container.querySelector('.k-card__foot')?.textContent).toBe('12');
+  });
+
+  it('children render between the head and the foot, and not while loading', () => {
+    const { container, rerender } = render(<ContextCard title="a" figures={<span>12</span>}><p>body</p></ContextCard>);
+    const kids = Array.from((container.querySelector('.k-card') as HTMLElement).children).map((c) => c.className);
+    expect(kids).toEqual(['k-card__head', 'k-card__body', 'k-card__foot']);
+    rerender(<ContextCard title="" state="loading"><p>body</p></ContextCard>);
+    expect(container.querySelector('.k-card__body')).toBeNull();
+  });
+
+  it('a loading card still ghosts head and foot', () => {
+    const { container } = render(<ContextCard title="" state="loading" />);
+    expect(container.querySelector('.k-card__foot')).not.toBeNull();
+  });
+});

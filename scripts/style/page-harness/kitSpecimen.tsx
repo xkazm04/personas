@@ -306,6 +306,18 @@ function Grow4Parts() {
         </Tiles>
         <Caption>Gaps s, m, l; a Stack with no `divided` is the gap alone.</Caption>
       </Section>
+      <Section title="ContextCard fill, corner figure, body" level={2} meta="the quantity as the card's background and a figure in the corner, so a tour card is two rows; the head collapses with no meta and the foot with no figures">
+        <ContextCards label="Fill cards" min="min(100%, 17rem)">
+          <ContextCard title="Getting Started" fill={{ value: 1, tone: 'success' }} figure="4/4" mark={{ tone: 'success', glyph: 'solid', label: 'Done' }} onPress={noop} />
+          <ContextCard title="Execution & Observability" fill={{ value: 0.4, tone: 'info' }} figure="2/5" mark={{ tone: 'info', glyph: 'soft', label: 'In progress' }} onPress={noop} />
+          <ContextCard title="Orchestration & Events" fill={{ value: 0, tone: 'neutral' }} figure="0/4" onPress={noop} />
+          <ContextCard title="Teams & Orchestration" fill={{ value: 0.22, tone: 'primary' }} figure="2/9" meta="with a meta line" onPress={noop} />
+          <ContextCard title="With actions" fill={{ value: 0.6, tone: 'warning' }} figure="3/5" actions={<KitButton quiet onClick={noop} stopPropagation>Open</KitButton>} onPress={noop} />
+          <ContextCard title="With a body" fill={{ value: 0.5, tone: 'agent' }} figure="5/10" onPress={noop}>
+            <p className="typo-caption" style={{ margin: 0 }}>A region between the head and the foot.</p>
+          </ContextCard>
+        </ContextCards>
+      </Section>
       <Section title="Tile mark and KitButton describedBy" level={2} meta="the tile's own status on its rail at the title's height; a Hint describing a button's press">
         <Tiles label="Tile marks">
           <Tile span={3} title="Healthy" mark={{ tone: 'success', glyph: 'soft', label: 'Healthy' }} count={12}>

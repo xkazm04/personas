@@ -18,12 +18,35 @@ export interface ContextCardProps {
   art?: ReactNode;
   /** Status, drawn ON the card's rail at the title's height (the card's own spine). */
   mark?: { tone: Tone; glyph?: Glyph; label: string };
+  /**
+   * The card's own quantity painted as its BACKGROUND (grow-4): `value` is 0..1 of the card's
+   * width, washed in `tone` over the band. The owner's call on 2026-10-03 - "bars can be
+   * represented by card background fill, number of passed tours in right top corner. This way we
+   * can get rid of third row" - so a card states its quantity without spending a row on a strip.
+   * It is a background LAYER under the band's own gradient, so the band is tinted, never replaced,
+   * and the rail (a pseudo-element over the background) is untouched. The figure that reads it
+   * aloud belongs in `figure`; a fill alone is decoration and carries no accessible name.
+   */
+  fill?: { value: number; tone?: Tone };
+  /**
+   * A figure in the card's TOP-RIGHT corner ("4/4"): the quantity `fill` draws, stated. It keeps
+   * the corner on its own and, like `art`, gives it up to `actions` when a card has them, so the
+   * three never collide. Not drawn while loading.
+   */
+  figure?: ReactNode;
   state?: KitStates;
   /** Rendered in place of meta and figures when the state is `empty`. */
   empty?: EmptySpec;
   /** Present = the card selects: its title becomes a button whose hit area is the whole card. */
   onPress?: () => void;
   testId?: string;
+  /**
+   * A region between the head and the foot (grow-4; recorded as a gap at home-2) - a sentence, a
+   * strip, a `Stack` of regions. The head stays at the top and the figures stay pinned to the
+   * bottom edge around it, so grow-1's law still holds. Not drawn while loading or empty, where
+   * those states own the card's geometry.
+   */
+  children?: ReactNode;
 }
 
 /**
@@ -40,9 +63,15 @@ export interface ContextCardProps {
  * its hint and action in the foot. A pressable card's title is its one button (its hit area
  * stretched over the card) so the actions are never nested in it. Art (grow-2) is the head's
  * decoration: top-right, aria-hidden, pointer-events off, so it never displaces the foot.
- * @catalog ContextCard - one of few peers as a tile: a band on a rail, head on top (art top-right), figures on the foot; ContextCards grids them. Kit.
+ *
+ * grow-4 collapses the card to what it actually carries: the head's meta line was already
+ * conditional, the FOOT now is too, and the card's floor dropped from 104px to 80px - together
+ * that is the "second row is empty always" the owner saw on the Learning tour cards. `fill` paints
+ * the card's quantity as its background and `figure` states it in the top-right corner, which is
+ * the third row those cards no longer need. `children` is the region between head and foot.
+ * @catalog ContextCard - one of few peers as a tile: a band on a rail, head on top (figure/art top-right), an optional body, figures on the foot, and its quantity as a background fill; ContextCards grids them. Kit.
  */
-export function ContextCard({ title, meta, figures, actions, art, mark, state, empty, onPress, testId }: ContextCardProps) {
+export function ContextCard({ title, meta, figures, actions, art, mark, fill, figure, state, empty, onPress, testId, children }: ContextCardProps) {
   const states = typeof state === 'string' ? [state] : state ?? [];
   const loading = states.includes('loading');
   const isEmpty = !loading && states.includes('empty');
@@ -63,18 +92,30 @@ export function ContextCard({ title, meta, figures, actions, art, mark, state, e
     : isEmpty
       ? <>{empty?.hint && <span className="typo-caption">{empty.hint}</span>}{empty?.action}</>
       : figures;
+  // The foot renders only when it carries something. A card with no figures was still paying for
+  // the foot's min-height and its margin-top:auto, which is the always-empty row the owner saw on
+  // the Learning tour cards; with the strip moved into `fill` that row has nothing left to hold.
+  const hasFoot = loading || (isEmpty ? empty?.hint != null || empty?.action != null : figures != null);
+  const style = fill ? ({ '--fill': `${Math.round(Math.min(1, Math.max(0, fill.value)) * 100)}%` } as CSSProperties) : undefined;
   return (
-    <div className={cx('k-card', stateClass(state), onPress && 'is-pressable')} {...kitAttrs('ContextCard', state)} data-testid={testId}>
+    <div
+      className={cx('k-card', stateClass(state), onPress && 'is-pressable', fill && 'k-card--fill', fill && `t-${fill.tone ?? 'primary'}`)}
+      {...kitAttrs('ContextCard', state)}
+      data-testid={testId}
+      style={style}
+    >
       {cardMark}
       <div className="k-card__head">
         <div className="k-card__titles">
           {name}
           {line != null && line !== '' && <div className="k-card__meta typo-caption">{line}</div>}
         </div>
+        {figure != null && !loading && <div className="k-card__figure typo-data k-regular">{figure}</div>}
         {art && !loading && <div className="k-card__art" aria-hidden="true">{art}</div>}
         {actions && !loading && <div className="k-card__actions">{actions}</div>}
       </div>
-      <div className="k-card__foot">{foot}</div>
+      {children != null && !loading && !isEmpty && <div className="k-card__body">{children}</div>}
+      {hasFoot && <div className="k-card__foot">{foot}</div>}
     </div>
   );
 }

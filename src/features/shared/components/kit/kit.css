@@ -486,7 +486,12 @@ button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); backgroun
   /* The card's rail is its spine, and it is drawn over the band, so parts nested in a card band
    * from beside the rail (grow-4, part 1). */
   --band-x: 4px;
-  position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 104px;
+  /* The card's floor, 104px until grow-4. A card that carries only a title and a foot measures
+   * ~74px, so 104 was spending 30px on a row that was always empty (owner, 2026-10-03: "Second
+   * row is empty always and can be reduced"). Cards in a row still align: the grid stretches them
+   * to the tallest, which is what carried the alignment all along. */
+  --card-h: 80px;
+  position: relative; display: flex; flex-direction: column; min-width: 0; min-height: var(--card-h);
   padding: 12px 14px 12px 20px; border-radius: 0 var(--radius-card) var(--radius-card) 0;
   background: linear-gradient(to right, color-mix(in srgb, var(--primary) 7%, var(--card-band)), var(--card-band) 55%);
   transition: background-color var(--duration-fast);
@@ -522,6 +527,24 @@ button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); backgroun
 .k-card__actions { position: relative; z-index: 1; flex: none; display: flex; align-items: center; gap: 6px; margin: -6px -6px 0 0; }
 .k-card__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; min-height: 20px; margin-top: auto; padding-top: 10px; }
 .k-card__foot > :is(button, a) { position: relative; z-index: 1; }
+/* The figure in the card's corner (grow-4): the quantity `fill` draws, stated. It keeps the corner
+ * on its own and gives it up to the actions when a card has them, as `art` does. */
+.k-card__figure { flex: none; display: flex; align-items: baseline; gap: 6px; white-space: nowrap; margin-top: -2px; }
+/* The region between head and foot (grow-4): a sentence, a strip, a Stack of regions. */
+.k-card__body { min-width: 0; padding-top: 8px; }
+/* The card's quantity as its own BACKGROUND (grow-4, owner 2026-10-03: "bars can be represented by
+ * card background fill ... This way we can get rid of third row"). A --fill fraction of the card's
+ * width is washed in its tone as a background LAYER over the band's own gradient, so the band is
+ * tinted and never replaced, the rail (a pseudo-element above the background) is untouched, and
+ * hover and selected still move --card-band underneath. Light themes take a stronger mix, as the
+ * band itself does, because a translucent tone reads weaker over a light surface. */
+.k-card--fill {
+  --fill-c: color-mix(in srgb, var(--tone) 16%, transparent);
+  background:
+    linear-gradient(to right, var(--fill-c) var(--fill, 0%), transparent var(--fill, 0%)),
+    linear-gradient(to right, color-mix(in srgb, var(--primary) 7%, var(--card-band)), var(--card-band) 55%);
+}
+:is([data-theme^="light"], [data-brightness^="light"]) .k-card--fill { --fill-c: color-mix(in srgb, var(--tone) 22%, transparent); }
 
 /* ============ ContextGroups (added at kit grow-1): level 1 over many contexts ============ */
 .k-groups { display: flex; flex-direction: column; }
