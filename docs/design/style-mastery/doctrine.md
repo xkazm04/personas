@@ -134,7 +134,33 @@ fewer such pairs, not more: if a pair is common, it is a missing token.
 `typo-section-title` stepped up to 1.25rem AND kept its tint. A divider that needs
 a rule draws the Manifest hairline (`border-b border-primary/10`, `KT_RULE`).
 
-## 3. One muting level (proposal; not applied)
+## 3. One muting level (APPLIED 2026-10-03, at 80%)
+
+> **Applied, by the owner's decision, and at a different number than proposed.**
+> "Both tokens to 80%, app-wide" took `.typo-caption` and the kit's `--quiet`
+> from 70% to 80%; "Finish it — one ladder, all three families" then brought
+> `--muted-foreground` onto the same basis. It is now declared ONCE, in `:root`,
+> as `color-mix(in srgb, var(--foreground) 80%, transparent)`, and the ten
+> per-theme hexes are deleted — so **there is one muting level and three names
+> for it**: `--muted-foreground`, `.typo-caption`, `--quiet`.
+>
+> The spread that was there before is the argument for having done it. Solved
+> back into a fraction of each theme's own `--foreground`, the single named
+> token `--muted-foreground` meant **64.8% to 85.6%** depending on the theme,
+> and once caption went to a flat 80% the two names sat 1.12:1 apart on the
+> default theme with their ordering **flipped** (muted-foreground was the
+> stronger of the two in 6 of 11 themes before, in 1 of 11 after).
+>
+> Measured at 80%: **10.13:1 on the default canvas, at least 8.47:1 on every
+> theme's canvas and at least 9.42:1 on every theme's card**
+> (`contrast.generated.json`, regenerated). The figures below this box were the
+> 70% ones and are superseded. `--ink-muted` / `text-ink-muted` are still not
+> defined in the app; `--muted-foreground` is the name that carries the level
+> for anything that is not a caption. The fourth family —
+> `text-foreground/NN` in `.tsx` class strings, 1,797 sites across 719 files at
+> 24 levels — is ratcheted by the census rule `off-ladder-ink-opacity` and its
+> sweep is staged in `scripts/style/codemod-ink-ladder.mjs`; the mapping and the
+> contrast behind each row are in `docs/development/contrast.md`.
 
 Gate 0 left muting as it is: no muting form was rewritten, and `--ink-muted` /
 `text-ink-muted` are not defined in the app. The proposal, kept for the module

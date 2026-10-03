@@ -7,7 +7,7 @@
  "recipe": {
   "chipFill": 0.1,
   "chipBorder": 0.3,
-  "mute": 0.7
+  "mute": 0.8
  },
  "themes": {
   "dark-midnight": {
@@ -79,14 +79,14 @@
     }
    },
    "muting": {
-    "typo-caption (70%)": 7.97,
+    "typo-caption (80%)": 10.13,
     "text-foreground/60": 6.1,
     "text-foreground/40": 3.29,
     "text-foreground opacity-60": 6.1,
-    "text-muted-foreground": 11.41,
-    "text-muted-foreground@80 (check-themes floor)": 7.56,
-    "proposed ink-muted on canvas": 7.97,
-    "proposed ink-muted on card": 7.48
+    "text-muted-foreground": 10.13,
+    "text-muted-foreground@80 (check-themes floor)": 6.75,
+    "ink-muted on canvas (= --muted-foreground = kit --quiet)": 10.13,
+    "ink-muted on card": 9.42
    }
   },
   "dark-cyan": {
@@ -158,14 +158,14 @@
     }
    },
    "muting": {
-    "typo-caption (70%)": 8.4,
+    "typo-caption (80%)": 10.68,
     "text-foreground/60": 6.38,
     "text-foreground/40": 3.5,
     "text-foreground opacity-60": 6.38,
-    "text-muted-foreground": 10.09,
-    "text-muted-foreground@80 (check-themes floor)": 6.77,
-    "proposed ink-muted on canvas": 8.4,
-    "proposed ink-muted on card": 8.05
+    "text-muted-foreground": 10.68,
+    "text-muted-foreground@80 (check-themes floor)": 7.14,
+    "ink-muted on canvas (= --muted-foreground = kit --quiet)": 10.68,
+    "ink-muted on card": 10.22
    }
   },
   "dark-bronze": {
@@ -237,14 +237,14 @@
     }
    },
    "muting": {
-    "typo-caption (70%)": 8.03,
+    "typo-caption (80%)": 10.29,
     "text-foreground/60": 6.1,
     "text-foreground/40": 3.29,
     "text-foreground opacity-60": 6.1,
-    "text-muted-foreground": 7.64,
-    "text-muted-foreground@80 (check-themes floor)": 5.19,
-    "proposed ink-muted on canvas": 8.03,
-    "proposed ink-muted on card": 7.92
+    "text-muted-foreground": 10.29,
+    "text-muted-foreground@80 (check-themes floor)": 6.84,
+    "ink-muted on canvas (= --muted-foreground = kit --quiet)": 10.29,
+    "ink-muted on card": 10.06
    }
   },
   "dark-frost": {
@@ -316,14 +316,14 @@
     }
    },
    "muting": {
-    "typo-caption (70%)": 8.76,
+    "typo-caption (80%)": 11.14,
     "text-foreground/60": 6.69,
     "text-foreground/40": 3.58,
     "text-foreground opacity-60": 6.69,
-    "text-muted-foreground": 7.37,
-    "text-muted-foreground@80 (check-themes floor)": 5.1,
-    "proposed ink-muted on canvas": 8.76,
-    "proposed ink-muted on card": 8.36
+    "text-muted-foreground": 11.14,
+    "text-muted-foreground@80 (check-themes floor)": 7.46,
+    "ink-muted on canvas (= --muted-foreground = kit --quiet)": 11.14,
+    "ink-muted on card": 10.57
    }
   },
   "dark-purple": {
@@ -395,14 +395,14 @@
     }
    },
    "muting": {
-    "typo-caption (70%)": 8,
+    "typo-caption (80%)": 10.29,
     "text-foreground/60": 6.1,
     "text-foreground/40": 3.28,
     "text-foreground opacity-60": 6.1,
-    "text-muted-foreground": 7.88,
-    "text-muted-foreground@80 (check-themes floor)": 5.36,
-    "proposed ink-muted on canvas": 8,
-    "proposed ink-muted on card": 7.93
+    "text-muted-foreground": 10.29,
+    "text-muted-foreground@80 (check-themes floor)": 6.83,
+    "ink-muted on canvas (= --muted-foreground = kit --quiet)": 10.29,
+    "ink-muted on card": 10.07
    }
   },
   "dark-pink": {
@@ -474,14 +474,14 @@
     }
    },
    "muting": {
-    "typo-caption (70%)": 7.95,
+    "typo-caption (80%)": 10.21,
     "text-foreground/60": 6.06,
     "text-foreground/40": 3.28,
     "text-foreground opacity-60": 6.06,
-    "text-muted-foreground": 7.75,
-    "text-muted-foreground@80 (check-themes floor)": 5.26,
-    "proposed ink-muted on canvas": 7.95,
-    "proposed ink-muted on card": 7.85
+    "text-muted-foreground": 10.21,
+    "text-muted-foreground@80 (check-themes floor)": 6.79,
+    "ink-muted on canvas (= --muted-foreground = kit --quiet)": 10.21,
+    "ink-muted on card": 9.97
    }
   },
   "dark-red": {
@@ -553,14 +553,14 @@
     }
    },
    "muting": {
-    "typo-caption (70%)": 8.42,
+    "typo-caption (80%)": 10.89,
     "text-foreground/60": 6.35,
     "text-foreground/40": 3.38,
     "text-foreground opacity-60": 6.35,
-    "text-muted-foreground": 7.94,
-    "text-muted-foreground@80 (check-themes floor)": 5.35,
-    "proposed ink-muted on canvas": 8.42,
-    "proposed ink-muted on card": 8.31
+    "text-muted-foreground": 10.89,
+    "text-muted-foreground@80 (check-themes floor)": 7.12,
+    "ink-muted on canvas (= --muted-foreground = kit --quiet)": 10.89,
+    "ink-muted on card": 10.61
    }
   },
   "dark-matrix": {
@@ -632,14 +632,14 @@
     }
    },
    "muting": {
-    "typo-caption (70%)": 8.18,
+    "typo-caption (80%)": 10.62,
     "text-foreground/60": 6.14,
     "text-foreground/40": 3.24,
     "text-foreground opacity-60": 6.14,
-    "text-muted-foreground": 7.79,
-    "text-muted-foreground@80 (check-themes floor)": 5.23,
-    "proposed ink-muted on canvas": 8.18,
-    "proposed ink-muted on card": 8.04
+    "text-muted-foreground": 10.62,
+    "text-muted-foreground@80 (check-themes floor)": 6.98,
+    "ink-muted on canvas (= --muted-foreground = kit --quiet)": 10.62,
+    "ink-muted on card": 10.42
    }
   },
   "light": {
@@ -711,14 +711,14 @@
     }
    },
    "muting": {
-    "typo-caption (70%)": 6.15,
+    "typo-caption (80%)": 8.66,
     "text-foreground/60": 4.47,
     "text-foreground/40": 2.49,
     "text-foreground opacity-60": 4.47,
-    "text-muted-foreground": 7.73,
-    "text-muted-foreground@80 (check-themes floor)": 4.64,
-    "proposed ink-muted on canvas": 6.15,
-    "proposed ink-muted on card": 6.63
+    "text-muted-foreground": 8.66,
+    "text-muted-foreground@80 (check-themes floor)": 5.1,
+    "ink-muted on canvas (= --muted-foreground = kit --quiet)": 8.66,
+    "ink-muted on card": 9.49
    }
   },
   "light-ice": {
@@ -790,14 +790,14 @@
     }
    },
    "muting": {
-    "typo-caption (70%)": 6.17,
+    "typo-caption (80%)": 8.69,
     "text-foreground/60": 4.48,
     "text-foreground/40": 2.48,
     "text-foreground opacity-60": 4.48,
-    "text-muted-foreground": 7.62,
-    "text-muted-foreground@80 (check-themes floor)": 4.61,
-    "proposed ink-muted on canvas": 6.17,
-    "proposed ink-muted on card": 6.58
+    "text-muted-foreground": 8.69,
+    "text-muted-foreground@80 (check-themes floor)": 5.06,
+    "ink-muted on canvas (= --muted-foreground = kit --quiet)": 8.69,
+    "ink-muted on card": 9.44
    }
   },
   "light-news": {
@@ -869,14 +869,14 @@
     }
    },
    "muting": {
-    "typo-caption (70%)": 6.11,
+    "typo-caption (80%)": 8.47,
     "text-foreground/60": 4.46,
     "text-foreground/40": 2.5,
     "text-foreground opacity-60": 4.46,
-    "text-muted-foreground": 7.48,
-    "text-muted-foreground@80 (check-themes floor)": 4.6,
-    "proposed ink-muted on canvas": 6.11,
-    "proposed ink-muted on card": 6.79
+    "text-muted-foreground": 8.47,
+    "text-muted-foreground@80 (check-themes floor)": 5.06,
+    "ink-muted on canvas (= --muted-foreground = kit --quiet)": 8.47,
+    "ink-muted on card": 9.74
    }
   }
  },

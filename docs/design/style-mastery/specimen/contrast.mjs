@@ -111,6 +111,25 @@ function parseVarsResolved(block, scope) {
   }
   return vars;
 }
+
+/** A palette var written as `color-mix(in srgb, var(--x) N%, transparent)`,
+ *  composited over `bg` — the form `--muted-foreground` took on 2026-10-03 when
+ *  its eleven per-theme hexes collapsed onto the one muting level (80% of each
+ *  theme's own `--foreground`). `parseVars` above keeps hex ONLY, because it is
+ *  copied verbatim from check-themes, which had exactly the same gap; without
+ *  this pass `eff['muted-foreground']` is `undefined` and this generator throws
+ *  inside `hexToRgb`, which is what it did. The sibling fix is `parseMixes` +
+ *  `assertHardPairsResolved` in scripts/check-themes.mjs. */
+function parseMixesResolved(block, scope, bg) {
+  const vars = {};
+  const re = /--([a-z0-9-]+)\s*:\s*color-mix\(\s*in srgb\s*,\s*var\(--([a-z0-9-]+)\)\s+(\d+(?:\.\d+)?)%\s*,\s*transparent\s*\)\s*;/gi;
+  for (const m of block.matchAll(re)) {
+    const base = vars[m[2]] ?? scope[m[2]];
+    if (base) vars[m[1]] = blendOver(base, bg, Number(m[3]) / 100);
+  }
+  return vars;
+}
+
 /** rgba(r, g, b, a) -> { hex, alpha } for the card surface, which is translucent. */
 function parseRgba(block, name) {
   const m = block.match(new RegExp(`--${name}\\s*:\\s*rgba\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*([\\d.]+)\\s*\\)`));
@@ -138,7 +157,7 @@ export const ROLES = ['agent', 'human', 'external', 'highlight'];
 export const STATUSES = ['success', 'warning', 'error', 'info'];
 const CHIP_FILL = 0.1; // bg-role-x/10, the fill status chips already use (bg-status-x/10)
 const CHIP_BORDER = 0.3; // border-role-x/30
-const MUTE = 0.7; // the one muting level: foreground at 70%
+const MUTE = 0.8; // the one muting level: foreground at 80% (raised from 70% app-wide by the owner, 2026-10-03)
 const TEXT_BAR = 4.5; // AA body text: the bar this proposal holds roles to
 const STATUS_BAR = 3.0; // the bar check-themes applies to status colours
 
@@ -151,6 +170,11 @@ for (const theme of THEMES) {
   const eff = { ...rootVars, ...parseVarsResolved(block, rootVars) };
   const bg = eff.background;
   const fg = eff.foreground;
+  // Fractional palette vars resolve LAST: they need this theme's own canvas.
+  Object.assign(eff, parseMixesResolved(rootBlock, eff, bg), parseMixesResolved(block, eff, bg));
+  if (!eff['muted-foreground']) {
+    throw new Error(`${theme.id}: --muted-foreground did not resolve. The parser went blind; it did not find a clean theme.`);
+  }
   const cardRaw = parseRgba(block, 'card-bg') ?? parseRgba(rootBlock, 'card-bg');
   const card = cardRaw ? blendOver(cardRaw.hex, bg, cardRaw.alpha) : bg;
   const pVars = parseVars(proposalBlock(theme.id) ?? '');
@@ -178,14 +202,14 @@ for (const theme of THEMES) {
   // The four muting forms as the app writes them, then the one proposed level.
   const alpha = (a) => r2(contrastRatio(blendOver(fg, bg, a), bg));
   row.muting = {
-    'typo-caption (70%)': alpha(0.7),
+    'typo-caption (80%)': alpha(0.8),
     'text-foreground/60': alpha(0.6),
     'text-foreground/40': alpha(0.4),
     'text-foreground opacity-60': alpha(0.6),
     'text-muted-foreground': r2(contrastRatio(eff['muted-foreground'], bg)),
     'text-muted-foreground@80 (check-themes floor)': r2(contrastRatio(blendOver(eff['muted-foreground'], bg, MIN_CAPTION_OPACITY), bg)),
-    'proposed ink-muted on canvas': alpha(MUTE),
-    'proposed ink-muted on card': r2(contrastRatio(blendOver(fg, card, MUTE), card)),
+    'ink-muted on canvas (= --muted-foreground = kit --quiet)': alpha(MUTE),
+    'ink-muted on card': r2(contrastRatio(blendOver(fg, card, MUTE), card)),
   };
   out.themes[theme.id] = row;
 }
@@ -199,7 +223,7 @@ for (const [id, row] of Object.entries(out.themes)) {
   console.log(pad(id, 15) + ROLES.map((r) => {
     const g = row.roles[r];
     return pad(g ? `${g.onBg}/${g.onChip}/${g.onCard}${g.pass ? '' : ' LOW'}` : 'missing', 22);
-  }).join('') + `${row.muting['proposed ink-muted on canvas']}/${row.muting['proposed ink-muted on card']}`);
+  }).join('') + `${row.muting['ink-muted on canvas (= --muted-foreground = kit --quiet)']}/${row.muting['ink-muted on card']}`);
 }
 console.log(belowBar === 0 ? `OK: every role clears ${TEXT_BAR}:1 on canvas, chip and card in every theme` : `${belowBar} role/theme cell(s) below ${TEXT_BAR}:1`);
 
