@@ -80,6 +80,30 @@ home, overview, agents, vault, settings, then plugins, companions, teams, trigge
 - The Home Cockpit is a TOOL surface (compact density accepted), ranked lists at 30-40 are fine as cap + Show all without a parent layer, and a short list's empty band beside a long one is acceptable (home-2: "keep as proposed without resolving any concern"). Do not re-raise these three on dashboard grids.
 - Explanatory scaffolding stays off the surface: a strip's quantum lives in its Hint, not drawn beside it (grow-2: "Hover only (Hint)"). Approved buttons over big cards for first-run actions, and whole-row press without a "Try it" button, despite the Director's flags.
 
+- **The owner stopped the gating ritual (grow-4, 2026-10-03, verbatim):** "Do not use human gating
+  rounds for each change from /kit, I will need to put you notes with each module and do your per
+  best decision, exchange only key decisions". This OVERRIDES the skill's "One human selection per
+  batch" invariant for this project. The working mode is now: he writes a note per module, the
+  Director decides and executes without a gate, and only KEY decisions are exchanged. A key
+  decision is one that (a) contradicts a recorded taste line, (b) is irreversible or expensive to
+  undo, (c) rests on a premise his note got wrong, or (d) is a genuine fork with no evidence
+  favouring either side. Everything else is the Director's call, made and reported.
+  Shots and the family image remain the DIRECTOR'S review instrument - they stop being a
+  presentation ritual.
+- **Measure the perception before accepting its diagnosis (grow-4).** He read the Roadmap prose as
+  "muted" and prescribed "reduce muting to 20%". Measured on real pixels, that text is 15.41:1,
+  near-white on near-black, and the muting change moved it by exactly zero. The real variable was
+  perceived WEIGHT of 400-weight light type on a dark ground, not opacity. His perception was
+  right and his diagnosis was wrong; the fix he then chose was the weight step. Take the symptom
+  seriously, re-derive the cause.
+- **A gate can pass without looking.** `check:themes` ran green over the muting change while
+  `check-themes.mjs:69` reads only `globals.css` and never opens `typography.css`. Before citing a
+  green gate as evidence for a change, confirm the gate's input actually includes the file changed.
+- **An instrument can invent its own findings.** The perf harness reported `twin/profiles` as the
+  app's worst surface by 4x; ~7.3s of its 8.9s gap was the harness's own timed-out poll loop, and
+  the surface it was compared against was the other timed-out stop. Measured afterwards: summed
+  `durationMs` is 99.8% harness time. Never rank by a number whose instrument you have not read.
+
 ## Skill improvement log
 - 2026-09-25 (grow-1 / dead code): deleting a component broke `check:evidence` through a subject evidence list; second sighting in this repo, promoted into `## Gates`.
 - 2026-09-28 (grow-2): a gate option worded from token NAMES ("primary -> accent gradient") could not deliver its own description ("the hero banner's hue family"): the theme's primary and accent are one hue, so the build read flat and cost two extra rounds. Render or measure a visual option (hue gap, contrast) before offering it at a gate.
