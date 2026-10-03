@@ -38,6 +38,13 @@ import { useHealthSections } from './useHealthSections';
  * stats in `LogDiskUsageSection`, the crash corpora in `CrashLogsSection`. Nothing waits on
  * anything else (`docs/design/overview-loading.md` law 6, adopted 2026-10-03).
  */
+// The two diagnostics this surface carries in a dev build -- the prototype switch and the crash
+// corpus -- are declared ONCE here rather than decided inside a render brace, which is the form
+// `App.tsx:46-50` uses and the one the census rule `inline-dev-build-gate` asks for: the set of
+// things a production build hides stays enumerable from the top of the module. In prod Vite
+// replaces `import.meta.env.DEV` with `false`, so both branches fold away.
+const SHOW_DIAGNOSTICS = import.meta.env.DEV;
+
 export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
   const { t } = useTranslation();
   const board = useHealthSections();
@@ -107,7 +114,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
 
       <ContentBody centered>
         <KitHost compact testId="system-check">
-          {import.meta.env.DEV && <VariantSwitch value={variant} onChange={setVariant} />}
+          {SHOW_DIAGNOSTICS && <VariantSwitch value={variant} onChange={setVariant} />}
 
           {variant === 'board' && <HealthBoardA board={board} deps={deps} />}
           {variant === 'spine' && <HealthSpineB board={board} deps={deps} />}
@@ -117,7 +124,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
             {/* CrashLogsSection owns its own collapsible header and its own chrome, so wrapping it
                 in a kit Section would print "Crash Logs" twice. It is DEV-only and out of this
                 batch's scope; recorded as the one region of this surface still not kit-composed. */}
-            {import.meta.env.DEV && <CrashLogsSection />}
+            {SHOW_DIAGNOSTICS && <CrashLogsSection />}
             <LogDiskUsageSection />
           </Surface>
 
