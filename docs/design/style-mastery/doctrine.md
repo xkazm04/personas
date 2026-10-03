@@ -340,6 +340,72 @@ Decided with the kit:
   its specimen page and SettingRow. Every composition root still carries
   `data-kit` / `data-kit-state`, so a Lens can be added without touching parts.
 
+## 6c. What the kit does NOT govern: the figure (2026-10-03)
+
+> **The kit governs STRUCTURE. It does not govern FIGURE.** Owner, after reviewing the
+> System Check prototypes: *"prototypes following the kit then look terrible, locked by
+> the kit limitations from visual creativity perspective, and the typography does not
+> add. It seems we have critical gaps in kit design, and the way how we use it, I will
+> need your help to get out from this situation so we can trust it."*
+
+### What went wrong, measured
+
+The kit was forged on **Fleet Activity**, a dense list page, and it is excellent at being
+that. But section 6b's rule - *a local composition that duplicates a kit part is a
+finding* - was read as *everything on a surface must be a kit part*. Counted 2026-10-03:
+the kit exports about **30 parts, of which exactly TWO can draw anything**: `UnitStrip`
+(rows of 7-12px squares) and `ChartFrame` (a frame *around* a chart something else
+draws). There is no part for a figure, a diagram, an illustration, or any geometry.
+
+So a builder who needed visual expression had **no legal move**: the kit could not draw
+it, and hand-rolling it was a finding. The only compliant output was austere rows. That
+is a defect in this doctrine, not in the builders. `strata` (the twin blueprint variant,
+~1,778 lines of bespoke SVG and CSS) is the quality bar the owner names, and it was only
+ever legal because it sits outside the kit's jurisdiction entirely.
+
+### The split
+
+- **The kit owns**: layout and the spine, rhythm and row height, density tiers, status
+  vocabulary (Tone x Glyph), controls, lists and tables, facts, empty and loading states,
+  chrome. Section 6b's rule stands **in full** for all of it.
+- **The kit does NOT own**: a drawn figure. Geometry, illustration, diagram, isometric or
+  spatial composition, bespoke SVG, a visualization whose whole point is its shape. A
+  figure is **composed INTO a kit frame and is free inside it.**
+- **Free does not mean lawless.** Inside the frame a figure still takes colour only
+  through app tokens (`--primary`, `--status-*`, roles, `color-mix` over them), states
+  type through `.typo-*` or `calc(var(--type-N) * var(--type-f))`, honours
+  `prefers-reduced-motion`, and renders in every theme light and dark. Section 6's rule
+  for bespoke stylesheets - free layout, tokenised type and colour - is exactly the right
+  law for a figure, and it already existed.
+- **A figure is NOT an excuse to re-draw chrome.** A hand-built section head beside a
+  figure is still a finding. The exemption covers the drawing, not its furniture.
+
+### How to tell them apart
+
+Ask what would be lost if the thing were replaced by a labelled list of the same numbers.
+**Nothing lost -> it is structure**, and it belongs to the kit. **The point is lost ->
+it is a figure**, and the kit hosts it without dictating it.
+
+### Consequences adopted the same day
+
+1. **`Figure`** joins the kit as the legal door: a framed region that hosts drawn content
+   on the reading line, with the surface's own ghost and empty states, so a figure is
+   composed-into rather than bolted-on.
+2. **The expressive vocabulary is chosen the way the kit itself was** - by contest, on a
+   real page, judged by the owner. A second contest covers what `UnitStrip` and
+   `ChartFrame` cannot say.
+3. **The compact tier is for dense tool lists ONLY.** Measured 2026-10-03 with
+   `scripts/style/kit-type-probe/`: a compact kit host renders every row token **11.1% to
+   12.5% smaller** than the same token outside the kit (at the default appearance setting
+   `typo-body` is 13.20px in the app and **11.55px** in a compact host). **14 surfaces**
+   had opted in, including System Check, the Home Cockpit and Athena's chat cards - most
+   of them not dense tool lists. A showcase, diagnostic or reading surface must not be
+   compact.
+   The same probe refuted the other half of the owner's reading: kit tokens **do** track
+   the appearance setting, identically to the rest of the app, across all five scales.
+   The perception was right and the mechanism was not - which is the second time in one
+   review, so **measure the rendered pixels before accepting a diagnosis.**
+
 ## 7. How it landed (D6, as decided at Gate 0)
 
 1. Delete the dead overrides: 2,777 in 977 files, no visible change (`937854f7d`).

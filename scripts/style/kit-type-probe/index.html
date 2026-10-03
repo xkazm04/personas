@@ -1,0 +1,14 @@
+<!doctype html>
+<!--
+  Measures what the kit's type tokens actually RENDER, against the app's real
+  stylesheet, in every text-scale the appearance setting offers - inside a plain
+  kit host, inside a compact kit host, and outside the kit entirely.
+  Driven by scripts/style/kit-type-probe/run.mjs through Vite; not part of the app.
+-->
+<html lang="en" class="dark">
+  <head><meta charset="UTF-8" /><title>Kit type probe</title></head>
+  <body class="bg-background text-foreground">
+    <div id="probe"></div>
+    <script type="module" src="./probe.ts"></script>
+  </body>
+</html>
