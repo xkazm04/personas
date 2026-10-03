@@ -17,6 +17,12 @@
 .k-host {
   --spine-x: 14px;          /* where the spine line runs, from a surface's left edge */
   --gutter: 40px;           /* the reading line: every name starts here, on every surface */
+  /* Where a banded part's fill BEGINS (grow-4). On a Surface the band clears the spine line so it
+   * never paints over it; a host with no spine line (a Tile, a ContextCard) RE-DECLARES this, and
+   * the band then reaches under the Mark instead of leaving it hanging outside the stripe (owner,
+   * 2026-10-03: "stripes do not reach bulletpoints"). One variable the host sets, so a part nested
+   * somewhere new follows its host rather than a constant. */
+  --band-x: calc(var(--spine-x) + 8px);
   --spine-c: color-mix(in srgb, var(--primary) 30%, transparent);
   --quiet: color-mix(in srgb, var(--foreground) 64%, transparent);
   --glow: color-mix(in srgb, var(--primary) 60%, transparent);
@@ -121,7 +127,7 @@
 .k-section__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; padding-bottom: 2px; }
 .k-section__actions { margin-left: auto; display: flex; align-items: center; gap: 8px; padding-bottom: 2px; }
 .k-section.is-hover > .k-section__head,
-.k-section > .k-section__head:hover { background: linear-gradient(to right, transparent calc(var(--spine-x) + 8px), var(--band-hover) calc(var(--spine-x) + 8px)); }
+.k-section > .k-section__head:hover { background: linear-gradient(to right, transparent var(--band-x), var(--band-hover) var(--band-x)); }
 .k-section.is-muted > .k-section__head, .k-section.is-muted > .k-section__body { opacity: .55; }
 .k-section__desc { padding: 0 12px 10px var(--gutter); max-width: 76ch; }
 .k-count { color: var(--quiet); }
@@ -173,7 +179,7 @@
   --band: transparent; --row-h: 56px;
   position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 24px;
   height: var(--row-h); padding: 0 12px 0 var(--gutter); outline-offset: -2px;
-  background: linear-gradient(to right, transparent calc(var(--spine-x) + 8px), var(--band) calc(var(--spine-x) + 8px));
+  background: linear-gradient(to right, transparent var(--band-x), var(--band) var(--band-x));
   border-radius: 0 var(--radius-interactive) var(--radius-interactive) 0;
 }
 .k-rows > .k-row:nth-child(even) { --band: var(--band-alt); }
@@ -330,7 +336,7 @@ button.k-chip:hover, .k-chip.is-hover { border-color: color-mix(in srgb, var(--p
 .k-table td { height: 56px; padding: 0 12px; vertical-align: middle; background: var(--band); }
 .k-table td:first-child {
   position: relative; padding-left: var(--gutter); width: 99%; max-width: 0;
-  background: linear-gradient(to right, transparent calc(var(--spine-x) + 8px), var(--band) calc(var(--spine-x) + 8px));
+  background: linear-gradient(to right, transparent var(--band-x), var(--band) var(--band-x));
 }
 .k-table td:last-child { border-radius: 0 var(--radius-interactive) var(--radius-interactive) 0; }
 .k-table .k-num { text-align: right; white-space: nowrap; }
@@ -357,7 +363,7 @@ button.k-chip:hover, .k-chip.is-hover { border-color: color-mix(in srgb, var(--p
   position: relative; display: flex; align-items: center; gap: 20px; min-height: 80px; padding: 14px 12px 14px var(--gutter);
 }
 .k-empty::before {
-  content: ""; position: absolute; left: calc(var(--spine-x) + 8px); right: 0; top: 4px; bottom: 4px; border-radius: var(--radius-card);
+  content: ""; position: absolute; left: var(--band-x); right: 0; top: 4px; bottom: 4px; border-radius: var(--radius-card);
   border: 1px dashed var(--line); background: var(--band-alt);
 }
 .k-empty > * { position: relative; }
@@ -433,6 +439,9 @@ button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); backgroun
 }
 .k-card {
   --rail: var(--spine-c); --card-band: var(--band-alt);
+  /* The card's rail is its spine, and it is drawn over the band, so parts nested in a card band
+   * from beside the rail (grow-4, part 1). */
+  --band-x: 4px;
   position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 104px;
   padding: 12px 14px 12px 20px; border-radius: 0 var(--radius-card) var(--radius-card) 0;
   background: linear-gradient(to right, color-mix(in srgb, var(--primary) 7%, var(--card-band)), var(--card-band) 55%);
@@ -477,7 +486,7 @@ button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); backgroun
   position: relative; display: grid; align-items: center; column-gap: 20px; width: 100%; height: 56px;
   grid-template-columns: minmax(10rem, 16rem) 3rem minmax(0, 1fr) repeat(var(--grp-figs, 0), 6.5rem);
   padding: 0 12px 0 var(--gutter); border: 0; color: inherit; text-align: left; cursor: pointer; outline-offset: -2px;
-  background: linear-gradient(to right, transparent calc(var(--spine-x) + 8px), var(--band) calc(var(--spine-x) + 8px));
+  background: linear-gradient(to right, transparent var(--band-x), var(--band) var(--band-x));
   border-radius: 0 var(--radius-interactive) var(--radius-interactive) 0;
 }
 .k-grp__item:nth-child(even) > .k-grp { --band: var(--band-alt); }
@@ -524,6 +533,9 @@ button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); backgroun
  * right-only radius. No spine runs through a band, so a mark needs no background ring cutting it. */
 .k-dtile {
   --card-band: var(--band-alt);
+  /* No spine line runs through a band, so a row inside one has nothing to clear: the band starts
+   * beside the rail and the Mark sits ON it (grow-4, part 1). */
+  --band-x: 4px;
   padding: 12px 0; border-radius: 0 var(--radius-card) var(--radius-card) 0;
   background: linear-gradient(to right, color-mix(in srgb, var(--primary) 7%, var(--card-band)), var(--card-band) 55%);
 }
