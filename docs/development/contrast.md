@@ -10,9 +10,10 @@ at once, and CI catches regressions.
 
 ## The token gate — `scripts/check-themes.mjs`
 
-`npm run check:themes` parses `src/styles/globals.css`, resolves each theme's
-effective variable map (`:root` defaults + the `[data-theme="…"]` overrides),
-and computes contrast ratios. It is **wired into CI** (`.github/workflows/ci.yml`)
+`npm run check:themes` parses `src/styles/globals.css` **and
+`src/styles/typography.css`**, resolves each theme's effective variable map
+(`:root` defaults + the `[data-theme="…"]` overrides), and computes contrast
+ratios. It is **wired into CI** (`.github/workflows/ci.yml`)
 and **fails the build (exit 1)** if any of these text-token pairings drops below
 AA (4.5:1) in any theme:
 
@@ -30,6 +31,50 @@ icons, and accents rather than running copy.
 ```bash
 npm run check:themes      # prints the full table; exits 1 on any sub-AA text pairing
 ```
+
+### The type tokens — the other half, unread until 2026-10-03
+
+The table above grades the **palette**. `globals.css` only declares the
+variables; `typography.css` decides what fraction of them a given tier of text
+is painted in, and **that file was never opened**. The cost was measured: on
+2026-10-03 `.typo-caption`'s muting moved from 70% to 80% foreground — 4,292
+occurrences across 1,269 files, the widest-reaching text-colour change the app
+has had — and `check:themes` ran **green without looking at it**.
+`--muted-foreground`, which the gate does grade, appears **0 times** in
+`typography.css`; `.typo-caption` is what the app's secondary prose actually
+wears.
+
+So a second table now scores **every `.typo-*` rule that sets `color`** against
+each theme's `--background`, at the same 4.5:1 floor:
+
+- the per-theme value is the `[data-theme*="light"]` override where the file
+  writes one, otherwise the base declaration;
+- `color-mix(in srgb, A N%, transparent)` is composited over the canvas (the
+  same model the `muted-fg@80` row uses); an opaque second term is interpolated;
+- a value the parser cannot read is **printed as "not scored"**, never counted
+  as a pass, and a run that parses *no* type tokens **exits 2** — the matcher
+  going blind must not look like a clean bill of health.
+
+Known sub-AA cells are recorded in `TYPE_TOKEN_EXEMPT` with a reason and are
+**two-sided** (built like `MONOCHROME_THEMES`): a new one fails the gate, and an
+exemption whose cell has climbed back above the floor also fails, so the map
+cannot rot into a permanent licence. There are **four** today, all one defect
+seen four times — `dark-red`'s `--primary` is itself 3.4:1 on its own canvas
+(the informational `primary/bg` row above has always said so), and every
+primary-tinted tier (`typo-title`, `typo-title-lg`, `typo-section-title`,
+`typo-submodule-header`) inherits it. The fix is to move `dark-red`'s
+`--primary-raw` in `globals.css`; `typography.css` cannot correct it.
+
+Measured while wiring this up: the caption muting holds AA down to **`/65`** and
+breaks at **`/60`** on the light themes — so the 70→80 change was safe, which
+is now *verified* rather than assumed.
+
+**What this half still cannot see:** a `text-foreground/NN` utility written in a
+`.tsx` file appears in no stylesheet, so no CSS reader can find it (there are
+~1,679 such sites across 18 levels, `/15`–`/95`; a separate workstream owns
+them). What the gate *can* compute is the floor those sites must clear, and it
+prints it every run: `--foreground` over `--background` holds AA down to
+**`/50`** on the dark themes and **`/65`** on the light ones.
 
 ## The caption-opacity floor: `/80` minimum
 

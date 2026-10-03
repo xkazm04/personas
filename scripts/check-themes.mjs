@@ -5,7 +5,15 @@
  * Parses src/styles/globals.css, extracts the :root defaults and every
  * [data-theme="..."] override block, resolves each theme's effective CSS
  * variable map (overrides layered on root), then computes contrast ratios
- * for the pairs that matter:
+ * for the pairs that matter — AND, since 2026-10-03, scores every `.typo-*`
+ * colour in src/styles/typography.css against the same canvases, because
+ * globals.css only declares the VARIABLES and the type scale decides what
+ * fraction of them a tier of text is actually painted in. Reading one and not
+ * the other graded the palette and not the page: `.typo-caption`'s muting
+ * moved 70% -> 80% foreground (4,292 occurrences in 1,269 files) and this gate
+ * ran green without looking at it. See the "Type tokens" section.
+ *
+ * The pairs:
  *
  *   foreground       / background  (body text — MUST be AA, ideally AAA)
  *   muted-foreground / background  (secondary/helper text — MUST be AA)
@@ -30,6 +38,16 @@
  *
  * The remaining pairs (primary + status colors) stay informational warnings
  * at the 3.0:1 (AA-large / non-text-UI) threshold.
+ *
+ * Type-token AA gate (hard fail → exit 1, added 2026-10-03):
+ *   every `.typo-*` rule in typography.css that sets `color` is resolved per
+ *   theme (the file's `[data-theme*="light"]` override is matched as a second
+ *   rule), composited where the value is alpha, and held to the same 4.5:1
+ *   floor. Known sub-AA cells live in TYPE_TOKEN_EXEMPT with a reason, and are
+ *   TWO-SIDED exactly as MONOCHROME_THEMES is: a new one fails, and an
+ *   exemption whose cell has climbed back above the floor fails too. A run that
+ *   parses no type tokens exits 2 rather than grading zero of them — "found
+ *   nothing" and "looked at nothing" are different outcomes.
  *
  * Role distinctness gate (hard fail, added 2026-09-24, WP4c):
  *   every accent role must be told apart AT A GLANCE from every status colour
@@ -67,6 +85,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const CSS_PATH = process.env.CHECK_THEMES_CSS
   ? resolve(process.env.CHECK_THEMES_CSS)
   : resolve(__dirname, '..', 'src', 'styles', 'globals.css');
+// The type scale is the OTHER half of this audit's subject and was unread until
+// 2026-10-03 — see the "Type tokens" section below for what that cost.
+const TYPO_CSS_PATH = process.env.CHECK_THEMES_TYPO_CSS
+  ? resolve(process.env.CHECK_THEMES_TYPO_CSS)
+  : resolve(__dirname, '..', 'src', 'styles', 'typography.css');
 
 // --- Contrast math --------------------------------------------------------
 
@@ -460,8 +483,162 @@ function auditRendered(cssText, themes, monochrome = MONOCHROME_THEMES) {
   return cells;
 }
 
+// --- Type tokens (src/styles/typography.css) --------------------------------
+//
+// WHY THIS SECTION EXISTS, measured: on 2026-10-03 `.typo-caption`'s muting
+// moved from 70% to 80% foreground — 4,292 occurrences across 1,269 files, the
+// widest-reaching text-colour change this app has had — and `check:themes` ran
+// GREEN WITHOUT LOOKING AT IT, because it read only globals.css. A gate that
+// models one token family and is structurally blind to the other is the
+// "museum of gates that ran green while checking nothing" the census doctrine
+// names by that phrase.
+//
+// The division of labour between the two files is the reason the blind spot
+// was invisible: globals.css declares the VARIABLES (--foreground, --primary,
+// --background, per theme) and typography.css decides what fraction of them a
+// given tier of text is painted in. `--muted-foreground` is graded above and
+// has 0 occurrences in typography.css; `.typo-caption` is what the app's
+// secondary prose actually wears. Grading one and not the other grades the
+// palette and not the page.
+//
+// Scope: every `.typo-*` rule that sets `color`, resolved per theme (the file
+// writes a light-theme override as a second rule, matched on the selector),
+// composited where the value is alpha, and scored against that theme's
+// --background exactly as muted-foreground already is.
+
+/** Every flat `selector { body }` rule. A brace-free body means an `@layer` or
+ *  `@media` wrapper never matches as a rule of its own — the scan falls
+ *  through to the rules inside it, which is what we want. */
+function* cssRules(cssText) {
+  const src = cssText.replace(/\/\*[\s\S]*?\*\//g, '');
+  const re = /([^{}]+)\{([^{}]*)\}/g;
+  let m;
+  while ((m = re.exec(src))) yield { selector: m[1].trim(), body: m[2] };
+}
+
+/** The `.typo-*` tokens that set a text colour: `{ name, base, light }`, where
+ *  `light` is the override the file writes for `[data-theme*="light"]`. The
+ *  `color` match is prefixed so `background-color` and `color-mix(` inside
+ *  another property (text-shadow) cannot be mistaken for a text colour. */
+function parseTypeTokens(cssText) {
+  const tokens = new Map();
+  for (const { selector, body } of cssRules(cssText)) {
+    const names = [...selector.matchAll(/\.(typo-[a-z0-9-]+)/gi)].map((x) => x[1]);
+    if (names.length === 0) continue;
+    const decls = [...body.matchAll(/(?:^|[;{\s])color\s*:\s*([^;]+);/g)];
+    if (decls.length === 0) continue;
+    const value = decls[decls.length - 1][1].trim();
+    const light = /light/.test(selector);
+    for (const name of names) {
+      const entry = tokens.get(name) ?? { name, base: null, light: null };
+      entry[light ? 'light' : 'base'] = value;
+      tokens.set(name, entry);
+    }
+  }
+  return [...tokens.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** One colour term: a var(), a hex, or a keyword the type scale actually uses. */
+function termColour(term, effective) {
+  const t = term.trim();
+  if (/^transparent$/i.test(t)) return 'transparent';
+  if (/^white$/i.test(t)) return '#ffffff';
+  if (/^black$/i.test(t)) return '#000000';
+  let m = t.match(/^var\(\s*--([a-z0-9-]+)\s*\)$/i);
+  if (m) return effective[m[1]] ?? null;
+  m = t.match(/^#([0-9a-f]{3,8})$/i);
+  if (!m) return null;
+  const h = m[1];
+  return '#' + (h.length === 3 ? h.split('').map((c) => c + c).join('') : h.slice(0, 6));
+}
+
+/** The opaque colour a `color:` declaration delivers to the eye on `bg`.
+ *  `color-mix(in srgb, A N%, transparent)` is an ALPHA of N composited over the
+ *  canvas (blendOver, the same model the muted-fg@80 pair already uses); with
+ *  an opaque second term it is a plain sRGB interpolation. Anything else
+ *  returns a reason, which the audit PRINTS — a value this parser cannot read
+ *  is a hole in the gate, not a token that passed. */
+function resolveTextColour(expr, effective, bg) {
+  const e = expr.trim().replace(/\s+/g, ' ');
+  const direct = termColour(e, effective);
+  if (direct === 'transparent') return { skip: 'transparent (painted via background-clip)' };
+  if (direct) return { colour: direct };
+  const m = e.match(/^color-mix\(\s*in srgb\s*,\s*(.+?)\s+(\d+(?:\.\d+)?)%\s*,\s*(.+?)\s*\)$/i);
+  if (!m) return { skip: `unreadable value \`${e}\`` };
+  const a = termColour(m[1], effective);
+  const b = termColour(m[3], effective);
+  const pct = Number(m[2]) / 100;
+  if (!a || a === 'transparent' || !b) return { skip: `unreadable value \`${e}\`` };
+  return { colour: blendOver(a, b === 'transparent' ? bg : b, pct), alpha: b === 'transparent' ? pct : null };
+}
+
+// Text is text: a type token carries readable copy in every theme, so it holds
+// the same AA floor body and muted-foreground already do. Nothing lower is
+// defensible here — the whole point of the section is that the two families
+// were being held to different standards by accident.
+const TYPE_TOKEN_MIN = 4.5;
+
+// Cells that are below the floor today, each with the reason and where the fix
+// belongs. A TWO-SIDED exemption, built exactly like MONOCHROME_THEMES above: a
+// NEW sub-AA cell fails, and an exemption whose cell has climbed back above the
+// floor ALSO fails, so this map cannot rot into a permanent licence. The
+// standard stays AA for every token in every theme; these are recorded
+// deviations, not a lowered bar for a whole token family.
+//
+// All four are the same single defect seen four times: dark-red's `--primary`
+// is itself 3.4:1 on its own canvas, which the INFORMATIONAL primary/bg pair in
+// the palette table above has always measured. Every primary-tinted type token
+// (the Gate 0 tinted tier: title, title-lg, section-title, submodule-header)
+// inherits it. The fix is to move dark-red's --primary in globals.css — a
+// palette decision owned by the theme, not something typography.css can correct
+// — so it is registered rather than silently ground off here.
+const TYPE_TOKEN_EXEMPT = {
+  'dark-red·typo-title': "dark-red --primary is 3.4:1 on its canvas (see primary/bg above); the tinted tier inherits it. Fix = move --primary-raw in globals.css.",
+  'dark-red·typo-title-lg': "dark-red --primary is 3.4:1 on its canvas (see primary/bg above); the tinted tier inherits it. Fix = move --primary-raw in globals.css.",
+  'dark-red·typo-section-title': "dark-red --primary is 3.4:1 on its canvas (see primary/bg above); the tinted tier inherits it. Fix = move --primary-raw in globals.css.",
+  'dark-red·typo-submodule-header': "dark-red --primary is 3.4:1 on its canvas (see primary/bg above); the tinted tier inherits it. Fix = move --primary-raw in globals.css.",
+};
+
+/** Every `.typo-*` colour against every theme's canvas. */
+function auditTypeTokens(tokens, themes, exempt = TYPE_TOKEN_EXEMPT) {
+  const rows = [];
+  const failures = [];
+  const skipped = [];
+  const exempted = [];
+  const seenBelow = new Set();
+  let scored = 0;
+  for (const theme of themes) {
+    if (theme.error) continue;
+    const bg = theme.effective.background;
+    const cells = {};
+    for (const tok of tokens) {
+      const expr = (theme.id.startsWith('light') && tok.light) || tok.base;
+      if (!expr) { cells[tok.name] = null; continue; }
+      const r = resolveTextColour(expr, theme.effective, bg);
+      if (!r.colour) {
+        skipped.push({ theme: theme.id, token: tok.name, why: r.skip });
+        cells[tok.name] = null;
+        continue;
+      }
+      scored++;
+      const key = `${theme.id}·${tok.name}`;
+      const ratio = contrastRatio(r.colour, bg);
+      const low = ratio < TYPE_TOKEN_MIN;
+      const isExempt = low && key in exempt;
+      if (low) seenBelow.add(key);
+      cells[tok.name] = { ratio, level: level(ratio), fg: r.colour, alpha: r.alpha, exempt: isExempt };
+      if (low && !isExempt) failures.push({ theme: theme.id, token: tok.name, ratio, expr, fg: r.colour, bg });
+      if (isExempt) exempted.push({ theme: theme.id, token: tok.name, ratio, why: exempt[key] });
+    }
+    rows.push({ id: theme.id, cells });
+  }
+  // The other side of the exemption: a recorded deviation that is no longer one.
+  const stale = Object.keys(exempt).filter((k) => !seenBelow.has(k));
+  return { rows, failures, skipped, exempted, stale, scored };
+}
+
 /** Proves the instrument and the gate before the real run trusts them. */
-function selfCheck(cssText) {
+function selfCheck(cssText, typoText, typeThemes) {
   const problems = [];
   for (const [a, b, want] of CIEDE2000_TEST_DATA) {
     const got = deltaE2000Lab(a, b);
@@ -482,6 +659,39 @@ function selfCheck(cssText) {
   // Seed 2: an exemption declared for a theme that has hue must read stale.
   const stale = auditDistinct(resolveThemes(cssText), { ...MONOCHROME_THEMES, 'dark-midnight': 'seeded' }).stale;
   cases.push({ name: 'dark-midnight declared monochrome', caught: stale.includes('dark-midnight'), detail: [] });
+  // Seed 3: the change this section was added for, pushed until it breaks.
+  // `.typo-caption`'s muting is the app's widest-reaching text colour; take it
+  // from 80% foreground to 35% and the gate must go red. Proven on every run,
+  // so a future refactor that quietly stops reading typography.css — the exact
+  // failure this section closes — cannot pass as green.
+  const typoTokens = parseTypeTokens(typoText);
+  if (typoTokens.length === 0) {
+    problems.push('seed 3: no .typo-* colour rules parsed out of typography.css');
+  } else if (!typoTokens.some((x) => x.name === 'typo-caption')) {
+    problems.push('seed 3: .typo-caption carries no colour declaration any more — re-point this seed');
+  } else {
+    const seeded = typoTokens.map((x) => (x.name === 'typo-caption'
+      ? { ...x, base: 'color-mix(in srgb, var(--foreground) 35%, transparent)', light: null }
+      : x));
+    const caught = auditTypeTokens(seeded, typeThemes).failures.filter((f) => f.token === 'typo-caption');
+    cases.push({
+      name: 'typo-caption muted to 35% foreground (AA floor 4.5:1)',
+      caught: caught.length > 0,
+      detail: caught.map((f) => ({ theme: f.theme, a: f.token, b: 'background', de: null, ratio: f.ratio, ha: f.fg, hb: f.bg })),
+    });
+    // Seed 4: the OTHER side of the type-token exemption, as seed 2 is for the
+    // monochrome one. An exemption declared for a cell that holds AA must read
+    // stale, or the map becomes a permanent licence nobody revisits.
+    const staleType = auditTypeTokens(typoTokens, typeThemes, {
+      ...TYPE_TOKEN_EXEMPT,
+      'dark-midnight·typo-caption': 'seeded',
+    }).stale;
+    cases.push({
+      name: 'dark-midnight · typo-caption declared exempt while above AA',
+      caught: staleType.includes('dark-midnight·typo-caption'),
+      detail: [],
+    });
+  }
   for (const c of cases) if (!c.caught) problems.push(`seeded case NOT caught: ${c.name}`);
   return { problems, cases };
 }
@@ -490,6 +700,19 @@ const css = readFileSync(CSS_PATH, 'utf8');
 const resolved = resolveThemes(css);
 if (!resolved) {
   console.error('FATAL: could not find :root block in globals.css');
+  process.exit(2);
+}
+
+const typoCss = readFileSync(TYPO_CSS_PATH, 'utf8');
+const typeTokens = parseTypeTokens(typoCss);
+const typeAudit = auditTypeTokens(typeTokens, resolved);
+// Fail-loud contract (census doctrine): "found nothing" and "looked at nothing"
+// are different outcomes and only one of them is success. A parser that stops
+// matching typography.css must break the run, not quietly grade zero tokens —
+// that silence is the exact defect this section was added to end.
+if (typeTokens.length === 0 || typeAudit.scored === 0) {
+  console.error(`FATAL: no .typo-* colour rules scored out of ${TYPO_CSS_PATH} ` +
+    `(${typeTokens.length} token(s) parsed, ${typeAudit.scored} cell(s) scored) — the type-token matcher is broken`);
   process.exit(2);
 }
 
@@ -546,7 +769,7 @@ function colorLevel(lvl, failed) {
   return DIM + lvl + RESET;
 }
 
-console.log('\nWCAG contrast audit — src/styles/globals.css\n');
+console.log('\nWCAG contrast audit — src/styles/globals.css (palette) + src/styles/typography.css (type tokens)\n');
 
 const header = ['theme'.padEnd(15)].concat(PAIRS.map((p) => p.label.padEnd(13))).join('');
 console.log(DIM + header + RESET);
@@ -589,6 +812,74 @@ if (hardFailures > 0) {
   console.log(GREEN + 'OK: all text-token pairings (body / muted-foreground / muted-foreground@80% / muted / the four accent roles) meet AA in every theme' + RESET);
 }
 
+// --- Type-token output --------------------------------------------------------
+
+const typoShort = (name) => name.replace(/^typo-/, '');
+console.log(`\nType tokens — every .typo-* colour in typography.css vs its theme's canvas, AA floor ${TYPE_TOKEN_MIN}:1\n`);
+
+const typeHeader = ['theme'.padEnd(15)].concat(typeTokens.map((tok) => typoShort(tok.name).slice(0, 12).padEnd(13))).join('');
+console.log(DIM + typeHeader + RESET);
+console.log(DIM + '-'.repeat(15 + typeTokens.length * 13) + RESET);
+for (const row of typeAudit.rows) {
+  const cells = [row.id.padEnd(15)];
+  for (const tok of typeTokens) {
+    const r = row.cells[tok.name];
+    if (!r) {
+      cells.push(DIM + 'n/a'.padEnd(13) + RESET);
+    } else {
+      const lvl = r.exempt ? YELLOW + r.level + RESET : colorLevel(r.level, r.ratio < TYPE_TOKEN_MIN);
+      cells.push((r.ratio.toFixed(1) + ':1 ' + lvl).padEnd(13 + lvl.length - r.level.length));
+    }
+  }
+  console.log(cells.join(''));
+}
+for (const s of typeAudit.skipped) {
+  console.log(DIM + `  not scored: ${s.theme} · .${s.token} — ${s.why}` + RESET);
+}
+for (const e of typeAudit.exempted) {
+  console.log(YELLOW + `  recorded deviation: ${e.theme} · .${e.token} = ${e.ratio.toFixed(2)}:1 — ${e.why}` + RESET);
+}
+
+// What this half of the gate still cannot see, said out loud rather than left
+// to be assumed. A `text-foreground/NN` utility in a .tsx file appears in no
+// stylesheet, so no CSS reader can find it (a separate workstream owns the
+// 1,679 such sites, 18 distinct levels, /15 to /95). What IS computable from
+// here is the FLOOR those sites have to clear: the lowest alpha at which
+// `--foreground` over `--background` still holds AA, per theme. Informational
+// — this gate grades declarations, not call sites.
+const alphaFloor = (theme) => {
+  for (let pct = 5; pct <= 100; pct += 5) {
+    if (contrastRatio(blendOver(theme.effective.foreground, theme.effective.background, pct / 100), theme.effective.background) >= TYPE_TOKEN_MIN) return pct;
+  }
+  return null;
+};
+const floors = resolved.filter((t) => !t.error && t.effective.foreground && t.effective.background)
+  .map((t) => ({ id: t.id, pct: alphaFloor(t) }));
+const worstFloor = floors.reduce((a, b) => (b.pct !== null && (a === null || b.pct > a.pct) ? b.pct : a), null);
+console.log(YELLOW + `\n  text-foreground/NN utilities (informational, NOT graded — they live in .tsx, not in any\n` +
+  `  stylesheet, so no CSS reader can see them): AA needs /${worstFloor} in the worst theme ` +
+  `(${floors.filter((f) => f.pct === worstFloor).map((f) => f.id).join(', ')}); per theme ` +
+  floors.map((f) => `${f.id} /${f.pct}`).join(', ') + RESET);
+
+if (typeAudit.failures.length > 0) {
+  console.log(RED + `\nFAIL: ${typeAudit.failures.length} type-token colour(s) below AA (${TYPE_TOKEN_MIN}:1):` + RESET);
+  for (const f of typeAudit.failures) {
+    console.log(RED + `  • ${f.theme} · .${f.token} = ${f.ratio.toFixed(2)}:1 — ${f.fg} on ${f.bg}  (${f.expr})` + RESET);
+  }
+  console.log(DIM + '\nA .typo-* token sets the text colour of every surface that wears it. Adjust the\n' +
+    'declaration in src/styles/typography.css (or the variable it mixes, in globals.css);\n' +
+    'see docs/development/contrast.md. A cell that is a known, owned deviation goes in\n' +
+    'TYPE_TOKEN_EXEMPT with its reason — never by relaxing the floor.' + RESET);
+}
+if (typeAudit.stale.length > 0) {
+  console.log(RED + `\nFAIL: ${typeAudit.stale.length} stale type-token exemption(s) — the cell now holds AA (or no longer exists):` + RESET);
+  for (const k of typeAudit.stale) console.log(RED + `  • ${k} — delete it from TYPE_TOKEN_EXEMPT` + RESET);
+}
+if (typeAudit.failures.length === 0 && typeAudit.stale.length === 0) {
+  console.log(GREEN + `\nOK: all ${typeAudit.scored} type-token/theme colour(s) across ${typeTokens.length} .typo-* token(s) meet AA` +
+    (typeAudit.exempted.length > 0 ? ` (${typeAudit.exempted.length} recorded deviation(s), listed above)` : '') + RESET);
+}
+
 // --- Role distinctness output -------------------------------------------------
 
 const short = (name) => name.replace(/^(status|role)-/, '');
@@ -628,21 +919,26 @@ if (process.argv.includes('--matrix')) {
   for (const c of rendered) console.log(DIM + `    ${c.theme.padEnd(15)}${c.tier.padEnd(11)}min ${c.de.toFixed(1)} (${short(c.a)} / ${short(c.b)})` + RESET);
 }
 
-const check = selfCheck(css);
+const check = selfCheck(css, typoCss, resolved);
 console.log(DIM + `\n  instrument: CIEDE2000 reproduces ${CIEDE2000_TEST_DATA.length} published pairs (Sharma et al. 2005); ` +
   `${check.cases.filter((c) => c.caught).length}/${check.cases.length} seeded cases caught (--self-check shows them)` + RESET);
 if (process.argv.includes('--self-check')) {
   for (const c of check.cases) {
     console.log(`\n  seeded: ${c.name} -> ${c.caught ? 'CAUGHT' : 'MISSED'}`);
     for (const f of c.detail) {
-      console.log(RED + `    FAIL ${f.theme} · ${f.a} ${f.ha} vs ${f.b} ${f.hb} = deltaE ${f.de.toFixed(1)} (needs >= ${DISTINCT_MIN_DE00})` + RESET);
+      // Two kinds of seeded failure now: a distinctness pair (deltaE) and a
+      // type-token contrast pair (a ratio against the canvas).
+      console.log(f.de === null
+        ? RED + `    FAIL ${f.theme} · .${f.a} ${f.ha} on ${f.b} ${f.hb} = ${f.ratio.toFixed(2)}:1 (needs >= ${TYPE_TOKEN_MIN})` + RESET
+        : RED + `    FAIL ${f.theme} · ${f.a} ${f.ha} vs ${f.b} ${f.hb} = deltaE ${f.de.toFixed(1)} (needs >= ${DISTINCT_MIN_DE00})` + RESET);
     }
-    if (c.name.startsWith('dark-midnight')) console.log(RED + '    FAIL stale monochrome exemption: dark-midnight has no grey pair below the bar' + RESET);
+    if (c.name === 'dark-midnight declared monochrome') console.log(RED + '    FAIL stale monochrome exemption: dark-midnight has no grey pair below the bar' + RESET);
+    if (c.name.startsWith('dark-midnight · typo-caption')) console.log(RED + '    FAIL stale type-token exemption: dark-midnight · .typo-caption is above the AA floor' + RESET);
   }
 }
 
 if (check.problems.length > 0) {
-  console.log(RED + '\nFATAL: the distinctness instrument is broken:' + RESET);
+  console.log(RED + '\nFATAL: an instrument is broken (distinctness and/or the type-token matcher):' + RESET);
   for (const p of check.problems) console.log(RED + '  • ' + p + RESET);
   process.exit(2);
 }
@@ -660,4 +956,4 @@ if (distinct.failures.length > 0 || distinct.stale.length > 0) {
 }
 const distinctFailed = distinct.failures.length > 0 || distinct.stale.length > 0;
 if (!distinctFailed) console.log(GREEN + `\nOK: every role is at least deltaE ${DISTINCT_MIN_DE00} from every status and every other role in every theme` + RESET);
-process.exit(hardFailures > 0 || distinctFailed ? 1 : 0);
+process.exit(hardFailures > 0 || distinctFailed || typeAudit.failures.length > 0 || typeAudit.stale.length > 0 ? 1 : 0);
