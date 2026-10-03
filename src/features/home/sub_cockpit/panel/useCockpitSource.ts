@@ -50,13 +50,28 @@ export function useCockpitSource() {
       .catch(silentCatch('cockpit_metrics_summary'));
   }, []);
   // Personas: fetch-if-empty exactly once (an empty fleet re-produces a fresh [] per fetch).
+  //
+  // Law 6 (`docs/design/overview-loading.md`, 2026-10-03): the roster is this body's OTHER
+  // source, and the starter cockpit is composed from it. Until this cycle settles, "no spec and
+  // no personas" is indistinguishable from "never composed and no fleet" - which is what the
+  // talk-to-Athena hero asserts. Without `rosterSettled` the panel announced an empty cockpit
+  // (a 440px image) in the window before the roster answered, then replaced it with the starter
+  // grid. Same shape as `useGetStarted` (`sub_welcome/WelcomeGetStarted.tsx:43`), which gates
+  // its first-run band on the same fetch for the same reason, and as the eight premature empty
+  // states fixed in `678ee0eae` / `24dc4d13b`.
   const personasRequestedRef = useRef(false);
+  const [rosterSettled, setRosterSettled] = useState(false);
   useEffect(() => {
     if ((!personas || personas.length === 0) && !personasRequestedRef.current) {
       personasRequestedRef.current = true;
-      fetchPersonas().catch(silentCatch('cockpit_fetch_personas'));
+      fetchPersonas()
+        .catch(silentCatch('cockpit_fetch_personas'))
+        .finally(() => setRosterSettled(true));
     }
   }, [personas, fetchPersonas]);
+  // A pre-warmed roster (the shell fetches it in wave 1) never enters the branch above, so it is
+  // settled by definition and the ghost is skipped entirely.
+  const rosterPending = (personas?.length ?? 0) === 0 && !rosterSettled;
 
   const load = useCallback(() => {
     setLoading(true);
@@ -136,11 +151,16 @@ export function useCockpitSource() {
     [showDefault, personas, metrics, labels],
   );
 
+  // Each source retires its own part of the body, in the order they can decide it: Athena's spec
+  // paints the moment it lands and never waits for the roster or the metrics; the starter paints
+  // the moment the roster lands and never waits for the metrics (the vitals tile says so itself -
+  // `defaultCockpit.ts` renders a metric it has not got as an em dash, not as a zero); and the
+  // empty CTA is reached only once BOTH reads that could fill the body have answered.
   const phase: CockpitPhase = contextual
     ? 'contextual'
     : parseFailed || (error && !spec)
       ? 'error'
-      : loading && !spec
+      : (loading || rosterPending) && !spec
         ? 'loading'
         : persistent
           ? 'composed'

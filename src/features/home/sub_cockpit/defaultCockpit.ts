@@ -104,7 +104,11 @@ export function composeDefaultCockpit(
             unit: successRate !== null ? '%' : undefined,
             intent: successIntent(successRate),
           },
-          { label: labels.stat.executions, value: metrics?.totalExecutions ?? 0 },
+          // An em dash, not a zero: this tile paints as soon as the ROSTER lands, and the metrics
+          // summary is a separate cycle that may still be in flight (law 6). `0 executions` is a
+          // claim about the fleet; `—` is the honest "not read yet", and it is the same answer the
+          // success rate above gives for the same reason.
+          { label: labels.stat.executions, value: metrics?.totalExecutions ?? '—' },
           {
             label: labels.stat.needsAttention,
             value: attention.length,
