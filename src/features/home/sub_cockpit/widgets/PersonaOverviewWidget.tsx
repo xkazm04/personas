@@ -99,20 +99,17 @@ export function PersonaOverviewWidget({ config, title, span, actions, footer }: 
   }
 
   const c = t.overview.cockpit;
-  // The description takes the slack the name column would otherwise swallow on a 12-span tile;
-  // the fixed tracks keep model, state and trust lined up down the list whatever the tile's span.
+  // No description column. It was the "Detail" column the owner removed by name on 2026-10-03, and
+  // measured on the 5-span roster of `home/cockpit` it cost the row its ONE emphasis: with five
+  // tracks in ~590px the persona's NAME truncated to "Release..." while its description showed
+  // "Release Notes ...". A roster says who, how, how healthy and how trusted; the description is
+  // on the featured block above and on the persona's own page.
   const columns: TableColumn<Persona>[] = [
     {
       key: 'name',
       label: c.col_persona,
-      width: 'minmax(0, 1fr)',
-      render: (p) => nameCell(p.name, personaMark(p, t).label, p.name),
-    },
-    {
-      key: 'description',
-      label: t.common.description,
       width: 'minmax(0, 1.6fr)',
-      render: (p) => <Cell value={p.description} hint={p.description} />,
+      render: (p) => nameCell(p.name, personaMark(p, t).label, p.name),
     },
     {
       key: 'model',

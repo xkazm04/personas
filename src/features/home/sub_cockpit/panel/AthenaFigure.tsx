@@ -25,12 +25,15 @@ export function AthenaFigure({ size = 22 }: { size?: number }) {
       style={{ width: size, height: size, background: 'color-mix(in srgb, var(--primary) 24%, var(--background))' }}
       aria-hidden
     >
+      {/* The still is a full figure on a square canvas, so `object-cover` alone would put her
+          whole body in a 22px disc and read as a smudge. The image is laid in at 2.6x the disc and
+          offset so her face - centred at roughly (50%, 37%) of the frame - lands at the disc's
+          centre. Measured off `athena_baseline.jpg` itself, not guessed. */}
       <img
         src="/athena/athena_baseline.jpg"
         alt=""
-        className="absolute inset-0 w-full h-full object-cover"
-        // Her eyes sit high in the frame; the still is a full figure, so the disc crops to the face.
-        style={{ objectPosition: '50% 16%' }}
+        className="absolute max-w-none"
+        style={{ width: size * 2.6, height: size * 2.6, left: -0.8 * size, top: -0.462 * size }}
       />
     </span>
   );

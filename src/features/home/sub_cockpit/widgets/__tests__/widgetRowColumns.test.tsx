@@ -136,7 +136,7 @@ function persona(over: Partial<Persona>): Persona {
 }
 
 describe('PersonaOverviewWidget', () => {
-  it('the roster spreads description, model, state and trust into named columns', () => {
+  it('the roster is who / how / how healthy / how trusted - and carries no description column', () => {
     useAgentStore.setState({
       personas: [
         persona({ id: 'hero', name: 'Incident Commander' }),
@@ -145,15 +145,15 @@ describe('PersonaOverviewWidget', () => {
       fetchPersonas: vi.fn().mockResolvedValue(undefined),
     } as never);
     render(<PersonaOverviewWidget title="Your fleet" config={{ hero: 'hero' }} />);
-    const heads = headsOf('cockpit-persona-overview-table');
-    expect(heads).not.toContain('Detail');
-    expect(heads[0]).toBe('Persona');
-    expect(heads[1]).toBe('Description');
+    // The description WAS the "Detail" column the owner removed by name, and on the 5-span roster
+    // it truncated the row's one emphasis - the persona's name - to make room for itself.
+    expect(headsOf('cockpit-persona-overview-table')).toEqual(['Persona', 'Model', 'Status', 'Trust']);
     const cells = cellsOf(rowsOf('cockpit-persona-overview-table')[0]!);
-    expect(cells).toHaveLength(5);
-    expect(cells[1]).toContain('Sorts the morning inbox');
-    expect(cells[2]).toContain('Sonnet');
-    expect(cells[4]).toContain('90%');
+    expect(cells).toHaveLength(4);
+    expect(cells[0]).toContain('Inbox Triage');
+    expect(cells[0]).not.toContain('Sorts the morning inbox');
+    expect(cells[1]).toContain('Sonnet');
+    expect(cells[3]).toContain('90%');
     expect(screen.getByText('Inbox Triage')).toBeInTheDocument();
   });
 
