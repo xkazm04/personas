@@ -226,11 +226,18 @@
 .k-time { min-width: 2.6em; text-align: right; white-space: nowrap; }
 
 /* ============ StatStrip ============ */
-.k-stats { display: flex; flex-wrap: wrap; gap: 4px 8px; padding: 0 12px 4px var(--gutter); }
+/* The strip PACKS at a measured track and stops growing (grow-4, part 4). `flex: 1 1 140px` grew
+ * every tile to fill the strip, so six stats in a 1500px row became six ~250px columns, each with
+ * its figure alone in a wide empty cell (the Cockpit's "Fleet vitals"). A stat is a UNIT: its
+ * track is declared (--stat-w) and capped (--stat-max), and the strip's leftover room stays
+ * leftover room. A lone tile is still a strip of one - its content was left-aligned inside the
+ * tile either way, and now its hover and selected band is the unit rather than the whole row.
+ * A dense tool surface keeps growing tiles (it has no room to spare) and clears the cap. */
+.k-stats { --stat-w: 10rem; --stat-max: 14rem; display: flex; flex-wrap: wrap; gap: 4px 8px; padding: 0 12px 4px var(--gutter); }
 .k-tile {
   position: relative; display: flex; flex-direction: column; gap: 6px; min-width: 0;
   padding: 10px 14px 12px 12px; border-radius: var(--radius-interactive); transition: background-color var(--duration-fast);
-  flex: 1 1 140px;
+  flex: 0 1 var(--stat-w); max-width: var(--stat-max);
 }
 .k-tile:hover, .k-tile.is-hover { background: var(--band-hover); }
 .k-tile.is-selected { background: var(--band-sel); }
@@ -423,7 +430,7 @@ button.k-chip:hover, .k-chip.is-hover { border-color: color-mix(in srgb, var(--p
 /* ============ dense tool surfaces: the working list is on screen at arrival ============ */
 .k-surface--dense .k-section { padding-bottom: 22px; }
 .k-surface--dense .k-section__head { padding-bottom: 8px; }
-.k-surface--dense .k-stats { flex-wrap: wrap; gap: 2px 4px; }
+.k-surface--dense .k-stats { --stat-max: none; flex-wrap: wrap; gap: 2px 4px; }
 .k-surface--dense .k-tile { flex: 1 1 auto; padding: 6px 14px 8px 12px; gap: 3px; }
 .k-surface--dense .k-tile__fig { line-height: 1.15; }
 .k-surface--dense .k-tile__draw { min-height: 0; }
