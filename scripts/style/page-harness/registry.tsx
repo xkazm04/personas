@@ -23,6 +23,7 @@ import { KIT_OVERVIEW_MODULES } from './kitOverview';
 import { HOME_WELCOME_MODULES } from './homeWelcomeSurfaces';
 import { HOME_LEARNING_MODULES } from './homeLearningSurfaces';
 import { HOME_COCKPIT_MODULES } from './homeCockpitSurfaces';
+import { HOME_SYSTEM_CHECK_MODULES } from './homeSystemCheckSurfaces';
 import { KIT_TILES_MODULES } from './kitTiles';
 import { ATHENA_TABLE_MODULES } from './athenaTableSurfaces';
 import { TWIN_BLUEPRINT_MODULES } from './twinBlueprintSurfaces';
@@ -79,6 +80,8 @@ export const MODULES: Record<string, HarnessModule> = {
   ...HOME_LEARNING_MODULES,
   // Kit batch home-2, Home > Cockpit + Athena chat cards + council evidence well (homeCockpitSurfaces.tsx, homeCockpitTapes.mjs).
   ...HOME_COCKPIT_MODULES,
+  // Kit batch home-3, Home > System Check (homeSystemCheckSurfaces.tsx, homeSystemCheckTapes.mjs).
+  ...HOME_SYSTEM_CHECK_MODULES,
   // The kit specimen: every kit part in its states (kitSpecimen.tsx); harness-only.
   ...KIT_MODULES,
   ...KIT_OVERVIEW_MODULES,

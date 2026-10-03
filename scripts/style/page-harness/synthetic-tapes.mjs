@@ -14,6 +14,7 @@ import { factoryTapes } from './factoryTapes.mjs';
 import { homeWelcomeTapes } from './homeWelcomeTapes.mjs';
 import { homeLearningTapes } from './homeLearningTapes.mjs';
 import { homeCockpitTapes } from './homeCockpitTapes.mjs';
+import { homeSystemCheckTapes } from './homeSystemCheckTapes.mjs';
 import { twinDetailTapes } from './twinDetailTapes.mjs';
 
 export const RECORDED_AT = '2026-09-22T15:40:00.000Z';
@@ -291,6 +292,8 @@ const BUILDERS = {
   ...homeLearningTapes({ RECORDED_AT }).builders,
   // Kit batch home-2, Home > Cockpit + Athena chat cards + council evidence well (homeCockpitSurfaces.tsx, homeCockpitTapes.mjs).
   ...homeCockpitTapes({ RECORDED_AT }).builders,
+  // Kit batch home-3, Home > System Check (homeSystemCheckSurfaces.tsx, homeSystemCheckTapes.mjs).
+  ...homeSystemCheckTapes({ RECORDED_AT }).builders,
   // Kit grow-3 (kitTiles.tsx): the composed-a Cockpit tape, its seed joined by the briefing,
   // chat-card and council-seat seeds the recomposed stacks read.
   ...Object.fromEntries(['kit/tiles'].map((id) => [id, () => kitTilesTape(id)])),
