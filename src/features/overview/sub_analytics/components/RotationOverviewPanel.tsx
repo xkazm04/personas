@@ -11,6 +11,7 @@ import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from "@/stores/toastStore";
+import { silentCatch } from '@/lib/silentCatch';
 import type { RotationOverviewItem } from '@/stores/slices/vault/rotationSlice';
 import { useRotationOverviewList } from "@/stores/selectors/rotationOverview";
 
@@ -105,12 +106,30 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
   const fetchAllRotationStatuses = useVaultStore((s) => s.fetchAllRotationStatuses);
   const rotateCredentialNow = useVaultStore((s) => s.rotateCredentialNow);
   const credentials = useVaultStore((s) => s.credentials);
+  const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const addToast = useToastStore((s) => s.addToast);
 
   // Tracks which row is mid-rotation so we can spin its button without
   // blocking sibling rotate clicks.
   const [rotatingId, setRotatingId] = useState<string | null>(null);
+
+  // "No rotation policies configured" is a verdict about the credential list,
+  // and neither vault slice carries a loading flag, so this panel had no way to
+  // tell "nothing to rotate" from "nothing has arrived yet" — and asserted the
+  // first over an empty initial store (docs/design/overview-loading.md,
+  // Definition of done: "Empty state renders only when !isFetching"). The read
+  // it depends on is the honest signal: `fetchCredentials` is deduped and
+  // TTL-cached (createCachedFetch), so awaiting it here costs no extra IPC and
+  // is the only place that learns the list has actually come back.
+  const [credsSettled, setCredsSettled] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    void Promise.resolve(fetchCredentials())
+      .catch(silentCatch('RotationOverviewPanel:fetchCredentials'))
+      .finally(() => { if (alive) setCredsSettled(true); });
+    return () => { alive = false; };
+  }, [fetchCredentials]);
 
   useEffect(() => {
     if (credentials.length > 0) {
@@ -140,8 +159,16 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
     }
   }, [rotateCredentialNow, addToast, t, tx, rotatingId]);
 
-  if (rotationOverviewList.length === 0 && credentials.length > 0) {
-    return null; // No rotation policies configured -- don't show the panel
+  // Whether this panel exists at all is itself decided by the credential read,
+  // so until that read has come back there is nothing honest to paint: not the
+  // rows (none yet), not "no rotation policies configured" (unknown), and not a
+  // ghost either — a placeholder for a panel that may legitimately resolve to
+  // nothing promises content that will never arrive. overview-loading.md §D
+  // sanctions exactly this for an optional widget ("fallback={null} is
+  // acceptable for small widgets"); its absence shifts no layout, because
+  // absence is already this panel's normal outcome on the line below.
+  if (rotationOverviewList.length === 0 && (credentials.length > 0 || !credsSettled)) {
+    return null; // No rotation policies configured (or not yet known) -- don't show the panel
   }
 
   return (

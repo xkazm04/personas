@@ -39,6 +39,13 @@ export interface HealingIssuesPanelProps {
   setViewMode: (mode: ViewMode) => void;
   timelineEvents: HealingTimelineEvent[];
   timelineLoading: boolean;
+  /**
+   * True while the healing-issues read is still in flight — it has produced
+   * neither a result nor an error. The timeline half of this panel has always
+   * had `timelineLoading`; the list half had nothing, so a cold visit was told
+   * "no open issues" and then watched them appear.
+   */
+  issuesLoading: boolean;
   selectedPersonaId?: string | null;
   personas: ReadonlyArray<{ id: string; name: string }>;
   w: ObservabilityWords;
@@ -84,7 +91,9 @@ export function HealingIssuesPanel(p: HealingIssuesPanelProps) {
       id="s-obs-health"
       eyebrow={w.eyebrow}
       title={o.healing_issues_panel.title}
-      count={p.healingIssues.length}
+      // A "0" beside a ghost is the same false claim the empty band was: while
+      // the read is in flight the section head has no count to show yet.
+      count={p.issuesLoading && p.healingIssues.length === 0 ? undefined : p.healingIssues.length}
       meta={p.healingIssues.length > 0 ? <HealingIssueSummary issues={p.healingIssues} w={w} /> : undefined}
       actions={
         <KitButton onClick={p.handleRunAnalysis} loading={p.healingRunning} testId="obs-run-analysis">
@@ -146,6 +155,7 @@ export function HealingIssuesPanel(p: HealingIssuesPanelProps) {
               onResolve={p.resolveHealingIssue}
               personaName={personaName}
               empty={{ title: o.healing_issues_panel.no_open_issues, hint: o.healing_issues_panel.run_analysis_hint, tone: 'success' }}
+              loading={p.issuesLoading}
               w={w}
             />
           )}

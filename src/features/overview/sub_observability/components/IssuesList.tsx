@@ -23,10 +23,18 @@ interface IssuesListProps {
   onResolve: (id: string) => void;
   personaName: (id: string) => string | null;
   empty: EmptySpec;
+  /**
+   * True while the issues read is still in flight and has produced neither rows
+   * nor an error. `DataTable` has always accepted `loading` and this list never
+   * passed it, so a cold visit was told "no open issues" and then watched them
+   * appear (docs/design/overview-loading.md, Definition of done: "Empty state
+   * renders only when !isFetching").
+   */
+  loading?: boolean;
   w: ObservabilityWords;
 }
 
-export function IssuesList({ issues, selectedId, onSelect, onOpen, onResolve, personaName, empty, w }: IssuesListProps) {
+export function IssuesList({ issues, selectedId, onSelect, onOpen, onResolve, personaName, empty, loading, w }: IssuesListProps) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   // A filter that shortens the list starts it again from the first page.
   useEffect(() => { setVisibleCount(PAGE_SIZE); }, [issues]);
@@ -85,6 +93,10 @@ export function IssuesList({ issues, selectedId, onSelect, onOpen, onResolve, pe
           { key: 'act', label: '', num: true },
         ]}
         rows={rows}
+        // Ghosts only into emptiness: a refresh never hides rows already on
+        // screen (law 1), which is the same shape every other DataTable in this
+        // module passes (AthenaSpendSection, ToolPerformanceSection, …).
+        loading={loading && issues.length === 0}
         empty={empty}
         pager={issues.length > visibleCount ? (
           <>

@@ -15,8 +15,14 @@ const SHOWN = 10;
 
 export function AlertHistoryPanel({ eyebrow }: { eyebrow?: string }) {
   const { t } = useTranslation();
-  const { alertHistory, dismissAlert, clearAlertHistory } = useOverviewStore(useShallow((s) => ({
-    alertHistory: s.alertHistory, dismissAlert: s.dismissAlert, clearAlertHistory: s.clearAlertHistory,
+  // `alertHistoryLoading` has existed in alertSlice since this panel did and was
+  // never read here, so a cold open said "no alerts" before the read returned
+  // (docs/design/overview-loading.md, Definition of done: "Empty state renders
+  // only when !isFetching"). `Rows` already owns the calm delayed ghost; the
+  // flag was the only missing piece.
+  const { alertHistory, alertHistoryLoading, dismissAlert, clearAlertHistory } = useOverviewStore(useShallow((s) => ({
+    alertHistory: s.alertHistory, alertHistoryLoading: s.alertHistoryLoading,
+    dismissAlert: s.dismissAlert, clearAlertHistory: s.clearAlertHistory,
   })));
   const [all, setAll] = useState(false);
   const active = alertHistory.filter((a) => !a.dismissed).length;
@@ -34,6 +40,7 @@ export function AlertHistoryPanel({ eyebrow }: { eyebrow?: string }) {
     >
       <Rows
         count={shown.length}
+        loading={alertHistoryLoading && alertHistory.length === 0}
         empty={{ title: t.overview.emptyState.alerts_title, hint: t.overview.emptyState.alerts_subtitle, tone: 'success' }}
         label={t.overview.healing_issues_panel.alert_history_title}
         pager={alertHistory.length > SHOWN && !all ? (

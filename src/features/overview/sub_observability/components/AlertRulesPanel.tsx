@@ -35,6 +35,12 @@ export function AlertRulesPanel({ eyebrow }: { eyebrow?: string }) {
   const s = useOverviewStore(useShallow((st) => ({
     alertRules: st.alertRules, addAlertRule: st.addAlertRule, updateAlertRule: st.updateAlertRule,
     deleteAlertRule: st.deleteAlertRule, toggleAlertRule: st.toggleAlertRule, health: st.alertEvalHealth,
+    // `alertRulesLoading` has existed in alertSlice since the panel did and was
+    // never read here, so a cold open asserted "no rules configured" before the
+    // read returned (docs/design/overview-loading.md, Definition of done:
+    // "Empty state renders only when !isFetching"). `Rows` already owns the
+    // calm delayed ghost; it only ever lacked the flag.
+    loading: st.alertRulesLoading,
   })));
   const personas = useAgentStore((st) => st.personas);
   const personaList = personas.map((p) => ({ id: p.id, name: p.name }));
@@ -69,7 +75,11 @@ export function AlertRulesPanel({ eyebrow }: { eyebrow?: string }) {
       actions={<KitButton onClick={() => { setAdding(true); setEditingId(null); }} testId="obs-rule-add">{hp.add_rule}</KitButton>}
     >
       {adding && <AlertRuleForm personas={personaList} onSubmit={add} onCancel={() => setAdding(false)} />}
-      <Rows count={s.alertRules.length} empty={{ title: hp.no_rules_configured }}>
+      <Rows
+        count={s.alertRules.length}
+        loading={s.loading && s.alertRules.length === 0}
+        empty={{ title: hp.no_rules_configured }}
+      >
         {s.alertRules.map((rule) => {
           if (editingId === rule.id) {
             return <AlertRuleForm key={rule.id} initial={toForm(rule)} personas={personaList} onSubmit={(d) => edit(rule.id, d)} onCancel={() => setEditingId(null)} />;

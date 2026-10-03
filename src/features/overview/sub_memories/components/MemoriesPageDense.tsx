@@ -393,7 +393,9 @@ export default function MemoriesPageDense() {
       {viewTab === 'conflicts' ? (
         <ContentBody flex>
           <div className="flex-1 overflow-y-auto p-4">
-            <MemoryConflictReview />
+            {/* The same `isFetching` the rows region uses, so the audit cannot
+                certify an all-clear over a store that has not answered yet. */}
+            <MemoryConflictReview loading={isFetching} />
           </div>
         </ContentBody>
       ) : (

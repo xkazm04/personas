@@ -119,6 +119,12 @@ export default function ObservabilityDashboard() {
               setViewMode={healing.setHealingViewMode}
               timelineEvents={d.healingTimeline}
               timelineLoading={d.healingTimelineLoading}
+              // The healing issues are fetched by the dashboard pipeline, not by
+              // this tab, so the only honest in-flight signal is the pipeline's
+              // own bookkeeping: `healingIssues` has neither a success stamp nor
+              // a recorded error yet (overviewSlice.runDashboardWave2 writes one
+              // or the other for every source).
+              issuesLoading={pipelineFetchedAt.healingIssues === undefined && pipelineErrors.healingIssues === undefined}
               selectedPersonaId={d.selectedPersonaId}
               personas={d.personas}
               w={w}

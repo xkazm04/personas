@@ -22,9 +22,19 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 interface MemoryConflictReviewProps {
   onConflictsResolved?: () => void;
+  /**
+   * True while the memories read this audit runs over is still in flight —
+   * `MemoriesPageDense`'s own `isFetching` (the store's `memoriesLoading` plus
+   * the 300ms search debounce the store cannot see). Without it the detector
+   * ran over an empty store and this tab certified "all conflicts resolved"
+   * before a single memory had arrived: a false ALL-CLEAR, which is the worst
+   * shape the missing loading gate can take (docs/design/overview-loading.md,
+   * Definition of done: "Empty state renders only when !isFetching").
+   */
+  loading?: boolean;
 }
 
-export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictReviewProps) {
+export function MemoryConflictReview({ onConflictsResolved, loading }: MemoryConflictReviewProps) {
   const { t, tx } = useTranslation();
   const mc = t.overview.memory_conflict;
   const {
@@ -183,6 +193,23 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
       setProcessing(null);
     }
   }, [setMemoryTier, mergeMemoriesAction, fetchMemories, activeConflictId, onConflictsResolved, mc]);
+
+  // Nothing has arrived yet, so there is no verdict to give: a calm, delayed
+  // ghost of the banner in its own geometry (§C — invisible for 120ms, so a
+  // warm store never paints one, no pulse, aria-hidden).
+  if (loading && memories.length === 0) {
+    return (
+      <div className="mx-4 md:mx-6" aria-hidden="true">
+        <div
+          className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-modal border border-primary/[0.06] animate-fade-in"
+          style={{ animationDelay: '120ms' }}
+        >
+          <span className="w-4 h-4 rounded-card bg-primary/[0.06] flex-shrink-0" />
+          <span className="h-3.5 flex-1 max-w-[18rem] rounded-card bg-primary/[0.06]" />
+        </div>
+      </div>
+    );
+  }
 
   // Rendering `null` here was invisible-by-design in the old banner position,
   // but this component IS the Conflicts tab's entire body: a store with no

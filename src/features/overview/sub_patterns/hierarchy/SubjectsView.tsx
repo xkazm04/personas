@@ -36,15 +36,66 @@ import { useHierarchyScorecard } from './useHierarchyScorecard';
  *  `_laws.md` inside its bundle (`source.corpusRel`). */
 const LAWS_FILE_FALLBACK = 'docs/concepts/paths/_laws.md';
 
+/** Calm bar, the one shape this module's ghost is built from. */
+function GhostBar({ w, h = 10, delay }: { w: string; h?: number; delay: number }) {
+  return (
+    <span
+      className="block rounded-card bg-primary/[0.06] animate-fade-in"
+      style={{ width: w, height: h, animationDelay: `${120 + delay * 35}ms` }}
+    />
+  );
+}
+
+/**
+ * The lane's own delayed ghost (docs/design/overview-loading.md §C): the shelf
+ * rail and one document column in the SAME geometry `SubjectsCodex` renders —
+ * the 248px bordered nav, then the `px-8 py-8` article. Invisible for the first
+ * 120ms, calm, never a pulse, `aria-hidden`. It replaces the empty bordered box
+ * this branch used to paint, which was a loading state that said nothing.
+ */
+function SubjectsGhost() {
+  return (
+    <div className="flex-1 min-h-0 flex rounded-card border border-border/40 bg-background/40 overflow-hidden" aria-hidden="true">
+      <div className="w-[248px] flex-shrink-0 border-r border-border/40 py-2">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="px-3 py-2">
+            <GhostBar w={['58%', '42%', '66%', '48%', '60%', '38%'][i]!} delay={i} />
+          </div>
+        ))}
+      </div>
+      <div className="flex-1 min-w-0 px-8 py-8">
+        <div className="max-w-[72ch] flex flex-col gap-3">
+          <GhostBar w="28%" h={8} delay={1} />
+          <GhostBar w="62%" h={20} delay={2} />
+          {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+            <GhostBar key={i} w={['96%', '88%', '92%', '74%', '90%', '84%', '58%'][i]!} delay={3 + i} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function SubjectsView() {
   const { t, tx } = useTranslation();
   const p = t.overview.patterns_v2;
   const addToast = useToastStore((s) => s.addToast);
   const projects = useSystemStore((s) => s.projects);
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
+  // `projectsLoading` has existed in devToolsProjectSlice since before this lane
+  // and was never read here, so the "no projects" state asserted itself over an
+  // unanswered read. The store flag alone is still false on the FIRST frame —
+  // before the effect below has dispatched the fetch — so it is paired with a
+  // local "the read has come back" latch, which is the only thing that can see
+  // that window. Together they are the lane's `isFetching`.
+  const projectsLoading = useSystemStore((s) => s.projectsLoading);
+  const [projectsSettled, setProjectsSettled] = useState(false);
 
   useEffect(() => {
-    if (projects.length === 0) void fetchProjects();
+    if (projects.length > 0) return;
+    let alive = true;
+    void Promise.resolve(fetchProjects()).finally(() => { if (alive) setProjectsSettled(true); });
+    return () => { alive = false; };
   }, [projects.length, fetchProjects]);
 
   const projectIds = useMemo(() => projects.map((pr) => pr.id), [projects]);
@@ -64,7 +115,11 @@ export function SubjectsView() {
     persistHierarchyProjectId(id);
   }, []);
 
-  const { graph, error, refetch } = useHierarchyGraph(projectId);
+  // `useHierarchyGraph` documents its own `loading` as "the view ghosts only
+  // when `loading && !graph`" (useHierarchyGraph.ts:25-26) and this view never
+  // destructured it, so the hook's contract went unfulfilled for its only
+  // caller.
+  const { graph, loading: graphLoading, error, refetch } = useHierarchyGraph(projectId);
   // OPTIONAL census signal — the whole lane renders fully without it.
   const { scorecard } = useHierarchyScorecard(projectId);
   const adherence = useMemo(() => subjectScoreMap(scorecard), [scorecard]);
@@ -138,6 +193,11 @@ export function SubjectsView() {
   );
 
   const emptyGraph = graph !== null && graph.subjects.length === 0;
+  // The two cold states this lane can be in, each retired by its OWN read
+  // (law 6): the project list, then that project's graph. Neither empty state
+  // may paint over an unanswered read.
+  const projectsCold = projects.length === 0 && (projectsLoading || !projectsSettled);
+  const graphCold = graph === null && graphLoading;
 
   // Law chips resolve inside whichever corpus the graph was read from.
   const lawsFile = graph?.source.corpusRel
@@ -226,7 +286,9 @@ export function SubjectsView() {
         </div>
       )}
 
-      {projects.length === 0 ? (
+      {projectsCold || graphCold ? (
+        <SubjectsGhost />
+      ) : projects.length === 0 ? (
         <div className="flex-1 min-h-0 flex items-center justify-center p-6">
           <IllustratedEmptyState
             variant="routines"
@@ -245,6 +307,8 @@ export function SubjectsView() {
       ) : variantProps ? (
         <SubjectsCodex {...variantProps} />
       ) : (
+        /* No graph and no fetch in flight (an unresolved project id, or a
+           failure whose notice is above): the box keeps the lane's geometry. */
         <div className="flex-1 min-h-0 flex rounded-card border border-border/40 bg-background/40 overflow-hidden" />
       )}
 
