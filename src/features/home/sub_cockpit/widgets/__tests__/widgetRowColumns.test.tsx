@@ -109,15 +109,20 @@ function persona(over: Partial<Persona>): Persona {
 }
 
 describe('PersonaOverviewWidget columns and regions', () => {
-  it('the roster spreads model, state and trust into aligned columns', () => {
+  it('the roster spreads description, model, state and trust into aligned columns', () => {
     useAgentStore.setState({
-      personas: [persona({ id: 'hero', name: 'Incident Commander' }), persona({ id: 'p2', name: 'Inbox Triage' })],
+      personas: [
+        persona({ id: 'hero', name: 'Incident Commander' }),
+        persona({ id: 'p2', name: 'Inbox Triage', description: 'Sorts the morning inbox' }),
+      ],
       fetchPersonas: vi.fn().mockResolvedValue(undefined),
     } as never);
     render(<PersonaOverviewWidget title="Your fleet" config={{ hero: 'hero' }} />);
     const cells = firstRowCells();
-    expect(cells).toHaveLength(3);
-    expect(cells[2]).toContain('90%');
+    expect(cells).toHaveLength(4);
+    expect(cells[0]).toContain('Sorts the morning inbox');
+    expect(cells[1]).toContain('Sonnet');
+    expect(cells[3]).toContain('90%');
     expect(screen.getByText('Inbox Triage')).toBeInTheDocument();
   });
 

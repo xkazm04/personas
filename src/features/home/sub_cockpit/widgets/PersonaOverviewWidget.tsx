@@ -98,8 +98,11 @@ export function PersonaOverviewWidget({ config, title, span, actions, footer }: 
 
   const c = t.overview.cockpit;
   // Fixed tracks, because every row is its own grid: only a declared length lines up with the row
-  // above it. The state column drops first on a narrow tile - its meaning is already on the mark.
+  // above it. The description takes the slack an `fr` name column would otherwise swallow on a
+  // 12-span tile; it and the state drop first on a narrow one, where the state is already on the
+  // mark and the description would be a few ellipsized words.
   const columns: RowColumn[] = [
+    { head: c.col_detail, width: '1.6fr', collapse: true },
     { head: t.common.model_label, width: '7rem' },
     { head: t.common.status, width: '9rem', collapse: true },
     { head: c.col_trust, width: '5rem', align: 'end' },
@@ -120,6 +123,7 @@ export function PersonaOverviewWidget({ config, title, span, actions, footer }: 
                   name={p.name}
                   mark={mark}
                   cells={[
+                    p.description,
                     modelTierLabel(p.model_profile),
                     mark.label,
                     <span key="t" className="typo-data k-regular">{trust.pct}%</span>,
