@@ -7,7 +7,7 @@
  * how something went; `neutral` says nothing. Item status is the exception
  * (Gate 1): it keeps the theme glow on its rail, see ITEM_STATUS_RAIL.
  */
-import { Bug, FileText, Sparkles, ShieldCheck, TriangleAlert, Wrench, type LucideIcon } from 'lucide-react';
+import type { Glyph } from '@/features/shared/components/kit';
 import type { ReleaseItemPriority, ReleaseItemStatus, ReleaseItemType, ReleaseStatus } from '@/data/releases';
 import type { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 
@@ -71,13 +71,28 @@ export const RELEASE_STATUS_TONE: Record<ReleaseStatus, ReleaseTone> = {
   roadmap: 'neutral',
 };
 
-/** A release item's kind as a glyph: security and breaking carry a status,
- * the rest are told apart by shape alone. */
-export const ITEM_TYPE_GLYPH: Record<ReleaseItemType, { icon: LucideIcon; tone: ReleaseTone }> = {
-  feature: { icon: Sparkles, tone: 'highlight' },
-  fix: { icon: Bug, tone: 'success' },
-  security: { icon: ShieldCheck, tone: 'error' },
-  breaking: { icon: TriangleAlert, tone: 'warning' },
-  docs: { icon: FileText, tone: 'neutral' },
-  chore: { icon: Wrench, tone: 'neutral' },
+/**
+ * A release item's kind as the kit's own bulletpoint - a `Dot`, tone x glyph (owner,
+ * 2026-10-03: "For each release row design rather themed bulletpoint instead of spark
+ * icon"). The lucide icon per kind (Sparkles, Bug, ShieldCheck, TriangleAlert, FileText,
+ * Wrench) is gone: a release is read as a LIST, and 23 different 16px pictograms down its
+ * left edge compete with the sentences they are meant to introduce.
+ *
+ * What carries the six kinds now, and how far it carries them: TONE separates the four
+ * that mean something - a feature is the theme's own hue, a fix is success, a security
+ * item is error, a breaking change is warning - so the two the owner's brief calls out as
+ * having to stay distinguishable are distinguishable by colour alone. `docs` and `chore`
+ * both mean "says nothing" and share `neutral` on purpose (doctrine section 4: colour by
+ * meaning, and neither is a status); GLYPH is what tells those two apart - a hollow ring
+ * for docs against a half-filled dot for chore. That is the weakest of the six
+ * distinctions, deliberately, because they are the two lowest-salience kinds; the
+ * Tooltip and the dot's accessible name state the kind for every item regardless.
+ */
+export const ITEM_TYPE_MARK: Record<ReleaseItemType, { tone: ReleaseTone; glyph: Glyph }> = {
+  feature: { tone: 'highlight', glyph: 'solid' },
+  fix: { tone: 'success', glyph: 'solid' },
+  security: { tone: 'error', glyph: 'solid' },
+  breaking: { tone: 'warning', glyph: 'solid' },
+  docs: { tone: 'neutral', glyph: 'hollow' },
+  chore: { tone: 'neutral', glyph: 'soft' },
 };
