@@ -219,6 +219,12 @@ export function homeCockpitTapes({ RECORDED_AT }) {
         calls: baseCalls([{ cmd: 'companion_get_cockpit', error: 'database is locked' }]),
       }),
       'home/cockpit/states/loading': () => tape('home/cockpit/states/loading', 'Synthetic: the cockpit fetch never settles (held by the view), so the ghost grid shows.', [never]),
+      // Law 6 (overview-loading.md, 2026-10-03): the cockpit fetch SETTLES with null - never
+      // composed - while `list_personas` is still in flight. The starter cockpit is composed from
+      // the roster, so the body has nothing to show yet, and "no spec and no roster" is the exact
+      // state a fresh profile is in. Before the roster cycle was tracked this painted the
+      // talk-to-Athena hero (a 440px image) and then replaced it with the starter grid.
+      'home/cockpit/states/loading-roster': () => tape('home/cockpit/states/loading-roster', 'Synthetic: never composed, and the roster fetch behind the starter cockpit is held by the view - the window in which the body knows nothing yet.', [never]),
       'athena/inline-cards': () => tape('athena/inline-cards', 'Synthetic: Athena chat card stack at the expanded panel width (912 px): KPI, issue list, use-case set, trigger set, model tier, persona ready.', []),
       'curator/evidence-well': () => tape('curator/evidence-well', 'Synthetic: one council member reading (ux seat): 5 findings, 2 metrics, 1 url, 2 files, 2 screenshots.', []),
       'curator/evidence-well/rivalry': () => tape('curator/evidence-well/rivalry', 'Synthetic: the rivalry seat, whose evidence composes a comparison card of 4 named rivals.', []),

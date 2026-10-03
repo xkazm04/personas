@@ -13,6 +13,9 @@
  *   home/cockpit/states               fresh profile: Get Started band + empty state
  *   home/cockpit/states/error         the cockpit fetch rejects
  *   home/cockpit/states/loading       the cockpit fetch is held, so the ghost grid shows
+ *   home/cockpit/states/loading-roster the cockpit fetch SETTLED (never composed) while the
+ *                                     roster fetch behind the starter cockpit is still in
+ *                                     flight - the law-6 window on this surface
  *   athena/inline-cards               Athena's chat-card stack (`AthenaChatCards`, the real
  *                                     parent of InlineChatCard) in a column at the expanded
  *                                     panel width; the panel shell, transcript and engine are
@@ -52,9 +55,15 @@ function holdCommand(cmd: string): void {
   }
 }
 
-async function prepareCockpit(opts: { fresh?: boolean; hold?: boolean } = {}): Promise<void> {
+async function prepareCockpit(opts: { fresh?: boolean; hold?: boolean; holdRoster?: boolean } = {}): Promise<void> {
   const seed = readSeed();
   if (opts.hold) holdCommand('companion_get_cockpit');
+  // The law-6 case: `companion_get_cockpit` SETTLES (null - never composed) while the roster
+  // fetch that decides the starter cockpit is still in flight. The body has no spec and no
+  // personas, which is indistinguishable from a fleet that has neither unless the roster's own
+  // cycle is tracked. Holding `list_personas` is what makes that window last long enough to
+  // photograph. `prepare` must not await its own `fetchPersonas` here, or it never returns.
+  if (opts.holdRoster) holdCommand('list_personas');
   useSystemStore.setState({
     sidebarSection: 'home',
     homeTab: 'cockpit',
@@ -78,6 +87,7 @@ async function prepareCockpit(opts: { fresh?: boolean; hold?: boolean } = {}): P
       pendingDecision: { ...decision, options: decision.options.map((o) => ({ ...o, run: () => {} })) } as never,
     });
   }
+  if (opts.holdRoster) return;
   try {
     await useAgentStore.getState().fetchPersonas();
   } catch (err) {
@@ -157,7 +167,7 @@ async function loadMemberReading(): Promise<{ default: ComponentType }> {
   };
 }
 
-const cockpit = (opts?: { fresh?: boolean; hold?: boolean }): HarnessModule => ({ load: loadCockpit, prepare: () => prepareCockpit(opts) });
+const cockpit = (opts?: { fresh?: boolean; hold?: boolean; holdRoster?: boolean }): HarnessModule => ({ load: loadCockpit, prepare: () => prepareCockpit(opts) });
 
 export const HOME_COCKPIT_MODULES: Record<string, HarnessModule> = {
   'home/cockpit': cockpit(),
@@ -171,6 +181,7 @@ export const HOME_COCKPIT_MODULES: Record<string, HarnessModule> = {
   'home/cockpit/states': cockpit({ fresh: true }),
   'home/cockpit/states/error': cockpit(),
   'home/cockpit/states/loading': cockpit({ hold: true }),
+  'home/cockpit/states/loading-roster': cockpit({ holdRoster: true }),
   'athena/inline-cards': { load: loadChatCards, prepare: prepareChat },
   'curator/evidence-well': { load: loadMemberReading },
   'curator/evidence-well/rivalry': { load: loadMemberReading },
