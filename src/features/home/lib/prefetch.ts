@@ -7,6 +7,8 @@
  */
 import { silentCatch } from '@/lib/silentCatch';
 import { prefetchSection } from '@/features/shared/chrome/navPrefetch';
+import { isHomeTabAvailable } from '@/features/shared/chrome/sidebar/sidebarData';
+import type { HomeTab } from '@/lib/types/types';
 
 type Prefetcher = () => Promise<unknown>;
 
@@ -23,9 +25,20 @@ function cache(fn: Prefetcher): Prefetcher {
   };
 }
 
-// Home tabs
-export const prefetchHomeReleases = cache(() => import('@/features/home/sub_releases/HomeReleases'));
-export const prefetchHomeLearning = cache(() => import('@/features/home/sub_learning/HomeLearning'));
+// Home tabs. One entry per row in `homeItems` - all five are lazy chunks since 2026-10-03, so
+// all five want warming; the map's key is the tab id so the caller can skip the one it is on.
+const HOME_TAB_CHUNKS: Partial<Record<HomeTab, Prefetcher>> = {
+  welcome: cache(() => import('@/features/home/sub_welcome/HomeWelcome')),
+  cockpit: cache(() => import('@/features/home/sub_cockpit/CockpitPanel')),
+  roadmap: cache(() => import('@/features/home/sub_releases/HomeReleases')),
+  learning: cache(() => import('@/features/home/sub_learning/HomeLearning')),
+  'system-check': cache(() => import('@/features/overview/components/health/SystemHealthPanel')),
+};
+
+/** Warm ONE home tab's chunk - the L2 rail's hover/focus intent. Unknown or absent: a no-op. */
+export function prefetchHomeTab(tab: HomeTab): void {
+  void HOME_TAB_CHUNKS[tab]?.();
+}
 
 // Top-level section targets: delegated to the shell's shared, deduped
 // section-chunk map (`shared/chrome/navPrefetch.ts`), the same map the main
@@ -48,10 +61,19 @@ function schedule(cb: () => void): () => void {
   return () => clearTimeout(handle);
 }
 
-/** Kick off idle-time prefetch of the other home tabs once Welcome has mounted. */
-export function schedulePrefetchOtherHomeTabs(): () => void {
+/**
+ * Kick off idle-time prefetch of every home tab EXCEPT the one already on screen.
+ *
+ * Called from `HomePage` rather than from a tab's own mount: it used to fire from the Welcome
+ * surface, which is `devOnly`, so a production landing (Cockpit) warmed nothing and every tab
+ * switch paid a cold chunk fetch. A tab a build cannot reach is skipped rather than fetched -
+ * `isHomeTabAvailable` is the same predicate `HomePage` routes on.
+ */
+export function schedulePrefetchOtherHomeTabs(active?: HomeTab): () => void {
   return schedule(() => {
-    void prefetchHomeReleases();
-    void prefetchHomeLearning();
+    for (const [tab, load] of Object.entries(HOME_TAB_CHUNKS) as Array<[HomeTab, Prefetcher]>) {
+      if (tab === active || !isHomeTabAvailable(tab)) continue;
+      void load();
+    }
   });
 }

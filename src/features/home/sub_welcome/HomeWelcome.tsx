@@ -2,7 +2,6 @@ import { BarChart3, Bot, Zap, Key, FlaskConical, Settings, Puzzle, Users } from 
 import { useSystemStore } from "@/stores/systemStore";
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { schedulePrefetchOtherHomeTabs } from '../lib/prefetch';
 import WelcomeLayout from './WelcomeLayout';
 import { useNavCardStatus } from './lib/useNavCardStatus';
 
@@ -57,8 +56,6 @@ export default function HomeWelcome() {
   const displayName = t.commander;
 
   const navStatus = useNavCardStatus();
-
-  useEffect(() => schedulePrefetchOtherHomeTabs(), []);
 
   return (
     <WelcomeLayout

@@ -1,15 +1,26 @@
-import { lazy, Suspense, useRef, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useRef, type ReactNode } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
 import type { HomeTab } from '@/lib/types/types';
-import { SystemHealthPanel } from '@/features/overview/components/health/SystemHealthPanel';
-import HomeWelcome from '@/features/home/sub_welcome/HomeWelcome';
 import { useMorningBriefing } from '@/features/home/sub_cockpit/briefing/useMorningBriefing';
 import { useLastSeenHeartbeat } from '@/features/home/sub_welcome/lib/sinceLeftBriefing';
+import { schedulePrefetchOtherHomeTabs } from '@/features/home/lib/prefetch';
 import { DEFAULT_HOME_TAB, isHomeTabAvailable } from '@/features/shared/chrome/sidebar/sidebarData';
 
+// EVERY tab is a chunk of its own, including the three dev-only ones. Welcome and System Check
+// were static imports until 2026-10-03, which put two whole surfaces -- the second of them the
+// health board, its five prototypes, the installer wiring and the configuration popups -- into
+// the chunk this page is, in every build. Three of the five rows here carry `devOnly` in
+// `homeItems`, so a production build can never reach them, and `import.meta.env.DEV` folds to
+// `false` at build time: their only reference is inside a dead branch, and the chunk goes with it.
+// (`docs/design/overview-loading.md` is about which FETCH a region waits on; this is the same
+// question asked of CODE -- the first screen must not be gated on the last section's module.)
+const HomeWelcome = lazy(() => import('@/features/home/sub_welcome/HomeWelcome'));
 const HomeReleases = lazy(() => import('@/features/home/sub_releases/HomeReleases'));
 const HomeLearning = lazy(() => import('@/features/home/sub_learning/HomeLearning'));
 const Cockpit = lazy(() => import('@/features/home/sub_cockpit/CockpitPanel'));
+const SystemCheck = lazy(() =>
+  import('@/features/overview/components/health/SystemHealthPanel').then((m) => ({ default: m.SystemHealthPanel })),
+);
 
 const PANE_CLASS = 'animate-fade-slide-in flex-1 min-h-0 flex flex-col w-full overflow-hidden';
 
@@ -50,6 +61,12 @@ export default function HomePage() {
   // surface with no sidebar row to match it.
   const activeTab: HomeTab = isHomeTabAvailable(homeTab) ? homeTab : DEFAULT_HOME_TAB;
 
+  // Warm the OTHER tabs' chunks in an idle slot, so the one cost of splitting them -- a tab
+  // switch that has to fetch a module -- is paid before anyone switches. This used to fire from
+  // the Welcome surface's own mount, which is a dev-only tab: a production landing (Cockpit)
+  // warmed nothing. `prefetch.ts` dedupes per chunk and swallows failures.
+  useEffect(() => schedulePrefetchOtherHomeTabs(activeTab), [activeTab]);
+
   // Track which tabs have EVER been active. Only visited tabs are mounted, so
   // the first paint mounts Welcome alone (the default) — cockpit/roadmap/learning
   // stay off the tree until the user opens them, preserving the lazy-load +
@@ -77,7 +94,7 @@ export default function HomePage() {
     <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
       {isDev && visited.has('welcome') && (
         <KeepAlivePane active={activeTab === 'welcome'}>
-          <HomeWelcome />
+          <Suspense fallback={fallback}><HomeWelcome /></Suspense>
         </KeepAlivePane>
       )}
       {visited.has('cockpit') && (
@@ -97,7 +114,7 @@ export default function HomePage() {
       )}
       {isDev && visited.has('system-check') && (
         <KeepAlivePane active={activeTab === 'system-check'}>
-          <SystemHealthPanel />
+          <Suspense fallback={fallback}><SystemCheck /></Suspense>
         </KeepAlivePane>
       )}
     </div>
