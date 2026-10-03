@@ -79,5 +79,8 @@
   "variant_label": "Прототип",
   "variant_board": "Панель",
   "variant_spine": "Ось",
-  "variant_triage": "Сортировка"
+  "variant_triage": "Сортировка",
+  "variant_fusion": "Слияние",
+  "filter_all": "Все окружения",
+  "filtered_to": "Фильтр: {section}"
 }

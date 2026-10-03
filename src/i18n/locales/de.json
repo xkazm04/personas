@@ -18456,7 +18456,10 @@
     "variant_label": "Prototyp",
     "variant_board": "Tafel",
     "variant_spine": "Achse",
-    "variant_triage": "Triage"
+    "variant_triage": "Triage",
+    "variant_fusion": "Fusion",
+    "filter_all": "Alle Umgebungen",
+    "filtered_to": "Gefiltert auf {section}"
   },
   "templates": {
     "actions": {

@@ -8,9 +8,9 @@
  *   home/system-check/healthy  every check passes - the board with nothing to do
  *   home/system-check/loading  the six section checks never resolve, so the cold-load ghosts hold
  *
- * The panel mounts one of THREE 2-layer prototypes behind a persisted dev switch
- * (`healthVariant.ts`), so `shoot.mjs --kit board|spine|triage` picks which one a run shoots; the
- * default with no `--kit` is `board`. Each prototype is shot against the mixed board AND against
+ * The panel mounts one of FOUR 2-layer prototypes behind a persisted dev switch
+ * (`healthVariant.ts`), so `shoot.mjs --kit fusion|board|spine|triage` picks which one a run
+ * shoots; the default with no `--kit` is `fusion`. Each is shot against the mixed board AND against
  * `home/system-check/healthy`, because "what the surface costs when there is nothing to do" is
  * exactly what prototype C bets on.
  *
@@ -47,7 +47,7 @@ function holdCommands(cmds: readonly string[]): void {
 /** `?kit=<id>` picks the prototype through the same persisted key the in-app switch writes. */
 function pickVariant(): void {
   const kit = new URLSearchParams(window.location.search).get('kit') ?? '';
-  const id = (HEALTH_VARIANT_IDS as readonly string[]).includes(kit) ? kit : 'board';
+  const id = (HEALTH_VARIANT_IDS as readonly string[]).includes(kit) ? kit : 'fusion';
   safeLocalSet('system-check-variant', id, 'page-harness:health-variant');
 }
 

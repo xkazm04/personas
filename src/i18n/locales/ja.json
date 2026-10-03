@@ -18456,7 +18456,10 @@
     "variant_label": "プロトタイプ",
     "variant_board": "ボード",
     "variant_spine": "スパイン",
-    "variant_triage": "トリアージ"
+    "variant_triage": "トリアージ",
+    "variant_fusion": "フュージョン",
+    "filter_all": "すべての環境",
+    "filtered_to": "{section} で絞り込み中"
   },
   "templates": {
     "actions": {

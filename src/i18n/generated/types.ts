@@ -14202,6 +14202,9 @@ export type Translations = {
     variant_board: string;
     variant_spine: string;
     variant_triage: string;
+    variant_fusion: string;
+    filter_all: string;
+    filtered_to: string;
   };
   errors: {
     dismiss_error: string;

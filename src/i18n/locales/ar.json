@@ -18456,7 +18456,10 @@
     "variant_label": "النموذج الأولي",
     "variant_board": "لوحة",
     "variant_spine": "محور",
-    "variant_triage": "فرز"
+    "variant_triage": "فرز",
+    "variant_fusion": "دمج",
+    "filter_all": "كل البيئات",
+    "filtered_to": "مُرشَّح على {section}"
   },
   "templates": {
     "actions": {

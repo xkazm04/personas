@@ -79,5 +79,8 @@
   "variant_label": "프로토타입",
   "variant_board": "보드",
   "variant_spine": "스파인",
-  "variant_triage": "트리아지"
+  "variant_triage": "트리아지",
+  "variant_fusion": "퓨전",
+  "filter_all": "모든 환경",
+  "filtered_to": "{section}(으)로 필터링됨"
 }

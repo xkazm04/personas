@@ -79,5 +79,8 @@
   "variant_label": "প্রোটোটাইপ",
   "variant_board": "বোর্ড",
   "variant_spine": "অক্ষ",
-  "variant_triage": "ট্রায়াজ"
+  "variant_triage": "ট্রায়াজ",
+  "variant_fusion": "সমন্বয়",
+  "filter_all": "সব পরিবেশ",
+  "filtered_to": "{section} অনুসারে ফিল্টার করা"
 }

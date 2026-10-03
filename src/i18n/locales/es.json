@@ -18456,7 +18456,10 @@
     "variant_label": "Prototipo",
     "variant_board": "Tablero",
     "variant_spine": "Eje",
-    "variant_triage": "Triaje"
+    "variant_triage": "Triaje",
+    "variant_fusion": "Fusión",
+    "filter_all": "Todos los entornos",
+    "filtered_to": "Filtrado por {section}"
   },
   "templates": {
     "actions": {

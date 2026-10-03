@@ -18456,7 +18456,10 @@
     "variant_label": "प्रोटोटाइप",
     "variant_board": "बोर्ड",
     "variant_spine": "अक्ष",
-    "variant_triage": "ट्राइएज"
+    "variant_triage": "ट्राइएज",
+    "variant_fusion": "संयोजन",
+    "filter_all": "सभी वातावरण",
+    "filtered_to": "{section} पर फ़िल्टर किया गया"
   },
   "templates": {
     "actions": {

@@ -79,5 +79,8 @@
   "variant_label": "Prototipe",
   "variant_board": "Papan",
   "variant_spine": "Poros",
-  "variant_triage": "Triase"
+  "variant_triage": "Triase",
+  "variant_fusion": "Fusi",
+  "filter_all": "Semua lingkungan",
+  "filtered_to": "Difilter ke {section}"
 }

@@ -18456,7 +18456,10 @@
     "variant_label": "Nguyên mẫu",
     "variant_board": "Bảng",
     "variant_spine": "Trục",
-    "variant_triage": "Phân loại"
+    "variant_triage": "Phân loại",
+    "variant_fusion": "Hợp nhất",
+    "filter_all": "Mọi môi trường",
+    "filtered_to": "Đã lọc theo {section}"
   },
   "templates": {
     "actions": {

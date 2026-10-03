@@ -14,6 +14,7 @@ import { FooterActions } from './FooterActions';
 import type { HealthActionDeps } from './HealthActions';
 import { LogDiskUsageSection } from './LogDiskUsageSection';
 import { HealthBoardA } from './prototypes/HealthBoardA';
+import { HealthFusionD } from './prototypes/HealthFusionD';
 import { HealthSpineB } from './prototypes/HealthSpineB';
 import { HealthTriageC } from './prototypes/HealthTriageC';
 import { LITELLM_FIELDS, OLLAMA_FIELDS, OllamaFooter } from './popupFieldConfigs';
@@ -116,6 +117,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
         <KitHost compact testId="system-check">
           {SHOW_DIAGNOSTICS && <VariantSwitch value={variant} onChange={setVariant} />}
 
+          {variant === 'fusion' && <HealthFusionD board={board} deps={deps} />}
           {variant === 'board' && <HealthBoardA board={board} deps={deps} />}
           {variant === 'spine' && <HealthSpineB board={board} deps={deps} />}
           {variant === 'triage' && <HealthTriageC board={board} deps={deps} />}
@@ -183,6 +185,7 @@ function VariantSwitch({ value, onChange }: { value: HealthVariantId; onChange: 
         value={value}
         onChange={onChange}
         options={[
+          { v: 'fusion', label: s.variant_fusion },
           { v: 'board', label: s.variant_board },
           { v: 'spine', label: s.variant_spine },
           { v: 'triage', label: s.variant_triage },

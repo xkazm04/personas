@@ -12,21 +12,21 @@ const KEY = 'system-check-variant';
 describe('readHealthVariant', () => {
   afterEach(() => localStorage.removeItem(KEY));
 
-  it('offers exactly the three prototypes the owner asked for', () => {
-    expect(HEALTH_VARIANT_IDS).toEqual(['board', 'spine', 'triage']);
+  it('offers the fusion plus the three studies it was composed from', () => {
+    expect(HEALTH_VARIANT_IDS).toEqual(['fusion', 'board', 'spine', 'triage']);
   });
 
-  it.each(['board', 'spine', 'triage'])('keeps a stored %s', (id) => {
+  it.each(['fusion', 'board', 'spine', 'triage'])('keeps a stored %s', (id) => {
     localStorage.setItem(KEY, id);
     expect(readHealthVariant()).toBe(id);
   });
 
-  it.each(['', 'drawer', 'Board', 'a'])('falls back to board for an unknown id: "%s"', (id) => {
+  it.each(['', 'drawer', 'Board', 'a'])('falls back to the fusion for an unknown id: "%s"', (id) => {
     localStorage.setItem(KEY, id);
-    expect(readHealthVariant()).toBe('board');
+    expect(readHealthVariant()).toBe('fusion');
   });
 
-  it('falls back to board when nothing is stored', () => {
-    expect(readHealthVariant()).toBe('board');
+  it('defaults to the fusion, which is the one proposed for shipping', () => {
+    expect(readHealthVariant()).toBe('fusion');
   });
 });

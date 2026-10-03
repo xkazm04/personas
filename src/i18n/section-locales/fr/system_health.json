@@ -79,5 +79,8 @@
   "variant_label": "Prototype",
   "variant_board": "Tableau",
   "variant_spine": "Axe",
-  "variant_triage": "Triage"
+  "variant_triage": "Triage",
+  "variant_fusion": "Fusion",
+  "filter_all": "Tous les environnements",
+  "filtered_to": "Filtré sur {section}"
 }
