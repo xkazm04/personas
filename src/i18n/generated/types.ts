@@ -8660,6 +8660,23 @@ export type Translations = {
       decisions_kind_output: string;
       decisions_kind_health: string;
       linked_memories_importance: string;
+      col_issue: string;
+      col_event: string;
+      col_decision: string;
+      col_memory: string;
+      col_service: string;
+      col_persona: string;
+      col_step: string;
+      col_use_case: string;
+      col_trigger: string;
+      col_detail: string;
+      col_choice: string;
+      col_why: string;
+      col_category: string;
+      col_kind: string;
+      col_trust: string;
+      col_used_by: string;
+      col_source: string;
     };
     events: {
       title: string;

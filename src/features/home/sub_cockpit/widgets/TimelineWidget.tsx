@@ -1,4 +1,4 @@
-import { ListRow, Rows, Tile } from '@/features/shared/components/kit';
+import { ListRow, Rows, Tile, type RowColumn } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 import { intentTone, toneLabel } from './intentColors';
@@ -9,7 +9,9 @@ import { intentTone, toneLabel } from './intentColors';
  * histories, schedule drift) so the user sees sequence and spacing, not
  * just a list.
  *
- * Rendered as one kit Tile of kit rows on the spine, each event's meaning as its Mark. The time
+ * Rendered as one kit Tile of kit rows on the spine, each event's meaning as its Mark. The
+ * detail is a declared column beside the label (kit grow-4), not a second line under it, so the
+ * events read down three aligned columns - what, what happened, when - at one row height. The time
  * column is the CLOCK time ("02:04"), with the day named on the first event and wherever the
  * day changes, so the spacing between events reads off the column; a relative "yesterday" on
  * every row said nothing about sequence. Capped at `EVENT_CAP` with "Show all N".
@@ -55,18 +57,20 @@ export function TimelineWidget({ config, title, span, actions, footer }: Cockpit
   const events = Array.isArray(config?.events) ? (config.events as TimelineEvent[]) : [];
   const times = clockTimes(events, language);
   const heading = title ?? t.overview.cockpit.timeline_title;
-  const size = events.some((e) => e.detail) ? 's' : 'line';
+  const c = t.overview.cockpit;
+  const detailed = events.some((e) => e.detail);
+  const columns: RowColumn[] | undefined = detailed ? [{ head: c.col_detail, width: '1.4fr' }] : undefined;
   return (
     <Tile span={span} title={heading} count={events.length || undefined} actions={actions} footer={footer} testId="cockpit-timeline">
-      <Rows count={events.length} cap={EVENT_CAP} empty={{ title: t.overview.cockpit.widget_empty }} label={heading}>
+      <Rows count={events.length} cap={EVENT_CAP} empty={{ title: c.widget_empty }} label={heading} columns={columns} nameHead={detailed ? c.col_event : undefined}>
         {events.map((evt, i) => {
           const tone = intentTone(evt.intent, 'info');
           return (
             <ListRow
               key={`${i}-${evt.label}`}
-              size={size}
+              size="line"
               name={evt.label}
-              meta={evt.detail}
+              cells={[evt.detail]}
               mark={{ tone, glyph: 'soft', label: toneLabel(t, tone) }}
               time={times[i]}
             />

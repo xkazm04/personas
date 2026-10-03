@@ -14,9 +14,11 @@ const HEALTH_MARK: Record<HealthState, { tone: Tone; glyph: Glyph }> = {
 
 /**
  * One credential in the Cockpit's connected-services tile: the name is the row's one emphasis
- * (its full text in a Hint, so a long name never truncates silently), health on the mark, the
- * failing probe's own message as the meta in its tone (a healthy row has no meta: the name
- * already says the service), and the personas that use it as a regular figure.
+ * (its full text in a Hint, so a long name never truncates silently) and health is on the mark.
+ * The two facts the rows SHARE fill the list's declared columns (kit grow-4): what the probe last
+ * said - its own message when it failed, the health word otherwise, toned only when it IS a
+ * failure - and how many personas use the credential. They used to be a meta line under the name
+ * and a figure at the far right, which left the band between them empty on a wide tile.
  */
 export function ServiceRow({ credential: c, health, used, onPress }: {
   credential: CredentialMetadata;
@@ -41,10 +43,14 @@ export function ServiceRow({ credential: c, health, used, onPress }: {
       testId={`cockpit-service-${c.id}`}
       name={<Hint content={c.name}><span>{c.name}</span></Hint>}
       mark={{ ...HEALTH_MARK[health], label: healthLabel[health] }}
-      meta={message ? <span className={`k-ellipsis k-toned t-${HEALTH_MARK[health].tone}`}>{message}</span> : undefined}
-      figures={used > 0
-        ? <span className="k-fig typo-data k-regular">{tx(used === 1 ? t.vault.audit_log.personas_one : t.vault.audit_log.personas_other, { count: used })}</span>
-        : undefined}
+      cells={[
+        failing
+          ? <span className={`k-toned t-${HEALTH_MARK[health].tone}`}>{message}</span>
+          : <span className="k-quiet">{healthLabel[health]}</span>,
+        used > 0
+          ? <span className="typo-data k-regular">{tx(used === 1 ? t.vault.audit_log.personas_one : t.vault.audit_log.personas_other, { count: used })}</span>
+          : null,
+      ]}
       onPress={onPress}
     />
   );

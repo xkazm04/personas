@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Rocket } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
-import { KeyValueGrid, KitButton, Tile, type KeyValueItem } from '@/features/shared/components/kit';
+import { KeyValueGrid, KitButton, Stack, Tile, type KeyValueItem } from '@/features/shared/components/kit';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
 type RecommendedAction = 'build_oneshot' | 'interactive' | 'use_template';
@@ -111,8 +111,12 @@ export function PersonaReadyWidget({ config, title, span, actions, footer }: Coc
       }
     >
       <div data-testid="companion-persona-ready-widget" data-recommended-action={recommended}>
-        <KeyValueGrid min="100%" items={[{ k: t.athena.persona_ready_intent_label, v: summary.intent_line }]} />
-        {facts.length > 0 && <KeyValueGrid min="18rem" items={facts} />}
+        {/* What it is, then what it is made of: two regions with a quiet rule between them
+            (kit grow-4 Stack), not two grids run together. */}
+        <Stack divided>
+          <KeyValueGrid min="100%" items={[{ k: t.athena.persona_ready_intent_label, v: summary.intent_line }]} />
+          {facts.length > 0 && <KeyValueGrid min="18rem" items={facts} />}
+        </Stack>
       </div>
     </Tile>
   );

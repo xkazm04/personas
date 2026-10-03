@@ -4,7 +4,7 @@ import { listMemoriesByExecution } from '@/api/overview/memories';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { silentCatch } from '@/lib/silentCatch';
-import { Hint, ListRow, Meta, Rows, Tile, UnitStrip, type Glyph, type Tone } from '@/features/shared/components/kit';
+import { Hint, ListRow, Rows, Tile, UnitStrip, type Glyph, type RowColumn, type Tone } from '@/features/shared/components/kit';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 
 import type { CockpitWidgetProps } from '../widgetRegistry';
@@ -27,9 +27,9 @@ const TIER_MARK: Record<string, { tone: Tone; glyph: Glyph }> = {
  * matching the contextual message's execution. Lets the user see what
  * the agent retained from this run alongside its message + decisions.
  *
- * One kit Tile of rows with ONE emphasis each, the memory's title: its tier is
- * the row's Mark, its category leads the quiet meta line, its importance is
- * drawn as five units in the trail.
+ * One kit Tile of rows with ONE emphasis each, the memory's title: its tier is the row's Mark,
+ * its category and its content fill the list's declared columns (kit grow-4) rather than running
+ * together on a meta line under the title, and its importance is drawn as five units in the trail.
  *
  * Config:
  *   { executionId: string }
@@ -60,6 +60,11 @@ export function LinkedMemoriesWidget({ config, title, span, actions, footer }: C
   }, [executionId]);
 
   const heading = title ?? c.linked_memories_title;
+  // The content drops first on a narrow tile: the Hint still carries it in full.
+  const columns: RowColumn[] = [
+    { head: c.col_category, width: '8rem' },
+    { head: c.col_detail, width: '1.4fr', collapse: true },
+  ];
   return (
     <Tile
       span={span}
@@ -70,7 +75,7 @@ export function LinkedMemoriesWidget({ config, title, span, actions, footer }: C
       testId="cockpit-widget-linked_memories"
       state={loading ? 'loading' : undefined}
     >
-      <Rows count={memories.length} cap={CAP} label={heading} empty={{ title: c.linked_memories_empty }}>
+      <Rows count={memories.length} cap={CAP} label={heading} empty={{ title: c.linked_memories_empty }} columns={columns} nameHead={c.col_memory}>
         {memories.map((m) => {
           const tier = TIER_MARK[m.tier] ?? TIER_MARK.working!;
           // A row without a score draws no strip rather than five empty units.
@@ -78,10 +83,13 @@ export function LinkedMemoriesWidget({ config, title, span, actions, footer }: C
           return (
             <ListRow
               key={m.id}
-              size="s"
+              size="line"
               name={m.title}
               mark={{ ...tier, label: tokenLabel(t, 'memory_tier', m.tier) }}
-              meta={<Meta parts={[tokenLabel(t, 'memory_category', m.category), <Hint key="c" content={m.content}><span className="k-ellipsis">{m.content}</span></Hint>]} />}
+              cells={[
+                tokenLabel(t, 'memory_category', m.category),
+                <Hint key="c" content={m.content}><span>{m.content}</span></Hint>,
+              ]}
               figures={importance == null ? undefined : (
                 <UnitStrip
                   size="s"

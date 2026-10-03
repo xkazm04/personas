@@ -1,4 +1,4 @@
-import { ListRow, Rows, Tile, type Glyph, type Tone } from '@/features/shared/components/kit';
+import { ListRow, Rows, Tile, type Glyph, type RowColumn, type Tone } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
 import type { CockpitWidgetProps } from '../widgetRegistry';
@@ -46,19 +46,21 @@ export function FlowStepsWidget({ config, title, span, actions, footer }: Cockpi
   const { t } = useTranslation();
   const steps = Array.isArray(config?.steps) ? (config.steps as FlowStep[]) : [];
   const heading = title ?? t.overview.cockpit.flow_title;
-  const size = steps.some((s) => s.detail) ? 's' : 'line';
+  const c = t.overview.cockpit;
+  const detailed = steps.some((s) => s.detail);
+  const columns: RowColumn[] | undefined = detailed ? [{ head: c.col_detail, width: '1.4fr' }] : undefined;
   return (
     <Tile span={span} title={heading} actions={actions} footer={footer} testId="cockpit-flow-steps">
-      <Rows count={steps.length} empty={{ title: t.overview.cockpit.widget_empty }} label={heading}>
+      <Rows count={steps.length} empty={{ title: c.widget_empty }} label={heading} columns={columns} nameHead={detailed ? c.col_step : undefined}>
         {steps.map((step, i) => {
           const status: Status = step.status && step.status in NODE ? step.status : 'pending';
           const node = NODE[status];
           return (
             <ListRow
               key={`${i}-${step.label}`}
-              size={size}
+              size="line"
               name={step.label}
-              meta={step.detail}
+              cells={[step.detail]}
               mark={{ ...node, label: statusLabel(t, status) }}
               state={status === 'current' ? 'selected' : undefined}
             />

@@ -9,6 +9,13 @@
  * is a pressable row under it, capped with an in-place "Show all" because a
  * real roster holds forty.
  *
+ * The two regions are a kit `Stack divided` (grow-4): the featured block and the roster are
+ * different things and a quiet rule on the band's reading line says so, which the bare stack of
+ * siblings never did (owner, 2026-10-03: "components inside are flying empty without subtle
+ * dividers or structure"). The roster declares a column set the rows FILL - model, state, trust -
+ * so a persona's metadata spreads across the band instead of stacking under its name and leaving
+ * the rest of a 1920 row empty.
+ *
  * Config:
  *   { "limit": N, "filter": "active" | "all", "hero": "persona_id"? }
  *   - `limit` is how many roster rows show before "Show all" (3 to 8).
@@ -22,7 +29,7 @@ import { ArrowRight } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { Hint, KitButton, ListRow, Meta, Rows, StatStrip, Tile, type Glyph, type Tone } from '@/features/shared/components/kit';
+import { Hint, KitButton, ListRow, Meta, Rows, Stack, StatStrip, Tile, type Glyph, type RowColumn, type Tone } from '@/features/shared/components/kit';
 import type { Persona } from '@/lib/bindings/Persona';
 import { silentCatch } from '@/lib/silentCatch';
 import { formatCost, formatRelativeTime } from '@/lib/utils/formatters';
@@ -89,27 +96,41 @@ export function PersonaOverviewWidget({ config, title, span, actions, footer }: 
     return <Tile span={span} title={heading} actions={actions} footer={footer} state="empty" empty={{ title: t.athena.persona_overview_empty }} />;
   }
 
+  const c = t.overview.cockpit;
+  // Fixed tracks, because every row is its own grid: only a declared length lines up with the row
+  // above it. The state column drops first on a narrow tile - its meaning is already on the mark.
+  const columns: RowColumn[] = [
+    { head: t.common.model_label, width: '7rem' },
+    { head: t.common.status, width: '9rem', collapse: true },
+    { head: c.col_trust, width: '5rem', align: 'end' },
+  ];
   return (
     <Tile span={span} title={heading} count={ranked.length} actions={actions} footer={footer} testId="cockpit-persona-overview">
-      <FeaturedPersona persona={hero} />
-      {rest.length > 0 && (
-        <Rows count={rest.length} cap={cap} empty={{ title: '' }} label={t.athena.persona_overview_rest_heading}>
-          {rest.map((p) => {
-            const trust = trustPercent(p.trust_score);
-            return (
-              <ListRow
-                key={p.id}
-                size="s"
-                name={p.name}
-                mark={personaMark(p, t)}
-                meta={<Meta parts={[modelTierLabel(p.model_profile), attentionFor(p) ? personaMark(p, t).label : null]} />}
-                figures={<span className="k-fig typo-data k-regular">{trust.pct}%</span>}
-                onPress={() => openPersona(p.id)}
-              />
-            );
-          })}
-        </Rows>
-      )}
+      <Stack divided>
+        <FeaturedPersona persona={hero} />
+        {rest.length > 0 && (
+          <Rows count={rest.length} cap={cap} empty={{ title: '' }} label={t.athena.persona_overview_rest_heading} columns={columns} nameHead={c.col_persona}>
+            {rest.map((p) => {
+              const trust = trustPercent(p.trust_score);
+              const mark = personaMark(p, t);
+              return (
+                <ListRow
+                  key={p.id}
+                  size="line"
+                  name={p.name}
+                  mark={mark}
+                  cells={[
+                    modelTierLabel(p.model_profile),
+                    mark.label,
+                    <span key="t" className="typo-data k-regular">{trust.pct}%</span>,
+                  ]}
+                  onPress={() => openPersona(p.id)}
+                />
+              );
+            })}
+          </Rows>
+        )}
+      </Stack>
     </Tile>
   );
 }
@@ -127,7 +148,7 @@ function FeaturedPersona({ persona }: { persona: Persona }) {
       ? t.deployment.deployments_panel.budget_no_limit
       : formatCost(persona.max_budget_usd);
   return (
-    <>
+    <Stack gap="s">
       <ListRow
         size="l"
         name={persona.name}
@@ -150,7 +171,7 @@ function FeaturedPersona({ persona }: { persona: Persona }) {
           </KitButton>
         }
       />
-      {persona.description && <p className="k-in typo-body m-0 pb-2">{persona.description}</p>}
+      {persona.description && <p className="k-in typo-body m-0">{persona.description}</p>}
       <StatStrip
         tiles={[
           {
@@ -163,6 +184,6 @@ function FeaturedPersona({ persona }: { persona: Persona }) {
           { label: t.athena.persona_overview_kpi_max_turns, value: persona.max_turns ?? null },
         ]}
       />
-    </>
+    </Stack>
   );
 }

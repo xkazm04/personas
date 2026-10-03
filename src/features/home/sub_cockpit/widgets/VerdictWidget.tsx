@@ -1,10 +1,10 @@
-import { Dot, Hint, KitButton, Tile } from '@/features/shared/components/kit';
+import { Dot, Hint, KitButton, Stack, Tile } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { runDecisionOption } from '@/features/companions/athena/decision/resolveDecision';
 import type { CockpitWidgetProps } from '../widgetRegistry';
-import { intentTone } from './intentColors';
+import { intentTone, toneLabel } from './intentColors';
 
 /**
  * `verdict` — Athena's answer card. The headline IS the recommendation;
@@ -14,7 +14,8 @@ import { intentTone } from './intentColors';
  * the Cockpit (same `runDecisionOption` path as the bubble / `;`-keys /
  * voice — all four surfaces resolve identically).
  *
- * Rendered as one kit Tile: confidence is the head's meta; the headline is the one emphasis, in
+ * Rendered as one kit Tile: the verdict's intent is the tile's own mark on its rail (kit
+ * grow-4), confidence is the head's meta; the headline is the one emphasis, in
  * ink (an answer, not a warning), its intent drawn as the Dot before it; the caveat is a caption
  * line behind a warning dot; the pending decision's options are KitButtons in the Tile footer
  * (the recommended one is the tile's primary call to action, each carries its number key as the
@@ -40,6 +41,7 @@ export function VerdictWidget({ config, title, span, actions, footer }: CockpitW
   const confidence = config?.confidence as 'high' | 'medium' | 'low' | undefined;
   const recommendedOption = config?.recommended_option as number | undefined;
   const caveat = config?.caveat as string | undefined;
+  const tone = intentTone(config?.intent, 'info');
   const confidenceLabel = confidence === 'high' ? c.verdict_confidence_high
     : confidence === 'medium' ? c.verdict_confidence_medium
       : confidence === 'low' ? c.verdict_confidence_low : null;
@@ -70,6 +72,7 @@ export function VerdictWidget({ config, title, span, actions, footer }: CockpitW
     <Tile
       span={span}
       title={title ?? c.verdict_title}
+      mark={headline ? { tone, glyph: 'solid', label: toneLabel(t, tone) } : undefined}
       meta={confidenceLabel ? `${c.verdict_confidence} · ${confidenceLabel}` : undefined}
       actions={actions}
       footer={choices || footer ? <>{choices}{footer}</> : undefined}
@@ -77,18 +80,20 @@ export function VerdictWidget({ config, title, span, actions, footer }: CockpitW
       empty={{ title: c.widget_empty }}
       testId="cockpit-verdict"
     >
-      <div className="k-in flex flex-col gap-2 max-w-[96ch]">
-        <div className="typo-heading-lg k-strong flex items-baseline gap-2">
-          <Dot tone={intentTone(config?.intent, 'info')} glyph="solid" />
-          <span className="min-w-0">{headline}</span>
-        </div>
-        {reasoning && <MarkdownRenderer content={reasoning} variant="card" />}
-        {caveat && (
-          <p className="typo-caption m-0 flex items-baseline gap-2">
-            <Dot tone="warning" glyph="hollow" />
-            <span className="min-w-0">{caveat}</span>
-          </p>
-        )}
+      <div className="k-in max-w-[96ch]">
+        <Stack gap="s">
+          <div className="typo-heading-lg k-strong flex items-baseline gap-2">
+            <Dot tone={tone} glyph="solid" />
+            <span className="min-w-0">{headline}</span>
+          </div>
+          {reasoning && <MarkdownRenderer content={reasoning} variant="card" />}
+          {caveat && (
+            <p className="typo-caption m-0 flex items-baseline gap-2">
+              <Dot tone="warning" glyph="hollow" />
+              <span className="min-w-0">{caveat}</span>
+            </p>
+          )}
+        </Stack>
       </div>
     </Tile>
   );

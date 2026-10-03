@@ -1,4 +1,4 @@
-import { Hint, ListRow, Rows, Section, type Tone } from '@/features/shared/components/kit';
+import { Hint, ListRow, Rows, Section, type RowColumn, type Tone } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 
@@ -24,8 +24,12 @@ function Clipped({ text }: { text: string }) {
 
 /**
  * The body of the browser-test report tile: the steps (result on each mark), then the defects
- * (severity on the mark, the cause and the suggested fix as the meta), the verbatim console
+ * (severity on the mark, the cause and the suggested fix beside the title), the verbatim console
  * errors and the security notes, each a level-2 kit Section of rows inside the one Tile.
+ *
+ * Steps and defects spread their evidence into a declared Detail column (kit grow-4) rather than
+ * stacking it under the title. The defects list draws no name head: the Section it sits in
+ * already names what its rows are, and repeating it over the first column says nothing.
  */
 export function BrowserReportSections({ steps, defects, consoleErrors, securityNotes }: {
   steps: ReportStep[];
@@ -35,6 +39,7 @@ export function BrowserReportSections({ steps, defects, consoleErrors, securityN
 }) {
   const { t } = useTranslation();
   const c = t.athena;
+  const detail: RowColumn[] = [{ head: t.overview.cockpit.col_detail, width: '1.6fr' }];
   const resultLabel: Record<string, string> = {
     pass: t.templates.test_report.status_passed,
     fail: t.templates.test_report.status_failed,
@@ -42,30 +47,30 @@ export function BrowserReportSections({ steps, defects, consoleErrors, securityN
   };
   return (
     <>
-      <Rows count={steps.length} empty={{ title: c.browser_report_empty }} label={c.browser_report_steps}>
+      <Rows count={steps.length} empty={{ title: c.browser_report_empty }} label={c.browser_report_steps} columns={detail} nameHead={t.overview.cockpit.col_step}>
         {steps.map((s, i) => (
           <ListRow
             key={i}
-            size="s"
+            size="line"
             name={s.label}
             mark={{ tone: RESULT_TONE[s.result ?? ''] ?? 'neutral', glyph: 'solid', label: resultLabel[s.result ?? ''] ?? (s.result || c.browser_report_steps) }}
-            meta={s.evidence ? <Clipped text={s.evidence} /> : undefined}
+            cells={[s.evidence ? <Clipped key="e" text={s.evidence} /> : null]}
           />
         ))}
       </Rows>
       {defects.length > 0 && (
         <Section level={2} title={c.browser_report_defects} count={defects.length}>
-          <Rows count={defects.length} empty={{ title: '' }}>
+          <Rows count={defects.length} empty={{ title: '' }} columns={detail}>
             {defects.map((d, i) => {
               const sev = d.severity ?? 'low';
               const why = [d.detail, d.fix].filter(Boolean).join(' · ');
               return (
                 <ListRow
                   key={i}
-                  size="s"
+                  size="line"
                   name={d.title}
                   mark={{ tone: SEVERITY_TONE[sev] ?? 'neutral', glyph: sev === 'low' ? 'hollow' : 'solid', label: tokenLabel(t, 'severity', sev) }}
-                  meta={why ? <Clipped text={why} /> : undefined}
+                  cells={[why ? <Clipped key="w" text={why} /> : null]}
                 />
               );
             })}

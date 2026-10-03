@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Hint, ListRow, Rows, Tile } from '@/features/shared/components/kit';
+import { Hint, ListRow, Rows, Tile, type RowColumn } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
@@ -39,6 +39,13 @@ export function TriggerSetWidget({ config, title, span, actions, footer }: Cockp
       .filter((tr) => tr.label.length > 0);
   }, [config]);
 
+  const c = t.overview.cockpit;
+  // The condition and the grain are what a trigger IS; the source is one short word, so it takes
+  // a fixed track and the detail takes the rest of the band.
+  const columns: RowColumn[] = [
+    { head: c.col_source, width: '7rem' },
+    { head: c.col_detail, width: '1.6fr' },
+  ];
   return (
     <Tile
       span={span}
@@ -50,7 +57,7 @@ export function TriggerSetWidget({ config, title, span, actions, footer }: Cockp
       empty={{ title: a.trigger_set_empty }}
       testId="companion-trigger-set-widget"
     >
-      <Rows count={triggers.length} empty={{ title: a.trigger_set_empty }}>
+      <Rows count={triggers.length} empty={{ title: a.trigger_set_empty }} columns={columns} nameHead={c.col_trigger}>
         {triggers.map((tr, i) => {
           const detail = [
             tr.condition && `${a.trigger_set_condition}: ${tr.condition}`,
@@ -60,14 +67,14 @@ export function TriggerSetWidget({ config, title, span, actions, footer }: Cockp
           return (
             <ListRow
               key={`${tr.label}-${i}`}
-              size="s"
+              size="line"
               name={tr.label}
-              meta={
-                <Hint content={detail}>
-                  <span className="k-ellipsis">{[tr.condition, tr.grain].filter(Boolean).join(' · ')}</span>
-                </Hint>
-              }
-              figures={tr.source ? <span className="k-fig typo-data k-regular k-quiet">{tr.source}</span> : undefined}
+              cells={[
+                tr.source ? <span key="s" className="typo-data k-regular k-quiet">{tr.source}</span> : null,
+                <Hint key="d" content={detail}>
+                  <span>{[tr.condition, tr.grain].filter(Boolean).join(' · ')}</span>
+                </Hint>,
+              ]}
             />
           );
         })}

@@ -1,4 +1,4 @@
-import { Tile } from '@/features/shared/components/kit';
+import { Stack, Tile } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 import { intentTone, toneLabel } from './intentColors';
@@ -41,25 +41,27 @@ export function LogExcerptWidget({ config, title, span, actions, footer }: Cockp
       empty={{ title: t.overview.cockpit.widget_empty }}
       testId="cockpit-log-excerpt"
     >
-      <div className="k-in flex flex-col gap-2">
-        <pre className={`typo-code rounded-input bg-background/60 py-1.5 m-0 t-${tone}`}>
-          {lines.map((line, i) => {
-            const hot = highlights.has(i + 1);
-            return (
-              <div
-                key={i}
-                className={`flex gap-2.5 px-2.5 border-l-2 ${hot ? 'border-l-[color:var(--tone)] bg-[color-mix(in_srgb,var(--tone)_12%,transparent)]' : 'border-l-transparent'}`}
-              >
-                <span className="select-none w-6 text-right shrink-0 k-quiet" aria-hidden>{i + 1}</span>
-                <span className={`whitespace-pre-wrap break-words min-w-0 ${hot ? 'text-foreground' : ''}`}>
-                  {hot && <span className="sr-only">{toneLabel(t, tone)}: </span>}
-                  {line || ' '}
-                </span>
-              </div>
-            );
-          })}
-        </pre>
-        {caption && <p className="typo-caption m-0">{caption}</p>}
+      <div className="k-in">
+        <Stack gap="s">
+          <pre className={`typo-code rounded-input bg-background/60 py-1.5 m-0 t-${tone}`}>
+            {lines.map((line, i) => {
+              const hot = highlights.has(i + 1);
+              return (
+                <div
+                  key={i}
+                  className={`flex gap-2.5 px-2.5 border-l-2 ${hot ? 'border-l-[color:var(--tone)] bg-[color-mix(in_srgb,var(--tone)_12%,transparent)]' : 'border-l-transparent'}`}
+                >
+                  <span className="select-none w-6 text-right shrink-0 k-quiet" aria-hidden>{i + 1}</span>
+                  <span className={`whitespace-pre-wrap break-words min-w-0 ${hot ? 'text-foreground' : ''}`}>
+                    {hot && <span className="sr-only">{toneLabel(t, tone)}: </span>}
+                    {line || ' '}
+                  </span>
+                </div>
+              );
+            })}
+          </pre>
+          {caption && <p className="typo-caption m-0">{caption}</p>}
+        </Stack>
       </div>
     </Tile>
   );

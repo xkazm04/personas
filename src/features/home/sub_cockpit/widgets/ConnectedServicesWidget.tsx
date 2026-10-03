@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
-import { KitButton, Rows, Tile } from '@/features/shared/components/kit';
+import { KitButton, Rows, Tile, type RowColumn } from '@/features/shared/components/kit';
 import { useAgentStore } from '@/stores/agentStore';
 import { useVaultStore } from '@/stores/vaultStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -18,9 +18,11 @@ const HEALTH_ORDER: Record<HealthState, number> = { failed: 0, unreachable: 1, u
 
 /**
  * Connected services: the credentials in the vault, each with its health on the row's mark and
- * how many personas reference it. One kit Tile; the head counts the credentials and names how
- * many fail, the rows list failing ones first and cap at `limit` (default 8) with "Show all",
- * so nothing is cut silently. A row press opens the Connections page, as the head's action does.
+ * how many personas reference it. One kit Tile; a failing vault puts the error on the TILE's own
+ * rail (grow-4) with the count left as the head's quiet meta, the rows list failing ones first
+ * and cap at `limit` (default 8) with "Show all", so nothing is cut silently. A row press opens
+ * the Connections page, as the head's action does. The rows fill a declared column set (grow-4):
+ * what the probe last said, and how many personas use the credential.
  *
  * Config:
  *   { "limit": N }
@@ -94,6 +96,12 @@ export function ConnectedServicesWidget({ config, title, span, actions, footer }
     useSystemStore.getState().setSidebarSection('credentials');
   };
   const heading = title ?? t.home.nav.credentials.label;
+  // The usage count drops first on a narrow tile; what the probe said is the column that earns
+  // the band, so it keeps its track.
+  const columns: RowColumn[] = [
+    { head: t.common.status, width: '1.4fr' },
+    { head: t.overview.cockpit.col_used_by, width: '7rem', align: 'end', collapse: true },
+  ];
   const noConnections = debtText('auto_no_connections_yet_5bb01e90');
 
   return (
@@ -101,14 +109,15 @@ export function ConnectedServicesWidget({ config, title, span, actions, footer }
       span={span}
       title={heading}
       count={rows.length || undefined}
-      meta={failing > 0 ? <span className="k-toned t-error">{tx(t.agents.connectors.test_diff_failing, { count: failing })}</span> : undefined}
+      meta={failing > 0 ? tx(t.agents.connectors.test_diff_failing, { count: failing }) : undefined}
+      mark={failing > 0 ? { tone: 'error', glyph: 'solid', label: tx(t.agents.connectors.test_diff_failing, { count: failing }) } : undefined}
       actions={<><KitButton tone="quiet" onClick={openConnections}>{t.sidebar.manage}</KitButton>{actions}</>}
       footer={footer}
       state={rows.length === 0 ? 'empty' : undefined}
       empty={{ title: noConnections }}
       testId="cockpit-connected-services"
     >
-      <Rows count={rows.length} cap={limit} empty={{ title: noConnections }} label={heading}>
+      <Rows count={rows.length} cap={limit} empty={{ title: noConnections }} label={heading} columns={columns} nameHead={t.overview.cockpit.col_service}>
         {rows.map(({ c, health }) => (
           <ServiceRow key={c.id} credential={c} health={health} used={usageByCredentialId.get(c.id) ?? 0} onPress={openConnections} />
         ))}

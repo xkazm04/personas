@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { Hint, ListRow, Rows, Tile } from '@/features/shared/components/kit';
+import { Hint, ListRow, Rows, Tile, type RowColumn } from '@/features/shared/components/kit';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
 interface Decision {
@@ -19,11 +19,12 @@ const CAP = 6;
  * the user (and future-Athena) can retrace reasoning later without
  * re-running the conversation.
  *
- * One kit Tile, one row per decision in the order they were taken (the
- * order is the sequence, so no timeline rail is drawn): the topic
- * emphasised, the choice beside it at regular
- * weight, the rationale as the row's meta with the full text in a Hint,
- * the time in the row's time column. The "Saved" note is the tile's meta.
+ * One kit Tile, one row per decision in the order they were taken (the order is the sequence, so
+ * no timeline rail is drawn), reading down declared columns (kit grow-4): the topic emphasised,
+ * the choice in its own column at regular weight, the rationale in the next with the full text in
+ * a Hint, the time in the row's time column. They used to be one run-on name and a meta line
+ * under it, which told the eye nothing about which part was the choice. The "Saved" note is the
+ * tile's meta.
  */
 export function DecisionLogWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
   const { t } = useTranslation();
@@ -44,7 +45,13 @@ export function DecisionLogWidget({ config, title, span, actions, footer }: Cock
   }, [config]);
 
   const heading = title || t.athena.decision_log_title;
+  const c = t.overview.cockpit;
   const empty = decisions.length === 0;
+  // The rationale drops first on a narrow tile: the Hint still carries it in full.
+  const columns: RowColumn[] = [
+    { head: c.col_choice, width: '1fr' },
+    { head: c.col_why, width: '1.4fr', collapse: true },
+  ];
   return (
     <Tile
       span={span}
@@ -61,19 +68,16 @@ export function DecisionLogWidget({ config, title, span, actions, footer }: Cock
       empty={{ title: t.athena.decision_log_empty }}
       testId="companion-decision-log-widget"
     >
-      <Rows count={decisions.length} cap={CAP} label={heading} empty={{ title: t.athena.decision_log_empty }}>
+      <Rows count={decisions.length} cap={CAP} label={heading} empty={{ title: t.athena.decision_log_empty }} columns={columns} nameHead={c.col_decision}>
         {decisions.map((d, i) => (
           <ListRow
             key={`${d.label}-${i}`}
-            size="s"
-            name={(
-              <span data-decision-index={i}>
-                <span>{d.label}</span>
-                <span className="k-quiet k-regular" aria-hidden="true">{' › '}</span>
-                <span className="k-regular">{d.choice}</span>
-              </span>
-            )}
-            meta={d.rationale ? <Hint content={d.rationale}><span className="k-ellipsis">{d.rationale}</span></Hint> : undefined}
+            size="line"
+            name={<span data-decision-index={i}>{d.label}</span>}
+            cells={[
+              <span key="c" className="k-regular">{d.choice}</span>,
+              d.rationale ? <Hint key="r" content={d.rationale}><span>{d.rationale}</span></Hint> : null,
+            ]}
             time={d.timestamp ? prettyTime(d.timestamp) : undefined}
           />
         ))}

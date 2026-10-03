@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ChipRow, Hint, ListRow, Rows, Tile, type Tone } from '@/features/shared/components/kit';
+import { ChipRow, Hint, ListRow, Rows, Stack, Tile, type RowColumn, type Tone } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
@@ -52,6 +52,8 @@ export function UseCaseSetWidget({ config, title, span, actions, footer }: Cockp
     out_of_scope: t.athena.use_case_set_role_out_of_scope,
   };
   const heading = title || t.athena.use_case_set_title;
+  const c = t.overview.cockpit;
+  const columns: RowColumn[] = [{ head: c.col_detail, width: '1.6fr' }];
   const rank = (r: string) => ROLES.findIndex((x) => x.role === roleOf(r));
   const ordered = [...useCases].sort((a, b) => rank(a.role) - rank(b.role));
   const chips = ROLES.map(({ role, tone }) => ({
@@ -73,22 +75,24 @@ export function UseCaseSetWidget({ config, title, span, actions, footer }: Cockp
       empty={{ title: t.athena.use_case_set_empty }}
       testId="companion-use-case-set-widget"
     >
-      <ChipRow chips={chips} label={heading} emptyLabel={t.athena.use_case_set_empty} />
-      <Rows count={ordered.length} empty={{ title: t.athena.use_case_set_empty }}>
-        {ordered.map((uc, i) => {
-          const role = roleOf(uc.role);
-          const tone = ROLES.find((x) => x.role === role)?.tone ?? 'info';
-          return (
-            <ListRow
-              key={`${uc.role}-${i}-${uc.label}`}
-              size="s"
-              name={uc.label}
-              mark={{ tone, glyph: 'soft', label: roleLabel[role] }}
-              meta={uc.description ? <Hint content={uc.description}><span className="k-ellipsis">{uc.description}</span></Hint> : undefined}
-            />
-          );
-        })}
-      </Rows>
+      <Stack gap="s">
+        <ChipRow chips={chips} label={heading} emptyLabel={t.athena.use_case_set_empty} />
+        <Rows count={ordered.length} empty={{ title: t.athena.use_case_set_empty }} columns={columns} nameHead={c.col_use_case}>
+          {ordered.map((uc, i) => {
+            const role = roleOf(uc.role);
+            const tone = ROLES.find((x) => x.role === role)?.tone ?? 'info';
+            return (
+              <ListRow
+                key={`${uc.role}-${i}-${uc.label}`}
+                size="line"
+                name={uc.label}
+                mark={{ tone, glyph: 'soft', label: roleLabel[role] }}
+                cells={[uc.description ? <Hint key="d" content={uc.description}><span>{uc.description}</span></Hint> : null]}
+              />
+            );
+          })}
+        </Rows>
+      </Stack>
     </Tile>
   );
 }
