@@ -23,7 +23,10 @@ export function ChipView({ chip: c }: { chip: Chip }) {
   const inner = (
     <>
       {c.glyph && <Dot tone={c.tone} glyph={c.glyph} />}
-      <span className="typo-label k-regular">{c.label}</span>
+      {/* The chip's one emphasis is its name. The count is a step LARGER (typo-data is step 1,
+        * typo-label step 0) and only the muting made it recede, so when muting weakened to 80%
+        * (grow-4, part 8) the name took the weight instead - the lever the doctrine names. */}
+      <span className="typo-label k-medium">{c.label}</span>
       {c.count != null && <span className="k-chip__count typo-data k-regular">{c.count}</span>}
       {c.share != null && <span className="k-chip__share" style={{ '--share': Math.min(1, Math.max(0, c.share)) } as CSSProperties} />}
     </>

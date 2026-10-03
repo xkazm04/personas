@@ -24,7 +24,11 @@
    * somewhere new follows its host rather than a constant. */
   --band-x: calc(var(--spine-x) + 8px);
   --spine-c: color-mix(in srgb, var(--primary) 30%, transparent);
-  --quiet: color-mix(in srgb, var(--foreground) 64%, transparent);
+  /* The kit's muting. ONE level app-wide (owner, 2026-10-03), 80% of the foreground - it was 64%
+   * until grow-4, and `.typo-caption` moves to the same 80% beside it, so the kit and the type
+   * scale mute by exactly one amount. A weaker muting carries less, so every pair the kit used to
+   * separate by muting ALONE now separates by weight or size instead (grow-4, part 8). */
+  --quiet: color-mix(in srgb, var(--foreground) 80%, transparent);
   --glow: color-mix(in srgb, var(--primary) 60%, transparent);
   /* fallbacks: plain token mixes */
   --band-alt: color-mix(in srgb, var(--foreground) 3%, transparent);
