@@ -11,7 +11,7 @@ vi.mock('@/api/pipeline/teamChannel', () => ({
 }));
 
 import { usePipelineStore } from '@/stores/pipelineStore';
-import { channelKey, countUnread, mergeHead, mergeHorizon, EMPTY_CHANNEL, CHANNEL_PAGE, type ChannelTeamState } from '../channelSlice';
+import { channelKey, clearChannelHeadCache, countUnread, mergeHead, mergeHorizon, EMPTY_CHANNEL, CHANNEL_PAGE, type ChannelTeamState } from '../channelSlice';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 
 /** Minimal channel item — only the fields the slice actually reads. */
@@ -44,6 +44,10 @@ function state(items: TeamChannelItem[], exhausted = false): ChannelTeamState {
 
 function resetStore() {
   usePipelineStore.setState({ channels: {}, channelSubs: {}, channelCounts: {} });
+  // The subscribe-time head fetch is freshness-gated by a module-level
+  // controller that outlives a single test, so a second test subscribing the
+  // same team inside the TTL would see its fetch skipped.
+  clearChannelHeadCache();
   listTeamChannel.mockReset();
   postTeamDirective.mockReset();
   countTeamChannelKinds.mockReset();
@@ -93,6 +97,47 @@ describe('channelSlice — refcounted subscription', () => {
     release();
     release(); // second call must be a no-op, not another decrement
     expect(usePipelineStore.getState().channelSubs[channelKey('team-1')]).toBe(1);
+  });
+
+  it('a release-and-retake inside the poll cadence costs no head read', async () => {
+    // The mount-burst shape: a watching surface whose set of teams grows
+    // releases EVERY key and re-takes every key in the same commit, so every
+    // key passes through refcount 0 -> 1 again. Without a freshness gate each
+    // pass re-issued a full list_team_channel for a page already in hand.
+    listTeamChannel.mockResolvedValue([item('a', '2026-07-13T10:00:00Z')]);
+    const { subscribeChannel } = usePipelineStore.getState();
+
+    const releaseOne = subscribeChannel('team-1');
+    const releaseTwo = subscribeChannel('team-2');
+    await vi.waitFor(() => expect(listTeamChannel).toHaveBeenCalledTimes(2));
+    listTeamChannel.mockClear();
+
+    // Set grew by one team: the hook drops all and re-takes all plus team-3.
+    releaseOne();
+    releaseTwo();
+    expect(usePipelineStore.getState().channelSubs[channelKey('team-1')]).toBeUndefined();
+    const retaken = [subscribeChannel('team-1'), subscribeChannel('team-2'), subscribeChannel('team-3')];
+    await vi.waitFor(() => expect(usePipelineStore.getState().channels[channelKey('team-3')]?.loaded).toBe(true));
+
+    // Only the genuinely new channel is read. Before the gate this was 3.
+    expect(listTeamChannel).toHaveBeenCalledTimes(1);
+    expect(listTeamChannel.mock.calls[0]?.[0]).toBe('team-3');
+    retaken.forEach((release) => release());
+  });
+
+  it('a cold key always reads, however many times the set has churned', async () => {
+    listTeamChannel.mockResolvedValue([item('a', '2026-07-13T10:00:00Z')]);
+    const { subscribeChannel } = usePipelineStore.getState();
+
+    subscribeChannel('team-1')();
+    await vi.waitFor(() => expect(listTeamChannel).toHaveBeenCalledTimes(1));
+
+    // The gate is a freshness window, not a fetch-once latch: past the window
+    // (simulated by dropping the recorded timestamps) a re-subscribe reads.
+    clearChannelHeadCache();
+    listTeamChannel.mockClear();
+    subscribeChannel('team-1')();
+    await vi.waitFor(() => expect(listTeamChannel).toHaveBeenCalledTimes(1));
   });
 
   it('refreshSubscribedChannels refreshes every subscribed team and nothing else', async () => {

@@ -8,6 +8,7 @@ import {
   type ChannelKind,
 } from "@/api/pipeline/teamChannel";
 import { silentCatch } from "@/lib/silentCatch";
+import { createCachedFetch } from "@/lib/async/createCachedFetch";
 import type { TeamChannelItem } from "@/lib/bindings/TeamChannelItem";
 import type { ChannelKindCounts } from "@/lib/bindings/ChannelKindCounts";
 
@@ -36,6 +37,52 @@ export const CHANNEL_PAGE = 60;
 export const CHANNEL_POLL_MS = 15_000;
 
 const LAST_SEEN_PREFIX = "personas.channel.lastSeen.";
+
+/**
+ * SUBSCRIBE-TIME HEAD FETCH — freshness-gated, because a re-subscribe is not
+ * news.
+ *
+ * `subscribeChannel` is refcounted, so only a 0 -> 1 transition fetches. That
+ * reads as "fetch once per channel", and it is not: a surface whose WATCHED SET
+ * changes membership releases every key and re-takes every key in the same
+ * commit (`useTeamChannel.useChannelSubscription` keys its effect on the joined
+ * id list, so one added team tears the whole set down and rebuilds it). Every
+ * key therefore passes through refcount 0 and back to 1, and every one of them
+ * re-issued a full `list_team_channel` for a page it was already holding. The
+ * app shell subscribes from `LiveChannelOverlay` (mounted in `App.tsx`), whose
+ * watched set is `teams` filtered by which of them has a home persona — two
+ * independently-arriving stores, so the set grows in waves on a cold start and
+ * each wave re-fetched every channel already loaded.
+ *
+ * Note the asymmetry this closes: the sibling call two lines below it
+ * (`fetchChannelCounts`) was ALREADY guarded by a cache check
+ * (`!get().channelCounts[teamId]`), so the counts read never joined the storm.
+ * Only the head read was unguarded.
+ *
+ * `invokeWithTimeout`'s 250ms auto-dedup never collapsed this: the waves are
+ * driven by separate data arrivals seconds apart, so the repeats land well
+ * outside the transport window. The gate has to be a real freshness window at
+ * the slice seam, which is what `createCachedFetch` is
+ * (`src/lib/async/createCachedFetch.ts` — the same primitive `credentialSlice`
+ * and `teamSlice` adopt).
+ *
+ * TTL = CHANNEL_POLL_MS: inside one poll cadence a re-subscribe cannot learn
+ * anything the shared service is not already about to deliver. The poll
+ * (`refreshSubscribedChannels`) and the push path (TEAM_ASSIGNMENT_PROGRESS,
+ * via `refreshChannel` directly) deliberately BYPASS this controller — gating
+ * a 15s poll behind a 15s window would make it skip ticks, and throttling a
+ * push refresh to 15s would make a live channel feel dead. The one cost is
+ * that `refreshChannel` swallows its own errors and resolves, so a head fetch
+ * that FAILED is recorded as fresh and a re-subscribe will not retry it; the
+ * ungated poll retries within CHANNEL_POLL_MS anyway.
+ */
+const subscribeHeadFetch = createCachedFetch<string>({ ttlMs: CHANNEL_POLL_MS });
+
+/** Drop every recorded subscribe-time head fetch. For tests. */
+export function clearChannelHeadCache(): void {
+  subscribeHeadFetch.invalidate();
+}
+
 
 /** Cache key. `kinds` is order-insensitive; empty = the blended read. */
 export function channelKey(teamId: string, kinds?: ChannelKind[]): string {
@@ -232,7 +279,10 @@ export const createChannelSlice: StateCreator<PipelineStore, [], [], ChannelSlic
           channels: { ...s.channels, [key]: { ...EMPTY_CHANNEL, lastSeenAt: readLastSeen(teamId) } },
         }));
       }
-      void get().refreshChannel(key);
+      // Freshness-gated — see `subscribeHeadFetch` above. A cold key always
+      // fetches (nothing recorded); a key re-taken inside one poll cadence
+      // does not.
+      void subscribeHeadFetch.run(key, () => get().refreshChannel(key));
       if (!get().channelCounts[teamId]) void get().fetchChannelCounts(teamId);
     }
 
