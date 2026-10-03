@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**167 reusable components** live under `src/features/shared/components/`.
+**168 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -183,18 +183,19 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 |---|---|
 | `ChartFrame` | ChartFrame - a chart's plot area on the reading line, fixed height, with its loading ghost and empty band. Kit. |
 | `ChipRow` | ChipRow - 30px chips with count and share bar, a chip with onPress is a filter; ChipView is one chip (toolbar filter). Kit. |
-| `ContextCard` | ContextCard - one of few peers as a tile: a band on a rail, head on top (art top-right), figures on the foot; ContextCards grids t |
+| `ContextCard` | ContextCard - one of few peers as a tile: a band on a rail, head on top (figure/art top-right), an optional body, figures on the f |
 | `ContextGroups` | ContextGroups - level 1 over many contexts: a row per group (worst mark, size, units by state, figures). Kit. |
 | `ContextOverview` | ContextOverview - parent layer over many contexts: groups + search, then one group as cards or a table. Kit. |
 | `Crumbs` | Crumbs - the trail above a drilled surface (Section eyebrow): onPress makes a door up; a last plain crumb is current. Kit. |
 | `DataTable` | DataTable - column heads over ListRow-family rows (band, mark, selection), pager under the last row, sortable, widths. Kit. |
 | `Hint` | Hint - the kit tip on a mark, figure or unit strip: shared Tooltip plus an always-present description. Kit. |
 | `KeyValueGrid` | KeyValueGrid - quiet keys over regular values in auto-fill columns; null renders honestly. Kit. |
-| `ListRow` | ListRow - fixed-height row: one emphasised name, quiet meta, status mark on the spine, figures; onPress makes the name the row's o |
+| `ListRow` | ListRow - fixed-height row: one emphasised name (500; 600 is the tinted title's), quiet meta, status mark on the spine, figures; o |
 | `Mark` | Mark - the status node on the spine (Tone x Glyph); Dot is the same glyph inline. Kit. |
 | `RangePicker` | RangePicker - a time-window control: preset segments plus an optional Custom segment that opens the caller's date picking. Kit. |
 | `Section` | Section - a titled part of a surface, bounded by a node on the spine (eyebrow, title, count, meta, actions; empty/loading states). |
 | `sortRows` | sortRows - the kit's stable table order: typed compare, absent values last, row id breaks ties. Kit. |
+| `Stack` | Stack - stacked regions inside a Tile or a card: owns the gap and, with divided, a quiet rule between them on the band's reading l |
 | `StatStrip` | StatStrip - stat tiles (glowing label, figure, drawn quantity); a lone tile is a strip of one. Kit. |
 | `Surface` | Kit surface family: KitHost (root, compact tier), Surface (a region on one spine), Split (detail pane when roomy), Drawer (narrow  |
 | `Tiles` | Tiles - the dashboard grid: 12 columns, content-sized rows, spans collapse by the grid's own width; cols={1} stacks. Kit. |
@@ -266,4 +267,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_167 components, 40 without a `@catalog` description._
+_168 components, 40 without a `@catalog` description._
