@@ -7341,7 +7341,22 @@
     "usage_relogin_step_authorising": "অনুমোদন করা হচ্ছে",
     "usage_relogin_step_opening_profile": "প্রোফাইল খোলা হচ্ছে",
     "usage_relogin_step_saving": "সংরক্ষণ করা হচ্ছে",
-    "usage_relogin_step_waiting_for_code": "কোডের অপেক্ষায়"
+    "usage_relogin_step_waiting_for_code": "কোডের অপেক্ষায়",
+    "layers_all_workspaces": "সব ওয়ার্কস্পেস",
+    "layers_decisions": "সিদ্ধান্ত",
+    "layers_decisions_aria": "আপনার অপেক্ষায় থাকা সবকিছু খুলুন",
+    "layers_empty": "এখানে এখনও কোনো প্রকল্প নেই",
+    "layers_empty_sub": "এই ওয়ার্কস্পেসে বরাদ্দ প্রকল্পগুলি তাদের প্রয়োজনসহ এখানে দেখা যাবে।",
+    "layers_needs_you_count_one": "1টি আপনার অপেক্ষায়",
+    "layers_needs_you_count_other": "{count}টি আপনার অপেক্ষায়",
+    "layers_open_aria": "{project} খুলুন",
+    "layers_overview": "সারসংক্ষেপ",
+    "layers_persona_count_one": "1টি পার্সোনা",
+    "layers_persona_count_other": "{count}টি পার্সোনা",
+    "layers_session_count_one": "1টি সেশন",
+    "layers_session_count_other": "{count}টি সেশন",
+    "layers_shape": "গঠন",
+    "layers_workspace_aria": "ওয়ার্কস্পেস বেছে নিন"
   },
   "onboarding": {
     "adopt_button": "এজেন্ট সেটআপ করুন",

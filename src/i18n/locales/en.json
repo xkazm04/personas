@@ -898,7 +898,22 @@
     "remote_receipt_title": "Returned work",
     "remote_session_gone": "This remote session is no longer tracked on this device.",
     "grid_column_contest_open": "Open {contest} on the Contest page",
-    "grid_column_contest_unlinked": "{contest} started before its seats recorded their project, so it cannot be opened from here"
+    "grid_column_contest_unlinked": "{contest} started before its seats recorded their project, so it cannot be opened from here",
+    "layers_all_workspaces": "All workspaces",
+    "layers_workspace_aria": "Choose a workspace",
+    "layers_decisions": "Decisions",
+    "layers_decisions_aria": "Open everything waiting on you",
+    "layers_overview": "Overview",
+    "layers_shape": "Shape",
+    "layers_empty": "No projects here yet",
+    "layers_empty_sub": "Projects assigned to this workspace appear here with what they need from you.",
+    "layers_open_aria": "Open {project}",
+    "layers_persona_count_one": "1 persona",
+    "layers_persona_count_other": "{count} personas",
+    "layers_needs_you_count_one": "1 needs you",
+    "layers_needs_you_count_other": "{count} need you",
+    "layers_session_count_one": "1 session",
+    "layers_session_count_other": "{count} sessions"
   },
   "common": {
     "unknown_error": "Unknown error",

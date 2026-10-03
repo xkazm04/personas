@@ -897,5 +897,20 @@
   "usage_relogin_step_authorising": "認可中",
   "usage_relogin_step_opening_profile": "プロファイルを開いています",
   "usage_relogin_step_saving": "保存中",
-  "usage_relogin_step_waiting_for_code": "コードを待機中"
+  "usage_relogin_step_waiting_for_code": "コードを待機中",
+  "layers_all_workspaces": "すべてのワークスペース",
+  "layers_decisions": "判断",
+  "layers_decisions_aria": "あなたを待っているすべてを開く",
+  "layers_empty": "ここにはまだプロジェクトがありません",
+  "layers_empty_sub": "このワークスペースに割り当てられたプロジェクトが、必要な対応とともにここに表示されます。",
+  "layers_needs_you_count_one": "1 件があなたを待っています",
+  "layers_needs_you_count_other": "{count} 件があなたを待っています",
+  "layers_open_aria": "{project} を開く",
+  "layers_overview": "概要",
+  "layers_persona_count_one": "ペルソナ 1 件",
+  "layers_persona_count_other": "{count} 件のペルソナ",
+  "layers_session_count_one": "セッション 1 件",
+  "layers_session_count_other": "{count} 件のセッション",
+  "layers_shape": "構成",
+  "layers_workspace_aria": "ワークスペースを選択"
 }

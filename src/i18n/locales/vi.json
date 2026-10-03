@@ -7341,7 +7341,22 @@
     "usage_relogin_step_authorising": "Đang cấp quyền",
     "usage_relogin_step_opening_profile": "Đang mở hồ sơ",
     "usage_relogin_step_saving": "Đang lưu",
-    "usage_relogin_step_waiting_for_code": "Đang chờ mã"
+    "usage_relogin_step_waiting_for_code": "Đang chờ mã",
+    "layers_all_workspaces": "Tất cả không gian làm việc",
+    "layers_decisions": "Quyết định",
+    "layers_decisions_aria": "Mở mọi thứ đang chờ bạn",
+    "layers_empty": "Chưa có dự án nào ở đây",
+    "layers_empty_sub": "Các dự án thuộc không gian làm việc này sẽ xuất hiện ở đây cùng điều chúng cần ở bạn.",
+    "layers_needs_you_count_one": "1 đang chờ bạn",
+    "layers_needs_you_count_other": "{count} đang chờ bạn",
+    "layers_open_aria": "Mở {project}",
+    "layers_overview": "Tổng quan",
+    "layers_persona_count_one": "1 persona",
+    "layers_persona_count_other": "{count} persona",
+    "layers_session_count_one": "1 phiên",
+    "layers_session_count_other": "{count} phiên",
+    "layers_shape": "Cấu thành",
+    "layers_workspace_aria": "Chọn không gian làm việc"
   },
   "onboarding": {
     "adopt_button": "Thiết lập tác nhân",

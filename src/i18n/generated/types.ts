@@ -905,6 +905,21 @@ export type Translations = {
     remote_session_gone: string;
     grid_column_contest_open: string;
     grid_column_contest_unlinked: string;
+    layers_all_workspaces: string;
+    layers_workspace_aria: string;
+    layers_decisions: string;
+    layers_decisions_aria: string;
+    layers_overview: string;
+    layers_shape: string;
+    layers_empty: string;
+    layers_empty_sub: string;
+    layers_open_aria: string;
+    layers_persona_count_one: string;
+    layers_persona_count_other: string;
+    layers_needs_you_count_one: string;
+    layers_needs_you_count_other: string;
+    layers_session_count_one: string;
+    layers_session_count_other: string;
   };
   common: {
     unknown_error: string;

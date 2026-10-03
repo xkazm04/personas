@@ -897,5 +897,20 @@
   "usage_relogin_step_authorising": "جارٍ التفويض",
   "usage_relogin_step_opening_profile": "جارٍ فتح ملف التعريف",
   "usage_relogin_step_saving": "جارٍ الحفظ",
-  "usage_relogin_step_waiting_for_code": "في انتظار الرمز"
+  "usage_relogin_step_waiting_for_code": "في انتظار الرمز",
+  "layers_all_workspaces": "كل مساحات العمل",
+  "layers_decisions": "القرارات",
+  "layers_decisions_aria": "افتح كل ما ينتظرك",
+  "layers_empty": "لا توجد مشاريع هنا بعد",
+  "layers_empty_sub": "تظهر المشاريع المعيّنة لمساحة العمل هذه هنا مع ما تحتاجه منك.",
+  "layers_needs_you_count_one": "واحد بانتظارك",
+  "layers_needs_you_count_other": "{count} بانتظارك",
+  "layers_open_aria": "فتح {project}",
+  "layers_overview": "نظرة عامة",
+  "layers_persona_count_one": "شخصية واحدة",
+  "layers_persona_count_other": "{count} شخصية",
+  "layers_session_count_one": "جلسة واحدة",
+  "layers_session_count_other": "{count} جلسة",
+  "layers_shape": "التكوين",
+  "layers_workspace_aria": "اختر مساحة عمل"
 }

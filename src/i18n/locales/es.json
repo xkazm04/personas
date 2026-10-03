@@ -7341,7 +7341,22 @@
     "usage_relogin_step_authorising": "Autorizando",
     "usage_relogin_step_opening_profile": "Abriendo perfil",
     "usage_relogin_step_saving": "Guardando",
-    "usage_relogin_step_waiting_for_code": "Esperando el código"
+    "usage_relogin_step_waiting_for_code": "Esperando el código",
+    "layers_all_workspaces": "Todos los espacios de trabajo",
+    "layers_decisions": "Decisiones",
+    "layers_decisions_aria": "Abrir todo lo que espera por ti",
+    "layers_empty": "Aún no hay proyectos aquí",
+    "layers_empty_sub": "Los proyectos asignados a este espacio de trabajo aparecen aquí con lo que necesitan de ti.",
+    "layers_needs_you_count_one": "1 te necesita",
+    "layers_needs_you_count_other": "{count} te necesitan",
+    "layers_open_aria": "Abrir {project}",
+    "layers_overview": "Resumen",
+    "layers_persona_count_one": "1 persona",
+    "layers_persona_count_other": "{count} personas",
+    "layers_session_count_one": "1 sesión",
+    "layers_session_count_other": "{count} sesiones",
+    "layers_shape": "Forma",
+    "layers_workspace_aria": "Elige un espacio de trabajo"
   },
   "onboarding": {
     "adopt_button": "Configurar agente",

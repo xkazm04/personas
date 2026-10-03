@@ -8,14 +8,18 @@ import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { ActivitySurfaceProps } from './useActivitySurface';
 import { ActivityEntryE } from './entry-e/ActivityEntryE';
+import { ActivityAtlas } from './layers/ActivityAtlas';
+import { ActivityCases } from './layers/ActivityCases';
 
-type Pick = 'baseline' | 'entry-e';
+type Pick = 'baseline' | 'entry-e' | 'atlas' | 'cases';
+
+const PICKS: readonly Pick[] = ['baseline', 'entry-e', 'atlas', 'cases'];
 
 const KEY = 'personas.prototype.activity-variant';
 function read(): Pick {
   try {
     const v = localStorage.getItem(KEY);
-    if (v === 'baseline' || v === 'entry-e') return v;
+    if ((PICKS as readonly string[]).includes(v ?? '')) return v as Pick;
   } catch (err) { silentCatch('fleet/prototype:readVariant')(err); }
   return 'baseline';
 }
@@ -23,6 +27,8 @@ function read(): Pick {
 const TABS: Array<{ id: Pick; label: string; hint: string }> = [
   { id: 'baseline', label: 'Baseline', hint: 'Current production surface' },
   { id: 'entry-e', label: 'E · Annunciator', hint: 'Contest winner, with the owner adjustments' },
+  { id: 'atlas', label: 'Atlas', hint: 'Layered: projects as a ranked ledger, every figure a door' },
+  { id: 'cases', label: 'Cases', hint: 'Layered: projects as places, decisions docked and widening' },
 ];
 
 export function ActivityPrototypeSwitcher({
@@ -33,7 +39,10 @@ export function ActivityPrototypeSwitcher({
     setPick(p);
     try { localStorage.setItem(KEY, p); } catch (err) { silentCatch('fleet/prototype:writeVariant')(err); }
   };
-  const Body = pick === 'entry-e' ? ActivityEntryE : Baseline;
+  const Body = pick === 'entry-e' ? ActivityEntryE
+    : pick === 'atlas' ? ActivityAtlas
+    : pick === 'cases' ? ActivityCases
+    : Baseline;
   return (
     <div className="flex h-full min-h-0 flex-col gap-1.5">
       <div className="flex flex-shrink-0 items-center gap-1 self-start rounded-interactive border border-dashed border-primary/30 bg-background/80 p-0.5" role="group" aria-label="Prototype variants">

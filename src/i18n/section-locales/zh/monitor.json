@@ -897,5 +897,20 @@
   "usage_relogin_step_authorising": "正在授权",
   "usage_relogin_step_opening_profile": "正在打开配置文件",
   "usage_relogin_step_saving": "正在保存",
-  "usage_relogin_step_waiting_for_code": "正在等待验证码"
+  "usage_relogin_step_waiting_for_code": "正在等待验证码",
+  "layers_all_workspaces": "所有工作区",
+  "layers_decisions": "决策",
+  "layers_decisions_aria": "打开所有等待你处理的事项",
+  "layers_empty": "此处暂无项目",
+  "layers_empty_sub": "分配到此工作区的项目会连同所需处理事项显示在这里。",
+  "layers_needs_you_count_one": "1 项需要你",
+  "layers_needs_you_count_other": "{count} 项需要你",
+  "layers_open_aria": "打开 {project}",
+  "layers_overview": "概览",
+  "layers_persona_count_one": "1 个人格",
+  "layers_persona_count_other": "{count} 个人格",
+  "layers_session_count_one": "1 个会话",
+  "layers_session_count_other": "{count} 个会话",
+  "layers_shape": "构成",
+  "layers_workspace_aria": "选择工作区"
 }
