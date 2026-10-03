@@ -136,7 +136,7 @@ function persona(over: Partial<Persona>): Persona {
 }
 
 describe('PersonaOverviewWidget', () => {
-  it('the roster is who / how / how healthy / how trusted - and carries no description column', () => {
+  function roster(span: number) {
     useAgentStore.setState({
       personas: [
         persona({ id: 'hero', name: 'Incident Commander' }),
@@ -144,9 +144,13 @@ describe('PersonaOverviewWidget', () => {
       ],
       fetchPersonas: vi.fn().mockResolvedValue(undefined),
     } as never);
-    render(<PersonaOverviewWidget title="Your fleet" config={{ hero: 'hero' }} />);
+    render(<PersonaOverviewWidget title="Your fleet" span={span} config={{ hero: 'hero' }} />);
+  }
+
+  it('a NARROW roster drops the description so the name keeps its room', () => {
     // The description WAS the "Detail" column the owner removed by name, and on the 5-span roster
-    // it truncated the row's one emphasis - the persona's name - to make room for itself.
+    // of home/cockpit it truncated the row's one emphasis - the persona's name - to fit itself in.
+    roster(5);
     expect(headsOf('cockpit-persona-overview-table')).toEqual(['Persona', 'Model', 'Status', 'Trust']);
     const cells = cellsOf(rowsOf('cockpit-persona-overview-table')[0]!);
     expect(cells).toHaveLength(4);
@@ -155,6 +159,15 @@ describe('PersonaOverviewWidget', () => {
     expect(cells[1]).toContain('Sonnet');
     expect(cells[3]).toContain('90%');
     expect(screen.getByText('Inbox Triage')).toBeInTheDocument();
+  });
+
+  it('a WIDE roster lets the description take the slack, and never a "Detail" head', () => {
+    roster(12);
+    const heads = headsOf('cockpit-persona-overview-table');
+    expect(heads).toEqual(['Persona', 'Description', 'Model', 'Status', 'Trust']);
+    expect(heads).not.toContain('Detail');
+    const cells = cellsOf(rowsOf('cockpit-persona-overview-table')[0]!);
+    expect(cells[1]).toContain('Sorts the morning inbox');
   });
 
   it('the featured block and the roster are divided regions, not a bare stack of siblings', () => {

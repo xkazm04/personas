@@ -99,28 +99,38 @@ export function PersonaOverviewWidget({ config, title, span, actions, footer }: 
   }
 
   const c = t.overview.cockpit;
-  // No description column. It was the "Detail" column the owner removed by name on 2026-10-03, and
-  // measured on the 5-span roster of `home/cockpit` it cost the row its ONE emphasis: with five
-  // tracks in ~590px the persona's NAME truncated to "Release..." while its description showed
-  // "Release Notes ...". A roster says who, how, how healthy and how trusted; the description is
-  // on the featured block above and on the persona's own page.
+  // The description column answers to the TILE'S SPAN, measured on both shots rather than reasoned
+  // about. It was the "Detail" column the owner removed by name on 2026-10-03; on the 5-span roster
+  // of `home/cockpit` keeping it cost the row its ONE emphasis (five tracks in ~590px truncated the
+  // persona's NAME to "Release..." while its description read "Release Notes ..."), and dropping it
+  // on the 12-span roster of `composed-a` opened ~900px of empty band between the name and Model -
+  // the owner's other recorded complaint. So a narrow roster says who, how, how healthy and how
+  // trusted, and a wide one lets the description take the slack. This is what the kit column's
+  // `collapse` did, driven by the span the composer declared instead of by a container query.
+  const wide = (span ?? 12) >= 8;
   const columns: TableColumn<Persona>[] = [
     {
       key: 'name',
       label: c.col_persona,
-      width: 'minmax(0, 1.6fr)',
+      width: wide ? 'minmax(0, 1fr)' : 'minmax(0, 1.6fr)',
       render: (p) => nameCell(p.name, personaMark(p, t).label, p.name),
     },
+    ...(wide ? [{
+      key: 'description',
+      label: t.common.description,
+      width: 'minmax(0, 1.6fr)',
+      render: (p: Persona) => <Cell value={p.description} hint={p.description} />,
+    }] : []),
     {
       key: 'model',
       label: t.common.model_label,
-      width: 'minmax(0, 7rem)',
+      width: wide ? 'minmax(0, 7rem)' : 'minmax(0, 1fr)',
       render: (p) => <Cell value={modelTierLabel(p.model_profile)} />,
     },
     {
       key: 'state',
       label: t.common.status,
-      width: 'minmax(0, 9rem)',
+      width: wide ? 'minmax(0, 9rem)' : 'minmax(0, 1fr)',
       render: (p) => {
         const mark = personaMark(p, t);
         return <Cell value={mark.label} tone={mark.tone} />;
