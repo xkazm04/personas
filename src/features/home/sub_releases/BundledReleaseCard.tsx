@@ -35,11 +35,15 @@ export function BundledReleaseCard({ release, t }: { release: Release; t: Releas
             <li key={item.id} className="flex items-start gap-2.5">
               <Tooltip content={typeLabel}>
                 {/* The dot itself is aria-hidden (it is a glyph, not a word); the kind is
-                    named here so a reader who cannot see the tone still gets it. */}
-                {/* mt-1.5 aligns the 9px dot on the first line's CAP centre, not its line
-                    box: at typo-body's 1.65 line-height the box centre sits ~2px below the
-                    letters and the bullet read as hanging off the baseline. */}
-                <span role="img" aria-label={typeLabel} className="mt-1.5 flex-none">
+                    named here so a reader who cannot see the tone still gets it.
+
+                    `flex` is load-bearing, not decoration: Dot is an inline-block, so in a
+                    plain span it sits on the BASELINE of a line box that inherits typo-body's
+                    1.65 leading - measured at 1440px, dot centre y=41 against a cap centre of
+                    y=35, a bullet visibly hanging off the bottom of its line, and the span's
+                    own line box padded the list's row pitch to 39px. As a flex item the span
+                    is its own 9px box (pitch 35.5px) and mt-2.5 lands the dot at y=35. */}
+                <span role="img" aria-label={typeLabel} className="mt-2.5 flex flex-none">
                   <Dot tone={bullet.tone} glyph={bullet.glyph} />
                 </span>
               </Tooltip>
