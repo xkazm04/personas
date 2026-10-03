@@ -25,7 +25,6 @@ import { SessionMenuProvider } from './SessionMenu';
 import { usePanelFilter } from './boardFilter';
 import { SupplyDeck } from './SupplyDeck';
 import { ClassicPanel } from './ClassicPanel';
-import { RunwayPanel } from './RunwayPanel';
 import { LanesPanel } from './LanesPanel';
 import { InboxDesk } from './InboxDesk';
 import './entryE.css';
@@ -76,8 +75,6 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
           <SessionMenuProvider onOpenTerminal={surface.setTerminal} onOpenRecap={surface.setRecap}>
             {layout === 'classic' ? (
               <ClassicPanel surface={surface} filter={filter} selectedPersonaId={props.selectedPersonaId} onOpenRemote={props.onOpenRemote} onClearFilter={surface.clearFilter} />
-            ) : layout === 'runway' ? (
-              <RunwayPanel surface={surface} filter={filter} cap={cap} onStart={confirm.askStart} onCancel={confirm.askCancel} />
             ) : (
               <LanesPanel surface={surface} filter={filter} cap={cap} onStart={confirm.askStart} onCancel={confirm.askCancel} />
             )}

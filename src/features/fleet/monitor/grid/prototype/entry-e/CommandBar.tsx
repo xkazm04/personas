@@ -41,7 +41,6 @@ export function CommandBar({
   };
   const layoutLabel: Record<BoardVariant, string> = {
     classic: m.board_variant_classic,
-    runway: m.board_variant_runway,
     lanes: m.board_variant_lanes,
   };
 
