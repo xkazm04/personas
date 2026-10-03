@@ -86,8 +86,55 @@ interface PerfState {
 }
 
 export interface PerfSnapshot {
+  /**
+   * Identity of the webview page load this measurement window belongs to.
+   *
+   * WHY THIS EXISTS. `resetAt` and `snapshotAt` are `performance.now()` values,
+   * which are PAGE-RELATIVE: a webview reload silently re-bases the clock to
+   * zero. A multi-stop walk that reloads mid-run therefore produces timestamps
+   * that go BACKWARDS, and nothing in the recorded numbers says so. Measured in
+   * `docs/harness/perf-runs/2026-09-24T10-08-09-822Z.json`: stop 23's `resetAt`
+   * (11,679.9) is below stop 22's `snapshotAt` (42,239.9).
+   *
+   * That is not just an ordering curiosity. The FIRST measurement window after a
+   * load absorbs the app's entire bootstrap — in that same run `twin/profiles`
+   * recorded 54 IPCs of which the bulk were `companion_init`, `radio_*`,
+   * `fleet_set_*`, `delete_stale_seed_templates` and `batch_import_design_reviews`:
+   * the app booting, not the surface working. On a clean run the same stop fires
+   * 1 IPC. Without this field a consumer cannot tell "this surface is expensive"
+   * from "this surface went first after a reload".
+   */
+  pageLoad: {
+    /**
+     * Stable for the life of this module evaluation; changes on a webview
+     * reload AND on an HMR re-evaluation (both re-base the counters, and both
+     * invalidate a cross-stop comparison).
+     */
+    id: string;
+    /**
+     * `performance.timeOrigin` — the wall-clock epoch the page-relative
+     * `resetAt`/`snapshotAt` are measured from. Discriminates the cause: a
+     * changed `id` with the SAME `timeOrigin` was an HMR re-eval, a changed
+     * `timeOrigin` was a real reload. 0 where the engine lacks it.
+     */
+    timeOrigin: number;
+    /**
+     * How many explicit `reset()` calls have happened on THIS page load. `1`
+     * means this is the first measured window on a fresh timeline, so it
+     * inherits whatever the app did while booting; `0` means no reset happened
+     * at all and the window is "since page load".
+     */
+    resetSeq: number;
+  };
   resetAt: number;
   snapshotAt: number;
+  /**
+   * `snapshotAt - resetAt`: the LENGTH OF THE MEASUREMENT WINDOW, not the cost
+   * of whatever was measured. It contains the caller's setup, the caller's
+   * settle/poll loop and the snapshot round-trip. Do not read it as a surface
+   * timing — `ipc.totalDurationMs`, `render.totalActualDurationMs` and
+   * `longTasks` are the costs that belong to the app.
+   */
   durationMs: number;
   marks: Array<{ label: string; tMs: number }>;
   ipc: {
@@ -180,6 +227,17 @@ function createInitialState(): PerfState {
  */
 const MAX_FRAME_SAMPLES = 20_000;
 
+/**
+ * Identity of this page load. Minted once per module evaluation, which is once
+ * per webview load (and once more per HMR re-eval, which is the other way the
+ * counters get re-based). See `PerfSnapshot.pageLoad` for why a consumer needs
+ * this to read `resetAt` honestly.
+ */
+const PAGE_LOAD_ID = `pl-${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`;
+const PAGE_TIME_ORIGIN = typeof performance.timeOrigin === 'number' ? performance.timeOrigin : 0;
+/** Explicit `reset()` calls on this page load. 0 until the first one. */
+let resetSeq = 0;
+
 let state: PerfState = createInitialState();
 // Baseline of getIpcTotalCount() at the last reset. Used to compute how
 // many new records have arrived since reset by comparing with the current
@@ -264,6 +322,11 @@ function snapshot(): PerfSnapshot {
     .sort((a, b) => b.count - a.count);
 
   return {
+    pageLoad: {
+      id: PAGE_LOAD_ID,
+      timeOrigin: PAGE_TIME_ORIGIN,
+      resetSeq,
+    },
     resetAt: state.resetAt,
     snapshotAt: now,
     durationMs: Math.round((now - state.resetAt) * 100) / 100,
@@ -424,6 +487,7 @@ function readJsHeap(): PerfSnapshot['memory'] {
 function reset(): void {
   state = createInitialState();
   ipcBaselineTotal = getIpcTotalCount();
+  resetSeq += 1;
 }
 
 function mark(label: string): void {
