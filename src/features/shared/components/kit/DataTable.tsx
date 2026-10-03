@@ -100,8 +100,11 @@ export function DataTable<K extends string>({ cols, rows: given, label, loading,
           </tr>
         </thead>
         <tbody>
+          {/* The ghost row's entrance delay, staggered down the table as GhostRows staggers a list
+            * (docs/design/overview-loading.md law 3): invisible for 150ms, so a warm fetch that
+            * resolves inside it never flashes a placeholder. */}
           {st === 'loading' && [0, 1, 2].map((i) => (
-            <tr key={i} className="is-loading" aria-hidden="true">
+            <tr key={i} className="is-loading" aria-hidden="true" style={{ '--ghost-delay': `${150 + i * 35}ms` } as CSSProperties}>
               {cols.map((c, ci) => (
                 <td key={c.key} className={c.num ? 'k-num' : undefined} style={track(c)}>
                   {ci === 0 ? (

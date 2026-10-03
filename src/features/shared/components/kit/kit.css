@@ -387,14 +387,24 @@ button.k-chip:hover, .k-chip.is-hover { border-color: color-mix(in srgb, var(--p
 .k-empty > * { position: relative; }
 .k-empty > .k-mark { position: absolute; }
 .k-empty__text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+/* The ghost is CALM and DELAYED (grow-4, part 9; docs/design/overview-loading.md laws 3 and 5,
+ * and §C's "no `animate-pulse`, ever"). It carried an infinite 4.2s shimmer and no delay at all,
+ * which is the one placeholder every kit surface renders and the one that broke the rule: it
+ * painted on the first frame of every load, including a warm one that resolves inside the
+ * placeholder delay, and its moving gradient made a loading-state screenshot non-deterministic.
+ * Now it is a flat bar that is literally INVISIBLE until --ghost-delay (150ms, staggered per row
+ * by GhostRows at the doctrine's 35ms), so a fast fetch never flashes one - zero timers, zero JS.
+ * Reduced motion drops the animation through the kit's own block below, which lands the ghost at
+ * its unanimated state: fully visible, settled, on the same code path as "already settled". */
 .k-ghost {
   display: block; height: 10px; border-radius: 4px; background-color: var(--ghost);
-  background-image: linear-gradient(90deg, transparent 0%, var(--band-alt) 50%, transparent 100%);
-  background-size: 220% 100%; background-repeat: no-repeat; animation: k-shimmer 4.2s linear infinite;
+  animation: k-ghost-in var(--duration-fast) ease-out var(--ghost-delay, 150ms) both;
 }
-@keyframes k-shimmer { from { background-position: 160% 0; } to { background-position: -60% 0; } }
+@keyframes k-ghost-in { from { opacity: 0; } }
 .k-row.is-loading { cursor: default; }
-.k-row.is-loading .k-mark, .k-table tr.is-loading .k-mark { background: var(--ghost); }
+.k-row.is-loading .k-mark, .k-table tr.is-loading .k-mark {
+  background: var(--ghost); animation: k-ghost-in var(--duration-fast) ease-out var(--ghost-delay, 150ms) both;
+}
 
 /* ============ Drawer (nested detail layer, narrow surfaces) ============ */
 .k-drawer {
@@ -478,7 +488,7 @@ button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); backgroun
 .k-card.is-empty::after { content: ""; position: absolute; inset: 0; border: 1px dashed var(--line); border-left: 0; border-radius: inherit; pointer-events: none; }
 .k-card.is-loading { cursor: default; }
 .k-card > .k-mark { left: -4px; top: 21px; margin-top: -4.5px; outline-color: var(--background); }
-.k-card.is-loading > .k-mark { background: var(--ghost); }
+.k-card.is-loading > .k-mark { background: var(--ghost); animation: k-ghost-in var(--duration-fast) ease-out var(--ghost-delay, 150ms) both; }
 /* One layout for every card: head at the top (actions at its top-right), foot pinned to the bottom edge. */
 .k-card__head { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
 .k-card__titles { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }

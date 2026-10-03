@@ -39,12 +39,17 @@ export function Ghost({ width, height, inline }: { width: string; height?: strin
 
 const WIDTHS = [58, 44, 66, 38, 52];
 
-/** Loading rows at the list's own height: a ghost under the chrome, never a spinner. */
+/** The row's own entrance delay: invisible for 150ms, then the doctrine's 35ms stagger down the
+ *  list (docs/design/overview-loading.md law 3 / §C). The value is a CSS variable set on the row,
+ *  so it reaches every ghost bar and the ghost mark inside it by inheritance. */
+const ghostDelay = (i: number) => ({ '--ghost-delay': `${150 + i * 35}ms` }) as CSSProperties;
+
+/** Loading rows at the list's own height: a calm, delayed ghost under the chrome, never a spinner. */
 export function GhostRows({ count = 3, size = 'm', label }: { count?: number; size?: 's' | 'm' | 'l'; label?: string }) {
   return (
     <div className="k-rows" aria-busy="true" aria-label={label}>
       {Array.from({ length: count }, (_, i) => (
-        <div key={i} className={`k-row k-row--${size} is-loading`} aria-hidden="true">
+        <div key={i} className={`k-row k-row--${size} is-loading`} aria-hidden="true" style={ghostDelay(i)}>
           <span className="k-mark g-solid" style={{ '--tone': 'var(--ghost)' } as CSSProperties} />
           <div className="k-row__main" style={{ gap: 8 }}>
             <Ghost width={`${WIDTHS[i % 5]}%`} />
