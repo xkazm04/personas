@@ -574,6 +574,21 @@ const STYLE_SEEDS = {
     near: '.a { font-family: var(--font-mono); font-size: 1em; }\n.b { font-family: inherit; color: var(--foreground); }\n/* color: #fff */\n',
     count: 4,
   },
+  // The near-miss carries the shapes this one must NOT claim: the two ink
+  // tokens WITHOUT a fraction (they are the ladder's rungs, the destination),
+  // a non-text property wearing a fraction (`border-`/`bg-foreground`, which
+  // is a line and a wash, not ink), an arbitrary alpha in brackets, and prose
+  // about the migration. Getting any of those wrong would make the rule fire
+  // on its own fix.
+  'off-ladder-ink-opacity': {
+    ext: '.tsx',
+    red: '<p className="text-foreground/90" /><p className="hover:text-muted-foreground/70" />\n'
+      + 'const idle = \'placeholder-muted-foreground/30\';\n',
+    near: '<p className="text-foreground text-muted-foreground" />\n'
+      + '<p className="border-foreground/15 bg-foreground/[0.03] border-muted-foreground/20" />\n'
+      + '// text-foreground/90 named in a comment about the ladder\n',
+    count: 3,
+  },
 };
 
 test('every style-unification rule is registered and has a seed', () => {

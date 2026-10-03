@@ -795,6 +795,33 @@ condition moved to `scripts/style/typo-allowlist.mjs`, run by `check-corpus-inte
 inside `npm run check`: zero tolerance, with the allow-list derived from the `.typo-*`
 selectors in `src/**/*.css` at run time and floors that fail a walk that saw nothing.
 
+### The ink ladder (added 2026-10-03)
+
+`off-ladder-ink-opacity` is the seventh style rule and it closes the hole the other six
+leave: they all grade a class string against a TOKEN, and the ink tokens themselves had no
+single level to grade against. Measured 2026-10-03: `--muted-foreground` was a per-theme
+hex computing to **64.8% to 85.6%** of its own theme's `--foreground` — one named role,
+eleven values, set by feel — while `.typo-caption` and the kit's `--quiet` had just been
+taken to a flat 80% app-wide, which left the two named tokens 1.12:1 apart on the default
+theme and FLIPPED their ordering (`--muted-foreground` was the stronger of the two in 6 of
+11 themes before, 1 of 11 after). Beside both sat a third, uncontrolled family: **1,797
+`text-foreground/NN` and `text-muted-foreground/NN` sites across 719 files at 24 distinct
+levels, /15 to /95.**
+
+`--muted-foreground` is now `color-mix(in srgb, var(--foreground) 80%, transparent)` in
+`:root` and nowhere else, so there is ONE muting level with three names, which is section 3
+of `docs/design/style-mastery/doctrine.md` stated as CSS rather than as a proposal. The
+ratchet freezes the third family at its measured count; `scripts/style/codemod-ink-ladder.mjs`
+is how it shrinks (/85 and above → `text-foreground`, /50 to /80 → `text-muted-foreground`,
+below /50 → hand review, placeholders a separate opt-in pass), and
+`docs/development/contrast.md` carries the mapping with the contrast figure behind each row.
+
+Note what this rule does NOT claim: `check:themes` grades the tokens and prints the floor
+these sites must clear, but it **cannot see a class string in a `.tsx` file at all** — no CSS
+reader can. That asymmetry is why this condition needs a ratchet rather than a stylesheet
+fix, and it is the same asymmetry that let the 70%→80% caption change ship green through a
+gate that had never opened `typography.css`.
+
 ```json
 {
   "rules": [
@@ -995,6 +1022,46 @@ selectors in `src/**/*.css` at run time and floors that fail a walk that saw not
         "matches": 389
       },
       "floor": 8
+    },
+    {
+      "id": "off-ladder-ink-opacity",
+      "goldenPath": "docs/concepts/golden-paths/design-token-usage.md",
+      "title": "An opacity modifier on an ink token: a private muting level beside the ladder",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?<![\\w-])(?:text|placeholder)-(?:muted-)?foreground\\/\\d{1,3}(?![\\w.-])",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "an opacity modifier written on an ink token (text-foreground/90, hover:text-muted-foreground/70, placeholder-muted-foreground/30) in src/**/*.{ts,tsx}. PROXY FOR the stack-free condition: the app has ONE muting level and the TOKEN carries it, so a call site that picks its own fraction is authoring a private tier the theme gate cannot see. Measured 2026-10-03 on a clean HEAD export: 17 distinct levels on text-foreground alone, /15 to /95, plus 7 on text-muted-foreground. check:themes grades the TOKENS in globals.css and typography.css and prints the floor these sites must clear (/50 on the dark themes, /65 on the light ones), but it cannot see a class string in a .tsx file at all - no CSS reader can - which is exactly why this condition needs a ratchet rather than a stylesheet fix. Recall limit, stated: a level assembled at runtime (`text-foreground/${n}`) is invisible to a static pattern, as is a class built by a helper that concatenates the slash.",
+        "note": "MEASURED 2026-10-03 on a `git archive HEAD` export, never the shared working tree (~265 foreign dirty files there). PRECISION 12/12 on an even sample of the hit list: every hit is a class string choosing an ink fraction. 2 of the 12 are a sub-class worth naming - an ICON tinted with an ink fraction (SubjectsAtlas.tsx:105, RevitalizeHistoryTable.tsx:58): same spelling, but the fix is a glyph decision, not a prose tier, which is why everything below /50 goes to hand review rather than into the codemod. The distribution is the argument for the rule, not the total: 845 matches sit at /85-/95, i.e. within 1.18:1 of full ink and visually indistinguishable from it, while 138 sit at /15-/45, which is below AA in every theme. One token, nineteen opinions. Overlaps `custom/no-low-contrast-text-classes` (ESLint, warn, 705 findings) by design and DISAGREES WITH IT on the destination: that rule forbids `text-muted-foreground` outright and sends everything to `text-foreground`, which predates both the one-muting-level doctrine (doctrine.md section 3) and the AA calibration of the muted token (docs/development/contrast.md). The ladder in `fix` is the current answer; the ESLint rule is the stale one, and it is warn-level, so it gates nothing.",
+        "fix": "Drop the modifier and let the token carry the level. /85 and above -> `text-foreground` (full ink). /50 to /80 -> `text-muted-foreground`, which IS 80% of the theme's foreground since 2026-10-03, the same level `.typo-caption` and the kit's `--quiet` wear. Below /50 -> hand review: it is either secondary prose (so `text-muted-foreground`) or it is not text at all (an icon stroke, a separator, a decorative glyph), in which case it is not an ink token's job. Placeholders are a separate pass: `placeholder:text-muted-foreground`. `scripts/style/codemod-ink-ladder.mjs` applies the first two rows and reports the third; docs/development/contrast.md records the full mapping.",
+        "precondition": "`--muted-foreground` and `.typo-caption` both resolve to 80% of `--foreground`, which `npm run check:themes` asserts (it exits 2 if either stops resolving). If the ladder's rungs change, this rule's `fix` is wrong before its pattern is."
+      },
+      "exclude": [
+        {
+          "path": "**/__tests__/**",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.tsx",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.ts",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        }
+      ],
+      "baseline": {
+        "files": 719,
+        "matches": 1797
+      },
+      "floor": 5000
     }
   ]
 }
