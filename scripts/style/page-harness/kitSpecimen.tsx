@@ -7,11 +7,11 @@
  * draws hover with), selected, muted / disabled, live, empty, loading.
  */
 /* eslint-disable custom/no-hardcoded-jsx-text -- specimen fixtures in a harness-only view, not product copy */
-import { useEffect, type ComponentType, type ReactNode } from 'react';
+import { useEffect, useState, type ComponentType, type ReactNode } from 'react';
 import { Bot, MessageCircle, Play, RefreshCw, Sparkles, Workflow } from 'lucide-react';
 import { OverviewDemo } from './kitContexts';
 import {
-  ChartFrame, ChipRow, ContextCard, ContextCards, Crumbs, DataTable, Dot, Hint, KeyValueGrid, KitButton, KitHost, ListRow,
+  ChartFrame, ChipRow, ContextCard, ContextCards, Crumbs, DataTable, Dot, Figure, Hint, KeyValueGrid, KitButton, KitHost, ListRow,
   Meta, RangePicker, Rows, SearchField, Section, Segmented, Stack, StatStrip, Surface, Tile, Tiles, Toolbar, UnitStrip,
   apportion, quantumFor, toneColor, type Glyph, type TableCol, type TableRow, type Tone,
 } from '@/features/shared/components/kit';
@@ -197,7 +197,85 @@ function Facts() {
         <ChartFrame height={80} label="Loading chart" state="loading">{null}</ChartFrame>
         <ChartFrame height={80} label="Empty chart" state="empty" empty={{ title: 'No data in this window' }}>{null}</ChartFrame>
       </Section>
+      <Figures />
     </>
+  );
+}
+
+/**
+ * Figure (doctrine 6c): the frame that HOSTS a drawing. Two completely different drawings sit in
+ * it here on purpose - a stepped structure on a declared height with the callout rail and a press,
+ * and a polar dial on a declared aspect with no rail at all - because the claim the part makes is
+ * that it is AGNOSTIC about shape. If both figures looked like the same chart, the frame would be
+ * a chart frame with a new name, which is the thing 6c is trying not to build.
+ */
+function Figures() {
+  const [lit, setLit] = useState<string | null>('b');
+  const cols = [
+    { id: 'a', label: 'Bridge', figure: '4/4', n: 4, drop: 0 },
+    { id: 'b', label: 'Runtime', figure: '2/3', n: 3, drop: 10 },
+    { id: 'c', label: 'Models', figure: '0/2', n: 2, drop: 22 },
+    { id: 'd', label: 'Account', figure: '1/1', n: 1, drop: 0 },
+  ];
+  return (
+    <Section title="Figure" level={1} eyebrow="the kit's door for a DRAWN figure (doctrine 6c)" meta="the frame owns the reading line, the geometry, the states, the announcement, the ink and the labels - and nothing about shape">
+      <Section title="A declared height, with the callout rail" level={2} meta="the labels sit OUT of the drawing at full type size, on the same equal track the drawing divides itself by; a callout with onPress is the figure's control, its hit area stretched over its own column">
+        <Figure
+          label="Specimen structure: four supports under one line"
+          desc="Seven of ten specimen checks pass across four supports."
+          height={190}
+          callouts={cols.map((c) => ({
+            id: c.id, label: c.label, figure: c.figure,
+            name: `${c.label}, ${c.figure} passing`,
+            pressed: lit === c.id,
+            onPress: () => setLit((cur) => (cur === c.id ? null : c.id)),
+          }))}
+        >
+          <svg viewBox="0 0 80 100" preserveAspectRatio="none" aria-hidden="true"
+            style={{ display: 'block', width: '100%', height: 'calc(100% - var(--fig-rail))' }}>
+            <rect x={0} y={86} width={80} height={2} style={{ fill: 'var(--fig-line)' }} />
+            {cols.map((c, i) => {
+              const top = 10 + c.drop;
+              const h = (86 - top - 1.2 * (c.n - 1)) / c.n;
+              return (
+                <g key={c.id}>
+                  {lit === c.id && <rect x={i * 20} y={0} width={20} height={86} style={{ fill: 'color-mix(in srgb, var(--primary) 13%, transparent)' }} />}
+                  <rect x={i * 20} y={top - 1.3} width={20} height={2.6} style={{ fill: 'var(--fig-ink)' }} />
+                  {Array.from({ length: c.n }, (_, k) => (
+                    <rect key={k} x={i * 20 + 4} y={top + k * (h + 1.2)} width={12} height={h}
+                      style={{ fill: 'var(--fig-fill)', stroke: 'var(--fig-line)', strokeWidth: 0.7, vectorEffect: 'non-scaling-stroke' }} />
+                  ))}
+                </g>
+              );
+            })}
+          </svg>
+        </Figure>
+      </Section>
+      <Section title="A declared aspect, a different drawing, a different tone" level={2} meta="aspect scales the figure with the surface and lets the view box keep its ratio, so a circle stays a circle; tone re-derives every --fig-* tint, here from role-agent">
+        <Figure label="Specimen dial: a share drawn as an arc" aspect={4} tone="agent">
+          <svg viewBox="0 0 200 50" aria-hidden="true" style={{ display: 'block', width: '100%', height: '100%' }}>
+            {[0, 1, 2].map((r) => (
+              <circle key={r} cx={100} cy={46} r={14 + r * 11} fill="none"
+                style={{ stroke: 'var(--fig-line-soft)', strokeWidth: 1, vectorEffect: 'non-scaling-stroke' }} />
+            ))}
+            {Array.from({ length: 13 }, (_, i) => {
+              const a = Math.PI - (i / 12) * Math.PI;
+              const r0 = 12; const r1 = i % 3 === 0 ? 40 : 36;
+              return (
+                <line key={i} x1={100 + Math.cos(a) * r0} y1={46 - Math.sin(a) * r0}
+                  x2={100 + Math.cos(a) * r1} y2={46 - Math.sin(a) * r1}
+                  style={{ stroke: i <= 8 ? 'var(--fig-ink)' : 'var(--fig-line-soft)', strokeWidth: i % 3 === 0 ? 2 : 1, vectorEffect: 'non-scaling-stroke' }} />
+              );
+            })}
+            <path d="M 56 46 A 44 44 0 0 1 138.1 24" fill="none" style={{ stroke: 'var(--fig-ink)', strokeWidth: 3, vectorEffect: 'non-scaling-stroke' }} />
+          </svg>
+        </Figure>
+      </Section>
+      <Section title="Loading and empty, in the figure's own geometry" level={2} meta="the frame holds the space the drawing will take, so nothing jumps when it lands">
+        <Figure label="Loading figure" height={110} state="loading">{null}</Figure>
+        <Figure label="Empty figure" height={110} state="empty" empty={{ title: 'Nothing measured yet', hint: 'A figure with no data keeps its own geometry.' }}>{null}</Figure>
+      </Section>
+    </Section>
   );
 }
 
@@ -467,6 +545,12 @@ function KitGaps() {
   return <KitHost compact testId="kit-specimen-gaps"><Surface><GapParts /></Surface></KitHost>;
 }
 
+/** Figure alone, and NOT `compact`: a figure's callouts are labels at full type size, which is the
+ *  mechanism that keeps text out of the drawing (doctrine 6c, consequence 3). */
+function KitFigure() {
+  return <KitHost testId="kit-specimen-figure"><Surface><Figures /></Surface></KitHost>;
+}
+
 /** Opens the first Hint for the shot: a synthetic pointer entry, as React reads hover. */
 function useOpenFirstHint() {
   useEffect(() => {
@@ -515,5 +599,9 @@ export const KIT_MODULES: Record<string, { load: () => Promise<{ default: Compon
   // The three home-3 gaps alone, for the same reason: they sit at the very bottom of kit/specimen.
   'kit/specimen/gaps': {
     load: async () => ({ default: KitGaps }),
+  },
+  // Figure alone (doctrine 6c): two different drawings in the same frame, plus its states.
+  'kit/specimen/figure': {
+    load: async () => ({ default: KitFigure }),
   },
 };

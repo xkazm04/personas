@@ -683,3 +683,104 @@ button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); backgroun
 .k-dtile.is-pressable :is(.k-dtile__actions, .k-dtile__foot) { position: relative; z-index: 1; }
 .k-dtile.is-pressable .k-dtile__body :is(.k-row, .k-card) { z-index: 1; }
 .k-dtile.is-pressable .k-dtile__body :is(button, a, [tabindex]):not(.k-row__press, .k-card__press) { position: relative; z-index: 1; }
+
+/* ============ Figure: the kit's frame for a DRAWN figure (doctrine 6c, 2026-10-03) ============
+ * The frame owns four things and no more - the reading line, the geometry, the states and the ink.
+ * It owns nothing about shape: 6c's defect was that "compose from the kit" had been read as
+ * "everything must be a kit part", and a frame that grew opinions about marks or scales would
+ * re-make it one layer down.
+ *
+ * On the reading line like ChartFrame (`--gutter`), so a figure lines up with the names in the list
+ * under it; a figure that wants out of the gutter is asking the kit to stop governing chrome. */
+.k-figure { display: block; margin: 0; padding: 0 12px 4px var(--gutter); min-width: 0; }
+.k-figure.is-empty { padding: 0; }
+
+/* The plot is a SIZE CONTAINER. This is the one thing strata actually needed from a host and the
+ * reason its entire geometry is CSS on container units with nothing measured in script: inside
+ * here a figure's own stylesheet writes `cqw` / `cqh` and never reads a layout box in JS. A size
+ * container needs a definite size in BOTH axes, which is exactly what `--fig-h` / `--fig-aspect`
+ * declare - it is why the geometry is a prop and not left to the content. */
+.k-figure__plot { position: relative; min-width: 0; container-type: size; }
+.k-figure--h .k-figure__plot { height: var(--fig-h); }
+.k-figure--aspect .k-figure__plot { aspect-ratio: var(--fig-aspect); height: auto; }
+/* The loading ghost takes the frame's own geometry, so a figure that is still loading holds the
+ * space its drawing will take and the page does not jump when it lands (law 1 / law 5). */
+.k-figure.is-loading .k-ghost { height: 100%; border-radius: var(--radius-card); }
+
+/* ---- the callout rail: the labels, OUT of the drawing ----
+ * Strata's rule, made structural. The rail overlays the plot and sits on its bottom edge, divided
+ * into the same equal columns the drawing divides itself by (`--fig-cols`), so the two align with
+ * nothing measured in script - the drawing's own stylesheet insets itself by `--fig-rail` and the
+ * names land under the part they name. Type is a `typo-*` class on the element, at FULL size: the
+ * whole point is that a label here is reachable by the type scale, where one inside a scaled
+ * drawing is not. */
+/* The rail's own height, in `em` so it follows the appearance setting's text scale rather than
+ * pinning two lines of text under a px constant that is right at one scale only. A drawing insets
+ * itself by this, which is the whole alignment contract: `height: calc(100% - var(--fig-rail))`. */
+.k-figure--railed { --fig-rail: 3.9em; }
+.k-figure__rail {
+  position: absolute; inset: 0; display: grid; align-items: end;
+  grid-template-columns: repeat(var(--fig-cols, 1), minmax(0, 1fr));
+  pointer-events: none;
+}
+.k-figure__callout {
+  pointer-events: auto; position: relative; display: flex; flex-direction: column; justify-content: flex-end;
+  gap: 1px; height: 100%; min-width: 0; padding: 0 10px 6px 0; margin: 0;
+  border: 0; background: transparent; color: inherit; text-align: left;
+}
+.k-figure__name { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.k-figure__fig { display: block; color: var(--quiet); }
+/* The press: the same stretched hit area `.k-row__press` and `.k-card__press` use, so the whole
+ * column of the drawing above the label is the target and the label is the accessible name.
+ *
+ * The hover and selected washes are TRANSLUCENT tints, not the kit's `--band-hover` / `--band-sel`.
+ * Those two are mixed over the background and are therefore OPAQUE, which is correct for a row
+ * (the band sits behind the row's own text) and wrong here: the stretched `::after` paints over a
+ * drawing, and in the kit specimen a selected callout rendered as a grey slab covering the pier it
+ * had just lit AND its own label. A figure washes; it never covers. The content is lifted above it
+ * for the same reason. The frame owns this wash, so a drawing must not paint its own. */
+.k-figure__press { cursor: pointer; }
+.k-figure__press > * { position: relative; z-index: 1; }
+.k-figure__press::after { content: ""; position: absolute; inset: 0; border-radius: var(--radius-card); }
+.k-figure__press:disabled { cursor: default; }
+.k-figure__press:disabled .k-figure__name { color: var(--quiet); }
+.k-figure__press:not(:disabled):hover::after { background: color-mix(in srgb, var(--primary) 7%, transparent); }
+.k-figure__press.is-selected::after { background: color-mix(in srgb, var(--primary) 13%, transparent); }
+.k-figure__press.is-selected .k-figure__name { color: var(--primary); }
+.k-figure__press:focus-visible { outline: 0; }
+.k-figure__press:focus-visible::after { outline: 2px solid var(--focus-ring-color); outline-offset: -2px; }
+
+/* The figure's text equivalent. Announced through `aria-describedby`, never drawn: the drawing is
+ * `aria-hidden` and the labels live in flat callouts beside it at full type size, so this is what
+ * a reader gets instead of the shape. Not `display:none` and not `visibility:hidden`, either of
+ * which also removes it from the accessibility tree. */
+.k-figure__desc {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+/* The figure's INK, derived once here from `--fig-ink` (the Tone the caller named, set inline from
+ * `toneColor`). Every figure needs this set and strata's `--s-*` block is the proof - ten
+ * `color-mix()`es plus a light-theme correction, which is the single most copy-pasteable thing in
+ * it and the half a second figure would get wrong. Declaring it on the frame means a figure's own
+ * stylesheet reads `var(--fig-line)` and is tokenised for free, in every theme, with no per-theme
+ * code of its own. */
+.k-figure {
+  --fig-line: color-mix(in srgb, var(--fig-ink) 55%, transparent);
+  --fig-line-soft: color-mix(in srgb, var(--fig-ink) 26%, transparent);
+  --fig-fill: color-mix(in srgb, var(--fig-ink) 22%, transparent);
+  --fig-wash: color-mix(in srgb, var(--fig-ink) 8%, transparent);
+  --fig-glow: color-mix(in srgb, var(--fig-ink) 40%, transparent);
+  --fig-void: color-mix(in srgb, var(--fig-ink) 10%, var(--background));
+}
+/* Light themes: the app renders them through a brightness filter below 1, which eats a faint tint
+ * and leaves a wash invisible while a line reads too hard. Strata's own light block, same shape:
+ * lines up, fills down. One rule, every light theme, no per-theme code. */
+:is([data-theme^="light"], [data-brightness^="light"]) .k-figure {
+  --fig-line: color-mix(in srgb, var(--fig-ink) 70%, transparent);
+  --fig-line-soft: color-mix(in srgb, var(--fig-ink) 34%, transparent);
+  --fig-fill: color-mix(in srgb, var(--fig-ink) 16%, transparent);
+  --fig-wash: color-mix(in srgb, var(--fig-ink) 6%, transparent);
+  --fig-glow: color-mix(in srgb, var(--fig-ink) 24%, transparent);
+  --fig-void: color-mix(in srgb, var(--fig-ink) 7%, var(--background));
+}

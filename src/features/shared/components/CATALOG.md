@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**168 reusable components** live under `src/features/shared/components/`.
+**169 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -188,6 +188,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `ContextOverview` | ContextOverview - parent layer over many contexts: groups + search, then one group as cards or a table. Kit. |
 | `Crumbs` | Crumbs - the trail above a drilled surface (Section eyebrow): onPress makes a door up; a last plain crumb is current. Kit. |
 | `DataTable` | DataTable - column heads over ListRow-family rows (band, mark, selection), pager under the last row, sortable, widths. Kit. |
+| `Figure` | Figure - the kit's frame for a DRAWN figure (doctrine 6c): the reading line, a declared height or aspect, a size container for the |
 | `Hint` | Hint - the kit tip on a mark, figure or unit strip: shared Tooltip plus an always-present description. Kit. |
 | `KeyValueGrid` | KeyValueGrid - quiet keys over regular values in auto-fill columns; null renders honestly. Kit. |
 | `ListRow` | ListRow - fixed-height row: one emphasised name (500; 600 is the tinted title's), quiet meta, status mark on the spine, figures; o |
@@ -267,4 +268,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_168 components, 40 without a `@catalog` description._
+_169 components, 40 without a `@catalog` description._
