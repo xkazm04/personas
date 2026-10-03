@@ -51,10 +51,15 @@
   --role-human: var(--role-human-raw);
   --role-external: var(--role-external-raw);
   --role-highlight: var(--role-highlight-raw);
-  /* THE ONE MUTING LEVEL: foreground at 70%, the value typo-caption ships
-     today. Alpha, not an opaque mix, so it reads the same on canvas, card
-     and chip. */
-  --ink-muted: color-mix(in srgb, var(--foreground) 70%, transparent);
+  /* THE ONE MUTING LEVEL: foreground at 80%. Alpha, not an opaque mix, so it
+     reads the same on canvas, card and chip.
+     Was 70% — "the value typo-caption ships today" — until 2026-10-03, when
+     the owner took the muting to 80% app-wide and `--muted-foreground` came
+     onto the same basis. The specimen must teach the number that ships, or it
+     teaches the previous answer. This sheet is NOT dead: specimen.tsx:17
+     imports it and docs/design/style-mastery/specimen/contrast.mjs:123 reads
+     it. */
+  --ink-muted: color-mix(in srgb, var(--foreground) 80%, transparent);
 }
 
 /* theme: dark-cyan */

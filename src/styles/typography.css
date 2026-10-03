@@ -141,7 +141,55 @@ body {
     font-feature-settings: "kern" 1, "liga" 1;
   }
 
-  /* Body -- paragraphs, descriptions */
+  /* -- Body -- paragraphs, descriptions ----------------------------------------
+     WEIGHT STAYS 400, AND THE REASON IS A MEASUREMENT, NOT A PREFERENCE.
+
+     Asked on 2026-10-03 to "step .typo-body up for reading prose — decide 450
+     vs 500 by looking". Measured first, in the same headless Chromium that
+     shoots the review screenshots, on this app's real `--font-sans`
+     (`system-ui, 'Segoe UI Variable Text', 'Segoe UI', …`):
+
+       requested   rendered advance of a 13.2px sample   ink
+         300         335.203px                            (distinct)
+         400         353.938px                            222
+         420         353.938px   <- identical to 400
+         450         353.938px   <- identical to 400
+         475         353.938px   <- identical to 400
+         500         360.938px                            273
+         600         360.938px   <- identical to 500
+         700         375.484px                            (distinct)
+
+     Two findings, both load-bearing:
+     1. `system-ui` resolves to **Segoe UI**, a STATIC family (its metrics
+        match `'Segoe UI'` exactly, 305.703px on a probe string, and NOT
+        `'Segoe UI Variable Text'`'s 305.703/351.813). Segoe UI ships Light
+        300, Regular 400, Semibold 600, Bold 700 — no Medium. CSS font
+        matching for a target in (400,500] searches up to 500 first, finds
+        nothing, then falls back below: so **420, 450 and 475 all render as
+        400**. A half-step is a no-op, not a subtle improvement.
+     2. `font-variation-settings: 'wght' N` does nothing either — probed at
+        400/430/450/470/500/600 against 'Segoe UI Variable Text', 'Segoe UI
+        Variable Display' and 'Segoe UI Variable': identical advance AND
+        identical ink coverage at every value. There is no continuous weight
+        axis available in this renderer.
+
+     So the rendered weight ladder in this app is exactly **300 / 400 / 600 /
+     700**, and "one step up from body" means SEMIBOLD, +23% ink. That would
+     put reading prose at the same rendered weight as .typo-title (600),
+     .typo-label (600) and the kit's .k-strong — collapsing three tiers into
+     one — and it contradicts the owner's own line from the same day: "White
+     text should have norm weight."
+
+     Corollary worth knowing before writing `font-weight: 500` anywhere: 500
+     and 600 are the SAME rendered weight here, so the kit's `.k-medium` (500)
+     and `.k-strong` (600) are indistinguishable, and the grow-4 emphasis
+     recipe "600 belongs to the TINTED title; a white name reads 500" separates
+     its two cases by tint alone, not by weight.
+
+     The lever for reading prose is therefore SIZE, not weight: .typo-body is
+     step 1 (13.2px at the default appearance setting) because doctrine
+     section 1 puts a whole row on one step, and prose that wants to read
+     bigger moves to .typo-body-lg (step 2, 14.9px) at the call site. */
   .typo-body {
     font-size: calc(var(--type-1) * var(--type-f));
     font-weight: 400;
@@ -287,7 +335,19 @@ body {
      caption is muted secondary prose, the title is semibold, slightly
      tracked, and tinted with the theme primary (same adaptive recipe as
      .typo-section-title) — so a title + description pair never renders as
-     two near-identical lines. */
+     two near-identical lines.
+
+     THE TINT READS `--primary-ink`, NOT `--primary` (2026-10-03). All four
+     tinted tokens here (title, title-lg, section-title, submodule-header) do.
+     `--primary-ink` is `var(--primary)` in every theme but dark-red, so this
+     changed nothing that renders in ten of eleven themes; dark-red's blood red
+     (#cc0000) is 3.40:1 on its own #080808 canvas, which dragged all four
+     tiers below AA (4.28 / 4.28 / 3.80 / 3.62:1) and was carried as four
+     entries in check-themes' TYPE_TOKEN_EXEMPT. A brand colour chosen for a
+     4% gradient wash is not automatically legible as 13px type; splitting the
+     text ink from the tint fixes the text without touching one glow, which is
+     what Gate 0 and Gate 1 protect. The glow on .typo-card-label and the hero
+     shine gradient still read `--primary`: those ARE tint. */
 
   .typo-title {
     font-size: calc(var(--type-1) * var(--type-f));
@@ -295,12 +355,12 @@ body {
     line-height: 1.4;
     letter-spacing: 0.015em;
     font-feature-settings: "kern" 1, "liga" 1;
-    color: color-mix(in srgb, var(--primary) 75%, var(--foreground));
+    color: color-mix(in srgb, var(--primary-ink) 75%, var(--foreground));
   }
 
   :root[class*="light"] .typo-title,
   [data-theme*="light"] .typo-title {
-    color: color-mix(in srgb, var(--primary) 60%, var(--foreground));
+    color: color-mix(in srgb, var(--primary-ink) 60%, var(--foreground));
   }
 
   /* Title large -- content headlines (e.g. a logged decision's choice). */
@@ -310,12 +370,12 @@ body {
     line-height: 1.45;
     letter-spacing: 0.005em;
     font-feature-settings: "kern" 1, "liga" 1;
-    color: color-mix(in srgb, var(--primary) 75%, var(--foreground));
+    color: color-mix(in srgb, var(--primary-ink) 75%, var(--foreground));
   }
 
   :root[class*="light"] .typo-title-lg,
   [data-theme*="light"] .typo-title-lg {
-    color: color-mix(in srgb, var(--primary) 60%, var(--foreground));
+    color: color-mix(in srgb, var(--primary-ink) 60%, var(--foreground));
   }
 
   /* -- Section Title -----------------------------------------------------------
@@ -328,7 +388,7 @@ body {
     line-height: 1.3;
     letter-spacing: 0.01em;
     font-feature-settings: "kern" 1, "liga" 1;
-    color: color-mix(in srgb, var(--primary) 85%, var(--foreground));
+    color: color-mix(in srgb, var(--primary-ink) 85%, var(--foreground));
   }
 
   :root[class*="light"] .typo-section-title,
@@ -348,12 +408,12 @@ body {
     line-height: 1.3;
     letter-spacing: -0.005em;
     font-feature-settings: "kern" 1, "liga" 1;
-    color: color-mix(in srgb, var(--primary) 90%, var(--foreground));
+    color: color-mix(in srgb, var(--primary-ink) 90%, var(--foreground));
   }
 
   :root[class*="light"] .typo-submodule-header,
   [data-theme*="light"] .typo-submodule-header {
-    color: color-mix(in srgb, var(--primary) 75%, var(--foreground));
+    color: color-mix(in srgb, var(--primary-ink) 75%, var(--foreground));
   }
 
   /* -- Text scale: one factor --------------------------------------------------

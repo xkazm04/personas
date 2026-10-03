@@ -11,7 +11,7 @@
    1. A token owns size, weight, line-height, tracking and font features. It
       never owns colour. Colour is the component's: a text-* class or a role.
    2. One exception, and it is a default, not an owner: typo-caption carries the
-      one muting level (--ink-muted, foreground at 70%). It sits in a layer, so
+      one muting level (--ink-muted, foreground at 80% since 2026-10-03). It sits in a layer, so
       a status or role colour written beside it still wins.
    3. The tokens live in `@layer components`. Tailwind utilities (a later
       layer) beat them, so `typo-body font-semibold` finally means what it says.

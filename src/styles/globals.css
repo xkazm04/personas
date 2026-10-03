@@ -287,10 +287,57 @@
   --foreground: #e2e8f0;
   --muted: #8c9aae;
   --muted-dark: #6e7e92;
-  --muted-foreground: #bcc8d8;
+  /* -- The ONE muting level, third name ------------------------------------
+     80% of the theme's own foreground, composited over whatever is behind it.
+     NOT a per-theme hex any more (2026-10-03).
+
+     Measured before the change, by solving each theme's declared hex back
+     into a fraction of its own `--foreground`: the SAME named token meant
+     **64.8% to 85.6%** depending on the theme — dark-frost 64.8, dark-bronze
+     67.6, dark-red 67.7, dark-matrix 68.3, dark-pink 69.9, dark-purple 70.8,
+     light-news 76.0, dark-cyan 76.0, light-ice 76.3, light 76.8,
+     dark-midnight 85.6. A 21-point spread on a token whose role is "secondary
+     text", set by feel, eleven times. On 2026-10-03 `.typo-caption` moved to
+     80% app-wide ("Both tokens to 80%, app-wide" — the owner), which left the
+     two names 1.12:1 apart on the default theme and FLIPPED the ordering:
+     `--muted-foreground` was the stronger of the two in 6 of 11 themes before,
+     in 1 of 11 after. Two names for one tier, drifting against each other.
+
+     So there is one muting level and three names for it, which is doctrine
+     section 3 ("One muting level") stated as CSS rather than as a proposal:
+       100%  --foreground                      full ink
+        80%  --muted-foreground                  = .typo-caption = kit --quiet
+         -   --muted / --muted-dark             the dim tertiary tier, below
+     The percentage basis is not new here — `html[data-contrast="high"]`
+     has always written this token as `color-mix(… var(--foreground) 75/80% …)`.
+     This makes the normal mode agree with it.
+
+     Contrast after: 8.47:1 (light-news) to 11.14:1 (dark-frost), every theme
+     AAA. The `/80` opacity modifier on top lands 5.05:1 to 7.21:1, so
+     `text-muted-foreground/80` is still AA everywhere and the floor for this
+     token's modifier is `/75` on the light themes, `/65` on the dark ones
+     (`npm run check:themes` prints both and grades the `/80` row).
+     Custom themes keep a derived hex (src/lib/theme/deriveCustomTheme.ts:137)
+     and are not on this ladder; they are not among the eleven graded themes. */
+  --muted-foreground: color-mix(in srgb, var(--foreground) 80%, transparent);
   --card-bg: rgba(255, 255, 255, 0.05);
   --card-border: rgba(255, 255, 255, 0.10);
   --primary: #06b6d4;
+  /* -- The brand tint AS TEXT ----------------------------------------------
+     `--primary` is the brand: fills, glows, borders, gradients, chips. It is
+     chosen for tint, and a tint that reads beautifully as a 4% gradient wash
+     can be illegible as a 13px title. The four tinted type tokens (Gate 0:
+     .typo-title, .typo-title-lg, .typo-section-title, .typo-submodule-header)
+     mix THIS token instead, so a theme can lift its brand colour for reading
+     without touching a single glow.
+
+     Everywhere it is `var(--primary)`, so ten of the eleven themes render
+     byte-identically to before. dark-red overrides it, and that is the whole
+     reason the token exists — see the note on its block below. Added
+     2026-10-03 to clear the four sub-AA cells `check:themes` recorded in
+     TYPE_TOKEN_EXEMPT without changing any theme's character (Gate 0/Gate 1
+     protect the brand tint and the glow). */
+  --primary-ink: var(--primary);
   --secondary: #1e293b;
   --accent: #22d3ee;
   --border: #1e293b;
@@ -2374,7 +2421,6 @@ html[data-motion="reduce"] .animate-map-spin {
   --secondary: #0d2025;
   --muted: #5b8390;
   --muted-dark: #36525a;
-  --muted-foreground: #94c5d4;
   --border: #164e63;
   --card-bg: rgba(34, 211, 238, 0.04);
   --card-border: rgba(34, 211, 238, 0.10);
@@ -2409,7 +2455,6 @@ html[data-motion="reduce"] .animate-map-spin {
   --secondary: #16130c;
   --muted: #867d6b;
   --muted-dark: #443d30;
-  --muted-foreground: #aaa092;
   --border: #2a251b;
   --card-bg: rgba(255, 244, 224, 0.022);
   --card-border: rgba(245, 158, 11, 0.10);
@@ -2449,7 +2494,6 @@ html[data-motion="reduce"] .animate-map-spin {
   --secondary: #1a1f28;
   --muted: #737e95;
   --muted-dark: #3a414e;
-  --muted-foreground: #94a3b8;
   --border: #334155;
   --card-bg: rgba(255, 255, 255, 0.035);
   --card-border: rgba(255, 255, 255, 0.08);
@@ -2482,7 +2526,6 @@ html[data-motion="reduce"] .animate-map-spin {
   --secondary: #151320;
   --muted: #837e8f;
   --muted-dark: #403c4c;
-  --muted-foreground: #a7a1b3;
   --border: #272338;
   --card-bg: rgba(244, 240, 255, 0.022);
   --card-border: rgba(168, 85, 247, 0.10);
@@ -2523,7 +2566,6 @@ html[data-motion="reduce"] .animate-map-spin {
   --secondary: #1b1219;
   --muted: #8a7c83;
   --muted-dark: #483a42;
-  --muted-foreground: #ad9fa7;
   --border: #2c2127;
   --card-bg: rgba(255, 240, 247, 0.022);
   --card-border: rgba(236, 72, 153, 0.10);
@@ -2554,13 +2596,33 @@ html[data-motion="reduce"] .animate-map-spin {
 /* Dark: Deadpool -- black/white canvas with blood-red accents */
 [data-theme="dark-red"] {
   --primary: #cc0000;
+  /* The blood red STAYS #cc0000 for every tint, glow, border and wash: it is
+     this theme's whole identity and Gate 0/Gate 1 protect it. But #cc0000 is
+     3.40:1 on #080808 — below AA as text on its own canvas, which the
+     informational primary/bg row of `check:themes` has always measured — and
+     the four primary-tinted type tokens inherited it: .typo-title 4.28:1,
+     .typo-title-lg 4.28:1, .typo-section-title 3.80:1, .typo-submodule-header
+     3.62:1. Those were the only four sub-AA cells in the 77-cell type-token
+     table, all one defect seen four times, carried in TYPE_TOKEN_EXEMPT.
+
+     The ink is the same colour with lightness raised and nothing else moved —
+     hsl(0 100% 40%) -> hsl(0 100% 55%): hue 0 and saturation 100% are
+     preserved EXACTLY, which is what docs/development/contrast.md prescribes
+     ("nudge lightness only, by the minimum needed to clear AA with a small
+     margin"). Measured on #080808: pure 5.16:1, and the tinted tiers land
+     6.04 / 6.04 / 5.54 / 5.36:1 — every cell AA with ~19% headroom, so the
+     exemptions are deleted rather than re-explained. The minimum that clears
+     all four is L=50% (#ff0000, worst cell 5.07:1); L=55% buys the margin the
+     contrast doc asks for and is a hair less harsh than a pure-channel red.
+     Nothing else in the theme changes: `--primary`, `--accent`, `--glass-bg`,
+     `--glass-border` and `--btn-primary` are untouched. */
+  --primary-ink: #ff1a1a;
   --accent: #e60000;
   --background: #080808;
   --foreground: #ededed;
   --secondary: #131313;
   --muted: #797979;
   --muted-dark: #404040;
-  --muted-foreground: #a3a3a3;
   --border: #262626;
   --card-bg: rgba(255, 255, 255, 0.025);
   --card-border: rgba(255, 255, 255, 0.06);
@@ -2596,7 +2658,6 @@ html[data-motion="reduce"] .animate-map-spin {
   --secondary: #0e0e0e;
   --muted: #787878;
   --muted-dark: #353535;
-  --muted-foreground: #a0a0a0;
   --border: #0f1a0f;
   --card-bg: rgba(255, 255, 255, 0.02);
   --card-border: rgba(0, 255, 65, 0.08);
@@ -2643,7 +2704,6 @@ html[data-motion="reduce"] .animate-map-spin {
   --secondary: #e3e7ee;
   --muted: #586883;
   --muted-dark: #45536a;
-  --muted-foreground: #3e4a5c;
   --border: #cdd5e1;
   --card-bg: rgba(255, 255, 255, 0.92);
   --card-border: rgba(15, 23, 42, 0.08);
@@ -2695,7 +2755,6 @@ html[data-motion="reduce"] .animate-map-spin {
   --secondary: #d4e2f0;
   --muted: #44607d;
   --muted-dark: #2e4862;
-  --muted-foreground: #324c6a;
   --border: #b0c8e0;
   /* Crisp white cards pop off the icy canvas (was translucent → blue-tinted). */
   --card-bg: rgba(255, 255, 255, 0.88);
@@ -2838,7 +2897,6 @@ html[data-motion="reduce"] .animate-map-spin {
   --secondary: #d0cdc6;
   --muted: #5e5e5e;
   --muted-dark: #424242;
-  --muted-foreground: #424242;
   --border: #ada8a0;
   /* Crisper cards lift off the newsprint canvas — kept a touch translucent so
      the vintage paper tone still reads (not pure clinical white). */

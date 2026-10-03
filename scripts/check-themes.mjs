@@ -258,6 +258,27 @@ function parseRefs(block) {
   return refs;
 }
 
+/** Map of var-name -> raw `color-mix(...)` value, for the palette vars that are
+ *  a FRACTION of another token rather than a hex.
+ *
+ *  WHY: until 2026-10-03 `parseVars` kept hex only, by design and with a
+ *  comment saying so ("non-hex … get skipped"). Then `--muted-foreground`
+ *  became `color-mix(in srgb, var(--foreground) 80%, transparent)` — the one
+ *  muting level, on a percentage basis instead of eleven hand-set hexes — and
+ *  skipping it would have silently turned the TWO HARD-FAIL ROWS that grade
+ *  the app's secondary text (`muted-fg/bg` and `muted-fg@80`) into `n/a`,
+ *  which this script's own output code treats as `failed: false`. That is the
+ *  identical failure mode the type-token section below exists to close, one
+ *  file over. The resolver reads the mix; `assertHardPairsResolved` makes an
+ *  unreadable one fatal rather than blank. */
+function parseMixes(block) {
+  const mixes = {};
+  const re = /--([a-z0-9-]+)\s*:\s*(color-mix\([^;]*\))\s*;/gi;
+  let m;
+  while ((m = re.exec(block))) mixes[m[1].trim()] = m[2].trim().replace(/\s+/g, ' ');
+  return mixes;
+}
+
 function extractBlock(css, selector) {
   // Match `<selector>` followed by optional whitespace and `{` — anchors to
   // the actual variable definition block, NOT to descendant selectors like
@@ -341,11 +362,13 @@ function resolveThemes(cssText) {
   if (!rootBlock) return null;
   const rootVars = parseVars(rootBlock);
   const rootRefs = parseRefs(rootBlock);
+  const rootMixes = parseMixes(rootBlock);
   return THEMES.map((theme) => {
     const themeBlock = theme.selector === ':root' ? rootBlock : extractBlock(cssText, theme.selector);
     if (!themeBlock) return { id: theme.id, error: 'block not found' };
     const themeVars = parseVars(themeBlock);
     const themeRefs = parseRefs(themeBlock);
+    const themeMixes = parseMixes(themeBlock);
     // Effective map: root → theme overrides on top
     const effective = { ...rootVars, ...themeVars };
     // Resolve `--x: var(--y)` one level against the merged map, unless the theme
@@ -356,7 +379,18 @@ function resolveThemes(cssText) {
       if (themeRefs[name] === undefined && name in rootVars) continue;
       if (effective[target]) effective[name] = effective[target];
     }
-    return { id: theme.id, effective, literal: new Set(Object.keys(themeVars)) };
+    // Then the fractional vars, composited over this theme's own canvas with
+    // the same model `muted-fg@80` and the type tokens already use. A theme
+    // that sets the name to a literal hex still wins (none do today).
+    const unresolvedMixes = {};
+    for (const [name, expr] of Object.entries({ ...rootMixes, ...themeMixes })) {
+      if (name in themeVars) continue;
+      if (themeMixes[name] === undefined && name in rootVars) continue;
+      const r = resolveTextColour(expr, effective, effective.background);
+      if (r.colour) effective[name] = r.colour;
+      else unresolvedMixes[name] = r.skip ?? `unreadable \`${expr}\``;
+    }
+    return { id: theme.id, effective, unresolvedMixes, literal: new Set(Object.keys(themeVars)) };
   });
 }
 
@@ -585,19 +619,26 @@ const TYPE_TOKEN_MIN = 4.5;
 // standard stays AA for every token in every theme; these are recorded
 // deviations, not a lowered bar for a whole token family.
 //
-// All four are the same single defect seen four times: dark-red's `--primary`
-// is itself 3.4:1 on its own canvas, which the INFORMATIONAL primary/bg pair in
-// the palette table above has always measured. Every primary-tinted type token
-// (the Gate 0 tinted tier: title, title-lg, section-title, submodule-header)
-// inherits it. The fix is to move dark-red's --primary in globals.css — a
-// palette decision owned by the theme, not something typography.css can correct
-// — so it is registered rather than silently ground off here.
-const TYPE_TOKEN_EXEMPT = {
-  'dark-red·typo-title': "dark-red --primary is 3.4:1 on its canvas (see primary/bg above); the tinted tier inherits it. Fix = move --primary-raw in globals.css.",
-  'dark-red·typo-title-lg': "dark-red --primary is 3.4:1 on its canvas (see primary/bg above); the tinted tier inherits it. Fix = move --primary-raw in globals.css.",
-  'dark-red·typo-section-title': "dark-red --primary is 3.4:1 on its canvas (see primary/bg above); the tinted tier inherits it. Fix = move --primary-raw in globals.css.",
-  'dark-red·typo-submodule-header': "dark-red --primary is 3.4:1 on its canvas (see primary/bg above); the tinted tier inherits it. Fix = move --primary-raw in globals.css.",
-};
+// EMPTY SINCE 2026-10-03, and the four entries it held are worth keeping in
+// the record because they were FIXED rather than re-explained. All four were
+// one defect seen four times: dark-red's `--primary` (#cc0000) is itself
+// 3.40:1 on its own #080808 canvas — which the INFORMATIONAL primary/bg pair
+// in the palette table above had always measured — and every primary-tinted
+// type token inherited it (typo-title 4.28, typo-title-lg 4.28,
+// typo-section-title 3.80, typo-submodule-header 3.62).
+//
+// The fix was NOT to move `--primary`: that is the theme's identity and Gate 0
+// / Gate 1 protect the brand tint and the glow. globals.css gained
+// `--primary-ink` — `var(--primary)` everywhere, a lighter red in dark-red
+// only — and the four tinted tokens in typography.css read the ink instead of
+// the tint. Nothing but text moved; the four cells now measure 6.04 / 6.04 /
+// 5.54 / 5.36:1. Ten of eleven themes render byte-identically.
+//
+// The map stays, with its two-sided contract intact, because the next theme
+// whose brand colour is beautiful and illegible will need somewhere to be
+// recorded while it waits for the same treatment. Baseline it at measured
+// reality, never at zero tolerance for a cell nobody has looked at.
+const TYPE_TOKEN_EXEMPT = {};
 
 /** Every `.typo-*` colour against every theme's canvas. */
 function auditTypeTokens(tokens, themes, exempt = TYPE_TOKEN_EXEMPT) {
@@ -656,6 +697,32 @@ function selfCheck(cssText, typoText, typeThemes) {
       .filter((f) => f.theme === 'light' && f.a === 'role-highlight' && f.b === 'status-info');
     cases.push({ name: `light role-highlight := status-info (${info})`, caught: caught.length > 0, detail: caught });
   }
+  // Seed 1b: the palette half's new blind spot, pushed until it breaks.
+  // `--muted-foreground` is a `color-mix` fraction of `--foreground` since
+  // 2026-10-03; take it to 25% and the two hard-fail muted rows must go red.
+  // If a future refactor drops `parseMixes`, this seed fails instead of the
+  // gate silently printing `n/a` (which the output code scores as a pass).
+  const rootBlock = extractBlock(cssText, ':root');
+  const mixedRootVars = rootBlock ? parseMixes(rootBlock) : {};
+  if (!('muted-foreground' in mixedRootVars)) {
+    problems.push('seed 1b: :root --muted-foreground is no longer a color-mix — re-point this seed');
+  } else {
+    const seeded = cssText.replace(rootBlock, rootBlock.replace(
+      /--muted-foreground\s*:\s*color-mix\([^;]*\);/,
+      '--muted-foreground: color-mix(in srgb, var(--foreground) 25%, transparent);'));
+    const themes = resolveThemes(seeded);
+    const caught = themes.filter((t) => !t.error
+      && contrastRatio(t.effective['muted-foreground'], t.effective.background) < 4.5);
+    cases.push({
+      name: '--muted-foreground mixed down to 25% foreground (AA floor 4.5:1)',
+      caught: caught.length === themes.length,
+      detail: caught.slice(0, 2).map((t) => ({
+        theme: t.id, a: 'muted-foreground', b: 'background', de: null,
+        ratio: contrastRatio(t.effective['muted-foreground'], t.effective.background),
+        ha: t.effective['muted-foreground'], hb: t.effective.background,
+      })),
+    });
+  }
   // Seed 2: an exemption declared for a theme that has hue must read stale.
   const stale = auditDistinct(resolveThemes(cssText), { ...MONOCHROME_THEMES, 'dark-midnight': 'seeded' }).stale;
   cases.push({ name: 'dark-midnight declared monochrome', caught: stale.includes('dark-midnight'), detail: [] });
@@ -696,10 +763,37 @@ function selfCheck(cssText, typoText, typeThemes) {
   return { problems, cases };
 }
 
+/** The fail-loud contract for the PALETTE half, matching the one the type-token
+ *  half already has. `n/a` is `failed: false` in the output code below, so a
+ *  hard-fail pair the resolver cannot read is a gate that grades nothing while
+ *  printing green. "Found nothing" and "looked at nothing" are different
+ *  outcomes and only one of them is success. Fatal, never a warning. */
+function assertHardPairsResolved(themes) {
+  const blind = [];
+  for (const theme of themes) {
+    if (theme.error) { blind.push(`${theme.id}: ${theme.error}`); continue; }
+    for (const [name, why] of Object.entries(theme.unresolvedMixes ?? {})) {
+      blind.push(`${theme.id} · --${name} is a color-mix this parser cannot read (${why})`);
+    }
+    for (const pair of PAIRS) {
+      if (!pair.hardFail) continue;
+      if (!theme.effective[pair.fg]) blind.push(`${theme.id} · ${pair.label}: --${pair.fg} did not resolve`);
+      if (!theme.effective[pair.bg]) blind.push(`${theme.id} · ${pair.label}: --${pair.bg} did not resolve`);
+    }
+  }
+  return blind;
+}
+
 const css = readFileSync(CSS_PATH, 'utf8');
 const resolved = resolveThemes(css);
 if (!resolved) {
   console.error('FATAL: could not find :root block in globals.css');
+  process.exit(2);
+}
+const blindPairs = assertHardPairsResolved(resolved);
+if (blindPairs.length > 0) {
+  console.error('FATAL: a graded pairing did not resolve, so the gate would have printed n/a and passed:');
+  for (const b of blindPairs) console.error(`  • ${b}`);
   process.exit(2);
 }
 
