@@ -1,6 +1,7 @@
 import { useId, type CSSProperties, type ReactNode } from 'react';
+import { Mark } from './Mark';
 import { emptyBand, GhostRows, type EmptySpec } from './states';
-import { cx, kitAttrs, stateClass, type KitStates } from './types';
+import { cx, kitAttrs, stateClass, type Glyph, type KitStates, type Tone } from './types';
 
 /**
  * Tiles: the dashboard grid (grow-3). Twelve columns; a Tile spans `span` of them. Rows are
@@ -29,6 +30,12 @@ export interface TileProps {
   meta?: ReactNode;
   /** Top-right of the head. */
   actions?: ReactNode;
+  /**
+   * Status, drawn ON the tile's rail at the title's height - the tile's own spine, exactly as a
+   * ContextCard carries one (grow-4, part 7; recorded as a gap at home-2). Meaning on the rail,
+   * never a trailing status word; the caller's `label` is its accessible name.
+   */
+  mark?: { tone: Tone; glyph?: Glyph; label: string };
   /** Actions for the tile's content (Approve, Re-run): inside the tile, pinned to its bottom edge. */
   footer?: ReactNode;
   state?: KitStates;
@@ -50,9 +57,11 @@ export interface TileProps {
  * and no inner scroll: the content decides the height. A long list inside is a capped `Rows`
  * (`cap`), which expands in place; in a tile stretched beside a taller one its pager sits on the
  * tile's foot. The loading ghost follows `ghostRows`; empty and error are the kit's empty band.
- * @catalog Tile - a dashboard tile in Tiles, a band on a rail: head (title, count, meta, actions), body, footer actions; loading/empty/error states; content-sized. Kit.
+ * `mark` (grow-4) is the tile's status ON its rail at the title's height, as a ContextCard's is:
+ * meaning on the rail, never a trailing status word.
+ * @catalog Tile - a dashboard tile in Tiles, a band on a rail: head (title, count, meta, actions), a status mark on the rail, body, footer actions; loading/empty/error states; content-sized. Kit.
  */
-export function Tile({ span = 12, title, count, meta, actions, footer, state, empty, error, ghostRows = 3, testId, children }: TileProps) {
+export function Tile({ span = 12, title, count, meta, actions, mark, footer, state, empty, error, ghostRows = 3, testId, children }: TileProps) {
   const id = useId();
   const states = typeof state === 'string' ? [state] : state ?? [];
   const loading = states.includes('loading');
@@ -74,6 +83,7 @@ export function Tile({ span = 12, title, count, meta, actions, footer, state, em
       data-testid={testId}
       style={{ '--span': n } as CSSProperties}
     >
+      {mark && !loading && <Mark tone={mark.tone} glyph={mark.glyph} label={mark.label} />}
       {(title != null || actions) && (
         <header className="k-dtile__head">
           {title != null && (

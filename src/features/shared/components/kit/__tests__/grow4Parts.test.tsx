@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { ContextCard, DataTable, ListRow, Rows, Stack } from '../index';
+import { ContextCard, DataTable, Hint, KitButton, ListRow, Rows, Stack, Tile, Tiles } from '../index';
 
 describe('the emphasis recipe (grow-4 part 5)', () => {
   it('a ListRow name is 500 by default: the tinted title above it carries the 600', () => {
@@ -75,5 +75,41 @@ describe('Stack (grow-4 part 3)', () => {
     expect(block).toContain('var(--band-x)');
     expect(block).toContain('background-image');
     expect(block).not.toContain('border');
+  });
+});
+
+describe('the two gaps home-2 recorded (grow-4 part 7)', () => {
+  it('Tile mark: the tile carries its status on its own rail, not as a trailing word', () => {
+    const { container } = render(
+      <Tiles label="g"><Tile span={6} title="Services" mark={{ tone: 'error', label: 'Failing' }}>x</Tile></Tiles>,
+    );
+    const mark = container.querySelector('.k-dtile > .k-mark')!;
+    expect(mark.getAttribute('aria-label')).toBe('Failing');
+    expect(mark.className).toContain('t-error');
+  });
+
+  it('Tile mark is not drawn while the tile loads (its ghost owns the geometry)', () => {
+    const { container } = render(
+      <Tiles label="g"><Tile span={6} title="Services" state="loading" mark={{ tone: 'error', label: 'Failing' }} /></Tiles>,
+    );
+    expect(container.querySelector('.k-dtile > .k-mark')).toBeNull();
+  });
+
+  it('KitButton describedBy: a Hint around a button now describes its press', () => {
+    render(<Hint content="Re-runs every failed execution"><KitButton onClick={() => {}}>Bulk re-run</KitButton></Hint>);
+    const b = screen.getByRole('button', { name: 'Bulk re-run' });
+    const id = b.getAttribute('aria-describedby');
+    expect(id).toBeTruthy();
+    expect(document.getElementById(id!)?.textContent).toBe('Re-runs every failed execution');
+  });
+
+  it('describedBy and a Hint merge rather than one winning', () => {
+    render(
+      <>
+        <span id="own">owned</span>
+        <Hint content="from the hint"><KitButton describedBy="own" onClick={() => {}}>Act</KitButton></Hint>
+      </>,
+    );
+    expect(screen.getByRole('button', { name: 'Act' }).getAttribute('aria-describedby')?.split(' ')).toHaveLength(2);
   });
 });

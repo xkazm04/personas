@@ -306,6 +306,27 @@ function Grow4Parts() {
         </Tiles>
         <Caption>Gaps s, m, l; a Stack with no `divided` is the gap alone.</Caption>
       </Section>
+      <Section title="Tile mark and KitButton describedBy" level={2} meta="the tile's own status on its rail at the title's height; a Hint describing a button's press">
+        <Tiles label="Tile marks">
+          <Tile span={3} title="Healthy" mark={{ tone: 'success', glyph: 'soft', label: 'Healthy' }} count={12}>
+            <p className="k-in typo-body" style={{ margin: 0 }}>A tile carries its state on the rail.</p>
+          </Tile>
+          <Tile span={3} title="At risk" mark={{ tone: 'warning', label: 'At risk' }} meta="with meta">
+            <p className="k-in typo-body" style={{ margin: 0 }}>Never a trailing status word.</p>
+          </Tile>
+          <Tile span={3} title="Working" mark={{ tone: 'primary', glyph: 'live', label: 'Live' }} state="live">
+            <p className="k-in typo-body" style={{ margin: 0 }}>A live tile breathes on its rail.</p>
+          </Tile>
+          <Tile span={3} title="Paused" mark={{ tone: 'neutral', glyph: 'hollow', label: 'Paused' }} state="muted">
+            <p className="k-in typo-body" style={{ margin: 0 }}>Muted keeps the mark readable.</p>
+          </Tile>
+        </Tiles>
+        <div className="k-in k-legend-row" data-specimen-hint style={{ gap: 24, marginTop: 12 }}>
+          <Hint content="Re-runs every failed execution in this window" focusable>
+            <KitButton onClick={noop}>Bulk re-run</KitButton>
+          </Hint>
+        </div>
+      </Section>
     </Section>
   );
 }

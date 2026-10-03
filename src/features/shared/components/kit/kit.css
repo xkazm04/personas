@@ -586,6 +586,9 @@ button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); backgroun
 .k-dtile::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; border-radius: 1px; background: var(--spine-c); }
 .k-dtile .k-rows > .k-row:nth-child(even) { --band: color-mix(in srgb, var(--foreground) 4%, transparent); }
 .k-dtile .k-mark { outline-color: transparent; }
+/* The tile's OWN status (grow-4, part 7) sits on its rail at the title's height, exactly as a
+ * ContextCard's does: the band's left edge is the tile's spine, so meaning is carried there. */
+.k-dtile > .k-mark { left: -4px; top: 26px; margin-top: -4.5px; }
 /* A short list beside a long one: the body fills the stretched tile and its pager ("Show all")
  * sits on the tile's foot, so the height reads as the tile's own, not a gap under the rows. */
 .k-dtile__body > .k-pager { margin-top: auto; }

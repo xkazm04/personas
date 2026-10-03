@@ -94,9 +94,10 @@ export type KitButtonTone = 'default' | 'quiet' | 'primary';
  * with the theme primary -> accent gradient and the primary glow; it rides the shared Button's primary
  * variant, so its brightness compensation is the product's). `icon` sits before the label as
  * its own flex item (hidden from the tree; a busy spinner takes its place), so it never wraps.
+ * `describedBy` (grow-4) forwards `aria-describedby`, so a kit `Hint` can describe the press.
  * @catalog KitButton - the kit 32px button over the shared Button: tone default|quiet|primary, a leading icon, real busy spinner, disabled with a reason, stopPropagation inside a selectable row. Kit.
  */
-export function KitButton({ children, onClick, loading, tone, quiet, icon, hint, className, testId, pressed, expanded, disabled, disabledReason, stopPropagation, label }: {
+export function KitButton({ children, onClick, loading, tone, quiet, icon, hint, className, testId, pressed, expanded, disabled, disabledReason, stopPropagation, label, describedBy, ...host }: {
   children: ReactNode;
   onClick: () => unknown;
   loading?: boolean;
@@ -121,8 +122,18 @@ export function KitButton({ children, onClick, loading, tone, quiet, icon, hint,
   stopPropagation?: boolean;
   /** Accessible name when the content is not text (a sparkline and a figure). */
   label?: string;
+  /**
+   * The id of the node that DESCRIBES this press (grow-4, part 7; recorded as a gap at home-2):
+   * forwarded as `aria-describedby`. The button's accessible NAME stays its own - a description
+   * only describes. A kit `Hint` wrapped around a KitButton sets the same attribute by cloning,
+   * which is why the raw prop is accepted too and the two are merged rather than one winning.
+   */
+  describedBy?: string;
+  /** Forwarded by a kit `Hint` wrapped around this button; merged with `describedBy`. */
+  'aria-describedby'?: string;
 }) {
   const look: KitButtonTone = tone ?? (quiet ? 'quiet' : 'default');
+  const described = [describedBy, host['aria-describedby']].filter(Boolean).join(' ') || undefined;
   const stop = stopPropagation
     ? { onKeyDown: (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); } }
     : null;
@@ -137,6 +148,7 @@ export function KitButton({ children, onClick, loading, tone, quiet, icon, hint,
       disabled={disabled}
       disabledReason={disabledReason}
       aria-label={label}
+      aria-describedby={described}
       aria-pressed={pressed}
       aria-expanded={expanded}
       onClick={stopPropagation ? (e: MouseEvent) => { e.stopPropagation(); return onClick(); } : onClick}
