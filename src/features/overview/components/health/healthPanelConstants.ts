@@ -1,37 +1,18 @@
-import { Monitor, Cloud, User } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+/**
+ * What is left of the old panel's constants (kit batch home-3).
+ *
+ * The violet / sky / amber `SECTION_STYLES` table went: it coloured each environment by a
+ * hardcoded palette step, which said nothing about whether anything was wrong, and the doctrine
+ * forbids colour by hue. Status is now the only thing coloured, by meaning, through the kit's
+ * `Tone x Glyph` (`healthModel.ts`). `SECTION_ICONS` and `SKELETON_SECTIONS` went with it -- the
+ * six section names are `t.system_health.category_*` (`healthModel.sectionLabel`) and the six
+ * sections are `healthModel.HEALTH_SECTION_IDS`, so the list can no longer drift from the
+ * commands it stands for.
+ *
+ * Only `CrashLogsSection`'s own ghost geometry stays here.
+ */
 
-export const SECTION_ICONS: Record<string, LucideIcon> = {
-  local: Monitor,
-  cloud: Cloud,
-  account: User,
-};
-
-export const SECTION_STYLES: Record<string, { badge: string; icon: string }> = {
-  local: { badge: 'bg-violet-500/10', icon: 'text-violet-400' },
-  cloud: { badge: 'bg-sky-500/10', icon: 'text-sky-400' },
-  account: { badge: 'bg-amber-500/10', icon: 'text-amber-400' },
-};
-
-export const DEFAULT_SECTION_STYLE = { badge: 'bg-violet-500/10', icon: 'text-violet-400' };
-
-/** Skeleton section stubs -- rendered immediately while backend check runs.
- *  MUST cover every id in useHealthChecks' CHECKS list: this list drifted to
- *  3 of the 6 fetched sections, so environment/agents/subscriptions were
- *  fetched and thrown away every refresh — 3 wasted IPC round-trips, warning
- *  banners for issues the user couldn't see, and the Ollama/LiteLLM
- *  configure buttons (which live in the agents section) were unreachable. */
-/** Calm ghost-bar styling shared by every loading placeholder in this module
- *  (docs/design/overview-loading.md §C) — no `animate-pulse`, ever. */
+/** Calm ghost-bar styling for the crash-log placeholder (docs/design/overview-loading.md §C) -- no `animate-pulse`, ever. */
 export const HEALTH_GHOST_BAR = 'rounded bg-primary/[0.06]';
 /** Deterministic width variation so stacked ghost bars read as text, not a barcode. */
 export const HEALTH_GHOST_WIDTHS = ['w-36', 'w-28', 'w-40'];
-
-export const SKELETON_SECTIONS = [
-  { id: 'local', label: 'Local Environment' },
-  { id: 'environment', label: 'Environment' },
-  { id: 'agents', label: 'Agents' },
-  { id: 'cloud', label: 'Cloud Deployment' },
-  { id: 'account', label: 'Account' },
-  { id: 'subscriptions', label: 'Subscription Health' },
-];

@@ -15,6 +15,7 @@ export function homeSystemCheckTapes({ RECORDED_AT }) {
       item('database', 'Local Database', 'ok', 'SQLite 3.46 at %APPDATA%/personas/personas.db (42.1 MB).'),
       item('disk', 'Disk Space', 'warn', '6.2 GB free on C: - executions keep about 40 MB a week.',
         { remediation: 'Free space on C:, or move the data directory to a larger volume.' }),
+      item('claude_desktop_mcp', 'Claude Desktop MCP', 'ok', 'Personas is registered as an MCP server.'),
     ],
     environment: [
       item('node', 'Node.js', 'error', 'Not found on PATH. Agent CLI sessions cannot start without it.',
@@ -25,7 +26,6 @@ export function homeSystemCheckTapes({ RECORDED_AT }) {
     agents: [
       item('ollama_api_key', 'Ollama Cloud API Key', 'inactive', 'No key saved. Local models still run without one.'),
       item('litellm_proxy', 'LiteLLM Proxy', 'inactive', 'No proxy configured.'),
-      item('mcp_registration', 'Claude Desktop MCP', 'ok', 'Personas is registered as an MCP server.'),
     ],
     cloud: [
       item('cloud_orchestrator', 'Cloud Orchestrator', 'info', 'Cloud execution is off. Everything runs on this machine.'),

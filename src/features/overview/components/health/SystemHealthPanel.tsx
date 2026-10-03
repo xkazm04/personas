@@ -1,25 +1,47 @@
-import { useState, useEffect, useRef } from 'react';
-import { useTranslation } from '@/i18n/useTranslation';
-import { RefreshCw, Monitor } from 'lucide-react';
-import { Button } from '@/features/shared/components/buttons';
-import { useAuthStore } from '@/stores/authStore';
-import { useAutoInstaller } from '@/hooks/utility/data/useAutoInstaller';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Monitor } from 'lucide-react';
+
 import { ConfigurationPopup } from '@/features/overview/components/health/ConfigurationPopup';
-
-import { SECTION_ICONS, SECTION_STYLES, DEFAULT_SECTION_STYLE, SKELETON_SECTIONS } from './healthPanelConstants';
-import { OLLAMA_FIELDS, OllamaFooter, LITELLM_FIELDS } from './popupFieldConfigs';
-import { CrashLogsSection } from './CrashLogsSection';
-import { LogDiskUsageSection } from './LogDiskUsageSection';
-import { SectionCard } from './SectionCard';
-import { FooterActions } from './FooterActions';
-import { useHealthChecks } from './useHealthChecks';
+import { ContentBody, ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
+import { KitHost, Segmented, Surface, Toolbar } from '@/features/shared/components/kit';
+import { useAutoInstaller } from '@/hooks/utility/data/useAutoInstaller';
+import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { useAuthStore } from '@/stores/authStore';
 
+import { CrashLogsSection } from './CrashLogsSection';
+import { FooterActions } from './FooterActions';
+import type { HealthActionDeps } from './HealthActions';
+import { LogDiskUsageSection } from './LogDiskUsageSection';
+import { HealthBoardA } from './prototypes/HealthBoardA';
+import { HealthSpineB } from './prototypes/HealthSpineB';
+import { HealthTriageC } from './prototypes/HealthTriageC';
+import { LITELLM_FIELDS, OLLAMA_FIELDS, OllamaFooter } from './popupFieldConfigs';
+import { useHealthVariant, type HealthVariantId } from './healthVariant';
+import { useHealthSections } from './useHealthSections';
 
+/**
+ * Home > System Check: the host of the three 2-layer prototypes (kit batch home-3).
+ *
+ * The owner's verdict on 2026-10-03 was "design unusable and that's why hidden behind a dev flag",
+ * with the brief: layer 1 is a GRAPHICAL overview of each environment, layer 2 carries the
+ * metadata and the action, and the header's re-run button comes out. This file owns only what is
+ * common to all three: the chrome, the install / auth / popup wiring, and the switch between them.
+ *
+ * **The re-run button is gone from the header.** The panel already re-runs by itself on an auth
+ * change (:below), on an install completing, on a saved Ollama key, on a saved LiteLLM
+ * configuration and on an MCP registration. The one manual re-run that still earns its keep is
+ * per environment, in layer 2, on the thing the operator just went and fixed - `HealthDetail`'s
+ * "Check again", which calls `runSection` for that section alone.
+ *
+ * Every region here loads on its own fetch: six section cycles in `useHealthSections`, the log
+ * stats in `LogDiskUsageSection`, the crash corpora in `CrashLogsSection`. Nothing waits on
+ * anything else (`docs/design/overview-loading.md` law 6, adopted 2026-10-03).
+ */
 export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
   const { t } = useTranslation();
-  const { sections, loading, hasIssues, ipcError, runChecks } = useHealthChecks();
+  const board = useHealthSections();
+  const [variant, setVariant] = useHealthVariant();
   const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const authLoading = useAuthStore((s) => s.isLoading);
@@ -28,143 +50,137 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
   const [showOllamaPopup, setShowOllamaPopup] = useState(false);
   const [showLiteLLMPopup, setShowLiteLLMPopup] = useState(false);
   const mountedRef = useRef(false);
+  const { runAll, runSection } = board;
 
+  // Signing in or out changes what the account and cloud checks report.
   useEffect(() => {
     if (!mountedRef.current) {
       mountedRef.current = true;
       return;
     }
-    runChecks();
-  }, [isAuthenticated, runChecks]);
+    runAll();
+  }, [isAuthenticated, runAll]);
 
+  // An install that just finished changes what the environment check reports; the backend needs a
+  // moment to see the new binary on PATH, hence the delay the old panel also used.
   useEffect(() => {
     if (nodeState.phase !== 'completed' && claudeState.phase !== 'completed') return;
-    const timer = setTimeout(() => { runChecks(); }, 3000);
+    const timer = setTimeout(() => { runSection('environment'); }, 3000);
     return () => clearTimeout(timer);
-  }, [nodeState.phase, claudeState.phase, runChecks]);
+  }, [nodeState.phase, claudeState.phase, runSection]);
 
-  const handleSignIn = async () => {
-    try { await loginWithGoogle(); } catch (err) { silentCatch("features/overview/components/health/SystemHealthPanel:catch1")(err); }
-  };
+  const handleSignIn = useCallback(async () => {
+    try {
+      await loginWithGoogle();
+    } catch (err) {
+      silentCatch('features/overview/components/health/SystemHealthPanel:signIn')(err);
+    }
+  }, [loginWithGoogle]);
 
-  const hasNodeIssue = sections
-    .flatMap((s) => s.items)
-    .some((i) => i.id === 'node' && i.status !== 'ok' && i.installable);
-  const hasClaudeIssue = sections
-    .flatMap((s) => s.items)
-    .some((i) => i.id === 'claude_cli' && i.status !== 'ok' && i.installable);
-  const anyInstalling =
-    nodeState.phase === 'downloading' || nodeState.phase === 'installing' ||
-    claudeState.phase === 'downloading' || claudeState.phase === 'installing';
+  const deps = useMemo<HealthActionDeps>(() => ({
+    unavailable: board.anyFailed,
+    nodeState,
+    claudeState,
+    install,
+    authLoading,
+    authError,
+    onSignIn: handleSignIn,
+    onShowOllama: () => setShowOllamaPopup(true),
+    onShowLiteLLM: () => setShowLiteLLMPopup(true),
+    onMcpDone: () => runSection('local'),
+  }), [board.anyFailed, nodeState, claudeState, install, authLoading, authError, handleSignIn, runSection]);
 
-  const sectionMap = new Map(sections.map((s) => [s.id, s]));
+  const checks = board.items;
+  const hasNodeIssue = checks.some((i) => i.id === 'node' && i.status !== 'ok' && i.installable);
+  const hasClaudeIssue = checks.some((i) => i.id === 'claude_cli' && i.status !== 'ok' && i.installable);
+  const anyInstalling = nodeState.phase === 'downloading' || nodeState.phase === 'installing'
+    || claudeState.phase === 'downloading' || claudeState.phase === 'installing';
 
   return (
     <ContentBox>
       <ContentHeader
-        icon={<Monitor className="w-5 h-5 text-cyan-400" />}
+        icon={<Monitor className="w-5 h-5 text-primary" />}
         iconColor="cyan"
         title={t.overview.system_health.title}
         subtitle={t.overview.system_health.subtitle}
-        actions={
-          !loading ? (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={runChecks}
-              icon={<RefreshCw className="w-3.5 h-3.5" />}
-              className="text-foreground hover:text-muted-foreground"
-              title={t.overview.system_health.re_run_checks}
-            />
-          ) : undefined
-        }
       />
 
       <ContentBody centered>
-        <div className="space-y-4">
-          <div className="grid gap-4 items-stretch" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-            {SKELETON_SECTIONS.map((stub, stubIdx) => {
-              const loaded = sectionMap.get(stub.id);
-              const SectionIcon = SECTION_ICONS[stub.id] || Monitor;
-              const sectionStyle = SECTION_STYLES[stub.id] ?? DEFAULT_SECTION_STYLE;
+        <KitHost compact testId="system-check">
+          {import.meta.env.DEV && <VariantSwitch value={variant} onChange={setVariant} />}
 
-              const section = loaded ?? { id: stub.id, label: stub.label, items: [] };
-              return (
-                <SectionCard
-                  key={section.id}
-                  section={section}
-                  stubIdx={stubIdx}
-                  SectionIcon={SectionIcon}
-                  sectionStyle={sectionStyle}
-                  loading={loading}
-                  ipcError={ipcError}
-                  nodeState={nodeState}
-                  claudeState={claudeState}
-                  install={install}
-                  authLoading={authLoading}
-                  authError={authError}
-                  onSignIn={handleSignIn}
-                  onShowOllama={() => setShowOllamaPopup(true)}
-                  onShowLiteLLM={() => setShowLiteLLMPopup(true)}
-                  onMcpRegistered={runChecks}
-                />
-              );
-            })}
-          </div>
+          {variant === 'board' && <HealthBoardA board={board} deps={deps} />}
+          {variant === 'spine' && <HealthSpineB board={board} deps={deps} />}
+          {variant === 'triage' && <HealthTriageC board={board} deps={deps} />}
 
-          {import.meta.env.DEV && (
-            <div className="rounded-modal border-2 border-amber-500/30 p-0.5">
-              <CrashLogsSection />
-            </div>
-          )}
-
-          <LogDiskUsageSection />
-
-          {hasIssues && !loading && (
-            <p className="typo-body text-amber-400/80">
-              {ipcError
-                ? t.overview.system_health.ipc_error
-                : t.overview.system_health.issues_warning}
-            </p>
-          )}
+          <Surface>
+            {/* CrashLogsSection owns its own collapsible header and its own chrome, so wrapping it
+                in a kit Section would print "Crash Logs" twice. It is DEV-only and out of this
+                batch's scope; recorded as the one region of this surface still not kit-composed. */}
+            {import.meta.env.DEV && <CrashLogsSection />}
+            <LogDiskUsageSection />
+          </Surface>
 
           <FooterActions
-            loading={loading}
-            ipcError={ipcError}
+            loading={!board.settled}
+            ipcError={board.anyFailed}
             hasNodeIssue={hasNodeIssue}
             hasClaudeIssue={hasClaudeIssue}
             anyInstalling={anyInstalling}
             install={install}
             onNext={onNext}
           />
+        </KitHost>
 
-          {showOllamaPopup && (
-              <ConfigurationPopup
-                title={t.overview.system_health.ollama_title}
-                subtitle={t.overview.system_health.ollama_subtitle}
-                accent="emerald"
-                fields={OLLAMA_FIELDS}
-                saveLabel={t.overview.system_health.save_key}
-                footerText={<OllamaFooter />}
-                onClose={() => setShowOllamaPopup(false)}
-                onSaved={() => { setShowOllamaPopup(false); runChecks(); }}
-              />
-            )}
+        {showOllamaPopup && (
+          <ConfigurationPopup
+            title={t.overview.system_health.ollama_title}
+            subtitle={t.overview.system_health.ollama_subtitle}
+            accent="emerald"
+            fields={OLLAMA_FIELDS}
+            saveLabel={t.overview.system_health.save_key}
+            footerText={<OllamaFooter />}
+            onClose={() => setShowOllamaPopup(false)}
+            onSaved={() => { setShowOllamaPopup(false); runSection('agents'); }}
+          />
+        )}
 
-          {showLiteLLMPopup && (
-              <ConfigurationPopup
-                title={t.overview.system_health.litellm_title}
-                subtitle={t.overview.system_health.litellm_subtitle}
-                accent="sky"
-                fields={LITELLM_FIELDS}
-                saveLabel={t.overview.system_health.save_configuration}
-                footerText={t.overview.system_health.litellm_footer}
-                onClose={() => setShowLiteLLMPopup(false)}
-                onSaved={() => { setShowLiteLLMPopup(false); runChecks(); }}
-              />
-            )}
-        </div>
+        {showLiteLLMPopup && (
+          <ConfigurationPopup
+            title={t.overview.system_health.litellm_title}
+            subtitle={t.overview.system_health.litellm_subtitle}
+            accent="sky"
+            fields={LITELLM_FIELDS}
+            saveLabel={t.overview.system_health.save_configuration}
+            footerText={t.overview.system_health.litellm_footer}
+            onClose={() => setShowLiteLLMPopup(false)}
+            onSaved={() => { setShowLiteLLMPopup(false); runSection('agents'); }}
+          />
+        )}
       </ContentBody>
     </ContentBox>
+  );
+}
+
+/**
+ * The dev-only switch between the three prototypes. The page harness writes the same persisted key
+ * from `?kit=<id>`, so `shoot.mjs --kit board|spine|triage` shoots whichever one it is handed.
+ */
+function VariantSwitch({ value, onChange }: { value: HealthVariantId; onChange: (v: HealthVariantId) => void }) {
+  const { t } = useTranslation();
+  const s = t.system_health;
+  return (
+    <Toolbar label={s.variant_label}>
+      <Segmented<HealthVariantId>
+        label={s.variant_label}
+        value={value}
+        onChange={onChange}
+        options={[
+          { v: 'board', label: s.variant_board },
+          { v: 'spine', label: s.variant_spine },
+          { v: 'triage', label: s.variant_triage },
+        ]}
+      />
+    </Toolbar>
   );
 }

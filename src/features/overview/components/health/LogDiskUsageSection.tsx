@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { HardDrive } from 'lucide-react';
-import { useTranslation } from '@/i18n/useTranslation';
+
 import { getLogDirectoryStats, type LogDirectoryStats } from '@/api/system/system';
+import { KeyValueGrid, Section } from '@/features/shared/components/kit';
+import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
-import { HEALTH_GHOST_BAR, HEALTH_GHOST_WIDTHS } from './healthPanelConstants';
 
 function formatBytes(bytes: number | bigint): string {
   const n = typeof bytes === 'bigint' ? Number(bytes) : bytes;
@@ -13,15 +13,25 @@ function formatBytes(bytes: number | bigint): string {
   return `${(n / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
+/**
+ * What the logs weigh, as a level-2 kit `Section` (kit batch home-3).
+ *
+ * It used to be a hand-rolled boxed card (`rounded-modal border bg-secondary/20`) with a
+ * `cyan-500/10` badge, a hand-rolled ghost of six positioned bars and four rows of prose. It is
+ * now the kit: two facts in a `KeyValueGrid`, the two retention rules as the section's `desc`, and
+ * the section's own `loading` ghost. Its fetch is its own, so its placeholder is retired by its
+ * own data and it never waits on a health check (`overview-loading.md` law 6).
+ */
 export function LogDiskUsageSection() {
   const { t, tx } = useTranslation();
+  const s = t.system_health;
   const [stats, setStats] = useState<LogDirectoryStats | null>(null);
   const [unavailable, setUnavailable] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     getLogDirectoryStats()
-      .then((s) => { if (!cancelled) setStats(s); })
+      .then((next) => { if (!cancelled) setStats(next); })
       .catch((err) => {
         silentCatch('LogDiskUsageSection.getLogDirectoryStats')(err);
         if (!cancelled) setUnavailable(true);
@@ -29,78 +39,37 @@ export function LogDiskUsageSection() {
     return () => { cancelled = true; };
   }, []);
 
+  const state = unavailable ? 'empty' : stats === null ? 'loading' : undefined;
+
   return (
-    <div className="rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden">
-      <div className="flex items-center gap-2.5 px-4 py-2.5">
-        <div className="w-6 h-6 rounded-card flex items-center justify-center bg-cyan-500/10">
-          <HardDrive className="w-3.5 h-3.5 text-cyan-300" />
-        </div>
-        <span className="typo-label text-foreground">
-          {t.system_health.log_disk_usage}
-        </span>
-      </div>
-
-      <div className="border-t border-primary/5 px-4 py-3 space-y-2">
-        {unavailable && (
-          <p className="typo-body text-foreground">{t.system_health.log_disk_unavailable}</p>
-        )}
-        {!unavailable && stats === null && <LogDiskGhost />}
-        {!unavailable && stats && (
-          <>
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="typo-body text-foreground">{t.system_health.log_disk_tracing}</span>
-              <span className="typo-code text-foreground">
-                {formatBytes(stats.log_bytes)}
-                <span className="text-foreground ml-2">
-                  {tx(t.system_health.log_disk_files_count, { count: stats.log_file_count })}
-                </span>
-              </span>
-            </div>
-            <p className="typo-body text-foreground">
-              {tx(t.system_health.log_disk_retention_hint, { limit: stats.tracing_log_retention })}
-            </p>
-
-            <div className="flex items-baseline justify-between gap-2 pt-2 border-t border-primary/5">
-              <span className="typo-body text-foreground">{t.system_health.log_disk_crashes}</span>
-              <span className="typo-code text-foreground">
-                {formatBytes(stats.crash_bytes)}
-                <span className="text-foreground ml-2">
-                  {tx(t.system_health.log_disk_files_count, { count: stats.crash_file_count })}
-                </span>
-              </span>
-            </div>
-            <p className="typo-body text-foreground">
-              {tx(t.system_health.log_disk_crash_retention_hint, { limit: stats.crash_log_retention })}
-            </p>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// LogDiskGhost — calm placeholder matching the two-row (bytes + retention
-// hint) x two-block (log / crash) geometry of the real content, shown only
-// while the stats fetch is in flight (docs/design/overview-loading.md §C).
-// ---------------------------------------------------------------------------
-function LogDiskGhost() {
-  return (
-    <div aria-hidden="true">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className={`h-3 ${HEALTH_GHOST_WIDTHS[0]} ${HEALTH_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '120ms' }} />
-        <span className={`h-3 w-16 ${HEALTH_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '120ms' }} />
-      </div>
-      <p className="mt-1.5">
-        <span className={`block h-2.5 ${HEALTH_GHOST_WIDTHS[1]} ${HEALTH_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '155ms' }} />
-      </p>
-      <div className="flex items-baseline justify-between gap-2 pt-2 mt-2 border-t border-primary/5">
-        <span className={`h-3 ${HEALTH_GHOST_WIDTHS[2]} ${HEALTH_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '190ms' }} />
-        <span className={`h-3 w-16 ${HEALTH_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '190ms' }} />
-      </div>
-      <p className="mt-1.5">
-        <span className={`block h-2.5 ${HEALTH_GHOST_WIDTHS[0]} ${HEALTH_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '225ms' }} />
-      </p>
-    </div>
+    <Section
+      level={2}
+      title={s.log_disk_usage}
+      state={state}
+      ghostRows={2}
+      empty={{ title: s.log_disk_unavailable }}
+      // Not the kit's `Meta`: it joins its parts with `.k-sep`, which carries no margin of its
+      // own, so two adjacent string parts render glued to the dot ("...10 files·Capped at..."). A
+      // kit finding, recorded for the Director rather than worked around inside the kit.
+      desc={stats
+        ? `${tx(s.log_disk_retention_hint, { limit: stats.tracing_log_retention })} · ${tx(s.log_disk_crash_retention_hint, { limit: stats.crash_log_retention })}`
+        : undefined}
+    >
+      {stats && (
+        <KeyValueGrid
+          min="14rem"
+          items={[
+            {
+              k: s.log_disk_tracing,
+              v: `${formatBytes(stats.log_bytes)} · ${tx(s.log_disk_files_count, { count: stats.log_file_count })}`,
+            },
+            {
+              k: s.log_disk_crashes,
+              v: `${formatBytes(stats.crash_bytes)} · ${tx(s.log_disk_files_count, { count: stats.crash_file_count })}`,
+            },
+          ]}
+        />
+      )}
+    </Section>
   );
 }
