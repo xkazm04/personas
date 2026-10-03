@@ -65,9 +65,15 @@ export function useMorningBriefing(): void {
 
     let cancelled = false;
 
-    (async () => {
+    const compose = async () => {
       // Warm the shared spine + gather the actionable inputs. All are
       // TTL-guarded/deduped shared fetches — no new IPC surface.
+      //
+      // LAW 6, the written exception (`docs/design/overview-loading.md`, "a region that
+      // genuinely cannot paint alone"): this fan-out is NOT a surface waiting on its
+      // neighbours. The briefing is ONE region - a single overlay - and the delta it states
+      // is computed from all four inputs at once; a briefing that counted the runs but not
+      // the alerts would be a wrong briefing, not a partial one. So the `allSettled` stays.
       const ov = useOverviewStore.getState();
       const ag = useAgentStore.getState();
       const approvalsPromise = companionListPendingApprovals().catch(
@@ -160,10 +166,31 @@ export function useMorningBriefing(): void {
         spec,
       });
       useSystemStore.getState().setHomeTab('cockpit');
-    })().catch(silentCatch('morning_briefing'));
+    };
+
+    // What law 6 DOES reach here is WHEN the region starts. Not one of these five calls
+    // decides a pixel of the first screen - the briefing is an overlay the user has not asked
+    // for yet - so by the law's own words ("the shell awaits only what decides WHAT to render;
+    // everything else is a prewarm") it belongs after the first paint, not on the mount frame
+    // beside the fetches the visible tab is waiting for. It can also move the user
+    // (`setHomeTab('cockpit')` above), and doing that while the landing is still painting is a
+    // tab yanked out from under them. Same idle hand-off `App.tsx:248-253` gives the session
+    // bootstrap and `sub_events/libs/useEventLog.ts:150-154` gives its backfill wave.
+    //
+    // This is NOT a speed claim: `tauriInvoke` has no concurrency limiter, so delaying the
+    // briefing does not make the tab's own reads finish sooner. It stops the briefing racing
+    // the paint it is not part of.
+    const start = () => {
+      if (cancelled) return;
+      void compose().catch(silentCatch('morning_briefing'));
+    };
+    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
+    const timer = typeof ric === 'function' ? null : setTimeout(start, 300);
+    if (typeof ric === 'function') ric(start, { timeout: 2000 });
 
     return () => {
       cancelled = true;
+      if (timer !== null) clearTimeout(timer);
     };
     // Session-open trigger: run exactly once; `t`/`tx` are stable proxies.
     // eslint-disable-next-line react-hooks/exhaustive-deps
