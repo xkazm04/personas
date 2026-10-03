@@ -14,7 +14,8 @@ import { Cell, WidgetTable, nameCell, type TableColumn } from './widgetTable';
  * One kit Tile holding ONE `UnifiedTable` (see `widgetTable.tsx`): done = success, the step the
  * user is at = the theme primary, not yet = the faintest rule, blocked = error. The step's own
  * sentence is the Description column beside it, never a second line (the row keeps one height).
- * Not capped: a chain is read whole.
+ * A chain is read whole up to the table's default cap, past which "Show all N" expands it in
+ * place - a chain Athena composes is the one row count nobody reviews, so it is bounded.
  *
  * Config:
  *   {

@@ -13,8 +13,14 @@
  *
  * - **no `groupBy`** — the owner said day groups are not needed here, and a widget's rows are
  *   ranked by Athena, not chronological;
- * - **no `rowHeight`** — a tile never scrolls (the page does, `Tiles`' contract), so the table
- *   stays in flow layout and the tile sizes to its rows;
+ * - **no windowing** — `rowHeight={0}` is passed EXPLICITLY, and the reason is the one
+ *   `long-list-rendering.md` asks a call site to write down. `UnifiedTable` windows rows only by
+ *   giving itself a bounded scroll container, and a kit `Tile` forbids exactly that (`Tiles`:
+ *   "no row span and no inner scroll: the content decides the height; the page scrolls"). So the
+ *   bound is applied BEFORE the data reaches the table instead: `cap` (defaulted, never absent)
+ *   slices the rows, and the only way past it is the user pressing "Show all N" — which is what
+ *   home-2 accepted, at forty. A widget whose row count comes out of a language model is
+ *   therefore bounded by construction, not by the composer's restraint;
  * - **no `tableId`** — a composed widget's columns are not the user's to resize or re-sort, and a
  *   per-widget localStorage key would accumulate one entry per composition.
  *
@@ -112,6 +118,13 @@ export function nameCell(value: ReactNode, spoken?: string, hint?: string | null
   );
 }
 
+/**
+ * The bound a Cockpit table takes when its caller names none. Eight is home-2's accepted range for
+ * a grid list ("grid lists cap at 6-8"), and a widget's rows are already ranked by Athena, so the
+ * first eight are the ones that matter.
+ */
+export const DEFAULT_CAP = 8;
+
 export interface WidgetTableProps<T> {
   columns: TableColumn<T>[];
   rows: readonly T[];
@@ -123,7 +136,11 @@ export interface WidgetTableProps<T> {
   emptyTitle: string;
   /** Accessible name of the table and of its "Show all" pager. */
   label: string;
-  /** Show the first `cap` rows and a "Show all N" that expands in place (home-2 contract). */
+  /**
+   * Show the first `cap` rows and a "Show all N" that expands in place (home-2 contract). This is
+   * the table's ONLY bound on how many rows enter the DOM (see the note on windowing above), so
+   * it is never absent: a caller that names none gets {@link DEFAULT_CAP}.
+   */
   cap?: number;
   isLoading?: boolean;
   testId?: string;
@@ -134,19 +151,19 @@ export interface WidgetTableProps<T> {
  * head lines up under the tile's own title, with the capped "Show all N" under the last row.
  */
 export function WidgetTable<T>({
-  columns, rows, getRowKey, onRowClick, rowTone, emptyTitle, label, cap, isLoading, testId,
+  columns, rows, getRowKey, onRowClick, rowTone, emptyTitle, label, cap = DEFAULT_CAP, isLoading, testId,
 }: WidgetTableProps<T>) {
   const { t, tx } = useTranslation();
   const [open, setOpen] = useState(false);
   const [said, setSaid] = useState('');
-  const capped = cap != null && rows.length > cap;
+  const capped = rows.length > cap;
   const shown = capped && !open ? rows.slice(0, cap) : rows;
   const toggle = useCallback(() => {
     setOpen((was) => {
       const next = !was;
       setSaid(next
         ? tx(t.shared.rows_showing_all, { count: rows.length })
-        : tx(t.shared.rows_showing_first, { count: cap ?? 0 }));
+        : tx(t.shared.rows_showing_first, { count: cap }));
       return next;
     });
   }, [cap, rows.length, t.shared.rows_showing_all, t.shared.rows_showing_first, tx]);
@@ -172,6 +189,10 @@ export function WidgetTable<T>({
           borderless
           stickyHeader={false}
           ariaLabel={label}
+          // Deliberately NOT windowed, and this is the written reason the ratchet asks for: a Tile
+          // has no inner scroll to window against, so the bound is `cap` above, applied to the
+          // data before it ever reaches the table.
+          rowHeight={0}
         />
       </div>
       {capped && (
