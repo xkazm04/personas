@@ -245,6 +245,22 @@
 .k-tile__fig { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
 .k-tile__draw { min-height: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
+/* ============ Stack (added at kit grow-4): the regions inside a Tile or a card ============ */
+/* Stacked regions ran together with nothing between them (owner, 2026-10-03: "components inside
+ * are flying empty without subtle dividers or structure"). A Stack owns the gap and, with
+ * `divided`, the rule. The rule is drawn as a background gradient on each region AFTER the first,
+ * so it starts where its host's band starts and is a RULE, not a border box: no edge on the left
+ * or right, nothing boxed, and the row band under it untouched. */
+.k-stack { --stack-gap: 12px; display: flex; flex-direction: column; min-width: 0; }
+.k-stack--s { --stack-gap: 8px; }
+.k-stack--l { --stack-gap: 18px; }
+.k-stack > * + * { margin-top: var(--stack-gap); }
+.k-stack--divided > * + * {
+  padding-top: var(--stack-gap);
+  background-image: linear-gradient(to right, transparent var(--band-x), var(--rule) var(--band-x));
+  background-size: 100% 1px; background-repeat: no-repeat; background-position: 0 0;
+}
+
 /* ============ KeyValueGrid ============ */
 .k-kv {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--kv-min, 150px), 1fr)); gap: 12px 24px;

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { ContextCard, DataTable, ListRow, Rows } from '../index';
+import { ContextCard, DataTable, ListRow, Rows, Stack } from '../index';
 
 describe('the emphasis recipe (grow-4 part 5)', () => {
   it('a ListRow name is 500 by default: the tinted title above it carries the 600', () => {
@@ -53,5 +53,27 @@ describe('the ghost is calm and delayed (grow-4 part 9)', () => {
     expect(ghost).toContain('k-ghost-in');
     expect(ghost).toContain('var(--ghost-delay, 150ms)');
     expect(ghost).not.toContain('infinite');
+  });
+});
+
+describe('Stack (grow-4 part 3)', () => {
+  it('names itself and owns the gap; `divided` is the opt-in rule, never a box', () => {
+    const { container, rerender } = render(<Stack><p>a</p><p>b</p></Stack>);
+    const plain = container.querySelector('.k-stack')!;
+    expect(plain.getAttribute('data-kit')).toBe('Stack');
+    expect(plain.className).toContain('k-stack--m');
+    expect(plain.className).not.toContain('k-stack--divided');
+    rerender(<Stack gap="s" divided><p>a</p><p>b</p></Stack>);
+    const ruled = container.querySelector('.k-stack')!;
+    expect(ruled.className).toContain('k-stack--s');
+    expect(ruled.className).toContain('k-stack--divided');
+  });
+
+  it('the rule starts at the host band origin and is drawn, not bordered', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/features/shared/components/kit/kit.css'), 'utf8');
+    const block = /\.k-stack--divided > \* \+ \* \{[^}]*\}/.exec(css)?.[0] ?? '';
+    expect(block).toContain('var(--band-x)');
+    expect(block).toContain('background-image');
+    expect(block).not.toContain('border');
   });
 });

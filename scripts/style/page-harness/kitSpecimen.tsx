@@ -12,8 +12,8 @@ import { Bot, MessageCircle, Play, RefreshCw, Sparkles, Workflow } from 'lucide-
 import { OverviewDemo } from './kitContexts';
 import {
   ChartFrame, ChipRow, ContextCard, ContextCards, Crumbs, DataTable, Dot, Hint, KeyValueGrid, KitButton, KitHost, ListRow,
-  Meta, RangePicker, Rows, SearchField, Section, Segmented, StatStrip, Surface, Toolbar, UnitStrip, apportion,
-  quantumFor, toneColor, type Glyph, type TableCol, type TableRow, type Tone,
+  Meta, RangePicker, Rows, SearchField, Section, Segmented, Stack, StatStrip, Surface, Tile, Tiles, Toolbar, UnitStrip,
+  apportion, quantumFor, toneColor, type Glyph, type TableCol, type TableRow, type Tone,
 } from '@/features/shared/components/kit';
 
 const noop = () => {};
@@ -283,9 +283,40 @@ function Grow2Parts() {
   );
 }
 
+/** Kit grow-4: the parts the owner's 2026-10-03 Home review earned, in their states. */
+function Grow4Parts() {
+  return (
+    <Section title="Kit grow-4" level={1} eyebrow="the parts the Home review earned" meta="band origin, row columns, Stack, packed stats, the emphasis recipe, card fill, tile mark">
+      <Section title="Stack" level={2} meta="the regions inside a tile: the gap, and with `divided` a quiet rule that starts on the band's reading line - a rule, never a box">
+        <Tiles label="Stack tiles">
+          <Tile span={6} title="Plain regions" meta="nothing between them">
+            <div className="k-in typo-body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <p style={{ margin: 0 }}>Your fleet ran 1,284 times this week at a 90.6% success rate.</p>
+              <ul style={{ margin: 0, paddingLeft: 18 }}><li>Cost is up 38%, mostly research runs</li><li>25 decisions are waiting</li></ul>
+            </div>
+            <StatStrip tiles={[{ label: 'Runs', value: '1,284' }, { label: 'Spend', value: '$48.72' }]} />
+          </Tile>
+          <Tile span={6} title="Divided regions" meta="the same tile inside a Stack divided">
+            <Stack divided>
+              <p className="k-in typo-body" style={{ margin: 0 }}>Your fleet ran 1,284 times this week at a 90.6% success rate.</p>
+              <ul className="k-in typo-body" style={{ margin: 0, paddingLeft: 58 }}><li>Cost is up 38%, mostly research runs</li><li>25 decisions are waiting</li></ul>
+              <StatStrip tiles={[{ label: 'Runs', value: '1,284' }, { label: 'Spend', value: '$48.72' }]} />
+            </Stack>
+          </Tile>
+        </Tiles>
+        <Caption>Gaps s, m, l; a Stack with no `divided` is the gap alone.</Caption>
+      </Section>
+    </Section>
+  );
+}
+
 function KitGrow2() {
   useOpenFirstHint();
   return <KitHost compact testId="kit-specimen-grow-2"><Surface><Grow2Parts /></Surface></KitHost>;
+}
+
+function KitGrow4() {
+  return <KitHost compact testId="kit-specimen-grow-4"><Surface><Grow4Parts /></Surface></KitHost>;
 }
 
 /** Opens the first Hint for the shot: a synthetic pointer entry, as React reads hover. */
@@ -314,6 +345,7 @@ function KitSpecimen() {
         </Section>
         <Facts />
         <Grow2Parts />
+        <Grow4Parts />
       </Surface>
     </KitHost>
   );
@@ -326,5 +358,9 @@ export const KIT_MODULES: Record<string, { load: () => Promise<{ default: Compon
   // Kit grow-2 alone, so its parts are in the shot (on kit/specimen they sit below 3200px).
   'kit/specimen/grow-2': {
     load: async () => ({ default: KitGrow2 }),
+  },
+  // Kit grow-4 alone, for the same reason: on kit/specimen its parts sit below 3200px.
+  'kit/specimen/grow-4': {
+    load: async () => ({ default: KitGrow4 }),
   },
 };
