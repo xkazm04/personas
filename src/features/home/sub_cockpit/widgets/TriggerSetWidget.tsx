@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
-import { Hint, ListRow, Rows, Tile, type RowColumn } from '@/features/shared/components/kit';
+import { Tile } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
+import { Cell, WidgetTable, nameCell, type TableColumn } from './widgetTable';
 
 interface Trigger {
   label: string;
@@ -11,45 +12,84 @@ interface Trigger {
   idempotency_note?: string;
 }
 
+interface TriggerRow extends Trigger {
+  key: string;
+  /** What the row shows in its condition column. */
+  reads: string;
+  /** The full design rationale, on hover and focus. */
+  full: string;
+}
+
 /**
  * Inline chat-card Athena emits via `show_trigger_set { intent, triggers }`. Each trigger answers
  * the cycle-6 doctrine's right-grain test: one trigger condition produces one persona response
  * shape. Sibling of `show_use_case_set` (when-it-fires vs what-it-handles).
  *
- * One kit Tile, one row per trigger: the label is the row's one emphasis, the condition and the
- * grain its meta, the source a regular figure on the right. The idempotency note is design
- * rationale, so it lives in the row's Hint with the full wording (a truncated meta never hides
- * text silently). The intent is not repeated here: the surface shows it once.
+ * One kit Tile holding ONE `UnifiedTable` — the app's shared table (see `widgetTable.tsx`). Three
+ * named columns: the trigger, where it comes from, and what makes it fire. The column that used
+ * to be headed "Detail" now carries the head it earned ("Fires when"), the owner having removed
+ * that generic head by name on 2026-10-03. The idempotency note is design rationale, so it stays
+ * in the cell's Hint with the full wording (a truncated cell never hides text silently). The
+ * intent is not repeated here: the surface shows it once.
  */
 export function TriggerSetWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
   const { t } = useTranslation();
   const a = t.athena;
-  const triggers = useMemo<Trigger[]>(() => {
+  const c = t.overview.cockpit;
+  const triggers = useMemo<TriggerRow[]>(() => {
     const raw = config?.triggers;
     if (!Array.isArray(raw)) return [];
     return raw
       .filter((tr): tr is Record<string, unknown> => typeof tr === 'object' && tr !== null)
-      .map((tr) => ({
-        label: typeof tr.label === 'string' ? tr.label : '',
-        source: typeof tr.source === 'string' ? tr.source : '',
-        condition: typeof tr.condition === 'string' ? tr.condition : '',
-        grain: typeof tr.grain === 'string' ? tr.grain : undefined,
-        idempotency_note: typeof tr.idempotency_note === 'string' ? tr.idempotency_note : undefined,
-      }))
+      .map((tr, i) => {
+        const label = typeof tr.label === 'string' ? tr.label : '';
+        const condition = typeof tr.condition === 'string' ? tr.condition : '';
+        const grain = typeof tr.grain === 'string' ? tr.grain : undefined;
+        const note = typeof tr.idempotency_note === 'string' ? tr.idempotency_note : undefined;
+        return {
+          label,
+          source: typeof tr.source === 'string' ? tr.source : '',
+          condition,
+          grain,
+          idempotency_note: note,
+          key: `${label}-${i}`,
+          reads: [condition, grain].filter(Boolean).join(' · '),
+          full: [
+            condition && `${a.trigger_set_condition}: ${condition}`,
+            grain && `${a.trigger_set_grain}: ${grain}`,
+            note && `${a.trigger_set_idempotency}: ${note}`,
+          ].filter(Boolean).join(' · '),
+        };
+      })
       .filter((tr) => tr.label.length > 0);
-  }, [config]);
+  }, [a.trigger_set_condition, a.trigger_set_grain, a.trigger_set_idempotency, config]);
 
-  const c = t.overview.cockpit;
-  // The condition and the grain are what a trigger IS; the source is one short word, so it takes
-  // a fixed track and the detail takes the rest of the band.
-  const columns: RowColumn[] = [
-    { head: c.col_source, width: '7rem' },
-    { head: c.col_detail, width: '1.6fr' },
-  ];
+  const heading = title || a.trigger_set_title;
+  const columns = useMemo<TableColumn<TriggerRow>[]>(() => [
+    {
+      key: 'label',
+      label: c.col_trigger,
+      width: 'minmax(0, 1fr)',
+      render: (tr) => nameCell(tr.label, undefined, tr.label),
+    },
+    {
+      key: 'source',
+      label: c.col_source,
+      width: 'minmax(0, 8rem)',
+      render: (tr) => <Cell value={tr.source} data hint={tr.source} />,
+    },
+    {
+      key: 'condition',
+      label: a.trigger_set_condition,
+      width: 'minmax(0, 1.6fr)',
+      render: (tr) => <Cell value={tr.reads} hint={tr.full} />,
+    },
+  ], [a.trigger_set_condition, c.col_source, c.col_trigger]);
+
   return (
     <Tile
       span={span}
-      title={title || a.trigger_set_title}
+      title={heading}
       count={triggers.length || undefined}
       actions={actions}
       footer={footer}
@@ -57,28 +97,14 @@ export function TriggerSetWidget({ config, title, span, actions, footer }: Cockp
       empty={{ title: a.trigger_set_empty }}
       testId="companion-trigger-set-widget"
     >
-      <Rows count={triggers.length} empty={{ title: a.trigger_set_empty }} columns={columns} nameHead={c.col_trigger}>
-        {triggers.map((tr, i) => {
-          const detail = [
-            tr.condition && `${a.trigger_set_condition}: ${tr.condition}`,
-            tr.grain && `${a.trigger_set_grain}: ${tr.grain}`,
-            tr.idempotency_note && `${a.trigger_set_idempotency}: ${tr.idempotency_note}`,
-          ].filter(Boolean).join(' · ');
-          return (
-            <ListRow
-              key={`${tr.label}-${i}`}
-              size="line"
-              name={tr.label}
-              cells={[
-                tr.source ? <span key="s" className="typo-data k-regular k-quiet">{tr.source}</span> : null,
-                <Hint key="d" content={detail}>
-                  <span>{[tr.condition, tr.grain].filter(Boolean).join(' · ')}</span>
-                </Hint>,
-              ]}
-            />
-          );
-        })}
-      </Rows>
+      <WidgetTable<TriggerRow>
+        columns={columns}
+        rows={triggers}
+        getRowKey={(tr) => tr.key}
+        emptyTitle={a.trigger_set_empty}
+        label={heading}
+        testId="companion-trigger-set-table"
+      />
     </Tile>
   );
 }

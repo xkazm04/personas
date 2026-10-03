@@ -50,9 +50,11 @@ describe('UseCaseSetWidget', () => {
         }}
       />,
     );
-    expect(screen.getByText(/golden path/)).toBeInTheDocument();
-    expect(screen.getByText(/variant/)).toBeInTheDocument();
-    expect(screen.getByText(/out of scope/)).toBeInTheDocument();
+    // Each role now reads twice: once as the chip strip's count label, once as the row's
+    // sr-only name prefix (the row's left accent draws the role but carries no text).
+    expect(screen.getAllByText(/golden path/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/variant/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/out of scope/).length).toBeGreaterThan(0);
   });
 
   it('sorts golden → variant → out_of_scope regardless of input order', () => {
@@ -67,8 +69,8 @@ describe('UseCaseSetWidget', () => {
         }}
       />,
     );
-    // One kit ListRow per use case, in render order.
-    const labels = Array.from(container.querySelectorAll('[data-kit="ListRow"]')).map(
+    // One shared-table row per use case, in render order.
+    const labels = Array.from(container.querySelectorAll('[data-testid="companion-use-case-set-table"] .row-hover-lift')).map(
       (row) => row.textContent ?? '',
     );
     // Sequence must put golden first, then variant, then out_of_scope

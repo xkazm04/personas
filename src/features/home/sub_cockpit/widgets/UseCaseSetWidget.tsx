@@ -1,12 +1,17 @@
 import { useMemo } from 'react';
-import { ChipRow, Hint, ListRow, Rows, Stack, Tile, type RowColumn, type Tone } from '@/features/shared/components/kit';
+import { ChipRow, Stack, Tile, type Tone } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
+import { Cell, WidgetTable, nameCell, type TableColumn } from './widgetTable';
 
 interface UseCase {
   label: string;
   role: 'golden' | 'variant' | 'out_of_scope' | string;
   description: string;
+}
+
+interface UseCaseRow extends UseCase {
+  key: string;
 }
 
 type Role = 'golden' | 'variant' | 'out_of_scope';
@@ -22,14 +27,19 @@ function roleOf(role: string): Role {
   return role === 'golden' || role === 'out_of_scope' ? role : 'variant';
 }
 
+function toneOf(role: string): Tone {
+  return ROLES.find((x) => x.role === roleOf(role))?.tone ?? 'info';
+}
+
 /**
  * Inline chat-card Athena emits via `show_use_case_set { intent, use_cases }`: 3-5 proposed use
  * cases tagged Golden / Variant / Out-of-scope (the persona-design doctrine's decomposition;
  * a set with only golden cases breaks on its first edge-case input).
  *
  * One kit Tile. The roles are a count strip under the head (the tile's parent layer: how the set
- * splits), each case is one row whose mark carries its role, sorted golden, variant, out of
- * scope. The intent is not repeated here: the surface shows it once.
+ * splits), then ONE `UnifiedTable` — the app's shared table (see `widgetTable.tsx`) — of the cases
+ * sorted golden, variant, out of scope, each row's role its left accent and its description the
+ * column beside it. The intent is not repeated here: the surface shows it once.
  */
 export function UseCaseSetWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
   const { t } = useTranslation();
@@ -46,23 +56,40 @@ export function UseCaseSetWidget({ config, title, span, actions, footer }: Cockp
       .filter((u) => u.label.length > 0);
   }, [config]);
 
-  const roleLabel: Record<Role, string> = {
+  const roleLabel = useMemo<Record<Role, string>>(() => ({
     golden: t.athena.use_case_set_role_golden,
     variant: t.athena.use_case_set_role_variant,
     out_of_scope: t.athena.use_case_set_role_out_of_scope,
-  };
+  }), [t.athena.use_case_set_role_golden, t.athena.use_case_set_role_out_of_scope, t.athena.use_case_set_role_variant]);
   const heading = title || t.athena.use_case_set_title;
   const c = t.overview.cockpit;
-  const columns: RowColumn[] = [{ head: c.col_detail, width: '1.6fr' }];
   const rank = (r: string) => ROLES.findIndex((x) => x.role === roleOf(r));
-  const ordered = [...useCases].sort((a, b) => rank(a.role) - rank(b.role));
+  const ordered: UseCaseRow[] = [...useCases]
+    .sort((a, b) => rank(a.role) - rank(b.role))
+    .map((uc, i) => ({ ...uc, key: `${uc.role}-${i}-${uc.label}` }));
   const chips = ROLES.map(({ role, tone }) => ({
     id: role,
     label: <span className="k-cap inline-block">{roleLabel[role]}</span>,
     count: useCases.filter((u) => roleOf(u.role) === role).length,
     tone,
     glyph: 'soft' as const,
-  })).filter((c) => c.count > 0);
+  })).filter((chip) => chip.count > 0);
+
+  const columns = useMemo<TableColumn<UseCaseRow>[]>(() => [
+    {
+      key: 'label',
+      label: c.col_use_case,
+      width: 'minmax(0, 1fr)',
+      render: (uc) => nameCell(uc.label, roleLabel[roleOf(uc.role)], uc.label),
+    },
+    {
+      key: 'description',
+      label: t.common.description,
+      width: 'minmax(0, 1.6fr)',
+      render: (uc) => <Cell value={uc.description} hint={uc.description} />,
+    },
+  // `roleLabel` is rebuilt from `t` every render, so `t` is the honest identity for both columns.
+  ], [c.col_use_case, roleLabel, t]);
 
   return (
     <Tile
@@ -77,21 +104,15 @@ export function UseCaseSetWidget({ config, title, span, actions, footer }: Cockp
     >
       <Stack gap="s">
         <ChipRow chips={chips} label={heading} emptyLabel={t.athena.use_case_set_empty} />
-        <Rows count={ordered.length} empty={{ title: t.athena.use_case_set_empty }} columns={columns} nameHead={c.col_use_case}>
-          {ordered.map((uc, i) => {
-            const role = roleOf(uc.role);
-            const tone = ROLES.find((x) => x.role === role)?.tone ?? 'info';
-            return (
-              <ListRow
-                key={`${uc.role}-${i}-${uc.label}`}
-                size="line"
-                name={uc.label}
-                mark={{ tone, glyph: 'soft', label: roleLabel[role] }}
-                cells={[uc.description ? <Hint key="d" content={uc.description}><span>{uc.description}</span></Hint> : null]}
-              />
-            );
-          })}
-        </Rows>
+        <WidgetTable<UseCaseRow>
+          columns={columns}
+          rows={ordered}
+          getRowKey={(uc) => uc.key}
+          rowTone={(uc) => toneOf(uc.role)}
+          emptyTitle={t.athena.use_case_set_empty}
+          label={heading}
+          testId="companion-use-case-set-table"
+        />
       </Stack>
     </Tile>
   );

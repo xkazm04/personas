@@ -5,7 +5,7 @@ import { DesignCapabilitiesWidget } from '../DesignCapabilitiesWidget';
 describe('DesignCapabilitiesWidget', () => {
   it('renders the static capability list (8 rows)', () => {
     render(<DesignCapabilitiesWidget config={{}} />);
-    const items = document.querySelectorAll('[data-kit="ListRow"]');
+    const items = document.querySelectorAll('[data-testid="companion-design-capabilities-table"] .row-hover-lift');
     expect(items.length).toBe(8);
   });
 
@@ -31,13 +31,15 @@ describe('DesignCapabilitiesWidget', () => {
     expect(container.querySelectorAll('p').length).toBe(0);
   });
 
-  it('every row carries the example prompt prefix', () => {
+  it('names the example column once and gives every row its own example', () => {
     render(<DesignCapabilitiesWidget config={{}} />);
-    // 8 rows × 1 example each → ≥8 occurrences of "Try:" or its localized equivalent
-    const tryMatches = screen.getAllByText((_, node) =>
-      Boolean(node?.textContent?.includes('Try:')),
+    // The "Try:" prefix used to be repeated into all 8 cells; it is the COLUMN HEAD now, so the
+    // cells carry the example alone. The head says it once, the rows say it eight times over.
+    expect(screen.getByText('Try:')).toBeInTheDocument();
+    const cells = document.querySelectorAll(
+      '[data-testid="companion-design-capabilities-table"] .row-hover-lift > div:nth-child(2)',
     );
-    // Every capability row carries its "Try:" example line.
-    expect(tryMatches.length).toBeGreaterThanOrEqual(8);
+    expect(cells.length).toBe(8);
+    for (const cell of cells) expect((cell.textContent ?? '').length).toBeGreaterThan(0);
   });
 });

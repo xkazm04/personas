@@ -1,22 +1,27 @@
-import { ListRow, Rows, Tile, type Glyph, type RowColumn, type Tone } from '@/features/shared/components/kit';
+import { useMemo } from 'react';
+
+import { Tile, type Tone } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
 import type { CockpitWidgetProps } from '../widgetRegistry';
+import { Cell, WidgetTable, nameCell, type TableColumn } from './widgetTable';
 
 /**
  * `flow_steps` — a causal / sequence chain. Athena uses it to explain
  * "what happened, then what, and what happens if you act": each step is
- * a node on the kit spine, its state drawn as the row's Mark.
+ * a row of the shared table, its state drawn as the row's left accent.
  *
- * Rendered as one kit Tile of kit rows: done = success (soft), the step the user is at = the
- * theme primary, not yet = hollow, blocked = error. Not capped: a chain is read whole.
+ * One kit Tile holding ONE `UnifiedTable` (see `widgetTable.tsx`): done = success, the step the
+ * user is at = the theme primary, not yet = the faintest rule, blocked = error. The step's own
+ * sentence is the Description column beside it, never a second line (the row keeps one height).
+ * Not capped: a chain is read whole.
  *
  * Config:
  *   {
  *     "steps": [
  *       {
  *         "label": "Trigger fired",          // required
- *         "detail": "Sentry webhook…",       // optional second line
+ *         "detail": "Sentry webhook…",       // optional
  *         "status": "done"                   // "done" | "current" | "pending" | "blocked"
  *       }
  *     ]
@@ -28,14 +33,22 @@ interface FlowStep {
   status?: 'done' | 'current' | 'pending' | 'blocked';
 }
 
+interface FlowRow extends FlowStep {
+  key: string;
+}
+
 type Status = NonNullable<FlowStep['status']>;
 
-const NODE: Record<Status, { tone: Tone; glyph: Glyph }> = {
-  done: { tone: 'success', glyph: 'soft' },
-  current: { tone: 'primary', glyph: 'solid' },
-  pending: { tone: 'neutral', glyph: 'hollow' },
-  blocked: { tone: 'error', glyph: 'solid' },
+const NODE: Record<Status, Tone> = {
+  done: 'success',
+  current: 'primary',
+  pending: 'neutral',
+  blocked: 'error',
 };
+
+function statusOf(step: FlowStep): Status {
+  return step.status && step.status in NODE ? step.status : 'pending';
+}
 
 function statusLabel(t: Translations, s: Status): string {
   const c = t.overview.cockpit;
@@ -44,29 +57,43 @@ function statusLabel(t: Translations, s: Status): string {
 
 export function FlowStepsWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
   const { t } = useTranslation();
-  const steps = Array.isArray(config?.steps) ? (config.steps as FlowStep[]) : [];
-  const heading = title ?? t.overview.cockpit.flow_title;
   const c = t.overview.cockpit;
+  const steps = Array.isArray(config?.steps) ? (config.steps as FlowStep[]) : [];
+  const heading = title ?? c.flow_title;
   const detailed = steps.some((s) => s.detail);
-  const columns: RowColumn[] | undefined = detailed ? [{ head: c.col_detail, width: '1.4fr' }] : undefined;
+  const rows: FlowRow[] = steps.map((s, i) => ({ ...s, key: `${i}-${s.label}` }));
+
+  const columns = useMemo<TableColumn<FlowRow>[]>(() => {
+    const cols: TableColumn<FlowRow>[] = [
+      {
+        key: 'label',
+        label: c.col_step,
+        width: 'minmax(0, 1fr)',
+        render: (step) => nameCell(step.label, statusLabel(t, statusOf(step)), step.label),
+      },
+    ];
+    if (detailed) {
+      cols.push({
+        key: 'detail',
+        label: t.common.description,
+        width: 'minmax(0, 1.4fr)',
+        render: (step) => <Cell value={step.detail} hint={step.detail} />,
+      });
+    }
+    return cols;
+  }, [c.col_step, detailed, t]);
+
   return (
     <Tile span={span} title={heading} actions={actions} footer={footer} testId="cockpit-flow-steps">
-      <Rows count={steps.length} empty={{ title: c.widget_empty }} label={heading} columns={columns} nameHead={detailed ? c.col_step : undefined}>
-        {steps.map((step, i) => {
-          const status: Status = step.status && step.status in NODE ? step.status : 'pending';
-          const node = NODE[status];
-          return (
-            <ListRow
-              key={`${i}-${step.label}`}
-              size="line"
-              name={step.label}
-              cells={[step.detail]}
-              mark={{ ...node, label: statusLabel(t, status) }}
-              state={status === 'current' ? 'selected' : undefined}
-            />
-          );
-        })}
-      </Rows>
+      <WidgetTable<FlowRow>
+        columns={columns}
+        rows={rows}
+        getRowKey={(step) => step.key}
+        rowTone={(step) => NODE[statusOf(step)]}
+        emptyTitle={c.widget_empty}
+        label={heading}
+        testId="cockpit-flow-steps-table"
+      />
     </Tile>
   );
 }

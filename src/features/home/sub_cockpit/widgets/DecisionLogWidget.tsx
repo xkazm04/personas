@@ -1,13 +1,20 @@
 import { useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { Hint, ListRow, Rows, Tile, type RowColumn } from '@/features/shared/components/kit';
+import { Hint, Tile } from '@/features/shared/components/kit';
 import type { CockpitWidgetProps } from '../widgetRegistry';
+import { Cell, WidgetTable, nameCell, type TableColumn } from './widgetTable';
 
 interface Decision {
   label: string;
   choice: string;
   rationale: string;
   timestamp?: string;
+}
+
+interface DecisionRow extends Decision {
+  key: string;
+  index: number;
+  when?: string;
 }
 
 /** Rows shown before "Show all" (home-2 contract: grid lists cap at 6-8). */
@@ -19,16 +26,15 @@ const CAP = 6;
  * the user (and future-Athena) can retrace reasoning later without
  * re-running the conversation.
  *
- * One kit Tile, one row per decision in the order they were taken (the order is the sequence, so
- * no timeline rail is drawn), reading down declared columns (kit grow-4): the topic emphasised,
- * the choice in its own column at regular weight, the rationale in the next with the full text in
- * a Hint, the time in the row's time column. They used to be one run-on name and a meta line
- * under it, which told the eye nothing about which part was the choice. The "Saved" note is the
- * tile's meta.
+ * One kit Tile holding ONE `UnifiedTable` — the app's shared table (see `widgetTable.tsx`) — one
+ * row per decision in the order they were taken (the order is the sequence, so no timeline rail
+ * is drawn), reading down four named columns: the topic emphasised, the choice, the rationale with
+ * the full text in a Hint, and when. They used to be one run-on name and a meta line under it,
+ * which told the eye nothing about which part was the choice. The "Saved" note is the tile's meta.
  */
 export function DecisionLogWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
   const { t } = useTranslation();
-  const decisions = useMemo<Decision[]>(() => {
+  const decisions = useMemo<DecisionRow[]>(() => {
     const raw = config?.decisions;
     if (!Array.isArray(raw)) return [];
     return raw
@@ -41,17 +47,48 @@ export function DecisionLogWidget({ config, title, span, actions, footer }: Cock
         rationale: typeof d.rationale === 'string' ? d.rationale : '',
         timestamp: typeof d.timestamp === 'string' ? d.timestamp : undefined,
       }))
-      .filter((d) => d.label.length > 0 && d.choice.length > 0);
+      .filter((d) => d.label.length > 0 && d.choice.length > 0)
+      .map((d, i) => ({
+        ...d,
+        key: `${d.label}-${i}`,
+        index: i,
+        when: d.timestamp ? prettyTime(d.timestamp) : undefined,
+      }));
   }, [config]);
 
   const heading = title || t.athena.decision_log_title;
   const c = t.overview.cockpit;
   const empty = decisions.length === 0;
-  // The rationale drops first on a narrow tile: the Hint still carries it in full.
-  const columns: RowColumn[] = [
-    { head: c.col_choice, width: '1fr' },
-    { head: c.col_why, width: '1.4fr', collapse: true },
-  ];
+  const columns = useMemo<TableColumn<DecisionRow>[]>(() => [
+    {
+      key: 'label',
+      label: c.col_decision,
+      width: 'minmax(0, 1fr)',
+      render: (d) => <span className="block min-w-0" data-decision-index={d.index}>{nameCell(d.label, undefined, d.label)}</span>,
+    },
+    {
+      key: 'choice',
+      label: c.col_choice,
+      width: 'minmax(0, 1fr)',
+      render: (d) => <Cell value={d.choice} hint={d.choice} />,
+    },
+    {
+      key: 'rationale',
+      label: c.col_why,
+      width: 'minmax(0, 1.4fr)',
+      render: (d) => <Cell value={d.rationale} hint={d.rationale} />,
+    },
+    {
+      key: 'when',
+      // 'When' already exists in this section and in all 14 locales; a cockpit-local key would be
+      // the same word translated a second time.
+      label: t.overview.ipc_panel.when_header,
+      width: 'minmax(0, 6rem)',
+      align: 'right' as const,
+      render: (d) => <Cell value={d.when} data />,
+    },
+  ], [c.col_choice, c.col_decision, c.col_why, t.overview.ipc_panel.when_header]);
+
   return (
     <Tile
       span={span}
@@ -68,20 +105,15 @@ export function DecisionLogWidget({ config, title, span, actions, footer }: Cock
       empty={{ title: t.athena.decision_log_empty }}
       testId="companion-decision-log-widget"
     >
-      <Rows count={decisions.length} cap={CAP} label={heading} empty={{ title: t.athena.decision_log_empty }} columns={columns} nameHead={c.col_decision}>
-        {decisions.map((d, i) => (
-          <ListRow
-            key={`${d.label}-${i}`}
-            size="line"
-            name={<span data-decision-index={i}>{d.label}</span>}
-            cells={[
-              <span key="c" className="k-regular">{d.choice}</span>,
-              d.rationale ? <Hint key="r" content={d.rationale}><span>{d.rationale}</span></Hint> : null,
-            ]}
-            time={d.timestamp ? prettyTime(d.timestamp) : undefined}
-          />
-        ))}
-      </Rows>
+      <WidgetTable<DecisionRow>
+        columns={columns}
+        rows={decisions}
+        getRowKey={(d) => d.key}
+        emptyTitle={t.athena.decision_log_empty}
+        label={heading}
+        cap={CAP}
+        testId="companion-decision-log-table"
+      />
     </Tile>
   );
 }

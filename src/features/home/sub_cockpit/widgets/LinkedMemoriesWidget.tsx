@@ -1,25 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { listMemoriesByExecution } from '@/api/overview/memories';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { silentCatch } from '@/lib/silentCatch';
-import { Hint, ListRow, Rows, Tile, UnitStrip, type Glyph, type RowColumn, type Tone } from '@/features/shared/components/kit';
+import { Tile, UnitStrip, type Tone } from '@/features/shared/components/kit';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 
 import type { CockpitWidgetProps } from '../widgetRegistry';
+import { Cell, WidgetTable, nameCell, type TableColumn } from './widgetTable';
 
 /** Rows shown before "Show all" (home-2 contract). */
 const CAP = 6;
 /** PersonaMemory.importance is 1-5 (MEMORY CONTRACT (4)). */
 const IMPORTANCE_MAX = 5;
 
-/** A memory's tier on the row's Mark: pinned core solid, the scored hot set soft, the rest hollow. */
-const TIER_MARK: Record<string, { tone: Tone; glyph: Glyph }> = {
-  core: { tone: 'primary', glyph: 'solid' },
-  active: { tone: 'primary', glyph: 'soft' },
-  working: { tone: 'neutral', glyph: 'soft' },
-  archive: { tone: 'neutral', glyph: 'hollow' },
+/** A memory's tier as the row's accent: pinned core and the scored hot set read primary, the rest quiet. */
+const TIER_TONE: Record<string, Tone> = {
+  core: 'primary',
+  active: 'primary',
+  working: 'neutral',
+  archive: 'neutral',
 };
 
 /**
@@ -27,9 +28,11 @@ const TIER_MARK: Record<string, { tone: Tone; glyph: Glyph }> = {
  * matching the contextual message's execution. Lets the user see what
  * the agent retained from this run alongside its message + decisions.
  *
- * One kit Tile of rows with ONE emphasis each, the memory's title: its tier is the row's Mark,
- * its category and its content fill the list's declared columns (kit grow-4) rather than running
- * together on a meta line under the title, and its importance is drawn as five units in the trail.
+ * One kit Tile holding ONE `UnifiedTable` — the app's shared table (see `widgetTable.tsx`) — with
+ * ONE emphasis per row, the memory's title. Its tier is the row's left accent, its category and
+ * its content are named columns rather than running together on a meta line under the title, and
+ * its importance is five drawn units in the last column (a figure, which doctrine 6c leaves to
+ * the kit's `UnitStrip`).
  *
  * Config:
  *   { executionId: string }
@@ -60,11 +63,50 @@ export function LinkedMemoriesWidget({ config, title, span, actions, footer }: C
   }, [executionId]);
 
   const heading = title ?? c.linked_memories_title;
-  // The content drops first on a narrow tile: the Hint still carries it in full.
-  const columns: RowColumn[] = [
-    { head: c.col_category, width: '8rem' },
-    { head: c.col_detail, width: '1.4fr', collapse: true },
-  ];
+  const columns = useMemo<TableColumn<PersonaMemory>[]>(() => [
+    {
+      key: 'title',
+      label: c.col_memory,
+      width: 'minmax(0, 1fr)',
+      render: (m) => nameCell(m.title, tokenLabel(t, 'memory_tier', m.tier), m.title),
+    },
+    {
+      key: 'category',
+      label: c.col_category,
+      width: 'minmax(0, 9rem)',
+      render: (m) => <Cell value={tokenLabel(t, 'memory_category', m.category)} />,
+    },
+    {
+      key: 'content',
+      label: t.common.description,
+      width: 'minmax(0, 1.4fr)',
+      render: (m) => <Cell value={m.content} hint={m.content} />,
+    },
+    {
+      key: 'importance',
+      // 'Importance' already exists in this section and in all 14 locales.
+      label: t.overview.memory_detail.importance_label,
+      width: 'minmax(0, 6rem)',
+      align: 'right' as const,
+      render: (m) => {
+        // A row without a score draws no strip rather than five empty units.
+        const importance = Number.isFinite(m.importance)
+          ? Math.min(IMPORTANCE_MAX, Math.max(0, Math.round(m.importance)))
+          : null;
+        if (importance == null) return null;
+        return (
+          <span className="inline-flex justify-end w-full">
+            <UnitStrip
+              size="s"
+              label={tx(c.linked_memories_importance, { value: importance, max: IMPORTANCE_MAX })}
+              segments={[{ n: importance, tone: 'primary' }, { n: IMPORTANCE_MAX - importance, tone: 'neutral', glyph: 'empty' }]}
+            />
+          </span>
+        );
+      },
+    },
+  ], [c.col_category, c.col_memory, c.linked_memories_importance, t, tx]);
+
   return (
     <Tile
       span={span}
@@ -73,34 +115,18 @@ export function LinkedMemoriesWidget({ config, title, span, actions, footer }: C
       actions={actions}
       footer={footer}
       testId="cockpit-widget-linked_memories"
-      state={loading ? 'loading' : undefined}
     >
-      <Rows count={memories.length} cap={CAP} label={heading} empty={{ title: c.linked_memories_empty }} columns={columns} nameHead={c.col_memory}>
-        {memories.map((m) => {
-          const tier = TIER_MARK[m.tier] ?? TIER_MARK.working!;
-          // A row without a score draws no strip rather than five empty units.
-          const importance = Number.isFinite(m.importance) ? Math.min(IMPORTANCE_MAX, Math.max(0, Math.round(m.importance))) : null;
-          return (
-            <ListRow
-              key={m.id}
-              size="line"
-              name={m.title}
-              mark={{ ...tier, label: tokenLabel(t, 'memory_tier', m.tier) }}
-              cells={[
-                tokenLabel(t, 'memory_category', m.category),
-                <Hint key="c" content={m.content}><span>{m.content}</span></Hint>,
-              ]}
-              figures={importance == null ? undefined : (
-                <UnitStrip
-                  size="s"
-                  label={tx(c.linked_memories_importance, { value: importance, max: IMPORTANCE_MAX })}
-                  segments={[{ n: importance, tone: 'primary' }, { n: IMPORTANCE_MAX - importance, tone: 'neutral', glyph: 'empty' }]}
-                />
-              )}
-            />
-          );
-        })}
-      </Rows>
+      <WidgetTable<PersonaMemory>
+        columns={columns}
+        rows={memories}
+        getRowKey={(m) => m.id}
+        rowTone={(m) => TIER_TONE[m.tier] ?? 'neutral'}
+        emptyTitle={c.linked_memories_empty}
+        label={heading}
+        cap={CAP}
+        isLoading={loading}
+        testId="cockpit-linked-memories-table"
+      />
     </Tile>
   );
 }

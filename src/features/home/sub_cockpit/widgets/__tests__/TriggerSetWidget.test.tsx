@@ -61,8 +61,8 @@ describe('TriggerSetWidget', () => {
       />,
     );
     expect(screen.getByText('Kept')).toBeInTheDocument();
-    // The empty-label row is filtered, so only one rendered row
-    const items = document.querySelectorAll('[data-kit="ListRow"]');
+    // The empty-label row is filtered, so the shared table renders one row.
+    const items = document.querySelectorAll('[data-testid="companion-trigger-set-table"] .row-hover-lift');
     expect(items.length).toBe(1);
   });
 });

@@ -12,9 +12,10 @@
  * The two regions are a kit `Stack divided` (grow-4): the featured block and the roster are
  * different things and a quiet rule on the band's reading line says so, which the bare stack of
  * siblings never did (owner, 2026-10-03: "components inside are flying empty without subtle
- * dividers or structure"). The roster declares a column set the rows FILL - model, state, trust -
- * so a persona's metadata spreads across the band instead of stacking under its name and leaving
- * the rest of a 1920 row empty.
+ * dividers or structure"). The roster is ONE `UnifiedTable` - the app's shared table (see
+ * `widgetTable.tsx`), the owner's 2026-10-03 ruling that it wins everywhere - with named columns
+ * the rows fill: description, model, state, trust. A persona's metadata spreads across the band
+ * instead of stacking under its name and leaving the rest of a 1920 row empty.
  *
  * Config:
  *   { "limit": N, "filter": "active" | "all", "hero": "persona_id"? }
@@ -29,13 +30,14 @@ import { ArrowRight } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { Hint, KitButton, ListRow, Meta, Rows, Stack, StatStrip, Tile, type Glyph, type RowColumn, type Tone } from '@/features/shared/components/kit';
+import { Hint, KitButton, ListRow, Meta, Stack, StatStrip, Tile, type Glyph, type Tone } from '@/features/shared/components/kit';
 import type { Persona } from '@/lib/bindings/Persona';
 import { silentCatch } from '@/lib/silentCatch';
 import { formatCost, formatRelativeTime } from '@/lib/utils/formatters';
 
 import type { CockpitWidgetProps } from '../widgetRegistry';
 import { attentionFor, modelTierLabel, recentActivity, trustPercent, trustToneFor, type TrustTone } from './personaStats';
+import { Cell, WidgetTable, nameCell, type TableColumn } from './widgetTable';
 
 type Translations = ReturnType<typeof useTranslation>['t'];
 
@@ -97,42 +99,60 @@ export function PersonaOverviewWidget({ config, title, span, actions, footer }: 
   }
 
   const c = t.overview.cockpit;
-  // Fixed tracks, because every row is its own grid: only a declared length lines up with the row
-  // above it. The description takes the slack an `fr` name column would otherwise swallow on a
-  // 12-span tile; it and the state drop first on a narrow one, where the state is already on the
-  // mark and the description would be a few ellipsized words.
-  const columns: RowColumn[] = [
-    { head: c.col_detail, width: '1.6fr', collapse: true },
-    { head: t.common.model_label, width: '7rem' },
-    { head: t.common.status, width: '9rem', collapse: true },
-    { head: c.col_trust, width: '5rem', align: 'end' },
+  // The description takes the slack the name column would otherwise swallow on a 12-span tile;
+  // the fixed tracks keep model, state and trust lined up down the list whatever the tile's span.
+  const columns: TableColumn<Persona>[] = [
+    {
+      key: 'name',
+      label: c.col_persona,
+      width: 'minmax(0, 1fr)',
+      render: (p) => nameCell(p.name, personaMark(p, t).label, p.name),
+    },
+    {
+      key: 'description',
+      label: t.common.description,
+      width: 'minmax(0, 1.6fr)',
+      render: (p) => <Cell value={p.description} hint={p.description} />,
+    },
+    {
+      key: 'model',
+      label: t.common.model_label,
+      width: 'minmax(0, 7rem)',
+      render: (p) => <Cell value={modelTierLabel(p.model_profile)} />,
+    },
+    {
+      key: 'state',
+      label: t.common.status,
+      width: 'minmax(0, 9rem)',
+      render: (p) => {
+        const mark = personaMark(p, t);
+        return <Cell value={mark.label} tone={mark.tone} />;
+      },
+    },
+    {
+      key: 'trust',
+      label: c.col_trust,
+      width: 'minmax(0, 5rem)',
+      align: 'right' as const,
+      render: (p) => <Cell value={`${trustPercent(p.trust_score).pct}%`} data />,
+    },
   ];
   return (
     <Tile span={span} title={heading} count={ranked.length} actions={actions} footer={footer} testId="cockpit-persona-overview">
       <Stack divided>
         <FeaturedPersona persona={hero} />
         {rest.length > 0 && (
-          <Rows count={rest.length} cap={cap} empty={{ title: '' }} label={t.athena.persona_overview_rest_heading} columns={columns} nameHead={c.col_persona}>
-            {rest.map((p) => {
-              const trust = trustPercent(p.trust_score);
-              const mark = personaMark(p, t);
-              return (
-                <ListRow
-                  key={p.id}
-                  size="line"
-                  name={p.name}
-                  mark={mark}
-                  cells={[
-                    p.description,
-                    modelTierLabel(p.model_profile),
-                    mark.label,
-                    <span key="t" className="typo-data k-regular">{trust.pct}%</span>,
-                  ]}
-                  onPress={() => openPersona(p.id)}
-                />
-              );
-            })}
-          </Rows>
+          <WidgetTable<Persona>
+            columns={columns}
+            rows={rest}
+            getRowKey={(p) => p.id}
+            rowTone={(p) => personaMark(p, t).tone}
+            onRowClick={(p) => openPersona(p.id)}
+            emptyTitle={t.athena.persona_overview_empty}
+            label={t.athena.persona_overview_rest_heading}
+            cap={cap}
+            testId="cockpit-persona-overview-table"
+          />
         )}
       </Stack>
     </Tile>

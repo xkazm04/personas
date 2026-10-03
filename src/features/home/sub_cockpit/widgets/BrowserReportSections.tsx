@@ -1,6 +1,10 @@
-import { Hint, ListRow, Rows, Section, type RowColumn, type Tone } from '@/features/shared/components/kit';
+import { useMemo } from 'react';
+
+import { Hint, ListRow, Rows, Section, type Tone } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
+
+import { Cell, WidgetTable, nameCell, type TableColumn } from './widgetTable';
 
 export interface ReportStep {
   label?: string;
@@ -14,6 +18,15 @@ export interface ReportDefect {
   fix?: string;
 }
 
+interface StepRow extends ReportStep {
+  key: string;
+}
+interface DefectRow extends ReportDefect {
+  key: string;
+  /** The cause and the suggested fix, as the row shows them. */
+  why: string;
+}
+
 const RESULT_TONE: Record<string, Tone> = { pass: 'success', fail: 'error', warn: 'warning' };
 const SEVERITY_TONE: Record<string, Tone> = { critical: 'error', high: 'error', medium: 'warning', low: 'neutral' };
 
@@ -23,13 +36,15 @@ function Clipped({ text }: { text: string }) {
 }
 
 /**
- * The body of the browser-test report tile: the steps (result on each mark), then the defects
- * (severity on the mark, the cause and the suggested fix beside the title), the verbatim console
- * errors and the security notes, each a level-2 kit Section of rows inside the one Tile.
+ * The body of the browser-test report tile: the steps (result on each row's accent), then the
+ * defects (severity on the accent, the cause and the suggested fix beside the title) as two
+ * `UnifiedTable`s - the app's shared table (see `widgetTable.tsx`) - and the verbatim console
+ * errors and security notes as kit `Rows`, each a level-2 kit Section inside the one Tile.
  *
- * Steps and defects spread their evidence into a declared Detail column (kit grow-4) rather than
- * stacking it under the title. The defects list draws no name head: the Section it sits in
- * already names what its rows are, and repeating it over the first column says nothing.
+ * Steps and defects name their second column ("Description") instead of the generic "Detail" head
+ * the owner removed by name on 2026-10-03. The console and security lists are NOT tables: they
+ * are one verbatim line each with nothing to put in a second column, which is exactly the case
+ * `ListRow` still serves (only the kit's COLUMN mode retires, not the row).
  */
 export function BrowserReportSections({ steps, defects, consoleErrors, securityNotes }: {
   steps: ReportStep[];
@@ -39,42 +54,72 @@ export function BrowserReportSections({ steps, defects, consoleErrors, securityN
 }) {
   const { t } = useTranslation();
   const c = t.athena;
-  const detail: RowColumn[] = [{ head: t.overview.cockpit.col_detail, width: '1.6fr' }];
-  const resultLabel: Record<string, string> = {
-    pass: t.templates.test_report.status_passed,
-    fail: t.templates.test_report.status_failed,
-    warn: t.overview.health.warning,
-  };
+  const stepRows: StepRow[] = steps.map((s, i) => ({ ...s, key: `${i}-${s.label ?? ''}` }));
+  const defectRows: DefectRow[] = defects.map((d, i) => ({
+    ...d,
+    key: `${i}-${d.title ?? ''}`,
+    why: [d.detail, d.fix].filter(Boolean).join(' · '),
+  }));
+
+  const stepColumns = useMemo<TableColumn<StepRow>[]>(() => {
+    const resultLabel: Record<string, string> = {
+      pass: t.templates.test_report.status_passed,
+      fail: t.templates.test_report.status_failed,
+      warn: t.overview.health.warning,
+    };
+    return [
+      {
+        key: 'label',
+        label: t.overview.cockpit.col_step,
+        width: 'minmax(0, 1fr)',
+        render: (s) => nameCell(s.label, resultLabel[s.result ?? ''] ?? (s.result || c.browser_report_steps), s.label),
+      },
+      {
+        key: 'evidence',
+        label: t.common.description,
+        width: 'minmax(0, 1.6fr)',
+        render: (s) => <Cell value={s.evidence} hint={s.evidence} />,
+      },
+    ];
+  }, [c.browser_report_steps, t]);
+
+  const defectColumns = useMemo<TableColumn<DefectRow>[]>(() => [
+    {
+      key: 'title',
+      label: c.browser_report_defects,
+      width: 'minmax(0, 1fr)',
+      render: (d) => nameCell(d.title, tokenLabel(t, 'severity', d.severity ?? 'low'), d.title),
+    },
+    {
+      key: 'why',
+      label: t.common.description,
+      width: 'minmax(0, 1.6fr)',
+      render: (d) => <Cell value={d.why} hint={d.why} />,
+    },
+  ], [c.browser_report_defects, t]);
+
   return (
     <>
-      <Rows count={steps.length} empty={{ title: c.browser_report_empty }} label={c.browser_report_steps} columns={detail} nameHead={t.overview.cockpit.col_step}>
-        {steps.map((s, i) => (
-          <ListRow
-            key={i}
-            size="line"
-            name={s.label}
-            mark={{ tone: RESULT_TONE[s.result ?? ''] ?? 'neutral', glyph: 'solid', label: resultLabel[s.result ?? ''] ?? (s.result || c.browser_report_steps) }}
-            cells={[s.evidence ? <Clipped key="e" text={s.evidence} /> : null]}
-          />
-        ))}
-      </Rows>
+      <WidgetTable<StepRow>
+        columns={stepColumns}
+        rows={stepRows}
+        getRowKey={(s) => s.key}
+        rowTone={(s) => RESULT_TONE[s.result ?? ''] ?? 'neutral'}
+        emptyTitle={c.browser_report_empty}
+        label={c.browser_report_steps}
+        testId="companion-browser-report-steps"
+      />
       {defects.length > 0 && (
         <Section level={2} title={c.browser_report_defects} count={defects.length}>
-          <Rows count={defects.length} empty={{ title: '' }} columns={detail}>
-            {defects.map((d, i) => {
-              const sev = d.severity ?? 'low';
-              const why = [d.detail, d.fix].filter(Boolean).join(' · ');
-              return (
-                <ListRow
-                  key={i}
-                  size="line"
-                  name={d.title}
-                  mark={{ tone: SEVERITY_TONE[sev] ?? 'neutral', glyph: sev === 'low' ? 'hollow' : 'solid', label: tokenLabel(t, 'severity', sev) }}
-                  cells={[why ? <Clipped key="w" text={why} /> : null]}
-                />
-              );
-            })}
-          </Rows>
+          <WidgetTable<DefectRow>
+            columns={defectColumns}
+            rows={defectRows}
+            getRowKey={(d) => d.key}
+            rowTone={(d) => SEVERITY_TONE[d.severity ?? 'low'] ?? 'neutral'}
+            emptyTitle={c.browser_report_empty}
+            label={c.browser_report_defects}
+            testId="companion-browser-report-defects"
+          />
         </Section>
       )}
       {consoleErrors.length > 0 && (

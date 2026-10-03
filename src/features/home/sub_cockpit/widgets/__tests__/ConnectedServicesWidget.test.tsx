@@ -28,8 +28,8 @@ describe('ConnectedServicesWidget', () => {
       fetchCredentials: vi.fn().mockResolvedValue(undefined),
     } as never);
     render(<ConnectedServicesWidget config={{}} />);
-    const rows = Array.from(document.querySelectorAll('[data-kit="ListRow"]'));
-    expect(rows[0]?.getAttribute('data-testid')).toBe('cockpit-service-c-2');
+    const rows = Array.from(document.querySelectorAll('[data-testid="cockpit-connected-services-table"] .row-hover-lift'));
+    expect(rows[0]?.textContent).toContain('Service 2');
     expect(screen.getByText('Token expired')).toBeInTheDocument();
   });
 
@@ -39,8 +39,9 @@ describe('ConnectedServicesWidget', () => {
       fetchCredentials: vi.fn().mockResolvedValue(undefined),
     } as never);
     render(<ConnectedServicesWidget config={{ limit: 5 }} />);
-    expect(document.querySelectorAll('[data-kit="ListRow"]').length).toBe(5);
+    const rows = () => document.querySelectorAll('[data-testid="cockpit-connected-services-table"] .row-hover-lift');
+    expect(rows().length).toBe(5);
     fireEvent.click(screen.getByRole('button', { name: /12/ }));
-    expect(document.querySelectorAll('[data-kit="ListRow"]').length).toBe(12);
+    expect(rows().length).toBe(12);
   });
 });

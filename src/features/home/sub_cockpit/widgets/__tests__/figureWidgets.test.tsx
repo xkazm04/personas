@@ -60,7 +60,8 @@ describe('figure widgets', () => {
     const items = Array.from({ length: 9 }, (_, i) => ({ id: `i${i}`, title: `Issue ${i}`, href: i === 0 ? 'https://example.test/0' : undefined }));
     render(<IssueListWidget title="Needs attention" config={{ items }} />);
     expect(screen.queryByText('Issue 8')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Issue 0' }));
+    // The row itself is the press now (UnifiedTable's onRowClick), not a button inside it.
+    fireEvent.click(screen.getByText('Issue 0'));
     expect(openExternalUrl).toHaveBeenCalledWith('https://example.test/0');
   });
 

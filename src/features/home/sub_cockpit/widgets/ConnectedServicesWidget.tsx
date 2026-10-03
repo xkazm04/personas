@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
-import { KitButton, Rows, Tile, type RowColumn } from '@/features/shared/components/kit';
+import { KitButton, Tile } from '@/features/shared/components/kit';
 import { useAgentStore } from '@/stores/agentStore';
 import { useVaultStore } from '@/stores/vaultStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -11,18 +11,20 @@ import { silentCatch } from '@/lib/silentCatch';
 import { readCredentialHealthState, type HealthState } from '@/lib/credentials/healthState';
 
 import type { CockpitWidgetProps } from '../widgetRegistry';
-import { ServiceRow } from './ServiceRow';
+import { HEALTH_TONE, useServiceColumns, type ServiceRowData } from './serviceColumns';
+import { WidgetTable } from './widgetTable';
 
 /** Failing first, so a cap never hides a broken credential behind "Show all". */
 const HEALTH_ORDER: Record<HealthState, number> = { failed: 0, unreachable: 1, untested: 2, unverifiable: 3, verified: 4 };
 
 /**
- * Connected services: the credentials in the vault, each with its health on the row's mark and
- * how many personas reference it. One kit Tile; a failing vault puts the error on the TILE's own
- * rail (grow-4) with the count left as the head's quiet meta, the rows list failing ones first
- * and cap at `limit` (default 8) with "Show all", so nothing is cut silently. A row press opens
- * the Connections page, as the head's action does. The rows fill a declared column set (grow-4):
- * what the probe last said, and how many personas use the credential.
+ * Connected services: the credentials in the vault, each with its health on the row's accent and
+ * how many personas reference it. One kit Tile holding ONE `UnifiedTable` - the app's shared table
+ * (see `widgetTable.tsx`); a failing vault puts the error on the TILE's own rail with the count
+ * left as the head's quiet meta, the rows list failing ones first and cap at `limit` (default 8)
+ * with "Show all", so nothing is cut silently. A row press opens the Connections page, as the
+ * head's action does. The column model is `serviceColumns.tsx`: what the probe last said, and how
+ * many personas use the credential.
  *
  * Config:
  *   { "limit": N }
@@ -84,11 +86,11 @@ export function ConnectedServicesWidget({ config, title, span, actions, footer }
 
   // `unverifiable` (the connector has no live probe) is not a failure, and showing it as one is
   // what the resolver exists to prevent. See @/lib/credentials/healthState.
-  const rows = useMemo(
+  const rows = useMemo<ServiceRowData[]>(
     () => (credentials ?? [])
-      .map((c) => ({ c, health: readCredentialHealthState(c) }))
+      .map((c) => ({ credential: c, health: readCredentialHealthState(c), used: usageByCredentialId.get(c.id) ?? 0 }))
       .sort((x, y) => HEALTH_ORDER[x.health] - HEALTH_ORDER[y.health]),
-    [credentials],
+    [credentials, usageByCredentialId],
   );
   const failing = rows.filter((r) => r.health === 'failed').length;
 
@@ -96,13 +98,8 @@ export function ConnectedServicesWidget({ config, title, span, actions, footer }
     useSystemStore.getState().setSidebarSection('credentials');
   };
   const heading = title ?? t.home.nav.credentials.label;
-  // The usage count drops first on a narrow tile; what the probe said is the column that earns
-  // the band, so it keeps its track.
-  const columns: RowColumn[] = [
-    { head: t.common.status, width: '1.4fr' },
-    { head: t.overview.cockpit.col_used_by, width: '7rem', align: 'end', collapse: true },
-  ];
   const noConnections = debtText('auto_no_connections_yet_5bb01e90');
+  const columns = useServiceColumns();
 
   return (
     <Tile
@@ -117,11 +114,17 @@ export function ConnectedServicesWidget({ config, title, span, actions, footer }
       empty={{ title: noConnections }}
       testId="cockpit-connected-services"
     >
-      <Rows count={rows.length} cap={limit} empty={{ title: noConnections }} label={heading} columns={columns} nameHead={t.overview.cockpit.col_service}>
-        {rows.map(({ c, health }) => (
-          <ServiceRow key={c.id} credential={c} health={health} used={usageByCredentialId.get(c.id) ?? 0} onPress={openConnections} />
-        ))}
-      </Rows>
+      <WidgetTable<ServiceRowData>
+        columns={columns}
+        rows={rows}
+        getRowKey={(row) => row.credential.id}
+        rowTone={(row) => HEALTH_TONE[row.health]}
+        onRowClick={openConnections}
+        emptyTitle={noConnections}
+        label={heading}
+        cap={limit}
+        testId="cockpit-connected-services-table"
+      />
     </Tile>
   );
 }
