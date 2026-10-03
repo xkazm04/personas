@@ -1,4 +1,4 @@
-import { Compass, MessageCircle, X } from 'lucide-react';
+import { Compass, X } from 'lucide-react';
 
 import type { CompanionCockpitSpecBody } from '@/api/companion';
 import type { ContextualCockpit } from '@/stores/slices/system/uiSlice';
@@ -7,6 +7,7 @@ import { ContentHeader } from '@/features/shared/components/layout/ContentLayout
 import { Hint } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { ATHENA_BAND, AthenaFigure } from './AthenaFigure';
 import type { CockpitPhase } from './useCockpitSource';
 
 type CockpitCopy = ReturnType<typeof useTranslation>['t']['overview']['cockpit'];
@@ -63,6 +64,13 @@ export function cockpitHeading(
  * Home > Cockpit header: the page chrome every phase keeps. Actions are the
  * overlay's Exit (only while an overlay shows; it carries the old context
  * banners' test ids) and Talk to Athena.
+ *
+ * Talk to Athena carries HER, not a speech-bubble glyph (owner, 2026-10-03: "include her visual,
+ * similar to card in BinderPanel.tsx:117"). The control is still `buttons/Button` - chrome, so the
+ * primitive owns the focus ring, the press response and the touch target - and what it carries is a
+ * figure: her portrait in a ringed disc over the art band that the binder card draws behind every
+ * project tile (`AthenaFigure`). Doctrine 6c, the same day: the kit governs structure, not figure.
+ * `data-testid="cockpit-talk-to-athena"` is unchanged - tests and the tour anchor read it.
  */
 export function CockpitHeader({ phase, body, contextual, onExit, onTalk }: {
   phase: CockpitPhase;
@@ -91,8 +99,18 @@ export function CockpitHeader({ phase, body, contextual, onExit, onTalk }: {
               </Button>
             </span>
           )}
-          <Button variant="secondary" size="sm" icon={<MessageCircle className="w-3.5 h-3.5" />} onClick={onTalk}
-            data-testid="cockpit-talk-to-athena">
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<AthenaFigure />}
+            onClick={onTalk}
+            // The band replaces `secondary`'s flat fill; the border and the ring stay the
+            // primitive's. `pl-1` lets the portrait sit almost on the control's left edge, the way
+            // the binder card's art band reaches its own.
+            className="relative overflow-hidden pl-1 border-primary/30 hover:border-primary/50"
+            style={ATHENA_BAND}
+            data-testid="cockpit-talk-to-athena"
+          >
             {c.talk_to_athena}
           </Button>
         </div>
