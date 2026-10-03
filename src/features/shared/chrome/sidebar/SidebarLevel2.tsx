@@ -191,7 +191,7 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
             // Every home tab is its own chunk since 2026-10-03, so hover warms whichever row the
             // pointer stopped on rather than the two that happened to be lazy first.
             onHoverItem={(id) => {
-              void import('@/features/home/lib/prefetch').then((m) => m.prefetchHomeTab(id as HomeTab));
+              void import('@/features/home/lib/prefetch').then((m) => m.prefetchHomeTab(id));
             }}
           />
           <div className="flex-1" />

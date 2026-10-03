@@ -35,9 +35,21 @@ const HOME_TAB_CHUNKS: Partial<Record<HomeTab, Prefetcher>> = {
   'system-check': cache(() => import('@/features/overview/components/health/SystemHealthPanel')),
 };
 
-/** Warm ONE home tab's chunk - the L2 rail's hover/focus intent. Unknown or absent: a no-op. */
-export function prefetchHomeTab(tab: HomeTab): void {
-  void HOME_TAB_CHUNKS[tab]?.();
+/**
+ * Warm ONE home tab's chunk - the L2 rail's hover/focus intent.
+ *
+ * Takes a plain `string` and TESTS membership rather than asserting the caller's id into
+ * `HomeTab` (census rule `unchecked-destination-id-assertion`, golden path
+ * `navigation-destination.md`): the rail hands out whatever id its row carries, and an id that
+ * is not a home tab must warm nothing, not index this map on a lie.
+ */
+export function prefetchHomeTab(id: string): void {
+  for (const [tab, load] of Object.entries(HOME_TAB_CHUNKS)) {
+    if (tab === id) {
+      void load?.();
+      return;
+    }
+  }
 }
 
 // Top-level section targets: delegated to the shell's shared, deduped
