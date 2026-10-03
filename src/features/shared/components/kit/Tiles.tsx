@@ -38,6 +38,22 @@ export interface TileProps {
   mark?: { tone: Tone; glyph?: Glyph; label: string };
   /** Actions for the tile's content (Approve, Re-run): inside the tile, pinned to its bottom edge. */
   footer?: ReactNode;
+  /**
+   * Present = the tile is ENTERED by pressing it (home-3 recorded the gap with evidence: a builder
+   * reached for `ContextCard` instead of `Tiles` because a board could not be opened from its own
+   * tile). The title becomes the tile's ONE button with its hit area stretched over the tile -
+   * the same mechanism as a pressable `ContextCard`'s title and a pressable `ListRow`'s name
+   * (`.k-card__press` / `.k-row__press`), under the tile's own name, never a third spelling. One
+   * tab stop for the tile, the focus ring on the tile, and everything that presses on its own -
+   * the head's `actions`, the `footer`, a `Rows` list or a control in the body - stays pressable
+   * above it, which a tile needs more than a card does because a tile's body routinely holds a
+   * pressable list.
+   *
+   * A tile is entered, not toggled, so a `selected` pressable tile is the CURRENT board
+   * (`aria-current`), the navigational spelling a pressable `ListRow` already uses; it is never
+   * `aria-pressed`. `onPress` needs a `title`, because the title is the button.
+   */
+  onPress?: () => void;
   state?: KitStates;
   /** Rendered in place of the body when the state is `empty`. */
   empty?: EmptySpec;
@@ -58,13 +74,18 @@ export interface TileProps {
  * (`cap`), which expands in place; in a tile stretched beside a taller one its pager sits on the
  * tile's foot. The loading ghost follows `ghostRows`; empty and error are the kit's empty band.
  * `mark` (grow-4) is the tile's status ON its rail at the title's height, as a ContextCard's is:
- * meaning on the rail, never a trailing status word.
- * @catalog Tile - a dashboard tile in Tiles, a band on a rail: head (title, count, meta, actions), a status mark on the rail, body, footer actions; loading/empty/error states; content-sized. Kit.
+ * meaning on the rail, never a trailing status word. `onPress` (home-3) makes the title the tile's
+ * one button with its hit area over the whole tile, so a board is entered from its own tile
+ * instead of being rebuilt as a ContextCard for the sake of a press.
+ * @catalog Tile - a dashboard tile in Tiles, a band on a rail: head (title, count, meta, actions), a status mark on the rail, body, footer actions; onPress makes the title the tile's one button; loading/empty/error states; content-sized. Kit.
  */
-export function Tile({ span = 12, title, count, meta, actions, mark, footer, state, empty, error, ghostRows = 3, testId, children }: TileProps) {
+export function Tile({ span = 12, title, count, meta, actions, mark, footer, onPress, state, empty, error, ghostRows = 3, testId, children }: TileProps) {
   const id = useId();
   const states = typeof state === 'string' ? [state] : state ?? [];
   const loading = states.includes('loading');
+  // The title is the button, so a tile with no title has nothing to press: the press is dropped
+  // rather than invented somewhere else, which is what keeps "one tab stop per tile" true.
+  const press = onPress != null && title != null;
   const body = error
     ? emptyBand({ tone: 'error', ...error })
     : loading
@@ -76,7 +97,7 @@ export function Tile({ span = 12, title, count, meta, actions, mark, footer, sta
   const Root = title != null ? 'section' : 'div';
   return (
     <Root
-      className={cx('k-dtile', stateClass(state), error && 'is-error')}
+      className={cx('k-dtile', stateClass(state), error && 'is-error', press && 'is-pressable')}
       {...kitAttrs('Tile', state)}
       aria-labelledby={title != null ? id : undefined}
       data-span={n}
@@ -89,7 +110,9 @@ export function Tile({ span = 12, title, count, meta, actions, mark, footer, sta
           {title != null && (
             <div className="k-dtile__titles">
               <h3 id={id} className="k-dtile__title typo-title">
-                {title}
+                {press
+                  ? <button type="button" className="k-dtile__press" aria-current={states.includes('selected') || undefined} onClick={onPress}>{title}</button>
+                  : title}
                 {count != null && <span className="k-count typo-data k-regular">{count}</span>}
               </h3>
               {meta && <div className="k-dtile__meta typo-caption">{meta}</div>}

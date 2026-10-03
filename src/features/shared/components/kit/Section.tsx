@@ -54,16 +54,28 @@ export function Section({ title, eyebrow, count, meta, actions, desc, level = 1,
   );
 }
 
-/** Meta parts joined by a quiet middle dot, empty parts dropped.
- * @catalog Meta - meta parts joined by a quiet middle dot. Kit.
+/**
+ * Meta parts joined by a quiet middle dot, empty parts dropped. A part stays in `display: contents`
+ * so the HOST lays the parts out: in a flex meta line (`.k-row__meta`, `.k-card__meta`,
+ * `.k-section__meta`, `.k-dtile__meta`) each part and each dot is a flex item and the host's own
+ * gap spaces them.
+ *
+ * The dot carries a space on EACH SIDE as its own text node (home-3). `.k-sep` has no margin, so
+ * in a host that is not a flex line - a `Section`'s `desc`, a `KeyValueGrid` value, any sentence -
+ * two adjacent string parts rendered glued to it ("...10 files·Capped at 30 days"), and a builder
+ * hand-rolled a separated string rather than reach for `Meta`. A space text node fixes it in
+ * exactly the hosts that were broken and in no other: an anonymous flex item of only white space
+ * is NOT rendered (CSS Flexbox 1 sec. 4), so every current flex caller is byte-identical, while in
+ * inline flow the space renders and the sentence reads.
+ * @catalog Meta - meta parts joined by a quiet middle dot that reads in a flex meta line and in a sentence alike. Kit.
  */
 export function Meta({ parts }: { parts: ReadonlyArray<ReactNode> }) {
   const shown = parts.filter((p) => p != null && p !== '' && p !== false);
   return (
     <>
       {shown.map((p, i) => (
-        <span key={i} className="contents">
-          {i > 0 && <span className="k-sep" aria-hidden="true">·</span>}
+        <span key={i} className="k-meta__part">
+          {i > 0 && <>{' '}<span className="k-sep" aria-hidden="true">·</span>{' '}</>}
           {p}
         </span>
       ))}

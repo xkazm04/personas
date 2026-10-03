@@ -22,6 +22,9 @@ export interface RowColumn {
 /** The track a column takes when it does not declare one: fixed, so rows line up. */
 const DEFAULT_TRACK = '8rem';
 
+/** The name track when the caller declares none: it takes everything the columns leave. */
+const NAME_FILL = 'minmax(0, 1fr)';
+
 const RowColumnsContext = createContext<readonly RowColumn[] | null>(null);
 
 /** The columns the enclosing `Rows` declared, or null on a list that declared none. */
@@ -29,10 +32,20 @@ export function useRowColumns(): readonly RowColumn[] | null {
   return useContext(RowColumnsContext);
 }
 
-/** The row grid: the name takes the rest, each column its declared track, the trail its content. */
-function tracks(columns: readonly RowColumn[], narrow: boolean): string {
+/**
+ * The row grid: the name takes the rest, each column its declared track, the trail its content.
+ *
+ * With a declared `nameWidth` (home-3) the two ends swap jobs: the name becomes a track like any
+ * other column - `minmax(0, w)`, so it still shrinks on a cramped list instead of overflowing it -
+ * and the LEFTOVER room moves to the trail's track, which turns from `auto` into the flexible one.
+ * The trail then right-aligns inside it (`.k-rowcols--namefixed`), so the figures keep the right
+ * edge they had while the columns close up against the name. Without `nameWidth` nothing changes,
+ * which is why no current caller moves.
+ */
+function tracks(columns: readonly RowColumn[], narrow: boolean, nameWidth?: string): string {
   const cols = columns.filter((c) => !narrow || !c.collapse).map((c) => c.width ?? DEFAULT_TRACK);
-  return ['minmax(0, 1fr)', ...cols, 'auto'].join(' ');
+  const name = nameWidth ? `minmax(0, ${nameWidth})` : NAME_FILL;
+  return [name, ...cols, nameWidth ? NAME_FILL : 'auto'].join(' ');
 }
 
 /**
@@ -44,22 +57,24 @@ function tracks(columns: readonly RowColumn[], narrow: boolean): string {
  * The head line is `aria-hidden`, as `ContextGroups`'s is: a reader hears a column's name from the
  * `sr-only` label the cell itself carries, so the heads are not read again as a row of their own.
  */
-export function RowList({ columns, nameHead, label, pager, children }: {
+export function RowList({ columns, nameHead, nameWidth, label, pager, children }: {
   columns: readonly RowColumn[];
   /** The name column's head; with it (or any column head) the list draws a head line. */
   nameHead?: ReactNode;
+  /** The name column's own track; without it the name takes everything the columns leave. */
+  nameWidth?: string;
   label?: string;
   pager?: ReactNode;
   children: ReactNode;
 }) {
   const style = useMemo(() => ({
-    '--row-tracks': tracks(columns, false),
-    '--row-tracks-narrow': tracks(columns, true),
-  }) as CSSProperties, [columns]);
+    '--row-tracks': tracks(columns, false, nameWidth),
+    '--row-tracks-narrow': tracks(columns, true, nameWidth),
+  }) as CSSProperties, [columns, nameWidth]);
   const heads = nameHead != null || columns.some((c) => c.head != null);
   return (
     <RowColumnsContext.Provider value={columns}>
-      <div className="k-rowcols" style={style}>
+      <div className={cx('k-rowcols', nameWidth && 'k-rowcols--namefixed')} style={style}>
         {heads && (
           <div className="k-rowhead typo-label k-regular k-quiet" aria-hidden="true">
             <span>{nameHead}</span>

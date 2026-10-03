@@ -9,7 +9,7 @@ import { KitButton } from './Toolbar';
  * collapses it again; a polite status says how many rows show now. Not exported: reach it
  * through `<Rows cap>`.
  */
-export function CappedRows({ cap, children, pager, label, columns, nameHead }: {
+export function CappedRows({ cap, children, pager, label, columns, nameHead, nameWidth }: {
   cap: number;
   children: ReactNode;
   pager?: ReactNode;
@@ -17,6 +17,8 @@ export function CappedRows({ cap, children, pager, label, columns, nameHead }: {
   /** The column set the list declared (grow-4): a capped list keeps its columns and its head. */
   columns?: readonly RowColumn[];
   nameHead?: ReactNode;
+  /** The name track the list declared (home-3): a capped list keeps it too. */
+  nameWidth?: string;
 }) {
   const { t, tx } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -37,7 +39,7 @@ export function CappedRows({ cap, children, pager, label, columns, nameHead }: {
     </>
   );
   const rows = open ? all : all.slice(0, cap);
-  if (columns) return <RowList columns={columns} nameHead={nameHead} label={label} pager={nav}>{rows}</RowList>;
+  if (columns) return <RowList columns={columns} nameHead={nameHead} nameWidth={nameWidth} label={label} pager={nav}>{rows}</RowList>;
   return (
     <>
       <div className="k-rows">{rows}</div>

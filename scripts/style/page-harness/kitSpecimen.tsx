@@ -389,6 +389,71 @@ function Grow4Parts() {
   );
 }
 
+/** The three gaps the home-3 builders recorded with evidence, built in the kit (2026-10-03):
+ *  a pressable Tile, a Meta that reads in a sentence, and a caller-declared name track. */
+function GapParts() {
+  return (
+    <Section title="Kit gaps (home-3)" level={1} eyebrow="the three gaps the Home builders recorded" meta="a pressable Tile, Meta in a sentence, a declared name track">
+      <Section title="Tile onPress" level={2} meta="the title is the tile's one button, its hit area stretched over the tile; actions, footer and a row inside the body keep their own press above it">
+        <Tiles label="Pressable tiles">
+          <Tile span={4} title="Enter this board" meta="press anywhere on the tile" mark={{ tone: 'info', glyph: 'soft', label: 'Open' }} onPress={noop}>
+            <p className="k-in typo-body" style={{ margin: 0 }}>One tab stop; the focus ring is the tile's, as a pressable card's is.</p>
+          </Tile>
+          <Tile span={4} title="The current board" state="selected" meta="a selected pressable tile is aria-current" onPress={noop}>
+            <p className="k-in typo-body" style={{ margin: 0 }}>A tile is entered, not toggled, so it is never aria-pressed.</p>
+          </Tile>
+          <Tile
+            span={4}
+            title="With its own controls"
+            meta="nested presses stay reachable"
+            actions={<KitButton quiet onClick={noop} stopPropagation>Scan</KitButton>}
+            footer={<KitButton quiet onClick={noop} stopPropagation>Re-run</KitButton>}
+            onPress={noop}
+          >
+            <Rows count={2} empty={{ title: 'none' }}>
+              <ListRow size="s" name="a row that presses on its own" onPress={noop} />
+              <ListRow size="s" name="and keeps its own hit area" onPress={noop} />
+            </Rows>
+          </Tile>
+        </Tiles>
+      </Section>
+      <Section
+        title="Meta in a sentence"
+        level={2}
+        meta="the same Meta in a flex meta line, unchanged"
+        desc={<Meta parts={['Traces are kept for 7 days', 'crash reports for 30 days', 'both capped at 500 MB']} />}
+      >
+        <Caption>Above: Meta inside a Section desc, a plain paragraph - the host that used to glue two string parts to the dot.</Caption>
+        <Rows count={2} empty={{ title: 'none' }}>
+          <ListRow size="s" name="Fleet settings page on typo tokens" meta={<Meta parts={['personas', 'opus-5-5', '3.6M tokens', '71 turns']} />} time="6m" />
+          <ListRow size="s" name="Rewrite the guide index page" meta={<Meta parts={['personas-web', 'sonnet-5', '742.8K tokens', '19 turns']} />} time="1m" />
+        </Rows>
+      </Section>
+      <Section title="Rows nameWidth" level={2} meta="the caller declares the name track; the leftover room moves to the trail, which keeps its right edge">
+        <Caption>Default: the name takes everything the columns leave, so a wide page runs an empty band between the name and the first column.</Caption>
+        <Rows count={5} empty={{ title: 'none' }} nameHead="Session" columns={GAP_COLS}>
+          {COLUMN_ROWS.map((r) => (
+            <ListRow key={r.name} size="s" name={r.name} mark={{ tone: r.tone, glyph: r.glyph, label: r.state }} cells={[r.project, r.model, r.tokens, r.turns]} time={r.age} />
+          ))}
+        </Rows>
+        <Caption>The same list with nameWidth="26rem".</Caption>
+        <Rows count={5} empty={{ title: 'none' }} nameHead="Session" nameWidth="26rem" columns={GAP_COLS}>
+          {COLUMN_ROWS.map((r) => (
+            <ListRow key={r.name} size="s" name={r.name} mark={{ tone: r.tone, glyph: r.glyph, label: r.state }} cells={[r.project, r.model, r.tokens, r.turns]} time={r.age} />
+          ))}
+        </Rows>
+      </Section>
+    </Section>
+  );
+}
+
+const GAP_COLS = [
+  { head: 'Project', width: '10rem' },
+  { head: 'Model', width: '7rem', collapse: true },
+  { head: 'Tokens', width: '6rem', align: 'end' as const },
+  { head: 'Turns', width: '5rem', align: 'end' as const },
+];
+
 function KitGrow2() {
   useOpenFirstHint();
   return <KitHost compact testId="kit-specimen-grow-2"><Surface><Grow2Parts /></Surface></KitHost>;
@@ -396,6 +461,10 @@ function KitGrow2() {
 
 function KitGrow4() {
   return <KitHost compact testId="kit-specimen-grow-4"><Surface><Grow4Parts /></Surface></KitHost>;
+}
+
+function KitGaps() {
+  return <KitHost compact testId="kit-specimen-gaps"><Surface><GapParts /></Surface></KitHost>;
 }
 
 /** Opens the first Hint for the shot: a synthetic pointer entry, as React reads hover. */
@@ -425,6 +494,7 @@ function KitSpecimen() {
         <Facts />
         <Grow2Parts />
         <Grow4Parts />
+        <GapParts />
       </Surface>
     </KitHost>
   );
@@ -441,5 +511,9 @@ export const KIT_MODULES: Record<string, { load: () => Promise<{ default: Compon
   // Kit grow-4 alone, for the same reason: on kit/specimen its parts sit below 3200px.
   'kit/specimen/grow-4': {
     load: async () => ({ default: KitGrow4 }),
+  },
+  // The three home-3 gaps alone, for the same reason: they sit at the very bottom of kit/specimen.
+  'kit/specimen/gaps': {
+    load: async () => ({ default: KitGaps }),
   },
 };

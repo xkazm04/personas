@@ -92,9 +92,15 @@ export function ListRow({ name, meta, mark, figures, cells, time, size = 'm', st
  * content ellipsizes rather than wrapping, so the fixed row height survives (Gate 2b); and the set
  * collapses against the LIST's own width, as `.k-grp` does, so a list inside a narrow tile
  * collapses even on a wide surface.
- * @catalog Rows - a list of ListRows with its loading ghost, empty band, optional pager, an in-place "Show all" cap and an optional declared column set the rows fill. Kit.
+ *
+ * `nameWidth` (home-3) lets the caller declare the NAME track too. A column list's name track takes
+ * everything the columns leave, which on a 1920 surface opened ~950px of empty band between the
+ * name and the first column (measured on `kit/specimen/grow-4`, 2026-10-03); with a width the name
+ * is a track like any other and the leftover room moves to the trail, which keeps its right edge.
+ * Without it nothing changes, so every current caller keeps the behaviour it has.
+ * @catalog Rows - a list of ListRows with its loading ghost, empty band, optional pager, an in-place "Show all" cap, an optional declared column set the rows fill and an optional declared name track. Kit.
  */
-export function Rows({ loading, empty, children, count, pager, label, cap, columns, nameHead }: {
+export function Rows({ loading, empty, children, count, pager, label, cap, columns, nameHead, nameWidth }: {
   loading?: boolean;
   empty: EmptySpec;
   /** Number of rows about to render; 0 renders the empty band. */
@@ -110,13 +116,19 @@ export function Rows({ loading, empty, children, count, pager, label, cap, colum
   columns?: readonly RowColumn[];
   /** The name column's head; with it (or any column head) the list draws a head line. */
   nameHead?: ReactNode;
+  /**
+   * The name column's own track, a CSS length or `fr` (`'26rem'`), used only by a list that also
+   * declares `columns`. Without it the name takes everything the columns leave, which is what every
+   * list did before and still does.
+   */
+  nameWidth?: string;
 }) {
   if (loading) return <GhostRows />;
   if (count === 0) return <>{emptyBand(empty)}</>;
   if (cap != null && Children.count(children) > cap) {
-    return <CappedRows cap={cap} pager={pager} label={label} columns={columns} nameHead={nameHead}>{children}</CappedRows>;
+    return <CappedRows cap={cap} pager={pager} label={label} columns={columns} nameHead={nameHead} nameWidth={nameWidth}>{children}</CappedRows>;
   }
-  if (columns) return <RowList columns={columns} nameHead={nameHead} label={label} pager={pager}>{children}</RowList>;
+  if (columns) return <RowList columns={columns} nameHead={nameHead} nameWidth={nameWidth} label={label} pager={pager}>{children}</RowList>;
   return (
     <>
       <div className="k-rows">{children}</div>

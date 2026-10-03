@@ -144,6 +144,10 @@
 .k-count { color: var(--quiet); }
 .k-in { padding-left: var(--gutter); padding-right: 12px; }
 .k-sep { opacity: .6; }
+/* A `Meta` part is laid out by its HOST, not by a box of its own: in a flex meta line the part and
+ * the dot are flex items the host's gap spaces, in a sentence they are inline. Owned by kit.css
+ * rather than borrowed from a utility, so the kit's own stylesheet carries all of its geometry. */
+.k-meta__part { display: contents; }
 
 /* ============ glyphs: mark + unit share one vocabulary ============ */
 :where(.k-mark, .k-u) { --tone: var(--status-neutral); }
@@ -243,6 +247,11 @@
 .k-dtile__body > .k-rowcols { flex: 1 0 auto; }
 .k-rowcols > .k-pager { margin-top: auto; }
 .k-rows--cols > .k-row, .k-rowhead { grid-template-columns: var(--row-tracks); }
+/* A declared name track (home-3): the flexible track moves from the name to the TRAIL, so the
+ * columns close up against the name and the figures still end on the row's right edge. Only the
+ * alignment lives here; the track set itself is `--row-tracks`, written by the list. */
+.k-rowcols--namefixed .k-row__trail { justify-content: flex-end; }
+.k-rowcols--namefixed .k-rowhead > :last-child { text-align: right; }
 .k-rowhead {
   display: grid; align-items: end; column-gap: 24px; height: 28px;
   padding: 0 12px 6px var(--gutter); border-bottom: 1px solid var(--rule);
@@ -651,3 +660,26 @@ button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); backgroun
 /* A short list beside a long one: the body fills the stretched tile and its pager ("Show all")
  * sits on the tile's foot, so the height reads as the tile's own, not a gap under the rows. */
 .k-dtile__body > .k-pager { margin-top: auto; }
+
+/* A PRESSABLE tile (home-3): a board is entered from its own tile. Same mechanism as
+ * `.k-card__press` and `.k-row__press` under the tile's own name - the title is the one button and
+ * a stretched `::after` carries its hit area over the tile.
+ * The head and the title give up their positioning context while the tile presses, or that
+ * `::after` would resolve to the nearest positioned ancestor (the head) and cover the head alone.
+ * Nothing else is positioned against either, so dropping it costs nothing.
+ * Everything that presses on its own sits above the press, as a pressable row's trail does - and a
+ * tile needs more of that than a card: its body routinely holds a `Rows` list whose own rows press.
+ * `.k-row` and `.k-card` are already positioned, so they take z-index alone; adding `position` to
+ * a `.k-row__press` would re-anchor ITS stretched hit area to the button and shrink it to the name. */
+.k-dtile.is-pressable { cursor: pointer; }
+.k-dtile.is-pressable.is-loading { cursor: default; }
+.k-dtile.is-pressable > .k-mark { pointer-events: none; }
+.k-dtile.is-pressable :is(.k-dtile__head, .k-dtile__title) { position: static; }
+.k-dtile.is-pressable:hover, .k-dtile.is-pressable.is-hover { --card-band: var(--band-hover); }
+.k-dtile__press { display: block; min-width: 0; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.k-dtile__press::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.k-dtile__press:focus-visible { outline: 0; }
+.k-dtile.is-pressable:has(.k-dtile__press:focus-visible) { outline: 2px solid var(--focus-ring-color); outline-offset: 2px; }
+.k-dtile.is-pressable :is(.k-dtile__actions, .k-dtile__foot) { position: relative; z-index: 1; }
+.k-dtile.is-pressable .k-dtile__body :is(.k-row, .k-card) { z-index: 1; }
+.k-dtile.is-pressable .k-dtile__body :is(button, a, [tabindex]):not(.k-row__press, .k-card__press) { position: relative; z-index: 1; }
