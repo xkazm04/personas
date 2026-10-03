@@ -20,8 +20,8 @@ import type { PersonaCardModel } from '../monitorModel';
 
 /**
  * Node geometry. One width for EVERY node on the board — persona, live
- * session, queued session — so a column, the tray and the runway's wrapped
- * queue all measure with the same number and cannot drift. `NODE_W` is the
+ * session, queued session — so a column, the tray and a queue tile all
+ * measure with the same number and cannot drift. `NODE_W` is the
  * source; `TILE_W` / `QUEUE_TILE_W` are its names in the two places the board
  * grew up calling it something else.
  *
@@ -160,7 +160,7 @@ export const COLUMNS_PER_ROW = 5;
  * A board column never narrows below the node it holds — this IS `NODE_W`,
  * named separately because it is the ladder's lower clamp rather than the
  * node's own geometry. Do not widen `NODE_W` to widen the board: `QUEUE_TILE_W`
- * aliases it, so that would silently widen the runway and lane queues too.
+ * aliases it, so that would silently widen the lanes queue too.
  */
 export const COLUMN_MIN_W = NODE_W;
 /**
@@ -186,8 +186,8 @@ export const COLUMN_BODY_MAX_H = 10 * PERSONA_ROW_H;
 
 /**
  * How many columns go on one board row at `width`: five, or fewer if narrow.
- * `tileWidth` defaults to the node width; the runway's wrapped queue measures
- * with the same node and no five-column ceiling (`maxPerRow`).
+ * `tileWidth` defaults to the node width; `maxPerRow` lets a caller with no
+ * five-column ceiling (the retired Runway board's wrapped queue) raise it.
  */
 export function boardPerRow(width: number, tileWidth = TILE_W, maxPerRow = COLUMNS_PER_ROW): number {
   // Before the first measurement, assume the full count — a one-column first

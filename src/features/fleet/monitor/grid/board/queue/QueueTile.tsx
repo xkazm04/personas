@@ -6,9 +6,8 @@
 // row — its AFFORDANCES, handed to the node as `symbols`, which the node
 // reveals at the symbol row's right end on hover or focus-within:
 //
-//   • a QUEUED row carries a drag grip (when a list drives it — framer's
-//     `Reorder` on the Lanes board, or native HTML5 drag on the Runway's
-//     wrapped grid), ↑/↓ for the keyboard, Cancel and Start now as direct
+//   • a QUEUED row carries a drag grip (framer's `Reorder` on the Lanes
+//     board), ↑/↓ for the keyboard, Cancel and Start now as direct
 //     buttons, and the ⋯ menu with the same two verbs — each verb behind a
 //     `ConfirmDialog` because both are irreversible from the queue's side;
 //   • a RUNNING row carries a lock (it holds a slot and is not in the queue —

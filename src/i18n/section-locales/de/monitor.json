@@ -740,7 +740,6 @@
   "usage_plan_count": "{count}/{max} Pläne",
   "board_variant_aria": "Board-Layout",
   "board_variant_classic": "Klassisch",
-  "board_variant_runway": "Startbahn",
   "board_variant_lanes": "Spuren",
   "node_symbol_origin": "Gestartet von {origin}",
   "node_symbol_team": "Team {name}",

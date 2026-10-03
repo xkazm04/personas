@@ -7184,7 +7184,6 @@
     "usage_plan_count": "{count}/{max} gói",
     "board_variant_aria": "Bố cục bảng",
     "board_variant_classic": "Cổ điển",
-    "board_variant_runway": "Đường băng",
     "board_variant_lanes": "Làn",
     "node_symbol_origin": "Được gửi bởi {origin}",
     "node_symbol_team": "Nhóm {name}",

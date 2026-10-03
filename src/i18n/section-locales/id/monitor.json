@@ -740,7 +740,6 @@
   "usage_plan_count": "{count}/{max} paket",
   "board_variant_aria": "Tata letak papan",
   "board_variant_classic": "Klasik",
-  "board_variant_runway": "Landasan",
   "board_variant_lanes": "Jalur",
   "node_symbol_origin": "Dikirim oleh {origin}",
   "node_symbol_team": "Tim {name}",

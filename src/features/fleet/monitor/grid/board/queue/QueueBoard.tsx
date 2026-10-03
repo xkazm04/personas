@@ -20,7 +20,6 @@ import { GridBoard, type GridBoardProps } from '../GridBoard';
 import { QUEUE_TILE_H, QUEUE_TILE_W } from '../../gridGeometry';
 import type { BoardVariant } from './boardVariant';
 import type { QueueBoardProps } from './queueBoardTypes';
-import { RunwayBoard } from './RunwayBoard';
 import { LanesBoard } from './LanesBoard';
 
 /** Geometry-matched ghost bars under the chrome — static, delayed, calm. */
@@ -73,7 +72,6 @@ export function QueueBoard({
   }
 
   switch (variant) {
-    case 'runway': return <RunwayBoard {...queue} />;
     case 'lanes': return <LanesBoard {...queue} />;
   }
 }

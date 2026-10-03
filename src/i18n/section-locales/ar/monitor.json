@@ -740,7 +740,6 @@
   "usage_plan_count": "{count}/{max} خطط",
   "board_variant_aria": "تخطيط اللوحة",
   "board_variant_classic": "كلاسيكي",
-  "board_variant_runway": "مدرج",
   "board_variant_lanes": "مسارات",
   "node_symbol_origin": "أُرسل بواسطة {origin}",
   "node_symbol_team": "الفريق {name}",

@@ -7184,7 +7184,6 @@
     "usage_plan_count": "{count}/{max} planes",
     "board_variant_aria": "Disposición del tablero",
     "board_variant_classic": "Clásico",
-    "board_variant_runway": "Pista",
     "board_variant_lanes": "Carriles",
     "node_symbol_origin": "Enviado por {origin}",
     "node_symbol_team": "Equipo {name}",

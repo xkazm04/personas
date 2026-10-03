@@ -1,9 +1,9 @@
 // QueueReorderList — the queued rows as a framer `Reorder.Group`.
 //
-// The Lanes board's queued column (`axis: 'y'`). The Runway's queue used to be
-// this list on the `x` axis; it is a wrapped grid now, and framer's `Reorder`
-// is one-dimensional, so the runway reorders with native HTML5 drag instead
-// (`RunwayBoard`). Drag here starts from the tile's handle only
+// The Lanes board's queued column (`axis: 'y'`). The retired Runway board's
+// queue used this same list on the `x` axis; its wrapped-grid successor
+// needed native HTML5 drag instead, since framer's `Reorder` is
+// one-dimensional. Drag here starts from the tile's handle only
 // (`dragListener={false}` + `useDragControls`, the pattern the Schedules
 // orchestration editor used before it moved here), so a click on the menu, the
 // arrows or the body never begins a drag. `Reorder` reports the whole new id

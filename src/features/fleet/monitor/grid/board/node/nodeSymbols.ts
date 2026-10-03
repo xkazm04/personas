@@ -10,7 +10,7 @@
 // COUNT (in a dot).
 //
 // ONE ordered list (`NODE_SYMBOL_ORDER`) decides the left → right order on
-// every board, so Classic, Runway and Lanes cannot disagree; the two pure
+// every board, so Classic and Lanes cannot disagree; the two pure
 // `*Symbols()` functions decide WHICH of them a given node shows, and the
 // tests drive them without a DOM.
 //

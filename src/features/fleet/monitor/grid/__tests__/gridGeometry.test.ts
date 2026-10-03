@@ -32,8 +32,8 @@ describe('node geometry', () => {
     // wide a column is depends on a measurement and cannot be a constant. The
     // NODE's width still is one, and that is what protects everything that is
     // not the board: `QUEUE_TILE_W` aliases `NODE_W`, so widening the node to
-    // widen the board would silently widen the runway and lane queues and
-    // their ghosts. The ladder's floor is the node, never a replacement for it.
+    // widen the board would silently widen the lanes queue and its ghosts.
+    // The ladder's floor is the node, never a replacement for it.
     expect(COLUMN_MIN_W).toBe(NODE_W);
     expect(boardLayout(3078).columnWidth).toBeGreaterThan(NODE_W);
     expect(QUEUE_TILE_W).toBe(NODE_W);
@@ -60,7 +60,7 @@ describe('node geometry', () => {
     expect(COLUMN_BODY_MAX_H).toBe(10 * PERSONA_ROW_H);
   });
 
-  it('wraps the runway queue with the same arithmetic as the board, at the node width', () => {
+  it('wraps a queue with no column ceiling the same arithmetic as the board, at the node width', () => {
     expect(boardPerRow(NODE_W * 3 + BOARD_GAP * 2, QUEUE_TILE_W, 64)).toBe(3);
     expect(boardPerRow(NODE_W * 12 + BOARD_GAP * 11, QUEUE_TILE_W, 64)).toBe(12);
     expect(boardPerRow(360 - 24, QUEUE_TILE_W, 64)).toBe(1);
@@ -132,10 +132,10 @@ describe('trayPerRow', () => {
 
 describe('boardPerRow', () => {
   it('caps at five however wide the board is — it is a COUNT, and its callers want one', () => {
-    // Still true of `boardPerRow` itself, which the runway queue calls with its
-    // own tile width and a ceiling of 64 and which the board calls for its
-    // pre-measurement count. The board's MEASURED count is `boardLayout`'s,
-    // and that one goes to ten.
+    // Still true of `boardPerRow` itself, which a caller with no column
+    // ceiling can override with its own tile width and a higher `maxPerRow`,
+    // and which the board calls for its pre-measurement count. The board's
+    // MEASURED count is `boardLayout`'s, and that one goes to ten.
     expect(boardPerRow(TILE_W * 20)).toBe(COLUMNS_PER_ROW);
     expect(boardPerRow(100_000)).toBe(COLUMNS_PER_ROW);
   });

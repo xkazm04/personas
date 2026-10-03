@@ -804,7 +804,6 @@
   "usage_plan_count": "{count}/{max} plans",
   "board_variant_aria": "Board layout",
   "board_variant_classic": "Classic",
-  "board_variant_runway": "Runway",
   "board_variant_lanes": "Lanes",
   "node_symbol_origin": "Dispatched by {origin}",
   "node_symbol_team": "Team {name}",

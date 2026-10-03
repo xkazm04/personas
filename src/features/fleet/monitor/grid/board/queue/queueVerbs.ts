@@ -2,9 +2,8 @@
 //
 // A board decides WHAT to send (`reorderPayload`, `canDrag`); the API layer
 // (`@/api/fleet/queue`) sends it. Keeping the arithmetic here means a
-// keyboard ↑/↓, a one-dimensional `Reorder` drop and the runway's wrapped
-// two-dimensional drop all produce the same ordered id list from the same
-// rule, and the tests drive the rule without a DOM.
+// keyboard ↑/↓ and a one-dimensional `Reorder` drop produce the same ordered
+// id list from the same rule, and the tests drive the rule without a DOM.
 
 import type { QueueItem } from './useQueueModel';
 

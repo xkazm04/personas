@@ -740,7 +740,6 @@
   "usage_plan_count": "{count}/{max} 个套餐",
   "board_variant_aria": "看板布局",
   "board_variant_classic": "经典",
-  "board_variant_runway": "跑道",
   "board_variant_lanes": "泳道",
   "node_symbol_origin": "由 {origin} 派发",
   "node_symbol_team": "团队 {name}",

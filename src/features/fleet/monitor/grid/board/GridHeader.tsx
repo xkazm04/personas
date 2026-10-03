@@ -10,8 +10,9 @@
 // legend: the `AutopilotSwitch` (the attention loop's on/off with its pacing
 // verdict), the `MaxParallelStepper` (the fleet's cap, with `running / cap`
 // beside it — over-admission reads `11 / 10` in the warning tone), and the
-// board LAYOUT — three variants on a `SegmentedTabs` (classic team columns,
-// runway, lanes), whose panel is the board body (`FleetGridView` spreads
+// board LAYOUT — two variants on a `SegmentedTabs` (classic team columns,
+// lanes; a third, Runway, was retired — see `boardVariant.ts`), whose panel
+// is the board body (`FleetGridView` spreads
 // `segmentedTabPanelProps('fleet-board', …)` on it, so `aria-controls`
 // resolves), a per-viewer preference kept in localStorage. (A node STYLE
 // switch sat beside it while three dressings were prototyped; tinted won and
@@ -112,7 +113,6 @@ export function GridHeader({
   };
   const variantLabel: Record<BoardVariant, string> = {
     classic: s.board_variant_classic,
-    runway: s.board_variant_runway,
     lanes: s.board_variant_lanes,
   };
 

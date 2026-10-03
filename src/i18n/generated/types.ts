@@ -811,7 +811,6 @@ export type Translations = {
     usage_plan_count: string;
     board_variant_aria: string;
     board_variant_classic: string;
-    board_variant_runway: string;
     board_variant_lanes: string;
     node_symbol_origin: string;
     node_symbol_team: string;

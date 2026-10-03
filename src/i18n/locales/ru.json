@@ -7184,7 +7184,6 @@
     "usage_plan_count": "{count}/{max} планов",
     "board_variant_aria": "Раскладка доски",
     "board_variant_classic": "Классическая",
-    "board_variant_runway": "Полоса",
     "board_variant_lanes": "Дорожки",
     "node_symbol_origin": "Запущено: {origin}",
     "node_symbol_team": "Команда {name}",

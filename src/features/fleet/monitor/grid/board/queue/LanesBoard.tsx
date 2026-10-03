@@ -10,7 +10,7 @@
 //
 // Every node FILLS its lane (`fill`): the lane is the column, so a fixed
 // 172 px node would leave the rest of it empty and truncate the title for
-// nothing. Runway and Classic keep the fixed node width.
+// nothing. Classic keeps the fixed node width.
 
 import { useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';

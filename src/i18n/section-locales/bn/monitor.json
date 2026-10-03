@@ -740,7 +740,6 @@
   "usage_plan_count": "{count}/{max} প্ল্যান",
   "board_variant_aria": "বোর্ড লেআউট",
   "board_variant_classic": "ক্লাসিক",
-  "board_variant_runway": "রানওয়ে",
   "board_variant_lanes": "লেন",
   "node_symbol_origin": "{origin} দ্বারা প্রেরিত",
   "node_symbol_team": "দল {name}",

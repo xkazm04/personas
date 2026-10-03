@@ -7184,7 +7184,6 @@
     "usage_plan_count": "{count}/{max} プラン",
     "board_variant_aria": "ボードのレイアウト",
     "board_variant_classic": "クラシック",
-    "board_variant_runway": "滑走路",
     "board_variant_lanes": "レーン",
     "node_symbol_origin": "{origin} が起動",
     "node_symbol_team": "チーム {name}",
