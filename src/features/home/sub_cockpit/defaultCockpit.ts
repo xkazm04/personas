@@ -117,7 +117,9 @@ export function composeDefaultCockpit(
       id: 'default-attention',
       kind: 'issue_list',
       title: labels.attentionTitle,
-      span: 12,
+      // The two lists sit side by side rather than stacking two full-width bands: the triage list
+      // is the wider one because its rows carry a reason column.
+      span: 7,
       config: {
         empty_label: labels.attentionEmpty,
         items: attention.map(({ p, flag }) => ({
@@ -132,7 +134,7 @@ export function composeDefaultCockpit(
       id: 'default-roster',
       kind: 'persona_overview',
       title: labels.rosterTitle,
-      span: 12,
+      span: 5,
       config: { limit: 6, filter: 'active' },
     },
   ];

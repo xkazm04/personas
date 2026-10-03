@@ -63,6 +63,36 @@ export interface CockpitWidgetProps {
   footer?: ReactNode;
 }
 
+/**
+ * The span a widget KIND takes when the composer does not say (kit batch home-3).
+ *
+ * The host clamped every unstated span to 6, and `compose_cockpit` leaves it unstated far more often
+ * than not, so a 1920 page was one column of full-width tiles with the content pinned to the left
+ * edge (owner, 2026-10-03: "creating empty space"). A sensible default is a property of the KIND -
+ * a stat strip is wide, a short list is half, a single figure is a quarter - so it lives here,
+ * beside the registry that already owns what a kind IS, not inside each widget (where the host
+ * could not read it) and not in the composer (where every spec would have to repeat it).
+ *
+ * It is a DEFAULT, never a rule: `widget.span` from Athena's spec always wins, which is why the
+ * composed views keep the layouts she chose. A kind absent here falls back to the old 6.
+ */
+export const WIDGET_DEFAULT_SPAN: Record<string, number> = {
+  // One figure: a quarter, so three KPIs sit abreast.
+  metric_spark: 4,
+  // Figures across a band, long-form prose, and the recaps that are read as a page: full width.
+  stat_grid: 12,
+  text_callout: 12,
+  persona_overview: 12,
+  comparison_cards: 12,
+  persona_walkthrough: 12,
+  persona_ready: 12,
+  model_tier_choice: 12,
+  browser_test_report: 12,
+  message_summary: 12,
+  design_capabilities: 12,
+  // Everything else is a list, a well or an offer: half the band, so two sit side by side.
+};
+
 export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetProps>> = {
   persona_overview: PersonaOverviewWidget,
   connected_services: ConnectedServicesWidget,

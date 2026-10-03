@@ -4,7 +4,7 @@ import type { CompanionCockpitWidget } from '@/api/companion';
 import { KitHost, Tile, Tiles } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { cockpitWidgetRegistry } from '../widgetRegistry';
+import { WIDGET_DEFAULT_SPAN, cockpitWidgetRegistry } from '../widgetRegistry';
 import { parseWidgetActions } from '../briefing/actions';
 import { WidgetActionBar } from '../briefing/WidgetActionBar';
 
@@ -30,7 +30,9 @@ export function CockpitGrid({ label, widgets }: { label: string; widgets: Compan
  *  handed to it as its Tile footer. An unknown kind is an error Tile, never a gap. */
 function CockpitWidgetCell({ widget }: { widget: CompanionCockpitWidget }) {
   const { t, tx } = useTranslation();
-  const span = Math.max(1, Math.min(12, widget.span ?? 6));
+  // Athena's span wins; a spec that states none takes the KIND's default (WIDGET_DEFAULT_SPAN),
+  // which is how an unstated span stops meaning "half, whatever the widget is".
+  const span = Math.max(1, Math.min(12, widget.span ?? WIDGET_DEFAULT_SPAN[widget.kind] ?? 6));
   const Component = cockpitWidgetRegistry[widget.kind];
   const actions = useMemo(() => parseWidgetActions(widget.actions), [widget.actions]);
   if (!Component) {
