@@ -25,7 +25,19 @@ export function BundledReleaseCard({ release, t }: { release: Release; t: Releas
         </span>
         {release.released_at && <span className="typo-caption tabular-nums">{release.released_at}</span>}
       </div>
-      {i18n?.summary && <p className="typo-body mt-2 text-foreground">{i18n.summary}</p>}
+      {/* The release's lead sentence reads a STEP LARGER than its item list (step 2, 14.9px at
+          the default appearance setting, against the items' step 1). SIZE is the lever because
+          weight is not one: the card's text was already full `text-foreground` - measured
+          (226,233,240) on (11,16,24), ~15.6:1, with no muting applied anywhere in it, so there was
+          nothing to un-mute - and the app's font (Segoe UI, no Medium) renders only 300/400/600/700,
+          so the half-step a lead would want does not exist and 600 would make the sentence shout at
+          the same weight as the tinted head above it. The step also buys a TIER the card did not
+          have: the summary and the 21 item titles were the same token, which is the monotone Gate 3
+          names. The items deliberately stay at step 1 - they are a two-column scanned list with a
+          toned Dot per line (26 titles, median 32 characters), a row by doctrine section 1, and
+          lifting them too would restore the monotone, add ~38px to the tallest card, and invalidate
+          the dot's measured baseline alignment recorded below. */}
+      {i18n?.summary && <p className="typo-body-lg mt-2 text-foreground">{i18n.summary}</p>}
       <ul className="mt-4 grid gap-x-8 gap-y-2 lg:grid-cols-2">
         {release.items.map((item) => {
           const bullet = ITEM_TYPE_MARK[item.type];
