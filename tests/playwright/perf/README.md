@@ -26,7 +26,10 @@ Measurement-first perf testing for the Personas desktop app. Replaces audit-time
 
 Two instrumentation hooks live in the app, loaded only in test mode:
 
-1. **`src/test/automation/perfInstrument.ts`** patches `window.__TAURI_INTERNALS__.invoke` to count + time every Tauri command (catches all import paths) and exposes `window.__PERF__.{reset, snapshot, mark}`. Idempotent across HMR.
+1. **`src/test/automation/perfInstrument.ts`** wraps the `tauriInvoke.ts` chokepoint to count + time every Tauri command. (It does NOT patch
+   `window.__TAURI_INTERNALS__.invoke`, as this line claimed until 2026-10-03: that property is
+   non-configurable and the attempt was rejected — the module's own header, `perfInstrument.ts:13`,
+   records it. Calls that bypass `tauriInvoke.ts` are therefore NOT counted.) and exposes `window.__PERF__.{reset, snapshot, mark}`. Idempotent across HMR.
 
 2. **Root `<Profiler>` in `src/App.tsx`** forwards every React commit to `__PERF__.recordRender(...)`. The lookup is a single object access when `__PERF__` is absent (production) — no measurable cost.
 
@@ -125,7 +128,12 @@ Run the perf walk:
 2. **After** the wave to see the delta.
 3. **Periodically** (weekly?) to catch silent regressions.
 
-The JSON files are tracked in git, so PRs touching a perf-sensitive area can show before/after numbers without anyone having to rerun the baseline.
+**The JSON files are NOT tracked in git.** `docs/harness/perf-runs/` is gitignored
+(`.gitignore:245`) and `git ls-files docs/harness/perf-runs/` returns nothing: no run has
+ever been committed. This line claimed the opposite until 2026-10-03, and a design campaign
+cited two runs as "committed evidence" on the strength of it. A run exists only in the
+working tree of the machine that produced it. To show before/after in a PR, paste the
+numbers, or force-add the specific file and say in the message that you did.
 
 **Don't aim to fix everything at the top of the renders list** — first ask:
 - Is this stop one users actually visit?
@@ -136,7 +144,24 @@ The right targets are stops where (a) the metric is genuinely high, (b) users la
 ## Limitations
 
 - **One `<Profiler>` at root** captures totals only — you can see "this stop did 142 commits" but not "in 142 commits, ChartTooltip rendered 100 times". For per-component breakdown, add component-level Profilers locally for the investigation (Wave 2's Realtime fixes used this approach informally).
-- **Wait-for-idle uses a 600ms IPC stability window.** Stops that emit periodic background IPC (telemetry pollers, websocket heartbeats) may register stable values rather than zero — that's a real cost reading, not a measurement bug.
+- **`durationMs` is mostly the harness, not the surface.** Measured 2026-10-03 over a full
+  30-stop walk: summed `durationMs` 37,554.7 ms against summed `harnessMs` 37,492 ms, a
+  per-stop residual of **0.8 to 4.3 ms**. The window is `resetPerf -> setup -> waitForIdle ->
+  snapshot`, so it carries the settle loop's own time, which has a floor around 740 ms (every
+  zero-IPC stop lands in 739-767 ms) and a ceiling of 8,120 ms. **Never rank surfaces by
+  `durationMs`.** Doing so once produced a "worst surface, by 4x" that was two timed-out
+  stops being compared with each other. Read `timing.{setupMs,settleMs,harnessMs}`,
+  `settle.settled` and `ipcSplit` (schema 2) instead.
+- **Wait-for-idle uses a 600ms IPC stability window, and a stop that never settles is not a
+  cost reading.** This bullet used to call an unsettled stop "a real cost reading, not a
+  measurement bug"; that is exactly backwards, and it is what licensed the ranking above.
+  A surface under continuous ambient IPC can never reach 600 ms of quiet, so the loop runs to
+  its deadline and returns silently. Schema 2 records `settle.settled` and `summary.unsettled`
+  so an unsettled stop is now visible; treat one as **no measurement**, not a slow surface.
+- **A reload or an HMR re-eval re-bases the clock.** `resetAt` is page-relative, so a walk that
+  reloads mid-run produces non-monotonic timestamps and the first stop on the new timeline
+  inherits the whole app bootstrap. Schema 2 emits `pageLoad.{id,timeOrigin,resetSeq}` and
+  derives `firstOnPageLoad`; a row with `resetSeq === 1` is measuring boot, not the surface.
 - **The instrumentation runs in test mode only**, gated on `import.meta.env.DEV || window.__PERSONAS_TEST_MODE__`. Production builds carry the root Profiler (negligible cost) but skip patching `__TAURI_INTERNALS__` and never instantiate `__PERF__`.
 - **Browser-only paths (fetch, XHR) are not instrumented.** Personas is overwhelmingly Tauri-IPC-driven, so this is acceptable. If a feature starts using `fetch()` heavily, add a wrapper in `perfInstrument.ts`.
 
