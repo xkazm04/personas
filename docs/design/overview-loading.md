@@ -41,7 +41,7 @@ state that is literally invisible, and 184 files under `src/features/**`
 hand-roll `animate-spin` because the documented shared answer visibly did
 nothing. Both halves are now written down.*
 
-## The five laws
+## The six laws
 
 1. **Data on screen is sacred.** A fetch never hides, dims, or replaces rows
    that are already rendered. Stores are usually pre-warmed (dashboard
@@ -64,6 +64,79 @@ nothing. Both halves are now written down.*
 5. **Static chrome always renders.** Headers, column headers, filter bars,
    tab strips, pane shells, KPI tile frames — never inside a loading branch.
    Ghosts render *under the real chrome*, in the real geometry.
+6. **A region's placeholder is retired by that region's own data.** No region
+   waits on another region's fetch. A surface with N regions runs N
+   independent load cycles, each with its own flag, its own ghost and its own
+   settle; it does not run one cycle over `Promise.all` and swap everything in
+   on the same frame.
+
+> **"The five laws" elsewhere in the repo means laws 1 to 5 of this file.** The
+> count moved on 2026-10-03 and eight documents still say five:
+> `page-loading.md:25,:168` (and its generated index), `tables.md:77` (quoting
+> `UnifiedTable`'s own source comment), `error-boundary.md:798`,
+> `partial-failure-read-envelope.md:337,:1103`,
+> `streaming-chat-transcript.md:628`, and
+> `paths/async-ui-states/applications/react--state-model.md:16`. Most are claims
+> about what laws 1 to 5 do **not** cover, which stay true as written; the one
+> that is now misleading by count is `page-loading.md:25`, "you get all five
+> laws from two props", because `UnifiedTable` gives a region laws 1 to 5 and
+> **cannot** give a surface law 6, which is about the surface's fetch topology
+> and not about any one table. Left unswept deliberately: those are golden-path
+> documents with generated indexes and `check:evidence` / `check:doc-map` gates
+> behind them, and a count sweep is its own change with its own gate run.
+
+### Why law 6 was missing until 2026-10-03, and what it is not
+
+Laws 1 to 5 all govern **what to paint while ONE fetch is in flight**. Not one
+of them says how many fetches a surface should have, or whether a region may
+paint before its neighbour returns. Measured 2026-10-03: the strings
+`Promise.all`, `fan-out`, `per-region`, `waterfall` and `parallel` occur **zero
+times** across this file and `docs/concepts/golden-paths/page-loading.md`. The
+reference implementation this doctrine was written from, `GlobalExecutionList`,
+is a single list with a single fetch, which is exactly the case where the
+question does not arise.
+
+The consequence is that **a surface could be 100% conformant with laws 1 to 5
+and still be the defect**: one `Promise.all` over nine commands, one
+`setLoading(false)`, calm delayed geometry-matched ghosts under real chrome for
+the whole 1.4s, and then nine regions appearing in one frame. The doctrine
+called that a pass. The owner, walking the app on 2026-10-03, called it
+"big bang causing freezes on cold loads".
+
+**Law 6 is not a performance law, and must not be sold as one.** `tauriInvoke`
+has no concurrency limiter (`src/lib/tauriInvoke.ts`), and async Tauri commands
+are spawned on a multi-thread runtime, so the calls in a `Promise.all` genuinely
+overlap: measured, 1,406ms of IPC inside a 1,321ms wall-clock window. **A
+fan-out over N commands already costs `max(latency)`, not `sum`.** Splitting it
+therefore does not make the surface *finish* sooner. It makes the surface
+*start showing* sooner. Write that distinction into every commit message that
+cites this law; a speed claim here is false.
+
+It is also not a freeze law. Across 60 stop-measurements in this repo's own perf
+harness (`docs/harness/perf-runs/2026-09-24T10-*.json`), only 2 recorded a long
+task, 189ms of main-thread block in total, with long-task support confirmed on.
+A page waiting on law 6 is **empty and waiting, not blocked**. The repo's one
+genuine main-thread freeze is a different defect with its own note
+(`long-list-rendering.md`: 6,535 rows to 52,281 DOM nodes and 4.46s).
+
+### Applying law 6
+
+- **The shell awaits only what decides WHAT to render**: auth, tier and
+  entitlement, the active project, anything that can redirect. Everything else
+  is a prewarm. Fire it, let the store fill, let each surface paint when its own
+  data lands.
+- **A server-side bundle is not a fix, it is a move.** One call that joins N
+  regions on the backend is better on IPC count and *identical* on this law:
+  still one await, still one state write, still one frame. Watch for the worst
+  shape, a bundle nested inside a client fan-out.
+- **Reuse, do not build.** `useLayeredList` already implements the staged shape
+  and its own header says "Anti-'big-bang'". Measured 2026-10-03: **2 call sites
+  in 4,829 files**. `useExecutionDashboardPipeline` is a worked example already
+  in the tree. This repo's dominant defect is unadopted abstractions, not
+  missing ones; prove the existing one does not fit before writing a new one.
+- **A region that genuinely cannot paint alone is an exception worth writing
+  down**, not a reason to fan out again: name it in the module's comment with
+  what it is waiting for.
 
 **Deprecated:** `LoadingReveal` + `useStableLoading` as a gate around primary
 content (the v1 pattern). Do not add new usages; migrations remove existing
@@ -238,6 +311,11 @@ counters snap. Never add motion outside these gates.
 - [ ] Empty state renders only when `!isFetching`, and its title/description are
       translated (both primitives default to hardcoded English `'No data'`).
 - [ ] Static chrome (headers/filters/tabs/shells) outside every loading branch.
+- [ ] **No region waits on another region's fetch** (law 6). Count the awaited
+      IPC calls on cold mount and say which part of the first screen each one
+      decides; anything that decides nothing visible is a prewarm, not an await.
+      A `Promise.all` with one `setLoading(false)` behind it fails this item
+      even when every other box is ticked.
 - [ ] **No spinner is used as a surface loading state** — no `<LoadingSpinner>`
       (it renders `null`), no centred `Loader2`/`RefreshCw animate-spin`, no
       `fallback={<SuspenseFallback/>}` on a route. Spinners in this module are
