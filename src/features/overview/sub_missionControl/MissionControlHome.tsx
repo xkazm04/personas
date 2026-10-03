@@ -35,6 +35,7 @@ import { fadeUp, staggerContainer } from '@/features/overview/libs/animations';
 import { DashboardEmptyState } from '@/features/overview/components/dashboard/DashboardEmptyState';
 import { HomeCustomizePopover } from '@/features/overview/components/dashboard/HomeCustomizePopover';
 import FleetOptimizationCard from './cards/FleetOptimizationCard';
+import { MissionControlGhost } from './MissionControlGhost';
 import { PaneHeader } from './PaneHeader';
 import { VitalsConsole } from './VitalsConsole';
 import { StatusTicker } from './StatusTicker';
@@ -67,6 +68,7 @@ export default function MissionControlHome() {
   const { t, tx } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const personas = useAgentStore((s) => s.personas);
+  const personasLoading = useAgentStore((s) => s.isLoading);
   const {
     globalExecutions, globalExecutionCounts, memoryActions, executionDashboard,
     observabilityMetrics, pipelineErrors, pipelineFetchedAt, setOverviewTab,
@@ -158,7 +160,30 @@ export default function MissionControlHome() {
     ? new Date(lastSyncedIso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : '—';
 
-  const isEmpty = personas.length === 0 && globalExecutions.length === 0;
+  // "Nothing here" is a CLAIM about the data, so it may only render once the
+  // surface KNOWS the set is empty (docs/design/overview-loading.md law 1 —
+  // "a loading flag decides only what an *empty* region shows" — and §A,
+  // "empty state ONLY when settled"). The fetch lives outside this component
+  // (hooks/overview/useExecutionDashboardPipeline), so the honest settled
+  // signal is the pipeline's own bookkeeping: a source lands in
+  // `pipelineFetchedAt` once it settled clean and in `pipelineErrors` once it
+  // settled with an error. Both halves of the claim are gated — executions by
+  // the pipeline, personas by the agent store's in-flight flag.
+  //
+  // Law 1 still holds: these flags NEVER hide data. Both the ghost and the
+  // empty state require `nothingRecorded`, so a pre-warmed store paints on the
+  // first frame and a refresh settles silently behind it; `isFetching` only
+  // chooses between a ghost and the settled empty state inside an already-empty
+  // region. The secondary sections below keep gating on bare `nothingRecorded`
+  // (the old `isEmpty`): suppressing them on a fresh install is a density
+  // choice, not a claim, and mounting them for the unknown window would only
+  // make them appear and then vanish.
+  const executionsSettled = pipelineFetchedAt.globalExecutions !== undefined
+    || pipelineErrors.globalExecutions !== undefined;
+  const isFetching = !executionsSettled || personasLoading;
+  const nothingRecorded = personas.length === 0 && globalExecutions.length === 0;
+  const showGhost = isFetching && nothingRecorded;
+  const knownEmpty = !isFetching && nothingRecorded;
   const reduceMotion = useReducedMotion();
   const enterInitial = reduceMotion ? false : 'hidden';
 
@@ -210,34 +235,42 @@ export default function MissionControlHome() {
           )}
 
           <motion.div variants={fadeUp}>
-            {isEmpty ? (
+            {knownEmpty ? (
               <DashboardEmptyState />
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-[minmax(300px,380px)_1fr] gap-4">
-                <VitalsConsole
-                  successRate={vitals.successRate}
-                  activeAgents={stats.activeAgents}
-                  activeAlertCount={attention.active_alerts}
-                  totalExecutions={globalExecutionCounts.total}
-                  pendingReviews={attention.pending_reviews}
-                  points={vitals.points}
-                  personaName={personaName}
-                  trend={successTrendPoints.length > 0 && (
-                    <div className="w-full pt-3 border-t border-primary/10">
-                      <div className="flex items-center justify-between typo-caption uppercase tracking-widest text-foreground mb-1.5 font-mono">
-                        <span>{t.overview.sla.success_rate}</span>
-                        <span>{successTrendPoints.length}d</span>
+                {/* Three states in identical geometry (law 2 — a plain
+                    conditional, never an AnimatePresence swap). The status
+                    monitor beside it is deliberately NOT gated on this
+                    region's flags: it owns its own fetch and its own settled
+                    empty state, and law 6 says no region waits on another
+                    region's. */}
+                {showGhost ? <MissionControlGhost /> : (
+                  <VitalsConsole
+                    successRate={vitals.successRate}
+                    activeAgents={stats.activeAgents}
+                    activeAlertCount={attention.active_alerts}
+                    totalExecutions={globalExecutionCounts.total}
+                    pendingReviews={attention.pending_reviews}
+                    points={vitals.points}
+                    personaName={personaName}
+                    trend={successTrendPoints.length > 0 && (
+                      <div className="w-full pt-3 border-t border-primary/10">
+                        <div className="flex items-center justify-between typo-caption uppercase tracking-widest text-foreground mb-1.5 font-mono">
+                          <span>{t.overview.sla.success_rate}</span>
+                          <span>{successTrendPoints.length}d</span>
+                        </div>
+                        <DailyTrendChart points={successTrendPoints} />
                       </div>
-                      <DailyTrendChart points={successTrendPoints} />
-                    </div>
-                  )}
-                />
+                    )}
+                  />
+                )}
                 <MissionStatusMonitor />
               </div>
             )}
           </motion.div>
 
-          {!isEmpty && (
+          {!nothingRecorded && (
             <motion.div variants={fadeUp}>
               <LeaderboardSection />
             </motion.div>
@@ -260,7 +293,7 @@ export default function MissionControlHome() {
               initial={enterInitial}
               animate="visible"
             >
-              {!isEmpty && (
+              {!nothingRecorded && (
                 <motion.div variants={fadeUp} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {!hiddenSections.includes('heatmap') ? (
                     <ExecutionHeatmap
@@ -281,7 +314,7 @@ export default function MissionControlHome() {
                 </motion.div>
               )}
 
-              {!isEmpty && (
+              {!nothingRecorded && (
                 <motion.div variants={fadeUp} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* The attention-loop tile is deliberately outside the
                       'routines' customize toggle — it carries the loop's
