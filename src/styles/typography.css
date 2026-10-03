@@ -182,9 +182,20 @@ body {
 
      Corollary worth knowing before writing `font-weight: 500` anywhere: 500
      and 600 are the SAME rendered weight here, so the kit's `.k-medium` (500)
-     and `.k-strong` (600) are indistinguishable, and the grow-4 emphasis
-     recipe "600 belongs to the TINTED title; a white name reads 500" separates
-     its two cases by tint alone, not by weight.
+     and `.k-strong` (600) are indistinguishable. The grow-4 emphasis recipe
+     "600 belongs to the TINTED title; a white name reads 500" therefore
+     separated its two cases by tint alone and changed no pixels at all; it was
+     corrected at home-3 to "a white name reads 400", which is the one step
+     this font can draw between the two. `.k-medium` is kept (a step DOWN from
+     700 is real) but is never a step UP from 400 — the full decision table is
+     at `.k-strong`/`.k-medium`/`.k-regular` in
+     src/features/shared/components/kit/kit.css.
+
+     Still unreconciled, recorded rather than silently carried: `.typo-data`
+     below asks for 500 and therefore renders SEMIBOLD, so every figure in the
+     app sits at the tinted title's weight. Changing it re-weights every stat,
+     count and metric in the product, which is a decision of its own and not
+     one the emphasis recipe gets to make.
 
      The lever for reading prose is therefore SIZE, not weight: .typo-body is
      step 1 (13.2px at the default appearance setting) because doctrine

@@ -64,6 +64,16 @@ export interface ContextCardProps {
  * stretched over the card) so the actions are never nested in it. Art (grow-2) is the head's
  * decoration: top-right, aria-hidden, pointer-events off, so it never displaces the foot.
  *
+ * Its title follows THE KIT'S EMPHASIS RECIPE (`typo-body k-regular`, documented in full on
+ * `ListRow` and in kit.css): 600 is the tinted head's weight, so the card's white title reads 400
+ * under it. Corrected home-3 - grow-4 set it to `k-medium` (500), and 500 and 600 are the SAME
+ * rendered weight on this app's font, so that move changed nothing and left the two cases of the
+ * recipe separated by tint alone. Unlike `ListRow` the card takes NO override for this, on
+ * purpose: a cards grid reaches a surface through `ContextCards` inside a `Section` or a `Tile`,
+ * both of which head it with a tinted 600, so the exception `ListRow.nameClass` exists for cannot
+ * arise here. If a surface ever grids cards under no head at all, that is the moment to add the
+ * prop - not before.
+ *
  * grow-4 collapses the card to what it actually carries: the head's meta line was already
  * conditional, the FOOT now is too, and the card's floor dropped from 104px to 80px - together
  * that is the "second row is empty always" the owner saw on the Learning tour cards. `fill` paints
@@ -84,8 +94,8 @@ export function ContextCard({ title, meta, figures, actions, art, mark, fill, fi
   const name = loading
     ? <Ghost width="58%" height="12px" />
     : onPress
-      ? <button type="button" className="k-card__title k-card__press typo-body k-medium" aria-pressed={selected} onClick={onPress}>{title}</button>
-      : <div className="k-card__title typo-body k-medium">{title}</div>;
+      ? <button type="button" className="k-card__title k-card__press typo-body k-regular" aria-pressed={selected} onClick={onPress}>{title}</button>
+      : <div className="k-card__title typo-body k-regular">{title}</div>;
   const line = loading ? <Ghost width="40%" height="8px" /> : isEmpty ? empty?.title : meta;
   const foot = loading
     ? <><Ghost width="44px" inline /><Ghost width="72px" inline /></>

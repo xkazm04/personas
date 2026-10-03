@@ -6,12 +6,19 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ContextCard, DataTable, Hint, KitButton, ListRow, Rows, Stack, Tile, Tiles } from '../index';
 
-describe('the emphasis recipe (grow-4 part 5)', () => {
-  it('a ListRow name is 500 by default: the tinted title above it carries the 600', () => {
+/** grow-4 part 5, corrected at home-3: the default is 400, not 500. `--font-sans` resolves to
+ *  Segoe UI, which has no Medium, so 500 and 600 render at one identical advance - the grow-4
+ *  default changed no pixels and these assertions passed over a no-op. `k-regular` is the first
+ *  spelling of the recipe the font can actually draw apart from the title's 600. The assertions
+ *  deliberately exclude BOTH heavier classes: a future edit that reaches for `k-medium` to make a
+ *  name "slightly stronger" is the exact mistake this correction undid. */
+describe('the emphasis recipe (grow-4 part 5, corrected home-3)', () => {
+  it('a ListRow name is 400 by default: the tinted title above it carries the 600', () => {
     render(<Rows count={1} empty={{ title: 'none' }}><ListRow name="Invoice Reconciler" /></Rows>);
     const name = screen.getByText('Invoice Reconciler');
-    expect(name.className).toContain('k-medium');
+    expect(name.className).toContain('k-regular');
     expect(name.className).not.toContain('k-strong');
+    expect(name.className).not.toContain('k-medium');
   });
 
   it('the 600 exception is explicit: a caller opts in through nameClass', () => {
@@ -21,12 +28,23 @@ describe('the emphasis recipe (grow-4 part 5)', () => {
 
   it('a ContextCard title follows the same recipe', () => {
     render(<ContextCard title="Authentication" />);
-    expect(screen.getByText('Authentication').className).toContain('k-medium');
+    const title = screen.getByText('Authentication');
+    expect(title.className).toContain('k-regular');
+    expect(title.className).not.toContain('k-medium');
   });
 
   it('the empty band follows it too, so one rule covers the kit', () => {
     render(<Rows count={0} empty={{ title: 'Nothing here' }}>{null}</Rows>);
-    expect(screen.getByText('Nothing here').className).toContain('k-medium');
+    const line = screen.getByText('Nothing here');
+    expect(line.className).toContain('k-regular');
+    expect(line.className).not.toContain('k-medium');
+  });
+
+  it('no kit part reaches for k-medium on a white name: it renders as 600 on this font', () => {
+    const src = ['ListRow', 'ContextCard', 'ContextGroups', 'states', 'ChipRow']
+      .map((f) => readFileSync(resolve(process.cwd(), `src/features/shared/components/kit/${f}.tsx`), 'utf8'))
+      .join(' ');
+    expect(src).not.toMatch(/className=[^>]{0,120}k-medium/);
   });
 });
 

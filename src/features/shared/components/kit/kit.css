@@ -67,13 +67,38 @@
 }
 
 /* ============ modifiers ============ */
-/* THE EMPHASIS RECIPE (grow-4, part 5): weight 600 belongs to the TINTED title - the surface's
- * own voice (`typo-section-title`, `typo-title`, `typo-card-label`). A WHITE name beside it (a
- * row's name, a card's title, a group's name, an empty band's line) reads at 500, because a white
- * 600 under a tinted 600 is a second emphasis in the same voice (owner, 2026-10-03: "white text
- * should have norm weight"). The row is not flattened by it - the name still carries a size step,
- * full ink against the one muting, and 500 against 400 (Gate 3). 600 on white is the EXPLICIT
- * exception, for a name with no tinted title above it: a caller passes `nameClass`. */
+/* THE EMPHASIS RECIPE (grow-4 part 5, corrected home-3 by measurement): weight 600 belongs to the
+ * TINTED title - the surface's own voice (`typo-section-title`, `typo-title`, `typo-card-label`).
+ * A WHITE name beside it (a row's name, a card's title, a group's name, an empty band's line)
+ * reads at 400, because a white 600 under a tinted 600 is a second emphasis in the same voice
+ * (owner, 2026-10-03: "white text should have norm weight").
+ *
+ * THE RENDERED LADDER IN THIS APP IS 300 / 400 / 600 / 700, AND NOTHING ELSE. `--font-sans`
+ * resolves to Segoe UI, a static family with Light / Regular / Semibold / Bold and no Medium;
+ * probed in headless Chromium against the app's own stack (the table is at `.typo-body` in
+ * src/styles/typography.css), 400 / 420 / 450 / 475 all render at one identical advance and
+ * 500 / 550 / 600 at another, and `font-variation-settings: 'wght'` moves neither advance nor ink
+ * at any value. So **450 and 500 do not exist here**: a request for either is rounded to a weight
+ * the font owns, and grow-4's "a white name reads 500" separated its two cases by TINT ALONE - the
+ * white name was still rendering 600 and nothing had moved.
+ *
+ * What separates the two cases now is weight, for the first time: 400 against the title's 600 is
+ * the only step this font can draw between them. The row is not flattened by it (Gate 3,
+ * "prevent monotone text"): the name keeps a size step over its meta (`typo-body` is step 1,
+ * `typo-caption` step 0) and full ink against the one muting, and it now stands a real 400 under a
+ * real 600 instead of two 600s differing only in hue. 600 on white is the EXPLICIT exception, for
+ * a name with no tinted title above it: a caller passes `nameClass="typo-body k-strong"`.
+ *
+ * Which weight class to write:
+ *   .k-strong (600)   the tinted title's weight; on white it is the declared exception
+ *   .k-regular (400)  the kit's white name, every figure, every meta - the default voice
+ *   .k-medium (500)   RENDERS AS 600 ON THIS FONT, identical to .k-strong. It is a step DOWN
+ *                     from 700 (`typo-data-lg k-medium` pulls a bold figure back to a title's
+ *                     weight, and that advance really does change) and it is NOT a step up from
+ *                     400 - there is no such step. Never reach for it to make a 400 "slightly
+ *                     stronger"; that is `.k-strong`, said honestly. Kept at 500 rather than
+ *                     retired so the intent survives a future variable `--font-sans`, where it
+ *                     would finally render as the tier its name claims. */
 .k-strong { font-weight: 600; }
 .k-medium { font-weight: 500; }
 .k-regular { font-weight: 400; }
