@@ -14197,6 +14197,10 @@
     "variant_spine": "Spine",
     "variant_triage": "Triage",
     "variant_fusion": "Fusion",
+    "variant_machine": "Machine",
+    "figure_label": "This machine, drawn as six environments bearing one readiness line",
+    "figure_desc": "{ok} of {total} checks pass across {sections} environments.",
+    "pier_label": "{section}: {status}, {ok} of {total} checks pass",
     "filter_all": "All environments",
     "filtered_to": "Filtered to {section}"
   },

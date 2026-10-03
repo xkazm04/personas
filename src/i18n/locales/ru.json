@@ -18458,6 +18458,10 @@
     "variant_spine": "Ось",
     "variant_triage": "Сортировка",
     "variant_fusion": "Слияние",
+    "variant_machine": "Машина",
+    "figure_label": "Эта машина, изображённая как шесть сред, несущих одну линию готовности",
+    "figure_desc": "{ok} из {total} проверок пройдено в {sections} средах.",
+    "pier_label": "{section}: {status}, пройдено {ok} из {total} проверок",
     "filter_all": "Все окружения",
     "filtered_to": "Фильтр: {section}"
   },

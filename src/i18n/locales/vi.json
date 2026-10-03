@@ -18458,6 +18458,10 @@
     "variant_spine": "Trục",
     "variant_triage": "Phân loại",
     "variant_fusion": "Hợp nhất",
+    "variant_machine": "Máy",
+    "figure_label": "Máy này, được vẽ thành sáu môi trường cùng đỡ một đường sẵn sàng",
+    "figure_desc": "{ok} trên {total} kiểm tra đạt trong {sections} môi trường.",
+    "pier_label": "{section}: {status}, {ok} trên {total} kiểm tra đạt",
     "filter_all": "Mọi môi trường",
     "filtered_to": "Đã lọc theo {section}"
   },

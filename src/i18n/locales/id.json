@@ -18458,6 +18458,10 @@
     "variant_spine": "Poros",
     "variant_triage": "Triase",
     "variant_fusion": "Fusi",
+    "variant_machine": "Mesin",
+    "figure_label": "Mesin ini, digambar sebagai enam lingkungan yang menopang satu garis kesiapan",
+    "figure_desc": "{ok} dari {total} pemeriksaan lolos di {sections} lingkungan.",
+    "pier_label": "{section}: {status}, {ok} dari {total} pemeriksaan lolos",
     "filter_all": "Semua lingkungan",
     "filtered_to": "Difilter ke {section}"
   },

@@ -81,6 +81,10 @@
   "variant_spine": "Axe",
   "variant_triage": "Triage",
   "variant_fusion": "Fusion",
+  "variant_machine": "Machine",
+  "figure_label": "Cette machine, dessinée comme six environnements portant une ligne de disponibilité",
+  "figure_desc": "{ok} vérifications sur {total} réussissent dans {sections} environnements.",
+  "pier_label": "{section} : {status}, {ok} vérifications sur {total} réussissent",
   "filter_all": "Tous les environnements",
   "filtered_to": "Filtré sur {section}"
 }

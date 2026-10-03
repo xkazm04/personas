@@ -18458,6 +18458,10 @@
     "variant_spine": "主轴",
     "variant_triage": "分诊",
     "variant_fusion": "融合",
+    "variant_machine": "机器",
+    "figure_label": "本机：绘制为共同承载一条就绪线的六个环境",
+    "figure_desc": "{sections} 个环境中，{total} 项检查有 {ok} 项通过。",
+    "pier_label": "{section}：{status}，{total} 项检查有 {ok} 项通过",
     "filter_all": "全部环境",
     "filtered_to": "已筛选：{section}"
   },

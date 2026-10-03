@@ -18458,6 +18458,10 @@
     "variant_spine": "스파인",
     "variant_triage": "트리아지",
     "variant_fusion": "퓨전",
+    "variant_machine": "머신",
+    "figure_label": "하나의 준비 상태 선을 떠받치는 여섯 개의 환경으로 그린 이 머신",
+    "figure_desc": "{sections}개 환경에서 {total}개 검사 중 {ok}개가 통과했습니다.",
+    "pier_label": "{section}: {status}, {total}개 검사 중 {ok}개 통과",
     "filter_all": "모든 환경",
     "filtered_to": "{section}(으)로 필터링됨"
   },

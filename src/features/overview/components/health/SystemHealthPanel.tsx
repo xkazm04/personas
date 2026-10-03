@@ -15,6 +15,7 @@ import type { HealthActionDeps } from './HealthActions';
 import { LogDiskUsageSection } from './LogDiskUsageSection';
 import { HealthBoardA } from './prototypes/HealthBoardA';
 import { HealthFusionD } from './prototypes/HealthFusionD';
+import { HealthMachineE } from './prototypes/HealthMachineE';
 import { HealthSpineB } from './prototypes/HealthSpineB';
 import { HealthTriageC } from './prototypes/HealthTriageC';
 import { LITELLM_FIELDS, OLLAMA_FIELDS, OllamaFooter } from './popupFieldConfigs';
@@ -22,7 +23,7 @@ import { useHealthVariant, type HealthVariantId } from './healthVariant';
 import { useHealthSections } from './useHealthSections';
 
 /**
- * Home > System Check: the host of the three 2-layer prototypes (kit batch home-3).
+ * Home > System Check: the host of the five 2-layer prototypes (kit batch home-3).
  *
  * The owner's verdict on 2026-10-03 was "design unusable and that's why hidden behind a dev flag",
  * with the brief: layer 1 is a GRAPHICAL overview of each environment, layer 2 carries the
@@ -114,9 +115,18 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
       />
 
       <ContentBody centered>
-        <KitHost compact testId="system-check">
+        {/* NOT `compact` (doctrine 6c, consequence 3). Measured the same day with
+            `scripts/style/kit-type-probe/`: a compact kit host renders every row token 11.1% to
+            12.5% smaller than the same token outside it - `typo-body` is 13.20px in the app and
+            11.55px here, at the default appearance setting. The tier is for dense tool lists; this
+            is a diagnostic page the operator reads once and acts on, and it is the surface whose
+            type the owner said "does not add". Taking it off is what lets the figure's callouts be
+            labels at FULL type size, which is the whole mechanism that keeps text out of the
+            drawing. */}
+        <KitHost testId="system-check">
           {SHOW_DIAGNOSTICS && <VariantSwitch value={variant} onChange={setVariant} />}
 
+          {variant === 'machine' && <HealthMachineE board={board} deps={deps} />}
           {variant === 'fusion' && <HealthFusionD board={board} deps={deps} />}
           {variant === 'board' && <HealthBoardA board={board} deps={deps} />}
           {variant === 'spine' && <HealthSpineB board={board} deps={deps} />}
@@ -185,6 +195,7 @@ function VariantSwitch({ value, onChange }: { value: HealthVariantId; onChange: 
         value={value}
         onChange={onChange}
         options={[
+          { v: 'machine', label: s.variant_machine },
           { v: 'fusion', label: s.variant_fusion },
           { v: 'board', label: s.variant_board },
           { v: 'spine', label: s.variant_spine },

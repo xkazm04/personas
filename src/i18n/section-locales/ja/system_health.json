@@ -81,6 +81,10 @@
   "variant_spine": "スパイン",
   "variant_triage": "トリアージ",
   "variant_fusion": "フュージョン",
+  "variant_machine": "マシン",
+  "figure_label": "1 本の準備完了ラインを支える 6 つの環境として描いたこのマシン",
+  "figure_desc": "{sections} 個の環境で {total} 件中 {ok} 件のチェックが成功しています。",
+  "pier_label": "{section}: {status}、{total} 件中 {ok} 件のチェックが成功",
   "filter_all": "すべての環境",
   "filtered_to": "{section} で絞り込み中"
 }

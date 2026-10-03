@@ -6,7 +6,13 @@
  * blueprint contest did (`plugins/twin/.../blueprintVariant.ts`). The page harness writes this key
  * from `?kit=<id>`, so `shoot.mjs --kit fusion|board|spine|triage` shoots whichever one it is given.
  *
- * `fusion` is the DEFAULT and is the one proposed for shipping: the Director resolved the field by
+ * `machine` is the DEFAULT since 2026-10-03 (builder FG, doctrine 6c): it is `fusion` with layer 1
+ * redrawn as a FIGURE rather than as a board of cards, which is the thing the owner's verdict was
+ * actually about ("prototypes following the kit then look terrible ... what I would expect is the
+ * level of visualization we have in Strata"). The fusion's information architecture is untouched,
+ * so the change the owner is being asked to judge is exactly the one he asked for.
+ *
+ * `fusion` was the DEFAULT before it and is the one it was composed from: the Director resolved the field by
  * composing rather than choosing (A's board as layer 1, C's attention list under it, B's full audit
  * table behind C's Segmented), which is the owner's recorded way of settling a contest. `board`,
  * `spine` and `triage` stay mounted as the studies the fusion was composed FROM, so the comparison
@@ -20,11 +26,11 @@ import { useCallback, useState } from 'react';
 
 import { safeLocalGet, safeLocalSet } from '@/lib/safeLocalStorage';
 
-export const HEALTH_VARIANT_IDS = ['fusion', 'board', 'spine', 'triage'] as const;
+export const HEALTH_VARIANT_IDS = ['machine', 'fusion', 'board', 'spine', 'triage'] as const;
 export type HealthVariantId = (typeof HEALTH_VARIANT_IDS)[number];
 
 const VARIANT_KEY = 'system-check-variant';
-const DEFAULT_VARIANT: HealthVariantId = 'fusion';
+const DEFAULT_VARIANT: HealthVariantId = 'machine';
 
 export function readHealthVariant(): HealthVariantId {
   const raw = safeLocalGet(VARIANT_KEY, 'health:variant');

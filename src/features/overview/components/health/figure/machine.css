@@ -1,0 +1,88 @@
+/* The machine figure (kit batch home-3, builder FG). A bespoke stylesheet under doctrine section 6
+   and 6c: layout and geometry are free, type and colour are not. There is no font-size and no
+   literal colour anywhere in this file - every ink is an app token, a `--status-*` by MEANING, or
+   the `--fig-*` tint the kit's `Figure` derived from the figure's tone. Every rule works on both
+   themes because the tokens underneath it do; nothing here is per-theme.
+
+   The drawing sits above the kit's callout rail and insets itself by the rail's own height, so the
+   names land directly under the pier they name with nothing measured in script. */
+
+.mf-draw {
+  position: absolute;
+  left: 0;
+  top: 0;
+  /* `width` explicitly, not `left: 0; right: 0`: an <svg> is a REPLACED element, so an absolutely
+     positioned one with `width: auto` takes its INTRINSIC width (measured here: 245px of a 1340px
+     plot) and ignores the two insets. */
+  width: 100%;
+  height: calc(100% - var(--fig-rail));
+  display: block;
+  overflow: visible;
+}
+
+/* Strokes keep their declared width whatever the window does to the view box's X axis. */
+.mf-draw :is(rect, line) { vector-effect: non-scaling-stroke; }
+
+/* ---------- this machine: the ground and the base the piers stand on ---------- */
+.mf-ground { fill: var(--fig-wash); }
+.mf-base { fill: var(--fig-line); }
+
+/* ---------- the deck: the one continuous thing all six piers carry ----------
+   Its silhouette IS the headline. Flat across the width = ready; a step down over a pier = that
+   environment is carrying less; a gap = it is not carrying at all.
+
+   The deck is ONE COLOUR on purpose. The first draft toned every span by its own status - warning
+   yellow here, info blue there - and the result was four coloured bars at three heights that read
+   as four objects instead of as one deck that dips, which is the only claim the figure makes.
+   Severity is already in the shape, so a second encoding of it is the redundancy doctrine 0b.3
+   says to remove rather than restyle. The exception earns itself: a BREAK takes `--status-error`,
+   because a missing span is the one thing that must not be missed, and a span never built is quiet
+   (`--fig-line-soft`, dashed) because nothing is wrong with it. */
+.mf-deck { fill: var(--fig-ink); }
+.mf-deck--sagging { fill: var(--fig-ink); }
+.mf-deck--broken { fill: var(--status-error); }
+.mf-deck--planned { fill: var(--fig-line-soft); }
+.mf-deck--ghost { fill: var(--ghost); }
+.mf-riser { fill: var(--fig-line); }
+
+/* ---------- courses: one per check, worst at the top, under the deck it fails to carry ----------
+   Shape alone separates all five, which is the constraint 2b set: a filled stone, an inset stone,
+   a void between two stubs, an empty outline, a thin shim. */
+.mf-course { fill: var(--fig-fill); stroke: var(--fig-line); stroke-width: 1; }
+/* The capital and the plinth, in the figure's own line: structure, never a quantity. */
+.mf-bearing rect { fill: var(--fig-line); }
+.mf-c-warn { fill: color-mix(in srgb, var(--status-warning) 42%, transparent); stroke: var(--status-warning); }
+.mf-c-error { fill: var(--status-error); stroke: none; }
+.mf-c-info { fill: var(--fig-line-soft); stroke: none; }
+.mf-c-ghost { fill: var(--ghost); stroke: none; }
+
+/* The missing stone: the outline says where it should have been, the gap says it is not there. */
+.mf-void {
+  fill: none;
+  stroke: var(--status-error);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 3;
+}
+/* Planned and never built: an outlined PLACE, not a hole - the faintest wash so the eye reads
+   "nothing here yet" rather than "the drawing stopped". */
+.mf-planned {
+  fill: var(--fig-wash);
+  stroke: var(--status-info);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 3;
+}
+/* A whole environment the bridge could not answer for: nothing is known, so nothing is drawn
+   inside it - the pier is an outline at the deck's deepest. */
+.mf-failed {
+  fill: var(--fig-void);
+  stroke: var(--status-error);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 3;
+}
+/* More checks than the pier draws as courses: two ticks above it, never hairline courses. */
+.mf-over { fill: var(--fig-line); }
+
+/* The ghost courses breathe in on the kit's own delayed, calm ghost curve (overview-loading law 3
+   and 5): invisible for 150ms so a warm section never flashes a placeholder, and settled - not
+   animating - the moment reduced motion removes the animation. */
+.mf-c-ghost { animation: k-ghost-in var(--duration-fast) ease-out var(--ghost-delay, 150ms) both; }

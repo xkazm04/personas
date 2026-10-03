@@ -81,6 +81,10 @@
   "variant_spine": "Osa",
   "variant_triage": "Triáž",
   "variant_fusion": "Fúze",
+  "variant_machine": "Stroj",
+  "figure_label": "Tento počítač vykreslený jako šest prostředí nesoucích jednu linii připravenosti",
+  "figure_desc": "{ok} z {total} kontrol prošlo v {sections} prostředích.",
+  "pier_label": "{section}: {status}, {ok} z {total} kontrol prošlo",
   "filter_all": "Všechna prostředí",
   "filtered_to": "Filtrováno na {section}"
 }

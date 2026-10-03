@@ -18458,6 +18458,10 @@
     "variant_spine": "अक्ष",
     "variant_triage": "ट्राइएज",
     "variant_fusion": "संयोजन",
+    "variant_machine": "मशीन",
+    "figure_label": "यह मशीन, एक तैयारी-रेखा को थामे छह परिवेशों के रूप में बनी",
+    "figure_desc": "{sections} परिवेशों में {total} में से {ok} जाँचें पास हैं।",
+    "pier_label": "{section}: {status}, {total} में से {ok} जाँचें पास",
     "filter_all": "सभी वातावरण",
     "filtered_to": "{section} पर फ़िल्टर किया गया"
   },

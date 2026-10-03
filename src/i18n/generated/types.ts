@@ -14203,6 +14203,10 @@ export type Translations = {
     variant_spine: string;
     variant_triage: string;
     variant_fusion: string;
+    variant_machine: string;
+    figure_label: string;
+    figure_desc: string;
+    pier_label: string;
     filter_all: string;
     filtered_to: string;
   };

@@ -81,6 +81,10 @@
   "variant_spine": "محور",
   "variant_triage": "فرز",
   "variant_fusion": "دمج",
+  "variant_machine": "الجهاز",
+  "figure_label": "هذا الجهاز مرسومًا كستة بيئات تحمل خط جاهزية واحدًا",
+  "figure_desc": "نجحت {ok} من {total} فحوصات عبر {sections} بيئات.",
+  "pier_label": "{section}: {status}، نجحت {ok} من {total} فحوصات",
   "filter_all": "كل البيئات",
   "filtered_to": "مُرشَّح على {section}"
 }

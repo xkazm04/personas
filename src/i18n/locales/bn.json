@@ -18458,6 +18458,10 @@
     "variant_spine": "অক্ষ",
     "variant_triage": "ট্রায়াজ",
     "variant_fusion": "সমন্বয়",
+    "variant_machine": "মেশিন",
+    "figure_label": "এই মেশিন, একটি প্রস্তুতি-রেখা বহনকারী ছয়টি পরিবেশ হিসেবে আঁকা",
+    "figure_desc": "{sections}টি পরিবেশ জুড়ে {total}টির মধ্যে {ok}টি পরীক্ষা উত্তীর্ণ।",
+    "pier_label": "{section}: {status}, {total}টির মধ্যে {ok}টি পরীক্ষা উত্তীর্ণ",
     "filter_all": "সব পরিবেশ",
     "filtered_to": "{section} অনুসারে ফিল্টার করা"
   },

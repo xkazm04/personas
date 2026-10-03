@@ -18458,6 +18458,10 @@
     "variant_spine": "Achse",
     "variant_triage": "Triage",
     "variant_fusion": "Fusion",
+    "variant_machine": "Maschine",
+    "figure_label": "Dieser Rechner, gezeichnet als sechs Umgebungen, die eine Bereitschaftslinie tragen",
+    "figure_desc": "{ok} von {total} Prüfungen bestehen in {sections} Umgebungen.",
+    "pier_label": "{section}: {status}, {ok} von {total} Prüfungen bestehen",
     "filter_all": "Alle Umgebungen",
     "filtered_to": "Gefiltert auf {section}"
   },

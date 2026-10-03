@@ -81,6 +81,10 @@
   "variant_spine": "Eje",
   "variant_triage": "Triaje",
   "variant_fusion": "Fusión",
+  "variant_machine": "Máquina",
+  "figure_label": "Esta máquina, dibujada como seis entornos que sostienen una línea de preparación",
+  "figure_desc": "{ok} de {total} comprobaciones pasan en {sections} entornos.",
+  "pier_label": "{section}: {status}, {ok} de {total} comprobaciones pasan",
   "filter_all": "Todos los entornos",
   "filtered_to": "Filtrado por {section}"
 }
