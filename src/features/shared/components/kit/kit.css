@@ -270,6 +270,11 @@
   padding: 10px 14px 12px 12px; border-radius: var(--radius-interactive); transition: background-color var(--duration-fast);
   flex: 0 1 var(--stat-w); max-width: var(--stat-max);
 }
+/* A strip of ONE has nothing to line up with, so neither the track nor the cap has a job there and
+ * the lone tile keeps the whole strip, exactly as it did before grow-4. Measured on
+ * home/cockpit/composed-a at 1920x1080: without this the lone "Unresolved Sentry issues" tile
+ * shrank to the 10rem track and wrapped its label onto a second line. */
+.k-tile:only-child { flex: 1 1 auto; max-width: none; }
 .k-tile:hover, .k-tile.is-hover { background: var(--band-hover); }
 .k-tile.is-selected { background: var(--band-sel); }
 .k-tile.is-muted { opacity: .55; }
