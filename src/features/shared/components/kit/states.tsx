@@ -23,7 +23,7 @@ export function emptyBand({ title, hint, tone = 'neutral', action, markLabel, te
     <div className="k-empty" data-empty="1" data-testid={testId}>
       <Mark tone={tone} glyph="hollow" label={markLabel ?? (typeof title === 'string' ? title : '')} />
       <div className="k-empty__text">
-        <span className="typo-body k-strong">{title}</span>
+        <span className="typo-body k-medium">{title}</span>
         {hint && <span className="typo-caption">{hint}</span>}
       </div>
       {action}

@@ -67,6 +67,13 @@
 }
 
 /* ============ modifiers ============ */
+/* THE EMPHASIS RECIPE (grow-4, part 5): weight 600 belongs to the TINTED title - the surface's
+ * own voice (`typo-section-title`, `typo-title`, `typo-card-label`). A WHITE name beside it (a
+ * row's name, a card's title, a group's name, an empty band's line) reads at 500, because a white
+ * 600 under a tinted 600 is a second emphasis in the same voice (owner, 2026-10-03: "white text
+ * should have norm weight"). The row is not flattened by it - the name still carries a size step,
+ * full ink against the one muting, and 500 against 400 (Gate 3). 600 on white is the EXPLICIT
+ * exception, for a name with no tinted title above it: a caller passes `nameClass`. */
 .k-strong { font-weight: 600; }
 .k-medium { font-weight: 500; }
 .k-regular { font-weight: 400; }

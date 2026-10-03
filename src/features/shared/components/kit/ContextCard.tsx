@@ -55,8 +55,8 @@ export function ContextCard({ title, meta, figures, actions, art, mark, state, e
   const name = loading
     ? <Ghost width="58%" height="12px" />
     : onPress
-      ? <button type="button" className="k-card__title k-card__press typo-body k-strong" aria-pressed={selected} onClick={onPress}>{title}</button>
-      : <div className="k-card__title typo-body k-strong">{title}</div>;
+      ? <button type="button" className="k-card__title k-card__press typo-body k-medium" aria-pressed={selected} onClick={onPress}>{title}</button>
+      : <div className="k-card__title typo-body k-medium">{title}</div>;
   const line = loading ? <Ghost width="40%" height="8px" /> : isEmpty ? empty?.title : meta;
   const foot = loading
     ? <><Ghost width="44px" inline /><Ghost width="72px" inline /></>

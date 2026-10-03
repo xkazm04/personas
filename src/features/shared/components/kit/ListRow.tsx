@@ -15,7 +15,11 @@ export interface ListRowProps {
   time?: ReactNode;
   size?: RowSize;
   state?: KitStates;
-  /** Overrides the one emphasised name recipe (`typo-body k-strong`). */
+  /**
+   * Overrides the one emphasised name recipe (`typo-body k-medium`). `typo-body k-strong` is the
+   * declared exception: a white name at 600 where no tinted title is above it (see the emphasis
+   * recipe on `ListRow`).
+   */
   nameClass?: string;
   /**
    * Present = the row presses (opens, launches, selects): its name becomes the row's one button,
@@ -31,11 +35,24 @@ export interface ListRowProps {
  * alternating band; its status mark sits on the spine and a selected row lights its segment. With
  * `onPress` (grow-2) the name is the row's one button, as a pressable ContextCard's title is:
  * one tab stop per row, the focus ring on the row, hover band and pointer over all of it.
- * @catalog ListRow - fixed-height row: one emphasised name, quiet meta, status mark on the spine, figures; onPress makes the name the row's one button. Kit.
+ *
+ * THE KIT'S EMPHASIS RECIPE (grow-4, part 5). **Weight 600 belongs to the TINTED title; a WHITE
+ * name beside it reads at 500.** A kit list always hangs under a head that is already tinted and
+ * 600 (`typo-section-title` on a Section, `typo-title` on a Tile), so a white 600 name under it
+ * is a SECOND emphasis in the same voice on the same surface - the owner's 2026-10-03 reading,
+ * "we have themed strong types and white strong types of texts; white text should have norm
+ * weight". The row is not flattened by the move (Gate 3, "prevent monotone text"): the name still
+ * stands off its meta by three things at once - a size step (`typo-body` is step 1, `typo-caption`
+ * step 0), full ink against the one muting, and 500 against 400.
+ *
+ * The exception is explicit, never implicit: a name with no tinted title above it on its surface
+ * passes `nameClass="typo-body k-strong"` and keeps 600. `.k-strong` itself is untouched; only the
+ * kit's DEFAULT recipe moved.
+ * @catalog ListRow - fixed-height row: one emphasised name (500; 600 is the tinted title's), quiet meta, status mark on the spine, figures; onPress makes the name the row's one button. Kit.
  */
 export function ListRow({ name, meta, mark, figures, time, size = 'm', state, nameClass, onPress, testId }: ListRowProps) {
   const trail = figures != null || time != null;
-  const nameCls = cx('k-row__name', nameClass ?? 'typo-body k-strong');
+  const nameCls = cx('k-row__name', nameClass ?? 'typo-body k-medium');
   const selected = typeof state === 'string' ? state === 'selected' : !!state?.includes('selected');
   return (
     <div className={cx('k-row', `k-row--${size}`, stateClass(state), onPress && 'is-pressable')} {...kitAttrs('ListRow', state)} data-testid={testId}>

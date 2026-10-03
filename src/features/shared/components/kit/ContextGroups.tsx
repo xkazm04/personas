@@ -95,7 +95,7 @@ export function ContextGroups({ groups, label, unitLabel, legend, figureHeads, o
           >
             <Mark tone={g.mark.tone} glyph={g.mark.glyph} label={g.mark.label} />
             <span className="k-grp__name">
-              <span className="typo-body k-strong k-ellipsis">{g.name}</span>
+              <span className="typo-body k-medium k-ellipsis">{g.name}</span>
               {g.meta != null && <span className="typo-caption k-ellipsis">{g.meta}</span>}
             </span>
             <span className="k-grp__count typo-data k-regular">{g.count}</span>
