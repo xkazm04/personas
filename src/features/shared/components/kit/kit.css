@@ -225,6 +225,37 @@
 .k-fig { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; white-space: nowrap; }
 .k-time { min-width: 2.6em; text-align: right; white-space: nowrap; }
 
+/* ---- ListRow columns (grow-4, part 2) ----
+ * A row's metadata stacked under its name in one left cell, so at 1920 a list left ~1300px of
+ * empty band between the name and the trail (owner, 2026-10-03: "no columns used and creating
+ * empty space over passing metadata from rows to spread"). A list can now declare a column set
+ * ONCE; every row inherits it as `--row-tracks` and fills it, which is how the columns line up
+ * down the list without `subgrid` and without a track written per row. A declared track is fixed
+ * or `fr` for exactly that reason: each row is its own grid, so a content-sized track would
+ * measure differently on every row.
+ * The two-cell shape stays the default, so no list that did not ask for columns changes.
+ * A cell ellipsizes and never wraps, so the row keeps its fixed height (Gate 2b).
+ * The host is the size container, so the set collapses against the LIST's own width - a list in a
+ * narrow tile collapses on a wide surface, which a query on the surface could never do. */
+.k-rowcols { container: krows / inline-size; display: flex; flex-direction: column; min-width: 0; }
+.k-rowcols > * { min-width: 0; }
+/* As `.k-dtile__body > .k-pager`: in a tile stretched beside a taller one the pager sits on the foot. */
+.k-dtile__body > .k-rowcols { flex: 1 0 auto; }
+.k-rowcols > .k-pager { margin-top: auto; }
+.k-rows--cols > .k-row, .k-rowhead { grid-template-columns: var(--row-tracks); }
+.k-rowhead {
+  display: grid; align-items: end; column-gap: 24px; height: 28px;
+  padding: 0 12px 6px var(--gutter); border-bottom: 1px solid var(--rule);
+}
+.k-rowhead > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.k-rowhead__end { text-align: right; }
+.k-row__cell { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.k-row__cell--end { text-align: right; }
+@container krows (max-width: 720px) {
+  .k-rows--cols > .k-row, .k-rowhead { grid-template-columns: var(--row-tracks-narrow, var(--row-tracks)); }
+  :is(.k-rows--cols > .k-row, .k-rowhead) > [data-collapse] { display: none; }
+}
+
 /* ============ StatStrip ============ */
 /* The strip PACKS at a measured track and stops growing (grow-4, part 4). `flex: 1 1 140px` grew
  * every tile to fill the strip, so six stats in a 1500px row became six ~250px columns, each with

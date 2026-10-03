@@ -156,3 +156,74 @@ describe('ContextCard collapses to what it carries (grow-4 part 6)', () => {
     expect(container.querySelector('.k-card__foot')).not.toBeNull();
   });
 });
+
+const COLS = [
+  { head: 'Project', width: '10rem' },
+  { head: 'Model', width: '7rem', collapse: true },
+  { head: 'Tokens', width: '6rem', align: 'end' as const },
+];
+
+function threeRows() {
+  return (
+    <Rows count={3} empty={{ title: 'none' }} nameHead="Session" columns={COLS}>
+      {['a', 'b', 'c'].map((id) => (
+        <ListRow key={id} size="s" name={`row ${id}`} cells={['personas', 'opus', '3.6M']} time="5m" />
+      ))}
+    </Rows>
+  );
+}
+
+describe('Rows columns (grow-4 part 2)', () => {
+  it('the track set is declared ONCE on the list, not per row', () => {
+    const { container } = render(threeRows());
+    const host = container.querySelector('.k-rowcols') as HTMLElement;
+    expect(host.style.getPropertyValue('--row-tracks')).toBe('minmax(0, 1fr) 10rem 7rem 6rem auto');
+    expect(container.querySelectorAll('.k-row[style]')).toHaveLength(0);
+  });
+
+  it('a collapsible column leaves the narrow track set, so the track goes with the cell', () => {
+    const { container } = render(threeRows());
+    const host = container.querySelector('.k-rowcols') as HTMLElement;
+    expect(host.style.getPropertyValue('--row-tracks-narrow')).toBe('minmax(0, 1fr) 10rem 6rem auto');
+    expect(container.querySelectorAll('[data-collapse]')).toHaveLength(4); // one head + three cells
+  });
+
+  it('every row fills the same columns, and a column carries its own alignment', () => {
+    const { container } = render(threeRows());
+    const rows = Array.from(container.querySelectorAll('.k-rows--cols > .k-row'));
+    expect(rows).toHaveLength(3);
+    for (const r of rows) {
+      const cells = Array.from(r.querySelectorAll('.k-row__cell'));
+      expect(cells).toHaveLength(3);
+      expect(cells[2]!.className).toContain('k-row__cell--end');
+    }
+  });
+
+  it('the head line is drawn once and hidden from the tree; the cell carries the column name instead', () => {
+    const { container } = render(threeRows());
+    const head = container.querySelector('.k-rowhead')!;
+    expect(head.getAttribute('aria-hidden')).toBe('true');
+    expect(Array.from(head.children).map((c) => c.textContent)).toEqual(['Session', 'Project', 'Model', 'Tokens', '']);
+    expect(container.querySelector('.k-row__cell')?.textContent).toBe('Project: personas');
+  });
+
+  it('the two-cell shape is still the default: no column set, no wrapper, no cells', () => {
+    const { container } = render(
+      <Rows count={1} empty={{ title: 'none' }}><ListRow name="plain" cells={['ignored']} /></Rows>,
+    );
+    expect(container.querySelector('.k-rowcols')).toBeNull();
+    expect(container.querySelector('.k-row__cell')).toBeNull();
+    expect(container.querySelector('.k-rows')!.className).not.toContain('k-rows--cols');
+  });
+
+  it('a capped list keeps its columns and its head', () => {
+    const { container } = render(
+      <Rows count={4} cap={2} empty={{ title: 'none' }} nameHead="Session" columns={COLS}>
+        {['a', 'b', 'c', 'd'].map((id) => <ListRow key={id} name={id} cells={['p', 'm', '1']} />)}
+      </Rows>,
+    );
+    expect(container.querySelector('.k-rowcols')).not.toBeNull();
+    expect(container.querySelector('.k-rowhead')).not.toBeNull();
+    expect(container.querySelectorAll('.k-rows--cols > .k-row')).toHaveLength(2);
+  });
+});

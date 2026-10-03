@@ -283,6 +283,15 @@ function Grow2Parts() {
   );
 }
 
+/** Five rows with real metadata, shown once in columns and once stacked (kit grow-4, part 2). */
+const COLUMN_ROWS: Array<{ name: string; project: string; model: string; tokens: string; turns: string; age: string; tone: Tone; glyph: Glyph; state: string }> = [
+  { name: 'Fleet settings page on typo tokens', project: 'personas', model: 'opus-5-5', tokens: '3.6M', turns: '71', age: '6m', tone: 'neutral', glyph: 'hollow', state: 'Idle' },
+  { name: 'Port the DataGrid pager onto tokens', project: 'personas', model: 'opus-5-5', tokens: '1.5M', turns: '34', age: '<1m', tone: 'primary', glyph: 'live', state: 'Working' },
+  { name: 'Rewrite the guide index page', project: 'personas-web', model: 'sonnet-5', tokens: '742.8K', turns: '19', age: '1m', tone: 'primary', glyph: 'live', state: 'Working' },
+  { name: 'Refactor vault connector retries', project: 'personas', model: 'opus-5-5', tokens: '2.5M', turns: '49', age: '2m', tone: 'warning', glyph: 'solid', state: 'Awaiting input' },
+  { name: 'Regenerate the knowledge index', project: 'ai-registry', model: 'haiku-4-5', tokens: '134.4K', turns: '7', age: '38m', tone: 'neutral', glyph: 'hollow', state: 'Idle' },
+];
+
 /** Kit grow-4: the parts the owner's 2026-10-03 Home review earned, in their states. */
 function Grow4Parts() {
   return (
@@ -305,6 +314,43 @@ function Grow4Parts() {
           </Tile>
         </Tiles>
         <Caption>Gaps s, m, l; a Stack with no `divided` is the gap alone.</Caption>
+      </Section>
+      <Section title="Rows columns" level={2} meta="one declared track set on the list, filled by every row: aligned columns with their own heads and alignment, the fixed row height kept, collapsing against the list's own width">
+        <Rows
+          count={5}
+          empty={{ title: 'none' }}
+          nameHead="Session"
+          columns={[
+            { head: 'Project', width: '10rem' },
+            { head: 'Model', width: '7rem', collapse: true },
+            { head: 'Tokens', width: '6rem', align: 'end' },
+            { head: 'Turns', width: '5rem', align: 'end' },
+          ]}
+        >
+          {COLUMN_ROWS.map((r) => (
+            <ListRow
+              key={r.name}
+              size="s"
+              name={r.name}
+              mark={{ tone: r.tone, glyph: r.glyph, label: r.state }}
+              cells={[r.project, r.model, r.tokens, r.turns]}
+              time={r.age}
+            />
+          ))}
+        </Rows>
+        <Caption>The same five rows with no column set: the metadata stacks under the name and the band runs empty.</Caption>
+        <Rows count={5} empty={{ title: 'none' }}>
+          {COLUMN_ROWS.map((r) => (
+            <ListRow
+              key={r.name}
+              size="s"
+              name={r.name}
+              mark={{ tone: r.tone, glyph: r.glyph, label: r.state }}
+              meta={<Meta parts={[r.project, r.model, `${r.tokens} tokens`, `${r.turns} turns`]} />}
+              time={r.age}
+            />
+          ))}
+        </Rows>
       </Section>
       <Section title="ContextCard fill, corner figure, body" level={2} meta="the quantity as the card's background and a figure in the corner, so a tour card is two rows; the head collapses with no meta and the foot with no figures">
         <ContextCards label="Fill cards" min="min(100%, 17rem)">

@@ -1,5 +1,6 @@
 import { Children, type ReactNode } from 'react';
 import { Mark } from './Mark';
+import { RowCells, RowList, type RowColumn } from './RowColumns';
 import { CappedRows } from './RowsCap';
 import { emptyBand, GhostRows, type EmptySpec } from './states';
 import { cx, kitAttrs, stateClass, type Glyph, type KitStates, type Tone } from './types';
@@ -12,6 +13,12 @@ export interface ListRowProps {
   mark?: { tone: Tone; glyph?: Glyph; label: string };
   /** Figures, always regular weight; the caller says what they are. */
   figures?: ReactNode;
+  /**
+   * The row's metadata SPREAD into the columns its `Rows` list declared, one node per column, in
+   * the list's order (grow-4, part 2). Without a declared column set the row keeps its two-cell
+   * shape and this is ignored, which is why no existing caller changes.
+   */
+  cells?: readonly ReactNode[];
   time?: ReactNode;
   size?: RowSize;
   state?: KitStates;
@@ -50,7 +57,7 @@ export interface ListRowProps {
  * kit's DEFAULT recipe moved.
  * @catalog ListRow - fixed-height row: one emphasised name (500; 600 is the tinted title's), quiet meta, status mark on the spine, figures; onPress makes the name the row's one button. Kit.
  */
-export function ListRow({ name, meta, mark, figures, time, size = 'm', state, nameClass, onPress, testId }: ListRowProps) {
+export function ListRow({ name, meta, mark, figures, cells, time, size = 'm', state, nameClass, onPress, testId }: ListRowProps) {
   const trail = figures != null || time != null;
   const nameCls = cx('k-row__name', nameClass ?? 'typo-body k-medium');
   const selected = typeof state === 'string' ? state === 'selected' : !!state?.includes('selected');
@@ -63,6 +70,7 @@ export function ListRow({ name, meta, mark, figures, time, size = 'm', state, na
           : <div className={nameCls}>{name}</div>}
         {meta != null && <div className="k-row__meta typo-caption">{meta}</div>}
       </div>
+      {cells && <RowCells cells={cells} />}
       {trail && (
         <div className="k-row__trail">
           {figures}
@@ -75,9 +83,18 @@ export function ListRow({ name, meta, mark, figures, time, size = 'm', state, na
 
 /** A list of rows, or its loading ghost, or its empty band: the list's three states; a pager under the last row.
  * `cap` (grow-3) shows the first `cap` rows and a "Show all N" control that expands the list in place.
- * @catalog Rows - a list of ListRows with its loading ghost, empty band, optional pager and an in-place "Show all" cap. Kit.
+ *
+ * `columns` (grow-4) gives the list REAL columns: the caller declares the track set ONCE on the
+ * list and each row fills it through `cells`, so a row's metadata spreads into aligned columns
+ * instead of stacking under the name and leaving the band empty across a wide surface (owner,
+ * 2026-10-03: "no columns used and creating empty space over passing metadata from rows to
+ * spread"). The two-cell shape stays the DEFAULT, so no existing caller changes; a column's
+ * content ellipsizes rather than wrapping, so the fixed row height survives (Gate 2b); and the set
+ * collapses against the LIST's own width, as `.k-grp` does, so a list inside a narrow tile
+ * collapses even on a wide surface.
+ * @catalog Rows - a list of ListRows with its loading ghost, empty band, optional pager, an in-place "Show all" cap and an optional declared column set the rows fill. Kit.
  */
-export function Rows({ loading, empty, children, count, pager, label, cap }: {
+export function Rows({ loading, empty, children, count, pager, label, cap, columns, nameHead }: {
   loading?: boolean;
   empty: EmptySpec;
   /** Number of rows about to render; 0 renders the empty band. */
@@ -89,10 +106,17 @@ export function Rows({ loading, empty, children, count, pager, label, cap }: {
   label?: string;
   /** Show the first `cap` rows and a "Show all N" control that expands in place (the page scrolls). */
   cap?: number;
+  /** The columns every row of this list fills through `ListRow cells`. */
+  columns?: readonly RowColumn[];
+  /** The name column's head; with it (or any column head) the list draws a head line. */
+  nameHead?: ReactNode;
 }) {
   if (loading) return <GhostRows />;
   if (count === 0) return <>{emptyBand(empty)}</>;
-  if (cap != null && Children.count(children) > cap) return <CappedRows cap={cap} pager={pager} label={label}>{children}</CappedRows>;
+  if (cap != null && Children.count(children) > cap) {
+    return <CappedRows cap={cap} pager={pager} label={label} columns={columns} nameHead={nameHead}>{children}</CappedRows>;
+  }
+  if (columns) return <RowList columns={columns} nameHead={nameHead} label={label} pager={pager}>{children}</RowList>;
   return (
     <>
       <div className="k-rows">{children}</div>
