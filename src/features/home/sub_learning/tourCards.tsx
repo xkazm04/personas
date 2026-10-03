@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ContextCard, UnitStrip, type Tone } from '@/features/shared/components/kit';
+import { ContextCard, type Tone } from '@/features/shared/components/kit';
 import type { TourDef } from '@/stores/slices/system/tourSlice';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -22,32 +22,27 @@ export function progressOf(done: number, completed: boolean): TourProgress {
 }
 
 /**
- * How a tour's state is drawn, on the card's rail and in its step units. Done is a
- * success; a tour with saved steps is waiting on you to continue, which reads
- * info-blue (the in-progress badge it replaces was the info status, Gate 5).
+ * How a tour's state is drawn: on the card's rail, and as the card's own background
+ * fill. Done is a success; a tour with saved steps is waiting on you to continue,
+ * which reads info-blue (the in-progress badge it replaces was the info status, Gate 5).
  */
 export const PROGRESS_TONE: Record<TourProgress, Tone> = { done: 'success', progress: 'info', fresh: 'neutral' };
 
-/** A tour's steps as units: the finished ones filled in its state's tone. */
-export function StepUnits({ done, total, progress, label }: { done: number; total: number; progress: TourProgress; label: string }) {
-  return (
-    <UnitStrip
-      size="m"
-      label={label}
-      segments={[
-        { n: done, tone: PROGRESS_TONE[progress], glyph: 'solid' },
-        { n: Math.max(0, total - done), tone: 'neutral', glyph: 'empty' },
-      ]}
-    />
-  );
-}
-
 /**
- * One tour as a kit card: its name at the top and, pinned to the foot, its steps
- * drawn as units beside the done/total figure (what it covers is in its detail). State is the Mark on the rail
- * (done, or in progress); a tour never started carries no mark. The progress
- * figure keeps `learning-tour-progress-<id>` only while the tour is in progress. Anchors
- * are written as data-testid literals because the tour-anchor generator reads only those.
+ * One tour as a kit card, in TWO rows and not three (owner, 2026-10-03: "bars can be
+ * represented by card background fill, number of passed tours in right top corner. This
+ * way we can get rid of third row. Second row is empty always and can be reduced").
+ *
+ * So: the name on the first row, the done/total figure in the corner beside it, and the
+ * progress itself painted as the card's `fill` - the quantity the step strip used to
+ * spend a whole foot row drawing. With no figures left the kit collapses the foot, and
+ * the meta line was already conditional, so a guided tour card is its name and its
+ * number. State is still the Mark on the rail (done, or in progress); a tour never
+ * started carries no mark and no fill, which is what "not started" looks like.
+ *
+ * The progress figure keeps `learning-tour-progress-<id>` only while the tour is in
+ * progress. Anchors are written as data-testid literals because the tour-anchor
+ * generator reads only those.
  */
 export function TourCard({ tour, title, completed, done, meta, onPress, actions, muted }: {
   tour: Pick<TourDef, 'id' | 'steps'>;
@@ -74,20 +69,25 @@ export function TourCard({ tour, title, completed, done, meta, onPress, actions,
       : progress === 'progress'
         ? { tone: 'info' as const, glyph: 'soft' as const, label: fraction }
         : undefined;
-  const figures = muted ? undefined : (
-    <>
-      <StepUnits done={done} total={total} progress={progress} label={tx(ht.steps_count, { count: total })} />
-      {progress === 'progress'
-        ? <span className="typo-data k-regular k-quiet" data-testid={`learning-tour-progress-${tour.id}`}>{fraction}</span>
-        : <span className="typo-data k-regular k-quiet">{fraction}</span>}
-    </>
-  );
+  // The corner figure, which is what the foot's `done/total` span was. A stale composed
+  // tour has no steps to count, so it states nothing.
+  const figure = muted
+    ? undefined
+    : progress === 'progress'
+      ? <span data-testid={`learning-tour-progress-${tour.id}`}>{fraction}</span>
+      : <span>{fraction}</span>;
+  // Progress as the card's background. Only once there IS progress: a fill of 0 draws
+  // nothing and would only add a class that says a quantity is being shown.
+  const fill = !muted && total > 0 && done > 0
+    ? { value: done / total, tone: PROGRESS_TONE[progress] }
+    : undefined;
   return (
     <ContextCard
       title={title}
       meta={meta}
       mark={mark}
-      figures={figures}
+      fill={fill}
+      figure={figure}
       actions={actions}
       state={muted ? 'muted' : undefined}
       onPress={onPress}

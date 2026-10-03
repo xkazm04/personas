@@ -74,7 +74,11 @@ function ComposedCard({ entry: { record, def }, completion, stepCompleted, onOpe
         title={title}
         completed={false}
         done={0}
-        meta={ht.composed_stale}
+        // Clamped: the stale sentence is the longest copy on this surface and, left to
+        // wrap, it decided the card's height and stretched every card in its grid row
+        // (Gate 2b - content never decides a row's height). Nothing is lost to a reader
+        // who cannot see it: the Mark beside it carries the same sentence as its label.
+        meta={<span className="line-clamp-2">{ht.composed_stale}</span>}
         muted={{ markLabel: ht.composed_stale }}
         actions={
           <Hint content={ht.composed_dismiss}>
