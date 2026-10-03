@@ -159,9 +159,10 @@ body {
 
   /* Caption -- secondary text, descriptions, timestamps, hints.
      Body-sized (was text-xs; bumped +2px 2026-06-10 for readability) but
-     muted to 70% foreground so the title/description pair reads as two
-     distinct tiers. The color lives in @layer base (below) so any explicit
-     text-* utility — status colors, accent chips, badges — still wins.
+     muted to 80% foreground (was 70% until 2026-10-03) so the title/description
+     pair reads as two distinct tiers. The color lives in @layer base (below) so
+     any explicit text-* utility — status colors, accent chips, badges — still
+     wins, and that is where the figure and its reasoning live.
 
      WEIGHT IS 400 ON PURPOSE (was 500 until 2026-08-06). Caption and
      .typo-title share the same 0.875rem size, so at 500-vs-600 the pair
@@ -421,9 +422,29 @@ body {
   [data-type-density="compact"] .typo-card-label { font-size: calc(var(--type-1) * var(--type-f)); }
 }
 
+/* The app's ONE muting level for secondary prose: 80% foreground, i.e. 20%
+   muting. It sits in @layer base so any explicit text-* utility still wins.
+
+   RAISED FROM 70% TO 80% ON 2026-10-03, by the owner, app-wide. The Home
+   review said of Roadmap: "it seems the fonts are muted a bit worsening the
+   readability. If muting or opacity can be found and reduced to 20%, it would
+   improve the feel" — and, asked how wide to take it: "Both tokens to 80%,
+   app-wide". The second token is the kit's `--quiet`
+   (src/features/shared/components/kit/kit.css), moved to 80% in 299713fff, so
+   the kit and the type scale now mute by the same amount. Gate 0 (2026-09-24)
+   had deferred the muting item to "module gates"; this is that gate, and the
+   answer was app-wide rather than per-module.
+
+   The tier separation does NOT rest on this number. .typo-caption is 400 at
+   --type-1 and untinted; .typo-title is 600 at the same size and tinted with
+   the primary; .typo-label is 600 one size step down (--type-0). Measured
+   2026-10-03 against those rules — see the comment on the token above, which
+   says in full why weight and size, not colour, must carry the pair. If the
+   next person is tempted to widen the colour gap again to make a pair read,
+   the defect is the weight on that pair, not this figure. */
 @layer base {
   .typo-caption {
-    color: color-mix(in srgb, var(--foreground) 70%, transparent);
+    color: color-mix(in srgb, var(--foreground) 80%, transparent);
   }
 }
 
