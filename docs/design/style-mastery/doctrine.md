@@ -412,6 +412,35 @@ Ask what would be lost if the thing were replaced by a labelled list of the same
 **Nothing lost -> it is structure**, and it belongs to the kit. **The point is lost ->
 it is a figure**, and the kit hosts it without dictating it.
 
+### What the first builder under 6c found ambiguous (fed back the same day)
+
+`Figure` and the System Check machine figure were built hours after this section landed, and the
+builder reported three gaps. All three are closed here rather than left for the next person:
+
+1. **A figure's controls and labels are the KIT's, not the figure's.** The line between "the
+   drawing" and "its furniture" was not stated, and the builder hit it as a *census failure*: a
+   raw `<button>` for a pressable part of the drawing is a finding in a feature directory and
+   legal inside the kit. That pressure pushed the callout rail into `Figure` itself, which is the
+   right outcome - but it arrived by gate accident, not by doctrine. **Stated now: the press
+   target, the label rail, the legend and the selection state belong to the kit part that frames
+   the figure. The drawing owns shape, ink and geometry, and nothing that takes a click or reads
+   as text.**
+2. **A figure's viewBox aspect is load-bearing and was unmentioned.** The first attempt used a
+   120x100 viewBox inside a 1340x188 plot, stretching ~6:1, and every drawn support came out
+   wider than tall - a bar chart, which is precisely the failure mode 6c exists to prevent.
+   **Measure the plot the frame will actually give you, then choose the viewBox to match it.** A
+   figure whose aspect fights its frame is not a figure; `preserveAspectRatio="none"` makes the
+   mismatch silent.
+3. **`compact` is now forbidden on showcase surfaces and nothing enforces it.** 13 surfaces still
+   opt in. That is census-shaped (an attribute on a root, matched against the surface's kind) and
+   is registered as the next ratchet rather than left to vigilance.
+
+Two further traps the same build surfaced, worth carrying: `.k-fig` was ALREADY taken by
+`ListRow`'s figures cell, so a new figure class silently inherited `display:inline-flex` and drew
+at 0px wide - **grep the kit's stylesheet before minting a class name**. And an `<svg>` is a
+replaced element: absolutely positioned with `width:auto` it takes its intrinsic width and ignores
+`left`/`right`.
+
 ### Consequences adopted the same day
 
 1. **`Figure`** joins the kit as the legal door: a framed region that hosts drawn content
