@@ -95,10 +95,17 @@ export function Cell({ value, hint, tone, data, strong }: {
   const ink = tone ? TONE_TEXT[tone] : 'text-foreground';
   const adds = hint && hint !== (typeof value === 'string' ? value : null) ? hint : null;
   const node = (
-    // `k-medium` (500), not `font-medium`: the kit's own weight class, which `typo-token-overpainted`
-    // does not count as a local variant of a type recipe — and 500 IS the kit's recipe for a white
-    // name (grow-4 part 5; 600 belongs to the tinted title above it).
-    <span className={`block min-w-0 truncate ${data ? 'typo-data' : 'typo-body'} ${strong ? 'k-medium' : 'k-regular'} ${ink}`}>
+    // A kit weight class, not `font-medium`: `typo-token-overpainted` does not count the kit's own
+    // classes as a local variant of a type recipe.
+    //
+    // `k-strong` (600), NOT `k-medium` (500). Measured 2026-10-03 by text advance width in the same
+    // headless Chromium that shoots this surface: `system-ui` resolves to Segoe UI, which has no
+    // Medium, so 400/420/450/475 all render identically and 500/550/600 all render identically.
+    // The ladder this font draws is 300/400/600/700 — `k-medium` renders AS 600 while claiming to
+    // be a tier below it. The kit's recipe is therefore 600 on the tinted title and **400** on a
+    // white name (`kit/ListRow.tsx`, the emphasis recipe), which is a step the font can actually
+    // draw; grow-4's original 500 moved no pixels at all.
+    <span className={`block min-w-0 truncate ${data ? 'typo-data' : 'typo-body'} ${strong ? 'k-strong' : 'k-regular'} ${ink}`}>
       {value}
     </span>
   );
