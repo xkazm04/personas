@@ -2615,7 +2615,16 @@ html[data-motion="reduce"] .animate-map-spin {
      all four is L=50% (#ff0000, worst cell 5.07:1); L=55% buys the margin the
      contrast doc asks for and is a hair less harsh than a pure-channel red.
      Nothing else in the theme changes: `--primary`, `--accent`, `--glass-bg`,
-     `--glass-border` and `--btn-primary` are untouched. */
+     `--glass-border` and `--btn-primary` are untouched.
+
+     This is not a new idea in this repo — Gate 0 reached the same answer for
+     the same reason and nobody carried it across: this theme's
+     `--role-highlight-raw` below is `#fe6b6d`, and the proposal sheet records
+     why in as many words ("highlight is a lighter red because the theme
+     primary (#cc0000) is 3.4:1 on the canvas",
+     src/styles/accent-roles.proposed.css:116-119). A text role already got a
+     lighter red while `--primary` kept the blood red. The tinted type tier is
+     the second such role; `--primary-ink` is just the name it needed. */
   --primary-ink: #ff1a1a;
   --accent: #e60000;
   --background: #080808;
