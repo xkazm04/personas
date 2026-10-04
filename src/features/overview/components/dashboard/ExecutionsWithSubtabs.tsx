@@ -1,5 +1,6 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import { Activity } from 'lucide-react';
+import { lazyRetry } from '@/lib/lazyRetry';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useOverviewStore } from '@/stores/overviewStore';
 import {
@@ -12,9 +13,11 @@ import GlobalExecutionList from '@/features/overview/sub_activity/components/Glo
 
 // Neither of these is reached on the default (Activity) lens, so keep both out
 // of the Activity view's initial chunk: the per-call LLM usage table, and the
-// metrics dashboard with its whole chart stack.
-const LlmCallsTable = lazy(() => import('@/features/overview/sub_activity/components/LlmCallsTable'));
-const ExecutionMetricsDashboard = lazy(() =>
+// metrics dashboard with its whole chart stack. `lazyRetry`, not raw `lazy`:
+// a failed chunk fetch is retried instead of having its rejection cached
+// forever (docs/concepts/golden-paths/lazy-route-chunk.md).
+const LlmCallsTable = lazyRetry(() => import('@/features/overview/sub_activity/components/LlmCallsTable'));
+const ExecutionMetricsDashboard = lazyRetry(() =>
   import('@/features/overview/sub_activity/components/ExecutionMetricsDashboard').then((m) => ({
     default: m.ExecutionMetricsDashboard,
   })),
@@ -73,7 +76,7 @@ export default function ExecutionsWithSubtabs() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<Activity className="w-5 h-5 text-blue-400" />}
+        icon={<Activity className="w-5 h-5 text-status-info" />}
         iconColor="blue"
         title={t.overview.executions.title}
         subtitle={tx(total !== 1 ? t.overview.activity.recorded : t.overview.activity.recorded_one, { count: total })}
