@@ -909,7 +909,8 @@
     "layers_persona_count_one": "1 persona",
     "layers_persona_count_other": "{count} personas",
     "layers_session_count_one": "1 session",
-    "layers_session_count_other": "{count} sessions"
+    "layers_session_count_other": "{count} sessions",
+    "layers_crew_aria": "{running} running, {attention} need you, {failed} failed, {idle} idle"
   },
   "common": {
     "unknown_error": "Unknown error",

@@ -908,5 +908,6 @@
   "layers_persona_count_other": "{count} personas",
   "layers_session_count_one": "1 sesión",
   "layers_session_count_other": "{count} sesiones",
-  "layers_workspace_aria": "Elige un espacio de trabajo"
+  "layers_workspace_aria": "Elige un espacio de trabajo",
+  "layers_crew_aria": "{running} en ejecución, {attention} te necesitan, {failed} con fallo, {idle} inactivos"
 }

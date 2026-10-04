@@ -908,5 +908,6 @@
   "layers_persona_count_other": "{count} 个人格",
   "layers_session_count_one": "1 个会话",
   "layers_session_count_other": "{count} 个会话",
-  "layers_workspace_aria": "选择工作区"
+  "layers_workspace_aria": "选择工作区",
+  "layers_crew_aria": "{running} 运行中，{attention} 需要你，{failed} 失败，{idle} 空闲"
 }

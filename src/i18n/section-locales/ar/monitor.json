@@ -908,5 +908,6 @@
   "layers_persona_count_other": "{count} شخصية",
   "layers_session_count_one": "جلسة واحدة",
   "layers_session_count_other": "{count} جلسة",
-  "layers_workspace_aria": "اختر مساحة عمل"
+  "layers_workspace_aria": "اختر مساحة عمل",
+  "layers_crew_aria": "{running} قيد التشغيل، {attention} بانتظارك، {failed} فشلت، {idle} خاملة"
 }

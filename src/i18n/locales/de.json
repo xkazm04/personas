@@ -7352,7 +7352,8 @@
     "layers_persona_count_other": "{count} Personas",
     "layers_session_count_one": "1 Sitzung",
     "layers_session_count_other": "{count} Sitzungen",
-    "layers_workspace_aria": "Arbeitsbereich wählen"
+    "layers_workspace_aria": "Arbeitsbereich wählen",
+    "layers_crew_aria": "{running} laufen, {attention} brauchen Sie, {failed} fehlgeschlagen, {idle} untätig"
   },
   "onboarding": {
     "adopt_button": "Agent einrichten",

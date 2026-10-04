@@ -25,6 +25,15 @@ import { tallyStates, type SquareState } from '../../fleetGridModel';
 import type { BoardColumn, BoardModel } from '../../useBoardModel';
 import type { ActivitySurface } from '../useActivitySurface';
 
+/** What a project owes a human, by kind. Three counts that never overlap:
+ *  a decision waiting, something that broke, something unread. */
+export interface FollowUps {
+  reviews: number;
+  warnings: number;
+  messages: number;
+  total: number;
+}
+
 /** A project as a layer-1 unit: its column, its roster states, what it owes you. */
 export interface ProjectUnit {
   projectId: string;
@@ -41,6 +50,11 @@ export interface ProjectUnit {
   sessions: number;
   /** The project's own colour, inherited from its workspace. */
   color: string;
+  /** Rolled up from the column's own cards — the same numbers the board badges
+   *  each persona with, summed, so a card and its personas cannot disagree. */
+  followUps: FollowUps;
+  /** The one state the card is drawn in: the worst thing happening inside. */
+  dominant: SquareState;
 }
 
 export interface WorkspaceUnit {
@@ -59,6 +73,31 @@ const NO_STATES: Record<SquareState, number> = { running: 0, attention: 0, faile
  *  board underneath it. */
 function tallyColumn(column: BoardColumn | null): Record<SquareState, number> {
   return column ? tallyStates(column.cards) : NO_STATES;
+}
+
+const NO_FOLLOW_UPS: FollowUps = { reviews: 0, warnings: 0, messages: 0, total: 0 };
+
+function followUpsOf(column: BoardColumn | null, states: Record<SquareState, number>): FollowUps {
+  if (!column) return NO_FOLLOW_UPS;
+  let reviews = 0;
+  let messages = 0;
+  for (const card of column.cards) {
+    reviews += card.reviewCount;
+    messages += card.messageCount;
+  }
+  // A warning is a persona that BROKE, which is a different fact from a review
+  // waiting or a report unread — so the three never double-count one thing.
+  const warnings = states.failed;
+  return { reviews, warnings, messages, total: reviews + warnings + messages };
+}
+
+/** Worst-first: a project with one failure is a failing project however many
+ *  of its agents are idle. */
+function dominantState(states: Record<SquareState, number>): SquareState {
+  if (states.failed > 0) return 'failed';
+  if (states.attention > 0) return 'attention';
+  if (states.running > 0) return 'running';
+  return 'idle';
 }
 
 /**
@@ -135,6 +174,8 @@ export function useFleetLayers(surface: ActivitySurface): FleetLayers {
         needsYou: states.attention + states.failed,
         sessions: column ? column.rows.filter((r) => r.kind === 'session').length : 0,
         color,
+        followUps: followUpsOf(column, states),
+        dominant: dominantState(states),
       };
     },
     [byTeam],
@@ -176,6 +217,8 @@ export function useFleetLayers(surface: ActivitySurface): FleetLayers {
         needsYou: states.attention + states.failed,
         sessions: column.rows.filter((r) => r.kind === 'session').length,
         color: column.teamColor,
+        followUps: followUpsOf(column, states),
+        dominant: dominantState(states),
       };
     });
   }, [model, claimed]);

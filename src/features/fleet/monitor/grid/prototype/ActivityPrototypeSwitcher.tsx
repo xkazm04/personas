@@ -9,10 +9,11 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { ActivitySurfaceProps } from './useActivitySurface';
 import { ActivityEntryE } from './entry-e/ActivityEntryE';
 import { ActivityCases } from './layers/ActivityCases';
+import { PlateCard, GaugeCard, SignalCard } from './layers/casesCards';
 
-type Pick = 'baseline' | 'entry-e' | 'cases';
+type Pick = 'baseline' | 'entry-e' | 'plate' | 'gauge' | 'signal';
 
-const PICKS: readonly Pick[] = ['baseline', 'entry-e', 'cases'];
+const PICKS: readonly Pick[] = ['baseline', 'entry-e', 'plate', 'gauge', 'signal'];
 
 const KEY = 'personas.prototype.activity-variant';
 function read(): Pick {
@@ -26,7 +27,9 @@ function read(): Pick {
 const TABS: Array<{ id: Pick; label: string; hint: string }> = [
   { id: 'baseline', label: 'Baseline', hint: 'Current production surface' },
   { id: 'entry-e', label: 'E · Annunciator', hint: 'Contest winner, with the owner adjustments' },
-  { id: 'cases', label: 'Cases', hint: 'Layered: projects as places, decisions docked and widening' },
+  { id: 'plate', label: 'Plate', hint: 'Cases layout · the card as a nameplate with a state rail' },
+  { id: 'gauge', label: 'Gauge', hint: 'Cases layout · the card as its state mix, drawn across' },
+  { id: 'signal', label: 'Signal', hint: 'Cases layout · dark glass that lights only when it needs you' },
 ];
 
 export function ActivityPrototypeSwitcher({
@@ -37,9 +40,8 @@ export function ActivityPrototypeSwitcher({
     setPick(p);
     try { localStorage.setItem(KEY, p); } catch (err) { silentCatch('fleet/prototype:writeVariant')(err); }
   };
-  const Body = pick === 'entry-e' ? ActivityEntryE
-    : pick === 'cases' ? ActivityCases
-    : Baseline;
+  const CARD = { plate: PlateCard, gauge: GaugeCard, signal: SignalCard } as const;
+  const card = pick in CARD ? CARD[pick as keyof typeof CARD] : null;
   return (
     <div className="flex h-full min-h-0 flex-col gap-1.5">
       <div className="flex flex-shrink-0 items-center gap-1 self-start rounded-interactive border border-dashed border-primary/30 bg-background/80 p-0.5" role="group" aria-label="Prototype variants">
@@ -59,7 +61,9 @@ export function ActivityPrototypeSwitcher({
         ))}
       </div>
       <div className="min-h-0 flex-1">
-        <Body {...props} />
+        {card ? <ActivityCases {...props} Card={card} />
+          : pick === 'entry-e' ? <ActivityEntryE {...props} />
+          : <Baseline {...props} />}
       </div>
     </div>
   );

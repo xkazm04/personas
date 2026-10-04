@@ -1,115 +1,38 @@
-// The parts CASES is drawn from: the state strip, the project tile, and the
-// tile grid that is layer 1's body.
-//
-// Split out of `ActivityCases` when ATLAS was cut and the surface became one
-// variant rather than two — the shared-chrome file it used to sit beside stopped
-// earning itself, and the shell was past the repo's component size directive.
+// The parts CASES is drawn from: the fleet tally, and the grid that is layer
+// 1's body. The project CARD itself lives in `casesCards` — it is a figure,
+// drawn three ways, and the grid takes whichever one is being shown.
 
-import { memo, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Button } from '@/features/shared/components/buttons';
-import { Tiles, Tile, UnitStrip, type UnitSegment } from '@/features/shared/components/kit';
 import { SQUARE_STATE_ORDER, SQUARE_VISUAL, type SquareState } from '../../fleetGridModel';
 import type { ProjectUnit } from './useFleetLayers';
-
-/** The board's four states on the kit's closed tone vocabulary. Idle is drawn
- *  hollow rather than tinted: a quiet agent is absence of work, not a state
- *  competing for the eye. */
-const TONE_OF: Record<SquareState, UnitSegment['tone']> = {
-  running: 'primary',
-  attention: 'warning',
-  failed: 'error',
-  idle: 'neutral',
-};
-
-export function stateSegments(states: Record<SquareState, number>): UnitSegment[] {
-  return SQUARE_STATE_ORDER
-    .filter((s) => states[s] > 0)
-    .map((s) => ({ n: states[s], tone: TONE_OF[s], glyph: s === 'idle' ? 'hollow' : 'solid' }));
-}
-
-/** The mark a project wears: the worst thing happening inside it. */
-function markFor(unit: ProjectUnit, needs: string, clear: string) {
-  return {
-    tone: unit.states.failed > 0 ? 'error' as const
-      : unit.needsYou > 0 ? 'warning' as const
-      : unit.states.running > 0 ? 'primary' as const
-      : 'neutral' as const,
-    glyph: unit.states.running > 0 ? 'live' as const : 'solid' as const,
-    label: unit.needsYou > 0 ? needs : clear,
-  };
-}
-
-export const CaseTile = memo(function CaseTile({
-  unit, onOpen, reducedMotion,
-}: {
-  unit: ProjectUnit;
-  onOpen: (projectId: string) => void;
-  reducedMotion: boolean;
-}) {
-  const { t, tx } = useTranslation();
-  const press = useCallback(() => onOpen(unit.projectId), [onOpen, unit.projectId]);
-  const segments = stateSegments(unit.states);
-
-  return (
-    <motion.div
-      layoutId={reducedMotion ? undefined : `case:${unit.projectId}`}
-      transition={reducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 400, damping: 32 }}
-      className="contents"
-    >
-      <Tile
-        span={3}
-        testId="cases-tile"
-        onPress={press}
-        title={unit.name}
-        count={unit.needsYou > 0 ? <span className="text-status-warning"><Numeric value={unit.needsYou} /></span> : undefined}
-        mark={markFor(unit, t.monitor.columns_needs_attention, t.monitor.columns_all_clear)}
-        meta={
-          <span className="flex items-center gap-2">
-            <span>
-              {tx(unit.personas === 1 ? t.monitor.layers_persona_count_one : t.monitor.layers_persona_count_other,
-                { count: unit.personas })}
-            </span>
-            {unit.sessions > 0 && (
-              <span>
-                {tx(unit.sessions === 1 ? t.monitor.layers_session_count_one : t.monitor.layers_session_count_other,
-                  { count: unit.sessions })}
-              </span>
-            )}
-          </span>
-        }
-      >
-        {segments.length > 0 && (
-          <UnitStrip
-            segments={segments}
-            size="m"
-            rows={2}
-            label={tx(t.monitor.layers_open_aria, { project: unit.name })}
-          />
-        )}
-      </Tile>
-    </motion.div>
-  );
-});
+import type { ProjectCardComponent } from './casesCards';
 
 /** Layer 1's body. The grid keeps a stable order (the model sorts once), so a
  *  project stays where the operator last found it. */
 export function CaseGrid({
-  units, onOpen, reducedMotion,
+  units, onOpen, Card, wide,
 }: {
   units: readonly ProjectUnit[];
   onOpen: (projectId: string) => void;
-  reducedMotion: boolean;
+  Card: ProjectCardComponent;
+  /** SIGNAL carries a headline figure and needs a wider column. */
+  wide?: boolean;
 }) {
   const { t } = useTranslation();
   return (
-    <Tiles label={t.monitor.conv_projects}>
+    <div
+      className={`pc-grid ${wide ? 'pc-grid--signal' : ''}`}
+      role="list"
+      aria-label={t.monitor.conv_projects}
+    >
       {units.map((u) => (
-        <CaseTile key={u.projectId} unit={u} onOpen={onOpen} reducedMotion={reducedMotion} />
+        <div role="listitem" key={u.projectId} className="contents">
+          <Card unit={u} onOpen={onOpen} />
+        </div>
       ))}
-    </Tiles>
+    </div>
   );
 }
 

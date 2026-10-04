@@ -7352,7 +7352,8 @@
     "layers_persona_count_other": "{count} 件のペルソナ",
     "layers_session_count_one": "セッション 1 件",
     "layers_session_count_other": "{count} 件のセッション",
-    "layers_workspace_aria": "ワークスペースを選択"
+    "layers_workspace_aria": "ワークスペースを選択",
+    "layers_crew_aria": "実行中 {running}、要対応 {attention}、失敗 {failed}、待機 {idle}"
   },
   "onboarding": {
     "adopt_button": "エージェントを設定",

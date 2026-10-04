@@ -44,6 +44,7 @@ import { useActivitySurface, type ActivitySurfaceProps } from '../useActivitySur
 import { useRailSurface } from '../useRailSurface';
 import { useFleetLayers, type FleetLayers } from './useFleetLayers';
 import { CaseGrid, FleetTally } from './casesParts';
+import { PlateCard, SignalCard, type ProjectCardComponent } from './casesCards';
 import { CasesDock } from './CasesDock';
 
 const WORKSPACE_TABS_PREFIX = 'layers-workspace';
@@ -77,7 +78,13 @@ function WorkspaceCases({ layers }: { layers: FleetLayers }) {
   );
 }
 
-function ActivityCasesImpl(props: ActivitySurfaceProps) {
+export interface CasesProps extends ActivitySurfaceProps {
+  /** The project card this round is showing. The layout strategy is settled;
+   *  the card is what round 2 is choosing between. */
+  Card?: ProjectCardComponent;
+}
+
+function ActivityCasesImpl({ Card = PlateCard, ...props }: CasesProps) {
   const { t } = useTranslation();
   const surface = useActivitySurface(props);
   const layers = useFleetLayers(surface);
@@ -183,7 +190,8 @@ function ActivityCasesImpl(props: ActivitySurfaceProps) {
                     <CaseGrid
                       units={layers.visible}
                       onOpen={layers.openProject}
-                      reducedMotion={surface.reducedMotion}
+                      Card={Card}
+                      wide={Card === SignalCard}
                     />
                     {layers.visible.length === 0 && !surface.cold && (
                       <div className="px-3 py-10">

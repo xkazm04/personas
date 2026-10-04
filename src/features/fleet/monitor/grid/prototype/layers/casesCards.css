@@ -1,0 +1,230 @@
+/* The project card, drawn three ways.
+ *
+ * These are FIGURES, not kit structure: the point of each is its shape, so
+ * they are composed here rather than out of `Tile` (doctrine 6c — the kit
+ * governs structure, not figure). Layout is free; every colour is a token or a
+ * color-mix over one, and every size is an em or a token, so nothing here is a
+ * literal the style gates would count.
+ *
+ * ONE TONE CONTRACT across all three. `--pc-tone` is set per card from the
+ * project's dominant state and everything else mixes from it, so a card cannot
+ * drift from the board's own four-state palette.
+ */
+
+.pc {
+  --pc-tone: var(--status-neutral);
+  --pc-wash: color-mix(in srgb, var(--pc-tone) 10%, transparent);
+  --pc-wash-strong: color-mix(in srgb, var(--pc-tone) 18%, transparent);
+  --pc-edge: color-mix(in srgb, var(--pc-tone) 42%, transparent);
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  border-radius: var(--radius-card, 0.75em);
+  text-align: left;
+  isolation: isolate;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.pc[data-state='running']   { --pc-tone: var(--primary); }
+.pc[data-state='attention'] { --pc-tone: var(--status-warning); }
+.pc[data-state='failed']    { --pc-tone: var(--status-error); }
+.pc[data-state='idle']      { --pc-tone: var(--foreground); --pc-wash: color-mix(in srgb, var(--foreground) 4%, transparent); --pc-edge: color-mix(in srgb, var(--foreground) 14%, transparent); }
+
+.pc:is(button) { appearance: none; background: none; border: 0; padding: 0; color: inherit; font: inherit; }
+.pc:focus-visible { outline: 2px solid var(--focus-ring-color, var(--primary)); outline-offset: 2px; }
+.pc:hover { transform: translateY(-1px); }
+
+/* The name never shrinks and never truncates to one unreadable line. */
+.pc__name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---- follow-up sigils: a kind, drawn, with its count ------------------- */
+
+.pc__ups { display: flex; align-items: center; gap: 0.45em; flex-wrap: wrap; }
+
+.pc__up {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0.12em 0.45em 0.12em 0.3em;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--up-tone) 34%, transparent);
+  background: color-mix(in srgb, var(--up-tone) 13%, transparent);
+  color: var(--up-tone);
+  white-space: nowrap;
+}
+.pc__up svg { width: 1em; height: 1em; flex: none; }
+.pc__up--reviews  { --up-tone: var(--status-info); }
+.pc__up--warnings { --up-tone: var(--status-error); }
+.pc__up--messages { --up-tone: var(--primary); }
+
+/* ---- the crew: one mark per persona, coloured by its state ------------- */
+
+.pc__crew { display: flex; flex-wrap: wrap; gap: 0.22em; align-content: flex-start; }
+.pc__cell { width: 0.5em; height: 0.5em; border-radius: 0.14em; flex: none; }
+.pc__cell[data-s='running']   { background: var(--primary); }
+.pc__cell[data-s='attention'] { background: var(--status-warning); }
+.pc__cell[data-s='failed']    { background: var(--status-error); }
+.pc__cell[data-s='idle']      { background: color-mix(in srgb, var(--foreground) 22%, transparent); }
+
+/* ======================================================================== */
+/* PLATE — identity first: a machined nameplate with a state rail.          */
+/* ======================================================================== */
+
+.pc--plate {
+  border: 1px solid var(--pc-edge);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--foreground) 5%, transparent) 0%, transparent 38%),
+    var(--pc-wash);
+  padding: 0.75em 0.85em 0.7em 1.05em;
+  gap: 0.6em;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 7%, transparent);
+}
+/* The rail IS the left edge, full height: a colour strip you scan without
+   reading a word. */
+.pc--plate::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0.28em;
+  border-radius: inherit;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  background: var(--pc-tone);
+  opacity: 0.85;
+}
+.pc--plate[data-state='idle']::before { opacity: 0.3; }
+.pc--plate:hover { border-color: color-mix(in srgb, var(--pc-tone) 70%, transparent); }
+.pc--plate .pc__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6em;
+  padding-top: 0.55em;
+  border-top: 1px solid color-mix(in srgb, var(--foreground) 9%, transparent);
+}
+
+/* ======================================================================== */
+/* GAUGE — composition first: the state mix drawn across the card.          */
+/* ======================================================================== */
+
+.pc--gauge {
+  border: 1px solid color-mix(in srgb, var(--foreground) 11%, transparent);
+  background: var(--pc-wash);
+  padding: 0.75em 0.85em;
+  gap: 0.65em;
+}
+.pc--gauge:hover { border-color: var(--pc-edge); }
+.pc__meter {
+  display: flex;
+  width: 100%;
+  height: 0.62em;
+  gap: 0.12em;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
+}
+.pc__seg { min-width: 0.3em; border-radius: 999px; }
+.pc__seg[data-s='running']   { background: var(--primary); }
+.pc__seg[data-s='attention'] { background: var(--status-warning); }
+.pc__seg[data-s='failed']    { background: var(--status-error); }
+/* Idle is drawn as absence — hatched, not tinted, so a quiet project does not
+   compete with a busy one for the eye. */
+.pc__seg[data-s='idle'] {
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--foreground) 16%, transparent) 0 0.22em,
+    transparent 0.22em 0.44em
+  );
+}
+.pc__scale { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5em; }
+
+/* ======================================================================== */
+/* SIGNAL — urgency first: dark glass that lights only when it needs you.   */
+/* ======================================================================== */
+
+.pc--signal {
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+  background: color-mix(in srgb, var(--foreground) 3%, transparent);
+  padding: 0.8em 0.9em;
+  gap: 0.5em;
+  flex-direction: row;
+  align-items: center;
+}
+/* Lit: the card takes the tone, gains an edge and a soft bloom. */
+.pc--signal[data-lit='true'] {
+  border-color: var(--pc-edge);
+  background: var(--pc-wash-strong);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--pc-tone) 16%, transparent),
+              0 0.5em 1.4em -0.7em color-mix(in srgb, var(--pc-tone) 55%, transparent);
+}
+.pc--signal:hover { border-color: var(--pc-edge); }
+.pc__body { display: flex; min-width: 0; flex: 1 1 auto; flex-direction: column; gap: 0.4em; }
+/* The headline figure: how much this project owes you, at a size you read
+   across the board rather than per card. */
+.pc__total {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15em;
+  line-height: 1;
+  color: var(--pc-tone);
+}
+.pc--signal[data-lit='false'] .pc__total { color: color-mix(in srgb, var(--foreground) 38%, transparent); }
+/* A running project that owes nothing still says it is working: one quiet
+   pulsing tick, never the whole card. */
+.pc__tick {
+  position: absolute;
+  top: 0.65em;
+  right: 0.75em;
+  width: 0.42em;
+  height: 0.42em;
+  border-radius: 999px;
+  background: var(--primary);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .pc__tick { animation: pc-breathe 2.4s ease-in-out infinite; }
+}
+@keyframes pc-breathe { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+
+/* ---- the grid the cards sit in ---------------------------------------- */
+
+.pc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15em, 1fr));
+  gap: 0.7em;
+}
+.pc-grid--signal { grid-template-columns: repeat(auto-fill, minmax(19em, 1fr)); }
+
+/* The stretched press target: covers the whole figure, paints nothing, and
+   keeps the card's own focus ring (see `.pc:focus-within`). */
+.pc__press { position: absolute; inset: 0; z-index: 1; border-radius: inherit; padding: 0; min-height: 0; background: none; }
+.pc__press:hover { background: color-mix(in srgb, var(--pc-tone) 7%, transparent); }
+.pc:focus-within { outline: 2px solid var(--focus-ring-color, var(--primary)); outline-offset: 2px; }
+.pc__press:focus-visible { outline: none; }
+/* Anything the pointer should still reach sits above it. */
+.pc__ups, .pc__crew, .pc__total { position: relative; z-index: 2; pointer-events: none; }
+
+/* ---- quiet: a project with no crew and nothing owed ---------------------
+   Measured on the real fleet: 78 of 91 projects are bound to no personas at
+   all, so without this the overview is 86% identical near-empty plates and the
+   dozen that matter do not stand out. A quiet card keeps its name legible and
+   gives up everything else — height, edge, wash — to the ones that are alive. */
+.pc[data-quiet] {
+  padding-block: 0.45em;
+  gap: 0.25em;
+  border-color: color-mix(in srgb, var(--foreground) 7%, transparent);
+  background: none;
+}
+.pc[data-quiet] .pc__name { color: color-mix(in srgb, var(--foreground) 55%, transparent); }
+.pc--plate[data-quiet]::before { opacity: 0.12; }
+.pc--plate[data-quiet] .pc__foot { display: none; }
+.pc--signal[data-quiet] .pc__total { display: none; }

@@ -7352,7 +7352,8 @@
     "layers_persona_count_other": "페르소나 {count}개",
     "layers_session_count_one": "세션 1개",
     "layers_session_count_other": "세션 {count}개",
-    "layers_workspace_aria": "워크스페이스 선택"
+    "layers_workspace_aria": "워크스페이스 선택",
+    "layers_crew_aria": "실행 중 {running}, 대기 중 {attention}, 실패 {failed}, 유휴 {idle}"
   },
   "onboarding": {
     "adopt_button": "에이전트 설정",

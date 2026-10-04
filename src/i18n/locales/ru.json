@@ -7352,7 +7352,8 @@
     "layers_persona_count_other": "{count} персон",
     "layers_session_count_one": "1 сессия",
     "layers_session_count_other": "{count} сессий",
-    "layers_workspace_aria": "Выберите рабочую область"
+    "layers_workspace_aria": "Выберите рабочую область",
+    "layers_crew_aria": "{running} выполняется, {attention} ждут вас, {failed} с ошибкой, {idle} простаивают"
   },
   "onboarding": {
     "adopt_button": "Настроить агента",

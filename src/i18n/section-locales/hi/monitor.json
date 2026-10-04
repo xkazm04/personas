@@ -908,5 +908,6 @@
   "layers_persona_count_other": "{count} पर्सोना",
   "layers_session_count_one": "1 सत्र",
   "layers_session_count_other": "{count} सत्र",
-  "layers_workspace_aria": "वर्कस्पेस चुनें"
+  "layers_workspace_aria": "वर्कस्पेस चुनें",
+  "layers_crew_aria": "{running} चल रहे, {attention} को आपकी ज़रूरत, {failed} विफल, {idle} निष्क्रिय"
 }

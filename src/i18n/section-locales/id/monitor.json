@@ -908,5 +908,6 @@
   "layers_persona_count_other": "{count} persona",
   "layers_session_count_one": "1 sesi",
   "layers_session_count_other": "{count} sesi",
-  "layers_workspace_aria": "Pilih ruang kerja"
+  "layers_workspace_aria": "Pilih ruang kerja",
+  "layers_crew_aria": "{running} berjalan, {attention} menunggu Anda, {failed} gagal, {idle} menganggur"
 }
