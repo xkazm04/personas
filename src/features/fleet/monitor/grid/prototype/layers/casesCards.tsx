@@ -1,23 +1,21 @@
-// THE PROJECT CARD, three ways.
+// PLATE — the project as a nameplate.
 //
-// Round 1 drew projects with the kit's `Tile` and the owner's verdict was that
-// the cards were the weakness — a generic container with "N personas" under it
-// says almost nothing a fleet operator needs. These are drawn components
-// instead: the point of each is its SHAPE, which is what doctrine 6c means by a
-// figure, and what the kit explicitly does not govern.
+// Round 2 drew three cards and the owner kept this one; Gauge and Signal are
+// gone. Round 3 reshaped it to a strict TWO ROWS — the name, then the crew —
+// with what the project owes a human lifted out of the flow entirely and
+// parked in the top-right corner, so a card's height never depends on how much
+// is wrong with it and a wall of them keeps one rhythm.
 //
-// What all three carry, and none of them spell out in words:
-//   · the project's name, never truncated to one unreadable line
-//   · its DOMINANT STATE as the card's own background tone and edge
-//   · its crew, drawn one mark per persona in that persona's state colour
-//   · what it owes a human, as three sigils that only appear when non-zero:
-//     reviews (a decision waiting), warnings (something broke), messages
-//     (something unread)
+// THE SIGILS ARE DOORS, not badges. Pressing one lands in the thing that
+// resolves it rather than in another layer that lists it:
+//   warnings -> the failed persona itself, opened at its activity
+//   reviews  -> that project's decisions, in the dock, ready to triage
+//   messages -> that project's unread reports, in the dock
+// They sit above the card's own press target, so the corner resolves and the
+// rest of the card opens the project.
 //
-// They differ in what they put first:
-//   PLATE   identity   — a nameplate with a state rail; the project is a place
-//   GAUGE   mix        — the state distribution drawn across the whole card
-//   SIGNAL  urgency    — dark glass; a card lights only when it needs you
+// It is a FIGURE, not kit structure (doctrine 6c): colour is a token or a
+// color-mix over one, and the shape is the point.
 
 import { memo, type ComponentType } from 'react';
 import { ClipboardCheck, MessageSquare, TriangleAlert } from 'lucide-react';
@@ -28,101 +26,102 @@ import { SQUARE_STATE_ORDER, type SquareState } from '../../fleetGridModel';
 import type { FollowUps, ProjectUnit } from './useFleetLayers';
 import './casesCards.css';
 
-/** Nothing bound, nothing owed. Drawn as a name and little else — see the
- *  `[data-quiet]` block in the stylesheet for why that matters on this fleet. */
-export function isQuiet(unit: ProjectUnit): boolean {
-  return unit.personas === 0 && unit.followUps.total === 0;
-}
+/** The three kinds of follow-up a project can owe, and what resolves each. */
+export type FollowUpKind = 'reviews' | 'warnings' | 'messages';
 
 export interface ProjectCardProps {
   unit: ProjectUnit;
   onOpen: (projectId: string) => void;
+  /** Take me to the thing that resolves this, not to a list of it. */
+  onResolve: (unit: ProjectUnit, kind: FollowUpKind) => void;
 }
 
 export type ProjectCardComponent = ComponentType<ProjectCardProps>;
 
-/** The crew: one mark per persona, in that persona's state colour, worst
- *  first. Capped so a 40-agent project stays a shape rather than a wall; the
- *  remainder is said once, in figures. */
-const CREW_CAP = 28;
+/** Nothing bound, nothing owed — drawn as a name and little else. */
+export function isQuiet(unit: ProjectUnit): boolean {
+  return unit.personas === 0 && unit.followUps.total === 0;
+}
+
+/** One mark per persona in that persona's state colour, worst first. Capped so
+ *  a 40-agent project stays a shape; the remainder is said once, in figures. */
+const CREW_CAP = 26;
 
 function Crew({ states, label }: { states: Record<SquareState, number>; label: string }) {
   const marks: SquareState[] = [];
   for (const s of SQUARE_STATE_ORDER) {
     for (let i = 0; i < states[s] && marks.length < CREW_CAP; i += 1) marks.push(s);
   }
-  const total = SQUARE_STATE_ORDER.reduce((n, s) => n + states[s], 0);
-  const rest = total - marks.length;
+  const rest = SQUARE_STATE_ORDER.reduce((n, s) => n + states[s], 0) - marks.length;
+  if (marks.length === 0) return null;
   return (
     <span className="pc__crew" role="img" aria-label={label}>
       {marks.map((s, i) => <span key={i} className="pc__cell" data-s={s} aria-hidden />)}
-      {rest > 0 && (
-        <span className="typo-caption text-foreground" aria-hidden>+<Numeric value={rest} /></span>
-      )}
+      {rest > 0 && <span className="pc__rest typo-caption" aria-hidden>+<Numeric value={rest} /></span>}
     </span>
   );
 }
 
-/** The three kinds of follow-up, drawn. A zero is absent rather than printed:
- *  an empty row is the fastest way to read "nothing here wants me". */
-function FollowUpSigils({ ups, labels }: { ups: FollowUps; labels: Record<string, string> }) {
+const SIGIL = {
+  warnings: TriangleAlert,
+  reviews: ClipboardCheck,
+  messages: MessageSquare,
+} as const;
+
+/** The corner. Each sigil is its own button because each resolves a different
+ *  thing; one combined "12 things" chip would have to be opened before it could
+ *  be acted on, which is the nested layer this round exists to remove. */
+function FollowUpCorner({
+  ups, labels, onPick,
+}: {
+  ups: FollowUps;
+  labels: Record<FollowUpKind, string>;
+  onPick: (kind: FollowUpKind) => void;
+}) {
   if (ups.total === 0) return null;
-  const items = [
-    { k: 'reviews' as const, n: ups.reviews, Icon: ClipboardCheck },
-    { k: 'warnings' as const, n: ups.warnings, Icon: TriangleAlert },
-    { k: 'messages' as const, n: ups.messages, Icon: MessageSquare },
-  ].filter((i) => i.n > 0);
+  const items: Array<{ k: FollowUpKind; n: number }> = [
+    { k: 'warnings', n: ups.warnings },
+    { k: 'reviews', n: ups.reviews },
+    { k: 'messages', n: ups.messages },
+  ];
   return (
-    <span className="pc__ups">
-      {items.map(({ k, n, Icon }) => (
-        <span key={k} className={`pc__up pc__up--${k} typo-caption`}>
-          <Icon aria-hidden />
-          <span className="tabular-nums"><Numeric value={n} /></span>
-          <span className="sr-only">{labels[k]}</span>
-        </span>
-      ))}
+    <span className="pc__corner">
+      {items.filter((i) => i.n > 0).map(({ k, n }) => {
+        const Icon = SIGIL[k];
+        return (
+          <Button
+            key={k}
+            variant="ghost"
+            onClick={(e) => { e.stopPropagation(); onPick(k); }}
+            aria-label={labels[k]}
+            data-testid={`plate-sigil-${k}`}
+            className={`pc__up pc__up--${k} typo-caption`}
+          >
+            <span className="pc__up-in">
+              <Icon aria-hidden />
+              <span className="tabular-nums"><Numeric value={n} /></span>
+            </span>
+          </Button>
+        );
+      })}
     </span>
   );
 }
 
-function useCardLabels() {
+export const PlateCard: ProjectCardComponent = memo(function PlateCard({
+  unit, onOpen, onResolve,
+}: ProjectCardProps) {
   const { t, tx } = useTranslation();
-  return {
-    labels: {
-      reviews: t.monitor.conv_tab_reviews,
-      warnings: t.monitor.grid_state_failed,
-      messages: t.monitor.grid_rail_tab_messages,
-    },
-    crewLabel: (u: ProjectUnit) => tx(t.monitor.layers_crew_aria, {
-      running: u.states.running, attention: u.states.attention,
-      failed: u.states.failed, idle: u.states.idle,
-    }),
-    openLabel: (u: ProjectUnit) => tx(t.monitor.layers_open_aria, { project: u.name }),
+  const labels: Record<FollowUpKind, string> = {
+    reviews: tx(t.monitor.layers_resolve_reviews, { count: unit.followUps.reviews }),
+    warnings: tx(t.monitor.layers_resolve_warnings, { count: unit.followUps.warnings }),
+    messages: tx(t.monitor.layers_resolve_messages, { count: unit.followUps.messages }),
   };
-}
+  const crewLabel = tx(t.monitor.layers_crew_aria, {
+    running: unit.states.running, attention: unit.states.attention,
+    failed: unit.states.failed, idle: unit.states.idle,
+  });
 
-/**
- * The press target. The card is a FIGURE, so the button is a stretched overlay
- * rather than the card's own element — the same shape the kit's own `ListRow`
- * uses (`.k-row__press::after { inset: 0 }`), and the reason the WHOLE card is
- * pressable here where the kit's `Tile` made only its title pressable.
- */
-function CardPress({ label, onPress }: { label: string; onPress: () => void }) {
-  return (
-    <Button
-      variant="ghost"
-      onClick={onPress}
-      aria-label={label}
-      data-testid="cases-tile-press"
-      className="pc__press"
-    />
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-
-export const PlateCard: ProjectCardComponent = memo(function PlateCard({ unit, onOpen }: ProjectCardProps) {
-  const { labels, crewLabel, openLabel } = useCardLabels();
   return (
     <div
       className="pc pc--plate"
@@ -130,69 +129,17 @@ export const PlateCard: ProjectCardComponent = memo(function PlateCard({ unit, o
       data-quiet={isQuiet(unit) || undefined}
       data-testid="cases-tile"
     >
-      <CardPress label={openLabel(unit)} onPress={() => onOpen(unit.projectId)} />
+      {/* The card's own press target, under the corner. */}
+      <Button
+        variant="ghost"
+        onClick={() => onOpen(unit.projectId)}
+        aria-label={tx(t.monitor.layers_open_aria, { project: unit.name })}
+        data-testid="cases-tile-press"
+        className="pc__press"
+      />
       <span className="pc__name typo-title">{unit.name}</span>
-      <Crew states={unit.states} label={crewLabel(unit)} />
-      <span className="pc__foot">
-        <FollowUpSigils ups={unit.followUps} labels={labels} />
-      </span>
-    </div>
-  );
-});
-
-export const GaugeCard: ProjectCardComponent = memo(function GaugeCard({ unit, onOpen }: ProjectCardProps) {
-  const { labels, crewLabel, openLabel } = useCardLabels();
-  const total = SQUARE_STATE_ORDER.reduce((n, s) => n + unit.states[s], 0);
-  return (
-    <div
-      className="pc pc--gauge"
-      data-state={unit.dominant}
-      data-quiet={isQuiet(unit) || undefined}
-      data-testid="cases-tile"
-    >
-      <CardPress label={openLabel(unit)} onPress={() => onOpen(unit.projectId)} />
-      <span className="pc__scale">
-        <span className="pc__name typo-title">{unit.name}</span>
-        <FollowUpSigils ups={unit.followUps} labels={labels} />
-      </span>
-      {total > 0 && (
-        <span className="pc__meter" role="img" aria-label={crewLabel(unit)}>
-          {SQUARE_STATE_ORDER.filter((s) => unit.states[s] > 0).map((s) => (
-            <span
-              key={s}
-              className="pc__seg"
-              data-s={s}
-              style={{ flexGrow: unit.states[s] }}
-              aria-hidden
-            />
-          ))}
-        </span>
-      )}
-    </div>
-  );
-});
-
-export const SignalCard: ProjectCardComponent = memo(function SignalCard({ unit, onOpen }: ProjectCardProps) {
-  const { labels, crewLabel, openLabel } = useCardLabels();
-  const lit = unit.followUps.total > 0;
-  return (
-    <div
-      className="pc pc--signal"
-      data-state={unit.dominant}
-      data-quiet={isQuiet(unit) || undefined}
-      data-lit={lit}
-      data-testid="cases-tile"
-    >
-      <CardPress label={openLabel(unit)} onPress={() => onOpen(unit.projectId)} />
-      {!lit && unit.states.running > 0 && <span className="pc__tick" aria-hidden />}
-      <span className="pc__body">
-        <span className="pc__name typo-title">{unit.name}</span>
-        <Crew states={unit.states} label={crewLabel(unit)} />
-        <FollowUpSigils ups={unit.followUps} labels={labels} />
-      </span>
-      <span className="pc__total">
-        <span className="typo-hero tabular-nums"><Numeric value={unit.followUps.total} /></span>
-      </span>
+      <Crew states={unit.states} label={crewLabel} />
+      <FollowUpCorner ups={unit.followUps} labels={labels} onPick={(k) => onResolve(unit, k)} />
     </div>
   );
 });

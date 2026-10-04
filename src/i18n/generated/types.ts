@@ -917,6 +917,9 @@ export type Translations = {
     layers_session_count_one: string;
     layers_session_count_other: string;
     layers_crew_aria: string;
+    layers_resolve_reviews: string;
+    layers_resolve_warnings: string;
+    layers_resolve_messages: string;
   };
   common: {
     unknown_error: string;

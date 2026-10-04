@@ -7353,7 +7353,10 @@
     "layers_session_count_one": "1 सत्र",
     "layers_session_count_other": "{count} सत्र",
     "layers_workspace_aria": "वर्कस्पेस चुनें",
-    "layers_crew_aria": "{running} चल रहे, {attention} को आपकी ज़रूरत, {failed} विफल, {idle} निष्क्रिय"
+    "layers_crew_aria": "{running} चल रहे, {attention} को आपकी ज़रूरत, {failed} विफल, {idle} निष्क्रिय",
+    "layers_resolve_messages": "{count} रिपोर्ट पढ़ें",
+    "layers_resolve_reviews": "{count} निर्णय छाँटें",
+    "layers_resolve_warnings": "{count} विफल खोलें"
   },
   "onboarding": {
     "adopt_button": "एजेंट सेट करें",

@@ -7353,7 +7353,10 @@
     "layers_session_count_one": "1 phiên",
     "layers_session_count_other": "{count} phiên",
     "layers_workspace_aria": "Chọn không gian làm việc",
-    "layers_crew_aria": "{running} đang chạy, {attention} đang chờ bạn, {failed} thất bại, {idle} rảnh"
+    "layers_crew_aria": "{running} đang chạy, {attention} đang chờ bạn, {failed} thất bại, {idle} rảnh",
+    "layers_resolve_messages": "Đọc {count} báo cáo",
+    "layers_resolve_reviews": "Phân loại {count} quyết định",
+    "layers_resolve_warnings": "Mở {count} đang lỗi"
   },
   "onboarding": {
     "adopt_button": "Thiết lập tác nhân",

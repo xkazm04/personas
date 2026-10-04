@@ -7353,7 +7353,10 @@
     "layers_session_count_one": "1টি সেশন",
     "layers_session_count_other": "{count}টি সেশন",
     "layers_workspace_aria": "ওয়ার্কস্পেস বেছে নিন",
-    "layers_crew_aria": "{running}টি চলছে, {attention}টি আপনার অপেক্ষায়, {failed}টি ব্যর্থ, {idle}টি নিষ্ক্রিয়"
+    "layers_crew_aria": "{running}টি চলছে, {attention}টি আপনার অপেক্ষায়, {failed}টি ব্যর্থ, {idle}টি নিষ্ক্রিয়",
+    "layers_resolve_messages": "{count}টি রিপোর্ট পড়ুন",
+    "layers_resolve_reviews": "{count}টি সিদ্ধান্ত বাছাই করুন",
+    "layers_resolve_warnings": "{count}টি ব্যর্থ খুলুন"
   },
   "onboarding": {
     "adopt_button": "এজেন্ট সেটআপ করুন",

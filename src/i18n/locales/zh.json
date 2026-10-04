@@ -7353,7 +7353,10 @@
     "layers_session_count_one": "1 个会话",
     "layers_session_count_other": "{count} 个会话",
     "layers_workspace_aria": "选择工作区",
-    "layers_crew_aria": "{running} 运行中，{attention} 需要你，{failed} 失败，{idle} 空闲"
+    "layers_crew_aria": "{running} 运行中，{attention} 需要你，{failed} 失败，{idle} 空闲",
+    "layers_resolve_messages": "阅读 {count} 份报告",
+    "layers_resolve_reviews": "处理 {count} 项决策",
+    "layers_resolve_warnings": "打开 {count} 个失败项"
   },
   "onboarding": {
     "adopt_button": "设置智能体",

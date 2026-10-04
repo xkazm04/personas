@@ -909,5 +909,8 @@
   "layers_session_count_one": "セッション 1 件",
   "layers_session_count_other": "{count} 件のセッション",
   "layers_workspace_aria": "ワークスペースを選択",
-  "layers_crew_aria": "実行中 {running}、要対応 {attention}、失敗 {failed}、待機 {idle}"
+  "layers_crew_aria": "実行中 {running}、要対応 {attention}、失敗 {failed}、待機 {idle}",
+  "layers_resolve_messages": "{count} 件のレポートを読む",
+  "layers_resolve_reviews": "{count} 件の判断を仕分け",
+  "layers_resolve_warnings": "失敗中の {count} 件を開く"
 }

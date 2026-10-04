@@ -909,5 +909,8 @@
   "layers_session_count_one": "جلسة واحدة",
   "layers_session_count_other": "{count} جلسة",
   "layers_workspace_aria": "اختر مساحة عمل",
-  "layers_crew_aria": "{running} قيد التشغيل، {attention} بانتظارك، {failed} فشلت، {idle} خاملة"
+  "layers_crew_aria": "{running} قيد التشغيل، {attention} بانتظارك، {failed} فشلت، {idle} خاملة",
+  "layers_resolve_messages": "قراءة {count} تقارير",
+  "layers_resolve_reviews": "فرز {count} قرارات",
+  "layers_resolve_warnings": "فتح {count} فاشلة"
 }

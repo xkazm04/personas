@@ -909,5 +909,8 @@
   "layers_session_count_one": "1 Sitzung",
   "layers_session_count_other": "{count} Sitzungen",
   "layers_workspace_aria": "Arbeitsbereich wählen",
-  "layers_crew_aria": "{running} laufen, {attention} brauchen Sie, {failed} fehlgeschlagen, {idle} untätig"
+  "layers_crew_aria": "{running} laufen, {attention} brauchen Sie, {failed} fehlgeschlagen, {idle} untätig",
+  "layers_resolve_messages": "{count} Berichte lesen",
+  "layers_resolve_reviews": "{count} Entscheidungen sichten",
+  "layers_resolve_warnings": "{count} fehlerhafte öffnen"
 }

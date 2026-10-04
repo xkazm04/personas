@@ -910,7 +910,10 @@
     "layers_persona_count_other": "{count} personas",
     "layers_session_count_one": "1 session",
     "layers_session_count_other": "{count} sessions",
-    "layers_crew_aria": "{running} running, {attention} need you, {failed} failed, {idle} idle"
+    "layers_crew_aria": "{running} running, {attention} need you, {failed} failed, {idle} idle",
+    "layers_resolve_reviews": "Triage {count} decisions",
+    "layers_resolve_warnings": "Open {count} failing",
+    "layers_resolve_messages": "Read {count} reports"
   },
   "common": {
     "unknown_error": "Unknown error",

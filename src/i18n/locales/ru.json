@@ -7353,7 +7353,10 @@
     "layers_session_count_one": "1 сессия",
     "layers_session_count_other": "{count} сессий",
     "layers_workspace_aria": "Выберите рабочую область",
-    "layers_crew_aria": "{running} выполняется, {attention} ждут вас, {failed} с ошибкой, {idle} простаивают"
+    "layers_crew_aria": "{running} выполняется, {attention} ждут вас, {failed} с ошибкой, {idle} простаивают",
+    "layers_resolve_messages": "Прочитать {count} отчётов",
+    "layers_resolve_reviews": "Разобрать {count} решений",
+    "layers_resolve_warnings": "Открыть {count} с ошибкой"
   },
   "onboarding": {
     "adopt_button": "Настроить агента",

@@ -7353,7 +7353,10 @@
     "layers_session_count_one": "1 relace",
     "layers_session_count_other": "{count} relací",
     "layers_workspace_aria": "Vyberte pracovní prostor",
-    "layers_crew_aria": "{running} běží, {attention} čeká na vás, {failed} selhalo, {idle} nečinných"
+    "layers_crew_aria": "{running} běží, {attention} čeká na vás, {failed} selhalo, {idle} nečinných",
+    "layers_resolve_messages": "Přečíst {count} hlášení",
+    "layers_resolve_reviews": "Posoudit {count} rozhodnutí",
+    "layers_resolve_warnings": "Otevřít {count} selhávajících"
   },
   "onboarding": {
     "adopt_button": "Nastavit agenta",

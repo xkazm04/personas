@@ -909,5 +909,8 @@
   "layers_session_count_one": "1 session",
   "layers_session_count_other": "{count} sessions",
   "layers_workspace_aria": "Choisir un espace de travail",
-  "layers_crew_aria": "{running} en cours, {attention} vous attendent, {failed} en échec, {idle} inactifs"
+  "layers_crew_aria": "{running} en cours, {attention} vous attendent, {failed} en échec, {idle} inactifs",
+  "layers_resolve_messages": "Lire {count} rapports",
+  "layers_resolve_reviews": "Trier {count} décisions",
+  "layers_resolve_warnings": "Ouvrir {count} en échec"
 }

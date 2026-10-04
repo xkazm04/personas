@@ -7353,7 +7353,10 @@
     "layers_session_count_one": "세션 1개",
     "layers_session_count_other": "세션 {count}개",
     "layers_workspace_aria": "워크스페이스 선택",
-    "layers_crew_aria": "실행 중 {running}, 대기 중 {attention}, 실패 {failed}, 유휴 {idle}"
+    "layers_crew_aria": "실행 중 {running}, 대기 중 {attention}, 실패 {failed}, 유휴 {idle}",
+    "layers_resolve_messages": "보고서 {count}건 읽기",
+    "layers_resolve_reviews": "결정 {count}건 분류",
+    "layers_resolve_warnings": "실패 {count}건 열기"
   },
   "onboarding": {
     "adopt_button": "에이전트 설정",

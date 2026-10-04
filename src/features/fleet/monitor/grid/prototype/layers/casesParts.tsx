@@ -7,29 +7,28 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Button } from '@/features/shared/components/buttons';
 import { SQUARE_STATE_ORDER, SQUARE_VISUAL, type SquareState } from '../../fleetGridModel';
 import type { ProjectUnit } from './useFleetLayers';
-import type { ProjectCardComponent } from './casesCards';
+import type { FollowUpKind, ProjectCardComponent } from './casesCards';
 
 /** Layer 1's body. The grid keeps a stable order (the model sorts once), so a
  *  project stays where the operator last found it. */
 export function CaseGrid({
-  units, onOpen, Card, wide,
+  units, onOpen, onResolve, Card,
 }: {
   units: readonly ProjectUnit[];
   onOpen: (projectId: string) => void;
+  onResolve: (unit: ProjectUnit, kind: FollowUpKind) => void;
   Card: ProjectCardComponent;
-  /** SIGNAL carries a headline figure and needs a wider column. */
-  wide?: boolean;
 }) {
   const { t } = useTranslation();
   return (
     <div
-      className={`pc-grid ${wide ? 'pc-grid--signal' : ''}`}
+      className="pc-grid"
       role="list"
       aria-label={t.monitor.conv_projects}
     >
       {units.map((u) => (
         <div role="listitem" key={u.projectId} className="contents">
-          <Card unit={u} onOpen={onOpen} />
+          <Card unit={u} onOpen={onOpen} onResolve={onResolve} />
         </div>
       ))}
     </div>
