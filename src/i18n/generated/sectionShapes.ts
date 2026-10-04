@@ -381,7 +381,8 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "vault_activity": {
       "kinds": {}
     },
-    "memories_ui": {}
+    "memories_ui": {},
+    "mission_layers": {}
   },
   "matrix_v3": {},
   "templates": {

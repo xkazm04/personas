@@ -1,0 +1,48 @@
+/* Mission Control variants: shared frame and layer-2 layout. Type and colour
+   stay tokenised (typo-* classes, var(--status-*), color-mix over tokens). */
+
+.mc-body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem 1.25rem;
+}
+
+.mc-banners { display: flex; flex-direction: column; gap: 0.5rem; flex-shrink: 0; }
+.mc-empty { flex: 1 1 auto; overflow: auto; }
+
+.mc-unit { font-weight: 400; opacity: 1; color: color-mix(in srgb, var(--foreground) 62%, transparent); font-size: 0.55em; margin-left: 0.15em; }
+
+.mc-detail-stack { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.mc-detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1rem; align-items: start; }
+
+.mc-bars { width: 100%; height: 100%; display: block; }
+
+/* A verdict's ink, set by `data-verdict` on any variant element. */
+[data-verdict] { --v: var(--status-neutral); }
+[data-verdict="ok"] { --v: var(--status-success); }
+[data-verdict="watch"] { --v: var(--status-warning); }
+[data-verdict="yours"] { --v: var(--status-info); }
+[data-verdict="act"] { --v: var(--status-error); }
+[data-verdict="pending"] { --v: var(--status-pending); }
+
+.mc-lamp {
+  width: 0.7rem; height: 0.7rem; border-radius: 999px; flex-shrink: 0;
+  background: var(--v);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--v) 18%, transparent);
+}
+[data-verdict="pending"] .mc-lamp, .mc-lamp[data-verdict="pending"] { background: transparent; border: 2px dashed var(--v); box-shadow: none; }
+[data-verdict="failed"] .mc-lamp, [data-verdict="unmeasured"] .mc-lamp,
+.mc-lamp[data-verdict="failed"], .mc-lamp[data-verdict="unmeasured"] { background: transparent; border: 2px solid var(--v); box-shadow: none; }
+[data-verdict="act"] .mc-lamp, .mc-lamp[data-verdict="act"] { animation: mc-pulse 2.4s ease-in-out infinite; }
+
+@keyframes mc-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--v) 22%, transparent); }
+  50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--v) 8%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mc-lamp { animation: none !important; }
+}

@@ -1,0 +1,47 @@
+/* Annunciator Wall. Layout is this file's; type comes from typo-* classes on
+   the elements and colour from tokens via the shared [data-verdict] --v ink. */
+
+.aw-layer1 { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 0.75rem; overflow: auto; }
+.aw-layer1 .k-dtiles { row-gap: 1.25rem; }
+
+.aw-cell { display: flex; flex-direction: column; gap: 0.75rem; padding: 0.75rem 1rem 0.25rem var(--gutter, 1rem); min-height: 19.5rem; }
+.aw-readout { display: flex; flex-direction: column; gap: 0.25rem; }
+.aw-lamp-row { display: inline-flex; align-items: center; gap: 0.6rem; }
+.aw-state { color: var(--v); text-transform: uppercase; letter-spacing: 0.08em; }
+.aw-figure { color: var(--v); font-variant-numeric: tabular-nums; line-height: 1.05; }
+.aw-cell[data-quiet] .aw-figure { color: var(--foreground); }
+.aw-cell[data-verdict="pending"] .aw-figure,
+.aw-cell[data-verdict="failed"] .aw-figure,
+.aw-cell[data-verdict="unmeasured"] .aw-figure { color: color-mix(in srgb, var(--foreground) 55%, transparent); }
+.aw-dash { letter-spacing: 0.1em; }
+.aw-note { color: var(--foreground); margin: 0; }
+
+.aw-trace { width: 100%; height: 5.5rem; display: block; }
+.aw-trace--none { height: 5.5rem; border-bottom: 1px dashed color-mix(in srgb, var(--foreground) 14%, transparent); }
+.aw-trace__base { stroke: color-mix(in srgb, var(--foreground) 16%, transparent); stroke-width: 1; }
+.aw-trace__bar { fill: color-mix(in srgb, var(--v) 70%, transparent); }
+.aw-cell[data-quiet] .aw-trace__bar { fill: color-mix(in srgb, var(--v) 38%, transparent); }
+
+/* A lit annunciator: the tile's band takes the verdict's wash. */
+.k-dtile:has(.aw-cell:is([data-verdict="act"], [data-verdict="watch"], [data-verdict="yours"])) {
+  --card-band: color-mix(in srgb, var(--v) 9%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--v) 28%, transparent);
+}
+.k-dtile:has(.aw-cell[data-verdict="act"]) { --v: var(--status-error); }
+.k-dtile:has(.aw-cell[data-verdict="watch"]) { --v: var(--status-warning); }
+.k-dtile:has(.aw-cell[data-verdict="yours"]) { --v: var(--status-info); }
+
+.aw-key {
+  display: inline-grid; place-items: center; min-width: 1.6rem; height: 1.6rem; padding: 0 0.35rem;
+  border-radius: 0.375rem; border: 1px solid color-mix(in srgb, var(--foreground) 22%, transparent);
+  color: var(--foreground); background: color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+.aw-hint { margin: 0; text-align: right; color: var(--foreground); }
+
+.aw-layer2 { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(17rem, 21rem) 1fr; gap: 1.5rem; }
+.aw-rail { min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 0.25rem; padding-right: 0.25rem; }
+.aw-rail__fig { display: inline-flex; align-items: center; gap: 0.6rem; color: var(--v); }
+.aw-rail__item[data-verdict="ok"] .aw-rail__fig { color: var(--foreground); }
+.aw-pane { min-height: 0; min-width: 0; overflow: auto; display: flex; flex-direction: column; gap: 0.75rem; padding-right: 0.5rem; }
+.aw-pane .k-section__title .mc-lamp { margin-right: 0.6rem; }
+.aw-pane__body { padding-top: 0.5rem; }
