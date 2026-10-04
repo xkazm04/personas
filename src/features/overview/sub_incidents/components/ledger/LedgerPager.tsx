@@ -48,8 +48,15 @@ export function LedgerPager({
           {tx(l.showing_range, { start: rangeStart, end: rangeEnd, total })}
         </span>
         {/* The caveat reads as the second clause of the range, muted one tier
-            below it — typo-caption's own muting, no text-* utility. */}
-        {note && <span className="typo-caption">{note}</span>}
+            below it (typo-caption's own muting, no text-* utility) behind the
+            app's own separator — without it the two sentences run together as
+            "Showing 1-25 of 100 Showing the first 100 incidents ...". */}
+        {note && (
+          <span className="typo-caption">
+            <span aria-hidden="true" className="mr-2">·</span>
+            {note}
+          </span>
+        )}
       </span>
 
       <div className="flex items-center gap-3">
