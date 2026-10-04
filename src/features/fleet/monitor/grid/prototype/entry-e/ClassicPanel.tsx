@@ -20,14 +20,17 @@ import { BayGhosts } from './Ghosts';
 import { sessionLamp, toneClass } from './tone';
 import { Engraved, Lamp } from './parts';
 import type { PanelFilter } from './boardFilter';
+import type { WorkspaceScope } from './workspaceScope';
 
 const TICK_MS = 30_000;
 
 export function ClassicPanel({
-  surface, filter, selectedPersonaId, onOpenRemote, onClearFilter,
+  surface, filter, workspaces, selectedPersonaId, onOpenRemote, onClearFilter,
 }: {
   surface: ActivitySurface;
   filter: PanelFilter;
+  /** The notepad's current sheet: which workspace's bays this panel draws. */
+  workspaces: WorkspaceScope;
   selectedPersonaId: string | null;
   onOpenRemote?: (jobId: string) => void;
   onClearFilter: () => void;
@@ -89,15 +92,23 @@ export function ClassicPanel({
     return null;
   }, [selectedPersonaId, select, focusKey, bubbles, unseen, setTerminal, setRecap, onOpenRemote, now]);
 
-  const bays = useMemo(() => model.columns.map((column) => {
+  const bays = useMemo(() => model.columns.filter((c) => workspaces.keepTeam(c.teamId)).map((column) => {
     const rows = column.rows.filter(keep);
     const personas = rows.filter((r) => r.kind === 'persona');
     const live = rows.filter((r) => r.kind === 'session' || r.kind === 'remote');
     return { column, personas, live, show: !filter.active || rows.length > 0 };
-  }).filter((b) => b.show), [model.columns, keep, filter.active]);
+  }).filter((b) => b.show), [model.columns, keep, filter.active, workspaces]);
 
-  const trayCards = useMemo(() => model.ungrouped.filter(filter.card), [model.ungrouped, filter]);
-  const traySessions = useMemo(() => model.traySessions.filter(filter.session), [model.traySessions, filter]);
+  // The tray is what no project claims, so no workspace claims it either: on a
+  // named sheet it is not narrowed, it is absent.
+  const trayCards = useMemo(
+    () => (workspaces.active ? [] : model.ungrouped.filter(filter.card)),
+    [model.ungrouped, filter, workspaces.active],
+  );
+  const traySessions = useMemo(
+    () => (workspaces.active ? [] : model.traySessions.filter(filter.session)),
+    [model.traySessions, filter, workspaces.active],
+  );
   const onScope = useCallback((c: BoardColumn) => toggleScope(c.teamId, c.teamName, c.cards), [toggleScope]);
 
   if (surface.cold) return <BayGhosts />;

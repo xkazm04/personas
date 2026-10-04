@@ -1,8 +1,18 @@
 // A session as a COMPACT LINE (Lanes, Classic, the tray): two rows inside the
 // plate, hairlines between lines instead of a box around each. Row one is the
-// lamp and the title; row two says state and origin, then the age as a bar
-// with its figure at the right edge. A lit line spills its tone from the left.
-// The recap sits at the right of row one, shown on hover or focus.
+// lamp and the title. A lit line spills its tone from the left. The recap sits
+// at the right of row one, shown on hover or focus.
+//
+// ROW TWO IS DRAWN, NOT WRITTEN (2026-10-04). It used to read
+// "Awaiting input · Curator · personas-web" — three strings competing with the
+// title for the same width, in a line 50px tall. Each fact is now the mark it
+// already has elsewhere on the panel: the STATE is its glyph in the line's own
+// lamp tone (`sessionStateIcon` + `ae-tone-text`, the same pairing the bays
+// use), the SOURCE is the origin glyph every node on the board is stamped
+// with (`ORIGIN_GLYPH`, via `useSessionFacts`), and the age stays a bar with
+// its figure. Only the project — which no glyph can stand for — is still text,
+// and only where the list is board-wide. The words are not lost: the line's
+// tooltip and its `aria-label` are the same full reading as before.
 
 import { memo, type KeyboardEvent } from 'react';
 import { ScanEye } from 'lucide-react';
@@ -15,7 +25,7 @@ import { useSessionFacts } from '../shared';
 import { AGE_RUNG_COUNT, ageRungs, compactAge, sessionLamp, toneClass } from './tone';
 import { Lamp } from './parts';
 import { useSessionMenu } from './SessionMenu';
-import { useSessionSummary } from './sessionBits';
+import { sessionStateIcon, useSessionSummary } from './sessionBits';
 
 export const SESSION_LINE_H = 50;
 
@@ -40,6 +50,7 @@ export const SessionLine = memo(function SessionLine({
   const lamp = sessionLamp(session.state);
   const age = Math.max(0, now - f.startedAt);
   const Origin = f.OriginIcon;
+  const State = sessionStateIcon(session.state);
   const open = () => onOpen?.(session);
   const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
     menu.onKeyDown(e);
@@ -76,12 +87,11 @@ export const SessionLine = memo(function SessionLine({
             />
           </span>
         </span>
-        <span className="flex min-w-0 items-center gap-1.5 pl-[18px] typo-caption">
-          <Origin className="h-3.5 w-3.5 flex-shrink-0 text-foreground" aria-hidden />
-          <span className="min-w-0 flex-1 truncate">
-            {[f.stateLabel, f.originLabel, showProject ? f.project : null].filter(Boolean).join(' · ')}
-          </span>
-          <span className="ae-bar w-8 flex-shrink-0" aria-hidden>
+        <span className="flex min-w-0 items-center gap-2 pl-[18px] typo-caption">
+          <State className="ae-tone-text h-3.5 w-3.5 flex-shrink-0" aria-hidden />
+          <Origin className="h-3.5 w-3.5 flex-shrink-0" aria-hidden />
+          {showProject && f.project && <span className="min-w-0 flex-1 truncate">{f.project}</span>}
+          <span className={`ae-bar w-10 flex-shrink-0 ${showProject && f.project ? '' : 'ml-auto'}`} aria-hidden>
             <span style={{ width: `${(ageRungs(age) / AGE_RUNG_COUNT) * 100}%`, opacity: lamp.lit ? 1 : 0.45 }} />
           </span>
           <span className="w-8 flex-shrink-0 text-right tabular-nums text-foreground">{compactAge(age)}</span>

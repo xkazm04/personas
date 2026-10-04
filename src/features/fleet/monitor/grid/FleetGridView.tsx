@@ -1,94 +1,37 @@
-// FleetGridView — the "Activity" monitor surface, and the Monitor's baseline.
+// FleetGridView — the "Activity" monitor surface.
 //
-// A control-panel read on the whole fleet: every persona is a state-coloured
-// TILE carrying its name, grouped by team into one-per-team columns. Under each
-// team's roster a divider separates the personas from the LIVE CLAUDE SESSIONS
-// dispatched into that team's projects (cwd → DevProject → team_id). Teamless
-// personas, and sessions the board cannot place, live in a tray below.
+// A control-room read on the whole fleet. THIS FILE IS THE ENTRY AND NOTHING
+// ELSE: it names the props the Monitor passes and hands them to the surface.
 //
-// State + grouping logic is shared (`fleetGridModel`) with the rest of the
-// Monitor so a tile's colour always agrees with the other views. Clicking a
-// tile selects the persona and opens the Monitor drawer.
+// CONSOLIDATED 2026-10-04. The surface spent two rounds as three variants
+// behind a prototype switcher (the baseline grid, "E · Annunciator", "Plate").
+// The owner called the round: the Annunciator is the surface, with the two
+// ideas Plate was kept alive for folded into it — the workspace layer as a
+// notepad of index tabs, and the decision rail docked as three figures that
+// widen into the list. The switcher and the Plate layers are deleted.
 //
-// THIS FILE IS THE COMPOSITION AND NOTHING ELSE. Each part of the surface owns
-// its own module and its own reasoning:
+// Where the surface lives now, and why each piece is where it is:
 //
-//   • `board/GridHeader`   — the title strip, the state key, the simulation
-//                            toggle, the cap stepper, the layout switch and the
-//                            Orchestration button. Why the key is a row of pills.
-//   • `UsageStrip`         — the subscription's five plan slots.
-//   • `board/GridBoard`    — the columns, the tray, the empty and ghost states,
-//                            and the two tile kinds. Why they differ in shape.
-//   • `board/queue/`       — the two queue layouts over the same fleet (runway,
-//                            lanes) and `QueueBoard`, which switches between
-//                            them and the classic board. The dispatch queue's
-//                            verbs live there too.
-//   • `board/node/`        — the ONE node every board paints (`FleetNode`) and
-//                            its three prototype styles, threaded to every
-//                            board through `NodeContext`.
-//   • `board/TeamColumn`   — one column; its header IS the rail's scope control.
-//   • `board/RailSlot`     — the rail's footprint and its lazy chunk.
-//   • `board/SessionModals`— terminal + recap, mounted on click only.
-//   • `useBoardModel`      — grouping, tallies, per-column rows.
-//   • `useRailScope`       — what a column header can honestly match a feed on.
-//   • `useFocusFlash`      — Athena's pointer at a node.
-//   • `useStagedMount`     — chrome in frame one, tiles in two, rail in three.
-//   • `simulation/`        — the mock fleet, in test builds only.
+//   • `prototype/entry-e/ActivityEntryE` — the composition.
+//   • `prototype/useActivitySurface`     — every fact the surface reads,
+//                                          with no pixels attached. It is
+//                                          this file's old body, lifted.
+//   • `prototype/entry-e/*`              — the panel: command bar, notepad,
+//                                          supply column, bays, lanes, desk.
 //
-// THE COLD OPEN IS STAGED. `useStagedMount` paints the chrome in frame one
-// (header, usage strip, column headers, geometry-matched ghost rows, an empty
-// rail of the persisted width), the tiles in frame two, the rail in frame
-// three — once per app session, since every later mount is warm and would only
-// be slowed by it. A Monitor that opens before the roster exists gets the same
-// chrome over `BoardGhost` rather than a header-only skeleton in its place.
+// DELIBERATE DEBT, NOT AN OVERSIGHT: the surface is still under `prototype/`,
+// and the baseline's own parts (`board/GridHeader`, `board/GridBoard`,
+// `board/queue/QueueBoard`, `board/RailSlot`) are still on disk with nothing
+// importing them. Moving the one and sweeping the other is a rename pass over
+// ~30 files that would bury this design change in churn; it is the next
+// commit, not this one.
 
-import { memo, useCallback, useEffect, useMemo, useState, Suspense } from 'react';
-import { useReducedMotion } from 'framer-motion';
-import { lazyRetry } from '@/lib/lazyRetry';
-import type { DevProject } from '@/lib/bindings/DevProject';
-import type { FleetSession } from '@/lib/bindings/FleetSession';
+import { memo } from 'react';
+import type { DrawerSection, PersonaCardModel } from '../monitorModel';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
-import { useSystemStore } from '@/stores/systemStore';
-import type { DrawerSection, PersonaCardModel } from '../monitorModel';
 import type { FeedTeam } from '../channels/types';
-import { UsageStripFallback } from './UsageStripShell';
-import { FINAL_STAGE, useStagedMount } from './useStagedMount';
-import { useChannelBubbles } from './useChannelBubbles';
-import { useFleetSessions } from './useFleetSessions';
-import { useBoardModel } from './useBoardModel';
-import { useRemoteBoard } from './remote/useRemoteBoard';
-import { useAttentionCursor } from './useAttentionCursor';
-import { NO_BOARD_FILTER, type BoardFilter } from './boardFilter';
-import type { SquareState } from './fleetGridModel';
-import { useRailScope } from './useRailScope';
-import { useFocusFlash } from './useFocusFlash';
-import { simQueueActions, useSimulatedBoard, useSimulationEnabled } from './simulation';
-import { useSimulatedRail } from './useSimulatedRail';
-import { segmentedTabPanelProps } from '@/features/shared/components/layout/SegmentedTabs';
-import { BOARD_TABS_PREFIX, GridHeader } from './board/GridHeader';
-import { RailSlot } from './board/RailSlot';
-import { SessionModals } from './board/SessionModals';
-import { useQueuePoll } from './board/useQueuePoll';
-import { QueueBoard } from './board/queue/QueueBoard';
-import { useQueueModel } from './board/queue/useQueueModel';
-import { useQueueActions } from './board/queue/useQueueActions';
-import { useLocalOrder } from './board/queue/useLocalOrder';
-import { readBoardVariant, writeBoardVariant, type BoardVariant } from './board/queue/boardVariant';
-import { NodeContext, type NodeContextValue } from './board/node/nodeContext';
-import { meanWaitMs } from './board/queue/queueVerbs';
-import { OrchestrationPanel } from './orchestration';
-import { ActivityPrototypeSwitcher } from './prototype/ActivityPrototypeSwitcher';
-
-// The usage strip carries a confirm dialog, a toggle and async buttons — a
-// chunk of its own, landing into a fallback that already occupies its footprint.
-const UsageStrip = lazyRetry(() => import('./UsageStrip'));
-
-/** Stage at which the tiles mount; the rail follows one frame later. */
-const TILES_STAGE = 1;
-
-/** Stable empty list for the project lookup while the store is cold. */
-const NO_PROJECTS: DevProject[] = [];
+import { ActivityEntryE } from './prototype/entry-e/ActivityEntryE';
 
 interface Props {
   cards: PersonaCardModel[];
@@ -96,7 +39,7 @@ interface Props {
   teams: PersonaTeam[];
   selectedPersonaId: string | null;
   onSelect: (personaId: string, section: DrawerSection) => void;
-  /** Teams whose channels the rail's Messages tab merges. Absent = the tab
+  /** Teams whose channels the desk's Messages tab merges. Absent = the tab
    *  renders its empty state rather than subscribing to nothing. */
   feedTeams?: FeedTeam[];
   /** Scope the Monitor's Timeline to one speaker (a Messages row click). */
@@ -111,177 +54,8 @@ interface Props {
   onOpenRemote?: (jobId: string) => void;
 }
 
-function FleetGridViewImpl({
-  cards, personas, teams, selectedPersonaId, onSelect, feedTeams, onOpenSpeaker, isLoading = false, onOpenRemote,
-}: Props) {
-  const stage = useStagedMount();
-  const reducedMotion = useReducedMotion() ?? false;
-  const focusKey = useFocusFlash();
+export const FleetGridView = memo(function FleetGridView(props: Props) {
+  return <ActivityEntryE {...props} />;
+});
 
-  // Channel bubbles for the personas on this board. The roster set is keyed by
-  // the cards' ids, so a roster change re-diffs and nothing else does.
-  const personaIds = useMemo(() => new Set(cards.map((c) => c.personaId)), [cards]);
-  const liveBubbles = useChannelBubbles(feedTeams, personaIds);
-  const liveSessions = useFleetSessions();
-  const liveProjects = useSystemStore((st) => st.projects) ?? NO_PROJECTS;
-  const liveSessionList = useSystemStore((st) => st.fleetSessions);
-  const liveQueue = useSystemStore((st) => st.fleetQueue);
-
-  // THE ONE SEAM. Everything below this line reads `board`, never the props.
-  const simulating = useSimulationEnabled();
-  const board = useSimulatedBoard(simulating, {
-    cards, personas, teams,
-    projects: liveProjects,
-    sessions: liveSessions,
-    sessionList: liveSessionList,
-    queue: liveQueue,
-    unseen: liveBubbles.unseen,
-    isLoading,
-  });
-  const simulatedRail = useSimulatedRail(simulating);
-
-  // THE QUEUE. The store is event-driven; the board owns the 60 s reconcile
-  // poll (only while mounted, and never against the simulated world) and
-  // asks for one read on mount so the stepper and the queue boards have a
-  // snapshot before the first event arrives.
-  const queueRefresh = useSystemStore((st) => st.fleetQueueRefresh);
-  useQueuePoll(!simulating);
-  useEffect(() => { if (!simulating) void queueRefresh(); }, [simulating, queueRefresh]);
-
-  const [variant, setVariant] = useState<BoardVariant>(readBoardVariant);
-  const changeVariant = useCallback((v: BoardVariant) => { setVariant(v); writeBoardVariant(v); }, []);
-  const [orchestrationOpen, setOrchestrationOpen] = useState(false);
-  const openOrchestration = useCallback(() => setOrchestrationOpen(true), []);
-  const closeOrchestration = useCallback(() => setOrchestrationOpen(false), []);
-
-  const queueModel = useQueueModel(board.sessionList, board.queue, board.personas, board.teams, board.projects);
-  const queueActions = useQueueActions(simulating ? simQueueActions : null);
-  const queueOrder = useLocalOrder(queueModel.queued, queueActions.reorder);
-
-  // What every node reads, on every board: the style, and the two numbers the
-  // meter variant divides by — the mean duration the door's estimates imply
-  // and the queue's length. Recomputed only when the queue model does.
-  const nodeContext = useMemo<NodeContextValue>(() => ({
-    meanDurationMs: meanWaitMs(queueModel.queued, Date.now()),
-    queueLength: queueModel.queued.length,
-  }), [queueModel.queued]);
-
-  // Opening a persona is the operator looking at it: its unread mark clears.
-  const { acknowledge } = liveBubbles;
-  const handleSelect = useCallback(
-    (personaId: string, section: DrawerSection) => {
-      acknowledge(personaId);
-      onSelect(personaId, section);
-    },
-    [acknowledge, onSelect],
-  );
-
-  // The board's narrowing lives here, above the model, so the header's control
-  // and the model's predicate cannot drift apart.
-  const [filter, setFilter] = useState<BoardFilter>(NO_BOARD_FILTER);
-  // Picking the state already showing clears it, so the pill is the only
-  // control needed in both directions.
-  const pickState = useCallback(
-    (state: SquareState) => setFilter((f) => ({ ...f, state: f.state === state ? null : state })),
-    [],
-  );
-
-  // Sessions sent to paired devices: real ones only, never over the mock fleet.
-  const remote = useRemoteBoard(board.projects, !simulating);
-  const model = useBoardModel(board.cards, board.personas, board.teams, board.sessions, filter, remote);
-  // The board is a queue with a cursor: `n`/`j` walk the actionable tiles in
-  // board order, `k` walks back, Enter opens the focused one. Same predicate as
-  // the header's filter, so the walk visits exactly what filtering would show.
-  useAttentionCursor(model, board.cards, handleSelect);
-
-  const { scope, toggleScope, clearScope } = useRailScope(board.projects);
-
-  const [terminal, setTerminal] = useState<FleetSession | null>(null);
-  const [recap, setRecap] = useState<FleetSession | null>(null);
-  const closeTerminal = useCallback(() => setTerminal(null), []);
-  const closeRecap = useCallback(() => setRecap(null), []);
-
-  return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-card border border-border bg-foreground/[0.01] hud-corners hud-bloom">
-      <GridHeader
-        totals={model.totals}
-        showTally={!(board.isLoading && board.cards.length === 0)}
-        stateFilter={filter.state}
-        onPickState={pickState}
-        variant={variant}
-        onVariantChange={changeVariant}
-        queueRunning={board.queue?.running ?? queueModel.running.length}
-        queueOverAdmitted={board.queue?.overAdmitted ?? 0}
-        simulated={simulating}
-        onOpenOrchestration={openOrchestration}
-      />
-
-      <Suspense fallback={<UsageStripFallback />}>
-        <UsageStrip simulated={simulating} />
-      </Suspense>
-
-      <div className="flex min-h-0 flex-1">
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col" {...segmentedTabPanelProps(BOARD_TABS_PREFIX, variant)}>
-          <NodeContext.Provider value={nodeContext}>
-          <QueueBoard
-            variant={variant}
-            isLoading={board.isLoading || (!simulating && board.queue === null)}
-            classic={{
-              model,
-              isLoading: board.isLoading,
-              staged: stage >= TILES_STAGE,
-              reducedMotion,
-              focusKey,
-              selectedPersonaId,
-              onSelect: handleSelect,
-              bubbles: liveBubbles.bubbles,
-              unseen: board.unseen,
-              onOpenSession: setTerminal,
-              onRecapSession: setRecap,
-              scopedTeamId: scope?.teamId ?? null,
-              onToggleScope: toggleScope,
-              onOpenRemote,
-            }}
-            queue={{
-              model: queueModel,
-              order: queueOrder,
-              actions: queueActions,
-              sessions: board.sessionList,
-              teams: board.teams,
-              reducedMotion,
-              focusKey,
-              onOpenSession: setTerminal,
-              onRecapSession: setRecap,
-            }}
-          />
-          </NodeContext.Provider>
-        </div>
-
-        <RailSlot
-          ready={stage >= FINAL_STAGE}
-          feedTeams={feedTeams ?? []}
-          onOpenSpeaker={onOpenSpeaker}
-          filter={scope}
-          onClearFilter={clearScope}
-          simulated={simulatedRail}
-        />
-      </div>
-
-      <SessionModals
-        terminal={terminal}
-        recap={recap}
-        onCloseTerminal={closeTerminal}
-        onCloseRecap={closeRecap}
-      />
-      <OrchestrationPanel open={orchestrationOpen} onClose={closeOrchestration} />
-    </div>
-  );
-}
-
-// TODO(prototype, 2026-09-24): consolidate the Activity switcher.
-function FleetGridViewPrototype(props: Props) {
-  return <ActivityPrototypeSwitcher {...props} Baseline={FleetGridViewImpl} />;
-}
-
-export const FleetGridView = memo(FleetGridViewPrototype);
 export default FleetGridView;

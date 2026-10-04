@@ -4,7 +4,7 @@
 // lane holds three times what a card column did. The lamp is lit only when the
 // lane holds something; an empty lane is a dark plate at a glance.
 
-import { useMemo, type ReactNode } from 'react';
+import { useCallback, useMemo, type ReactNode } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useFixedTicker } from '@/hooks/utility/timing/relativeTimeTicker';
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -16,6 +16,7 @@ import { SocketGhosts } from './Ghosts';
 import { Engraved, Lamp } from './parts';
 import type { Tone } from './tone';
 import { isParked, type PanelFilter } from './boardFilter';
+import type { WorkspaceScope } from './workspaceScope';
 
 const HOLDS: ReadonlySet<string> = new Set(['running', 'spawning', 'awaiting_input', 'idle']);
 
@@ -37,10 +38,12 @@ function Lane({
 }
 
 export function LanesPanel({
-  surface, filter, cap, onStart, onCancel,
+  surface, filter, workspaces, cap, onStart, onCancel,
 }: {
   surface: ActivitySurface;
   filter: PanelFilter;
+  /** The notepad's current sheet: which workspace's sessions these lanes hold. */
+  workspaces: WorkspaceScope;
   cap: number;
   onStart: (item: QueueItem) => void;
   onCancel: (item: QueueItem) => void;
@@ -56,14 +59,20 @@ export function LanesPanel({
     const holders = live.filter((i) => HOLDS.has(i.session.state));
     return new Set(cap > 0 ? holders.slice(cap).map((i) => i.sessionId) : []);
   }, [live, cap]);
-  const running = live.filter((i) => filter.session(i.session));
-  const queued = order.items.filter((i) => filter.session(i.session));
+  // A queue row reaches its workspace by either join the model already made:
+  // the team the dispatch resolved to, or the project its cwd sits in.
+  const inSheet = useCallback(
+    (i: QueueItem) => workspaces.keepTeam(i.teamId) || workspaces.keepSession(i.session),
+    [workspaces],
+  );
+  const running = live.filter((i) => filter.session(i.session) && inSheet(i));
+  const queued = order.items.filter((i) => filter.session(i.session) && inSheet(i));
   const parked = useMemo(() => {
     const at = Date.now();
     return board.sessionList
-      .filter((s) => isParked(s, at) && filter.session(s))
+      .filter((s) => isParked(s, at) && filter.session(s) && workspaces.keepSession(s))
       .sort((a, b) => Number(b.lastActivityMs) - Number(a.lastActivityMs));
-  }, [board.sessionList, filter]);
+  }, [board.sessionList, filter, workspaces]);
 
   if (surface.queueCold) {
     return <div className="flex min-h-0 flex-1 gap-3 p-3">{[0, 1, 2].map((i) => <div key={i} className="flex-1"><SocketGhosts count={3} /></div>)}</div>;

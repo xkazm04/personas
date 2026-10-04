@@ -2,8 +2,15 @@
 //
 // The cap is a rack of sockets - one per slot - lit by the sessions holding
 // them, so "7 / 10" is also seven lights and three dark wells, and an
-// over-admitted session is a lamp outside the rack. Autopilot says its pacing
-// verdict in words under its switch instead of hiding it in a tooltip.
+// over-admitted session is a lamp outside the rack.
+//
+// AUTOPILOT KEEPS ITS VERDICT, NOT ITS CENSUS (2026-10-04). The plate printed
+// a phrase under the switch; while the loop is OFF that phrase is "N eligible"
+// — a roster count, not a verdict, costing a row of the column to say nothing
+// is happening. The row now appears only when the loop is ON and the phrase is
+// a reason (holding, stopped, N slots). Everything else — the three gauges,
+// the headroom, which personas are eligible — is in `AutopilotTip`, which is
+// a laid-out panel rather than a column of sentences.
 
 import { Bot, ListOrdered, Minus, Plus } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -11,11 +18,12 @@ import { toastCatch } from '@/lib/silentCatch';
 import { AsyncButton, Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Numeric } from '@/features/shared/components/display/Numeric';
-import { AutopilotDetails, autopilotPhrase } from '../../board/AutopilotSwitch';
+import { autopilotPhrase } from '../../board/AutopilotSwitch';
 import { useAutopilotStatus } from '../../board/useAutopilotStatus';
 import { autopilotReadout, autopilotTone } from '../../board/autopilotReadout';
 import type { useCapSetting } from '../shared';
 import type { UsageFeed } from '../useUsageFeed';
+import { AutopilotTip } from './AutopilotTip';
 import { Engraved, Lamp } from './parts';
 import { PlanPlates } from './PlanPlates';
 import type { Tone } from './tone';
@@ -81,6 +89,8 @@ function AutopilotPlate({ onOpenOrchestration }: { onOpenOrchestration: () => vo
   const tone = readout ? autopilotTone(readout) : 'off';
   const phrase = readout ? autopilotPhrase(readout, m, tx) : failed ? m.autopilot_unavailable : null;
   const on = status?.enabled ?? false;
+  // `off` is the "N eligible" census; it is the tooltip's business, not a row.
+  const verdict = readout && readout.kind !== 'off' ? phrase : null;
 
   return (
     <section
@@ -104,12 +114,8 @@ function AutopilotPlate({ onOpenOrchestration }: { onOpenOrchestration: () => vo
         </Tooltip>
       </header>
       <Tooltip
-        content={
-          <div className="flex max-w-xs flex-col gap-1 typo-caption">
-            <span>{m.autopilot_aria}</span>
-            {status && <AutopilotDetails status={status} />}
-          </div>
-        }
+        placement="right"
+        content={<AutopilotTip status={status} failed={failed} on={on} phrase={phrase} tone={AUTOPILOT_TONE[tone]} />}
       >
         <span className="flex">
           <AsyncButton
@@ -129,7 +135,7 @@ function AutopilotPlate({ onOpenOrchestration }: { onOpenOrchestration: () => vo
           </AsyncButton>
         </span>
       </Tooltip>
-      {phrase && <p className="typo-caption tabular-nums" data-testid="entry-e-autopilot-phrase">{phrase}</p>}
+      {verdict && <p className="typo-caption tabular-nums" data-testid="entry-e-autopilot-phrase">{verdict}</p>}
     </section>
   );
 }

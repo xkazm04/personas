@@ -9,9 +9,20 @@
 // Three columns, one grammar: SUPPLY on the left (the cap as a socket rack,
 // Autopilot, subscription windows as fuel strips), the BOARD in the middle
 // (Classic bays, the Runway rack, the three Lanes), the DESK on the right
-// (everything waiting on a human). One band of chrome above them all.
+// (everything waiting on a human). One band of chrome above them all, and
+// under it the notepad of workspaces the board below is a sheet of.
+//
+// CONSOLIDATED 2026-10-04. This is now the Activity surface itself, not one
+// of three variants behind a switcher. It is the Annunciator with the two
+// ideas the Plate variant was kept alive for folded in: the WORKSPACE LAYER
+// (`WorkspaceTabs` over `useWorkspaceScope` — Plate's second screen reduced to
+// a row of index tabs that narrow the board in place) and the DOCKED DESK
+// (`DecisionDock` — the decision rail resting as three figures and widening
+// into the list, instead of holding a column open all session). The baseline
+// grid and the Plate layers are gone; `prototype/` keeps its name until the
+// files are moved, which is a rename pass and not a design one.
 
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { OrchestrationPanel } from '../../orchestration';
 import { SessionModals } from '../../board/SessionModals';
 import { FINAL_STAGE } from '../../useStagedMount';
@@ -20,24 +31,29 @@ import { useActivitySurface, type ActivitySurfaceProps } from '../useActivitySur
 import { useUsageFeed } from '../useUsageFeed';
 import { useRailSurface } from '../useRailSurface';
 import { useCapSetting, useQueueConfirm } from '../shared';
-import { CommandBar, CommandFloor, FilterBanner } from './CommandBar';
+import { CommandBar, CommandFloor } from './CommandBar';
 import { SessionMenuProvider } from './SessionMenu';
 import { usePanelFilter } from './boardFilter';
+import { useWorkspaceScope } from './workspaceScope';
+import { WorkspaceSheet, WorkspaceTabs } from './WorkspaceTabs';
 import { SupplyDeck } from './SupplyDeck';
 import { ClassicPanel } from './ClassicPanel';
 import { LanesPanel } from './LanesPanel';
-import { InboxDesk } from './InboxDesk';
+import { DecisionDock, type DockTab } from './DecisionDock';
 import './entryE.css';
 
 function ActivityEntryEImpl(props: ActivitySurfaceProps) {
   const surface = useActivitySurface(props);
   const usage = useUsageFeed(surface.simulating);
   const width = useRailWidth();
+  const [dockOpen, setDockOpen] = useState(false);
   const rail = useRailSurface({
     feedTeams: props.feedTeams ?? [],
     onOpenSpeaker: props.onOpenSpeaker,
     filter: surface.scope,
     simulated: surface.simulatedRail,
+    // The desk is shut: nothing renders a row, so no feed builds one.
+    rowsEnabled: dockOpen,
   });
   const capSetting = useCapSetting(surface.simulating);
   const confirm = useQueueConfirm(surface.queueActions);
@@ -45,6 +61,10 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
   const { layout, setLayout } = surface;
   const onLayout = useCallback((v: typeof layout) => setLayout(v), [setLayout]);
   const filter = usePanelFilter(surface);
+  const workspaces = useWorkspaceScope(surface);
+  const toggleDock = useCallback(() => setDockOpen((v) => !v), []);
+  const { setTab } = rail;
+  const openDockTab = useCallback((tab: DockTab) => { setTab(tab); setDockOpen(true); }, [setTab]);
 
   return (
     <div
@@ -60,7 +80,7 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
         layout={layout}
         onLayout={onLayout}
       />
-      <FilterBanner filter={filter} onClear={surface.clearFilter} />
+      <WorkspaceTabs scope={workspaces} />
 
       <div className="flex min-h-0 flex-1">
         <SupplyDeck
@@ -71,22 +91,28 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
           onOpenOrchestration={surface.openOrchestration}
         />
 
-        <CommandFloor layout={layout} className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <SessionMenuProvider onOpenTerminal={surface.setTerminal} onOpenRecap={surface.setRecap}>
-            {layout === 'classic' ? (
-              <ClassicPanel surface={surface} filter={filter} selectedPersonaId={props.selectedPersonaId} onOpenRemote={props.onOpenRemote} onClearFilter={surface.clearFilter} />
-            ) : (
-              <LanesPanel surface={surface} filter={filter} cap={cap} onStart={confirm.askStart} onCancel={confirm.askCancel} />
-            )}
-          </SessionMenuProvider>
-        </CommandFloor>
+        <WorkspaceSheet scope={workspaces} className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <CommandFloor layout={layout} className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <SessionMenuProvider onOpenTerminal={surface.setTerminal} onOpenRecap={surface.setRecap}>
+              {layout === 'classic' ? (
+                <ClassicPanel surface={surface} filter={filter} workspaces={workspaces} selectedPersonaId={props.selectedPersonaId} onOpenRemote={props.onOpenRemote} onClearFilter={surface.clearFilter} />
+              ) : (
+                <LanesPanel surface={surface} filter={filter} workspaces={workspaces} cap={cap} onStart={confirm.askStart} onCancel={confirm.askCancel} />
+              )}
+            </SessionMenuProvider>
+          </CommandFloor>
+        </WorkspaceSheet>
 
-        <InboxDesk
+        <DecisionDock
           rail={rail}
           width={width}
+          open={dockOpen}
+          onToggle={toggleDock}
+          onOpenTab={openDockTab}
           scope={surface.scope}
           onClearScope={surface.clearScope}
           ready={surface.stage >= FINAL_STAGE}
+          reducedMotion={surface.reducedMotion}
         />
       </div>
 

@@ -1,12 +1,18 @@
 // The ONE band of chrome above the panel. Left, the census: every agent in the
-// fleet counted by lamp, and each lamp is the filter for its own number
-// (pressing it again, or Clear, lets go). Right, the layout switch and the
-// keyboard walk printed as keycaps, so the shortcut that exists is one the
-// operator can see. Sessions are counted in the supply column, never here:
-// this band counts AGENTS, and says so.
+// fleet counted by lamp, and each lamp is the filter for its own number.
+// Right, the layout switch and the keyboard walk printed as keycaps, so the
+// shortcut that exists is one the operator can see.
+//
+// ALL IS A STATE, NOT A VERB (2026-10-04). The band used to print "N agents ·
+// M sessions" as a label and grow a Clear button once a tag was pressed — two
+// different grammars for one fact, and the undo appeared only after the
+// mistake. `All` is now simply the first tag: same window, same lamp, same
+// count (every agent and session the layout can show), and it is the one that
+// is lit while nothing is filtered. Letting go is pressing a tag, exactly like
+// choosing one.
 
 import type { ReactNode } from 'react';
-import { Activity, X } from 'lucide-react';
+import { Activity } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SegmentedTabs, segmentedTabPanelProps } from '@/features/shared/components/layout/SegmentedTabs';
 import { Button } from '@/features/shared/components/buttons';
@@ -46,18 +52,29 @@ export function CommandBar({
 
   return (
     <div className="flex min-h-[52px] flex-shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b border-border px-3 py-2" data-testid="entry-e-command">
-      <span className="flex items-center gap-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-full border border-primary/40 bg-primary/10">
+      <Tooltip content={m.activity_mode}>
+        <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-primary/40 bg-primary/10" role="img" aria-label={m.activity_mode}>
           <Activity className="h-4 w-4 text-primary" aria-hidden />
         </span>
-        <span className="typo-heading text-foreground">{m.activity_mode}</span>
-      </span>
+      </Tooltip>
 
       {showTally && (
         <div className="flex items-center gap-1" role="group" aria-label={t.sidebar.agents} data-testid="fleet-grid-tally">
-          <span className="mr-1 typo-caption tabular-nums">
-            {tx(t.common.agent_count_other, { count: filter.agentTotal })} · {filter.sessionTotal} {filter.sessionTotal === 1 ? 'session' : 'sessions'}
-          </span>
+          <Tooltip content={`${t.common.all}: ${tx(t.common.agent_count_other, { count: filter.agentTotal })} · ${filter.sessionTotal} ${filter.sessionTotal === 1 ? 'session' : 'sessions'}`}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClear}
+              aria-pressed={active === null}
+              data-testid="fleet-grid-tally-all"
+              className={`ae-win ae-focus rounded-input px-2.5 py-1 [&>span]:inline-flex [&>span]:items-center [&>span]:gap-2 ${
+                active === null ? 'is-selected is-lit ae-t-run' : 'ae-t-off'}`}
+            >
+              <Lamp lamp={{ tone: 'run', lit: active === null }} />
+              <span className="typo-caption text-foreground">{t.common.all}</span>
+              <span className="typo-data tabular-nums text-foreground">{filter.agentTotal + filter.sessionTotal}</span>
+            </Button>
+          </Tooltip>
           {SQUARE_STATE_ORDER.map((s) => {
             const on = active === s;
             const lamp = PERSONA_LAMP[s];
@@ -82,11 +99,6 @@ export function CommandBar({
               </Tooltip>
             );
           })}
-          {active && (
-            <Button variant="ghost" size="sm" onClick={onClear} icon={<X className="h-3.5 w-3.5" />} data-testid="entry-e-filter-clear">
-              {t.common.clear}
-            </Button>
-          )}
         </div>
       )}
 
@@ -113,27 +125,10 @@ export function CommandBar({
   );
 }
 
-/** The filtered state, said once above the board with its one-click undo. */
-export function FilterBanner({ filter, onClear }: { filter: PanelFilter; onClear: () => void }) {
-  const { t, tx } = useTranslation();
-  if (!filter.state) return null;
-  const m = t.monitor;
-  const label = { running: m.grid_state_running, attention: m.grid_state_attention, failed: m.grid_state_failed, idle: m.grid_state_idle }[filter.state];
-  const c = filter.counts[filter.state];
-  const lamp = PERSONA_LAMP[filter.state];
-  return (
-    <div className={`flex flex-shrink-0 items-center gap-2.5 border-b border-border px-3 py-1.5 ae-t-${lamp.tone}`} role="status" data-testid="entry-e-filter-banner">
-      <Lamp lamp={{ tone: lamp.tone, lit: true }} />
-      <span className="typo-body text-foreground">{tx(m.grid_filter_state_aria, { state: label })}</span>
-      <span className="typo-caption tabular-nums">
-        {tx(t.common.agent_count_other, { count: c.agents })} · {c.sessions} {c.sessions === 1 ? 'session' : 'sessions'}
-      </span>
-      <Button variant="ghost" size="sm" onClick={onClear} icon={<X className="h-3.5 w-3.5" />} className="ml-auto" data-testid="entry-e-filter-banner-clear">
-        {t.common.clear}
-      </Button>
-    </div>
-  );
-}
+/* THE FILTER BANNER IS GONE (2026-10-04). It restated the active tag in a
+   strip of its own and carried a second Clear — a whole row of the panel for
+   a fact the tag above already shows lit and pressed, with `All` beside it as
+   the undo. The row went to the workspace notepad. */
 
 /**
  * The floor: the panel the layout switch above controls. It is declared here,

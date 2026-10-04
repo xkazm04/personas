@@ -1,12 +1,20 @@
-// Subscription usage as FUEL: each window is a strip of twenty lamps and the
-// lit ones are what is LEFT. A plan burning down goes dark from the right and
-// turns amber, then red - the panel dims exactly as the budget does, so a
-// drained plan cannot look healthy. On the live plan the auto-rotate threshold
-// is a notch on its 5-hour strip: when the light drains past it, the rotation
+// Subscription usage as FUEL: a window is a strip of lamps and the lit ones
+// are what is LEFT. A plan burning down goes dark from the right and turns
+// amber, then red - the panel dims exactly as the budget does, so a drained
+// plan cannot look healthy. On the live plan the auto-rotate threshold is a
+// notch on its 5-hour strip: when the light drains past it, the rotation
 // fires. The printed number stays "used %", the app's one vocabulary.
+//
+// A PLAN IS TWO ROWS (2026-10-04). It was four - the name, the 5-hour window,
+// the 7-day window and sometimes an "Estimated" line - so five stored plans
+// ate the supply column and the board below it lost the room. Row one is
+// unchanged. Row two carries BOTH windows side by side at eight segments each:
+// the strip's job is "how much light is left", which eight lamps answer as
+// well as twenty at half the width. "Estimated" left the card for the name's
+// tooltip, which is where its explanation already lived.
 
 import { useState } from 'react';
-import { ArrowLeftRight, RefreshCw, X } from 'lucide-react';
+import { ArrowLeftRight, RefreshCw, RotateCw, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { formatPercent } from '@/lib/utils/formatters';
 import { AsyncButton, Button } from '@/features/shared/components/buttons';
@@ -20,7 +28,8 @@ import type { UsageFeed } from '../useUsageFeed';
 import { Engraved, Lamp, Segments } from './parts';
 import { METER_TONE } from './tone';
 
-const SEGS = 20;
+/** Eight lamps per window: two windows fit one row of a 264px column. */
+const SEGS = 8;
 
 function WindowStrip({ w, threshold }: { w: WindowModel; threshold: number | null }) {
   const { t, tx } = useTranslation();
@@ -29,10 +38,17 @@ function WindowStrip({ w, threshold }: { w: WindowModel; threshold: number | nul
   const tone = METER_TONE[w.tone];
   return (
     <Tooltip content={windowSentence(t, tx, w)}>
-      <div className="grid grid-cols-[1.75rem_1fr_auto] items-center gap-2" aria-label={windowSentence(t, tx, w)} role="img">
-        <span className="typo-caption tabular-nums">{windowTitle(t, w)}</span>
-        <Segments count={SEGS} lit={(left / 100) * SEGS} tone={tone} mark={threshold !== null ? ((100 - threshold) / 100) * SEGS : null} />
-        <span className={`inline-flex min-w-[3.25rem] items-center justify-end gap-1 typo-data tabular-nums ${
+      <div className="flex min-w-0 flex-1 items-center gap-1.5" aria-label={windowSentence(t, tx, w)} role="img">
+        <span className="flex-shrink-0 typo-caption tabular-nums">{windowTitle(t, w)}</span>
+        <Segments
+          className="min-w-0 flex-1"
+          count={SEGS}
+          lit={(left / 100) * SEGS}
+          tone={tone}
+          thin
+          mark={threshold !== null ? ((100 - threshold) / 100) * SEGS : null}
+        />
+        <span className={`inline-flex flex-shrink-0 items-center gap-0.5 typo-caption tabular-nums ${
           w.tone === 'error' ? 'text-status-error' : w.tone === 'warning' ? 'text-status-warning' : 'text-foreground'}`}>
           {Pace && <Pace className="h-3 w-3" aria-hidden />}
           {formatPercent(w.usedPct, { precision: 0 })}
@@ -47,6 +63,13 @@ function PlanBlock({ plan, readOnly, usage }: { plan: PlanModel; readOnly: boole
   const m = t.monitor;
   const threshold = plan.isActive && usage.autoRotate?.enabled ? usage.autoRotate.thresholdPct : null;
   const email = plan.name ?? '';
+  // What the removed third row used to say, folded into the name's tooltip:
+  // the plan could not be reached and these figures are carried forward.
+  const nameTip = [
+    email,
+    plan.isActive ? m.usage_plan_live_login : null,
+    plan.state === 'projected' ? m.usage_projected_short : null,
+  ].filter(Boolean).join(' · ');
   return (
     <div
       className={`ae-win flex flex-col gap-1.5 rounded-input px-2.5 py-2 ${plan.isActive ? 'is-lit ae-t-run' : ''}`}
@@ -55,7 +78,7 @@ function PlanBlock({ plan, readOnly, usage }: { plan: PlanModel; readOnly: boole
     >
       <div className="flex min-w-0 items-center gap-2">
         <Lamp lamp={{ tone: plan.state === 'quarantined' ? 'err' : 'run', lit: plan.isActive }} />
-        <Tooltip content={plan.isActive ? `${email} · ${m.usage_plan_live_login}` : email}>
+        <Tooltip content={nameTip}>
           <span className="min-w-0 flex-1 truncate typo-body text-foreground">{plan.name ?? m.usage_not_stored}</span>
         </Tooltip>
         {!readOnly && plan.canSwitch && (
@@ -74,11 +97,12 @@ function PlanBlock({ plan, readOnly, usage }: { plan: PlanModel; readOnly: boole
           {plan.state === 'quarantined' ? m.usage_accounts_quarantined : reasonLabel(t, plan.reason)}
         </p>
       ) : (
-        plan.windows.filter((w) => w.label === 'short' || w.label === 'long').map((w) => (
-          <WindowStrip key={w.key} w={w} threshold={w.label === 'short' ? threshold : null} />
-        ))
+        <div className="flex min-w-0 items-center gap-2.5">
+          {plan.windows.filter((w) => w.label === 'short' || w.label === 'long').map((w) => (
+            <WindowStrip key={w.key} w={w} threshold={w.label === 'short' ? threshold : null} />
+          ))}
+        </div>
       )}
-      {plan.state === 'projected' && <span className="typo-caption">{m.usage_projected_short}</span>}
     </div>
   );
 }
@@ -132,10 +156,13 @@ export function PlanPlates({ usage }: { usage: UsageFeed }) {
       </header>
       {usage.model.providers.map((p) => <ProviderPlate key={p.id} provider={p} usage={usage} />)}
       {rotate && (
-        <Tooltip content={m.usage_auto_rotate_hint}>
+        /* ONE ROW (2026-10-04): the switch, its icon in place of the words,
+           and the threshold. The label the icon replaced is the tooltip, with
+           the full explanation of what rotation does under it. */
+        <Tooltip content={<span className="flex max-w-xs flex-col gap-1"><span className="text-foreground">{m.usage_auto_rotate}</span><span>{m.usage_auto_rotate_hint}</span></span>}>
           <div className="flex items-center gap-2 border-t border-border pt-2.5">
             <AccessibleToggle size="sm" checked={rotate.enabled} onChange={() => usage.saveAutoRotate(!rotate.enabled, shown)} label={m.usage_auto_rotate} />
-            <span className="typo-caption text-foreground">{m.usage_auto_rotate}</span>
+            <RotateCw className={`h-3.5 w-3.5 flex-shrink-0 ${rotate.enabled ? 'text-primary' : ''}`} aria-hidden />
             <input
               type="number"
               min={1}

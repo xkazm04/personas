@@ -17,21 +17,30 @@ import type { RailTab, RailTabSpec } from '../rail/RailChrome';
 import type { SimRailRows } from '../simulation';
 
 export function useRailSurface({
-  feedTeams, onOpenSpeaker, filter, simulated,
+  feedTeams, onOpenSpeaker, filter, simulated, rowsEnabled = true,
 }: {
   feedTeams: FeedTeam[];
   onOpenSpeaker?: (teamId: string, personaId: string) => void;
   filter: RailProjectFilter | null;
   simulated: SimRailRows | null;
+  /**
+   * Whether anything is RENDERING the rows. A docked surface that is shut
+   * passes false and no feed adapts a row for any tab. The three counts are
+   * unaffected by design: `useRailFeeds` never gates the queue, the accepted
+   * list or the channel subscription the badges are derived from, only the
+   * projection into rows — so a shut desk still says honestly how much is
+   * waiting behind it.
+   */
+  rowsEnabled?: boolean;
 }) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<RailTab>('reviews');
   const [showAllThreads, setShowAllThreads] = useState(false);
 
   const live = !simulated;
-  const reviews = useReviewFeed(live && tab === 'reviews', filter);
-  const dispatch = useDispatchFeed(live && tab === 'dispatch', filter);
-  const messages = useMessageFeed(feedTeams, live && tab === 'messages', filter, showAllThreads);
+  const reviews = useReviewFeed(rowsEnabled && live && tab === 'reviews', filter);
+  const dispatch = useDispatchFeed(rowsEnabled && live && tab === 'dispatch', filter);
+  const messages = useMessageFeed(feedTeams, rowsEnabled && live && tab === 'messages', filter, showAllThreads);
 
   const simThreads = useMemo(
     () => (simulated ? (showAllThreads ? simulated.messages : simulated.messages.filter((r) => r.unread)) : null),
@@ -40,7 +49,7 @@ export function useRailSurface({
   const simRows = simulated
     ? tab === 'reviews' ? simulated.reviews : tab === 'dispatch' ? simulated.dispatch : simThreads
     : null;
-  const simFeed = useSimFeed(simRows, filter);
+  const simFeed = useSimFeed(rowsEnabled ? simRows : null, filter);
   const active = simulated ? simFeed : tab === 'reviews' ? reviews : tab === 'dispatch' ? dispatch : messages;
 
   const act = useRailActions({

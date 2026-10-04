@@ -197,3 +197,59 @@
 @media (prefers-reduced-motion: reduce) {
   .ae-line, .ae-line.is-flash { transition: none; animation: none; }
 }
+
+/* ── Notepad: the workspace layer as index tabs ────────────────────────── */
+/* A tab sits ON the sheet below it: the open one is solid, breaks the strip's
+   hairline with its own foot, and the closed ones stay behind the glass. */
+.ae-notes {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 5px 10px 0;
+  border-bottom: 1px solid var(--ae-edge);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ae-notes::-webkit-scrollbar { display: none; }
+
+.ae-note {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-bottom: -1px;
+  padding: 3px 10px 4px;
+  border: 1px solid var(--ae-edge);
+  border-bottom-color: transparent;
+  border-radius: 7px 7px 0 0;
+  background: var(--ae-glass);
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+.ae-note:hover { background: var(--ae-glass-hi); border-color: var(--ae-edge-hi); }
+.ae-note.is-active {
+  background: color-mix(in srgb, var(--background) 94%, var(--foreground));
+  border-color: var(--ae-edge-hi);
+  box-shadow: inset 0 2px 0 var(--primary);
+}
+/* The foot that joins the open tab to the sheet, hiding the strip's hairline. */
+.ae-note.is-active::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 1px;
+  background: inherit;
+}
+.ae-note-swatch { width: 7px; height: 7px; border-radius: 2px; flex-shrink: 0; }
+.ae-note-count {
+  min-width: 1.1rem;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--status-warning) 22%, transparent);
+  color: var(--status-warning);
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ae-note { transition: none; }
+}
