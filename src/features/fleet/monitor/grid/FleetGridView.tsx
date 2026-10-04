@@ -21,8 +21,11 @@
 //
 // DELIBERATE DEBT, NOT AN OVERSIGHT: the surface is still under `prototype/`,
 // and the baseline's own parts (`board/GridHeader`, `board/GridBoard`,
-// `board/queue/QueueBoard`, `board/RailSlot`) are still on disk with nothing
-// importing them. Moving the one and sweeping the other is a rename pass over
+// `board/queue/QueueBoard`) are still on disk with nothing importing them.
+// (`board/RailSlot` and the `ActivityRail` it lazy-loaded were swept when
+// `RailTriageModal` was retired — the modal was the rail's only way to open a
+// case, and reworking it in a file nothing renders would have been work with
+// no observable effect.) Moving the one and sweeping the other is a rename pass over
 // ~30 files that would bury this design change in churn; it is the next
 // commit, not this one.
 

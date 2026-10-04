@@ -9848,7 +9848,8 @@
       "undecided_label": "unentschieden",
       "unknown_persona": "Unbekannte Persona",
       "you": "Sie",
-      "load_failed_title": "Die Prüfliste konnte nicht geladen werden"
+      "load_failed_title": "Die Prüfliste konnte nicht geladen werden",
+      "row_gone": "Diese Prüfung ist nicht mehr in der Warteschlange. Bitte neu laden und erneut versuchen."
     },
     "saved_views": {
       "errors": {

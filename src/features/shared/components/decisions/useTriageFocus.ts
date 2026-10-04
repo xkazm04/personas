@@ -15,11 +15,41 @@
 // item stays open, the per-option verdicts stay recorded, the note stays typed,
 // and the surface renders the failure beside the buttons. A triage surface that
 // advances on a failed write silently loses decisions.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 
 import { resolveError } from '@/lib/errors/errorRegistry';
 
 import type { TriageDecision, TriageItem, TriageVerdict } from '@/features/shared/triage/triageFocusBridge';
+
+/**
+ * Per-item ink for the persona NAME, decided by the CALLER.
+ *
+ * Overview paints a persona's name in its WORKSPACE's own swatch, so the eye
+ * learns "this decision came out of that organisation" before it reads a word.
+ * That colour is deterministic per workspace, comes from the app's own
+ * `WORKSPACE_COLORS`, and was contrast-measured across all 11 themes x all 8
+ * swatches (worst cell 5.29:1) — and a persona with NO workspace deliberately
+ * resolves to nothing, because absence of a workspace must not be painted as a
+ * workspace.
+ *
+ * None of that can live here. The resolver reads two Zustand stores and the
+ * mix lives in a stylesheet under `overview/sub_manual-review/libs/`, and a
+ * catalog primitive that imports either stops being shareable (ESLint
+ * `no-restricted-imports` and the `catalog-boundary-escape` ratchet both say
+ * so, which is why `shared/triage/triageFocusBridge.ts` exists at all).
+ *
+ * So the component keeps what it owns — WHERE the name sits, what size and
+ * weight it is, that it truncates — and the caller hands back only the ink:
+ * a class and/or a style, spread onto the name as it is. Overview passes the
+ * workspace resolver; the Monitor's dock passes nothing and the name keeps the
+ * default. No shared-to-feature import in either direction.
+ *
+ * Returning `undefined` is a FIRST-CLASS answer, not a failure: it means "this
+ * item has no accent", and the default ink stands.
+ */
+export type TriagePersonaAccent = (
+  item: TriageItem,
+) => { className?: string; style?: CSSProperties } | undefined;
 
 /**
  * A verdict on ONE option of a multi-decision item. `skip` has no meaning here.

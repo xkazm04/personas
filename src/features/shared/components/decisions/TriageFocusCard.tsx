@@ -25,9 +25,14 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { TriageFocusOptionCard, TriageFocusOptionStrip } from './TriageFocusOptions';
 import { CARD_SPRING, CARD_VARIANTS, STILL_SPRING, STILL_VARIANTS } from './triageFocusMotion';
-import type { TriageFocusController } from './useTriageFocus';
+import type { TriageFocusController, TriagePersonaAccent } from './useTriageFocus';
 
-function CardHeader({ item }: { item: TriageItem }) {
+function CardHeader({ item, personaAccent }: { item: TriageItem; personaAccent?: TriagePersonaAccent }) {
+  // The caller's ink, never its layout: the class is APPENDED to `typo-title`
+  // rather than replacing it, so a resolver can only change colour and the
+  // card keeps the name's size, weight and truncation. See
+  // `TriagePersonaAccent` for why the colour cannot be computed here.
+  const accent = personaAccent?.(item);
   return (
     <div className="flex items-start gap-3">
       <PersonaIcon
@@ -38,7 +43,12 @@ function CardHeader({ item }: { item: TriageItem }) {
         frameSize="lg"
       />
       <div className="min-w-0 flex-1">
-        <span className="typo-title block truncate">{item.source.label}</span>
+        <span
+          className={`typo-title block truncate${accent?.className ? ` ${accent.className}` : ''}`}
+          style={accent?.style}
+        >
+          {item.source.label}
+        </span>
         {item.source.sublabel && (
           <span className="typo-caption block truncate">{item.source.sublabel}</span>
         )}
@@ -48,7 +58,11 @@ function CardHeader({ item }: { item: TriageItem }) {
   );
 }
 
-export function TriageFocusCard({ item, ctl }: { item: TriageItem; ctl: TriageFocusController }) {
+export function TriageFocusCard({ item, ctl, personaAccent }: {
+  item: TriageItem;
+  ctl: TriageFocusController;
+  personaAccent?: TriagePersonaAccent;
+}) {
   const { t, tx } = useTranslation();
   const m = t.monitor;
   const still = useReducedMotion();
@@ -68,7 +82,7 @@ export function TriageFocusCard({ item, ctl }: { item: TriageItem; ctl: TriageFo
         className="flex min-h-0 w-full flex-1 flex-col gap-3 overflow-hidden p-4"
         data-testid="triage-focus-card"
       >
-        <CardHeader item={item} />
+        <CardHeader item={item} personaAccent={personaAccent} />
 
         {item.tags.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5">

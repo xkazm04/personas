@@ -9848,7 +9848,8 @@
       "undecided_label": "belum diputuskan",
       "unknown_persona": "Persona tidak diketahui",
       "you": "Anda",
-      "load_failed_title": "Tidak dapat memuat antrean tinjauan"
+      "load_failed_title": "Tidak dapat memuat antrean tinjauan",
+      "row_gone": "Tinjauan itu tidak ada lagi di antrean. Muat ulang lalu coba lagi."
     },
     "saved_views": {
       "errors": {

@@ -9848,7 +9848,8 @@
       "undecided_label": "未决定",
       "unknown_persona": "未知智能体",
       "you": "您",
-      "load_failed_title": "无法加载审核队列"
+      "load_failed_title": "无法加载审核队列",
+      "row_gone": "该审核已不在队列中。请重新加载后重试。"
     },
     "saved_views": {
       "errors": {

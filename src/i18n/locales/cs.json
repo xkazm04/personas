@@ -9848,7 +9848,8 @@
       "undecided_label": "nerozhodnuto",
       "unknown_persona": "Neznámá persona",
       "you": "Ty",
-      "load_failed_title": "Frontu ke schválení se nepodařilo načíst"
+      "load_failed_title": "Frontu ke schválení se nepodařilo načíst",
+      "row_gone": "Tato kontrola už ve frontě není. Načtěte stránku znovu a zkuste to."
     },
     "saved_views": {
       "errors": {

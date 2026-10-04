@@ -1824,7 +1824,8 @@
     "undecided_label": "chưa quyết định",
     "unknown_persona": "Persona không rõ",
     "you": "Bạn",
-    "load_failed_title": "Không thể tải hàng đợi xét duyệt"
+    "load_failed_title": "Không thể tải hàng đợi xét duyệt",
+    "row_gone": "Bản đánh giá đó không còn trong hàng đợi. Hãy tải lại và thử lại."
   },
   "saved_views": {
     "errors": {

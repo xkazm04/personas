@@ -3,15 +3,17 @@
 // renders its own tab strip and its own row (inside the shared virtualised
 // `RailList`), and mounts `modals` once.
 
-import { useMemo, useState } from 'react';
-import { AlertCircle, MessagesSquare, Rocket } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { AlertCircle, ArrowLeft, MessagesSquare, Rocket } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Button } from '@/features/shared/components/buttons';
+import { TriageFocus } from '@/features/shared/components/decisions/TriageFocus';
+import type { TriageDecision, TriageItem } from '@/features/agents/quick-answer/triage/triageTypes';
 import type { FeedTeam } from '../../channels/types';
 import type { RailProjectFilter } from '../rail/railFilter';
 import { useDispatchFeed, useMessageFeed, useReviewFeed } from '../rail/useRailFeeds';
 import { useSimFeed } from '../rail/useSimFeed';
 import { useRailActions } from '../rail/useRailActions';
-import { RailTriageModal } from '../rail/RailTriageModal';
 import { RailThreadModal } from '../rail/RailThreadModal';
 import type { RailTab, RailTabSpec } from '../rail/RailChrome';
 import type { SimRailRows } from '../simulation';
@@ -81,16 +83,79 @@ export function useRailSurface({
     ? simulated.messages.length - simulated.messages.filter((r) => r.unread).length
     : messages.total - messages.unread;
 
-  const modals = (
-    <>
-      <RailTriageModal item={act.openTriage} onClose={act.closeTriage} onDecide={reviews.decide} />
-      <RailThreadModal
-        thread={act.openThread ? messages.threadByKey(act.openThread.key) ?? act.openThread : null}
-        onClose={act.closeThread}
-        onMarkRead={messages.markThreadRead}
-        onOpenDetail={onOpenSpeaker ? act.drillToSpeaker : undefined}
+  // ---- The opened case, IN the dock ---------------------------------------
+  //
+  // This used to be `RailTriageModal`: a centre-screen modal, three buttons,
+  // no verdict hotkeys, no per-decision carousel, and a `try/finally` with no
+  // `catch` that closed on a write that had FAILED. It is now the shared
+  // `TriageFocus` rendered in the dock's own body, which is strictly more
+  // surface at strictly less width.
+  //
+  // `queueSidebar` is OFF and that is the whole reason the prop exists. The
+  // rail's default width is 320px and the sidebar alone is 330; the dock's tab
+  // list already IS the queue, so the rail is redundant here and impossible
+  // besides. Overview, which owns a page, passes it and gets the rail.
+  //
+  // The queue the focus navigates is the tab's OWN rows resolved back through
+  // `itemById` — no second list, so N-of-M can never disagree with what the
+  // operator just scrolled past, and every kind the unified queue produces
+  // (review, idea, question, policy, evolution, goal) decides here, not just
+  // reviews.
+  const triageItems = useMemo<TriageItem[]>(() => {
+    if (!act.openTriage) return [];
+    const resolved = active.rows
+      .map((row) => reviews.itemById(row.id))
+      .filter((item): item is TriageItem => !!item);
+    // A row the feed can no longer resolve (it polled away mid-read) must not
+    // take the open card with it.
+    return resolved.some((i) => i.id === act.openTriage!.id) ? resolved : [act.openTriage];
+  }, [act.openTriage, active.rows, reviews]);
+
+  const triageIndex = Math.max(0, triageItems.findIndex((i) => i.id === act.openTriage?.id));
+
+  const onTriageIndexChange = useCallback((next: number) => {
+    const row = active.rows[next];
+    if (row) act.openRow(row);
+  }, [active.rows, act]);
+
+  /** Rejects on a failed write, so the card stays open with everything typed. */
+  const onTriageDecide = useCallback(async (decision: TriageDecision) => {
+    await reviews.resolve(decision);
+    act.closeTriage();
+  }, [reviews, act]);
+
+  const triage = act.openTriage ? (
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col" data-testid="rail-triage-focus">
+      <div className="flex h-9 flex-shrink-0 items-center gap-1.5 border-b border-border px-2">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={act.closeTriage}
+          aria-label={t.common.back}
+          data-testid="rail-triage-close"
+          icon={<ArrowLeft className="h-3.5 w-3.5" />}
+        />
+        <span className="min-w-0 flex-1 truncate typo-label text-foreground">
+          {t.monitor.grid_rail_triage_modal_aria}
+        </span>
+      </div>
+      <TriageFocus
+        className="min-h-0 flex-1"
+        items={triageItems}
+        index={triageIndex}
+        onIndexChange={onTriageIndexChange}
+        onDecide={onTriageDecide}
       />
-    </>
+    </div>
+  ) : null;
+
+  const modals = (
+    <RailThreadModal
+      thread={act.openThread ? messages.threadByKey(act.openThread.key) ?? act.openThread : null}
+      onClose={act.closeThread}
+      onMarkRead={messages.markThreadRead}
+      onOpenDetail={onOpenSpeaker ? act.drillToSpeaker : undefined}
+    />
   );
 
   return {
@@ -101,6 +166,8 @@ export function useRailSurface({
     /** Key for `RailList` so the three feeds never share a scroll offset. */
     listKey: `${tab}:${filter?.teamId ?? 'all'}:${tab === 'messages' && showAllThreads ? 'all' : 'unread'}`,
     simulated: !!simulated,
+    /** The opened case, to render INSTEAD of the row list. Null when none. */
+    triage,
     modals,
   };
 }

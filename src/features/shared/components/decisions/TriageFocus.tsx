@@ -34,7 +34,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { TriageFocusActions } from './TriageFocusActions';
 import { TriageFocusCard } from './TriageFocusCard';
 import { TriageFocusQueue } from './TriageFocusQueue';
-import { useTriageFocus, type TriageFocusDecide } from './useTriageFocus';
+import { useTriageFocus, type TriageFocusDecide, type TriagePersonaAccent } from './useTriageFocus';
 
 export interface TriageFocusProps {
   /** The queue, already ordered. Resolved rows are the caller's to remove. */
@@ -47,6 +47,8 @@ export interface TriageFocusProps {
   onIndexChange?: (index: number) => void;
   /** Render the 330px queue rail. Off by default — see the module header. */
   queueSidebar?: boolean;
+  /** Ink for the persona name, per item. See {@link TriagePersonaAccent}. */
+  personaAccent?: TriagePersonaAccent;
   /** Claim the arrow keys at `ROUTE_DECISION_PRIORITY`. Default true. */
   keyboard?: boolean;
   /** Replaces the default "All caught up" state. */
@@ -55,8 +57,8 @@ export interface TriageFocusProps {
 }
 
 export function TriageFocus({
-  items, onDecide, index, onIndexChange, queueSidebar = false, keyboard = true,
-  emptyState, className,
+  items, onDecide, index, onIndexChange, queueSidebar = false, personaAccent,
+  keyboard = true, emptyState, className,
 }: TriageFocusProps) {
   const { t, tx } = useTranslation();
   const m = t.monitor;
@@ -129,7 +131,7 @@ export function TriageFocus({
   return (
     <div className={`flex min-h-0 overflow-hidden ${className ?? ''}`.trim()} data-testid="triage-focus">
       {queueSidebar && (
-        <TriageFocusQueue items={items} index={ctl.index} onSelect={ctl.goTo} />
+        <TriageFocusQueue items={items} index={ctl.index} onSelect={ctl.goTo} personaAccent={personaAccent} />
       )}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <div className="flex flex-shrink-0 items-center justify-between gap-2 border-b border-primary/10 px-3 py-2">
@@ -151,7 +153,7 @@ export function TriageFocus({
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-          <TriageFocusCard item={item} ctl={ctl} />
+          <TriageFocusCard item={item} ctl={ctl} personaAccent={personaAccent} />
         </div>
 
         <TriageFocusActions item={item} ctl={ctl} hasOptions={multi} />

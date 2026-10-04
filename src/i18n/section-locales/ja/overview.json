@@ -1824,7 +1824,8 @@
     "undecided_label": "未決定",
     "unknown_persona": "不明なペルソナ",
     "you": "自分",
-    "load_failed_title": "レビューキューを読み込めませんでした"
+    "load_failed_title": "レビューキューを読み込めませんでした",
+    "row_gone": "そのレビューはキューにありません。再読み込みしてからお試しください。"
   },
   "saved_views": {
     "errors": {

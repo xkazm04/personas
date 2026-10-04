@@ -9848,7 +9848,8 @@
       "undecided_label": "indécis",
       "unknown_persona": "Persona inconnu",
       "you": "Vous",
-      "load_failed_title": "Impossible de charger la file d'attente de revue"
+      "load_failed_title": "Impossible de charger la file d'attente de revue",
+      "row_gone": "Cette revue n'est plus dans la file. Rechargez la page puis réessayez."
     },
     "saved_views": {
       "errors": {

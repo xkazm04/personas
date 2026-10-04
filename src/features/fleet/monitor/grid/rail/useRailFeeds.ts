@@ -90,6 +90,7 @@ import {
   type AcceptedDispatch,
 } from '@/features/agents/quick-answer/triage/deck/useAcceptedDispatch';
 import type {
+  TriageDecision,
   TriageItem,
   TriageVerdict,
 } from '@/features/agents/quick-answer/triage/triageTypes';
@@ -165,6 +166,15 @@ export function useReviewFeed(
    *  verdict recorded from the rail and one recorded from the deck cannot take
    *  different paths to the backend. */
   decide: (item: TriageItem, verdict: TriageVerdict) => Promise<void>;
+  /**
+   * The SAME door, for a caller that has a whole decision rather than a bare
+   * verdict. `TriageFocus` hands back a branch id, a free-text reason and the
+   * per-option verdict map, and the two-argument `decide` above silently drops
+   * all three — a fired branch would land as a plain approval. Added rather
+   * than widening `decide`, because the rail's own accept/reject buttons
+   * genuinely have nothing else to say.
+   */
+  resolve: (decision: TriageDecision) => Promise<void>;
 } {
   const copy = useTriageCopy();
   const { t } = useTranslation();
@@ -216,6 +226,7 @@ export function useReviewFeed(
     total: items.length,
     itemById,
     decide,
+    resolve: queueDecide,
   };
 }
 

@@ -21,6 +21,8 @@ import type { Tone } from '@/features/shared/components/kit/types';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { TriageItem, TriageTone } from '@/features/shared/triage/triageFocusBridge';
 
+import type { TriagePersonaAccent } from './useTriageFocus';
+
 /** The item vocabulary's tone, in the kit's words. One map, no hues. */
 const KIT_TONE: Record<TriageTone, Tone> = {
   neutral: 'neutral',
@@ -44,14 +46,34 @@ export function TriageFocusQueue({
   items,
   index,
   onSelect,
+  personaAccent,
 }: {
   items: readonly TriageItem[];
   index: number;
   onSelect: (index: number) => void;
+  /** Ink for each row's persona line. See {@link TriagePersonaAccent}. */
+  personaAccent?: TriagePersonaAccent;
 }) {
   const { t } = useTranslation();
   const m = t.monitor;
-  const rows = useMemo(() => items.map((item) => ({ item, mark: rowTone(item) })), [items]);
+  // `meta` is a ReactNode, so the accent rides as a span INSIDE the kit's own
+  // `k-row__meta` rather than as a class on it: the row keeps the kit's type
+  // and density and only the ink is the caller's. The donor tinted the same
+  // line in its own rail, and a tint that appeared on the card but not in the
+  // queue beside it would read as two different personas.
+  const rows = useMemo(
+    () => items.map((item) => {
+      const accent = personaAccent?.(item);
+      return {
+        item,
+        mark: rowTone(item),
+        meta: accent
+          ? <span className={accent.className} style={accent.style}>{item.source.label}</span>
+          : item.source.label,
+      };
+    }),
+    [items, personaAccent],
+  );
 
   return (
     <aside
@@ -66,11 +88,11 @@ export function TriageFocusQueue({
       <div className="min-h-0 flex-1 overflow-y-auto">
         <KitHost>
           <Rows count={rows.length} empty={{ title: m.triage_focus_empty_title }}>
-            {rows.map(({ item, mark }, i) => (
+            {rows.map(({ item, mark, meta }, i) => (
               <ListRow
                 key={item.id}
                 name={item.title}
-                meta={item.source.label}
+                meta={meta}
                 mark={mark}
                 state={i === index ? 'selected' : 'default'}
                 onPress={() => onSelect(i)}

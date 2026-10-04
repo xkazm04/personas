@@ -379,6 +379,17 @@
       ]
     },
     {
+      "_comment": "Approvals — the manual-review queue and the focused triage flow. Mapped to NOTHING until 2026-10-04, so every change to the surface the README's own 'Approvals' row describes was invisible to the doc-sync check. `shared/components/decisions/**` is here rather than under a shared entry because TriageFocus has exactly two callers and both are decision queues this doc covers.",
+      "doc": "docs/features/overview/README.md",
+      "sourceGlobs": [
+        "src/features/overview/sub_manual-review/**",
+        "src/features/shared/components/decisions/**",
+        "src/features/shared/triage/**",
+        "src/lib/decisions/rowWrites.ts"
+      ],
+      "marketingModule": "overview"
+    },
+    {
       "doc": "docs/features/monitor.md",
       "sourceGlobs": [
         "src/features/fleet/monitor/**",

@@ -8544,6 +8544,7 @@ export type Translations = {
       gc_none: string;
       gc_failed: string;
       bulk_partial_failure: string;
+      row_gone: string;
       backlog_all_groups: string;
       backlog_group_summary: string;
       backlog_all_summary: string;

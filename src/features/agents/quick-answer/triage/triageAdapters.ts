@@ -31,6 +31,12 @@ import {
 import type { LucideIcon } from 'lucide-react';
 
 import { parseSuggestedActions } from '@/lib/reviews/suggestedActions';
+// The ONE parser for a review's `context_data`. Imported rather than
+// re-implemented: `DecisionItem` and `TriageDecisionOption` are the same seven
+// fields by construction (see `TriageDecisionOption`'s own doc comment), and a
+// second JSON reader over the same column is how two surfaces start disagreeing
+// about what a decision is.
+import { parseDecisions } from '@/features/overview/sub_manual-review/components/reviewFocusHelpers';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { BuildQuestion } from '@/lib/types/buildTypes';
 import type { EvolutionPromotionProposal } from '@/lib/bindings/EvolutionPromotionProposal';
@@ -582,6 +588,14 @@ export function bodyWithoutTitle(
 
 export function reviewToTriage(review: TriageReviewRow, copy: TriageCopy): TriageItem {
   const severity = (review.severity || 'medium').toLowerCase();
+  // `context_data` is not one thing. When a persona raises N choices it holds
+  // an array of DECISIONS plus the prose that framed them; otherwise it is an
+  // opaque payload. Until now this adapter threw the whole blob into
+  // `evidence`, so the richest shape in the queue — a review carrying five
+  // options to rule on one at a time — reached every TriageItem consumer as a
+  // wall of JSON. Parsed here, once, at the boundary.
+  const { decisions, contextText } = parseDecisions(review.context_data);
+  const hasDecisions = decisions.length > 0;
   const actions = parseSuggestedActions(review.suggested_actions);
   // `assignment_id` / `step_id` mean a team step is HELD on this verdict.
   const blocking = !!(review.assignment_id || review.step_id);
@@ -618,9 +632,20 @@ export function reviewToTriage(review: TriageReviewRow, copy: TriageCopy): Triag
     id: `review:${review.id}`,
     sourceId: review.id,
     kind: 'review',
+    decisions: hasDecisions ? decisions : undefined,
+    personaIcon: review.persona_icon ?? null,
+    personaId: review.persona_id ?? null,
     title: review.title,
     body: bodyWithoutTitle(review.content, review.title) || copy.noDescription,
-    evidence: review.context_data,
+    // The narrative the backend preserves beside the decisions. Without it a
+    // multi-decision card is a list of bare labels with nothing saying what
+    // the persona was actually weighing.
+    reasoning: contextText ?? undefined,
+    // Once the decisions are parsed OUT of the blob, printing the blob as well
+    // renders every option twice — once as a card the reviewer can rule on and
+    // once as raw JSON underneath it. The dump is the fallback for a payload
+    // nothing else could read, which is exactly the no-decisions case.
+    evidence: hasDecisions ? null : review.context_data,
     tags,
     alert: blocking
       ? {

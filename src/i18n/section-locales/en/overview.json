@@ -419,6 +419,7 @@
     "gc_none": "No stale reviews to clear.",
     "gc_failed": "Could not clear stale reviews — see logs.",
     "bulk_partial_failure": "{count} of the selected reviews could not be resolved — they are still pending.",
+    "row_gone": "That review is no longer in the queue. Reload and try again.",
     "backlog_all_groups": "All categories",
     "backlog_group_summary": "{group} · {count} ideas",
     "backlog_all_summary": "{count} ideas",
