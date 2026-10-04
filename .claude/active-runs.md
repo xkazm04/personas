@@ -2,6 +2,26 @@
 
 ## Active
 
+- **[2026-10-03 16:10]**
+- **Paths:** `src/features/home/components/**` · `src/features/home/sub_cockpit/**` · `src/features/home/sub_welcome/HomeWelcome.tsx` · `src/features/home/lib/**` · `scripts/style/page-harness/homeCockpitSurfaces.tsx` · `scripts/style/page-harness/homeCockpitTapes.mjs`
+- **Status:** started
+
+- **[2026-10-03 14:13]**
+- **Paths:** `src/features/shared/components/kit/Figure.tsx` · `src/features/overview/components/health/**` · `scripts/style/page-harness/kitSpecimen.tsx`
+- **Status:** started
+
+- **[2026-10-03 13:11]**
+- **Paths:** `src/features/overview/sub_patterns/hierarchy/SubjectsView.tsx` · `src/features/overview/sub_memories/components/MemoryConflictReview.tsx` · `src/features/overview/sub_memories/components/MemoriesPageDense.tsx` · `src/features/overview/sub_observability/components/HealingIssuesPanel.tsx` · `src/features/overview/sub_observability/components/IssuesList.tsx` · `src/features/overview/sub_observability/components/AlertRulesPanel.tsx` · `src/features/overview/sub_observability/components/AlertHistoryPanel.tsx` · `src/features/overview/sub_analytics/components/RotationOverviewPanel.tsx` · `scripts/check-themes.mjs`
+- **Status:** started
+
+- **[2026-10-03 12:46]**
+- **Paths:** `src/features/overview/components/health/**`
+- **Status:** started
+
+- **[2026-10-03 12:24]**
+- **Paths:** `src/features/overview/components/health/**` · `scripts/style/page-harness/homeSystemCheck*`
+- **Status:** started
+
 - **[2026-09-29 12:48]**
 - **Paths:** `src-tauri/engine/src/unattended.rs` · `src-tauri/src/commands/fleet/stale.rs` · `src-tauri/src/commands/curator/tick.rs`
 - **Status:** started
@@ -1228,6 +1248,16 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### kit-st-law6-home — /kit ST: law 6 across the five Home surfaces - per-region retirement + section layering
+
+### kit-figure-fg — /kit builder FG: the Figure kit part (doctrine 6c legal door) + System Check layer 1 redrawn as a figure, off compact
+
+### kit-home3-loading-themes — kit/home-3: six overview surfaces get a loading gate before their empty state; check:themes extended to read typography.css type tokens
+
+### kit-home3-systemcheck-fusion — kit home-3: System Check fusion (builder SC, Director override)
+
+### kit-home3-systemcheck — kit home-3: three 2-layer System Check prototypes (builder SC)
 
 ### curator-fleet-hygiene — Curator fleet workers: explicit curator: run label so the machine-worker retire/prune lanes see them; hibernated counts as ended
 
