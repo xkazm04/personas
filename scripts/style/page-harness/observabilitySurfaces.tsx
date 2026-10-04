@@ -35,32 +35,39 @@ async function prepareObservability(): Promise<void> {
   s.applyPipelineResults(['observabilityMetrics', 'healingIssues', 'alertRules', 'alertHistory'].map((source) => ({ source, error: null })));
 }
 
-/** Clicks the first element matching `selector` once it exists (polled for up to 5 s). StrictMode-safe. */
-function ClickWhenReady({ selector, children }: { selector: string; children: ReactNode }) {
+/**
+ * Clicks each selector in turn once it exists (polled for up to 5 s each). StrictMode-safe.
+ * A sequence exists because the surface is two-level since 2026-10-04: a control inside a
+ * region can only be reached after that region's layer-1 card has been pressed open.
+ */
+function ClickWhenReady({ selectors, children }: { selectors: readonly string[]; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const root = ref.current;
     if (!root || root.dataset.driven) return;
     root.dataset.driven = '1';
+    let step = 0;
     let tries = 0;
     const tick = () => {
+      const selector = selectors[step];
+      if (selector === undefined) return;
       const el = root.querySelector<HTMLElement>(selector);
-      if (el) { el.click(); return; }
+      if (el) { el.click(); step += 1; tries = 0; setTimeout(tick, 50); return; }
       if (tries++ < 100) setTimeout(tick, 50);
     };
     tick();
-  }, [selector]);
+  }, [selectors]);
   return <div ref={ref} className="contents">{children}</div>;
 }
 
 const dashboard = () => import('@/features/overview/sub_observability/components/ObservabilityDashboard') as Promise<{ default: ComponentType }>;
 
-function page(click?: string) {
+function page(clicks: readonly string[]) {
   return async (): Promise<{ default: ComponentType }> => {
     const { default: Page } = await dashboard();
     return {
       default: function ObservabilityHost() {
-        return click ? <ClickWhenReady selector={click}><Page /></ClickWhenReady> : <Page />;
+        return clicks.length > 0 ? <ClickWhenReady selectors={clicks}><Page /></ClickWhenReady> : <Page />;
       },
     };
   };
@@ -71,14 +78,24 @@ const providers = async () => {
   return (children: ReactNode) => <OverviewFilterProvider>{children}</OverviewFilterProvider>;
 };
 
-const entry = (click?: string): HarnessModule => ({ load: page(click), providers, prepare: prepareObservability });
+const entry = (...clicks: string[]): HarnessModule => ({ load: page(clicks), providers, prepare: prepareObservability });
+
+/**
+ * Layer-1 card presses. Each is listed first so the same entry works before and after the
+ * two-level rework: on the one-level page the card does not exist, the poll times out, and
+ * the next selector in the sequence is tried against the section that was always on screen.
+ */
+const OPEN_HEALTH = '[data-testid="obs-card-health"] button';
+const OPEN_ALERTS = '[data-testid="obs-card-alerts"] button, [data-testid="obs-alerts-toggle"], button[title="Alert Rules"]';
+const OPEN_CHARTS = '[data-testid="obs-card-charts"] button';
 
 export const OBSERVABILITY_MODULES: Record<string, HarnessModule> = {
   'observability/dashboard': entry(),
-  'observability/alerts': entry('[data-testid="obs-alerts-toggle"], button[title="Alert Rules"]'),
-  'observability/timeline': entry('[data-testid="obs-view"] button:last-child, button[title="timeline_view"]'),
+  'observability/alerts': entry(OPEN_ALERTS),
+  'observability/charts': entry(OPEN_CHARTS),
+  'observability/timeline': entry(OPEN_HEALTH, '[data-testid="obs-view"] button:last-child, button[title="timeline_view"]'),
   // The full issue: the detail's Details button (pre-kit: a row click opened the modal).
-  'observability/issue': entry('[data-testid="obs-issue-open"], [role="option"]'),
+  'observability/issue': entry(OPEN_HEALTH, '[data-testid="obs-issue-open"], [role="option"]'),
   // A row click: the detail in the pane or the drawer (pre-kit: the modal).
-  'observability/select': entry('tr[data-testid="obs-issue-row"]:nth-child(2), [role="option"]:nth-child(2)'),
+  'observability/select': entry(OPEN_HEALTH, 'tr[data-testid="obs-issue-row"]:nth-child(2), [role="option"]:nth-child(2)'),
 };

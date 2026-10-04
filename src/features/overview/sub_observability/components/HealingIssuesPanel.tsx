@@ -89,7 +89,6 @@ export function HealingIssuesPanel(p: HealingIssuesPanelProps) {
   return (
     <Section
       id="s-obs-health"
-      eyebrow={w.eyebrow}
       title={o.healing_issues_panel.title}
       // A "0" beside a ghost is the same false claim the empty band was: while
       // the read is in flight the section head has no count to show yet.

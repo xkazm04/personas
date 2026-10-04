@@ -4,6 +4,9 @@
  * a Section on a spine whose Mark vocabulary matches the list (issueModel), the analysis and
  * the suggested fix as level-2 Sections, the facts as a KeyValueGrid, the actions as
  * KitButtons with the product's real spinner while resolving.
+ *
+ * Not `KitHost compact` (doctrine 6c, 2026-10-03): one issue's analysis and suggested fix is a
+ * reading surface, and the compact tier renders every row token it holds 11.1-12.5% smaller.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { CheckCircle } from 'lucide-react';
@@ -48,7 +51,7 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
 
   return (
     <BaseModal isOpen onClose={onClose} titleId="healing-issue-title" maxWidthClass="max-w-xl" staggerChildren={false}>
-      <KitHost compact testId="healing-issue-modal">
+      <KitHost testId="healing-issue-modal">
         {resolved
           ? (
             <div className="animate-fade-scale-in flex flex-col items-center justify-center gap-4 py-16 px-8">

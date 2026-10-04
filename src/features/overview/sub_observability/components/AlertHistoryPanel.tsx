@@ -13,7 +13,7 @@ import { SEVERITY_MARK } from './AlertRulesPanel';
 
 const SHOWN = 10;
 
-export function AlertHistoryPanel({ eyebrow }: { eyebrow?: string }) {
+export function AlertHistoryPanel() {
   const { t } = useTranslation();
   // `alertHistoryLoading` has existed in alertSlice since this panel did and was
   // never read here, so a cold open said "no alerts" before the read returned
@@ -31,7 +31,6 @@ export function AlertHistoryPanel({ eyebrow }: { eyebrow?: string }) {
   return (
     <Section
       id="s-obs-alert-history"
-      eyebrow={eyebrow}
       title={t.overview.healing_issues_panel.alert_history_title}
       count={active}
       actions={alertHistory.length > 0 ? (

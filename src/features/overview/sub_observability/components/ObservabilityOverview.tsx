@@ -4,6 +4,9 @@
  * (cost and runs at a 1-2-5 quantum stated in the legend, success rate as 20 squares of 5%,
  * one square per active persona). The pipeline's per-source state is a ChipRow, shown only when
  * a source failed, went stale or has not loaded.
+ *
+ * This is layer 1's first and only Section (2026-10-04): the alert-rules toggle that used to sit
+ * in this toolbar is now a card of its own in the grid below, so the toolbar holds filters only.
  */
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -20,9 +23,6 @@ const PRESETS: Array<{ v: OverviewDayRange; label: string }> = [{ v: 1, label: '
 
 export interface OverviewProps {
   d: ReturnType<typeof useObservabilityData>;
-  showAlerts: boolean;
-  onToggleAlerts: () => void;
-  activeAlertCount: number;
   pipelineErrors: Record<string, string>;
   pipelineFetchedAt: Record<string, number>;
   w: ObservabilityWords;
@@ -63,7 +63,6 @@ export function ObservabilityOverview(p: OverviewProps) {
   return (
     <Section
       id="s-obs-overview"
-      eyebrow={w.eyebrow}
       title={w.t.sidebar.overview}
       meta={
         <span className="k-legend-row typo-caption">
@@ -98,13 +97,6 @@ export function ObservabilityOverview(p: OverviewProps) {
             ),
           }}
         />
-        <KitButton pressed={p.showAlerts} onClick={p.onToggleAlerts} testId="obs-alerts-toggle">
-          <span className="inline-flex items-center gap-2">
-            {p.activeAlertCount > 0 && <Dot tone="error" />}
-            {o.observability.alert_rules}
-            {p.activeAlertCount > 0 && <span className="typo-data k-regular k-quiet">{p.activeAlertCount}</span>}
-          </span>
-        </KitButton>
       </Toolbar>
       {chips.length > 0 && <ChipRow label={o.observability.title} emptyLabel="" chips={chips} />}
       {d.observabilityError && (

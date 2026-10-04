@@ -25,7 +25,7 @@ const Ms = ({ ms }: { ms: number }) => (
   <span className="inline-flex items-center gap-2"><Dot tone={latencyTone(ms)} /><Numeric value={ms} unit="ms" /></span>
 );
 
-export default function IpcPerformancePanel({ eyebrow }: { eyebrow?: string }) {
+export default function IpcPerformancePanel() {
   const { t } = useTranslation();
   const ip = t.overview.ipc_panel;
   const [expanded, setExpanded] = useState(false);
@@ -38,7 +38,6 @@ export default function IpcPerformancePanel({ eyebrow }: { eyebrow?: string }) {
   return (
     <Section
       id="s-obs-ipc"
-      eyebrow={eyebrow}
       title={ip.title}
       count={<Numeric value={summary.totalCalls} unit="count" />}
       actions={

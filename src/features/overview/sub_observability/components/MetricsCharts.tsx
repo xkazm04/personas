@@ -36,8 +36,6 @@ export interface MetricsChartsProps {
   pieData: PieDataPoint[];
   anomalies?: MetricAnomaly[];
   annotations?: ChartAnnotationRecord[];
-  /** Section eyebrow (the page's). */
-  eyebrow?: string;
   loading?: boolean;
   /** Called when a failure bar is clicked with the date string (YYYY-MM-DD). */
   onFailureBarClick?: (date: string) => void;
@@ -57,7 +55,7 @@ function Plot({ render, resetKey }: { render: (R: RechartsModule) => ReactElemen
   );
 }
 
-export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, anomalies = [], annotations = [], eyebrow, loading, onFailureBarClick, onAnomalyClick }: MetricsChartsProps) {
+export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, anomalies = [], annotations = [], loading, onFailureBarClick, onAnomalyClick }: MetricsChartsProps) {
   const { t, tx, language } = useTranslation();
   const c = t.overview.observability_charts;
   const sf = useScaledFontSize();
@@ -99,7 +97,7 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
 
   return (
     <>
-      <Section id="s-obs-cost" eyebrow={eyebrow} title={c.cost_over_time} meta={anomalyMeta}>
+      <Section id="s-obs-cost" title={c.cost_over_time} meta={anomalyMeta}>
         <ChartFrame height={HEIGHT} label={c.cost_over_time} state={state} empty={empty}>
           <Plot resetKey={resetKey} render={(R) => (
             <R.AreaChart data={chartData} margin={PLOT_MARGIN}>
@@ -116,7 +114,6 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
       </Section>
       <Section
         id="s-obs-health-chart"
-        eyebrow={eyebrow}
         title={c.execution_health}
         meta={
           <span className="k-legend-row typo-caption">
@@ -148,7 +145,7 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
           )} />
         </ChartFrame>
       </Section>
-      <PersonaBreakdownTable rows={pieData} eyebrow={eyebrow} loading={loading} />
+      <PersonaBreakdownTable rows={pieData} loading={loading} />
     </>
   );
 });

@@ -1,18 +1,20 @@
 /**
- * Observability (composition kit): tool latency and reliability over the page's window, from
+ * Observability, layer 2: tool latency and reliability over the page's window, from
  * `get_tool_performance_summary` (the same command the shared ToolPerformancePanel reads; that
- * panel stays for its other surfaces). A row's Mark is its error rate, the tool type filters, every column sorts (most runs first).
+ * panel stays for its other surfaces). A row's Mark is its error rate, the tool type filters,
+ * every column sorts (most runs first).
+ *
+ * The read itself moved to `libs/useToolPerformance` on 2026-10-04: the dashboard calls it once
+ * and hands the result to the layer-1 card and to this section, so the card's figure and the
+ * table are one read and the card never waits on this section to mount.
  */
-import { memo, useEffect, useMemo, useState } from 'react';
-import { getToolPerformanceSummary } from '@/api/agents/tools';
-import type { ToolPerformanceSummary } from '@/lib/bindings/ToolPerformanceSummary';
+import { memo, useMemo, useState } from 'react';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { DataTable, Section, Segmented, Toolbar, type Tone, type Glyph, type TableRow } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
+import type { ToolPerformance } from '../libs/useToolPerformance';
 
 type Col = 'tool' | 'runs' | 'avg' | 'max' | 'err';
-const LIMIT = 8;
 
 function errorMark(rate: number): { tone: Tone; glyph: Glyph } {
   if (rate === 0) return { tone: 'success', glyph: 'hollow' };
@@ -20,37 +22,11 @@ function errorMark(rate: number): { tone: Tone; glyph: Glyph } {
   return { tone: 'error', glyph: 'solid' };
 }
 
-export const ToolPerformanceSection = memo(function ToolPerformanceSection({ since, personaId, eyebrow }: {
-  /** ISO 8601; rows older than this are excluded. */
-  since: string;
-  personaId?: string;
-  eyebrow?: string;
-}) {
+export const ToolPerformanceSection = memo(function ToolPerformanceSection({ perf }: { perf: ToolPerformance }) {
   const { t, language } = useTranslation();
   const wd = t.overview.widgets;
-  const [rows, setRows] = useState<ToolPerformanceSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [failed, setFailed] = useState(false);
+  const { rows, loading, failed } = perf;
   const [type, setType] = useState('all');
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setFailed(false);
-    void (async () => {
-      try {
-        const r = await getToolPerformanceSummary(since, personaId, LIMIT);
-        if (!cancelled) setRows(r);
-      } catch (err) {
-        if (cancelled) return;
-        silentCatch('ToolPerformanceSection:getToolPerformanceSummary')(err);
-        setFailed(true);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [since, personaId]);
 
   const types = useMemo(() => [...new Set(rows.map((r) => r.tool_type))].sort((a, b) => a.localeCompare(b)), [rows]);
   const shown = useMemo(
@@ -85,7 +61,7 @@ export const ToolPerformanceSection = memo(function ToolPerformanceSection({ sin
   });
 
   return (
-    <Section id="s-obs-tools" eyebrow={eyebrow} title={wd.tool_performance} count={rows.length || undefined} meta={wd.tool_performance_subtitle}>
+    <Section id="s-obs-tools" title={wd.tool_performance} count={rows.length || undefined} meta={wd.tool_performance_subtitle}>
       {types.length > 1 && (
         <Toolbar label={wd.tool_performance}>
           <Segmented

@@ -29,7 +29,7 @@ const toForm = (r: AlertRule): RuleFormData => ({
   name: r.name, metric: r.metric, operator: r.operator, threshold: String(r.threshold), severity: r.severity, personaId: r.persona_id,
 });
 
-export function AlertRulesPanel({ eyebrow }: { eyebrow?: string }) {
+export function AlertRulesPanel() {
   const { t } = useTranslation();
   const hp = t.overview.healing_issues_panel;
   const s = useOverviewStore(useShallow((st) => ({
@@ -62,7 +62,6 @@ export function AlertRulesPanel({ eyebrow }: { eyebrow?: string }) {
   return (
     <Section
       id="s-obs-alert-rules"
-      eyebrow={eyebrow}
       title={t.overview.observability.alert_rules}
       count={s.alertRules.length}
       meta={h.lastEvalAt ? (

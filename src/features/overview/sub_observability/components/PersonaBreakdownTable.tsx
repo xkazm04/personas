@@ -11,7 +11,7 @@ import type { PieDataPoint } from './MetricsCharts';
 
 type Col = 'persona' | 'runs' | 'cost';
 
-export function PersonaBreakdownTable({ rows, eyebrow, loading }: { rows: PieDataPoint[]; eyebrow?: string; loading?: boolean }) {
+export function PersonaBreakdownTable({ rows, loading }: { rows: PieDataPoint[]; loading?: boolean }) {
   const { t } = useTranslation();
   const o = t.overview;
   const sorted = useMemo(() => [...rows].sort((a, b) => b.executions - a.executions), [rows]);
@@ -37,7 +37,7 @@ export function PersonaBreakdownTable({ rows, eyebrow, loading }: { rows: PieDat
     },
   }));
   return (
-    <Section id="s-obs-personas" eyebrow={eyebrow} title={o.observability_charts.executions_by_persona} count={sorted.length}>
+    <Section id="s-obs-personas" title={o.observability_charts.executions_by_persona} count={sorted.length}>
       <DataTable<Col>
         label={o.observability_charts.executions_by_persona}
         loading={loading && sorted.length === 0}

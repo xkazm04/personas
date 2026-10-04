@@ -4,6 +4,11 @@
  * the likely root causes and the correlated events as ListRows on the spine, each Mark in the
  * tone of what kind of event it was, relevance drawn as ten units. Loading is the kit's ghost,
  * not a spinner.
+ *
+ * Not `KitHost compact` (doctrine 6c, 2026-10-03): a drill-down exists to be READ - it explains
+ * one spike in prose, figures and event rows - and the compact tier subtracts 11.1-12.5% from
+ * every row token it holds. Compact is for dense tool lists. This panel is also mounted by
+ * Activity's cost-anomaly section, which gains the same step back.
  */
 import { memo, useMemo } from 'react';
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -58,7 +63,7 @@ export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, o
 
   return (
     <BaseModal isOpen onClose={onClose} titleId="anomaly-drilldown-title" maxWidthClass="max-w-2xl" staggerChildren={false}>
-      <KitHost compact testId="anomaly-drilldown">
+      <KitHost testId="anomaly-drilldown">
         <div className="overflow-y-auto" style={{ maxHeight: '85vh', padding: '20px 8px 8px 4px' }}>
           <Surface>
             <Section

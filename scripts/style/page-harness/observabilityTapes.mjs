@@ -9,6 +9,7 @@
 //                            anomaly, 9 health issues in every state, Athena
 //                            health and spend, tool performance
 //   observability/alerts     the same page with the alert rules and history open
+//   observability/charts     the Metrics card opened into cost, health and the persona split
 //   observability/timeline   the health issues switched to the healing timeline
 //   observability/issue      the first health issue opened in full
 //   observability/select     the second health issue clicked
@@ -208,6 +209,7 @@ export function observabilityTapes({ RECORDED_AT, PERSONAS }) {
     builders: {
       'observability/dashboard': () => base('observability/dashboard', 'Synthetic: 30 days of metrics with one cost anomaly, 9 health issues in every state, Athena health and spend, 6 tools.'),
       'observability/alerts': () => base('observability/alerts', 'Synthetic: the dashboard tape, alert rules and history open.'),
+      'observability/charts': () => base('observability/charts', 'Synthetic: the dashboard tape, the Metrics card opened into its charts and the per-persona split.'),
       'observability/timeline': () => base('observability/timeline', 'Synthetic: the dashboard tape, health issues on the healing timeline (4 chains, 2 knowledge patterns).'),
       'observability/issue': () => base('observability/issue', 'Synthetic: the dashboard tape, first health issue opened in full.'),
       'observability/select': () => base('observability/select', 'Synthetic: the dashboard tape, second health issue clicked.'),

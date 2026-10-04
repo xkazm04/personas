@@ -16,7 +16,7 @@ import { SystemTraceWaterfall } from './SystemTraceWaterfall';
 type Col = 'trace' | 'spans' | 'dur' | 'at';
 const opLabel = (op: SystemOperationType) => SYSTEM_OPERATION_CONFIG[op]?.label ?? op;
 
-export default function SystemTraceViewer({ eyebrow }: { eyebrow?: string }) {
+export default function SystemTraceViewer() {
   const { t } = useTranslation();
   const st = t.overview.system_trace_extra;
   const { traces, activeCount, errorCount, clear } = useSystemTraces();
@@ -53,7 +53,6 @@ export default function SystemTraceViewer({ eyebrow }: { eyebrow?: string }) {
   return (
     <Section
       id="s-obs-trace"
-      eyebrow={eyebrow}
       title={t.overview.observability_extra.system_trace}
       count={traces.length || undefined}
       meta={traces.length > 0 ? <Meta parts={[activeCount > 0 ? `${activeCount} ${t.common.active.toLowerCase()}` : null, errorCount > 0 ? `${errorCount} ${t.common.error.toLowerCase()}` : null]} /> : undefined}

@@ -12,7 +12,7 @@ import { memo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Section, StatStrip, UnitStrip, apportion, quantumFor, type StatTile, type Tone, type Glyph } from '@/features/shared/components/kit';
-import { useAthenaHealth } from '../libs/useAthenaHealth';
+import type { AthenaHealth } from '@/lib/bindings/AthenaHealth';
 import { AthenaSpendSection } from './AthenaSpendSection';
 import { ReplyShapePanel } from '@/features/companions/athena/ReplyShapePanel';
 
@@ -33,11 +33,10 @@ const Legend = ({ q, label }: { q: number; label: string }) => (
   </span>
 );
 
-export const AthenaHealthPanel = memo(function AthenaHealthPanel({ eyebrow }: { eyebrow?: string }) {
+export const AthenaHealthPanel = memo(function AthenaHealthPanel({ health: data, loading }: { health: AthenaHealth | null; loading: boolean }) {
   const { t } = useTranslation();
   const a = t.overview.athena;
-  const { data, loading } = useAthenaHealth();
-  const head = { id: 's-obs-athena', eyebrow, title: a.health_title, meta: a.health_hint };
+  const head = { id: 's-obs-athena', title: a.health_title, meta: a.health_hint };
   if (loading && !data) return <Section {...head} state="loading" ghostRows={3} />;
   if (!data) return null;
 
