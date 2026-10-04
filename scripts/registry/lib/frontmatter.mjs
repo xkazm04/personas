@@ -3,8 +3,9 @@
  * by every registry-lane script.
  *
  * This repo already treats "two parsers over one contract" as a live drift risk
- * (`hierarchy_read.rs` pins itself against `check-corpus-integrity.mjs` with a
- * committed fixture precisely because of it). A third hand-rolled parser inside
+ * (the Rust `hierarchy_read.rs` reader pinned itself against `check-corpus-integrity.mjs`
+ * with a committed fixture precisely because of it, until the reader was removed
+ * with the Patterns tab on 2026-10-04). A third hand-rolled parser inside
  * `evidence-check.mjs` would have been exactly that mistake again, so the pieces
  * `mirror-paths.mjs` already had live here now and both scripts import them.
  *

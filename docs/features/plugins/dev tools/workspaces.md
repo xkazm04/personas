@@ -29,7 +29,7 @@
   that project's team, or that team's personas' charters refuses.
 - **Knowledge registry** — a workspace can be paired with a working copy of the
   organisation's ai-registry. The registry is the knowledge authority; the app
-  **reads** it (Overview → Patterns: the Subjects and Coverage lanes) and never
+  **reads** it (the Council page draws its topology) and never
   ingests it into SQLite.
 
 ## Commands

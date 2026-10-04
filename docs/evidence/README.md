@@ -34,6 +34,6 @@ npm run check:evidence                               # resolve pointers, compare
 ```
 
 Readers: `scripts/registry/evidence-check.mjs`, `scripts/census/check-corpus-integrity.mjs`,
-`scripts/census/build-paths-index.mjs` (subject-index, law-index, router). The Overview ->
-Patterns UI still reads evidence from the corpus frontmatter through `hierarchy_read.rs`;
-re-pointing it here is a P4 prerequisite.
+`scripts/census/build-paths-index.mjs` (subject-index, law-index, router). (The Overview ->
+Patterns UI and its Rust reader `hierarchy_read.rs` were removed 2026-10-04, so nothing reads
+evidence from the corpus frontmatter in-app any more.)
