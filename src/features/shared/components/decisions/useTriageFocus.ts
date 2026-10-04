@@ -17,6 +17,8 @@
 // advances on a failed write silently loses decisions.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { resolveError } from '@/lib/errors/errorRegistry';
+
 import type { TriageDecision, TriageItem, TriageVerdict } from '@/features/shared/triage/triageFocusBridge';
 
 /**
@@ -149,7 +151,14 @@ export function useTriageFocus(
     } catch (e) {
       // See the module header: the item stays open and everything typed stays
       // typed. The caller's queue decides whether the row is still there.
-      setError(e instanceof Error ? e.message : String(e));
+      //
+      // Through the error registry, never the raw `message`. A verdict write
+      // fails for reasons the reviewer can act on (the row was decided
+      // elsewhere, the door refused it, the backend is unreachable), and the
+      // registry is where this repo keeps the sentence that says which. A bare
+      // `e.message` here would put a backend string in front of the one person
+      // whose next action depends on understanding it.
+      setError(resolveError(e instanceof Error ? e.message : String(e)).message);
     } finally {
       setBusy(false);
     }
