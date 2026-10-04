@@ -2394,6 +2394,17 @@ Finished."#;
     const CAPTURED_ASSISTANT_LINES: &str =
         include_str!("../tests/fixtures/stream_assistant_lines.jsonl");
 
+    /// The model id the captured lines carry, read from the fixture itself: it is a
+    /// fact about the capture, not about which model the app currently defaults to.
+    fn captured_model() -> String {
+        captured_assistant_lines()
+            .find_map(|l| {
+                let v: serde_json::Value = serde_json::from_str(l).ok()?;
+                v.pointer("/message/model")?.as_str().map(str::to_string)
+            })
+            .expect("the fixture carries a model")
+    }
+
     fn captured_assistant_lines() -> impl Iterator<Item = &'static str> {
         CAPTURED_ASSISTANT_LINES
             .lines()
@@ -2413,10 +2424,7 @@ Finished."#;
         // Two ROOT messages: the first is repeated across two content-block
         // lines carrying the same usage, and the subagent message is not a turn.
         assert_eq!(tally.assistant_turns(), 2);
-        assert_eq!(
-            tally.model(),
-            Some(personas_core::model_ids::SONNET_CURRENT)
-        );
+        assert_eq!(tally.model(), Some(captured_model().as_str()));
 
         let mut m = ExecutionMetrics::default();
         let cost = backfill_metrics_from_stream(&mut m, &tally, None).expect("estimated");
@@ -2428,10 +2436,7 @@ Finished."#;
         assert_eq!(m.cache_creation_tokens, 13_475 + 2_042 + 1_403);
         assert!(cost > 0.0);
         assert_eq!(m.cost_usd, cost);
-        assert_eq!(
-            m.model_used.as_deref(),
-            Some(personas_core::model_ids::SONNET_CURRENT)
-        );
+        assert_eq!(m.model_used.as_deref(), Some(captured_model().as_str()));
         // The run's terminal fact is untouched: still no result line.
         assert!(!m.result_seen);
     }

@@ -20,6 +20,12 @@
 
 - **[2026-10-03 12:24]**
 - **Paths:** `src/features/overview/components/health/**` · `scripts/style/page-harness/homeSystemCheck*`
+- **[2026-09-28 11:56]**
+- **Paths:** `src-tauri/src/engine/build_session/**` · `src/features/agents/sub_glyph/contactSheet/**` · `src/features/agents/components/matrix/UnifiedBuildEntry.tsx` · `src/features/agents/components/matrix/BuildTemplateSuggestion.tsx`
+- **Status:** started
+
+- **[2026-09-25 18:33]**
+- **Paths:** `src/features/plugins/dev-tools/contest/**` · `src-tauri/src/commands/contest/**` · `src/i18n/locales/**` · `src/lib/bindings/Contest*`
 - **Status:** started
 
 - **[2026-09-29 12:48]**
@@ -89,17 +95,14 @@
 - **Paths:** `.contest/staging/contest-arena-restyle/**` · `.contest/arena/contest-arena-restyle/**`
 - **Status:** started
 
-### studio-nav — Studio: reopened sheet load motion; Studio moved under Projects
 - **[2026-09-25 16:24]**
 - **Paths:** `src/features/studio/**` · `src/features/shared/chrome/sidebar/**` · `src/lib/navigation/**`
 - **Status:** started
 
-### build-stream-and-parallel-tests — Build sheet: release finished first-turn results mid-turn (provisional frames) + parallel scripted connector tests by default
 - **[2026-09-25 15:06]**
 - **Paths:** `src-tauri/src/engine/build_session/**` · `src/features/agents/sub_glyph/contactSheet/cinema/**` · `src/stores/slices/agents/matrixBuildSlice.ts` · `src/features/agents/components/matrix/useBuildSession.ts`
 - **Status:** started
 
-### spark-lifecycle-v2 — /spark lifecycle-v2: dev practice pipeline presets + contest UI + Athena toolset
 - **[2026-09-25 15:03]**
 - **Paths:** `src/features/plugins/dev-tools/sub_lifecycle/**`
 - **Status:** started
@@ -1259,6 +1262,17 @@
 
 ### kit-home3-systemcheck — kit home-3: three 2-layer System Check prototypes (builder SC)
 
+### build-sheet-live-fixes — Build sheet live-check fixes: template card in centre panel, scripted-test routing, provisional on the work turn, compose label/scrollbar
+
+### contest-ledger-port — Port /contest winner A/3 Season Ledger into the Contest page, replacing the Arena
+
+### spark-lifecycle-v2 — /spark lifecycle-v2: dev practice pipeline presets + contest UI + Athena toolset
+
+### contest-arena-restyle — /contest Opus xhigh vs Opus max: 6 static redesign variants of the Contest page on a baseline copy
+
+### build-stream-and-parallel-tests — Build sheet: release finished first-turn results mid-turn (provisional frames) + parallel scripted connector tests by default
+
+### studio-nav — Studio: reopened sheet load motion; Studio moved under Projects
 ### curator-fleet-hygiene — Curator fleet workers: explicit curator: run label so the machine-worker retire/prune lanes see them; hibernated counts as ended
 
 ### kit-home-2 — kit home-2: Home Cockpit composed from the kit (look phase: harness views + BEFORE shots)
