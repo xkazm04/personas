@@ -46,7 +46,6 @@ function buildSidebarLabelMap(sb: SidebarBundle): Map<string, string> {
     // below); the key stays because Plugins → Twin still has a 'knowledge' item.
     ['knowledge', sb.knowledge],
     ['memories', sb.memories],
-    ['patterns', sb.patterns],
     // Deliberately NOT keyed 'graph' — that id already means "Dependencies"
     // under Connections and this map is global across sections.
     ['memory-graph', sb.memory_graph],

@@ -448,7 +448,7 @@ export type LegacyEditorTab = "prompt" | "connectors" | "health" | "life";
 // "extracted" was retired 2026-08-26 (the execution-extracted knowledge graph page).
 // "director" was retired 2026-09-22: the Director is the Overseer companion,
 // and its reviews page lives at `companions` -> `overseer:reviews`.
-export type OverviewTab = "home" | "incidents" | "observability" | "executions" | "manual-review" | "messages" | "events" | "memories" | "patterns" | "memory-graph";
+export type OverviewTab = "home" | "incidents" | "observability" | "executions" | "manual-review" | "messages" | "events" | "memories" | "memory-graph";
 export type TemplateTab = "n8n" | "generated" | "explore" | "recipes" | "presets";
 export type CloudTab = "cloud" | "gitlab" | "unified";
 export type SettingsTab = "account" | "appearance" | "notifications" | "radio" | "engine" | "byom" | "portability" | "network" | "devices" | "admin" | "api-keys" | "history" | "limits";

@@ -21,7 +21,6 @@ vi.mock('@/features/overview/sub_manual-review/components/ManualReviewList', () 
 vi.mock('@/features/overview/sub_reports/components/ReportList', () => ({ default: () => <div data-testid="tab-messages" /> }));
 vi.mock('@/features/overview/sub_events/components/EventLogList', () => ({ default: () => <div data-testid="tab-events" /> }));
 vi.mock('@/features/overview/sub_memories/components/MemoriesPage', () => ({ default: () => <div data-testid="tab-memories" /> }));
-vi.mock('@/features/overview/sub_patterns/PatternsPanel', () => ({ default: () => <div data-testid="tab-patterns" /> }));
 vi.mock('@/features/overview/sub_memories/components/MemoriesPageGraph', () => ({ default: () => <div data-testid="tab-memory-graph" /> }));
 
 import OverviewPage from '../OverviewPage';

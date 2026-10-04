@@ -1,5 +1,5 @@
 import {
-  BarChart3, Zap, Key, Activity, ClipboardCheck, MessageSquare, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Globe, Palette, GitBranch, LayoutDashboard, Cpu, Network, Database, Compass, Shield, ShieldCheck, HardDriveDownload, Map, Play, Share2, Gauge, Unplug, Webhook, Store, Archive, Layers, GraduationCap, AlertOctagon, Sparkles, Headphones, Wand2, Gauge as GaugeIcon, Bell, Terminal, RefreshCw, FolderOpen, History, MoonStar, Landmark, Library, GitFork, Laptop, Stethoscope, type LucideIcon,
+  BarChart3, Zap, Key, Activity, ClipboardCheck, MessageSquare, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Globe, Palette, GitBranch, LayoutDashboard, Cpu, Network, Database, Compass, Shield, ShieldCheck, HardDriveDownload, Map, Play, Share2, Gauge, Unplug, Webhook, Store, Archive, Layers, GraduationCap, AlertOctagon, Sparkles, Headphones, Wand2, Gauge as GaugeIcon, Bell, Terminal, RefreshCw, FolderOpen, History, MoonStar, Landmark, GitFork, Laptop, Stethoscope, type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
 import type { SubNavItem } from '@/features/shared/chrome/sidebar/SidebarSubNav';
@@ -93,7 +93,6 @@ export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: st
   // not `graph` — `graph` is already a sidebar id meaning "Dependencies" under
   // Connections, and the shared label map is keyed by id.
   { id: 'memories', icon: Brain, label: 'Memories', minTier: TIERS.TEAM },
-  { id: 'patterns', icon: Library, label: 'Patterns', minTier: TIERS.TEAM },
   { id: 'memory-graph', icon: GitFork, label: 'Graph', minTier: TIERS.TEAM },
   // Reliability (SLA), Health and Leaderboard were consolidated into the
   // Mission Control dashboard on 2026-08-25 — their best sections (daily
@@ -217,7 +216,7 @@ export interface SidebarItemGroupDef {
 export const overviewGroups: SidebarItemGroupDef[] = [
   { id: 'monitoring', labelKey: 'group_monitoring', itemIds: ['executions', 'events', 'home'] },
   { id: 'operations', labelKey: 'group_operations', itemIds: ['manual-review', 'incidents', 'observability', 'messages'] },
-  { id: 'memory',     labelKey: 'group_memory',     itemIds: ['memories', 'patterns', 'memory-graph'] },
+  { id: 'memory',     labelKey: 'group_memory',     itemIds: ['memories', 'memory-graph'] },
 ];
 
 /** Home → a single group holding every home tab. */

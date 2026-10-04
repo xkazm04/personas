@@ -12,7 +12,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { FolderGit2, RefreshCw } from 'lucide-react';
 
 import { githubListRepos } from '@/api/agents/automations';
-import { probeRegistry } from '@/api/devTools/registryCoverage';
+import { probeRegistry } from '@/api/devTools/registryProbe';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { DirectoryPickerInput } from '@/features/shared/components/forms/DirectoryPickerInput';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';

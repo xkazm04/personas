@@ -20,7 +20,6 @@ const EventLogList = lazyRetry(() => import('@/features/overview/sub_events/comp
 // that used to wrap them) was deleted on 2026-07-29 — the sidebar is the
 // navigation now, so each view is routed directly.
 const MemoriesPage = lazyRetry(() => import('@/features/overview/sub_memories/components/MemoriesPage'));
-const PatternsPanel = lazyRetry(() => import('@/features/overview/sub_patterns/PatternsPanel'));
 // The 'extracted' tab (execution-extracted knowledge graph) was retired 2026-08-26.
 const MemoriesPageGraph = lazyRetry(() => import('@/features/overview/sub_memories/components/MemoriesPageGraph'));
 // The former Reliability (SLA), Health and Leaderboard tabs were consolidated
@@ -74,7 +73,6 @@ function OverviewContent() {
           overviewTab === 'messages' ? <ReportList /> :
           overviewTab === 'events' ? <EventLogList /> :
           overviewTab === 'memories' ? <MemoriesPage /> :
-          overviewTab === 'patterns' ? <PatternsPanel /> :
           overviewTab === 'memory-graph' ? <MemoriesPageGraph /> :
           <DashboardWithSubtabs />}
         </Suspense>
