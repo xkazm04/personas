@@ -43,7 +43,7 @@ const CASCADE_ROWS = 10;
 const SORT_GRID = 'minmax(96px,0.7fr) minmax(120px,1fr) minmax(120px,1.1fr) 120px 72px minmax(116px,auto)';
 
 export function IncidentsLedgerDossier(props: IncidentLedgerViewProps) {
-  const { incidents, focusedId, lastSeenAt, onPageRowsChange } = props;
+  const { incidents, focusedId, lastSeenAt, onPageRowsChange, footerNote } = props;
   const { t } = useTranslation();
   const ledger = useIncidentLedger(incidents, { initialSortKey: 'created', initialPageSize: 25 });
   const { page, sortKey, sortDir, toggleSort } = ledger;
@@ -74,7 +74,7 @@ export function IncidentsLedgerDossier(props: IncidentLedgerViewProps) {
 
       <LedgerPager pageIndex={ledger.pageIndex} pageCount={ledger.pageCount} pageSize={ledger.pageSize}
         rangeStart={ledger.rangeStart} rangeEnd={ledger.rangeEnd} total={ledger.total}
-        onPageChange={ledger.setPageIndex} onPageSizeChange={ledger.setPageSize} />
+        onPageChange={ledger.setPageIndex} onPageSizeChange={ledger.setPageSize} note={footerNote} />
     </div>
   );
 }

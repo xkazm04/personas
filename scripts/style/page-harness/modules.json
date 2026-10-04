@@ -141,6 +141,124 @@
     ],
     "fill": {}
   },
+  "overview/sub_manual-review": {
+    "title": "Overview / Approvals (opens on the pending focus flow)",
+    "record": [
+      {
+        "method": "navigate",
+        "params": {
+          "section": "home"
+        }
+      },
+      {
+        "method": "navigate",
+        "params": {
+          "section": "overview"
+        }
+      },
+      {
+        "method": "clickTestId",
+        "params": {
+          "testId": "tab-manual-review"
+        }
+      }
+    ],
+    "boot": [
+      [
+        "list_personas",
+        null
+      ],
+      [
+        "get_persona_summaries",
+        null
+      ],
+      [
+        "list_teams",
+        null
+      ]
+    ],
+    "fill": {}
+  },
+  "overview/sub_incidents": {
+    "title": "Overview / Incidents",
+    "record": [
+      {
+        "method": "navigate",
+        "params": {
+          "section": "home"
+        }
+      },
+      {
+        "method": "navigate",
+        "params": {
+          "section": "overview"
+        }
+      },
+      {
+        "method": "clickTestId",
+        "params": {
+          "testId": "tab-incidents"
+        }
+      }
+    ],
+    "boot": [
+      [
+        "list_personas",
+        null
+      ],
+      [
+        "get_persona_summaries",
+        null
+      ]
+    ],
+    "fill": {}
+  },
+  "overview/sub_missionControl": {
+    "title": "Overview / Mission Control (the 'home' leaf of the Overview tab bar)",
+    "record": [
+      {
+        "method": "navigate",
+        "params": {
+          "section": "home"
+        }
+      },
+      {
+        "method": "navigate",
+        "params": {
+          "section": "overview"
+        }
+      },
+      {
+        "method": "clickTestId",
+        "params": {
+          "testId": "tab-home"
+        }
+      }
+    ],
+    "boot": [
+      [
+        "list_personas",
+        null
+      ],
+      [
+        "get_persona_summaries",
+        null
+      ],
+      [
+        "count_executions",
+        null
+      ],
+      [
+        "get_pending_review_count",
+        null
+      ],
+      [
+        "get_unread_report_count",
+        null
+      ]
+    ],
+    "fill": {}
+  },
   "home/sub_releases": {
     "title": "Home / What's New",
     "record": [

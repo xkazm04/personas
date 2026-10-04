@@ -6,6 +6,13 @@ import { OPEN_ONLY_FILTERS as OPEN_FILTERS } from '../libs/incidentFilterDefault
 
 interface Props {
   summary: AuditIncidentSummary | null;
+  /**
+   * The strip's OWN load cycle (overview-loading law 6): true only while the
+   * summary command is in flight with nothing to show. A `0` painted during a
+   * fetch is a claim, not a placeholder — the tiles ghost their figure instead.
+   * A refresh with numbers already on screen never reaches this (law 1).
+   */
+  pending?: boolean;
   /** Current inbox filters — drives which tile reads as active. */
   filters: IncidentFilters;
   /** Apply a tile's filter slice (clicking a KPI jumps the inbox to that view). */
@@ -53,8 +60,9 @@ function filtersMatch(a: IncidentFilters, b: IncidentFilters): boolean {
   );
 }
 
-export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters, autonomous }: Props) {
+export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters, autonomous, pending = false }: Props) {
   const { t } = useTranslation();
+  const ghost = pending && summary === null;
   const open = Number(summary?.open ?? 0);
   const ack = Number(summary?.acknowledged ?? 0);
   const resolved = Number(summary?.resolved ?? 0);
@@ -69,6 +77,7 @@ export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters, auto
       <Tile
         label={t.overview.incidents.kpi_open}
         value={open}
+        ghost={ghost}
         Icon={AlertCircle}
         tone="warning"
         active={filtersMatch(filters, OPEN_FILTERS)}
@@ -77,6 +86,7 @@ export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters, auto
       <Tile
         label={t.overview.incidents.kpi_critical}
         value={critical}
+        ghost={ghost}
         Icon={AlertTriangle}
         tone="danger"
         sublabel={critical > 0 ? t.overview.incidents.urgency_critical : undefined}
@@ -86,6 +96,7 @@ export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters, auto
       <Tile
         label={t.overview.incidents.kpi_acknowledged}
         value={ack}
+        ghost={ghost}
         Icon={Activity}
         tone="info"
         active={filtersMatch(filters, ACK_FILTERS)}
@@ -94,6 +105,7 @@ export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters, auto
       <Tile
         label={t.overview.incidents.kpi_resolved}
         value={resolved}
+        ghost={ghost}
         Icon={CheckCircle2}
         tone="success"
         active={filtersMatch(filters, RESOLVED_FILTERS)}
@@ -122,9 +134,11 @@ interface TileProps {
   sublabel?: string;
   active: boolean;
   onClick: () => void;
+  /** Paint a calm placeholder where the figure goes — see `pending` above. */
+  ghost?: boolean;
 }
 
-function Tile({ label, value, Icon, tone, sublabel, active, onClick }: TileProps) {
+function Tile({ label, value, Icon, tone, sublabel, active, onClick, ghost = false }: TileProps) {
   const accent = toneClass(tone);
   return (
     <button
@@ -142,7 +156,18 @@ function Tile({ label, value, Icon, tone, sublabel, active, onClick }: TileProps
       </div>
       <div className="flex min-w-0 flex-col">
         <span className="typo-caption text-foreground">{label}</span>
-        <span className="typo-heading text-foreground">{value}</span>
+        {ghost ? (
+          // Geometry-matched to the figure it replaces (typo-heading's line
+          // box), calm, and delayed 120ms behind `animate-fade-in`'s
+          // fill-mode: both — so a fast summary never paints one at all.
+          <span
+            aria-hidden="true"
+            className="my-[0.3rem] h-4 w-10 rounded-card bg-primary/[0.06] animate-fade-in"
+            style={{ animationDelay: '120ms' }}
+          />
+        ) : (
+          <span className="typo-heading text-foreground">{value}</span>
+        )}
         {sublabel && <span className="typo-caption text-foreground truncate">{sublabel}</span>}
       </div>
     </button>

@@ -1,6 +1,7 @@
 // Pagination footer for the incidents ledger and the autonomous log.
 
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
@@ -17,11 +18,19 @@ interface Props {
   onPageSizeChange: (size: PageSize) => void;
   /** Tighter padding for the dense ledger; roomier for the audit trail. */
   dense?: boolean;
+  /**
+   * A caveat about the rows, rendered under the range it qualifies. The
+   * server-side cap notice lives here (2026-10-04) rather than above the
+   * column header: a sentence about what the list is MISSING belongs where
+   * the list ends and says how much of it you are seeing, not between the
+   * filter bar and the first row, where it read as a page banner.
+   */
+  note?: ReactNode;
 }
 
 export function LedgerPager({
   pageIndex, pageCount, pageSize, rangeStart, rangeEnd, total,
-  onPageChange, onPageSizeChange, dense = false,
+  onPageChange, onPageSizeChange, dense = false, note,
 }: Props) {
   const { t, tx } = useTranslation();
   const l = t.overview.incidents.ledger;
@@ -34,8 +43,13 @@ export function LedgerPager({
         dense ? 'px-3 py-1.5' : 'px-4 py-2.5'
       }`}
     >
-      <span className="typo-caption text-foreground tabular-nums">
-        {tx(l.showing_range, { start: rangeStart, end: rangeEnd, total })}
+      <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <span className="typo-caption text-foreground tabular-nums">
+          {tx(l.showing_range, { start: rangeStart, end: rangeEnd, total })}
+        </span>
+        {/* The caveat reads as the second clause of the range, muted one tier
+            below it — typo-caption's own muting, no text-* utility. */}
+        {note && <span className="typo-caption">{note}</span>}
       </span>
 
       <div className="flex items-center gap-3">

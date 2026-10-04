@@ -3,6 +3,7 @@
 // the sort-header cell.
 
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import type { ReactNode } from 'react';
 import type { Translations } from '@/i18n/generated/types';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 import type { IncidentSortKey, SortDirection } from '../../libs/useIncidentLedger';
@@ -38,6 +39,13 @@ export interface IncidentLedgerViewProps {
   onReopen: (id: string) => void;
   /** Report the rows currently on screen so keyboard triage walks exactly them. */
   onPageRowsChange: (rows: AuditIncident[]) => void;
+  /**
+   * A caveat about the rows themselves — today, the server-side cap notice.
+   * It belongs in the pager's footer, under the last row, beside the range it
+   * qualifies; above the column header (where it used to sit) it read as a
+   * page-level banner and pushed the table down. Omitted when there is none.
+   */
+  footerNote?: ReactNode;
 }
 
 /** True when the incident arrived after the user last marked the inbox seen. */

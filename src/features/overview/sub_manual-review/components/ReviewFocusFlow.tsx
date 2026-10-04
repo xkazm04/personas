@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, type CSSProperties } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Check,
@@ -34,6 +34,8 @@ import { FocusedDecisionCard } from './FocusedDecisionCard';
 import { ActionZone } from './ActionZone';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
+import { usePersonaWorkspaceSwatch } from '../libs/workspaceTint';
+import '../libs/workspaceTint.css';
 
 
 // ---------------------------------------------------------------------------
@@ -46,6 +48,48 @@ function SeverityBadge({ severity }: { severity: string }) {
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full typo-caption border ${SEV_BADGE_COLORS[severity] ?? SEV_BADGE_COLORS.info!}`}>
       {cfg.icon}
       {cfg.label}
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Persona name — the dominant line of a queue row
+// ---------------------------------------------------------------------------
+
+/**
+ * Until 2026-10-04 the decision's title and the persona's name were the SAME
+ * token (`typo-caption text-foreground`): same size, same 400 weight, same
+ * colour, so nothing separated whose decision this was from what it was about.
+ *
+ * This is the kit's emphasis recipe (`kit/kit.css`) applied: 600 on a TINTED
+ * name, 400 muted on the white title above it. `typo-title` carries both — it
+ * is caption-SIZED (`--type-1`, same step as the title, so the row's rhythm is
+ * untouched) at weight 600 with the theme's primary tint. The asked-for "+100
+ * weight" lands on 600 and not 500: this font has no Medium (300/400/600/700),
+ * so 400 -> 600 is the only step below bold that renders at all.
+ *
+ * `swatch` replaces `typo-title`'s tint with the persona's workspace swatch.
+ *
+ * **A persona with NO workspace goes white, not tinted** — and that is a
+ * declared deviation from the owner's "white text should have norm weight"
+ * (2026-10-03), taken under the kit's own written exception: "600 on white is
+ * the EXPLICIT exception, for a name with no tinted title above it"
+ * (`kit/kit.css:90`, which `ListRow` ships as `nameClass="typo-body k-strong"`).
+ * style-deviation: keeping the theme tint for the no-workspace case measured
+ * INDISTINGUISHABLE from one of the eight workspace swatches — in dark-midnight
+ * the primary tint renders #46e2ff and the cyan swatch #45e1ff, so "belongs to
+ * no workspace" and "belongs to workspace X" read as the same colour, which is
+ * the one thing this tint exists to tell apart. White is not a ninth identity
+ * colour; it is the absence of one, and it cannot collide with any of them.
+ */
+function PersonaName({ name, swatch, className }: { name: string; swatch?: string; className?: string }) {
+  // A CSS custom property is not expressible in React's CSSProperties. The
+  // invariant: `swatch` is a literal from WORKSPACE_COLORS, never user input.
+  const style = swatch ? ({ '--ws-ink': swatch } as CSSProperties) : undefined;
+  const ink = swatch ? 'review-ws-ink' : 'text-foreground';
+  return (
+    <span className={`typo-title ${ink}${className ? ` ${className}` : ''}`} style={style}>
+      {name}
     </span>
   );
 }
@@ -70,6 +114,9 @@ interface ReviewFocusFlowProps {
 
 export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction, isProcessing }: ReviewFocusFlowProps) {
   const { t } = useTranslation();
+  // Which colour a persona's name wears: its workspace's own swatch, or nothing
+  // (and then `typo-title`'s theme tint) when it belongs to no workspace.
+  const workspaceSwatch = usePersonaWorkspaceSwatch();
   const pending = useMemo(() => reviews.filter((r) => r.status === 'pending'), [reviews]);
   const [reviewIdx, setReviewIdx] = useState(0);
   const [reviewDir, setReviewDir] = useState(0);
@@ -340,12 +387,21 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
               >
                 <div className="flex items-center gap-2">
                   <span className={`w-2 h-2 rounded-full flex-shrink-0 ${sevDot(r.severity)}`} />
-                  <span className={`typo-caption truncate ${isActive ? 'text-foreground' : 'text-foreground'}`}>
+                  {/* The decision reads as prose under its persona: the
+                      token's own muting (typo-caption mutes in @layer base) is
+                      the second tier, so no text-* utility is written here. The
+                      branch this replaced painted `text-foreground` in BOTH
+                      arms — a ternary that could not change anything. */}
+                  <span className="typo-caption truncate">
                     {stripPersonaPrefix(r.title, r.persona_name)}
                   </span>
                 </div>
                 {r.persona_name && (
-                  <span className="typo-caption text-foreground ml-4 block truncate mt-0.5">{r.persona_name}</span>
+                  <PersonaName
+                    name={r.persona_name}
+                    swatch={workspaceSwatch(r.persona_id)}
+                    className="ml-4 block truncate mt-0.5"
+                  />
                 )}
               </button>
             );
@@ -389,7 +445,11 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                   {/* Header */}
                   <div className="flex items-start gap-3">
                     <PersonaIcon icon={current!.persona_icon ?? null} color={current!.persona_color ?? null} display="framed" frameSize={"lg"} />
-                    <span className="typo-body text-foreground mt-1">{current!.persona_name || 'Unknown'}</span>
+                    <PersonaName
+                      name={current!.persona_name || t.overview.review.unknown_persona}
+                      swatch={workspaceSwatch(current!.persona_id)}
+                      className="mt-1"
+                    />
                     <div className="mt-1"><SeverityBadge severity={current!.severity} /></div>
                     <div className="ml-auto flex flex-col items-end gap-1">
                       {hasMultipleDecisions && (

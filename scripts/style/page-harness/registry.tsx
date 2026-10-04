@@ -29,6 +29,7 @@ import { ATHENA_TABLE_MODULES } from './athenaTableSurfaces';
 import { TWIN_BLUEPRINT_MODULES } from './twinBlueprintSurfaces';
 import { TWIN_DETAIL_MODULES } from './twinDetailSurfaces';
 import { ACTIVITY_MODULES } from './activitySurfaces';
+import { INBOX_MODULES } from './inboxSurfaces';
 
 type Wrap = (children: ReactNode) => ReactNode;
 
@@ -71,6 +72,8 @@ export const MODULES: Record<string, HarnessModule> = {
   },
   // Kit batch overview-1, Overview > Executions (activitySurfaces.tsx, activityTapes.mjs).
   ...ACTIVITY_MODULES,
+  // Kit batch overview-1, Overview > Approvals + Incidents (inboxSurfaces.tsx, inboxTapes.mjs).
+  ...INBOX_MODULES,
   ...TONE_MODULES,
   ...TRIAGE_MODULES,
   ...DATAGRID_MODULES,

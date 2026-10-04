@@ -17,6 +17,7 @@ import { homeCockpitTapes } from './homeCockpitTapes.mjs';
 import { homeSystemCheckTapes } from './homeSystemCheckTapes.mjs';
 import { twinDetailTapes } from './twinDetailTapes.mjs';
 import { activityTapes } from './activityTapes.mjs';
+import { inboxTapes } from './inboxTapes.mjs';
 
 export const RECORDED_AT = '2026-09-22T15:40:00.000Z';
 const T0 = Date.parse(RECORDED_AT);
@@ -283,6 +284,8 @@ const BUILDERS = {
   'home/sub_releases': (repoRoot) => subReleases(repoRoot),
   // Kit batch overview-1, Overview > Executions (activitySurfaces.tsx, activityTapes.mjs).
   ...activityTapes({ RECORDED_AT, PERSONAS }).builders,
+  // Kit batch overview-1, Overview > Approvals + Incidents (inboxSurfaces.tsx, inboxTapes.mjs).
+  ...inboxTapes({ RECORDED_AT, PERSONAS }).builders,
   // Module 3, the Fleet cluster (fleetSurfaces.tsx, fleetTapes.mjs).
   ...fleetTapes({ RECORDED_AT }).builders,
   // Module 4, Overview > Observability (observabilitySurfaces.tsx, observabilityTapes.mjs).

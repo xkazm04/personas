@@ -7,12 +7,16 @@
 // groups, so the ledger below is a plain list with its own sort + pagination.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshCw, Inbox } from 'lucide-react';
+import { RefreshCw, Inbox, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import EmptyState, { InboxZero } from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import Button from '@/features/shared/components/buttons/Button';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
+import { bulkResolveAuditIncidents } from '@/api/overview/incidents';
+import { toastCatch } from '@/lib/silentCatch';
 import { useIncidentsData, DEFAULT_LIMIT } from '../libs/useIncidentsData';
 import { useIncidentActions } from '../libs/useIncidentActions';
 import { useAutonomousIncidents } from '../libs/useAutonomousIncidents';
@@ -28,7 +32,7 @@ import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 import { isNarrowedFilters } from '../libs/incidentFilterDefaults';
 
 export default function IncidentsInbox() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const { filters, setFilters, lastSeenAt } = useIncidentInboxPersistence();
   const [detailIncident, setDetailIncident] = useState<AuditIncident | null>(null);
   const [justCleared, setJustCleared] = useState(false);
@@ -39,8 +43,17 @@ export default function IncidentsInbox() {
   // never triggers the inbox-zero celebration — only clearing the inbox does.
   const [clearedByAction, setClearedByAction] = useState(false);
 
-  const { incidents, summary, loading, error, refresh, truncated } = useIncidentsData(filters);
+  const { incidents, summary, loading, summaryLoading, error, refresh, truncated } = useIncidentsData(filters);
   const autonomous = useAutonomousIncidents();
+  const [confirmingClearAll, setConfirmingClearAll] = useState(false);
+
+  // What "clear the inbox" actually clears: every listed incident that is still
+  // asking for something. Already-closed rows are left alone so the count in
+  // the dialog is the count of rows that will visibly change.
+  const clearableIds = useMemo(
+    () => incidents.filter((i) => i.status !== 'resolved' && i.status !== 'dismissed').map((i) => i.id),
+    [incidents],
+  );
 
   const onAfterChange = useCallback(async () => {
     setClearedByAction(true);
@@ -67,6 +80,31 @@ export default function IncidentsInbox() {
     resolve,
     announce: setAnnouncement,
   });
+
+  /**
+   * Clear the inbox in one action, behind `ConfirmDialog`.
+   *
+   * **It resolves; it does not delete.** There is no delete door for incidents
+   * on the Rust side — `commands/execution/audit_incidents.rs` exposes list /
+   * get / summary / acknowledge / in-progress / resolve / dismiss / reopen and
+   * two bulk commands, and no `delete_*` of any shape (checked 2026-10-04;
+   * `delete_all_manual_reviews` exists for the sibling Approvals surface, so
+   * the asymmetry is real and deliberate to leave in place rather than close
+   * with an unreviewed destructive command). `bulk_resolve_audit_incidents` is
+   * the only mass-clear door that exists, it empties the default (open) view,
+   * and every row it touches is reversible through Reopen — which is why the
+   * dialog says "resolve", names the count, and does not promise a delete.
+   */
+  const handleClearAll = useCallback(async () => {
+    try {
+      await bulkResolveAuditIncidents(clearableIds);
+      await refresh();
+    } catch (err) {
+      toastCatch('IncidentsInbox:clearAll', t.overview.incidents.clear_all_failed)(err);
+    } finally {
+      setConfirmingClearAll(false);
+    }
+  }, [clearableIds, refresh, t.overview.incidents.clear_all_failed]);
 
   const handleAcknowledge = useCallback((id: string) => void acknowledge(id), [acknowledge]);
   const handleResolve = useCallback((id: string) => void resolve(id), [resolve]);
@@ -98,7 +136,11 @@ export default function IncidentsInbox() {
     onDismiss: handleDismiss,
     onReopen: handleReopen,
     onPageRowsChange,
-  }), [incidents, focusedId, lastSeenAt, openDetail, handleAcknowledge, handleResolve, handleDismiss, handleReopen, onPageRowsChange]);
+    // The cap notice now rides in the pager's footer (see LedgerPager.note).
+    footerNote: truncated
+      ? t.overview.incidents.list_truncated.replace('{limit}', String(DEFAULT_LIMIT))
+      : undefined,
+  }), [incidents, focusedId, lastSeenAt, openDetail, handleAcknowledge, handleResolve, handleDismiss, handleReopen, onPageRowsChange, truncated, t.overview.incidents.list_truncated]);
 
   return (
     <ContentBox data-testid="incidents-inbox">
@@ -108,15 +150,31 @@ export default function IncidentsInbox() {
         title={t.overview.incidents.title}
         subtitle={t.overview.incidents.subtitle}
         actions={
-          <button
-            type="button"
-            onClick={() => { void refresh(); void autonomous.refresh(); }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors focus-ring"
-            aria-label={t.overview.incidents.refresh}
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-            {t.overview.incidents.refresh}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => { void refresh(); void autonomous.refresh(); }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors focus-ring"
+              aria-label={t.overview.incidents.refresh}
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+              {t.overview.incidents.refresh}
+            </button>
+            {/* Hidden when there is nothing to clear: an action that would do
+                nothing must not offer itself. */}
+            {clearableIds.length > 0 && (
+              <Button
+                variant="accent"
+                tone="error"
+                size="sm"
+                icon={<Trash2 className="h-3.5 w-3.5" />}
+                onClick={() => setConfirmingClearAll(true)}
+                aria-label={t.overview.incidents.clear_all}
+              >
+                {t.overview.incidents.clear_all}
+              </Button>
+            )}
+          </div>
         }
       />
 
@@ -127,6 +185,7 @@ export default function IncidentsInbox() {
         <div className="px-4 pt-3 pb-2">
           <IncidentsInboxKpiHeader
             summary={summary}
+            pending={summaryLoading}
             filters={filters}
             onApplyFilters={(next) => { setFilters(next); setShowAutonomous(false); }}
             autonomous={{
@@ -157,13 +216,9 @@ export default function IncidentsInbox() {
               </div>
             )}
 
-            {truncated && (
-              <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/10 bg-secondary/20">
-                <span className="typo-caption text-foreground">
-                  {t.overview.incidents.list_truncated.replace('{limit}', String(DEFAULT_LIMIT))}
-                </span>
-              </div>
-            )}
+            {/* The cap notice used to sit here, between the filter bar and the
+                column header. It now rides in the ledger's own footer, under
+                the last row and beside the range it qualifies (2026-10-04). */}
 
             {/* Nothing on screen yet + a fetch in flight: calm ghost rows. A
                 background refresh with rows already visible never reaches this
@@ -192,6 +247,17 @@ export default function IncidentsInbox() {
           </>
         )}
       </ContentBody>
+
+      {confirmingClearAll && (
+        <ConfirmDialog
+          danger
+          title={t.overview.incidents.clear_all_confirm_title}
+          body={tx(t.overview.incidents.clear_all_confirm_body, { count: clearableIds.length })}
+          confirmLabel={t.overview.incidents.clear_all_confirm_cta}
+          onConfirm={handleClearAll}
+          onCancel={() => setConfirmingClearAll(false)}
+        />
+      )}
 
       {detailIncident && (
         <IncidentDetailModal

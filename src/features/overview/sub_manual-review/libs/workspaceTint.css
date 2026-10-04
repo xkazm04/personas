@@ -1,0 +1,27 @@
+/* The workspace tint's one rule. See `workspaceTint.ts` for which swatch a
+   persona gets and why; this file only turns that swatch into legible ink.
+
+   `--ws-ink` is set inline per element (it is DATA — the workspace's own
+   swatch). The mix is `.typo-title`'s own recipe with the workspace hue in
+   place of `--primary-ink`, so the ink always leans toward the canvas's
+   foreground and stays legible in both directions: on a dark canvas the mix
+   lifts a dark swatch, on a light canvas it darkens a bright one.
+
+   The two ratios differ on purpose. `.typo-title` uses 75% / 60%; the workspace
+   swatches are mid-lightness fills rather than theme primaries, and 60% on
+   light measures 3.65:1 at worst (light-news amber) — below AA. At 45% the
+   worst cell across all 11 themes x all 8 swatches is 5.29:1. Measured with
+   check-themes' own maths; re-measure before changing either number.
+
+   Unlayered on purpose: `typography.css` sits in `@layer components`, so this
+   rule wins over `.typo-title`'s colour wherever the class is applied, and
+   nowhere else. */
+
+.review-ws-ink {
+  color: color-mix(in srgb, var(--ws-ink) 75%, var(--foreground));
+}
+
+:root[class*="light"] .review-ws-ink,
+[data-theme*="light"] .review-ws-ink {
+  color: color-mix(in srgb, var(--ws-ink) 45%, var(--foreground));
+}
