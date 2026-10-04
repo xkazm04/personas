@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**169 reusable components** live under `src/features/shared/components/`.
+**174 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -33,6 +33,11 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 |---|---|
 | `DecisionActions` | Accept/reject control shared by every decision surface (review, backlog, knowledge). |
 | `DecisionRow` | One list row for any decision stream — title, supporting line, facts, verdict. |
+| `TriageFocus` | Focused triage surface for a queue of TriageItems - N-of-M navigation, a per-decision carousel, arm-then-confirm keyboard, and an  |
+| `TriageFocusActions` | TriageFocus part: the three-verdict action bar, its note field and the keyboard legend. |
+| `TriageFocusCard` | TriageFocus part: one item card - persona, chips, age, decision carousel and the deck body. |
+| `TriageFocusQueue` | TriageFocus part: the optional 330px queue rail, built from the kit Rows/ListRow. |
+| `useTriageFocus` | TriageFocus state: cursors, per-option verdicts, the note, and the one guarded verdict write. |
 
 ## display — Read-only display: badges, status, avatars, tables, time, numbers, tooltips
 
@@ -191,7 +196,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `Figure` | Figure - the kit's frame for a DRAWN figure (doctrine 6c): the reading line, a declared height or aspect, a size container for the |
 | `Hint` | Hint - the kit tip on a mark, figure or unit strip: shared Tooltip plus an always-present description. Kit. |
 | `KeyValueGrid` | KeyValueGrid - quiet keys over regular values in auto-fill columns; null renders honestly. Kit. |
-| `ListRow` | ListRow - fixed-height row: one emphasised name (500; 600 is the tinted title's), quiet meta, status mark on the spine, figures; o |
+| `ListRow` | ListRow - fixed-height row: one emphasised name (400; 600 is the tinted title's), quiet meta, status mark on the spine, figures; o |
 | `Mark` | Mark - the status node on the spine (Tone x Glyph); Dot is the same glyph inline. Kit. |
 | `RangePicker` | RangePicker - a time-window control: preset segments plus an optional Custom segment that opens the caller's date picking. Kit. |
 | `Section` | Section - a titled part of a surface, bounded by a node on the spine (eyebrow, title, count, meta, actions; empty/loading states). |
@@ -268,4 +273,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_169 components, 40 without a `@catalog` description._
+_174 components, 40 without a `@catalog` description._
