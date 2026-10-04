@@ -374,8 +374,6 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "dashboard_home": {},
     "fleet_optimization_card": {},
     "day_range_picker": {},
-    "patterns_v2": {},
-    "registry_coverage": {},
     "reports": {
       "columns": {}
     },

@@ -75,7 +75,6 @@
   "network": "Red",
   "notifications": "Notificaciones",
   "overview": "Resumen",
-  "patterns": "Patrones",
   "pending_events_sr": "{count} evento pendiente",
   "pending_events_sr_other": "{count} eventos pendientes",
   "pending_reviews_sr": "{count} revisión pendiente",

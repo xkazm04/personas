@@ -75,7 +75,6 @@
   "network": "网络",
   "notifications": "通知",
   "overview": "概览",
-  "patterns": "模式",
   "pending_events_sr": "{count} 个待处理事件",
   "pending_events_sr_other": "{count} 个待处理事件",
   "pending_reviews_sr": "{count} 条待审核",

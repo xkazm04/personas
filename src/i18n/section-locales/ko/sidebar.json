@@ -75,7 +75,6 @@
   "network": "네트워크",
   "notifications": "알림",
   "overview": "개요",
-  "patterns": "패턴",
   "pending_events_sr": "대기 이벤트 {count}건",
   "pending_events_sr_other": "대기 이벤트 {count}건",
   "pending_reviews_sr": "검토 대기 {count}건",
