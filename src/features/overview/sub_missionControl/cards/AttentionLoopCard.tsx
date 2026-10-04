@@ -3,6 +3,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { getAttentionLoopStatus } from '@/api/agents/personaBrain';
 import { setAppSetting } from '@/api/system/settings';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { StatusBadge, type StatusVariant } from '@/features/shared/components/display/StatusBadge';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -40,30 +41,41 @@ export default function AttentionLoopCard() {
   const [status, setStatus] = useState<AttentionLoopStatus | null>(null);
   const [failed, setFailed] = useState(false);
   const [saving, setSaving] = useState(false);
-  const fetchingRef = useRef(false);
+  // Latest-wins token, `createLatestWins()` — the repo's own guard for exactly
+  // this race, and the same fix UpcomingRoutinesCard carries. The `fetchingRef`
+  // boolean it replaces deadlocked under StrictMode's development double mount:
+  // mount 1's answer was discarded by its torn-down `cancelled` closure and
+  // mount 2's retry was refused by the still-set boolean, so the card showed
+  // its ghost for the full 30s until the interval fired. A boolean makes a
+  // RETRY impossible; a token makes a stale RESPONSE inert.
+  const latestWins = useRef(createLatestWins()).current;
+  /** Token of the in-flight request, or null when none is. */
+  const inFlightTokenRef = useRef<number | null>(null);
 
   // Mount + 30s/visibility refetch, mirroring UpcomingRoutinesCard: the loop
   // ticks in the background, so a session-long card must roll its readout.
   useEffect(() => {
-    let cancelled = false;
     const refetch = () => {
-      if (fetchingRef.current) return;
-      fetchingRef.current = true;
+      // Overlap guard: a slow request is not stacked by the next tick. Scoped to
+      // a TOKEN rather than a boolean, so a remount always gets its own fetch.
+      if (inFlightTokenRef.current !== null && latestWins.isCurrent(inFlightTokenRef.current)) return;
+      const token = latestWins.next();
+      inFlightTokenRef.current = token;
       getAttentionLoopStatus()
         .then((s) => {
-          if (!cancelled) {
-            setStatus(s);
-            setFailed(false);
-          }
+          if (!latestWins.isCurrent(token)) return;
+          setStatus(s);
+          setFailed(false);
         })
         .catch((err: unknown) => {
           // A failed read is NOT an empty ledger: keep whatever was loaded and
           // flag the failure so the cold path says "unavailable", not "off/0".
-          if (!cancelled) setFailed(true);
+          if (latestWins.isCurrent(token)) setFailed(true);
           silentCatch('dashboard/AttentionLoopCard')(err);
         })
         .finally(() => {
-          fetchingRef.current = false;
+          // Only release the slot this request claimed.
+          if (inFlightTokenRef.current === token) inFlightTokenRef.current = null;
         });
     };
     refetch();
@@ -73,11 +85,12 @@ export default function AttentionLoopCard() {
     const id = window.setInterval(tick, 30_000);
     document.addEventListener('visibilitychange', tick);
     return () => {
-      cancelled = true;
+      // Retire the in-flight token so anything still running stamps nothing.
+      latestWins.next();
       window.clearInterval(id);
       document.removeEventListener('visibilitychange', tick);
     };
-  }, []);
+  }, [latestWins]);
 
   const toggle = async () => {
     if (!status || saving) return;

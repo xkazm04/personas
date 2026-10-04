@@ -4,6 +4,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { listAllTriggers } from '@/api/pipeline/triggers';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { IllustratedEmptyState as EmptyState } from '@/features/shared/components/display/IllustratedEmptyState';
 import { formatRelativeShort, type RelativeShortResult } from '@/features/overview/libs/formatRelativeShort';
 import { PaneHeader } from '../PaneHeader';
@@ -35,9 +36,20 @@ export default function UpcomingRoutinesCard() {
   // fired routines lingered as upcoming. Bump on an interval (and on tab
   // re-show) so the memo recomputes against the current time.
   const [nowTick, setNowTick] = useState(() => Date.now());
-  // Guards against overlapping in-flight refetches (a slow request must not be
-  // stacked by the next tick).
-  const fetchingRef = useRef(false);
+  // Latest-wins token, `createLatestWins()` — the repo's own guard for exactly
+  // this race (its docstring names StrictMode double-mount first), used the same
+  // way `MemoryClaimsSection.tsx:52-64` uses it.
+  //
+  // It replaces a `fetchingRef` boolean + a `cancelled` closure, which
+  // DEADLOCKED under StrictMode's development double mount: mount 1 started the
+  // fetch and was torn down, so its answer was discarded; mount 2's retry was
+  // then REFUSED by the still-set boolean, and nothing re-ran until the 30s
+  // interval below — the card sat on ghost rows for half a minute on every dev
+  // load. A boolean makes a RETRY impossible; a token makes a stale RESPONSE
+  // inert, which is the property actually wanted.
+  const latest = useRef(createLatestWins()).current;
+  /** Token of the in-flight request, or null when none is. */
+  const inFlightTokenRef = useRef<number | null>(null);
 
   // Load triggers on mount AND refetch on the same 30s/visibility cadence as
   // `nowTick`. The clock alone only re-filters the already-fetched list, so as
@@ -46,20 +58,22 @@ export default function UpcomingRoutinesCard() {
   // are still scheduled. Re-pulling pulls the scheduler's advanced
   // `next_trigger_at`, so the list rolls to the next occurrence instead.
   useEffect(() => {
-    let cancelled = false;
     const refetch = () => {
-      if (fetchingRef.current) return;
-      fetchingRef.current = true;
+      // Overlap guard: a slow request is not stacked by the next tick. Scoped to
+      // a TOKEN rather than a boolean, so a remount always gets its own fetch.
+      if (inFlightTokenRef.current !== null && latest.isCurrent(inFlightTokenRef.current)) return;
+      const token = latest.next();
+      inFlightTokenRef.current = token;
       listAllTriggers()
         .then((rows) => {
-          if (!cancelled) {
-            setTriggers(rows);
-            setLoaded(true);
-          }
+          if (!latest.isCurrent(token)) return;
+          setTriggers(rows);
+          setLoaded(true);
         })
         .catch(silentCatch('dashboard/UpcomingRoutinesCard'))
         .finally(() => {
-          fetchingRef.current = false;
+          // Only release the slot this request claimed.
+          if (inFlightTokenRef.current === token) inFlightTokenRef.current = null;
         });
     };
     refetch();
@@ -72,11 +86,12 @@ export default function UpcomingRoutinesCard() {
     const id = window.setInterval(tick, 30_000);
     document.addEventListener('visibilitychange', tick);
     return () => {
-      cancelled = true;
+      // Retire the in-flight token so anything still running stamps nothing.
+      latest.next();
       window.clearInterval(id);
       document.removeEventListener('visibilitychange', tick);
     };
-  }, []);
+  }, [latest]);
 
   const rows = useMemo<UpcomingRow[]>(() => {
     const now = nowTick;
