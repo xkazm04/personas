@@ -222,8 +222,7 @@ pub(super) fn shard(
         commands::infrastructure::registry_usage::dev_tools_write_registry_usage,
         commands::infrastructure::skill_registry_export::dev_tools_export_skill_registry,
         // Registry coverage (docs/plans/registry-coverage-ui.md R1, read-only)
-        commands::infrastructure::registry_coverage::dev_tools_registry_probe,
-        commands::infrastructure::registry_coverage::dev_tools_registry_coverage,
+        commands::infrastructure::registry_probe::dev_tools_registry_probe,
         commands::infrastructure::registry_galaxy::dev_tools_registry_galaxy,
         // Doc-rot telemetry (Brainiac-adoption P2)
         commands::infrastructure::doc_rot::doc_rot_scan,

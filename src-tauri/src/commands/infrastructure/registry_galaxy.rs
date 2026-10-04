@@ -1,7 +1,7 @@
 //! The registry's topology as the Council page draws it.
 //!
 //! **Everything here is a READER**, with the same posture as its neighbour
-//! [`registry_coverage`](super::registry_coverage): it parses the registry
+//! [`registry_probe`](super::registry_probe): it parses the registry
 //! working copy's generated indexes (`knowledge/<domain>/index.json` and the
 //! `taxonomy.json` beside each) and derives one [`RegistryGalaxy`] per call.
 //! Nothing is written and nothing is persisted - a stored copy of the corpus
@@ -33,7 +33,7 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 use ts_rs::TS;
 
-use super::registry_coverage::{git_head_short, probe_registry_root};
+use super::registry_probe::{git_head_short, probe_registry_root};
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
