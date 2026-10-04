@@ -11,8 +11,9 @@
 //!   the only ones that can be resumed.
 //! - Writes are best-effort and must never block or fail a PTY/state path
 //!   (see [`crate::commands::fleet::persist`], which owns the writer thread).
-//! - Exited rows age out on boot ([`prune_exited_before`]); the live registry
-//!   remains the source of truth while the app runs.
+//! - Terminal rows - `exited` and `expired` - age out on boot
+//!   ([`prune_exited_before`]); the live registry remains the source of truth
+//!   while the app runs.
 
 use rusqlite::{params, OptionalExtension};
 
@@ -247,7 +248,7 @@ pub fn list_rehydratable(pool: &DbPool) -> Result<Vec<FleetSessionRow>, AppError
         let mut stmt = conn.prepare(&format!(
             "SELECT {COLUMNS}
              FROM fleet_sessions
-             WHERE state <> 'exited'
+             WHERE state NOT IN ('exited', 'expired')
              ORDER BY created_at_ms DESC"
         ))?;
         let rows = stmt.query_map([], map_row)?;
@@ -675,11 +676,16 @@ pub fn recent_ended_durations_ms(pool: &DbPool, limit: u32) -> Result<Vec<i64>, 
 
 /// Retention: drop terminal rows last touched before `cutoff_ms`. Called once
 /// on boot — a 24h-old exited session has no recovery value.
+///
+/// `expired` is terminal in exactly the same way (a queued dispatch retired
+/// without ever running, `FleetSessionState::Expired`) and ages out on the
+/// same clock; leaving it out would keep every expired row forever, since no
+/// other lane deletes one.
 pub fn prune_exited_before(pool: &DbPool, cutoff_ms: i64) -> Result<usize, AppError> {
     timed_query!("fleet_sessions", "fleet_sessions::prune_exited_before", {
         let conn = pool.get()?;
         let n = conn.execute(
-            "DELETE FROM fleet_sessions WHERE state = 'exited' AND updated_at_ms < ?1",
+            "DELETE FROM fleet_sessions WHERE state IN ('exited', 'expired') AND updated_at_ms < ?1",
             params![cutoff_ms],
         )?;
         Ok(n)
@@ -774,6 +780,35 @@ mod tests {
         upsert(&pool, &row("old", "run", "running", 1)).unwrap();
         let old = get(&pool, "old").unwrap().unwrap();
         assert_eq!((old.machine_units, old.skip_count), (None, None));
+    }
+
+    /// `expired` is as terminal as `exited` and must be treated as such by
+    /// both lanes that read terminality out of the state column - the boot
+    /// rehydration and the retention sweep. It had no producer when the state
+    /// was introduced; the queue's expiry reaper is the first, and without
+    /// this an expired row would come back on every boot as a resumable
+    /// tombstone and never be deleted.
+    #[test]
+    fn an_expired_row_is_terminal_to_rehydration_and_to_retention() {
+        let pool = init_test_db().unwrap();
+        upsert(&pool, &row("alive", "run", "idle", 1_000)).unwrap();
+        upsert(&pool, &row("dead", "run", "exited", 1_000)).unwrap();
+        upsert(&pool, &row("unrun", "run", "expired", 1_000)).unwrap();
+
+        let ids: Vec<String> = list_rehydratable(&pool)
+            .unwrap()
+            .into_iter()
+            .map(|r| r.id)
+            .collect();
+        assert_eq!(ids, vec!["alive".to_string()]);
+
+        // Both terminal rows age out on the same clock; the live one stays.
+        // The cutoff is read against `updated_at_ms`, which `upsert` stamps
+        // from the wall clock - `i64::MAX` is "whatever that was, it is past".
+        assert_eq!(prune_exited_before(&pool, i64::MAX).unwrap(), 2);
+        assert!(get(&pool, "unrun").unwrap().is_none());
+        assert!(get(&pool, "dead").unwrap().is_none());
+        assert!(get(&pool, "alive").unwrap().is_some());
     }
 
     #[test]

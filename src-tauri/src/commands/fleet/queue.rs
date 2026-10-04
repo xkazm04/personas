@@ -45,7 +45,22 @@
 //! from (`persist::rehydrate` → [`reconcile_after_restore`]). Writes ride the
 //! existing `persist::note_changed` piggyback on the registry-changed emit —
 //! no second write path. State moves only through `registry::apply_transition`
-//! (`Queued → Spawning` on promotion, `Queued → Exited` on cancel).
+//! (`Queued → Spawning` on promotion, `Queued → Exited` on cancel,
+//! `Queued → Expired` on expiry).
+//!
+//! ## Bounds
+//!
+//! The queue is BOUNDED in both dimensions, and neither bound existed before
+//! the one that commissioned this paragraph. In depth:
+//! `fleet.max_queued_sessions` ([`queued_cap`]) is how many rows may wait at
+//! once, and [`enqueue`] refuses past it with [`REFUSAL_QUEUE_FULL`] — the
+//! door's second typed refusal, carrying the cap so the operator is told
+//! which number stopped them. In time: `fleet.queued_expiry_ms`
+//! ([`queued_expiry_ms`]) is how long one row may wait, and
+//! `super::stale::queued_expiry_pass` retires the ones past it through
+//! [`expire_dispatch`] (`Queued → Expired`, never `Exited`: the row never ran).
+//! Both apply to every origin equally; there is no exemption (see
+//! [`door_verdict_for`]).
 
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -360,6 +375,20 @@ fn without_claude_gauge(mut inputs: BudgetInputs) -> BudgetInputs {
 /// STARTS with this token (the `Admission` wire shape has no refused arm).
 pub const REFUSAL_EXCEEDS_BUDGET: &str = "exceeds_budget";
 
+/// Admit refusal reason: the queue is already at its DEPTH bound
+/// (`fleet.max_queued_sessions`), so this dispatch has nowhere to wait.
+/// Refused at the door, never queued, never silently dropped — same shape as
+/// [`REFUSAL_EXCEEDS_BUDGET`]: an `AppError::Validation` whose message STARTS
+/// with this token.
+///
+/// The message carries the CAP, because "the queue is full" without the
+/// number tells the operator nothing they can act on — the frontend's
+/// `monitor.queue_full_refused` string is written around a `{cap}`
+/// placeholder for exactly this. A refusal also applies to every initiator
+/// equally: the depth bound sits where [`door_verdict_for`] sits, with no
+/// per-origin term and no exemption (see its note).
+pub const REFUSAL_QUEUE_FULL: &str = "queue_full";
+
 /// Why promotion is being held back even though a count slot may be free.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "snake_case")]
@@ -517,6 +546,59 @@ pub fn cap(pool: &DbPool) -> u32 {
             .unwrap_or(settings_keys::FLEET_MAX_PARALLEL_SESSIONS_DEFAULT);
     super::stale::note_live_slot_cap(cap);
     cap
+}
+
+/// The queue's DEPTH bound — how many rows may WAIT at once
+/// (`fleet.max_queued_sessions`, clamped). [`cap`] above bounds how many may
+/// RUN; this one is what [`enqueue`] refuses past.
+///
+/// Read per admission, like [`cap`]: the setting is one indexed row and a
+/// cached copy would be a second authority for a number the operator can
+/// change at any moment.
+pub fn queued_cap(pool: &DbPool) -> u32 {
+    crate::db::repos::core::settings::get(pool, settings_keys::FLEET_MAX_QUEUED_SESSIONS)
+        .ok()
+        .flatten()
+        .and_then(|v| v.trim().parse::<u32>().ok())
+        .map(|n| {
+            n.clamp(
+                settings_keys::FLEET_MAX_QUEUED_SESSIONS_MIN,
+                settings_keys::FLEET_MAX_QUEUED_SESSIONS_MAX,
+            )
+        })
+        .unwrap_or(settings_keys::FLEET_MAX_QUEUED_SESSIONS_DEFAULT)
+}
+
+/// How long a row may sit `Queued` before the reaper retires it unrun
+/// (`fleet.queued_expiry_ms`, clamped). Read by
+/// [`super::stale::queued_expiry_pass`].
+///
+/// Far above `budgets::AGING_MAX_WAIT_MS` by construction (24 h against 30
+/// min): aging grants a waiting row the right to block backfill behind it,
+/// expiry ends its wait. Two clocks over the same quantity, kept three orders
+/// of magnitude apart so neither can be mistaken for the other.
+pub fn queued_expiry_ms(pool: &DbPool) -> i64 {
+    let ms = crate::db::repos::core::settings::get(pool, settings_keys::FLEET_QUEUED_EXPIRY_MS)
+        .ok()
+        .flatten()
+        .and_then(|v| v.trim().parse::<u32>().ok())
+        .map(|n| {
+            n.clamp(
+                settings_keys::FLEET_QUEUED_EXPIRY_MS_MIN,
+                settings_keys::FLEET_QUEUED_EXPIRY_MS_MAX,
+            )
+        })
+        .unwrap_or(settings_keys::FLEET_QUEUED_EXPIRY_MS_DEFAULT);
+    i64::from(ms)
+}
+
+/// [`queued_expiry_ms`] through an `AppHandle`; with no pool yet there is
+/// nothing queued either, so the default is a safe answer.
+pub(super) fn queued_expiry_ms_via_app(app: &AppHandle) -> i64 {
+    match pool_of(app) {
+        Some(pool) => queued_expiry_ms(&pool),
+        None => i64::from(settings_keys::FLEET_QUEUED_EXPIRY_MS_DEFAULT),
+    }
 }
 
 /// [`cap`] through an `AppHandle`; before the DB pool is managed (early
@@ -1240,8 +1322,34 @@ fn enqueue_into(
     (id, rank)
 }
 
+/// Is there room for one more waiting row? Pure over the registry so the
+/// tests can exercise the bound without a pool.
+///
+/// Counts QUEUED rows, which is the thing the bound is about — not the live
+/// set, and not `queued_in_order().len()` as [`promote_head`] uses it, where
+/// the same number is a LOOP bound ("the pass can iterate at most once per
+/// waiting row") and says nothing about capacity.
+fn queue_has_room(reg: &FleetRegistry, queued_cap: u32) -> bool {
+    (reg.queued_in_order().len() as u32) < queued_cap
+}
+
+/// The depth-bound refusal, built in one place so the token and the number
+/// cannot drift apart. The cap is IN the message because that is how the
+/// operator learns which bound stopped them; the frontend's
+/// `monitor.queue_full_refused` says the same thing in their language.
+fn queue_full_refusal(queued_cap: u32) -> AppError {
+    AppError::Validation(format!(
+        "{REFUSAL_QUEUE_FULL}: the queue is full at {queued_cap} waiting sessions - let one start \
+         or cancel one, then dispatch again"
+    ))
+}
+
 /// Queue a dispatch: registry row + durable row (via the registry-changed
 /// piggyback) + the two events.
+///
+/// The ONE place the queue's depth bound is enforced. Past it the dispatch is
+/// refused LOUDLY — a typed `Validation` the UI can name — rather than queued
+/// into a line nobody will reach or dropped on the floor.
 fn enqueue(
     app: &AppHandle,
     req: &DispatchRequest,
@@ -1249,7 +1357,16 @@ fn enqueue(
     running: u32,
 ) -> Result<(String, u32), AppError> {
     // Durable by contract — a queue that cannot be persisted is not a queue.
-    pool_or_err(app)?;
+    let pool = pool_or_err(app)?;
+    let depth_cap = queued_cap(&pool);
+    if !queue_has_room(registry(), depth_cap) {
+        super::debug_log::lifecycle(
+            "-",
+            "refused",
+            &format!("{REFUSAL_QUEUE_FULL} · {depth_cap} rows already waiting"),
+        );
+        return Err(queue_full_refusal(depth_cap));
+    }
     let (id, rank) = enqueue_into(registry(), req, now_ms(), cap, running);
     // Before the emit, which is what persists the row: a session born flagged
     // must carry the grant into its FIRST durable write, not acquire it later.
@@ -1536,6 +1653,56 @@ pub fn cancel_dispatch(app: &AppHandle, session_id: &str) -> Result<(), AppError
     release_tasks_of(app, session_id);
     emit_queue_changed(app, "cancelled", Some(session_id));
     Ok(())
+}
+
+/// Retire ONE queued dispatch that waited past `fleet.queued_expiry_ms`
+/// (`Queued → Expired`). Returns whether the row actually moved.
+///
+/// The cancel path's twin, and deliberately not a call into it:
+/// [`cancel_dispatch`] lands the row in `Exited`, which means "it ran and
+/// ended". This one never ran. `registry::expire_queued` is the transition
+/// (modelled on `fail_queued`, which is the other lane that retires a row
+/// nobody asked it to retire, with a stated reason); everything after it is
+/// what `cancel_dispatch` does, for the same reasons — renumber the
+/// survivors densely and persist that, unbind the `dev_tasks` rows so the
+/// idea is dispatchable again, announce it.
+///
+/// **A row that is no longer queued is never touched.** `expire_queued`
+/// re-checks the state under the registry lock, so a dispatch promoted
+/// between the sweep's snapshot and this call is left alone — nothing here
+/// can reach a session that is running.
+pub(super) fn expire_dispatch(app: &AppHandle, session_id: &str, waited_ms: i64) -> bool {
+    let hours = waited_ms / 3_600_000;
+    let reason = format!(
+        "Expired in the queue after waiting {hours}h without ever starting - dispatch it again if \
+         it still matters"
+    );
+    if !registry().expire_queued(session_id, &reason) {
+        return false;
+    }
+    super::debug_log::lifecycle(
+        session_id,
+        "expired",
+        &format!("retired unrun after {hours}h in the queue"),
+    );
+    // The state emit persists the row. `Expired` is not live, so the
+    // promotion pass it schedules is a no-op here: no slot was freed.
+    super::pty::emit_session_state(
+        app,
+        session_id,
+        Some(state_to_token(FleetSessionState::Queued)),
+        state_to_token(FleetSessionState::Expired),
+        Some(reason),
+    );
+    let ranks = registry().renumber_queue(&[]);
+    persist_ranks(app, &ranks);
+    release_tasks_of(app, session_id);
+    // `cancelled` rather than a new kind: the event's vocabulary already
+    // means "a row left the queue without starting" here (the failed-spawn
+    // path in `promote_head` emits the same), and the Monitor re-reads the
+    // snapshot rather than branching on the kind.
+    emit_queue_changed(app, "cancelled", Some(session_id));
+    true
 }
 
 /// Read a queued row back as the dispatch it holds, plus the identity the
@@ -3120,5 +3287,133 @@ mod tests {
         assert_eq!((stale.behind_pct, stale.memory_slots), (None, None));
         // Never read at all is the same as stale.
         assert_eq!(BudgetLive::new().inputs(10, true, 5).behind_pct, None);
+    }
+
+    // -----------------------------------------------------------------
+    // The depth bound
+    // -----------------------------------------------------------------
+
+    /// Fill a private registry with `n` waiting rows.
+    fn fill_queue(reg: &FleetRegistry, n: usize) -> Vec<String> {
+        (0..n)
+            .map(|i| {
+                enqueue_into(
+                    reg,
+                    &req(&format!("C:/repo/{i:02}")),
+                    1_000 + i as i64,
+                    10,
+                    10,
+                )
+                .0
+            })
+            .collect()
+    }
+
+    #[test]
+    fn the_depth_bound_admits_below_the_cap_and_refuses_at_it() {
+        let reg = FleetRegistry::default();
+        let cap = 10u32;
+        fill_queue(&reg, 9);
+        assert!(queue_has_room(&reg, cap), "9 waiting under a cap of 10");
+        // The tenth still fits.
+        fill_queue(&reg, 1);
+        assert_eq!(reg.queued_in_order().len(), 10);
+        assert!(
+            !queue_has_room(&reg, cap),
+            "the cap is a bound, not a target"
+        );
+        // And the queue is UNCHANGED by the refusal: nothing is dropped, no
+        // row is evicted to make room, the eleventh simply never exists.
+        let before: Vec<String> = reg
+            .queued_in_order()
+            .into_iter()
+            .map(|(id, _, _, _)| id)
+            .collect();
+        assert!(!queue_has_room(&reg, cap));
+        let after: Vec<String> = reg
+            .queued_in_order()
+            .into_iter()
+            .map(|(id, _, _, _)| id)
+            .collect();
+        assert_eq!(before, after);
+    }
+
+    #[test]
+    fn the_depth_bound_counts_queued_rows_only_never_live_ones() {
+        let reg = FleetRegistry::default();
+        for i in 0..20 {
+            reg.insert(live(&format!("live-{i:02}"), S::Running));
+        }
+        // Twenty live sessions and an empty queue: the DEPTH bound has
+        // nothing to say about them. The live cap is a different number.
+        assert_eq!(reg.live_count(), 20);
+        assert!(queue_has_room(&reg, 10));
+    }
+
+    #[test]
+    fn the_queue_full_refusal_names_the_cap() {
+        let err = queue_full_refusal(137);
+        let AppError::Validation(msg) = &err else {
+            panic!("the depth refusal is a typed Validation, got {err:?}");
+        };
+        assert!(
+            msg.starts_with(REFUSAL_QUEUE_FULL),
+            "the token leads the message, as the budget refusal's does: {msg}"
+        );
+        assert!(
+            msg.contains("137"),
+            "the operator is told WHICH cap refused them: {msg}"
+        );
+    }
+
+    // -----------------------------------------------------------------
+    // The expiry reaper
+    // -----------------------------------------------------------------
+
+    #[test]
+    fn an_expired_row_lands_in_expired_not_exited_and_survivors_renumber_densely() {
+        let reg = FleetRegistry::default();
+        let ids = fill_queue(&reg, 3);
+        assert_eq!(
+            reg.queued_in_order()
+                .into_iter()
+                .map(|(_, rank, _, _)| rank)
+                .collect::<Vec<_>>(),
+            vec![1, 2, 3]
+        );
+        // The head waited too long. `expire_dispatch`'s transition half, which
+        // is all of it that runs without an AppHandle.
+        assert!(reg.expire_queued(&ids[0], "waited 24h"));
+        assert_eq!(reg.session_state(&ids[0]), Some(S::Expired));
+        assert_ne!(
+            reg.session_state(&ids[0]),
+            Some(S::Exited),
+            "a row that never ran did not exit"
+        );
+        // It is out of the queue, rank dropped, and the survivors close up.
+        let ranks = reg.renumber_queue(&[]);
+        assert_eq!(
+            ranks,
+            vec![(ids[1].clone(), 1), (ids[2].clone(), 2)],
+            "dense 1.. over the survivors, in their old order"
+        );
+        assert!(!is_live_state(S::Expired), "an expired row holds no slot");
+    }
+
+    #[test]
+    fn expiry_never_touches_a_running_session() {
+        let reg = FleetRegistry::default();
+        reg.insert(live("runner", S::Running));
+        let (queued, _) = enqueue_into(&reg, &req("C:/repo/q"), 1_000, 10, 1);
+        // The selection the reaper walks cannot even SEE a live row.
+        let visible: Vec<String> = reg
+            .queued_in_order()
+            .into_iter()
+            .map(|(id, _, _, _)| id)
+            .collect();
+        assert_eq!(visible, vec![queued.clone()]);
+        // And the door refuses the edge outright if a lane ever asks for it.
+        assert!(!reg.expire_queued("runner", "waited 24h"));
+        assert_eq!(reg.session_state("runner"), Some(S::Running));
     }
 }

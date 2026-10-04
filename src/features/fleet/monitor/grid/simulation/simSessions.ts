@@ -35,10 +35,16 @@ const ORIGINS: readonly DispatchOrigin[] = [
 /**
  * The states worth painting. `spawning` and `exited` are transient by design.
  *
- * `expired` is left out ON PURPOSE rather than by omission: it is reached only
- * by a queue reaper, which does not exist yet, so a board that painted it
- * would be showing a state the running app cannot produce. Add it here when
- * the reaper lands, together with `simulation.test.ts`'s matching list.
+ * `expired` is still left out ON PURPOSE, but the reason has changed. The
+ * queue reaper now exists (`stale::queued_expiry_pass` retires a row that has
+ * waited past `fleet.queued_expiry_ms`), so the running app CAN produce the
+ * state - the note that said otherwise was true only until that landed. What
+ * keeps it out of this list is what the list is: these are the states of a
+ * LIVE session, one with a process. An expired row is terminal and never had
+ * one, so painting it here would put a dead dispatch among the running ones.
+ * It belongs with the queue's own retired rows whenever the board grows a
+ * place for those; `simulation.test.ts`'s matching list is this one, so the
+ * two still agree.
  */
 const STATES: readonly FleetSessionState[] = [
   'running', 'awaiting_input', 'idle', 'stale', 'finished', 'hibernated',

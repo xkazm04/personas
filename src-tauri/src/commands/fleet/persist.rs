@@ -211,9 +211,20 @@ fn queue_rank_for(state: FleetSessionState, rank: Option<u32>) -> Option<u32> {
 pub fn inner_from_row(row: &FleetSessionRow) -> FleetSessionInner {
     // A row persisted mid-spawn never bound anything useful; anything we can't
     // parse falls back to Stale, which is honest ("we don't know, look at it")
-    // and doze-compatible. Exited never reaches here (filtered by the query).
+    // and doze-compatible. The two terminal states never reach here (filtered
+    // by `list_rehydratable`'s query); both are named here anyway, as `Exited`
+    // always was, so a terminal token arriving by any other route falls back
+    // to the honest `Stale` rather than being restored as itself. `Expired`
+    // in particular must never come back resumable: that row never ran.
     let state = token_to_state(&row.state)
-        .filter(|s| !matches!(s, FleetSessionState::Exited | FleetSessionState::Spawning))
+        .filter(|s| {
+            !matches!(
+                s,
+                FleetSessionState::Exited
+                    | FleetSessionState::Expired
+                    | FleetSessionState::Spawning
+            )
+        })
         .unwrap_or(FleetSessionState::Stale);
     let args: Vec<String> = serde_json::from_str(&row.args_json).unwrap_or_default();
     FleetSessionInner {

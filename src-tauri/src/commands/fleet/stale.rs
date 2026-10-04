@@ -526,6 +526,9 @@ fn tick_once(app: &AppHandle) {
     let stalled_ms = stalled_secs * 1000;
 
     // Pass A — snapshot the sessions worth checking (no IO under the lock).
+    // `Queued` is excluded here because it has no transcript to stat, not
+    // because it is beyond this ticker's reach: `queued_expiry_pass`, at the
+    // end of this tick, is the queue's own reaper.
     let snaps: Vec<(String, Option<String>)> = {
         let map = registry()
             .sessions
@@ -611,6 +614,11 @@ fn tick_once(app: &AppHandle) {
         for session in map.values_mut() {
             // Queued included: a dispatch waiting for a slot has no process
             // and no transcript, so nothing about it can grow or go stale.
+            // That exclusion is from the SILENCE sweep only — it is no longer
+            // true that queued rows are never reaped: `queued_expiry_pass`
+            // below retires the ones that have waited past
+            // `fleet.queued_expiry_ms`, on their own clock (`queued_at_ms`),
+            // which is a wait and not a silence.
             if matches!(
                 session.state,
                 FleetSessionState::Exited
@@ -998,6 +1006,71 @@ fn tick_once(app: &AppHandle) {
     live_slot_pass(app);
     auto_forget_pass(app);
     machine_worker_retire_pass(app, now);
+    queued_expiry_pass(app, now);
+}
+
+/// Which queued rows have waited past the expiry bound. Pure over the
+/// snapshot `FleetRegistry::queued_in_order` returns — `(id, rank,
+/// queued_at_ms, not_before_ms)`.
+///
+/// Three deliberate choices:
+///
+/// - **The clock is `queued_at_ms`**, the row's own admission stamp, written
+///   once by `queue::queued_inner` and never rewritten. NOT `updated_at_ms`,
+///   which is the state-change clock the exited-row pruning reads and which
+///   the skip/rank setters deliberately leave alone — a row whose rank was
+///   renumbered has not restarted its wait.
+/// - **A row with no stamp is never expired.** `queued_at_ms` is `Option` on
+///   the row, and the snapshot spells a missing one as `0`, which would read
+///   as "waiting since the epoch" and retire it on the first tick. A row we
+///   cannot date is a row we do not judge.
+/// - **A time-gated row (`not_before_ms` in the future) waits on its gate,
+///   not on us.** Scheduling a dispatch for tomorrow is not the same thing as
+///   a dispatch nobody could start, and expiring one would make
+///   `not_before_ms` unusable past the bound.
+fn expired_queued(
+    rows: &[(String, u32, i64, Option<i64>)],
+    now: i64,
+    expiry_ms: i64,
+) -> Vec<(String, i64)> {
+    rows.iter()
+        .filter(|(_, _, queued_at, not_before)| {
+            *queued_at > 0 && now - *queued_at >= expiry_ms && !not_before.is_some_and(|t| t > now)
+        })
+        .map(|(id, _, queued_at, _)| (id.clone(), now - *queued_at))
+        .collect()
+}
+
+/// The queue's reaper: retire rows that have waited longer than
+/// `fleet.queued_expiry_ms` without ever starting (`Queued → Expired`).
+///
+/// **This is the lane that makes "queued rows are never reaped" untrue**, and
+/// it lives here, with the other reapers, rather than on a timer of its own.
+/// Until it existed the queue had a live-session cap and budget holds but no
+/// bound on waiting at all: a row admitted at the cap could sit in `queued`
+/// forever, and aging (`budgets::AGING_MAX_WAIT_MS`, 30 min) only ever won it
+/// the right to block backfill behind it — it never moved its rank and never
+/// retired it.
+///
+/// Nothing running is reachable from here by construction:
+/// `queued_in_order()` returns QUEUED rows only, and `expire_queued`
+/// re-validates the state under the registry lock before it writes.
+fn queued_expiry_pass(app: &AppHandle, now: i64) {
+    let rows = registry().queued_in_order();
+    if rows.is_empty() {
+        return;
+    }
+    let expiry_ms = super::queue::queued_expiry_ms_via_app(app);
+    for (sid, waited_ms) in expired_queued(&rows, now, expiry_ms) {
+        if super::queue::expire_dispatch(app, &sid, waited_ms) {
+            tracing::info!(
+                session_id = %sid,
+                waited_ms,
+                expiry_ms,
+                "fleet queue: queued dispatch expired without ever running"
+            );
+        }
+    }
 }
 
 /// Unanswered-question sweep: an UNATTENDED worker that ends its turn asking
@@ -2960,5 +3033,86 @@ mod tests {
         assert!(at > now, "reset must be in the future");
         assert!(at - now < 24 * 60 * 60 * 1000);
         assert_eq!(hm_of(at), (7, 50));
+    }
+
+    // ---------------------------------------------------------------
+    // The queue's expiry reaper
+    // ---------------------------------------------------------------
+
+    const DAY_MS: i64 = 24 * 60 * 60 * 1000;
+
+    /// One `queued_in_order` row: `(id, rank, queued_at_ms, not_before_ms)`.
+    fn waiting(
+        id: &str,
+        queued_at: i64,
+        not_before: Option<i64>,
+    ) -> (String, u32, i64, Option<i64>) {
+        (id.into(), 1, queued_at, not_before)
+    }
+
+    #[test]
+    fn only_a_row_past_the_expiry_bound_is_reaped() {
+        let now = 10 * DAY_MS;
+        let rows = vec![
+            waiting("old", now - DAY_MS - 1, None),
+            waiting("exactly-at-the-bound", now - DAY_MS, None),
+            waiting("young", now - DAY_MS + 1, None),
+        ];
+        let picked: Vec<String> = super::expired_queued(&rows, now, DAY_MS)
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
+        assert_eq!(picked, vec!["old", "exactly-at-the-bound"]);
+    }
+
+    #[test]
+    fn the_reaper_reports_how_long_the_row_actually_waited() {
+        let now = 10 * DAY_MS;
+        let rows = vec![waiting("old", now - 3 * DAY_MS, None)];
+        assert_eq!(
+            super::expired_queued(&rows, now, DAY_MS),
+            vec![("old".to_string(), 3 * DAY_MS)]
+        );
+    }
+
+    #[test]
+    fn an_undated_row_and_a_still_gated_row_are_never_expired() {
+        let now = 10 * DAY_MS;
+        let rows = vec![
+            // No `queued_at_ms` on the row: the snapshot spells that `0`,
+            // which must not read as "waiting since the epoch".
+            waiting("undated", 0, None),
+            // Scheduled for tomorrow: waiting on its own gate, not on a slot.
+            waiting("gated", now - 5 * DAY_MS, Some(now + DAY_MS)),
+            // A gate that has already come due does not protect it.
+            waiting("gate-passed", now - 5 * DAY_MS, Some(now - 1)),
+        ];
+        let picked: Vec<String> = super::expired_queued(&rows, now, DAY_MS)
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
+        assert_eq!(picked, vec!["gate-passed"]);
+    }
+
+    #[test]
+    fn expiry_always_sits_far_above_aging() {
+        // The two clocks measure the same quantity (how long a row has
+        // waited) and must never be confusable: aging wins a row the right
+        // to block backfill, expiry ends its wait. Measured, not asserted
+        // from the prose: the DEFAULT expiry is 48x the aging window, and
+        // even the shortest an operator may configure is 2x it.
+        use crate::db::settings_keys as k;
+        let aging = crate::commands::fleet::budgets::AGING_MAX_WAIT_MS;
+        assert_eq!(aging, 30 * 60 * 1000);
+        assert!(
+            i64::from(k::FLEET_QUEUED_EXPIRY_MS_DEFAULT) >= aging * 24,
+            "the default expiry must be nowhere near the aging window"
+        );
+        assert!(
+            i64::from(k::FLEET_QUEUED_EXPIRY_MS_MIN) >= aging * 2,
+            "the SHORTEST expiry anyone can configure still outlasts the aging window"
+        );
+        assert!(k::FLEET_QUEUED_EXPIRY_MS_DEFAULT > k::FLEET_QUEUED_EXPIRY_MS_MIN);
+        assert!(k::FLEET_QUEUED_EXPIRY_MS_MAX > k::FLEET_QUEUED_EXPIRY_MS_DEFAULT);
     }
 }

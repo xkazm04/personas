@@ -28,8 +28,9 @@ pub enum FleetSessionState {
     /// arrived. No process, no PID, no transcript — the row holds the
     /// dispatch (cwd, args, mode, run label) so the queue can spawn it later
     /// ON THIS SAME ID. Not live, not stale-eligible, not hibernate-eligible.
-    /// Leaves only by promotion (→ `Spawning`) or cancellation (→ `Exited`,
-    /// reason `cancelled`). See `queue.rs`.
+    /// Leaves only by promotion (→ `Spawning`), cancellation (→ `Exited`,
+    /// reason `cancelled`) or expiry (→ `Expired`, after
+    /// `fleet.queued_expiry_ms` of waiting). See `queue.rs`.
     Queued,
     /// PTY spawned, awaiting first SessionStart hook to bind the
     /// Claude-side `session_id`.

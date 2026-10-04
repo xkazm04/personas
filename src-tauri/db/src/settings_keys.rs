@@ -776,8 +776,11 @@ pub const FLEET_MAX_QUEUED_SESSIONS_MAX: u32 = 2000;
 /// The 24 h default is deliberately FAR above `AGING_MAX_WAIT_MS` (30 min,
 /// `budgets.rs`), which is the window over which a waiting row's priority is
 /// aged upward. Aging and expiry both measure "how long has this waited" and
-/// would be easy to confuse; three orders of magnitude between them means a
-/// row that is merely being aged is never anywhere near expiry.
+/// would be easy to confuse; the default sits 48x above the aging window (and
+/// the clamp's floor still 2x above it), so a row that is merely being aged is
+/// never anywhere near expiry. The line here read "three orders of magnitude"
+/// until the reaper's own test measured the two constants against each other
+/// and found 48x - a real gap, and not the one the prose claimed.
 pub const FLEET_QUEUED_EXPIRY_MS: &str = "fleet.queued_expiry_ms";
 /// Default for [`FLEET_QUEUED_EXPIRY_MS`] — 24 hours.
 pub const FLEET_QUEUED_EXPIRY_MS_DEFAULT: u32 = 86_400_000;

@@ -633,10 +633,17 @@ impl TransitionOutcome {
 ///   to "still starting". The one entry edge is the queue's: a queued row is
 ///   spawned on its own id, so `Queued → Spawning` is how a dispatch that
 ///   waited for a slot starts (`super::queue::promote_head`).
-/// - **`Queued` leaves only two ways.** Promotion (`→ Spawning`) or
-///   cancellation (`→ Exited`, reason `cancelled`). It has no process, so no
+/// - **Nothing leaves `Expired`.** It is terminal for the same reason
+///   `Exited` is, and it is reached from ONE place: the queue's expiry reaper
+///   (`super::stale::queued_expiry_pass` → `super::queue::expire_dispatch`).
+/// - **`Queued` leaves only three ways.** Promotion (`→ Spawning`),
+///   cancellation (`→ Exited`, reason `cancelled`) or expiry (`→ Expired`,
+///   after `fleet.queued_expiry_ms` of waiting). It has no process, so no
 ///   hook, ticker, transcript or hibernate lane may move it; every other edge
 ///   out of it is refused.
+/// - **Nothing ENTERS `Expired` except out of `Queued`.** "Retired without
+///   ever running" is only true of a row that never ran: a live session that
+///   ends is `Exited`, whatever killed it.
 ///
 /// Every other edge among `Spawning`/`Running`/`AwaitingInput`/`Idle`/`Stale`/
 /// `Finished` — plus each of those into `Exited`/`Hibernated` — is legal, and
@@ -647,9 +654,9 @@ impl TransitionOutcome {
 pub fn transition_is_legal(from: FleetSessionState, to: FleetSessionState) -> bool {
     use FleetSessionState::*;
     match from {
-        Exited | Hibernated => false,
-        Queued => matches!(to, Spawning | Exited),
-        _ => !matches!(to, Spawning | Queued),
+        Exited | Hibernated | Expired => false,
+        Queued => matches!(to, Spawning | Exited | Expired),
+        _ => !matches!(to, Spawning | Queued | Expired),
     }
 }
 
@@ -859,6 +866,32 @@ impl FleetRegistry {
             reason,
             "queue:spawn-failed",
         );
+        if out.changed() {
+            session.queue_rank = None;
+        }
+        out.changed()
+    }
+
+    /// Retire a queued dispatch that waited past `fleet.queued_expiry_ms`:
+    /// `Queued → Expired` with the wait as its reason, through the door.
+    /// `false` for an unknown id or a row that is not queued — which is what
+    /// keeps a session that started between the reaper's snapshot and this
+    /// call untouched.
+    ///
+    /// `Expired`, not `Exited`, and the distinction is the whole point: this
+    /// row never had a process, so "it ran and ended" would be a lie every
+    /// later exit-code and did-the-work reader would believe. The rank is
+    /// cleared on the way out, as [`Self::cancel_queued`] and
+    /// [`Self::fail_queued`] do — the caller renumbers the survivors.
+    pub fn expire_queued(&self, session_id: &str, reason: &str) -> bool {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else {
+            return false;
+        };
+        if !matches!(session.state, FleetSessionState::Queued) {
+            return false;
+        }
+        let out = apply_transition(session, FleetSessionState::Expired, reason, "queue:expired");
         if out.changed() {
             session.queue_rank = None;
         }
@@ -2922,6 +2955,19 @@ mod tests {
             (Stale, Spawning),
             (AwaitingInput, Spawning),
             (Finished, Spawning),
+            // Nothing leaves `Expired` either, and nothing ENTERS it except
+            // out of `Queued`: "retired without ever running" is only true of
+            // a row that never ran.
+            (Expired, Running),
+            (Expired, Exited),
+            (Expired, Stale),
+            (Expired, Hibernated),
+            (Running, Expired),
+            (Idle, Expired),
+            (Stale, Expired),
+            (AwaitingInput, Expired),
+            (Finished, Expired),
+            (Spawning, Expired),
         ] {
             assert!(
                 !transition_is_legal(from, to),
@@ -2993,6 +3039,40 @@ mod tests {
             assert_eq!(inner.state, to);
             assert_eq!(inner.state_reason.as_deref(), Some("moved"));
         }
+    }
+
+    #[test]
+    fn expire_queued_retires_a_waiting_row_and_nothing_else() {
+        use FleetSessionState::*;
+        let reg = FleetRegistry::default();
+        let mut waiting = session("waiting", Queued, Some("cc-q"));
+        waiting.queue_rank = Some(3);
+        waiting.queued_at_ms = Some(1_000);
+        reg.insert(waiting);
+        reg.insert(session("runner", Running, Some("cc-r")));
+        reg.insert(session("dead", Exited, Some("cc-x")));
+
+        // The queued row goes `Queued -> Expired`, with its reason, and drops
+        // its rank the way cancel/fail do. `queued_at_ms` is KEPT: it is the
+        // evidence of how long it waited, which the reason quotes.
+        assert!(reg.expire_queued("waiting", "waited 24h"));
+        assert_eq!(state_of(&reg, "waiting"), Expired);
+        {
+            let map = reg.sessions.lock().unwrap();
+            let s = map.get("waiting").unwrap();
+            assert_eq!(s.queue_rank, None);
+            assert_eq!(s.queued_at_ms, Some(1_000));
+            assert_eq!(s.state_reason.as_deref(), Some("waited 24h"));
+            assert_eq!(s.child_pid, Some(1234), "no process was ever touched");
+        }
+        // Nothing else is reachable: not a live row, not a dead one, not an
+        // id that does not exist, and not the same row twice.
+        assert!(!reg.expire_queued("runner", "waited 24h"));
+        assert_eq!(state_of(&reg, "runner"), Running);
+        assert!(!reg.expire_queued("dead", "waited 24h"));
+        assert_eq!(state_of(&reg, "dead"), Exited);
+        assert!(!reg.expire_queued("ghost", "waited 24h"));
+        assert!(!reg.expire_queued("waiting", "waited 48h"));
     }
 
     #[test]
