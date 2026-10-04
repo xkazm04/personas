@@ -902,15 +902,11 @@
   "layers_workspace_aria": "Choose a workspace",
   "layers_decisions": "Decisions",
   "layers_decisions_aria": "Open everything waiting on you",
-  "layers_overview": "Overview",
-  "layers_shape": "Shape",
   "layers_empty": "No projects here yet",
   "layers_empty_sub": "Projects assigned to this workspace appear here with what they need from you.",
   "layers_open_aria": "Open {project}",
   "layers_persona_count_one": "1 persona",
   "layers_persona_count_other": "{count} personas",
-  "layers_needs_you_count_one": "1 needs you",
-  "layers_needs_you_count_other": "{count} need you",
   "layers_session_count_one": "1 session",
   "layers_session_count_other": "{count} sessions"
 }

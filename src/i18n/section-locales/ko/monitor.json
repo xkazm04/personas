@@ -903,14 +903,10 @@
   "layers_decisions_aria": "당신을 기다리는 모든 항목 열기",
   "layers_empty": "아직 프로젝트가 없습니다",
   "layers_empty_sub": "이 워크스페이스에 배정된 프로젝트가 필요한 조치와 함께 여기에 표시됩니다.",
-  "layers_needs_you_count_one": "1개가 기다리는 중",
-  "layers_needs_you_count_other": "{count}개가 기다리는 중",
   "layers_open_aria": "{project} 열기",
-  "layers_overview": "개요",
   "layers_persona_count_one": "페르소나 1개",
   "layers_persona_count_other": "페르소나 {count}개",
   "layers_session_count_one": "세션 1개",
   "layers_session_count_other": "세션 {count}개",
-  "layers_shape": "구성",
   "layers_workspace_aria": "워크스페이스 선택"
 }

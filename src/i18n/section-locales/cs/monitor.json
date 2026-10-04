@@ -903,14 +903,10 @@
   "layers_decisions_aria": "Otevřít vše, co čeká na vás",
   "layers_empty": "Zatím zde nejsou žádné projekty",
   "layers_empty_sub": "Projekty přiřazené tomuto pracovnímu prostoru se zde objeví s tím, co od vás potřebují.",
-  "layers_needs_you_count_one": "1 čeká na vás",
-  "layers_needs_you_count_other": "{count} čeká na vás",
   "layers_open_aria": "Otevřít {project}",
-  "layers_overview": "Přehled",
   "layers_persona_count_one": "1 persona",
   "layers_persona_count_other": "{count} person",
   "layers_session_count_one": "1 relace",
   "layers_session_count_other": "{count} relací",
-  "layers_shape": "Tvar",
   "layers_workspace_aria": "Vyberte pracovní prostor"
 }

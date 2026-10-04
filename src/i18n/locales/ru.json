@@ -7347,15 +7347,11 @@
     "layers_decisions_aria": "Открыть всё, что ждёт вас",
     "layers_empty": "Пока здесь нет проектов",
     "layers_empty_sub": "Проекты этой рабочей области появятся здесь вместе с тем, что им от вас нужно.",
-    "layers_needs_you_count_one": "1 ждёт вас",
-    "layers_needs_you_count_other": "{count} ждут вас",
     "layers_open_aria": "Открыть {project}",
-    "layers_overview": "Обзор",
     "layers_persona_count_one": "1 персона",
     "layers_persona_count_other": "{count} персон",
     "layers_session_count_one": "1 сессия",
     "layers_session_count_other": "{count} сессий",
-    "layers_shape": "Состав",
     "layers_workspace_aria": "Выберите рабочую область"
   },
   "onboarding": {

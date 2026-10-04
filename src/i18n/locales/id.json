@@ -7347,15 +7347,11 @@
     "layers_decisions_aria": "Buka semua yang menunggu Anda",
     "layers_empty": "Belum ada proyek di sini",
     "layers_empty_sub": "Proyek yang ditugaskan ke ruang kerja ini muncul di sini beserta yang dibutuhkannya dari Anda.",
-    "layers_needs_you_count_one": "1 menunggu Anda",
-    "layers_needs_you_count_other": "{count} menunggu Anda",
     "layers_open_aria": "Buka {project}",
-    "layers_overview": "Ikhtisar",
     "layers_persona_count_one": "1 persona",
     "layers_persona_count_other": "{count} persona",
     "layers_session_count_one": "1 sesi",
     "layers_session_count_other": "{count} sesi",
-    "layers_shape": "Bentuk",
     "layers_workspace_aria": "Pilih ruang kerja"
   },
   "onboarding": {

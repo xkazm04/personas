@@ -903,14 +903,10 @@
   "layers_decisions_aria": "आपकी प्रतीक्षा में सब कुछ खोलें",
   "layers_empty": "यहाँ अभी कोई प्रोजेक्ट नहीं है",
   "layers_empty_sub": "इस वर्कस्पेस को सौंपे गए प्रोजेक्ट यहाँ दिखेंगे, साथ में उन्हें आपसे क्या चाहिए।",
-  "layers_needs_you_count_one": "1 को आपकी ज़रूरत है",
-  "layers_needs_you_count_other": "{count} को आपकी ज़रूरत है",
   "layers_open_aria": "{project} खोलें",
-  "layers_overview": "अवलोकन",
   "layers_persona_count_one": "1 पर्सोना",
   "layers_persona_count_other": "{count} पर्सोना",
   "layers_session_count_one": "1 सत्र",
   "layers_session_count_other": "{count} सत्र",
-  "layers_shape": "स्वरूप",
   "layers_workspace_aria": "वर्कस्पेस चुनें"
 }
