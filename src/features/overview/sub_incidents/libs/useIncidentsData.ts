@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { silentCatch } from '@/lib/silentCatch';
 import {
   listAuditIncidents,
@@ -45,33 +46,36 @@ export function useIncidentsData(filters: IncidentFilters): UseIncidentsDataResu
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [truncated, setTruncated] = useState(false);
-  // Monotonic request token. A plain boolean in-flight guard couldn't tell a
-  // duplicate poll (drop it) from a NEW request after a filter change (must run):
-  // it dropped the filter-change refetch, so the list showed stale-filter rows
-  // for up to the 30s poll interval. With a token, overlapping requests are
-  // allowed and only the newest response is applied (out-of-order-safe too).
-  const reqSeqRef = useRef(0);
-  // The summary is global (no filter dimension), so it carries its OWN token:
+  // Latest-wins, through the shared primitive rather than a hand-rolled counter
+  // (`stale-response-guard`; the census rule `hand-rolled-stale-token` exists to
+  // stop this shape being re-written per surface). A plain boolean in-flight
+  // guard could not tell a duplicate poll (drop it) from a NEW request after a
+  // filter change (must run): it dropped the filter-change refetch, so the list
+  // showed stale-filter rows for up to the 30s poll interval. With a token,
+  // overlapping requests are allowed and only the newest response is applied,
+  // which is out-of-order-safe too.
+  const listLatest = useRef(createLatestWins()).current;
+  // The summary is global (no filter dimension), so it carries its OWN guard:
   // a filter change supersedes the list's request without superseding a
   // summary request that is still legitimately in flight.
-  const summarySeqRef = useRef(0);
+  const summaryLatest = useRef(createLatestWins()).current;
 
   // Stable filter key for the dependency array.
   const filterKey = useMemo(() => JSON.stringify(filters), [filters]);
 
   const refreshList = useCallback(async () => {
-    const seq = ++reqSeqRef.current;
+    const token = listLatest.next();
     setLoading(true);
     try {
       const rows = await listAuditIncidents(filters, DEFAULT_LIMIT, 0);
-      if (seq !== reqSeqRef.current) return; // superseded by a newer request
+      if (!listLatest.isCurrent(token)) return; // superseded by a newer request
       setIncidents(rows);
       setTruncated(rows.length >= DEFAULT_LIMIT);
       setError(null);
     } catch (e) {
-      if (seq === reqSeqRef.current) setError(String(e));
+      if (listLatest.isCurrent(token)) setError(String(e));
     } finally {
-      if (seq === reqSeqRef.current) setLoading(false);
+      if (listLatest.isCurrent(token)) setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterKey]);
@@ -79,11 +83,11 @@ export function useIncidentsData(filters: IncidentFilters): UseIncidentsDataResu
   // A summary failure never becomes the surface's error: the ledger is the
   // surface, the KPI strip is a header on it. It keeps its last good numbers.
   const refreshSummary = useCallback(async () => {
-    const seq = ++summarySeqRef.current;
+    const token = summaryLatest.next();
     setSummaryLoading(true);
     try {
       const sum = await getAuditIncidentsSummary();
-      if (seq !== summarySeqRef.current) return;
+      if (!summaryLatest.isCurrent(token)) return;
       setSummary(sum);
     } catch (e) {
       // Never becomes the surface's error (see above), but it still leaves a
@@ -91,7 +95,7 @@ export function useIncidentsData(filters: IncidentFilters): UseIncidentsDataResu
       // kind of failure that has to be visible in Sentry.
       silentCatch('useIncidentsData:summary')(e);
     } finally {
-      if (seq === summarySeqRef.current) setSummaryLoading(false);
+      if (summaryLatest.isCurrent(token)) setSummaryLoading(false);
     }
   }, []);
 
