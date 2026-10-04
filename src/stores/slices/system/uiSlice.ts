@@ -412,9 +412,10 @@ export function isNavRestoring(): boolean {
 /** Current selected persona id, read via storeBus so uiSlice avoids importing agentStore. */
 function currentSelectedPersonaId(): string | null {
   try {
-    return storeBus.get<string | undefined>(AccessorKey.AGENTS_SELECTED_PERSONA_ID) ?? null;
+    return storeBus.tryGet<string | undefined>(AccessorKey.AGENTS_SELECTED_PERSONA_ID) ?? null;
   } catch {
-    // Accessor not yet registered (e.g. unit tests, pre-initStoreBus boot).
+    // Kept: the accessor itself can throw once registered; tryGet only covers
+    // the not-yet-registered window (unit tests, pre-initStoreBus boot).
     return null;
   }
 }

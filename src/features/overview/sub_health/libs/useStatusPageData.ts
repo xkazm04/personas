@@ -163,7 +163,10 @@ export function useStatusPageData() {
   }, [loadData]);
 
   const entries = useMemo((): CompositeHealthEntry[] => {
-    const personas = storeBus.get<Persona[]>(AccessorKey.AGENTS_PERSONAS) ?? [];
+    // tryGet, not get: this runs during RENDER, and `get` throws until
+    // initStoreBus() has registered the accessor (App mounts it behind two
+    // dynamic imports), which took Overview > Health down on a cold boot.
+    const personas = storeBus.tryGet<Persona[]>(AccessorKey.AGENTS_PERSONAS) ?? [];
     if (personas.length === 0) return [];
 
     const dailyPoints = (executionDashboard?.daily_points ?? []).map(pt => ({

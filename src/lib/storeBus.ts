@@ -128,10 +128,32 @@ function get<T>(key: string): T {
   return resolver() as T;
 }
 
+/**
+ * Read cross-domain data through a named accessor, or `undefined` if no accessor
+ * is registered yet.
+ *
+ * `get` THROWS for an unregistered key, and `initStoreBus()` runs behind two
+ * dynamic `import()`s inside App's mount effect, so there is a real window in
+ * which a reader can run first. Three slices already hand-rolled the same
+ * try/catch around it with the same comment ("Accessor not yet registered
+ * (storeBusWiring loads async)"); this is that idiom, once.
+ *
+ * Use it wherever a missing accessor is a TIMING fact rather than a bug - a
+ * render path above all, where a throw takes the surface down. Measured
+ * 2026-10-04: `useStatusPageData` read `AGENTS_PERSONAS` through `get` inside a
+ * `useMemo`, so Overview > Health could throw during render on a cold boot.
+ * Keep `get` where a missing accessor really is a programming error.
+ */
+function tryGet<T>(key: string): T | undefined {
+  const resolver = _accessors.get(key);
+  if (!resolver) return undefined;
+  return resolver() as T;
+}
+
 /** Remove all listeners and accessors (for tests / hot-reload). */
 function _reset(): void {
   _listeners.clear();
   _accessors.clear();
 }
 
-export const storeBus = { emit, on, provide, get, _reset } as const;
+export const storeBus = { emit, on, provide, get, tryGet, _reset } as const;
