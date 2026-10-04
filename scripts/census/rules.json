@@ -155,8 +155,8 @@
         "description": "a chunk boundary declared with raw React.lazy(); lazyRetry() is the drop-in that survives a failed chunk fetch instead of caching the rejection forever (2026-06-07 incident). Proxy for: a dynamic-import boundary with no recovery path."
       },
       "baseline": {
-        "files": 19,
-        "matches": 61
+        "files": 18,
+        "matches": 60
       },
       "floor": 4000
     },
@@ -1427,7 +1427,7 @@
       },
       "baseline": {
         "files": 409,
-        "matches": 759
+        "matches": 758
       },
       "floor": 2000
     },
@@ -5625,7 +5625,7 @@
       ],
       "baseline": {
         "files": 851,
-        "matches": 3997
+        "matches": 3995
       },
       "floor": 5000
     },
@@ -5741,7 +5741,7 @@
       ],
       "baseline": {
         "files": 994,
-        "matches": 2254
+        "matches": 2252
       },
       "floor": 2200
     },
@@ -5810,8 +5810,8 @@
         }
       ],
       "baseline": {
-        "files": 709,
-        "matches": 1737
+        "files": 708,
+        "matches": 1736
       },
       "floor": 5000
     }
