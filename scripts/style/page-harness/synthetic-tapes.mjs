@@ -16,6 +16,7 @@ import { homeLearningTapes } from './homeLearningTapes.mjs';
 import { homeCockpitTapes } from './homeCockpitTapes.mjs';
 import { homeSystemCheckTapes } from './homeSystemCheckTapes.mjs';
 import { twinDetailTapes } from './twinDetailTapes.mjs';
+import { activityTapes } from './activityTapes.mjs';
 
 export const RECORDED_AT = '2026-09-22T15:40:00.000Z';
 const T0 = Date.parse(RECORDED_AT);
@@ -280,6 +281,8 @@ const BUILDERS = {
     id, () => ({ ...subEvents(), module: id, note: 'Synthetic: the sub_events personas and events, for a shared DataGrid surface.' }),
   ])),
   'home/sub_releases': (repoRoot) => subReleases(repoRoot),
+  // Kit batch overview-1, Overview > Executions (activitySurfaces.tsx, activityTapes.mjs).
+  ...activityTapes({ RECORDED_AT, PERSONAS }).builders,
   // Module 3, the Fleet cluster (fleetSurfaces.tsx, fleetTapes.mjs).
   ...fleetTapes({ RECORDED_AT }).builders,
   // Module 4, Overview > Observability (observabilitySurfaces.tsx, observabilityTapes.mjs).

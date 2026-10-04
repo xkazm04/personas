@@ -28,6 +28,7 @@ import { KIT_TILES_MODULES } from './kitTiles';
 import { ATHENA_TABLE_MODULES } from './athenaTableSurfaces';
 import { TWIN_BLUEPRINT_MODULES } from './twinBlueprintSurfaces';
 import { TWIN_DETAIL_MODULES } from './twinDetailSurfaces';
+import { ACTIVITY_MODULES } from './activitySurfaces';
 
 type Wrap = (children: ReactNode) => ReactNode;
 
@@ -68,6 +69,8 @@ export const MODULES: Record<string, HarnessModule> = {
       useSystemStore.setState({ sidebarSection: 'home', homeTab: 'roadmap' });
     },
   },
+  // Kit batch overview-1, Overview > Executions (activitySurfaces.tsx, activityTapes.mjs).
+  ...ACTIVITY_MODULES,
   ...TONE_MODULES,
   ...TRIAGE_MODULES,
   ...DATAGRID_MODULES,

@@ -39,6 +39,108 @@
       }
     }
   },
+  "overview/sub_activity": {
+    "title": "Overview / Executions / Activity",
+    "record": [
+      {
+        "method": "navigate",
+        "params": {
+          "section": "home"
+        }
+      },
+      {
+        "method": "navigate",
+        "params": {
+          "section": "overview"
+        }
+      },
+      {
+        "method": "clickTestId",
+        "params": {
+          "testId": "tab-executions"
+        }
+      }
+    ],
+    "boot": [
+      [
+        "list_personas",
+        null
+      ],
+      [
+        "get_persona_summaries",
+        null
+      ]
+    ],
+    "fill": {}
+  },
+  "overview/sub_activity/calls": {
+    "title": "Overview / Executions / Calls (record with --manual: click the Calls segment)",
+    "record": [
+      {
+        "method": "navigate",
+        "params": {
+          "section": "home"
+        }
+      },
+      {
+        "method": "navigate",
+        "params": {
+          "section": "overview"
+        }
+      },
+      {
+        "method": "clickTestId",
+        "params": {
+          "testId": "tab-executions"
+        }
+      }
+    ],
+    "boot": [
+      [
+        "list_personas",
+        null
+      ],
+      [
+        "get_persona_summaries",
+        null
+      ]
+    ],
+    "fill": {}
+  },
+  "overview/sub_activity/metrics": {
+    "title": "Overview / Executions / Metrics (record with --manual: click the Metrics segment)",
+    "record": [
+      {
+        "method": "navigate",
+        "params": {
+          "section": "home"
+        }
+      },
+      {
+        "method": "navigate",
+        "params": {
+          "section": "overview"
+        }
+      },
+      {
+        "method": "clickTestId",
+        "params": {
+          "testId": "tab-executions"
+        }
+      }
+    ],
+    "boot": [
+      [
+        "list_personas",
+        null
+      ],
+      [
+        "get_persona_summaries",
+        null
+      ]
+    ],
+    "fill": {}
+  },
   "home/sub_releases": {
     "title": "Home / What's New",
     "record": [

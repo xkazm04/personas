@@ -69,13 +69,18 @@ export function useGlobalExecutionColumns(a: GlobalColumnsArgs): TableColumn<Glo
       ],
       filterValue: modelFilter,
       onFilterChange: onModelFilterChange,
+      // Same `typo-body text-foreground` as every other value cell in this
+      // ledger: the model id is a name the operator reads, not a code block,
+      // and `font-mono` here was one of four columns rendering in a family of
+      // its own (see the ExecutionCells header). The full id stays reachable
+      // through the Tooltip.
       render: (exec) => {
         const full = exec.modelUsed ?? personaModelById.get(exec.personaId) ?? null;
         const short = formatModelShort(full);
-        if (!short) return <span className="typo-body text-foreground font-mono">—</span>;
+        if (!short) return <span className="typo-body text-foreground">—</span>;
         return (
           <Tooltip content={full ?? ''}>
-            <span className="block typo-body text-foreground font-mono truncate">{short}</span>
+            <span className="block typo-body text-foreground truncate">{short}</span>
           </Tooltip>
         );
       },

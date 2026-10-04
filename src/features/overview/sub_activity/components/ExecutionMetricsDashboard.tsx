@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { TrendingUp, AlertTriangle, X, Zap, DollarSign, CheckCircle, Clock, Timer, RefreshCw } from 'lucide-react';
+import { TrendingUp, AlertTriangle, Zap, DollarSign, CheckCircle, Clock, Timer, RefreshCw } from 'lucide-react';
 import { DayRangePicker } from '@/features/overview/sub_usage/components/DayRangePicker';
 import { CompareToggle } from '@/features/overview/sub_usage/components/PersonaSelect';
 import { useExecutionMetrics } from '../libs/useExecutionMetrics';
@@ -16,6 +16,10 @@ import { LlmSpendSection } from './LlmSpendSection';
 import { useOverviewStore } from '@/stores/overviewStore';
 
 interface ExecutionMetricsDashboardProps {
+  /** Hand the operator back to the Activity ledger. Not a close button any
+   *  more - the surface's tab switcher is the way out of this lens - it is the
+   *  door the anomaly drill-down walks through after parking an execution id
+   *  that only the ledger can hydrate. */
   onClose?: () => void;
 }
 
@@ -49,35 +53,35 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
   }, [setPendingExecutionFocus, onClose]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 md:p-6 xl:p-8 space-y-5">
-      {/* Header — always painted (docs/design/overview-loading.md law 5). */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <TrendingUp className="w-4 h-4 text-blue-400" />
-          <h3 className="typo-heading text-foreground/90">{t.overview.activity.execution_metrics}</h3>
-          <DayRangePicker value={m.days} onChange={m.setDayRange} customDateRange={m.customDateRange} onCustomDateRangeChange={m.setCustomDateRange} />
-          <CompareToggle enabled={m.compareEnabled} onChange={m.setCompareEnabled} />
-          <span className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-card bg-blue-500/8 border border-blue-500/15 text-[11px] text-blue-400/70">
-            <Timer className="w-3 h-3" />
-            {m.activeRangeLabel}
+    <div className="flex-1 min-h-0 flex flex-col">
+      {/* This lens's control band — always painted
+          (docs/design/overview-loading.md law 5) and on the same geometry as
+          Activity's FilterBar and the Calls window bar, so the row under the
+          surface's shared header does not move when the lens changes.
+          The title and the close button that used to sit here are gone: the
+          header above names the surface and the tab switcher is the way out,
+          so both repeated what position already says (doctrine 0b.3). */}
+      <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-2 flex-shrink-0">
+        <TrendingUp className="w-4 h-4 text-blue-400 flex-shrink-0" aria-hidden="true" />
+        <DayRangePicker value={m.days} onChange={m.setDayRange} customDateRange={m.customDateRange} onCustomDateRangeChange={m.setCustomDateRange} />
+        <CompareToggle enabled={m.compareEnabled} onChange={m.setCompareEnabled} />
+        <span className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-card bg-blue-500/8 border border-blue-500/15 text-[11px] text-blue-400/70">
+          <Timer className="w-3 h-3" />
+          {m.activeRangeLabel}
+        </span>
+        {m.isRefreshing && (
+          <span
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] text-blue-400/70"
+            aria-live="polite"
+            aria-label={t.common.refresh}
+            title={t.common.refresh}
+          >
+            <RefreshCw className="w-3 h-3 animate-spin" />
           </span>
-          {m.isRefreshing && (
-            <span
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] text-blue-400/70"
-              aria-live="polite"
-              aria-label={t.common.refresh}
-              title={t.common.refresh}
-            >
-              <RefreshCw className="w-3 h-3 animate-spin" />
-            </span>
-          )}
-        </div>
-        {onClose && (
-          <button type="button" onClick={onClose} className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors">
-            <X className="w-4 h-4" />
-          </button>
         )}
       </div>
+
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6 xl:p-8 space-y-5">
 
       {m.error && !m.data ? (
         <div className="text-center py-8">
@@ -123,6 +127,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
           compareEnabled={m.compareEnabled}
         />
       )}
+      </div>
     </div>
   );
 }

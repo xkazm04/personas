@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -30,6 +30,16 @@ import { toastCatch } from '@/lib/silentCatch';
  * time window) and sorting run client-side over the loaded rows, which the
  * store caps at the 500 most recent — the "recent-N" bound. `Load more` (wired
  * to the table's end-reached) grows that page up to the cap.
+ *
+ * BODY ONLY. The surface's header - icon, name, recorded count and the
+ * Activity / Calls / Metrics switcher - belongs to `ExecutionsWithSubtabs` and
+ * is identical on all three lenses. Until 2026-10-04 this view had no
+ * `ContentHeader` at all: it was handed the switcher through a `headerSwitch`
+ * prop and hand-rolled a thin strip of its own around it, so reaching Calls
+ * made the surface's whole header band disappear. What is left here is this
+ * lens's own control band, on the same geometry as Activity's `FilterBar`
+ * (`px-4 md:px-6 py-3`, one hairline under it) so the row under the header
+ * does not move when the lens changes.
  *
  * Loading choreography (docs/design/overview-loading.md v2): `isFetching` goes
  * straight to `UnifiedTable`, which owns the whole cold-load contract — calm
@@ -65,12 +75,7 @@ function rowTime(e: GlobalExecutionListItem): number {
   return new Date(e.startedAt || e.createdAt).getTime();
 }
 
-interface LlmCallsTableProps {
-  /** Subtab switcher rendered in the toolbar so both views share one control. */
-  headerSwitch?: ReactNode;
-}
-
-export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
+export default function LlmCallsTable() {
   const { t, tx, language } = useTranslation();
   const {
     globalExecutions,
@@ -191,6 +196,13 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
     [t],
   );
 
+  // ONE type scale across every value cell - `typo-body text-foreground`,
+  // the vocabulary of the surface the owner named as the model
+  // (`sub_events/eventLogColumns.tsx`) and of the Activity ledger beside this
+  // one. Five of these six columns were `typo-code` (step 0, monospace) while
+  // the persona name was sans at step 1, so each column read as its own table.
+  // `font-data` on an em dash is a font-FEATURE preset, not a size or weight:
+  // it keeps the placeholder on the same figure axis as the numbers above it.
   const columns = useMemo<TableColumn<GlobalExecutionListItem>[]>(
     () => [
       {
@@ -200,7 +212,7 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
         sortable: true,
         sortFn: (a, b) => rowTime(a) - rowTime(b),
         render: (e) => (
-          <RelativeTime timestamp={e.startedAt || e.createdAt} className="typo-code text-foreground" />
+          <RelativeTime timestamp={e.startedAt || e.createdAt} className="typo-body text-foreground" />
         ),
       },
       {
@@ -228,10 +240,10 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
             <span className="flex items-center gap-1.5 min-w-0">
               {short ? (
                 <Tooltip content={resolved ?? ''}>
-                  <span className="typo-code text-foreground truncate">{short}</span>
+                  <span className="typo-body text-foreground truncate">{short}</span>
                 </Tooltip>
               ) : (
-                <span className="typo-code text-foreground">{'—'}</span>
+                <span className="typo-body text-foreground">{'—'}</span>
               )}
               {e.thinkingLevel && (
                 <span
@@ -254,9 +266,9 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
         sortFn: (a, b) => a.inputTokens - b.inputTokens,
         render: (e) =>
           e.inputTokens > 0 ? (
-            <Numeric value={e.inputTokens} unit="compact" language={language} align="right" className="typo-code text-foreground" />
+            <Numeric value={e.inputTokens} unit="compact" language={language} align="right" className="typo-body text-foreground" />
           ) : (
-            <span className="typo-code text-foreground">{'—'}</span>
+            <span className="typo-body text-foreground font-data">{'—'}</span>
           ),
       },
       {
@@ -268,9 +280,9 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
         sortFn: (a, b) => a.outputTokens - b.outputTokens,
         render: (e) =>
           e.outputTokens > 0 ? (
-            <Numeric value={e.outputTokens} unit="compact" language={language} align="right" className="typo-code text-foreground" />
+            <Numeric value={e.outputTokens} unit="compact" language={language} align="right" className="typo-body text-foreground" />
           ) : (
-            <span className="typo-code text-foreground">{'—'}</span>
+            <span className="typo-body text-foreground font-data">{'—'}</span>
           ),
       },
       {
@@ -284,9 +296,9 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
           // A cost the run never recorded is an em dash, not $0 — see
           // `GlobalExecutionListItem::cost_usd`.
           e.costUsd !== null && e.costUsd > 0 ? (
-            <Numeric value={e.costUsd} unit="usd" language={language} align="right" className="typo-code text-foreground" />
+            <Numeric value={e.costUsd} unit="usd" language={language} align="right" className="typo-body text-foreground" />
           ) : (
-            <span className="typo-code text-foreground">{'—'}</span>
+            <span className="typo-body text-foreground font-data">{'—'}</span>
           ),
       },
     ],
@@ -295,37 +307,33 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
-      <div className="flex items-center justify-between gap-2 px-4 md:px-6 py-2.5">
-        <div className="flex items-center gap-3 min-w-0">
-          {headerSwitch}
-          <span className="typo-caption text-foreground truncate">
-            {tx(t.overview.activity.showing, { count: rows.length, total: globalExecutionCounts.total })}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <SegmentedTabs<TimeWindow>
-            tabs={windowTabs}
-            activeTab={timeWindow}
-            onTabChange={setTimeWindow}
-            variant="segment"
-            size="sm"
-            fullWidth={false}
-            ariaLabel={t.overview.usage_filters.time_range_label}
-          />
-          <button
-            type="button"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="p-1.5 rounded-interactive text-foreground hover:bg-primary/8 disabled:opacity-60 focus-ring"
-            title={t.common.refresh}
-            aria-label={t.common.refresh}
-          >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
+      {/* This lens's control band, on the geometry Activity's FilterBar uses. */}
+      <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-2 flex-shrink-0">
+        <SegmentedTabs<TimeWindow>
+          tabs={windowTabs}
+          activeTab={timeWindow}
+          onTabChange={setTimeWindow}
+          variant="segment"
+          size="sm"
+          fullWidth={false}
+          ariaLabel={t.overview.usage_filters.time_range_label}
+        />
+        <button
+          type="button"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors border text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border-primary/15 disabled:opacity-60"
+          title={t.common.refresh}
+        >
+          <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <span className="typo-body">{t.common.refresh}</span>
+        </button>
+        <span className="ml-auto typo-code text-foreground">
+          {tx(t.overview.activity.showing, { count: rows.length, total: globalExecutionCounts.total })}
+        </span>
       </div>
 
-      <div className="flex-1 min-h-0 flex flex-col mx-4 md:mx-6 mb-3">
+      <div className="flex-1 min-h-0 flex flex-col mx-4 md:mx-6 my-3">
         <UnifiedTable<GlobalExecutionListItem>
           columns={columns}
           data={rows}
