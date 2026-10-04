@@ -99,7 +99,7 @@ const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
   //   and the deployTarget slice its health monitor reads).
   // agent_lab / eval_strategies — agents/sub_lab.
   personas: [
-    'agents', 'director', 'matrix_v3', 'design', 'execution', 'models', 'templates',
+    'agents', 'director', 'design', 'execution', 'models', 'templates',
     'foundry', 'recipes_catalog', 'deployment', 'deploy_errors', 'agent_lab', 'eval_strategies',
   ],
   events: ['triggers', 'event_types', 'alerts', 'schedules', 'shared'],

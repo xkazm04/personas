@@ -69,6 +69,19 @@ const UNREFERENCED_SECTIONS = {
   // `deliberation` left this registry 2026-09-01: DeliberationRail (Monitor →
   // Conversations) now renders its status captions from t.deliberation.status_*,
   // so the section is live again and rides in BASE_SECTIONS beside `monitor`.
+  matrix_v3:
+    '2026-10-04 - 88 keys, zero call sites. The persona build MATRIX layout; its last ' +
+    'use went with 0cf0d814e6 (2026-09-23, "Sheet - Cinema is the only persona build ' +
+    'layout"), which left the strings and the route preload behind. Removed from ' +
+    'ROUTE_SECTIONS the same day this entry was written, so a dead section is no longer ' +
+    'fetched on a live route. Retire candidate.',
+  media_studio:
+    '2026-10-04 - 176 keys, zero call sites. Retired with the Artist plugin in 0697f13438 ' +
+    '(2026-09-15, "remove the Artist and Research Lab plugins, client and server"); the ' +
+    'strings were not removed with it. Retire candidate.',
+  research_lab:
+    '2026-10-04 - 184 keys, zero call sites. Retired in the same commit as media_studio, ' +
+    '0697f13438 (2026-09-15). Retire candidate.',
   planner:
     '2026-08-09 — 67 keys, zero call sites. A standalone Planner page (nav_label, ' +
     'page_title, steps_heading, …) that no longer exists; the surviving planner UI is ' +
