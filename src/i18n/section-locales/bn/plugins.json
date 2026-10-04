@@ -2499,7 +2499,8 @@
     "_comment_skills_applied_partial": "Partial toast after the fan-out; the button now retries the misses",
     "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
     "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
-    "state_queued": "সারিতে"
+    "state_queued": "সারিতে",
+    "state_expired": "অপেক্ষার সময় শেষ"
   },
   "obsidian_brain_desc": "নলেজ রিট্রিভাল, নোট ব্রাউজিং ও সিঙ্কের জন্য আপনার Obsidian ভল্ট সংযুক্ত করুন।",
   "obsidian_brain_label": "Obsidian Brain",

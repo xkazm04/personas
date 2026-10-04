@@ -2499,7 +2499,8 @@
     "_comment_skills_applied_partial": "Partial toast after the fan-out; the button now retries the misses",
     "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
     "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
-    "state_queued": "Đang chờ"
+    "state_queued": "Đang chờ",
+    "state_expired": "Hết hạn chờ"
   },
   "obsidian_brain_desc": "Kết nối vault Obsidian để truy xuất kiến thức, duyệt ghi chú và đồng bộ.",
   "obsidian_brain_label": "Obsidian Brain",

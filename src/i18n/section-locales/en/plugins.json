@@ -144,6 +144,7 @@
     "state_idle": "Idle",
     "state_stale": "Stale",
     "state_exited": "Exited",
+    "state_expired": "Expired",
     "sessions_one": "{count} session",
     "sessions_other": "{count} sessions",
     "no_project_hint": "No project selected — pick one in Dev Tools → Projects",
