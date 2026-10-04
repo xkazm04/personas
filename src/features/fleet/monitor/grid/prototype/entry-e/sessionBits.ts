@@ -2,7 +2,7 @@
 // lean Runway window or the compact two-row line of Lanes and Classic).
 
 import type { LucideIcon } from 'lucide-react';
-import { Activity, Check, CircleDashed, Circle, Clock, Hourglass, MessageSquare, Moon, Square } from 'lucide-react';
+import { Activity, Check, CircleDashed, Circle, Clock, Hourglass, MessageSquare, Moon, Square, TimerOff } from 'lucide-react';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { useSessionFacts } from '../shared';
@@ -20,6 +20,7 @@ const STATE_ICON: Record<FleetSessionState, LucideIcon> = {
   finished: Check,
   hibernated: Moon,
   exited: Square,
+  expired: TimerOff,
 };
 
 export const sessionStateIcon = (s: FleetSessionState): LucideIcon => STATE_ICON[s];

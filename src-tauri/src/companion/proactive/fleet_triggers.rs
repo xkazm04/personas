@@ -97,7 +97,14 @@ pub fn fleet_attention() -> Vec<Nudge> {
             // while no completion lane existed at all.
             // Queued: nothing has happened yet — the queue's own event
             // (`fleet-queue-changed`) is the surface for a waiting dispatch.
-            FleetSessionState::Queued
+            //
+            // Expired is silent HERE for a reason, not by oversight: the row
+            // never ran, so there is no log to offer and no failure to
+            // diagnose, which is all this lane knows how to say. Whether a
+            // retired dispatch deserves a nudge of its own is the reaper
+            // package's call, and it owns the expiry event to hang it on.
+            FleetSessionState::Expired
+            | FleetSessionState::Queued
             | FleetSessionState::Spawning
             | FleetSessionState::Running
             | FleetSessionState::Idle

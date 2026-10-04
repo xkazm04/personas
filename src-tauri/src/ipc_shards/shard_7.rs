@@ -274,6 +274,7 @@ pub(super) fn shard(
         commands::radio::radio_track_ended,
         commands::radio::radio_fetch_somafm_metadata,
         // Fleet (DEV-only Claude Code session aggregator)
+        commands::fleet::athena_flag::fleet_set_athena_flag,
         commands::fleet::commands::fleet_spawn_session,
         commands::fleet::commands::fleet_write_input,
         commands::fleet::commands::fleet_resize_session,
@@ -305,6 +306,8 @@ pub(super) fn shard(
         commands::fleet::queue::fleet_queue_reorder,
         commands::fleet::queue::fleet_queue_cancel,
         commands::fleet::queue::fleet_queue_start_now,
+        commands::fleet::queue_lanes::fleet_queue_set_lane,
+        commands::fleet::queue_lanes::fleet_queue_reserve_band,
         commands::fleet::transcript_read::fleet_read_transcript,
         commands::fleet::transcript_read::fleet_recent_transcripts,
         commands::fleet::transcript_read::fleet_session_metadata,

@@ -1220,6 +1220,8 @@ fn state_label(s: FleetSessionState) -> &'static str {
         FleetSessionState::Finished => "task complete",
         FleetSessionState::Hibernated => "hibernated",
         FleetSessionState::Exited => "exited",
+        // Distinct from "exited": there was no run to end.
+        FleetSessionState::Expired => "expired in the queue without running",
     }
 }
 

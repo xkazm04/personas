@@ -26,7 +26,7 @@ use std::sync::{Arc, Mutex, OnceLock};
 
 use tauri::{Emitter, State};
 
-use crate::commands::fleet::types::FleetSessionState;
+use crate::commands::fleet::types::{FleetSession, FleetSessionState};
 use crate::companion::brain::fleet::{record_fleet_event, FleetEpisodeInput, FleetEventKind};
 use crate::companion::orchestration::operative_memory::OperationStatus;
 use crate::error::AppError;
@@ -958,6 +958,21 @@ fn orchestrate_session(
         );
         return;
     }
+    // The grant answers AT the checkpoint, after the trigger has fired and the
+    // situation has been named — never before it. A withheld grant is a
+    // recorded verdict ("this would have woken her"), which is the whole point
+    // of answering here instead of filtering the trigger away upstream.
+    if !athena_grant_holds_for(session_id) {
+        debug_log::athena(
+            session_id,
+            "skipped",
+            &format!(
+                "no Athena grant on this session · situation={} · flag it on the tile (or dispatch it as Athena) to let her act",
+                situation.label()
+            ),
+        );
+        return;
+    }
     // Mechanical protocol first — a FLEET:DONE / FLEET:NEXT recap cue resolves
     // this wake without an Athena turn (and without consuming the throttle).
     if matches!(situation, FleetSituation::AwaitingInput) && handle_mechanical_cue(app, session_id)
@@ -1315,6 +1330,55 @@ pub fn claude_session_id_for(session_id: &str) -> Option<String> {
         .and_then(|s| s.claude_session_id)
 }
 
+// ── The Athena grant (spark `monitor-companions`) ────────────────────────
+//
+// Autonomous mode used to be a GLOBAL master switch: every fleet path it gated
+// iterated the WHOLE fleet. It is now a grant SCOPED to the sessions the
+// operator (or Athena's own dispatch) marked as hers. The scoping rule has
+// exactly ONE definition — `FleetSessionInner::athena_flag_resolved`
+// (`commands::fleet::registry`), surfaced on the DTO as `athena_flagged`.
+// Nothing in this module re-derives it from `origin`; the helpers below are
+// the only readers, and they read the resolver's output.
+//
+// Shape matters (registry standard `hitl-approval/unattended-mode`, rule
+// "through the gate, not around it"): a loop FILTERS ITS CANDIDATE SET and
+// keeps its per-candidate evaluation intact, and the per-session checkpoint
+// (`orchestrate_session`) ANSWERS at the checkpoint with a logged verdict
+// rather than returning before the trigger has been evaluated. That is what
+// keeps "what would have asked me?" answerable.
+
+/// Does Athena hold the grant on this session? Reads the ONE resolver's output
+/// and nothing else — `FleetSession::athena_flagged` IS
+/// `FleetSessionInner::athena_flag_resolved()` (`registry.rs`, `to_dto`), which
+/// already folds in `origin == "athena"`.
+pub(crate) fn athena_grant_holds(s: &FleetSession) -> bool {
+    s.athena_flagged
+}
+
+/// The candidate set a fleet-session loop may iterate under the grant. Filters
+/// the set; it does NOT short-circuit the loop, so each surviving candidate is
+/// still evaluated by the loop's own rules.
+pub(crate) fn athena_granted_sessions(all: Vec<FleetSession>) -> Vec<FleetSession> {
+    all.into_iter().filter(athena_grant_holds).collect()
+}
+
+/// The grant verdict for a bare session id, against a given set of sessions.
+/// Fail-closed: an id no row in the set answers to holds no grant.
+pub(crate) fn athena_grant_holds_in(all: &[FleetSession], session_id: &str) -> bool {
+    all.iter()
+        .any(|s| s.id == session_id && athena_grant_holds(s))
+}
+
+/// The grant verdict for a bare session id against the LIVE registry — for the
+/// paths that hold an id rather than a DTO (the operative-memory loop, the
+/// approval autopilot).
+pub(crate) fn athena_grant_holds_for(session_id: &str) -> bool {
+    athena_grant_holds_in(
+        &crate::commands::fleet::registry::registry().list_dto(),
+        session_id,
+    )
+}
+
 /// How long a session must sit in `AwaitingInput` before the proactive tick
 /// re-assesses it. Below this, the hook-driven `orchestrate_on_awaiting` (fired
 /// on the AwaitingInput transition) is the authoritative handler; this timer
@@ -1346,7 +1410,9 @@ pub fn reassess_stale_awaiting(app: &tauri::AppHandle) {
         return;
     }
     let now = crate::commands::fleet::registry::now_ms();
-    for s in crate::commands::fleet::registry::registry().list_dto() {
+    // Scoped to the grant: the candidate SET shrinks, every surviving
+    // candidate is still evaluated by the rules below exactly as before.
+    for s in athena_granted_sessions(crate::commands::fleet::registry::registry().list_dto()) {
         // Stale is included deliberately (2026-07-24): a session parked on a
         // question whose wake was lost (limit outage, dropped turn) decays
         // AwaitingInput → Stale, and an AwaitingInput-only sweep never sees it
@@ -1405,10 +1471,20 @@ pub fn reassess_stuck_sessions(app: &tauri::AppHandle) {
             continue;
         }
         for s in &op.sessions {
+            // Scoped to the grant. This loop's candidates come from operative
+            // memory rather than the registry, so the filter is per-candidate
+            // by id; the evaluation below is untouched.
+            if !athena_grant_holds_for(&s.fleet_session_id) {
+                continue;
+            }
             if matches!(
                 s.last_state,
                 crate::commands::fleet::types::FleetSessionState::Exited
                     | crate::commands::fleet::types::FleetSessionState::Idle
+                    // `Expired` = queued so long it was retired WITHOUT ever
+                    // running. There is no screen, no failure and no process
+                    // to unstick, so it is never a recovery candidate.
+                    | crate::commands::fleet::types::FleetSessionState::Expired
             ) {
                 continue; // not a live, working session
             }
@@ -1470,7 +1546,8 @@ pub fn reassess_idle_needs_next(app: &tauri::AppHandle) {
     }
     let now = crate::commands::fleet::registry::now_ms();
     let mem = crate::companion::orchestration::operative_memory::memory();
-    for s in crate::commands::fleet::registry::registry().list_dto() {
+    // Scoped to the grant (see `athena_granted_sessions`).
+    for s in athena_granted_sessions(crate::commands::fleet::registry::registry().list_dto()) {
         if !matches!(
             s.state,
             crate::commands::fleet::types::FleetSessionState::Idle
@@ -2536,5 +2613,133 @@ mod assessment_generation_tests {
 
         // Leave shared statics clean for any other test in this binary.
         ACTIVE_GENERATION.store(0, Ordering::SeqCst);
+    }
+}
+
+#[cfg(test)]
+mod athena_grant_tests {
+    //! The grant's scoping rule, exercised through a REAL `FleetRegistry` so
+    //! `list_dto()` runs the one resolver
+    //! (`FleetSessionInner::athena_flag_resolved`) rather than a copy of it.
+    use super::*;
+    use crate::commands::fleet::registry::{
+        FleetRegistry, FleetSessionInner, OutputRing, OUTPUT_RING_CAP,
+    };
+    use crate::commands::fleet::types::FleetSessionMode;
+    use std::sync::atomic::AtomicBool;
+
+    fn inner(id: &str, origin: Option<&str>, flagged: bool) -> FleetSessionInner {
+        FleetSessionInner {
+            id: id.into(),
+            claude_session_id: Some(format!("cc-{id}")),
+            cwd: std::path::PathBuf::from("C:/repo/personas"),
+            project_label: "personas".into(),
+            name: Some(id.into()),
+            title: None,
+            athena_active_until_ms: 0,
+            args: vec![],
+            mode: FleetSessionMode::Interactive,
+            cols: 120,
+            rows: 32,
+            state: FleetSessionState::AwaitingInput,
+            last_activity_ms: 0,
+            last_pty_output_ms: 0,
+            last_grew_ms: 0,
+            created_at_ms: 0,
+            child_pid: None,
+            exit_code: None,
+            state_reason: None,
+            limit_reset_at_ms: 0,
+            run_id: None,
+            run_label: None,
+            stale_kind: None,
+            queue_rank: None,
+            queued_at_ms: None,
+            not_before_ms: None,
+            origin: origin.map(str::to_string),
+            athena_flagged: flagged,
+            lane: None,
+            reserved_band: None,
+            persona_id: None,
+            goal_id: None,
+            cycle_index: None,
+            admission: Default::default(),
+            master: Mutex::new(None),
+            writer: Mutex::new(None),
+            hibernating: AtomicBool::new(false),
+            dozing: false,
+            reaped: false,
+            output: Arc::new(Mutex::new(OutputRing::new(OUTPUT_RING_CAP))),
+            killer: None,
+        }
+    }
+
+    fn candidates(reg: &FleetRegistry) -> Vec<String> {
+        athena_granted_sessions(reg.list_dto())
+            .into_iter()
+            .map(|s| s.id)
+            .collect()
+    }
+
+    #[test]
+    fn an_unflagged_user_session_is_no_candidate_for_the_reassess_loops() {
+        let reg = FleetRegistry::default();
+        // The operator's own CLI: no grant, no Athena origin.
+        reg.insert(inner("user-cli", Some("manual"), false));
+        // ...and one the operator DID hand to her, so the filter is proved to
+        // be selecting rather than just returning nothing.
+        reg.insert(inner("granted", Some("manual"), true));
+
+        let ids = candidates(&reg);
+        assert_eq!(ids, vec!["granted".to_string()]);
+
+        // ...and the by-id door the operative-memory loop and the approval
+        // autopilot use answers the same way, including fail-closed on an id
+        // nothing answers to.
+        let all = reg.list_dto();
+        assert!(!athena_grant_holds_in(&all, "user-cli"));
+        assert!(athena_grant_holds_in(&all, "granted"));
+        assert!(!athena_grant_holds_in(&all, "hallucinated"));
+    }
+
+    #[test]
+    fn an_athena_dispatched_session_needs_no_explicit_flag() {
+        let reg = FleetRegistry::default();
+        // `DispatchOrigin::Athena`'s token, stamped by `fleet_spawn` /
+        // `fleet_dispatch`. The stored grant is still 0 — the resolver is what
+        // makes this session hers.
+        reg.insert(inner("hers", Some("athena"), false));
+        reg.insert(inner("autopilot", Some("autopilot"), false));
+
+        let dto = reg.list_dto();
+        let hers = dto.iter().find(|s| s.id == "hers").unwrap();
+        assert!(athena_grant_holds(hers), "origin=athena IS a grant");
+        assert_eq!(candidates(&reg), vec!["hers".to_string()]);
+    }
+
+    #[test]
+    fn clearing_the_flag_drops_the_session_from_the_next_pass() {
+        let reg = FleetRegistry::default();
+        reg.insert(inner("running", Some("manual"), true));
+        assert_eq!(candidates(&reg), vec!["running".to_string()]);
+
+        assert!(reg.set_athena_flagged("running", false));
+        assert!(
+            candidates(&reg).is_empty(),
+            "a revoked grant must stop the very next pass"
+        );
+    }
+
+    #[test]
+    fn a_revoked_flag_cannot_be_revived_by_a_non_athena_origin() {
+        // Guards the inverse of the rule above: only `origin == "athena"`
+        // survives a revoke, because only that origin IS a grant.
+        let reg = FleetRegistry::default();
+        reg.insert(inner("hers", Some("athena"), true));
+        reg.insert(inner("theirs", Some("autopilot"), true));
+        assert!(reg.set_athena_flagged("hers", false));
+        assert!(reg.set_athena_flagged("theirs", false));
+
+        assert_eq!(candidates(&reg), vec!["hers".to_string()]);
     }
 }

@@ -16,6 +16,7 @@ pub(crate) fn test_persona() -> Persona {
         sensitive: false,
         headless: false,
         starred: false,
+        athena_auto_flag: false,
         max_concurrent: 2,
         timeout_ms: 300000,
         notification_channels: None,

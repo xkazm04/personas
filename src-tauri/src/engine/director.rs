@@ -2575,6 +2575,7 @@ mod tests {
             sensitive: false,
             headless: false,
             starred: false,
+            athena_auto_flag: false,
             max_concurrent: 1,
             timeout_ms: 300_000,
             model_profile: None,

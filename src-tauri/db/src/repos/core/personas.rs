@@ -362,7 +362,7 @@ enum ProfileMode {
 /// `last_modified_device`. (`core_profile` joined the projection with the
 /// living-agent spine — the Life tab reads the Core off every row.)
 const FULL_COLUMNS: &str = "id, project_id, name, description, system_prompt, \
-     structured_prompt, icon, color, enabled, sensitive, headless, starred, \
+     structured_prompt, icon, color, enabled, sensitive, headless, starred, athena_auto_flag, \
      max_concurrent, timeout_ms, notification_channels, last_design_result, \
      last_test_report, model_profile, max_budget_usd, max_turns, design_context, \
      home_team_id, source_review_id, trust_level, trust_origin, trust_verified_at, \
@@ -395,6 +395,7 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
         sensitive: row.get::<_, i32>("sensitive")? != 0,
         headless: row.get::<_, i32>("headless").unwrap_or(0) != 0,
         starred: row.get::<_, i32>("starred").unwrap_or(0) != 0,
+        athena_auto_flag: row.get::<_, i32>("athena_auto_flag").unwrap_or(0) != 0,
         max_concurrent: row.get("max_concurrent")?,
         timeout_ms: row.get("timeout_ms")?,
         notification_channels,
@@ -537,7 +538,7 @@ pub fn get_all_by_lifecycle(pool: &DbPool, stages: &[&str]) -> Result<Vec<Person
 /// `notification_channels`, `parameters`) so they are never read from SQLite
 /// nor serialized over IPC for the list view.
 const LEAN_LIST_COLUMNS: &str = "id, project_id, name, description, icon, color, \
-     enabled, sensitive, headless, starred, max_concurrent, timeout_ms, \
+     enabled, sensitive, headless, starred, athena_auto_flag, max_concurrent, timeout_ms, \
      last_design_result, model_profile, max_budget_usd, max_turns, design_context, \
      home_team_id, source_review_id, trust_level, trust_origin, trust_verified_at, \
      trust_score, gateway_exposure, template_category, cli_awareness_enabled, \
@@ -565,6 +566,7 @@ fn row_to_persona_lean(row: &Row) -> rusqlite::Result<Persona> {
         sensitive: row.get::<_, i32>("sensitive")? != 0,
         headless: row.get::<_, i32>("headless").unwrap_or(0) != 0,
         starred: row.get::<_, i32>("starred").unwrap_or(0) != 0,
+        athena_auto_flag: row.get::<_, i32>("athena_auto_flag").unwrap_or(0) != 0,
         max_concurrent: row.get("max_concurrent")?,
         timeout_ms: row.get("timeout_ms")?,
         notification_channels: None,
@@ -813,6 +815,22 @@ pub fn set_starred(pool: &DbPool, id: &str, starred: bool) -> Result<bool, AppEr
         return Err(AppError::NotFound(format!("persona {id}")));
     }
     Ok(starred)
+}
+
+/// Set a persona's Athena auto-flag (the default that stamps future sessions).
+/// Returns the new value.
+pub fn set_athena_auto_flag(pool: &DbPool, id: &str, enabled: bool) -> Result<bool, AppError> {
+    timed_query!("personas", "personas::set_athena_auto_flag", {
+        let conn = pool.conn("personas::set_athena_auto_flag")?;
+        let updated = conn.execute(
+            "UPDATE personas SET athena_auto_flag = ?1, updated_at = datetime('now') WHERE id = ?2",
+            rusqlite::params![if enabled { 1 } else { 0 }, id],
+        )?;
+        if updated == 0 {
+            return Err(AppError::NotFound(format!("persona {id}")));
+        }
+        Ok(enabled)
+    })
 }
 
 /// Flip a persona's runtime switch and report whether it CHANGED.

@@ -16,6 +16,7 @@
 //! DEV-gated. Keeps ts-rs output and command-name codegen stable across
 //! build profiles.
 
+pub mod athena_flag;
 pub mod autopilot;
 /// Performance gates over the scale-critical hot paths. Test-only: it carries no
 /// production callers by design, so it costs nothing in a shipped build.
@@ -42,6 +43,7 @@ pub mod persist;
 pub mod process_scan;
 pub mod pty;
 pub mod queue;
+pub mod queue_lanes;
 pub mod registry;
 pub mod remote_exec;
 pub mod run;

@@ -8,6 +8,7 @@ import {
   Sparkle,
   Moon,
   ListOrdered,
+  TimerOff,
 } from 'lucide-react';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import type { FleetLabelKey } from '../FleetStatusDots';
@@ -33,6 +34,7 @@ export const GROUP_ORDER = [
   { id: 'finished',       labelKey: 'state_finished',       icon: Flag },
   { id: 'hibernated',     labelKey: 'state_hibernated',     icon: Moon },
   { id: 'exited',         labelKey: 'state_exited',         icon: Ban },
+  { id: 'expired',        labelKey: 'state_expired',        icon: TimerOff },
 ] as const satisfies ReadonlyArray<FleetGroupMeta>;
 
 export type FleetGroup = (typeof GROUP_ORDER)[number];

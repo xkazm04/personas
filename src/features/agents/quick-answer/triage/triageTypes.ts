@@ -219,6 +219,23 @@ export interface TriageInput {
   deferred: boolean;
 }
 
+/**
+ * One option of a multi-choice decision carried by a triage item. Lifted from
+ * `DecisionItem` in `sub_manual-review/components/reviewFocusHelpers.tsx`
+ * (same fields, same snake_case wire names); the two converge in a later package.
+ * Named `...Option` because `TriageDecision` is already the verdict a variant
+ * hands back.
+ */
+export interface TriageDecisionOption {
+  id: string;
+  label: string;
+  description?: string;
+  category?: string;
+  image_url?: string;
+  gallery_image_ref?: string;
+  preview_url?: string;
+}
+
 /** The unified triage item — what every variant renders. */
 export interface TriageItem {
   /** Unique across sources: `${kind}:${sourceId}`. Queue keys use this. */
@@ -226,6 +243,12 @@ export interface TriageItem {
   /** The id the backend knows. Verdict dispatch uses this. */
   sourceId: string;
   kind: TriageKind;
+  /** Options the reviewer chooses between, when the item is a decision. */
+  decisions?: TriageDecisionOption[];
+  /** Raising persona's icon token, when a persona raised the item. */
+  personaIcon?: string | null;
+  /** Raising persona's id, when a persona raised the item. */
+  personaId?: string | null;
   title: string;
   /** The long-form case being judged. Markdown. */
   body: string;

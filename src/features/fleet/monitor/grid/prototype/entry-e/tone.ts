@@ -41,6 +41,10 @@ export function sessionLamp(state: FleetSessionState): Lamp {
     case 'idle':
     case 'finished':
       return { tone: 'ok', lit: false };
+    // `expired` is dark like `exited`, but it is named: the lamp is off
+    // because the session never ran, not because the default caught it.
+    case 'expired':
+      return { tone: 'off', lit: false };
     default:
       return { tone: 'off', lit: false };
   }

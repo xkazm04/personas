@@ -42,6 +42,10 @@ export function deriveAxes(state: FleetSessionState): { console: ConsoleAxis; bu
     case 'finished':       return { console: 'alive',      business: 'finished' };
     case 'hibernated':     return { console: 'hibernated', business: 'none' };
     case 'exited':         return { console: 'exited',     business: 'none' };
+    // Expired never held a process, so the console axis reads the same as
+    // exited (nothing is alive) and the business axis stays silent: there
+    // was no work to be idle, working or stale about.
+    case 'expired':        return { console: 'exited',     business: 'none' };
   }
 }
 

@@ -96,6 +96,7 @@ function personaRow(team: number, slot: number): Persona {
     sensitive: false,
     headless: false,
     starred: false,
+    athena_auto_flag: false,
     max_concurrent: 1,
     timeout_ms: 600_000,
     notification_channels: null,

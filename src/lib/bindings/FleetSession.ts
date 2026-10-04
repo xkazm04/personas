@@ -151,6 +151,24 @@ notBeforeMs: number | null,
  */
 origin: string | null, 
 /**
+ * The RESOLVED Athena grant (`FleetSessionInner::athena_flag_resolved`):
+ * the stored flag OR an Athena-dispatched session. Never the raw column.
+ */
+athenaFlagged: boolean, 
+/**
+ * Queue LANE (migration e58). 1-based like `rank`; `None` means no lane,
+ * which is NOT lane 0. A lane is an ordering device - N strands that each
+ * move to the queue's tail after one of their tasks finishes - and never
+ * a concurrency width.
+ */
+lane: number | null, 
+/**
+ * The band this row holds a reservation in (migration e58). `None` means
+ * it holds none. Survives `renumber_queue`, which is the whole point:
+ * ranks are rewritten wholesale, a reservation must not be.
+ */
+reservedBand: number | null, 
+/**
  * The persona this dispatch works for, when a persona dispatched it.
  */
 personaId: string | null, 

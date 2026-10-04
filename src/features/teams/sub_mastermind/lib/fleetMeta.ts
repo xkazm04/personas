@@ -15,4 +15,7 @@ export const fleetStateLabel = (t: Translations, s: string): string =>
     stale: t.plugins.fleet.state_stale,
     hibernated: t.plugins.fleet.state_hibernated,
     exited: t.plugins.fleet.state_exited,
+    queued: t.plugins.fleet.state_queued,
+    finished: t.plugins.fleet.state_finished,
+    expired: t.plugins.fleet.state_expired,
   })[s] ?? s;

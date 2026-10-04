@@ -1,4 +1,4 @@
-import { Ban, CheckCircle2, Clock, Moon, Sparkle } from 'lucide-react';
+import { Ban, CheckCircle2, Clock, Moon, Sparkle, TimerOff } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -37,6 +37,9 @@ const STATE_VIS: Partial<
   finished: { Icon: CheckCircle2, labelKey: 'state_finished', accent: 'text-teal-400' },
   hibernated: { Icon: Moon, labelKey: 'state_hibernated', accent: 'text-indigo-400' },
   exited: { Icon: Ban, labelKey: 'state_exited', accent: 'text-foreground' },
+  // Without this row the `?? STATE_VIS.idle!` below would paint a retired
+  // dispatch as a healthy idle session, emerald tick and all.
+  expired: { Icon: TimerOff, labelKey: 'state_expired', accent: 'text-foreground' },
 };
 
 export function FleetTileStatusBlock({ session: s }: { session: FleetSession }) {

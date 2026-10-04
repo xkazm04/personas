@@ -21,7 +21,12 @@ warnings: Array<string>, id: string, project_id: string, name: string, descripti
  * Per-persona star: marks the persona as in the Director's coaching scope.
  * Promoted from a localStorage-only favorite to a durable column.
  */
-starred: boolean, max_concurrent: number, timeout_ms: number, notification_channels: string | null, last_design_result: string | null, 
+starred: boolean, 
+/**
+ * Default that stamps FUTURE fleet sessions of this persona as Athena-flagged
+ * (migration e57). Grants nothing to a session that already exists.
+ */
+athena_auto_flag: boolean, max_concurrent: number, timeout_ms: number, notification_channels: string | null, last_design_result: string | null, 
 /**
  * JSON-encoded report from the most recent `test_build_draft` run for
  * this persona (A-grade Phase 2, 2026-05-03). Shape matches the value

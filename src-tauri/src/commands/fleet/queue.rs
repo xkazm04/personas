@@ -1069,6 +1069,10 @@ fn spawn_now(
         req.goal_id.clone(),
         req.cycle_index,
     );
+    // ... and, if its persona carries the Athena auto-flag default, the grant
+    // (see `stamp_athena_auto_flag`). Same place, same moment as the rest of
+    // the row's origin facts.
+    stamp_athena_auto_flag(app, &id, req.persona_id.as_deref());
     // ... and its charge: the live set's cost is summed from the rows, so a
     // session that never queued (or was started over the budgets by the
     // operator) is counted in `used` like any other. A promoted row already
@@ -1170,6 +1174,9 @@ fn queued_inner(
         queued_at_ms: Some(now),
         not_before_ms: req.not_before_ms,
         origin: Some(req.origin.token().to_string()),
+        athena_flagged: false,
+        lane: None,
+        reserved_band: None,
         persona_id: req.persona_id.clone(),
         goal_id: req.goal_id.clone(),
         cycle_index: req.cycle_index,
@@ -1183,6 +1190,31 @@ fn queued_inner(
         reaped: false,
         output: Arc::new(Mutex::new(OutputRing::new(OUTPUT_RING_CAP))),
         killer: None,
+    }
+}
+
+/// A persona's `athena_auto_flag` (migration e57) is a DEFAULT, not a grant:
+/// it stamps the sessions that persona starts from now on, and says nothing
+/// about the ones already running. This is where it lands — the two doors a
+/// dispatch is born through (`enqueue` for a queued row, `spawn_now` for an
+/// immediate start), beside the rest of the row's origin facts.
+///
+/// Never clears: the flag is only ever set here, so a dispatch of an
+/// unflagged persona leaves a row the operator already flagged by hand alone.
+/// Best-effort — an unreadable pool or a missing persona is "no default",
+/// never an accidental grant.
+fn stamp_athena_auto_flag(app: &AppHandle, session_id: &str, persona_id: Option<&str>) {
+    let Some(persona_id) = persona_id.filter(|p| !p.trim().is_empty()) else {
+        return;
+    };
+    let Some(pool) = pool_of(app) else {
+        return;
+    };
+    let auto = crate::db::repos::core::personas::get_by_id(&pool, persona_id)
+        .map(|p| p.athena_auto_flag)
+        .unwrap_or(false);
+    if auto {
+        registry().set_athena_flagged(session_id, true);
     }
 }
 
@@ -1219,6 +1251,9 @@ fn enqueue(
     // Durable by contract — a queue that cannot be persisted is not a queue.
     pool_or_err(app)?;
     let (id, rank) = enqueue_into(registry(), req, now_ms(), cap, running);
+    // Before the emit, which is what persists the row: a session born flagged
+    // must carry the grant into its FIRST durable write, not acquire it later.
+    stamp_athena_auto_flag(app, &id, req.persona_id.as_deref());
     super::pty::emit_registry_changed(app, "added", &id);
     emit_queue_changed(app, "enqueued", Some(&id));
     Ok((id, rank))
@@ -1648,7 +1683,7 @@ pub fn on_cap_changed(app: &AppHandle) {
     schedule_promote_head(app);
 }
 
-fn emit_queue_changed(app: &AppHandle, kind: &str, session_id: Option<&str>) {
+pub(super) fn emit_queue_changed(app: &AppHandle, kind: &str, session_id: Option<&str>) {
     if let Err(e) = app.emit(
         event_name::FLEET_QUEUE_CHANGED,
         QueueChangedPayload {
@@ -1828,7 +1863,10 @@ fn build_snapshot_with(
     }
 }
 
-async fn snapshot(app: &AppHandle, pool: DbPool) -> Result<FleetQueueSnapshot, AppError> {
+pub(super) async fn snapshot(
+    app: &AppHandle,
+    pool: DbPool,
+) -> Result<FleetQueueSnapshot, AppError> {
     let _ = app;
     let (cap, enabled, durations) = tokio::task::spawn_blocking(move || {
         let cap = cap(&pool);

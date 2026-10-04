@@ -23,12 +23,13 @@ export const STATE_GLYPH: Record<ActivityState, { tone: Tone; glyph: Glyph }> = 
   finished: { tone: 'success', glyph: 'solid' },
   hibernated: { tone: 'neutral', glyph: 'soft' },
   exited: { tone: 'neutral', glyph: 'hollow' },
+  expired: { tone: 'neutral', glyph: 'hollow' },
   gone: { tone: 'neutral', glyph: 'hollow' },
 };
 
 /** The variant's order for the state filter; only states present in the data are offered. */
 export const STATE_ORDER: readonly ActivityState[] = [
-  'awaiting_input', 'running', 'spawning', 'queued', 'idle', 'stale', 'finished', 'hibernated', 'exited', 'gone',
+  'awaiting_input', 'running', 'spawning', 'queued', 'idle', 'stale', 'finished', 'hibernated', 'exited', 'expired', 'gone',
 ];
 
 /** Token claims, in the variant's order and roles. */

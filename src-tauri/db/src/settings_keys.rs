@@ -760,6 +760,31 @@ pub const FLEET_MAX_PARALLEL_SESSIONS: &str = "fleet.max_parallel_sessions";
 pub const FLEET_MAX_PARALLEL_SESSIONS_DEFAULT: u32 = 10;
 pub const FLEET_MAX_PARALLEL_SESSIONS_MIN: u32 = 1;
 pub const FLEET_MAX_PARALLEL_SESSIONS_MAX: u32 = 30;
+/// The fleet queue's DEPTH bound — how many rows may sit in `queued` at once.
+/// [`FLEET_MAX_PARALLEL_SESSIONS`] above bounds how many sessions may RUN;
+/// this bounds how many may WAIT. Without it the queue is unbounded and a
+/// dispatch loop can grow it without limit, since nothing today refuses an
+/// admission. Read by `commands::fleet::queue`.
+pub const FLEET_MAX_QUEUED_SESSIONS: &str = "fleet.max_queued_sessions";
+pub const FLEET_MAX_QUEUED_SESSIONS_DEFAULT: u32 = 100;
+pub const FLEET_MAX_QUEUED_SESSIONS_MIN: u32 = 10;
+pub const FLEET_MAX_QUEUED_SESSIONS_MAX: u32 = 2000;
+/// How long a row may sit in `queued` before it is retired unrun (→
+/// `FleetSessionState::Expired`). The queue has no reaper today, so a queued
+/// row can wait forever; this is the clock the reaper will read.
+///
+/// The 24 h default is deliberately FAR above `AGING_MAX_WAIT_MS` (30 min,
+/// `budgets.rs`), which is the window over which a waiting row's priority is
+/// aged upward. Aging and expiry both measure "how long has this waited" and
+/// would be easy to confuse; three orders of magnitude between them means a
+/// row that is merely being aged is never anywhere near expiry.
+pub const FLEET_QUEUED_EXPIRY_MS: &str = "fleet.queued_expiry_ms";
+/// Default for [`FLEET_QUEUED_EXPIRY_MS`] — 24 hours.
+pub const FLEET_QUEUED_EXPIRY_MS_DEFAULT: u32 = 86_400_000;
+/// Minimum for [`FLEET_QUEUED_EXPIRY_MS`] — 1 hour.
+pub const FLEET_QUEUED_EXPIRY_MS_MIN: u32 = 3_600_000;
+/// Maximum for [`FLEET_QUEUED_EXPIRY_MS`] — 30 days.
+pub const FLEET_QUEUED_EXPIRY_MS_MAX: u32 = 2_592_000_000;
 /// Whether the fleet's admission door charges the two DYNAMIC budgets (machine
 /// units gated by measured RAM, plan units scaled by Claude plan pace) on top
 /// of the static count cap above. On by default; off is the kill switch back
@@ -1399,6 +1424,8 @@ const ALLOWED_KEYS: &[&str] = &[
     FLEET_AUTOPILOT_MEMORY_STOP_PCT,
     FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB,
     FLEET_MAX_PARALLEL_SESSIONS,
+    FLEET_MAX_QUEUED_SESSIONS,
+    FLEET_QUEUED_EXPIRY_MS,
     FLEET_DYNAMIC_BUDGETS,
     COMPANION_DAILY_ROLLUP,
     COMPANION_DAILY_ROLLUP_HOUR,
@@ -1643,6 +1670,18 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
             value,
             FLEET_MAX_PARALLEL_SESSIONS_MIN,
             FLEET_MAX_PARALLEL_SESSIONS_MAX,
+        ),
+        FLEET_MAX_QUEUED_SESSIONS => validate_int_range(
+            key,
+            value,
+            FLEET_MAX_QUEUED_SESSIONS_MIN,
+            FLEET_MAX_QUEUED_SESSIONS_MAX,
+        ),
+        FLEET_QUEUED_EXPIRY_MS => validate_int_range(
+            key,
+            value,
+            FLEET_QUEUED_EXPIRY_MS_MIN,
+            FLEET_QUEUED_EXPIRY_MS_MAX,
         ),
         FLEET_AUTOPILOT_WEEKLY_TARGET_PCT => validate_int_range(
             key,
@@ -2135,6 +2174,8 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | FLEET_AUTOPILOT_MEMORY_STOP_PCT
         | FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB
         | FLEET_MAX_PARALLEL_SESSIONS
+        | FLEET_MAX_QUEUED_SESSIONS
+        | FLEET_QUEUED_EXPIRY_MS
         | FLEET_DYNAMIC_BUDGETS
         | EVENT_RETENTION_MAX_COUNT => "limits",
         // Data-retention windows.
@@ -2674,6 +2715,23 @@ mod tests {
         assert!(validate_value(FLEET_MAX_PARALLEL_SESSIONS, "30").is_ok());
         assert!(validate_value(FLEET_MAX_PARALLEL_SESSIONS, "0").is_err());
         assert!(validate_value(FLEET_MAX_PARALLEL_SESSIONS, "31").is_err());
+        // The queue's DEPTH bound and the expiry clock, registered in all
+        // three lists (allow-list, validator, audit category).
+        assert!(validate_key(FLEET_MAX_QUEUED_SESSIONS).is_ok());
+        assert!(validate_value(FLEET_MAX_QUEUED_SESSIONS, "10").is_ok());
+        assert!(validate_value(FLEET_MAX_QUEUED_SESSIONS, "2000").is_ok());
+        assert!(validate_value(FLEET_MAX_QUEUED_SESSIONS, "9").is_err());
+        assert!(validate_value(FLEET_MAX_QUEUED_SESSIONS, "2001").is_err());
+        assert_eq!(audit_category(FLEET_MAX_QUEUED_SESSIONS), Some("limits"));
+        assert!(validate_key(FLEET_QUEUED_EXPIRY_MS).is_ok());
+        assert!(validate_value(FLEET_QUEUED_EXPIRY_MS, "3600000").is_ok());
+        assert!(validate_value(FLEET_QUEUED_EXPIRY_MS, "2592000000").is_ok());
+        assert!(validate_value(FLEET_QUEUED_EXPIRY_MS, "3599999").is_err());
+        assert!(validate_value(FLEET_QUEUED_EXPIRY_MS, "2592000001").is_err());
+        assert_eq!(audit_category(FLEET_QUEUED_EXPIRY_MS), Some("limits"));
+        // 24 h expiry must stay far above AGING_MAX_WAIT_MS (30 min) so a row
+        // being aged is never mistaken for one about to be retired.
+        assert!(FLEET_QUEUED_EXPIRY_MS_DEFAULT > 30 * 60 * 1000 * 10);
         assert!(validate_value(FLEET_AUTOPILOT_WEEKLY_TARGET_PCT, "90").is_ok());
         assert!(validate_value(FLEET_AUTOPILOT_WEEKLY_TARGET_PCT, "5").is_err());
         assert!(validate_value(FLEET_AUTOPILOT_MEMORY_STOP_PCT, "75").is_ok());

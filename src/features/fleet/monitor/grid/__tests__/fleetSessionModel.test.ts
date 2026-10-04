@@ -38,9 +38,11 @@ describe('sessionStateMeta', () => {
 });
 
 describe('isLiveSession', () => {
-  it('keeps everything but exited', () => {
+  it('keeps everything but the two terminal states', () => {
     const states = FLEET_STATE_META.map((m) => m.id);
-    expect(states.filter((s) => !isLiveSession({ state: s }))).toEqual(['exited']);
+    // `expired` is terminal like `exited` and must not pad the live board:
+    // a row retired out of the queue never ran at all.
+    expect(states.filter((s) => !isLiveSession({ state: s })).sort()).toEqual(['exited', 'expired']);
   });
 });
 

@@ -24,6 +24,7 @@ const STATE_BAR: Record<FleetSessionState, { bg: string; labelKey: FleetLabelKey
   finished: { bg: 'bg-teal-400', labelKey: 'state_finished' },
   hibernated: { bg: 'bg-indigo-400', labelKey: 'state_hibernated' },
   exited: { bg: 'bg-zinc-500', labelKey: 'state_exited' },
+  expired: { bg: 'bg-stone-500', labelKey: 'state_expired' },
 };
 
 const MAX_TICKS = 10;

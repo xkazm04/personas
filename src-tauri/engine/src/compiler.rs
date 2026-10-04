@@ -209,6 +209,7 @@ mod tests {
             sensitive: false,
             headless: false,
             starred: false,
+            athena_auto_flag: false,
             max_concurrent: 1,
             timeout_ms: 300000,
             notification_channels: None,

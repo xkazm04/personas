@@ -21,6 +21,7 @@ export function useActivityWords() {
       finished: f.state_finished,
       hibernated: f.state_hibernated,
       exited: f.state_exited,
+      expired: f.state_expired,
       gone: t.common.inactive,
     };
     return {

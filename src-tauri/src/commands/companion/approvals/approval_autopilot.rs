@@ -122,6 +122,61 @@ pub async fn auto_resolve_if_allowed(
     // with the owner guard relaxed, confidence is now the sole gate on what
     // auto-fires vs. what surfaces as an orb consult.
     let state = app.state::<Arc<AppState>>();
+    // ── The Athena grant (spark `monitor-companions`) ────────────────────
+    //
+    // Autonomous mode is no longer a GLOBAL switch over the whole fleet: it is
+    // a grant scoped to the sessions the operator marked as Athena's — or that
+    // she dispatched herself. The seven FLEET-SESSION actions in
+    // `GRANT_SCOPED_FLEET_ACTIONS` additionally require that grant on their
+    // target session. Every other action is untouched: browser ops, device
+    // ops, `reconnect_credential`, `update_identity`, memory writes and the
+    // connector calls all keep exactly the behaviour they had.
+    //
+    // The scoping rule has ONE definition — `FleetSessionInner::athena_flag_resolved`
+    // (`commands::fleet::registry`) — reached here only through
+    // `fleet_bridge::athena_grant_holds_for`. Nothing in this file compares an
+    // origin token.
+    //
+    // Shape: this ANSWERS at the checkpoint (a withheld grant is a `deferred`
+    // ledger row the operator can read back and a card still waiting on the
+    // orb), it does not skip the checkpoint.
+    let mut grant_decider: Option<&'static str> = None;
+    if GRANT_SCOPED_FLEET_ACTIONS.contains(&approval.action.as_str()) {
+        match fleet_target_session(&approval.params_json) {
+            // Three of the seven name no session, because each is about to
+            // CREATE the row: `fleet_spawn` and `fleet_dispatch` carry
+            // `cwd`/`args`/`role_specs`, and `fleet_resume` carries `pid` +
+            // `cwd` (it adopts an orphaned process). There is no row that
+            // could hold a grant yet, so there is nothing here to ask. What
+            // scopes the sessions they create is the persona-level
+            // `athena_auto_flag`, stamped at session birth in
+            // `commands::fleet::queue::stamp_athena_auto_flag`.
+            FleetTarget::Unnamed => {}
+            // Fail-closed, like every other fleet guard here: an id nothing in
+            // the registry answers to holds no grant.
+            FleetTarget::Named { resolved } => {
+                let granted = resolved
+                    .as_deref()
+                    .is_some_and(crate::commands::companion::fleet_bridge::athena_grant_holds_for);
+                if !granted {
+                    tracing::info!(
+                        approval_id = %approval.id,
+                        action = %approval.action,
+                        "autonomous autoapprove deferred: Athena holds no grant on the target session — left pending for a user click"
+                    );
+                    record_fleet_decision(
+                        &state.db,
+                        &approval.action,
+                        &approval.params_json,
+                        "deferred",
+                        Some(GRANT_WITHHELD_REASON),
+                    );
+                    return Ok(false);
+                }
+                grant_decider = Some(ATHENA_GRANT_DECIDER);
+            }
+        }
+    }
     // Both the screen-driving fleet actions share the confidence gate: they carry
     // `session_id` / `confidence` / `decision_class` and type into a live PTY, so
     // the boldness dial + execution-time screen re-check apply identically.
@@ -200,14 +255,25 @@ pub async fn auto_resolve_if_allowed(
         //     actions (a bare `fleet_kill` carries no confidence, so under
         //     Cautious/Balanced it always defers to a consult; Bold fires);
         // (2) a HARD structural guard the dial can't relax — the target must
-        //     resolve (either id form), be Athena-owned (spawn-time name
-        //     sentinel, which survives a restart via the durable
-        //     fleet_sessions `name` column), and be resting in a
+        //     resolve (either id form) and be resting in a
         //     not-actively-working state (`fleet_kill_state_is_closable`:
         //     Finished / Idle / Stale / Hibernated — which also covers
         //     rehydrated dead tombstones, restored as Stale). Never auto-kill
-        //     a Running / AwaitingInput / Spawning session or anything the
-        //     user spawned themselves.
+        //     a Running / AwaitingInput / Spawning session.
+        //
+        // OWNERSHIP MOVED, 2026-10-04 (spark `monitor-companions`). This arm
+        // used to add `registry.is_athena_owned(fid)` — a NAME-prefix sentinel
+        // ("does the visible name start with `athena`?"). It answered the same
+        // question the grant now answers, worse: a user can rename any session
+        // `athena-mine` and pass it, while a session the operator deliberately
+        // handed Athena fails it. The grant gate above is the one owner of
+        // "may Athena act on this session", it is strictly stronger for every
+        // session Athena spawned herself (both spawn paths stamp
+        // `DispatchOrigin::Athena`, whose token the resolver folds in), and it
+        // runs on EVERY grant-scoped fleet action rather than on this one.
+        // `is_athena_owned` survives for its two other, genuinely different
+        // callers (`persist`, the completion-policy read in `fleet_bridge`);
+        // it is no longer an authorization gate here.
         let boldness = crate::commands::companion::chat::fleet_boldness(&state.db);
         if !fleet_action_auto_fires(&approval.params_json, boldness) {
             record_fleet_decision(
@@ -226,21 +292,20 @@ pub async fn auto_resolve_if_allowed(
             .and_then(|v| v.get("session_id"))
             .and_then(|v| v.as_str())
             .and_then(|sid| registry.resolve_session_id(sid));
-        let safe_to_close = resolved.as_deref().is_some_and(|fid| {
-            registry.is_athena_owned(fid)
-                && fleet_kill_state_is_closable(registry.session_state(fid))
-        });
+        let safe_to_close = resolved
+            .as_deref()
+            .is_some_and(|fid| fleet_kill_state_is_closable(registry.session_state(fid)));
         if !safe_to_close {
             tracing::info!(
                 approval_id = %approval.id,
-                "autonomous autoapprove deferred: fleet_kill target is not an Athena-owned resting (Finished/Idle/Stale/Hibernated) session — left pending for a user click"
+                "autonomous autoapprove deferred: fleet_kill target is not a resting (Finished/Idle/Stale/Hibernated) session — left pending for a user click"
             );
             record_fleet_decision(
                 &state.db,
                 &approval.action,
                 &approval.params_json,
                 "deferred",
-                Some("kill_target_not_athena_owned_or_not_done"),
+                Some("kill_target_not_done"),
             );
             return Ok(false);
         }
@@ -320,7 +385,16 @@ pub async fn auto_resolve_if_allowed(
         } else {
             "auto_failed"
         };
-        record_fleet_decision(&state.db, &action, &approval.params_json, outcome, None);
+        // "Ungated is not unrecorded": when the grant is what let this action
+        // through without a click, the ledger row NAMES it as the decider.
+        record_fleet_decision_with_decider(
+            &state.db,
+            &action,
+            &approval.params_json,
+            outcome,
+            None,
+            grant_decider,
+        );
         // Her assessment RESOLVED (typed or failed to type) — drop the
         // "Athena's on it" window now instead of letting it lapse; the typed
         // input's own hooks (UserPromptSubmit → Running) drive the state next.
@@ -384,12 +458,78 @@ pub(crate) fn escalate_fleet_consult(app: &tauri::AppHandle, params_json: &str) 
     crate::commands::companion::fleet_bridge::resolve_athena_assessment(app, sid, Some(&reason));
 }
 
+/// The fleet-session actions the Athena grant scopes. Everything NOT on this
+/// list keeps the behaviour it had before the grant existed.
+pub(crate) const GRANT_SCOPED_FLEET_ACTIONS: &[&str] = &[
+    "fleet_send_input",
+    "fleet_intervene",
+    "fleet_kill",
+    "fleet_wake",
+    "fleet_resume",
+    "fleet_spawn",
+    "fleet_dispatch",
+];
+
+/// What the ledger row calls the decider when the grant is what let an action
+/// fire with no click. Recorded in `rationale`, the same column
+/// `commands::fleet::companion_api::audit` uses to name a remote device as the
+/// decider of a remote act — one existing convention, not a second one.
+pub(crate) const ATHENA_GRANT_DECIDER: &str = "athena_flag grant";
+
+/// `defer_reason` for an action withheld because Athena holds no grant on its
+/// target session.
+pub(crate) const GRANT_WITHHELD_REASON: &str = "session_not_athena_flagged";
+
+/// What an approval's params say about its target fleet session.
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum FleetTarget {
+    /// No `session_id` in the params. The action is about to CREATE its
+    /// session (`fleet_spawn` / `fleet_dispatch`), so no row holds a grant.
+    Unnamed,
+    /// A `session_id` was named; `resolved` is the registry's own id for it
+    /// (callers may pass either id form), `None` when nothing answers to it.
+    Named { resolved: Option<String> },
+}
+
+/// The `session_id` an approval's params name, if any. Pure — split out from
+/// the registry lookup so the parse itself is testable.
+pub(crate) fn named_session_id(params_json: &str) -> Option<String> {
+    let v: serde_json::Value = serde_json::from_str(params_json).ok()?;
+    let raw = v.get("session_id")?.as_str()?.trim();
+    (!raw.is_empty()).then(|| raw.to_string())
+}
+
+/// Resolve an approval's target session against the live registry.
+fn fleet_target_session(params_json: &str) -> FleetTarget {
+    match named_session_id(params_json) {
+        None => FleetTarget::Unnamed,
+        Some(raw) => FleetTarget::Named {
+            resolved: crate::commands::fleet::registry::registry().resolve_session_id(&raw),
+        },
+    }
+}
+
 pub(crate) fn record_fleet_decision(
     db: &crate::db::DbPool,
     action: &str,
     params_json: &str,
     outcome: &str,
     defer_reason: Option<&str>,
+) {
+    record_fleet_decision_with_decider(db, action, params_json, outcome, defer_reason, None);
+}
+
+/// As [`record_fleet_decision`], plus the name of the POLICY that decided —
+/// for an action nobody clicked. `decider` is folded into the row's
+/// `rationale` (`"<decider>: <Athena's own rationale>"`), which is where this
+/// ledger already records a non-human decider.
+pub(crate) fn record_fleet_decision_with_decider(
+    db: &crate::db::DbPool,
+    action: &str,
+    params_json: &str,
+    outcome: &str,
+    defer_reason: Option<&str>,
+    decider: Option<&str>,
 ) {
     let v: serde_json::Value = serde_json::from_str(params_json).unwrap_or(serde_json::Value::Null);
     let get = |k: &str| {
@@ -443,9 +583,22 @@ pub(crate) fn record_fleet_decision(
             confidence: get("confidence"),
             decision_class: get("decision_class"),
             defer_reason: defer_reason.map(str::to_string),
-            rationale: get("rationale"),
+            rationale: rationale_with_decider(decider, get("rationale")),
         },
     );
+}
+
+/// Compose the ledger's `rationale` so a policy-decided action names its
+/// decider without losing Athena's own words.
+pub(crate) fn rationale_with_decider(
+    decider: Option<&str>,
+    rationale: Option<String>,
+) -> Option<String> {
+    match (decider, rationale) {
+        (Some(d), Some(r)) => Some(format!("{d}: {r}")),
+        (Some(d), None) => Some(d.to_string()),
+        (None, r) => r,
+    }
 }
 
 /// Emit the `athena://fleet/auto-decided` event the orb listens for to flash a
@@ -838,3 +991,136 @@ mod fleet_kill_gate_tests {
 
 #[cfg(test)]
 mod containment_posture_tests {}
+
+#[cfg(test)]
+mod athena_grant_ledger_tests {
+    //! The grant's compensating control: an action that fired with no click
+    //! because the operator had flagged the session must leave a ledger row
+    //! that NAMES the grant as the decider ("ungated is not unrecorded").
+    use super::*;
+
+    fn params(session_id: Option<&str>, rationale: Option<&str>) -> String {
+        let mut v = serde_json::Map::new();
+        if let Some(sid) = session_id {
+            v.insert("session_id".into(), serde_json::json!(sid));
+        }
+        if let Some(r) = rationale {
+            v.insert("rationale".into(), serde_json::json!(r));
+        }
+        serde_json::Value::Object(v).to_string()
+    }
+
+    #[test]
+    fn an_auto_fired_action_on_a_flagged_session_names_the_flag_as_decider() {
+        let pool = crate::db::init_test_db().expect("test db");
+        record_fleet_decision_with_decider(
+            &pool,
+            "fleet_send_input",
+            &params(Some("sess-1"), Some("the prompt wants a yes")),
+            "auto_fired",
+            None,
+            Some(ATHENA_GRANT_DECIDER),
+        );
+
+        // Read back through the ledger's own door, which is also the surface
+        // the operator's retrospective review reads.
+        let rows = crate::db::repos::fleet_decisions::recent(&pool, 10).expect("ledger readable");
+        assert_eq!(rows.len(), 1, "one auto-fire, one row");
+        let row = &rows[0];
+
+        assert_eq!(row.session_id, "sess-1");
+        assert_eq!(row.action, "fleet_send_input");
+        // The outcome token is UNCHANGED — `has_prior_autofire` matches it
+        // exactly, so naming the decider must not move it.
+        assert_eq!(row.outcome, "auto_fired");
+        assert!(row.defer_reason.is_none(), "an auto-fire is not a defer");
+        let rationale = row.rationale.as_deref().expect("the decider is recorded");
+        assert!(rationale.starts_with(ATHENA_GRANT_DECIDER), "{rationale}");
+        // Athena's own words survive beside it.
+        assert!(rationale.contains("the prompt wants a yes"), "{rationale}");
+    }
+
+    #[test]
+    fn an_action_withheld_for_want_of_a_grant_is_recorded_as_a_defer() {
+        let pool = crate::db::init_test_db().expect("test db");
+        record_fleet_decision(
+            &pool,
+            "fleet_kill",
+            &params(Some("sess-2"), None),
+            "deferred",
+            Some(GRANT_WITHHELD_REASON),
+        );
+
+        let rows = crate::db::repos::fleet_decisions::recent(&pool, 10).expect("ledger readable");
+        let row = rows
+            .first()
+            .expect("a withheld action is still a recorded decision");
+
+        assert_eq!(row.outcome, "deferred");
+        assert_eq!(row.defer_reason.as_deref(), Some(GRANT_WITHHELD_REASON));
+        // No decider: nothing decided this, it is waiting for the operator.
+        assert!(row.rationale.is_none());
+    }
+
+    #[test]
+    fn a_decision_with_no_decider_keeps_the_rationale_it_had() {
+        assert_eq!(
+            rationale_with_decider(None, Some("because the build is red".into())),
+            Some("because the build is red".to_string())
+        );
+        assert_eq!(rationale_with_decider(None, None), None);
+        assert_eq!(
+            rationale_with_decider(Some(ATHENA_GRANT_DECIDER), None),
+            Some(ATHENA_GRANT_DECIDER.to_string())
+        );
+    }
+
+    #[test]
+    fn the_target_parse_tells_a_named_session_from_a_session_being_created() {
+        // `fleet_send_input` & co. name their target...
+        assert_eq!(
+            named_session_id(&params(Some("sess-3"), None)).as_deref(),
+            Some("sess-3")
+        );
+        // ...while `fleet_spawn` / `fleet_dispatch` carry no session at all:
+        // there is nothing yet that could hold a grant.
+        assert!(named_session_id(r#"{"cwd":"C:/repo","args":["go"]}"#).is_none());
+        // A blank or absent id is NOT a target (and must never read as one).
+        assert!(named_session_id(&params(Some("   "), None)).is_none());
+        assert!(named_session_id("not json").is_none());
+    }
+
+    #[test]
+    fn the_grant_scopes_fleet_session_actions_and_nothing_else() {
+        for a in [
+            "fleet_send_input",
+            "fleet_intervene",
+            "fleet_kill",
+            "fleet_wake",
+            "fleet_resume",
+            "fleet_spawn",
+            "fleet_dispatch",
+        ] {
+            assert!(
+                GRANT_SCOPED_FLEET_ACTIONS.contains(&a),
+                "{a} must be scoped"
+            );
+        }
+        // Explicitly out of scope for this change — a regression here would
+        // silently widen the grant past fleet-session work.
+        for a in [
+            "browser_act",
+            "browser_login",
+            "reconnect_credential",
+            "update_identity",
+            "remote_instruct",
+            "write_fact",
+            "use_connector",
+        ] {
+            assert!(
+                !GRANT_SCOPED_FLEET_ACTIONS.contains(&a),
+                "{a} must be untouched by the grant"
+            );
+        }
+    }
+}

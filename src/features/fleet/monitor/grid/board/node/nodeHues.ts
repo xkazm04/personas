@@ -34,6 +34,7 @@ export const SESSION_TINT: Record<FleetSessionState, string> = {
   finished: 'bg-teal-500/[0.08]',
   hibernated: 'bg-indigo-500/[0.08]',
   exited: 'bg-zinc-500/[0.08]',
+  expired: 'bg-stone-500/[0.08]',
 };
 
 export function sessionHue(state: FleetSessionState): NodeHue {

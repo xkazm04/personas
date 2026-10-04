@@ -60,6 +60,14 @@ pub enum FleetSessionState {
     Hibernated,
     /// PTY child exited (clean or crash). Terminal state.
     Exited,
+    /// Waited in the queue past `fleet.queued_expiry_ms` and was retired
+    /// WITHOUT EVER RUNNING. Terminal state, and deliberately distinct from
+    /// `Exited`: that one means "it ran and ended", this one means "it never
+    /// got a turn". Collapsing the two would make every exit-code reading and
+    /// every "did the work happen" query silently wrong for a row that never
+    /// had a process. No PID, no transcript, no exit code. Reached only from
+    /// `Queued`.
+    Expired,
 }
 
 /// The wire token for a state — what ships in `FLEET_SESSION_STATE` payloads,
@@ -81,6 +89,7 @@ pub fn state_to_token(s: FleetSessionState) -> &'static str {
         FleetSessionState::Finished => "finished",
         FleetSessionState::Hibernated => "hibernated",
         FleetSessionState::Exited => "exited",
+        FleetSessionState::Expired => "expired",
     }
 }
 
@@ -102,6 +111,7 @@ pub fn token_to_state(token: &str) -> Option<FleetSessionState> {
         "finished" => FleetSessionState::Finished,
         "hibernated" => FleetSessionState::Hibernated,
         "exited" => FleetSessionState::Exited,
+        "expired" => FleetSessionState::Expired,
         _ => return None,
     })
 }
@@ -242,6 +252,21 @@ pub struct FleetSession {
     /// `dev_runner`, `autopilot`, …). `None` for rows written before the
     /// queue existed.
     pub origin: Option<String>,
+    /// The RESOLVED Athena grant (`FleetSessionInner::athena_flag_resolved`):
+    /// the stored flag OR an Athena-dispatched session. Never the raw column.
+    #[serde(default)]
+    pub athena_flagged: bool,
+    /// Queue LANE (migration e58). 1-based like `rank`; `None` means no lane,
+    /// which is NOT lane 0. A lane is an ordering device - N strands that each
+    /// move to the queue's tail after one of their tasks finishes - and never
+    /// a concurrency width.
+    #[serde(default)]
+    pub lane: Option<u32>,
+    /// The band this row holds a reservation in (migration e58). `None` means
+    /// it holds none. Survives `renumber_queue`, which is the whole point:
+    /// ranks are rewritten wholesale, a reservation must not be.
+    #[serde(default)]
+    pub reserved_band: Option<u32>,
     /// The persona this dispatch works for, when a persona dispatched it.
     pub persona_id: Option<String>,
     /// The goal the dispatch advances, when one was named.

@@ -734,6 +734,10 @@ pub struct Persona {
     /// Promoted from a localStorage-only favorite to a durable column.
     #[serde(default)]
     pub starred: bool,
+    /// Default that stamps FUTURE fleet sessions of this persona as Athena-flagged
+    /// (migration e57). Grants nothing to a session that already exists.
+    #[serde(default)]
+    pub athena_auto_flag: bool,
     pub max_concurrent: i32,
     pub timeout_ms: i32,
     pub notification_channels: Option<String>,

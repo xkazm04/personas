@@ -33,11 +33,11 @@ export const REMOTE_MIRROR_STALE_MS = 45_000;
 
 /** Every token the closed union carries, for guarding a value off the wire. */
 const REMOTE_STATES: ReadonlySet<RemoteSessionState> = new Set<RemoteSessionState>([
-  'queued', 'spawning', 'running', 'awaiting_input', 'idle', 'stale', 'finished', 'hibernated', 'exited', 'unknown',
+  'queued', 'spawning', 'running', 'awaiting_input', 'idle', 'stale', 'finished', 'hibernated', 'exited', 'expired', 'unknown',
 ]);
 
 /** A session state that says the process is over. */
-const ENDED_STATES: ReadonlySet<RemoteSessionState> = new Set<RemoteSessionState>(['finished', 'exited']);
+const ENDED_STATES: ReadonlySet<RemoteSessionState> = new Set<RemoteSessionState>(['finished', 'exited', 'expired']);
 
 /**
  * The state a remote session should RENDER as at `nowMs`.

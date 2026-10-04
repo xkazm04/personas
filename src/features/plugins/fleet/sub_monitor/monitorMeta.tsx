@@ -1,6 +1,6 @@
 import {
   Ban, CircleCheck, CircleHelp, Clock, Loader2, MoonStar, Sparkles, SquareCheckBig,
-  Cpu, Bot, Gauge, Activity, Waves, CircleOff, ListOrdered, type LucideIcon,
+  Cpu, Bot, Gauge, Activity, Waves, CircleOff, ListOrdered, TimerOff, type LucideIcon,
 } from 'lucide-react';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import type { ScreenHealth } from '@/lib/bindings/ScreenHealth';
@@ -23,6 +23,9 @@ export const STATE_ICON: Record<FleetSessionState, LucideIcon> = {
   stale: Clock,
   finished: SquareCheckBig,
   hibernated: MoonStar,
+  // Expired: retired out of the queue unrun. `Ban` would read as "stopped";
+  // the fact here is that its wait ran out.
+  expired: TimerOff,
   exited: Ban,
 };
 

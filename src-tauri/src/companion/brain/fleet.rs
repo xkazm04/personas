@@ -170,6 +170,7 @@ fn state_token(s: FleetSessionState) -> &'static str {
         FleetSessionState::Finished => "finished",
         FleetSessionState::Hibernated => "hibernated",
         FleetSessionState::Exited => "exited",
+        FleetSessionState::Expired => "expired",
     }
 }
 
@@ -184,6 +185,9 @@ fn state_label(s: FleetSessionState) -> &'static str {
         FleetSessionState::Finished => "task complete",
         FleetSessionState::Hibernated => "hibernated",
         FleetSessionState::Exited => "exited",
+        // Never ran. Said as a fact about the WAIT, not about an ending,
+        // so Athena does not narrate it as work that happened.
+        FleetSessionState::Expired => "expired in the queue without running",
     }
 }
 

@@ -45,6 +45,15 @@ export const FLEET_STATE_META: ReadonlyArray<FleetStateMeta> = [
   { id: 'finished',       dot: 'bg-teal-400',    text: 'text-teal-300',    chip: 'bg-teal-500/15',    labelKey: 'state_finished' },
   { id: 'hibernated',     dot: 'bg-indigo-400',  text: 'text-indigo-300',  chip: 'bg-indigo-500/15',  labelKey: 'state_hibernated' },
   { id: 'exited',         dot: 'bg-zinc-500',    text: 'text-foreground',  chip: 'bg-secondary/60',   labelKey: 'state_exited' },
+  // Expired - waited past `fleet.queued_expiry_ms` and was retired WITHOUT
+  // ever running. Last, and in stone rather than exited's zinc: both are
+  // terminal and both are quiet, but they are different facts (one ran and
+  // ended, one never got a turn) and a shared hue would erase that.
+  // `text` is the token `text-foreground`, not a stone spelling: the census
+  // rule `raw-palette-text-colour` ratchets raw palette TEXT classes and a
+  // new row must not raise it. The dot and chip carry the stone hue, which
+  // is what distinguishes expired from exited at a glance anyway.
+  { id: 'expired',        dot: 'bg-stone-500',   text: 'text-foreground',  chip: 'bg-stone-500/15',   labelKey: 'state_expired' },
 ];
 
 /**
@@ -62,6 +71,10 @@ export function laneOfState(state: FleetSessionState): FleetAttentionLane {
   // process and consumes no slot — the working lane is what counts against
   // the cap, and a queued row is precisely what did not fit under it.
   if (state === 'idle' || state === 'hibernated' || state === 'queued') return 'parked';
+  // `expired` is named rather than left to the fall-through: it is terminal,
+  // so `done` is the right lane, but it reaches it as a decision and not as
+  // whatever the last line happens to return.
+  if (state === 'expired' || state === 'exited' || state === 'finished') return 'done';
   return 'done';
 }
 
@@ -84,7 +97,7 @@ export const FLEET_LANE_TONE: Record<FleetAttentionLane, string> = {
 
 /** Zero-filled tally — every state present, so consumers never guard on undefined. */
 export function emptyFleetStateCounts(): Record<FleetSessionState, number> {
-  return { queued: 0, spawning: 0, running: 0, awaiting_input: 0, idle: 0, stale: 0, finished: 0, hibernated: 0, exited: 0 };
+  return { queued: 0, spawning: 0, running: 0, awaiting_input: 0, idle: 0, stale: 0, finished: 0, hibernated: 0, exited: 0, expired: 0 };
 }
 
 /** Count sessions per lifecycle state. */

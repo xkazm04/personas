@@ -69,6 +69,16 @@ pub struct FleetSessionRow {
     pub skip_count: Option<u32>,
     /// When promotion first found this entry unfit; the aging bound's clock.
     pub first_unfit_at_ms: Option<i64>,
+    /// The per-session Athena grant (migration e57). A plain bool, not
+    /// `Option`: the column is `NOT NULL DEFAULT 0`.
+    pub athena_flagged: bool,
+    /// Queue LANE (migration e58). 1-based like `queue_rank`; `None` means the
+    /// row belongs to no lane, which is a different fact from lane 0 - see the
+    /// migration's module doc. A lane is an ordering device, never a width.
+    pub lane: Option<u32>,
+    /// The band this row holds a reservation in (migration e58). `None` means
+    /// it holds none; the column IS the reservation.
+    pub reserved_band: Option<u32>,
 }
 
 /// The projection every read shares — named, so a mid-table `ADD COLUMN`
@@ -79,7 +89,8 @@ const COLUMNS: &str = "id, claude_session_id, cwd, project_label, name, title, a
                     created_at_ms, last_activity_ms,
                     queue_rank, queued_at_ms, not_before_ms, origin, persona_id, goal_id,
                     cycle_index,
-                    machine_units, plan_units, gpu_class, skip_count, first_unfit_at_ms";
+                    machine_units, plan_units, gpu_class, skip_count, first_unfit_at_ms,
+                    athena_flagged, lane, reserved_band";
 
 /// Insert-or-replace a session row. Keyed on the registry id, so a state
 /// change is a single cheap UPSERT rather than a read-modify-write.
@@ -93,9 +104,11 @@ pub fn upsert(pool: &DbPool, row: &FleetSessionRow) -> Result<(), AppError> {
                  created_at_ms, last_activity_ms, updated_at_ms,
                  queue_rank, queued_at_ms, not_before_ms, origin, persona_id, goal_id,
                  cycle_index,
-                 machine_units, plan_units, gpu_class, skip_count, first_unfit_at_ms)
+                 machine_units, plan_units, gpu_class, skip_count, first_unfit_at_ms, athena_flagged,
+                 lane, reserved_band)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15,
-                     ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27)
+                     ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28,
+                     ?29, ?30)
              ON CONFLICT(id) DO UPDATE SET
                 claude_session_id = excluded.claude_session_id,
                 cwd               = excluded.cwd,
@@ -130,7 +143,20 @@ pub fn upsert(pool: &DbPool, row: &FleetSessionRow) -> Result<(), AppError> {
                 plan_units        = COALESCE(excluded.plan_units, fleet_sessions.plan_units),
                 gpu_class         = COALESCE(excluded.gpu_class, fleet_sessions.gpu_class),
                 skip_count        = COALESCE(excluded.skip_count, fleet_sessions.skip_count),
-                first_unfit_at_ms = COALESCE(excluded.first_unfit_at_ms, fleet_sessions.first_unfit_at_ms)",
+                first_unfit_at_ms = COALESCE(excluded.first_unfit_at_ms, fleet_sessions.first_unfit_at_ms),
+                -- a grant is sticky across state writes, like the provenance
+                -- above: a bool has no NULL for COALESCE to fall back on, so
+                -- MAX keeps a stored 1 against a literal that defaulted to 0.
+                -- Revoking goes through `set_athena_flagged`, which writes the
+                -- column directly (and the registry first).
+                athena_flagged    = MAX(excluded.athena_flagged, fleet_sessions.athena_flagged),
+                -- the lane and the band are assignments the operator (or a
+                -- scheduler) made ABOUT a waiting row, not facts a state
+                -- write carries. COALESCE so a plain state upsert, whose
+                -- literal is `None`, cannot silently un-assign either one.
+                -- Clearing goes through `set_lane` / `set_reserved_band`.
+                lane              = COALESCE(excluded.lane, fleet_sessions.lane),
+                reserved_band     = COALESCE(excluded.reserved_band, fleet_sessions.reserved_band)",
             params![
                 row.id,
                 row.claude_session_id,
@@ -159,6 +185,9 @@ pub fn upsert(pool: &DbPool, row: &FleetSessionRow) -> Result<(), AppError> {
                 row.gpu_class,
                 row.skip_count,
                 row.first_unfit_at_ms,
+                row.athena_flagged,
+                row.lane,
+                row.reserved_band,
             ],
         )?;
         Ok(())
@@ -450,6 +479,64 @@ pub fn set_queue_rank(pool: &DbPool, id: &str, rank: Option<u32>) -> Result<bool
     })
 }
 
+/// Set or clear one session's Athena grant. Returns the new value; a missing
+/// row is `NotFound` (the caller decides whether an unpersisted session is an
+/// error). `updated_at_ms` is left alone: it is the state-change clock
+/// (`updated_at_ms`, exited-row pruning), and a grant is not a state change.
+pub fn set_athena_flagged(
+    pool: &DbPool,
+    session_id: &str,
+    flagged: bool,
+) -> Result<bool, AppError> {
+    timed_query!("fleet_sessions", "fleet_sessions::set_athena_flagged", {
+        let conn = pool.get()?;
+        let updated = conn.execute(
+            "UPDATE fleet_sessions SET athena_flagged = ?2 WHERE id = ?1",
+            params![session_id, if flagged { 1 } else { 0 }],
+        )?;
+        if updated == 0 {
+            return Err(AppError::NotFound(format!("fleet session {session_id}")));
+        }
+        Ok(flagged)
+    })
+}
+
+/// Set or clear one row's queue LANE (`None` = no lane). Returns whether a
+/// row was written. Lanes are 1-based; this writer validates nothing beyond
+/// the row existing, because WHICH lane is legal is the lane scheduler's
+/// question and it does not exist yet. `updated_at_ms` is left alone for the
+/// same reason `set_athena_flagged` leaves it: an assignment is not a state
+/// change and must not look like one to the exited-row pruner.
+pub fn set_lane(pool: &DbPool, session_id: &str, lane: Option<u32>) -> Result<bool, AppError> {
+    timed_query!("fleet_sessions", "fleet_sessions::set_lane", {
+        let conn = pool.get()?;
+        let updated = conn.execute(
+            "UPDATE fleet_sessions SET lane = ?2 WHERE id = ?1",
+            params![session_id, lane],
+        )?;
+        Ok(updated == 1)
+    })
+}
+
+/// Set or clear one row's reserved band (`None` = holds no reservation).
+/// Returns whether a row was written. Like [`set_lane`], a thin writer: the
+/// band's meaning, and whether this row is entitled to it, belong to the
+/// reservation package.
+pub fn set_reserved_band(
+    pool: &DbPool,
+    session_id: &str,
+    band: Option<u32>,
+) -> Result<bool, AppError> {
+    timed_query!("fleet_sessions", "fleet_sessions::set_reserved_band", {
+        let conn = pool.get()?;
+        let updated = conn.execute(
+            "UPDATE fleet_sessions SET reserved_band = ?2 WHERE id = ?1",
+            params![session_id, band],
+        )?;
+        Ok(updated == 1)
+    })
+}
+
 /// The highest rank held by a queued row (`0` when the queue is empty), so a
 /// new admission takes `max + 1`.
 pub fn max_queue_rank(pool: &DbPool) -> Result<u32, AppError> {
@@ -637,6 +724,9 @@ mod tests {
             gpu_class: None,
             skip_count: None,
             first_unfit_at_ms: None,
+            athena_flagged: false,
+            lane: None,
+            reserved_band: None,
         }
     }
 
@@ -813,4 +903,7 @@ row_mapper!(map_row -> FleetSessionRow {
     gpu_class,
     skip_count,
     first_unfit_at_ms,
+    athena_flagged [bool],
+    lane,
+    reserved_band,
 });

@@ -32,7 +32,14 @@ const ORIGINS: readonly DispatchOrigin[] = [
   'manual', 'dev_runner', 'dispatch_ideas', 'athena', 'autopilot', 'night_shift', 'feed_impact', 'orphan_resume',
 ];
 
-/** The states worth painting. `spawning` and `exited` are transient by design. */
+/**
+ * The states worth painting. `spawning` and `exited` are transient by design.
+ *
+ * `expired` is left out ON PURPOSE rather than by omission: it is reached only
+ * by a queue reaper, which does not exist yet, so a board that painted it
+ * would be showing a state the running app cannot produce. Add it here when
+ * the reaper lands, together with `simulation.test.ts`'s matching list.
+ */
 const STATES: readonly FleetSessionState[] = [
   'running', 'awaiting_input', 'idle', 'stale', 'finished', 'hibernated',
 ];
@@ -86,6 +93,9 @@ function session(id: string, cwd: string, projectLabel: string, now: number, ran
     claudeSessionId: `${id}-claude`,
     cwd,
     projectLabel,
+    athenaFlagged: false,
+    lane: null,
+    reservedBand: null,
     name: null,
     title: i % 2 === 0 ? LONG_TITLES[(i >> 1) % LONG_TITLES.length]! : SHORT_TITLES[(i >> 1) % SHORT_TITLES.length]!,
     args: [],

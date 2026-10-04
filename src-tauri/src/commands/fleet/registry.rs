@@ -320,6 +320,16 @@ pub struct FleetSessionInner {
     pub not_before_ms: Option<i64>,
     /// `DispatchOrigin` wire token (`manual`, `autopilot`, …).
     pub origin: Option<String>,
+    /// The RAW per-session Athena grant (`fleet_sessions.athena_flagged`).
+    /// Read it only through [`Self::athena_flag_resolved`].
+    pub athena_flagged: bool,
+    /// Queue lane (migration e58), 1-based; `None` is "no lane", never lane 0.
+    /// Unlike `queue_rank` it SURVIVES `renumber_queue`: the renumber rewrites
+    /// ranks wholesale and must leave an assignment alone.
+    pub lane: Option<u32>,
+    /// Reserved band (migration e58); `None` holds no reservation. Also
+    /// survives `renumber_queue`, for the same reason.
+    pub reserved_band: Option<u32>,
     pub persona_id: Option<String>,
     pub goal_id: Option<String>,
     pub cycle_index: Option<i64>,
@@ -396,6 +406,15 @@ impl AdmissionFacts {
 }
 
 impl FleetSessionInner {
+    /// Whether Athena may act on this session: the stored grant, OR the session
+    /// was dispatched by Athena herself (`origin == "athena"`), which is a grant
+    /// by construction. This is the ONE definition. `to_dto` and every gate that
+    /// asks "is this session Athena's to touch" must call this function;
+    /// nothing may re-derive the rule from `athena_flagged` and `origin`.
+    pub fn athena_flag_resolved(&self) -> bool {
+        self.athena_flagged || self.origin.as_deref() == Some("athena")
+    }
+
     pub fn to_dto(&self) -> FleetSession {
         let contest = self
             .run_label
@@ -432,6 +451,9 @@ impl FleetSessionInner {
             queued_at_ms: self.queued_at_ms,
             not_before_ms: self.not_before_ms,
             origin: self.origin.clone(),
+            athena_flagged: self.athena_flag_resolved(),
+            lane: self.lane,
+            reserved_band: self.reserved_band,
             persona_id: self.persona_id.clone(),
             goal_id: self.goal_id.clone(),
             cycle_index: self.cycle_index,
@@ -1105,6 +1127,43 @@ impl FleetRegistry {
             return false;
         }
         session.stale_kind = kind;
+        true
+    }
+
+    /// Set the RAW Athena grant on a live session. Returns whether the session
+    /// exists. Callers read the effective value through
+    /// [`FleetSessionInner::athena_flag_resolved`], never this field.
+    pub fn set_athena_flagged(&self, session_id: &str, flagged: bool) -> bool {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else {
+            return false;
+        };
+        session.athena_flagged = flagged;
+        true
+    }
+
+    /// Set or clear a live session's queue lane. Returns whether the session
+    /// exists. A WRITER ONLY: it validates no lane number and reorders
+    /// nothing, because the lane scheduler that would know what is legal does
+    /// not exist yet. `None` clears the assignment.
+    pub fn set_lane(&self, session_id: &str, lane: Option<u32>) -> bool {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else {
+            return false;
+        };
+        session.lane = lane;
+        true
+    }
+
+    /// Set or clear a live session's reserved band. Returns whether the
+    /// session exists. A writer only, like [`Self::set_lane`]; who is
+    /// entitled to a band is the reservation package's question.
+    pub fn set_reserved_band(&self, session_id: &str, band: Option<u32>) -> bool {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else {
+            return false;
+        };
+        session.reserved_band = band;
         true
     }
 
@@ -2481,6 +2540,9 @@ mod tests {
             queued_at_ms: None,
             not_before_ms: None,
             origin: None,
+            athena_flagged: false,
+            lane: None,
+            reserved_band: None,
             persona_id: None,
             goal_id: None,
             cycle_index: None,

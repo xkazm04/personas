@@ -41,6 +41,7 @@ fn make_persona(system_prompt: &str) -> personas_db::models::Persona {
         sensitive: false,
         headless: false,
         starred: false,
+        athena_auto_flag: false,
         max_concurrent: 1,
         timeout_ms: 60_000,
         notification_channels: None,

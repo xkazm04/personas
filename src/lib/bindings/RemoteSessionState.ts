@@ -8,4 +8,4 @@
  * link is down, or no mirror or health frame arrived for 45 s (three 15 s
  * health ticks). A quiet remote session is never shown as running.
  */
-export type RemoteSessionState = "queued" | "spawning" | "running" | "awaiting_input" | "idle" | "stale" | "finished" | "hibernated" | "exited" | "unknown";
+export type RemoteSessionState = "queued" | "spawning" | "running" | "awaiting_input" | "idle" | "stale" | "finished" | "hibernated" | "exited" | "expired" | "unknown";

@@ -7,7 +7,7 @@
 //   running   - running, spawning                     (work in flight)
 //   attention - awaiting_input, stale                 (needs the operator)
 //   failed    - exited with a non-zero exit code      (its last run broke)
-//   idle      - idle, queued, hibernated, finished, a clean exit
+//   idle      - idle, queued, hibernated, finished, expired, a clean exit
 // It mirrors `fleetStateMeta.laneOfState` (needs_you / working / parked+done)
 // with "done" split by how it ended.
 
@@ -37,6 +37,11 @@ export function sessionBucket(s: Pick<FleetSession, 'state' | 'exitCode'>): Squa
       return 'attention';
     case 'exited':
       return s.exitCode !== null && s.exitCode !== 0 ? 'failed' : 'idle';
+    // `expired` is NOT `failed`: nothing broke, the row simply never got a
+    // turn and has no exit code to read. Named here rather than left to the
+    // default so the four-bucket fold stays a decision per state.
+    case 'expired':
+      return 'idle';
     default:
       return 'idle';
   }

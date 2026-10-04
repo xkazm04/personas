@@ -83,6 +83,8 @@ mod e53_drop_auto_pr_columns;
 mod e54_dev_lifecycle;
 mod e55_twin_samples;
 mod e56_claude_login_profiles;
+mod e57_athena_session_flag;
+mod e58_queue_lanes_and_bounds;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -162,6 +164,8 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e54_dev_lifecycle::run(conn)?;
     e55_twin_samples::run(conn)?;
     e56_claude_login_profiles::run(conn)?;
+    e57_athena_session_flag::run(conn)?;
+    e58_queue_lanes_and_bounds::run(conn)?;
 
     Ok(())
 }

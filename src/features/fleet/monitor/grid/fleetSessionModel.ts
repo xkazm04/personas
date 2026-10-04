@@ -35,19 +35,30 @@ const META_BY_STATE = new Map<FleetSessionState, FleetStateMeta>(FLEET_STATE_MET
 /** Attention-first rank — the canonical table's own order. */
 const STATE_RANK = new Map<FleetSessionState, number>(FLEET_STATE_META.map((m, i) => [m.id, i]));
 
+/**
+ * `exited` is the documented fallback in every other fleet consumer, so it is
+ * looked up BY ID. It used to be `FLEET_STATE_META[length - 1]`, which was the
+ * same row only for as long as `exited` happened to be last: appending
+ * `expired` moved the fallback to a different state without touching this
+ * line. A positional read of a table that grows is not a fallback, it is a
+ * coincidence.
+ */
+const EXITED_META = META_BY_STATE.get('exited') ?? FLEET_STATE_META[FLEET_STATE_META.length - 1]!;
+
 export function sessionStateMeta(state: FleetSessionState): FleetStateMeta {
-  // `exited` is the documented fallback in every other fleet consumer.
-  return META_BY_STATE.get(state) ?? FLEET_STATE_META[FLEET_STATE_META.length - 1]!;
+  return META_BY_STATE.get(state) ?? EXITED_META;
 }
 
 /**
  * A session is "live" for the board when it still represents work in the world.
- * `exited` is the one terminal state — the registry keeps exited rows around so
- * the Fleet page can show the tail, but a monitor that is answering "what is
- * running right now" would only be padded by them.
+ * `exited` and `expired` are the terminal states — the registry keeps both
+ * around so the Fleet page can show the tail, but a monitor that is answering
+ * "what is running right now" would only be padded by them. `expired` is named
+ * explicitly: a row retired out of the queue never ran, so counting it as live
+ * would be the most misleading answer of the set.
  */
 export function isLiveSession(s: { state: FleetSessionState }): boolean {
-  return s.state !== 'exited';
+  return s.state !== 'exited' && s.state !== 'expired';
 }
 
 /** The name a session shows to a human: live terminal title > user name > project. */

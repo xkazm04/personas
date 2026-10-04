@@ -166,6 +166,12 @@ pub fn row_from_inner(inner: &FleetSessionInner) -> Option<FleetSessionRow> {
         // `0` skips is "never skipped", which the column spells as NULL.
         skip_count: Some(inner.admission.skip_count).filter(|n| *n > 0),
         first_unfit_at_ms: inner.admission.first_unfit_at_ms,
+        // The RAW grant: the resolved flag also folds in `origin`, which the
+        // row already carries, so persisting the resolved value would freeze
+        // an origin-derived grant into the column.
+        athena_flagged: inner.athena_flagged,
+        lane: inner.lane,
+        reserved_band: inner.reserved_band,
     })
 }
 
@@ -242,6 +248,11 @@ pub fn inner_from_row(row: &FleetSessionRow) -> FleetSessionInner {
         queued_at_ms: row.queued_at_ms,
         not_before_ms: row.not_before_ms,
         origin: row.origin.clone(),
+        athena_flagged: row.athena_flagged,
+        // The lane and the band are assignments, not queue position: they
+        // restore whatever state the row came back in.
+        lane: row.lane,
+        reserved_band: row.reserved_band,
         persona_id: row.persona_id.clone(),
         goal_id: row.goal_id.clone(),
         cycle_index: row.cycle_index,
@@ -675,6 +686,9 @@ mod tests {
             queued_at_ms: None,
             not_before_ms: None,
             origin: None,
+            athena_flagged: false,
+            lane: None,
+            reserved_band: None,
             persona_id: None,
             goal_id: None,
             cycle_index: None,

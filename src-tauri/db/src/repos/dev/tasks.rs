@@ -1015,6 +1015,9 @@ mod live_fleet_task_tests {
             gpu_class: None,
             skip_count: None,
             first_unfit_at_ms: None,
+            athena_flagged: false,
+            lane: None,
+            reserved_band: None,
         }
     }
 

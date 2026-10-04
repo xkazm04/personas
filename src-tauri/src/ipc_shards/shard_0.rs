@@ -19,6 +19,7 @@ pub(super) fn shard(
         commands::core::personas::list_personas,
         commands::core::personas::get_persona,
         commands::core::personas::set_persona_starred,
+        commands::fleet::athena_flag::persona_set_athena_auto_flag,
         commands::core::personas::set_persona_enabled,
         commands::core::personas::create_persona,
         commands::core::personas::update_persona,

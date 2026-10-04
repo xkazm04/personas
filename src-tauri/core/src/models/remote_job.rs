@@ -234,6 +234,10 @@ pub enum RemoteSessionState {
     Finished,
     Hibernated,
     Exited,
+    /// Retired from the queue without ever running. Mirrors
+    /// `FleetSessionState::Expired`; kept here so the doc line above stays
+    /// true and a remote `expired` frame is not coerced to `Unknown`.
+    Expired,
     Unknown,
 }
 

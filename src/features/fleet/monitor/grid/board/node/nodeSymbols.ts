@@ -26,7 +26,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   AlertTriangle, Bot, Check, CircleDashed, Clock, Hand, Hourglass, Laptop, Library, Lightbulb, MessageSquare, Moon,
-  Play, RotateCcw, Rss, Sparkles, Square, Trophy,
+  Play, RotateCcw, Rss, Sparkles, Square, TimerOff, Trophy,
 } from 'lucide-react';
 import type { DispatchOrigin } from '@/lib/bindings/DispatchOrigin';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
@@ -117,6 +117,9 @@ export const SESSION_STATE_MARK: Record<FleetSessionState, StateMark> = {
   spawning: { kind: 'icon', icon: CircleDashed },
   finished: { kind: 'icon', icon: Check },
   hibernated: { kind: 'icon', icon: Moon },
+  // Expired: the clock ran out on a row that never started. `TimerOff`, not
+  // exited's `Square` - the mark has to say "never ran", not "stopped".
+  expired: { kind: 'icon', icon: TimerOff },
   exited: { kind: 'icon', icon: Square },
 };
 
