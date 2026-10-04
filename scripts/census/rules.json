@@ -727,8 +727,8 @@
         }
       ],
       "baseline": {
-        "files": 55,
-        "matches": 754
+        "files": 56,
+        "matches": 756
       },
       "floor": 1500
     },
@@ -3487,6 +3487,10 @@
         {
           "path": "src-tauri/src/companion/brain/memory_sim.rs",
           "reason": "the memory-year benchmark driver's stderr pump for one CLI leg (feature `memory-sim`, in no release profile). The task is not detached in the sense the rule names: its JoinHandle is awaited on the next lines before the reply is parsed, and what it collects is the leg's stderr, which the driver reports back to the harness on failure. A panic here loses log text for one benchmark call, not a user's work"
+        },
+        {
+          "path": "src-tauri/src/commands/fleet/claude_accounts/relogin/cli.rs",
+          "reason": "a FALSE POSITIVE of this rule's own anchor, not a deliberate exception. The anchor matches a spawn in statement position because that means \"its JoinHandle is created and destroyed in the same statement\" - the rule's stated premise. Here the spawn is the TAIL EXPRESSION of a `.map(|mut r| ...)` closure (cli.rs:119-124), so its handle is the closure's value: it is returned and stored as `LoginProcess.drain`, never dropped at the spawn. The `[;{}]` lookbehind sees the closure's opening brace and cannot see the bind two lines up. The body is `tokio::io::copy` into `tokio::io::sink()`, whose only job is to stop a chatty child blocking on a full stdout pipe, and the handle is aborted on drop with the LoginProcess. If the anchor ever learns to see a returned handle, delete this exclusion rather than keeping the door"
         }
       ]
     },
@@ -5427,6 +5431,10 @@
         {
           "path": "src-tauri/src/companion/brain/memory_sim.rs",
           "reason": "the memory-year benchmark driver reproduces the chat-turn spawn deliberately and can not route through cli_process: it builds its argv from the tree's OWN session::base_cli_invocation and applies session::apply_no_console_window, but it must spawn from the throwaway `--home` (production spawns from the user's home, which would let a replayed turn pick up this repo's CLAUDE.md and measure a brain reading our own docs) and it must own the three stdio pipes to meter the leg. Feature `memory-sim`, in no release profile; if the chokepoint ever grows a current_dir + piped-stdio shape, this exclusion should go rather than the driver keeping its own door"
+        },
+        {
+          "path": "src-tauri/src/engine/login_lane/tests_chrome.rs",
+          "reason": "the live-Chrome test module's ASSERTION helper, not an app subprocess. `chrome_procs()` shells to PowerShell's Get-CimInstance to count chrome.exe processes carrying the lane marker, i.e. it inspects the machine to verify a test's outcome; routing it through cli_process would mean the chokepoint that exists to give CHILD AGENT SESSIONS argv separation, env scrubbing, kill-on-drop and PID recording was also the door for a test's `Measure-Object`. The marker travels in the environment and is never spliced into the script text, so the shell vehicle's argument stays a literal. Tests only; if this helper ever moves into production code the exclusion must go with it"
         }
       ],
       "baseline": {
