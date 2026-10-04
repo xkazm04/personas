@@ -771,6 +771,41 @@ longer blanks the rail; its status caption is translated.
 The live constellation for one team — who is doing what to whom; a node
 click drills into the Timeline scoped to that persona.
 
+## Card context menus
+
+Every card on the Activity board carries its verbs on a right-click, and both
+menus are keyboard-reachable the same way: focus the card and press the
+**Menu** key or **Shift+F10**. One host owns each menu for the whole board, so
+a roster of fifty cards mounts one menu, not fifty.
+
+### A session card
+
+*Open terminal* (while the session has one), *Open recap*, **Flag / Unflag for
+Athena**, *Kill*, *Delete card*. Kill and Delete each confirm first; Delete
+stops the process if it still runs, then drops the registry row.
+
+### A persona card
+
+- **Quick chat** — a message straight to the persona without opening the
+  drawer. The item appears once a composer is mounted on the surface.
+- **Star / Remove star for Overseer** — the persona's membership in the
+  Overseer's coaching scope. It is the same star the agents page shows as a
+  favourite; there is one flag, not two.
+- **Flag / Unflag for Athena** — a **bulk** verb. It flags every live session
+  the persona owns *and* sets the persona's default so its future sessions are
+  born flagged. It reads back as three states: on (all live sessions flagged,
+  or the default set with no sessions running), off (none), and **mixed** when
+  only some are — mixed offers *Flag all sessions for Athena*. A persona whose
+  default is on says so under the label.
+- **Enable / Disable persona** — the runtime switch. A disabled persona starts
+  for no event, schedule or attention tick. An orphan card (a review or message
+  whose persona is gone) has no switch and does not show the item.
+
+Flagging for Athena is a **grant, not a filter**: it is what lets her read and
+act on that session. Her hold on a session also turns on by itself when the
+session was started by her, which is why a session can read as flagged without
+anyone having flagged it.
+
 ## The drawer
 
 Opening a badge slides a drawer **down** from the top over the grid (the grid

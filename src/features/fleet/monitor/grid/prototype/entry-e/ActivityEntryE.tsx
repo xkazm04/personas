@@ -23,6 +23,7 @@
 // files are moved, which is a rename pass and not a design one.
 
 import { memo, useCallback, useState } from 'react';
+import type { PersonaCardModel } from '../../../monitorModel';
 import { OrchestrationPanel } from '../../orchestration';
 import { SessionModals } from '../../board/SessionModals';
 import { FINAL_STAGE } from '../../useStagedMount';
@@ -33,6 +34,8 @@ import { useRailSurface } from '../useRailSurface';
 import { useCapSetting, useQueueConfirm } from '../shared';
 import { CommandBar, CommandFloor } from './CommandBar';
 import { SessionMenuProvider } from './SessionMenu';
+import { PersonaMenuProvider } from './PersonaMenu';
+import { QuickChatComposer } from './QuickChatComposer';
 import { usePanelFilter } from './boardFilter';
 import { useWorkspaceScope } from './workspaceScope';
 import { WorkspaceSheet, WorkspaceTabs } from './WorkspaceTabs';
@@ -47,6 +50,10 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
   const usage = useUsageFeed(surface.simulating);
   const width = useRailWidth();
   const [dockOpen, setDockOpen] = useState(false);
+  // The quick-chat seam the persona menu exposes. The composer is anchored to
+  // the persona's own line, so the board it was opened from stays readable.
+  const [quickChat, setQuickChat] = useState<PersonaCardModel | null>(null);
+  const closeQuickChat = useCallback(() => setQuickChat(null), []);
   const rail = useRailSurface({
     feedTeams: props.feedTeams ?? [],
     onOpenSpeaker: props.onOpenSpeaker,
@@ -94,11 +101,13 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
         <WorkspaceSheet scope={workspaces} className="flex min-h-0 min-w-0 flex-1 flex-col">
           <CommandFloor layout={layout} className="flex min-h-0 min-w-0 flex-1 flex-col">
             <SessionMenuProvider onOpenTerminal={surface.setTerminal} onOpenRecap={surface.setRecap}>
-              {layout === 'classic' ? (
-                <ClassicPanel surface={surface} filter={filter} workspaces={workspaces} selectedPersonaId={props.selectedPersonaId} onOpenRemote={props.onOpenRemote} onClearFilter={surface.clearFilter} />
-              ) : (
-                <LanesPanel surface={surface} filter={filter} workspaces={workspaces} cap={cap} onStart={confirm.askStart} onCancel={confirm.askCancel} />
-              )}
+              <PersonaMenuProvider onQuickChat={setQuickChat}>
+                {layout === 'classic' ? (
+                  <ClassicPanel surface={surface} filter={filter} workspaces={workspaces} selectedPersonaId={props.selectedPersonaId} onOpenRemote={props.onOpenRemote} onClearFilter={surface.clearFilter} />
+                ) : (
+                  <LanesPanel surface={surface} filter={filter} workspaces={workspaces} cap={cap} onStart={confirm.askStart} onCancel={confirm.askCancel} />
+                )}
+              </PersonaMenuProvider>
             </SessionMenuProvider>
           </CommandFloor>
         </WorkspaceSheet>
@@ -125,6 +134,7 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
       <OrchestrationPanel open={surface.orchestrationOpen} onClose={surface.closeOrchestration} />
       {rail.modals}
       {usage.dialog}
+      <QuickChatComposer card={quickChat} onClose={closeQuickChat} />
       {confirm.dialog}
     </div>
   );

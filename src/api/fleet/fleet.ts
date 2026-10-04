@@ -74,6 +74,18 @@ export const killSession = (sessionId: string) =>
   invoke<null>('fleet_kill_session', { sessionId });
 
 /**
+ * Grant or revoke Athena's hold on ONE session. Returns the new value.
+ *
+ * The registry entry changes first (so a running session reflects it at once),
+ * then the DB row, then `registry-changed` fires and the fleet slice folds the
+ * new `athenaFlagged` into `fleetSessions` itself — no manual refresh needed.
+ * The persona-level default is a different row with a different lifetime:
+ * `setPersonaAthenaAutoFlag` in `@/api/agents/personas`.
+ */
+export const setSessionAthenaFlag = (sessionId: string, flagged: boolean) =>
+  invoke<boolean>('fleet_set_athena_flag', { sessionId, flagged });
+
+/**
  * Snapshot the registry — every tracked session plus install state of
  * the Claude Code hook receivers.
  */

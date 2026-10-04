@@ -11,18 +11,34 @@ import { createContext, useCallback, useContext, useMemo, useState, type Keyboar
 import { createPortal } from 'react-dom';
 import { ScanEye, SquareTerminal, Trash2, XOctagon } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
-import { killSession, removeSession } from '@/api/fleet/fleet';
+import { killSession, removeSession, setSessionAthenaFlag } from '@/api/fleet/fleet';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { ContextMenu, type ContextMenuItem } from '@/features/shared/components/overlays/ContextMenu';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { sessionLabel } from '../../fleetSessionModel';
+import { CompanionMark } from './CompanionMark';
 
 type Open = (session: FleetSession, x: number, y: number) => void;
 const MenuContext = createContext<Open | null>(null);
 
-/** A process may still be attached: anything not already gone. */
-const mayBeLive = (s: FleetSession) => s.state !== 'exited' && s.state !== 'hibernated';
+/**
+ * A process may still be attached: anything not already gone. Exported because
+ * `PersonaMenu`'s bulk Athena flag needs the SAME definition of "live session"
+ * — a second, drifting copy of it would make a persona read as fully flagged
+ * while one of its sessions was not.
+ */
+/**
+ * Could this session still have a process behind it? Three terminal states say
+ * no, and `expired` is the one that is easy to miss: a dispatch retired from
+ * the queue after waiting past its bound NEVER RAN, so there is nothing to kill
+ * and nothing to flag for Athena to see through. It is excluded here rather
+ * than left to `isLiveSession`, because this predicate gates three different
+ * verbs (kill, delete, and the persona menu's bulk Athena flag) and all three
+ * are wrong on a session that never started.
+ */
+export const mayBeLive = (s: FleetSession) =>
+  s.state !== 'exited' && s.state !== 'hibernated' && s.state !== 'expired';
 
 export function SessionMenuProvider({
   children, onOpenTerminal, onOpenRecap,
@@ -58,6 +74,19 @@ export function SessionMenuProvider({
       onSelect: () => onOpenTerminal(menu.session),
     }] : []),
     { id: 'recap', label: t.monitor.grid_session_recap_open, icon: <ScanEye className="h-3.5 w-3.5" />, onSelect: () => onOpenRecap(menu.session) },
+    {
+      // The per-session grant, the one the persona menu sets in bulk.
+      // `athenaFlagged` is already resolved by the backend (explicit flag OR an
+      // Athena origin); it is read, never recomputed.
+      id: 'athena', separatorBefore: true,
+      label: menu.session.athenaFlagged ? t.monitor.persona_menu_unflag_athena : t.monitor.persona_menu_flag_athena,
+      icon: <CompanionMark companion="athena" active={menu.session.athenaFlagged} />,
+      testId: 'entry-e-session-athena',
+      onSelect: () => {
+        setSessionAthenaFlag(menu.session.id, !menu.session.athenaFlagged)
+          .catch(toastCatch('fleet/entry-e:session-athena-flag'));
+      },
+    },
     ...(mayBeLive(menu.session) ? [{
       id: 'kill', label: t.monitor.grid_fleet_kill, icon: <XOctagon className="h-3.5 w-3.5" />, separatorBefore: true,
       testId: 'entry-e-session-kill', onSelect: () => setConfirm({ kind: 'kill', session: menu.session }),

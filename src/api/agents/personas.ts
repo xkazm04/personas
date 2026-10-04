@@ -90,6 +90,14 @@ export const restorePersona = (id: string) =>
 export const bulkDeletePersonas = (ids: string[]) =>
   invoke<BulkDeleteOutcome[]>("bulk_delete_personas", { ids });
 
+/**
+ * Set a persona's Athena auto-flag: the DEFAULT that stamps its future
+ * sessions. It grants Athena nothing on a session that already exists - those
+ * are flagged one by one through `setSessionAthenaFlag`. Returns the new value.
+ */
+export const setPersonaAthenaAutoFlag = (personaId: string, enabled: boolean) =>
+  invoke<boolean>("persona_set_athena_auto_flag", { personaId, enabled });
+
 /** Star/unstar a persona (its membership in the Director's coaching scope). */
 export const setPersonaStarred = (id: string, starred: boolean) =>
   invoke<boolean>("set_persona_starred", { id, starred });
