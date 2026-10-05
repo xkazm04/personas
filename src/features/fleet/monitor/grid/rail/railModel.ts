@@ -30,6 +30,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 import { authorName } from '@/features/teams/sub_collab/collabRender';
 import { resolveCompact } from '../../channels/MergedRow';
 import { cleanName } from '../fleetGridModel';
+import { severityBucket } from '../../monitorModel';
 import type { MessageThread } from './messageThreads';
 
 export type { TriageTone };
@@ -61,8 +62,9 @@ export interface RailRow {
   body: string | null;
   /** Accent colour of the producing persona/team, for variants that tint. */
   accent: string | null;
-  /** The persona that produced it, for variants that show a face. */
-  persona: { icon: string | null; color: string | null } | null;
+  /** The persona that produced it, for variants that show a face. `name`
+   *  feeds the initials fallback of a persona with no icon. */
+  persona: { icon: string | null; color: string | null; name?: string | null } | null;
   /** True → the row has not been seen (Messages). */
   unread: boolean;
   /** How many unseen messages the row stands for (a Messages thread). */
@@ -171,13 +173,43 @@ const TRIAGE_CODE: Record<string, string> = {
   question: 'ASK', policy: 'POL', evolution: 'EVO', goal: 'GOA',
 };
 
-/** The triage queue — the Reviews tab. `kindLabel` is injected so this module
- *  never touches the translation proxy (rule 2). */
-export function triageToRow(item: TriageItem, kindLabel: string): RailRow {
+/**
+ * A review is a persona NEEDING you, so its tone is the Board's rule for that
+ * state (`piles.needTone`): a critical review reads critical, every other
+ * severity reads warning. Every other kind keeps the deck's own kind tone.
+ */
+function triageTone(item: TriageItem): TriageTone {
+  if (item.kind !== 'review') return KIND_META[item.kind].tone;
+  // `reviewToTriage` always stamps the tag; an untagged review is its default.
+  const tag = item.tags.find((t) => t.id === 'severity');
+  return severityBucket(tag ? tag.label : 'medium') === 'critical' ? 'danger' : 'warning';
+}
+
+/**
+ * The persona a triage item belongs to, when it names one: from the roster
+ * when `personaOf` knows the id (a question or a proposal names its persona
+ * only in the payload), else from the icon the item carries itself.
+ */
+function triagePersona(item: TriageItem, personaOf?: (id: string) => Persona | undefined): RailRow['persona'] {
+  const id = item.personaId ?? item.payload?.personaId ?? null;
+  const known = id ? personaOf?.(id) : undefined;
+  if (known) return { icon: known.icon, color: known.color, name: known.name };
+  if (!item.personaIcon) return null;
+  return { icon: item.personaIcon, color: item.source.color ?? null, name: item.source.label || null };
+}
+
+/** The triage queue — the Reviews tab. `kindLabel` and the roster lookup are
+ *  injected so this module never touches the translation proxy or a store
+ *  (rules 1 and 2). */
+export function triageToRow(
+  item: TriageItem,
+  kindLabel: string,
+  personaOf?: (id: string) => Persona | undefined,
+): RailRow {
   const meta = KIND_META[item.kind];
   return {
     id: item.id,
-    tone: meta.tone,
+    tone: triageTone(item),
     code: TRIAGE_CODE[item.kind] ?? '···',
     kind: kindLabel,
     icon: meta.icon,
@@ -192,7 +224,7 @@ export function triageToRow(item: TriageItem, kindLabel: string): RailRow {
     // 4KB string and the DOM.
     body: plainify(item.reasoning) || plainify(item.body) || null,
     accent: item.source.color ?? null,
-    persona: null,
+    persona: triagePersona(item, personaOf),
     unread: false,
     selectable: false,
     decidable: true,

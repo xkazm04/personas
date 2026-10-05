@@ -179,6 +179,12 @@ export function useReviewFeed(
   const copy = useTriageCopy();
   const { t } = useTranslation();
   const queue = useUnifiedTriage(copy);
+  // The roster, so a row can wear the face of the persona that raised it.
+  const personas = useAgentStore((s) => s.personas);
+  const personaOf = useMemo(() => {
+    const byId = new Map(personas.map((p) => [p.id, p]));
+    return (id: string) => byId.get(id);
+  }, [personas]);
 
   // Scoping happens HERE, above both the badge and the rows, so the two cannot
   // report different queues. See `railFilter` for why this one is a name test.
@@ -192,9 +198,9 @@ export function useReviewFeed(
   const all = useMemo(
     () =>
       active
-        ? items.map((item) => triageToRow(item, kindCopy(t, item.kind).one))
+        ? items.map((item) => triageToRow(item, kindCopy(t, item.kind).one, personaOf))
         : NO_ROWS,
-    [active, items, t],
+    [active, items, t, personaOf],
   );
 
   // `triageToRow` keys the row by `item.id`, so the index is that id straight

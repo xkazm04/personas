@@ -1,138 +1,69 @@
-// RailRowView — THE row of the Activity rail. One component, three tabs.
+// RailRowView — THE row of the Activity desk's Reviews tab (and any rail feed
+// that is not a message thread: those draw `RailThreadRow`).
 //
-// Winner of the 2026-08-31 /prototype round (against LEDGER, a fixed monospace
-// kind gutter, and DIGEST, section bands per kind). It began as the Messages row
-// and now draws reviews, dispatchable ideas and channel activity alike — which
-// is the actual unification: not that the three tabs were restyled to match, but
-// that there is only one row left to style.
+// ## It wears the Board rail's row (2026-10-05 fuse)
 //
-// ## The two-line contract (2026-08-31, round 2)
+// The look is the Board's `NeedsRail` row, from the Board's own stylesheet
+// (`fb-rail__row`, `fb-rail__bar`, `fb-ink`): a tone bar on the leading edge, a
+// framed face, the title in `typo-body`, a toned `typo-label` line under it,
+// and the age trailing in its own column. The tone arrives as `--fb-tone` (`railToneVar`): the
+// Board's own colours where the row is a persona needing you, the deck's kind
+// tone where it is not. The persona's identity colour is its FACE, not the
+// bar — the bar says state, as it does on the Board.
 //
-// LINE 1 IS THE TITLE AND NOTHING ELSE. It gets the row's full width, its
-// readable type tier, and full-strength foreground. Everything that used to
-// compete with it there — the relative time, the source, the kind chip — moved
-// down. The reason is arithmetic: at 320px the rail can show roughly 38
-// characters, and a chip plus a timestamp on the same line was eating fifteen of
-// them, so most titles truncated inside their first clause. A title that
-// truncates before its verb is not a title, it is a hint that you have to open
-// the row to read it — which defeats a rail whose whole job is to let you decide
-// what to open.
+// ## The two-line contract
 //
-// LINE 2 IS EVERYTHING ELSE, muted: where it came from, and then — pushed to
-// the trailing edge — either the two verdict buttons or the timestamp. The
-// instant used to LEAD that line, which put the least decision-relevant thing
-// on the row in the first place the eye lands after the title. It reads better
-// last and it is not printed at all on the two tabs that are backlogs rather
-// than chronologies (`RailRow.showTime`).
+// LINE 1 IS THE TITLE AND NOTHING ELSE: at rail width every character spent on
+// a chip or a timestamp is one the title loses before its verb. LINE 2 is where
+// it came from, toned. The KIND is carried by a glyph, never a word (except
+// where `RailRow.showKind` says a colour could not teach it): the glyph is the
+// face when the row has no persona, and leads line 2 when a persona's face
+// took that slot.
 //
-// ## Groups, and why the header is a band inside the row
+// The verdict buttons trail LINE 2, not the row: the owner judged a full-width
+// title over the source, with both verdicts in reach, the better review row,
+// and a trailing column would cost every title their width. Only a timed row
+// (`showTime`) fills the Board's trailing column, with its age; the two never
+// meet, since a decidable row is a backlog entry and prints no time.
 //
-// No live tab groups today: the Messages tab became a thread list
-// (`RailThreadRow`, 2026-09-16) and draws its own row. The band is kept as a
-// row capability. A group's first row draws the name above itself rather than the list interleaving separate header
-// elements, for one reason: `RailList` virtualizes on an index, and two kinds
-// of entry in one index space is how a virtualized list starts misplacing
-// things. One entry type, a variable height, one `railRowHeight` both the
-// virtualizer and the row are measured from.
+// ## Read and unread
 //
-// ## Read and unread are not the same weight
+// Only feeds with a watermark (`RailRow.tracksRead`) step read rows back, and
+// by opacity alone: a second hue down this column would read as a second KIND
+// of row, not the same row read. Dimming a review for not being "read" would
+// dim the whole tab to mean nothing.
 //
-// (Thread rows carry their own version of this rule in `RailThreadRow`.)
-// A merged channel feed is mostly history. Rendering all of it at one weight
-// makes the four lines that are actually new indistinguishable from the four
-// hundred that are not, which is the whole job of the tab. Unread titles keep
-// full-strength foreground and gain medium weight; read ones step back. Only
-// feeds that HAVE a watermark do this (`RailRow.tracksRead`) — dimming a review
-// for not being "read" would dim the Reviews tab to mean nothing.
+// ## Why the verdict buttons are on the row
 //
-// ## Why the verdict buttons are here and not in a menu
+// Most of a triage pass is "yes, obviously" and "no, obviously"; putting them
+// one click from the list keeps the rail a working surface. They carry NO
+// reason prompt on purpose — anything that needs an argument should be opened.
 //
-// The rail's Reviews tab is a queue of things blocking work. Most of a triage
-// pass is "yes, obviously" and "no, obviously"; only the ambiguous minority
-// needs the card. Putting accept/reject one click from the list is what keeps
-// the rail a working surface rather than an index into a modal. The buttons
-// carry NO reason prompt on purpose — a quick verdict is the one that needed no
-// argument, and anything that needs an argument should be opened.
+// ## Height
 //
-// ## What did not change
-//
-// The state colour is still a full-height rail on the leading edge, the persona
-// still gets a face where it has one, and a row's height is still DECIDED here
-// and nowhere else, because `RailList` virtualizes from it — a row that grows
-// with its content misplaces every row below it. What changed is that the
-// height is a function ({@link railRowHeight}) rather than a constant, since a
-// group's opening row wears a band the others do not.
+// A row's height is DECIDED here and nowhere else, because `RailList`
+// virtualizes from it: {@link railRowHeight}, the Board rail's 56px plus the
+// project band a group's first row wears (the band is a grid track inside the
+// row, so the list keeps ONE entry per index).
 
-import { memo } from 'react';
-import { Check, X } from 'lucide-react';
+import '../../fleetboard/fleetboard.css';
+import { memo, type CSSProperties } from 'react';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
-import { useTranslation } from '@/i18n/useTranslation';
-import { RailAvatar, RailCheckbox, RailTime, RailUnread } from './RailBits';
-import { TONE_TEXT, type RailRow } from './railModel';
+import { RailCheckbox, RailFace, RailTime, RailUnread, RailVerdicts, railToneVar } from './RailBits';
+import type { RailRow } from './railModel';
 
-/**
- * `typo-body` title line (14 × 1.65 ≈ 23) + `typo-caption` meta line (~18) +
- * py-1.5 (12) + the 1px rule. Fed to BOTH the virtualizer and the row from
- * here, so the two cannot drift.
- */
+/** The Board rail's row: a `md` framed face (36) inside `typo-body` + `typo-label`
+ *  (~23 + ~17). Fed to BOTH the virtualizer and the row, so the two cannot drift. */
 export const RAIL_ROW_HEIGHT = 56;
 
 /** The project band a group's first row wears above itself: `typo-label` on
  *  one line plus its own padding. */
 export const RAIL_GROUP_HEADER_HEIGHT = 26;
 
-/**
- * What this row occupies. The ONE height authority — `RailList` measures the
- * virtualizer from it and the row element is sized by it, so a group band that
- * grew here could not silently misplace every row beneath it.
- */
+/** What this row occupies. The ONE height authority (see the header). */
 export function railRowHeight(row: RailRow): number {
   return RAIL_ROW_HEIGHT + (row.groupHeader ? RAIL_GROUP_HEADER_HEIGHT : 0);
 }
-
-/** The two quick verdicts. Icon-only — at rail width a labelled button pair
- *  would take the whole meta line, and the icons are the app's own verdict
- *  glyphs (the triage card stamps the same check and cross). */
-const VerdictButtons = memo(function VerdictButtons({
-  row, onAccept, onReject,
-}: {
-  row: RailRow;
-  onAccept: (id: string) => void;
-  onReject: (id: string) => void;
-}) {
-  const { t, tx } = useTranslation();
-  const stop = (e: React.MouseEvent) => {
-    // The row itself opens the card. A verdict is not an "open", so the click
-    // must not reach the row — without this, accepting from the rail would also
-    // throw the modal up over the queue you were working down.
-    e.stopPropagation();
-    e.preventDefault();
-  };
-  const base =
-    'inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-interactive border transition-colors';
-  return (
-    <span className="ml-1 flex flex-shrink-0 items-center gap-1">
-      <button
-        type="button"
-        onClick={(e) => { stop(e); onAccept(row.id); }}
-        aria-label={tx(t.monitor.grid_rail_accept_aria, { title: row.title })}
-        data-testid="rail-row-accept"
-        className={`${base} border-status-success/30 text-status-success hover:bg-status-success/15`}
-      >
-        <Check className="h-3 w-3" />
-      </button>
-      <button
-        type="button"
-        onClick={(e) => { stop(e); onReject(row.id); }}
-        aria-label={tx(t.monitor.grid_rail_reject_aria, { title: row.title })}
-        data-testid="rail-row-reject"
-        className={`${base} border-status-error/30 text-status-error hover:bg-status-error/15`}
-      >
-        <X className="h-3 w-3" />
-      </button>
-    </span>
-  );
-});
 
 export const RailRowView = memo(function RailRowView({
   row, selected, onToggle, onOpen, onAccept, onReject,
@@ -146,23 +77,21 @@ export const RailRowView = memo(function RailRowView({
 }) {
   const Icon = row.icon;
   const openable = !!onOpen;
+  const toggles = row.selectable && !!onToggle;
   const canDecide = row.decidable && !!onAccept && !!onReject;
 
   const body = (
     <>
-      {/* The project band. Inside the row, above its own content, so the list
-          keeps ONE entry per index (see the header). `sticky` is deliberately
-          NOT used: a sticky band inside an absolutely-positioned virtual row
-          sticks to the row, not the scroller, which looks like a bug. */}
+      {/* The project band: the row's first grid track, spanning every column.
+          Not `sticky` — inside an absolutely-positioned virtual row it would
+          stick to the row, not the scroller. */}
       {row.groupHeader && (
         <span
-          className="flex items-center gap-1.5 border-b border-border pb-1 typo-label text-foreground opacity-70"
-          style={{ height: RAIL_GROUP_HEADER_HEIGHT }}
+          className="col-span-full flex items-center gap-1.5 self-stretch border-b border-border pb-1 typo-label text-foreground opacity-70"
           data-testid="rail-group-header"
         >
-          {/* The board column's own colour. The band and the column it names
-              are the same thing seen twice, and a shared accent is what says
-              so without a second label. */}
+          {/* The board column's own colour: the band and the column it names
+              are the same thing seen twice. */}
           {row.accent && (
             <span
               aria-hidden
@@ -173,89 +102,54 @@ export const RailRowView = memo(function RailRowView({
           <span className="min-w-0 truncate">{row.groupHeader}</span>
         </span>
       )}
-      {/* The state rail — the whole leading edge, so a column reads as a colour
-          strip you can scan without reading a word. */}
-      <span
-        aria-hidden
-        className={`absolute inset-y-0 left-0 w-0.5 ${row.accent ? '' : TONE_TEXT[row.tone].replace('text-', 'bg-')}`}
-        style={row.accent ? { backgroundColor: colorWithAlpha(row.accent, 0.7) } : undefined}
-      />
-
-      {/* LINE 1 — the title, and only the title. */}
+      <i className="fb-rail__bar" aria-hidden />
       <span className="flex items-center gap-1.5">
-        {row.selectable && onToggle && <RailCheckbox row={row} checked={!!selected} onToggle={onToggle} />}
-        {row.persona ? (
-          <RailAvatar row={row} size="w-3.5 h-3.5" />
-        ) : (
-          <Icon className={`h-3.5 w-3.5 flex-shrink-0 ${TONE_TEXT[row.tone]}`} aria-hidden />
-        )}
-        <RailUnread unread={row.unread} />
-        {/* Read steps BACK; unread is simply left alone. The difference is
-            carried by opacity and nothing else, and that is not a stylistic
-            preference — it is the only axis available here:
-              • WEIGHT is unavailable. `typo-*` sets `font-weight` from an
-                UNLAYERED rule, so it beats Tailwind's `@layer utilities` and
-                `typo-body font-medium` is a silent no-op (typography.css says
-                so twice, in as many words). Emphasis is meant to move up a
-                token instead — but `typo-title` also changes line-height 1.65
-                → 1.4 and tints the colour, which would make every unread row
-                lay out three pixels shorter than its neighbours in a list whose
-                heights are fixed and measured.
-              • HUE is available and wrong: a second colour down this column
-                reads as a second KIND of row, not the same row unread.
-            Rows from a feed with no watermark are never stepped back at all —
-            see `tracksRead`. */}
-        <span
-          className={`min-w-0 flex-1 truncate typo-body text-foreground ${
-            row.tracksRead && !row.unread ? 'opacity-50' : ''
-          }`}
-        >
-          {row.title}
-        </span>
-        {/* The kind is on screen only where a colour could not teach it (see
-            `RailRow.showKind`); everywhere else it is here for assistive tech
-            alone, because an icon is not a label. */}
-        {!row.showKind && <span className="sr-only">{row.kind}</span>}
+        {toggles && <RailCheckbox row={row} checked={!!selected} onToggle={onToggle} />}
+        <RailFace row={row} />
       </span>
-
-      {/* LINE 2 — where it came from, then the trailing slot. The two things
-          that can occupy that slot (a verdict pair, an instant) never occur on
-          the same row: a decidable row is a backlog entry and prints no time,
-          a timed row is a message and has no verdict. */}
-      <span className="mt-0.5 flex items-center gap-1.5 pl-5 typo-caption text-foreground opacity-55">
-        {row.source && <span className="min-w-0 truncate">{row.source}</span>}
-        {row.showKind && (
-          <>
-            {row.source && <span aria-hidden>·</span>}
-            <span className={`flex-shrink-0 ${TONE_TEXT[row.tone]}`}>{row.kind}</span>
-          </>
-        )}
-        {canDecide ? (
-          <span className="ml-auto flex items-center">
-            <VerdictButtons row={row} onAccept={onAccept} onReject={onReject} />
+      <span className="min-w-0">
+        <span className="flex items-center gap-1.5">
+          <RailUnread unread={row.unread} />
+          <span className={`min-w-0 flex-1 truncate typo-body text-foreground ${row.tracksRead && !row.unread ? 'opacity-50' : ''}`}>
+            {row.title}
           </span>
-        ) : (
-          row.showTime && <RailTime at={row.at} className="ml-auto" />
-        )}
+          {/* On screen the kind is a glyph; the word is here for assistive tech. */}
+          {!row.showKind && <span className="sr-only">{row.kind}</span>}
+        </span>
+        <span className="flex min-w-0 items-center gap-1 typo-label fb-ink">
+          {row.persona && <Icon className="h-3 w-3 flex-shrink-0" aria-hidden />}
+          {row.source && <span className="min-w-0 truncate">{row.source}</span>}
+          {row.showKind && (
+            <>
+              {row.source && <span aria-hidden>·</span>}
+              <span className="flex-shrink-0">{row.kind}</span>
+            </>
+          )}
+          {canDecide && (
+            <span className="ml-auto flex items-center pl-1">
+              <RailVerdicts row={row} onAccept={onAccept} onReject={onReject} />
+            </span>
+          )}
+        </span>
       </span>
+      {row.showTime && !canDecide && <RailTime at={row.at} className="typo-label text-foreground" />}
     </>
   );
 
-  const cls = `relative block w-full border-b border-border px-2.5 py-1.5 pl-3 text-left transition-colors ${
-    selected ? 'bg-primary/10' : openable || row.selectable ? 'hover:bg-secondary/40' : ''
-  }`;
+  const cls = `fb-rail__row mx-1${selected ? ' is-lit' : ''}`;
+  const style = {
+    '--fb-tone': railToneVar(row.tone),
+    ...(row.groupHeader ? { gridTemplateRows: `${RAIL_GROUP_HEADER_HEIGHT}px minmax(0, 1fr)` } : null),
+    ...(openable || toggles ? null : { cursor: 'default' }),
+  } as CSSProperties;
 
-  // The `data-testid` rides on ALL THREE branches, not just the two that are
-  // buttons. It was missing on the label branch once, and the tell was that the
-  // Dispatch tab's badge said 1 while a `[data-testid="rail-row"]` query
-  // returned 0 — a row on screen and invisible to every test and tour anchor
-  // that addresses rows.
-  if (row.selectable && onToggle) {
-    return <label className={`${cls} cursor-pointer`} data-testid="rail-row">{body}</label>;
+  // The `data-testid` rides on ALL THREE branches: a row missing it is on
+  // screen and invisible to every test and tour anchor that addresses rows.
+  if (toggles) {
+    return <label className={cls} style={style} data-testid="rail-row">{body}</label>;
   }
-  // A div-with-role rather than a <button>: the verdict buttons on line 2 are
-  // interactive, and nesting a button inside a button is invalid HTML that
-  // browsers resolve by dropping one of them.
+  // A div-with-role rather than a <button>: the verdict buttons are
+  // interactive, and a button inside a button is invalid HTML.
   return openable ? (
     <div
       role="button"
@@ -266,13 +160,14 @@ export const RailRowView = memo(function RailRowView({
         e.preventDefault();
         onOpen?.(row);
       }}
-      className={`${cls} focus-ring cursor-pointer`}
+      className={cls}
+      style={style}
       data-testid="rail-row"
     >
       {body}
     </div>
   ) : (
-    <div className={cls} data-testid="rail-row">{body}</div>
+    <div className={cls} style={style} data-testid="rail-row">{body}</div>
   );
 });
 

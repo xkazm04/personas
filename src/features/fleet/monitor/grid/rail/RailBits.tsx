@@ -7,10 +7,46 @@
 // and how loud it is.
 
 import { memo } from 'react';
+import { Check, X } from 'lucide-react';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
-import { TONE_FILL, type RailRow } from './railModel';
+import { PILE_VISUAL } from '../../fleetboard/piles';
+import { TONE_FILL, type RailRow, type TriageTone } from './railModel';
+
+/**
+ * A row's tone as the Board's `--fb-tone`, so the Board's bar and ink classes
+ * paint it. Danger and warning are a persona NEEDING you and take the Board's
+ * own colours (`PILE_VISUAL`, whose warning lifts to a fill on light themes);
+ * the other tones are not persona states and keep the deck's fill token, read
+ * off `TONE_FILL` rather than re-picked (`bg-primary` -> `var(--primary)`).
+ */
+export function railToneVar(tone: TriageTone): string {
+  if (tone === 'danger') return PILE_VISUAL.critical.tone;
+  if (tone === 'warning') return PILE_VISUAL.warning.tone;
+  return `var(--${TONE_FILL[tone].slice('bg-'.length)})`;
+}
+
+/**
+ * The row's face, in the Board rail's slot: the persona's framed icon when the
+ * row belongs to one, else the row's kind glyph in a frame of the same size,
+ * tinted by the row's tone, so the column of faces stays one width.
+ */
+export function RailFace({ row }: { row: RailRow }) {
+  if (row.persona) {
+    return (
+      <PersonaIcon icon={row.persona.icon} color={row.persona.color} name={row.persona.name ?? null} display="framed" frameSize="md" />
+    );
+  }
+  const Icon = row.icon;
+  return (
+    <span aria-hidden className="icon-frame icon-frame-md" style={{ background: 'color-mix(in oklab, var(--fb-tone) 14%, transparent)' }}>
+      <span className="flex items-center justify-center">
+        <Icon className="h-5 w-5 fb-ink" />
+      </span>
+    </span>
+  );
+}
 
 /** The row's instant. Always `tabular-nums` so a column of times does not
  *  shimmer as the shared clock ticks each one. */
@@ -73,3 +109,45 @@ export function RailAvatar({ row, size = 'w-3.5 h-3.5' }: { row: RailRow; size?:
   if (!row.persona) return null;
   return <PersonaIcon icon={row.persona.icon} color={row.persona.color} size={size} />;
 }
+
+/** The two quick verdicts. Icon-only — at rail width a labelled pair would take
+ *  the title's room, and the icons are the triage card's own verdict glyphs. */
+export const RailVerdicts = memo(function RailVerdicts({
+  row, onAccept, onReject,
+}: {
+  row: RailRow;
+  onAccept: (id: string) => void;
+  onReject: (id: string) => void;
+}) {
+  const { t, tx } = useTranslation();
+  const stop = (e: React.MouseEvent) => {
+    // The row itself opens the card. A verdict is not an "open", so the click
+    // must not reach the row, or accepting would throw the modal up as well.
+    e.stopPropagation();
+    e.preventDefault();
+  };
+  const base =
+    'inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-interactive border transition-colors';
+  return (
+    <span className="flex flex-shrink-0 items-center gap-1">
+      <button
+        type="button"
+        onClick={(e) => { stop(e); onAccept(row.id); }}
+        aria-label={tx(t.monitor.grid_rail_accept_aria, { title: row.title })}
+        data-testid="rail-row-accept"
+        className={`${base} border-status-success/30 text-status-success hover:bg-status-success/15`}
+      >
+        <Check className="h-3 w-3" />
+      </button>
+      <button
+        type="button"
+        onClick={(e) => { stop(e); onReject(row.id); }}
+        aria-label={tx(t.monitor.grid_rail_reject_aria, { title: row.title })}
+        data-testid="rail-row-reject"
+        className={`${base} border-status-error/30 text-status-error hover:bg-status-error/15`}
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </span>
+  );
+});
