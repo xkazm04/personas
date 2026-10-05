@@ -562,10 +562,6 @@
     "skipped_stat_label": "{skipped} пропущено",
     "skipped_stat_tooltip": "{skipped} из {total} событий за последние 7 дней не имели подписчиков и были пропущены ({rate}). Высокая доля указывает на триггер, который никто не слушает.",
     "source": "Источник",
-    "source_event": "Событие",
-    "source_manual": "Вручную",
-    "source_scheduled": "По расписанию",
-    "source_system": "Система",
     "subtitle": "{filtered} из {total} событий",
     "subtitle_one": "{filtered} из {total} события",
     "title": "События",
@@ -578,7 +574,8 @@
       "team_channel_leader_verdict": "Вердикт руководителя команды"
     },
     "view_name_placeholder": "Название вида (например, 'Сбои вебхуков на этой неделе')",
-    "views_label": "Виды:"
+    "views_label": "Виды:",
+    "source_unknown": "Неизвестный источник"
   },
   "execution_list": {
     "all_personas": "Все персоны",

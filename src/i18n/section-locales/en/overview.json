@@ -643,10 +643,6 @@
     "all_statuses": "All statuses",
     "all_types": "All types",
     "all_triggers": "All triggers",
-    "source_event": "Event",
-    "source_manual": "Manual",
-    "source_system": "System",
-    "source_scheduled": "Scheduled",
     "event_detail_title": "Event:",
     "event_detail_status": "Status:",
     "type_labels": {
@@ -671,7 +667,8 @@
     "event_data": "Event Data",
     "error": "Error",
     "skipped_stat_label": "{skipped} skipped",
-    "skipped_stat_tooltip": "{skipped} of {total} events in the last 7 days had no subscriber and were skipped ({rate}). A high rate signals a trigger nothing is listening to."
+    "skipped_stat_tooltip": "{skipped} of {total} events in the last 7 days had no subscriber and were skipped ({rate}). A high rate signals a trigger nothing is listening to.",
+    "source_unknown": "Unknown source"
   },
   "health": {
     "title": "Agent Health",

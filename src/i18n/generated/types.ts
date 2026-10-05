@@ -8768,10 +8768,6 @@ export type Translations = {
       all_statuses: string;
       all_types: string;
       all_triggers: string;
-      source_event: string;
-      source_manual: string;
-      source_system: string;
-      source_scheduled: string;
       event_detail_title: string;
       event_detail_status: string;
       type_labels: {
@@ -8797,6 +8793,7 @@ export type Translations = {
       error: string;
       skipped_stat_label: string;
       skipped_stat_tooltip: string;
+      source_unknown: string;
     };
     health: {
       title: string;
@@ -15136,6 +15133,51 @@ export type Translations = {
       decision: string;
       context: string;
       learning: string;
+    };
+    event_source: {
+      user: string;
+      manual_review: string;
+      app_focus: string;
+      clipboard: string;
+      persona: string;
+      autopilot: string;
+      app_master: string;
+      chain: string;
+      composite: string;
+      team_channel: string;
+      system: string;
+      system_op: string;
+      scheduler: string;
+      trigger: string;
+      trigger_engine: string;
+      audit_incident: string;
+      health_monitor: string;
+      sla_monitor: string;
+      fired_alerts: string;
+      memory_engine: string;
+      review_pipeline: string;
+      cloud_deploy: string;
+      vault: string;
+      context_rule: string;
+      findings: string;
+      polling: string;
+      deployment: string;
+      test: string;
+      webhook: string;
+      cloud_webhook: string;
+      smee_relay: string;
+      scraper: string;
+      file_watcher: string;
+      local_drive: string;
+      shared_catalog: string;
+      shared_catalog_local: string;
+      mcp: string;
+    };
+    event_origin: {
+      you: string;
+      agent: string;
+      app: string;
+      external: string;
     };
   };
   project_overview: {

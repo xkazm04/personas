@@ -563,7 +563,9 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "memory_tier": {},
     "span_type": {},
     "memory_action": {},
-    "memory_category": {}
+    "memory_category": {},
+    "event_source": {},
+    "event_origin": {}
   },
   "project_overview": {},
   "plugins": {

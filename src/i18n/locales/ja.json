@@ -8586,10 +8586,6 @@
       "skipped_stat_label": "{skipped} 件スキップ",
       "skipped_stat_tooltip": "過去 7 日間で {total} 件中 {skipped} 件のイベントに購読者がなくスキップされました（{rate}）。この割合が高い場合、誰も購読していないトリガーがあることを示します。",
       "source": "ソース",
-      "source_event": "イベント",
-      "source_manual": "手動",
-      "source_scheduled": "スケジュール",
-      "source_system": "システム",
       "subtitle": "{total}件中{filtered}件のイベント",
       "subtitle_one": "{total}件中{filtered}件のイベント",
       "title": "イベント",
@@ -8602,7 +8598,8 @@
         "team_channel_leader_verdict": "チームリーダーの判定"
       },
       "view_name_placeholder": "ビュー名（例:「今週失敗したWebhook」）",
-      "views_label": "ビュー:"
+      "views_label": "ビュー:",
+      "source_unknown": "不明なソース"
     },
     "execution_list": {
       "all_personas": "すべてのペルソナ",
@@ -18135,6 +18132,51 @@
       "not_ready": "未対応",
       "production": "本番",
       "promising": "有望"
+    },
+    "event_origin": {
+      "agent": "エージェント",
+      "app": "アプリ",
+      "external": "外部から",
+      "you": "あなたの操作"
+    },
+    "event_source": {
+      "app_focus": "アプリのフォーカス",
+      "app_master": "App Master",
+      "audit_incident": "インシデント",
+      "autopilot": "オートパイロット",
+      "chain": "チェーン",
+      "clipboard": "クリップボード",
+      "cloud_deploy": "クラウドデプロイ",
+      "cloud_webhook": "クラウド Webhook",
+      "composite": "複合トリガー",
+      "context_rule": "コンテキストルール",
+      "deployment": "デプロイ",
+      "file_watcher": "ファイル監視",
+      "findings": "検出結果",
+      "fired_alerts": "アラート",
+      "health_monitor": "ヘルスモニター",
+      "local_drive": "ローカルドライブ",
+      "manual_review": "手動レビュー",
+      "mcp": "MCP ツール",
+      "memory_engine": "メモリ",
+      "persona": "エージェント",
+      "polling": "ポーリング",
+      "review_pipeline": "レビューパイプライン",
+      "scheduler": "スケジュール実行",
+      "scraper": "Web スクレイパー",
+      "shared_catalog": "共有カタログ",
+      "shared_catalog_local": "共有カタログ（ローカル）",
+      "sla_monitor": "SLA モニター",
+      "smee_relay": "Webhook リレー",
+      "system": "システム",
+      "system_op": "システム操作",
+      "team_channel": "チームチャネル",
+      "test": "テストデータ",
+      "trigger": "トリガー",
+      "trigger_engine": "トリガー",
+      "user": "あなた",
+      "vault": "保管庫",
+      "webhook": "Webhook"
     }
   },
   "studio": {

@@ -8586,10 +8586,6 @@
       "skipped_stat_label": "{skipped} přeskočeno",
       "skipped_stat_tooltip": "{skipped} z {total} událostí za posledních 7 dní nemělo žádného odběratele a bylo přeskočeno ({rate}). Vysoký podíl signalizuje trigger, kterému nikdo nenaslouchá.",
       "source": "Zdroj",
-      "source_event": "Událost",
-      "source_manual": "Ruční",
-      "source_scheduled": "Plánované",
-      "source_system": "Systém",
       "subtitle": "{filtered} z {total} událostí",
       "subtitle_one": "{filtered} z {total} události",
       "title": "Události",
@@ -8602,7 +8598,8 @@
         "team_channel_leader_verdict": "Verdikt vedoucího týmu"
       },
       "view_name_placeholder": "Název zobrazení (např. 'Selhané webhooky tento týden')",
-      "views_label": "Zobrazení:"
+      "views_label": "Zobrazení:",
+      "source_unknown": "Neznámý zdroj"
     },
     "execution_list": {
       "all_personas": "Všechny persony",
@@ -18135,6 +18132,51 @@
       "not_ready": "Není připraveno",
       "production": "Produkce",
       "promising": "Slibné"
+    },
+    "event_origin": {
+      "agent": "Agent",
+      "app": "Aplikace",
+      "external": "Zvenčí",
+      "you": "Vaše akce"
+    },
+    "event_source": {
+      "app_focus": "Zaměření aplikace",
+      "app_master": "App Master",
+      "audit_incident": "Incident",
+      "autopilot": "Autopilot",
+      "chain": "Řetěz",
+      "clipboard": "Schránka",
+      "cloud_deploy": "Nasazení do cloudu",
+      "cloud_webhook": "Cloudový webhook",
+      "composite": "Složený spouštěč",
+      "context_rule": "Kontextové pravidlo",
+      "deployment": "Nasazení",
+      "file_watcher": "Sledování souborů",
+      "findings": "Zjištění",
+      "fired_alerts": "Výstraha",
+      "health_monitor": "Sledování zdraví",
+      "local_drive": "Místní disk",
+      "manual_review": "Manuální kontrola",
+      "mcp": "Nástroj MCP",
+      "memory_engine": "Paměť",
+      "persona": "Agent",
+      "polling": "Dotazování",
+      "review_pipeline": "Kontrolní linka",
+      "scheduler": "Naplánováno",
+      "scraper": "Webový scraper",
+      "shared_catalog": "Společný katalog",
+      "shared_catalog_local": "Společný katalog (místní)",
+      "sla_monitor": "Sledování SLA",
+      "smee_relay": "Webhook relé",
+      "system": "Systém",
+      "system_op": "Systémová operace",
+      "team_channel": "Týmový kanál",
+      "test": "Testovací data",
+      "trigger": "Spouštěč",
+      "trigger_engine": "Spouštěč",
+      "user": "Vy",
+      "vault": "Trezor",
+      "webhook": "Webhook"
     }
   },
   "studio": {

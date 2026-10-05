@@ -11,6 +11,7 @@ import { timeGroupKey, timeGroupLabels } from '@/features/shared/components/disp
 import type { PersonaEvent } from '@/lib/types/types';
 import { seedMockEvent } from '@/api/overview/events';
 import { useEventLog } from '../libs/useEventLog';
+import { eventSourceLabel } from '../libs/eventSourceRegistry';
 import { EventDetailContent } from './EventDetailContent';
 import { EventLogToolbar } from './EventLogToolbar';
 import { useEventLogColumns } from './eventLogColumns';
@@ -32,12 +33,6 @@ export default function EventLogList() {
     { value: 'processing', label: 'Processing' },
     { value: 'skipped', label: 'Skipped' },
   ];
-  const SOURCE_TYPE_LABELS = useMemo<Record<string, string>>(() => ({
-    persona: t.overview.events.source_event,
-    user: t.overview.events.source_manual,
-    system: t.overview.events.source_system,
-    scheduler: t.overview.events.source_scheduled,
-  }), [t.overview.events.source_event, t.overview.events.source_manual, t.overview.events.source_scheduled, t.overview.events.source_system]);
   const {
     recentEvents, personas, availableTypes, skippedStats,
     statusFilter, setStatusFilter, typeFilter, setTypeFilter,
@@ -67,15 +62,18 @@ export default function EventLogList() {
     return filteredEvents.filter((e) => e.source_type === triggerFilter);
   }, [filteredEvents, triggerFilter]);
 
-  // Unique trigger (source_type) values from current data for dropdown
+  // Unique source_type values in the loaded rows, as the Source filter's
+  // options. Labels come from the same registry the cells use (there used to
+  // be a SECOND, four-key label map here, which is half of why two thirds of
+  // the rows showed an untranslated raw token in their tooltip).
   const triggerOptions = useMemo(() => {
     const unique = new Set<string>();
     for (const e of filteredEvents) unique.add(e.source_type);
     const items = Array.from(unique)
-      .sort((a, b) => (SOURCE_TYPE_LABELS[a] ?? a).localeCompare(SOURCE_TYPE_LABELS[b] ?? b))
-      .map((v) => ({ value: v, label: SOURCE_TYPE_LABELS[v] ?? v }));
+      .map((v) => ({ value: v, label: eventSourceLabel(t, v) }))
+      .sort((a, b) => a.label.localeCompare(b.label));
     return [{ value: 'all', label: t.overview.events.all_triggers }, ...items];
-  }, [SOURCE_TYPE_LABELS, filteredEvents, t.overview.events.all_triggers]);
+  }, [filteredEvents, t]);
 
   const hasActiveFilters = !!(statusFilter !== 'all' || typeFilter !== 'all' || selectedPersonaId || searchText.trim() || triggerFilter !== 'all');
 
@@ -98,7 +96,6 @@ export default function EventLogList() {
 
   const columns = useEventLogColumns({
     t,
-    sourceTypeLabels: SOURCE_TYPE_LABELS,
     personas,
     getPersona,
     triggerFilter, setTriggerFilter, triggerOptions,

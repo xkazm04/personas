@@ -1,6 +1,4 @@
 import { useMemo } from 'react';
-import { Bot, HardDrive, Webhook, CalendarClock, KeyRound, HeartPulse, CloudUpload, Brain, ClipboardCheck, UserCheck, User, Cog, FlaskConical, Workflow, HelpCircle } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import type { Translations } from '@/i18n/en';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { TableColumn } from '@/features/shared/components/display/UnifiedTable';
@@ -11,39 +9,22 @@ import { EVENT_STATUS_COLORS, getEventTypeColor } from '@/lib/utils/formatters';
 import { getEventStatusIcon } from '@/lib/design/eventTokens';
 import type { PersonaEvent, Persona } from '@/lib/types/types';
 import { eventTypeLabel } from '../libs/eventTypeLabel';
+import { resolveEventSource } from '../libs/eventSourceRegistry';
 
-const defaultStatus = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' };
+// Fallback for a status token EVENT_STATUS_COLORS does not know. Amber means
+// "unexpected", so it reads through the status palette rather than a raw hue.
+const defaultStatus = { bg: 'bg-status-warning/10', text: 'text-status-warning', border: 'border-status-warning/20' };
 
-const TRIGGER_ICON_MAP: Record<string, { icon: LucideIcon; tone: string }> = {
-  persona:         { icon: Bot,            tone: 'text-violet-400' },
-  user:            { icon: User,           tone: 'text-sky-400' },
-  system:          { icon: Cog,            tone: 'text-foreground' },
-  scheduler:       { icon: CalendarClock,  tone: 'text-amber-400' },
-  local_drive:     { icon: HardDrive,      tone: 'text-emerald-400' },
-  webhook:         { icon: Webhook,        tone: 'text-cyan-400' },
-  trigger_engine:  { icon: Workflow,       tone: 'text-amber-400' },
-  vault:           { icon: KeyRound,       tone: 'text-amber-300' },
-  health_monitor:  { icon: HeartPulse,     tone: 'text-rose-400' },
-  cloud_deploy:    { icon: CloudUpload,    tone: 'text-blue-400' },
-  memory_engine:   { icon: Brain,          tone: 'text-fuchsia-400' },
-  review_pipeline: { icon: ClipboardCheck, tone: 'text-emerald-400' },
-  manual_review:   { icon: UserCheck,      tone: 'text-emerald-400' },
-  test:            { icon: FlaskConical,   tone: 'text-foreground' },
-};
-
-const FALLBACK_TRIGGER_ICON = { icon: HelpCircle, tone: 'text-foreground' };
-
-function resolveTriggerIcon(sourceType: string): { icon: LucideIcon; tone: string } {
-  if (sourceType.startsWith('persona:')) return TRIGGER_ICON_MAP.persona ?? FALLBACK_TRIGGER_ICON;
-  if (sourceType.startsWith('trigger:')) return TRIGGER_ICON_MAP.trigger_engine ?? FALLBACK_TRIGGER_ICON;
-  return TRIGGER_ICON_MAP[sourceType] ?? FALLBACK_TRIGGER_ICON;
-}
+// The source icon/label/tone map used to live here, 15 keys wide, with a
+// `HelpCircle` fallback — and it was missing the three sources that produced
+// two thirds of the real rows. It now lives in `libs/eventSourceRegistry.ts`,
+// enumerated from the Rust emit sites and gated by its own test. See that
+// file's header for the measurement.
 
 interface FilterOption { value: string; label: string }
 
 export interface EventLogColumnsArgs {
   t: Translations;
-  sourceTypeLabels: Record<string, string>;
   personas: Persona[];
   getPersona: (id: string | null) => Persona | null;
   triggerFilter: string;
@@ -65,7 +46,7 @@ export interface EventLogColumnsArgs {
  * filter state comes in via args.
  */
 export function useEventLogColumns({
-  t, sourceTypeLabels, personas, getPersona,
+  t, personas, getPersona,
   triggerFilter, setTriggerFilter, triggerOptions,
   typeOptions, typeFilter, setTypeFilter,
   statusOptions, statusFilter, setStatusFilter,
@@ -73,33 +54,46 @@ export function useEventLogColumns({
 }: EventLogColumnsArgs): TableColumn<PersonaEvent>[] {
   return useMemo(() => [
     {
+      // The column key stays `trigger` so a user's saved width for this table
+      // (UnifiedTable `tableId`) survives the rename of its header.
       key: 'trigger',
-      label: 'Trigger',
-      width: 'minmax(100px, 0.6fr)',
+      // Headed "Source", not "Trigger": the field is `source_type`, and most
+      // rows are not triggers at all (an incident, an overnight autopilot run
+      // and a context scan are none of them). The owner names it Source too.
+      label: t.overview.events.source,
+      // Widened from minmax(100px, 0.6fr): the cell now prints the label beside
+      // the glyph, so a bare 7x7 mark no longer forces a hover to answer "what
+      // is this". The column is user-resizable, so it can afford the text.
+      width: 'minmax(170px, 1fr)',
       filterComponent: (
         <ColumnDropdownFilter
-          label="Trigger"
+          label={t.overview.events.source}
           value={triggerFilter}
           options={triggerOptions}
           onChange={setTriggerFilter}
         />
       ),
       render: (event) => {
-        const raw = event.source_type || '';
-        const baseKey = raw.startsWith('persona:')
-          ? 'persona'
-          : raw.startsWith('trigger:')
-            ? 'trigger_engine'
-            : raw;
-        const label = sourceTypeLabels[baseKey] ?? baseKey.replace(/_/g, ' ');
-        const { icon: Icon, tone } = resolveTriggerIcon(raw);
+        // One registry, enumerated from the Rust emit sites. `tone` is the
+        // ORIGIN's colour, not the source's: four meaningful hues (you / an
+        // agent / the app / outside) replace eleven decorative ones, now that
+        // the label carries identity and colour is free to carry origin.
+        const { icon: Icon, tone, label, originLabel, known } =
+          resolveEventSource(t, event.source_type || '');
         return (
           <span
-            className={`inline-flex items-center justify-center w-7 h-7 rounded-card bg-secondary/30 border border-primary/10 ${tone}`}
-            title={label}
-            aria-label={label}
+            className="inline-flex items-center gap-2 min-w-0 max-w-full"
+            title={`${label} · ${originLabel}`}
+            aria-label={`${label} · ${originLabel}`}
           >
-            <Icon className="w-3.5 h-3.5" />
+            <Icon className={`w-3.5 h-3.5 shrink-0 ${tone}`} />
+            {/* typo-body like every other value cell. An unregistered source
+                takes the warning colour on the text too, so it reads as a
+                defect rather than as a valid state — and it still prints the
+                raw token, because this cell is never allowed to be empty. */}
+            <span className={`block truncate typo-body ${known ? 'text-foreground' : 'text-status-warning'}`}>
+              {label}
+            </span>
           </span>
         );
       },
@@ -108,7 +102,7 @@ export function useEventLogColumns({
       key: 'persona',
       // Widened (was minmax(160px, 1fr)) so roughly twice as much of a
       // persona's name is visible before the cell truncates.
-      label: 'Persona',
+      label: t.overview.events.col_persona,
       width: 'minmax(320px, 2fr)',
       filterComponent: (
         <PersonaColumnFilter
@@ -149,7 +143,7 @@ export function useEventLogColumns({
     },
     {
       key: 'type',
-      label: 'Event Name',
+      label: t.overview.events.col_event_name,
       width: 'minmax(180px, 1.2fr)',
       filterOptions: typeOptions,
       filterValue: typeFilter,
@@ -169,7 +163,7 @@ export function useEventLogColumns({
     },
     {
       key: 'status',
-      label: 'Status',
+      label: t.overview.events.col_status,
       width: 'minmax(140px, 0.8fr)',
       filterOptions: statusOptions,
       filterValue: statusFilter,
@@ -191,7 +185,7 @@ export function useEventLogColumns({
     },
     {
       key: 'created',
-      label: 'Created',
+      label: t.overview.events.col_created,
       width: 'minmax(120px, 0.8fr)',
       sortable: true,
       align: 'right' as const,
@@ -200,7 +194,7 @@ export function useEventLogColumns({
       ),
     },
   ], [
-    t, sourceTypeLabels, personas, getPersona,
+    t, personas, getPersona,
     triggerFilter, setTriggerFilter, triggerOptions,
     typeOptions, typeFilter, setTypeFilter,
     statusOptions, statusFilter, setStatusFilter,

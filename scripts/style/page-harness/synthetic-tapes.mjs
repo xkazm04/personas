@@ -18,6 +18,7 @@ import { homeSystemCheckTapes } from './homeSystemCheckTapes.mjs';
 import { twinDetailTapes } from './twinDetailTapes.mjs';
 import { activityTapes } from './activityTapes.mjs';
 import { inboxTapes } from './inboxTapes.mjs';
+import { missionControlTapes } from './missionControlTapes.mjs';
 
 export const RECORDED_AT = '2026-09-22T15:40:00.000Z';
 const T0 = Date.parse(RECORDED_AT);
@@ -51,15 +52,35 @@ const PERSONAS = [
 
 // [minutesAgo, event_type, source_type, target persona, status, error]
 // Event types are all keys of EVENT_TYPE_COLORS (src/lib/design/eventTokens.ts),
-// so none renders the gray unknown-type fallback.
+// so none renders the gray unknown-type fallback. Where a realistic source has
+// no colour-mapped event type of its own (`incident_resolved`,
+// `dev_tools.context_scan_completed`, the autopilot's run verdicts) the row
+// uses `custom` rather than introducing a grey one.
+//
+// The `source_type` column of this table is DISTRIBUTION-SHAPED, not
+// convenience-shaped: it mirrors what the live DB actually holds. Measured
+// 2026-10-05 over 164 real rows, the top three sources were `audit_incident`
+// (54), `autopilot` (45) and `system_op` (9) — 108 rows, two thirds of the
+// table — and this tape carried none of them. The Source column rendered an
+// icon-only cell, so every one of those real rows showed a HelpCircle
+// question mark while the harness shot stayed clean. A tape built only from
+// the keys the renderer already knows cannot photograph a coverage gap; keep
+// the real leaders in here so it can.
 const EVENT_ROWS = [
   [3, 'execution_completed', 'persona', 'p-triage', 'completed', null],
+  [5, 'custom', 'audit_incident', 'p-review', 'completed', null],
   [7, 'webhook_received', 'webhook', 'p-review', 'processing', null],
+  [9, 'custom', 'autopilot', 'p-triage', 'processing', null],
   [12, 'trigger_fired', 'scheduler', 'p-monitor', 'completed', null],
+  [15, 'custom', 'system_op', null, 'completed', null],
   [18, 'health_check_failed', 'health_monitor', 'p-monitor', 'failed', 'Endpoint https://status.example.com returned 503 three times'],
   [26, 'task_created', 'local_drive', 'p-release', 'pending', null],
+  [33, 'trigger_fired', 'trigger', 'p-monitor', 'completed', null],
   [41, 'persona_action', 'user', 'p-research', 'completed', null],
+  [48, 'chain_triggered', 'chain', 'p-finance', 'completed', null],
   [55, 'review_submitted', 'review_pipeline', 'p-review', 'skipped', null],
+  [66, 'custom', 'app_master', 'p-release', 'completed', null],
+  [84, 'review_submitted', 'manual_review', 'p-review', 'pending', null],
   [73, 'memory_created', 'memory_engine', null, 'processed', null],
   [96, 'credential_rotated', 'vault', null, 'completed', null],
   [128, 'chain_triggered', 'persona', 'p-finance', 'failed', 'Budget cap reached before the reconciliation finished'],
@@ -103,7 +124,7 @@ function subEvents() {
     module: 'overview/sub_events',
     source: 'synthetic',
     recordedAt: RECORDED_AT,
-    note: 'Synthetic: 6 personas, 20 events over ~4 days, mixed status and trigger kinds.',
+    note: 'Synthetic: 6 personas, 27 events over ~4 days, mixed status and source kinds (distribution-shaped: audit_incident / autopilot / system_op lead, as in the live DB).',
     calls: [
       { cmd: 'list_personas', response: PERSONAS },
       { cmd: 'get_persona_summaries', response: [] },
@@ -321,6 +342,8 @@ const BUILDERS = {
   ])),
   // The integrated Twin Detail page and training overlay (twinDetailSurfaces.tsx, twinDetailTapes.mjs).
   ...twinDetailTapes({ RECORDED_AT }).builders,
+  // Overview > Mission Control (missionControlSurfaces.tsx, missionControlTapes.mjs).
+  ...missionControlTapes({ RECORDED_AT, PERSONAS }).builders,
   // shoot.mjs --self-test probes: no data needed.
   '__selftest/empty': () => ({ version: 1, source: 'synthetic', recordedAt: RECORDED_AT, calls: [] }),
   '__selftest/console-error': () => ({ version: 1, source: 'synthetic', recordedAt: RECORDED_AT, calls: [] }),

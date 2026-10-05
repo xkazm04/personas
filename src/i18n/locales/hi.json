@@ -8586,10 +8586,6 @@
       "skipped_stat_label": "{skipped} छोड़े गए",
       "skipped_stat_tooltip": "पिछले 7 दिनों में {total} में से {skipped} इवेंट्स का कोई सब्सक्राइबर नहीं था और वे छोड़ दिए गए ({rate})। उच्च दर का मतलब है कि कोई ट्रिगर ऐसा है जिसे कोई नहीं सुन रहा।",
       "source": "स्रोत",
-      "source_event": "इवेंट",
-      "source_manual": "मैन्युअल",
-      "source_scheduled": "शेड्यूल्ड",
-      "source_system": "सिस्टम",
       "subtitle": "{total} में से {filtered} इवेंट",
       "subtitle_one": "{total} में से {filtered} इवेंट",
       "title": "इवेंट",
@@ -8602,7 +8598,8 @@
         "team_channel_leader_verdict": "टीम लीडर का निर्णय"
       },
       "view_name_placeholder": "दृश्य नाम (जैसे 'इस सप्ताह विफल webhooks')",
-      "views_label": "दृश्य:"
+      "views_label": "दृश्य:",
+      "source_unknown": "अज्ञात स्रोत"
     },
     "execution_list": {
       "all_personas": "सभी पर्सोना",
@@ -18135,6 +18132,51 @@
       "not_ready": "तैयार नहीं",
       "production": "प्रोडक्शन",
       "promising": "आशाजनक"
+    },
+    "event_origin": {
+      "agent": "एक ेजेंट",
+      "app": "ऐप",
+      "external": "बाहर से",
+      "you": "आपकी कार्रवाई"
+    },
+    "event_source": {
+      "app_focus": "ऐप में सक्रियता",
+      "app_master": "App Master",
+      "audit_incident": "घटना",
+      "autopilot": "ऑटोपायलट",
+      "chain": "शृंखला",
+      "clipboard": "क्लिपबोर्ड",
+      "cloud_deploy": "क्लाउड परिनियोजन",
+      "cloud_webhook": "क्लाउड वेबहुक",
+      "composite": "संयुक्त ट्रिगर",
+      "context_rule": "संदर्भ नियम",
+      "deployment": "परिनियोजन",
+      "file_watcher": "फाइल निगरानी",
+      "findings": "निष्कर्ष",
+      "fired_alerts": "चेतावनी",
+      "health_monitor": "स्वास्थ्य निगरानी",
+      "local_drive": "स्थानीय ड्राइव",
+      "manual_review": "मैनुअल समीक्षा",
+      "mcp": "MCP टूल",
+      "memory_engine": "स्मृति",
+      "persona": "ेजेंट",
+      "polling": "पोलिंग",
+      "review_pipeline": "समीक्षा पाइपलाइन",
+      "scheduler": "निर्धारित",
+      "scraper": "वेब स्क्रैपर",
+      "shared_catalog": "साझा कैटलॉग",
+      "shared_catalog_local": "साझा कैटलॉग (स्थानीय)",
+      "sla_monitor": "SLA मॉनिटर",
+      "smee_relay": "वेबहुक रिले",
+      "system": "सिस्टम",
+      "system_op": "सिस्टम संचालन",
+      "team_channel": "टीम चैनल",
+      "test": "परीक्षण डेटा",
+      "trigger": "ट्रिगर",
+      "trigger_engine": "ट्रिगर",
+      "user": "आप",
+      "vault": "वॉल्ट",
+      "webhook": "वेबहुक"
     }
   },
   "studio": {

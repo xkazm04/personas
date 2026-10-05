@@ -8586,10 +8586,6 @@
       "skipped_stat_label": "{skipped} omitidos",
       "skipped_stat_tooltip": "{skipped} de {total} eventos en los últimos 7 días no tenían suscriptor y se omitieron ({rate}). Una tasa alta señala un disparador que nadie escucha.",
       "source": "Origen",
-      "source_event": "Evento",
-      "source_manual": "Manual",
-      "source_scheduled": "Programado",
-      "source_system": "Sistema",
       "subtitle": "{filtered} de {total} eventos",
       "subtitle_one": "{filtered} de {total} evento",
       "title": "Eventos",
@@ -8602,7 +8598,8 @@
         "team_channel_leader_verdict": "Veredicto del líder del equipo"
       },
       "view_name_placeholder": "Nombre de la vista (p. ej. 'Webhooks fallidos esta semana')",
-      "views_label": "Vistas:"
+      "views_label": "Vistas:",
+      "source_unknown": "Fuente desconocida"
     },
     "execution_list": {
       "all_personas": "Todas las personas",
@@ -18135,6 +18132,51 @@
       "not_ready": "No listo",
       "production": "Producción",
       "promising": "Prometedor"
+    },
+    "event_origin": {
+      "agent": "Un agente",
+      "app": "La aplicación",
+      "external": "Desde fuera",
+      "you": "Tu acción"
+    },
+    "event_source": {
+      "app_focus": "Foco de la app",
+      "app_master": "App Master",
+      "audit_incident": "Incidencia",
+      "autopilot": "Piloto automático",
+      "chain": "Cadena",
+      "clipboard": "Portapapeles",
+      "cloud_deploy": "Despliegue en la nube",
+      "cloud_webhook": "Webhook en la nube",
+      "composite": "Disparador compuesto",
+      "context_rule": "Regla de contexto",
+      "deployment": "Despliegue",
+      "file_watcher": "Vigilante de archivos",
+      "findings": "Hallazgos",
+      "fired_alerts": "Alerta",
+      "health_monitor": "Monitor de estado",
+      "local_drive": "Unidad local",
+      "manual_review": "Revisión manual",
+      "mcp": "Herramienta MCP",
+      "memory_engine": "Memoria",
+      "persona": "Agente",
+      "polling": "Sondeo",
+      "review_pipeline": "Flujo de revisión",
+      "scheduler": "Programado",
+      "scraper": "Rastreador web",
+      "shared_catalog": "Catálogo compartido",
+      "shared_catalog_local": "Catálogo compartido (local)",
+      "sla_monitor": "Monitor de SLA",
+      "smee_relay": "Relé de webhook",
+      "system": "Sistema",
+      "system_op": "Operación del sistema",
+      "team_channel": "Canal del equipo",
+      "test": "Datos de prueba",
+      "trigger": "Disparador",
+      "trigger_engine": "Disparador",
+      "user": "Tú",
+      "vault": "Bóveda",
+      "webhook": "Webhook"
     }
   },
   "studio": {

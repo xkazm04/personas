@@ -562,10 +562,6 @@
     "skipped_stat_label": "{skipped} omitidos",
     "skipped_stat_tooltip": "{skipped} de {total} eventos en los últimos 7 días no tenían suscriptor y se omitieron ({rate}). Una tasa alta señala un disparador que nadie escucha.",
     "source": "Origen",
-    "source_event": "Evento",
-    "source_manual": "Manual",
-    "source_scheduled": "Programado",
-    "source_system": "Sistema",
     "subtitle": "{filtered} de {total} eventos",
     "subtitle_one": "{filtered} de {total} evento",
     "title": "Eventos",
@@ -578,7 +574,8 @@
       "team_channel_leader_verdict": "Veredicto del líder del equipo"
     },
     "view_name_placeholder": "Nombre de la vista (p. ej. 'Webhooks fallidos esta semana')",
-    "views_label": "Vistas:"
+    "views_label": "Vistas:",
+    "source_unknown": "Fuente desconocida"
   },
   "execution_list": {
     "all_personas": "Todas las personas",

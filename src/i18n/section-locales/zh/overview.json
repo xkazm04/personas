@@ -562,10 +562,6 @@
     "skipped_stat_label": "{skipped} 条被跳过",
     "skipped_stat_tooltip": "过去 7 天内有 {skipped}/{total} 个事件没有任何订阅者而被跳过（{rate}）。跳过率过高意味着某个触发器没有任何监听者。",
     "source": "来源",
-    "source_event": "事件",
-    "source_manual": "手动",
-    "source_scheduled": "计划",
-    "source_system": "系统",
     "subtitle": "{total} 个事件中的 {filtered} 个",
     "subtitle_one": "{total} 个事件中的 {filtered} 个",
     "title": "事件",
@@ -578,7 +574,8 @@
       "team_channel_leader_verdict": "团队负责人裁定"
     },
     "view_name_placeholder": "视图名称（例如「本周失败的 webhook」）",
-    "views_label": "视图："
+    "views_label": "视图：",
+    "source_unknown": "未知来源"
   },
   "execution_list": {
     "all_personas": "所有智能体",

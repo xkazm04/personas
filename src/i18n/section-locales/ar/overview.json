@@ -562,10 +562,6 @@
     "skipped_stat_label": "{skipped} متخطاة",
     "skipped_stat_tooltip": "{skipped} من أصل {total} حدثًا خلال آخر 7 أيام لم يكن لها أي مشترك فتم تخطيها ({rate}). المعدل المرتفع يشير إلى مشغّل لا يستمع إليه أحد.",
     "source": "المصدر",
-    "source_event": "حدث",
-    "source_manual": "يدوي",
-    "source_scheduled": "مجدوَل",
-    "source_system": "نظام",
     "subtitle": "{filtered} من {total} حدث",
     "subtitle_one": "{filtered} من {total} حدث",
     "title": "الأحداث",
@@ -578,7 +574,8 @@
       "team_channel_leader_verdict": "قرار قائد الفريق"
     },
     "view_name_placeholder": "اسم العرض (مثل: 'Webhooks الفاشلة هذا الأسبوع')",
-    "views_label": "العروض:"
+    "views_label": "العروض:",
+    "source_unknown": "مصدر غير معروف"
   },
   "execution_list": {
     "all_personas": "جميع الشخصيات",

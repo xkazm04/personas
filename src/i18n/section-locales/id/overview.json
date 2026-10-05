@@ -562,10 +562,6 @@
     "skipped_stat_label": "{skipped} dilewati",
     "skipped_stat_tooltip": "{skipped} dari {total} event dalam 7 hari terakhir tidak memiliki pelanggan dan dilewati ({rate}). Tingkat yang tinggi menandakan ada pemicu yang tidak didengarkan siapa pun.",
     "source": "Sumber",
-    "source_event": "Peristiwa",
-    "source_manual": "Manual",
-    "source_scheduled": "Terjadwal",
-    "source_system": "Sistem",
     "subtitle": "{filtered} dari {total} peristiwa",
     "subtitle_one": "{filtered} dari {total} peristiwa",
     "title": "Peristiwa",
@@ -578,7 +574,8 @@
       "team_channel_leader_verdict": "Keputusan pemimpin tim"
     },
     "view_name_placeholder": "Nama tampilan (misal 'Webhook gagal minggu ini')",
-    "views_label": "Tampilan:"
+    "views_label": "Tampilan:",
+    "source_unknown": "Sumber tidak diketahui"
   },
   "execution_list": {
     "all_personas": "Semua persona",

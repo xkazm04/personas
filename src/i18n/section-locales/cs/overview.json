@@ -562,10 +562,6 @@
     "skipped_stat_label": "{skipped} přeskočeno",
     "skipped_stat_tooltip": "{skipped} z {total} událostí za posledních 7 dní nemělo žádného odběratele a bylo přeskočeno ({rate}). Vysoký podíl signalizuje trigger, kterému nikdo nenaslouchá.",
     "source": "Zdroj",
-    "source_event": "Událost",
-    "source_manual": "Ruční",
-    "source_scheduled": "Plánované",
-    "source_system": "Systém",
     "subtitle": "{filtered} z {total} událostí",
     "subtitle_one": "{filtered} z {total} události",
     "title": "Události",
@@ -578,7 +574,8 @@
       "team_channel_leader_verdict": "Verdikt vedoucího týmu"
     },
     "view_name_placeholder": "Název zobrazení (např. 'Selhané webhooky tento týden')",
-    "views_label": "Zobrazení:"
+    "views_label": "Zobrazení:",
+    "source_unknown": "Neznámý zdroj"
   },
   "execution_list": {
     "all_personas": "Všechny persony",

@@ -562,10 +562,6 @@
     "skipped_stat_label": "{skipped} छोड़े गए",
     "skipped_stat_tooltip": "पिछले 7 दिनों में {total} में से {skipped} इवेंट्स का कोई सब्सक्राइबर नहीं था और वे छोड़ दिए गए ({rate})। उच्च दर का मतलब है कि कोई ट्रिगर ऐसा है जिसे कोई नहीं सुन रहा।",
     "source": "स्रोत",
-    "source_event": "इवेंट",
-    "source_manual": "मैन्युअल",
-    "source_scheduled": "शेड्यूल्ड",
-    "source_system": "सिस्टम",
     "subtitle": "{total} में से {filtered} इवेंट",
     "subtitle_one": "{total} में से {filtered} इवेंट",
     "title": "इवेंट",
@@ -578,7 +574,8 @@
       "team_channel_leader_verdict": "टीम लीडर का निर्णय"
     },
     "view_name_placeholder": "दृश्य नाम (जैसे 'इस सप्ताह विफल webhooks')",
-    "views_label": "दृश्य:"
+    "views_label": "दृश्य:",
+    "source_unknown": "अज्ञात स्रोत"
   },
   "execution_list": {
     "all_personas": "सभी पर्सोना",

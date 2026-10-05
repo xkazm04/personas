@@ -8762,10 +8762,6 @@
       "all_statuses": "All statuses",
       "all_types": "All types",
       "all_triggers": "All triggers",
-      "source_event": "Event",
-      "source_manual": "Manual",
-      "source_system": "System",
-      "source_scheduled": "Scheduled",
       "event_detail_title": "Event:",
       "event_detail_status": "Status:",
       "type_labels": {
@@ -8790,7 +8786,8 @@
       "event_data": "Event Data",
       "error": "Error",
       "skipped_stat_label": "{skipped} skipped",
-      "skipped_stat_tooltip": "{skipped} of {total} events in the last 7 days had no subscriber and were skipped ({rate}). A high rate signals a trigger nothing is listening to."
+      "skipped_stat_tooltip": "{skipped} of {total} events in the last 7 days had no subscriber and were skipped ({rate}). A high rate signals a trigger nothing is listening to.",
+      "source_unknown": "Unknown source"
     },
     "health": {
       "title": "Agent Health",
@@ -15130,6 +15127,51 @@
       "decision": "Decision",
       "context": "Context",
       "learning": "Learning"
+    },
+    "event_source": {
+      "user": "You",
+      "manual_review": "Manual review",
+      "app_focus": "App focus",
+      "clipboard": "Clipboard",
+      "persona": "Agent",
+      "autopilot": "Autopilot",
+      "app_master": "App Master",
+      "chain": "Chain",
+      "composite": "Composite trigger",
+      "team_channel": "Team channel",
+      "system": "System",
+      "system_op": "System operation",
+      "scheduler": "Scheduled",
+      "trigger": "Trigger",
+      "trigger_engine": "Trigger",
+      "audit_incident": "Incident",
+      "health_monitor": "Health monitor",
+      "sla_monitor": "SLA monitor",
+      "fired_alerts": "Alert",
+      "memory_engine": "Memory",
+      "review_pipeline": "Review pipeline",
+      "cloud_deploy": "Cloud deploy",
+      "vault": "Vault",
+      "context_rule": "Context rule",
+      "findings": "Findings",
+      "polling": "Polling",
+      "deployment": "Deployment",
+      "test": "Test fixture",
+      "webhook": "Webhook",
+      "cloud_webhook": "Cloud webhook",
+      "smee_relay": "Webhook relay",
+      "scraper": "Web scraper",
+      "file_watcher": "File watcher",
+      "local_drive": "Local drive",
+      "shared_catalog": "Shared catalog",
+      "shared_catalog_local": "Shared catalog (local)",
+      "mcp": "MCP tool"
+    },
+    "event_origin": {
+      "you": "Your action",
+      "agent": "An agent",
+      "app": "The app",
+      "external": "Outside the app"
     }
   },
   "project_overview": {

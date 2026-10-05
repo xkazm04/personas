@@ -8586,10 +8586,6 @@
       "skipped_stat_label": "{skipped} 条被跳过",
       "skipped_stat_tooltip": "过去 7 天内有 {skipped}/{total} 个事件没有任何订阅者而被跳过（{rate}）。跳过率过高意味着某个触发器没有任何监听者。",
       "source": "来源",
-      "source_event": "事件",
-      "source_manual": "手动",
-      "source_scheduled": "计划",
-      "source_system": "系统",
       "subtitle": "{total} 个事件中的 {filtered} 个",
       "subtitle_one": "{total} 个事件中的 {filtered} 个",
       "title": "事件",
@@ -8602,7 +8598,8 @@
         "team_channel_leader_verdict": "团队负责人裁定"
       },
       "view_name_placeholder": "视图名称（例如「本周失败的 webhook」）",
-      "views_label": "视图："
+      "views_label": "视图：",
+      "source_unknown": "未知来源"
     },
     "execution_list": {
       "all_personas": "所有智能体",
@@ -18135,6 +18132,51 @@
       "not_ready": "未就绪",
       "production": "生产就绪",
       "promising": "有潜力"
+    },
+    "event_origin": {
+      "agent": "代理",
+      "app": "应用",
+      "external": "来自外部",
+      "you": "你的操作"
+    },
+    "event_source": {
+      "app_focus": "应用焦点",
+      "app_master": "App Master",
+      "audit_incident": "事件",
+      "autopilot": "自动驾驶",
+      "chain": "链",
+      "clipboard": "剪贴板",
+      "cloud_deploy": "云端部署",
+      "cloud_webhook": "云端 Webhook",
+      "composite": "复合触发器",
+      "context_rule": "上下文规则",
+      "deployment": "部署",
+      "file_watcher": "文件监视",
+      "findings": "发现",
+      "fired_alerts": "警报",
+      "health_monitor": "健康监控",
+      "local_drive": "本地磁盘",
+      "manual_review": "人工审核",
+      "mcp": "MCP 工具",
+      "memory_engine": "记忆",
+      "persona": "代理",
+      "polling": "轮询",
+      "review_pipeline": "审核流水线",
+      "scheduler": "已排期",
+      "scraper": "网页抓取器",
+      "shared_catalog": "共享目录",
+      "shared_catalog_local": "共享目录（本地）",
+      "sla_monitor": "SLA 监控",
+      "smee_relay": "Webhook 中继",
+      "system": "系统",
+      "system_op": "系统操作",
+      "team_channel": "团队频道",
+      "test": "测试数据",
+      "trigger": "触发器",
+      "trigger_engine": "触发器",
+      "user": "你",
+      "vault": "保险库",
+      "webhook": "Webhook"
     }
   },
   "studio": {

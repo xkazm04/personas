@@ -562,10 +562,6 @@
     "skipped_stat_label": "{skipped} এড়ানো হয়েছে",
     "skipped_stat_tooltip": "গত ৭ দিনে {total}টির মধ্যে {skipped}টি ইভেন্টের কোনো সাবস্ক্রাইবার ছিল না এবং সেগুলি এড়িয়ে যাওয়া হয়েছে ({rate})। উচ্চ হার নির্দেশ করে যে এমন একটি ট্রিগার আছে যা কেউ শুনছে না।",
     "source": "উৎস",
-    "source_event": "ইভেন্ট",
-    "source_manual": "ম্যানুয়াল",
-    "source_scheduled": "নির্ধারিত",
-    "source_system": "সিস্টেম",
     "subtitle": "{total}-এর মধ্যে {filtered}টি ইভেন্ট",
     "subtitle_one": "{total}-এর মধ্যে {filtered}টি ইভেন্ট",
     "title": "ইভেন্ট",
@@ -578,7 +574,8 @@
       "team_channel_leader_verdict": "টিম লিডারের রায়"
     },
     "view_name_placeholder": "দৃশ্যের নাম (যেমন 'এই সপ্তাহের ব্যর্থ webhook')",
-    "views_label": "দৃশ্য:"
+    "views_label": "দৃশ্য:",
+    "source_unknown": "অজানা উৎস"
   },
   "execution_list": {
     "all_personas": "সব পার্সোনা",

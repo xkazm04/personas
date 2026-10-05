@@ -8586,10 +8586,6 @@
       "skipped_stat_label": "{skipped} ignorés",
       "skipped_stat_tooltip": "{skipped} des {total} événements des 7 derniers jours n’avaient aucun abonné et ont été ignorés ({rate}). Un taux élevé signale un déclencheur que personne n’écoute.",
       "source": "Provenance",
-      "source_event": "Événement",
-      "source_manual": "Manuel",
-      "source_scheduled": "Planifié",
-      "source_system": "Système",
       "subtitle": "{filtered} sur {total} événements",
       "subtitle_one": "{filtered} sur {total} événement",
       "title": "Événements",
@@ -8602,7 +8598,8 @@
         "team_channel_leader_verdict": "Verdict du chef d'équipe"
       },
       "view_name_placeholder": "Nom de la vue (ex. 'Webhooks échoués cette semaine')",
-      "views_label": "Vues :"
+      "views_label": "Vues :",
+      "source_unknown": "Source inconnue"
     },
     "execution_list": {
       "all_personas": "Tous les personas",
@@ -18135,6 +18132,51 @@
       "not_ready": "Non prêt",
       "production": "Production",
       "promising": "Prometteur"
+    },
+    "event_origin": {
+      "agent": "Un agent",
+      "app": "L’application",
+      "external": "De l’extérieur",
+      "you": "Votre action"
+    },
+    "event_source": {
+      "app_focus": "Focus de l’app",
+      "app_master": "App Master",
+      "audit_incident": "Incident",
+      "autopilot": "Pilote automatique",
+      "chain": "Chaîne",
+      "clipboard": "Presse-papiers",
+      "cloud_deploy": "Déploiement cloud",
+      "cloud_webhook": "Webhook cloud",
+      "composite": "Déclencheur composite",
+      "context_rule": "Règle de contexte",
+      "deployment": "Déploiement",
+      "file_watcher": "Surveillance de fichiers",
+      "findings": "Constats",
+      "fired_alerts": "Alerte",
+      "health_monitor": "Moniteur de santé",
+      "local_drive": "Disque local",
+      "manual_review": "Revue manuelle",
+      "mcp": "Outil MCP",
+      "memory_engine": "Mémoire",
+      "persona": "Agent",
+      "polling": "Interrogation",
+      "review_pipeline": "Pipeline de revue",
+      "scheduler": "Planifié",
+      "scraper": "Scraper web",
+      "shared_catalog": "Catalogue partagé",
+      "shared_catalog_local": "Catalogue partagé (local)",
+      "sla_monitor": "Moniteur de SLA",
+      "smee_relay": "Relais de webhook",
+      "system": "Système",
+      "system_op": "Opération système",
+      "team_channel": "Canal d’équipe",
+      "test": "Données de test",
+      "trigger": "Déclencheur",
+      "trigger_engine": "Déclencheur",
+      "user": "Vous",
+      "vault": "Coffre-fort",
+      "webhook": "Webhook"
     }
   },
   "studio": {

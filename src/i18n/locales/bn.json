@@ -8586,10 +8586,6 @@
       "skipped_stat_label": "{skipped} এড়ানো হয়েছে",
       "skipped_stat_tooltip": "গত ৭ দিনে {total}টির মধ্যে {skipped}টি ইভেন্টের কোনো সাবস্ক্রাইবার ছিল না এবং সেগুলি এড়িয়ে যাওয়া হয়েছে ({rate})। উচ্চ হার নির্দেশ করে যে এমন একটি ট্রিগার আছে যা কেউ শুনছে না।",
       "source": "উৎস",
-      "source_event": "ইভেন্ট",
-      "source_manual": "ম্যানুয়াল",
-      "source_scheduled": "নির্ধারিত",
-      "source_system": "সিস্টেম",
       "subtitle": "{total}-এর মধ্যে {filtered}টি ইভেন্ট",
       "subtitle_one": "{total}-এর মধ্যে {filtered}টি ইভেন্ট",
       "title": "ইভেন্ট",
@@ -8602,7 +8598,8 @@
         "team_channel_leader_verdict": "টিম লিডারের রায়"
       },
       "view_name_placeholder": "দৃশ্যের নাম (যেমন 'এই সপ্তাহের ব্যর্থ webhook')",
-      "views_label": "দৃশ্য:"
+      "views_label": "দৃশ্য:",
+      "source_unknown": "অজানা উৎস"
     },
     "execution_list": {
       "all_personas": "সব পার্সোনা",
@@ -18135,6 +18132,51 @@
       "not_ready": "প্রস্তুত নয়",
       "production": "প্রোডাকশন",
       "promising": "আশাব্যঞ্জক"
+    },
+    "event_origin": {
+      "agent": "একজন সহকারী",
+      "app": "অ্যাপ",
+      "external": "বাইরে থেকে",
+      "you": "আপনার কাজ"
+    },
+    "event_source": {
+      "app_focus": "অ্যাপ ফোকাস",
+      "app_master": "App Master",
+      "audit_incident": "ঘটনা",
+      "autopilot": "অটোপাইলট",
+      "chain": "চেইন",
+      "clipboard": "ক্লিপবোর্ড",
+      "cloud_deploy": "ক্লাউড ডিপ্লয়",
+      "cloud_webhook": "ক্লাউড ওয়েবহুক",
+      "composite": "যৌগিক ট্রিগার",
+      "context_rule": "প্রসঙ্গ নিয়ম",
+      "deployment": "ডিপ্লয়মেন্ট",
+      "file_watcher": "ফাইল পর্যবেক্ষণ",
+      "findings": "অনুসন্ধান",
+      "fired_alerts": "সতর্কতা",
+      "health_monitor": "স্বাস্থ্য পর্যবেক্ষণ",
+      "local_drive": "স্থানীয় ড্রাইভ",
+      "manual_review": "ম্যানুয়াল পর্যালোচনা",
+      "mcp": "MCP টুল",
+      "memory_engine": "স্মৃতি",
+      "persona": "সহকারী",
+      "polling": "পোলিং",
+      "review_pipeline": "পর্যালোচনা পাইপলাইন",
+      "scheduler": "নির্ধারিত",
+      "scraper": "ওয়েব স্ক্র্যাপার",
+      "shared_catalog": "শেয়ার করা ক্যাটালগ",
+      "shared_catalog_local": "শেয়ার করা ক্যাটালগ (স্থানীয়)",
+      "sla_monitor": "SLA মনিটর",
+      "smee_relay": "ওয়েবহুক রিলে",
+      "system": "সিস্টেম",
+      "system_op": "সিস্টেম অপারেশন",
+      "team_channel": "টিম চ্যানেল",
+      "test": "পরীক্ষার ডেটা",
+      "trigger": "ট্রিগার",
+      "trigger_engine": "ট্রিগার",
+      "user": "আপনি",
+      "vault": "ভল্ট",
+      "webhook": "ওয়েবহুক"
     }
   },
   "studio": {

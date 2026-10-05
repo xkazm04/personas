@@ -8586,10 +8586,6 @@
       "skipped_stat_label": "{skipped} пропущено",
       "skipped_stat_tooltip": "{skipped} из {total} событий за последние 7 дней не имели подписчиков и были пропущены ({rate}). Высокая доля указывает на триггер, который никто не слушает.",
       "source": "Источник",
-      "source_event": "Событие",
-      "source_manual": "Вручную",
-      "source_scheduled": "По расписанию",
-      "source_system": "Система",
       "subtitle": "{filtered} из {total} событий",
       "subtitle_one": "{filtered} из {total} события",
       "title": "События",
@@ -8602,7 +8598,8 @@
         "team_channel_leader_verdict": "Вердикт руководителя команды"
       },
       "view_name_placeholder": "Название вида (например, 'Сбои вебхуков на этой неделе')",
-      "views_label": "Виды:"
+      "views_label": "Виды:",
+      "source_unknown": "Неизвестный источник"
     },
     "execution_list": {
       "all_personas": "Все персоны",
@@ -18135,6 +18132,51 @@
       "not_ready": "Не готов",
       "production": "Продакшен",
       "promising": "Перспективный"
+    },
+    "event_origin": {
+      "agent": "Агент",
+      "app": "Приложение",
+      "external": "Извне",
+      "you": "Ваше действие"
+    },
+    "event_source": {
+      "app_focus": "Фокус приложения",
+      "app_master": "App Master",
+      "audit_incident": "Инцидент",
+      "autopilot": "Автопилот",
+      "chain": "Цепочка",
+      "clipboard": "Буфер обмена",
+      "cloud_deploy": "Развёртывание в облако",
+      "cloud_webhook": "Облачный веб-хук",
+      "composite": "Составной триггер",
+      "context_rule": "Правило контекста",
+      "deployment": "Развёртывание",
+      "file_watcher": "Наблюдение за файлами",
+      "findings": "Находки",
+      "fired_alerts": "Оповещение",
+      "health_monitor": "Монитор состояния",
+      "local_drive": "Локальный диск",
+      "manual_review": "Ручная проверка",
+      "mcp": "Инструмент MCP",
+      "memory_engine": "Память",
+      "persona": "Агент",
+      "polling": "Опрос",
+      "review_pipeline": "Конвейер проверки",
+      "scheduler": "По расписанию",
+      "scraper": "Веб-скрапер",
+      "shared_catalog": "Общий каталог",
+      "shared_catalog_local": "Общий каталог (локальный)",
+      "sla_monitor": "Монитор SLA",
+      "smee_relay": "Релейный веб-хук",
+      "system": "Система",
+      "system_op": "Системная операция",
+      "team_channel": "Командный канал",
+      "test": "Тестовые данные",
+      "trigger": "Триггер",
+      "trigger_engine": "Триггер",
+      "user": "Вы",
+      "vault": "Хранилище",
+      "webhook": "Веб-хук"
     }
   },
   "studio": {

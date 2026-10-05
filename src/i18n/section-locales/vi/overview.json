@@ -562,10 +562,6 @@
     "skipped_stat_label": "{skipped} bị bỏ qua",
     "skipped_stat_tooltip": "{skipped} trong số {total} sự kiện trong 7 ngày qua không có người đăng ký nào và đã bị bỏ qua ({rate}). Tỷ lệ cao cho thấy có một trình kích hoạt mà không ai lắng nghe.",
     "source": "Nguồn",
-    "source_event": "Sự kiện",
-    "source_manual": "Thủ công",
-    "source_scheduled": "Theo lịch",
-    "source_system": "Hệ thống",
     "subtitle": "{filtered} trong {total} sự kiện",
     "subtitle_one": "{filtered} trong {total} sự kiện",
     "title": "Sự kiện",
@@ -578,7 +574,8 @@
       "team_channel_leader_verdict": "Phán quyết của trưởng nhóm"
     },
     "view_name_placeholder": "Tên chế độ xem (vd: 'Webhook thất bại tuần này')",
-    "views_label": "Chế độ xem:"
+    "views_label": "Chế độ xem:",
+    "source_unknown": "Nguồn không xác định"
   },
   "execution_list": {
     "all_personas": "Tất cả personas",
