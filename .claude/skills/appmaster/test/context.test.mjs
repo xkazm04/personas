@@ -149,7 +149,7 @@ test('renderContext is pure, steps down its budget, and ends cut lists with +N m
       gitBranches: { total: 30, branches: big(10, (i) => ({ branch: `autopilot/b-${i}`, at: now, ahead: 1, behind: 2 })) },
       checkout: { branch: 'main', dirty: 3 }, readErrors: [],
     },
-    machine: { memory: { usedPct: 70, freeGb: 4, stop: true }, limit: { limited: true, reason: 'usage limit', resetsAt: now }, running: { project: 0, global: 1 } },
+    machine: { memory: { usedPct: 70, freeGb: 3, totalGb: 64, dispatchNeedGb: 4, stop: true }, limit: { limited: true, reason: 'usage limit', resetsAt: now }, running: { project: 0, global: 1 } },
     docs: ['C:/x/big/CLAUDE.md'],
   };
   const a = X.renderContext(input), b = X.renderContext(input);
@@ -188,7 +188,7 @@ test('status: per project record, stream age, and a text digest where quiet proj
   assert.ok('memory' in st.brakes && 'limit' in st.brakes);
   const txt = await G.cmdStatus({ flags: { text: true } });
   assert.equal(txt.__text, true);
-  assert.match(txt.text, /^Machine: memory \d+% used/);
+  assert.match(txt.text, /^Machine: [\d.]+ GB free/);
   assert.match(txt.text, /^bare - quiet, no decision yet, due now.$/m);
   assert.match(txt.text, /Running [0-9a-f]{8} project-kpi-stewardship \(claude-sonnet-5-5\), last output 0 min ago/);
   const one = await G.cmdStatus({ flags: { project: 'Demo' } });

@@ -8,13 +8,14 @@ import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  SKILL_DIR, runDir, shortId, nowIso, mintId, memoryHeadroom, claudeBin, Refusal,
-  ENV_STRIP, ENV_SET, RUN_LABEL_PREFIX, GLOBAL_CAP, PER_PROJECT_CAP, MEMORY_STOP_PCT,
+  SKILL_DIR, runDir, shortId, nowIso, mintId, claudeBin, Refusal,
+  ENV_STRIP, ENV_SET, RUN_LABEL_PREFIX, GLOBAL_CAP, PER_PROJECT_CAP,
   QUIET_MIN, TIMEOUT_MIN, LIVE_RUN_STATES,
 } from './contract.mjs';
 import { loadBrief, listRuns, listSlugs, findRun, updateRun } from './store.mjs';
 import { readLimit, setLimit, detectLimit, limitSurface, limitSnippet } from './limits.mjs';
 import { createWorktree, removeWorktree } from './worktree.mjs';
+import { memoryState } from './memory.mjs';
 import { resolveGates, splitBoundaries, GATE_NAMES } from './gate.mjs';
 
 // ---------------------------------------------------------------- small helpers
@@ -30,12 +31,10 @@ export function pidAlive(pid) {
   try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; }
 }
 
-/** Used-memory percent; APPMASTER_FAKE_USED_PCT overrides it (tests only). */
-export function usedPct() {
-  const fake = process.env.APPMASTER_FAKE_USED_PCT;
-  return fake !== undefined && fake !== '' ? Number(fake) : memoryHeadroom().usedPct;
+/** Builders in state `running` across every managed project, not counting `exceptRunId`. */
+export function countRunning(exceptRunId) {
+  return [...new Set(listSlugs())].flatMap((s) => listRuns(s, { states: ['running'] })).filter((r) => r.runId !== exceptRunId).length;
 }
-
 /** Resolve --run (full id or 8-char short form) across every managed project. */
 export function requireRun(id) {
   if (!id || id === true) throw new Error('--run <runId> is required');
@@ -146,8 +145,8 @@ export function cmdDispatch({ flags = {} } = {}) {
 
   const limit = readLimit();
   if (limit) throw new Refusal('usage limit', { resetsAt: limit.resetsAt ?? null, reason: limit.reason });
-  const used = usedPct();
-  if (used >= MEMORY_STOP_PCT) throw new Refusal('memory', { usedPct: used, stopPct: MEMORY_STOP_PCT });
+  const mem = memoryState({ runningBuilders: countRunning(run.runId) });
+  if (!mem.dispatchOk) throw new Refusal('memory', { freeGb: mem.freeGb, needGb: mem.dispatchNeedGb, hint: 'a dispatch needs FREE memory (more with builders already running); `status --text` names who is using it' });
   if (run.state === 'running') return run;
   if (run.state !== 'planned') throw new Refusal('run not planned', { runId: run.runId, state: run.state });
   const mine = listRuns(run.slug, { states: ['running'] }).filter((r) => r.runId !== run.runId);

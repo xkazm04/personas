@@ -11,6 +11,7 @@ import { loadBrief, updateRun, raiseAsk, queueOutbox, openAsks, updateAsk } from
 import { readLimit } from './limits.mjs';
 import { requireRun, pidAlive, runFile, markLimitFromRun } from './worker.mjs';
 import { git, gitTry, revParse, isAncestor, removeWorktree, withBaseWorktree } from './worktree.mjs';
+import { acquireGateSlot } from './memory.mjs';
 import { resolveGates, runGates, gatesVerdict, splitBoundaries, boundaryHits, failuresAreInherited, GATE_TIMEOUT_MS } from './gate.mjs';
 
 const lines = (s) => String(s || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
@@ -169,7 +170,13 @@ export function mergeGate(run, verdict = {}, { gates, timeoutMs = GATE_TIMEOUT_M
  * (args) => Run   // --run id [--retry]   merged | held(+ask queued) | failed | released
  * A settled run returns as it is; `--retry` re-settles a held one (after the operator cleaned up).
  */
-export function cmdSettle({ flags = {} } = {}) {
+/** Holds the machine-wide gate slot while a settle runs gates; released however the settle ends. */
+export function cmdSettle(args = {}) {
+  const slot = { release: null, prev: null, runId: null };
+  try { return settleCore(args, slot); } finally { slot.release?.(); }
+}
+
+function settleCore({ flags = {} } = {}, slot) {
   let run = requireRun(flags.run);
   if (['merged', 'failed', 'released'].includes(run.state)) return run;
   if (run.state === 'held' && !flags.retry) return run;
@@ -178,6 +185,7 @@ export function cmdSettle({ flags = {} } = {}) {
     if (pidAlive(run.pid)) throw new Refusal('still running', { runId: run.runId, pid: run.pid });
     run = updateRun(run, { state: 'exited', endedAt: run.endedAt || nowIso() });
   }
+  slot.prev = run.state; slot.runId = run.runId;
   run = updateRun(run, { state: 'verifying', verifyStartedAt: nowIso() });
 
   // A usage limit is not a verdict on the work: release, keep everything, let a later pass retake it.
@@ -213,7 +221,15 @@ export function cmdSettle({ flags = {} } = {}) {
   const left = worktreeDirty(run.worktree);
   if (left.length) return hold(run, `the worktree has uncommitted changes, so the gates would not verify the committed tip: ${left.slice(0, 10).join(', ')}`, verdict);
 
-  // 2. the project's own gates, in the worktree
+  // 2. the project's own gates, in the worktree. They are the heavy part (typecheck + tests, then the
+  // same again on the base): take the machine-wide gate slot first, and wait (bounded) for headroom.
+  // A refusal here puts the run back where it was, so a later settle simply retries.
+  try { slot.release = acquireGateSlot({ label: `settle ${shortId(run.runId)}` }); } catch (e) {
+    if (e instanceof Refusal) updateRun(run, { state: slot.prev === 'held' ? 'held' : 'exited' });
+    throw e;
+  }
+
+  // 2b. run them
   const gates = resolveGates(root, brief);
   const timeoutMs = Number(process.env.APPMASTER_GATE_TIMEOUT_MS) || GATE_TIMEOUT_MS;
   verdict.gates = runGates(run.worktree, gates, { timeoutMs });

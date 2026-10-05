@@ -10,7 +10,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  ASK_KINDS, GLOBAL_CAP, MAX_ASKS, MAX_DISPATCH, MEMORY_STOP_PCT, PER_PROJECT_CAP, WAKE_MAX, WAKE_MIN,
+  ASK_KINDS, GLOBAL_CAP, MAX_ASKS, MAX_DISPATCH, MEM, PER_PROJECT_CAP, WAKE_MAX, WAKE_MIN,
   LIVE_RUN_STATES, contextDir, briefPath, mintId, nowIso, shortId,
 } from './contract.mjs';
 import { loadBrief, loadWakes, saveWake, openAsks, loadAsks, loadChannel, listRuns } from './store.mjs';
@@ -97,7 +97,7 @@ export function renderAt(input, C) {
   L.push('- PRIORITY: an explicit priority (1 highest .. 5 lowest) goes ahead of none. No priority is not low priority: the judgment is yours.');
   L.push('- COVERAGE: the coverage and last-run lines and your last note are your memory. Do not re-run what you just ran; do not starve what you keep deferring.');
   L.push(`- CAPACITY: dispatch AT MOST ${MAX_DISPATCH} charter (one builder per project, ${GLOBAL_CAP} in all; running now: ${machine.running?.project ?? 0} here, ${machine.running?.global ?? 0} in all). A dispatch while this project's builder runs is refused. None is a legitimate answer.`);
-  L.push(`- MACHINE: a dispatch is refused at memory >= ${MEMORY_STOP_PCT}% and while a usage-limit mark stands; when either is tripped, dispatch nothing and sleep long.`);
+  L.push(`- MACHINE: a dispatch is refused while FREE memory is under ${MEM.dispatchMinFreeGb} GB (+${MEM.perBuilderReserveGb} GB per builder already running) and while a usage-limit mark stands. A tripped memory brake clears by itself within minutes: dispatch nothing this wake and choose a SHORT next wake (10 to 20 min); a usage limit needs a long one.`);
   L.push('- IN FLIGHT: running, exited and verifying runs are not finished; planned is minted, not started. Never re-dispatch a live charter or an idea an in-flight task carries.');
   L.push('- THE BUILDER: a fresh builder in an isolated worktree on its own autopilot branch, merged only if the gates pass and no file it touched is dirty in the checkout. Your `brief` is all it knows: what to change, the accepted idea ids it carries (up to 6 of one shape, or none), how it proves done. A delivery brief first checks each id against the base branch; one already there is closed as delivered, not rebuilt.');
   L.push('- IDEA VERDICTS: accept or reject a pending idea named here, with a reason; queued until the app is up.');
@@ -209,7 +209,7 @@ export function renderAt(input, C) {
   // MACHINE
   head('MACHINE');
   const mem = machine.memory ?? {}, lim = machine.limit ?? {}, run = machine.running ?? {};
-  L.push(`- memory: ${mem.usedPct ?? '?'}% used${mem.freeGb != null ? ` (${mem.freeGb} GB free)` : ''}; dispatch is refused at ${MEMORY_STOP_PCT}%${mem.stop ? ' - TRIPPED NOW' : ''}`);
+  L.push(`- memory: ${mem.freeGb ?? '?'} GB free${mem.totalGb != null ? ` of ${mem.totalGb}` : ''}; a dispatch needs ${mem.dispatchNeedGb ?? MEM.dispatchMinFreeGb} GB free${mem.stop ? ' - TRIPPED NOW' : ''}`);
   L.push(`- usage limit: ${lim.limited ? `LIMITED${lim.reason ? ` (${clip(lim.reason, 120)})` : ''}${lim.resetsAt ? `, resets ${lim.resetsAt}` : ', reset time unknown'} - dispatch is refused` : 'none'}`);
   L.push(`- running builders: ${run.project ?? 0} of ${PER_PROJECT_CAP} in this project, ${run.global ?? 0} of ${GLOBAL_CAP} across all projects`);
 
@@ -297,7 +297,7 @@ export async function cmdContext({ flags = {} } = {}) {
   return {
     wakeId: input.wakeId, path: file, slug: project.slug, due: input.due, chars: text.length,
     brakes: {
-      memory: { usedPct: m.memory.usedPct, stop: m.memory.stop },
+      memory: { freeGb: m.memory.freeGb, usedPct: m.memory.usedPct, needGb: m.memory.dispatchNeedGb, stop: m.memory.stop },
       limit: { limited: m.limit.limited, resetsAt: m.limit.resetsAt },
       running: { project: m.running.project, global: m.running.global },
     },

@@ -10,6 +10,8 @@ import os from 'node:os';
 import path from 'node:path';
 
 const tmp = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'appmaster-wp2-merge-')));
+process.env.APPMASTER_FAKE_FREE_GB = '40';   // settle takes the gate slot: pin memory so these tests never depend on the host
+process.env.APPMASTER_GATE_POLL_MS = '5';
 process.env.APPMASTER_STATE_ROOT = path.join(tmp, 'state');
 process.env.APPMASTER_WORKTREE_ROOT = path.join(tmp, 'worktrees');
 process.env.APPMASTER_CLAUDE_BIN = path.join(tmp, 'never-called.mjs');
@@ -316,6 +318,23 @@ test('(xv) the failure signature is the same for the same test in the branch wor
   assert.deepEqual(branch, base);
   assert.equal(G.failuresAreInherited(branch, base), true);
   assert.equal(G.failuresAreInherited([...branch, 'app/api/c/d.test.ts'], base), false, 'a failure only the branch has is not inherited');
+});
+
+test('(xvi) settle with no memory headroom refuses, leaves the run exactly as it was, and a later settle succeeds', () => {
+  const { run, wt } = scenario('nomem');
+  commitIn(wt, 'c.txt', 'x\n');
+  const before = S.loadRun('nomem', run.runId);
+  process.env.APPMASTER_FAKE_FREE_GB = '1';
+  process.env.APPMASTER_GATE_WAIT_MS = '30';
+  process.env.APPMASTER_GATE_POLL_MS = '5';
+  try {
+    assert.throws(() => settle(run), (e) => e.reason === 'memory' && e.extra.needGb === C.MEM.gateMinFreeGb);
+  } finally { delete process.env.APPMASTER_GATE_WAIT_MS; process.env.APPMASTER_FAKE_FREE_GB = '40'; }
+  const after = S.loadRun('nomem', run.runId);
+  assert.equal(after.state, before.state, 'the run is back in the state it was in (exited)');
+  assert.equal(fs.existsSync(path.join(C.STATE_ROOT, '_headless-gate.lock')), false, 'no lock left behind');
+  const out = settle(run);
+  assert.equal(out.state, 'merged', out.heldReason);
 });
 
 // ---------------------------------------------------------------- the rest of the state machine

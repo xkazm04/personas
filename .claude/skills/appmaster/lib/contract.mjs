@@ -50,7 +50,20 @@ export const DEFAULT_MANAGED = ['pof', 'ascent', 'kp'];
 
 export const GLOBAL_CAP = 3;          // builders running at once across all projects
 export const PER_PROJECT_CAP = 1;     // builders running at once in one project
-export const MEMORY_STOP_PCT = 90;    // refuse to dispatch at or above this used-memory percent (raised from 60 by the operator, 2026-10-05)
+/**
+ * Memory admission, in GB of FREE memory (lib/memory.mjs). Replaces the old machine-wide used-% brake,
+ * which a sibling process could pin high without this loop being the cause.
+ */
+export const MEM = {
+  dispatchMinFreeGb: 4,        // a dispatch needs this much free ...
+  perBuilderReserveGb: 1.5,    // ... plus this per builder already running (they grow: tsc, vitest)
+  gateMinFreeGb: 6,            // a gate run (typecheck ~2.6 GB + a test run) needs this much free
+  samples: 5,                  // free memory is the MEDIAN of this many readings
+  sampleGapMs: 600,
+  gateWaitMaxMin: 20,          // settle waits this long for the gate slot and the headroom, then refuses
+  gateWaitPollSec: 20,
+  lockStaleMin: 45,            // a gate lock older than this, or whose pid is dead, is taken over
+};
 export const QUIET_MIN = 10;          // a run whose stream.jsonl is this old is flagged quiet (never killed)
 export const TIMEOUT_MIN = 90;        // a run older than this is flagged timed-out (never killed)
 export const WAKE_MIN = 10;           // nextWakeMinutes bounds a master may choose

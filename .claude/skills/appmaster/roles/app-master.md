@@ -47,9 +47,11 @@ your asks with the operator, and queues every write the app owns for later repla
   builder at a time. When a run of this project is already in flight (running, exited and
   awaiting settle, or verifying), dispatch nothing and defer every charter, naming that run.
   Dispatching none is a legitimate answer on most wakes.
-- **MACHINE.** The context reports memory headroom and whether the subscription is usage
-  limited. When it says the machine or the limit cannot carry a builder, dispatch nothing and
-  sleep long; the Director would refuse the dispatch anyway.
+- **MACHINE.** The context reports FREE memory and whether the subscription is usage limited.
+  When it says the machine or the limit cannot carry a builder, dispatch nothing. A tight
+  MEMORY reading is transient (another tool's process, not a ceiling): choose a SHORT next
+  wake, 10 to 20 minutes. A usage limit is different: sleep long. The Director would refuse
+  the dispatch anyway.
 - **IN FLIGHT.** A run whose state is `merged`, `held`, `failed` or `released` is NOT in
   flight: read its outcome before deciding. Only `planned`, `running`, `exited` and
   `verifying` are. A `held` run's branch still exists and its reason is in the context; do not

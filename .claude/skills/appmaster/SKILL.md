@@ -36,7 +36,7 @@ Director (this session)    the clock: status -> context -> decide -> dispatch ->
 - **Worktrees**: `~/.personas/headless-masters/worktrees/<project>/<runId8>`, branch
   `autopilot/<charter>-<runId8>`, cut from the base branch tip. Outside every repo, so a
   recursive delete can never reach a checkout.
-- **Numbers** live once in `lib/contract.mjs` (caps, memory brake, quiet and timeout flags,
+- **Numbers** live once in `lib/contract.mjs` (caps, the `MEM` free-memory numbers, quiet and timeout flags,
   wake bounds, the ScheduleWakeup clamp, the models). Quote them from there, not from memory.
 - **Managed projects**: `pof` (`C:\Users\kazda\kiro\pof`, base `master`, not onboarded yet),
   `ascent` (`C:\Users\kazda\kiro\ascent`, `master`), `kp` (`C:\Users\kazda\kiro\kp`, base
@@ -138,9 +138,14 @@ Every step is the Director's. `ScheduleWakeup`, `AskUserQuestion`, `Agent` and `
 are used here, in this session, and never inside a master subagent.
 
 1. **Status.** `AM status`. Note each project's `due`, running and held runs, open asks.
-2. **Brakes.** `status` reports memory and the usage-limit mark. Memory at or above the
-   brake, or a limit mark set: say which, in one line, schedule a long wake (3600 s), and do
-   nothing else this wake.
+2. **Brakes.** `status` reports free memory and the usage-limit mark. The memory brake is
+   FREE GB (a dispatch needs `MEM.dispatchMinFreeGb` plus `MEM.perBuilderReserveGb` per builder
+   already running), not a used percentage, so another tool's big process cannot hold the loop
+   hostage for hours: it clears by itself. **Memory tripped:** dispatch nothing and wake no
+   master this tick, but still `watch` and `settle` (settle waits for its own headroom, below),
+   say who is using the memory (`status --text` names the biggest other processes and what
+   the builders use), and schedule a SHORT wake (300 to 600 s). **Usage limit marked:** say so,
+   do nothing else, schedule a long wake (3600 s).
 3. **Context.** For each managed project with `due: true`: `AM context --project <p>`.
    Collect `{wakeId, path}`. A refusal here is reported and that project skips this wake.
 4. **Masters, in parallel.** In ONE message, one `Agent` call per due project:
@@ -160,7 +165,11 @@ are used here, in this session, and never inside a master subagent.
    `memory`, `project cap`, `global cap`, `run not planned`) is reported and left for the next
    wake, never retried in a loop.
 7. **Watch and settle.** `AM watch` (it moves a run whose pid is gone to `exited`). For each
-   run whose state is `exited`: `AM settle --run <runId>`; it ends `merged`, `held` (with an
+   run whose state is `exited`: `AM settle --run <runId>` (run it in the background, never
+   several at once: `settle` takes the one machine-wide gate slot and WAITS up to
+   `MEM.gateWaitMaxMin` minutes for `MEM.gateMinFreeGb` free, so gates run one at a time and never
+   on a starved machine; a `refused: memory` or `gate busy` leaves the run untouched, retry next
+   tick); it ends `merged`, `held` (with an
    ask), `failed` (no commits) or `released` (the builder hit the usage limit). Builders take
    minutes; never block on one, come back on a later wake. A `quiet` or `timedOut` flag is
    reported, never acted on: no kill without the operator's word (see `release`). A
@@ -184,8 +193,9 @@ are used here, in this session, and never inside a master subagent.
     clamped to 60..3600 s; about 120 s while a builder is running or a run is `exited`, so
     `settle` happens promptly. On a quiet wake say one line and reschedule.
 
-**Stop** when the usage-limit mark is set (say when it resets if known), memory is at or above
-the brake, or the operator says stop. Then run `end`.
+**Stop** when the usage-limit mark is set (say when it resets if known) or the operator says
+stop. A tripped memory brake is NOT a stop: it pauses dispatch and waking until it clears.
+Then run `end`.
 
 ### Digest format (terminal only)
 
@@ -195,7 +205,7 @@ and last-output age, held with reason, the note, the master's say, asks open, ou
 project where nothing moved collapses to one line.
 
 ```
-Machine: memory 48% used; no usage limit; builders running 1 of 3.
+Machine: 31.2 GB free; no usage limit; builders running 1 of 3.
 ascent - decided 14:15, dispatched accepted-idea-delivery; next wake 14:40.
   Running 9a41c7e2 accepted-idea-delivery (claude-sonnet-5-5), last output 3 min ago.
   Held 2c7e01bb codebase-security-scan: uncommitted changes in the checkout overlap the branch: ...
@@ -256,7 +266,7 @@ No vault note (the operator's choice). In order:
 - **Rung 3 means the gate merges, not the Director.** A held run is reported with its reason
   and an ask; it is never forced.
 - Evidence over narration: every claim cites a run id, a SHA, a wake id or a file.
-- Memory headroom before every dispatch (`dispatch` refuses at the brake; do not work around it).
+- Free memory before every dispatch and every gate run (`dispatch` refuses; `settle` waits then refuses; do not work around either). Never kill a process to make room: name who is using it and tell the operator.
 - Builders run `--dangerously-skip-permissions` in their worktree. The risk, named once: that
   confines the working directory, it is not a sandbox; a builder could still write elsewhere.
 - pof, ascent and kp all carry uncommitted foreign work in their checkouts. The merge gate

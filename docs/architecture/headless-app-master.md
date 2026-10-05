@@ -80,7 +80,7 @@ values that could drift. The subcommand table is `appmaster.mjs` (`COMMANDS`).
   own `say` (the channel door authors every message as the operator). Those stay in the
   journal and the terminal. Replay reads the database before and after each post.
 - **Caps and brakes**: `GLOBAL_CAP` builders across projects, `PER_PROJECT_CAP` per project,
-  `MEMORY_STOP_PCT` refuses a dispatch, `QUIET_MIN` and `TIMEOUT_MIN` flag (never kill), the
+  `MEM` (free GB: a dispatch needs a floor plus a reserve per running builder; a gate run needs more) refuses a dispatch, `QUIET_MIN` and `TIMEOUT_MIN` flag (never kill), the
   Director's sleep is clamped to `SLEEP_MIN_SEC`..`SLEEP_MAX_SEC`. Models: `MODELS` (Opus
   decides, Sonnet builds; `builderByCharter` and the brief's `models.byCharter` override).
 - **Exit codes** (`EXIT`): 0 ok, 2 refused by a brake or gate (`{refused}` on stdout), 1 error.
@@ -142,7 +142,7 @@ project checkout: all three carry foreign uncommitted work, which is why conditi
 | Builder process dies | `watch` sees the pid gone, state `exited`; `settle` verifies by git, so a dead builder with no commits ends `failed` and one with commits goes through the gate. |
 | Builder goes quiet or runs long | Flagged `quiet` / `timedOut` in `watch` and the digest; never killed. Only `release --kill`, on the operator's word. |
 | Usage limit | A builder's output matching `LIMIT_SIGNATURES` (scanned on stderr and non-conversation stream lines only, so a repo that mentions "usage limit" does not trip it) writes the global mark from `watch` or `settle`; `settle` releases that run; `dispatch` refuses while the mark stands (a mark whose `resetsAt` has passed reads as cleared); the loop stops. |
-| Memory at the brake | `dispatch` refuses; the loop says so and sleeps long. |
+| Memory short (free GB, not used %) | `dispatch` refuses and the loop pauses dispatch and master wakes, still verifies; `settle` takes the single machine-wide gate slot and WAITS (bounded) for headroom, then refuses leaving the run untouched. A short sleep, never a long one: a sibling process holding memory is transient. `status --text` names who is using it. |
 | App starts mid-run | The app's stale sweep (`STALE_AFTER_SECS`, `src-tauri/src/commands/fleet/stale.rs:65`, 6 min) marks fleet sessions stale, but these builders write no `fleet_sessions` rows, so it cannot touch them. Replay the outbox only after `--dry-run`. |
 | Merge held | Branch kept, ask raised and queued; the operator decides. |
 | Invalid decision | `decide` refuses with the errors; the Director sends them back to the same master once, then parks the project for the wake and reports it. |

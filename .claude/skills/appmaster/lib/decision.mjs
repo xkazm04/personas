@@ -228,7 +228,7 @@ export async function cmdDecide({ flags = {} } = {}) {
   const result = { wakeId: wake.wakeId, runIds: runs.map((r) => r.runId), outbox, asks: askIds, nextWakeAt };
   const b = brakes(slug);
   const warnings = [];
-  if (runs.length && b.memory.stop) warnings.push(`memory ${b.memory.usedPct}% used: dispatch will refuse until it drops under the brake`);
+  if (runs.length && b.memory.stop) warnings.push(`memory ${b.memory.freeGb} GB free (a dispatch needs ${b.memory.dispatchNeedGb}): dispatch will refuse until it recovers`);
   if (runs.length && b.limit.limited) warnings.push(`usage limit marked${b.limit.resetsAt ? ` until ${b.limit.resetsAt}` : ''}: dispatch will refuse`);
   saveWake(slug, { wakeId: wake.wakeId, status: 'decided', decision, runIds: result.runIds, nextWakeAt, note: decision.note, decidedAt, result });
   return warnings.length ? { ...result, warnings } : result;

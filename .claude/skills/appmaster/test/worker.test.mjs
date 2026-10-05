@@ -13,7 +13,7 @@ const tmp = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'appmaster-wp2
 process.env.APPMASTER_STATE_ROOT = path.join(tmp, 'state');
 process.env.APPMASTER_WORKTREE_ROOT = path.join(tmp, 'worktrees');
 process.env.APPMASTER_CLAUDE_BIN = path.join(tmp, 'shim.mjs');
-process.env.APPMASTER_FAKE_USED_PCT = '10';
+process.env.APPMASTER_FAKE_FREE_GB = '40';
 process.env.SHIM_OUT_DIR = path.join(tmp, 'shim-out');
 // the scrub must remove these from the child even though this process carries them
 Object.assign(process.env, { ANTHROPIC_API_KEY: 'leak', CLAUDECODE: '1', CLAUDE_CODE_SESSION_ID: 'nested', CLAUDE_EFFORT: 'max' });
@@ -232,13 +232,14 @@ test('dispatch brakes: limit mark, memory, not planned, project cap, global cap 
   assert.ok(e.extra.resetsAt);
   L.clearLimit();
 
-  process.env.APPMASTER_FAKE_USED_PCT = String(C.MEMORY_STOP_PCT + 15);
+  process.env.APPMASTER_FAKE_FREE_GB = String(C.MEM.dispatchMinFreeGb - 0.5);
   e = refusal(() => W.cmdDispatch({ flags: { run: run.runId } }));
   assert.equal(e.reason, 'memory');
-  assert.equal(e.extra.usedPct, C.MEMORY_STOP_PCT + 15);
-  process.env.APPMASTER_FAKE_USED_PCT = String(C.MEMORY_STOP_PCT);
-  assert.equal(refusal(() => W.cmdDispatch({ flags: { run: run.runId } })).reason, 'memory', 'at the threshold is refused');
-  process.env.APPMASTER_FAKE_USED_PCT = '10';
+  assert.equal(e.extra.freeGb, C.MEM.dispatchMinFreeGb - 0.5);
+  assert.equal(e.extra.needGb, C.MEM.dispatchMinFreeGb);
+  process.env.APPMASTER_FAKE_FREE_GB = String(C.MEM.dispatchMinFreeGb - 0.1);
+  assert.equal(refusal(() => W.cmdDispatch({ flags: { run: run.runId } })).reason, 'memory', 'just under the need is refused');
+  process.env.APPMASTER_FAKE_FREE_GB = '40';
 
   const held = plan({ state: 'held' });
   S.saveRun({ ...held, state: 'held' });
