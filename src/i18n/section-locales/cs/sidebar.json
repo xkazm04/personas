@@ -101,10 +101,10 @@
   "welcome": "Vítejte",
   "browser": "Prohlížeč",
   "webview": "Webové zobrazení",
-  "whitelist": "Povolené weby",
   "navigation_drawer": "Zásuvka navigace",
   "primary_nav": "Hlavní navigace",
   "create_athena": "Vytvořit Athenu",
   "features": "Funkce",
-  "companions": "Společníci"
+  "companions": "Společníci",
+  "whitelist": "Správa serverů"
 }

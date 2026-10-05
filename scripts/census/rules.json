@@ -3960,6 +3960,14 @@
         {
           "path": "src/features/settings/sub_notifications/libs/__tests__/webhookPatternParity.test.ts",
           "reason": "this file IS the agreement mechanism for webhookMatch.ts (see that exclude); its comment names the Rust matcher because it reads it"
+        },
+        {
+          "path": "src/features/browser/servers/serverConfig.ts",
+          "reason": "the mirror is TETHERED, not comment-kept: the Edit modal's dev-command check is gated by servers/__tests__/serverConfigParity.test.ts, which reads FORBIDDEN_CHARS and COMMAND_MAX_CHARS out of src-tauri/src/webbuild/server_control.rs at run time and fails when TS refuses less or the limit differs (the webhookPatternParity precedent). Rust still decides on every configure and scan"
+        },
+        {
+          "path": "src/features/browser/servers/__tests__/serverConfigParity.test.ts",
+          "reason": "this file IS the agreement mechanism for serverConfig.ts (see that exclude); its comment names the Rust validator because it reads it"
         }
       ],
       "baseline": {

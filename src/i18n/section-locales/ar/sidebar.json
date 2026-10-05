@@ -101,10 +101,10 @@
   "welcome": "مرحبًا",
   "browser": "المتصفح",
   "webview": "عرض الويب",
-  "whitelist": "القائمة البيضاء",
   "navigation_drawer": "درج التنقل",
   "primary_nav": "التنقل الرئيسي",
   "create_athena": "إنشاء أثينا",
   "features": "الميزات",
-  "companions": "الرفاق"
+  "companions": "الرفاق",
+  "whitelist": "التحكم بالخوادم"
 }

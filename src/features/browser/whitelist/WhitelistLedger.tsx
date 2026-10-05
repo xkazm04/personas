@@ -1,24 +1,39 @@
 /**
- * Whitelist variant A — the ledger.
+ * The whitelist ledger: one dense row per origin, the shape an operator
+ * auditing a gate wants. Every site's tier, scan state, write policy,
+ * credential and enabled switch on one line, sortable, with the row actions at
+ * the end. `UnifiedTable` brings the ghost-under-header loading state, the
+ * settled-only empty state and the row-entrance cascade, so none of that is
+ * hand-rolled here.
  *
- * One dense row per origin, the shape an operator auditing a gate wants: every
- * site's tier, scan state, write policy, credential and enabled switch on one
- * line, sortable, with the three row actions at the end. `UnifiedTable` brings
- * the ghost-under-header loading state, the settled-only empty state and the
- * row-entrance cascade, so none of that is hand-rolled here.
+ * It was one of three layouts behind a switcher until spark server-control
+ * (2026-10-05) kept it as the only one; Edit opens the site modal, which now
+ * carries the credential, the budget and the ask-first overrides too.
  */
 import { ExternalLink, ScanSearch, Check } from 'lucide-react';
 
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
+import Button from '@/features/shared/components/buttons/Button';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import type { BrowserSite } from '../../types';
-import { CredentialChip, PatternChip, ScanChip, TierChip, WritesChip } from '../SiteChips';
-import type { WhitelistVariantProps } from './variantProps';
+import type { BrowserSite } from '../types';
+import { CredentialChip, PatternChip, ScanChip, TierChip, WritesChip } from './SiteChips';
 
-export default function LedgerVariant({
+export interface WhitelistLedgerProps {
+  sites: readonly BrowserSite[];
+  /** True only while the FIRST read is in flight: a refetch never ghosts rows. */
+  loading: boolean;
+  onToggle: (site: BrowserSite) => Promise<void>;
+  onScan: (site: BrowserSite) => Promise<void>;
+  onConfirm: (site: BrowserSite) => Promise<void>;
+  onRemove: (site: BrowserSite) => Promise<void>;
+  onOpen: (site: BrowserSite) => Promise<void>;
+  onEdit: (site: BrowserSite) => void;
+}
+
+export default function WhitelistLedger({
   sites,
   loading,
   onToggle,
@@ -27,7 +42,7 @@ export default function LedgerVariant({
   onRemove,
   onOpen,
   onEdit,
-}: WhitelistVariantProps) {
+}: WhitelistLedgerProps) {
   const { t } = useTranslation();
   const w = t.browser.whitelist;
 
@@ -126,13 +141,9 @@ export default function LedgerVariant({
           >
             {w.action_open}
           </AsyncButton>
-          <button
-            type="button"
-            onClick={() => onEdit(site)}
-            className="typo-caption text-foreground hover:text-foreground focus-ring rounded-interactive px-1.5 py-0.5"
-          >
-            {w.action_edit}
-          </button>
+          <Button size="xs" variant="ghost" onClick={() => onEdit(site)} data-testid={`whitelist-edit-${site.origin}`}>
+            {t.browser.add_site.edit_action}
+          </Button>
           <AsyncButton size="xs" variant="ghost" onClick={() => onRemove(site)}>
             {w.action_remove}
           </AsyncButton>

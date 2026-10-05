@@ -13,6 +13,7 @@ import { useSyncExternalStore } from 'react';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 
 import * as api from '@/api/devServers';
+import { getActiveTranslations } from '@/i18n/useTranslation';
 import type { DevServerView } from '@/lib/bindings/DevServerView';
 import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
@@ -104,12 +105,22 @@ export function useDevServers(): DevServerSnapshot {
   return useSyncExternalStore(subscribeDevServers, devServersSnapshot);
 }
 
+/**
+ * The toast headline for a failed action. Read at failure time, not at import:
+ * the Fleet Monitor bay calls this from an overlay where the `browser` section
+ * may not be loaded, and then toastCatch falls back to the resolved error.
+ */
+function failureCopy(kind: 'start' | 'stop' | 'restart'): string | undefined {
+  const s = getActiveTranslations().browser?.servers;
+  return kind === 'stop' ? s?.stop_failed : s?.start_failed;
+}
+
 /** Start / stop / restart with the error surfaced as a toast. The event repaints. */
 export async function serverAction(kind: 'start' | 'stop' | 'restart', projectId: string): Promise<void> {
   const call = kind === 'start' ? api.startDevServer : kind === 'stop' ? api.stopDevServer : api.restartDevServer;
   try {
     await call(projectId);
   } catch (err) {
-    toastCatch(`dev server ${kind}`)(err);
+    toastCatch(`dev server ${kind}`, failureCopy(kind))(err);
   }
 }

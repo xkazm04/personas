@@ -101,10 +101,10 @@
   "welcome": "Chào mừng",
   "browser": "Trình duyệt",
   "webview": "Khung web",
-  "whitelist": "Danh sách cho phép",
   "navigation_drawer": "Ngăn điều hướng",
   "primary_nav": "Điều hướng chính",
   "create_athena": "Tạo Athena",
   "features": "Tính năng",
-  "companions": "Bạn đồng hành"
+  "companions": "Bạn đồng hành",
+  "whitelist": "Điều khiển máy chủ"
 }

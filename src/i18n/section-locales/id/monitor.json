@@ -1036,5 +1036,8 @@
   "server_menu_restart": "Mulai ulang server dev",
   "server_menu_start": "Mulai server dev",
   "server_menu_stop": "Hentikan server dev",
-  "server_running_hint": "Server dev berjalan di port {port}"
+  "server_running_hint": "Server dev berjalan di port {port}",
+  "server_external_hint": "Port {port} dipegang oleh server yang tidak dijalankan Personas",
+  "server_host_guard": "Server ini sedang melayani Personas sendiri",
+  "server_starting_hint": "Server dev dimulai di port {port}"
 }

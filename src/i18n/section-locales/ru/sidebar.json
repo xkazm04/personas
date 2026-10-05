@@ -101,10 +101,10 @@
   "welcome": "Добро пожаловать",
   "browser": "Браузер",
   "webview": "Веб-обозреватель",
-  "whitelist": "Белый список",
   "navigation_drawer": "Панель навигации",
   "primary_nav": "Основная навигация",
   "create_athena": "Создать Athena",
   "features": "Функции",
-  "companions": "Спутники"
+  "companions": "Спутники",
+  "whitelist": "Управление серверами"
 }

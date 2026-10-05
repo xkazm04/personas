@@ -1,13 +1,83 @@
 # Browser
 
-A sidebar group under Projects, below Development, with two surfaces that let
-Athena and your personas open and control web pages the way you would: inside
-the app, on websites you have allowed, with every write passing your orb first.
+A sidebar group under Projects, below Development, with two surfaces:
+**Server control**, where you run your projects' dev servers and choose which
+websites agents may open, and
+the **Webview**, where Athena and your personas open and control web pages the
+way you would: inside the app, on websites you have allowed, with every write
+passing your orb first.
 
 Design record and the migration analysis from `athena-portable`:
 [`docs/architecture/browser-control.md`](../architecture/browser-control.md).
 
-## Whitelist
+## Server control
+
+One page, two sections (the sidebar item is **Server control**; it used to be
+called Whitelist):
+
+1. **App servers** at the top: one row per dev project that has a port, with a
+   switch to start and stop its dev server.
+2. **Allowed websites** below it: the whitelist ledger, the origin gate every
+   browser backend consults.
+
+### App servers
+
+Each server is one dev project with a **dev command** and a **port**. The
+section shows its state, which Rust derives and announces on every change:
+
+| state | meaning |
+|---|---|
+| Running | Personas started it and it answers HTTP on its port. |
+| Starting | Personas started it and it has not answered yet (it has 120 seconds). |
+| Running outside Personas | Something Personas did not start holds the port, for example a terminal you ran `npm run dev` in. Its PID is shown. |
+| Stopping | A stop is in flight. |
+| Failed | It exited before answering, never answered within 120 seconds, or its scan failed. The reason is shown until the next Start or Stop. |
+| Scanning | Claude is reading the repository (see *Add app*). |
+| Stopped | Configured and not running. |
+| Not configured | The project has a port but no dev command yet. |
+
+The section offers four layouts behind a switcher while the design settles
+(Rack, Port map, Switchboard, Live tiles). All four show the same servers and
+offer the same actions; your choice is remembered.
+
+**Right-click a server** for its menu: *Start* or *Stop*, *Restart*, *Open in
+Webview* (opens `http://localhost:<port>` in the embedded browser and switches to
+it), *Edit*, *Rescan with AI* and *Remove from view*. *Stop* on a server running
+outside Personas stops that process tree too. *Remove from view* takes the
+project out of this section and never deletes the project; it is disabled while
+the server holds its port, so stop it first. The Fleet Monitor's Activity bays
+offer the same run and stop items for their project's server.
+
+**Add app** (the page header, or the empty state) takes a repository folder,
+typed or picked with *Browse*, and an optional workspace. Personas finds or
+creates the dev project for that folder, gives it the first free port from 3000
+up, and starts a one-shot Claude scan in the repository that picks the dev
+command, a port and the tech stack. The server appears at once in *Scanning* and
+fills in when the scan lands (up to two minutes). A scan that fails leaves the
+server in the view with no command and the reason shown. *Rescan with AI* runs
+the same scan again.
+
+**Edit** sets the dev command and the port by hand. A command is one program
+invocation: at most 200 characters, and none of `&`, `|`, `;`, `<`, `>`, a
+backtick, `$`, `(`, `)`, `%` (Windows would expand `%NAME%` from the app's
+environment) or a line break. `{port}` is the only placeholder and is
+replaced by the port; `PORT` is also set in the environment, which is what
+Next.js reads. A blank command leaves the server not configured.
+
+Saving a port by hand, adding an app and a scan that picks a port all add
+`http://localhost:<port>` to the allowed websites if it is not there yet,
+enabled, so *Open in Webview* works on the first try.
+
+**Servers outlive Personas.** A server Personas started keeps running when you
+close the app, and the next start picks it up again by its process id. Studio's
+live preview servers are the exception: they are stopped when the app exits.
+
+**The server serving Personas itself** (when you run Personas from a dev build,
+the Vite server on the window's own port) cannot be stopped or restarted from
+here: its *Stop* and *Restart* are disabled with a note saying why, because
+stopping it would take this window down.
+
+### Allowed websites
 
 The list of websites agents may open and control. Nothing outside it is
 reachable from any browser backend: an agent asking for a page that is not
@@ -18,18 +88,22 @@ say yes twice. A row you add by hand starts paused until you switch it on.
 
 Each row is one origin (`https://app.example.com`) and carries:
 
-- **Enabled** — a paused site stays listed but refuses everything.
-- **Control tier** — what the controllability scan found: `0` read-only, `1`
+- **Enabled**: a paused site stays listed but refuses everything.
+- **Control tier**: what the controllability scan found: `0` read-only, `1`
   generic hands (click, fill, select, submit by reference), `2` the page
   publishes its own tools (WebMCP).
-- **Overrides** — per tool, you may force a class to *ask first*. You can never
+- **Overrides**: per tool, you may force a class to *ask first*. You can never
   loosen a class below what the page's own manifest implies; the repo answers a
   loosening attempt with `refused_loosening`, and the UI offers no control that
   would produce one. Clearing an override restores the derived class, which is
   a reset rather than a loosening.
-- **Budget** — how many calls an agent may make on this site in one turn.
-- **Credential** — optionally a vault credential the app can use to log in for
+- **Budget**: how many calls an agent may make on this site in one turn.
+- **Credential**: optionally a vault credential the app can use to log in for
   the agent. The values never reach the model, a snapshot or a screenshot.
+
+The ledger shows one dense, sortable row per site: tier, scan state, write
+policy, credential, the enabled switch and the row actions (*Scan* or *Rescan*,
+*Confirm* when a scan is waiting for you, *Open*, *Edit*, *Remove*).
 
 **Controllability scan.** *Scan* runs a background agent that opens the site in
 the Webview with read-only tools, looks for a WebMCP manifest, landmarks,
@@ -38,17 +112,25 @@ files its findings as a proposal. Nothing is enabled by a scan; you confirm it.
 While a scan runs the row says so and the page re-reads the rows until it
 settles.
 
-**Adding a site.** *Add site* takes an origin — scheme and host with an
-optional port, no path and no query — and an optional name. "Scan now" is on by
-default, because a site with no scan is a site nobody knows anything about.
+**Adding a site.** *Add site* (the section head) takes an origin: scheme and
+host with an optional port, no path and no query, and an optional name. "Scan
+now" is on by default, because a site with no scan is a site nobody knows
+anything about.
+
+**Editing a site.** *Edit* opens the same dialog with the address read-only
+(changing it would be adding a different site) and everything you may change
+about the site in one place: its name, the sign-in credential (and whether the
+scan found a sign-in form to use it on), which of the page's own tools must ask
+first, and the per-turn budget. Nothing is written until *Save*, and then only
+what you changed.
 
 **Wildcards.** An address may also be a pattern, and a row that is one is
-marked *pattern* beside its address in every layout:
+marked *pattern* beside its address:
 
-- `https://*.example.com` — the site itself and every subdomain under it, at any
+- `https://*.example.com`: the site itself and every subdomain under it, at any
   depth. It matches on a label boundary, so `evil-example.com` and
   `example.com.evil` are outside it.
-- `http://localhost:*` — that host on any port, and on no port.
+- `http://localhost:*`: that host on any port, and on no port.
 
 The `*` is allowed in exactly those two places: as a single leading `*.` label
 on the host, or as the whole port. A bare `*` host, a `*` inside a label, a path
@@ -57,27 +139,10 @@ before you submit. A wildcard is a policy decision, not a shortcut: every
 subdomain the site ever publishes becomes reachable by an agent without you
 seeing it appear.
 
-One pattern row is there when you first open the page —
-`http://localhost:3000`, named *Local dev (example)* and enabled — so the shape
+One pattern row is there when you first open the page,
+`http://localhost:3000`, named *Local dev (example)* and enabled, so the shape
 is visible rather than described. It is an ordinary row: rename it, pause it or
 remove it like any other.
-
-### Three layouts
-
-A switcher at the top of the page picks one while the design settles. All three
-show the same rows and offer the same actions; your choice is remembered.
-
-- **Ledger** — one dense row per site, sortable: tier, scan state, write policy,
-  credential, the enabled switch and the row actions. The view for auditing the
-  gate across every site at once.
-- **Cards** — one tile per site, led by a three-segment control meter and the
-  scan findings inline. The view for "how much can an agent actually do here?".
-- **Detail** — a thin list on the left, and on the right five tabs for one site:
-  *Overview* (the scan report), *Page tools* (what the page publishes, with the
-  class the policy derived and the manifest's own claims beside it), *Hands*
-  (what the generic hands can do and the per-turn budget), *Sign in* (bind a
-  vault credential), *Policy* (force tools to ask first; set the budget). The
-  view for deciding about one site.
 
 ## Webview
 
@@ -92,8 +157,8 @@ Two consequences are worth knowing:
 - Leaving the route hides the page and keeps every tab. Coming back shows the
   same pages, still where you left them.
 - Nothing can be drawn on top of the page, so this route opens no dialogs of
-  its own. Everything that needs one — adding a site, editing policy — lives on
-  the Whitelist. The one exception is the twin forge that Learn's **New twin**
+  its own. Everything that needs one (adding a site, editing policy) lives on
+  Server control. The one exception is the twin forge that Learn's **New twin**
   opens: while it is up the page steps aside, exactly as it does for the
   address suggestions, and comes back when the forge closes.
 

@@ -101,10 +101,10 @@
   "welcome": "Selamat datang",
   "browser": "Peramban",
   "webview": "Tampilan web",
-  "whitelist": "Daftar putih",
   "navigation_drawer": "Laci navigasi",
   "primary_nav": "Navigasi utama",
   "create_athena": "Buat Athena",
   "features": "Fitur",
-  "companions": "Pendamping"
+  "companions": "Pendamping",
+  "whitelist": "Kontrol server"
 }

@@ -1036,5 +1036,8 @@
   "server_menu_restart": "Restartovat vývojový server",
   "server_menu_start": "Spustit vývojový server",
   "server_menu_stop": "Zastavit vývojový server",
-  "server_running_hint": "Vývojový server běží na portu {port}"
+  "server_running_hint": "Vývojový server běží na portu {port}",
+  "server_external_hint": "Port {port} drží server, který Personas nespustil",
+  "server_host_guard": "Tento server obsluhuje samotné Personas",
+  "server_starting_hint": "Vývojový server se spouští na portu {port}"
 }

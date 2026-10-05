@@ -101,10 +101,10 @@
   "welcome": "स्वागत",
   "browser": "ब्राउज़र",
   "webview": "वेब व्यू",
-  "whitelist": "श्वेतसूची",
   "navigation_drawer": "नेविगेशन ड्रॉअर",
   "primary_nav": "मुख्य नेविगेशन",
   "create_athena": "Athena बनाएं",
   "features": "फ़ीचर",
-  "companions": "साथी"
+  "companions": "साथी",
+  "whitelist": "सर्वर नियंत्रण"
 }

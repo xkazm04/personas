@@ -1036,5 +1036,8 @@
   "server_menu_restart": "ডেভ সার্ভার পুনরায় চালু করুন",
   "server_menu_start": "ডেভ সার্ভার চালু করুন",
   "server_menu_stop": "ডেভ সার্ভার বন্ধ করুন",
-  "server_running_hint": "ডেভ সার্ভার পোর্ট {port}-এ চলছে"
+  "server_running_hint": "ডেভ সার্ভার পোর্ট {port}-এ চলছে",
+  "server_external_hint": "পোর্ট {port} এমন একটি সার্ভারের দখলে যা Personas চালু করেনি",
+  "server_host_guard": "এই সার্ভার নিজেই Personas পরিবেশন করছে",
+  "server_starting_hint": "পোর্ট {port}-এ ডেভ সার্ভার চালু হচ্ছে"
 }

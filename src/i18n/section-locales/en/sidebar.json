@@ -101,7 +101,7 @@
   "unread_reports_sr_other": "{count} unread reports",
   "experimental": "Experimental",
   "browser": "Browser",
-  "whitelist": "Whitelist",
+  "whitelist": "Server control",
   "webview": "Webview",
   "primary_nav": "Primary",
   "navigation_drawer": "Navigation drawer",

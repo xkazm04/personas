@@ -1036,5 +1036,8 @@
   "server_menu_restart": "डेव सर्वर रीस्टार्ट करें",
   "server_menu_start": "डेव सर्वर शुरू करें",
   "server_menu_stop": "डेव सर्वर बंद करें",
-  "server_running_hint": "डेव सर्वर पोर्ट {port} पर चल रहा है"
+  "server_running_hint": "डेव सर्वर पोर्ट {port} पर चल रहा है",
+  "server_external_hint": "पोर्ट {port} ऐसे सर्वर के पास है जिसे Personas ने शुरू नहीं किया",
+  "server_host_guard": "यह सर्वर स्वयं Personas को सर्व कर रहा है",
+  "server_starting_hint": "डेव सर्वर पोर्ट {port} पर शुरू हो रहा है"
 }

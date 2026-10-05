@@ -101,10 +101,10 @@
   "welcome": "স্বাগতম",
   "browser": "ব্রাউজার",
   "webview": "ওয়েব ভিউ",
-  "whitelist": "হোয়াইটলিস্ট",
   "navigation_drawer": "নেভিগেশন ড্রয়ার",
   "primary_nav": "প্রধান নেভিগেশন",
   "create_athena": "Athena তৈরি করো",
   "features": "ফিচার",
-  "companions": "সঙ্গীরা"
+  "companions": "সঙ্গীরা",
+  "whitelist": "সার্ভার নিয়ন্ত্রণ"
 }

@@ -101,10 +101,10 @@
   "welcome": "Bienvenue",
   "browser": "Navigateur",
   "webview": "Vue web",
-  "whitelist": "Liste blanche",
   "navigation_drawer": "Tiroir de navigation",
   "primary_nav": "Navigation principale",
   "create_athena": "Créer Athena",
   "features": "Fonctionnalités",
-  "companions": "Compagnons"
+  "companions": "Compagnons",
+  "whitelist": "Contrôle des serveurs"
 }

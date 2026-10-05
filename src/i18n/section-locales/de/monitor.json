@@ -1036,5 +1036,8 @@
   "server_menu_restart": "Dev-Server neu starten",
   "server_menu_start": "Dev-Server starten",
   "server_menu_stop": "Dev-Server stoppen",
-  "server_running_hint": "Dev-Server läuft auf Port {port}"
+  "server_running_hint": "Dev-Server läuft auf Port {port}",
+  "server_external_hint": "Port {port} wird von einem Server belegt, den Personas nicht gestartet hat",
+  "server_host_guard": "Dieser Server stellt Personas selbst bereit",
+  "server_starting_hint": "Dev-Server startet auf Port {port}"
 }

@@ -1036,5 +1036,8 @@
   "server_menu_restart": "開発サーバーを再起動",
   "server_menu_start": "開発サーバーを起動",
   "server_menu_stop": "開発サーバーを停止",
-  "server_running_hint": "開発サーバーはポート {port} で実行中"
+  "server_running_hint": "開発サーバーはポート {port} で実行中",
+  "server_external_hint": "ポート {port} はPersonasが起動していないサーバーが使用中です",
+  "server_host_guard": "このサーバーはPersonas自体を提供しています",
+  "server_starting_hint": "開発サーバーをポート {port} で起動中"
 }

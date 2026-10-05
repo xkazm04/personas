@@ -1036,5 +1036,8 @@
   "server_menu_restart": "Redémarrer le serveur de développement",
   "server_menu_start": "Démarrer le serveur de développement",
   "server_menu_stop": "Arrêter le serveur de développement",
-  "server_running_hint": "Serveur de développement actif sur le port {port}"
+  "server_running_hint": "Serveur de développement actif sur le port {port}",
+  "server_external_hint": "Le port {port} est occupé par un serveur que Personas n'a pas démarré",
+  "server_host_guard": "Ce serveur sert Personas lui-même",
+  "server_starting_hint": "Démarrage du serveur de développement sur le port {port}"
 }

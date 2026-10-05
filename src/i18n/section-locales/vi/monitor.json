@@ -1036,5 +1036,8 @@
   "server_menu_restart": "Khởi động lại máy chủ dev",
   "server_menu_start": "Khởi động máy chủ dev",
   "server_menu_stop": "Dừng máy chủ dev",
-  "server_running_hint": "Máy chủ dev đang chạy trên cổng {port}"
+  "server_running_hint": "Máy chủ dev đang chạy trên cổng {port}",
+  "server_external_hint": "Cổng {port} đang bị một máy chủ không do Personas khởi động chiếm giữ",
+  "server_host_guard": "Máy chủ này đang phục vụ chính Personas",
+  "server_starting_hint": "Máy chủ dev đang khởi động trên cổng {port}"
 }

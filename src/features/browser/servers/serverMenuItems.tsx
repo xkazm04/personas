@@ -7,6 +7,7 @@ import { ExternalLink, Play, RotateCw, Square } from 'lucide-react';
 
 import * as browserApi from '@/api/browser';
 import type { ContextMenuItem } from '@/features/shared/components/overlays/ContextMenu';
+import { getActiveTranslations } from '@/i18n/useTranslation';
 import type { DevServerView } from '@/lib/bindings/DevServerView';
 import { toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
@@ -31,7 +32,8 @@ export async function openServerInWebview(server: DevServerView): Promise<void> 
     setSidebarSection('teams');
     setTeamsTab('webview');
   } catch (err) {
-    toastCatch('dev server open')(err);
+    // Read at failure time: the Monitor bay calls this where `browser` may not be loaded.
+    toastCatch('dev server open', getActiveTranslations().browser?.servers?.open_failed)(err);
   }
 }
 

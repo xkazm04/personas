@@ -101,10 +101,10 @@
   "welcome": "欢迎",
   "browser": "浏览器",
   "webview": "网页视图",
-  "whitelist": "白名单",
   "navigation_drawer": "导航抽屉",
   "primary_nav": "主导航",
   "create_athena": "创建 Athena",
   "features": "功能",
-  "companions": "伙伴"
+  "companions": "伙伴",
+  "whitelist": "服务器控制"
 }

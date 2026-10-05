@@ -101,10 +101,10 @@
   "welcome": "ようこそ",
   "browser": "ブラウザー",
   "webview": "ウェブビュー",
-  "whitelist": "ホワイトリスト",
   "navigation_drawer": "ナビゲーションドロワー",
   "primary_nav": "メインナビゲーション",
   "create_athena": "Athenaを作る",
   "features": "機能",
-  "companions": "コンパニオン"
+  "companions": "コンパニオン",
+  "whitelist": "サーバー制御"
 }

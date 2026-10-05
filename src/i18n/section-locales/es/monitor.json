@@ -1036,5 +1036,8 @@
   "server_menu_restart": "Reiniciar servidor de desarrollo",
   "server_menu_start": "Iniciar servidor de desarrollo",
   "server_menu_stop": "Detener servidor de desarrollo",
-  "server_running_hint": "Servidor de desarrollo en ejecución en el puerto {port}"
+  "server_running_hint": "Servidor de desarrollo en ejecución en el puerto {port}",
+  "server_external_hint": "El puerto {port} está ocupado por un servidor que Personas no inició",
+  "server_host_guard": "Este servidor está sirviendo a Personas mismo",
+  "server_starting_hint": "Servidor de desarrollo iniciando en el puerto {port}"
 }

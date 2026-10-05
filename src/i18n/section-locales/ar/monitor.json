@@ -1036,5 +1036,8 @@
   "server_menu_restart": "إعادة تشغيل خادم التطوير",
   "server_menu_start": "تشغيل خادم التطوير",
   "server_menu_stop": "إيقاف خادم التطوير",
-  "server_running_hint": "خادم التطوير يعمل على المنفذ {port}"
+  "server_running_hint": "خادم التطوير يعمل على المنفذ {port}",
+  "server_external_hint": "المنفذ {port} يشغله خادم لم يشغّله Personas",
+  "server_host_guard": "هذا الخادم يخدم Personas نفسه",
+  "server_starting_hint": "خادم التطوير قيد التشغيل على المنفذ {port}"
 }

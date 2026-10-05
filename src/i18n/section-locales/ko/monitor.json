@@ -1036,5 +1036,8 @@
   "server_menu_restart": "개발 서버 다시 시작",
   "server_menu_start": "개발 서버 시작",
   "server_menu_stop": "개발 서버 중지",
-  "server_running_hint": "개발 서버가 포트 {port}에서 실행 중"
+  "server_running_hint": "개발 서버가 포트 {port}에서 실행 중",
+  "server_external_hint": "포트 {port}는 Personas가 시작하지 않은 서버가 사용 중입니다",
+  "server_host_guard": "이 서버는 Personas 자체를 제공하고 있습니다",
+  "server_starting_hint": "개발 서버를 포트 {port}에서 시작하는 중"
 }

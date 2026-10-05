@@ -780,7 +780,12 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
   "notepad": {},
   "browser": {
     "whitelist": {},
-    "servers": {},
+    "servers": {
+      "rack": {},
+      "portmap": {},
+      "switchboard": {},
+      "tiles": {}
+    },
     "add_site": {},
     "scan_report": {},
     "detail": {},
