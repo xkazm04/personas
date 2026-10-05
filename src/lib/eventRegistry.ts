@@ -40,6 +40,7 @@ import type { TwinSampleUpdatedEvent } from '@/lib/bindings/TwinSampleUpdatedEve
 // (`src/features/browser/types.ts`), which WP4 re-points at `@/lib/bindings`
 // once the Rust side carries `#[derive(TS)] #[ts(export)]`.
 import type { BrowserTab } from '@/features/browser/types';
+import type { DevServerView } from '@/lib/bindings/DevServerView';
 
 // ---------------------------------------------------------------------------
 // Event name constants (keep in sync with Rust event_registry::event_name)
@@ -379,6 +380,8 @@ export const EventName = {
   // the status and the tier, never the report: the report is a row the page
   // already re-reads, and a second copy on the wire can disagree with it.
   BROWSER_SCAN: 'browser-scan',
+  /** Browser > Server control: the whole dev-server list, on every change. */
+  DEV_SERVERS_CHANGED: 'dev-servers-changed',
 } as const;
 
 export type EventNameValue = (typeof EventName)[keyof typeof EventName];
@@ -1304,6 +1307,7 @@ export interface EventPayloadMap {
   // (`running` | `proposed` | `confirmed` | `failed`); `tier` is the grade the
   // scan settled on, `null` while it is running or when it failed.
   [EventName.BROWSER_SCAN]: { origin: string; status: string; tier: number | null };
+  [EventName.DEV_SERVERS_CHANGED]: DevServerView[];
 
   // Persona event-bus signals (P1b review decisions + P2.3 incident resolved).
   // These are backend bus events consumed by persona subscriptions for

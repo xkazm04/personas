@@ -1031,5 +1031,10 @@
   "grid_dock_landing_tip_wait": "{cap} 个槽位已全部占用，因此这次会排到队尾的第 {position} 位。",
   "grid_dock_landing_unknown": "无读数",
   "grid_dock_landing_wait": "等待第 {position} 位",
-  "grid_dock_athena_remote": "在已配对设备上运行时不可用：该会话位于另一台机器上，不在本机队中。"
+  "grid_dock_athena_remote": "在已配对设备上运行时不可用：该会话位于另一台机器上，不在本机队中。",
+  "server_menu_open": "在 Webview 中打开",
+  "server_menu_restart": "重启开发服务器",
+  "server_menu_start": "启动开发服务器",
+  "server_menu_stop": "停止开发服务器",
+  "server_running_hint": "开发服务器运行在端口 {port}"
 }

@@ -12,6 +12,7 @@ import { fleetTapes } from './fleetTapes.mjs';
 import { observabilityTapes } from './observabilityTapes.mjs';
 import { factoryTapes } from './factoryTapes.mjs';
 import { homeWelcomeTapes } from './homeWelcomeTapes.mjs';
+import { serverControlTapes } from './serverControlTapes.mjs';
 import { homeLearningTapes } from './homeLearningTapes.mjs';
 import { homeCockpitTapes } from './homeCockpitTapes.mjs';
 import { homeSystemCheckTapes } from './homeSystemCheckTapes.mjs';
@@ -324,6 +325,8 @@ const BUILDERS = {
   ...factoryTapes({ RECORDED_AT }).builders,
   // Kit batch home-1, Home > Welcome (homeWelcomeSurfaces.tsx, homeWelcomeTapes.mjs).
   ...homeWelcomeTapes({ RECORDED_AT, PERSONAS, EVENTS }).builders,
+  // Spark server-control, Browser > Server control (serverControlSurfaces.tsx, serverControlTapes.mjs).
+  ...serverControlTapes({ RECORDED_AT }).builders,
   // Kit batch home-1, Home > Learning (homeLearningSurfaces.tsx, homeLearningTapes.mjs).
   ...homeLearningTapes({ RECORDED_AT }).builders,
   // Kit batch home-2, Home > Cockpit + Athena chat cards + council evidence well (homeCockpitSurfaces.tsx, homeCockpitTapes.mjs).

@@ -1031,5 +1031,10 @@
   "grid_dock_landing_tip_wait": "Alle {cap} Slots sind belegt, daher reiht sich dies am Ende der Warteschlange auf Position {position} ein.",
   "grid_dock_landing_unknown": "Keine Daten",
   "grid_dock_landing_wait": "Wartet #{position}",
-  "grid_dock_athena_remote": "Nicht verfügbar für einen Lauf auf einem gekoppelten Gerät: Diese Sitzung liegt auf der anderen Maschine, nicht in dieser Flotte."
+  "grid_dock_athena_remote": "Nicht verfügbar für einen Lauf auf einem gekoppelten Gerät: Diese Sitzung liegt auf der anderen Maschine, nicht in dieser Flotte.",
+  "server_menu_open": "In Webview öffnen",
+  "server_menu_restart": "Dev-Server neu starten",
+  "server_menu_start": "Dev-Server starten",
+  "server_menu_stop": "Dev-Server stoppen",
+  "server_running_hint": "Dev-Server läuft auf Port {port}"
 }

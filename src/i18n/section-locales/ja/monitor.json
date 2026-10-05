@@ -1031,5 +1031,10 @@
   "grid_dock_landing_tip_wait": "{cap}スロットすべてが使用中のため、キュー末尾の{position}番目に入ります。",
   "grid_dock_landing_unknown": "読み取りなし",
   "grid_dock_landing_wait": "{position}番目で待機",
-  "grid_dock_athena_remote": "ペアリング済みデバイスでの実行では利用できません。そのセッションは別のマシン上にあり、このフリートには属しません。"
+  "grid_dock_athena_remote": "ペアリング済みデバイスでの実行では利用できません。そのセッションは別のマシン上にあり、このフリートには属しません。",
+  "server_menu_open": "Webview で開く",
+  "server_menu_restart": "開発サーバーを再起動",
+  "server_menu_start": "開発サーバーを起動",
+  "server_menu_stop": "開発サーバーを停止",
+  "server_running_hint": "開発サーバーはポート {port} で実行中"
 }

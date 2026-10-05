@@ -21,6 +21,7 @@ import { FACTORY_MODULES } from './factorySurfaces';
 import { KIT_MODULES } from './kitSpecimen';
 import { KIT_OVERVIEW_MODULES } from './kitOverview';
 import { HOME_WELCOME_MODULES } from './homeWelcomeSurfaces';
+import { SERVER_CONTROL_MODULES } from './serverControlSurfaces';
 import { HOME_LEARNING_MODULES } from './homeLearningSurfaces';
 import { HOME_COCKPIT_MODULES } from './homeCockpitSurfaces';
 import { HOME_SYSTEM_CHECK_MODULES } from './homeSystemCheckSurfaces';
@@ -89,6 +90,8 @@ export const MODULES: Record<string, HarnessModule> = {
   ...FACTORY_MODULES,
   // Kit batch home-1, Home > Welcome (homeWelcomeSurfaces.tsx, homeWelcomeTapes.mjs).
   ...HOME_WELCOME_MODULES,
+  // Spark server-control, Browser > Server control (serverControlSurfaces.tsx, serverControlTapes.mjs).
+  ...SERVER_CONTROL_MODULES,
   // Kit batch home-1, Home > Learning (homeLearningSurfaces.tsx, homeLearningTapes.mjs).
   ...HOME_LEARNING_MODULES,
   // Kit batch home-2, Home > Cockpit + Athena chat cards + council evidence well (homeCockpitSurfaces.tsx, homeCockpitTapes.mjs).

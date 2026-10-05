@@ -1031,5 +1031,10 @@
   "grid_dock_landing_tip_wait": "{cap}개 슬롯이 모두 사용 중이라 대기열 맨 뒤 {position}번째에 들어갑니다.",
   "grid_dock_landing_unknown": "읽음 없음",
   "grid_dock_landing_wait": "{position}번째 대기",
-  "grid_dock_athena_remote": "페어링된 기기에서 실행할 때는 사용할 수 없습니다. 그 세션은 다른 컴퓨터에 있으며 이 플릿에 속하지 않습니다."
+  "grid_dock_athena_remote": "페어링된 기기에서 실행할 때는 사용할 수 없습니다. 그 세션은 다른 컴퓨터에 있으며 이 플릿에 속하지 않습니다.",
+  "server_menu_open": "Webview에서 열기",
+  "server_menu_restart": "개발 서버 다시 시작",
+  "server_menu_start": "개발 서버 시작",
+  "server_menu_stop": "개발 서버 중지",
+  "server_running_hint": "개발 서버가 포트 {port}에서 실행 중"
 }

@@ -28,6 +28,7 @@ pub mod notepad_ingest;
 pub mod replay_queue;
 pub mod schema_vocabulary;
 
+pub mod dev_servers;
 pub mod director;
 pub mod doc_rot;
 pub mod gitlab;

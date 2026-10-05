@@ -1031,5 +1031,10 @@
   "grid_dock_landing_tip_wait": "Las {cap} plazas están ocupadas, así que esto se une al final de la cola en la posición {position}.",
   "grid_dock_landing_unknown": "Sin lectura",
   "grid_dock_landing_wait": "Espera #{position}",
-  "grid_dock_athena_remote": "No disponible para una ejecución en un dispositivo emparejado: esa sesión vive en la otra máquina, no en esta flota."
+  "grid_dock_athena_remote": "No disponible para una ejecución en un dispositivo emparejado: esa sesión vive en la otra máquina, no en esta flota.",
+  "server_menu_open": "Abrir en Webview",
+  "server_menu_restart": "Reiniciar servidor de desarrollo",
+  "server_menu_start": "Iniciar servidor de desarrollo",
+  "server_menu_stop": "Detener servidor de desarrollo",
+  "server_running_hint": "Servidor de desarrollo en ejecución en el puerto {port}"
 }

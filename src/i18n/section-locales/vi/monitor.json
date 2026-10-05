@@ -1031,5 +1031,10 @@
   "grid_dock_landing_tip_wait": "Cả {cap} chỗ đều đang dùng, nên lượt này vào cuối hàng đợi ở vị trí {position}.",
   "grid_dock_landing_unknown": "Chưa đọc",
   "grid_dock_landing_wait": "Chờ #{position}",
-  "grid_dock_athena_remote": "Không khả dụng cho lượt chạy trên thiết bị đã ghép nối: phiên đó nằm trên máy kia, không thuộc đội này."
+  "grid_dock_athena_remote": "Không khả dụng cho lượt chạy trên thiết bị đã ghép nối: phiên đó nằm trên máy kia, không thuộc đội này.",
+  "server_menu_open": "Mở trong Webview",
+  "server_menu_restart": "Khởi động lại máy chủ dev",
+  "server_menu_start": "Khởi động máy chủ dev",
+  "server_menu_stop": "Dừng máy chủ dev",
+  "server_running_hint": "Máy chủ dev đang chạy trên cổng {port}"
 }

@@ -1031,5 +1031,10 @@
   "grid_dock_landing_tip_wait": "كل الخانات الـ{cap} مستخدمة، لذا ينضم هذا إلى آخر الطابور في الموضع {position}.",
   "grid_dock_landing_unknown": "لا توجد قراءة",
   "grid_dock_landing_wait": "ينتظر #{position}",
-  "grid_dock_athena_remote": "غير متاح لتشغيل على جهاز مقترن: تلك الجلسة تعيش على الجهاز الآخر، لا في هذا الأسطول."
+  "grid_dock_athena_remote": "غير متاح لتشغيل على جهاز مقترن: تلك الجلسة تعيش على الجهاز الآخر، لا في هذا الأسطول.",
+  "server_menu_open": "فتح في Webview",
+  "server_menu_restart": "إعادة تشغيل خادم التطوير",
+  "server_menu_start": "تشغيل خادم التطوير",
+  "server_menu_stop": "إيقاف خادم التطوير",
+  "server_running_hint": "خادم التطوير يعمل على المنفذ {port}"
 }

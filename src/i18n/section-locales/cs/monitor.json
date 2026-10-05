@@ -1031,5 +1031,10 @@
   "grid_dock_landing_tip_wait": "Všech {cap} slotů je obsazeno, takže se tohle zařadí na konec fronty na pozici {position}.",
   "grid_dock_landing_unknown": "Bez odečtu",
   "grid_dock_landing_wait": "Čeká #{position}",
-  "grid_dock_athena_remote": "Není k dispozici pro běh na spárovaném zařízení: ta relace žije na druhém stroji, ne v této flotile."
+  "grid_dock_athena_remote": "Není k dispozici pro běh na spárovaném zařízení: ta relace žije na druhém stroji, ne v této flotile.",
+  "server_menu_open": "Otevřít ve Webview",
+  "server_menu_restart": "Restartovat vývojový server",
+  "server_menu_start": "Spustit vývojový server",
+  "server_menu_stop": "Zastavit vývojový server",
+  "server_running_hint": "Vývojový server běží na portu {port}"
 }

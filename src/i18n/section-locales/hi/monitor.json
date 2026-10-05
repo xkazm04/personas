@@ -1031,5 +1031,10 @@
   "grid_dock_landing_tip_wait": "सभी {cap} स्लॉट उपयोग में हैं, इसलिए यह कतार के अंत में स्थान {position} पर लगेगा।",
   "grid_dock_landing_unknown": "कोई पाठ नहीं",
   "grid_dock_landing_wait": "#{position} पर प्रतीक्षा",
-  "grid_dock_athena_remote": "जोड़े गए डिवाइस पर चलने वाले रन के लिए उपलब्ध नहीं: वह सेशन दूसरी मशीन पर रहता है, इस फ़्लीट में नहीं।"
+  "grid_dock_athena_remote": "जोड़े गए डिवाइस पर चलने वाले रन के लिए उपलब्ध नहीं: वह सेशन दूसरी मशीन पर रहता है, इस फ़्लीट में नहीं।",
+  "server_menu_open": "Webview में खोलें",
+  "server_menu_restart": "डेव सर्वर रीस्टार्ट करें",
+  "server_menu_start": "डेव सर्वर शुरू करें",
+  "server_menu_stop": "डेव सर्वर बंद करें",
+  "server_running_hint": "डेव सर्वर पोर्ट {port} पर चल रहा है"
 }

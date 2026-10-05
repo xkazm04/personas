@@ -23,6 +23,7 @@ import { toastCatch } from '@/lib/silentCatch';
 
 import { browserSnapshot, refreshSites, subscribeBrowser } from '../browserStore';
 import type { BrowserSite } from '../types';
+import ServerSection from '../servers/ServerSection';
 import AddSiteModal, { type AddSiteSubmit } from './AddSiteModal';
 import { useWhitelistActions } from './useWhitelistActions';
 import CardsVariant from './variants/CardsVariant';
@@ -145,6 +146,7 @@ export default function WhitelistPage() {
         }
       />
       <ContentBody>
+        <ServerSection />
         {/* `segmentedTabPanelProps` supplies the id SegmentedTabs' own
             `aria-controls` points at. `role="tabpanel"` is redundant with that
             spread and written out anyway: the helper hides it behind a call,

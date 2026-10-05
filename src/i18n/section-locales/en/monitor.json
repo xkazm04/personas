@@ -1,4 +1,9 @@
 {
+  "server_menu_start": "Start dev server",
+  "server_menu_stop": "Stop dev server",
+  "server_menu_restart": "Restart dev server",
+  "server_menu_open": "Open in Webview",
+  "server_running_hint": "Dev server running on port {port}",
   "title": "Persona Monitor",
   "subtitle": "{personas} personas · {attention} need attention · {running} running",
   "close": "Close monitor",

@@ -212,6 +212,14 @@ event_names! {
     // never `app.emit`, because `app.emit` reaches the page webviews and a
     // page webview is whatever site an agent navigated to.
     BROWSER_SCAN               => "browser-scan",
+    // Browser > Server control: the WHOLE dev-server list (`DevServerView[]`)
+    // every time any of it moves -- a start, a stop, a server answering HTTP
+    // for the first time, an external listener appearing on a configured port,
+    // a scan finishing. Emitted by the commands that mutate and by the
+    // supervisor tick, which emits ONLY when the list differs from the last one
+    // (rows carry a start stamp, not an uptime, so an idle fleet is silent).
+    // Same target rule as `BROWSER_TABS`: `emit_to(AnyLabel{"main"})`.
+    DEV_SERVERS_CHANGED        => "dev-servers-changed",
     // The findings loop's SIGNAL events (docs/plans/dev-findings-loop.md). A sensor
     // raised a finding, or a verdict landed on one that shipped. Published on every
     // create_finding / set_finding_verify_state — i.e. from the repo, so no caller

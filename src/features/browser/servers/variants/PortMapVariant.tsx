@@ -1,0 +1,29 @@
+/**
+ * Server control prototype: Port map. WP0 PLACEHOLDER, replaced by its variant builder.
+ * Owns presentation only; see `../serverVariantProps.ts`.
+ */
+import { useTranslation } from '@/i18n/useTranslation';
+
+import type { ServerVariantProps } from '../serverVariantProps';
+
+export default function PortMapVariant({ servers, onMenu, onToggle }: ServerVariantProps) {
+  const { t } = useTranslation();
+  const s = t.browser.servers;
+  return (
+    <ul className="flex flex-col gap-1" data-testid="server-variant-placeholder-portmap">
+      {servers.map((server) => (
+        <li
+          key={server.projectId}
+          data-testid="server-item"
+          data-project-id={server.projectId}
+          data-state={server.state}
+          onContextMenu={(e) => onMenu(e, server)}
+          onDoubleClick={() => onToggle(server)}
+          className="typo-body text-foreground"
+        >
+          {server.projectName} :{server.devPort} {s[`state_${server.state}`]}
+        </li>
+      ))}
+    </ul>
+  );
+}

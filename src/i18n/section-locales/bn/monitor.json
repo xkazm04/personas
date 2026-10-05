@@ -1031,5 +1031,10 @@
   "grid_dock_landing_tip_wait": "{cap}টি স্লটের সবগুলোই ব্যবহৃত, তাই এটি সারির শেষে {position} নম্বরে যুক্ত হবে।",
   "grid_dock_landing_unknown": "পাঠ নেই",
   "grid_dock_landing_wait": "#{position}-এ অপেক্ষা",
-  "grid_dock_athena_remote": "যুক্ত ডিভাইসে চালানো রানের জন্য পাওয়া যায় না: সেই সেশনটি অন্য মেশিনে থাকে, এই ফ্লিটে নয়।"
+  "grid_dock_athena_remote": "যুক্ত ডিভাইসে চালানো রানের জন্য পাওয়া যায় না: সেই সেশনটি অন্য মেশিনে থাকে, এই ফ্লিটে নয়।",
+  "server_menu_open": "Webview-তে খুলুন",
+  "server_menu_restart": "ডেভ সার্ভার পুনরায় চালু করুন",
+  "server_menu_start": "ডেভ সার্ভার চালু করুন",
+  "server_menu_stop": "ডেভ সার্ভার বন্ধ করুন",
+  "server_running_hint": "ডেভ সার্ভার পোর্ট {port}-এ চলছে"
 }

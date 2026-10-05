@@ -1031,5 +1031,10 @@
   "grid_dock_landing_tip_wait": "Semua {cap} slot terpakai, jadi ini masuk ke akhir antrean di posisi {position}.",
   "grid_dock_landing_unknown": "Belum dibaca",
   "grid_dock_landing_wait": "Menunggu #{position}",
-  "grid_dock_athena_remote": "Tidak tersedia untuk proses di perangkat yang dipasangkan: sesi itu berada di mesin lain, bukan di armada ini."
+  "grid_dock_athena_remote": "Tidak tersedia untuk proses di perangkat yang dipasangkan: sesi itu berada di mesin lain, bukan di armada ini.",
+  "server_menu_open": "Buka di Webview",
+  "server_menu_restart": "Mulai ulang server dev",
+  "server_menu_start": "Mulai server dev",
+  "server_menu_stop": "Hentikan server dev",
+  "server_running_hint": "Server dev berjalan di port {port}"
 }

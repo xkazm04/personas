@@ -1031,5 +1031,10 @@
   "grid_dock_landing_tip_wait": "Все {cap} слотов заняты, поэтому запуск встанет в конец очереди на позицию {position}.",
   "grid_dock_landing_unknown": "Нет данных",
   "grid_dock_landing_wait": "Ждёт #{position}",
-  "grid_dock_athena_remote": "Недоступно для запуска на сопряжённом устройстве: та сессия живёт на другой машине, а не в этом флоте."
+  "grid_dock_athena_remote": "Недоступно для запуска на сопряжённом устройстве: та сессия живёт на другой машине, а не в этом флоте.",
+  "server_menu_open": "Открыть в Webview",
+  "server_menu_restart": "Перезапустить dev-сервер",
+  "server_menu_start": "Запустить dev-сервер",
+  "server_menu_stop": "Остановить dev-сервер",
+  "server_running_hint": "Dev-сервер работает на порту {port}"
 }

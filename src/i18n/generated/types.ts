@@ -6,6 +6,11 @@
 
 export type Translations = {
   monitor: {
+    server_menu_start: string;
+    server_menu_stop: string;
+    server_menu_restart: string;
+    server_menu_open: string;
+    server_running_hint: string;
     title: string;
     subtitle: string;
     close: string;
@@ -24561,6 +24566,66 @@ export type Translations = {
       open_failed: string;
       save_failed: string;
       pattern_chip: string;
+    };
+    servers: {
+      title: string;
+      subtitle: string;
+      section_servers: string;
+      section_whitelist: string;
+      add_app: string;
+      variant_label: string;
+      variant_rack: string;
+      variant_portmap: string;
+      variant_switchboard: string;
+      variant_tiles: string;
+      empty_title: string;
+      empty_description: string;
+      state_unconfigured: string;
+      state_stopped: string;
+      state_scanning: string;
+      state_starting: string;
+      state_running: string;
+      state_stopping: string;
+      state_external: string;
+      state_failed: string;
+      menu_label: string;
+      menu_start: string;
+      menu_stop: string;
+      menu_restart: string;
+      menu_open: string;
+      menu_edit: string;
+      menu_rescan: string;
+      menu_remove: string;
+      host_guard: string;
+      port_label: string;
+      command_label: string;
+      tech_label: string;
+      uptime: string;
+      external_pid: string;
+      running_count: string;
+      external_count: string;
+      ports_in_use: string;
+      add_title: string;
+      add_folder: string;
+      add_folder_placeholder: string;
+      add_browse: string;
+      add_workspace: string;
+      add_no_workspace: string;
+      add_submit: string;
+      add_scan_hint: string;
+      edit_title: string;
+      edit_save: string;
+      command_invalid: string;
+      port_invalid: string;
+      command_port_hint: string;
+      remove_live: string;
+      start_failed: string;
+      stop_failed: string;
+      save_failed: string;
+      add_failed: string;
+      remove_failed: string;
+      rescan_failed: string;
+      open_failed: string;
     };
     add_site: {
       title: string;
