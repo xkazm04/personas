@@ -858,6 +858,34 @@ so on a fleet with many unread reports most tiles glow. The brightness
 setting's light "Dimmer" tier (the default for a fresh light profile) dims
 the whole window, the Board included.
 
+**Activity's lines wear the piles (monitor UI fuse, 2026-10-05).** Classic
+keeps its layout (masonry bays, nameplates, share bars, the tray) but a
+persona line (`entry-e/PersonaLine.tsx`, 36px) and a session card
+(`entry-e/SessionLine.tsx`, 50px - Classic's bays and tray, and the Running
+and Parked lanes) are drawn as Board tiles: the line's whole background is
+its pile, the Board's `fb-tile is-*` classes toned by `PILE_VISUAL`, taken
+into list flow by `ae-pile` (`entryE.css`). A persona line carries its framed
+face, its name at the tile weight, and at the right the run age (also drawn
+along the foot), or the reason glyph and count (the reason in words where the
+line is 300px or wider), or the off glyph. A session card carries its origin
+glyph on the Board's puck, its title, then the state glyph, the state in words
+(unless it is working), the project (Lanes) and the age; the age is the
+Board's foot bar. `entry-e/pileSkin.ts` holds the only new rule: a session's
+pile is the panel filter's own fold (`sessionBucket`) - awaiting input or
+stale = needs amber, a failed exit = needs red, running or spawning = working,
+idle / queued / hibernated / finished = resting, a clean exit or an expired
+row = off - so a command-bar tag and the fill it counts agree; and a persona
+whose project is switched off is drawn off unless it needs you. The working
+sweep runs across a line only with motion allowed (OS and app) and the window
+visible (`useAmbientMotion.ts`, CSS-gated again). The Queued lane's rungs
+(`entry-e/QueueRung.tsx`, compact) wear the same skin through the same fold
+(a queued row is resting glass): grip, rank, the origin puck, the title, the
+estimated start and the amber not-before cue for a deferred rung; drag and
+Alt+Up/Down reorder are unchanged, and the four verbs now float over the
+rung's right edge on hover or focus instead of reserving their width. The bay
+nameplates' lamps still speak the Annunciator's lamp vocabulary (`tone.ts`). Harness: `monitor/classic`, `monitor/lanes` (+
+`/sim`) in `scripts/style/page-harness/monitorActivitySurfaces.tsx`.
+
 ## Card context menus
 
 Every card on the Activity board carries its verbs on a right-click, and both

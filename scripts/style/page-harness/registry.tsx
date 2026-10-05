@@ -32,6 +32,8 @@ import { MISSION_CONTROL_MODULES } from './missionControlSurfaces';
 import { ACTIVITY_MODULES } from './activitySurfaces';
 import { INBOX_MODULES } from './inboxSurfaces';
 import { MONITOR_BOARD_MODULES } from './monitorBoardSurfaces';
+import { MONITOR_RAIL_MODULES } from './monitorRailSurfaces';
+import { MONITOR_ACTIVITY_MODULES } from './monitorActivitySurfaces';
 
 type Wrap = (children: ReactNode) => ReactNode;
 
@@ -77,6 +79,8 @@ export const MODULES: Record<string, HarnessModule> = {
   // Kit batch overview-1, Overview > Approvals + Incidents (inboxSurfaces.tsx, inboxTapes.mjs).
   ...INBOX_MODULES,
   ...MONITOR_BOARD_MODULES,
+  ...MONITOR_RAIL_MODULES,
+  ...MONITOR_ACTIVITY_MODULES,
   ...TONE_MODULES,
   ...TRIAGE_MODULES,
   ...DATAGRID_MODULES,

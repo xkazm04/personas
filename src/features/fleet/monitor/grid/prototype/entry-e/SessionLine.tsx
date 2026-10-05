@@ -1,18 +1,17 @@
-// A session as a COMPACT LINE (Lanes, Classic, the tray): two rows inside the
-// plate, hairlines between lines instead of a box around each. Row one is the
-// lamp and the title. A lit line spills its tone from the left. The recap sits
-// at the right of row one, shown on hover or focus.
+// A session as a COMPACT CARD (Lanes, Classic, the tray), worn as a Board
+// tile: its pile is the card's whole background (`sessionPileKey` - awaiting
+// input, stale or a failed exit is a solid tone fill, running is lit theme
+// colour with the sweep, alive and idle is glass, ended is hatched), so a lane
+// sorts itself before a title is read.
 //
-// ROW TWO IS DRAWN, NOT WRITTEN (2026-10-04). It used to read
-// "Awaiting input · Curator · personas-web" — three strings competing with the
-// title for the same width, in a line 50px tall. Each fact is now the mark it
-// already has elsewhere on the panel: the STATE is its glyph in the line's own
-// lamp tone (`sessionStateIcon` + `ae-tone-text`, the same pairing the bays
-// use), the SOURCE is the origin glyph every node on the board is stamped
-// with (`ORIGIN_GLYPH`, via `useSessionFacts`), and the age stays a bar with
-// its figure. Only the project — which no glyph can stand for — is still text,
-// and only where the list is board-wide. The words are not lost: the line's
-// tooltip and its `aria-label` are the same full reading as before.
+// The face is the ORIGIN glyph every node on the board is stamped with
+// (`ORIGIN_GLYPH`, via `useSessionFacts`), framed on the Board's puck. Row one
+// is the title, with the recap at its right on hover or focus. Row two is the
+// state glyph and - unless the card is working, when the lit fill already says
+// it - the state in words, the project where the list is board-wide, and the
+// age as its figure. The age is also DRAWN along the foot (the Board's run-age
+// bar: a log scale full at four hours), so a forgotten session is the long
+// bar. The tooltip and the `aria-label` are the full reading.
 
 import { memo, type KeyboardEvent } from 'react';
 import { ScanEye } from 'lucide-react';
@@ -20,10 +19,11 @@ import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Button } from '@/features/shared/components/buttons';
+import { runAgeFraction } from '../../../fleetboard/Tile';
 import type { QueueItem } from '../../board/queue/useQueueModel';
 import { useSessionFacts } from '../shared';
-import { AGE_RUNG_COUNT, ageRungs, compactAge, sessionLamp, toneClass } from './tone';
-import { Lamp } from './parts';
+import { compactAge } from './tone';
+import { pileSkin, sessionPileKey } from './pileSkin';
 import { useSessionMenu } from './SessionMenu';
 import { sessionStateIcon, useSessionSummary } from './sessionBits';
 
@@ -47,7 +47,7 @@ export const SessionLine = memo(function SessionLine({
   const f = useSessionFacts()(session, item);
   const summary = useSessionSummary(f, now, over);
   const menu = useSessionMenu(session);
-  const lamp = sessionLamp(session.state);
+  const skin = pileSkin(sessionPileKey(session), session.id);
   const age = Math.max(0, now - f.startedAt);
   const Origin = f.OriginIcon;
   const State = sessionStateIcon(session.state);
@@ -57,6 +57,7 @@ export const SessionLine = memo(function SessionLine({
     if (e.defaultPrevented || e.target !== e.currentTarget) return;
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
   };
+  const project = showProject ? f.project : null;
 
   return (
     <Tooltip content={<span className="whitespace-pre-line">{summary}</span>} placement="right" delay={450}>
@@ -69,33 +70,34 @@ export const SessionLine = memo(function SessionLine({
         aria-label={summary.replace(/\n/g, ', ')}
         data-testid="fleet-grid-session"
         data-state={session.state}
-        className={`ae-line ae-row ae-focus flex w-full min-w-0 flex-col justify-center gap-0.5 px-2.5 ${onOpen ? 'cursor-pointer' : ''} ${
-          toneClass(lamp.tone)} ${lamp.lit ? 'is-lit' : ''} ${over ? 'is-over' : ''} ${flash ? 'is-flash' : ''}`}
-        style={{ height: SESSION_LINE_H }}
+        data-pile={skin.pile}
+        className={`${skin.className} ae-row flex min-w-0 items-center gap-2 pl-1.5 pr-1 ${onOpen ? '' : 'is-inert'} ${
+          over ? 'is-over' : ''} ${flash ? 'is-flash' : ''}`}
+        style={{ ...skin.style, height: SESSION_LINE_H }}
       >
-        <span className="flex min-w-0 items-center gap-2">
-          <Lamp lamp={lamp} />
-          <span className="min-w-0 flex-1 truncate typo-body text-foreground">{f.label}</span>
-          <span className="ae-reveal -my-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => onRecap(session)}
-              aria-label={t.monitor.grid_session_recap_open}
-              data-testid="fleet-grid-session-recap"
-              icon={<ScanEye className="h-3.5 w-3.5" aria-hidden />}
-            />
+        <span className="fb-face fb-ink ae-puck" aria-hidden><Origin className="h-4 w-4" /></span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="flex min-w-0 items-center gap-1">
+            <span className="min-w-0 flex-1 truncate typo-heading">{f.label}</span>
+            <span className="ae-reveal -my-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => onRecap(session)}
+                aria-label={t.monitor.grid_session_recap_open}
+                data-testid="fleet-grid-session-recap"
+                icon={<ScanEye className="h-3.5 w-3.5" aria-hidden />}
+              />
+            </span>
+          </span>
+          <span className="flex min-w-0 items-center gap-1.5 pr-1.5 typo-label">
+            <State className="h-3.5 w-3.5 flex-shrink-0" aria-hidden />
+            {skin.pile !== 'working' && <span className="min-w-0 flex-shrink truncate">{f.stateLabel}</span>}
+            {project && <span className={`min-w-0 flex-1 truncate ${skin.pile !== 'working' ? 'ae-sep' : ''}`}>{project}</span>}
+            <span className="ml-auto flex-shrink-0 tabular-nums">{compactAge(age)}</span>
           </span>
         </span>
-        <span className="flex min-w-0 items-center gap-2 pl-[18px] typo-caption">
-          <State className="ae-tone-text h-3.5 w-3.5 flex-shrink-0" aria-hidden />
-          <Origin className="h-3.5 w-3.5 flex-shrink-0" aria-hidden />
-          {showProject && f.project && <span className="min-w-0 flex-1 truncate">{f.project}</span>}
-          <span className={`ae-bar w-10 flex-shrink-0 ${showProject && f.project ? '' : 'ml-auto'}`} aria-hidden>
-            <span style={{ width: `${(ageRungs(age) / AGE_RUNG_COUNT) * 100}%`, opacity: lamp.lit ? 1 : 0.45 }} />
-          </span>
-          <span className="w-8 flex-shrink-0 text-right tabular-nums text-foreground">{compactAge(age)}</span>
-        </span>
+        <i className="fb-age" aria-hidden style={{ width: `${runAgeFraction(f.startedAt, Math.floor(now / 60_000)) * 100}%` }} />
       </div>
     </Tooltip>
   );

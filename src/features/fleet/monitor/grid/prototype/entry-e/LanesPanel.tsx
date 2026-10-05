@@ -17,6 +17,7 @@ import { Engraved, Lamp } from './parts';
 import type { Tone } from './tone';
 import { isParked, type PanelFilter } from './boardFilter';
 import type { WorkspaceScope } from './workspaceScope';
+import { useAmbientMotionClass } from './useAmbientMotion';
 
 const HOLDS: ReadonlySet<string> = new Set(['running', 'spawning', 'awaiting_input', 'idle']);
 
@@ -52,6 +53,7 @@ export function LanesPanel({
   const m = t.monitor;
   useFixedTicker(30_000);
   const now = Date.now();
+  const motion = useAmbientMotionClass();
   const { queueModel: model, queueOrder: order, board, setTerminal, setRecap, focusKey, reducedMotion } = surface;
 
   const live = useMemo(() => model.running.filter((i) => !isParked(i.session, Date.now())), [model.running]);
@@ -79,7 +81,7 @@ export function LanesPanel({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 gap-2.5 overflow-hidden p-3" data-testid="fleet-queue-lanes">
+    <div className={`flex min-h-0 flex-1 gap-2.5 overflow-hidden p-3 ${motion}`} data-testid="fleet-queue-lanes">
       <Lane title={m.queue_band_running} count={running.length} tone="run" empty={m.queue_empty_title} testId="fleet-queue-lane-running">
         {running.map((item) => (
           <SessionLine key={item.sessionId} session={item.session} item={item} onOpen={setTerminal} onRecap={setRecap}

@@ -5,7 +5,7 @@
 // is the widest bay, at the foot, in as many columns as the width allows.
 
 import { useCallback, useMemo, type ReactNode } from 'react';
-import { Laptop, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useFixedTicker } from '@/hooks/utility/timing/relativeTimeTicker';
 import { effectiveRemoteState } from '@/lib/network/remoteSessionModel';
@@ -17,8 +17,9 @@ import { SessionLine } from './SessionLine';
 import { Bay, ShareBar } from './Bay';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { BayGhosts } from './Ghosts';
-import { sessionLamp, toneClass } from './tone';
-import { Engraved, Lamp } from './parts';
+import { Engraved } from './parts';
+import { RemoteLine } from './RemoteLine';
+import { useAmbientMotionClass } from './useAmbientMotion';
 import type { PanelFilter } from './boardFilter';
 import type { WorkspaceScope } from './workspaceScope';
 
@@ -39,6 +40,7 @@ export function ClassicPanel({
   const m = t.monitor;
   useFixedTicker(TICK_MS);
   const now = Date.now();
+  const motion = useAmbientMotionClass();
   const { unfilteredModel: model, select, focusKey, bubbles, unseen, setTerminal, setRecap, scope, toggleScope } = surface;
 
   const keep = useCallback((row: ColumnRow): boolean => {
@@ -69,26 +71,7 @@ export function ClassicPanel({
     if (row.kind === 'session') {
       return <SessionLine key={row.key} session={row.session} onOpen={setTerminal} onRecap={setRecap} flash={focusKey === `s:${row.session.id}`} now={now} />;
     }
-    if (row.kind === 'remote') {
-      const state = effectiveRemoteState(row.view, now);
-      const lamp = state === 'unknown' ? { tone: 'off' as const, lit: false } : sessionLamp(state);
-      const title = row.view.title?.trim() || row.view.projectLabel || row.view.jobId.slice(0, 8);
-      const device = row.view.peerDisplayName || row.view.peerId.slice(0, 8);
-      return (
-        <div
-          key={row.key}
-          role="button"
-          tabIndex={0}
-          onClick={() => onOpenRemote?.(row.view.jobId)}
-          onKeyDown={(e) => { if (e.key === 'Enter') onOpenRemote?.(row.view.jobId); }}
-          data-testid="fleet-grid-remote"
-          className={`ae-line ae-focus flex min-w-0 cursor-pointer flex-col justify-center gap-0.5 px-2.5 py-1.5 ${toneClass(lamp.tone)} ${lamp.lit ? 'is-lit' : ''}`}
-        >
-          <span className="flex min-w-0 items-center gap-2"><Lamp lamp={lamp} /><span className="truncate typo-body text-foreground">{title}</span></span>
-          <span className="flex min-w-0 items-center gap-1.5 pl-[18px] typo-caption"><Laptop className="h-3.5 w-3.5 flex-shrink-0" aria-hidden /><span className="truncate">{device}</span></span>
-        </div>
-      );
-    }
+    if (row.kind === 'remote') return <RemoteLine key={row.key} view={row.view} now={now} onOpen={onOpenRemote} />;
     return null;
   }, [selectedPersonaId, select, focusKey, bubbles, unseen, setTerminal, setRecap, onOpenRemote, now]);
 
@@ -123,7 +106,7 @@ export function ClassicPanel({
   }
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto p-3" aria-label={m.grid_board_aria} data-testid="entry-e-classic">
+    <div className={`min-h-0 flex-1 overflow-y-auto p-3 ${motion}`} aria-label={m.grid_board_aria} data-testid="entry-e-classic">
       <div className="ae-bays">
         {bays.map(({ column, personas, live }) => (
           <Bay

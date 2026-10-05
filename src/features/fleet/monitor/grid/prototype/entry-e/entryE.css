@@ -198,6 +198,70 @@
   .ae-line, .ae-line.is-flash { transition: none; animation: none; }
 }
 
+/* ── Pile tiles: the Board's skin on a line of a list ──────────────────── */
+/* A persona or session line wears the Board's tile (fleetboard.css `fb-tile`
+   + `is-needs|working|resting|off`, toned by --fb-tone from PILE_VISUAL), so
+   its state is the line's whole background, read before its name: a solid
+   tone fill when it needs you, lit theme colour while it works, glass at rest,
+   hatched when off. `ae-pile` only takes the tile out of the Board's absolute
+   field and into a column: in flow, as wide as its column, a small gap
+   between neighbours so two fills never merge into one block. */
+.ae-pile.fb-tile {
+  position: relative;
+  container-type: inline-size;
+  margin: 0 6px 3px;
+}
+.ae-pile > :not(.fb-age) { position: relative; z-index: 1; }
+.ae-pile:hover { border-color: color-mix(in oklab, var(--foreground) 45%, var(--fb-tone)); }
+.ae-pile.is-inert { cursor: default; }
+.ae-pile.is-over { box-shadow: inset 3px 0 0 var(--status-warning); }
+.ae-pile.is-flash { animation: ae-flash 900ms ease-out 3; }
+/* On a needs fill everything is ink: the revealed verbs and the age bar too. */
+.ae-pile.is-needs button { color: inherit; }
+.ae-pile.is-needs .fb-age { background: currentColor; box-shadow: none; opacity: 0.45; }
+/* A queue rung's verbs float over its right edge, on a puck of the page
+   colour, only on hover or keyboard focus: hidden, they take no width and no
+   pointer, so the title keeps the lane. */
+.ae-pile .ae-reveal.ae-float {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  z-index: 2;
+  transform: translateY(-50%);
+  padding: 2px;
+  border-radius: var(--radius-input);
+  background: color-mix(in oklab, var(--background) 92%, var(--foreground));
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 14%, transparent);
+  pointer-events: none;
+}
+.ae-row:hover .ae-float, .ae-row:focus-within .ae-float { pointer-events: auto; }
+/* A rung being dragged is opaque, so the rungs it passes do not show through. */
+.ae-pile.ae-dragging { background: color-mix(in oklab, var(--background) 92%, var(--foreground)); }
+/* A session's face: its origin glyph on the Board's page-colour puck. */
+.ae-puck { display: grid; place-items: center; width: 32px; height: 32px; }
+/* A middle dot between two facts written side by side (state, project). */
+.ae-sep::before { content: "\00B7"; margin-right: 0.375rem; }
+/* The reason in words where the line has the width; the glyph always. */
+@container (width < 300px) { .ae-pile .ae-word { display: none; } }
+
+/* The working sweep runs across a line (the Board's runs down a tile), and only
+   with motion allowed by the OS and the app and the window visible
+   (`ae-moving`, set from useReducedMotion + useDocumentVisibility). Without it
+   the Board's static lit band stays. */
+@keyframes ae-sweep { from { transform: translateX(-110%); } to { transform: translateX(260%); } }
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion="reduce"]) .ae-moving .ae-pile.is-working::after {
+    inset: 0 auto 0 0;
+    width: 40%;
+    background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--fb-tone) 22%, transparent), transparent);
+    animation: ae-sweep 3.2s linear infinite;
+    animation-delay: var(--fb-sd, 0s);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ae-pile.is-flash { animation: none; }
+}
+
 /* ── Notepad: the workspace layer as index tabs ────────────────────────── */
 /* A tab sits ON the sheet below it: the open one is solid, breaks the strip's
    hairline with its own foot, and the closed ones stay behind the glass. */

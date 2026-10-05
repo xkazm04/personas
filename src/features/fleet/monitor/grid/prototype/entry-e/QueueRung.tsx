@@ -1,7 +1,12 @@
 // One rung of the queue ladder. Full (Runway): grip, a big rank numeral, the
 // title, a meta line (origin, project, estimated start, not-before gate) and the
-// wait drawn as a bar, with the four verbs at the right. Compact (Lanes): the
-// same two-row line every other lane uses, the verbs revealed on hover/focus.
+// wait drawn as a bar, with the four verbs at the right. Compact (Lanes):
+// the Board tile every other lane card wears (`pileSkin`): a queued session is
+// resting glass (`sessionPileKey`, so a row the door reports in any other
+// state is drawn by the same fold), the origin glyph on the Board's puck, the
+// title, then the estimated start and - for a deferred rung - the amber
+// not-before cue. The verbs float over the rung's right edge on hover or
+// focus instead of reserving their width, so the title keeps the lane.
 
 import { memo, type ReactNode } from 'react';
 import { ChevronDown, ChevronUp, Clock, X, Zap } from 'lucide-react';
@@ -12,6 +17,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { QueueItem } from '../../board/queue/useQueueModel';
 import { useSessionFacts } from '../shared';
 import { useSessionMenu } from './SessionMenu';
+import { pileSkin, sessionPileKey } from './pileSkin';
 
 export const QueueRung = memo(function QueueRung({
   item, index, total, maxWait, now, compact, flash, lifted = false, grip, onNudge, onStart, onCancel,
@@ -43,7 +49,7 @@ export const QueueRung = memo(function QueueRung({
   const eta = item.estimatedStartMs !== null ? tx(m.queue_estimated_start, { time: est }) : m.queue_no_estimate;
 
   const verbs = (
-    <span className={`flex flex-shrink-0 items-center gap-0.5 ${compact ? 'ae-reveal' : ''}`}>
+    <span className={`flex flex-shrink-0 items-center gap-0.5 ${compact ? 'ae-reveal ae-float' : ''}`}>
       <Tooltip content={m.queue_move_up}>
         <Button variant="ghost" size="icon-sm" disabled={index === 0} onClick={() => onNudge(item.sessionId, -1)} aria-label={m.queue_move_up} data-testid="fleet-queue-up" icon={<ChevronUp className="h-4 w-4" />} />
       </Tooltip>
@@ -66,20 +72,23 @@ export const QueueRung = memo(function QueueRung({
   );
 
   if (compact) {
+    const skin = pileSkin(sessionPileKey(item.session), item.sessionId);
     return (
       <div
         tabIndex={0}
         onContextMenu={menu.onContextMenu}
         onKeyDown={menu.onKeyDown}
         aria-label={`${tx(m.queue_rank_aria, { rank })}, ${f.label}, ${eta}`}
-        className={`ae-line ae-row ae-focus ae-t-info flex min-w-0 items-center gap-2 py-1.5 pl-1 pr-1.5 ${flash ? 'is-flash' : ''} ${lifted ? 'ae-dragging bg-background' : ''}`}
+        data-pile={skin.pile}
+        className={`${skin.className} ae-row is-inert flex min-w-0 items-center gap-2 py-1.5 pl-1 pr-1.5 ${flash ? 'is-flash' : ''} ${lifted ? 'ae-dragging' : ''}`}
+        style={skin.style}
       >
         {grip}
-        <span className="w-6 flex-shrink-0 text-center typo-data tabular-nums text-foreground">{rank}</span>
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="truncate typo-body text-foreground">{f.label}</span>
-          <span className="flex min-w-0 items-center gap-1.5 typo-caption">
-            <Origin className="h-3.5 w-3.5 flex-shrink-0" aria-hidden />
+        <span className="w-6 flex-shrink-0 text-center typo-data tabular-nums">{rank}</span>
+        <span className="fb-face fb-ink ae-puck" aria-hidden><Origin className="h-4 w-4" /></span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate typo-heading">{f.label}</span>
+          <span className="flex min-w-0 items-center gap-1.5 typo-label">
             <span className="min-w-0 flex-1 truncate tabular-nums">{eta}</span>
             {gateTag}
           </span>
