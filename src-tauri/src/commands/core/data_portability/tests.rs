@@ -2982,4 +2982,78 @@ mod tests {
         assert_eq!(name, "P legacy-pr");
         Ok(())
     }
+
+    /// A bundle from a NEWER format generation is refused by its version, never
+    /// by whichever field its new shape happens to break first. A generation
+    /// bump is by contract a shape change, so a gate that runs after the typed
+    /// parse only ever sees the newer bundles that did not need one, and the
+    /// rest reach the user as "missing field ..." with no hint that the fix is
+    /// to update Personas.
+    #[test]
+    fn a_newer_generation_bundle_is_refused_by_its_version_not_its_shape(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let cases = [
+            (
+                "same-shape",
+                r#"{"format_version":4,"exported_at":"x","app_version":"x","scope":"full",
+                    "personas":[],"tool_definitions":[],"teams":[],"credentials":[]}"#,
+            ),
+            (
+                "renamed-section",
+                r#"{"format_version":4,"exported_at":"x","app_version":"x","scope":"full",
+                    "agents":[],"tool_definitions":[],"teams":[],"credentials":[]}"#,
+            ),
+            (
+                "restructured-scope",
+                r#"{"format_version":4,"exported_at":"x","app_version":"x","scope":{"kind":"full"},
+                    "personas":[],"tool_definitions":[],"teams":[],"credentials":[]}"#,
+            ),
+            ("envelope-only", r#"{"format_version":99}"#),
+        ];
+        let pool = init_test_db().map_err(|e| e.to_string())?;
+        let tmp = tempfile::tempdir()?;
+        let mut named = 0;
+        for (label, body) in cases {
+            let path = tmp.path().join(format!("{label}.json"));
+            std::fs::write(&path, body)?;
+            let Err(err) = run_bundle_import(&pool, None, &path, None, None) else {
+                return Err(format!("{label}: a newer-generation bundle imported").into());
+            };
+            let err = err.to_string();
+            let version =
+                serde_json::from_str::<serde_json::Value>(body)?["format_version"].to_string();
+            let by_version = err.contains("newer version") && err.contains(&version);
+            eprintln!(
+                "generation-gate {label}: {} -> {err}",
+                if by_version { "VERSION" } else { "SHAPE" }
+            );
+            if by_version {
+                named += 1;
+            }
+        }
+        assert_eq!(named, cases.len(), "newer bundles refused by version");
+        Ok(())
+    }
+
+    /// A file with no numeric `format_version` is its own named case - not a
+    /// bundle of the current generation, and not a generic parse failure.
+    #[test]
+    fn a_bundle_without_a_generation_stamp_is_named_as_such(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let pool = init_test_db().map_err(|e| e.to_string())?;
+        let tmp = tempfile::tempdir()?;
+        let path = tmp.path().join("unstamped.json");
+        std::fs::write(
+            &path,
+            r#"{"exported_at":"x","app_version":"x","scope":"full",
+                "personas":[],"tool_definitions":[],"teams":[],"credentials":[]}"#,
+        )?;
+        let Err(err) = run_bundle_import(&pool, None, &path, None, None) else {
+            return Err("an unstamped bundle imported".into());
+        };
+        let err = err.to_string();
+        eprintln!("generation-gate unstamped -> {err}");
+        assert!(err.contains("no format version"), "{err}");
+        Ok(())
+    }
 }

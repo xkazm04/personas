@@ -87,6 +87,41 @@ pub(crate) fn spawn_pending_reembed(
     });
 }
 
+/// Bundle generations this build reads: 2 is the plain portability format,
+/// 3 adds the sealed sections. Anything above the last was written by a newer
+/// Personas.
+const READABLE_FORMAT_VERSIONS: [u64; 2] = [2, 3];
+
+/// Refuse a bundle by its declared generation, naming the three cases a reader
+/// can hit apart: no stamp, a newer generation, an older one this build no
+/// longer reads. Runs over the untyped value so the refusal never depends on
+/// which fields a generation it cannot read happens to carry.
+pub(crate) fn check_bundle_generation(raw: &serde_json::Value) -> Result<(), AppError> {
+    let Some(version) = raw
+        .get("format_version")
+        .and_then(serde_json::Value::as_u64)
+    else {
+        return Err(AppError::Validation(
+            "Invalid export file: no format version, so this is not a Personas export bundle"
+                .into(),
+        ));
+    };
+    if READABLE_FORMAT_VERSIONS.contains(&version) {
+        return Ok(());
+    }
+    let newest = READABLE_FORMAT_VERSIONS[READABLE_FORMAT_VERSIONS.len() - 1];
+    if version > newest {
+        return Err(AppError::Validation(format!(
+            "This bundle was written by a newer version of Personas (format version \
+             {version}); this build reads format versions 2 and 3. Update Personas to \
+             import it."
+        )));
+    }
+    Err(AppError::Validation(format!(
+        "Unsupported format version: {version} (this build reads 2 and 3)"
+    )))
+}
+
 /// Shared body of [`import_portability_bundle`] and its debug from-path twin:
 /// read + parse + version-gate + validate the bundle at `path`, run the DB
 /// import (with optional conflict resolutions), then apply embedded encrypted
@@ -106,15 +141,14 @@ pub(crate) fn run_bundle_import(
             .map_err(|e| AppError::Internal(format!("Failed to read file: {e}")))?
     };
 
-    let mut bundle: PortabilityBundle = serde_json::from_str(&content)
+    // Gate on the generation BEFORE the typed parse. A newer generation is by
+    // contract a shape change, so parsing first turns "written by a newer
+    // Personas" into whichever "missing field" the new shape trips first.
+    let raw: serde_json::Value = serde_json::from_str(&content)
         .map_err(|e| AppError::Validation(format!("Invalid export file: {e}")))?;
-
-    if bundle.format_version != 2 && bundle.format_version != 3 {
-        return Err(AppError::Validation(format!(
-            "Unsupported format version: {} (expected 2 or 3)",
-            bundle.format_version
-        )));
-    }
+    check_bundle_generation(&raw)?;
+    let mut bundle: PortabilityBundle = serde_json::from_value(raw)
+        .map_err(|e| AppError::Validation(format!("Invalid export file: {e}")))?;
 
     // Decrypt the always-encrypted sections BEFORE validation, so
     // `validate_bundle` sees the real twin / Athena content rather than an
