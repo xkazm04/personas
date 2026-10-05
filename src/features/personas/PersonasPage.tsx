@@ -19,7 +19,6 @@ import { useCanvasControlBridge } from '@/features/teams/sub_mastermind/lib/useC
 import { useCanvasPanelBridge } from '@/features/teams/sub_mastermind/lib/useCanvasPanelBridge';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { renderSectionRoute, isRoutableSection, isSectionGated } from '@/features/personas/sectionRouter';
-import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { prefetchSection } from '@/features/shared/chrome/navPrefetch';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { silentCatch } from '@/lib/silentCatch';
@@ -59,11 +58,26 @@ const DrivePage = lazyRetry(() => import('@/features/plugins/drive/DrivePage'));
 const TwinPage = lazyRetry(() => import('@/features/plugins/twin/TwinPage'));
 const ScraperPage = lazyRetry(() => import('@/features/scraper/ScraperPage'));
 
-// Every Suspense boundary below falls back to `RouteChunkSkeleton`: invisible
-// for 150ms (CSS delay), so a warm or prefetched chunk paints nothing, and a
-// slow one shows the calm header ghost. A `null` fallback here used to rely on
-// a motion wrapper to fade content in, but that wrapper is disabled (see the
-// content area below), so a cold chunk showed a blank, collapsed area.
+// Every Suspense boundary below falls back to RESERVED SPACE, not a ghost.
+//
+// 2026-10-05. These boundaries used `RouteChunkSkeleton`, which is invisible for
+// 150ms and then draws a calm header ghost. For a WARM chunk that is correct and
+// paints nothing. But most sections here are cold on first navigation and resolve
+// well past 150ms, so the common case was: ghost header appears, real
+// `ContentHeader` replaces it. Two headers in sequence at the same position is
+// the skeleton -> content blink the loading doctrine forbids
+// (`docs/design/overview-loading.md`), and the owner reported it as such.
+//
+// A bare `null` fallback is not the fix either - that was the state before the
+// skeleton, and because the motion wrapper that used to fade content in is
+// disabled (see the content area below), a cold chunk collapsed the content area
+// to zero height and the whole page jumped when it resolved.
+//
+// So the fallback holds the chunk's geometry and paints nothing at all. No ghost
+// to replace, no collapse to recover from. `RouteChunkSkeleton` itself is
+// unchanged and still correct for the surfaces that mount it under permanent
+// chrome, where there is no second header to blink against.
+const ROUTE_CHUNK_FALLBACK = <div aria-hidden="true" className="flex-1 min-h-0" />;
 
 // Dev-only startup-phase attribution for the freeze watchdog. Mirrors the
 // markPhase helper in App.tsx: the data waves below are the prime suspects for
@@ -302,7 +316,7 @@ export default function PersonasPage() {
       if (agentTab === 'cloud') {
         return (
           <ErrorBoundary onGoHome={goHome} name="Cloud">
-            <Suspense fallback={<RouteChunkSkeleton />}>
+            <Suspense fallback={ROUTE_CHUNK_FALLBACK}>
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={cloudTab}
@@ -332,10 +346,10 @@ export default function PersonasPage() {
       // describe-it chat, or jump to templates) — the two-layer
       // architecture made visible at the front door.
       if (personasFetched && !isLoading && !error && personas.length === 0) {
-        return <ErrorBoundary onGoHome={goHome} name="CreatePersonaEntry"><Suspense fallback={<RouteChunkSkeleton />}><CreatePersonaEntry /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="CreatePersonaEntry"><Suspense fallback={ROUTE_CHUNK_FALLBACK}><CreatePersonaEntry /></Suspense></ErrorBoundary>;
       }
       if (isCreatingPersona) {
-        return <ErrorBoundary onGoHome={goHome} name="CreatePersonaEntry"><Suspense fallback={<RouteChunkSkeleton />}><CreatePersonaEntry /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="CreatePersonaEntry"><Suspense fallback={ROUTE_CHUNK_FALLBACK}><CreatePersonaEntry /></Suspense></ErrorBoundary>;
       }
     }
 
@@ -343,19 +357,19 @@ export default function PersonasPage() {
       // Teams 1st-level section: Workspace (canvas/Studio), Goals, KPIs, or Factory.
       // Each tab is its own lazy chunk behind the shared delayed header ghost.
       if (teamsTab === 'factory') {
-        return <ErrorBoundary onGoHome={goHome} name="Factory"><Suspense fallback={<RouteChunkSkeleton />}><FactoryPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Factory"><Suspense fallback={ROUTE_CHUNK_FALLBACK}><FactoryPage /></Suspense></ErrorBoundary>;
       }
       if (teamsTab === 'kpis') {
-        return <ErrorBoundary onGoHome={goHome} name="KPIs"><Suspense fallback={<RouteChunkSkeleton />}><KPIsPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="KPIs"><Suspense fallback={ROUTE_CHUNK_FALLBACK}><KPIsPage /></Suspense></ErrorBoundary>;
       }
       if (teamsTab === 'goals') {
-        return <ErrorBoundary onGoHome={goHome} name="Goals"><Suspense fallback={<RouteChunkSkeleton />}><GoalsPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Goals"><Suspense fallback={ROUTE_CHUNK_FALLBACK}><GoalsPage /></Suspense></ErrorBoundary>;
       }
       if (teamsTab === 'projects') {
-        return <ErrorBoundary onGoHome={goHome} name="Projects"><Suspense fallback={<RouteChunkSkeleton />}><ProjectManagerPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Projects"><Suspense fallback={ROUTE_CHUNK_FALLBACK}><ProjectManagerPage /></Suspense></ErrorBoundary>;
       }
       if (teamsTab === 'lifecycle') {
-        return <ErrorBoundary onGoHome={goHome} name="Lifecycle"><Suspense fallback={<RouteChunkSkeleton />}><LifecyclePage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Lifecycle"><Suspense fallback={ROUTE_CHUNK_FALLBACK}><LifecyclePage /></Suspense></ErrorBoundary>;
       }
       // Contest — the in-app home for the /contest method (setup, seats in
       // the fleet queue, gallery review). Took over the retired Competition
@@ -363,10 +377,10 @@ export default function PersonasPage() {
       // older build no longer matches any branch and falls through to the
       // section's landing route below.
       if (teamsTab === 'contest') {
-        return <ErrorBoundary onGoHome={goHome} name="Contest"><Suspense fallback={<RouteChunkSkeleton />}><ContestPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Contest"><Suspense fallback={ROUTE_CHUNK_FALLBACK}><ContestPage /></Suspense></ErrorBoundary>;
       }
       if (teamsTab === 'features') {
-        return <ErrorBoundary onGoHome={goHome} name="Features"><Suspense fallback={<RouteChunkSkeleton />}><FeaturesPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Features"><Suspense fallback={ROUTE_CHUNK_FALLBACK}><FeaturesPage /></Suspense></ErrorBoundary>;
       }
       if (teamsTab === 'mastermind') {
         // Mastermind has no page header, so the header-band ghost matched nothing
@@ -377,10 +391,10 @@ export default function PersonasPage() {
       // Browser group (agent web-app control): the Whitelist gate and the
       // embedded Webview. See docs/features/browser.md.
       if (teamsTab === 'whitelist') {
-        return <ErrorBoundary onGoHome={goHome} name="Whitelist"><Suspense fallback={<RouteChunkSkeleton />}><WhitelistPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Whitelist"><Suspense fallback={ROUTE_CHUNK_FALLBACK}><WhitelistPage /></Suspense></ErrorBoundary>;
       }
       if (teamsTab === 'webview') {
-        return <ErrorBoundary onGoHome={goHome} name="Webview"><Suspense fallback={<RouteChunkSkeleton />}><WebviewPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Webview"><Suspense fallback={ROUTE_CHUNK_FALLBACK}><WebviewPage /></Suspense></ErrorBoundary>;
       }
       return renderSectionRoute('teams', goHome);
     }
@@ -388,19 +402,19 @@ export default function PersonasPage() {
       // Each plugin primary is a separate lazy chunk (not idle-prefetched) behind
       // the shared delayed header ghost, so a cold first-open never flashes blank.
       if (pluginTab === 'dev-tools') {
-        return <ErrorBoundary onGoHome={goHome} name="DevTools"><Suspense fallback={<RouteChunkSkeleton />}><DevToolsPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="DevTools"><Suspense fallback={ROUTE_CHUNK_FALLBACK}><DevToolsPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'obsidian-brain') {
-        return <ErrorBoundary onGoHome={goHome} name="ObsidianBrain"><Suspense fallback={<RouteChunkSkeleton />}><ObsidianBrainPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="ObsidianBrain"><Suspense fallback={ROUTE_CHUNK_FALLBACK}><ObsidianBrainPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'drive') {
-        return <ErrorBoundary onGoHome={goHome} name="Drive"><Suspense fallback={<RouteChunkSkeleton />}><DrivePage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Drive"><Suspense fallback={ROUTE_CHUNK_FALLBACK}><DrivePage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'twin') {
-        return <ErrorBoundary onGoHome={goHome} name="Twin"><Suspense fallback={<RouteChunkSkeleton />}><TwinPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Twin"><Suspense fallback={ROUTE_CHUNK_FALLBACK}><TwinPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'scraper' && import.meta.env.DEV) {
-        return <ErrorBoundary onGoHome={goHome} name="Scraper"><Suspense fallback={<RouteChunkSkeleton />}><ScraperPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Scraper"><Suspense fallback={ROUTE_CHUNK_FALLBACK}><ScraperPage /></Suspense></ErrorBoundary>;
       }
       // Browse view — plugin cards with enable/disable toggles
       return renderSectionRoute('plugins', goHome);
@@ -422,9 +436,9 @@ export default function PersonasPage() {
       return renderSectionRoute(sidebarSection, goHome);
     }
     if (selectedPersonaId && buildPersonaId === selectedPersonaId && buildPhase && buildPhase !== 'promoted') {
-      return <ErrorBoundary onGoHome={goHome} name="UnifiedBuildEntry"><Suspense fallback={<RouteChunkSkeleton />}><UnifiedBuildEntry /></Suspense></ErrorBoundary>;
+      return <ErrorBoundary onGoHome={goHome} name="UnifiedBuildEntry"><Suspense fallback={ROUTE_CHUNK_FALLBACK}><UnifiedBuildEntry /></Suspense></ErrorBoundary>;
     }
-    if (selectedPersonaId) return <ErrorBoundary onGoHome={goHome} name="Agent Editor"><Suspense fallback={<RouteChunkSkeleton />}><PersonaEditor /></Suspense></ErrorBoundary>;
+    if (selectedPersonaId) return <ErrorBoundary onGoHome={goHome} name="Agent Editor"><Suspense fallback={ROUTE_CHUNK_FALLBACK}><PersonaEditor /></Suspense></ErrorBoundary>;
     // Default: All Agents table view (registry primary for the personas section)
     return renderSectionRoute('personas', goHome);
   };

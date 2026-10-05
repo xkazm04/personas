@@ -9,15 +9,17 @@
 // stranded — `useWorkspaceSwitch` re-points the active project into the new scope.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, ChevronDown, FolderGit2, Layers, Plus, X } from 'lucide-react';
+import { Check, ChevronDown, FolderGit2, Layers, Pencil, Plus, X } from 'lucide-react';
 
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { Button } from '@/features/shared/components/buttons';
 
 import type { DevProject } from '@/lib/bindings/DevProject';
 
 import { createWorkspace, setActiveWorkspace } from './workspaceStore';
+import { WorkspaceEditMenu } from './WorkspaceEditMenu';
 import { useWorkspaceSwitch } from './useWorkspaceSwitch';
 
 const byName = <T extends { name: string }>(a: T, b: T) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
@@ -105,6 +107,11 @@ export function WorkspaceProjectSelector({
   const ref = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  // Rename / recolour / delete for one workspace. This used to hang off the
+  // manager page's own workspace tab strip, which was a second copy of this
+  // very control; the strip is gone (2026-10-05) and its one non-duplicated
+  // affordance lives here, on the row it edits.
+  const [editingWs, setEditingWs] = useState<string | null>(null);
   const loadedRef = useRef(false);
 
   const sortedWorkspaces = useMemo(() => [...workspaces].sort(byName), [workspaces]);
@@ -118,6 +125,8 @@ export function WorkspaceProjectSelector({
     loadedRef.current = true;
     void fetchProjects();
   }, [fetchProjects]);
+
+  useEffect(() => { if (!open) setEditingWs(null); }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -195,17 +204,34 @@ export function WorkspaceProjectSelector({
               </div>
               <div className="max-h-[300px] overflow-y-auto py-1">
                 {[{ id: null, name: c.workspace_all_projects, color: null, count: null }, ...sortedWorkspaces.map((w) => ({ id: w.id, name: w.name, color: w.color, count: w.projectIds.length }))].map((w) => (
-                  <button
-                    type="button"
-                    key={w.id ?? 'all'}
-                    onClick={() => switchWorkspace(w.id)}
-                    className={`${row} typo-caption ${activeId === w.id ? 'bg-primary/10 text-foreground' : idle}`}
-                  >
-                    <span className={`w-2 h-2 rounded-sm flex-shrink-0 ${w.color ? '' : 'bg-muted-foreground/50'}`} style={w.color ? { background: w.color } : undefined} aria-hidden />
-                    <span className="flex-1 truncate">{w.name}</span>
-                    {w.count !== null && <span className="text-foreground/40 tabular-nums text-[10px]">{w.count}</span>}
-                    {activeId === w.id && <Check className="w-3 h-3 flex-shrink-0" />}
-                  </button>
+                  // The row is a flex PAIR, not one button: the select action
+                  // stays the whole-row target it was, and the edit door is its
+                  // own control beside it. Nesting the second one inside the
+                  // first would be invalid markup and unreachable by keyboard.
+                  <div key={w.id ?? 'all'} className="group/ws flex items-stretch">
+                    <button
+                      type="button"
+                      onClick={() => switchWorkspace(w.id)}
+                      className={`${row} typo-caption min-w-0 flex-1 ${activeId === w.id ? 'bg-primary/10 text-foreground' : idle}`}
+                    >
+                      <span className={`w-2 h-2 rounded-sm flex-shrink-0 ${w.color ? '' : 'bg-muted-foreground/50'}`} style={w.color ? { background: w.color } : undefined} aria-hidden />
+                      <span className="flex-1 truncate">{w.name}</span>
+                      {w.count !== null && <span className="text-foreground/40 tabular-nums text-[10px]">{w.count}</span>}
+                      {activeId === w.id && <Check className="w-3 h-3 flex-shrink-0" />}
+                    </button>
+                    {w.id !== null && (
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={t.common.edit}
+                        onClick={() => setEditingWs((cur) => (cur === w.id ? null : w.id))}
+                        className={`shrink-0 self-center mr-1 transition-opacity ${
+                          editingWs === w.id ? 'opacity-100' : 'opacity-0 group-hover/ws:opacity-100 focus-visible:opacity-100'
+                        }`}
+                        icon={<Pencil className="w-3 h-3" aria-hidden />}
+                      />
+                    )}
+                  </div>
                 ))}
               </div>
               <button
@@ -267,6 +293,17 @@ export function WorkspaceProjectSelector({
               </button>
             </div>
           </div>
+
+          {editingWs && (() => {
+            const ws = workspaces.find((w) => w.id === editingWs);
+            if (!ws) return null;
+            return (
+              <>
+                <div className="absolute inset-0 bg-background/70" aria-hidden />
+                <WorkspaceEditMenu ws={ws} onClose={() => setEditingWs(null)} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+              </>
+            );
+          })()}
         </div>,
         document.body,
       )}
