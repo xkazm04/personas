@@ -41,8 +41,9 @@ function makeRepo(name) {
 }
 
 /** A project + an `exited` run whose worktree is cut and ready for the test to commit in. */
-function scenario(slug, { gates = okGates, boundaries = [] } = {}) {
+function scenario(slug, { gates = okGates, boundaries = [], prep } = {}) {
   const root = makeRepo(slug);
+  if (prep) prep(root);
   const project = { slug, id: `p-${slug}`, name: slug, root, baseBranch: 'main' };
   S.saveBrief(slug, { headless: true, charters: [{ slug: 'accepted-idea-delivery', priority: 1 }], gates, boundaries });
   let run = S.newRun(project, { wakeId: `w-${slug}`, charterSlug: 'accepted-idea-delivery', reason: 'r', brief: `Deliver idea for ${slug}`, ideaIds: [`i-${slug}`], model: C.MODELS.builder });
@@ -236,6 +237,47 @@ test('(ix) unresolved conflicts left by a stash pop (no MERGE_HEAD) -> held with
   assert.match(out.heldReason, /unresolved conflicted file/);
   assert.match(out.heldReason, /b\.txt/);
   assert.equal(sh(root, 'rev-parse', 'HEAD'), headBefore);
+});
+
+// delta gate: a gate that is ALREADY red on the base blocks a branch only if the branch adds a failure
+const redScript = path.join(tmp, 'red-gate.cjs').replace(/\\/g, '/');
+fs.writeFileSync(redScript, [
+  "const fs = require('fs');",
+  'const out = [];',
+  "if (fs.existsSync('base-red.txt')) out.push(' FAIL  src/old.test.ts > already red on base  7ms');",
+  "if (fs.existsSync('new-bug.txt')) out.push(' FAIL  src/new.test.ts > broken by the branch  9ms');",
+  "console.log(out.join('\\n'));",
+  'process.exit(out.length ? 1 : 0);',
+].join('\n'));
+const redGates = { typecheck: 'exit 0', lint: 'exit 0', test: `node ${redScript}` };
+const redBase = (root) => { commitIn(root, 'base-red.txt', 'x\n', 'base is red'); };
+
+test('(x) base already red, branch adds no failure -> merged, the gate is recorded as inherited', () => {
+  const { root, run, wt } = scenario('inh-ok', { gates: redGates, prep: redBase });
+  commitIn(wt, 'c.txt', 'x\n');
+  const out = settle(run);
+  assert.equal(out.state, 'merged', out.heldReason);
+  assert.equal(out.verdict.gates.test.inherited, true);
+  assert.equal(out.verdict.gates.test.ok, false);
+  assert.equal(out.verdict.gates.test.base.ok, false);
+  assert.equal(branchExists(root, run.branch), false);
+});
+
+test('(xi) base already red, branch adds a NEW failure -> held on the new one', () => {
+  const { run, wt } = scenario('inh-new', { gates: redGates, prep: redBase });
+  commitIn(wt, 'new-bug.txt', 'x\n');
+  const out = settle(run);
+  assertHeldWithAsk(out, 'inh-new');
+  assert.match(out.heldReason, /gate test failed/);
+  assert.notEqual(out.verdict.gates.test.inherited, true);
+});
+
+test('(xii) base green, branch red -> held (nothing is inherited from a passing base)', () => {
+  const { run, wt } = scenario('inh-green', { gates: redGates });
+  commitIn(wt, 'new-bug.txt', 'x\n');
+  const out = settle(run);
+  assertHeldWithAsk(out, 'inh-green');
+  assert.equal(out.verdict.gates.test.base.ok, true);
 });
 
 // ---------------------------------------------------------------- the rest of the state machine

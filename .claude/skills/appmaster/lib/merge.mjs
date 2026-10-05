@@ -10,8 +10,8 @@ import { nowIso, readJson, shortId, Refusal } from './contract.mjs';
 import { loadBrief, updateRun, raiseAsk, queueOutbox } from './store.mjs';
 import { readLimit } from './limits.mjs';
 import { requireRun, pidAlive, runFile, markLimitFromRun } from './worker.mjs';
-import { git, gitTry, revParse, isAncestor, removeWorktree } from './worktree.mjs';
-import { resolveGates, runGates, gatesVerdict, splitBoundaries, boundaryHits, GATE_TIMEOUT_MS } from './gate.mjs';
+import { git, gitTry, revParse, isAncestor, removeWorktree, withBaseWorktree } from './worktree.mjs';
+import { resolveGates, runGates, gatesVerdict, splitBoundaries, boundaryHits, failuresAreInherited, GATE_TIMEOUT_MS } from './gate.mjs';
 
 const lines = (s) => String(s || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
 const keyOf = (p) => (process.platform === 'win32' ? p.toLowerCase() : p);
@@ -202,6 +202,19 @@ export function cmdSettle({ flags = {} } = {}) {
   const timeoutMs = Number(process.env.APPMASTER_GATE_TIMEOUT_MS) || GATE_TIMEOUT_MS;
   verdict.gates = runGates(run.worktree, gates, { timeoutMs });
   verdict.gateSources = gates.sources;
+  // A gate that fails on the branch is the BRANCH's failure only if the base does not fail the same
+  // way: these repos carry red tests of their own (measured 2026-10-05: a docs-only ascent branch and
+  // a test-clock pin in pof were held by tests neither could have touched). Re-run each failed gate
+  // once on the base commit; failures that are all inherited are recorded, not blocking.
+  for (const g of Object.keys(verdict.gates)) {
+    const r = verdict.gates[g];
+    if (r.skipped || r.ok || r.timedOut || !r.failures?.length || !run.baseSha) continue;
+    try {
+      const base = withBaseWorktree(run, (dir) => runGates(dir, gates, { timeoutMs, only: [g] })[g]);
+      r.base = { ok: base.ok, exit: base.exit, failures: base.failures?.length ?? 0 };
+      if (!base.ok && failuresAreInherited(r.failures, base.failures)) r.inherited = true;
+    } catch (e) { r.base = { error: String(e.message || e).split('\n')[0] }; }
+  }
   const gv = gatesVerdict(verdict.gates);
   if (!gv.ran.length) return hold(run, 'no verifiable gate (every gate was skipped: no command)', verdict);
   if (gv.failed.length) {

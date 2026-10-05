@@ -133,3 +133,25 @@ export function removeWorktree(run) {
   }
   return out;
 }
+
+/**
+ * (run: Run, fn: (dir: string) => T) => T
+ * A throwaway detached checkout of the run's baseSha, with the project's node_modules junctioned in,
+ * for measuring what a gate says about the BASE. Always removed afterwards, junction first.
+ */
+export function withBaseWorktree(run, fn) {
+  const { root } = run.project;
+  const dir = path.join(WORKTREE_ROOT, run.slug, `base-${shortId(run.runId)}`);
+  if (!isUnder(dir, WORKTREE_ROOT)) throw new Error(`base worktree ${dir} is not under ${WORKTREE_ROOT}`);
+  fs.mkdirSync(path.dirname(dir), { recursive: true });
+  if (fs.existsSync(dir)) { try { unlinkJunction(path.join(dir, 'node_modules')); } catch { /* none */ } gitTry(root, ['worktree', 'remove', '--force', dir]); }
+  git(root, ['worktree', 'add', '--detach', dir, run.baseSha]);
+  try {
+    linkNodeModules(root, dir);
+    return fn(dir);
+  } finally {
+    try { unlinkJunction(path.join(dir, 'node_modules')); } catch { /* already gone */ }
+    gitTry(root, ['worktree', 'remove', '--force', dir]);
+    gitTry(root, ['worktree', 'prune']);
+  }
+}

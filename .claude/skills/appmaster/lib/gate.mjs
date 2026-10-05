@@ -61,6 +61,39 @@ function gateEnv() {
   return env;
 }
 
+/**
+ * What a failed gate failed ON, so settle can tell "this branch broke it" from "it was already red".
+ * A sorted, de-duplicated list of normalised failure lines: vitest/node:test `FAIL`/`x` lines and tsc
+ * `error TSnnnn` lines, with timings and (line,col) stripped so a shifted line is not a new failure.
+ * Empty when nothing recognisable was printed; the caller then treats the failure as the branch's own.
+ */
+export function failureSignature(text, cap = 300) {
+  const set = new Set();
+  const ESC = String.fromCharCode(27);
+  const ansi = new RegExp(ESC + '\\[[0-9;]*m', 'g');
+  for (const raw of String(text || '').split(/\r?\n/)) {
+    const line = raw.replace(ansi, '').trim();
+    const isTestFail = /^(?:FAIL|\u00d7|\u2717|\u2716|\u2718)\s+/.test(line);
+    const isTsError = /error TS\d+/.test(line);
+    if (!isTestFail && !isTsError) continue;
+    const norm = line
+      .replace(/\(\d+,\d+\)/g, '')              // tsc (line,col)
+      .replace(/\s+\d+(?:\.\d+)?\s?m?s$/i, '')    // trailing timing
+      .replace(/\s*\[[^\]]*\]\s*$/, '')           // trailing [ ... ] annotation
+      .replace(/\s+/g, ' ')
+      .slice(0, 300);
+    if (norm) set.add(norm);
+  }
+  return [...set].sort().slice(0, cap);
+}
+
+/** Is every failure of `branch` also a failure of `base`? Both must be non-empty lists. */
+export function failuresAreInherited(branch, base) {
+  if (!branch?.length || !base?.length) return false;
+  const b = new Set(base);
+  return branch.every((f) => b.has(f));
+}
+
 /** Run one shell command in cwd: cmd /d /s /c on Windows (UTF-8 code page), sh -c elsewhere. */
 export function runShell(command, cwd, timeoutMs = GATE_TIMEOUT_MS) {
   const opts = { cwd, encoding: 'utf8', timeout: timeoutMs, windowsHide: true, maxBuffer: 256 * 2 ** 20, stdio: ['ignore', 'pipe', 'pipe'], env: gateEnv() };
@@ -69,7 +102,8 @@ export function runShell(command, cwd, timeoutMs = GATE_TIMEOUT_MS) {
     : spawnSync('/bin/sh', ['-c', command], opts);
   const timedOut = r.error?.code === 'ETIMEDOUT';
   const text = `${r.stdout || ''}${r.stderr ? `\n${r.stderr}` : ''}${r.error && !timedOut ? `\n${r.error.message}` : ''}${timedOut ? `\n[gate timed out after ${Math.round(timeoutMs / 60000)} min]` : ''}`;
-  return { ok: r.status === 0 && !timedOut, exit: r.status, tail: tail(text), ...(timedOut ? { timedOut: true } : {}) };
+  const ok = r.status === 0 && !timedOut;
+  return { ok, exit: r.status, tail: tail(text), ...(ok ? {} : { failures: failureSignature(text) }), ...(timedOut ? { timedOut: true } : {}) };
 }
 
 /**
@@ -92,7 +126,7 @@ export function gatesVerdict(results) {
   const names = Object.keys(results);
   const skipped = names.filter((g) => results[g].skipped);
   const ran = names.filter((g) => !results[g].skipped);
-  const failed = ran.filter((g) => !results[g].ok);
+  const failed = ran.filter((g) => !results[g].ok && !results[g].inherited);
   return { ran, failed, skipped, ok: ran.length > 0 && failed.length === 0 };
 }
 
