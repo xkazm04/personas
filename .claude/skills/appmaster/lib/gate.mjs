@@ -75,7 +75,10 @@ export function failureSignature(text, cap = 300) {
     const line = raw.replace(ansi, '').trim();
     const isTestFail = /^(?:FAIL|\u00d7|\u2717|\u2716|\u2718)\s+/.test(line);
     const isTsError = /error TS\d+/.test(line);
-    if (!isTestFail && !isTsError) continue;
+    // node:test summaries as kp's runner prints them: a bare test-file path, and `\u00b7 test name` under it
+    const isNodeTestFile = /^(?:[A-Za-z]:)?[\\/].*\.test\.[cm]?[jt]sx?$/.test(line);
+    const isNodeTestName = /^\u00b7\s+\S/.test(line);
+    if (!isTestFail && !isTsError && !isNodeTestFile && !isNodeTestName) continue;
     const norm = line
       .replace(/\(\d+,\d+\)/g, '')              // tsc (line,col)
       .replace(/\s+\d+(?:\.\d+)?\s?m?s$/i, '')    // trailing timing
