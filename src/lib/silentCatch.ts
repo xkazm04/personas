@@ -3,6 +3,7 @@ import { log } from "./log";
 import { useToastStore } from "@/stores/toastStore";
 import { classifyErrorFull } from "@/lib/errors/errorPipeline";
 import { recordSwallow } from "./silentFailureTelemetry";
+import { recordError } from "./devlog/errors";
 
 
 /**
@@ -117,6 +118,17 @@ export function toastCatch(context: string, customMessage?: string): (err: unkno
       message: `${context} failed: ${msg}`,
       level: "warning",
       data: { ...(stack ? { stack } : {}), errorCategory: classified.category },
+    });
+    // A user-visible failure reaches the app log file too (devlog `error`,
+    // msg `toast error [<context>]: <first line>`); per-site silentCatch
+    // deliberately does not.
+    recordError({
+      source: "toast",
+      scope: "toastCatch",
+      error: msg,
+      stack,
+      category: classified.category,
+      extra: { scope: context },
     });
     // Pass the raw error string (no "Failed to load data." prefix). NOTE: this
     // comment used to say the prefix "was always discarded by the renderer's

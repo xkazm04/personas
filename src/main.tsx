@@ -25,6 +25,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import { ensureAppDataDir } from '@/lib/icons/customIconStore';
 import { bootstrapAppearanceMirror } from '@/lib/appearanceMirror';
 import { echoLanguageMirrorOnce } from '@/stores/i18nStore';
+import { errorKindOf, installDevlog, recordError } from '@/lib/devlog';
 
 // Capture whether the webview profile already holds appearance prefs, BEFORE the
 // theme store (imported transitively via App) can write its key. On a fresh /
@@ -41,6 +42,15 @@ const appearanceHadLocal: boolean = (() => {
 
 
 const globalErrorLogger = createLogger("global-error");
+// The two global handlers below write their own devlog record ("uncaught
+// error" / "unhandled rejection"), so their console line must not ALSO be
+// forwarded as a generic "logged error".
+const crashConsole = createLogger("global-error", { forward: false });
+
+// Start batching WebView records into the app log file (devlog_ingest).
+// Records produced before this line are already queued and leave with the
+// first flush.
+installDevlog();
 
 // Copy for the top-level Sentry error boundary fallback. This renders when
 // the React tree itself crashed, so useTranslation() may be unsafe here
@@ -104,7 +114,18 @@ function getErrorContext(): Record<string, unknown> {
 window.onerror = (_message, _source, _lineno, _colno, error) => {
   const ctx = getErrorContext();
   const err = error ?? new Error(String(_message));
-  globalErrorLogger.error("Uncaught synchronous error", {
+  recordError({
+    source: "uncaught",
+    scope: "global-error",
+    error: err instanceof Error ? err.message : String(err),
+    stack: err instanceof Error ? err.stack : undefined,
+    extra: {
+      source: typeof _source === "string" ? _source : undefined,
+      line: _lineno ?? undefined,
+      col: _colno ?? undefined,
+    },
+  });
+  crashConsole.error("Uncaught synchronous error", {
     message: err instanceof Error ? err.message : String(err),
     source: _source ?? undefined,
     line: _lineno ?? undefined,
@@ -127,7 +148,14 @@ window.addEventListener("unhandledrejection", (event) => {
   if (msg === "send was called before connect") return;
 
   const ctx = getErrorContext();
-  globalErrorLogger.error("Unhandled promise rejection", {
+  recordError({
+    source: "rejection",
+    scope: "global-error",
+    error: msg,
+    stack: reason instanceof Error ? reason.stack : undefined,
+    extra: { error_kind: errorKindOf(reason) },
+  });
+  crashConsole.error("Unhandled promise rejection", {
     message: msg,
     ...ctx,
   });

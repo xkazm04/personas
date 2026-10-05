@@ -1,4 +1,6 @@
 import { silentCatch } from '@/lib/silentCatch';
+import { devlog, type DevlogInput } from '@/lib/devlog/buffer';
+import { truncateStack } from '@/lib/devlog/errors';
 /**
  * Store & Memory Growth Monitor
  *
@@ -12,8 +14,15 @@ import { silentCatch } from '@/lib/silentCatch';
  * - DOM node growth rate
  * - React fiber tree depth (via __REACT_DEVTOOLS_GLOBAL_HOOK__)
  *
- * Writes findings to localStorage AND Rust log every 2 seconds.
+ * Writes findings to localStorage every 2 seconds, and each alert to the app
+ * log as a devlog `store_alert` record.
  */
+
+const TICK_MS = 2000;
+
+function storeAlert(msg: string, fields: Record<string, unknown>): DevlogInput {
+  return { kind: 'store_alert', lvl: 'warn', scope: 'storeMonitor', msg, fields: { ...fields, window_ms: TICK_MS } };
+}
 
 const _origSetInterval = window.setInterval.bind(window);
 const _origClearInterval = window.clearInterval.bind(window);
@@ -89,11 +98,13 @@ function tick(): void {
 
   // Detect anomalies
   const alerts: string[] = [];
+  const records: DevlogInput[] = [];
 
   // 1. Any store updating >20 times in 2 seconds
   storeUpdates.forEach((rec) => {
     if (rec.count > 20) {
       alerts.push(`STORE LOOP: ${rec.name} updated ${rec.count}x in 2s\n${rec.lastStack}`);
+      records.push(storeAlert('store update loop', { store: rec.name, updates: rec.count, stack: truncateStack(rec.lastStack) }));
     }
     rec.count = 0; // reset for next tick
   });
@@ -104,6 +115,7 @@ function tick(): void {
     const growth = heapMB - prev.heapMB;
     if (growth > 20) {
       alerts.push(`HEAP GROWTH: +${growth}MB in 2s (${prev.heapMB}→${heapMB}MB)`);
+      records.push(storeAlert('heap growth', { growth_mb: growth, from_mb: prev.heapMB, to_mb: heapMB }));
     }
   }
 
@@ -113,6 +125,7 @@ function tick(): void {
     const growth = domNodes - prev.domNodes;
     if (growth > 200) {
       alerts.push(`DOM GROWTH: +${growth} nodes in 2s (${prev.domNodes}→${domNodes})`);
+      records.push(storeAlert('dom growth', { growth_nodes: growth, from_nodes: prev.domNodes, to_nodes: domNodes }));
     }
   }
 
@@ -123,13 +136,8 @@ function tick(): void {
     if (alerts.length > 0) {
       const alertMsg = `[STORE ALERT]\n${alerts.join('\n---\n')}`;
       console.warn(alertMsg);
-      // Write to Rust log
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).__TAURI_INTERNALS__?.invoke?.('log_frontend_error', {
-          level: 'warn', message: alertMsg + '\n' + summary
-        });
-      } catch (err) { silentCatch("lib/debug/storeMonitor:catch1")(err); }
+      // Into the app log: one record per alert, numbers as fields.
+      for (const record of records) devlog(record);
     }
   }
 
@@ -149,7 +157,7 @@ function tick(): void {
 export function startMonitor(): void {
   if (timerId) return;
   // Use ORIGINAL setInterval to avoid being tracked by callbackTracker
-  timerId = _origSetInterval(tick, 2000);
+  timerId = _origSetInterval(tick, TICK_MS);
   console.info('[store-monitor] Started — tracking store updates + memory growth');
 }
 

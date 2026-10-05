@@ -5,7 +5,8 @@
 // With 250+ call sites, the aggregate swallow rate is an unmeasured failure
 // surface — no single breadcrumb tells you "auth:refresh has failed 400 times
 // this session". This module aggregates swallows per call-site tag and emits a
-// periodic rollup (one structured log line + one Sentry breadcrumb summary),
+// periodic rollup (one structured log line + one Sentry breadcrumb summary,
+// and in DEV one devlog `swallow_rollup` record per tag),
 // plus a rate-limited sampled `captureException` for high-frequency tags so a
 // genuinely-broken path surfaces as a real Sentry issue, not just a breadcrumb.
 //
@@ -19,6 +20,7 @@
 
 import * as Sentry from '@sentry/react';
 import { log } from './log';
+import { devlog } from './devlog/buffer';
 
 // --- Tunables (exported so tests can reference, not mutate) -----------------
 
@@ -195,6 +197,20 @@ function flushRollup(state: TrackerState, now: number): void {
   };
 
   log.info('silentFailures', 'swallow rollup', summary);
+  // The same window, per tag, into the app log file (DEV only: PROD keeps
+  // just errors, slow IPC and freezes, so these are not even built there).
+  if (import.meta.env.DEV) {
+    for (const [tag, s] of state.tags) {
+      if (s.count <= 0) continue;
+      devlog({
+        kind: 'swallow_rollup',
+        lvl: 'info',
+        scope: 'silentFailures',
+        msg: 'swallowed errors',
+        fields: { tag, count: s.count },
+      });
+    }
+  }
   Sentry.addBreadcrumb({
     category: 'silentFailure.rollup',
     level: 'info',

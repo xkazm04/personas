@@ -1,10 +1,35 @@
 /**
  * Structured frontend logger.
- * In development, logs to console. In production, could optionally
- * forward to the Rust backend via invoke('log_frontend', ...).
+ * Every level writes to the WebView console. `error` additionally reaches the
+ * app's JSONL log file as a devlog `error` record (msg
+ * `logged error [<scope>]: <first line>`, the full text in `fields.error`,
+ * the scope in `fields.scope`), batched through
+ * `devlog_ingest` - in every build, since PROD keeps `error` records. A logger
+ * made with `{ forward: false }` stays console-only; main.tsx's global
+ * handlers use one because they emit their own, more specific record.
  */
 
+import { recordError } from "./devlog/errors";
+
 type LogLevel = "debug" | "info" | "warn" | "error";
+
+export interface LoggerOptions {
+  /** Forward `error` calls to devlog (default true). */
+  forward?: boolean;
+}
+
+function forwardError(scope: string, message: string, context?: Record<string, unknown>) {
+  const { error, stack, category, ...rest } = context ?? {};
+  recordError({
+    source: "logged",
+    scope,
+    error: message,
+    stack,
+    category: typeof category === "string" ? category : undefined,
+    // A caller's own `error` text is kept as `detail`, beside the log message.
+    extra: { ...rest, detail: typeof error === "string" ? error : undefined, scope },
+  });
+}
 
 function formatMessage(
   level: LogLevel,
@@ -21,8 +46,10 @@ function logAt(
   level: LogLevel,
   scope: string,
   message: string,
-  context?: Record<string, unknown>
+  context?: Record<string, unknown>,
+  forward = true,
 ) {
+  if (level === "error" && forward) forwardError(scope, message, context);
   const formatted = formatMessage(level, scope, message, context);
   switch (level) {
     case "debug":
@@ -59,11 +86,12 @@ export interface ScopedLogger {
 }
 
 /** Create a scoped logger instance. Scope is baked in so callers just pass message + context. */
-export function createLogger(scope: string): ScopedLogger {
+export function createLogger(scope: string, options?: LoggerOptions): ScopedLogger {
+  const forward = options?.forward ?? true;
   return {
     debug: (msg, ctx) => logAt("debug", scope, msg, ctx),
     info: (msg, ctx) => logAt("info", scope, msg, ctx),
     warn: (msg, ctx) => logAt("warn", scope, msg, ctx),
-    error: (msg, ctx) => logAt("error", scope, msg, ctx),
+    error: (msg, ctx) => logAt("error", scope, msg, ctx, forward),
   };
 }

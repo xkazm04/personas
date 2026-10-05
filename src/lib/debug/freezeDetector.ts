@@ -4,6 +4,7 @@
 
 import { unpatchAll, currentCallback } from './callbackTracker';
 import { silentCatch } from '@/lib/silentCatch';
+import { devlog } from '@/lib/devlog/buffer';
 
 
 const FLAG = '__personas_freeze_detector';
@@ -31,11 +32,19 @@ function push(ev: FreezeEvent): void {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(ring)); } catch (err) { silentCatch("lib/debug/freezeDetector:catch1")(err); }
 }
 
-async function reportSevere(ev: FreezeEvent): Promise<void> {
-  try {
-    const { invoke } = await import('@tauri-apps/api/core');
-    await invoke('log_frontend_error', { level: 'warn', message: `UI freeze: ${ev.duration}ms ${JSON.stringify(ev)}` });
-  } catch (err) { silentCatch("lib/debug/freezeDetector:catch2")(err); }
+function reportSevere(ev: FreezeEvent): void {
+  devlog({
+    kind: 'freeze',
+    lvl: 'warn',
+    scope: 'freezeDetector',
+    msg: 'ui freeze',
+    fields: {
+      duration_ms: ev.duration,
+      dom_nodes: ev.domNodes,
+      memory_mb: ev.memoryMB ?? undefined,
+      callback: ev.callback ?? undefined,
+    },
+  });
 }
 
 function tick(now: number): void {

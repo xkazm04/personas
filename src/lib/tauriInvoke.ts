@@ -4,6 +4,8 @@ import { recordIpcCall } from "./ipcMetrics";
 import type { CommandName as RegisteredCommand } from "./commandNames.generated";
 import type { UnregisteredCommand } from "./commandNames.overrides";
 import { createLogger } from "./log";
+import { DEVLOG_INGEST_COMMAND } from "./devlog/buffer";
+import { observeIpcSettle } from "./devlog/ipc";
 
 const logger = createLogger("tauriInvoke");
 
@@ -325,7 +327,9 @@ export interface InvokeOpts {
  * `Promise.race`. If the backend doesn't respond within `timeoutMs` the
  * returned promise rejects with an `InvokeTimeoutError`.
  *
- * Every call is recorded into the IPC metrics ring buffer for observability.
+ * Every call is recorded into the IPC metrics ring buffer for observability,
+ * and slow calls reach the app log through devlog (`src/lib/devlog/ipc.ts`);
+ * the devlog flush command itself is excluded from both.
  *
  * ### undefined-to-null coercion
  *
@@ -531,7 +535,11 @@ function _invokeCore<T>(
 
   // Gate on _retryDepth === 0 so token-wait + auth-retry recursion don't
   // triple the breadcrumb count for a single user-initiated call.
-  if (_retryDepth === 0) {
+  // `devlog_ingest` is the devlog flush itself: it is kept out of the
+  // breadcrumbs, the IPC metrics ring and the devlog IPC producers, or every
+  // flush would report on itself and schedule the next one.
+  const observed = cmd !== DEVLOG_INGEST_COMMAND;
+  if (_retryDepth === 0 && observed) {
     Sentry.addBreadcrumb({ category: 'ipc.invoke', message: cmd, level: 'info' });
   }
 
@@ -576,11 +584,20 @@ function _invokeCore<T>(
 
   return Promise.race([invocation, timeout]).then(
     (result) => {
-      recordIpcCall({ command: cmd, durationMs: performance.now() - start, ok: true, timestamp: Date.now() });
+      if (observed) {
+        const durationMs = performance.now() - start;
+        recordIpcCall({ command: cmd, durationMs, ok: true, timestamp: Date.now() });
+        observeIpcSettle({ command: cmd, durationMs, ok: true, timedOut: false });
+      }
       return result;
     },
     (err) => {
-      recordIpcCall({ command: cmd, durationMs: performance.now() - start, ok: false, timestamp: Date.now(), timedOut: err instanceof InvokeTimeoutError });
+      if (observed) {
+        const durationMs = performance.now() - start;
+        const timedOut = err instanceof InvokeTimeoutError;
+        recordIpcCall({ command: cmd, durationMs, ok: false, timestamp: Date.now(), timedOut });
+        observeIpcSettle({ command: cmd, durationMs, ok: false, timedOut, error: err });
+      }
       // One-shot recovery for the WebView2 race where the IPC session token
       // monkey-patch hasn't propagated by the time the first privileged call
       // fires. The wrapper already injects `x-ipc-token` from window.__IPC_TOKEN,

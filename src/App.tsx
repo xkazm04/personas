@@ -37,8 +37,13 @@ import { CARD_PADDING, TOOLS_BTN_COMPACT } from "@/lib/utils/designTokens";
 import { lazyRetry } from "@/lib/lazyRetry";
 import { silentCatch } from "@/lib/silentCatch";
 import { BrowserHostVisibility } from "@/features/browser/webview/hostVisibility";
+import { setDevlogRouteReader } from "@/lib/devlog";
 
 initPseudoLocale();
+
+// Every devlog record carries the active sidebar section as `route`, read at
+// record time (no subscription: the shell's store is the one source).
+setDevlogRouteReader(() => useSystemStore.getState().sidebarSection);
 
 const appLogger = createLogger("App");
 

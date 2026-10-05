@@ -1,4 +1,5 @@
 import { silentCatch } from '@/lib/silentCatch';
+import { devlog } from '@/lib/devlog/buffer';
 /**
  * Freeze Watchdog — uses a Web Worker to monitor the main thread from outside.
  *
@@ -91,13 +92,21 @@ export function startWatchdog(): void {
           if (prev.length > 10) prev.shift();
           localStorage.setItem('__watchdog_freezes', JSON.stringify(prev));
         } catch (err) { silentCatch("lib/debug/freezeWatchdog:catch1")(err); }
-        // Try IPC to Rust (may fail if thread is blocked)
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (window as any).__TAURI_INTERNALS__?.invoke?.('log_frontend_error', {
-            level: 'warn', message: report
-          });
-        } catch (err) { silentCatch("lib/debug/freezeWatchdog:catch2")(err); }
+        // Into the app log via devlog; this handler only runs once the main
+        // thread is free again, so the batch leaves on the next flush.
+        devlog({
+          kind: 'freeze',
+          lvl: 'warn',
+          scope: 'freezeWatchdog',
+          msg: 'worker heartbeat stall',
+          fields: {
+            gap_ms: typeof msg.gap === 'number' ? Math.round(msg.gap) : undefined,
+            last_action: msg.lastData?.lastAction,
+            dom_nodes: msg.lastData?.domNodes,
+            memory_mb: msg.lastData?.memoryMB ?? undefined,
+            pending: msg.lastData?.pendingCallbacks?.length ? msg.lastData.pendingCallbacks.join(', ') : undefined,
+          },
+        });
       }
       if (msg.type === 'freeze_recovered') {
         console.warn(`[WATCHDOG] Thread recovered after ${msg.duration}ms`);

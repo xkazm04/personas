@@ -23,6 +23,7 @@ import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChu
 import { prefetchSection } from '@/features/shared/chrome/navPrefetch';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { silentCatch } from '@/lib/silentCatch';
+import { SectionProfiler } from '@/lib/devlog/SectionProfiler';
 
 // Section PRIMARIES (Home, Overview, Teams canvas, Agents table, Events,
 // Connections, Templates, Plugins browse, Studio, Settings) are registry-driven
@@ -459,7 +460,9 @@ export default function PersonasPage() {
             )}
             {/* AnimatePresence disabled — testing if framer-motion layout measurement causes freeze */}
             <div className="flex-1 flex flex-col w-full min-w-0 overflow-y-hidden">
-              {renderContent()}
+              {/* DEV-only Profiler: slow commits of the active section reach
+                  devlog as `commit` records keyed by section id. */}
+              <SectionProfiler id={sidebarSection}>{renderContent()}</SectionProfiler>
             </div>
           </div>
         </div>
