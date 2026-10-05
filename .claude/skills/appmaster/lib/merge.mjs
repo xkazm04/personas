@@ -106,6 +106,14 @@ export function mergeGate(run, verdict = {}, { gates, timeoutMs = GATE_TIMEOUT_M
     if (fs.existsSync(path.resolve(root, rel))) return { ok: false, reason: `the checkout has ${marker} (an operation is in progress)` };
   }
 
+  // A stuck `git stash pop` (measured in pof, 2026-10-05) leaves conflicted index entries with no
+  // MERGE_HEAD; git then refuses every merge. Say so instead of failing at the last step.
+  const unmerged = lines(git(root, ['ls-files', '--unmerged'])).map((l) => l.split('\t')[1]).filter(Boolean);
+  if (unmerged.length) {
+    const uniq = [...new Set(unmerged)];
+    return { ok: false, reason: `the checkout has ${uniq.length} unresolved conflicted file(s) (a stuck stash pop or merge); resolve them first: ${uniq.slice(0, 3).join(', ')}${uniq.length > 3 ? ', ...' : ''}` };
+  }
+
   let baseNow = revParse(root, `refs/heads/${baseBranch}`);
   let rebased = false;
   if (baseNow !== run.baseSha && !isAncestor(root, baseNow, branchRef)) {

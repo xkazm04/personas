@@ -221,6 +221,23 @@ test('(viii) checkout on another branch -> held, nothing merged', () => {
   assert.deepEqual(snapshot(root), before);
 });
 
+test('(ix) unresolved conflicts left by a stash pop (no MERGE_HEAD) -> held with a clear reason, nothing merged', () => {
+  const { root, run, wt } = scenario('stashpop');
+  commitIn(wt, 'c.txt', 'x\n');
+  fs.writeFileSync(path.join(root, 'b.txt'), 'local edit\n');
+  sh(root, 'stash', 'push', '-q', '-m', 'wip');
+  commitIn(root, 'b.txt', 'upstream edit\n', 'upstream change to b');
+  try { sh(root, 'stash', 'pop'); } catch { /* the conflict is the point */ }
+  assert.match(sh(root, 'ls-files', '--unmerged'), /b\.txt/);
+  assert.equal(fs.existsSync(path.join(root, '.git', 'MERGE_HEAD')), false);
+  const headBefore = sh(root, 'rev-parse', 'HEAD');
+  const out = settle(run);
+  assertHeldWithAsk(out, 'stashpop');
+  assert.match(out.heldReason, /unresolved conflicted file/);
+  assert.match(out.heldReason, /b\.txt/);
+  assert.equal(sh(root, 'rev-parse', 'HEAD'), headBefore);
+});
+
 // ---------------------------------------------------------------- the rest of the state machine
 
 test('a usage limit in the stream -> released (not held, not failed) and the mark is set', () => {
