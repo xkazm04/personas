@@ -29,6 +29,9 @@ export function sendDevlogBatch(records: DevlogRecord[]): Promise<void> {
 export function installDevlog(): () => void {
   // DEV-gated so a production bundle never constructs a PerformanceObserver.
   const stopLongTasks = import.meta.env.DEV ? startLongTaskObserver() : null;
+  // index.html's boot-time error handlers stand down from here on, so an
+  // error is never recorded by both them and main.tsx's handlers.
+  (window as unknown as { __personasDevlogReady?: boolean }).__personasDevlogReady = true;
   return installDevlogBuffer({
     send: sendDevlogBatch,
     onTeardown: stopLongTasks ?? undefined,

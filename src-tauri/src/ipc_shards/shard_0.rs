@@ -10,7 +10,6 @@ pub(super) fn shard(
     personas_macros::ipc_shard!(tauri::generate_handler![
         // Phase 1
         commands::core::frontend_bridge::greet,
-        commands::core::frontend_bridge::log_frontend_error,
         commands::core::frontend_bridge::devlog_ingest,
         commands::core::frontend_bridge::report_frontend_ready,
         // Test automation (always registered; server only starts when enabled)

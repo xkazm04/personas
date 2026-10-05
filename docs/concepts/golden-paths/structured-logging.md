@@ -85,10 +85,12 @@ for exactly this. **And then stop:** no `println!`, no second logging system, no
 format, no interpolating a value into a message you could have named.
 
 **Know what you have NOT bought.** A `tracing` record is not durable and not private. It goes to
-stdout (dies with the process), to a daily file kept **7 files deep** (`logging.rs:40`), and to
-Sentry only at `ERROR`. It is written **verbatim, unsanitized** — none of this repo's five redaction
-layers sits on the file path (§7 P1). A field is queryable in principle and this app ships no query
-tool, so "queryable" today means "greppable by a human who knows the field name".
+stdout (dies with the process), to a daily JSONL file kept **7 files deep** (`logging.rs`,
+`TRACING_LOG_RETENTION`), and to Sentry only at `ERROR`. It is written **verbatim, unsanitized** —
+none of this repo's five redaction layers sits on the file path (§7 P1). Since 2026-10-05 the file
+is one JSON object per line with every field kept by name, and `npm run devlog`
+([`docs/development/devlog.md`](../../development/devlog.md)) ranks a session from it by
+fingerprint, so a named field is now queryable; an interpolated value still is not (§7 P5).
 
 ### Which clauses are physics, and which are this house
 
@@ -138,11 +140,24 @@ redaction gap costs credentials.
   into `before_send` **and** `before_breadcrumb`, scrubbing messages, exception values, breadcrumb
   messages and breadcrumb data values, plus `send_default_pii: false` and a `dsn: None` under
   `debug_assertions`. **The best-defended boundary in the app.**
-- **`src-tauri/src/logging.rs:55-90`** — the subscriber. Default filter `info,personas_desktop=debug`
-  (see §7 P2 — the debug half is a no-op); stdout + a daily rolling file capped at **7 files**
-  (`:40`); `sentry_tracing` maps `WARN`→breadcrumb, `ERROR`→event (`:76-80`). **No `debug_assertions`
-  gate: this runs in release exactly as in dev.**
-- **`%APPDATA%/com.personas.desktop/logs/personas.<date>.log`** — the ground truth. Six days of it
+- **`src-tauri/src/logging.rs` `init()`** — the subscriber. Default filter (debug builds)
+  `info,app_lib=debug,personas_core=debug,personas_db=debug,personas_engine=debug,webview=debug`,
+  release `info`, plus `devlog=info` always (§7 P2, fixed 2026-10-05); stdout (compact text) + a
+  daily rolling **JSONL** file capped at **7 files**; `sentry_tracing` maps `WARN`→breadcrumb,
+  `ERROR`→event. The file and stdout share one rate limit; Sentry is unfiltered.
+- **The file record** (`logging/jsonl.rs`), one object per line, an absent value omits its key:
+  `ts` (RFC 3339 UTC, µs), `lvl`, `src` (`rust`|`webview`), `tgt`, `file`, `line`, `msg`, `fp`,
+  `boot` (uuid v4 per process), `span` (names, outermost first), `f` (every other field by name;
+  numbers and bools stay JSON, `%`/`?` values become strings). `fp` = FNV-1a 32 over
+  `lvl|tgt|normalize(msg)`, normalization shared with `scripts/devlog/fingerprint.mjs` and pinned by
+  `scripts/devlog/fp-vectors.json` in both test suites. Each boot's first record is `boot.start`
+  (version, profile, pid, os, `PERSONAS_DEVLOG_SESSION`); a span busy for at least 1 ms closes with a
+  `span.close` record (`f.span`, `f.busy_ms`, `f.idle_ms`, its fields).
+- **The rate limit** (`logging/rate_limit.rs`) — per fingerprint, the first 20 events in 60 s pass and
+  the rest are counted; at the window's rollover (or the next 10 s sweep) one `log.suppressed` record
+  carries `f.fp_suppressed` and `f.count`. `ERROR` and the `devlog` target are never limited.
+- **`%APPDATA%/com.personas.desktop/logs/personas.<date>.jsonl`** — the ground truth (the pre-devlog
+  `personas.<date>.log` text files age out under the same 7-file cap). Six days of the text files
   answered four questions this document could not have answered from source.
 
 **Do not exist — this path names them:**
@@ -150,7 +165,8 @@ redaction gap costs credentials.
 - **A sanitizing sink.** Nothing between "a string the app did not author" and "a file on disk".
   `sanitize_secrets` exists and is wired only to DB writes. See *Prefer a type over a gate*.
 - **Any retention on the execution log.** `prune_orphan_personas_logs` (`logging.rs:194`) matches
-  `personas.*.log` only, and its docstring explicitly lists execution logs among what it *preserves*.
+  `personas.*.jsonl` / legacy `personas.*.log` only, and its docstring explicitly lists execution logs
+  among what it *preserves*.
 - **Runtime log-level control.** `EnvFilter::try_from_default_env()` reads `RUST_LOG` **once, at
   process start**. There is **no `tracing_subscriber::reload` layer anywhere in the tree** (0 hits),
   so a user hitting a bug cannot raise the level without relaunching with an env var — and no UI
@@ -205,7 +221,10 @@ redaction gap costs credentials.
   appender, bypassing the subscriber, the filter and Sentry** — and *then* also emits
   `tracing::<level>!(target: "webview", "{}", message)`. Every frontend diagnostic lands in the
   rolling file twice, once uncontrolled. (Honest scope: only **3** callers, all in `src/lib/debug/`,
-  and **305 lines** in six days. Small, but it is the shape.)
+  and **305 lines** in six days. Small, but it is the shape.) **FIXED 2026-10-05:** `log_frontend_error`
+  and `webview_log` are deleted; the WebView sends batches through `devlog_ingest`, each record one
+  tracing event with target `webview::<kind>`, so it takes the subscriber, filter, rate limit and
+  envelope like any Rust record.
 - **Collapsing structure back into a string on the way in.** `src/lib/log.ts:16-17`
   `formatMessage` does `` `${message} ${JSON.stringify(context)}` `` — the frontend's "structured
   logger" stringifies its context into the message before `console.*` ever sees it, and
@@ -389,6 +408,11 @@ Two specific consequences worth naming:
 
 ### P2 — the default filter enables debug logging for a crate that emits none
 
+> **FIXED 2026-10-05** (devlog spark). The default is now
+> `info,app_lib=debug,personas_core=debug,personas_db=debug,personas_engine=debug,webview=debug`
+> in debug builds and `info` in release; `RUST_LOG` still overrides, and `devlog=info` is always
+> added so the sink's own records survive a quiet filter. The text below is the finding as measured.
+
 `logging.rs:57` — `EnvFilter::new("info,personas_desktop=debug")`. But `src-tauri/Cargo.toml:26-27`
 declares `[lib] name = "app_lib"`, so **`personas_desktop` is the target root of `src/main.rs` alone**;
 everything else compiles as `app_lib`, `personas_core`, `personas_db` or `personas_engine`.
@@ -501,7 +525,8 @@ file a future reader will copy from when writing credential code.
    emits goes to all three sinks. There is no way to say "this line is useful on stdout during
    development and must never reach the 7-day file".
 7. **`#[instrument]` implies timing and provides none.** 67 attributes; `with_span_events` is never
-   set. Carried from [query-latency-instrumentation](./query-latency-instrumentation.md) §8 because
+   set. *(Partly closed 2026-10-05: the JSONL layer writes a `span.close` record with busy/idle time
+   for every span busy for at least 1 ms. Stdout still shows none.)* Carried from [query-latency-instrumentation](./query-latency-instrumentation.md) §8 because
    it is equally a *log-shape* trap: it looks like instrumentation to every reader.
 8. **Nothing joins a log line to the execution that caused it.** The rolling file has no
    `execution_id`; the execution file has no level. The two records of the same incident cannot be

@@ -8,6 +8,20 @@
 #![allow(clippy::print_stdout, clippy::print_stderr)]
 
 fn main() {
+    // `npm run devlog`'s wrapper (scripts/devlog/run.mjs) forces colour on
+    // for cargo when it pipes `tauri dev`, and lists the vars it set here. The
+    // app inherits them and spawns CLIs whose output it parses, so undo
+    // exactly those before any thread or logging starts. Edition 2021:
+    // `remove_var` is safe, and main() is still single-threaded here.
+    if let Ok(forced) = std::env::var("PERSONAS_DEVLOG_FORCED_ENV") {
+        for name in forced.split(',').map(str::trim) {
+            if matches!(name, "CARGO_TERM_COLOR" | "FORCE_COLOR" | "CLICOLOR_FORCE") {
+                std::env::remove_var(name);
+            }
+        }
+        std::env::remove_var("PERSONAS_DEVLOG_FORCED_ENV");
+    }
+
     // Health check mode: verify the binary can initialize core subsystems
     // without launching the full Tauri GUI. Used by installer acceptance tests
     // and CI smoke tests.

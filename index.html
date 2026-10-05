@@ -11,28 +11,40 @@
     <script src="./webview2-compat.js"></script>
     <script src="./theme-init.js"></script>
     <script>
-      // Global error handler — persists errors to Rust log file via IPC
-      function __logToRust(level, message) {
+      // Boot-time error handler: until main.tsx installs devlog (which sets
+      // window.__personasDevlogReady and its own handlers), errors go straight
+      // to the app log as devlog `error` records. After that these stand down,
+      // so no error is recorded twice.
+      function __devlogBoot(source, error, stack, extra) {
+        if (window.__personasDevlogReady || !window.__TAURI_INTERNALS__) return;
+        var first = String(error || '').split('
+')[0];
+        var fields = { error: String(error || ''), scope: 'boot' };
+        if (stack) fields.stack = String(stack).slice(0, 2000);
+        for (var k in extra || {}) if (extra[k] !== undefined) fields[k] = extra[k];
+        var record = { kind: 'error', lvl: 'error', scope: 'boot', cts: Date.now(),
+          msg: (source + ' [boot]: ' + first).slice(0, 200), fields: fields };
         try {
-          if (window.__TAURI_INTERNALS__) {
-            window.__TAURI_INTERNALS__.invoke('log_frontend_error', { level: level, message: message });
-          }
+          var p = window.__TAURI_INTERNALS__.invoke('devlog_ingest', { records: [record] });
+          if (p && p.catch) p.catch(function () { /* IPC not ready yet */ });
         } catch (_) { /* IPC not ready yet */ }
       }
       window.onerror = function(msg, url, line, col, err) {
         var text = '[GLOBAL ERROR] ' + msg + ' at ' + url + ':' + line + ':' + col;
-        if (err && err.stack) text += '\n' + err.stack;
+        if (err && err.stack) text += '
+' + err.stack;
         console.error(text);
-        __logToRust('error', text);
+        __devlogBoot('uncaught error', err && err.message ? err.message : msg, err && err.stack,
+          { source: url, line: line, col: col });
       };
       window.addEventListener('unhandledrejection', function(e) {
         var r = e.reason;
         var msg = r instanceof Error ? r.message : (r && typeof r === 'object' ? (r.message || r.error || JSON.stringify(r)) : String(r));
         // Vite HMR client races its own WebSocket during dev — never a real bug
         if (typeof msg === 'string' && msg.indexOf('send was called before connect') !== -1) return;
-        var text = '[UNHANDLED PROMISE] ' + msg;
-        console.error(text);
-        __logToRust('error', text);
+        if (window.__personasDevlogReady) return;
+        console.error('[UNHANDLED PROMISE] ' + msg);
+        __devlogBoot('unhandled rejection', msg, r instanceof Error ? r.stack : undefined);
       });
     </script>
   </head>

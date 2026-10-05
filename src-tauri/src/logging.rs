@@ -1,3 +1,29 @@
+//! The app's log sink: stdout (compact text), Sentry, and a rolling JSONL
+//! file the `npm run devlog` CLI reads (`docs/development/devlog.md`).
+//!
+//! Submodules: [`fingerprint`] (the record identity shared with
+//! `scripts/devlog/fingerprint.mjs`), [`rate_limit`] (the repeat bound on
+//! stdout + file) and [`jsonl`] (the file layer and its envelope).
+
+mod fingerprint;
+mod jsonl;
+mod rate_limit;
+
+/// Capture helpers for tests elsewhere in the crate that assert on records.
+#[cfg(test)]
+pub(crate) mod test_support {
+    pub(crate) use super::jsonl::test_support::MemWriter;
+    pub(crate) use super::jsonl::DEVLOG_FIELDS;
+
+    /// The JSONL layer alone (no rate limit) writing into `mem`.
+    pub(crate) fn jsonl_capture<S>(mem: MemWriter) -> impl tracing_subscriber::Layer<S>
+    where
+        S: tracing::Subscriber + for<'a> tracing_subscriber::registry::LookupSpan<'a>,
+    {
+        super::jsonl::JsonlLayer::new(mem, None)
+    }
+}
+
 use std::collections::HashSet;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -6,7 +32,11 @@ use std::time::{Duration, SystemTime};
 use tracing_appender::non_blocking::NonBlocking;
 use tracing_appender::rolling;
 use tracing_subscriber::fmt::MakeWriter;
-use tracing_subscriber::{fmt, prelude::*, EnvFilter};
+use tracing_subscriber::registry::LookupSpan;
+use tracing_subscriber::{fmt, prelude::*, EnvFilter, Layer};
+
+use jsonl::JsonlLayer;
+use rate_limit::{Clock, RateLimit, RateLimited};
 
 /// Global crash log directory, set during init.
 static CRASH_LOG_DIR: OnceLock<PathBuf> = OnceLock::new();
@@ -24,11 +54,6 @@ static FILE_LOG_GUARD: OnceLock<tracing_appender::non_blocking::WorkerGuard> = O
 /// discarded by `DeferredFileWriter` so early-boot tracing doesn't have to wait.
 static FILE_WRITER: OnceLock<NonBlocking> = OnceLock::new();
 
-/// Non-blocking writer for WebView console messages (same underlying appender
-/// as `FILE_WRITER`, kept as a separate handle so the WebView path can format
-/// messages independently).
-static WEBVIEW_LOG_WRITER: OnceLock<NonBlocking> = OnceLock::new();
-
 /// Cap on the number of crash log files retained on disk. Older files are
 /// pruned at startup. The full backtrace + last few hundred KB of context per
 /// crash is small, so 20 retained files keeps a useful history without ever
@@ -36,12 +61,58 @@ static WEBVIEW_LOG_WRITER: OnceLock<NonBlocking> = OnceLock::new();
 const CRASH_LOG_RETENTION: usize = 20;
 
 /// Cap on the number of rolling daily tracing files retained.
-/// `tracing_appender::rolling::RollingFileAppender` enforces this on rotation;
-/// also enforced at startup by `prune_orphan_personas_logs` to handle cases
-/// where the cap was reduced between runs.
+/// `tracing_appender::rolling::RollingFileAppender` enforces this on rotation
+/// for `.jsonl` only (the suffix it writes); `prune_orphan_personas_logs`
+/// enforces it at startup over `.jsonl` AND the pre-devlog `.log` text files
+/// together, so the old files age out under the same cap.
 const TRACING_LOG_RETENTION: usize = 7;
 
-/// Initialize tracing with stdout (colored), Sentry, and a deferred file layer.
+/// Debug builds: debug for the four crates that make up the app (the old
+/// `personas_desktop=debug` named only `main.rs`, which emits nothing:
+/// structured-logging.md section 7 P2) and for WebView records. Release: info.
+fn default_filter_directives() -> &'static str {
+    if cfg!(debug_assertions) {
+        "info,app_lib=debug,personas_core=debug,personas_db=debug,personas_engine=debug,webview=debug"
+    } else {
+        "info"
+    }
+}
+
+/// `RUST_LOG` wins over the default; `devlog=info` is added either way so the
+/// sink's own records (`boot.start`, `log.suppressed`) survive a quiet filter.
+fn env_filter() -> EnvFilter {
+    let filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new(default_filter_directives()));
+    match "devlog=info".parse::<tracing_subscriber::filter::Directive>() {
+        Ok(directive) => filter.add_directive(directive),
+        Err(_) => filter,
+    }
+}
+
+/// Stdout (compact text) and the JSONL file layer, both behind one rate
+/// limit. One `RateLimited` wrapper over the pair means each event is counted
+/// once and both sinks get the same verdict.
+fn sink_layers<S, Out, File>(stdout: Out, file: File, rate: RateLimit) -> impl Layer<S>
+where
+    S: tracing::Subscriber + for<'a> LookupSpan<'a>,
+    Out: for<'w> MakeWriter<'w> + 'static,
+    File: for<'w> MakeWriter<'w> + 'static,
+{
+    let stdout_layer = fmt::layer()
+        .with_target(true)
+        .with_thread_ids(false)
+        .with_file(true)
+        .with_line_number(true)
+        .compact()
+        .with_writer(stdout);
+    RateLimited::new(
+        stdout_layer.and_then(JsonlLayer::new(file, Some(rate.clone()))),
+        rate,
+    )
+}
+
+/// Initialize tracing with stdout (colored), Sentry, and a deferred JSONL
+/// file layer.
 ///
 /// The file layer is wired through `DeferredFileMakeWriter`, which silently
 /// discards writes until `add_file_layer` populates `FILE_WRITER`. This lets
@@ -50,29 +121,14 @@ const TRACING_LOG_RETENTION: usize = 7;
 /// from boot onward (everything emitted between `init()` and `add_file_layer()`
 /// is dropped — that window is short and stdout still receives it).
 ///
-/// - Stdout: colored, human-readable for dev console
-/// - File: rolling daily, no ANSI, bounded by `TRACING_LOG_RETENTION`
-/// - Sentry: captures ERROR events as issues, WARN as breadcrumbs
-/// - Default level: INFO, override via RUST_LOG env
+/// - Stdout: colored, human-readable compact text for the dev console
+/// - File: one JSON envelope per line (`logging/jsonl.rs`), rolling daily
+///   `personas.YYYY-MM-DD.jsonl`, bounded by `TRACING_LOG_RETENTION`
+/// - Stdout and file share one rate limit (`logging/rate_limit.rs`): 20 per
+///   fingerprint per 60 s, then one `log.suppressed` count; never ERROR
+/// - Sentry: captures ERROR events as issues, WARN as breadcrumbs; unfiltered
+/// - Default level: `default_filter_directives`; `RUST_LOG` overrides it
 pub fn init() {
-    let env_filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info,personas_desktop=debug"));
-
-    let stdout_layer = fmt::layer()
-        .with_target(true)
-        .with_thread_ids(false)
-        .with_file(true)
-        .with_line_number(true)
-        .compact();
-
-    let file_layer = fmt::layer()
-        .with_target(true)
-        .with_thread_ids(false)
-        .with_file(true)
-        .with_line_number(true)
-        .with_ansi(false)
-        .with_writer(DeferredFileMakeWriter);
-
     // Routes existing tracing::error!/warn! calls to Sentry automatically.
     // No-op when Sentry DSN is not configured.
     let sentry_layer = sentry_tracing::layer().event_filter(|meta| match *meta.level() {
@@ -82,19 +138,50 @@ pub fn init() {
     });
 
     tracing_subscriber::registry()
-        .with(env_filter)
-        .with(stdout_layer)
-        .with(file_layer)
+        .with(env_filter())
+        .with(sink_layers(
+            io::stdout,
+            DeferredFileMakeWriter,
+            RateLimit::new(Clock::system()),
+        ))
         .with(sentry_layer)
         .init();
 
     tracing::debug!("Tracing initialized");
 }
 
+/// The first record of every boot's file: who wrote the lines that follow.
+/// Records emitted before `add_file_layer` set the writer were dropped by
+/// `DeferredFileWriter` (unchanged behaviour), so this is line one.
+fn emit_boot_start() {
+    let session = std::env::var("PERSONAS_DEVLOG_SESSION").ok();
+    tracing::info!(
+        target: "devlog",
+        version = env!("CARGO_PKG_VERSION"),
+        profile = if cfg!(debug_assertions) { "debug" } else { "release" },
+        pid = std::process::id(),
+        os = std::env::consts::OS,
+        git_sha = option_env!("PERSONAS_GIT_SHA"),
+        devlog_session = session.as_deref(),
+        "boot.start"
+    );
+}
+
+/// The daily rolling JSONL appender in `log_dir`.
+fn open_appender(log_dir: &Path) -> Result<rolling::RollingFileAppender, rolling::InitError> {
+    rolling::RollingFileAppender::builder()
+        .rotation(rolling::Rotation::DAILY)
+        .filename_prefix("personas")
+        .filename_suffix("jsonl")
+        .max_log_files(TRACING_LOG_RETENTION)
+        .build(log_dir)
+}
+
 /// Add a file-based log layer after the app data directory is known.
-/// Writes Rust `tracing::*!` events and WebView console messages to a daily
-/// rolling file in `<app_data>/logs/`, capped at `TRACING_LOG_RETENTION` files.
-/// Gracefully degrades if the directory is not writable.
+/// Writes Rust `tracing::*!` events and WebView records (`devlog_ingest`) to
+/// a daily rolling JSONL file in `<app_data>/logs/`, capped at
+/// `TRACING_LOG_RETENTION` files. Gracefully degrades if the directory is not
+/// writable.
 pub fn add_file_layer(app_data_dir: &std::path::Path) {
     let log_dir = app_data_dir.join("logs");
     if std::fs::create_dir_all(&log_dir).is_err() {
@@ -120,36 +207,17 @@ pub fn add_file_layer(app_data_dir: &std::path::Path) {
     prune_orphan_personas_logs(&log_dir, TRACING_LOG_RETENTION);
 
     // Try to open a rolling log file; skip if permissions deny it
-    match rolling::RollingFileAppender::builder()
-        .rotation(rolling::Rotation::DAILY)
-        .filename_prefix("personas")
-        .filename_suffix("log")
-        .max_log_files(TRACING_LOG_RETENTION)
-        .build(&log_dir)
-    {
+    match open_appender(&log_dir) {
         Ok(file_appender) => {
             let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
             FILE_LOG_GUARD.set(guard).ok();
-            // Wire the same writer into both the deferred tracing layer (so
-            // Rust tracing calls reach disk) and the WebView path (so console
-            // messages land in the same file).
-            FILE_WRITER.set(non_blocking.clone()).ok();
-            WEBVIEW_LOG_WRITER.set(non_blocking).ok();
-            tracing::info!("File logging enabled at {}", log_dir.display());
+            FILE_WRITER.set(non_blocking).ok();
+            emit_boot_start();
+            tracing::info!(log_dir = %log_dir.display(), "File logging enabled");
         }
         Err(e) => {
-            tracing::warn!("File logging disabled: {}", e);
+            tracing::warn!(error = %e, "File logging disabled");
         }
-    }
-}
-
-/// Append a WebView console message to the log file.
-pub fn webview_log(level: &str, message: &str) {
-    if let Some(writer) = WEBVIEW_LOG_WRITER.get() {
-        let timestamp = chrono::Local::now().format("%Y-%m-%dT%H:%M:%S%.3f");
-        let line = format!("[{timestamp}] [WebView/{level}] {message}\n");
-        let mut w = writer.clone();
-        let _ = w.write_all(line.as_bytes());
     }
 }
 
@@ -189,7 +257,8 @@ impl<'a> MakeWriter<'a> for DeferredFileMakeWriter {
 }
 
 /// Remove all but the `keep` most-recent daily rolling files matching the
-/// `personas.*.log` naming convention. Safe to call before the rolling
+/// `personas.*.jsonl` naming convention or the pre-devlog `personas.*.log`
+/// text files, counted together. Safe to call before the rolling
 /// appender starts because it ignores everything that doesn't match the
 /// prefix/suffix (preserves `last_boot.log`, execution logs named with UUIDs,
 /// freeze monitor dumps, etc.).
@@ -200,7 +269,9 @@ fn prune_orphan_personas_logs(log_dir: &std::path::Path, keep: usize) {
             .filter_map(|entry| {
                 let path = entry.path();
                 let name = path.file_name()?.to_str()?.to_string();
-                if name.starts_with("personas.") && name.ends_with(".log") {
+                if name.starts_with("personas.")
+                    && (name.ends_with(".jsonl") || name.ends_with(".log"))
+                {
                     Some((name, path))
                 } else {
                     None
@@ -214,13 +285,13 @@ fn prune_orphan_personas_logs(log_dir: &std::path::Path, keep: usize) {
         return;
     }
 
-    // Filenames embed the rotation date (`personas.YYYY-MM-DD.log`), so a
-    // descending lexical sort puts the newest first.
+    // Filenames embed the rotation date (`personas.YYYY-MM-DD.jsonl|log`), so
+    // a descending lexical sort puts the newest first, whatever the format.
     rolling_files.sort_by(|a, b| b.0.cmp(&a.0));
 
     for (_, path) in rolling_files.into_iter().skip(keep) {
         if let Err(e) = std::fs::remove_file(&path) {
-            tracing::warn!("Failed to prune old log {}: {}", path.display(), e);
+            tracing::warn!(path = %path.display(), error = %e, "Failed to prune old log");
         }
     }
 }
@@ -494,8 +565,9 @@ pub struct LogDirectoryStats {
     pub crash_log_retention: u32,
 }
 
-/// Sum all `.log` (and `.gz`/no-extension rotation) file sizes under `dir`.
-/// Walks one level deep — the tracing/crash directories are flat.
+/// Sum the sizes of every regular file under `dir` (`.jsonl`, the old `.log`
+/// text files, execution logs, `.gz`/no-extension rotations alike). Walks one
+/// level deep — the tracing/crash directories are flat.
 fn directory_stats(dir: &std::path::Path) -> (u64, u32) {
     let mut bytes: u64 = 0;
     let mut count: u32 = 0;
@@ -691,8 +763,185 @@ mod tests {
         std::fs::write(dir.path().join("a.log"), b"hello").unwrap();
         std::fs::write(dir.path().join("b.log"), b"world!").unwrap();
 
+        std::fs::write(
+            dir.path().join("personas.2026-10-05.jsonl"),
+            b"{}
+",
+        )
+        .unwrap();
+
         let (bytes, count) = directory_stats(dir.path());
-        assert_eq!(count, 2);
-        assert_eq!(bytes, 11); // 5 + 6
+        assert_eq!(count, 3);
+        assert_eq!(bytes, 14); // 5 + 6 + 3
+    }
+
+    /// The JSONL files and the pre-devlog text files share one retention cap,
+    /// so the old format ages out as the new one accumulates.
+    #[test]
+    fn prune_counts_jsonl_and_legacy_log_together() {
+        let dir = tempdir().unwrap();
+        for date in ["2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01"] {
+            std::fs::write(dir.path().join(format!("personas.{date}.log")), b"x").unwrap();
+        }
+        for date in ["2026-10-02", "2026-10-03"] {
+            std::fs::write(dir.path().join(format!("personas.{date}.jsonl")), b"x").unwrap();
+        }
+        std::fs::write(dir.path().join("last_boot.log"), b"boot").unwrap();
+
+        prune_orphan_personas_logs(dir.path(), 3);
+
+        let mut names: Vec<String> = std::fs::read_dir(dir.path())
+            .unwrap()
+            .flatten()
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .collect();
+        names.sort();
+        assert_eq!(
+            names,
+            vec![
+                "last_boot.log".to_string(),
+                "personas.2026-10-01.log".to_string(),
+                "personas.2026-10-02.jsonl".to_string(),
+                "personas.2026-10-03.jsonl".to_string(),
+            ]
+        );
+    }
+
+    /// Real-world proof without the app: the production composition (env
+    /// filter, stdout + JSONL behind the rate limit) writing through the real
+    /// rolling appender into a temp dir. `init()` / `add_file_layer()`
+    /// themselves set process-global OnceLocks and the global subscriber, so
+    /// they cannot run in-process beside the rest of the suite; everything
+    /// they compose is exercised here instead.
+    #[test]
+    fn full_stack_writes_parseable_jsonl_through_the_rolling_appender() {
+        let dir = tempdir().unwrap();
+        let appender = open_appender(dir.path()).unwrap();
+        let (writer, guard) = tracing_appender::non_blocking(appender);
+        let subscriber = tracing_subscriber::registry()
+            .with(EnvFilter::new(default_filter_directives()))
+            .with(sink_layers(
+                io::sink,
+                writer,
+                RateLimit::new(Clock::system()),
+            ));
+        tracing::subscriber::with_default(subscriber, || {
+            emit_boot_start();
+            for i in 0..50 {
+                tracing::warn!(attempt = i, "Slow DB query detected");
+            }
+            let span = tracing::info_span!("db_init");
+            span.in_scope(|| std::thread::sleep(Duration::from_millis(3)));
+            drop(span);
+            tracing::debug!("debug reaches the file in a debug build");
+            tracing::trace!("trace never does");
+        });
+        drop(guard); // flush the worker
+
+        let files: Vec<PathBuf> = std::fs::read_dir(dir.path())
+            .unwrap()
+            .flatten()
+            .map(|e| e.path())
+            .collect();
+        assert_eq!(files.len(), 1, "{files:?}");
+        let name = files[0].file_name().unwrap().to_string_lossy().into_owned();
+        assert!(
+            name.starts_with("personas.") && name.ends_with(".jsonl") && name.len() == 25,
+            "{name}"
+        );
+        let text = std::fs::read_to_string(&files[0]).unwrap();
+        let recs: Vec<serde_json::Value> = text
+            .lines()
+            .map(|l| serde_json::from_str(l).unwrap_or_else(|e| panic!("{l}: {e}")))
+            .collect();
+
+        let first = &recs[0];
+        assert_eq!(first["msg"], "boot.start");
+        assert_eq!(first["tgt"], "devlog");
+        assert_eq!(first["f"]["version"], env!("CARGO_PKG_VERSION"));
+        assert!(first["f"]["pid"].is_u64());
+        let boot = first["boot"].as_str().unwrap();
+        assert!(
+            recs.iter().all(|r| r["boot"] == boot),
+            "one boot id per process"
+        );
+        assert_eq!(
+            recs.iter()
+                .filter(|r| r["msg"] == "Slow DB query detected")
+                .count(),
+            20,
+            "rate limited"
+        );
+        assert!(recs
+            .iter()
+            .any(|r| r["msg"] == "span.close" && r["f"]["span"] == "db_init"));
+        let has_debug = recs.iter().any(|r| r["lvl"] == "DEBUG");
+        assert_eq!(has_debug, cfg!(debug_assertions));
+        assert!(!recs.iter().any(|r| r["lvl"] == "TRACE"));
+    }
+
+    /// Overhead probe, run on demand:
+    /// `node scripts/build/run-rust-tests.mjs -- --ignored --nocapture logging::tests::bench`
+    #[test]
+    #[ignore]
+    fn bench_jsonl_layer_overhead() {
+        const N: u32 = 100_000;
+        fn run(rate: Option<RateLimit>, distinct: bool) -> f64 {
+            let sub = tracing_subscriber::registry();
+            let layer = jsonl::JsonlLayer::new(io::sink, rate.clone());
+            let start = std::time::Instant::now();
+            match rate {
+                Some(rate) => {
+                    let sub = sub.with(RateLimited::new(layer, rate));
+                    tracing::subscriber::with_default(sub, || emit(distinct));
+                }
+                None => {
+                    let sub = sub.with(layer);
+                    tracing::subscriber::with_default(sub, || emit(distinct));
+                }
+            }
+            start.elapsed().as_nanos() as f64 / f64::from(N)
+        }
+        fn emit(distinct: bool) {
+            for i in 0..N {
+                if distinct {
+                    tracing::info!(i, "job {} finished in {} ms", i, i % 97);
+                } else {
+                    tracing::info!(i, "job finished");
+                }
+            }
+        }
+        let text = |sink: bool| {
+            let start = std::time::Instant::now();
+            let layer = fmt::layer().with_ansi(false).with_writer(io::sink);
+            let sub = tracing_subscriber::registry().with(layer);
+            tracing::subscriber::with_default(sub, || emit(sink));
+            start.elapsed().as_nanos() as f64 / f64::from(N)
+        };
+        let rl = || Some(RateLimit::new(Clock::system()));
+        println!(
+            "text fmt layer (old file format), static msg: {:.0} ns/event",
+            text(false)
+        );
+        println!(
+            "jsonl, static msg, no rate limit:            {:.0} ns/event",
+            run(None, false)
+        );
+        println!(
+            "jsonl, static msg, rate limit (99.98% cut):  {:.0} ns/event",
+            run(rl(), false)
+        );
+        println!(
+            "text fmt layer (old file format), dynamic:   {:.0} ns/event",
+            text(true)
+        );
+        println!(
+            "jsonl, dynamic msg, no rate limit:           {:.0} ns/event",
+            run(None, true)
+        );
+        println!(
+            "jsonl, dynamic msg, rate limit:              {:.0} ns/event",
+            run(rl(), true)
+        );
     }
 }
