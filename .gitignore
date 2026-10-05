@@ -271,3 +271,9 @@ src-tauri/target-approval/
 /$DB_PATH
 .grok/
 /scratchpad/
+
+# Runtime state a Curator worker leaves in the repo root, and Playwright output.
+/claim.json
+/worker.pid
+/census_tmp.json
+test-results/
