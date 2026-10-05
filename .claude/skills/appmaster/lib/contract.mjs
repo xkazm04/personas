@@ -45,6 +45,9 @@ export const shortId = (runId) => String(runId).replace(/-/g, '').slice(0, 8);
 
 // ---------------------------------------------------------------- numbers (defined ONCE)
 
+/** Projects this skill manages by default; any other brief.json opts in with `"headless": true`. */
+export const DEFAULT_MANAGED = ['pof', 'ascent', 'kp'];
+
 export const GLOBAL_CAP = 3;          // builders running at once across all projects
 export const PER_PROJECT_CAP = 1;     // builders running at once in one project
 export const MEMORY_STOP_PCT = 60;    // refuse to dispatch at or above this used-memory percent
@@ -108,7 +111,8 @@ export const claudeBin = () => process.env.APPMASTER_CLAUDE_BIN || 'claude';
 /**
  * @typedef {Object} Brief             .claude/master/<slug>/brief.json, /master's schema; this skill only READS it
  * @property {Array<{slug:string,priority:number|null}>} charters
- * @property {string[]} [boundaries]   path globs a builder must never touch
+ * @property {boolean} [headless]     opt a project outside DEFAULT_MANAGED into this skill
+ * @property {string[]} [boundaries]   path globs (no whitespace, enforced) or prose rules (passed to the builder only)
  * @property {{typecheck?:string,lint?:string,test?:string}} [gates]  shell commands; else .ai/manifest.yaml capabilities
  * @property {{master?:string,builder?:string,byCharter?:Record<string,string>}} [models]
  * @property {string[]} [askFor]
@@ -164,6 +168,8 @@ export const claudeBin = () => process.env.APPMASTER_CLAUDE_BIN || 'claude';
  * @property {Object} [verdict]        what `settle` measured: commits, files, gates{}, boundaryHits[]
  * @property {string} [heldReason]
  * @property {string} [mergedSha]
+ * @property {string} [nodeModules] @property {string} [limitSeenAt] @property {boolean} [killed] @property {Object} [cleanup]
+ * @property {string} [askId] @property {string} [settledAt] @property {string} [verifyStartedAt]   written by WP2 (worker/merge)
  */
 
 /**

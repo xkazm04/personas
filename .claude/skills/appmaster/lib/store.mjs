@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   STATE_ROOT, briefPath, headlessDir, wakesPath, asksPath, channelPath, outboxPath, runsDir, runDir,
-  appendJsonl, readJsonl, readJson, writeJson, mintId, nowIso, sha1, canonical,
+  appendJsonl, readJsonl, readJson, writeJson, mintId, nowIso, sha1, canonical, DEFAULT_MANAGED,
   RUN_STATES, OUTBOX_KINDS,
 } from './contract.mjs';
 
@@ -18,10 +18,12 @@ import {
 export const loadBrief = (slug) => readJson(briefPath(slug), null);
 export const saveBrief = (slug, brief) => writeJson(briefPath(slug), brief);
 
-/** Slugs that have a brief (the projects this skill manages). */
+/** Slugs this skill manages: a brief.json AND (DEFAULT_MANAGED or `headless: true` in the brief).
+ *  /master keeps briefs for projects this skill must never wake (firetv, bank-*). */
 export function listSlugs() {
   let names; try { names = fs.readdirSync(STATE_ROOT); } catch { return []; }
-  return names.filter((n) => fs.existsSync(briefPath(n))).sort();
+  return names.filter((n) => fs.existsSync(briefPath(n)))
+    .filter((n) => DEFAULT_MANAGED.includes(n) || loadBrief(n)?.headless === true).sort();
 }
 
 // ---------------------------------------------------------------- latest-line-wins readers

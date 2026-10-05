@@ -38,7 +38,11 @@ test('runs: minted before effects, listed, found by short id', () => {
   assert.equal(r.state, 'planned');
   assert.equal(S.loadRun('demo', r.runId).runId, r.runId);
   assert.equal(S.listRuns('demo', { states: ['planned'] }).length, 1);
-  fs.writeFileSync(C.briefPath('demo'), '{"charters":[]}');
+  fs.mkdirSync(path.dirname(C.briefPath('demo')), { recursive: true });
+  fs.writeFileSync(C.briefPath('demo'), '{"charters":[],"headless":true}');
+  fs.mkdirSync(path.dirname(C.briefPath('firetv')), { recursive: true });
+  fs.writeFileSync(C.briefPath('firetv'), '{"charters":[]}');
+  assert.deepEqual(S.listSlugs(), ['demo']);
   assert.equal(S.findRun(C.shortId(r.runId)).runId, r.runId);
   assert.throws(() => S.saveRun({ ...r, state: 'nope' }), /bad run state/);
 });

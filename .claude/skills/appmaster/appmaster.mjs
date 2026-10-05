@@ -7,14 +7,14 @@
 //   decide   --project p --wake <wakeId> --file <decision.json>
 //   dispatch --run <runId>
 //   watch    [--project p]
-//   settle   --run <runId>
+//   settle   --run <runId> [--retry]
 //   release  --run <runId> --reason <text> [--kill]
-//   say      --project p --file <msg.md>
+//   say      --project p --file <msg.md> | --text <message>
 //   asks     [--project p]
 //   answer   --ask <askId> --choice <label> --notes <text>
 //   outbox   list|replay [--dry-run] [--project p]
 //   limit    set|clear|show [--reason <text>] [--resets <iso>]
-//   onboard  --project p --brief <brief.json>
+//   onboard  --project p --brief <brief.json> [--force]
 //
 // The table below is the ONLY place a subcommand is bound to its implementation. Each handler
 // is `async (args) => object` where args = { _: positionals after the subcommand, flags }.
