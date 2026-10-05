@@ -1,9 +1,12 @@
 // The Backlog table's columns, split out of BacklogTable.tsx (Gate 2).
 //
-// The Idea cell is two lines: the title on its own line (the row's identity,
-// one line, full text in a Tooltip when cut), then the sensor badge and the
-// description as a muted caption. A description that merely repeats the title
-// loses that prefix; one that is nothing but the title is not shown at all.
+// The Idea cell is ONE line: the title, full text in a Tooltip when cut. It was
+// two — a sensor badge and a description caption underneath — and the second line
+// was removed on operator instruction (2026-10-05): the descriptions it rendered
+// come from five producers writing five different shapes (87% of pending items
+// are unstructured prose), so the caption was a per-row lottery rather than a
+// column. Origin stays reachable: the left rail groups by category then sensor,
+// and the detail ledger carries the badge, the evidence and the full body.
 import { useMemo } from 'react';
 import { CheckSquare, Square } from 'lucide-react';
 
@@ -11,24 +14,9 @@ import { Button } from '@/features/shared/components/buttons';
 import type { DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { TruncateWithTooltip } from '@/features/shared/components/display/TruncateWithTooltip';
-// Cross-feature import, precedented: the sensor palette is defined once next to
-// the badge that renders it, and the Backlog must label origins identically to
-// the findings surfaces or the same sensor reads as two different things.
-import { FindingBadge } from '@/features/plugins/dev-tools/sub_triage/findings/FindingBadge';
 import type { Translations } from '@/i18n/en';
 
 import type { BacklogIdea } from './backlogModel';
-
-/** Separators a description tends to put after a repeated title: space, `.`, `:`, `;`, `,`, hyphen, en and em dash. */
-const LEADING_SEPARATORS = /^[\s.:;,\-–—]+/;
-
-/** The description without a leading copy of the title; '' when nothing else is left. */
-export function descriptionAfterTitle(description: string, title: string): string {
-  const d = description.trim();
-  const t = title.trim();
-  if (!t || !d.toLowerCase().startsWith(t.toLowerCase())) return d;
-  return d.slice(t.length).replace(LEADING_SEPARATORS, '').trim();
-}
 
 export function useBacklogColumns({
   r,
@@ -73,24 +61,9 @@ export function useBacklogColumns({
         label: r.backlog_col_title,
         width: 'minmax(0, 1fr)',
         sortable: true,
-        render: (row) => {
-          const detail = descriptionAfterTitle(row.description, row.title);
-          return (
-            <span className="flex flex-col gap-1 min-w-0 w-full py-0.5">
-              <TruncateWithTooltip text={row.title} className="typo-body text-foreground min-w-0" />
-              {(row.origin || detail) && (
-                <span className="flex items-center gap-2 min-w-0">
-                  {row.origin && (
-                    <span onClick={(e) => e.stopPropagation()} className="shrink-0">
-                      <FindingBadge origin={row.origin} evidence={row.evidence} />
-                    </span>
-                  )}
-                  {detail && <span className="typo-caption truncate min-w-0">{detail}</span>}
-                </span>
-              )}
-            </span>
-          );
-        },
+        render: (row) => (
+          <TruncateWithTooltip text={row.title} className="typo-body text-foreground min-w-0 w-full" />
+        ),
       },
     ];
     if (showProject) {
