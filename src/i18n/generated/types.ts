@@ -248,6 +248,8 @@ export type Translations = {
     live_toggle_hint: string;
     activity_mode: string;
     activity_mode_title: string;
+    board_mode: string;
+    board_mode_title: string;
     grid_state_running: string;
     grid_state_attention: string;
     grid_state_failed: string;
@@ -8288,7 +8290,6 @@ export type Translations = {
       noc_no_diagnosis: string;
       noc_diagnose_failed: string;
       ledger: {
-        col_state: string;
         col_age: string;
         col_actions: string;
         col_raised: string;

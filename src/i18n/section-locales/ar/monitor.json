@@ -2,6 +2,8 @@
   "activity": "النشاط",
   "activity_mode": "النشاط",
   "activity_mode_title": "النشاط — حالة كل شخصية مباشرةً على شكل شبكة",
+  "board_mode": "اللوحة",
+  "board_mode_title": "اللوحة — الأسطول كله في صورة واحدة: من يعمل ومن يحتاج إليك",
   "approve": "موافقة",
   "assertion_failures_summary": "فشل {failed} من أصل {total} تأكيدات مخرجات في هذا التشغيل.",
   "assertion_failures_title": "فشلت تأكيدات المخرجات",

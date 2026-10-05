@@ -2,6 +2,8 @@
   "activity": "गतिविधि",
   "activity_mode": "गतिविधि",
   "activity_mode_title": "गतिविधि — हर पर्सोना की लाइव स्थिति ग्रिड के रूप में",
+  "board_mode": "बोर्ड",
+  "board_mode_title": "बोर्ड — पूरा बेड़ा एक तस्वीर में: कौन काम कर रहा है, किसे आपकी ज़रूरत है",
   "approve": "स्वीकृत करें",
   "assertion_failures_summary": "इस रन में {total} में से {failed} आउटपुट असर्शन विफल हुए।",
   "assertion_failures_title": "आउटपुट असर्शन विफल",

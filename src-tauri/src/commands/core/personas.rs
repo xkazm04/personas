@@ -5,8 +5,8 @@ use ts_rs::TS;
 
 use crate::db::models::{
     BulkDeleteOutcome, CreatePersonaInput, Persona, PersonaAutomation, PersonaChangeEntry,
-    PersonaEventSubscription, PersonaSummary, PersonaTeam, PersonaToolDefinition, PersonaTrigger,
-    UpdateExecutionStatus, UpdatePersonaInput,
+    PersonaEventSubscription, PersonaHourlyRuns, PersonaSummary, PersonaTeam,
+    PersonaToolDefinition, PersonaTrigger, UpdateExecutionStatus, UpdatePersonaInput,
 };
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::core::personas as repo;
@@ -464,6 +464,19 @@ pub fn get_persona_summaries(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<PersonaSummary>, AppError> {
     repo::get_summaries(&state.db)
+}
+
+/// Runs per hour per persona over the last `hours` UTC hours (see
+/// [`PersonaHourlyRuns`]). WP0 contract stub: WP1 implements the query.
+/// No `#[requires(auth)]`: that guard expands to an unconditional Ok (census
+/// `unfalsifiable-tier-guard`); the IPC wrapper is the gate.
+#[tauri::command]
+pub fn get_persona_runs_hourly(
+    state: State<'_, Arc<AppState>>,
+    hours: u32,
+) -> Result<Vec<PersonaHourlyRuns>, AppError> {
+    let _ = (&state, hours);
+    Ok(Vec::new())
 }
 
 /// Batched persona detail: persona + tools + triggers + subscriptions + automations

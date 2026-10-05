@@ -2,6 +2,8 @@
   "activity": "活动",
   "activity_mode": "活动",
   "activity_mode_title": "活动 — 以网格形式显示每个角色的实时状态",
+  "board_mode": "看板",
+  "board_mode_title": "看板 — 整个团队一图尽览：谁在工作，谁需要你",
   "approve": "批准",
   "assertion_failures_summary": "本次运行有 {failed}/{total} 个输出断言失败。",
   "assertion_failures_title": "输出断言失败",

@@ -6446,6 +6446,8 @@
     "activity": "Aktivität",
     "activity_mode": "Aktivität",
     "activity_mode_title": "Aktivität — der Live-Status jeder Persona als Raster",
+    "board_mode": "Lagebild",
+    "board_mode_title": "Lagebild — die ganze Flotte als ein Bild: wer arbeitet, wer Sie braucht",
     "approve": "Genehmigen",
     "assertion_failures_summary": "{failed} von {total} Ausgabeprüfungen sind bei diesem Lauf fehlgeschlagen.",
     "assertion_failures_title": "Ausgabeprüfungen fehlgeschlagen",

@@ -2,6 +2,8 @@
   "activity": "Actividad",
   "activity_mode": "Actividad",
   "activity_mode_title": "Actividad — el estado en vivo de cada persona en forma de cuadrícula",
+  "board_mode": "Tablero",
+  "board_mode_title": "Tablero — toda la flota en una sola imagen: quién trabaja y quién te necesita",
   "approve": "Aprobar",
   "assertion_failures_summary": "Fallaron {failed} de {total} aserciones de salida en esta ejecución.",
   "assertion_failures_title": "Fallaron aserciones de salida",

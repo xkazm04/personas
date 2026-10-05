@@ -1045,6 +1045,19 @@ pub struct PersonaSummary {
     pub health: PersonaHealth,
 }
 
+/// Runs per hour for one persona over a trailing window (the Monitor Board's
+/// 24h sparkline). `buckets` is oldest first, one entry per UTC hour, ending
+/// with the current hour; its length equals the requested window. A persona
+/// with no runs in the window is omitted from the result, and consumers read a
+/// missing persona as all-zero buckets.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct PersonaHourlyRuns {
+    pub persona_id: String,
+    pub buckets: Vec<u32>,
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct UpdatePersonaInput {

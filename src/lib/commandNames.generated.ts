@@ -919,6 +919,7 @@ export type CommandName =
   | "get_persona_manifest"
   | "get_persona_memory_review_proposal"
   | "get_persona_recipes"
+  | "get_persona_runs_hourly"
   | "get_persona_summaries"
   | "get_pipeline_analytics"
   | "get_pipeline_run"

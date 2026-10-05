@@ -6446,6 +6446,8 @@
     "activity": "활동",
     "activity_mode": "활동",
     "activity_mode_title": "활동 — 모든 페르소나의 실시간 상태를 그리드로 표시",
+    "board_mode": "보드",
+    "board_mode_title": "보드 — 전체 플릿을 한 장의 그림으로: 누가 일하고 있고 누가 당신을 기다리는지",
     "approve": "승인",
     "assertion_failures_summary": "이 실행에서 출력 어설션 {total}개 중 {failed}개가 실패했습니다.",
     "assertion_failures_title": "출력 어설션 실패",

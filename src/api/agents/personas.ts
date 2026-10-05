@@ -2,6 +2,7 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { Persona } from "@/lib/bindings/Persona";
 import type { PersonaSummary } from "@/lib/bindings/PersonaSummary";
+import type { PersonaHourlyRuns } from "@/lib/bindings/PersonaHourlyRuns";
 import type { PersonaToolDefinition } from "@/lib/bindings/PersonaToolDefinition";
 import type { PersonaTrigger } from "@/lib/bindings/PersonaTrigger";
 import type { PersonaEventSubscription } from "@/lib/bindings/PersonaEventSubscription";
@@ -122,6 +123,11 @@ export const getPersonaBlastRadius = (id: string) =>
 
 export const getPersonaSummaries = () =>
   invoke<PersonaSummary[]>("get_persona_summaries");
+
+/** Runs per hour per persona over the last `hours` UTC hours, oldest bucket
+ *  first. Personas with no runs in the window are omitted (read as zeros). */
+export const getPersonaRunsHourly = (hours = 24) =>
+  invoke<PersonaHourlyRuns[]>("get_persona_runs_hourly", { hours });
 
 /** Single IPC call that returns the persona with all sub-resources. */
 export const getPersonaDetail = (id: string) =>

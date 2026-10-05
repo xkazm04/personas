@@ -6446,6 +6446,8 @@
     "activity": "Aktivitas",
     "activity_mode": "Aktivitas",
     "activity_mode_title": "Aktivitas — status langsung setiap persona dalam bentuk kisi",
+    "board_mode": "Papan",
+    "board_mode_title": "Papan — seluruh armada dalam satu gambar: siapa yang bekerja, siapa yang membutuhkan Anda",
     "approve": "Setujui",
     "assertion_failures_summary": "{failed} dari {total} asersi keluaran gagal pada eksekusi ini.",
     "assertion_failures_title": "Asersi keluaran gagal",

@@ -1245,6 +1245,8 @@ export interface EventPayloadMap {
     action: 'started' | 'completed' | 'failed' | 'cancelled' | 'queued';
     run_id?: string;
     label?: string;
+    /** Owning persona, when the run belongs to one (null for persona-less work). */
+    persona_id?: string | null;
   };
 
   // Titlebar notification

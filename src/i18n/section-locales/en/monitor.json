@@ -241,6 +241,8 @@
   "live_toggle_hint": "Show incoming channel messages as corner pop-ups",
   "activity_mode": "Activity",
   "activity_mode_title": "Activity — every persona's live state as a grid",
+  "board_mode": "Board",
+  "board_mode_title": "Board — the whole fleet as one picture: who is working, who needs you",
   "grid_state_running": "Running",
   "grid_state_attention": "Needs you",
   "grid_state_failed": "Failed",

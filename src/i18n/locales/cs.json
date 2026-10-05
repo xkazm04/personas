@@ -6446,6 +6446,8 @@
     "activity": "Aktivita",
     "activity_mode": "Aktivita",
     "activity_mode_title": "Aktivita — živý stav každé persony v mřížce",
+    "board_mode": "Tabule",
+    "board_mode_title": "Tabule — celá flotila jako jeden obraz: kdo pracuje a kdo vás potřebuje",
     "approve": "Schválit",
     "assertion_failures_summary": "V tomto běhu selhalo {failed} z {total} kontrol výstupu.",
     "assertion_failures_title": "Kontroly výstupu selhaly",

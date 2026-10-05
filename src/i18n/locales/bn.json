@@ -6446,6 +6446,8 @@
     "activity": "কার্যকলাপ",
     "activity_mode": "অ্যাক্টিভিটি",
     "activity_mode_title": "অ্যাক্টিভিটি — প্রতিটি পার্সোনার লাইভ অবস্থা গ্রিড আকারে",
+    "board_mode": "বোর্ড",
+    "board_mode_title": "বোর্ড — পুরো বহর এক ছবিতে: কে কাজ করছে, কার আপনাকে দরকার",
     "approve": "অনুমোদন",
     "assertion_failures_summary": "এই রানে {total}টির মধ্যে {failed}টি আউটপুট অ্যাসারশন ব্যর্থ হয়েছে।",
     "assertion_failures_title": "আউটপুট অ্যাসারশন ব্যর্থ",

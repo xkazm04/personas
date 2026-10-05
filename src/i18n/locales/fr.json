@@ -6446,6 +6446,8 @@
     "activity": "Activité",
     "activity_mode": "Activité",
     "activity_mode_title": "Activité — l’état en direct de chaque persona sous forme de grille",
+    "board_mode": "Tableau",
+    "board_mode_title": "Tableau — toute la flotte en une image : qui travaille, qui a besoin de vous",
     "approve": "Approuver",
     "assertion_failures_summary": "{failed} assertion(s) de sortie sur {total} ont échoué pour cette exécution.",
     "assertion_failures_title": "Des assertions de sortie ont échoué",

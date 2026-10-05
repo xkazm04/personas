@@ -6446,6 +6446,8 @@
     "activity": "Hoạt động",
     "activity_mode": "Hoạt động",
     "activity_mode_title": "Hoạt động — trạng thái trực tiếp của từng persona dưới dạng lưới",
+    "board_mode": "Bảng",
+    "board_mode_title": "Bảng — toàn bộ đội ngũ trong một bức tranh: ai đang làm việc, ai cần bạn",
     "approve": "Phê duyệt",
     "assertion_failures_summary": "{failed} trên {total} kiểm định đầu ra thất bại trong lần chạy này.",
     "assertion_failures_title": "Kiểm định đầu ra thất bại",

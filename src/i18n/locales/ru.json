@@ -6446,6 +6446,8 @@
     "activity": "Активность",
     "activity_mode": "Активность",
     "activity_mode_title": "Активность — состояние каждой персоны в реальном времени в виде сетки",
+    "board_mode": "Доска",
+    "board_mode_title": "Доска — весь флот одной картиной: кто работает, кому нужны вы",
     "approve": "Одобрить",
     "assertion_failures_summary": "В этом запуске не пройдено {failed} из {total} проверок вывода.",
     "assertion_failures_title": "Проверки вывода не пройдены",

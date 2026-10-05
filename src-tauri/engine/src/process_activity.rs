@@ -17,6 +17,11 @@ pub struct ProcessActivityEvent {
     pub action: String,
     pub run_id: Option<String>,
     pub label: Option<String>,
+    /// The persona that owns this run, when there is one. The Monitor used to
+    /// tie a run to its persona through `label == persona.name`, which put two
+    /// same-named personas' runs in the System band. Set it with
+    /// [`ProcessActivityEvent::with_persona`]; persona-less work leaves it None.
+    pub persona_id: Option<String>,
     pub timestamp_ms: u64,
 }
 
@@ -31,8 +36,15 @@ impl ProcessActivityEvent {
             action: action.to_string(),
             run_id: run_id.map(|s| s.to_string()),
             label: label.map(|s| s.to_string()),
+            persona_id: None,
             timestamp_ms,
         }
+    }
+
+    /// Attach the owning persona's id (see `persona_id`).
+    pub fn with_persona(mut self, persona_id: &str) -> Self {
+        self.persona_id = Some(persona_id.to_string());
+        self
     }
 }
 

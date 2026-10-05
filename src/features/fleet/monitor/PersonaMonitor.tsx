@@ -5,6 +5,7 @@
 //   Timeline      — the merged cross-team transmission log (Stream)
 //   Conversations — the messenger, one project at a time (ConversationBriefing)
 //   Map           — the live constellation of one project (ChannelMap)
+//   Board         — the whole fleet as one full-frame picture (fleetboard/)
 // The old two-level switching (a "Channels" mode that then nested its own
 // stream/conversations/map pill) is retired: the three channel surfaces are
 // top-level destinations now, and the project-columns fleet view is gone.
@@ -13,7 +14,7 @@
 
 import { memo, Suspense, useState, useMemo, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { X, Activity, MessagesSquare, Bell, LayoutGrid, Radio, Orbit } from 'lucide-react';
+import { X, Activity, MessagesSquare, Bell, LayoutGrid, LayoutDashboard, Radio, Orbit } from 'lucide-react';
 import FleetActivityStrip from '@/features/shared/chrome/FleetActivityStrip';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { lazyRetry } from '@/lib/lazyRetry';
@@ -53,6 +54,7 @@ const ConversationBriefing = lazyRetry(() =>
 );
 const ChannelMap = lazyRetry(() => import('./channels/map/ChannelMap'));
 const QuickDispatchDock = lazyRetry(() => import('./grid/QuickDispatchDock'));
+const BoardView = lazyRetry(() => import('./fleetboard'));
 
 /** The dock's footprint while its chunk loads: the same 36px collapsed bar. */
 function DockPlaceholder() {
@@ -75,8 +77,8 @@ interface PersonaMonitorProps {
 // into a bail-out at this boundary.
 const MemoFleetActivityStrip = memo(FleetActivityStrip);
 
-/** The four top-level Monitor destinations. */
-type MonitorView = 'activity' | 'timeline' | 'conversations' | 'map';
+/** The five top-level Monitor destinations. */
+type MonitorView = 'activity' | 'timeline' | 'conversations' | 'map' | 'board';
 
 /**
  * Last-selected tab, remembered for the life of the session (the Monitor is a
@@ -153,15 +155,17 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   // cadence buckets from. Used below for the elapsed-time tick.
   const visible = useDocumentVisibility();
 
-  const isActivityView = view === 'activity';
+  // Activity and Board are the two FLEET views: both draw cards built from
+  // these feeds and both host the persona drawer.
+  const isFleetView = view === 'activity' || view === 'board';
   const feeds = useMemo(
     () => ({
-      reviews: isActivityView,
-      messages: isActivityView,
-      personaHealth: isActivityView,
+      reviews: isFleetView,
+      messages: isFleetView,
+      personaHealth: isFleetView,
       badgeCounts: true,
     }),
-    [isActivityView],
+    [isFleetView],
   );
   // `reviewsError` / `messagesError` / `healthError` / `lastRefreshed` were all
   // produced by the hook (or by its polling layer) and destructured by nobody,
@@ -253,11 +257,11 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
     // after a minute away would render every elapsed time a minute short until
     // the next second elapsed. The effect re-runs on the false→true edge and
     // corrects it in the same commit that restarts the tick.
-    if (!anyRunning || view !== 'activity' || !visible) return;
+    if (!anyRunning || !isFleetView || !visible) return;
     setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [anyRunning, view, visible]);
+  }, [anyRunning, isFleetView, visible]);
 
   const [selection, setSelection] = useState<Selection | null>(null);
   // A remote session's drawer (a `remote:<jobId>` tile). One drawer at a time:
@@ -349,6 +353,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
     { id: 'timeline', label: t.monitor.channels_layout_timeline, hint: t.monitor.channels_layout_timeline_hint, icon: Radio },
     { id: 'conversations', label: t.monitor.channels_layout_grid, hint: t.monitor.channels_layout_grid_hint, icon: MessagesSquare },
     { id: 'map', label: t.monitor.channels_layout_map, hint: t.monitor.channels_layout_map_hint, icon: Orbit },
+    { id: 'board', label: t.monitor.board_mode, hint: t.monitor.board_mode_title, icon: LayoutDashboard },
   ];
   const selectView = useCallback(
     (next: MonitorView) => {
@@ -472,7 +477,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
 
       {/* A failed feed says so here, above a board that keeps whatever it last
           knew. Renders nothing when all three answered. */}
-      {view === 'activity' && (
+      {isFleetView && (
         <MonitorFeedStatus
           reviewsError={reviewsError}
           messagesError={messagesError}
@@ -481,8 +486,8 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
         />
       )}
 
-      {view === 'activity' ? (
-        /* Body — the fleet board with the drawer layered over it */
+      {isFleetView ? (
+        /* Body — the fleet board (Activity or Board) with the drawer layered over it */
         <div className="relative z-10 flex-1 min-h-0 overflow-hidden">
           {/* Same wrapper the three channel surfaces get — the Activity board is
               a card on the HUD atmosphere now, not a bare grid on the page
@@ -505,17 +510,32 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
                   lands (law 1 / law 3). This used to swap the whole board for
                   a header-only skeleton, so the cold open painted a page
                   header, then a blank, then everything at once. */}
-              <FleetGridView
-                cards={cards}
-                personas={personas}
-                teams={teams}
-                selectedPersonaId={selection?.personaId ?? null}
-                onSelect={handleCardSelect}
-                feedTeams={workspaceTeams}
-                onOpenSpeaker={handleDrillIn}
-                isLoading={loading && cards.length === 0}
-                onOpenRemote={openRemote}
-              />
+              {view === 'board' ? (
+                <Suspense fallback={<SurfaceFallback />}>
+                  <BoardView
+                    cards={cards}
+                    personas={personas}
+                    teams={teams}
+                    systemProcesses={systemProcesses}
+                    now={now}
+                    selectedPersonaId={selection?.personaId ?? null}
+                    onSelect={handleCardSelect}
+                    isLoading={loading && cards.length === 0}
+                  />
+                </Suspense>
+              ) : (
+                <FleetGridView
+                  cards={cards}
+                  personas={personas}
+                  teams={teams}
+                  selectedPersonaId={selection?.personaId ?? null}
+                  onSelect={handleCardSelect}
+                  feedTeams={workspaceTeams}
+                  onOpenSpeaker={handleDrillIn}
+                  isLoading={loading && cards.length === 0}
+                  onOpenRemote={openRemote}
+                />
+              )}
             </div>
           </div>
 

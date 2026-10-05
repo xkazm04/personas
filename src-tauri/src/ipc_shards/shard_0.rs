@@ -33,6 +33,7 @@ pub(super) fn shard(
         commands::core::personas::restore_persona,
         commands::core::personas::bulk_delete_personas,
         commands::core::personas::get_persona_summaries,
+        commands::core::personas::get_persona_runs_hourly,
         commands::core::personas::get_persona_detail,
         commands::core::personas::list_personas_using_connector,
         commands::core::personas::resolve_effective_config,
