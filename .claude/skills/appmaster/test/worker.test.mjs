@@ -287,7 +287,12 @@ test('watch writes the limit mark from a limit banner, and dispatch then refuses
 test('limit: detectLimit, cmdLimit show|set|clear, an expired resetsAt reads as cleared', () => {
   assert.equal(L.detectLimit('Claude AI USAGE LIMIT reached'), true);
   assert.equal(L.detectLimit('all good'), false);
-  assert.equal(L.limitSurface('{"type":"user","message":"usage limit"}\n{"type":"result","result":"ok"}', ''), '\n{"type":"result","result":"ok"}');
+  // user turns, system/init lines and clean results are NOT scanned; error results and unparseable lines are
+  assert.equal(L.detectLimit(L.limitSurface('{"type":"user","message":"usage limit"}\n{"type":"result","result":"ok","is_error":false}', '')), false);
+  const initNoise = JSON.stringify({ type: 'system', subtype: 'init', slash_commands: ['review', 'usage-credits', 'extra-usage'] });
+  assert.equal(L.detectLimit(L.limitSurface(initNoise, '')), false, 'the init slash-command list must not read as a limit');
+  assert.equal(L.detectLimit(L.limitSurface('{"type":"result","is_error":true,"result":"hit your limit"}', '')), true);
+  assert.equal(L.detectLimit(L.limitSurface('plain stdout banner: usage limit reached', '')), true);
   assert.deepEqual(L.cmdLimit({ _: ['show'], flags: {} }), { limited: false });
   const set = L.cmdLimit({ _: ['set'], flags: { reason: 'weekly cap', resets: '2099-01-01T00:00:00Z' } });
   assert.equal(set.limited, true);

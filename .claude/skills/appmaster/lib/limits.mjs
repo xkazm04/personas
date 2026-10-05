@@ -26,8 +26,10 @@ export function limitSnippet(text) {
  * The part of a worker's output a limit banner can honestly come from. A stream-json transcript
  * carries every tool result verbatim (source files, docs, logs), so a whole-stream substring scan
  * would read a repo that merely MENTIONS "usage limit" as the subscription being out. Scanned:
- * stderr whole; from the stream, every line that is not a user/assistant turn (init, system, error,
- * result), plus assistant lines that carry an `error` field, plus any line that does not parse.
+ * stderr whole; from the stream: error and unknown line types, `result` lines with is_error, assistant
+ * lines that carry an `error` field, and any line that does not parse. NOT scanned: user turns,
+ * system/init lines (a 2026-10-05 false positive: the slash-command list contains `usage-credits`),
+ * clean assistant turns and clean results.
  * (streamText, stderrText) => string
  */
 export function limitSurface(streamText, stderrText = '') {
@@ -36,8 +38,9 @@ export function limitSurface(streamText, stderrText = '') {
     if (!line.trim()) continue;
     let o; try { o = JSON.parse(line); } catch { parts.push(line); continue; }
     if (!o || typeof o !== 'object') continue;
-    if (o.type === 'user') continue;
+    if (o.type === 'user' || o.type === 'system') continue;   // system init lists slash commands, one is literally 'usage-credits'
     if (o.type === 'assistant' && !o.error) continue;
+    if (o.type === 'result' && !o.is_error) continue;          // a clean result quotes the builder's own summary
     parts.push(line);
   }
   return parts.join('\n');
