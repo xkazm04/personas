@@ -54,6 +54,39 @@
 .ae-plate.is-group { border-style: dashed; border-color: color-mix(in srgb, var(--primary) 35%, transparent); }
 .ae-plate.is-scoped { border-color: color-mix(in srgb, var(--primary) 60%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent), 0 0 28px -12px var(--primary); }
 
+/* The project's dev server, as the plate's top edge (`::before` is the corner
+   ticks). Running: a lit theme-primary edge with a soft glow falling into the
+   plate, breathing slowly where motion is allowed (gated below). Starting: the
+   same edge, dim and still. External (someone else holds the port): a thin
+   info-toned edge. Stopped or unconfigured: nothing. */
+.ae-plate[data-server-state="running"]::after,
+.ae-plate[data-server-state="starting"]::after,
+.ae-plate[data-server-state="external"]::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  pointer-events: none;
+}
+.ae-plate[data-server-state="running"]::after {
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--primary) 35%, transparent),
+    color-mix(in srgb, var(--primary) 85%, transparent) 50%,
+    color-mix(in srgb, var(--primary) 35%, transparent));
+  box-shadow: 0 0 12px 1px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+.ae-plate[data-server-state="starting"]::after { background: color-mix(in srgb, var(--primary) 32%, transparent); }
+.ae-plate[data-server-state="external"]::after { height: 1px; background: color-mix(in srgb, var(--status-info) 55%, transparent); }
+/* The nameplate's port socket: the server's lamp and port in a pill, set apart
+   from the bare live-session lamp beside it. Starting draws its rim dashed. */
+.ae-port {
+  padding: 0 7px 0 5px;
+  border: 1px solid color-mix(in srgb, var(--ae-tone) 45%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ae-tone) 10%, transparent);
+}
+.ae-port.is-dim { border-style: dashed; background: transparent; }
+
 /* The engraved section title every plate carries. */
 .ae-engrave { color: color-mix(in srgb, var(--foreground) 68%, transparent); letter-spacing: 0.06em; text-transform: uppercase; }
 
@@ -260,6 +293,19 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .ae-pile.is-flash { animation: none; }
+}
+
+/* A running dev server's edge breathes: slow, and never below a third lit, so
+   the bay still reads as running at the trough. Without motion the edge stays
+   fully lit and still (the rule above). */
+@keyframes ae-server-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion="reduce"]) .ae-moving .ae-plate[data-server-state="running"]::after {
+    animation: ae-server-pulse 2.8s ease-in-out infinite;
+  }
 }
 
 /* ── Notepad: the workspace layer as index tabs ────────────────────────── */

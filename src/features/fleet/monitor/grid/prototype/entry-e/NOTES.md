@@ -23,6 +23,6 @@ The panel opens dark, and the few lit lamps are the to-do list. Usage shows the 
 
 ## Known limits
 
-- No right-click menus or drag-to-reorder.
+- No drag-to-reorder. Right-click works on persona lines, session lines and anywhere on a bay: a project bay offers its switch and, when the project has a dev server configured, Start / Stop / Restart / Open in Webview (the same items as Browser > Server control); a workspace group bay offers its group menu.
 - The Runway rack treats running, spawning, awaiting input and idle as holding a slot, which matches today's door count.
 - `isParked` is copied locally because the original is private.

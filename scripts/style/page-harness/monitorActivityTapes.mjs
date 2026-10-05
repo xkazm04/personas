@@ -9,6 +9,9 @@
 // queue, so Classic's bays carry session lines and all three Lanes fill.
 // Three dev projects tie session directories to teams, so sessions land in
 // their bays; one directory no project owns lands in the ungrouped tray.
+// Server control (spark server-control): personas' dev server runs (its bay's
+// top edge breathes), docs' is configured and stopped, research's port is held
+// by a server Personas did not start; Legal has no project, so no server.
 //
 // The simulation variants reuse the Board's simulation shell: their fleet,
 // sessions and queue are the test build's own.
@@ -19,6 +22,13 @@ const PROJECTS = [
   ['dp-personas', 'personas', '/work/personas', 't-personas-desktop'],
   ['dp-docs', 'docs', '/work/docs', 't-docs'],
   ['dp-research', 'research', '/work/research', 't-research'],
+];
+
+/** [projectId, port, state, extra]: DevServerView rows for the bays' projects. */
+const SERVERS = [
+  ['dp-personas', 3000, 'running', { pid: 31092, startedMin: 134 }],
+  ['dp-docs', 4321, 'stopped', {}],
+  ['dp-research', 5173, 'external', { externalPid: 29096 }],
 ];
 
 /** [id, state, title, cwd, ageMin, idleMin, origin, extra] */
@@ -54,6 +64,16 @@ export function monitorActivityTapes({ RECORDED_AT }) {
     test_env_branch: null, main_branch: 'master', standards_config: null, team_id, workspace_id: null, kind: 'code',
     enabled: true, created_at: ago(60 * 24 * 30), updated_at: ago(60 * 24),
   }));
+  const servers = SERVERS.map(([projectId, devPort, state, extra]) => {
+    const p = projects.find((x) => x.id === projectId);
+    return {
+      projectId, projectName: p.name, rootPath: p.root_path, workspaceId: null, techStack: 'Vite,React,TypeScript',
+      devCommand: 'npm run dev -- --port {port}', devPort, state, pid: extra.pid ?? null,
+      externalPid: extra.externalPid ?? null,
+      startedAt: extra.startedMin === undefined ? null : Math.floor(T0 / 1000) - extra.startedMin * 60,
+      url: `http://localhost:${devPort}`, error: null,
+    };
+  });
   const labelOf = (cwd) => cwd.split('/').pop();
   const session = (id, state, title, cwd, ageMin, idleMin, origin, extra = {}) => ({
     id, claudeSessionId: state === 'queued' ? null : `${id}-claude`, cwd, projectLabel: labelOf(cwd), name: null, title,
@@ -87,14 +107,15 @@ export function monitorActivityTapes({ RECORDED_AT }) {
     module,
     note: `${tape.note} ${note}`,
     calls: [
-      ...tape.calls.filter((c) => c.cmd !== 'fleet_list_sessions' && c.cmd !== 'dev_tools_list_projects'),
+      ...tape.calls.filter((c) => !['fleet_list_sessions', 'dev_tools_list_projects', 'dev_servers_list'].includes(c.cmd)),
       { cmd: 'fleet_list_sessions', response: { sessions: [...live, ...queued], hookPort: null, hooksInstalled: true } },
       { cmd: 'dev_tools_list_projects', response: projects },
       { cmd: 'fleet_queue_snapshot', response: snapshot },
+      { cmd: 'dev_servers_list', response: servers },
     ],
   });
   const sim = (module) => ({ ...board['monitor/board/sim'](), module });
-  const NOTE = 'Plus 10 sessions in every painted state and a queue of 4 (3 dev projects tie them to bays).';
+  const NOTE = 'Plus 10 sessions in every painted state and a queue of 4 (3 dev projects tie them to bays); dev servers running / stopped / external on those 3 projects.';
   return {
     builders: {
       'monitor/classic': () => withSessions(board['monitor/board'](), 'monitor/classic', NOTE),

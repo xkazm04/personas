@@ -4,23 +4,26 @@
 // forty bays the ones that need the operator show before a name is read.
 // Under it, the roster drawn as its states (the share bar), then one flat line
 // per agent and a two-row line per live session. Clicking the nameplate scopes
-// the inbox; right-clicking it switches the project (or opens the workspace
-// group's menu).
+// the inbox. Right-clicking anywhere on the bay opens the project's menu (the
+// switch, then Start / Stop / Restart / Open for its dev server) or the
+// workspace group's menu; a line with its own menu claims the click first. While
+// the project's dev server holds its port the plate lights its top edge and the
+// nameplate carries the server's lamp and port.
 
 import { Button } from '@/features/shared/components/buttons';
 import { memo, useCallback, useState, type MouseEvent, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
-import { Filter, Landmark, Laptop, Power, PowerOff } from 'lucide-react';
+import { Filter, Landmark, Laptop, PowerOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { ContextMenu } from '@/features/shared/components/overlays/ContextMenu';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
-import { useProjectForTeam, useToggleProject } from '@/features/plugins/dev-tools/sub_projects/projectSwitch/useProjectSwitch';
+import { useProjectForTeam } from '@/features/plugins/dev-tools/sub_projects/projectSwitch/useProjectSwitch';
 import { cleanName, squareState, SQUARE_STATE_ORDER } from '../../fleetGridModel';
 import type { BoardColumn } from '../../useBoardModel';
 import { useWorkspaceName, WorkspaceGroupMenu, type ColumnMenuAnchor } from '../../board/WorkspaceGroup';
 import { PERSONA_LAMP, toneClass, type Lamp as LampModel } from './tone';
 import { Lamp } from './parts';
+import { BayProjectMenu, BayServerChip, useServerHint } from './BayServerMenu';
+import { useBayServer } from './useBayServer';
 
 /** The bay's own lamp: the most urgent persona inside it. */
 export function bayLamp(cards: BoardColumn['cards']): LampModel {
@@ -64,13 +67,20 @@ export const Bay = memo(function Bay({
   const spaceName = useWorkspaceName(workspaceId) ?? name;
   const project = useProjectForTeam(remote ? null : column.teamId);
   const off = project !== null && !project.enabled;
-  const toggleProject = useToggleProject();
+  const server = useBayServer(workspaceId === null ? project?.id ?? null : null);
+  const serverHint = useServerHint(server);
   const [menu, setMenu] = useState<ColumnMenuAnchor | null>(null);
   const closeMenu = useCallback(() => setMenu(null), []);
-  const onContextMenu = (e: MouseEvent<HTMLButtonElement>) => {
-    if (workspaceId === null && !project) return;
+  // The whole bay answers a right-click. A persona or session line opens its
+  // own menu and marks the event handled, so the bay steps aside for it. A
+  // click inside a portalled menu or popover bubbles here through React, not
+  // through the DOM, and is not the bay's.
+  const onContextMenu = (e: MouseEvent<HTMLElement>) => {
+    if (e.defaultPrevented || !e.currentTarget.contains(e.target as Node)) return;
+    if (remote || (workspaceId === null && !project)) return;
     e.preventDefault();
-    setMenu({ x: e.clientX, y: e.clientY, anchor: e.currentTarget.getBoundingClientRect() });
+    const header = e.currentTarget.querySelector('[data-testid="fleet-grid-column-header"]') ?? e.currentTarget;
+    setMenu({ x: e.clientX, y: e.clientY, anchor: header.getBoundingClientRect() });
   };
   const lamp = bayLamp(column.cards);
   const hint = remote ? tx(m.remote_on_device, { device: remote.displayName })
@@ -84,13 +94,14 @@ export const Bay = memo(function Bay({
       className={`ae-plate flex min-w-0 flex-col overflow-hidden rounded-card ${workspaceId !== null ? 'is-group' : ''} ${scoped ? 'is-scoped' : ''}`}
       data-testid={remote ? 'fleet-grid-device-column' : 'fleet-grid-column'}
       data-workspace-group={workspaceId !== null || undefined}
+      data-server-state={server?.state}
+      onContextMenu={onContextMenu}
     >
-      <Tooltip content={hint} delay={500}>
+      <Tooltip content={serverHint ? <>{hint}<br />{serverHint}</> : hint} delay={500}>
         <Button
           variant="ghost"
           disabled={remote !== null}
           onClick={() => onScope(column)}
-          onContextMenu={onContextMenu}
           aria-pressed={scoped}
           data-testid="fleet-grid-column-header"
           data-project-off={off || undefined}
@@ -104,6 +115,7 @@ export const Bay = memo(function Bay({
           </span>
           {off && <PowerOff className="h-3.5 w-3.5 flex-shrink-0 text-status-warning" aria-label={t.plugins.dev_projects.project_state_off} />}
           {scoped && <Filter className="h-3.5 w-3.5 flex-shrink-0 text-primary" aria-hidden />}
+          <BayServerChip server={server} hint={serverHint} />
           {liveCount > 0 && (
             <span className="ae-t-run inline-flex flex-shrink-0 items-center gap-1 typo-caption tabular-nums text-primary">
               <Lamp lamp={{ tone: 'run', lit: true }} />{liveCount}
@@ -128,21 +140,8 @@ export const Bay = memo(function Bay({
       {workspaceId !== null && (
         <WorkspaceGroupMenu menu={menu} onCloseMenu={closeMenu} teamId={column.teamId} teamName={name} workspaceId={workspaceId} />
       )}
-      {workspaceId === null && menu && project && createPortal(
-        <ContextMenu
-          x={menu.x}
-          y={menu.y}
-          onClose={closeMenu}
-          ariaLabel={name}
-          widthClass="w-52"
-          items={[{
-            id: 'toggle-project',
-            label: project.enabled ? t.plugins.dev_projects.project_switch_off : t.plugins.dev_projects.project_switch_on,
-            icon: project.enabled ? <PowerOff className="h-3.5 w-3.5" /> : <Power className="h-3.5 w-3.5" />,
-            onSelect: () => { void toggleProject(project); },
-          }]}
-        />,
-        document.body,
+      {workspaceId === null && menu && project && (
+        <BayProjectMenu menu={menu} onClose={closeMenu} name={name} project={project} server={server} />
       )}
     </section>
   );
