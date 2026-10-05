@@ -50,7 +50,7 @@ export const DEFAULT_MANAGED = ['pof', 'ascent', 'kp'];
 
 export const GLOBAL_CAP = 3;          // builders running at once across all projects
 export const PER_PROJECT_CAP = 1;     // builders running at once in one project
-export const MEMORY_STOP_PCT = 60;    // refuse to dispatch at or above this used-memory percent
+export const MEMORY_STOP_PCT = 90;    // refuse to dispatch at or above this used-memory percent (raised from 60 by the operator, 2026-10-05)
 export const QUIET_MIN = 10;          // a run whose stream.jsonl is this old is flagged quiet (never killed)
 export const TIMEOUT_MIN = 90;        // a run older than this is flagged timed-out (never killed)
 export const WAKE_MIN = 10;           // nextWakeMinutes bounds a master may choose
