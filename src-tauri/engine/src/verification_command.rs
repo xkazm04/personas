@@ -11,6 +11,19 @@
 //! The command is operator-authored (a persona `verification_command` parameter),
 //! so it inherits the host environment like any dev tool — it is trusted input,
 //! unlike untrusted agent output.
+//!
+//! ## The second door: a detached operator server ([`spawn_detached`])
+//!
+//! Server control (Browser > Server control) runs a project's dev server from
+//! an operator-configured command line (`npm run dev -- --port 3001`). Same
+//! trust boundary as above, so it goes through the same shell vehicle rather
+//! than opening a second one; what differs is the lifetime. A verification
+//! command is a bounded child the caller waits on. A dev server must OUTLIVE
+//! the app: no `kill_on_drop`, stdio null, its own process group, and on
+//! Windows a breakaway from any job object the app was launched in (when the
+//! job allows it). Its caller validates the command first (no `& | ; < >`,
+//! backticks, `$`, parentheses, `%` or newlines), so the shell only ever sees
+//! one simple command line, never a chain.
 
 use std::path::Path;
 use std::process::Stdio;
@@ -126,11 +139,78 @@ pub async fn run_verification(dir: &Path, command: &str, timeout: Duration) -> V
     }
 }
 
+/// Variables of THIS process a detached server must not inherit. The app sets
+/// its own bridge token on itself at boot (`boot::finalize`); a dev server is a
+/// long-lived process running a repository's code and has no business holding it.
+const DETACHED_SCRUBBED_ENV: &[&str] = &["PERSONAS_API_KEY"];
+
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+#[cfg(target_os = "windows")]
+const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
+#[cfg(target_os = "windows")]
+const CREATE_BREAKAWAY_FROM_JOB: u32 = 0x0100_0000;
+/// `ERROR_ACCESS_DENIED`: what `CreateProcess` answers when the job object the
+/// app runs in does not allow `CREATE_BREAKAWAY_FROM_JOB`.
+#[cfg(target_os = "windows")]
+const ERROR_ACCESS_DENIED: i32 = 5;
+
+/// Start an operator-authored command as a long-lived, DETACHED process in
+/// `dir` and return its handle immediately (see the module note).
+///
+/// The returned child is the shell (`cmd` / `sh`), the root of the tree the
+/// caller later kills; it is never killed on drop, so dropping the handle, or
+/// the whole app exiting, leaves the server running. `vars` are set on top of
+/// the inherited environment (`PORT`), minus [`DETACHED_SCRUBBED_ENV`].
+pub fn spawn_detached(
+    dir: &Path,
+    command: &str,
+    vars: &[(&str, String)],
+) -> std::io::Result<tokio::process::Child> {
+    let mut cmd = shell_command(command);
+    cmd.current_dir(dir)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .kill_on_drop(false)
+        .envs(vars.iter().map(|(var, value)| (*var, value.as_str())));
+    for var in DETACHED_SCRUBBED_ENV {
+        cmd.env_remove(var);
+    }
+    #[cfg(unix)]
+    {
+        // Its own process group: a terminal's SIGINT/SIGHUP to the app's group
+        // does not reach it, and the caller can kill the whole tree by group.
+        cmd.process_group(0);
+    }
+    #[cfg(target_os = "windows")]
+    {
+        // A new process group keeps the app's console Ctrl+C away from it; the
+        // breakaway takes it out of a job object whose closing would kill it.
+        cmd.creation_flags(CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP | CREATE_BREAKAWAY_FROM_JOB);
+        match cmd.spawn() {
+            Ok(child) => return Ok(child),
+            Err(e) if e.raw_os_error() == Some(ERROR_ACCESS_DENIED) => {
+                // The job forbids breakaway. Spawn inside it: the server then
+                // lives as long as that job, which is the best this host allows.
+                cmd.creation_flags(CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP);
+            }
+            Err(e) => return Err(e),
+        }
+    }
+    cmd.spawn()
+}
+
 fn shell_command(command: &str) -> Command {
     #[cfg(target_os = "windows")]
     {
+        // `/S /C "<command>"`, appended RAW: with `/S`, cmd.exe strips exactly
+        // the outer pair of quotes and runs the rest verbatim. Passing the
+        // command through `.arg()` instead applies MSVCRT escaping (`\"`),
+        // which cmd's own quote parser does not understand, so a command line
+        // that itself contained a quoted argument reached the shell mangled.
         let mut c = Command::new("cmd");
-        c.arg("/C").arg(command);
+        c.args(["/S", "/C"]).raw_arg(format!("\"{command}\""));
         c
     }
     #[cfg(not(target_os = "windows"))]

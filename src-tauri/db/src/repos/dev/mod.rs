@@ -29,6 +29,9 @@ pub mod cross_project;
 /// Autopilot cycles as `dev_goals` rows: the `[cycle:<persona>:<n>]` marker,
 /// the claim, the successor filing and the close.
 pub mod cycle_goals;
+/// Server control: `dev_projects.dev_command` / `dev_port` and
+/// `dev_server_runs` (the servers Personas spawned and still owns).
+pub mod dev_servers;
 /// The Features page's ONE read: every context's role, every feature's council
 /// and scenarios, joined in memory from bulk reads rather than per feature.
 pub mod feature_board;

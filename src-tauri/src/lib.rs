@@ -238,8 +238,10 @@ pub fn run() {
             std::process::exit(1);
         })
         .run(|app_handle, event| {
-            // Kill any running Bun dev servers when the app exits so a closing
-            // app never orphans a `bun`/`next` process tree (web-build runtime).
+            // Kill any running Studio (Bun) preview servers when the app exits
+            // so a closing app never orphans a `bun`/`next` process tree. The
+            // Server control servers are NOT killed: they outlive the app by
+            // design and the next boot re-adopts them (`dev_server_runs`).
             if matches!(event, tauri::RunEvent::Exit) {
                 // The loopback bridge's `{port, token, pid}` handshake must not
                 // outlive the process that wrote it: a stale one reads to a
@@ -250,6 +252,7 @@ pub fn run() {
                 // them; end them here or they outlive the app.
                 companion::session::kill_all_warm_sessions();
                 if let Some(state) = app_handle.try_state::<Arc<AppState>>() {
+                    state.webbuild_servers.shutdown();
                     state.webbuild_servers.stop_all();
 
                     // LAST, after the teardown above, and never optimistically:

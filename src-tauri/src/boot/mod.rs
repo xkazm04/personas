@@ -207,7 +207,7 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         leadership: Arc::new(engine::leadership::EngineLeadership::new(
             app_data_dir.clone(),
         )),
-        webbuild_servers: Arc::new(webbuild::DevServerRegistry::new()),
+        webbuild_servers: Arc::new(webbuild::DevServerRegistry::new(pool.clone())),
         // Cap local voice sidecars at one process per engine so chunked
         // TTS / TTS-while-STT can't stack unbounded piper/whisper procs
         // (combined-scan 2026-06-25 #3). Separate semaphores: one piper
@@ -228,6 +228,16 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     // insert events, and fire out-of-cadence consolidator runs.
     engine::project_tracking::push::init(state_arc.user_db.clone(), app.handle().clone());
     app.manage(state_arc.clone());
+
+    // Server control: re-adopt the dev servers that outlived the last session
+    // (`dev_server_runs`), then the 3 s supervisor that keeps the Server
+    // control view current. Stopped by the exit hook through the registry's
+    // shutdown token; the servers themselves are left running on purpose.
+    webbuild::server_control::start_supervisor(
+        app.handle().clone(),
+        pool.clone(),
+        state_arc.webbuild_servers.clone(),
+    );
 
     // Engine-owned handles get their own slots in Tauri's state map, in
     // addition to living on `AppState`. The engine reaches them through
