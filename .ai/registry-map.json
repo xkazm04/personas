@@ -3314,6 +3314,20 @@
           "evaluatedAt": "2026-10-03",
           "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
           "evaluatedRevision": 6
+        },
+        {
+          "subject": "undo-history",
+          "bundle": "software-engineering",
+          "source": "conform",
+          "confidence": "strong",
+          "digest": "sha256-b2:6b331b14c940f6a7",
+          "revision": 3,
+          "changedAt": "2026-09-04",
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:224 truncates the redo side only inside pushUndo, which runs from the post-save path (src/features/agents/sub_editor/libs/useEditorSave.ts:185) after an 800ms debounce (useEditorSave.ts:217) plus an IPC round-trip, so after undo then a new edit redo stays enabled and redo's reapply (useEditorSave.ts:156) writes the stale step over the typed value (redo-semantics: truncate on the edit, no redo after a divergent edit); undo (EditorDocument.tsx:229-232) neither cancels the pending debounced save (cancelAll, EditorDocument.tsx:187) nor awaits the in-flight one, so Ctrl+Z within 800ms of a toggle reverts the PREVIOUS saved step and the restore overwrites the open edit (gesture-coalescing: undo closes the open step first; undo-scope: settle in-flight mutations before restoring). Realized: gesture-coalescing time-window for typing runs (useEditorSave.ts:217), stack-policy bound oldest-first (EditorDocument.tsx:46,222) and no clear on autosave (useEditorDraft.ts:88 only on persona switch), undo-scope slice closed by exhaustiveness check (PersonaDraft.ts:100) with a persona guard (useEditorSave.ts:129). Not judged: undo-model-selection, checkpoint-restore, execution-emitted-inverse. Also: canUndo/canRedo have no consumer, undo is reachable only via keyboard (EditorBody.tsx:103), so availability and step names are not visible",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:6b331b14c940f6a7",
+          "evaluatedRevision": 3
         }
       ],
       "governance": "governed"
@@ -5294,12 +5308,10 @@
           "changedAt": "2026-09-29",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:161 applies an edited BYOM policy in place, with no version, diff, blast radius or approver. The audit record (src/lib/bindings/ProviderAuditEntry.ts:6) cites no policy version or asserted class, so an audit cannot tell 'rule violated' from 'rule did not exist yet'. The rule-name half of the old finding is FIXED: ByomAuditLog.tsx:77/:84 now show routing and compliance rule names (62ff6f942e).",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:882e564ae1160b86",
-          "evaluatedRevision": 18,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "policy-governance: src/features/settings/sub_byom/libs/useByomSettings.ts:161 applies an edited BYOM policy in place and src-tauri/db/src/byom.rs:305 stores it as bare JSON under one settings key, with no version, diff, blast radius or approver; src/lib/bindings/ProviderAuditEntry.ts:6 cites no policy version, so an audit cannot tell 'rule violated' from 'rule did not exist yet'. routing-policy: the filter at src-tauri/src/engine/failover.rs:770 silently drops blocked providers and an empty chain surfaces as the generic 'All providers failed or have open circuit breakers' at src-tauri/src/engine/runner/mod.rs:2393, not a named policy-exhausted failure. Rule-name half FIXED: src/features/settings/sub_byom/components/ByomAuditLog.tsx:77 and :84 show routing and compliance rule names.",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:5484901d8df95b15",
+          "evaluatedRevision": 21
         },
         {
           "subject": "settings",
@@ -8318,6 +8330,14 @@
           "changedAt": "2026-09-25",
           "confidence": "probable",
           "state": "unknown"
+        },
+        {
+          "subject": "cost-metering",
+          "bundle": "software-engineering",
+          "source": "conform",
+          "confidence": "strong",
+          "state": "unknown",
+          "evidence": "added by /conform: the matcher scored this context at zero although src-tauri/core/src/run_budget.rs is the per-run ceiling and src-tauri/core/src/models/llm_spend.rs the ledger row shape; not judged this run"
         }
       ],
       "governance": "governed"
@@ -8820,6 +8840,14 @@
           "evaluatedAgainst": "sha256-b2:e895b228981cf506",
           "evaluatedRevision": 7,
           "revisionsBehind": 0
+        },
+        {
+          "subject": "cost-metering",
+          "bundle": "software-engineering",
+          "source": "conform",
+          "confidence": "strong",
+          "state": "unknown",
+          "evidence": "added by /conform: the matcher scored this context at zero although src-tauri/db/src/repos/llm_spend.rs:30 is the headless spend ledger writer (best-effort record, result-line-only parse at :85); not judged this run"
         }
       ],
       "governance": "governed"
@@ -9180,7 +9208,11 @@
           "revision": 14,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/executions.rs:2359 sums cost_usd with COALESCE(..,0.0), so unpriced rows (NULL, deliberately kept by the mappers at :294) vanish into the month figure the gate enforces, and get_monthly_spend returns a bare f64 (:2348) with no period window or floor flag; unattended consumers swallow a ledger error as $0 (src-tauri/src/engine/background/scheduler.rs:889, src-tauri/src/engine/execution.rs:3001 unwrap_or(0.0)), an undeclared uncounted fail-open where budget-enforcement defaults unattended paths to fail-closed. Realized: one shared MONTHLY_SPEND_PREDICATE with a UTC month boundary and failed/cancelled rows counted (:2346)",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:b3129728f9d9c336",
+          "evaluatedRevision": 14
         }
       ],
       "governance": "governed"
@@ -10090,6 +10122,20 @@
           "changedAt": "2026-09-05",
           "evaluatedRevision": 4,
           "revisionsBehind": 0
+        },
+        {
+          "subject": "cost-metering",
+          "bundle": "software-engineering",
+          "source": "conform",
+          "confidence": "strong",
+          "digest": "sha256-b2:b3129728f9d9c336",
+          "revision": 14,
+          "changedAt": "2026-09-29",
+          "state": "deviation",
+          "evidence": "added by /conform: the matcher scored this context at zero although it holds the price table. src-tauri/src/engine/http_engine/config.rs:44 prices an unknown model at $0.0 (price_per_million returns None for every SKU but two, :33, and the test at :153 pins the zero) and openai.rs:228 repeats the zero branch inline, so a newer remote model is free under every ceiling (price-tables: never zero); it is also a second price authority beside src-tauri/engine/src/cost.rs:15 with the opposite unknown-model policy",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:b3129728f9d9c336",
+          "evaluatedRevision": 14
         }
       ],
       "governance": "governed"
@@ -10284,6 +10330,20 @@
           "evaluatedAt": "2026-10-03",
           "evaluatedAgainst": "sha256-b2:2bd472ebca7609ca",
           "evaluatedRevision": 16
+        },
+        {
+          "subject": "rate-limiting",
+          "bundle": "software-engineering",
+          "source": "conform",
+          "confidence": "probable",
+          "digest": "sha256-b2:c1ab95c98c885951",
+          "revision": 8,
+          "changedAt": "2026-09-03",
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/management_api.rs:739-744 logs a warn and writes an api_key_audit DB row on every 429, defeating the once-per-streak latch at src-tauri/engine/src/rate_limiter.rs:78 (webhook.rs:393 does the same); storm-hygiene requires the refusal branch be budgeted as the hot path, so a refusal storm becomes log and DB write amplification. Pair added by /conform.",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:c1ab95c98c885951",
+          "evaluatedRevision": 8
         }
       ],
       "governance": "governed"
@@ -10820,7 +10880,11 @@
           "revision": 4,
           "changedAt": "2026-09-20",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/shared/components/feedback/SuspenseFallback.tsx:14 renders LoadingSpinner, which is a sr-only status and paints nothing (src/features/shared/components/feedback/LoadingSpinner.tsx:9 spinners disabled app-wide), so placeholder-design code-arrival is unmet: a slow lazy chunk shows a blank hole with no delayed header ghost; 4 live sites (EditorBody.tsx:190, FleetPage.tsx:150, SettingsPage.tsx:84, KPIDashboard.tsx:105) bypass the conformant RouteChunkSkeleton (src/features/shared/components/layout/RouteChunkSkeleton.tsx:36). failure-states is realized here (ErrorBanner.tsx:23 panel with retry, StalenessIndicator.tsx:48,57 admits staleness)",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:c71d22c8deba8577",
+          "evaluatedRevision": 4
         },
         {
           "subject": "error-handling",
@@ -14393,7 +14457,11 @@
           "revision": 21,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "Precondition unmet: the context renders Lab results, it makes no routing decision. src/features/agents/sub_lab/components/shared/ScenarioDetailPanel.tsx:155 and LabProgress.tsx:102 only print a result's modelId; no class, tier, effort or policy appears in its 23 files. The matcher's tokens (diff, chart, quality) are display vocabulary.",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:5484901d8df95b15",
+          "evaluatedRevision": 21
         },
         {
           "subject": "test-harness",
@@ -17585,7 +17653,11 @@
           "revision": 14,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/models/llm_spend.rs:49 LlmSpendTotals.cost_usd is a non-optional f64 and the struct (:46) carries no unpriced-row count, so rows whose cost_usd was NULL (LlmSpendInsert keeps it Option) sum as $0 instead of a floor; cache_creation_tokens is stored per row but absent from the rollup (:46), and the dashboard echoes only window_days (:89), not period start/end, so consumers re-derive the window",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:b3129728f9d9c336",
+          "evaluatedRevision": 14
         },
         {
           "subject": "llm-call-telemetry-model",
@@ -18075,7 +18147,11 @@
           "revision": 14,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_activity/components/LlmSpendSection.tsx:108 renders the total as a bare number with no window or unpriced/floor caveat, :110 sums only input+output tokens (cache classes dropped), the errors tile (:111) counts calls not failed-call spend, by_trigger is cut to 8 (:50) with no remainder so slices do not reach the total, by_model is returned but never rendered anywhere in sub_activity, and there is no outlier or row drill-down: spend-observability's reading order stops below the total",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:b3129728f9d9c336",
+          "evaluatedRevision": 14
         },
         {
           "subject": "agent-memory",
@@ -18688,8 +18764,8 @@
           "changedAt": "2026-09-20",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/overview/shared/emptyStatePrototype/types.ts:46 EmptyStateContent carries no cause input and variants are keyed by module motif (:19), not cause, so consumers branch on filtered counts - ManualReviewList.tsx:174 passes filteredReviews.length, and a filter that excludes every review shows the first-run hero with a 'create persona' action",
-          "evaluatedAt": "2026-09-23",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/types.ts:46 EmptyStateContent carries no cause input and variants are keyed by module motif (types.ts:19), not cause, so consumers branch on the filtered count: src/features/overview/sub_manual-review/components/ManualReviewList.tsx:183 passes filteredReviews.length to resolveReviewQueueView (src/features/overview/sub_manual-review/libs/reviewHelpers.ts:127), and a filter that excludes every review lands on the first-run hero with a create-persona action (ManualReviewList.tsx:491). Failure is kept distinct from empty (ManualReviewList.tsx:460), which is the part that holds",
+          "evaluatedAt": "2026-10-05",
           "evaluatedAgainst": "sha256-b2:c71d22c8deba8577",
           "evaluatedRevision": 4,
           "revisionsBehind": 0
@@ -18977,7 +19053,11 @@
           "revision": 21,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "Precondition unmet: the incidents inbox triages persisted failure rows, it makes no routing decision. Its only contact with routing is src/features/overview/sub_incidents/components/IncidentsFilterBar.tsx:20 listing provider_audit_log as a source kind (failover rows as low-severity incidents); no class, tier, effort or policy is read or written in its 17 files.",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:5484901d8df95b15",
+          "evaluatedRevision": 21
         },
         {
           "subject": "agent-memory",
@@ -21874,7 +21954,11 @@
           "revision": 3,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "context-map.json:7655 shows file_paths empty; the 80-step undo/redo in useMediaStudio.ts was deleted with the Artist plugin in 0697f13438 (2026-09-15) and git ls-files has no sub_media_studio path, so there is no undo surface to judge. Live undo is src/features/agents/sub_editor/libs/EditorDocument.tsx:46 (pair added under agents-editor).",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:6b331b14c940f6a7",
+          "evaluatedRevision": 3
         },
         {
           "subject": "settings",
@@ -25716,7 +25800,11 @@
           "revision": 14,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/idea_scanner.rs:904 books spend only from the stream's `result` line inside a 1200s timeout (:890), so a timed-out or killed scan writes no ledger row and failed-call spend is invisible (usage-ledgers: every call that reached the provider is a row); the same observe_line shape is hand-repeated at ~20 call sites (kpi_scan.rs:841, standards_scan.rs:330) with no chokepoint, a dropped write only warns uncounted (src-tauri/db/src/repos/llm_spend.rs:30), and the command it fronts returns no unpriced share or period window (src-tauri/src/commands/infrastructure/llm_spend.rs:20)",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:b3129728f9d9c336",
+          "evaluatedRevision": 14
         },
         {
           "subject": "llm-call-telemetry-model",
@@ -25793,6 +25881,20 @@
           "evaluatedAt": "2026-10-01",
           "evaluatedAgainst": "sha256-b2:56f3abeffc1687c8",
           "evaluatedRevision": 2
+        },
+        {
+          "subject": "rate-limiting",
+          "bundle": "software-engineering",
+          "source": "conform",
+          "confidence": "probable",
+          "digest": "sha256-b2:c1ab95c98c885951",
+          "revision": 8,
+          "changedAt": "2026-09-03",
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/tier_usage.rs:83-87 infers each bucket's limit from its key spelling (webhook: prefix, else event_source_max) so apikey: buckets (enforced 120, management_api.rs:398) and tool: buckets (enforced 30, rate_limiter.rs:175) are charted against the wrong limit and feed approaching_limit; the limiter owns no policy (check() takes max/window per call, rate_limiter.rs:50) and limit-observability requires one arithmetic for operator and caller. Pair added by /conform.",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:c1ab95c98c885951",
+          "evaluatedRevision": 8
         }
       ],
       "governance": "governed"
@@ -27105,7 +27207,11 @@
           "revision": 4,
           "changedAt": "2026-09-20",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/shared/components/buttons/AsyncButton.tsx:109 swaps a spinner+label in without engaging Button width-lock (Button.tsx:154 only runs on the `loading` prop, which AsyncButton omits at :13), so action-busy-states rule 3 (geometry holds) fails for icon-less buttons and any differing loadingText: the button reflows when pressed. Realized in the same file: synchronous disarm (AsyncButton.tsx:35-46), aria-busy (:113), and placeholder-design in RouteChunkSkeleton.tsx:36 (delayed header-only ghost) and ListSkeleton.tsx:39 (static, aria-hidden)",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:c71d22c8deba8577",
+          "evaluatedRevision": 4
         },
         {
           "subject": "native-shell-integration",
@@ -29538,7 +29644,11 @@
           "revision": 21,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "Precondition unmet: the Factory page manages KPIs, it routes no model calls. The only 'tier' is KPI importance at src/features/teams/sub_factory/addKpiPrimitives.tsx:14 (TIER_OPTS), unrelated to capability tiers; no class, effort, provider or model selection appears in its 18 files. The matcher's tokens (model, traffic, task) are generic.",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:5484901d8df95b15",
+          "evaluatedRevision": 21
         },
         {
           "subject": "agent-instruction-files",
@@ -32667,6 +32777,20 @@
           "changedAt": "2026-09-29",
           "confidence": "probable",
           "state": "unknown"
+        },
+        {
+          "subject": "cost-metering",
+          "bundle": "software-engineering",
+          "source": "conform",
+          "confidence": "strong",
+          "digest": "sha256-b2:b3129728f9d9c336",
+          "revision": 14,
+          "changedAt": "2026-09-29",
+          "state": "deviation",
+          "evidence": "added by /conform: the matcher scored this context at zero although it holds the price table. src-tauri/engine/src/cost.rs:34 prices an unknown model at Sonnet-class 3.0/15.0 (:58), below the table's own Opus (15/75) and gpt-4 rows, uncounted and unmarked on the estimate, and families resolve by substring contains (:17) with no verified-on date: price-tables requires an unknown model to default at or above the most expensive known family and to count the hit; the preflight constants (:11 3.8 chars/token, :116 0.4x output) carry no measurement behind them",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:b3129728f9d9c336",
+          "evaluatedRevision": 14
         }
       ],
       "governance": "governed"
@@ -33096,12 +33220,10 @@
           "changedAt": "2026-09-29",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:105 commits a Studio link as `trigger_type: 'chain'`. 'Routing' in this context wires one persona's completion to another's start. No tier, effort, provider, model or class appears in the context's files, so model-routing does not govern it.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:882e564ae1160b86",
-          "evaluatedRevision": 18,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "Precondition unmet: 'routing' here wires one persona's completion to another's start. src/features/triggers/sub_studio/libs/studioCommit.ts:5 commits persona links directly as a `chain` trigger; no class, tier, effort, provider or model appears in the context's 34 files.",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:5484901d8df95b15",
+          "evaluatedRevision": 21
         },
         {
           "subject": "native-shell-integration",
@@ -36190,6 +36312,20 @@
           "evaluatedAt": "2026-10-03",
           "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
           "evaluatedRevision": 9
+        },
+        {
+          "subject": "rate-limiting",
+          "bundle": "software-engineering",
+          "source": "conform",
+          "confidence": "probable",
+          "digest": "sha256-b2:c1ab95c98c885951",
+          "revision": 8,
+          "changedAt": "2026-09-03",
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/webhook.rs:399 refuses with 429 and no_headers() (body prose only); refusal-contract requires standard Retry-After signalling, which the same file already sets on its 422 path (webhook.rs:487-492) - senders honouring the header get nothing and fall back to guessing. Pair added by /conform: the matcher scored this context's webhook limiter at zero.",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:c1ab95c98c885951",
+          "evaluatedRevision": 8
         }
       ],
       "governance": "governed"

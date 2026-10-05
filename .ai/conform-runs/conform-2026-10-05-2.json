@@ -1,0 +1,38 @@
+{
+  "schema": "rkb-run-result/1",
+  "run_id": "conform-2026-10-05-2",
+  "skill": "conform",
+  "skill_version": "1.8.3",
+  "mode": "named",
+  "domain": null,
+  "started_at": "2026-10-05T12:10:00Z",
+  "ended_at": "2026-10-05T12:40:00Z",
+  "exit": 0,
+  "counts": {
+    "dispatched": 0,
+    "landed": 5,
+    "declined": 0,
+    "idled": 0,
+    "contended": 0
+  },
+  "subjects": [
+    {
+      "id": "model-routing",
+      "at": "2026-10-05",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    }
+  ],
+  "verdicts": [],
+  "files": [
+    ".ai/registry-map.json",
+    ".ai/consults.jsonl"
+  ],
+  "commits": [],
+  "pr": null,
+  "declined": [],
+  "failure_signature": null,
+  "notes": "5 model-routing pairs re-judged at rev 21: byom-provider-settings stays deviation (no policy version, diff or approver; no policy-exhausted failure); 4 not-applicable. Map not rebuilt; uncommitted by instruction."
+}

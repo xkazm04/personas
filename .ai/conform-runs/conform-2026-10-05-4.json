@@ -1,0 +1,37 @@
+{
+  "schema": "rkb-run-result/1",
+  "run_id": "conform-2026-10-05-4",
+  "skill": "conform",
+  "skill_version": "1.8.3",
+  "mode": "named",
+  "domain": null,
+  "started_at": "2026-10-05T14:20:00Z",
+  "ended_at": "2026-10-05T14:45:00Z",
+  "exit": 0,
+  "counts": {
+    "dispatched": 0,
+    "landed": 1,
+    "declined": 0,
+    "idled": 0,
+    "contended": 0
+  },
+  "subjects": [
+    {
+      "id": "undo-history",
+      "at": "2026-10-05",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    }
+  ],
+  "verdicts": [],
+  "files": [
+    ".ai/registry-map.json"
+  ],
+  "commits": [],
+  "pr": null,
+  "declined": [],
+  "failure_signature": null,
+  "notes": "agents-editor x undo-history judged deviation against 4 of 7 techniques (stack-policy, redo-semantics, gesture-coalescing, undo-scope); undo-model-selection, checkpoint-restore and execution-emitted-inverse were not read. Map digest matched the registry index. Uncommitted."
+}
