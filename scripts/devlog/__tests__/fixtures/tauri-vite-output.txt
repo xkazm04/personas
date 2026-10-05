@@ -1,0 +1,14 @@
+        Info Watching C:\Users\dev\personas\src-tauri for changes...
+
+> personas-desktop@1.1.0 dev
+> vite
+
+error when starting dev server:
+Error: Port 1420 is already in use
+        Warn Waiting for your frontend dev server to start on http://localhost:1420/...
+
+  VITE v8.0.16  ready in 812 ms
+
+10:41:02 AM [vite] (client) error while updating dependencies:
+       Error [tauri_cli] The "beforeDevCommand" terminated with a non-zero status code.
+     Running DevCommand (`cargo  run --no-default-features --color always --`)

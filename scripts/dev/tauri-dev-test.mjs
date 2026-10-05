@@ -14,16 +14,13 @@
 // PERSONAS_VITE_PORT unset → devUrl :1420, byte-for-byte the prior behavior.
 //
 // Implementation: the merged config is written to a temp file and passed to
-// `--config` by PATH (not inline JSON). Two reasons:
-//   1. `shell: true` is REQUIRED on Node >=20 / Windows to spawn `npx` (a
-//      `.cmd` shim) — without it, spawn throws `EINVAL`.
-//   2. Under a shell, an inline-JSON `--config` arg would be mangled by shell
-//      quoting; a file path is a single safe token. The temp file lives next to
-//      the lite config (src-tauri/) so its relative paths resolve, and is
-//      removed on exit.
-import { spawn } from 'node:child_process';
+// `--config` by PATH (not inline JSON): a file path is a single safe token
+// whatever launches tauri (this script used to spawn `npx` under a shell, where
+// inline JSON was mangled by quoting). The temp file lives next to the lite
+// config (src-tauri/) so its relative paths resolve, and is removed on exit.
 import { readFileSync, writeFileSync, rmSync } from 'node:fs';
 
+import { runWrapped } from '../devlog/run.mjs';
 import { ensureMcpSidecar } from './ensure-mcp-sidecar.mjs';
 
 const LITE_CONFIG = 'src-tauri/tauri.lite.conf.json';
@@ -51,31 +48,19 @@ const cleanup = () => {
   }
 };
 
-// `shell: true` so Windows resolves `npx` → `npx.cmd` (Node >=20 throws EINVAL
-// spawning a `.cmd` without a shell). Pass a single command STRING (not an args
-// array) — that's Node's recommended form under `shell: true` (avoids the
-// DEP0190 array+shell warning), and every token here is a static literal with
-// no spaces, so there is no injection/quoting hazard. The inline-JSON pitfall
-// is sidestepped entirely by passing the config by file path.
-const command = `npx tauri dev --config ${TMP_CONFIG} -- --features test-automation`;
-const child = spawn(command, { stdio: 'inherit', shell: true });
-
-const forwardSignal = () => {
-  try {
-    child.kill();
-  } catch {
-    /* child already gone */
-  }
-};
-process.on('SIGINT', forwardSignal);
-process.on('SIGTERM', forwardSignal);
-
-child.on('exit', (code) => {
-  cleanup();
-  process.exit(code ?? 0);
-});
-child.on('error', (err) => {
-  cleanup();
-  console.error('Failed to launch tauri dev:', err);
-  process.exit(1);
-});
+// Launched through the devlog wrapper (scripts/devlog/run.mjs), like every
+// other tauri:dev* script: output passes through unchanged, the toolchain's
+// diagnostics land in toolchain.YYYY-MM-DD.jsonl, Ctrl+C reaches the tree and
+// the exit code propagates. The wrapper spawns the tauri CLI with node directly
+// (no shell, so no `.cmd` EINVAL and no quoting), and the config still goes by
+// file path.
+runWrapped({
+  args: ['--config', TMP_CONFIG, '--', '--features', 'test-automation'],
+  onExit: cleanup,
+})
+  .then((code) => process.exit(code))
+  .catch((err) => {
+    cleanup();
+    console.error('Failed to launch tauri dev:', err);
+    process.exit(1);
+  });

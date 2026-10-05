@@ -92,6 +92,7 @@ recordings/
 !.claude/mvp/
 !.claude/spark/
 !.claude/kit/
+!.claude/devlog/
 !.claude/agents/
 !.claude/codebase-catalogs.md
 !.claude/codebase-context.md

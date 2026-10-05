@@ -16,6 +16,10 @@ import { devSourceLocPlugin } from "./scripts/babel/dev-source-loc-vite-plugin.m
 // experiment — see ADR "react-compiler-build-only" and the file header for the
 // measurement protocol before ever flipping the default.
 import { reactCompilerPlugin } from "./scripts/babel/react-compiler-vite-plugin.mjs";
+// Dev-only: Vite warnings/errors, HMR error payloads and full-reload storms
+// become toolchain records for `npm run devlog` (docs/development/devlog.md).
+// Registered for `serve` only; prints nothing and changes no Vite output.
+import { devlogVitePlugin } from "./scripts/devlog/vite-plugin.mjs";
 
 const host = process.env.TAURI_DEV_HOST;
 const isMobile = !!process.env.TAURI_ANDROID || !!process.env.TAURI_IOS;
@@ -34,7 +38,7 @@ const platform = process.env.TAURI_ANDROID
 // NO Vite transform plugin -- it double-processes pre-bundled deps and breaks
 // comma expressions in minified code.
 
-export default defineConfig(async () => ({
+export default defineConfig(async ({ command }) => ({
   // Use relative paths so assets resolve under tauri:// protocol in production
   base: "./",
   plugins: [
@@ -45,6 +49,7 @@ export default defineConfig(async () => ({
     // so it runs before oxc lowers JSX and is a no-op (no transform hook at
     // all) unless PERSONAS_REACT_COMPILER=1.
     reactCompilerPlugin(),
+    ...(command === "serve" ? [devlogVitePlugin()] : []),
     // Codegen (template checksums, connector seed, agent icon sprites,
     // i18n locale split, command names, ts-rs binding regen, n8n limits,
     // host-triple cache check) is owned by `scripts/run-codegen.mjs` via

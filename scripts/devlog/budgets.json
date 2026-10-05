@@ -1,0 +1,9 @@
+{
+  "ipc_ms": 300,
+  "db_ms": 100,
+  "long_task_ms": 50,
+  "commit_ms": 50,
+  "span_ms": 200,
+  "boot_phase_ms": 1000,
+  "commands": {}
+}

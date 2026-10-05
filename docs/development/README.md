@@ -9,6 +9,7 @@ Use these docs for day-to-day engineering work.
 | [build-cache.md](build-cache.md) | Capping `target/` + agent-worktree disk use |
 | [android-build.md](android-build.md) | Android build notes |
 | [test-automation.md](test-automation.md) | Test automation harness |
+| [devlog.md](devlog.md) | Structured dev-server logs, toolchain capture and the `npm run devlog` digest |
 | [adoption-test-framework.md](adoption-test-framework.md) | Template adoption test framework |
 | [ipc-orphans.md](ipc-orphans.md) | Census of registered IPC commands with no caller, classified with per-command dispositions (report only — nothing deleted) |
 

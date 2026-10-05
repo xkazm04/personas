@@ -1,0 +1,23 @@
+2026-10-04T23:59:58.100000Z  WARN app_lib::engine::kp_reporter: src\engine\kp_reporter.rs:397: KP report push failed what="rollup" error=error sending request
+2026-10-05T06:41:02.462161Z  INFO app_lib::logging: src\logging.rs:138: File logging enabled at C:\Users\dev\AppData\Roaming\com.personas.desktop\logs
+2026-10-05T06:42:00.985589Z  INFO personas_db: db\src\lib.rs:382: Initializing database path=C:\Users\dev\AppData\Roaming\com.personas.desktop\personas.db
+2026-10-05T06:42:01.635595Z  WARN personas_engine::responsibility: engine\src\responsibility.rs:975: responsibility migration: could not insert the charter row (persona deleted?); the legacy app_settings row stays put project_id="b0c1541f-af08-4912-818e-19ca94f7b6e9" persona_id=cfe7e8d1-e65e-4387-9b4d-f0805b6f1726 error=Database error: FOREIGN KEY constraint failed
+2026-10-05T06:42:01.868220Z  INFO app_lib::boot::finalize: src\boot\finalize.rs:19: Backend setup completed total_ms=59715
+2026-10-05T06:42:01.868340Z  INFO app_lib::boot::finalize: src\boot\finalize.rs:22: 
+=== Startup Timing ===
+Total setup: 59715ms
+  file_logging                                309ms  (at 309ms)
+  db_init                                   59098ms  (at 59408ms)
+  user_db_init                                 62ms  (at 59471ms)
+  cdc_drain_task                              184ms  (at 59705ms)
+
+2026-10-05T06:42:02.676609Z  INFO get_all_monthly_spend: app_lib::commands::communication::observability::metrics: src\commands\communication\observability\metrics.rs:130: cmd::get_all_monthly_spend duration_ms=0 rows=30
+2026-10-05T06:43:00.000001Z  WARN personas_engine::responsibility: engine\src\responsibility.rs:571: responsibility: a project holds more than one active software charter; the newest one is the mandate (a hire is supposed to REPLACE) project_id="a9a1ef97-c684-4c32-b622-44cd4ea1ea05" rows=6
+2026-10-05T06:43:01.000001Z  WARN personas_engine::responsibility: engine\src\responsibility.rs:571: responsibility: a project holds more than one active software charter; the newest one is the mandate (a hire is supposed to REPLACE) project_id="2315bddf-eda2-4d1d-9e58-68c6b23a2aac" rows=6
+2026-10-05T06:43:02.000001Z  WARN personas_db::perf: db\src\perf.rs:259: Slow DB query detected table=app_settings operation=app_settings::set duration_ms=17200
+[2026-10-05T08:44:01.811] [WebView/warn] [STORE ALERT]
+HEAP GROWTH: +36MB in 2s (491→527MB)
+2026-10-05T06:44:01.811802Z  WARN webview: src\commands\core\frontend_bridge.rs:25: [STORE ALERT]
+HEAP GROWTH: +36MB in 2s (491→527MB)
+2026-10-05T06:45:00.000000Z ERROR tauri_runtime_wry: C:\Users\dev\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tauri-runtime-wry-2.11.2\src\lib.rs:3780: WebView2 error: WindowsError(Error { code: HRESULT(0x8007139F) })
+2026-10-05T06:45:01.000000Z  WARN outer{id=7}:inner: app_lib::engine::x: src\engine\x.rs:10: nested span event reason="a b=c" n=5
