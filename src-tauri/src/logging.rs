@@ -161,7 +161,6 @@ fn emit_boot_start() {
         profile = if cfg!(debug_assertions) { "debug" } else { "release" },
         pid = std::process::id(),
         os = std::env::consts::OS,
-        git_sha = option_env!("PERSONAS_GIT_SHA"),
         devlog_session = session.as_deref(),
         "boot.start"
     );
