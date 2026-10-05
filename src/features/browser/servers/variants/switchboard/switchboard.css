@@ -1,0 +1,143 @@
+/* Server control, Switchboard variant (spark server-control, WP3).
+   A dense console: one grid row per app, columns shared with the head line.
+   The switch, the lamp and the port chips are drawn figures (kit doctrine 6c);
+   type is tokenised on the elements, colour reads --primary / --status-* /
+   --foreground through color-mix(). Motion is reduced-motion gated below. */
+
+/* ── Tones (prefixed: the kit already owns .t-info and friends) ───────── */
+.sbt-run { --sb-tone: var(--primary); }
+.sbt-warn { --sb-tone: var(--status-warning); }
+.sbt-err { --sb-tone: var(--status-error); }
+.sbt-info { --sb-tone: var(--status-info); }
+.sbt-off { --sb-tone: color-mix(in srgb, var(--foreground) 45%, transparent); }
+
+/* The summary keeps the kit tile but drops the spine gutter: this console has no spine. */
+.sb-root { container-type: inline-size; }
+.sb-root > .k-host { --gutter: 0px; }
+.sb-summary { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+/* One line of four tiles at the kit's dense rhythm (the values .k-surface--dense uses):
+   the console's height belongs to its rows. */
+.sb-summary .k-stats { flex: 1 1 auto; flex-wrap: nowrap; gap: 2px 4px; padding: 0; }
+.sb-summary .k-tile { flex: 0 0 auto; min-width: 9rem; max-width: none; padding: 2px 14px 4px 12px; gap: 2px; }
+.sb-summary .k-tile__fig { line-height: 1.15; }
+.sb-keys { margin: 0 4px 6px auto; white-space: nowrap; }
+/* The keys hint is a wide-screen courtesy: the list's accessible name carries the same
+   instructions, and at 1280 the ten rows need the line. */
+@container (max-width: 1240px) { .sb-keys { display: none; } }
+.sb-ports { display: inline-flex; flex-wrap: wrap; gap: 4px; align-self: center; }
+.sb-portchip {
+  padding: 0 6px; border-radius: var(--radius-sm);
+  color: color-mix(in srgb, var(--sb-tone) 80%, var(--foreground));
+  background: color-mix(in srgb, var(--sb-tone) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sb-tone) 35%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── The console grid ─────────────────────────────────────────────────── */
+.sb-list {
+  container-type: inline-size;
+  margin-top: 4px;
+  border-top: 1px solid var(--rule, color-mix(in srgb, var(--foreground) 10%, transparent));
+}
+.sb-row {
+  --sb-cols: 6.5rem 52px 4rem minmax(8rem, 17rem) 12.5rem 7.5rem minmax(8rem, 1fr) minmax(8rem, 1fr);
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--sb-cols);
+  align-items: center;
+  column-gap: 12px;
+  min-height: 32px;
+  padding: 0 12px 0 14px;
+  border-radius: var(--radius-input);
+  cursor: default;
+  outline: none;
+}
+.sb-row > * { min-width: 0; }
+/* The workspace rail: a thin bar in the workspace's own colour down every row of the group. */
+.sb-row::before {
+  content: ""; position: absolute; left: 3px; top: 0; bottom: 0; width: 3px;
+  background: var(--sb-ws, transparent);
+}
+.sb-row.is-group-start::before { top: 5px; border-radius: 2px 2px 0 0; }
+.sb-row:not(.sb-heads):not(.is-ghost):hover { background: var(--band-hover); }
+.sb-row.is-active { background: var(--band-alt); }
+.sb-row:focus-visible { background: var(--band-sel); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--primary) 70%, transparent); }
+.sb-row.is-group-start { box-shadow: inset 0 1px 0 var(--rule, color-mix(in srgb, var(--foreground) 10%, transparent)); }
+.sb-heads { min-height: 22px; color: color-mix(in srgb, var(--foreground) 72%, transparent); }
+.sb-ws { padding-left: 4px; }
+
+.sb-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.sb-port { font-variant-numeric: tabular-nums; text-align: right; }
+.sb-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+/* The name never yields to the badge: the badge truncates to its icon first. */
+.sb-name > .sb-ellipsis { flex-shrink: 0; max-width: 100%; }
+.sb-host {
+  display: inline-flex; align-items: center; gap: 4px; flex: 0 1 auto; min-width: 0; overflow: hidden; white-space: nowrap;
+  padding: 0 6px; border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 40%, transparent);
+}
+.sb-state { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.sb-tech { display: inline-flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; }
+.sb-tech__word { padding: 0 4px; border-radius: var(--radius-sm); background: color-mix(in srgb, var(--foreground) 8%, transparent); white-space: nowrap; }
+.sb-detail, .sb-cmd { display: flex; min-width: 0; }
+.sb-detail > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+/* Narrow lists drop the command column first; it lives in the row's menu (Edit) anyway. */
+@container (max-width: 1000px) {
+  .sb-row { --sb-cols: 6rem 52px 4rem minmax(8rem, 1fr) 12rem 7rem minmax(7rem, 1fr); }
+  .sb-row > :nth-child(8) { display: none; }
+  /* The host badge keeps its icon; the words live in its tooltip and on the switch's reason. */
+  .sb-host__text { display: none; }
+}
+
+/* ── Lamp ─────────────────────────────────────────────────────────────── */
+.sb-lamp {
+  width: 10px; height: 10px; flex-shrink: 0; border-radius: 999px;
+  border: 1.5px solid color-mix(in srgb, var(--sb-tone) 70%, transparent);
+  background: color-mix(in srgb, var(--sb-tone) 10%, transparent);
+}
+.sb-lamp.is-lit {
+  border-color: var(--sb-tone);
+  background: radial-gradient(circle at 35% 35%, color-mix(in srgb, var(--sb-tone) 55%, var(--foreground)), var(--sb-tone) 60%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sb-tone) 16%, transparent), 0 0 12px 1px color-mix(in srgb, var(--sb-tone) 55%, transparent);
+}
+.sbt-err .sb-lamp { border-color: var(--sb-tone); background: color-mix(in srgb, var(--sb-tone) 45%, transparent); }
+
+/* ── The switch figure ────────────────────────────────────────────────── */
+.sb-switch-hit { padding: 2px 4px; }
+.sb-switch {
+  position: relative; display: block; width: 42px; height: 22px; border-radius: 999px;
+  background: color-mix(in srgb, var(--foreground) 12%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--foreground) 22%, transparent);
+  transition: background-color var(--duration-fast), border-color var(--duration-fast), box-shadow var(--duration-fast);
+}
+.sb-switch__thumb {
+  position: absolute; top: 1.5px; left: 2px; width: 16px; height: 16px; border-radius: 999px;
+  display: grid; place-items: center; color: var(--sb-tone);
+  background: var(--foreground);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--background) 60%, transparent);
+  transition: transform var(--duration-fast);
+}
+.sb-switch.is-on { background: color-mix(in srgb, var(--sb-tone) 78%, transparent); border-color: var(--sb-tone); }
+.sb-switch.is-on .sb-switch__thumb { transform: translateX(20px); background: var(--background); }
+.sbt-run.sb-switch.is-on { box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent), 0 0 16px color-mix(in srgb, var(--primary) 50%, transparent); }
+.sb-switch.is-mid { background: color-mix(in srgb, var(--sb-tone) 35%, transparent); border-color: var(--sb-tone); }
+.sb-switch.is-mid .sb-switch__thumb { transform: translateX(10px); }
+.sbt-err.sb-switch { border-color: var(--status-error); }
+.sb-switch.is-inert.is-off { border-style: dashed; background: transparent; }
+.sb-switch.is-inert.is-off .sb-switch__thumb { background: color-mix(in srgb, var(--foreground) 35%, transparent); }
+
+/* Light themes: the off thumb needs an edge against a pale track. */
+:is([data-theme^="light"], [data-brightness^="light"]) .sb-switch__thumb { box-shadow: 0 0 0 1px color-mix(in srgb, var(--foreground) 25%, transparent); }
+:is([data-theme^="light"], [data-brightness^="light"]) .sb-switch.is-off .sb-switch__thumb { background: var(--background); }
+
+/* ── Motion: scanning breathes, a running lamp glows slowly. Gated. ───── */
+@keyframes sb-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--sb-tone) 55%, transparent); }
+  50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--sb-tone) 0%, transparent), 0 0 14px color-mix(in srgb, var(--sb-tone) 45%, transparent); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion="reduce"]) .sb-lamp.is-pulse { animation: sb-breathe 1.8s ease-in-out infinite; }
+  html:not([data-motion="reduce"]) .sb-switch.is-pulse { animation: sb-breathe 1.8s ease-in-out infinite; }
+}
