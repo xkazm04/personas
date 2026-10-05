@@ -72,6 +72,16 @@ const SYNC_TABLES: &[(&str, &str, bool, bool)] = &[
     ),
     ("synced_healing_issues", "healing_issues", false, true),
     ("synced_triggers", "triggers", true, false),
+    // The twelfth table, and the only one that is NOT cursor-synced. Its two
+    // flags are therefore inert: the pass reads the WHOLE queue every time and
+    // reconciles by deleting what it did not just write. The entry is here so
+    // the Settings grid shows the queue beside the other eleven and so the
+    // cursor key cannot collide; see `sync_fleet_queue` and the long comment
+    // over `rows::fetch_fleet_queue` for why a cursor cannot express a row
+    // LEAVING a set. `full_backfill = true` keeps `get_cursor`'s unused
+    // fallback at the epoch rather than 90 days back, so nothing reads as a
+    // bounded first push that is not one.
+    ("synced_fleet_queue", "fleet_queue", true, false),
 ];
 
 /// Last-pass result for one table, retained in memory for the status surface.
@@ -355,6 +365,11 @@ async fn collect_pass(pool: &DbPool, client: &SyncClient, device_id: &str) -> Sy
     tables.push(sync!(9, rows::fetch_healing_issues));
     tables.push(sync!(10, rows::fetch_triggers));
 
+    // The queue (index 11) does not go through `sync!`: it is a full-set
+    // replace with a reconcile delete, not a cursor read. Fault-isolated the
+    // same way - it returns its own LastTable and never propagates.
+    tables.push(sync_fleet_queue(pool, client, device_id).await);
+
     // Delete propagation (v2): mirror local persona deletions into the cloud.
     // Kept out of the displayed grid (it has no upsert cursor of its own row),
     // but its outcome still influences is_clean()/last_error.
@@ -367,6 +382,86 @@ async fn collect_pass(pool: &DbPool, client: &SyncClient, device_id: &str) -> Sy
         .map(|t| t.rows)
         .sum();
     SyncReport { tables, total }
+}
+
+/// Sync the fleet dispatch queue: a full-set replace.
+///
+/// Unlike the eleven cursor-synced tables this pushes the ENTIRE queue every
+/// pass and then deletes this device's rows the pass did not write, which is
+/// the only shape that can express a row *leaving* the queue (promoted,
+/// cancelled, expired). `rows::fetch_fleet_queue`'s module comment carries the
+/// derivation and the staleness window.
+///
+/// The reconcile delete keys on `synced_at`, not on a list of session ids. An
+/// id list would have to be interpolated into a PostgREST `not.in.(...)`
+/// filter, and `remote_commands::validate_command_id` exists precisely because
+/// unvalidated interpolation into a PostgREST path lets a value widen the
+/// WHERE clause. The stamp is a value this function minted; the device id is
+/// one `cursor::resolve_device_id` minted. Neither comes from outside.
+///
+/// Order is upsert-then-delete, so a crash between them leaves the remote with
+/// a superset carrying honest `synced_at` stamps, never a gap.
+///
+/// The cursor is written for the status grid's "last synced" column ONLY - it
+/// is never read back as a watermark, because this table has none. It is set
+/// to the pass stamp, and only on success.
+async fn sync_fleet_queue(pool: &DbPool, client: &SyncClient, device_id: &str) -> LastTable {
+    let (remote, cursor_key, _, _) = SYNC_TABLES[11];
+    match sync_fleet_queue_inner(pool, client, remote, cursor_key, device_id).await {
+        Ok(rows) => LastTable {
+            remote: remote.to_string(),
+            rows,
+            error: None,
+        },
+        Err(e) => {
+            tracing::warn!(table = remote, error = %e, "cloud sync: queue failed (isolated)");
+            LastTable {
+                remote: remote.to_string(),
+                rows: 0,
+                error: Some(e.to_string()),
+            }
+        }
+    }
+}
+
+/// The queue pass's stamp. **`Z`, not `+00:00`, and that is load-bearing.**
+/// This value is the only timestamp in this module that is interpolated into a
+/// URL rather than a JSON body, and `chrono`'s default `to_rfc3339()` renders
+/// the offset as `+00:00`. A literal `+` in a query string decodes to a SPACE,
+/// so the reconcile filter below would compare against a malformed timestamp -
+/// and a `synced_at=lt.<garbage>` either errors or, worse, matches nothing and
+/// leaves every superseded row in place while the pass reports success.
+fn queue_stamp() -> String {
+    chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
+}
+
+async fn sync_fleet_queue_inner(
+    pool: &DbPool,
+    client: &SyncClient,
+    remote: &str,
+    cursor_key: &str,
+    device_id: &str,
+) -> Result<u64, AppError> {
+    let stamp = queue_stamp();
+    let pool_c = pool.clone();
+    let device = device_id.to_string();
+    let stamp_c = stamp.clone();
+    let rows =
+        tokio::task::spawn_blocking(move || rows::fetch_fleet_queue(&pool_c, &device, &stamp_c))
+            .await
+            .map_err(|e| AppError::Internal(format!("cloud sync queue fetch join: {e}")))??;
+
+    let n = rows.len() as u64;
+    client.upsert(remote, &rows).await?;
+    // Everything this device had queued that the pass above did not re-write
+    // is no longer queued. Idempotent, and a no-op on the very first pass.
+    client
+        .delete(&format!(
+            "{remote}?device_id=eq.{device_id}&synced_at=lt.{stamp}"
+        ))
+        .await?;
+    cursor::set_cursor(pool, cursor_key, &stamp)?;
+    Ok(n)
 }
 
 /// Synced child tables keyed by `persona_id` (mirror of the local
@@ -593,7 +688,7 @@ mod tests {
     fn sync_tables_cover_all_phase1_tables() {
         // The grid + dispatch are driven off this list; guard its length so a
         // table added to collect_pass without a SYNC_TABLES entry fails CI.
-        assert_eq!(SYNC_TABLES.len(), 11);
+        assert_eq!(SYNC_TABLES.len(), 12);
         // cursor keys must be unique (they key app_settings rows).
         let mut keys: Vec<&str> = SYNC_TABLES.iter().map(|(_, c, _, _)| *c).collect();
         keys.sort_unstable();
@@ -602,6 +697,45 @@ mod tests {
             keys.len(),
             SYNC_TABLES.len(),
             "duplicate cursor key in SYNC_TABLES"
+        );
+    }
+
+    /// The reconcile filter is the one timestamp this module puts in a URL.
+    /// A `+00:00` offset would decode to a space and silently stop the delete
+    /// from matching anything.
+    #[test]
+    fn queue_stamp_is_url_safe() {
+        let s = queue_stamp();
+        assert!(
+            !s.contains('+'),
+            "a `+` in a query string decodes to a space: {s}"
+        );
+        assert!(s.ends_with('Z'), "{s}");
+        assert!(
+            chrono::DateTime::parse_from_rfc3339(&s).is_ok(),
+            "still RFC3339: {s}"
+        );
+        assert!(
+            now_rfc3339().contains('+'),
+            "the default form is why this exists"
+        );
+    }
+
+    /// `sync_fleet_queue` reads its tuple by INDEX (it is the one table the
+    /// `sync!` macro cannot dispatch), so a reorder of SYNC_TABLES would
+    /// silently point it at another table's cursor key. Pin the index.
+    #[test]
+    fn fleet_queue_is_the_twelfth_entry() {
+        let (remote, cursor_key, full_backfill, resync) = SYNC_TABLES[11];
+        assert_eq!(remote, "synced_fleet_queue");
+        assert_eq!(cursor_key, "fleet_queue");
+        assert!(
+            full_backfill,
+            "the unused cursor fallback stays at the epoch"
+        );
+        assert!(
+            !resync,
+            "a resync window is meaningless for a full-set replace"
         );
     }
 }

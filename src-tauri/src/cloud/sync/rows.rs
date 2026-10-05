@@ -897,6 +897,161 @@ pub fn fetch_triggers(
 }
 
 // ---------------------------------------------------------------------------
+// Fleet dispatch queue (the twelfth table)
+// ---------------------------------------------------------------------------
+//
+// # The remote shape
+//
+// ```sql
+// create table public.synced_fleet_queue (
+//   user_id      uuid        not null default auth.uid() references auth.users(id) on delete cascade,
+//   device_id    text        not null,
+//   session_id   text        not null,
+//   rank         integer     not null,
+//   lane         integer,
+//   reserved_band integer,
+//   origin       text        not null,
+//   state        text        not null,
+//   label        text        not null,
+//   persona_id   text,
+//   goal_id      text,
+//   queued_at_ms bigint      not null,
+//   not_before_ms bigint,
+//   synced_at    timestamptz not null,
+//   primary key (user_id, device_id, session_id)
+// );
+// alter table public.synced_fleet_queue enable row level security;
+// -- the usual per-tenant policy: using (user_id = auth.uid())
+// ```
+//
+// # Why this table is NOT cursor-synced like the other eleven
+//
+// Every other `synced_*` table has a monotonic watermark (`created_at` or
+// `updated_at`) and syncs the slice above it. The queue has neither property:
+//
+//   * `queue_rank` is the most mutable field in the app. A reorder, a
+//     promotion, a cancel, a lane assignment and a band claim each renumber
+//     the WHOLE queue densely (`fleet_sessions::renumber_queue`), so a pass
+//     that pushed only "rows changed since X" would push every row anyway.
+//   * `fleet_sessions` carries no `updated_at` the renumber touches in a form
+//     this module can compare - the column is `updated_at_ms`, an INTEGER, and
+//     the generic `fetch` compares `datetime(col)` against RFC3339 text.
+//   * A row that is promoted, cancelled or expired STOPS BEING QUEUED. It is
+//     not updated, it is no longer in the set. A cursor sync has no way to
+//     express that; `resync_recent_window` re-reads rows, it never removes
+//     them, and `fetch_tombstones` is persona-scoped and fires only on a
+//     persona DELETE. Neither covers a row leaving a set it is still a row in.
+//
+// So the queue syncs as a **full-set replace**, which it can afford because it
+// is the one BOUNDED table here: `fleet.max_queued_sessions` caps the row
+// count (tens, not thousands). Each pass stamps every row it pushes with the
+// pass's own `synced_at`, then deletes this device's rows whose `synced_at` is
+// older - the set difference, computed by the stamp rather than by
+// interpolating session ids into a PostgREST `not.in.(...)` filter.
+//
+// # What the remote looks like while it is wrong
+//
+// Between passes the remote holds the queue as of the last pass's `synced_at`,
+// which is why that column is part of the projection rather than a detail: a
+// web client can compute the age and must refuse to present a stale ordering
+// as live. Worst case is one periodic tick (~45s; `notify_dirty` is wired to
+// the enable toggle only, so a queue edit does NOT currently nudge the loop).
+// In that window the remote can show a rank that has since shifted, a row that
+// has since started, or a row that has since been cancelled. That is exactly
+// why no web verb names a rank - see `cloud::remote_commands`.
+//
+// # What is deliberately NOT in the projection
+//
+// The rule the LAN companion API states for the same data ("no PTY bytes, no
+// transcripts, no cwd paths, no credentials", `commands::fleet::companion_api`)
+// applies verbatim. Omitted on purpose: `cwd` (the field a naive projection
+// would include first), `args_json` (the spawn argv - it carries the task
+// text), `claude_session_id` (the `--resume` key), `run_id` / `run_label`,
+// `state_reason`, and the budget charge columns. `label` follows the companion
+// API's own precedent exactly - `title > name > project_label`, where
+// `project_label` is the cwd's final path SEGMENT and never the path - and is
+// additionally run through the scalar half of `redact_secrets`, which is a
+// backstop against an operator pasting a token into a session title, not a
+// licence to widen the field list.
+
+/// One queued dispatch, as the cloud projection sees it.
+#[derive(Debug, Serialize)]
+pub struct SyncedFleetQueueRow {
+    pub device_id: Option<String>,
+    pub session_id: String,
+    pub rank: u32,
+    pub lane: Option<u32>,
+    pub reserved_band: Option<u32>,
+    pub origin: String,
+    pub state: String,
+    pub label: String,
+    pub persona_id: Option<String>,
+    pub goal_id: Option<String>,
+    pub queued_at_ms: i64,
+    pub not_before_ms: Option<i64>,
+    /// The pass that pushed this row. Doubles as the reconcile key (rows with
+    /// an older stamp are no longer queued) and as the staleness signal the
+    /// web must read before presenting an ordering.
+    pub synced_at: String,
+}
+
+/// Redact a scalar that is about to be sent under a benign key. Reuses the
+/// value-shaped half of the event sanitizer; `key_is_secret` does not apply
+/// because the key here is ours (`label`) and is fixed.
+fn redact_scalar(s: String) -> String {
+    if value_looks_secret(&s) {
+        "[redacted]".to_string()
+    } else {
+        s
+    }
+}
+
+/// Display label, matching `companion_api`'s preference exactly:
+/// `title > name > project_label`.
+fn queue_label(title: Option<&str>, name: Option<&str>, project_label: &str) -> String {
+    let pick = title
+        .filter(|s| !s.trim().is_empty())
+        .or_else(|| name.filter(|s| !s.trim().is_empty()))
+        .unwrap_or(project_label);
+    redact_scalar(pick.to_string())
+}
+
+/// Project the whole current queue. `synced_at` is the caller's pass stamp,
+/// written identically onto every row so the reconcile delete can use it.
+///
+/// Reads through `fleet_sessions::list_queued_ordered` - the queue's existing
+/// durable read, already ordered by rank - rather than a second SELECT, so a
+/// column added to the queue cannot drift between the two.
+pub fn fetch_fleet_queue(
+    pool: &DbPool,
+    device_id: &str,
+    synced_at: &str,
+) -> Result<Vec<SyncedFleetQueueRow>, AppError> {
+    let rows = crate::db::repos::fleet_sessions::list_queued_ordered(pool)?;
+    Ok(rows
+        .into_iter()
+        .map(|r| SyncedFleetQueueRow {
+            device_id: Some(device_id.to_string()),
+            session_id: r.id,
+            // A queued row with no rank sorts last everywhere else in the app
+            // (`queue_rank.unwrap_or(u32::MAX)`); keep that reading rather than
+            // inventing a 0, which would read as "head of queue".
+            rank: r.queue_rank.unwrap_or(u32::MAX),
+            lane: r.lane,
+            reserved_band: r.reserved_band,
+            origin: r.origin.unwrap_or_else(|| "manual".to_string()),
+            state: r.state,
+            label: queue_label(r.title.as_deref(), r.name.as_deref(), &r.project_label),
+            persona_id: r.persona_id,
+            goal_id: r.goal_id,
+            queued_at_ms: r.queued_at_ms.unwrap_or(r.created_at_ms),
+            not_before_ms: r.not_before_ms,
+            synced_at: synced_at.to_string(),
+        })
+        .collect())
+}
+
+// ---------------------------------------------------------------------------
 // Tombstones (v2 delete propagation)
 // ---------------------------------------------------------------------------
 
@@ -1111,6 +1266,116 @@ mod tests {
     /// user_id is never sent on the wire — Supabase fills it from auth.uid()
     /// via the column default, and RLS enforces it. Sending it would be a
     /// (harmless but wrong) attempt to set another user's scope.
+    /// The queue projection's field list is a security boundary, so it is
+    /// asserted in both directions: every field the web contract promises is
+    /// present, and the five device-local fields that live on the same row are
+    /// absent. `cwd` is the one a naive projection would include first.
+    #[test]
+    fn fleet_queue_row_field_list_is_exact() {
+        let row = SyncedFleetQueueRow {
+            device_id: Some("dev-1".into()),
+            session_id: "s1".into(),
+            rank: 3,
+            lane: Some(2),
+            reserved_band: None,
+            origin: "curator".into(),
+            state: "queued".into(),
+            label: "personas".into(),
+            persona_id: None,
+            goal_id: None,
+            queued_at_ms: 17,
+            not_before_ms: None,
+            synced_at: "2026-10-05T00:00:00Z".into(),
+        };
+        let mut k = keys(&serde_json::to_value(&row).unwrap());
+        k.sort();
+        let mut expected: Vec<String> = [
+            "device_id",
+            "session_id",
+            "rank",
+            "lane",
+            "reserved_band",
+            "origin",
+            "state",
+            "label",
+            "persona_id",
+            "goal_id",
+            "queued_at_ms",
+            "not_before_ms",
+            "synced_at",
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+        expected.sort();
+        assert_eq!(k, expected, "queue projection field list drifted");
+        for forbidden in [
+            "cwd",
+            "args_json",
+            "claude_session_id",
+            "project_label",
+            "run_label",
+            "state_reason",
+            "user_id",
+        ] {
+            assert!(
+                !k.contains(&forbidden.to_string()),
+                "queue row leaked `{forbidden}`"
+            );
+        }
+    }
+
+    /// The label follows companion_api's preference and never silently carries
+    /// a credential an operator pasted into a session title.
+    #[test]
+    fn queue_label_prefers_title_then_name_then_project() {
+        assert_eq!(queue_label(Some("T"), Some("N"), "P"), "T");
+        assert_eq!(queue_label(None, Some("N"), "P"), "N");
+        assert_eq!(queue_label(Some("   "), None, "P"), "P");
+        assert_eq!(
+            queue_label(Some("sk-abcdefghijklmnop"), None, "P"),
+            "[redacted]",
+            "a token pasted into a title must not ride the label out"
+        );
+    }
+
+    /// End to end over a real DB: only `queued` rows project, the pass stamp
+    /// lands on every row identically (the reconcile delete keys on it), and
+    /// `cwd` never reaches the wire even though it is on the source row.
+    #[test]
+    fn fetch_fleet_queue_projects_only_queued_rows_without_cwd() -> Result<(), AppError> {
+        let pool = crate::db::init_test_db().unwrap();
+        {
+            let conn = pool.get()?;
+            for (id, state, rank) in [("q1", "queued", Some(1)), ("r1", "running", None)] {
+                conn.execute(
+                    "INSERT INTO fleet_sessions (id, claude_session_id, cwd, project_label, \
+                     args_json, mode, state, created_at_ms, last_activity_ms, updated_at_ms, \
+                     queue_rank, queued_at_ms, origin, lane) \
+                     VALUES (?1, 'cs', 'C:/Users/secret/kiro/personas', 'personas', '[]', \
+                     'interactive', ?2, 10, 10, 10, ?3, 11, 'curator', 2)",
+                    params![id, state, rank],
+                )
+                .unwrap();
+            }
+        }
+        let rows = fetch_fleet_queue(&pool, "dev-1", "2026-10-05T00:00:00Z")?;
+        assert_eq!(rows.len(), 1, "only the queued row projects");
+        let r = &rows[0];
+        assert_eq!(r.session_id, "q1");
+        assert_eq!(r.rank, 1);
+        assert_eq!(r.lane, Some(2));
+        assert_eq!(r.origin, "curator");
+        assert_eq!(r.label, "personas");
+        assert_eq!(r.synced_at, "2026-10-05T00:00:00Z");
+        let json = serde_json::to_string(r).unwrap();
+        assert!(
+            !json.contains("C:/Users/secret"),
+            "the cwd must not reach the wire: {json}"
+        );
+        Ok(())
+    }
+
     #[test]
     fn rows_never_send_user_id() {
         let exec = SyncedExecutionRow {
