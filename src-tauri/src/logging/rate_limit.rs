@@ -5,7 +5,8 @@
 //! written. When the window has rolled over, the next event with that
 //! fingerprint (or the periodic sweep, whichever comes first) queues one
 //! `log.suppressed` summary that the JSONL layer writes before its next
-//! record. ERROR and the `devlog` target are never limited, and Sentry sits
+//! record. ERROR, the `devlog` target and the WebView aggregates
+//! ([`UNLIMITED_TARGETS`]) are never limited, and Sentry sits
 //! outside the [`RateLimited`] wrapper.
 //!
 //! The sweep piggy-backs on events (no thread): at most every
@@ -18,6 +19,14 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Instant;
+
+/// Targets that are never limited. `devlog` carries the sink's own records
+/// (`boot.start`, `log.suppressed`). The two WebView kinds are ALREADY
+/// aggregates - one record per command or tag per flush - and they share one
+/// constant message, so a per-fingerprint bound would drop most of a flush's
+/// rows and with them the per-command latency they exist to carry (measured
+/// 2026-10-05: 1,255 `ipc_window` rows withheld in one boot).
+const UNLIMITED_TARGETS: [&str; 3] = ["devlog", "webview::ipc_window", "webview::swallow_rollup"];
 
 use std::any::TypeId;
 
@@ -121,7 +130,7 @@ impl RateLimit {
         let inner = &self.inner;
         let now = inner.clock.now_ms();
         self.maybe_sweep(now);
-        if *level == Level::ERROR || target == "devlog" {
+        if *level == Level::ERROR || UNLIMITED_TARGETS.contains(&target) {
             return true;
         }
         let mut shard = lock(&inner.shards[fp as usize % SHARDS]);
@@ -340,6 +349,20 @@ mod tests {
         let (rl, _) = manual(2);
         assert!((0..50).all(|_| rl.admit(&Level::ERROR, "app_lib::x", 1)));
         assert!((0..50).all(|_| rl.admit(&Level::INFO, "devlog", 2)));
+    }
+
+    #[test]
+    fn webview_aggregates_are_never_limited() {
+        let (rl, _) = manual(2);
+        assert!((0..50).all(|_| rl.admit(&Level::DEBUG, "webview::ipc_window", 3)));
+        assert!((0..50).all(|_| rl.admit(&Level::INFO, "webview::swallow_rollup", 4)));
+        // A non-aggregate WebView kind is still bounded.
+        assert_eq!(
+            (0..50)
+                .filter(|_| rl.admit(&Level::WARN, "webview::ipc_slow", 5))
+                .count(),
+            2
+        );
     }
 
     #[test]

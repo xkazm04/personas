@@ -305,6 +305,14 @@ where
             .map(|scope| scope.from_root().map(|s| s.name()).collect())
             .unwrap_or_default();
         let tgt = meta.target();
+        // A WebView record's callsite is the Rust line that re-emits it
+        // (`frontend_bridge::emit_record`), which says nothing about where it
+        // came from; its origin travels in `f.scope` instead.
+        let (file, line) = if src_of(tgt) == "webview" {
+            (None, None)
+        } else {
+            (meta.file(), meta.line())
+        };
         self.write_line(
             Some(meta),
             &Envelope {
@@ -312,8 +320,8 @@ where
                 lvl: meta.level().as_str(),
                 src: src_of(tgt),
                 tgt,
-                file: meta.file(),
-                line: meta.line(),
+                file,
+                line,
                 msg: &msg,
                 fp: &fp_hex(fp),
                 boot: &BOOT_ID,
@@ -448,6 +456,9 @@ mod tests {
         assert!(!obj.contains_key("span"), "no span -> no key");
         assert!(!obj.contains_key("f"), "no fields -> no key");
         assert_eq!(rec["src"], "webview");
+        // The re-emitting Rust line is not the record's origin.
+        assert!(!obj.contains_key("file"), "webview -> no Rust callsite");
+        assert!(!obj.contains_key("line"), "webview -> no Rust callsite");
     }
 
     #[test]
