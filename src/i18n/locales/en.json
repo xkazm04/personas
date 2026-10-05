@@ -8282,7 +8282,6 @@
       "noc_no_diagnosis": "No diagnosis yet — I can dig into this incident for you.",
       "noc_diagnose_failed": "Diagnosis failed",
       "ledger": {
-        "col_state": "State",
         "col_age": "Age",
         "col_actions": "Actions",
         "col_raised": "Raised",
