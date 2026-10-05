@@ -40,3 +40,17 @@ Most-corroborated: `home.summary_stats` carries English-only pluralization place
 | `triggers.tab_shared_subtitle` | Ambiguous for native review: target ("发现并订阅其他代理共享的事件") mentions agents/personas sharing events, but the en source ("Subscribe to curated global events — including connector API updates — and wire them into your workflows | zh |
 | `director.run_all` | Ambiguous for native review: target ("审查范围内所有代理") says "review all agents in scope", but the en source ("Review all in scope") does not specify what "in scope" refers to (could be personas/agents, or something else entir | zh |
 | `shared.forms_extra.select_persona_icon / shared.forms_extra.select_agent_icon` | Two near-duplicate English keys ('Select persona icon' / 'Select agent icon') label what appears to be the same UI control with different English nouns (persona vs agent). Translators converged on 人格 for both in this bat | zh |
+
+## 2026-10-06: two-model divergence pass (cs, registry run apply-1006-css)
+
+70 note-less keys sampled from en.json, labelled blind for Czech (key + English only). Candidates for the
+owner, **unconfirmed**: each is a question, and the answer belongs in a `_comment_<leaf>` note. The divergence
+signal itself found 1 of these 4 (`monitor.open_messages`); two drew identical renderings from both engines
+because both took the same default reading.
+
+| key | problem | reported by |
+|---|---|---|
+| `templates.adopt_modal.blocked_count` | "{count} blocked" names no referent: Czech needs its gender and number to agree the participle (zablokováno / zablokovaných). | cs (blind labeller) |
+| `plugins.contest.ledger.open_variant` | "Open variant": imperative action or the state "an open variant"? Both engines chose the verb; nothing says it is. | cs (blind labeller) |
+| `studio.pick_frames` | "The frames around it": "it" has no stated referent (gender), and "frames" could be video frames or picture frames. | cs (blind labeller) |
+| `monitor.open_messages` | "Open reports": verb or adjective. One engine rendered "Otevřít hlášení", the other "Otevřené zprávy". | cs (blind labeller, divergence) |
