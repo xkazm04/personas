@@ -2327,6 +2327,10 @@
     ],
     "llm-extracted-entity-graph": [
       "876c0b4e-6472-4544-a21b-56e7529fb6b3"
+    ],
+    "subprocess-lifecycle": [
+      "2de6333f-8375-404b-8fdc-fe0fb15d4f95",
+      "6a81750d-fdbf-4518-bae6-689303e1a884"
     ]
   },
   "contexts": [
@@ -3439,7 +3443,12 @@
           "revision": 12,
           "changedAt": "2026-09-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_executions/components/ActiveChainsBadge.tsx:104 shows as the chain spend a figure src-tauri/db/src/repos/execution/executions.rs:1752 derives as the MAX of handoff-carried path totals, which under fan-out omits sibling branches (chain.rs:347 names it this PATH spend and the budget guard sums recorded spend instead); also libs/useChainTrace.ts:107 turns a failed stop-ledger load into no stop reasons",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:596d59ae9fc2d310",
+          "evaluatedRevision": 12,
+          "revisionsBehind": 0
         },
         {
           "subject": "quality-gates",
@@ -5259,7 +5268,11 @@
           "revision": 9,
           "changedAt": "2026-09-09",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2089 dispatches qwen-profiled runs to DashScope before policy_decision is consulted and returns above the audit write at :3744, while src/features/settings/sub_byom/components/ByomProviderList.tsx:37 presents Qwen as a policy-governed provider; and a policy that blocks every EngineKind empties the chain so src-tauri/src/engine/runner/mod.rs:2393 reports a policy refusal as \"All providers failed or have open circuit breakers\" - a compliance-tagged persona can run on an unaudited upstream, and a denial reads as an outage (exclusive-authorship-of-a-measured-decision, policy-verdict-in-the-status-space)",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:f268193750c0a517",
+          "evaluatedRevision": 9
         },
         {
           "subject": "agent-runtime-assembly",
@@ -5811,10 +5824,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:276 binds executors by string match with an `other => Err` fallback, so a catalog kind with no executor is a runtime shrug rather than a startup failure; combined with the retired set-equality parity test the five-copy vocabulary drifts unchecked.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0d0b7d17a538708c",
-          "stale": true
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:223 matches the action as a &str and :370 ends in `other => Err(unknown action)`, so a kind added to the 58-entry ALLOWED_ACTIONS without an arm compiles and fails only when someone approves it; all 58 have arms today (63 arms) but nothing pins it, and 5 arms (kp_hire_request, compose_dashboard, use_connector, post_team_message, night_shift_execute_plan) have no declared producer.",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:7a0b336cac31d173",
+          "evaluatedRevision": 4
         },
         {
           "subject": "agent-browser-control",
@@ -5966,8 +5979,8 @@
           "changedAt": "2026-08-31",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/personas.rs:2286 the blast-radius probe counts only running/queued executions while persona_executions is ON DELETE CASCADE (src-tauri/db/src/migrations/schema.rs:111), so the delete also takes every completed and failed run and the preview never names that history as a casualty",
-          "evaluatedAt": "2026-09-23",
+          "evidence": "src-tauri/db/src/repos/core/personas.rs:2425 the blast-radius probe counts only running/queued executions while persona_executions is ON DELETE CASCADE (src-tauri/db/src/migrations/schema.rs:111), so a persona delete destroys every completed and failed run - history cascade-design says should detach - and the preview never names it as a casualty",
+          "evaluatedAt": "2026-10-05",
           "evaluatedAgainst": "sha256-b2:cef5e3463825ff22",
           "evaluatedRevision": 6,
           "revisionsBehind": 0
@@ -6680,6 +6693,20 @@
           "changedAt": "2026-09-29",
           "confidence": "probable",
           "state": "unknown"
+        },
+        {
+          "subject": "subprocess-lifecycle",
+          "bundle": "software-engineering",
+          "score": 0,
+          "why": [],
+          "confidence": "strong",
+          "state": "unknown",
+          "source": "conform",
+          "grounding": "precondition",
+          "digest": "sha256-b2:14e6e49e4c386292",
+          "revision": 12,
+          "changedAt": "2026-09-04",
+          "evidence": "added by /conform 2026-10-06: the golden path precondition (a long-lived host running external child processes, many at once) governs this context - src-tauri/src/commands/fleet/pty.rs and headless.rs spawn Claude CLI children, headless.rs:59-80 kills them by pid, stale.rs is the liveness ticker; the 2026-09-23 rebuild dropped the only prior pair (fleet-session-grid, probable) and the matcher never scored it here"
         }
       ],
       "governance": "governed"
@@ -6889,10 +6916,10 @@
           "changedAt": "2026-09-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/disk.rs:22-26 and 85 further `use crate::db::` sites across the module import the host application directly, so the runtime has one host forever; the offsetting strength is a real second consumer at src-tauri/src/companion/remote_jobs.rs:1-32 that calls the runtime rather than re-implementing it.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0d0b7d17a538708c",
-          "stale": true
+          "evidence": "src-tauri/Cargo.toml:14 declares no companion crate, so the runtime is a module of its host: src-tauri/src/companion/disk.rs:23-25 imports crate::db directly (111 of 162 companion files reach crate::db, 22 reach crate::commands/AppState) and src-tauri/src/companion/session/turn.rs:70 takes `app: &AppHandle` as its only turn sink; no build sees the line, and the terminal channel .claude/skills/athena/brain.py:16 re-implements the episode write path by parity contract instead of calling the turn.",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:7a0b336cac31d173",
+          "evaluatedRevision": 4
         },
         {
           "subject": "prompt-assembly",
@@ -7049,10 +7076,10 @@
           "changedAt": "2026-09-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/brain/cockpit.rs:1-7 and dashboard.rs:1-9 let a model-composed spec overwrite the singleton with no reset-to-known-good action, so the worst arrangement the model produces is permanent for a user who never chose the previous one.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0d0b7d17a538708c",
-          "stale": true
+          "evidence": "src-tauri/src/companion/brain/cockpit.rs:3 lets `compose_cockpit` overwrite the singleton spec and no cockpit reset command exists, while the dashboard undo at src-tauri/src/companion/brain/dashboard.rs:176 is still `#[allow(dead_code)]` awaiting a command; a model-composed arrangement has no one-action way back to the model-free default, so its worst state is permanent.",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:7a0b336cac31d173",
+          "evaluatedRevision": 4
         },
         {
           "subject": "mcp-tools",
@@ -7222,12 +7249,10 @@
           "changedAt": "2026-09-30",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/stores/slices/system/athenaSlice.ts:353 still defaults speech capture to the browser engine, which on WebView2 sends raw microphone audio to the OS vendor's cloud (disclosed only once the user opens sub_voice/SttPanel.tsx:87). Cloud capture is the default instead of an affirmative opt-in.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256-b2:4337a608b34cbe4a",
-          "evaluatedRevision": 18,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/stores/slices/system/athenaSlice.ts:353 still defaults capture to the browser engine that streams mic audio to the OS vendor cloud (on-device-vs-cloud: cloud must be opt-in); src/features/companions/athena/BubbleReadAloud.tsx:65 synthesizes the raw markdown reply, bypassing the stripMarkdownForSpeech door (speech-ready-text), and :73 starts play() after an unmount mid-synthesis because stop never reaches the synthesis gap and voicePlayback.ts:47 hands every caller the raw audio element (tts-pipeline).",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:b7d28920c42693f8",
+          "evaluatedRevision": 19
         },
         {
           "subject": "conversation-orchestration",
@@ -7391,6 +7416,20 @@
           "changedAt": "2026-09-25",
           "confidence": "probable",
           "state": "unknown"
+        },
+        {
+          "subject": "schema-driven-ui",
+          "bundle": "software-engineering",
+          "source": "conform",
+          "confidence": "strong",
+          "digest": "sha256-b2:3a801e8a0fefc717",
+          "revision": 2,
+          "changedAt": "2026-08-21",
+          "state": "deviation",
+          "evidence": "added by /conform (matcher scored zero). src/features/companions/athena/InlineChatCard.tsx:52 special-cases six chat-only kinds through an if-chain before the registry lookup at :102, a second unregistered vocabulary: those kinds get no shared config contract or emitter docs, and each new one edits the dispatcher",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:3a801e8a0fefc717",
+          "evaluatedRevision": 2
         }
       ],
       "governance": "governed"
@@ -7467,10 +7506,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/plugins/companion/athenaLabels.ts:13-16 documents a manual three-step procedure for adding each backend action slug to a frontend switch, making the rendering surface a fourth hand-maintained copy of the action vocabulary that no check compares to the backend table.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0d0b7d17a538708c",
-          "stale": true
+          "evidence": "src/features/companions/athena/athenaLabels.ts:114-115 falls back to titleCase(action) inside a bundle that ships with the catalog, and no test compares its 37 cases to the 58 ALLOWED_ACTIONS at src-tauri/src/companion/dispatcher/catalog.rs:11 (23 unlabeled); the co-deployed fallback hides exactly the drift actionRisk.test.ts already gates for the risk table.",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:7a0b336cac31d173",
+          "evaluatedRevision": 4
         },
         {
           "subject": "chat-transcript",
@@ -7797,8 +7836,12 @@
           "revision": 19,
           "changedAt": "2026-09-30",
           "confidence": "strong",
-          "state": "unknown",
-          "priorNotApplicable": 3
+          "state": "deviation",
+          "priorNotApplicable": 3,
+          "evidence": "src-tauri/src/companion/tts/kokoro.rs:222 spawns a fresh sherpa sidecar per utterance, reloading the ~310MB model every call (kokoro.rs:47, 1-3s cold) on the default live-reply engine (real-time-synthesis-budget: the process boundary is part of the rate); src-tauri/src/companion/stt/whisper.rs:210 returns no-speech as the same AppError::Internal as an engine crash (stt-pipeline: silence, no-speech and failure are three facts); whisper.rs:101 engine_status is an is_file bool, collapsing absent and broken (engine-abstraction).",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:b7d28920c42693f8",
+          "evaluatedRevision": 19
         },
         {
           "subject": "proactive-nudges",
@@ -8005,7 +8048,11 @@
           "revision": 24,
           "changedAt": "2026-09-25",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "tests/playwright/athena-conversation.spec.ts:107 when data-testid=\"tab-memory\" is not found the test pushes a warn annotation and returns green (same at :254); no producer of that testid exists in src (BrainViewer.tsx:250 SegmentedTabs passes no testId), so both Phase D tests pass while asserting nothing - live-app-harness makes a removed identifier a breaking change and a missing stash a harness failure, never a pass.",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:ed2a102243f795c1",
+          "evaluatedRevision": 25
         },
         {
           "subject": "conversation-orchestration",
@@ -8089,7 +8136,11 @@
           "revision": 2,
           "changedAt": "2026-08-21",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "tests/playwright/companion-design-cards.spec.ts:8 injects synthetic chat-card state and asserts DOM; this context is Playwright specs only and owns no spec, registry, validator or renderer (matched on spec/button tokens) - the governed renderer is src/features/home/sub_cockpit/widgetRegistry.ts (home-welcome)",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:3a801e8a0fefc717",
+          "evaluatedRevision": 2
         },
         {
           "subject": "guided-tours",
@@ -8577,7 +8628,11 @@
           "revision": 15,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/lib.rs:469 sets WAL through execute_batch and discards the effective mode, so a silent journal fallback is never asserted at boot (journal-and-durability-modes); src-tauri/db/src/lib.rs:345 deferral is debug-only with no harm-bound escalation and no pass record (quiet-window-maintenance); src-tauri/db/src/perf.rs:53 one 100ms slow line for every table, the networked threshold db-self-instrumentation names as deaf. Realized: labelled+timed acquire src-tauri/db/src/lib.rs:127, RAII FK guard src-tauri/db/src/lib.rs:220, vec0 registered before the user pool src-tauri/db/src/lib.rs:723, sidecar_path src-tauri/db/src/lib.rs:1891, provenance classify src-tauri/db/src/damage.rs:132 and quarantined-store skips checkpoint src-tauri/db/src/lib.rs:322",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:0722fec97cff5b66",
+          "evaluatedRevision": 15
         },
         {
           "subject": "migrations",
@@ -9302,7 +9357,11 @@
           "revision": 11,
           "changedAt": "2026-09-22",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/lab/arena.rs:71 persists an arena run with no dataset version/frozen flag and no determinism stamp (per-cell rows at :103 do carry quality, tokens, cost, duration); dataset-sampling-anonymize-freeze + determinism-stamping: scenarios are LLM-regenerated per run (src-tauri/engine/src/test_runner/scenarios.rs:66, 600s cache) and src-tauri/core/src/models/lab.rs:19 has no partial state, so runs cannot be compared and a budget-halted run stores as completed (src-tauri/engine/src/test_runner/lab.rs:550)",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
+          "evaluatedRevision": 11
         }
       ],
       "governance": "governed"
@@ -9976,12 +10035,10 @@
           "changedAt": "2026-09-30",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:245 'voice' here is the persona's written style/output_format; no file in the context captures, transcribes or synthesizes audio (the 'transcript' is Claude Code JSONL, cli_session_awareness/transcript.rs:1), so every voice-io precondition fails.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256-b2:4337a608b34cbe4a",
-          "evaluatedRevision": 18,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:245 voice is the persona written style/output_format; the context synthesizes gate questions, not audio, and its only transcript is Claude Code JSONL (src-tauri/engine/src/cli_session_awareness/transcript.rs:1), so no voice-io precondition holds. Re-checked against rev 19.",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:b7d28920c42693f8",
+          "evaluatedRevision": 19
         },
         {
           "subject": "mcp-tools",
@@ -10609,7 +10666,12 @@
           "revision": 12,
           "changedAt": "2026-09-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/chain/ChainTraceView.tsx:125 lists every ledger row flat under Why the chain ended (:122), dropping link_execution_id and chain_depth and any outcome class, so an informational cas_lost/handoff_suppressed row or one sibling outside_window reads as the whole chain having stopped; stop-reason-ledgers requires per-leaf, outcome-classified rendering",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:596d59ae9fc2d310",
+          "evaluatedRevision": 12,
+          "revisionsBehind": 0
         },
         {
           "subject": "prompt-assembly",
@@ -12952,6 +13014,20 @@
           "changedAt": "2026-09-14",
           "confidence": "probable",
           "state": "unknown"
+        },
+        {
+          "subject": "schema-driven-ui",
+          "bundle": "software-engineering",
+          "source": "conform",
+          "confidence": "strong",
+          "digest": "sha256-b2:3a801e8a0fefc717",
+          "revision": 2,
+          "changedAt": "2026-08-21",
+          "state": "deviation",
+          "evidence": "added by /conform (matcher scored zero; Athena-composed cockpit is the subject precondition). src/features/home/sub_cockpit/widgetRegistry.ts:55 types config as Record<string, unknown> with no per-kind contract, and :8-10 keeps the emitter vocabulary as a hand-synced copy (also src-tauri/src/companion/dispatcher/catalog.rs:784, src-tauri/src/companion/brain/briefing.rs:48); compose_cockpit stores kinds unvalidated (src-tauri/src/companion/dispatcher/dispatch.rs:992), so a hallucinated kind or bad config first surfaces in front of the user",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:3a801e8a0fefc717",
+          "evaluatedRevision": 2
         }
       ],
       "governance": "governed"
@@ -13854,11 +13930,12 @@
           "revision": 3,
           "changedAt": "2026-08-29",
           "confidence": "probable",
-          "state": "conformant",
-          "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:39-152 realizes navigation-guards: one interceptor covers sidebar-section navigation, opt-in settings-tab navigation, and window close (beforeunload), offering save/discard/stay and reverting the in-flight navigation until resolved — matching 'one interceptor over all exit paths.' This hooks context owns no draft buffer itself, so draft-model/dirty-tracking/debounced-save-groups/field-defaults-and-bounds/completeness-derivation are not-applicable here; notably the two contexts that DO own a buffer (agents-editor, templates-draft-editor) are both already recorded as draft-model deviations, so the shared guard hook is sound even though the buffers it guards are not.",
-          "evaluatedAt": "2026-08-31",
+          "state": "deviation",
+          "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:90 opens the modal on any dirty exit without attempting a flush, and its contract (:51) takes only an isDirty boolean, so work one debounce from saved (EditorBody.tsx:93 cancels the pending saves on Discard) always meets a dialog; navigation-guards flush-first-ask-second is unrealizable for every caller",
+          "evaluatedAt": "2026-10-05",
           "evaluatedAgainst": "sha256-b2:79771a6adb7936e5",
-          "source": "retained"
+          "source": "retained",
+          "evaluatedRevision": 3
         },
         {
           "subject": "render-mount-pipeline",
@@ -14181,8 +14258,8 @@
           "changedAt": "2026-09-18",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/i18n/generated/types.ts:14715 the user-facing chain_stop vocabulary, now 15 tokens, still has no success-shaped 'completed', no 'cancelled' and no 'condition_unevaluable', so an unknown condition type or missing jsonpath (src-tauri/db/src/chain.rs:1045) is recorded as predicate_unmet exactly like a chain that chose to stop; the fix belongs in the chain.rs authority, not this generated mirror",
-          "evaluatedAt": "2026-09-23",
+          "evidence": "src/i18n/generated/types.ts:14958 the user-facing chain_stop vocabulary, still 15 tokens, has no success-shaped completed, no cancelled and no condition_unevaluable, so an unknown condition type (src-tauri/db/src/chain.rs:1045) or missing jsonpath is recorded as predicate_unmet like a chain that chose to stop; the parity test reads the producer (conformant), the fix belongs in the chain.rs authority",
+          "evaluatedAt": "2026-10-05",
           "evaluatedAgainst": "sha256-b2:596d59ae9fc2d310",
           "evaluatedRevision": 12,
           "source": "retained",
@@ -14339,7 +14416,11 @@
           "revision": 11,
           "changedAt": "2026-09-22",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:279 pre-flight is consent-only (estimate + unpriced named via arenaSpendEstimate.ts:90) with no ceiling, and the run has none live (src-tauri/engine/src/test_runner/modes.rs:270 hard-wires should_halt_budget false); ArenaResultsView.tsx:192 crowns the highest composite mean Best; budget-preflight-and-ceiling + target-matrix-runs: a multi-model arena spends uncapped and an untested mean reads as the winner",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
+          "evaluatedRevision": 11
         },
         {
           "subject": "test-harness",
@@ -14618,7 +14699,11 @@
           "revision": 11,
           "changedAt": "2026-09-22",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:554 tells the reader every version was graded on the same generated scenario set so ratings are directly comparable, yet scenarios regenerate per run (src-tauri/engine/src/test_runner/scenarios.rs:66) and :203 badges the highest mean Best (evalAggregation.ts:229 winner = aggs[0]); axes-and-caveats-live-at-the-surface + dataset-sampling-anonymize-freeze + target-matrix-runs: the exported artifact asserts comparability and a winner the runs never earned",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
+          "evaluatedRevision": 11
         },
         {
           "subject": "quality-gates",
@@ -15221,12 +15306,10 @@
           "changedAt": "2026-09-25",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/lib/harness/verifier.ts:13 PERSONAS_GATES wires only typecheck/lint/build commands; the module is an autonomous Plan->Execute->Verify coding loop (orchestrator.ts:3) that owns no test suite, lane, fixture or acceptance journey, so the machinery this subject governs is absent.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:c449405aa9d2e869",
-          "evaluatedRevision": 23,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/lib/harness/verifier.ts:13 PERSONAS_GATES wires only typecheck/lint/build (plus grep-count custom gates); the module is an autonomous Plan->Execute->Verify coding loop (src/lib/harness/orchestrator.ts:3) that owns no suite, lane, fixture or journey, so the harness machinery this subject governs is absent here. [re-judged at rev 25: the added mutation-lane technique does not change the precondition]",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:ed2a102243f795c1",
+          "evaluatedRevision": 25
         },
         {
           "subject": "eval-harness",
@@ -18029,7 +18112,11 @@
           "revision": 9,
           "changedAt": "2026-09-09",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/engine/src/parser.rs:125 parses one producer (Claude CLI stream-json) with no upstream parameter - the N=1 streaming-output ground - and src-tauri/src/engine/api_proxy.rs:3 proxies a request to the credential it names, so no candidate is ever selected among interchangeable upstreams; the plane realisation (failover chain, BYOM, qwen reader) lives outside this context",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:f268193750c0a517",
+          "evaluatedRevision": 9
         },
         {
           "subject": "agent-runtime-assembly",
@@ -19169,7 +19256,11 @@
           "revision": 3,
           "changedAt": "2026-09-20",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:124 feeds signal.successRate into the heaviest (0.30) dimension while ignoring successRateSource, which src/stores/slices/overview/personaHealthSlice.ts:415 sets to 100 for an unmeasured persona, so an idle agent collects full marks (unmeasured-honesty: absence as the ceiling); unmeasured speed/cost still enter ranking and the fleet benchmark as a fabricated 50 (leaderboardScoring.ts:71, leaderboardRanking.ts:38); scoreCostEfficiency normalizes dailyBurnRate not cost per execution (leaderboardScoring.ts:127); tie-break is successRate, not a stable id (:182); the view re-bands with a copied 80/60/40 table applied to dimensions too and never renders the computed tier, weights, contributions or coverage (src/features/overview/sub_leaderboard/components/leaderboardViewHelpers.ts:43, LeaderboardMatrixView.tsx:262); WEIGHTS (:58) has no rationale, sum assertion, version, fixtures or gap list",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:476078a37f34137d",
+          "evaluatedRevision": 3
         },
         {
           "subject": "cross-provider-benchmark-operations",
@@ -22121,10 +22212,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/plugins/companion/decision/useDecisionQueue.ts:70-80 keeps `LOW_RISK_ACTIONS`, a hand-maintained subset of the backend action vocabulary that decides what Athena recommends approving; a new low-risk kind silently falls to the cautious branch.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0d0b7d17a538708c",
-          "stale": true
+          "evidence": "prior anchor resolved: the hand LOW_RISK set moved to src/features/companions/athena/decision/actionRisk.ts:48/:83 with both arms named and pinned to catalog.rs by actionRisk.test.ts:36; residual: src/features/companions/athena/decision/useDecisionQueue.ts:89 builds the orb decision prompt from actionLabel, the unpinned titleCase-fallback switch, so 23 of 58 approval kinds are voiced as synthesized slugs with no failing check.",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:7a0b336cac31d173",
+          "evaluatedRevision": 4
         },
         {
           "subject": "module-design",
@@ -25540,6 +25631,20 @@
           "changedAt": "2026-09-14",
           "confidence": "probable",
           "state": "unknown"
+        },
+        {
+          "subject": "prompt-safety",
+          "bundle": "software-engineering",
+          "source": "conform",
+          "confidence": "strong",
+          "digest": "sha256-b2:51087132dbd1c9fb",
+          "revision": 7,
+          "changedAt": "2026-09-17",
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:1369 interpolates agent-memory title/content raw and :1480 appends it after assembly, outside every <untrusted_*> fence and after the canary (src-tauri/engine/src/prompt/assemble.rs:891), framed as \"strong defaults\" (:1367) - recalled memory is a named attacker-controlled span that bypasses the one fencing/caps door (untrusted-span-fencing, input-caps-and-clamps); also src-tauri/engine/src/prompt/runtime_safety.rs:11 nonce is time^counter, not cryptographic, never checked absent from the payload, and nothing screens output for the nonce or the [SECURITY] canary (canary-tripwires: no trip protocol). Realized: nonce fences on third-party spans (assemble.rs:1022) and announced truncation (runtime_safety.rs:98).",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:51087132dbd1c9fb",
+          "evaluatedRevision": 7
         }
       ],
       "governance": "governed"
@@ -26009,7 +26114,11 @@
           "revision": 11,
           "changedAt": "2026-09-22",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/RunDeskPage.tsx:24 the queue unit is a DevTask (dispatched dev work), not a benchmark target x case cell; no model comparison or scorecard exists here, so the precondition does not hold - lexical match on run/runner",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
+          "evaluatedRevision": 11
         },
         {
           "subject": "agent-cli-transport",
@@ -27796,7 +27905,11 @@
           "revision": 15,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/stores/systemStore.ts:40 these are Zustand stores persisted through zustand/middleware to localStorage; no file in the context opens, pools, journals or maintains an embedded engine, the match is the word store",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:0722fec97cff5b66",
+          "evaluatedRevision": 15
         },
         {
           "subject": "docs-sync",
@@ -28815,12 +28928,10 @@
           "changedAt": "2026-09-30",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/cloud/sync/mod.rs:1 is a desktop-to-Supabase row sync writer; its four files carry no audio capture, transcription, synthesis or engine adapter, so no voice-io technique's precondition holds.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256-b2:4337a608b34cbe4a",
-          "evaluatedRevision": 18,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/src/cloud/sync/mod.rs:1 is a desktop-to-Supabase row sync writer; its four files carry no audio capture, transcription, synthesis or engine adapter. Re-checked against rev 19.",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:b7d28920c42693f8",
+          "evaluatedRevision": 19
         },
         {
           "subject": "test-harness",
@@ -28868,7 +28979,11 @@
           "revision": 15,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/cloud/sync/mod.rs:298 the pipeline only reads changed rows through the db crate pool in a scoped spawn_blocking fetch and pushes row projections over HTTP; it builds no pool, signs no durability contract, runs no maintenance or pruning and copies no store files, so sync-replication governs, not embedded-db",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:0722fec97cff5b66",
+          "evaluatedRevision": 15
         },
         {
           "subject": "credential-vault",
@@ -31083,7 +31198,11 @@
           "revision": 4,
           "changedAt": "2026-09-01",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx:310 deletes a template with no confirm or undo and closes before the await (failure only logged); TemplateModals.tsx:62 unmounts RebuildModal so src/lib/ui/BaseModal.tsx:229 flag-flip restore never returns focus; CatalogCredentialModal.tsx:93 typed-credential form dismisses on backdrop/Escape unguarded; credential (TemplateModals.tsx:112) and compare modals bypass useModalStack",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:c0c7b5eacfef8679",
+          "evaluatedRevision": 4
         },
         {
           "subject": "sql-console",
@@ -31621,9 +31740,9 @@
           "revision": 3,
           "changedAt": "2026-08-29",
           "confidence": "probable",
-          "state": "deviation",
-          "evidence": "src/features/templates/sub_generated/generation/mergeDraftIntoDesignResult.ts:60 draft.description || base.summary collapses 'cleared' into 'never set', so a description the user clears in Review (DraftEditStep.tsx:146 writes null) is silently replaced by the generator's summary in the saved template (the system prompt at :59 behaves the same)",
-          "evaluatedAt": "2026-09-23",
+          "state": "not-applicable",
+          "evidence": "the buffer-owning draft editor this deviation was about (draft-editor/DraftEditStep.tsx, mergeDraftIntoDesignResult.ts) was deleted in 14dd786e50; what remains is a catalog browser and a one-shot preset adoption, src/features/templates/sub_presets/usePresetAdoption.ts:30 staging preview->adopting->done with no persisted entity under sustained revision",
+          "evaluatedAt": "2026-10-05",
           "evaluatedAgainst": "sha256-b2:79771a6adb7936e5",
           "evaluatedRevision": 3,
           "revisionsBehind": 0
@@ -32490,7 +32609,11 @@
           "revision": 24,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/test_automation.rs:79 control-surface request structs derive Deserialize only (no ts-rs export), so tests/playwright/companion-bridge.ts:27 hand-redeclares response shapes and its header (companion-bridge.ts:14) records endpoint shapes \"learned the hard way\" - live-app-harness requires the client typed against shapes shared with the product; drift surfaces as runtime folklore, not a compile error. (Release gating test_bridge.rs:52 and the serial law playwright.config.ts:56 conform.)",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:ed2a102243f795c1",
+          "evaluatedRevision": 25
         },
         {
           "subject": "eval-harness",
@@ -32791,6 +32914,20 @@
           "evaluatedAt": "2026-10-05",
           "evaluatedAgainst": "sha256-b2:b3129728f9d9c336",
           "evaluatedRevision": 14
+        },
+        {
+          "subject": "subprocess-lifecycle",
+          "bundle": "software-engineering",
+          "score": 0,
+          "why": [],
+          "confidence": "strong",
+          "state": "unknown",
+          "source": "conform",
+          "grounding": "precondition",
+          "digest": "sha256-b2:14e6e49e4c386292",
+          "revision": 12,
+          "changedAt": "2026-09-04",
+          "evidence": "added by /conform 2026-10-06: the golden path precondition governs this context - src-tauri/engine/src/session_pool.rs:1-11 is CLI session reuse (session-reuse), with resource_governor.rs, queue.rs and process_activity.rs as the admission, host-protection and liveness side of the same child lifecycle; the matcher scored it at zero"
         }
       ],
       "governance": "governed"
@@ -33287,7 +33424,11 @@
           "revision": 11,
           "changedAt": "2026-09-22",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/TriggerStudioCanvas.tsx:2 Chain Studio composes event-routing rules between personas; it runs no provider x model matrix and produces no scorecard, so the subject precondition (choosing which model serves a workload from benchmark evidence) does not hold - lexical match on routing/target",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:529238b95e86e429",
+          "evaluatedRevision": 11
         },
         {
           "subject": "codegen",
@@ -33317,13 +33458,17 @@
           "score": 0,
           "why": [],
           "confidence": "strong",
-          "state": "unknown",
+          "state": "deviation",
           "source": "conform",
           "grounding": "precondition",
-          "evidence": "added by /conform triage 2026-08-29: the golden path precondition governs this context; the matcher paired on vocabulary",
+          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:109 commits a persona link by appending a chain trigger with no check against an identical live route (create has no dedup, definitions.rs:252 checks cycles only, and the CAS claim is per trigger), so re-drawing a live arrow double-fires the target; and libs/routeCodec.ts:154 renders an unknown condition type as Always while chain.rs:1045 never fires it. Reconcile-from-rows read side, whole-route disconnect and dry-run-before-enable conform",
           "digest": "sha256-b2:596d59ae9fc2d310",
           "revision": 12,
-          "changedAt": "2026-09-18"
+          "changedAt": "2026-09-18",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:596d59ae9fc2d310",
+          "evaluatedRevision": 12,
+          "revisionsBehind": 0
         },
         {
           "subject": "canvas-graph",
@@ -33345,13 +33490,16 @@
           "score": 0,
           "why": [],
           "confidence": "strong",
-          "state": "unknown",
+          "state": "deviation",
           "source": "conform",
           "grounding": "precondition",
-          "evidence": "added by /conform triage 2026-08-29: the golden path precondition governs this context; the matcher paired on vocabulary",
+          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:174 commitAll iterates committableLinks (:168) without excluding links already in committing, and commitLink has no in-flight check, so a second Commit-all click (StudioPatchbay.tsx:149, never disabled) during a gated link create->dry-run->enable round trip creates a second live chain trigger for the same link (create_trigger does not dedupe); and :124 drops the link by id on success, so a condition cycled mid-flight (StudioPatchbay.tsx:196 stays enabled while busy) is silently lost while the live trigger keeps the old one",
           "digest": "sha256-b2:79771a6adb7936e5",
           "revision": 3,
-          "changedAt": "2026-08-29"
+          "changedAt": "2026-08-29",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:79771a6adb7936e5",
+          "evaluatedRevision": 3
         }
       ],
       "governance": "governed"
@@ -34417,7 +34565,11 @@
           "revision": 9,
           "changedAt": "2026-09-09",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/gateway/GatewayMembersModal.tsx:7 routes each namespaced tool call back to the one member that owns it - an aggregator of non-interchangeable MCP servers, not a candidate selection; the rest of the context is credential-intelligence UI with no upstream path",
+          "evaluatedAt": "2026-10-05",
+          "evaluatedAgainst": "sha256-b2:f268193750c0a517",
+          "evaluatedRevision": 9
         },
         {
           "subject": "agent-runtime-assembly",
@@ -36162,12 +36314,10 @@
           "changedAt": "2026-09-30",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/engine/src/template_v3.rs:844 reads the persona's 'voice' block (style + output_format) as prompt text; the only other audio match is a template file name (template_checksums.rs:16). No webhook, relay or engine file carries an audio path.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256-b2:4337a608b34cbe4a",
-          "evaluatedRevision": 18,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/engine/src/template_v3.rs:844 reads the persona voice block (style + output_format) as prompt text; the only audio hit is a template filename (src-tauri/engine/src/template_checksums.rs:16). No webhook, relay or engine file carries an audio path. Re-checked against rev 19.",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:b7d28920c42693f8",
+          "evaluatedRevision": 19
         },
         {
           "subject": "test-harness",
