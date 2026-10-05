@@ -221,4 +221,17 @@ test('onboard: validates, writes, refuses to overwrite, keeps a backup with --fo
   await assert.rejects(O.cmdOnboard({ flags: { project: 'x', brief: writeFile('b.json', '{nope') } }), (e) => e.reason === 'invalid brief');
 });
 
+test('unknownIdeaIds: a retyped idea id is refused against dev_ideas; no DB means no check', async () => {
+  const F = await import('./wp1-fixture.mjs');
+  const named = (ids) => ({ dispatch: [{ charterSlug: 'x', reason: 'r', brief: 'b', ideaIds: ids }], ideaVerdicts: [] });
+  assert.deepEqual(V.unknownIdeaIds(F.IDS.project, named(['whatever'])), [], 'database absent: degrade to no check');
+  const db = F.makeDb(env); db.close();   // the fixture DB now exists at PERSONAS_DB
+  try {
+    assert.deepEqual(V.unknownIdeaIds(F.IDS.project, named([F.IDS.ideaAccepted])), []);
+    const retyped = F.IDS.ideaAccepted.replace('accepted', 'acceptxd');
+    assert.deepEqual(V.unknownIdeaIds(F.IDS.project, { ...named([]), ideaVerdicts: [{ ideaId: retyped, status: 'accepted', reason: 'r' }] }), [retyped]);
+    assert.deepEqual(V.unknownIdeaIds(F.IDS.bare, named([F.IDS.ideaAccepted])), [F.IDS.ideaAccepted], 'an id of another project is unknown here');
+  } finally { fs.rmSync(env.dbPath, { force: true }); }
+});
+
 test('cleanup', () => { fs.rmSync(env.tmp, { recursive: true, force: true }); });

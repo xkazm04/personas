@@ -11,7 +11,7 @@ import {
   Refusal, canonical, nowIso,
 } from './contract.mjs';
 import { listRuns, loadAsks, loadBrief, loadWake, newRun, queueOutbox, raiseAsk, saveWake } from './store.mjs';
-import { briefCharters, resolveManaged } from './dbread.mjs';
+import { briefCharters, resolveManaged, openDb, q } from './dbread.mjs';
 import { brakes } from './brakes.mjs';
 
 const TOP_KEYS = ['wakeId', 'dispatch', 'defer', 'asks', 'ideaVerdicts', 'say', 'note', 'nextWakeMinutes'];
@@ -154,6 +154,25 @@ export function builderModel(brief, charterSlug) {
   return m.byCharter?.[charterSlug] ?? MODELS.builderByCharter[charterSlug] ?? m.builder ?? MODELS.builder;
 }
 
+/**
+ * Idea ids a decision names that are not in dev_ideas for this project (read-only). A master once
+ * wrote one real idea with two different full ids (2026-10-05); the wrong one would have queued an
+ * idea-verdict for nothing. Returns [] when the database cannot be read: no check, never a block.
+ */
+export function unknownIdeaIds(projectId, decision) {
+  const named = new Set([
+    ...(decision.dispatch ?? []).flatMap((x) => x.ideaIds ?? []),
+    ...(decision.ideaVerdicts ?? []).map((x) => x.ideaId),
+  ].filter((id) => typeof id === 'string' && id.trim()));
+  if (!named.size) return [];
+  let d; try { d = openDb(); } catch { return []; }
+  let rows;
+  try { rows = q(d, 'select id from dev_ideas where project_id = ?', [projectId]); } finally { try { d.close(); } catch { /* already closed */ } }
+  if (rows.some((r) => r.error)) return [];
+  const known = new Set(rows.map((r) => r.id));
+  return [...named].filter((id) => !known.has(id));
+}
+
 /** (args) => {wakeId, runIds:string[], outbox:string[], asks:string[], nextWakeAt}   // mints runIds BEFORE writing; Refusal on invalid */
 export async function cmdDecide({ flags = {} } = {}) {
   if (!flags.wake || flags.wake === true) throw new Error('--wake <wakeId> is required');
@@ -177,6 +196,8 @@ export async function cmdDecide({ flags = {} } = {}) {
   }
   const v = validateDecision(decision, { slug, wakeId: wake.wakeId, brief });
   if (!v.ok) throw new Refusal('invalid decision', { errors: v.errors });
+  const unknown = unknownIdeaIds(project.id, decision);
+  if (unknown.length) throw new Refusal('invalid decision', { errors: unknown.map((id) => `idea ${id} is not a dev_ideas row of ${slug}; copy the full id from the context document, never retype it`) });
 
   // (1) identity before effect: one planned run per dispatch. A re-submission after a crash
   // finds the run this wake already minted for the charter instead of minting a second one.
