@@ -6,6 +6,8 @@ version: 0.1.0
 
 # /master — one App Master per project, from the terminal
 
+App closed or under development? Use `/appmaster` - the headless chair that needs no running app.
+
 > The App Master is a runtime role the app already owns: a persona bound to a project, with
 > charters, a law manifest, a decision lane that wakes it, fleet workers it dispatches, ideas
 > and KPIs it files, and asks it raises in Approvals. The record of how it came to be is
