@@ -80,6 +80,9 @@ export function failureSignature(text, cap = 300) {
     const isNodeTestName = /^\u00b7\s+\S/.test(line);
     if (!isTestFail && !isTsError && !isNodeTestFile && !isNodeTestName) continue;
     const norm = line
+      // the SAME test lives at a different absolute path in the branch worktree and in the base worktree
+      .replace(/[A-Za-z]:[\\/][^\s]*?[\\/]worktrees[\\/][^\\/\s]+[\\/][^\\/\s]+[\\/]/g, '')
+      .replace(/\\/g, '/')
       .replace(/\(\d+,\d+\)/g, '')              // tsc (line,col)
       .replace(/\s+\d+(?:\.\d+)?\s?m?s$/i, '')    // trailing timing
       .replace(/\s*\[[^\]]*\]\s*$/, '')           // trailing [ ... ] annotation

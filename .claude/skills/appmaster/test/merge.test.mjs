@@ -307,6 +307,17 @@ test('(xiv) a held run that merges on a retry closes its own merge-held asks and
   assert.match(S.loadAsks('closeasks').find((a) => a.askId === mine.askId).answer.notes, /merged abcdef0123/);
 });
 
+test('(xv) the failure signature is the same for the same test in the branch worktree and the base worktree', async () => {
+  const G = await import('../lib/gate.mjs');
+  const text = (dir) => `  BROKEN     failed twice\n    C:\\Users\\x\\.personas\\headless-masters\\worktrees\\kp\\${dir}\\app\\api\\a\\b.test.ts\n      \u00b7 the thing works\n`;
+  const branch = G.failureSignature(text('1d7bc52b'));
+  const base = G.failureSignature(text('base-1d7bc52b'));
+  assert.ok(branch.length > 0);
+  assert.deepEqual(branch, base);
+  assert.equal(G.failuresAreInherited(branch, base), true);
+  assert.equal(G.failuresAreInherited([...branch, 'app/api/c/d.test.ts'], base), false, 'a failure only the branch has is not inherited');
+});
+
 // ---------------------------------------------------------------- the rest of the state machine
 
 test('a usage limit in the stream -> released (not held, not failed) and the mark is set', () => {
