@@ -141,14 +141,25 @@ export function ProjectsLayer({
     return m;
   }, [factoryProjects]);
 
-  // The head is a kit Section; the wall below keeps its own type tier (it is
-  // out of the Gate 5 port) so it sits after the compact KitHost, on the same
-  // reading line. // style-deviation: passport wall tier, Gate 5.
+  // The head is a kit Section at the REAL type tier.
+  //
+  // It was `KitHost compact`, which is `data-type-density="compact"` - measured
+  // at 11.1-12.5% smaller than the same token outside the kit
+  // (`scripts/style/kit-type-probe/`). Doctrine 6c reserves that tier for dense
+  // tool lists; this is the Factory's landing showcase, so it was the exact case
+  // the doctrine names. It also CAUSED the deviation that used to be annotated
+  // here: the wall below had to hold its own tier to stay on the same reading
+  // line as a head that had shrunk away from it. Dropping `compact` puts both on
+  // one ladder and retires the deviation rather than documenting it.
+  //
+  // `Surface dense` stays - it is padding only (`k-surface--dense`), not type,
+  // so the head band keeps its tight rhythm.
   const failed = !!error && passports.length === 0;
   const empty = !failed && !loading && passports.length === 0;
   return (
-    <div>
-      <KitHost compact testId="factory-landing">
+    // The head and the wall used to butt together with no gap at all.
+    <div className="space-y-3">
+      <KitHost testId="factory-landing">
         <Surface dense>
           <Section
             id="s-fac-readiness"
