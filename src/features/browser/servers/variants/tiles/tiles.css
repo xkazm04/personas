@@ -1,0 +1,167 @@
+/* Live tiles: the Server control prototype drawn as cards (spark server-control, WP3).
+   Every class is `lt-` scoped and built from theme variables only, so each theme paints
+   its own tiles. Grammar: a TILE is one app; its TOP EDGE is the lamp you read from across
+   the room (running pulses in the theme primary, the motif the Monitor bay shares); its
+   STATE BLOCK is the foot of the tile, washed in the state's tone. */
+
+.lt-root { display: flex; flex-direction: column; gap: 22px; }
+
+/* ── Workspace group ─────────────────────────────────────────────────── */
+.lt-group { display: flex; flex-direction: column; gap: 10px; }
+.lt-group__head { display: flex; align-items: center; gap: 10px; min-height: 28px; }
+.lt-group__swatch {
+  width: 6px; height: 22px; flex-shrink: 0; border-radius: var(--radius-pill);
+  background: var(--ws, color-mix(in srgb, var(--foreground) 35%, transparent));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--ws, var(--foreground)) 45%, transparent);
+}
+.lt-group__name { color: color-mix(in srgb, var(--ws, var(--foreground)) 62%, var(--foreground)); }
+.lt-group__rule {
+  flex: 1; height: 1px; min-width: 24px;
+  background: linear-gradient(to right, color-mix(in srgb, var(--ws, var(--foreground)) 40%, transparent), transparent);
+}
+.lt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(272px, 1fr)); gap: 14px; }
+
+/* ── Tone ────────────────────────────────────────────────────────────── */
+.lt-t-run { --lt-tone: var(--primary); }
+.lt-t-warn { --lt-tone: var(--status-warning); }
+.lt-t-err { --lt-tone: var(--status-error); }
+.lt-t-info { --lt-tone: var(--status-info); }
+.lt-t-off { --lt-tone: color-mix(in srgb, var(--foreground) 45%, transparent); }
+
+/* ── Tile ────────────────────────────────────────────────────────────── */
+.lt-card {
+  position: relative; display: flex; flex-direction: column; min-width: 0; overflow: hidden;
+  border-radius: var(--radius-card);
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+  background:
+    radial-gradient(130% 80% at 0% 0%, color-mix(in srgb, var(--lt-tone) 9%, transparent), transparent 62%),
+    color-mix(in srgb, var(--foreground) 2.5%, var(--background));
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  outline: none;
+}
+.lt-card:hover, .lt-card:focus-within { border-color: color-mix(in srgb, var(--lt-tone) 45%, transparent); }
+.lt-card:focus-visible { box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--primary); }
+.lt-card.is-run {
+  border-color: color-mix(in srgb, var(--primary) 32%, transparent);
+  box-shadow: 0 18px 40px -26px color-mix(in srgb, var(--primary) 70%, transparent);
+}
+.lt-card.is-host { border-style: dashed; }
+
+/* The top edge: a lit bar in the state tone. Off states keep a quiet rule. */
+.lt-card::before {
+  content: ""; position: absolute; inset: 0 0 auto; height: 3px; pointer-events: none;
+  background: color-mix(in srgb, var(--lt-tone) 55%, transparent);
+}
+.lt-t-off.lt-card::before { background: color-mix(in srgb, var(--foreground) 8%, transparent); }
+.lt-card.is-run::before {
+  height: 4px; background: var(--primary);
+  box-shadow: 0 0 14px 1px color-mix(in srgb, var(--primary) 60%, transparent);
+}
+.lt-card.is-starting::before { background: color-mix(in srgb, var(--primary) 40%, transparent); }
+
+.lt-card__body { display: flex; flex-direction: column; gap: 8px; padding: 20px 18px 14px; min-width: 0; }
+.lt-card__top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.lt-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0; color: var(--foreground); }
+.lt-host {
+  flex-shrink: 0; padding: 1px 8px; border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in srgb, var(--primary) 40%, transparent);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
+}
+
+.lt-port {
+  display: block; margin-top: -2px;
+  font-size: calc(var(--type-4) * var(--type-f)); font-weight: 500; line-height: 1;
+  font-variant-numeric: tabular-nums lining-nums; letter-spacing: -0.01em;
+  color: color-mix(in srgb, var(--lt-tone) 55%, var(--foreground));
+}
+.lt-t-off .lt-port { color: color-mix(in srgb, var(--foreground) 80%, transparent); }
+.lt-port__colon { color: color-mix(in srgb, var(--lt-tone) 60%, transparent); margin-right: 1px; }
+
+.lt-tech { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; min-height: 30px; }
+.lt-tech__well {
+  display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
+  border-radius: var(--radius-interactive);
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
+  color: var(--foreground);
+}
+.lt-tech__token {
+  padding: 3px 8px; border-radius: var(--radius-interactive);
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+.lt-cmd {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: color-mix(in srgb, var(--foreground) 78%, transparent);
+}
+
+/* ── State block ─────────────────────────────────────────────────────── */
+.lt-state {
+  margin-top: auto; display: flex; align-items: center; gap: 12px; min-height: 68px;
+  padding: 10px 12px 10px 18px;
+  border-top: 1px solid color-mix(in srgb, var(--lt-tone) 22%, transparent);
+  background: color-mix(in srgb, var(--lt-tone) 9%, transparent);
+}
+.lt-t-off .lt-state { background: color-mix(in srgb, var(--foreground) 3%, transparent); }
+.lt-state__text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.lt-state__word { color: var(--lt-tone); }
+.lt-t-off .lt-state__word { color: var(--foreground); }
+.lt-state__detail, .lt-state__error {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.lt-state__error { color: var(--status-error); }
+.lt-lamp {
+  width: 12px; height: 12px; flex-shrink: 0; border-radius: var(--radius-pill);
+  border: 1.5px solid color-mix(in srgb, var(--lt-tone) 75%, transparent);
+  background: color-mix(in srgb, var(--lt-tone) 10%, transparent);
+}
+.lt-lamp.is-lit {
+  border-color: var(--lt-tone);
+  background: radial-gradient(circle at 35% 35%, color-mix(in srgb, var(--lt-tone) 55%, var(--foreground)), var(--lt-tone) 60%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lt-tone) 18%, transparent), 0 0 14px 2px color-mix(in srgb, var(--lt-tone) 55%, transparent);
+}
+
+/* The power control: a quiet ring at rest, a large lit disc on hover or focus. */
+.lt-power.lt-power {
+  width: 44px; height: 44px; flex-shrink: 0; border-radius: var(--radius-pill);
+  border: 1.5px solid color-mix(in srgb, var(--lt-tone) 50%, transparent);
+  background: color-mix(in srgb, var(--background) 60%, transparent);
+  color: var(--lt-tone);
+  transition: width 160ms ease, height 160ms ease, background-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+}
+.lt-t-off .lt-power.lt-power { color: var(--foreground); border-color: color-mix(in srgb, var(--foreground) 30%, transparent); }
+.lt-card:hover .lt-power.lt-power:not(:disabled),
+.lt-card:focus-within .lt-power.lt-power:not(:disabled) {
+  width: 52px; height: 52px;
+  background: var(--lt-tone); color: var(--background); border-color: var(--lt-tone);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lt-tone) 18%, transparent), 0 0 22px color-mix(in srgb, var(--lt-tone) 55%, transparent);
+}
+.lt-card.lt-t-off:hover .lt-power.lt-power:not(:disabled),
+.lt-card.lt-t-off:focus-within .lt-power.lt-power:not(:disabled) {
+  background: var(--primary); border-color: var(--primary); color: var(--background);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 18%, transparent), 0 0 22px color-mix(in srgb, var(--primary) 50%, transparent);
+}
+
+/* ── Loading ghost: the tile's own shape, still ───────────────────────── */
+.lt-ghost { pointer-events: none; }
+.lt-ghost__bar { border-radius: var(--radius-interactive); background: color-mix(in srgb, var(--foreground) 7%, transparent); }
+.lt-ghost .lt-card { min-height: 196px; }
+
+/* ── Motion (gated like fleetboard.css) ──────────────────────────────── */
+@keyframes lt-edge-pulse {
+  0%, 100% { opacity: 0.5; box-shadow: 0 0 6px color-mix(in srgb, var(--primary) 30%, transparent); }
+  50% { opacity: 1; box-shadow: 0 0 18px 2px color-mix(in srgb, var(--primary) 70%, transparent); }
+}
+@keyframes lt-lamp-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--lt-tone) 55%, transparent); }
+  70% { box-shadow: 0 0 0 7px transparent; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion="reduce"]) .lt-card.is-run::before { animation: lt-edge-pulse 2.8s ease-in-out infinite; }
+  html:not([data-motion="reduce"]) .lt-lamp.is-pulse { animation: lt-lamp-pulse 1.8s ease-out infinite; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lt-card, .lt-power.lt-power { transition: none; }
+}
+html[data-motion="reduce"] .lt-card, html[data-motion="reduce"] .lt-power.lt-power { transition: none; }
