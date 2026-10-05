@@ -33,6 +33,15 @@ interface Props {
 // Each tile is a one-click jump to the exact slice its number counts. The
 // summary KPIs are global (no source/time/persona scoping), so the targets
 // clear those dimensions to keep the list count matching the headline number.
+//
+// They are TOGGLES, not a one-way trip (2026-10-05): clicking the tile that is
+// already pressed hands back `OPEN_FILTERS` — the inbox's documented resting
+// view — so a narrowed list can always be widened from the same control that
+// narrowed it, with no hunting for a reset. The Open tile IS that resting
+// view, so its second click is a harmless no-op rather than a trap-door into
+// some other state. This matters more since the ledger dropped its `state`
+// column: the pressed tile is now the only thing saying which statuses are on
+// screen, so it has to be reversible.
 const CRITICAL_FILTERS: IncidentFilters = {
   statuses: ['open'], severities: ['critical'], source_tables: null, persona_id: null, since: null,
 };
@@ -91,7 +100,7 @@ export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters, auto
         tone="danger"
         sublabel={critical > 0 ? t.overview.incidents.urgency_critical : undefined}
         active={filtersMatch(filters, CRITICAL_FILTERS)}
-        onClick={() => onApplyFilters(CRITICAL_FILTERS)}
+        onClick={() => onApplyFilters(filtersMatch(filters, CRITICAL_FILTERS) ? OPEN_FILTERS : CRITICAL_FILTERS)}
       />
       <Tile
         label={t.overview.incidents.kpi_acknowledged}
@@ -100,7 +109,7 @@ export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters, auto
         Icon={Activity}
         tone="info"
         active={filtersMatch(filters, ACK_FILTERS)}
-        onClick={() => onApplyFilters(ACK_FILTERS)}
+        onClick={() => onApplyFilters(filtersMatch(filters, ACK_FILTERS) ? OPEN_FILTERS : ACK_FILTERS)}
       />
       <Tile
         label={t.overview.incidents.kpi_resolved}
@@ -109,7 +118,7 @@ export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters, auto
         Icon={CheckCircle2}
         tone="success"
         active={filtersMatch(filters, RESOLVED_FILTERS)}
-        onClick={() => onApplyFilters(RESOLVED_FILTERS)}
+        onClick={() => onApplyFilters(filtersMatch(filters, RESOLVED_FILTERS) ? OPEN_FILTERS : RESOLVED_FILTERS)}
       />
       {autonomous && (
         <Tile

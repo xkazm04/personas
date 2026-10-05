@@ -12,7 +12,7 @@ import { incidentDaysOpen, severityRank } from './incidentTaxonomy';
  * performance practice the other Overview tables get from virtualization.
  */
 
-export type IncidentSortKey = 'created' | 'severity' | 'source' | 'persona' | 'state' | 'age';
+export type IncidentSortKey = 'created' | 'title' | 'severity' | 'source' | 'persona' | 'state' | 'age';
 export type SortDirection = 'asc' | 'desc';
 
 export const PAGE_SIZES = [25, 50, 100] as const;
@@ -42,6 +42,7 @@ export interface IncidentLedgerState {
 /** Descending is the useful default for time and severity; ascending for names. */
 const DEFAULT_DIR: Record<IncidentSortKey, SortDirection> = {
   created: 'desc',
+  title: 'asc',
   severity: 'desc',
   source: 'asc',
   persona: 'asc',
@@ -60,12 +61,19 @@ const STATE_RANK: Record<string, number> = {
 
 function compare(a: AuditIncident, b: AuditIncident, key: IncidentSortKey): number {
   switch (key) {
+    // Every case is written DESCENDING-first, because `sorted` negates the
+    // whole comparator for an ascending sort. The alphabetical keys are
+    // therefore `b.localeCompare(a)` so that their 'asc' default (DEFAULT_DIR)
+    // reads A-Z. `source` and `persona` were written the other way round and
+    // so opened Z-A on first click, against this file's own stated contract.
+    case 'title':
+      return b.title.localeCompare(a.title);
     case 'severity':
       return severityRank(b.severity) - severityRank(a.severity);
     case 'source':
-      return a.sourceTable.localeCompare(b.sourceTable);
+      return b.sourceTable.localeCompare(a.sourceTable);
     case 'persona':
-      return (a.personaName ?? '').localeCompare(b.personaName ?? '');
+      return (b.personaName ?? '').localeCompare(a.personaName ?? '');
     case 'state':
       return (STATE_RANK[a.status] ?? 9) - (STATE_RANK[b.status] ?? 9);
     case 'age':
