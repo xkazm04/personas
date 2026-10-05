@@ -139,6 +139,7 @@
       "contexts": ["| `batch_delete_memories` (plural) | `memories.rs:821` → `spawn_delete_memory_embeddings(ids)` (`:843`) | ✅ **yes** |"],
       "resolved": false
     },
+    "orchestrator.rs": {"count":1,"sections":[4],"lines":["30"],"contexts":["is \"wire it\", not \"write it\".** `LaneOutcome<T>` (`orchestrator.rs:30`) is the generic form and has"],"resolved":false},
     "package.json": {"count":1,"sections":[9],"contexts":["**`npm run check`** (`package.json` — `check` = `check:contracts && … && census:check && tsc && eslint`),"]},
     "packages/orchestrator/src/httpApi.ts": {"count":1,"sections":[6],"lines":["1864"],"contexts":["one batch endpoint (`packages/orchestrator/src/httpApi.ts:1864`) takes a `count`, not an id list,"],"resolved":false},
     "personas.rs": {"count":1,"sections":[0],"lines":["1823-1824"],"contexts":["(`personas.rs:1823-1824`). **It names the drain and does not do it.** Latent today: 0 of 78 personas"],"resolved":false},
@@ -374,9 +375,9 @@
       "verbatim": "build_session/fanout.rs"
     },
     "src-tauri/src/engine/build_session/orchestrator.rs": {
-      "count": 3,
-      "sections": [3,4,7],
-      "lines": ["30-33","30"],
+      "count": 2,
+      "sections": [3,7],
+      "lines": ["30-33"],
       "contexts": [
         "| `src/engine/build_session/orchestrator.rs:30-33` — `LaneOutcome<T> { lane: String, result: Result<T, String> }` | **the generic type this leaf wants, already written.** Adopt it — but see §7 D8: it…"
       ],

@@ -52,7 +52,16 @@
     },
     "index.ts": {"count":1,"sections":[7],"lines":["9-18"],"contexts":["806 LOC, exported from `index.ts:9-18` and imported by nothing, sitting beside"],"resolved":false},
     "onboardingStore.ts": {"count":1,"sections":[7],"contexts":["`/api/goals`; `onboardingStore.ts` stores the result), with `resetOnboarding`"],"resolved":false},
+    "overview/components/health/StatusIndicators.tsx": {"count":1,"sections":[7],"lines":["18"],"contexts":["| `overview/components/health/StatusIndicators.tsx:18` | a section with no checks renders the \"inactive/info\" dot |"],"resolved":false},
+    "overview/components/health/useHealthChecks.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["87"],
+      "contexts": ["| `overview/components/health/useHealthChecks.ts:87` | zero resolved health sections → `hasIssues = false` → **the health surface reports healthy on no data** |"],
+      "resolved": false
+    },
     "overview/sub_knowledge/components/KnowledgeRow.tsx": {"count":1,"sections":[],"lines":["80"],"contexts":["positives are `overview/sub_knowledge/components/KnowledgeRow.tsx:80` and"],"resolved":false},
+    "overview/sub_manual-review/.../ReviewFocusFlow.tsx": {"count":1,"sections":[7],"lines":["177"],"contexts":["| `overview/sub_manual-review/.../ReviewFocusFlow.tsx:177` | an empty decision set is \"all decided\" |"],"resolved":false},
     "overview/sub_patterns/ExtractionMenu.tsx": {"count":1,"sections":[7],"lines":["57"],"contexts":["**The one site to copy is `overview/sub_patterns/ExtractionMenu.tsx:57`:**"],"resolved":false},
     "readinessGaps.ts": {
       "count": 1,
@@ -131,30 +140,6 @@
       "contexts": ["`OnboardingProgressBar.tsx` read directly. 4,397 production files instrumented,"],
       "resolvedFrom": "basename",
       "verbatim": "OnboardingProgressBar.tsx"
-    },
-    "src/features/overview/components/health/StatusIndicators.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["18"],
-      "contexts": ["| `overview/components/health/StatusIndicators.tsx:18` | a section with no checks renders the \"inactive/info\" dot |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/components/health/StatusIndicators.tsx"
-    },
-    "src/features/overview/components/health/useHealthChecks.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["87"],
-      "contexts": ["| `overview/components/health/useHealthChecks.ts:87` | zero resolved health sections → `hasIssues = false` → **the health surface reports healthy on no data** |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/components/health/useHealthChecks.ts"
-    },
-    "src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["177"],
-      "contexts": ["| `overview/sub_manual-review/.../ReviewFocusFlow.tsx:177` | an empty decision set is \"all decided\" |"],
-      "resolvedFrom": "elided-suffix",
-      "verbatim": "overview/sub_manual-review/.../ReviewFocusFlow.tsx"
     },
     "src/features/plugins/twin/setup/SetupReadinessRow.tsx": {
       "count": 1,

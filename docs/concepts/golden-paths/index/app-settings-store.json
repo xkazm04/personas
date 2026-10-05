@@ -190,6 +190,7 @@
       ],
       "resolved": false
     },
+    "schema.rs": {"count":3,"sections":[5,7],"lines":["595-599","597","595"],"contexts":["(`schema.rs:595-599`) and the settings module has **zero** references to `crypto`, `encrypt` or"],"resolved":false},
     "schemas.ts": {"count":1,"sections":[6],"lines":["278"],"contexts":["`DeploymentCreateSchema` already accepts `maxMonthlyBudgetUsd` (`schemas.ts:278`). Deriving the"],"resolved":false},
     "scripts/census/": {"count":1,"sections":[9],"contexts":["mechanism already exists at [`scripts/census/`](../../../scripts/census/) and **`npm run census:check`"],"resolved":false,"isDir":true},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["This path publishes **three** entries for `scripts/census/rules.json` (merged by the orchestrator —"]},
@@ -212,14 +213,6 @@
     },
     "src-tauri/core/src/redact.rs": {"count":2,"sections":[5,7],"lines":["34"],"contexts":["- **Declaring the key literal a second time — 10 sites across 8 files.** `redact.rs:34`,"],"resolvedFrom":"basename","verbatim":"redact.rs"},
     "src-tauri/db/src": {"count":1,"sections":[9],"contexts":["| renamed registry root (`src-tauri/db/src` → `…/db/srcx`) | **1** |"],"resolved":false,"isDir":true},
-    "src-tauri/db/src/migrations/schema.rs": {
-      "count": 3,
-      "sections": [5,7],
-      "lines": ["595-599","597","595"],
-      "contexts": ["(`schema.rs:595-599`) and the settings module has **zero** references to `crypto`, `encrypt` or"],
-      "resolvedFrom": "basename",
-      "verbatim": "schema.rs"
-    },
     "src-tauri/db/src/repos/core/personas.rs": {
       "count": 1,
       "sections": [7],

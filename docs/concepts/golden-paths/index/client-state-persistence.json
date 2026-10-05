@@ -86,6 +86,15 @@
       ],
       "resolved": false
     },
+    "schema.rs": {
+      "count": 3,
+      "sections": [4,7,8],
+      "lines": ["595"],
+      "contexts": [
+        "9. **If it is a secret, stop and leave this path.** Route it to `create_credential` / `update_credential`. Do not put it in `app_settings` (values are plaintext `TEXT` — `schema.rs:595`), do not put…"
+      ],
+      "resolved": false
+    },
     "scripts/bundle-baseline.json": {
       "count": 1,
       "sections": [9],
@@ -158,16 +167,6 @@
       "contexts": [
         "- **`src-tauri/core/src/crypto.rs`** — `encrypt_for_db` (`:1302`) / `decrypt_from_db` (`:1317`) / `encrypt_field` (`:1350`), AES-256-GCM under an OS-keychain-bound, fail-closed, mlock-pinned master k…"
       ]
-    },
-    "src-tauri/db/src/migrations/schema.rs": {
-      "count": 3,
-      "sections": [4,7,8],
-      "lines": ["595"],
-      "contexts": [
-        "9. **If it is a secret, stop and leave this path.** Route it to `create_credential` / `update_credential`. Do not put it in `app_settings` (values are plaintext `TEXT` — `schema.rs:595`), do not put…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "schema.rs"
     },
     "src-tauri/db/src/repos/core/personas.rs": {
       "count": 1,

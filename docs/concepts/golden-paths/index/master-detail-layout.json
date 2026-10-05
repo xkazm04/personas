@@ -22,6 +22,7 @@
     "Gallery3D.tsx": {"count":1,"sections":[7],"lines":["114"],"contexts":["`Gallery3D.tsx:114` (`selectedIndex: number | null`) selects a position in a 3-D carousel."],"resolved":false},
     "KnowledgeApprovalsPanel.tsx": {"count":1,"sections":[7],"contexts":["`KnowledgeApprovalsPanel.tsx`, `ContextMapPage.tsx`, `LifecycleProjectPicker.tsx`,"],"resolved":false},
     "MessageList.tsx": {"count":1,"sections":[7],"contexts":["`useEventLog.ts`, `MemoriesPageDense.tsx`, `MemoriesPageGraph.tsx`, `MessageList.tsx`,"],"resolved":false},
+    "PatternsPanel.tsx": {"count":2,"sections":[7],"lines":["71"],"contexts":["`PatternsPanel.tsx`, `ProfilesAtelier.tsx`, `CredentialTemplateForm.tsx`,"],"resolved":false},
     "PersonaLayoutView.tsx": {"count":1,"sections":[7],"contexts":["collection.** `PersonaLayoutView.tsx`, `useOnboardingState.ts:253-260`,"],"resolved":false},
     "ReviewsSplitPane.tsx": {
       "count": 2,
@@ -72,7 +73,6 @@
     "src/features/overview/sub_memories/components/MemoriesPageGraph.tsx": {"count":1,"sections":[7],"contexts":["`useEventLog.ts`, `MemoriesPageDense.tsx`, `MemoriesPageGraph.tsx`, `MessageList.tsx`,"],"resolvedFrom":"basename","verbatim":"MemoriesPageGraph.tsx"},
     "src/features/overview/sub_observability/libs/useAnomalyDrilldown.ts": {"count":1,"sections":[7],"contexts":["`useHealingPanelState.ts`, `useAnomalyDrilldown.ts`, `DirectorCoachingTab.tsx`,"],"resolvedFrom":"basename","verbatim":"useAnomalyDrilldown.ts"},
     "src/features/overview/sub_observability/libs/useHealingPanelState.ts": {"count":1,"sections":[7],"contexts":["`useHealingPanelState.ts`, `useAnomalyDrilldown.ts`, `DirectorCoachingTab.tsx`,"],"resolvedFrom":"basename","verbatim":"useHealingPanelState.ts"},
-    "src/features/overview/sub_patterns/PatternsPanel.tsx": {"count":2,"sections":[7],"lines":["71"],"contexts":["`PatternsPanel.tsx`, `ProfilesAtelier.tsx`, `CredentialTemplateForm.tsx`,"],"resolvedFrom":"basename","verbatim":"PatternsPanel.tsx"},
     "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx": {"count":1,"sections":[7],"contexts":["`KnowledgeApprovalsPanel.tsx`, `ContextMapPage.tsx`, `LifecycleProjectPicker.tsx`,"],"resolvedFrom":"basename","verbatim":"ContextMapPage.tsx"},
     "src/features/plugins/dev-tools/sub_lifecycle/LifecycleProjectPicker.tsx": {"count":1,"sections":[7],"contexts":["`KnowledgeApprovalsPanel.tsx`, `ContextMapPage.tsx`, `LifecycleProjectPicker.tsx`,"],"resolvedFrom":"basename","verbatim":"LifecycleProjectPicker.tsx"},
     "src/features/plugins/dev-tools/sub_skills/trace/useSkillTraceModel.ts": {"count":1,"sections":[],"contexts":["`TrainingAtelier.tsx`, `useOnboardingState.ts`, `useSkillTraceModel.ts`,"],"resolvedFrom":"basename","verbatim":"useSkillTraceModel.ts"},

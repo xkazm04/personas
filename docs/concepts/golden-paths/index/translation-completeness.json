@@ -58,6 +58,13 @@
     "mvp-passport.json": {"count":1,"sections":[],"lines":["43"],"contexts":["English-only as an explicit launch decision (`mvp-passport.json:43`) and has zero i18n crates"],"resolved":false},
     "opengraph-image.tsx": {"count":2,"sections":[8],"lines":["137-139"],"contexts":["(`t.has(kindKey) ? t(kindKey) : …`, `opengraph-image.tsx:137-139`)."],"resolved":false},
     "personas-web/src/i18n/useTranslation.ts": {"count":1,"sections":[],"lines":["46-48"],"contexts":["(`personas-web/src/i18n/useTranslation.ts:46-48`), and a CI + pre-push completeness gate. On P4 that"],"resolved":false},
+    "schema.rs": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["777","108"],
+      "contexts": ["| `generating` | execution | `db/src/repos/lab/arena.rs:71-72` (and the column default, `schema.rs:777`) | `LabHistoryTable.tsx:90`, `LabResultModal.tsx:41` |"],
+      "resolved": false
+    },
     "scripts/": {"count":1,"sections":[7],"contexts":["`scripts/` — which after one correction (below) **agree exactly at 26 pairs / 17 sections / 121"],"resolved":false,"isDir":true},
     "scripts/data-analysis/kg-bill-roles-ingest.ts": {"count":1,"sections":[],"contexts":["(`scripts/data-analysis/kg-bill-roles-ingest.ts`, `kg-bill-engagement-ingest.ts`)."],"resolved":false},
     "scripts/i18n/check-coverage.mjs": {
@@ -92,14 +99,6 @@
     "section-locales/{es,ja}/overview.json": {"count":1,"sections":[7],"contexts":["both present in `section-locales/{es,ja}/overview.json` — and neither is ever fetched on the route"],"resolved":false},
     "src-tauri/db/src/chain.rs": {"count":2,"sections":[6,8],"lines":["45-81"],"contexts":["- `:15-29` — the domain list **mirrored verbatim**, with `src-tauri/db/src/chain.rs:45-81` named in"]},
     "src-tauri/db/src/migrations/incremental.rs": {"count":1,"sections":[7],"lines":["8232"],"contexts":["`widen_kpi_measurement_source_with_ai_compose` (`src-tauri/db/src/migrations/incremental.rs:8232`,"],"resolved":false},
-    "src-tauri/db/src/migrations/schema.rs": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["777","108"],
-      "contexts": ["| `generating` | execution | `db/src/repos/lab/arena.rs:71-72` (and the column default, `schema.rs:777`) | `LabHistoryTable.tsx:90`, `LabResultModal.tsx:41` |"],
-      "resolvedFrom": "basename",
-      "verbatim": "schema.rs"
-    },
     "src-tauri/db/src/model_routing.rs": {
       "count": 1,
       "sections": [7],

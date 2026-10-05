@@ -233,6 +233,15 @@
       ],
       "resolved": false
     },
+    "schema.rs": {
+      "count": 3,
+      "sections": [5,7],
+      "lines": ["1054-1067","678"],
+      "contexts": [
+        "- **Reading `DEFAULT` as a nullability guarantee — 27 columns, and the root cause of most of this document.** `persona_executions.input_tokens INTEGER DEFAULT 0` (`db/src/migrations/schema.rs:115`) i…"
+      ],
+      "resolved": false
+    },
     "scripts/census/": {"count":1,"sections":[9],"contexts":["mechanism already exists at [`scripts/census/`](../../../scripts/census/). This path publishes three"],"resolved":false,"isDir":true},
     "scripts/census/merge-published-rules.mjs": {"count":1,"sections":[9],"contexts":["`scripts/census/merge-published-rules.mjs`, never edited here directly):"]},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["entries for `scripts/census/rules.json` (merged by the orchestrator via"]},
@@ -360,9 +369,9 @@
       "verbatim": "initial.rs"
     },
     "src-tauri/db/src/migrations/schema.rs": {
-      "count": 6,
+      "count": 3,
       "sections": [5,6,7],
-      "lines": ["115","1054-1067","115-117","678"],
+      "lines": ["115","115-117","1054-1067"],
       "contexts": [
         "- **Reading `DEFAULT` as a nullability guarantee — 27 columns, and the root cause of most of this document.** `persona_executions.input_tokens INTEGER DEFAULT 0` (`db/src/migrations/schema.rs:115`) i…"
       ],

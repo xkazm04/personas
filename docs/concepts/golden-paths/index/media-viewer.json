@@ -38,6 +38,13 @@
     },
     "cmmedia-private-rules.json": {"count":1,"sections":[],"contexts":["**Validation.** Run standalone in a private scratch registry (`cmmedia-private-rules.json`),"],"resolved":false},
     "node_modules/@tauri-apps/api/core.js": {"count":1,"sections":[12],"lines":["234-236"],"contexts":["`node_modules/@tauri-apps/api/core.js:234-236` — a synchronous string formatter with no"],"resolved":false},
+    "overview/sub_manual-review/components/ReviewFocusFlow.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["458"],
+      "contexts": ["| `overview/sub_manual-review/components/ReviewFocusFlow.tsx:458` | `<video src={galleryImage}>` | the flow steps through gallery items in place |"],
+      "resolved": false
+    },
     "scripts/census/lib/instruments/stripComments.mjs": {"count":1,"sections":[],"contexts":["pass over `scripts/census/lib/instruments/stripComments.mjs`, and a bespoke"]},
     "src-tauri/engine/src/path_safety.rs": {
       "count": 2,
@@ -67,14 +74,6 @@
       "contexts": ["| `overview/sub_manual-review/components/FocusedDecisionCard.tsx:79` | `<video src={url}>` | the card is reused as the reviewer advances through decisions |"],
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_manual-review/components/FocusedDecisionCard.tsx"
-    },
-    "src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["458"],
-      "contexts": ["| `overview/sub_manual-review/components/ReviewFocusFlow.tsx:458` | `<video src={galleryImage}>` | the flow steps through gallery items in place |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/sub_manual-review/components/ReviewFocusFlow.tsx"
     },
     "src/features/plugins/radio/components/RadioFooter.tsx": {
       "count": 2,

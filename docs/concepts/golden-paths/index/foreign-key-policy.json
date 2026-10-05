@@ -53,6 +53,7 @@
       "resolved": false
     },
     "render_plan/invariants.rs": {"count":1,"sections":[9],"contexts":["strings (`engine/src/design.rs`, `companion/prompt.rs`, `render_plan/invariants.rs`"],"resolved":false},
+    "schema.rs": {"count":3,"sections":[6],"contexts":["Production DDL by file: `incremental.rs` 146 · `schema.rs` 79 · `db/src/lib.rs`"],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["this into `rules.json`:**"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "scripts/test/clean-env.cjs": {"count":5,"sections":[5,7,9],"lines":["57"],"contexts":["data. `scripts/test/clean-env.cjs:57` sets `foreign_keys = OFF`, deletes 17"]},
     "shared-facts.json": {"count":2,"sections":[9],"contexts":["`shared-facts.json`) with a comment-stripping,"],"resolved":false},
@@ -76,7 +77,6 @@
     },
     "src-tauri/db/src/migrations/fk_hygiene.rs": {"count":8,"sections":[4,5,6,7,8],"lines":["185-190","947"],"contexts":["function to `fk_hygiene.rs` and call it from `run()`. Give it a"],"resolvedFrom":"basename","verbatim":"fk_hygiene.rs"},
     "src-tauri/db/src/migrations/initial.rs": {"count":1,"sections":[6],"contexts":["43 · `initial.rs` 23 · `fk_hygiene.rs` 9 · `companion/dispatcher.rs` 9 ·"],"resolvedFrom":"basename","verbatim":"initial.rs"},
-    "src-tauri/db/src/migrations/schema.rs": {"count":3,"sections":[6],"contexts":["Production DDL by file: `incremental.rs` 146 · `schema.rs` 79 · `db/src/lib.rs`"],"resolvedFrom":"basename","verbatim":"schema.rs"},
     "src-tauri/db/src/repos/dev_memories_tests.rs": {"count":1,"sections":[7],"lines":["20"],"contexts":["`dev_memories_tests.rs:20`, `dev_tools_backlog_tests.rs:23`,"],"resolvedFrom":"basename","verbatim":"dev_memories_tests.rs"},
     "src-tauri/db/src/repos/dev_workspaces.rs": {
       "count": 2,

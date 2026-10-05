@@ -155,6 +155,7 @@
       "resolved": false
     },
     "personas.rs": {"count":2,"sections":[3,7],"lines":["30-45"],"contexts":["- **`src/lib/personas/personaThresholds.ts`.** A faithful transcription of `personas.rs:30-45` — all"],"resolved":false},
+    "schema.rs": {"count":1,"sections":[7],"lines":["108"],"contexts":["a fourth opinion, after the Rust macro, the SQL `CHECK` (`schema.rs:108`) and"],"resolved":false},
     "scripts/census/lib/engine.mjs": {"count":1,"sections":[9],"contexts":["own comment-block grouping and its own regex assembly, importing nothing from `lib/engine.mjs`."],"resolvedFrom":"suffix","verbatim":"lib/engine.mjs"},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Checked first that it is not already gated.** `scripts/census/rules.json` holds **140 rules**; none"]},
     "scripts/docs/gen-tour-anchors.mjs": {"count":5,"sections":[0,6,7,9],"contexts":["`scripts/docs/gen-tour-anchors.mjs`."]},
@@ -216,7 +217,6 @@
       "verbatim": "core/src/types.rs"
     },
     "src-tauri/db/src/chain.rs": {"count":3,"sections":[0,5],"contexts":["(`EventGateReason`), `src/features/triggers/lib/eventReason.ts`, `db/src/chain.rs`,"],"resolvedFrom":"suffix","verbatim":"db/src/chain.rs"},
-    "src-tauri/db/src/migrations/schema.rs": {"count":1,"sections":[7],"lines":["108"],"contexts":["a fourth opinion, after the Rust macro, the SQL `CHECK` (`schema.rs:108`) and"],"resolvedFrom":"basename","verbatim":"schema.rs"},
     "src-tauri/src/commands/design/connector_readiness.rs": {
       "count": 2,
       "sections": [7],

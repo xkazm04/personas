@@ -42,7 +42,6 @@
     },
     "DesignPhaseApplied.tsx": {"count":1,"sections":[7],"lines":["83,116"],"contexts":["(`DesignPhaseApplied.tsx:83,116`), `<p className=\"typo-heading text-amber-400/90\">`"],"resolved":false},
     "MessageDetailModal.tsx": {"count":1,"sections":[9],"lines":["87"],"contexts":["(`MessageDetailModal.tsx:87`, `:600`, `SectionCard.tsx:32`). Both reconcile to the digit."],"resolved":false},
-    "SectionCard.tsx": {"count":1,"sections":[9],"lines":["32"],"contexts":["(`MessageDetailModal.tsx:87`, `:600`, `SectionCard.tsx:32`). Both reconcile to the digit."],"resolved":false},
     "eslint-rules/no-low-contrast-text-classes.cjs": {
       "count": 4,
       "sections": [3,7],
@@ -123,6 +122,14 @@
       "contexts": ["`CustomThemeCreator.tsx` lets a user build a theme from a primary colour and a base mode."],
       "resolvedFrom": "basename",
       "verbatim": "CustomThemeCreator.tsx"
+    },
+    "src/features/shared/components/layout/SectionCard.tsx": {
+      "count": 1,
+      "sections": [9],
+      "lines": ["32"],
+      "contexts": ["(`MessageDetailModal.tsx:87`, `:600`, `SectionCard.tsx:32`). Both reconcile to the digit."],
+      "resolvedFrom": "basename",
+      "verbatim": "SectionCard.tsx"
     },
     "src/features/teams/sub_factory/passport/improve/monitoringCard.tsx": {
       "count": 1,

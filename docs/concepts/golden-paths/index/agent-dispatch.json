@@ -79,6 +79,7 @@
     "lefthook.yml": {"count":2,"sections":[9],"lines":["74-75","58-64"],"contexts":["(`lefthook.yml:74-75`), which exists because the census had been *\"enforced NOWHERE\"* before"]},
     "lib.rs": {"count":1,"sections":[7],"lines":["842-864"],"contexts":["(`approval_lifecycle.rs:390`), lab / teams / n8n (`lib.rs:842-864`) — and"],"resolved":false},
     "migrations/0018_sweep_schedules.sql": {"count":1,"sections":[],"lines":["9-11"],"contexts":["(`migrations/0018_sweep_schedules.sql:9-11`). Consequently `POST /v1/ops/sweeps/{kind}/run`"],"resolved":false},
+    "orchestrator.rs": {"count":1,"sections":[7],"lines":["59"],"contexts":["orchestrator uses `Semaphore::new(max_parallel)` (`orchestrator.rs:59`). **Four bounded lanes and"],"resolved":false},
     "overview/sub_patterns/practiceHarvestPrompt.ts": {
       "count": 1,
       "sections": [3],
@@ -221,14 +222,6 @@
       "verbatim": "task_executor.rs"
     },
     "src-tauri/src/companion/jobs/mod.rs": {"count":1,"sections":[7],"lines":["170"],"contexts":["`companion_background_job` (`companion/jobs/mod.rs:170`), `companion_approval`"],"resolvedFrom":"suffix","verbatim":"companion/jobs/mod.rs"},
-    "src-tauri/src/engine/build_session/orchestrator.rs": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["59"],
-      "contexts": ["orchestrator uses `Semaphore::new(max_parallel)` (`orchestrator.rs:59`). **Four bounded lanes and"],
-      "resolvedFrom": "basename",
-      "verbatim": "orchestrator.rs"
-    },
     "src-tauri/src/engine/mod.rs": {
       "count": 3,
       "sections": [0,6,7],

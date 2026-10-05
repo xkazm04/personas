@@ -364,6 +364,15 @@
       ],
       "resolved": false
     },
+    "schema.rs": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["966","985"],
+      "contexts": [
+        "- `repos/resources/credentials.rs:445-467` — the credential delete destroys **`credential_fields` (the encrypted secret material itself)**, `credential_audit_log` (the credential's own audit trail, a…"
+      ],
+      "resolved": false
+    },
     "scripts/build/run-rust-tests.mjs": {"count":1,"sections":[9],"contexts":["`scripts/build/run-rust-tests.mjs` passes `--lib` against the ROOT manifest,"]},
     "scripts/check-command-contract.mjs": {
       "count": 3,
@@ -405,9 +414,8 @@
       "verbatim": "db/src/migrations/fk_hygiene.rs"
     },
     "src-tauri/db/src/migrations/schema.rs": {
-      "count": 3,
-      "sections": [3,7],
-      "lines": ["966","985"],
+      "count": 1,
+      "sections": [3],
       "contexts": [
         "- **`db/src/migrations/schema.rs` / `incremental.rs`** — where the `REFERENCES … ON DELETE CASCADE | SET NULL` clause is declared. This is the only place the ownership graph is allowed to live."
       ],

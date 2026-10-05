@@ -143,6 +143,15 @@
       ],
       "resolved": false
     },
+    "schema.rs": {
+      "count": 6,
+      "sections": [4,7,9],
+      "lines": ["1386","128","527"],
+      "contexts": [
+        "2. **Declare it once.** Put the DDL in exactly one migration file. If a table is created in both `initial.rs`/`schema.rs` *and* patched by `incremental.rs`, the two must agree byte-for-byte on the ti…"
+      ],
+      "resolved": false
+    },
     "scripts/build/run-rust-tests.mjs": {"count":1,"sections":[9],"contexts":["`scripts/build/run-rust-tests.mjs` passes `--lib` against the ROOT manifest,"]},
     "scripts/check-event-registry.mjs": {
       "count": 1,
@@ -231,14 +240,14 @@
       "verbatim": "initial.rs"
     },
     "src-tauri/db/src/migrations/schema.rs": {
-      "count": 9,
-      "sections": [4,5,6,7,9],
-      "lines": ["128","323","678","1386","527"],
+      "count": 3,
+      "sections": [5,6,7],
+      "lines": ["128","323","678"],
       "contexts": [
-        "2. **Declare it once.** Put the DDL in exactly one migration file. If a table is created in both `initial.rs`/`schema.rs` *and* patched by `incremental.rs`, the two must agree byte-for-byte on the ti…"
+        "- **Declaring a test fixture's table with a different timestamp shape than production** — 7 sites. `src/companion/jobs/operations_views.rs:270` gives `persona_executions.created_at` a `DEFAULT (datet…"
       ],
-      "resolvedFrom": "basename",
-      "verbatim": "schema.rs"
+      "resolvedFrom": "suffix",
+      "verbatim": "db/src/migrations/schema.rs"
     },
     "src-tauri/db/src/repos/communication/events.rs": {
       "count": 1,

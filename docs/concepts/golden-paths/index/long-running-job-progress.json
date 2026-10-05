@@ -149,6 +149,13 @@
       ],
       "resolved": false
     },
+    "schema.rs": {
+      "count": 8,
+      "sections": [7],
+      "lines": ["1250","1267","1306","605","1510","1473","107-108","1570"],
+      "contexts": ["| `dev_scans` (`schema.rs:1250`) | `'running'` | **none** — the shared row for *every* `BackgroundJobManager` scan family |"],
+      "resolved": false
+    },
     "scripts/": {
       "count": 1,
       "sections": [9],
@@ -170,14 +177,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "core/src/types.rs"
-    },
-    "src-tauri/db/src/migrations/schema.rs": {
-      "count": 8,
-      "sections": [7],
-      "lines": ["1250","1267","1306","605","1510","1473","107-108","1570"],
-      "contexts": ["| `dev_scans` (`schema.rs:1250`) | `'running'` | **none** — the shared row for *every* `BackgroundJobManager` scan family |"],
-      "resolvedFrom": "basename",
-      "verbatim": "schema.rs"
     },
     "src-tauri/db/src/repos/core/build_sessions.rs": {
       "count": 1,

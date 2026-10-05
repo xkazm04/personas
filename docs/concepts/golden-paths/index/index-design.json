@@ -62,6 +62,15 @@
     "metrics.ts": {"count":1,"sections":[6],"contexts":["measures at the *request* level only; `personas-cloud`'s 391-line `metrics.ts` collector measures"],"resolved":false},
     "migrations/0033_list_indexes.sql": {"count":1,"sections":[6],"lines":["9-13"],"contexts":["`migrations/0033_list_indexes.sql:9-13`: *\"The archive orders by (created_at DESC, id) and pages"],"resolved":false},
     "migrations/0046_contradiction_sibling_lookup.sql": {"count":1,"sections":[6],"lines":["18-25"],"contexts":["10k.\"* `migrations/0046_contradiction_sibling_lookup.sql:18-25` goes further than anything in this"],"resolved":false},
+    "schema.rs": {
+      "count": 15,
+      "sections": [7,9],
+      "lines": ["130","1562","39","97","347","269","208","394"],
+      "contexts": [
+        "| `db/src/migrations/incremental.rs:1881` and `:1882` | `CREATE INDEX IF NOT EXISTS idx_pe_persona ON policy_events(persona_id)` and `idx_pe_created ON policy_events(created_at DESC)`. **Both names a…"
+      ],
+      "resolved": false
+    },
     "scripts/check-event-registry.mjs": {"count":1,"sections":[9],"contexts":["two-source parity check modelled on `scripts/check-event-registry.mjs`, and it would have caught"]},
     "shared-facts.json": {"count":2,"sections":[9],"contexts":["Sweep size: **963 `.rs` files** (exactly `rust.files` in `shared-facts.json`) ·"],"resolved":false},
     "src-tauri/**": {"count":1,"sections":[],"contexts":["Composed 2026-08-14 from a ground-truth sweep of `src-tauri/**` against `master`."],"resolved":false,"isDir":true},
@@ -100,16 +109,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "initial.rs"
-    },
-    "src-tauri/db/src/migrations/schema.rs": {
-      "count": 15,
-      "sections": [7,9],
-      "lines": ["130","1562","39","97","347","269","208","394"],
-      "contexts": [
-        "| `db/src/migrations/incremental.rs:1881` and `:1882` | `CREATE INDEX IF NOT EXISTS idx_pe_persona ON policy_events(persona_id)` and `idx_pe_created ON policy_events(created_at DESC)`. **Both names a…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "schema.rs"
     },
     "src-tauri/db/src/perf.rs": {
       "count": 4,

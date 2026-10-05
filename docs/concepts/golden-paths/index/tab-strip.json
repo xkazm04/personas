@@ -49,6 +49,7 @@
     "ExecutiveSummary.tsx": {"count":1,"sections":[],"lines":["894"],"contexts":["`ExecutiveSummary.tsx:894`, `ArchitectureBottomBar.tsx:169-221`, `DatabaseHealthPanel.tsx:265-280`;"],"resolved":false},
     "IngestMonitor.tsx": {"count":1,"sections":[],"lines":["78"],"contexts":["`console/app/demo/DemoConsole.tsx:324`, `CortexMap.tsx:79`, `IngestMonitor.tsx:78`; `vibeman`"],"resolved":false},
     "LiteratureSearchPanel.tsx": {"count":1,"sections":[7],"contexts":["(`LiteratureSearchPanel.tsx`, `ResearchProjectList.tsx`)."],"resolved":false},
+    "PatternsPanel.tsx": {"count":1,"sections":[7],"lines":["118"],"contexts":["(`PatternsPanel.tsx:118`, `FleetTerminalOverlay.tsx:205`); the rest are `useState` or a prop from a"],"resolved":false},
     "PrototypeTabs.tsx": {"count":1,"sections":[12],"contexts":["`PrototypeTabs.tsx` (2 sites) and `TwinVariantTabs.tsx` (1 site), both self-labelled *\"throwaway"],"resolved":false},
     "ReportPanels.tsx": {"count":2,"sections":[6],"lines":["5-6"],"contexts":["(`ReportPanels.tsx:5-6`, repeated inline at `:43`). State reset is not mentioned — and its real"],"resolved":false},
     "ReportView.tsx": {"count":1,"sections":[],"lines":["133-146"],"contexts":["`ascent` 2/3 (`ReportView.tsx:133-146`, validated against `validTabs`, `?tab=` deleted for the"],"resolved":false},
@@ -125,14 +126,6 @@
       "contexts": ["`overview/sub_observability/components/HealingIssuesPanel.tsx`,"],
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_observability/components/HealingIssuesPanel.tsx"
-    },
-    "src/features/overview/sub_patterns/PatternsPanel.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["118"],
-      "contexts": ["(`PatternsPanel.tsx:118`, `FleetTerminalOverlay.tsx:205`); the rest are `useState` or a prop from a"],
-      "resolvedFrom": "basename",
-      "verbatim": "PatternsPanel.tsx"
     },
     "src/features/personas/PersonasPage.tsx": {
       "count": 6,

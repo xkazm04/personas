@@ -106,6 +106,7 @@
     "scripts/census/run-census.mjs": {"count":1,"sections":[],"contexts":["(`scripts/census/run-census.mjs`) before being written down, then re-extracted"]},
     "scripts/check-csp-hosts.mjs": {"count":1,"sections":[12],"contexts":["the doctrine documents for `check-csp-hosts.mjs`."],"resolvedFrom":"basename","verbatim":"check-csp-hosts.mjs"},
     "scripts/generate-command-names.mjs": {"count":1,"sections":[8],"contexts":["*could* exist is a generated table — `scripts/generate-command-names.mjs`"]},
+    "session.rs": {"count":1,"sections":[6],"lines":["1047"],"contexts":["did not blank (`healing.rs:405` `\"{new_timeout}ms\"`, `session.rs:1047`,"],"resolved":false},
     "shared-facts.json": {"count":1,"sections":[],"contexts":["exactly with `rust.files` in `shared-facts.json`, reached"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[],"contexts":["**Sweep size.** All **963** non-generated `.rs` files under `src-tauri/` (agrees"],"resolved":false,"isDir":true},
     "src-tauri/build.rs": {"count":1,"sections":[9],"contexts":["~20 lines in `src-tauri/build.rs` plus a generated file, and it is the only fix"]},
@@ -281,7 +282,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "src/engine/runner/mod.rs"
     },
-    "src-tauri/src/engine/twin_setup/session.rs": {"count":1,"sections":[6],"lines":["1047"],"contexts":["did not blank (`healing.rs:405` `\"{new_timeout}ms\"`, `session.rs:1047`,"],"resolvedFrom":"basename","verbatim":"session.rs"},
     "src-tauri/src/notifications.rs": {
       "count": 1,
       "sections": [7],

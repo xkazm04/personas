@@ -169,6 +169,7 @@
     },
     "packages/orchestrator/src/triggerScheduler.ts": {"count":1,"sections":[6],"lines":["87"],"contexts":["`packages/orchestrator/src/triggerScheduler.ts:87` *\"Ported from desktop"],"resolved":false},
     "packages/shared/src/bus.ts": {"count":1,"sections":[6],"lines":["5,53"],"contexts":["engine/background.rs::event_bus_tick()\"*, `packages/shared/src/bus.ts:5,53` *\"Ported from"],"resolved":false},
+    "schema.rs": {"count":1,"sections":[9],"lines":["87"],"contexts":["at `schema.rs:87` for the admitted six, `VALID_TRIGGER_TYPES` minus the `CHECK` for the rejected"],"resolved":false},
     "scripts/census/lib/": {"count":1,"sections":[9],"contexts":["from `scripts/census/lib/`. Both agree at **6 files / 9 matches**, and — per the doctrine's warning"],"resolved":false,"isDir":true},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["removed from `scripts/census/rules.json` rather than re-baselined."]},
     "sqlite.driver.ts": {
@@ -205,8 +206,8 @@
       "verbatim": "core/src/validation/trigger.rs"
     },
     "src-tauri/db/src/migrations/schema.rs": {
-      "count": 7,
-      "sections": [0,2,4,7,9],
+      "count": 6,
+      "sections": [0,2,4,7],
       "lines": ["87"],
       "contexts": ["`db/src/migrations/schema.rs`, `engine/src/bus.rs`, `src/engine/polling.rs`,"],
       "resolvedFrom": "suffix",

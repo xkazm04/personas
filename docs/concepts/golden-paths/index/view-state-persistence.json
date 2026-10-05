@@ -35,7 +35,6 @@
   ],
   "citations": {
     ".github/workflows/ci.yml": {"count":1,"sections":[9],"contexts":["`ci.yml`, which is currently red on 10 pre-existing failures; a gate that only runs in CI runs nowhere."],"resolvedFrom":"basename","verbatim":"ci.yml"},
-    "SectionCard.tsx": {"count":1,"sections":[4],"lines":["75-83"],"contexts":["`readStorage` (`SectionCard.tsx:75-83`, a boolean, correct by coercion)."],"resolved":false},
     "TimeRangeSelector.tsx": {"count":1,"sections":[],"lines":["3-6"],"contexts":["`ascent` puts it in the **URL** and says so (`TimeRangeSelector.tsx:3-6`: *\"URL-as-state keeps the"],"resolved":false},
     "ascent/src/lib/window.ts": {"count":1,"sections":[],"lines":["39-44"],"contexts":["- `ascent/src/lib/window.ts:39-44` — `parsePeriodCookie` returns null on an unknown range key."],"resolved":false},
     "cliSessionStore.ts": {"count":1,"sections":[],"lines":["418-489"],"contexts":["`cliSessionStore.ts:418-489` at `version: 9` with a nine-step chained migration ladder."],"resolved":false},
@@ -223,8 +222,9 @@
       "verbatim": "UnifiedTable.tsx"
     },
     "src/features/shared/components/layout/SectionCard.tsx": {
-      "count": 2,
-      "sections": [3],
+      "count": 3,
+      "sections": [3,4],
+      "lines": ["75-83"],
       "contexts": ["`shared/components/layout/SectionCard.tsx`, `overview/sub_incidents/components/IncidentsInbox.tsx`,"],
       "resolvedFrom": "suffix",
       "verbatim": "shared/components/layout/SectionCard.tsx"

@@ -403,14 +403,13 @@
       "verbatim": "api/pipeline/scheduler.ts"
     },
     "src/features/overview/components/health/useHealthChecks.ts": {
-      "count": 3,
-      "sections": [4,6,7],
+      "count": 1,
+      "sections": [6],
       "lines": ["39"],
       "contexts": [
-        "10. **Prove it can be seen.** Open the Overview → Health page and confirm your subscription appears (`health_check_subscriptions` → `useHealthChecks.ts:39`). If it does not appear, you did not regist…"
+        "- **`src-tauri/src/commands/infrastructure/system/health.rs:715-765` (`build_subscriptions_section`) → `src/features/overview/components/health/useHealthChecks.ts:39`.** The one working end-to-end pa…"
       ],
-      "resolvedFrom": "basename",
-      "verbatim": "useHealthChecks.ts"
+      "resolved": false
     },
     "src/features/schedules/components/SchedulesOverlay.tsx": {
       "count": 2,
@@ -422,6 +421,15 @@
     },
     "src/lib/eventRegistry.ts": {"count":1,"sections":[7],"lines":["216"],"contexts":["panic (`subscription.rs:1341-1347`) — is declared in `eventRegistry.ts:216` with"],"resolvedFrom":"basename","verbatim":"eventRegistry.ts"},
     "sweeps.rs": {"count":3,"sections":[],"lines":["244","46","261"],"contexts":["advances `next_run_at` *before* knowing the outcome (`sweeps.rs:244`), so a"],"resolved":false},
+    "useHealthChecks.ts": {
+      "count": 2,
+      "sections": [4,7],
+      "lines": ["39"],
+      "contexts": [
+        "10. **Prove it can be seen.** Open the Overview → Health page and confirm your subscription appears (`health_check_subscriptions` → `useHealthChecks.ts:39`). If it does not appear, you did not regist…"
+      ],
+      "resolved": false
+    },
     "useIngestFeed.ts": {"count":1,"sections":[],"lines":["6-10"],"contexts":["`useIngestFeed.ts:6-10` opens with a comment that reads as a post-mortem — *\"an"],"resolved":false}
   }
 }

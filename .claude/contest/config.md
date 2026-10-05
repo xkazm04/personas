@@ -159,3 +159,17 @@ recorded under 2026-09-21 below.
   or stage a vendor list in `data/` so the compound-identifier exemption can keep them.
   Also: the arena sits inside this repo, and a codex seat ran `npm run gate`/`check` against the
   host tree from its workspace (nothing was written, verified by `git status`).
+
+- 2026-10-04 (mission-control-layers) - **The overlay's `vault_subdir` names a directory that does not
+  exist, so every contest run on the overlay default quotes ZERO prior patterns.** The frontmatter says
+  `vault_subdir: Contest`; the UI pattern ledger is actually `.contest/Product/Patterns.md` (and the
+  backend one `.contest/Backend/`). `init` reports `prior patterns quoted: 0` and carries on, so the
+  "what has won before" floor-raising mechanism has been silently off - a gate running green while
+  checking nothing. Pass `--vault-subdir Product` until the frontmatter is corrected. Also: a UI brief
+  whose deliverable is **committed app code in a git worktree** uses only `init` (framing) plus the
+  `plan` route; `collect`/`judge`/`router` blind and stage static-HTML variant directories and do not
+  apply. Host work that decided the run: build the page-harness view for the target page and prove it
+  renders FULL before spending any seat time - Mission Control had none, and a contest shot against a
+  skeleton would have been unjudgeable. When the harness and a running seat disagree, measure a way
+  around it (here `--settle 32000` let two cards recover via their own 30s interval) rather than
+  editing files underneath a live seat.

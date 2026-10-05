@@ -344,7 +344,6 @@
       "resolvedFrom": "basename",
       "verbatim": "SystemHealthPanel.tsx"
     },
-    "src/features/overview/components/health/useHealthChecks.ts": {"count":1,"sections":[7],"lines":["39"],"contexts":["The section *is* rendered (`useHealthChecks.ts:39` → `SystemHealthPanel.tsx:22`),"],"resolvedFrom":"basename","verbatim":"useHealthChecks.ts"},
     "src/lib/alerts.ts": {
       "count": 1,
       "sections": [6],
@@ -384,6 +383,7 @@
       ],
       "resolved": false
     },
+    "useHealthChecks.ts": {"count":1,"sections":[7],"lines":["39"],"contexts":["The section *is* rendered (`useHealthChecks.ts:39` → `SystemHealthPanel.tsx:22`),"],"resolved":false},
     "workerPool.ts": {
       "count": 1,
       "sections": [6],

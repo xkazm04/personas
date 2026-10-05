@@ -101,12 +101,13 @@
       "resolved": false
     },
     "research-lab/shared/FormField.tsx": {"count":2,"sections":[5,9],"lines":["3"],"contexts":["`research-lab/shared/FormField.tsx:3` (`FIELD_CLASS`, `rounded-card`),"],"resolved":false},
+    "schema.rs": {"count":1,"sections":[7],"contexts":["anywhere**; the 17 `CHECK` constraints in `schema.rs` are all enum/status"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[7],"contexts":["honestly without this. Verified against `src-tauri/`:"],"resolved":false,"isDir":true},
     "src-tauri/core/src/validation/": {"count":1,"sections":[7],"contexts":["adoption.** `src-tauri/core/src/validation/` (mod 266 lines, persona 569,"],"resolved":false,"isDir":true},
     "src-tauri/core/src/validation/persona.rs": {"count":1,"sections":[7],"lines":["516"],"contexts":["`validation/persona.rs:516`, **0 in `contract.rs` / `chat.rs` / `memory.rs` /"],"resolvedFrom":"suffix","verbatim":"validation/persona.rs"},
     "src-tauri/core/src/validation/trigger.rs": {"count":1,"sections":[7],"lines":["282"],"contexts":["- Rust validation tests: 13 in `validation/trigger.rs:282`, 5 in"],"resolvedFrom":"suffix","verbatim":"validation/trigger.rs"},
     "src-tauri/db/src/migrations/schema.rs": {
-      "count": 2,
+      "count": 1,
       "sections": [7],
       "lines": ["15"],
       "contexts": ["- **The database is not a backstop.** `personas.name` (`db/src/migrations/schema.rs:15`),"],

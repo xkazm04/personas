@@ -138,6 +138,7 @@
       ],
       "resolved": false
     },
+    "schema.rs": {"count":2,"sections":[3,7],"lines":["1365"],"contexts":["- **`db/src/migrations/incremental.rs:2871` / `schema.rs:1365` — `id INTEGER PRIMARY KEY CHECK (id = 1)`**"],"resolved":false},
     "scraper.rs": {
       "count": 1,
       "sections": [7],
@@ -148,6 +149,15 @@
       "resolved": false
     },
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Neither rule duplicates an existing one, checked against all 31 entries in `rules.json` before"],"resolvedFrom":"basename","verbatim":"rules.json"},
+    "session.rs": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["727"],
+      "contexts": [
+        "| **width 12 (48 bits) — the post-`d96f085ff` standard:** `companion/util.rs:11` called from `dispatcher.rs:3172`, `session.rs:727`, `turn_ledger.rs:317`, `projects.rs:117`, `backlog_triage.rs:197`,…"
+      ],
+      "resolved": false
+    },
     "shared-facts.json": {"count":2,"sections":[9],"contexts":["`frontend.tsFiles` in `shared-facts.json`) · **398 `CREATE TABLE` statements"],"resolved":false},
     "src-tauri/core/src/models/tool.rs": {
       "count": 1,
@@ -186,14 +196,6 @@
       "contexts": ["| `id TEXT PRIMARY KEY` **without** `NOT NULL` | **299** statements / 29 files | `incremental.rs` 114 · `schema.rs` 73 · `lib.rs` 30 · `initial.rs` 21 · `fk_hygiene.rs` 12 · 24 more files |"],
       "resolvedFrom": "basename",
       "verbatim": "initial.rs"
-    },
-    "src-tauri/db/src/migrations/schema.rs": {
-      "count": 2,
-      "sections": [3,7],
-      "lines": ["1365"],
-      "contexts": ["- **`db/src/migrations/incremental.rs:2871` / `schema.rs:1365` — `id INTEGER PRIMARY KEY CHECK (id = 1)`**"],
-      "resolvedFrom": "basename",
-      "verbatim": "schema.rs"
     },
     "src-tauri/db/src/repos/communication/alert_rules.rs": {
       "count": 3,
@@ -495,16 +497,6 @@
       "verbatim": "engine/persona_jobs.rs"
     },
     "src-tauri/src/engine/share_link.rs": {"count":3,"sections":[5,7],"lines":["112","376"],"contexts":["- **Using a UUID as a bearer token.** `engine/share_link.rs:112` mints"],"resolvedFrom":"suffix","verbatim":"engine/share_link.rs"},
-    "src-tauri/src/engine/twin_setup/session.rs": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["727"],
-      "contexts": [
-        "| **width 12 (48 bits) — the post-`d96f085ff` standard:** `companion/util.rs:11` called from `dispatcher.rs:3172`, `session.rs:727`, `turn_ledger.rs:317`, `projects.rs:117`, `backlog_triage.rs:197`,…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "session.rs"
-    },
     "src-tauri/src/ipc_auth.rs": {
       "count": 2,
       "sections": [2,5],

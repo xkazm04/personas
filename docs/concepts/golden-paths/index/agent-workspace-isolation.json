@@ -35,11 +35,11 @@
     "headless.rs": {"count":1,"sections":[2],"lines":["132"],"contexts":["`pty.rs:324`, `:364`, `headless.rs:132`, `external.rs:169`, and nine more), so the working"],"resolved":false},
     "mkB-private-rules.json": {"count":1,"sections":[9],"contexts":["Validated standalone in a private registry (`mkB-private-rules.json`, filename unique to this"],"resolved":false},
     "package.json": {"count":4,"sections":[0,7],"lines":["81"],"contexts":["the flags `package.json` actually ships and once with `--include-orphans` — and the two runs"]},
+    "schema.rs": {"count":1,"sections":[7],"lines":["1338"],"contexts":["`dev_competition_slots.worktree_name` (`schema.rs:1338`) records B's name. C and D are"],"resolved":false},
     "scripts/test/longitudinal.mjs": {"count":1,"sections":[0],"lines":["66"],"contexts":["`worktree-gc.mjs:283` runs one on every `--force` pass, and `scripts/test/longitudinal.mjs:66` runs"]},
     "scripts/worktree-gc.mjs": {"count":7,"sections":[0,7,12],"lines":["43","283","200","170"],"contexts":["construction sites opened and classified by hand. `scripts/worktree-gc.mjs` (289 lines) read in"]},
     "src-tauri/": {"count":1,"sections":[7],"contexts":["There is no `Drop` impl on the struct (verified: all 25 `impl Drop for` sites in `src-tauri/` were"],"resolved":false,"isDir":true},
     "src-tauri/db/src/lib.rs": {"count":3,"sections":[2,7],"lines":["896","1984"],"contexts":["(`src-tauri/db/src/lib.rs:896`) does this and `%TEMP%/personas-exec-wt-<execution_id>` does not;"]},
-    "src-tauri/db/src/migrations/schema.rs": {"count":1,"sections":[7],"lines":["1338"],"contexts":["`dev_competition_slots.worktree_name` (`schema.rs:1338`) records B's name. C and D are"],"resolvedFrom":"basename","verbatim":"schema.rs"},
     "src-tauri/engine/src/auto_triage.rs": {"count":2,"sections":[0,9],"lines":["280"],"contexts":["| `personas-auto-triage-*` | `auto_triage.rs:280` — cleans on success | 0 |"],"resolvedFrom":"basename","verbatim":"auto_triage.rs"},
     "src-tauri/engine/src/cli_capabilities.rs": {
       "count": 5,

@@ -2,6 +2,55 @@
 
 ## Active
 
+- **[2026-10-05 11:05]**
+- **Paths:** `src/features/fleet/monitor/fleetboard/**`
+- **Status:** started
+
+### spark2-lanes — spark 2: queue lanes as an ordering device, the dispatch modal, the dock's tail+Athena
+- **[2026-10-05 10:56]**
+- **Paths:** `src-tauri/src/commands/fleet/**` · `src-tauri/src/commands/infrastructure/task_executor.rs` · `src/features/agents/quick-answer/triage/deck/**` · `src/features/fleet/monitor/grid/QuickDispatchDock.tsx` · `scripts/docs/feature-doc-map.json`
+- **Status:** started
+
+- **[2026-10-05 10:31]**
+- **Paths:** `src/features/overview/sub_events/**` · `scripts/style/page-harness/synthetic-tapes.mjs` · `src/i18n/locales/**`
+- **Status:** started
+
+- **[2026-10-05 10:30]**
+- **Paths:** `.claude/skills/master/**` · `.claude/skills/appmaster/**` · `docs/architecture/app-master-*`
+- **Status:** started
+
+- **[2026-10-05 10:26]**
+- **Paths:** `src/features/overview/sub_manual-review/components/backlog/**`
+- **Status:** started
+
+- **[2026-10-05 09:25]**
+- **Paths:** `src-tauri/src/logging.rs` · `src/lib/logging/**` · `scripts/logs/**` · `.claude/skills/logdoctor/**`
+- **Status:** started
+
+- **[2026-10-04 22:24]**
+- **Paths:** `src/features/overview/sub_manual-review/**` · `src/features/fleet/monitor/grid/**` · `src/features/shared/components/decisions/**` · `src/features/agents/quick-answer/triage/triageAdapters.ts` · `scripts/docs/feature-doc-map.json`
+- **Status:** started
+
+- **[2026-10-04 16:46]**
+- **Paths:** `src/features/fleet/monitor/grid/board/queue/**` · `src/features/companions/curator/blueprint/**` · `src/features/agents/quick-answer/triage/deck/**` · `src/features/fleet/monitor/grid/QuickDispatchDock.tsx` · `src-tauri/src/commands/fleet/queue.rs`
+- **Status:** started
+
+- **[2026-10-04 15:26]**
+- **Paths:** `src/features/fleet/monitor/**` · `src/features/overview/sub_manual-review/**` · `src/features/companions/**` · `src/features/shared/components/**` · `src-tauri/src/commands/companions/**` · `src/i18n/locales/**`
+- **Status:** started
+
+- **[2026-10-04 15:07]**
+- **Paths:** `src/features/overview/sub_patterns/**` · `src-tauri/src/commands/infrastructure/hierarchy_read.rs` · `src-tauri/src/commands/infrastructure/registry_coverage.rs` · `src/api/devTools/hierarchy.ts`
+- **Status:** started
+
+- **[2026-10-04 15:04]**
+- **Paths:** `scripts/style/page-harness/missionControlSurfaces.tsx` · `scripts/style/page-harness/missionControlTapes.mjs` · `src/features/overview/sub_missionControl/**`
+- **Status:** started
+
+- **[2026-10-04 15:00]**
+- **Paths:** `src/features/overview/sub_observability/**` · `scripts/style/page-harness/observabilitySurfaces.tsx`
+- **Status:** started
+
 - **[2026-10-03 16:10]**
 - **Paths:** `src/features/home/components/**` · `src/features/home/sub_cockpit/**` · `src/features/home/sub_welcome/HomeWelcome.tsx` · `src/features/home/lib/**` · `scripts/style/page-harness/homeCockpitSurfaces.tsx` · `scripts/style/page-harness/homeCockpitTapes.mjs`
 - **Status:** started
@@ -1251,6 +1300,28 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### spark-board-monitor — spark: port the web playground's Board (full-frame fleet overview) into PersonaMonitor on real data - visual reality check
+
+### spark-headless-appmaster — spark: headless App Master layer (Pof/Ascent/KP) as Claude-skill subagents
+
+### kit-ev-events-source — kit EV: event log Source column — every emitted source gets a real icon + translated label
+
+### spark-devlog-doctor — spark: dev-server log design + log-doctor skill
+
+### backlog-format-sweep — Backlog: one-line rows, format fault sources, subagent re-triage of 279 unformatted pending items
+
+### wp5-triage-focus-adoption — WP5: both triage callers adopt the shared TriageFocus
+
+### spark-queue-initiators — Queue initiators (Curator/backlog/manual/personas) + secure personas-web queue sync
+
+### spark-monitor-companions — PersonaMonitor: companion flagging context menu (Athena/Overseer), quick chat, unified triage UI
+
+### kit-overview-1-observability — /kit overview-1 builder OB: Observability two-level structure, off compact, law 6
+
+### contest-mission-control — /contest Mission Control two-layer redesign: harness view + 2 seat worktrees + shots
+
+### pt-patterns-removal — Remove Overview Patterns module (owner note 2026-10-04)
 
 ### kit-st-law6-home — /kit ST: law 6 across the five Home surfaces - per-region retirement + section layering
 

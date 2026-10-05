@@ -32,6 +32,7 @@
       "contexts": ["(`memories.rs:1928`) enumerates `tier = 'archive'` rows *in the main DB* and"],
       "resolved": false
     },
+    "schema.rs": {"count":1,"sections":[7],"lines":["525"],"contexts":["| `ON DELETE CASCADE` from `personas` (`schema.rs:525`) | ❌ **structurally impossible** |"],"resolved":false},
     "scripts/check-csp-hosts.mjs": {"count":1,"sections":[],"contexts":["requirement and the `check-csp-hosts.mjs` precedent — an orphan checker with no"],"resolvedFrom":"basename","verbatim":"check-csp-hosts.mjs"},
     "src-tauri/db/src/embedder.rs": {"count":1,"sections":[],"contexts":["`src-tauri/db/src/vector_store.rs` (208), `src-tauri/db/src/embedder.rs` (264),"]},
     "src-tauri/db/src/macros.rs": {
@@ -51,7 +52,6 @@
       "resolvedFrom": "basename",
       "verbatim": "fk_hygiene.rs"
     },
-    "src-tauri/db/src/migrations/schema.rs": {"count":1,"sections":[7],"lines":["525"],"contexts":["| `ON DELETE CASCADE` from `personas` (`schema.rs:525`) | ❌ **structurally impossible** |"],"resolvedFrom":"basename","verbatim":"schema.rs"},
     "src-tauri/db/src/repos/core/memories.rs": {"count":3,"sections":[0],"lines":["1689-1693"],"contexts":["the `ml`-gated regions of `src-tauri/db/src/repos/core/memories.rs`,"]},
     "src-tauri/db/src/vector_store.rs": {"count":2,"sections":[7],"lines":["191-199"],"contexts":["`src-tauri/db/src/vector_store.rs` (208), `src-tauri/db/src/embedder.rs` (264),"]},
     "src-tauri/src/commands/credentials/mod.rs": {

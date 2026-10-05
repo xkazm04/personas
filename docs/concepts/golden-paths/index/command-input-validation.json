@@ -46,7 +46,6 @@
     "core/src/validation/*.rs": {"count":1,"sections":[9],"contexts":["`MIN/MAX_COMPOSITE_WINDOW_SECONDS` from `core/src/validation/*.rs`; parse the corresponding"],"resolved":false},
     "data_portability.rs": {"count":1,"sections":[7],"lines":["1950"],"contexts":["guard\": `import_portability_bundle` (`data_portability.rs:1950`), `import_credentials` (`:9670`),"],"resolved":false},
     "db.ts": {"count":1,"sections":[],"lines":["254"],"contexts":["`ON CONFLICT(id) DO UPDATE SET … script_path = …` upsert, on a table (`db.ts:254`) with **no"],"resolved":false},
-    "guard.rs": {"count":2,"sections":[5],"lines":["188"],"contexts":["The sibling sweep found the same trap in `brainiac` (`guard.rs:188` `.take(MAX_PATHS)` silently"],"resolved":false},
     "http.rs": {"count":2,"sections":[],"lines":["130-132","488"],"contexts":["- **\"Kept in sync by cross-reference\" is not synchronisation.** `brainiac`'s `http.rs:130-132`"],"resolved":false},
     "httpApi.ts": {"count":1,"sections":[],"lines":["550-556"],"contexts":["`POST /api/personas` (`httpApi.ts:550-556`) does `id: body.id || nanoid()` **after** a cross-tenant"],"resolved":false},
     "index.ts": {"count":1,"sections":[9],"lines":["917"],"contexts":["load-bearing: `index.ts:917` exports `ValidationRule` and **has zero importers itself**, so"],"resolved":false},
@@ -181,6 +180,14 @@
       "contexts": ["publishers (`git.rs:71-75`, `okf.rs:159-163`) with a comment admitting it. **A helper is a rule you"],
       "resolvedFrom": "basename",
       "verbatim": "git.rs"
+    },
+    "src-tauri/src/engine/twin_sample/guard.rs": {
+      "count": 2,
+      "sections": [5],
+      "lines": ["188"],
+      "contexts": ["The sibling sweep found the same trap in `brainiac` (`guard.rs:188` `.take(MAX_PATHS)` silently"],
+      "resolvedFrom": "basename",
+      "verbatim": "guard.rs"
     },
     "src-tauri/src/lib.rs": {"count":1,"sections":[3],"lines":["49"],"contexts":["**The vocabulary (`src-tauri/core/src/validation/`, re-exported at `src-tauri/src/lib.rs:49`)**"]},
     "src-tauri/srcc": {"count":1,"sections":[9],"contexts":["| renamed root (`src-tauri/srcc`) | **1** | `walked 0 files but floor is 400` + `matched zero files anywhere` + both drops |"],"resolved":false,"isDir":true},

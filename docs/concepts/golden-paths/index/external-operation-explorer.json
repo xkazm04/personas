@@ -16,6 +16,7 @@
     "CompanionAssignmentCards.tsx": {"count":1,"sections":[9],"lines":["73"],"contexts":["apply-view button), `CompanionAssignmentCards.tsx:73` (a secondary action inside"],"resolved":false},
     "DriveFileList.tsx": {"count":1,"sections":[],"lines":["798"],"contexts":["keyboard/AT users now get two real buttons\"*), `DriveFileList.tsx:798`, and"],"resolved":false},
     "KnowledgeGraphDashboard.tsx": {"count":1,"sections":[9],"lines":["278"],"contexts":["`KnowledgeGraphDashboard.tsx:278` and `:301` (a clear-filter `×` button inside a"],"resolved":false},
+    "ReviewFocusFlow.tsx": {"count":1,"sections":[12],"lines":["408"],"contexts":["- *Run 2 → 3 (8 → 7).* One survivor, `ReviewFocusFlow.tsx:408`, closed at the"],"resolved":false},
     "api_proxy.rs": {
       "count": 1,
       "sections": [3],
@@ -67,7 +68,6 @@
     "src/features/fleet/monitor/channels/ConversationCards.tsx": {"count":2,"sections":[9],"lines":["51"],"contexts":["`ConversationCards.tsx:51` already applies, and which the census can only"],"resolvedFrom":"basename","verbatim":"ConversationCards.tsx"},
     "src/features/home/sub_welcome/ResumeBanner.tsx": {"count":1,"sections":[],"lines":["57"],"contexts":["interactives are not)\"*), `ResumeBanner.tsx:57` (*\"`role=\"button\"` span inside"],"resolvedFrom":"basename","verbatim":"ResumeBanner.tsx"},
     "src/features/overview/sub_events/components/EventLogList.tsx": {"count":1,"sections":[9],"lines":["371"],"contexts":["button), `EventLogList.tsx:371` (a delete-saved-view button inside the"],"resolvedFrom":"basename","verbatim":"EventLogList.tsx"},
-    "src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx": {"count":1,"sections":[12],"lines":["408"],"contexts":["- *Run 2 → 3 (8 → 7).* One survivor, `ReviewFocusFlow.tsx:408`, closed at the"],"resolvedFrom":"basename","verbatim":"ReviewFocusFlow.tsx"},
     "src/features/plugins/gitlab/components/JobRow.tsx": {"count":1,"sections":[9],"lines":["74"],"contexts":["the card button), `JobRow.tsx:74` (an `<a href target=\"_blank\">` inside the"],"resolvedFrom":"basename","verbatim":"JobRow.tsx"},
     "src/features/shared/chrome/CommandPaletteResults.tsx": {
       "count": 1,

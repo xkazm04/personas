@@ -2884,7 +2884,11 @@
           "revision": 7,
           "changedAt": "2026-09-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/CloudHistoryHelpers.tsx:12 'provider-capability-honesty' is the only tier/capability-adjacent hit in this component tree; grep for tier|entitle|capability|plan across the whole cloud/ directory finds nothing else. Cloud-deploy reachability is gated solely by Google OAuth (#[requires(cloud)]), a different axis from the product tier model in src/lib/constants/uiModes.ts:30 (TIERS) -- precondition (this context implements or reads a plan/tier gate) does not hold.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:58f21c0561a86e45",
+          "evaluatedRevision": 7
         },
         {
           "subject": "extension-trust-boundary",
@@ -3254,7 +3258,12 @@
           "revision": 1,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_editor/components/PersonaEditor.tsx:1 composes the persona editor shell (EditorDirtyProvider + EditorBody, tabs for persona config/history/decisions); no file in the context opens a database connection or executes SQL, so no sql-console precondition holds.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:60a26f15745fd8c1",
+          "evaluatedRevision": 1,
+          "revisionsBehind": 0
         },
         {
           "subject": "long-form-reading-surface",
@@ -3295,13 +3304,16 @@
           "score": 0,
           "why": [],
           "confidence": "strong",
-          "state": "unknown",
+          "state": "not-applicable",
           "source": "conform",
           "grounding": "precondition",
-          "evidence": "added by /conform triage 2026-08-29: the golden path precondition governs this context; the matcher paired on vocabulary",
+          "evidence": "src/features/agents/sub_editor/components/EditorTabBar.tsx:100-124 is a page-owned tab strip (reads/writes useSystemStore().editorTab locally; its ids are not in the navigation registry's section vocabulary) -- nav-hierarchy.md 'Level three does not live in the shell ... the page owns the depth (tabs, trees, master-detail)' names exactly this precondition: PersonaEditor's tab bar is the page's own structure, not shell navigation.",
           "digest": "sha256-b2:62a9a7fc993ea8b5",
           "revision": 6,
-          "changedAt": "2026-09-23"
+          "changedAt": "2026-09-23",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
+          "evaluatedRevision": 6
         }
       ],
       "governance": "governed"
@@ -4179,7 +4191,11 @@
           "revision": 6,
           "changedAt": "2026-09-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/management_api.rs:767 and src-tauri/src/mcp_server/auth.rs:74-76 — an unrecognized/invalid API-key token denial is only tracing::warn!/returned as 401, never written to a queryable audit store; authorization-audit requires every denial recorded with context, so a credential-probing attack against /api/* or the MCP surface leaves no trail an operator can query. (ceiling-before-consent and scope-design are conformant: pairing.rs:60-174 and external_api_keys.rs:179-185 mould requested scopes to a declared ceiling at both the door and the mint via one shared function, including the unattended auto-approve path.)",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:57d60a438fa36d05",
+          "evaluatedRevision": 6
         },
         {
           "subject": "concurrency-guards",
@@ -4195,7 +4211,11 @@
           "revision": 14,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx:50,92-99 and PairApprovalModal.tsx:34,79-99 are per-instance submitting/busy UI flags that disable a button while one request is in flight -- the async-race-guards pattern the golden path assigns to the sibling client-state path (concurrency-guards.md:38-39), not this subject in-flight-dedup/cross-process machinery. The actual Tauri command handlers that could duplicate a key or pairing live in src-tauri/src/commands/, outside this context paths.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:41b09d489d8f7ef9",
+          "evaluatedRevision": 14
         },
         {
           "subject": "agent-runtime-assembly",
@@ -4611,7 +4631,11 @@
           "revision": 16,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/api/pipeline/scheduler.ts:13-20 every export is a one-line invoke() forwarding to a Tauri command with no local state; job-coordination governs the record owner, which lives in the Rust engine, not this IPC binding layer.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:2bd472ebca7609ca",
+          "evaluatedRevision": 16
         },
         {
           "subject": "ci-execution-trust",
@@ -4849,11 +4873,10 @@
           "confidence": "strong",
           "state": "deviation",
           "evidence": "src/api/vault/oauthGatewayApi.ts:31 still sends the OAuth client secret across IPC as plaintext (also startOAuth at :58) while credential field values cross session-encrypted (src/api/vault/credentials.ts:115), so one class of foreign secret bypasses the envelope the rest of the vault uses.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:1772d33e2929beec",
-          "evaluatedRevision": 2,
-          "revisionsBehind": 2,
-          "stale": true
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 2
         },
         {
           "subject": "markdown-vault",
@@ -4901,7 +4924,11 @@
           "revision": 3,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "Of the 8 techniques only broker-proxy-attaches-secret applies here (thin IPC wrapper, no outbound fetch or SQL in this context's files). Realized: oauthGatewayApi.ts never returns raw token material (OAuthStatusResult carries only hasAccessToken/hasRefreshToken booleans + a one-time oauthSessionRef, per src/lib/bindings/OAuthStatusResult.ts:9-16) and the refresh_oauth_token command that once accepted a raw refresh_token was deliberately retired (oauthGatewayApi.ts:70-75), backed by oauth::tests::status_response_never_contains_token_material in the Rust source.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:d3eef10e9ed8459f",
+          "evaluatedRevision": 3
         }
       ],
       "governance": "governed"
@@ -4940,12 +4967,10 @@
           "changedAt": "2026-09-24",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/styles/globals.css:832 still applies the brightness axis as a whole-surface `filter: brightness()` on <html>, the pixel-filter trap density-and-scale-axes names. So the contrast numbers CustomThemeCreator.tsx:33 computes describe declarations that never reach the screen, and the compensation machinery around it keeps growing (themeStore.ts:230 plus the exempt-token pre-adjust list).",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:677bcf6173f511aa",
-          "evaluatedRevision": 6,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/styles/globals.css:906-907 still filters the whole <html> via `filter: brightness(var(--app-brightness))`, the whole-surface-pixel-filter trap density-and-scale-axes names. CustomThemeCreator.tsx:33's contrast readout computes ratios from the declared --foreground/--background values, never the filtered pixel, so a theme can read AAA while the screen renders dimmer. The compensation list it forces keeps growing: themeStore.ts:220-224 BRIGHTNESS_EXEMPT_TOKENS (12 status/brand tokens, re-captured at runtime) plus a second, independently hand-maintained set of per-theme `-raw` role overrides baked into globals.css (e.g. :367-370) that the JS list does not cover.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:165125b7a54d0de3",
+          "evaluatedRevision": 7
         },
         {
           "subject": "settings",
@@ -5069,7 +5094,11 @@
           "revision": 3,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "Precondition (a credential crossing this surface) does not hold: a full grep across every file in this context's path list (browserStore.ts, twinDraftLane.ts, types.ts, webview/*) for credential|secret|vault returns zero matches. The credential-binding surface is the sibling site-whitelist-management context (LoginTab.tsx); this context is pure tab/address-bar/navigation chrome with no secret material.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:d3eef10e9ed8459f",
+          "evaluatedRevision": 3
         },
         {
           "subject": "mcp-tools",
@@ -5286,7 +5315,11 @@
           "revision": 13,
           "changedAt": "2026-09-05",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "useByomSettings.ts routes through dedicated get_byom_policy/set_byom_policy/validate_byom_policy commands (src-tauri/src/commands/infrastructure/byom.rs:37-67) backed by src-tauri/db/src/byom.rs:244-305's ByomPolicy::load/save, which calls the generic settings::set - so key-registry, typed-accessors (validate_json_as::<ByomPolicy> at settings_keys.rs:1821) and settings-audit-and-history (audit_category 'byom' at settings_keys.rs:2143) all apply automatically; useByomSettings.ts:142-148 refuses to save over a corrupt load, protecting the stored policy (save-experience). read-batching, in-place-document-patch and cross-source-precedence-chain are not-applicable: this is one document behind one dedicated key, read and written whole (byom.rs:245,305), not a scattered-keys boot read or a multi-source config.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
+          "evaluatedRevision": 13
         },
         {
           "subject": "cross-provider-benchmark-operations",
@@ -5485,7 +5518,11 @@
           "revision": 7,
           "changedAt": "2026-09-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:6 'TierSlug' is an LLM-model capability tier (haiku|sonnet|opus) and ObservabilityPlanWidget's 'plan' is an operational runbook, not a subscription/billing plan; these tests exercise those widgets, not the product tier model in src/lib/constants/uiModes.ts -- precondition (tests cover plan/tier gating) does not hold.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:58f21c0561a86e45",
+          "evaluatedRevision": 7
         },
         {
           "subject": "voice-io",
@@ -5635,7 +5672,11 @@
           "revision": 6,
           "changedAt": "2026-09-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "core/src/types.rs:526 ExecutionMetrics.cost_usd defaults to 0.0 (not Option), so engine/runner/mod.rs:3985 always writes Some(metrics.cost_usd) even on Failed/incomplete terminal states (result_seen can be false, types.rs:531); executions.rs:2346 MONTHLY_SPEND_PREDICATE includes failed/incomplete, so the phantom $0 is summed by metrics.rs:195 straight into the budget gate that blocks runs — the exact corrupted-headroom failure nullable-cost-never-zero names. Cache-read/cache-creation token classes computed on ExecutionMetrics (types.rs:522-525) are never persisted: core/src/models/execution.rs:271-283 UpdateExecutionStatus has no cache-token fields, so provider cache pricing can never be reconciled (token-usage-quadruple).",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:834b798969457037",
+          "evaluatedRevision": 6
         },
         {
           "subject": "agent-runtime-assembly",
@@ -5981,7 +6022,12 @@
           "revision": 1,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/core/import_export.rs:59-74 defines a versioned .persona.json envelope for this app's OWN model (export/restore), and gallery.rs:133-161 imports that SAME envelope via the identical validator; the golden path explicitly excludes same-system export/restore (\"When you control both ends... do not route it through the foreign-import machinery\") so no foreign-format precondition holds here.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:4981ff0ea8a59c1b",
+          "evaluatedRevision": 1,
+          "revisionsBehind": 0
         },
         {
           "subject": "agent-browser-control",
@@ -5998,6 +6044,17 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "unknown"
+        },
+        {
+          "subject": "review-iteration-loops",
+          "bundle": "media-generation",
+          "source": "conform",
+          "confidence": "strong",
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/core/persona_icon_gen.rs:230 requests num_images: 1 with no mask/region param and no structured refused-vs-failed outcome (only generic errors at lines 357-361), and the only caller, src/features/agents/components/PersonaIconPickerModal.tsx:152 (handleGenerate) immediately calls handlePick (:105-108, onChange+onClose) on success with no intermediate review state — persona-icon generation is a one-shot generate-and-commit action, not an iterative review/revision loop, so the subject's precondition (a review stage with variants, critique, or edit-notes feeding a revision pass) does not hold anywhere in this repo.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:d73259dd3f3260df",
+          "evaluatedRevision": 10
         }
       ],
       "governance": "governed"
@@ -6067,7 +6124,11 @@
           "revision": 8,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/credentials/cli_capture.rs:1-14 shells out to gcloud/gh/vercel/netlify/heroku to extract already-issued OAuth tokens as app credentials; none is a coding-agent CLI run as an LLM transport (oauth.rs and cli_capture.rs carry zero claude/codex/gemini references) — the subject's precondition (spawning a headless coding-agent CLI as prompt-in/answer-out) does not hold in this context.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+          "evaluatedRevision": 9
         },
         {
           "subject": "browser-credential-boundary",
@@ -6083,7 +6144,11 @@
           "revision": 3,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:2073-2080 (custom provider authorize_url/token_url accepted with zero destination validation) and oauth.rs:105 token_endpoint_request uses crate::SHARED_HTTP, not the repo's own SSRF-safe SSRF_SAFE_HTTP (src-tauri/core/src/http_clients.rs:27, built explicitly for \"target URL is influenced by user-supplied credential data\"); discover_oidc (oauth.rs:1289-1300) also uses SHARED_HTTP and validate_issuer_url (oauth.rs:1187-1226) only inspects literal-IP hosts, not DNS names, so a rebinding hostname bypasses it. outbound-fetch-destination-validation is not realized: client_secret is POSTed to a destination resolved with no SSRF-safe binding.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:d3eef10e9ed8459f",
+          "evaluatedRevision": 3
         },
         {
           "subject": "priced-authority",
@@ -6116,6 +6181,17 @@
           "changedAt": "2026-09-03",
           "confidence": "probable",
           "state": "unknown"
+        },
+        {
+          "subject": "retrieval",
+          "bundle": "software-engineering",
+          "source": "conform",
+          "confidence": "strong",
+          "state": "conformant",
+          "evidence": "relevance-floors: src-tauri/src/commands/credentials/vector_kb.rs:966-967 reuses the SAME shared primitive companion-brain uses (crate::retrieval::filter_by_distance_floor, MAX_VECTOR_DISTANCE), proven not to perturb RRF ranking by a seeded test at :1527-1577. hybrid-lane-fusion: :834-881 RRF-style BM25 reorder of the vector-matched pool before trimming. ranking-budgets: :28 MAX_TOP_K=200 overfetch, :954 clamp(top_k, MAX_TOP_K) -- one cut, in consumer units, after fusion. embedding-lifecycle: :50-51 stamps embedding_model/embedding_dims at KB create time, :915-934 reconciles against the live embedder on every query and fails closed with a named reindex path (kb_reindex) rather than mixing vector spaces silently. Not-applicable (precondition unmet): relationship-proximity-lane and structural-centrality-lane -- db/src/vector_store.rs:61 schema is 'vec0(chunk_id TEXT, embedding float[dims])', no relation/edge columns, so there is no typed-relation graph to expand or rank by; query-decomposition-before-the-lanes -- the search query (:904 query.top_k) is one flat string against one abstraction level, no corpus indexed at multiple tiers; padded-slots-are-misses -- vector_store.rs:132 is a plain 'ORDER BY distance LIMIT ?2' over sqlite-vec's vec0, which returns fewer rows rather than padding with a sentinel when the table holds less than k.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:9f05c1f381f9d83f",
+          "evaluatedRevision": 17
         }
       ],
       "governance": "governed"
@@ -6169,7 +6245,11 @@
           "revision": 7,
           "changedAt": "2026-09-04",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "n8n_transform/cli_runner.rs:1-16 spawns via tokio::process::Command (not a PTY) and streams structured JSON lines through parse_stream_line for a one-shot background job (job_state.rs); there is no portable_pty/pty:: anywhere under src-tauri/src/commands/design/ (grepped), no resize, no multi-client viewer, no keystroke framing. The context is background-jobs/subprocess-lifecycle territory, not an interactive multiplexed terminal — the subject's precondition (a PTY-backed, resizable, attach/detach-able session) does not hold here. The matcher scored this from generic words (\"commands\", \"session\", \"sessions\") shared with the real PTY surface in commands/fleet.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:c3ef11aba4a471f5",
+          "evaluatedRevision": 7
         },
         {
           "subject": "test-harness",
@@ -6385,6 +6465,17 @@
           "changedAt": "2026-09-03",
           "confidence": "probable",
           "state": "unknown"
+        },
+        {
+          "subject": "usage-limit-governance",
+          "bundle": "llm-observability",
+          "source": "conform",
+          "confidence": "strong",
+          "state": "deviation",
+          "evidence": "executions.rs:469-481 + db/executions.rs:2348-2367: SELECT-then-compare against persona.max_budget_usd with no per-persona lock/transaction, so concurrent execute_persona calls can both read pre-burst spend and both pass (concurrent-admission-integrity); enforcement is also a single hard-stop cliff with no graduated shed before it.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:a784035133baaaba",
+          "evaluatedRevision": 5
         }
       ],
       "governance": "governed"
@@ -6423,12 +6514,11 @@
           "changedAt": "2026-09-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/fleet/pty.rs:420 allows multiple sessions per cwd by design, and the one admission door (queue.rs:133 DispatchRequest carries cwd, with no write set; door_verdict_for at queue.rs:720 decides on cap, time gate and budget only) never checks disjointness. N concurrent sessions in one repo can therefore collide unseen. The stale.rs inline state write is FIXED: the sweep now goes through registry::apply_transition.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:a03459c799a53308",
+          "evidence": "src-tauri/src/commands/fleet/pty.rs:420 allows multiple sessions per cwd by design, and the one admission door (queue.rs:162 DispatchRequest carries cwd; door_verdict_for at queue.rs:837-878 decides on cap, time gate and budget only and never reads req.cwd) never checks disjointness, so N concurrent sessions in one repo can collide unseen. The stale.rs inline state write remains fixed: the sweep still goes through registry::apply_transition (stale.rs:662 etc).",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:e63d5473ea2636c8",
           "evaluatedRevision": 24,
-          "revisionsBehind": 0,
-          "stale": true
+          "revisionsBehind": 0
         },
         {
           "subject": "terminal-multiplexing",
@@ -6444,7 +6534,11 @@
           "revision": 7,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "pty.rs spawns via portable-pty with a dedicated reaper (pty.rs:957-1036 finalize_child_exit) distinct from the byte reader, so process exit never gets confused with stream end (pty-management); registry.rs:1430-1452 resize() keeps PTY master + stored dims + VT parser in sync so wrapped output tracks the new width (pty-management); registry.rs:1261-1298 write_text_line distinguishes a typed Enter (lone \r chunk) from a pasted one and frames multi-line payloads as bracketed paste before fleet_write_input (commands.rs:197-202) ever reaches the PTY (keystroke-injection); registry.rs:34,1564-1588 OutputRing (OUTPUT_RING_CAP=512KiB) buffers unsubscribed sessions and replays the tail snapshot on (re)subscribe (bounded-replay-buffers, attach-detach-lifecycle); hooks.rs:1-120 drives occupant state off Claude Code's own Notification/Stop/PreToolUse hooks rather than guessing from PTY bytes, with revive_to_running_on_activity correcting a stale AwaitingInput (occupant-state-detection); hook_install.rs:160,236-280 dedupes fleet-tagged hook entries on reinstall and flags needs_upgrade on port/token/legacy-command drift mid-session (injected-hook-reconvergence, capability-revalidation); fleet_wake_session (commands.rs:325-378) mints a new row id on hibernate->wake (a fresh OS process is unavoidable) but explicitly threads lineage (created_at_ms, name, device ownership) through adopt_lineage/carry_over so the conversation's identity is not lost, just its row id (multiplexer-state). multi-client-fan-out does not apply: the frontend keeps exactly one ManagedTerminal per sessionId in a module-level registry (fleetTerminalManager.ts:306-308, with the deliberate rationale at :459 that a refcount is the wrong instrument here), matching the backend's single subscribed:bool (registry.rs:45) — the product never has two simultaneous viewers of one session.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:c3ef11aba4a471f5",
+          "evaluatedRevision": 7
         },
         {
           "subject": "agent-runtime-assembly",
@@ -7060,6 +7154,17 @@
           "changedAt": "2026-09-29",
           "confidence": "probable",
           "state": "unknown"
+        },
+        {
+          "subject": "retrieval",
+          "bundle": "software-engineering",
+          "source": "conform",
+          "confidence": "strong",
+          "state": "deviation",
+          "evidence": "retrieval-triggering: src-tauri/src/companion/prompt/recall.rs:18-51 calls retrieval::retrieve unconditionally every turn with no skip decision -- the golden path's 'always' failure mode (every turn spends the vector+keyword lanes even when the question needs no corpus at all). relationship-proximity-lane: src-tauri/src/companion/brain/graph.rs:8 'Phase 2: traverse, add_edge, contradict_scan' is still a stub; the companion_edge typed-relation graph is stored (frontmatter links:) but never queried at recall time -- 'a stored graph that nothing queries at request time'. Conformant elsewhere: embedding-lifecycle (retrieval.rs:78-110 filter_by_model, grandfathers unstamped vectors, drops cross-model hits), relevance-floors (retrieval.rs:41-76 MAX_VECTOR_DISTANCE + filter_by_distance_floor, honest-empty tests), hybrid-lane-fusion (retrieval.rs:112-165 Lane/rank_into_lanes, retrieval.rs:360-402 union_keyword_ids fusing vector+keyword lanes), retrieval-evaluation (evals/memory-year -- labeled probe classes with ground truth replayed through the SAME production retrieval::retrieve path, memory_sim.rs:649).",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:9f05c1f381f9d83f",
+          "evaluatedRevision": 17
         }
       ],
       "governance": "governed"
@@ -7988,7 +8093,12 @@
           "revision": 4,
           "changedAt": "2026-09-02",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "tests/playwright/ (29 specs this context owns, incl. getting-started-tour.spec.ts, getting-started-tour-mock.spec.ts, tours-explore.spec.ts, tours-obsidian-brain.spec.ts, athena-guided-walkthrough*.spec.ts) regression-test action-driven-advancement's completeOn wiring and fresh-profile tour-lifecycle well (getting-started-tour-mock.spec.ts:1-41 drives real storeBus events, not tourEmit shortcuts), but none of the 29 specs exercises missing-anchor-degradation (no missing/removed-anchor scenario, no never-strand assertion) or overlay-precedence (no modal-collision, escape-key, or focus-trap assertion against a running tour) — grep for degradation/overlay/escape/focus-trap signals across every file in this context returns zero hits. The never-strand invariant is the subject's most catastrophic failure mode and has no e2e coverage anywhere in this context.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:6f44ad03ebd5bd19",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 0
         },
         {
           "subject": "session-continuation",
@@ -8139,7 +8249,11 @@
           "revision": 15,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "taxonomy-design (error.rs:9-137 closed 21-variant enum + category(); error_taxonomy.rs:127-196 prefers structural minting over message prose, documented incident), structured-propagation (error.rs:158-227 Serialize ships kind+category+auto_fixable+failover_eligible intact across FFI), consumer-decides-error-shape (error.rs:9-95 closed enum crosses the independently-released frontend boundary). not-applicable: cancellation-attribution/crash-capture/exit-contract-is-a-taxonomy-projection/reclassification-is-not-repair -- pure-library crate (lib.rs:1-40) with no process boundary, panic hook, or declared-zero-rate internal class.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:e561e382d42cb2f2",
+          "evaluatedRevision": 15
         },
         {
           "subject": "mcp-tools",
@@ -8322,6 +8436,17 @@
           "changedAt": "2026-09-03",
           "confidence": "probable",
           "state": "unknown"
+        },
+        {
+          "subject": "retrieval",
+          "bundle": "software-engineering",
+          "source": "conform",
+          "confidence": "strong",
+          "state": "unknown",
+          "evidence": "src-tauri/core/src/retrieval/mod.rs is the pure, consumer-agnostic home of the shared relevance-floor / model-guard / lane-fusion primitives (filter_by_distance_floor, filter_by_model, Lane/rank_into_lanes) that both companion-brain and commands/credentials/vector_kb.rs consume and that this run judged conformant at the call sites. Below the evidence floor to verdict THIS pair in isolation (only 3 of 12 techniques anchored directly in this file); left unknown pending a pass that also reads this crate's models/knowledge.rs and models/knowledge_base.rs for chunking-and-indexing and retrieval-evaluation.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:9f05c1f381f9d83f",
+          "evaluatedRevision": 17
         }
       ],
       "governance": "governed"
@@ -8412,7 +8537,11 @@
           "revision": 13,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/settings_keys.rs:618-620 defaults MONTHLY_COST_CEILING_USD to 0.0 meaning 'no ceiling', and the file defines no SettingKind taxonomy separating ceilings from flags/preferences - the exact fail-open inversion typed-accessors/setting-kinds name as the subject's canonical bad example (absent ceiling should mean zero-blocking, not unlimited); key-registry (validate_key :1479, ALLOWED_KEYS :1295), read-batching (settings.rs:195 get_batch, :186 GET_BATCH_MAX_KEYS), settings-audit-and-history (settings.rs:26 audit_setting_change + audit_category :2070) and config-backup-and-restore (backup.rs rotation + lib.rs:88 restore module) are realized; presence-decides-precedence is not-applicable here (deprecated_replacement :1894 only retires keys, no dual-name grace-period reader exists).",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
+          "evaluatedRevision": 13
         },
         {
           "subject": "embedded-db",
@@ -8679,6 +8808,18 @@
           "changedAt": "2026-09-25",
           "confidence": "probable",
           "state": "unknown"
+        },
+        {
+          "subject": "versioning-snapshots",
+          "bundle": "software-engineering",
+          "source": "conform",
+          "confidence": "strong",
+          "state": "deviation",
+          "evidence": "added by /conform: the matcher never paired this context with versioning-snapshots, even though db/src/repos/execution/metrics.rs:84-140 (create_prompt_version_with_snapshot) is the real repo-layer home of persona_prompt_versions, the table every live Lab version actually lives in (db-repos-lab's own versions.rs/persona_versions is dead — see that context's verdict). Deviations found: (1) lineage-and-variants — schema.rs:433-442 CREATE TABLE persona_prompt_versions has no parent_version_id or any lineage column; every restore/rollback (commands/execution/lab.rs:847-939 lab_rollback_version) re-promotes an EXISTING row via a tag flip with no edge recording what triggered it. (2) snapshot-scope — three divergent capture sites (metrics.rs:104-123, commands/execution/lab.rs:620-634, commands/design/build_sessions.rs:2683-2705) write different column sets, and lab.rs:620's dedupe gate (\"if latest_prompt.as_deref() != Some(&draft_json)\") compares structured_prompt alone, silently exempting system_prompt/model/tools from ever triggering a new version — the exact single-field dedupe anti-pattern the technique names. (3) restore-semantics — lab_rollback_version (lab.rs:887-908) overwrites the live personas row in place with no capture-before-restore of the persona's current uncaptured state, so an unsaved edit is destroyed with no snapshot of it ever taken. (4) snapshot-scope again — none of the three capture sites copy persona_tools, so a restored version can wire an old prompt to today's tool list (the chimera the subject's golden path opens with). promotion-lifecycle is the one conformant technique: three declared tag states (experimental/production/archived, lab.rs:828), one active pointer per persona enforced by an atomic demote+promote inside a single transaction (lab.rs:910-934, :1040-1066), and creation always defaults to experimental (schema.rs:440) rather than implicitly promoting on save.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:e895b228981cf506",
+          "evaluatedRevision": 7,
+          "revisionsBehind": 0
         }
       ],
       "governance": "governed"
@@ -8955,7 +9096,11 @@
           "revision": 17,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src-tauri/db/src/repos/execution/executions.rs: query-construction via QueryBuilder (L482-501, L559-584) with bound params + centralized FTS5 escaping in build_fts5_query (L374-382); row-mapping via single COLUMNS/LIST_ITEM_COLUMNS consts + row_to_execution decode seam (L93-99,232-275) with fail-whole collection reads (L404-405) and fail-loud single-record read (L738-745); read-models-and-projections via LIST_ITEM_COLUMNS/GLOBAL_LIST_COLUMNS lean projections never written back (L100-125,138-145); batching-and-n-plus-one via get_all_global replacing the per-persona N+1 (L447-454); transactions-and-units-of-work via test_runs.rs batch_create_results opening conn.unchecked_transaction() and passing &tx into repos::lab::write_tool_calls_child_rows for the cross-repo invariant (test_runs.rs:230-279); repo-testing via init_test_db() real-engine fixtures, no hand-rolled CREATE TABLE (executions.rs:2742+); layering-rules conformant here (no tauri/AppHandle/Emitter import in this context's files, unlike sibling db context's cdc.rs); cross-driver-invariant-parity/capability-declared-in-the-type/sequence-token-write-ordering not-applicable (single rusqlite engine, db/Cargo.toml:50, no second backend behind this surface); existence-authority-written-last not-applicable to this context specifically (the log_file_path write-vs-row ordering decision is made in src-tauri/src/engine/runner/, outside db-repos-execution's files); operator-defined-tables/localized-record-identity not-applicable (fixed code schema, no operator-authored tables or multi-language records in persona_executions/execution_traces/tool_usage_log/execution_annotations).",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:7bc5f1ebaf276655",
+          "evaluatedRevision": 17
         },
         {
           "subject": "agent-memory",
@@ -9104,7 +9249,12 @@
           "revision": 7,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/lab/versions.rs:45 create_version() is the only production-grade implementation in the tree (global uuid + MAX+1 version_number inside one IMMEDIATE transaction + parent_version_id lineage computed from the production tag, with persona_version_tools copied atomically in the same tx) but has ZERO production callers — grep for `create_version(` finds only its own #[cfg(test)] module. The live Lab versioning path the app actually runs is a different table, persona_prompt_versions (schema.rs:433-442, no lineage column at all), written from THREE separate hand-rolled MAX+1-then-INSERT sites — db/src/repos/execution/metrics.rs:104-123, commands/execution/lab.rs:620-634, commands/design/build_sessions.rs:2683-2705 — each capturing a different column set (lab.rs:630 omits design_context/icon/color/core_profile that the other two write). This is the snapshot-scope technique's own predicted failure (\"two capture implementations will disagree about scope within a quarter, and the one written second will be the under-scoped one\") multiplied by three, while the one correctly-scoped, lineage-aware implementation sits dead.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:e895b228981cf506",
+          "evaluatedRevision": 7,
+          "revisionsBehind": 0
         },
         {
           "subject": "cross-provider-benchmark-operations",
@@ -9494,13 +9644,16 @@
           "score": 0,
           "why": [],
           "confidence": "strong",
-          "state": "unknown",
+          "state": "not-applicable",
           "source": "conform",
           "grounding": "precondition",
-          "evidence": "added by /conform triage 2026-08-29: the golden path precondition governs this context; the matcher paired on vocabulary",
+          "evidence": "src/features/shared/components/display/RelativeTime.tsx:1-5 and Tooltip.tsx:1-10 are generic read-only display/overlay primitives reused across every feature, with no section vocabulary, nav badge, or shell-residency concept -- app-shell's techniques govern the persistent nav frame and its hosted services, which this context has none of.",
           "digest": "sha256-b2:62a9a7fc993ea8b5",
           "revision": 6,
-          "changedAt": "2026-09-23"
+          "changedAt": "2026-09-23",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
+          "evaluatedRevision": 6
         }
       ],
       "governance": "governed"
@@ -9636,7 +9789,11 @@
           "revision": 10,
           "changedAt": "2026-09-24",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/shared/components/display/MotionizedGlyph.tsx:11,106-120 the entrance (staggered-draw) is wired to an IntersectionObserver that bumps runKey on every re-entry into the viewport (section land, tab switch, scroll-back), replaying the stagger each time rather than once per surface per visit — the exact scroll-reveal replay unprompted-motion-lifecycle names as a glitch, not a flourish; the per-preset reduced-motion fallback and preset-vocabulary declaration (motionPresets.ts) are otherwise sound.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:8d9b3eabe2f3b534",
+          "evaluatedRevision": 10
         },
         {
           "subject": "module-design",
@@ -9684,7 +9841,12 @@
           "revision": 1,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:1 is the generic list/table primitive (sorting, virtualization, cold-load contract) the golden path itself assigns elsewhere: \"Result-grid mechanics ... are owned by table\" (sql-console.md:52-55), not this subject.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:60a26f15745fd8c1",
+          "evaluatedRevision": 1,
+          "revisionsBehind": 0
         },
         {
           "subject": "eval-harness",
@@ -9885,12 +10047,11 @@
           "confidence": "probable",
           "state": "deviation",
           "evidence": "src-tauri/src/engine/build_session/fanout.rs:118 still tells each dispatched capability resolver 'do NOT ask clarifying questions, pick sensible defaults', which is silent inference where the brief technique wants a flagged question. The module is now wired but reachable only through an env var (fanout.rs:13), no longer unwired dead code.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:a03459c799a53308",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:e63d5473ea2636c8",
           "evaluatedRevision": 24,
           "source": "retained",
-          "revisionsBehind": 0,
-          "stale": true
+          "revisionsBehind": 0
         },
         {
           "subject": "agent-cli-transport",
@@ -10112,6 +10273,17 @@
           "changedAt": "2026-09-29",
           "confidence": "probable",
           "state": "unknown"
+        },
+        {
+          "subject": "job-coordination",
+          "bundle": "software-engineering",
+          "source": "conform",
+          "confidence": "strong",
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/persona_jobs.rs:197-215 recover_orphans() blanket-UPDATEs every running row to failed on boot (the anti-pattern the golden path names: never a blanket sweep that stamps one fate on every non-terminal row) and no command exposes list/get on persona_background_job, so job-observability (position/holder/age/next-action from storage alone) is unmet; job-state-machines is also unrealized (4 raw UPDATEs at lines 153-190 write the status column directly with no single transition-validating door).",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:2bd472ebca7609ca",
+          "evaluatedRevision": 16
         }
       ],
       "governance": "governed"
@@ -10664,7 +10836,11 @@
           "revision": 15,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "crash-capture (ErrorBoundary.tsx:43-51 last-resort render-boundary handler; crashPersistence.ts:88-147 sanitizeCrashString before persisting locally, then fire-and-forget to backend). Remaining 10 techniques not-applicable: pure presentational component library (ErrorBanner.tsx:5-12 takes a pre-resolved message prop) -- classification, routing and propagation are owned by caller code / the sibling failure-states subject per error-handling.md:122-127's own boundary note.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:e561e382d42cb2f2",
+          "evaluatedRevision": 15
         },
         {
           "subject": "agent-runtime-assembly",
@@ -10696,7 +10872,12 @@
           "revision": 1,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ErrorBanner.tsx:1 is a generic dismiss/retry banner with no database or SQL text in its props; nothing in the context names a connection, a query, or an engine error, so the sql-console precondition is unmet.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:60a26f15745fd8c1",
+          "evaluatedRevision": 1,
+          "revisionsBehind": 0
         },
         {
           "subject": "client-state",
@@ -10744,7 +10925,11 @@
           "revision": 10,
           "changedAt": "2026-09-24",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/shared/components/feedback/DropZoneGlow.tsx:27-95 the framer-motion scale/opacity spring (outer ring 1.0->1.02, label fade) carries no useMotion/useReducedMotion gate at all; only the CSS dasharray march is disabled via globals.css (per the :25 comment), so prefers-reduced-motion users still get the full scale+spring travel on every drag-over — the reduction mechanism is scoped to one engine (CSS) while a second engine (framer-motion) animates uncovered.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:8d9b3eabe2f3b534",
+          "evaluatedRevision": 10
         },
         {
           "subject": "concurrency-guards",
@@ -10760,7 +10945,11 @@
           "revision": 14,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/feedback/ConfirmDialog.tsx:37-49 is a per-instance busy boolean disabling both buttons while a promise is pending -- a single-caller UI debounce, not a shared guard-key set, cross-process lock, or idempotent write. The golden path explicitly carves this out to the sibling client-state/async-race-guards path (concurrency-guards.md:38-39); no file in this context defines operation identity, release-on-panic, or cross-process exclusion.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:41b09d489d8f7ef9",
+          "evaluatedRevision": 14
         },
         {
           "subject": "fleet-orchestration",
@@ -10831,10 +11020,11 @@
           "changedAt": "2026-09-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/fleet/monitor/channels/DeliberationRail.tsx:52 drives a multi-round debate as the default path for team decisions with every seat on one model family, which the panel technique names as a sampling run in costume; and channels/types.ts:21 adds a third informal persona-state vocabulary beside the store's closed one.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/fleet/monitor/channels/types.ts:21 defines persona presence as an ad-hoc 'working'|'waiting' union (PresenceMap), a second informal vocabulary beside the registry's closed FleetSessionState/ActiveProcessStatus enums (session-registry's one-authority-per-vocabulary law). The other half of the original finding (DeliberationRail.tsx:52, a one-model-family debate default) no longer anchors: DeliberationsPane was deleted and merged into DeliberationRail, which carries no model-selection code at all, so that claim is dropped as unverifiable rather than re-asserted.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:e63d5473ea2636c8",
+          "evaluatedRevision": 24,
+          "revisionsBehind": 0
         },
         {
           "subject": "chat-transcript",
@@ -10914,7 +11104,11 @@
           "revision": 15,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/fleet/monitor/channels/useConversation.ts:197-210 calls decomposeTeamAssignmentGoal and trusts its already-typed steps[] result; the extraction/validation/repair machinery for that LLM call lives in the backend command behind it, not in this context's files. The one technique this context could realize, display-vs-machine-channels, is conformant (conversationModel.ts:22-33 keeps the AssignProposal card and chat \"talk\" rows as separate row kinds, never re-deriving one from the other) but the remaining eleven techniques govern extraction machinery this frontend-only context does not contain.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:d51aec71411ccb2b",
+          "evaluatedRevision": 15
         },
         {
           "subject": "feed",
@@ -12182,7 +12376,11 @@
           "revision": 7,
           "changedAt": "2026-09-18",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:6-9 'tier' is an LLM-model capability tier (haiku|sonnet|opus), and ObservabilityPlanWidget.tsx's 'plan' is an operational runbook Athena proposes -- neither reads or writes src/lib/constants/uiModes.ts's TIERS (the actual product tier model). Precondition (this widget set implements plan/tier gating) does not hold; it is a vocabulary collision, not a deviation.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:58f21c0561a86e45",
+          "evaluatedRevision": 7
         },
         {
           "subject": "prompt-assembly",
@@ -12271,13 +12469,16 @@
           "score": 0,
           "why": [],
           "confidence": "strong",
-          "state": "unknown",
+          "state": "deviation",
           "source": "conform",
           "grounding": "precondition",
-          "evidence": "added by /conform triage 2026-08-29: the golden path precondition governs this context; the matcher paired on vocabulary",
+          "evidence": "src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx:20 claims rows arrive ranked so the first eight are the ones to act on, but the ranking it consumes (useUnifiedInbox.ts:129, a sibling context) is pure recency with no severity tier, so a stale low-severity item can sit ahead of a fresh critical one in the capped first-eight the comment promises are prioritized; governance is partial — only the Decisions*/inbox-consuming widgets in this grab-bag context are within this subject, the persona-design widgets (ModelTierChoiceWidget, DesignCapabilitiesWidget, etc.) are not",
           "digest": "sha256-b2:70c2c3ebc5f18a8f",
           "revision": 3,
-          "changedAt": "2026-08-29"
+          "changedAt": "2026-08-29",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:70c2c3ebc5f18a8f",
+          "evaluatedRevision": 3
         },
         {
           "subject": "hitl-approval",
@@ -13048,7 +13249,12 @@
           "revision": 7,
           "changedAt": "2026-09-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/hooks/execution/useReasoningTrace.ts:100 coerces an absent backend duration_ms (Option<u64>, genuinely None on some paths per src-tauri/core/src/trace.rs:227) to 0 via `?? 0`; ExecutionSummaryCard.tsx:124-127 renders that as a real 0ms measurement since its `!= null` guard cannot see the coercion, so an execution whose duration was never measured reads as instantaneous instead of unknown.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:441741a78f8712b4",
+          "evaluatedRevision": 7,
+          "revisionsBehind": 0
         }
       ],
       "governance": "governed"
@@ -13278,7 +13484,11 @@
           "revision": 13,
           "changedAt": "2026-09-05",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "useAppSetting.ts:39-43 accepts a bare key: string with a caller-supplied ad hoc validator instead of one typed accessor per key, and callers pass free string literals ('cli_engine' EngineCapabilityBadge.tsx:24, 'health_digest_enabled' NotificationSettings.tsx:40) or per-feature local *_KEY constants (LimitsSettings.tsx CEILING_KEY/CONCURRENCY_KEY) rather than one shared TS key-registry mirroring db/src/settings_keys.rs's ALLOWED_KEYS, so a frontend typo compiles clean and surfaces only as a backend runtime warn; useSettings.ts:44-112's microtask coalescer does realize read-batching.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
+          "evaluatedRevision": 13
         },
         {
           "subject": "quality-gates",
@@ -13448,6 +13658,14 @@
       ],
       "subjects": [
         {
+          "subject": "plan-entitlements",
+          "bundle": "software-engineering",
+          "source": "conform",
+          "confidence": "strong",
+          "state": "unknown",
+          "evidence": "added by /conform: the matcher never scored this pair, yet useTier.ts:41-54 is this repo's one hook wrapper around the tier model (src/lib/constants/uiModes.ts TIERS/TIER_RANK/BUILD_MAX_TIER/isTierVisible) -- a direct realization site for id-vs-label-split and capability-gate-predicates, missed because 'interaction hooks' scores nothing on the subject's billing/entitlement vocabulary."
+        },
+        {
           "subject": "test-harness",
           "bundle": "software-engineering",
           "score": 1272.6,
@@ -13495,11 +13713,9 @@
           "confidence": "strong",
           "state": "deviation",
           "evidence": "src/hooks/utility/interaction/useMotion.ts:153 the reduced clone collapses every transition to exact duration 0 (and :133 strips delay), so timing-load-bearing invisibility windows vanish and zero-duration completion events may never fire for code awaiting an exit",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:d623a3bcfdcbd1c0",
-          "evaluatedRevision": 9,
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:8d9b3eabe2f3b534",
+          "evaluatedRevision": 10
         },
         {
           "subject": "settings",
@@ -13733,7 +13949,11 @@
           "revision": 15,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/errors/errorRegistry.ts:65-693,719-737 classifies via 62 regex/substring rules against the raw stringified message instead of the structured AppError kind/category already on the wire (anti-pattern named verbatim at docs/concepts/golden-paths/typed-error-contract.md:143-145); src/lib/silentCatch.ts:102-136 toastCatch never calls recordSwallow so the user-facing door can never produce a Sentry event (swallowed-error-telemetry.md:227-236, 379 sites); ToastContainer discards toast.message so a translated customMessage still renders GENERIC_FALLBACK English (swallowed-error-telemetry.md:295-301, 675 sites). Consequence: category drift survives dependency upgrades silently and most user-facing failures are invisible to telemetry.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:e561e382d42cb2f2",
+          "evaluatedRevision": 15
         },
         {
           "subject": "mcp-tools",
@@ -13998,7 +14218,11 @@
           "revision": 15,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "taxonomy-design's cross-boundary mirroring (chainStopReasons.parity.test.ts:16-37 parses src-tauri/db/src/chain.rs's stop_reason consts at test time rather than hand-copying, citing failure-not-empty-success), user-facing-mapping (useTranslatedError.test.ts:27-59 pins the four-link resolveErrorTranslated fallback chain against ERROR_KEY_MAP). Remaining techniques not-applicable to this test-only context -- no production catch/propagation/cancellation code.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:e561e382d42cb2f2",
+          "evaluatedRevision": 15
         }
       ],
       "governance": "governed"
@@ -14658,7 +14882,11 @@
           "revision": 6,
           "changedAt": "2026-09-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:90 — connectorLicensing/connectorRoles/connectorAudiences 'tier'/'role' values are consumed only by Array.filter for the catalog picker's UI facets, never by a grant, mint, or command-dispatch gate; privilege-tiers/scope-design require an enforced, totally-assigned vocabulary, which doesn't exist here. Lexical-only match (role/tier/audience as UI taxonomy vs. security vocabulary).",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:57d60a438fa36d05",
+          "evaluatedRevision": 6
         },
         {
           "subject": "agent-memory",
@@ -15231,7 +15459,12 @@
           "revision": 1,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/personas/parsers/workflowPipeline.ts:29-41 only logs/telemetries unmapped node types; AgentIR (src/lib/types/designTypes.ts:70) carries no per-entity provenance or conversion-grade field, so lossy-conversion-disclosure's itemized ledger never reaches review/commit (same root cause already recorded as a deviation in templates-n8n-steps); platformDefinitions.ts:8-29 also self-documents as a hand-maintained twin of the Rust platform-definition table with nothing comparing them, the exact adapter-capability-tables anti-pattern.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:4981ff0ea8a59c1b",
+          "evaluatedRevision": 1,
+          "revisionsBehind": 0
         },
         {
           "subject": "structured-output",
@@ -15247,7 +15480,11 @@
           "revision": 15,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/lib/personas/parsers/n8nParser.ts:13-26 (and the sibling zapier/githubActions/workflow parsers) parse a deterministic, platform-authored export file the user imports — never a model's settled text — so the subject's founding precondition (a generative model as unreliable serializer) does not hold; this is the golden path's own \"when a deterministic source exists\" exclusion.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:d51aec71411ccb2b",
+          "evaluatedRevision": 15
         },
         {
           "subject": "translation-pipeline-topology",
@@ -15501,11 +15738,9 @@
           "confidence": "probable",
           "state": "deviation",
           "evidence": "src/lib/utils/rafAnimationEngine.ts:71 the shared spring engine reads reduced motion from the OS media query alone, ignoring the in-app Reduce Motion toggle that useMotion.ts:49 merges in, so a user who enables it in app settings still gets full spring travel on every scripted counter",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:d623a3bcfdcbd1c0",
-          "evaluatedRevision": 9,
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:8d9b3eabe2f3b534",
+          "evaluatedRevision": 10
         },
         {
           "subject": "design-tokens",
@@ -15521,7 +15756,11 @@
           "revision": 7,
           "changedAt": "2026-09-24",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "rafAnimationEngine.ts:66-71 `prefersReducedMotion()` reads only `matchMedia('(prefers-reduced-motion: reduce)')`, never the in-app Appearance toggle (`data-motion=\"reduce\"`, set by themeStore.ts:197-202) that useMotion.ts:10-18 already documents as a second required signal for Framer consumers -- so a user who turns on Reduce Motion only in-app still gets full-speed rAF-driven springs and gauge counters. Separately, animation/animationPresets.ts:163-176 `useTemplateMotion`'s reduced-motion branch hand-enumerates the 3 current `MOTION_PRESETS` keys instead of deriving them through the membership-based `toReducedVariants` gate the same file re-exports (useMotion.ts:121-196) -- a 4th preset added to `MOTION_PRESETS` would silently miss the reduced-motion mirror, the deny-list failure motion-tokens.md's 'one door' section warns against.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:165125b7a54d0de3",
+          "evaluatedRevision": 7
         },
         {
           "subject": "agent-memory",
@@ -15973,7 +16212,12 @@
           "revision": 3,
           "changedAt": "2026-08-29",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/liveState.ts:87-88,116-119 loadMonitoringSummaries puts a project whose per-project Sentry fetch FAILED and a project that was never configured for monitoring into the exact same bucket (absent from the returned map, rendered as 'honest unknown'/readiness-only colour) - passive-signal-ingestion demands could-not-observe stay distinct from a project that is legitimately unwatched/quiet, and here an operator cannot tell a broken credential from a project that simply doesn't use Sentry. The family-level half of the same technique IS realized: sceneStore.ts:36,82-83's FamilyStatus (idle/loading/loaded/failed/stale) plus DataHealthBar.tsx explicitly name failed/stale families rather than rendering a silent partial truth. project-identity-and-joins is conformant throughout (groupScansByProject at sceneStore.ts:66-78 and the goals/sentry/runners maps all key by project.id, never by name).",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:07b32de44fd25fc6",
+          "evaluatedRevision": 3,
+          "revisionsBehind": 0
         },
         {
           "subject": "supply-chain",
@@ -17052,7 +17296,11 @@
           "revision": 7,
           "changedAt": "2026-09-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/notepad/plan/ShipMilestoneComposer.tsx and the rest of this context's files use 'plan' for a Ship delivery/milestone plan (ShipGoalRail, ShipDispatch, ShipCriteriaPanel); grep for tier|entitle|TIER|minTier across src/features/notepad/plan finds zero hits -- precondition (this context models a subscription/billing plan) does not hold, confirming the generator's own 'lexical-only' grounding flag.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:58f21c0561a86e45",
+          "evaluatedRevision": 7
         },
         {
           "subject": "prompt-assembly",
@@ -17353,7 +17601,11 @@
           "revision": 6,
           "changedAt": "2026-09-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "core/src/models/llm_spend.rs:44-58 LlmSpendTotals aggregates a nullable cost_usd with no unpriced-call count, so a window with unpriced rows cannot be told apart from one fully priced (nullable-cost-never-zero's disclosure corollary); LlmSpendInsert (llm_spend.rs:20-38) carries no cost_source, so 100% self-reported CLI cost is indistinguishable from an operator-verified figure anywhere downstream.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:834b798969457037",
+          "evaluatedRevision": 6
         },
         {
           "subject": "node-boot-and-declarative-bootstrap",
@@ -17564,7 +17816,11 @@
           "revision": 16,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/onboarding/components/useOnboardingState.ts:69-79 step state is renderer-session Zustand state with no durable job record or crash recovery; the golden path itself names wizard-flows as the governing neighbor for human-paced step UX.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:2bd472ebca7609ca",
+          "evaluatedRevision": 16
         },
         {
           "subject": "voice-io",
@@ -17951,7 +18207,11 @@
           "revision": 5,
           "changedAt": "2026-09-20",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/lib/bindings/LlmSpendDashboard.ts:6 + LlmSpendSection.tsx render spend/metrics with no cap/threshold/limit field; this context has no admission-control capability — the enforced monthly budget gate lives in commands/execution/executions.rs instead.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:a784035133baaaba",
+          "evaluatedRevision": 5
         },
         {
           "subject": "margin-and-unit-economics",
@@ -18181,7 +18441,11 @@
           "revision": 15,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "swallowed-error-prevention/error-doors: ConfigurationPopup.tsx:76-77 routes its catch through silentCatch('ConfigurationPopup:loadSettings') correctly; MetricHelpPopover.tsx:53-59's bindingless catch guards a local JSON.parse, the sanctioned legitimate shape. Other techniques not-applicable -- this context is dashboard/empty-state presentation with no raw-error classification or propagation.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:e561e382d42cb2f2",
+          "evaluatedRevision": 15
         },
         {
           "subject": "app-shell",
@@ -18197,7 +18461,11 @@
           "revision": 6,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:55-79 renders whatever overviewTab value is set with no entitlement check, and the setter itself (src/stores/slices/overview/overviewSlice.ts:222 setOverviewTab) checks nothing either -- external callers (src/features/shared/chrome/notifications/NotificationCenter.tsx:125, src/features/companions/athena/ProactiveCard.tsx:53, src/features/companions/athena/decision/useDecisionQueue.ts:153) route straight to tabs the sidebar hides below TEAM tier (sidebarData.ts:81 incidents, :87 manual-review), bypassing entitlement-gating's one-authority-guards-every-entrance rule entirely. (lazy-section-loading is realized here: OverviewPage.tsx:14-30 + lib/lazyRetry.ts:59-116 give one retry-then-surface unit per subtab.)",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
+          "evaluatedRevision": 6
         },
         {
           "subject": "data-viz",
@@ -18343,7 +18611,11 @@
           "revision": 6,
           "changedAt": "2026-09-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/companions/overseer/components/AddToScopeModal.tsx:9-11 — 'scope' here is Director roster membership (the persona.starred flag), consumed only by roster/UI filters, never a capability check; categoryMeta.ts's 'verdict' is a coaching-quality rating, not an allow/deny decision. Lexical-only false match on generic English words ('scope', 'verdict', 'leak') that happen to be this subject's jargon.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:57d60a438fa36d05",
+          "evaluatedRevision": 6
         }
       ],
       "governance": "governed"
@@ -18381,11 +18653,9 @@
           "confidence": "probable",
           "state": "deviation",
           "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:32 inlines an off-ladder 1.1s duration (ladder is 50/150/250/400ms) and :40 an unnamed 320/22 call-site spring; the motifs are per-component keyframes with no preset, no declared bespoke exception and no reduced fallback",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:d623a3bcfdcbd1c0",
-          "evaluatedRevision": 9,
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:8d9b3eabe2f3b534",
+          "evaluatedRevision": 10
         },
         {
           "subject": "narrative-scroll-surface",
@@ -18540,7 +18810,11 @@
           "revision": 15,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_health/libs/useStatusPageData.ts:96,109,116 classifies three IPC rejection values via 'instanceof Error ? .message : String(err)' (the repo's own named 176-site anti-pattern, typed-error-contract.md:139-142), discarding the structured AppError kind/category already on the wire, then only log.warn's and sets local state -- no silentCatch/toastCatch/Sentry door at all. Consequence: a real backend outage on this status page produces zero telemetry.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:e561e382d42cb2f2",
+          "evaluatedRevision": 15
         },
         {
           "subject": "analytics-store-design",
@@ -18588,7 +18862,11 @@
           "revision": 7,
           "changedAt": "2026-09-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_health/libs/compositeHealthScore.ts and the rest of this context are persona/agent health scoring and event detail views; grep for tier|entitle|TIER|minTier across src/features/overview/sub_health finds zero hits -- precondition (this context reads or renders plan/tier entitlement state) does not hold.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:58f21c0561a86e45",
+          "evaluatedRevision": 7
         },
         {
           "subject": "generator-uncertainty-scoring",
@@ -18679,7 +18957,11 @@
           "revision": 15,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "taxonomy-design (incidentTaxonomy.ts:55-88 ranks Unclassified at the TOP rung, documented fix to a prior inversion -- exemplary unknown-is-not-a-value), user-facing-mapping (incidentTaxonomy.ts:130-143 incidentGuidance() maps classified source to translated next-action copy), structured-propagation (groupIncidents.ts:1 imports the ts-rs-bound AuditIncident type so category survives the FFI intact), consumer-decides-error-shape (AuditIncident is the one aggregate shape the inbox door consumes across 9 source tables). Remaining techniques not-applicable -- incidents here are already-persisted records; the routing/catch decision happened upstream.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:e561e382d42cb2f2",
+          "evaluatedRevision": 15
         },
         {
           "subject": "model-routing",
@@ -19844,7 +20126,11 @@
           "revision": 5,
           "changedAt": "2026-09-20",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/components/MetricChart.tsx:24-36 is a generic chart shell (title/chart/emptySlot props); matched on vocabulary overlap alone (grounding: lexical-only) — no cap/threshold/limit concept exists in sub_usage.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:a784035133baaaba",
+          "evaluatedRevision": 5
         }
       ],
       "governance": "governed"
@@ -20107,7 +20393,11 @@
           "revision": 5,
           "changedAt": "2026-09-20",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "passportModel.ts:19 ObservabilityLevel is a readiness rung for whether a project HAS LLM-cost observability wired, not an enforced cap; no budget/threshold/limit field exists under sub_factory/passport.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:a784035133baaaba",
+          "evaluatedRevision": 5
         },
         {
           "subject": "guest-language-introspection",
@@ -20177,7 +20467,12 @@
           "revision": 3,
           "changedAt": "2026-08-29",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/passportModel.ts:316-319 scoreTint grades every passport against fixed absolute thresholds (>=80/60/40) but no field anywhere records that choice as the dimension's anchor policy, so a score cell cannot say whether 62 means 'ahead of the fleet' or 'two-thirds to a fixed bar' - cross-project-comparison's per-dimension anchor-policy demand is unmet (readinessSkew at :346-351 does realize the technique's divergence-ranking sub-point: automationReadiness.score minus productionReadiness.score). portfolio-drill-hierarchy is conformant: ProjectsLayer.tsx:53,159-200 toggles Atlas/Wall (PassportAtlas cover vs WallCompareTable comparison) over the SAME passports array - exactly the golden path's 'one level, two lenses' - and usePassportData.ts's phased publish (phase0/phase1/phase2) plus the 60s CACHE_FRESH_MS cache keep the fetch bounded rather than blocking first paint. project-identity-and-joins is conformant: usePassportData.ts:163 byId = new Map(projects.map(p => [p.id, p])) and dataLinks (:307-309) resolve by id, never by name.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:07b32de44fd25fc6",
+          "evaluatedRevision": 3,
+          "revisionsBehind": 0
         },
         {
           "subject": "repository-landing-document",
@@ -20241,7 +20536,11 @@
           "revision": 16,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/passport/ProjectsPassportWall.tsx:38-50 props are display data (passports, openSlugs, attentionByProject) over pre-fetched readiness state; the component owns no job record, claim, or recovery logic.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:2bd472ebca7609ca",
+          "evaluatedRevision": 16
         },
         {
           "subject": "usage-limit-governance",
@@ -20257,7 +20556,11 @@
           "revision": 5,
           "changedAt": "2026-09-20",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "LlmTrackingCell.tsx:39-95 fetches a connector's 30-day spend purely to display it as a readiness signal, with no threshold/action/enforcement; the admission-control precondition does not hold here.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:a784035133baaaba",
+          "evaluatedRevision": 5
         },
         {
           "subject": "guest-language-introspection",
@@ -20780,7 +21083,11 @@
           "revision": 7,
           "changedAt": "2026-09-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/glyph/persona-layout/CapabilityTabBar.tsx:9 imports PersonaCapability from '@/lib/personas/capabilities' -- a persona use-case/skill, not a plan/tier entitlement; grep for tier|entitle|TIER|minTier across this context finds zero hits. Precondition (this context implements capability-gate-predicates over a tier) does not hold; 'capability' here is a vocabulary collision with the subject's 'capability'.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:58f21c0561a86e45",
+          "evaluatedRevision": 7
         },
         {
           "subject": "agent-memory",
@@ -22007,13 +22314,16 @@
           "score": 0,
           "why": [],
           "confidence": "strong",
-          "state": "unknown",
+          "state": "deviation",
           "source": "conform",
           "grounding": "precondition",
-          "evidence": "added by /conform triage 2026-08-29: the golden path precondition governs this context; the matcher paired on vocabulary",
+          "evidence": "src/features/companions/athena/inbox/hooks/useUnifiedInbox.ts:129 sorts purely by createdAt despite the docstring at :8 claiming a severity-aware order, and UnifiedInboxItem.severity (types.ts:33) is never read by the comparator, so an old critical item never outranks a fresh low one; the snapshot also carries no per-source loaded/failed status (only items/total/truncated/needsMeTotal), so a failed fetchManualReviews (overviewSlice.ts:446-447) reads as zero pending rather than visibly failed",
           "digest": "sha256-b2:70c2c3ebc5f18a8f",
           "revision": 3,
-          "changedAt": "2026-08-29"
+          "changedAt": "2026-08-29",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:70c2c3ebc5f18a8f",
+          "evaluatedRevision": 3
         }
       ],
       "governance": "governed"
@@ -22527,7 +22837,11 @@
           "revision": 6,
           "changedAt": "2026-09-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "llmTracingAdapters.ts:38 LlmPinpoint.totalCostUsd is a non-nullable number and every mapper (e.g. :402 mapHeliconeRequests totalCostUsd: toNum(r.costUSD)) defaults a missing provider cost to 0 — the phantom-zero substitute nullable-cost-never-zero forbids. The LlmPinpoint shape (:28-41) has no cached-input/reasoning counters, so any such classes Langfuse/LangSmith/Helicone report for cached Anthropic calls are silently folded away (token-usage-quadruple).",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:834b798969457037",
+          "evaluatedRevision": 6
         },
         {
           "subject": "llm-price-book-operations",
@@ -23009,11 +23323,10 @@
           "confidence": "probable",
           "state": "deviation",
           "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 spawns a Fleet session for a finding with no dispatch-key check (is one already running for this idea?) and discards the returned session id, so the task row created at :80 is never bound to the session. A re-fired signal opens a duplicate, and nothing can find the session again.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:a03459c799a53308",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:e63d5473ea2636c8",
           "evaluatedRevision": 24,
-          "revisionsBehind": 0,
-          "stale": true
+          "revisionsBehind": 0
         },
         {
           "subject": "test-harness",
@@ -23109,7 +23422,11 @@
           "revision": 3,
           "changedAt": "2026-08-29",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:278-287 dedups against every known key then caps at SWEEP_CAP and reports the drop count, and skippedSensors/probedOrigins (sweep.ts:88-253) + verify.ts honesty rules 1-3 (never fabricate cleared) + dispatch.ts:91-121 per-item ok/failed report-back realize source-normalization, queue-lifecycle and verdict-writeback; no per-item ordered deck or multi-select lives in these files, so queue-ordering-and-identity, focus-mode and bulk-triage are not-applicable here",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:70c2c3ebc5f18a8f",
+          "evaluatedRevision": 3
         },
         {
           "subject": "translation-quality-measurement",
@@ -23347,11 +23664,10 @@
           "confidence": "strong",
           "state": "deviation",
           "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:68 still asserts full-lifecycle coverage over a hand-typed list of 7 of the now 9 FleetSessionState values, omitting finished and queued, although production deriveAxes handles both (FleetStatusDots.tsx:36). The test certifies a coverage it does not check.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:a03459c799a53308",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:e63d5473ea2636c8",
           "evaluatedRevision": 24,
-          "revisionsBehind": 0,
-          "stale": true
+          "revisionsBehind": 0
         },
         {
           "subject": "test-harness",
@@ -23597,7 +23913,11 @@
           "revision": 16,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/gitlab/components/GitLabPipelineViewer.tsx:26-36 polls and renders GitLab-owned pipeline/job status via gitlab* store selectors; GitLab, not this repo, owns the job record, so the governing subject is cicd-monitoring, not job-coordination.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:2bd472ebca7609ca",
+          "evaluatedRevision": 16
         },
         {
           "subject": "mcp-tools",
@@ -23848,7 +24168,11 @@
           "revision": 6,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx:10-15 code-splits its six sub-panels with plain React lazy() instead of this repo's own chunk-retry wrapper, which the sibling Twin plugin uses correctly (src/features/plugins/twin/TwinPage.tsx:19-24, lib/lazyRetry.ts) -- a transient chunk-fetch blip skips lazy-section-loading's 'retry once or twice automatically' step and goes straight to the ErrorBoundary's reload prompt. (navigation-model is realized here: TwinPage.tsx:82-93 validates a persisted/rehydrated tab id against the current vocabulary and redirects retired ids instead of rendering blank.)",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
+          "evaluatedRevision": 6
         },
         {
           "subject": "test-harness",
@@ -23952,7 +24276,11 @@
           "revision": 7,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/radio/** is the Settings -> Radio tab (RadioPage.tsx:1-30): curating streaming radio stations (YouTube/SomaFM), playback defaults and footer picker state. No PTY, no xterm, no terminal session of any kind — grepped for pty/portable_pty/xterm/terminal across the directory and found nothing relevant (the two hits are an unrelated CSS/icon string). The matcher's own why[] (\"hooks\", \"ended\", \"startup\") is React hooks + a playback-ended event + auto-resume-on-startup, a pure lexical collision with the subject's vocabulary rather than a real pairing.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:c3ef11aba4a471f5",
+          "evaluatedRevision": 7
         },
         {
           "subject": "sidecar-provisioning",
@@ -24764,7 +25092,11 @@
           "revision": 16,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/progress/ContentLoader.tsx:36-40 pure presentational loading/progress primitives rendering caller-supplied props, no backing durable record or state surviving a restart.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:2bd472ebca7609ca",
+          "evaluatedRevision": 16
         }
       ],
       "governance": "weak"
@@ -24817,7 +25149,12 @@
           "revision": 3,
           "changedAt": "2026-08-29",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_overview/useOverviewData.ts:89-92 activeProjectId is a single global pointer (systemStore), not a portfolio registry, and ProjectOverviewPage.tsx:98-539 renders only ONE active project's own repo/Sentry vitals - member-level health diagnostics, not portfolio identity/drill/comparison/lifecycle, which this subject's golden path explicitly assigns to sibling contexts (teams-factory, passport-wall-ui, judged separately). The pair scored on lexical overlap alone ('project'/'projects'/'view', grounding=lexical-only) rather than on the subject's actual concerns.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:07b32de44fd25fc6",
+          "evaluatedRevision": 3,
+          "revisionsBehind": 0
         },
         {
           "subject": "test-harness",
@@ -25082,7 +25419,11 @@
           "revision": 8,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/prompt/cli_args.rs:107 and :327 build_cli_args_inner/build_resume_cli_args_inner emit --dangerously-skip-permissions unconditionally for every persona execution and resume, with no mode vocabulary (generate/readonly-scan/edit) anywhere in the builder — permission-stance-enforcement's three-layer read-only posture and edit-acceptance-never-bypass rule are both unrealized, so no caller of this transport can get a provably non-writing run.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+          "evaluatedRevision": 9
         },
         {
           "subject": "supply-chain",
@@ -25391,7 +25732,11 @@
           "revision": 6,
           "changedAt": "2026-09-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "commands/infrastructure/llm_spend.rs:14-21 is an 8-line require_auth_sync + repo::dashboard pass-through with no schema-shaping of its own, and the other 10 files this context declares (tier_usage.rs rate-limit snapshots, memory_ledger/health, scraper, qwen_engine, idea_scanner, cloud[_sync], skill_files/usage) carry no LLM call event record either — every technique's governing site sits in sibling contexts (observability-audit-models, db-repos).",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:834b798969457037",
+          "evaluatedRevision": 6
         },
         {
           "subject": "agent-instruction-files",
@@ -25423,7 +25768,11 @@
           "revision": 5,
           "changedAt": "2026-09-20",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "tier_usage.rs:83-91 caps event_source_max/webhook_trigger_max (request COUNTS per tier), not LLM-metered cost; llm_spend.rs:17-21 is read-only with no threshold/action. The real LLM budget-cap gate lives in the unpaired commands-execution context.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:a784035133baaaba",
+          "evaluatedRevision": 5
         },
         {
           "subject": "operator-surfaces-for-llm-spend",
@@ -26256,6 +26605,14 @@
       ],
       "subjects": [
         {
+          "subject": "plan-entitlements",
+          "bundle": "software-engineering",
+          "source": "conform",
+          "confidence": "strong",
+          "state": "unknown",
+          "evidence": "added by /conform: the matcher never scored this pair, yet sidebarData.ts:53-61 (filterByTier) and :59,:328 (isTierVisible) are the real read-side capability-gate-predicate call sites over src/lib/constants/uiModes.ts's TIERS/BUILD_MAX_TIER model -- the actual governing context for this subject's UI half, missed because the repo's vocabulary ('tier', not 'entitlement') scored every OTHER context in this map higher by lexical overlap alone."
+        },
+        {
           "subject": "app-shell",
           "bundle": "software-engineering",
           "score": 1106.1,
@@ -26270,12 +26627,10 @@
           "changedAt": "2026-09-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:121 still casts an untyped sub-nav id with `id as TwinTab`; only the top level derives from the navigation registry (sidebarData.ts:33) while the sub-destination vocabularies stay hand-maintained string arrays, and sidebarData.ts:153 records that this exact cast shipped a blank-page bug.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:ae100598f7bfe8ef",
-          "evaluatedRevision": 4,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:120-122 casts untyped sub-nav ids (`id as DevToolsTab`/`ObsidianBrainTab`/`TwinTab`); only the top-level `sections` array is derived from the navigation registry (sidebarData.ts:34, SIDEBAR_SECTIONS) while every sub-nav vocabulary (devToolsItems, obsidianBrainItems, twinItems, overviewItems, credentialItems, eventBusItems, templateItems, cloudItems) stays a hand-maintained array -- sidebarData.ts:156-159 documents this exact cast having shipped a blank page for a retired 'voice' tab, and the pattern it warned about is still live. (Corrected anchors: the prior verdict cited PluginsSidebarNav.tsx:121 and sidebarData.ts:153, which are off by one line from the actual cast and comment.)",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
+          "evaluatedRevision": 6
         },
         {
           "subject": "quality-gates",
@@ -27050,7 +27405,11 @@
           "revision": 3,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "broker-proxy-attaches-secret is the applicable technique; the remaining 7 (RLS/SQL-shaped) do not apply to a local per-site whitelist table. LoginTab.tsx:1-4,30-36 binds a site to a credential_id reference only (browserApi.bindSiteCredential), never touching the secret value itself; the comment documents the intent explicitly (\"so browser_login can sign the agent in without the model ever seeing a value\"), matching the execution-side test no_credential_value_appears_in_any_serialized_surface_of_browser_login in src-tauri/src/commands/companion/approvals/approval_exec_browser.rs.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:d3eef10e9ed8459f",
+          "evaluatedRevision": 3
         },
         {
           "subject": "test-harness",
@@ -27824,12 +28183,11 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/stores/slices/system/fleetSlice.ts:306 stamps lastActivityMs = Date.now() on EVERY FLEET_SESSION_STATE event, a value the payload never carried. The registry deliberately does not reset the staleness clock on a declared completion (src-tauri/src/commands/fleet/registry.rs:2024), and no paired refresh follows, so a parked or finished session reads as just-active and sorts to the top of its group.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:a03459c799a53308",
+          "evidence": "src/stores/slices/system/fleetSlice.ts:357 (and :385 for the exited handler) stamps lastActivityMs = Date.now() on EVERY FLEET_SESSION_STATE/EXITED event, a value the payload never carried. The registry deliberately withholds that stamp for parked completions via apply_transition_parked (src-tauri/src/commands/fleet/registry.rs:664-666, used by mark_finished at :2029), so a parked or finished session reads as just-active and sorts to the top of its group.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:e63d5473ea2636c8",
           "evaluatedRevision": 24,
-          "revisionsBehind": 0,
-          "stale": true
+          "revisionsBehind": 0
         },
         {
           "subject": "data-access",
@@ -27909,7 +28267,12 @@
           "revision": 4,
           "changedAt": "2026-09-02",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/stores/slices/system/tourSlice.ts:1573 advanceTour computes allDone via steps.every(...), vacuously true when getActiveTourSteps(:1111) returns [] for an unregistered tour id; startTour (:1473) never checks getTourById before setting tourActive, so a dynamic athena-* tour whose in-memory registry entry (:989-998) did not survive an app restart finishes on the very first advance and tourCompletionMap (:1637) records it completed — tour-lifecycle requires zero-steps-found to be a distinct failure outcome, never a perfect score. Compounded by the single global TOUR_STATE_VERSION (:1127) wiping every tour's progress on any schema bump (:1243-1246) with no expired-by-retirement outcome recorded, instead of per-tour content versioning.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:6f44ad03ebd5bd19",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 0
         }
       ],
       "governance": "governed"
@@ -28273,7 +28636,12 @@
           "revision": 7,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/studio/StudioVersions.tsx:50-61 restore() calls webbuildRestoreVersion directly with only a confirm dialog in front of it (:118-129) — no client-side capture-before-restore, matching the backend gap at webbuild/versions.rs (same subject, webbuild context). The component's own header comment (:10-19) already names the defect: a mis-click \"overwrites... with no copy kept anywhere.\" lineage-and-variants and promotion-lifecycle are not-applicable here: BuildVersion (src/lib/bindings/BuildVersion.ts:3) carries only {sha, message, when} — no parent/lineage field and no state/tag field exist for the UI to render, because the backend never mints a version on restore (no lineage to show) and treats every build turn as linear (no promote/activate concept surfaced anywhere in studioStore.ts or StudioVersions.tsx).",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:e895b228981cf506",
+          "evaluatedRevision": 7,
+          "revisionsBehind": 0
         },
         {
           "subject": "chat-transcript",
@@ -28426,7 +28794,11 @@
           "revision": 17,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/cloud/sync/mod.rs:384-402 delete_persona_cascade deletes dependent child tables (synced_executions/reviews/messages/metrics/tool_usage/memories/knowledge_patterns/events) BEFORE the parent synced_personas row, deliberately (comment at :385-387: \"Personas row deleted last so a mid-cascade failure leaves the persona present... rather than orphaning its children\") - the reverse of existence-authority-written-last's delete order (authority removed first, dependents last), so an abandoned cascade leaves a reader-visible ghost parent with vanished children in the cloud dashboard instead of the technique's intended invisible orphaned-children garbage. Separately, mod.rs:58-75 (SYNC_TABLES) sets resync=false for synced_personas/synced_manual_reviews/synced_tool_usage/synced_triggers while rows.rs:535-547 filters strictly on datetime(cursor_col) > datetime(cursor_prev) and mod.rs:294-303 advances the cursor to the observed max of synced rows - a late write whose timestamp ties the already-advanced cursor on one of those four non-resync tables is permanently excluded from every later pass (sequence-token-write-ordering's \"a missing/tied token never reads as older\" rule, with no reconciliation pass checking for it on these tables).",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:7bc5f1ebaf276655",
+          "evaluatedRevision": 17
         },
         {
           "subject": "settings",
@@ -28588,7 +28960,11 @@
           "revision": 8,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/system/binary_probe.rs:61-69 command_exists_in_path/command_version resolve the agent CLI via where/which + a bare Command::new(command), bypassing cli_process::claude_cli_invocation's shim-immune resolver — violating availability-probe's 'resolve like the spawn will' rule, so this health probe can report claude available (or missing) while the production spawn path (which resolves claude.exe directly, never via PATH shim) disagrees.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+          "evaluatedRevision": 9
         },
         {
           "subject": "agent-memory",
@@ -29095,7 +29471,12 @@
           "revision": 3,
           "changedAt": "2026-08-29",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_factory/ProjectsLayer.tsx:133-142 attentionByProject is folded from factoryProjects (useFactoryData), the full per-project KPI tree fetched by factoryData.tsx:251-298's N-project fan-out (groups+contexts+kpis+measurements) - the same page already proved the batched alternative for headerStats/roadmapBySlug via projectWallSummary (ProjectsLayer.tsx:81), so the wall's attention badge alone still pays portfolio-drill-hierarchy's forbidden N x depth cost. project-identity-and-joins is realized throughout (factoryData.tsx assembleProject/loadFactoryTree join by project.id; FactoryShell.tsx keys by projectId). per-project-tabs-and-state is not-applicable: FactoryShell.tsx:42 holds a single projectId: string | null selection (drill-down), never a persisted multi-project tab set - that pattern lives in Studio's tab bar (judged separately from this context).",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:07b32de44fd25fc6",
+          "evaluatedRevision": 3,
+          "revisionsBehind": 0
         },
         {
           "subject": "quality-gates",
@@ -29203,7 +29584,12 @@
           "revision": 3,
           "changedAt": "2026-08-29",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/l2/FactoryProjectTabs.tsx:21-34 L2Tab ('overview'|'matrix'|'observability') is a segmented sub-view strip SCOPED TO ONE PROJECT the parent FactoryShell already selected (projectId is a prop, not a tab set) - not the portfolio-level persisted working-set per-project-tabs-and-state specifies. The portfolio-level project switcher and drill hierarchy live in the sibling teams-factory context (FactoryShell/FactoryBreadcrumb, judged separately). Note: the context map's entry_points still cite src/features/teams/sub_factory/l2/ship/FactoryShipTab.tsx and shipDerive.ts, which no longer exist on disk (the Ship tab was retired 2026-09-15 per ProjectsLayer.tsx:177-183) - a context-map staleness worth a rescan, not a code defect.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:07b32de44fd25fc6",
+          "evaluatedRevision": 3,
+          "revisionsBehind": 0
         },
         {
           "subject": "test-harness",
@@ -29688,8 +30074,12 @@
           "revision": 3,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 2
+          "state": "not-applicable",
+          "priorNotApplicable": 2,
+          "evidence": "src/features/teams/sub_kpis/kpiMeta.ts:28 CATEGORY_META (technical/quality/traffic/value) shows KPIs here are single-project metrics (test coverage, failure rate, traffic, value) measured by a codebase command/derived formula/connector/manual entry (kpiMeasurementProvenance.ts:1-12, describeMeasurement.ts:40-83); there is no population of teams adopting a practice, no uptake signal, and kpiConvergence.ts pairs SIM-vs-PROD readings of the same metric, not a before/after adoption instant - the subject's precondition (a practice spreading across a population) does not hold.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:502064804797857b",
+          "evaluatedRevision": 3
         },
         {
           "subject": "media-playback",
@@ -29888,7 +30278,11 @@
           "revision": 7,
           "changedAt": "2026-09-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_teamWorkspace/CreateTeamForm.tsx and useAutoTeam.ts implement the in-app multi-persona Team workspace feature, not a billing team seat count; grep for tier|entitle|TIER|minTier across this context's files finds zero hits (the sibling teamStudio/teamStudioShared.tsx:19 TIER_TONE/MemberTierChip is an LLM-model tier per member, also unrelated to billing). Precondition (this context models team-plan entitlements) does not hold.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:58f21c0561a86e45",
+          "evaluatedRevision": 7
         },
         {
           "subject": "sidecar-provisioning",
@@ -29944,11 +30338,9 @@
           "confidence": "probable",
           "state": "not-applicable",
           "evidence": "src/features/templates/sub_generated/adoption/persona-layout/personaLayoutAdoptionTypes.ts:1 prop contract of a template-instantiation wizard - 'adoption' here is one user configuring one persona from a template, not measuring a practice's spread across a population, the precondition of every technique; no uptake signal, population or ledger exists in this context",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:66f6d2712bdac80a",
-          "evaluatedRevision": 3,
-          "revisionsBehind": 0,
-          "stale": true
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:502064804797857b",
+          "evaluatedRevision": 3
         },
         {
           "subject": "templates-scaffolding",
@@ -29965,12 +30357,10 @@
           "changedAt": "2026-09-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/composerScheduleToTriggerSelection.ts:103 an hourly trigger still displays as Daily in a picker that cannot represent hourly; the unchanged-Apply rewrite is FIXED by the round-trip guard at :58, but editing only the hour now falls through to :83 and silently converts the declared hourly trigger to daily.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:3c599949a10176d8",
-          "evaluatedRevision": 1,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/composerScheduleToTriggerSelection.ts:58 the GetPut guard still only catches an UNCHANGED Apply; editing just the hour on an hourly capability (next.frequency stays 'daily', the only thing the composer can display) misses the guard at :58 and falls through to the 'daily' branch at :82-84, which calls selectionForTimePreset('daily', prev) (useCasePickerShared.ts:148-149, explicitly sets preset: 'daily') -- silently converting the declared hourly trigger. adoption-lifecycle's own doctrine names this exact failure (\"a GetPut guard alone still lets a real edit to one field re-derive the field the editor cannot represent\"); the fix it names (widen the editor's vocabulary, or have it refuse to represent hourly) is not implemented.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:3dd9549b75f4f998",
+          "evaluatedRevision": 3
         },
         {
           "subject": "agent-instruction-files",
@@ -30173,11 +30563,9 @@
           "confidence": "probable",
           "state": "not-applicable",
           "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:10 summarizeAnswer formats one user's answers in a template-configuration questionnaire; nothing here measures a practice's uptake across a population, the subject's precondition",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:66f6d2712bdac80a",
-          "evaluatedRevision": 3,
-          "revisionsBehind": 0,
-          "stale": true
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:502064804797857b",
+          "evaluatedRevision": 3
         },
         {
           "subject": "generated-workflow-candidates",
@@ -30282,8 +30670,12 @@
           "revision": 3,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 2
+          "state": "not-applicable",
+          "priorNotApplicable": 2,
+          "evidence": "src/features/templates/sub_generated/adoption/useCasePickerShared.ts:1-3 \"Shared helpers + types for UseCasePickerStep\" - this is the same template-instantiation wizard as the sibling adoption contexts (one user configuring one persona from a template); no population, uptake signal or ledger of a spreading practice exists here.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:502064804797857b",
+          "evaluatedRevision": 3
         },
         {
           "subject": "module-design",
@@ -30429,7 +30821,11 @@
           "revision": 14,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "Every file in this context (DesignResultPreview.tsx, DesignTestResults.tsx, DesignCheckbox.tsx, ConnectorsSection.tsx, EventsSection.tsx, MessagesSection.tsx, helpers.ts) is a pure, stateless render of a result object passed in as a prop -- DesignCheckbox.tsx:9-40 is a controlled toggle with no async operation at all. No operation here is reachable from more than one place, so the subject precondition (concurrency-guards.md:25-31, two-places-at-once reachability) is unmet.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:41b09d489d8f7ef9",
+          "evaluatedRevision": 14
         },
         {
           "subject": "test-harness",
@@ -30593,7 +30989,12 @@
           "revision": 1,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/modals/TemplateModals.tsx:1 wires persona-template gallery modals (rebuild/preview/credential); no file executes SQL or browses a database schema, so no sql-console precondition holds.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:60a26f15745fd8c1",
+          "evaluatedRevision": 1,
+          "revisionsBehind": 0
         },
         {
           "subject": "prompt-assembly",
@@ -30648,12 +31049,10 @@
           "changedAt": "2026-09-24",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/search/filters/ComponentFilterDropdown.tsx:69 matches with raw label.toLowerCase().includes(q); the repo now has one folding matcher (src/lib/text/search.ts:33 matchesQuery, NFD plus locale lowercasing) but this context re-derives matching at three call sites, so accented or Turkish-I input fails in a 14-locale app.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:b02a2eca8c0c6377",
-          "evaluatedRevision": 4,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/templates/sub_generated/gallery/search/filters/ComponentFilterDropdown.tsx:69, ConnectorFilterDropdown.tsx:64, and suggestions/SearchAutocomplete.tsx:33 all still match with raw label.toLowerCase().includes(q); the one-door matcher (src/lib/text/search.ts:33 matchesQuery, NFD + locale lowercasing) exists but none of this context's three filter call sites route through it, so accented or Turkish-I input still fails to match in a 14-locale app. Re-checked against search.md r5 (2026-10-03): unchanged since the r4 verdict.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:b76b1bab72ccfec5",
+          "evaluatedRevision": 5
         },
         {
           "subject": "generated-workflow-candidates",
@@ -30686,12 +31085,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/search/filters/searchConstants.ts:135 still sorts and labels 'Ready to Deploy' from computeAdoptionReadiness, a category-level local score (src/features/templates/sub_generated/shared/adoptionReadiness.ts:59) the adoption gate never computes, so the browse badge and the gate disagree on exactly the entries that matter.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:3c599949a10176d8",
-          "evaluatedRevision": 1,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/templates/sub_generated/gallery/search/filters/searchConstants.ts:135 still sorts/labels 'Ready to Deploy' from computeAdoptionReadiness (adoptionReadiness.ts:48), a category-level heuristic (any credential in an architectural category unlocks every template needing that category) consumed only by the browse cards (useTemplateCardData.ts:96, useGalleryActions.ts:68) -- confirmed to share no code path with the actual adoption-time blocking gate (vaultAdoptionMatcher.ts / ChronologyAdoptionView.tsx's blockedQuestionIds, which matches per-question vault_category against live credentials). The browse badge and the gate that actually blocks adoption remain two independent computations that can and do disagree on exactly the entries where it matters.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:3dd9549b75f4f998",
+          "evaluatedRevision": 3
         },
         {
           "subject": "table",
@@ -30983,12 +31380,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/lib/templates/templateVerification.ts:208 returns integrityValid=true when no expected digest was registered, so an un-fingerprinted built-in wears TrustBadge 'Verified' (TrustBadge.tsx:21 has no unverifiable level); the hash is now compared when a fingerprint exists (:209, the recorded never-compared defect is FIXED), but absence still folds into verified.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:3c599949a10176d8",
-          "evaluatedRevision": 1,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/lib/templates/templateVerification.ts:208 resolveIntegrityValid still returns true when no expected digest is registered (expected === null), so an un-fingerprinted built-in gets integrityValid=true -> deriveTrustLevel -> TrustBadge.tsx:21-25 'verified' shield, with no fourth unverifiable/pending state anywhere in the three-level TRUST_ICONS map. Confirmed unchanged: this folds integrity-and-provenance's verdict 3 (could-not-verify) into verdict 1 (verified) exactly as the technique's decoration-gate section describes. The within-fingerprint comparison at :209 is real (the previously recorded never-compared defect stays fixed); only the absent-expectation fallthrough remains wrong.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:3dd9549b75f4f998",
+          "evaluatedRevision": 3
         },
         {
           "subject": "agent-instruction-files",
@@ -31201,7 +31596,12 @@
           "revision": 1,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_explore/ExploreView.tsx:1-8 is the template-catalog Explore/adoption flow (domains, presets); no file connects to a user database or runs SQL, so no sql-console precondition holds.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:60a26f15745fd8c1",
+          "evaluatedRevision": 1,
+          "revisionsBehind": 0
         },
         {
           "subject": "test-harness",
@@ -31270,12 +31670,10 @@
           "changedAt": "2026-09-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx:884 seeds every authored default into the answer set verbatim with no membership check against its option list (none exists at any door in src), so an off-list default is adopted while the closed picker shows no option selected. The recorded mockTestDelivery call is still at ucPicker/useUcPickerState.ts:247, but UseCasePickerStep (ucPicker/index.ts:5) is no longer mounted outside a test.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:3c599949a10176d8",
-          "evaluatedRevision": 1,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx:884 still seeds every question default verbatim with no check against the question's own option list (confirmed unchanged; template-anatomy's defaults-within-options invariant has no door anywhere in src). The recorded mockTestDelivery import is still live at ucPicker/useUcPickerState.ts:247, and UseCasePickerStep (ucPicker/index.ts:5) remains unmounted outside its own test -- the entire 26-file ucPicker/ subtree has exactly one production consumer, a type-only import of UseCaseOption in ChronologyAdoptionView.tsx:18, so a live defaults-checking gate was never built against the code path that actually renders use-case selection.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:3dd9549b75f4f998",
+          "evaluatedRevision": 3
         },
         {
           "subject": "adoption-measurement",
@@ -31289,8 +31687,12 @@
           "revision": 3,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 2
+          "state": "not-applicable",
+          "priorNotApplicable": 2,
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPickerTypes.ts:1-4 \"the production UI for the adoption wizard's capability-and-trigger step\" - single-user wizard UI, not measurement of a practice's uptake across a population, the precondition every technique in this subject shares.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:502064804797857b",
+          "evaluatedRevision": 3
         },
         {
           "subject": "generated-workflow-candidates",
@@ -31817,12 +32219,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:39 the provenance stamp still omits the answer set and adoption time (its own note: the AdoptionMetadata envelope is not persisted). The recorded dark staleness apparatus is FIXED: :249 now pins source_recipe_version, which recipeStaleness.ts:41 compares.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:3c599949a10176d8",
-          "evaluatedRevision": 1,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:220-250 recipeToUseCase still stamps only source_recipe_id (:248) and source_recipe_version (:249) onto the adopted DesignUseCase -- no binding values, no adoption timestamp, confirmed by the function's own header comment at :39-42 (\"the full AdoptionMetadata envelope is still not persisted\"). This is instance-upgrade's named failure mode \"a stamp without answers\": isRecipeStale (recipeStaleness.ts:37-41) can correctly detect that the catalog moved on, but nothing can regenerate the adopted instance's base to separate the adopter's edits from the recipe's changes, because the answer set was never kept. The version-comparison apparatus itself (recipeStaleness.ts:41, comparing recipe.version to the pinned source_recipe_version) is confirmed working, matching the previously recorded fix.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:3dd9549b75f4f998",
+          "evaluatedRevision": 3
         },
         {
           "subject": "quality-gates",
@@ -32910,7 +33310,11 @@
           "revision": 6,
           "changedAt": "2026-09-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "useSharedEvents.ts:3-5 types (SharedEventCatalogEntry/SharedEventSubscription/SharedEventFeedActivity) show this context is the Watchtower marketplace feed-subscription UI; none of its 7 files declare a cost, token, or model field anywhere — a lexical match on 'event'/'feed', not an LLM call record.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:834b798969457037",
+          "evaluatedRevision": 6
         },
         {
           "subject": "feed",
@@ -33297,11 +33701,10 @@
           "confidence": "probable",
           "state": "deviation",
           "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx:107 still masks a captured field only when the template types it 'password' (and :108 offers copy), so a captured API key typed 'text' renders in cleartext on a review screen where every field is a secret.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:1772d33e2929beec",
-          "evaluatedRevision": 2,
-          "revisionsBehind": 2,
-          "stale": true
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 2
         },
         {
           "subject": "sql-console",
@@ -33471,11 +33874,10 @@
           "confidence": "probable",
           "state": "deviation",
           "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:267 still classifies probe failures by substring-matching backend prose (also :308 'skipped automatic healthcheck') and :256 regexes an HTTP status out of the message, so the taxonomy dies at the boundary and breaks on the first reworded message.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:1772d33e2929beec",
-          "evaluatedRevision": 2,
-          "revisionsBehind": 2,
-          "stale": true
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 2
         },
         {
           "subject": "mcp-tools",
@@ -33530,13 +33932,11 @@
           "changedAt": "2026-09-24",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:127 still hardcodes `bg-orange-500/10 border-orange-500/20 text-orange-400`, and :144 hardcodes `bg-emerald-500/10 border-emerald-500/20 text-emerald-400`. Both are raw ramp steps instead of roles, and the emerald border has already drifted from the /30 that STATUS_PALETTE.success defines (statusTokens.ts:27). The gate that would catch this is warn-level and muted at commit.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:677bcf6173f511aa",
-          "evaluatedRevision": 6,
-          "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:127 still hardcodes `bg-orange-500/10 border-orange-500/20 text-orange-400`, and :144 hardcodes `bg-emerald-500/10 border-emerald-500/20 text-emerald-400` -- name-tagged raw ramp steps instead of roles, and the emerald border has already drifted from the /30 STATUS_PALETTE.success defines (src/lib/design/statusTokens.ts:27-30). The `text-orange-400`/`text-emerald-400` half is inside the census ratchet (`raw-palette-text-colour`, baselined 3997-strong 2026-09-24) so it is invisible only because it predates the baseline, not because the rule is advisory; the `bg-*`/`border-*` raw-colour half has no gate at all -- no census rule and no ESLint `no-raw-*-classes` rule covers background/border palette steps -- so new instances of that half would ship silently today.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:165125b7a54d0de3",
+          "evaluatedRevision": 7,
+          "source": "retained"
         },
         {
           "subject": "copy-quality-gates",
@@ -33616,7 +34016,11 @@
           "revision": 6,
           "changedAt": "2026-09-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/catalogRolePresets.ts:1-13 is a deprecated stub feeding the same UI-filter-only audience tagging as lib-credentials; ForagingConsent.tsx:30-91 is pre-scan filesystem-read disclosure (credential-vault's acquisition stage per authorization.md:384-386's own boundary), not a scope/grant ceiling render. No scope vocabulary or enforcement point in this context.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:57d60a438fa36d05",
+          "evaluatedRevision": 6
         }
       ],
       "governance": "governed"
@@ -33851,11 +34255,10 @@
           "confidence": "strong",
           "state": "deviation",
           "evidence": "src/features/vault/sub_credentials/components/features/CredentialRotationSection.tsx:124 paints every non-success last_status red, so a 'skipped' rotation (which the backend declares not a failure, src-tauri/core/src/lifecycle.rs:489, and the timeline at :166 paints amber) reads as a failed rotation. The recorded AnomalyScorePanel snake_case miss is FIXED (AnomalyScorePanel.tsx:11 is now Record<Remediation,...>).",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:1772d33e2929beec",
-          "evaluatedRevision": 2,
-          "revisionsBehind": 2,
-          "stale": true
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 2
         },
         {
           "subject": "markdown-vault",
@@ -33940,7 +34343,11 @@
           "revision": 6,
           "changedAt": "2026-09-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/api_proxy.rs:781-811 + src-tauri/engine/src/scope_enforcement.rs — WarnOnly/Block scope-enforcement outcomes are recorded only via tracing::warn!, never via db/src/repos/resources/audit_log.rs::insert, so out-of-scope access attempts are invisible to AuditLogTable.tsx's per-credential trail (its OP_LABELS has no denial operation). scope-design itself is conformant (scope_enforcement.rs fails closed on corrupt data, exact-match only, regression-tested).",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:57d60a438fa36d05",
+          "evaluatedRevision": 6
         },
         {
           "subject": "agent-memory",
@@ -34044,11 +34451,10 @@
           "confidence": "probable",
           "state": "deviation",
           "evidence": "src/features/vault/sub_credentials/components/list/credentialListTypes.ts:162 the health sort rebuilds a probe result from success/message only, dropping healthcheck_last_state (src/lib/types/types.ts:84), so an unverifiable credential (success:true) sorts as fully healthy (100) while the composite dot scores it neutral 50. The recorded HealthcheckResultDisplay collapse is FIXED (HealthcheckResultDisplay.tsx:35).",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:1772d33e2929beec",
-          "evaluatedRevision": 2,
-          "revisionsBehind": 2,
-          "stale": true
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 2
         },
         {
           "subject": "markdown-vault",
@@ -34155,7 +34561,12 @@
           "revision": 1,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/forms/ConnectorCredentialModal.tsx:1 captures connector credentials for the vault; the golden path explicitly places this elsewhere: \"Connection secrets belong to the credential-vault\" (sql-console.md:46-51), not sql-console.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:60a26f15745fd8c1",
+          "evaluatedRevision": 1,
+          "revisionsBehind": 0
         },
         {
           "subject": "test-harness",
@@ -34187,7 +34598,11 @@
           "revision": 6,
           "changedAt": "2026-09-18",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "Context is dominantly credential-acquisition/storage UI (OAuth tabs, field capture, import, delete-confirm) — credential-vault's territory per authorization.md's 'what is not this subject' section. The one scope-shaped file, card/banners/ScopeMismatchBanner.tsx, is unreferenced anywhere in src/ (confirmed by repo-wide grep) — dead code, not live enforcement surface. Real gating for this flow (credential_blast_radius/delete_credential) lives server-side in src-tauri/src/commands/credentials/crud.rs behind #[requires(privileged)], outside this context.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:57d60a438fa36d05",
+          "evaluatedRevision": 6
         },
         {
           "subject": "import-normalization",
@@ -34203,7 +34618,12 @@
           "revision": 1,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/design/useCredentialDesignModal.ts:118-127 handleImportComplete takes only results[0], silently discarding every other detected service group on a multi-service import with no warning, and even the surviving group loses the actual secret VALUES (importHelpers.ts:346-372 forwards only key/label/type into CredentialDesignResult, never ImportedSecret.value) so the user must retype what the importer already read -- lossy-conversion-disclosure's \"imported successfully over silent loss\" failure, compounded by unbounded JSON.parse on 1Password/AWS/Azure/Doppler paste input (importHelpers.ts:211-313) with no size/depth cap unlike the equivalent workflow importer elsewhere in this repo.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:4981ff0ea8a59c1b",
+          "evaluatedRevision": 1,
+          "revisionsBehind": 0
         }
       ],
       "governance": "governed"
@@ -34383,7 +34803,11 @@
           "revision": 17,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "query-construction conformant: src/features/vault/sub_databases/introspectionQueries.ts:1-8 documents that live introspection was consolidated onto backend PARAMETERIZED commands (introspect_db_tables/introspect_db_columns), retiring a weaker frontend-interpolated second implementation; the surviving frontend code is only a clipboard-copy helper (getSelectAllQuery, L152-178) behind centralized identifier/literal escaping (L108-149); hooks/useDbQueryRunner.ts:39-58 passes the user's own typed SQL straight through to one backend execution command (executeDbQuery) with no frontend query-string assembly. The rest of the subject's techniques (layering-rules, row-mapping, read-models-and-projections, batching-and-n-plus-one, transactions-and-units-of-work, repo-testing, cross-driver-invariant-parity, capability-declared-in-the-type, sequence-token-write-ordering, existence-authority-written-last, operator-defined-tables, localized-record-identity) are not-applicable: this context is the golden path's own named exception (\"ad-hoc analytics and one-off reporting... keep them out of the application's surface entirely\", data-access.md L304-323) - a SQL console (SqlEditor.tsx) for the user's own exploratory queries against externally connected databases they own, not the app's operational store.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:7bc5f1ebaf276655",
+          "evaluatedRevision": 17
         },
         {
           "subject": "module-design",
@@ -34680,7 +35104,11 @@
           "revision": 5,
           "changedAt": "2026-09-24",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:118-127 re-derives matching inline (t.table_name.toLowerCase().includes(q)) instead of the one-door matcher at src/lib/text/search.ts:33 (query-parsing); separately, tables arrives paginated (truncated flag + fetchMoreTables at src/hooks/database/useTableIntrospection.ts:156-220) but the filter at TableListSidebar.tsx:118-124 runs only over the already-loaded window, and totalLabel (TableListSidebar.tsx:134) reports tables.length as the total with no disclosure that more rows may exist unloaded while truncated is true (faceting-and-filters completeness precondition) — a table on an unfetched page is invisible to the filter and silently undercounted.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:b76b1bab72ccfec5",
+          "evaluatedRevision": 5
         },
         {
           "subject": "status-vocabulary",
@@ -34927,11 +35355,10 @@
           "confidence": "probable",
           "state": "deviation",
           "evidence": "src/features/vault/shared/hooks/health/useBulkHealthcheck.ts:84 'Test all' mirrors each outcome into the per-card cache as {success, message} and drops the typed state the wire carries, so an unverifiable credential (success:true) paints as verified and :95 lists every unreachable one under needs-attention. The recorded single-probe collapse is FIXED (useCredentialHealth.ts:165 throw -> unreachable, :190 persists only real verdicts).",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:1772d33e2929beec",
-          "evaluatedRevision": 2,
-          "revisionsBehind": 2,
-          "stale": true
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 2
         },
         {
           "subject": "markdown-vault",
@@ -35117,7 +35544,11 @@
           "revision": 15,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/shared/playground/tabs/McpToolResultDisplay.tsx:7-17,45-56 pretty-prints and renders raw MCP tool-call JSON directly in a <pre> block, which would be a display-vs-machine-channels violation in a conversational surface — but this file is a developer tool-testing console (the \"playground\" API/MCP explorer), whose entire purpose is to show the raw response to the developer invoking it; there is no accompanying human-facing chat message the raw payload is standing in for, so the two-channel precondition does not hold here.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:d51aec71411ccb2b",
+          "evaluatedRevision": 15
         },
         {
           "subject": "agent-instruction-files",
@@ -35224,7 +35655,11 @@
           "revision": 17,
           "changedAt": "2026-09-30",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "This context is presentation-only: src/features/vault/shared/vector/search/SearchResultCard.tsx:25,52,79,87-94 DISPLAYS the score/distance the backend already computed (ScoreBadge, distance_label) and implements none of the retrieval techniques itself -- the relevance-floor / RRF fusion / ranking-budget / embedding-lifecycle machinery behind this UI lives in commands/credentials/vector_kb.rs, paired with retrieval this run (state: conformant) as the commands-credentials context. Coverage note for the registry: the matcher scored THIS UI context on vocabulary ('corpus','ingest','embedding') that actually describes the backend one layer down -- a technique-shaped resonance, not a vocabulary miss.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:9f05c1f381f9d83f",
+          "evaluatedRevision": 17
         },
         {
           "subject": "document-text-extraction",
@@ -35336,7 +35771,11 @@
           "revision": 15,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/kb_extract.rs:88-90,193-197 extraction-strategies has only one rung (ai_helpers.rs:84-130 fenced-block-or-bust, no whole-text/balanced-span/prose fallback) and schema-validation-and-repair has no model-assisted repair loop at all (immediate AppError::Internal on parse failure); commands/credentials/vector_kb.rs:1242-1266 kb_run_extraction has no single-flight guard (ExtractTab.tsx:33-37 admits the race, mitigates client-side only, doubling model spend and written rows on a second call); core/src/models/knowledge_base.rs:271-283 KbExtractionProgress has no failure counter so a decaying per-document failure rate (kb_extract.rs:147-152, swallowed into tracing::warn!) is invisible to the user — extraction-observability unmet. display-vs-machine-channels is realized (EntityTable.tsx:12-22,93-131 renders a purpose-built table, never raw payload). answer-coverage-gating is not-applicable: the extraction prompt is open-ended (\"Emit one object per real instance you find\", kb_extract.rs:176) with no enumerated unit count the request itself asked for.",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:d51aec71411ccb2b",
+          "evaluatedRevision": 15
         },
         {
           "subject": "credential-vault",
@@ -35439,8 +35878,8 @@
           "changedAt": "2026-09-03",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/webbuild/versions.rs:74 restore still runs `git checkout <sha> -- .` with no capture-before-restore, so uncommitted edits that exist in no version are overwritten, files created after <sha> stay in place (a chimera labelled as that version), and the restore itself is recorded nowhere until the next turn commits.",
-          "evaluatedAt": "2026-09-23",
+          "evidence": "src-tauri/src/webbuild/versions.rs:96-115 restore() runs `git restore --overlay --source <sha> --worktree -- .` directly on the live worktree; the only caller (commands/infrastructure/webbuild.rs:321-329, webbuild_restore_version) never calls commit_snapshot first, so uncommitted edits to tracked files that exist in no snapshot are overwritten and the restore itself mints no new version (the snapshot ref gets no entry), leaving no audit trail of what was restored from what. (Re-judged 2026-10-03: the prior verdict cited line 74 and `git checkout <sha> -- .`, both stale — the file was rewritten 2026-09-24 by 5fe4834230, the day after the 2026-09-23 verdict. That rewrite fixed the file-deletion complaint on purpose: --overlay never deletes a file added after the snapshot, a decision recorded at versions.rs:93-95 — so that half of the old evidence no longer applies. The capture-before-restore gap is unchanged and is also called out in the frontend's own comment, src/features/studio/StudioVersions.tsx:14-19.)",
+          "evaluatedAt": "2026-10-03",
           "evaluatedAgainst": "sha256-b2:e895b228981cf506",
           "evaluatedRevision": 7,
           "revisionsBehind": 0
@@ -35740,6 +36179,17 @@
           "changedAt": "2026-09-11",
           "confidence": "probable",
           "state": "unknown"
+        },
+        {
+          "subject": "agent-cli-transport",
+          "bundle": "software-engineering",
+          "source": "conform",
+          "confidence": "strong",
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/cli_process.rs:45-49 force_subscription_auth (the one spawn door every path in this file calls) strips only ANTHROPIC_*; CLAUDECODE/CLAUDE_CODE session-marker stripping is duplicated instead of centralized (inline in prompt/cli_args.rs:204-205, a separate nesting_env_removals() in companion/session/launch.rs:458) — a new CliArgs-building call site must remember the strip itself, the forgettable-guard shape subscription-auth-selection's session-nesting clause warns against. (cli_capabilities.rs's probe() is a strong, independent realization of availability-probe/dated-capability-matrix in the same file set.)",
+          "evaluatedAt": "2026-10-03",
+          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+          "evaluatedRevision": 9
         }
       ],
       "governance": "governed"

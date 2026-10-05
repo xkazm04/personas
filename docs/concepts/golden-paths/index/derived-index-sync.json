@@ -71,6 +71,7 @@
     "migrations/incremental.rs": {"count":1,"sections":[9],"lines":["298,302,306,308"],"contexts":["`migrations/incremental.rs:298,302,306,308` and `migrations/schema.rs:142,146,150,152`"],"resolved":false},
     "observability.repository.ts": {"count":2,"sections":[10],"lines":["452-465","142-151"],"contexts":["5-minute interval, querying `observability.repository.ts:452-465` with no `WHERE` and no"],"resolved":false},
     "resolve.rs": {"count":1,"sections":[10],"lines":["106-117"],"contexts":["- **brainiac's read-path self-healing reconciler** (`resolve.rs:106-117`): any canonical entity"],"resolved":false},
+    "schema.rs": {"count":2,"sections":[0,10],"lines":["402-419"],"contexts":["| files holding them | 3 (`lib.rs`, `schema.rs`, `incremental.rs`) | 7 (`companion/brain/*`) |"],"resolved":false},
     "scripts/test/clean-env.cjs": {"count":6,"sections":[0,7,9,12],"lines":["73","53-62"],"contexts":["`scripts/test/clean-env.cjs` read in full."]},
     "sla.rs": {"count":2,"sections":[10,12],"lines":["692-760","642"],"contexts":["- **The divergence-resolving rollup reader** (`sla.rs:692-760`), which merges the durable"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[],"contexts":["**Sweep size.** All **963** `.rs` files under `src-tauri/` walked **four** times — twice by"],"resolved":false,"isDir":true},
@@ -107,12 +108,14 @@
       "verbatim": "db/src/migrations/helpers.rs"
     },
     "src-tauri/db/src/migrations/schema.rs": {
-      "count": 5,
-      "sections": [0,3,6,9,10],
-      "lines": ["141-153","142,146,150,152","402-419"],
-      "contexts": ["| files holding them | 3 (`lib.rs`, `schema.rs`, `incremental.rs`) | 7 (`companion/brain/*`) |"],
-      "resolvedFrom": "basename",
-      "verbatim": "schema.rs"
+      "count": 3,
+      "sections": [3,6,9],
+      "lines": ["141-153","142,146,150,152"],
+      "contexts": [
+        "| the three `executions_fts_a[iud]` triggers | `db/src/migrations/schema.rs:141-153` | store-maintained FTS: `AFTER INSERT`, `AFTER DELETE`, and `AFTER UPDATE **OF** input_data, output_data, error_me…"
+      ],
+      "resolvedFrom": "suffix",
+      "verbatim": "db/src/migrations/schema.rs"
     },
     "src-tauri/db/src/repos/communication/sla.rs": {
       "count": 5,

@@ -18,10 +18,10 @@
     "7.H Elevation, motion, arbitrary values",
     "7.I Primitives repainted at the call site"
   ],
-  "ruleIds": ["bare-rounded","feature-css-type-literal","hand-rolled-disabled-state","opacity-dimmed-text","raw-arbitrary-text-size","raw-palette-text-colour","typo-token-overpainted"],
+  "ruleIds": ["bare-rounded","feature-css-type-literal","hand-rolled-disabled-state","off-ladder-ink-opacity","opacity-dimmed-text","raw-arbitrary-text-size","raw-palette-text-colour","typo-token-overpainted"],
   "ruleIdsFrom": "section-9",
   "sections": [1,2,3,4,5,6,7,8,9],
-  "citationCount": 113,
+  "citationCount": 115,
   "triggers": [
     "\"make this card/panel/badge look right\", \"match the styling of that other row\"",
     "\"add a subtle border\", \"dim it when it's disabled\", \"make this label stand out\"",
@@ -39,7 +39,6 @@
       "contexts": ["| `exclude` path renamed (`Button.tsx` → `ButtonMOVED.tsx`) | **1** | `[structural] exclude \"…ButtonMOVED.tsx\" matched no file. The exemption is stale` |"],
       "resolved": false
     },
-    "SectionCard.tsx": {"count":3,"sections":[5,7],"lines":["50-56","58-62"],"contexts":["`statusTokens.ts`, `Button.tsx`, `SectionCard.tsx`, `StatusBadge.tsx`, `.claude/Design.md`,"],"resolved":false},
     "StatusBadge.tsx": {"count":2,"sections":[7],"lines":["47-50"],"contexts":["`statusTokens.ts`, `Button.tsx`, `SectionCard.tsx`, `StatusBadge.tsx`, `.claude/Design.md`,"],"resolved":false},
     "designTokens.ts": {
       "count": 9,
@@ -91,6 +90,7 @@
       "verbatim": "check-corpus-integrity.mjs"
     },
     "scripts/census/self-test.mjs": {"count":1,"sections":[9],"contexts":["token to use instead in `signal.fix`, and is seeded red in `scripts/census/self-test.mjs`."]},
+    "scripts/style/codemod-ink-ladder.mjs": {"count":1,"sections":[9],"contexts":["ratchet freezes the third family at its measured count; `scripts/style/codemod-ink-ladder.mjs`"]},
     "scripts/style/typo-allowlist.mjs": {"count":1,"sections":[9],"contexts":["condition moved to `scripts/style/typo-allowlist.mjs`, run by `check-corpus-integrity.mjs`"]},
     "shared-facts.json": {"count":2,"sections":[7],"contexts":["`shared-facts.json` they agree with it, with one correction"],"resolved":false},
     "shared/components/*.tsx": {"count":1,"sections":[8],"contexts":["**126 of 129** `shared/components/*.tsx` files reference `className`; **63** declare"],"resolved":false},
@@ -178,6 +178,14 @@
     },
     "src/features/shared/components/forms/NumberStepper.tsx": {"count":1,"sections":[7],"lines":["190"],"contexts":["`ConfirmDialog.tsx:75,84`, `ThemedSelect.tsx:140`, `NumberStepper.tsx:190`,"],"resolvedFrom":"basename","verbatim":"NumberStepper.tsx"},
     "src/features/shared/components/forms/ThemedSelect.tsx": {"count":1,"sections":[7],"lines":["140"],"contexts":["`ConfirmDialog.tsx:75,84`, `ThemedSelect.tsx:140`, `NumberStepper.tsx:190`,"],"resolvedFrom":"basename","verbatim":"ThemedSelect.tsx"},
+    "src/features/shared/components/layout/SectionCard.tsx": {
+      "count": 3,
+      "sections": [5,7],
+      "lines": ["50-56","58-62"],
+      "contexts": ["`statusTokens.ts`, `Button.tsx`, `SectionCard.tsx`, `StatusBadge.tsx`, `.claude/Design.md`,"],
+      "resolvedFrom": "basename",
+      "verbatim": "SectionCard.tsx"
+    },
     "src/features/shared/components/modals/ExecutionDetailModal/OutputSections.tsx": {
       "count": 1,
       "sections": [7],
@@ -239,8 +247,8 @@
       "verbatim": "globals.css"
     },
     "src/styles/typography.css": {
-      "count": 9,
-      "sections": [2,3,5,6,7],
+      "count": 10,
+      "sections": [2,3,5,6,7,9],
       "lines": ["120-191","161-162","105-358","147-168"],
       "contexts": ["twelve token axes; plus full reads of `globals.css`, `typography.css`, `designTokens.ts`,"],
       "resolvedFrom": "basename",

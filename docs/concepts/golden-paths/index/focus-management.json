@@ -68,6 +68,7 @@
     "PrototypeTabs.tsx": {"count":1,"sections":[7],"contexts":["`AuthMethodTabs.tsx` · `TwinVariantTabs.tsx` · `PrototypeTabs.tsx`."],"resolved":false},
     "RecipePlaygroundModal.tsx": {"count":1,"sections":[7],"contexts":["`HealingIssueModal.tsx`, `RecipePlaygroundModal.tsx`."],"resolved":false},
     "ReportPreviewDrawer.tsx": {"count":1,"sections":[7],"lines":["215"],"contexts":["consumers), `TestReportModal.tsx:68`, `ReportPreviewDrawer.tsx:215`,"],"resolved":false},
+    "ReviewFocusFlow.tsx": {"count":2,"sections":[6,7],"lines":["217"],"contexts":["`ReviewFocusFlow.tsx:217` and `BacklogFocusDeck.tsx:95` (route surfaces at"],"resolved":false},
     "StickyNoteNode.tsx": {"count":1,"sections":[7],"lines":["127"],"contexts":["`TerminalSearchBar.tsx:83` · `StickyNoteNode.tsx:127` · `DraftEditStep.tsx:107` ·"],"resolved":false},
     "TagEditorModal.tsx": {"count":1,"sections":[7],"lines":["114"],"contexts":["`AddToScopeModal.tsx:60` · `TagEditorModal.tsx:114` · `Composer.tsx:310` ·"],"resolved":false},
     "TeamCertCard.tsx": {"count":1,"sections":[7],"lines":["74"],"contexts":["`TeamCertCard.tsx:74` · `TimelinePanel.tsx:447` · `TimelineScrubber.tsx:129` ·"],"resolved":false},
@@ -77,6 +78,7 @@
     "TwinVariantTabs.tsx": {"count":1,"sections":[7],"contexts":["`AuthMethodTabs.tsx` · `TwinVariantTabs.tsx` · `PrototypeTabs.tsx`."],"resolved":false},
     "UseCaseChannelDropdown.tsx": {"count":1,"sections":[8],"lines":["15"],"contexts":["(`AddChannelButton.tsx:22`, `UseCaseChannelDropdown.tsx:15`,"],"resolved":false},
     "UseCaseDetailPanel.tsx": {"count":1,"sections":[7],"lines":["237"],"contexts":["`FixtureDropdownList.tsx:32` · `UseCaseDetailPanel.tsx:237` ·"],"resolved":false},
+    "WorkspaceTabs.tsx": {"count":1,"sections":[7],"lines":["18"],"contexts":["`StudioTabBar.tsx:17` · `WorkspaceTabs.tsx:18` · `ModeTabBar.tsx` ·"],"resolved":false},
     "eslint-rules/role-button-requires-keydown.cjs": {"count":3,"sections":[3,8,9],"lines":["47-63"],"contexts":["- **`eslint-rules/role-button-requires-keydown.cjs`** — registered at **error** in"]},
     "eslint.config.js": {"count":2,"sections":[3,8],"lines":["106"],"contexts":["`eslint.config.js:106`. Currently the only machine check touching this situation. It"]},
     "scripts/census/run-census.mjs": {
@@ -207,7 +209,6 @@
       "resolvedFrom": "basename",
       "verbatim": "IncidentsInbox.tsx"
     },
-    "src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx": {"count":2,"sections":[6,7],"lines":["217"],"contexts":["`ReviewFocusFlow.tsx:217` and `BacklogFocusDeck.tsx:95` (route surfaces at"],"resolvedFrom":"basename","verbatim":"ReviewFocusFlow.tsx"},
     "src/features/overview/sub_manual-review/components/backlog/BacklogDetailModal.tsx": {"count":1,"sections":[7],"lines":["110"],"contexts":["`PracticeDetailModal.tsx:99` · `BacklogDetailModal.tsx:110` ·"],"resolvedFrom":"basename","verbatim":"BacklogDetailModal.tsx"},
     "src/features/overview/sub_manual-review/components/backlog/BacklogFocusDeck.tsx": {"count":2,"sections":[6,7],"lines":["95"],"contexts":["`ReviewFocusFlow.tsx:217` and `BacklogFocusDeck.tsx:95` (route surfaces at"],"resolvedFrom":"basename","verbatim":"BacklogFocusDeck.tsx"},
     "src/features/overview/sub_memories/components/MemoryCard.tsx": {"count":1,"sections":[7],"lines":["174,184"],"contexts":["`MemoryCard.tsx:174,184` · `N8nParserResultsSections.tsx:27,72,126` ·"],"resolvedFrom":"basename","verbatim":"MemoryCard.tsx"},
@@ -243,7 +244,6 @@
       "verbatim": "TeamGraphPreview.tsx"
     },
     "src/features/plugins/dev-tools/sub_projects/pipeline/ProjectStep.tsx": {"count":1,"sections":[7],"lines":["37"],"contexts":["`AutomationsSection.tsx:125` · `ProjectStep.tsx:37` · `DraftPromptTab.tsx:125` ·"],"resolvedFrom":"basename","verbatim":"ProjectStep.tsx"},
-    "src/features/plugins/dev-tools/sub_workspaces/WorkspaceTabs.tsx": {"count":1,"sections":[7],"lines":["18"],"contexts":["`StudioTabBar.tsx:17` · `WorkspaceTabs.tsx:18` · `ModeTabBar.tsx` ·"],"resolvedFrom":"basename","verbatim":"WorkspaceTabs.tsx"},
     "src/features/plugins/drive/DrivePage.tsx": {"count":1,"sections":[7],"lines":["324"],"contexts":["`useQuestionnaireKeyboardNav.ts:90` · `ReplaySandbox.tsx:96` · `DrivePage.tsx:324` ·"],"resolvedFrom":"basename","verbatim":"DrivePage.tsx"},
     "src/features/plugins/drive/knowledge/DriveKnowledgeDrawer.tsx": {
       "count": 1,

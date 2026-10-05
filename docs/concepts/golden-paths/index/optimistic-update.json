@@ -43,6 +43,7 @@
       "contexts": ["| — the rollback restores **nothing** | **6** | workspaceStore ×4, `usePresetAdoption.ts:183`, `CompetitionCard.tsx:141` |"],
       "resolved": false
     },
+    "PatternsPanel.tsx": {"count":2,"sections":[0,7],"lines":["57"],"contexts":["calls `refreshWorkspaces()` from outside the store is `PatternsPanel.tsx:57`, on mount. **Until the"],"resolved":false},
     "contextStore.ts": {
       "count": 1,
       "sections": [6],
@@ -198,14 +199,6 @@
       "contexts": ["`useBacklogQueue.ts:105-118`, `useDevToolsActions.ts:56-59`, `useInboxActions.ts:63,78`,"],
       "resolvedFrom": "basename",
       "verbatim": "useBacklogQueue.ts"
-    },
-    "src/features/overview/sub_patterns/PatternsPanel.tsx": {
-      "count": 2,
-      "sections": [0,7],
-      "lines": ["57"],
-      "contexts": ["calls `refreshWorkspaces()` from outside the store is `PatternsPanel.tsx:57`, on mount. **Until the"],
-      "resolvedFrom": "basename",
-      "verbatim": "PatternsPanel.tsx"
     },
     "src/features/plugins/dev-tools/hooks/useDevToolsActions.ts": {
       "count": 1,

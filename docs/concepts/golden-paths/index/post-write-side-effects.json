@@ -103,6 +103,7 @@
     "migrations/0025_document_reads.sql": {"count":1,"sections":[4],"lines":["3-5"],"contexts":["`migrations/0025_document_reads.sql:3-5`, *\"a log, not a counter, because"],"resolved":false},
     "packages/orchestrator/src/eventProcessor.ts": {"count":1,"sections":[4],"lines":["164-167"],"contexts":["`AuditRecorder` (`packages/orchestrator/src/eventProcessor.ts:164-167`)"],"resolved":false},
     "reviews/actions.ts": {"count":1,"sections":[10],"lines":["56-60"],"contexts":["— `reviews/actions.ts:56-60`"],"resolved":false},
+    "schema.rs": {"count":2,"sections":[4,6],"lines":["141-152"],"contexts":["`schema.rs:141-152` is the shape. A trigger pair with an accumulating column"],"resolved":false},
     "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["- **Mechanism** — a `scripts/census/rules.json` entry, ratcheting. Not a new"]},
     "shared-facts.json": {"count":1,"sections":[],"contexts":["`shared-facts.json`, not re-derived); **two independent"],"resolved":false},
     "sla.rs": {"count":4,"sections":[2,6,7,11],"lines":["636-664","614-621"],"contexts":["`sla.rs:636-664`); and if the derived table is deliberately allowed to outlive"],"resolved":false},
@@ -119,8 +120,8 @@
     },
     "src-tauri/db/src/journal.rs": {"count":1,"sections":[7],"lines":["147"],"contexts":["`db/src/journal.rs:147` registers a `preupdate_hook` on every pooled connection,"],"resolvedFrom":"suffix","verbatim":"db/src/journal.rs"},
     "src-tauri/db/src/migrations/schema.rs": {
-      "count": 4,
-      "sections": [3,4,6,8],
+      "count": 2,
+      "sections": [3,8],
       "lines": ["141-152"],
       "contexts": ["- **`db/src/migrations/schema.rs:141-152` — the `executions_fts_ai/ad/au`"],
       "resolvedFrom": "suffix",

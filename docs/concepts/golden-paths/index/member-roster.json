@@ -64,13 +64,12 @@
       ],
       "resolved": false
     },
-    "src-tauri/db/src/migrations/schema.rs": {
+    "schema.rs": {
       "count": 4,
       "sections": [0,7,12],
       "lines": ["473","474-475"],
       "contexts": ["| `persona_team_members` | `persona_id … REFERENCES personas(id) **ON DELETE CASCADE**` (`schema.rs:473`) | **64** rows across 8 teams | **0** |"],
-      "resolvedFrom": "basename",
-      "verbatim": "schema.rs"
+      "resolved": false
     },
     "src-tauri/src/commands/design/team_synthesis.rs": {"count":3,"sections":[0,7,9],"lines":["918-920"],"contexts":["server:** `team_synthesis.rs:918-920`,"],"resolvedFrom":"basename","verbatim":"team_synthesis.rs"},
     "src/components/org/members/MembersPanel.tsx": {"count":1,"sections":[],"lines":["146-229"],"contexts":["- **`ascent` — yes**, and it is a real one: `src/components/org/members/MembersPanel.tsx:146-229`."],"resolved":false},

@@ -116,16 +116,15 @@
       "resolved": false
     },
     "reviews.rs": {"count":1,"sections":[7],"lines":["997"],"contexts":["`list_manual_reviews` (`reviews.rs:997`), `list_manual_reviews_page` (`:1027`),"],"resolved":false},
-    "src-tauri/core/src/context_fingerprint.rs": {"count":1,"sections":[12],"contexts":["(`core/src/context_fingerprint.rs` ×3, `macros/src/lib.rs` ×4 — the `requires`"],"resolvedFrom":"suffix","verbatim":"core/src/context_fingerprint.rs"},
-    "src-tauri/db/src/migrations/schema.rs": {
+    "schema.rs": {
       "count": 1,
       "sections": [9],
       "contexts": [
         "| **a `WHERE id = ?N` on a table that has an owner column** | ~678 | 9 | The largest and most tempting population, and unscoreable without the schema: the pattern is in a SQL string and the column li…"
       ],
-      "resolvedFrom": "basename",
-      "verbatim": "schema.rs"
+      "resolved": false
     },
+    "src-tauri/core/src/context_fingerprint.rs": {"count":1,"sections":[12],"contexts":["(`core/src/context_fingerprint.rs` ×3, `macros/src/lib.rs` ×4 — the `requires`"],"resolvedFrom":"suffix","verbatim":"core/src/context_fingerprint.rs"},
     "src-tauri/db/src/repos": {
       "count": 1,
       "sections": [9],

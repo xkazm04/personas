@@ -545,7 +545,8 @@
       "lines": ["360,398,426,508-510,606-623"],
       "contexts": [
         "| `src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx:360,398,426,508-510,606-623` | Seven hardcoded English strings on the reference review surface, two of them wrapped in `DebtT…"
-      ]
+      ],
+      "resolved": false
     },
     "src/features/overview/sub_manual-review/components/backlog/useBacklogQueue.ts": {
       "count": 2,

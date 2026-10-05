@@ -120,6 +120,14 @@
       "contexts": ["| `SYNC_TABLES` + `sync!` + `rows::fetch_*` | `src/cloud/sync/mod.rs:57-69`, `:307-323`, `rows.rs` | Never syncs (3 parallel lists, index-coupled) |"],
       "resolved": false
     },
+    "schema.rs": {
+      "count": 5,
+      "sections": [2,4,5,6],
+      "contexts": [
+        "**Every schema change — new table, new column, new index — goes in exactly one place: a new `run_step(…)` appended to the END of `run_incremental`'s body, at `incremental.rs:4789` — immediately befor…"
+      ],
+      "resolved": false
+    },
     "scripts/check-event-registry.mjs": {"count":1,"sections":[9],"contexts":["**Mechanism.** Two artifacts, modelled on `scripts/check-event-registry.mjs` — the repo's own precedent for a static two-source parity check."]},
     "scripts/check-schema-refs.mjs": {
       "count": 1,
@@ -235,15 +243,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "initial.rs"
-    },
-    "src-tauri/db/src/migrations/schema.rs": {
-      "count": 5,
-      "sections": [2,4,5,6],
-      "contexts": [
-        "**Every schema change — new table, new column, new index — goes in exactly one place: a new `run_step(…)` appended to the END of `run_incremental`'s body, at `incremental.rs:4789` — immediately befor…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "schema.rs"
     },
     "src-tauri/db/src/repos/communication/sla.rs": {
       "count": 1,

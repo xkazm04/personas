@@ -50,6 +50,15 @@
     "KnowledgeTree.tsx": {"count":1,"sections":[9],"lines":["83"],"contexts":["`KnowledgeTree.tsx:83` and `ArxivSearchModal.tsx:23` use — a two-valued verdict where absence is the"],"resolved":false},
     "MessageDetailModal.tsx": {"count":8,"sections":[0,1,4,5,9,12],"lines":["864-870","906","858-859","949-951","932","876"],"contexts":["commit.\"* — `MessageDetailModal.tsx:864-870`"],"resolved":false},
     "PracticeRolloutModal.tsx": {"count":1,"sections":[9],"lines":["52"],"contexts":["- **It counts a declaration, not a behaviour.** `PracticeRolloutModal.tsx:52` holds a per-item map and"],"resolved":false},
+    "ReviewFocusFlow.tsx": {
+      "count": 1,
+      "sections": [5],
+      "lines": ["181-185"],
+      "contexts": [
+        "| **Deriving the batch verdict from the item verdicts** | `anyAccepted ? approved : rejected` (`ReviewFocusFlow.tsx:181-185`) approves a batch on one accept out of eight — and the learned memory then…"
+      ],
+      "resolved": false
+    },
     "apply-batch/route.ts": {
       "count": 1,
       "sections": [6],
@@ -200,16 +209,6 @@
       "contexts": ["`ReviewDetailPanel.tsx:239`'s `{decisions.length - accepted - rejected} undecided` — which is the"],
       "resolvedFrom": "basename",
       "verbatim": "ReviewDetailPanel.tsx"
-    },
-    "src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx": {
-      "count": 1,
-      "sections": [5],
-      "lines": ["181-185"],
-      "contexts": [
-        "| **Deriving the batch verdict from the item verdicts** | `anyAccepted ? approved : rejected` (`ReviewFocusFlow.tsx:181-185`) approves a batch on one accept out of eight — and the learned memory then…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "ReviewFocusFlow.tsx"
     },
     "src/features/overview/sub_manual-review/components/backlog/AthenaVerdictCard.tsx": {
       "count": 5,

@@ -133,6 +133,13 @@
     "run_budget.rs": {"count":3,"sections":[8,9],"lines":["198"],"contexts":["`director_lab.rs` and `run_budget.rs` each re-derive the same read in a different shape. **This is the"],"resolved":false},
     "scan-credit.ts": {"count":2,"sections":[],"lines":["36-56","62-67"],"contexts":["central doctrine.** `scan-credit.ts:36-56` (`reserveScanCredit` / `refundScanCredit` /"],"resolved":false},
     "scan/route.ts": {"count":1,"sections":[],"lines":["109-110"],"contexts":["report at any age rather than a dead end (`scan/route.ts:109-110`). **This repo's `declined_budget`"],"resolved":false},
+    "schema.rs": {
+      "count": 1,
+      "sections": [],
+      "lines": ["564"],
+      "contexts": ["| 9 | Enforce or delete `EnclavePolicy.max_cost_usd` (0 consumers) and `budget_alert_rules` (0 readers, 0 writers) | `enclave.rs:31`, `schema.rs:564` | S |"],
+      "resolved": false
+    },
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["Run against a private registry (never `scripts/census/rules.json`, per the contract's concurrent-writer"]},
     "src-tauri/": {"count":2,"sections":[7],"contexts":["Sweep: all **963** non-generated Rust files under `src-tauri/` walked by the census engine and re-walked"],"resolved":false,"isDir":true},
     "src-tauri/core/src/models/persona.rs": {
@@ -170,9 +177,9 @@
       "verbatim": "memory_recall.rs"
     },
     "src-tauri/db/src/migrations/schema.rs": {
-      "count": 3,
+      "count": 2,
       "sections": [3,7],
-      "lines": ["564-572","564"],
+      "lines": ["564-572"],
       "contexts": ["(`migrations/schema.rs:564-572`) has a schema, an index, a `threshold_usd REAL NOT NULL` and **zero"],
       "resolvedFrom": "suffix",
       "verbatim": "migrations/schema.rs"
