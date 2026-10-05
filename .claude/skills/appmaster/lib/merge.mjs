@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { nowIso, readJson, shortId, Refusal } from './contract.mjs';
-import { loadBrief, updateRun, raiseAsk, queueOutbox } from './store.mjs';
+import { loadBrief, updateRun, raiseAsk, queueOutbox, openAsks, updateAsk } from './store.mjs';
 import { readLimit } from './limits.mjs';
 import { requireRun, pidAlive, runFile, markLimitFromRun } from './worker.mjs';
 import { git, gitTry, revParse, isAncestor, removeWorktree, withBaseWorktree } from './worktree.mjs';
@@ -57,6 +57,22 @@ const HELD_OPTIONS = (branch) => [
   { label: 'Discard the branch', action: 'release run; the branch is kept for the operator to delete' },
   { label: 'Re-dispatch after I commit', action: 'wait for a clean tree' },
 ];
+
+/**
+ * A run that was held, then merged on a retry, leaves its merge-held asks open: nothing closed them
+ * (2026-10-05: four stale asks after two merged retries). The hold question starts `Run <id8> `, so
+ * close this run's open merge-gate asks, saying why.
+ */
+export function closeHeldAsks(run, sha) {
+  const prefix = `Run ${shortId(run.runId)} `;
+  const closed = [];
+  for (const a of openAsks(run.slug)) {
+    if (a.source !== 'merge-gate' || !String(a.question || '').startsWith(prefix)) continue;
+    updateAsk(run.slug, a.askId, { state: 'answered', answer: { choice: '(closed by settle)', notes: `run merged ${String(sha).slice(0, 10)} on a later settle; nothing left to decide`, at: nowIso() } });
+    closed.push(a.askId);
+  }
+  return closed;
+}
 
 function hold(run, reason, verdict) {
   const id8 = shortId(run.runId);
@@ -239,6 +255,7 @@ export function cmdSettle({ flags = {} } = {}) {
   // `verifying` run whose re-settle finds the branch already in base and queues the same id again
   queueOutbox(run.slug, run.project.id, 'task-complete',
     { ideaIds: run.ideaIds || [], sha: mg.sha, title: taskTitle(run), runId: run.runId, branch: run.branch }, { runId: run.runId });
+  closeHeldAsks(run, mg.sha);
   run = updateRun(run, { state: 'merged', mergedSha: mg.sha, verdict, endedAt: run.endedAt || nowIso(), settledAt: nowIso() });
   let cleanup;
   try { cleanup = removeWorktree(run); } catch (e) { cleanup = { error: e.message }; }

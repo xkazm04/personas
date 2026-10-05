@@ -294,6 +294,19 @@ test('(xiii) a gate that rewrites a tracked file is reverted and recorded, and t
   assert.equal(fs.readFileSync(path.join(root, 'b.txt'), 'utf8').replace(/\r\n/g, '\n'), 'b\n', 'the rewrite never reached the checkout');
 });
 
+test('(xiv) a held run that merges on a retry closes its own merge-held asks and no one else\'s', () => {
+  const { run, wt } = scenario('closeasks');
+  commitIn(wt, 'c.txt', 'x\n');
+  const other = S.raiseAsk('closeasks', { wakeId: 'w-x', source: 'merge-gate', kind: 'merge-held', question: 'Run deadbeef (x) in closeasks is held', context: '', options: [] });
+  const mine = S.raiseAsk('closeasks', { wakeId: run.wakeId, source: 'merge-gate', kind: 'merge-held', question: `Run ${C.shortId(run.runId)} (accepted-idea-delivery) in closeasks is held and was not merged: x`, context: '', options: [] });
+  const masterAsk = S.raiseAsk('closeasks', { wakeId: run.wakeId, source: 'master', kind: 'scope', question: `Run ${C.shortId(run.runId)} is mentioned here but this is the master's own ask`, context: '', options: [] });
+  const closed = M.closeHeldAsks(run, 'abcdef0123456789');
+  assert.deepEqual(closed, [mine.askId]);
+  const open = S.openAsks('closeasks').map((a) => a.askId).sort();
+  assert.deepEqual(open, [other.askId, masterAsk.askId].sort());
+  assert.match(S.loadAsks('closeasks').find((a) => a.askId === mine.askId).answer.notes, /merged abcdef0123/);
+});
+
 // ---------------------------------------------------------------- the rest of the state machine
 
 test('a usage limit in the stream -> released (not held, not failed) and the mark is set', () => {
