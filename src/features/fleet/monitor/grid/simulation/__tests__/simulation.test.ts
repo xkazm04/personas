@@ -17,6 +17,9 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { groupFleet, squareState, type SquareState } from '../../fleetGridModel';
 import { buildSimRoster } from '../simFleet';
 import { buildSimCards } from '../simCards';
+import { simHourlyRuns, SIM_HOURLY_WINDOW } from '../simHourly';
+import { SIM_LOAD_AGENTS_PER_PROJECT } from '../simRandom';
+import { severityBucket } from '../../../monitorModel';
 import {
   buildSimQueueSnapshot, buildSimSessions, LONG_TITLES, SHORT_TITLES, SIM_LIVE_SESSIONS, SIM_QUEUE_CAP, SIM_QUEUED_SESSIONS,
 } from '../simSessions';
@@ -26,7 +29,7 @@ import { groupSessions } from '../../fleetSessionModel';
 import {
   _resetSimulationForTests, isTestBuild, setSimulation, simulationEnabled, toggleSimulation,
 } from '../simulationMode';
-import { _resetSimWorldForTests, simWorld } from '../useSimWorld';
+import { _resetSimWorldForTests, simLoadFleet, simWorld } from '../useSimWorld';
 
 const testWindow = () => window as unknown as { __PERSONAS_TEST_MODE__?: boolean };
 
@@ -277,5 +280,141 @@ describe('the world singleton', () => {
     const first = simWorld();
     expect(simWorld().cards).toBe(first.cards);
     expect(simWorld().cards[0]).toBe(first.cards[0]);
+  });
+});
+
+describe('the load-shape roster (the size knob)', () => {
+  it('builds 20 projects with 5 agents each — 100 agents — and keeps names distinct per project', () => {
+    const roster = buildSimRoster(SIM_LOAD_AGENTS_PER_PROJECT);
+    expect(roster.teams).toHaveLength(20);
+    expect(roster.personas).toHaveLength(100);
+    expect(new Set(roster.personas.map((p) => p.id)).size).toBe(100);
+    for (const team of roster.teams) {
+      const names = roster.personas.filter((p) => p.home_team_id === team.id).map((p) => p.name);
+      expect(names).toHaveLength(5);
+      expect(new Set(names).size).toBe(5);
+    }
+    const grouped = groupFleet(buildSimCards(roster), roster.personas, roster.teams);
+    expect(grouped.teams).toHaveLength(20);
+    for (const column of grouped.teams) expect(column.cards).toHaveLength(5);
+  });
+
+  it('leaves the default at 60 agents', () => {
+    expect(buildSimRoster().personas).toHaveLength(60);
+  });
+
+  it('switches a few agents Off, and an Off agent is idle', () => {
+    for (const roster of [buildSimRoster(), buildSimRoster(SIM_LOAD_AGENTS_PER_PROJECT)]) {
+      const cards = buildSimCards(roster);
+      const off = cards.filter((c) => c.enabled === false);
+      expect(off.length).toBeGreaterThan(0);
+      expect(off.length).toBeLessThan(cards.length / 10);
+      for (const c of off) {
+        expect(roster.personas.find((p) => p.id === c.personaId)!.enabled).toBe(false);
+        expect(c.running + c.queued + c.inputRequired + c.draftReady + c.attentionCount).toBe(0);
+      }
+      // The Off agents are not all in one project.
+      const teamsOff = new Set(off.map((c) => roster.personas.find((p) => p.id === c.personaId)!.home_team_id));
+      expect(teamsOff.size).toBe(off.length);
+    }
+  });
+
+  it('still paints all four tile states at 100 agents', () => {
+    const cards = buildSimCards(buildSimRoster(SIM_LOAD_AGENTS_PER_PROJECT));
+    expect([...new Set(cards.map(squareState))].sort()).toEqual(['attention', 'failed', 'idle', 'running']);
+  });
+});
+
+describe('the simulated health', () => {
+  const cards = buildSimCards(buildSimRoster(SIM_LOAD_AGENTS_PER_PROJECT), 1_700_000_000_000);
+
+  it('carries up to ten recent outcomes, most agents a full ten', () => {
+    for (const c of cards) expect(c.recentStatuses.length).toBeLessThanOrEqual(10);
+    expect(cards.filter((c) => c.recentStatuses.length === 10).length).toBeGreaterThan(cards.length / 2);
+  });
+
+  it('derives success rate, health and totalRecent from the outcomes, as the backend does', () => {
+    for (const c of cards) {
+      const n = c.recentStatuses.length;
+      expect(c.totalRecent).toBe(n);
+      if (n === 0) {
+        expect(c.healthStatus).toBe('dormant');
+        expect(c.successRate).toBeNull();
+        expect(c.runsToday).toBe(0);
+        continue;
+      }
+      const completed = c.recentStatuses.filter((s) => s === 'completed').length;
+      const failRatio = c.recentStatuses.filter((s) => s === 'failed').length / n;
+      expect(c.successRate).toBeCloseTo(completed / n, 10);
+      const expected = failRatio === 0 ? 'healthy' : failRatio >= 0.6 ? 'failing' : 'degraded';
+      expect(c.healthStatus).toBe(expected);
+    }
+  });
+
+  it('agrees with the tile: only a failed tile has a failed newest outcome', () => {
+    for (const c of cards) {
+      expect(c.recentStatuses[0] === 'failed').toBe(squareState(c) === 'failed');
+    }
+  });
+
+  it('covers every health level, and a running agent has run today', () => {
+    expect(new Set(cards.map((c) => c.healthStatus))).toEqual(new Set(['healthy', 'degraded', 'failing', 'dormant']));
+    for (const c of cards.filter((x) => x.running > 0)) expect(c.runsToday).toBeGreaterThan(0);
+  });
+
+  it('includes medium reviews, bucketed as warnings', () => {
+    const medium = cards.filter((c) => c.reviews.some((r) => r.severity === 'medium'));
+    expect(medium.length).toBeGreaterThan(0);
+    for (const c of medium) {
+      expect(severityBucket('medium')).toBe('warning');
+      expect(c.topReviewSeverity).toBe('warning');
+      expect(c.reviewCounts.critical).toBe(0);
+      expect(c.reviewCounts.warning).toBe(c.reviews.length);
+    }
+  });
+});
+
+describe('the simulated runs per hour', () => {
+  // 2023-11-14 22:13:20 UTC: 23 hours of "today" sit inside the 24h window.
+  const NOW = 1_700_000_000_000;
+  const cards = buildSimCards(buildSimRoster(SIM_LOAD_AGENTS_PER_PROJECT), NOW);
+  const rows = simHourlyRuns(cards, NOW);
+
+  it("matches the command's shape: 24 buckets, a row only for agents that ran", () => {
+    expect(SIM_HOURLY_WINDOW).toBe(24);
+    expect(rows.length).toBeGreaterThan(50);
+    for (const r of rows) {
+      expect(r.buckets).toHaveLength(24);
+      expect(r.buckets.some((n) => n > 0)).toBe(true);
+      expect(r.buckets.every((n) => Number.isInteger(n) && n >= 0)).toBe(true);
+    }
+    const ids = new Set(rows.map((r) => r.personaId));
+    for (const c of cards) if (c.recentStatuses.length === 0) expect(ids.has(c.personaId)).toBe(false);
+  });
+
+  it("sums today's buckets to the card's runsToday, with a running agent's run in the current hour", () => {
+    const todayHours = new Date(NOW).getUTCHours() + 1;
+    const byId = new Map(rows.map((r) => [r.personaId, r.buckets]));
+    for (const c of cards) {
+      const buckets = byId.get(c.personaId) ?? new Array<number>(24).fill(0);
+      const today = buckets.slice(24 - todayHours).reduce((a, b) => a + b, 0);
+      expect(today).toBe(c.runsToday);
+      if (c.running > 0) expect(buckets[23]!).toBeGreaterThan(0);
+    }
+  });
+
+  it('is deterministic, and clamps the window like the backend', () => {
+    expect(JSON.stringify(simHourlyRuns(cards, NOW))).toBe(JSON.stringify(rows));
+    for (const r of simHourlyRuns(cards, NOW, 1_000)) expect(r.buckets).toHaveLength(168);
+    for (const r of simHourlyRuns(cards, NOW, 0)) expect(r.buckets).toHaveLength(1);
+  });
+});
+
+describe('the load fleet singleton', () => {
+  it('is 100 agents with their hourly rows, built once', () => {
+    const first = simLoadFleet();
+    expect(first.cards).toHaveLength(100);
+    expect(first.hourly.length).toBeGreaterThan(0);
+    expect(simLoadFleet()).toBe(first);
   });
 });

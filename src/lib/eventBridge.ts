@@ -496,10 +496,13 @@ const registry: EventRegistration[] = [
         EventName.PROCESS_ACTIVITY,
         (payload) => {
           const store = useOverviewStore.getState();
+          // `persona_id` is the run's owner when it has one; the Monitor
+          // attributes by it before it ever looks at the label.
+          const personaId = payload.persona_id ?? undefined;
           if (payload.action === "started") {
-            store.processStarted(payload.domain, payload.run_id, payload.label);
+            store.processStarted(payload.domain, payload.run_id, payload.label, undefined, personaId);
           } else if (payload.action === "queued") {
-            store.processQueued(payload.domain, payload.run_id, payload.label);
+            store.processQueued(payload.domain, payload.run_id, payload.label, undefined, personaId);
           } else {
             store.processEnded(payload.domain, payload.action, payload.run_id);
           }

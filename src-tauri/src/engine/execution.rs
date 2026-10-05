@@ -838,12 +838,13 @@ impl ExecutionEngine {
                         admitted_execution_id = %execution_id,
                         "Queued execution displaced by a higher-priority arrival at the depth bound",
                     );
-                    process_activity::emit_process_activity(
+                    process_activity::emit_persona_process_activity(
                         &app,
                         "execution",
                         "cancelled",
                         Some(&displaced_id),
-                        Some(&persona.name),
+                        &persona.name,
+                        &persona.id,
                     );
                 }
                 let queue_depth = self.tracker.lock().await.queue_depth(&persona.id);
@@ -870,12 +871,13 @@ impl ExecutionEngine {
                     },
                 );
                 // Emit process activity so the drawer shows this process as queued
-                process_activity::emit_process_activity(
+                process_activity::emit_persona_process_activity(
                     &app,
                     "execution",
                     "queued",
                     Some(&execution_id),
-                    Some(&persona.name),
+                    &persona.name,
+                    &persona.id,
                 );
                 // Store the execution context for when a slot opens
                 self.queued_contexts.lock().await.insert(
@@ -923,12 +925,13 @@ impl ExecutionEngine {
                     in_flight_execution_id = %holder,
                     "Duplicate admission refused: a run for this trigger is already in flight",
                 );
-                process_activity::emit_process_activity(
+                process_activity::emit_persona_process_activity(
                     &app,
                     "execution",
                     "cancelled",
                     Some(&execution_id),
-                    Some(&persona.name),
+                    &persona.name,
+                    &persona.id,
                 );
                 Ok(())
             }

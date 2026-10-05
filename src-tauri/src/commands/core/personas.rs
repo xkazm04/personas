@@ -467,16 +467,21 @@ pub fn get_persona_summaries(
 }
 
 /// Runs per hour per persona over the last `hours` UTC hours (see
-/// [`PersonaHourlyRuns`]). WP0 contract stub: WP1 implements the query.
+/// [`PersonaHourlyRuns`]; `hours` is clamped to `1..=168`). Async over a
+/// blocking task: the read is a GROUP BY over `persona_executions` and must
+/// not hold the IPC worker.
 /// No `#[requires(auth)]`: that guard expands to an unconditional Ok (census
 /// `unfalsifiable-tier-guard`); the IPC wrapper is the gate.
 #[tauri::command]
-pub fn get_persona_runs_hourly(
+pub async fn get_persona_runs_hourly(
     state: State<'_, Arc<AppState>>,
     hours: u32,
 ) -> Result<Vec<PersonaHourlyRuns>, AppError> {
-    let _ = (&state, hours);
-    Ok(Vec::new())
+    let db = state.db.clone();
+    crate::commands::blocking::run_blocking("get_persona_runs_hourly", move || {
+        repo::get_runs_hourly(&db, hours)
+    })
+    .await
 }
 
 /// Batched persona detail: persona + tools + triggers + subscriptions + automations

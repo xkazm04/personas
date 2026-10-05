@@ -45,11 +45,16 @@ export type PillarStateKey =
   | 'attention'
   | 'idle';
 
-/** Every severity token any producer in this tree actually emits. */
+/**
+ * Every severity token any producer in this tree actually emits. `medium` is
+ * the middle of the low/medium/high scale and reads as a warning; unlisted it
+ * fell through to the loud default and rendered as critical.
+ */
 const READABLE_SEVERITY: Record<string, SeverityBucket> = {
   critical: 'critical',
   error: 'critical',
   high: 'warning',
+  medium: 'warning',
   warning: 'warning',
   low: 'info',
   info: 'info',
@@ -285,10 +290,12 @@ export function buildMonitorModel(
   for (const [key, proc] of Object.entries(activeProcesses)) {
     const entry: ProcessEntry = { key, proc };
     let owner: string | null = null;
-    if (proc.personaId && personaIds.has(proc.personaId)) {
-      owner = proc.personaId;
-    } else if (proc.navigateTo?.personaId && personaIds.has(proc.navigateTo.personaId)) {
-      owner = proc.navigateTo.personaId;
+    // The id is the only key that names a persona. A process that CARRIES one
+    // is never re-attributed by its label: an id this list does not hold (a
+    // persona deleted mid-run) must not land on a same-named stranger.
+    const carriedId = proc.personaId ?? proc.navigateTo?.personaId;
+    if (carriedId) {
+      if (personaIds.has(carriedId)) owner = carriedId;
     } else if (proc.label && nameToId.has(proc.label) && !nameCollisions.has(proc.label)) {
       owner = nameToId.get(proc.label)!;
     }

@@ -12,6 +12,7 @@ import {
   healthSegments,
   processStatusMeta,
   processStatusLabel,
+  severityBucket,
   PROCESS_STATUS_META,
   UNKNOWN_PROCESS_STATUS_META,
   type PersonaCardModel,
@@ -279,5 +280,61 @@ describe('buildMonitorModel — label attribution is refused on a name collision
     const m = buildMonitorModel(twins, [], [], { k: mkProc({ label: 'Echo', personaId: 'b' }) }, {});
     expect(m.systemProcesses).toHaveLength(0);
     expect(find(m, 'b').running).toBe(1);
+  });
+});
+
+// --- attribution by persona id ----------------------------------------------
+
+describe('buildMonitorModel — running work is matched by persona id', () => {
+  it('gives two same-named personas each their own running card', () => {
+    const twins = [mkPersona('a', 'Echo'), mkPersona('b', 'Echo')];
+    const m = buildMonitorModel(twins, [], [], {
+      'execution:r1': mkProc({ label: 'Echo', personaId: 'a', runId: 'r1', startedAt: 1000 }),
+      'execution:r2': mkProc({ label: 'Echo', personaId: 'b', runId: 'r2', startedAt: 2000 }),
+    }, {});
+    expect(m.systemProcesses).toHaveLength(0);
+    expect(find(m, 'a').running).toBe(1);
+    expect(find(m, 'b').running).toBe(1);
+    expect(find(m, 'a').processes.map((e) => e.key)).toEqual(['execution:r1']);
+    expect(find(m, 'b').processes.map((e) => e.key)).toEqual(['execution:r2']);
+    expect(find(m, 'a').execState).toBe('running');
+    expect(find(m, 'b').execState).toBe('running');
+  });
+
+  it('prefers the id over a label that names a different persona', () => {
+    const personas = [mkPersona('a', 'Alpha'), mkPersona('b', 'Bravo')];
+    const m = buildMonitorModel(personas, [], [], { k: mkProc({ label: 'Alpha', personaId: 'b' }) }, {});
+    expect(find(m, 'b').running).toBe(1);
+    expect(find(m, 'a').running).toBe(0);
+  });
+
+  it('never falls back to the label when the carried id is unknown', () => {
+    // A persona deleted mid-run: its process still carries the old id. The
+    // label happens to match a live persona, which must not inherit the run.
+    const personas = [mkPersona('a', 'Alpha')];
+    const m = buildMonitorModel(personas, [], [], { k: mkProc({ label: 'Alpha', personaId: 'gone' }) }, {});
+    expect(find(m, 'a').running).toBe(0);
+    expect(m.systemProcesses).toHaveLength(1);
+  });
+});
+
+// --- review severity buckets ------------------------------------------------
+
+describe('severityBucket', () => {
+  it('reads medium as a warning, not a critical', () => {
+    expect(severityBucket('medium')).toBe('warning');
+    expect(severityBucket(' Medium ')).toBe('warning');
+    expect(severityBucket('high')).toBe('warning');
+    expect(severityBucket('critical')).toBe('critical');
+    expect(severityBucket('low')).toBe('info');
+    // An unknown token still takes the loudest bucket.
+    expect(severityBucket('sublimating')).toBe('critical');
+  });
+
+  it('counts a pending medium review in the warning bucket of its card', () => {
+    const m = buildMonitorModel([mkPersona('a', 'Alpha')], [mkReview('a', 'medium')], [], {}, {});
+    const c = find(m, 'a');
+    expect(c.reviewCounts).toEqual({ critical: 0, warning: 1, info: 0 });
+    expect(c.topReviewSeverity).toBe('warning');
   });
 });

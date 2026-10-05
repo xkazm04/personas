@@ -1,4 +1,5 @@
-// simFleet — the simulated roster: 20 projects, 3 agents in each.
+// simFleet — the simulated roster: 20 projects, 3 agents in each by default,
+// or 5 in each (100 agents, the load-harness shape) when asked for.
 //
 // These are DATABASE-SHAPED rows, not view models. The simulation substitutes
 // at the board's props boundary (`cards` / `personas` / `teams`) and at the
@@ -16,7 +17,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import {
-  mulberry32, PROJECT_NAMES, ROLE_NAMES, SEED, SIM_AGENTS_PER_PROJECT, TEAM_COLORS,
+  mulberry32, PROJECT_NAMES, ROLE_NAMES, SEED, SIM_AGENTS_PER_PROJECT, SIM_OFF_EVERY, TEAM_COLORS,
 } from './simRandom';
 
 /** Every simulated id carries this prefix — greppable, and never a real uuid. */
@@ -80,19 +81,20 @@ function projectRow(i: number, name: string): DevProject {
   };
 }
 
-function personaRow(team: number, slot: number): Persona {
+function personaRow(team: number, slot: number, perProject: number): Persona {
+  const index = team * perProject + slot;
   return {
     id: simPersonaId(team, slot),
     project_id: simProjectId(team),
     // No project prefix — see `ROLE_NAMES`. The column header names the
     // project; the tile names the agent.
-    name: ROLE_NAMES[(team * SIM_AGENTS_PER_PROJECT + slot) % ROLE_NAMES.length]!,
+    name: ROLE_NAMES[index % ROLE_NAMES.length]!,
     description: null,
     system_prompt: '',
     structured_prompt: null,
     icon: null,
     color: TEAM_COLORS[team % TEAM_COLORS.length]!,
-    enabled: true,
+    enabled: index % SIM_OFF_EVERY !== SIM_OFF_EVERY - 1,
     sensitive: false,
     headless: false,
     starred: false,
@@ -135,8 +137,12 @@ export interface SimRoster {
  * The roster. The RNG is drawn from even though nothing here is currently
  * random — it advances the stream in a fixed order so a later generator's
  * draws stay stable when this one grows a random field.
+ *
+ * `perProject` is the size knob: the default is the Activity board's 60-agent
+ * fixture, `SIM_LOAD_AGENTS_PER_PROJECT` (5) is the 100-agent load shape.
+ * Names stay distinct inside a project for any value up to `ROLE_NAMES.length`.
  */
-export function buildSimRoster(): SimRoster {
+export function buildSimRoster(perProject: number = SIM_AGENTS_PER_PROJECT): SimRoster {
   const rand = mulberry32(SEED.fleet);
   const teams: PersonaTeam[] = [];
   const personas: Persona[] = [];
@@ -145,9 +151,9 @@ export function buildSimRoster(): SimRoster {
   PROJECT_NAMES.forEach((name, i) => {
     teams.push(teamRow(i, name));
     projects.push(projectRow(i, name));
-    for (let slot = 0; slot < SIM_AGENTS_PER_PROJECT; slot += 1) {
+    for (let slot = 0; slot < perProject; slot += 1) {
       rand();
-      personas.push(personaRow(i, slot));
+      personas.push(personaRow(i, slot, perProject));
     }
   });
 

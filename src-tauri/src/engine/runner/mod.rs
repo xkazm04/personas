@@ -2323,7 +2323,8 @@ pub async fn run_execution(
                         "cancelled",
                         Some(&execution_id),
                         Some(&persona.name),
-                    ),
+                    )
+                    .with_persona(&persona.id),
                 );
 
                 let duration_ms = start_time.elapsed().as_millis() as u64;
@@ -2419,7 +2420,8 @@ pub async fn run_execution(
                 "failed",
                 Some(&execution_id),
                 Some(&persona.name),
-            ),
+            )
+            .with_persona(&persona.id),
         );
 
         emit_to(
@@ -2512,7 +2514,8 @@ pub async fn run_execution(
                 "cancelled",
                 Some(&execution_id),
                 Some(&persona.name),
-            ),
+            )
+            .with_persona(&persona.id),
         );
 
         let duration_ms = start_time.elapsed().as_millis() as u64;
@@ -2554,7 +2557,8 @@ pub async fn run_execution(
             "started",
             Some(&execution_id),
             Some(&persona.name),
-        ),
+        )
+        .with_persona(&persona.id),
     );
 
     // Provider spawn succeeded -- record in trace
@@ -2603,7 +2607,8 @@ pub async fn run_execution(
                 "cancelled",
                 Some(&execution_id),
                 Some(&persona.name),
-            ),
+            )
+            .with_persona(&persona.id),
         );
 
         let duration_ms = start_time.elapsed().as_millis() as u64;
@@ -3802,7 +3807,8 @@ pub async fn run_execution(
                 action,
                 Some(&execution_id),
                 Some(&persona.name),
-            ),
+            )
+            .with_persona(&persona.id),
         );
     }
 

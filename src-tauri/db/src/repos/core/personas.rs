@@ -6,7 +6,8 @@ use tracing::instrument;
 
 use crate::models::{
     CreatePersonaInput, HealthStatus, Persona, PersonaGatewayExposure, PersonaHealth,
-    PersonaLifecycle, PersonaSummary, PersonaTrustLevel, PersonaTrustOrigin, UpdatePersonaInput,
+    PersonaHourlyRuns, PersonaLifecycle, PersonaSummary, PersonaTrustLevel, PersonaTrustOrigin,
+    UpdatePersonaInput,
 };
 use crate::query_builder::QueryBuilder;
 use crate::repos::utils::collect_rows;
@@ -1719,6 +1720,126 @@ pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
 
         Ok(summaries)
     })
+}
+
+/// Longest window [`get_runs_hourly`] serves: one week of hourly buckets. A
+/// request above it is clamped, never refused, and so is a request of zero.
+pub const RUNS_HOURLY_MAX_HOURS: u32 = 168;
+
+/// The SQLite `datetime()` text shape: what `strftime` hands back for an hour
+/// key, and what the window bounds are written in.
+const SQLITE_DATETIME_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
+
+/// Runs per persona per UTC hour over the trailing `hours` hours (clamped to
+/// `1..=RUNS_HOURLY_MAX_HOURS`), for the Monitor Board's sparkline. Each
+/// persona's buckets are oldest first, `hours` long, and end with the current
+/// UTC hour. A persona with no run in the window is omitted. A run is counted
+/// by its `created_at`, the clock `get_summaries` counts `runs_today` by.
+#[instrument(skip(pool))]
+pub fn get_runs_hourly(pool: &DbPool, hours: u32) -> Result<Vec<PersonaHourlyRuns>, AppError> {
+    get_runs_hourly_at(pool, hours, chrono::Utc::now())
+}
+
+/// [`get_runs_hourly`] with the clock passed in, so a test can hold it still.
+pub fn get_runs_hourly_at(
+    pool: &DbPool,
+    hours: u32,
+    now: chrono::DateTime<chrono::Utc>,
+) -> Result<Vec<PersonaHourlyRuns>, AppError> {
+    let hours = hours.clamp(1, RUNS_HOURLY_MAX_HOURS);
+    let window_start = hourly_window_start(now, hours);
+    let window_end = window_start + chrono::Duration::hours(i64::from(hours));
+    let start = window_start.format(SQLITE_DATETIME_FORMAT).to_string();
+    let end = window_end.format(SQLITE_DATETIME_FORMAT).to_string();
+    timed_query!("persona_executions", "personas::get_runs_hourly", {
+        let conn = pool.conn("personas::get_runs_hourly")?;
+        // `created_at` is written as RFC 3339 (`2026-10-05T11:00:00+00:00`)
+        // by the executions repo, but older rows can carry SQLite's own
+        // `2026-10-05 11:00:00`. `datetime()` normalises both to UTC; the bare
+        // `created_at >= ?1` in front of it is a superset of the window for
+        // either shape (`T` sorts after the space), and lets the
+        // `idx_pe_created` index skip every row older than the window's day.
+        let mut stmt = conn.prepare_cached(
+            "SELECT persona_id,
+                    strftime('%Y-%m-%d %H:00:00', created_at) AS hour,
+                    COUNT(*) AS runs
+             FROM persona_executions
+             WHERE created_at >= ?1
+               AND datetime(created_at) >= ?1
+               AND datetime(created_at) < ?2
+             GROUP BY persona_id, hour",
+        )?;
+        let rows = stmt.query_map(params![start, end], |row| {
+            Ok((
+                row.get::<_, String>("persona_id")?,
+                row.get::<_, String>("hour")?,
+                row.get::<_, i64>("runs")?,
+            ))
+        })?;
+        let rows = collect_rows(rows, "personas::get_runs_hourly");
+        Ok(bucket_hourly_runs(rows, window_start, hours))
+    })
+}
+
+/// The first hour of a window of `hours` UTC hours that ends with the hour
+/// `now` falls in.
+fn hourly_window_start(now: chrono::DateTime<chrono::Utc>, hours: u32) -> chrono::NaiveDateTime {
+    use chrono::Timelike;
+    let at = now.naive_utc();
+    let current_hour = at
+        - chrono::Duration::minutes(i64::from(at.minute()))
+        - chrono::Duration::seconds(i64::from(at.second()))
+        - chrono::Duration::nanoseconds(i64::from(at.nanosecond()));
+    current_hour - chrono::Duration::hours(i64::from(hours) - 1)
+}
+
+/// Fold `(persona_id, hour, runs)` rows into one oldest-first bucket vector per
+/// persona. `hour` is an hour key in [`SQLITE_DATETIME_FORMAT`]; a key outside
+/// the window, or one that does not parse, is logged and dropped, never
+/// shifted into a neighbouring bucket. Personas come back sorted by id.
+fn bucket_hourly_runs(
+    rows: Vec<(String, String, i64)>,
+    window_start: chrono::NaiveDateTime,
+    hours: u32,
+) -> Vec<PersonaHourlyRuns> {
+    let len = hours as usize;
+    let mut by_persona: std::collections::BTreeMap<String, Vec<u32>> =
+        std::collections::BTreeMap::new();
+    for (persona_id, hour, runs) in rows {
+        let at = match chrono::NaiveDateTime::parse_from_str(&hour, SQLITE_DATETIME_FORMAT) {
+            Ok(at) => at,
+            Err(e) => {
+                tracing::warn!(persona_id, hour, error = %e, "get_runs_hourly: unreadable hour key");
+                continue;
+            }
+        };
+        let slot = usize::try_from((at - window_start).num_hours())
+            .ok()
+            .filter(|i| *i < len);
+        let (Some(slot), Ok(runs)) = (slot, u32::try_from(runs)) else {
+            tracing::warn!(
+                persona_id,
+                hour,
+                runs,
+                "get_runs_hourly: row outside the window"
+            );
+            continue;
+        };
+        if runs == 0 {
+            continue;
+        }
+        let buckets = by_persona.entry(persona_id).or_insert_with(|| vec![0; len]);
+        if let Some(bucket) = buckets.get_mut(slot) {
+            *bucket = bucket.saturating_add(runs);
+        }
+    }
+    by_persona
+        .into_iter()
+        .map(|(persona_id, buckets)| PersonaHourlyRuns {
+            persona_id,
+            buckets,
+        })
+        .collect()
 }
 
 /// Compute a trust score (0.0–100.0) for a persona from its recent execution history.
@@ -3826,6 +3947,101 @@ mod tests {
         let outcomes = bulk_delete_personas(&pool, &["tb_a".to_string(), "tb_b".to_string()])?;
         assert_eq!(outcomes.len(), 2);
         assert_eq!(persona_tombstones::count(&pool)?, 2);
+        Ok(())
+    }
+
+    // -- get_runs_hourly ------------------------------------------------------
+
+    /// 2026-10-05 11:40:12.5 UTC: mid-hour, so "the current hour" is 11:00.
+    fn hourly_now() -> chrono::DateTime<chrono::Utc> {
+        chrono::DateTime::parse_from_rfc3339("2026-10-05T11:40:12.5+00:00")
+            .unwrap()
+            .with_timezone(&chrono::Utc)
+    }
+
+    #[test]
+    fn hourly_window_ends_with_the_current_utc_hour() {
+        let start = hourly_window_start(hourly_now(), 24);
+        assert_eq!(start.to_string(), "2026-10-04 12:00:00");
+        let one = hourly_window_start(hourly_now(), 1);
+        assert_eq!(one.to_string(), "2026-10-05 11:00:00");
+    }
+
+    #[test]
+    fn hourly_bucketing_is_oldest_first_and_drops_rows_outside_the_window() {
+        let start = hourly_window_start(hourly_now(), 24);
+        let row = |p: &str, h: &str, n: i64| (p.to_string(), h.to_string(), n);
+        let rows = vec![
+            row("b", "2026-10-05 11:00:00", 2), // the current hour: last bucket
+            row("a", "2026-10-04 12:00:00", 1), // the oldest bucket
+            row("a", "2026-10-05 03:00:00", 4), // 15 hours after the start
+            row("a", "2026-10-04 11:00:00", 9), // one hour too old
+            row("a", "2026-10-05 12:00:00", 9), // the future
+            row("a", "not a time", 9),
+            row("c", "2026-10-05 10:00:00", 0), // zero runs: omitted
+        ];
+        let out = bucket_hourly_runs(rows, start, 24);
+        let ids: Vec<&str> = out.iter().map(|r| r.persona_id.as_str()).collect();
+        assert_eq!(ids, ["a", "b"]);
+        assert!(out.iter().all(|r| r.buckets.len() == 24));
+        let a = &out[0].buckets;
+        assert_eq!((a[0], a[15], a.iter().sum::<u32>()), (1, 4, 5));
+        let b = &out[1].buckets;
+        assert_eq!((b[23], b.iter().sum::<u32>()), (2, 2));
+    }
+
+    /// End to end against the migrated schema with every `created_at` fixed:
+    /// both timestamp shapes the table holds, a run one second outside the
+    /// window, and a persona with no run inside it.
+    #[test]
+    fn get_runs_hourly_counts_executions_per_persona_per_utc_hour() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let conn = pool.get()?;
+        for id in ["hr_a", "hr_b", "hr_idle"] {
+            conn.execute(
+                "INSERT INTO personas (id, name, system_prompt, enabled, created_at, updated_at)
+                 VALUES (?1, 'Echo', 'sp', 1, '2026-01-01T00:00:00+00:00', '2026-01-01T00:00:00+00:00')",
+                params![id],
+            )?;
+        }
+        let runs = [
+            ("e1", "hr_a", "2026-10-05T11:05:00.123456789+00:00"), // current hour
+            ("e2", "hr_a", "2026-10-05T11:39:59+00:00"),           // current hour
+            ("e3", "hr_a", "2026-10-04 12:00:00"),                 // oldest hour, SQLite shape
+            ("e4", "hr_a", "2026-10-04T11:59:59+00:00"),           // one second too old
+            ("e5", "hr_b", "2026-10-05T00:30:00Z"),                // 12 hours after the start
+            ("e6", "hr_idle", "2026-09-01T10:00:00+00:00"),        // weeks ago
+        ];
+        for (id, persona, at) in runs {
+            conn.execute(
+                "INSERT INTO persona_executions (id, persona_id, status, created_at)
+                 VALUES (?1, ?2, 'completed', ?3)",
+                params![id, persona, at],
+            )?;
+        }
+        drop(conn);
+
+        let out = get_runs_hourly_at(&pool, 24, hourly_now())?;
+        let ids: Vec<&str> = out.iter().map(|r| r.persona_id.as_str()).collect();
+        assert_eq!(
+            ids,
+            ["hr_a", "hr_b"],
+            "a persona with no run in the window is omitted"
+        );
+        let a = &out[0].buckets;
+        assert_eq!(a.len(), 24);
+        assert_eq!((a[0], a[23], a.iter().sum::<u32>()), (1, 2, 3));
+        let b = &out[1].buckets;
+        assert_eq!((b[12], b.iter().sum::<u32>()), (1, 1));
+
+        // The window is clamped, never refused.
+        let wide = get_runs_hourly_at(&pool, 10_000, hourly_now())?;
+        assert!(wide
+            .iter()
+            .all(|r| r.buckets.len() == RUNS_HOURLY_MAX_HOURS as usize));
+        let narrow = get_runs_hourly_at(&pool, 0, hourly_now())?;
+        assert_eq!(narrow.len(), 1);
+        assert_eq!(narrow[0].buckets, vec![2]);
         Ok(())
     }
 }

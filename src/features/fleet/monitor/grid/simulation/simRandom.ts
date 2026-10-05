@@ -44,6 +44,18 @@ export function chance(rand: Rand, p: number): boolean {
 /** The board's shape, fixed by the brief: 20 projects, 3 agents in each. */
 export const SIM_PROJECTS = 20;
 export const SIM_AGENTS_PER_PROJECT = 3;
+/**
+ * The operator's measured peak, 20 projects x 5 personas (the shape the
+ * backend load harness generates): the size the full-frame Board is judged at.
+ * `buildSimRoster(SIM_LOAD_AGENTS_PER_PROJECT)` builds it; the default stays 3.
+ */
+export const SIM_LOAD_AGENTS_PER_PROJECT = 5;
+/**
+ * Every thirteenth agent is switched Off. Thirteen shares no factor with the
+ * three- or five-agent stride, so the Off agents land in different slots of
+ * different projects instead of one column of the board going dark.
+ */
+export const SIM_OFF_EVERY = 13;
 /** Five Claude plans — the count the strip's header chip is read against (`UsageStripShell.PLAN_SLOTS`). */
 export const SIM_PLANS = 5;
 
@@ -55,6 +67,8 @@ export const SEED = {
   plans: 0x91a5_0001,
   rail: 0x7a11_0005,
   bubbles: 0xbbb1_e500,
+  health: 0x4ea1_7400,
+  hourly: 0x0b0a_2400,
 } as const;
 
 /** Twenty fictional projects. One team and one `dev_project` per name. */

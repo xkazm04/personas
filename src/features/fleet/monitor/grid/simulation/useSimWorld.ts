@@ -23,8 +23,11 @@ import type { FleetQueueSnapshot } from '@/lib/bindings/FleetQueueSnapshot';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { ClaudeAutoRotateConfig } from '@/lib/bindings/ClaudeAutoRotateConfig';
 import { groupSessions, type SessionGrouping } from '../fleetSessionModel';
+import type { PersonaHourlyRuns } from '@/lib/bindings/PersonaHourlyRuns';
 import { buildSimCards } from './simCards';
 import { buildSimRoster, type SimRoster } from './simFleet';
+import { simHourlyRuns } from './simHourly';
+import { SIM_LOAD_AGENTS_PER_PROJECT } from './simRandom';
 import { buildSimQueueSnapshot, buildSimSessions } from './simSessions';
 import {
   buildSimAccountsSnapshot, simRelogin, simRemoveAccount, simSaveProfile, simSetProfile, simSwitchActive,
@@ -114,6 +117,31 @@ export function simWorld(): SimWorld {
   return world;
 }
 
+/** A roster at one size, its cards, and their runs-per-hour. */
+export interface SimFleet {
+  roster: SimRoster;
+  cards: PersonaCardModel[];
+  /** The 24h sparkline rows, in `getPersonaRunsHourly`'s shape. */
+  hourly: PersonaHourlyRuns[];
+}
+
+let loadFleet: SimFleet | null = null;
+
+/**
+ * The 100-agent fleet (20 projects x `SIM_LOAD_AGENTS_PER_PROJECT`), built at
+ * most once for the same identity reason as {@link simWorld}. The Activity
+ * board keeps its 60-agent world; the full-frame Board is judged at this one.
+ * `hourly` is anchored to the first call's clock — a consumer that stays open
+ * across an hour boundary can rebuild it with `simHourlyRuns(cards, now)`.
+ */
+export function simLoadFleet(): SimFleet {
+  if (loadFleet) return loadFleet;
+  const roster = buildSimRoster(SIM_LOAD_AGENTS_PER_PROJECT);
+  const cards = buildSimCards(roster);
+  loadFleet = { roster, cards, hourly: simHourlyRuns(cards) };
+  return loadFleet;
+}
+
 export interface SimPlans {
   /** Null while the simulation is off — the strip reads its real accounts then. */
   snapshot: ClaudeAccountsSnapshot | null;
@@ -182,5 +210,6 @@ export function useSimPlans(enabled: boolean): SimPlans {
 /** Test hatch — the fleet half is a module singleton. */
 export function _resetSimWorldForTests(): void {
   world = null;
+  loadFleet = null;
   queueTick = 0;
 }

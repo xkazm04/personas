@@ -76,7 +76,19 @@ export interface ProcessActivitySlice {
   setMaxParallelExecutions: (max: number) => void;
 
   // Actions
-  processStarted: (domain: string, runId?: string, label?: string, navigateTo?: ProcessNavigateTo) => void;
+  /**
+   * Mark a process running. `personaId` names the persona that owns the run;
+   * when omitted, the id an earlier `processQueued` recorded for the same key
+   * is kept, so a queued run promoted to running stays attributed to its
+   * persona instead of falling back to its label.
+   */
+  processStarted: (
+    domain: string,
+    runId?: string,
+    label?: string,
+    navigateTo?: ProcessNavigateTo,
+    personaId?: string,
+  ) => void;
   processEnded: (
     domain: string,
     action: "completed" | "failed" | "cancelled",
@@ -243,21 +255,23 @@ export const createProcessActivitySlice: StateCreator<
     );
   },
 
-  processStarted: (domain, runId, label, navigateTo) => {
+  processStarted: (domain, runId, label, navigateTo, personaId) => {
     const key = processKey(domain, runId);
     set((state) => {
-      const isNew = state.activeProcesses[key] === undefined;
+      const existing = state.activeProcesses[key];
+      const isNew = existing === undefined;
       const activeProcesses = {
         ...state.activeProcesses,
         [key]: {
           domain,
           runId,
-          label: label ?? state.activeProcesses[key]?.label,
+          label: label ?? existing?.label,
           startedAt: Date.now(),
           status: "running" as const,
           toolCallCount: 0,
           costUsd: 0,
-          navigateTo: navigateTo ?? state.activeProcesses[key]?.navigateTo,
+          navigateTo: navigateTo ?? existing?.navigateTo,
+          personaId: personaId ?? existing?.personaId,
         },
       };
       return isNew
@@ -350,7 +364,10 @@ export const createProcessActivitySlice: StateCreator<
           toolCallCount: 0,
           costUsd: 0,
           queuePosition: position,
-          personaId,
+          // Two producers queue the same run (QUEUE_STATUS and the
+          // process-activity event); whichever lands second must not erase
+          // the persona id the first one carried.
+          personaId: personaId ?? existing?.personaId,
         },
       };
       return isNew

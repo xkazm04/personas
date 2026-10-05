@@ -55,12 +55,36 @@ pub fn emit_process_activity(
     run_id: Option<&str>,
     label: Option<&str>,
 ) {
-    let event = ProcessActivityEvent::new(domain, action, run_id, label);
-    if let Err(e) = app.emit(super::event_registry::event_name::PROCESS_ACTIVITY, event) {
+    emit_event(
+        app,
+        ProcessActivityEvent::new(domain, action, run_id, label),
+    );
+}
+
+/// [`emit_process_activity`] for a persona's run: the label is the persona's
+/// name and the event carries its id, so the Monitor ties the run to the right
+/// persona even when two share a name.
+pub fn emit_persona_process_activity(
+    app: &AppHandle,
+    domain: &str,
+    action: &str,
+    run_id: Option<&str>,
+    persona_name: &str,
+    persona_id: &str,
+) {
+    emit_event(
+        app,
+        ProcessActivityEvent::new(domain, action, run_id, Some(persona_name))
+            .with_persona(persona_id),
+    );
+}
+
+fn emit_event(app: &AppHandle, event: ProcessActivityEvent) {
+    if let Err(e) = app.emit(super::event_registry::event_name::PROCESS_ACTIVITY, &event) {
         tracing::warn!(
-            domain,
-            action,
-            ?run_id,
+            domain = %event.domain,
+            action = %event.action,
+            run_id = ?event.run_id,
             "Failed to emit process activity event: {e}"
         );
     }

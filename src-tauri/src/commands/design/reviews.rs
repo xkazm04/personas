@@ -1090,12 +1090,15 @@ pub struct PersonaPendingReviewCount {
     pub info: i64,
 }
 
-/// Collapse a raw severity token the same way the Activity board does:
-/// unknown tokens take the loudest bucket so they cannot hide.
+/// Collapse a raw severity token the same way the Activity board does
+/// (`severityBucket` in `monitorModel.ts`): unknown tokens take the loudest
+/// bucket so they cannot hide. `medium` is a real producer token (the
+/// five-step low/medium/high scale) and sits with `high` in the warning
+/// bucket; before it was listed it fell through to critical.
 fn bucket_review_severity(sev: &str) -> &'static str {
     match sev.trim().to_ascii_lowercase().as_str() {
         "critical" | "error" => "critical",
-        "high" | "warning" => "warning",
+        "high" | "medium" | "warning" => "warning",
         "low" | "info" => "info",
         _ => "critical",
     }
@@ -1107,6 +1110,12 @@ pub fn get_pending_review_counts_by_persona(
 ) -> Result<Vec<PersonaPendingReviewCount>, AppError> {
     require_auth_sync(&state)?;
     let rows = manual_repo::pending_counts_by_persona(&state.db)?;
+    Ok(fold_pending_review_counts(rows))
+}
+
+/// Fold `(persona_id, severity, n)` rows into one badge per persona, bucketed
+/// by [`bucket_review_severity`].
+fn fold_pending_review_counts(rows: Vec<(String, String, i64)>) -> Vec<PersonaPendingReviewCount> {
     let mut by_persona: std::collections::HashMap<String, PersonaPendingReviewCount> =
         std::collections::HashMap::new();
     for (persona_id, severity, n) in rows {
@@ -1128,7 +1137,7 @@ pub fn get_pending_review_counts_by_persona(
             _ => entry.critical += n,
         }
     }
-    Ok(by_persona.into_values().collect())
+    by_persona.into_values().collect()
 }
 
 /// Reviews tied to one execution — the cockpit linked-decisions slice.
@@ -3526,5 +3535,26 @@ mod ask_tests {
         )
         .unwrap();
         assert!(!apply_ask_verdicts(&pool, &plain, Some(ASK_ACCEPT_ACTION)).handled);
+    }
+
+    /// `medium` is a warning, not a critical: the per-persona badge map must
+    /// not paint a medium review red. Unknown tokens still go to critical.
+    #[test]
+    fn medium_severity_counts_as_warning_in_the_pending_badge() {
+        let rows = vec![
+            ("p1".to_string(), "medium".to_string(), 2),
+            ("p1".to_string(), "Medium ".to_string(), 1),
+            ("p1".to_string(), "critical".to_string(), 1),
+            ("p1".to_string(), "low".to_string(), 3),
+            ("p2".to_string(), "sublimating".to_string(), 1),
+        ];
+        let mut out = fold_pending_review_counts(rows);
+        out.sort_by(|a, b| a.persona_id.cmp(&b.persona_id));
+        assert_eq!(out.len(), 2);
+        let p1 = &out[0];
+        assert_eq!((p1.pending, p1.critical, p1.warning, p1.info), (7, 1, 3, 3));
+        let p2 = &out[1];
+        assert_eq!((p2.pending, p2.critical, p2.warning, p2.info), (1, 1, 0, 0));
+        assert_eq!(bucket_review_severity("medium"), "warning");
     }
 }
