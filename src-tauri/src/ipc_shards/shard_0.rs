@@ -11,6 +11,7 @@ pub(super) fn shard(
         // Phase 1
         commands::core::frontend_bridge::greet,
         commands::core::frontend_bridge::log_frontend_error,
+        commands::core::frontend_bridge::devlog_ingest,
         commands::core::frontend_bridge::report_frontend_ready,
         // Test automation (always registered; server only starts when enabled)
         test_automation::__test_respond,

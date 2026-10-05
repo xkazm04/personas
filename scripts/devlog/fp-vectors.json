@@ -1,0 +1,91 @@
+{
+  "algorithm": "fnv1a32 over UTF-8 of `${lvl}|${tgt}|${normalize(msg)}`; toolchain: `${lvl}|${tgt}|${code}|${file}`. Reference: scripts/devlog/fingerprint.mjs",
+  "app": [
+    {
+      "lvl": "WARN",
+      "tgt": "app_lib::engine::kp_reporter",
+      "msg": "KP report push failed",
+      "norm": "KP report push failed",
+      "fp": "3de00333"
+    },
+    {
+      "lvl": "WARN",
+      "tgt": "personas_db::perf",
+      "msg": "Slow DB query detected",
+      "norm": "Slow DB query detected",
+      "fp": "96529fb3"
+    },
+    {
+      "lvl": "ERROR",
+      "tgt": "webview::error",
+      "msg": "Unhandled rejection",
+      "norm": "Unhandled rejection",
+      "fp": "41f37df8"
+    },
+    {
+      "lvl": "INFO",
+      "tgt": "app_lib::commands::core::personas",
+      "msg": "Persona 3f2b8c1e-9a4d-4c2b-8e7f-1a2b3c4d5e6f updated in 1108ms",
+      "norm": "Persona <uuid> updated in <n>ms",
+      "fp": "c4cc36e1"
+    },
+    {
+      "lvl": "WARN",
+      "tgt": "app_lib::commands::obsidian_brain",
+      "msg": "sync failed for \"Research Notes\": C:\\Users\\kazda\\vault\\a.md missing",
+      "norm": "sync failed for <s>: <path> missing",
+      "fp": "434e1a5d"
+    },
+    {
+      "lvl": "WARN",
+      "tgt": "app_lib::cloud::sync",
+      "msg": "table /var/lib/personas/data.db locked after 3 retries (0.25s)",
+      "norm": "table <path> locked after <n> retries (<n>s)",
+      "fp": "48232bc9"
+    },
+    {
+      "lvl": "DEBUG",
+      "tgt": "app_lib::engine",
+      "msg": "commit deadbeefcafe1234 applied to `main`",
+      "norm": "commit <hex> applied to <s>",
+      "fp": "49700956"
+    },
+    {
+      "lvl": "INFO",
+      "tgt": "devlog",
+      "msg": "log.suppressed",
+      "norm": "log.suppressed",
+      "fp": "3ebc678a"
+    },
+    {
+      "lvl": "INFO",
+      "tgt": "app_lib::engine",
+      "msg": "Café ünïcode -42 stays",
+      "norm": "Café ünïcode <n> stays",
+      "fp": "5d58f9e8"
+    }
+  ],
+  "toolchain": [
+    {
+      "lvl": "WARN",
+      "tgt": "cargo",
+      "code": "unused_variables",
+      "file": "src\\engine\\execution.rs",
+      "fp": "88ccddbc"
+    },
+    {
+      "lvl": "ERROR",
+      "tgt": "cargo",
+      "code": "E0308",
+      "file": "src/commands/core/personas.rs",
+      "fp": "c3e82dd7"
+    },
+    {
+      "lvl": "ERROR",
+      "tgt": "vite",
+      "code": "",
+      "file": "",
+      "fp": "6b0c2e91"
+    }
+  ]
+}
