@@ -77,6 +77,12 @@ pub(super) fn build_compress_prompt(
          ONLY when the evidence states or directly implies a boundary; if nothing said \
          when it ends, leave it null. An invented date deletes a true fact, so null is \
          always the safe answer.\n\
+         2c. A decision needs evidence that SAYS it was decided, done, merged, shipped or \
+         committed to. Items listed in notes, a planning session, a brainstorm, a meeting, an \
+         agenda or a document carry the status of that container, and if the evidence does \
+         not state that an item was decided, it was NOT decided as far as you know: record it \
+         as \"listed in <where>; decision status not stated\", with confidence at most 0.6, or \
+         leave it out. Never write \"decided\" when the evidence does not.\n\
          3. A `fact` is something that IS. A `procedural` is something to DO: a trigger and \
          the behaviour it should produce.\n\
          4. Tag from the vocabulary below and nowhere else. A tag that is not on the list is \
