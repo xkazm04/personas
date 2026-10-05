@@ -12,7 +12,7 @@ import { readLimit } from './limits.mjs';
 import { requireRun, pidAlive, runFile, markLimitFromRun } from './worker.mjs';
 import { git, gitTry, revParse, isAncestor, removeWorktree, withBaseWorktree } from './worktree.mjs';
 import { acquireGateSlot } from './memory.mjs';
-import { resolveGates, runGates, gatesVerdict, splitBoundaries, boundaryHits, failuresAreInherited, GATE_TIMEOUT_MS } from './gate.mjs';
+import { resolveGates, runGates, gatesVerdict, splitBoundaries, boundaryHits, failuresAreInherited, testFilesIn, narrowCommand, GATE_TIMEOUT_MS } from './gate.mjs';
 
 const lines = (s) => String(s || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
 const keyOf = (p) => (process.platform === 'win32' ? p.toLowerCase() : p);
@@ -243,9 +243,22 @@ function settleCore({ flags = {} } = {}, slot) {
     if (r.skipped || r.ok || r.timedOut || !r.failures?.length || !run.baseSha) continue;
     try {
       const base = withBaseWorktree(run, (dir) => runGates(dir, gates, { timeoutMs, only: [g] })[g]);
-      r.base = { ok: base.ok, exit: base.exit, failures: base.failures?.length ?? 0 };
+      r.base = { ok: base.ok, exit: base.exit, failures: base.failures?.length ?? 0, failureList: (base.failures || []).slice(0, 100) };
       if (!base.ok && failuresAreInherited(r.failures, base.failures)) r.inherited = true;
     } catch (e) { r.base = { error: String(e.message || e).split('\n')[0] }; }
+    // Not inherited: a failure only the BRANCH shows may still be load flakiness (measured 2026-10-05 in
+    // pof: a mermaid click test failed in the full run, passed alone, and the failing set differed on
+    // every run). Re-run just the newly failing test files once on the branch; a pass clears them.
+    if (!r.inherited) {
+      const baseSet = new Set(r.base?.failureList || []);
+      const fresh = (r.failures || []).filter((f) => !baseSet.has(f));
+      const files = testFilesIn(fresh).slice(0, 12);
+      if (files.length && g === 'test') {
+        const again = runGates(run.worktree, { [g]: narrowCommand(gates[g], files) }, { timeoutMs, only: [g] })[g];
+        r.rerun = { files, ok: again.ok, exit: again.exit };
+        if (again.ok) { r.flaky = files; r.inherited = true; }
+      }
+    }
   }
   // The gates ran in a worktree that was clean before them, so anything dirty now is THEIR side effect
   // (vitest rewrote snapshot files in both first runs, 2026-10-05). Record it and revert it: a retry,

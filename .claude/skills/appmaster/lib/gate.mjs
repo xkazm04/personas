@@ -93,6 +93,21 @@ export function failureSignature(text, cap = 300) {
   return [...set].sort().slice(0, cap);
 }
 
+/** The test files named by failure signature lines (vitest FAIL lines, node:test file lines). */
+export function testFilesIn(failures) {
+  const files = new Set();
+  for (const f of failures || []) {
+    const m = /([\w@./-]+\.test\.[cm]?[jt]sx?)/.exec(String(f));
+    if (m) files.add(m[1]);
+  }
+  return [...files];
+}
+
+/** The gate command narrowed to specific files: everything before the first " -- " plus "-- <files>". */
+export function narrowCommand(command, files) {
+  return String(command).split(' -- ')[0] + ' -- ' + files.join(' ');
+}
+
 /** Is every failure of `branch` also a failure of `base`? Both must be non-empty lists. */
 export function failuresAreInherited(branch, base) {
   if (!branch?.length || !base?.length) return false;

@@ -337,6 +337,39 @@ test('(xvi) settle with no memory headroom refuses, leaves the run exactly as it
   assert.equal(out.state, 'merged', out.heldReason);
 });
 
+// flake check: a failure only the branch shows is cleared if the failing files pass when re-run alone
+const flakyScript = path.join(tmp, 'flaky-gate.cjs').replace(/\\/g, '/');
+fs.writeFileSync(flakyScript, [
+  "const fs = require('fs');",
+  "if (fs.existsSync('flaky-once.txt') && !fs.existsSync('flaky-seen.txt')) {",
+  "  fs.writeFileSync('flaky-seen.txt', 'x');",
+  "  console.log(' FAIL  src/flaky.test.ts > only fails under load  4ms');",
+  '  process.exit(1);',
+  '}',
+  'process.exit(0);',
+].join('\n'));
+const flakyGates = { typecheck: 'exit 0', lint: 'exit 0', test: `node ${flakyScript} -- everything` };
+
+test('(xvii) a test that fails only in the full run and passes alone is cleared as flaky, and recorded', () => {
+  const { root, run, wt } = scenario('flaky', { gates: flakyGates });
+  commitIn(wt, 'flaky-once.txt', 'x\n');
+  const out = settle(run);
+  assert.equal(out.state, 'merged', out.heldReason);
+  const t = out.verdict.gates.test;
+  assert.equal(t.ok, false);
+  assert.equal(t.inherited, true);
+  assert.deepEqual(t.flaky, ['src/flaky.test.ts']);
+  assert.deepEqual(t.rerun, { files: ['src/flaky.test.ts'], ok: true, exit: 0 });
+  assert.equal(branchExists(root, run.branch), false);
+});
+
+test('(xviii) narrowCommand and testFilesIn', async () => {
+  const G = await import('../lib/gate.mjs');
+  assert.equal(G.narrowCommand('npm run test:unit -- app/a/**/*.test.ts app/b/*.test.ts', ['x/y.test.ts']), 'npm run test:unit -- x/y.test.ts');
+  assert.equal(G.narrowCommand('npm run test', ['a.test.tsx', 'b.test.ts']), 'npm run test -- a.test.tsx b.test.ts');
+  assert.deepEqual(G.testFilesIn(['FAIL src/__tests__/a.test.tsx > suite > case', 'x/y.test.ts', 'no file here']).sort(), ['src/__tests__/a.test.tsx', 'x/y.test.ts']);
+});
+
 // ---------------------------------------------------------------- the rest of the state machine
 
 test('a usage limit in the stream -> released (not held, not failed) and the mark is set', () => {
