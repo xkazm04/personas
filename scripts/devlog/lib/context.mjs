@@ -27,6 +27,9 @@ export function repoPathOf(rec) {
 
 /** `file:line` for display. */
 export function callsiteOf(rec) {
+  // A WebView record's origin is its producer scope; any file/line on it is
+  // the Rust line that re-emitted it (older boots wrote it), never the source.
+  if (rec.src === "webview") return rec.f?.scope ? `webview:${rec.f.scope}` : "webview";
   let p = repoPathOf(rec);
   if (!p) return "-";
   // Dependency sources: `<home>/.cargo/registry/src/<index>/crate-1.2.3/...` -> `crates.io/crate-1.2.3/...`

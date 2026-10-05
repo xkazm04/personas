@@ -21,7 +21,8 @@ export function parseDuration(text) {
  */
 export function classify(r) {
   if (r.src === "toolchain") {
-    if (r.tgt === "devlog") return "meta";
+    // A capture failure is a finding about the toolchain log itself: show it.
+    if (r.tgt === "devlog") return r.msg === "devlog.capture_error" ? "toolchain" : "meta";
     if (r.tgt === "cargo" && r.msg === "cargo.build") return "build";
     return "toolchain";
   }

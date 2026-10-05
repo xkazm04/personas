@@ -96,6 +96,18 @@ test("vite recorder: logger errors with loc, HMR dedupe, reload storm", () => {
   assert.equal(storms[0].f.reloads_per_min, 6);
 });
 
+test("vite recorder: the browser console Vite forwards is not a toolchain record", () => {
+  const recs = [];
+  const rec = createViteRecorder({ write: (r) => recs.push(r), now: () => 1, session: "s-1" });
+  // The exact shapes seen live, 2026-10-05.
+  rec.log("warn", "\x1b[33m[console.warn] [store-monitor] heap=162MB dom=1435\x1b[39m", undefined);
+  rec.log("warn", "[console.warn] [STORE ALERT]", undefined);
+  rec.log("error", "[console.error] uncaught", undefined);
+  assert.equal(recs.length, 0);
+  rec.log("warn", "(!) Failed to run dependency scan.", undefined);
+  assert.equal(recs.length, 1, "Vite's own warning still is");
+});
+
 test("vite plugin: serve-only, wraps the logger without changing what it prints", async () => {
   const plugin = devlogVitePlugin();
   assert.equal(plugin.apply, "serve");

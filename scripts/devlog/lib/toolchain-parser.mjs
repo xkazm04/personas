@@ -12,7 +12,10 @@
 
 import { normalizeMessage } from "../fingerprint.mjs";
 
-const ANSI = /\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07]*(?:\x07|\x1b\\)/g;
+// An OSC sequence (cargo's OSC-8 hyperlinks: `ESC]8;;url ESC\ text ESC]8;; ESC\`)
+// ends at its OWN terminator. A greedy body ran to the line's last terminator
+// and ate the visible text between two links - the profile name, a `-->` path.
+const ANSI = /\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g;
 
 /** Remove ANSI escapes; parsing only, the terminal keeps its colours. */
 export function stripAnsi(text) {
@@ -161,9 +164,21 @@ export function createToolchainParser({ emit, state = { viteReady: false } }) {
   return {
     /** Feed one line (no trailing newline, ANSI allowed). */
     line(raw) {
-      const line = stripAnsi(raw).replace(/\r$/, "");
-      if (cargoLine(line)) return;
-      otherLine(line);
+      // A bare `\r` is a redraw: cargo's progress bar (`Building [==> ] n/m`)
+      // repaints in place and the next real line arrives on the SAME `\n`
+      // line. Split like a terminal renders, or every line after a redraw -
+      // `Finished`, `warning:` - fails its `^` anchor (measured 2026-10-05:
+      // a tauri dev build that warned and finished recorded nothing).
+      const segments = stripAnsi(raw).split("\r").filter((s) => s.trim() !== "");
+      // A truly blank line still ends an open diagnostic block.
+      if (segments.length === 0) {
+        if (!cargoLine("")) otherLine("");
+        return;
+      }
+      for (const segment of segments) {
+        if (cargoLine(segment)) continue;
+        otherLine(segment);
+      }
     },
     /** End of stream: emit a block still open. */
     flush,

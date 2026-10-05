@@ -78,20 +78,47 @@ async function digestOf(dir, selection, extra = {}) {
 
 const section = (d, name) => d.sections.find((s) => s.name === name);
 
-test("coverage lists every producer and says NOT CAPTURED for silent ones", async () => {
+test("coverage: a silent producer on a live source reads 0, never blank", async () => {
   const { dir } = buildLogsDir();
   const { d } = await digestOf(dir, { since: "1d" });
   const cov = section(d, "Coverage");
   const byName = Object.fromEntries(cov.rows.map((r) => [r.producer, r.count]));
-  assert.equal(byName["swallow_rollup"], "NOT CAPTURED");
+  // The WebView and the wrapper are both reporting here, so a quiet producer
+  // means "nothing happened", not "nobody looked".
+  assert.equal(byName["swallow_rollup"], "0 (webview live)");
+  assert.equal(byName["toolchain tauri"], "0 (toolchain live)");
   assert.equal(cov.rows.find((r) => r.producer === "freeze/store_alert").source, "legacy-text");
   assert.equal(byName["commit"], 1);
-  assert.equal(byName["toolchain tauri"], "NOT CAPTURED");
   assert.ok(byName["rust"] > 0 && byName["ipc_slow"] === 2 && byName["db slow query"] === 3 && byName["toolchain vite"] === 1);
   for (const r of cov.rows) assert.notEqual(String(r.count).trim(), "", `${r.producer} is never blank`);
   const text = renderDigestText(d);
-  assert.match(text, /swallow_rollup\s+NOT CAPTURED/);
+  assert.match(text, /swallow_rollup\s+0 \(webview live\)/);
   assert.equal(d.meta.malformed_lines, 1);
+});
+
+test("coverage: a producer whose source is dark reads NOT CAPTURED", async () => {
+  const dir = tmpDir("devlog-dark-");
+  const B = "55555555-5555-4555-8555-555555555555";
+  const recs = [
+    app(B, at(9, 0), "INFO", "devlog", "boot.start", { f: { version: "1.1.0", profile: "debug", pid: 9, os: "windows" } }),
+    app(B, at(9, 1), "WARN", "app_lib::engine::x", "only rust spoke", { file: "src/engine/x.rs", line: 1 }),
+  ];
+  fs.writeFileSync(path.join(dir, `personas.${DAY}.jsonl`), recs.map(toLine).join(""));
+  const { d } = await digestOf(dir, { since: "1d" });
+  const byName = Object.fromEntries(section(d, "Coverage").rows.map((r) => [r.producer, r.count]));
+  assert.equal(byName["webview error"], "NOT CAPTURED");
+  assert.equal(byName["ipc_window"], "NOT CAPTURED");
+  assert.equal(byName["toolchain cargo"], "NOT CAPTURED");
+  // Rust is live, so its quiet sub-producers are zero, not dark.
+  assert.equal(byName["db slow query"], "0 (rust live)");
+});
+
+test("webview rows name their scope, never the Rust line that re-emitted them", async () => {
+  const { callsiteOf } = await import("../lib/context.mjs");
+  const { sampleOf } = await import("../lib/format.mjs");
+  const rec = { src: "webview", tgt: "webview::store_alert", msg: "dom growth", file: "src/commands/core/frontend_bridge.rs", line: 184, f: { cts: 1791204798163, scope: "storeMonitor", route: "teams", growth_nodes: 619 } };
+  assert.equal(callsiteOf(rec), "webview:storeMonitor");
+  assert.equal(sampleOf(rec), "dom growth growth_nodes=619");
 });
 
 test("sections rank by cost and fold suppressed counts in", async () => {

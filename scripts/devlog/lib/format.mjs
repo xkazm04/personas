@@ -11,11 +11,16 @@ export function cut(text, width) {
 }
 
 /** A record's message with up to three abbreviated fields. */
+// Bookkeeping every WebView record carries: the client clock, and the scope
+// and route the row already shows as its callsite and grouping.
+const WEBVIEW_BOOKKEEPING = new Set(["cts", "scope", "route"]);
+
 export function sampleOf(rec, { skip = [] } = {}) {
   const parts = [rec.msg ?? ""];
   let n = 0;
   for (const [k, v] of Object.entries(rec.f ?? {})) {
     if (skip.includes(k) || k === "detail" || k === "legacy_tgt" || k === "stack") continue;
+    if (rec.src === "webview" && WEBVIEW_BOOKKEEPING.has(k)) continue;
     if (n >= MAX_FIELDS) break;
     const val = typeof v === "object" ? JSON.stringify(v) : String(v);
     parts.push(`${k}=${cut(val, VALUE_WIDTH)}`);

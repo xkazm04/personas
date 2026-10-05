@@ -36,10 +36,15 @@ in-flight-visibility), resolved through `../ai-registry/knowledge/software-engin
 
 `npm run devlog -- digest <window> --budget 120`. Read the **Coverage** section first:
 
-- A producer marked `NOT CAPTURED` means *nobody looked*, not *nothing happened*. Say which
-  producers were dark, in the report, before any finding. (The common cause: the session was not
-  started through a `tauri:dev*` script, so the toolchain wrapper never ran; or a WebView producer
-  is DEV-only and the boot was a release build.)
+- A producer marked `NOT CAPTURED` means its whole SOURCE (rust, webview or toolchain) sent
+  nothing in the window: *nobody looked*. Say which producers were dark, in the report, before any
+  finding. (The common causes: the session was not started through a `tauri:dev*` script, so the
+  toolchain wrapper never ran; or the boot was a release build, where the WebView sends only
+  errors and slow IPC.) `0 (<source> live)` is different: the source was reporting and this
+  producer had nothing to say - a real zero.
+- A `devlog.capture_error` row in Toolchain means the wrapper failed on a line it could not
+  parse; it records up to 20 per session with the line. Re-run with `DEVLOG_RAW=1` to keep the
+  child's raw output beside the logs before guessing at the parser.
 - Then work through the ranked sections. Each row carries `fp`, count, cost, sample, callsite
   `file:line` and the owning context from `context-map.json`.
 

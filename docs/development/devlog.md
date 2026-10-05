@@ -43,8 +43,16 @@ unchanged, so their `pre*` hooks still run. The wrapper:
   with piped output and writes every chunk to the terminal unchanged;
 - keeps colour: when the terminal is a TTY the child gets
   `CARGO_TERM_COLOR=always`, `FORCE_COLOR=1`, `CLICOLOR_FORCE=1` unless already
-  set (`DEVLOG_COLOR=0` turns this off). They are inherited by the app and what
-  it spawns, as if set in the shell;
+  set (`DEVLOG_COLOR=0` turns this off). The ones it set are listed in
+  `PERSONAS_DEVLOG_FORCED_ENV` and the app removes them at the top of
+  `main()`, so only the toolchain sees them, never the CLIs the app spawns;
+- splits a line at every bare `\r` before parsing, as a terminal renders it:
+  cargo's progress bar redraws in place and the next real line (`Finished`,
+  `warning:`) arrives on the same `\n` line;
+- never switches capture off: a line it cannot parse, or a record it cannot
+  build, costs that line and is recorded as `devlog.capture_error` (up to 20
+  per session, shown in Toolchain). `DEVLOG_RAW=1` also writes the child's raw
+  output, ANSI intact, to `toolchain-raw.<session>.log` in the logs dir;
 - sets `PERSONAS_DEVLOG_SESSION=<uuid>`; the app records it in `boot.start`, so
   an app boot and its toolchain session join both ways;
 - records cargo `warning:` / `error[E....]:` / `error:` blocks (one record per
@@ -123,8 +131,10 @@ npm run devlog -- walk [--port 17320] [--sections all|a,b]
 
 ### Digest sections
 
-In order: **Coverage** (each producer's count in the selection, or
-`NOT CAPTURED`), **Boot phases** (setup total and each phase over 100 ms,
+In order: **Coverage** (each producer's count in the selection; `0 (<source>
+live)` when its source - rust, webview or toolchain - was reporting and the
+producer had nothing to say; `NOT CAPTURED` only when the whole source was
+silent), **Boot phases** (setup total and each phase over 100 ms,
 aggregated over the boots that logged their timing table; `last_boot.log`
 stands in for the newest boot when its records lack the table), **Errors**,
 **Repeating warnings** (fps seen at least twice or rate-limited; suppressed

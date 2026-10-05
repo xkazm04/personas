@@ -24,6 +24,11 @@ import { normalizeMessage } from "./fingerprint.mjs";
 const STORM_PER_MIN = 5;
 const DEDUPE_MS = 2000;
 
+/** A logger line that is the browser's console forwarded by Vite. */
+export function isForwardedBrowserConsole(msg) {
+  return /^\s*\[console\.[a-z]+\]/.test(stripAnsi(String(msg ?? "")));
+}
+
 /** Fields of a Vite/Rollup error: plugin, id, file, line. */
 export function errorFields(err) {
   if (!err || typeof err !== "object") return {};
@@ -75,6 +80,12 @@ export function createViteRecorder({ write, now = () => Date.now(), session }) {
 
   return {
     log(type, msg, opts) {
+      // Vite forwards the BROWSER's console to the dev-server logger as
+      // `[console.warn] ...`. That is the app talking, not the toolchain, and
+      // devlog already carries it as WebView records; recording it here
+      // filled the toolchain log with store-monitor ticks (25 in 40 s,
+      // measured 2026-10-05). Only Vite's own messages are toolchain records.
+      if (isForwardedBrowserConsole(msg)) return;
       const err = opts?.error;
       const fields = { ...errorFields(err), via: "logger" };
       const text = err?.message ?? msg;

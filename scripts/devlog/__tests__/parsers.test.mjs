@@ -72,6 +72,37 @@ test("cargo parser strips ANSI for parsing", () => {
   assert.equal(stripAnsi("\x1b[31mred\x1b[0m"), "red");
 });
 
+test("a progress-bar redraw does not hide the line that follows it (raw tee, 2026-10-05)", () => {
+  // Exact shape from toolchain-raw: the bar, a blanking redraw, then the real
+  // line - all on one `\n` line.
+  const bar = "\x1b[1m\x1b[96m    Building\x1b[0m [=======================> ] 777/778: personas…\r" + " ".repeat(60) + "\r";
+  const text =
+    `${bar}\x1b[1m\x1b[33mwarning\x1b[0m: unused variable: \`x\`\n` +
+    "  --> src\\engine\\a.rs:3:9\n" +
+    "\n" +
+    `${bar}\x1b[1m\x1b[92m    Finished\x1b[0m \`dev\` profile [unoptimized + debuginfo] target(s) in 2m 03s\r\n`;
+  const recs = parseText(text);
+  assert.deepEqual(
+    recs.map((r) => r.msg),
+    ["cargo.warning", "cargo.build"],
+  );
+  assert.equal(recs[0].file, "src\\engine\\a.rs");
+  assert.equal(recs[1].f.duration_s, 123);
+});
+
+test("OSC-8 hyperlinks end at their own terminator (cargo 1.96, measured 2026-10-05)", () => {
+  // The exact shape cargo 1.96 printed through the wrapper: two links on one
+  // line. A greedy OSC body ate the visible text between them.
+  const link = (url, text) => `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
+  const line = `\x1b[1m\x1b[92m    Finished\x1b[0m ${link("https://doc.rust-lang.org/cargo/reference/profiles.html#default-profiles", "`dev` profile [unoptimized + debuginfo]")} target(s) in 5.57s`;
+  assert.equal(stripAnsi(line), "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.57s");
+  const recs = parseText(`${line}\n`);
+  assert.equal(recs.length, 1);
+  assert.equal(recs[0].f.profile, "dev");
+  assert.equal(recs[0].f.duration_s, 5.57);
+  assert.equal(stripAnsi(`--> ${link("file:///C:/x/src/main.rs", "src\\main.rs")}:1:5`), "--> src\\main.rs:1:5");
+});
+
 test("cargo durations", () => {
   assert.equal(parseCargoDuration("1m 23s"), 83);
   assert.equal(parseCargoDuration("23.45s"), 23.45);

@@ -26,6 +26,7 @@
 
 import { spawn, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { StringDecoder } from "node:string_decoder";
@@ -78,6 +79,22 @@ function killTree(child, signal) {
  * @param {{ args?: string[], env?: object, logsDir?: string, onExit?: () => void,
  *           stdout?: NodeJS.WritableStream, stderr?: NodeJS.WritableStream }} opts
  */
+/** At most this many `devlog.capture_error` records per session. */
+const MAX_CAPTURE_ERRORS = 20;
+
+function openRaw(logsDir, sessionId, errOut) {
+  try {
+    fs.mkdirSync(logsDir, { recursive: true });
+    const file = path.join(logsDir, `toolchain-raw.${sessionId}.log`);
+    const stream = fs.createWriteStream(file, { flags: "a" });
+    stream.on("error", () => {});
+    errOut.write(`[devlog] raw child output -> ${file}\n`);
+    return stream;
+  } catch {
+    return null;
+  }
+}
+
 export async function runWrapped(opts = {}) {
   const args = opts.args ?? [];
   const env = { ...process.env, ...(opts.env ?? {}) };
@@ -88,13 +105,47 @@ export async function runWrapped(opts = {}) {
   const startedAt = Date.now();
   const writer = new JsonlWriter(logsDir, { warn: (m) => errOut.write(m + "\n") });
   pruneDaily(logsDir, "toolchain", 7);
+  // DEVLOG_RAW=1 also keeps every line the child printed (ANSI intact) in
+  // `toolchain-raw.<session>.log`, for when the parser misses something.
+  const raw = env.DEVLOG_RAW === "1" ? openRaw(logsDir, sessionId, errOut) : null;
 
-  const record = (draft) => {
+  // One bad line, or one record that cannot be built, costs that line and
+  // never the session. Both used to switch capture off for good: a tauri dev
+  // run that built and booted the app wrote nothing after session.start
+  // (2026-10-05). Failures are recorded, bounded, so the digest shows them.
+  let failures = 0;
+  const noteFailure = (stage, err, line) => {
+    failures += 1;
+    if (failures > MAX_CAPTURE_ERRORS) return;
     try {
-      writer.write(makeRecord({ ...draft, src: "toolchain", boot: sessionId }));
-    } catch (err) {
-      writer.fail(err);
+      writer.write(
+        makeRecord({
+          lvl: "WARN",
+          tgt: "devlog",
+          msg: "devlog.capture_error",
+          src: "toolchain",
+          boot: sessionId,
+          f: {
+            stage,
+            error: String(err?.message ?? err).slice(0, 300),
+            line: line === undefined ? undefined : String(line).slice(0, 300),
+            n: failures,
+          },
+        }),
+      );
+    } catch {
+      /* the writer itself is gone; its own fail() already said so */
     }
+  };
+  const record = (draft) => {
+    let rec;
+    try {
+      rec = makeRecord({ ...draft, src: "toolchain", boot: sessionId });
+    } catch (err) {
+      noteFailure("record", err, draft?.msg);
+      return;
+    }
+    writer.write(rec);
   };
 
   const [cmd, ...cmdArgs] = childCommand(args, env);
@@ -126,15 +177,12 @@ export async function runWrapped(opts = {}) {
     },
   });
 
-  let parsing = true;
   const state = { viteReady: false };
-  const safeParse = (fn) => {
-    if (!parsing) return;
+  const safeParse = (fn, line) => {
     try {
       fn();
     } catch (err) {
-      parsing = false;
-      errOut.write(`[devlog] toolchain parsing disabled for this session: ${err?.message ?? err}\n`);
+      noteFailure("parse", err, line);
     }
   };
 
@@ -142,7 +190,10 @@ export async function runWrapped(opts = {}) {
 
   const pipe = (stream, target) => {
     const parser = createToolchainParser({ emit: record, state });
-    const splitter = createLineSplitter((line) => safeParse(() => parser.line(line)));
+    const splitter = createLineSplitter((line) => {
+      raw?.write(line + "\n");
+      safeParse(() => parser.line(line), line);
+    });
     const decoder = new StringDecoder("utf8");
     stream.on("data", (chunk) => {
       if (!target.write(chunk)) {
@@ -204,6 +255,7 @@ export async function runWrapped(opts = {}) {
     f: { exit_code: exitCode, duration_ms: Date.now() - startedAt, signal: exit.signal ?? interrupted ?? undefined, records: writer.written + 1 },
   });
   await writer.close();
+  raw?.end();
   opts.onExit?.();
   return exitCode;
 }

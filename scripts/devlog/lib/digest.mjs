@@ -65,24 +65,43 @@ function where(ctx, rec) {
 
 // ── sections ────────────────────────────────────────────────────────────────
 
+// [producer, record test, the source it rides on]. A producer with no records
+// is only `NOT CAPTURED` when its SOURCE is dark too: an error kind with zero
+// errors while the WebView is reporting means "nothing happened", and saying
+// "nobody looked" there is the false alarm that teaches readers to ignore it.
 const PRODUCERS = [
-  ["rust", (r) => r.src === "rust"],
-  ["span timings", (r) => r.msg === "span.close"],
-  ["webview error", (r) => r.tgt === "webview::error"],
-  ["ipc_slow", (r) => r.tgt === "webview::ipc_slow"],
-  ["ipc_window", (r) => r.tgt === "webview::ipc_window"],
-  ["long_task", (r) => r.tgt === "webview::long_task"],
-  ["commit", (r) => r.tgt === "webview::commit"],
-  ["freeze/store_alert", (r) => r.tgt === "webview::freeze" || r.tgt === "webview::store_alert"],
-  ["swallow_rollup", (r) => r.tgt === "webview::swallow_rollup"],
-  ["toolchain cargo", (r) => r.src === "toolchain" && r.tgt === "cargo"],
-  ["toolchain vite", (r) => r.src === "toolchain" && r.tgt === "vite"],
-  ["toolchain tauri", (r) => r.src === "toolchain" && r.tgt === "tauri"],
-  ["db slow query", (r) => r.msg === "Slow DB query detected"],
+  ["rust", (r) => r.src === "rust", "rust"],
+  ["span timings", (r) => r.msg === "span.close", "rust"],
+  ["webview error", (r) => r.tgt === "webview::error", "webview"],
+  ["ipc_slow", (r) => r.tgt === "webview::ipc_slow", "webview"],
+  ["ipc_window", (r) => r.tgt === "webview::ipc_window", "webview"],
+  ["long_task", (r) => r.tgt === "webview::long_task", "webview"],
+  ["commit", (r) => r.tgt === "webview::commit", "webview"],
+  ["freeze/store_alert", (r) => r.tgt === "webview::freeze" || r.tgt === "webview::store_alert", "webview"],
+  ["swallow_rollup", (r) => r.tgt === "webview::swallow_rollup", "webview"],
+  ["toolchain cargo", (r) => r.src === "toolchain" && r.tgt === "cargo", "toolchain"],
+  ["toolchain vite", (r) => r.src === "toolchain" && r.tgt === "vite", "toolchain"],
+  ["toolchain tauri", (r) => r.src === "toolchain" && r.tgt === "tauri", "toolchain"],
+  ["db slow query", (r) => r.msg === "Slow DB query detected", "rust"],
 ];
 
-function coverage(records) {
-  const rows = PRODUCERS.map(([producer, test]) => {
+/** Which sources were reporting in this selection. The toolchain counts as
+ *  live when the focused app boot was started by the dev wrapper (its
+ *  boot.start names a devlog session) or a wrapper session record is in view;
+ *  a walk's own records do not make it live. */
+function liveSources(records, focus) {
+  const live = new Set();
+  for (const r of records) {
+    if (r.src === "rust" || r.src === "webview") live.add(r.src);
+    else if (r.src === "toolchain" && !String(r.boot ?? "").startsWith("walk-")) live.add("toolchain");
+  }
+  if (focus?.devlogSession) live.add("toolchain");
+  return live;
+}
+
+function coverage(records, focus) {
+  const live = liveSources(records, focus);
+  const rows = PRODUCERS.map(([producer, test, sourceName]) => {
     let count = 0;
     let legacy = 0;
     for (const r of records) {
@@ -91,7 +110,8 @@ function coverage(records) {
       if (r._legacy) legacy += 1;
     }
     const source = count === 0 ? "-" : legacy === count ? "legacy-text" : legacy ? "jsonl+legacy-text" : "jsonl";
-    return { producer, count: count ? count : "NOT CAPTURED", source };
+    const shown = count ? count : live.has(sourceName) ? `0 (${sourceName} live)` : "NOT CAPTURED";
+    return { producer, count: shown, source };
   });
   return { columns: ["producer", "count", "source"], rows, fixed: true };
 }
@@ -473,7 +493,7 @@ export function buildDigest(model, sel, opts) {
   };
   const supp = suppressedMap(sel.records);
   const built = {
-    Coverage: coverage(sel.records),
+    Coverage: coverage(sel.records, sel.focus),
     "Boot phases": bootPhases(ctx, sel),
     Errors: errors(ctx, sel, supp),
     "Repeating warnings": warnings(ctx, sel, supp),
