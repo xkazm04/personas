@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "appmaster/decision",
+  "title": "App Master wake decision",
+  "description": "The master subagent's whole answer to one wake. Parity with the in-app contract (attention_decide.rs: dispatch/defer/asks/say/note/nextWakeMinutes) so a later replay is lossless. ABSENT-VALUE CONVENTION: every array is present (empty []), say is null when silent; nothing is omitted. Cross-field rules the schema cannot say (enforced by lib/decision.mjs validateDecision): every charter slug of the brief appears exactly once across dispatch and defer; dispatch has at most 1 entry; asks has at most 3; nextWakeMinutes is an integer 10..240; wakeId equals the wake the context was rendered for.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["wakeId", "dispatch", "defer", "asks", "ideaVerdicts", "say", "note", "nextWakeMinutes"],
+  "properties": {
+    "wakeId": { "type": "string", "minLength": 1 },
+    "dispatch": {
+      "type": "array", "maxItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["charterSlug", "reason", "brief", "ideaIds"],
+        "properties": {
+          "charterSlug": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 },
+          "brief": { "type": "string", "minLength": 1, "description": "The task text for the builder: what to do, in this project's terms." },
+          "ideaIds": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "defer": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["charterSlug", "reason"],
+        "properties": { "charterSlug": { "type": "string", "minLength": 1 }, "reason": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "asks": {
+      "type": "array", "maxItems": 3,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["kind", "question", "context", "options"],
+        "properties": {
+          "kind": { "enum": ["scope", "spend", "risk", "goal-conflict", "recipe-failing", "merge-held", "other"] },
+          "question": { "type": "string", "minLength": 1 },
+          "context": { "type": "string" },
+          "options": {
+            "type": "array", "minItems": 2, "maxItems": 4,
+            "items": {
+              "type": "object", "additionalProperties": false,
+              "required": ["label", "action"],
+              "properties": { "label": { "type": "string", "minLength": 1 }, "action": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+    "ideaVerdicts": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["ideaId", "status", "reason"],
+        "properties": {
+          "ideaId": { "type": "string", "minLength": 1 },
+          "status": { "enum": ["accepted", "rejected"] },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "say": { "type": ["string", "null"] },
+    "note": { "type": "string", "minLength": 1, "description": "The coverage note: what this wake covered and left. The next wake's context quotes it." },
+    "nextWakeMinutes": { "type": "integer", "minimum": 10, "maximum": 240 }
+  }
+}
