@@ -504,6 +504,15 @@ pub struct FleetQueueEntry {
     pub skips: u32,
     /// Why THIS entry is not being promoted, when a budget is the reason.
     pub held_by: Option<BudgetHold>,
+    /// The QUEUE LANE this entry is assigned to (`super::lanes`), 1-based;
+    /// `None` is "no lane", never lane 0. Carried so a lane UI can render
+    /// what it just assigned: the snapshot is the only thing an assignment
+    /// command hands back, and without this field the caller of
+    /// `fleet_queue_assign_lanes` could not see its own write.
+    pub lane: Option<u32>,
+    /// The reserved band this entry holds (`super::bands`), for the same
+    /// reason. `None` is "holds no reservation".
+    pub reserved_band: Option<u32>,
 }
 
 /// The queue as the Monitor reads it.
@@ -2015,6 +2024,8 @@ fn build_snapshot_with(
                     gpu: s.admission.charge().gpu,
                     skips: s.admission.skip_count,
                     held_by: view.held_by.get(&s.id).copied(),
+                    lane: s.lane,
+                    reserved_band: s.reserved_band,
                 }
             })
             .collect()
@@ -3661,6 +3672,285 @@ mod tests {
             reg.reserved_band_of(&curator),
             Some(CURATOR_BAND),
             "the column is left alone; the next claim clears it"
+        );
+    }
+
+    // -----------------------------------------------------------------
+    // Queue lanes (`super::super::lanes`) - the ORDERING device, and its
+    // composition with the band above. Not `LanesBoard`'s kanban column and
+    // not the "code path" sense of the word.
+    // -----------------------------------------------------------------
+
+    use crate::commands::fleet::lanes::{
+        lane_rotation, note_lane_served, reset_served_ticks, LANE_TEST_LOCK,
+    };
+
+    /// The rotation is process-wide on purpose, and cargo runs these tests as
+    /// threads in one process, so every lane test holds this.
+    fn lane_guard() -> std::sync::MutexGuard<'static, ()> {
+        let g = LANE_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        reset_served_ticks();
+        g
+    }
+
+    /// Queued rows in declaration order, laned as given. Returns the ids.
+    fn laned_rows(reg: &FleetRegistry, lanes: &[Option<u32>]) -> Vec<String> {
+        let mut ids = Vec::with_capacity(lanes.len());
+        for (i, lane) in lanes.iter().enumerate() {
+            let (id, _) = enqueue_into(reg, &req(&format!("C:/repo/r{i}")), 1_000 + i as i64, 1, 1);
+            assert!(reg.set_lane(&id, *lane));
+            ids.push(id);
+        }
+        ids
+    }
+
+    /// The queued ids in rank order.
+    fn order_of(reg: &FleetRegistry) -> Vec<String> {
+        reg.renumber_queue(&[])
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect()
+    }
+
+    #[test]
+    fn two_lanes_take_turns_in_the_real_queue() {
+        let _guard = lane_guard();
+        let reg = FleetRegistry::default();
+        // Natural order is lane 1's three rows, then lane 2's two.
+        let ids = laned_rows(&reg, &[Some(1), Some(1), Some(1), Some(2), Some(2)]);
+        let ranks = reg.renumber_queue(&[]);
+        assert_eq!(
+            ranks,
+            vec![
+                (ids[0].clone(), 1),
+                (ids[3].clone(), 2),
+                (ids[1].clone(), 3),
+                (ids[4].clone(), 4),
+                (ids[2].clone(), 5),
+            ],
+            "the strands alternate, and each strand keeps its own order"
+        );
+        assert_eq!(
+            ranks.iter().map(|(_, r)| *r).collect::<Vec<_>>(),
+            vec![1, 2, 3, 4, 5],
+            "dense and 1-based, as with no lanes at all"
+        );
+        // An uneven split degrades to the long lane's natural order once the
+        // short one drains: ranks 4 and 5 above are already that, and the
+        // relative order inside lane 1 is untouched.
+        let lane1: Vec<&String> = ranks
+            .iter()
+            .map(|(id, _)| id)
+            .filter(|id| reg.lane_of(id) == Some(1))
+            .collect();
+        assert_eq!(lane1, vec![&ids[0], &ids[1], &ids[2]]);
+    }
+
+    #[test]
+    fn an_unlaned_row_holds_its_exact_position_through_a_lane_assignment() {
+        let _guard = lane_guard();
+        let reg = FleetRegistry::default();
+        let ids = laned_rows(&reg, &[None, None, None, None]);
+        assert_eq!(order_of(&reg), ids, "no lanes, no change");
+        // Two of the four are laned; the other two must not move AT ALL.
+        assert!(reg.set_lane(&ids[0], Some(2)));
+        assert!(reg.set_lane(&ids[3], Some(1)));
+        let after = order_of(&reg);
+        assert_eq!(after[1], ids[1], "an unlaned row keeps its absolute slot");
+        assert_eq!(after[2], ids[2], "an unlaned row keeps its absolute slot");
+        // Lane 1 is served before lane 2 on a fresh rotation, so the two
+        // laned rows swap between the two slots they already occupied.
+        assert_eq!(
+            after,
+            vec![
+                ids[3].clone(),
+                ids[1].clone(),
+                ids[2].clone(),
+                ids[0].clone()
+            ]
+        );
+    }
+
+    #[test]
+    fn a_band_beats_a_lane() {
+        let _guard = lane_guard();
+        // Curator holds band 1 while four rows round-robin behind her.
+        let reg = FleetRegistry::default();
+        let ids = laned_rows(&reg, &[Some(1), Some(2), Some(1), None]);
+        let (curator, _) = enqueue_into(&reg, &req("C:/repo/curator"), 1_100, 1, 1);
+        assert!(reg.claim_band(&curator, CURATOR_BAND).is_some());
+        let ranks = reg.renumber_queue(&[]);
+        assert_eq!(
+            ranks[0],
+            (curator.clone(), 1),
+            "her reserved seat is absolute - a lane cannot round-robin into it"
+        );
+        // And the lanes still took turns among the slots left over: the
+        // unlaned row at natural index 3 never moved, so the three laned rows
+        // alternate 1, 2, 1 in the slots they already held.
+        let behind: Vec<String> = ranks[1..].iter().map(|(id, _)| id.clone()).collect();
+        assert_eq!(
+            behind,
+            vec![
+                ids[0].clone(),
+                ids[1].clone(),
+                ids[2].clone(),
+                ids[3].clone()
+            ]
+        );
+        // Now give lane 2 the turn. The laned rows re-permute; she does not.
+        note_lane_served(1);
+        assert_eq!(lane_rotation(&[Some(1), Some(2)]), vec![2, 1]);
+        let ranks = reg.renumber_queue(&[]);
+        assert_eq!(ranks[0], (curator.clone(), 1), "still hers");
+        assert_eq!(
+            ranks[1].0, ids[1],
+            "lane 2 took the first slot the band left free"
+        );
+        assert_eq!(
+            ranks.iter().map(|(_, r)| *r).collect::<Vec<_>>(),
+            vec![1, 2, 3, 4, 5],
+            "dense through BOTH passes"
+        );
+    }
+
+    #[test]
+    fn a_lane_that_was_just_served_goes_behind_one_that_never_was() {
+        let _guard = lane_guard();
+        let reg = FleetRegistry::default();
+        let ids = laned_rows(&reg, &[Some(1), Some(2), Some(1), Some(2)]);
+        assert_eq!(order_of(&reg)[0], ids[0], "lane 1 first, nobody served");
+        // Lane 1's head is PROMOTED - a row leaving `Queued` through the one
+        // state door is what spends a lane's turn.
+        assert!(reg.adopt_spawn(spawned(&ids[0])));
+        assert_eq!(
+            lane_rotation(&[Some(1), Some(2)]),
+            vec![2, 1],
+            "the door bumped lane 1's served tick"
+        );
+        assert_eq!(order_of(&reg)[0], ids[1], "lane 2's turn now");
+        // Cancellation and expiry spend a turn too - they are the other two
+        // exits from `Queued`, and all three go through the same door.
+        assert_eq!(reg.cancel_queued(&ids[1]), Some(true));
+        assert_eq!(lane_rotation(&[Some(1), Some(2)]), vec![1, 2]);
+        assert!(reg.expire_queued(&ids[2], "waited 24h"));
+        assert_eq!(lane_rotation(&[Some(1), Some(2)]), vec![2, 1]);
+    }
+
+    #[test]
+    fn a_lane_is_invisible_to_the_expiry_reaper_and_to_the_depth_cap() {
+        let _guard = lane_guard();
+        let reg = FleetRegistry::default();
+        let ids = laned_rows(&reg, &[Some(1), Some(2), Some(1)]);
+        reg.renumber_queue(&[]);
+        // What the reaper selects on, in full. The tuple is
+        // `(id, rank, queued_at_ms, not_before_ms)` and this destructuring is
+        // the assertion: a lane added to it would not compile here.
+        for (id, _rank, queued_at_ms, _not_before) in reg.queued_in_order() {
+            assert!(
+                reg.lane_of(&id).is_some(),
+                "every row in this fixture is laned..."
+            );
+            assert!(
+                queued_at_ms >= 1_000,
+                "...and its wait is clocked like everyone else's"
+            );
+        }
+        // The depth cap counts a laned row like any other.
+        assert!(queue_has_room(&reg, 4));
+        assert!(
+            !queue_has_room(&reg, 3),
+            "three waiting rows, all of them laned, fill a cap of three"
+        );
+        // And the reaper's transition is accepted on a laned row.
+        assert!(reg.expire_queued(&ids[0], "waited 24h"));
+        assert_eq!(reg.session_state(&ids[0]), Some(S::Expired));
+        assert_eq!(
+            reg.lane_of(&ids[0]),
+            Some(1),
+            "the column is left alone; an expired row is simply not in the queue"
+        );
+        assert_eq!(order_of(&reg), vec![ids[1].clone(), ids[2].clone()]);
+    }
+
+    #[test]
+    fn lanes_survive_a_restart_through_reconcile_after_restore() {
+        let _guard = lane_guard();
+        // `reconcile_after_restore` renumbers UNCONDITIONALLY at boot, so the
+        // lane has to come back through the durable row and be honoured by
+        // that renumber - and the ROTATION resets to plain lane order, which
+        // is the trade `lanes.rs` documents.
+        let before = FleetRegistry::default();
+        let ids = laned_rows(&before, &[Some(1), Some(2), Some(1), None]);
+        let ranks = before.renumber_queue(&[]);
+        let pool = crate::db::init_test_db().unwrap();
+        {
+            let map = before.sessions.lock().unwrap();
+            for id in &ids {
+                let row = super::super::persist::row_from_inner(map.get(id).unwrap()).unwrap();
+                fleet_sessions::upsert(&pool, &row).unwrap();
+            }
+        }
+        fleet_sessions::renumber_queue(&pool, &ranks).unwrap();
+        // The column round-trip: the lane is on the row, not just in memory.
+        let stored = fleet_sessions::list_queued_ordered(&pool).unwrap();
+        let mut laned: Vec<(String, Option<u32>)> =
+            stored.iter().map(|r| (r.id.clone(), r.lane)).collect();
+        laned.sort();
+        let mut expected = vec![
+            (ids[0].clone(), Some(1)),
+            (ids[1].clone(), Some(2)),
+            (ids[2].clone(), Some(1)),
+            (ids[3].clone(), None),
+        ];
+        expected.sort();
+        assert_eq!(laned, expected);
+        // Boot: rows come back through `persist::inner_from_row` into a fresh
+        // registry, with the rank gaps a restart can leave, and with the
+        // served ticks GONE (a fresh process).
+        reset_served_ticks();
+        let after = FleetRegistry::default();
+        for row in &stored {
+            let mut inner = super::super::persist::inner_from_row(row);
+            inner.queue_rank = inner.queue_rank.map(|r| r * 4);
+            after.insert(inner);
+        }
+        assert_eq!(after.lane_of(&ids[0]), Some(1));
+        assert_eq!(after.lane_of(&ids[3]), None);
+        assert_eq!(
+            after.renumber_queue(&[]),
+            vec![
+                (ids[0].clone(), 1),
+                (ids[1].clone(), 2),
+                (ids[2].clone(), 3),
+                (ids[3].clone(), 4),
+            ],
+            "dense again, the strands intact, the rotation back to plain lane order"
+        );
+    }
+
+    #[test]
+    fn the_snapshot_carries_the_lane_and_the_band_a_caller_just_assigned() {
+        let _guard = lane_guard();
+        // The gap this closes: without these two fields a lane UI reading the
+        // snapshot cannot render what it just wrote.
+        let reg = FleetRegistry::default();
+        let ids = laned_rows(&reg, &[Some(1), None, Some(2)]);
+        assert!(reg.claim_band(&ids[1], CURATOR_BAND).is_some());
+        reg.renumber_queue(&[]);
+        let snap = build_snapshot(&reg, 1, &[], 10_000);
+        let seen: Vec<(String, Option<u32>, Option<u32>)> = snap
+            .entries
+            .iter()
+            .map(|e| (e.session_id.clone(), e.lane, e.reserved_band))
+            .collect();
+        assert_eq!(
+            seen,
+            vec![
+                (ids[1].clone(), None, Some(CURATOR_BAND)),
+                (ids[0].clone(), Some(1), None),
+                (ids[2].clone(), Some(2), None),
+            ]
         );
     }
 }

@@ -4615,6 +4615,10 @@
           "reason": "RUNNING is a keyed single-flight guard over an in-process consolidation pass — an RAII CycleKey inserts on acquire and removes on Drop, so it is never a one-way latch and never a record of what was already EMITTED (the emission/dedupe decisions live durably in persona_attention_ledger rows). Same leaf as team_assignment_orchestrator.rs's LIVE above: idempotent-invocation, not a suppression ledger over an emission - hand-verified 2026-09-01"
         },
         {
+          "path": "src-tauri/src/commands/fleet/lanes.rs",
+          "reason": "LANE_SERVED is a FAIRNESS ROTATION, not a suppression ledger: its tick decides the ORDER in which queue lanes take their turns inside renumber_queue, never whether to emit something a second time, so none of the rule's three harms can apply. It is not a one-way latch (a tick is overwritten on every service event) and it is bounded at MAX_LANE = 8 keys; renumber_queue is by construction the only evaluator, so there is no second one to be blind to it; and a restart resetting the rotation to plain lane order is CORRECT rather than a lost suppression window - the strand assignment itself is durable in fleet_sessions.lane, and the first completion in each lane re-establishes the real order. Same leaf as sleep_cycle.rs's RUNNING and driver.rs's watched() below: in-process coordination, not a record of what was EMITTED. The module header states the volatility and the trade at length - hand-verified 2026-10-05"
+        },
+        {
           "path": "src-tauri/src/commands/contest/driver.rs",
           "reason": "watched() is a keyed single-flight guard over in-process seat WATCHER TASKS (a session id is inserted when its watcher is spawned and removed when that task ends), so it is never a one-way latch and never a record of what was EMITTED; the durable record of which seat run was finalised is app.json recordedSessions. A restart kills the watchers, so resetting with the process is correct. Same leaf as team_assignment_orchestrator.rs's LIVE: idempotent-invocation - hand-verified 2026-09-24"
         }

@@ -731,6 +731,18 @@ fn transition_inner(
     }
     session.state = to;
     TRANSITIONS_APPLIED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    // A QUEUE LANE's turn is spent HERE, at the one state door, because this
+    // is the single seam every exit from `Queued` passes through — promotion
+    // (`→ Spawning`), cancellation (`→ Exited`) and expiry (`→ Expired`).
+    // Bumping from `promote_head` instead would miss the other two, and a
+    // lane whose rows were all cancelled would keep its turn forever. Note
+    // this is the QUEUE lane (`super::lanes`), not the "code path" sense of
+    // the word this very module's header uses.
+    if from == FleetSessionState::Queued {
+        if let Some(queue_lane) = session.lane {
+            super::lanes::note_lane_served(queue_lane);
+        }
+    }
     // Wake anyone blocked on a state condition HERE rather than at each caller's
     // emit — a transition that reaches the registry can no longer skip the wake
     // by taking a lane that emits `registry-changed` instead of `session-state`
@@ -1000,6 +1012,20 @@ impl FleetRegistry {
     /// whole design (migration e37 retired an operator-written GLOBAL
     /// dispatch rank for being a second order; read it before touching this).
     ///
+    /// **A queued row carrying a `lane` round-robins with the other lanes**
+    /// before the bands are seated — see [`super::lanes::place_lanes`] for
+    /// the strand semantics and the edge cases. The composition is
+    /// `natural order → place_lanes → place_reserved_bands`, in that order
+    /// and for the reason stated at the call site: bands last, so a band
+    /// still wins. Both passes are PERMUTATIONS, so there is still exactly
+    /// one ranker, one comparison, and one dense 1-based order.
+    ///
+    /// One consequence worth naming: a drag-and-drop `order` that moves a
+    /// LANED row may be re-permuted by the lane pass, because a lane is a
+    /// statement about which rows are mutually sequential and the operator
+    /// made it second. Dragging an unlaned row is unaffected — an unlaned
+    /// row never moves in the lane pass at all.
+    ///
     /// The placement itself is [`place_reserved_bands`], which is pure and
     /// carries the edge cases.
     pub fn renumber_queue(&self, order: &[String]) -> Vec<(String, u32)> {
@@ -1032,14 +1058,29 @@ impl FleetRegistry {
             .into_iter()
             .chain(rest.into_iter().map(|(id, _, _)| id.clone()))
             .collect();
+        // LANES FIRST, THEN BANDS — the composition order is the whole
+        // safety argument and it is stated at the call site rather than left
+        // to the reader. Lanes permute the natural order among themselves;
+        // the band then takes its reserved seat in whatever order came out,
+        // so **a band always beats a lane** and Curator cannot be pushed out
+        // of her seat by a strand that happens to round-robin into it.
+        // Reversing these two lines would let the lane pass re-shuffle a
+        // seated row. Both passes are permutations, so `i + 1` below stays
+        // dense whichever rows moved.
+        let lanes: Vec<Option<u32>> = natural_order
+            .iter()
+            .map(|id| map.get(id).and_then(|s| s.lane))
+            .collect();
+        let rotation = super::lanes::lane_rotation(&lanes);
+        let laned_order = super::lanes::place_lanes(natural_order, &lanes, &rotation);
         // The band each queued row holds, in the order above. Read while the
         // lock is held and immediately handed to a pure function, so the
         // placement rule is testable without a registry.
-        let bands: Vec<Option<u32>> = natural_order
+        let bands: Vec<Option<u32>> = laned_order
             .iter()
             .map(|id| map.get(id).and_then(|s| s.reserved_band))
             .collect();
-        let final_order = place_reserved_bands(natural_order, &bands);
+        let final_order = place_reserved_bands(laned_order, &bands);
         let mut out = Vec::with_capacity(final_order.len());
         for (i, id) in final_order.iter().enumerate() {
             let rank = i as u32 + 1;
@@ -1273,6 +1314,32 @@ impl FleetRegistry {
             changed.push(session_id.to_string());
         }
         Some(changed)
+    }
+
+    /// Is this id one the registry tracks at all?
+    ///
+    /// Separate from [`Self::lane_of`] because for a BULK writer the two
+    /// facts are not the same: "unknown session" must refuse the whole batch
+    /// before anything is written, while "known, holds no lane" is an
+    /// ordinary row to assign. A reader that conflates them would report
+    /// success for an id that does not exist.
+    pub fn has_session(&self, session_id: &str) -> bool {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.contains_key(session_id)
+    }
+
+    /// The QUEUE LANE a session is assigned to right now — `None` for an
+    /// unknown session and for one in no lane. See [`super::lanes`]; this is
+    /// the strand, not a state bucket and not a code path.
+    ///
+    /// **Test-only** for now: production reads the field under the lock it
+    /// already holds (`renumber_queue`, `build_snapshot_with`), so a public
+    /// accessor would be a second lock acquisition and an unadopted
+    /// primitive. Drop the attribute the day a caller appears.
+    #[cfg(test)]
+    pub fn lane_of(&self, session_id: &str) -> Option<u32> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(session_id).and_then(|s| s.lane)
     }
 
     /// The band a session holds right now — `None` for an unknown session and

@@ -307,6 +307,7 @@ pub(super) fn shard(
         commands::fleet::queue::fleet_queue_cancel,
         commands::fleet::queue::fleet_queue_start_now,
         commands::fleet::queue_lanes::fleet_queue_set_lane,
+        commands::fleet::queue_lanes::fleet_queue_assign_lanes,
         commands::fleet::queue_lanes::fleet_queue_reserve_band,
         commands::fleet::transcript_read::fleet_read_transcript,
         commands::fleet::transcript_read::fleet_recent_transcripts,

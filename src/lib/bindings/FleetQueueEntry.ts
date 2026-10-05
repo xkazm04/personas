@@ -27,4 +27,17 @@ skips: number,
 /**
  * Why THIS entry is not being promoted, when a budget is the reason.
  */
-heldBy: BudgetHold | null, };
+heldBy: BudgetHold | null, 
+/**
+ * The QUEUE LANE this entry is assigned to (`super::lanes`), 1-based;
+ * `None` is "no lane", never lane 0. Carried so a lane UI can render
+ * what it just assigned: the snapshot is the only thing an assignment
+ * command hands back, and without this field the caller of
+ * `fleet_queue_assign_lanes` could not see its own write.
+ */
+lane: number | null, 
+/**
+ * The reserved band this entry holds (`super::bands`), for the same
+ * reason. `None` is "holds no reservation".
+ */
+reservedBand: number | null, };

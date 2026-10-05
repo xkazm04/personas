@@ -701,6 +701,7 @@ export type { LabToolCall } from "./LabToolCall";
 export type { LabUserRating } from "./LabUserRating";
 export type { LabVersionEconomics } from "./LabVersionEconomics";
 export type { LabVersionRating } from "./LabVersionRating";
+export type { LaneAssignment } from "./LaneAssignment";
 export type { LearnedMemoryRef } from "./LearnedMemoryRef";
 export type { LedgerAnomalyScore } from "./LedgerAnomalyScore";
 export type { LedgerHealthEntry } from "./LedgerHealthEntry";

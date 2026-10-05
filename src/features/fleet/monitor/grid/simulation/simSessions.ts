@@ -198,6 +198,11 @@ export function buildSimQueueSnapshot(sessions: readonly FleetSession[], now = D
     machineUnits: 1,
     planUnits: 2,
     gpu: 'none',
+    // The rehearsal fleet uses neither overlay: no operator has assigned a
+    // strand to it and no companion holds a seat in it. Both fields are
+    // nullable precisely so "not in a lane" is a different fact from lane 0.
+    lane: null,
+    reservedBand: null,
     skips: 0,
     heldBy: null,
   }));
