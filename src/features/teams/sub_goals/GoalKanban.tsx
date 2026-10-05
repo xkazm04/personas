@@ -13,6 +13,7 @@ import type { DevGoalItem } from '@/lib/bindings/DevGoalItem';
 import * as devApi from '@/api/devTools/devTools';
 import { GOAL_STATUSES, GOAL_STATUS_META, isAwaitingAcceptance, normalizeGoalStatus, type GoalLane, type GoalStatus } from './goalStatus';
 import GoalCard from './GoalCard';
+import { orderGoalsByProjectThenDeadline, projectRunHeads } from './goalChronology';
 
 /** Cards in the first viewport of a lane that play the one-shot entrance
  *  cascade when a fresh result set lands (35ms stagger via RevealItem,
@@ -147,8 +148,16 @@ export default function GoalKanban({
     () => (showDone ? LANE_CHROME : LANE_CHROME.filter((l) => l.id !== 'done')),
     [showDone],
   );
+  // Ordered, not just filtered. The Timeline view used to be the only place a
+  // goal's DEADLINE affected what you saw; it was retired into this board
+  // (2026-10-05), so the board carries its sense: inside every lane, goals group
+  // by project and run most-urgent-first (`goalChronology`). `KanbanBoard`
+  // buckets by status while preserving input order, so sorting here is all it
+  // takes for each lane to come out chronological.
   const visibleGoals = useMemo(
-    () => (showDone ? goals : goals.filter((g) => normalizeGoalStatus(g.status) !== 'done')),
+    () => orderGoalsByProjectThenDeadline(
+      showDone ? goals : goals.filter((g) => normalizeGoalStatus(g.status) !== 'done'),
+    ),
     [goals, showDone],
   );
 
@@ -192,6 +201,20 @@ export default function GoalKanban({
       }
     }
     return map;
+  }, [columns, visibleGoals]);
+
+  // Which cards start a new project run INSIDE their own lane. Computed per lane
+  // against the same status bucketing the board applies, because a goal that
+  // leads its project in one lane need not lead it in another. A lane holding a
+  // single project gets no heads at all, so a single-project board stays exactly
+  // as clean as it was.
+  const projectHeadIds = useMemo(() => {
+    const heads = new Set<string>();
+    for (const col of columns) {
+      const lane = visibleGoals.filter((g) => col.statuses.includes(normalizeGoalStatus(g.status)));
+      for (const id of projectRunHeads(lane)) heads.add(id);
+    }
+    return heads;
   }, [columns, visibleGoals]);
 
   const handleMove = useCallback(
@@ -256,6 +279,7 @@ export default function GoalKanban({
       fallbackColumnId="your_turn"
       renderCard={(g) => {
         const order = orderByGoalId.get(g.id) ?? 0;
+        const runHead = projectHeadIds.has(g.id) ? projectNameById.get(g.project_id) : undefined;
         return (
           <RevealItem
             revealId={g.id}
@@ -263,6 +287,9 @@ export default function GoalKanban({
             hasEntered={(id) => order >= CASCADE_CARDS || enter.hasEntered(id)}
             markEntered={enter.markEntered}
           >
+            {runHead && (
+              <p className="typo-caption px-1 pt-1 pb-0.5 truncate">{runHead}</p>
+            )}
             <GoalCard
               goal={g}
               items={itemsByGoal.get(g.id) ?? []}

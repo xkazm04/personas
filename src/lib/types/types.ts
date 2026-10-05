@@ -412,7 +412,7 @@ export type SidebarSection = "home" | "overview" | "teams" | "personas" | "event
 // it lives at `companions` -> `curator:council` now.
 export type TeamsTab = "workspace" | "goals" | "kpis" | "factory" | "projects" | "lifecycle" | "contest" | "mastermind" | "features" | "whitelist" | "webview";
 export type HomeTab = "welcome" | "cockpit" | "roadmap" | "system-check" | "learning";
-export type GoalsTab = "board" | "timeline" | "progress" | "missions";
+export type GoalsTab = "board" | "progress";
 /** Sub-view within the KPIs hub — surfaced as sidebar sub-items (mirrors GoalsTab). */
 export type KpisTab = "dashboard" | "proposals";
 export type EditorTab = "activity" | "matrix" | "use-cases" | "lab" | "settings" | "chat" | "design" | "assertions";

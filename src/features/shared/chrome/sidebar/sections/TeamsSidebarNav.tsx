@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Radio, Gauge, Inbox, Factory, FolderKanban, GitBranch, Trophy, Network, Layers, ShieldCheck, Globe, PenTool } from 'lucide-react';
+import { Target, LayoutDashboard, ChartNoAxesGantt, Gauge, Inbox, Factory, FolderKanban, GitBranch, Trophy, Network, Layers, Server, Globe, PenTool } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
@@ -30,14 +30,12 @@ import type { TeamsTab, GoalsTab, KpisTab } from '@/lib/types/types';
  *   origins agents may drive, and the embedded Webview they drive them in. See
  *   BROWSER_ITEMS and docs/features/browser.md.
  */
-const GOAL_VIEWS: Array<{ id: GoalsTab; icon: typeof LayoutDashboard; labelKey: 'goal_view_board' | 'goal_view_timeline' | 'goal_view_progress' | 'goal_view_missions' }> = [
+const GOAL_VIEWS: Array<{ id: GoalsTab; icon: typeof LayoutDashboard; labelKey: 'goal_view_board' | 'goal_view_progress' }> = [
+  // Two views (2026-10-05). Timeline folded into the Board, which now orders
+  // every lane by deadline and prints the date on the card; Missions was a
+  // Teams concern (assignments with no goal) wearing a Goals tab.
   { id: 'board', icon: LayoutDashboard, labelKey: 'goal_view_board' },
-  { id: 'timeline', icon: CalendarClock, labelKey: 'goal_view_timeline' },
   { id: 'progress', icon: ChartNoAxesGantt, labelKey: 'goal_view_progress' },
-  // Missions — the ad-hoc assignments the Assign flow creates with `goalId:
-  // null`. They belong to no goal, so board/timeline/progress (all goal-keyed)
-  // cannot show them at all; without this view they are invisible.
-  { id: 'missions', icon: Radio, labelKey: 'goal_view_missions' },
 ];
 
 // KPI hub sub-views — sidebar sub-items mirroring GOAL_VIEWS. Labels reuse the
@@ -86,7 +84,7 @@ const BROWSER_ITEMS: Array<{
   labelKey: 'whitelist' | 'webview';
   testId: string;
 }> = [
-  { id: 'whitelist', icon: ShieldCheck, labelKey: 'whitelist', testId: 'teams-whitelist-nav' },
+  { id: 'whitelist', icon: Server, labelKey: 'whitelist', testId: 'teams-whitelist-nav' },
   { id: 'webview', icon: Globe, labelKey: 'webview', testId: 'teams-webview-nav' },
 ];
 

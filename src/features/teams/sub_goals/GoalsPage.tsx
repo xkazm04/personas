@@ -14,10 +14,8 @@ import { LifecycleProjectPicker } from '@/features/plugins/dev-tools/sub_lifecyc
 import { usePickerScope, inPickerScope } from '@/features/plugins/dev-tools/sub_workspaces/usePickerScope';
 import GoalConstellation from './GoalConstellation';
 import { GoalEditorModal } from './GoalEditorModal';
-import { GoalsTimeline } from './GoalsTimeline';
 import { GoalsProgress } from './GoalsProgress';
 import { GoalViewExplainer } from './GoalViewExplainer';
-import { GoalsMissions } from './GoalsMissions';
 import { isComplete } from './goalStatus';
 
 /** Board preference: whether the Done lane is visible. Hidden by default so
@@ -151,22 +149,18 @@ export default function GoalsPage() {
       />
 
       <ContentBody>
-        {/* MISSIONS is the one view that is not keyed on a goal: the Assign flow
-            creates team assignments with `goalId: null`, so every goal-keyed
-            branch below (board / timeline / progress) is structurally blind to
-            them. It therefore branches ABOVE the goals-empty hero too — a
-            project with zero goals can still have running missions. */}
-        {goalsTab === 'missions' ? (
-          <GoalsMissions />
-        ) : goalsTab === 'progress' ? (
+        {/* Two views, down from four (2026-10-05).
+            MISSIONS is gone: it showed the ad-hoc team assignments the Assign
+            flow creates with `goalId: null`, which is a TEAMS concern wearing a
+            Goals tab - it was the one branch here not keyed on a goal, and it
+            had to sit above the goals-empty hero for that reason alone.
+            TIMELINE is gone too, folded into the Board rather than deleted: its
+            deadline sense is now the Board's own ordering and the due date it
+            puts on every card (`goalChronology`, `GoalCard`). */}
+        {goalsTab === 'progress' ? (
           <div className="space-y-3">
             <GoalViewExplainer key="progress" view="progress" text={dl.goal_explainer_progress} />
             <GoalsProgress projectScope={scope} />
-          </div>
-        ) : goalsTab === 'timeline' ? (
-          <div className="space-y-3">
-            <GoalViewExplainer key="timeline" view="timeline" text={dl.goal_explainer_timeline} />
-            <GoalsTimeline showProject={crossProject} projectScope={scope} />
           </div>
         ) : goalsLoading && goals.length === 0 ? (
           /* Cold first visit: goals fetch in flight, store still empty. A

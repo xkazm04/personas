@@ -14,6 +14,8 @@ import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevGoalItem } from '@/lib/bindings/DevGoalItem';
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import { useTranslation } from '@/i18n/useTranslation';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { kpiTrack } from '../sub_kpis/kpiMath';
 import { TRACK_COLOR } from '../sub_kpis/kpiMeta';
 import { goalStatusMeta, isAwaitingAcceptance, isOngoing } from './goalStatus';
@@ -116,10 +118,21 @@ export default function GoalCard({ goal, items, projectName, kpi, onOpen, onAcce
           </span>
         )}
 
-        {overdue && (
-          <span title="Overdue" className="shrink-0">
-            <Clock className="w-3 h-3 text-red-400" />
-          </span>
+        {/* The DEADLINE, not just a warning that one passed.
+            Until 2026-10-05 this was a bare clock icon with a hardcoded English
+            `title="Overdue"`, and the date itself appeared nowhere on the board
+            - you had to switch to the Timeline view to find out WHEN a goal was
+            due. That view is gone and its information lives here: the relative
+            date always, tinted when it is past. `Tooltip` rather than `title=`
+            (`native-title-tooltip`), and the label reuses the retired view's own
+            key rather than inventing one. */}
+        {goal.target_date && isOngoing(goal.status) && (
+          <Tooltip content={overdue ? t.plugins.dev_lifecycle.timeline_overdue_group : t.plugins.dev_lifecycle.goal_field_target_date}>
+            <span className={`inline-flex items-center gap-1 typo-caption tabular-nums shrink-0 ${overdue ? 'text-status-error' : 'text-foreground'}`}>
+              <Clock className="w-3 h-3" aria-hidden />
+              <RelativeTime timestamp={goal.target_date} />
+            </span>
+          </Tooltip>
         )}
 
         <span className="text-[11px] text-foreground tabular-nums w-9 text-right shrink-0">{pct}%</span>

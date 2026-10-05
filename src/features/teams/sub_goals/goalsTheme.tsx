@@ -7,8 +7,7 @@
  * Goals surface (Board · Map · Timeline) composes from these so the look
  * stays cohesive and a tweak is a one-file edit.
  */
-import type { CSSProperties, ReactNode } from 'react';
-import { FolderKanban } from 'lucide-react';
+import type { CSSProperties } from 'react';
 import { goalStatusMeta } from './goalStatus';
 
 /**
@@ -45,40 +44,3 @@ export function GoalAtmosphere({ className = '' }: { className?: string }) {
   );
 }
 
-/**
- * Project-origin chip — shown on Board cards / Timeline rows in the
- * cross-project ("All projects") scope so each goal carries which project it
- * belongs to. Hidden in single-project scope (redundant).
- */
-export function GoalProjectBadge({ name, className = '' }: { name: string; className?: string }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1 max-w-[140px] px-1.5 py-0.5 rounded-full border border-primary/15 bg-primary/5 text-[10px] text-foreground ${className}`}
-      title={name}
-    >
-      <FolderKanban className="w-2.5 h-2.5 shrink-0 text-violet-400" />
-      <span className="truncate">{name}</span>
-    </span>
-  );
-}
-
-/** Section header: a short status-neutral accent bar + uppercase tracking label. */
-export function SectionLabel({
-  children,
-  accent = 'bg-primary/50',
-  count,
-}: {
-  children: ReactNode;
-  accent?: string;
-  count?: number;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className={`h-3 w-0.5 rounded-full ${accent}`} />
-      <h3 className="typo-caption uppercase tracking-[0.18em] text-foreground">{children}</h3>
-      {count !== undefined && (
-        <span className="typo-caption text-foreground tabular-nums">{count}</span>
-      )}
-    </div>
-  );
-}
