@@ -28,6 +28,7 @@ import { KIT_TILES_MODULES } from './kitTiles';
 import { ATHENA_TABLE_MODULES } from './athenaTableSurfaces';
 import { TWIN_BLUEPRINT_MODULES } from './twinBlueprintSurfaces';
 import { TWIN_DETAIL_MODULES } from './twinDetailSurfaces';
+import { MISSION_CONTROL_MODULES } from './missionControlSurfaces';
 import { ACTIVITY_MODULES } from './activitySurfaces';
 import { INBOX_MODULES } from './inboxSurfaces';
 
@@ -98,6 +99,8 @@ export const MODULES: Record<string, HarnessModule> = {
   ...TWIN_BLUEPRINT_MODULES,
   // The integrated Twin Detail page and training overlay (twinDetailSurfaces.tsx, twinDetailTapes.mjs).
   ...TWIN_DETAIL_MODULES,
+  // Overview > Mission Control (missionControlSurfaces.tsx, missionControlTapes.mjs).
+  ...MISSION_CONTROL_MODULES,
   // Probes for `shoot.mjs --self-test`: each must make the shooter exit non-zero.
   '__selftest/empty': {
     load: async () => ({ default: () => <div /> }),

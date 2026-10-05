@@ -3,6 +3,7 @@ import {
   Brain,
   ChevronLeft,
   ChevronRight,
+  Plug,
   Plus,
   Settings,
   Wrench,
@@ -68,8 +69,11 @@ export function AthenaToolbar(props: {
    * it), its own surface classes, connector menus that open to the right
    * instead of off-screen, and enabled connectors moved into a second narrow
    * rail attached to the primary one's right edge.
+   *
+   * `single` is `left` with ONE column guaranteed: the connectors never ride
+   * in the rail, a single button opens them as a secondary column to its left.
    */
-  dock?: 'panel' | 'left';
+  dock?: 'panel' | 'left' | 'single';
   /** Root surface classes when `dock="left"`. */
   className?: string;
 } = {}) {
@@ -100,6 +104,7 @@ export function AthenaToolbar(props: {
   const addToast = useToastStore((s) => s.addToast);
 
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [connectorsOpen, setConnectorsOpen] = useState(false);
 
   // Hydrate connectors + plugin toggles once on mount.
   useEffect(() => {
@@ -154,7 +159,7 @@ export function AthenaToolbar(props: {
   const renderConnector = (c: (typeof connectors)[number]) => (
     <ConnectorIconButton
       key={c.connectorName}
-      menuSide={dock === 'left' ? 'right' : 'left'}
+      menuSide={dock === 'panel' ? 'left' : 'right'}
       name={c.connectorName}
       enabled={c.enabled}
       onToggle={async () => {
@@ -196,13 +201,16 @@ export function AthenaToolbar(props: {
   );
 
   const enabledConnectors = dock === 'left' ? connectors.filter((c) => c.enabled) : [];
+  // `single` keeps the rail to ONE column: the connectors do not ride in it at
+  // all, they open as a secondary column beside it (see `connectorColumn`).
+  const single = dock === 'single';
 
   const primary = (
     <aside
       className={
-        dock === 'left'
-          ? `relative shrink-0 w-11 flex flex-col items-center py-3 gap-1.5 ${props.className ?? ''}`
-          : 'relative shrink-0 w-11 border-l border-foreground/10 flex flex-col items-center py-3 gap-1.5 bg-foreground/[0.02]'
+        dock === 'panel'
+          ? 'relative shrink-0 w-11 border-l border-foreground/10 flex flex-col items-center py-3 gap-1.5 bg-foreground/[0.02]'
+          : `relative shrink-0 w-11 flex flex-col items-center py-3 gap-1.5 ${props.className ?? ''}`
       }
       aria-label={t.athena.toolbar_label}
       data-testid="companion-toolbar"
@@ -254,15 +262,29 @@ export function AthenaToolbar(props: {
 
       <Divider />
 
-      {/* Connectors group. Docked left, the enabled ones move to the attached
-          second rail; only the pinned-but-off ones stay here. */}
-      {(dock === 'left' ? connectors.filter((c) => !c.enabled) : connectors).map(renderConnector)}
-      <ToolbarButton
-        icon={<Plus className="w-4 h-4" />}
-        label={t.athena.connectors_add}
-        onClick={() => setPickerOpen(true)}
-        testId="companion-connectors-add"
-      />
+      {/* Connectors group. `single` keeps them OUT of the rail entirely — one
+          button opens them as a column beside it. Docked left, the enabled
+          ones move to the attached second rail; only the pinned-but-off ones
+          stay here. */}
+      {single ? (
+        <ToolbarButton
+          icon={<Plug className="w-4 h-4" />}
+          label={t.athena.connectors_section_label}
+          onClick={() => setConnectorsOpen((v) => !v)}
+          active={connectorsOpen}
+          testId="companion-connectors-column"
+        />
+      ) : (
+        <>
+          {(dock === 'left' ? connectors.filter((c) => !c.enabled) : connectors).map(renderConnector)}
+          <ToolbarButton
+            icon={<Plus className="w-4 h-4" />}
+            label={t.athena.connectors_add}
+            onClick={() => setPickerOpen(true)}
+            testId="companion-connectors-add"
+          />
+        </>
+      )}
 
       <Divider />
 
@@ -295,6 +317,33 @@ export function AthenaToolbar(props: {
       />
     </aside>
   );
+
+  // One column: the quick actions stay the rail, and the connectors open as a
+  // secondary column on its LEFT — so the order reads connectors-then-actions
+  // toward the screen's edge, and the rail never becomes two rails.
+  if (single) {
+    return (
+      <div className="flex items-stretch gap-1.5">
+        {connectorsOpen && (
+          <div
+            className="shrink-0 w-11 flex flex-col items-center py-3 gap-1.5"
+            aria-label={t.athena.connectors_section_label}
+            role="group"
+            data-testid="companion-toolbar-connector-column"
+          >
+            {connectors.map(renderConnector)}
+            <ToolbarButton
+              icon={<Plus className="w-4 h-4" />}
+              label={t.athena.connectors_add}
+              onClick={() => setPickerOpen(true)}
+              testId="companion-connectors-add"
+            />
+          </div>
+        )}
+        {primary}
+      </div>
+    );
+  }
 
   if (dock !== 'left' || enabledConnectors.length === 0) return primary;
 

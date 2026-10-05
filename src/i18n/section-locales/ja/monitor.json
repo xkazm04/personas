@@ -976,5 +976,21 @@
   "triage_dispatch_unassigned_note": "未割り当ての案は、最初に空いたレーンで実行されます。",
   "triage_dispatch_unpin": "{title} の固定を解除",
   "triage_dispatch_unpinned_count": "未割り当て {count} 件",
-  "triage_dispatch_work_heading": "送信する内容"
+  "triage_dispatch_work_heading": "送信する内容",
+  "grid_dock_athena_failed": "ランは送信されましたが、Athenaには渡されていません。それでも引き継がせたい場合は、セッションのメニューからフラグを付けてください。",
+  "grid_dock_athena_label": "このランをAthenaに任せる",
+  "grid_dock_athena_off": "オフ：このランはあなたのものです。Athenaは触れる前に確認します。",
+  "grid_dock_athena_on": "オン：Athenaがこのランを引き継ぎます。応答、介入、復帰に加えて、終わったらプロセスの終了まで、あなたに確認せず自分で行えます。",
+  "grid_dock_athena_unseen": "Athenaはこのランを受け取っていません。対応するセッションが現れませんでした。もし開始していたら、そのメニューからフラグを付けてください。",
+  "grid_dock_landing_ahead": "{count}件の前",
+  "grid_dock_landing_aria": "このディスパッチがキューのどこに入るか",
+  "grid_dock_landing_caveat": "直近のキュースナップショットの読み取りであり、確約ではありません。予算の保留があればなお待つことがあります。",
+  "grid_dock_landing_room": "空きあり",
+  "grid_dock_landing_tip_ahead": "{count}件が待機中ですが、フリートは上限に達していないため、ゲートはこれを先に開始できます。追い越した行ごとにスキップが記録され、待ちすぎた行があると追い越しは止まります。",
+  "grid_dock_landing_tip_room": "{cap}スロット中{running}使用中で、待機はありません。",
+  "grid_dock_landing_tip_unknown": "キューはまだ読み込まれていません。",
+  "grid_dock_landing_tip_wait": "{cap}スロットすべてが使用中のため、キュー末尾の{position}番目に入ります。",
+  "grid_dock_landing_unknown": "読み取りなし",
+  "grid_dock_landing_wait": "{position}番目で待機",
+  "grid_dock_athena_remote": "ペアリング済みデバイスでの実行では利用できません。そのセッションは別のマシン上にあり、このフリートには属しません。"
 }

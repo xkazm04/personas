@@ -20,6 +20,16 @@
 import type { ComponentType } from 'react';
 import type { ProjectColumn } from '../useProcessColumns';
 import type { WorkItem } from '../useWorkforce';
+import type { AthenaChatEngine } from '../../athenaChatEngine';
+import type { FrameLook } from './frameLook';
+
+export interface TopProps {
+  look: FrameLook;
+  engine: AthenaChatEngine;
+  expanded: boolean;
+  onExpand: () => void;
+  onOpenWaiting: () => void;
+}
 
 export interface RightPanelProps {
   columns: ProjectColumn[];
@@ -40,6 +50,10 @@ export interface DecisionStageProps {
 export interface HaloSlots {
   id: 'base' | 'a' | 'b' | 'c';
   label: string;
+  /** The wrapper surface for the top/bottom/left/center pieces (`VariantFrame`). */
+  look: FrameLook;
+  /** The top piece's own content. Defaults to the shared `FrameTop` when omitted. */
+  Top?: ComponentType<TopProps>;
   RightPanel: ComponentType<RightPanelProps>;
   DecisionStage: ComponentType<DecisionStageProps>;
 }

@@ -27,6 +27,23 @@
 //     rates are real published prices; the token volume is a heuristic, and the
 //     gauge says so in its tooltip rather than posing as a quote.
 //   · IS IT READY — STANDBY flips to ARMED, and the rail above quickens.
+//   · WHERE IN THE LINE — added 2026-10-05, because the operator believed a
+//     manual dispatch "always goes to last queue position" and the dock said
+//     nothing either way. It does go to the tail WHEN IT QUEUES
+//     (`queue.rs::enqueue_into` ranks at `max + 1`), but under the cap the
+//     admission door starts it at once, ahead of whatever is waiting, and
+//     calls that a backfill. `dockLanding.ts` holds what this reading is
+//     allowed to claim; read it before changing a word of the pill.
+//
+// ## And one control that is not a reading: the Athena grant
+//
+// `DockAthenaToggle` arms Athena's hold BEFORE the launch, and the grant is
+// written onto whatever the dispatch becomes — a started session or a queued
+// row, both of which exist in the registry by the time the door returns. The
+// watcher and the reason it is a watcher are in `dockAthenaGrant.ts`. If the
+// dispatch lands and the grant does not, that is TOLD: a running session the
+// operator believes Athena owns is the one state this feature must never
+// produce quietly.
 //
 // The resting row was the one dimension this variant scored worst on, and the
 // fix came from a rival entry the owner also saw: permanent chrome must pay
@@ -57,8 +74,14 @@ import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
+import { toastCatch } from '@/lib/silentCatch';
+import { setSessionAthenaFlag } from '@/api/fleet/fleet';
 import { RunOnSelect } from '@/features/shared/dispatch/RunOnSelect';
 import { laneOfState } from '@/features/plugins/fleet/fleetStateMeta';
+import { DockAthenaToggle } from './DockAthenaToggle';
+import { DockLandingPill } from './DockLandingPill';
+import { dockLanding } from './dockLanding';
+import { grantAthenaToDispatch } from './dockAthenaGrant';
 import { DockPresetSelect } from './DockPresetSelect';
 import { DockSkillPicker } from './DockSkillPicker';
 import { estimateDispatch, formatEstimateCost, formatEstimateMinutes } from './dockEstimate';
@@ -97,6 +120,9 @@ export function QuickDispatchDock() {
   const [expanded, setExpanded] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [firing, setFiring] = useState(false);
+  // Armed, not applied: the grant is a decision about the dispatch that has not
+  // happened yet, and it is written only once a session exists to write it to.
+  const [athenaArmed, setAthenaArmed] = useState(false);
   const closePicker = useCallback(() => setPickerOpen(false), []);
   const fieldRef = useRef<HTMLTextAreaElement>(null);
 
@@ -132,6 +158,10 @@ export function QuickDispatchDock() {
   // board above renders. Bare selector, no `useShallow` — a refetched list holds
   // fresh objects anyway (the controller documents the same deviation).
   const sessions = useSystemStore((s) => s.fleetSessions);
+  // The queue as the Monitor already reads it (`useQueuePoll` + the
+  // `fleet-queue-changed` listener own the freshness; the dock only reads).
+  const queue = useSystemStore((s) => s.fleetQueue);
+  const landing = useMemo(() => dockLanding(queue), [queue]);
   const tally = useMemo(() => {
     let needsYou = 0;
     let working = 0;
@@ -163,8 +193,42 @@ export function QuickDispatchDock() {
     setFiring(true);
     if (flareTimer.current !== null) window.clearTimeout(flareTimer.current);
     flareTimer.current = window.setTimeout(() => setFiring(false), 600);
-    void c.handleSubmit();
-  }, [c]);
+    // Read BEFORE the door opens: which sessions already existed, and where
+    // this one is aimed. `grantAthenaToDispatch` takes the difference.
+    const cwd = c.projectChip?.root_path ?? null;
+    const before = new Set(useSystemStore.getState().fleetSessions.map((s) => s.id));
+    const wantAthena = athenaArmed;
+    const remote = c.runOn !== null;
+    void (async () => {
+      await c.handleSubmit();
+      // A remote dispatch creates no session in THIS fleet, so there is
+      // nothing here that could hold the grant; the control is disabled for
+      // it, and this is the second half of the same fact.
+      if (!wantAthena || !cwd || remote) return;
+      const outcome = await grantAthenaToDispatch({
+        cwd,
+        before,
+        sessions: () => useSystemStore.getState().fleetSessions,
+        flag: setSessionAthenaFlag,
+      });
+      if (outcome.problem === 'none') return;
+      // THE FAILURE THAT MATTERS. A dispatch that ran while the operator
+      // believes Athena owns it is worse than no feature at all, so a grant
+      // that did not land is TOLD, loudly, and names the manual way out. It
+      // is a toast rather than the dock's inline slot because the inline slot
+      // is a fixed-height swap the shared meta line owns, and because the
+      // operator has usually moved on by the time the watch window closes.
+      // `unseen` stays neutral about whether the dispatch itself started: the
+      // controller reports that failure on its own, and this message must not
+      // contradict it either way.
+      toastCatch(
+        'fleet/dock:athena-grant',
+        outcome.problem === 'unseen'
+          ? t.monitor.grid_dock_athena_unseen
+          : t.monitor.grid_dock_athena_failed,
+      )(new Error(`athena grant ${outcome.problem} for dispatch at ${cwd}`));
+    })();
+  }, [c, athenaArmed, t]);
 
   if (!expanded) {
     return (
@@ -319,6 +383,9 @@ export function QuickDispatchDock() {
             >
               {armed ? c.quickT.status_armed : c.quickT.status_standby}
             </span>
+            {/* The fourth reading: where in the line this lands. Always
+                mounted, so it cannot move the row by appearing. */}
+            <DockLandingPill landing={landing} />
           </span>
 
           <button
@@ -452,6 +519,14 @@ export function QuickDispatchDock() {
           <div className="min-w-0 flex-1 px-1">
             <QuickDispatchMetaLine c={c} />
           </div>
+          {/* The grant, armed before the launch. Left of headless, inside the
+              same `ml-auto` cluster, at the same 24px pill height. */}
+          <DockAthenaToggle
+            armed={athenaArmed}
+            onToggle={() => setAthenaArmed((v) => !v)}
+            disabled={c.sending}
+            remote={c.runOn !== null}
+          />
           {/* Headless is a switch with a visible track now rather than a tinted
               icon: it is the one control that changes where the WORK happens,
               and an icon that only differs by tint read as decoration. State is

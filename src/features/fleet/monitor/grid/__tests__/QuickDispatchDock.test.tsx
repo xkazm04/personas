@@ -25,18 +25,31 @@ vi.mock('@/api/devTools/devTools', () => ({
   listProjects: (...a: unknown[]) => listProjects(...(a as [])),
   listSkills: (...a: unknown[]) => listSkills(...(a as [])),
 }));
-vi.mock('@/api/companion', () => ({ companionDispatchFleetPlan: vi.fn(async () => ({})) }));
+// The dispatch door. By default it returns without the board changing; the
+// Athena block below swaps in a version that births a session, the way the
+// real door does, so the grant has something to land on.
+const companionDispatchFleetPlan = vi.fn(async () => ({}));
+vi.mock('@/api/companion', () => ({
+  companionDispatchFleetPlan: (...a: unknown[]) => companionDispatchFleetPlan(...(a as [])),
+}));
+const setSessionAthenaFlag = vi.fn(async (_id: string, _on: boolean) => true);
 vi.mock('@/api/fleet/fleet', () => ({
   renameSession: vi.fn(async () => undefined),
   spawnHeadlessSession: vi.fn(async () => ({})),
+  setSessionAthenaFlag: (...a: unknown[]) => setSessionAthenaFlag(...(a as [string, boolean])),
+}));
+const toastCatch = vi.fn(() => () => {});
+vi.mock('@/lib/silentCatch', () => ({
+  toastCatch: (...a: unknown[]) => toastCatch(...(a as [])),
+  silentCatch: () => () => {},
 }));
 
 // The board snapshot the resting row reports on. Two sessions that need the
 // operator, one working — the lanes come from `laneOfState`.
 const sessions = [
-  { id: 'a', state: 'awaiting_input' },
-  { id: 'b', state: 'stale' },
-  { id: 'c', state: 'running' },
+  { id: 'a', state: 'awaiting_input', cwd: 'C:/elsewhere' },
+  { id: 'b', state: 'stale', cwd: 'C:/elsewhere' },
+  { id: 'c', state: 'running', cwd: 'C:/elsewhere' },
 ];
 
 // ONE store object, hoisted. Building it inside the selector would hand back a
@@ -58,10 +71,18 @@ const storeState = {
   p2pUnavailable: false,
   remoteSessionsPinned: false,
   loadRemoteSessions: vi.fn(async () => undefined),
+  // The queue snapshot the landing pill reads. Under the cap, nothing waiting.
+  fleetQueue: { cap: 10, running: 3, queued: 0, overAdmitted: 0, entries: [], budgets: {} },
 };
 
+// `getState` as well as the selector form: the dock reads the session list
+// imperatively at launch time (what existed BEFORE the door opened) and the
+// hook form would hand it a render-time snapshot instead.
 vi.mock('@/stores/systemStore', () => ({
-  useSystemStore: (selector: (s: unknown) => unknown) => selector(storeState),
+  useSystemStore: Object.assign(
+    (selector: (s: unknown) => unknown) => selector(storeState),
+    { getState: () => storeState },
+  ),
 }));
 
 const expand = () => fireEvent.click(screen.getByTestId('quick-dispatch-dock-expand'));
@@ -207,5 +228,166 @@ describe('QuickDispatchDock — the readout', () => {
     expand();
     fireEvent.change(field(), { target: { value: 'abcde' } });
     expect(screen.getByTestId('quick-dispatch-char-count').textContent).toBe('5');
+  });
+});
+
+
+describe('QuickDispatchDock — where in the line this lands', () => {
+  it('reports the queue state on the manifest row, always mounted', () => {
+    render(<QuickDispatchDock />);
+    expand();
+    // Room: under the cap with an empty queue. Mounted in every state, so it
+    // can never move the board above by appearing.
+    expect(screen.getByTestId('quick-dispatch-landing').textContent).toBe('Room');
+  });
+
+  it('names the tail position when the fleet is full', () => {
+    storeState.fleetQueue = { cap: 3, running: 3, queued: 4, overAdmitted: 0, entries: [], budgets: {} };
+    render(<QuickDispatchDock />);
+    expand();
+    // Five rows waiting once this one joins: enqueue_into ranks at the tail.
+    expect(screen.getByTestId('quick-dispatch-landing').textContent).toContain('5');
+    storeState.fleetQueue = { cap: 10, running: 3, queued: 0, overAdmitted: 0, entries: [], budgets: {} };
+  });
+
+  it('names the backfill rather than claiming a start, when rows are waiting under the cap', () => {
+    storeState.fleetQueue = { cap: 10, running: 1, queued: 2, overAdmitted: 0, entries: [], budgets: {} };
+    render(<QuickDispatchDock />);
+    expand();
+    expect(screen.getByTestId('quick-dispatch-landing').textContent).toBe('Ahead of 2');
+    storeState.fleetQueue = { cap: 10, running: 3, queued: 0, overAdmitted: 0, entries: [], budgets: {} };
+  });
+});
+
+describe('QuickDispatchDock — the Athena grant', () => {
+  beforeEach(() => {
+    setSessionAthenaFlag.mockClear();
+    toastCatch.mockClear();
+    companionDispatchFleetPlan.mockReset();
+    companionDispatchFleetPlan.mockImplementation(async () => ({}));
+    storeState.fleetSessions = sessions;
+  });
+
+  it('is off the table for a run bound for a paired device', () => {
+    // No paired device in the default store, so the control is live; the
+    // disabled form is asserted through the prop, which is what the dock
+    // computes from `runOn`.
+    render(<QuickDispatchDock />);
+    expand();
+    expect((screen.getByTestId('quick-dispatch-athena-toggle') as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('rests disarmed, and carries its state on aria-pressed rather than on colour', () => {
+    render(<QuickDispatchDock />);
+    expand();
+    const toggle = screen.getByTestId('quick-dispatch-athena-toggle');
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('writes the grant onto the session the dispatch produced', async () => {
+    // The door births a row, exactly as `queue::enqueue`/`spawn_now` do.
+    companionDispatchFleetPlan.mockImplementation(async () => {
+      storeState.fleetSessions = [...sessions, { id: 'born', state: 'running', cwd: PROJECT.root_path }];
+      return {};
+    });
+    render(<QuickDispatchDock />);
+    expand();
+    await arm();
+    fireEvent.click(screen.getByTestId('quick-dispatch-athena-toggle'));
+    fireEvent.click(screen.getByTestId('quick-dispatch-send'));
+    await vi.waitFor(() => expect(setSessionAthenaFlag).toHaveBeenCalledWith('born', true));
+    expect(toastCatch).not.toHaveBeenCalled();
+  });
+
+  it('writes nothing when the grant was never armed', async () => {
+    companionDispatchFleetPlan.mockImplementation(async () => {
+      storeState.fleetSessions = [...sessions, { id: 'born', state: 'running', cwd: PROJECT.root_path }];
+      return {};
+    });
+    render(<QuickDispatchDock />);
+    expand();
+    await arm();
+    fireEvent.click(screen.getByTestId('quick-dispatch-send'));
+    await vi.waitFor(() => expect(companionDispatchFleetPlan).toHaveBeenCalled());
+    expect(setSessionAthenaFlag).not.toHaveBeenCalled();
+  });
+
+  it('TELLS the operator when the dispatch ran and the grant did not land', async () => {
+    companionDispatchFleetPlan.mockImplementation(async () => {
+      storeState.fleetSessions = [...sessions, { id: 'born', state: 'running', cwd: PROJECT.root_path }];
+      return {};
+    });
+    setSessionAthenaFlag.mockImplementation(async () => { throw new Error('door closed'); });
+    render(<QuickDispatchDock />);
+    expand();
+    await arm();
+    fireEvent.click(screen.getByTestId('quick-dispatch-athena-toggle'));
+    fireEvent.click(screen.getByTestId('quick-dispatch-send'));
+    // A running session the operator believes Athena owns is the one state
+    // this feature must never produce silently.
+    await vi.waitFor(() => expect(toastCatch).toHaveBeenCalled());
+    setSessionAthenaFlag.mockImplementation(async () => true);
+  });
+});
+
+
+describe('QuickDispatchDock — the anti-shake contract, with two more controls in the row', () => {
+  // jsdom has no layout engine, so this is a STRUCTURAL measurement, not a
+  // pixel one: the dock's height is the sum of four rows whose heights are
+  // literal classes, so if the class list and the row count are identical in
+  // every state, the outer height is too. The pixel measurement is the
+  // reserved-height classes themselves (30 / 24 / 92 / 34), asserted below.
+  const rows = () => {
+    const grid = screen.getByTestId('quick-dispatch-dock').querySelector('.dock-instrument-grid');
+    return Array.from(grid?.children ?? [])
+      .map((el) => (el as HTMLElement).className)
+      .filter((cn) => cn.includes('z-[1]'))
+      .map((cn) => cn.match(/\bh-\[?[\w.]+\]?/)?.[0] ?? '');
+  };
+  /** The deck's reserved box lives one level in, on the bordered frame. */
+  const deckHeight = () => {
+    const grid = screen.getByTestId('quick-dispatch-dock').querySelector('.dock-instrument-grid');
+    // By content, not by index: an open typeahead prepends an absolutely
+    // positioned panel to the grid, and that panel is precisely the thing that
+    // must NOT be counted as a row.
+    const deck = Array.from(grid?.children ?? [])
+      .find((el) => el.querySelector('textarea'))?.firstElementChild as HTMLElement | undefined;
+    return deck?.className.match(/\bh-\[?[\w.]+\]?/)?.[0] ?? '';
+  };
+
+  it('keeps the same four reserved rows, at the same heights, in every state', async () => {
+    render(<QuickDispatchDock />);
+    expand();
+    const draft = rows();
+    expect(draft).toEqual(['h-[30px]', 'h-6', '', 'h-[34px]']);
+    expect(deckHeight()).toBe('h-[92px]');
+
+    // Typed.
+    await arm();
+    expect(rows()).toEqual(draft);
+    expect(deckHeight()).toBe('h-[92px]');
+
+    // Typeahead open: the panel renders absolutely at bottom-full, out of flow.
+    fireEvent.change(field(), { target: { value: '@per' } });
+    await screen.findByTestId('quick-dispatch-suggestion-item');
+    expect(rows()).toEqual(draft);
+    expect(deckHeight()).toBe('h-[92px]');
+
+    // Long objective: the field grows INSIDE the 92px deck and then scrolls.
+    fireEvent.change(field(), { target: { value: 'x'.repeat(1100) } });
+    expect(rows()).toEqual(draft);
+    expect(deckHeight()).toBe('h-[92px]');
+  });
+
+  it('mounts both new controls in every state, so neither can move a row by appearing', async () => {
+    render(<QuickDispatchDock />);
+    expand();
+    for (const value of ['', 'a short objective', 'x'.repeat(1100)]) {
+      fireEvent.change(field(), { target: { value } });
+      expect(screen.getByTestId('quick-dispatch-landing')).toBeTruthy();
+      expect(screen.getByTestId('quick-dispatch-athena-toggle')).toBeTruthy();
+    }
   });
 });

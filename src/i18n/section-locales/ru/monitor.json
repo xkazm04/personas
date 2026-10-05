@@ -976,5 +976,21 @@
   "triage_dispatch_unassigned_note": "Идея без назначения пойдёт на ту полосу, которая освободится первой.",
   "triage_dispatch_unpin": "Открепить {title}",
   "triage_dispatch_unpinned_count": "Без назначения: {count}",
-  "triage_dispatch_work_heading": "Что вы отправляете"
+  "triage_dispatch_work_heading": "Что вы отправляете",
+  "grid_dock_athena_failed": "Запуск отправлен, но Athena его не получила. Пометьте сессию в её меню, если всё же хотите передать её Athena.",
+  "grid_dock_athena_label": "Передать этот запуск Athena",
+  "grid_dock_athena_off": "Выключено: этот запуск остаётся вашим. Athena спросит, прежде чем вмешаться.",
+  "grid_dock_athena_on": "Включено: Athena берёт этот запуск на себя. Она может отвечать, вмешиваться, будить его и сама завершить процесс в конце, не спрашивая вас.",
+  "grid_dock_athena_unseen": "Athena не получила этот запуск: для него не появилось ни одной сессии. Если она всё же началась, пометьте её в её меню.",
+  "grid_dock_landing_ahead": "Впереди {count}",
+  "grid_dock_landing_aria": "Куда этот запуск попадёт в очереди",
+  "grid_dock_landing_caveat": "Показание по последнему снимку очереди, а не обещание. Бюджетное удержание всё ещё может заставить его ждать.",
+  "grid_dock_landing_room": "Есть место",
+  "grid_dock_landing_tip_ahead": "Ожидают: {count}, а флот ниже своего лимита, поэтому шлюз может запустить этот раньше них. Он засчитывает это как пропуск каждой обойдённой строке, а строка, ждавшая слишком долго, это останавливает.",
+  "grid_dock_landing_tip_room": "Занято {running} из {cap} слотов, и ничего не ждёт.",
+  "grid_dock_landing_tip_unknown": "Очередь ещё не прочитана.",
+  "grid_dock_landing_tip_wait": "Все {cap} слотов заняты, поэтому запуск встанет в конец очереди на позицию {position}.",
+  "grid_dock_landing_unknown": "Нет данных",
+  "grid_dock_landing_wait": "Ждёт #{position}",
+  "grid_dock_athena_remote": "Недоступно для запуска на сопряжённом устройстве: та сессия живёт на другой машине, а не в этом флоте."
 }

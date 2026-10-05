@@ -976,5 +976,21 @@
   "triage_dispatch_sequential": "Strictly one at a time",
   "triage_dispatch_assign_aria": "Lane for {title}",
   "triage_dispatch_unpin": "Unpin {title}",
-  "triage_dispatch_confirm": "Dispatch {count}"
+  "triage_dispatch_confirm": "Dispatch {count}",
+  "grid_dock_landing_aria": "Where this dispatch lands in the queue",
+  "grid_dock_landing_unknown": "No read",
+  "grid_dock_landing_room": "Room",
+  "grid_dock_landing_ahead": "Ahead of {count}",
+  "grid_dock_landing_wait": "Waits #{position}",
+  "grid_dock_landing_tip_room": "{running} of {cap} slots are in use and nothing is waiting.",
+  "grid_dock_landing_tip_ahead": "{count} waiting, and the fleet is under its cap, so the door can start this one ahead of them. It counts that as a skip against every row it passes, and a row that has waited too long stops it.",
+  "grid_dock_landing_tip_wait": "Every one of the {cap} slots is in use, so this joins the end of the queue at position {position}.",
+  "grid_dock_landing_tip_unknown": "The queue has not been read yet.",
+  "grid_dock_landing_caveat": "A reading of the last queue snapshot, not a promise. A budget hold can still make this wait.",
+  "grid_dock_athena_label": "Hand this run to Athena",
+  "grid_dock_athena_on": "Armed: Athena takes this run over. She can answer it, step in, wake it and kill the process herself when it is done, without asking you first.",
+  "grid_dock_athena_off": "Off: this run stays yours. Athena asks before she touches it.",
+  "grid_dock_athena_failed": "The run was dispatched but Athena was not given it. Flag the session from its menu if you still want her to take it over.",
+  "grid_dock_athena_unseen": "Athena was not given this run: no session appeared for it. If one did start, flag it from its menu.",
+  "grid_dock_athena_remote": "Not available for a run on a paired device: that session lives on the other machine, not in this fleet."
 }

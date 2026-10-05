@@ -976,5 +976,21 @@
   "triage_dispatch_unassigned_note": "Ide yang belum ditetapkan berjalan di jalur mana pun yang lebih dulu kosong.",
   "triage_dispatch_unpin": "Lepaskan {title}",
   "triage_dispatch_unpinned_count": "{count} belum ditetapkan",
-  "triage_dispatch_work_heading": "Yang akan Anda kirim"
+  "triage_dispatch_work_heading": "Yang akan Anda kirim",
+  "grid_dock_athena_failed": "Proses sudah dikirim tetapi Athena tidak menerimanya. Tandai sesi dari menunya jika Anda tetap ingin dia mengambil alih.",
+  "grid_dock_athena_label": "Serahkan proses ini kepada Athena",
+  "grid_dock_athena_off": "Nonaktif: proses ini tetap milik Anda. Athena bertanya dulu sebelum menyentuhnya.",
+  "grid_dock_athena_on": "Aktif: Athena mengambil alih proses ini. Dia bisa menjawab, turun tangan, membangunkannya, dan menghentikan prosesnya sendiri saat selesai, tanpa bertanya lebih dulu.",
+  "grid_dock_athena_unseen": "Athena tidak menerima proses ini: tidak ada sesi yang muncul untuknya. Jika ternyata ada yang dimulai, tandai dari menunya.",
+  "grid_dock_landing_ahead": "Di depan {count}",
+  "grid_dock_landing_aria": "Di mana pengiriman ini mendarat dalam antrean",
+  "grid_dock_landing_caveat": "Pembacaan dari snapshot antrean terakhir, bukan janji. Penahanan anggaran masih bisa membuatnya menunggu.",
+  "grid_dock_landing_room": "Ada ruang",
+  "grid_dock_landing_tip_ahead": "{count} menunggu, dan armada masih di bawah batasnya, jadi gerbang bisa memulai yang ini lebih dulu. Itu dihitung sebagai satu lompatan untuk setiap baris yang dilewati, dan baris yang sudah menunggu terlalu lama akan menghentikannya.",
+  "grid_dock_landing_tip_room": "{running} dari {cap} slot terpakai dan tidak ada yang menunggu.",
+  "grid_dock_landing_tip_unknown": "Antrean belum dibaca.",
+  "grid_dock_landing_tip_wait": "Semua {cap} slot terpakai, jadi ini masuk ke akhir antrean di posisi {position}.",
+  "grid_dock_landing_unknown": "Belum dibaca",
+  "grid_dock_landing_wait": "Menunggu #{position}",
+  "grid_dock_athena_remote": "Tidak tersedia untuk proses di perangkat yang dipasangkan: sesi itu berada di mesin lain, bukan di armada ini."
 }

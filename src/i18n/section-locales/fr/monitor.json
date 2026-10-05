@@ -976,5 +976,21 @@
   "triage_dispatch_unassigned_note": "Une idée non attribuée part sur la voie qui se libère en premier.",
   "triage_dispatch_unpin": "Détacher {title}",
   "triage_dispatch_unpinned_count": "{count} non attribuées",
-  "triage_dispatch_work_heading": "Ce que vous envoyez"
+  "triage_dispatch_work_heading": "Ce que vous envoyez",
+  "grid_dock_athena_failed": "L'exécution a été lancée mais Athena ne l'a pas reçue. Signalez la session depuis son menu si vous voulez toujours qu'elle la prenne en charge.",
+  "grid_dock_athena_label": "Confier cette exécution à Athena",
+  "grid_dock_athena_off": "Désactivé : cette exécution reste la vôtre. Athena demande avant d'y toucher.",
+  "grid_dock_athena_on": "Armé : Athena prend cette exécution en charge. Elle peut y répondre, intervenir, la réveiller et arrêter le processus elle-même à la fin, sans vous demander.",
+  "grid_dock_athena_unseen": "Athena n'a pas reçu cette exécution : aucune session n'est apparue pour elle. Si une session a bien démarré, signalez-la depuis son menu.",
+  "grid_dock_landing_ahead": "Devant {count}",
+  "grid_dock_landing_aria": "Où cet envoi arrive dans la file",
+  "grid_dock_landing_caveat": "Une lecture du dernier instantané de la file, pas une promesse. Une retenue budgétaire peut encore la faire attendre.",
+  "grid_dock_landing_room": "Place libre",
+  "grid_dock_landing_tip_ahead": "{count} en attente, et la flotte est sous son plafond, donc la porte peut démarrer celle-ci avant elles. Elle compte cela comme un dépassement pour chaque ligne doublée, et une ligne qui a trop attendu l'arrête.",
+  "grid_dock_landing_tip_room": "{running} créneaux sur {cap} occupés et rien n'attend.",
+  "grid_dock_landing_tip_unknown": "La file n'a pas encore été lue.",
+  "grid_dock_landing_tip_wait": "Les {cap} créneaux sont tous occupés, donc ceci rejoint la fin de la file à la position {position}.",
+  "grid_dock_landing_unknown": "Pas de lecture",
+  "grid_dock_landing_wait": "Attend #{position}",
+  "grid_dock_athena_remote": "Indisponible pour une exécution sur un appareil appairé : cette session vit sur l'autre machine, pas dans cette flotte."
 }

@@ -984,6 +984,22 @@ export type Translations = {
     triage_dispatch_assign_aria: string;
     triage_dispatch_unpin: string;
     triage_dispatch_confirm: string;
+    grid_dock_landing_aria: string;
+    grid_dock_landing_unknown: string;
+    grid_dock_landing_room: string;
+    grid_dock_landing_ahead: string;
+    grid_dock_landing_wait: string;
+    grid_dock_landing_tip_room: string;
+    grid_dock_landing_tip_ahead: string;
+    grid_dock_landing_tip_wait: string;
+    grid_dock_landing_tip_unknown: string;
+    grid_dock_landing_caveat: string;
+    grid_dock_athena_label: string;
+    grid_dock_athena_on: string;
+    grid_dock_athena_off: string;
+    grid_dock_athena_failed: string;
+    grid_dock_athena_unseen: string;
+    grid_dock_athena_remote: string;
   };
   common: {
     unknown_error: string;

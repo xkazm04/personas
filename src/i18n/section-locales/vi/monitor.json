@@ -976,5 +976,21 @@
   "triage_dispatch_unassigned_note": "Ý tưởng chưa gán sẽ chạy trên làn nào trống trước.",
   "triage_dispatch_unpin": "Bỏ ghim {title}",
   "triage_dispatch_unpinned_count": "{count} chưa gán",
-  "triage_dispatch_work_heading": "Những gì bạn sắp gửi"
+  "triage_dispatch_work_heading": "Những gì bạn sắp gửi",
+  "grid_dock_athena_failed": "Lượt chạy đã được điều phối nhưng Athena không nhận được nó. Hãy gắn cờ phiên từ menu của nó nếu bạn vẫn muốn cô ấy tiếp quản.",
+  "grid_dock_athena_label": "Giao lượt chạy này cho Athena",
+  "grid_dock_athena_off": "Tắt: lượt chạy này vẫn là của bạn. Athena sẽ hỏi trước khi can thiệp.",
+  "grid_dock_athena_on": "Bật: Athena tiếp quản lượt chạy này. Cô ấy có thể trả lời, can thiệp, đánh thức và tự kết thúc tiến trình khi xong mà không cần hỏi bạn.",
+  "grid_dock_athena_unseen": "Athena không nhận được lượt chạy này: không có phiên nào xuất hiện cho nó. Nếu một phiên đã thực sự bắt đầu, hãy gắn cờ từ menu của nó.",
+  "grid_dock_landing_ahead": "Trước {count}",
+  "grid_dock_landing_aria": "Nơi lượt điều phối này rơi vào hàng đợi",
+  "grid_dock_landing_caveat": "Đây là số đọc từ ảnh chụp hàng đợi gần nhất, không phải lời hứa. Một khoản giữ ngân sách vẫn có thể khiến nó phải chờ.",
+  "grid_dock_landing_room": "Còn chỗ",
+  "grid_dock_landing_tip_ahead": "Có {count} đang chờ, và đội còn dưới giới hạn nên cổng có thể khởi chạy lượt này trước. Mỗi dòng bị vượt sẽ được tính một lần bỏ qua, và một dòng đã chờ quá lâu sẽ chặn việc vượt.",
+  "grid_dock_landing_tip_room": "Đang dùng {running}/{cap} chỗ và không có gì đang chờ.",
+  "grid_dock_landing_tip_unknown": "Hàng đợi chưa được đọc.",
+  "grid_dock_landing_tip_wait": "Cả {cap} chỗ đều đang dùng, nên lượt này vào cuối hàng đợi ở vị trí {position}.",
+  "grid_dock_landing_unknown": "Chưa đọc",
+  "grid_dock_landing_wait": "Chờ #{position}",
+  "grid_dock_athena_remote": "Không khả dụng cho lượt chạy trên thiết bị đã ghép nối: phiên đó nằm trên máy kia, không thuộc đội này."
 }

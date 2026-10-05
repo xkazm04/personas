@@ -9,6 +9,7 @@
  * TODO(prototype, 2026-09-23): consolidate the Athena chat switcher.
  */
 
+import { FRAME_LOOKS } from '../../frameLook';
 import type { HaloSlots } from '../../slots';
 import { BinderPanel } from './BinderPanel';
 import { SPREAD_COPY } from './copy';
@@ -17,6 +18,7 @@ import { SpreadStage } from './SpreadStage';
 export const HALO_C_SLOTS: HaloSlots = {
   id: 'c',
   label: SPREAD_COPY.tab,
+  look: FRAME_LOOKS.halo,
   RightPanel: BinderPanel,
   DecisionStage: SpreadStage,
 };

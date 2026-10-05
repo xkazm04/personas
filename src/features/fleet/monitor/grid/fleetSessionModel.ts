@@ -80,8 +80,11 @@ export function sessionGlyph(s: FleetSession): string {
   return words[0]!.slice(0, 3).toUpperCase();
 }
 
-/** Normalize a path for cwd↔root matching — mirrors `fleetSlice.normPath`. */
-const normPath = (p: string): string => p.replace(/\\/g, '/').toLowerCase().replace(/\/+$/, '');
+/** Normalize a path for cwd↔root matching — mirrors `fleetSlice.normPath`.
+ *  Exported 2026-10-05 so `dockAthenaGrant` matches a freshly dispatched
+ *  session to its project root by the SAME normalisation this board groups by,
+ *  rather than becoming the fifth hand-rolled copy of it. */
+export const normPath = (p: string): string => p.replace(/\\/g, '/').toLowerCase().replace(/\/+$/, '');
 
 export interface SessionGrouping {
   /** teamId → its sessions, attention-first. Only non-empty teams appear. */

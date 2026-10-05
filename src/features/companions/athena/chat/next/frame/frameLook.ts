@@ -10,10 +10,17 @@
  * Halo is the look the owner kept from round 2 (Glass and Bezel were removed):
  * floating cards, each wearing the workforce glow frame, accent headings,
  * duotone icons in tinted discs.
+ *
+ * Filament (round 3, contest B/1) retires the card for the top piece only in
+ * this first pass: a flush, borderless strip lit by a thin primary-tinted
+ * edge instead of a frosted card. Bottom/left/center keep Halo's surface
+ * unchanged — this look is scoped to what the contest actually judged
+ * (the top status line + the right panel + the decision stage, the latter
+ * two owned by the variant's own slots, not by `FrameLook`).
  */
 
 
-export type FrameLookId = 'halo';
+export type FrameLookId = 'halo' | 'filament';
 
 export interface FrameLook {
   id: FrameLookId;
@@ -61,5 +68,35 @@ export const FRAME_LOOKS: Record<FrameLookId, FrameLook> = {
     },
     message: 'typo-body-lg text-foreground',
     label: 'typo-label uppercase tracking-wider text-primary',
+  },
+  filament: {
+    id: 'filament',
+    surface: {
+      // The lit bezel strip: flush, no card, a thin primary-tinted edge and
+      // an ambient glow instead of a border/shadow/radius.
+      top: 'relative bg-transparent border-b border-primary/25 shadow-[0_10px_28px_-16px_var(--primary)]',
+      // Unchanged from Halo for this first pass (not part of the contest's
+      // own scope, and the composer/toolbar/Brain surfaces stay legible).
+      bottom: 'rounded-modal bg-background/92 backdrop-blur-md',
+      left: 'rounded-modal bg-background/92 backdrop-blur-md',
+      right: 'rounded-modal bg-background/92 backdrop-blur-md',
+      center: 'rounded-modal bg-background/92 backdrop-blur-md',
+    },
+    place: {
+      top: 'relative w-full max-w-[736px] mx-auto',
+      bottom: 'relative w-full max-w-[640px] mx-auto',
+      left: 'relative self-center max-h-full',
+      right: 'relative h-full min-h-0',
+      center: 'absolute inset-0 mx-auto w-full max-w-[920px]',
+    },
+    framed: false,
+    icon: {
+      button: 'w-9 h-9 rounded-full bg-primary/10 text-primary/85 hover:bg-primary/20 hover:text-primary',
+      active: 'bg-primary text-background',
+      stroke: 2,
+      size: 'w-4 h-4',
+    },
+    message: 'typo-body-lg text-foreground',
+    label: 'typo-label uppercase tracking-wider text-primary animate-pulse',
   },
 };

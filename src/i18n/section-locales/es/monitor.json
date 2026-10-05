@@ -976,5 +976,21 @@
   "triage_dispatch_unassigned_note": "Una idea sin asignar se ejecuta en el carril que se libere primero.",
   "triage_dispatch_unpin": "Soltar {title}",
   "triage_dispatch_unpinned_count": "{count} sin asignar",
-  "triage_dispatch_work_heading": "Lo que vas a enviar"
+  "triage_dispatch_work_heading": "Lo que vas a enviar",
+  "grid_dock_athena_failed": "La ejecución se envió pero Athena no la recibió. Marca la sesión desde su menú si aún quieres que ella se haga cargo.",
+  "grid_dock_athena_label": "Entregar esta ejecución a Athena",
+  "grid_dock_athena_off": "Desactivado: esta ejecución sigue siendo tuya. Athena pregunta antes de tocarla.",
+  "grid_dock_athena_on": "Armado: Athena se hace cargo de esta ejecución. Puede responderla, intervenir, despertarla y detener el proceso ella misma al terminar, sin preguntarte.",
+  "grid_dock_athena_unseen": "Athena no recibió esta ejecución: no apareció ninguna sesión para ella. Si alguna llegó a arrancar, márcala desde su menú.",
+  "grid_dock_landing_ahead": "Delante de {count}",
+  "grid_dock_landing_aria": "Dónde cae este envío en la cola",
+  "grid_dock_landing_caveat": "Una lectura de la última instantánea de la cola, no una promesa. Una retención de presupuesto todavía puede hacer que espere.",
+  "grid_dock_landing_room": "Hay sitio",
+  "grid_dock_landing_tip_ahead": "{count} en espera, y la flota está por debajo de su límite, así que la puerta puede arrancar esta antes que ellas. Cuenta eso como un adelantamiento para cada fila que salta, y una fila que ha esperado demasiado lo detiene.",
+  "grid_dock_landing_tip_room": "{running} de {cap} plazas en uso y nada en espera.",
+  "grid_dock_landing_tip_unknown": "La cola aún no se ha leído.",
+  "grid_dock_landing_tip_wait": "Las {cap} plazas están ocupadas, así que esto se une al final de la cola en la posición {position}.",
+  "grid_dock_landing_unknown": "Sin lectura",
+  "grid_dock_landing_wait": "Espera #{position}",
+  "grid_dock_athena_remote": "No disponible para una ejecución en un dispositivo emparejado: esa sesión vive en la otra máquina, no en esta flota."
 }

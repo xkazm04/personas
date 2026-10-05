@@ -33,16 +33,13 @@ import { useWorkforce } from '../useWorkforce';
 import { FrameBottom } from './FrameBottom';
 import { FramePiece } from './FramePiece';
 import { FrameTop } from './FrameTop';
-import { FRAME_LOOKS } from './frameLook';
 import type { HaloSlots } from './slots';
 import { useScreenCentre } from './screenCentre';
 
 const CENTRED_EDGES = ['top', 'bottom'] as const;
 
-const look = FRAME_LOOKS.halo;
-
 export function VariantFrame({ engine, lifted, slots }: { engine: AthenaChatEngine; lifted: boolean; slots: HaloSlots }) {
-  const { RightPanel, DecisionStage } = slots;
+  const { RightPanel, DecisionStage, look, Top } = slots;
   const workforce = useWorkforce();
   const columns = useProcessColumns(workforce, C.athena);
   const layer = useLayer();
@@ -91,23 +88,33 @@ export function VariantFrame({ engine, lifted, slots }: { engine: AthenaChatEngi
       </div>
 
       <div ref={centreRef} className="min-w-0 min-h-0 flex flex-col gap-4">
-        <FramePiece
-          edge="top"
-          look={look}
-          frame={frame}
-          working={streaming}
-          label={C.athena}
-          shiftX={shift.top}
-          sectionClassName={expandedTop ? 'flex-1 min-h-0' : 'shrink-0'}
-        >
-          <FrameTop
+        {Top ? (
+          <div
+            className={`relative pointer-events-auto ${look.place.top} ${expandedTop ? 'flex-1 min-h-0' : 'shrink-0'}`}
+            style={shift.top ? { translate: `${shift.top}px 0` } : undefined}
+            aria-label={C.athena}
+          >
+            <Top look={look} engine={engine} expanded={expandedTop} onExpand={toggleExpanded} onOpenWaiting={() => layer.openWork()} />
+          </div>
+        ) : (
+          <FramePiece
+            edge="top"
             look={look}
-            engine={engine}
-            expanded={expandedTop}
-            onExpand={toggleExpanded}
-            onOpenWaiting={() => layer.openWork()}
-          />
-        </FramePiece>
+            frame={frame}
+            working={streaming}
+            label={C.athena}
+            shiftX={shift.top}
+            sectionClassName={expandedTop ? 'flex-1 min-h-0' : 'shrink-0'}
+          >
+            <FrameTop
+              look={look}
+              engine={engine}
+              expanded={expandedTop}
+              onExpand={toggleExpanded}
+              onOpenWaiting={() => layer.openWork()}
+            />
+          </FramePiece>
+        )}
 
         <div className={expandedTop ? 'relative h-0 -mt-4' : 'relative flex-1 min-h-0'}>
           {centreOpen && (
