@@ -776,7 +776,7 @@ fn budget_reading(
     )
 }
 
-fn pool_of(app: &AppHandle) -> Option<DbPool> {
+pub(super) fn pool_of(app: &AppHandle) -> Option<DbPool> {
     app.try_state::<Arc<AppState>>().map(|s| s.db.clone())
 }
 
@@ -1820,7 +1820,7 @@ fn count_live_for_origin(reg: &FleetRegistry, origin: DispatchOrigin) -> u32 {
 }
 
 /// Write the queue's ranks to the durable rows.
-fn persist_ranks(app: &AppHandle, ranks: &[(String, u32)]) {
+pub(super) fn persist_ranks(app: &AppHandle, ranks: &[(String, u32)]) {
     let Some(pool) = pool_of(app) else { return };
     if let Err(err) = fleet_sessions::renumber_queue(&pool, ranks) {
         tracing::warn!(error = %err, "fleet queue: rank write failed");
@@ -3415,5 +3415,252 @@ mod tests {
         // And the door refuses the edge outright if a lane ever asks for it.
         assert!(!reg.expire_queued("runner", "waited 24h"));
         assert_eq!(reg.session_state("runner"), Some(S::Running));
+    }
+
+    // -----------------------------------------------------------------
+    // Curator's reserved band
+    //
+    // The acceptance bar, asserted directly: her position in the queue is
+    // IDENTICAL before and after each way the queue moves around her. See
+    // `super::super::bands` for why this is a reserved seat inside one order
+    // and not the global dispatch rank migration e37 deleted.
+    // -----------------------------------------------------------------
+
+    use crate::commands::fleet::bands::CURATOR_BAND;
+
+    /// Three queued rows, the middle one Curator's, with `band` claimed.
+    /// Returns `(ahead, curator, behind)`.
+    fn banded_trio(reg: &FleetRegistry, band: u32) -> (String, String, String) {
+        let (ahead, _) = enqueue_into(reg, &req("C:/repo/ahead"), 1_000, 1, 1);
+        let (curator, _) = enqueue_into(reg, &req("C:/repo/curator"), 1_001, 1, 1);
+        let (behind, _) = enqueue_into(reg, &req("C:/repo/behind"), 1_002, 1, 1);
+        assert!(
+            reg.claim_band(&curator, band).is_some(),
+            "a queued row takes a free band"
+        );
+        (ahead, curator, behind)
+    }
+
+    /// Her rank, or `None` once she is no longer queued.
+    fn rank_of(reg: &FleetRegistry, id: &str) -> Option<u32> {
+        reg.queued_in_order()
+            .into_iter()
+            .find(|(sid, _, _, _)| sid == id)
+            .map(|(_, rank, _, _)| rank)
+    }
+
+    #[test]
+    fn her_band_holds_her_position_through_an_unrelated_reorder() {
+        let reg = FleetRegistry::default();
+        let (ahead, curator, behind) = banded_trio(&reg, CURATOR_BAND);
+        let ranks = reg.renumber_queue(&[]);
+        assert_eq!(
+            ranks,
+            vec![
+                (curator.clone(), 1),
+                (ahead.clone(), 2),
+                (behind.clone(), 3)
+            ],
+            "band 1 seats her at the head"
+        );
+        // The operator drags the LAST row to the front - the whole queue is
+        // reordered and her seat is not part of the bargain.
+        let ranks = reg.renumber_queue(&[behind.clone()]);
+        assert_eq!(
+            ranks,
+            vec![
+                (curator.clone(), 1),
+                (behind.clone(), 2),
+                (ahead.clone(), 3)
+            ]
+        );
+        assert_eq!(
+            rank_of(&reg, &curator),
+            Some(1),
+            "identical before and after"
+        );
+        // And the reorder still did what the operator asked, among the rest.
+        assert!(rank_of(&reg, &behind) < rank_of(&reg, &ahead));
+    }
+
+    #[test]
+    fn her_band_holds_her_position_when_a_row_ahead_of_her_is_cancelled() {
+        let reg = FleetRegistry::default();
+        let (ahead, curator, behind) = banded_trio(&reg, 2);
+        let ranks = reg.renumber_queue(&[]);
+        assert_eq!(
+            ranks,
+            vec![
+                (ahead.clone(), 1),
+                (curator.clone(), 2),
+                (behind.clone(), 3)
+            ]
+        );
+        // The row in front of her leaves the queue.
+        assert_eq!(reg.cancel_queued(&ahead), Some(true));
+        let ranks = reg.renumber_queue(&[]);
+        assert_eq!(ranks, vec![(behind.clone(), 1), (curator.clone(), 2)]);
+        assert_eq!(
+            rank_of(&reg, &curator),
+            Some(2),
+            "she keeps seat 2 - the row BEHIND her moves up instead"
+        );
+    }
+
+    #[test]
+    fn her_band_holds_her_position_when_another_row_is_started_now() {
+        let reg = FleetRegistry::default();
+        let (ahead, curator, behind) = banded_trio(&reg, 2);
+        reg.renumber_queue(&[]);
+        assert_eq!(rank_of(&reg, &curator), Some(2));
+        // `fleet_queue_start_now`'s transition half: the operator promotes a
+        // row over the cap, and `promote` renumbers the survivors.
+        assert!(reg.adopt_spawn(spawned(&behind)));
+        let ranks = reg.renumber_queue(&[]);
+        assert_eq!(ranks, vec![(ahead.clone(), 1), (curator.clone(), 2)]);
+        assert_eq!(rank_of(&reg, &curator), Some(2));
+        // The clamp, stated rather than left to surprise: once she is the
+        // ONLY row left, seat 2 does not exist and the band clamps to the end
+        // of a one-row queue. A dense rank is the invariant; a gap is not
+        // expressible. She is not starved by it - she is first.
+        assert!(reg.adopt_spawn(spawned(&ahead)));
+        assert_eq!(reg.renumber_queue(&[]), vec![(curator.clone(), 1)]);
+    }
+
+    #[test]
+    fn her_band_survives_a_restart_through_reconcile_after_restore() {
+        // `reconcile_after_restore` renumbers UNCONDITIONALLY at boot, so the
+        // band has to come back through the durable row and be honoured by
+        // that renumber - not merely be left alone by it.
+        let before = FleetRegistry::default();
+        let (ahead, curator, behind) = banded_trio(&before, 2);
+        let ranks = before.renumber_queue(&[]);
+        let pool = crate::db::init_test_db().unwrap();
+        {
+            let map = before.sessions.lock().unwrap();
+            for id in [&ahead, &curator, &behind] {
+                let row = super::super::persist::row_from_inner(map.get(id).unwrap()).unwrap();
+                fleet_sessions::upsert(&pool, &row).unwrap();
+            }
+        }
+        fleet_sessions::renumber_queue(&pool, &ranks).unwrap();
+        // The column round-trip: the band is on the row, not just in memory.
+        let stored = fleet_sessions::list_queued_ordered(&pool).unwrap();
+        let banded: Vec<(String, Option<u32>)> = stored
+            .iter()
+            .map(|r| (r.id.clone(), r.reserved_band))
+            .collect();
+        assert_eq!(
+            banded,
+            vec![
+                (ahead.clone(), None),
+                (curator.clone(), Some(2)),
+                (behind.clone(), None)
+            ]
+        );
+        // Boot: rows come back through `persist::inner_from_row` into a fresh
+        // registry, with the rank gaps a restart can leave.
+        let after = FleetRegistry::default();
+        for row in &stored {
+            let mut inner = super::super::persist::inner_from_row(row);
+            inner.queue_rank = inner.queue_rank.map(|r| r * 4);
+            after.insert(inner);
+        }
+        assert_eq!(after.reserved_band_of(&curator), Some(2));
+        // ...and then that unconditional renumber.
+        let ranks = after.renumber_queue(&[]);
+        assert_eq!(
+            ranks,
+            vec![
+                (ahead.clone(), 1),
+                (curator.clone(), 2),
+                (behind.clone(), 3)
+            ],
+            "dense again, and she is back in her seat"
+        );
+    }
+
+    #[test]
+    fn with_curator_off_there_is_no_band_and_the_ranks_are_dense_as_ever() {
+        let reg = FleetRegistry::default();
+        let (ahead, curator, behind) = banded_trio(&reg, CURATOR_BAND);
+        assert_eq!(reg.renumber_queue(&[])[0].0, curator);
+        // The switch goes off: `bands::release`'s registry half.
+        assert_eq!(reg.release_band(CURATOR_BAND), vec![curator.clone()]);
+        assert_eq!(reg.reserved_band_of(&curator), None);
+        // She keeps the rank she legitimately holds right now - a release is
+        // not a rewind, and the ranks are the queue's live truth. What ends
+        // is the RESERVATION: from here the queue moves her like anybody
+        // else, which is the thing the band existed to prevent.
+        let ranks = reg.renumber_queue(&[]);
+        assert_eq!(
+            ranks,
+            vec![
+                (curator.clone(), 1),
+                (ahead.clone(), 2),
+                (behind.clone(), 3)
+            ]
+        );
+        assert_eq!(
+            ranks.iter().map(|(_, r)| *r).collect::<Vec<_>>(),
+            vec![1, 2, 3],
+            "dense and 1-based, with nothing reserved"
+        );
+        // The same drag that could not move her a moment ago now does.
+        assert_eq!(
+            reg.renumber_queue(&[behind.clone()]),
+            vec![
+                (behind.clone(), 1),
+                (curator.clone(), 2),
+                (ahead.clone(), 3)
+            ],
+            "exactly what an install that never turned her on would do"
+        );
+    }
+
+    #[test]
+    fn a_reserved_row_is_still_refused_by_the_depth_cap() {
+        // The band is claimed AFTER admission, so a reserved row is counted
+        // by the bound like any other and buys no way past it.
+        let reg = FleetRegistry::default();
+        let (_, curator, _) = banded_trio(&reg, CURATOR_BAND);
+        assert_eq!(reg.reserved_band_of(&curator), Some(CURATOR_BAND));
+        assert!(queue_has_room(&reg, 4));
+        assert!(
+            !queue_has_room(&reg, 3),
+            "three waiting rows, one of them reserved, fill a cap of three"
+        );
+        assert!(!queue_has_room(&reg, 1));
+        // And the refusal names the bound, not the holder.
+        let err = queue_full_refusal(3).to_string();
+        assert!(err.contains(REFUSAL_QUEUE_FULL), "{err}");
+        assert!(err.contains('3'), "{err}");
+    }
+
+    #[test]
+    fn a_reserved_row_is_still_reaped_by_the_expiry_pass() {
+        let reg = FleetRegistry::default();
+        let (ahead, curator, behind) = banded_trio(&reg, CURATOR_BAND);
+        reg.renumber_queue(&[]);
+        // What the reaper selects on, in full: `queued_in_order`'s tuple is
+        // `(id, rank, queued_at_ms, not_before_ms)` and carries no band at
+        // all, so `stale::expired_queued` cannot see one even in principle.
+        let rows = reg.queued_in_order();
+        let hers = rows.iter().find(|(id, _, _, _)| *id == curator).unwrap();
+        assert_eq!(hers.2, 1_001, "her wait is clocked like everyone else's");
+        // And the transition the reaper calls accepts her row.
+        assert!(reg.expire_queued(&curator, "waited 24h"));
+        assert_eq!(reg.session_state(&curator), Some(S::Expired));
+        // Her band is now inert: an expired row is not in the queue, so the
+        // survivors renumber densely with nothing reserved.
+        assert_eq!(
+            reg.renumber_queue(&[]),
+            vec![(ahead.clone(), 1), (behind.clone(), 2)]
+        );
+        assert_eq!(
+            reg.reserved_band_of(&curator),
+            Some(CURATOR_BAND),
+            "the column is left alone; the next claim clears it"
+        );
     }
 }

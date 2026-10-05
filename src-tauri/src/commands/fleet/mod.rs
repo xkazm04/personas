@@ -18,6 +18,7 @@
 
 pub mod athena_flag;
 pub mod autopilot;
+pub mod bands;
 /// Performance gates over the scale-critical hot paths. Test-only: it carries no
 /// production callers by design, so it costs nothing in a shipped build.
 #[cfg(test)]

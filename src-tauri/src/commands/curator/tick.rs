@@ -62,6 +62,7 @@ use personas_core::models::{
     CuratorPolicy, CuratorRequest, CuratorRequestState, CuratorSkill, CURATOR_SPEND_SOURCE,
 };
 
+use crate::commands::fleet::bands;
 use crate::commands::fleet::queue::{self, DispatchOrigin, DispatchRequest};
 use crate::commands::fleet::registry::is_live_state;
 use crate::commands::fleet::types::{FleetSessionMode, FleetSessionState};
@@ -152,6 +153,21 @@ impl ReactiveSubscription for CuratorLoopSubscription {
 /// work is a brake; stopping her from recording finished work is a leak.
 async fn tick_once(app: &AppHandle, pool: &DbPool) {
     if !crate::commands::companions::curator_enabled(pool) {
+        // Switched off, so her RESERVED BAND must stop existing: with no
+        // Curator the queue's ranks have to be dense exactly as they are on
+        // an install that never turned her on (see `fleet::bands`).
+        //
+        // Released HERE, and not in `companions_set_enabled`, although that
+        // command is the obvious seam. It is not the only way the switch goes
+        // off - a settings import, a restored database and a hand-edited row
+        // all land the same `false` without passing through it - and a band
+        // that outlives its companion is the failure this release exists to
+        // prevent. The first statement of her loop is the one place that
+        // observes EVERY way she can be off, whatever wrote it, and it runs
+        // whether or not she has ever ticked. The cost is a bound of one tick
+        // interval on the release; the call is idempotent and writes nothing
+        // when she holds no band, so paying it every minute is free.
+        bands::release(app, bands::CURATOR_BAND);
         return;
     }
     let root = match super::registry_root_of(pool) {
@@ -737,7 +753,18 @@ async fn start(
         }
     };
 
+    let queued = matches!(admission.state, FleetSessionState::Queued);
     let session_id = admission.session_id;
+    // Her band, taken only on the row that is actually WAITING: a dispatch the
+    // door started immediately holds no position, so there is nothing to
+    // reserve. The claim is after `queue::admit`, never instead of it - the
+    // row has already been counted against the queue's depth cap and is
+    // already reapable by the expiry pass, and the band changes neither. A
+    // refused claim (she already holds the band with an earlier row) is the
+    // ordinary case and not a failure: this one waits in its natural place.
+    if queued {
+        bands::claim(app, &session_id, bands::CURATOR_BAND);
+    }
     let level = dispatch::authorising_level(policy, &skill);
     let dispatch_id = uuid::Uuid::new_v4().to_string();
     let (request_id, plan_item_id) = match &work {

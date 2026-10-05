@@ -91,9 +91,19 @@ pub async fn fleet_queue_set_lane(
 /// for the same reason `lane` is - band 0 and "no band" would otherwise be
 /// indistinguishable at every call site.
 ///
-/// Validates no band NUMBER and enforces no exclusivity: whether this session
-/// is entitled to the band, and what happens to whoever held it, belongs to
-/// the reservation package. This writer only records the claim.
+/// THIS GOES THROUGH `bands::claim`, NOT THE RAW SETTER, AND THAT IS THE WHOLE
+/// POINT OF THE FUNCTION. The first cut of this command wrote the column
+/// directly and said in its own doc that entitlement and exclusivity "belong to
+/// the reservation package". That package now exists, and leaving an
+/// unvalidated door open beside it is how a single reserved seat becomes the
+/// general priority field migration e37 deleted: an arbitrary caller writing an
+/// arbitrary band on an arbitrary row IS `fleet_autopilot.dispatch_order`
+/// wearing a different column name. See `bands.rs` for that history.
+///
+/// So a claim here obeys the same two rules the engine obeys - the row must be
+/// `Queued`, and an incumbent is never evicted - and a refusal is reported
+/// rather than silently recorded. Releasing is unconstrained on purpose:
+/// clearing your own reservation takes nothing from anyone.
 #[tauri::command]
 pub async fn fleet_queue_reserve_band(
     app: AppHandle,
@@ -101,26 +111,56 @@ pub async fn fleet_queue_reserve_band(
     session_id: String,
     band: Option<u32>,
 ) -> Result<FleetQueueSnapshot, AppError> {
-    if !registry().set_reserved_band(&session_id, band) {
-        return Err(AppError::NotFound(format!("fleet session {session_id}")));
-    }
-    let pool = state.db.clone();
-    let id = session_id.clone();
-    // Same panic boundary as `fleet_queue_set_lane` above, for the same
-    // reason: the registry already holds the claim.
-    match tokio::task::spawn_blocking(move || fleet_sessions::set_reserved_band(&pool, &id, band))
-        .await
-    {
-        Ok(r) => {
-            r?;
+    match band {
+        Some(b) => {
+            if registry().reserved_band_of(&session_id).is_none()
+                && !registry()
+                    .queued_in_order()
+                    .iter()
+                    .any(|(id, ..)| id == &session_id)
+            {
+                return Err(AppError::Validation(format!(
+                    "band_refused: fleet session {session_id} is not queued, so it has no position to reserve"
+                )));
+            }
+            // `claim` does the registry write, the column write, the re-rank
+            // and the announce; it returns false when the band is already held
+            // by another waiting row.
+            if !super::bands::claim(&app, &session_id, b) {
+                return Err(AppError::Validation(format!(
+                    "band_refused: band {b} is already held by another waiting session"
+                )));
+            }
         }
-        Err(e) if e.is_panic() => {
-            return Err(AppError::Internal(
-                "fleet queue reserve band: the column write PANICKED; the in-memory reservation is applied, the row is not".into(),
-            ));
+        None => {
+            if !registry().set_reserved_band(&session_id, None) {
+                return Err(AppError::NotFound(format!("fleet session {session_id}")));
+            }
+            let pool = state.db.clone();
+            let id = session_id.clone();
+            // Same panic boundary as `fleet_queue_set_lane` above, for the same
+            // reason: the registry already dropped the reservation.
+            match tokio::task::spawn_blocking(move || {
+                fleet_sessions::set_reserved_band(&pool, &id, None)
+            })
+            .await
+            {
+                Ok(r) => {
+                    r?;
+                }
+                Err(e) if e.is_panic() => {
+                    return Err(AppError::Internal(
+                        "fleet queue reserve band: the column write PANICKED; the in-memory release is applied, the row is not".into(),
+                    ));
+                }
+                Err(e) => return Err(AppError::Internal(format!("fleet queue reserve band: {e}"))),
+            }
+            // A release changes who sits where, so the queue is re-ranked for
+            // the same reason a claim re-ranks it.
+            let ranks = registry().renumber_queue(&[]);
+            crate::commands::fleet::queue::persist_ranks(&app, &ranks);
+            emit_queue_changed(&app, "band_changed", Some(&session_id));
         }
-        Err(e) => return Err(AppError::Internal(format!("fleet queue reserve band: {e}"))),
     }
-    emit_queue_changed(&app, "band_changed", Some(&session_id));
     snapshot(&app, state.db.clone()).await
 }

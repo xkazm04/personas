@@ -988,6 +988,20 @@ impl FleetRegistry {
     /// are unknown or not queued are skipped; queued rows NOT named keep
     /// their relative order after the named ones. Returns the final
     /// `(id, rank)` list so the caller can persist exactly what is in memory.
+    ///
+    /// **A queued row holding a `reserved_band` is seated at that position
+    /// and everything else fills the rest in exactly the order it would have
+    /// had.** The band is ONE RESERVED SEAT INSIDE THIS ORDER, not a second
+    /// ordering authority: this function stays the queue's only ranker, the
+    /// ranks it writes stay dense and 1-based, and no caller can push an
+    /// arbitrary row to an arbitrary rank through it — the only writers of
+    /// the column are `queue_lanes::fleet_queue_reserve_band` and
+    /// [`super::bands`], whose module doc records why that distinction is the
+    /// whole design (migration e37 retired an operator-written GLOBAL
+    /// dispatch rank for being a second order; read it before touching this).
+    ///
+    /// The placement itself is [`place_reserved_bands`], which is pure and
+    /// carries the edge cases.
     pub fn renumber_queue(&self, order: &[String]) -> Vec<(String, u32)> {
         let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         let mut named: Vec<String> = Vec::with_capacity(order.len());
@@ -1014,10 +1028,18 @@ impl FleetRegistry {
             })
             .collect();
         rest.sort_by_key(|(_, rank, at)| (*rank, *at));
-        let final_order: Vec<String> = named
+        let natural_order: Vec<String> = named
             .into_iter()
             .chain(rest.into_iter().map(|(id, _, _)| id.clone()))
             .collect();
+        // The band each queued row holds, in the order above. Read while the
+        // lock is held and immediately handed to a pure function, so the
+        // placement rule is testable without a registry.
+        let bands: Vec<Option<u32>> = natural_order
+            .iter()
+            .map(|id| map.get(id).and_then(|s| s.reserved_band))
+            .collect();
+        let final_order = place_reserved_bands(natural_order, &bands);
         let mut out = Vec::with_capacity(final_order.len());
         for (i, id) in final_order.iter().enumerate() {
             let rank = i as u32 + 1;
@@ -1198,6 +1220,83 @@ impl FleetRegistry {
         };
         session.reserved_band = band;
         true
+    }
+
+    /// Take `band` for `session_id`, one holder at a time. Returns the ids
+    /// whose column changed — `session_id` plus any stale holder cleared on
+    /// the way — or `None` when the band is NOT available, which is every
+    /// case the caller must not treat as a claim:
+    ///
+    /// * the session is unknown, or is not `Queued` (a band is a position in
+    ///   the queue; a row that is not waiting cannot hold one);
+    /// * another QUEUED row already holds the band. Width is one, and a claim
+    ///   never evicts the incumbent — the second claimant simply queues
+    ///   normally, which is the whole point of a reservation.
+    ///
+    /// A holder that has since left the queue (promoted, cancelled, expired)
+    /// is not an incumbent: its band is inert and is cleared here. That is
+    /// why no lifecycle transition needs band bookkeeping of its own.
+    ///
+    /// One lock for the whole decision, so two ticks cannot both see the band
+    /// free.
+    pub fn claim_band(&self, session_id: &str, band: u32) -> Option<Vec<String>> {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        if !map
+            .get(session_id)
+            .is_some_and(|s| matches!(s.state, FleetSessionState::Queued))
+        {
+            return None;
+        }
+        let mut stale: Vec<String> = Vec::new();
+        for s in map.values() {
+            if s.id == session_id || s.reserved_band != Some(band) {
+                continue;
+            }
+            if matches!(s.state, FleetSessionState::Queued) {
+                return None;
+            }
+            stale.push(s.id.clone());
+        }
+        let mut changed = Vec::with_capacity(stale.len() + 1);
+        for id in stale {
+            if let Some(s) = map.get_mut(&id) {
+                s.reserved_band = None;
+                changed.push(id);
+            }
+        }
+        if let Some(s) = map.get_mut(session_id) {
+            if s.reserved_band == Some(band) {
+                // Already hers: the claim holds, nothing to write.
+                return Some(changed);
+            }
+            s.reserved_band = Some(band);
+            changed.push(session_id.to_string());
+        }
+        Some(changed)
+    }
+
+    /// The band a session holds right now — `None` for an unknown session and
+    /// for one holding no band, which are the same fact to every caller.
+    pub fn reserved_band_of(&self, session_id: &str) -> Option<u32> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(session_id).and_then(|s| s.reserved_band)
+    }
+
+    /// Clear `band` from every session holding it, whatever its state.
+    /// Returns the ids that changed, so the caller persists exactly those.
+    pub fn release_band(&self, band: u32) -> Vec<String> {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let holders: Vec<String> = map
+            .values()
+            .filter(|s| s.reserved_band == Some(band))
+            .map(|s| s.id.clone())
+            .collect();
+        for id in &holders {
+            if let Some(s) = map.get_mut(id) {
+                s.reserved_band = None;
+            }
+        }
+        holders
     }
 
     pub fn try_lookup_label(&self, session_id: &str) -> Option<String> {
@@ -2481,6 +2580,91 @@ pub(super) fn is_generic_claude_title(title: &str) -> bool {
     core.eq_ignore_ascii_case("claude") || core.eq_ignore_ascii_case("claude code")
 }
 
+/// Which 0-based slot a band claims in a queue of `len` rows.
+///
+/// Ranks are 1-BASED, so band 1 is the head. Two coercions, both deliberate
+/// and both documented on [`place_reserved_bands`]: band 0 reads as the head
+/// rather than as "no band" (the column is nullable precisely so that "no
+/// band" has its own spelling), and a band past the end of the queue clamps
+/// to the LAST slot. `len` must be non-zero; the only caller checks.
+fn band_slot(band: u32, len: usize) -> usize {
+    (band.max(1) as usize).min(len) - 1
+}
+
+/// Seat the rows holding a `reserved_band` at their band's position and let
+/// everything else fill the remaining slots in the order it already had.
+///
+/// `bands[i]` is the band of `natural_order[i]`. The result is a permutation
+/// of `natural_order` — same length, same ids — so the caller's `i + 1`
+/// stamping stays DENSE and 1-based no matter what the bands say. That is the
+/// invariant the whole queue rests on and no edge case below is allowed to
+/// break it.
+///
+/// The edge cases, each decided here rather than left to fall out:
+///
+/// * **A band larger than the queue.** Clamped to the last slot. Holding the
+///   literal position would mean leaving a gap, and a gap is not expressible:
+///   ranks are the index into this vector. A reservation that cannot be
+///   honoured exactly is honoured as "as far back as the queue goes", which
+///   is also the harmless direction — it never jumps a row forward.
+/// * **Band 0, and band 1.** Both seat at the head. See [`band_slot`].
+/// * **Two rows claiming the same band.** The one that comes FIRST in
+///   `natural_order` keeps it; the other is treated as unreserved and takes
+///   its turn in the ordinary fill. First-in-the-order rather than
+///   first-to-claim because this function cannot see claim times, and because
+///   the ordinary order is exactly the fallback a loser should get.
+/// * **Two different bands clamping onto the same slot** (bands 5 and 6 in a
+///   queue of three). Resolved the same way, after sorting by
+///   `(slot, band, index)`: the lower band wins the slot and the higher one
+///   falls back to the ordinary fill. It never displaces anyone.
+/// * **A reserved row that is no longer `Queued`.** It is not in
+///   `natural_order` at all, so its band is inert — it reserves nothing and
+///   costs nothing until the row is queued again. Promotion, cancellation and
+///   expiry therefore need no band bookkeeping of their own; the next claim
+///   clears the stale column (see [`FleetRegistry::claim_band`]).
+fn place_reserved_bands(natural_order: Vec<String>, bands: &[Option<u32>]) -> Vec<String> {
+    let len = natural_order.len();
+    if len == 0 || bands.iter().all(Option::is_none) {
+        return natural_order;
+    }
+    // One holder per band: the earliest row in the natural order wins it.
+    let mut claimed_bands: Vec<u32> = Vec::new();
+    let mut claims: Vec<(usize, usize, u32)> = Vec::new();
+    for (i, band) in bands.iter().enumerate().take(len) {
+        let Some(band) = *band else { continue };
+        if claimed_bands.contains(&band) {
+            continue;
+        }
+        claimed_bands.push(band);
+        claims.push((band_slot(band, len), i, band));
+    }
+    claims.sort_unstable_by_key(|(slot, i, band)| (*slot, *band, *i));
+    let mut seated: Vec<Option<usize>> = vec![None; len];
+    let mut is_seated = vec![false; len];
+    for (slot, i, _) in claims {
+        if seated[slot].is_none() {
+            seated[slot] = Some(i);
+            is_seated[i] = true;
+        }
+    }
+    // The seated rows and the unseated ones partition `0..len`, and there are
+    // exactly as many free slots as unseated rows, so this fills every slot
+    // and `seated` becomes a permutation of `0..len`. Indexing rather than
+    // moving keeps that total without an unwrap: the queue is depth-capped,
+    // so the clone is a handful of ids.
+    let free: Vec<usize> = (0..len).filter(|slot| seated[*slot].is_none()).collect();
+    let mut rest = (0..len).filter(|i| !is_seated[*i]);
+    for slot in free {
+        seated[slot] = rest.next();
+    }
+    debug_assert!(seated.iter().all(Option::is_some), "every slot is filled");
+    seated
+        .into_iter()
+        .enumerate()
+        .map(|(slot, i)| natural_order[i.unwrap_or(slot)].clone())
+        .collect()
+}
+
 /// Wall-clock ms since UNIX epoch. Used for `last_activity_ms` /
 /// `created_at_ms`.
 // Moved to `personas_core::utils` so the data layer can stamp Fleet rows
@@ -3476,5 +3660,154 @@ mod tests {
         let v: serde_json::Value = serde_json::from_str(got.trim()).unwrap();
         assert_eq!(v["type"], "user");
         assert_eq!(v["message"]["content"][0]["text"], "line one\nline two");
+    }
+
+    // -----------------------------------------------------------------
+    // Reserved bands
+    // -----------------------------------------------------------------
+
+    /// `place_reserved_bands` over ids named for their natural position, so
+    /// an assertion reads as "who ended up where".
+    fn placed(ids: &[&str], bands: &[Option<u32>]) -> Vec<String> {
+        place_reserved_bands(ids.iter().map(|s| s.to_string()).collect(), bands)
+    }
+
+    fn queued(id: &str, band: Option<u32>) -> FleetSessionInner {
+        let mut s = session(id, FleetSessionState::Queued, Some("cc"));
+        s.child_pid = None;
+        s.queued_at_ms = Some(1_000);
+        s.reserved_band = band;
+        s
+    }
+
+    #[test]
+    fn with_no_band_the_placement_is_the_identity() {
+        assert_eq!(
+            placed(&["a", "b", "c"], &[None, None, None]),
+            ["a", "b", "c"]
+        );
+        assert_eq!(placed(&[], &[]), Vec::<String>::new());
+    }
+
+    #[test]
+    fn a_band_seats_its_row_and_everyone_else_keeps_their_relative_order() {
+        // Band 1 on the LAST row: it takes the head, a/b slide back by one
+        // and stay in their own order.
+        assert_eq!(
+            placed(&["a", "b", "c"], &[None, None, Some(1)]),
+            ["c", "a", "b"]
+        );
+        // Band 2 on the last row: the middle seat, a before b around it.
+        assert_eq!(
+            placed(&["a", "b", "c"], &[None, None, Some(2)]),
+            ["a", "c", "b"]
+        );
+        // A band the row already sits at changes nothing.
+        assert_eq!(
+            placed(&["a", "b", "c"], &[Some(1), None, None]),
+            ["a", "b", "c"]
+        );
+    }
+
+    #[test]
+    fn band_zero_and_band_one_both_mean_the_head() {
+        assert_eq!(
+            placed(&["a", "b"], &[None, Some(0)]),
+            ["b", "a"],
+            "0 is coerced to the head, never read as 'no band'"
+        );
+        assert_eq!(placed(&["a", "b"], &[None, Some(1)]), ["b", "a"]);
+    }
+
+    #[test]
+    fn a_band_past_the_end_clamps_to_the_last_slot_rather_than_leaving_a_gap() {
+        // Ranks are the index into the result, so a gap is not expressible:
+        // the reservation is honoured as far back as the queue goes.
+        let out = placed(&["a", "b", "c"], &[Some(99), None, None]);
+        assert_eq!(out, ["b", "c", "a"]);
+        assert_eq!(out.len(), 3, "still dense - the clamp invents no slot");
+    }
+
+    #[test]
+    fn two_rows_claiming_one_band_resolve_to_the_earlier_row() {
+        // `b` is earlier in the natural order, so `b` keeps band 1 and `c`
+        // falls back to the ordinary fill in its own place.
+        assert_eq!(
+            placed(&["a", "b", "c"], &[None, Some(1), Some(1)]),
+            ["b", "a", "c"]
+        );
+    }
+
+    #[test]
+    fn two_bands_clamping_onto_one_slot_resolve_to_the_lower_band() {
+        // In a queue of three, bands 5 and 6 both clamp to slot 3. The lower
+        // band takes it; the higher one never displaces anybody.
+        let out = placed(&["a", "b", "c"], &[Some(6), Some(5), None]);
+        assert_eq!(out, ["a", "c", "b"]);
+        let mut sorted = out.clone();
+        sorted.sort();
+        assert_eq!(sorted, ["a", "b", "c"], "a permutation, nothing lost");
+    }
+
+    #[test]
+    fn claim_band_takes_it_once_and_refuses_a_second_waiting_row() {
+        let reg = FleetRegistry::default();
+        reg.insert(queued("first", None));
+        reg.insert(queued("second", None));
+        assert_eq!(
+            reg.claim_band("first", 1).as_deref(),
+            Some(&["first".to_string()][..])
+        );
+        assert_eq!(reg.reserved_band_of("first"), Some(1));
+        assert_eq!(
+            reg.claim_band("second", 1),
+            None,
+            "width one: the incumbent is never evicted"
+        );
+        assert_eq!(reg.reserved_band_of("second"), None);
+        // Re-claiming her own band is a no-op, not a second write.
+        assert_eq!(reg.claim_band("first", 1), Some(Vec::new()));
+        assert_eq!(reg.reserved_band_of("first"), Some(1));
+    }
+
+    #[test]
+    fn claim_band_refuses_a_row_that_is_not_queued_and_clears_a_stale_holder() {
+        let reg = FleetRegistry::default();
+        // A band is a position IN the queue: a running row cannot hold one.
+        reg.insert(session("runner", FleetSessionState::Running, Some("cc")));
+        assert_eq!(reg.claim_band("runner", 1), None);
+        assert_eq!(reg.claim_band("ghost", 1), None, "unknown id");
+        // A holder that left the queue is inert, and the next claim clears
+        // it - which is why promotion/cancel/expiry need no band bookkeeping.
+        let mut promoted = queued("promoted", Some(1));
+        promoted.state = FleetSessionState::Running;
+        reg.insert(promoted);
+        reg.insert(queued("waiting", None));
+        let changed = reg.claim_band("waiting", 1).unwrap();
+        assert_eq!(changed, vec!["promoted".to_string(), "waiting".to_string()]);
+        assert_eq!(reg.reserved_band_of("promoted"), None);
+        assert_eq!(reg.reserved_band_of("waiting"), Some(1));
+    }
+
+    #[test]
+    fn release_band_clears_every_holder_and_is_idempotent() {
+        let reg = FleetRegistry::default();
+        assert!(reg.release_band(1).is_empty(), "nobody holds it");
+        reg.insert(queued("waiting", Some(1)));
+        let mut done = queued("done", Some(1));
+        done.state = FleetSessionState::Exited;
+        reg.insert(done);
+        reg.insert(queued("other", Some(2)));
+        let mut cleared = reg.release_band(1);
+        cleared.sort();
+        assert_eq!(cleared, vec!["done".to_string(), "waiting".to_string()]);
+        assert_eq!(reg.reserved_band_of("waiting"), None);
+        assert_eq!(reg.reserved_band_of("done"), None);
+        assert_eq!(
+            reg.reserved_band_of("other"),
+            Some(2),
+            "a different band is untouched"
+        );
+        assert!(reg.release_band(1).is_empty(), "idempotent");
     }
 }
