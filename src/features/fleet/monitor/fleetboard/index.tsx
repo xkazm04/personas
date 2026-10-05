@@ -15,7 +15,7 @@
 // Activity's 60-agent world because a hundred agents is the picture it is
 // judged at.
 
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import type { DrawerSection, PersonaCardModel, ProcessEntry } from '../monitorModel';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
@@ -64,13 +64,17 @@ function LiveBoard(props: SourceProps) {
 
 export const BoardView = memo(function BoardView(props: BoardViewProps) {
   const simulating = useSimulationEnabled();
-  // WP3 SEAM: the team zoom (L1). The nameplate of every bay calls this with
-  // the bay's team id (or TEAMLESS_BAY); WP3 turns it into the zoomed view and
-  // a level of the Monitor's Escape chain.
-  const onZoomTeam = useCallback((_teamId: string) => undefined, []);
+  // THE TEAM ZOOM (L1). The id of the zoomed bay, or null for the fleet. It is
+  // only a REQUEST: the surface resolves it against the bays it is drawing
+  // (`zoomBoard`), so a team that leaves the field - a scale or simulation
+  // switch, the last member moved away - reads as the fleet without an effect
+  // having to clear it. A nameplate press zooms; the zoomed bay's own
+  // nameplate, the Back control and Escape return to the fleet.
+  const [zoom, setZoom] = useState<string | null>(null);
+  const onZoomTeam = useCallback((teamId: string | null) => setZoom((z) => (teamId === null || z === teamId ? null : teamId)), []);
   return simulating
-    ? <SimulatedBoard {...props} onZoomTeam={onZoomTeam} />
-    : <LiveBoard {...props} onZoomTeam={onZoomTeam} />;
+    ? <SimulatedBoard {...props} zoom={zoom} onZoomTeam={onZoomTeam} />
+    : <LiveBoard {...props} zoom={zoom} onZoomTeam={onZoomTeam} />;
 });
 
 export default BoardView;

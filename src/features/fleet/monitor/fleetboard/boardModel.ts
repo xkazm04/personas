@@ -90,6 +90,29 @@ export function buildBoard(cards: PersonaCardModel[], personas: Persona[], teams
   };
 }
 
+/** The board narrowed to one team (the zoom, L1), or the fleet when `bayId` names no bay. */
+export interface ZoomedBoard extends BoardShape {
+  /** The zoomed bay; null at fleet level - including when the team has left the fleet. */
+  zoomed: Bay | null;
+}
+
+/**
+ * Derived, never stored: a zoom on a team that is gone (a scale switch, the
+ * simulation toggled, the team emptied) simply reads as the fleet.
+ */
+export function zoomBoard(board: BoardShape, bayId: string | null): ZoomedBoard {
+  const bay = bayId ? board.bays.find((b) => b.id === bayId) ?? null : null;
+  if (!bay) return { ...board, zoomed: null };
+  return {
+    ...board,
+    bays: [bay],
+    totals: bay.counts,
+    queue: board.queue.filter((c) => board.bayOf.get(c.personaId) === bay),
+    runsToday: bay.cards.reduce((s, c) => s + c.runsToday, 0),
+    zoomed: bay,
+  };
+}
+
 /**
  * The shape `useAttentionCursor` walks: one column per bay in the Board's
  * reading order. Its predicate is `actionWeight > 0` - exactly the needs pile -

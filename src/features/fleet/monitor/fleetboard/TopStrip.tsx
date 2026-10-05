@@ -7,7 +7,9 @@ import { memo, type CSSProperties } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { Ghost } from '@/features/shared/components/kit';
+import { ArrowLeft } from 'lucide-react';
+import { Crumbs, Ghost, KitButton } from '@/features/shared/components/kit';
+import { TEAMLESS_BAY, type Bay } from './boardModel';
 import { formatPercent } from '@/lib/utils/formatters';
 import { windowIn, type PlanModel, type WindowModel } from '../grid/usage/useResourceModel';
 import { windowSentence, windowTitle } from '../grid/usageBits';
@@ -51,7 +53,7 @@ function FleetMix({ totals }: { totals: PileCounts }) {
         <span className="typo-heading text-foreground">{verdict}</span>
       </span>
       <span className="fb-sep" aria-hidden />
-      <span role="img" aria-label={mixLabel} className="flex min-w-0 items-center gap-4">
+      <span role="img" aria-label={mixLabel} className="flex min-w-0 items-center gap-4 overflow-hidden">
         <span className="fb-mix">
           {PILE_ORDER.filter((p) => totals[p] > 0).map((p) => (
             <i key={p} style={{ flexGrow: totals[p], '--fb-tone': pileVisual(p).tone } as CSSProperties} />
@@ -69,6 +71,22 @@ function FleetMix({ totals }: { totals: PileCounts }) {
   );
 }
 
+/** Below the fleet level: the way back (Esc does the same) and where the reader is. */
+function ZoomTrail({ bay, onBack }: { bay: Bay; onBack: () => void }) {
+  const { t } = useTranslation();
+  const m = t.monitor;
+  return (
+    <span className="flex flex-shrink-0 items-center gap-3">
+      <KitButton icon={<ArrowLeft />} hint="Esc" onClick={onBack} testId="monitor-board-back">{m.board_back}</KitButton>
+      <Crumbs
+        label={m.board_crumbs_aria}
+        items={[{ label: m.board_crumb_fleet, onPress: onBack }, { label: bay.id === TEAMLESS_BAY ? m.board_teamless : bay.name }]}
+      />
+      <span className="fb-sep" aria-hidden />
+    </span>
+  );
+}
+
 /** The plan the fleet is spending: the live Claude login, else the first one read. */
 function livePlan(usage: UsageFeed): PlanModel | null {
   const claude = usage.model.providers.find((p) => p.id === 'claude');
@@ -76,12 +94,15 @@ function livePlan(usage: UsageFeed): PlanModel | null {
   return plans.find((p) => p.isActive) ?? plans[0] ?? null;
 }
 
-export const TopStrip = memo(function TopStrip({ totals, runsToday, usage, loading }: {
+export const TopStrip = memo(function TopStrip({ totals, runsToday, usage, loading, zoomed, onBack }: {
   totals: PileCounts;
   runsToday: number;
   usage: UsageFeed;
   /** First read in flight: the counts would claim a calm fleet they have not seen. */
   loading: boolean;
+  /** The zoomed team (its counts are the ones shown), or null at fleet level. */
+  zoomed: Bay | null;
+  onBack: () => void;
 }) {
   const { t } = useTranslation();
   const m = t.monitor;
@@ -89,7 +110,8 @@ export const TopStrip = memo(function TopStrip({ totals, runsToday, usage, loadi
   const windows = plan ? [windowIn(plan, 'short'), windowIn(plan, 'long')].filter((w): w is WindowModel => w !== null) : [];
 
   return (
-    <div className="fb-top">
+    <div className={`fb-top${zoomed ? ' is-zoomed' : ''}`}>
+      {zoomed && <ZoomTrail bay={zoomed} onBack={onBack} />}
       {loading ? <span className="w-72 flex-shrink-0"><Ghost width="100%" height="14px" /></span> : <FleetMix totals={totals} />}
       <span className="ml-auto flex flex-shrink-0 items-center gap-5">
         {windows.map((w) => <Pace key={w.key} w={w} />)}

@@ -1,7 +1,7 @@
 // BayFrame — a team's frame on the field: tinted with the team's colour
 // (identity, never a status), a nameplate that says who, and two counts drawn
 // in the pile colours: how many work, how many need you. The nameplate is the
-// door to the team zoom (L1); `onZoom` is the seam WP3 fills.
+// door to the team zoom (L1), a toggle: pressed again it returns to the fleet.
 
 import { memo, useCallback, type CSSProperties, type KeyboardEvent } from 'react';
 import { Inbox, Layers, Workflow, type LucideIcon } from 'lucide-react';
@@ -24,10 +24,12 @@ function bayGlyph(bay: Bay): LucideIcon | null {
 interface Props {
   bay: Bay;
   rect: Rect;
+  /** This bay is the zoomed one (it fills the field). */
+  zoomed: boolean;
   onZoom: (teamId: string) => void;
 }
 
-export const BayFrame = memo(function BayFrame({ bay, rect, onZoom }: Props) {
+export const BayFrame = memo(function BayFrame({ bay, rect, zoomed, onZoom }: Props) {
   const { t, tx } = useTranslation();
   const name = bay.kind === 'teamless' ? t.monitor.board_teamless : bay.name;
   const Glyph = bayGlyph(bay);
@@ -49,6 +51,7 @@ export const BayFrame = memo(function BayFrame({ bay, rect, onZoom }: Props) {
         role="button"
         tabIndex={0}
         data-team-id={bay.id}
+        aria-pressed={zoomed}
         aria-label={tx(t.monitor.board_bay_aria, { team: name, count: bay.cards.length, working, needs })}
         className="fb-bay__head focus-ring"
         onClick={zoom}
@@ -65,7 +68,7 @@ export const BayFrame = memo(function BayFrame({ bay, rect, onZoom }: Props) {
             </span>
           )}
           {needs > 0 && (
-            <span className="fb-count" style={{ '--fb-tone': PILE_VISUAL[critical > 0 ? 'critical' : 'warning'].tone } as CSSProperties}>
+            <span className={`fb-count${critical > 0 ? ' is-critical' : ''}`} style={{ '--fb-tone': PILE_VISUAL[critical > 0 ? 'critical' : 'warning'].tone } as CSSProperties}>
               <Numeric value={needs} unit="count" className="typo-label" />
             </span>
           )}

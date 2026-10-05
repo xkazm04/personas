@@ -9,6 +9,7 @@ import type { PersonaCardModel } from '../monitorModel';
 import { TILE_ID_ATTR } from '../grid/useAttentionCursor';
 import { PersonaMenuProvider } from '../grid/prototype/entry-e/PersonaMenu';
 import { layoutField } from './layout';
+import { pileOf } from './piles';
 import type { BoardShape } from './boardModel';
 import type { HourlyRuns } from './useBoardData';
 import { BayFrame } from './BayFrame';
@@ -16,16 +17,22 @@ import { Tile } from './Tile';
 import { HoverCard } from './HoverCard';
 
 const ZERO_DAY: readonly number[] = Array<number>(24).fill(0);
+/** A zoomed team of one or two draws cards, not posters. */
+const ZOOM_CAP = { w: 380, h: 232 };
 
 interface FieldProps {
   board: BoardShape;
+  /** One team fills the field (L1): tiles are capped, the nameplate toggles back. */
+  zoomed: boolean;
+  /** The clock in whole minutes: what the small working tiles' run-age bar reads. */
+  minute: number;
   width: number;
   height: number;
   litId: string | null;
   selectedPersonaId: string | null;
   hourly: HourlyRuns;
   onOpen: (card: PersonaCardModel) => void;
-  onZoomTeam: (teamId: string) => void;
+  onZoomTeam: (teamId: string | null) => void;
   /** The persona under the pointer or the keyboard (lights its rail row), or null. */
   onLight: (personaId: string | null) => void;
 }
@@ -35,11 +42,11 @@ function tileUnder(target: EventTarget | null): HTMLElement | null {
 }
 
 export const Field = memo(function Field({
-  board, width, height, litId, selectedPersonaId, hourly, onOpen, onZoomTeam, onLight,
+  board, zoomed, minute, width, height, litId, selectedPersonaId, hourly, onOpen, onZoomTeam, onLight,
 }: FieldProps) {
   const layout = useMemo(
-    () => layoutField(board.bays.map((b) => ({ id: b.id, count: b.cards.length })), width, height),
-    [board.bays, width, height],
+    () => layoutField(board.bays.map((b) => ({ id: b.id, count: b.cards.length })), width, height, zoomed ? ZOOM_CAP : undefined),
+    [board.bays, width, height, zoomed],
   );
   const [tip, setTip] = useState<{ id: string; anchor: DOMRect } | null>(null);
 
@@ -69,7 +76,7 @@ export const Field = memo(function Field({
           if (!laid) return null;
           return (
             <div key={bay.id} className="contents">
-              <BayFrame bay={bay} rect={laid.rect} onZoom={onZoomTeam} />
+              <BayFrame bay={bay} rect={laid.rect} zoomed={zoomed} onZoom={onZoomTeam} />
               {bay.cards.map((card, k) => (
                 <Tile
                   key={card.personaId}
@@ -80,6 +87,7 @@ export const Field = memo(function Field({
                   lit={litId === card.personaId}
                   selected={selectedPersonaId === card.personaId}
                   hourly={laid.tier === 'large' ? hourly.get(card.personaId) ?? ZERO_DAY : ZERO_DAY}
+                  minute={laid.tier === 'small' && pileOf(card) === 'working' ? minute : 0}
                   onOpen={onOpen}
                 />
               ))}

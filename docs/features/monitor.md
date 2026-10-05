@@ -31,7 +31,8 @@ instant open/close.
 > nested layout pills). The persona search input was removed with the columns
 > view it filtered; the Live pop-ups toggle is icon-only (Bell) with its label
 > in the tooltip. The last-selected tab persists across monitor opens within a
-> session.
+> session. A fifth destination, **Board**, was added on 2026-10-05 (see
+> [Board](#board)).
 
 ## The global fleet activity strip
 
@@ -770,6 +771,92 @@ longer blanks the rail; its status caption is translated.
 
 The live constellation for one team — who is doing what to whom; a node
 click drills into the Timeline scoped to that persona.
+
+### Board
+
+> Added 2026-10-05 (spark board-monitor). The fifth header destination, beside
+> Activity: the whole fleet as one full-frame real-time picture, built to be
+> compared with Activity's Classic bays (doctrine 6b: after the comparison one
+> of the two retires). Screenshots of the real Monitor shell, dark and light,
+> at 1280x800 and 1920x1080, real-shaped fleet and the 100-persona simulation:
+> [`docs/design/board-monitor/`](../design/board-monitor/).
+
+**What it does.** Every persona is a tile, every team a bay, and the field
+sorts itself so the eye answers "who is working, where am I needed" before
+reading a name, at 30 personas or 100:
+
+- **Needs you** - a solid block in the needs tone (red for a failed last run
+  or a critical review, amber otherwise) carrying the reason as a big glyph
+  and the queue depth. The loudest thing on screen; critical ones pulse.
+- **Working** - lit in the theme colour with a band sweeping through it and
+  the run age (on the smallest tiles the age is a bar along the foot, log
+  scale, full at four hours).
+- **Resting** - a quiet glass tile. **Off** - hatched.
+
+Around the field: a **top strip** (how many need you, the fleet's mix as one
+bar with its legend, the live Claude plan's 5-hour and 7-day pace - used %
+against the window's elapsed tick - and runs started today), a **needs-you
+rail** on the right (one row per persona, most urgent first: face, name,
+reason, how long it has waited; hovering a row lights its tile and vice
+versa), and a **bottom strip** (app-level work no persona owns - the System
+band's rows - and how many personas are working). One hover card follows the
+pointer or the keyboard across the field (an inert tooltip); a tile press
+(click, Enter, Space) opens the persona's drawer on its primary section,
+right-click opens the persona menu, and `n` / `j` / `k` walk the needs tiles
+exactly as on Activity.
+
+**Team zoom (L1).** A bay's nameplate zooms that team into the whole field:
+its tiles grow to the large size (capped at card size for a team of one or
+two), the top strip shows **Back** (`Esc`) and the trail *Fleet · Team* with
+the team's own counts, and the rail lists only that team's needs. Pressing
+the nameplate again, Back, or `Esc` returns to the fleet. `Esc` is one level
+at a time: it closes a drawer first, then the zoom, and only then the
+Monitor - never the Monitor while zoomed. With reduced motion the swap is
+instant; otherwise the bay and its tiles slide to their new places
+(a short CSS transition).
+
+**How it works.**
+
+- *One state authority* - `fleetboard/piles.ts` folds the Monitor's existing
+  ranking into the four piles: needs = `actionWeight > 0` (the attention
+  cursor's predicate; reason and urgency are the head of `actionBadges`:
+  failed > review > input > draft > message), off = disabled, working =
+  `pillarStateKey === 'running'`, else resting. One `PILE_VISUAL` table maps
+  each pile (and the needs tone) to its colour role, glyph and label. Working
+  is `--primary`, as on Activity. The warning fill on light themes is the
+  same status token lifted to a fill's lightness (`--fb-warning`), because
+  the light themes seat `--status-warning` at a text brown.
+- *Grouping* - Activity's own `groupFleet` (team by `home_team_id`,
+  workspace groups, the teamless tray); bays with nobody in them are not
+  drawn. Bays are packed largest first, tiles inside a bay needs (most urgent
+  first) > working > resting > off.
+- *Layout* - `fleetboard/layout.ts`, a pure function of the measured field
+  (ResizeObserver) and the headcounts: every bay gets area in proportion to
+  its members plus its nameplate, so the bays fill the field edge to edge.
+  Packed rows, packed columns and a squarified treemap are each scored by the
+  smallest tile they can draw, and the best wins. Tiles are tiered by drawn
+  size: small (initials + the reason glyph), medium (face, name, run age or
+  the leading badge), large (+ success rate, health, the last ten runs, the
+  last day's runs per hour). Unit-tested at the Monitor body sizes for the
+  real fleet shape and the 100-persona simulation.
+- *Data* - the Monitor's cards (`buildMonitorModel`, shared with Activity);
+  `get_persona_runs_hourly(24)` (`getPersonaRunsHourly`, UTC hour buckets,
+  personas without runs omitted and read as zeros) polled on the dashboards'
+  30s cadence with a module cache; `useUsageFeed` for the pace meters. In a
+  test build with the simulation on, the Board draws the simulation's
+  **100-persona load fleet** (`simLoadFleet()`, 20 projects x 5, with its
+  hourly rows) instead of Activity's 60-agent world.
+- *Escape seam* - `fleetboard/boardEscape.ts`: the Board registers a back
+  step while zoomed and `PersonaMonitor`'s Escape handler takes it before
+  closing (the Board is a lazy chunk with a frozen prop contract, so the
+  level travels through this tiny module, not a prop).
+
+**Known gaps.** No current-task line, no cost or live tool calls on a tile,
+no run progress (run age stands in) - the backend does not emit them for
+persona runs. Unread messages count as "needs you" by the owner's decision,
+so on a fleet with many unread reports most tiles glow. The brightness
+setting's light "Dimmer" tier (the default for a fresh light profile) dims
+the whole window, the Board included.
 
 ## Card context menus
 

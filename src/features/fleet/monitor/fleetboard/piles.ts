@@ -77,7 +77,8 @@ export interface PileVisual {
  */
 export const PILE_VISUAL: Record<PileKey, PileVisual> = {
   critical: { tone: 'var(--status-error)', glyph: AlertOctagon, labelKey: 'board_pile_needs' },
-  warning: { tone: 'var(--status-warning)', glyph: AlertTriangle, labelKey: 'board_pile_needs' },
+  // --fb-warning is --status-warning, except as a FILL on light themes (fleetboard.css).
+  warning: { tone: 'var(--fb-warning)', glyph: AlertTriangle, labelKey: 'board_pile_needs' },
   working: { tone: 'var(--primary)', glyph: Activity, labelKey: 'board_pile_working' },
   resting: { tone: 'var(--status-neutral)', glyph: Moon, labelKey: 'board_pile_resting' },
   off: { tone: 'color-mix(in oklab, var(--foreground) 30%, transparent)', glyph: PowerOff, labelKey: 'board_pile_off' },

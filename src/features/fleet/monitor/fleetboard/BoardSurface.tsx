@@ -2,7 +2,7 @@
 // rail and the bottom strip. The field owns every pixel the strips do not;
 // its size is measured, and the layout is a pure function of that size.
 
-import { memo, useCallback, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LayoutDashboard } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
@@ -13,7 +13,8 @@ import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { primaryDrawerSection, type DrawerSection, type PersonaCardModel, type ProcessEntry } from '../monitorModel';
 import { useAttentionCursor } from '../grid/useAttentionCursor';
 import { useUsageFeed } from '../grid/prototype/useUsageFeed';
-import { attentionModel, buildBoard } from './boardModel';
+import { attentionModel, buildBoard, zoomBoard } from './boardModel';
+import { registerBoardBack } from './boardEscape';
 import { useElementSize, type HourlyRuns } from './useBoardData';
 import { TopStrip } from './TopStrip';
 import { Field } from './Field';
@@ -34,18 +35,25 @@ export interface BoardSurfaceProps {
   /** The test build's simulated fleet is on: usage reads its fixture plans. */
   simulating: boolean;
   hourly: HourlyRuns;
-  /** A bay's nameplate was pressed (the team zoom, L1). */
-  onZoomTeam: (teamId: string) => void;
+  /** The team the operator asked to zoom (L1), or null; resolved against the bays drawn. */
+  zoom: string | null;
+  /** Zoom a team (its id; the zoomed team's own id toggles back), or null for the fleet. */
+  onZoomTeam: (teamId: string | null) => void;
 }
 
 export const BoardSurface = memo(function BoardSurface({
-  cards, personas, teams, systemProcesses, now, selectedPersonaId, onSelect, isLoading, simulating, hourly, onZoomTeam,
+  cards, personas, teams, systemProcesses, now, selectedPersonaId, onSelect, isLoading, simulating, hourly, zoom, onZoomTeam,
 }: BoardSurfaceProps) {
   const { t, tx } = useTranslation();
   const reduced = useReducedMotion();
   const visible = useDocumentVisibility();
   const usage = useUsageFeed(simulating);
-  const board = useMemo(() => buildBoard(cards, personas, teams), [cards, personas, teams]);
+  const fleet = useMemo(() => buildBoard(cards, personas, teams), [cards, personas, teams]);
+  const board = useMemo(() => zoomBoard(fleet, zoom), [fleet, zoom]);
+  const { zoomed } = board;
+  const back = useCallback(() => onZoomTeam(null), [onZoomTeam]);
+  // While zoomed, Escape is one level: back to the fleet, never the Monitor.
+  useEffect(() => (zoomed ? registerBoardBack(back) : undefined), [zoomed, back]);
 
   const fieldRef = useRef<HTMLDivElement>(null);
   const size = useElementSize(fieldRef);
@@ -65,7 +73,7 @@ export const BoardSurface = memo(function BoardSurface({
 
   return (
     <div className={`fb-root${still ? ' is-still' : ''}`} data-testid="monitor-board">
-      <TopStrip totals={board.totals} runsToday={board.runsToday} usage={usage} loading={isLoading} />
+      <TopStrip totals={board.totals} runsToday={board.runsToday} usage={usage} loading={isLoading} zoomed={zoomed} onBack={back} />
       <div ref={fieldRef} className="fb-field" role="group" aria-label={fieldLabel}>
         {isLoading ? (
           <BoardGhost width={size.w} height={size.h} />
@@ -76,6 +84,8 @@ export const BoardSurface = memo(function BoardSurface({
         ) : (
           <Field
             board={board}
+            zoomed={zoomed !== null}
+            minute={Math.floor(now / 60_000)}
             width={size.w}
             height={size.h}
             litId={litId}

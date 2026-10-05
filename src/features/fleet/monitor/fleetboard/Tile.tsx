@@ -32,6 +32,8 @@ interface TileProps {
   selected: boolean;
   /** Runs per hour, oldest first (large tiles only). */
   hourly: readonly number[];
+  /** The clock in whole minutes (small working tiles: the run-age bar), else 0. */
+  minute: number;
   onOpen: (card: PersonaCardModel) => void;
 }
 
@@ -49,7 +51,18 @@ function Meta({ card, state }: { card: PersonaCardModel; state: string }) {
   return <span className="typo-label truncate">{state}</span>;
 }
 
-export const Tile = memo(function Tile({ card, rect, tier, index, lit, selected, hourly, onOpen }: TileProps) {
+/**
+ * How far a run has gone, 0-1, for a tile with no room for "45 min": a log
+ * scale that fills at four hours, so the first minutes move visibly and a
+ * long run reads as long without every run past an hour looking the same.
+ */
+export function runAgeFraction(runningSince: number | null, minute: number): number {
+  if (runningSince === null || minute <= 0) return 0;
+  const minutes = Math.max(0, minute - runningSince / 60_000);
+  return Math.min(1, Math.log1p(minutes) / Math.log1p(240));
+}
+
+export const Tile = memo(function Tile({ card, rect, tier, index, lit, selected, hourly, minute, onOpen }: TileProps) {
   const { tx, t } = useTranslation();
   const pile = pileOf(card);
   const key = pileKey(card);
@@ -93,6 +106,9 @@ export const Tile = memo(function Tile({ card, rect, tier, index, lit, selected,
           <span className="fb-grow" />
           {pile === 'working' && <span className="fb-hide-narrow"><Meta card={card} state={state} /></span>}
           {needs && <NeedGlyph card={card} size="sm" />}
+          {pile === 'working' && (
+            <i className="fb-age" style={{ width: `${runAgeFraction(card.runningSince, minute) * 100}%` }} />
+          )}
         </span>
       ) : (
         <span className="fb-tile__body is-stack" aria-hidden>

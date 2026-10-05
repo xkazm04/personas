@@ -284,6 +284,9 @@ export type Translations = {
     board_loading: string;
     board_empty_title: string;
     board_empty_subtitle: string;
+    board_back: string;
+    board_crumb_fleet: string;
+    board_crumbs_aria: string;
     grid_state_running: string;
     grid_state_attention: string;
     grid_state_failed: string;

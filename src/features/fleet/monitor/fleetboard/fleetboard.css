@@ -9,7 +9,25 @@
  * is set from useReducedMotion + useDocumentVisibility); each has a static
  * fallback that reads the same without the movement. */
 
+/* The warning pile's colour role. The status token is tuned for TEXT, and on a
+ * light theme that is a deep brown (#92400e) - right for an amber word on a
+ * pale canvas, wrong for the fill of the loudest tile on screen (and the light
+ * brightness tier dims it further). Light themes lift the SAME token to a
+ * fill: its own hue, at a fill's lightness and at least an amber's chroma
+ * (no new hue; --status-warning-raw is re-seated to the same brown on light,
+ * and --brand-amber is grey on light-news), with dark ink on it (below), so a
+ * needs tile stays the warmest, loudest thing on the board in every theme. */
+:root { --fb-warning: var(--status-warning); }
+@supports (color: oklch(from red l c h)) {
+  [data-theme^="light"] { --fb-warning: oklch(from var(--status-warning) 0.8 max(c, 0.16) h); }
+}
+
 .fb-root {
+  /* The kit parts the top strip borrows (Crumbs, KitButton) read these; the
+   * Board is not a kit host, so it supplies the kit's own fallbacks. */
+  --band-hover: color-mix(in srgb, var(--primary) 6%, transparent);
+  --quiet: color-mix(in srgb, var(--foreground) 80%, transparent);
+  --glow: color-mix(in srgb, var(--primary) 60%, transparent);
   --fb-rule: color-mix(in oklab, var(--foreground) 10%, transparent);
   --fb-glass: color-mix(in oklab, var(--foreground) 4%, transparent);
   --ghost: color-mix(in oklab, var(--foreground) 8%, transparent);
@@ -40,6 +58,8 @@
 /* The legend yields first: words, then the swatches (the bar still draws the mix). */
 @container (width < 1360px) { .fb-key > .typo-caption { display: none; } }
 @container (width < 1040px) { .fb-key { display: none; } }
+/* Zoomed, the way back takes the room first: the legend yields earlier. */
+@container (width < 1500px) { .fb-top.is-zoomed .fb-key { display: none; } }
 .fb-bottom { border-top: 1px solid var(--fb-rule); gap: 16px; }
 .fb-sep { width: 1px; align-self: stretch; margin: 9px 0; background: var(--fb-rule); flex-shrink: 0; }
 .fb-mix { display: flex; height: 10px; width: clamp(96px, 12vw, 220px); gap: 2px; border-radius: var(--radius-pill); overflow: hidden; flex-shrink: 0; }
@@ -77,6 +97,8 @@
 /* A narrow bay keeps its name and its needs count; the working count yields. */
 @container (width < 150px) { .fb-bay__work { display: none; } }
 @container (width < 120px) { .fb-count { display: none; } }
+[data-theme^="light"] .fb-tile.is-needs:not(.is-critical),
+[data-theme^="light"] .fb-count:not(.is-critical) { color: var(--foreground); }
 .fb-count { min-width: 1.6em; padding: 0 5px; border-radius: var(--radius-interactive); text-align: center; background: var(--fb-tone); color: var(--background); }
 
 /* ── Tiles ──────────────────────────────────────────────────────────── */
@@ -149,6 +171,10 @@
 @container (width < 92px) {
   .fb-hide-narrow { display: none; }
 }
+
+/* A small working tile's run age, drawn: a bar along its foot (log scale, full at 4h). */
+.fb-age { position: absolute; left: 0; bottom: 0; height: 4px; border-radius: 0 2px 2px 0; background: var(--fb-tone); box-shadow: 0 0 8px var(--fb-tone); }
+.fb-root.is-still .fb-tile, .fb-root.is-still .fb-bay { transition: none; }
 
 /* Drawn quantities on a large tile: last ten runs, 24h runs per hour. */
 .fb-runs { display: flex; gap: 2px; height: 14px; flex: 2; min-width: 0; }

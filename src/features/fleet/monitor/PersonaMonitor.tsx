@@ -29,6 +29,7 @@ import { useChannelWorkspace } from './channels';
 import { MonitorFeedStatus } from './MonitorFeedStatus';
 import { MonitorDrawerShell } from './MonitorDrawerShell';
 import { FleetGridView } from './grid/FleetGridView';
+import { takeBoardBack } from './fleetboard/boardEscape';
 import {
   buildMonitorModel,
   processStatusMeta, processStatusLabel, elapsedStr,
@@ -305,9 +306,11 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
       // plumbed up from each of them and would go stale the moment a fourth
       // arrives. `[role="dialog"]` is what BaseModal already stamps.
       if (document.querySelector('[role="dialog"]')) return;
+      // Innermost first: the drawer, the remote drawer, then the Board's team
+      // zoom (one level back to the fleet), and only then the Monitor itself.
       if (selection) setSelection(null);
       else if (remoteJobId) setRemoteJobId(null);
-      else onClose();
+      else if (!takeBoardBack()) onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

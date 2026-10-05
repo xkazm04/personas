@@ -19,6 +19,7 @@ import { twinDetailTapes } from './twinDetailTapes.mjs';
 import { activityTapes } from './activityTapes.mjs';
 import { inboxTapes } from './inboxTapes.mjs';
 import { missionControlTapes } from './missionControlTapes.mjs';
+import { monitorBoardTapes } from './monitorBoardTapes.mjs';
 
 export const RECORDED_AT = '2026-09-22T15:40:00.000Z';
 const T0 = Date.parse(RECORDED_AT);
@@ -307,6 +308,8 @@ const BUILDERS = {
   ...activityTapes({ RECORDED_AT, PERSONAS }).builders,
   // Kit batch overview-1, Overview > Approvals + Incidents (inboxSurfaces.tsx, inboxTapes.mjs).
   ...inboxTapes({ RECORDED_AT, PERSONAS }).builders,
+  // Spark board-monitor, the Persona Monitor's Board (monitorBoardSurfaces.tsx, monitorBoardTapes.mjs).
+  ...monitorBoardTapes({ RECORDED_AT }).builders,
   // Module 3, the Fleet cluster (fleetSurfaces.tsx, fleetTapes.mjs).
   ...fleetTapes({ RECORDED_AT }).builders,
   // Module 4, Overview > Observability (observabilitySurfaces.tsx, observabilityTapes.mjs).

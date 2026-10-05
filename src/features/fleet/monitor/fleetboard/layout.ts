@@ -140,11 +140,15 @@ export function fitTiles(n: number, w: number, h: number, gap: number): TileGrid
   return { cols: best.cols, rows: best.rows, tw: best.tw, th: best.th };
 }
 
-function bayIn(id: string, cell: Rect, n: number): BayLayout {
+/** A tile never grows past this (a zoomed team of two must not draw two posters). */
+export interface TileCap { w: number; h: number }
+
+function bayIn(id: string, cell: Rect, n: number, cap?: TileCap): BayLayout {
   const { gap, head, pad, tileGap } = GEOMETRY;
   const rect = { x: cell.x + gap / 2, y: cell.y + gap / 2, w: Math.max(0, cell.w - gap), h: Math.max(0, cell.h - gap) };
   const iw = rect.w - 2 * pad, ih = rect.h - head - pad;
-  const g = fitTiles(n, Math.max(0, iw), Math.max(0, ih), tileGap);
+  const fit = fitTiles(n, Math.max(0, iw), Math.max(0, ih), tileGap);
+  const g = cap ? { ...fit, tw: Math.min(fit.tw, cap.w), th: Math.min(fit.th, cap.h) } : fit;
   // Centre whatever the aspect cap left over (zero for a well-shaped bay).
   const ox = rect.x + pad + (iw - (g.cols * g.tw + (g.cols - 1) * tileGap)) / 2;
   const oy = rect.y + head + (ih - (g.rows * g.th + (g.rows - 1) * tileGap)) / 2;
@@ -161,7 +165,7 @@ function bayIn(id: string, cell: Rect, n: number): BayLayout {
  * an empty band). Returned bays keep the INPUT order, so a caller can zip them
  * with its own bay list; only their rects follow the packing order.
  */
-export function layoutField(bays: readonly BayInput[], width: number, height: number): BayLayout[] {
+export function layoutField(bays: readonly BayInput[], width: number, height: number, cap?: TileCap): BayLayout[] {
   const { edge, gap } = GEOMETRY;
   const live = bays.map((b, i) => ({ ...b, i })).filter((b) => b.count > 0);
   if (live.length === 0 || width <= 0 || height <= 0) return [];
@@ -182,7 +186,7 @@ export function layoutField(bays: readonly BayInput[], width: number, height: nu
   let best: BayLayout[] = [];
   let bestScore = -1;
   for (const cells of candidates) {
-    const laid = packed.map((b, k) => bayIn(b.id, cells[k]!, b.count));
+    const laid = packed.map((b, k) => bayIn(b.id, cells[k]!, b.count, cap));
     const tileAreas = laid.map(({ tiles: [t] }) => t!.w * t!.h * shapeFactor(t!.w, t!.h));
     const min = Math.min(...tileAreas);
     const mean = tileAreas.reduce((s, a) => s + a, 0) / tileAreas.length;

@@ -31,6 +31,7 @@ import { TWIN_DETAIL_MODULES } from './twinDetailSurfaces';
 import { MISSION_CONTROL_MODULES } from './missionControlSurfaces';
 import { ACTIVITY_MODULES } from './activitySurfaces';
 import { INBOX_MODULES } from './inboxSurfaces';
+import { MONITOR_BOARD_MODULES } from './monitorBoardSurfaces';
 
 type Wrap = (children: ReactNode) => ReactNode;
 
@@ -75,6 +76,7 @@ export const MODULES: Record<string, HarnessModule> = {
   ...ACTIVITY_MODULES,
   // Kit batch overview-1, Overview > Approvals + Incidents (inboxSurfaces.tsx, inboxTapes.mjs).
   ...INBOX_MODULES,
+  ...MONITOR_BOARD_MODULES,
   ...TONE_MODULES,
   ...TRIAGE_MODULES,
   ...DATAGRID_MODULES,
