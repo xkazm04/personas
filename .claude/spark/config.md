@@ -102,6 +102,11 @@ Authority: `.claude/CLAUDE.md` (parallel-safety primitives apply in full).
   module if `scripts/docs/feature-doc-map.json` maps one). Ask the scout in Phase 2 whether the target
   source paths are covered by that map at all.
 - New Rust types with ts-rs: run the `export_bindings` gate above and commit `src/lib/bindings/`.
+- File edits from scripts on Windows: never Python text-mode `open(p,'w').write` (it writes CRLF into LF-tracked files;
+  sighted twice, 2026-09 and 2026-10-05 devlog-doctor). Use the Edit tool, or read and write BYTES (`'rb'`/`'wb'`).
+  Before deleting an IPC command, `git grep` its name over the WHOLE tree, `index.html` included. When you commit a
+  file another session has STAGED (`git status` shows `MM`), apply your hunk to their staged blob too, or their next
+  commit reverts yours. Promoted 2026-10-05 (devlog-doctor).
 - Incremental migration numbers collide across machines and sibling sessions (three collisions
   2026-09-21 to 09-25). Name the migration in WP0 from the highest e-number on BOTH local master and
   `origin/master`, and re-check both before landing; a rename is mechanical (file, `mod` line, `run`
