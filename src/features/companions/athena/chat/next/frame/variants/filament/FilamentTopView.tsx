@@ -72,8 +72,20 @@ export function FilamentTopView({
   const [turn, setTurn] = useState<Turn | null>(null);
   const conversations = useAthenaStore((s) => s.conversations);
   const activeConversationId = useAthenaStore((s) => s.activeConversationId);
-  const conversationTitle =
-    conversations.find((c) => c.id === activeConversationId)?.title ?? t.athena.name;
+  // Bound, so an absence arm has somewhere to live. The one-expression form
+  // (`.find(...)?.title ?? t.athena.name`) rendered a conversation whose row is
+  // GONE byte-identically to no conversation being chosen at all
+  // (`missing-current-entity-rendered-as-unset`), and dangling ids are the
+  // normal case here, not a hypothetical: the operator's own database holds
+  // 2.7 dead references per live entity. Three states, three labels.
+  const activeConversation = activeConversationId
+    ? conversations.find((c) => c.id === activeConversationId) ?? null
+    : null;
+  const conversationTitle = activeConversation
+    ? activeConversation.title
+    : activeConversationId
+      ? t.athena.health_status_unknown
+      : t.athena.name;
   const last = useMemo(() => latestReply(engine.messages), [engine.messages]);
   const reading = expanded && !turn;
   const { scrollRef, scrollToBottom, maybeAutoScroll } = useChatScroll(reading);

@@ -13,7 +13,8 @@
  * TODO(prototype, 2026-10-04): consolidate the Athena chat switcher.
  */
 
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
+import { useAnnounce } from '@/features/shared/components/feedback/AriaLiveProvider';
 import { FULLSCREEN_LAYER_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import type { PendingApproval } from '@/api/companion';
 import type { McpPendingRequest } from '@/features/companions/athena/mcp/mcpRequestStore';
@@ -175,6 +176,15 @@ function Oracle({ model, item, color }: { model: CardModel; item: WorkItem; colo
   const rec = model.recommendation;
   const art = ART[item.kind] ?? ART.plan;
   const { lead, rest } = splitPrompt(model.question);
+  // The verdict and the composing line are what this card exists to say, so
+  // they are what gets announced. The regions themselves live at the app root
+  // (`AriaLiveProvider`) and are mounted for the whole session, which is the
+  // property the removed inline `role="status"` nodes could not have.
+  const announce = useAnnounce();
+  const spoken = rec?.revealed && rec.text ? rec.text : rec?.composing ?? '';
+  useEffect(() => {
+    if (spoken) announce(spoken);
+  }, [spoken, announce]);
   return (
     <>
       <svg className="glyph-art" viewBox="0 0 120 120" aria-hidden style={{ ['--c' as string]: color }}>
@@ -251,8 +261,16 @@ function Oracle({ model, item, color }: { model: CardModel; item: WorkItem; colo
           </label>
         )}
 
+        {/* No `role="status"` on these branches. A live region that enters the
+            accessibility tree in the SAME commit as its text gives assistive
+            tech no change to observe, so the announcement never fires
+            (`live-region-born-with-its-message`; MDN is explicit that the
+            attribute must be present BEFORE the content changes). The
+            announcement goes through `useAnnounce`, whose two regions are
+            mounted once at the app root and are therefore always already
+            there. */}
         {rec && rec.revealed && rec.text ? (
-          <div className="verdict" role="status">
+          <div className="verdict">
             <span className="avatar" aria-hidden>
               <Sigil />
             </span>
@@ -263,7 +281,7 @@ function Oracle({ model, item, color }: { model: CardModel; item: WorkItem; colo
             </p>
           </div>
         ) : rec?.composing ? (
-          <p className="typo-body" role="status">
+          <p className="typo-body">
             {rec.composing}
           </p>
         ) : rec?.reveal ? (

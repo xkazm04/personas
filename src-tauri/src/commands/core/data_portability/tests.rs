@@ -3020,8 +3020,13 @@ mod tests {
                 return Err(format!("{label}: a newer-generation bundle imported").into());
             };
             let err = err.to_string();
-            let version =
-                serde_json::from_str::<serde_json::Value>(body)?["format_version"].to_string();
+            // Through the bounded decoder, like the product path it is
+            // asserting against (`engine::safe_json` validates size and depth
+            // BEFORE serde allocates). A test that decodes its own fixture with
+            // bare serde_json reads, to the census, exactly like a wire buffer
+            // decoded unbounded - and there is no reason for the test to use a
+            // different door than the importer it is testing.
+            let version = crate::engine::safe_json::from_str(body)?["format_version"].to_string();
             let by_version = err.contains("newer version") && err.contains(&version);
             eprintln!(
                 "generation-gate {label}: {} -> {err}",

@@ -25,11 +25,18 @@ export function getKindLabels(t: Translations): Record<GraphNodeKind, string> {
   };
 }
 
+// Styles only. The four `label: 'Low Risk' | 'Medium Risk' | 'High Risk' |
+// 'Critical'` entries that used to sit here were DEAD: `getSeverityStyles`
+// below overwrites every one with its translated key, and nothing imports this
+// constant directly (the other `SEVERITY_STYLES` in the tree are unrelated
+// file-local ones). They were unreachable English in a `.ts` module, which is
+// the condition `frozen-ui-copy-constant` exists to stop growing, and no
+// translation lookup could ever have reached them.
 export const SEVERITY_STYLES = {
-  low: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20', label: 'Low Risk' },
-  medium: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20', label: 'Medium Risk' },
-  high: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20', label: 'High Risk' },
-  critical: { bg: 'bg-fuchsia-500/10', text: 'text-fuchsia-400', border: 'border-fuchsia-500/20', label: 'Critical' },
+  low: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
+  medium: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
+  high: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20' },
+  critical: { bg: 'bg-fuchsia-500/10', text: 'text-fuchsia-400', border: 'border-fuchsia-500/20' },
 } as const;
 
 /** Returns severity styles with translated labels. */
