@@ -43,6 +43,11 @@ with the first technique in the subject's index entry that has no application ro
 in THIS repo, whose `.ai/registry-map.json` it writes; that worker is told not to commit or
 push, so the operator reads and commits the map diff.
 
+`conform` items are also filtered by scope: the scan ranks a subject without knowing which
+bundles this repo consumes, so `loop.py` skips any item whose domain is not in
+`.ai/manifest.yaml` `knowledge.domains` (an unreadable or absent declaration filters nothing).
+Measured 2026-10-05: `recruiting/candidate-consent-and-retention` idled for exactly this reason.
+
 There is **no bare worker form**: every pass goes through the ladder, because a run that
 picked its own subject would be a person using her credentials rather than her loop.
 

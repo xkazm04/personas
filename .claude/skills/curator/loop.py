@@ -518,6 +518,25 @@ def method_authorization() -> str:
     )
 
 
+def declared_domains() -> set[str] | None:
+    """The bundles this repo consumes: `knowledge.domains` in `.ai/manifest.yaml`.
+
+    `None` means UNKNOWN (no manifest, no such key, unreadable) and the caller must
+    not filter on it - an absent declaration is not an empty one. The manifest's
+    flow-list shape is read with a regex so the driver stays stdlib-only.
+    """
+    try:
+        text = (PERSONAS_ROOT / ".ai" / "manifest.yaml").read_text(encoding="utf-8")
+    except OSError:
+        return None
+    m = re.search(r"^knowledge:\s*\n(?:[ \t]+.*\n)*?[ \t]+domains:\s*\[([^\]]*)\]", text, re.M)
+    if not m:
+        return None
+    names = {d.strip().strip("'\"") for d in m.group(1).split(",")}
+    names.discard("")
+    return names or None
+
+
 def derive_plan_argument(row, root: pathlib.Path) -> tuple[str, str | None] | None:
     """(argument, cwd override) for an engine whose item cannot carry its own, else None.
 
@@ -531,6 +550,13 @@ def derive_plan_argument(row, root: pathlib.Path) -> tuple[str, str | None] | No
     """
     slug = row["subject_id"].split("/")[-1]
     if row["engine"] == "conform":
+        # The scan ranks a subject with no knowledge of which bundles THIS repo
+        # consumes, so a bundle it never declared still scores. Measured 2026-10-05:
+        # `recruiting/candidate-consent-and-retention` idled because the manifest's
+        # `knowledge.domains` omits recruiting and `scope.does_not` excludes it.
+        declared = declared_domains()
+        if declared is not None and row["domain"] not in declared:
+            return None
         return f"--subject {slug}", str(PERSONAS_ROOT)
     index = root / "knowledge" / row["domain"] / "index.json"
     try:
