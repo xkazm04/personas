@@ -215,6 +215,15 @@ export function cmdSettle({ flags = {} } = {}) {
       if (!base.ok && failuresAreInherited(r.failures, base.failures)) r.inherited = true;
     } catch (e) { r.base = { error: String(e.message || e).split('\n')[0] }; }
   }
+  // The gates ran in a worktree that was clean before them, so anything dirty now is THEIR side effect
+  // (vitest rewrote snapshot files in both first runs, 2026-10-05). Record it and revert it: a retry,
+  // the rebase and the merge gate all need the committed tip, not the tip plus a test run's leftovers.
+  const effects = worktreeDirty(run.worktree);
+  if (effects.length) {
+    verdict.gateSideEffects = effects.slice(0, 20);
+    gitTry(run.worktree, ['checkout', '--', '.']);
+    gitTry(run.worktree, ['clean', '-fdq', '-e', 'node_modules']);
+  }
   const gv = gatesVerdict(verdict.gates);
   if (!gv.ran.length) return hold(run, 'no verifiable gate (every gate was skipped: no command)', verdict);
   if (gv.failed.length) {

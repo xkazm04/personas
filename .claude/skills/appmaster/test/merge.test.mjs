@@ -280,6 +280,20 @@ test('(xii) base green, branch red -> held (nothing is inherited from a passing 
   assert.equal(out.verdict.gates.test.base.ok, true);
 });
 
+// gate side effects: a test run that rewrites a tracked file (vitest snapshots) must not leave the worktree dirty
+const noisyScript = path.join(tmp, 'noisy-gate.cjs').replace(/\\/g, '/');
+fs.writeFileSync(noisyScript, "require('fs').appendFileSync('b.txt', 'rewritten by the gate\\n');\n");
+const noisyGates = { typecheck: 'exit 0', lint: 'exit 0', test: `node ${noisyScript}` };
+
+test('(xiii) a gate that rewrites a tracked file is reverted and recorded, and the merge still goes through', () => {
+  const { root, run, wt } = scenario('noisy', { gates: noisyGates });
+  commitIn(wt, 'c.txt', 'x\n');
+  const out = settle(run);
+  assert.equal(out.state, 'merged', out.heldReason);
+  assert.deepEqual(out.verdict.gateSideEffects, ['b.txt']);
+  assert.equal(fs.readFileSync(path.join(root, 'b.txt'), 'utf8').replace(/\r\n/g, '\n'), 'b\n', 'the rewrite never reached the checkout');
+});
+
 // ---------------------------------------------------------------- the rest of the state machine
 
 test('a usage limit in the stream -> released (not held, not failed) and the mark is set', () => {
