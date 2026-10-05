@@ -29,12 +29,14 @@ const platform = process.env.TAURI_ANDROID
     ? "ios"
     : "desktop";
 
-// WebView2 compatibility uses TWO layers:
+// WebView2 compatibility uses THREE carriers, each owning disjoint code:
 // 1. Runtime shim (public/webview2-compat.js) -- converts Object.prototype
 //    properties to getter/setters. Handles ALL patterns if properties are
-//    configurable.
-// 2. Rolldown source transform (below) -- rewrites simple assignments during
-//    dep pre-bundling as a fallback for non-configurable properties.
+//    configurable (a frozen realm defeats it).
+// 2. Rolldown source transform (below) -- rewrites spaced assignments in
+//    non-minified deps during dep pre-bundling (dev only).
+// 3. Postinstall patch (scripts/patches/fix-frozen-intrinsics.mjs) -- owns the
+//    minified @xterm files, dev and production. The transform skips @xterm.
 // NO Vite transform plugin -- it double-processes pre-bundled deps and breaks
 // comma expressions in minified code.
 
@@ -222,22 +224,14 @@ export default defineConfig(async ({ command }) => ({
           transform(code: string, id: string) {
             if (!id.includes("node_modules")) return null;
             if (!/\.(js|mjs|cjs)$/.test(id)) return null;
-            // xterm ships its ESM build minified (`o.toString=s`, no space), so
-            // the space-gated general transform below intentionally skips it.
-            // But WebView2 treats inherited Object.prototype.toString as
-            // read-only, so that assignment throws and the whole terminal (the
-            // Fleet module) fails to render. Rewrite xterm's narrow, safe
-            // statement form (`IDENT.PROP=IDENT<terminator>`) to defineProperty
-            // — scoped to @xterm so the minified-sequence hazard the general
-            // transform avoids can't bite other deps.
-            if (id.includes("@xterm")) {
-              const patched = code.replace(
-                /([A-Za-z_$][\w$]*)\.(toString|constructor|valueOf|toLocaleString)=(?!=)([A-Za-z_$][\w$]*)([;,)}\]])/g,
-                (_m: string, obj: string, prop: string, val: string, term: string) =>
-                  `Object.defineProperty(${obj},'${prop}',{value:${val},writable:!0,configurable:!0,enumerable:!0})${term}`,
-              );
-              return patched !== code ? { code: patched } : null;
-            }
+            // @xterm is owned by ONE carrier: scripts/patches/fix-frozen-
+            // intrinsics.mjs (postinstall), which patches node_modules so dev
+            // and `vite build` see the same bytes. Do not re-patch it here: a
+            // second carrier over the same hunks wrote different bytes for them
+            // and hid a skipped postinstall in dev while production shipped
+            // xterm unpatched. If the Fleet page throws "read only property",
+            // re-run `node scripts/patches/fix-frozen-intrinsics.mjs`.
+            if (id.includes("@xterm")) return null;
             if (!needsTransform(code)) return null;
             const transformed = transformForWebView2(code);
             if (transformed === code) return null;

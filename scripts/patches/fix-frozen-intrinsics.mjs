@@ -32,7 +32,17 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-/** Files known to carry the namespace `X.toString = fn;` assignment. */
+/**
+ * Files known to carry the namespace `X.toString = fn;` assignment.
+ *
+ * This script is the ONLY carrier for @xterm. The dev optimizeDeps transform in
+ * vite.config.ts used to rewrite the same two hunks with a wider pattern, so the
+ * fix lived in two places that wrote different bytes for one hunk (enumerable
+ * vs not), and a skipped postinstall stayed invisible in dev while `vite build`
+ * shipped xterm unpatched. Measured 2026-10-05 on pristine xterm 6.0.0 +
+ * addon-webgl 0.19.0: both carriers matched the same 2 hunks, 0 dev-only. One
+ * carrier per upstream file; it reaches dev and production alike.
+ */
 const TARGETS = [
   'node_modules/@xterm/xterm/lib/xterm.mjs',
   'node_modules/@xterm/xterm/lib/xterm.js',
@@ -40,10 +50,13 @@ const TARGETS = [
   'node_modules/@xterm/addon-webgl/lib/addon-webgl.js',
 ];
 
-// `<ident>.toString=<ident>;` (minified namespace pattern). Deliberately does
-// NOT match `.prototype.toString=` (legal: own property of a plain prototype
-// object) or longer right-hand sides.
-const PATTERN = /\b([A-Za-z_$][\w$]*)\.toString=([A-Za-z_$][\w$]*);/g;
+// `<ident>.<protected>=<ident><terminator>` (minified statement or sequence
+// form). Deliberately does NOT match a member-chain suffix like
+// `a.prototype.toString=` (legal: own property of a plain prototype object) or
+// longer right-hand sides; the terminator is kept, so a sequence expression
+// stays a sequence expression.
+const PATTERN =
+  /(?<![\w$.])([A-Za-z_$][\w$]*)\.(toString|constructor|valueOf|toLocaleString)=(?!=)([A-Za-z_$][\w$]*)([;,)}\]])/g;
 
 let patchedAny = false;
 for (const rel of TARGETS) {
@@ -58,9 +71,10 @@ for (const rel of TARGETS) {
     continue;
   }
   let count = 0;
-  const out = src.replace(PATTERN, (_m, obj, fn) => {
+  // enumerable: a plain assignment creates an enumerable own property.
+  const out = src.replace(PATTERN, (_m, obj, prop, fn, term) => {
     count++;
-    return `Object.defineProperty(${obj},"toString",{value:${fn},writable:true,configurable:true});`;
+    return `Object.defineProperty(${obj},'${prop}',{value:${fn},writable:!0,configurable:!0,enumerable:!0})${term}`;
   });
   if (count === 0) {
     console.log(`[fix-frozen-intrinsics] no match in ${rel} — dependency may have fixed it upstream`);
