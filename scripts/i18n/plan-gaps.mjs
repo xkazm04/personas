@@ -7,6 +7,11 @@
  * reads exactly one task file and writes the same shape (key → translation) to
  * .i18n-work/out/<lang>/<file>. merge-chunks.mjs validates and merges.
  *
+ * A key's `_comment_<leaf>` sibling is the author's note to the translator; it
+ * rides in the task file's `notes` map (key → note) so the translator sees it.
+ * Without it, two engines given "Credential gaps" read "gaps" as two different
+ * things; with it, both land on the meaning the author wrote down.
+ *
  * Dead keys (find-unused-i18n-keys.mjs) are excluded — never spend a token on a
  * string no user can see.
  *
@@ -49,6 +54,13 @@ fs.mkdirSync(`${WORK}/gaps`, { recursive: true });
 const index = [];
 let totalKeys = 0;
 let deadSkipped = 0;
+let notesAttached = 0;
+
+/** The author's translator note for `a.b.leaf` lives at `a.b._comment_leaf`. */
+const noteOf = (k) => {
+  const i = k.lastIndexOf('.');
+  return en[`${k.slice(0, i + 1)}_comment_${k.slice(i + 1)}`];
+};
 
 let repairs = 0;
 for (const lang of langs) {
@@ -68,14 +80,23 @@ for (const lang of langs) {
   const dir = `${WORK}/gaps/${lang}`;
   fs.mkdirSync(dir, { recursive: true });
   const emit = (name, sections, keys) => {
+    const notes = Object.fromEntries(
+      keys.map((k) => [k, noteOf(k)]).filter(([, n]) => typeof n === 'string' && n.trim()),
+    );
     fs.writeFileSync(
       `${dir}/${name}`,
       JSON.stringify(
-        { lang, sections, strings: Object.fromEntries(keys.map((k) => [k, en[k]])) },
+        {
+          lang,
+          sections,
+          strings: Object.fromEntries(keys.map((k) => [k, en[k]])),
+          ...(Object.keys(notes).length ? { notes } : {}),
+        },
         null,
         2,
       ) + '\n',
     );
+    notesAttached += Object.keys(notes).length;
     index.push({ lang, sections, count: keys.length, file: `${dir}/${name}` });
     totalKeys += keys.length;
   };
@@ -111,6 +132,7 @@ fs.writeFileSync(`${WORK}/index.json`, JSON.stringify({ chunk: CHUNK, totalKeys,
 console.log(`locales      : ${langs.length}`);
 console.log(`live gaps    : ${totalKeys}`);
 console.log(`  of which placeholder repairs: ${repairs}`);
+console.log(`  with an author note: ${notesAttached}`);
 if (skipDead) console.log(`dead skipped : ${deadSkipped}`);
 console.log(`tasks        : ${index.length}  (<=${CHUNK} keys each)`);
 console.log(`\nwrote ${WORK}/index.json + ${WORK}/gaps/<lang>/<section>-NN.json`);
