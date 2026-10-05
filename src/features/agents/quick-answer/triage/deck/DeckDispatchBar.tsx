@@ -26,6 +26,17 @@
  *    right call in the numeric surfaces it was built for and a foreign object
  *    in a panel that is `typo-*` throughout. The bar passes `typo-label`.
  *
+ * ## The mode pills and the stepper are gone (2026-10-05)
+ *
+ * Both of them set a number that `dev_tools_start_batch` opened by throwing
+ * away (`let _ = max_parallel;`), so `single`, `batch` and `parallel` were
+ * three names for one behaviour. The executor honours the width now, and the
+ * choice moved somewhere it can be made properly: the rocket opens
+ * {@link DeckDispatchModal}, where the reviewer sees the work they are about
+ * to pay for and assigns it to lanes. What is left on the bar is what fits at
+ * rail floor and what the rail is for — select, count, delete, send — which
+ * is also why the bar did not simply grow a fourth control.
+ *
  * Three deliberate omissions, none of them oversights:
  *  • "New task" — this bar acts on a selection of ideas the reviewer just
  *    accepted; authoring a task from nothing is not a triage act.
@@ -47,19 +58,13 @@
 import { useState } from 'react';
 import { Rocket, Trash2 } from 'lucide-react';
 
-import { AsyncButton, Button } from '@/features/shared/components/buttons';
+import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
-import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
-import { PillGroup, type PillOption } from '@/features/shared/components/forms/PillGroup';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import {
-  MAX_PARALLEL,
-  MIN_PARALLEL,
-  type AcceptedDispatch,
-  type DispatchMode,
-} from './useAcceptedDispatch';
+import { DeckDispatchModal } from './DeckDispatchModal';
+import { type AcceptedDispatch } from './useAcceptedDispatch';
 
 export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
   const { t, tx } = useTranslation();
@@ -67,21 +72,13 @@ export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
   // The confirm gate is bar-local: nothing outside needs to know it is open,
   // and the hook deliberately does not ask — `remove()` just deletes.
   const [confirming, setConfirming] = useState(false);
+  // So is the dispatch modal. It reads and writes the same `ctl`, so nothing
+  // above the bar has to hold a flag for a surface it does not render.
+  const [dispatchOpen, setDispatchOpen] = useState(false);
 
   const total = ctl.rows.length;
   const chosen = ctl.selected.size;
   const allSelected = total > 0 && chosen === total;
-
-  // A RADIO GROUP, not a tab strip. The three modes select a parameter, not a
-  // region — nothing on this bar is a `tabpanel`, and `SegmentedTabs` would
-  // have this row telling assistive tech it controls three panels that do not
-  // exist (census: `tabstrip-with-no-declared-panel`). `PillGroup` declares
-  // `role="radiogroup"` / `role="radio"`, which is what this actually is.
-  const modes: PillOption<DispatchMode>[] = [
-    { value: 'single', label: m.triage_accepted_mode_single },
-    { value: 'batch', label: m.triage_accepted_mode_batch },
-    { value: 'parallel', label: m.triage_accepted_mode_parallel },
-  ];
 
   return (
     <div className="shrink-0 space-y-1.5 border-b border-border px-2.5 py-2">
@@ -138,50 +135,32 @@ export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
         />
       )}
 
-      {/* ONE ROW: how to send, then send. The mode is the question and the
-          rocket is the answer, so they sit together instead of stacking a
-          full-width button under the pills. */}
+      {/* ONE ROW, ONE CONTROL. Not an `AsyncButton`, for the same reason the
+          trash is not: pressing this opens a surface, it does not start the
+          dispatch. The in-flight control is the modal's own Dispatch, which
+          disables itself and its sibling while the batch is being accepted.
+          Icon only, as before: the label is the tooltip and the accessible
+          name, and the rail cannot afford a word here. */}
       <div className="flex items-center gap-1.5">
-        <Tooltip content={m.triage_accepted_concurrency_hint}>
-          <div aria-label={m.triage_accepted_mode_aria} className="flex min-w-0">
-            <PillGroup
-              options={modes}
-              value={ctl.mode}
-              onChange={ctl.setMode}
-              labelClass="typo-label"
-            />
-          </div>
-        </Tooltip>
-        {/* Only in `parallel`: in the other two modes the width is not the
-            reviewer's to set (1, and the runner's own default), and a stepper
-            that does nothing is worse than no stepper. FIXED WIDTH — the field
-            only ever holds one digit. */}
-        {ctl.mode === 'parallel' && (
-          <NumberStepper
-            value={ctl.maxParallel}
-            onChange={(n) => ctl.setMaxParallel(n ?? MIN_PARALLEL)}
-            min={MIN_PARALLEL}
-            max={MAX_PARALLEL}
-            ariaLabel={m.triage_accepted_concurrency_hint}
-            className="w-[74px] shrink-0"
-          />
-        )}
-        {/* An ACTION, so a real spinner on the control the reviewer pressed —
-            `AsyncButton` with a promise-returning onClick, never a `useState`
-            busy flag (docs/concepts/golden-paths/inline-busy-state.md). Icon
-            only: the label moved to the tooltip and the accessible name. */}
-        <Tooltip content={m.triage_accepted_dispatch}>
-          <AsyncButton
+        <span className="min-w-0 flex-1 truncate typo-caption">
+          {tx(m.triage_dispatch_lane_summary, { lanes: ctl.lanes })}
+        </span>
+        <Tooltip content={m.triage_dispatch_open}>
+          <Button
             variant="primary"
             size="icon-sm"
-            aria-label={m.triage_accepted_dispatch}
-            className="ml-auto shrink-0"
+            aria-label={m.triage_dispatch_open}
+            className="shrink-0"
             icon={<Rocket className="h-3.5 w-3.5" />}
-            disabled={chosen === 0}
-            onClick={() => ctl.dispatch()}
+            disabled={chosen === 0 || ctl.dispatching || ctl.removing}
+            onClick={() => setDispatchOpen(true)}
           />
         </Tooltip>
       </div>
+
+      {dispatchOpen && (
+        <DeckDispatchModal ctl={ctl} onClose={() => setDispatchOpen(false)} />
+      )}
 
       {/* The outcome of whichever act ran last, until the next one clears it.
           Both branches print the partial result BESIDE the successful one and

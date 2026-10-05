@@ -587,11 +587,6 @@ export type Translations = {
     triage_accepted_select_all: string;
     triage_accepted_selected: string;
     triage_accepted_dispatch: string;
-    triage_accepted_mode_aria: string;
-    triage_accepted_mode_single: string;
-    triage_accepted_mode_batch: string;
-    triage_accepted_mode_parallel: string;
-    triage_accepted_concurrency_hint: string;
     triage_accepted_result: string;
     triage_accepted_result_skipped: string;
     triage_accepted_delete: string;
@@ -973,6 +968,22 @@ export type Translations = {
     layers_resolve_reviews: string;
     layers_resolve_warnings: string;
     layers_resolve_messages: string;
+    triage_dispatch_open: string;
+    triage_dispatch_lane_summary: string;
+    triage_dispatch_title: string;
+    triage_dispatch_subtitle: string;
+    triage_dispatch_work_heading: string;
+    triage_dispatch_lanes_heading: string;
+    triage_dispatch_lane_count: string;
+    triage_dispatch_lane_name: string;
+    triage_dispatch_lane_empty: string;
+    triage_dispatch_unassigned: string;
+    triage_dispatch_unassigned_note: string;
+    triage_dispatch_unpinned_count: string;
+    triage_dispatch_sequential: string;
+    triage_dispatch_assign_aria: string;
+    triage_dispatch_unpin: string;
+    triage_dispatch_confirm: string;
   };
   common: {
     unknown_error: string;

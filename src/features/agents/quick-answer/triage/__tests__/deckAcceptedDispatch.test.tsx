@@ -1,14 +1,20 @@
 /**
  * The rail's Accepted tab — the Run Desk dispatch machinery, migrated.
  *
- * What is worth pinning here is NOT that the tab renders. It is the one claim
- * the migration actually makes: that "Single", "Batch" and "Parallel" are the
- * Run Desk's three real concurrency techniques and not three labels over one
- * behaviour. Each maps to a different `maxParallel` on the same
- * `dev_tools_dispatch_ideas` call, and `batch` maps to **omitting** it, because
- * the backend's own `max_parallel.unwrap_or(2)` is what "batch" has always
- * meant — sending an explicit 2 would look identical today and silently stop
- * tracking that default the moment it changes.
+ * **This file used to assert the opposite of the truth.** Its claim was that
+ * "Single", "Batch" and "Parallel" were "the Run Desk's three real concurrency
+ * techniques and not three labels over one behaviour", and three tests pinned
+ * the three different `maxParallel` values that went over the wire. They were
+ * three labels over one behaviour: `dev_tools_start_batch` opened with
+ * `let _ = max_parallel;` and spawned every task at once, so the number those
+ * tests pinned reached nothing. A test can only see the call it makes, and
+ * every one of them passed for the whole time the control was decorative.
+ *
+ * The executor honours the width now (as N strands, with optional per-strand
+ * pinning), the modes are gone, and what is pinned below is the lane width and
+ * the columns — plus the one thing the old tests could not have checked and
+ * the new ones still cannot: that the backend does something with them. That
+ * lives in `task_executor.rs`'s own tests, over `plan_batch_lanes`.
  *
  * The other two properties pinned below are the ones whose absence would be
  * invisible in a screenshot: the list reads `dev_tools_undispatched_ideas`
@@ -24,7 +30,7 @@
  * than it asked for has to say so rather than report a clean success.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, cleanup, screen, waitFor } from '@testing-library/react';
+import { render, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import type { UndispatchedIdea } from '@/lib/bindings/UndispatchedIdea';
@@ -34,13 +40,22 @@ import { makeItem } from './triageFixtures';
 
 const undispatchedIdeas = vi.fn<() => Promise<UndispatchedIdea[]>>();
 const dispatchIdeas =
-  vi.fn<(ids: string[], target: string, opts?: { maxParallel?: number }) => Promise<unknown>>();
+  vi.fn<
+    (
+      ids: string[],
+      target: string,
+      opts?: { maxParallel?: number; lanes?: string[][] },
+    ) => Promise<unknown>
+  >();
 const bulkDeleteIdeas = vi.fn<(ids: string[]) => Promise<number>>();
 
 vi.mock('@/api/devTools/devTools', () => ({
   undispatchedIdeas: () => undispatchedIdeas(),
-  dispatchIdeas: (ids: string[], target: string, opts?: { maxParallel?: number }) =>
-    dispatchIdeas(ids, target, opts),
+  dispatchIdeas: (
+    ids: string[],
+    target: string,
+    opts?: { maxParallel?: number; lanes?: string[][] },
+  ) => dispatchIdeas(ids, target, opts),
   bulkDeleteIdeas: (ids: string[]) => bulkDeleteIdeas(ids),
 }));
 
@@ -121,58 +136,156 @@ describe('rail tabs', () => {
   });
 });
 
-describe('dispatch techniques', () => {
-  it('Single sends one at a time', async () => {
+describe('the dispatch modal and its lanes', () => {
+  const openModal = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(screen.getByRole('button', { name: 'Choose lanes and dispatch' }));
+    return screen.findByRole('heading', { name: 'Send to the runner' });
+  };
+
+  it('shows the work itself, not a count', async () => {
     const user = userEvent.setup();
     renderRail();
     await openAccepted(user);
 
     await user.click(screen.getByRole('checkbox', { name: 'Select Cache the roster' }));
-    await user.click(screen.getByRole('radio', { name: 'Single' }));
-    await user.click(screen.getByRole('button', { name: /Dispatch/ }));
+    await openModal(user);
 
-    await waitFor(() =>
-      expect(dispatchIdeas).toHaveBeenCalledWith(['i1'], 'runner', { maxParallel: 1 }),
-    );
+    // The reviewer is one press from spending money and wall-clock. The last
+    // surface before that has to name what is being sent.
+    expect(screen.getAllByText('Cache the roster').length).toBeGreaterThan(0);
   });
 
-  it('Batch OMITS the width so the backend default of 2 stays the definition', async () => {
-    const user = userEvent.setup();
-    renderRail();
-    await openAccepted(user);
-
-    // `batch` is the default mode — no radio click needed, which is itself part
-    // of the contract: the safe middle setting is what you get for free.
-    await user.click(screen.getByRole('checkbox', { name: 'Select Cache the roster' }));
-    await user.click(screen.getByRole('button', { name: /Dispatch/ }));
-
-    await waitFor(() =>
-      expect(dispatchIdeas).toHaveBeenCalledWith(['i1'], 'runner', { maxParallel: undefined }),
-    );
-  });
-
-  it('Parallel sends the stepper value, which is the store setting the Run Desk writes', async () => {
+  it('sends the lane WIDTH, which the executor now honours', async () => {
     const user = userEvent.setup();
     renderRail();
     await openAccepted(user);
 
     await user.click(screen.getByRole('checkbox', { name: 'Select Cache the roster' }));
-    await user.click(screen.getByRole('radio', { name: 'Parallel' }));
-    await user.click(screen.getByRole('button', { name: /Dispatch/ }));
+    await openModal(user);
+    await user.click(screen.getByRole('button', { name: 'Dispatch 1' }));
 
-    // `maxParallelTasks` seeds at 2 in `devToolsTaskSlice`. The number matters
-    // less than where it came from: the SAME store slot the Run Desk's own
-    // stepper binds, so the two surfaces cannot disagree about "parallel".
+    // `maxParallelTasks` seeds at 2 in `devToolsTaskSlice` — the SAME store
+    // slot the Run Desk's own stepper binds. What changed is that the number
+    // reaches something: `dev_tools_start_batch` opened with
+    // `let _ = max_parallel;` until 2026-10-05, so the three modes this bar
+    // used to show were three names for one behaviour.
     await waitFor(() =>
-      expect(dispatchIdeas).toHaveBeenCalledWith(['i1'], 'runner', { maxParallel: 2 }),
+      expect(dispatchIdeas).toHaveBeenCalledWith(['i1'], 'runner', {
+        maxParallel: 2,
+        lanes: [[], []],
+      }),
     );
   });
 
-  it('cannot dispatch nothing', async () => {
+  it('leaves an unassigned idea out of every column, for the shared pool', async () => {
     const user = userEvent.setup();
     renderRail();
     await openAccepted(user);
-    expect(screen.getByRole('button', { name: /Dispatch/ })).toBeDisabled();
+
+    await user.click(screen.getByRole('checkbox', { name: 'Select Cache the roster' }));
+    await openModal(user);
+    expect(screen.getAllByText('Nothing pinned here')).toHaveLength(2);
+    await user.click(screen.getByRole('button', { name: 'Dispatch 1' }));
+
+    // Unassigned is legal and common. The columns go out empty and the
+    // executor drops the task into one pool every strand pulls from, so it
+    // runs on whichever lane frees up first.
+    await waitFor(() =>
+      expect(dispatchIdeas).toHaveBeenCalledWith(
+        ['i1'],
+        'runner',
+        expect.objectContaining({ lanes: [[], []] }),
+      ),
+    );
+  });
+
+  it('pins an idea to the lane its select names', async () => {
+    const user = userEvent.setup();
+    renderRail();
+    await openAccepted(user);
+
+    await user.click(screen.getByRole('checkbox', { name: 'Select Cache the roster' }));
+    await openModal(user);
+
+    // A select, not only a drag: a drag is unreachable by keyboard and this
+    // is the last gate before the work costs something.
+    await user.click(screen.getByRole('button', { name: 'Lane for Cache the roster' }));
+    await user.click(await screen.findByRole('button', { name: 'Lane 2' }));
+    await user.click(screen.getByRole('button', { name: 'Dispatch 1' }));
+
+    await waitFor(() =>
+      expect(dispatchIdeas).toHaveBeenCalledWith(
+        ['i1'],
+        'runner',
+        expect.objectContaining({ lanes: [[], ['i1']] }),
+      ),
+    );
+  });
+
+  it('pins an idea dropped onto a lane column', async () => {
+    const user = userEvent.setup();
+    renderRail();
+    await openAccepted(user);
+
+    await user.click(screen.getByRole('checkbox', { name: 'Select Cache the roster' }));
+    await openModal(user);
+
+    fireEvent.drop(screen.getByRole('region', { name: 'Lane 1' }), {
+      dataTransfer: { getData: () => 'i1' },
+    });
+    await user.click(screen.getByRole('button', { name: 'Dispatch 1' }));
+
+    await waitFor(() =>
+      expect(dispatchIdeas).toHaveBeenCalledWith(
+        ['i1'],
+        'runner',
+        expect.objectContaining({ lanes: [['i1'], []] }),
+      ),
+    );
+  });
+
+  it('drops a pin the reviewer narrows the lane count past, rather than wrapping it', async () => {
+    const user = userEvent.setup();
+    renderRail();
+    await openAccepted(user);
+
+    await user.click(screen.getByRole('checkbox', { name: 'Select Cache the roster' }));
+    await openModal(user);
+    fireEvent.drop(screen.getByRole('region', { name: 'Lane 2' }), {
+      dataTransfer: { getData: () => 'i1' },
+    });
+    // Down to one lane. The executor would wrap a column index it cannot
+    // honour (`column % width`), which is the right answer for work it must
+    // not lose and the wrong one for a pin the reviewer can still see.
+    await user.click(screen.getByRole('button', { name: 'Decrease' }));
+    await user.click(screen.getByRole('button', { name: 'Dispatch 1' }));
+
+    await waitFor(() =>
+      expect(dispatchIdeas).toHaveBeenCalledWith(
+        ['i1'],
+        'runner',
+        expect.objectContaining({ maxParallel: 1, lanes: [[]] }),
+      ),
+    );
+  });
+
+  it('cannot open the modal with nothing selected', async () => {
+    const user = userEvent.setup();
+    renderRail();
+    await openAccepted(user);
+    expect(screen.getByRole('button', { name: 'Choose lanes and dispatch' })).toBeDisabled();
+  });
+
+  it('cancels without reaching the backend', async () => {
+    const user = userEvent.setup();
+    renderRail();
+    await openAccepted(user);
+
+    await user.click(screen.getByRole('checkbox', { name: 'Select Cache the roster' }));
+    await openModal(user);
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(dispatchIdeas).not.toHaveBeenCalled();
   });
 
   it('clears the selection and re-reads, so a second press cannot re-send', async () => {
@@ -181,13 +294,14 @@ describe('dispatch techniques', () => {
     await openAccepted(user);
 
     await user.click(screen.getByRole('checkbox', { name: 'Select Cache the roster' }));
-    await user.click(screen.getByRole('button', { name: /Dispatch/ }));
+    await openModal(user);
+    await user.click(screen.getByRole('button', { name: 'Dispatch 1' }));
 
     await waitFor(() => expect(dispatchIdeas).toHaveBeenCalledTimes(1));
     // Two reads: the mount, and the one the dispatch triggers.
     await waitFor(() => expect(undispatchedIdeas).toHaveBeenCalledTimes(2));
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: /Dispatch/ })).toBeDisabled(),
+      expect(screen.getByRole('button', { name: 'Choose lanes and dispatch' })).toBeDisabled(),
     );
   });
 
@@ -203,7 +317,8 @@ describe('dispatch techniques', () => {
     await openAccepted(user);
 
     await user.click(screen.getByRole('checkbox', { name: 'Select Cache the roster' }));
-    await user.click(screen.getByRole('button', { name: /Dispatch/ }));
+    await openModal(user);
+    await user.click(screen.getByRole('button', { name: 'Dispatch 1' }));
 
     // A dispatch that half worked must not read as one that worked.
     expect(await screen.findByText(/1 skipped/)).toBeTruthy();

@@ -15,22 +15,34 @@
  * the same two backend calls, the same three concurrency techniques, owned by
  * the deck's own rail.
  *
- * ## The three techniques, and what they actually do
+ * ## Lanes, and the three modes they replaced
  *
  * `dev_tools_dispatch_ideas` creates a `dev_tasks` row per idea and then hands
- * the batch to `dev_tools_start_batch`, whose `max_parallel` is the semaphore
- * width — `unwrap_or(2)` when the caller says nothing. The Run Desk exposed
- * that as three separate buttons; the three modes here are the same three
- * numbers, named rather than implied:
+ * the batch to `dev_tools_start_batch`.
  *
- *  • `single`   — `maxParallel: 1`. Strictly one at a time, which is what the
- *                 Run Desk's per-row start meant: watch this one run.
- *  • `batch`    — `maxParallel: undefined` → the backend's default of 2. The
- *                 Run Desk's "Start batch" button, unchanged.
- *  • `parallel` — `maxParallel:` the stepper. The Run Desk's concurrency
- *                 stepper, which lived in the store as `maxParallelTasks` and
- *                 is read from the same place here so the two surfaces cannot
- *                 disagree about what "parallel" means.
+ * **This surface used to offer three modes — `single` / `batch` / `parallel` —
+ * and all three did the same thing.** The header here claimed `max_parallel`
+ * was "the semaphore width, `unwrap_or(2)` when the caller says nothing";
+ * measured 2026-10-05 against `task_executor.rs`, the command opened with
+ * `let _ = max_parallel;` and spawned every task at once. The number the
+ * stepper set reached nothing. (It was not unbounded — every task is admitted
+ * through `queue::admit`, and the fleet's global `max_parallel_sessions`
+ * promotes queued sessions as slots free. The batch's own width was the part
+ * that did not exist.)
+ *
+ * `dev_tools_start_batch` now honours it as a LANE WIDTH: `n` strands, each
+ * pulling its next task only once its current one has finished, with `lanes`
+ * pinning specific tasks to specific strands. So one control replaces two —
+ * the mode names are gone and the number IS the question:
+ *
+ *  • `lanes === 1` — strictly one at a time (the old `single`).
+ *  • `lanes >= 2` — that many at a time, in strands (the old `parallel`).
+ *  • Omitting the width entirely is still legal on the wire and still means
+ *    the fan-out; this surface never does, because a reviewer who opened the
+ *    dispatch modal has named a number.
+ *
+ * The width lives in the store as `maxParallelTasks`, read from the same place
+ * the Run Desk's own stepper writes it, so the two surfaces cannot disagree.
  *
  * Deliberately NOT a fourth mode: auto-run. `dev_tools_start_auto_run` is
  * project-scoped and keeps pulling work until the queue drains — a durable
@@ -53,13 +65,30 @@ import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
 import type { UndispatchedIdea } from '@/lib/bindings/UndispatchedIdea';
 
-/** How the selected rows are handed to the runner. See the header. */
-export type DispatchMode = 'single' | 'batch' | 'parallel';
-
-/** Bounds for the concurrency stepper — mirrors the Run Desk's own clamp,
- *  which mirrors the executor's. */
+/**
+ * Bounds for the lane width.
+ *
+ * **The one TypeScript declaration of these two numbers.** They were declared
+ * twice — here and, identically, in `sub_runner/RunDeskControls.tsx` — under a
+ * comment saying this "mirrors the Run Desk's own clamp, which mirrors the
+ * executor's": three copies of one number, none of which could tell you if
+ * another had moved. The Run Desk imports these now, and the executor's own
+ * ceiling is named: `MIN_BATCH_LANES` / `MAX_BATCH_LANES` in
+ * `src-tauri/src/commands/infrastructure/task_executor.rs`, which clamps to
+ * the same 1..=8 server-side. A value outside that range is not rejected
+ * there, it is clamped, so these bounds are the UI telling the truth about
+ * what the executor will actually do rather than a second rule.
+ */
 export const MIN_PARALLEL = 1;
 export const MAX_PARALLEL = 8;
+
+/**
+ * Which lane an idea is pinned to, by idea id. Absent means unpinned, which
+ * is legal and common: the executor drops every unpinned task into one shared
+ * pool that each strand pulls from when its own column empties, so an
+ * unpinned idea runs on whichever lane frees up first.
+ */
+export type LaneAssignments = ReadonlyMap<string, number>;
 
 /**
  * What the last act on the selection actually did.
@@ -76,7 +105,8 @@ export const MAX_PARALLEL = 8;
 export type AcceptedReport =
   | {
       kind: 'dispatch';
-      mode: DispatchMode;
+      /** The lane width the batch was sent down. */
+      lanes: number;
       dispatched: number;
       skipped: number;
       /** Resolved, translated message. Null on success. */
@@ -113,11 +143,15 @@ export interface AcceptedDispatch {
   toggle: (id: string) => void;
   /** Select every row, or clear when everything is already selected. */
   toggleAll: () => void;
-  mode: DispatchMode;
-  setMode: (mode: DispatchMode) => void;
-  /** The `parallel` mode's width. Shared with the Run Desk via the store. */
-  maxParallel: number;
-  setMaxParallel: (n: number) => void;
+  /** How many strands the batch runs down. Shared with the Run Desk via the
+   *  store, clamped to MIN_PARALLEL..MAX_PARALLEL. */
+  lanes: number;
+  setLanes: (n: number) => void;
+  /** Idea id → lane index. Pruned whenever a row leaves the list or the lane
+   *  count shrinks past it. */
+  assignments: LaneAssignments;
+  /** Pin an idea to a lane, or `null` to unpin it. */
+  assign: (id: string, lane: number | null) => void;
   /** In flight. The bar's button is an AsyncButton, so this is for the rows. */
   dispatching: boolean;
   /** A delete is in flight. Separate from `dispatching` on purpose: they are
@@ -175,7 +209,7 @@ export function useAcceptedDispatch({
   // `true` there is what produces a ghost over data already on screen.
   const [loading, setLoading] = useState(() => warmRows === null);
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set<string>());
-  const [mode, setMode] = useState<DispatchMode>('batch');
+  const [assignments, setAssignments] = useState<LaneAssignments>(() => new Map<string, number>());
   const [dispatching, setDispatching] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [report, setReport] = useState<AcceptedReport | null>(null);
@@ -183,12 +217,25 @@ export function useAcceptedDispatch({
   // The concurrency width lives in the store, exactly where the Run Desk's
   // stepper put it. Two surfaces writing two different numbers under one name
   // is how "parallel" quietly comes to mean two things.
-  const maxParallel = useSystemStore((s) => s.maxParallelTasks);
-  const setMaxParallelRaw = useSystemStore((s) => s.setMaxParallelTasks);
-  const setMaxParallel = useCallback(
-    (n: number) => setMaxParallelRaw(Math.min(MAX_PARALLEL, Math.max(MIN_PARALLEL, n))),
-    [setMaxParallelRaw],
+  const storedLanes = useSystemStore((s) => s.maxParallelTasks);
+  const setLanesRaw = useSystemStore((s) => s.setMaxParallelTasks);
+  // Clamp on the way OUT as well as in: the store is written by the Run Desk
+  // too, and a value from an older build (or a hand-edited settings row) must
+  // not render a lane column the executor will never fill.
+  const lanes = Math.min(MAX_PARALLEL, Math.max(MIN_PARALLEL, storedLanes));
+  const setLanes = useCallback(
+    (n: number) => setLanesRaw(Math.min(MAX_PARALLEL, Math.max(MIN_PARALLEL, n))),
+    [setLanesRaw],
   );
+
+  const assign = useCallback((id: string, lane: number | null) => {
+    setAssignments((prev) => {
+      const next = new Map(prev);
+      if (lane === null) next.delete(id);
+      else next.set(id, lane);
+      return next;
+    });
+  }, []);
 
   // Guards a setState after unmount — the deck can be closed mid-fetch, and
   // this hook's whole point is that it is mounted inside a dismissible overlay.
@@ -246,6 +293,22 @@ export function useAcceptedDispatch({
     });
   }, [rows]);
 
+  // The same prune for the lane pins, against BOTH ways a pin can go stale:
+  // the row left the list, or the reviewer narrowed the lane count past the
+  // column the pin names. A pin to a lane that no longer exists would be
+  // silently wrapped by the executor (`column % width`), which is a worse
+  // answer than dropping it where the reviewer can see it drop.
+  useEffect(() => {
+    setAssignments((prev) => {
+      if (prev.size === 0) return prev;
+      const live = new Set(rows.map((r) => r.id));
+      const kept = new Map(
+        [...prev].filter(([id, lane]) => live.has(id) && lane < lanes),
+      );
+      return kept.size === prev.size ? prev : kept;
+    });
+  }, [rows, lanes]);
+
   const toggleAll = useCallback(() => {
     setSelected((prev) =>
       prev.size === rows.length && rows.length > 0
@@ -261,29 +324,42 @@ export function useAcceptedDispatch({
     if (ids.length === 0) return;
     setDispatching(true);
     setReport(null);
+    // The columns, as the executor wants them: `columns[i]` is the ordered
+    // list of ids strand `i` must run. Built from `ids` rather than from the
+    // assignment map so the order inside a lane is the order the reviewer is
+    // looking at, and so an assignment to a row that just left the list
+    // cannot smuggle a dead id onto the wire.
+    const columns: string[][] = Array.from({ length: lanes }, () => []);
+    for (const id of ids) {
+      const lane = assignments.get(id);
+      if (lane === undefined) continue;
+      // `noUncheckedIndexedAccess`: the bound above is what makes this safe,
+      // and the compiler cannot see it, so the column is named once.
+      const column = columns[lane];
+      if (column) column.push(id);
+    }
     try {
       const result = await devApi.dispatchIdeas(ids, 'runner', {
-        // `undefined` is NOT "no limit" — it is the backend's own default of 2,
-        // which is precisely what `batch` means. See the header.
-        maxParallel:
-          mode === 'single' ? 1 : mode === 'parallel' ? maxParallel : undefined,
+        maxParallel: lanes,
+        lanes: columns,
       });
       setReport({
         kind: 'dispatch',
-        mode,
+        lanes,
         dispatched: result.dispatched.length,
         skipped: result.skipped.length,
         error: null,
       });
       setSelected(new Set<string>());
+      setAssignments(new Map<string, number>());
       load();
     } catch (err) {
       silentCatch('triage/useAcceptedDispatch:dispatch')(err);
-      setReport({ kind: 'dispatch', mode, dispatched: 0, skipped: 0, error: resolveErrorMessage(err) });
+      setReport({ kind: 'dispatch', lanes, dispatched: 0, skipped: 0, error: resolveErrorMessage(err) });
     } finally {
       if (aliveRef.current) setDispatching(false);
     }
-  }, [rows, selected, mode, maxParallel, load, resolveErrorMessage]);
+  }, [rows, selected, lanes, assignments, load, resolveErrorMessage]);
 
   const remove = useCallback(async () => {
     // Read the ids off `rows` rather than off `selected` directly, exactly as
@@ -319,10 +395,10 @@ export function useAcceptedDispatch({
       selected,
       toggle,
       toggleAll,
-      mode,
-      setMode,
-      maxParallel,
-      setMaxParallel,
+      lanes,
+      setLanes,
+      assignments,
+      assign,
       dispatching,
       removing,
       report,
@@ -332,7 +408,7 @@ export function useAcceptedDispatch({
       reload: load,
     }),
     [
-      rows, loading, selected, toggle, toggleAll, mode, maxParallel, setMaxParallel,
+      rows, loading, selected, toggle, toggleAll, lanes, setLanes, assignments, assign,
       dispatching, removing, report, dismissReport, dispatch, remove, load,
     ],
   );

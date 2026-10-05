@@ -456,13 +456,18 @@ rate** — of the findings that shipped and were judged, how many cleared or imp
 > retries, PR bridge — but the "I just accepted eleven things, send them" step no
 > longer requires leaving the deck for another section. The triage deck's queue
 > rail grew a second tab, **Accepted**, listing `dev_tools_undispatched_ideas`
-> (accepted ideas with no `dev_tasks` row) with checkbox selection and the same
-> three concurrency techniques this page has, named rather than implied:
-> **Single** (`maxParallel: 1`), **Batch** (omitted → the backend's `unwrap_or(2)`),
-> and **Parallel** (the `maxParallelTasks` stepper, shared with this page's own so
-> the two surfaces cannot disagree about what "parallel" means). It goes through
-> the same `dev_tools_dispatch_ideas(ids, "runner", { maxParallel })`, so a
-> dispatch from either surface is one code path. **Auto-Run stays here** — it is a
+> (accepted ideas with no `dev_tasks` row) with checkbox selection and a
+> **dispatch modal** (2026-10-05): the selected ideas on the left, readable
+> rather than counted, and the lanes as columns on the right, with a select or
+> a drag to pin an idea to one. The modal replaced three mode pills
+> (**Single** / **Batch** / **Parallel**) that were three names for one
+> behaviour — `dev_tools_start_batch` opened with `let _ = max_parallel;` and
+> spawned the whole list at once, so the number none of them set reached
+> nothing. It is a lane width now: `n` strands, each pulling its next task when
+> its current one finishes, with `lanes[i]` pinning tasks to strand `i` and
+> everything unpinned going to one shared pool the strands drain. It goes
+> through the same `dev_tools_dispatch_ideas(ids, "runner", { maxParallel, lanes })`,
+> so a dispatch from either surface is one code path. **Auto-Run stays here** — it is a
 > durable project-scoped scheduler with a banner that reports it, not a dispatch of
 > the rows a reviewer selected. See `agents/quick-answer/triage/deck/useAcceptedDispatch.ts`
 > and [`docs/features/overview/README.md`](../../overview/README.md) § triage deck.

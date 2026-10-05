@@ -1131,7 +1131,8 @@ pub fn dispatch_prompt(idea: &DevIdea) -> String {
 /// `repo::create_task`, so every task is minted by one door.
 ///
 /// `runner` starts the created tasks through the existing batch machinery
-/// (`dev_tools_start_batch`, unchanged — no fork of the execution path).
+/// (`dev_tools_start_batch` — no fork of the execution path), forwarding
+/// `max_parallel` as its lane width and `lanes` as its per-strand pinning.
 /// `fleet` composes AND spawns the sessions backend-side (headless
 /// `claude -p`, one per idea, rooted at the project's `root_path`) — the
 /// documented v1 "fleet arm stays frontend-composed" limitation is gone, so a
@@ -1144,14 +1145,15 @@ pub async fn dev_tools_dispatch_ideas(
     target: String,
     depth: Option<String>,
     max_parallel: Option<usize>,
+    lanes: Option<Vec<Vec<String>>>,
 ) -> Result<DispatchIdeasResult, AppError> {
     require_auth(&state).await?;
 
-    // `max_parallel` stays on the wire for the callers that still send it,
-    // but capacity is no longer this command's to decide: the fleet's global
-    // cap (`fleet.max_parallel_sessions`) admits or queues every session, for
-    // the fleet arm here and for the runner batch below alike.
-    let _ = max_parallel;
+    // `max_parallel` and `lanes` are the RUNNER arm's, and only the runner
+    // arm's. The fleet arm spawns a session per idea and the fleet's global
+    // cap (`fleet.max_parallel_sessions`) admits or queues each one, so there
+    // is nothing here for a width to mean. Both are handed to
+    // `dev_tools_start_batch` below, which documents what each does.
     let mut result =
         dispatch_ideas_core(&state.db, &app, idea_ids, &target, depth.as_deref(), false).await?;
 
@@ -1161,11 +1163,33 @@ pub async fn dev_tools_dispatch_ideas(
             .iter()
             .map(|d| d.task_id.clone())
             .collect();
+        // The caller assigns IDEAS to lanes, because an idea is what it has
+        // on screen; the executor pins TASKS. Translate here rather than
+        // making the caller wait for the task ids it cannot know yet. An
+        // idea that was skipped simply drops out of its column.
+        let task_lanes = lanes.map(|columns| {
+            columns
+                .into_iter()
+                .map(|column| {
+                    column
+                        .into_iter()
+                        .filter_map(|idea_id| {
+                            result
+                                .dispatched
+                                .iter()
+                                .find(|d| d.idea_id == idea_id)
+                                .map(|d| d.task_id.clone())
+                        })
+                        .collect::<Vec<String>>()
+                })
+                .collect::<Vec<Vec<String>>>()
+        });
         crate::commands::infrastructure::task_executor::dev_tools_start_batch(
             state.clone(),
             app,
             task_ids,
             max_parallel,
+            task_lanes,
         )
         .await?;
         result.started = true;

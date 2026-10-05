@@ -824,182 +824,322 @@ pub(crate) fn start_task_execution(
     Ok(json!({ "task_id": task_id }))
 }
 
-/// Start a batch of tasks. Every task is admitted to the fleet at once — the
-/// fleet's global cap decides how many run now and how many wait as `queued`
-/// sessions (visible in the fleet grid, in order). `max_parallel` stays on
-/// the wire for the callers that still send it and is ignored: the batch's
-/// own semaphore was a second cap on top of the fleet's, and a session it
-/// held back was invisible everywhere.
+/// One batch task's execution, guarded exactly as it has always been.
+///
+/// Extracted verbatim from the old inline loop body so that BOTH dispatch
+/// shapes below run the same code: the same `spawn_guarded` panic arm, the
+/// same `TASK_EXEC_JOBS` status/output stream, the same `finalize_task`. The
+/// `JoinHandle` is returned so a lane strand can await it; the fan-out drops
+/// it, which is exactly what the old loop did.
+fn spawn_batch_task(
+    app: &tauri::AppHandle,
+    db: &crate::db::DbPool,
+    batch_id: &str,
+    tid: String,
+) -> tokio::task::JoinHandle<()> {
+    let batch_id = batch_id.to_string();
+    let app_handle = app.clone();
+    let pool = db.clone();
+    let app_handle_for_panic = app_handle.clone();
+    let pool_for_panic = pool.clone();
+    let tid_for_panic = tid.clone();
+
+    spawn_guarded(
+        "dev-tools batch task execution",
+        tid_for_panic.clone(),
+        async move {
+            // Read task to get project info
+            let task = match repo::get_task_by_id(&pool, &tid) {
+                Ok(t) => t,
+                Err(e) => {
+                    TASK_EXEC_JOBS.emit_line(
+                        &app_handle,
+                        &tid,
+                        format!("[Error] Failed to read task: {e}"),
+                    );
+                    return;
+                }
+            };
+
+            let project_id = match task.project_id.as_deref() {
+                Some(pid) => pid.to_string(),
+                None => {
+                    TASK_EXEC_JOBS.emit_line(
+                        &app_handle,
+                        &tid,
+                        "[Error] Task has no project_id".to_string(),
+                    );
+                    return;
+                }
+            };
+
+            let project = match repo::get_project_by_id(&pool, &project_id) {
+                Ok(p) => p,
+                Err(e) => {
+                    TASK_EXEC_JOBS.emit_line(
+                        &app_handle,
+                        &tid,
+                        format!("[Error] Failed to read project: {e}"),
+                    );
+                    return;
+                }
+            };
+
+            let ctx = gather_task_context(
+                &pool,
+                task.source_idea_id.as_deref(),
+                task.goal_id.as_deref(),
+                &project_id,
+            );
+            let context_warnings = ctx.warnings;
+
+            let prompt_text = build_task_prompt(
+                &task.title,
+                task.description.as_deref(),
+                ctx.idea,
+                ctx.plan,
+                ctx.goal,
+                ctx.codebase,
+                ctx.memories,
+                &task.depth,
+            );
+
+            // Mark task as running
+            let now = chrono::Utc::now().to_rfc3339();
+            let _ = repo::update_task(
+                &pool,
+                &tid,
+                None,
+                None,
+                Some("running"),
+                None,
+                Some(0),
+                None,
+                None,
+                Some(Some(&now)),
+                None,
+            );
+
+            let cancel_token = CancellationToken::new();
+            if TASK_EXEC_JOBS
+                .insert_running(tid.clone(), cancel_token.clone(), TaskExecExtra)
+                .is_err()
+            {
+                return;
+            }
+            TASK_EXEC_JOBS.set_status(&app_handle, &tid, "running", None);
+
+            for w in &context_warnings {
+                TASK_EXEC_JOBS.emit_line(&app_handle, &tid, format!("[Warning] {w}"));
+            }
+
+            let result = run_task_execution(
+                &app_handle,
+                &tid,
+                &pool,
+                &project.root_path,
+                prompt_text,
+                DEFAULT_DEV_TASK_MODEL,
+                &task.title,
+                &batch_id,
+                &cancel_token,
+            )
+            .await;
+
+            let goal_id = task.goal_id.clone();
+
+            finalize_task(
+                &app_handle,
+                &pool,
+                &tid,
+                result,
+                &context_warnings,
+                goal_id.as_deref(),
+                FinalizeOpts {
+                    notify_project: None,
+                    goal_success_message: "Task completed successfully",
+                    outcome_quotes_line_count: false,
+                },
+            );
+        },
+        move |msg| async move {
+            let completed_now = chrono::Utc::now().to_rfc3339();
+            let _ = repo::update_task(
+                &pool_for_panic,
+                &tid_for_panic,
+                None,
+                None,
+                Some("failed"),
+                None,
+                None,
+                None,
+                Some(Some(&msg)),
+                None,
+                Some(Some(&completed_now)),
+            );
+            TASK_EXEC_JOBS.set_status(
+                &app_handle_for_panic,
+                &tid_for_panic,
+                "failed",
+                Some(msg.clone()),
+            );
+            TASK_EXEC_JOBS.emit_line(
+                &app_handle_for_panic,
+                &tid_for_panic,
+                format!("[Error] {msg}"),
+            );
+        },
+    )
+}
+
+/// The lane width a batch may ask for. Mirrored by `MIN_PARALLEL` /
+/// `MAX_PARALLEL` in
+/// `src/features/agents/quick-answer/triage/deck/useAcceptedDispatch.ts`,
+/// which is now the one TypeScript declaration of these two numbers and
+/// cites these constants by name.
+const MIN_BATCH_LANES: usize = 1;
+const MAX_BATCH_LANES: usize = 8;
+
+/// A batch's work, split into the strands that will run it.
+///
+/// Pure, so the rule it encodes is testable without a Tauri handle, a pool or
+/// a fleet: the spawning below does nothing but walk what this returns.
+struct BatchPlan {
+    /// `columns[i]` is the ordered list strand `i` must run first.
+    columns: Vec<std::collections::VecDeque<String>>,
+    /// Everything nobody pinned, in the order the caller listed it. Each
+    /// strand pulls from here once its own column is empty.
+    pool: std::collections::VecDeque<String>,
+}
+
+/// Split `task_ids` across `width` strands, honouring `lanes` as pins.
+///
+/// The rules, all of which exist because the caller is a UI that can be a
+/// version behind the backend:
+///
+/// * a column index at or beyond `width` wraps (`i % width`) rather than
+///   being dropped, so shrinking the lane count never silently loses work;
+/// * an id a column names that is not in `task_ids` is ignored, because it
+///   is not this batch's to start;
+/// * an id named by two columns belongs to the first, so a double-pin is a
+///   resolved conflict rather than a task started twice;
+/// * everything else goes to the shared pool, in the caller's order.
+fn plan_batch_lanes(
+    task_ids: Vec<String>,
+    width: usize,
+    lanes: Option<Vec<Vec<String>>>,
+) -> BatchPlan {
+    debug_assert!(width >= MIN_BATCH_LANES);
+    let known: std::collections::HashSet<&str> = task_ids.iter().map(String::as_str).collect();
+    let mut columns: Vec<std::collections::VecDeque<String>> =
+        vec![std::collections::VecDeque::new(); width];
+    let mut claimed: std::collections::HashSet<String> = std::collections::HashSet::new();
+    for (column, ids) in lanes.unwrap_or_default().into_iter().enumerate() {
+        for tid in ids {
+            if !known.contains(tid.as_str()) || claimed.contains(&tid) {
+                continue;
+            }
+            claimed.insert(tid.clone());
+            columns[column % width].push_back(tid);
+        }
+    }
+    let pool = task_ids
+        .into_iter()
+        .filter(|tid| !claimed.contains(tid))
+        .collect();
+    BatchPlan { columns, pool }
+}
+
+/// Start a batch of tasks, either as a fan-out or down N lanes.
+///
+/// ## `max_parallel: None` — the fan-out (unchanged, and still the default)
+///
+/// Every task is admitted to the fleet at once and the fleet's global cap
+/// (`fleet.max_parallel_sessions`) decides how many run now and how many wait
+/// as `queued` sessions, visible in the fleet grid in rank order. That cap is
+/// already a real worker pool: [`queue::admit`] promotes the next queued row
+/// as each slot frees. A batch that names no width wants exactly this, and
+/// gets it with no second gate in front of it.
+///
+/// ## `max_parallel: Some(n)` — N lanes
+///
+/// `n` strands (clamped to [`MIN_BATCH_LANES`]..=[`MAX_BATCH_LANES`], and
+/// never more than there are tasks), each pulling its next task only once its
+/// current one has finished. This IS a second bound, inside the fleet's: a
+/// lane-held task has not been admitted to the fleet yet, so it is not a
+/// queued fleet session. It is not invisible either - it is still a
+/// `dev_tasks` row at its birth status `queued`, which is exactly what the
+/// Run Desk's own queue lists (`dev_tools_tasks_page` with a status filter).
+/// That is the trade a named width buys, and it is why `None` rather than a
+/// number is the default: a caller that says nothing keeps the behaviour in
+/// which every task is a fleet-visible session from the moment it starts.
+///
+/// `lanes` PINS tasks to strands: `lanes[i]` is the ordered list of task ids
+/// strand `i` must run, in that order. A column beyond the clamped width
+/// wraps onto `i % width`. Any id in `task_ids` that no column claims - and
+/// any id a column names twice, or names without it being in `task_ids` -
+/// goes into one shared pool every strand pulls from when its own column is
+/// empty, so an unassigned task runs on whichever lane frees up first.
+///
+/// A task that FAILS does not wedge its strand: the per-task
+/// [`spawn_guarded`] catches its panic and reports it, so the join always
+/// resolves and the strand pulls the next one.
 #[tauri::command]
 pub async fn dev_tools_start_batch(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     task_ids: Vec<String>,
     max_parallel: Option<usize>,
+    lanes: Option<Vec<Vec<String>>>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
-    let _ = max_parallel;
 
     let batch_id = uuid::Uuid::new_v4().to_string();
     let started = task_ids.len();
 
-    for tid in task_ids {
-        let batch_id = batch_id.clone();
+    let width = match max_parallel {
+        Some(n) => n.clamp(MIN_BATCH_LANES, MAX_BATCH_LANES).min(started),
+        None => 0,
+    };
+
+    if width == 0 {
+        for tid in task_ids {
+            spawn_batch_task(&app, &state.db, &batch_id, tid);
+        }
+        return Ok(json!({ "batch_id": batch_id, "started": started, "lanes": 0 }));
+    }
+
+    let plan = plan_batch_lanes(task_ids, width, lanes);
+    let shared = Arc::new(tokio::sync::Mutex::new(plan.pool));
+
+    for (lane, mut column) in plan.columns.into_iter().enumerate() {
+        let shared = shared.clone();
         let app_handle = app.clone();
         let pool = state.db.clone();
-        let app_handle_for_panic = app_handle.clone();
-        let pool_for_panic = pool.clone();
-        let tid_for_panic = tid.clone();
-
+        let batch = batch_id.clone();
         spawn_guarded(
-            "dev-tools batch task execution",
-            tid_for_panic.clone(),
+            "dev-tools batch lane",
+            format!("{batch_id}#{lane}"),
             async move {
-                // Read task to get project info
-                let task = match repo::get_task_by_id(&pool, &tid) {
-                    Ok(t) => t,
-                    Err(e) => {
-                        TASK_EXEC_JOBS.emit_line(
-                            &app_handle,
-                            &tid,
-                            format!("[Error] Failed to read task: {e}"),
-                        );
-                        return;
-                    }
-                };
-
-                let project_id = match task.project_id.as_deref() {
-                    Some(pid) => pid.to_string(),
-                    None => {
-                        TASK_EXEC_JOBS.emit_line(
-                            &app_handle,
-                            &tid,
-                            "[Error] Task has no project_id".to_string(),
-                        );
-                        return;
-                    }
-                };
-
-                let project = match repo::get_project_by_id(&pool, &project_id) {
-                    Ok(p) => p,
-                    Err(e) => {
-                        TASK_EXEC_JOBS.emit_line(
-                            &app_handle,
-                            &tid,
-                            format!("[Error] Failed to read project: {e}"),
-                        );
-                        return;
-                    }
-                };
-
-                let ctx = gather_task_context(
-                    &pool,
-                    task.source_idea_id.as_deref(),
-                    task.goal_id.as_deref(),
-                    &project_id,
-                );
-                let context_warnings = ctx.warnings;
-
-                let prompt_text = build_task_prompt(
-                    &task.title,
-                    task.description.as_deref(),
-                    ctx.idea,
-                    ctx.plan,
-                    ctx.goal,
-                    ctx.codebase,
-                    ctx.memories,
-                    &task.depth,
-                );
-
-                // Mark task as running
-                let now = chrono::Utc::now().to_rfc3339();
-                let _ = repo::update_task(
-                    &pool,
-                    &tid,
-                    None,
-                    None,
-                    Some("running"),
-                    None,
-                    Some(0),
-                    None,
-                    None,
-                    Some(Some(&now)),
-                    None,
-                );
-
-                let cancel_token = CancellationToken::new();
-                if TASK_EXEC_JOBS
-                    .insert_running(tid.clone(), cancel_token.clone(), TaskExecExtra)
-                    .is_err()
-                {
-                    return;
+                loop {
+                    let next = match column.pop_front() {
+                        Some(tid) => Some(tid),
+                        None => shared.lock().await.pop_front(),
+                    };
+                    let Some(tid) = next else { break };
+                    // Joining a guarded task: the guard has already caught and
+                    // reported any panic, so this never resolves to an error
+                    // and the strand always gets to pull the next task.
+                    let _ = spawn_batch_task(&app_handle, &pool, &batch, tid).await;
                 }
-                TASK_EXEC_JOBS.set_status(&app_handle, &tid, "running", None);
-
-                for w in &context_warnings {
-                    TASK_EXEC_JOBS.emit_line(&app_handle, &tid, format!("[Warning] {w}"));
-                }
-
-                let result = run_task_execution(
-                    &app_handle,
-                    &tid,
-                    &pool,
-                    &project.root_path,
-                    prompt_text,
-                    DEFAULT_DEV_TASK_MODEL,
-                    &task.title,
-                    &batch_id,
-                    &cancel_token,
-                )
-                .await;
-
-                let goal_id = task.goal_id.clone();
-
-                finalize_task(
-                    &app_handle,
-                    &pool,
-                    &tid,
-                    result,
-                    &context_warnings,
-                    goal_id.as_deref(),
-                    FinalizeOpts {
-                        notify_project: None,
-                        goal_success_message: "Task completed successfully",
-                        outcome_quotes_line_count: false,
-                    },
-                );
             },
             move |msg| async move {
-                let completed_now = chrono::Utc::now().to_rfc3339();
-                let _ = repo::update_task(
-                    &pool_for_panic,
-                    &tid_for_panic,
-                    None,
-                    None,
-                    Some("failed"),
-                    None,
-                    None,
-                    None,
-                    Some(Some(&msg)),
-                    None,
-                    Some(Some(&completed_now)),
-                );
-                TASK_EXEC_JOBS.set_status(
-                    &app_handle_for_panic,
-                    &tid_for_panic,
-                    "failed",
-                    Some(msg.clone()),
-                );
-                TASK_EXEC_JOBS.emit_line(
-                    &app_handle_for_panic,
-                    &tid_for_panic,
-                    format!("[Error] {msg}"),
-                );
+                tracing::error!(lane, panic = %msg, "dev-tools batch lane died");
             },
         );
     }
 
-    Ok(json!({ "batch_id": batch_id, "started": started }))
+    Ok(json!({ "batch_id": batch_id, "started": started, "lanes": width }))
 }
 
 #[tauri::command]
@@ -2557,5 +2697,85 @@ mod tests {
         assert!(row.worktree_branch.is_none());
         assert_eq!(row.worktree_fallback_reason.as_deref(), Some(&reason[..]));
         Ok(())
+    }
+
+    // ── Lanes: what a batch's width and pins actually produce ─────────────
+
+    fn ids(items: &[&str]) -> Vec<String> {
+        items.iter().map(|s| (*s).to_string()).collect()
+    }
+
+    fn column(plan: &BatchPlan, lane: usize) -> Vec<String> {
+        plan.columns[lane].iter().cloned().collect()
+    }
+
+    fn pool(plan: &BatchPlan) -> Vec<String> {
+        plan.pool.iter().cloned().collect()
+    }
+
+    #[test]
+    fn with_no_pins_every_task_goes_to_the_shared_pool() {
+        let plan = plan_batch_lanes(ids(&["a", "b", "c"]), 2, None);
+        assert_eq!(plan.columns.len(), 2);
+        assert!(plan.columns.iter().all(|c| c.is_empty()));
+        // In the caller's order: the pool is a queue, not a set.
+        assert_eq!(pool(&plan), ids(&["a", "b", "c"]));
+    }
+
+    #[test]
+    fn a_pinned_task_keeps_its_lane_and_its_place_in_it() {
+        let plan = plan_batch_lanes(
+            ids(&["a", "b", "c", "d"]),
+            2,
+            Some(vec![ids(&["c", "a"]), ids(&["d"])]),
+        );
+        assert_eq!(column(&plan, 0), ids(&["c", "a"]));
+        assert_eq!(column(&plan, 1), ids(&["d"]));
+        assert_eq!(pool(&plan), ids(&["b"]));
+    }
+
+    #[test]
+    fn a_column_beyond_the_width_wraps_rather_than_dropping_its_work() {
+        // The UI can be a version behind, or the reviewer can shrink the lane
+        // count after assigning. Losing the task silently is the one outcome
+        // that must not happen.
+        let plan = plan_batch_lanes(
+            ids(&["a", "b", "c"]),
+            2,
+            Some(vec![ids(&["a"]), ids(&["b"]), ids(&["c"])]),
+        );
+        assert_eq!(column(&plan, 0), ids(&["a", "c"]));
+        assert_eq!(column(&plan, 1), ids(&["b"]));
+        assert!(pool(&plan).is_empty());
+    }
+
+    #[test]
+    fn an_id_two_columns_claim_is_started_once_by_the_first() {
+        let plan = plan_batch_lanes(
+            ids(&["a", "b"]),
+            2,
+            Some(vec![ids(&["a"]), ids(&["a", "b"])]),
+        );
+        assert_eq!(column(&plan, 0), ids(&["a"]));
+        assert_eq!(column(&plan, 1), ids(&["b"]));
+        assert!(pool(&plan).is_empty());
+    }
+
+    #[test]
+    fn a_pin_to_an_id_outside_the_batch_is_ignored() {
+        let plan = plan_batch_lanes(ids(&["a"]), 1, Some(vec![ids(&["ghost", "a"])]));
+        assert_eq!(column(&plan, 0), ids(&["a"]));
+        assert!(pool(&plan).is_empty());
+    }
+
+    #[test]
+    fn one_lane_is_strictly_sequential_and_still_holds_every_task() {
+        let plan = plan_batch_lanes(ids(&["a", "b", "c"]), 1, Some(vec![ids(&["c"])]));
+        assert_eq!(plan.columns.len(), 1);
+        assert_eq!(column(&plan, 0), ids(&["c"]));
+        assert_eq!(pool(&plan), ids(&["a", "b"]));
+        // Nothing is lost between the column and the pool, whatever the pins.
+        let total = plan.columns.iter().map(|c| c.len()).sum::<usize>() + plan.pool.len();
+        assert_eq!(total, 3);
     }
 }

@@ -1079,13 +1079,18 @@ export const createTask = (title: string, projectId?: string, description?: stri
 export const dispatchIdeas = (
   ideaIds: string[],
   target: "runner" | "fleet",
-  opts?: { depth?: string; maxParallel?: number },
+  opts?: { depth?: string; maxParallel?: number; lanes?: string[][] },
 ) =>
   invoke<DispatchIdeasResult>("dev_tools_dispatch_ideas", {
     ideaIds,
     target,
     depth: opts?.depth,
+    // Runner arm only. `maxParallel` is the batch's LANE WIDTH: omit it and
+    // every task is admitted to the fleet at once, with the fleet's own
+    // global cap deciding what runs now. `lanes[i]` pins idea ids to strand
+    // `i`, in order; an id in no column runs on whichever strand frees first.
     maxParallel: opts?.maxParallel,
+    lanes: opts?.lanes,
   });
 
 /**
@@ -1276,8 +1281,19 @@ export const memorySkillContextPairs = (projectId: string): Promise<SkillContext
 export const executeTask = (taskId: string, model?: string) =>
   invoke<{ task_id: string }>("dev_tools_execute_task", { taskId, model: model ?? null });
 
-export const startBatchExecution = (taskIds: string[], maxParallel?: number) =>
-  invoke<{ batch_id: string; started: number }>("dev_tools_start_batch", { taskIds, maxParallel });
+/** `maxParallel` is the lane width — see `dev_tools_start_batch`'s own doc for
+ *  what omitting it means (the fan-out, bounded only by the fleet's cap).
+ *  `lanes[i]` pins task ids to strand `i`, in order. */
+export const startBatchExecution = (
+  taskIds: string[],
+  maxParallel?: number,
+  lanes?: string[][],
+) =>
+  invoke<{ batch_id: string; started: number; lanes: number }>("dev_tools_start_batch", {
+    taskIds,
+    maxParallel,
+    lanes,
+  });
 
 export const cancelTaskExecution = (taskId: string) =>
   safeInvoke<boolean>(false, "dev_tools_cancel_task_execution", { taskId });
