@@ -1,6 +1,6 @@
 # Personas Desktop
 
-> A local-first desktop app for building, orchestrating, and monitoring AI agent personas — encrypted credentials, visual pipelines, and real-time observability, all running entirely on your machine.
+> A local-first desktop app for building AI agents, connecting them to your tools, running them on triggers, and putting teams of them to work on real software projects. Credentials are encrypted, state lives in SQLite on your machine, and nothing leaves it unless you send it.
 
 [![CI](https://github.com/xkazm04/personas/actions/workflows/ci.yml/badge.svg)](https://github.com/xkazm04/personas/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/xkazm04/personas?display_name=tag&sort=semver)](https://github.com/xkazm04/personas/releases)
@@ -12,185 +12,235 @@
 
 Built with **Tauri 2** (Rust) and **React 19** (TypeScript).
 
-**Looking for...**
-[Features](#key-features) · [Quickstart](#getting-started) · [Architecture](./docs/architecture/README.md) · [Docs](./docs/README.md) · [Contributing](./CONTRIBUTING.md) · [Security](./SECURITY.md) · [Changelog](./CHANGELOG.md)
+**Jump to:**
+[What it does](#what-it-does) · [Tour of the app](#tour-of-the-app) · [How a run works](#how-a-run-works) · [Quickstart](#getting-started) · [Docs](./docs/README.md) · [Contributing](./CONTRIBUTING.md) · [Changelog](./CHANGELOG.md)
 
 ---
 
-## Overview
+## What it does
 
-Personas Desktop provides a local-first environment for creating AI agents with distinct identities, connecting them to external services via encrypted credentials, and running them on schedules or event triggers. A visual team canvas lets you wire agents together into collaborative pipelines, while an observability dashboard tracks every execution in real time.
+Personas is built around one loop. You define **agents** (personas), give them **connections** to the services they need, let **triggers** run them, and **watch and govern** what they do. On top of that loop sit three larger things: a way to point **teams of agents at your own codebases**, three built-in **Companions** that look after the app itself, and **plugins** for adjacent jobs.
 
-**Why local-first?** Your personas, prompts, and credentials never leave your machine unless you explicitly send them. The only outbound traffic goes to the AI providers and third-party services you configure. No telemetry dashboards. No cloud account required. Your data stays yours.
+| If you want to… | Go to | Short version |
+| --- | --- | --- |
+| Create an agent and tune its prompt, tools and model | [Agents](#2-build-agents) | Describe it in plain language; the app builds the spec |
+| Give agents access to Slack, GitHub, a database… | [Connections](#3-connect-services) | Encrypted vault, 130+ built-in connectors |
+| Run agents on a schedule, a webhook or an event | [Events & Schedules](#4-automate-and-trigger) | Ten ways a run can start, plus chains between agents |
+| See what agents did, what it cost, and what needs you | [Overview](#5-observe-and-govern) | Dashboard, approvals, incidents, memory |
+| Point agents at your repos and steer them by goals and KPIs | [Projects](#6-ship-software-with-agents) | Context map, goals, KPIs, task runner, fleet |
+| Get help running all of the above | [Companions](#7-companions-the-apps-own-agents) | Athena, Overseer, Curator |
+| Extend it | [Plugins](#8-plugins) | Dev Tools, Obsidian Brain, Drive, Twin |
 
-## Key Features
+**Why local-first?** Your personas, prompts and credentials never leave your machine unless you explicitly send them. Outbound traffic goes only to the AI providers and third-party services you configure. No cloud account is required.
 
-### Agent Creation & Management
+---
 
-- Create and configure AI personas with custom system prompts, tools, and behavioral rules
-- Version-controlled prompt editor with history, diff view, and performance tracking
-- Onboarding wizard for quick persona creation from built-in or n8n-imported templates
-- Group and organize agents with drag-and-drop; assign connectors per persona
-- Reusable recipe system for multi-step execution workflows with versioning
+## Tour of the app
 
-### AI Execution
+The sidebar has two levels: an icon rail of top-level sections and a panel of grouped pages inside each section. The sections below follow the rail from top to bottom, regrouped by the job each one does. Which sections you see depends on your [interface tier](#interface-tiers) and on whether you run a dev build.
 
-- Runs the **Claude Code** CLI as the execution engine, with **BYOM (bring-your-own-model)** support for pointing executions at custom or local model endpoints
-- Circuit-breaker health tracking that automatically disables an unhealthy provider
-- Streaming NDJSON output parsing with token counting and cost attribution
-- Per-execution budget limits (per run, daily, monthly) with automatic enforcement
-- Configurable concurrency and timeout controls per persona
+### 1. Start here
 
-### Team Canvas & Pipelines
+**Home** is the entry point: a cockpit for what needs attention, a learning area, and guided tours that walk through first-run setup (first agent, first credential, first execution). **Simple Mode** is a reduced interface for non-technical users; see [tiers](#interface-tiers).
 
-- Visual node-based editor (React Flow) for composing multi-agent pipelines
-- Define data-flow connections between personas with chain triggers
-- Pipeline execution controls with real-time status propagation
+Docs: [home](./docs/features/home.md) · [onboarding](./docs/features/onboarding.md) · [simple mode](./docs/features/interface-modes/simple-mode.md)
 
-### Trigger System
+### 2. Build agents
 
-- **Manual** — on-demand execution from UI
-- **Schedule** — 5-field cron expressions with preview
-- **Webhook** — inbound HTTP POST to local server (`localhost:9420`)
-- **Clipboard Monitor** — polls system clipboard for text changes matching regex filters
-- **File Watcher** — monitors local filesystem for file creation/modification events
-- **Chain** — output from one persona triggers the next in a pipeline
-- **Event Listener** — custom events published by other personas via the event bus
+**Agents** is where personas are created and edited. You describe what you want and the build session asks clarifying questions, then resolves a spec you can refine.
 
-### Credential Vault
+- Persona editor with system prompt, tools, behavioural rules, model and reasoning effort, and a version history with diffs
+- **Templates** (under Connections → Templates): adopt a ready-made agent from the catalog, import one from **n8n**, or start from a generated draft
+- **Recipes**: reusable, parameterized capabilities you adopt onto a persona
+- **Presets**: pre-assembled teams of agents for a common job
+- Lab for testing a persona against scenarios, with quality scoring and prompt benchmarking
+- Chat tab as an **operations hub**: run, check health, edit prompts and assign tools without leaving the conversation
 
-- **AES-256-GCM** encryption at rest for all stored credentials
-- OS-native keyring integration (Windows Credential Manager / macOS Keychain / Linux Secret Service)
-- PBKDF2-HMAC-SHA256 fallback key derivation (600,000 iterations)
-- Hybrid RSA-2048 + AES-256-GCM encryption for IPC transport; session keys regenerated on each app launch
-- Sensitive values zeroized on memory drop (`ZeroizeOnDrop`)
-- **130+ built-in connectors**: Slack, GitHub, Linear, Discord, Jira, Notion, Airtable, PostgreSQL, MongoDB, Stripe, Vercel, and more
-- Credential health checks, automatic token refresh, and rotation support
-- **Auto-Credential Browser**: Playwright-powered semi-automated OAuth/login flow driven by Claude
-- **Guided Setup**: step-by-step credential creation instructions generated by AI
-- API Playground for testing authenticated requests against any connector
+Docs: [personas](./docs/features/personas/README.md) · [templates](./docs/features/templates/README.md) · [recipes](./docs/features/recipes/README.md) · [operations hub](./docs/features/agents/operations-hub.md)
 
-### Observability & Monitoring
+### 3. Connect services
 
-- Real-time event bus visualization with animated particle lanes
-- OpenTelemetry-style execution tracing (spans, parent-child relationships, durations)
-- Observability dashboard with execution metrics, cost tracking, and charts
-- Knowledge graph dashboard for cross-persona insights
-- Memory management for persistent agent context
-- Structured logging with tracing; per-execution log files
+**Connections** is the credential vault and everything around it.
 
-### Self-Healing Engine
+- **AES-256-GCM** encryption at rest, with the key held in the OS keyring (Windows Credential Manager, macOS Keychain, Linux Secret Service)
+- **130+ built-in connectors** (Slack, GitHub, Linear, Discord, Jira, Notion, Airtable, PostgreSQL, MongoDB, Stripe, Vercel and more), each with credential health checks and guided setup
+- Catalog, **Databases**, a **Dependencies** graph of what uses which credential, and a **Broker**
+- Credentials are handed to an execution as environment variables and scrubbed afterwards, never passed as CLI arguments
 
-- Automatic detection and recovery from transient execution failures
-- Healing issue tracking with root-cause analysis
-- Circuit-breaker pattern disables unhealthy providers automatically
+Docs: [connections](./docs/features/connections/README.md) · [integrations](./docs/features/integrations/README.md)
 
-### Design Reviews & Testing
+### 4. Automate and trigger
 
-- Automated design review generation for agent configurations
-- Manual review queue with approval workflow
-- Test suite runner with mock tools and scenario-based validation
-- Quality scoring and prompt performance benchmarking
+**Events** is the routing layer. **Schedules** (a calendar overlay from the title bar) holds cron jobs.
 
-### Deployment & Automation
+- A run can start from a manual click, a cron **schedule**, an inbound **webhook** (`localhost:9420`), an **event** on the bus, a polling check, a **chain** from another persona, a file watcher, the clipboard, app focus, or a composite of these
+- **Chain Studio** wires personas together by the signals they emit and listen for
+- Live Stream, speed limits (rate limits), dead-letter queue and a test panel for maintaining the event flow
+- **Marketplace** for shared events; **automation tools** (n8n, GitHub Actions) for outbound steps
 
-- Deploy personas to **cloud orchestrator** (webhook-based job dispatch)
-- **GitHub Actions** integration — trigger repository dispatch workflows
-- **GitLab CI/CD** integration — export personas as pipeline YAML, auto-commit and deploy
-- **n8n** workflow integration — import, transform, and trigger n8n workflows
-- Automation run history with status tracking and retry configuration
+Docs: [events & triggers](./docs/features/events/README.md) · [schedules](./docs/features/schedules.md) · [execution entry points](./docs/features/execution/01-entry-points.md) · [automation tools](./docs/features/automation-tools.md)
 
-### Desktop Integration
+### 5. Observe and govern
 
-- System tray with scheduler pause/resume and recent execution shortcuts
-- Desktop notifications for execution events, reviews, and healing alerts
-- Window state persistence across sessions
-- Single-instance enforcement with deep link routing (`personas://`)
-- Auto-updater via GitHub Releases
+**Overview** answers "what are my agents doing, and what needs me?"
 
-## How It Works
+| Group | Pages |
+| --- | --- |
+| **Monitoring** | Dashboard (Mission control: vitals, status monitor, leaderboard, self-healing), Activity (every execution with model, tokens and cost), Events |
+| **Operations** | Approvals (manual-review queue), Incidents (one triage inbox over seven failure streams), Observability (alerts, health issues, trends, IPC performance), Messages |
+| **Memory** | Memories (what agents remember, with dispute and recall controls) and Graph |
+
+Also here: the **Director**, a built-in coach that scores each persona and suggests improvements, and the **Persona Monitor**, a full-screen grid of the whole fleet.
+
+The runtime protects itself: per-run, daily and monthly **budget limits**, **circuit breakers** that disable an unhealthy provider, and a **self-healing** engine that detects and recovers from transient failures. Execution traces record spans, durations and cost.
+
+Docs: [overview](./docs/features/overview/README.md) · [execution](./docs/features/execution/README.md) · [persona monitor](./docs/features/monitor.md) · [Director](./docs/features/companions/overseer/README.md)
+
+### 6. Ship software with agents
+
+**Projects** turns the app from "run some agents" into "run a team on my repository." Register a codebase, map it, define what success means, and let agents work toward it.
+
+| Group | What it is |
+| --- | --- |
+| **Teams** | Assemble a team from a preset, give it a goal, decompose, assign and run. Moderated multi-persona **deliberations** end in an approved assignment |
+| **Goals / KPIs** | KPIs define outcomes; a KPI off its critical line derives goals; goals are what teams advance |
+| **Development** | **Lifecycle** (each project's practice: Solo or Team), **Factory** (project readiness and KPI matrix), **Contest** (run several model seats on one brief and keep the winner), **Mastermind** (portfolio view across projects), **Features**, and **Studio** (an app builder, dev builds only) |
+| **Browser** | Lets Athena and your personas open and control allow-listed web pages, with each write passing the approval orb |
+
+The supporting tooling lives in **Plugins → Dev Tools**: Context Map (scan a repo into groups and contexts), Task Runner, **Fleet** (observe and steer many Claude Code CLI sessions in one window; dev builds), Workspaces (group projects into an org), and Skills. A **Notepad** (footer toggle) turns notes into dispatched work or goals.
+
+An **App Master** is the accountable agent for one registered project. It can be adopted headlessly and driven from a terminal; see [Headless bridge](./docs/development/headless-bridge.md).
+
+Docs: [Teams & orchestration](./docs/features/teams/README.md) · [Dev Tools](./docs/features/plugins/dev%20tools/README.md) · [notepad](./docs/features/notepad.md) · [browser](./docs/features/browser.md)
+
+### 7. Companions: the app's own agents
+
+**Companions** are three built-in agents, distinct from the personas you create. Each has its own pages and an on/off switch.
+
+| Companion | Role |
+| --- | --- |
+| **Athena** | The assistant. Plans, builds, remembers and answers across the whole app, by chat or voice, with an orb overlay and guided walkthroughs |
+| **Overseer** | Keeper of the fleet. Keeps starred agents running without error and worth what they cost; audits each wave of work. Needs at least one starred agent |
+| **Curator** | Keeper of the knowledge registry. Keeps a mapped registry current and applied in the projects that subscribe to it. Needs a workspace with a registry |
+
+Docs: [companions](./docs/features/companions/README.md) · [Athena](./docs/features/companions/athena/README.md) · [Curator](./docs/features/companions/curator/blueprint.md)
+
+### 8. Plugins
+
+Enable plugins from **Plugins**. Each adds a group of pages to the sidebar.
+
+| Plugin | What it gives you |
+| --- | --- |
+| **Dev Tools** | The codebase tooling described in [section 6](#6-ship-software-with-agents) |
+| **Obsidian Brain** | A two-way bridge between agent memory and an Obsidian vault, as plain markdown, optionally backed up to your own Google Drive |
+| **Drive** | A sandboxed local file manager for what agents, OCR, signing and exports produce |
+| **Twin** | A digital identity (bio, per-channel tone, voice, curated memory) that your agents adopt so they speak as you |
+
+Also in the tree: a built-in **Scraper** that emits change events onto the bus (dev builds), **GitLab** CI/CD export and deployment, and the **Cloud** orchestrator for pushing personas to a remote runtime.
+
+Docs: [plugins](./docs/features/plugins/) · [Twin](./docs/features/plugins/twin.md) · [Drive](./docs/features/plugins/drive/README.md) · [Obsidian Brain](./docs/features/plugins/brain/README.md) · [deployment](./docs/features/deployment/README.md) · [GitLab](./docs/features/gitlab.md)
+
+### 9. Settings and the desktop shell
+
+**Settings** groups into General (account, appearance, data portability, radio, notifications), Connect (API keys for inbound MCP/HTTP access, paired devices, network sharing) and LLM (engine, custom models, limits). Data export and import can carry personas, connectors, twins and Athena's memory between machines; **Sharing** covers bundles, `personas://` deep links and peer-to-peer transfer (needs a full build).
+
+The desktop shell adds a system tray with scheduler pause/resume, native notifications, window-state persistence, a single-instance lock with deep-link routing, an in-footer **Radio**, and an auto-updater via GitHub Releases.
+
+Docs: [settings](./docs/features/settings/README.md) · [sharing](./docs/features/sharing/README.md) · [radio](./docs/features/radio.md) · [navigation](./docs/features/navigation.md)
+
+### Interface tiers
+
+One codebase, three audiences. Each tier is a strict superset of the one before.
+
+| Tier | Label in the app | Audience | Adds |
+| --- | --- | --- | --- |
+| `starter` | Simple | Non-technical users | Agents, connections, messages, templates |
+| `team` (default) | Power | Teams and enterprises | Events, projects and teams, deployment, analytics, scheduling, databases, plugins, companions |
+| `builder` | (dev builds) | Developers | Dev-only surfaces, raw JSON editing |
+
+Switch at runtime in **Settings → Appearance → Interface Mode**. Builder is a compile-time gate with no runtime path to it. To build a tier-locked bundle, see [Build tiers](#build-tiers).
+
+---
+
+## How a run works
 
 ```
- User creates persona          Trigger fires           AI provider returns
- (prompt + tools + creds)      (cron/webhook/          structured output
-         |                      clipboard/file/chain)        |
-         v                           |                       v
-  +--------------+            +------v-------+        +-------------+
-  | SQLite DB    | ---------> | Rust Engine  | -----> | Post-process|
-  | (encrypted   |   load     | (Tokio async)|  parse | (healing,   |
-  |  credentials)|            | spawn CLI    |        |  chain,     |
-  +--------------+            +--------------+        |  notify)    |
-                                     |                +-------------+
-                              Credentials injected
-                              as env vars (scrubbed
-                              after execution)
+ You define a persona          A trigger fires              The provider returns
+ (prompt + tools + creds)      (cron / webhook / event /     structured output
+         |                      chain / file / clipboard)           |
+         v                              |                         v
+  +--------------+               +------v-------+          +-------------+
+  | SQLite DB    | ------------> | Rust engine  | -------> | Post-process|
+  | (encrypted   |     load      | (Tokio async)|  parse   | (healing,   |
+  |  credentials)|               | spawns CLI   |          |  chain,     |
+  +--------------+               +--------------+          |  notify)    |
+                                        |                  +-------------+
+                                 Credentials injected
+                                 as env vars, scrubbed
+                                 after the run
 ```
 
-1. **Define** — Create a persona with a system prompt, select an AI provider, assign tools, and attach encrypted credentials from the vault.
-2. **Connect** — Wire personas together on the Team Canvas to form pipelines, or configure triggers (cron, webhook, clipboard, file watcher, chain events).
-3. **Execute** — The Rust engine spawns the AI provider CLI, streams NDJSON output in real time, tracks tokens/cost, and writes execution traces.
-4. **Observe** — Monitor executions via the dashboard, event bus, and tracing views. The healing engine automatically recovers from transient failures.
-5. **Deploy** — Optionally push personas to cloud, GitHub Actions, GitLab CI/CD, or n8n for production orchestration.
+1. **Define.** Create a persona, pick a model, assign tools, attach vault credentials.
+2. **Trigger.** Start it by hand, on a schedule, from a webhook or event, or from another persona.
+3. **Execute.** The Rust engine spawns the **Claude Code** CLI as a subprocess, streams its output, counts tokens and cost, and writes a trace. Custom or local model endpoints can be configured under Settings → Custom Models (dev builds).
+4. **Observe.** Executions land in Overview; approvals and incidents queue for you; healing retries what it safely can.
+5. **Deploy (optional).** Push personas to the cloud orchestrator, GitHub Actions, GitLab CI/CD, or n8n.
 
-### Data Flow & Privacy
+### Data flow and privacy
 
 | Data | Where it goes | Encryption |
 |------|--------------|------------|
-| Persona prompts & config | Local SQLite | Plaintext (not secrets) |
+| Persona prompts and config | Local SQLite | Plaintext (not secrets) |
 | Credential values | Local SQLite | AES-256-GCM (key in OS keyring) |
 | Execution output | Local SQLite + log files | Plaintext |
 | AI provider requests | Provider API (HTTPS) | TLS in transit |
 | Connector API calls | Third-party service (HTTPS) | TLS in transit |
 | Error reports (opt-in) | Sentry | PII stripped before send |
 
-## Tech Stack
+---
+
+## Tech stack
 
 | Layer | Technology |
 |-------|-----------|
-| Desktop Runtime | [Tauri 2](https://v2.tauri.app/) |
+| Desktop runtime | [Tauri 2](https://v2.tauri.app/) |
 | Backend | Rust, Tokio, SQLite (r2d2 pool) |
 | Frontend | React 19, TypeScript 6, Vite 8 |
 | Styling | Tailwind CSS 4 |
-| State | Zustand |
-| Animations | Framer Motion |
-| Visualizations | Recharts, React Flow (XYFlow) |
-| Encryption | AES-GCM, PBKDF2, OS Keyring |
+| State | Zustand 5 |
+| Animation | Framer Motion |
+| Visualization | Recharts, React Flow (XYFlow) |
+| Encryption | AES-GCM, OS keyring |
 | Networking | Reqwest (rustls-tls) |
+
+---
 
 ## Prerequisites
 
-| Dependency | Minimum Version | Check command |
-|-----------|----------------|---------------|
+| Dependency | Version | Check command |
+|-----------|---------|---------------|
 | [Node.js](https://nodejs.org/) | >= 20 | `node --version` |
-| [Rust](https://www.rust-lang.org/tools/install) | >= 1.77.2 | `rustc --version` |
-| WebView2 Runtime | (bundled with Windows 10+) | — |
-| C++ Build Tools | MSVC (Visual Studio) | — |
+| [Rust](https://www.rust-lang.org/tools/install) | via `rustup`; the repo pins its toolchain in `rust-toolchain.toml` | `rustc --version` |
+| WebView2 Runtime | bundled with Windows 10+ | none |
+| C++ Build Tools | MSVC (Visual Studio) | none |
 
-### Windows Setup
+### Windows setup
 
-1. **Install Node.js** (if not already installed):
+1. **Install Node.js**:
 
    ```powershell
    winget install OpenJS.NodeJS.LTS
    ```
 
-2. **Install Rust** via rustup:
+2. **Install Rust** via rustup, then **restart your terminal** so `cargo` and `rustc` are on your PATH:
 
    ```powershell
    winget install Rustlang.Rustup
-   ```
-
-   After installation, **restart your terminal** so `cargo` and `rustc` are on your PATH. Verify with:
-
-   ```powershell
    rustc --version
    cargo --version
    ```
 
-3. **Install Visual Studio C++ Build Tools** (if not already installed):
-   - Download [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
-   - In the installer, select **"Desktop development with C++"** workload
-   - This provides the MSVC compiler and Windows SDK required by Tauri
+3. **Install Visual Studio C++ Build Tools**: download [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) and select the **"Desktop development with C++"** workload. It provides the MSVC compiler and Windows SDK that Tauri needs.
 
 4. **Install LLVM/Clang** (required on Windows ARM64 for the `ring` crypto crate):
 
@@ -198,396 +248,163 @@ Personas Desktop provides a local-first environment for creating AI agents with 
    winget install LLVM.LLVM
    ```
 
-   After installation, ensure `C:\Program Files\LLVM\bin` is on your PATH (the installer usually adds it automatically; restart your terminal to pick it up).
+   Make sure `C:\Program Files\LLVM\bin` is on your PATH, and restart your terminal.
 
-5. **WebView2 Runtime** ships with Windows 10 (version 1803+) and Windows 11. No action needed on modern Windows.
-
-6. **Run from a Developer Command Prompt** or ensure the MSVC environment is active. The easiest way is to launch your terminal from **"Developer Command Prompt for VS"** or **"Developer PowerShell for VS"** so that `cl.exe`, `INCLUDE`, and `LIB` are set. Alternatively, run:
+5. **Run from a Developer shell.** Launch your terminal from **"Developer PowerShell for VS"** so `cl.exe`, `INCLUDE` and `LIB` are set, or load the environment into the current session:
 
    ```powershell
-   # PowerShell: load VS environment into your current session
    & "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\Launch-VsDevShell.ps1" -Arch arm64
    ```
 
-### macOS Setup
-
-1. Install Xcode Command Line Tools:
-
-   ```bash
-   xcode-select --install
-   ```
-
-2. Install Node.js and Rust:
-
-   ```bash
-   brew install node
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-   ```
-
-3. Restart your terminal, then verify:
-
-   ```bash
-   node --version && rustc --version && cargo --version
-   ```
-
-### Linux Setup (Debian/Ubuntu)
-
-1. Install system dependencies:
-
-   ```bash
-   sudo apt update
-   sudo apt install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
-     libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
-   ```
-
-2. Install Node.js (via [NodeSource](https://github.com/nodesource/distributions)):
-
-   ```bash
-   curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-   sudo apt install -y nodejs
-   ```
-
-3. Install Rust:
-
-   ```bash
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-   source "$HOME/.cargo/env"
-   ```
-
-## Getting Started
+### macOS setup
 
 ```bash
-# 1. Install frontend dependencies
-npm install
-
-# 2. Run in development mode (recommended, Windows)
-# PowerShell
-.\scripts\desktop-dev.ps1 -Restart
-
-# 3. (optional) Preflight check only
-.\scripts\desktop-dev.ps1 -CheckOnly
-
-# 4. Build for production (all features — ~15 min)
-npm run tauri:build
-
-# 5. Build lite installer (no ML/P2P — ~10 min, NSIS only)
-npm run tauri:build:lite
+xcode-select --install
+brew install node
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-### Developer run (recommended)
+Restart your terminal, then verify with `node --version && rustc --version && cargo --version`.
 
-To avoid common restart/startup issues (missing clang on PATH, stale app process, stale Vite process), use the helper script instead of calling `npm run tauri dev` directly:
+### Linux setup (Debian/Ubuntu)
+
+```bash
+sudo apt update
+sudo apt install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+  libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+# Node.js via NodeSource
+curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source "$HOME/.cargo/env"
+```
+
+---
+
+## Getting started
+
+```bash
+npm install                  # 1. frontend dependencies
+npm run tauri:dev:lite       # 2. daily-driver dev mode (desktop features, no ML/P2P)
+```
+
+On Windows, the helper script avoids the usual startup problems (clang missing from PATH, a stale app process, a stale Vite process):
 
 ```powershell
-Set-Location .\personas
-.\scripts\desktop-dev.ps1 -Restart
+.\scripts\desktop-dev.ps1 -Restart      # run the app
+.\scripts\desktop-dev.ps1 -CheckOnly    # preflight only
 ```
 
-If you prefer the raw command, it still works once your environment is healthy:
+> The first run compiles all Rust dependencies, which takes several minutes. Later builds are incremental.
 
-```bash
-npm run tauri dev
-```
+**Lite or full?** Use `tauri:dev:lite` for almost everything: UI, IPC wiring, schema, triggers, recipes, observability. Switch to `npm run tauri:dev` (full) only when you are working on the vector knowledge base, embeddings, ONNX inference, or P2P, which are compiled only in the full build.
 
-> **Note:** The first run will compile all Rust dependencies, which can take several minutes. Subsequent builds are incremental and much faster.
-
-### Build Tiers
-
-The app supports three audience tiers. Each tier is a strict superset of the previous one, so a Team build includes everything in Starter, and Builder includes everything in Team.
-
-| Tier | Audience | What's included |
-|------|----------|----------------|
-| **Starter** | Non-technical users | Agents, credentials, messages, templates — clean, focused UI |
-| **Team** | Teams & enterprises | + events, pipelines, deployment, analytics, scheduling, databases |
-| **Builder** | Developers | + dev tools, lab, design system, raw JSON editing |
-
-Users can switch tiers at runtime via **Settings > Account > Interface Mode**. The default tier is **Team**.
+### Build tiers
 
 To build a tier-locked variant (higher-tier features are tree-shaken from the bundle):
 
 ```bash
-npm run build:starter    # Starter-only features
-npm run build:team       # Starter + Team features
-npm run build:builder    # All features (default)
+npm run build:starter    # Simple tier only
+npm run build:team       # Simple + Power
+npm run build:builder    # everything (default)
 ```
 
-For Tauri desktop builds with a specific tier:
+For desktop installers:
 
 ```bash
-VITE_APP_TIER=starter npm run tauri build   # Starter installer
-VITE_APP_TIER=team npm run tauri build      # Team installer
+VITE_APP_TIER=starter npm run tauri build   # Simple installer
+VITE_APP_TIER=team npm run tauri build      # Power installer
 npm run tauri build                         # Builder installer (default)
 ```
 
-When `VITE_APP_TIER` is not set, the build includes all tiers and users can switch freely at runtime.
+When `VITE_APP_TIER` is unset, the build includes every tier and users switch at runtime.
 
-### Available Scripts
+### Common scripts
 
-| Command | Description |
+| Command | What it does |
 |---------|-------------|
-| `npm run dev` | Vite dev server only (port 1420) — frontend without Tauri |
-| `npm run dev:inspect` | `npm run dev` with the DevInspector source-mapping flag (see below) |
-| `npm run build` | TypeScript check + Vite production build (builder tier) |
-| `npm run build:{starter,team,builder}` | Tier-specific frontend bundle |
-| `npm run lint` | ESLint on `src/` |
-| `npm run check` | TypeScript + lint |
-| `npm run check:tiers` | Compile-check all three frontend tiers locally |
-| `npm run check:tauri-configs` | Validate `tauri.conf.json` and overlay configs |
-| `npm run tauri:dev` | Launch Tauri in dev mode (canonical config) |
-| `npm run tauri:dev:lite` | Dev mode with `desktop` features only — fast iteration |
-| `npm run tauri:dev:test` | Dev mode with `--features test-automation` (HTTP server on :17320) **and** the DevInspector source-mapping flag — one build with both the test bridge and click-to-copy source paths |
-| `npm run tauri:build` | Build full installer (all targets, `desktop-full`) |
-| `npm run tauri:build:lite` | Build NSIS-only installer with `desktop` features |
-| `npm run tauri:build:stable` | Build NSIS + MSI installer for Windows release |
-| `npm run analyze` | Generate bundle treemap (`dist/bundle-report.html`) |
-| `npm run check:budget` | Check JS chunk sizes against budget limits |
-| `npm run check:assets` | Show potential image optimization savings |
-| `npm run clean:rust` | `cargo clean` — full Rust target wipe |
-| `npm run clean:ort` | Surgical clean of `ort` + `ort-sys` (recovers from x64/arm64 cache contamination) |
+| `npm run dev` | Vite dev server only (port 1420), frontend without Tauri |
+| `npm run tauri:dev` / `:lite` | Tauri dev mode, full or lite feature set |
+| `npm run tauri:dev:test` | Lite dev mode plus the test-automation HTTP server (`:17320`) and DevInspector |
+| `npm run build` | TypeScript check + Vite production build |
+| `npm run tauri:build` | Full installer (all targets, `desktop-full`) |
+| `npm run tauri:build:lite` | NSIS-only installer with `desktop` features |
+| `npm run tauri:build:stable` | NSIS + MSI installer for a Windows release |
+| `npm run check` | The full pre-push gate chain: project checks, type check, ESLint and the golden-path census |
+| `npm run gate` | Fast per-commit check (tsc, changed-file ESLint, census) from a warm local daemon |
+| `npm run test` | Vitest |
+| `npm run test:rust` | Rust unit tests (use this on Windows rather than raw `cargo test`) |
+| `npm run check:tiers` | Compile-check all three frontend tiers |
+| `npm run analyze` / `check:budget` | Bundle treemap / chunk-size budget |
+| `npm run clean:rust` / `clean:ort` | Full Rust wipe / surgical ONNX Runtime cache clean |
 
-For end-to-end build documentation (architecture differences, ARM64 vs x64
-on Windows, codegen pipeline, profiles, ONNX Runtime bundling, Android setup),
-see **[docs/development/build.md](./docs/development/build.md)**.
+Build internals (ARM64 vs x64 on Windows, the codegen pipeline, profiles, ONNX bundling) are in **[docs/development/build.md](./docs/development/build.md)**; Android setup is in **[docs/development/android-build.md](./docs/development/android-build.md)**.
 
-### DevInspector — click a component, copy its source path
+### DevInspector: click a component, copy its source path
 
-A dev-only overlay for grabbing a component's `src/.../File.tsx:line` and pasting
-it straight into an AI coding CLI (Claude Code, etc.). Off by default and never
-present in production builds.
+A dev-only overlay for grabbing a component's `src/.../File.tsx:line` and pasting it into an AI coding CLI. Off by default and never present in production builds.
 
 ```bash
-npm run tauri:dev:test        # full app + test bridge (:17320), source mapping on
-npm run dev:inspect           # frontend-only / faster iteration
+npm run tauri:dev:test        # full app + test bridge, source mapping on
+npm run dev:inspect           # frontend only, faster iteration
 ```
 
-Then in the app, press **`;`** (enters keyboard nav mode) then **`i`** (Inspect)
-to arm it. Hover highlights the element and pins a `File.tsx:line` chip at the
-cursor; **click** copies the call-site path, **Alt+click** copies the literal
-element, and **Esc** exits. Full design + tuning notes live in
-**[docs/development/dev-inspector.md](./docs/development/dev-inspector.md)**.
+In the app press **`;`** then **`i`** to arm it. Hover highlights an element and pins a path chip; **click** copies the call-site path, **Alt+click** copies the element, **Esc** exits. See [docs/development/dev-inspector.md](./docs/development/dev-inspector.md).
 
-### Registering a project headlessly (dev-tools bridge)
+### Driving the app from a terminal
 
-Every project the Factory manages is a row in `dev_projects`. You can create that row and
-run the context-map scan from a terminal or a script, without the GUI, through the loopback
-**dev-tools bridge** the running app exposes. The app must be running: the bridge lives inside
-its process, and it writes a handshake file `~/.personas/local-http.json` (`{pid, port, token}`)
-on every bind. The port is the first free one at or above `17400`; the token is mandatory.
+The running app exposes a loopback **dev-tools bridge** for creating projects, scanning codebases, adopting an App Master and writing results back, with no GUI. The full route reference is in **[docs/development/headless-bridge.md](./docs/development/headless-bridge.md)**.
 
-```bash
-PORT=$(grep -o '"port"[^,]*' ~/.personas/local-http.json | grep -o '[0-9]*')
-TOKEN=$(grep -o '"token": *"[^"]*"' ~/.personas/local-http.json | sed 's/.*"\([^"]*\)"$/\1/')
-B="http://127.0.0.1:$PORT/dev-tools"; AUTH=(-H "X-Personas-Local-Token: $TOKEN")
+---
 
-curl -s "${AUTH[@]}" "$B/projects"                      # list; match on root_path, not name
-curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/projects"   -d '{"name":"my-app","root_path":"/abs/path/to/my-app","description":"...","tech_stack":"..."}'
-#   -> the DevProject row (keep .id). Idempotent on root_path; writes .personas/project.json
-#      into the repo (commit it: it lets a moved checkout heal and refuses a clone collision).
-curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/scan-codebase"   -d '{"project_id":"<id>","root_path":".","delta_mode":false}'      # -> {"scan_id"}
-curl -s "${AUTH[@]}" "$B/scan-status/<scan_id>"         # poll; then export the artifacts:
-curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/export-context-map"   -d '{"project_id":"<id>"}'                             # context-map.json + CLAUDE.md block
-```
-
-`401` means a stale token (re-read the handshake), `403` a non-loopback `Host` header, `400`
-on create a `root_path` that does not exist. Project create, context scan, export and the
-repair routes are unattended; the use-case/KPI lanes (`/project-populate`) and passport
-onboarding (`/passport-onboard`) deliberately stop to ask the operator questions. Route table:
-`src-tauri/src/commands/infrastructure/dev_tools_http.rs`; identity rules:
-`src-tauri/db/src/project_identity.rs`; narrative: `docs/features/plugins/dev tools/cx-map.md`.
-
-##### Creating the repository too (`POST /projects/create`)
-
-`POST /projects` needs a folder that already exists. `POST /projects/create` makes one: it
-computes `<root>/<workspace-slug>/<name>`, `git init`s it, writes a `README.md`, a `.gitignore`
-and the template's skeleton, makes one `chore: scaffold <name>` commit, then registers the
-project and assigns it to the workspace — resolving the workspace by id or by name, and
-**creating** the workspace when the name matches none.
-
-```bash
-curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/projects/create" -d '{
-  "workspace": "Bank",
-  "name": "bank-core",
-  "description": "accounts, ledger, payments",
-  "techStack": "rust",
-  "template": "rust-service"
-}'
-#   -> { project, repositoryPath, workspaceId, created, workspaceCreated }
-```
-
-`template` is `empty` (default) | `rust-service` | `node-service` | `python-service`; the
-non-empty ones write a dependency-free hello server so the skeleton builds and runs offline.
-`techStack` also accepts the snake_case `tech_stack`. `root` (absolute) overrides the root for
-one call; otherwise the root is the `simulation_projects_root` setting, and unset that is
-`<app data dir>/sim` (`PERSONAS_DATA_DIR` overrides the app data dir, as it does for the
-authoring worktrees). Set the setting once when the repositories belong somewhere specific —
-the Grand Simulation's dedicated bank folder is the case this exists for.
-
-`400` when the target directory exists and is **not empty** (the response names the path), and
-when `name` is not a single directory component. A directory that already carries
-`.personas/project.json` is the exception: the call is idempotent, returns the same project and
-reports `"created": false`. Same operation as the Tauri command `create_project_repository`
-(`src/api/devTools/projectScaffold.ts`); implementation:
-`src-tauri/src/commands/infrastructure/project_scaffold.rs`.
-
-##### The never-delete tag (`GET /workspaces`, `POST /workspaces/{id}/protect`)
-
-A workspace can be tagged as the **last working version** — the state Personas must keep. While
-the tag is set, four delete doors refuse with
-`workspace <name> is protected as the last working version`: deleting one of its projects,
-deleting the workspace, deleting a member project's team, and the `replace` branch of a dev
-project import (which wipes a project's whole working graph without touching the project row).
-
-```bash
-curl -s "${AUTH[@]}" "$B/workspaces"          # -> [{ id, name, protected, projectCount }]
-curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" \
-  "$B/workspaces/<workspace-id>/protect" -d '{"lastWorkingVersion":true}'   # -> the workspace row
-```
-
-Guards: `src-tauri/db/src/repos/workspaces/protection.rs`; the column arrives in migration
-`e24_workspace_protection`.
-
-#### Registering an App Master headlessly
-
-An **App Master** is the accountable owner of one registered project: a persona pinned to that
-project's codebase, holding one standing charter per recipe you name, enrolled in the
-living-agent attention loop. `POST /dev-tools/app-master/adopt` builds it with no GUI, using the
-same handshake as above.
-
-```bash
-curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/app-master/adopt" -d '{
-  "project": "my-app",
-  "recipes": [ {"slug":"codebase-architecture-review","priority":2},
-               {"slug":"accepted-idea-delivery"} ],
-  "model": "opus", "maxConcurrent": 2, "scopeRung": 2, "enabled": false }'
-#   -> { personaId, personaName, projectId, created, charters[], suspended[], manifestPath, notes[] }
-curl -s "${AUTH[@]}" "$B/app-master/<project_id>"    # the current adoption, or `null`
-```
-
-`project` accepts an id, a name or a `root_path`. Everything but `project` is optional:
-`model` defaults to `sonnet` (a tier slug or a full `claude-*` id), `maxConcurrent` to 2,
-`scopeRung` to 2 (the mandate ceiling — rung 3/4 are never granted), `enabled` to **false**
-(adoption prepares the App Master; enabling it is a separate act), `name` to
-`App Master <project name>`.
-
-##### Write-back routes for workers
-
-A dispatched App Master run is a headless session in an isolated worktree: it has a repository and a
-model, and these four routes are its **only** way back into Personas. Without them a run's work ends
-at a git commit — the idea it delivered stays `accepted` with no task, so the next wake's
-"accepted ideas with no task" sensor offers it again. Every dispatch brief names them, along with the
-handshake file and the header above.
-
-```bash
-curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/ideas/<idea_id>/outcome" -d '{"outcome":"delivered","note":"what shipped","branch":"autopilot/x","commit":"abc1234","pr_url":"..."}'
-#   outcome: delivered | declined | blocked. Finds (or mints) the idea's dev_tasks row and closes it
-#   -> completed / cancelled / failed respectively; `declined` also rejects the idea through the one
-#   verdict door, with `note` as the reason. -> { ideaId, ideaStatus, task, taskCreated, taskStatus }
-curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/ideas"   -d '{"project_id":"<id>","title":"...","description":"...","reasoning":"...","category":"technical","effort":2,"impact":4,"risk":1}'
-#   -> { idea, created, dedupKey }. Deduped on a normalized title, so re-filing is safe and
-#   `created:false` hands back the row that already holds the key (in ANY status, rejected included).
-curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/kpis"   -d '{"project_id":"<id>","name":"Rust clippy findings","measure_kind":"codebase","unit":"findings","direction":"down","target_value":0}'
-#   -> the DevKpi row. `status` defaults to `proposed` (pass `active` to claim it is readable now).
-curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/kpis/<kpi_id>/measure"   -d '{"value":5,"evidence":"cargo clippy -> 5","source":"scan"}'
-#   -> the measurement row. `env` defaults to `production` and rolls current_value forward;
-#   `local`/`test` route to the simulation door and deliberately do not.
-```
-
-`400` names the offending token and the vocabulary it had to come from (task, KPI and measurement
-fields are all schema CHECK-constrained); `404` means the idea, project or KPI id does not exist.
-Everything lands through the same repo functions the UI uses — a worker-written row is
-indistinguishable from one written by a click. Code: `app_master_writeback.rs`.
-
-The call is idempotent: the persona is keyed by its codebase pin plus name, each charter by its
-recipe slug, so re-running with the same body updates in place. A slug you drop from `recipes`
-**suspends** its charter rather than deleting it — the charter carries the coverage memory the
-attention loop writes between wakes. `400` means the project did not resolve or a field is out of
-range (priority is 1..5); `404` names the recipe slugs nobody has seeded, and nothing is written
-when it fires. Partial outcomes are reported, never rounded up — read `notes` and `manifestPath`
-before treating an adoption as complete. The same operation is the `adopt_app_master` Tauri
-command; the code is `src-tauri/src/commands/infrastructure/app_master_adopt.rs`.
-
-## Project Structure
+## Repository layout
 
 ```
-personas-desktop/
+personas/
 ├── src/                        # Frontend (React + TypeScript)
 │   ├── api/                    # Tauri IPC bridge (typed command wrappers)
-│   ├── features/               # Feature modules, one folder per surface:
-│   │   ├── agents/             #   persona builder/editor (the main module)
-│   │   ├── teams/              #   team canvas & multi-agent pipelines
-│   │   ├── vault/              #   credential vault & connectors
-│   │   ├── overview/           #   observability: executions, analytics, SLA
-│   │   ├── triggers/           #   schedules, webhooks, event registry
-│   │   ├── plugins/            #   companion, drive, dev-tools, …
+│   ├── features/               # One folder per product surface
+│   │   ├── agents/ personas/   #   persona builder and editor
 │   │   ├── templates/          #   templates, recipes, design reviews
-│   │   └── home/ · onboarding/ · settings/ · shared/
+│   │   ├── vault/              #   credentials and connectors (the "Connections" section)
+│   │   ├── triggers/ schedules/#   events, webhooks, cron
+│   │   ├── overview/           #   observability, approvals, incidents, memory
+│   │   ├── teams/              #   projects, teams, goals, KPIs, factory, contest
+│   │   ├── companions/         #   Athena, Overseer, Curator
+│   │   ├── plugins/            #   dev-tools, obsidian-brain, drive, twin, fleet, gitlab, radio
+│   │   ├── browser/ studio/ notepad/ scraper/ cloud/ fleet/
+│   │   └── home/ onboarding/ settings/ shared/
 │   ├── i18n/                   # Localization (locales, codegen, useTranslation)
-│   ├── lib/
-│   │   ├── bindings/           # Auto-generated TS types from Rust (ts-rs)
-│   │   ├── icons/ · credentials/ · analytics/   # Domain utilities
-│   │   └── types/              # TypeScript type definitions
-│   ├── stores/                 # Zustand state stores (sliced)
-│   └── styles/                 # Global CSS
+│   ├── lib/                    # Business logic; bindings/ holds Rust-generated TS types
+│   ├── stores/                 # Zustand state (slice pattern)
+│   └── styles/                 # Global CSS and themes
 │
 ├── src-tauri/                  # Backend (Rust)
-│   ├── src/
-│   │   ├── commands/           # Tauri command handlers
-│   │   ├── db/                 # SQLite database layer
-│   │   │   └── repos/          # Repository pattern data access
-│   │   ├── engine/             # Core execution engine
-│   │   │   ├── runner/         # Agent execution
-│   │   │   ├── scheduler.rs    # Cron scheduling
-│   │   │   ├── crypto.rs       # AES-GCM encryption
-│   │   │   ├── bus.rs          # Event bus
-│   │   │   ├── healing.rs      # Self-healing logic
-│   │   │   └── ...
-│   │   └── cloud/              # Cloud deployment client
-│   └── tauri.conf.json         # Tauri app configuration
+│   ├── src/commands/           # Tauri command handlers (the IPC surface)
+│   ├── src/engine/             # Execution engine, scheduler, healing, event bus
+│   ├── db/                     # SQLite schema, migrations, repos (extracted crate)
+│   └── tauri.conf.json
 │
-├── package.json
-├── vite.config.ts
-└── tsconfig.json
+├── docs/                       # Feature, architecture, development docs
+├── scripts/                    # Codegen, census, i18n, templates, connector catalog
+├── cloud-worker/ supabase/ sdk/ evals/ tests/
+└── package.json
 ```
+
+The system map, with the runtime layers and which command module owns what, is [docs/architecture/overview.md](./docs/architecture/overview.md) and [docs/architecture/codebase-map.md](./docs/architecture/codebase-map.md).
+
+---
 
 ## Internationalization (i18n)
 
-The app ships with **14 languages**: English (source of truth) + Arabic, Bengali, Czech, German, Spanish, French, Hindi, Indonesian, Japanese, Korean, Russian, Vietnamese, and Simplified Chinese.
+The app ships in **14 languages**: English (source of truth) plus Arabic, Bengali, Czech, German, Spanish, French, Hindi, Indonesian, Japanese, Korean, Russian, Vietnamese and Simplified Chinese.
 
-### How it layers
-
-- **`src/i18n/locales/en.json`** is the single source of truth. All user-facing strings live here (~15,800 leaf keys across 56 top-level sections like `common`, `agents`, `vault`, `overview`, `triggers`, etc.).
-- **`src/i18n/locales/<lang>.json`** are **partial** locale files (13 non-English bundles). Missing keys fall back to the matching English section automatically — locales never break the app even mid-migration.
-- **`src/i18n/section-locales/<lang>/<section>.json`** are auto-generated splits of the per-locale bundles, one JSON per top-level section. They are produced by `scripts/i18n/split-locales.mjs` (wired into `vite buildStart` and `npm run predev`/`prebuild`) — do not edit by hand.
-- At runtime, `src/i18n/useTranslation.ts` lazy-loads each section as its own JS chunk via `import.meta.glob('./section-locales/*/*.json', { eager: false })`. The `t` value is a `Proxy` that resolves to English while a non-English chunk is in flight.
-- `src/i18n/routeSections.ts` declares which sections each route needs. Active-route sections preload eagerly; everything else loads on demand. `src/main.tsx` also preloads the persisted locale's section set before React mounts so non-English users avoid an English first-paint flash.
-- Strings are looked up via `const { t, tx } = useTranslation()` — e.g. `t.common.save` or `tx(t.common.agent_count_other, { count: 5 })` for interpolation/pluralization.
-- Backend (Rust) sends language-agnostic **status tokens** (`"queued"`, `"failed"`, etc.) over IPC; the frontend maps them via `src/i18n/tokenMaps.ts` → `tokenLabel()`.
-- The TypeScript type tree for `t` (`src/i18n/generated/types.ts`) is codegen'd from `locales/en.json` by `scripts/i18n/gen-types.mjs` on `predev`/`prebuild`. It gives `t.section.key` autocomplete and catches drift at compile time.
-
-### Checking coverage
-
-```bash
-npm run check:i18n                              # CI gate — wraps check-coverage.mjs
-node scripts/i18n/check-coverage.mjs --strict   # Also fail on missing keys (use before a release)
-node scripts/i18n/check-coverage.mjs --json     # Machine-readable
-```
-
-`check-coverage.mjs` reads `src/i18n/locales/*.json`. Stale (extra) keys always fail — they appear when a key is renamed or removed in `en.json` but not in a locale. Missing keys warn by default, since translation lag is expected and the runtime fall-back to English keeps the UI functional.
-
-### Populating translations
-
-Translation refresh is driven manually today:
-
-1. New English strings land in `src/i18n/locales/en.json`.
-2. Translation teams (or a one-shot Claude subagent run) fill in the missing keys per locale, mirroring the JSON structure.
-3. `npm run check:i18n` validates that the locales' keysets match `en.json` and have no drift.
-4. The split + section-locales regeneration is automatic on the next `npm run dev` / `npm run build` (via `scripts/i18n/split-locales.mjs`).
-
-The previous batched subagent pipeline (`i18n-agent-prep` / `i18n-agent-merge` / `translate-locales`) was retired alongside the JSON conversion; reintroducing a similar pipeline is tracked but not in tree.
-
-### Writing new UI code
-
-Every user-facing string **must** go through i18n. The ESLint rule `custom/no-hardcoded-jsx-text` enforces this for JSX. In practice:
+- `src/i18n/locales/en.json` is the only file you edit for new strings. Each section of every locale is lazy-loaded as its own chunk, and a missing key falls back to English at runtime.
+- `src/i18n/section-locales/` and `src/i18n/generated/types.ts` are generated on `predev` / `prebuild`. Do not edit them by hand.
+- Strings are looked up through `useTranslation()`; the backend sends language-agnostic status tokens that the frontend maps in `src/i18n/tokenMaps.ts`.
 
 ```typescript
 import { useTranslation } from '@/i18n/useTranslation';
@@ -603,56 +420,62 @@ function MyComponent() {
 }
 ```
 
-Add new keys to `src/i18n/locales/en.json` only. Translator-facing context goes in the PR or commit message (JSON does not support inline comments). Non-English bundles catch up asynchronously.
+Hardcoded English in JSX is a bug (ESLint `custom/no-hardcoded-jsx-text`), and a key added to `en.json` must be translated into all 13 other locales in the same change.
+
+```bash
+npm run check:i18n                       # CI gate: keysets match en.json, no stale keys
+npm run check:i18n:strict                # also fails on missing translations
+node scripts/i18n/check-coverage.mjs     # coverage report
+```
+
+The full pipeline and translation workflow is in [docs/i18n](./docs/i18n/contract.md) and `.claude/rules/i18n.md`.
+
+---
 
 ## Troubleshooting
 
-### `failed to run 'cargo metadata'` / `program not found`
+**`failed to run 'cargo metadata'` / `program not found`.** Rust is not installed. Run `winget install Rustlang.Rustup` (Windows) or install `rustup`, then restart your terminal.
 
-Rust is not installed. Install it with `winget install Rustlang.Rustup` (Windows) or `rustup` (macOS/Linux), then **restart your terminal**.
+**`failed to find tool "clang": program not found` (Windows ARM64).** The `ring` crate needs Clang for ARM64 assembly: `winget install LLVM.LLVM`, then restart your terminal.
 
-### `failed to find tool "clang": program not found` (Windows ARM64)
+**`Cannot open include file: 'windows.h'`.** The MSVC environment is not loaded. Build from **Developer PowerShell for VS**.
 
-The `ring` crate requires Clang for ARM64 assembly. Install LLVM:
+**`Port 1420 is already in use`.** A previous `tauri dev` died mid-startup and orphaned Vite. Find it with `netstat -ano | findstr :1420` and stop that PID.
 
-```powershell
-winget install LLVM.LLVM
-```
+**`lld-link: machine type x64 conflicts with arm64`.** Host-triple drift, usually the mislabeled ONNX Runtime download. Run `npm run ensure:ort-cache`; if it persists, `npm run clean:ort`.
 
-Restart your terminal so `clang` is on your PATH.
+**`cargo test` exits silently with code 127 on Windows.** That is the loader failing on a missing manifest, not a failing test. Use `npm run test:rust`.
 
-### `Cannot open include file: 'windows.h'`
+**The first build is very slow.** Expected: Cargo compiles 200+ crates the first time. Later builds are incremental.
 
-The MSVC environment variables (`INCLUDE`, `LIB`) are not set. Run your build from a **Developer Command Prompt for VS** or **Developer PowerShell for VS**, not a plain terminal.
+More in [docs/development/build.md](./docs/development/build.md) and [docs/devops/guide-desktop-troubleshooting.md](./docs/devops/guide-desktop-troubleshooting.md).
 
-### First build is very slow
-
-This is expected — Cargo compiles ~200+ Rust crates on the first build. Subsequent builds use incremental compilation and are much faster.
+---
 
 ## Security
 
-- All credentials encrypted with **AES-256-GCM** before database storage
-- Encryption keys stored in OS-native keyring, never on disk in plaintext
-- No hardcoded secrets in source code
-- Credentials passed to child processes as environment variables (not CLI args)
-- API keys scrubbed from environment after execution
-- Sensitive values never written to logs
-- HTTPS-only external communication via rustls
+- Credentials are encrypted with **AES-256-GCM** before they reach the database; keys live in the OS keyring, never in plaintext on disk
+- Credentials reach child processes as environment variables (not CLI arguments) and are scrubbed after the run
+- Sensitive values are not written to logs
+- External traffic is HTTPS through rustls
+- The dev-tools bridge binds to loopback and requires a token
 
-## For Contributors
+Architecture details: [docs/architecture](./docs/architecture/README.md). Please do not file security issues publicly; contact the maintainers directly through the [repository](https://github.com/xkazm04/personas).
 
-New to the project? Start here:
+---
 
-- **[docs/README.md](./docs/README.md)** — documentation entry point and maintenance rules
-- **[docs/architecture](./docs/architecture/README.md)** — system overview, frontend/backend boundaries, execution path, data layer, security model
-- **[docs/development](./docs/development/README.md)** — day-to-day dev loop: running locally, testing, debugging, common tasks
-- **[CONTRIBUTING.md](./CONTRIBUTING.md)** — coding standards, PR workflow, commit style
-- **[CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)** — community standards (Contributor Covenant v2.1)
-- **[SECURITY.md](./SECURITY.md)** — vulnerability disclosure policy
-- **[CHANGELOG.md](./CHANGELOG.md)** — release history
+## For contributors
 
-Good first issues are labelled `good first issue` on the [issue tracker](https://github.com/xkazm04/personas/issues). i18n string extraction is a particularly friendly starting point — see the [i18n section](#internationalization-i18n) above.
+- **[docs/README.md](./docs/README.md)**: documentation entry point and where each kind of doc belongs
+- **[docs/features](./docs/features/README.md)**: what each feature does today, one folder per area
+- **[docs/architecture](./docs/architecture/README.md)**: system overview, frontend/backend boundaries, execution path, data layer, security model
+- **[docs/development](./docs/development/README.md)**: the day-to-day loop (running, testing, debugging)
+- **[CONTRIBUTING.md](./CONTRIBUTING.md)**: coding standards, PR workflow, commit style
+- **[AGENTS.md](./AGENTS.md)** and **[CLAUDE.md](./CLAUDE.md)**: instructions for AI coding agents working in this repo
+- **[CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)** · **[CHANGELOG.md](./CHANGELOG.md)**
+
+Before opening a PR, run `npm run check`, `npm run test`, and (if Rust changed) `cargo clippy` and `npm run test:rust`. Good first issues are labelled `good first issue` on the [issue tracker](https://github.com/xkazm04/personas/issues); translation work is a friendly place to start.
 
 ## License
 
-This project is licensed under the [MIT License](./LICENSE). By contributing, you agree that your contributions will be licensed under the same terms.
+[MIT](./LICENSE). By contributing, you agree that your contributions are licensed under the same terms.
