@@ -44,6 +44,20 @@ describe('dock frame view switch', () => {
     expect(screen.queryByTestId('studio-plan-button')).toBeNull();
   });
 
+  it('every control sits on the toolbar; the input row is the field and Send alone', () => {
+    seed();
+    render(<StudioChatInput goals={{ open: true, onToggle: () => {} }} view={{ showing: 'app', appReady: true, onChange: () => {} }} />);
+    const toolbar = screen.getByTestId('studio-dock-toolbar');
+    for (const id of ['studio-view-plan', 'studio-view-app', 'studio-plan-button']) {
+      expect(toolbar.contains(screen.getByTestId(id))).toBe(true);
+    }
+    const field = screen.getByTestId('studio-chat-input');
+    const row = field.parentElement!;
+    expect(row.contains(toolbar)).toBe(false);
+    // One button in the input row: Send.
+    expect(row.querySelectorAll('button')).toHaveLength(1);
+  });
+
   it('the goals button reports the rail state and toggles it', () => {
     seed();
     const onToggle = vi.fn();

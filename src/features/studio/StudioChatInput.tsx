@@ -27,9 +27,10 @@ import { phaseProgress } from './studioBuildModel';
 import { classifyMidTurnIntent } from '@/features/companions/athena/midTurnIntent';
 import { isStopOnly } from './studioSeed';
 
-// The Studio dock — the input row and its tools, docked bottom-center over the
-// frame. Guide draws the latest message, the question and the next moves
-// itself; the chevron expands the full conversation above the row. A note
+// The Studio dock — a thin toolbar over the input row, docked bottom-center
+// over the frame. Every control lives on the toolbar so the input row is the
+// field and Send alone. Guide draws the latest message, the question and the
+// next moves itself; the chevron expands the full conversation above. A note
 // typed while Athena works is queued for her next step instead of refused. The
 // goals button shows or hides the goals rail beside the frame.
 
@@ -143,9 +144,7 @@ export default function StudioChatInput({
       <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-8">
         <div
           className={`flex w-full flex-col gap-2 transition-[max-width] duration-200 ${
-            // The row grows to the right by the frame switch's width (~4rem),
-            // so the field keeps the width it had without it.
-            chatOpen ? 'max-w-[46rem]' : view ? 'max-w-[42rem]' : 'max-w-[38rem]'
+            chatOpen ? 'max-w-[46rem]' : 'max-w-[38rem]'
           }`}
         >
           {/* Expanded body — the full conversation */}
@@ -207,53 +206,32 @@ export default function StudioChatInput({
             {queueFull ? tx(guideStrings(t).notes_full, { max: QUEUED_NOTES_MAX }) : null}
           </p>
 
-          {/* Input row */}
-          <ChatInputBar
-            value={input}
-            onChange={setInput}
-            onSubmit={send}
-            placeholder={
-              working
-                ? guideStrings(t).placeholder_queue
-                : question
-                ? tx(t.studio.answer_athena, { name })
-                : autonomous
-                  ? tx(t.studio.building_autonomously, { name })
-                  : tx(t.studio.tell_athena, { name })
-            }
-            boxShadow={stateShadow}
-            inputTestId="studio-chat-input"
-            sendLabel={t.common.send}
-            leading={
-              <button
-                type="button"
-                onClick={() => setChatOpen((v) => !v)}
-                aria-label={
-                  chatOpen ? t.studio.collapse_conversation : t.studio.expand_conversation
-                }
-                aria-expanded={chatOpen}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-primary"
-              >
-                {chatOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-              </button>
-            }
-            trailing={
+          {/* Toolbar — every control on one thin row above the field, so the
+              field takes the whole input row and Send sits right beside it.
+              Left: what you look at (conversation, frame, goals); right: what
+              the next step gets (a reference, settings) and stop / autonomous. */}
+          <div
+            data-testid="studio-dock-toolbar"
+            className="pointer-events-auto flex h-9 items-center gap-0.5 rounded-full border border-border bg-background/85 px-1 shadow-elevation-2 backdrop-blur"
+          >
+            <button
+              type="button"
+              onClick={() => setChatOpen((v) => !v)}
+              aria-label={chatOpen ? t.studio.collapse_conversation : t.studio.expand_conversation}
+              aria-expanded={chatOpen}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-primary"
+            >
+              {chatOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+            </button>
+            {view && (
               <>
-                {/* What the frame shows, first among the row's tools so the field
-                    keeps its width: icons only, each named by its tooltip. */}
-                {view && <FrameViewSwitch view={view} />}
-                <button
-                  type="button"
-                  onClick={() => void pickReference()}
-                  disabled={working}
-                  aria-label={t.studio.add_reference_image}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-primary disabled:opacity-40"
-                >
-                  <ImageIcon className="h-4 w-4" />
-                </button>
-                {/* Goals — shows or hides the goals rail beside the frame, sitting
-                    with the other input-row tools instead of floating above the dock. */}
-                {goals && (
+                <ToolbarDivider />
+                <FrameViewSwitch view={view} />
+              </>
+            )}
+            {goals && (
+              <>
+                <ToolbarDivider />
                 <button
                   type="button"
                   onClick={goals.onToggle}
@@ -264,7 +242,7 @@ export default function StudioChatInput({
                       : guideStrings(t).goals
                   }
                   aria-expanded={goals.open}
-                  className={`relative flex h-8 shrink-0 items-center gap-1.5 rounded-full px-2 transition-colors ${
+                  className={`relative flex h-7 shrink-0 items-center gap-1.5 rounded-full px-2 transition-colors ${
                     goals.open
                       ? 'bg-secondary/70 text-primary'
                       : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary'
@@ -283,42 +261,74 @@ export default function StudioChatInput({
                     </span>
                   )}
                 </button>
-                )}
-                <StudioBuildSettings id={activeId} />
-                {busy ? (
-                  <button
-                    type="button"
-                    onClick={() => stopTurn(activeId)}
-                    data-testid="studio-stop"
-                    aria-label={t.studio.stop_athena}
-                    className="flex h-8 shrink-0 items-center gap-1 rounded-full border border-status-error/40 bg-status-error/10 px-2.5 typo-label text-status-error transition-colors hover:bg-status-error/20"
-                  >
-                    <CircleStop className="h-4 w-4" />
-                    {t.studio.stop}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => (autonomous ? stopAutonomous(activeId) : startAutonomous(activeId))}
-                    aria-label={
-                      autonomous ? t.studio.stop_autonomous : t.studio.build_autonomously
-                    }
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
-                      autonomous
-                        ? 'bg-primary/20 text-primary'
-                        : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary'
-                    }`}
-                  >
-                    {autonomous ? <Square className="h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
-                  </button>
-                )}
               </>
+            )}
+            <div className="flex-1" />
+            <button
+              type="button"
+              onClick={() => void pickReference()}
+              disabled={working}
+              aria-label={t.studio.add_reference_image}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-primary disabled:opacity-40"
+            >
+              <ImageIcon className="h-4 w-4" />
+            </button>
+            <StudioBuildSettings id={activeId} />
+            <ToolbarDivider />
+            {busy ? (
+              <button
+                type="button"
+                onClick={() => stopTurn(activeId)}
+                data-testid="studio-stop"
+                aria-label={t.studio.stop_athena}
+                className="flex h-7 shrink-0 items-center gap-1 rounded-full border border-status-error/40 bg-status-error/10 px-2.5 typo-label text-status-error transition-colors hover:bg-status-error/20"
+              >
+                <CircleStop className="h-4 w-4" />
+                {t.studio.stop}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => (autonomous ? stopAutonomous(activeId) : startAutonomous(activeId))}
+                aria-label={autonomous ? t.studio.stop_autonomous : t.studio.build_autonomously}
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors ${
+                  autonomous
+                    ? 'bg-primary/20 text-primary'
+                    : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary'
+                }`}
+              >
+                {autonomous ? <Square className="h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
+              </button>
+            )}
+          </div>
+
+          {/* Input row: the field and Send, nothing between them. */}
+          <ChatInputBar
+            value={input}
+            onChange={setInput}
+            onSubmit={send}
+            placeholder={
+              working
+                ? guideStrings(t).placeholder_queue
+                : question
+                ? tx(t.studio.answer_athena, { name })
+                : autonomous
+                  ? tx(t.studio.building_autonomously, { name })
+                  : tx(t.studio.tell_athena, { name })
             }
+            boxShadow={stateShadow}
+            inputTestId="studio-chat-input"
+            sendLabel={t.common.send}
           />
         </div>
       </div>
     </>
   );
+}
+
+/** A hairline between the toolbar's groups. */
+function ToolbarDivider() {
+  return <span aria-hidden className="mx-0.5 h-4 w-px shrink-0 bg-border" />;
 }
 
 // Plan | App, the same choice the B key makes: the blueprint sheet or the
@@ -354,7 +364,7 @@ function FrameViewSwitch({
     );
   };
   return (
-    <div role="group" aria-label={g.view_switch} className="flex shrink-0 items-center gap-0.5 rounded-full border border-border p-0.5">
+    <div role="group" aria-label={g.view_switch} className="flex shrink-0 items-center gap-0.5">
       {option('plan')}
       {option('app')}
     </div>

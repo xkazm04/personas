@@ -189,7 +189,7 @@ export default function GuideStudio({
           return useStudioStore.getState().queueNote(id, addGoalNote(goal));
         }}
       />
-      <div className="relative flex min-w-0 flex-1 flex-col gap-2 bg-[radial-gradient(ellipse_at_50%_0%,color-mix(in_srgb,var(--primary)_10%,transparent),transparent_60%)] p-3 pb-[5.25rem]">
+      <div className="relative flex min-w-0 flex-1 flex-col gap-2 bg-[radial-gradient(ellipse_at_50%_0%,color-mix(in_srgb,var(--primary)_10%,transparent),transparent_60%)] p-3 pb-[8rem]">
         <GuideFrame
           preview={preview}
           blueprint={showBlueprint || drafting}
@@ -212,11 +212,13 @@ export default function GuideStudio({
               working={working}
               notes={drafting ? null : lastReply}
               awaitingApproval={awaitingApproval}
-              proofUrl={live && id ? (preview.previewUrls[id] ?? null) : null}
+              // The live proof turns the home page into a flat legend over a
+              // screenshot; Plan picked over the app draws the sheet itself.
+              proofUrl={live && id && blueprintPinned !== true ? (preview.previewUrls[id] ?? null) : null}
               booting={!drafting && !!rt && rt.phase !== 'live'}
               opened={opened}
-              // Plan picked over a running app: the drawing replays at the
-              // quick pace instead of the setup wait's.
+              // Plan picked over a running app: the onboarding drawing replays
+              // in its order, region by region under the pen.
               replay={blueprintPinned === true}
             />
           )}

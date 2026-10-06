@@ -307,6 +307,9 @@ describe('Guide layout', () => {
       expect(screen.getByTestId('studio-preview')).toBe(frame);
       expect(frame.getAttribute('data-hidden')).toBe('true');
       expect(frame.hasAttribute('inert')).toBe(true);
+      // The sheet draws itself: no live proof inside it, which would turn the
+      // home page into a flat legend and skip the region-by-region drawing.
+      expect(screen.getByTestId('drafting-sheet').querySelector('iframe')).toBeNull();
       fireEvent.keyDown(window, { key: 'b' });
       expect(screen.queryByTestId('drafting-sheet')).toBeNull();
       expect(frame.getAttribute('data-hidden')).toBeNull();
