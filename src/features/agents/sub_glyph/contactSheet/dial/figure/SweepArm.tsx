@@ -19,6 +19,8 @@ interface SweepArmProps {
   working: boolean;
   /** Angle the needle rests at with nothing drawn yet. */
   rest?: number;
+  /** The needle's colour: the dimension it points at (default: the ink). */
+  color?: string;
 }
 
 /** The nearest equivalent of `target` to `from`, so the swing is never the long way. */
@@ -26,7 +28,7 @@ function nearest(from: number, target: number): number {
   return from + ((((target - from) % 360) + 540) % 360) - 180;
 }
 
-export function SweepArm({ pivot, r0, r1, angle, working, rest = 0 }: SweepArmProps) {
+export function SweepArm({ pivot, r0, r1, angle, working, rest = 0, color = "var(--ink-strong)" }: SweepArmProps) {
   const { shouldAnimate } = useMotion();
   const [deg, setDeg] = useState(angle ?? rest);
   const target = angle ?? rest;
@@ -49,11 +51,12 @@ export function SweepArm({ pivot, r0, r1, angle, working, rest = 0 }: SweepArmPr
       <svg width={size} height={size} className="overflow-visible">
         <path
           d={`M${m} ${m - r0}L${m} ${m - r1}A${r1} ${r1} 0 0 0 ${w0.x} ${w0.y}Z`}
-          fill="color-mix(in srgb, var(--ink) 14%, transparent)"
+          fill={`color-mix(in srgb, ${color} 14%, transparent)`}
+          style={{ transition: "fill 0.6s ease" }}
         />
-        <line x1={m} y1={m - r0} x2={m} y2={m - r1} stroke="var(--ink-strong)" strokeWidth={1.5} />
-        <path d={`M${m - 3.5} ${m - r1 + 7}L${m + 3.5} ${m - r1 + 7}L${m} ${m - r1}Z`} fill="var(--ink-strong)" />
-        <circle className={working ? "dial-nib" : undefined} cx={m} cy={m - r1 - 4} r={2.5} fill="var(--ink-strong)" />
+        <line x1={m} y1={m - r0} x2={m} y2={m - r1} stroke={color} strokeWidth={1.5} style={{ transition: "stroke 0.6s ease" }} />
+        <path d={`M${m - 3.5} ${m - r1 + 7}L${m + 3.5} ${m - r1 + 7}L${m} ${m - r1}Z`} fill={color} />
+        <circle className={working ? "dial-nib" : undefined} cx={m} cy={m - r1 - 4} r={2.5} fill={color} />
       </svg>
     </motion.div>
   );

@@ -10,14 +10,17 @@
  *  is TIMED (the kit's useDraftSteps, keyed per build session) and never gates
  *  a control. The hub carries Cinema's act surfaces; through casting the crowd
  *  orbits it and the winner flies in to be crowned. A sector click EXPLODES it
- *  (explode/ExplodedLayer); every other layer is Cinema's camera, unchanged. */
+ *  and so does the question round, the asked sector beside its question
+ *  (DialLayers); every other layer is Cinema's camera, unchanged. While a
+ *  sector is out the dial sinks well back, so nothing behind it competes. */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { useReducedMotion } from "@/hooks/utility/interaction/useMotion";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import { GLYPH_DIMENSIONS } from "@/features/shared/glyph";
 import { useGlyphDimText } from "@/features/shared/glyph/persona-sigil";
 import { useAgentStore } from "@/stores/agentStore";
+import { CELL_KEY_TO_DIM } from "@/features/agents/sub_glyph/glyphLayoutHelpers";
 import { recordPersonaCoreClose } from "@/features/agents/sub_glyph/personaCore";
 import type { GlyphFullLayoutProps } from "@/features/agents/sub_glyph/glyphLayoutTypes";
 import "../blueprint";
@@ -37,12 +40,12 @@ import { useStageSize } from "./useStageSize";
 import { DialPrint } from "./DialPrint";
 import { DialHub } from "./DialHub";
 import { DialLegend, DialPlate } from "./DialPlate";
-import { ExplodedLayer } from "./explode/ExplodedLayer";
+import { DialLayers } from "./DialLayers";
 import { COPY } from "./copy";
 import "./dial.css";
 
 const PAUSED = "[&_*]:[animation-play-state:paused]";
-const DIMMED = { transform: "scale(0.95)", opacity: 0.14 };
+const DIMMED = { transform: "scale(0.95)", opacity: 0.07 };
 
 export function SchematicDialLayout(props: GlyphFullLayoutProps) {
   const s = useSheetState(props);
@@ -87,10 +90,13 @@ export function SchematicDialLayout(props: GlyphFullLayoutProps) {
   }, [layer]);
   const dropLayer = useCallback(() => setLayer(null), []);
 
-  const questionOpen = act === "questions" && flow.stage === "asking" && !layer && !exploded;
-  const shot = useCamera(layerShot(layer, s, questionOpen, frameRect), reduce);
+  // The question round explodes its sector here; the camera never pushes for it.
+  const asking = act === "questions" && flow.stage === "asking" && !layer && !exploded && !!flow.current;
+  const shot = useCamera(layerShot(layer, s, false, frameRect), reduce);
   const pushed = shot !== null;
-  const explodeShot = exploded && L ? { key: `x-${exploded}`, x: L.c.x, y: L.c.y } : null;
+  const outKey = exploded ? `x-${exploded}` : asking && flow.current ? `q-${CELL_KEY_TO_DIM[flow.current.cellKey] ?? "centre"}` : null;
+  const out = outKey !== null;
+  const explodeShot = outKey && L ? { key: outKey, x: L.c.x, y: L.c.y } : null;
   const sleep = useSheetSleep(shot ?? explodeShot, (reduce ? SHEET_MOVE_REDUCED : SHEET_MOVE).duration * 1000);
   const scene = CINEMA.scene[act === "questions" && (flow.stage === "review" || flow.stage === "sending") ? "review" : act];
 
@@ -143,18 +149,18 @@ export function SchematicDialLayout(props: GlyphFullLayoutProps) {
       <div ref={stageRef} className="bp-grid relative flex-1 min-h-0 min-w-0 overflow-clip" aria-label={COPY.root}>
         <motion.div
           className={`absolute inset-0 ${sleep.frozen ? PAUSED : ""}`}
-          style={{ transformOrigin: sleep.origin, willChange: sleep.frozen ? "transform, opacity" : undefined, visibility: sleep.hidden && !exploded ? "hidden" : undefined }}
+          style={{ transformOrigin: sleep.origin, willChange: sleep.frozen ? "transform, opacity" : undefined, visibility: sleep.hidden && !out ? "hidden" : undefined }}
           initial={false}
-          animate={pushed ? (reduce ? SHEET_PUSHED_REDUCED : SHEET_PUSHED) : exploded ? DIMMED : SHEET_REST}
+          animate={pushed ? (reduce ? SHEET_PUSHED_REDUCED : SHEET_PUSHED) : out ? DIMMED : SHEET_REST}
           transition={reduce ? SHEET_MOVE_REDUCED : SHEET_MOVE}
           onAnimationComplete={sleep.onMoveEnd}
-          inert={pushed || exploded ? true : undefined}
-          aria-hidden={pushed || exploded ? true : undefined}
+          inert={pushed || out ? true : undefined}
+          aria-hidden={pushed || out ? true : undefined}
         >
           {L ? (
             <DialPrint
               frozen={sleep.frozen} stage={stage} layout={L} labels={dimText.label} drawing={drawing}
-              populated={populated} values={frameValues} cast={s.cast} accent={s.cast.accent} presence={s.presence}
+              populated={populated} values={frameValues} cast={s.cast} presence={s.presence}
               orbiting={act === "casting" || act === "questions" || act === "wiring"} working={working}
               sweepKey={drawKey} onOpen={explode} hub={hub}
               furniture={
@@ -172,15 +178,12 @@ export function SchematicDialLayout(props: GlyphFullLayoutProps) {
             />
           ) : hub}
         </motion.div>
-        <AnimatePresence>
-          {exploded && L && (
-            <ExplodedLayer
-              key={exploded} dim={exploded} s={s} rows={s.isCompose ? [] : props.glyphRows}
-              label={dimText.label[exploded]} desc={dimText.desc[exploded]} scene={scene} layout={L} stage={stage}
-              ink={drawing.ink[exploded]} populated={populated[exploded]} drawKey={drawKey} onClose={closeLayer}
-            />
-          )}
-        </AnimatePresence>
+        {L && (
+          <DialLayers
+            s={s} rows={s.isCompose ? [] : props.glyphRows} exploded={exploded} asking={asking} layout={L} stage={stage}
+            drawing={drawing} populated={populated} drawKey={drawKey} scene={scene} dimText={dimText} onClose={closeLayer}
+          />
+        )}
         <SheetLayers p={props} s={s} layer={layer} shot={shot} scene={scene} dimText={dimText} close={closeLayer} drop={dropLayer} openRefine={openRefine} />
       </div>
 

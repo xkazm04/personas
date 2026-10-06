@@ -1,7 +1,8 @@
 /* The Schematic Dial's loops (spark onboarding-blueprint WP3). CSS on purpose:
    the app's global reduced-motion reset stops CSS animations, and it cannot see
    framer-motion's script-driven ones (census rule looping-framer-animation).
-   Colour comes from the blueprint kit's ink (--ink*, from --cinema-accent). */
+   Construction colour is the blueprint kit's ink (--ink*, from the theme's
+   --primary); a sector's own colour arrives as --sector, set on the sector. */
 
 /* A sector being drafted: its hatch lines run under the pen. The lines are
    drawn 10 px apart along x, so a 10 px run is a seamless loop. */
@@ -42,8 +43,8 @@
 }
 .dial-sector:hover .dial-sector-hit,
 .dial-sector:focus-visible .dial-sector-hit {
-  fill: color-mix(in srgb, var(--ink) 9%, transparent);
-  stroke: var(--ink-strong);
+  fill: color-mix(in srgb, var(--sector, var(--ink)) 12%, transparent);
+  stroke: var(--sector, var(--ink-strong));
   stroke-width: 1.5;
 }
 

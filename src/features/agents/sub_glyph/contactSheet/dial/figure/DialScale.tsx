@@ -1,19 +1,22 @@
 /** DialScale - the instrument's construction: a degree scale (minor graduation
  *  every 2.5°, major every 15°, a cardinal every 90°), the hairline circles
  *  that bound the rim and the sector ring, and the face behind the hub, lit by
- *  how much of the persona has been crowned into being. It is the construction
+ *  how much of the persona has been crowned into being. The construction is
+ *  the app theme's ink; the outer ring is a colour wheel, each dimension's
+ *  arc over its own sector, so the instrument reads multicolour at rest. It is the construction
  *  grid's analogue: drawn once per session, swept in clockwise from 12 o'clock
  *  by a masked stroke (a one-shot draw, not a loop), never redrawn. */
 import { memo, useId } from "react";
 import { motion } from "framer-motion";
+import { DIM_META, GLYPH_DIMENSIONS } from "@/features/shared/glyph";
 import { useMotion } from "@/hooks/utility/interaction/useMotion";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
-import { RADII, radial, type Pt } from "../dialGeometry";
+import { RADII, arc, radial, sectorSpan, type Pt } from "../dialGeometry";
+import { THEME_INK, tint } from "../tint";
 
 interface DialScaleProps {
   c: Pt;
   R: number;
-  accent: string;
   /** 0..1: the face glow (the Cinema sigil core's presence). */
   presence: number;
   /** A new key sweeps the scale in again (a new build session). */
@@ -31,7 +34,10 @@ function graduations(c: Pt, R: number) {
   return { minor, major, cardinal };
 }
 
-export const DialScale = memo(function DialScale({ c, R, accent, presence, sweepKey }: DialScaleProps) {
+/** The face glow, in the theme's primary. */
+const glow = (alpha: number) => tint(THEME_INK, alpha);
+
+export const DialScale = memo(function DialScale({ c, R, presence, sweepKey }: DialScaleProps) {
   const { shouldAnimate } = useMotion();
   const id = useId().replace(/:/g, "");
   const g = graduations(c, R);
@@ -43,8 +49,8 @@ export const DialScale = memo(function DialScale({ c, R, accent, presence, sweep
     <g aria-hidden>
       <defs>
         <radialGradient id={`${id}-face`}>
-          <stop offset="0%" style={{ stopColor: colorWithAlpha(accent, 0.1 + presence * 0.18) }} />
-          <stop offset="72%" style={{ stopColor: colorWithAlpha(accent, 0.02) }} />
+          <stop offset="0%" style={{ stopColor: glow(0.1 + presence * 0.18) }} />
+          <stop offset="72%" style={{ stopColor: glow(0.02) }} />
           <stop offset="100%" style={{ stopColor: "transparent" }} />
         </radialGradient>
         <mask id={`${id}-sweep`}>
@@ -62,6 +68,10 @@ export const DialScale = memo(function DialScale({ c, R, accent, presence, sweep
       <circle cx={c.x} cy={c.y} r={R * RADII.face} fill="none" stroke="var(--ink-faint)" strokeWidth={1} />
       <g mask={`url(#${id}-sweep)`}>
         {ring(RADII.outer, false, "var(--ink-dim)")}
+        {GLYPH_DIMENSIONS.map((dim) => {
+          const [a0, a1] = sectorSpan(dim);
+          return <path key={dim} d={arc(c, R * RADII.outer, a0, a1)} fill="none" stroke={colorWithAlpha(DIM_META[dim].color, 0.7)} strokeWidth={2.5} strokeLinecap="round" />;
+        })}
         <path d={g.minor} stroke="var(--ink-faint)" strokeWidth={1} />
         <path d={g.major} stroke="var(--ink-dim)" strokeWidth={1} />
         <path d={g.cardinal} stroke="var(--ink)" strokeWidth={1.5} />

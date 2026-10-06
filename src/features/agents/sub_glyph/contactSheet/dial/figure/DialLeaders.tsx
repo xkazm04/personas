@@ -1,7 +1,8 @@
 /** DialLeaders - the leader lines from each sector to its readout in the side
  *  columns: a dot where the line leaves the sector, a knee, a run to the chip
  *  and a short end tick. A sector still to draw keeps a faint dotted leader
- *  (its slot is reserved, the spacer trick); an inked one takes its colour.
+ *  (its slot is reserved, the spacer trick), and every leader is in its
+ *  dimension's colour, fuller as the sector fills.
  *  The leader of the step drawn last is re-drawn hard, from the sector out, as
  *  the pen writes its callout into that readout. */
 import { memo } from "react";
@@ -31,11 +32,11 @@ export const DialLeaders = memo(function DialLeaders({ readouts, ink, populated,
         const r = readouts[dim];
         const drawn = ink[dim] !== "pending";
         const color = DIM_META[dim].color;
-        const stroke = !drawn ? "var(--ink-faint)" : populated[dim] ? colorWithAlpha(color, 0.55) : "var(--ink-dim)";
+        const stroke = colorWithAlpha(color, !drawn ? 0.3 : populated[dim] ? 0.6 : 0.42);
         return (
           <g key={dim}>
             <path d={pathOf(r)} stroke={stroke} strokeWidth={1} strokeDasharray={drawn ? undefined : "1 4"} />
-            <circle cx={r.p0.x} cy={r.p0.y} r={drawn ? 2.2 : 1.5} fill={drawn ? stroke : "var(--ink-dim)"} />
+            <circle cx={r.p0.x} cy={r.p0.y} r={drawn ? 2.2 : 1.5} fill={drawn ? stroke : colorWithAlpha(color, 0.5)} />
             <path d={`M${r.end.x} ${r.end.y - 5}L${r.end.x} ${r.end.y + 5}`} stroke={stroke} strokeWidth={1} />
           </g>
         );
@@ -44,7 +45,7 @@ export const DialLeaders = memo(function DialLeaders({ readouts, ink, populated,
         <motion.path
           key={callout.id}
           d={pathOf(readouts[callout.dim])}
-          stroke="var(--ink-strong)" strokeWidth={1.5}
+          stroke={DIM_META[callout.dim].color} strokeWidth={1.5}
           initial={shouldAnimate ? { pathLength: 0, opacity: 1 } : { opacity: 1 }}
           animate={{ pathLength: 1, opacity: [1, 1, 0.35] }}
           transition={{ pathLength: { duration: 0.7, ease: "easeOut" }, opacity: { duration: 4.2, times: [0, 0.8, 1] } }}

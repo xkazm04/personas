@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import { DIM_META, PETAL_ANGLES } from "@/features/shared/glyph";
 import { useReducedMotion } from "@/hooks/utility/interaction/useMotion";
+import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import { RADII, annulus, sectorPoint, sectorSpan, type Pt } from "../dialGeometry";
 import type { Ink } from "../dialMarks";
 import { SectorInk } from "../figure/SectorInk";
@@ -39,7 +40,7 @@ export function FlyingSector({ dim, c, R, stage, ink, populated }: FlyingSectorP
 
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0">
-      {svg(<path d={d} fill="none" stroke="var(--ink-dim)" strokeDasharray="3 4" />)}
+      {svg(<path d={d} fill="none" stroke={colorWithAlpha(DIM_META[dim].color, 0.45)} strokeDasharray="3 4" />)}
       <motion.div
         className="absolute inset-0"
         style={{ transformOrigin: `${mid.x}px ${mid.y}px`, willChange: "transform, opacity" }}

@@ -32,6 +32,10 @@ export const COPY = {
     rim: (n: number) => `${n} mark${n === 1 ? "" : "s"}`,
   },
   stamp: { issued: "In service", passed: "Screened", stopped: "Void" },
+  question: {
+    answer: "Answer",
+    back: "Step back to the dial",
+  },
   fan: {
     back: "Re-seat the sector",
     esc: "Esc",

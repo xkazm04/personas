@@ -29,14 +29,25 @@ export interface CentreActions {
   startOver: () => void;
 }
 
+/** How the question round's content is drawn: Cinema's own by default; a
+ *  layout with its own idiom (the Schematic Dial) passes drop-ins with the
+ *  same props. */
+export interface QuestionViews {
+  Summary: typeof QuestionsSummary;
+  Answers: typeof AnswersList;
+}
+const CINEMA_QUESTION_VIEWS: QuestionViews = { Summary: QuestionsSummary, Answers: AnswersList };
+
 interface ActPanelProps {
   p: GlyphFullLayoutProps;
   s: SheetState;
   a: CentreActions;
   tight: boolean;
+  questionViews?: QuestionViews;
 }
 
-export function ActPanel({ p, s, a, tight }: ActPanelProps) {
+export function ActPanel({ p, s, a, tight, questionViews = CINEMA_QUESTION_VIEWS }: ActPanelProps) {
+  const { Summary, Answers } = questionViews;
   const activity = useAgentStore((st) => st.buildActivity);
   // Fetches only while the draft sits at test_complete (the verdict act).
   const promoteView = usePromoteView();
@@ -84,7 +95,7 @@ export function ActPanel({ p, s, a, tight }: ActPanelProps) {
             </Button>
           }
         >
-          <AnswersList stage={flow.stage} qs={flow.qs} draftOf={flow.draftOf} onOpen={flow.open} />
+          <Answers stage={flow.stage} qs={flow.qs} draftOf={flow.draftOf} onOpen={flow.open} />
         </ActionPanel>
       );
     }
@@ -102,7 +113,7 @@ export function ActPanel({ p, s, a, tight }: ActPanelProps) {
           </Button>
         }
       >
-        <QuestionsSummary qs={flow.qs} note={!suggesting} />
+        <Summary qs={flow.qs} note={!suggesting} />
         {p.templateSuggestion}
       </ActionPanel>
     );

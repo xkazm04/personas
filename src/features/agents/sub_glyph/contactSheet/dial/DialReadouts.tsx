@@ -8,6 +8,7 @@ import { memo, useEffect, useState } from "react";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import { DIM_META, GLYPH_DIMENSIONS } from "@/features/shared/glyph";
 import Button from "@/features/shared/components/buttons/Button";
+import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import { LETTERING } from "../blueprint";
 import type { FrameValue } from "../cinema/useFrameValues";
 import { frameNumber } from "../cinema/sheetModel";
@@ -70,7 +71,7 @@ export const DialReadouts = memo(function DialReadouts({ readouts, colW, labels,
           >
             <span className={`flex w-full items-center gap-2 ${left ? "flex-row-reverse" : ""}`}>
               <InkBadge num={frameNumber(dim)} ink={ink[dim]} color={color} populated={populated[dim]} size={18} />
-              <span className="dial-readout-label truncate" style={{ ...LETTERING, color: vivid ? color : ink[dim] === "pending" ? "var(--ink-dim)" : "var(--ink-strong)" }}>
+              <span className="dial-readout-label truncate" style={{ ...LETTERING, color: vivid ? color : colorWithAlpha(color, ink[dim] === "pending" ? 0.62 : 0.85) }}>
                 {labels[dim]}
               </span>
               <span className={`typo-caption whitespace-nowrap ${left ? "mr-auto" : "ml-auto"}`}>{stateWord(ink[dim], value)}</span>
@@ -78,7 +79,7 @@ export const DialReadouts = memo(function DialReadouts({ readouts, colW, labels,
             <span className="block w-full truncate typo-body text-foreground">
               {writing ? (
                 <span key={writing.id}>
-                  <span style={{ ...LETTERING, color: "var(--ink)" }}>{writing.kind === "sector" ? (writing.ink && COPY.ink[writing.ink]) || COPY.kind.sector : COPY.kind[writing.kind]}</span>{" "}
+                  <span style={{ ...LETTERING, color }}>{writing.kind === "sector" ? (writing.ink && COPY.ink[writing.ink]) || COPY.kind.sector : COPY.kind[writing.kind]}</span>{" "}
                   <Lettered text={writing.text} />
                 </span>
               ) : value?.caption ?? " "}

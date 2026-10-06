@@ -12,9 +12,12 @@ import { ComposeCentre } from "../cinema/centre/ComposeCentre";
 import { TitleCard } from "../cinema/centre/TitleCard";
 import { PremiereCentre } from "../cinema/centre/EndCentres";
 import { RecipeStarters } from "../cinema/centre/RecipeStarters";
-import { ActPanel, type CentreActions } from "../cinema/centre/ActPanel";
+import { ActPanel, type CentreActions, type QuestionViews } from "../cinema/centre/ActPanel";
 import { EASE } from "../cinema/cinemaMotion";
 import { DialIdentity } from "./DialCasting";
+import { DialAnswersList, DialQuestionsSummary } from "./question/DialAnswers";
+
+const DIAL_QUESTION_VIEWS: QuestionViews = { Summary: DialQuestionsSummary, Answers: DialAnswersList };
 
 interface DialHubProps {
   p: GlyphFullLayoutProps;
@@ -28,7 +31,7 @@ interface DialHubProps {
 export function DialHub({ p, s, a, tight, billing, box }: DialHubProps) {
   const { act, flow, cast } = s;
   const reviewing = act === "questions" && (flow.stage === "review" || flow.stage === "sending");
-  const panel = <ActPanel p={p} s={s} a={a} tight={tight} />;
+  const panel = <ActPanel p={p} s={s} a={a} tight={tight} questionViews={DIAL_QUESTION_VIEWS} />;
 
   let body: React.ReactNode;
   let key: string = act;

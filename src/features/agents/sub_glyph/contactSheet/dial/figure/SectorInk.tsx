@@ -1,10 +1,13 @@
 /** SectorInk - one ring segment drawn in an ink state, shared by the dial's
  *  sectors, the flying sector and the exploded fan's sub-sectors, so the
- *  nested view speaks the main frame's line language exactly:
- *    pending   a dashed outline, nothing inside (still to draw);
+ *  nested view speaks the main frame's line language exactly. Every state is
+ *  drawn in the DIMENSION's own colour (as Cinema's frames are), and the
+ *  state only decides how much of it shows:
+ *    pending   a faint dashed outline, nothing inside (still to draw);
  *    drafting  the outline inked hard, hatch lines running inside it;
- *    asking    a dashed outline in the dimension's colour, breathing;
- *    done      filled in the dimension's colour, outline drawn on;
+ *    asking    a dashed outline, breathing;
+ *    done      filled, outline drawn on: lightly while it carries nothing,
+ *              fully once it carries metadata;
  *    error     the status error ink.
  *  The outline of every solid state draws itself on (a one-shot stroke). */
 import { useId } from "react";
@@ -23,7 +26,7 @@ interface SectorInkProps {
   box: { x: number; y: number; size: number };
 }
 
-function Hatch({ d, box }: { d: string; box: SectorInkProps["box"] }) {
+function Hatch({ d, box, color }: { d: string; box: SectorInkProps["box"]; color: string }) {
   const id = useId().replace(/:/g, "");
   const lines: string[] = [];
   const { x, y, size } = box;
@@ -32,7 +35,7 @@ function Hatch({ d, box }: { d: string; box: SectorInkProps["box"] }) {
     <>
       <defs><clipPath id={`${id}-clip`}><path d={d} /></clipPath></defs>
       <g clipPath={`url(#${id}-clip)`}>
-        <path className="dial-hatch" d={lines.join("")} stroke="var(--ink-dim)" strokeWidth={1} />
+        <path className="dial-hatch" d={lines.join("")} stroke={colorWithAlpha(color, 0.55)} strokeWidth={1} />
       </g>
     </>
   );
@@ -44,7 +47,7 @@ export function SectorInk({ d, ink, color, populated, box }: SectorInkProps) {
   const fadeIn = shouldAnimate ? { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.6, delay: 0.35 } } : {};
 
   if (ink === "pending") {
-    return <path d={d} fill="none" stroke="var(--ink-dim)" strokeWidth={1} strokeDasharray="3 4" />;
+    return <path d={d} fill={colorWithAlpha(color, 0.04)} stroke={colorWithAlpha(color, 0.5)} strokeWidth={1} strokeDasharray="3 4" />;
   }
   if (ink === "asking") {
     return <path className="dial-asking" d={d} fill={colorWithAlpha(color, 0.08)} stroke={color} strokeWidth={1.6} strokeDasharray="6 3" />;
@@ -52,15 +55,15 @@ export function SectorInk({ d, ink, color, populated, box }: SectorInkProps) {
   if (ink === "drafting") {
     return (
       <g>
-        <Hatch d={d} box={box} />
-        <motion.path key="drafting" d={d} fill="none" stroke="var(--ink-strong)" strokeWidth={1.3} {...draw} />
+        <Hatch d={d} box={box} color={color} />
+        <motion.path key="drafting" d={d} fill="none" stroke={color} strokeWidth={1.3} {...draw} />
       </g>
     );
   }
-  const stroke = ink === "error" ? "var(--status-error)" : populated ? color : "var(--ink)";
+  const stroke = ink === "error" ? "var(--status-error)" : populated ? color : colorWithAlpha(color, 0.75);
   const fill = ink === "error"
     ? "color-mix(in srgb, var(--status-error) 16%, transparent)"
-    : populated ? colorWithAlpha(color, 0.36) : "color-mix(in srgb, var(--ink) 16%, transparent)";
+    : colorWithAlpha(color, populated ? 0.36 : 0.14);
   return (
     <g>
       <motion.path key={`${ink}-fill`} d={d} fill={fill} stroke="none" {...fadeIn} />

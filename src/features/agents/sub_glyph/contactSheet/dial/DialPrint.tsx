@@ -8,7 +8,7 @@
 import { memo } from "react";
 import { LayoutGroup } from "framer-motion";
 import type { GlyphDimension } from "@/features/shared/glyph";
-import { GLYPH_DIMENSIONS, PETAL_ANGLES } from "@/features/shared/glyph";
+import { DIM_META, GLYPH_DIMENSIONS, PETAL_ANGLES } from "@/features/shared/glyph";
 import type { CinemaCast } from "../cinema/useCinemaCast";
 import type { FrameValue } from "../cinema/useFrameValues";
 import { frameNumber } from "../cinema/sheetModel";
@@ -32,7 +32,6 @@ interface DialPrintProps {
   values: Record<GlyphDimension, FrameValue | null>;
   cast: CinemaCast;
   orbiting: boolean;
-  accent: string;
   presence: number;
   working: boolean;
   sweepKey: string;
@@ -56,7 +55,7 @@ function DialPrintImpl(p: DialPrintProps) {
   return (
     <LayoutGroup id="dial-cast">
       <svg width={p.stage.w} height={p.stage.h} className="absolute inset-0 overflow-visible" data-testid="dial-figure">
-        <DialScale c={L.c} R={L.R} accent={p.accent} presence={p.presence} sweepKey={p.sweepKey} />
+        <DialScale c={L.c} R={L.R} presence={p.presence} sweepKey={p.sweepKey} />
         <DialRim c={L.c} R={L.R} ticks={d.ticks} />
         <DialLeaders readouts={L.readouts} ink={d.ink} populated={p.populated} callout={callout ? { id: callout.id, dim: callout.dim } : null} />
         {GLYPH_DIMENSIONS.map((dim) => (
@@ -66,7 +65,10 @@ function DialPrintImpl(p: DialPrintProps) {
           />
         ))}
       </svg>
-      <SweepArm pivot={L.c} r0={L.R * RADII.face} r1={L.R * 0.955} angle={armAngle(d)} working={p.working} />
+      <SweepArm
+        pivot={L.c} r0={L.R * RADII.face} r1={L.R * 0.955} angle={armAngle(d)} working={p.working}
+        color={d.latest ? DIM_META[d.latest.dim].color : undefined}
+      />
       {p.orbiting && <DialOrbit cast={p.cast} c={L.c} R={L.R} />}
       {p.hub}
       <DialReadouts

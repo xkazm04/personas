@@ -5,6 +5,7 @@
 import { useLayoutEffect, useState, type RefObject } from "react";
 import { motion } from "framer-motion";
 import { useMotion } from "@/hooks/utility/interaction/useMotion";
+import { tint } from "../tint";
 
 export interface LeaderGeometry { d: string; end: { x: number; y: number } }
 
@@ -35,7 +36,7 @@ export function useLeaderGeometry(rootRef: RefObject<HTMLElement | null>, anchor
   return geo;
 }
 
-export function ExplodedLeader({ geometry }: { geometry: LeaderGeometry }) {
+export function ExplodedLeader({ geometry, color }: { geometry: LeaderGeometry; color: string }) {
   const { shouldAnimate } = useMotion();
   return (
     <motion.svg
@@ -45,12 +46,12 @@ export function ExplodedLeader({ geometry }: { geometry: LeaderGeometry }) {
       exit={{ opacity: 0, transition: { duration: 0.2 } }}
     >
       <motion.path
-        d={geometry.d} fill="none" stroke="var(--ink-dim)" strokeWidth={1}
+        d={geometry.d} fill="none" stroke={tint(color, 0.55)} strokeWidth={1}
         initial={shouldAnimate ? { pathLength: 0 } : false}
         animate={{ pathLength: 1 }}
         transition={{ duration: 0.8, delay: 0.9, ease: "easeOut" }}
       />
-      <circle cx={geometry.end.x} cy={geometry.end.y} r={2.5} fill="var(--ink-strong)" />
+      <circle cx={geometry.end.x} cy={geometry.end.y} r={2.5} fill={color} />
     </motion.svg>
   );
 }

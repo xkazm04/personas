@@ -102,6 +102,29 @@ describe("SchematicDialLayout", () => {
     await waitFor(() => expect(screen.getByTestId("dial-readout-connector").textContent).toContain("Gmail"), { timeout: 3000 });
   });
 
+  it("questions, asking: the asked sector explodes beside the question, which answers by click and by number key", () => {
+    state = makeState("questions", { trigger: "pending" });
+    const pick = vi.fn();
+    const q = { cellKey: DIM_TO_CELL_KEY.trigger, question: "When should it run?", options: ["Every morning", "Hourly"] };
+    state = { ...state, flow: { ...state.flow, qs: [q], n: 1, current: q, stage: "asking", pick } } as SheetState;
+    render(<SchematicDialLayout {...props({ buildPhase: "awaiting_input" })} />);
+    ids("dial-question-layer", "dial-exploded-fan", "dial-question");
+    expect(screen.queryByTestId("dial-exploded-controls")).toBeNull();
+    fireEvent.click(screen.getByRole("radio", { name: /Hourly/ }));
+    expect(pick).toHaveBeenLastCalledWith("Hourly");
+    fireEvent.keyDown(window, { key: "1" });
+    expect(pick).toHaveBeenLastCalledWith("Every morning");
+  });
+
+  it("questions, asking: a question no dimension owns opens as the column alone", () => {
+    state = makeState("questions");
+    const q = { cellKey: "persona-name", question: "What should it be called?", options: null };
+    state = { ...state, flow: { ...state.flow, qs: [q], n: 1, current: q, stage: "asking" } } as SheetState;
+    render(<SchematicDialLayout {...props({ buildPhase: "awaiting_input" })} />);
+    ids("dial-question-layer", "dial-question");
+    expect(screen.queryByTestId("dial-exploded-fan")).toBeNull();
+  });
+
   it("draft: the title card's panel carries simulate", () => {
     state = makeState("draft", { connector: "lit" });
     render(<SchematicDialLayout {...props({ hasDesignResult: true, buildPhase: "draft_ready" })} />);

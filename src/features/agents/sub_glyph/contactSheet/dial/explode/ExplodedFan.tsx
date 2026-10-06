@@ -11,6 +11,7 @@ import { motion } from "framer-motion";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import { DIM_META, PETAL_ANGLES } from "@/features/shared/glyph";
 import { useMotion } from "@/hooks/utility/interaction/useMotion";
+import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import { LETTERING, useDraftSteps } from "../../blueprint";
 import { FAN_HALF, HALF_SPAN, fanAnnulus, fanLayout, fanPolar, type Pt } from "../dialGeometry";
 import type { Ink } from "../dialMarks";
@@ -62,8 +63,8 @@ export function ExplodedFan({ dim, size, parts, partInk, populated, drawKey, anc
   return (
     <div className="relative h-full w-full overflow-hidden" data-testid="dial-exploded-fan">
       <svg width={size.w} height={size.h} className="absolute inset-0" aria-hidden>
-        <path d={`${edge(-FAN_HALF)}${edge(FAN_HALF)}`} stroke="var(--ink-faint)" strokeDasharray="2 5" fill="none" />
-        <motion.path d={fanAnnulus(apex, rI, rO, -FAN_HALF, FAN_HALF)} fill="color-mix(in srgb, var(--background) 70%, transparent)" stroke="var(--ink)" strokeWidth={1.2} {...draw} />
+        <path d={`${edge(-FAN_HALF)}${edge(FAN_HALF)}`} stroke={colorWithAlpha(color, 0.3)} strokeDasharray="2 5" fill="none" />
+        <motion.path d={fanAnnulus(apex, rI, rO, -FAN_HALF, FAN_HALF)} fill="color-mix(in srgb, var(--background) 70%, transparent)" stroke={color} strokeWidth={1.2} {...draw} />
         {steps >= 1 && <FanScale apex={apex} rO={rO} theta={theta} />}
         {steps >= 2 && (
           <motion.g initial={shouldAnimate ? { opacity: 0 } : false} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
@@ -78,7 +79,7 @@ export function ExplodedFan({ dim, size, parts, partInk, populated, drawKey, anc
         )}
         {n === 0 && steps >= 2 && (
           <g>
-            <path d={fanAnnulus(apex, bandIn, bandOut, -FAN_HALF + 2, FAN_HALF - 2)} fill="none" stroke="var(--ink-dim)" strokeDasharray="3 4" />
+            <path d={fanAnnulus(apex, bandIn, bandOut, -FAN_HALF + 2, FAN_HALF - 2)} fill="none" stroke={colorWithAlpha(color, 0.5)} strokeDasharray="3 4" />
             <text x={apex.x + (bandIn + bandOut) / 2} y={apex.y + 4} textAnchor="middle" style={{ ...LETTERING, fontSize: 11 }} fill="var(--ink-dim)">{COPY.fan.empty}</text>
           </g>
         )}
@@ -92,15 +93,15 @@ export function ExplodedFan({ dim, size, parts, partInk, populated, drawKey, anc
           return (
             <motion.g key={`${i}-${text}`} initial={shouldAnimate ? { opacity: 0 } : false} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
               <SectorInk d={d} ink={partInk} color={color} populated={populated} box={box} />
-              <circle cx={mid.x} cy={mid.y} r={10} fill="var(--background)" stroke={populated ? color : "var(--ink)"} />
+              <circle cx={mid.x} cy={mid.y} r={10} fill="var(--background)" stroke={color} />
               <text x={mid.x} y={mid.y + 3.5} textAnchor="middle" style={{ ...LETTERING, fontSize: 10, letterSpacing: 0 }} fill="var(--ink-strong)">{String(i + 1).padStart(2, "0")}</text>
-              <motion.path d={`M${l0.x} ${l0.y}L${l1.x} ${l1.y}`} stroke="var(--ink-strong)" {...draw} />
+              <motion.path d={`M${l0.x} ${l0.y}L${l1.x} ${l1.y}`} stroke={colorWithAlpha(color, 0.75)} {...draw} />
               <text x={at.x} y={at.y} dy={4} transform={`rotate(${pm} ${at.x} ${at.y})`} style={{ ...LETTERING, fontSize: 11 }} fill="var(--ink-strong)">{label}</text>
             </motion.g>
           );
         })}
       </svg>
-      <SweepArm pivot={apex} r0={rI} r1={rO - 2} angle={steps >= 1 ? latestPhi + 90 : null} working={drawnParts < n} rest={90} />
+      <SweepArm pivot={apex} r0={rI} r1={rO - 2} angle={steps >= 1 ? latestPhi + 90 : null} working={drawnParts < n} rest={90} color={color} />
       <span ref={anchorRef} aria-hidden className="absolute h-px w-px" style={{ left: corner.x, top: corner.y }} />
       <span className="sr-only">{shown.join(", ")}</span>
     </div>
