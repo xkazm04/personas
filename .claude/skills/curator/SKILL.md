@@ -132,7 +132,7 @@ function would be a second source of truth for the number her whole loop is rank
 takes about 80 seconds. Build it once:
 
 ```bash
-cargo build --release --bin personas-curator-project --features desktop   --manifest-path src-tauri/Cargo.toml
+cargo build --release -p personas-engine --bin personas-curator-project --manifest-path src-tauri/Cargo.toml
 ```
 
 Re-project after any merge that moves the registry, then read `status` again: both axes

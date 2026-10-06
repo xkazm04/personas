@@ -933,7 +933,7 @@ def reproject(repo: pathlib.Path) -> dict:
         return {
             "ok": False,
             "error": "personas-curator-project is not built; run: cargo build --release "
-                     "--bin personas-curator-project --features desktop "
+                     "-p personas-engine --bin personas-curator-project "
                      "--manifest-path src-tauri/Cargo.toml",
         }
     try:
