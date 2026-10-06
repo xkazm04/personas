@@ -133,7 +133,8 @@ project checkout: all three carry foreign uncommitted work, which is why conditi
 - **No push**, no pull request. Merges are local fast-forwards.
 - **No scheduled or unattended tick.** It runs only while a Director session loops.
 - **No HTML page**, no notifications, no vault session note: one terminal digest per wake.
-- **No Rust or app change**, and no edit of a project's code by the Director or the master.
+- **No app change beyond the state door** (next section), and no edit of a project's code
+  by the Director or the master.
 
 ## Failure modes and their handling
 
@@ -146,6 +147,61 @@ project checkout: all three carry foreign uncommitted work, which is why conditi
 | App starts mid-run | The app's stale sweep (`STALE_AFTER_SECS`, `src-tauri/src/commands/fleet/stale.rs:65`, 6 min) marks fleet sessions stale, but these builders write no `fleet_sessions` rows, so it cannot touch them. Replay the outbox only after `--dry-run`. |
 | Merge held | Branch kept, ask raised and queued; the operator decides. |
 | Invalid decision | `decide` refuses with the errors; the Director sends them back to the same master once, then parks the project for the wake and reports it. |
+
+## The state door: the app sees the headless chair
+
+Added 2026-10-06. Before it, the app showed a headless-run project's in-app master as idle
+or stale (the kp master note frozen at its last in-app decision, pof with no master at all,
+"Running" never shown), and nothing stopped the in-app tick from deciding on the same
+backlog. Scope is the master's STATE only; the Fleet builder rows, `persona_executions` and
+`fleet_sessions` are untouched.
+
+- **Storage**: one `app_settings` row per project, `headless_master:<project_id>`
+  (`HEADLESS_MASTER_PREFIX`, `src-tauri/db/src/settings_keys.rs`), JSON
+  `{ state: running|idle|ended, note (<= 600 chars, cut server-side), nextWakeAt, beatAt
+  (server-stamped), runId, source: "appmaster" }`. Excluded from the settings audit, so a
+  beat never floods Settings -> History. Rejected alternatives: a fake `persona_executions`
+  row (takes a concurrency slot and is swept as stale at startup), an attention-ledger row,
+  and the charter's `spec.pacing` (distorts the interval floor and the daily cap).
+- **Write**: `POST /dev-tools/app-master/{project_id}/heartbeat`
+  (`dev_tools_http.rs` -> `commands/infrastructure/headless_master.rs`
+  `record_heartbeat`). The project resolves by id, name or root path like the adopt door.
+  A bad state, an unparseable `nextWakeAt`, a run id over 100 characters or a note over
+  16,384 characters after trimming is a 400; a note between 600 and that is stored cut.
+  The answer is the stored beat plus `suppressing`. A beat is accepted for a project with
+  no master persona yet (pof before adoption) and displays once the persona exists.
+- **Freshness**: fresh while
+  `now < min(max(beatAt, nextWakeAt) + 15 min, beatAt + 6 h)` and the state is not
+  `ended` (`HEADLESS_GRACE_MINUTES`, `HEADLESS_HARD_CAP_HOURS`). The grace covers the
+  minutes a wake takes to decide and settle, since a headless wake can be up to 240 minutes
+  after the last; the hard cap stops a Director that died without `ended` from holding the
+  in-app master aside forever. `ended` releases at once.
+- **The in-app tick stands aside**: the top rung of `admit_persona`
+  (`src-tauri/src/engine/subscription/attention.rs`) refuses a persona any of whose active
+  charters is bound to a project with a fresh beat, as
+  `AttentionRefusal::HeadlessMaster` (kind `headless_master`). It sits before the wake
+  request is consumed, so a pending wake survives, and it covers the live tick and the
+  Orchestration preview alike.
+- **Read side**: `HeadlessState { state, note, nextWakeAt, beatAt, fresh }` on
+  `AppMasterAdoption.headless` (`GET /dev-tools/app-master/{project_id}`; `None` on the
+  adopt path) and on each Orchestration preview row, resolved to the project's App Master
+  persona by the adopt door's rule (design-context pin + the "App Master" name prefix). The
+  preview fills it whatever the persona's own switch says, so a switched-off in-app master
+  whose project a terminal runs does not read only "Switched off". The Orchestration panel
+  shows it as a chip (`docs/features/monitor.md`).
+- **The skill side**: `lib/heartbeat.mjs` posts best-effort through `lib/bridge.mjs` at the
+  end of `decide`, `dispatch`, `watch`, `settle` and `release`, and `heartbeat --project p
+  [--state ended]` posts by hand; `end` posts `ended` for every managed project. It never
+  throws, never blocks past about two seconds and never changes an exit code; with the app
+  down it does nothing.
+
+**Known gap (v1)**: only the attention TICK stands aside. A channel reply to the in-app
+master (the arrivals path) and a manual wake from the UI still start an in-app run while a
+headless chair holds the project.
+
+**pof adoption note**: adopt pof's master with the adopt route only. A channel brief
+(`/master onboard`'s brief post) calls `dispatch_channel_followup` and WOULD start an in-app
+run, which the v1 door does not stop.
 
 ## Relationship to /master and the app
 
@@ -176,6 +232,8 @@ own gate, independent of the app's mandate.
 - `Discard the branch` releases the run but `release` keeps the branch and worktree; deleting
   them is left to the operator.
 - `settle --retry` is not yet in the usage header of `appmaster.mjs`.
+- The state door holds the in-app tick only; channel replies and manual wakes are not
+  stopped (see "The state door").
 
 ## Replay checklist (the day the app is back)
 

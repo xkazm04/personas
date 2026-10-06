@@ -529,10 +529,10 @@ governor's stop is announced.
 
 #### Orchestration panel — the next tick, read-only
 
-Opened from the Activity board, the **Orchestration** panel is a `BaseModal`
+Opened from the Activity board's Autopilot plate (`SupplyDeck.tsx`), the
+**Orchestration** panel is a `BaseModal`
 (`src/features/fleet/monitor/grid/orchestration/OrchestrationPanel.tsx`, exported
-from that folder's `index.ts`; the board-header button lands in a later
-package) around the autonomous-agent ledger that used to be the third tab of
+from that folder's `index.ts`) around the autonomous-agent ledger that used to be the third tab of
 the Schedules overlay (moved 2026-09-17). The schedule module was built for
 time-triggered personas — a trigger fires at a moment and the calendar shows
 the moments. Autopilot adds a population with no moment at all: personas the
@@ -555,6 +555,22 @@ counters above (budget, would start, waiting, held) and the budget band
 any pacing hold). `useDispatchPreview` polls it every 30 s while the panel is
 open, pauses while the tab is hidden, and keeps a warm copy so a re-open
 paints at once.
+
+**A project run from a terminal shows it.** When `/appmaster` runs a project's
+App Master from a Claude Code session, it reports through
+`POST /dev-tools/app-master/{project_id}/heartbeat`
+(`docs/architecture/headless-app-master.md`, "The state door"). The preview row
+of that project's App Master carries the report as `headless`, filled even
+when the persona is switched off, and `PersonaIdentity` wears a chip
+(`HeadlessChip` in `parts.tsx`): **Headless - running** while a builder is in
+flight, **Headless - idle** between wakes, both only while the report is fresh;
+**Headless - stale** in a neutral tone once it is not; nothing when no report
+was ever posted or the terminal chair ended. The tooltip carries the wake note,
+the next wake time and how long ago the last report landed. While a report is
+fresh the in-app master stands aside, so an enabled one reads *Refused* with the
+rung *A terminal App Master holds this project* (`headless_master`). The UI
+never calls this a heartbeat: the Vitals Ledger already uses that word for
+execution success.
 
 **It is read-only, with one switch.** The operator dispatch order
 (`fleet_autopilot.dispatch_order`, its `fleet_dispatch_order_set` command and
