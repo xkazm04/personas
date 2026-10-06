@@ -75,13 +75,13 @@ const RESULT = (outcome, extra = {}) => ({ outcome, overall: 0.5, coverage: 0.7,
 
 test('a lite review with no commits settles `reviewed`: the run dir is copied to the journal, a council entry is queued, the worktree goes', () => {
   const run = reviewRun('org-journey');
-  const dir = writeCouncil(run.worktree, '2026-10-07-org-journey-r1', RESULT('fail'), { 'report.md': '# report\n' });
+  const dir = writeCouncil(run.worktree, '2026-10-07-org-journey-lite-r1', RESULT('fail'), { 'report.md': '# report\n' });
   claim(run, dir);
   const out = settle(run);
   assert.equal(out.state, 'reviewed', out.heldReason);
   assert.equal(out.council.outcome, 'fail');
   assert.equal(out.council.mode, 'lite');
-  assert.equal(out.council.runDirName, '2026-10-07-org-journey-r1');
+  assert.equal(out.council.runDirName, '2026-10-07-org-journey-lite-r1');
   assert.deepEqual(out.council.mustAddress, ['Link the three tabs', 'Add the shared header']);
   assert.equal(out.verdict.councilRunDirFrom, 'claim');
   assert.equal(path.dirname(out.council.copyPath), C.councilDir('demo'));
@@ -101,17 +101,17 @@ test('dispatch of a review: the feature\'s earlier rounds and state.json are see
   const planned = S.newRun(project, { wakeId: 'w-seed', charterSlug: 'council-lite-review', reason: 'r', brief: 'Review the org journey.', ideaIds: [], model: C.MODELS.builder, paths: [], featureSlug: 'org-journey', councilMode: 'lite' });
   const run = W.cmdDispatch({ flags: { run: planned.runId } });
   assert.equal(run.state, 'running');
-  assert.deepEqual(run.councilSeeded, ['2026-10-07-org-journey-r1'], 'the earlier lite round came from the journal copy');
+  assert.deepEqual(run.councilSeeded, ['2026-10-07-org-journey-lite-r1'], 'the earlier lite round came from the journal copy');
   assert.equal(run.councilSeed.expectedRound, 2);
   assert.equal(run.councilSeed.stateCopied, true);
-  assert.ok(fs.existsSync(path.join(run.worktree, C.COUNCIL.runsRel, '2026-10-07-org-journey-r1', 'result.json')));
+  assert.ok(fs.existsSync(path.join(run.worktree, C.COUNCIL.runsRel, '2026-10-07-org-journey-lite-r1', 'result.json')));
   assert.ok(fs.existsSync(path.join(run.worktree, C.COUNCIL.stateRel)));
   const p = path.join(process.env.SHIM_OUT_DIR, `${run.sessionId}.json`);
   for (let i = 0; i < 100 && !fs.existsSync(p); i++) await new Promise((r) => setTimeout(r, 100));
   const { stdin } = JSON.parse(fs.readFileSync(p, 'utf8'));
   assert.match(stdin, /^# Council reviewer brief: Demo \(demo\)/);
   assert.ok(stdin.includes('Run `/council --lite org-journey` inside'));
-  assert.ok(stdin.includes('this should be round 2') && stdin.includes('`2026-10-07-org-journey-r1`'));
+  assert.ok(stdin.includes('this should be round 2') && stdin.includes('`2026-10-07-org-journey-lite-r1`'));
   assert.ok(stdin.includes('Review the org journey.') && stdin.includes('do NOT fall back to a full council'));
   assert.ok(!/\{\{\w+\}\}/.test(stdin));
   assert.equal(fs.readFileSync(W.runFile(run, 'brief.md'), 'utf8'), stdin);
@@ -123,7 +123,7 @@ test('a review whose branch carries a commit is held: a reviewer must not change
   const run = reviewRun('billing-flow');
   fs.writeFileSync(path.join(run.worktree, 'a.txt'), 'the reviewer edited code\n');
   sh(run.worktree, 'add', 'a.txt'); sh(run.worktree, 'commit', '-q', '-m', 'oops');
-  writeCouncil(run.worktree, '2026-10-07-billing-flow-r1', RESULT('ready'));
+  writeCouncil(run.worktree, '2026-10-07-billing-flow-lite-r1', RESULT('ready'));
   const out = settle(run);
   assert.equal(out.state, 'held');
   assert.match(out.heldReason, /a review run must not change code, and its branch carries 1 commit\(s\) \(a\.txt\)/);
@@ -135,15 +135,15 @@ test('a review whose branch carries a commit is held: a reviewer must not change
 });
 
 test('no run dir of its own, a missing result.json, an unknown outcome: each holds; a fixed one settles on --retry', () => {
-  const run = reviewRun('org-journey', 'lite', { before: [['2026-10-01-org-journey-r1', RESULT('ready')]] });
-  assert.deepEqual(run.councilSeeded, ['2026-10-01-org-journey-r1', '2026-10-07-org-journey-r1']);
+  const run = reviewRun('org-journey', 'lite', { before: [['2026-10-01-org-journey-lite-r1', RESULT('ready')]] });
+  assert.deepEqual(run.councilSeeded, ['2026-10-01-org-journey-lite-r1', '2026-10-07-org-journey-lite-r1']);
   let out = settle(run);
   assert.equal(out.state, 'held');
   assert.match(out.heldReason, /no council run directory for org-journey was written in the worktree .* beside the 2 that were there before/, 'a directory that was there before is never taken for this run\'s');
-  const dir = writeCouncil(run.worktree, '2026-10-08-org-journey-r3', null);
+  const dir = writeCouncil(run.worktree, '2026-10-08-org-journey-lite-r3', null);
   out = settle(run, true);
   assert.equal(out.state, 'held');
-  assert.match(out.heldReason, /the council run directory 2026-10-08-org-journey-r3 has no result\.json/);
+  assert.match(out.heldReason, /the council run directory 2026-10-08-org-journey-lite-r3 has no result\.json/);
   fs.writeFileSync(path.join(dir, 'result.json'), JSON.stringify({ outcome: 'great' }));
   out = settle(run, true);
   assert.match(out.heldReason, /outcome "great" is not one of ready, fail, incomplete, stalled/);
@@ -211,10 +211,10 @@ test('decide: featureSlug required for a review, unknown features refused, one c
   // three lite rounds already used on billing-flow: a fourth is refused
   for (let i = 1; i <= 2; i++) {
     S.saveRun({ ...S.newRun(project, { wakeId: 'w-old', charterSlug: 'council-lite-review', reason: 'r', brief: 'b', model: 'm', featureSlug: 'billing-flow', councilMode: 'lite' }),
-      state: 'reviewed', settledAt: C.nowIso(), council: { mode: 'lite', featureSlug: 'billing-flow', runDirName: `2026-10-0${i}-billing-flow-r${i}`, outcome: 'fail', mustAddress: [`Refund fix ${i}`] } });
+      state: 'reviewed', settledAt: C.nowIso(), council: { mode: 'lite', featureSlug: 'billing-flow', runDirName: `2026-10-0${i}-billing-flow-lite-r${i}`, outcome: 'fail', mustAddress: [`Refund fix ${i}`] } });
   }
   const third = await decide(base([lite('billing-flow')]));
-  S.updateRun(S.loadRun('demo', third.runIds[0]), { state: 'reviewed', settledAt: new Date(Date.now() + 1000).toISOString(), council: { mode: 'lite', featureSlug: 'billing-flow', runDirName: '2026-10-03-billing-flow-r3', outcome: 'fail', mustAddress: ['Refund fix 3'] } });
+  S.updateRun(S.loadRun('demo', third.runIds[0]), { state: 'reviewed', settledAt: new Date(Date.now() + 1000).toISOString(), council: { mode: 'lite', featureSlug: 'billing-flow', runDirName: '2026-10-03-billing-flow-lite-r3', outcome: 'fail', mustAddress: ['Refund fix 3'] } });
   await assert.rejects(decide(base([lite('billing-flow')])), (e) => e.extra.errors.some((x) => /feature billing-flow has used 3 lite council round\(s\); round 4 is refused \(stalled\)/.test(x)));
   // a council of kpi-board in flight: no second council of it (another charter, so only the feature clashes)
   const flying = S.saveRun({ ...S.newRun(project, { wakeId: 'w-old', charterSlug: 'council-lite-review', reason: 'r', brief: 'b', model: 'm', featureSlug: 'kpi-board', councilMode: 'lite' }), state: 'running', pid: 999999 });

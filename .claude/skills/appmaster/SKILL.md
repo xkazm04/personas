@@ -452,10 +452,12 @@ hand. Design: `docs/architecture/headless-app-master.md`, "The state door".
   The `plan` routes (POST `/dev-tools/milestones`, `/dev-tools/goals`) landed on master in
   `0fe21a3e29` with this exact contract; the `council`, `tier` and `report` routes did not exist
   yet: their request bodies follow the brief of 2026-10-07, not a route that answered.
-- `/council --lite` is unverified: the council skill linked on 2026-10-07 (v0.3.1) documents no
-  `--lite` flag. The reviewer is told to stop `blocked` rather than fall back to a full council.
-  A lite and a full council of one feature share the council's own round counter on disk; this
-  skill counts rounds per mode and seeds only the same mode's earlier rounds into a worktree.
+- `/council --lite` landed in the registry council 0.4.0 (2026-10-07, `82dad518`): lite runs are
+  named `<date>-<slug>-lite-r<n>` and count rounds per mode, which this skill matches
+  (`councilRunDirRe(slug, mode)`). It is not yet driven against a real feature. Registry skill links
+  are never checked in, so a worktree usually lacks `.claude/skills/council`; the reviewer role
+  reads the registry copy by absolute path. The Personas ingest door counts rounds per mode only
+  after its per-mode fix lands; until then a full council after a lite one may be refused at ingest.
 - A `ux-proposal` builder files its `[UX]` idea through the ideas door, which needs the app
   running; with the app down it lists the idea in its result's `questions` instead.
 - pof has no goals until it is onboarded here and then through `/master onboard`.

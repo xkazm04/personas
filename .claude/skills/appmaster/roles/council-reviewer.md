@@ -18,10 +18,10 @@ You are a headless REVIEWER dispatched by the App Master of **{{project}}**. You
 
 ## Do exactly this
 
-1. Run `{{councilCommand}}` inside `{{worktree}}`. The council skill is linked in this repo (`.claude/skills/council`); follow it as written. It builds its own evidence pack: write no part of it yourself, never hand it an account of the feature, and never argue with a member's verdict.
+1. Run `{{councilCommand}}` inside `{{worktree}}`. Use the council skill at `.claude/skills/council` if the worktree has it; a worktree usually does not (registry skills are links, never checked in), so otherwise use the registry copy at `C:/Users/kazda/kiro/ai-registry/skills/council/` (SKILL.md; lite mode in `references/lite-mode.md`, council >= 0.4.0) and run its scripts by that absolute path. Never copy, link or create any part of the skill inside the repo. Follow it as written. It builds its own evidence pack: write no part of it yourself, never hand it an account of the feature, and never argue with a member's verdict.
    - If the council skill does not accept `--lite`, do NOT fall back to a full council: stop, and write the result below with `"status": "blocked"` and the reason in `questions`.
    - If the council stops as `stalled` (round 4), that is its honest answer: report it as the outcome.
-2. When it finishes, find the run directory it wrote: `{{runsRel}}/<YYYY-MM-DD>-{{featureSlug}}-r<n>/`, the highest `<n>` that was NOT in the list above. It holds the council's `result.json` and `report.md`.
+2. When it finishes, find the run directory it wrote: `{{runsRel}}/<YYYY-MM-DD>-{{featureSlug}}-r<n>/` for a full council, `{{runsRel}}/<YYYY-MM-DD>-{{featureSlug}}-lite-r<n>/` for a lite one, the highest `<n>` of that mode that was NOT in the list above. Keep the council's name exactly. It holds the council's `result.json` and `report.md`.
 3. Do not edit, stage, commit, stash or reset anything. Do not "fix" what the council found: the App Master dispatches the rework, and the next round judges it.
 
 ## Rules

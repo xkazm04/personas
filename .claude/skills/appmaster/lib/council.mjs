@@ -16,8 +16,13 @@ import { COUNCIL, councilDir, readJson, shortId } from './contract.mjs';
 import { listRuns } from './store.mjs';
 
 const escapeRe = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-/** `<YYYY-MM-DD>-<feature>-r<n>`: the council's run-directory convention (SKILL.md "Round"). */
-export const councilRunDirRe = (featureSlug) => new RegExp(`^\\d{4}-\\d{2}-\\d{2}-${escapeRe(featureSlug)}-r(\\d+)$`);
+/**
+ * The council's run-directory convention (SKILL.md "Round"): full `<YYYY-MM-DD>-<feature>-r<n>`, lite
+ * (council >= 0.4.0) `<YYYY-MM-DD>-<feature>-lite-r<n>`. Rounds are counted per mode, so each mode
+ * matches only its own directories.
+ */
+export const councilRunDirRe = (featureSlug, mode = 'full') =>
+  new RegExp(`^\\d{4}-\\d{2}-\\d{2}-${escapeRe(featureSlug)}${mode === 'lite' ? '-lite' : ''}-r(\\d+)$`);
 export const roundOfName = (name) => Number(/-r(\d+)$/.exec(String(name))?.[1] ?? 0);
 const listDirs = (dir) => { try { return fs.readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name); } catch { return []; } };
 const keyOf = (p) => (process.platform === 'win32' ? path.resolve(p).toLowerCase() : path.resolve(p));
@@ -49,7 +54,7 @@ export const boundedMustAddress = (list) => (Array.isArray(list) ? list : []).fi
 export function seedCouncil(run, repoRoot) {
   const runsDir = path.join(run.worktree, COUNCIL.runsRel);
   fs.mkdirSync(runsDir, { recursive: true });
-  const re = councilRunDirRe(run.featureSlug);
+  const re = councilRunDirRe(run.featureSlug, run.councilMode);
   const copied = [];
   const copyIn = (src, name) => {
     const dest = path.join(runsDir, name);
@@ -83,7 +88,7 @@ export function seedCouncil(run, repoRoot) {
  * else the highest round under COUNCIL.runsRel that was not there before. The claim is a hint, never trusted.
  */
 export function findCouncilRunDir(run, claim) {
-  const re = councilRunDirRe(run.featureSlug);
+  const re = councilRunDirRe(run.featureSlug, run.councilMode);
   const before = new Set(run.councilSeeded ?? []);
   const fresh = (abs) => isInside(abs, run.worktree) && re.test(path.basename(abs)) && !before.has(path.basename(abs))
     && fs.existsSync(abs) && fs.statSync(abs).isDirectory();
