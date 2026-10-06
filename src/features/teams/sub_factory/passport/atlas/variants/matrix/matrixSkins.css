@@ -1,0 +1,88 @@
+/* The matrix's benched LOOKS (/prototype 2026-10-06).
+ *
+ * Scoped from `.atlas-portfolio[data-skin]`, not from the matrix, so a look
+ * re-cuts the marks in the LEGEND and the READOUT together with the figure.
+ * The baseline sets NO `data-skin` at all: it is the control, and it must keep
+ * rendering exactly what it rendered before this seam existed. That is why
+ * every shared correction below hangs off the bare `[data-skin]` attribute.
+ *
+ * Everything here is type, colour and geometry on the app's own tokens. No
+ * literal font size (that would opt the element out of the Appearance
+ * `--type-f` factor), no raw palette, no `font-weight` pinned in a feature
+ * stylesheet where the token ladder cannot see it. */
+
+/* ===== what all three looks correct in the baseline ====================== */
+
+/* -- the six marks, re-cut ---------------------------------------------------
+ * Measured on the shipped marks at 10px: `good` (success + hollow) and `setup`
+ * (info + empty) are BOTH a 1.5px ring on a transparent box and differ only by
+ * a 2px corner radius - about one pixel of geometry per corner - while `info`
+ * (a 5px filled dot) reads as a smaller `bad` (a 10px filled dot) rather than
+ * as a different kind of thing. Two of the six states were separated by colour
+ * alone, which is the one thing the shape cue exists to prevent.
+ *
+ * The re-cut gives each state its own SHAPE: disc, half-disc, ring, square,
+ * bar, dashed ring. It also routes setup and info through the kit's `--tone`
+ * instead of naming `--status-info` / `--status-neutral` directly, so a
+ * re-toned mark stays re-tonable. */
+.atlas-portfolio[data-skin] .atlas-ink .k-dot { width: 11px; height: 11px; }
+.atlas-portfolio[data-skin] .atlas-ink[data-ink='setup'] .k-dot {
+  /* A square, not a circle with soft corners: at 11px a 2px radius still read
+     as round beside `good`. 1px keeps it from looking like a render fault. */
+  border-radius: 1px; background: transparent; box-shadow: inset 0 0 0 1.5px var(--tone);
+}
+.atlas-portfolio[data-skin] .atlas-ink[data-ink='info'] .k-dot {
+  /* A bar: "there is something to read here", which is not a small failure. */
+  width: 11px; height: 3px; margin: 0; border-radius: 1px; background: var(--tone);
+}
+.atlas-portfolio[data-skin] .atlas-ink[data-ink='unknown'] .k-dot {
+  background: transparent; box-shadow: none;
+  outline: 1.5px dashed color-mix(in srgb, var(--tone) 70%, transparent); outline-offset: -1.5px;
+}
+
+/* -- the 8px grid ------------------------------------------------------------
+ * The shipped matrix puts 7 of its 15 lengths off the grid: --score 44 and 36,
+ * the narrow cell floor 44, the dim padding 3 and 6, the project padding 10,
+ * the gaps column 22, the spine at 13. Snapping them is not pedantry here: the
+ * row band is 32px and the head 56px, so an off-grid column width shifts every
+ * mark a half-step out of the rhythm those bands establish. */
+.atlas-portfolio[data-skin] .atlas-matrix { --score: 48px; }
+.atlas-portfolio[data-skin] .atlas-matrix__project { padding: 0 8px 0 16px; }
+.atlas-portfolio[data-skin] .atlas-matrix__gaps { width: 24px; }
+.atlas-portfolio[data-skin] .atlas-matrix__dim {
+  /* 8px of optical space under the text, of which the rule itself is 2. */
+  padding: 0 8px calc(8px - 2px);
+}
+
+/* -- the spine, from the kit's own positions ---------------------------------
+ * The shipped selected-row spine is drawn at a literal `left: 13px` while the
+ * kit runs every other spine in the app at `--spine-x` (14px), and the band's
+ * left edge is a literal 22px where the kit already names `--band-x`
+ * (`--spine-x` + 8). One pixel of drift, in the one place a reader compares
+ * this surface against the rest of the app. */
+.atlas-portfolio[data-skin] .atlas-matrix__row.is-selected::after {
+  left: calc(var(--spine-x) - 1px); width: 3px;
+}
+.atlas-portfolio[data-skin] .atlas-matrix__row > :first-child {
+  background: linear-gradient(to right, transparent var(--band-x), var(--band) var(--band-x));
+}
+
+/* -- the header rule runs the whole way --------------------------------------
+ * The shipped 2px rule lives on `.atlas-matrix__dim` alone, so the figure's
+ * most important horizontal boundary starts 336px in (the name column plus the
+ * two score columns) and has no left half at all. */
+.atlas-portfolio[data-skin] .atlas-matrix__head > * { border-bottom: 2px solid var(--rule); }
+
+/* -- the readout stops wearing the zebra's tint ------------------------------
+ * `.atlas-readout` and the striped rows both sat on `--band-alt`, so the
+ * status bar read as one more row of the table rather than as its foot. */
+.atlas-portfolio[data-skin] .atlas-readout {
+  background: none; border-top: 1px solid var(--rule); margin-top: 8px;
+}
+
+/* -- the current column's count tints with its name --------------------------
+ * `.atlas-matrix__dim.is-current { color: var(--primary) }` tints the label and
+ * NOT the count beside it: `.typo-caption` carries its colour as a class rule
+ * in `@layer base`, which a parent `color` cannot outrank. Half of the current
+ * column's head therefore stayed muted while the other half lit. */
+.atlas-portfolio[data-skin] .atlas-matrix__dim.is-current .atlas-matrix__dim-count { color: var(--primary); }

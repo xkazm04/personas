@@ -8,15 +8,22 @@
 // cell. A roving coordinate moves with the arrows; a cell opens the drawer,
 // a project's name opens its passport. Fixed row bands on the 8px grid, the
 // spine glows on the selected line, headings stay horizontal.
+//
+// The LOOK is a skin (`matrixSkins.tsx`): the few slots whose type token or
+// draw a benched look changes, and nothing else. The semantics below -
+// `role="grid"`, the aria counts, the roving `tabIndex`, the key map and every
+// `data-testid` - exist exactly once and therefore cannot vary by look.
 import { useEffect, useRef, type KeyboardEvent } from 'react';
 import { Button } from '@/features/shared/components/buttons';
 import { Hint } from '@/features/shared/components/kit';
 import { countInk, inkOf } from '../../atlasModel';
 import { InkDot } from '../../AtlasParts';
 import { ATLAS_WORDS as W, INK_MARK, SHORT_LABEL } from '../../atlasWords';
-import type { AtlasFigureProps } from '../../atlasFigure';
+import type { AtlasFigureProps, AtlasSkin } from '../../atlasFigure';
+import { MATRIX_SKINS } from './matrixSkins';
 
-export function MatrixFigure({ projects, rows, names, at, onMove, onOpenCell, onOpenProject }: AtlasFigureProps) {
+export function MatrixFigure({ skin = 'baseline', projects, rows, names, at, onMove, onOpenCell, onOpenProject }: AtlasFigureProps & { skin?: AtlasSkin }) {
+  const look = MATRIX_SKINS[skin];
   const gridRef = useRef<HTMLDivElement>(null);
   const focusWithin = useRef(false);
 
@@ -59,14 +66,14 @@ export function MatrixFigure({ projects, rows, names, at, onMove, onOpenCell, on
           {W.repository} <span className="k-quiet">{projects.length}</span>
           <span className="atlas-matrix__gaps-head k-quiet">{W.gaps}</span>
         </span>
-        <span role="columnheader" className="atlas-matrix__score-head typo-label k-quiet">{W.auto}</span>
-        <span role="columnheader" className="atlas-matrix__score-head typo-label k-quiet">{W.prod}</span>
+        <span role="columnheader" className={`atlas-matrix__score-head ${look.scoreHead}`}>{W.auto}</span>
+        <span role="columnheader" className={`atlas-matrix__score-head ${look.scoreHead}`}>{W.prod}</span>
         {rows.map((r, di) => (
-          <span key={r.key} role="columnheader" className={`atlas-matrix__dim typo-label${di === at.di ? ' is-current' : ''}`}>
+          <span key={r.key} role="columnheader" className={`atlas-matrix__dim ${look.dim}${di === at.di ? ' is-current' : ''}`}>
             <Hint content={r.info} placement="bottom">
               <span className="atlas-matrix__dim-label">{SHORT_LABEL[r.key] ?? r.label}</span>
             </Hint>
-            <span className="atlas-matrix__dim-count typo-caption">{W.below(projects.filter((p) => inkOf(p, r) === 'bad').length)}</span>
+            {look.countDraw(projects.filter((p) => inkOf(p, r) === 'bad').length, projects.length)}
           </span>
         ))}
       </div>
@@ -82,10 +89,10 @@ export function MatrixFigure({ projects, rows, names, at, onMove, onOpenCell, on
                 <span className="k-ellipsis k-strong">{nm?.name ?? p.identity.name}</span>
                 {nm?.qualifier && <span className="k-quiet k-regular">{nm.qualifier}</span>}
               </Button>
-              <span className="atlas-matrix__gaps typo-caption tabular-nums">{p.repoUnreadable ? '?' : countInk(p, 'bad')}</span>
+              <span className={`atlas-matrix__gaps ${look.num}`}>{p.repoUnreadable ? '?' : countInk(p, 'bad')}</span>
             </span>
-            <span role="gridcell" className="atlas-matrix__score typo-caption tabular-nums">{p.repoUnreadable ? '-' : p.automationReadiness.score}</span>
-            <span role="gridcell" className="atlas-matrix__score typo-caption tabular-nums">{p.repoUnreadable ? '-' : p.productionReadiness.score}</span>
+            <span role="gridcell" className={`atlas-matrix__score ${look.num}`}>{p.repoUnreadable ? '-' : p.automationReadiness.score}</span>
+            <span role="gridcell" className={`atlas-matrix__score ${look.num}`}>{p.repoUnreadable ? '-' : p.productionReadiness.score}</span>
             {rows.map((r, di) => {
               const ink = inkOf(p, r);
               const here = pi === at.pi && di === at.di;

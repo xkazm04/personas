@@ -10,13 +10,13 @@ import { KitButton, SearchField, Segmented, StatStrip, Toolbar, UnitStrip } from
 import { NoResults } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import type { AppPassport } from '../passportModel';
 import { inkOf, needCare, type AtlasLens, type AtlasRow, type AtlasSort } from './atlasModel';
-import type { AtlasCoord, AtlasNames } from './atlasFigure';
+import type { AtlasCoord, AtlasNames, AtlasSkin } from './atlasFigure';
 import { InkDot, valueText } from './AtlasParts';
 import { ATLAS_WORDS as W, INK_MARK, LEGEND_ORDER, LENSES, SORTS } from './atlasWords';
 
 export interface PortfolioView { lens: AtlasLens; sort: AtlasSort; query: string; unfold: boolean; at: AtlasCoord }
 
-export function AtlasPortfolioShell({ all, projects, rows, sharedSetup, names, view, onView, figure, extraControls }: {
+export function AtlasPortfolioShell({ all, projects, rows, sharedSetup, names, view, onView, figure, skin, extraControls }: {
   all: AppPassport[];
   projects: AppPassport[];
   rows: AtlasRow[];
@@ -26,6 +26,10 @@ export function AtlasPortfolioShell({ all, projects, rows, sharedSetup, names, v
   onView: (patch: Partial<PortfolioView>) => void;
   /** The figure, already wired to the model. Null when nothing matched. */
   figure: ReactNode;
+  /** The benched look. Absent for the baseline, so its CSS is the bare class
+   *  it always was; a look is an attribute the legend and readout share with
+   *  the figure, which is why it is set here and not inside the matrix. */
+  skin?: AtlasSkin;
   /** Dev-only look picker; absent in a production build. */
   extraControls?: ReactNode;
 }) {
@@ -43,6 +47,7 @@ export function AtlasPortfolioShell({ all, projects, rows, sharedSetup, names, v
   return (
     <div
       className="atlas-portfolio"
+      data-skin={skin}
       onKeyDown={(e) => {
         if (e.key === '/' && (e.target as HTMLElement).tagName !== 'INPUT') { e.preventDefault(); searchRef.current?.focus(); }
       }}

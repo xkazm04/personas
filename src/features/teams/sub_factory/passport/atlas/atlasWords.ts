@@ -35,6 +35,7 @@ export const ATLAS_WORDS = {
   noMatch: 'No projects match',
   noMatchHint: 'Try a name or a repository path.',
   clearSearch: 'Clear search',
+  look: 'Look',
   keysPortfolio: '↑ ↓ projects · ← → dimensions · Enter details · P passport · / find',
   keysPassport: '[ ] previous / next project · Esc portfolio',
   openPassport: 'Open passport',
