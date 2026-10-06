@@ -38,7 +38,6 @@ import { ProgressLegend, ProgressEmpty, ProgressGhost, useGoalDrawer } from './p
 import { ProgressViewProvider, useCanvasHost } from './progress/canvasHost';
 import { useProgressModel, type DoneFilter } from './progress/useProgressModel';
 import { FilmstripCanvas } from './progress/variants/FilmstripCanvas';
-import { SwimlaneCanvas } from './progress/variants/SwimlaneCanvas';
 import { LedgerCanvas } from './progress/variants/LedgerCanvas';
 
 const LEFT_W = 200;
@@ -47,7 +46,7 @@ const LEFT_W = 200;
  *  be enumerated or reviewed; a named constant can be grepped. */
 const SHOW_VARIANT_SWITCHER = import.meta.env.DEV;
 
-type ProgressVariant = 'filmstrip' | 'swimlane' | 'ledger';
+type ProgressVariant = 'filmstrip' | 'ledger';
 
 /**
  * The switcher really does select among mutually exclusive regions, so it
@@ -61,8 +60,10 @@ type ProgressVariant = 'filmstrip' | 'swimlane' | 'ledger';
 const VARIANT_TABS_ID = 'goals-progress-variant';
 
 const VARIANTS: Array<{ id: ProgressVariant; label: string }> = [
+  // Swimlane is gone (2026-10-06, owner's call). Two survive for a later
+  // session to fuse; a third kept alive "to decide between" is a third surface
+  // to keep green.
   { id: 'filmstrip', label: 'Filmstrip' },
-  { id: 'swimlane', label: 'Swimlane' },
   { id: 'ledger', label: 'Ledger' },
 ];
 
@@ -148,7 +149,6 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
               the gate is noise. */}
           <div {...segmentedTabPanelProps(VARIANT_TABS_ID, variant)} role="tabpanel">
             {variant === 'filmstrip' && <FilmstripCanvas leftWidth={LEFT_W} />}
-            {variant === 'swimlane' && <SwimlaneCanvas />}
             {variant === 'ledger' && <LedgerCanvas />}
           </div>
         </ProgressViewProvider>
