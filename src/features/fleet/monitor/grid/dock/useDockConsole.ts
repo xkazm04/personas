@@ -1,10 +1,12 @@
 // useDockConsole — everything the dispatch dock KNOWS, lifted out of the shell
 // that paints it.
 //
-// Three shells now render the same console (`DockRail`, `DockConsole`,
-// `DockRibbon`). The brain stays one object so a variant cannot quietly own a
-// different dispatch path, a different estimate or a different Athena grant —
-// the whole point of hosting variants is that only the ARRANGEMENT varies.
+// Three shells rendered this console behind a persisted switch until
+// 2026-10-06 (`DockRail`, `DockConsoleShell`, `DockRibbon`); the operator kept
+// `DockConsoleShell` and the other two were deleted. The brain stays a
+// separate object: the lift is what guaranteed no arrangement could quietly
+// own a different dispatch path, a different estimate or a different Athena
+// grant, and it keeps the surviving shell purely declarative.
 //
 // Lifted verbatim from `QuickDispatchDock.tsx` (2026-10-06, no behaviour
 // change). The reasoning that earned each piece lives in that file's header and

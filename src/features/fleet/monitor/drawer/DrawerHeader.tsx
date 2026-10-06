@@ -1,12 +1,16 @@
-// DrawerHeader — the nameplate the three readings share.
+// DrawerHeader — the drawer's nameplate.
 //
 // The header used to carry a name, a counts sentence and a close box, which
 // is a title bar, not a header that earns its space on a drawer the operator
 // opened ON PURPOSE to decide something. It now carries the three facts that
 // change what the operator does next: who this is, whether it runs on its own
-// (and whether it is an App Master), and which reading of the dossier is on.
+// (and whether it is an App Master), and the way out.
+//
+// It carried a third thing until 2026-10-06 — the strip that switched between
+// three readings of the dossier. That strip was scaffold; the operator picked
+// the console and the other two readings were deleted with it, so the header
+// hosts no tablist any more.
 
-import type { ReactNode } from 'react';
 import { X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -16,18 +20,9 @@ import type { PersonaCardModel } from '../monitorModel';
 import { DrawerAutonomy } from './DrawerAutonomy';
 
 export function DrawerHeader({
-  card, switcher, onClose,
+  card, onClose,
 }: {
   card: PersonaCardModel;
-  /**
-   * The variant tab strip, rendered by `MonitorDrawer` and passed in. It lives
-   * THERE and not here on purpose: a tab strip must declare the panel it
-   * controls (`segmentedTabPanelProps`), the panel is the drawer's scroll
-   * region, and census rule `tabstrip-with-no-declared-panel` counts a strip
-   * in a file that renders no `role="tabpanel"`. Keeping the two together is
-   * what makes this the first compliant SegmentedTabs site in the tree.
-   */
-  switcher: ReactNode;
   onClose: () => void;
 }) {
   const { t, tx } = useTranslation();
@@ -51,8 +46,6 @@ export function DrawerHeader({
         {card.personaId !== 'unassigned' && (
           <DrawerAutonomy personaId={card.personaId} onNavigate={onClose} />
         )}
-
-        {switcher}
 
         <Tooltip content={t.monitor.close_hint}>
           <Button

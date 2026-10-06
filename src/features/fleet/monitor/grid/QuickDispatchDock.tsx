@@ -12,28 +12,24 @@
 // the headless fallback and the ARIA combobox contract cannot drift between the
 // two hosts. What is re-authored here is the SHELL.
 //
-// ## Three shells, one console (2026-10-06)
+// ## One console, one shell (2026-10-06)
 //
-// This file is now the HOST. Everything the dock knows lives in
-// `dock/useDockConsole.ts`; everything it paints lives in `dock/`, as three
-// shells behind a persisted switch (`dockVariant.ts`, the same shape as the
-// board's own `boardVariant.ts` — a frozen tuple, one guard, an unknown stored
-// value reading as the default). The operator picks a winner and the losers get
-// deleted; until then a variant may change only the ARRANGEMENT, never the
-// dispatch path, the estimate or the Athena grant.
+// This file is the HOST. Everything the dock knows lives in
+// `dock/useDockConsole.ts`; everything it paints lives in `dock/`, in
+// `DockConsoleShell`. Three shells were authored behind a persisted switch —
+// `rail` (readings on their own manifest line above the toolbar), `console`
+// (controls first, readings on the line above the field) and `ribbon`
+// (readings in a footer under the command row) — and the operator picked
+// `console`, which was NOT the stored default. The switch, the other two
+// shells and their four i18n keys were deleted with the pick.
 //
-// All three obey the same four shape rules the operator set:
+// The shell obeys the four shape rules the operator set:
 //   · ONE row holds the objective and the dispatch button, and nothing else.
 //   · A TOOLBAR above it carries every toggle and every parameter (model,
 //     effort, Athena, background, project, skill).
 //   · Every button is the shared `Button`.
 //   · No control splits its icon and its label across two lines — the launch
 //     used to stack its arrow over its word, and that is what ended it.
-//
-// They differ in where the READOUT goes:
-//   · rail    — readings on their own manifest line, above the toolbar.
-//   · console — controls first; the readings drop to the line above the field.
-//   · ribbon  — toolbar on top, readings in a FOOTER under the command row.
 //
 // ## Why there is a readout at all (the Launch Rail, 2026-09-21)
 //
@@ -57,8 +53,8 @@
 //     calls that a backfill. `dockLanding.ts` holds what this reading is
 //     allowed to claim; read it before changing a word of the pill.
 //
-// None of the three variants may drop one of those four. That is why they
-// render `DockReadout` rather than re-authoring the pills.
+// The shell may not drop one of those four. That is why it renders
+// `DockReadout` rather than re-authoring the pills.
 //
 // ## And one control that is not a reading: the Athena grant
 //
@@ -72,10 +68,10 @@
 // The resting row was the one dimension the Launch Rail scored worst on, and
 // the fix came from a rival entry the owner also saw: permanent chrome must pay
 // rent. Collapsed, the row carries the live fleet tally (how many sessions need
-// you, how many are working) instead of restating a placeholder. It is shared
-// by all three variants — the variants are about the CONSOLE, and a resting row
-// that changed shape with the stored variant would be three different front
-// doors to one room.
+// you, how many are working) instead of restating a placeholder. It was shared
+// by all three shells while there were three — the arrangements were about the
+// CONSOLE, and a resting row that changed shape with the stored variant would
+// have been three different front doors to one room.
 //
 // ## What lags, and what never does (2026-10-06)
 //
@@ -86,48 +82,33 @@
 // with `useDeferredValue` in `useDockConsole`. **THE CARET IS NEVER DEFERRED.**
 // The full derivation is in that file's header.
 //
-// ## The anti-shake contract — unchanged, and non-negotiable in all three
+// ## The anti-shake contract — unchanged, and non-negotiable
 //
 // The dock sits at the BOTTOM of a live board: if its outer height moves as the
 // operator types, the board above it moves too. So every volatile panel
 // (suggestions, skill picker, both preset menus) renders absolutely at
 // `bottom-full`, out of document flow, opening UPWARD — hosted ONCE here by
-// `DockPanels`, so no shell can put one in its own column — and every in-flow
-// row has a reserved literal height, with the objective field growing INSIDE a
-// fixed deck and then scrolling. `QuickDispatchDock.test.tsx` measures the row
-// class list across collapsed / typed / typeahead-open / long-objective FOR
-// EACH VARIANT; the heights differ between variants and are identical within
-// one, which is the property that matters.
+// `DockPanels`, so the shell cannot put one in its own column — and every
+// in-flow row has a reserved literal height, with the objective field growing
+// INSIDE a fixed deck and then scrolling. `QuickDispatchDock.test.tsx`
+// measures the row class list across collapsed / typed / typeahead-open /
+// long-objective; the heights must be identical in every state, which is the
+// property that matters.
 //
 // The dock is the console and the dispatch mechanism, nothing else. Its content
 // is capped at 800px and centred, so on a wide window the composer stays a
 // readable column instead of a full-width strip.
 
-import { useCallback, useState } from 'react';
 import { Terminal } from 'lucide-react';
 
 import { DockConsoleShell } from './dock/DockConsoleShell';
 import { DockPanels } from './dock/DockPanels';
 import { DOCK_COLUMN } from './dock/DockParts';
-import { DockRail } from './dock/DockRail';
-import { DockRibbon } from './dock/DockRibbon';
 import { useDockConsole } from './dock/useDockConsole';
-import { readDockVariant, writeDockVariant, type DockVariant } from './dockVariant';
-
-const SHELLS: Record<DockVariant, typeof DockRail> = {
-  rail: DockRail,
-  console: DockConsoleShell,
-  ribbon: DockRibbon,
-};
 
 export function QuickDispatchDock() {
   const d = useDockConsole();
   const { c, tally } = d;
-  const [variant, setVariantState] = useState<DockVariant>(readDockVariant);
-  const setVariant = useCallback((v: DockVariant) => {
-    setVariantState(v);
-    writeDockVariant(v);
-  }, []);
 
   if (!d.expanded) {
     return (
@@ -169,13 +150,10 @@ export function QuickDispatchDock() {
     );
   }
 
-  const Shell = SHELLS[variant];
-
   return (
     <div
       className="relative flex-shrink-0 border-t border-border bg-foreground/[0.015]"
       data-testid="quick-dispatch-dock"
-      data-dock-variant={variant}
       onKeyDown={(e) => {
         // Escape collapses the dock rather than closing anything global — the
         // controller's own Escape handling (strip the open typeahead token)
@@ -200,7 +178,7 @@ export function QuickDispatchDock() {
 
       <div ref={c.cardRef} className={`${DOCK_COLUMN} dock-instrument-grid relative pb-2`}>
         <DockPanels console={d} />
-        <Shell console={d} variant={variant} onVariantChange={setVariant} />
+        <DockConsoleShell console={d} />
       </div>
     </div>
   );

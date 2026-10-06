@@ -1,32 +1,29 @@
-// DockParts — the readings and the two bits of shell chrome that all three
-// dispatch-dock variants share.
+// DockParts — the dispatch dock's readings, and its one bit of shell chrome.
 //
 // The dock's module header records what the readout EARNED in a blind contest:
 // firing an agent at a real repository is a pre-flight act, so the console
 // answers WHERE this lands, WHAT IT COSTS, IS IT READY and WHERE IN THE LINE
-// before the operator commits. The variants rearrange those four readings; none
-// of them is allowed to drop one, which is why they live here as one component
-// instead of being re-authored per shell.
+// before the operator commits. Three shells rearranged those four readings
+// until 2026-10-06; none was allowed to drop one, which is why they live here
+// as one component instead of being re-authored per shell. The operator kept
+// `console` and the other two shells went, along with the switch and the
+// panel declaration that paired with it — this file hosted the tree's other
+// compliant `SegmentedTabs` site, and with no tablist left there is no panel
+// to declare.
 //
 // Every pill is the same chrome at the same 20px content height, and the group
 // is always fully mounted — a reading that appeared or vanished would move the
 // row it sits in, and the row it sits in is at the bottom of a live board.
 
-import type { ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { DockLandingPill } from '../DockLandingPill';
 import { formatEstimateCost, formatEstimateMinutes } from '../dockEstimate';
-import { DOCK_VARIANTS, type DockVariant } from '../dockVariant';
 import type { DockConsole } from './useDockConsole';
-
-/** The id prefix the tab strip and its panel must agree on. */
-const VARIANT_TABS_PREFIX = 'quick-dispatch-variant';
 
 /** One column, centred — the dock's content never spreads past this. */
 export const DOCK_COLUMN = 'mx-auto w-full max-w-[800px]';
@@ -121,59 +118,5 @@ export function DockCollapse({ onClick }: { onClick: () => void }) {
     >
       <ChevronDown className="h-3.5 w-3.5" aria-hidden />
     </Button>
-  );
-}
-
-/**
- * Which of the three shells paints the console. A prototype affordance: the
- * operator picks a winner and the losers get deleted, so it is deliberately the
- * same control and the same persistence shape as the board's own layout switch
- * rather than anything bespoke.
- */
-export function DockVariantSwitch({ value, onChange }: { value: DockVariant; onChange: (v: DockVariant) => void }) {
-  const { t } = useTranslation();
-  const label: Record<DockVariant, string> = {
-    rail: t.monitor.grid_dock_variant_rail,
-    console: t.monitor.grid_dock_variant_console,
-    ribbon: t.monitor.grid_dock_variant_ribbon,
-  };
-  return (
-    <SegmentedTabs
-      size="sm"
-      variant="segment"
-      fullWidth={false}
-      ariaLabel={t.monitor.grid_dock_variant_aria}
-      idPrefix={VARIANT_TABS_PREFIX}
-      activeTab={value}
-      onTabChange={onChange}
-      className="h-6 flex-shrink-0 [&_button]:py-0"
-      tabs={DOCK_VARIANTS.map((id) => ({ id, label: label[id], testId: `quick-dispatch-variant-${id}` }))}
-    />
-  );
-}
-
-/**
- * The region the switch above actually swaps, DECLARED as the panel it is.
- *
- * `SegmentedTabs` emits `aria-controls` unconditionally; measured across the
- * repo, not one of its 21 call sites renders the `role="tabpanel"` it points
- * at, and `segmentedTabPanelProps` — the helper written to close exactly this
- * loop — had zero consumers. This is the first. `display: contents` is what
- * lets the declaration exist without adding a box: the rows stay direct
- * children of the dock's grid, so the reserved-height contract is untouched.
- *
- * The tab strip is rendered OUTSIDE this wrapper, in each shell's header row,
- * so the tablist is not nested inside its own panel.
- */
-export function DockVariantPanel({ variant, children }: { variant: DockVariant; children: ReactNode }) {
-  return (
-    <div
-      className="contents"
-      role="tabpanel"
-      id={`${VARIANT_TABS_PREFIX}-panel-${variant}`}
-      aria-labelledby={`${VARIANT_TABS_PREFIX}-tab-${variant}`}
-    >
-      {children}
-    </div>
   );
 }

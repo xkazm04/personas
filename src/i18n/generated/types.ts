@@ -673,10 +673,6 @@ export type Translations = {
     grid_rail_tabs_aria: string;
     grid_messages_empty: string;
     grid_dock_collapse: string;
-    grid_dock_variant_aria: string;
-    grid_dock_variant_rail: string;
-    grid_dock_variant_console: string;
-    grid_dock_variant_ribbon: string;
     grid_rail_loading_more: string;
     grid_rail_unread: string;
     grid_rail_resize: string;
