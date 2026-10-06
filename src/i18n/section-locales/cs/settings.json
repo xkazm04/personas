@@ -645,7 +645,9 @@
     "fleet_concurrency_aria": "Maximum souběžných relací flotily",
     "fleet_concurrency_hint": "Kolik relací Claude Code smí běžet najednou, napříč všemi odesílateli. Nad touto hranicí je odeslání zařazeno do fronty a spustí se samo, jakmile se uvolní slot. Stejné nastavení zapisuje krokovač v hlavičce přehledu Aktivita.",
     "dynamic_budgets_hint": "Připouští běhy flotily podle živých rozpočtů stroje, GPU a plánu s využitím profilu zdrojů každého pověření. Vypněte pro návrat k pevnému limitu relace výše.",
-    "dynamic_budgets_label": "Dynamické rozpočty flotily"
+    "dynamic_budgets_label": "Dynamické rozpočty flotily",
+    "strict_queue_order_hint": "Každé odeslání počká, až na ně přijde řada: nový běh se zařadí za každý čekající běh, který je připraven začít, i když má flotila volný slot. Ta cena je skutečná. Slot může zůstat nevyužitý až do dalšího průchodu povyšování a běh, který jste právě spustili, nemusí začít, přestože flotila vypadá volná. Za během, který zdržuje rozpočet nebo jeho vlastní čas startu, se nikdy nečeká.",
+    "strict_queue_order_label": "Přísné pořadí fronty"
   },
   "notifications": {
     "digest_description": "Týdenní notifikace shrnující zdravotní problémy napříč všemi agenty s celkovým skóre zdraví",

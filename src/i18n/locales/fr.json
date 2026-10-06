@@ -7483,7 +7483,8 @@
     "server_running_hint": "Serveur de développement actif sur le port {port}",
     "server_external_hint": "Le port {port} est occupé par un serveur que Personas n'a pas démarré",
     "server_host_guard": "Ce serveur sert Personas lui-même",
-    "server_starting_hint": "Démarrage du serveur de développement sur le port {port}"
+    "server_starting_hint": "Démarrage du serveur de développement sur le port {port}",
+    "grid_dock_landing_tip_strict": "L'ordre strict de la file est activé : un créneau libre ne permet donc pas à celle-ci de doubler. {count} attendent déjà, et celle-ci se place à la fin en position {position}."
   },
   "onboarding": {
     "adopt_button": "Configurer l’agent",
@@ -16703,7 +16704,9 @@
       "fleet_concurrency_aria": "Nombre maximal de sessions de flotte en parallèle",
       "fleet_concurrency_hint": "Sessions Claude Code pouvant s’exécuter en même temps, tous lanceurs confondus. Au-delà de cette ligne un lancement est admis en file et démarre de lui-même dès qu’un créneau se libère. Le compteur de l’en-tête du tableau Activité écrit le même réglage.",
       "dynamic_budgets_hint": "Admet les exécutions de flotte selon les budgets en direct de machine, GPU et plan, en utilisant le profil de ressources de chaque mandat. Désactivez pour revenir au plafond de session fixe ci-dessus.",
-      "dynamic_budgets_label": "Budgets de flotte dynamiques"
+      "dynamic_budgets_label": "Budgets de flotte dynamiques",
+      "strict_queue_order_hint": "Chaque lancement attend son tour : une nouvelle exécution se place derrière toute exécution en attente déjà prête à démarrer, même si la flotte a un créneau libre. Le coût est réel. Ce créneau peut rester inutilisé jusqu'au prochain passage de promotion, et une exécution que vous venez de lancer peut ne pas démarrer alors que la flotte semble libre. On n'attend jamais derrière une exécution retenue par un budget ou par sa propre heure de départ.",
+      "strict_queue_order_label": "Ordre strict de la file"
     },
     "notifications": {
       "digest_description": "Notification hebdomadaire résumant les problèmes de santé de tous les agents avec un score de santé global",

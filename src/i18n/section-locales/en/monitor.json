@@ -1032,6 +1032,7 @@
   "grid_dock_landing_tip_room": "{running} of {cap} slots are in use and nothing is waiting.",
   "grid_dock_landing_tip_ahead": "{count} waiting, and the fleet is under its cap, so the door can start this one ahead of them. It counts that as a skip against every row it passes, and a row that has waited too long stops it.",
   "grid_dock_landing_tip_wait": "Every one of the {cap} slots is in use, so this joins the end of the queue at position {position}.",
+  "grid_dock_landing_tip_strict": "Strict queue order is on, so a free slot does not let this one jump the line. {count} are already waiting, and this joins the end at position {position}.",
   "grid_dock_landing_tip_unknown": "The queue has not been read yet.",
   "grid_dock_landing_caveat": "A reading of the last queue snapshot, not a promise. A budget hold can still make this wait.",
   "grid_dock_athena_label": "Hand this run to Athena",

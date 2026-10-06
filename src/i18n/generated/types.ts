@@ -1039,6 +1039,7 @@ export type Translations = {
     grid_dock_landing_tip_room: string;
     grid_dock_landing_tip_ahead: string;
     grid_dock_landing_tip_wait: string;
+    grid_dock_landing_tip_strict: string;
     grid_dock_landing_tip_unknown: string;
     grid_dock_landing_caveat: string;
     grid_dock_athena_label: string;
@@ -13404,6 +13405,8 @@ export type Translations = {
       fleet_concurrency_hint: string;
       dynamic_budgets_label: string;
       dynamic_budgets_hint: string;
+      strict_queue_order_label: string;
+      strict_queue_order_hint: string;
     };
     recent_change: {
       label: string;

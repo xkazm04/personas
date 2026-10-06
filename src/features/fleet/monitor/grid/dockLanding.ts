@@ -26,6 +26,24 @@
 // the permissive one ("it starts now") is never asserted, only described in
 // the tooltip's prose. Prose cannot branch wrongly; a second copy of
 // `door_verdict_for` could. Do not grow this file into one.
+//
+// ## `strictOrder` — a second restrictive verdict, and only that
+//
+// `fleet.strict_queue_order` (snapshot field `strictOrder`) makes the door
+// defer an arrival behind a queued row that is ELIGIBLE TO START NOW. With it
+// on, "under the cap with rows waiting" is no longer a possible backfill — it
+// is a wait, and saying "ahead of N" there would be the one thing this module
+// promised never to do: claim a start the door will not give.
+//
+// So the flag only ever turns `ahead` into `wait`. It is read as the
+// RESTRICTIVE direction and nothing more: this file still does not know
+// whether the rows ahead are gated or budget-held (the door defers only
+// behind an eligible one), so when `strictOrder` is on and rows are waiting
+// it says the dispatch waits, and the tooltip's caveat still carries the
+// forecast's uncertainty. Resist the pull to resolve that uncertainty here by
+// reading `entries[].notBeforeMs` or `heldBy` — that is `door_verdict_for`'s
+// scan, and reimplementing it is exactly the second copy this file exists to
+// not be.
 
 import type { FleetQueueSnapshot } from '@/lib/bindings/FleetQueueSnapshot';
 
@@ -36,6 +54,11 @@ export type DockLanding =
   | { kind: 'room'; running: number; cap: number }
   /** Under the cap with rows waiting: the door may backfill this past them. */
   | { kind: 'ahead'; waiting: number; running: number; cap: number }
+  /**
+   * Strict queue order is on and rows are waiting: a free slot does not make
+   * this one start. It joins the tail, at `position`.
+   */
+  | { kind: 'strict'; position: number; waiting: number }
   /** At or over the cap: this joins the tail, at `position`. */
   | { kind: 'wait'; position: number; cap: number };
 
@@ -45,10 +68,13 @@ export type DockLanding =
  */
 export function dockLanding(snapshot: FleetQueueSnapshot | null | undefined): DockLanding {
   if (!snapshot) return { kind: 'unknown' };
-  const { cap, running, queued } = snapshot;
+  const { cap, running, queued, strictOrder } = snapshot;
   // A cap of zero admits nothing, so it reads as full like any other full
   // fleet rather than as "room" by arithmetic accident.
   if (running >= cap) return { kind: 'wait', position: queued + 1, cap };
+  // Under the cap, but strict order says a line is a line. Only ever
+  // narrows `ahead` into a wait — the restrictive direction.
+  if (strictOrder && queued > 0) return { kind: 'strict', position: queued + 1, waiting: queued };
   if (queued > 0) return { kind: 'ahead', waiting: queued, running, cap };
   return { kind: 'room', running, cap };
 }

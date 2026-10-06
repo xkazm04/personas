@@ -393,8 +393,20 @@ immediate start, so `used` — the sum over live sessions (`spawning`,
 - **Kill switch.** `fleet.dynamic_budgets = false` → the count-only door,
   exactly; nothing is sampled. The snapshot then reports `enabled: false`, real
   `used`, neutral budgets and no holds.
+- **Strict queue order.** `fleet.strict_queue_order` (**Settings → Limits**,
+  default **off**, which is the behaviour above exactly). On, a dispatch that
+  could start now instead joins the tail whenever a queued row is **eligible to
+  start now** — the same row promotion would take next. It is never deferred
+  behind a row whose `not_before_ms` is still ahead or one a budget holds, so a
+  free slot is never idled behind a clock. The cost is real: the slot can sit
+  unused until the next promotion pass, and a dispatch the operator just fired
+  may not start although the fleet looks free. ADMISSION only — promotion
+  already runs in rank order and is untouched. The queue snapshot carries it as
+  `strictOrder`, which is what the dock's pre-flight readout reads to stop
+  saying "Ahead of N".
 - **Start now** bypasses the budgets as it bypasses the cap; its charge counts
-  in `used` afterwards.
+  in `used` afterwards. It bypasses strict order too: it never consults the
+  door.
 - **Every origin obeys.** There is no origin exemption at the door.
 
 **Re-evaluation.** Promotion runs on a slot freeing, a cap / switch change,

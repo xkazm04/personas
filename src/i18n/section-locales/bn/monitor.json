@@ -1039,5 +1039,6 @@
   "server_running_hint": "ডেভ সার্ভার পোর্ট {port}-এ চলছে",
   "server_external_hint": "পোর্ট {port} এমন একটি সার্ভারের দখলে যা Personas চালু করেনি",
   "server_host_guard": "এই সার্ভার নিজেই Personas পরিবেশন করছে",
-  "server_starting_hint": "পোর্ট {port}-এ ডেভ সার্ভার চালু হচ্ছে"
+  "server_starting_hint": "পোর্ট {port}-এ ডেভ সার্ভার চালু হচ্ছে",
+  "grid_dock_landing_tip_strict": "কঠোর সারি ক্রম চালু আছে, তাই একটি খালি স্লট এটিকে লাইন টপকাতে দেয় না। {count}টি ইতিমধ্যে অপেক্ষা করছে, এবং এটি {position} অবস্থানে শেষে যুক্ত হবে।"
 }

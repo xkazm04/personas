@@ -528,6 +528,12 @@ pub struct FleetQueueSnapshot {
     pub over_admitted: u32,
     pub entries: Vec<FleetQueueEntry>,
     pub budgets: FleetBudgets,
+    /// `fleet.strict_queue_order` - on, a dispatch that could start now waits
+    /// behind a queued row that could also start now. The dock's pre-flight
+    /// readout (`fleet/monitor/grid/dockLanding.ts`) needs this: without it,
+    /// "under the cap with rows waiting" reads as a possible backfill, which
+    /// is wrong the moment the setting is on.
+    pub strict_order: bool,
 }
 
 /// How many ended sessions the start estimate averages over.
@@ -646,6 +652,32 @@ pub fn dynamic_budgets_via_app(app: &AppHandle) -> bool {
     match pool_of(app) {
         Some(pool) => dynamic_budgets(&pool),
         None => DYNAMIC_BUDGETS_CACHED.load(Ordering::Relaxed),
+    }
+}
+
+/// The last `fleet.strict_queue_order` reading, for a reader with no pool yet.
+static STRICT_QUEUE_ORDER_CACHED: AtomicBool =
+    AtomicBool::new(settings_keys::FLEET_STRICT_QUEUE_ORDER_DEFAULT);
+
+/// `fleet.strict_queue_order` - whether an arrival that could start now must
+/// WAIT behind a queued row that could also start now. Off by default, which
+/// is the door's historical backfill behaviour exactly. Unset or unparseable
+/// reads as the default (off).
+pub fn strict_queue_order(pool: &DbPool) -> bool {
+    let on = crate::db::repos::core::settings::get(pool, settings_keys::FLEET_STRICT_QUEUE_ORDER)
+        .ok()
+        .flatten()
+        .and_then(|v| v.trim().parse::<bool>().ok())
+        .unwrap_or(settings_keys::FLEET_STRICT_QUEUE_ORDER_DEFAULT);
+    STRICT_QUEUE_ORDER_CACHED.store(on, Ordering::Relaxed);
+    on
+}
+
+/// [`strict_queue_order`] through an `AppHandle`, read like [`cap_via_app`].
+pub fn strict_queue_order_via_app(app: &AppHandle) -> bool {
+    match pool_of(app) {
+        Some(pool) => strict_queue_order(&pool),
+        None => STRICT_QUEUE_ORDER_CACHED.load(Ordering::Relaxed),
     }
 }
 
@@ -815,6 +847,11 @@ enum QueueWhy {
     BudgetFull,
     /// An aged entry ahead of it must start first: backfill is suspended.
     BehindAged,
+    /// `fleet.strict_queue_order` is on and a row already in the queue is
+    /// eligible to start right now, so this arrival takes the tail and waits
+    /// its turn. Never raised by a GATED row or one a budget holds - see
+    /// [`door_verdict_for`].
+    BehindQueued,
 }
 
 impl QueueWhy {
@@ -826,6 +863,9 @@ impl QueueWhy {
             QueueWhy::BudgetFull => "the machine and plan budgets are in use".into(),
             QueueWhy::BehindAged => {
                 "an older dispatch that has waited its turn out starts first".into()
+            }
+            QueueWhy::BehindQueued => {
+                "strict queue order is on and a dispatch already in line is ready to start".into()
             }
         }
     }
@@ -908,6 +948,7 @@ fn door_verdict(
     now: i64,
     inputs: &BudgetInputs,
     used: Used,
+    strict_order: bool,
 ) -> Door {
     let effective = if is_non_claude_dispatch(req) {
         without_claude_gauge(*inputs)
@@ -921,10 +962,23 @@ fn door_verdict(
         now,
         &effective,
         used,
+        strict_order,
     )
 }
 
 /// [`door_verdict`] over the two facts of the request it reads.
+///
+/// `strict_order` is `fleet.strict_queue_order` ([`strict_queue_order`]). It
+/// is its OWN parameter and deliberately not a `BudgetInputs` field: that
+/// struct is what the budgets are computed from, and ordering is not a
+/// budget.
+///
+/// The shape below is one decision ladder, not two: the budgets-enabled half
+/// adds the `Refuse` test at the top and the `fits` test in the middle, and
+/// both halves fall through to the SAME queue walk at the bottom. Strict
+/// order has to consult that walk on both paths, so the walk must be reached
+/// by both - bolting a second check onto the budgets-off early return is how
+/// the two paths start answering differently.
 fn door_verdict_for(
     reg: &FleetRegistry,
     charge: Charge,
@@ -932,20 +986,14 @@ fn door_verdict_for(
     now: i64,
     inputs: &BudgetInputs,
     used: Used,
+    strict_order: bool,
 ) -> Door {
     let under = under_cap(reg.live_count(), inputs.cap);
     let gate_ahead = not_before_ms.is_some_and(|t| t > now);
-    if !inputs.enabled {
-        return if under && !gate_ahead {
-            Door::Start { passed: Vec::new() }
-        } else if gate_ahead {
-            Door::Queue(QueueWhy::Gated)
-        } else {
-            Door::Queue(QueueWhy::Cap)
-        };
-    }
+    // Derived once; it binds nothing while the kill switch is off, which is
+    // why every use of it below is guarded by `inputs.enabled`.
     let budgets = budgets::budgets_from(inputs, used);
-    if budgets::never_fits(charge, &budgets) {
+    if inputs.enabled && budgets::never_fits(charge, &budgets) {
         return Door::Refuse;
     }
     if gate_ahead {
@@ -954,17 +1002,42 @@ fn door_verdict_for(
     if !under {
         return Door::Queue(QueueWhy::Cap);
     }
-    if let Err(unfit) = budgets::fits(charge, used, &budgets) {
-        return Door::Queue(match unfit.hold() {
-            Some(hold) => QueueWhy::Held(hold),
-            None => QueueWhy::BudgetFull,
-        });
+    if inputs.enabled {
+        if let Err(unfit) = budgets::fits(charge, used, &budgets) {
+            return Door::Queue(match unfit.hold() {
+                Some(hold) => QueueWhy::Held(hold),
+                None => QueueWhy::BudgetFull,
+            });
+        }
     }
-    // It fits - but a direct start is a backfill past the waiting line, and
-    // an aged entry suspends backfill for arrivals as it does for promotion.
+    // Under the cap, gate passed, charge affordable: this dispatch COULD
+    // start. Everything from here is about the waiting line, and both paths
+    // read it through the same walk - with budgets off `scan_queue` is
+    // `head_to_promote` and nothing else, so `unfit` is empty and `passed`
+    // stays what it has always been.
     let scan = scan_queue(reg, now, inputs, used);
     if scan.blocked_by_aged {
         return Door::Queue(QueueWhy::BehindAged);
+    }
+    // A direct start is a BACKFILL past the waiting line. With strict order
+    // on, a line that has someone in it who could start NOW is a line this
+    // arrival joins instead.
+    //
+    // `scan.pick` is the whole predicate, and it is exactly "the first queued
+    // row that is eligible right now": it skips a row whose `not_before_ms`
+    // is still ahead and returns only a row that `budgets::fits`. So a free
+    // slot is never held behind a clock or behind a budget hold - only behind
+    // work that the very next promotion pass will start. That is also why
+    // this cannot wedge: `pick.is_some()` plus a free count slot is the
+    // precondition `promote_head` promotes on, so the queue drains and the
+    // slot is used; and when nothing is eligible `pick` is `None` and this
+    // dispatch starts.
+    //
+    // ADMISSION only. `promote_head` is untouched: promotion has always run
+    // in rank order, and this setting is about who may jump IN FRONT of that
+    // order at the door, not about how the order is served.
+    if strict_order && scan.pick.is_some() {
+        return Door::Queue(QueueWhy::BehindQueued);
     }
     Door::Start { passed: scan.unfit }
 }
@@ -1021,7 +1094,8 @@ pub fn admit_sync(app: &AppHandle, req: DispatchRequest) -> Result<Admission, Ap
     let now = now_ms();
     let gate_ahead = req.not_before_ms.is_some_and(|t| t > now);
     let (inputs, used, _) = budget_reading(registry(), cap, dynamic_budgets_via_app(app), now);
-    let verdict = door_verdict(registry(), &req, now, &inputs, used);
+    let strict_order = strict_queue_order_via_app(app);
+    let verdict = door_verdict(registry(), &req, now, &inputs, used, strict_order);
     if let Door::Refuse = verdict {
         let charge = request_charge(&req);
         super::debug_log::lifecycle(
@@ -1056,14 +1130,21 @@ pub fn admit_sync(app: &AppHandle, req: DispatchRequest) -> Result<Admission, Ap
             running: running + 1,
         });
     }
-    let budget_wait = match verdict {
-        Door::Queue(why @ (QueueWhy::Held(_) | QueueWhy::BudgetFull | QueueWhy::BehindAged)) => {
-            Some(why)
-        }
+    // Why a dispatch that is UNDER the count cap is waiting anyway - a budget
+    // hold, an aged row ahead of it, or strict queue order. `Cap` and `Gated`
+    // are not here: the log line below already says both in the operator's
+    // own terms.
+    let under_cap_wait = match verdict {
+        Door::Queue(
+            why @ (QueueWhy::Held(_)
+            | QueueWhy::BudgetFull
+            | QueueWhy::BehindAged
+            | QueueWhy::BehindQueued),
+        ) => Some(why),
         _ => None,
     };
     let (session_id, rank) = enqueue(app, &req, cap, running)?;
-    if let Some(why) = budget_wait {
+    if let Some(why) = under_cap_wait {
         // Under the count cap and still waiting: say what holds it.
         registry().set_state_reason(
             &session_id,
@@ -1074,7 +1155,7 @@ pub fn admit_sync(app: &AppHandle, req: DispatchRequest) -> Result<Admission, Ap
     super::debug_log::lifecycle(
         &session_id,
         "queued",
-        &if let Some(why) = budget_wait {
+        &if let Some(why) = under_cap_wait {
             format!("rank {rank} · {} ({running} of {cap} live)", why.label())
         } else if gate_ahead {
             format!(
@@ -1988,7 +2069,15 @@ fn build_snapshot(
     let inputs = BudgetInputs::unmeasured(cap, true);
     let mut live = BudgetLive::new();
     let used = live.used(reg);
-    build_snapshot_with(reg, durations_ms, now, &inputs, used, live.gpu_holder)
+    build_snapshot_with(
+        reg,
+        durations_ms,
+        now,
+        &inputs,
+        used,
+        live.gpu_holder,
+        false,
+    )
 }
 
 /// Assemble the snapshot from the registry, the budgets' inputs and the
@@ -2000,6 +2089,7 @@ fn build_snapshot_with(
     inputs: &BudgetInputs,
     used: Used,
     gpu_holder: Option<String>,
+    strict_order: bool,
 ) -> FleetQueueSnapshot {
     let cap = inputs.cap;
     let view = budget_view(reg, inputs, used, gpu_holder, now);
@@ -2038,6 +2128,7 @@ fn build_snapshot_with(
         over_admitted: over_admitted(running, cap),
         entries,
         budgets: view.budgets,
+        strict_order,
     }
 }
 
@@ -2046,12 +2137,13 @@ pub(super) async fn snapshot(
     pool: DbPool,
 ) -> Result<FleetQueueSnapshot, AppError> {
     let _ = app;
-    let (cap, enabled, durations) = tokio::task::spawn_blocking(move || {
+    let (cap, enabled, strict_order, durations) = tokio::task::spawn_blocking(move || {
         let cap = cap(&pool);
         let enabled = dynamic_budgets(&pool);
+        let strict_order = strict_queue_order(&pool);
         let durations =
             fleet_sessions::recent_ended_durations_ms(&pool, ESTIMATE_HISTORY).unwrap_or_default();
-        (cap, enabled, durations)
+        (cap, enabled, strict_order, durations)
     })
     .await
     .map_err(|e| AppError::Internal(format!("fleet queue snapshot: {e}")))?;
@@ -2064,6 +2156,7 @@ pub(super) async fn snapshot(
         &inputs,
         used,
         gpu_holder,
+        strict_order,
     ))
 }
 
@@ -2766,7 +2859,7 @@ mod tests {
         for i in 0..n {
             let r = req(&format!("C:/repo/{i:02}"));
             let used = measured.used(&reg);
-            match door_verdict(&reg, &r, 1_000, &inputs, used) {
+            match door_verdict(&reg, &r, 1_000, &inputs, used, false) {
                 Door::Start { passed } => {
                     assert!(passed.is_empty());
                     reg.insert(live_charged(&format!("live-{i:02}"), &r));
@@ -2827,11 +2920,11 @@ mod tests {
         assert_eq!((used.machine, used.plan), (1, 2));
         // At the door.
         assert_eq!(
-            door_verdict(&reg, &xl_light("C:/repo/xl"), 1_000, &inputs, used),
+            door_verdict(&reg, &xl_light("C:/repo/xl"), 1_000, &inputs, used, false),
             Door::Queue(QueueWhy::Held(BudgetHold::AheadOfPace))
         );
         assert_eq!(
-            door_verdict(&reg, &s_heavy("C:/repo/heavy"), 1_000, &inputs, used),
+            door_verdict(&reg, &s_heavy("C:/repo/heavy"), 1_000, &inputs, used, false),
             Door::Start { passed: vec![] }
         );
         // In the queue: promotion backfills the s/heavy past the held xl.
@@ -2842,7 +2935,7 @@ mod tests {
         assert_eq!(scan.unfit, vec![xl.clone()]);
         assert!(!scan.blocked_by_aged);
         // The Monitor reads the same story.
-        let snap = build_snapshot_with(&reg, &[], 2_000, &inputs, used, None);
+        let snap = build_snapshot_with(&reg, &[], 2_000, &inputs, used, None, false);
         assert!(snap.budgets.enabled);
         assert_eq!((snap.budgets.plan_used, snap.budgets.plan_budget), (2, 4));
         assert_eq!(snap.budgets.plan_budget_max, 20);
@@ -2900,10 +2993,10 @@ mod tests {
         // A blocked pass promotes nothing, so it counts no skip.
         assert!(mark_unfit(&reg, &scan.unfit, 3_000, false).is_empty());
         assert_eq!(
-            door_verdict(&reg, &s_heavy("C:/repo/new"), 3_000, &inputs, used),
+            door_verdict(&reg, &s_heavy("C:/repo/new"), 3_000, &inputs, used, false),
             Door::Queue(QueueWhy::BehindAged)
         );
-        let snap = build_snapshot_with(&reg, &[], 3_000, &inputs, used, None);
+        let snap = build_snapshot_with(&reg, &[], 3_000, &inputs, used, None, false);
         assert_eq!(snap.entries[0].skips, AGING_MAX_SKIPS);
         // The pace recovers: the aged head goes first, then the line drains.
         let calm = BudgetInputs::unmeasured(10, true);
@@ -2961,7 +3054,7 @@ mod tests {
         let used = measured.used(&reg);
         assert!(!used.gpu_held);
         assert_eq!(
-            door_verdict(&reg, &gpu_job("C:/repo/g1"), 1_000, &inputs, used),
+            door_verdict(&reg, &gpu_job("C:/repo/g1"), 1_000, &inputs, used, false),
             Door::Start { passed: vec![] }
         );
         let mut g1 = live_charged("g1", &gpu_job("C:/repo/g1"));
@@ -2972,7 +3065,7 @@ mod tests {
         assert_eq!(measured.gpu_holder.as_deref(), Some("g1"));
         // A second one waits on the token; `shared` does not.
         assert_eq!(
-            door_verdict(&reg, &gpu_job("C:/repo/g2"), 1_000, &inputs, used),
+            door_verdict(&reg, &gpu_job("C:/repo/g2"), 1_000, &inputs, used, false),
             Door::Queue(QueueWhy::Held(BudgetHold::GpuTokenHeld))
         );
         let shared = profiled(
@@ -2982,12 +3075,19 @@ mod tests {
             GpuClass::Shared,
         );
         assert_eq!(
-            door_verdict(&reg, &shared, 1_000, &inputs, used),
+            door_verdict(&reg, &shared, 1_000, &inputs, used, false),
             Door::Start { passed: vec![] }
         );
         let (g2, _) = enqueue_into(&reg, &gpu_job("C:/repo/g2"), 1_000, 10, 1);
-        let snap =
-            build_snapshot_with(&reg, &[], 2_000, &inputs, used, measured.gpu_holder.clone());
+        let snap = build_snapshot_with(
+            &reg,
+            &[],
+            2_000,
+            &inputs,
+            used,
+            measured.gpu_holder.clone(),
+            false,
+        );
         assert_eq!(snap.budgets.gpu_holder.as_deref(), Some("g1"));
         assert_eq!(snap.budgets.hold, Some(BudgetHold::GpuTokenHeld));
         assert_eq!(snap.entries[0].held_by, Some(BudgetHold::GpuTokenHeld));
@@ -3046,6 +3146,7 @@ mod tests {
                 1_000,
                 &m.inputs(10, true, 1_000),
                 used,
+                false,
             )
         };
         // Nothing sampled, then the FIRST sample - however bad - is not acted on.
@@ -3071,7 +3172,7 @@ mod tests {
         let used = measured.used(&reg);
         let inputs = measured.inputs(10, true, 1_000);
         assert_eq!(scan_queue(&reg, 2_000, &inputs, used).pick, None);
-        let snap = build_snapshot_with(&reg, &[], 2_000, &inputs, used, None);
+        let snap = build_snapshot_with(&reg, &[], 2_000, &inputs, used, None, false);
         assert_eq!(snap.budgets.ram_gate, RamGate::Closed);
         assert_eq!(snap.budgets.ram_pct, Some(close));
         assert_eq!(snap.budgets.hold, Some(BudgetHold::RamHighWater));
@@ -3099,6 +3200,7 @@ mod tests {
             &measured.inputs(10, true, 1),
             Used::default(),
             None,
+            false,
         );
         assert_eq!(snap.budgets.hold, Some(BudgetHold::RamHighWater));
     }
@@ -3113,7 +3215,15 @@ mod tests {
             gpu: GpuClass::None,
         };
         assert_eq!(
-            door_verdict_for(&reg, oversized, None, 1_000, &inputs, Used::default()),
+            door_verdict_for(
+                &reg,
+                oversized,
+                None,
+                1_000,
+                &inputs,
+                Used::default(),
+                false
+            ),
             Door::Refuse
         );
         // Refused even when a time gate or a full fleet would otherwise queue it.
@@ -3124,7 +3234,8 @@ mod tests {
                 Some(i64::MAX),
                 1_000,
                 &inputs,
-                Used::default()
+                Used::default(),
+                false
             ),
             Door::Refuse
         );
@@ -3138,13 +3249,13 @@ mod tests {
             GpuClass::Exclusive,
         );
         assert_eq!(
-            door_verdict(&reg, &heaviest, 1_000, &tiny, Used::default()),
+            door_verdict(&reg, &heaviest, 1_000, &tiny, Used::default(), false),
             Door::Start { passed: vec![] }
         );
         // The count-only door has no budgets to exceed.
         let off = BudgetInputs::unmeasured(4, false);
         assert_eq!(
-            door_verdict_for(&reg, oversized, None, 1_000, &off, Used::default()),
+            door_verdict_for(&reg, oversized, None, 1_000, &off, Used::default(), false),
             Door::Start { passed: vec![] }
         );
     }
@@ -3171,19 +3282,19 @@ mod tests {
         );
         let used = BudgetLive::new().used(&reg);
         assert_eq!(
-            door_verdict(&reg, &heaviest, 1_000, &off, used),
+            door_verdict(&reg, &heaviest, 1_000, &off, used, false),
             Door::Start { passed: vec![] }
         );
         reg.insert(live("b", S::Running));
         let used = BudgetLive::new().used(&reg);
         assert_eq!(
-            door_verdict(&reg, &heaviest, 1_000, &off, used),
+            door_verdict(&reg, &heaviest, 1_000, &off, used, false),
             Door::Queue(QueueWhy::Cap)
         );
         let mut gated = req("C:/gated");
         gated.not_before_ms = Some(9_000);
         assert_eq!(
-            door_verdict(&reg, &gated, 1_000, &off, used),
+            door_verdict(&reg, &gated, 1_000, &off, used, false),
             Door::Queue(QueueWhy::Gated)
         );
         // Promotion is the plain head.
@@ -3194,7 +3305,7 @@ mod tests {
         assert_eq!(scan.pick.as_deref(), Some(head.as_str()));
         assert!(scan.unfit.is_empty() && !scan.blocked_by_aged);
         // The snapshot says so: nothing held, neutral budgets, real usage.
-        let snap = build_snapshot_with(&reg, &[], 2_000, &off, used, None);
+        let snap = build_snapshot_with(&reg, &[], 2_000, &off, used, None, false);
         assert!(!snap.budgets.enabled);
         assert_eq!(snap.budgets.hold, None);
         assert_eq!(
@@ -3207,6 +3318,187 @@ mod tests {
         assert_eq!(snap.entries[0].plan_units, 8, "the weight is still shown");
     }
 
+    // -----------------------------------------------------------------
+    // fleet.strict_queue_order
+    // -----------------------------------------------------------------
+
+    #[test]
+    fn strict_queue_order_off_is_the_backfilling_door_the_fleet_has_always_had() {
+        // The default. Under the cap with an eligible row waiting, the
+        // arrival still starts and the waiting row is passed - on BOTH the
+        // budgets-on and the budgets-off path.
+        for enabled in [true, false] {
+            let reg = FleetRegistry::default();
+            reg.insert(live("a", S::Running));
+            let inputs = BudgetInputs::unmeasured(3, enabled);
+            let used = BudgetLive::new().used(&reg);
+            enqueue_into(&reg, &req("C:/waiting"), 1_000, 3, 1);
+            assert_eq!(
+                door_verdict(&reg, &req("C:/arrival"), 2_000, &inputs, used, false),
+                Door::Start { passed: vec![] },
+                "budgets enabled={enabled}: the default door backfills"
+            );
+        }
+    }
+
+    #[test]
+    fn strict_queue_order_on_makes_an_arrival_wait_behind_an_eligible_row_budgets_off() {
+        // The case with no coverage at all before this test: with the
+        // budgets kill switch OFF the door used to return `Start` on
+        // `under_cap` alone, never scanning the queue, so a manual dispatch
+        // jumped the whole line and nothing recorded that it had.
+        let reg = FleetRegistry::default();
+        reg.insert(live("a", S::Running));
+        let off = BudgetInputs::unmeasured(3, false);
+        let used = BudgetLive::new().used(&reg);
+        let (head, head_rank) = enqueue_into(&reg, &req("C:/waiting"), 1_000, 3, 1);
+        assert_eq!(head_rank, 1);
+        let arrival = req("C:/arrival");
+        assert!(
+            under_cap(reg.live_count(), off.cap),
+            "a count slot is free - this is a backfill, not a cap refusal"
+        );
+        assert_eq!(
+            door_verdict(&reg, &arrival, 2_000, &off, used, true),
+            Door::Queue(QueueWhy::BehindQueued)
+        );
+        // It joins the TAIL, behind the row it waited for.
+        let (_, rank) = enqueue_into(&reg, &arrival, 2_000, 3, 1);
+        assert_eq!(
+            rank, 2,
+            "ranks stay dense and 1-based; nothing is reordered"
+        );
+        assert_eq!(
+            QueueWhy::BehindQueued.label(),
+            "strict queue order is on and a dispatch already in line is ready to start"
+        );
+        // And it cannot wedge: the free slot the arrival declined is exactly
+        // the one the next promotion pass gives to the row ahead of it.
+        let scan = scan_queue(&reg, 3_000, &off, used);
+        assert_eq!(scan.pick.as_deref(), Some(head.as_str()));
+    }
+
+    #[test]
+    fn strict_queue_order_on_queues_instead_of_backfilling_with_budgets_on() {
+        let reg = FleetRegistry::default();
+        reg.insert(live("a", S::Running));
+        let inputs = BudgetInputs::unmeasured(3, true); // machine 3, plan 6
+        let used = BudgetLive::new().used(&reg);
+        let (head, _) = enqueue_into(&reg, &req("C:/waiting"), 1_000, 3, 1);
+        // The waiting row fits right now, so it is what `pick` returns.
+        let scan = scan_queue(&reg, 2_000, &inputs, used);
+        assert_eq!(scan.pick.as_deref(), Some(head.as_str()));
+        assert_eq!(
+            door_verdict(&reg, &req("C:/arrival"), 2_000, &inputs, used, true),
+            Door::Queue(QueueWhy::BehindQueued)
+        );
+    }
+
+    #[test]
+    fn strict_queue_order_never_holds_a_free_slot_behind_a_gated_row() {
+        // A row waiting on its own clock is not waiting for a turn. Blocking
+        // a free slot behind it would idle the fleet until the gate opens.
+        for enabled in [true, false] {
+            let reg = FleetRegistry::default();
+            reg.insert(live("a", S::Running));
+            let inputs = BudgetInputs::unmeasured(3, enabled);
+            let used = BudgetLive::new().used(&reg);
+            let mut gated = req("C:/gated");
+            gated.not_before_ms = Some(9_000);
+            enqueue_into(&reg, &gated, 1_000, 3, 1);
+            assert_eq!(
+                scan_queue(&reg, 2_000, &inputs, used).pick,
+                None,
+                "budgets enabled={enabled}: a gated row is skipped, not waited on"
+            );
+            assert_eq!(
+                door_verdict(&reg, &req("C:/arrival"), 2_000, &inputs, used, true),
+                Door::Start { passed: vec![] },
+                "budgets enabled={enabled}: the slot is used, not idled"
+            );
+        }
+    }
+
+    #[test]
+    fn strict_queue_order_never_holds_a_free_slot_behind_a_row_a_budget_holds() {
+        let reg = FleetRegistry::default();
+        reg.insert(live("a", S::Running));
+        let inputs = BudgetInputs::unmeasured(3, true); // machine 3, plan 6
+        let used = BudgetLive::new().used(&reg);
+        let big = profiled("C:/big", MachineLoad::Heavy, EffortBand::Xl, GpuClass::None);
+        let (held, _) = enqueue_into(&reg, &big, 1_000, 3, 1);
+        let scan = scan_queue(&reg, 2_000, &inputs, used);
+        assert_eq!(scan.pick, None, "4/8 on top of a live default does not fit");
+        assert_eq!(scan.unfit, vec![held.clone()]);
+        // A light arrival fits and starts: it is not waiting for a turn the
+        // row ahead of it cannot take.
+        assert_eq!(
+            door_verdict(&reg, &req("C:/arrival"), 2_000, &inputs, used, true),
+            Door::Start { passed: vec![held] },
+            "the pass is still counted as a skip against the held row"
+        );
+    }
+
+    #[test]
+    fn strict_queue_order_on_starts_when_the_queue_is_empty() {
+        for enabled in [true, false] {
+            let reg = FleetRegistry::default();
+            reg.insert(live("a", S::Running));
+            let inputs = BudgetInputs::unmeasured(3, enabled);
+            let used = BudgetLive::new().used(&reg);
+            assert_eq!(
+                door_verdict(&reg, &req("C:/arrival"), 2_000, &inputs, used, true),
+                Door::Start { passed: vec![] },
+                "budgets enabled={enabled}"
+            );
+        }
+    }
+
+    #[test]
+    fn strict_queue_order_does_not_reach_start_now_which_never_consults_the_door() {
+        // `fleet_queue_start_now` is the one explicit bypass: it calls
+        // `promote` on the named row, which does not go through
+        // `door_verdict` at all. So a rank-2 row the operator starts by hand
+        // starts even with an eligible rank-1 row ahead of it.
+        let reg = FleetRegistry::default();
+        reg.insert(live("a", S::Running));
+        let off = BudgetInputs::unmeasured(3, false);
+        let used = BudgetLive::new().used(&reg);
+        let (head, _) = enqueue_into(&reg, &req("C:/head"), 1_000, 3, 1);
+        let (second, rank) = enqueue_into(&reg, &req("C:/second"), 1_001, 3, 1);
+        assert_eq!(rank, 2);
+        // The door would have made the second one wait.
+        assert_eq!(
+            door_verdict(&reg, &req("C:/second"), 2_000, &off, used, true),
+            Door::Queue(QueueWhy::BehindQueued)
+        );
+        // The bypass spawns it regardless; the head is still queued.
+        assert!(reg.adopt_spawn(spawned(&second)));
+        assert!(is_live_state(
+            reg.sessions.lock().unwrap().get(&second).unwrap().state
+        ));
+        assert_eq!(
+            reg.queued_in_order()
+                .into_iter()
+                .map(|(id, _, _, _)| id)
+                .collect::<Vec<_>>(),
+            vec![head]
+        );
+    }
+
+    #[test]
+    fn the_snapshot_reports_strict_queue_order_both_ways() {
+        // Without this the dock's pre-flight readout cannot tell the
+        // operator whether their dispatch will start now or wait.
+        let reg = FleetRegistry::default();
+        let inputs = BudgetInputs::unmeasured(3, true);
+        let used = BudgetLive::new().used(&reg);
+        for strict in [true, false] {
+            let snap = build_snapshot_with(&reg, &[], 2_000, &inputs, used, None, strict);
+            assert_eq!(snap.strict_order, strict);
+        }
+    }
+
     #[test]
     fn start_now_bypasses_the_budgets_and_its_charge_counts_afterwards() {
         let reg = FleetRegistry::default();
@@ -3216,7 +3508,7 @@ mod tests {
         let big = profiled("C:/big", MachineLoad::Heavy, EffortBand::Xl, GpuClass::None);
         let used = measured.used(&reg);
         assert_eq!(
-            door_verdict(&reg, &big, 1_000, &inputs, used),
+            door_verdict(&reg, &big, 1_000, &inputs, used, false),
             Door::Queue(QueueWhy::BudgetFull),
             "4/8 on top of a live default does not fit 3/6"
         );
@@ -3228,10 +3520,10 @@ mod tests {
         // Under the COUNT cap (2 of 3) - and still nothing else fits.
         assert!(under_cap(reg.live_count(), 3));
         assert_eq!(
-            door_verdict(&reg, &req("C:/next"), 2_000, &inputs, used),
+            door_verdict(&reg, &req("C:/next"), 2_000, &inputs, used, false),
             Door::Queue(QueueWhy::BudgetFull)
         );
-        let snap = build_snapshot_with(&reg, &[], 2_000, &inputs, used, None);
+        let snap = build_snapshot_with(&reg, &[], 2_000, &inputs, used, None, false);
         assert_eq!(
             (snap.budgets.machine_used, snap.budgets.machine_budget),
             (5, 3)
@@ -3259,7 +3551,7 @@ mod tests {
         );
         let used = measured.used(&reg);
         assert_eq!(
-            door_verdict(&reg, &exclusive, 1_000, &inputs, used),
+            door_verdict(&reg, &exclusive, 1_000, &inputs, used, false),
             Door::Start { passed: vec![] }
         );
         reg.insert(live_charged("x", &exclusive));
@@ -3267,7 +3559,7 @@ mod tests {
         assert_eq!((used.machine, used.plan, used.gpu_held), (8, 8, true));
         // It owns the machine: three count slots are free and nothing fits.
         assert_eq!(
-            door_verdict(&reg, &req("C:/d"), 1_000, &inputs, used),
+            door_verdict(&reg, &req("C:/d"), 1_000, &inputs, used, false),
             Door::Queue(QueueWhy::BudgetFull)
         );
         // Not alone, the same job waits instead.
@@ -3275,7 +3567,7 @@ mod tests {
         busy.insert(live("a", S::Running));
         let used = BudgetLive::new().used(&busy);
         assert_eq!(
-            door_verdict(&busy, &exclusive, 1_000, &inputs, used),
+            door_verdict(&busy, &exclusive, 1_000, &inputs, used, false),
             Door::Queue(QueueWhy::BudgetFull)
         );
     }

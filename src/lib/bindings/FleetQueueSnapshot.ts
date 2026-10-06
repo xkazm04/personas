@@ -10,4 +10,12 @@ export type FleetQueueSnapshot = { cap: number, running: number, queued: number,
  * `max(0, running - cap)` — how far "start now" has pushed the fleet
  * past its own line.
  */
-overAdmitted: number, entries: Array<FleetQueueEntry>, budgets: FleetBudgets, };
+overAdmitted: number, entries: Array<FleetQueueEntry>, budgets: FleetBudgets, 
+/**
+ * `fleet.strict_queue_order` - on, a dispatch that could start now waits
+ * behind a queued row that could also start now. The dock's pre-flight
+ * readout (`fleet/monitor/grid/dockLanding.ts`) needs this: without it,
+ * "under the cap with rows waiting" reads as a possible backfill, which
+ * is wrong the moment the setting is on.
+ */
+strictOrder: boolean, };

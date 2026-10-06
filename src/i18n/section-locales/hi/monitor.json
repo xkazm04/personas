@@ -1039,5 +1039,6 @@
   "server_running_hint": "डेव सर्वर पोर्ट {port} पर चल रहा है",
   "server_external_hint": "पोर्ट {port} ऐसे सर्वर के पास है जिसे Personas ने शुरू नहीं किया",
   "server_host_guard": "यह सर्वर स्वयं Personas को सर्व कर रहा है",
-  "server_starting_hint": "डेव सर्वर पोर्ट {port} पर शुरू हो रहा है"
+  "server_starting_hint": "डेव सर्वर पोर्ट {port} पर शुरू हो रहा है",
+  "grid_dock_landing_tip_strict": "सख़्त कतार क्रम चालू है, इसलिए खाली स्लॉट होने पर भी यह लाइन नहीं लाँघ सकता। {count} पहले से इंतज़ार में हैं, और यह {position} स्थान पर अंत में लगेगा।"
 }

@@ -9,13 +9,19 @@ import { describe, expect, it } from 'vitest';
 import { dockLanding } from '../dockLanding';
 import type { FleetQueueSnapshot } from '@/lib/bindings/FleetQueueSnapshot';
 
-const snap = (cap: number, running: number, queued: number): FleetQueueSnapshot => ({
+const snap = (
+  cap: number,
+  running: number,
+  queued: number,
+  strictOrder = false,
+): FleetQueueSnapshot => ({
   cap,
   running,
   queued,
   overAdmitted: Math.max(0, running - cap),
   entries: [],
   budgets: {} as FleetQueueSnapshot['budgets'],
+  strictOrder,
 });
 
 describe('dockLanding', () => {
@@ -47,5 +53,27 @@ describe('dockLanding', () => {
 
   it('treats a cap of zero as full rather than as room by arithmetic accident', () => {
     expect(dockLanding(snap(0, 0, 0))).toEqual({ kind: 'wait', position: 1, cap: 0 });
+  });
+
+  it('stops naming a backfill once strict queue order is on', () => {
+    // The same snapshot that reads "ahead of 3" with the setting off. With it
+    // on the door defers behind a row that could start now, so "ahead" would
+    // be the permissive answer to a question the door now answers the other
+    // way - the one claim this module promised never to make.
+    expect(dockLanding(snap(10, 2, 3, true))).toEqual({
+      kind: 'strict',
+      position: 4,
+      waiting: 3,
+    });
+  });
+
+  it('still reports room under strict order when nothing is waiting', () => {
+    // Strict order only ever narrows `ahead` into a wait. With an empty queue
+    // there is no turn to wait for and the door starts the dispatch.
+    expect(dockLanding(snap(10, 3, 0, true))).toEqual({ kind: 'room', running: 3, cap: 10 });
+  });
+
+  it('keeps the cap verdict ahead of the strict one, since the cap says more', () => {
+    expect(dockLanding(snap(4, 4, 4, true))).toEqual({ kind: 'wait', position: 5, cap: 4 });
   });
 });

@@ -7483,7 +7483,8 @@
     "server_running_hint": "Server dev berjalan di port {port}",
     "server_external_hint": "Port {port} dipegang oleh server yang tidak dijalankan Personas",
     "server_host_guard": "Server ini sedang melayani Personas sendiri",
-    "server_starting_hint": "Server dev dimulai di port {port}"
+    "server_starting_hint": "Server dev dimulai di port {port}",
+    "grid_dock_landing_tip_strict": "Urutan antrean ketat sedang aktif, jadi slot kosong tidak membuat yang ini menyerobot barisan. Sudah ada {count} yang menunggu, dan yang ini masuk di akhir pada posisi {position}."
   },
   "onboarding": {
     "adopt_button": "Siapkan agen",
@@ -16703,7 +16704,9 @@
       "fleet_concurrency_aria": "Maksimum sesi armada paralel",
       "fleet_concurrency_hint": "Sesi Claude Code yang boleh berjalan bersamaan, dari semua pengirim. Melewati garis ini pengiriman diterima sebagai mengantre dan mulai sendiri saat slot kosong. Stepper di header papan Aktivitas menulis pengaturan yang sama.",
       "dynamic_budgets_hint": "Izinkan proses armada berjalan berdasarkan anggaran mesin, GPU, dan paket secara langsung menggunakan profil sumber daya setiap mandat. Matikan untuk kembali ke batas sesi tetap di atas.",
-      "dynamic_budgets_label": "Anggaran armada dinamis"
+      "dynamic_budgets_label": "Anggaran armada dinamis",
+      "strict_queue_order_hint": "Buat setiap pengiriman menunggu gilirannya: proses baru mengantre di belakang proses mana pun yang sedang menunggu dan sudah siap jalan, bahkan saat armada punya slot kosong. Biayanya nyata. Slot itu bisa menganggur sampai putaran promosi berikutnya, dan proses yang baru saja Anda kirim mungkin tidak jalan meski armada terlihat kosong. Tidak pernah ada tunggu di belakang proses yang tertahan anggaran atau waktu mulainya sendiri.",
+      "strict_queue_order_label": "Urutan antrean ketat"
     },
     "notifications": {
       "digest_description": "Notifikasi mingguan merangkum masalah kesehatan di semua agen dengan skor kesehatan total",

@@ -1033,6 +1033,7 @@
     "grid_dock_landing_tip_room": "{running} of {cap} slots are in use and nothing is waiting.",
     "grid_dock_landing_tip_ahead": "{count} waiting, and the fleet is under its cap, so the door can start this one ahead of them. It counts that as a skip against every row it passes, and a row that has waited too long stops it.",
     "grid_dock_landing_tip_wait": "Every one of the {cap} slots is in use, so this joins the end of the queue at position {position}.",
+    "grid_dock_landing_tip_strict": "Strict queue order is on, so a free slot does not let this one jump the line. {count} are already waiting, and this joins the end at position {position}.",
     "grid_dock_landing_tip_unknown": "The queue has not been read yet.",
     "grid_dock_landing_caveat": "A reading of the last queue snapshot, not a promise. A budget hold can still make this wait.",
     "grid_dock_athena_label": "Hand this run to Athena",
@@ -13397,7 +13398,9 @@
       "fleet_concurrency_aria": "Maximum parallel fleet sessions",
       "fleet_concurrency_hint": "Claude Code sessions that may run at once, across every dispatcher. Past this line a dispatch is admitted as queued and starts on its own when a slot frees. The Activity board’s header stepper writes the same setting.",
       "dynamic_budgets_label": "Dynamic fleet budgets",
-      "dynamic_budgets_hint": "Admit fleet runs against live machine, GPU and plan budgets using each charter's resource profile. Turn off to fall back to the fixed session cap above."
+      "dynamic_budgets_hint": "Admit fleet runs against live machine, GPU and plan budgets using each charter's resource profile. Turn off to fall back to the fixed session cap above.",
+      "strict_queue_order_label": "Strict queue order",
+      "strict_queue_order_hint": "Make every dispatch wait its turn: a new run queues behind any waiting run that is ready to start, even when the fleet has a free slot. The cost is real. That slot can sit idle until the next promotion pass, and a run you just fired may not start although the fleet looks free. Runs held by a budget or by their own start time are never waited on."
     },
     "recent_change": {
       "label": "Last {action}: {when}",

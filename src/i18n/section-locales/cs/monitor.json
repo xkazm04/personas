@@ -1039,5 +1039,6 @@
   "server_running_hint": "Vývojový server běží na portu {port}",
   "server_external_hint": "Port {port} drží server, který Personas nespustil",
   "server_host_guard": "Tento server obsluhuje samotné Personas",
-  "server_starting_hint": "Vývojový server se spouští na portu {port}"
+  "server_starting_hint": "Vývojový server se spouští na portu {port}",
+  "grid_dock_landing_tip_strict": "Přísné pořadí fronty je zapnuté, takže volný slot tomuto běhu nedovolí předběhnout řadu. Už čeká {count} a tento se zařadí na konec na pozici {position}."
 }

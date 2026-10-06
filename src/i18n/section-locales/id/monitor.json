@@ -1039,5 +1039,6 @@
   "server_running_hint": "Server dev berjalan di port {port}",
   "server_external_hint": "Port {port} dipegang oleh server yang tidak dijalankan Personas",
   "server_host_guard": "Server ini sedang melayani Personas sendiri",
-  "server_starting_hint": "Server dev dimulai di port {port}"
+  "server_starting_hint": "Server dev dimulai di port {port}",
+  "grid_dock_landing_tip_strict": "Urutan antrean ketat sedang aktif, jadi slot kosong tidak membuat yang ini menyerobot barisan. Sudah ada {count} yang menunggu, dan yang ini masuk di akhir pada posisi {position}."
 }

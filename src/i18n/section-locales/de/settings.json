@@ -645,7 +645,9 @@
     "fleet_concurrency_aria": "Maximale parallele Flottensitzungen",
     "fleet_concurrency_hint": "Wie viele Claude-Code-Sitzungen gleichzeitig laufen dürfen, über alle Auslöser hinweg. Über dieser Linie wird ein Auftrag als wartend aufgenommen und startet von selbst, sobald ein Slot frei wird. Der Stepper in der Kopfzeile des Aktivitäts-Boards schreibt dieselbe Einstellung.",
     "dynamic_budgets_hint": "Lässt Flotten-Läufe anhand der aktuellen Maschinen-, GPU- und Plan-Budgets zu, basierend auf dem Ressourcenprofil jedes Mandats. Deaktivieren, um auf die feste Sitzungsobergrenze oben zurückzufallen.",
-    "dynamic_budgets_label": "Dynamische Flotten-Budgets"
+    "dynamic_budgets_label": "Dynamische Flotten-Budgets",
+    "strict_queue_order_hint": "Jeder Start wartet, bis er an der Reihe ist: Ein neuer Lauf stellt sich hinter jeden wartenden Lauf, der startbereit ist, selbst wenn die Flotte einen freien Platz hat. Der Preis dafür ist real. Dieser Platz kann bis zum nächsten Beförderungsdurchlauf ungenutzt bleiben, und ein gerade abgeschickter Lauf startet womöglich nicht, obwohl die Flotte frei wirkt. Hinter einem Lauf, den ein Budget oder seine eigene Startzeit zurückhält, wird nie gewartet.",
+    "strict_queue_order_label": "Strenge Warteschlangenreihenfolge"
   },
   "notifications": {
     "digest_description": "Wöchentliche Benachrichtigung mit Zusammenfassung der Zustandsprobleme aller Agenten und Gesamt-Zustandsbewertung",

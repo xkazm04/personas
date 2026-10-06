@@ -1039,5 +1039,6 @@
   "server_running_hint": "Servidor de desarrollo en ejecución en el puerto {port}",
   "server_external_hint": "El puerto {port} está ocupado por un servidor que Personas no inició",
   "server_host_guard": "Este servidor está sirviendo a Personas mismo",
-  "server_starting_hint": "Servidor de desarrollo iniciando en el puerto {port}"
+  "server_starting_hint": "Servidor de desarrollo iniciando en el puerto {port}",
+  "grid_dock_landing_tip_strict": "El orden estricto de la cola está activado, así que un hueco libre no permite que esta se salte la fila. Ya hay {count} esperando, y esta se coloca al final en la posición {position}."
 }

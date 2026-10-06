@@ -1039,5 +1039,6 @@
   "server_running_hint": "開発サーバーはポート {port} で実行中",
   "server_external_hint": "ポート {port} はPersonasが起動していないサーバーが使用中です",
   "server_host_guard": "このサーバーはPersonas自体を提供しています",
-  "server_starting_hint": "開発サーバーをポート {port} で起動中"
+  "server_starting_hint": "開発サーバーをポート {port} で起動中",
+  "grid_dock_landing_tip_strict": "厳密なキュー順が有効なため、空きスロットがあってもこれは列を飛び越えません。すでに {count} 件が待機しており、これは末尾の {position} 番目に入ります。"
 }

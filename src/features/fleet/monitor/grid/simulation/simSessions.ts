@@ -212,6 +212,9 @@ export function buildSimQueueSnapshot(sessions: readonly FleetSession[], now = D
     queued: entries.length,
     overAdmitted: Math.max(0, running - SIM_QUEUE_CAP),
     entries,
+    // The rehearsal fleet runs the door's DEFAULT: strict queue order off, so
+    // the simulation keeps showing the backfill the live door does today.
+    strictOrder: false,
     // Neutral budgets - what the door reports when nothing is charged or held:
     // one machine unit and two plan units per count slot, pace factor 1.
     budgets: {

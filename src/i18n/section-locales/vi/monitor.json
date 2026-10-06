@@ -1039,5 +1039,6 @@
   "server_running_hint": "Máy chủ dev đang chạy trên cổng {port}",
   "server_external_hint": "Cổng {port} đang bị một máy chủ không do Personas khởi động chiếm giữ",
   "server_host_guard": "Máy chủ này đang phục vụ chính Personas",
-  "server_starting_hint": "Máy chủ dev đang khởi động trên cổng {port}"
+  "server_starting_hint": "Máy chủ dev đang khởi động trên cổng {port}",
+  "grid_dock_landing_tip_strict": "Thứ tự hàng đợi nghiêm ngặt đang bật, nên một chỗ trống cũng không cho lượt này chen hàng. Đã có {count} đang chờ, và lượt này vào cuối ở vị trí {position}."
 }

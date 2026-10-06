@@ -645,7 +645,9 @@
     "fleet_concurrency_aria": "舰队并行会话上限",
     "fleet_concurrency_hint": "所有派发者合计可同时运行的 Claude Code 会话数。超过这条线，派发会以排队状态被接纳，并在槽位空出后自动启动。活动看板标题栏的步进器写入的是同一设置。",
     "dynamic_budgets_hint": "根据每个职责的资源配置，按实时机器、GPU 和套餐预算放行舰队运行。关闭后将回退到上方的固定会话上限。",
-    "dynamic_budgets_label": "动态舰队预算"
+    "dynamic_budgets_label": "动态舰队预算",
+    "strict_queue_order_hint": "让每次派发都等到自己的轮次：新任务会排在任何已准备好启动的等待任务之后，即使机群还有空闲槽位。代价是实实在在的。该槽位可能一直空置到下一轮提升，你刚发出的任务也可能不会启动，尽管机群看起来很空。被预算或自身启动时间挡住的任务，永远不会被排在前面等待。",
+    "strict_queue_order_label": "严格队列顺序"
   },
   "notifications": {
     "digest_description": "每周通知，汇总所有智能体的健康问题及总体健康评分",

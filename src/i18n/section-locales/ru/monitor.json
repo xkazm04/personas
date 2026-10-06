@@ -1039,5 +1039,6 @@
   "server_running_hint": "Dev-сервер работает на порту {port}",
   "server_external_hint": "Порт {port} занят сервером, который запустил не Personas",
   "server_host_guard": "Этот сервер обслуживает сам Personas",
-  "server_starting_hint": "Dev-сервер запускается на порту {port}"
+  "server_starting_hint": "Dev-сервер запускается на порту {port}",
+  "grid_dock_landing_tip_strict": "Строгий порядок очереди включён, поэтому свободный слот не позволит этому запуску пройти без очереди. Уже ждут {count}, и этот встанет в конец на позицию {position}."
 }

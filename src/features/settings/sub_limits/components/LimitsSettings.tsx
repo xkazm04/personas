@@ -53,6 +53,14 @@ const ROSTER_DEFAULT = 10;
 const DYNAMIC_BUDGETS_KEY = 'fleet.dynamic_budgets';
 const DYNAMIC_BUDGETS_DEFAULT = true;
 
+// Admission ORDER, not a budget (`fleet.strict_queue_order`, settings_keys.rs
+// `FLEET_STRICT_QUEUE_ORDER`, default false). On, the door defers a dispatch
+// that could start now behind a queued row that could also start now. It never
+// defers behind a gated or budget-held row, so a free slot is not idled behind
+// a clock. Promotion is untouched; this is the door only.
+const STRICT_QUEUE_ORDER_KEY = 'fleet.strict_queue_order';
+const STRICT_QUEUE_ORDER_DEFAULT = false;
+
 function isBoolSetting(value: string): boolean {
   return value === 'true' || value === 'false';
 }
@@ -84,6 +92,45 @@ function DynamicBudgetsRow() {
         <div className="typo-body text-foreground">{s.dynamic_budgets_label}</div>
         <p className="typo-caption text-foreground">{s.dynamic_budgets_hint}</p>
         {setting.error && <span className="typo-caption text-red-400">{setting.error}</span>}
+      </div>
+    </div>
+  );
+}
+
+/** The "Strict queue order" row. Same shape as the kill switch above it: a
+ *  toggle is its own commit, so it writes directly rather than through the
+ *  hook's Set-button `save`. */
+function StrictQueueOrderRow() {
+  const { t } = useTranslation();
+  const s = t.settings.limits;
+  const setting = useAppSetting(
+    STRICT_QUEUE_ORDER_KEY,
+    String(STRICT_QUEUE_ORDER_DEFAULT),
+    isBoolSetting,
+  );
+  const on = setting.value === 'true';
+  return (
+    <div
+      className="flex items-start gap-3 border-t border-border/60 pt-3"
+      data-testid="fleet-strict-queue-order-row"
+    >
+      <AccessibleToggle
+        checked={on}
+        onChange={() => {
+          const next = on ? 'false' : 'true';
+          setAppSetting(STRICT_QUEUE_ORDER_KEY, next)
+            .then(() => setting.setValue(next))
+            .catch(toastCatch('settings/LimitsSettings:strictQueueOrder', s.strict_queue_order_label));
+        }}
+        label={s.strict_queue_order_label}
+        size="sm"
+        disabled={!setting.loaded}
+        data-testid="fleet-strict-queue-order-toggle"
+      />
+      <div className="min-w-0">
+        <div className="typo-body text-foreground">{s.strict_queue_order_label}</div>
+        <p className="typo-caption text-foreground">{s.strict_queue_order_hint}</p>
+        {setting.error && <span className="typo-caption text-status-error">{setting.error}</span>}
       </div>
     </div>
   );
@@ -235,6 +282,7 @@ export default function LimitsSettings() {
             <p className="typo-caption text-foreground">{s.fleet_concurrency_hint}</p>
           </div>
           <DynamicBudgetsRow />
+          <StrictQueueOrderRow />
         </div>
       ),
     },

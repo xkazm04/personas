@@ -796,6 +796,20 @@ pub const FLEET_QUEUED_EXPIRY_MS_MAX: u32 = 2_592_000_000;
 pub const FLEET_DYNAMIC_BUDGETS: &str = "fleet.dynamic_budgets";
 /// Default for [`FLEET_DYNAMIC_BUDGETS`] - on.
 pub const FLEET_DYNAMIC_BUDGETS_DEFAULT: bool = true;
+/// Whether a dispatch that could start right now must instead WAIT behind a
+/// queued row that could also start right now. Off by default, which is the
+/// door's historical behaviour: under the count cap the door starts the
+/// arrival immediately and calls it a backfill past the waiting line. On, the
+/// arrival is queued at the tail and the waiting row is promoted first.
+///
+/// It defers only behind a row that is ELIGIBLE NOW - never behind one whose
+/// own `not_before_ms` is still ahead, and never behind one a budget holds -
+/// so a free slot is never idled behind a clock. ADMISSION only;
+/// `promote_head` already runs in rank order and is untouched. Read by
+/// `commands::fleet::queue`. Stored `"true"`/`"false"`.
+pub const FLEET_STRICT_QUEUE_ORDER: &str = "fleet.strict_queue_order";
+/// Default for [`FLEET_STRICT_QUEUE_ORDER`] - off (today's behaviour).
+pub const FLEET_STRICT_QUEUE_ORDER_DEFAULT: bool = false;
 /// Design D — whether the deliberation tick may, unattended, advance an open
 /// team deliberation (a moderated multi-persona conversation that produces work
 /// feeding the deterministic engine). The Haiku moderator picks the key
@@ -1430,6 +1444,7 @@ const ALLOWED_KEYS: &[&str] = &[
     FLEET_MAX_QUEUED_SESSIONS,
     FLEET_QUEUED_EXPIRY_MS,
     FLEET_DYNAMIC_BUDGETS,
+    FLEET_STRICT_QUEUE_ORDER,
     COMPANION_DAILY_ROLLUP,
     COMPANION_DAILY_ROLLUP_HOUR,
     COMPANION_DAILY_ROLLUP_LAST,
@@ -1801,6 +1816,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | AUTONOMOUS_ATTENTION_LOOP
         | FLEET_AUTOPILOT_PACING
         | FLEET_DYNAMIC_BUDGETS
+        | FLEET_STRICT_QUEUE_ORDER
         | COMPANION_DAILY_ROLLUP
         | COMPANION_NIGHT_SHIFT
         | COMPANION_PROFILE_SYNTHESIS
@@ -2180,6 +2196,7 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | FLEET_MAX_QUEUED_SESSIONS
         | FLEET_QUEUED_EXPIRY_MS
         | FLEET_DYNAMIC_BUDGETS
+        | FLEET_STRICT_QUEUE_ORDER
         | EVENT_RETENTION_MAX_COUNT => "limits",
         // Data-retention windows.
         EVENT_RETENTION_DAYS | EXECUTION_RETENTION_DAYS => "retention",
@@ -2710,6 +2727,12 @@ mod tests {
         assert!(validate_key(FLEET_DYNAMIC_BUDGETS).is_ok());
         assert!(validate_value(FLEET_DYNAMIC_BUDGETS, "false").is_ok());
         assert!(validate_value(FLEET_DYNAMIC_BUDGETS, "off").is_err());
+        assert!(validate_key(FLEET_STRICT_QUEUE_ORDER).is_ok());
+        assert!(validate_value(FLEET_STRICT_QUEUE_ORDER, "true").is_ok());
+        assert!(validate_value(FLEET_STRICT_QUEUE_ORDER, "false").is_ok());
+        assert!(validate_value(FLEET_STRICT_QUEUE_ORDER, "strict").is_err());
+        assert_eq!(audit_category(FLEET_STRICT_QUEUE_ORDER), Some("limits"));
+        assert!(!FLEET_STRICT_QUEUE_ORDER_DEFAULT, "strict order is opt-in");
         assert!(validate_value(FLEET_AUTOPILOT_MAX_PARALLEL, "1").is_ok());
         assert!(validate_value(FLEET_AUTOPILOT_MAX_PARALLEL, "10").is_ok());
         assert!(validate_value(FLEET_AUTOPILOT_MAX_PARALLEL, "0").is_err());

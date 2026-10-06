@@ -1039,5 +1039,6 @@
   "server_running_hint": "Serveur de développement actif sur le port {port}",
   "server_external_hint": "Le port {port} est occupé par un serveur que Personas n'a pas démarré",
   "server_host_guard": "Ce serveur sert Personas lui-même",
-  "server_starting_hint": "Démarrage du serveur de développement sur le port {port}"
+  "server_starting_hint": "Démarrage du serveur de développement sur le port {port}",
+  "grid_dock_landing_tip_strict": "L'ordre strict de la file est activé : un créneau libre ne permet donc pas à celle-ci de doubler. {count} attendent déjà, et celle-ci se place à la fin en position {position}."
 }

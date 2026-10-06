@@ -645,7 +645,9 @@
     "fleet_concurrency_aria": "Máximo de sesiones de flota en paralelo",
     "fleet_concurrency_hint": "Sesiones de Claude Code que pueden ejecutarse a la vez, desde cualquier despachador. Por encima de esta línea un despacho se admite en cola y arranca solo cuando se libera una plaza. El control del encabezado del tablero de Actividad escribe el mismo ajuste.",
     "dynamic_budgets_hint": "Admite ejecuciones de flota según los presupuestos en vivo de máquina, GPU y plan usando el perfil de recursos de cada mandato. Desactive para volver al límite de sesión fijo indicado arriba.",
-    "dynamic_budgets_label": "Presupuestos dinámicos de flota"
+    "dynamic_budgets_label": "Presupuestos dinámicos de flota",
+    "strict_queue_order_hint": "Haz que cada envío espere su turno: una ejecución nueva se pone detrás de cualquier ejecución en espera que ya esté lista para arrancar, incluso si la flota tiene un hueco libre. El coste es real. Ese hueco puede quedarse inactivo hasta la siguiente ronda de promoción, y una ejecución que acabas de lanzar puede no arrancar aunque la flota parezca libre. Nunca se espera detrás de una ejecución retenida por un presupuesto o por su propia hora de inicio.",
+    "strict_queue_order_label": "Orden estricto de la cola"
   },
   "notifications": {
     "digest_description": "Notificación semanal que resume problemas de salud de todos los agentes con una puntuación de salud total",

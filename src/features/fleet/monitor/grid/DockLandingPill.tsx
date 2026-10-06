@@ -37,6 +37,14 @@ export function DockLandingPill({ landing }: { landing: DockLanding }) {
           label: tx(m.grid_dock_landing_ahead, { count: landing.waiting }),
           tip: tx(m.grid_dock_landing_tip_ahead, { count: landing.waiting }),
         };
+      case 'strict':
+        return {
+          label: tx(m.grid_dock_landing_wait, { position: landing.position }),
+          tip: tx(m.grid_dock_landing_tip_strict, {
+            count: landing.waiting,
+            position: landing.position,
+          }),
+        };
       case 'wait':
         return {
           label: tx(m.grid_dock_landing_wait, { position: landing.position }),
