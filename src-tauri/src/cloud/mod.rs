@@ -1,3 +1,4 @@
+pub(crate) mod athena_send;
 pub mod client;
 pub mod config;
 pub mod pairing;
