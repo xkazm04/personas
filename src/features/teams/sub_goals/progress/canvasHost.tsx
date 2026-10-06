@@ -10,10 +10,10 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 
 import type { DevLifecycleT } from '../progressShared';
 import { MilestoneNameModal } from './MilestoneNameModal';
-import type { GoalBinding, MilestoneLane } from './milestoneOps';
+import type { MilestoneLane } from './milestoneOps';
 import { useGoalDrag, useLaneDrop, type GoalDragState, type LaneDrop } from './rowCanvas';
 import { useCanvasMenu, type CanvasTarget } from './useCanvasMenu';
-import { useProgressCanvas, type BindingSnapshot } from './useProgressCanvas';
+import { useProgressCanvas } from './useProgressCanvas';
 import type { ProgressModel } from './useProgressModel';
 
 export interface CanvasHost {
@@ -27,10 +27,6 @@ export interface CanvasHost {
   /** Open the context menu. Wire through `useMenuKey` for keyboard parity. */
   openMenu: (e: React.MouseEvent, target: CanvasTarget) => void;
   bindGoal: (goalId: string, milestoneId: string | null) => void;
-  /** Batch re-bind and its undo. See `useProgressCanvas`. */
-  bindingsOf: (goalId: string) => GoalBinding[];
-  bindGoals: (goalIds: readonly string[], milestoneId: string | null) => Promise<boolean>;
-  restoreBindings: (snapshots: readonly BindingSnapshot[]) => Promise<boolean>;
   deleteMilestone: (milestoneId: string) => void;
   startCreateMilestone: (projectId: string) => void;
 }
@@ -112,9 +108,6 @@ export function useCanvasHost(opts: {
       drop,
       openMenu,
       bindGoal: onBind,
-      bindingsOf: canvas.bindingsOf,
-      bindGoals: canvas.bindGoals,
-      restoreBindings: canvas.restoreBindings,
       deleteMilestone: canvas.deleteMilestone,
       startCreateMilestone: setPendingProject,
     }),

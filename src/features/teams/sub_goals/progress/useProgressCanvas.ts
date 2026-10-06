@@ -20,16 +20,8 @@ import {
   lanesFor,
   moveGoalToMilestone,
   removeMilestone,
-  restoreGoalBindings,
-  type GoalBinding,
   type MilestoneLane,
 } from './milestoneOps';
-
-/** A goal's memberships at one moment - what an undo restores. */
-export interface BindingSnapshot {
-  goalId: string;
-  bindings: GoalBinding[];
-}
 
 /** How many projects' member-lists are shaped at once. */
 const PROJECT_FANOUT = 4;
@@ -45,15 +37,6 @@ export interface ProgressCanvas {
   deleteMilestone: (milestoneId: string) => void;
   /** `to === null` unbinds the goal from every milestone it is in. */
   bindGoal: (goalId: string, to: string | null) => void;
-  /** Every membership row a goal has right now, for a later restore. */
-  bindingsOf: (goalId: string) => GoalBinding[];
-  /**
-   * Re-bind several goals as ONE mutation (one busy span, one re-read).
-   * Resolves `true` once the writes landed, `false` if one failed (toasted).
-   */
-  bindGoals: (goalIds: readonly string[], to: string | null) => Promise<boolean>;
-  /** Put goals back to snapshots taken by `bindingsOf`. Same contract. */
-  restoreBindings: (snapshots: readonly BindingSnapshot[]) => Promise<boolean>;
   reload: () => void;
 }
 
@@ -111,37 +94,14 @@ export function useProgressCanvas(projectIds: readonly string[]): ProgressCanvas
    * what the backend just did.
    */
   const run = useCallback(
-    (context: string, op: () => Promise<unknown>): Promise<boolean> => {
+    (context: string, op: () => Promise<unknown>) => {
       setBusy(true);
-      return op()
-        .then(() => {
-          load();
-          return true;
-        })
-        .catch((err: unknown) => {
-          toastCatch(context)(err);
-          // A failed batch may have landed part-way; re-read so the canvas
-          // shows what the backend actually holds.
-          load();
-          return false;
-        })
+      void op()
+        .then(load)
+        .catch(toastCatch(context))
         .finally(() => setBusy(false));
     },
     [load],
-  );
-
-  const bindingsOf = useCallback(
-    (goalId: string) => {
-      const out: GoalBinding[] = [];
-      for (const lanes of lanesByProject?.values() ?? []) {
-        for (const lane of lanes) {
-          const b = lane.members.get(goalId);
-          if (b) out.push(b);
-        }
-      }
-      return out;
-    },
-    [lanesByProject],
   );
 
   return {
@@ -152,13 +112,13 @@ export function useProgressCanvas(projectIds: readonly string[]): ProgressCanvas
       (projectId: string, name: string) => {
         const trimmed = name.trim();
         if (!trimmed) return;
-        void run('GoalsProgress.createMilestone', () => addMilestone(projectId, trimmed));
+        run('GoalsProgress.createMilestone', () => addMilestone(projectId, trimmed));
       },
       [run],
     ),
     deleteMilestone: useCallback(
       (milestoneId: string) => {
-        void run('GoalsProgress.deleteMilestone', () => removeMilestone(milestoneId));
+        run('GoalsProgress.deleteMilestone', () => removeMilestone(milestoneId));
       },
       [run],
     ),
@@ -167,30 +127,8 @@ export function useProgressCanvas(projectIds: readonly string[]): ProgressCanvas
         const from = lanesOfGoal(goalId);
         if (from.length === 0 && to === null) return;
         if (from.length === 1 && from[0] === to) return;
-        void run('GoalsProgress.bindGoal', () => moveGoalToMilestone(goalId, from, to));
+        run('GoalsProgress.bindGoal', () => moveGoalToMilestone(goalId, from, to));
       },
-      [run, lanesOfGoal],
-    ),
-    bindingsOf,
-    bindGoals: useCallback(
-      (goalIds: readonly string[], to: string | null) => {
-        const moves = goalIds
-          .map((id) => ({ id, from: lanesOfGoal(id) }))
-          .filter(({ from }) => !(from.length === 0 && to === null) && !(from.length === 1 && from[0] === to));
-        if (moves.length === 0) return Promise.resolve(true);
-        // Sequential on purpose: each move is a remove plus an upsert, and a
-        // parallel fan-out over one milestone's member table buys nothing.
-        return run('GoalsProgress.bindGoals', async () => {
-          for (const m of moves) await moveGoalToMilestone(m.id, m.from, to);
-        });
-      },
-      [run, lanesOfGoal],
-    ),
-    restoreBindings: useCallback(
-      (snapshots: readonly BindingSnapshot[]) =>
-        run('GoalsProgress.restoreBindings', async () => {
-          for (const s of snapshots) await restoreGoalBindings(s.goalId, lanesOfGoal(s.goalId), s.bindings);
-        }),
       [run, lanesOfGoal],
     ),
     reload: load,

@@ -9,7 +9,7 @@
  * parallel idea of what a milestone is. The write path is `progress/milestoneOps`
  * and nothing else in the module calls the milestone API.
  *
- * The layouts read the same model (`progress/useProgressModel`) and the same
+ * Three layouts read the same model (`progress/useProgressModel`) and the same
  * canvas (`progress/canvasHost`), behind a dev-only switcher:
  *
  *   FILMSTRIP  the current view. Chronology is the spine; a milestone is a chip
@@ -21,9 +21,6 @@
  *   LEDGER     one dense `UnifiedTable` row per goal grouped by project, the cut
  *              as a sortable column. Best for working the backlog; shows you
  *              rows rather than shape.
- *   BUSBAR     the goals-filmstrip-r2 contest winner: each milestone a rail,
- *              goals wired onto it, one project open as a sheet and the rest
- *              as compact bus strips, driven by a key grammar.
  *
  * The switcher is declared as a named constant rather than an
  * `import.meta.env.DEV` test inside the JSX, and its state is session-scoped:
@@ -42,7 +39,6 @@ import { ProgressViewProvider, useCanvasHost } from './progress/canvasHost';
 import { useProgressModel, type DoneFilter } from './progress/useProgressModel';
 import { FilmstripCanvas } from './progress/variants/FilmstripCanvas';
 import { LedgerCanvas } from './progress/variants/LedgerCanvas';
-import { BusbarCanvas } from './progress/variants/busbar/BusbarCanvas';
 
 const LEFT_W = 200;
 
@@ -50,7 +46,7 @@ const LEFT_W = 200;
  *  be enumerated or reviewed; a named constant can be grepped. */
 const SHOW_VARIANT_SWITCHER = import.meta.env.DEV;
 
-type ProgressVariant = 'filmstrip' | 'ledger' | 'busbar';
+type ProgressVariant = 'filmstrip' | 'ledger';
 
 /**
  * The switcher really does select among mutually exclusive regions, so it
@@ -69,9 +65,6 @@ const VARIANTS: Array<{ id: ProgressVariant; label: string }> = [
   // to keep green.
   { id: 'filmstrip', label: 'Filmstrip' },
   { id: 'ledger', label: 'Ledger' },
-  // The goals-filmstrip-r2 contest winner (B/3), ported 2026-10-06 as an
-  // ALTERNATIVE so the owner can judge whether its design survives the app.
-  { id: 'busbar', label: 'Busbar' },
 ];
 
 export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } = {}) {
@@ -141,12 +134,7 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
           no remounts. */}
       <div
         data-done-filter={model.doneFilter}
-        // Busbar pins its status line with `position: sticky`, which an
-        // `overflow: hidden` ancestor would capture; `clip` rounds the same
-        // corners without becoming a scroll container.
-        className={`group/strip relative rounded-modal border border-primary/10 bg-gradient-to-br from-card/60 to-card/20 ${
-          variant === 'busbar' ? 'overflow-clip' : 'overflow-hidden'
-        }`}
+        className="group/strip relative rounded-modal border border-primary/10 bg-gradient-to-br from-card/60 to-card/20 overflow-hidden"
       >
         {variant === 'filmstrip' && (
           <ChronologyHeader leftWidth={LEFT_W} label={tx(dl.progress_summary, { projects: model.rows.length, goals: model.shownGoals })} />
@@ -162,7 +150,6 @@ export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } =
           <div {...segmentedTabPanelProps(VARIANT_TABS_ID, variant)} role="tabpanel">
             {variant === 'filmstrip' && <FilmstripCanvas leftWidth={LEFT_W} />}
             {variant === 'ledger' && <LedgerCanvas />}
-            {variant === 'busbar' && <BusbarCanvas />}
           </div>
         </ProgressViewProvider>
 
