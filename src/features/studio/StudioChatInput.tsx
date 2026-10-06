@@ -23,41 +23,31 @@ import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { QUEUED_NOTES_MAX, useStudioStore } from './studioStore';
 import StudioBuildSettings from './StudioBuildSettings';
 import StudioMessages from './StudioMessages';
-import StudioPlanDrawer from './StudioPlanDrawer';
-import StudioQuickActions from './StudioQuickActions';
 import { phaseProgress } from './studioBuildModel';
 import { classifyMidTurnIntent } from '@/features/companions/athena/midTurnIntent';
 import { isStopOnly } from './studioSeed';
 
-// The Studio dock — Athena's conversation + input, docked bottom-center over the
-// immersive preview. Collapsed by default (latest message only) so the preview +
-// orb stay the star; expand for a readable, scrollable conversation panel. The
-// build plan is NOT in the dock: it opens as a right-edge drawer from the plan
-// button in the input row, so you can read the plan while you keep steering. The
-// dock re-centres itself into the space the drawer leaves.
+// The Studio dock — the input row and its tools, docked bottom-center over the
+// frame. Guide draws the latest message, the question and the next moves
+// itself; the chevron expands the full conversation above the row. A note
+// typed while Athena works is queued for her next step instead of refused. The
+// goals button shows or hides the goals rail beside the frame.
 
 export type StudioFrameView = 'plan' | 'app';
 
 export default function StudioChatInput({
-  variant = 'default',
-  onPlanClick,
+  goals,
   view,
 }: {
-  /** `guide`: the Guide layout draws the latest message, the question and the
-   *  next moves itself, so the dock is only the input row + tools; a note typed
-   *  while Athena works is queued for her next step instead of refused. */
-  variant?: 'default' | 'guide';
-  /** Guide: the plan button points at the goals rail instead of the drawer. */
-  onPlanClick?: () => void;
-  /** Guide: what the main frame shows, the plan sheet or the running app. The
-   *  App side waits for a live preview; without one there is nothing to show. */
+  /** The goals rail beside the frame: whether it shows, and the toggle. */
+  goals?: { open: boolean; onToggle: () => void };
+  /** What the main frame shows, the plan sheet or the running app. The App
+   *  side waits for a live preview; without one there is nothing to show. */
   view?: { showing: StudioFrameView; appReady: boolean; onChange: (v: StudioFrameView) => void };
 } = {}) {
-  const guide = variant === 'guide';
   const { t, tx } = useTranslation();
   const [input, setInput] = useState('');
   const [chatOpen, setChatOpen] = useState(false);
-  const [planOpen, setPlanOpen] = useState(false);
   // The step (by its start time) whose queue refused a note; the notice is
   // about that step only and is gone once the next one starts.
   const [queueFullTurn, setQueueFullTurn] = useState<number | null>(null);
@@ -107,7 +97,6 @@ export default function StudioChatInput({
     const text = input.trim();
     if (!text) return;
     if (working) {
-      if (!guide) return;
       // A bare stop word only stops: queued, it became the sole note of a new
       // turn told to carry on.
       if (isStopOnly(text)) {
@@ -150,21 +139,8 @@ export default function StudioChatInput({
 
   return (
     <>
-      <StudioPlanDrawer
-        open={planOpen}
-        onClose={() => setPlanOpen(false)}
-        phases={phases ?? []}
-        done={done}
-        total={total}
-        busy={busy}
-      />
-
-      {/* Dock — full-width row so the column stays centred in whatever space the
-          plan drawer leaves behind (pure padding transition, no transform fight). */}
-      <div
-        className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-8 transition-[padding] duration-300 ease-out"
-        style={planOpen ? { paddingRight: 'calc(min(22rem, 45%) + 2rem)' } : undefined}
-      >
+      {/* Dock — a full-width row so the column stays centred over the frame. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-8">
         <div
           className={`flex w-full flex-col gap-2 transition-[max-width] duration-200 ${
             chatOpen ? 'max-w-[46rem]' : 'max-w-[38rem]'
@@ -204,9 +180,6 @@ export default function StudioChatInput({
             )}
           </AnimatePresence>
 
-          {/* Collapsed — the latest message bubble (+ earlier-message reveal) */}
-          {!chatOpen && !guide && <StudioMessages />}
-
           {/* Stop found nothing to interrupt. Saying so is the whole point: the
               dock has just been released early, and without a line here that
               reads as the build having finished. */}
@@ -232,15 +205,13 @@ export default function StudioChatInput({
             {queueFull ? tx(guideStrings(t).notes_full, { max: QUEUED_NOTES_MAX }) : null}
           </p>
 
-          {!guide && !working && !question && !chatOpen && <StudioQuickActions id={activeId} />}
-
           {/* Input row */}
           <ChatInputBar
             value={input}
             onChange={setInput}
             onSubmit={send}
             placeholder={
-              guide && working
+              working
                 ? guideStrings(t).placeholder_queue
                 : question
                 ? tx(t.studio.answer_athena, { name })
@@ -248,8 +219,6 @@ export default function StudioChatInput({
                   ? tx(t.studio.building_autonomously, { name })
                   : tx(t.studio.tell_athena, { name })
             }
-            disabled={working && !guide}
-            busy={busy && !autonomous && !guide}
             boxShadow={stateShadow}
             inputTestId="studio-chat-input"
             sendLabel={t.common.send}
@@ -282,26 +251,21 @@ export default function StudioChatInput({
                 >
                   <ImageIcon className="h-4 w-4" />
                 </button>
-                {/* Build plan — the drawer's one entry point, sitting with the other
-                    input-row tools instead of floating above the dock. */}
+                {/* Goals — shows or hides the goals rail beside the frame, sitting
+                    with the other input-row tools instead of floating above the dock. */}
+                {goals && (
                 <button
                   type="button"
-                  onClick={() => (onPlanClick ? onPlanClick() : setPlanOpen((v) => !v))}
+                  onClick={goals.onToggle}
                   data-testid="studio-plan-button"
-                  // Guide: the button moves focus to the goals rail; it opens
-                  // nothing, so it names the goals and claims no expanded state.
                   aria-label={
-                    onPlanClick
-                      ? hasPlan
-                        ? `${guideStrings(t).goals} · ${tx(guideStrings(t).goals_progress, { done, total })}`
-                        : guideStrings(t).goals
-                      : hasPlan
-                        ? tx(t.studio.plan_progress, { done, total })
-                        : t.studio.build_plan
+                    hasPlan
+                      ? `${guideStrings(t).goals} · ${tx(guideStrings(t).goals_progress, { done, total })}`
+                      : guideStrings(t).goals
                   }
-                  aria-expanded={onPlanClick ? undefined : planOpen}
+                  aria-expanded={goals.open}
                   className={`relative flex h-8 shrink-0 items-center gap-1.5 rounded-full px-2 transition-colors ${
-                    planOpen
+                    goals.open
                       ? 'bg-secondary/70 text-primary'
                       : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary'
                   }`}
@@ -319,6 +283,7 @@ export default function StudioChatInput({
                     </span>
                   )}
                 </button>
+                )}
                 <StudioBuildSettings id={activeId} />
                 {busy ? (
                   <button

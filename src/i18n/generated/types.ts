@@ -24038,10 +24038,6 @@ export type Translations = {
     decompose_brief_no_brief: string;
   };
   studio: {
-    scaffolding: string;
-    starting: string;
-    start_error: string;
-    no_project_open: string;
     reload_preview: string;
     preview_path: string;
     preview_frame_title: string;
@@ -24088,10 +24084,6 @@ export type Translations = {
     your_call: string;
     press_to_pick: string;
     type_answer_below: string;
-    build_plan: string;
-    close_plan: string;
-    no_plan_yet: string;
-    plan_progress: string;
     open_or_create: string;
     new_project: string;
     add_existing_project: string;
@@ -24125,11 +24117,6 @@ export type Translations = {
     athena_is_working: string;
     decisions_waiting_other: string;
     athena_needs_you: string;
-    qa_plan_it_out: string;
-    qa_what_should_we_build: string;
-    qa_refine: string;
-    qa_build_phase: string;
-    qa_whats_next: string;
     setting_up: string;
     build_with_athena: string;
     vision_tagline: string;
@@ -24148,11 +24135,9 @@ export type Translations = {
     vision_dashboard: string;
     vision_blog: string;
     guide: {
-      layout_switch: string;
-      layout_guide: string;
-      layout_current: string;
       goals: string;
       goals_progress: string;
+      goals_hide: string;
       goals_drafting: string;
       goal_now: string;
       goal_done: string;

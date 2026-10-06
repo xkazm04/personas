@@ -1,8 +1,8 @@
 # Studio Guide: migrating the prototype into Personas
 
 Status: phase 1 in progress (2026-09-23). Owner decision: the **Guide** prototype won the Studio
-next-gen round ("I see the vision in 'Guide'"). It ships behind a **Current / Guide** layout switch
-inside Studio until it reaches parity and polish; then the current layout is descoped.
+next-gen round ("I see the vision in 'Guide'"). It shipped behind a **Current / Guide** layout switch;
+on 2026-10-06 the owner retired the current (Classic) layout and Guide is Studio's only layout.
 
 Source of the design: `.contest/prototype/studio-nextgen/v1/` (gitignored, static HTML) and its
 `NOTES.md`; the fused brief with the owner's review is `.contest/prototype/studio-nextgen/BRIEF.md`.
@@ -96,9 +96,16 @@ Connect real data with a file watch, try it on your phone (serve over the local 
 research findings as a card that becomes a goal, try three looks as three live branches, time per
 goal on the timeline, cold restart on a free port from a plain-words error card.
 
-## Descoping the current layout
+## Descoping the current layout (done 2026-10-06)
 
-When Guide covers every journey the current layout covers (vision, import, resume, versions,
-settings, autonomous, stop, multi-project) and the owner has lived with it: delete the switch, the
-current layout's orphaned components (`StudioPlanDrawer`, `StudioChecklistStepper`, `PlanGlyph`,
-`StudioQuickActions` if unused), their i18n keys and tests, in one change.
+Owner decision: remove Classic, keep Guide and its blueprint mode, and let the goals be hidden and
+shown from the dock. Removed in one change: the layout switch and `useStudioHistory.layout`,
+`StudioCurrentLayout`, `StudioPlanDrawer`, `StudioQuickActions`, the dock's `variant` (the dock is
+always what Guide's variant was), their i18n keys and the Classic dock test.
+
+Kept on purpose: the owner preferred the plan drawer's look to the goals rail's, so the rail now
+wears it - icon header with the count, a 2 px progress line, `StudioChecklistStepper` as the
+timeline, `PlanGlyph` as the no-plan state - while keeping the rail's own behaviour (draft goals
+from the sketch, ghost rows while she plans, add a goal on G). The dock's goals button shows or
+hides the rail (`useStudioHistory.goalsOpen`, kept per machine); its Plan | App switch pins the
+frame the way B does.

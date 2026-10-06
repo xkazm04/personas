@@ -25,7 +25,8 @@ import { useGuideKeys } from './useGuideKeys';
 // The Guide layout (the /prototype winner, docs/design/studio-guide.md):
 // a goals timeline on the left, the app being built in a full-focus frame, a
 // blueprint until the plan is approved, Athena's next moves as cards, her tools
-// around the orb, and today's Studio dock underneath. Everything runs on the
+// around the orb, and the Studio dock underneath (its goals button shows or
+// hides the rail, its Plan | App switch pins the frame). Everything runs on the
 // real build protocol; no step here is simulated.
 export default function GuideStudio({
   showVision,
@@ -52,6 +53,8 @@ export default function GuideStudio({
   const [dismissed, setDismissed] = useState<Set<string>>(() => new Set());
   const [blueprintPinned, setBlueprintPinned] = useState<boolean | null>(null);
   const readAloud = useGuideReadAloud();
+  const goalsOpen = useStudioHistory((s) => s.goalsOpen);
+  const setGoalsOpen = useStudioHistory((s) => s.setGoalsOpen);
 
   const id = rt?.id ?? null;
   const placeholder = rt ? isPlaceholderPlan(rt.phases) : true;
@@ -150,7 +153,11 @@ export default function GuideStudio({
     enabled: !!rt && !showVision && !drafting && !arcOpen,
     escapeEnabled: !showVision && !arcOpen,
     onTools: () => setArcOpen(true),
-    onAddGoal: () => railRef.current?.startAdding(),
+    // G opens a hidden rail as well: the field it focuses lives there.
+    onAddGoal: () => {
+      setGoalsOpen(true);
+      railRef.current?.startAdding();
+    },
     onToggleBlueprint: () => setBlueprintPinned((p) => !(p ?? showBlueprint)),
     onInspect: () => live && preview.startPickMode(),
     onEscape: () => {
@@ -169,6 +176,9 @@ export default function GuideStudio({
     <div className="flex min-h-0 w-full min-w-0 flex-1">
       <GuideGoalsRail
         ref={railRef}
+        open={goalsOpen}
+        onClose={() => setGoalsOpen(false)}
+        busy={!!rt?.busy}
         phases={rt?.phases ?? []}
         placeholder={placeholder || showVision || drafting}
         drafting={!showVision && !drafting && planning && !sketchSrc?.sketch}
@@ -303,8 +313,7 @@ export default function GuideStudio({
         )}
         {rt && !showVision && !drafting && (
           <StudioChatInput
-            variant="guide"
-            onPlanClick={() => railRef.current?.focusActive()}
+            goals={{ open: goalsOpen, onToggle: () => setGoalsOpen(!goalsOpen) }}
             // The dock's Plan | App switch pins the frame the same way B does.
             view={{ showing: showBlueprint ? 'plan' : 'app', appReady: live, onChange: (v) => setBlueprintPinned(v === 'plan') }}
           />

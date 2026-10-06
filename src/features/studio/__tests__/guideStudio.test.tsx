@@ -53,6 +53,7 @@ const mount = () => render(<GuideStudio showVision={false} submitting={false} on
 afterEach(() => {
   cleanup();
   useStudioStore.setState({ runtimes: {}, tabOrder: [], activeId: null, draft: null });
+  useStudioHistory.setState({ goalsOpen: true });
 });
 
 describe('Guide layout', () => {
@@ -199,6 +200,24 @@ describe('Guide layout', () => {
     expect(note).toContain('Gift cards');
     expect(note).toMatch(/goal/i);
     expect(note).toMatch(/BUILD_PLAN/);
+  });
+
+  it('a hidden goals rail stays hidden, and G brings it back with the goal field focused', () => {
+    useStudioHistory.setState({ goalsOpen: false });
+    seed({});
+    mount();
+    expect(screen.queryByTestId('studio-goals-rail')).toBeNull();
+    fireEvent.keyDown(window, { key: 'g' });
+    expect(screen.getByTestId('studio-goals-rail')).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByPlaceholderText('add_goal_placeholder'));
+    expect(useStudioHistory.getState().goalsOpen).toBe(true);
+  });
+
+  it('the rail header hides the goals', () => {
+    seed({});
+    mount();
+    fireEvent.click(screen.getByLabelText('goals_hide'));
+    expect(useStudioHistory.getState().goalsOpen).toBe(false);
   });
 
   it('asks the question on a large card with keyed options', () => {

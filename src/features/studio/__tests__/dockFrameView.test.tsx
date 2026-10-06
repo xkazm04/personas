@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
-// The dock's Plan | App switch: what Guide's main frame shows, the plan sheet
-// or the running app. It only appears where a layout hands it a view, and App
-// waits for a live preview.
+// The dock's Plan | App switch (what the main frame shows, the plan sheet or
+// the running app; App waits for a live preview) and its goals button, which
+// shows or hides the goals rail.
 
 vi.mock('@/i18n/useTranslation', () => ({
   useTranslation: () => ({
@@ -14,9 +14,7 @@ vi.mock('@/i18n/useTranslation', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: () => Promise.resolve(() => {}) }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: () => Promise.resolve(null) }));
 vi.mock('../StudioBuildSettings', () => ({ default: () => null }));
-vi.mock('../StudioPlanDrawer', () => ({ default: () => null }));
 vi.mock('../StudioMessages', () => ({ default: () => null }));
-vi.mock('../StudioQuickActions', () => ({ default: () => null }));
 
 const { useStudioStore } = await import('../studioStore');
 const StudioChatInput = (await import('../StudioChatInput')).default;
@@ -39,16 +37,29 @@ afterEach(() => {
 });
 
 describe('dock frame view switch', () => {
-  it('is absent when the layout passes no view (Classic)', () => {
+  it('draws neither control when it is handed neither', () => {
     seed();
     render(<StudioChatInput />);
     expect(screen.queryByTestId('studio-view-plan')).toBeNull();
+    expect(screen.queryByTestId('studio-plan-button')).toBeNull();
+  });
+
+  it('the goals button reports the rail state and toggles it', () => {
+    seed();
+    const onToggle = vi.fn();
+    const { rerender } = render(<StudioChatInput goals={{ open: true, onToggle }} />);
+    const btn = screen.getByTestId('studio-plan-button');
+    expect(btn.getAttribute('aria-expanded')).toBe('true');
+    fireEvent.click(btn);
+    expect(onToggle).toHaveBeenCalledTimes(1);
+    rerender(<StudioChatInput goals={{ open: false, onToggle }} />);
+    expect(screen.getByTestId('studio-plan-button').getAttribute('aria-expanded')).toBe('false');
   });
 
   it('marks the shown side and reports a switch', () => {
     seed();
     const onChange = vi.fn();
-    render(<StudioChatInput variant="guide" view={{ showing: 'plan', appReady: true, onChange }} />);
+    render(<StudioChatInput view={{ showing: 'plan', appReady: true, onChange }} />);
     expect(screen.getByTestId('studio-view-plan').getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByTestId('studio-view-app').getAttribute('aria-pressed')).toBe('false');
     fireEvent.click(screen.getByTestId('studio-view-app'));
@@ -58,7 +69,7 @@ describe('dock frame view switch', () => {
   it('holds App back until the preview is live', () => {
     seed();
     const onChange = vi.fn();
-    render(<StudioChatInput variant="guide" view={{ showing: 'plan', appReady: false, onChange }} />);
+    render(<StudioChatInput view={{ showing: 'plan', appReady: false, onChange }} />);
     const app = screen.getByTestId('studio-view-app') as HTMLButtonElement;
     expect(app.disabled).toBe(true);
     fireEvent.click(app);
