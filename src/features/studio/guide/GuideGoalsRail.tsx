@@ -97,7 +97,7 @@ const GuideGoalsRail = forwardRef<
                 type="button"
                 onClick={onClose}
                 aria-label={g.goals_hide}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-foreground"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-foreground"
               >
                 <X className="h-4 w-4" />
               </button>

@@ -1,7 +1,7 @@
 // Pure model for the Guide layout: Athena's tools and the recommendation deck.
 // Every tool and every card is a REAL build turn with a purpose-built prompt;
 // nothing here is simulated. Prompts stay English on purpose (they are
-// instructions to the model, like StudioQuickActions); labels are translated at
+// instructions to the model, like every build-turn prompt); labels are translated at
 // render time from the ids.
 import type { BuildPhase } from '../studioBuildModel';
 import type { StudioActivity } from '../studioActivity';
