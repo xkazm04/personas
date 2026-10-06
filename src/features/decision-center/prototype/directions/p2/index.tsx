@@ -1,17 +1,17 @@
 /**
- * Prototype direction p2 — placeholder committed by WP0 so the Lab compiles.
- * The direction's builder replaces this file's Hub with the real one.
+ * Prototype direction P2 — "Deck & Ledger": the evolution of the app's own
+ * triage lineage. The modal is a card on a deck (TriageFocus's direction-aware
+ * spring slide, grown an origin morph and a leave-on-verdict), and every card
+ * of every type carries the same ledger rail (BacklogDetailLedger's margin
+ * rail, generalised) with the decision docked at its foot.
  */
-import type { HubProps, PrototypeDirection } from '../../directionContract';
-
-function Hub({ items }: HubProps) {
-  return <div className="p-6 typo-body text-foreground">{items.length}</div>;
-}
+import type { PrototypeDirection } from '../../directionContract';
+import { Hub } from './Hub';
 
 const direction: PrototypeDirection = {
   id: 'p2',
-  name: 'p2',
-  tagline: '',
+  name: 'Deck & Ledger',
+  tagline: 'Every decision is a card on a deck; every card has the same ledger rail, actions docked at its foot.',
   Hub,
 };
 
