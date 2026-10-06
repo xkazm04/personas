@@ -163,46 +163,182 @@ pub struct PendingCounts {
     pub ideas: u32,
     pub policy_proposals: u32,
     pub promotion_proposals: u32,
+    /// Open audit incidents: status `open` | `acknowledged` | `in_progress` -
+    /// every non-terminal `IncidentStatus` (only `resolved` and `dismissed`
+    /// are settled).
+    pub open_incidents: u32,
+    /// The subset of `open_incidents` at severity `critical` or `high`
+    /// (decision tier 1). A subset, so it is never added to a total.
+    pub blocking_incidents: u32,
+    /// Persona reports with `is_read = 0` - the reports repo's own unread count.
+    pub unread_reports: u32,
+    /// Athena companion approvals awaiting a human: exactly what
+    /// `companion_list_pending_approvals` returns (pending, inside the consent
+    /// freshness window, well-formed, capped at its list limit). Filled in by
+    /// the command layer, because the approvals live in the companion database.
+    pub companion_approvals: u32,
+    /// Council subjects a person can decide: derived state `ready` AND (tier
+    /// `major` OR kind `architecture`), the frontend's `decidable()` rule over
+    /// the council store's own `derive_council_state`.
+    pub council_decidable: u32,
+    /// `total` + open_incidents + unread_reports + companion_approvals +
+    /// council_decidable (blocking_incidents is a subset, not added). Build
+    /// questions and chat are added client-side.
+    pub decision_total: u32,
     /// The five above. The caller adds build questions on top.
     pub total: u32,
 }
 
-/// See {@link PendingCounts}. One pooled connection, six index-backed COUNTs.
+impl PendingCounts {
+    /// Fold in the companion-approval count, which only the command layer can
+    /// read (it lives in the companion database, not this pool), and keep
+    /// `decision_total` honest about it.
+    pub fn with_companion_approvals(mut self, companion_approvals: u32) -> Self {
+        self.companion_approvals = companion_approvals;
+        self.decision_total = self.sum_decisions();
+        self
+    }
+
+    /// The one place `decision_total` is computed, so the repo and the command
+    /// layer cannot disagree about which sources it adds.
+    fn sum_decisions(&self) -> u32 {
+        self.total
+            + self.open_incidents
+            + self.unread_reports
+            + self.companion_approvals
+            + self.council_decidable
+    }
+}
+
+/// THE council rule, mirrored from `councilRules.ts` `decidable()`: only a
+/// `ready` subject that is a MAJOR feature or an architecture redesign reaches
+/// a person. `machine_pass` is not waiting on anybody.
+fn council_subject_is_decidable(state: &str, tier: Option<&str>, kind: &str) -> bool {
+    state == "ready" && (tier == Some("major") || kind == "architecture")
+}
+
+/// Council subjects waiting on a person, with each state derived by the council
+/// store's own [`council::derive_council_state`] over the same readers
+/// [`council::list_subject_states`] feeds it (`latest_run`,
+/// `standing_decision`). Not `list_subject_states` itself: that also reads
+/// every run's verdicts and resolves registry subjects from disk per subject,
+/// none of which a count needs.
+fn count_council_decidable(pool: &DbPool) -> Result<u32, AppError> {
+    use super::council;
+
+    let subjects: Vec<(String, String, Option<String>, String)> = {
+        let conn = pool.get()?;
+        let mut stmt =
+            conn.prepare("SELECT id, kind, use_case_id, drift FROM dev_council_subjects")?;
+        let rows = stmt.query_map([], |r| {
+            Ok((
+                r.get::<_, String>("id")?,
+                r.get::<_, String>("kind")?,
+                r.get::<_, Option<String>>("use_case_id")?,
+                r.get::<_, String>("drift")?,
+            ))
+        })?;
+        rows.collect::<Result<Vec<_>, _>>()?
+    };
+
+    let mut decidable = 0u32;
+    for (id, kind, use_case_id, drift) in subjects {
+        let Some(run) = council::latest_run(pool, &id)? else {
+            continue; // never councilled: state `none`, nobody to ask
+        };
+        let decision = council::standing_decision(pool, &id)?;
+        // Same lookup as the council store's private `use_case_tier`: `None`
+        // for an architecture subject (no feature, no tier) or a missing row.
+        let tier: Option<String> = match use_case_id.as_deref() {
+            Some(uc) => pool
+                .get()?
+                .query_row(
+                    "SELECT tier FROM dev_use_cases WHERE id = ?1",
+                    params![uc],
+                    |r| r.get::<_, String>("tier"),
+                )
+                .ok(),
+            None => None,
+        };
+        let state = council::derive_council_state(&council::CouncilStateInputs {
+            latest_outcome: Some(run.outcome.as_str()),
+            latest_run_id: Some(run.id.as_str()),
+            decision: decision.as_ref().map(|d| d.decision.as_str()),
+            decision_run_id: decision.as_ref().map(|d| d.run_id.as_str()),
+            tier: tier.as_deref(),
+            drift: &drift,
+        });
+        if council_subject_is_decidable(&state, tier.as_deref(), &kind) {
+            decidable += 1;
+        }
+    }
+    Ok(decidable)
+}
+
+/// See {@link PendingCounts}. One pooled connection for the SQL counts; the
+/// unread-report count is the reports repo's own function and the council count
+/// is derived (see [`count_council_decidable`]). `companion_approvals` is 0 here;
+/// the command layer folds it in via [`PendingCounts::with_companion_approvals`].
 pub fn pending_counts(pool: &DbPool) -> Result<PendingCounts, AppError> {
     timed_query!("pending_counts", "pending_counts::all", {
-        let conn = pool.get()?;
-        let one =
-            |sql: &str| -> Result<u32, AppError> { Ok(conn.query_row(sql, [], |r| r.get(0))?) };
+        let mut counts = sql_pending_counts(pool)?;
+        // After the pooled connection above is released: both of these take
+        // their own, and the test pool holds only two.
+        let unread = crate::repos::communication::reports::get_unread_count(pool)?;
+        counts.unread_reports = u32::try_from(unread).unwrap_or(u32::MAX);
+        counts.council_decidable = count_council_decidable(pool)?;
+        counts.decision_total = counts.sum_decisions();
+        Ok(counts)
+    })
+}
 
-        let goal_acceptance =
-            one("SELECT COUNT(*) FROM dev_goals WHERE status = 'awaiting_acceptance'")?;
-        // FOREIGN TABLE: persona_manual_reviews is owned by
-        // `repos::communication::manual_reviews`. Read directly here so the badge is
-        // one query; left as-is by the W1 split, to be routed through the owner later.
-        let manual_reviews =
-            one("SELECT COUNT(*) FROM persona_manual_reviews WHERE status = 'pending'")?;
-        let ideas = one("SELECT COUNT(*) FROM dev_ideas WHERE status = 'pending'")?;
-        // FOREIGN TABLE: policy_proposals is owned by
-        // `repos::execution::policy_proposals`.
-        let policy_proposals =
-            one("SELECT COUNT(*) FROM policy_proposals WHERE status = 'pending'")?;
-        // FOREIGN TABLE: evolution_promotion_proposals is owned by
-        // `repos::lab::evolution_proposals`.
-        let promotion_proposals =
-            one("SELECT COUNT(*) FROM evolution_promotion_proposals WHERE status = 'pending'")?;
+/// The plain-SQL counts, on one pooled connection.
+fn sql_pending_counts(pool: &DbPool) -> Result<PendingCounts, AppError> {
+    let conn = pool.get()?;
+    let one = |sql: &str| -> Result<u32, AppError> { Ok(conn.query_row(sql, [], |r| r.get(0))?) };
 
-        Ok(PendingCounts {
-            total: goal_acceptance
-                + manual_reviews
-                + ideas
-                + policy_proposals
-                + promotion_proposals,
-            goal_acceptance,
-            manual_reviews,
-            ideas,
-            policy_proposals,
-            promotion_proposals,
-        })
+    let goal_acceptance =
+        one("SELECT COUNT(*) FROM dev_goals WHERE status = 'awaiting_acceptance'")?;
+    // FOREIGN TABLE: persona_manual_reviews is owned by
+    // `repos::communication::manual_reviews`. Read directly here so the badge is
+    // one query; left as-is by the W1 split, to be routed through the owner later.
+    let manual_reviews =
+        one("SELECT COUNT(*) FROM persona_manual_reviews WHERE status = 'pending'")?;
+    let ideas = one("SELECT COUNT(*) FROM dev_ideas WHERE status = 'pending'")?;
+    // FOREIGN TABLE: policy_proposals is owned by
+    // `repos::execution::policy_proposals`.
+    let policy_proposals = one("SELECT COUNT(*) FROM policy_proposals WHERE status = 'pending'")?;
+    // FOREIGN TABLE: evolution_promotion_proposals is owned by
+    // `repos::lab::evolution_proposals`.
+    let promotion_proposals =
+        one("SELECT COUNT(*) FROM evolution_promotion_proposals WHERE status = 'pending'")?;
+    // FOREIGN TABLE: audit_incidents is owned by
+    // `repos::execution::audit_incidents`. "Open" is every non-terminal
+    // `IncidentStatus` (open | acknowledged | in_progress) - wider than that
+    // repo's `summary().open` chip, which counts the literal `open` status
+    // only. Severity is stored normalized (`normalize_severity`); LOWER()
+    // keeps a hand-written row from slipping past. `idx_ai_status` serves
+    // the status filter.
+    let (open_incidents, blocking_incidents): (u32, u32) = conn.query_row(
+        "SELECT COUNT(*) AS open_n,
+                    COALESCE(SUM(CASE WHEN LOWER(severity) IN ('critical', 'high')
+                                      THEN 1 ELSE 0 END), 0) AS blocking_n
+               FROM audit_incidents
+              WHERE status IN ('open', 'acknowledged', 'in_progress')",
+        [],
+        |r| Ok((r.get("open_n")?, r.get("blocking_n")?)),
+    )?;
+
+    Ok(PendingCounts {
+        total: goal_acceptance + manual_reviews + ideas + policy_proposals + promotion_proposals,
+        goal_acceptance,
+        manual_reviews,
+        ideas,
+        policy_proposals,
+        promotion_proposals,
+        open_incidents,
+        blocking_incidents,
+        ..PendingCounts::default()
     })
 }
 
@@ -518,5 +654,190 @@ mod pending_counts_tests {
         let counts = pending_counts(&pool).unwrap();
         assert_eq!(counts.total, 0);
         assert_eq!(counts.promotion_proposals, 0);
+        assert_eq!(counts.open_incidents, 0);
+        assert_eq!(counts.unread_reports, 0);
+        assert_eq!(counts.council_decidable, 0);
+        assert_eq!(counts.decision_total, 0);
+    }
+
+    fn incident(pool: &DbPool, source_id: &str, severity: &str, title: &str) -> String {
+        use crate::models::CreateAuditIncidentInput;
+        crate::repos::execution::audit_incidents::promote(
+            pool,
+            CreateAuditIncidentInput {
+                source_table: "fired_alerts".into(),
+                source_id: source_id.into(),
+                persona_id: None,
+                persona_name: None,
+                execution_id: None,
+                severity: severity.into(),
+                kind: "test".into(),
+                title: title.into(),
+                detail: None,
+            },
+        )
+        .unwrap()
+        .unwrap()
+    }
+
+    /// Every non-terminal incident is open; only critical/high are blocking,
+    /// and blocking is a subset that `decision_total` does not add twice.
+    #[test]
+    fn open_incidents_are_the_non_terminal_ones_and_blocking_is_their_high_subset() {
+        use crate::repos::execution::audit_incidents as incidents;
+        let pool = crate::init_test_db().unwrap();
+
+        incident(&pool, "a-1", "critical", "Critical open");
+        let high = incident(&pool, "a-2", "high", "High acknowledged");
+        incidents::acknowledge(&pool, &high).unwrap();
+        let medium = incident(&pool, "a-3", "medium", "Medium in progress");
+        incidents::start_progress(&pool, &medium).unwrap();
+        let resolved = incident(&pool, "a-4", "high", "High resolved");
+        incidents::resolve(&pool, &resolved, None).unwrap();
+        let dismissed = incident(&pool, "a-5", "critical", "Critical dismissed");
+        incidents::dismiss(&pool, &dismissed, None).unwrap();
+
+        let counts = pending_counts(&pool).unwrap();
+        assert_eq!(
+            counts.open_incidents, 3,
+            "open + acknowledged + in_progress; resolved and dismissed are settled"
+        );
+        assert_eq!(
+            counts.blocking_incidents, 2,
+            "a high incident counts in both open and blocking; medium is not blocking"
+        );
+        assert_eq!(counts.decision_total, counts.total + 3);
+    }
+
+    #[test]
+    fn a_read_report_is_not_counted() {
+        use crate::models::CreateReportInput;
+        use crate::repos::communication::reports;
+        let pool = crate::init_test_db().unwrap();
+        let persona_id = crate::repos::test_fixtures::create_test_persona_id(
+            &pool,
+            "Pending Counts Persona",
+            "You are a test persona.",
+        );
+        let report = |title: &str| {
+            reports::create(
+                &pool,
+                CreateReportInput {
+                    persona_id: persona_id.clone(),
+                    execution_id: None,
+                    title: Some(title.into()),
+                    content: format!("{title} body"),
+                    content_type: None,
+                    priority: None,
+                    metadata: None,
+                    thread_id: None,
+                    use_case_id: None,
+                },
+            )
+            .unwrap()
+        };
+        report("Unread one");
+        report("Unread two");
+        let read = report("Already read");
+        reports::mark_as_read(&pool, &read.id).unwrap();
+
+        let counts = pending_counts(&pool).unwrap();
+        assert_eq!(counts.unread_reports, 2);
+        assert_eq!(counts.decision_total, counts.total + 2);
+    }
+
+    fn council_run(subject_id: &str, round: i32, outcome: &str) -> super::super::council::NewRun {
+        super::super::council::NewRun {
+            subject_id: subject_id.to_string(),
+            round_no: round,
+            supersedes_run_id: None,
+            rubric_version: "feature-v1".into(),
+            trust_state: "uncalibrated".into(),
+            outcome: outcome.into(),
+            overall: Some(0.7),
+            coverage: 1.0,
+            head_sha: "abc".into(),
+            span_digest: "dig".into(),
+            spanned_paths_json: "[]".into(),
+            hard_failures_json: "[]".into(),
+            must_address_json: "[]".into(),
+            summary: "s".into(),
+            run_dir: format!("/runs/{subject_id}/{round}"),
+            started_at: None,
+            finished_at: Some("2026-10-01T00:00:00Z".into()),
+        }
+    }
+
+    /// Decidable = derived `ready` AND (major OR architecture). Each excluded
+    /// subject below is excluded for a different reason.
+    #[test]
+    fn council_decidable_matches_the_derived_rule() -> Result<(), AppError> {
+        use super::super::council;
+        use crate::repos::dev::use_cases::create_use_case;
+        let pool = crate::init_test_db().unwrap();
+        let project = create_project(&pool, "P", "/tmp/pcc", None, None, None, None, None).unwrap();
+        let use_case = |name: &str, tier: &str| -> Result<String, AppError> {
+            let uc = create_use_case(
+                &pool,
+                &project.id,
+                name,
+                None,
+                "capability",
+                None,
+                &[],
+                Some("active"),
+                "scan",
+                None,
+            )?;
+            pool.get()?.execute(
+                "UPDATE dev_use_cases SET tier = ?1 WHERE id = ?2",
+                params![tier, uc.id],
+            )?;
+            Ok(uc.id)
+        };
+        let subject = |kind: &str, slug: &str, uc: Option<&str>| {
+            council::upsert_subject(&pool, &project.id, kind, slug, slug, uc)
+                .unwrap()
+                .0
+                .id
+        };
+
+        // 1. Major feature, ready -> decidable.
+        let major = use_case("Major ready", "major")?;
+        let s = subject("use_case", "major-ready", Some(&major));
+        council::insert_run(&pool, &council_run(&s, 1, "ready"), &[]).unwrap();
+
+        // 2. Architecture, ready -> decidable (no tier at all).
+        let s = subject("architecture", "arch-ready", None);
+        council::insert_run(&pool, &council_run(&s, 1, "ready"), &[]).unwrap();
+
+        // 3. Standard feature, ready -> machine_pass, nobody's decision.
+        let standard = use_case("Standard ready", "standard")?;
+        let s = subject("use_case", "standard-ready", Some(&standard));
+        council::insert_run(&pool, &council_run(&s, 1, "ready"), &[]).unwrap();
+
+        // 4. Major feature, ready, but rejected on that same run -> decided.
+        let major2 = use_case("Major rejected", "major")?;
+        let s = subject("use_case", "major-rejected", Some(&major2));
+        let run = council::insert_run(&pool, &council_run(&s, 1, "ready"), &[]).unwrap();
+        council::insert_decision(&pool, &s, &run.id, "rejected", Some("no"), "dig").unwrap();
+
+        // 5. Never councilled -> `none`.
+        subject("architecture", "never-run", None);
+
+        let counts = pending_counts(&pool).unwrap();
+        assert_eq!(counts.council_decidable, 2);
+        assert_eq!(counts.decision_total, counts.total + 2);
+        Ok(())
+    }
+
+    #[test]
+    fn companion_approvals_fold_into_the_decision_total() {
+        let pool = crate::init_test_db().unwrap();
+        let counts = pending_counts(&pool).unwrap();
+        assert_eq!(counts.companion_approvals, 0, "the repo cannot see them");
+        let with = counts.with_companion_approvals(4);
+        assert_eq!(with.companion_approvals, 4);
+        assert_eq!(with.decision_total, with.total + 4);
     }
 }
