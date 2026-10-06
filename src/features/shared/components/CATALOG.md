@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**174 reusable components** live under `src/features/shared/components/`.
+**175 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -33,11 +33,6 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 |---|---|
 | `DecisionActions` | Accept/reject control shared by every decision surface (review, backlog, knowledge). |
 | `DecisionRow` | One list row for any decision stream — title, supporting line, facts, verdict. |
-| `TriageFocus` | Focused triage surface for a queue of TriageItems - N-of-M navigation, a per-decision carousel, arm-then-confirm keyboard, and an  |
-| `TriageFocusActions` | TriageFocus part: the three-verdict action bar, its note field and the keyboard legend. |
-| `TriageFocusCard` | TriageFocus part: one item card - persona, chips, age, decision carousel and the deck body. |
-| `TriageFocusQueue` | TriageFocus part: the optional 330px queue rail, built from the kit Rows/ListRow. |
-| `useTriageFocus` | TriageFocus state: cursors, per-option verdicts, the note, and the one guarded verdict write. |
 
 ## display — Read-only display: badges, status, avatars, tables, time, numbers, tooltips
 
@@ -237,6 +232,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `DataDiffSection` | Undo this run" action. |
 | `ExecutionDetailContent` | _(add a `@catalog` tag)_ |
 | `ExecutionDetailModal` | a single execution. |
+| `ModalShell` | ModalShell - the standard modal interior over BaseModal: surface, |
 
 ## overlays — Popovers, dropdowns, command palette, filter bars
 
@@ -273,4 +269,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_174 components, 40 without a `@catalog` description._
+_175 components, 40 without a `@catalog` description._

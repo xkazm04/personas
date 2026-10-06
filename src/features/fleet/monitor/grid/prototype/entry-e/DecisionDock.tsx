@@ -146,10 +146,10 @@ export function DecisionDock({
               <RailThreadFilter showAll={rail.showAllThreads} onChange={rail.setShowAllThreads} hidden={rail.hiddenThreads} />
             )}
 
-            {/* An opened case takes the dock's body. It is the same surface
-                Overview renders, minus the queue rail — see `useRailSurface`,
-                and `TriageFocus`'s own header for why density is a prop. */}
-            {rail.triage ?? (ready ? (
+            {/* An opened case is a MODAL over this list now, not a takeover of
+                the dock body — `RailReviewModal`, mounted with the rest of the
+                rail's modals. The list stays where the operator left it. */}
+            {ready ? (
               <RailList
                 key={rail.listKey}
                 rows={rail.active.rows}
@@ -169,7 +169,7 @@ export function DecisionDock({
               <div className="flex min-h-0 flex-1 flex-col gap-2 p-2" aria-hidden>
                 {[0, 1, 2, 3, 4].map((i) => <span key={i} className="ae-ghost h-[76px] rounded-input" />)}
               </div>
-            ))}
+            )}
 
             <div className="flex flex-shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-t border-border px-3 py-1.5 typo-caption" aria-hidden>
               <span className="flex items-center gap-1"><Kbd>↑</Kbd><Kbd>↓</Kbd></span>

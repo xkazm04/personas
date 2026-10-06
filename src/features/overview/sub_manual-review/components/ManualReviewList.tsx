@@ -34,17 +34,8 @@ import { DecisionModeTabs, type DecisionMode } from './DecisionModeTabs';
 import { BacklogPanel } from './backlog/BacklogPanel';
 import { useBacklogQueue } from './backlog/useBacklogQueue';
 import { ReviewFilterTrailing } from './ReviewFilterTrailing';
-import { TriageFocus } from '@/features/shared/components/decisions/TriageFocus';
-import type { TriageDecision } from '@/features/agents/quick-answer/triage/triageTypes';
-import type { TriageReviewRow } from '@/features/agents/quick-answer/triage/triageAdapters';
-import {
-  encodeDecisionVerdicts,
-  useTriageReviewItems,
-  useWorkspacePersonaAccent,
-} from '../libs/triageReviewBridge';
-// The workspace tint's one rule, loaded where the tint is rendered — the
-// donor (`ReviewFocusFlow`) imported it at the same seam.
-import '../libs/workspaceTint.css';
+import type { TriageReview } from './reviewFocusHelpers';
+import { ReviewFocusFlow } from './ReviewFocusFlow';
 
 /**
  * Shape a raw `PersonaManualReview` row (as returned by the layered
@@ -242,49 +233,23 @@ export default function ManualReviewList() {
     } finally { setIsProcessing(false); }
   }, [activeReview, allReviews, isProcessing, filteredReviews, reloadQueue]);
 
-  // ---- The focused pending flow (shared `TriageFocus`) --------------------
-  //
-  // Adapted here rather than inside the component: `TriageFocus` speaks the
-  // unified item model and knows nothing about manual reviews, which is what
-  // lets the Monitor's dock render the same surface at 320px.
-  const triageItems = useTriageReviewItems(filteredReviews as TriageReviewRow[]);
-  const personaAccent = useWorkspacePersonaAccent();
-
-  /**
-   * One verdict, through the same door every other surface writes through.
-   *
-   * REJECTS on failure, deliberately — and that is why this is not
-   * `handleAction`. `handleAction` catches and toasts, so the flow would
-   * advance past a verdict whose write failed, which is the exact bug the
-   * shared component was extracted to stop. Here the rejection reaches
-   * `useTriageFocus`, which keeps the card open with the note still typed and
-   * the per-option verdicts still recorded, and renders the failure in place.
-   */
-  const handleTriageDecide = useCallback(async (decision: TriageDecision) => {
-    // `skip` is the spine's "not now": a local advance, never a write.
-    if (decision.verdict === 'skip') return;
-    const row = allReviews.find((r) => r.id === decision.item.sourceId);
-    if (!row) throw new Error(t.overview.review.row_gone);
+  // Phase 5b — choose a suggested action: resolve + dispatch a follow-up run
+  // (the same action model as the Quick Answer stepper). Cloud reviews record
+  // the choice as an approval (no dispatch path).
+  const handleDispatchAction = useCallback(async (id: string, action: string) => {
+    const reviewToAct = allReviews.find((r) => r.id === id) ?? activeReview;
+    if (!reviewToAct || isProcessing) return;
+    setIsProcessing(true);
     try {
-      if (decision.branchId) {
-        // A suggested action resolves the review AND dispatches the follow-up
-        // run — materially different from a bare approval, so it is a branch.
-        await dispatchReviewRowAction(row, decision.branchId);
-      } else {
-        await resolveReviewRow(
-          row,
-          decision.verdict === 'accept' ? 'approved' : 'rejected',
-          encodeDecisionVerdicts(decision),
-        );
-      }
-    } catch (err) {
-      // A conflict means somebody else's verdict is the truth; re-read either
-      // way, then let the rejection through so the card stays open.
+      await dispatchReviewRowAction(reviewToAct, action);
+      const nextPending = filteredReviews.find((r) => r.id !== reviewToAct.id && r.status === 'pending');
+      if (nextPending) setActiveReviewId(nextPending.id);
       reloadQueue();
-      throw err;
-    }
-    reloadQueue();
-  }, [allReviews, reloadQueue, t.overview.review.row_gone]);
+    } catch (err) {
+      toastCatch('manualReview:dispatchAction')(err);
+      reloadQueue();
+    } finally { setIsProcessing(false); }
+  }, [activeReview, allReviews, isProcessing, filteredReviews, reloadQueue]);
 
   const handleBulkAction = useCallback(async (status: ManualReviewStatus) => {
     setIsBulkProcessing(true);
@@ -502,15 +467,12 @@ export default function ManualReviewList() {
             animate="show"
             exit={shouldAnimate ? "exit" : undefined}
           >
-            {/* Overview owns a whole page, so it takes the 330px queue rail;
-                the Monitor's 320px dock renders the same component without
-                one. Density is a prop, not a second surface. */}
-            <TriageFocus
-              className="h-full"
-              items={triageItems}
-              onDecide={handleTriageDecide}
-              queueSidebar
-              personaAccent={personaAccent}
+            <ReviewFocusFlow
+              reviews={filteredReviews as TriageReview[]}
+              onApprove={(id: string, notes?: string) => handleAction(id, 'approved' as ManualReviewStatus, notes)}
+              onReject={(id: string, notes?: string) => handleAction(id, 'rejected' as ManualReviewStatus, notes)}
+              onDispatchAction={handleDispatchAction}
+              isProcessing={isProcessing}
             />
           </motion.div>
         ) : (
