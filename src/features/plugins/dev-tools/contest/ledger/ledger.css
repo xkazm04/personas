@@ -159,6 +159,9 @@
 .contest-ledger .lfoot { display: flex; align-items: center; gap: 18px; margin: 14px 12px 0; padding-top: 12px; border-top: 1px solid var(--hair-soft); font-size: var(--cl-t0); color: var(--mu); }
 .contest-ledger .lfoot b { color: var(--mf); font-weight: 500; }
 .contest-ledger .lfoot .cl-btn { margin-left: auto; }
+/* The window's own foot: how much is on screen, and the next page. */
+.contest-ledger .lmore { display: flex; align-items: center; gap: 12px; height: 34px; margin: 6px 12px 0; padding-top: 6px; border-top: 1px solid var(--hair-soft); font-size: var(--cl-t0); color: var(--mu); font-variant-numeric: tabular-nums; }
+.contest-ledger .lmore .cl-btn { margin-left: auto; }
 .contest-ledger .lghost { display: grid; grid-template-columns: 120px minmax(0, 1fr) 128px 234px 204px 58px; column-gap: 14px; align-items: center; height: var(--row-h); padding: 0 12px; }
 .contest-ledger .lghost i { display: block; height: 10px; border-radius: 4px; background: color-mix(in srgb, var(--primary) 6%, transparent); }
 
