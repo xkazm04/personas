@@ -118,7 +118,12 @@
 .fusion .fu-after { display: flex; flex-direction: column; gap: 8px; }
 
 /* ── the rail: one instrument on one lit line ──────────────────────────── */
-.fusion .fu-rail-seat { position: absolute; right: 6px; top: 6px; bottom: 44px; width: 54px; pointer-events: none; z-index: 6; }
+.fusion .fu-rail-seat {
+  position: absolute; right: 6px; top: 6px; bottom: 44px; width: 54px; pointer-events: none; z-index: 6;
+  /* How far the rail reads out loud, leftward over the app; 0 at rest. */
+  --fu-open: 18rem; --fu-x: 0px; --fu-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+.fusion .fu-rail-seat.is-expanded { --fu-x: var(--fu-open); }
 /* The line: the theme's accent, faint the whole height, bright where the rail sits. */
 .fusion .fu-rail-seat::before {
   content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 1.5px; transform: translateX(-50%);
@@ -126,10 +131,18 @@
 }
 .fusion .fu-rail {
   position: relative; pointer-events: auto; display: flex; flex-direction: column; align-items: center; gap: 8px;
-  width: 54px; max-height: 100%; padding: 8px 0 6px; border-radius: var(--radius-pill); background: var(--fu-glass-strong);
+  /* The marks keep a 54px column on the right edge; expanding adds glass to its LEFT
+     (padding + a matching negative margin), so no mark moves and nothing is pushed. */
+  box-sizing: border-box; width: calc(54px + var(--fu-x)); margin-left: calc(-1 * var(--fu-x)); padding: 8px 0 6px var(--fu-x);
+  max-height: 100%; border-radius: 27px; background: var(--fu-glass-strong);
+  transition: width var(--duration-normal) var(--fu-ease), margin-left var(--duration-normal) var(--fu-ease),
+    padding-left var(--duration-normal) var(--fu-ease), box-shadow var(--duration-normal);
+}
+.fusion .fu-rail-seat.is-expanded .fu-rail {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent), inset 0 1px 0 var(--fu-sheen), var(--shadow-elevation-4);
 }
 .fusion .fu-line {
-  position: absolute; left: 50%; top: 18px; bottom: 18px; width: 2px; transform: translateX(-50%); border-radius: var(--radius-pill); pointer-events: none;
+  position: absolute; right: 26px; top: 18px; bottom: 18px; width: 2px; border-radius: var(--radius-pill); pointer-events: none;
   background: color-mix(in srgb, var(--primary) 75%, transparent); box-shadow: 0 0 8px color-mix(in srgb, var(--primary) 55%, transparent); z-index: 0;
 }
 /* Everything on the rail sits ON the line: positioned above it, inside the rail's own stacking context. */
@@ -144,7 +157,8 @@
 
 .fusion .fu-beads { display: flex; flex-direction: column; align-items: center; gap: 5px; }
 .fusion .fu-attn {
-  width: 30px; height: 30px; padding: 0; justify-content: center; border-radius: 50%;
+  width: 30px; height: 30px; margin: 0; padding: 0; justify-content: center; border-radius: 50%;
+  transition: width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease), margin var(--duration-normal) var(--fu-ease);
   background: var(--c, var(--fu-warm)); color: var(--background);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--fu-warm) 55%, transparent), 0 0 18px 2px color-mix(in srgb, var(--fu-warm) 55%, transparent);
 }
@@ -156,23 +170,29 @@
   50% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--fu-warm) 70%, transparent), 0 0 28px 6px color-mix(in srgb, var(--fu-warm) 60%, transparent); }
 }
 .fusion .fu-bead { width: 20px; height: 18px; padding: 0; justify-content: center; border-radius: 50%; background: transparent; }
-.fusion .fu-bead i { display: block; width: 11px; height: 11px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 3px var(--fu-knock), 0 0 10px color-mix(in srgb, var(--c) 70%, transparent); }
+.fusion .fu-bead i {
+  display: block; width: 11px; height: 11px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 3px var(--fu-knock), 0 0 10px color-mix(in srgb, var(--c) 70%, transparent);
+  transition: width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease);
+}
 .fusion .fu-bead:hover i, .fusion .fu-bead:focus-visible i { filter: brightness(1.25); }
 .fusion .fu-over { color: var(--muted-foreground); background: var(--fu-knock); padding: 0 3px; border-radius: var(--radius-interactive); }
 
 .fusion .fu-cats { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .fusion .fu-cat { flex-direction: column; gap: 0; width: 44px; height: auto; padding: 0; justify-content: center; background: transparent; border-radius: var(--radius-interactive); }
 .fusion .fu-cat:hover { background: transparent; }
-.fusion .fu-cat-dial { position: relative; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: var(--fu-knock); }
-.fusion .fu-cat-ring { position: absolute; inset: 0; transform: rotate(-90deg); overflow: visible; }
+.fusion .fu-cat-dial {
+  position: relative; width: 36px; height: 36px; margin: 0; display: grid; place-items: center; border-radius: 50%; background: var(--fu-knock);
+  transition: width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease), margin var(--duration-normal) var(--fu-ease);
+}
+.fusion .fu-cat-ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
 .fusion .fu-arc-empty { fill: none; stroke: var(--fu-rule); stroke-width: 1.5; }
 .fusion .fu-cat-core {
   width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
   background: color-mix(in srgb, var(--ink) 20%, var(--background)); color: var(--ink);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 55%, transparent);
-  transition: box-shadow var(--duration-fast), filter var(--duration-fast);
+  transition: box-shadow var(--duration-fast), filter var(--duration-fast), width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease);
 }
-.fusion .fu-cat-core svg { width: 14px; height: 14px; }
+.fusion .fu-cat-core svg { width: 14px; height: 14px; transition: width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease); }
 .fusion .fu-cat:hover .fu-cat-core, .fusion .fu-cat:focus-visible .fu-cat-core { filter: brightness(1.2); }
 .fusion .fu-cat.is-open .fu-cat-core { box-shadow: inset 0 0 0 1px var(--ink), 0 0 12px color-mix(in srgb, var(--ink) 55%, transparent); }
 .fusion .fu-cat.is-quiet .fu-cat-core { background: var(--background); color: var(--muted-foreground); box-shadow: inset 0 0 0 1px var(--fu-rule); }
@@ -183,29 +203,72 @@
 .fusion .fu-cat-n { position: absolute; right: -7px; bottom: -5px; min-width: 17px; padding: 0 4px; text-align: center; color: var(--foreground); background: var(--fu-knock); border-radius: var(--radius-pill); box-shadow: inset 0 0 0 1px var(--fu-rule); line-height: 1.35; }
 .fusion .fu-cat.is-quiet .fu-cat-n { color: var(--muted-foreground); }
 
-/* The toolset: marks on the line at rest; on hover or focus a real panel,
-   double width and growing LEFT from the rail, with targets big enough to hit. */
-.fusion .fu-tools-seat {
-  align-self: flex-end; margin-right: 3px; display: flex; justify-content: flex-end;
-  border-radius: var(--radius-modal); background: transparent;
-  transition: background var(--duration-normal), box-shadow var(--duration-normal), padding var(--duration-normal);
-}
-.fusion .fu-tools-seat aside { width: 44px; gap: 6px; padding: 2px 0; background: none; border: 0; transition: width var(--duration-normal); }
+/* The toolset: marks on the line, one column (the shared toolbar's own
+   chrome steps aside). Its buttons grow with the rest of the rail. */
+.fusion .fu-tools-seat { display: flex; justify-content: center; }
+.fusion .fu-tools-seat aside { width: 44px; gap: 6px; padding: 2px 0; background: none; border: 0; }
 /* The dividers and the spacer are the docked panel's; on the rail the line is the divider. */
 .fusion .fu-tools-seat aside > div[aria-hidden], .fusion .fu-tools-seat aside > div.flex-1 { display: none; }
-.fusion .fu-tools-seat button { width: 34px; height: 34px; border-radius: 50%; background: var(--fu-knock); transition: width var(--duration-normal), height var(--duration-normal); }
-.fusion .fu-tools-seat button svg { width: 18px; height: 18px; }
-.fusion .fu-tools-seat:hover, .fusion .fu-tools-seat:focus-within {
-  background: var(--fu-glass-strong); backdrop-filter: blur(var(--blur-modal));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent), var(--shadow-elevation-4); padding: 4px;
+.fusion .fu-tools-seat :is(aside, [role='group']) > button, .fusion .fu-tools-seat :is(aside, [role='group']) > div > button {
+  width: 34px; height: 34px; margin: 0; border-radius: 50%; background: var(--fu-knock);
+  transition: width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease), margin var(--duration-normal) var(--fu-ease);
 }
-.fusion .fu-tools-seat:hover aside, .fusion .fu-tools-seat:focus-within aside { width: 88px; }
-.fusion .fu-tools-seat:hover button, .fusion .fu-tools-seat:focus-within button { width: 56px; height: 56px; }
-.fusion .fu-tools-seat:hover button svg, .fusion .fu-tools-seat:focus-within button svg { width: 26px; height: 26px; }
+.fusion .fu-tools-seat :is(aside, [role='group']) > button svg, .fusion .fu-tools-seat :is(aside, [role='group']) > div > button svg {
+  width: 18px; height: 18px; transition: width var(--duration-normal) var(--fu-ease), height var(--duration-normal) var(--fu-ease);
+}
+
+/* -- the rail read out loud (hover / keyboard focus, `useRailExpand`) -------
+   Each mark grows IN PLACE: a bigger size paid back by a negative margin, so
+   its box (and every mark under it) stays put. Its words fade in beside it,
+   right-aligned to one edge just left of the line. No mark moves. */
+.fusion .fu-rail-seat.is-expanded .fu-attn { width: 36px; height: 36px; margin: -3px; }
+.fusion .fu-rail-seat.is-expanded .fu-attn svg { width: 19px; height: 19px; }
+.fusion .fu-rail-seat.is-expanded .fu-bead i { width: 14px; height: 14px; }
+.fusion .fu-rail-seat.is-expanded .fu-cat-dial { width: 42px; height: 42px; margin: -3px; }
+.fusion .fu-rail-seat.is-expanded .fu-cat-core { width: 30px; height: 30px; }
+/* The dial grows under its badge and count: they stay where they were, so a
+   neighbour's badge never meets them. */
+.fusion .fu-rail-seat.is-expanded .fu-cat-badge { right: -1px; top: -1px; }
+.fusion .fu-rail-seat.is-expanded .fu-cat-n { right: -4px; bottom: -2px; }
+.fusion .fu-rail-seat.is-expanded .fu-cat-core svg { width: 17px; height: 17px; }
+.fusion .fu-rail-seat.is-expanded .fu-tools-seat :is(aside, [role='group']) > button,
+.fusion .fu-rail-seat.is-expanded .fu-tools-seat :is(aside, [role='group']) > div > button { width: 40px; height: 40px; margin: -3px; }
+.fusion .fu-rail-seat.is-expanded .fu-tools-seat :is(aside, [role='group']) > button svg,
+.fusion .fu-rail-seat.is-expanded .fu-tools-seat :is(aside, [role='group']) > div > button svg { width: 22px; height: 22px; }
+
+.fusion .fu-tag,
+.fusion .fu-tools-seat aside > button::after, .fusion .fu-tools-seat aside > div > button::after {
+  position: absolute; right: calc(50% + 30px); top: 50%; transform: translateY(-50%);
+  white-space: nowrap; text-align: right; pointer-events: none; opacity: 0; visibility: hidden;
+  transition: opacity var(--duration-fast), visibility 0s linear var(--duration-fast);
+}
+.fusion .fu-tag { display: flex; align-items: baseline; justify-content: flex-end; gap: 6px; width: max-content; max-width: calc(var(--fu-open) - 20px); }
+.fusion .fu-tag.is-two { flex-direction: column; align-items: flex-end; gap: 0; }
+.fusion .fu-tag.is-row { align-items: center; gap: 8px; }
+.fusion .fu-tag-main { flex: none; color: var(--foreground); }
+.fusion .fu-tag-meta { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; font-weight: 400; color: var(--muted-foreground); }
+/* The shared toolbar's buttons carry their names as aria-labels only: the words are drawn from them. */
+.fusion .fu-tools-seat aside > button::after, .fusion .fu-tools-seat aside > div > button::after {
+  content: attr(aria-label); font-family: var(--font-sans); font-size: calc(var(--type-0) * var(--type-f)); font-weight: 600; line-height: 1.4;
+  color: var(--foreground);
+}
+.fusion .fu-rail-seat.is-expanded .fu-tag,
+.fusion .fu-rail-seat.is-expanded .fu-tools-seat aside > button::after,
+.fusion .fu-rail-seat.is-expanded .fu-tools-seat aside > div > button::after {
+  opacity: 1; visibility: visible; transition: opacity var(--duration-normal) var(--duration-instant), visibility 0s;
+}
+/* A label belongs to its mark: on the expanded rail it is part of the target. */
+.fusion .fu-rail-seat.is-expanded .fu-tag { pointer-events: auto; }
+/* With the connectors column open beside the tools, the tools' words would sit on it. */
+.fusion .fu-tools-seat:has([data-testid='companion-toolbar-connector-column']) aside > button::after,
+.fusion .fu-tools-seat:has([data-testid='companion-toolbar-connector-column']) aside > div > button::after { display: none; }
+/* Reduced motion: the same expansion, instantly. */
+.fusion .fu-rail-seat.is-still *, .fusion .fu-rail-seat.is-still *::after { transition: none; }
 
 /* A category unfolded beside the rail. */
 .fusion .fu-panel {
-  position: absolute; right: calc(100% + 10px); width: 330px; max-height: 380px; pointer-events: auto;
+  /* Hangs off the rail's left edge, wherever the rail's expansion puts it. */
+  position: absolute; right: calc(100% + 10px + var(--fu-x)); transition: right var(--duration-normal) var(--fu-ease); width: 330px; max-height: 380px; pointer-events: auto;
   display: flex; flex-direction: column; border-radius: var(--radius-card); overflow: hidden; background: var(--fu-glass-strong);
   box-shadow: inset 0 0 0 1px var(--fu-rule), inset 3px 0 0 var(--ink), var(--shadow-elevation-4);
 }
@@ -287,7 +350,7 @@
 /* ── reduced motion: calm, complete, still ─────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .fusion .fu-mark.is-moving .fu-ring, .fusion .fu-caret.is-moving, .fusion .fu-attn.is-moving, .fusion .fu-face-sm.is-moving { animation: none; }
-  .fusion .fu-glass, .fusion .fu-glass.is-open, .fusion .fu-scrim, .fusion .fu-tools-seat:hover { backdrop-filter: none; }
+  .fusion .fu-glass, .fusion .fu-glass.is-open, .fusion .fu-scrim { backdrop-filter: none; }
   .fusion .fu-glass { background: color-mix(in srgb, var(--background) 97%, transparent); }
 }
 :root[data-motion='reduce'] .fusion :is(.fu-ring, .fu-caret, .fu-attn, .fu-face-sm) { animation: none; }

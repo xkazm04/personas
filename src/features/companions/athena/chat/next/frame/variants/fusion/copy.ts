@@ -31,10 +31,20 @@ export const FUSION_COPY = {
 
   // The rail.
   rail: 'What Athena manages',
-  pendingNamed: (n: number) => (n === 1 ? '1 waits on you' : `${n} wait on you`),
+  pendingNamed: (n: number) => (n === 1 ? '1 needs you' : `${n} need you`),
   noneWaiting: 'Nothing waits on you',
   openQueue: 'Open the decisions',
   more: (n: number) => `+${n}`,
+  // The rail read out loud (hover / focus): each mark's words beside it.
+  pendingLabel: (n: number) => `${n} waiting on you`,
+  moreLabel: (n: number) => `${n} more waiting`,
+  catQuiet: 'Nothing right now',
+  stateShort: {
+    working: 'working',
+    waiting: 'waiting',
+    stuck: 'stuck',
+    idle: 'idle',
+  } as Record<string, string>,
   categories: {
     fleet: 'Fleet',
     personas: 'Personas',

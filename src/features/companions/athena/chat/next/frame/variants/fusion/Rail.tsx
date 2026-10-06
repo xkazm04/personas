@@ -7,9 +7,15 @@
  *   3. what Athena manages, one circle per category in its own ink, ringed by
  *      its items' states (Current's side panel, in Filament's slim language),
  *      each unfolding into its panel;
- *   4. her toolset (`AthenaToolbar dock="single"`), which grows on hover or
- *      focus exactly as Filament's does.
+ *   4. her toolset (`AthenaToolbar dock="single"`).
  * The line takes the theme's own accent (`--primary`), not a fixed hue.
+ *
+ * The whole rail is ONE expanding wrapper (`useRailExpand`): hovering any of
+ * it, or tabbing into it, widens it LEFTWARD over the app as one piece - every
+ * circle, bead and tool grows in place and gains its words beside it (the
+ * pending count, each bead's kind and title, each category's counts by state,
+ * each tool's name). Nothing moves vertically and nothing pushes layout; Esc
+ * or leaving folds it. Reduced motion expands it instantly.
  *
  * TODO(prototype, 2026-10-07): athena chat fusion - consolidate after the owner picks.
  */
@@ -18,7 +24,7 @@ import { AnimatePresence } from 'framer-motion';
 import { useRef, useState } from 'react';
 import { Check, Hand } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { AthenaToolbar } from '../../../../../AthenaToolbar';
 import type { WorkItem } from '../../../useWorkforce';
 import { AttentionBeads } from './AttentionBeads';
@@ -26,6 +32,7 @@ import { CategoryCircle } from './CategoryCircle';
 import { CategoryPanel } from './CategoryPanel';
 import { FUSION_COPY as F } from './copy';
 import type { CategoryKey, ManagedCategory } from './useManaged';
+import { useRailExpand } from './useRailExpand';
 
 const PANEL_MAX = 380;
 
@@ -43,6 +50,8 @@ export function Rail({
   const [open, setOpen] = useState<{ key: CategoryKey; top: number; keyboard: boolean } | null>(null);
   const active = open ? (categories.find((c) => c.key === open.key) ?? null) : null;
   const n = items.length;
+  const { seatRef, expanded, handlers } = useRailExpand();
+  const { shouldAnimate } = useMotion();
 
   const toggle = (key: CategoryKey, keyboard: boolean) => {
     if (open?.key === key) {
@@ -65,24 +74,36 @@ export function Rail({
   };
 
   return (
-    <div className="fu-rail-seat">
-      <nav ref={railRef} className="fu-rail fu-glass" aria-label={F.rail} data-testid="companion-fusion-rail">
+    <div
+      ref={seatRef}
+      className={`fu-rail-seat${expanded ? ' is-expanded' : ''}${shouldAnimate ? '' : ' is-still'}`}
+      {...handlers}
+    >
+      <nav
+        ref={railRef}
+        className="fu-rail fu-glass"
+        aria-label={F.rail}
+        data-testid="companion-fusion-rail"
+        data-companion-fusion-rail-expanded={expanded ? 'true' : 'false'}
+      >
         <span className={`fu-line${n ? ' is-waiting' : ''}`} aria-hidden />
-        <Tooltip content={`${n ? F.pendingNamed(n) : F.noneWaiting} · ${F.keyWork}`} placement="left">
-          <Button
-            variant="ghost"
-            className={`fu-count${n ? '' : ' is-quiet'}`}
-            onClick={() => onOpenItem(null)}
-            aria-keyshortcuts="Alt+W"
-            aria-label={`${n ? F.pendingNamed(n) : F.noneWaiting}. ${F.openQueue}`}
-            data-testid="companion-fusion-count"
-          >
-            <span className="typo-data-lg fu-count-n">{n}</span>
-            {/* A glyph, not a word: "waiting" does not fit a 54px rail, and a hand
-                says "on you" without colour. The words are the label and tooltip. */}
-            {n ? <Hand className="fu-count-g" aria-hidden /> : <Check className="fu-count-g" aria-hidden />}
-          </Button>
-        </Tooltip>
+        <Button
+          variant="ghost"
+          className={`fu-count${n ? '' : ' is-quiet'}`}
+          onClick={() => onOpenItem(null)}
+          aria-keyshortcuts="Alt+W"
+          aria-label={`${n ? F.pendingNamed(n) : F.noneWaiting}. ${F.openQueue}`}
+          data-testid="companion-fusion-count"
+        >
+          <span className="typo-data-lg fu-count-n">{n}</span>
+          {/* A glyph, not a word: "waiting" does not fit a 54px rail, and a hand
+              says "on you" without colour. The words stand beside it when the rail expands. */}
+          {n ? <Hand className="fu-count-g" aria-hidden /> : <Check className="fu-count-g" aria-hidden />}
+          <span className="fu-tag is-row" aria-hidden>
+            <span className="typo-label fu-tag-main">{n ? F.pendingLabel(n) : F.noneWaiting}</span>
+            <span className="fu-kbd typo-caption">{F.keyWork}</span>
+          </span>
+        </Button>
         <AttentionBeads items={items} onOpen={onOpenItem} />
         <span className="fu-rule" aria-hidden />
         <div className="fu-cats" data-testid="companion-fusion-categories">
