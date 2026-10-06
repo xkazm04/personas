@@ -32,6 +32,11 @@
     "cloud_sync_device_name_save": "Simpan nama",
     "cloud_sync_device_name_saved": "Tersimpan. Ponsel akan menampilkannya setelah sinkronisasi berikutnya.",
     "cloud_sync_device_name_failed": "Gagal menyimpan nama.",
+    "cloud_sync_notes_label": "Sinkronkan catatan",
+    "cloud_sync_notes_hint": "Tampilkan tujuan dari Catatan di ponsel Anda. Teks catatan keluar dari komputer ini, dengan apa pun yang tampak seperti kunci atau token disamarkan. Menonaktifkannya menghapus catatan yang telah disinkronkan.",
+    "cloud_sync_chats_label": "Sinkronkan obrolan",
+    "cloud_sync_chats_hint": "Tampilkan percakapan Anda dengan Athena di ponsel dan kirimi dia pesan dari sana. Balasan bisa mengutip apa yang dibaca agen Anda, jadi opsi ini mulai dalam keadaan mati. Menonaktifkannya menghapus obrolan yang telah disinkronkan.",
+    "cloud_sync_class_failed": "Gagal mengubah apa yang disinkronkan. Coba lagi.",
     "cloud_sync_enable_failed": "Tidak dapat memperbarui pengaturan sinkronisasi",
     "cloud_sync_error": "Sinkronisasi terakhir gagal: {error}",
     "cloud_sync_hide_details": "Sembunyikan rincian",
@@ -60,7 +65,10 @@
       "synced_messages": "Pesan",
       "synced_metrics_snapshots": "Metrik",
       "synced_personas": "Persona",
-      "synced_tool_usage": "Penggunaan alat"
+      "synced_tool_usage": "Penggunaan alat",
+      "synced_notes": "Catatan",
+      "synced_chat_sessions": "Utas obrolan",
+      "synced_chat_messages": "Pesan obrolan"
     },
     "cloud_sync_title": "Sinkronisasi dasbor cloud",
     "cloud_sync_toggle": "Sinkronkan ke dasbor cloud",

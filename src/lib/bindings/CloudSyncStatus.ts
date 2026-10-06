@@ -37,4 +37,12 @@ totalRowsSynced: bigint,
 /**
  * Per-table breakdown for the most recent pass + cursor watermarks.
  */
-tables: Array<TableSyncStatus>, };
+tables: Array<TableSyncStatus>, 
+/**
+ * The "Sync notes" opt-in (default off).
+ */
+syncNotes: boolean, 
+/**
+ * The "Sync chats" opt-in (default off).
+ */
+syncChats: boolean, };

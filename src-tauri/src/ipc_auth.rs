@@ -145,6 +145,8 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     // privileged like the sync toggle beside them.
     "cloud_pair_controller_cancel",
     "cloud_sync_set_device_name",
+    // Each opt-in sends a new class of free text off the machine (M19).
+    "cloud_sync_set_data_class",
     "cloud_controllers_list",
     "cloud_controller_revoke",
     "discover_connector_resources",

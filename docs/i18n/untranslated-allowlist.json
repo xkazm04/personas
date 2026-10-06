@@ -2396,6 +2396,7 @@
   "fr:schedules.view_orchestration",
   "fr:settings.account.cloud_sync_state_active",
   "fr:settings.account.cloud_sync_tables.synced_messages",
+  "fr:settings.account.cloud_sync_tables.synced_notes",
   "fr:settings.account.cloud_sync_tables.synced_personas",
   "fr:settings.admin.tour_active",
   "fr:settings.ambient.action",

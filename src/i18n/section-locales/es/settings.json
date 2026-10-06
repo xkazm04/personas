@@ -32,6 +32,11 @@
     "cloud_sync_device_name_save": "Guardar nombre",
     "cloud_sync_device_name_saved": "Guardado. El teléfono lo mostrará tras la próxima sincronización.",
     "cloud_sync_device_name_failed": "No se pudo guardar el nombre.",
+    "cloud_sync_notes_label": "Sincronizar notas",
+    "cloud_sync_notes_hint": "Muestra en tu teléfono los objetivos de tus Notas. El texto de las notas sale de este ordenador, con todo lo que parezca una clave o un token oculto. Al desactivarlo se borran las notas sincronizadas.",
+    "cloud_sync_chats_label": "Sincronizar chats",
+    "cloud_sync_chats_hint": "Muestra en tu teléfono tus conversaciones con Athena y escríbele desde allí. Las respuestas pueden citar lo que leyeron tus agentes, por eso empieza desactivado. Al desactivarlo se borran los chats sincronizados.",
+    "cloud_sync_class_failed": "No se pudo cambiar qué se sincroniza. Inténtalo de nuevo.",
     "cloud_sync_enable_failed": "No se pudo actualizar la configuración de sincronización",
     "cloud_sync_error": "Error en la última sincronización: {error}",
     "cloud_sync_hide_details": "Ocultar desglose",
@@ -60,7 +65,10 @@
       "synced_messages": "Mensajes",
       "synced_metrics_snapshots": "Métricas",
       "synced_personas": "Personas",
-      "synced_tool_usage": "Uso de herramientas"
+      "synced_tool_usage": "Uso de herramientas",
+      "synced_notes": "Notas",
+      "synced_chat_sessions": "Hilos de chat",
+      "synced_chat_messages": "Mensajes de chat"
     },
     "cloud_sync_title": "Sincronización con panel en la nube",
     "cloud_sync_toggle": "Sincronizar con el panel en la nube",

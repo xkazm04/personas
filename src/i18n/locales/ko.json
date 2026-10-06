@@ -16111,6 +16111,11 @@
       "cloud_sync_device_name_save": "이름 저장",
       "cloud_sync_device_name_saved": "저장했습니다. 다음 동기화 후 휴대폰에 표시됩니다.",
       "cloud_sync_device_name_failed": "이름을 저장하지 못했습니다.",
+      "cloud_sync_notes_label": "메모 동기화",
+      "cloud_sync_notes_hint": "메모의 목표를 휴대폰에 표시합니다. 메모 내용이 이 컴퓨터 밖으로 전송되며, 키나 토큰처럼 보이는 것은 가려집니다. 끄면 동기화된 메모가 삭제됩니다.",
+      "cloud_sync_chats_label": "채팅 동기화",
+      "cloud_sync_chats_hint": "Athena와의 대화를 휴대폰에 표시하고 휴대폰에서 Athena에게 메시지를 보낼 수 있습니다. 답장에 에이전트가 읽은 내용이 인용될 수 있어 처음에는 꺼져 있습니다. 끄면 동기화된 채팅이 삭제됩니다.",
+      "cloud_sync_class_failed": "동기화 항목을 변경하지 못했습니다. 다시 시도하세요.",
       "cloud_sync_enable_failed": "동기화 설정을 업데이트할 수 없습니다",
       "cloud_sync_error": "마지막 동기화 실패: {error}",
       "cloud_sync_hide_details": "세부 정보 숨기기",
@@ -16139,7 +16144,10 @@
         "synced_messages": "메시지",
         "synced_metrics_snapshots": "메트릭",
         "synced_personas": "페르소나",
-        "synced_tool_usage": "도구 사용"
+        "synced_tool_usage": "도구 사용",
+        "synced_notes": "메모",
+        "synced_chat_sessions": "채팅 스레드",
+        "synced_chat_messages": "채팅 메시지"
       },
       "cloud_sync_title": "클라우드 대시보드 동기화",
       "cloud_sync_toggle": "클라우드 대시보드에 동기화",

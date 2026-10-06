@@ -16111,6 +16111,11 @@
       "cloud_sync_device_name_save": "名前を保存",
       "cloud_sync_device_name_saved": "保存しました。次回の同期後にスマートフォンに表示されます。",
       "cloud_sync_device_name_failed": "名前を保存できませんでした。",
+      "cloud_sync_notes_label": "メモを同期",
+      "cloud_sync_notes_hint": "メモの目標をスマートフォンに表示します。メモの本文はこのパソコンの外に送られますが、キーやトークンに見えるものは伏せられます。オフにすると同期済みのメモは削除されます。",
+      "cloud_sync_chats_label": "チャットを同期",
+      "cloud_sync_chats_hint": "Athena との会話をスマートフォンに表示し、そこから Athena にメッセージを送れます。返信にはエージェントが読んだ内容が引用されることがあるため、最初はオフです。オフにすると同期済みのチャットは削除されます。",
+      "cloud_sync_class_failed": "同期する内容を変更できませんでした。もう一度お試しください。",
       "cloud_sync_enable_failed": "同期設定を更新できませんでした",
       "cloud_sync_error": "前回の同期に失敗しました: {error}",
       "cloud_sync_hide_details": "詳細を非表示",
@@ -16139,7 +16144,10 @@
         "synced_messages": "メッセージ",
         "synced_metrics_snapshots": "メトリクス",
         "synced_personas": "ペルソナ",
-        "synced_tool_usage": "ツール使用状況"
+        "synced_tool_usage": "ツール使用状況",
+        "synced_notes": "メモ",
+        "synced_chat_sessions": "チャットのスレッド",
+        "synced_chat_messages": "チャットのメッセージ"
       },
       "cloud_sync_title": "クラウドダッシュボード同期",
       "cloud_sync_toggle": "クラウドダッシュボードに同期",

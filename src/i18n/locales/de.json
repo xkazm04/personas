@@ -16111,6 +16111,11 @@
       "cloud_sync_device_name_save": "Namen speichern",
       "cloud_sync_device_name_saved": "Gespeichert. Ihr Telefon zeigt ihn nach der nächsten Synchronisierung.",
       "cloud_sync_device_name_failed": "Der Name konnte nicht gespeichert werden.",
+      "cloud_sync_notes_label": "Notizen synchronisieren",
+      "cloud_sync_notes_hint": "Zeigt Ihre Ziele aus den Notizen auf Ihrem Telefon. Der Notiztext verlässt diesen Computer; alles, was wie ein Schlüssel oder Token aussieht, wird maskiert. Beim Ausschalten werden die synchronisierten Notizen gelöscht.",
+      "cloud_sync_chats_label": "Chats synchronisieren",
+      "cloud_sync_chats_hint": "Zeigt Ihre Unterhaltungen mit Athena auf Ihrem Telefon, und Sie können ihr von dort schreiben. Antworten können zitieren, was Ihre Agenten gelesen haben, deshalb ist dies anfangs aus. Beim Ausschalten werden die synchronisierten Chats gelöscht.",
+      "cloud_sync_class_failed": "Die Synchronisierungsauswahl konnte nicht geändert werden. Versuchen Sie es erneut.",
       "cloud_sync_enable_failed": "Synchronisierungseinstellung konnte nicht aktualisiert werden",
       "cloud_sync_error": "Letzte Synchronisierung fehlgeschlagen: {error}",
       "cloud_sync_hide_details": "Aufschlüsselung ausblenden",
@@ -16139,7 +16144,10 @@
         "synced_messages": "Nachrichten",
         "synced_metrics_snapshots": "Metriken",
         "synced_personas": "Personas",
-        "synced_tool_usage": "Tool-Nutzung"
+        "synced_tool_usage": "Tool-Nutzung",
+        "synced_notes": "Notizen",
+        "synced_chat_sessions": "Chat-Verläufe",
+        "synced_chat_messages": "Chat-Nachrichten"
       },
       "cloud_sync_title": "Cloud-Dashboard-Synchronisierung",
       "cloud_sync_toggle": "Mit Cloud-Dashboard synchronisieren",

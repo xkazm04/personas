@@ -16111,6 +16111,11 @@
       "cloud_sync_device_name_save": "Uložit název",
       "cloud_sync_device_name_saved": "Uloženo. Telefon ho ukáže po další synchronizaci.",
       "cloud_sync_device_name_failed": "Název se nepodařilo uložit.",
+      "cloud_sync_notes_label": "Synchronizovat poznámky",
+      "cloud_sync_notes_hint": "Zobrazí cíle z Poznámek ve vašem telefonu. Text poznámek opustí tento počítač a vše, co vypadá jako klíč nebo token, se skryje. Vypnutím se synchronizované poznámky smažou.",
+      "cloud_sync_chats_label": "Synchronizovat chaty",
+      "cloud_sync_chats_hint": "Zobrazí vaše konverzace s Athenou v telefonu a umožní vám jí odtud psát. Odpovědi mohou citovat, co vaši agenti četli, proto je tato volba zpočátku vypnutá. Vypnutím se synchronizované chaty smažou.",
+      "cloud_sync_class_failed": "Nastavení synchronizace se nepodařilo změnit. Zkuste to znovu.",
       "cloud_sync_enable_failed": "Nastavení synchronizace se nepodařilo aktualizovat",
       "cloud_sync_error": "Poslední synchronizace selhala: {error}",
       "cloud_sync_hide_details": "Skrýt přehled",
@@ -16139,7 +16144,10 @@
         "synced_messages": "Zprávy",
         "synced_metrics_snapshots": "Metriky",
         "synced_personas": "Persony",
-        "synced_tool_usage": "Využití nástrojů"
+        "synced_tool_usage": "Využití nástrojů",
+        "synced_notes": "Poznámky",
+        "synced_chat_sessions": "Vlákna chatu",
+        "synced_chat_messages": "Zprávy chatu"
       },
       "cloud_sync_title": "Synchronizace s cloudovým panelem",
       "cloud_sync_toggle": "Synchronizovat s cloudovým panelem",

@@ -1139,6 +1139,7 @@ export type { SubscriptionHealth } from "./SubscriptionHealth";
 export type { SubscriptionUpdate } from "./SubscriptionUpdate";
 export type { SubscriptionWithProject } from "./SubscriptionWithProject";
 export type { SyncConflict } from "./SyncConflict";
+export type { SyncDataClass } from "./SyncDataClass";
 export type { SyncLogEntry } from "./SyncLogEntry";
 export type { SyncState } from "./SyncState";
 export type { SyncWinner } from "./SyncWinner";

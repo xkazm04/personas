@@ -1104,6 +1104,21 @@ pub const CLOUD_SYNC_DEVICE_NAME: &str = "cloud_sync_device_name";
 /// Upper bound for [`CLOUD_SYNC_DEVICE_NAME`], in characters.
 pub const CLOUD_SYNC_DEVICE_NAME_MAX: usize = 64;
 
+/// Per-class opt-in: push the Notepad notes (goals) to the cloud
+/// (`synced_notes`). Value: `"true"` / `"false"`. **Default off, also for
+/// users who already sync** (owner decision M19): note text is free text the
+/// user typed, a new class of data leaving the machine. Turning it off deletes
+/// this device's `synced_notes` rows at the next pass.
+pub const CLOUD_SYNC_NOTES_ENABLED: &str = "cloud_sync_notes_enabled";
+
+/// Per-class opt-in: push Athena's conversations to the cloud
+/// (`synced_chat_sessions` / `synced_chat_messages`, `thread_kind = 'athena'`)
+/// and accept a paired phone's `chat_send` to Athena. Value: `"true"` /
+/// `"false"`. **Default off, also for users who already sync** (M19): replies
+/// can quote what agents read through their connectors. Turning it off deletes
+/// this device's chat rows at the next pass.
+pub const CLOUD_SYNC_CHATS_ENABLED: &str = "cloud_sync_chats_enabled";
+
 /// Paired phones ("controllers") of the mobile command plane: a JSON array of
 /// `{controllerId, name, publicKey, createdAt, revoked, revokedAt}`. Public
 /// keys and metadata only, NEVER a secret. Owned by `cloud::trust`.
@@ -1512,6 +1527,8 @@ const ALLOWED_KEYS: &[&str] = &[
     CLOUD_SYNC_LAST_AT,
     CLOUD_SYNC_TOTAL_ROWS,
     CLOUD_SYNC_DEVICE_NAME,
+    CLOUD_SYNC_NOTES_ENABLED,
+    CLOUD_SYNC_CHATS_ENABLED,
     CLOUD_CONTROLLERS,
     APPEARANCE_PREFERENCES,
     APP_LANGUAGE,
@@ -1873,6 +1890,8 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | COMPANION_AUTONOMOUS_MODE
         | COMPANION_DEV_MODE
         | CLOUD_SYNC_ENABLED
+        | CLOUD_SYNC_NOTES_ENABLED
+        | CLOUD_SYNC_CHATS_ENABLED
         | AUTONOMOUS_MESSAGE_TRIAGE
         | AUTONOMOUS_GOAL_ADVANCEMENT
         | AUTONOMOUS_ATTENTION_LOOP
@@ -2338,9 +2357,14 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | OBSIDIAN_BRAIN_SAVED_VAULTS
         | DEV_TOOLS_CROSS_PROJECT_METADATA => "integrations",
         // Cloud sync (user-facing toggle only; bookkeeping excluded above).
-        // The paired-phone trust list and the heartbeat name are user acts
-        // (pair, revoke, rename), so they are audited beside the toggle.
-        CLOUD_SYNC_ENABLED | CLOUD_CONTROLLERS | CLOUD_SYNC_DEVICE_NAME => "sync",
+        // The paired-phone trust list, the heartbeat name and the per-class
+        // opt-ins are user acts (pair, revoke, rename, share more data), so
+        // they are audited beside the toggle.
+        CLOUD_SYNC_ENABLED
+        | CLOUD_CONTROLLERS
+        | CLOUD_SYNC_DEVICE_NAME
+        | CLOUD_SYNC_NOTES_ENABLED
+        | CLOUD_SYNC_CHATS_ENABLED => "sync",
         // UI / onboarding state.
         ONBOARDING_QUEST_STATE => "config",
         // Any registered-but-uncategorized key → generic bucket (still audited).
@@ -3069,6 +3093,8 @@ mod tests {
         assert_eq!(audit_category(COMPANION_AUTONOMOUS_MODE), Some("autonomy"));
         assert_eq!(audit_category(OBSIDIAN_BRAIN_CONFIG), Some("integrations"));
         assert_eq!(audit_category(CLOUD_SYNC_ENABLED), Some("sync"));
+        assert_eq!(audit_category(CLOUD_SYNC_NOTES_ENABLED), Some("sync"));
+        assert_eq!(audit_category(CLOUD_SYNC_CHATS_ENABLED), Some("sync"));
         // Prefix families.
         assert_eq!(audit_category("auto_rollback:persona-1"), Some("autonomy"));
         assert_eq!(audit_category("autopilot_mode:proj-1"), Some("autonomy"));

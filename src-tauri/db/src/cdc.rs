@@ -293,6 +293,21 @@ pub struct CdcHooks {
     /// Called on `persona_events` INSERT to wake the subscription event bus
     /// rather than waiting for its next poll tick.
     pub wake_event_bus: fn(),
+    /// Called when a Notepad note or a note-thread entry changes
+    /// ([`is_cloud_notes_table`]), so the cloud mirror can push notes. A hook
+    /// of its own because notes take a longer debounce than the other synced
+    /// tables (the pad saves every 500 ms while the operator types), and the
+    /// receiver no-ops unless the operator opted into syncing notes.
+    pub notify_cloud_notes_dirty: fn(),
+}
+
+/// Tables whose changes reach the cloud mirror's NOTES projection
+/// (`synced_notes`): the notes themselves and their thread, which feeds the
+/// open-review and unread counts. Deliberately not in [`table_to_event`]: the
+/// pad already has its own events for the frontend, and this nudge is for the
+/// sync loop only, so it adds no event nobody listens to.
+pub fn is_cloud_notes_table(table: &str) -> bool {
+    matches!(table, "dev_notes" | "dev_note_comments")
 }
 
 /// Spawns a background tokio task that drains CDC events from the sync channel
@@ -370,6 +385,11 @@ pub fn spawn_cdc_drain_task(
 
         // Async consumer
         while let Some(event) = rx.recv().await {
+            // Before the event-name lookup: the notes tables have no frontend
+            // event of their own here, only the cloud nudge.
+            if is_cloud_notes_table(&event.table) {
+                (hooks.notify_cloud_notes_dirty)();
+            }
             let event_name = match table_to_event(&event.table, event.action) {
                 Some(name) => name,
                 None => continue,
@@ -624,6 +644,16 @@ mod tests {
     }
 
     // --- table_to_event mapping --------------------------------------------
+
+    #[test]
+    fn the_notes_tables_nudge_the_cloud_and_emit_no_frontend_event() {
+        for table in ["dev_notes", "dev_note_comments"] {
+            assert!(is_cloud_notes_table(table));
+            assert_eq!(table_to_event(table, CdcAction::Update), None);
+        }
+        assert!(!is_cloud_notes_table("dev_goals"));
+        assert!(!is_cloud_notes_table("dev_note_runs"));
+    }
 
     #[test]
     fn table_to_event_maps_known_and_unknown_tables() {

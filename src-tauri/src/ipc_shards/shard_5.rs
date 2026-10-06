@@ -122,6 +122,7 @@ pub(super) fn shard(
         commands::infrastructure::cloud_sync::cloud_sync_status,
         commands::infrastructure::cloud_sync::cloud_sync_now,
         commands::infrastructure::cloud_sync::cloud_sync_set_device_name,
+        commands::infrastructure::cloud_sync::cloud_sync_set_data_class,
         commands::infrastructure::cloud_sync::cloud_pair_controller_start,
         commands::infrastructure::cloud_sync::cloud_pair_controller_poll,
         commands::infrastructure::cloud_sync::cloud_pair_controller_cancel,

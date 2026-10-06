@@ -17,6 +17,7 @@ import type { CloudSyncStatus } from '@/lib/bindings/CloudSyncStatus';
 import type { TableSyncStatus } from '@/lib/bindings/TableSyncStatus';
 import PairedPhonesPanel from './PairedPhonesPanel';
 import DeviceNameField from './DeviceNameField';
+import SyncedDataToggles from './SyncedDataToggles';
 
 type ConnState = 'off' | 'active' | 'syncing';
 
@@ -224,6 +225,9 @@ export default function CloudSyncCard() {
 
           {/* The name a phone shows for this desktop (heartbeat) */}
           <DeviceNameField key={status?.deviceName ?? ''} current={status?.deviceName ?? null} onSaved={setStatus} />
+
+          {/* Per-class opt-ins: notes and chats leave this computer only when switched on */}
+          {status && <SyncedDataToggles status={status} onChanged={setStatus} />}
 
           {/* Paired phones: who may command this desktop from personas.so */}
           <PairedPhonesPanel />

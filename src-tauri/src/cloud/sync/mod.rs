@@ -14,19 +14,22 @@
 //! surfaced through [`CloudSyncStatus`] so the Settings panel can show exactly
 //! what synced and what didn't.
 
+pub(crate) mod athena_chat;
 pub mod client;
 pub(crate) mod cursor;
+pub(crate) mod notes;
+mod redact;
 mod rows;
 
 use std::sync::{Arc, LazyLock};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use serde::Serialize;
 use tauri::AppHandle;
 use tokio::sync::{Mutex, Notify};
 use ts_rs::TS;
 
-use crate::db::DbPool;
+use crate::db::{DbPool, UserDbPool};
 use crate::error::AppError;
 use crate::AppState;
 use client::SyncClient;
@@ -82,6 +85,27 @@ const SYNC_TABLES: &[(&str, &str, bool, bool)] = &[
     // fallback at the epoch rather than 90 days back, so nothing reads as a
     // bounded first push that is not one.
     ("synced_fleet_queue", "fleet_queue", true, false),
+    // The thirteenth: Notepad notes, a full-set replace like the queue (its
+    // flags are inert for the same reason) and only behind the "Sync notes"
+    // opt-in. See `notes`.
+    ("synced_notes", notes::NOTES_CURSOR, true, false),
+    // The fourteenth and fifteenth: Athena's threads and turns, behind the
+    // "Sync chats" opt-in. Not cursor-synced through `sync_table` either: the
+    // per-thread ledger in `athena_chat` keeps its own keyset cursors (and
+    // its own 90-day floor), so these flags are inert too and the cursors
+    // here only feed the status grid.
+    (
+        "synced_chat_sessions",
+        athena_chat::SESSIONS_CURSOR,
+        true,
+        false,
+    ),
+    (
+        "synced_chat_messages",
+        athena_chat::MESSAGES_CURSOR,
+        true,
+        false,
+    ),
 ];
 
 /// Last-pass result for one table, retained in memory for the status surface.
@@ -140,6 +164,10 @@ pub struct CloudSyncStatus {
     pub total_rows_synced: u64,
     /// Per-table breakdown for the most recent pass + cursor watermarks.
     pub tables: Vec<TableSyncStatus>,
+    /// The "Sync notes" opt-in (default off).
+    pub sync_notes: bool,
+    /// The "Sync chats" opt-in (default off).
+    pub sync_chats: bool,
 }
 
 /// Internal result of one pass — drives both the persisted counters and the
@@ -160,6 +188,92 @@ impl SyncReport {
 
 fn now_rfc3339() -> String {
     chrono::Utc::now().to_rfc3339()
+}
+
+/// Mirror of the "Sync notes" opt-in, so the CDC hook (which has no pool) can
+/// skip waking the loop for a note edit nobody is syncing. Refreshed at every
+/// pass and by [`set_data_class`]; a stale `false` only costs an edit its
+/// prompt push, never the push itself (the periodic tick still runs).
+static NOTES_SYNC_ON: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// The notes-only debounce: `(first nudge, due)` while a wake is pending.
+static NOTES_DUE: std::sync::Mutex<Option<(Instant, Instant)>> = std::sync::Mutex::new(None);
+
+/// Quiet time after the last note edit before the pass runs. The pad saves
+/// 500 ms after typing stops, so the plain 2 s debounce would run a pass every
+/// few seconds of a typing session (PHASE2-SPEC 5.1).
+const NOTES_DEBOUNCE: Duration = Duration::from_secs(10);
+
+/// A typing session that never pauses still syncs this often.
+const NOTES_MAX_WAIT: Duration = Duration::from_secs(60);
+
+/// When the notes wake is due, given the pending window (if any). Pure, so
+/// the trailing-debounce arithmetic is tested.
+fn notes_due(pending: Option<(Instant, Instant)>, now: Instant) -> (Instant, Instant) {
+    let first = pending.map_or(now, |(first, _)| first);
+    (first, (now + NOTES_DEBOUNCE).min(first + NOTES_MAX_WAIT))
+}
+
+/// Wakes the loop to re-read [`NOTES_DUE`] (without running a pass).
+static NOTES_WAKE: LazyLock<Notify> = LazyLock::new(Notify::new);
+
+/// A note or a note-thread entry changed (CDC on `dev_notes` /
+/// `dev_note_comments`). Schedules a pass [`NOTES_DEBOUNCE`] after the LAST
+/// such change (at most [`NOTES_MAX_WAIT`] after the first), and only while
+/// "Sync notes" is on. The sync loop owns the timer, so no task is spawned.
+pub fn notify_notes_dirty() {
+    if !NOTES_SYNC_ON.load(std::sync::atomic::Ordering::Acquire) {
+        return;
+    }
+    {
+        let mut g = NOTES_DUE.lock().unwrap_or_else(|p| p.into_inner());
+        *g = Some(notes_due(*g, Instant::now()));
+    }
+    NOTES_WAKE.notify_one();
+}
+
+/// The pending notes deadline, if any.
+fn notes_deadline() -> Option<Instant> {
+    NOTES_DUE
+        .lock()
+        .unwrap_or_else(|p| p.into_inner())
+        .map(|(_, due)| due)
+}
+
+/// Resolve at `due`, or never.
+async fn until(due: Option<Instant>) {
+    match due {
+        Some(due) => tokio::time::sleep_until(tokio::time::Instant::from_std(due)).await,
+        None => std::future::pending::<()>().await,
+    }
+}
+
+/// The per-class opt-ins of PHASE2-SPEC 5 (owner decision M19).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub enum SyncDataClass {
+    /// Notepad notes -> `synced_notes`.
+    Notes,
+    /// Athena's conversations -> `synced_chat_*` (and a paired phone's
+    /// `chat_send` to Athena).
+    Chats,
+}
+
+/// Turn one data class on or off. Off is honoured by the next pass, which
+/// deletes this device's rows of that class; the loop is woken either way so
+/// that happens within seconds.
+pub fn set_data_class(pool: &DbPool, class: SyncDataClass, enabled: bool) -> Result<(), AppError> {
+    let key = match class {
+        SyncDataClass::Notes => crate::db::settings_keys::CLOUD_SYNC_NOTES_ENABLED,
+        SyncDataClass::Chats => crate::db::settings_keys::CLOUD_SYNC_CHATS_ENABLED,
+    };
+    crate::db::repos::core::settings::set(pool, key, if enabled { "true" } else { "false" })?;
+    if class == SyncDataClass::Notes {
+        NOTES_SYNC_ON.store(enabled, std::sync::atomic::Ordering::Release);
+    }
+    notify_dirty();
+    Ok(())
 }
 
 /// Signal that local data changed; the sync loop debounces and pushes.
@@ -209,6 +323,8 @@ pub async fn status(pool: &DbPool) -> CloudSyncStatus {
         rows_synced_last: rt.rows_synced_last,
         total_rows_synced: cursor::get_total_rows(pool),
         tables,
+        sync_notes: notes::notes_enabled(pool),
+        sync_chats: athena_chat::chats_enabled(pool),
     }
 }
 
@@ -323,7 +439,12 @@ where
 /// dashboard always knows this device exists; then each Phase-1 table, fault
 /// isolated. The heartbeat's outcome influences `is_clean()`/`last_error` but is
 /// not shown as a per-table grid row (it has no cursor).
-async fn collect_pass(pool: &DbPool, client: &SyncClient, device_id: &str) -> SyncReport {
+async fn collect_pass(
+    pool: &DbPool,
+    user_db: &UserDbPool,
+    client: &SyncClient,
+    device_id: &str,
+) -> SyncReport {
     let mut tables: Vec<LastTable> = Vec::with_capacity(SYNC_TABLES.len() + 1);
 
     // Device heartbeat (own outcome, kept out of the displayed grid).
@@ -373,6 +494,11 @@ async fn collect_pass(pool: &DbPool, client: &SyncClient, device_id: &str) -> Sy
     // replace with a reconcile delete, not a cursor read. Fault-isolated the
     // same way - it returns its own LastTable and never propagates.
     tables.push(sync_fleet_queue(pool, client, device_id).await);
+
+    // Notes (index 12) and Athena's chats (13, 14): opt-in classes, each
+    // fault-isolated like a table. Off with rows in the cloud = purge.
+    tables.push(sync_notes(pool, client, device_id).await);
+    tables.extend(sync_athena_chat(pool, user_db, client, device_id).await);
 
     // Delete propagation (v2): mirror local persona deletions into the cloud.
     // Kept out of the displayed grid (it has no upsert cursor of its own row),
@@ -466,6 +592,135 @@ async fn sync_fleet_queue_inner(
         .await?;
     cursor::set_cursor(pool, cursor_key, &stamp)?;
     Ok(n)
+}
+
+/// Sync the Notepad notes: a full-set replace when the projection changed, a
+/// purge after an opt-out, nothing otherwise. See `notes`.
+async fn sync_notes(pool: &DbPool, client: &SyncClient, device_id: &str) -> LastTable {
+    let (remote, cursor_key, _, _) = SYNC_TABLES[12];
+    NOTES_SYNC_ON.store(
+        notes::notes_enabled(pool),
+        std::sync::atomic::Ordering::Release,
+    );
+    match sync_notes_inner(pool, client, remote, cursor_key, device_id).await {
+        Ok(rows) => LastTable {
+            remote: remote.to_string(),
+            rows,
+            error: None,
+        },
+        Err(e) => {
+            tracing::warn!(table = remote, error = %e, "cloud sync: notes failed (isolated)");
+            LastTable {
+                remote: remote.to_string(),
+                rows: 0,
+                error: Some(e.to_string()),
+            }
+        }
+    }
+}
+
+async fn sync_notes_inner(
+    pool: &DbPool,
+    client: &SyncClient,
+    remote: &str,
+    cursor_key: &str,
+    device_id: &str,
+) -> Result<u64, AppError> {
+    let pool_c = pool.clone();
+    let device = device_id.to_string();
+    let plan = tokio::task::spawn_blocking(move || notes::plan(&pool_c, &device))
+        .await
+        .map_err(|e| AppError::Internal(format!("cloud sync notes join: {e}")))??;
+    match plan {
+        notes::NotesPlan::Idle | notes::NotesPlan::Unchanged => Ok(0),
+        notes::NotesPlan::Purge => {
+            client
+                .delete(&format!("{remote}?device_id=eq.{device_id}"))
+                .await?;
+            notes::forget(pool)?;
+            Ok(0)
+        }
+        notes::NotesPlan::Push(mut rows, fp) => {
+            // The same URL-safe stamp the queue uses: it goes into the
+            // reconcile filter below.
+            let stamp = queue_stamp();
+            for r in &mut rows {
+                r.synced_at = stamp.clone();
+            }
+            let n = rows.len() as u64;
+            client.upsert(remote, &rows).await?;
+            client
+                .delete(&format!(
+                    "{remote}?device_id=eq.{device_id}&synced_at=lt.{stamp}"
+                ))
+                .await?;
+            cursor::set_cursor(pool, cursor_key, &stamp)?;
+            notes::remember_push(fp);
+            Ok(n)
+        }
+    }
+}
+
+/// Sync Athena's conversations: two status rows (sessions, messages) from one
+/// ledger walk. See `athena_chat`.
+async fn sync_athena_chat(
+    pool: &DbPool,
+    user_db: &UserDbPool,
+    client: &SyncClient,
+    device_id: &str,
+) -> [LastTable; 2] {
+    let (sessions_remote, sessions_key, _, _) = SYNC_TABLES[13];
+    let (messages_remote, messages_key, _, _) = SYNC_TABLES[14];
+    let cloud = athena_chat::PostgrestChat {
+        client,
+        device_id: device_id.to_string(),
+    };
+    match athena_chat::run_pass(pool, user_db, &cloud, device_id).await {
+        Ok(report) => {
+            if athena_chat::chats_enabled(pool) {
+                // Status-grid cursors only (the ledger is the real watermark
+                // and is saved inside the pass); a failed write is logged.
+                let stamp = now_rfc3339();
+                for key in [sessions_key, messages_key] {
+                    if let Err(e) = cursor::set_cursor(pool, key, &stamp) {
+                        tracing::warn!(cursor = key, error = %e, "cloud sync: chat status cursor not saved");
+                    }
+                }
+            }
+            if report.more {
+                // The pass budget ran out: drain the rest promptly.
+                notify_dirty();
+            }
+            [
+                LastTable {
+                    remote: sessions_remote.to_string(),
+                    rows: report.sessions,
+                    error: None,
+                },
+                LastTable {
+                    remote: messages_remote.to_string(),
+                    rows: report.messages,
+                    error: None,
+                },
+            ]
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "cloud sync: Athena chat failed (isolated)");
+            let error = Some(e.to_string());
+            [
+                LastTable {
+                    remote: sessions_remote.to_string(),
+                    rows: 0,
+                    error: error.clone(),
+                },
+                LastTable {
+                    remote: messages_remote.to_string(),
+                    rows: 0,
+                    error,
+                },
+            ]
+        }
+    }
 }
 
 /// Synced child tables keyed by `persona_id` (mirror of the local
@@ -566,7 +821,7 @@ pub async fn run_sync_once(state: &Arc<AppState>) {
     let report = match SyncClient::new(jwt) {
         Ok(client) => {
             let device_id = cursor::resolve_device_id(&pool);
-            collect_pass(&pool, &client, &device_id).await
+            collect_pass(&pool, &state.user_db, &client, &device_id).await
         }
         Err(e) => SyncReport {
             tables: vec![LastTable {
@@ -605,6 +860,10 @@ pub fn spawn_sync_loop(_app: AppHandle, state: Arc<AppState>) {
                     // Coalesce a burst of mutations into one pass.
                     tokio::time::sleep(Duration::from_secs(2)).await;
                 }
+                // A note edit moved the notes deadline: re-read it.
+                _ = NOTES_WAKE.notified() => continue,
+                // The notes deadline passed: run the pass below.
+                _ = until(notes_deadline()) => {}
             }
 
             if !state.leadership.is_leader() || !cursor::is_enabled(&state.db) {
@@ -616,6 +875,8 @@ pub fn spawn_sync_loop(_app: AppHandle, state: Arc<AppState>) {
             // a follow-up below, instead of being silently folded into a pass
             // that already missed it.
             SYNC_DIRTY.store(false, std::sync::atomic::Ordering::Release);
+            // This pass reads the notes too: a pending notes deadline is met.
+            *NOTES_DUE.lock().unwrap_or_else(|p| p.into_inner()) = None;
 
             // run_sync_once writes the status snapshot internally and logs any
             // per-table failures (in sync_table); nothing more for the loop to do.
@@ -692,7 +953,7 @@ mod tests {
     fn sync_tables_cover_all_phase1_tables() {
         // The grid + dispatch are driven off this list; guard its length so a
         // table added to collect_pass without a SYNC_TABLES entry fails CI.
-        assert_eq!(SYNC_TABLES.len(), 12);
+        assert_eq!(SYNC_TABLES.len(), 15);
         // cursor keys must be unique (they key app_settings rows).
         let mut keys: Vec<&str> = SYNC_TABLES.iter().map(|(_, c, _, _)| *c).collect();
         keys.sort_unstable();
@@ -722,6 +983,34 @@ mod tests {
         assert!(
             now_rfc3339().contains('+'),
             "the default form is why this exists"
+        );
+    }
+
+    /// `sync_notes` and `sync_athena_chat` read their tuples by INDEX, like
+    /// the queue: pin them.
+    #[test]
+    fn notes_and_chat_are_the_last_three_entries() {
+        assert_eq!(SYNC_TABLES[12].0, "synced_notes");
+        assert_eq!(SYNC_TABLES[13].0, "synced_chat_sessions");
+        assert_eq!(SYNC_TABLES[14].0, "synced_chat_messages");
+        for (_, _, full_backfill, resync) in &SYNC_TABLES[12..] {
+            assert!(*full_backfill && !*resync, "their flags are inert");
+        }
+    }
+
+    /// The notes debounce is trailing: each edit pushes the wake out by 10 s,
+    /// but never past 60 s after the first edit.
+    #[test]
+    fn the_notes_debounce_trails_and_is_capped() {
+        let t0 = Instant::now();
+        let (first, due) = notes_due(None, t0);
+        assert_eq!((first, due), (t0, t0 + NOTES_DEBOUNCE));
+        let t1 = t0 + Duration::from_secs(4);
+        assert_eq!(notes_due(Some((first, due)), t1), (t0, t1 + NOTES_DEBOUNCE));
+        let late = t0 + Duration::from_secs(55);
+        assert_eq!(
+            notes_due(Some((first, due)), late),
+            (t0, t0 + NOTES_MAX_WAIT)
         );
     }
 

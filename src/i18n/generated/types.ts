@@ -12705,6 +12705,11 @@ export type Translations = {
       cloud_sync_device_name_save: string;
       cloud_sync_device_name_saved: string;
       cloud_sync_device_name_failed: string;
+      cloud_sync_notes_label: string;
+      cloud_sync_notes_hint: string;
+      cloud_sync_chats_label: string;
+      cloud_sync_chats_hint: string;
+      cloud_sync_class_failed: string;
       cloud_sync_tables_title: string;
       cloud_sync_show_details: string;
       cloud_sync_hide_details: string;
@@ -12721,6 +12726,9 @@ export type Translations = {
         synced_tool_usage: string;
         synced_memories: string;
         synced_knowledge_patterns: string;
+        synced_notes: string;
+        synced_chat_sessions: string;
+        synced_chat_messages: string;
       };
     };
     appearance: {

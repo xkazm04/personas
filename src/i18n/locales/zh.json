@@ -16111,6 +16111,11 @@
       "cloud_sync_device_name_save": "保存名称",
       "cloud_sync_device_name_saved": "已保存。下次同步后会在手机上显示。",
       "cloud_sync_device_name_failed": "无法保存名称。",
+      "cloud_sync_notes_label": "同步笔记",
+      "cloud_sync_notes_hint": "在手机上显示笔记中的目标。笔记文本会离开这台电脑，任何看起来像密钥或令牌的内容都会被遮盖。关闭后会删除已同步的笔记。",
+      "cloud_sync_chats_label": "同步聊天",
+      "cloud_sync_chats_hint": "在手机上显示你与 Athena 的对话，并可从手机给她发消息。回复可能会引用你的智能体读到的内容，因此默认关闭。关闭后会删除已同步的聊天。",
+      "cloud_sync_class_failed": "无法更改同步内容，请重试。",
       "cloud_sync_enable_failed": "无法更新同步设置",
       "cloud_sync_error": "上次同步失败：{error}",
       "cloud_sync_hide_details": "隐藏详情",
@@ -16139,7 +16144,10 @@
         "synced_messages": "消息",
         "synced_metrics_snapshots": "指标",
         "synced_personas": "人格",
-        "synced_tool_usage": "工具使用"
+        "synced_tool_usage": "工具使用",
+        "synced_notes": "笔记",
+        "synced_chat_sessions": "聊天会话",
+        "synced_chat_messages": "聊天消息"
       },
       "cloud_sync_title": "云端仪表板同步",
       "cloud_sync_toggle": "同步到云端仪表板",

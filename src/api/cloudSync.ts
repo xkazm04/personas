@@ -3,6 +3,7 @@ import type { CloudSyncStatus } from '@/lib/bindings/CloudSyncStatus';
 import type { CloudPairingStart } from '@/lib/bindings/CloudPairingStart';
 import type { CloudPairingPoll } from '@/lib/bindings/CloudPairingPoll';
 import type { CloudController } from '@/lib/bindings/CloudController';
+import type { SyncDataClass } from '@/lib/bindings/SyncDataClass';
 
 /** Read the current cloud-sync status (enabled flag + last-run telemetry). */
 export const getCloudSyncStatus = () =>
@@ -20,6 +21,12 @@ export const cloudSyncNow = () => invokeWithTimeout<CloudSyncStatus>('cloud_sync
  *  it back to the operating system's name. Returns the fresh status. */
 export const setCloudSyncDeviceName = (name: string | null) =>
   invokeWithTimeout<CloudSyncStatus>('cloud_sync_set_device_name', { name });
+
+/** Turn a per-class opt-in on or off ("Sync notes" / "Sync chats"; both default
+ *  off). Off deletes this computer's synced rows of that class at the next pass.
+ *  Returns the fresh status. */
+export const setCloudSyncDataClass = (dataClass: SyncDataClass, enabled: boolean) =>
+  invokeWithTimeout<CloudSyncStatus>('cloud_sync_set_data_class', { class: dataClass, enabled });
 
 // -- Paired phones (mobile command plane) ------------------------------------
 

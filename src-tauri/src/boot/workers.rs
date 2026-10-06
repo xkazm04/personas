@@ -198,6 +198,7 @@ pub fn spawn_cdc_drain(
         db::cdc::CdcHooks {
             notify_cloud_dirty: cloud::sync::notify_dirty,
             wake_event_bus: || engine::subscription::event_bus_wake_signal().notify_one(),
+            notify_cloud_notes_dirty: cloud::sync::notify_notes_dirty,
         },
     );
     st.checkpoint("cdc_drain_task");

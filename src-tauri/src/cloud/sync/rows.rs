@@ -60,7 +60,7 @@ fn key_is_secret(key: &str) -> bool {
 
 /// A string value that looks like a credential even under an innocuous key:
 /// known token prefixes, or a long whitespace-free high-base64/hex-density run.
-fn value_looks_secret(s: &str) -> bool {
+pub(super) fn value_looks_secret(s: &str) -> bool {
     const PREFIXES: &[&str] = &[
         "sk-",
         "sk_",

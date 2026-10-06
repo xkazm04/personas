@@ -32,6 +32,11 @@
     "cloud_sync_device_name_save": "নাম সংরক্ষণ করুন",
     "cloud_sync_device_name_saved": "সংরক্ষিত হয়েছে। পরের সিঙ্কের পরে আপনার ফোনে দেখাবে।",
     "cloud_sync_device_name_failed": "নাম সংরক্ষণ করা যায়নি।",
+    "cloud_sync_notes_label": "নোট সিঙ্ক করুন",
+    "cloud_sync_notes_hint": "আপনার নোটের লক্ষ্যগুলো ফোনে দেখান। নোটের লেখা এই কম্পিউটার ছেড়ে যায়, তবে কী বা টোকেনের মতো দেখতে যেকোনো কিছু লুকিয়ে রাখা হয়। বন্ধ করলে সিঙ্ক হওয়া নোট মুছে যায়।",
+    "cloud_sync_chats_label": "চ্যাট সিঙ্ক করুন",
+    "cloud_sync_chats_hint": "Athena-র সঙ্গে আপনার কথোপকথন ফোনে দেখুন এবং সেখান থেকেই তাকে বার্তা পাঠান। উত্তরে আপনার এজেন্টদের পড়া তথ্য উদ্ধৃত থাকতে পারে, তাই এটি শুরুতে বন্ধ থাকে। বন্ধ করলে সিঙ্ক হওয়া চ্যাট মুছে যায়।",
+    "cloud_sync_class_failed": "কী সিঙ্ক হবে তা বদলানো যায়নি। আবার চেষ্টা করুন।",
     "cloud_sync_enable_failed": "সিঙ্ক সেটিং আপডেট করা যায়নি",
     "cloud_sync_error": "সর্বশেষ সিঙ্ক ব্যর্থ হয়েছে: {error}",
     "cloud_sync_hide_details": "বিস্তারিত লুকান",
@@ -60,7 +65,10 @@
       "synced_messages": "বার্তা",
       "synced_metrics_snapshots": "মেট্রিক্স",
       "synced_personas": "পার্সোনা",
-      "synced_tool_usage": "টুল ব্যবহার"
+      "synced_tool_usage": "টুল ব্যবহার",
+      "synced_notes": "নোট",
+      "synced_chat_sessions": "চ্যাট থ্রেড",
+      "synced_chat_messages": "চ্যাট বার্তা"
     },
     "cloud_sync_title": "ক্লাউড ড্যাশবোর্ড সিঙ্ক",
     "cloud_sync_toggle": "ক্লাউড ড্যাশবোর্ডে সিঙ্ক করুন",

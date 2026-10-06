@@ -60,6 +60,21 @@ pub async fn cloud_sync_set_device_name(
     Ok(sync::status(&state.db).await)
 }
 
+/// Turn one per-class opt-in on or off: "Sync notes" (`notes`) or "Sync
+/// chats" (`chats`). Both default off, also for users who already sync (owner
+/// decision M19). Off deletes this device's rows of that class at the next
+/// pass, which this wakes; returns the fresh status. Enforced by its
+/// `PRIVILEGED_COMMANDS` entry, like the device name above.
+#[tauri::command]
+pub async fn cloud_sync_set_data_class(
+    state: State<'_, Arc<AppState>>,
+    class: sync::SyncDataClass,
+    enabled: bool,
+) -> Result<sync::CloudSyncStatus, AppError> {
+    sync::set_data_class(&state.db, class, enabled)?;
+    Ok(sync::status(&state.db).await)
+}
+
 // ── paired phones (mobile command plane, PHASE2-SPEC 3.2-3.4) ───────────
 
 /// A started pairing, returned once to the Settings dialog. The secret lives
