@@ -14,6 +14,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { HATCH_BG } from '../../kpiChartTheme';
 import { nextMoveOf, nextMoveText } from '../../estate/kpiNextMove';
+import { useKT } from '../../treatment/KpiTreatmentContext';
 import { fitsLabel, plotArea, plotColumns, type GroupTerritory } from './mapLayout';
 import { plotStyle, type MapLens } from './mapPlot';
 
@@ -47,6 +48,7 @@ export function MapTerritory({
   onOpenKpi: (kpiId: string) => void;
 }) {
   const { t, tx } = useTranslation();
+  const KT = useKT();
   const o = t.kpis.overview;
   const { rect, tally } = territory;
   const labelled = fitsLabel(rect);
@@ -80,15 +82,15 @@ export function MapTerritory({
           onClick={onOpen}
           aria-label={summary}
           data-testid={`kpi-map-territory-${territory.key}`}
-          className="absolute inset-0 rounded-interactive border border-card-border bg-secondary/10 text-left hover:border-primary/50 focus-ring"
+          className={`absolute inset-0 text-left hover:border-primary/50 focus-ring ${KT.cell}`}
           style={territory.color ? { borderLeftColor: territory.color, borderLeftWidth: 2 } : undefined}
         />
       </Tooltip>
 
       {labelled && (
         <div className="pointer-events-none absolute inset-x-1.5 top-0.5 flex items-baseline justify-between gap-1">
-          <span className="truncate typo-label text-foreground">{territory.label}</span>
-          <span className="shrink-0 typo-code text-foreground tabular-nums">
+          <span className={`truncate text-foreground ${KT.colHead}`}>{territory.label}</span>
+          <span className={`shrink-0 text-foreground ${KT.markFigure}`}>
             {`${tally.measured}/${tally.total}`}
           </span>
         </div>
@@ -96,7 +98,7 @@ export function MapTerritory({
       {territory.rank != null && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full typo-code tabular-nums"
+          className={`pointer-events-none absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full ${KT.markFigure}`}
           style={{ background: 'var(--primary)', color: 'var(--background)' }}
         >
           {territory.rank}
@@ -132,7 +134,7 @@ export function MapTerritory({
             <span
               key={kpi.id}
               data-kpi-id={kpi.id}
-              className="block rounded-[1px]"
+              className={`block ${KT.markRadius}`}
               style={{
                 background: style.fill ?? 'transparent',
                 backgroundImage: style.fill ? undefined : HATCH_BG,

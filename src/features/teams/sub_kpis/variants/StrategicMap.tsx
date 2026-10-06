@@ -29,7 +29,7 @@ import { brokenPromises, type MapLens } from './map/mapPlot';
 import { MapLegend } from './map/MapLegend';
 import { MapTerritory, type PlotHit } from './map/MapTerritory';
 import { MapPlotTip } from './map/MapPlotTip';
-import { KT } from '../estate/kpiType';
+import { useKT } from '../treatment/KpiTreatmentContext';
 
 /** Tall enough that 1,044 plots are individually visible at 1280px wide; the
  *  canvas is a fixed frame, never a page that grows with the estate. */
@@ -37,6 +37,7 @@ const CANVAS_HEIGHT = 640;
 
 export default function StrategicMap({ overview, loading, onFocus, onOpen }: KpiVariantProps) {
   const { t, tx } = useTranslation();
+  const KT = useKT();
   const o = t.kpis.overview;
   const [lens, setLens] = useState<MapLens>('state');
   const [hit, setHit] = useState<PlotHit | null>(null);
@@ -105,17 +106,17 @@ export default function StrategicMap({ overview, loading, onFocus, onOpen }: Kpi
           {layout.frames.map((frame) => (
             <div
               key={frame.projectId}
-              className="absolute rounded-card border border-primary/15"
+              className={`absolute overflow-hidden ${KT.radius} ${KT.frame}`}
               style={{ left: frame.rect.x, top: frame.rect.y, width: frame.rect.w, height: frame.rect.h }}
             >
               <button
                 type="button"
                 onClick={() => (altitude.project ? altitude.climb() : altitude.descend(frame.projectId))}
                 data-testid={`kpi-map-frame-${frame.projectId}`}
-                className="flex w-full items-baseline gap-2 truncate rounded-t-card px-2 py-0.5 text-left hover:bg-secondary/30 focus-ring"
+                className={`flex w-full items-baseline gap-2 truncate px-2 py-0.5 text-left focus-ring ${KT.rowHover}`}
               >
                 <span className={`truncate ${KT.name}`}>{frame.label}</span>
-                <span className="shrink-0 typo-caption tabular-nums">
+                <span className={`shrink-0 ${KT.metaFigure}`}>
                   {tx(o.map_lit_of, { measured: frame.tally.measured, total: frame.tally.total })}
                 </span>
                 {frame.groupsUnknown && (
