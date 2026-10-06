@@ -51,6 +51,35 @@
 // need you, how many are working) instead of restating a placeholder the
 // expanded state shows anyway.
 //
+// ## What lags, and what never does (2026-10-06)
+//
+// This is a text field at the BOTTOM OF A LIVE BOARD. Two things re-render it
+// that have nothing to do with each other: the operator's keystrokes, and the
+// fleet underneath it changing (it subscribes to `fleetSessions` and
+// `fleetQueue` directly). Everything it paints apart from the field itself is
+// a derived READING — the cost gauge, the landing pill, the resting tally, the
+// typeahead panel — and none of them is read in the middle of a keystroke.
+//
+// So those readings are taken off the urgent frame with `useDeferredValue`.
+// That is the consumer-side shape this repo already uses for a borrowed live
+// source (`useUnifiedTriage.ts:354`) and for a search box
+// (`CommandPalette.tsx:82`); it is preferred to `startTransition` here because
+// neither the keystroke nor the store write is ours to mark.
+//
+// **THE CARET IS NEVER DEFERRED.** The textarea's `value`, the character
+// budget beside it and `armed` / `canSend` all read the controller's live
+// `c.value`, so the field and the launch button commit on the urgent frame and
+// only the readings settle behind them. On mount a deferred value IS the
+// current value, so a cold open paints nothing stale.
+//
+// What this CANNOT buy, said plainly rather than implied: the typeahead's
+// actual WORK — tokenising the draft, filtering projects and filtering skills —
+// is three memos inside the SHARED controller (`quickDispatchController.ts:179-211`),
+// and that hook runs inside this component's render at whatever priority the
+// render has. Deferring here takes the PANEL off the urgent frame, not the
+// filter. Moving the filter would mean editing the controller, which the
+// Quick Dispatch overlay also hosts.
+//
 // ## The anti-shake contract — unchanged, and non-negotiable
 //
 // The dock sits at the BOTTOM of a live board: if its outer height moves as the
@@ -68,7 +97,7 @@
 // content is capped at 800px and centred, so on a wide window the composer
 // stays a readable column instead of a full-width strip.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowUp, ChevronDown, Ghost, LayoutGrid, Terminal } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -132,7 +161,20 @@ export function QuickDispatchDock() {
     focusInput();
   }, [focusInput]);
 
-  const showSuggestions = !!c.token && (c.suggestions.length > 0 || !!c.suggestionHint);
+  // The typeahead panel, deferred as ONE snapshot. Deferring the token, the
+  // rows and the hint separately would let the listbox paint last frame's rows
+  // under this frame's emptiness — a combobox that lies for a frame. The
+  // active index is deliberately NOT in here: it is the arrow keys' own state
+  // and must move at once, and it cannot disagree with a deferred list anyway,
+  // because the rows only change when `value` changes and the controller
+  // resets the index to 0 on every token edit (`quickDispatchController.ts:213`).
+  const typeahead = useDeferredValue(
+    useMemo(
+      () => ({ token: c.token, items: c.suggestions, hint: c.suggestionHint }),
+      [c.token, c.suggestions, c.suggestionHint],
+    ),
+  );
+  const showSuggestions = !!typeahead.token && (typeahead.items.length > 0 || !!typeahead.hint);
   // One volatile panel at a time: a typeahead token in the input outranks the
   // picker, which closes again the moment the operator starts typing a token.
   const showPicker = pickerOpen && !showSuggestions;
@@ -147,20 +189,35 @@ export function QuickDispatchDock() {
   // in-flight send and an empty objective.
   const armed = c.canSend && !c.sending;
 
-  // The readout. Recomputed on every keystroke, which is the point — but it is
-  // pure arithmetic over three scalars, so there is nothing to memoize away.
+  // The readout. Still recomputed as the objective, the model and the effort
+  // change — that is the point of a live gauge — but it prices a DEFERRED copy
+  // of the objective, so it settles a frame behind the caret instead of in
+  // front of it. The arithmetic itself is three multiplications; what comes
+  // off the urgent frame is the readout subtree it feeds — two `Tooltip`s and
+  // two `Intl` passes (`formatEstimateCost` / `formatEstimateMinutes`).
+  // The model and the effort are NOT deferred: those are discrete choices from
+  // a listbox, not a stream of keystrokes, and the gauge is the feedback for
+  // having made one.
+  const objective = useDeferredValue(c.value);
   const estimate = useMemo(
-    () => estimateDispatch(c.value, c.model, c.effort, !!c.skillChip),
-    [c.value, c.model, c.effort, c.skillChip],
+    () => estimateDispatch(objective, c.model, c.effort, !!c.skillChip),
+    [objective, c.model, c.effort, c.skillChip],
   );
 
   // The resting row's rent: what the fleet is doing, from the same snapshot the
   // board above renders. Bare selector, no `useShallow` — a refetched list holds
   // fresh objects anyway (the controller documents the same deviation).
-  const sessions = useSystemStore((s) => s.fleetSessions);
+  // Deferred at the consumer: a fleet poll landing mid-sentence must not
+  // preempt the keystroke behind it. The urgent re-render keeps the previous
+  // snapshot, both memos below hold, and the tally is rebuilt at deferred
+  // priority. Note `submit` reads the session list IMPERATIVELY through
+  // `getState()`, so what the Athena grant diffs against is never this copy.
+  const sessions = useDeferredValue(useSystemStore((s) => s.fleetSessions));
   // The queue as the Monitor already reads it (`useQueuePoll` + the
   // `fleet-queue-changed` listener own the freshness; the dock only reads).
-  const queue = useSystemStore((s) => s.fleetQueue);
+  // Deferred for the same reason, and it costs nothing: the source is a poll,
+  // and the pill it feeds is a pre-flight reading, not a control.
+  const queue = useDeferredValue(useSystemStore((s) => s.fleetQueue));
   const landing = useMemo(() => dockLanding(queue), [queue]);
   const tally = useMemo(() => {
     let needsYou = 0;
@@ -315,9 +372,9 @@ export function QuickDispatchDock() {
               <div className="max-h-[38vh] overflow-y-auto p-1.5">
                 <QuickDispatchSuggestions
                   listboxId={c.listboxId}
-                  items={c.suggestions}
+                  items={typeahead.items}
                   activeIndex={c.activeIndex}
-                  hint={c.suggestionHint}
+                  hint={typeahead.hint}
                   onPick={c.pickSuggestion}
                   onHoverIndex={c.setActiveIndex}
                 />
