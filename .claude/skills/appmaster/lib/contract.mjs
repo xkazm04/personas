@@ -65,7 +65,14 @@ export const MEM = {
   lockStaleMin: 45,            // a gate lock older than this, or whose pid is dead, is taken over
 };
 export const QUIET_MIN = 10;          // a run whose stream.jsonl is this old is flagged quiet (never killed)
-export const TIMEOUT_MIN = 90;        // a run older than this is flagged timed-out (never killed)
+export const TIMEOUT_MIN = 90;        // a run older than this is flagged timed-out (never killed); also `await`'s default wait
+/**
+ * `await` (lib/await.mjs): an exit watcher instead of a polling Director. It polls the builder's pid
+ * (cheap, no LLM) every pollSec, then watches and settles that run. Its per-run lock
+ * (runs/<id>/await.lock) expires at the wait + MEM.gateWaitMaxMin + lockSlackMin, so a reused pid
+ * can never hold a run forever.
+ */
+export const AWAIT = { pollSec: 5, lockSlackMin: 120 };
 export const WAKE_MIN = 10;           // nextWakeMinutes bounds a master may choose
 export const WAKE_MAX = 240;
 export const MAX_ASKS = 3;            // asks one decision may raise

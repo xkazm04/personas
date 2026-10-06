@@ -9,7 +9,7 @@ import path from 'node:path';
 import { nowIso, readJson, shortId, Refusal } from './contract.mjs';
 import { loadBrief, updateRun, raiseAsk, queueOutbox, openAsks, updateAsk } from './store.mjs';
 import { readLimit } from './limits.mjs';
-import { requireRun, pidAlive, runFile, markLimitFromRun } from './worker.mjs';
+import { requireRun, pidAlive, runFile, markLimitFromRun, awaitHolder } from './worker.mjs';
 import { git, gitTry, revParse, isAncestor, removeWorktree, withBaseWorktree } from './worktree.mjs';
 import { acquireGateSlot } from './memory.mjs';
 import { resolveGates, runGates, gatesVerdict, splitBoundaries, boundaryHits, failuresAreInherited, testFilesIn, narrowCommand, GATE_TIMEOUT_MS } from './gate.mjs';
@@ -181,6 +181,9 @@ function settleCore({ flags = {} } = {}, slot) {
   if (['merged', 'failed', 'released'].includes(run.state)) return run;
   if (run.state === 'held' && !flags.retry) return run;
   if (run.state === 'planned') throw new Refusal('not dispatched', { runId: run.runId });
+  // one settler per run: an `await` in another process owns this run until it settles or gives up
+  const awaiter = awaitHolder(run);
+  if (awaiter && awaiter.pid !== process.pid) throw new Refusal('awaited', { runId: run.runId, slug: run.slug, awaitPid: awaiter.pid, since: awaiter.at, hint: 'an `await` is already settling this run; let it finish, never settle beside it' });
   if (run.state === 'running') {
     if (pidAlive(run.pid)) throw new Refusal('still running', { runId: run.runId, pid: run.pid });
     run = updateRun(run, { state: 'exited', endedAt: run.endedAt || nowIso() });

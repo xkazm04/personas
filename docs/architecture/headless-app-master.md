@@ -37,7 +37,7 @@ clock is a Claude Code session and the record is a file journal.
      |  decide -> run ids; dispatch
      v
   builder (Sonnet, `claude -p`, background) in ~/.personas/headless-masters/worktrees/<p>/<run8>
-     |  exited
+     |  exited (seen by the background `await`: a pid check every few seconds)
      v
   settle: verify claim -> merge gate --ff-only--> project checkout (pof/ascent: master, kp: main)
                                  \--held--> ask
@@ -63,7 +63,7 @@ values that could drift. The subcommand table is `appmaster.mjs` (`COMMANDS`).
   later replay into the app loses nothing; the in-app prompt's `charterId` becomes
   `charterSlug` here because there is no persona-responsibility id without the app.
 - **Run states** (`RUN_STATES`): `planned` (minted by `decide` before any effect) ->
-  `running` (`dispatch`) -> `exited` (`watch` saw the process gone) -> `verifying` (`settle`)
+  `running` (`dispatch`) -> `exited` (`await` or `watch` saw the process gone) -> `verifying` (`settle`)
   -> `merged` | `held` | `failed`; any non-merged state may go to `released`. Only
   `lib/worker.mjs` writes planned/running/exited; only `lib/merge.mjs` writes the rest.
   `LIVE_RUN_STATES` are the ones that hold a project's slot.
@@ -140,13 +140,41 @@ project checkout: all three carry foreign uncommitted work, which is why conditi
 
 | Situation | Handling |
 |---|---|
-| Builder process dies | `watch` sees the pid gone, state `exited`; `settle` verifies by git, so a dead builder with no commits ends `failed` and one with commits goes through the gate. |
+| Builder process dies | The run's `await` (or a `watch`) sees the pid gone, state `exited`; `settle` verifies by git, so a dead builder with no commits ends `failed` and one with commits goes through the gate. |
+| An `await` is lost (the Director session restarted) | Its lock names a dead pid and holds nothing; the next wake's `watch` finds the run `running` or `exited` and the Director starts a new `await`. The lock also expires on its own (`AWAIT.lockSlackMin` past the wait), so a reused pid cannot hold a run. |
+| An `await` times out | `{timedOut: true}`, exit 0, the run still `running`, nothing killed. |
 | Builder goes quiet or runs long | Flagged `quiet` / `timedOut` in `watch` and the digest; never killed. Only `release --kill`, on the operator's word. |
 | Usage limit | A builder's output matching `LIMIT_SIGNATURES` (scanned on stderr and non-conversation stream lines only, so a repo that mentions "usage limit" does not trip it) writes the global mark from `watch` or `settle`; `settle` releases that run; `dispatch` refuses while the mark stands (a mark whose `resetsAt` has passed reads as cleared); the loop stops. |
 | Memory short (free GB, not used %) | `dispatch` refuses and the loop pauses dispatch and master wakes, still verifies; `settle` takes the single machine-wide gate slot and WAITS (bounded) for headroom, then refuses leaving the run untouched. A short sleep, never a long one: a sibling process holding memory is transient. `status --text` names who is using it. |
 | App starts mid-run | The app's stale sweep (`STALE_AFTER_SECS`, `src-tauri/src/commands/fleet/stale.rs:65`, 6 min) marks fleet sessions stale, but these builders write no `fleet_sessions` rows, so it cannot touch them. Replay the outbox only after `--dry-run`. |
 | Merge held | Branch kept, ask raised and queued; the operator decides. |
 | Invalid decision | `decide` refuses with the errors; the Director sends them back to the same master once, then parks the project for the wake and reports it. |
+
+## Exit watchers: `await` instead of a polling Director
+
+Added 2026-10-06. The Director used to find a finished builder by polling `watch` on its
+wake cadence (about 15 minutes), so a builder that had exited waited 17.8 minutes on average
+(p90 30) before `settle` started. Now `dispatch` prints an `awaitCommand`, and the Director
+starts it with `run_in_background` at once:
+
+- `await --run <id> [--timeout-min N]` (`lib/await.mjs`) blocks until the run's builder pid is
+  gone, polling it every `AWAIT.pollSec` seconds with `process.kill(pid, 0)`: no model, no
+  journal write while it waits. Then it does exactly what `watch` does for that run (running
+  -> exited, the usage-limit mark) and then `settle`'s own code path, so the machine-wide gate
+  slot, the memory wait and every refusal are settle's. It prints the settled run plus
+  `waitedSec` (the wait for the exit, not the gates). `--project p` awaits the first of the
+  project's `running`/`exited` runs to finish instead.
+- **Many at once, one per run.** Awaits run side by side; their gates still run one at a time
+  because settling takes the gate slot. Each run is locked (`runs/<id>/await.lock`, pid +
+  expiry): a second await on it is refused `already awaited`, and `settle` refuses `awaited`
+  while another process holds the lock, so a run is never settled twice concurrently.
+- **Refusals** (exit 2): `not awaitable` for a run not `running`/`exited` (also when the
+  operator releases it mid-wait), `nothing to await`, `already awaited`, and settle's own
+  (`memory`, `gate busy`, ...), each carrying the slug, run id and `waitedSec`.
+- **Timeout** (default `TIMEOUT_MIN`): `{timedOut: true}`, exit 0, and nothing is killed;
+  the skill kills a worker only on the operator's word (`release --kill`).
+- The Director's `ScheduleWakeup` becomes a fallback heartbeat (1200 s or more); a
+  background-task notification is the primary wake. `watch` stays for runs no await covers.
 
 ## The state door: the app sees the headless chair
 
@@ -190,7 +218,8 @@ backlog. Scope is the master's STATE only; the Fleet builder rows, `persona_exec
   whose project a terminal runs does not read only "Switched off". The Orchestration panel
   shows it as a chip (`docs/features/monitor.md`).
 - **The skill side**: `lib/heartbeat.mjs` posts best-effort through `lib/bridge.mjs` at the
-  end of `decide`, `dispatch`, `watch`, `settle` and `release`, and `heartbeat --project p
+  end of `decide`, `dispatch`, `watch`, `settle`, `await` (also after its refusals) and
+  `release`, and `heartbeat --project p
   [--state ended]` posts by hand; `end` posts `ended` for every managed project. It never
   throws, never blocks past about two seconds and never changes an exit code; with the app
   down it does nothing.

@@ -18,7 +18,7 @@ version: 0.1.0
 ## Topology
 
 ```
-Director (this session)    the clock: status -> context -> decide -> dispatch -> watch -> settle
+Director (this session)    the clock: status -> context -> decide -> dispatch -> await (watch + settle)
   master subagent (Opus)   one per due project, read-only, returns ONE decision JSON
   builder (Sonnet)         one per project, background `claude -p` in its own worktree
   merge gate               verifies the claim, then ff-merges or holds with an ask
@@ -59,6 +59,7 @@ decide   --project p --wake <wakeId> --file <decision.json>
 dispatch --run <runId>
 watch    [--project p]
 settle   --run <runId>
+await    --run <runId> | --project p [--timeout-min N]
 release  --run <runId> --reason <text> [--kill]
 say      --project p --file <msg.md>
 asks     [--project p]
@@ -69,8 +70,12 @@ onboard  --project p --brief <brief.json>
 ```
 
 `--run` takes the full run id or its 8-character short form. `settle` also takes `--retry`,
-which re-settles a `held` run (otherwise a held run is returned as it is). Below, `AM` stands
-for `node .claude/skills/appmaster/appmaster.mjs`.
+which re-settles a `held` run (otherwise a held run is returned as it is). `await` is the exit
+watcher: it blocks until the run's builder pid is gone (a cheap pid check every `AWAIT.pollSec`
+seconds, no LLM), then does what `watch` does for that run, then settles it through `settle`'s
+own code path (same gate slot, memory wait and refusals), and prints the settled run plus
+`waitedSec` (the wait for the exit). Below, `AM` stands for
+`node .claude/skills/appmaster/appmaster.mjs`.
 
 ## `/appmaster` (status)
 
@@ -142,7 +147,7 @@ are used here, in this session, and never inside a master subagent.
    FREE GB (a dispatch needs `MEM.dispatchMinFreeGb` plus `MEM.perBuilderReserveGb` per builder
    already running), not a used percentage, so another tool's big process cannot hold the loop
    hostage for hours: it clears by itself. **Memory tripped:** dispatch nothing and wake no
-   master this tick, but still `watch` and `settle` (settle waits for its own headroom, below),
+   master this tick, but still `watch` and let the awaits settle (settle waits for its own headroom, below),
    say who is using the memory (`status --text` names the biggest other processes and what
    the builders use), and schedule a SHORT wake (300 to 600 s). **Usage limit marked:** say so,
    do nothing else, schedule a long wake (3600 s).
@@ -160,20 +165,31 @@ are used here, in this session, and never inside a master subagent.
    `invalid decision` (its `errors` list), `SendMessage` the errors back to the SAME subagent ONCE and decide again
    on its corrected reply; a second refusal parks the project for this wake and goes into the
    digest with the errors. Never edit a master's JSON yourself.
-6. **Dispatch.** For each run id `decide` returned: `AM dispatch --run <runId>`, which cuts
-   the worktree and starts the builder in the background. A typed refusal (`usage limit`,
-   `memory`, `project cap`, `global cap`, `run not planned`) is reported and left for the next
-   wake, never retried in a loop.
-7. **Watch and settle.** `AM watch` (it moves a run whose pid is gone to `exited`). For each
-   run whose state is `exited`: `AM settle --run <runId>` (run it in the background, never
-   several at once: `settle` takes the one machine-wide gate slot and WAITS up to
-   `MEM.gateWaitMaxMin` minutes for `MEM.gateMinFreeGb` free, so gates run one at a time and never
-   on a starved machine; a `refused: memory` or `gate busy` leaves the run untouched, retry next
-   tick); it ends `merged`, `held` (with an
-   ask), `failed` (no commits) or `released` (the builder hit the usage limit). Builders take
-   minutes; never block on one, come back on a later wake. A `quiet` or `timedOut` flag is
-   reported, never acted on: no kill without the operator's word (see `release`). A
-   `limitHit` row means the mark is now set: stop after this wake.
+6. **Dispatch, then await.** For each run id `decide` returned: `AM dispatch --run <runId>`,
+   which cuts the worktree and starts the builder in the background. A typed refusal (`usage
+   limit`, `memory`, `project cap`, `global cap`, `run not planned`) is reported and left for
+   the next wake, never retried in a loop. On success, start the `awaitCommand` that `dispatch`
+   printed (`AM await --run <runId>`) with `run_in_background`, at once. That background task's
+   notification is the PRIMARY wake: when it arrives, read its JSON (the settled run plus
+   `waitedSec`) and go to step 8. Several awaits run side by side safely: settling takes the one
+   machine-wide gate slot, so their gates still run one at a time.
+   - **One await per run.** `await` locks the run (`runs/<id>/await.lock`); a second await on it
+     is refused `already awaited`, and so is a `settle` (`awaited`) while another process
+     awaits it. Never start `await` and `settle` on the same run: the await settles it.
+   - `await` refuses (exit 2) a run that is not `running` or `exited` (`not awaitable`); an
+     already `exited` run settles at once. A settle refusal (`memory`, `gate busy`) comes back
+     with `waitedSec` and leaves the run `exited`: start `await` on it again next wake.
+   - On `timedOut: true` (after `--timeout-min`, default `TIMEOUT_MIN`) nothing was killed and
+     the run is still `running`: report it like a `timedOut` watch flag and start a new await
+     only if the operator wants it watched further. No kill without the operator's word.
+7. **Watch (fallback).** `AM watch` on every wake, for what no await covers: a run dispatched
+   before this session, an await that was lost with a restarted session, or a builder flagged
+   `quiet` / `timedOut` (reported, never acted on; see `release`). For an `exited` run with no
+   await running, start `AM await --run <runId>` in the background rather than `settle`
+   (same result, and it holds the run's lock); `settle` by hand only for `--retry` of a held
+   run. A settle ends `merged`, `held` (with an ask), `failed` (no commits) or `released` (the
+   builder hit the usage limit). A `limitHit` row means the mark is now set: stop after this
+   wake.
 8. **Asks.** `AM asks`. An ask is the operator's when its kind matches the brief's `askFor`
    (scope change -> `scope`, spending -> `spend`, money or data path risk -> `risk`, two goals
    in conflict -> `goal-conflict`, a recipe failing -> `recipe-failing`) and always when it is
@@ -190,8 +206,9 @@ are used here, in this session, and never inside a master subagent.
    when the operator says the checkout is clean, `AM settle --run <runId> --retry`.
 9. **Digest.** Print it (format below).
 10. **Sleep.** `ScheduleWakeup` at the earliest `nextWakeAt` over the managed projects,
-    clamped to 60..3600 s; about 120 s while a builder is running or a run is `exited`, so
-    `settle` happens promptly. On a quiet wake say one line and reschedule.
+    clamped to 60..3600 s. While builders run, the await notifications wake you, so the
+    `ScheduleWakeup` is only a FALLBACK heartbeat: long, 1200 s or more (it never needs to be
+    short to catch an exit any more). On a quiet wake say one line and reschedule.
 
 **Stop** when the usage-limit mark is set (say when it resets if known) or the operator says
 stop. A tripped memory brake is NOT a stop: it pauses dispatch and waking until it clears.
@@ -252,8 +269,10 @@ outside a builder (builders that hit one set it themselves).
 
 No vault note (the operator's choice). In order:
 1. `AM watch`; list every run in flight with its state, and every held run with its reason.
-2. Say what the next wake will do, project by project. Leave running builders running; they
-   are settled by the next `/appmaster run`.
+2. Say what the next wake will do, project by project. Leave running builders running, and
+   their background awaits too (an await never kills; it settles the run if this session is
+   still alive when the builder exits). Whatever is left `running` or `exited` is settled by
+   the next `/appmaster run` (step 7).
 3. `AM heartbeat --state ended`: posts `ended` for every managed project, so the app stops
    showing them as run from here and each in-app master's tick may run again at once. Quote
    the `beats` it returns (`posted: false` with the app down is normal; nothing else to do).
@@ -263,8 +282,8 @@ No vault note (the operator's choice). In order:
 
 ## The state door (what the app sees)
 
-The app cannot see this chair unless it is told. After `decide`, `dispatch`, `watch`, `settle`
-and `release` succeed, `appmaster.mjs` posts the project's state through the dev-tools bridge
+The app cannot see this chair unless it is told. After `decide`, `dispatch`, `watch`, `settle`,
+`await` and `release` succeed (and after an `await` refusal, whose wait may have moved a run), `appmaster.mjs` posts the project's state through the dev-tools bridge
 (`POST /dev-tools/app-master/{project_id}/heartbeat`, `lib/heartbeat.mjs`): `running` while a
 run is running, exited or verifying, else `idle`, with the latest wake note and next wake.
 While that beat is fresh the app shows the master as run from a terminal and its in-app tick

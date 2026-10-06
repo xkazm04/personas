@@ -35,6 +35,45 @@ export function pidAlive(pid) {
 export function countRunning(exceptRunId) {
   return [...new Set(listSlugs())].flatMap((s) => listRuns(s, { states: ['running'] })).filter((r) => r.runId !== exceptRunId).length;
 }
+// ---------------------------------------------------------------- the await lock (one await per run)
+
+export const awaitLockPath = (run) => runFile(run, 'await.lock');
+
+/**
+ * The live holder of a run's await lock, or null. A lock whose pid is dead or whose expiresAt has
+ * passed holds nothing (a crashed await, or a pid the OS reused).
+ */
+export function awaitHolder(run, now = Date.now()) {
+  let held; try { held = JSON.parse(fs.readFileSync(awaitLockPath(run), 'utf8')); } catch { return null; }
+  if (!held?.pid || !pidAlive(held.pid)) return null;
+  if (held.expiresAt && Date.parse(held.expiresAt) <= now) return null;
+  return held;
+}
+
+/** Take the run's await lock for this process; false when another live await holds it. */
+export function takeAwaitLock(run, expiresAt) {
+  const p = awaitLockPath(run);
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const fd = fs.openSync(p, 'wx');
+      fs.writeSync(fd, JSON.stringify({ pid: process.pid, at: nowIso(), expiresAt }));
+      fs.closeSync(fd);
+      return true;
+    } catch (e) { if (e.code !== 'EEXIST') throw e; }
+    const holder = awaitHolder(run);
+    if (holder && holder.pid !== process.pid) return false;
+    try { fs.rmSync(p, { force: true }); } catch { /* raced */ }   // stale, or our own: retake
+  }
+  return false;
+}
+
+/** Release the lock only if this process holds it. */
+export function releaseAwaitLock(run) {
+  let held; try { held = JSON.parse(fs.readFileSync(awaitLockPath(run), 'utf8')); } catch { return; }
+  if (held?.pid === process.pid) { try { fs.rmSync(awaitLockPath(run), { force: true }); } catch { /* gone */ } }
+}
+
 /** Resolve --run (full id or 8-char short form) across every managed project. */
 export function requireRun(id) {
   if (!id || id === true) throw new Error('--run <runId> is required');
@@ -139,8 +178,19 @@ export function spawnWorker(run, promptText) {
 
 // ---------------------------------------------------------------- dispatch
 
-/** (args) => Run   // Refusal at limit / memory / not planned / project cap / global cap */
-export function cmdDispatch({ flags = {} } = {}) {
+/**
+ * The exit watcher the Director starts (with run_in_background) right after a dispatch. Absolute and
+ * forward-slashed so it runs from any cwd in Git Bash and PowerShell alike.
+ */
+export const awaitCommandFor = (run) => `node "${path.join(SKILL_DIR, 'appmaster.mjs').replace(/\\/g, '/')}" await --run ${shortId(run.runId)}`;
+
+/** (args) => Run & {awaitCommand}   // Refusal at limit / memory / not planned / project cap / global cap */
+export function cmdDispatch(args = {}) {
+  const run = dispatchCore(args);
+  return { ...run, awaitCommand: awaitCommandFor(run) };
+}
+
+function dispatchCore({ flags = {} } = {}) {
   let run = requireRun(flags.run);
 
   const limit = readLimit();
