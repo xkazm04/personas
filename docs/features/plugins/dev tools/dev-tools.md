@@ -550,7 +550,7 @@ A project's **lifecycle** is its development practice: the ordered steps that ha
 5. **The journey (interim view).** **Projects → Lifecycle** shows the active project (picker in the header) with the preset and version in the subtitle ("Solo practice, v2 by Athena"). One sentence names the weakest step: the lowest enforcement strength (live > detected > pending > missing > advisory), then the highest skip rate ("Tests is the weakest step: advisory only, and skipped in 14 of 20 recent changes"); with no evidence yet it says "No work has passed through yet." Below it, the **Before the task** and **After the task** lanes sit on one path line. Each node is the step's glyph in a shape whose border encodes its strongest binding state by shape AND colour (solid = live, double = detected, dashed = pending or missing, dotted hairline = advisory), with up to eight evidence dots under it, newest on the right (filled = done, hollow = skipped, dashed ring = unknown, error colour = failed). Arrow keys, Home and End move along the nodes; Enter opens the **detail layer** (a side sheet: rule, each binding with its state and what was found, the tally, and the evidence list with task / commit / pull request marked); Esc closes it. Cold load ghosts the lanes under the permanent header; a return visit paints from a per-project module cache and revalidates; a failed read shows an inline banner with Retry and keeps any snapshot already on screen.
 6. **Install into repo.** Offered only while some binding is **missing**. A confirm popover lists the missing steps and bindings; confirming dispatches a Run Desk task (toast with its id) and the affected nodes read **pending** until it finishes.
 7. **Ask Athena.** Users do not edit the steps. **Ask Athena** (on the Lifecycle page, and "Ask Athena to change it" on the Overview's read-only Practice card) opens a chat seeded with the project's name and id and the weakest step. See **Changing a lifecycle through Athena** below.
-8. **Visual pending.** The journey above is deliberately minimal: the next-gen graphic journey is being designed by a `/contest` (lifecycle-nextgen) and its winner will replace `journey/LifecycleJourney.tsx`, reusing `journeyModel.ts` and `useLifecycleSnapshot.ts`.
+8. **No drawer; the state renders inline (2026-10-06).** Clicking a node SELECTS it and the step's state renders under the timeline, so you can walk the journey with the arrow keys and watch the panel follow — where a modal cost an open/close cycle per step. Selection is pre-seeded to the weakest step and the panel's region carries a reserved height, so it never pops in and shoves the timeline (`docs/design/overview-loading.md` law 6). Evidence is a `display/UnifiedTable` ledger (`tableId="lifecycle-evidence"`, sortable, the table owns its own cold-load ghost). `LifecycleJourney.tsx`, `JourneyTrack.tsx` and `StepDetailSheet.tsx` are gone; the model (`journeyModel.ts`, `useLifecycleSnapshot.ts`) survived unchanged under `journey/`. Three layouts ship behind a dev-only switcher in the page header — RailBelow (the shipped look, default), StepperBeside, LedgerFirst — pending the owner's pick.
 
 #### Runtime: how a lifecycle reaches a session
 
@@ -822,11 +822,19 @@ src/features/plugins/dev-tools/
 ├── sub_lifecycle/
 │   ├── LifecyclePage.tsx         # the development practice: header, actions, states
 │   ├── LifecycleProjectPicker.tsx # header project picker shared by 7 pages
-│   ├── journey/                  # interim journey (contest winner replaces the view)
+│   ├── journey/                  # the pure model + the cold-load ghost
 │   │   ├── journeyModel.ts       # pure: snapshot -> lanes, weakest step, missing bindings
 │   │   ├── useLifecycleSnapshot.ts # getLifecycle + per-project module cache + live refresh
-│   │   ├── LifecycleJourney.tsx · JourneyTrack.tsx · StepDetailSheet.tsx · JourneyGhost.tsx
+│   │   ├── JourneyGhost.tsx      # the delayed cold-load ghost
 │   │   └── journeyLabels.ts · journeyStyles.ts
+│   ├── lifecycleView/            # the view: one model, blocks, three layouts (2026-10-06)
+│   │   ├── useLifecycleView.ts   # snapshot + lanes + SELECTION + install / Ask-Athena
+│   │   ├── context.tsx           # so a layout arranges blocks instead of forwarding props
+│   │   ├── blocks/               # StepRail · StepStepper · StepStrip · StepState ·
+│   │   │                         # EvidenceLedger (UnifiedTable) · evidenceColumns ·
+│   │   │                         # evidenceRows · LifecycleActions · StateLegend ·
+│   │   │                         # EvidenceDots · useStepRoving
+│   │   └── variants/             # RailBelow (default) · StepperBeside · LedgerFirst
 │   ├── goals/forceLayout.ts      # constellation force-directed layout
 │   ├── GoalConstellation.tsx · GoalKanban.tsx
 │   └── i18n/                     # 14 language stubs (deprecated — use root i18n)
