@@ -1,25 +1,26 @@
 /**
- * Server control prototype: Live tiles (spark server-control, WP3).
+ * Server control's app servers as live tiles (spark server-control; the
+ * winner of the 2026-10-06 prototype round over Rack, Port map, Switchboard).
  *
- * The most visual and least dense direction: one large card per app, grouped
+ * One large card per app, grouped
  * under a heading in the workspace's colour. A running tile pulses along its
  * top edge in the theme primary (the motif the Monitor bay shares); its state
  * block washes the foot of the tile in the state's tone; hover or focus grows
  * the power control into a large lit disc. Owns presentation only; see
- * `../serverVariantProps.ts`.
+ * `./serverTilesProps.ts`.
  */
 import type { CSSProperties } from 'react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { formatUptime, groupByWorkspace, useNowSeconds, useWorkspaceIndex } from '../serverModel';
-import { isLive } from '../serverTone';
-import type { ServerVariantProps } from '../serverVariantProps';
+import { formatUptime, groupByWorkspace, useNowSeconds, useWorkspaceIndex } from './serverModel';
+import { isLive } from './serverTone';
+import type { ServerTilesProps } from './serverTilesProps';
 import { TileCard } from './tiles/TileCard';
 import { TilesGhost } from './tiles/TilesGhost';
 import './tiles/tiles.css';
 
-export default function LiveTilesVariant({ servers, loading, hostPort, onMenu, onToggle }: ServerVariantProps) {
+export default function ServerTiles({ servers, loading, hostPort, onMenu, onToggle }: ServerTilesProps) {
   const { t, tx } = useTranslation();
   const lt = t.browser.servers.tiles;
   const workspaces = useWorkspaceIndex();

@@ -6,7 +6,7 @@ import type { KeyboardEvent } from 'react';
 
 import type { DevServerView } from '@/lib/bindings/DevServerView';
 
-import { canStart, canStop, SERVER_TONE, type ServerTone } from '../../serverTone';
+import { canStart, canStop, SERVER_TONE, type ServerTone } from '../serverTone';
 
 /**
  * What the tile's power control means right now.

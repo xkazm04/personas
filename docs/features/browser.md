@@ -36,9 +36,12 @@ section shows its state, which Rust derives and announces on every change:
 | Stopped | Configured and not running. |
 | Not configured | The project has a port but no dev command yet. |
 
-The section offers four layouts behind a switcher while the design settles
-(Rack, Port map, Switchboard, Live tiles). All four show the same servers and
-offer the same actions; your choice is remembered.
+Servers show as **live tiles** grouped by workspace (a heading in the
+workspace's colour with its app and live counts): each tile carries the name,
+the port, the tech-stack icons and the dev command, and a state block at its
+foot. A running tile's top edge pulses in the theme colour, the same motif as a
+Fleet Monitor bay. (Live tiles won a four-way prototype round on 2026-10-06
+over Rack, Port map and Switchboard, which were removed.)
 
 **Right-click a server** for its menu: *Start* or *Stop*, *Restart*, *Open in
 Webview* (opens `http://localhost:<port>` in the embedded browser and switches to
@@ -48,10 +51,11 @@ project out of this section and never deletes the project; it is disabled while
 the server holds its port, so stop it first. The Fleet Monitor's Activity bays
 offer the same run and stop items for their project's server.
 
-**Add app** (the page header, or the empty state) takes a repository folder,
-typed or picked with *Browse*, and an optional workspace. Personas finds or
-creates the dev project for that folder, gives it the first free port from 3000
-up, and starts a one-shot Claude scan in the repository that picks the dev
+**Add app** (the page header, or the empty state) lists your code projects
+that are not in Server control yet, grouped by workspace and searchable; pick
+one. A repository that is not a project yet is created with **New project**,
+the same dialog the Projects manager uses, and added in the same step. Personas
+gives the project the first free port from 3000 up, and starts a one-shot Claude scan in the repository that picks the dev
 command, a port and the tech stack. The server appears at once in *Scanning* and
 fills in when the scan lands (up to two minutes). A scan that fails leaves the
 server in the view with no command and the reason shown. *Rescan with AI* runs

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { DevServerState } from '@/lib/bindings/DevServerState';
 import type { DevServerView } from '@/lib/bindings/DevServerView';
 
-import LiveTilesVariant from '../../LiveTilesVariant';
+import ServerTiles from '../../ServerTiles';
 import { isMenuKey, tileControl } from '../tileModel';
 
 vi.mock('@/features/plugins/dev-tools/sub_workspaces/workspaceStore', () => ({
@@ -61,13 +61,13 @@ function setup(hostPort: number | null = null) {
   const onToggle = vi.fn();
   const onAdd = vi.fn();
   render(
-    <LiveTilesVariant servers={SERVERS} loading={false} hostPort={hostPort} onMenu={onMenu} onToggle={onToggle} onAdd={onAdd} />,
+    <ServerTiles servers={SERVERS} loading={false} hostPort={hostPort} onMenu={onMenu} onToggle={onToggle} onAdd={onAdd} />,
   );
   const item = (id: string) => screen.getAllByTestId('server-item').find((el) => el.dataset.projectId === id)!;
   return { onMenu, onToggle, item };
 }
 
-describe('LiveTilesVariant', () => {
+describe('ServerTiles', () => {
   it('renders every server with its state attribute, grouped by workspace', () => {
     const { item } = setup();
     const items = screen.getAllByTestId('server-item');
@@ -123,7 +123,7 @@ describe('LiveTilesVariant', () => {
   });
 
   it('loading renders the ghost, not items', () => {
-    render(<LiveTilesVariant servers={[]} loading hostPort={null} onMenu={vi.fn()} onToggle={vi.fn()} onAdd={vi.fn()} />);
+    render(<ServerTiles servers={[]} loading hostPort={null} onMenu={vi.fn()} onToggle={vi.fn()} onAdd={vi.fn()} />);
     expect(screen.getByTestId('server-tiles-ghost')).toBeTruthy();
     expect(screen.queryAllByTestId('server-item')).toHaveLength(0);
   });

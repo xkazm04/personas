@@ -10,7 +10,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DevServerView } from '@/lib/bindings/DevServerView';
 
-import { SERVER_TONE } from '../../serverTone';
+import { SERVER_TONE } from '../serverTone';
 import type { TileControl } from './tileModel';
 
 interface Props {

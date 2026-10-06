@@ -2,40 +2,25 @@
  * Spark server-control: Browser > Server control (the page at the `whitelist`
  * route), on the synthetic tapes in `serverControlTapes.mjs`.
  *
- *   browser/servers/rack          the Rack prototype, ten servers in every state
- *   browser/servers/portmap       the Port map prototype, same fleet
- *   browser/servers/switchboard   the Switchboard prototype, same fleet
- *   browser/servers/tiles         the Live tiles prototype, same fleet
- *   browser/servers/empty         no app servers yet (whichever variant is stored)
- *   browser/servers/add           the Add app picker open over the Rack layout
+ *   browser/servers         the server tiles, ten servers in every state
+ *   browser/servers/empty   no app servers yet
+ *   browser/servers/add     the Add app picker open over the tiles
  *
- * The variant is chosen the way the operator chooses it: the switcher's stored
- * value, seeded in `prepare` before the page first renders.
+ * (Live tiles won the 2026-10-06 prototype round; the Rack, Port map and
+ * Switchboard modules went with their variants.)
  */
 import { useSystemStore } from '@/stores/systemStore';
 import type { HarnessModule } from './registry';
 
-const VARIANT_KEY = 'personas.browser.servers.variant';
-
-function prepare(variant: string | null): () => void {
-  return () => {
-    try {
-      if (variant) localStorage.setItem(VARIANT_KEY, variant);
-    } catch (err) {
-      console.warn('[page-harness] variant seed failed', err);
-    }
-    useSystemStore.setState({ sidebarSection: 'teams', teamsTab: 'whitelist' });
-  };
+function prepare(): void {
+  useSystemStore.setState({ sidebarSection: 'teams', teamsTab: 'whitelist' });
 }
 
 const page = () => import('@/features/browser/whitelist/WhitelistPage');
 
 export const SERVER_CONTROL_MODULES: Record<string, HarnessModule> = {
-  'browser/servers/rack': { load: page, prepare: prepare('rack') },
-  'browser/servers/portmap': { load: page, prepare: prepare('portmap') },
-  'browser/servers/switchboard': { load: page, prepare: prepare('switchboard') },
-  'browser/servers/tiles': { load: page, prepare: prepare('tiles') },
-  'browser/servers/empty': { load: page, prepare: prepare(null) },
+  'browser/servers': { load: page, prepare },
+  'browser/servers/empty': { load: page, prepare },
   'browser/servers/add': {
     load: async () => {
       const [{ default: Page }, { default: AddAppModal }] = await Promise.all([
@@ -44,6 +29,6 @@ export const SERVER_CONTROL_MODULES: Record<string, HarnessModule> = {
       ]);
       return { default: () => (<><Page /><AddAppModal isOpen onClose={() => {}} /></>) };
     },
-    prepare: prepare('rack'),
+    prepare,
   },
 };

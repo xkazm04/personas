@@ -9,13 +9,13 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DevServerView } from '@/lib/bindings/DevServerView';
 
-import { techTokens } from '../../serverModel';
-import type { ServerVariantProps } from '../../serverVariantProps';
+import { techTokens } from '../serverModel';
+import type { ServerTilesProps } from '../serverTilesProps';
 import { openMenuFromKey, tileControl, tileTone } from './tileModel';
 import { TileStateBlock } from './TileStateBlock';
 import { TileTech } from './TileTech';
 
-interface Props extends Pick<ServerVariantProps, 'hostPort' | 'onMenu' | 'onToggle'> {
+interface Props extends Pick<ServerTilesProps, 'hostPort' | 'onMenu' | 'onToggle'> {
   server: DevServerView;
   uptime: string | null;
 }

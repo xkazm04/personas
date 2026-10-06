@@ -4,7 +4,7 @@
 // project names and paths are invented, ports are the ones a dev machine uses.
 //
 // Ten servers, every DevServerState at least once, across three workspaces and
-// one project with no workspace, so each variant is judged on the whole
+// one project with no workspace, so the tiles are judged on the whole
 // vocabulary and on grouping.
 
 export function serverControlTapes({ RECORDED_AT }) {
@@ -83,10 +83,7 @@ export function serverControlTapes({ RECORDED_AT }) {
   return {
     SERVERS,
     builders: {
-      'browser/servers/rack': () => tape('browser/servers/rack', FULL, SERVERS),
-      'browser/servers/portmap': () => tape('browser/servers/portmap', FULL, SERVERS),
-      'browser/servers/switchboard': () => tape('browser/servers/switchboard', FULL, SERVERS),
-      'browser/servers/tiles': () => tape('browser/servers/tiles', FULL, SERVERS),
+      'browser/servers': () => tape('browser/servers', FULL, SERVERS),
       'browser/servers/empty': () => tape('browser/servers/empty', 'Synthetic: no app servers yet.', []),
       'browser/servers/add': () => tape('browser/servers/add', 'Synthetic: the Add app picker open over the full fleet; three projects are not in the view yet.', SERVERS),
     },

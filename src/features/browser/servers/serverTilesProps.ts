@@ -1,16 +1,14 @@
-import type { ComponentType, MouseEvent } from 'react';
+import type { MouseEvent } from 'react';
 
 import type { DevServerView } from '@/lib/bindings/DevServerView';
 
 /**
- * The four Server control prototypes. Every variant receives the identical
- * props and owns ONLY presentation: the page owns the data, the right-click
- * menu and the modals, so no variant can quietly become a fifth product.
+ * What the server tiles receive. The tiles own only presentation: the section
+ * owns the data, the right-click menu and the modals. Live tiles won the
+ * four-way prototype round (Rack, Port map, Switchboard, Live tiles) on
+ * 2026-10-06; the other three were deleted.
  */
-export const SERVER_VARIANT_IDS = ['rack', 'portmap', 'switchboard', 'tiles'] as const;
-export type ServerVariantId = (typeof SERVER_VARIANT_IDS)[number];
-
-export interface ServerVariantProps {
+export interface ServerTilesProps {
   servers: readonly DevServerView[];
   /** First load only: render the ghost under the chrome, not a spinner. */
   loading: boolean;
@@ -23,5 +21,3 @@ export interface ServerVariantProps {
   /** Opens Add app. */
   onAdd: () => void;
 }
-
-export type ServerVariant = ComponentType<ServerVariantProps>;

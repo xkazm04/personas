@@ -781,9 +781,6 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
   "browser": {
     "whitelist": {},
     "servers": {
-      "rack": {},
-      "portmap": {},
-      "switchboard": {},
       "tiles": {}
     },
     "add_site": {},
