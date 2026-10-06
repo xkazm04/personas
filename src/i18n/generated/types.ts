@@ -705,6 +705,9 @@ export type Translations = {
     grid_rail_empty_threads: string;
     grid_rail_empty_threads_sub: string;
     grid_fleet_kill: string;
+    terminal_asleep_label: string;
+    terminal_wake_failed: string;
+    terminal_wake_failed_hint: string;
     grid_fleet_exited: string;
     grid_session_recap_open: string;
     grid_session_recap_summary: string;

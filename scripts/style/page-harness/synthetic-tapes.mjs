@@ -9,6 +9,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fleetTapes } from './fleetTapes.mjs';
+import { fleetTerminalTapes } from './fleetTerminalTapes.mjs';
 import { observabilityTapes } from './observabilityTapes.mjs';
 import { factoryTapes } from './factoryTapes.mjs';
 import { homeWelcomeTapes } from './homeWelcomeTapes.mjs';
@@ -319,6 +320,8 @@ const BUILDERS = {
   ...monitorActivityTapes({ RECORDED_AT }).builders,
   // Module 3, the Fleet cluster (fleetSurfaces.tsx, fleetTapes.mjs).
   ...fleetTapes({ RECORDED_AT }).builders,
+  // The session terminal modal (fleetTerminalSurfaces.tsx, fleetTerminalTapes.mjs).
+  ...fleetTerminalTapes({ RECORDED_AT }).builders,
   // Module 4, Overview > Observability (observabilitySurfaces.tsx, observabilityTapes.mjs).
   ...observabilityTapes({ RECORDED_AT, PERSONAS }).builders,
   // Module 5, Teams > Factory (factorySurfaces.tsx, factoryTapes.mjs).

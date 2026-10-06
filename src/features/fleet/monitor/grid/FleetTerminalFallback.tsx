@@ -14,19 +14,21 @@
 // above it, so the operator knows what they are waking it up to answer.
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { MoonStar, RefreshCw, Send } from 'lucide-react';
+import { MoonStar, RefreshCw, Send, TerminalSquare } from 'lucide-react';
 import { AsyncButton, Button } from '@/features/shared/components/buttons';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { ModalSection } from '@/features/shared/components/modals/ModalShell';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { sessionRecap } from '@/api/fleet/fleet';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionRecap } from '@/lib/bindings/FleetSessionRecap';
 import { replyToSession } from '@/features/plugins/fleet/replyToSession';
 import { redrawTerminal } from '@/features/plugins/fleet/fleetTerminalManager';
-import { RecapField } from './RecapField';
 
 /** A row with no process on this side: asleep (dozing / hibernated). */
 export function isSleeping(s: FleetSession): boolean {
@@ -47,39 +49,50 @@ function useLastWords(claudeSessionId: string | null) {
   return recap?.awaySummary ?? recap?.lastAssistantText ?? null;
 }
 
+/**
+ * A sleeping row's body: why it is asleep and what it last said, each on its own
+ * inset panel (`ModalSection`), so nothing floats over the modal's backdrop. The
+ * Wake button lives in the modal's footer; when a wake fails, the refusal is
+ * shown HERE rather than as a toast - the terminal modal sits on the portal tier
+ * (z 10000) and a toast renders underneath it, which is why a failed wake used to
+ * look like a button that ignored the click.
+ */
 export function SleepingSessionPanel({
-  session, onWake,
+  session, wakeError,
 }: {
   session: FleetSession;
-  /** Resume the conversation; resolves once the woken row is in the store. */
-  onWake: () => Promise<void>;
+  /** The raw refusal of the last wake attempt, or null. */
+  wakeError: unknown;
 }) {
   const { t } = useTranslation();
-  const f = t.plugins.fleet;
+  const m = t.monitor;
   const lastWords = useLastWords(session.claudeSessionId);
-  const canWake = !!session.claudeSessionId;
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center" data-testid="fleet-terminal-sleeping">
-      <MoonStar className="h-6 w-6 text-primary" aria-hidden />
-      <p className="max-w-xl typo-body-lg text-foreground">{session.stateReason ?? f.doze_tooltip}</p>
-      <p className="typo-caption text-foreground">
-        {t.monitor.grid_session_recap_last_activity} <RelativeTime timestamp={Number(session.lastActivityMs)} />
-      </p>
-      {lastWords && (
-        <div className="max-h-[40%] w-full max-w-2xl overflow-y-auto rounded-card border border-border bg-secondary/20 p-3 text-left">
-          <RecapField label={t.monitor.grid_session_recap_last_said} value={lastWords} emphasis />
+    <div className="flex flex-col gap-4" data-testid="fleet-terminal-sleeping">
+      {wakeError !== null && (
+        <div data-testid="fleet-terminal-wake-error">
+          <InlineErrorBanner
+            title={m.terminal_wake_failed}
+            message={`${resolveErrorTranslated(t, extractMessage(wakeError)).message} ${m.terminal_wake_failed_hint}`}
+          />
         </div>
       )}
-      <AsyncButton
-        variant="primary"
-        size="md"
-        onClick={onWake}
-        disabled={!canWake}
-        autoFocus
-        data-testid="fleet-terminal-wake"
-      >
-        {f.wake_session}
-      </AsyncButton>
+      <ModalSection label={m.terminal_asleep_label}>
+        <div className="flex items-start gap-3">
+          <MoonStar className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" aria-hidden />
+          <div className="min-w-0">
+            <p className="typo-body-lg text-foreground">{session.stateReason ?? t.plugins.fleet.doze_tooltip}</p>
+            <p className="mt-1 typo-caption">
+              {m.grid_session_recap_last_activity} <RelativeTime timestamp={Number(session.lastActivityMs)} />
+            </p>
+          </div>
+        </div>
+      </ModalSection>
+      {lastWords && (
+        <ModalSection label={m.grid_session_recap_last_said}>
+          <p className="max-h-[32vh] overflow-y-auto whitespace-pre-wrap typo-body text-foreground">{lastWords}</p>
+        </ModalSection>
+      )}
     </div>
   );
 }
@@ -87,9 +100,12 @@ export function SleepingSessionPanel({
 /** A terminal-less row that is not asleep: headless, queued or exited. */
 export function NoTerminalPanel({ text }: { text: string }) {
   return (
-    <div className="flex h-full items-center justify-center px-6 text-center" data-testid="fleet-terminal-none">
-      <p className="max-w-xl typo-body text-foreground">{text}</p>
-    </div>
+    <ModalSection>
+      <div className="flex items-center gap-3" data-testid="fleet-terminal-none">
+        <TerminalSquare className="h-5 w-5 flex-shrink-0 text-primary" aria-hidden />
+        <p className="typo-body-lg text-foreground">{text}</p>
+      </div>
+    </ModalSection>
   );
 }
 
@@ -114,7 +130,7 @@ export function SessionReplyBar({ session }: { session: FleetSession }) {
     inputRef.current?.focus();
   };
   return (
-    <form onSubmit={send} className="flex flex-shrink-0 items-center gap-2 border-t border-border px-3 py-2" data-testid="fleet-terminal-reply">
+    <form onSubmit={send} className="flex w-full items-center gap-2" data-testid="fleet-terminal-reply">
       <input
         ref={inputRef}
         value={text}

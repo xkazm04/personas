@@ -16,6 +16,7 @@ import { TONE_MODULES } from './toneSurfaces';
 import { TRIAGE_MODULES } from './triageSurfaces';
 import { DATAGRID_MODULES } from './datagridSurfaces';
 import { FLEET_MODULES } from './fleetSurfaces';
+import { FLEET_TERMINAL_MODULES } from './fleetTerminalSurfaces';
 import { OBSERVABILITY_MODULES } from './observabilitySurfaces';
 import { FACTORY_MODULES } from './factorySurfaces';
 import { KIT_MODULES } from './kitSpecimen';
@@ -86,6 +87,8 @@ export const MODULES: Record<string, HarnessModule> = {
   ...TRIAGE_MODULES,
   ...DATAGRID_MODULES,
   ...FLEET_MODULES,
+  // The Monitor's session terminal modal, its no-terminal states (fleetTerminalSurfaces.tsx).
+  ...FLEET_TERMINAL_MODULES,
   ...OBSERVABILITY_MODULES,
   ...FACTORY_MODULES,
   // Kit batch home-1, Home > Welcome (homeWelcomeSurfaces.tsx, homeWelcomeTapes.mjs).
