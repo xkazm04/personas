@@ -18,6 +18,29 @@ The companion, **Athena**, can also open it — ask her for a fleet overview
 ("how are my personas doing?") and she summarises in chat and opens the grid.
 See [companion](./companion/README.md).
 
+### The Decision Center (2026-10-06)
+
+Everything that needs a human now lands in one place: the Activity view's
+command bar. It carries a strip of chips — **Gates** (persona reviews, build
+questions, Athena's approvals), **Proposals** (routing/budget policies,
+evolution promotions, finished goals awaiting sign-off), **Backlog**,
+**Incidents**, **Council**, **Reports**, **Chat** (threads where a persona or
+Athena spoke after your last reply) — then, after a divider, **Ready to
+dispatch** (accepted ideas not yet sent to the fleet). Each chip shows its
+count and a severity lamp; a chip at zero stays in place, dimmed; a chip whose
+source failed to load shows a warning glyph, never a 0.
+
+Pressing a chip opens a **peek** under it, in the order the queue should be
+worked (blocking items first, then decisions, then reads and replies). Keys:
+↑/↓ move, ←/→ switch chip, **A** accept, **R** reject (Enter confirms),
+**D** done (reports, chat), **S** skip, **Enter** opens the item, **Esc**
+steps back. **Triage all** opens the first item across every chip. The
+titlebar decisions badge counts the same roster and opens this view; Athena's
+orb and the Home decisions widget read it too, so every count agrees.
+
+The old Activity rail ("Decision dock" with Reviews / Dispatch / Messages tabs)
+is retired; its dispatch bar lives in the Ready peek.
+
 Press `Esc` (or click the titlebar button again) to close. The Monitor fades
 in on open and fades out on close (the mount is wrapped in `AnimatePresence`
 so the exit animation plays before it unmounts); reduced-motion users get an

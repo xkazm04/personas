@@ -24,7 +24,6 @@ import type { SquareState } from '../fleetGridModel';
 import { useRailScope } from '../useRailScope';
 import { useFocusFlash } from '../useFocusFlash';
 import { simQueueActions, useSimulatedBoard, useSimulationEnabled } from '../simulation';
-import { useSimulatedRail } from '../useSimulatedRail';
 import { useQueuePoll } from '../board/useQueuePoll';
 import { useQueueModel } from '../board/queue/useQueueModel';
 import { useQueueActions } from '../board/queue/useQueueActions';
@@ -71,7 +70,6 @@ export function useActivitySurface({
     unseen: liveBubbles.unseen,
     isLoading,
   });
-  const simulatedRail = useSimulatedRail(simulating);
 
   const queueRefresh = useSystemStore((st) => st.fleetQueueRefresh);
   useQueuePoll(!simulating);
@@ -129,7 +127,7 @@ export function useActivitySurface({
   const sessionsInFlight = board.queue?.running ?? queueModel.running.length;
 
   return {
-    stage, reducedMotion, focusKey, simulating, board, simulatedRail,
+    stage, reducedMotion, focusKey, simulating, board,
     bubbles: liveBubbles.bubbles, unseen: board.unseen,
     layout, setLayout,
     orchestrationOpen, openOrchestration, closeOrchestration,

@@ -6,31 +6,32 @@
 // ones glow in the theme colour, the ones waiting on you glow amber, failures
 // red. Calm is the default state of the panel; light is the exception.
 //
-// Three columns, one grammar: SUPPLY on the left (the cap as a socket rack,
-// Autopilot, subscription windows as fuel strips), the BOARD in the middle
-// (Classic bays, the Runway rack, the three Lanes), the DESK on the right
-// (everything waiting on a human). One band of chrome above them all, and
-// under it the notepad of workspaces the board below is a sheet of.
+// Two columns, one grammar: SUPPLY on the left (the cap as a socket rack,
+// Autopilot, subscription windows as fuel strips) and the BOARD (Classic bays,
+// the Runway rack, the three Lanes). One band of chrome above them, carrying
+// the Decision Center's strip (everything waiting on a human), and under it
+// the notepad of workspaces the board below is a sheet of.
 //
 // CONSOLIDATED 2026-10-04. This is now the Activity surface itself, not one
 // of three variants behind a switcher. It is the Annunciator with the two
 // ideas the Plate variant was kept alive for folded in: the WORKSPACE LAYER
 // (`WorkspaceTabs` over `useWorkspaceScope` — Plate's second screen reduced to
 // a row of index tabs that narrow the board in place) and the DOCKED DESK
-// (`DecisionDock` — the decision rail resting as three figures and widening
-// into the list, instead of holding a column open all session). The baseline
+// (`DecisionDock`, since retired - see below). The baseline
 // grid and the Plate layers are gone; `prototype/` keeps its name until the
 // files are moved, which is a rename pass and not a design one.
+//
+// THE DOCKED DESK IS RETIRED (2026-10-06, decision-center spark A3). Its three
+// feeds became the Decision Center roster, its figures became the strip's
+// chips in the band above (`CommandBar` → `DecisionHub`), and an opened row
+// now opens in its own surface. The board gets the full width back.
 
 import { memo, useCallback, useState } from 'react';
 import type { PersonaCardModel } from '../../../monitorModel';
 import { OrchestrationPanel } from '../../orchestration';
 import { SessionModals } from '../../board/SessionModals';
-import { FINAL_STAGE } from '../../useStagedMount';
-import { useRailWidth } from '../../rail/useRailWidth';
 import { useActivitySurface, type ActivitySurfaceProps } from '../useActivitySurface';
 import { useUsageFeed } from '../useUsageFeed';
-import { useRailSurface } from '../useRailSurface';
 import { useCapSetting, useQueueConfirm } from '../shared';
 import { CommandBar, CommandFloor } from './CommandBar';
 import { SessionMenuProvider } from './SessionMenu';
@@ -42,26 +43,15 @@ import { WorkspaceSheet, WorkspaceTabs } from './WorkspaceTabs';
 import { SupplyDeck } from './SupplyDeck';
 import { ClassicPanel } from './ClassicPanel';
 import { LanesPanel } from './LanesPanel';
-import { DecisionDock, type DockTab } from './DecisionDock';
 import './entryE.css';
 
 function ActivityEntryEImpl(props: ActivitySurfaceProps) {
   const surface = useActivitySurface(props);
   const usage = useUsageFeed(surface.simulating);
-  const width = useRailWidth();
-  const [dockOpen, setDockOpen] = useState(false);
   // The quick-chat seam the persona menu exposes. The composer is anchored to
   // the persona's own line, so the board it was opened from stays readable.
   const [quickChat, setQuickChat] = useState<PersonaCardModel | null>(null);
   const closeQuickChat = useCallback(() => setQuickChat(null), []);
-  const rail = useRailSurface({
-    feedTeams: props.feedTeams ?? [],
-    onOpenSpeaker: props.onOpenSpeaker,
-    filter: surface.scope,
-    simulated: surface.simulatedRail,
-    // The desk is shut: nothing renders a row, so no feed builds one.
-    rowsEnabled: dockOpen,
-  });
   const capSetting = useCapSetting(surface.simulating);
   const confirm = useQueueConfirm(surface.queueActions);
   const cap = surface.queueModel.cap > 0 ? surface.queueModel.cap : capSetting.cap;
@@ -69,9 +59,6 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
   const onLayout = useCallback((v: typeof layout) => setLayout(v), [setLayout]);
   const filter = usePanelFilter(surface);
   const workspaces = useWorkspaceScope(surface);
-  const toggleDock = useCallback(() => setDockOpen((v) => !v), []);
-  const { setTab } = rail;
-  const openDockTab = useCallback((tab: DockTab) => { setTab(tab); setDockOpen(true); }, [setTab]);
 
   return (
     <div
@@ -86,6 +73,7 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
         onClear={surface.clearFilter}
         layout={layout}
         onLayout={onLayout}
+        feedTeams={props.feedTeams}
       />
       <WorkspaceTabs scope={workspaces} />
 
@@ -111,18 +99,6 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
             </SessionMenuProvider>
           </CommandFloor>
         </WorkspaceSheet>
-
-        <DecisionDock
-          rail={rail}
-          width={width}
-          open={dockOpen}
-          onToggle={toggleDock}
-          onOpenTab={openDockTab}
-          scope={surface.scope}
-          onClearScope={surface.clearScope}
-          ready={surface.stage >= FINAL_STAGE}
-          reducedMotion={surface.reducedMotion}
-        />
       </div>
 
       <SessionModals
@@ -132,7 +108,6 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
         onCloseRecap={surface.closeRecap}
       />
       <OrchestrationPanel open={surface.orchestrationOpen} onClose={surface.closeOrchestration} />
-      {rail.modals}
       {usage.dialog}
       <QuickChatComposer card={quickChat} onClose={closeQuickChat} />
       {confirm.dialog}

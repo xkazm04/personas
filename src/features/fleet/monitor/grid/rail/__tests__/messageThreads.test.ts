@@ -5,7 +5,6 @@ import type { TaggedItem } from '../../../channels/types';
 import {
   buildMessageThreads, countUnreadThreads, SYSTEM_THREAD_KEY, type ThreadLookups,
 } from '../messageThreads';
-import { threadToRow } from '../railModel';
 
 /**
  * The Messages tab is one thread per source. What is worth pinning: which
@@ -160,31 +159,5 @@ describe('buildMessageThreads — unread', () => {
       }),
     );
     expect(countUnreadThreads(threads)).toBe(0);
-  });
-});
-
-describe('threadToRow', () => {
-  const preview = (m: string, author: string | null, mine: boolean) =>
-    mine ? `You: ${m}` : author ? `${author}: ${m}` : m;
-
-  it('projects a thread as name + latest line + unread count, keyed by thread', () => {
-    const [scout] = buildMessageThreads(merged, lookups());
-    const row = threadToRow(scout!, lookups().personaOf, preview);
-    expect(row.id).toBe('persona:p1');
-    expect(row.title).toBe('Scout');
-    expect(row.body).toBe('hello');
-    expect(row.unread).toBe(true);
-    expect(row.unreadCount).toBe(2);
-    expect(row.persona).toEqual({ icon: null, color: '#f00' });
-    expect(row.groupHeader).toBeNull();
-  });
-
-  it('prefixes the author on a team thread and marks your own last word', () => {
-    const team = buildMessageThreads([tg('a', { id: 'x', kind: 'director' })], lookups())[0]!;
-    expect(threadToRow(team, lookups().personaOf, preview).body).toBe('Director: hello');
-    const mine = buildMessageThreads([tg('a', { id: 'y', kind: 'directive' })], lookups())[0]!;
-    const row = threadToRow(mine, lookups().personaOf, preview);
-    expect(row.body).toBe('You: hello');
-    expect(row.unread).toBe(false);
   });
 });

@@ -17,8 +17,8 @@
  * (no new hue; --status-warning-raw is re-seated to the same brown on light,
  * and --brand-amber is grey on light-news), with dark ink on it (below), so a
  * needs tile stays the warmest, loudest thing on the board in every theme. */
-/* Board skin tokens are global on purpose: Activity's Classic rows, session and queue cards and the
-   DecisionDock rail rows wear the same skin outside .fb-root (monitor UI fuse). */
+/* Board skin tokens are global on purpose: Activity's Classic rows and its session and queue cards
+   wear the same skin outside .fb-root (monitor UI fuse). */
 :root { --fb-warning: var(--status-warning); --fb-glass: color-mix(in oklab, var(--foreground) 4%, transparent); }
 @supports (color: oklch(from red l c h)) {
   [data-theme^="light"] { --fb-warning: oklch(from var(--status-warning) 0.8 max(c, 0.16) h); }

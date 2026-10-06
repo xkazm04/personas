@@ -1,0 +1,180 @@
+{
+  "version": 1,
+  "module": "monitor/rail",
+  "source": "synthetic",
+  "recordedAt": "2026-09-22T15:40:00.000Z",
+  "note": "Synthetic: the test build simulation fleet, plus decision counts and three companion approvals for the Gates peek.",
+  "calls": [
+    {
+      "cmd": "dev_tools_workspace_list",
+      "response": []
+    },
+    {
+      "cmd": "dev_tools_list_projects",
+      "response": []
+    },
+    {
+      "cmd": "dev_tools_workspace_set_active",
+      "response": null
+    },
+    {
+      "cmd": "fleet_list_sessions",
+      "response": {
+        "sessions": [],
+        "hookPort": null,
+        "hooksInstalled": true
+      }
+    },
+    {
+      "cmd": "get_app_settings_bulk",
+      "response": {
+        "max_parallel_executions": "4",
+        "fleet.max_parallel_sessions": "4"
+      }
+    },
+    {
+      "cmd": "fleet_claude_usage",
+      "response": {
+        "available": true,
+        "reason": null,
+        "subscriptionType": "max",
+        "rateLimitTier": null,
+        "fetchedAtMs": 1790091540000,
+        "windows": [
+          {
+            "key": "five_hour",
+            "utilizationPct": 34,
+            "resetsAtMs": 1790102400000,
+            "windowMs": 18000000
+          },
+          {
+            "key": "seven_day",
+            "utilizationPct": 41,
+            "resetsAtMs": 1790437200000,
+            "windowMs": 604800000
+          }
+        ]
+      }
+    },
+    {
+      "cmd": "fleet_claude_accounts_list",
+      "response": {
+        "activeAccountId": null,
+        "liveEmail": null,
+        "liveCaptured": false,
+        "livePresent": false,
+        "accounts": [],
+        "autoRotate": {
+          "enabled": false,
+          "thresholdPct": 90,
+          "cooldownSecs": 600
+        },
+        "lastRotation": null,
+        "profiles": []
+      }
+    },
+    {
+      "cmd": "list_manual_reviews_page",
+      "response": {
+        "rows": [],
+        "hasMore": false,
+        "nextCursor": null
+      }
+    },
+    {
+      "cmd": "dev_tools_undispatched_ideas",
+      "response": []
+    },
+    {
+      "cmd": "dev_tools_list_pending_acceptance",
+      "response": []
+    },
+    {
+      "cmd": "evolution_list_promotion_proposals",
+      "response": []
+    },
+    {
+      "cmd": "policy_tuning_list",
+      "response": []
+    },
+    {
+      "cmd": "dev_tools_triage_ideas",
+      "response": {
+        "ideas": [],
+        "cursor": null,
+        "hasMore": false,
+        "counts": {
+          "pending": 0,
+          "accepted": 0,
+          "rejected": 0
+        }
+      }
+    },
+    {
+      "cmd": "get_persona_summaries",
+      "response": []
+    },
+    {
+      "cmd": "get_pending_review_counts_by_persona",
+      "response": []
+    },
+    {
+      "cmd": "get_unread_report_counts_by_persona",
+      "response": {}
+    },
+    {
+      "cmd": "list_teams",
+      "response": []
+    },
+    {
+      "cmd": "get_team_counts",
+      "response": []
+    },
+    {
+      "cmd": "dev_tools_pending_counts",
+      "response": {
+        "goalAcceptance": 1,
+        "manualReviews": 0,
+        "ideas": 7,
+        "policyProposals": 1,
+        "promotionProposals": 1,
+        "openIncidents": 3,
+        "blockingIncidents": 1,
+        "unreadReports": 4,
+        "companionApprovals": 3,
+        "councilDecidable": 1,
+        "decisionTotal": 0,
+        "total": 0
+      }
+    },
+    {
+      "cmd": "companion_list_pending_approvals",
+      "response": [
+        {
+          "id": "ap-1",
+          "action": "write_fact",
+          "rationale": "You said the staging deploys move to Thursdays.",
+          "paramsJson": "{}",
+          "humanReviewId": null,
+          "createdAt": "2026-09-22T15:28:00.000Z"
+        },
+        {
+          "id": "ap-2",
+          "action": "create_goal",
+          "rationale": "The retry budget keeps coming up in three teams.",
+          "paramsJson": "{}",
+          "humanReviewId": null,
+          "createdAt": "2026-09-22T14:53:00.000Z"
+        },
+        {
+          "id": "ap-3",
+          "action": "dispatch_persona",
+          "rationale": "The Docs team asked for a release note draft.",
+          "paramsJson": "{}",
+          "humanReviewId": null,
+          "createdAt": "2026-09-22T12:40:00.000Z"
+        }
+      ]
+    }
+  ]
+}
