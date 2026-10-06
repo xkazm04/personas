@@ -593,8 +593,8 @@
         }
       ],
       "baseline": {
-        "files": 257,
-        "matches": 560
+        "files": 256,
+        "matches": 559
       },
       "floor": 4000
     },
@@ -1426,8 +1426,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 404,
-        "matches": 748
+        "files": 402,
+        "matches": 746
       },
       "floor": 2000
     },
@@ -1966,8 +1966,8 @@
         "description": "A leading-character cut taken with a UTF-16 code-unit index and NOT continued (neither `+ rest` nor `}${rest}`) — i.e. a monogram, not a capitalisation. charAt(0)/slice(0,1)/slice(0,2) split any astral-plane codepoint, so an emoji-initial entity name yields a lone surrogate and renders U+FFFD. Cut with [...name][0] instead."
       },
       "baseline": {
-        "files": 10,
-        "matches": 10
+        "files": 9,
+        "matches": 9
       },
       "floor": 4000
     },
@@ -5636,8 +5636,8 @@
         }
       ],
       "baseline": {
-        "files": 846,
-        "matches": 3956
+        "files": 843,
+        "matches": 3949
       },
       "floor": 5000
     },
@@ -5714,8 +5714,8 @@
         }
       ],
       "baseline": {
-        "files": 79,
-        "matches": 215
+        "files": 77,
+        "matches": 195
       },
       "floor": 5000
     },
@@ -5752,8 +5752,8 @@
         }
       ],
       "baseline": {
-        "files": 991,
-        "matches": 2233
+        "files": 989,
+        "matches": 2224
       },
       "floor": 2200
     },
@@ -5822,8 +5822,8 @@
         }
       ],
       "baseline": {
-        "files": 705,
-        "matches": 1722
+        "files": 704,
+        "matches": 1720
       },
       "floor": 5000
     }
