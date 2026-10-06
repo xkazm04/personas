@@ -33,9 +33,8 @@ function DockKey(p: KeyProps) {
     <Tooltip content={p.label}>
       <Button variant="ghost" size="sm" onClick={p.onClick} onContextMenu={p.onContextMenu}
         onPointerEnter={p.onPointerEnter} disabled={p.disabled} aria-label={p.label}
-        aria-pressed={p.pressed} data-testid={p.testId}
+        aria-pressed={p.pressed} data-testid={p.testId} icon={p.glyph}
         className={`relative h-10 rounded-none! px-3! gap-2! ${p.pressed ? 'text-primary bg-primary/10' : ''}`}>
-        {p.glyph}
         {p.text && <span className="typo-body font-medium text-foreground max-w-32 truncate hidden xl:inline">{p.text}</span>}
         {edge && <span className={`absolute top-0 inset-x-2 h-0.5 rounded-full ${EDGE[edge]}`} />}
       </Button>

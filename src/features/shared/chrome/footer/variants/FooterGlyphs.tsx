@@ -22,7 +22,7 @@ interface GlyphProps {
 function ink(weight: GlyphWeight = 'duo') {
   return weight === 'solid'
     ? { body: { fill: 'currentColor', fillOpacity: 1 }, detail: 'var(--background)' }
-    : { body: { fill: 'currentColor', fillOpacity: 0.2 }, detail: 'currentColor' };
+    : { body: { fill: 'currentColor', fillOpacity: 0.32 }, detail: 'currentColor' };
 }
 
 function Svg({ className = 'w-6 h-6', children }: { className?: string; children: ReactNode }) {
@@ -65,11 +65,11 @@ export function KeycapGlyph(p: GlyphProps) {
   const k = ink(p.weight);
   return (
     <Svg className={p.className}>
-      <rect x="3" y="3.5" width="18" height="17" rx="3.5" />
-      <rect x="5.5" y="5.5" width="13" height="10.5" rx="2" {...k.body} strokeWidth={1.25} />
-      <circle cx="12" cy="8.4" r="1.15" fill={k.detail} stroke="none" />
-      <circle cx="12" cy="11.9" r="1.15" fill={k.detail} stroke="none" />
-      <path d="M12.9 12.1c.1 1.4-.5 2.3-1.6 2.8" stroke={k.detail} strokeWidth={1.4} />
+      <rect x="3" y="3" width="18" height="18" rx="3.5" />
+      <rect x="5.5" y="5.25" width="13" height="11.5" rx="2" {...k.body} strokeWidth={1.25} />
+      <circle cx="12" cy="8.3" r="1.45" fill={k.detail} stroke="none" />
+      <circle cx="12" cy="12.4" r="1.45" fill={k.detail} stroke="none" />
+      <path d="M13.3 12.6c.15 1.7-.55 2.8-2.1 3.4" stroke={k.detail} strokeWidth={1.6} />
     </Svg>
   );
 }
@@ -102,7 +102,7 @@ export function NetworkGlyph(p: GlyphProps) {
 
 /** A CPU die whose body fills from the bottom with the measured load (0..1). */
 export function CpuGlyph({ load, ...p }: GlyphProps & { load: number }) {
-  const clip = useId();
+  const clip = `g${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const h = 12 * Math.min(1, Math.max(0, load));
   return (
     <Svg className={p.className}>
@@ -157,7 +157,7 @@ export function AccountGlyph(p: GlyphProps) {
 
 /** A memory stick whose chips fill left to right with used RAM (0..1). */
 export function MemoryGlyph({ used, ...p }: GlyphProps & { used: number }) {
-  const clip = useId();
+  const clip = `g${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const w = 16 * Math.min(1, Math.max(0, used));
   return (
     <Svg className={p.className}>

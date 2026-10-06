@@ -4,7 +4,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import {
   AthenaFooterIcon, FleetDebugLogFooterPill, FleetFooterIcon, PluginContextSelectors,
 } from '../lazyFooterIcons';
-import { CpuGlyph } from './FooterGlyphs';
+import { CpuGlyph, MemoryGlyph } from './FooterGlyphs';
 import {
   AccountControl, GuidanceControl, NetworkControl, NotepadControl, ShortcutsControl,
   SidebarControl, ThemeControl, type KeyProps, type Skin,
@@ -50,14 +50,18 @@ function Bay({ children }: { children: ReactNode }) {
   );
 }
 
-function Meter({ pct, bg }: { pct: number; bg: string }) {
+/** One reading: a glyph that fills with the value, the figure, a bar under the figure. */
+function Reading({ glyph, pct, bg }: { glyph: ReactNode; pct: number; bg: string }) {
   return (
     <div className="flex items-center gap-1.5">
-      <div className="h-1.5 w-10 rounded-full bg-foreground/10 overflow-hidden">
-        <div className={`h-full rounded-full transition-[width] duration-500 ease-out ${bg}`}
-          style={{ width: `${Math.min(100, Math.max(0, pct))}%` }} />
+      {glyph}
+      <div className="flex flex-col gap-0.5 w-9">
+        <span className="typo-body font-medium text-foreground tabular-nums leading-none">{Math.round(pct)}%</span>
+        <div className="h-1 rounded-full bg-foreground/10 overflow-hidden">
+          <div className={`h-full rounded-full transition-[width] duration-500 ease-out ${bg}`}
+            style={{ width: `${Math.min(100, Math.max(0, pct))}%` }} />
+        </div>
       </div>
-      <span className="typo-caption text-foreground tabular-nums w-7 text-right">{Math.round(pct)}%</span>
     </div>
   );
 }
@@ -67,12 +71,9 @@ function LoadInstrument() {
   return (
     <Tooltip content={load.tooltip}>
       <div role="status" aria-label={`${load.label}: ${load.headroom}`} data-testid="footer-system-load"
-        className="flex items-center gap-2 h-9 pl-1.5 pr-2.5">
-        <CpuGlyph load={load.cpu / 100} className={`w-6 h-6 transition-colors ${load.tone.text}`} />
-        <div className="flex flex-col leading-none gap-0.5">
-          <Meter pct={load.cpu} bg={load.tone.bg} />
-          <Meter pct={load.memUsedPct} bg={load.tone.bg} />
-        </div>
+        className={`flex items-center gap-3 h-9 px-2 ${load.tone.text}`}>
+        <Reading pct={load.cpu} bg={load.tone.bg} glyph={<CpuGlyph load={load.cpu / 100} className="w-6 h-6" />} />
+        <Reading pct={load.memUsedPct} bg={load.tone.bg} glyph={<MemoryGlyph used={load.memUsedPct / 100} className="w-6 h-6" />} />
       </div>
     </Tooltip>
   );
