@@ -84,7 +84,12 @@ export function slugsAfter(sub, args = {}, result = null) {
     if (Array.isArray(result)) {
       const s = [...new Set(result.map((r) => r?.slug).filter(Boolean))];
       if (s.length) return s;
-    } else if (result && typeof result === 'object' && typeof result.slug === 'string') return [result.slug];
+    } else if (result && typeof result === 'object') {
+      // the run's own slug, plus every project a promote (alone, or after an await) started a run in
+      const promoted = [...(Array.isArray(result.slugs) ? result.slugs : []), ...(Array.isArray(result.promoted?.slugs) ? result.promoted.slugs : [])];
+      const s = [...new Set([typeof result.slug === 'string' ? result.slug : null, ...promoted].filter((x) => typeof x === 'string' && x))];
+      if (s.length) return s;
+    }
     if (flags.project && flags.project !== true) {
       const want = slugify(flags.project);
       const hit = listSlugs().find((s) => s === want);

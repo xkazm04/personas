@@ -185,9 +185,11 @@ are used here, in this session, and never inside a master subagent.
    on its corrected reply; a second refusal parks the project for this wake and goes into the
    digest with the errors. Never edit a master's JSON yourself.
 6. **Dispatch, then await.** For each run id `decide` returned: `AM dispatch --run <runId>`,
-   which cuts the worktree and starts the builder in the background. A typed refusal (`usage
-   limit`, `memory`, `project cap`, `paths overlap`, `global cap`, `run not planned`) is reported and left for
-   the next wake, never retried in a loop. On success, start the `awaitCommand` that `dispatch`
+   which cuts the worktree and starts the builder in the background. A refusal for a slot
+   (`global cap`, `project cap`, `repo lane`, `paths overlap`, `memory`) still exits 2 but says
+   `queued: true` and the `position`: the run is now held in the admission queue (below) and a
+   later `promote` starts it; do not retry it by hand. Any other refusal (`usage limit`, `run not
+   planned`) is reported and left for the next wake. On success, start the `awaitCommand` that `dispatch`
    printed (`AM await --run <runId>`) with `run_in_background`, at once. That background task's
    notification is the PRIMARY wake: when it arrives, read its JSON (the settled run plus
    `waitedSec`) and go to step 8. Several awaits run side by side safely: settling takes the one
@@ -254,6 +256,29 @@ kp - quiet, next wake 16:05.
 Then add what this wake did that status cannot show: `QUIET` / `TIMEOUT` flags from `watch`,
 refusals from `decide` or `dispatch`, asks the Director answered itself and why. Every claim
 cites a run id, SHA, wake id or file; never narrate what the journal does not show.
+
+## The admission queue ("later is a promise")
+
+A dispatch refused for a slot is not dropped. `dispatch` appends the planned run to the global
+`.claude/master/_queue.jsonl` (append-only, latest line per run wins) and the run stays `planned`
+until `promote` starts it or `queue drop` refuses it explicitly. Semantics, exactly:
+
+- **What is queued**: only a run whose `dispatch` was tried and refused for `global cap`,
+  `project cap`, `repo lane`, `paths overlap` or `memory`. A planned run whose wake is decided
+  but whose dispatch was never tried is NOT in the queue. A `usage limit` is not a slot and
+  never queues: it stops the loop.
+- **Order**: runs the operator pinned with `queue move` first (lower position first), then
+  FIFO by the time the run's wake was decided. A run queued again keeps its place.
+- **In flight**: a queued run counts as in flight for `decide` (its charter and its ideas are
+  not dispatched again) and the master's context lists it with its position.
+- **Promote**: `AM promote` walks the queue in order under one machine-wide lock and dispatches
+  every run that now fits the caps, lanes, paths and memory; a run that does not fit is skipped
+  (a later one may fit), and a `global cap`, `memory` or `usage limit` refusal stops the walk.
+  It prints `{promoted, stillQueued, refusals, awaitCommands}`. `await` runs it after every
+  settle, so a freed slot refills at once.
+- **Refusal**: `AM queue drop --run <id> --reason "<why>"` releases the run with that reason; a
+  `release` of a queued run drops it too. Nothing leaves the queue silently.
+- `AM queue list` prints the ordered table; `status --text` and the digest end with it.
 
 ## `say`, `asks` / `answer`
 

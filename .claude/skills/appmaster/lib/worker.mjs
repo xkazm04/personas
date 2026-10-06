@@ -10,7 +10,7 @@ import path from 'node:path';
 import {
   SKILL_DIR, runDir, shortId, nowIso, mintId, claudeBin, Refusal,
   ENV_STRIP, ENV_SET, RUN_LABEL_PREFIX, GLOBAL_CAP, PER_PROJECT_CAP,
-  QUIET_MIN, TIMEOUT_MIN, LIVE_RUN_STATES,
+  QUIET_MIN, TIMEOUT_MIN, LIVE_RUN_STATES, QUEUE_REASONS,
 } from './contract.mjs';
 import { loadBrief, listRuns, listSlugs, findRun, updateRun } from './store.mjs';
 import { readLimit, setLimit, detectLimit, limitSurface, limitSnippet } from './limits.mjs';
@@ -18,6 +18,7 @@ import { createWorktree, removeWorktree } from './worktree.mjs';
 import { memoryState } from './memory.mjs';
 import { resolveGates, splitBoundaries, GATE_NAMES } from './gate.mjs';
 import { overlappingPairs } from './paths.mjs';
+import { enqueue, markQueue, queuedEntry, withQueueLock } from './queue.mjs';
 
 // ---------------------------------------------------------------- small helpers
 
@@ -188,19 +189,43 @@ export function spawnWorker(run, promptText) {
  */
 export const awaitCommandFor = (run) => `node "${path.join(SKILL_DIR, 'appmaster.mjs').replace(/\\/g, '/')}" await --run ${shortId(run.runId)}`;
 
-/** (args) => Run & {awaitCommand}   // Refusal at limit / memory / not planned / project cap / paths overlap / global cap */
+/**
+ * (args) => Run & {awaitCommand}   // Refusal at limit / not planned / project cap / paths overlap /
+ * global cap / memory. A refusal for a slot (QUEUE_REASONS) is NOT dropped: the planned run is held in
+ * the admission queue and the refusal says `queued: true` with its position (still exit 2).
+ * Holds the queue lock, so a dispatch and a promote never take the same slot twice.
+ */
 export function cmdDispatch(args = {}) {
-  const run = dispatchCore(args);
+  const run = withQueueLock(() => dispatchOrQueue(args), { label: 'dispatch' });
   return { ...run, awaitCommand: awaitCommandFor(run) };
 }
 
-function dispatchCore({ flags = {} } = {}) {
+function dispatchOrQueue(args) {
+  let run;
+  try {
+    run = dispatchCore(args);
+  } catch (e) {
+    if (!(e instanceof Refusal) || !QUEUE_REASONS.includes(e.reason)) throw e;
+    const planned = requireRun(args.flags?.run);
+    if (planned.state !== 'planned') throw e;
+    const q = enqueue(planned, e.reason);
+    throw new Refusal(e.reason, { ...e.extra, runId: planned.runId, slug: planned.slug, queued: true, position: q.position, queueLength: q.length });
+  }
+  // a queued run the Director dispatched by hand has left the queue
+  if (queuedEntry(run.runId)) markQueue(run.runId, 'promoted', { promotedAt: nowIso(), by: 'dispatch' });
+  return run;
+}
+
+/**
+ * The dispatch itself, checks cheapest first so a refusal names the binding constraint and a promote
+ * pass over the queue samples memory only for a run that fits everything else. Caller holds the
+ * queue lock (cmdDispatch, promote).
+ */
+export function dispatchCore({ flags = {} } = {}) {
   let run = requireRun(flags.run);
 
   const limit = readLimit();
   if (limit) throw new Refusal('usage limit', { resetsAt: limit.resetsAt ?? null, reason: limit.reason });
-  const mem = memoryState({ runningBuilders: countRunning(run.runId) });
-  if (!mem.dispatchOk) throw new Refusal('memory', { freeGb: mem.freeGb, needGb: mem.dispatchNeedGb, hint: 'a dispatch needs FREE memory (more with builders already running); `status --text` names who is using it' });
   if (run.state === 'running') return run;
   if (run.state !== 'planned') throw new Refusal('run not planned', { runId: run.runId, state: run.state });
   const mine = listRuns(run.slug, { states: ['running'] }).filter((r) => r.runId !== run.runId);
@@ -225,6 +250,8 @@ function dispatchCore({ flags = {} } = {}) {
   const slugs = [...new Set([...listSlugs(), run.slug])];
   const all = slugs.flatMap((s) => listRuns(s, { states: ['running'] })).filter((r) => r.runId !== run.runId);
   if (all.length >= GLOBAL_CAP) throw new Refusal('global cap', { cap: GLOBAL_CAP, running: all.map((r) => `${r.slug}:${shortId(r.runId)}`) });
+  const mem = memoryState({ runningBuilders: all.length });
+  if (!mem.dispatchOk) throw new Refusal('memory', { freeGb: mem.freeGb, needGb: mem.dispatchNeedGb, hint: 'a dispatch needs FREE memory (more with builders already running); `status --text` names who is using it' });
 
   const brief = loadBrief(run.slug) || {};
   const wt = createWorktree(run, brief);
@@ -327,5 +354,8 @@ export function cmdRelease({ flags = {} } = {}) {
     patch.killed = true;
   }
   if (run.state === 'planned' && run.worktree) patch.cleanup = removeWorktree(run);
-  return updateRun(run, patch);
+  const out = updateRun(run, patch);
+  // a released run owes the queue nothing more: its promise ends in this explicit refusal
+  if (queuedEntry(run.runId)) markQueue(run.runId, 'dropped', { droppedAt: nowIso(), droppedReason: String(flags.reason) });
+  return out;
 }

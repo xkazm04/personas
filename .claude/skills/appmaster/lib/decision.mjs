@@ -14,6 +14,7 @@ import { specError, overlappingPairs } from './paths.mjs';
 import { listRuns, loadAsks, loadBrief, loadWake, newRun, queueOutbox, raiseAsk, saveWake } from './store.mjs';
 import { briefCharters, resolveManaged, openDb, q } from './dbread.mjs';
 import { brakes } from './brakes.mjs';
+import { queueTable } from './queue.mjs';
 
 const STARTED_STATES = LIVE_RUN_STATES.filter((s) => s !== 'planned');
 const TOP_KEYS =['wakeId', 'dispatch', 'defer', 'asks', 'ideaVerdicts', 'say', 'note', 'nextWakeMinutes'];
@@ -246,19 +247,22 @@ export async function cmdDecide({ flags = {} } = {}) {
   if (unknown.length) throw new Refusal('invalid decision', { errors: unknown.map((id) => `idea ${id} is not a dev_ideas row of ${slug}; copy the full id from the context document, never retype it`) });
 
   // A charter already in flight from an earlier wake is not dispatched beside itself (one builder per
-  // charter, as when the project cap was one), and neither is an idea a started run carries. A
-  // never-started `planned` run is intent only (a refused dispatch nobody retries): the context
-  // tells the master about it, and it does not block here.
+  // charter, as when the project cap was one), and neither is an idea a started run carries. A QUEUED
+  // planned run (its dispatch was refused for a slot) is a promise the loop keeps, so it counts as in
+  // flight too. A never-started, never-queued `planned` run is intent only (decided, dispatch never
+  // tried): the context tells the master about it, and it does not block here.
   const all = listRuns(slug);
   const prior = all.filter((r) => r.wakeId === wake.wakeId);
-  const live = all.filter((r) => STARTED_STATES.includes(r.state) && r.wakeId !== wake.wakeId);
+  const queued = new Map(queueTable().map((e) => [e.runId, e]));
+  const live = all.filter((r) => (STARTED_STATES.includes(r.state) || (r.state === 'planned' && queued.has(r.runId))) && r.wakeId !== wake.wakeId);
+  const stateOf = (r) => (queued.has(r.runId) ? `queued at position ${queued.get(r.runId).position}` : r.state);
   const clash = [];
   decision.dispatch.forEach((x, i) => {
     const same = live.find((r) => r.charterSlug === x.charterSlug);
-    if (same) clash.push(`dispatch[${i}]: charter ${x.charterSlug} already has live run ${shortId(same.runId)} (${same.state}); defer it until that run settles`);
+    if (same) clash.push(`dispatch[${i}]: charter ${x.charterSlug} already has live run ${shortId(same.runId)} (${stateOf(same)}); defer it until that run settles`);
     for (const id of x.ideaIds ?? []) {
       const carrier = live.find((r) => (r.ideaIds ?? []).includes(id));
-      if (carrier) clash.push(`dispatch[${i}]: idea ${id} is already carried by live run ${shortId(carrier.runId)} (${carrier.state})`);
+      if (carrier) clash.push(`dispatch[${i}]: idea ${id} is already carried by live run ${shortId(carrier.runId)} (${stateOf(carrier)})`);
     }
   });
   if (clash.length) throw new Refusal('invalid decision', { errors: clash });

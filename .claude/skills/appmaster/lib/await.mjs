@@ -14,6 +14,7 @@ import { AWAIT, MEM, TIMEOUT_MIN, Refusal, shortId } from './contract.mjs';
 import { listRuns, listSlugs, loadRun } from './store.mjs';
 import { requireRun, pidAlive, watchRun, takeAwaitLock, releaseAwaitLock, awaitHolder } from './worker.mjs';
 import { cmdSettle } from './merge.mjs';
+import { promote } from './promote.mjs';
 
 /** The states an await may start on: a builder still running, or one that exited unsettled. */
 export const AWAITABLE = ['running', 'exited'];
@@ -108,15 +109,22 @@ export async function cmdAwait({ flags = {} } = {}, { sleep = defaultSleep } = {
 }
 
 /**
- * What `watch` does for this run, then `settle` itself; refusals carry slug, runId and waitedSec.
+ * What `watch` does for this run, then `settle` itself, then a `promote` pass: the settled run freed
+ * its slot, so the queue's next run that fits starts at once. Its `awaitCommands` are in `promoted`
+ * for the Director to start. Refusals carry slug, runId and waitedSec; a promote that fails is
+ * reported in `promoted.error` and never changes the settle's own result.
  * waitedSec is the wait for the EXIT; the settle's own gate-slot wait is in its result or refusal.
  */
 function settleAfterExit(run, slug, waitedSec) {
   watchRun(run);   // running -> exited and the limit mark, exactly as `watch` would
+  let settled;
   try {
-    return { ...cmdSettle({ flags: { run: run.runId } }), waitedSec };
+    settled = cmdSettle({ flags: { run: run.runId } });
   } catch (e) {
     if (e instanceof Refusal) throw new Refusal(e.reason, { ...e.extra, slug, runId: run.runId, waitedSec });
     throw e;
   }
+  let promoted;
+  try { promoted = promote(); } catch (e) { promoted = { error: e instanceof Refusal ? e.reason : String(e?.message || e).split('\n')[0] }; }
+  return { ...settled, waitedSec, promoted };
 }

@@ -41,9 +41,15 @@ export const runsDir = (slug) => path.join(headlessDir(slug), 'runs');
 export const runDir = (slug, runId) => path.join(runsDir(slug), runId);
 /** Global (not per project): a usage limit belongs to the subscription. */
 export const limitPath = () => path.join(STATE_ROOT, '_headless-limit.json');
+/** Global: the durable admission queue (append-only, latest line per runId wins) and its lock. */
+export const queuePath = () => path.join(STATE_ROOT, '_queue.jsonl');
+export const queueLockPath = () => path.join(STATE_ROOT, '_queue.lock');
 export const shortId = (runId) => String(runId).replace(/-/g, '').slice(0, 8);
 
 // ---------------------------------------------------------------- numbers (defined ONCE)
+
+/** The repo key of a project's own checkout (a dispatch with no `repo` targets it). */
+export const SELF_REPO = 'self';
 
 /** Projects this skill manages by default; any other brief.json opts in with `"headless": true`. */
 export const DEFAULT_MANAGED = ['pof', 'ascent', 'kp'];
@@ -84,6 +90,15 @@ export const MAX_ASKS = 3;            // asks one decision may raise
 export const MAX_DISPATCH = 2;        // dispatches one decision may make (== PER_PROJECT_CAP); 2 needs disjoint `paths`
 export const SLEEP_MIN_SEC = 60;      // the Director's ScheduleWakeup clamp
 export const SLEEP_MAX_SEC = 3600;
+/**
+ * The admission queue (lib/queue.mjs). "Later is a promise": a dispatch refused for one of these
+ * reasons is not dropped but held in _queue.jsonl until `promote` dispatches it or `queue drop`
+ * refuses it explicitly. A usage limit is NOT a reason to queue: it stops the loop.
+ * The lock serialises dispatch and promote across processes (several awaits promote at once).
+ */
+export const QUEUE_REASONS = ['global cap', 'project cap', 'repo lane', 'paths overlap', 'memory'];
+export const QUEUE_STATES = ['queued', 'promoted', 'dropped'];
+export const QUEUE_LOCK = { waitMs: 30000, pollMs: 100, staleMin: 10 };
 
 // ---------------------------------------------------------------- vocabularies
 
@@ -237,6 +252,20 @@ export const claudeBin = () => process.env.APPMASTER_CLAUDE_BIN || 'claude';
  * @property {'open'|'answered'} state
  * @property {string} raisedAt
  * @property {{choice:string,notes:string,at:string}} [answer]
+ */
+
+/**
+ * @typedef {Object} QueueEntry        one line of _queue.jsonl (global; latest line per runId wins)
+ * @property {string} runId
+ * @property {string} slug
+ * @property {string} charterSlug
+ * @property {string} repo             the run's target repo key ('self' or a brief.repos key)
+ * @property {string} model
+ * @property {string} decidedAt        when the wake that minted the run was decided: the FIFO key
+ * @property {string} enqueuedAt       the first refusal
+ * @property {string} reason           QUEUE_REASONS: the latest refusal
+ * @property {'queued'|'promoted'|'dropped'} state
+ * @property {number} [position]       operator override (`queue move`), lower first; unpositioned entries follow, FIFO
  */
 
 // ---------------------------------------------------------------- small helpers

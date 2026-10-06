@@ -19,6 +19,7 @@ import {
   operatorChannelSince, repoDocs,
 } from './dbread.mjs';
 import { brakes, parseTs, ageText, lastDecided, isDue } from './brakes.mjs';
+import { queueTable } from './queue.mjs';
 
 export { parseTs, ageText, lastDecided, isDue };
 
@@ -106,7 +107,7 @@ export function renderAt(input, C) {
   L.push(`- CAPACITY: dispatch AT MOST ${MAX_DISPATCH} charters (${PER_PROJECT_CAP} builders per project, ${GLOBAL_CAP} in all; running now: ${machine.running?.project ?? 0} here, ${machine.running?.global ?? 0} in all; free slots: ${slots.project} here, ${slots.global} in all). Two at once ONLY when each is independent of the other and their \`paths\` are disjoint from each other AND from every run in flight below. Every dispatch declares \`paths\`: the repo-relative prefixes or globs its builder will touch (none = the whole repo, which leaves no room for a second builder). An overlap is refused. None is a legitimate answer.`);
   L.push('- MODEL: per dispatch, `model` "opus" for discovery (security scan, architecture review, KPI or measure design), "sonnet" for fixing a shape already chosen, delivering a well-specified idea, or a mechanical sweep; omit it for the charter default. A model the brief pins wins.');
   L.push(`- MACHINE: a dispatch is refused while FREE memory is under ${MEM.dispatchMinFreeGb} GB (+${MEM.perBuilderReserveGb} GB per builder already running) and while a usage-limit mark stands. A tripped memory brake clears by itself within minutes: dispatch nothing this wake and choose a SHORT next wake (10 to 20 min); a usage limit needs a long one.`);
-  L.push('- IN FLIGHT: running, exited and verifying runs are not finished; planned is minted, not started. Never re-dispatch a live charter or an idea an in-flight task carries.');
+  L.push('- IN FLIGHT: running, exited and verifying runs are not finished; planned is minted, not started. A QUEUED run (a dispatch refused for a slot, held and started in order when one frees) is a promise the loop keeps. Never re-dispatch a live or queued charter, or an idea an in-flight or queued task carries.');
   L.push('- THE BUILDER: a fresh builder in an isolated worktree on its own autopilot branch, merged only if the gates pass and no file it touched is dirty in the checkout. Your `brief` is all it knows: what to change, the accepted idea ids it carries (up to 6 of one shape, or none), how it proves done. A delivery brief first checks each id against the base branch; one already there is closed as delivered, not rebuilt.');
   L.push('- IDEA VERDICTS: accept or reject a pending idea named here, with a reason; queued until the app is up.');
   L.push(`- NEXT WAKE: \`nextWakeMinutes\`, integer ${WAKE_MIN}-${WAKE_MAX}, always present. SHORT (${WAKE_MIN}-20) after a dispatch to check on or with work you could not start; LONG (60-${WAKE_MAX}) when all is in flight, nothing is due, or a brake is tripped.`);
@@ -199,10 +200,15 @@ export function renderAt(input, C) {
   if (!tasks.length) L.push('  in-app tasks in flight: nothing');
   else { L.push(`  in-app tasks in flight (${tasks.length}; DO NOT RE-DISPATCH these):`); for (const t of tasks) L.push(`    - ${clip(t.title, C.title)}${t.source_idea_id ? ` [idea ${t.source_idea_id}]` : ''} (${t.status}${t.started_at ? `, started ${shortStamp(t.started_at)}` : ''})`); }
   const live = runs.live ?? [], recent = runs.recent ?? [];
+  const qd = input.queue ?? { mine: [], total: 0 };
+  const queuedAt = new Map((qd.mine ?? []).map((q) => [q.runId, q]));
   if (!live.length) L.push('  headless runs in flight: nothing');
   else {
     L.push('  headless runs in flight (a new dispatch must not overlap their paths):');
-    for (const r of live) L.push(`    - ${shortId(r.runId)} ${r.charterSlug} ${r.state}${r.model ? ` (${r.model})` : ''}${r.branch ? ` on ${r.branch}` : ''} (created ${stampAgeShort(r.createdAt, nowMs)}); paths: ${clip(pathsText(r.paths), 200)}`);
+    for (const r of live) {
+      const q = queuedAt.get(r.runId);
+      L.push(`    - ${shortId(r.runId)} ${r.charterSlug} ${r.state}${q ? `, QUEUED at position ${q.position} of ${qd.total} (waiting ${q.waitedMin ?? '?'} min on ${q.reason})` : ''}${r.model ? ` (${r.model})` : ''}${r.branch ? ` on ${r.branch}` : ''} (created ${stampAgeShort(r.createdAt, nowMs)}); paths: ${clip(pathsText(r.paths), 200)}`);
+    }
   }
   if (recent.length) { L.push('  recent headless runs:'); for (const r of recent) L.push(`    - ${shortId(r.runId)} ${r.charterSlug} ${r.state}${r.mergedSha ? ` ${String(r.mergedSha).slice(0, 8)}` : ''}${r.heldReason ? `: ${clip(r.heldReason, 140)}` : ''}`); }
   const gb = s.gitBranches ?? { total: 0, branches: [] };
@@ -224,6 +230,7 @@ export function renderAt(input, C) {
   L.push(`- usage limit: ${lim.limited ? `LIMITED${lim.reason ? ` (${clip(lim.reason, 120)})` : ''}${lim.resetsAt ? `, resets ${lim.resetsAt}` : ', reset time unknown'} - dispatch is refused` : 'none'}`);
   const free = freeSlots(run);
   L.push(`- running builders: ${run.project ?? 0} of ${PER_PROJECT_CAP} in this project (${free.project} slot(s) free), ${run.global ?? 0} of ${GLOBAL_CAP} across all projects (${free.global} free)`);
+  L.push(`- admission queue: ${qd.total ?? 0} run(s) waiting across all projects, ${(qd.mine ?? []).length} of them yours; a refused dispatch queues and starts in order when a slot frees`);
 
   // OUTPUT CONTRACT (schema/decision.schema.json)
   head('ANSWER WITH ONE JSON OBJECT AND NOTHING ELSE - no prose before or after, no code fence:');
@@ -290,6 +297,8 @@ export function gatherContext(ref) {
       machine: b,
       docs: repoDocs(project.root),
     };
+    const table = queueTable(nowMs);
+    input.queue = { mine: table.filter((q) => q.slug === project.slug), total: table.length };
     input.due = isDue(wakes, nowMs);
   } finally { d.close(); }
   return input;
