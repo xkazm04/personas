@@ -86,10 +86,10 @@ test('decision schema parses and names the contract fields', () => {
   assert.ok(!schema.properties.dispatch.items.required.includes('paths'), 'paths is optional for one dispatch (required for two by validateDecision)');
 });
 
-test('caps: two builders per project, four in all, two dispatches per wake', () => {
+test('caps: two builders per project, eight in all, two dispatches per wake', () => {
   assert.equal(C.PER_PROJECT_CAP, 2);
   assert.equal(C.MAX_DISPATCH, C.PER_PROJECT_CAP);
-  assert.equal(C.GLOBAL_CAP, 4);
+  assert.equal(C.GLOBAL_CAP, 8);
   assert.ok(C.MEM.dispatchMinFreeGb > 0 && C.MEM.perBuilderReserveGb > 0, 'the free-memory brake is kept');
 });
 

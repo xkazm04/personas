@@ -160,7 +160,8 @@ project checkout: all three carry foreign uncommitted work, which is why conditi
 
 ## Two builders per project
 
-Added 2026-10-06. `PER_PROJECT_CAP` is two, `MAX_DISPATCH` two, `GLOBAL_CAP` four; the
+Added 2026-10-06. `PER_PROJECT_CAP` is two, `MAX_DISPATCH` two, `GLOBAL_CAP` eight (four
+until 2026-10-07, raised for the ten-master day); the
 free-memory brake (`MEM`) is unchanged and still decides whether the machine can carry one
 more builder. Two builders of one project are safe only if they do not collide, so:
 

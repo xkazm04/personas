@@ -48,7 +48,7 @@ export const shortId = (runId) => String(runId).replace(/-/g, '').slice(0, 8);
 /** Projects this skill manages by default; any other brief.json opts in with `"headless": true`. */
 export const DEFAULT_MANAGED = ['pof', 'ascent', 'kp'];
 
-export const GLOBAL_CAP = 4;          // builders running at once across all projects
+export const GLOBAL_CAP = 8;          // builders running at once across all projects (ten masters share it; a refused dispatch queues)
 /**
  * Builders running at once in one project. Two only when their declared `paths` are disjoint from
  * every other live run of the project (dispatch refuses `paths overlap`); the free-memory brake

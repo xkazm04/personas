@@ -241,7 +241,7 @@ and last-output age, held with reason, the note, the master's say, asks open, ou
 project where nothing moved collapses to one line.
 
 ```
-Machine: 31.2 GB free; no usage limit; builders running 2 of 4.
+Machine: 31.2 GB free; no usage limit; builders running 2 of 8.
 ascent - decided 14:15, dispatched accepted-idea-delivery; next wake 14:40.
   Running 9a41c7e2 accepted-idea-delivery (claude-sonnet-5-5), last output 3 min ago; paths src/app/org/.
   Running 5b20d4c1 codebase-security-scan (claude-opus-5), last output 1 min ago; paths src/lib/auth/.
