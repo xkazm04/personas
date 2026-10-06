@@ -60,6 +60,11 @@
 //!   POST /repair-cross-refs                 → re-point cross_refs orphaned by past consolidations { project_id, apply } — DRY RUN unless `apply`
 //!   POST /app-master/adopt                  → adopt an App Master for a project { project, recipes[], model?, maxConcurrent?, scopeRung?, enabled?, name? }
 //!   GET  /app-master/{project_id}           → the project's current App Master adoption, or `null`
+//!   POST /app-master/{project_id}/heartbeat → the headless App Master's state { state: running|idle|ended,
+//!                                             note?, nextWakeAt?, runId? } → the stored beat + `suppressing`.
+//!                                             Written by `/appmaster`; while fresh, the in-app master's tick
+//!                                             stands aside (`headless_master`). A bad state, an unparseable
+//!                                             nextWakeAt or an absurd note is a 400; `ended` releases at once.
 //!   POST /architect/adopt                   → adopt an Architect for a WORKSPACE { workspace, recipes[], model?, maxConcurrent?, scopeRung?, enabled?, name? }
 //!   GET  /architect/{workspace}             → the workspace's current Architect adoption, or `null`
 //!   POST /hire                              → ask kp to compose a role from a need and dispatch
@@ -115,6 +120,7 @@ use crate::commands::infrastructure::context_generation::{
     confine_to_project_root, launch_context_scan, list_scans_json, scan_status_json,
 };
 use crate::commands::infrastructure::context_map_export::write_context_map_artifacts;
+use crate::commands::infrastructure::headless_master;
 use crate::commands::infrastructure::kpi_scan::{
     kpi_scan_prompt, kpi_scan_status_json, launch_kpi_scan,
 };
@@ -174,6 +180,10 @@ pub fn router(app: AppHandle) -> Router {
         .route("/kpi-sim/ingest", post(kpi_sim_ingest))
         .route("/app-master/adopt", post(app_master_adopt_route))
         .route("/app-master/{project_id}", get(app_master_state))
+        .route(
+            "/app-master/{project_id}/heartbeat",
+            post(app_master_heartbeat_route),
+        )
         .route("/architect/adopt", post(architect_adopt_route))
         .route("/architect/{workspace}", get(architect_state))
         .route("/hire", post(hire_route))
@@ -1689,6 +1699,20 @@ where
         })?
         .map(Json)
         .map_err(status_for)
+}
+
+/// The headless App Master's beat (`/appmaster`). Same blocking shape as the
+/// write-back routes; a refused payload is a `Validation` and so a 400.
+async fn app_master_heartbeat_route(
+    State(s): State<DevToolsHttp>,
+    Path(project_id): Path<String>,
+    Json(b): Json<headless_master::HeadlessHeartbeatInput>,
+) -> Result<Json<headless_master::HeadlessHeartbeatResult>, (StatusCode, String)> {
+    let pool = db(&s)?;
+    writeback("headless heartbeat", move || {
+        headless_master::record_heartbeat(&pool, &project_id, &b)
+    })
+    .await
 }
 
 async fn idea_outcome_route(

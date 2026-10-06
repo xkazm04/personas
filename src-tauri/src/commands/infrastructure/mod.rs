@@ -23,6 +23,9 @@ pub mod dev_tools;
 pub mod dev_tools_http;
 pub mod dev_workspaces;
 pub mod feed_impact;
+/// The headless App Master state door: `/appmaster`'s beat, read by the App
+/// Master readout and by the attention tick, which stands aside while it is fresh.
+pub mod headless_master;
 /// The `/note-task` skill's one gated door back into the app (the Notepad).
 pub mod notepad_ingest;
 pub mod replay_queue;

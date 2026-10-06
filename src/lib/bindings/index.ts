@@ -621,6 +621,8 @@ export type { GoalProgressSuggestion } from "./GoalProgressSuggestion";
 export type { GoogleCredentialOAuthStartResult } from "./GoogleCredentialOAuthStartResult";
 export type { GpuClass } from "./GpuClass";
 export type { GroundingEntry } from "./GroundingEntry";
+export type { HeadlessHeartbeatInput } from "./HeadlessHeartbeatInput";
+export type { HeadlessState } from "./HeadlessState";
 export type { HealingAnalysisResult } from "./HealingAnalysisResult";
 export type { HealingAuditEntry } from "./HealingAuditEntry";
 export type { HealingEffectivenessReport } from "./HealingEffectivenessReport";

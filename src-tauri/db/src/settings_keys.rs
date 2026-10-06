@@ -1126,6 +1126,16 @@ pub const AUTOPILOT_MODE_PREFIX: &str = "autopilot_mode:";
 /// mandate.
 pub const APP_MASTER_MANDATE_PREFIX: &str = "app_master_mandate:";
 
+/// Per-project **headless App Master** state. Full key:
+/// `headless_master:<project_id>`, value = a JSON
+/// `HeadlessMasterBeat` (`commands::infrastructure::headless_master`):
+/// `{ state, note, nextWakeAt, beatAt, runId, source }`. Written by the
+/// `/appmaster` skill through `POST /dev-tools/app-master/{project_id}/heartbeat`
+/// while it runs that project's master from a terminal; read by the App Master
+/// readout and by the attention tick, which stands aside while a beat is fresh.
+/// Engine bookkeeping, never user-set, so it is excluded from the settings audit.
+pub const HEADLESS_MASTER_PREFIX: &str = "headless_master:";
+
 /// Durable mirror of the webview appearance preferences (JSON-encoded object:
 /// `themeId`, `textScale`, `brightness`, `density`, `timezone`, a11y toggles,
 /// `customTheme`). The render-path authority stays in webview localStorage
@@ -1507,6 +1517,7 @@ const ALLOWED_PREFIXES: &[&str] = &[
     AUTOPILOT_MODE_PREFIX,
     APP_MASTER_MANDATE_PREFIX,
     TEAM_SLACK_BRIDGE_CURSOR_PREFIX,
+    HEADLESS_MASTER_PREFIX,
 ];
 
 /// Returns true if `suffix` is a syntactically acceptable persona_id-shaped
@@ -1591,6 +1602,13 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
     // mandate that fails to parse is read as ABSENT, and an absent mandate
     // enforces nothing.
     if key.starts_with(APP_MASTER_MANDATE_PREFIX) {
+        return validate_json_wellformed(key, value);
+    }
+    // Per-project headless App Master beat (prefix key). The struct lives in
+    // app_lib; the write route parses the beat itself, so only well-formedness
+    // is checked here -- an unparseable beat reads as absent, which lets the
+    // in-app tick run again (the safe direction).
+    if key.starts_with(HEADLESS_MASTER_PREFIX) {
         return validate_json_wellformed(key, value);
     }
     // Multi-plan Claude login policy + last rotation: JSON blobs whose structs
@@ -2111,10 +2129,14 @@ const AUDIT_EXCLUDED_KEYS: &[&str] = &[
 ];
 
 /// Prefix families that are internal bookkeeping (per-table cloud-sync cursors,
-/// per-bridge team -> Slack relay watermarks). These advance on every engine
-/// tick; auditing them would bury real config changes in the History tab.
-const AUDIT_EXCLUDED_PREFIXES: &[&str] =
-    &[CLOUD_SYNC_CURSOR_PREFIX, TEAM_SLACK_BRIDGE_CURSOR_PREFIX];
+/// per-bridge team -> Slack relay watermarks, per-project headless App Master
+/// beats). These advance on every engine tick or headless wake; auditing them
+/// would bury real config changes in the History tab.
+const AUDIT_EXCLUDED_PREFIXES: &[&str] = &[
+    CLOUD_SYNC_CURSOR_PREFIX,
+    TEAM_SLACK_BRIDGE_CURSOR_PREFIX,
+    HEADLESS_MASTER_PREFIX,
+];
 
 /// Map a settings key to its audit CATEGORY, or `None` if the key is internal
 /// bookkeeping that must NOT be audited (see [`AUDIT_EXCLUDED_KEYS`] /
@@ -2975,6 +2997,17 @@ mod tests {
         assert_eq!(audit_category(COMPANION_CONSTITUTION_VERSION), None);
         // Per-table cloud-sync cursor prefix family → None.
         assert_eq!(audit_category("cloud_sync_cursor:executions"), None);
+    }
+
+    #[test]
+    fn headless_master_prefix_validates_and_is_not_audited() {
+        let key = format!("{HEADLESS_MASTER_PREFIX}proj-1");
+        assert!(validate_key(&key).is_ok());
+        assert!(validate_key(HEADLESS_MASTER_PREFIX).is_err());
+        assert!(validate_value(&key, r#"{"state":"idle"}"#).is_ok());
+        assert!(validate_value(&key, "{\"state\":").is_err());
+        // A beat lands on every headless wake; it must never reach History.
+        assert_eq!(audit_category(&key), None);
     }
 
     #[test]
