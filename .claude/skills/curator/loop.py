@@ -667,6 +667,7 @@ def take_next(
     skills: dict,
     dry: bool,
     lanes: set[str] | None = None,
+    plan_engines: set[str] | None = None,
 ) -> dict | None:
     """Decide AND claim, in the app's own order. `None` = nothing to take.
 
@@ -717,6 +718,9 @@ def take_next(
 
     # 2. Her own plan.
     engines = [e for e, s in PLAN_ROUTES.items() if vet_autonomous(skills, s, "probe") is None]
+    # Like `lanes`, a filter only SKIPS plan items; it never reorders the ladder.
+    if plan_engines is not None:
+        engines = [e for e in engines if e in plan_engines]
     if engines and want("plan"):
         ph = ",".join("?" for _ in engines)
         rows = c.execute(
@@ -1452,6 +1456,9 @@ def main() -> int:
     p.add_argument("--fetch", action="store_true", help="git fetch before measuring the lag")
     p.add_argument("--lane", help="restrict the ladder to these lanes, comma separated "
                                   "(queue,plan,method,refill); the order never changes")
+    p.add_argument("--engine", help="restrict the PLAN lane to these engines, comma separated "
+                                    "(reconcile,deepen,apply,conform); `conform` runs in this repo "
+                                    "and never touches the registry")
     p = sub.add_parser("work")
     p.add_argument("--claim", required=True)
     p.add_argument("--timeout-min", type=int, default=45)
@@ -1554,7 +1561,10 @@ def main() -> int:
         lanes = {x.strip() for x in a.lane.split(",")} if a.lane else None
         if lanes and not lanes <= set(LANE_SENTENCE):
             die(f"unknown lane(s): {sorted(lanes - set(LANE_SENTENCE))}; known: {sorted(LANE_SENTENCE)}")
-        claim = take_next(c, root, skills, dry=a.dry, lanes=lanes)
+        plan_engines = {x.strip() for x in a.engine.split(",")} if a.engine else None
+        if plan_engines and not plan_engines <= set(PLAN_ROUTES):
+            die(f"unknown engine(s): {sorted(plan_engines - set(PLAN_ROUTES))}; known: {sorted(PLAN_ROUTES)}")
+        claim = take_next(c, root, skills, dry=a.dry, lanes=lanes, plan_engines=plan_engines)
         if claim and not claim.get("declined") and not a.dry:
             claim["head"] = claim.get("head") or git_head(root)
             claim["dispatch_id"] = record_dispatch(c, claim, root)

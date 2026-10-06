@@ -30,6 +30,8 @@ queue before her plan. Two situations need it and both have happened: the app is
 owns the standing lane, or her plan is still the one projected from an older checkout and
 only the queue file is current.
 
+`next --engine conform,deepen,apply,reconcile` filters the PLAN lane the same way (skip, never reorder). `--engine conform` is the one that cannot publish registry content: `conform` workers run in this repo, write only `.ai/registry-map.json` and are told never to commit or push, while `apply` and `deepen` workers commit in the registry and may push its default branch. Use it when the registry's `main` carries commits that are not Curator's.
+
 `next --terminal-owns` waives ONLY the `curator_enabled` brake, for when the operator switched
 the app's tick off precisely so this terminal drives her (quiet hours and backpressure still
 hold, and the waiver is printed). `work` sets `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`: the
