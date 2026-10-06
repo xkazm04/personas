@@ -10,6 +10,8 @@ import { getReport, deleteReport } from '@/api/overview/reports';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaReport } from '@/lib/types/types';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { ConversationGhostRows } from './ConversationCards';
 import { VirtualConversation } from './VirtualConversation';
 import { dayLabel } from './conversationModel';
 import {
@@ -254,17 +256,27 @@ export const PersonaConversation = memo(function PersonaConversation({ persona }
 
   return (
     <div className="flex-1 min-w-0 flex flex-col min-h-0">
-      {rows.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center">
-          <div className="relative">
-            <div className="absolute inset-0 -m-6 rounded-full bg-primary/10 blur-2xl" />
-            <MessagesSquare className="relative w-8 h-8 text-foreground opacity-70" />
-          </div>
-          <p className="typo-body text-foreground">{t.monitor.conv_persona_empty_title}</p>
-          <p className="typo-caption text-foreground opacity-50 max-w-xs">{t.monitor.conv_persona_empty_body}</p>
-        </div>
+      {/* Same loading switch as the team channel (overview-loading SS A): a
+          cold persona channel showed the SETTLED empty state for the whole of
+          its first fetch. Ghosts into emptiness only; the empty state waits
+          until `loaded`. */}
+      {!loaded && rows.length === 0 ? (
+        <ConversationGhostRows count={4} />
+      ) : rows.length === 0 ? (
+        <ScenarioEmptyState
+          className="flex-1 justify-center"
+          icon={MessagesSquare}
+          title={t.monitor.conv_persona_empty_title}
+          subtitle={t.monitor.conv_persona_empty_body}
+        />
       ) : (
-        <VirtualConversation rows={rows} renderRow={renderRow} hasMore={!st.exhausted} onTopReached={onTopReached} />
+        <VirtualConversation
+          rows={rows}
+          renderRow={renderRow}
+          hasMore={!st.exhausted}
+          onTopReached={onTopReached}
+          revealKey={persona.id}
+        />
       )}
 
       <PersonaComposer persona={persona} />

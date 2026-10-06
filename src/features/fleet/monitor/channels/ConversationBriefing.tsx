@@ -14,7 +14,11 @@ import { VirtualConversation } from './VirtualConversation';
 import { QueuedPromptRow } from './QueuedPromptRow';
 import { RailSplitter } from './RailSplitter';
 import { useRailWidth } from '../grid/rail/useRailWidth';
-import { AssignmentCard, DeliberationCard, ProposalCard, TalkBubble } from './ConversationCards';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import {
+  AssignmentCard, ConversationGhostRows, DeliberationCard, ProposalCard, TalkBubble,
+} from './ConversationCards';
 import { DeliberationRail } from './DeliberationRail';
 import { LinkedChannelChip } from './LinkedChannelChip';
 import type { TeamSlackBridge } from '@/lib/channel/teamBridge';
@@ -47,6 +51,14 @@ import type { Persona } from '@/lib/bindings/Persona';
  * -------------------------------------------------------------------------- */
 
 type RailTab = 'focus' | 'reviews' | 'quick';
+
+/** Shared by the strip and the pane it selects, so each tab's `aria-controls`
+ *  actually resolves to a `role="tabpanel"` (census:
+ *  `tabstrip-with-no-declared-panel` — the relationship was previously only in
+ *  the visual layout). Written out rather than taken from
+ *  `segmentedTabPanelProps`: the ids are the helper's own format, and a
+ *  spread object is invisible both to a reader and to the ratchet. */
+const RAIL_TABS_ID = 'conversation-rail';
 
 export function ConversationBriefing({
   teams, personas, bridges, layoutControl, preset,
@@ -188,6 +200,25 @@ export function ConversationBriefing({
     setTab('focus');
   }, []);
 
+  const railTabs = useMemo(
+    () => [
+      {
+        id: 'reviews' as const,
+        label: <><AlertCircle className="w-3 h-3" />{t.monitor.conv_tab_reviews}</>,
+      },
+      {
+        id: 'focus' as const,
+        label: <><Scale className="w-3 h-3" />{t.monitor.conv_tab_deliberation}</>,
+        disabled: !focusDelib || !!activePersona,
+      },
+      {
+        id: 'quick' as const,
+        label: <><Sparkles className="w-3 h-3" />{t.monitor.conv_tab_quick}</>,
+      },
+    ],
+    [t, focusDelib, activePersona],
+  );
+
   const dayWords = useMemo(
     () => ({ today: t.monitor.conv_day_today, yesterday: t.monitor.conv_day_yesterday }),
     [t],
@@ -200,6 +231,13 @@ export function ConversationBriefing({
   // (`dayWords` was also referenced from here before it was declared — a
   // missing dep that happened to work by closure timing.)
   const { delibIndex, confirmProposal, dropProposal, retryPrompt, dropPrompt } = conv;
+  // Keyed, so `ProposalCard`'s memo has stable props to bail on. The two
+  // inline lambdas this replaces were minted on every render of this
+  // component, which is what made the card re-render on every poll.
+  const runProposal = useCallback(
+    (p: Parameters<typeof confirmProposal>[0]) => void confirmProposal(p),
+    [confirmProposal],
+  );
   const renderRow = useCallback(
     (row: ConversationRow) => {
       switch (row.kind) {
@@ -207,7 +245,7 @@ export function ConversationBriefing({
           return (
             <div className="flex items-center gap-2 py-2">
               <span className="flex-1 h-px bg-border" />
-              <span className="typo-caption text-foreground opacity-40">{dayLabel(row.at, dayWords)}</span>
+              <span className="typo-caption">{dayLabel(row.at, dayWords)}</span>
               <span className="flex-1 h-px bg-border" />
             </div>
           );
@@ -239,8 +277,8 @@ export function ConversationBriefing({
           return (
             <ProposalCard
               proposal={row.proposal}
-              onConfirm={() => void confirmProposal(row.proposal)}
-              onDismiss={() => dropProposal(row.proposal.goal)}
+              onConfirm={runProposal}
+              onDismiss={dropProposal}
             />
           );
         case 'queued':
@@ -248,15 +286,10 @@ export function ConversationBriefing({
       }
     },
     [
-      expanded, toggle, delibIndex, focusDeliberation, confirmProposal, dropProposal,
+      expanded, toggle, delibIndex, focusDeliberation, runProposal, dropProposal,
       retryPrompt, dropPrompt, dayWords,
     ],
   );
-
-  const tabClass = (on: boolean) =>
-`px-2 py-0.5 rounded-interactive typo-label transition-colors ${
-      on ? 'text-foreground bg-secondary/40' : 'text-foreground opacity-45 hover:opacity-80'
-    }`;
 
   return (
     <div className="h-full flex flex-col min-h-0 rounded-card border border-border bg-foreground/[0.01] overflow-hidden hud-corners hud-bloom">
@@ -299,17 +332,24 @@ export function ConversationBriefing({
           <PersonaConversation persona={activePersona} />
         ) : (
         <div className="flex-1 min-w-0 flex flex-col min-h-0">
+          {/* THE LOADING SWITCH (overview-loading §A, laws 1 and 4).
+              `loaded` used to be read for exactly one thing — firing markSeen —
+              so the whole of a cold channel's first fetch rendered the SETTLED
+              empty state and then snapped to a full conversation. "No messages
+              here" is an answer; showing it before anyone has asked the
+              question is a lie. Ghosts go into emptiness only, and the empty
+              state waits until the fetch has settled. */}
           {!team ? (
-            <div className="flex-1 flex items-center justify-center typo-body text-foreground opacity-50">{t.monitor.conv_pick_project}</div>
+            <div className="flex-1 flex items-center justify-center typo-caption">{t.monitor.conv_pick_project}</div>
+          ) : !conv.loaded && conv.rows.length === 0 ? (
+            <ConversationGhostRows />
           ) : conv.rows.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center">
-              <div className="relative">
-                <div className="absolute inset-0 -m-6 rounded-full bg-primary/10 blur-2xl" />
-                <MessagesSquare className="relative w-8 h-8 text-foreground opacity-70" />
-              </div>
-              <p className="typo-body text-foreground">{t.monitor.conv_empty_title}</p>
-              <p className="typo-caption text-foreground opacity-50 max-w-xs">{t.monitor.conv_empty_body}</p>
-            </div>
+            <ScenarioEmptyState
+              className="flex-1 justify-center"
+              icon={MessagesSquare}
+              title={t.monitor.conv_empty_title}
+              subtitle={t.monitor.conv_empty_body}
+            />
           ) : (
             <VirtualConversation
               rows={conv.rows}
@@ -317,6 +357,7 @@ export function ConversationBriefing({
               hasMore={conv.hasMore}
               onTopReached={conv.loadOlder}
               pinKey={conv.pinKey}
+              revealKey={team.teamId}
             />
           )}
 
@@ -341,24 +382,36 @@ export function ConversationBriefing({
           className="flex-shrink-0 min-h-0 bg-foreground/[0.012] flex flex-col"
           style={{ width: decisionRail.width }}
         >
-          <div className="flex-shrink-0 h-9 px-2 flex items-center gap-1 border-b border-border">
-            <button type="button" onClick={() => setTab('reviews')} className={tabClass(tab === 'reviews')}>
-              <AlertCircle className="w-3 h-3 inline mr-1" />{t.monitor.conv_tab_reviews}
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab('focus')}
-              disabled={!focusDelib || !!activePersona}
-              className={`${tabClass(tab === 'focus')} disabled:opacity-25`}
-            >
-              <Scale className="w-3 h-3 inline mr-1" />{t.monitor.conv_tab_deliberation}
-            </button>
-            <button type="button" onClick={() => setTab('quick')} className={tabClass(tab === 'quick')}>
-              <Sparkles className="w-3 h-3 inline mr-1" />{t.monitor.conv_tab_quick}
-            </button>
+          {/* The shared strip, not three hand-rolled buttons: it owns the
+              disabled appearance, the roving tabindex and the arrow-key
+              tablist nav the raw buttons never had — and its sliding indicator
+              is what makes the switch read as a MOVE rather than three
+              independent colour changes. */}
+          <div className="flex-shrink-0 h-9 px-2 flex items-center border-b border-border">
+            <SegmentedTabs
+              tabs={railTabs}
+              activeTab={tab}
+              onTabChange={setTab}
+              variant="pill"
+              size="sm"
+              fullWidth={false}
+              ariaLabel={t.monitor.conv_title}
+              idPrefix={RAIL_TABS_ID}
+              className="border-0 bg-transparent"
+            />
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto p-2">
+          {/* Keyed on the tab so the incoming pane fades rather than
+              hard-cutting. Opacity-only and 150ms, so nothing is HELD (law 2):
+              the content is in the DOM on the first frame of the switch, and
+              under reduced motion `animate-fade-in` is `animation: none`. */}
+          <div
+            key={tab}
+            role="tabpanel"
+            id={`${RAIL_TABS_ID}-panel-${tab}`}
+            aria-labelledby={`${RAIL_TABS_ID}-tab-${tab}`}
+            className="flex-1 min-h-0 overflow-y-auto p-2 animate-fade-in"
+          >
             {/* The Quick tab shares the Reviews tab's predicate. It used to
                 mount the fleet-wide deck, so opening one team's channel still
                 listed every other team's held questions - the operator hunting
@@ -374,7 +427,7 @@ export function ConversationBriefing({
               <DeliberationRail teamId={team.teamId} deliberationId={focusDelib} />
             )}
             {tab === 'focus' && !activePersona && !focusDelib && (
-              <p className="typo-caption text-foreground opacity-45 p-2">{t.monitor.conv_focus_hint}</p>
+              <p className="typo-caption p-2">{t.monitor.conv_focus_hint}</p>
             )}
           </div>
         </div>

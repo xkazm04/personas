@@ -15,6 +15,7 @@ import {
   nextPromptBatch,
   type AssignProposal,
   type ConversationRow,
+  reconcileRows,
   rowKeyForItem,
   type QueuedPrompt,
 } from './conversationModel';
@@ -84,6 +85,12 @@ export function useConversation(teamId: string | null, focusItemId?: string | nu
     return m;
   }, [deliberations]);
 
+  // The previous row list, kept so a rebuild can hand back the objects it
+  // already minted for the rows that did not change (see `reconcileRows`). A
+  // ref rather than state: it is a memo cache, never something a render reads
+  // on its own.
+  const lastRows = useRef<ConversationRow[]>([]);
+
   const rows: ConversationRow[] = useMemo(() => {
     const merged = [...talk.items, ...turns.items].sort(
       (a, b) => b.at.localeCompare(a.at) || b.id.localeCompare(a.id),
@@ -100,7 +107,11 @@ export function useConversation(teamId: string | null, focusItemId?: string | nu
     for (const p of queue) {
       base.push({ kind: 'queued', key: `queued:${p.id}`, at: '', prompt: p });
     }
-    return base;
+    // One arriving message used to replace EVERY row object, so every visible
+    // memoized card re-rendered even though only the last one had changed.
+    const next = reconcileRows(lastRows.current, base);
+    lastRows.current = next;
+    return next;
   }, [talk.items, turns.items, proposals, queue]);
 
   // DEEP LINK ONTO THE LINE. A pop-up's preset used to name a team and stop
