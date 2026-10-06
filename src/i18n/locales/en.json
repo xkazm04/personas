@@ -8703,7 +8703,8 @@
       "backlog_athena_not_judged": "{count} selected items were skipped (already decided or missing).",
       "backlog_execute_accepted": "Execute accepted",
       "backlog_execute_none": "No accepted items to execute.",
-      "backlog_execute_queued": "Queued {count} tasks on the Run Desk."
+      "backlog_execute_queued": "Queued {count} tasks on the Run Desk.",
+      "view_report": "View report"
     },
     "cockpit": {
       "title_default": "Cockpit",
@@ -10199,7 +10200,12 @@
       "no_reports": "No reports yet",
       "no_reports_hint": "Reports are created when agents run and communicate with each other.",
       "report_label": "Report",
-      "show_read_reports": "Show read"
+      "show_read_reports": "Show read",
+      "attachments_label": "Attachments",
+      "attachments_cleaned": "Screenshots removed after the decision",
+      "attachment_missing": "File no longer available",
+      "attachment_open": "Open {name}",
+      "linked_report_unavailable": "That report is no longer available"
     },
     "vault_activity": {
       "title": "Vault Activity",

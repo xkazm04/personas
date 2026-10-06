@@ -9679,7 +9679,12 @@
       "unknown_persona": "Desconocido",
       "unread": "No leído",
       "view_execution": "Ver Ejecución",
-      "what_could_be_better": "¿Qué podría mejorar?"
+      "what_could_be_better": "¿Qué podría mejorar?",
+      "attachment_missing": "El archivo ya no está disponible",
+      "attachment_open": "Abrir {name}",
+      "attachments_cleaned": "Capturas de pantalla eliminadas tras la decisión",
+      "attachments_label": "Adjuntos",
+      "linked_report_unavailable": "Ese informe ya no está disponible"
     },
     "reports": {
       "channel_desktop": "Escritorio",
@@ -9931,7 +9936,8 @@
       "unknown_persona": "Persona desconocida",
       "you": "Tú",
       "load_failed_title": "No se pudo cargar la cola de revisión",
-      "row_gone": "Esa revisión ya no está en la cola. Vuelve a cargar la página e inténtalo de nuevo."
+      "row_gone": "Esa revisión ya no está en la cola. Vuelve a cargar la página e inténtalo de nuevo.",
+      "view_report": "Ver informe"
     },
     "saved_views": {
       "errors": {

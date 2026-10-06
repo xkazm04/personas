@@ -1569,7 +1569,12 @@
     "unknown_persona": "알 수 없음",
     "unread": "읽지 않음",
     "view_execution": "실행 보기",
-    "what_could_be_better": "무엇이 더 나아질 수 있을까요?"
+    "what_could_be_better": "무엇이 더 나아질 수 있을까요?",
+    "attachment_missing": "파일을 더 이상 사용할 수 없습니다",
+    "attachment_open": "{name} 열기",
+    "attachments_cleaned": "결정 후 스크린샷이 삭제되었습니다",
+    "attachments_label": "첨부 파일",
+    "linked_report_unavailable": "해당 보고서를 더 이상 사용할 수 없습니다"
   },
   "reports": {
     "channel_desktop": "데스크톱",
@@ -1821,7 +1826,8 @@
     "unknown_persona": "알 수 없는 페르소나",
     "you": "나",
     "load_failed_title": "검토 대기열을 불러오지 못했습니다",
-    "row_gone": "해당 검토는 대기열에 없습니다. 새로 고침한 뒤 다시 시도하세요."
+    "row_gone": "해당 검토는 대기열에 없습니다. 새로 고침한 뒤 다시 시도하세요.",
+    "view_report": "보고서 보기"
   },
   "saved_views": {
     "errors": {

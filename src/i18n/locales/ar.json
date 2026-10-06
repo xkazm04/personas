@@ -9679,7 +9679,12 @@
       "unknown_persona": "غير معروف",
       "unread": "غير مقروء",
       "view_execution": "عرض التنفيذ",
-      "what_could_be_better": "ما الذي يمكن تحسينه؟"
+      "what_could_be_better": "ما الذي يمكن تحسينه؟",
+      "attachment_missing": "الملف لم يعد متاحًا",
+      "attachment_open": "فتح {name}",
+      "attachments_cleaned": "تمت إزالة لقطات الشاشة بعد اتخاذ القرار",
+      "attachments_label": "المرفقات",
+      "linked_report_unavailable": "هذا التقرير لم يعد متاحًا"
     },
     "reports": {
       "channel_desktop": "سطح المكتب",
@@ -9931,7 +9936,8 @@
       "unknown_persona": "شخصية غير معروفة",
       "you": "أنت",
       "load_failed_title": "تعذر تحميل قائمة المراجعة",
-      "row_gone": "لم تعد هذه المراجعة في قائمة الانتظار. أعد التحميل ثم حاول مجددًا."
+      "row_gone": "لم تعد هذه المراجعة في قائمة الانتظار. أعد التحميل ثم حاول مجددًا.",
+      "view_report": "عرض التقرير"
     },
     "saved_views": {
       "errors": {

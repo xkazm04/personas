@@ -1569,7 +1569,12 @@
     "unknown_persona": "Tidak diketahui",
     "unread": "Belum dibaca",
     "view_execution": "Lihat Eksekusi",
-    "what_could_be_better": "Apa yang bisa lebih baik?"
+    "what_could_be_better": "Apa yang bisa lebih baik?",
+    "attachment_missing": "File tidak lagi tersedia",
+    "attachment_open": "Buka {name}",
+    "attachments_cleaned": "Tangkapan layar dihapus setelah keputusan",
+    "attachments_label": "Lampiran",
+    "linked_report_unavailable": "Laporan itu tidak lagi tersedia"
   },
   "reports": {
     "channel_desktop": "Desktop",
@@ -1821,7 +1826,8 @@
     "unknown_persona": "Persona tidak diketahui",
     "you": "Anda",
     "load_failed_title": "Tidak dapat memuat antrean tinjauan",
-    "row_gone": "Tinjauan itu tidak ada lagi di antrean. Muat ulang lalu coba lagi."
+    "row_gone": "Tinjauan itu tidak ada lagi di antrean. Muat ulang lalu coba lagi.",
+    "view_report": "Lihat laporan"
   },
   "saved_views": {
     "errors": {

@@ -9679,7 +9679,12 @@
       "unknown_persona": "अज्ञात",
       "unread": "अपठित",
       "view_execution": "निष्पादन देखें",
-      "what_could_be_better": "क्या बेहतर हो सकता है?"
+      "what_could_be_better": "क्या बेहतर हो सकता है?",
+      "attachment_missing": "फ़ाइल अब उपलब्ध नहीं है",
+      "attachment_open": "{name} खोलें",
+      "attachments_cleaned": "निर्णय के बाद स्क्रीनशॉट हटा दिए गए",
+      "attachments_label": "संलग्नक",
+      "linked_report_unavailable": "वह रिपोर्ट अब उपलब्ध नहीं है"
     },
     "reports": {
       "channel_desktop": "डेस्कटॉप",
@@ -9931,7 +9936,8 @@
       "unknown_persona": "अज्ञात पर्सोना",
       "you": "आप",
       "load_failed_title": "समीक्षा कतार लोड नहीं की जा सकी",
-      "row_gone": "वह समीक्षा अब कतार में नहीं है। पेज फिर से लोड करके दोबारा कोशिश करें।"
+      "row_gone": "वह समीक्षा अब कतार में नहीं है। पेज फिर से लोड करके दोबारा कोशिश करें।",
+      "view_report": "रिपोर्ट देखें"
     },
     "saved_views": {
       "errors": {

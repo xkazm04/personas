@@ -8710,6 +8710,7 @@ export type Translations = {
       backlog_execute_accepted: string;
       backlog_execute_none: string;
       backlog_execute_queued: string;
+      view_report: string;
     };
     cockpit: {
       title_default: string;
@@ -10206,6 +10207,11 @@ export type Translations = {
       no_reports_hint: string;
       report_label: string;
       show_read_reports: string;
+      attachments_label: string;
+      attachments_cleaned: string;
+      attachment_missing: string;
+      attachment_open: string;
+      linked_report_unavailable: string;
     };
     vault_activity: {
       title: string;

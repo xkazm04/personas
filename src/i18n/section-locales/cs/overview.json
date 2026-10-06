@@ -1569,7 +1569,12 @@
     "unknown_persona": "Neznámý",
     "unread": "Nepřečteno",
     "view_execution": "Zobrazit spuštění",
-    "what_could_be_better": "Co by mohlo být lepší?"
+    "what_could_be_better": "Co by mohlo být lepší?",
+    "attachment_missing": "Soubor už není dostupný",
+    "attachment_open": "Otevřít {name}",
+    "attachments_cleaned": "Snímky obrazovky byly po rozhodnutí odstraněny",
+    "attachments_label": "Přílohy",
+    "linked_report_unavailable": "Toto hlášení už není dostupné"
   },
   "reports": {
     "channel_desktop": "Desktop",
@@ -1821,7 +1826,8 @@
     "unknown_persona": "Neznámá persona",
     "you": "Ty",
     "load_failed_title": "Frontu ke schválení se nepodařilo načíst",
-    "row_gone": "Tato kontrola už ve frontě není. Načtěte stránku znovu a zkuste to."
+    "row_gone": "Tato kontrola už ve frontě není. Načtěte stránku znovu a zkuste to.",
+    "view_report": "Zobrazit hlášení"
   },
   "saved_views": {
     "errors": {

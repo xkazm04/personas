@@ -9679,7 +9679,12 @@
       "unknown_persona": "Không rõ",
       "unread": "Chưa đọc",
       "view_execution": "Xem thực thi",
-      "what_could_be_better": "Điều gì có thể tốt hơn?"
+      "what_could_be_better": "Điều gì có thể tốt hơn?",
+      "attachment_missing": "Tệp không còn khả dụng",
+      "attachment_open": "Mở {name}",
+      "attachments_cleaned": "Ảnh chụp màn hình đã được xóa sau khi quyết định",
+      "attachments_label": "Tệp đính kèm",
+      "linked_report_unavailable": "Báo cáo đó không còn khả dụng"
     },
     "reports": {
       "channel_desktop": "Máy tính",
@@ -9931,7 +9936,8 @@
       "unknown_persona": "Persona không rõ",
       "you": "Bạn",
       "load_failed_title": "Không thể tải hàng đợi xét duyệt",
-      "row_gone": "Bản đánh giá đó không còn trong hàng đợi. Hãy tải lại và thử lại."
+      "row_gone": "Bản đánh giá đó không còn trong hàng đợi. Hãy tải lại và thử lại.",
+      "view_report": "Xem báo cáo"
     },
     "saved_views": {
       "errors": {

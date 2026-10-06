@@ -1569,7 +1569,12 @@
     "unknown_persona": "不明",
     "unread": "未読",
     "view_execution": "実行を表示",
-    "what_could_be_better": "何を改善できますか？"
+    "what_could_be_better": "何を改善できますか？",
+    "attachment_missing": "ファイルは利用できなくなりました",
+    "attachment_open": "{name} を開く",
+    "attachments_cleaned": "決定後にスクリーンショットを削除しました",
+    "attachments_label": "添付ファイル",
+    "linked_report_unavailable": "このレポートは利用できなくなりました"
   },
   "reports": {
     "channel_desktop": "デスクトップ",
@@ -1821,7 +1826,8 @@
     "unknown_persona": "不明なペルソナ",
     "you": "自分",
     "load_failed_title": "レビューキューを読み込めませんでした",
-    "row_gone": "そのレビューはキューにありません。再読み込みしてからお試しください。"
+    "row_gone": "そのレビューはキューにありません。再読み込みしてからお試しください。",
+    "view_report": "レポートを表示"
   },
   "saved_views": {
     "errors": {
