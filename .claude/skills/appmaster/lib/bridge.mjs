@@ -40,13 +40,17 @@ export async function appUp() {
   } catch { return false; }
 }
 
-/** (route, body?) => Promise<any>   // POST when body is given, else GET; throws on a non-2xx */
-export async function devTools(route, body) {
+/**
+ * (route, body?, {timeoutMs?}) => Promise<any>   // POST when body is given, else GET; throws on a
+ * non-2xx. `timeoutMs` aborts a request the app never answers (the heartbeat's budget).
+ */
+export async function devTools(route, body, { timeoutMs } = {}) {
   const h = handshake();
   const res = await fetch(h.base + route, {
     method: body ? 'POST' : 'GET',
     headers: { 'X-Personas-Local-Token': h.token, 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
+    signal: timeoutMs ? AbortSignal.timeout(timeoutMs) : undefined,
   });
   const text = await res.text();
   let json; try { json = JSON.parse(text); } catch { json = { raw: text }; }

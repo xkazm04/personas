@@ -254,9 +254,25 @@ No vault note (the operator's choice). In order:
 1. `AM watch`; list every run in flight with its state, and every held run with its reason.
 2. Say what the next wake will do, project by project. Leave running builders running; they
    are settled by the next `/appmaster run`.
-3. Nothing to commit unless skill or doc files changed in this session. If they did: the
+3. `AM heartbeat --state ended`: posts `ended` for every managed project, so the app stops
+   showing them as run from here and each in-app master's tick may run again at once. Quote
+   the `beats` it returns (`posted: false` with the app down is normal; nothing else to do).
+4. Nothing to commit unless skill or doc files changed in this session. If they did: the
    isolated-index ritual from `.claude/CLAUDE.md`, one bash invocation, your paths only, then
    `git show --name-status HEAD`. Never push.
+
+## The state door (what the app sees)
+
+The app cannot see this chair unless it is told. After `decide`, `dispatch`, `watch`, `settle`
+and `release` succeed, `appmaster.mjs` posts the project's state through the dev-tools bridge
+(`POST /dev-tools/app-master/{project_id}/heartbeat`, `lib/heartbeat.mjs`): `running` while a
+run is running, exited or verifying, else `idle`, with the latest wake note and next wake.
+While that beat is fresh the app shows the master as run from a terminal and its in-app tick
+stands aside; `ended` (step 3 of `end`) hands the project back. It is best-effort: never
+throws, gives up after about 2 s, never changes an output or an exit code, and does nothing
+while the app is down. It writes no app table but the project's one `headless_master:<id>`
+setting, through the app's own door. `AM heartbeat --project <p> [--state ended]` posts by
+hand. Design: `docs/architecture/headless-app-master.md`, "The state door".
 
 ## Guardrails
 
@@ -281,5 +297,8 @@ No vault note (the operator's choice). In order:
 - Outbox replay against the live app is unverified until the app runs (tests use a fake bridge).
 - pof has no goals until it is onboarded here and then through `/master onboard`.
 - Nested subagents are unverified and not needed: masters return JSON, the Director spawns.
-- The in-app master and this one share no lock. Do not run `/master run` and `/appmaster run`
-  on the same project at the same time.
+- The in-app master and this one share no lock beyond the state door: a fresh beat holds the
+  in-app master's attention TICK aside, but a channel reply or a manual wake in the app still
+  starts an in-app run. Do not run `/master run` and `/appmaster run` on the same project at
+  the same time, and adopt pof's in-app master with the adopt route only (a `/master onboard`
+  brief post starts an in-app run).

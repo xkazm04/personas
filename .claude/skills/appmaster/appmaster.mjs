@@ -15,6 +15,11 @@
 //   outbox   list|replay [--dry-run] [--project p]
 //   limit    set|clear|show [--reason <text>] [--resets <iso>]
 //   onboard  --project p --brief <brief.json> [--force]
+//   heartbeat [--project p] [--state running|idle|ended]   (no --project: every managed project)
+//
+// After decide, dispatch, watch, settle and release succeed, the CLI tells the app the project's
+// state (lib/heartbeat.mjs, best-effort: never throws, ~2 s at most, never changes the output or
+// the exit code; a no-op while the app is down).
 //
 // The table below is the ONLY place a subcommand is bound to its implementation. Each handler
 // is `async (args) => object` where args = { _: positionals after the subcommand, flags }.
@@ -36,7 +41,20 @@ export const COMMANDS = {
   outbox:   ['./lib/outbox.mjs', 'cmdOutbox'],      // WP1
   limit:    ['./lib/limits.mjs', 'cmdLimit'],       // WP2
   onboard:  ['./lib/onboard.mjs', 'cmdOnboard'],    // WP1
+  heartbeat: ['./lib/heartbeat.mjs', 'cmdHeartbeat'], // the state door
 };
+
+/** Subcommands whose success changes what the app should show for a project. */
+export const BEAT_AFTER = ['decide', 'dispatch', 'watch', 'settle', 'release'];
+
+/** Tell the app, best-effort. Swallows everything, including a failed import. */
+async function beatAfter(sub, args, result) {
+  if (!BEAT_AFTER.includes(sub)) return;
+  try {
+    const hb = await import('./lib/heartbeat.mjs');
+    await hb.beatAfter(sub, args, result);
+  } catch { /* a notice, never a dependency */ }
+}
 
 export function parseArgs(argv) {
   const out = { _: [], flags: {} };
@@ -60,9 +78,11 @@ export async function run(argv) {
   const [file, fn] = COMMANDS[sub];
   try {
     const mod = await import(file);
-    const result = await mod[fn](parseArgs(rest));
+    const args = parseArgs(rest);
+    const result = await mod[fn](args);
     if (result && typeof result === 'object' && 'text' in result && result.__text) console.log(result.text);
     else console.log(JSON.stringify(result ?? { ok: true }, null, 2));
+    await beatAfter(sub, args, result);
     return EXIT.OK;
   } catch (e) {
     if (e instanceof Refusal) { console.log(JSON.stringify({ refused: e.reason, ...e.extra }, null, 2)); return EXIT.REFUSED; }
