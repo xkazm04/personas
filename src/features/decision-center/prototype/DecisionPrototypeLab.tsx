@@ -30,12 +30,18 @@ const DIRECTIONS: Record<DirectionId, () => Promise<{ default: PrototypeDirectio
   p1: () => import('./directions/p1'),
   p2: () => import('./directions/p2'),
   p3: () => import('./directions/p3'),
+  r2a: () => import('./directions/r2a'),
+  r2b: () => import('./directions/r2b'),
+  r2c: () => import('./directions/r2c'),
 };
 
 const LAZY: Record<DirectionId, React.FC<import('./directionContract').HubProps>> = {
   p1: lazyRetry(() => DIRECTIONS.p1().then((m) => ({ default: m.default.Hub }))),
   p2: lazyRetry(() => DIRECTIONS.p2().then((m) => ({ default: m.default.Hub }))),
   p3: lazyRetry(() => DIRECTIONS.p3().then((m) => ({ default: m.default.Hub }))),
+  r2a: lazyRetry(() => DIRECTIONS.r2a().then((m) => ({ default: m.default.Hub }))),
+  r2b: lazyRetry(() => DIRECTIONS.r2b().then((m) => ({ default: m.default.Hub }))),
+  r2c: lazyRetry(() => DIRECTIONS.r2c().then((m) => ({ default: m.default.Hub }))),
 };
 
 type Entry = 'strip' | `peek:${HubChip}` | 'modal:backlog' | 'modal:approval' | 'modal:report' | 'modal:chat';
@@ -67,7 +73,7 @@ function readKit(): { direction: DirectionId; entry: Entry } {
   const kit = new URLSearchParams(window.location.search).get('kit');
   if (!kit) return fallback;
   const [d, ...rest] = kit.split(':');
-  const direction = (['p1', 'p2', 'p3'] as const).includes(d as DirectionId) ? (d as DirectionId) : 'p1';
+  const direction = (['p1', 'p2', 'p3', 'r2a', 'r2b', 'r2c'] as const).includes(d as DirectionId) ? (d as DirectionId) : 'p1';
   const entry = rest.join(':') as Entry;
   return { direction, entry: ENTRIES.includes(entry) ? entry : 'strip' };
 }
@@ -109,7 +115,7 @@ export default function DecisionPrototypeLab() {
     <div className="flex h-full min-h-0 flex-col bg-background" data-testid="decision-prototype-lab">
       <div className="flex flex-wrap items-center gap-3 border-b border-primary/10 px-4 py-2">
         <SegmentedTabs
-          tabs={(['p1', 'p2', 'p3'] as const).map((id) => ({ id, label: id.toUpperCase() }))}
+          tabs={(['p1', 'p2', 'p3', 'r2a', 'r2b', 'r2c'] as const).map((id) => ({ id, label: id.toUpperCase() }))}
           activeTab={direction}
           onTabChange={(d) => setDirection(d)}
           size="sm"

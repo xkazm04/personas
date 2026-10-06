@@ -24,7 +24,7 @@ import type {
 } from '../model/decisionModel';
 import type { TriageVerdict } from '@/features/agents/quick-answer/triage/triageTypes';
 
-export type DirectionId = 'p1' | 'p2' | 'p3';
+export type DirectionId = 'p1' | 'p2' | 'p3' | 'r2a' | 'r2b' | 'r2c';
 
 /** Where the Lab asks the hub to open. */
 export type HubInitial =
