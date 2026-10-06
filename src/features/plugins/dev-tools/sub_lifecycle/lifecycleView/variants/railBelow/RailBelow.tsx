@@ -21,14 +21,14 @@
  * of the severity the model had already computed. It reads one type step up and
  * carries the weakest step's own status ink.
  */
-import { JourneyGhost } from '../../journey/JourneyGhost';
-import { STATE_TEXT } from '../../journey/journeyStyles';
-import { useLifecycleViewModel } from '../context';
-import { EvidenceLedger } from '../blocks/EvidenceLedger';
-import { LifecycleActions } from '../blocks/LifecycleActions';
-import { StateLegend } from '../blocks/StateLegend';
-import { StepRail } from '../blocks/StepRail';
-import { StepState } from '../blocks/StepState';
+import { JourneyGhost } from '../../../journey/JourneyGhost';
+import { STATE_TEXT } from '../../../journey/journeyStyles';
+import { useLifecycleViewModel } from '../../context';
+import { EvidenceLedger } from '../../blocks/EvidenceLedger';
+import { LifecycleActions } from '../../blocks/LifecycleActions';
+import { StateLegend } from '../../blocks/StateLegend';
+import { StepRail } from '../../blocks/StepRail';
+import { StepState } from '../../blocks/StepState';
 
 export function RailBelow() {
   const { headline, headlineState, order, loading } = useLifecycleViewModel();
