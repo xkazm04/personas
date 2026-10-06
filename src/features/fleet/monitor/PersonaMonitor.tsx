@@ -12,7 +12,7 @@
 // A live-mode pop-up toggle sits at the right of the router. The global fleet
 // pulse lives in the app chrome (see FleetActivityStrip), not here.
 
-import { memo, Suspense, useState, useMemo, useEffect, useCallback } from 'react';
+import { memo, Suspense, useState, useMemo, useEffect, useCallback, startTransition } from 'react';
 import { motion } from 'framer-motion';
 import { X, Activity, MessagesSquare, Bell, LayoutGrid, LayoutDashboard, Radio, Orbit } from 'lucide-react';
 import FleetActivityStrip from '@/features/shared/chrome/FleetActivityStrip';
@@ -25,6 +25,7 @@ import { usePipelineStore } from '@/stores/pipelineStore';
 import { toastCatch } from '@/lib/silentCatch';
 import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
 import { useMonitorData } from './useMonitorData';
+import { MonitorVisibilityContext } from './monitorVisibility';
 import { useChannelWorkspace } from './channels';
 import { MonitorFeedStatus } from './MonitorFeedStatus';
 import { MonitorDrawerShell } from './MonitorDrawerShell';
@@ -67,9 +68,52 @@ function SurfaceFallback() {
   return <RouteChunkSkeleton showIcon showActions={false} showSubtitle={false} />;
 }
 
+/**
+ * The body region's footprint while a view's chunk loads — the same geometry
+ * each branch gives its own content (`flex-1 min-h-0` outer, `h-full p-2
+ * hud-atmosphere` inner), so the swap moves nothing.
+ *
+ * It belongs to ONE boundary around the whole body rather than one per branch,
+ * and that is what makes `startTransition` worth anything here. React only
+ * holds already-revealed content through a suspension when the boundary that
+ * suspends has already committed something: a fresh boundary inside the
+ * incoming branch has not, so it drops straight to its fallback and the
+ * outgoing view is thrown away whether the update is a transition or not. With
+ * one boundary spanning both branches, the Activity board it is already
+ * showing stays on screen — painted and interactive — until Timeline's chunk
+ * is ready to replace it. This only ever paints on a FIRST view whose chunk is
+ * cold (a deep link straight into Timeline), which is exactly what it used to
+ * paint for.
+ */
+function BodyFallback() {
+  return (
+    <div className="relative z-10 flex-1 min-h-0">
+      <div className="h-full p-2 hud-atmosphere">
+        <SurfaceFallback />
+      </div>
+    </div>
+  );
+}
+
 interface PersonaMonitorProps {
   onClose: () => void;
+  /**
+   * Is the overlay on screen? The Monitor is mounted once per app session and
+   * hidden rather than torn down (see `monitorVisibility.ts` and the
+   * suspension block below), so this is the only thing that moves when the
+   * operator opens or closes it. Defaults to `true` for the standalone mounts
+   * that have no owner to drive it (tests, the dev-only grid overlay).
+   */
+  visible?: boolean;
 }
+
+/**
+ * How long the hide waits for the exit fade. The fade is 0.16s (below); a
+ * little slack past it means the overlay is still painted for the whole
+ * animation and goes `content-visibility: hidden` only once it is already
+ * fully transparent.
+ */
+const HIDE_AFTER_EXIT_MS = 220;
 
 // The strip takes no props and owns its own store subscriptions, so there is
 // nothing for it to learn from a parent render — but the 1s elapsed-time tick
@@ -82,10 +126,17 @@ const MemoFleetActivityStrip = memo(FleetActivityStrip);
 type MonitorView = 'activity' | 'timeline' | 'conversations' | 'map' | 'board';
 
 /**
- * Last-selected tab, remembered for the life of the session (the Monitor is a
- * header overlay that fully unmounts on close, so component state cannot carry
- * this). Deliberately module-scoped and NOT persisted — a fresh app launch
- * should land on Activity.
+ * Last-selected tab, remembered for the life of the session.
+ *
+ * It was module-scoped because the Monitor fully unmounted on close, so
+ * component state could not carry it. **That is no longer true** — the overlay
+ * now persists for the app session and hides instead, so `view` itself
+ * survives a close and this is redundant for the close/reopen case it was
+ * written for. It is kept deliberately: it is still the initializer for the
+ * genuine remounts that remain (the dev-only standalone mount, a Fast Refresh
+ * boundary, a test), and other code may yet read the last destination from
+ * here. Deliberately NOT persisted — a fresh app launch should land on
+ * Activity.
  */
 let lastView: MonitorView = 'activity';
 
@@ -103,8 +154,45 @@ interface Selection {
   section: DrawerSection;
 }
 
-export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
+export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps) {
   const { t } = useTranslation();
+
+  /* OVERLAY SUSPENSION — the mirror of App.tsx's "C5 — SHELL SUSPENSION".
+   *
+   * `TrayOverlays` keeps this component mounted from the first open onward, so
+   * "closed" has to mean something other than "gone". It means what C5 already
+   * means one level up, pointed the other way: `inert` + `content-visibility:
+   * hidden`, so the browser skips paint, layout and hit-testing for the whole
+   * subtree and drops it out of the a11y tree, while React state, effects and
+   * every scroll offset inside stay alive. Reopening is therefore instant and
+   * lands on the same view, the same scroll position and the same selection —
+   * which `display: none` would not give us.
+   *
+   * `invisible` (visibility: hidden) rides along because this element is NOT
+   * the shell: it is a fixed, fully-opaque, z-50 sheet covering the app.
+   * `content-visibility: hidden` only skips the CONTENTS — the element itself
+   * would still paint its own `bg-background` over everything and still be the
+   * hit-test target for every click in the app. `pointer-events-none` is the
+   * belt to that braces, because an `inert` element is not hit-tested as a
+   * target but is also not transparent to what is behind it.
+   *
+   * THE ASYMMETRY IS THE SAME ONE C5 MAKES, INVERTED. C5 delays suspending the
+   * shell past the overlay's ENTRANCE so nothing visibly vanishes mid-fade,
+   * and restores immediately on close so the exit fade plays over live
+   * content. Here it is this overlay that fades: hiding is DELAYED past its
+   * own 0.16s exit fade (so the fade is seen), showing is IMMEDIATE (so the
+   * entrance fade plays over an already-live subtree). Both directions keep
+   * the rule: never suspend something that is still animating.
+   */
+  const [hidden, setHidden] = useState(!visible);
+  useEffect(() => {
+    if (visible) {
+      setHidden(false);
+      return;
+    }
+    const id = setTimeout(() => setHidden(true), HIDE_AFTER_EXIT_MS);
+    return () => clearTimeout(id);
+  }, [visible]);
 
   // A live pop-up can deep-link straight into a Monitor destination via the
   // transient `monitorInitialView` signal. Two of the three names predate the
@@ -118,6 +206,30 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   const [view, setView] = useState<MonitorView>(() =>
     monitorInitialView ? viewForSignal(monitorInitialView) : lastView,
   );
+  /**
+   * THE TAB THE OPERATOR JUST PRESSED, which is not the same thing as the tab
+   * being rendered.
+   *
+   * `goToView` below hands the actual view change to `startTransition`, so the
+   * outgoing surface stays mounted and interactive while the incoming one (a
+   * lazy chunk, in three of the five cases) builds. The standard trap with
+   * that is the one thing the operator can see: the tab strip reads `view`, so
+   * the pill they clicked would not light up until the new body had finished
+   * arriving, and a 300ms chunk fetch would read as a dead click. This holds
+   * the pressed destination as an URGENT update, cleared inside the same
+   * transition that commits the view, so the affordance moves on the frame of
+   * the click and the two can never end up disagreeing.
+   */
+  const [pressedView, setPressedView] = useState<MonitorView | null>(null);
+  /** What the tab strip highlights: the press if one is in flight, else the view. */
+  const activeTab = pressedView ?? view;
+  const goToView = useCallback((next: MonitorView) => {
+    setPressedView(next);
+    startTransition(() => {
+      setView(next);
+      setPressedView(null);
+    });
+  }, []);
   useEffect(() => {
     lastView = view;
   }, [view]);
@@ -153,8 +265,11 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   // straight into Timeline. Nothing here is remembered longer than it is true.
   // The app's one visibility primitive (`@/lib/documentVisibility` via
   // `useSyncExternalStore`) — the same source `PollingCoordinator` suspends its
-  // cadence buckets from. Used below for the elapsed-time tick.
-  const visible = useDocumentVisibility();
+  // cadence buckets from. Used below for the elapsed-time tick. Renamed from
+  // `visible` when the overlay gained its own `visible` prop: the WINDOW being
+  // visible and the OVERLAY being on screen are two independent questions, and
+  // the tick below has to ask both.
+  const documentVisible = useDocumentVisibility();
 
   // Activity and Board are the two FLEET views: both draw cards built from
   // these feeds and both host the persona drawer.
@@ -228,9 +343,9 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   const handleDrillIn = useCallback(
     (teamId: string, personaId: string) => {
       scopeToPersona(teamId, personaId);
-      setView('timeline');
+      goToView('timeline');
     },
-    [scopeToPersona],
+    [scopeToPersona, goToView],
   );
 
   // Tick once a second only while something is running.
@@ -258,11 +373,21 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
     // after a minute away would render every elapsed time a minute short until
     // the next second elapsed. The effect re-runs on the false→true edge and
     // corrects it in the same commit that restarts the tick.
-    if (!anyRunning || !isFleetView || !visible) return;
+    // The fourth condition is the OVERLAY itself, and it arrived with
+    // persistence. A closed Monitor used to be an unmounted Monitor, so this
+    // interval could not outlive it; now the whole tree stays alive behind
+    // `content-visibility: hidden` and the clock would keep ticking against a
+    // surface nobody can see — re-rendering the Monitor once a second to paint
+    // into a subtree the browser is not painting. It is CLEARED, not merely
+    // skipped in the body: an interval that wakes every second to decide it
+    // has nothing to do is still a wake, and `now` is re-stamped on the
+    // false→true edge exactly as it is for the window, so reopening after ten
+    // minutes away shows honest elapsed times in the first commit.
+    if (!anyRunning || !isFleetView || !documentVisible || !visible) return;
     setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [anyRunning, isFleetView, visible]);
+  }, [anyRunning, isFleetView, documentVisible, visible]);
 
   const [selection, setSelection] = useState<Selection | null>(null);
   // A remote session's drawer (a `remote:<jobId>` tile). One drawer at a time:
@@ -288,6 +413,20 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   );
 
   useEffect(() => {
+    // A HIDDEN MONITOR DOES NOT ANSWER ESCAPE.
+    //
+    // This is a `window` listener, and before persistence a closed Monitor was
+    // an unmounted Monitor, so there was no listener to answer with. Keeping
+    // it registered while hidden would be a behaviour change, not an
+    // optimisation: the handler reaches `takeBoardBack()` and `onClose()`, so
+    // one Escape pressed anywhere else in the app — dismissing a sidebar
+    // popover, leaving a field — would silently unzoom a Board nobody is
+    // looking at, or clear a drawer selection the operator left open on
+    // purpose and expects to find again. Escape belongs to whatever is on
+    // screen, and a `content-visibility: hidden` overlay is not. Gating the
+    // REGISTRATION rather than the body also means a hidden Monitor costs the
+    // keyboard path nothing at all.
+    if (!visible) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       // A MODAL ABOVE US OWNS ESCAPE FIRST.
@@ -314,7 +453,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [selection, remoteJobId, onClose]);
+  }, [selection, remoteJobId, onClose, visible]);
 
   const selectedPersona = useMemo(
     () => personas.find((p) => p.id === selection?.personaId) ?? null,
@@ -362,9 +501,9 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
     (next: MonitorView) => {
       // Only the map's node click should carry a callsign into the Timeline.
       clearDrill();
-      setView(next);
+      goToView(next);
     },
-    [clearDrill],
+    [clearDrill, goToView],
   );
 
   // Faint network-of-agents backdrop — dark mode only (the light-theme
@@ -384,13 +523,29 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   // whole app underneath every frame. A full-screen opaque overlay that
   // occludes the layers below lets the browser skip painting them entirely.
   return (
+    /* The signal the whole subtree gates its own cost on. See
+       `monitorVisibility.ts` for why this is a context and not a store read,
+       and why its default is `true`. It carries the PROP, not `!hidden`: the
+       160ms of exit fade is time nobody is reading, so a poll that stops at
+       the start of the fade rather than at the end of it stops at the right
+       moment. */
+    <MonitorVisibilityContext.Provider value={visible}>
     <motion.div
+      /* The enter/exit fade used to come from `AnimatePresence` in
+         `TrayOverlays`, which could only play it by mounting and unmounting
+         this tree. There is no unmount left, so the same 0.16s fade is driven
+         off `visible` instead — identical to the eye, and now reversible
+         mid-flight (closing during the entrance fades back out from wherever
+         it got to, instead of snapping). */
       initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      animate={{ opacity: visible ? 1 : 0 }}
       transition={{ duration: 0.16 }}
-      className="fixed inset-x-0 bottom-0 top-[var(--titlebar-height,40px)] z-50 bg-background flex flex-col"
+      inert={hidden || undefined}
+      className={`fixed inset-x-0 bottom-0 top-[var(--titlebar-height,40px)] z-50 bg-background flex flex-col${
+        hidden ? ' invisible pointer-events-none [content-visibility:hidden]' : ''
+      }`}
       data-testid="persona-monitor"
+      data-hidden={hidden || undefined}
     >
       {/* Faint interconnected-agents backdrop (dark mode only). */}
       {isDark && (
@@ -418,7 +573,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
           <div className="flex items-center gap-1" role="group" data-testid="monitor-view-tabs">
             {VIEWS.map((v) => {
               const Icon = v.icon;
-              const on = view === v.id;
+              const on = activeTab === v.id;
               return (
                 <button
                   key={v.id}
@@ -489,6 +644,8 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
         />
       )}
 
+      {/* ONE boundary for the whole body — see `BodyFallback`. */}
+      <Suspense fallback={<BodyFallback />}>
       {isFleetView ? (
         /* Body — the fleet board (Activity or Board) with the drawer layered over it */
         <div className="relative z-10 flex-1 min-h-0 overflow-hidden">
@@ -514,18 +671,16 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
                   a header-only skeleton, so the cold open painted a page
                   header, then a blank, then everything at once. */}
               {view === 'board' ? (
-                <Suspense fallback={<SurfaceFallback />}>
-                  <BoardView
-                    cards={cards}
-                    personas={personas}
-                    teams={teams}
-                    systemProcesses={systemProcesses}
-                    now={now}
-                    selectedPersonaId={selection?.personaId ?? null}
-                    onSelect={handleCardSelect}
-                    isLoading={loading && cards.length === 0}
-                  />
-                </Suspense>
+                <BoardView
+                  cards={cards}
+                  personas={personas}
+                  teams={teams}
+                  systemProcesses={systemProcesses}
+                  now={now}
+                  selectedPersonaId={selection?.personaId ?? null}
+                  onSelect={handleCardSelect}
+                  isLoading={loading && cards.length === 0}
+                />
               ) : (
                 <FleetGridView
                   cards={cards}
@@ -575,31 +730,28 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
           <div className="h-full p-2 hud-atmosphere">
             {!hasChannels ? (
               channelEmpty
+            ) : view === 'timeline' ? (
+              <Stream
+                teams={workspaceTeams}
+                onSelectTeam={selectOnly}
+                allOn={allOn}
+                onSetAll={setAll}
+                initialCallsign={drillCallsign}
+              />
+            ) : view === 'map' ? (
+              <ChannelMap teams={workspaceTeams} onDrillIn={handleDrillIn} />
             ) : (
-              <Suspense fallback={<SurfaceFallback />}>
-                {view === 'timeline' ? (
-                  <Stream
-                    teams={workspaceTeams}
-                    onSelectTeam={selectOnly}
-                    allOn={allOn}
-                    onSetAll={setAll}
-                    initialCallsign={drillCallsign}
-                  />
-                ) : view === 'map' ? (
-                  <ChannelMap teams={workspaceTeams} onDrillIn={handleDrillIn} />
-                ) : (
-                  <ConversationBriefing
-                    teams={workspaceTeams}
-                    personas={personas}
-                    bridges={bridges}
-                    preset={channelPreset}
-                  />
-                )}
-              </Suspense>
+              <ConversationBriefing
+                teams={workspaceTeams}
+                personas={personas}
+                bridges={bridges}
+                preset={channelPreset}
+              />
             )}
           </div>
         </div>
       )}
+      </Suspense>
 
       {/* THE COMMAND CONSOLE, where the footer's legend + count line used to be.
           Both of those were passive restatements of things already on screen —
@@ -612,6 +764,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
         <QuickDispatchDock />
       </Suspense>
     </motion.div>
+    </MonitorVisibilityContext.Provider>
   );
 }
 
