@@ -118,22 +118,23 @@ export function DecisionStage({
         data-testid="companion-fusion-decision"
         exit={shouldAnimate ? { opacity: 0, x: 90, scale: 0.94, transition: { duration: 0.3, ease: EASE } } : { opacity: 0, transition: { duration: 0 } }}
       >
-        <DecisionStyleTabs />
-        <AnimatePresence mode="wait" initial={false}>
-          {active && nav ? (
-            <motion.div
-              key={active.id}
-              className="fu-stage-item"
-              exit={{ opacity: 0, y: shouldAnimate ? -6 : 0, transition: { duration: shouldAnimate ? 0.16 : 0, ease: EASE } }}
-            >
-              <ItemSurface item={active} nav={nav} onSend={onSend} />
-            </motion.div>
-          ) : (
-            <motion.div key="none" className="fu-question fu-glass" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <ScenarioEmptyState title={F.nothingWaiting} subtitle={F.nothingWaitingSub} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <DecisionStyleTabs>
+          <AnimatePresence mode="wait" initial={false}>
+            {active && nav ? (
+              <motion.div
+                key={active.id}
+                className="fu-stage-item"
+                exit={{ opacity: 0, y: shouldAnimate ? -6 : 0, transition: { duration: shouldAnimate ? 0.16 : 0, ease: EASE } }}
+              >
+                <ItemSurface item={active} nav={nav} onSend={onSend} />
+              </motion.div>
+            ) : (
+              <motion.div key="none" className="fu-question fu-glass" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <ScenarioEmptyState title={F.nothingWaiting} subtitle={F.nothingWaitingSub} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </DecisionStyleTabs>
       </motion.div>
     </>
   );
