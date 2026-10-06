@@ -7,44 +7,50 @@
  * the verification gate, and the live activity feed (dev_goal_signals, incl. the
  * team_* signals the orchestrator writes).
  *
- * 2026-10-05 - SHELL ONLY, AND FOUR LAYOUTS.
+ * 2026-10-05 - SHELL ONLY. The data moved to `goalDetail/useGoalDetail` behind a
+ * context and the sections became blocks, so a layout is a small file that
+ * arranges blocks.
  *
- * This file was 774 lines: store bindings, six parallel reads, 14 state slots,
- * 20 handlers and a seven-section render in one function. That is also why it
- * could only ever have one layout, and the owner's note was about the layout:
- * "composed as one large column instead of spreading to width and using size to
- * compose sections visually better and with more clarity".
+ * 2026-10-06 - LEDGER WON, AND THE STYLING IS THE QUESTION NOW.
  *
- * So the data moved to `goalDetail/useGoalDetail` behind a context, the sections
- * became blocks in `goalDetail/blocks/`, and a LAYOUT is now a small file that
- * arranges blocks and chooses how loudly each one speaks. Three alternatives
- * ship beside the original, each taking a different position on the same brief:
+ * The layout contest is settled: Ledger is the layout (owner's call), and
+ * Column, Dossier and Brief are gone. The remaining complaint was that the modal
+ * "is very inconsistent from Personas app" - which measurement bore out. Across
+ * the 103 files that use `BaseModal` there are 40 DISTINCT `panelClassName`
+ * strings, two radii (`rounded-2xl` at 42 sites against the `rounded-card` token
+ * at 9), three paddings and 13 widths. There was no modal standard; there were
+ * forty.
  *
- *   COLUMN   the shipped baseline, kept so the others are judged against the
- *            real thing rather than a memory of it
- *   LEDGER   the sections are NOT peers - 2:1 split, work left, consult rail
- *            right, three heading tiers
- *   DOSSIER  only the DECISION ranks - a full-bleed band carries it, then three
- *            equal columns with no hierarchy at all
- *   BRIEF    spreading to width is not always better - the reading column stays
- *            at a sane measure and the width buys a one-at-a-time shelf, so the
- *            surface has a constant height
+ * So `shared/components/modals/ModalShell` now owns the modal INTERIOR -
+ * surface, radius and elevation tokens, the header and its type tiers, the one
+ * scroll region, section rhythm, the footer bar - and this drawer is the first
+ * surface to use it. The switcher below picks the SKIN, which is the three
+ * styling approaches over the one winning layout:
  *
- * The switcher is dev-only and the default is COLUMN, so nothing changes for a
- * user until the owner picks. The choice lasts for the session.
+ *   FLAT       the app's dominant look made canonical - one hairline, the radius
+ *              token, a single surface, uppercase caption section heads. The
+ *              closest match to the rest of the app, and the default.
+ *   RAISED     layered surfaces - a tinted header band, content on inset panels
+ *              so each section reads as its own card, larger title, looser
+ *              rhythm. Closest to the Overview and Factory surfaces.
+ *   EDITORIAL  typographic - almost no chrome, hierarchy from the type scale and
+ *              whitespace alone, one rule under the title, body held to a
+ *              reading measure. Closest to the docs surfaces.
+ *
+ * The switcher is dev-only, declared as a named constant rather than an
+ * `import.meta.env.DEV` gate inside the JSX, and session-scoped: it exists to
+ * pick a winner, and a Web Storage call for a prototype toggle would add a
+ * storage site the golden path then has to route somewhere.
  */
-import { useState, type ReactElement } from 'react';
+import { useState } from 'react';
 
-import { BaseModal } from '@/lib/ui/BaseModal';
 import { Segmented } from '@/features/shared/components/kit';
+import type { ModalSkin } from '@/features/shared/components/modals/ModalShell';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 
 import { GoalDetailProvider } from './goalDetail/context';
 import { useGoalDetail } from './goalDetail/useGoalDetail';
-import { ColumnLayout, COLUMN_WIDTH } from './goalDetail/variants/ColumnLayout';
-import { LedgerLayout, LEDGER_WIDTH } from './goalDetail/variants/LedgerLayout';
-import { DossierLayout, DOSSIER_WIDTH } from './goalDetail/variants/DossierLayout';
-import { BriefLayout, BRIEF_WIDTH } from './goalDetail/variants/BriefLayout';
+import { LedgerLayout } from './goalDetail/variants/LedgerLayout';
 
 interface Props {
   isOpen: boolean;
@@ -57,62 +63,38 @@ interface Props {
   goalFallback?: DevGoal | null;
 }
 
-type VariantId = 'column' | 'ledger' | 'dossier' | 'brief';
+/** See the header: a build-flag decision taken at the point of rendering cannot
+ *  be enumerated or reviewed; a named constant can be grepped. */
+const SHOW_SKIN_SWITCHER = import.meta.env.DEV;
 
-const VARIANTS: Record<VariantId, { width: string; Layout: () => ReactElement | null; label: string }> = {
-  column: { width: COLUMN_WIDTH, Layout: ColumnLayout, label: 'Column' },
-  ledger: { width: LEDGER_WIDTH, Layout: LedgerLayout, label: 'Ledger' },
-  dossier: { width: DOSSIER_WIDTH, Layout: DossierLayout, label: 'Dossier' },
-  brief: { width: BRIEF_WIDTH, Layout: BriefLayout, label: 'Brief' },
-};
+const SKINS: Array<{ v: ModalSkin; label: string }> = [
+  { v: 'flat', label: 'Flat' },
+  { v: 'raised', label: 'Raised' },
+  { v: 'editorial', label: 'Editorial' },
+];
 
-/**
- * Declared once, here, instead of as an `import.meta.env.DEV` gate inside the
- * JSX. A build-flag decision taken at the point of rendering cannot be
- * enumerated or reviewed (`inline-dev-build-gate`); a named module constant can
- * be grepped. This is not a `NavGates` entry because it gates no route - it is a
- * comparison affordance inside one modal.
- */
-const SHOW_LAYOUT_SWITCHER = import.meta.env.DEV;
-
-/** The layout chosen for THIS session. Deliberately not persisted: the switcher
- *  exists to pick a winner, and inventing a Web Storage call for a temporary
- *  prototype toggle would add a storage site the golden path would then have to
- *  route somewhere. It resets to the shipped baseline on reload. */
-const DEFAULT_VARIANT: VariantId = 'column';
+const DEFAULT_SKIN: ModalSkin = 'flat';
 
 export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback = null }: Props) {
   const model = useGoalDetail({ isOpen, goalId, onEdit, onClose, goalFallback });
-  const [variant, setVariant] = useState<VariantId>(DEFAULT_VARIANT);
+  const [skin, setSkin] = useState<ModalSkin>(DEFAULT_SKIN);
 
-  // Every early return lives here, so no layout has to carry the guard.
+  // The one early return, so no layout has to carry the guard.
   if (!model.goal) return null;
-  const { width, Layout } = VARIANTS[variant];
 
   return (
-    <BaseModal
-      isOpen={isOpen}
-      onClose={onClose}
-      titleId="goal-detail-title"
-      maxWidthClass={width}
-      panelClassName="bg-background border border-primary/10 rounded-2xl p-6 shadow-elevation-4 max-h-[88vh] overflow-y-auto"
-    >
-      <GoalDetailProvider model={model}>
-        <Layout />
-        {SHOW_LAYOUT_SWITCHER && (
-          // Dev-only, and deliberately at the BOTTOM: a layout chooser above the
-          // content would itself become part of the composition being judged.
-          <div className="mt-5 pt-3 border-t border-primary/10 flex items-center gap-2">
-            <span className="typo-caption text-foreground">Layout</span>
-            <Segmented
-              label="Goal detail layout"
-              value={variant}
-              onChange={setVariant}
-              options={(Object.keys(VARIANTS) as VariantId[]).map((v) => ({ v, label: VARIANTS[v].label }))}
-            />
-          </div>
-        )}
-      </GoalDetailProvider>
-    </BaseModal>
+    <GoalDetailProvider model={model}>
+      <LedgerLayout skin={skin} isOpen={isOpen} />
+      {SHOW_SKIN_SWITCHER && isOpen && (
+        // Fixed, bottom-centre, OUTSIDE the panel. Inside it the chooser became
+        // part of the composition being judged, and in the editorial skin -
+        // whose whole argument is "almost no chrome" - a control bar at the end
+        // of the body was the loudest thing on the surface.
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9100] flex items-center gap-2 rounded-pill border border-primary/20 bg-background/95 px-3 py-1.5 shadow-elevation-3">
+          <span className="typo-caption text-foreground">Skin</span>
+          <Segmented label="Goal detail modal skin" value={skin} onChange={setSkin} options={SKINS} />
+        </div>
+      )}
+    </GoalDetailProvider>
   );
 }

@@ -4,3 +4,11 @@
 export { BaseModal } from '@/lib/ui/BaseModal';
 export type { BaseModalSize } from '@/lib/ui/BaseModal';
 
+
+// The modal INTERIOR standard. `BaseModal` above owns everything outside the
+// panel; `ModalShell` owns everything inside it, so a caller never writes a
+// `panelClassName` again. Prefer it for any new modal.
+export { ModalShell, ModalSection, modalSectionHeadClass } from './ModalShell';
+export type { ModalShellProps } from './ModalShell';
+export { SKINS as MODAL_SKINS } from './modalSkins';
+export type { ModalSkin, ModalWidth, SkinSpec } from './modalSkins';
