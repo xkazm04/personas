@@ -57,12 +57,13 @@ Director (this session)    the clock: status -> context -> decide -> dispatch ->
   branch unchanged, and holds the run with a `merge-held` ask; nothing is ever forced. A base
   that moves again WHILE the gates run is rebased again at the merge gate and the full gates
   re-run.
-- **Managed projects**: `pof` (`C:\Users\kazda\kiro\pof`, base `master`, not onboarded yet),
-  `ascent` (`C:\Users\kazda\kiro\ascent`, `master`), `kp` (`C:\Users\kazda\kiro\kp`, base
-  **`main`**; "CandiDate" in `dev_projects`). A project is addressed by its slug, the root's
-  last path segment. `status` lists every slug that has a `brief.json`, which includes
-  projects `/master` onboarded (firetv); this skill drives only pof, ascent and kp unless the
-  operator names another.
+- **Managed projects**: the managed set is `DEFAULT_MANAGED` (`pof`, `ascent`, `kp`) plus every
+  project whose `brief.json` says `"headless": true` (for 2026-10-07: gravitone-gcloud,
+  personas-web, firetv, garden-vr, mage-arena-vr, paypal, devsecops once their briefs say so).
+  A brief WITHOUT `headless: true` (firetv and the bank-* briefs `/master` keeps) is never woken,
+  dispatched or listed by `status`. `pof` is `C:\Users\kazda\kiro\pof` (base `master`), `ascent`
+  `C:\Users\kazda\kiro\ascent` (`master`), `kp` `C:\Users\kazda\kiro\kp` (base **`main`**;
+  "CandiDate" in `dev_projects`). A project is addressed by its slug, the root's last path segment.
 
 ## The instrument
 
@@ -249,7 +250,7 @@ project where nothing moved collapses to one line.
 Machine: 31.2 GB free; no usage limit; builders running 2 of 8.
 ascent - decided 14:15, dispatched accepted-idea-delivery; next wake 14:40.
   Running 9a41c7e2 accepted-idea-delivery (claude-sonnet-5-5), last output 3 min ago; paths src/app/org/.
-  Running 5b20d4c1 codebase-security-scan (claude-opus-5), last output 1 min ago; paths src/lib/auth/.
+  Running 5b20d4c1 codebase-security-scan (claude-opus-5-5), last output 1 min ago; paths src/lib/auth/.
   Held 2c7e01bb codebase-security-scan: uncommitted changes in the checkout overlap the branch: ...
   Note: Dispatched delivery of 4c2e81aa/7d90b3f1. Next wake: settle, then KPI readings.
   1 ask(s) open; 4 outbox entries queued.

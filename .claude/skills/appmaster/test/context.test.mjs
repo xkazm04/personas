@@ -224,7 +224,7 @@ test('status --text names each running run\'s model and its paths', async () => 
   const st = await G.cmdStatus({ flags: {} });
   assert.deepEqual(st.projects.find((p) => p.slug === 'demo').running.find((r) => r.runId8 === C.shortId(run.runId)).paths, ['src/x/']);
   const txt = await G.cmdStatus({ flags: { text: true } });
-  assert.match(txt.text, new RegExp(`Running ${C.shortId(run.runId)} accepted-idea-delivery \\(claude-opus-5\\).*; paths src/x/\\.`));
+  assert.match(txt.text, new RegExp(`Running ${C.shortId(run.runId)} accepted-idea-delivery \\(${C.MODELS.master}\\).*; paths src/x/\\.`));
 });
 
 test('recipes: each charter quotes its v3 recipe need and core action; a charter with none says so, built-ins give their purpose', async () => {

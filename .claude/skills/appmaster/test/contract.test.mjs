@@ -86,6 +86,25 @@ test('decision schema parses and names the contract fields', () => {
   assert.ok(!schema.properties.dispatch.items.required.includes('paths'), 'paths is optional for one dispatch (required for two by validateDecision)');
 });
 
+test('models: Opus is claude-opus-5-5; the retired claude-opus-5 resolves to it; sonnet and opus resolve', () => {
+  assert.equal(C.MODELS.master, 'claude-opus-5-5');
+  assert.equal(C.resolveModel('claude-opus-5'), 'claude-opus-5-5');
+  assert.equal(C.resolveModel('opus'), 'claude-opus-5-5');
+  assert.equal(C.resolveModel('sonnet'), C.MODELS.builder);
+  assert.ok(Object.values(C.MODELS.builderByCharter).every((m) => m === C.MODELS.master));
+});
+
+test('managed set: DEFAULT_MANAGED plus every brief with headless:true; a brief without it is never woken', () => {
+  for (const [slug, brief] of [['bank-ledger', { charters: [], headless: true }], ['bank-other', { charters: [] }], ['garden-vr', { charters: [], headless: true }]]) {
+    fs.mkdirSync(path.dirname(C.briefPath(slug)), { recursive: true });
+    fs.writeFileSync(C.briefPath(slug), JSON.stringify(brief));
+  }
+  const managed = S.listSlugs();
+  assert.ok(managed.includes('bank-ledger') && managed.includes('garden-vr'), 'headless:true opts any project in, bank-* included');
+  assert.ok(!managed.includes('bank-other') && !managed.includes('firetv'), 'without headless:true it stays out (firetv, bank-*)');
+  assert.deepEqual(C.DEFAULT_MANAGED, ['pof', 'ascent', 'kp']);
+});
+
 test('caps: two builders per project, eight in all, two dispatches per wake', () => {
   assert.equal(C.PER_PROJECT_CAP, 2);
   assert.equal(C.MAX_DISPATCH, C.PER_PROJECT_CAP);

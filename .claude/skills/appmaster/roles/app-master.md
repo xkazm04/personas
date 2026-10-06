@@ -170,7 +170,7 @@ Return exactly this object. Field names, types and bounds are those of
       "reason":      string, non-empty,
       "brief":       string, non-empty, the task text for the builder,
       "ideaIds":     [ string, ... ],
-      "model":       "sonnet" | "opus" | "claude-sonnet-5-5" | "claude-opus-5" | null, optional,
+      "model":       "sonnet" | "opus" | "claude-sonnet-5-5" | "claude-opus-5-5" | null, optional,
       "paths":       [ string, ... ], repo-relative prefixes or globs; always give it,
                      REQUIRED and non-empty on both entries when there are two
                      (a council review needs none),

@@ -183,17 +183,22 @@ export const EXIT = { OK: 0, ERROR: 1, REFUSED: 2 };
 
 // ---------------------------------------------------------------- models
 
+/**
+ * The Opus id is `claude-opus-5-5` since 2026-10-07: `claude -p --model claude-opus-5-5 "say ok"`
+ * answered (exit 0) that day. `claude-opus-5` stays an accepted alias of it, so a master that still
+ * writes the old id is upgraded rather than refused.
+ */
 export const MODELS = {
-  master: 'claude-opus-5',
+  master: 'claude-opus-5-5',
   builder: 'claude-sonnet-5-5',
   /** charters that default to Opus builders; the brief's models.byCharter overrides any of this */
-  builderByCharter: { 'codebase-architecture-review': 'claude-opus-5', 'codebase-security-scan': 'claude-opus-5' },
+  builderByCharter: { 'codebase-architecture-review': 'claude-opus-5-5', 'codebase-security-scan': 'claude-opus-5-5' },
 };
-/** The short forms a master may write in a dispatch's `model`; each resolves to a model id above. */
-export const MODEL_ALIASES = { sonnet: MODELS.builder, opus: MODELS.master };
+/** The short forms (and the retired id) a master may write in a dispatch's `model`; each resolves to a model id above. */
+export const MODEL_ALIASES = { sonnet: MODELS.builder, opus: MODELS.master, 'claude-opus-5': MODELS.master };
 /** Every value a dispatch's `model` may take: the short forms and the model ids they name. */
 export const BUILDER_MODEL_CHOICES = [...new Set([...Object.keys(MODEL_ALIASES), ...Object.values(MODEL_ALIASES)])];
-/** 'opus' -> 'claude-opus-5'; a full id is returned as it is. */
+/** 'opus' (or the retired 'claude-opus-5') -> 'claude-opus-5-5'; any other full id is returned as it is. */
 export const resolveModel = (m) => MODEL_ALIASES[m] ?? m;
 
 // ---------------------------------------------------------------- worker spawn contract
