@@ -1,30 +1,31 @@
 /**
- * useDeck — the deck's state machine: which queue is open, which card is on
- * top, how the last card left, and the two-step verdicts (arm, then confirm;
- * reject, then a reason).
+ * useDeck — the deck's state machine: which card is on top, how the last card
+ * left, and the two-step verdicts (arm, then confirm; reject, then a reason).
  *
  * A verdict is felt before it is committed: the card is STAMPED with the
  * verdict first (`stamp`), and only after a short beat does the queue advance
- * and the Lab drop the item, so the card visibly leaves toward the verdict's
+ * and the write go out, so the card visibly leaves toward the verdict's
  * meaning. Reduced motion commits at once.
+ *
+ * The write is the host's (`onDecide`, which rejects when it did not land).
+ * The queue is the roster's, which drops a decided item optimistically and
+ * puts it back when the write fails — so on a rejection the deck walks back
+ * to the restored card. The LAST card is different: the deck only closes once
+ * its write has landed, so a failed last write leaves the card in hand.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import type { TriageReasonPrompt } from '@/features/agents/quick-answer/triage/triageTypes';
-import type { DecisionItem, DecisionModalType, HubChip } from '../model/decisionModel';
-import { chipOf, modalTypeOf } from '../model/decisionModel';
+import type { DecisionItem } from '../model/decisionModel';
+import { chipOf } from '../model/decisionModel';
+import type { DeckRequestScope } from './deckStore';
 import type { DeckVerdict } from './deckTypes';
 import type { Leave } from './deckMotion';
 
-export type DeckScope =
-  | { kind: 'chip'; chip: HubChip }
-  | { kind: 'all' }
-  | { kind: 'type'; type: DecisionModalType };
-
-export function queueOf(scope: DeckScope, items: DecisionItem[], ready: DecisionItem[]): DecisionItem[] {
+/** The cards a scope deals, in roster order. `items` is the roster's loaded list. */
+export function queueOf(scope: DeckRequestScope, items: DecisionItem[]): DecisionItem[] {
+  if (scope.kind === 'single') return [scope.item];
   if (scope.kind === 'all') return items;
-  if (scope.kind === 'type') return items.filter((x) => modalTypeOf(x.kind) === scope.type);
-  if (scope.chip === 'ready') return ready;
   return items.filter((x) => chipOf(x.kind) === scope.chip);
 }
 
@@ -34,29 +35,31 @@ const STAMP_BEAT = 150;
 export interface DeckMotionState { dir: 1 | -1; leave: Leave }
 
 export function useDeck(opts: {
-  scope: DeckScope;
+  queue: DecisionItem[];
   startId: string;
-  items: DecisionItem[];
-  ready: DecisionItem[];
-  onDecide: (v: DeckVerdict) => void;
+  /** The write. Resolves when it landed; rejects when it did not (the host has toasted). */
+  onDecide: (v: DeckVerdict) => Promise<void> | void;
   onEmpty: () => void;
 }) {
-  const { scope, items, ready, onDecide, onEmpty } = opts;
+  const { queue, onDecide, onEmpty } = opts;
   const still = useReducedMotion();
-  const queue = useMemo(() => queueOf(scope, items, ready), [scope, items, ready]);
   const [currentId, setCurrentId] = useState(opts.startId);
   const [motion, setMotion] = useState<DeckMotionState>({ dir: 1, leave: 'walk' });
   const [stamp, setStamp] = useState<Leave | null>(null);
   const [armed, setArmed] = useState<'accept' | 'reject' | null>(null);
   const [prompt, setPrompt] = useState<TriageReasonPrompt | null>(null);
 
-  const index = Math.max(0, queue.findIndex((x) => x.id === currentId));
+  const index = useMemo(() => Math.max(0, queue.findIndex((x) => x.id === currentId)), [queue, currentId]);
   const item: DecisionItem | undefined = queue[index];
 
   const queueRef = useRef(queue);
   useEffect(() => { queueRef.current = queue; }, [queue]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  const alive = useRef(true);
+  useEffect(() => () => {
+    alive.current = false;
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
 
   // A new card starts disarmed.
   useEffect(() => {
@@ -66,23 +69,33 @@ export function useDeck(opts: {
 
   const walk = useCallback((delta: 1 | -1) => {
     if (stamp) return;
-    const next = queue[queue.findIndex((x) => x.id === currentId) + delta];
+    const next = queue[index + delta];
     if (!next) return;
     setMotion({ dir: delta, leave: 'walk' });
     setCurrentId(next.id);
-  }, [queue, currentId, stamp]);
+  }, [queue, index, stamp]);
 
   const commit = useCallback((v: DeckVerdict, leave: Leave) => {
     const q = queueRef.current;
     const i = q.findIndex((x) => x.id === v.item.id);
-    let next: DecisionItem | undefined;
-    if (leave === 'skip') next = q.length > 1 ? q[(i + 1) % q.length] : undefined;
-    else next = q[i + 1] ?? q[i - 1];
+    if (leave === 'skip') {
+      setStamp(null);
+      setMotion({ dir: 1, leave });
+      const next = q.length > 1 ? q[(i + 1) % q.length] : undefined;
+      if (next) setCurrentId(next.id);
+      return;
+    }
+    const next = q[i + 1] ?? q[i - 1];
     setStamp(null);
     setMotion({ dir: 1, leave });
-    onDecide(v);
     if (next) setCurrentId(next.id);
-    else if (leave !== 'skip') onEmpty();
+    void Promise.resolve()
+      .then(() => onDecide(v))
+      .then(
+        () => { if (!next && alive.current) onEmpty(); },
+        // The roster restored the item; walk back to it.
+        () => { if (alive.current) setCurrentId(v.item.id); },
+      );
   }, [onDecide, onEmpty]);
 
   const decide = useCallback((v: Omit<DeckVerdict, 'item'>, leave: Leave) => {

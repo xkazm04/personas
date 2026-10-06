@@ -7,14 +7,20 @@
  * Aurora material: a layered surface lit from the kind tile's corner, a
  * living conic border in the kind tone (static under reduced motion), a tier
  * spine of light on the left edge, and the ledger rail sunk into a well.
+ *
+ * A read-only card (a history row) keeps its rail but trades the dock for a
+ * single Close: nothing on it can write.
  */
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Check, CornerUpRight, SkipForward, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import { useTranslation } from '@/i18n/useTranslation';
 import { modalTypeOf, type DecisionItem } from '../model/decisionModel';
 import { BURST_MOTION, CARD_MOTION, CARD_TRANSITION, STAMP_MOTION, STILL_CARD, STILL_TRANSITION, type Leave } from './deckMotion';
+import type { MonitorCopy } from './deckMeta';
 import { CardHeader } from './CardHeader';
 import { ChatThread } from './ChatThread';
 import { DeckDock } from './DeckDock';
@@ -35,14 +41,15 @@ const STAMP: Record<Exclude<Leave, 'walk'>, { lamp: string; icon: LucideIcon }> 
   skip: { lamp: 'au-l-neutral', icon: SkipForward },
 };
 
-function stampLabel(item: DecisionItem, leave: Exclude<Leave, 'walk'>): string {
-  if (leave === 'done') return modalTypeOf(item.kind) === 'chat' ? 'Done' : 'Read';
+function stampLabel(m: MonitorCopy, item: DecisionItem, leave: Exclude<Leave, 'walk'>): string {
+  const chat = modalTypeOf(item.kind) === 'chat';
+  if (leave === 'done') return chat ? m.dc_deck_stamp_done : m.dc_deck_stamp_read;
   if (leave === 'skip') return item.verdictLabels.skip;
-  if (leave === 'accept' && modalTypeOf(item.kind) === 'chat') return 'Sent';
+  if (leave === 'accept' && chat) return m.dc_deck_stamp_sent;
   return leave === 'accept' ? item.verdictLabels.accept : item.verdictLabels.reject;
 }
 
-function Stamp({ item, leave, still }: { item: DecisionItem; leave: Exclude<Leave, 'walk'>; still: boolean }) {
+function Stamp({ label, item, leave, still }: { label: string; item: DecisionItem; leave: Exclude<Leave, 'walk'>; still: boolean }) {
   const s = STAMP[leave];
   const Icon = leave === 'accept' && modalTypeOf(item.kind) === 'chat' ? CornerUpRight : s.icon;
   return (
@@ -54,7 +61,7 @@ function Stamp({ item, leave, still }: { item: DecisionItem; leave: Exclude<Leav
         className="au-stamp flex items-center gap-3 rounded-modal px-7 py-3 typo-hero uppercase"
       >
         <Icon className="h-10 w-10" strokeWidth={3} aria-hidden />
-        {stampLabel(item, leave)}
+        {label}
       </motion.span>
     </div>
   );
@@ -68,38 +75,53 @@ export interface CardState {
   missing: boolean;
 }
 
-export function DeckCard({ item, deck, act, state, titleId }: {
+function ReadOnlyFoot({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <span className="typo-caption">{t.monitor.dc_deck_read_only}</span>
+      <Button variant="secondary" size="md" block onClick={onClose} data-testid="deck-readonly-close">
+        {t.monitor.dc_deck_close}
+      </Button>
+    </>
+  );
+}
+
+export function DeckCard({ item, deck, act, state, titleId, onClose }: {
   item: DecisionItem;
   deck: DeckController;
   act: DeckActions;
   state: CardState;
   titleId: string;
+  onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const still = useReducedMotion();
   const type = modalTypeOf(item.kind);
   const isMd = item.document?.format === 'markdown';
   const mdSource = isMd ? item.document!.content : '';
-  const doc = useMemo(() => prepareDocument(mdSource, `p2-${item.sourceId}`), [mdSource, item.sourceId]);
+  const doc = useMemo(() => prepareDocument(mdSource, `dc-${item.sourceId}`), [mdSource, item.sourceId]);
   const reader = useReader(doc.headings, item.id);
   const stamp = deck.stamp && deck.stamp !== 'walk' ? deck.stamp : null;
+  const stampText = stamp ? stampLabel(t.monitor, item, stamp) : '';
 
   const body = type === 'report'
     ? <ReportReader item={item} doc={doc} reader={reader} />
     : type === 'chat'
-      ? <ChatThread item={item} onSend={act.reply} />
+      ? <ChatThread item={item} onSend={act.reply} readOnly={act.readOnly} />
       : (
         <ProseBody item={item}>
-          {item.input && <QuestionFields input={item.input} answers={state.answers} onAnswer={state.setAnswer} missing={state.missing} />}
+          {item.input && !act.readOnly && <QuestionFields input={item.input} answers={state.answers} onAnswer={state.setAnswer} missing={state.missing} />}
         </ProseBody>
       );
 
   const extra = type === 'report'
     ? <ReaderContents doc={doc} reader={reader} isHtml={!isMd} />
-    : type === 'chat'
-      ? (
-        <ThreadPeople item={item} />
-      )
-      : null;
+    : type === 'chat' ? <ThreadPeople item={item} /> : null;
+
+  const dock = act.readOnly
+    ? <ReadOnlyFoot onClose={onClose} />
+    : <DeckDock item={item} deck={deck} act={act} rating={state.rating} onRate={state.setRating} />;
 
   return (
     <motion.article
@@ -110,7 +132,7 @@ export function DeckCard({ item, deck, act, state, titleId }: {
       exit="exit"
       transition={still ? STILL_TRANSITION : CARD_TRANSITION}
       className="au-card au-living absolute inset-0 flex flex-col overflow-hidden rounded-modal"
-      data-testid="p2-card"
+      data-testid="deck-card"
       data-item={item.id}
     >
       <span className="au-spine" aria-hidden />
@@ -119,15 +141,11 @@ export function DeckCard({ item, deck, act, state, titleId }: {
           <CardHeader item={item} titleId={titleId} />
           {body}
         </div>
-        <LedgerRail
-          item={item}
-          extra={extra}
-          dock={<DeckDock item={item} deck={deck} act={act} rating={state.rating} onRate={state.setRating} />}
-        />
+        <LedgerRail item={item} extra={extra} dock={dock} />
       </div>
       {/* The live region is born empty and stays mounted; only its text follows the stamp. */}
-      <span className="sr-only" aria-live="polite">{stamp ? stampLabel(item, stamp) : ''}</span>
-      {stamp && <Stamp item={item} leave={stamp} still={still} />}
+      <span className="sr-only" aria-live="polite">{stampText}</span>
+      {stamp && <Stamp label={stampText} item={item} leave={stamp} still={still} />}
     </motion.article>
   );
 }

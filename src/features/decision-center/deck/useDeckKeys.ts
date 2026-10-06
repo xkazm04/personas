@@ -6,9 +6,9 @@
  *   a prompt is open) · Shift+1-5 rate a report · ? toggles the key map ·
  *   Esc steps back (closing the key map first).
  *
- * Escape is BaseModal's (one owner, any keyboard provider or none): its
- * onClose first asks the deck to disarm an armed verdict or close a reason
- * prompt, and only a press with nothing to undo steps the hub back to the peek.
+ * Escape is DeckModal's (one owner): it consumes the press, first asks the
+ * deck to disarm an armed verdict or close a reason prompt, and only a press
+ * with nothing to undo closes the deck (the hub then reopens its peek).
  * Letters never fire while the composer or a reason field has focus.
  */
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
@@ -20,7 +20,7 @@ const SCROLL_STEP = 120;
 
 export function useDeckKeys(deck: DeckController, act: DeckActions, opts: { enabled: boolean; onRate: (n: number) => void; onKeys: () => void }) {
   useAppKeyboard((e) => {
-    // Escape belongs to BaseModal (80); its onClose asks the deck to disarm first (DeckModal escapeGuard).
+    // Escape belongs to DeckModal, which asks the deck to disarm first (escapeGuard).
     if (e.key === 'Escape') return false;
     if (isTypingTarget(e.target) || !plain(e) || !deck.item) return false;
     const digit = digitOf(e);
@@ -46,7 +46,7 @@ export function useDeckKeys(deck: DeckController, act: DeckActions, opts: { enab
     if (e.key === '?') { opts.onKeys(); e.preventDefault(); return true; }
     if (e.shiftKey && e.key !== 'Enter') return false;
 
-    const scroller = () => document.querySelector<HTMLElement>(`[data-p2-scroll="${CSS.escape(deck.item!.id)}"]`);
+    const scroller = () => document.querySelector<HTMLElement>(`[data-deck-scroll="${CSS.escape(deck.item!.id)}"]`);
     switch (e.key) {
       case 'ArrowRight': case 'j': case 'J': deck.walk(1); break;
       case 'ArrowLeft': case 'k': case 'K': deck.walk(-1); break;

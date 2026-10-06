@@ -10,6 +10,7 @@
 import { useState } from 'react';
 import type { TriageReasonPrompt } from '@/features/agents/quick-answer/triage/triageTypes';
 import { Button } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Keycap } from './parts';
 
 export function ReasonPrompt({ prompt, min, onSubmit, onCancel }: {
@@ -18,6 +19,8 @@ export function ReasonPrompt({ prompt, min, onSubmit, onCancel }: {
   onSubmit: (reason?: string) => void;
   onCancel: () => void;
 }) {
+  const { t, tx } = useTranslation();
+  const m = t.monitor;
   const [text, setText] = useState('');
   const short = min > 0 && text.trim().length < min;
   const submitText = () => {
@@ -26,7 +29,7 @@ export function ReasonPrompt({ prompt, min, onSubmit, onCancel }: {
   };
 
   return (
-    <div className="flex flex-col gap-2" data-testid="p2-reason">
+    <div className="flex flex-col gap-2" data-testid="deck-reason">
       <span className="typo-heading text-foreground">{prompt.title}</span>
       {prompt.options.map((o, i) => (
         <Button key={o.id} variant="ghost" size="sm" block onClick={() => onSubmit(o.value)} className="au-branch au-lift justify-start! rounded-input py-2! hover:bg-transparent [&>span]:flex [&>span]:w-full [&>span]:items-center [&>span]:gap-2">
@@ -36,7 +39,7 @@ export function ReasonPrompt({ prompt, min, onSubmit, onCancel }: {
       ))}
       {prompt.freeText && (
         <textarea
-          id="p2-reason-text"
+          id="deck-reason-text"
           rows={2}
           autoFocus={prompt.options.length === 0}
           value={text}
@@ -45,19 +48,19 @@ export function ReasonPrompt({ prompt, min, onSubmit, onCancel }: {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitText(); }
             if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onCancel(); }
           }}
-          placeholder={prompt.placeholder ?? 'Or write a reason…'}
+          placeholder={prompt.placeholder ?? m.dc_deck_reason_placeholder}
           aria-label={prompt.title}
           className="au-well w-full resize-none rounded-input px-3 py-2 typo-body text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
       )}
       {min > 0 && (
         <span className={`typo-caption ${short ? 'text-status-warning' : 'text-status-success'}`}>
-          {short ? `${min - text.trim().length} more characters needed` : 'Ready — ↵ sends it back'}
+          {short ? tx(m.dc_deck_reason_short, { count: min - text.trim().length }) : m.dc_deck_reason_ready}
         </span>
       )}
       <div className="flex items-center gap-1.5 typo-caption">
         {min === 0 && <><Keycap>↵</Keycap> {prompt.skipLabel.toLowerCase()}</>}
-        <span className="ml-auto flex items-center gap-1.5"><Keycap>Esc</Keycap> cancel</span>
+        <span className="ml-auto flex items-center gap-1.5"><Keycap>Esc</Keycap> {m.dc_deck_cancel}</span>
       </div>
     </div>
   );

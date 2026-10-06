@@ -3,14 +3,17 @@
  * key printed ONCE, inset in the button itself. One layout for all four types:
  *   row 1  the verdict pair (glyph + verb + key), the yes lit, the no quieter
  *   then   the item's branches, full width: their own words, a hint, a digit
+ *   then   places to go and look (`links`) — quiet, no key, never a verdict
  *   last   later, quiet
  * An armed verdict says so in place ("↵ to confirm") and glows; a reject that
  * wants a reason swaps the dock for the reason prompt.
  */
 import type { ReactNode } from 'react';
-import { Check, CornerDownRight, MessageCircle, Reply, SkipForward, Star, X } from 'lucide-react';
+import { Check, CornerDownRight, ExternalLink, MessageCircle, Reply, SkipForward, Star, X } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { DecisionItem } from '../model/decisionModel';
+import { COUNCIL_MIN_REASON } from '../roster/decisionCopy';
 import type { DeckActions } from './useDeckActions';
 import type { DeckController } from './useDeck';
 import { ReasonPrompt } from './ReasonPrompt';
@@ -20,31 +23,32 @@ import { Keycap } from './parts';
 function Verdict({ k, label, yes, tone, icon, armed, onClick }: {
   k: string; label: string; yes: boolean; tone: 'success' | 'danger' | 'accent'; icon: ReactNode; armed?: boolean; onClick: () => void;
 }) {
+  const { t, tx } = useTranslation();
   return (
     <Button
       variant="ghost"
       size="md"
       block
       onClick={onClick}
-      aria-label={armed ? `${label} — press Enter to confirm` : label}
+      aria-label={armed ? tx(t.monitor.dc_deck_confirm_aria, { label }) : label}
       data-armed={armed ? '' : undefined}
       className={`au-verdict au-sheen au-lift au-l-${tone} ${yes ? 'au-verdict-yes' : 'au-verdict-no'} au-ink-lamp min-w-0 justify-start! rounded-input px-3! hover:bg-transparent [&>span:last-child]:flex [&>span:last-child]:min-w-0 [&>span:last-child]:flex-1 [&>span:last-child]:items-center [&>span:last-child]:gap-2`}
       icon={icon}
     >
-      <span className="min-w-0 flex-1 text-left typo-heading">{armed ? '↵ to confirm' : label}</span>
+      <span className="min-w-0 flex-1 text-left typo-heading">{armed ? t.monitor.dc_deck_confirm : label}</span>
       <Keycap>{k}</Keycap>
     </Button>
   );
 }
 
-function Branch({ k, label, hint, accent, icon, onClick }: { k: string; label: string; hint?: string; accent?: boolean; icon?: ReactNode; onClick: () => void }) {
+function Branch({ k, label, hint, accent, icon, onClick }: { k?: string; label: string; hint?: string; accent?: boolean; icon?: ReactNode; onClick: () => void }) {
   return (
     <Button
       variant="ghost"
       size="md"
       block
       onClick={onClick}
-      aria-label={hint ? `${label} — ${hint}` : label}
+      aria-label={hint ? `${label}: ${hint}` : label}
       data-accent={accent ? '' : undefined}
       className={`au-branch au-sheen au-lift min-w-0 justify-start! rounded-input px-3! py-2! hover:bg-transparent ${accent ? 'text-primary' : 'text-foreground'} [&>span:last-child]:flex [&>span:last-child]:min-w-0 [&>span:last-child]:flex-1 [&>span:last-child]:items-center [&>span:last-child]:gap-2`}
       icon={icon ?? <CornerDownRight className="h-4 w-4" aria-hidden />}
@@ -53,22 +57,45 @@ function Branch({ k, label, hint, accent, icon, onClick }: { k: string; label: s
         <span className="typo-body [text-wrap:pretty]">{label}</span>
         {hint && <span className="typo-caption">{hint}</span>}
       </span>
-      <Keycap>{k}</Keycap>
+      {k && <Keycap>{k}</Keycap>}
     </Button>
   );
 }
 
 function Rating({ value, onRate }: { value: number | null; onRate: (n: number) => void }) {
+  const { t, tx } = useTranslation();
   return (
-    <div className="flex items-center justify-between gap-2 px-1" role="radiogroup" aria-label="Rate this report (Shift+1-5)">
-      <span className="flex items-center gap-1.5 typo-eyebrow text-foreground">Rate <Keycap>⇧1-5</Keycap></span>
+    <div className="flex items-center justify-between gap-2 px-1" role="radiogroup" aria-label={t.monitor.dc_deck_rate_aria}>
+      <span className="flex items-center gap-1.5 typo-eyebrow text-foreground">{t.monitor.dc_deck_rate} <Keycap>⇧1-5</Keycap></span>
       <span className="flex gap-0.5">
         {[1, 2, 3, 4, 5].map((n) => (
-          <Button key={n} variant="ghost" size="icon-sm" role="radio" aria-checked={value === n} aria-label={`${n} of 5`} onClick={() => onRate(n)}>
+          <Button key={n} variant="ghost" size="icon-sm" role="radio" aria-checked={value === n} aria-label={tx(t.monitor.dc_deck_rate_star, { count: n })} onClick={() => onRate(n)}>
             <Star className={`h-4 w-4 ${value && n <= value ? 'fill-current text-status-warning' : 'text-muted-foreground'}`} aria-hidden />
           </Button>
         ))}
       </span>
+    </div>
+  );
+}
+
+function Links({ item, act }: { item: DecisionItem; act: DeckActions }) {
+  if (!item.links?.length) return null;
+  // Quieter than a branch: one line, no key, the hint only in its accessible name.
+  return (
+    <div className="flex flex-wrap gap-1">
+      {item.links.map((l) => (
+        <Button
+          key={l.id}
+          variant="ghost"
+          size="sm"
+          onClick={() => act.openLink(l.id)}
+          aria-label={l.hint ? `${l.label}: ${l.hint}` : l.label}
+          icon={<ExternalLink className="h-3.5 w-3.5" aria-hidden />}
+          className="au-lift"
+        >
+          {l.label}
+        </Button>
+      ))}
     </div>
   );
 }
@@ -80,8 +107,11 @@ export function DeckDock({ item, deck, act, rating, onRate }: {
   rating: number | null;
   onRate: (n: number) => void;
 }) {
+  const { t } = useTranslation();
+  const m = t.monitor;
   if (deck.prompt) {
-    return <ReasonPrompt prompt={deck.prompt} min={item.kind === 'council' ? 12 : 0} onSubmit={act.submitReason} onCancel={() => deck.setPrompt(null)} />;
+    const min = item.kind === 'council' ? Number(item.payload?.reasonMin ?? COUNCIL_MIN_REASON) || COUNCIL_MIN_REASON : 0;
+    return <ReasonPrompt prompt={deck.prompt} min={min} onSubmit={act.submitReason} onCancel={() => deck.setPrompt(null)} />;
   }
   const v = item.verdictLabels;
   const later = (
@@ -95,8 +125,8 @@ export function DeckDock({ item, deck, act, rating, onRate }: {
     return (
       <>
         <div className="grid grid-cols-2 gap-2">
-          <Verdict k="Space" label="Reply" yes tone="accent" icon={<Reply className="h-4 w-4" aria-hidden />} onClick={() => focusComposer(item.id)} />
-          <Verdict k="D" label="Done" yes={false} tone="success" icon={check} onClick={act.done} />
+          <Verdict k="Space" label={m.dc_deck_reply} yes tone="accent" icon={<Reply className="h-4 w-4" aria-hidden />} onClick={() => focusComposer(item.id)} />
+          <Verdict k="D" label={m.dc_chat_done} yes={false} tone="success" icon={check} onClick={act.done} />
         </div>
         {later}
       </>
@@ -106,7 +136,7 @@ export function DeckDock({ item, deck, act, rating, onRate }: {
     return (
       <>
         <Rating value={rating} onRate={onRate} />
-        <Verdict k="D" label="Done — mark read" yes tone="success" icon={check} onClick={act.done} />
+        <Verdict k="D" label={m.dc_deck_done_mark_read} yes tone="success" icon={check} onClick={act.done} />
         {item.branches.map((b, i) => (
           <Branch key={b.id} k={String(i + 1)} label={b.label} hint={b.hint} icon={<MessageCircle className="h-4 w-4" aria-hidden />} onClick={() => act.branch(i + 1)} />
         ))}
@@ -126,6 +156,7 @@ export function DeckDock({ item, deck, act, rating, onRate }: {
       {item.branches.map((b, i) => (
         <Branch key={b.id} k={String(i + 1)} label={b.label} hint={b.hint} accent={b.tone === 'accent'} onClick={() => act.branch(i + 1)} />
       ))}
+      <Links item={item} act={act} />
       {later}
     </>
   );

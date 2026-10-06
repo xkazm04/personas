@@ -1,12 +1,12 @@
 /**
- * P2 "Deck & Ledger" — the static vocabulary every part reads: what a chip and
- * a kind are called and drawn as, which tier an item sits in, what saying yes
- * does, and what an item costs to clear. Prototype data (English literals are
- * allowed in this dev-only folder), React-free.
+ * The deck's static vocabulary: how a kind is drawn and called, which tier an
+ * item sits in, what saying yes does, and what an item costs to clear.
+ * React-free.
  *
- * `tierOf` is a LOCAL stand-in for `decisionTier` (still a WP0 stub that
- * throws). It follows the tier law written in `decisionModel.ts` so the
- * prototype reads the way the real roster will.
+ * Copy is never stored here. Every word resolves at render from
+ * `t.monitor.dc_deck_*` (and the hub's chip / tier names, `dc_hub_*`, so a
+ * chip and the card it opens say the same thing) through the resolvers below,
+ * which take the translation section as their first argument.
  */
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -17,27 +17,21 @@ import {
   Landmark,
   Lightbulb,
   MessagesSquare,
-  Rocket,
   ShieldCheck,
   Siren,
   SlidersHorizontal,
   Sparkles,
-  Vote,
 } from 'lucide-react';
+import type { Translations } from '@/i18n/generated/types';
 import type { TriageTone } from '@/features/agents/quick-answer/triage/triageTypes';
-import type { DecisionItem, DecisionKind, DecisionTier, HubChip } from '../model/decisionModel';
+import type { DecisionChip, DecisionItem, DecisionKind, DecisionTier, HubChip } from '../model/decisionModel';
 import { chipOf, modalTypeOf } from '../model/decisionModel';
+import { decisionTier } from '../model/decisionOrder';
 
-export const CHIP_META: Record<HubChip, { label: string; icon: LucideIcon; hint: string }> = {
-  gates: { label: 'Gates', icon: ShieldCheck, hint: 'Reviews, questions and approvals holding work' },
-  proposals: { label: 'Proposals', icon: Vote, hint: 'Policy, promotion and goal sign-offs' },
-  backlog: { label: 'Backlog', icon: Lightbulb, hint: 'Scanner ideas waiting for a verdict' },
-  incidents: { label: 'Incidents', icon: Siren, hint: 'Failures and alerts' },
-  council: { label: 'Council', icon: Landmark, hint: 'Council verdicts to approve or send back' },
-  reports: { label: 'Reports', icon: FileText, hint: 'Unread reports' },
-  chat: { label: 'Chat', icon: MessagesSquare, hint: 'Threads waiting for your reply' },
-  ready: { label: 'Ready', icon: Rocket, hint: 'Accepted ideas ready to dispatch' },
-};
+/** The monitor section of the catalog — every deck word lives in it. */
+export type MonitorCopy = Translations['monitor'];
+/** `tx` from `useTranslation()`. */
+export type Interpolate = (template: string, vars: Record<string, string | number>) => string;
 
 /** The kind, drawn: one glyph per kind (the card's tile), the word only in the eyebrow. */
 export const KIND_ICON: Record<DecisionKind, LucideIcon> = {
@@ -82,62 +76,71 @@ export const URGENCY: Record<TriageTone, number> = { danger: 3, warning: 2, acce
 export function cardTags(item: DecisionItem) {
   const seen = [item.source.label, item.source.sublabel ?? ''].map((s) => s.toLowerCase());
   return item.tags
-    .filter((t) => t.id !== 'sev' && !seen.includes(t.label.toLowerCase()))
+    .filter((t) => t.id !== 'sev' && t.id !== 'severity' && !seen.includes(t.label.toLowerCase()))
     .slice(0, 2);
 }
 
-export const KIND_LABEL: Record<DecisionKind, string> = {
-  review: 'Review',
-  question: 'Question',
-  approval: 'Companion approval',
-  policy: 'Policy',
-  evolution: 'Promotion',
-  goal: 'Goal sign-off',
-  idea: 'Idea',
-  incident: 'Incident',
-  council: 'Council verdict',
-  report: 'Report',
-  message: 'Message',
-};
-
-export function tierOf(item: DecisionItem): DecisionTier {
-  if (item.kind === 'incident') return item.severity === 'critical' || item.severity === 'high' ? 1 : 2;
-  if (item.kind === 'approval') return 1;
-  if (item.kind === 'review' && item.alert) return 1;
-  if (item.kind === 'report' || item.kind === 'message') return 3;
-  return 2;
+/** The chip's name — the hub's own word, so the strip and the eyebrow agree. */
+export function chipLabel(m: MonitorCopy, chip: DecisionChip): string {
+  switch (chip) {
+    case 'gates': return m.dc_hub_chip_gates;
+    case 'proposals': return m.dc_hub_chip_proposals;
+    case 'backlog': return m.dc_hub_chip_backlog;
+    case 'incidents': return m.dc_hub_chip_incidents;
+    case 'council': return m.dc_hub_chip_council;
+    case 'reports': return m.dc_hub_chip_reports;
+    case 'chat': return m.dc_hub_chip_chat;
+  }
 }
 
-export const TIER_META: Record<DecisionTier, { label: string; tone: TriageTone }> = {
-  1: { label: 'Blocking', tone: 'danger' },
-  2: { label: 'Decide', tone: 'accent' },
-  3: { label: 'Read / reply', tone: 'neutral' },
-};
+export function kindLabel(m: MonitorCopy, kind: DecisionKind): string {
+  switch (kind) {
+    case 'review': return m.dc_deck_kind_review;
+    case 'question': return m.dc_deck_kind_question;
+    case 'approval': return m.dc_deck_kind_approval;
+    case 'policy': return m.dc_deck_kind_policy;
+    case 'evolution': return m.dc_deck_kind_evolution;
+    case 'goal': return m.dc_deck_kind_goal;
+    case 'idea': return m.dc_deck_kind_idea;
+    case 'incident': return m.dc_deck_kind_incident;
+    case 'council': return m.dc_deck_kind_council;
+    case 'report': return m.dc_deck_kind_report;
+    case 'message': return m.dc_deck_kind_message;
+  }
+}
 
-/** Tier stripe fill — the peek's left edge and the card's spine. */
-export const TIER_FILL: Record<DecisionTier, string> = {
-  1: 'bg-status-error',
-  2: 'bg-primary',
-  3: 'bg-muted-foreground',
-};
+/** The roster's own tier law (`decisionTier`), so the deck and the strip never disagree. */
+export const tierOf = (item: DecisionItem): DecisionTier => decisionTier(item);
 
-const YES_DOES: Record<DecisionKind, string> = {
-  review: 'The run resumes with this output.',
-  question: 'Your answers are sent and the build resumes.',
-  approval: 'Athena carries the action out now.',
-  policy: 'The routing change is applied fleet-wide.',
-  evolution: 'The challenger replaces the incumbent.',
-  goal: 'The goal is signed off and closed.',
-  idea: 'It moves to Ready to dispatch.',
-  incident: 'The incident is marked resolved.',
-  council: 'The council verdict is accepted and the work proceeds.',
-  report: 'The report is marked read.',
-  message: 'Your reply is posted to the thread.',
-};
+export const TIER_TONE: Record<DecisionTier, TriageTone> = { 1: 'danger', 2: 'accent', 3: 'neutral' };
+
+export function tierLabel(m: MonitorCopy, tier: DecisionTier): string {
+  if (tier === 1) return m.dc_hub_tier_blocking;
+  if (tier === 2) return m.dc_hub_tier_decide;
+  return m.dc_hub_tier_read;
+}
+
+function yesOfKind(m: MonitorCopy, kind: DecisionKind): string {
+  switch (kind) {
+    case 'review': return m.dc_deck_yes_review;
+    case 'question': return m.dc_deck_yes_question;
+    case 'approval': return m.dc_deck_yes_approval;
+    case 'policy': return m.dc_deck_yes_policy;
+    case 'evolution': return m.dc_deck_yes_evolution;
+    case 'goal': return m.dc_deck_yes_goal;
+    case 'idea': return m.dc_deck_yes_idea;
+    case 'incident': return m.dc_deck_yes_incident;
+    case 'council': return m.dc_deck_yes_council;
+    case 'report': return m.dc_deck_yes_report;
+    case 'message': return m.dc_deck_yes_chat;
+  }
+}
 
 /** One line: what saying yes does. The item's alert wins when it has one. */
-export function yesDoes(item: DecisionItem): string {
-  return item.alert?.detail ?? YES_DOES[item.kind];
+export function yesDoes(m: MonitorCopy, tx: Interpolate, item: DecisionItem): string {
+  if (item.alert?.detail) return item.alert.detail;
+  if (item.kind === 'message') return tx(m.dc_deck_yes_chat, { name: item.source.label });
+  return yesOfKind(m, item.kind);
 }
 
 function words(text: string): number {
@@ -149,16 +152,16 @@ export function readMinutes(item: DecisionItem): number {
 }
 
 /** What clearing the item costs, in the unit that matters for its type. */
-export function costOf(item: DecisionItem): string {
-  if (item.kind === 'question' && item.input) return `${item.input.fields.length} answers`;
+export function costOf(m: MonitorCopy, tx: Interpolate, item: DecisionItem): string {
+  if (item.kind === 'question' && item.input) return tx(m.dc_deck_cost_answers, { count: item.input.fields.length });
   const type = modalTypeOf(item.kind);
-  if (type === 'report') return `${readMinutes(item)} min read`;
-  if (type === 'chat') return 'reply';
+  if (type === 'report') return tx(m.dc_deck_cost_read, { count: readMinutes(item) });
+  if (type === 'chat') return m.dc_deck_cost_reply;
   if (type === 'backlog') {
     const effort = item.facts.find((f) => f.id === 'effort');
-    return effort ? `effort ${effort.value}` : 'triage';
+    return effort ? tx(m.dc_deck_cost_effort, { value: effort.value }) : m.dc_deck_cost_triage;
   }
-  return '1 key';
+  return m.dc_deck_cost_one_key;
 }
 
 /** Lamp tone -> dot fill (strip lamps, peek markers). */

@@ -5,6 +5,7 @@
  */
 import { Users } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { DecisionItem, DecisionThreadMessage } from '../model/decisionModel';
 
 const ROLE_INK: Record<DecisionThreadMessage['author'], string> = {
@@ -14,12 +15,13 @@ const ROLE_INK: Record<DecisionThreadMessage['author'], string> = {
 };
 
 export function ThreadPeople({ item }: { item: DecisionItem }) {
+  const { t } = useTranslation();
   const people = new Map<string, DecisionThreadMessage['author']>();
   for (const m of item.thread?.messages ?? []) people.set(m.name, m.author);
   if (people.size === 0) return null;
   return (
-    <section className="flex flex-col gap-2 pt-4" aria-label="In this thread">
-      <Tooltip content="In this thread">
+    <section className="flex flex-col gap-2 pt-4" aria-label={t.monitor.dc_deck_in_thread}>
+      <Tooltip content={t.monitor.dc_deck_in_thread}>
         <span className="flex items-center gap-1.5 typo-eyebrow text-foreground">
           <Users className="h-3.5 w-3.5" aria-hidden /> {people.size}
         </span>

@@ -54,10 +54,15 @@ export interface OriginBox { dx: number; dy: number; scale: number }
 
 export function originFrom(el: Element | null | undefined): OriginBox | null {
   if (!el || typeof window === 'undefined') return null;
-  const r = el.getBoundingClientRect();
+  return originFromRect(el.getBoundingClientRect());
+}
+
+/** A request's origin rect (`deckOriginOf`) as the morph's offset from the viewport centre. */
+export function originFromRect(r: { x: number; y: number; width: number; height: number } | null | undefined): OriginBox | null {
+  if (!r || typeof window === 'undefined') return null;
   return {
-    dx: r.left + r.width / 2 - window.innerWidth / 2,
-    dy: r.top + r.height / 2 - window.innerHeight / 2,
+    dx: r.x + r.width / 2 - window.innerWidth / 2,
+    dy: r.y + r.height / 2 - window.innerHeight / 2,
     scale: Math.max(0.08, Math.min(0.5, r.width / 900)),
   };
 }

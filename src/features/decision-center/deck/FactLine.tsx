@@ -8,7 +8,7 @@
  */
 import { Folder, History, PiggyBank, Repeat, Target, Trophy, Users, Wallet, Zap, type LucideIcon } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { TONE_TEXT } from '@/features/shared/triage/triageFocusBridge';
+import { TONE_TEXT } from '@/features/agents/quick-answer/triage/deck/DeckChips';
 import type { TriageFact } from '@/features/agents/quick-answer/triage/triageTypes';
 
 const FACT_ICON: Record<string, LucideIcon> = {

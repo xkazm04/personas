@@ -10,6 +10,7 @@ import type { ReactNode } from 'react';
 import { Clock, Gauge, type LucideIcon } from 'lucide-react';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { DecisionItem } from '../model/decisionModel';
 import { cardTags, costOf } from './deckMeta';
 import { FactLine } from './FactLine';
@@ -30,12 +31,19 @@ function HeroTile({ icon: Icon, label, children }: { icon: LucideIcon; label: st
 }
 
 export function LedgerRail({ item, extra, dock }: { item: DecisionItem; extra?: ReactNode; dock: ReactNode }) {
+  const { t, tx } = useTranslation();
+  const m = t.monitor;
   const meters = item.facts.filter((f): f is typeof f & { score: NonNullable<typeof f.score> } => !!f.score);
-  // A fact that restates the spine (the waiting time, the source's own name) is noise in the ledger.
-  const plainFacts = item.facts.filter((f) => !f.score && f.id !== 'waiting' && f.value !== item.source.label);
+  // A fact that restates the spine (the waiting time, the source's own name, an
+  // incident's severity the head already says in words) is noise in the ledger.
+  const plainFacts = item.facts.filter((f) => !f.score
+    && f.id !== 'waiting'
+    && f.value !== item.source.label
+    && f.value !== item.createdAt
+    && !(item.kind === 'incident' && f.id === 'severity'));
   const tags = cardTags(item);
   return (
-    <aside className="au-well flex w-[340px] flex-shrink-0 flex-col overflow-hidden rounded-card" aria-label="Ledger" data-testid="p2-ledger-rail">
+    <aside className="au-well flex w-[340px] flex-shrink-0 flex-col overflow-hidden rounded-card" aria-label={m.dc_deck_ledger_aria} data-testid="deck-ledger-rail">
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-3 pt-4">
         <div className="flex items-center gap-3">
           <Monogram item={item} />
@@ -45,8 +53,8 @@ export function LedgerRail({ item, extra, dock }: { item: DecisionItem; extra?: 
           </span>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <HeroTile icon={Clock} label="Waiting since"><RelativeTime timestamp={item.createdAt} className="typo-heading text-foreground" /></HeroTile>
-          <HeroTile icon={Gauge} label="What it costs to clear">{costOf(item)}</HeroTile>
+          <HeroTile icon={Clock} label={m.dc_deck_waiting_since}><RelativeTime timestamp={item.createdAt} className="typo-heading text-foreground" /></HeroTile>
+          <HeroTile icon={Gauge} label={m.dc_deck_cost_tip}>{costOf(m, tx, item)}</HeroTile>
         </div>
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-x-4 gap-y-1">
@@ -70,7 +78,7 @@ export function LedgerRail({ item, extra, dock }: { item: DecisionItem; extra?: 
           </div>
         )}
       </div>
-      <div className="flex flex-col gap-2 border-t border-primary/10 px-3 pb-3 pt-3" data-testid="p2-dock">
+      <div className="au-rail-foot flex flex-col gap-2 px-3 pb-3 pt-3" data-testid="deck-dock">
         {dock}
       </div>
     </aside>

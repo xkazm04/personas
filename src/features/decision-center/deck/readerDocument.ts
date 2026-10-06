@@ -31,7 +31,7 @@ function createAssigner(prefix: string) {
 }
 
 /** Markdown headings (outside fenced blocks) + word count. The caller memoises it per document. */
-export function prepareDocument(markdown: string, prefix = 'p2r'): PreparedDocument {
+export function prepareDocument(markdown: string, prefix = 'dcr'): PreparedDocument {
   const assign = createAssigner(prefix);
   const headings: DocHeading[] = [];
   let fenced = false;

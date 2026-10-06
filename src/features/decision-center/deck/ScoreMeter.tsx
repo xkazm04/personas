@@ -12,25 +12,36 @@ import { ArrowDown, Hammer, ShieldAlert, Target, Trophy, Zap, type LucideIcon } 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { bandTone } from '@/features/agents/quick-answer/triage/deck/DeckChips';
-import type { TriageFact } from '@/features/agents/quick-answer/triage/triageTypes';
+import type { TriageFact, TriageTone } from '@/features/agents/quick-answer/triage/triageTypes';
+import { useTranslation } from '@/i18n/useTranslation';
+import type { MonitorCopy } from './deckMeta';
 
-const WORD = { success: 'good', warning: 'fair', danger: 'poor', accent: '', neutral: '' } as const;
+function bandWord(m: MonitorCopy, tone: TriageTone): string {
+  if (tone === 'success') return m.dc_deck_band_good;
+  if (tone === 'warning') return m.dc_deck_band_fair;
+  if (tone === 'danger') return m.dc_deck_band_poor;
+  return '';
+}
+
 const METER_ICON: Record<string, LucideIcon> = { conf: Target, coverage: Target, effort: Hammer, impact: Zap, risk: ShieldAlert, wins: Trophy };
 
 export function ScoreMeter({ fact }: { fact: TriageFact & { score: NonNullable<TriageFact['score']> } }) {
+  const { t, tx } = useTranslation();
+  const m = t.monitor;
   const still = useReducedMotion();
   const { value, max, invert } = fact.score;
   const tone = bandTone(value, max, invert);
   const ratio = Math.min(value, max) / (max || 1);
   const Icon = METER_ICON[fact.id];
+  const word = bandWord(m, tone);
   return (
-    <div className={`au-l-${tone} flex flex-col gap-1.5`} data-testid={`p2-meter-${fact.id}`}>
+    <div className={`au-l-${tone} flex flex-col gap-1.5`} data-testid={`deck-meter-${fact.id}`}>
       <div className="flex items-center gap-2">
         {Icon && <Icon className="h-4 w-4 au-quiet flex-shrink-0" aria-hidden />}
         <span className="typo-eyebrow text-foreground">{fact.label}</span>
         {invert && (
-          <Tooltip content="Lower is better">
-            <span className="au-quiet inline-flex" tabIndex={0} aria-label="lower is better">
+          <Tooltip content={m.dc_deck_lower_better}>
+            <span className="au-quiet inline-flex" tabIndex={0} aria-label={m.dc_deck_lower_better}>
               <ArrowDown className="h-3.5 w-3.5" aria-hidden />
             </span>
           </Tooltip>
@@ -38,10 +49,10 @@ export function ScoreMeter({ fact }: { fact: TriageFact & { score: NonNullable<T
         <span className="ml-auto flex items-baseline gap-1.5">
           <span className="typo-heading tabular-nums text-foreground">{value}</span>
           <span className="typo-caption tabular-nums">/{max}</span>
-          {WORD[tone] && <span className="au-ink-lamp typo-label">{WORD[tone]}</span>}
+          {word && <span className="au-ink-lamp typo-label">{word}</span>}
         </span>
       </div>
-      <div className="au-meter" role="meter" aria-valuemin={0} aria-valuemax={max} aria-valuenow={value} aria-label={invert ? `${fact.label} (lower is better)` : fact.label}>
+      <div className="au-meter" role="meter" aria-valuemin={0} aria-valuemax={max} aria-valuenow={value} aria-label={invert ? tx(m.dc_deck_meter_lower_aria, { label: fact.label }) : fact.label}>
         {/* Full-width fill clipped to the value, so the ten notches stay fixed to the track. */}
         <motion.div
           className="au-meter-fill"
