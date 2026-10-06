@@ -17951,7 +17951,8 @@
     "create_athena": "Athena তৈরি করো",
     "features": "ফিচার",
     "companions": "সঙ্গীরা",
-    "whitelist": "সার্ভার নিয়ন্ত্রণ"
+    "whitelist": "সার্ভার নিয়ন্ত্রণ",
+    "timeline": "টাইমলাইন"
   },
   "status_tokens": {
     "automation": {

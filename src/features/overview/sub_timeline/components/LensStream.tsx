@@ -5,8 +5,8 @@ import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/b
 import { useGroupedVirtualizer, GroupHeaderRow, GROUP_HEADER_SIZE } from '@/features/shared/components/display/GroupedVirtualList';
 import { buildGroupRows, timeGroupKey, timeGroupLabels } from '@/features/shared/components/display/grouping';
 import { StreamRow, ROW_HEIGHT } from './StreamRow';
-import { resolveRowLabels } from './streamKinds';
-import type { TaggedItem } from './types';
+import { resolveRowLabels } from '../libs/streamKinds';
+import type { TaggedItem } from '@/features/fleet/monitor/channels/types';
 
 /**
  * LENS STREAM — the virtualized, day-grouped log.

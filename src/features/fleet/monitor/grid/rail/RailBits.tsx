@@ -11,11 +11,11 @@ import { Check, X } from 'lucide-react';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
-import { PILE_VISUAL } from '../../fleetboard/piles';
+import { PILE_VISUAL } from '../skin/piles';
 import { TONE_FILL, type RailRow, type TriageTone } from './railModel';
 
 /**
- * A row's tone as the Board's `--fb-tone`, so the Board's bar and ink classes
+ * A row's tone as the skin's `--fb-tone`, so the skin's bar and ink classes
  * paint it. Danger and warning are a persona NEEDING you and take the Board's
  * own colours (`PILE_VISUAL`, whose warning lifts to a fill on light themes);
  * the other tones are not persona states and keep the deck's fill token, read

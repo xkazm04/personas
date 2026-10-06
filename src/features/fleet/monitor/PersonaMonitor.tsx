@@ -1,25 +1,33 @@
 // PersonaMonitor — the full-screen fleet monitor.
 //
-// The header is the ROUTER: four peer views, one click apart, no nesting.
+// The header is the ROUTER: three peer views, one click apart, no nesting.
 //   Activity      — every persona as a state-coloured square (FleetGridView)
-//   Timeline      — the merged cross-team transmission log (Stream)
 //   Conversations — the messenger, one project at a time (ConversationBriefing)
 //   Map           — the live constellation of one project (ChannelMap)
-//   Board         — the whole fleet as one full-frame picture (fleetboard/)
 // The old two-level switching (a "Channels" mode that then nested its own
-// stream/conversations/map pill) is retired: the three channel surfaces are
+// stream/conversations/map pill) is retired: the channel surfaces are
 // top-level destinations now, and the project-columns fleet view is gone.
+//
+// TWO VIEWS LEFT ON 2026-10-06. The Board — the whole fleet as one full-frame
+// picture — is DELETED: Activity answers the same question and the operator
+// kept one of them. Its shared vocabulary (the four piles, the tile skin, the
+// need glyph) was not board-only and lives on at `grid/skin/`. The Timeline —
+// the merged cross-team transmission log — MOVED OUT, to Overview > Monitoring
+// > Timeline (`features/overview/sub_timeline/`), where a read-only log
+// belongs beside Activity and Events. See `handleDrillIn` for what the Map's
+// node click does now that its destination is on another surface.
 // A live-mode pop-up toggle sits at the right of the router. The global fleet
 // pulse lives in the app chrome (see FleetActivityStrip), not here.
 
 import { memo, Suspense, useState, useMemo, useEffect, useCallback, startTransition } from 'react';
 import { motion } from 'framer-motion';
-import { X, Activity, MessagesSquare, Bell, LayoutGrid, LayoutDashboard, Radio, Orbit } from 'lucide-react';
+import { X, Activity, MessagesSquare, Bell, LayoutGrid, Orbit } from 'lucide-react';
 import FleetActivityStrip from '@/features/shared/chrome/FleetActivityStrip';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
+import { useOverviewStore } from '@/stores/overviewStore';
 import { useIsDarkTheme } from '@/stores/themeStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { toastCatch } from '@/lib/silentCatch';
@@ -31,7 +39,6 @@ import { useChannelWorkspace } from './channels';
 import { MonitorFeedStatus } from './MonitorFeedStatus';
 import { MonitorDrawerShell } from './MonitorDrawerShell';
 import { FleetGridView } from './grid/FleetGridView';
-import { takeBoardBack } from './fleetboard/boardEscape';
 import {
   buildMonitorModel,
   processStatusMeta, processStatusLabel, elapsedStr,
@@ -44,20 +51,18 @@ import {
 // against the ~90 the app shell already holds. Almost all of the rest hangs
 // off five components that are not on screen when the Monitor opens onto
 // Activity — the drawer (366 modules, capabilities + reasoning trace), the
-// three channel surfaces (235–248 each), and the dispatch dock (117). Each
+// channel surfaces (235–248 each), and the dispatch dock (117). Each
 // is its own chunk now, fetched the first time it is needed, behind a
 // fallback that holds its exact footprint: the dock's 36px bar, the
 // channel card's header ghost, nothing for a drawer that has not been
 // opened. The Activity board itself keeps only what it paints in frame one.
 const MonitorDrawer = lazyRetry(() => import('./MonitorDrawer').then((m) => ({ default: m.MonitorDrawer })));
 const RemoteSessionDrawer = lazyRetry(() => import('./remote/RemoteSessionDrawer'));
-const Stream = lazyRetry(() => import('./channels/Stream'));
 const ConversationBriefing = lazyRetry(() =>
   import('./channels/ConversationBriefing').then((m) => ({ default: m.ConversationBriefing })),
 );
 const ChannelMap = lazyRetry(() => import('./channels/map/ChannelMap'));
 const QuickDispatchDock = lazyRetry(() => import('./grid/QuickDispatchDock'));
-const BoardView = lazyRetry(() => import('./fleetboard'));
 
 /** The dock's footprint while its chunk loads: the same 36px collapsed bar. */
 function DockPlaceholder() {
@@ -123,8 +128,8 @@ const HIDE_AFTER_EXIT_MS = 220;
 // into a bail-out at this boundary.
 const MemoFleetActivityStrip = memo(FleetActivityStrip);
 
-/** The five top-level Monitor destinations. */
-type MonitorView = 'activity' | 'timeline' | 'conversations' | 'map' | 'board';
+/** The three top-level Monitor destinations. */
+type MonitorView = 'activity' | 'conversations' | 'map';
 
 /**
  * Last-selected tab, remembered for the life of the session.
@@ -143,9 +148,16 @@ let lastView: MonitorView = 'activity';
 
 /** The store's deep-link vocabulary → this router's destinations. One function
  *  rather than the same ternary at the initializer and the effect, which is how
- *  a third value gets added to one of them and not the other. */
+ *  a third value gets added to one of them and not the other.
+ *
+ *  `'channels'` meant "the merged Timeline" and no longer names a Monitor
+ *  destination — the Timeline is an Overview tab since 2026-10-06. It is kept
+ *  in the store's union rather than removed, because removing it would silently
+ *  turn a stale caller's deep link into a type error at the call site and a
+ *  no-op at runtime; here it lands on Activity, the Monitor's own default.
+ *  Measured 2026-10-06: no caller sends it. A caller that wants the Timeline
+ *  should set `overviewTab` instead (see `handleDrillIn`). */
 function viewForSignal(signal: 'fleet' | 'channels' | 'conversations'): MonitorView {
-  if (signal === 'channels') return 'timeline';
   if (signal === 'conversations') return 'conversations';
   return 'activity';
 }
@@ -242,10 +254,10 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
 
   // WHICH FEEDS THIS VIEW ACTUALLY RENDERS.
   //
-  // The four header destinations are PEERS, and only Activity draws anything
+  // The three header destinations are PEERS, and only Activity draws anything
   // built out of `reviews` / `unreadMessages` / `healthMap`: the grid cards, the
-  // drawer over them, and the system band. Timeline, Conversations and Map draw
-  // the channel surfaces and nothing else.
+  // drawer over them, and the system band. Conversations and Map draw the
+  // channel surfaces and nothing else.
   //
   // This block used to read "all four feeds stay ON regardless of the active
   // view — deliberately", and justified it by "the footer's review count and the
@@ -272,9 +284,11 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
   // the tick below has to ask both.
   const documentVisible = useDocumentVisibility();
 
-  // Activity and Board are the two FLEET views: both draw cards built from
-  // these feeds and both host the persona drawer.
-  const isFleetView = view === 'activity' || view === 'board';
+  // Activity is the FLEET view: it draws cards built from these feeds and
+  // hosts the persona drawer. (It was `activity || board` until the Board was
+  // deleted on 2026-10-06; the name stays because the distinction it draws —
+  // fleet reads vs channel surfaces — is still the one the feeds gate on.)
+  const isFleetView = view === 'activity';
   const feeds = useMemo(
     () => ({
       reviews: isFleetView,
@@ -336,11 +350,15 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
     void fetchTeams();
   }, [fetchTeams]);
 
-  // Everything the three channel surfaces share (roster, team filter, Slack
-  // bridges, map drill-in). Bridges are only fetched once Conversations is up.
+  // Everything the channel surfaces share (roster, team filter, Slack
+  // bridges). Bridges are only fetched once Conversations is up.
+  //
+  // The team filter (`selectOnly` / `allOn` / `setAll`) and the drill scope
+  // (`drillCallsign` / `scopeToPersona` / `clearDrill`) were the Timeline's,
+  // and the Timeline is an Overview tab now — `TimelinePage` calls this same
+  // hook for them. Nothing left in the Monitor reads them.
   const {
-    workspaceTeams, bridges, selectOnly, allOn, setAll,
-    drillCallsign, scopeToPersona, clearDrill, hasChannels,
+    workspaceTeams, bridges, hasChannels,
   } = useChannelWorkspace({
     teams,
     personas,
@@ -348,13 +366,31 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
     needBridges: view === 'conversations',
   });
 
-  // Map node click → Timeline scoped to that speaker.
+  /* MAP NODE CLICK → THE TIMELINE, WHICH IS NO LONGER HERE.
+   *
+   * This used to be a tab switch inside one overlay. The Map stayed in the
+   * Monitor and the Timeline moved to Overview > Monitoring on 2026-10-06, so
+   * the gesture now crosses surfaces. The alternative was to drop it — the
+   * drill-in is the Map's only reason to be more than a picture, so it is
+   * kept, and kept HONEST: it navigates rather than pretending to stay put.
+   *
+   * Three writes, in this order: park the speaker in `pendingTimelineScope`
+   * (Overview's own transient signal, NOT the Monitor's `monitorChannelPreset`
+   * — this component is mounted-but-hidden after the navigation and would
+   * consume-and-clear that one out from under the destination), select the
+   * Timeline tab, then switch section. `setSidebarSection` clears
+   * `headerOverlay`, which is what closes this overlay, so it goes last.
+   */
+  const setPendingTimelineScope = useOverviewStore((s) => s.setPendingTimelineScope);
+  const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const handleDrillIn = useCallback(
     (teamId: string, personaId: string) => {
-      scopeToPersona(teamId, personaId);
-      goToView('timeline');
+      setPendingTimelineScope({ teamId, personaId });
+      setOverviewTab('timeline');
+      setSidebarSection('overview');
     },
-    [scopeToPersona, goToView],
+    [setPendingTimelineScope, setOverviewTab, setSidebarSection],
   );
 
   // Tick once a second only while something is running.
@@ -427,11 +463,10 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
     // This is a `window` listener, and before persistence a closed Monitor was
     // an unmounted Monitor, so there was no listener to answer with. Keeping
     // it registered while hidden would be a behaviour change, not an
-    // optimisation: the handler reaches `takeBoardBack()` and `onClose()`, so
-    // one Escape pressed anywhere else in the app — dismissing a sidebar
-    // popover, leaving a field — would silently unzoom a Board nobody is
-    // looking at, or clear a drawer selection the operator left open on
-    // purpose and expects to find again. Escape belongs to whatever is on
+    // optimisation: the handler reaches `onClose()`, so one Escape pressed
+    // anywhere else in the app — dismissing a sidebar popover, leaving a
+    // field — would tear down the whole Monitor, or clear a drawer selection
+    // the operator left open on purpose and expects to find again. Escape belongs to whatever is on
     // screen, and a `content-visibility: hidden` overlay is not. Gating the
     // REGISTRATION rather than the body also means a hidden Monitor costs the
     // keyboard path nothing at all.
@@ -454,11 +489,13 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
       // plumbed up from each of them and would go stale the moment a fourth
       // arrives. `[role="dialog"]` is what BaseModal already stamps.
       if (document.querySelector('[role="dialog"]')) return;
-      // Innermost first: the drawer, the remote drawer, then the Board's team
-      // zoom (one level back to the fleet), and only then the Monitor itself.
+      // Innermost first: the drawer, the remote drawer, and only then the
+      // Monitor itself. The third rung was the Board's team zoom
+      // (`takeBoardBack()`, one level back to the fleet) and went with the
+      // Board view on 2026-10-06.
       if (selection) setSelection(null);
       else if (remoteJobId) setRemoteJobId(null);
-      else if (!takeBoardBack()) onClose();
+      else onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -501,19 +538,14 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
   // uses, so the tab and the view it opens read as the same thing.
   const VIEWS: Array<{ id: MonitorView; label: string; hint: string; icon: typeof LayoutGrid }> = [
     { id: 'activity', label: t.monitor.activity_mode, hint: t.monitor.activity_mode_title, icon: LayoutGrid },
-    { id: 'timeline', label: t.monitor.channels_layout_timeline, hint: t.monitor.channels_layout_timeline_hint, icon: Radio },
     { id: 'conversations', label: t.monitor.channels_layout_grid, hint: t.monitor.channels_layout_grid_hint, icon: MessagesSquare },
     { id: 'map', label: t.monitor.channels_layout_map, hint: t.monitor.channels_layout_map_hint, icon: Orbit },
-    { id: 'board', label: t.monitor.board_mode, hint: t.monitor.board_mode_title, icon: LayoutDashboard },
   ];
-  const selectView = useCallback(
-    (next: MonitorView) => {
-      // Only the map's node click should carry a callsign into the Timeline.
-      clearDrill();
-      goToView(next);
-    },
-    [clearDrill, goToView],
-  );
+  // The tab strip's handler. It used to clear the map's pending drill scope
+  // first, because the Timeline was a sibling tab that would have picked it
+  // up; the drill-in leaves this surface entirely now, so there is nothing
+  // left to clear and this is `goToView`.
+  const selectView = goToView;
 
   // Faint network-of-agents backdrop — dark mode only (the light-theme
   // alternative is a follow-up). Rendered behind everything at low opacity so
@@ -579,7 +611,7 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* The router: four peer destinations. */}
+          {/* The router: three peer destinations. */}
           <div className="flex items-center gap-1" role="group" data-testid="monitor-view-tabs">
             {VIEWS.map((v) => {
               const Icon = v.icon;
@@ -657,7 +689,7 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
       {/* ONE boundary for the whole body — see `BodyFallback`. */}
       <Suspense fallback={<BodyFallback />}>
       {isFleetView ? (
-        /* Body — the fleet board (Activity or Board) with the drawer layered over it */
+        /* Body — the Activity board with the drawer layered over it */
         <div className="relative z-10 flex-1 min-h-0 overflow-hidden">
           {/* Same wrapper the three channel surfaces get — the Activity board is
               a card on the HUD atmosphere now, not a bare grid on the page
@@ -680,30 +712,17 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
                   lands (law 1 / law 3). This used to swap the whole board for
                   a header-only skeleton, so the cold open painted a page
                   header, then a blank, then everything at once. */}
-              {view === 'board' ? (
-                <BoardView
-                  cards={cards}
-                  personas={personas}
-                  teams={teams}
-                  systemProcesses={systemProcesses}
-                  now={now}
-                  selectedPersonaId={selection?.personaId ?? null}
-                  onSelect={handleCardSelect}
-                  isLoading={loading && cards.length === 0}
-                />
-              ) : (
-                <FleetGridView
-                  cards={cards}
-                  personas={personas}
-                  teams={teams}
-                  selectedPersonaId={selection?.personaId ?? null}
-                  onSelect={handleCardSelect}
-                  feedTeams={workspaceTeams}
-                  onOpenSpeaker={handleDrillIn}
-                  isLoading={loading && cards.length === 0}
-                  onOpenRemote={openRemote}
-                />
-              )}
+              <FleetGridView
+                cards={cards}
+                personas={personas}
+                teams={teams}
+                selectedPersonaId={selection?.personaId ?? null}
+                onSelect={handleCardSelect}
+                feedTeams={workspaceTeams}
+                onOpenSpeaker={handleDrillIn}
+                isLoading={loading && cards.length === 0}
+                onOpenRemote={openRemote}
+              />
             </div>
           </div>
 
@@ -740,14 +759,6 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
           <div className="h-full p-2 hud-atmosphere">
             {!hasChannels ? (
               channelEmpty
-            ) : view === 'timeline' ? (
-              <Stream
-                teams={workspaceTeams}
-                onSelectTeam={selectOnly}
-                allOn={allOn}
-                onSetAll={setAll}
-                initialCallsign={drillCallsign}
-              />
             ) : view === 'map' ? (
               <ChannelMap teams={workspaceTeams} onDrillIn={handleDrillIn} />
             ) : (

@@ -106,5 +106,6 @@
   "create_athena": "Vytvořit Athenu",
   "features": "Funkce",
   "companions": "Společníci",
-  "whitelist": "Správa serverů"
+  "whitelist": "Správa serverů",
+  "timeline": "Časová osa"
 }

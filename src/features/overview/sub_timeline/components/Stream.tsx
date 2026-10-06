@@ -10,15 +10,15 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 import { useSystemStore } from '@/stores/systemStore';
 import { WorkspaceProjectSelector } from '@/features/plugins/dev-tools/sub_workspaces/WorkspaceProjectSelector';
 import { LensStream } from './LensStream';
-import { useLensFeed } from './useLensFeed';
+import { useLensFeed } from '../libs/useLensFeed';
 import { StreamMemoryViews } from './StreamMemoryViews';
-import { KIND_META } from './streamKinds';
+import { KIND_META } from '../libs/streamKinds';
 import {
   ALL_FAMILIES, STREAM_KINDS, EMPTY_LENS, activeLensCount, callsign, facetCounts, fetchKinds,
   matchesLens, memoryModesAvailable, SPEAKER_REMOVED, SPEAKER_SYSTEM, type LensState, type MemoryMode,
-} from './lensModel';
-import type { StreamTeam, TaggedItem } from './types';
-import { cleanName } from '../grid/fleetGridModel';
+} from '../libs/lensModel';
+import type { StreamTeam, TaggedItem } from '@/features/fleet/monitor/channels/types';
+import { cleanName } from '@/features/fleet/monitor/grid/fleetGridModel';
 
 /* ----------------------------------------------------------------------------
  * STREAM — the Monitor's DECISION log. One virtualized, read-only feed with

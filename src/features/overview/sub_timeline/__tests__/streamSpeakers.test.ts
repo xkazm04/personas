@@ -3,8 +3,8 @@ import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 import {
   EMPTY_LENS, REMOVED_CALLSIGN, SPEAKER_REMOVED, SPEAKER_SYSTEM,
   facetCounts, matchesLens, rowCallsign, speakerKey,
-} from '../lensModel';
-import type { FeedTeam, TaggedItem } from '../types';
+} from '../libs/lensModel';
+import type { FeedTeam, TaggedItem } from '@/features/fleet/monitor/channels/types';
 
 /* REGRESSION — "the callsign rail lists many 'System' rows that differ only by
  * colour". Every one was a DELETED persona: its author id no longer resolves,

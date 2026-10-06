@@ -1,7 +1,7 @@
 import { eventFamily, type EventFamily } from '@/lib/channel/eventModel';
 import { slackAuthorName } from '@/features/teams/sub_collab/collabRender';
 import type { ChannelKind } from '@/api/pipeline/teamChannel';
-import type { TaggedItem } from './types';
+import type { TaggedItem } from '@/features/fleet/monitor/channels/types';
 
 /* ----------------------------------------------------------------------------
  * LENS MODEL — the Stream's filter vocabulary, shared by every variant.

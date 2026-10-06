@@ -5,7 +5,7 @@
  *  (a) TONE has one authority per meaning: a review is a persona needing you
  *      and reads the Board's critical/warning by severity (`piles.needTone`'s
  *      rule); every other kind keeps the deck's kind tone, painted through the
- *      same `--fb-tone` the Board's bar and ink read.
+ *      same `--fb-tone` the skin's bar and ink read.
  *  (b) The FACE is the persona the item names, from the roster first (a
  *      question names its persona only in the payload), else none - and then
  *      the kind glyph takes the face's slot.
@@ -16,7 +16,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import type { Persona } from '@/lib/bindings/Persona';
 import { makeItem, makeQuestion } from '@/features/agents/quick-answer/triage/__tests__/triageFixtures';
-import { PILE_VISUAL } from '../../../fleetboard/piles';
+import { PILE_VISUAL } from '../../skin/piles';
 import { ideaToRow, triageToRow } from '../railModel';
 import { railToneVar } from '../RailBits';
 import { RailRowView, railRowHeight, RAIL_ROW_HEIGHT } from '../RailRowView';

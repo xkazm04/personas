@@ -27,6 +27,10 @@ const MemoriesPageGraph = lazyRetry(() => import('@/features/overview/sub_memori
 const IncidentsInbox = lazyRetry(() => import('@/features/overview/sub_incidents'));
 // Routed 2026-09-25 after sitting unimported since a March 2026 refactor.
 const ObservabilityDashboard = lazyRetry(() => import('@/features/overview/sub_observability'));
+// The merged decision log, moved out of the PersonaMonitor 2026-10-06. Its
+// whole file set came with it (`sub_timeline/`), so the code structure matches
+// what the sidebar shows.
+const TimelinePage = lazyRetry(() => import('@/features/overview/sub_timeline'));
 
 /**
  * Suspense fallback while a tab's lazy chunk loads (hard refresh / first visit).
@@ -72,6 +76,7 @@ function OverviewContent() {
           overviewTab === 'manual-review' ? <ManualReviewList /> :
           overviewTab === 'messages' ? <ReportList /> :
           overviewTab === 'events' ? <EventLogList /> :
+          overviewTab === 'timeline' ? <TimelinePage /> :
           overviewTab === 'memories' ? <MemoriesPage /> :
           overviewTab === 'memory-graph' ? <MemoriesPageGraph /> :
           <DashboardWithSubtabs />}

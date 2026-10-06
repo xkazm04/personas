@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
-import { mergeTaggedRows, rowCallsign, rowToken } from '../lensModel';
-import type { FeedTeam, TaggedItem } from '../types';
+import { mergeTaggedRows, rowCallsign, rowToken } from '../libs/lensModel';
+import type { FeedTeam, TaggedItem } from '@/features/fleet/monitor/channels/types';
 
 /* ----------------------------------------------------------------------------
  * REGRESSION — "the Timeline shows duplicated System messages".

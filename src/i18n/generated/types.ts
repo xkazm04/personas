@@ -2193,6 +2193,7 @@ export type Translations = {
     navigation_drawer: string;
     create_athena: string;
     companions: string;
+    timeline: string;
   };
   home: {
     get_started: {

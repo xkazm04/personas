@@ -106,5 +106,6 @@
   "create_athena": "Создать Athena",
   "features": "Функции",
   "companions": "Спутники",
-  "whitelist": "Управление серверами"
+  "whitelist": "Управление серверами",
+  "timeline": "Лента"
 }

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 import type { Persona } from '@/lib/bindings/Persona';
-import { itemKind } from '../lensModel';
-import { buildConversation } from '../conversationModel';
+import { itemKind } from '../libs/lensModel';
+import { buildConversation } from '@/features/fleet/monitor/channels/conversationModel';
 import { authorName, slackAuthorName, itemAccent, AUTHOR_KIND_META } from '@/features/teams/sub_collab/collabRender';
 import { buildTeamBridgeIndex, findTeamSlackBridge } from '@/lib/channel/teamBridge';
 

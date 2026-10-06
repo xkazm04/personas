@@ -106,5 +106,6 @@
   "create_athena": "创建 Athena",
   "features": "功能",
   "companions": "伙伴",
-  "whitelist": "服务器控制"
+  "whitelist": "服务器控制",
+  "timeline": "时间线"
 }

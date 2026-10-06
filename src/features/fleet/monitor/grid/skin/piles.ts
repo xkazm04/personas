@@ -1,14 +1,20 @@
-// piles — the Board's ONE state vocabulary (registry: status-vocabulary).
+// piles — the fleet's ONE state vocabulary (registry: status-vocabulary).
 //
-// At a hundred personas the eye sorts the field into four piles before it
-// reads a single name, so every tile, the strip's mix bar, the rail and the
-// hover card speak the same four words:
+// At a hundred personas the eye sorts the fleet into four piles before it
+// reads a single name, so every Activity line, every rail row and every
+// skinned tile speak the same four words:
 //
 //   needs   - something waits on a human: the loudest thing on screen
 //             (red for a failed run or a critical review, amber otherwise)
 //   working - running now: lit in the theme colour, moving
 //   resting - on and idle (or only queued): present, quiet
 //   off     - switched off: hatched, quieter still
+//
+// RELOCATED 2026-10-06 from `fleetboard/piles.ts`. The Board view it was
+// written for is gone; the vocabulary is not, because Activity's persona and
+// session lines (`grid/prototype/entry-e/`) and the Decision rail
+// (`grid/rail/`) wear it. It lives beside its only consumers now, and the
+// `fb-` prefix its CSS still carries is explained in `skin.css`.
 //
 // THIS IS NOT A NEW STATE MACHINE. It folds the Monitor's own ranking: `needs`
 // is `actionWeight > 0` (the same predicate the attention cursor walks and the
@@ -19,8 +25,8 @@
 // running persona holding a review is drawn as needing you.
 
 import { Activity, AlertOctagon, AlertTriangle, Moon, PowerOff, type LucideIcon } from 'lucide-react';
-import { pillarStateKey, type PersonaCardModel } from '../monitorModel';
-import { actionWeight, dominantBadge, type ActionKind } from '../grid/fleetGridModel';
+import { pillarStateKey, type PersonaCardModel } from '../../monitorModel';
+import { actionWeight, dominantBadge, type ActionKind } from '../fleetGridModel';
 
 export type Pile = 'needs' | 'working' | 'resting' | 'off';
 export type NeedTone = 'critical' | 'warning';
@@ -77,7 +83,7 @@ export interface PileVisual {
  */
 export const PILE_VISUAL: Record<PileKey, PileVisual> = {
   critical: { tone: 'var(--status-error)', glyph: AlertOctagon, labelKey: 'board_pile_needs' },
-  // --fb-warning is --status-warning, except as a FILL on light themes (fleetboard.css).
+  // --fb-warning is --status-warning, except as a FILL on light themes (skin.css).
   warning: { tone: 'var(--fb-warning)', glyph: AlertTriangle, labelKey: 'board_pile_needs' },
   working: { tone: 'var(--primary)', glyph: Activity, labelKey: 'board_pile_working' },
   resting: { tone: 'var(--status-neutral)', glyph: Moon, labelKey: 'board_pile_resting' },

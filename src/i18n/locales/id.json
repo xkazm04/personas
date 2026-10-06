@@ -17951,7 +17951,8 @@
     "create_athena": "Buat Athena",
     "features": "Fitur",
     "companions": "Pendamping",
-    "whitelist": "Kontrol server"
+    "whitelist": "Kontrol server",
+    "timeline": "Linimasa"
   },
   "status_tokens": {
     "automation": {

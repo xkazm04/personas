@@ -96,9 +96,20 @@ export interface OverviewSlice {
    *  once the modal is open so the same id doesn't re-trigger on remount. */
   pendingExecutionFocus: string | null;
 
+  /** Cross-SURFACE scope signal for the Timeline, which moved out of the
+   *  PersonaMonitor into Overview > Monitoring on 2026-10-06. The Monitor's
+   *  Map is still a Monitor view, so its node click now has to cross from one
+   *  surface to the other: it parks the speaker here, routes to Overview >
+   *  Timeline and closes the overlay. `TimelinePage` consumes it into the
+   *  Stream's initial callsign lens and clears it, so a later visit opens on
+   *  the full feed. Transient, never persisted - the same contract
+   *  `pendingExecutionFocus` above keeps. */
+  pendingTimelineScope: { teamId: string; personaId: string } | null;
+
   // Actions
   setOverviewTab: (tab: OverviewTab) => void;
   setPendingExecutionFocus: (executionId: string | null) => void;
+  setPendingTimelineScope: (scope: { teamId: string; personaId: string } | null) => void;
   setPipelineError: (source: string, error: string | null) => void;
   /** Apply a whole wave of pipeline fetch outcomes in a single store write —
    *  one set() per wave instead of 2×N (setPipelineError + setPipelineFetchedAt
@@ -249,6 +260,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   pipelineErrors: {},
   pipelineFetchedAt: {},
   pendingExecutionFocus: null,
+  pendingTimelineScope: null,
 
   // Note: do NOT wrap this in startTransition. Sidebar nav clicks must be
   // a synchronous, deterministic state update — the OverviewPage uses
@@ -257,6 +269,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   // the content never swaps even though the sidebar highlight updated.
   setOverviewTab: (tab) => set({ overviewTab: tab }),
   setPendingExecutionFocus: (executionId) => set({ pendingExecutionFocus: executionId }),
+  setPendingTimelineScope: (scope) => set({ pendingTimelineScope: scope }),
   setPipelineError: (source, error) => set((prev) => {
     const next = { ...prev.pipelineErrors };
     if (error) next[source] = error;

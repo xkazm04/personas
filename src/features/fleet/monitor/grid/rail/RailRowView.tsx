@@ -4,7 +4,7 @@
 // ## It wears the Board rail's row (2026-10-05 fuse)
 //
 // The look is the Board's `NeedsRail` row, from the Board's own stylesheet
-// (`fb-rail__row`, `fb-rail__bar`, `fb-ink`): a tone bar on the leading edge, a
+// (`grid/skin/`: `fb-rail__row`, `fb-rail__bar`, `fb-ink`): a tone bar on the leading edge, a
 // framed face, the title in `typo-body`, a toned `typo-label` line under it,
 // and the age trailing in its own column. The tone arrives as `--fb-tone` (`railToneVar`): the
 // Board's own colours where the row is a persona needing you, the deck's kind
@@ -46,7 +46,7 @@
 // project band a group's first row wears (the band is a grid track inside the
 // row, so the list keeps ONE entry per index).
 
-import '../../fleetboard/fleetboard.css';
+import '../skin/skin.css';
 import { memo, type CSSProperties } from 'react';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { RailCheckbox, RailFace, RailTime, RailUnread, RailVerdicts, railToneVar } from './RailBits';

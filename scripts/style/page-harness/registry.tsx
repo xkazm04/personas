@@ -33,7 +33,6 @@ import { TWIN_DETAIL_MODULES } from './twinDetailSurfaces';
 import { MISSION_CONTROL_MODULES } from './missionControlSurfaces';
 import { ACTIVITY_MODULES } from './activitySurfaces';
 import { INBOX_MODULES } from './inboxSurfaces';
-import { MONITOR_BOARD_MODULES } from './monitorBoardSurfaces';
 import { MONITOR_RAIL_MODULES } from './monitorRailSurfaces';
 import { MONITOR_ACTIVITY_MODULES } from './monitorActivitySurfaces';
 
@@ -80,7 +79,9 @@ export const MODULES: Record<string, HarnessModule> = {
   ...ACTIVITY_MODULES,
   // Kit batch overview-1, Overview > Approvals + Incidents (inboxSurfaces.tsx, inboxTapes.mjs).
   ...INBOX_MODULES,
-  ...MONITOR_BOARD_MODULES,
+  // MONITOR_BOARD_MODULES went with the Board view (2026-10-06). Its tapes
+  // survive in `monitorBoardTapes.mjs` because the Activity and rail
+  // harnesses build their fleets from them.
   ...MONITOR_RAIL_MODULES,
   ...MONITOR_ACTIVITY_MODULES,
   ...TONE_MODULES,

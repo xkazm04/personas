@@ -312,7 +312,8 @@ const BUILDERS = {
   ...activityTapes({ RECORDED_AT, PERSONAS }).builders,
   // Kit batch overview-1, Overview > Approvals + Incidents (inboxSurfaces.tsx, inboxTapes.mjs).
   ...inboxTapes({ RECORDED_AT, PERSONAS }).builders,
-  // Spark board-monitor, the Persona Monitor's Board (monitorBoardSurfaces.tsx, monitorBoardTapes.mjs).
+  // Spark board-monitor's fleets (monitorBoardTapes.mjs). The Board surface
+  // itself was deleted 2026-10-06; the Activity and rail harnesses read these.
   ...monitorBoardTapes({ RECORDED_AT }).builders,
   // The Activity desk's rail rows (monitorRailSurfaces.tsx, monitorRailTapes.mjs).
   ...monitorRailTapes({ RECORDED_AT }).builders,

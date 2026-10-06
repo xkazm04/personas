@@ -6,7 +6,7 @@ import { useChannelSubscription } from '@/features/teams/sub_collab/useTeamChann
 import type { ChannelKind } from '@/api/pipeline/teamChannel';
 import type { ChannelKindCounts } from '@/lib/bindings/ChannelKindCounts';
 import { mergeTaggedRows } from './lensModel';
-import type { FeedTeam, TaggedItem } from './types';
+import type { FeedTeam, TaggedItem } from '@/features/fleet/monitor/channels/types';
 
 /* ----------------------------------------------------------------------------
  * LENS FEED — the Stream's view of the shared channel cache.

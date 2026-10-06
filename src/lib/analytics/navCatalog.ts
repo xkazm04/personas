@@ -82,7 +82,7 @@ const HOME_TABS = exact<HomeTab>({ welcome: true, cockpit: true, roadmap: true, 
 // is never mounted. The route-ladder test in
 // src/features/overview/components/dashboard/__tests__/ now mounts it.
 // See docs/concepts/golden-paths/query-latency-instrumentation.md.
-const OVERVIEW_TABS = exact<OverviewTab>({ home: true, incidents: true, observability: true, executions: true, 'manual-review': true, messages: true, events: true, memories: true, 'memory-graph': true });
+const OVERVIEW_TABS = exact<OverviewTab>({ home: true, incidents: true, observability: true, executions: true, 'manual-review': true, messages: true, events: true, timeline: true, memories: true, 'memory-graph': true });
 const TEAMS_TABS = exact<TeamsTab>({ workspace: true, goals: true, kpis: true, factory: true, projects: true, lifecycle: true, contest: true, mastermind: true, features: true, whitelist: true, webview: true });
 const GOALS_TABS = exact<GoalsTab>({ board: true, progress: true });
 const TEMPLATE_TABS = exact<TemplateTab>({ n8n: true, generated: true, explore: true, recipes: true, presets: true });

@@ -4,9 +4,9 @@ import { parsePayload, FAMILY_TEXT } from '@/lib/channel/eventModel';
 import type { Persona } from '@/lib/bindings/Persona';
 import { itemAccent, STEP_TONE } from '@/features/teams/sub_collab/collabRender';
 import { decisionTitle } from '@/features/teams/sub_collab/decisionTitle';
-import type { TaggedItem } from './types';
-import { itemKind, rowCallsign, rowFamily } from './lensModel';
-import { KIND_META, type StreamRowLabels } from './streamKinds';
+import type { TaggedItem } from '@/features/fleet/monitor/channels/types';
+import { itemKind, rowCallsign, rowFamily } from '../libs/lensModel';
+import { KIND_META, type StreamRowLabels } from '../libs/streamKinds';
 
 /* ----------------------------------------------------------------------------
  * STREAM ROW — one decision. A dense 30px log line, and only that.
@@ -104,7 +104,20 @@ export const StreamRow = memo(function StreamRow({
     <button
       type="button"
       onClick={() => onOpen(row)}
-      style={{ height: ROW_HEIGHT, boxShadow: `inset 2px 0 0 ${team.teamColor}` }}
+      /* TWO INSET SHADOWS, NOT A BORDER. The leading 2px rail is the team's
+         colour (identity of the channel); the trailing 1px hairline is the row
+         divider the log needs to read as a ledger rather than a wall of text.
+         `ROW_HEIGHT` is a CONTRACT: `LensStream` sets it as the virtualizer's
+         fixed `itemSize` AND as the height of the absolutely-positioned
+         wrapper it drops each row into, so the two must stay the same number.
+         A real `border-bottom` adds to the border box and would push this
+         button to 31px inside a 30px slot - the last pixel of every row
+         clipped, the divider with it. An inset shadow paints inside the box
+         and costs no layout at all. */
+      style={{
+        height: ROW_HEIGHT,
+        boxShadow: `inset 2px 0 0 ${team.teamColor}, inset 0 -1px 0 color-mix(in oklab, var(--foreground) 9%, transparent)`,
+      }}
       className="w-full text-left flex items-center gap-2 px-3 hover:bg-secondary/25 transition-colors"
     >
       <span className={`typo-code opacity-55 text-foreground tabular-nums flex-shrink-0`}>{hhmmss(item.at)}</span>

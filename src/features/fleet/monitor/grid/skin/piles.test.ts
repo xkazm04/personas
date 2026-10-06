@@ -1,18 +1,17 @@
-// piles + boardModel - the Board's one state vocabulary and the fleet it builds.
+// piles - the fleet's one state vocabulary.
 //
 // The pile is derived, never stored: these tests pin that it agrees with the
 // Monitor's own ranking (`actionWeight`, `actionBadges`, `pillarStateKey`), so
-// a persona cannot be "needs you" on the Board and quiet on Activity.
+// a persona cannot be "needs you" on one Activity surface and quiet on another.
+//
+// The `buildBoard` block that used to close this file went with the Board view
+// (2026-10-06); `boardModel.ts` no longer exists.
 
 import { describe, expect, it } from 'vitest';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { PersonaReport } from '@/lib/bindings/PersonaReport';
-import type { Persona } from '@/lib/bindings/Persona';
-import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
-import type { PersonaCardModel } from '../monitorModel';
-import { attentionOrder } from '../grid/useAttentionCursor';
+import type { PersonaCardModel } from '../../monitorModel';
 import { countPiles, needReason, needTone, orderByPile, pileOf } from './piles';
-import { TEAMLESS_BAY, attentionModel, buildBoard } from './boardModel';
 
 // Test fixtures: only the fields the derivations read are meaningful.
 const review = (id: string): ManualReviewItem => ({ id, severity: 'warning', created_at: '2026-10-05T08:00:00Z' } as unknown as ManualReviewItem);
@@ -89,37 +88,5 @@ describe('orderByPile / countPiles', () => {
 
   it('counts the piles and the critical needs', () => {
     expect(countPiles(cards)).toEqual({ needs: 3, critical: 2, working: 1, resting: 2, off: 1, total: 7 });
-  });
-});
-
-describe('buildBoard', () => {
-  const team = (id: string, workspace_id?: string) => ({ id, name: id.toUpperCase(), color: '#22d3ee', icon: null, workspace_id } as unknown as PersonaTeam);
-  const persona = (id: string, home_team_id: string | null) => ({ id, home_team_id } as unknown as Persona);
-  const personas = [persona('a', 't1'), persona('b', 't1'), persona('c', 't2'), persona('d', null)];
-  const teams = [team('t2'), team('t1'), team('ws', 'w1')];
-  const cards = [
-    card({ personaId: 'a', personaName: 'A' }),
-    card({ personaId: 'b', personaName: 'B', messageCount: 1 }),
-    card({ personaId: 'c', personaName: 'C', execState: 'failed', runsToday: 3 }),
-    card({ personaId: 'd', personaName: 'D', runsToday: 2 }),
-  ];
-
-  it('groups as Activity does, drops empty groups, packs the biggest bay first', () => {
-    const board = buildBoard(cards, personas, teams);
-    expect(board.bays.map((b) => b.id)).toEqual(['t1', 't2', TEAMLESS_BAY]);
-    expect(board.bays[0]!.cards.map((c) => c.personaId)).toEqual(['b', 'a']);
-    expect(board.bayOf.get('d')?.kind).toBe('teamless');
-    expect(board.runsToday).toBe(5);
-  });
-
-  it('ranks the queue by urgency, fleet-wide', () => {
-    const board = buildBoard(cards, personas, teams);
-    expect(board.queue.map((c) => c.personaId)).toEqual(['c', 'b']);
-    expect(board.totals).toMatchObject({ needs: 2, critical: 1, resting: 2 });
-  });
-
-  it('hands the attention cursor the needs tiles in the field reading order', () => {
-    const board = buildBoard(cards, personas, teams);
-    expect(attentionOrder(attentionModel(board.bays, cards))).toEqual(['b', 'c']);
   });
 });

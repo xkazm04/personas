@@ -1,4 +1,4 @@
-// An agent as ONE LINE of its bay, worn as a Board tile: the line's whole
+// An agent as ONE LINE of its bay, worn as a pile tile (`grid/skin/`): the line's whole
 // background is its pile (a solid tone fill when it needs you, lit theme
 // colour while it works, glass at rest, hatched when off), so a bay of forty
 // sorts itself before a name is read. Inside: the persona's framed face, its
@@ -14,9 +14,9 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { useOffProjectForPersona } from '@/features/plugins/dev-tools/sub_projects/projectSwitch/useProjectSwitch';
 import { primaryDrawerSection, type DrawerSection, type PersonaCardModel } from '../../../monitorModel';
-import { PILE_VISUAL } from '../../../fleetboard/piles';
-import { NeedGlyph } from '../../../fleetboard/TileParts';
-import { runAgeFraction, useTileState } from '../../../fleetboard/Tile';
+import { PILE_VISUAL } from '../../skin/piles';
+import { NeedGlyph } from '../../skin/NeedGlyph';
+import { runAgeFraction, useTileState } from '../../skin/tileState';
 import type { ChatBubble } from '../../channelBubbleModel';
 import { shortElapsed, usePersonaFacts } from '../shared';
 import { personaLinePileKey, pileSkin } from './pileSkin';

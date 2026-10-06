@@ -1,7 +1,7 @@
 import { useTeamMemories } from '@/features/teams/sub_teamMemory/useTeamMemories';
 import MemoryTimeline from '@/features/teams/sub_teamMemory/components/timeline/MemoryTimeline';
 import RunDiffView from '@/features/teams/sub_teamMemory/components/diff/RunDiffView';
-import type { MemoryMode } from './lensModel';
+import type { MemoryMode } from '../libs/lensModel';
 
 /**
  * MEMORY'S ANALYTICAL VIEWS inside the Stream (D2).

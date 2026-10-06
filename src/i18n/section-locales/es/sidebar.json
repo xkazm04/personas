@@ -106,5 +106,6 @@
   "create_athena": "Crear a Athena",
   "features": "Funciones",
   "companions": "Compañeros",
-  "whitelist": "Control de servidores"
+  "whitelist": "Control de servidores",
+  "timeline": "Cronología"
 }

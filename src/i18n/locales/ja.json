@@ -17951,7 +17951,8 @@
     "create_athena": "Athenaを作る",
     "features": "機能",
     "companions": "コンパニオン",
-    "whitelist": "サーバー制御"
+    "whitelist": "サーバー制御",
+    "timeline": "タイムライン"
   },
   "status_tokens": {
     "automation": {

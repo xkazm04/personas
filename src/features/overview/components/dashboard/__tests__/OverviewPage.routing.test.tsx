@@ -20,6 +20,7 @@ vi.mock('@/features/overview/components/dashboard/ExecutionsWithSubtabs', () => 
 vi.mock('@/features/overview/sub_manual-review/components/ManualReviewList', () => ({ default: () => <div data-testid="tab-manual-review" /> }));
 vi.mock('@/features/overview/sub_reports/components/ReportList', () => ({ default: () => <div data-testid="tab-messages" /> }));
 vi.mock('@/features/overview/sub_events/components/EventLogList', () => ({ default: () => <div data-testid="tab-events" /> }));
+vi.mock('@/features/overview/sub_timeline', () => ({ default: () => <div data-testid="tab-timeline" /> }));
 vi.mock('@/features/overview/sub_memories/components/MemoriesPage', () => ({ default: () => <div data-testid="tab-memories" /> }));
 vi.mock('@/features/overview/sub_memories/components/MemoriesPageGraph', () => ({ default: () => <div data-testid="tab-memory-graph" /> }));
 
@@ -40,6 +41,18 @@ describe('Overview route ladder', () => {
     render(<OverviewPage />);
     expect(await screen.findByTestId(`tab-${tab}`)).toBeTruthy();
     if (tab !== 'home') expect(screen.queryByTestId('tab-home')).toBeNull();
+  });
+
+  it('declares Timeline LAST in the Monitoring group', () => {
+    // Moved out of the PersonaMonitor 2026-10-06. "Last" is the operator's
+    // ask and it needs two things that can drift apart: the id declared last
+    // in the group (here), and `pinLast: ['timeline']` on the overview case in
+    // SidebarLevel2 — without the second, `buildGroups` sorts the group by
+    // RESOLVED LABEL and the row lands wherever its translation happens to
+    // sort. Only the first half has a seam to assert; the second is read.
+    const monitoring = overviewGroups.find((g) => g.id === 'monitoring');
+    expect(monitoring?.itemIds.at(-1)).toBe('timeline');
+    expect(tabIds).toContain('timeline');
   });
 
   it('declares Observability in the sidebar, right after Incidents', () => {
