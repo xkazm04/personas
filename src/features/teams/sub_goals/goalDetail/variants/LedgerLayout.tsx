@@ -9,14 +9,20 @@
 //
 // WHAT CHANGED is everything about how it is STYLED. This file used to hand-roll
 // its own panel classes, its own header and its own section rule - which is what
-// made the modal read as foreign to the rest of the app. It now composes
+// made the modal read as foreign to the rest of the app. It composes
 // `ModalShell`, so the surface, radius token, elevation, header tiers, scroll
-// region and section rhythm all come from one place, and the `skin` prop is the
-// only thing that varies between the three styling approaches.
+// region, section rhythm and the ONE section-heading token all come from one
+// place.
+//
+// 2026-10-06, second pass: the skin contest closed (RAISED won, the other two
+// are gone) and `tone` went with it. A layout no longer picks a different label
+// FONT for a leading section than for a railed one - that is how this modal
+// ended up with five section-heading treatments. Emphasis is the column's job:
+// its width, its position, the rail's rule.
 import { Pencil } from 'lucide-react';
 
 import { Button } from '@/features/shared/components/buttons';
-import { ModalShell, type ModalSkin } from '@/features/shared/components/modals/ModalShell';
+import { ModalShell } from '@/features/shared/components/modals';
 
 import { useGoalDetailModel } from '../context';
 import { GoalStatusBadge } from '../../GoalStatusBadge';
@@ -24,7 +30,7 @@ import { AcceptanceGate, Description, Outcome, ProgressNudge, RefreshingLine } f
 import { Handoff, Subgoals, Tasks, UatGate } from '../blocks/workBlocks';
 import { ActivityFeed, Dependencies, LinkedTeams } from '../blocks/contextBlocks';
 
-export function LedgerLayout({ skin, isOpen }: { skin: ModalSkin; isOpen: boolean }) {
+export function LedgerLayout({ isOpen }: { isOpen: boolean }) {
   const { goal, onEdit, onClose, t } = useGoalDetailModel();
   if (!goal) return null;
 
@@ -33,7 +39,6 @@ export function LedgerLayout({ skin, isOpen }: { skin: ModalSkin; isOpen: boolea
       isOpen={isOpen}
       onClose={onClose}
       titleId="goal-detail-title"
-      skin={skin}
       width="lg"
       title={goal.title}
       status={
@@ -58,9 +63,9 @@ export function LedgerLayout({ skin, isOpen }: { skin: ModalSkin; isOpen: boolea
         <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-x-6 gap-y-4 items-start">
           <div className="min-w-0 space-y-4">
             <Description />
-            <Tasks tone="lead" />
-            <UatGate tone="lead" />
-            <Subgoals tone="lead" />
+            <Tasks />
+            <UatGate />
+            <Subgoals />
             <Handoff />
           </div>
 

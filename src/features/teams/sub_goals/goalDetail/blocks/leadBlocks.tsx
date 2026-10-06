@@ -11,6 +11,7 @@ import { Activity, BadgeCheck, Check } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { RichMarkdown } from '@/features/shared/components/editors/RichMarkdown';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { MODAL_SECTION_HEAD } from '@/features/shared/components/modals';
 
 import { GoalKpiLink } from '../../GoalKpiLink';
 import { AcceptRejectControls } from '../../acceptancePrimitives';
@@ -42,7 +43,7 @@ export function Outcome() {
     <div className="rounded-card border border-status-warning/25 bg-status-warning/5 px-3.5 py-3">
       <div className="flex items-center gap-2 mb-1">
         <Activity className="w-4 h-4 text-status-warning shrink-0" />
-        <span className="typo-caption uppercase tracking-[0.18em] text-foreground">{t.kpis.goal_ungrounded_title}</span>
+        <span className={MODAL_SECTION_HEAD}>{t.kpis.goal_ungrounded_title}</span>
       </div>
       <p className="typo-caption text-foreground">{t.kpis.goal_ungrounded_body}</p>
     </div>

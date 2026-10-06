@@ -8,20 +8,20 @@ import { isComplete } from '../../goalStatus';
 import { GoalTaskTable } from '../../GoalTaskTable';
 import { GoalHandoffPanel } from '../../GoalHandoffPanel';
 import { useGoalDetailModel } from '../context';
-import { Section, type SectionTone } from '../parts';
+import { Section } from '../parts';
 
 /**
  * ONE table merging ad-hoc to-dos + team-assignment steps (de-duped by title;
  * team steps carry the responsible persona, status, output, and awaiting-review
  * intervention), plus the add-a-to-do row.
  */
-export function Tasks({ tone = 'quiet' }: { tone?: SectionTone }) {
+export function Tasks() {
   const {
     dl, steps, todoItems, personaById, toggleItem, deleteItem, resolveStep,
     newItem, setNewItem, addItem,
   } = useGoalDetailModel();
   return (
-    <Section icon={ListChecks} label={dl.goal_tasks_label} tone={tone} flush>
+    <Section icon={ListChecks} label={dl.goal_tasks_label} flush>
       <GoalTaskTable
         steps={steps}
         items={todoItems}
@@ -51,11 +51,11 @@ export function Tasks({ tone = 'quiet' }: { tone?: SectionTone }) {
  * live browser test ticks; while open it keeps the goal under 100%. Eligible to
  * run once the other to-dos are complete (it is the final acceptance step).
  */
-export function UatGate({ tone = 'quiet' }: { tone?: SectionTone }) {
+export function UatGate() {
   const { dl, t, isWebProject, verifyItem, uat, todosComplete } = useGoalDetailModel();
   if (!isWebProject && !verifyItem) return null;
   return (
-    <Section icon={Globe} label={dl.uat_section_title} tone={tone}>
+    <Section icon={Globe} label={dl.uat_section_title}>
       {verifyItem ? (
         <div className="rounded-card border border-status-info/25 bg-status-info/[0.04] px-3 py-2.5">
           <div className="flex items-center gap-2">
@@ -126,11 +126,11 @@ export function UatGate({ tone = 'quiet' }: { tone?: SectionTone }) {
   );
 }
 
-export function Subgoals({ tone = 'quiet' }: { tone?: SectionTone }) {
+export function Subgoals() {
   const { dl, subgoals } = useGoalDetailModel();
   if (subgoals.length === 0) return null;
   return (
-    <Section icon={Target} label={dl.goal_detail_subgoals} tone={tone}>
+    <Section icon={Target} label={dl.goal_detail_subgoals}>
       <ul className="space-y-1.5">
         {subgoals.map((sg) => (
           <li key={sg.id} className="flex items-center gap-2.5 typo-body">

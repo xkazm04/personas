@@ -11,9 +11,16 @@
 // `RichMarkdown` so the headings and bullets render, with the citations listed
 // rather than crammed into a tooltip. The two decisions ride along, because the
 // place you finish reading the argument is the place you want to act on it.
-import { Archive, Check, Cog, Target, X } from 'lucide-react';
+//
+// 2026-10-06, same day: migrated onto `ModalShell`. This shipped hand-writing its
+// own `panelClassName` and its own `typo-caption uppercase tracking-[0.18em]`
+// heading - one of the forty panel strings and one of the five heading
+// treatments the shell was built to end. It is a first adopter now: the shell
+// owns the surface, the header, the scroll region and the footer bar, and
+// `MODAL_SECTION_HEAD` owns the one section-heading token.
+import { Archive, Check, Cog, Target } from 'lucide-react';
 
-import { BaseModal } from '@/lib/ui/BaseModal';
+import { MODAL_SECTION_HEAD, ModalShell } from '@/features/shared/components/modals';
 import { Button } from '@/features/shared/components/buttons';
 import { RichMarkdown } from '@/features/shared/components/editors/RichMarkdown';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -40,39 +47,44 @@ export function KpiSuggestionDetail({ s, title, detail, busy, onApply, onDismiss
   const { t, tx } = useTranslation();
   const Icon = KIND_ICON[s.kind];
   return (
-    <BaseModal
+    <ModalShell
       isOpen
       onClose={onClose}
       titleId="kpi-suggestion-title"
-      maxWidthClass="max-w-[44rem]"
-      panelClassName="bg-background border border-primary/10 rounded-2xl p-6 shadow-elevation-4 max-h-[85vh] overflow-y-auto"
+      width="md"
+      icon={<Icon className="w-5 h-5" aria-hidden />}
+      title={title}
+      subtitle={detail || undefined}
+      footer={
+        <>
+          <Button variant="ghost" size="sm" disabled={busy} onClick={onDismiss}>
+            {t.kpis.suggest_dismiss}
+          </Button>
+          <Button
+            variant="accent"
+            tone="agent"
+            size="sm"
+            icon={<Check className="w-3.5 h-3.5" />}
+            disabled={busy}
+            onClick={onApply}
+            data-testid={`kpi-suggest-apply-detail-${s.kind}`}
+          >
+            {t.kpis.suggest_apply}
+          </Button>
+        </>
+      }
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3 min-w-0">
-          <span className="w-10 h-10 rounded-interactive bg-primary/10 border border-primary/25 flex items-center justify-center shrink-0">
-            <Icon className="w-5 h-5 text-primary" aria-hidden />
-          </span>
-          <div className="min-w-0">
-            <h2 id="kpi-suggestion-title" className="typo-section-title">{title}</h2>
-            {detail && <p className="typo-code mt-1 break-all">{detail}</p>}
-          </div>
-        </div>
-        <Button variant="ghost" size="icon-sm" aria-label={t.common.close} onClick={onClose}>
-          <X className="w-4 h-4" />
-        </Button>
-      </div>
-
       {s.rationale && (
         // Capped measure on purpose: this is the one place on the surface that
         // is genuinely reading matter, and a 700px line beats a 1000px one.
-        <div className="mt-4 rounded-card border border-primary/10 bg-card/30 px-4 py-3">
+        <div className="rounded-card border border-primary/10 bg-background/60 px-4 py-3">
           <RichMarkdown content={s.rationale} className="typo-body max-w-[70ch]" />
         </div>
       )}
 
       {s.citations.length > 0 && (
-        <div className="mt-4">
-          <h3 className="typo-caption uppercase tracking-[0.18em] text-foreground mb-1.5">
+        <div className="rounded-card border border-primary/10 bg-background/60 px-4 py-3">
+          <h3 className={`${MODAL_SECTION_HEAD} mb-1.5`}>
             {tx(t.kpis.suggest_sources, { count: s.citations.length })}
           </h3>
           {/* A list, not a newline-joined tooltip. A citation is something you
@@ -88,22 +100,6 @@ export function KpiSuggestionDetail({ s, title, detail, busy, onApply, onDismiss
         </div>
       )}
 
-      <div className="mt-5 pt-3 border-t border-primary/10 flex items-center justify-end gap-2">
-        <Button variant="ghost" size="sm" disabled={busy} onClick={onDismiss}>
-          {t.kpis.suggest_dismiss}
-        </Button>
-        <Button
-          variant="accent"
-          tone="agent"
-          size="sm"
-          icon={<Check className="w-3.5 h-3.5" />}
-          disabled={busy}
-          onClick={onApply}
-          data-testid={`kpi-suggest-apply-detail-${s.kind}`}
-        >
-          {t.kpis.suggest_apply}
-        </Button>
-      </div>
-    </BaseModal>
+    </ModalShell>
   );
 }

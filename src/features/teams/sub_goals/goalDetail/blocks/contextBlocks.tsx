@@ -14,16 +14,16 @@ import { tokenLabel } from '@/i18n/tokenMaps';
 
 import { useGoalDetailModel } from '../context';
 import { DEP_BLOCKS, DEP_FOLLOWS } from '../useGoalDetail';
-import { DepGroup, Section, TEAM_CHIP, type SectionTone } from '../parts';
+import { DepGroup, Section, TEAM_CHIP } from '../parts';
 
 /**
  * Dependencies + follow-ups. Always rendered, even with no rows, because the
  * add pickers are the only way to author a link.
  */
-export function Dependencies({ tone = 'quiet' }: { tone?: SectionTone }) {
+export function Dependencies() {
   const { dl, blocksDeps, followsDeps, goalById, candidates, addDep, removeDep } = useGoalDetailModel();
   return (
-    <Section icon={GitMerge} label={dl.goal_detail_dependencies} tone={tone} flush>
+    <Section icon={GitMerge} label={dl.goal_detail_dependencies} flush>
       <div className="space-y-3">
         <DepGroup
           label={dl.goal_dep_depends_on}
@@ -50,11 +50,11 @@ export function Dependencies({ tone = 'quiet' }: { tone?: SectionTone }) {
   );
 }
 
-export function LinkedTeams({ tone = 'quiet' }: { tone?: SectionTone }) {
+export function LinkedTeams() {
   const { dl, t, assignments, unlinkTeam } = useGoalDetailModel();
   if (assignments.length === 0) return null;
   return (
-    <Section icon={Users} label={dl.goal_detail_linked_teams} tone={tone}>
+    <Section icon={Users} label={dl.goal_detail_linked_teams}>
       <ul className="space-y-1.5">
         {assignments.map((asgn) => (
           <li key={asgn.id} className="group flex items-center gap-2.5 typo-body">
@@ -77,11 +77,11 @@ export function LinkedTeams({ tone = 'quiet' }: { tone?: SectionTone }) {
   );
 }
 
-export function ActivityFeed({ tone = 'quiet', limit = 12 }: { tone?: SectionTone; limit?: number }) {
+export function ActivityFeed({ limit = 12 }: { limit?: number }) {
   const { dl, signals } = useGoalDetailModel();
   if (signals.length === 0) return null;
   return (
-    <Section icon={Activity} label={dl.goal_detail_activity} tone={tone}>
+    <Section icon={Activity} label={dl.goal_detail_activity}>
       <ul className="space-y-1.5">
         {signals.slice(0, limit).map((sig) => (
           <li key={sig.id} className="flex items-start gap-2 typo-caption text-foreground">
