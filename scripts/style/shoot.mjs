@@ -24,7 +24,7 @@
 //            athena/chat: --query "variant=r5a&bg=none")
 //          --reduced-motion (emulates prefers-reduced-motion: reduce AND sets the in-app toggle, ?motion=reduce)
 //          --steps "click=<css>;press=<key>;wait=<ms>" (run after mount, before the settle; ';'-separated,
-//            e.g. --steps "click=[data-testid=chat-variant-spread];wait=600" or "press=Alt+W")
+//            e.g. --steps "click=[data-testid=chat-variant-filament];wait=600" or "press=Alt+W")
 //   --serve --module <id> also writes that module's synthetic tape to tmp/style-tapes/synthetic/ and
 //   prints a ready URL (the clock is NOT frozen in a served page).
 //
