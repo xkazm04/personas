@@ -4,9 +4,9 @@
  * deck draws its own surface: a tray holding a stack of cards, the top card
  * readable, the ones beneath peeking out to show how deep the queue is.
  *
- * The tray grows out of the chip / peek row that opened it and shrinks back
+ * The tray grows out of the segment / peek row that opened it and shrinks back
  * into it on close (origin morph); walking slides cards by direction; a
- * verdict stamps the card and sends it off toward its meaning.
+ * verdict stamps the card and sends it off along its meaning.
  */
 import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -21,8 +21,9 @@ import { DeckTray } from './DeckTray';
 import { useDeck, type DeckScope } from './useDeck';
 import { useDeckActions } from './useDeckActions';
 import { useDeckKeys } from './useDeckKeys';
+import './r2b.css';
 
-const TITLE_ID = 'p2-deck-title';
+const TITLE_ID = 'r2b-deck-title';
 
 /** One opening of the deck. `key` changes per opening so state starts fresh. */
 export interface DeckSession {
@@ -38,7 +39,7 @@ interface SessionProps extends Omit<DeckSession, 'key'> {
   ready: DecisionItem[];
   onDecide: (v: PrototypeVerdict) => void;
   onBack: () => void;
-  /** Set by the open session: undoes an armed verdict / open reason prompt; true when it did. */
+  /** Set by the open session: undoes an open key map / armed verdict / reason prompt; true when it did. */
   escapeGuard: MutableRefObject<(() => boolean) | null>;
 }
 
@@ -49,7 +50,7 @@ interface SessionProps extends Omit<DeckSession, 'key'> {
 export function DeckModal({ session, ...rest }: Omit<SessionProps, keyof Omit<DeckSession, 'key'> | 'escapeGuard'> & { session: DeckSession | null }) {
   const escapeGuard = useRef<(() => boolean) | null>(null);
   // Esc (BaseModal) and the backdrop both land here: the first press undoes
-  // what is armed, only a press with nothing to undo steps back.
+  // what is open or armed, only a press with nothing to undo steps back.
   const close = () => {
     if (escapeGuard.current?.()) return;
     rest.onBack();
@@ -85,6 +86,7 @@ function DeckSessionView({ scope, scopeLabel, startId, origin, items, ready, onD
   const [rating, setRating] = useState<number | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [missing, setMissing] = useState(false);
+  const [keysOpen, setKeysOpen] = useState(false);
   const item = deck.item;
 
   useEffect(() => {
@@ -94,9 +96,10 @@ function DeckSessionView({ scope, scopeLabel, startId, origin, items, ready, onD
   }, [item?.id]);
 
   const act = useDeckActions(deck, { rating, answers, onIncomplete: () => setMissing(true) });
-  useDeckKeys(deck, act, { enabled: !!item, onRate: setRating });
+  useDeckKeys(deck, act, { enabled: !!item, onRate: setRating, onKeys: () => setKeysOpen((o) => !o) });
   useEffect(() => {
     escapeGuard.current = () => {
+      if (keysOpen) { setKeysOpen(false); return true; }
       if (deck.prompt) { deck.setPrompt(null); return true; }
       if (deck.armed) { deck.setArmed(null); return true; }
       return false;
@@ -108,36 +111,42 @@ function DeckSessionView({ scope, scopeLabel, startId, origin, items, ready, onD
   const morph = originMotion(origin, still);
 
   return (
-    <motion.div initial={morph.initial} animate={morph.animate} exit={morph.exit} className={`relative w-full ${wide ? '' : 'max-w-[min(1120px,92vw)]'}`} data-testid="p2-deck">
-        <DeckTray
-          scopeLabel={scopeLabel}
-          queue={deck.queue}
-          index={deck.index}
-          type={item ? modalTypeOf(item.kind) : 'approval'}
-          isCouncil={item?.kind === 'council'}
-          onWalk={deck.walk}
-          onClose={onBack}
-          tall={wide}
-        >
-          <AnimatePresence initial={false} custom={deck.motion} mode="popLayout">
-            {item && (
-              <DeckCard
-                key={item.id}
-                item={item}
-                deck={deck}
-                act={act}
-                titleId={TITLE_ID}
-                state={{
-                  rating,
-                  setRating,
-                  answers,
-                  setAnswer: (k, v) => setAnswers((a) => ({ ...a, [k]: v })),
-                  missing,
-                }}
-              />
-            )}
-          </AnimatePresence>
-        </DeckTray>
+    <motion.div
+      initial={morph.initial}
+      animate={morph.animate}
+      exit={morph.exit}
+      className={`r2b relative w-full ${wide ? '' : 'max-w-[min(1120px,92vw)]'}`}
+      data-still={still || undefined}
+      data-testid="r2b-deck"
+    >
+      <DeckTray
+        scopeLabel={scopeLabel}
+        queue={deck.queue}
+        index={deck.index}
+        onWalk={deck.walk}
+        onClose={onBack}
+        tall={wide}
+      >
+        <AnimatePresence initial={false} custom={deck.motion} mode="popLayout">
+          {item && (
+            <DeckCard
+              key={item.id}
+              item={item}
+              deck={deck}
+              act={act}
+              titleId={TITLE_ID}
+              keys={{ open: keysOpen, toggle: () => setKeysOpen((o) => !o) }}
+              state={{
+                rating,
+                setRating,
+                answers,
+                setAnswer: (k, v) => setAnswers((a) => ({ ...a, [k]: v })),
+                missing,
+              }}
+            />
+          )}
+        </AnimatePresence>
+      </DeckTray>
     </motion.div>
   );
 }

@@ -28,8 +28,8 @@ export function queueOf(scope: DeckScope, items: DecisionItem[], ready: Decision
   return items.filter((x) => chipOf(x.kind) === scope.chip);
 }
 
-/** Beat between the stamp landing and the card leaving, in ms. */
-const STAMP_BEAT = 170;
+/** Beat between the decision and the card leaving, in ms: the 150 ms stamp lands, then holds a moment. */
+const STAMP_BEAT = 210;
 
 export interface DeckMotionState { dir: 1 | -1; leave: Leave }
 

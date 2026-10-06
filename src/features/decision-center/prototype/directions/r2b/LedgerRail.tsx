@@ -1,89 +1,94 @@
 /**
- * The ledger rail — P2's constant spine. Every card type, whatever its body,
- * carries the same right-hand rail in the same order (BacklogDetailLedger's
- * margin rail, generalised): who raised it, how long it has waited and what
- * it costs (its tier rides in the card head), its tags, its facts (scores metered), then a type-specific
- * section (contents for a report, participants for a chat), and at the foot
- * the DOCK — every action the card supports, with its key.
+ * The ledger rail — P2's constant spine, drawn as a recessed well. Every card
+ * type carries the same rail in the same order: who raised it (monogram), the
+ * two read-outs every card answers first as figures (waiting · cost — glyph
+ * and figure, the word in a tooltip), at most two tags, scored facts as
+ * instrument meters, a type section (contents for a report, people for a
+ * chat), and at its foot the DOCK — every action, with its key inside it.
+ *
+ * Plain facts (first seen, occurrences, saves…) and scored meters move to the
+ * body (its Record and Score rows) where the body has the width; only the
+ * reader cards, whose body is the document, keep them here.
  */
-import type { ReactNode } from 'react';
-import { Chip } from '@/features/shared/triage/triageFocusBridge';
+import type { CSSProperties, ReactNode } from 'react';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { DecisionItem } from '../../../model/decisionModel';
-import { costOf } from './deckMeta';
+import { CLOCK_ICON, COST_ICON, LAMP_TONE, costParts, visibleTags } from './deckMeta';
+import { Mono } from './Mono';
 import { ScoreMeter } from './ScoreMeter';
 
-/** The three numbers every card answers first: how long, how urgent, how much work. */
-function Stat({ label, children }: { label: string; children: ReactNode }) {
+export function metersOf(item: DecisionItem) {
+  return item.facts.filter((f): f is typeof f & { score: NonNullable<typeof f.score> } => !!f.score);
+}
+
+export function plainFactsOf(item: DecisionItem) {
+  // A fact that restates the spine (the waiting time, the source's own name) is noise.
+  return item.facts.filter((f) => !f.score && f.id !== 'waiting' && f.value !== item.source.label);
+}
+
+function Stat({ tip, icon, children }: { tip: string; icon: ReactNode; children: ReactNode }) {
   return (
-    <div className="flex min-w-0 flex-col gap-0.5 rounded-input bg-background/50 px-2 py-1.5">
-      <span className="typo-label">{label}</span>
-      <span className="truncate typo-body text-foreground">{children}</span>
-    </div>
+    <Tooltip content={tip}>
+      <div className="r2b-stat" tabIndex={0} aria-label={tip}>
+        <span className="r2b-stat-icon">{icon}</span>
+        <span className="r2b-stat-value">{children}</span>
+      </div>
+    </Tooltip>
   );
 }
 
-function Row({ label, children }: { label: string; children: ReactNode }) {
+export function LedgerRail({ item, extra, dock, plainInRail }: { item: DecisionItem; extra?: ReactNode; dock: ReactNode; plainInRail: boolean }) {
+  const meters = plainInRail ? metersOf(item) : [];
+  const plain = plainInRail ? plainFactsOf(item) : [];
+  const tags = visibleTags(item);
+  const cost = costParts(item);
+  const Clock = CLOCK_ICON;
+  const Cost = COST_ICON;
   return (
-    <div className="flex items-baseline justify-between gap-3 py-1.5">
-      <span className="typo-label">{label}</span>
-      <span className="min-w-0 truncate text-right typo-body text-foreground">{children}</span>
-    </div>
-  );
-}
-
-function SourceBadge({ item }: { item: DecisionItem }) {
-  // By codepoint, not code unit: an emoji-initial name must not split a surrogate pair.
-  const initial = ([...item.source.label][0] ?? '?').toUpperCase();
-  return (
-    <div className="flex items-center gap-2.5 pb-2">
-      <span
-        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-card border-2 bg-secondary/60 typo-heading text-foreground"
-        style={{ borderColor: item.source.color ?? 'var(--primary)' }}
-        aria-hidden
-      >
-        {initial}
-      </span>
-      <span className="flex min-w-0 flex-col">
-        <span className="typo-body truncate text-foreground">{item.source.label}</span>
-        {item.source.sublabel && <span className="typo-caption truncate">{item.source.sublabel}</span>}
-      </span>
-    </div>
-  );
-}
-
-export function LedgerRail({ item, extra, dock }: { item: DecisionItem; extra?: ReactNode; dock: ReactNode }) {
-  const meters = item.facts.filter((f): f is typeof f & { score: NonNullable<typeof f.score> } => !!f.score);
-  // A fact that restates the spine (the waiting time, the source's own name) is noise in the ledger.
-  const plainFacts = item.facts.filter((f) => !f.score && f.id !== 'waiting' && f.value !== item.source.label);
-  return (
-    <aside className="flex w-[320px] flex-shrink-0 flex-col border-l border-primary/10 bg-secondary/20" aria-label="Ledger" data-testid="p2-ledger-rail">
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-3">
-        <SourceBadge item={item} />
-        <div className="grid grid-cols-2 gap-1.5">
-          <Stat label="Waiting"><RelativeTime timestamp={item.createdAt} className="typo-body text-foreground" /></Stat>
-          <Stat label="Cost">{costOf(item)}</Stat>
+    <aside className="r2b-rail" aria-label="Ledger" data-testid="r2b-ledger-rail">
+      <div className="r2b-rail-scroll">
+        <div className="r2b-rail-sec flex items-center gap-3">
+          <Mono label={item.source.label} color={item.source.color} size="lg" />
+          <span className="flex min-w-0 flex-col">
+            <span className="typo-heading text-foreground">{item.source.label}</span>
+            {item.source.sublabel && <span className="typo-caption">{item.source.sublabel}</span>}
+          </span>
         </div>
-        {item.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 pt-2">
-            {item.tags.map((t) => <Chip key={t.id} label={t.label} tone={t.tone} />)}
+        <div className="r2b-rail-sec r2b-stats">
+          <Stat tip="Waiting — how long this has been held for you" icon={<Clock className="h-4 w-4" aria-hidden />}>
+            <RelativeTime timestamp={item.createdAt} format="elapsed" className="r2b-figure" />
+          </Stat>
+          <Stat tip="Cost to clear it" icon={<Cost className="h-4 w-4" aria-hidden />}>
+            <span className="r2b-figure">{cost.value}</span>
+            <span className="typo-caption r2b-caps">{cost.unit}</span>
+          </Stat>
+        </div>
+        {tags.length > 0 && (
+          <div className="r2b-rail-sec r2b-tags">
+            {tags.map((t) => (
+              <span key={t.id} className="r2b-tag typo-caption" style={{ '--r2b-tag-tone': LAMP_TONE[t.tone] } as CSSProperties}>{t.label}</span>
+            ))}
           </div>
         )}
-        {extra}
         {meters.length > 0 && (
-          <div className="flex flex-col pt-2">
+          <div className="r2b-rail-sec">
             {meters.map((f) => <ScoreMeter key={f.id} fact={f} />)}
           </div>
         )}
-        {plainFacts.length > 0 && (
-          <div className="mt-2 divide-y divide-primary/10">
-            {plainFacts.map((f) => <Row key={f.id} label={f.label}>{f.value}</Row>)}
+        {plain.length > 0 && (
+          <div className="r2b-rail-sec flex flex-col gap-2">
+            {plain.map((f) => (
+              <div key={f.id} className="flex items-baseline justify-between gap-3">
+                <span className="typo-caption">{f.label}</span>
+                <span className="typo-data r2b-num text-foreground">{f.value}</span>
+              </div>
+            ))}
           </div>
         )}
+        {extra && <div className="r2b-rail-sec">{extra}</div>}
       </div>
-      <div className="flex flex-col gap-2 border-t border-primary/10 bg-background/40 px-4 py-3" data-testid="p2-dock">
-        {dock}
-      </div>
+      <div className="r2b-dock" data-testid="r2b-dock">{dock}</div>
     </aside>
   );
 }

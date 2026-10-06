@@ -26,17 +26,17 @@ export function ReasonPrompt({ prompt, min, onSubmit, onCancel }: {
   };
 
   return (
-    <div className="flex flex-col gap-2" data-testid="p2-reason">
-      <span className="typo-heading text-foreground">{prompt.title}</span>
+    <div className="flex flex-col gap-2" data-testid="r2b-reason">
+      <span className="typo-eyebrow text-foreground">{prompt.title}</span>
       {prompt.options.map((o, i) => (
-        <Button key={o.id} variant="secondary" size="sm" block onClick={() => onSubmit(o.value)} className="justify-start! [&>span]:flex [&>span]:w-full [&>span]:items-center [&>span]:gap-2">
-          <Kbd>{i + 1}</Kbd>
-          <span className="truncate">{o.label}</span>
+        <Button key={o.id} variant="ghost" size="md" onClick={() => onSubmit(o.value)} className="r2b-reason-opt">
+          <span className="r2b-key">{<Kbd>{i + 1}</Kbd>}</span>
+          <span className="min-w-0 flex-1 text-left">{o.label}</span>
         </Button>
       ))}
       {prompt.freeText && (
         <textarea
-          id="p2-reason-text"
+          id="r2b-reason-text"
           rows={2}
           autoFocus={prompt.options.length === 0}
           value={text}
@@ -47,7 +47,7 @@ export function ReasonPrompt({ prompt, min, onSubmit, onCancel }: {
           }}
           placeholder={prompt.placeholder ?? 'Or write a reason…'}
           aria-label={prompt.title}
-          className="w-full resize-none rounded-input border border-primary/20 bg-background px-2.5 py-1.5 typo-body text-foreground focus:border-primary/50 focus:outline-none"
+          className="r2b-field typo-body"
         />
       )}
       {min > 0 && (
@@ -55,7 +55,7 @@ export function ReasonPrompt({ prompt, min, onSubmit, onCancel }: {
           {short ? `${min - text.trim().length} more characters needed` : 'Ready — ↵ sends it back'}
         </span>
       )}
-      <div className="flex items-center gap-1.5 typo-caption">
+      <div className="r2b-key flex items-center gap-1.5 typo-caption">
         {min === 0 && <><Kbd>↵</Kbd> {prompt.skipLabel.toLowerCase()}</>}
         <span className="ml-auto flex items-center gap-1.5"><Kbd>Esc</Kbd> cancel</span>
       </div>

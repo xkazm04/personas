@@ -1,10 +1,11 @@
 /**
- * P2 hub — strip -> peek -> deck, and the Esc ladder back down
+ * R2-B hub — strip -> peek -> deck, and the Esc ladder back down
  * (deck -> the peek it came from -> strip).
  */
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { chipOf, modalTypeOf, type DecisionItem, type HubChip } from '../../../model/decisionModel';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import { chipOf, modalTypeOf, type ChipCount, type DecisionItem, type HubChip } from '../../../model/decisionModel';
 import type { HubProps } from '../../directionContract';
 import { CHIP_META } from './deckMeta';
 import { originFrom } from './deckMotion';
@@ -13,6 +14,7 @@ import { FleetFloor } from './FleetFloor';
 import { Peek, type PeekVerdict } from './Peek';
 import { Strip } from './Strip';
 import { queueOf, type DeckScope } from './useDeck';
+import './r2b.css';
 
 const TYPE_LABEL = { approval: 'Approvals', backlog: 'Backlog', report: 'Reading', chat: 'Chat' } as const;
 
@@ -22,14 +24,29 @@ function scopeLabel(scope: DeckScope): string {
   return CHIP_META[scope.chip].label;
 }
 
+function kitParam(): string {
+  if (typeof window === 'undefined') return '';
+  return new URLSearchParams(window.location.search).get('kit') ?? '';
+}
+
 /** Harness-only deep link: `?kit=r2b:modal:<type>:<sourceId>` opens that card (the Lab only knows `modal:<type>`). */
 function kitItem(): string | null {
-  if (typeof window === 'undefined') return null;
-  const m = /^r2b:modal:\w+:(\w+)$/.exec(new URLSearchParams(window.location.search).get('kit') ?? '');
+  const m = /^r2b:modal:\w+:(\w+)$/.exec(kitParam());
   return m ? m[1]! : null;
 }
 
-export function Hub({ items, counts, ready, initial, onDecide }: HubProps) {
+/**
+ * Harness-only strip states: `?kit=r2b:strip:failed-zero` shows the council
+ * source failed and Ready at zero (the Lab falls back to the strip entry).
+ */
+function stripStates(counts: Record<HubChip, ChipCount>): Record<HubChip, ChipCount> {
+  if (kitParam() !== 'r2b:strip:failed-zero') return counts;
+  return { ...counts, council: { n: 0, lamp: 'danger', failed: true }, ready: { n: 0, lamp: 'neutral', failed: false } };
+}
+
+export function Hub({ items, counts: liveCounts, ready, initial, onDecide }: HubProps) {
+  const still = useReducedMotion();
+  const counts = useMemo(() => stripStates(liveCounts), [liveCounts]);
   const chipRefs = useRef<Partial<Record<HubChip | 'all', HTMLButtonElement | null>>>({});
   const anchor = useRef<HTMLElement | null>(null);
   const [peek, setPeek] = useState<{ chip: HubChip } | null>(null);
@@ -74,7 +91,7 @@ export function Hub({ items, counts, ready, initial, onDecide }: HubProps) {
   const verdict = (item: DecisionItem, v: PeekVerdict) => onDecide({ item, verdict: v });
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col bg-background" data-testid="p2-hub">
+    <div className="r2b relative flex h-full min-h-0 flex-col bg-background" data-still={still || undefined} data-testid="r2b-hub">
       <div className="relative z-20">
         <Strip
           counts={counts}

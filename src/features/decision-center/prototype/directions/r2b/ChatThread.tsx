@@ -1,7 +1,9 @@
 /**
  * The chat card's body: the thread tail, oldest first, ending at the question
- * (the last message is marked as the ask), then the composer. Space focuses
- * the composer (the deck's key); Enter sends, Shift+Enter breaks the line.
+ * (the last message is marked as the ask by a warning rule and the word
+ * "ask"), then the composer. Space focuses the composer (the deck's key);
+ * Enter sends, Shift+Enter breaks the line. `ThreadPeople` is the rail's type
+ * section: who is in the thread, as monograms.
  */
 import { useEffect, useRef, useState } from 'react';
 import { CornerDownLeft } from 'lucide-react';
@@ -9,24 +11,35 @@ import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownR
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Button } from '@/features/shared/components/buttons';
 import type { DecisionItem, DecisionThreadMessage } from '../../../model/decisionModel';
-
-const AUTHOR_TONE: Record<DecisionThreadMessage['author'], string> = {
-  user: 'border-primary/25 bg-primary/10',
-  persona: 'border-primary/10 bg-secondary/40',
-  athena: 'border-role-agent/30 bg-role-agent/10',
-};
+import { Mono } from './Mono';
 
 function Message({ m, ask }: { m: DecisionThreadMessage; ask: boolean }) {
   const mine = m.author === 'user';
   return (
-    <div className={`flex flex-col gap-1 ${mine ? 'items-end' : 'items-start'}`}>
-      <span className="flex items-center gap-1.5 typo-caption">
+    <div className="r2b-msg" data-mine={mine || undefined} data-ask={ask || undefined}>
+      <span className="r2b-msg-head typo-caption">
+        {!mine && <Mono label={m.name} />}
         <span className="text-foreground">{m.name}</span>
-        <RelativeTime timestamp={m.at} className="typo-caption" />
-        {ask && <span className="rounded-pill bg-status-warning/15 px-2 typo-caption text-status-warning">the ask</span>}
+        <RelativeTime timestamp={m.at} format="elapsed" className="typo-caption r2b-num" />
+        {ask && <span className="r2b-ask typo-label r2b-caps">· the ask</span>}
       </span>
-      <div className={`max-w-[80%] rounded-card border px-3.5 py-2.5 ${AUTHOR_TONE[m.author]} ${ask ? 'ring-2 ring-status-warning/40' : ''}`}>
+      <div className="r2b-msg-body">
         <MarkdownRenderer content={m.body} variant="card" className="typo-body text-foreground" />
+      </div>
+    </div>
+  );
+}
+
+export function ThreadPeople({ item }: { item: DecisionItem }) {
+  const names = [...new Set(item.thread?.messages.map((m) => m.name) ?? [])];
+  return (
+    <div className="flex flex-col gap-2.5">
+      <span className="typo-eyebrow r2b-unit">In this thread</span>
+      <div className="flex items-center gap-3">
+        <span className="r2b-mono-stack">
+          {names.map((n) => <Mono key={n} label={n} size="lg" tip />)}
+        </span>
+        <span className="typo-data r2b-num text-foreground">{names.length}</span>
       </div>
     </div>
   );
@@ -49,12 +62,12 @@ export function ChatThread({ item, onSend }: { item: DecisionItem; onSend: (text
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div ref={scroll} className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5" data-p2-scroll={item.id}>
+      <div ref={scroll} className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-8 py-6" data-r2b-scroll={item.id}>
         {messages.map((m, i) => <Message key={m.id} m={m} ask={i === messages.length - 1} />)}
       </div>
-      <div className="flex items-end gap-2 border-t border-primary/10 px-6 py-3">
+      <div className="r2b-composer">
         <textarea
-          data-p2-composer={item.id}
+          data-r2b-composer={item.id}
           rows={2}
           value={draft}
           disabled={!canReply}
@@ -63,10 +76,10 @@ export function ChatThread({ item, onSend }: { item: DecisionItem; onSend: (text
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
             if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); e.currentTarget.blur(); }
           }}
-          placeholder={canReply ? `Reply to ${item.source.label}…  (Space to focus, ↵ to send)` : 'This channel only takes replies in its own view'}
+          placeholder={canReply ? `Reply to ${item.source.label}…` : 'This channel only takes replies in its own view'}
           aria-label={`Reply to ${item.source.label}`}
-          className="min-h-[64px] flex-1 resize-none rounded-input border border-primary/20 bg-background px-3 py-2 typo-body text-foreground focus:border-primary/50 focus:outline-none"
-          data-testid="p2-composer"
+          className="r2b-field min-h-[64px] flex-1 typo-body"
+          data-testid="r2b-composer"
         />
         <Button variant="primary" size="md" onClick={send} disabled={!draft.trim()} iconRight={<CornerDownLeft className="h-4 w-4" aria-hidden />}>
           Send

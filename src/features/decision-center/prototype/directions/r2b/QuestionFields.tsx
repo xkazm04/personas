@@ -17,7 +17,7 @@ interface ControlProps {
 
 function ChoiceControl({ field, value, onAnswer }: ControlProps) {
   return (
-    <div className="flex flex-wrap gap-2" role="radiogroup" id={`p2-field-${field.key}`}>
+    <div className="flex flex-wrap gap-2" role="radiogroup" id={`r2b-field-${field.key}`}>
       {(field.options ?? []).map((o) => (
         <Button key={o} variant={value === o ? 'accent' : 'secondary'} tone={value === o ? 'info' : undefined} size="sm" role="radio" aria-checked={value === o} onClick={() => onAnswer(o)}>
           {o}
@@ -31,17 +31,17 @@ function TextControl({ field, value, onAnswer }: ControlProps) {
   return (
     <div className="flex flex-col gap-2">
       <input
-        id={`p2-field-${field.key}`}
+        id={`r2b-field-${field.key}`}
         value={value}
         onChange={(e) => onAnswer(e.target.value)}
         placeholder={field.placeholder ?? 'Type an answer'}
-        className="w-full max-w-sm rounded-input border border-primary/20 bg-background px-3 py-1.5 typo-body text-foreground focus:border-primary/50 focus:outline-none"
+        className="r2b-field max-w-sm typo-body"
       />
       {field.suggestions && field.suggestions.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="typo-caption">Suggested:</span>
+          <span className="typo-caption">Suggested</span>
           {field.suggestions.map((s) => (
-            <Button key={s} variant="ghost" size="xs" onClick={() => onAnswer(s)} className="border border-primary/15">
+            <Button key={s} variant="secondary" size="xs" onClick={() => onAnswer(s)}>
               {s}
             </Button>
           ))}
@@ -71,19 +71,20 @@ export function QuestionFields({ input, answers, onAnswer, missing }: {
   missing: boolean;
 }) {
   return (
-    <section className="flex max-w-[68ch] flex-col gap-4" aria-label="Answers" data-testid="p2-question-fields">
+    <div className="flex flex-col gap-5" aria-label="Answers" role="group" data-testid="r2b-question-fields">
       {input.fields.map((field, i) => {
         const empty = missing && !answers[field.key]?.trim();
         const Control = controlFor(field.kind);
         return (
           <div key={field.key} className="flex flex-col gap-2">
-            <label htmlFor={`p2-field-${field.key}`} className={`typo-heading ${empty ? 'text-status-warning' : 'text-foreground'}`}>
-              {i + 1}. {field.prompt}{empty ? ' — needed' : ''}
+            <label htmlFor={`r2b-field-${field.key}`} className={`flex items-baseline gap-2.5 typo-heading ${empty ? 'text-status-warning' : 'text-foreground'}`}>
+              <span className="r2b-num typo-data r2b-unit">{String(i + 1).padStart(2, '0')}</span>
+              {field.prompt}{empty ? ' — needed' : ''}
             </label>
             <Control field={field} value={answers[field.key] ?? ''} onAnswer={(v) => onAnswer(field.key, v)} />
           </div>
         );
       })}
-    </section>
+    </div>
   );
 }

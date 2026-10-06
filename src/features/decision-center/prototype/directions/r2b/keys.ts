@@ -24,5 +24,5 @@ export function digitOf(e: KeyboardEvent): number | null {
 
 /** The composer of THIS card — two cards coexist mid-slide, so never a global id. */
 export function focusComposer(itemId: string): void {
-  document.querySelector<HTMLTextAreaElement>(`[data-p2-composer="${CSS.escape(itemId)}"]`)?.focus();
+  document.querySelector<HTMLTextAreaElement>(`[data-r2b-composer="${CSS.escape(itemId)}"]`)?.focus();
 }

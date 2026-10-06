@@ -3,7 +3,8 @@
  *   ←/→ (also K/J) walk · ↑/↓ scroll the body · A accept · R reject (arm;
  *   Enter or R confirms; a reason may follow) · S skip · D done (reports,
  *   chat) · Space focus the composer · 1-9 branches (or reason options while
- *   a prompt is open) · Shift+1-5 rate a report · Esc steps back.
+ *   a prompt is open) · Shift+1-5 rate a report · ? toggles the key map ·
+ *   Esc steps back (closing the key map first).
  *
  * Escape is BaseModal's (one owner, any keyboard provider or none): its
  * onClose first asks the deck to disarm an armed verdict or close a reason
@@ -17,11 +18,12 @@ import { DECK_PRIORITY, digitOf, focusComposer, isTypingTarget, plain } from './
 
 const SCROLL_STEP = 120;
 
-export function useDeckKeys(deck: DeckController, act: DeckActions, opts: { enabled: boolean; onRate: (n: number) => void }) {
+export function useDeckKeys(deck: DeckController, act: DeckActions, opts: { enabled: boolean; onRate: (n: number) => void; onKeys: () => void }) {
   useAppKeyboard((e) => {
     // Escape belongs to BaseModal (80); its onClose asks the deck to disarm first (DeckModal escapeGuard).
     if (e.key === 'Escape') return false;
     if (isTypingTarget(e.target) || !plain(e) || !deck.item) return false;
+    if (e.key === '?') { opts.onKeys(); e.preventDefault(); return true; }
     const digit = digitOf(e);
 
     if (deck.prompt) {
@@ -44,7 +46,7 @@ export function useDeckKeys(deck: DeckController, act: DeckActions, opts: { enab
     }
     if (e.shiftKey && e.key !== 'Enter') return false;
 
-    const scroller = () => document.querySelector<HTMLElement>(`[data-p2-scroll="${CSS.escape(deck.item!.id)}"]`);
+    const scroller = () => document.querySelector<HTMLElement>(`[data-r2b-scroll="${CSS.escape(deck.item!.id)}"]`);
     switch (e.key) {
       case 'ArrowRight': case 'j': case 'J': deck.walk(1); break;
       case 'ArrowLeft': case 'k': case 'K': deck.walk(-1); break;

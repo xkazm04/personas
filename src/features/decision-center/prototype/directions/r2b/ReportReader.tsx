@@ -19,18 +19,17 @@ export function ReportReader({ item, doc, reader }: { item: DecisionItem; doc: P
   const isHtml = item.document?.format === 'html';
   const section = doc.headings.find((h) => h.id === reader.active)?.text;
   return (
-    <div ref={reader.scrollRef} className="relative min-h-0 flex-1 overflow-y-auto" data-p2-scroll={item.id} data-testid="p2-reader">
+    <div ref={reader.scrollRef} className="relative min-h-0 flex-1 overflow-y-auto" data-r2b-scroll={item.id} data-testid="r2b-reader">
       <div
-        className="sticky top-0 z-10 flex items-center gap-3 border-b border-primary/10 bg-background px-6"
+        className="r2b-reader-bar"
         style={{ height: READER_CHROME_OFFSET }}
       >
         <span className="min-w-0 flex-1 truncate typo-caption">
           {isHtml ? 'HTML document' : section ?? 'Start'}
         </span>
-        <span className="typo-data tabular-nums text-foreground">{formatPercent(reader.progress, { fromRatio: true, precision: 0 })}</span>
-        <span className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/10" aria-hidden>
+        <span className="typo-data r2b-num text-foreground">{formatPercent(reader.progress, { fromRatio: true, precision: 0 })}</span>
+        <span className="r2b-progress" aria-hidden>
           <motion.span
-            className="block h-full origin-left bg-primary"
             animate={{ scaleX: reader.progress }}
             transition={{ duration: 0.12 }}
           />
@@ -51,8 +50,8 @@ export function ReportReader({ item, doc, reader }: { item: DecisionItem; doc: P
 
 export function ReaderContents({ doc, reader, isHtml }: { doc: PreparedDocument; reader: ReaderState; isHtml: boolean }) {
   return (
-    <nav className="flex flex-col gap-1 pt-4" aria-label="Contents" data-testid="p2-contents">
-      <span className="typo-label">Contents</span>
+    <nav className="flex flex-col" aria-label="Contents" data-testid="r2b-contents">
+      <span className="typo-eyebrow r2b-unit pb-1">Contents</span>
       {isHtml || doc.headings.length === 0 ? (
         <span className="typo-caption">No outline — this document carries its own layout.</span>
       ) : (
@@ -65,9 +64,10 @@ export function ReaderContents({ doc, reader, isHtml }: { doc: PreparedDocument;
               size="xs"
               onClick={() => reader.jump(h.id)}
               aria-current={on ? 'location' : undefined}
-              className={`w-full min-w-0 justify-start! rounded-input text-left [&>span]:block [&>span]:min-w-0 [&>span]:truncate ${h.level === 1 ? '' : h.level === 2 ? 'pl-4' : 'pl-7'} ${on ? 'bg-primary/10 text-primary' : 'text-foreground'}`}
+              className="r2b-toc"
+              style={{ paddingLeft: 12 + (h.level - 1) * 12 }}
             >
-              <span className="truncate typo-caption text-current">{h.text}</span>
+              <span className="typo-caption text-current">{h.text}</span>
             </Button>
           );
         })

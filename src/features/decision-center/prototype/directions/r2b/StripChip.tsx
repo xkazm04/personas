@@ -1,23 +1,26 @@
 /**
- * One chip on the strip: icon with its severity lamp, label (dropped to a
- * tooltip when the bar is narrow), and a count that rolls when it changes.
+ * One segment of the strip's segmented control: kind glyph with its severity
+ * lamp, the count as the hero figure (an odometer when it changes), and the
+ * label in small caps when the bar has room (a tooltip always has it).
  *
- * Three honest states: zero (present, dimmed, lamp off — positions never
- * shift), failed (a warning glyph where the number would be — never a 0), and
- * "next" (the chip holding the first item of the whole roster wears a tint and
- * an underline: it is where the queue starts).
+ * The lamp lights only for held (amber) and critical or blocking (red) — a
+ * row of "waiting" dots is wallpaper. Three honest states: zero (present,
+ * quiet ink, lamp off — positions never
+ * shift), failed (a warning glyph where the figure would be — never a 0), and
+ * "next" (the segment holding the roster's first item: its figure and glyph
+ * take the lamp's tone and its lamp breathes). The raised plate slides to the
+ * open segment, or rests on "next" when nothing is open.
  */
-import { forwardRef, useState } from 'react';
+import { forwardRef, useState, type CSSProperties } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { TriangleAlert } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
-import { TONE_CHIP } from '@/features/agents/quick-answer/triage/deck/DeckChips';
 import type { ChipCount, HubChip } from '../../../model/decisionModel';
-import { CHIP_META, LAMP_FILL } from './deckMeta';
+import { CHIP_META, LAMP_TONE } from './deckMeta';
 
-function RollingCount({ n }: { n: number }) {
+export function RollingCount({ n, className = 'r2b-seg-count' }: { n: number; className?: string }) {
   const still = useReducedMotion();
   const [prev, setPrev] = useState(n);
   const [dir, setDir] = useState(1);
@@ -26,16 +29,16 @@ function RollingCount({ n }: { n: number }) {
     setPrev(n);
   }
   return (
-    <span className="relative inline-flex h-5 min-w-[0.75rem] items-center justify-center overflow-hidden">
+    <span className="relative inline-flex h-6 items-center justify-center overflow-hidden">
       <AnimatePresence mode="popLayout" initial={false} custom={dir}>
         <motion.span
           key={n}
           custom={dir}
-          initial={still ? { opacity: 0 } : { y: dir * 12, opacity: 0 }}
+          initial={still ? { opacity: 0 } : { y: dir * 18, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={still ? { opacity: 0 } : { y: -dir * 12, opacity: 0 }}
+          exit={still ? { opacity: 0 } : { y: -dir * 18, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 420, damping: 30 }}
-          className="typo-data tabular-nums"
+          className={`r2b-num ${className}`}
         >
           {n}
         </motion.span>
@@ -50,26 +53,25 @@ export interface StripChipProps {
   compact: boolean;
   isNext: boolean;
   open: boolean;
+  /** The raised plate sits on this segment (open, or next when nothing is open). */
+  plate: boolean;
   onPress: () => void;
 }
 
 export const StripChip = forwardRef<HTMLButtonElement, StripChipProps>(function StripChip(
-  { chip, count, compact, isNext, open, onPress },
+  { chip, count, compact, isNext, open, plate, onPress },
   ref,
 ) {
+  const still = useReducedMotion();
   const meta = CHIP_META[chip];
   const Icon = meta.icon;
   const zero = !count.failed && count.n === 0;
+  // A lamp is a warning light: only held (amber) and critical / blocking (red) light it.
+  const lit = !zero && !count.failed && (count.lamp === 'danger' || count.lamp === 'warning');
   const tip = count.failed
     ? `${meta.label}: the source did not answer — count unknown`
     : `${meta.label}: ${count.n} · ${meta.hint}`;
-  const surface = count.failed
-    ? 'border-dashed border-status-error/50 text-status-error'
-    : zero
-      ? 'border-primary/10 text-muted-foreground'
-      : isNext
-        ? TONE_CHIP[count.lamp === 'neutral' ? 'accent' : count.lamp]
-        : 'border-primary/15 bg-secondary/30 text-foreground';
+  const tone = lit ? LAMP_TONE[count.lamp] : 'var(--primary)';
 
   return (
     <Tooltip content={tip} placement="bottom">
@@ -81,20 +83,35 @@ export const StripChip = forwardRef<HTMLButtonElement, StripChipProps>(function 
         aria-pressed={open}
         aria-expanded={open}
         aria-label={tip}
-        data-testid={`p2-chip-${chip}`}
-        className={`relative rounded-input border ${surface} ${open ? 'ring-2 ring-primary/50' : ''} ${compact ? 'px-1.5! [&>span]:gap-1' : 'px-2! [&>span]:gap-1.5'} [&>span]:inline-flex [&>span]:items-center`}
+        data-testid={`r2b-chip-${chip}`}
+        data-plate={plate || undefined}
+        data-next={(isNext && !zero) || undefined}
+        data-zero={zero || undefined}
+        data-failed={count.failed || undefined}
+        className="r2b-seg"
+        style={{ '--r2b-seg-tone': tone } as CSSProperties}
       >
-        <span className="relative inline-flex">
+        {plate && (
+          <motion.span
+            layoutId={still ? undefined : 'r2b-seg-plate'}
+            transition={{ type: 'spring', stiffness: 420, damping: 36 }}
+            className="r2b-seg-plate"
+            aria-hidden
+          />
+        )}
+        <span className="r2b-seg-icon">
           <Icon className="h-4 w-4" aria-hidden />
-          {!zero && !count.failed && count.lamp !== 'neutral' && (
-            <span className={`absolute -right-1 -top-1 h-2 w-2 rounded-pill ring-2 ring-background ${LAMP_FILL[count.lamp]}`} aria-hidden />
+          {lit && (
+            <span
+              className="r2b-lamp"
+              data-breathe={(isNext && !still) || undefined}
+              style={{ '--r2b-lamp': LAMP_TONE[count.lamp] } as CSSProperties}
+              aria-hidden
+            />
           )}
         </span>
-        {!compact && <span className="typo-caption text-current">{meta.label}</span>}
         {count.failed ? <TriangleAlert className="h-4 w-4 text-status-error" aria-hidden /> : <RollingCount n={count.n} />}
-        {isNext && !zero && (
-          <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-pill bg-current" aria-hidden />
-        )}
+        {!compact && <span className="r2b-seg-label r2b-caps">{meta.label}</span>}
       </Button>
     </Tooltip>
   );
