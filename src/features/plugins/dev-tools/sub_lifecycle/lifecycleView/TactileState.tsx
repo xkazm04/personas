@@ -26,7 +26,7 @@ import { bindingKindLabel, bindingStateLabel, outcomeLabel, stepGlyph, stepLabel
 import { STATE_TEXT } from '../journey/journeyStyles';
 import { useLifecycleViewModel } from './context';
 import { KeyCap, MiniKey } from './TactileKeys';
-import { OUTCOMES } from './variantShared';
+import { OUTCOMES } from './railShared';
 
 const FLOOR: Record<LifecycleOutcome, string> = {
   done: 'bg-status-success',

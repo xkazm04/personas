@@ -24,7 +24,7 @@ import type { JourneyNode } from '../journey/journeyModel';
 import { useLifecycleViewModel } from './context';
 import { useStepRoving } from './blocks/useStepRoving';
 import { BeadTrack, KeyCap } from './TactileKeys';
-import { enterDelay } from './variantShared';
+import { enterDelay } from './railShared';
 
 const GROOVE = 'absolute top-1/2 -translate-y-1/2 h-0.5 bg-primary/15';
 

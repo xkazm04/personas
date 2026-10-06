@@ -1,103 +1,105 @@
 /**
- * RAIL BELOW - the Lifecycle body, and the only one: the journey is a horizontal
- * two-lane rail read left to right, and the selected step's state is docked in a
- * reserved region directly beneath it. Nothing moves when you pick a node; the
- * page reads top-down, journey then state then evidence.
+ * RAIL BELOW - the Lifecycle body. The journey is a horizontal two-lane rail
+ * read left to right, the selected step's state is docked in a reserved region
+ * beneath it, and the page reads top-down: verdict, journey, state, evidence.
  *
- * Two prototype rounds tried to find an alternative and the owner closed both.
- * The first varied this by SKIN - "to change colors of borders or background is
- * not prototyping nor component redesign" - and the second built three rival
- * containers, which he also declined. Both mechanisms are deleted: there is no
- * skin registry, no concept registry and no picker, every value the kept skin
- * held is an ordinary class at the site that draws it, and the two props that
- * existed only so a rival container could stack this one (`StateLegend layout`,
- * `StepState columns`) are collapsed to the single branch that ships.
+ * TACTILE won the 2026-10-06 prototype round (over Instrument and Editorial,
+ * and over the flat baseline): every part is a material control with depth -
+ * raised, recessed, seated - and every motion is the physics of pressing one.
+ *
+ * - HEADLINE as a PLATE: a raised label plate with an indicator lamp; a new
+ *   verdict settles onto it with a spring. It carries the weakest step's own
+ *   status ink, one type step above the legend.
+ * - RAIL as keys in two recessed trays, the selected key SEATED, evidence as
+ *   beads in a slot (`TactileRail`, `TactileKeys`).
+ * - LEGEND as a row of mini key caps, each with its step count on a raised
+ *   tab, and a bead slot as the evidence sample.
+ * - STATE as a raised control panel whose counters ROLL between steps
+ *   (`TactileState`); LEDGER rows with outcome chips and part-label source tags
+ *   (`tactileColumns`, `RailLedger`).
  *
  * The reserved region's min-height is held whether or not a step is selected, so
  * the state panel is never a block that appears and shoves the rail
  * (overview-loading law 6: a region is retired by its OWN data).
- *
- * The weakest-step sentence - the single most important line on the page, and the
- * reason the model pre-seeds the selection - rendered as `typo-body
- * text-foreground`, exactly the legend footnote two rows below it, with no trace
- * of the severity the model had already computed. It reads one type step up and
- * carries the weakest step's own status ink.
  */
-import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { Numeric } from '@/features/shared/components/display/Numeric';
+import type { LifecycleBindingState } from '@/lib/bindings/LifecycleBindingState';
 
 import { JourneyGhost } from '../journey/JourneyGhost';
-import { STATE_TEXT } from '../journey/journeyStyles';
+import { bindingStateLabel } from '../journey/journeyLabels';
+import { LEGEND_STATES, STATE_TEXT } from '../journey/journeyStyles';
 import { useLifecycleViewModel } from './context';
-import { EvidenceLedger } from './blocks/EvidenceLedger';
 import { LifecycleActions } from './blocks/LifecycleActions';
-import { StateLegend } from './blocks/StateLegend';
-import { StepRail } from './blocks/StepRail';
-import { StepState } from './blocks/StepState';
-import { RailBelowVariant1 } from './RailBelowVariant1';
-import { RailBelowVariant2 } from './RailBelowVariant2';
-import { RailBelowVariant3 } from './RailBelowVariant3';
+import { BeadTrack, MiniKey } from './TactileKeys';
+import { TactileRail } from './TactileRail';
+import { TactileState } from './TactileState';
+import { tactileColumns } from './tactileColumns';
+import { RailLedger } from './RailLedger';
+import { OUTCOMES, stateCounts } from './railShared';
 
-function RailBelowBaseline() {
-  const { headline, headlineState, order, loading } = useLifecycleViewModel();
+const LAMP: Record<LifecycleBindingState, string> = {
+  live: 'bg-status-success ring-status-success/20',
+  detected: 'bg-status-info ring-status-info/20',
+  pending: 'bg-status-warning ring-status-warning/20',
+  missing: 'bg-status-error ring-status-error/20',
+  advisory: 'bg-foreground/50 ring-foreground/10',
+};
+
+function Plate() {
+  const { headline, headlineState } = useLifecycleViewModel();
   const ink = headlineState ? STATE_TEXT[headlineState] : 'text-foreground';
-
   return (
-    <div className="space-y-5 pb-6" data-testid="lc-journey">
-      <LifecycleActions />
-
-      <div className="text-center">
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={headline}
+        className="mx-auto flex w-fit max-w-full items-center gap-3 rounded-card border border-primary/15 bg-gradient-to-b from-secondary/50 to-secondary/20 px-4 py-2.5 shadow-elevation-1"
+        initial={{ opacity: 0, scale: 0.97, y: -3 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, transition: { duration: 0.08 } }}
+        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+      >
+        {headlineState && <span aria-hidden className={`h-2.5 w-2.5 shrink-0 rounded-full ring-4 ${LAMP[headlineState]}`} />}
         <p className={`typo-body-lg ${ink}`} data-testid="lc-weakest">{headline}</p>
-      </div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
 
-      {order.length > 0 ? <StepRail /> : loading ? <JourneyGhost /> : null}
-
-      <StateLegend />
-
-      <div className="min-h-[26rem] border-t border-primary/15 pt-5 space-y-4" data-testid="lc-state-region">
-        <StepState />
-        <div className="h-[17rem]">
-          <EvidenceLedger />
-        </div>
-      </div>
+function KeyLegend() {
+  const { dl, order } = useLifecycleViewModel();
+  const counts = stateCounts(order);
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2" data-testid="lc-legend">
+      {LEGEND_STATES.map((s) => (
+        <span key={s} className="flex items-center gap-2 typo-label text-foreground">
+          <MiniKey state={s} />
+          {bindingStateLabel(dl, s)}
+          <Numeric value={counts[s]} className="typo-caption rounded-full bg-secondary/50 px-1.5 shadow-inner" />
+        </span>
+      ))}
+      <span className="flex items-center gap-2 typo-caption">
+        <BeadTrack beads={OUTCOMES.map((o) => ({ key: o, outcome: o }))} delay={0.4} />
+        {dl.lc_legend_evidence}
+      </span>
     </div>
   );
 }
 
-// TODO(prototype, 2026-10-06): consolidate RailBelow switcher
-// Throwaway prototype switcher: the same arrangement and data in four component
-// languages, baseline by default. Session state only; the operator picks one and
-// the switcher, the losers and `variantShared`/`VariantLedger` go with it.
-type RailVariant = 'baseline' | 'instrument' | 'editorial' | 'tactile';
-
-const RAIL_VARIANTS: { id: RailVariant; label: string }[] = [
-  { id: 'baseline', label: 'Baseline' },
-  { id: 'instrument', label: '1 Instrument' },
-  { id: 'editorial', label: '2 Editorial' },
-  { id: 'tactile', label: '3 Tactile' },
-];
-
 export function RailBelow() {
-  const [variant, setVariant] = useState<RailVariant>('baseline');
+  const { order, loading } = useLifecycleViewModel();
   return (
-    <div className="space-y-4">
-      <div className="mx-auto w-fit">
-        <SegmentedTabs
-          tabs={RAIL_VARIANTS}
-          activeTab={variant}
-          onTabChange={setVariant}
-          ariaLabel="RailBelow prototype variant"
-          idPrefix="lc-proto"
-          fullWidth={false}
-          size="sm"
-        />
-      </div>
-      <div role="tabpanel" id={`lc-proto-panel-${variant}`} aria-labelledby={`lc-proto-tab-${variant}`}>
-        {variant === 'baseline' && <RailBelowBaseline />}
-        {variant === 'instrument' && <RailBelowVariant1 />}
-        {variant === 'editorial' && <RailBelowVariant2 />}
-        {variant === 'tactile' && <RailBelowVariant3 />}
+    <div className="space-y-5 pb-6" data-testid="lc-journey">
+      <LifecycleActions />
+      <Plate />
+      {order.length > 0 ? <TactileRail /> : loading ? <JourneyGhost /> : null}
+      <KeyLegend />
+      <div className="min-h-[26rem] border-t border-primary/15 pt-5 space-y-4" data-testid="lc-state-region">
+        <TactileState />
+        <div className="h-[17rem]">
+          <RailLedger columnsFor={tactileColumns} tableId="lifecycle-evidence" rowHeight={44} />
+        </div>
       </div>
     </div>
   );

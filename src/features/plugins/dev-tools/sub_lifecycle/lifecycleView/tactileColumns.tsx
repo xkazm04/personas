@@ -9,7 +9,7 @@ import type { LifecycleOutcome } from '@/lib/bindings/LifecycleOutcome';
 
 import { outcomeLabel, sourceKindGlyph, sourceKindLabel } from '../journey/journeyLabels';
 import { Bead } from './TactileKeys';
-import { ledgerColumns } from './variantColumns';
+import { ledgerColumns } from './ledgerColumns';
 
 const ABSENT = '·';
 

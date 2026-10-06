@@ -1,8 +1,7 @@
 /**
- * The evidence ledger's column MODEL for the RailBelow prototype variants: the
- * baseline's keys, order, widths and sorts (`blocks/evidenceColumns`), with the
- * CELL renderers supplied per variant. A variant redesigns how a row is drawn,
- * never which question the ledger answers.
+ * The evidence ledger's column MODEL: keys, order, widths and sorts, with the
+ * CELL renderers supplied by the caller (`tactileColumns`). The model decides
+ * which question the ledger answers; the cells only decide how a row is drawn.
  */
 import type { ReactNode } from 'react';
 
@@ -13,7 +12,7 @@ import type { LifecycleOutcome } from '@/lib/bindings/LifecycleOutcome';
 import { sourceKindLabel } from '../journey/journeyLabels';
 import type { EvidenceRow } from './blocks/evidenceRows';
 
-/** Worst first, as in the baseline: a sort on Outcome asks what went wrong. */
+/** Worst first: a sort on Outcome asks what went wrong. */
 const SEVERITY: Record<LifecycleOutcome, number> = { failed: 0, skipped: 1, unknown: 2, done: 3 };
 
 export interface LedgerCells {

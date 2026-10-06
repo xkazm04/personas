@@ -1,9 +1,7 @@
 /**
- * The evidence ledger for the RailBelow prototype variants: the same
- * `UnifiedTable` contract as `blocks/EvidenceLedger` (cold-load ghost, settled
- * empty state, one-shot row reveal keyed on the step) with the CELLS supplied by
- * the variant. Column keys, order and sorts stay the baseline's, so the ledger
- * answers the same question in every variant and only its row components differ.
+ * The Lifecycle evidence ledger: a `UnifiedTable` with a cold-load ghost, a
+ * settled empty state and a one-shot row reveal keyed on the step, its CELLS
+ * supplied by the caller (`tactileColumns`).
  */
 import { useMemo } from 'react';
 
@@ -13,20 +11,20 @@ import type { Translations } from '@/i18n/en';
 import { useLifecycleViewModel } from './context';
 import { evidenceRowsFor, type EvidenceRow } from './blocks/evidenceRows';
 
-interface VariantLedgerProps {
+interface RailLedgerProps {
   columnsFor: (t: Translations) => TableColumn<EvidenceRow>[];
   tableId: string;
   rowHeight?: number;
   rowAccent?: (r: EvidenceRow) => string | undefined;
 }
 
-/** The baseline's accent: a bad outcome marks its row edge. */
+/** A bad outcome marks its row edge. */
 const ACCENT = (r: EvidenceRow) =>
   r.outcome === 'failed' ? 'border-l-status-error/70'
     : r.outcome === 'skipped' ? 'border-l-status-warning/70'
       : undefined;
 
-export function VariantLedger({ columnsFor, tableId, rowHeight = 40, rowAccent = ACCENT }: VariantLedgerProps) {
+export function RailLedger({ columnsFor, tableId, rowHeight = 40, rowAccent = ACCENT }: RailLedgerProps) {
   const { t, dl, evidence, selected, loading, error, refetch } = useLifecycleViewModel();
   const columns = useMemo(() => columnsFor(t), [columnsFor, t]);
   const rows = useMemo(() => evidenceRowsFor(selected?.id ?? null, evidence), [selected, evidence]);

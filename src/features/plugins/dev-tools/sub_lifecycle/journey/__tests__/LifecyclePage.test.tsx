@@ -91,7 +91,9 @@ describe('LifecyclePage', () => {
 
     fireEvent.click(await screen.findByTestId('lc-node-gate'));
     const state = await screen.findByTestId('lc-step-state');
-    expect(state.textContent).toContain('Rule for gate.');
+    // The panel swaps its body after the previous step's exit settles
+    // (AnimatePresence mode="wait"), so the new step arrives a tick later.
+    await waitFor(() => expect(state.textContent).toContain('Rule for gate.'));
     expect(state.textContent).toContain('Git hook');
     expect(screen.getByTestId('lc-node-gate').getAttribute('aria-pressed')).toBe('true');
     // The retired right-drawer must not be reachable from a node any more.
