@@ -15,23 +15,19 @@
  * 16px so a 2px dash renders as more than one dash per side.
  *
  * `inline` lays the five states out as a row that centres under a figure;
- * `stacked` is the same key as a column, for a concept that keeps it in a
- * gutter. Nothing else varies: a legend that disagreed with the marks it
- * explains would be a lie, so the chips come from the shared ladder either way.
+ * The chips come from the shared ladder: a legend that disagreed with the marks
+ * it explains would be a lie.
  */
 import { bindingStateLabel } from '../../journey/journeyLabels';
 import { LEGEND_STATES, STATE_CHIP } from '../../journey/journeyStyles';
 import { useLifecycleViewModel } from '../context';
 
-const WRAP = {
-  inline: 'flex flex-wrap items-center justify-center gap-x-5 gap-y-2',
-  stacked: 'flex flex-col items-start gap-1.5',
-} as const;
+const WRAP = 'flex flex-wrap items-center justify-center gap-x-5 gap-y-2';
 
-export function StateLegend({ layout = 'inline' }: { layout?: keyof typeof WRAP }) {
+export function StateLegend() {
   const { dl } = useLifecycleViewModel();
   return (
-    <div className={WRAP[layout]} data-testid="lc-legend">
+    <div className={WRAP} data-testid="lc-legend">
       {LEGEND_STATES.map((s) => (
         <span key={s} className="flex items-center gap-2 typo-label text-foreground">
           <span className={`shrink-0 w-4 h-4 rounded-interactive ${STATE_CHIP[s]}`} aria-hidden />

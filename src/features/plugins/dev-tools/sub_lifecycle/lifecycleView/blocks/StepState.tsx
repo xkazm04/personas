@@ -20,9 +20,6 @@
  *    figure) read exactly like the phase (a category). The tally is `typo-data`
  *    with tabular figures, the phase is meta ink, and the state word carries the
  *    one emphasis.
- *
- * `columns` is false for a concept that docks this in a narrow gutter: the rule
- * and the bindings then stack. It changes no content and no order.
  */
 import { useEffect } from 'react';
 
@@ -32,10 +29,9 @@ import { bindingKindLabel, bindingStateLabel, stepGlyph, stepLabel } from '../..
 import { STATE_CHIP, STATE_MARK, STATE_TEXT } from '../../journey/journeyStyles';
 import { useLifecycleViewModel } from '../context';
 
-const BODY_WIDE = 'grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-x-6 gap-y-4 items-start';
-const BODY_NARROW = 'flex flex-col gap-4';
+const BODY = 'grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-x-6 gap-y-4 items-start';
 
-export function StepState({ columns = true }: { columns?: boolean }) {
+export function StepState() {
   const { dl, tx, selected } = useLifecycleViewModel();
   const label = selected ? stepLabel(dl, selected.id, selected.label) : null;
 
@@ -72,7 +68,7 @@ export function StepState({ columns = true }: { columns?: boolean }) {
         </span>
       </header>
 
-      <div className={columns ? BODY_WIDE : BODY_NARROW}>
+      <div className={BODY}>
         <section className="min-w-0 space-y-1.5">
           <h4 className="typo-eyebrow text-foreground">{dl.lc_detail_rule}</h4>
           <p className="typo-body text-foreground leading-relaxed">{selected.rule}</p>
