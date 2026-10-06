@@ -1,7 +1,8 @@
-import { CheckCircle2, AlertCircle, Clock, Loader2, ChevronDown } from 'lucide-react';
+import { CheckCircle2, AlertCircle, AlertTriangle, Clock, Loader2, ChevronDown } from 'lucide-react';
 
-/** Visual treatment for a message priority chip. The three tiers are deliberately
- *  separable at a glance: High stays a solid red alert chip, Normal is a quiet but
+/** Visual treatment for a message priority chip. The tiers are deliberately
+ *  separable at a glance: Critical is the loudest (status-error ink, a stronger
+ *  fill and a warning glyph, so it outranks High by shape too), High stays a solid red alert chip, Normal is a quiet but
  *  present neutral chip, and Low is a recessive "ghost" — dashed border, muted
  *  text, and a down-chevron so it reads as low even before color registers. */
 export interface PriorityStyle {
@@ -11,16 +12,25 @@ export interface PriorityStyle {
   label: string;
   /** Optional leading glyph. Low gets a down-chevron so the recessive tier is
    *  scannable by shape, not color alone (also helps color-vision-deficient users). */
-  icon?: typeof ChevronDown;
+  icon?: typeof ChevronDown | typeof AlertTriangle;
   /** Extra chip classes (e.g. `border-dashed`, opacity) layered after the color tokens. */
   chipClass?: string;
 }
 
 export const priorityConfig: Record<string, PriorityStyle> = {
+  // The engine writes `critical` (engine/execution.rs) and this map had no
+  // entry for it, so a critical report rendered as Normal.
+  critical: { color: 'text-status-error', bgColor: 'bg-status-error/15', borderColor: 'border-status-error/50', label: 'Critical', icon: AlertTriangle },
   high: { color: 'text-red-400', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30', label: 'High' },
   normal: { color: 'text-foreground/90', bgColor: 'bg-secondary/40', borderColor: 'border-primary/20', label: 'Normal' },
   low: { color: 'text-muted-foreground/70', bgColor: 'bg-transparent', borderColor: 'border-muted-foreground/25', label: 'Low', icon: ChevronDown, chipClass: 'border-dashed' },
 };
+
+/** A report's body format, from its `content_type`. Only `html` is a document
+ *  frame; every other type (text, markdown, code, alert, ...) is markdown. */
+export function reportFormat(contentType: string | null | undefined): 'markdown' | 'html' {
+  return contentType === 'html' ? 'html' : 'markdown';
+}
 
 /** Row height for the flat message list. Matches the Activity list to keep
  *  the persona icon + body text comfortably aligned on a single row. */

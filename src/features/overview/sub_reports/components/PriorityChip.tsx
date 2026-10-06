@@ -4,6 +4,8 @@ interface PriorityChipProps {
   priority: PriorityStyle;
   /** `md` for the flat list + thread header rows, `sm` for nested thread replies. */
   size?: 'sm' | 'md';
+  /** Translated tier name; falls back to the config's English label. */
+  label?: string;
 }
 
 /**
@@ -13,7 +15,7 @@ interface PriorityChipProps {
  * border make Low scannable by shape so the priority column reads as a real
  * hierarchy rather than three near-identical neutral chips.
  */
-export function PriorityChip({ priority, size = 'md' }: PriorityChipProps) {
+export function PriorityChip({ priority, size = 'md', label }: PriorityChipProps) {
   const Icon = priority.icon;
   const sizing = size === 'sm'
     ? 'px-1.5 py-0.5 rounded typo-caption'
@@ -23,7 +25,7 @@ export function PriorityChip({ priority, size = 'md' }: PriorityChipProps) {
       className={`inline-flex items-center gap-0.5 border ${sizing} ${priority.bgColor} ${priority.color} ${priority.borderColor} ${priority.chipClass ?? ''}`}
     >
       {Icon && <Icon className="w-3 h-3 -ml-0.5" aria-hidden="true" />}
-      {priority.label}
+      {label ?? priority.label}
     </span>
   );
 }

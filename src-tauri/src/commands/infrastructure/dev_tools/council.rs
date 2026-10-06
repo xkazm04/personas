@@ -18,8 +18,10 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use serde::Serialize;
 use serde_json::json;
 use tauri::{AppHandle, State};
+use ts_rs::TS;
 
 use super::council_ingest::emit_council_changed;
 use crate::db::models::{
@@ -137,20 +139,12 @@ pub(crate) fn read_run_media(run_dir: &Path, rel_path: &str) -> Result<CouncilMe
             "Evidence is addressed by a path relative to its own run directory".into(),
         ));
     }
-    let canon_root = run_dir.canonicalize().map_err(|e| {
-        AppError::NotFound(format!(
-            "This run's directory is no longer readable ({e}) - re-ingest the run"
-        ))
-    })?;
-    let canon = canon_root
-        .join(&rel)
-        .canonicalize()
-        .map_err(|e| AppError::NotFound(format!("No such evidence file: {e}")))?;
-    if !canon.starts_with(&canon_root) {
-        return Err(AppError::Forbidden(
-            "Evidence must live inside the run's own directory".into(),
-        ));
-    }
+    let canon = match confine_to_run_dir(run_dir, &rel)? {
+        Confined::Inside(path) => path,
+        Confined::Missing(e) => {
+            return Err(AppError::NotFound(format!("No such evidence file: {e}")))
+        }
+    };
 
     let ext = canon
         .extension()
@@ -163,20 +157,125 @@ pub(crate) fn read_run_media(run_dir: &Path, rel_path: &str) -> Result<CouncilMe
         )));
     };
 
-    let meta = std::fs::metadata(&canon)
-        .map_err(|e| AppError::NotFound(format!("Evidence file not readable: {e}")))?;
-    if meta.len() > MAX_MEDIA_BYTES {
-        return Err(AppError::Validation(format!(
-            "That evidence file is {} bytes (cap {MAX_MEDIA_BYTES}) - too large to hand to the renderer",
-            meta.len()
-        )));
-    }
-    let bytes = std::fs::read(&canon)
-        .map_err(|e| AppError::Internal(format!("Evidence file could not be read: {e}")))?;
+    let bytes = read_capped(&canon, "evidence")?;
     Ok(CouncilMedia {
         mime: (*mime).to_string(),
         bytes,
     })
+}
+
+/// Where a run-relative path landed, once canonicalized.
+enum Confined {
+    /// The real location, proven to be inside the run directory.
+    Inside(PathBuf),
+    /// Nothing there (or not resolvable) - absent, not forbidden.
+    Missing(std::io::Error),
+}
+
+/// THE confinement for every file read out of a council run directory.
+///
+/// Both sides are canonicalized before they are compared, so `..`, a symlink
+/// out, and Windows' short names all resolve to the real location BEFORE the
+/// prefix test - a textual check would pass all three. A file that resolves
+/// outside the run dir is `Forbidden`; one that does not exist is `Missing`
+/// and each caller words its own not-found.
+fn confine_to_run_dir(run_dir: &Path, rel: &Path) -> Result<Confined, AppError> {
+    let canon_root = run_dir.canonicalize().map_err(|e| {
+        AppError::NotFound(format!(
+            "This run's directory is no longer readable ({e}) - re-ingest the run"
+        ))
+    })?;
+    let canon = match canon_root.join(rel).canonicalize() {
+        Ok(path) => path,
+        Err(e) => return Ok(Confined::Missing(e)),
+    };
+    if !canon.starts_with(&canon_root) {
+        return Err(AppError::Forbidden(
+            "Files must live inside the run's own directory".into(),
+        ));
+    }
+    Ok(Confined::Inside(canon))
+}
+
+/// Read a confined file, refusing anything over [`MAX_MEDIA_BYTES`] BEFORE it
+/// is read. The bytes cross IPC, so the cap is a renderer-memory decision.
+fn read_capped(path: &Path, what: &str) -> Result<Vec<u8>, AppError> {
+    let meta = std::fs::metadata(path)
+        .map_err(|e| AppError::NotFound(format!("The {what} file is not readable: {e}")))?;
+    if meta.len() > MAX_MEDIA_BYTES {
+        return Err(AppError::Validation(format!(
+            "That {what} file is {} bytes (cap {MAX_MEDIA_BYTES}) - too large to hand to the renderer",
+            meta.len()
+        )));
+    }
+    std::fs::read(path)
+        .map_err(|e| AppError::Internal(format!("The {what} file could not be read: {e}")))
+}
+
+/// A run's full long-form report, as the `/council` skill wrote it.
+#[derive(Debug, Clone, PartialEq, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CouncilReport {
+    /// `"html"` (report.html) or `"md"` (report.md).
+    pub format: String,
+    pub content: String,
+}
+
+/// The report files a run may carry, in preference order. HTML first: when a
+/// run wrote both, the HTML is the designed document and the markdown its
+/// plain-text twin.
+const REPORT_FILES: [(&str, &str); 2] = [("report.html", "html"), ("report.md", "md")];
+
+/// Read ONE run's full report - `report.html`, else `report.md` - from inside
+/// its own run directory.
+///
+/// The app otherwise reads only `report.md`'s first paragraph (as the run's
+/// summary, at ingest). Same door discipline as
+/// [`dev_tools_council_read_media`]: the run dir comes from the store, never
+/// from the renderer, and the read goes through the one confinement and the
+/// one size cap. A run with no report is a typed `NotFound`, not an empty
+/// string - "nothing was written" and "an empty report" are different facts.
+#[tauri::command]
+pub async fn dev_tools_council_read_report(
+    state: State<'_, Arc<AppState>>,
+    run_id: String,
+) -> Result<CouncilReport, AppError> {
+    require_auth(&state).await?;
+    let run = council_repo::get_run(&state.db, &run_id)?
+        .ok_or_else(|| AppError::NotFound(format!("Council run {run_id} not found")))?;
+    let read = tokio::task::spawn_blocking(move || read_run_report(Path::new(&run.run_dir))).await;
+    read.map_err(|e| AppError::Internal(format!("council report join error: {e}")))?
+}
+
+/// Body of [`dev_tools_council_read_report`], minus the IPC envelope.
+pub(crate) fn read_run_report(run_dir: &Path) -> Result<CouncilReport, AppError> {
+    // Ingest stores the CANONICAL run dir, so a stored dir is always absolute.
+    // A relative one (`../elsewhere`) would resolve against the process's
+    // working directory - refused rather than guessed at.
+    let traverses = run_dir
+        .components()
+        .any(|c| matches!(c, std::path::Component::ParentDir));
+    if !run_dir.is_absolute() || traverses {
+        return Err(AppError::Validation(
+            "A council run directory must be an absolute path with no `..`".into(),
+        ));
+    }
+    for (name, format) in REPORT_FILES {
+        let Confined::Inside(path) = confine_to_run_dir(run_dir, Path::new(name))? else {
+            continue;
+        };
+        let bytes = read_capped(&path, "report")?;
+        let content = String::from_utf8(bytes)
+            .map_err(|_| AppError::Validation(format!("{name} is not valid UTF-8 text")))?;
+        return Ok(CouncilReport {
+            format: format.to_string(),
+            content,
+        });
+    }
+    Err(AppError::NotFound(
+        "This run has no full report (no report.html or report.md)".into(),
+    ))
 }
 
 /// Promote or demote a feature. Only a `major` feature reaches the human gate;
@@ -886,6 +985,70 @@ mod tests {
             read_run_media(&run_dir, "small.webm").unwrap().mime,
             "video/webm"
         );
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    // ----- the full-report reader -----
+
+    #[test]
+    fn the_full_report_prefers_html_then_markdown_and_says_when_there_is_none() {
+        let base = tmp_root("report");
+        let run_dir = base.join("runs").join("r1");
+        std::fs::create_dir_all(&run_dir).unwrap();
+
+        // Nothing written: a typed not-found, never an empty string.
+        let err = read_run_report(&run_dir).unwrap_err();
+        assert!(matches!(err, AppError::NotFound(_)), "{err}");
+        assert!(err.to_string().contains("no full report"), "{err}");
+
+        std::fs::write(run_dir.join("report.md"), "# Verdict\n\nShip it.").unwrap();
+        let md = read_run_report(&run_dir).unwrap();
+        assert_eq!(md.format, "md");
+        assert!(md.content.starts_with("# Verdict"));
+
+        // Both present: the designed HTML document wins.
+        std::fs::write(run_dir.join("report.html"), "<h1>Verdict</h1>").unwrap();
+        let html = read_run_report(&run_dir).unwrap();
+        assert_eq!(html.format, "html");
+        assert_eq!(html.content, "<h1>Verdict</h1>");
+
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn the_full_report_refuses_a_run_dir_that_traverses_or_is_relative() {
+        let base = tmp_root("report-escape");
+        let run_dir = base.join("runs").join("r1");
+        std::fs::create_dir_all(&run_dir).unwrap();
+        // A real report sits one level ABOVE the run dir.
+        std::fs::write(base.join("runs").join("report.md"), "not this run's").unwrap();
+
+        // `<run>/..` would land on it - refused before anything is read.
+        let err = read_run_report(&run_dir.join("..")).unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)), "{err}");
+
+        // A relative dir resolves against the working directory - refused.
+        let err = read_run_report(Path::new("../runs/r1")).unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)), "{err}");
+
+        // A run dir that has vanished is absent, not empty.
+        let gone = base.join("runs").join("gone");
+        let err = read_run_report(&gone).unwrap_err();
+        assert!(matches!(err, AppError::NotFound(_)), "{err}");
+
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn an_oversized_report_is_refused_before_it_is_read() {
+        let base = tmp_root("bigreport");
+        let run_dir = base.join("r");
+        std::fs::create_dir_all(&run_dir).unwrap();
+        let f = std::fs::File::create(run_dir.join("report.html")).unwrap();
+        f.set_len(MAX_MEDIA_BYTES + 1).unwrap();
+        drop(f);
+        let err = read_run_report(&run_dir).unwrap_err().to_string();
+        assert!(err.contains("too large to hand to the renderer"), "{err}");
         let _ = std::fs::remove_dir_all(&base);
     }
 

@@ -11,6 +11,7 @@
 // on hover.
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
+import { CouncilFullReport } from './CouncilReportReader';
 import type { Seat } from './runModel';
 
 /** Trailing punctuation and case are not a difference worth reprinting for. */
@@ -90,10 +91,14 @@ export function RunSummary({
   summary,
   isSubjectFallback,
   words,
+  runId,
 }: {
   summary: string;
   isSubjectFallback: boolean;
   words: SummaryWords;
+  /** The run whose full report the "Read full report" control opens. The
+   *  summary is one sentence of it; the document is one click away. */
+  runId?: string;
 }) {
   const real = summary.trim().length > 0 && !isSubjectFallback;
   return (
@@ -106,6 +111,11 @@ export function RunSummary({
           {words.summary_none}
         </p>
       )}
+      {runId ? (
+        <div>
+          <CouncilFullReport runId={runId} />
+        </div>
+      ) : null}
     </section>
   );
 }

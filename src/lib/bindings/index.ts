@@ -271,6 +271,7 @@ export type { CouncilIngestSummary } from "./CouncilIngestSummary";
 export type { CouncilMedia } from "./CouncilMedia";
 export type { CouncilOverlay } from "./CouncilOverlay";
 export type { CouncilOverlaySubject } from "./CouncilOverlaySubject";
+export type { CouncilReport } from "./CouncilReport";
 export type { CouncilRun } from "./CouncilRun";
 export type { CouncilRunDetail } from "./CouncilRunDetail";
 export type { CouncilScenarioResult } from "./CouncilScenarioResult";

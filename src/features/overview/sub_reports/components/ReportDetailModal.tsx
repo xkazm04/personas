@@ -9,6 +9,7 @@ import DetailModal from '@/features/overview/components/dashboard/widgets/Detail
 import { useOverviewStore } from '@/stores/overviewStore';
 import { printReport } from '../libs/reportPrint';
 import { openReportInChat } from '../libs/openReportInChat';
+import { reportFormat } from '../libs/reportHelpers';
 import {
   useReportDeliveries,
   useReportRating,
@@ -61,6 +62,7 @@ export function ReportDetailModal({
   const { t, tx } = useTranslation();
   const msgId = message.id ?? '';
   const msgContent = message.content ?? '';
+  const msgFormat = reportFormat(message.content_type);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const { copied: copiedId, copy: copyId } = useCopyToClipboard();
   const [navDir, setNavDir] = useState<1 | -1>(1);
@@ -184,9 +186,11 @@ export function ReportDetailModal({
         >
           <ReportContentSection
             content={msgContent}
+            format={msgFormat}
+            title={message.title || t.overview.reports_view.report_label}
             t={t}
             companionEnabled={companionEnabled}
-            onExportPdf={() => printReport(message, {
+            onExportPdf={() => void printReport(message, {
               unknownPersona: t.overview.reports_view.unknown_persona,
               reportLabel: t.overview.reports_view.report_label,
             })}

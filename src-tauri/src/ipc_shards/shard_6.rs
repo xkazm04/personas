@@ -24,6 +24,7 @@ pub(super) fn shard(
         commands::infrastructure::dev_tools::dev_tools_council_decide,
         commands::infrastructure::dev_tools::dev_tools_council_overlay,
         commands::infrastructure::dev_tools::dev_tools_council_read_media,
+        commands::infrastructure::dev_tools::dev_tools_council_read_report,
         // Dev Tools -- the Features page: one board read, and the scenario
         // layer nested under a feature.
         commands::infrastructure::dev_tools::dev_tools_feature_board,

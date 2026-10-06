@@ -7,7 +7,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
-import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { ReportBody } from '@/features/shared/components/document/ReportBody';
 import { RichMarkdown } from '@/features/shared/components/editors/RichMarkdown';
 import { useTranslation } from '@/i18n/useTranslation';
 import { formatRelativeTime } from '@/lib/utils/formatters';
@@ -319,9 +319,13 @@ function ContentActionButton({
 // ---------------------------------------------------------------------------
 
 export function ReportContentSection({
-  content, t, companionEnabled, onExportPdf, onPlayInChat,
+  content, format, title, t, companionEnabled, onExportPdf, onPlayInChat,
 }: {
   content: string;
+  /** From the report's `content_type`: `html` is a sanitized document frame. */
+  format: 'markdown' | 'html';
+  /** Accessible name for an HTML report's frame. */
+  title: string;
   t: T;
   companionEnabled: boolean;
   onExportPdf: () => void;
@@ -331,9 +335,9 @@ export function ReportContentSection({
     <section className="mb-10">
       <SectionMark index="I" label={t.overview.reports_view.content_label} />
       <article className="rounded-3xl bg-[color-mix(in_srgb,var(--color-background),var(--color-foreground)_3.5%)] px-8 py-7 shadow-elevation-1">
-        <MarkdownRenderer
-          content={content}
-          variant="document"
+        <ReportBody
+          document={{ format, content }}
+          title={title}
           className={REPORT_CONTENT_MD_CLASS}
         />
       </article>

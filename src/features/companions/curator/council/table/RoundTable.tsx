@@ -251,6 +251,7 @@ export function RoundTable({
             summary={detail.run.summary}
             isSubjectFallback={detail.run.summaryIsSubjectFallback}
             words={tbl}
+            runId={detail.run.id}
           />
         ) : null}
         {detail ? (
