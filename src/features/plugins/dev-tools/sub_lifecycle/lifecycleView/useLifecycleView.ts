@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { installLifecycle } from '@/api/devTools/lifecycle';
 import { useAskAthena } from '@/features/companions/athena/useAskAthena';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { LifecycleBindingState } from '@/lib/bindings/LifecycleBindingState';
 import type { LifecycleEvidenceItem } from '@/lib/bindings/LifecycleEvidenceItem';
 import type { LifecycleSnapshot } from '@/lib/bindings/LifecycleSnapshot';
 import { toastCatch } from '@/lib/silentCatch';
@@ -50,6 +51,12 @@ export interface LifecycleViewModel {
   select: (stepId: string) => void;
   /** The weakest-step sentence, or the no-evidence / all-strong line. */
   headline: string;
+  /**
+   * The state the headline is REPORTING, so a view can ink the sentence with
+   * the severity the model already computed. Null when there is no weakest step
+   * (nothing to grade), which is the only case the sentence is not a verdict.
+   */
+  headlineState: LifecycleBindingState | null;
   missingText: string;
   missingCount: number;
   installing: boolean;
@@ -157,6 +164,7 @@ export function useLifecycleView(): LifecycleViewModel {
     evidence: current?.evidence ?? [],
     selected, select,
     headline,
+    headlineState: weak?.node.strongestState ?? null,
     missingText: missing.map((m) => `${stepLabel(dl, m.stepId, m.label)} (${bindingKindLabel(dl, m.kind)})`).join(', '),
     missingCount: missing.length,
     installing: forcePending || (current ? installInFlight(current) : false),
