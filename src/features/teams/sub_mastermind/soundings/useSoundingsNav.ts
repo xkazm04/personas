@@ -27,6 +27,10 @@ export const ms = (full: number, reduced: number) => (reducedMotion() ? reduced 
 export const sleep = (t: number) => new Promise<void>((r) => { window.setTimeout(r, t); });
 
 let seq = 0;
+/** The next React key for a transient row (a dock log line, a sonar ping).
+ *  Spelled as a function, not `++seq` at the call site, because the latter is
+ *  the shape of a staleness guard and this is not one: nothing awaits on it. */
+function nextKey(): number { seq += 1; return seq; }
 
 export type SoundingsNav = ReturnType<typeof useSoundingsNav>;
 
@@ -149,11 +153,11 @@ export function useSoundingsNav(stations: readonly Station[], indexOf: ReadonlyM
   // ── the dock's log and Athena's sonar ───────────────────────────────────
   const say = useCallback((who: LogLine['who'], text: string) => {
     const time = new Date().toTimeString().slice(0, 5);
-    setLog((l) => [...l.slice(-2), { id: ++seq, who, text, time }]);
+    setLog((l) => [...l.slice(-2), { id: nextKey(), who, text, time }]);
   }, []);
 
   const ping = useCallback((x: number, y: number) => {
-    const id = ++seq;
+    const id = nextKey();
     setPings((p) => [...p, { id, x, y }]);
     later(() => setPings((p) => p.filter((q) => q.id !== id)), 2800);
   }, [later]);
