@@ -156,6 +156,17 @@ function useWindow(all: RailRow[]): { rows: RailRow[]; hasMore: boolean; loadMor
  * manual reviews rendered "Nothing is waiting on you." while sixty ideas,
  * practices, policy diffs, build questions and finished goals sat undecided one
  * surface away. "Reviews" is the operator's word for all of it.
+ *
+ * `active` IS STILL NOT PASSED DOWN, AND THAT IS NOW CORRECT. It used not to
+ * be: `useUnifiedTriage` reaches `usePendingInteractions`, which mounted a
+ * SECOND `useMonitorData` with its own review and cloud pollers, and those ran
+ * whenever Activity was mounted — whatever tab this rail was on. Gating the
+ * flag here would have quieted that one call path and left the second engine
+ * in place for the next hook to wake. The engine moved up instead: the overlay
+ * mounts exactly one and shares it (`monitorDataContext`), so what reaches
+ * this hook is the queue the Monitor is already paying for. The only thing
+ * left to gate is the row projection, which is what the header describes and
+ * what `active` does.
  */
 export function useReviewFeed(
   active = true,

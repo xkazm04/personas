@@ -10,10 +10,24 @@
 //     is open.
 //
 // Mount only when the popover is open — useMonitorData polls reviews.
+//
+// …UNLESS THE MONITOR IS ALREADY RUNNING ONE. This hook is reached from two
+// places that are nothing like each other: the Quick Answer popover, which is
+// its own overlay with no engine above it, and the Monitor's decision rail
+// (`useRailSurface` → `useRailFeeds.useReviewFeed` → `useUnifiedTriage` →
+// here), which sits inside an overlay whose shell already mounts one. For the
+// second caller the line above was simply false — the rail is not the popover,
+// nobody was gating it, and opening Activity started a SECOND review poll and a
+// second cloud poll. See `monitorDataContext.tsx` for the full account.
 
 import { useMemo, useCallback } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
-import { useMonitorData, type MonitorReviewItem } from '@/features/fleet/monitor/useMonitorData';
+import { useSharedMonitorData } from '@/features/fleet/monitor/monitorDataContext';
+import {
+  MONITOR_REVIEW_LIMIT,
+  useMonitorData,
+  type MonitorReviewItem,
+} from '@/features/fleet/monitor/useMonitorData';
 import { answerBuildQuestion } from '@/api/agents/buildSession';
 import { buildBatchedAnswerPayload } from '@/lib/build/answerPayload';
 import type { BuildQuestion } from '@/lib/types/buildTypes';
@@ -70,24 +84,32 @@ export function isComplexQuestion(q: BuildQuestion): boolean {
  * object per render is exactly the kind of churn the rest of this pass removes.
  */
 /**
- * The pending-review working set this surface deals from.
- *
- * `list_manual_reviews` takes no limit, so the deck's 30-second poll re-read and
- * re-shaped EVERY pending row on every tick. This is a working set, not an
- * archive — the same posture the ideas keyset page has always had — and the cap
- * is reported (`reviewsHasMore` → the queue's `backlog.capped`) so a truncated
- * read can never be presented as a finished queue.
- *
- * 100 rather than the command's default 40: a reviewer who opens the deck to
- * clear a backlog should get the whole backlog in one deal on any realistic
- * install, and the cap exists to bound a pathological queue rather than to page
- * a normal one.
+ * The pending-review working set this surface deals from — the SAME bound the
+ * Monitor's shared engine uses, which is why it is imported rather than
+ * declared. `reviewsWarmCache` is keyed by the bound, so a deck that capped at
+ * a different number would warm a second cache for the same queue. The
+ * reasoning for the number itself lives with the constant.
  */
-const DECK_REVIEW_LIMIT = 100;
+const DECK_REVIEW_LIMIT = MONITOR_REVIEW_LIMIT;
 
 const DECK_FEEDS = {
   messages: false,
   personaHealth: false,
+  reviewLimit: DECK_REVIEW_LIMIT,
+} as const;
+
+/**
+ * THE FEEDS FOR THE INSTANCE THAT MUST NOT EXIST, AND DOES.
+ *
+ * A hook cannot be called conditionally, so when the shared engine IS there the
+ * local one is still mounted — it is just given nothing to do. Handing
+ * {@link DECK_FEEDS} here instead is not a performance regression, it is the
+ * exact duplicate this whole arrangement removes, silently restored, with no
+ * crash and no visible symptom. That is why it is pinned by a test named for
+ * the duplicate rather than trusted to this comment.
+ */
+const DORMANT_FEEDS = {
+  dormant: true,
   reviewLimit: DECK_REVIEW_LIMIT,
 } as const;
 
@@ -96,6 +118,11 @@ export function usePendingInteractions(): QuickAnswerData {
   const personas = useAgentStore((s) => s.personas);
   const applyPendingAnswers = useAgentStore((s) => s.applyPendingAnswers);
 
+  // The overlay's engine when this hook runs inside the Monitor, `null` when it
+  // runs in the Quick Answer popover. `own` is the popover's instance — always
+  // mounted, dormant whenever `shared` answered.
+  const shared = useSharedMonitorData();
+  const own = useMonitorData(shared ? DORMANT_FEEDS : DECK_FEEDS);
   const {
     reviews,
     reviewsError,
@@ -104,7 +131,7 @@ export function usePendingInteractions(): QuickAnswerData {
     isProcessing,
     handleReviewAction,
     handleDispatchAction,
-  } = useMonitorData(DECK_FEEDS);
+  } = shared ?? own;
 
   const questionGroups = useMemo<QuestionGroup[]>(() => {
     const personaById = new Map(personas.map((p) => [p.id, p]));

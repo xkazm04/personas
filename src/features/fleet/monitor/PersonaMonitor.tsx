@@ -24,8 +24,9 @@ import { useIsDarkTheme } from '@/stores/themeStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { toastCatch } from '@/lib/silentCatch';
 import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
-import { useMonitorData } from './useMonitorData';
+import { MONITOR_REVIEW_LIMIT, useMonitorData } from './useMonitorData';
 import { MonitorVisibilityContext } from './monitorVisibility';
+import { MonitorDataProvider } from './monitorDataContext';
 import { useChannelWorkspace } from './channels';
 import { MonitorFeedStatus } from './MonitorFeedStatus';
 import { MonitorDrawerShell } from './MonitorDrawerShell';
@@ -280,6 +281,10 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
       messages: isFleetView,
       personaHealth: isFleetView,
       badgeCounts: true,
+      // The rail's triage queue now reads THIS engine (see `monitorDataContext`),
+      // and it needs rows, not just a count. Composing the two here is what
+      // makes one engine able to serve both; see `MONITOR_REVIEW_LIMIT`.
+      reviewLimit: MONITOR_REVIEW_LIMIT,
     }),
     [isFleetView],
   );
@@ -288,13 +293,17 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
   // which is why a Monitor whose reads had been failing for ten minutes still
   // rendered every tile idle-grey with no "as of" anywhere. See
   // `MonitorFeedStatus`.
+  // Captured into a variable rather than destructured straight from the call,
+  // because the whole object is published to the subtree below and a provider
+  // cannot read the context it publishes.
+  const monitorData = useMonitorData(feeds);
   const {
     personas, healthMap, reviews, unreadMessages, activeProcesses,
     reviewBadgeCounts, messageBadgeCounts, refreshAttention,
     reviewsError, messagesError, healthError, lastRefreshed,
     loading, isProcessing, isReviewInFlight, handleReviewAction, handleDispatchAction,
     handleMarkRead,
-  } = useMonitorData(feeds);
+  } = monitorData;
 
   const { cards, systemProcesses } = useMemo(
     () => buildMonitorModel(personas, reviews, unreadMessages, activeProcesses, healthMap, {
@@ -530,6 +539,7 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
        the start of the fade rather than at the end of it stops at the right
        moment. */
     <MonitorVisibilityContext.Provider value={visible}>
+      <MonitorDataProvider data={monitorData}>
     <motion.div
       /* The enter/exit fade used to come from `AnimatePresence` in
          `TrayOverlays`, which could only play it by mounting and unmounting
@@ -764,6 +774,7 @@ export function PersonaMonitor({ onClose, visible = true }: PersonaMonitorProps)
         <QuickDispatchDock />
       </Suspense>
     </motion.div>
+      </MonitorDataProvider>
     </MonitorVisibilityContext.Provider>
   );
 }

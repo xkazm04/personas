@@ -66,7 +66,13 @@ const monitorData = {
   handleDispatchAction: vi.fn(),
   handleMarkRead: vi.fn(),
 };
-vi.mock('./useMonitorData', () => ({ useMonitorData: () => monitorData }));
+// `MONITOR_REVIEW_LIMIT` is a real export of the module and the shell imports
+// it, so a mock that omits it fails the whole file at import time. Keep this
+// in step with the module's export list, not with what this test uses.
+vi.mock('./useMonitorData', () => ({
+  useMonitorData: () => monitorData,
+  MONITOR_REVIEW_LIMIT: 100,
+}));
 
 const workspace = { hasChannels: false };
 vi.mock('./channels', () => ({

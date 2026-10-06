@@ -33,7 +33,7 @@
 // was written to delete. The behaviour is therefore pinned by a test named for
 // it, not merely documented here.
 
-import { createContext, useContext } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 
 import type { MonitorData } from './useMonitorData';
 
@@ -63,4 +63,31 @@ export const MonitorDataContext = createContext<MonitorData | null>(null);
  */
 export function useSharedMonitorData(): MonitorData | null {
   return useContext(MonitorDataContext);
+}
+
+/**
+ * Publish the overlay's one engine to everything under it.
+ *
+ * **It takes the engine, it does not start one.** That is the whole point: the
+ * single instance already lives in the overlay shell, which needs the same
+ * object for its own model memo, and a provider that mounted its OWN
+ * `useMonitorData` would be the second engine wearing the name of the fix. So
+ * the shell hands down what it already has, and this component is nothing but
+ * the context write — deliberately so, because the moment it grows a hook it
+ * stops being provably single.
+ *
+ * A thin wrapper rather than `<MonitorDataContext.Provider>` written out at the
+ * call site, because the context has to be exported for the consumer hook
+ * anyway and an exported raw Provider is an invitation to hand it a freshly
+ * built object. This one's prop is typed as the engine itself.
+ */
+export function MonitorDataProvider({
+  data,
+  children,
+}: {
+  /** The overlay's single `useMonitorData` result. */
+  data: MonitorData;
+  children: ReactNode;
+}) {
+  return <MonitorDataContext.Provider value={data}>{children}</MonitorDataContext.Provider>;
 }

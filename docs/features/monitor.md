@@ -426,6 +426,58 @@ down now — messages and persona-health keep their array/record identity when
 nothing moved, so an idle fleet no longer re-sorts and re-renders every tile
 twice a minute.
 
+**One data engine for the whole overlay (2026-10-06).** Opening Activity used
+to mount `useMonitorData` twice: once in the shell, and once more down a chain
+nobody reads end to end — the decision rail's review feed reaches the triage
+queue, which reaches the Quick Answer popover's data layer, which mounts its
+own engine with its own 30 s review poll and its own 15 s cloud poll. The rail
+took an `active` flag and never passed it down, so the second engine ran
+whenever Activity was mounted, whatever tab the rail was on. The shell now
+publishes its single engine through `monitorDataContext` and the rail consumes
+it; the popover, which is a different overlay with no provider above it, keeps
+an instance of its own. Because a hook cannot be called conditionally, the
+second instance is still *mounted* when a shared one exists — it is handed
+`dormant` feeds, which is what makes it cost nothing, and that is pinned by
+`sharedMonitorEngine.test.tsx` rather than by this paragraph. The shell's
+review read now returns badge counts **and** the capped row page in one pass,
+because the tiles need the first and the rail needs the second.
+
+**Being shut now costs nothing (2026-10-06).** The overlay no longer unmounts
+on close — it is hidden — so React state, effects and timers inside it stay
+alive. Every monitor-owned poll is therefore gated on `useMonitorVisible()`,
+and a hidden Monitor runs none of them. Reopening is not a flush: each feed
+remembers when it last *tried*, and a ticker that fires inside that window
+declines, so a feed read two seconds before the overlay was hidden is not
+re-read on reopen while one that went stale refreshes at once. The same
+eligibility gate removes the duplicate opening read — the mount effect and
+`usePolling`'s fire-on-register used to run the same three queries twice.
+
+**A dead backend now backs off (2026-10-06).** Every monitor loader catches
+internally and resolves, which is the contract its callers depend on and is
+also why `usePolling`'s exponential backoff was structurally unreachable: it
+only backs off when the fetch *rejects*. The loaders are unchanged and
+`reviewsError` / `messagesError` still reach the board exactly as before; a
+thin poll wrapper re-throws what the loader caught, so only the ticker sees a
+rejection. Reviews, messages and persona health are covered. `fetchCloudReviews`
+is not: it swallows into a `log.warn` and the slice carries no error field for
+it, so its ticker still cannot tell a failed read from an empty one.
+
+**The cloud poll no longer rebuilds the board (2026-10-06).**
+`fetchCloudReviews` ran every 15 s and set a freshly built array each time,
+including the paths that set a literal `[]`. That identity flows into
+`reviews`, which is one of the seven deps of the board's model memo, so an
+install with no cloud connection at all rebuilt every card four times a
+minute. The slice now keeps the array it has when the answer has not changed,
+the same guard `personaSlice` applies to its health map.
+
+**The stale-run reaper runs once, not twice (2026-10-06).** `FleetActivityStrip`
+is mounted both under the titlebar and inside the Monitor's header, and the
+polling coordinator does not dedupe tickers by name, so its 60 s
+`reapStaleRunning` ticker had always run twice while the Monitor was open —
+and the overlay persisting made that permanent. The reap is app-level work, so
+exactly one mounted strip claims it; a visibility gate would not have helped,
+because both copies are on screen at the same moment.
+
 #### Autopilot — the board's one switch, paced to the subscription
 
 The header's **Autopilot** pill is the attention loop's on/off

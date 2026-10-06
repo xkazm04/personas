@@ -16,7 +16,7 @@
 // were retired; the strip was competing with the Monitor capsule as a door and
 // its hover popover read as noise). Visuals unchanged.
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion, useMotionValue, animate } from 'framer-motion';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
@@ -41,6 +41,70 @@ function rampColor(index: number, mid: number): string {
 
 /** Resting opacity for each slot kind. Empty stays faintly visible (baseline). */
 const SLOT_OPACITY = { running: 1, queued: 0.5, empty: 0.12 } as const;
+
+// ---------------------------------------------------------------------------
+// The stale-run reaper runs ONCE, however many strips are on screen.
+//
+// This component is mounted twice whenever the Monitor is open: once as the
+// app-wide hairline under the titlebar (`App.tsx`) and once inside the
+// Monitor's own header. `PollingCoordinator.register` keys a ticker on
+// `name#${++idCounter}` and does not dedupe by name, so both registrations are
+// live and `reapStaleRunning` has always run twice a minute instead of once.
+// The overlay no longer unmounting on close made that permanent rather than
+// merely "while you are looking at it".
+//
+// WHY OWNERSHIP AND NOT A VISIBILITY GATE. Gating the Monitor's copy on
+// `useMonitorVisible()` does not discriminate: the two copies are visible AT
+// THE SAME TIME — the Monitor's strip is only on screen while the Monitor is
+// open, which is exactly when the app-wide one is also mounted and polling. It
+// would silence nothing. Deduping inside the coordinator by `name` was the
+// other candidate and is worse: `name` is a debugging label today, two
+// surfaces are free to share one, and a dedupe there would make the SECOND
+// registration a silent no-op for every caller in the app — including the ones
+// where both registrations are legitimate.
+//
+// So the reap is treated as what it is: ONE app-level reconciliation that any
+// mounted strip may perform, and exactly one does. A refcounted claim rather
+// than a one-way latch, per the HMR-safe-singleton rule — if the owner
+// unmounts, the claim passes to another live strip instead of the reap
+// stopping for the rest of the session.
+
+type ReapClaim = (owns: boolean) => void;
+const reapClaimants = new Set<ReapClaim>();
+let reapOwner: ReapClaim | null = null;
+
+function claimReap(claim: ReapClaim): void {
+  reapClaimants.add(claim);
+  if (reapOwner === null) {
+    reapOwner = claim;
+    claim(true);
+  }
+}
+
+function releaseReap(claim: ReapClaim): void {
+  reapClaimants.delete(claim);
+  if (reapOwner !== claim) return;
+  reapOwner = null;
+  const next = reapClaimants.values().next().value;
+  if (next) {
+    reapOwner = next;
+    next(true);
+  }
+}
+
+/** True in exactly one mounted strip at a time. */
+function useOwnsStaleReap(): boolean {
+  const [owns, setOwns] = useState(false);
+  useEffect(() => {
+    const claim: ReapClaim = setOwns;
+    claimReap(claim);
+    return () => {
+      releaseReap(claim);
+      setOwns(false);
+    };
+  }, []);
+  return owns;
+}
 
 export default function FleetActivityStrip() {
   const { t, tx } = useTranslation();
@@ -71,11 +135,15 @@ export default function FleetActivityStrip() {
   // local in-memory reconciliation (not a notification path), so there's
   // nothing lost by catching up on visibility regain instead of ticking
   // through the hidden window.
+  //
+  // `enabled` is the ownership claim above, NOT `true`: this component is
+  // mounted twice while the Monitor is open and the reap is app-level work.
   const reapStaleRunning = useOverviewStore((s) => s.reapStaleRunning);
+  const ownsStaleReap = useOwnsStaleReap();
   const STALE_MS = 25 * 60 * 1000;
   usePolling(() => reapStaleRunning(STALE_MS), {
     interval: 60_000,
-    enabled: true,
+    enabled: ownsStaleReap,
     name: 'fleetStaleReap',
   });
 
