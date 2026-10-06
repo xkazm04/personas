@@ -18476,6 +18476,9 @@
       "sheet_style_drafting": "制图模式",
       "sheet_style_label": "图纸样式",
       "sheet_style_plan": "计划卡片",
+      "view_switch": "显示计划或应用",
+      "view_plan": "计划",
+      "view_app": "应用",
       "draft_kind_draw": "绘制",
       "draft_plan_sheet": "计划",
       "draft_status_loading": "正在打开计划"

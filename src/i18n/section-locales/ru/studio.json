@@ -219,6 +219,9 @@
     "sheet_style_drafting": "Чертёж",
     "sheet_style_label": "Стиль листа",
     "sheet_style_plan": "Карточки плана",
+    "view_switch": "Показать план или приложение",
+    "view_plan": "План",
+    "view_app": "Приложение",
     "draft_kind_draw": "Чертёж",
     "draft_plan_sheet": "План",
     "draft_status_loading": "Открываю план"

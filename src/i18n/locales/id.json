@@ -18476,6 +18476,9 @@
       "sheet_style_drafting": "Menggambar",
       "sheet_style_label": "Gaya lembar",
       "sheet_style_plan": "Kartu rencana",
+      "view_switch": "Tampilkan rencana atau aplikasi",
+      "view_plan": "Rencana",
+      "view_app": "Aplikasi",
       "draft_kind_draw": "Gambar",
       "draft_plan_sheet": "Rencananya",
       "draft_status_loading": "Membuka rencana"

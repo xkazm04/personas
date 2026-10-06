@@ -18476,6 +18476,9 @@
       "sheet_style_drafting": "খসড়া",
       "sheet_style_label": "শিট শৈলী",
       "sheet_style_plan": "পরিকল্পনা কার্ড",
+      "view_switch": "পরিকল্পনা বা অ্যাপ দেখান",
+      "view_plan": "পরিকল্পনা",
+      "view_app": "অ্যাপ",
       "draft_kind_draw": "আঁকা",
       "draft_plan_sheet": "পরিকল্পনা",
       "draft_status_loading": "পরিকল্পনা খোলা হচ্ছে"

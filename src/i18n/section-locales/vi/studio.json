@@ -219,6 +219,9 @@
     "sheet_style_drafting": "Bản vẽ",
     "sheet_style_label": "Kiểu bản vẽ",
     "sheet_style_plan": "Thẻ kế hoạch",
+    "view_switch": "Hiện kế hoạch hoặc ứng dụng",
+    "view_plan": "Kế hoạch",
+    "view_app": "Ứng dụng",
     "draft_kind_draw": "Vẽ",
     "draft_plan_sheet": "Kế hoạch",
     "draft_status_loading": "Đang mở kế hoạch"

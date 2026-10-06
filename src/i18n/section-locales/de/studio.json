@@ -219,6 +219,9 @@
     "sheet_style_drafting": "Zeichnen",
     "sheet_style_label": "Blattstil",
     "sheet_style_plan": "Plankarten",
+    "view_switch": "Plan oder App anzeigen",
+    "view_plan": "Plan",
+    "view_app": "App",
     "draft_kind_draw": "Zeichnen",
     "draft_plan_sheet": "Der Plan",
     "draft_status_loading": "Plan wird geöffnet"

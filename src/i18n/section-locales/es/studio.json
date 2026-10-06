@@ -219,6 +219,9 @@
     "sheet_style_drafting": "Dibujo",
     "sheet_style_label": "Estilo de hoja",
     "sheet_style_plan": "Tarjetas de plan",
+    "view_switch": "Mostrar el plan o la app",
+    "view_plan": "Plan",
+    "view_app": "App",
     "draft_kind_draw": "Dibujo",
     "draft_plan_sheet": "El plan",
     "draft_status_loading": "Abriendo el plan"

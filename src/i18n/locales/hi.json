@@ -18476,6 +18476,9 @@
       "sheet_style_drafting": "ड्राफ्टिंग",
       "sheet_style_label": "शीट शैली",
       "sheet_style_plan": "प्लान कार्ड्स",
+      "view_switch": "प्लान या ऐप दिखाएँ",
+      "view_plan": "प्लान",
+      "view_app": "ऐप",
       "draft_kind_draw": "चित्र",
       "draft_plan_sheet": "योजना",
       "draft_status_loading": "योजना खुल रही है"

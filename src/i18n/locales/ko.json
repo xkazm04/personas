@@ -18476,6 +18476,9 @@
       "sheet_style_drafting": "도면 방식",
       "sheet_style_label": "시트 스타일",
       "sheet_style_plan": "계획 카드",
+      "view_switch": "계획 또는 앱 보기",
+      "view_plan": "계획",
+      "view_app": "앱",
       "draft_kind_draw": "그리기",
       "draft_plan_sheet": "계획",
       "draft_status_loading": "계획을 여는 중"

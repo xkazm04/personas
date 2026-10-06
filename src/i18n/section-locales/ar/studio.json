@@ -219,6 +219,9 @@
     "sheet_style_drafting": "الرسم",
     "sheet_style_label": "نمط اللوحة",
     "sheet_style_plan": "بطاقات الخطة",
+    "view_switch": "اعرض الخطة أو التطبيق",
+    "view_plan": "الخطة",
+    "view_app": "التطبيق",
     "draft_kind_draw": "رسم",
     "draft_plan_sheet": "الخطة",
     "draft_status_loading": "جارٍ فتح الخطة"

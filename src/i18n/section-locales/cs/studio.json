@@ -219,6 +219,9 @@
     "sheet_style_drafting": "Kreslení",
     "sheet_style_label": "Styl listu",
     "sheet_style_plan": "Plánovací karty",
+    "view_switch": "Zobrazit plán, nebo aplikaci",
+    "view_plan": "Plán",
+    "view_app": "Aplikace",
     "draft_kind_draw": "Kreslení",
     "draft_plan_sheet": "Plán",
     "draft_status_loading": "Otevírám plán"

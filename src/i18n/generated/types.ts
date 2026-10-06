@@ -24269,6 +24269,9 @@ export type Translations = {
       sheet_style_label: string;
       sheet_style_drafting: string;
       sheet_style_plan: string;
+      view_switch: string;
+      view_plan: string;
+      view_app: string;
       draft_project: string;
       draft_status: string;
       draft_brief: string;

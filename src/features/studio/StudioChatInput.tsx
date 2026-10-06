@@ -2,16 +2,20 @@ import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  AppWindow,
   ChevronDown,
   ChevronUp,
   CircleStop,
   Image as ImageIcon,
   ListChecks,
+  Map as MapIcon,
   MessageSquare,
   Square,
   Wand2,
 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { ChatInputBar } from '@/features/shared/components/forms/ChatInputBar';
 import { useTranslation } from '@/i18n/useTranslation';
 import { guideStrings } from './guide/guideCopy';
@@ -32,9 +36,12 @@ import { isStopOnly } from './studioSeed';
 // button in the input row, so you can read the plan while you keep steering. The
 // dock re-centres itself into the space the drawer leaves.
 
+export type StudioFrameView = 'plan' | 'app';
+
 export default function StudioChatInput({
   variant = 'default',
   onPlanClick,
+  view,
 }: {
   /** `guide`: the Guide layout draws the latest message, the question and the
    *  next moves itself, so the dock is only the input row + tools; a note typed
@@ -42,6 +49,9 @@ export default function StudioChatInput({
   variant?: 'default' | 'guide';
   /** Guide: the plan button points at the goals rail instead of the drawer. */
   onPlanClick?: () => void;
+  /** Guide: what the main frame shows, the plan sheet or the running app. The
+   *  App side waits for a live preview; without one there is nothing to show. */
+  view?: { showing: StudioFrameView; appReady: boolean; onChange: (v: StudioFrameView) => void };
 } = {}) {
   const guide = variant === 'guide';
   const { t, tx } = useTranslation();
@@ -244,17 +254,22 @@ export default function StudioChatInput({
             inputTestId="studio-chat-input"
             sendLabel={t.common.send}
             leading={
-              <button
-                type="button"
-                onClick={() => setChatOpen((v) => !v)}
-                aria-label={
-                  chatOpen ? t.studio.collapse_conversation : t.studio.expand_conversation
-                }
-                aria-expanded={chatOpen}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-primary"
-              >
-                {chatOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setChatOpen((v) => !v)}
+                  aria-label={
+                    chatOpen ? t.studio.collapse_conversation : t.studio.expand_conversation
+                  }
+                  aria-expanded={chatOpen}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-primary"
+                >
+                  {chatOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                </button>
+                {/* The frame switch sits ahead of the field: it says what the
+                    message is about, the plan or the app on screen. */}
+                {view && <FrameViewSwitch view={view} />}
+              </>
             }
             trailing={
               <>
@@ -338,5 +353,47 @@ export default function StudioChatInput({
         </div>
       </div>
     </>
+  );
+}
+
+// Plan | App, the same choice the B key makes in Guide. App is held back until
+// the preview is live; the tooltip says why instead of a dead button.
+function FrameViewSwitch({
+  view,
+}: {
+  view: { showing: StudioFrameView; appReady: boolean; onChange: (v: StudioFrameView) => void };
+}) {
+  const { t } = useTranslation();
+  const g = guideStrings(t);
+  const option = (v: StudioFrameView) => {
+    const on = view.showing === v;
+    const blocked = v === 'app' && !view.appReady;
+    return (
+      <Button
+        variant={on ? 'accent' : 'ghost'}
+        tone={on ? 'highlight' : undefined}
+        size="xs"
+        aria-pressed={on}
+        disabled={blocked}
+        onClick={() => view.onChange(v)}
+        data-testid={`studio-view-${v}`}
+        icon={v === 'plan' ? <MapIcon className="h-3.5 w-3.5" /> : <AppWindow className="h-3.5 w-3.5" />}
+        className={`rounded-full ${blocked ? 'pointer-events-none' : ''}`}
+      >
+        {v === 'plan' ? g.view_plan : g.view_app}
+      </Button>
+    );
+  };
+  return (
+    <div role="group" aria-label={g.view_switch} className="flex shrink-0 items-center gap-0.5">
+      {option('plan')}
+      {view.appReady ? (
+        option('app')
+      ) : (
+        <Tooltip content={g.tool_needs_live} placement="top" triggerFocusable triggerClassName="flex rounded-full">
+          {option('app')}
+        </Tooltip>
+      )}
+    </div>
   );
 }

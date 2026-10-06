@@ -301,7 +301,14 @@ export default function GuideStudio({
             toolsOpen={arcOpen}
           />
         )}
-        {rt && !showVision && !drafting && <StudioChatInput variant="guide" onPlanClick={() => railRef.current?.focusActive()} />}
+        {rt && !showVision && !drafting && (
+          <StudioChatInput
+            variant="guide"
+            onPlanClick={() => railRef.current?.focusActive()}
+            // The dock's Plan | App switch pins the frame the same way B does.
+            view={{ showing: showBlueprint ? 'plan' : 'app', appReady: live, onChange: (v) => setBlueprintPinned(v === 'plan') }}
+          />
+        )}
         {arcOpen && !drafting && <GuideToolArc unavailable={unavailable} onPick={pickTool} onClose={() => setArcOpen(false)} />}
       </div>
     </div>
