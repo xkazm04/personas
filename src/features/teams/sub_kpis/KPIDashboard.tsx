@@ -1,4 +1,4 @@
-// KPI dashboard — a DISPATCHER over three overview renderers behind one
+// KPI dashboard — a DISPATCHER over the overview renderers behind one
 // persisted switch (kpi-strategic-map spark, 2026-09-17): map, ledger and
 // river. Every variant reads the same overview model and opens the same
 // in-place Project › Group layer. The other three prototypes (classic, grid,
@@ -29,12 +29,22 @@ export interface KpiVariantProps {
 const StrategicMap = lazyRetry(() => import('./variants/StrategicMap'));
 const AttentionLedger = lazyRetry(() => import('./variants/AttentionLedger'));
 const StateRiver = lazyRetry(() => import('./variants/StateRiver'));
+// Prototype round 4 (dev builds only — see `kpiVariant.ts`). Lazy like the
+// shipped three, so a production bundle that can never select them still
+// never loads them.
+const Assay = lazyRetry(() => import('./variants/Assay'));
 const KpiGroupLayer = lazyRetry(() => import('./layer/KpiGroupLayer'));
 
 const VARIANT_COMPONENT: Record<KpiVariant, React.ComponentType<KpiVariantProps>> = {
   map: StrategicMap,
   ledger: AttentionLedger,
   river: StateRiver,
+  assay: Assay,
+  // `almanac` and `console` are declared in `KpiVariant` and land in their own
+  // commits; until then they are not in `KPI_PROTOTYPE_VARIANTS`, so neither
+  // the strip nor a persisted value can select one.
+  almanac: Assay,
+  console: Assay,
 };
 
 export function KPIDashboard({
