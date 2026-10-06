@@ -1,22 +1,18 @@
-/** BuildLayoutSwitcher - TEMPORARY prototype switcher (spark
- *  onboarding-blueprint). Cinema stays the default; the three blueprint
- *  variants run on the same props. Deleted at consolidation, with the losers.
+/** BuildLayoutSwitcher - TEMPORARY switcher (spark onboarding-blueprint).
+ *  The Schematic Dial won the prototype round; Cinema stays beside it, and
+ *  the default, until the dial is polished. Deleted when one of them goes.
  *  The pick is remembered for the app session only (module memory): a
  *  prototype choice is not user state worth persisting. */
 import { useState } from "react";
 import { SegmentedTabs } from "@/features/shared/components/layout/SegmentedTabs";
 import type { GlyphFullLayoutProps } from "@/features/agents/sub_glyph/glyphLayoutTypes";
 import { ContactSheetCinemaLayout } from "./cinema/ContactSheetCinemaLayout";
-import { AnnotatedSheetLayout } from "./annotated/AnnotatedSheetLayout";
-import { DraftingSheetLayout } from "./drafting/DraftingSheetLayout";
 import { SchematicDialLayout } from "./dial/SchematicDialLayout";
 
-type BuildLayout = "cinema" | "annotated" | "drafting" | "dial";
+type BuildLayout = "cinema" | "dial";
 const ID_PREFIX = "build-layout";
 const TABS: { id: BuildLayout; label: string }[] = [
   { id: "cinema", label: "Cinema" },
-  { id: "annotated", label: "Annotated Sheet" },
-  { id: "drafting", label: "Drafting Sheet" },
   { id: "dial", label: "Schematic Dial" },
 ];
 
@@ -40,10 +36,7 @@ export function BuildLayoutSwitcher(props: GlyphFullLayoutProps) {
         className="self-center"
       />
       <div role="tabpanel" id={`${ID_PREFIX}-panel-${layout}`} aria-labelledby={`${ID_PREFIX}-tab-${layout}`} className="flex-1 min-h-0 w-full flex flex-col">
-        {layout === "annotated" ? <AnnotatedSheetLayout {...props} />
-          : layout === "drafting" ? <DraftingSheetLayout {...props} />
-          : layout === "dial" ? <SchematicDialLayout {...props} />
-          : <ContactSheetCinemaLayout {...props} />}
+        {layout === "dial" ? <SchematicDialLayout {...props} /> : <ContactSheetCinemaLayout {...props} />}
       </div>
     </div>
   );
