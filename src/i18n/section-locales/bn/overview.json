@@ -372,10 +372,6 @@
     "linked_decisions_error": "সংযুক্ত সিদ্ধান্তগুলি লোড করা যায়নি।",
     "decisions_title": "যে সিদ্ধান্তগুলো নিতে হবে",
     "decisions_count": "{total}টির মধ্যে {shown}টি",
-    "decisions_kind_approval": "অনুমোদন",
-    "decisions_kind_message": "বার্তা",
-    "decisions_kind_output": "আউটপুট",
-    "decisions_kind_health": "স্বাস্থ্য সমস্যা",
     "linked_memories_importance": "গুরুত্ব {max}-এর মধ্যে {value}",
     "col_category": "বিভাগ",
     "col_choice": "পছন্দ",
@@ -2094,5 +2090,14 @@
   "reader_no_full_report_hint": "এই কাউন্সিল রান তার রান ডিরেক্টরিতে report.html বা report.md লেখেনি।",
   "reader_priority_critical": "জরুরি",
   "reader_read_full_report": "পূর্ণ রিপোর্ট পড়ুন",
-  "reader_report_unreadable": "পূর্ণ রিপোর্টটি পড়া যায়নি"
+  "reader_report_unreadable": "পূর্ণ রিপোর্টটি পড়া যায়নি",
+  "dc_badge_triage_all_hint": "এখানকার সব বাছাই করতে Shift চেপে ক্লিক করুন",
+  "dc_decide_n": "{count}টি সিদ্ধান্ত নিন",
+  "dc_decide_tip": "ডিসিশন সেন্টারে গেট সারি খুলুন, সবচেয়ে জরুরি আগে",
+  "dc_decided_elsewhere": "এটির সিদ্ধান্ত অন্য কেউ আগেই নিয়েছেন।",
+  "dc_open_in_deck": "ডিসিশন সেন্টারে খুলুন",
+  "dc_open_in_deck_hint": "এটি ডিসিশন সেন্টারে খুলুন (Enter)",
+  "dc_pending_lead": "প্রতিটি অপেক্ষমাণ রিভিউ ডিসিশন সেন্টারে খোলে, পূর্ণ বিবরণ ও অন্য সব সিদ্ধান্তের মতো একই কী নিয়ে।",
+  "dc_pending_list_aria": "অপেক্ষমাণ রিভিউ",
+  "dc_select_review": "রিভিউ বেছে নিন"
 }

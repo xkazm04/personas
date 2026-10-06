@@ -372,10 +372,6 @@
     "linked_decisions_error": "Не удалось загрузить связанные решения.",
     "decisions_title": "Требуют решения",
     "decisions_count": "{shown} из {total}",
-    "decisions_kind_approval": "Одобрение",
-    "decisions_kind_message": "Сообщение",
-    "decisions_kind_output": "Результат",
-    "decisions_kind_health": "Проблема состояния",
     "linked_memories_importance": "Важность {value} из {max}",
     "col_category": "Категория",
     "col_choice": "Выбор",
@@ -2094,5 +2090,14 @@
   "reader_no_full_report_hint": "Этот запуск совета не создал report.html или report.md в каталоге запуска.",
   "reader_priority_critical": "Критический",
   "reader_read_full_report": "Читать полный отчёт",
-  "reader_report_unreadable": "Не удалось прочитать полный отчёт"
+  "reader_report_unreadable": "Не удалось прочитать полный отчёт",
+  "dc_badge_triage_all_hint": "Shift+клик — разобрать всё здесь",
+  "dc_decide_n": "Решить: {count}",
+  "dc_decide_tip": "Открыть очередь гейтов в Центре решений, сначала срочные",
+  "dc_decided_elsewhere": "Это уже решил кто-то другой.",
+  "dc_open_in_deck": "Открыть в Центре решений",
+  "dc_open_in_deck_hint": "Открыть в Центре решений (Enter)",
+  "dc_pending_lead": "Каждое ожидающее ревью открывается в Центре решений с полным описанием и теми же клавишами, что и любое другое решение.",
+  "dc_pending_list_aria": "Ожидающие ревью",
+  "dc_select_review": "Выбрать ревью"
 }

@@ -7,6 +7,5 @@
     "relative_just_now": "gerade eben",
     "relative_minutes_one": "vor {m} Min.",
     "relative_minutes_other": "vor {m} Min."
-  },
-  "unknown_assistant": "Unbekannter Assistent"
+  }
 }

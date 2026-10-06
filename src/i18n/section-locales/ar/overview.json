@@ -372,10 +372,6 @@
     "linked_decisions_error": "تعذّر تحميل القرارات المرتبطة.",
     "decisions_title": "قرارات بانتظارك",
     "decisions_count": "{shown} من {total}",
-    "decisions_kind_approval": "موافقة",
-    "decisions_kind_message": "رسالة",
-    "decisions_kind_output": "مُخرَج",
-    "decisions_kind_health": "مشكلة في السلامة",
     "linked_memories_importance": "الأهمية {value} من {max}",
     "col_category": "الفئة",
     "col_choice": "الاختيار",
@@ -2094,5 +2090,14 @@
   "reader_no_full_report_hint": "لم يكتب تشغيل المجلس هذا ملف report.html أو report.md في مجلد التشغيل.",
   "reader_priority_critical": "حرجة",
   "reader_read_full_report": "قراءة التقرير الكامل",
-  "reader_report_unreadable": "تعذّرت قراءة التقرير الكامل"
+  "reader_report_unreadable": "تعذّرت قراءة التقرير الكامل",
+  "dc_badge_triage_all_hint": "اضغط مع Shift لفرز كل ما هنا",
+  "dc_decide_n": "قرّر في {count}",
+  "dc_decide_tip": "افتح طابور البوابات في مركز القرارات، الأكثر إلحاحًا أولًا",
+  "dc_decided_elsewhere": "سبق أن قرّر شخص آخر في هذا البند.",
+  "dc_open_in_deck": "فتح في مركز القرارات",
+  "dc_open_in_deck_hint": "افتح هذا البند في مركز القرارات (Enter)",
+  "dc_pending_lead": "تُفتح كل مراجعة معلّقة في مركز القرارات، بقضيتها الكاملة ومفاتيح كل قرار آخر نفسها.",
+  "dc_pending_list_aria": "المراجعات المعلّقة",
+  "dc_select_review": "تحديد المراجعة"
 }

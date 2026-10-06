@@ -372,10 +372,6 @@
     "linked_decisions_error": "Impossible de charger les décisions liées.",
     "decisions_title": "Décisions à prendre",
     "decisions_count": "{shown} sur {total}",
-    "decisions_kind_approval": "Approbation",
-    "decisions_kind_message": "Message reçu",
-    "decisions_kind_output": "Résultat",
-    "decisions_kind_health": "Problème de santé",
     "linked_memories_importance": "Importance {value} sur {max}",
     "col_category": "Catégorie",
     "col_choice": "Choix",
@@ -2094,5 +2090,14 @@
   "reader_no_full_report_hint": "Cette exécution du conseil n'a écrit ni report.html ni report.md dans son répertoire d'exécution.",
   "reader_priority_critical": "Critique",
   "reader_read_full_report": "Lire le rapport complet",
-  "reader_report_unreadable": "Impossible de lire le rapport complet"
+  "reader_report_unreadable": "Impossible de lire le rapport complet",
+  "dc_badge_triage_all_hint": "Maj+clic pour trier tout ce qui est ici",
+  "dc_decide_n": "Décider {count}",
+  "dc_decide_tip": "Ouvrir la file de validations dans le Centre de décision, le plus urgent d'abord",
+  "dc_decided_elsewhere": "Quelqu'un d'autre a déjà tranché.",
+  "dc_open_in_deck": "Ouvrir dans le Centre de décision",
+  "dc_open_in_deck_hint": "Ouvrir celle-ci dans le Centre de décision (Entrée)",
+  "dc_pending_lead": "Chaque revue en attente s'ouvre dans le Centre de décision, avec son dossier complet et les mêmes touches que toute autre décision.",
+  "dc_pending_list_aria": "Revues en attente",
+  "dc_select_review": "Sélectionner la revue"
 }

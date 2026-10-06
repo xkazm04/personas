@@ -372,10 +372,6 @@
     "linked_decisions_error": "リンクされた決定を読み込めませんでした。",
     "decisions_title": "判断が必要な項目",
     "decisions_count": "{shown} / {total}",
-    "decisions_kind_approval": "承認",
-    "decisions_kind_message": "メッセージ",
-    "decisions_kind_output": "出力",
-    "decisions_kind_health": "ヘルスの問題",
     "linked_memories_importance": "重要度 {value}/{max}",
     "col_category": "カテゴリ",
     "col_choice": "選択",
@@ -2094,5 +2090,14 @@
   "reader_no_full_report_hint": "この評議会の実行は、実行ディレクトリにreport.htmlまたはreport.mdを書き出しませんでした。",
   "reader_priority_critical": "重大",
   "reader_read_full_report": "完全レポートを読む",
-  "reader_report_unreadable": "完全レポートを読み込めませんでした"
+  "reader_report_unreadable": "完全レポートを読み込めませんでした",
+  "dc_badge_triage_all_hint": "Shift+クリックでここのすべてをトリアージ",
+  "dc_decide_n": "{count} 件を判断",
+  "dc_decide_tip": "ディシジョンセンターでゲートのキューを緊急度の高い順に開く",
+  "dc_decided_elsewhere": "これはすでに他のユーザーが判断済みです。",
+  "dc_open_in_deck": "ディシジョンセンターで開く",
+  "dc_open_in_deck_hint": "これをディシジョンセンターで開く (Enter)",
+  "dc_pending_lead": "保留中のレビューはそれぞれ、詳細な内容とほかの判断と同じキー操作で、ディシジョンセンターに開きます。",
+  "dc_pending_list_aria": "保留中のレビュー",
+  "dc_select_review": "レビューを選択"
 }

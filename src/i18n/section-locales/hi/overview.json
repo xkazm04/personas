@@ -372,10 +372,6 @@
     "linked_decisions_error": "लिंक किए गए निर्णय लोड नहीं हो सके।",
     "decisions_title": "लेने योग्य निर्णय",
     "decisions_count": "{total} में से {shown}",
-    "decisions_kind_approval": "स्वीकृति",
-    "decisions_kind_message": "संदेश",
-    "decisions_kind_output": "आउटपुट",
-    "decisions_kind_health": "स्वास्थ्य समस्या",
     "linked_memories_importance": "महत्व {max} में से {value}",
     "col_category": "श्रेणी",
     "col_choice": "विकल्प",
@@ -2094,5 +2090,14 @@
   "reader_no_full_report_hint": "इस काउंसिल रन ने अपनी रन डायरेक्टरी में report.html या report.md नहीं लिखी।",
   "reader_priority_critical": "गंभीर",
   "reader_read_full_report": "पूरी रिपोर्ट पढ़ें",
-  "reader_report_unreadable": "पूरी रिपोर्ट पढ़ी नहीं जा सकी"
+  "reader_report_unreadable": "पूरी रिपोर्ट पढ़ी नहीं जा सकी",
+  "dc_badge_triage_all_hint": "यहाँ सब कुछ छाँटने के लिए Shift+क्लिक करें",
+  "dc_decide_n": "{count} तय करें",
+  "dc_decide_tip": "डिसीज़न सेंटर में गेट कतार खोलें, सबसे ज़रूरी पहले",
+  "dc_decided_elsewhere": "इसे किसी और ने पहले ही तय कर दिया है।",
+  "dc_open_in_deck": "डिसीज़न सेंटर में खोलें",
+  "dc_open_in_deck_hint": "इसे डिसीज़न सेंटर में खोलें (Enter)",
+  "dc_pending_lead": "हर लंबित समीक्षा डिसीज़न सेंटर में अपने पूरे ब्योरे और अन्य निर्णयों जैसी ही कुंजियों के साथ खुलती है।",
+  "dc_pending_list_aria": "लंबित समीक्षाएँ",
+  "dc_select_review": "समीक्षा चुनें"
 }

@@ -372,10 +372,6 @@
     "linked_decisions_error": "Không thể tải các quyết định liên kết.",
     "decisions_title": "Quyết định cần đưa ra",
     "decisions_count": "{shown} / {total}",
-    "decisions_kind_approval": "Phê duyệt",
-    "decisions_kind_message": "Tin nhắn",
-    "decisions_kind_output": "Đầu ra",
-    "decisions_kind_health": "Sự cố tình trạng",
     "linked_memories_importance": "Mức quan trọng {value}/{max}",
     "col_category": "Danh mục",
     "col_choice": "Lựa chọn",
@@ -2094,5 +2090,14 @@
   "reader_no_full_report_hint": "Lượt chạy của hội đồng này không ghi report.html hoặc report.md vào thư mục chạy.",
   "reader_priority_critical": "Nghiêm trọng",
   "reader_read_full_report": "Đọc báo cáo đầy đủ",
-  "reader_report_unreadable": "Không thể đọc báo cáo đầy đủ"
+  "reader_report_unreadable": "Không thể đọc báo cáo đầy đủ",
+  "dc_badge_triage_all_hint": "Shift+nhấp để phân loại mọi thứ ở đây",
+  "dc_decide_n": "Quyết định {count}",
+  "dc_decide_tip": "Mở hàng đợi cổng duyệt trong Trung tâm quyết định, khẩn cấp nhất trước",
+  "dc_decided_elsewhere": "Người khác đã quyết định mục này.",
+  "dc_open_in_deck": "Mở trong Trung tâm quyết định",
+  "dc_open_in_deck_hint": "Mở mục này trong Trung tâm quyết định (Enter)",
+  "dc_pending_lead": "Mỗi đánh giá đang chờ sẽ mở trong Trung tâm quyết định, với đầy đủ nội dung và cùng phím như mọi quyết định khác.",
+  "dc_pending_list_aria": "Đánh giá đang chờ",
+  "dc_select_review": "Chọn đánh giá"
 }

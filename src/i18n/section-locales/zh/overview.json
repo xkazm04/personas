@@ -372,10 +372,6 @@
     "linked_decisions_error": "无法加载关联决策。",
     "decisions_title": "待做的决定",
     "decisions_count": "{shown} / {total}",
-    "decisions_kind_approval": "审批",
-    "decisions_kind_message": "消息",
-    "decisions_kind_output": "输出",
-    "decisions_kind_health": "健康问题",
     "linked_memories_importance": "重要性 {value}/{max}",
     "col_category": "分类",
     "col_choice": "选择",
@@ -2094,5 +2090,14 @@
   "reader_no_full_report_hint": "此次委员会运行未在其运行目录中写入 report.html 或 report.md。",
   "reader_priority_critical": "严重",
   "reader_read_full_report": "阅读完整报告",
-  "reader_report_unreadable": "无法读取完整报告"
+  "reader_report_unreadable": "无法读取完整报告",
+  "dc_badge_triage_all_hint": "Shift+点击可分诊此处全部内容",
+  "dc_decide_n": "决定 {count} 项",
+  "dc_decide_tip": "在决策中心打开关卡队列，最紧急的优先",
+  "dc_decided_elsewhere": "已有其他人做出决定。",
+  "dc_open_in_deck": "在决策中心打开",
+  "dc_open_in_deck_hint": "在决策中心打开此项 (Enter)",
+  "dc_pending_lead": "每个待审阅项都会在决策中心打开，附带完整背景，按键与其他所有决定一致。",
+  "dc_pending_list_aria": "待审阅项",
+  "dc_select_review": "选择审阅项"
 }

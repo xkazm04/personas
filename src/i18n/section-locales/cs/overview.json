@@ -372,10 +372,6 @@
     "linked_decisions_error": "Propojená rozhodnutí se nepodařilo načíst.",
     "decisions_title": "Rozhodnutí k vyřízení",
     "decisions_count": "{shown} z {total}",
-    "decisions_kind_approval": "Schválení",
-    "decisions_kind_message": "Zpráva",
-    "decisions_kind_output": "Výstup",
-    "decisions_kind_health": "Problém se stavem",
     "linked_memories_importance": "Důležitost {value} z {max}",
     "col_category": "Kategorie",
     "col_choice": "Volba",
@@ -2094,5 +2090,14 @@
   "reader_no_full_report_hint": "Tento běh rady do svého adresáře nezapsal soubor report.html ani report.md.",
   "reader_priority_critical": "Kritická",
   "reader_read_full_report": "Číst úplný report",
-  "reader_report_unreadable": "Úplný report se nepodařilo přečíst"
+  "reader_report_unreadable": "Úplný report se nepodařilo přečíst",
+  "dc_badge_triage_all_hint": "Shift+klik roztřídí vše zde",
+  "dc_decide_n": "Rozhodnout ({count})",
+  "dc_decide_tip": "Otevřít frontu bran v Centru rozhodnutí, nejnaléhavější první",
+  "dc_decided_elsewhere": "Tuto položku už rozhodl někdo jiný.",
+  "dc_open_in_deck": "Otevřít v Centru rozhodnutí",
+  "dc_open_in_deck_hint": "Otevřít tuto položku v Centru rozhodnutí (Enter)",
+  "dc_pending_lead": "Každá čekající revize se otevře v Centru rozhodnutí s celým podkladem a stejnými klávesami jako každé jiné rozhodnutí.",
+  "dc_pending_list_aria": "Čekající revize",
+  "dc_select_review": "Vybrat revizi"
 }

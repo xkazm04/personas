@@ -372,10 +372,6 @@
     "linked_decisions_error": "Verknüpfte Entscheidungen konnten nicht geladen werden.",
     "decisions_title": "Zu treffende Entscheidungen",
     "decisions_count": "{shown} von {total}",
-    "decisions_kind_approval": "Freigabe",
-    "decisions_kind_message": "Nachricht",
-    "decisions_kind_output": "Ergebnis",
-    "decisions_kind_health": "Zustandsproblem",
     "linked_memories_importance": "Wichtigkeit {value} von {max}",
     "col_category": "Kategorie",
     "col_choice": "Wahl",
@@ -2094,5 +2090,14 @@
   "reader_no_full_report_hint": "Dieser Ratslauf hat keine report.html oder report.md in sein Laufverzeichnis geschrieben.",
   "reader_priority_critical": "Kritisch",
   "reader_read_full_report": "Vollständigen Bericht lesen",
-  "reader_report_unreadable": "Der vollständige Bericht konnte nicht gelesen werden"
+  "reader_report_unreadable": "Der vollständige Bericht konnte nicht gelesen werden",
+  "dc_badge_triage_all_hint": "Shift+Klick, um hier alles zu sichten",
+  "dc_decide_n": "{count} entscheiden",
+  "dc_decide_tip": "Freigaben-Warteschlange im Entscheidungszentrum öffnen, Dringendstes zuerst",
+  "dc_decided_elsewhere": "Jemand anderes hat dies bereits entschieden.",
+  "dc_open_in_deck": "Im Entscheidungszentrum öffnen",
+  "dc_open_in_deck_hint": "Diese im Entscheidungszentrum öffnen (Enter)",
+  "dc_pending_lead": "Jede offene Prüfung öffnet sich im Entscheidungszentrum, mit vollständigem Fall und denselben Tasten wie jede andere Entscheidung.",
+  "dc_pending_list_aria": "Offene Prüfungen",
+  "dc_select_review": "Prüfung auswählen"
 }

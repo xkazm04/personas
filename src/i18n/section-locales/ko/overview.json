@@ -372,10 +372,6 @@
     "linked_decisions_error": "연결된 결정을 불러오지 못했습니다.",
     "decisions_title": "내려야 할 결정",
     "decisions_count": "{total}개 중 {shown}개",
-    "decisions_kind_approval": "승인",
-    "decisions_kind_message": "메시지",
-    "decisions_kind_output": "출력",
-    "decisions_kind_health": "상태 문제",
     "linked_memories_importance": "중요도 {value}/{max}",
     "col_category": "카테고리",
     "col_choice": "선택",
@@ -2094,5 +2090,14 @@
   "reader_no_full_report_hint": "이 위원회 실행은 실행 디렉터리에 report.html 또는 report.md를 작성하지 않았습니다.",
   "reader_priority_critical": "치명적",
   "reader_read_full_report": "전체 보고서 읽기",
-  "reader_report_unreadable": "전체 보고서를 읽을 수 없습니다"
+  "reader_report_unreadable": "전체 보고서를 읽을 수 없습니다",
+  "dc_badge_triage_all_hint": "Shift+클릭으로 여기 모든 항목을 분류",
+  "dc_decide_n": "{count}건 결정",
+  "dc_decide_tip": "결정 센터에서 게이트 대기열을 긴급한 순서대로 열기",
+  "dc_decided_elsewhere": "다른 사람이 이미 결정했습니다.",
+  "dc_open_in_deck": "결정 센터에서 열기",
+  "dc_open_in_deck_hint": "결정 센터에서 열기 (Enter)",
+  "dc_pending_lead": "대기 중인 검토는 전체 내용과 다른 모든 결정과 같은 키와 함께 결정 센터에서 열립니다.",
+  "dc_pending_list_aria": "대기 중인 검토",
+  "dc_select_review": "검토 선택"
 }

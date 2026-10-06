@@ -372,10 +372,6 @@
     "linked_decisions_error": "No se pudieron cargar las decisiones vinculadas.",
     "decisions_title": "Decisiones pendientes",
     "decisions_count": "{shown} de {total}",
-    "decisions_kind_approval": "Aprobación",
-    "decisions_kind_message": "Mensaje",
-    "decisions_kind_output": "Resultado",
-    "decisions_kind_health": "Problema de estado",
     "linked_memories_importance": "Importancia {value} de {max}",
     "col_category": "Categoría",
     "col_choice": "Elección",
@@ -2094,5 +2090,14 @@
   "reader_no_full_report_hint": "Esta ejecución del consejo no escribió un report.html ni un report.md en su directorio de ejecución.",
   "reader_priority_critical": "Crítica",
   "reader_read_full_report": "Leer informe completo",
-  "reader_report_unreadable": "No se pudo leer el informe completo"
+  "reader_report_unreadable": "No se pudo leer el informe completo",
+  "dc_badge_triage_all_hint": "Shift+clic para hacer triaje de todo aquí",
+  "dc_decide_n": "Decidir {count}",
+  "dc_decide_tip": "Abrir la cola de aprobaciones en el Centro de decisiones, lo más urgente primero",
+  "dc_decided_elsewhere": "Otra persona ya decidió esto.",
+  "dc_open_in_deck": "Abrir en el Centro de decisiones",
+  "dc_open_in_deck_hint": "Abrir esta en el Centro de decisiones (Enter)",
+  "dc_pending_lead": "Cada revisión pendiente se abre en el Centro de decisiones, con su caso completo y las mismas teclas que cualquier otra decisión.",
+  "dc_pending_list_aria": "Revisiones pendientes",
+  "dc_select_review": "Seleccionar revisión"
 }

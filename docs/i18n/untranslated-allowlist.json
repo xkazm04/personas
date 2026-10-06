@@ -4133,5 +4133,15 @@
   "id:monitor.dc_hub_chip_backlog",
   "id:monitor.dc_hub_chip_chat",
   "id:monitor.dc_consumers_chip_backlog",
-  "id:monitor.dc_consumers_chip_chat"
+  "id:monitor.dc_consumers_chip_chat",
+  "cs:monitor.dc_deck_kind_incident",
+  "de:monitor.dc_deck_reader_start",
+  "es:monitor.dc_hub_key_walk",
+  "es:monitor.dc_deck_kind_idea",
+  "fr:monitor.dc_hub_cost_effort",
+  "fr:monitor.dc_deck_cost_effort",
+  "fr:monitor.dc_deck_kind_question",
+  "fr:monitor.dc_deck_kind_evolution",
+  "fr:monitor.dc_deck_kind_incident",
+  "fr:monitor.dc_deck_kind_message"
 ]
