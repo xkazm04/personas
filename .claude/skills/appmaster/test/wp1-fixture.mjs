@@ -57,6 +57,11 @@ create table dev_tasks (id text primary key, project_id text, title text, descri
 create table dev_kpis (id text primary key, project_id text, name text, status text, last_measured_at text, created_at text);
 create table dev_milestones (id text primary key, project_id text, name text, goal text, status text default 'planned', order_index integer default 0, target_date text, cut_at text, shipped_at text, created_at text, updated_at text, description text);
 create table dev_milestone_items (milestone_id text, item_kind text, item_id text, bucket text default 'core');
+create table dev_use_cases (id text primary key, project_id text, name text, slug text, status text default 'active', tier text default 'standard', created_at text);
+create table dev_council_subjects (id text primary key, project_id text, kind text, use_case_id text, slug text, title text);
+create table dev_council_runs (id text primary key, subject_id text, round_no integer, outcome text, overall real, coverage real, must_address_json text, run_dir text, finished_at text, ingested_at text);
+create table dev_council_decisions (id text primary key, subject_id text, run_id text, decision text, reason text, decided_at text);
+create table persona_reports (id text primary key, persona_id text, title text, content text, created_at text);
 `;
 
 const sqlNow = (minAgo = 0) => new Date(Date.now() - minAgo * 60000).toISOString().replace('T', ' ').slice(0, 19);
@@ -88,6 +93,19 @@ export function makeDb(env) {
   run('insert into dev_tasks values (?,?,?,?,?,?,?,?,?,?)', 't1', IDS.project, 'Task in flight', 'x', IDS.ideaWithTask, null, 'running', null, '2026-09-03T00:00:00Z', '2026-09-03T00:00:00Z');
   run('insert into dev_kpis values (?,?,?,?,?,?)', 'k1', IDS.project, 'Unmeasured KPI', 'active', null, '2026-09-01');
   run('insert into dev_kpis values (?,?,?,?,?,?)', 'k2', IDS.project, 'Measured KPI', 'active', '2026-09-05', '2026-09-01');
+  // features (dev_use_cases) and the council history the app holds: an interactive full council that
+  // failed one feature, and an operator's approval of another
+  const uc = (id, slug, name) => run('insert into dev_use_cases (id, project_id, name, slug, status, tier, created_at) values (?,?,?,?,?,?,?)', id, IDS.project, name, slug, 'active', 'standard', '2026-09-01');
+  uc('uc-org', 'org-journey', 'Org journey');
+  uc('uc-bill', 'billing-flow', 'Billing flow');
+  uc('uc-kpi', 'kpi-board', 'KPI board');
+  run("insert into dev_council_subjects values ('s-bill', ?, 'use_case', 'uc-bill', 'billing-flow', 'Billing flow')", IDS.project);
+  run("insert into dev_council_subjects values ('s-kpi', ?, 'use_case', 'uc-kpi', 'kpi-board', 'KPI board')", IDS.project);
+  run("insert into dev_council_runs values ('cr-bill-1', 's-bill', 1, 'fail', 0.41, 0.8, ?, ?, '2026-09-20 10:00:00', '2026-09-20 10:05:00')",
+    JSON.stringify(['Fix the refund path: a partial refund double-counts tax']), path.join(env.demoRoot, '.personas', 'council', 'runs', '2026-09-20-billing-flow-r1'));
+  run("insert into dev_council_runs values ('cr-kpi-1', 's-kpi', 1, 'ready', 0.82, 0.9, '[]', ?, '2026-09-21 10:00:00', '2026-09-21 10:05:00')",
+    path.join(env.demoRoot, '.personas', 'council', 'runs', '2026-09-21-kpi-board-r1'));
+  run("insert into dev_council_decisions values ('cd-kpi', 's-kpi', 'cr-kpi-1', 'approved', 'looks right', '2026-09-22 09:00:00')");
   return d;
 }
 

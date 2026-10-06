@@ -10,8 +10,9 @@ import path from 'node:path';
 import {
   SKILL_DIR, runDir, shortId, nowIso, mintId, claudeBin, Refusal,
   ENV_STRIP, ENV_SET, RUN_LABEL_PREFIX, GLOBAL_CAP, PER_PROJECT_CAP,
-  QUIET_MIN, TIMEOUT_MIN, LIVE_RUN_STATES, QUEUE_REASONS, SELF_REPO, normRoot, repoOf, repoEnv,
+  QUIET_MIN, TIMEOUT_MIN, LIVE_RUN_STATES, QUEUE_REASONS, SELF_REPO, COUNCIL, normRoot, repoOf, repoEnv, isReviewRun,
 } from './contract.mjs';
+import { seedCouncil } from './council.mjs';
 import { loadBrief, listRuns, listSlugs, findRun, updateRun } from './store.mjs';
 import { readLimit, setLimit, detectLimit, limitSurface, limitSnippet } from './limits.mjs';
 import { createWorktree, removeWorktree } from './worktree.mjs';
@@ -148,11 +149,47 @@ export function renderBuilderPrompt(run, brief = {}, gates = {}) {
       ? `${listOrNone(run.paths.map((g) => `\`${g}\``), '')}\n  Another builder may be working beside you on other paths of this repo: stay inside these. A change the task needs outside them is reported in \`questions\`, not made.`
       : '  - (none declared: keep to what the task names)',
   };
+  return fillTemplate(template, values, 'builder prompt');
+}
+
+/** Every {{placeholder}} filled; a missing value or a placeholder the map lacks is an error, never a blank. */
+function fillTemplate(template, values, what) {
   const missing = Object.entries(values).filter(([, v]) => v === undefined || v === null || v === '').map(([k]) => k);
-  if (missing.length) throw new Error(`builder prompt: no value for ${missing.map((k) => `{{${k}}}`).join(', ')}`);
+  if (missing.length) throw new Error(`${what}: no value for ${missing.map((k) => `{{${k}}}`).join(', ')}`);
   const unknown = [...new Set([...template.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]).filter((k) => !(k in values)))];
-  if (unknown.length) throw new Error(`builder prompt: template names unknown placeholders ${unknown.join(', ')}`);
+  if (unknown.length) throw new Error(`${what}: template names unknown placeholders ${unknown.join(', ')}`);
   return template.replace(/\{\{(\w+)\}\}/g, (_, k) => String(values[k]));
+}
+
+/**
+ * (run, brief, seed) => string   // roles/council-reviewer.md filled: a review run runs the council on
+ * one feature and writes no code. `seed` is what seedCouncil put in the worktree before it started.
+ */
+export function renderReviewerPrompt(run, brief = {}, seed = {}) {
+  const template = fs.readFileSync(path.join(SKILL_DIR, 'roles', 'council-reviewer.md'), 'utf8');
+  const { rules } = splitBoundaries(brief?.boundaries);
+  const extraRules = Array.isArray(brief?.rules) ? brief.rules : brief?.rules ? [brief.rules] : [];
+  const p = run.project || {};
+  const lite = run.councilMode === 'lite';
+  const present = seed.present ?? run.councilSeeded ?? [];
+  return fillTemplate(template, {
+    project: p.name && p.name !== p.slug ? `${p.name} (${p.slug})` : p.slug,
+    root: repoOf(run).root,
+    charter: run.charterSlug,
+    mode: lite ? 'lite' : 'full',
+    featureSlug: run.featureSlug,
+    reason: run.reason,
+    task: run.brief,
+    councilCommand: lite ? `/council --lite ${run.featureSlug}` : `/council ${run.featureSlug}`,
+    worktree: run.worktree,
+    branch: run.branch,
+    baseBranch: repoOf(run).baseBranch,
+    runsRel: COUNCIL.runsRel,
+    seeded: present.length ? present.map((n) => `\`${n}\``).join(', ') : `none (this is the feature's first ${lite ? 'lite' : 'full'} round)`,
+    expectedRound: String(seed.expectedRound ?? present.length + 1),
+    runDir: runDir(run.slug, run.runId),
+    rules: listOrNone([...rules, ...extraRules], '(none beyond this brief)'),
+  }, 'reviewer prompt');
 }
 
 // ---------------------------------------------------------------- spawn
@@ -255,8 +292,9 @@ export function dispatchCore({ flags = {} } = {}) {
       hint: `at most ${lane} live run(s) may target this repo across all projects`,
     });
   }
-  // Disjoint declared paths in that repo. No declared paths = the whole repo.
-  const clashes = holding
+  // Disjoint declared paths in that repo. No declared paths = the whole repo. A council review commits
+  // nothing (settle holds one that does), so it neither blocks a builder nor is blocked by one.
+  const clashes = (isReviewRun(run) ? [] : holding.filter((r) => !isReviewRun(r)))
     .map((r) => ({ runId8: shortId(r.runId), slug: r.slug, state: r.state, charter: r.charterSlug, paths: r.paths ?? [], pairs: overlappingPairs(run.paths, r.paths) }))
     .filter((c) => c.pairs.length);
   if (clashes.length) {
@@ -276,8 +314,16 @@ export function dispatchCore({ flags = {} } = {}) {
   const wt = createWorktree(run, brief);
   // the worktree is an effect: record it on the still-planned run before anything else can fail
   run = updateRun(run, { branch: wt.branch, worktree: wt.worktree, baseSha: wt.baseSha, nodeModules: wt.nodeModules });
-  const gates = resolveRunGates(run, brief);
-  const prompt = renderBuilderPrompt(run, brief, gates);
+  let prompt;
+  if (isReviewRun(run)) {
+    // the feature's earlier rounds and the last human decision go in first; what is there now is
+    // recorded, so settle never takes a pre-existing run directory for this review's
+    const seed = seedCouncil(run, repoOf(run).root);
+    run = updateRun(run, { councilSeeded: seed.present, councilSeed: { copied: seed.copied, stateCopied: seed.stateCopied, expectedRound: seed.expectedRound } });
+    prompt = renderReviewerPrompt(run, brief, seed);
+  } else {
+    prompt = renderBuilderPrompt(run, brief, resolveRunGates(run, brief));
+  }
   fs.writeFileSync(runFile(run, 'brief.md'), prompt);
   const { pid, sessionId } = spawnWorker(run, prompt);
   return updateRun(run, { state: 'running', pid, sessionId, startedAt: nowIso() });
@@ -366,6 +412,7 @@ export function cmdRelease({ flags = {} } = {}) {
   const run = requireRun(flags.run);
   if (!flags.reason || flags.reason === true) throw new Error('release needs --reason <text>');
   if (run.state === 'merged') throw new Refusal('run already merged', { runId: run.runId, mergedSha: run.mergedSha });
+  if (run.state === 'reviewed') throw new Refusal('run already reviewed', { runId: run.runId, outcome: run.council?.outcome ?? null });
   if (run.state === 'released') return run;
   const patch = { state: 'released', heldReason: String(flags.reason), endedAt: run.endedAt || nowIso() };
   if (flags.kill && run.pid && pidAlive(run.pid)) {

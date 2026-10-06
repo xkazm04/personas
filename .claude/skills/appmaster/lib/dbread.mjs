@@ -290,6 +290,32 @@ export function planProgress(d, created) {
   };
 }
 
+/** Rows of a read that may hit a table an older DB lacks: {rows, error} instead of a silent []. */
+function tryRows(d, sql, params) {
+  try { return { rows: d.prepare(sql).all(...params).map((r) => ({ ...r })), error: null }; } catch (e) { return { rows: [], error: String(e.message || e).split('\n')[0] }; }
+}
+
+/** (db, projectId) => {rows:[{id,name,slug,status,tier}], error}   The project's features (not archived). */
+export function useCasesOf(d, projectId) {
+  const r = tryRows(d, `select id, name, slug, status, tier from dev_use_cases where project_id = ? and status <> 'archived' order by name`, [projectId]);
+  if (!r.error || !/no such column: tier/.test(r.error)) return r;
+  return tryRows(d, `select id, name, slug, status, null tier from dev_use_cases where project_id = ? and status <> 'archived' order by name`, [projectId]);
+}
+
+/** (db, projectId) => {rows:[{slug, round_no, outcome, overall, coverage, must_address_json, run_dir, at}], error}   council runs the app holds */
+export function councilRunsOf(d, projectId) {
+  return tryRows(d, `select s.slug, r.round_no, r.outcome, r.overall, r.coverage, r.must_address_json, r.run_dir, coalesce(r.finished_at, r.ingested_at) at
+                     from dev_council_runs r join dev_council_subjects s on s.id = r.subject_id
+                     where s.project_id = ? and s.kind = 'use_case' order by at`, [projectId]);
+}
+
+/** (db, projectId) => {rows:[{slug, decision, reason, decided_at}], error}   a person's decisions at the council's gate */
+export function councilDecisionsOf(d, projectId) {
+  return tryRows(d, `select s.slug, x.decision, x.reason, x.decided_at
+                     from dev_council_decisions x join dev_council_subjects s on s.id = x.subject_id
+                     where s.project_id = ? and s.kind = 'use_case' order by x.decided_at`, [projectId]);
+}
+
 /** Repo docs the master and builders should read, by path (never inlined: kp's CLAUDE.md is 23KB). */
 export function repoDocs(root) {
   return ['CLAUDE.md', 'AGENTS.md', path.join('.claude', 'CLAUDE.md')]

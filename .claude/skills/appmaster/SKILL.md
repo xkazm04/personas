@@ -224,7 +224,10 @@ are used here, in this session, and never inside a master subagent.
    nothing more (the operator merges; the Director never does); `Discard the branch` ->
    `AM release --run <runId> --reason "operator discarded"` (release keeps the branch and
    worktree, so give the operator the branch name to delete); `Re-dispatch after I commit` ->
-   when the operator says the checkout is clean, `AM settle --run <runId> --retry`.
+   when the operator says the checkout is clean, `AM settle --run <runId> --retry`. A held
+   council REVIEW offers `Discard the review` -> `AM release --run <runId> --reason "operator
+   discarded the review"`, and `Settle again` -> `AM settle --run <runId> --retry` once what held
+   it (a commit, a missing or unreadable council `result.json`) is fixed.
 9. **Digest.** Print it (format below).
 10. **Sleep.** `ScheduleWakeup` at the earliest `nextWakeAt` over the managed projects,
     clamped to 60..3600 s. While builders run, the await notifications wake you, so the

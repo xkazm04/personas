@@ -37,6 +37,8 @@ export const asksPath = (slug) => path.join(headlessDir(slug), 'asks.jsonl');
 export const channelPath = (slug) => path.join(headlessDir(slug), 'channel.jsonl');
 export const outboxPath = (slug) => path.join(headlessDir(slug), 'outbox.jsonl');
 export const contextDir = (slug) => path.join(headlessDir(slug), 'context');
+/** Durable copies of the council run directories review runs produced (the worktree is removed). */
+export const councilDir = (slug) => path.join(headlessDir(slug), 'council');
 export const runsDir = (slug) => path.join(headlessDir(slug), 'runs');
 export const runDir = (slug, runId) => path.join(runsDir(slug), runId);
 /** Global (not per project): a usage limit belongs to the subscription. */
@@ -129,16 +131,36 @@ export const SLEEP_MAX_SEC = 3600;
  * the app): 1..5 milestones of 1..5 goals each, strings bounded. Queued as ONE outbox entry `plan`.
  */
 export const PLAN = { minMilestones: 1, maxMilestones: 5, minGoals: 1, maxGoals: 5, nameMax: 120, goalMax: 500, titleMax: 160, measureMax: 300, descriptionMax: 1000 };
+/**
+ * The council lane. Two charter slugs a brief may list are REVIEW runs, not builds: the builder role is
+ * roles/council-reviewer.md, which runs `/council --lite <feature>` or `/council <feature>` in the
+ * project repo's worktree and must not change code. settle ends one `reviewed` (a terminal state),
+ * never `merged`. A dispatch for them carries `featureSlug` (a dev_use_cases slug).
+ */
+export const REVIEW_CHARTERS = { 'council-lite-review': 'lite', 'council-review': 'full' };
+export const isReviewRun = (run) => Boolean(REVIEW_CHARTERS[run?.charterSlug]);
+export const COUNCIL = {
+  runsRel: '.personas/council/runs',         // where the council writes <YYYY-MM-DD>-<slug>-r<n>/ (the skill's default)
+  stateRel: '.personas/council/state.json',  // what a person decided last time (seeded into the worktree)
+  outcomes: ['ready', 'fail', 'incomplete', 'stalled'],
+  maxRounds: 3,                              // the council refuses round 4 (stalled); decide refuses dispatching it
+  mustAddressItems: 3, mustAddressChars: 200,
+  reportMax: 20000,                          // the report.md carried in a `report` outbox entry
+  attachmentsMax: 20,
+};
+export const FEATURE_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const QUEUE_REASONS = ['global cap', 'project cap', 'repo lane', 'paths overlap', 'memory'];
 export const QUEUE_STATES = ['queued', 'promoted', 'dropped'];
 export const QUEUE_LOCK = { waitMs: 30000, pollMs: 100, staleMin: 10 };
 
 // ---------------------------------------------------------------- vocabularies
 
-export const RUN_STATES = ['planned', 'running', 'exited', 'verifying', 'merged', 'held', 'released', 'failed'];
+export const RUN_STATES = ['planned', 'running', 'exited', 'verifying', 'merged', 'held', 'released', 'failed', 'reviewed'];
 export const LIVE_RUN_STATES = ['planned', 'running', 'exited', 'verifying'];
+/** States settle never moves a run out of (`reviewed`: a council review run, settled without a merge). */
+export const SETTLED_STATES = ['merged', 'failed', 'released', 'reviewed'];
 export const ASK_KINDS = ['scope', 'spend', 'risk', 'goal-conflict', 'recipe-failing', 'merge-held', 'other'];
-export const OUTBOX_KINDS = ['idea-verdict', 'task-complete', 'ask', 'say', 'plan'];
+export const OUTBOX_KINDS = ['idea-verdict', 'task-complete', 'ask', 'say', 'plan', 'council', 'tier', 'report'];
 export const OUTBOX_STATES = ['queued', 'replayed', 'failed', 'skipped'];
 export const VERDICT_STATUSES = ['accepted', 'rejected'];
 /** Exit codes: 0 ok, 2 refused by a brake or a gate (stdout carries {refused}), 1 error. */
@@ -205,7 +227,8 @@ export const claudeBin = () => process.env.APPMASTER_CLAUDE_BIN || 'claude';
  * @typedef {Object} Decision          the master's whole answer to one wake (schema/decision.schema.json)
  * ABSENT-VALUE CONVENTION: every array is present (empty []), `say` is null when silent. Never omitted.
  * @property {string} wakeId
- * @property {Array<{charterSlug:string,reason:string,brief:string,ideaIds:string[],model?:string|null,paths?:string[],repo?:string}>} dispatch
+ * @property {Array<{charterSlug:string,reason:string,brief:string,ideaIds:string[],model?:string|null,paths?:string[],repo?:string,featureSlug?:string}>} dispatch
+ *   `featureSlug` is REQUIRED for a REVIEW_CHARTERS dispatch (and optional on a rework delivery)
  *   `model` (BUILDER_MODEL_CHOICES) overrides the charter's default unless the brief pins one;
  *   `paths` (repo-relative path prefixes / globs the builder will touch) is REQUIRED on every entry
  *   when there are two, and the two must be disjoint (lib/paths.mjs)
@@ -249,6 +272,10 @@ export const claudeBin = () => process.env.APPMASTER_CLAUDE_BIN || 'claude';
  * @property {string} [repo]           the target repo key (SELF_REPO or a brief.repos key); absent = self
  * @property {string} [repoRoot]       the target repo's checkout (worktree, gates, merge, dirty checks)
  * @property {string} [repoBase]       the branch the run is cut from and merges into
+ * @property {string} [featureSlug]    the dev_use_cases slug a review run (or a rework delivery) is about
+ * @property {'lite'|'full'} [councilMode]   a review run's council (REVIEW_CHARTERS)
+ * @property {string[]} [councilSeeded]      council run dirs present in the worktree BEFORE the reviewer ran
+ * @property {Object} [council]        what settle read: {mode, featureSlug, runDirName, copyPath, outcome, overall, coverage, round, mustAddress, summary}
  * @property {string} [branch]         autopilot/<charter>-<shortId>
  * @property {string} [worktree]
  * @property {string} [baseSha]        the base the branch sits on: the tip when the worktree was cut, moved by a rebase
@@ -273,6 +300,8 @@ export const claudeBin = () => process.env.APPMASTER_CLAUDE_BIN || 'claude';
  * @property {string} projectId
  * @property {Object} payload          idea-verdict {ideaId,status,reason} | task-complete {ideaIds,sha,title,runId,branch,repo?}
  *                                     | ask {askId,question,context,options} | say {message} | plan {projectId,plan}
+ *                                     | council {projectId,runDir,featureSlug,mode,outcome} | tier {projectId,featureSlug,tier}
+ *                                     | report {projectId,title,content,attachments:[{path,caption}],approval:{title,description,severity}}
  * @property {Object} [created]        ids a multi-post replay already created (plan: {milestones:{i:id}, goals:{"i.j":id}}),
  *                                     so a later replay never posts them again
  * @property {{wakeId?:string,runId?:string}} source

@@ -19,6 +19,12 @@
 //                    milestoneId} -> {goalId} per goal. Every id is recorded in the entry's `created` and
 //                    never posted again. Until a route answers, a 404 leaves the entry queued with the
 //                    evidence "route missing (404)" (those routes are new on 2026-10-07).
+//   council       -> POST /dev-tools/council/ingest {projectId, runDir} (runDir: the journal's durable copy)
+//   tier          -> GET /dev-tools/use-cases/{projectId} (the id by slug), then
+//                    POST /dev-tools/use-cases/{useCaseId}/tier {tier}
+//   report        -> POST /dev-tools/reports {projectId, title, content, attachments, approval}
+//                    (a FULL council `ready`: the human gate. The council never approves.)
+//                    The same 404 rule holds for all three.
 
 import { OUTBOX_STATES, Refusal, nowIso } from './contract.mjs';
 import { listSlugs, loadOutbox, updateOutbox } from './store.mjs';
@@ -203,7 +209,77 @@ async function plan(e, { db, doors, dryRun }) {
   return done('replayed', `db: ${Object.keys(created.milestones).length} milestone(s) [${ids8(created.milestones)}] and ${Object.keys(created.goals).length} goal(s) [${ids8(created.goals)}] (${posted} posted now, ${adopted} found already there)`);
 }
 
-const HANDLERS = { 'idea-verdict': ideaVerdict, 'task-complete': taskComplete, ask, say, plan };
+/** POST through the bridge; a 404 becomes {missing}, any other failure throws (replayEntry: failed). */
+async function postOr404(doors, route, body) {
+  if (typeof doors.devTools !== 'function') return { absent: true };
+  try { return { answer: await doors.devTools(route, body) }; } catch (err) { if (is404(err)) return { missing: true }; throw err; }
+}
+const baseName = (p) => String(p ?? '').split(/[\\/]/).filter(Boolean).at(-1) ?? '';
+
+/** council {projectId, runDir, featureSlug, mode, outcome}: the app ingests the durable copy of the run directory. */
+async function council(e, { db, doors, dryRun }) {
+  const { projectId, runDir, featureSlug, mode, outcome } = e.payload;
+  const name = baseName(runDir);
+  const read = () => one(db, 'select id from dev_council_runs where run_dir = ? or run_dir like ?', [runDir, `%${name}`]);
+  const before = read();
+  if (before) return res('skipped', `already applied: council run ${id8(before.id)} holds ${name}`);
+  if (dryRun) return res('queued', `would POST /dev-tools/council/ingest (${mode} ${featureSlug}: ${outcome}, ${name})`);
+  const r = await postOr404(doors, '/council/ingest', { projectId, runDir });
+  if (r.absent) return res('skipped', 'no door: doors.devTools is absent');
+  if (r.missing) return res('queued', 'route missing (404): POST /dev-tools/council/ingest');
+  const after = read();
+  return after
+    ? res('replayed', `db: council run ${id8(after.id)} (${mode} ${featureSlug}: ${outcome})`)
+    : res('failed', `post-check: no dev_council_runs row for ${name} after the door answered`);
+}
+
+/** tier {projectId, featureSlug, tier}: a full council's `ready` marks the feature major. */
+async function tier(e, { db, doors, dryRun }) {
+  const { projectId, featureSlug, tier: want } = e.payload;
+  const row = () => one(db, 'select id, tier from dev_use_cases where project_id = ? and slug = ?', [projectId, featureSlug]);
+  const before = row();
+  if (!before) return res('skipped', `no use case ${featureSlug} for this project in the app DB`);
+  if (before.tier === want) return res('skipped', `already applied: ${featureSlug} is ${want}`);
+  if (dryRun) return res('queued', `would resolve ${featureSlug} through GET /dev-tools/use-cases/${id8(projectId)} and POST its tier ${want}`);
+  if (typeof doors.devTools !== 'function') return res('skipped', 'no door: doors.devTools is absent');
+  let list;
+  try { list = await doors.devTools(`/use-cases/${encodeURIComponent(projectId)}`); } catch (err) {
+    if (is404(err)) return res('queued', 'route missing (404): GET /dev-tools/use-cases/{projectId}');
+    throw err;
+  }
+  const rows = Array.isArray(list) ? list : (list?.useCases ?? list?.items ?? []);
+  const useCaseId = rows.find((u) => u?.slug === featureSlug)?.id ?? null;
+  if (!useCaseId) return res('failed', `GET /dev-tools/use-cases did not list ${featureSlug}`);
+  const r = await postOr404(doors, `/use-cases/${encodeURIComponent(useCaseId)}/tier`, { tier: want });
+  if (r.missing) return res('queued', 'route missing (404): POST /dev-tools/use-cases/{useCaseId}/tier');
+  const after = row();
+  return after?.tier === want
+    ? res('replayed', `db: ${featureSlug} tier ${want}`)
+    : res('failed', `post-check: ${featureSlug} tier is ${after?.tier ?? 'unset'} after the door answered`);
+}
+
+/**
+ * report {projectId, title, content, attachments, approval}: the council's report and an Approval only
+ * the operator answers. Once the door names a report id it is recorded (`created`) and never posted again.
+ */
+async function report(e, { db, doors, dryRun }) {
+  const p = e.payload;
+  const find = () => one(db, 'select id from persona_reports where title = ? order by created_at desc limit 1', [p.title]);
+  const before = e.created?.reportId ? { id: e.created.reportId } : find();
+  if (before) return res('skipped', `already applied: report ${id8(before.id)}`, { created: { reportId: before.id } });
+  if (dryRun) return res('queued', `would POST /dev-tools/reports ("${String(p.title).slice(0, 80)}", ${p.attachments?.length ?? 0} attachment(s), approval "${p.approval?.title ?? ''}")`);
+  const r = await postOr404(doors, '/reports', p);
+  if (r.absent) return res('skipped', 'no door: doors.devTools is absent');
+  if (r.missing) return res('queued', 'route missing (404): POST /dev-tools/reports');
+  const after = find();
+  if (after) return res('replayed', `db: report ${id8(after.id)}`, { created: { reportId: after.id } });
+  const answered = r.answer?.reportId ?? r.answer?.id ?? null;
+  return answered
+    ? res('replayed', `the door answered report ${id8(answered)}; no persona_reports row has its title (the route may store it elsewhere)`, { created: { reportId: answered } })
+    : res('failed', 'post-check: no report row and no report id after the door answered');
+}
+
+const HANDLERS = { 'idea-verdict': ideaVerdict, 'task-complete': taskComplete, ask, say, plan, council, tier, report };
 
 /**
  * (entry, {dryRun, doors, db}) => {state, evidence}   // read-only DB check before and after posting.

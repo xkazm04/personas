@@ -10,13 +10,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  ASK_KINDS, GLOBAL_CAP, MAX_ASKS, MAX_DISPATCH, MEM, PER_PROJECT_CAP, PLAN, WAKE_MAX, WAKE_MIN,
+  ASK_KINDS, COUNCIL, GLOBAL_CAP, MAX_ASKS, MAX_DISPATCH, MEM, PER_PROJECT_CAP, PLAN, REVIEW_CHARTERS, WAKE_MAX, WAKE_MIN,
   LIVE_RUN_STATES, contextDir, briefPath, mintId, nowIso, shortId,
 } from './contract.mjs';
+import { councilJournal, councilEvents, featureState } from './council.mjs';
 import { loadBrief, loadWakes, saveWake, openAsks, loadAsks, loadChannel, listRuns, loadOutbox } from './store.mjs';
 import {
   openDb, resolveProject, masterPersona, chartersFor, projectSnapshot, pendingReviews,
-  operatorChannelSince, repoDocs, milestonesOf, planProgress,
+  operatorChannelSince, repoDocs, milestonesOf, planProgress, briefCharters, useCasesOf, councilRunsOf, councilDecisionsOf,
 } from './dbread.mjs';
 import { brakes, parseTs, ageText, lastDecided, isDue } from './brakes.mjs';
 import { queueTable } from './queue.mjs';
@@ -44,11 +45,13 @@ const askForText = (a) => (Array.isArray(a) ? a.join('; ') : a) || 'a scope chan
 
 /** List caps per budget level; renderContext steps down a level until the doc fits MAX_CONTEXT_CHARS. */
 export const BUDGET_LEVELS = [
-  { brief: 400, need: 160, core: 200, note: 260, goals: 10, ideas: 8, pending: 6, branches: 6, kpiNames: 5, asks: 6, said: 5, saidChars: 600, title: 120 },
-  { brief: 300, need: 0, core: 200, note: 220, goals: 8, ideas: 6, pending: 5, branches: 5, kpiNames: 3, asks: 5, said: 4, saidChars: 500, title: 100 },
-  { brief: 200, need: 0, core: 150, note: 160, goals: 5, ideas: 4, pending: 3, branches: 3, kpiNames: 0, asks: 4, said: 3, saidChars: 400, title: 76 },
-  { brief: 110, need: 0, core: 0, note: 120, goals: 3, ideas: 3, pending: 2, branches: 2, kpiNames: 0, asks: 3, said: 2, saidChars: 220, title: 80 },
+  { brief: 400, need: 160, core: 200, note: 260, goals: 10, ideas: 8, pending: 6, branches: 6, kpiNames: 5, asks: 6, said: 5, saidChars: 600, title: 120, features: 14, mustAddress: 3 },
+  { brief: 300, need: 0, core: 200, note: 220, goals: 8, ideas: 6, pending: 5, branches: 5, kpiNames: 3, asks: 5, said: 4, saidChars: 500, title: 100, features: 10, mustAddress: 2 },
+  { brief: 200, need: 0, core: 150, note: 160, goals: 5, ideas: 4, pending: 3, branches: 3, kpiNames: 0, asks: 4, said: 3, saidChars: 400, title: 76, features: 6, mustAddress: 1 },
+  { brief: 110, need: 0, core: 0, note: 120, goals: 3, ideas: 3, pending: 2, branches: 2, kpiNames: 0, asks: 3, said: 2, saidChars: 220, title: 80, features: 4, mustAddress: 1 },
 ];
+/** COUNCIL section order: what needs the master's hand first. */
+const COUNCIL_ORDER = { rejected: 0, 'lite-fail': 1, 'lite-incomplete': 1, 'full-fail': 2, 'full-incomplete': 2, none: 3, 'lite-ready': 4, 'full-ready': 5, stalled: 6, approved: 7 };
 /** '2026-09-25T07:54:33.126043600+00:00' -> '2026-09-25 07:54Z' (the age beside it carries the rest). */
 const shortStamp = (s) => { const t = parseTs(s); return Number.isFinite(t) ? `${new Date(t).toISOString().slice(0, 16).replace('T', ' ')}Z` : String(s); };
 const stampAgeShort = (s, nowMs) => (s ? `${shortStamp(s)}${ageText(s, nowMs) ? ` (${ageText(s, nowMs)})` : ''}` : 'never');
@@ -133,7 +136,7 @@ export function renderAt(input, C) {
   if (repos.length) L.push(`- REPOS: \`repo\` (omit for self, or one of: ${repos.map((r) => r.key).join(', ')}) picks the repo a builder works and merges in. In a shared repo, paths must be disjoint from every OTHER project's runs there too, and its lane caps live runs across all projects; a dispatch that does not fit is queued, not lost.`);
   L.push('- MODEL: per dispatch, `model` "opus" for discovery (security scan, architecture review, KPI or measure design), "sonnet" for fixing a shape already chosen, delivering a well-specified idea, or a mechanical sweep; omit it for the charter default. A model the brief pins wins.');
   L.push(`- MACHINE: a dispatch is refused while FREE memory is under ${MEM.dispatchMinFreeGb} GB (+${MEM.perBuilderReserveGb} GB per builder already running) and while a usage-limit mark stands. A tripped memory brake clears by itself within minutes: dispatch nothing this wake and choose a SHORT next wake (10 to 20 min); a usage limit needs a long one.`);
-  L.push('- IN FLIGHT: running, exited and verifying runs are not finished; planned is minted, not started. A QUEUED run (a dispatch refused for a slot, held and started in order when one frees) is a promise the loop keeps. Never re-dispatch a live or queued charter, or an idea an in-flight or queued task carries.');
+  L.push('- IN FLIGHT: running, exited and verifying runs are not finished (merged, held, failed, released and reviewed are); planned is minted, not started. A QUEUED run (a dispatch refused for a slot, held and started in order when one frees) is a promise the loop keeps. Never re-dispatch a live or queued charter, or an idea an in-flight or queued task carries.');
   L.push('- THE BUILDER: a fresh builder in an isolated worktree on its own autopilot branch, merged only if the gates pass and no file it touched is dirty in the checkout. Your `brief` is all it knows: what to change, the accepted idea ids it carries (up to 6 of one shape, or none), how it proves done. A delivery brief first checks each id against the base branch; one already there is closed as delivered, not rebuilt.');
   L.push('- IDEA VERDICTS: accept or reject a pending idea named here, with a reason; queued until the app is up.');
   L.push(`- NEXT WAKE: \`nextWakeMinutes\`, integer ${WAKE_MIN}-${WAKE_MAX}, always present. SHORT (${WAKE_MIN}-20) after a dispatch to check on or with work you could not start; LONG (60-${WAKE_MAX}) when all is in flight, nothing is due, or a brake is tripped.`);
@@ -236,7 +239,7 @@ export function renderAt(input, C) {
       L.push(`    - ${shortId(r.runId)} ${r.charterSlug} ${r.state}${q ? `, QUEUED at position ${q.position} of ${qd.total} (waiting ${q.waitedMin ?? '?'} min on ${q.reason})` : ''}${r.model ? ` (${r.model})` : ''}${r.repo && r.repo !== 'self' ? ` in repo ${r.repo}` : ''}${r.branch ? ` on ${r.branch}` : ''} (created ${stampAgeShort(r.createdAt, nowMs)}); paths: ${clip(pathsText(r.paths), 200)}`);
     }
   }
-  if (recent.length) { L.push('  recent headless runs:'); for (const r of recent) L.push(`    - ${shortId(r.runId)} ${r.charterSlug} ${r.state}${r.mergedSha ? ` ${String(r.mergedSha).slice(0, 8)}` : ''}${r.heldReason ? `: ${clip(r.heldReason, 140)}` : ''}`); }
+  if (recent.length) { L.push('  recent headless runs:'); for (const r of recent) L.push(`    - ${shortId(r.runId)} ${r.charterSlug} ${r.state}${r.mergedSha ? ` ${String(r.mergedSha).slice(0, 8)}` : ''}${r.council ? ` ${r.featureSlug}: ${r.council.mode} ${r.council.outcome}` : ''}${r.heldReason ? `: ${clip(r.heldReason, 140)}` : ''}`); }
   const gb = s.gitBranches ?? { total: 0, branches: [] };
   if (gb.error) L.push(`  unmerged autopilot branches: not read (${clip(gb.error, 160)})`);
   else if (!gb.total) L.push('  unmerged autopilot branches: none');
@@ -248,6 +251,9 @@ export function renderAt(input, C) {
     L.push('  Reconcile a branch before cutting another beside it for the same charter; raise ONE ask naming them if none about them is open.');
   }
   if (s.readErrors?.length) L.push(`  app DB reads that failed (those figures are unknown, not zero): ${s.readErrors.map((e) => clip(e, 100)).join('; ')}`);
+
+  // COUNCIL: the quality gate, per feature (only when the brief holds a council charter)
+  if (input.council) L.push(...renderCouncil(input.council, C));
 
   // MACHINE
   head('MACHINE');
@@ -263,6 +269,7 @@ export function renderAt(input, C) {
   const planShape = plan.wake ? `,"plan":{"milestones":[{"name":"<milestone>","goal":"<what landing it achieves>","targetDate":"YYYY-MM-DD","goals":[{"title":"<goal>","measure":"<observable proof>","description":"<optional>"}]}]}` : '';
   L.push(`{"wakeId":"${wakeId}","dispatch":[{"charterSlug":"<slug>","reason":"<why this one now>","brief":"<the builder's whole task>","ideaIds":["<accepted idea id>"],"model":"sonnet|opus","paths":["<repo-relative path prefix or glob it will touch>"]}],"defer":[{"charterSlug":"<slug>","reason":"<why it waits>"}],"asks":[{"kind":"<kind>","question":"<the decision you need>","context":"<why the loop needs it>","options":[{"label":"<a choice>","action":"<what you do if chosen>"}]}],"ideaVerdicts":[{"ideaId":"<pending idea id>","status":"accepted|rejected","reason":"<why>"}],"say":"<message to the operator>|null","note":"<coverage note for your next wake>","nextWakeMinutes":<${WAKE_MIN}-${WAKE_MAX}>${planShape}}`);
   if (plan.wake) L.push('`plan` is REQUIRED this wake (PLAN WAKE); on any other wake leave it out.');
+  if (input.council) L.push('A dispatch of council-lite-review or council-review REQUIRES "featureSlug":"<a feature slug from COUNCIL>" (and needs no paths); a rework delivery may carry the same featureSlug.');
   L.push(`Every key is always present ([] when empty, say null when silent). wakeId is exactly "${wakeId}"; every charter slug exactly once across dispatch and defer, no other slug; dispatch at most ${MAX_DISPATCH}, and with two each carries non-empty disjoint paths and no idea in both; model optional${repos.length ? `; repo optional (self, ${repos.map((r) => r.key).join(', ')})` : ''}; asks at most ${MAX_ASKS}, 2-4 options each, kind one of ${ASK_KINDS.join(', ')}; nextWakeMinutes an integer; every ideaId copied from this document.`);
   L.push(`Charter slugs: ${charters.map((c) => c.slug).join(', ') || '(none)'}`);
   return L.join('\n') + '\n';
@@ -296,6 +303,32 @@ const planAppState = (e) => {
   if (e.state === 'replayed') return 'posted';
   return `${e.state}${e.evidence ? ` (${clip(e.evidence, 140)})` : ' (the outbox replays it when the app is up)'}`;
 };
+
+/**
+ * COUNCIL: each feature (dev_use_cases) with its council state (journal + app), its latest must-address
+ * lines, the rounds each mode has used, and any review or rework run in flight. What needs the master's
+ * hand comes first; the list is cut by the budget with a count of every state.
+ */
+export function renderCouncil(c, C) {
+  const L = ['', 'COUNCIL (the quality gate. Every feature passes council-lite, reworked until lite-ready; a feature you judge major then gets the full council; a full ready goes to the operator as a Report with an Approval. The council never approves: only the operator does.)'];
+  if (c.error) { L.push(`- features not read (${clip(c.error, 140)}): no council dispatch can be checked against them this wake`); return L; }
+  const fs_ = c.features ?? [];
+  if (!fs_.length) { L.push('- no features (dev_use_cases) in the app for this project: nothing to review yet'); return L; }
+  const counts = {};
+  for (const f of fs_) counts[f.state] = (counts[f.state] ?? 0) + 1;
+  L.push(`- ${fs_.length} feature(s): ${Object.entries(counts).sort((a, b) => (COUNCIL_ORDER[a[0]] ?? 9) - (COUNCIL_ORDER[b[0]] ?? 9)).map(([k, n]) => `${k} ${n}`).join(', ')}`);
+  const order = [...fs_].sort((a, b) => (b.inFlight?.length ? 1 : 0) - (a.inFlight?.length ? 1 : 0)
+    || (COUNCIL_ORDER[a.state] ?? 9) - (COUNCIL_ORDER[b.state] ?? 9) || String(a.slug).localeCompare(String(b.slug)));
+  for (const f of order.slice(0, C.features)) {
+    const fly = (f.inFlight ?? []).map((r) => `${r.runId8} ${r.charter} ${r.state}`).join(', ');
+    L.push(`- ${f.slug}${f.tier === 'major' ? ' [major]' : ''}: ${f.state} · rounds lite ${f.rounds?.lite ?? 0}/${COUNCIL.maxRounds}, full ${f.rounds?.full ?? 0}/${COUNCIL.maxRounds}${fly ? ` · in flight: ${fly}` : ''}`);
+    const ma = (f.mustAddress ?? []).slice(0, C.mustAddress);
+    if (ma.length) L.push(`    must address: ${ma.map((m) => clip(m, 160)).join(' | ')}${(f.mustAddress?.length ?? 0) > ma.length ? ` (+${f.mustAddress.length - ma.length} more)` : ''}`);
+  }
+  L.push(...more(order.length, C.features, '  '));
+  L.push(`- To review: dispatch \`council-lite-review\` or \`council-review\` with \`featureSlug\` (no paths: a review writes no code). To rework: dispatch a delivery whose brief carries the must-address lines, with the same \`featureSlug\`; after it merges, a new lite round. A mode has ${COUNCIL.maxRounds} rounds; round ${COUNCIL.maxRounds + 1} is refused (stalled): ask the operator instead.`);
+  return L;
+}
 
 /** The newest decided wake that carried a plan: {wakeId, at, plan}, or null. */
 export function latestPlan(wakes) {
@@ -374,6 +407,22 @@ export function gatherContext(ref) {
       journal: planRec ? { ...planRec, entry: entry ? { state: entry.state, evidence: entry.evidence ?? null, created: entry.created ?? null } : null, progress: entry?.created ? planProgress(d, entry.created) : null } : null,
       app,
     };
+    // COUNCIL: only for a project whose brief holds a council charter (else nothing could act on it)
+    if (briefCharters(brief).some((c) => REVIEW_CHARTERS[c.slug])) {
+      const uc = useCasesOf(d, project.id);
+      const dbRuns = councilRunsOf(d, project.id).rows;
+      const decisions = councilDecisionsOf(d, project.id).rows;
+      const journal = councilJournal(project.slug);
+      const flying = runs.filter((r) => LIVE_RUN_STATES.includes(r.state) && r.featureSlug);
+      input.council = {
+        error: uc.error,
+        features: uc.rows.map((f) => ({
+          slug: f.slug, name: f.name, tier: f.tier ?? null,
+          ...featureState(f.slug, councilEvents(f.slug, journal, dbRuns), decisions),
+          inFlight: flying.filter((r) => r.featureSlug === f.slug).map((r) => ({ runId8: shortId(r.runId), charter: r.charterSlug, state: r.state })),
+        })),
+      };
+    }
     input.due = isDue(wakes, nowMs);
   } finally { d.close(); }
   return input;

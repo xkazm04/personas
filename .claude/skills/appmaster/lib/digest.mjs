@@ -30,6 +30,8 @@ export function projectStatus(slug, nowMs = Date.now()) {
     held: runs.filter((r) => r.state === 'held').map((r) => ({ runId8: shortId(r.runId), charter: r.charterSlug, branch: r.branch ?? null, heldReason: r.heldReason ?? null })),
     merged: runs.filter((r) => r.state === 'merged' && last && String(r.endedAt ?? r.createdAt) >= String(last.at))
       .map((r) => ({ runId8: shortId(r.runId), charter: r.charterSlug, mergedSha: r.mergedSha ?? null })),
+    reviewed: runs.filter((r) => r.state === 'reviewed' && r.council && last && String(r.settledAt ?? r.createdAt) >= String(last.at))
+      .map((r) => ({ runId8: shortId(r.runId), charter: r.charterSlug, featureSlug: r.featureSlug ?? null, mode: r.council.mode, outcome: r.council.outcome })),
     queued: queueTable(nowMs).filter((q) => q.slug === slug).map((q) => ({ runId8: q.runId8, charter: q.charterSlug, position: q.position, reason: q.reason })),
     asksOpen: openAsks(slug).length,
     outboxDepth: loadOutbox(slug).filter((e) => e.state === 'queued').length,
@@ -57,10 +59,12 @@ export function renderDigest(status, nowMs = Date.now()) {
   for (const p of status.projects) {
     const next = p.nextWakeAt ? `next wake ${hhmm(p.nextWakeAt, nowMs)}${p.due ? ' (due now)' : ''}` : 'no decision yet, due now';
     const queued = p.queued ?? [];
-    const quiet = !p.running.length && !p.held.length && !p.merged.length && !queued.length && !p.asksOpen && !p.outboxDepth && !p.lastDispatch.length && !p.say;
+    const reviewed = p.reviewed ?? [];
+    const quiet = !p.running.length && !p.held.length && !p.merged.length && !reviewed.length && !queued.length && !p.asksOpen && !p.outboxDepth && !p.lastDispatch.length && !p.say;
     if (quiet) { L.push(`${p.slug} - quiet, ${next}.`); continue; }
     L.push(`${p.slug} - ${p.lastDecisionAt ? `decided ${hhmm(p.lastDecisionAt, nowMs)}` : 'no decision yet'}${p.lastDispatch.length ? `, dispatched ${p.lastDispatch.join(', ')}` : ''}; ${next}.`);
     for (const m of p.merged) L.push(`  Merged ${m.runId8} ${m.charter}${m.mergedSha ? ` at ${String(m.mergedSha).slice(0, 8)}` : ''}.`);
+    for (const r of reviewed) L.push(`  Reviewed ${r.runId8} ${r.featureSlug}: ${r.mode} council ${r.outcome}${r.mode === 'full' && r.outcome === 'ready' ? ' (report + approval queued for the operator)' : ''}.`);
     // a planned run in the queue is a promise, not running: the queue block below shows it
     for (const r of p.running.filter((x) => !queued.some((q) => q.runId8 === x.runId8))) L.push(`  ${r.state === 'running' ? 'Running' : `Run ${r.state}:`} ${r.runId8} ${r.charter} (${r.model ?? 'model ?'})${r.repo && r.repo !== 'self' ? ` in repo ${r.repo}` : ''}${r.streamAgeMin != null ? `, last output ${r.streamAgeMin} min ago` : ''}${r.paths?.length ? `; paths ${clip(r.paths.join(', '), 80)}` : ''}.`);
     for (const q of queued) L.push(`  Queued ${q.runId8} ${q.charter} at position ${q.position}, waiting on ${q.reason}.`);

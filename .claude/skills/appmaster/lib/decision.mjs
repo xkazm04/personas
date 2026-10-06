@@ -7,12 +7,13 @@
 
 import fs from 'node:fs';
 import {
-  ASK_KINDS, BUILDER_MODEL_CHOICES, LIVE_RUN_STATES, MAX_ASKS, MAX_DISPATCH, MODELS, PLAN, VERDICT_STATUSES, WAKE_MAX, WAKE_MIN,
-  Refusal, canonical, nowIso, resolveModel, shortId,
+  ASK_KINDS, BUILDER_MODEL_CHOICES, COUNCIL, FEATURE_SLUG_RE, LIVE_RUN_STATES, MAX_ASKS, MAX_DISPATCH, MODELS, PLAN, REVIEW_CHARTERS,
+  SELF_REPO, VERDICT_STATUSES, WAKE_MAX, WAKE_MIN, Refusal, canonical, isReviewRun, nowIso, resolveModel, shortId,
 } from './contract.mjs';
+import { councilEvents, councilJournal, roundsUsed } from './council.mjs';
 import { specError, overlappingPairs } from './paths.mjs';
 import { listRuns, loadAsks, loadBrief, loadWake, newRun, queueOutbox, raiseAsk, saveWake } from './store.mjs';
-import { briefCharters, resolveManaged, openDb, q } from './dbread.mjs';
+import { briefCharters, resolveManaged, openDb, q, useCasesOf, councilRunsOf } from './dbread.mjs';
 import { brakes } from './brakes.mjs';
 import { queueTable } from './queue.mjs';
 import { repoKeys, resolveRepo, targetRootKey } from './repos.mjs';
@@ -140,9 +141,17 @@ export function validateDecision(decision, { slug, wakeId, brief, planWake = fal
   dispatch.forEach((x, i) => {
     const w = `dispatch[${i}]`;
     if (!isObj(x)) { errors.push(`${w} must be an object`); return; }
-    checkKeys(x, ['charterSlug', 'reason', 'brief', 'ideaIds', 'model', 'paths', 'repo'], w, errors);
+    checkKeys(x, ['charterSlug', 'reason', 'brief', 'ideaIds', 'model', 'paths', 'repo', 'featureSlug'], w, errors);
     if (x.repo !== undefined && x.repo !== null && !(typeof x.repo === 'string' && repoKeys(brief).includes(x.repo))) {
       errors.push(`${w}.repo ${JSON.stringify(x.repo)} is not a repo of this project (one of: ${repoKeys(brief).join(', ')}; omit it for self)`);
+    }
+    // a council review names the feature it reviews and runs in the project's own repo; a rework
+    // delivery may name the feature too, so the council section can show it in flight
+    const review = Boolean(REVIEW_CHARTERS[x.charterSlug]);
+    if (review && !nonEmpty(x.featureSlug)) errors.push(`${w}.featureSlug is required for ${x.charterSlug}: the dev_use_cases slug of the feature to review`);
+    if (review && x.repo !== undefined && x.repo !== null && x.repo !== SELF_REPO) errors.push(`${w}.repo: a council review runs in the project's own repo; omit repo`);
+    if (x.featureSlug !== undefined && x.featureSlug !== null && !(typeof x.featureSlug === 'string' && FEATURE_SLUG_RE.test(x.featureSlug) && x.featureSlug.length <= 100)) {
+      errors.push(`${w}.featureSlug ${JSON.stringify(x.featureSlug)} must be a kebab-case feature slug copied from the context`);
     }
     for (const k of ['charterSlug', 'reason', 'brief']) if (!nonEmpty(x[k])) errors.push(`${w}.${k} must be a non-empty string`);
     if (!Array.isArray(x.ideaIds)) errors.push(`${w}.ideaIds must be an array (use [] when none)`);
@@ -154,11 +163,12 @@ export function validateDecision(decision, { slug, wakeId, brief, planWake = fal
     if (x.model !== undefined && x.model !== null && !BUILDER_MODEL_CHOICES.includes(x.model)) {
       errors.push(`${w}.model "${x.model}" is not one of ${BUILDER_MODEL_CHOICES.join(', ')} (or null for the charter default)`);
     }
+    // a review commits nothing, so it needs no paths and collides with nothing
     if (x.paths === undefined || x.paths === null) {
-      if (several) errors.push(`${w}.paths is required when a wake dispatches ${dispatch.length}: name the path prefixes or globs this builder will touch`);
+      if (several && !review) errors.push(`${w}.paths is required when a wake dispatches ${dispatch.length}: name the path prefixes or globs this builder will touch`);
     } else if (!Array.isArray(x.paths)) errors.push(`${w}.paths must be an array of repo-relative path prefixes or globs`);
     else {
-      if (!x.paths.length && several) errors.push(`${w}.paths is empty; with ${dispatch.length} dispatches each must name what it touches`);
+      if (!x.paths.length && several && !review) errors.push(`${w}.paths is empty; with ${dispatch.length} dispatches each must name what it touches`);
       x.paths.forEach((p, j) => { const e = specError(p); if (e) errors.push(`${w}.paths[${j}] ${JSON.stringify(p)} ${e}`); });
     }
   });
@@ -167,7 +177,12 @@ export function validateDecision(decision, { slug, wakeId, brief, planWake = fal
   for (let i = 0; i < dispatch.length; i++) {
     for (let j = i + 1; j < dispatch.length; j++) {
       const a = dispatch[i], b = dispatch[j];
-      if (!isObj(a) || !isObj(b) || !Array.isArray(a.paths) || !Array.isArray(b.paths) || !a.paths.length || !b.paths.length) continue;
+      if (!isObj(a) || !isObj(b)) continue;
+      if (REVIEW_CHARTERS[a.charterSlug] && REVIEW_CHARTERS[b.charterSlug] && nonEmpty(a.featureSlug) && a.featureSlug === b.featureSlug) {
+        errors.push(`dispatch[${i}] and dispatch[${j}] both review ${a.featureSlug}; one council at a time per feature`);
+      }
+      if (REVIEW_CHARTERS[a.charterSlug] || REVIEW_CHARTERS[b.charterSlug]) continue;
+      if (!Array.isArray(a.paths) || !Array.isArray(b.paths) || !a.paths.length || !b.paths.length) continue;
       if (targetRootKey(brief, a.repo) !== targetRootKey(brief, b.repo)) continue;
       const pairs = overlappingPairs(a.paths, b.paths);
       if (pairs.length) errors.push(`dispatch[${i}] and dispatch[${j}] have overlapping paths (${pairs.slice(0, 4).map(([x, y]) => `${x} ~ ${y}`).join('; ')}); two builders in one wake need disjoint paths, or dispatch one and defer the other`);
@@ -286,6 +301,21 @@ export function unknownIdeaIds(projectId, decision) {
   return [...named].filter((id) => !known.has(id));
 }
 
+/**
+ * What the app knows about the features a decision names (read-only): {named, known:Set|null, dbRuns}.
+ * `known` is null when dev_use_cases cannot be read: no check, never a block (as unknownIdeaIds).
+ */
+export function councilFacts(projectId, decision) {
+  const named = (decision.dispatch ?? []).map((x) => x.featureSlug).filter((s) => typeof s === 'string' && s.trim());
+  if (!named.length) return { named, known: null, dbRuns: [] };
+  let d; try { d = openDb(); } catch { return { named, known: null, dbRuns: [] }; }
+  try {
+    const uc = useCasesOf(d, projectId);
+    const runs = councilRunsOf(d, projectId);
+    return { named, known: uc.error ? null : new Set(uc.rows.map((r) => r.slug)), dbRuns: runs.error ? [] : runs.rows };
+  } finally { try { d.close(); } catch { /* already closed */ } }
+}
+
 /** (args) => {wakeId, runIds:string[], outbox:string[], asks:string[], nextWakeAt}   // mints runIds BEFORE writing; Refusal on invalid */
 export async function cmdDecide({ flags = {} } = {}) {
   if (!flags.wake || flags.wake === true) throw new Error('--wake <wakeId> is required');
@@ -331,6 +361,20 @@ export async function cmdDecide({ flags = {} } = {}) {
       if (carrier) clash.push(`dispatch[${i}]: idea ${id} is already carried by live run ${shortId(carrier.runId)} (${stateOf(carrier)})`);
     }
   });
+  // The council lane: the feature exists, no council of it is in flight, and its mode has a round left
+  // (the council refuses round 4 as stalled; dispatching it would only burn a builder).
+  const facts = councilFacts(project.id, decision);
+  const journal = councilJournal(slug);
+  decision.dispatch.forEach((x, i) => {
+    if (!nonEmpty(x.featureSlug)) return;
+    if (facts.known && !facts.known.has(x.featureSlug)) clash.push(`dispatch[${i}]: feature ${x.featureSlug} is not a dev_use_cases slug of ${slug}; copy it from the COUNCIL section`);
+    const mode = REVIEW_CHARTERS[x.charterSlug];
+    if (!mode) return;
+    const reviewing = live.find((r) => isReviewRun(r) && r.featureSlug === x.featureSlug);
+    if (reviewing) clash.push(`dispatch[${i}]: feature ${x.featureSlug} already has a council run in flight: ${shortId(reviewing.runId)} ${reviewing.charterSlug} (${stateOf(reviewing)})`);
+    const used = roundsUsed(councilEvents(x.featureSlug, journal, facts.dbRuns))[mode];
+    if (used >= COUNCIL.maxRounds) clash.push(`dispatch[${i}]: feature ${x.featureSlug} has used ${used} ${mode} council round(s); round ${used + 1} is refused (stalled): raise it with the operator instead`);
+  });
   if (clash.length) throw new Refusal('invalid decision', { errors: clash });
 
   // (1) identity before effect: one planned run per dispatch. A re-submission after a crash
@@ -345,6 +389,9 @@ export async function cmdDecide({ flags = {} } = {}) {
       wakeId: wake.wakeId, charterSlug: x.charterSlug, reason: x.reason, brief: x.brief,
       ideaIds: x.ideaIds, model: chosen.model, modelSource: chosen.source, paths: Array.isArray(x.paths) ? x.paths : [],
       ...resolveRepo(project, brief, x.repo ?? undefined),   // validated above: never null here
+      ...(nonEmpty(x.featureSlug) ? { featureSlug: x.featureSlug } : {}),
+      // a review commits nothing: no paths to hold (it collides with no builder), its council's mode
+      ...(REVIEW_CHARTERS[x.charterSlug] ? { councilMode: REVIEW_CHARTERS[x.charterSlug], paths: [] } : {}),
     });
   });
 

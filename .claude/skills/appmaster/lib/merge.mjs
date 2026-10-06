@@ -6,7 +6,8 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { nowIso, readJson, shortId, Refusal, SELF_REPO, repoOf, repoEnv } from './contract.mjs';
+import { nowIso, readJson, shortId, Refusal, SELF_REPO, SETTLED_STATES, COUNCIL, repoOf, repoEnv, isReviewRun } from './contract.mjs';
+import { findCouncilRunDir, readCouncilResult, copyCouncilRun, reportPayload, boundedMustAddress, roundOfName } from './council.mjs';
 import { loadBrief, updateRun, raiseAsk, queueOutbox, openAsks, updateAsk } from './store.mjs';
 import { readLimit } from './limits.mjs';
 import { requireRun, pidAlive, runFile, markLimitFromRun, awaitHolder } from './worker.mjs';
@@ -58,18 +59,23 @@ const HELD_OPTIONS = (branch) => [
   { label: 'Discard the branch', action: 'release run; the branch is kept for the operator to delete' },
   { label: 'Re-dispatch after I commit', action: 'wait for a clean tree' },
 ];
+/** A held council review has nothing to merge: discard it, or settle it again once its cause is fixed. */
+const REVIEW_HELD_OPTIONS = () => [
+  { label: 'Discard the review', action: 'release run; the master may dispatch a fresh review next wake' },
+  { label: 'Settle again', action: 'settle --retry once what held it is fixed' },
+];
 
 /**
  * A run that was held, then merged on a retry, leaves its merge-held asks open: nothing closed them
  * (2026-10-05: four stale asks after two merged retries). The hold question starts `Run <id8> `, so
  * close this run's open merge-gate asks, saying why.
  */
-export function closeHeldAsks(run, sha) {
+export function closeHeldAsks(run, sha, notes = null) {
   const prefix = `Run ${shortId(run.runId)} `;
   const closed = [];
   for (const a of openAsks(run.slug)) {
     if (a.source !== 'merge-gate' || !String(a.question || '').startsWith(prefix)) continue;
-    updateAsk(run.slug, a.askId, { state: 'answered', answer: { choice: '(closed by settle)', notes: `run merged ${String(sha).slice(0, 10)} on a later settle; nothing left to decide`, at: nowIso() } });
+    updateAsk(run.slug, a.askId, { state: 'answered', answer: { choice: '(closed by settle)', notes: notes ?? `run merged ${String(sha).slice(0, 10)} on a later settle; nothing left to decide`, at: nowIso() } });
     closed.push(a.askId);
   }
   return closed;
@@ -79,7 +85,10 @@ function hold(run, reason, verdict) {
   const id8 = shortId(run.runId);
   const target = repoOf(run);
   const where = target.key === SELF_REPO ? run.slug : `${run.slug} (its ${target.key} repo, ${target.root})`;
-  const question = `Run ${id8} (${run.charterSlug}) in ${where} is held and was not merged: ${reason}. What should happen to branch ${run.branch}?`;
+  const review = isReviewRun(run);
+  const question = review
+    ? `Run ${id8} (${run.charterSlug} of ${run.featureSlug}) in ${where} is held and its council verdict was not used: ${reason}. What should happen to it?`
+    : `Run ${id8} (${run.charterSlug}) in ${where} is held and was not merged: ${reason}. What should happen to branch ${run.branch}?`;
   const context = [
     `Task: ${String(run.brief || '').split('\n')[0].slice(0, 200)}`,
     `Branch ${run.branch} (${verdict?.commits?.length ?? 0} commit(s) on top of ${String(run.baseSha || '').slice(0, 10)}), worktree ${run.worktree}.`,
@@ -87,7 +96,7 @@ function hold(run, reason, verdict) {
     verdict?.dirtyOverlap?.length ? `Uncommitted in the checkout and touched by the branch: ${verdict.dirtyOverlap.join(', ')}` : null,
     verdict?.boundaryHits?.length ? `Boundary hits: ${verdict.boundaryHits.map((h) => `${h.file} (${h.glob})`).join(', ')}` : null,
   ].filter(Boolean).join('\n');
-  const options = HELD_OPTIONS(run.branch);
+  const options = review ? REVIEW_HELD_OPTIONS() : HELD_OPTIONS(run.branch);
   const ask = raiseAsk(run.slug, { wakeId: run.wakeId, source: 'merge-gate', kind: 'merge-held', question, context, options });
   queueOutbox(run.slug, run.project.id, 'ask', { askId: ask.askId, question, context, options }, { runId: run.runId });
   return updateRun(run, { state: 'held', heldReason: reason, verdict, askId: ask.askId, settledAt: nowIso() });
@@ -255,6 +264,60 @@ export function mergeGate(run, verdict = {}, { gates, timeoutMs = GATE_TIMEOUT_M
   return { ok: true, sha: tip, rebased, rebasedOnto, dirtyOverlap: [] };
 }
 
+// ---------------------------------------------------------------- a council review: reviewed | held
+
+/**
+ * (run, verdict) => Run   // reviewed | held(+ask)
+ * A review run must not change code, so a branch with a commit is held. It must leave the council's
+ * run directory (named by its claim or found by convention, never one that was there before it ran)
+ * with a result.json that parses; else held. Then: copy that directory into the journal (durable), queue
+ * `council` (the app ingests it), and for a FULL council whose outcome is `ready` also `tier` (the
+ * feature is major) and `report` (the council report plus an Approval: the human gate); record the
+ * outcome on the run as `reviewed`; remove the worktree. Uncommitted edits outside the council's own
+ * directory are recorded (`touchedOutsideCouncil`), not held: they die with the worktree.
+ */
+function settleReview(run, verdict) {
+  const { root } = repoOf(run);
+  const branchRef = `refs/heads/${run.branch}`;
+  verdict.review = { mode: run.councilMode, featureSlug: run.featureSlug };
+  verdict.commits = lines(git(root, ['rev-list', '--reverse', `${run.baseSha}..${branchRef}`]));
+  if (verdict.commits.length) {
+    verdict.files = lines(git(root, ['diff', '--name-only', '--no-renames', `${run.baseSha}..${branchRef}`]));
+    return hold(run, `a review run must not change code, and its branch carries ${verdict.commits.length} commit(s) (${verdict.files.slice(0, 5).join(', ')}${verdict.files.length > 5 ? ', ...' : ''})`, verdict);
+  }
+  if (!run.worktree || !fs.existsSync(run.worktree)) return hold(run, `the worktree ${run.worktree} is gone; there is no council run directory to read`, verdict);
+  const found = findCouncilRunDir(run, verdict.claim);
+  if (!found) return hold(run, `no council run directory for ${run.featureSlug} was written in the worktree (expected ${COUNCIL.runsRel}/<YYYY-MM-DD>-${run.featureSlug}-r<n>/ beside the ${run.councilSeeded?.length ?? 0} that were there before)`, verdict);
+  verdict.councilRunDir = found.dir; verdict.councilRunDirFrom = found.from;
+  const read = readCouncilResult(found.dir);
+  if (read.error) return hold(run, `the council run directory ${path.basename(found.dir)} has ${read.error}`, verdict);
+  const result = read.result;
+  const touched = worktreeDirty(run.worktree).filter((p) => !p.startsWith('.personas/'));
+  if (touched.length) verdict.touchedOutsideCouncil = touched.slice(0, 20);
+
+  const copy = copyCouncilRun(run, found.dir);
+  const mode = run.councilMode;
+  const name = path.basename(found.dir);
+  const pid = run.project.id;
+  const src = { runId: run.runId };
+  const outbox = [queueOutbox(run.slug, pid, 'council', { projectId: pid, runDir: copy, featureSlug: run.featureSlug, mode, outcome: result.outcome }, src).id];
+  if (mode === 'full' && result.outcome === 'ready') {
+    outbox.push(queueOutbox(run.slug, pid, 'tier', { projectId: pid, featureSlug: run.featureSlug, tier: 'major' }, src).id);
+    outbox.push(queueOutbox(run.slug, pid, 'report', reportPayload(run, result, copy), src).id);
+  }
+  const council = {
+    mode, featureSlug: run.featureSlug, runDirName: name, copyPath: copy, outcome: result.outcome,
+    overall: typeof result.overall === 'number' ? result.overall : null, coverage: typeof result.coverage === 'number' ? result.coverage : null,
+    round: Number.isInteger(result.round_no) ? result.round_no : roundOfName(name),
+    mustAddress: boundedMustAddress(result.must_address), summary: String(result.summary ?? '').slice(0, 600), outbox,
+  };
+  closeHeldAsks(run, '', `review ${shortId(run.runId)} settled on a later try (${mode} ${result.outcome}); nothing left to decide`);
+  run = updateRun(run, { state: 'reviewed', council, verdict, endedAt: run.endedAt || nowIso(), settledAt: nowIso() });
+  let cleanup;
+  try { cleanup = removeWorktree(run); } catch (e) { cleanup = { error: e.message }; }
+  return updateRun(run, { cleanup });
+}
+
 // ---------------------------------------------------------------- settle
 
 /** The run once its branch sits on a new base: baseSha follows, the cut-time base is kept once. */
@@ -272,7 +335,7 @@ export function cmdSettle(args = {}) {
 
 function settleCore({ flags = {} } = {}, slot) {
   let run = requireRun(flags.run);
-  if (['merged', 'failed', 'released'].includes(run.state)) return run;
+  if (SETTLED_STATES.includes(run.state)) return run;
   if (run.state === 'held' && !flags.retry) return run;
   if (run.state === 'planned') throw new Refusal('not dispatched', { runId: run.runId });
   // one settler per run: an `await` in another process owns this run until it settles or gives up
@@ -298,6 +361,9 @@ function settleCore({ flags = {} } = {}, slot) {
   verdict.claim = readJson(runFile(run, 'result.json'), null);
 
   if (!run.branch || !gitTry(root, ['rev-parse', '--verify', '--quiet', branchRef]).ok) return hold(run, `branch ${run.branch} does not exist`, verdict);
+
+  // a council review is settled by what the council wrote, never merged (no gates, no gate slot)
+  if (isReviewRun(run)) return settleReview(run, verdict);
 
   // 1. the claim, from git
   verdict.commits = lines(git(root, ['rev-list', '--reverse', `${run.baseSha}..${branchRef}`]));

@@ -92,6 +92,27 @@ your asks with the operator, and queues every write the app owns for later repla
   in some milestone. On every other wake leave `plan` out; the context shows `YOUR PLAN` with its
   progress, and the earliest milestone not done is where your dispatches go next.
 
+## The council (when your charters include `council-lite-review` / `council-review`)
+
+The operator's rule, in order:
+
+1. **Every feature passes council-lite.** A feature in the COUNCIL section whose state is `none`
+   gets a `council-lite-review`; one that came back `lite-fail` or `lite-incomplete` is reworked
+   until it is `lite-ready`.
+2. **Rework** is a delivery: dispatch your delivery charter with a brief that carries the
+   feature's must-address lines verbatim (and `featureSlug` set to the feature), so the builder
+   fixes exactly what the council named. After it merges, dispatch a new lite round.
+3. **Major features get the full council.** A `lite-ready` feature you judge major (it carries a
+   key goal, the money or data path, or a surface users live in) gets a `council-review`. A full
+   `ready` goes to the operator as a Report with an Approval; a full `fail` is reworked like a lite one.
+4. **The council never approves; only the operator does.** `approved` and `rejected` are his. A
+   rejection's reason is a must-address for the next round.
+
+A review dispatch names `featureSlug` (copied from COUNCIL), needs no `paths` (a reviewer writes no
+code, so it collides with no builder) and runs in the project's own repo. One council per feature at
+a time; a mode has three rounds, and a fourth is refused as stalled: ask the operator instead. Each
+review takes a builder slot like any dispatch.
+
 ## Idea verdicts
 
 `ideaVerdicts` accepts or rejects pending ideas. Give a verdict only on an idea you have
@@ -141,7 +162,11 @@ Return exactly this object. Field names, types and bounds are those of
       "ideaIds":     [ string, ... ],
       "model":       "sonnet" | "opus" | "claude-sonnet-5-5" | "claude-opus-5" | null, optional,
       "paths":       [ string, ... ], repo-relative prefixes or globs; always give it,
-                     REQUIRED and non-empty on both entries when there are two }
+                     REQUIRED and non-empty on both entries when there are two
+                     (a council review needs none),
+      "repo":        string, optional: `self` (the default) or a repo key the context lists,
+      "featureSlug": string, REQUIRED for council-lite-review / council-review (a feature
+                     from COUNCIL); optional on a rework delivery of that feature }
   ],
   "defer": [
     { "charterSlug": string, non-empty,
