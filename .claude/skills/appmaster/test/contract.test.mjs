@@ -79,6 +79,18 @@ test('decision schema parses and names the contract fields', () => {
   assert.equal(schema.properties.nextWakeMinutes.maximum, C.WAKE_MAX);
   assert.equal(schema.properties.asks.maxItems, C.MAX_ASKS);
   assert.equal(schema.properties.dispatch.maxItems, C.MAX_DISPATCH);
+  const item = schema.properties.dispatch.items.properties;
+  assert.deepEqual(item.model.enum.filter((m) => m !== null).sort(), [...C.BUILDER_MODEL_CHOICES].sort(), 'the schema names the models contract.mjs knows');
+  assert.ok(item.model.enum.includes(null));
+  assert.equal(item.paths.type, 'array');
+  assert.ok(!schema.properties.dispatch.items.required.includes('paths'), 'paths is optional for one dispatch (required for two by validateDecision)');
+});
+
+test('caps: two builders per project, four in all, two dispatches per wake', () => {
+  assert.equal(C.PER_PROJECT_CAP, 2);
+  assert.equal(C.MAX_DISPATCH, C.PER_PROJECT_CAP);
+  assert.equal(C.GLOBAL_CAP, 4);
+  assert.ok(C.MEM.dispatchMinFreeGb > 0 && C.MEM.perBuilderReserveGb > 0, 'the free-memory brake is kept');
 });
 
 test('cleanup', () => { fs.rmSync(tmp, { recursive: true, force: true }); });

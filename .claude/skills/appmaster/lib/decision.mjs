@@ -7,14 +7,16 @@
 
 import fs from 'node:fs';
 import {
-  ASK_KINDS, MAX_ASKS, MAX_DISPATCH, MODELS, VERDICT_STATUSES, WAKE_MAX, WAKE_MIN,
-  Refusal, canonical, nowIso,
+  ASK_KINDS, BUILDER_MODEL_CHOICES, LIVE_RUN_STATES, MAX_ASKS, MAX_DISPATCH, MODELS, VERDICT_STATUSES, WAKE_MAX, WAKE_MIN,
+  Refusal, canonical, nowIso, resolveModel, shortId,
 } from './contract.mjs';
+import { specError, overlappingPairs } from './paths.mjs';
 import { listRuns, loadAsks, loadBrief, loadWake, newRun, queueOutbox, raiseAsk, saveWake } from './store.mjs';
 import { briefCharters, resolveManaged, openDb, q } from './dbread.mjs';
 import { brakes } from './brakes.mjs';
 
-const TOP_KEYS = ['wakeId', 'dispatch', 'defer', 'asks', 'ideaVerdicts', 'say', 'note', 'nextWakeMinutes'];
+const STARTED_STATES = LIVE_RUN_STATES.filter((s) => s !== 'planned');
+const TOP_KEYS =['wakeId', 'dispatch', 'defer', 'asks', 'ideaVerdicts', 'say', 'note', 'nextWakeMinutes'];
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const nonEmpty = (v) => typeof v === 'string' && v.trim().length > 0;
 
@@ -71,14 +73,39 @@ export function validateDecision(decision, { slug, wakeId, brief } = {}) {
 
   const dispatch = checkArray(d, 'dispatch', errors);
   if (dispatch.length > MAX_DISPATCH) errors.push(`dispatch has ${dispatch.length} entries; at most ${MAX_DISPATCH} per wake`);
+  const several = dispatch.length > 1;
+  const seenDispatchIdeas = new Map();
   dispatch.forEach((x, i) => {
     const w = `dispatch[${i}]`;
     if (!isObj(x)) { errors.push(`${w} must be an object`); return; }
-    checkKeys(x, ['charterSlug', 'reason', 'brief', 'ideaIds'], w, errors);
+    checkKeys(x, ['charterSlug', 'reason', 'brief', 'ideaIds', 'model', 'paths'], w, errors);
     for (const k of ['charterSlug', 'reason', 'brief']) if (!nonEmpty(x[k])) errors.push(`${w}.${k} must be a non-empty string`);
     if (!Array.isArray(x.ideaIds)) errors.push(`${w}.ideaIds must be an array (use [] when none)`);
-    else x.ideaIds.forEach((id, j) => { if (!nonEmpty(id)) errors.push(`${w}.ideaIds[${j}] must be a non-empty string`); });
+    else x.ideaIds.forEach((id, j) => {
+      if (!nonEmpty(id)) { errors.push(`${w}.ideaIds[${j}] must be a non-empty string`); return; }
+      if (seenDispatchIdeas.has(id) && seenDispatchIdeas.get(id) !== i) errors.push(`${w}: idea ${id} is already carried by dispatch[${seenDispatchIdeas.get(id)}]; one builder per idea`);
+      else seenDispatchIdeas.set(id, i);
+    });
+    if (x.model !== undefined && x.model !== null && !BUILDER_MODEL_CHOICES.includes(x.model)) {
+      errors.push(`${w}.model "${x.model}" is not one of ${BUILDER_MODEL_CHOICES.join(', ')} (or null for the charter default)`);
+    }
+    if (x.paths === undefined || x.paths === null) {
+      if (several) errors.push(`${w}.paths is required when a wake dispatches ${dispatch.length}: name the path prefixes or globs this builder will touch`);
+    } else if (!Array.isArray(x.paths)) errors.push(`${w}.paths must be an array of repo-relative path prefixes or globs`);
+    else {
+      if (!x.paths.length && several) errors.push(`${w}.paths is empty; with ${dispatch.length} dispatches each must name what it touches`);
+      x.paths.forEach((p, j) => { const e = specError(p); if (e) errors.push(`${w}.paths[${j}] ${JSON.stringify(p)} ${e}`); });
+    }
   });
+  // two builders at once only on disjoint paths (conservative: an unprovable pair overlaps)
+  for (let i = 0; i < dispatch.length; i++) {
+    for (let j = i + 1; j < dispatch.length; j++) {
+      const a = dispatch[i], b = dispatch[j];
+      if (!isObj(a) || !isObj(b) || !Array.isArray(a.paths) || !Array.isArray(b.paths) || !a.paths.length || !b.paths.length) continue;
+      const pairs = overlappingPairs(a.paths, b.paths);
+      if (pairs.length) errors.push(`dispatch[${i}] and dispatch[${j}] have overlapping paths (${pairs.slice(0, 4).map(([x, y]) => `${x} ~ ${y}`).join('; ')}); two builders in one wake need disjoint paths, or dispatch one and defer the other`);
+    }
+  }
 
   const defer = checkArray(d, 'defer', errors);
   defer.forEach((x, i) => {
@@ -150,8 +177,27 @@ export function validateDecision(decision, { slug, wakeId, brief } = {}) {
 
 /** brief.models.byCharter[slug] ?? MODELS.builderByCharter[slug] ?? brief.models.builder ?? MODELS.builder */
 export function builderModel(brief, charterSlug) {
+  return chooseBuilderModel(brief, charterSlug).model;
+}
+
+/**
+ * (brief, charterSlug, choice?) => {model, source: 'brief'|'decision'|'contract', overridden?}
+ * The operator's word wins: a brief that pins a model (models.byCharter for this charter, or
+ * models.builder, which onboarding writes only for "Opus everywhere") keeps it, and the master's
+ * `choice` is reported as overridden. Otherwise the master's choice overrides the contract's
+ * per-charter default; without one, the old order holds.
+ */
+export function chooseBuilderModel(brief, charterSlug, choice = null) {
   const m = brief?.models ?? {};
-  return m.byCharter?.[charterSlug] ?? MODELS.builderByCharter[charterSlug] ?? m.builder ?? MODELS.builder;
+  const pinned = m.byCharter?.[charterSlug] ?? null;
+  if (pinned || m.builder) {
+    const model = pinned ?? MODELS.builderByCharter[charterSlug] ?? m.builder;
+    const out = { model, source: pinned || !MODELS.builderByCharter[charterSlug] ? 'brief' : 'contract' };
+    if (choice && resolveModel(choice) !== model) out.overridden = resolveModel(choice);
+    return out;
+  }
+  if (choice) return { model: resolveModel(choice), source: 'decision' };
+  return { model: MODELS.builderByCharter[charterSlug] ?? MODELS.builder, source: 'contract' };
 }
 
 /**
@@ -199,14 +245,37 @@ export async function cmdDecide({ flags = {} } = {}) {
   const unknown = unknownIdeaIds(project.id, decision);
   if (unknown.length) throw new Refusal('invalid decision', { errors: unknown.map((id) => `idea ${id} is not a dev_ideas row of ${slug}; copy the full id from the context document, never retype it`) });
 
+  // A charter already in flight from an earlier wake is not dispatched beside itself (one builder per
+  // charter, as when the project cap was one), and neither is an idea a started run carries. A
+  // never-started `planned` run is intent only (a refused dispatch nobody retries): the context
+  // tells the master about it, and it does not block here.
+  const all = listRuns(slug);
+  const prior = all.filter((r) => r.wakeId === wake.wakeId);
+  const live = all.filter((r) => STARTED_STATES.includes(r.state) && r.wakeId !== wake.wakeId);
+  const clash = [];
+  decision.dispatch.forEach((x, i) => {
+    const same = live.find((r) => r.charterSlug === x.charterSlug);
+    if (same) clash.push(`dispatch[${i}]: charter ${x.charterSlug} already has live run ${shortId(same.runId)} (${same.state}); defer it until that run settles`);
+    for (const id of x.ideaIds ?? []) {
+      const carrier = live.find((r) => (r.ideaIds ?? []).includes(id));
+      if (carrier) clash.push(`dispatch[${i}]: idea ${id} is already carried by live run ${shortId(carrier.runId)} (${carrier.state})`);
+    }
+  });
+  if (clash.length) throw new Refusal('invalid decision', { errors: clash });
+
   // (1) identity before effect: one planned run per dispatch. A re-submission after a crash
   // finds the run this wake already minted for the charter instead of minting a second one.
-  const prior = listRuns(slug).filter((r) => r.wakeId === wake.wakeId);
-  const runs = decision.dispatch.map((x) => prior.find((r) => r.charterSlug === x.charterSlug)
-    ?? newRun(project, {
+  const warnings = [];
+  const runs = decision.dispatch.map((x, i) => {
+    const found = prior.find((r) => r.charterSlug === x.charterSlug);
+    if (found) return found;
+    const chosen = chooseBuilderModel(brief, x.charterSlug, x.model ?? null);
+    if (chosen.overridden) warnings.push(`dispatch[${i}].model ${x.model} ignored: the brief pins ${chosen.model} for ${x.charterSlug}`);
+    return newRun(project, {
       wakeId: wake.wakeId, charterSlug: x.charterSlug, reason: x.reason, brief: x.brief,
-      ideaIds: x.ideaIds, model: builderModel(brief, x.charterSlug),
-    }));
+      ideaIds: x.ideaIds, model: chosen.model, modelSource: chosen.source, paths: Array.isArray(x.paths) ? x.paths : [],
+    });
+  });
 
   // (2) the outbox (idempotent by kind+payload) and the asks (deduped per wake + question)
   const src = { wakeId: wake.wakeId };
@@ -227,7 +296,6 @@ export async function cmdDecide({ flags = {} } = {}) {
   const nextWakeAt = new Date(Date.parse(decidedAt) + decision.nextWakeMinutes * 60000).toISOString();
   const result = { wakeId: wake.wakeId, runIds: runs.map((r) => r.runId), outbox, asks: askIds, nextWakeAt };
   const b = brakes(slug);
-  const warnings = [];
   if (runs.length && b.memory.stop) warnings.push(`memory ${b.memory.freeGb} GB free (a dispatch needs ${b.memory.dispatchNeedGb}): dispatch will refuse until it recovers`);
   if (runs.length && b.limit.limited) warnings.push(`usage limit marked${b.limit.resetsAt ? ` until ${b.limit.resetsAt}` : ''}: dispatch will refuse`);
   saveWake(slug, { wakeId: wake.wakeId, status: 'decided', decision, runIds: result.runIds, nextWakeAt, note: decision.note, decidedAt, result });

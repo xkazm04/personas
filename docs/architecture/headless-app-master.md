@@ -36,7 +36,8 @@ clock is a Claude Code session and the record is a file journal.
      |
      |  decide -> run ids; dispatch
      v
-  builder (Sonnet, `claude -p`, background) in ~/.personas/headless-masters/worktrees/<p>/<run8>
+  builder (Sonnet or Opus, `claude -p`, background; up to two per project on disjoint paths)
+     in ~/.personas/headless-masters/worktrees/<p>/<run8>
      |  exited (seen by the background `await`: a pid check every few seconds)
      v
   settle: verify claim -> merge gate --ff-only--> project checkout (pof/ascent: master, kp: main)
@@ -55,7 +56,7 @@ All shared numbers, vocabularies, paths and record shapes are defined once in
 values that could drift. The subcommand table is `appmaster.mjs` (`COMMANDS`).
 
 - **Decision JSON**: `schema/decision.schema.json`. Keys `wakeId`, `dispatch` (at most
-  `MAX_DISPATCH`), `defer`, `asks` (at most `MAX_ASKS`, kinds `ASK_KINDS`, 2 to 4 options),
+  `MAX_DISPATCH`; each entry may carry `model` and `paths`, see "Two builders per project"), `defer`, `asks` (at most `MAX_ASKS`, kinds `ASK_KINDS`, 2 to 4 options),
   `ideaVerdicts` (`VERDICT_STATUSES`), `say` (string or null), `note`, `nextWakeMinutes`
   (`WAKE_MIN`..`WAKE_MAX`). Absent-value convention: every array present, `say` null, nothing
   omitted. Every charter appears exactly once across `dispatch` and `defer`
@@ -79,10 +80,13 @@ values that could drift. The subcommand table is `appmaster.mjs` (`COMMANDS`).
   command; the in-app raise needs a `persona_executions` row as its anchor), and the master's
   own `say` (the channel door authors every message as the operator). Those stay in the
   journal and the terminal. Replay reads the database before and after each post.
-- **Caps and brakes**: `GLOBAL_CAP` builders across projects, `PER_PROJECT_CAP` per project,
+- **Caps and brakes**: `GLOBAL_CAP` builders across projects, `PER_PROJECT_CAP` per project
+  (two only on disjoint declared paths),
   `MEM` (free GB: a dispatch needs a floor plus a reserve per running builder; a gate run needs more) refuses a dispatch, `QUIET_MIN` and `TIMEOUT_MIN` flag (never kill), the
   Director's sleep is clamped to `SLEEP_MIN_SEC`..`SLEEP_MAX_SEC`. Models: `MODELS` (Opus
-  decides, Sonnet builds; `builderByCharter` and the brief's `models.byCharter` override).
+  decides, Sonnet builds; `builderByCharter` and the brief's `models.byCharter` override; a
+  dispatch's `model` from `BUILDER_MODEL_CHOICES` overrides the charter default but not a model
+  the brief pins).
 - **Exit codes** (`EXIT`): 0 ok, 2 refused by a brake or gate (`{refused}` on stdout), 1 error.
 
 ## State layout
@@ -118,7 +122,11 @@ if all eight hold:
 4. the project checkout is on its base branch;
 5. it has no merge, rebase, cherry-pick or revert in progress;
 6. no path in `git status --porcelain --no-renames` of the checkout is in the branch's diff;
-7. if the base moved, the branch rebases cleanly onto the new tip and typecheck still passes;
+7. if the base moved (another builder of the project merged first, or the operator committed),
+   the branch rebases cleanly onto the new tip inside its worktree BEFORE the gates run (under the
+   gate slot, so condition 3 verifies the rebased tip), and if the base moves again while the
+   gates run, it rebases again and the full gates re-run; a conflict aborts the rebase, the
+   worktree is checked clean with the branch unchanged, and the run is held;
 8. `merge --ff-only` succeeds and the checkout's HEAD equals the branch tip afterwards.
 
 Any failed condition leaves the run `held`, keeps the branch and worktree, and raises a
@@ -149,6 +157,37 @@ project checkout: all three carry foreign uncommitted work, which is why conditi
 | App starts mid-run | The app's stale sweep (`STALE_AFTER_SECS`, `src-tauri/src/commands/fleet/stale.rs:65`, 6 min) marks fleet sessions stale, but these builders write no `fleet_sessions` rows, so it cannot touch them. Replay the outbox only after `--dry-run`. |
 | Merge held | Branch kept, ask raised and queued; the operator decides. |
 | Invalid decision | `decide` refuses with the errors; the Director sends them back to the same master once, then parks the project for the wake and reports it. |
+
+## Two builders per project
+
+Added 2026-10-06. `PER_PROJECT_CAP` is two, `MAX_DISPATCH` two, `GLOBAL_CAP` four; the
+free-memory brake (`MEM`) is unchanged and still decides whether the machine can carry one
+more builder. Two builders of one project are safe only if they do not collide, so:
+
+- **Declared paths.** Each dispatch carries `paths`: repo-relative prefixes or globs the
+  builder will touch (validated: no whitespace, not absolute, no `..`, no negation). The builder
+  is told them and to stay inside. `lib/paths.mjs` decides overlap CONSERVATIVELY: a spec's
+  scope is its literal directory before the first glob character (`src/app*` is all of
+  `src/`, `*.md` the whole repo), two specs overlap when one scope is a segment-prefix of the
+  other, case-insensitively, and an empty list is the whole repo.
+- **At decide.** Two dispatches need non-empty, pairwise-disjoint `paths` and no shared idea;
+  a dispatch may not name a charter or an idea that a started run of an earlier wake still
+  carries (one builder per charter, as when the cap was one). `model` must be one of
+  `BUILDER_MODEL_CHOICES`. Any violation is `invalid decision` with the errors.
+- **At dispatch.** The run's paths must not overlap any live run of the project: running,
+  exited, verifying, and planned once it has a worktree (a crash after the spawn may have left
+  a live builder). A never-started planned run is skipped, because whichever of the two is
+  dispatched second is checked against the first, and a refused, never-retried planned run
+  must not jam the project. The refusal is `paths overlap`, naming the runs and the pairs.
+  `run.json` keeps `paths`, `model` and `modelSource`; the model reaches `claude --model`.
+- **At settle.** The rebase above (merge gate condition 7). What the branch touched outside its
+  declared paths is recorded as `verdict.outsidePaths` for the master, not held: the
+  declaration keeps builders apart, and a rebase conflict is what actually stops a collision.
+- **The master** (roles/app-master.md) dispatches two only when both are independent and
+  disjoint, uses `opus` for discovery (security scan, architecture review, KPI or measure
+  design) and `sonnet` for fixing a chosen shape, delivering a well-specified idea and
+  mechanical sweeps, and always declares `paths`. Its context lists every live run's model and
+  paths and the free slots per project.
 
 ## Exit watchers: `await` instead of a polling Director
 

@@ -140,31 +140,112 @@ test('(ii) clean paths + gates ok -> fast-forward merged, mergedSha == branch ti
   assert.equal(M.cmdSettle({ flags: { run: run.runId } }).mergedSha, tip, 'settle is idempotent on a merged run');
 });
 
-test('(iii) base moved -> worktree rebase, typecheck re-run, then fast-forward', () => {
-  const { root, run, wt } = scenario('moved');
+// a gate that passes only when BOTH the builder's file and the moved base's file are present proves
+// the gates ran on the rebased result, not on the branch as it was cut
+const bothScript = path.join(tmp, 'both-gate.cjs').replace(/\\/g, '/');
+fs.writeFileSync(bothScript, "const fs = require('fs'); for (const f of process.argv.slice(2)) if (!fs.existsSync(f)) { console.log(' FAIL  src/both.test.ts > ' + f + ' is missing'); process.exit(1); }\n");
+const bothGates = (...files) => ({ typecheck: 'exit 0', lint: 'exit 0', test: `node ${bothScript} ${files.join(' ')}` });
+
+test('(iii) base moved with a disjoint file -> rebased in the worktree BEFORE the gates, gates verify the rebased tip, fast-forward', () => {
+  const { root, run, wt } = scenario('moved', { gates: bothGates('c.txt', 'base2.txt') });
   commitIn(wt, 'c.txt', 'builder file\n');
   const baseMove = commitIn(root, 'base2.txt', 'operator landed this meanwhile\n', 'operator commit');
   const out = settle(run);
   assert.equal(out.state, 'merged', out.heldReason);
   assert.equal(out.verdict.rebased, true);
-  assert.equal(out.verdict.gatesAfterRebase.typecheck.ok, true);
+  assert.equal(out.verdict.rebasedOnto, baseMove);
+  assert.equal(out.verdict.rebasedFrom, run.baseSha);
+  assert.equal(out.verdict.gates.test.ok, true, 'the test gate saw both files: it ran on the rebased tip');
+  assert.equal(out.verdict.gatesAfterRebase, undefined, 'no second rebase was needed at the merge');
+  assert.equal(out.baseSha, baseMove, 'the run records the base its branch now sits on');
+  assert.equal(out.originalBaseSha, run.baseSha, 'and keeps the cut-time base');
+  assert.equal(out.verdict.commits.length, 1, 'commits are counted from the new base');
+  assert.deepEqual(out.verdict.files, ['c.txt']);
   assert.equal(sh(root, 'rev-parse', 'HEAD'), out.mergedSha);
   sh(root, 'merge-base', '--is-ancestor', baseMove, 'HEAD');
   assert.ok(fs.existsSync(path.join(root, 'c.txt')) && fs.existsSync(path.join(root, 'base2.txt')));
   assert.equal(sh(root, 'rev-list', '--count', `${baseMove}..HEAD`), '1', 'linear: one rebased commit on top');
 });
 
-test('(iii-b) base moved with a conflict -> rebase aborted, held, branch tip unchanged', () => {
+test('(iii-b) base moved with a conflict -> rebase aborted, worktree clean, held with a merge-held ask, branch tip unchanged', () => {
   const { root, run, wt } = scenario('conflict');
   const tip = commitIn(wt, 'a.txt', 'builder line\n');
   commitIn(root, 'a.txt', 'operator line\n', 'operator commit');
   const before = snapshot(root);
   const out = settle(run);
   assertHeldWithAsk(out, 'conflict');
-  assert.match(out.heldReason, /conflicts/);
+  assert.match(out.heldReason, /rebasing onto [0-9a-f]{10} conflicts \(the rebase was aborted; the branch is unchanged\)/);
   assert.equal(sh(root, 'rev-parse', `refs/heads/${run.branch}`), tip);
-  assert.equal(fs.existsSync(path.resolve(wt, sh(wt, 'rev-parse', '--git-path', 'rebase-merge'))), false, 'no rebase left in progress');
+  assert.equal(sh(wt, 'rev-parse', 'HEAD'), tip, 'the worktree is back on the branch tip');
+  assert.equal(sh(wt, 'status', '--porcelain', '--untracked-files=all').split('\n').filter((l) => l && !/node_modules/.test(l)).length, 0, 'the worktree is clean');
+  for (const m of ['rebase-merge', 'rebase-apply']) assert.equal(fs.existsSync(path.resolve(wt, sh(wt, 'rev-parse', '--git-path', m))), false, `no ${m} left in progress`);
+  assert.equal(out.baseSha, run.baseSha, 'a failed rebase moves nothing');
+  assert.deepEqual(out.verdict.gates, {}, 'no gate ran on a branch that cannot rebase');
   assert.deepEqual(snapshot(root), before);
+  assert.equal(fs.existsSync(path.join(C.STATE_ROOT, '_headless-gate.lock')), false, 'the gate slot is released on the hold');
+});
+
+test('(iii-c) two builders of one project: the second to settle finds the base moved by the first, rebases and merges', () => {
+  const root = makeRepo('pair');
+  const project = { slug: 'pair', id: 'p-pair', name: 'pair', root, baseBranch: 'main' };
+  S.saveBrief('pair', { headless: true, charters: [{ slug: 'accepted-idea-delivery', priority: 1 }, { slug: 'project-kpi-stewardship', priority: 2 }], gates: okGates });
+  const cut = (charterSlug, paths) => {
+    let r = S.newRun(project, { wakeId: 'w-pair', charterSlug, reason: 'r', brief: `work on ${paths[0]}`, ideaIds: [], model: C.MODELS.builder, paths });
+    const wt = WT.createWorktree(r, {});
+    r = S.updateRun(r, { ...wt, state: 'exited', startedAt: C.nowIso(), endedAt: C.nowIso() });
+    return { run: r, wt: wt.worktree };
+  };
+  const A = cut('accepted-idea-delivery', ['src/a/']), B = cut('project-kpi-stewardship', ['src/b/']);
+  assert.equal(A.run.baseSha, B.run.baseSha, 'both cut from the same tip');
+  commitIn(A.wt, 'src/a/x.txt', 'A\n');
+  commitIn(B.wt, 'src/b/y.txt', 'B\n');
+  const outA = settle(A.run);
+  assert.equal(outA.state, 'merged', outA.heldReason);
+  assert.equal(outA.verdict.rebased, false);
+  const outB = settle(B.run);
+  assert.equal(outB.state, 'merged', outB.heldReason);
+  assert.equal(outB.verdict.rebased, true);
+  assert.equal(outB.verdict.rebasedOnto, outA.mergedSha);
+  assert.equal(sh(root, 'rev-parse', 'HEAD'), outB.mergedSha);
+  assert.equal(sh(root, 'rev-list', '--count', `${A.run.baseSha}..HEAD`), '2', 'linear history: A then B');
+  assert.ok(fs.existsSync(path.join(root, 'src/a/x.txt')) && fs.existsSync(path.join(root, 'src/b/y.txt')));
+  assert.equal(outB.verdict.outsidePaths, undefined, 'B stayed inside its declared paths');
+});
+
+test('(iii-d) the base moves WHILE the gates run -> the merge gate rebases again and re-runs the FULL gates', () => {
+  const marker = path.join(tmp, 'moved-once.flag').replace(/\\/g, '/');
+  const moverScript = path.join(tmp, 'mover-gate.cjs').replace(/\\/g, '/');
+  const { root, run, wt } = scenario('during');
+  // the lint gate lands an operator commit in the checkout the first time it runs (and never again)
+  fs.writeFileSync(moverScript, [
+    "const fs = require('fs'); const { execFileSync } = require('child_process');",
+    `if (!fs.existsSync('${marker}')) { fs.writeFileSync('${marker}', 'x');`,
+    `  const root = ${JSON.stringify(root.replace(/\\/g, '/'))};`,
+    "  fs.writeFileSync(root + '/late.txt', 'late\\n');",
+    "  execFileSync('git', ['-C', root, 'add', 'late.txt']);",
+    "  execFileSync('git', ['-C', root, 'commit', '-q', '-m', 'operator commit during the gates']); }",
+  ].join('\n'));
+  S.saveBrief('during', { ...S.loadBrief('during'), gates: { typecheck: 'exit 0', lint: `node ${moverScript}`, test: '' } });
+  commitIn(wt, 'c.txt', 'x\n');
+  const out = settle(run);
+  assert.equal(out.state, 'merged', out.heldReason);
+  const late = sh(root, 'log', '-1', '--format=%H', '--', 'late.txt');
+  assert.equal(out.verdict.rebasedOnto, late, 'the merge gate rebased onto the commit that landed mid-gates');
+  assert.deepEqual(Object.keys(out.verdict.gatesAfterRebase).sort(), ['lint', 'test', 'typecheck'], 'every gate ran again, not only typecheck');
+  assert.equal(out.verdict.gatesAfterRebase.typecheck.ok, true);
+  assert.equal(out.baseSha, late);
+  sh(root, 'merge-base', '--is-ancestor', late, 'HEAD');
+  assert.ok(fs.existsSync(path.join(root, 'late.txt')) && fs.existsSync(path.join(root, 'c.txt')));
+});
+
+test('(iii-e) outsidePaths: files beyond the declared paths are recorded, not held', () => {
+  const { run, wt } = scenario('outside');
+  S.updateRun(run, { paths: ['src/'] });
+  commitIn(wt, 'src/in.txt', 'x\n');
+  commitIn(wt, 'docs/out.md', 'x\n');
+  const out = settle(S.loadRun('outside', run.runId));
+  assert.equal(out.state, 'merged', out.heldReason);
+  assert.deepEqual(out.verdict.outsidePaths, ['docs/out.md']);
 });
 
 test('(iv) boundary hit -> held; prose boundaries are rules, not matchers', () => {

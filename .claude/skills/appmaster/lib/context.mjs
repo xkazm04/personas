@@ -30,6 +30,12 @@ const UNOBSERVED_GAP_MIN = 240;   // attention_decide.rs UNOBSERVED_GAP_MINUTES
 const stampAge = (s, nowMs) => (s ? `${s}${ageText(s, nowMs) ? ` (${ageText(s, nowMs)})` : ''}` : 'never');
 const clip = (s, n) => { const t = String(s ?? '').replace(/\s+/g, ' ').trim(); return t.length > n ? `${t.slice(0, n - 3)}...` : t; };
 const more = (total, shown, indent = '    ') => (total > shown ? [`${indent}+${total - shown} more`] : []);
+const pathsText = (paths) => (Array.isArray(paths) && paths.length ? paths.join(', ') : 'none declared (the whole repo)');
+/** Builder slots still free in this project and in all, from the running counts. */
+export const freeSlots = (running = {}) => ({
+  project: Math.max(0, PER_PROJECT_CAP - (running.project ?? 0)),
+  global: Math.max(0, GLOBAL_CAP - (running.global ?? 0)),
+});
 const askForText = (a) => (Array.isArray(a) ? a.join('; ') : a) || 'a scope change, spending, risk on the money or data path, a conflict between two goals';
 
 // ---------------------------------------------------------------- the renderer (pure)
@@ -96,7 +102,9 @@ export function renderAt(input, C) {
   head('HOW TO DECIDE');
   L.push('- PRIORITY: an explicit priority (1 highest .. 5 lowest) goes ahead of none. No priority is not low priority: the judgment is yours.');
   L.push('- COVERAGE: the coverage and last-run lines and your last note are your memory. Do not re-run what you just ran; do not starve what you keep deferring.');
-  L.push(`- CAPACITY: dispatch AT MOST ${MAX_DISPATCH} charter (one builder per project, ${GLOBAL_CAP} in all; running now: ${machine.running?.project ?? 0} here, ${machine.running?.global ?? 0} in all). A dispatch while this project's builder runs is refused. None is a legitimate answer.`);
+  const slots = freeSlots(machine.running);
+  L.push(`- CAPACITY: dispatch AT MOST ${MAX_DISPATCH} charters (${PER_PROJECT_CAP} builders per project, ${GLOBAL_CAP} in all; running now: ${machine.running?.project ?? 0} here, ${machine.running?.global ?? 0} in all; free slots: ${slots.project} here, ${slots.global} in all). Two at once ONLY when each is independent of the other and their \`paths\` are disjoint from each other AND from every run in flight below. Every dispatch declares \`paths\`: the repo-relative prefixes or globs its builder will touch (none = the whole repo, which leaves no room for a second builder). An overlap is refused. None is a legitimate answer.`);
+  L.push('- MODEL: per dispatch, `model` "opus" for discovery (security scan, architecture review, KPI or measure design), "sonnet" for fixing a shape already chosen, delivering a well-specified idea, or a mechanical sweep; omit it for the charter default. A model the brief pins wins.');
   L.push(`- MACHINE: a dispatch is refused while FREE memory is under ${MEM.dispatchMinFreeGb} GB (+${MEM.perBuilderReserveGb} GB per builder already running) and while a usage-limit mark stands. A tripped memory brake clears by itself within minutes: dispatch nothing this wake and choose a SHORT next wake (10 to 20 min); a usage limit needs a long one.`);
   L.push('- IN FLIGHT: running, exited and verifying runs are not finished; planned is minted, not started. Never re-dispatch a live charter or an idea an in-flight task carries.');
   L.push('- THE BUILDER: a fresh builder in an isolated worktree on its own autopilot branch, merged only if the gates pass and no file it touched is dirty in the checkout. Your `brief` is all it knows: what to change, the accepted idea ids it carries (up to 6 of one shape, or none), how it proves done. A delivery brief first checks each id against the base branch; one already there is closed as delivered, not rebuilt.');
@@ -192,7 +200,10 @@ export function renderAt(input, C) {
   else { L.push(`  in-app tasks in flight (${tasks.length}; DO NOT RE-DISPATCH these):`); for (const t of tasks) L.push(`    - ${clip(t.title, C.title)}${t.source_idea_id ? ` [idea ${t.source_idea_id}]` : ''} (${t.status}${t.started_at ? `, started ${shortStamp(t.started_at)}` : ''})`); }
   const live = runs.live ?? [], recent = runs.recent ?? [];
   if (!live.length) L.push('  headless runs in flight: nothing');
-  else { L.push('  headless runs in flight:'); for (const r of live) L.push(`    - ${shortId(r.runId)} ${r.charterSlug} ${r.state}${r.branch ? ` on ${r.branch}` : ''} (created ${stampAgeShort(r.createdAt, nowMs)})`); }
+  else {
+    L.push('  headless runs in flight (a new dispatch must not overlap their paths):');
+    for (const r of live) L.push(`    - ${shortId(r.runId)} ${r.charterSlug} ${r.state}${r.model ? ` (${r.model})` : ''}${r.branch ? ` on ${r.branch}` : ''} (created ${stampAgeShort(r.createdAt, nowMs)}); paths: ${clip(pathsText(r.paths), 200)}`);
+  }
   if (recent.length) { L.push('  recent headless runs:'); for (const r of recent) L.push(`    - ${shortId(r.runId)} ${r.charterSlug} ${r.state}${r.mergedSha ? ` ${String(r.mergedSha).slice(0, 8)}` : ''}${r.heldReason ? `: ${clip(r.heldReason, 140)}` : ''}`); }
   const gb = s.gitBranches ?? { total: 0, branches: [] };
   if (gb.error) L.push(`  unmerged autopilot branches: not read (${clip(gb.error, 160)})`);
@@ -211,12 +222,13 @@ export function renderAt(input, C) {
   const mem = machine.memory ?? {}, lim = machine.limit ?? {}, run = machine.running ?? {};
   L.push(`- memory: ${mem.freeGb ?? '?'} GB free${mem.totalGb != null ? ` of ${mem.totalGb}` : ''}; a dispatch needs ${mem.dispatchNeedGb ?? MEM.dispatchMinFreeGb} GB free${mem.stop ? ' - TRIPPED NOW' : ''}`);
   L.push(`- usage limit: ${lim.limited ? `LIMITED${lim.reason ? ` (${clip(lim.reason, 120)})` : ''}${lim.resetsAt ? `, resets ${lim.resetsAt}` : ', reset time unknown'} - dispatch is refused` : 'none'}`);
-  L.push(`- running builders: ${run.project ?? 0} of ${PER_PROJECT_CAP} in this project, ${run.global ?? 0} of ${GLOBAL_CAP} across all projects`);
+  const free = freeSlots(run);
+  L.push(`- running builders: ${run.project ?? 0} of ${PER_PROJECT_CAP} in this project (${free.project} slot(s) free), ${run.global ?? 0} of ${GLOBAL_CAP} across all projects (${free.global} free)`);
 
   // OUTPUT CONTRACT (schema/decision.schema.json)
   head('ANSWER WITH ONE JSON OBJECT AND NOTHING ELSE - no prose before or after, no code fence:');
-  L.push(`{"wakeId":"${wakeId}","dispatch":[{"charterSlug":"<slug>","reason":"<why this one now>","brief":"<the builder's whole task>","ideaIds":["<accepted idea id>"]}],"defer":[{"charterSlug":"<slug>","reason":"<why it waits>"}],"asks":[{"kind":"<kind>","question":"<the decision you need>","context":"<why the loop needs it>","options":[{"label":"<a choice>","action":"<what you do if chosen>"}]}],"ideaVerdicts":[{"ideaId":"<pending idea id>","status":"accepted|rejected","reason":"<why>"}],"say":"<message to the operator>|null","note":"<coverage note for your next wake>","nextWakeMinutes":<${WAKE_MIN}-${WAKE_MAX}>}`);
-  L.push(`Every key is always present ([] when empty, say null when silent). wakeId is exactly "${wakeId}"; every charter slug exactly once across dispatch and defer, no other slug; dispatch at most ${MAX_DISPATCH}; asks at most ${MAX_ASKS}, 2-4 options each, kind one of ${ASK_KINDS.join(', ')}; nextWakeMinutes an integer; every ideaId copied from this document.`);
+  L.push(`{"wakeId":"${wakeId}","dispatch":[{"charterSlug":"<slug>","reason":"<why this one now>","brief":"<the builder's whole task>","ideaIds":["<accepted idea id>"],"model":"sonnet|opus","paths":["<repo-relative path prefix or glob it will touch>"]}],"defer":[{"charterSlug":"<slug>","reason":"<why it waits>"}],"asks":[{"kind":"<kind>","question":"<the decision you need>","context":"<why the loop needs it>","options":[{"label":"<a choice>","action":"<what you do if chosen>"}]}],"ideaVerdicts":[{"ideaId":"<pending idea id>","status":"accepted|rejected","reason":"<why>"}],"say":"<message to the operator>|null","note":"<coverage note for your next wake>","nextWakeMinutes":<${WAKE_MIN}-${WAKE_MAX}>}`);
+  L.push(`Every key is always present ([] when empty, say null when silent). wakeId is exactly "${wakeId}"; every charter slug exactly once across dispatch and defer, no other slug; dispatch at most ${MAX_DISPATCH}, and with two each carries non-empty disjoint paths and no idea in both; model optional; asks at most ${MAX_ASKS}, 2-4 options each, kind one of ${ASK_KINDS.join(', ')}; nextWakeMinutes an integer; every ideaId copied from this document.`);
   L.push(`Charter slugs: ${charters.map((c) => c.slug).join(', ') || '(none)'}`);
   return L.join('\n') + '\n';
 }
@@ -299,7 +311,7 @@ export async function cmdContext({ flags = {} } = {}) {
     brakes: {
       memory: { freeGb: m.memory.freeGb, usedPct: m.memory.usedPct, needGb: m.memory.dispatchNeedGb, stop: m.memory.stop },
       limit: { limited: m.limit.limited, resetsAt: m.limit.resetsAt },
-      running: { project: m.running.project, global: m.running.global },
+      running: { project: m.running.project, global: m.running.global, free: freeSlots(m.running) },
     },
   };
 }

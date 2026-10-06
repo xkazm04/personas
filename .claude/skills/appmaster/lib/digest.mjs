@@ -24,7 +24,7 @@ export function projectStatus(slug, nowMs = Date.now()) {
   return {
     slug, name, nextWakeAt: next, due: isDue(wakes, nowMs),
     running: runs.filter((r) => LIVE_RUN_STATES.includes(r.state)).map((r) => ({
-      runId8: shortId(r.runId), charter: r.charterSlug, model: r.model, state: r.state, streamAgeMin: streamAgeMin(slug, r.runId, nowMs),
+      runId8: shortId(r.runId), charter: r.charterSlug, model: r.model, paths: r.paths ?? [], state: r.state, streamAgeMin: streamAgeMin(slug, r.runId, nowMs),
     })),
     held: runs.filter((r) => r.state === 'held').map((r) => ({ runId8: shortId(r.runId), charter: r.charterSlug, branch: r.branch ?? null, heldReason: r.heldReason ?? null })),
     merged: runs.filter((r) => r.state === 'merged' && last && String(r.endedAt ?? r.createdAt) >= String(last.at))
@@ -58,7 +58,7 @@ export function renderDigest(status, nowMs = Date.now()) {
     if (quiet) { L.push(`${p.slug} - quiet, ${next}.`); continue; }
     L.push(`${p.slug} - ${p.lastDecisionAt ? `decided ${hhmm(p.lastDecisionAt, nowMs)}` : 'no decision yet'}${p.lastDispatch.length ? `, dispatched ${p.lastDispatch.join(', ')}` : ''}; ${next}.`);
     for (const m of p.merged) L.push(`  Merged ${m.runId8} ${m.charter}${m.mergedSha ? ` at ${String(m.mergedSha).slice(0, 8)}` : ''}.`);
-    for (const r of p.running) L.push(`  ${r.state === 'running' ? 'Running' : `Run ${r.state}:`} ${r.runId8} ${r.charter} (${r.model ?? 'model ?'})${r.streamAgeMin != null ? `, last output ${r.streamAgeMin} min ago` : ''}.`);
+    for (const r of p.running) L.push(`  ${r.state === 'running' ? 'Running' : `Run ${r.state}:`} ${r.runId8} ${r.charter} (${r.model ?? 'model ?'})${r.streamAgeMin != null ? `, last output ${r.streamAgeMin} min ago` : ''}${r.paths?.length ? `; paths ${clip(r.paths.join(', '), 80)}` : ''}.`);
     for (const h of p.held) L.push(`  Held ${h.runId8} ${h.charter}${h.heldReason ? `: ${clip(h.heldReason, 140)}` : ''}.`);
     if (p.lastNote) L.push(`  Note: ${clip(p.lastNote, 200)}`);
     if (p.say) L.push(`  Said: ${clip(p.say, 240)}`);

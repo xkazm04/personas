@@ -1,6 +1,6 @@
 ---
 name: appmaster
-description: The headless App Master - one App Master per project (pof, ascent, kp) run from this terminal while the Personas app is closed or under development. This session is the clock; each wake renders a context document from a read-only snapshot of the app database plus a local file journal, one Opus subagent per due project returns ONE decision JSON (dispatch at most one builder, defer the rest, up to 3 asks, idea verdicts, a coverage note, the next wake), this session dispatches one background Sonnet builder per project into its own worktree, verifies what came back, and fast-forward merges only through the gate (project gates green, no touched file dirty in the checkout). Every write the app owns is queued in an outbox and replayed through the app's own doors when it is up; the app database is never written. Invoke with `/appmaster` (status), `/appmaster <project>` (boot), `/appmaster onboard <project>`, `/appmaster run` (the loop), `/appmaster say|asks|answer|outbox|release|limit|end`.
+description: The headless App Master - one App Master per project (pof, ascent, kp) run from this terminal while the Personas app is closed or under development. This session is the clock; each wake renders a context document from a read-only snapshot of the app database plus a local file journal, one Opus subagent per due project returns ONE decision JSON (dispatch up to two builders on disjoint paths, each Sonnet or Opus, defer the rest, up to 3 asks, idea verdicts, a coverage note, the next wake), this session dispatches each background builder into its own worktree, settles it the moment it exits (`await`), verifies what came back, and fast-forward merges only through the gate (project gates green, no touched file dirty in the checkout). Every write the app owns is queued in an outbox and replayed through the app's own doors when it is up; the app database is never written. Invoke with `/appmaster` (status), `/appmaster <project>` (boot), `/appmaster onboard <project>`, `/appmaster run` (the loop), `/appmaster say|asks|answer|outbox|release|limit|end`.
 version: 0.1.0
 ---
 
@@ -20,8 +20,10 @@ version: 0.1.0
 ```
 Director (this session)    the clock: status -> context -> decide -> dispatch -> await (watch + settle)
   master subagent (Opus)   one per due project, read-only, returns ONE decision JSON
-  builder (Sonnet)         one per project, background `claude -p` in its own worktree
-  merge gate               verifies the claim, then ff-merges or holds with an ask
+  builder (Sonnet|Opus)    up to PER_PROJECT_CAP per project on disjoint declared paths,
+                           background `claude -p`, each in its own worktree
+  await                    one background exit watcher per run; settles it when its pid is gone
+  merge gate               verifies the claim, rebases onto a moved base, then ff-merges or holds
   journal + outbox         files under .claude/master/<slug>/headless/, replayed later
   app DB                   read-only, mode=ro; never written by this skill
 ```
@@ -38,6 +40,23 @@ Director (this session)    the clock: status -> context -> decide -> dispatch ->
   recursive delete can never reach a checkout.
 - **Numbers** live once in `lib/contract.mjs` (caps, the `MEM` free-memory numbers, quiet and timeout flags,
   wake bounds, the ScheduleWakeup clamp, the models). Quote them from there, not from memory.
+- **Two builders per project.** `PER_PROJECT_CAP` builders may run in one project and
+  `GLOBAL_CAP` in all, and one decision may dispatch `MAX_DISPATCH`, but two only on disjoint
+  declared `paths` (`lib/paths.mjs`, conservative: a glob counts as its whole directory, and no
+  paths means the whole repo). `decide` refuses two dispatches without disjoint paths, one that
+  names a charter or idea an earlier wake's started run still carries, or an unknown `model`;
+  `dispatch` refuses `paths overlap` against any live run of the project (a never-started
+  `planned` run excepted). Each dispatch may set `model` (`sonnet` / `opus` or the full ids in
+  `MODELS`); it overrides the charter default, but a model the brief pins wins (a warning in
+  `decide`'s result says so). `run.json` keeps `paths`, `model` and `modelSource`. The
+  free-memory brake (`MEM`) still decides whether the machine can carry another builder.
+- **A moved base.** With two builders the second to settle finds the base moved. `settle`
+  rebases the branch onto the base tip inside its worktree under the gate slot, BEFORE the gates
+  (so the gates verify what would merge), and records the new `baseSha` (the cut-time base stays
+  as `originalBaseSha`). A conflict aborts the rebase, checks the worktree is clean and the
+  branch unchanged, and holds the run with a `merge-held` ask; nothing is ever forced. A base
+  that moves again WHILE the gates run is rebased again at the merge gate and the full gates
+  re-run.
 - **Managed projects**: `pof` (`C:\Users\kazda\kiro\pof`, base `master`, not onboarded yet),
   `ascent` (`C:\Users\kazda\kiro\ascent`, `master`), `kp` (`C:\Users\kazda\kiro\kp`, base
   **`main`**; "CandiDate" in `dev_projects`). A project is addressed by its slug, the root's
@@ -167,7 +186,7 @@ are used here, in this session, and never inside a master subagent.
    digest with the errors. Never edit a master's JSON yourself.
 6. **Dispatch, then await.** For each run id `decide` returned: `AM dispatch --run <runId>`,
    which cuts the worktree and starts the builder in the background. A typed refusal (`usage
-   limit`, `memory`, `project cap`, `global cap`, `run not planned`) is reported and left for
+   limit`, `memory`, `project cap`, `paths overlap`, `global cap`, `run not planned`) is reported and left for
    the next wake, never retried in a loop. On success, start the `awaitCommand` that `dispatch`
    printed (`AM await --run <runId>`) with `run_in_background`, at once. That background task's
    notification is the PRIMARY wake: when it arrives, read its JSON (the settled run plus
@@ -222,9 +241,10 @@ and last-output age, held with reason, the note, the master's say, asks open, ou
 project where nothing moved collapses to one line.
 
 ```
-Machine: 31.2 GB free; no usage limit; builders running 1 of 3.
+Machine: 31.2 GB free; no usage limit; builders running 2 of 4.
 ascent - decided 14:15, dispatched accepted-idea-delivery; next wake 14:40.
-  Running 9a41c7e2 accepted-idea-delivery (claude-sonnet-5-5), last output 3 min ago.
+  Running 9a41c7e2 accepted-idea-delivery (claude-sonnet-5-5), last output 3 min ago; paths src/app/org/.
+  Running 5b20d4c1 codebase-security-scan (claude-opus-5), last output 1 min ago; paths src/lib/auth/.
   Held 2c7e01bb codebase-security-scan: uncommitted changes in the checkout overlap the branch: ...
   Note: Dispatched delivery of 4c2e81aa/7d90b3f1. Next wake: settle, then KPI readings.
   1 ask(s) open; 4 outbox entries queued.

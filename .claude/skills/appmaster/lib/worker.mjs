@@ -17,6 +17,7 @@ import { readLimit, setLimit, detectLimit, limitSurface, limitSnippet } from './
 import { createWorktree, removeWorktree } from './worktree.mjs';
 import { memoryState } from './memory.mjs';
 import { resolveGates, splitBoundaries, GATE_NAMES } from './gate.mjs';
+import { overlappingPairs } from './paths.mjs';
 
 // ---------------------------------------------------------------- small helpers
 
@@ -132,6 +133,9 @@ export function renderBuilderPrompt(run, brief = {}, gates = {}) {
     gates: GATE_NAMES.map((g) => (gates[g] ? `- ${g}: \`${gates[g]}\`` : `- ${g}: no command configured (skipped; not a pass)`)).join('\n'),
     runDir: runDir(run.slug, run.runId),
     rules: listOrNone(ruleLines, '(none beyond this brief)'),
+    paths: Array.isArray(run.paths) && run.paths.length
+      ? `${listOrNone(run.paths.map((g) => `\`${g}\``), '')}\n  Another builder may be working beside you on other paths of this repo: stay inside these. A change the task needs outside them is reported in \`questions\`, not made.`
+      : '  - (none declared: keep to what the task names)',
   };
   const missing = Object.entries(values).filter(([, v]) => v === undefined || v === null || v === '').map(([k]) => k);
   if (missing.length) throw new Error(`builder prompt: no value for ${missing.map((k) => `{{${k}}}`).join(', ')}`);
@@ -184,7 +188,7 @@ export function spawnWorker(run, promptText) {
  */
 export const awaitCommandFor = (run) => `node "${path.join(SKILL_DIR, 'appmaster.mjs').replace(/\\/g, '/')}" await --run ${shortId(run.runId)}`;
 
-/** (args) => Run & {awaitCommand}   // Refusal at limit / memory / not planned / project cap / global cap */
+/** (args) => Run & {awaitCommand}   // Refusal at limit / memory / not planned / project cap / paths overlap / global cap */
 export function cmdDispatch(args = {}) {
   const run = dispatchCore(args);
   return { ...run, awaitCommand: awaitCommandFor(run) };
@@ -201,6 +205,23 @@ function dispatchCore({ flags = {} } = {}) {
   if (run.state !== 'planned') throw new Refusal('run not planned', { runId: run.runId, state: run.state });
   const mine = listRuns(run.slug, { states: ['running'] }).filter((r) => r.runId !== run.runId);
   if (mine.length >= PER_PROJECT_CAP) throw new Refusal('project cap', { cap: PER_PROJECT_CAP, running: mine.map((r) => shortId(r.runId)) });
+  // Two builders in one project only on disjoint paths, checked against every live run (an exited or
+  // verifying one still owns its files until it merges). No declared paths = the whole repo.
+  // A `planned` run counts once it has a worktree (a dispatch that crashed after the spawn may have
+  // a live builder); a never-started one has touched nothing, and whichever of the two is dispatched
+  // second is checked against the first, so skipping it loses no safety and a refused, never-retried
+  // planned run cannot jam the project.
+  const clashes = listRuns(run.slug, { states: LIVE_RUN_STATES })
+    .filter((r) => r.runId !== run.runId && (r.state !== 'planned' || r.worktree))
+    .map((r) => ({ runId8: shortId(r.runId), state: r.state, charter: r.charterSlug, paths: r.paths ?? [], pairs: overlappingPairs(run.paths, r.paths) }))
+    .filter((c) => c.pairs.length);
+  if (clashes.length) {
+    throw new Refusal('paths overlap', {
+      runId: run.runId, paths: run.paths ?? [],
+      with: clashes.map((c) => ({ runId8: c.runId8, state: c.state, charter: c.charter, paths: c.paths, overlaps: c.pairs.slice(0, 6) })),
+      hint: 'a run with no declared paths covers the whole repo; dispatch this after the other run settles',
+    });
+  }
   const slugs = [...new Set([...listSlugs(), run.slug])];
   const all = slugs.flatMap((s) => listRuns(s, { states: ['running'] })).filter((r) => r.runId !== run.runId);
   if (all.length >= GLOBAL_CAP) throw new Refusal('global cap', { cap: GLOBAL_CAP, running: all.map((r) => `${r.slug}:${shortId(r.runId)}`) });

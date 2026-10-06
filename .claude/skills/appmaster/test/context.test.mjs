@@ -195,4 +195,36 @@ test('status: per project record, stream age, and a text digest where quiet proj
   assert.deepEqual(one.projects.map((p) => p.slug), ['demo']);
 });
 
+test('two builders per project: the context shows each live run\'s model and paths, the free slots, and the paths/model contract', () => {
+  const now = '2026-10-06T10:00:00.000Z';
+  const doc = X.renderContext({
+    wakeId: 'w-two', now, project: { slug: 'two', id: 'pid', name: 'Two', root: 'C:/x/two', baseBranch: 'main' }, master: { id: 'm' },
+    brief: demoBrief([]), lastWake: null, charters: [{ slug: 'accepted-idea-delivery', title: 'Delivery', priority: 1, source: 'template' }],
+    runs: { live: [
+      { runId: 'aaaaaaaa-1111', charterSlug: 'codebase-security-scan', state: 'running', model: 'claude-opus-5', paths: ['src/auth/', 'src/api/'], createdAt: now },
+      { runId: 'bbbbbbbb-2222', charterSlug: 'old-run', state: 'exited', createdAt: now },
+    ], recent: [] },
+    snapshot: { checkout: { branch: 'main', dirty: 0 } },
+    machine: { memory: { freeGb: 30, dispatchNeedGb: 5.5 }, limit: { limited: false }, running: { project: 1, global: 3 } },
+  });
+  assert.match(doc, /aaaaaaaa codebase-security-scan running \(claude-opus-5\).*; paths: src\/auth\/, src\/api\//);
+  assert.match(doc, /bbbbbbbb old-run exited .*paths: none declared \(the whole repo\)/);
+  assert.match(doc, new RegExp(`dispatch AT MOST ${C.MAX_DISPATCH} charters \\(${C.PER_PROJECT_CAP} builders per project, ${C.GLOBAL_CAP} in all; running now: 1 here, 3 in all; free slots: 1 here, 1 in all\\)`));
+  assert.match(doc, /Two at once ONLY when each is independent/);
+  assert.match(doc, /MODEL: per dispatch, `model` "opus" for discovery/);
+  assert.match(doc, /1 of 2 in this project \(1 slot\(s\) free\), 3 of 4 across all projects \(1 free\)/);
+  assert.match(doc, /"model":"sonnet\|opus","paths":\[/);
+  assert.match(doc, /with two each carries non-empty disjoint paths/);
+  assert.deepEqual(X.freeSlots({ project: 2, global: 5 }), { project: 0, global: 0 });
+});
+
+test('status --text names each running run\'s model and its paths', async () => {
+  const run = S.newRun(D.resolveProject('demo'), { wakeId: 'w2', charterSlug: 'accepted-idea-delivery', reason: 'r', brief: 'b', model: C.MODELS.master, paths: ['src/x/'] });
+  S.updateRun(run, { state: 'running' });
+  const st = await G.cmdStatus({ flags: {} });
+  assert.deepEqual(st.projects.find((p) => p.slug === 'demo').running.find((r) => r.runId8 === C.shortId(run.runId)).paths, ['src/x/']);
+  const txt = await G.cmdStatus({ flags: { text: true } });
+  assert.match(txt.text, new RegExp(`Running ${C.shortId(run.runId)} accepted-idea-delivery \\(claude-opus-5\\).*; paths src/x/\\.`));
+});
+
 test('cleanup', () => { fixture.close(); fs.rmSync(env.tmp, { recursive: true, force: true }); });

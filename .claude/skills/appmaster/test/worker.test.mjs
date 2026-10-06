@@ -245,13 +245,30 @@ test('dispatch brakes: limit mark, memory, not planned, project cap, global cap 
   S.saveRun({ ...held, state: 'held' });
   assert.equal(refusal(() => W.cmdDispatch({ flags: { run: held.runId } })).reason, 'run not planned');
 
-  const busy = S.saveRun({ ...plan(), state: 'running', pid: 999999, startedAt: C.nowIso() });
+  // paths: a run with no declared paths covers the whole repo, so it overlaps any live run
+  const busy = S.saveRun({ ...plan({ paths: ['src/a/'] }), state: 'running', pid: 999999, startedAt: C.nowIso() });
   e = refusal(() => W.cmdDispatch({ flags: { run: run.runId } }));
-  assert.equal(e.reason, 'project cap');
+  assert.equal(e.reason, 'paths overlap');
+  assert.deepEqual(e.extra.with.map((w) => w.runId8), [C.shortId(busy.runId)]);
+  const nested = plan({ paths: ['src/'] });
+  e = refusal(() => W.cmdDispatch({ flags: { run: nested.runId } }));
+  assert.equal(e.reason, 'paths overlap');
+  assert.deepEqual(e.extra.with[0].overlaps, [['src/', 'src/a/']]);
   assert.equal(W.cmdDispatch({ flags: { run: busy.runId } }).runId, busy.runId, 'a running run returns itself');
-  S.updateRun(busy, { state: 'released' });
+  // an exited (unsettled) run still owns its paths
+  S.updateRun(busy, { state: 'exited' });
+  assert.equal(refusal(() => W.cmdDispatch({ flags: { run: nested.runId } })).reason, 'paths overlap');
+  // the project cap is PER_PROJECT_CAP running builders, whatever their paths
+  S.updateRun(busy, { state: 'running' });
+  const busy2 = S.saveRun({ ...plan({ paths: ['src/b/'] }), state: 'running', pid: 999999, startedAt: C.nowIso() });
+  e = refusal(() => W.cmdDispatch({ flags: { run: plan({ paths: ['docs/'] }).runId } }));
+  assert.equal(e.reason, 'project cap');
+  assert.equal(e.extra.cap, C.PER_PROJECT_CAP);
+  assert.equal(C.PER_PROJECT_CAP, 2);
+  S.updateRun(busy, { state: 'released' }); S.updateRun(busy2, { state: 'released' });
+  S.updateRun(nested, { state: 'released' });
 
-  for (const s of ['p1', 'p2', 'p3']) {
+  for (const s of Array.from({ length: C.GLOBAL_CAP }, (_, i) => `p${i + 1}`)) {
     S.saveBrief(s, { headless: true, charters: [] });
     S.saveRun({ ...S.newRun({ ...project, slug: s, id: s }, { wakeId: 'w', charterSlug: 'c', reason: 'r', brief: 'b', model: 'm' }), state: 'running', pid: 999999 });
   }
@@ -260,6 +277,34 @@ test('dispatch brakes: limit mark, memory, not planned, project cap, global cap 
   assert.equal(e.extra.running.length, C.GLOBAL_CAP);
   assert.equal(S.loadRun('demo', run.runId).state, 'planned', 'a refused dispatch writes nothing');
   assert.equal(S.loadRun('demo', run.runId).worktree, undefined, 'and cuts no worktree');
+  retireAll();
+});
+
+test('two builders in one project: disjoint paths both run, with their own models; run.json keeps paths + model', async () => {
+  retireAll();
+  process.env.SHIM_SLEEP_MS = '20000'; delete process.env.SHIM_MODE;
+  const a = W.cmdDispatch({ flags: { run: plan({ paths: ['src/kpi/'], model: C.MODELS.master, modelSource: 'decision' }).runId } });
+  const b = W.cmdDispatch({ flags: { run: plan({ paths: ['src/app/'], model: C.MODELS.builder }).runId } });
+  spawned.push(a.pid, b.pid);
+  assert.equal(a.state, 'running'); assert.equal(b.state, 'running');
+  assert.deepEqual(S.loadRun('demo', a.runId).paths, ['src/kpi/']);
+  assert.equal(S.loadRun('demo', a.runId).model, C.MODELS.master);
+  for (const run of [a, b]) {
+    const rec = await waitFor(() => { const p = path.join(process.env.SHIM_OUT_DIR, `${run.sessionId}.json`); return fs.existsSync(p) && JSON.parse(fs.readFileSync(p, 'utf8')); });
+    assert.equal(rec.argv[rec.argv.indexOf('--model') + 1], run.model, 'the run\'s model reaches the spawn');
+    assert.ok(rec.stdin.includes(`\`${run.paths[0]}\``) && rec.stdin.includes('stay inside these'), 'the builder is told its paths');
+  }
+  // a planned run that never started holds nothing; one with a worktree (a crashed dispatch) does
+  const idle = plan({ paths: ['src/kpi/deeper/'] });
+  W.cmdRelease({ flags: { run: a.runId, reason: 'test', kill: true } });
+  W.cmdRelease({ flags: { run: b.runId, reason: 'test', kill: true } });
+  const c = W.cmdDispatch({ flags: { run: plan({ paths: ['src/kpi/'] }).runId } });
+  spawned.push(c.pid);
+  assert.equal(c.state, 'running', `a never-started planned run (${C.shortId(idle.runId)}) did not block it`);
+  W.cmdRelease({ flags: { run: c.runId, reason: 'test', kill: true } });
+  const crashed = S.updateRun(plan({ paths: ['src/kpi/'] }), { worktree: path.join(C.WORKTREE_ROOT, 'demo', 'crashed') });
+  assert.equal(refusal(() => W.cmdDispatch({ flags: { run: idle.runId } })).reason, 'paths overlap');
+  S.updateRun(crashed, { state: 'released' });
   retireAll();
 });
 

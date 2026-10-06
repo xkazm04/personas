@@ -48,8 +48,13 @@ export const shortId = (runId) => String(runId).replace(/-/g, '').slice(0, 8);
 /** Projects this skill manages by default; any other brief.json opts in with `"headless": true`. */
 export const DEFAULT_MANAGED = ['pof', 'ascent', 'kp'];
 
-export const GLOBAL_CAP = 3;          // builders running at once across all projects
-export const PER_PROJECT_CAP = 1;     // builders running at once in one project
+export const GLOBAL_CAP = 4;          // builders running at once across all projects
+/**
+ * Builders running at once in one project. Two only when their declared `paths` are disjoint from
+ * every other live run of the project (dispatch refuses `paths overlap`); the free-memory brake
+ * (MEM) still decides whether the machine can carry another one.
+ */
+export const PER_PROJECT_CAP = 2;
 /**
  * Memory admission, in GB of FREE memory (lib/memory.mjs). Replaces the old machine-wide used-% brake,
  * which a sibling process could pin high without this loop being the cause.
@@ -76,7 +81,7 @@ export const AWAIT = { pollSec: 5, lockSlackMin: 120 };
 export const WAKE_MIN = 10;           // nextWakeMinutes bounds a master may choose
 export const WAKE_MAX = 240;
 export const MAX_ASKS = 3;            // asks one decision may raise
-export const MAX_DISPATCH = 1;        // dispatches one decision may make (== PER_PROJECT_CAP)
+export const MAX_DISPATCH = 2;        // dispatches one decision may make (== PER_PROJECT_CAP); 2 needs disjoint `paths`
 export const SLEEP_MIN_SEC = 60;      // the Director's ScheduleWakeup clamp
 export const SLEEP_MAX_SEC = 3600;
 
@@ -99,6 +104,12 @@ export const MODELS = {
   /** charters that default to Opus builders; the brief's models.byCharter overrides any of this */
   builderByCharter: { 'codebase-architecture-review': 'claude-opus-5', 'codebase-security-scan': 'claude-opus-5' },
 };
+/** The short forms a master may write in a dispatch's `model`; each resolves to a model id above. */
+export const MODEL_ALIASES = { sonnet: MODELS.builder, opus: MODELS.master };
+/** Every value a dispatch's `model` may take: the short forms and the model ids they name. */
+export const BUILDER_MODEL_CHOICES = [...new Set([...Object.keys(MODEL_ALIASES), ...Object.values(MODEL_ALIASES)])];
+/** 'opus' -> 'claude-opus-5'; a full id is returned as it is. */
+export const resolveModel = (m) => MODEL_ALIASES[m] ?? m;
 
 // ---------------------------------------------------------------- worker spawn contract
 
@@ -143,7 +154,10 @@ export const claudeBin = () => process.env.APPMASTER_CLAUDE_BIN || 'claude';
  * @typedef {Object} Decision          the master's whole answer to one wake (schema/decision.schema.json)
  * ABSENT-VALUE CONVENTION: every array is present (empty []), `say` is null when silent. Never omitted.
  * @property {string} wakeId
- * @property {Array<{charterSlug:string,reason:string,brief:string,ideaIds:string[]}>} dispatch
+ * @property {Array<{charterSlug:string,reason:string,brief:string,ideaIds:string[],model?:string|null,paths?:string[]}>} dispatch
+ *   `model` (BUILDER_MODEL_CHOICES) overrides the charter's default unless the brief pins one;
+ *   `paths` (repo-relative path prefixes / globs the builder will touch) is REQUIRED on every entry
+ *   when there are two, and the two must be disjoint (lib/paths.mjs)
  * @property {Array<{charterSlug:string,reason:string}>} defer
  * @property {Array<{kind:string,question:string,context:string,options:Array<{label:string,action:string}>}>} asks
  * @property {Array<{ideaId:string,status:'accepted'|'rejected',reason:string}>} ideaVerdicts
@@ -177,9 +191,12 @@ export const claudeBin = () => process.env.APPMASTER_CLAUDE_BIN || 'claude';
  * @property {string[]} ideaIds
  * @property {string} state            RUN_STATES
  * @property {string} model
+ * @property {'brief'|'decision'|'contract'} [modelSource]   who chose the model (the brief, the master, the defaults)
+ * @property {string[]} [paths]        what the builder declared it will touch; [] / absent = the whole repo
  * @property {string} [branch]         autopilot/<charter>-<shortId>
  * @property {string} [worktree]
- * @property {string} [baseSha]        base branch tip when the worktree was cut
+ * @property {string} [baseSha]        the base the branch sits on: the tip when the worktree was cut, moved by a rebase
+ * @property {string} [originalBaseSha] the cut-time base, kept once settle has rebased the branch onto a moved base
  * @property {number} [pid]
  * @property {string} [sessionId]
  * @property {string} createdAt

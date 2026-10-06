@@ -2,14 +2,14 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "appmaster/decision",
   "title": "App Master wake decision",
-  "description": "The master subagent's whole answer to one wake. Parity with the in-app contract (attention_decide.rs: dispatch/defer/asks/say/note/nextWakeMinutes) so a later replay is lossless. ABSENT-VALUE CONVENTION: every array is present (empty []), say is null when silent; nothing is omitted. Cross-field rules the schema cannot say (enforced by lib/decision.mjs validateDecision): every charter slug of the brief appears exactly once across dispatch and defer; dispatch has at most 1 entry; asks has at most 3; nextWakeMinutes is an integer 10..240; wakeId equals the wake the context was rendered for.",
+  "description": "The master subagent's whole answer to one wake. Parity with the in-app contract (attention_decide.rs: dispatch/defer/asks/say/note/nextWakeMinutes) so a later replay is lossless. ABSENT-VALUE CONVENTION: every array is present (empty []), say is null when silent; nothing is omitted. Cross-field rules the schema cannot say (enforced by lib/decision.mjs validateDecision): every charter slug of the brief appears exactly once across dispatch and defer; dispatch has at most 2 entries, and with 2 every entry carries a non-empty `paths` and the two are pairwise disjoint (lib/paths.mjs: conservative, an unprovable pair overlaps); no idea id in two dispatches; asks has at most 3; nextWakeMinutes is an integer 10..240; wakeId equals the wake the context was rendered for.",
   "type": "object",
   "additionalProperties": false,
   "required": ["wakeId", "dispatch", "defer", "asks", "ideaVerdicts", "say", "note", "nextWakeMinutes"],
   "properties": {
     "wakeId": { "type": "string", "minLength": 1 },
     "dispatch": {
-      "type": "array", "maxItems": 1,
+      "type": "array", "maxItems": 2,
       "items": {
         "type": "object", "additionalProperties": false,
         "required": ["charterSlug", "reason", "brief", "ideaIds"],
@@ -17,7 +17,9 @@
           "charterSlug": { "type": "string", "minLength": 1 },
           "reason": { "type": "string", "minLength": 1 },
           "brief": { "type": "string", "minLength": 1, "description": "The task text for the builder: what to do, in this project's terms." },
-          "ideaIds": { "type": "array", "items": { "type": "string" } }
+          "ideaIds": { "type": "array", "items": { "type": "string" } },
+          "model": { "enum": ["sonnet", "opus", "claude-sonnet-5-5", "claude-opus-5", null], "description": "Optional builder model (contract.mjs BUILDER_MODEL_CHOICES); overrides the charter default unless the brief pins a model. null or absent = the charter default." },
+          "paths": { "type": "array", "items": { "type": "string", "minLength": 1, "pattern": "^[^\\s]+$" }, "description": "Repo-relative path prefixes or globs the builder will touch. Optional for a single dispatch; REQUIRED and non-empty on every entry when there are two, and the two must be disjoint. dispatch refuses `paths overlap` against any live run of the same project; absent means the whole repo." }
         }
       }
     },
