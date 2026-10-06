@@ -463,7 +463,7 @@ export default function PersonasPage() {
           <Sidebar />
 
           {/* Content area */}
-          <div id="main-content" role="main" className={`flex-1 flex flex-col ${IS_MOBILE ? 'overflow-x-hidden' : 'overflow-x-auto'} overflow-y-hidden ${IS_MOBILE ? '' : 'pb-[var(--desktop-footer-h,2rem)]'}`}>
+          <div id="main-content" role="main" className={`flex-1 flex flex-col ${IS_MOBILE ? 'overflow-x-hidden' : 'overflow-x-auto'} overflow-y-hidden ${IS_MOBILE ? '' : 'pb-8'}`}>
             {error && (
               <ErrorBanner
                 message={error}

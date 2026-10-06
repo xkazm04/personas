@@ -1,5 +1,4 @@
 import { createPortal } from 'react-dom';
-import { lazyRetry } from '@/lib/lazyRetry';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAthenaEnabled } from '@/features/companions/status/useAthenaEnabled';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
@@ -11,24 +10,12 @@ import {
   ShortcutsFooterIcon, SystemLoadFooterIcon, ThemeFooterIcon,
   TourResumeFooterIcon,
 } from './lazyFooterIcons';
-import type { FooterModel } from './variants/FooterFrame';
-import { useFooterHeight } from './variants/footerHooks';
-import { FooterVariantSwitcher, useFooterVariant } from './variants/FooterVariantSwitcher';
-
-// PROTOTYPE (2026-10-06): three directional footer variants behind a DEV-only
-// switcher. Baseline below is the shipped bar, unchanged.
-const VARIANTS = {
-  console: lazyRetry(() => import('./variants/FooterConsole')),
-  dock: lazyRetry(() => import('./variants/FooterDock')),
-  rail: lazyRetry(() => import('./variants/FooterRail')),
-};
 
 // Desktop footer bar — layout shell only. Every child is a lazily loaded chunk
 // (see ./lazyFooterIcons.ts); constants shared with other surfaces live in
 // ./footerConstants.ts.
 
 export default function DesktopFooter() {
-  const variant = useFooterVariant();
   const radioEnabled = useSystemStore((s) => s.radioEnabled);
   // Grid mode covers the sidebar, so the footer takes over as the way into
   // other sections (see FooterSectionNav) — and lifts above the z-200 overlay.
@@ -43,11 +30,6 @@ export default function DesktopFooter() {
   // separator with nothing on either side of it.
   const { enabled: athenaEnabled } = useAthenaEnabled();
   if (IS_MOBILE) return null;
-  const model: FooterModel = {
-    z: fleetGridOpen || notepadOpen ? 'z-[210]' : 'z-40',
-    fleetGridOpen, radioEnabled, athenaEnabled,
-  };
-  const Variant = variant === 'baseline' ? null : VARIANTS[variant];
 
   // PORTAL, not an in-place render — this is load-bearing, not tidiness.
   //
@@ -66,21 +48,9 @@ export default function DesktopFooter() {
   // Visually identical either way: the bar is `position: fixed` with explicit
   // insets, so it never depended on its DOM parent for placement.
   return createPortal(
-    <>
-    {Variant ? <FooterSlot reserve={false}><Variant model={model} /></FooterSlot> : <BaselineBar model={model} />}
-    {import.meta.env.DEV && <FooterVariantSwitcher active={variant} />}
-    </>,
-    document.body,
-  );
-}
-
-function BaselineBar({ model }: { model: FooterModel }) {
-  useFooterHeight(32);
-  const { fleetGridOpen, radioEnabled } = model;
-  return (
     <div
       role="contentinfo"
-      className={`fixed bottom-0 left-0 right-0 ${model.z} flex items-center justify-between px-4 h-8 border-t border-primary/10 bg-background`}
+      className={`fixed bottom-0 left-0 right-0 ${fleetGridOpen || notepadOpen ? 'z-[210]' : 'z-40'} flex items-center justify-between px-4 h-8 border-t border-primary/10 bg-background`}
     >
       {/* Left cluster: collapse, account, theme, shortcuts, devices, network, companion */}
       <div className="flex items-center gap-1.5">
@@ -101,7 +71,7 @@ function BaselineBar({ model }: { model: FooterModel }) {
         )}
         {/* Athena companion — docked on the left, immediately right of the
             Network Settings icon. Gone entirely while she is switched off. */}
-        {model.athenaEnabled && (
+        {athenaEnabled && (
           <>
             <FooterDivider />
             <FooterSlot><AthenaFooterIcon /></FooterSlot>
@@ -143,6 +113,7 @@ function BaselineBar({ model }: { model: FooterModel }) {
         <FooterSlot reserve={false}><TourResumeFooterIcon /></FooterSlot>
         <FooterSlot reserve={false}><PluginContextSelectors /></FooterSlot>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
