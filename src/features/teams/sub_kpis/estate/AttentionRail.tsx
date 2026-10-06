@@ -13,7 +13,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import type { AttentionPick } from './kpiPicks';
 import { moveKind, nextMoveOf, nextMoveText } from './kpiNextMove';
-import { useKT } from '../treatment/KpiTreatmentContext';
+import { KT } from './kpiType';
 
 const KIND_TONE: Record<string, string> = {
   off: 'var(--status-error)',
@@ -51,11 +51,10 @@ export function AttentionRail({
   onOpen: (pick: AttentionPick) => void;
 }) {
   const { t, tx } = useTranslation();
-  const KT = useKT();
   const o = t.kpis.overview;
 
   return (
-    <section className={`space-y-2 ${KT.surface}`} aria-label={title}>
+    <section className="space-y-2" aria-label={title}>
       <h3 className={KT.eyebrow}>{title}</h3>
       {picks.length === 0 ? (
         <p className={KT.meta}>{o.rail_settled}</p>
@@ -64,7 +63,7 @@ export function AttentionRail({
           {groupPicks(picks).map((group) => (
             <div key={group.context ?? 'here'} className="space-y-0.5">
               {group.context && <p className={`px-1.5 pt-1 ${KT.meta}`}>{group.context}</p>}
-              <ol className={`divide-y ${KT.divide}`}>
+              <ol className="divide-y divide-primary/10">
                 {group.picks.map((pick) => {
                   const move = nextMoveOf(pick.tally);
                   return (
@@ -85,7 +84,7 @@ export function AttentionRail({
                           type="button"
                           onClick={() => onOpen(pick)}
                           data-testid={`kpi-rail-${pick.id}`}
-                          className={`flex w-full items-center gap-2 rounded-interactive px-1.5 text-left transition-colors focus-ring ${KT.rowPad} ${KT.rowHover}`}
+                          className="flex w-full items-center gap-2 rounded-interactive px-1.5 py-1.5 text-left transition-colors hover:bg-secondary/30 focus-ring"
                         >
                           <span
                             aria-hidden="true"

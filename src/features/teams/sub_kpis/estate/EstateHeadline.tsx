@@ -11,7 +11,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import type { Estate, EstateProject, KpiTally } from './kpiEstate';
 import { CoverageBar } from './CoverageBar';
-import { useKT } from '../treatment/KpiTreatmentContext';
+import { KT } from './kpiType';
 
 function coveragePct(tally: KpiTally): string {
   const pct = tally.coverage * 100;
@@ -28,7 +28,6 @@ export function EstateHeadline({
   onClimb: () => void;
 }) {
   const { t, tx } = useTranslation();
-  const KT = useKT();
   const o = t.kpis.overview;
   const tally = project ? project.tally : estate.tally;
 
@@ -36,7 +35,7 @@ export function EstateHeadline({
     // The Manifest's header pattern: the title row, then a hairline, then the
     // content - so where the page's own statement ends is visible.
     <header className="space-y-3">
-      <div className={`flex flex-wrap items-baseline gap-x-5 gap-y-2 border-b pb-3 ${KT.rule}`}>
+      <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2 border-b border-primary/10 pb-3">
         <h2 className="flex items-baseline gap-2">
           <span className={KT.hero}>{`${coveragePct(tally)}%`}</span>
           <span className="typo-title-lg">{o.headline_coverage}</span>
@@ -89,9 +88,8 @@ function Crumb({
   active: boolean;
   onClick?: () => void;
 }) {
-  const KT = useKT();
   const className = `rounded-interactive px-2 py-1 text-left transition-colors ${
-    active ? 'bg-secondary/40' : KT.rowHover
+    active ? 'bg-secondary/40' : 'hover:bg-secondary/30'
   }`;
   const body = (
     <>
@@ -121,19 +119,16 @@ function Crumb({
  *  something in it. */
 function Stat({ label, value, tone }: { label: string; value: number | string | null; tone: string }) {
   const { t } = useTranslation();
-  const KT = useKT();
   const lit = typeof value === 'string' || (value != null && value > 0);
   return (
     // Label first in the DOM so a screen reader hears "Off track, 0"; the
     // column is reversed so the eye meets the figure first.
-    <div className={`relative flex flex-col-reverse overflow-hidden ${KT.radius} ${KT.tile}`}>
-      {KT.toneLine && (
-        <span
-          aria-hidden="true"
-          className="absolute inset-x-0 top-0 h-px"
-          style={{ background: `linear-gradient(90deg, ${tone}, transparent 75%)`, opacity: lit ? 0.9 : 0.3 }}
-        />
-      )}
+    <div className="relative flex flex-col-reverse overflow-hidden rounded-card border border-card-border bg-gradient-to-b from-secondary/40 to-secondary/10 px-3 py-2">
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-px"
+        style={{ background: `linear-gradient(90deg, ${tone}, transparent 75%)`, opacity: lit ? 0.9 : 0.3 }}
+      />
       <dt className={KT.meta}>{label}</dt>
       <dd className={`${KT.stat} leading-tight`} style={{ color: lit ? tone : 'var(--foreground)' }}>
         {value ?? t.kpis.overview.read_never}

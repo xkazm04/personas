@@ -9,7 +9,7 @@
 import { useTranslation } from '@/i18n/useTranslation';
 
 import type { KpiTally } from '../../estate/kpiEstate';
-import { useKT } from '../../treatment/KpiTreatmentContext';
+import { KT } from '../../estate/kpiType';
 import { RiverbedChart } from './RiverbedChart';
 import { describeFlow, type Riverbed } from './riverbed';
 
@@ -27,7 +27,6 @@ export function RiverTributary({
   onOpen: () => void;
 }) {
   const { t, tx } = useTranslation();
-  const KT = useKT();
   const o = t.kpis.overview;
   const flow = describeFlow(bed, tally.measured);
   const sentence = {
@@ -45,7 +44,7 @@ export function RiverTributary({
       type="button"
       onClick={onOpen}
       data-testid={`kpi-river-tributary-${label}`}
-      className={`flex w-full items-center gap-4 px-2 text-left transition-colors focus-ring ${KT.rowPad} ${KT.rowHover}`}
+      className="flex w-full items-center gap-4 px-2 py-2.5 text-left transition-colors hover:bg-secondary/15 focus-ring"
     >
       <span aria-hidden="true" className={`w-5 shrink-0 ${KT.metaFigure}`}>
         {rank}

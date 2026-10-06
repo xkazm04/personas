@@ -12,7 +12,6 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { HATCH_BG } from '../../kpiChartTheme';
 import type { KpiTally } from '../../estate/kpiEstate';
-import { useKT } from '../../treatment/KpiTreatmentContext';
 import { TRACK_COLOR, type MapLens } from './mapPlot';
 
 export function MapLegend({
@@ -29,11 +28,10 @@ export function MapLegend({
   floored: number;
 }) {
   const { t, tx } = useTranslation();
-  const KT = useKT();
   const o = t.kpis.overview;
 
   return (
-    <div className={`flex flex-wrap items-center gap-x-4 gap-y-2 ${KT.surface}`}>
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
       <ul className="flex flex-wrap items-center gap-x-3 gap-y-1">
         {lens === 'state' ? (
           <>
@@ -66,7 +64,7 @@ export function MapLegend({
         />
       </ul>
 
-      <p className={KT.meta}>
+      <p className="typo-caption">
         {dropped > 0 ? tx(o.map_dropped, { count: dropped }) : tx(o.map_all_drawn, { count: tally.total })}
         {floored > 0 && ` ${tx(o.map_floored, { count: floored })}`}
       </p>
@@ -75,11 +73,10 @@ export function MapLegend({
 }
 
 function Key({ swatch, label }: { swatch: React.CSSProperties; label: string }) {
-  const KT = useKT();
   return (
     <li className="flex items-center gap-1.5">
-      <span aria-hidden="true" className={`block size-3 shrink-0 ${KT.markRadius}`} style={swatch} />
-      <span className={KT.meta}>{label}</span>
+      <span aria-hidden="true" className="block size-3 shrink-0 rounded-[2px]" style={swatch} />
+      <span className="typo-caption">{label}</span>
     </li>
   );
 }

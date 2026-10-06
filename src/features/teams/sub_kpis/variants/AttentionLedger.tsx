@@ -18,7 +18,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { KpiVariantProps } from '../KPIDashboard';
 import { buildEstate } from '../estate/kpiEstate';
 import { EstateHeadline } from '../estate/EstateHeadline';
-import { useKT } from '../treatment/KpiTreatmentContext';
+import { KT } from '../estate/kpiType';
 import { nextMoveOf, nextMoveText } from '../estate/kpiNextMove';
 import { useKpiAltitude } from '../estate/useKpiAltitude';
 import { useLazyTrends } from '../useKpiOverview';
@@ -30,7 +30,6 @@ import { BookChanges } from './ledger/BookChanges';
 
 export default function AttentionLedger({ overview, loading, onFocus, onOpen }: KpiVariantProps) {
   const { t, tx } = useTranslation();
-  const KT = useKT();
   const o = t.kpis.overview;
   const estate = useMemo(() => buildEstate(overview), [overview]);
   const altitude = useKpiAltitude(estate);
@@ -80,11 +79,11 @@ export default function AttentionLedger({ overview, loading, onFocus, onOpen }: 
         onOpen={onOpen}
       />
 
-      <div className={`overflow-x-auto ${KT.surface}`}>
+      <div className="overflow-x-auto">
         <table className="w-full min-w-[46rem] border-collapse" data-testid="kpi-books-table">
           <caption className="sr-only">{o.books_caption}</caption>
           <thead>
-            <tr className={`border-b ${KT.rule}`}>
+            <tr className="border-b border-primary/10">
               <Th className="w-8 text-left">{o.books_rank}</Th>
               <Th className="w-[34%] text-left">{altitude.project ? o.books_group : o.books_project}</Th>
               <Th className="text-right">{o.books_declared}</Th>
@@ -112,8 +111,8 @@ export default function AttentionLedger({ overview, loading, onFocus, onOpen }: 
             ))}
           </tbody>
           <tfoot>
-            <tr className={KT.band}>
-              <td colSpan={5} className={`pl-2 ${KT.rowPad} ${KT.meta}`}>
+            <tr>
+              <td colSpan={5} className={`py-2.5 pl-2 ${KT.meta}`}>
                 {tx(o.books_footer, { rows: rows.length, total: scopeTally.total })}
               </td>
               <Td>{owed.reading}</Td>
@@ -129,16 +128,13 @@ export default function AttentionLedger({ overview, loading, onFocus, onOpen }: 
 }
 
 function Th({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  // The column head is a treatment decision: `typo-label` (type-0/600, no
-  // tracking, no case change) is the baseline and reads as a slightly bolder
-  // data row; `typo-eyebrow` is the canonical tracked uppercase head.
-  const KT = useKT();
-  return <th className={`pb-2 pr-3 ${KT.colHead} ${className}`}>{children}</th>;
+  // The same header token UnifiedTable uses, so this table and the app's
+  // other tables have one header style.
+  return <th className={`pb-2 pr-3 typo-label ${className}`}>{children}</th>;
 }
 
 function Td({ children }: { children: React.ReactNode }) {
-  const KT = useKT();
-  return <td className={`pr-3 text-right ${KT.rowPad} ${KT.figure}`}>{children}</td>;
+  return <td className={`py-2.5 pr-3 text-right ${KT.figure}`}>{children}</td>;
 }
 
 /** Cold store, read in flight: the real geometry, invisible for its first

@@ -18,7 +18,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { KpiVariantProps } from '../KPIDashboard';
 import { buildEstate } from '../estate/kpiEstate';
 import { EstateHeadline } from '../estate/EstateHeadline';
-import { useKT } from '../treatment/KpiTreatmentContext';
+import { KT } from '../estate/kpiType';
 import { useKpiAltitude } from '../estate/useKpiAltitude';
 import { weeklyStateSeries } from '../kpiSample';
 import { useLazyTrends } from '../useKpiOverview';
@@ -36,7 +36,6 @@ const DRY_HEIGHT = 120;
 
 export default function StateRiver({ overview, loading, onFocus }: KpiVariantProps) {
   const { t, tx } = useTranslation();
-  const KT = useKT();
   const o = t.kpis.overview;
 
   const estate = useMemo(() => buildEstate(overview), [overview]);
@@ -102,20 +101,16 @@ export default function StateRiver({ overview, loading, onFocus }: KpiVariantPro
 
       {/* Full width: the mainstream and its tributaries share one axis, so
           the more of the page they get, the more a week can be read. */}
-      <div className={KT.surface}>
-        <RiverbedChart
-          bed={mainBed}
-          height={mainBed.dryWeeks === mainBed.points.length ? DRY_HEIGHT : MAIN_HEIGHT}
-        />
-      </div>
+      <RiverbedChart
+        bed={mainBed}
+        height={mainBed.dryWeeks === mainBed.points.length ? DRY_HEIGHT : MAIN_HEIGHT}
+      />
 
       <section aria-label={o.river_tributaries}>
         <h3 className={`mb-1 ${KT.eyebrow}`}>{tx(o.river_tributaries_count, { count: tributaries.length })}</h3>
-        {/* Ruled or banded, never both: a treatment that gives every
-            tributary its own surface does not also draw 11 hairlines. */}
-        <ol className={KT.band ? 'space-y-1.5' : `divide-y border-t ${KT.divide} ${KT.rule}`}>
+        <ol className="divide-y divide-primary/10 border-t border-primary/10">
           {tributaries.map((place, i) => (
-            <li key={place.id} className={KT.band}>
+            <li key={place.id}>
               <RiverTributary
                 rank={i + 1}
                 label={place.label}

@@ -12,11 +12,10 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { kpiNextMoveOf, nextMoveText } from '../../estate/kpiNextMove';
 import { ageDays } from '../../estate/kpiEstate';
 import { plotStyle } from './mapPlot';
-import { useKT } from '../../treatment/KpiTreatmentContext';
+import { KT } from '../../estate/kpiType';
 
 export function MapPlotTip({ kpi, now, groupLabel }: { kpi: DevKpi; now: number; groupLabel: string }) {
   const { t, tx } = useTranslation();
-  const KT = useKT();
   const o = t.kpis.overview;
   const style = plotStyle(kpi, now, 'state');
   const age = ageDays(kpi, now);
@@ -26,7 +25,7 @@ export function MapPlotTip({ kpi, now, groupLabel }: { kpi: DevKpi; now: number;
       <div className="flex items-start gap-2">
         <span
           aria-hidden="true"
-          className={`mt-1 block size-2.5 shrink-0 ${KT.markRadius}`}
+          className="mt-1 block size-2.5 shrink-0 rounded-[2px]"
           style={{
             background: style.fill ?? 'transparent',
             border: style.fill ? undefined : '1px solid var(--card-border)',
@@ -34,13 +33,13 @@ export function MapPlotTip({ kpi, now, groupLabel }: { kpi: DevKpi; now: number;
         />
         <span className={KT.name}>{kpi.name}</span>
       </div>
-      <p className={KT.meta}>{groupLabel}</p>
-      <p className={KT.meta}>
+      <p className="typo-caption">{groupLabel}</p>
+      <p className="typo-caption">
         {age == null
           ? o.map_never_read
           : tx(o.map_last_read, { days: Math.round(age), cadence: kpi.cadence ?? 'manual' })}
       </p>
-      <p className={KT.meta}>{nextMoveText(kpiNextMoveOf(kpi, now), t, tx)}</p>
+      <p className="typo-caption">{nextMoveText(kpiNextMoveOf(kpi, now), t, tx)}</p>
     </div>
   );
 }

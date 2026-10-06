@@ -14,9 +14,6 @@ import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState
 import { KPIS_GLYPH } from '@/features/shared/glyph/glyphs/kpisGlyph';
 
 import { KpiVariantSwitcher } from './KpiVariantSwitcher';
-import { KpiTreatmentSwitcher } from './treatment/KpiTreatmentSwitcher';
-import { KpiTreatmentProvider } from './treatment/KpiTreatmentContext';
-import type { KpiTreatmentId } from './treatment/kpiTreatment';
 import { useKpiVariant, type KpiVariant } from './kpiVariant';
 import { useKpiOverview } from './useKpiOverview';
 import type { KpiFocus, KpiProjectRollup } from './kpiOverviewModel';
@@ -52,28 +49,20 @@ export function KPIDashboard({
   const { t } = useTranslation();
   const [variant, setVariant] = useKpiVariant();
   const [focus, setFocus] = useState<KpiFocus | null>(null);
-  // SESSION state, deliberately not persisted: the visual treatment is a
-  // review axis, so a reviewer's pick must never be inherited by a user and
-  // the default is always the baseline (the current look).
-  const [treatmentId, setTreatmentId] = useState<KpiTreatmentId>('baseline');
-  const onChange = (v: KpiVariant) => { setFocus(null); setTreatmentId('baseline'); setVariant(v); };
+  const onChange = (v: KpiVariant) => { setFocus(null); setVariant(v); };
 
   return (
     <div data-testid="kpi-dashboard">
       <KpiVariantSwitcher variant={variant} onChange={onChange}>
-        <KpiTreatmentSwitcher variant={variant} treatmentId={treatmentId} onChange={setTreatmentId}>
-          <KpiTreatmentProvider variant={variant} treatmentId={treatmentId}>
-            <StrategicBody
-              variant={variant}
-              loading={loading}
-              focus={focus}
-              onFocus={setFocus}
-              onOpen={onOpen}
-              onReviewProposals={onReviewProposals}
-              emptyTitle={t.kpis.empty_title}
-            />
-          </KpiTreatmentProvider>
-        </KpiTreatmentSwitcher>
+        <StrategicBody
+          variant={variant}
+          loading={loading}
+          focus={focus}
+          onFocus={setFocus}
+          onOpen={onOpen}
+          onReviewProposals={onReviewProposals}
+          emptyTitle={t.kpis.empty_title}
+        />
       </KpiVariantSwitcher>
     </div>
   );
