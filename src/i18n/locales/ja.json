@@ -6669,6 +6669,10 @@
     "grid_column_workspace_open": "ワークスペースを開く",
     "grid_column_workspace_rename": "グループの名前を変更",
     "grid_dock_collapse": "送信コンソールを隠す",
+    "grid_dock_variant_aria": "ドックのレイアウト",
+    "grid_dock_variant_rail": "レール",
+    "grid_dock_variant_console": "コンソール",
+    "grid_dock_variant_ribbon": "リボン",
     "grid_fleet_exited": "このセッションは終了しました — ターミナルはもうありません。",
     "grid_fleet_kill": "セッションを終了",
     "terminal_asleep_label": "スリープ中の理由",
@@ -7197,6 +7201,14 @@
     "orch_never_served": "未実行",
     "orch_refusal_budget": "月間予算を使い切りました",
     "orch_refusal_concurrency": "マシンがペルソナ上限に達しています",
+    "orch_refusal_headless": "ターミナルの App Master がこのプロジェクトを担当中",
+    "orch_headless_running": "Headless - 実行中",
+    "orch_headless_idle": "Headless - 待機中",
+    "orch_headless_stale": "Headless - 古い",
+    "orch_headless_hint": "このプロジェクトの App Master はターミナル (/appmaster) から実行されています。報告が新しい間、アプリ内の master は待機します。",
+    "orch_headless_next_wake": "次回の起動:",
+    "orch_headless_no_wake": "未通知",
+    "orch_headless_reported": "最終報告:",
     "orch_refusal_daily_cap": "日次上限に到達しました",
     "orch_refusal_in_flight": "前回のパスをまだ実行中です",
     "orch_refusal_interval_floor": "間隔待機中です",
@@ -17915,6 +17927,7 @@
     "memory_graph": "グラフ",
     "observability": "オブザーバビリティ",
     "messages": "レポート",
+    "timeline": "タイムライン",
     "mission_control": "ミッションコントロール",
     "n8n_import": "n8nインポート",
     "network": "ネットワーク",
@@ -17951,8 +17964,7 @@
     "create_athena": "Athenaを作る",
     "features": "機能",
     "companions": "コンパニオン",
-    "whitelist": "サーバー制御",
-    "timeline": "タイムライン"
+    "whitelist": "サーバー制御"
   },
   "status_tokens": {
     "automation": {

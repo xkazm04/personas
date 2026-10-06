@@ -6669,6 +6669,10 @@
     "grid_column_workspace_open": "Mở không gian làm việc",
     "grid_column_workspace_rename": "Đổi tên nhóm",
     "grid_dock_collapse": "Ẩn bảng điều khiển gửi đi",
+    "grid_dock_variant_aria": "Bố cục thanh dock",
+    "grid_dock_variant_rail": "Thanh ray",
+    "grid_dock_variant_console": "Bảng điều khiển",
+    "grid_dock_variant_ribbon": "Dải băng",
     "grid_fleet_exited": "Phiên này đã kết thúc — terminal của nó không còn nữa.",
     "grid_fleet_kill": "Kết thúc phiên",
     "terminal_asleep_label": "Vì sao phiên đang ngủ",
@@ -7197,6 +7201,14 @@
     "orch_never_served": "chưa từng được phục vụ",
     "orch_refusal_budget": "Đã chi hết ngân sách tháng",
     "orch_refusal_concurrency": "Máy đã đạt giới hạn persona",
+    "orch_refusal_headless": "Một App Master trên terminal đang giữ dự án này",
+    "orch_headless_running": "Headless - đang chạy",
+    "orch_headless_idle": "Headless - nhàn rỗi",
+    "orch_headless_stale": "Headless - đã cũ",
+    "orch_headless_hint": "App Master của dự án này đang chạy từ terminal (/appmaster). Master trong ứng dụng nhường chỗ khi các báo cáo của nó còn mới.",
+    "orch_headless_next_wake": "Lần thức tiếp theo:",
+    "orch_headless_no_wake": "chưa thông báo",
+    "orch_headless_reported": "Báo cáo gần nhất:",
     "orch_refusal_daily_cap": "Đã đạt giới hạn ngày",
     "orch_refusal_in_flight": "Vẫn đang chạy lượt trước",
     "orch_refusal_interval_floor": "Đang nghỉ cho đến khoảng cách quy định",
@@ -17915,6 +17927,7 @@
     "memory_graph": "Đồ thị",
     "observability": "Khả năng quan sát",
     "messages": "Báo cáo",
+    "timeline": "Dòng thời gian",
     "mission_control": "Trung tâm điều hành",
     "n8n_import": "Nhập n8n",
     "network": "Mạng",
@@ -17951,8 +17964,7 @@
     "create_athena": "Tạo Athena",
     "features": "Tính năng",
     "companions": "Bạn đồng hành",
-    "whitelist": "Điều khiển máy chủ",
-    "timeline": "Dòng thời gian"
+    "whitelist": "Điều khiển máy chủ"
   },
   "status_tokens": {
     "automation": {

@@ -70,6 +70,7 @@
   "memory_graph": "Graph",
   "observability": "Beobachtbarkeit",
   "messages": "Berichte",
+  "timeline": "Zeitachse",
   "mission_control": "Mission Control",
   "n8n_import": "n8n-Import",
   "network": "Netzwerk",
@@ -106,6 +107,5 @@
   "create_athena": "Athena erstellen",
   "features": "Features",
   "companions": "Begleiter",
-  "whitelist": "Serversteuerung",
-  "timeline": "Zeitachse"
+  "whitelist": "Serversteuerung"
 }

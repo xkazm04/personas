@@ -6669,6 +6669,10 @@
     "grid_column_workspace_open": "Otevřít pracovní prostor",
     "grid_column_workspace_rename": "Přejmenovat skupinu",
     "grid_dock_collapse": "Skrýt konzoli odesílání",
+    "grid_dock_variant_aria": "Rozvržení doku",
+    "grid_dock_variant_rail": "Lišta",
+    "grid_dock_variant_console": "Konzole",
+    "grid_dock_variant_ribbon": "Pás",
     "grid_fleet_exited": "Tato relace skončila — její terminál už neexistuje.",
     "grid_fleet_kill": "Ukončit relaci",
     "terminal_asleep_label": "Proč spí",
@@ -7197,6 +7201,14 @@
     "orch_never_served": "nikdy neobsloužena",
     "orch_refusal_budget": "Měsíční rozpočet vyčerpán",
     "orch_refusal_concurrency": "Stroj na svém limitu person",
+    "orch_refusal_headless": "Tento projekt drží App Master z terminálu",
+    "orch_headless_running": "Headless - běží",
+    "orch_headless_idle": "Headless - nečinný",
+    "orch_headless_stale": "Headless - zastaralý",
+    "orch_headless_hint": "App Master tohoto projektu běží z terminálu (/appmaster). Master v aplikaci ustoupí, dokud jsou jeho hlášení čerstvá.",
+    "orch_headless_next_wake": "Příští probuzení:",
+    "orch_headless_no_wake": "neohlášeno",
+    "orch_headless_reported": "Poslední hlášení:",
     "orch_refusal_daily_cap": "Denní limit dosažen",
     "orch_refusal_in_flight": "Ještě běží její poslední průchod",
     "orch_refusal_interval_floor": "Odpočívá do svého intervalu",
@@ -17915,6 +17927,7 @@
     "memory_graph": "Graf",
     "observability": "Pozorovatelnost",
     "messages": "Reporty",
+    "timeline": "Časová osa",
     "mission_control": "Řídicí centrum",
     "n8n_import": "Import n8n",
     "network": "Síť",
@@ -17951,8 +17964,7 @@
     "create_athena": "Vytvořit Athenu",
     "features": "Funkce",
     "companions": "Společníci",
-    "whitelist": "Správa serverů",
-    "timeline": "Časová osa"
+    "whitelist": "Správa serverů"
   },
   "status_tokens": {
     "automation": {

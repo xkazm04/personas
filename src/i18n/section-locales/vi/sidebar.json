@@ -70,6 +70,7 @@
   "memory_graph": "Đồ thị",
   "observability": "Khả năng quan sát",
   "messages": "Báo cáo",
+  "timeline": "Dòng thời gian",
   "mission_control": "Trung tâm điều hành",
   "n8n_import": "Nhập n8n",
   "network": "Mạng",
@@ -106,6 +107,5 @@
   "create_athena": "Tạo Athena",
   "features": "Tính năng",
   "companions": "Bạn đồng hành",
-  "whitelist": "Điều khiển máy chủ",
-  "timeline": "Dòng thời gian"
+  "whitelist": "Điều khiển máy chủ"
 }

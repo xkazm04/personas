@@ -13,6 +13,8 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 
 import { QuickDispatchDock } from '../QuickDispatchDock';
+import { DOCK_VARIANTS, readDockVariant, writeDockVariant, type DockVariant } from '../dockVariant';
+import { DECK_HEIGHT } from '../dock/DockCommandRow';
 
 // A dispatch needs a TARGET: `canSend` is false without a project chip, so a
 // test that only types an objective is testing the disabled state. One real
@@ -333,61 +335,147 @@ describe('QuickDispatchDock — the Athena grant', () => {
 });
 
 
-describe('QuickDispatchDock — the anti-shake contract, with two more controls in the row', () => {
+describe('QuickDispatchDock — the anti-shake contract, in every variant', () => {
   // jsdom has no layout engine, so this is a STRUCTURAL measurement, not a
-  // pixel one: the dock's height is the sum of four rows whose heights are
-  // literal classes, so if the class list and the row count are identical in
-  // every state, the outer height is too. The pixel measurement is the
-  // reserved-height classes themselves (30 / 24 / 92 / 34), asserted below.
-  const rows = () => {
-    const grid = screen.getByTestId('quick-dispatch-dock').querySelector('.dock-instrument-grid');
-    return Array.from(grid?.children ?? [])
-      .map((el) => (el as HTMLElement).className)
-      .filter((cn) => cn.includes('z-[1]'))
-      .map((cn) => cn.match(/\bh-\[?[\w.]+\]?/)?.[0] ?? '');
-  };
+  // pixel one: the dock's height is the sum of its in-flow rows, whose heights
+  // are literal classes, so if the class list and the row count are identical
+  // in every state, the outer height is too.
+  //
+  // The dock now hosts THREE shells behind a persisted switch, and they do not
+  // share a row map — `ribbon` puts the readings in a footer where `rail` puts
+  // them in a header, so the heights differ BETWEEN variants by design. The
+  // contract was never "these four literals"; it is "the same rows, at the
+  // same heights, in every state" — per variant. So the literals are asserted
+  // per variant (the pixel measurement is still a real one, just three of
+  // them) and the cross-state identity is asserted for each.
+  //
+  // The rows are found by the `data-dock-row` marker they carry, not by being
+  // direct children of the grid carrying `z-[1]`. The marker is what a row IS;
+  // child position stopped being a safe proxy for it the moment the shells
+  // declared their swapped region as the tab panel the variant switch
+  // controls (a `display: contents` wrapper, so the layout is unchanged and
+  // only the DOM nesting moved). An absolutely positioned typeahead panel
+  // still carries no marker and so is still not counted, which was the only
+  // thing the old `z-[1]` filter was protecting.
+  const rows = () =>
+    Array.from(screen.getByTestId('quick-dispatch-dock').querySelectorAll('[data-dock-row]')).map(
+      (el) => (el as HTMLElement).className.match(/\bh-\[?[\w.]+\]?/)?.[0] ?? '',
+    );
   /** The deck's reserved box lives one level in, on the bordered frame. */
   const deckHeight = () => {
-    const grid = screen.getByTestId('quick-dispatch-dock').querySelector('.dock-instrument-grid');
-    // By content, not by index: an open typeahead prepends an absolutely
-    // positioned panel to the grid, and that panel is precisely the thing that
-    // must NOT be counted as a row.
-    const deck = Array.from(grid?.children ?? [])
-      .find((el) => el.querySelector('textarea'))?.firstElementChild as HTMLElement | undefined;
+    const deck = screen
+      .getByTestId('quick-dispatch-dock')
+      .querySelector('[data-dock-deck]') as HTMLElement | null;
     return deck?.className.match(/\bh-\[?[\w.]+\]?/)?.[0] ?? '';
   };
 
-  it('keeps the same four reserved rows, at the same heights, in every state', async () => {
-    render(<QuickDispatchDock />);
-    expand();
-    const draft = rows();
-    expect(draft).toEqual(['h-[30px]', 'h-6', '', 'h-[34px]']);
-    expect(deckHeight()).toBe('h-[92px]');
+  /** Each shell's row map. The deck is one literal, shared by all three. */
+  const SHAPES: Record<DockVariant, string[]> = {
+    rail: ['h-[30px]', 'h-[34px]', 'h-6', '', 'h-5'],
+    console: ['h-[34px]', 'h-[30px]', 'h-6', '', 'h-5'],
+    ribbon: ['h-[34px]', 'h-6', '', 'h-[26px]', 'h-5'],
+  };
 
-    // Typed.
-    await arm();
-    expect(rows()).toEqual(draft);
-    expect(deckHeight()).toBe('h-[92px]');
+  beforeEach(() => localStorage.clear());
 
-    // Typeahead open: the panel renders absolutely at bottom-full, out of flow.
-    fireEvent.change(field(), { target: { value: '@per' } });
-    await screen.findByTestId('quick-dispatch-suggestion-item');
-    expect(rows()).toEqual(draft);
-    expect(deckHeight()).toBe('h-[92px]');
+  for (const variant of DOCK_VARIANTS) {
+    it(`${variant}: keeps the same reserved rows, at the same heights, in every state`, async () => {
+      writeDockVariant(variant);
+      render(<QuickDispatchDock />);
+      expand();
+      const draft = rows();
+      expect(draft).toEqual(SHAPES[variant]);
+      expect(deckHeight()).toBe(DECK_HEIGHT);
 
-    // Long objective: the field grows INSIDE the 92px deck and then scrolls.
-    fireEvent.change(field(), { target: { value: 'x'.repeat(1100) } });
-    expect(rows()).toEqual(draft);
-    expect(deckHeight()).toBe('h-[92px]');
+      // Typed.
+      await arm();
+      expect(rows()).toEqual(draft);
+      expect(deckHeight()).toBe(DECK_HEIGHT);
+
+      // Typeahead open: the panel renders absolutely at bottom-full, out of flow.
+      fireEvent.change(field(), { target: { value: '@per' } });
+      await screen.findByTestId('quick-dispatch-suggestion-item');
+      expect(rows()).toEqual(draft);
+      expect(deckHeight()).toBe(DECK_HEIGHT);
+
+      // Long objective: the field grows INSIDE the deck and then scrolls.
+      fireEvent.change(field(), { target: { value: 'x'.repeat(1100) } });
+      expect(rows()).toEqual(draft);
+      expect(deckHeight()).toBe(DECK_HEIGHT);
+    });
+
+    it(`${variant}: mounts every reading and every toggle in every state`, async () => {
+      writeDockVariant(variant);
+      render(<QuickDispatchDock />);
+      expand();
+      for (const value of ['', 'a short objective', 'x'.repeat(1100)]) {
+        fireEvent.change(field(), { target: { value } });
+        expect(screen.getByTestId('quick-dispatch-landing')).toBeTruthy();
+        expect(screen.getByTestId('quick-dispatch-athena-toggle')).toBeTruthy();
+        expect(screen.getByTestId('quick-dispatch-gauge-cost')).toBeTruthy();
+        expect(screen.getByTestId('quick-dispatch-status-pill')).toBeTruthy();
+      }
+    });
+  }
+});
+
+describe('QuickDispatchDock — three variants, one set of shape rules', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('rests on `rail` for a missing, unknown or unreadable stored value', () => {
+    expect(readDockVariant()).toBe('rail');
+    localStorage.setItem('monitor.dock.variant', 'horizon');
+    expect(readDockVariant()).toBe('rail');
   });
 
-  it('mounts both new controls in every state, so neither can move a row by appearing', async () => {
+  it('switches shell and persists the choice', () => {
     render(<QuickDispatchDock />);
     expand();
-    for (const value of ['', 'a short objective', 'x'.repeat(1100)]) {
-      fireEvent.change(field(), { target: { value } });
-      expect(screen.getByTestId('quick-dispatch-landing')).toBeTruthy();
-      expect(screen.getByTestId('quick-dispatch-athena-toggle')).toBeTruthy();
-    }
+    expect(screen.getByTestId('quick-dispatch-dock').getAttribute('data-dock-variant')).toBe('rail');
+    fireEvent.click(screen.getByTestId('quick-dispatch-variant-ribbon'));
+    expect(screen.getByTestId('quick-dispatch-dock').getAttribute('data-dock-variant')).toBe('ribbon');
+    expect(readDockVariant()).toBe('ribbon');
   });
+
+  for (const variant of DOCK_VARIANTS) {
+    it(`${variant}: the toolbar carries the parameters and sits ABOVE the command row`, () => {
+      writeDockVariant(variant);
+      render(<QuickDispatchDock />);
+      expand();
+      const toolbar = screen.getByTestId('quick-dispatch-toolbar');
+      // Every toggle and parameter picker is inside the toolbar, not beside
+      // the field: "toolbar on top for toggles and param setup".
+      for (const id of [
+        'quick-dispatch-model-chip',
+        'quick-dispatch-effort-chip',
+        'quick-dispatch-athena-toggle',
+        'quick-dispatch-headless-toggle',
+        'quick-dispatch-skill-picker-toggle',
+      ]) {
+        expect(toolbar.contains(screen.getByTestId(id)), `${id} belongs to the toolbar`).toBe(true);
+      }
+      // ...and the toolbar precedes the command row in document order.
+      const send = screen.getByTestId('quick-dispatch-send');
+      expect(toolbar.compareDocumentPosition(send) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it(`${variant}: the objective and the launch share ONE row, and no control stacks its icon over its label`, () => {
+      writeDockVariant(variant);
+      render(<QuickDispatchDock />);
+      expand();
+      const send = screen.getByTestId('quick-dispatch-send');
+      // The field and the button are siblings inside the one command well.
+      expect(send.parentElement?.contains(screen.getByTestId('quick-dispatch-input'))).toBe(true);
+      // The launch used to be a `flex-col` stacking its arrow over its word.
+      for (const id of [
+        'quick-dispatch-send',
+        'quick-dispatch-headless-toggle',
+        'quick-dispatch-athena-toggle',
+        'quick-dispatch-model-chip',
+        'quick-dispatch-effort-chip',
+      ]) {
+        expect(screen.getByTestId(id).className, `${id} must not stack`).not.toMatch(/\bflex-col\b/);
+      }
+    });
+  }
 });

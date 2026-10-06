@@ -70,6 +70,7 @@
   "memory_graph": "Граф",
   "observability": "Мониторинг",
   "messages": "Отчёты",
+  "timeline": "Лента",
   "mission_control": "Центр управления",
   "n8n_import": "Импорт n8n",
   "network": "Сеть",
@@ -106,6 +107,5 @@
   "create_athena": "Создать Athena",
   "features": "Функции",
   "companions": "Спутники",
-  "whitelist": "Управление серверами",
-  "timeline": "Лента"
+  "whitelist": "Управление серверами"
 }

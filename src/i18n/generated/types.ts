@@ -673,6 +673,10 @@ export type Translations = {
     grid_rail_tabs_aria: string;
     grid_messages_empty: string;
     grid_dock_collapse: string;
+    grid_dock_variant_aria: string;
+    grid_dock_variant_rail: string;
+    grid_dock_variant_console: string;
+    grid_dock_variant_ribbon: string;
     grid_rail_loading_more: string;
     grid_rail_unread: string;
     grid_rail_resize: string;
@@ -878,6 +882,14 @@ export type Translations = {
     orch_refusal_daily_cap: string;
     orch_refusal_budget: string;
     orch_refusal_concurrency: string;
+    orch_refusal_headless: string;
+    orch_headless_running: string;
+    orch_headless_idle: string;
+    orch_headless_stale: string;
+    orch_headless_hint: string;
+    orch_headless_next_wake: string;
+    orch_headless_no_wake: string;
+    orch_headless_reported: string;
     orch_lane_arrivals: string;
     orch_lane_advance: string;
     orch_lane_improve: string;
@@ -2104,6 +2116,7 @@ export type Translations = {
     executions: string;
     manual_review: string;
     messages: string;
+    timeline: string;
     knowledge: string;
     sla: string;
     cron_agents: string;
@@ -2193,7 +2206,6 @@ export type Translations = {
     navigation_drawer: string;
     create_athena: string;
     companions: string;
-    timeline: string;
   };
   home: {
     get_started: {

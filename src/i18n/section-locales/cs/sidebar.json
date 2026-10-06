@@ -70,6 +70,7 @@
   "memory_graph": "Graf",
   "observability": "Pozorovatelnost",
   "messages": "Reporty",
+  "timeline": "Časová osa",
   "mission_control": "Řídicí centrum",
   "n8n_import": "Import n8n",
   "network": "Síť",
@@ -106,6 +107,5 @@
   "create_athena": "Vytvořit Athenu",
   "features": "Funkce",
   "companions": "Společníci",
-  "whitelist": "Správa serverů",
-  "timeline": "Časová osa"
+  "whitelist": "Správa serverů"
 }

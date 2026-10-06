@@ -6669,6 +6669,10 @@
     "grid_column_workspace_open": "Arbeitsbereich öffnen",
     "grid_column_workspace_rename": "Gruppe umbenennen",
     "grid_dock_collapse": "Sendekonsole ausblenden",
+    "grid_dock_variant_aria": "Dock-Layout",
+    "grid_dock_variant_rail": "Schiene",
+    "grid_dock_variant_console": "Konsole",
+    "grid_dock_variant_ribbon": "Band",
     "grid_fleet_exited": "Diese Sitzung ist beendet — ihr Terminal existiert nicht mehr.",
     "grid_fleet_kill": "Sitzung beenden",
     "terminal_asleep_label": "Warum sie schläft",
@@ -7197,6 +7201,14 @@
     "orch_never_served": "nie bedient",
     "orch_refusal_budget": "Monatsbudget aufgebraucht",
     "orch_refusal_concurrency": "Maschine an ihrem Persona-Limit",
+    "orch_refusal_headless": "Ein Terminal-App-Master hält dieses Projekt",
+    "orch_headless_running": "Headless - läuft",
+    "orch_headless_idle": "Headless - untätig",
+    "orch_headless_stale": "Headless - veraltet",
+    "orch_headless_hint": "Der App Master dieses Projekts läuft in einem Terminal (/appmaster). Der Master in der App tritt zurück, solange seine Meldungen aktuell sind.",
+    "orch_headless_next_wake": "Nächstes Aufwachen:",
+    "orch_headless_no_wake": "nicht angekündigt",
+    "orch_headless_reported": "Letzte Meldung:",
     "orch_refusal_daily_cap": "Tageslimit erreicht",
     "orch_refusal_in_flight": "Läuft noch ihren letzten Durchgang",
     "orch_refusal_interval_floor": "Ruht bis zu ihrem Intervall",
@@ -17915,6 +17927,7 @@
     "memory_graph": "Graph",
     "observability": "Beobachtbarkeit",
     "messages": "Berichte",
+    "timeline": "Zeitachse",
     "mission_control": "Mission Control",
     "n8n_import": "n8n-Import",
     "network": "Netzwerk",
@@ -17951,8 +17964,7 @@
     "create_athena": "Athena erstellen",
     "features": "Features",
     "companions": "Begleiter",
-    "whitelist": "Serversteuerung",
-    "timeline": "Zeitachse"
+    "whitelist": "Serversteuerung"
   },
   "status_tokens": {
     "automation": {

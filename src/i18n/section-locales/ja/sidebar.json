@@ -70,6 +70,7 @@
   "memory_graph": "グラフ",
   "observability": "オブザーバビリティ",
   "messages": "レポート",
+  "timeline": "タイムライン",
   "mission_control": "ミッションコントロール",
   "n8n_import": "n8nインポート",
   "network": "ネットワーク",
@@ -106,6 +107,5 @@
   "create_athena": "Athenaを作る",
   "features": "機能",
   "companions": "コンパニオン",
-  "whitelist": "サーバー制御",
-  "timeline": "タイムライン"
+  "whitelist": "サーバー制御"
 }

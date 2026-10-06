@@ -18,6 +18,7 @@
   "executions": "Activity",
   "manual_review": "Approvals",
   "messages": "Reports",
+  "timeline": "Timeline",
   "knowledge": "Knowledge",
   "sla": "Reliability",
   "cron_agents": "Scheduled Agents",
@@ -106,6 +107,5 @@
   "primary_nav": "Primary",
   "navigation_drawer": "Navigation drawer",
   "create_athena": "Create Athena",
-  "companions": "Companions",
-  "timeline": "Timeline"
+  "companions": "Companions"
 }

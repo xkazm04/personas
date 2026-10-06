@@ -12,20 +12,42 @@
 // the headless fallback and the ARIA combobox contract cannot drift between the
 // two hosts. What is re-authored here is the SHELL.
 //
-// ## Why it looks like this (the Launch Rail, 2026-09-21)
+// ## Three shells, one console (2026-10-06)
 //
-// The shell won a blind design contest against five other redesigns — three from
-// a second model family — and the owner picked it over the host's own top-ranked
-// entry. What it was picked FOR is the readout: firing an agent at a real
-// repository is a pre-flight act, not a form submission, so the console answers
-// three questions before the operator commits.
+// This file is now the HOST. Everything the dock knows lives in
+// `dock/useDockConsole.ts`; everything it paints lives in `dock/`, as three
+// shells behind a persisted switch (`dockVariant.ts`, the same shape as the
+// board's own `boardVariant.ts` — a frozen tuple, one guard, an unknown stored
+// value reading as the default). The operator picks a winner and the losers get
+// deleted; until then a variant may change only the ARRANGEMENT, never the
+// dispatch path, the estimate or the Athena grant.
 //
-//   · WHERE this lands — the absolute target path, on the manifest line.
+// All three obey the same four shape rules the operator set:
+//   · ONE row holds the objective and the dispatch button, and nothing else.
+//   · A TOOLBAR above it carries every toggle and every parameter (model,
+//     effort, Athena, background, project, skill).
+//   · Every button is the shared `Button`.
+//   · No control splits its icon and its label across two lines — the launch
+//     used to stack its arrow over its word, and that is what ended it.
+//
+// They differ in where the READOUT goes:
+//   · rail    — readings on their own manifest line, above the toolbar.
+//   · console — controls first; the readings drop to the line above the field.
+//   · ribbon  — toolbar on top, readings in a FOOTER under the command row.
+//
+// ## Why there is a readout at all (the Launch Rail, 2026-09-21)
+//
+// The shell won a blind design contest against five other redesigns — three
+// from a second model family — and the owner picked it over the host's own
+// top-ranked entry. What it was picked FOR is the readout: firing an agent at a
+// real repository is a pre-flight act, not a form submission, so the console
+// answers three questions before the operator commits.
+//
+//   · WHERE this lands — the absolute target path.
 //   · WHAT IT COSTS — `≈ $` and `~ min`, recomputed live as the objective, the
-//     model and the effort change (`dockEstimate.ts`). Until this shipped the
-//     dock fired with no indication of what `opus × xhigh` would spend. The
-//     rates are real published prices; the token volume is a heuristic, and the
-//     gauge says so in its tooltip rather than posing as a quote.
+//     model and the effort change (`dockEstimate.ts`). The rates are real
+//     published prices; the token volume is a heuristic, and the gauge says so
+//     in its tooltip rather than posing as a quote.
 //   · IS IT READY — STANDBY flips to ARMED, and the rail above quickens.
 //   · WHERE IN THE LINE — added 2026-10-05, because the operator believed a
 //     manual dispatch "always goes to last queue position" and the dock said
@@ -35,290 +57,110 @@
 //     calls that a backfill. `dockLanding.ts` holds what this reading is
 //     allowed to claim; read it before changing a word of the pill.
 //
+// None of the three variants may drop one of those four. That is why they
+// render `DockReadout` rather than re-authoring the pills.
+//
 // ## And one control that is not a reading: the Athena grant
 //
 // `DockAthenaToggle` arms Athena's hold BEFORE the launch, and the grant is
 // written onto whatever the dispatch becomes — a started session or a queued
-// row, both of which exist in the registry by the time the door returns. The
-// watcher and the reason it is a watcher are in `dockAthenaGrant.ts`. If the
-// dispatch lands and the grant does not, that is TOLD: a running session the
-// operator believes Athena owns is the one state this feature must never
+// row. The watcher and the reason it is a watcher are in `dockAthenaGrant.ts`.
+// If the dispatch lands and the grant does not, that is TOLD: a running session
+// the operator believes Athena owns is the one state this feature must never
 // produce quietly.
 //
-// The resting row was the one dimension this variant scored worst on, and the
-// fix came from a rival entry the owner also saw: permanent chrome must pay
-// rent. Collapsed, the row now carries the live fleet tally (how many sessions
-// need you, how many are working) instead of restating a placeholder the
-// expanded state shows anyway.
+// The resting row was the one dimension the Launch Rail scored worst on, and
+// the fix came from a rival entry the owner also saw: permanent chrome must pay
+// rent. Collapsed, the row carries the live fleet tally (how many sessions need
+// you, how many are working) instead of restating a placeholder. It is shared
+// by all three variants — the variants are about the CONSOLE, and a resting row
+// that changed shape with the stored variant would be three different front
+// doors to one room.
 //
 // ## What lags, and what never does (2026-10-06)
 //
 // This is a text field at the BOTTOM OF A LIVE BOARD. Two things re-render it
 // that have nothing to do with each other: the operator's keystrokes, and the
-// fleet underneath it changing (it subscribes to `fleetSessions` and
-// `fleetQueue` directly). Everything it paints apart from the field itself is
-// a derived READING — the cost gauge, the landing pill, the resting tally, the
-// typeahead panel — and none of them is read in the middle of a keystroke.
+// fleet underneath it changing. Everything it paints apart from the field
+// itself is a derived READING, so those readings are taken off the urgent frame
+// with `useDeferredValue` in `useDockConsole`. **THE CARET IS NEVER DEFERRED.**
+// The full derivation is in that file's header.
 //
-// So those readings are taken off the urgent frame with `useDeferredValue`.
-// That is the consumer-side shape this repo already uses for a borrowed live
-// source (`useUnifiedTriage.ts:354`) and for a search box
-// (`CommandPalette.tsx:82`); it is preferred to `startTransition` here because
-// neither the keystroke nor the store write is ours to mark.
-//
-// **THE CARET IS NEVER DEFERRED.** The textarea's `value`, the character
-// budget beside it and `armed` / `canSend` all read the controller's live
-// `c.value`, so the field and the launch button commit on the urgent frame and
-// only the readings settle behind them. On mount a deferred value IS the
-// current value, so a cold open paints nothing stale.
-//
-// What this CANNOT buy, said plainly rather than implied: the typeahead's
-// actual WORK — tokenising the draft, filtering projects and filtering skills —
-// is three memos inside the SHARED controller (`quickDispatchController.ts:179-211`),
-// and that hook runs inside this component's render at whatever priority the
-// render has. Deferring here takes the PANEL off the urgent frame, not the
-// filter. Moving the filter would mean editing the controller, which the
-// Quick Dispatch overlay also hosts.
-//
-// ## The anti-shake contract — unchanged, and non-negotiable
+// ## The anti-shake contract — unchanged, and non-negotiable in all three
 //
 // The dock sits at the BOTTOM of a live board: if its outer height moves as the
 // operator types, the board above it moves too. So every volatile panel
 // (suggestions, skill picker, both preset menus) renders absolutely at
-// `bottom-full`, out of document flow, opening UPWARD; and every row inside has
-// a reserved height — the chip rail is always mounted, the meta line is a
-// fixed-height swap slot, and the objective field grows INSIDE a fixed 92px
-// deck and then scrolls. Measured across collapsed → typed → typeahead-open →
-// long-objective, the dock's top edge does not move by a pixel.
+// `bottom-full`, out of document flow, opening UPWARD — hosted ONCE here by
+// `DockPanels`, so no shell can put one in its own column — and every in-flow
+// row has a reserved literal height, with the objective field growing INSIDE a
+// fixed deck and then scrolling. `QuickDispatchDock.test.tsx` measures the row
+// class list across collapsed / typed / typeahead-open / long-objective FOR
+// EACH VARIANT; the heights differ between variants and are identical within
+// one, which is the property that matters.
 //
-// The dock is the console and the dispatch mechanism, nothing else: the
-// "recent dispatches" list it used to show above itself was removed 2026-09-15
-// (the board above the dock already is the list of what was dispatched). Its
-// content is capped at 800px and centred, so on a wide window the composer
-// stays a readable column instead of a full-width strip.
+// The dock is the console and the dispatch mechanism, nothing else. Its content
+// is capped at 800px and centred, so on a wide window the composer stays a
+// readable column instead of a full-width strip.
 
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowUp, ChevronDown, Ghost, LayoutGrid, Terminal } from 'lucide-react';
-import Button from '@/features/shared/components/buttons/Button';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { useTranslation } from '@/i18n/useTranslation';
-import { useSystemStore } from '@/stores/systemStore';
-import { toastCatch } from '@/lib/silentCatch';
-import { setSessionAthenaFlag } from '@/api/fleet/fleet';
-import { RunOnSelect } from '@/features/shared/dispatch/RunOnSelect';
-import { laneOfState } from '@/features/plugins/fleet/fleetStateMeta';
-import { DockAthenaToggle } from './DockAthenaToggle';
-import { DockLandingPill } from './DockLandingPill';
-import { dockLanding } from './dockLanding';
-import { grantAthenaToDispatch } from './dockAthenaGrant';
-import { DockPresetSelect } from './DockPresetSelect';
-import { DockSkillPicker } from './DockSkillPicker';
-import { estimateDispatch, formatEstimateCost, formatEstimateMinutes } from './dockEstimate';
-import { QuickDispatchSuggestions } from '@/features/plugins/fleet/quick-dispatch/QuickDispatchSuggestions';
-import {
-  EFFORT_PRESETS,
-  MODEL_PRESETS,
-  useQuickDispatchController,
-} from '@/features/plugins/fleet/quick-dispatch/quickDispatchController';
-import { QuickDispatchChips, QuickDispatchMetaLine } from '@/features/plugins/fleet/quick-dispatch/QuickDispatchParts';
+import { useCallback, useState } from 'react';
+import { Terminal } from 'lucide-react';
 
-/** This dock's own typeahead listbox id — see the controller call below. */
-const DOCK_LISTBOX_ID = 'activity-dock-typeahead-listbox';
+import { DockConsoleShell } from './dock/DockConsoleShell';
+import { DockPanels } from './dock/DockPanels';
+import { DOCK_COLUMN } from './dock/DockParts';
+import { DockRail } from './dock/DockRail';
+import { DockRibbon } from './dock/DockRibbon';
+import { useDockConsole } from './dock/useDockConsole';
+import { readDockVariant, writeDockVariant, type DockVariant } from './dockVariant';
 
-/** One column, centred — the dock's content never spreads past this. */
-const COLUMN = 'mx-auto w-full max-w-[800px]';
-
-/** Server bound on the objective, mirrored from the controller's own door. */
-const OBJECTIVE_MAX = 1200;
-
-/**
- * The objective field's reserved box. It grows from one line to this ceiling
- * and then scrolls — the deck's own height never changes, which is half of why
- * the board above cannot move.
- */
-const FIELD_MIN_PX = 34;
-const FIELD_MAX_PX = 76;
+const SHELLS: Record<DockVariant, typeof DockRail> = {
+  rail: DockRail,
+  console: DockConsoleShell,
+  ribbon: DockRibbon,
+};
 
 export function QuickDispatchDock() {
-  const { t } = useTranslation();
-  // Its own listbox id rather than the module default: two composers
-  // advertising the same `aria-controls` target would be one pointing at the
-  // other's suggestions. The overlay that made that concrete is gone; the
-  // property is kept because the next second host will not announce itself.
-  const c = useQuickDispatchController({ listboxId: DOCK_LISTBOX_ID });
-  const [expanded, setExpanded] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [firing, setFiring] = useState(false);
-  // Armed, not applied: the grant is a decision about the dispatch that has not
-  // happened yet, and it is written only once a session exists to write it to.
-  const [athenaArmed, setAthenaArmed] = useState(false);
-  const closePicker = useCallback(() => setPickerOpen(false), []);
-  const fieldRef = useRef<HTMLTextAreaElement>(null);
-
-  const { focusInput } = c;
-  const expand = useCallback(() => {
-    setExpanded(true);
-    focusInput();
-  }, [focusInput]);
-
-  // The typeahead panel, deferred as ONE snapshot. Deferring the token, the
-  // rows and the hint separately would let the listbox paint last frame's rows
-  // under this frame's emptiness — a combobox that lies for a frame. The
-  // active index is deliberately NOT in here: it is the arrow keys' own state
-  // and must move at once, and it cannot disagree with a deferred list anyway,
-  // because the rows only change when `value` changes and the controller
-  // resets the index to 0 on every token edit (`quickDispatchController.ts:213`).
-  const typeahead = useDeferredValue(
-    useMemo(
-      () => ({ token: c.token, items: c.suggestions, hint: c.suggestionHint }),
-      [c.token, c.suggestions, c.suggestionHint],
-    ),
-  );
-  const showSuggestions = !!typeahead.token && (typeahead.items.length > 0 || !!typeahead.hint);
-  // One volatile panel at a time: a typeahead token in the input outranks the
-  // picker, which closes again the moment the operator starts typing a token.
-  const showPicker = pickerOpen && !showSuggestions;
-
-  const formatModel = (m: string | null) => (m ? c.tx(c.quickT.model_chip, { model: m }) : c.quickT.model_chip_unset);
-  const formatEffort = (e: string | null) =>
-    e ? c.tx(c.quickT.effort_chip, { effort: e }) : c.quickT.effort_chip_unset;
-
-  // ARMED is "this would actually dispatch" — the same predicate the launch
-  // button is enabled by, so the pill can never promise a flight the button
-  // refuses. `canSend` is the controller's, and it already accounts for an
-  // in-flight send and an empty objective.
-  const armed = c.canSend && !c.sending;
-
-  // The readout. Still recomputed as the objective, the model and the effort
-  // change — that is the point of a live gauge — but it prices a DEFERRED copy
-  // of the objective, so it settles a frame behind the caret instead of in
-  // front of it. The arithmetic itself is three multiplications; what comes
-  // off the urgent frame is the readout subtree it feeds — two `Tooltip`s and
-  // two `Intl` passes (`formatEstimateCost` / `formatEstimateMinutes`).
-  // The model and the effort are NOT deferred: those are discrete choices from
-  // a listbox, not a stream of keystrokes, and the gauge is the feedback for
-  // having made one.
-  const objective = useDeferredValue(c.value);
-  const estimate = useMemo(
-    () => estimateDispatch(objective, c.model, c.effort, !!c.skillChip),
-    [objective, c.model, c.effort, c.skillChip],
-  );
-
-  // The resting row's rent: what the fleet is doing, from the same snapshot the
-  // board above renders. Bare selector, no `useShallow` — a refetched list holds
-  // fresh objects anyway (the controller documents the same deviation).
-  // Deferred at the consumer: a fleet poll landing mid-sentence must not
-  // preempt the keystroke behind it. The urgent re-render keeps the previous
-  // snapshot, both memos below hold, and the tally is rebuilt at deferred
-  // priority. Note `submit` reads the session list IMPERATIVELY through
-  // `getState()`, so what the Athena grant diffs against is never this copy.
-  const sessions = useDeferredValue(useSystemStore((s) => s.fleetSessions));
-  // The queue as the Monitor already reads it (`useQueuePoll` + the
-  // `fleet-queue-changed` listener own the freshness; the dock only reads).
-  // Deferred for the same reason, and it costs nothing: the source is a poll,
-  // and the pill it feeds is a pre-flight reading, not a control.
-  const queue = useDeferredValue(useSystemStore((s) => s.fleetQueue));
-  const landing = useMemo(() => dockLanding(queue), [queue]);
-  const tally = useMemo(() => {
-    let needsYou = 0;
-    let working = 0;
-    for (const s of sessions) {
-      const lane = laneOfState(s.state);
-      if (lane === 'needs_you') needsYou += 1;
-      else if (lane === 'working') working += 1;
-    }
-    return { needsYou, working };
-  }, [sessions]);
-
-  // Grow the field inside its reserved box, then let it scroll. Runs on value
-  // change rather than on input so a programmatic set (picking a suggestion,
-  // clearing after dispatch) resizes too.
-  useEffect(() => {
-    const el = fieldRef.current;
-    if (!el) return;
-    el.style.height = `${FIELD_MIN_PX}px`;
-    el.style.height = `${Math.min(FIELD_MAX_PX, Math.max(FIELD_MIN_PX, el.scrollHeight))}px`;
-  }, [c.value, expanded]);
-
-  const flareTimer = useRef<number | null>(null);
-  useEffect(() => () => {
-    if (flareTimer.current !== null) window.clearTimeout(flareTimer.current);
+  const d = useDockConsole();
+  const { c, tally } = d;
+  const [variant, setVariantState] = useState<DockVariant>(readDockVariant);
+  const setVariant = useCallback((v: DockVariant) => {
+    setVariantState(v);
+    writeDockVariant(v);
   }, []);
 
-  const submit = useCallback(() => {
-    if (!c.canSend) return;
-    setFiring(true);
-    if (flareTimer.current !== null) window.clearTimeout(flareTimer.current);
-    flareTimer.current = window.setTimeout(() => setFiring(false), 600);
-    // Read BEFORE the door opens: which sessions already existed, and where
-    // this one is aimed. `grantAthenaToDispatch` takes the difference.
-    const cwd = c.projectChip?.root_path ?? null;
-    const before = new Set(useSystemStore.getState().fleetSessions.map((s) => s.id));
-    const wantAthena = athenaArmed;
-    const remote = c.runOn !== null;
-    void (async () => {
-      await c.handleSubmit();
-      // A remote dispatch creates no session in THIS fleet, so there is
-      // nothing here that could hold the grant; the control is disabled for
-      // it, and this is the second half of the same fact.
-      if (!wantAthena || !cwd || remote) return;
-      const outcome = await grantAthenaToDispatch({
-        cwd,
-        before,
-        sessions: () => useSystemStore.getState().fleetSessions,
-        flag: setSessionAthenaFlag,
-      });
-      if (outcome.problem === 'none') return;
-      // THE FAILURE THAT MATTERS. A dispatch that ran while the operator
-      // believes Athena owns it is worse than no feature at all, so a grant
-      // that did not land is TOLD, loudly, and names the manual way out. It
-      // is a toast rather than the dock's inline slot because the inline slot
-      // is a fixed-height swap the shared meta line owns, and because the
-      // operator has usually moved on by the time the watch window closes.
-      // `unseen` stays neutral about whether the dispatch itself started: the
-      // controller reports that failure on its own, and this message must not
-      // contradict it either way.
-      toastCatch(
-        'fleet/dock:athena-grant',
-        outcome.problem === 'unseen'
-          ? t.monitor.grid_dock_athena_unseen
-          : t.monitor.grid_dock_athena_failed,
-      )(new Error(`athena grant ${outcome.problem} for dispatch at ${cwd}`));
-    })();
-  }, [c, athenaArmed, t]);
-
-  if (!expanded) {
+  if (!d.expanded) {
     return (
       <div className="relative flex-shrink-0 border-t border-border bg-foreground/[0.015]">
         <span className="dock-rail pointer-events-none absolute inset-x-0 -top-px z-[4] h-px overflow-hidden" aria-hidden />
         <button
           type="button"
-          onClick={expand}
+          onClick={d.expand}
           data-testid="quick-dispatch-dock-expand"
           className="group block w-full text-left transition-colors hover:bg-secondary/30"
         >
-          <span className={`${COLUMN} flex h-9 items-center gap-2 px-3`}>
+          <span className={`${DOCK_COLUMN} flex h-9 items-center gap-2 px-3`}>
             <Terminal className="h-3.5 w-3.5 flex-shrink-0 text-primary" aria-hidden />
             <span className="dock-caret h-3.5 w-[7px] flex-shrink-0 rounded-[1px] bg-primary" aria-hidden />
-            <span className="min-w-0 flex-1 truncate font-mono text-xs text-foreground opacity-55 transition-opacity group-hover:opacity-85">
+            <span className="min-w-0 flex-1 truncate font-mono text-xs text-muted transition-colors group-hover:text-foreground">
               {c.quickT.placeholder}
             </span>
             {/* The rent this row pays: what the fleet is doing right now. */}
             <span className="flex flex-shrink-0 items-center gap-2.5" data-testid="quick-dispatch-dock-tally">
               {tally.needsYou > 0 && (
-                <span className="typo-label flex items-center gap-1 text-violet-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-violet-400" aria-hidden />
+                <span className="typo-label flex items-center gap-1 text-role-highlight">
+                  <span className="h-1.5 w-1.5 rounded-full bg-role-highlight" aria-hidden />
                   {c.tx(c.quickT.rest_tally_needs_you, { count: tally.needsYou })}
                 </span>
               )}
               {tally.working > 0 && (
-                <span className="typo-label flex items-center gap-1 text-blue-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-blue-400" aria-hidden />
+                <span className="typo-label flex items-center gap-1 text-status-info">
+                  <span className="h-1.5 w-1.5 rounded-full bg-status-info" aria-hidden />
                   {c.tx(c.quickT.rest_tally_working, { count: tally.working })}
                 </span>
               )}
             </span>
-            <span className="typo-label flex-shrink-0 text-foreground opacity-50 transition-colors group-hover:text-primary group-hover:opacity-90">
+            <span className="typo-label flex-shrink-0 text-muted transition-colors group-hover:text-primary">
               {c.quickT.title}
             </span>
           </span>
@@ -327,20 +169,22 @@ export function QuickDispatchDock() {
     );
   }
 
+  const Shell = SHELLS[variant];
+
   return (
     <div
       className="relative flex-shrink-0 border-t border-border bg-foreground/[0.015]"
       data-testid="quick-dispatch-dock"
+      data-dock-variant={variant}
       onKeyDown={(e) => {
         // Escape collapses the dock rather than closing anything global — the
-        // controller's own Escape handling (strip the open typeahead token) runs
-        // first, in the capture phase, so the first press never collapses a
-        // console the operator was mid-token in.
+        // controller's own Escape handling (strip the open typeahead token)
+        // runs first, in the capture phase, so the first press never collapses
+        // a console the operator was mid-token in.
         if (e.key === 'Escape') {
           e.preventDefault();
           e.stopPropagation();
-          setPickerOpen(false);
-          setExpanded(false);
+          d.collapse();
         }
       }}
     >
@@ -349,275 +193,14 @@ export function QuickDispatchDock() {
           it occupies no height. */}
       <span
         className={`dock-rail pointer-events-none absolute inset-x-0 -top-px z-[4] h-px overflow-hidden ${
-          armed ? 'dock-rail-armed' : ''
+          d.armed ? 'dock-rail-armed' : ''
         }`}
         aria-hidden
       />
 
-      <div ref={c.cardRef} className={`${COLUMN} dock-instrument-grid relative pb-2`}>
-        {/* The one volatile panel — absolutely anchored ABOVE the dock, out of
-            flow, so its appearance never moves the dock or the board. */}
-        {showPicker && (
-          <div className="absolute bottom-full left-0 right-0 z-30 mb-1 px-3">
-            <DockSkillPicker
-              activeProjectId={c.projectChip?.id ?? null}
-              onPick={c.pickFromRegistry}
-              onClose={closePicker}
-            />
-          </div>
-        )}
-        {showSuggestions && (
-          <div className="absolute bottom-full left-0 right-0 z-30 mb-1 px-3">
-            <div className="animate-fade-slide-in overflow-hidden rounded-card border border-border bg-background shadow-elevation-3">
-              <div className="max-h-[38vh] overflow-y-auto p-1.5">
-                <QuickDispatchSuggestions
-                  listboxId={c.listboxId}
-                  items={typeahead.items}
-                  activeIndex={c.activeIndex}
-                  hint={typeahead.hint}
-                  onPick={c.pickSuggestion}
-                  onHoverIndex={c.setActiveIndex}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 1 — MANIFEST (reserved 30px): where this lands, what it costs,
-            whether it is ready, and the collapse control. */}
-        <div className="relative z-[1] flex h-[30px] items-center gap-2 px-3">
-          <span
-            className={`min-w-0 flex-1 truncate text-right font-mono text-xs text-foreground ${
-              c.projectChip ? 'opacity-90' : 'opacity-45'
-            }`}
-            dir="rtl"
-          >
-            <span dir="ltr" style={{ unicodeBidi: 'embed' }}>
-              {c.projectChip ? c.projectChip.root_path : c.quickT.placeholder}
-            </span>
-          </span>
-
-          <span className="flex flex-shrink-0 items-center gap-1.5" data-testid="quick-dispatch-readout">
-            <Tooltip
-              content={
-                <span className="flex flex-col gap-0.5">
-                  <span>{c.quickT.estimate_cost_label}</span>
-                  <span className="typo-label text-primary">
-                    {estimate.assumedModel ? c.quickT.estimate_assumed_model : c.quickT.estimate_disclaimer}
-                  </span>
-                </span>
-              }
-              placement="top"
-            >
-              <span
-                className="typo-code flex items-center gap-1 rounded-pill border border-card-border bg-card-bg px-2 py-0.5 text-foreground opacity-80 [[data-theme^='light']_&]:border-primary/35 [[data-theme^='light']_&]:bg-secondary/50"
-                data-testid="quick-dispatch-gauge-cost"
-              >
-                ≈
-                <b className="font-semibold tabular-nums text-foreground">
-                  {armed ? formatEstimateCost(estimate.cost) : '—'}
-                </b>
-              </span>
-            </Tooltip>
-            <Tooltip content={c.quickT.estimate_eta_label} placement="top">
-              <span
-                className="typo-code flex items-center gap-1 rounded-pill border border-card-border bg-card-bg px-2 py-0.5 text-foreground opacity-80 [[data-theme^='light']_&]:border-primary/35 [[data-theme^='light']_&]:bg-secondary/50"
-                data-testid="quick-dispatch-gauge-eta"
-              >
-                ~
-                <b className="font-semibold tabular-nums text-foreground">
-                  {armed ? formatEstimateMinutes(estimate.minutes) : '—'}
-                </b>
-              </span>
-            </Tooltip>
-            <span
-              className={`typo-label whitespace-nowrap rounded-pill border px-2 py-0.5 ${
-                armed
-                  ? 'border-status-success/45 bg-status-success/10 text-status-success'
-                  : `border-card-border bg-card-bg text-muted [[data-theme^='light']_&]:border-primary/35 [[data-theme^='light']_&]:bg-secondary/50`
-              }`}
-              data-testid="quick-dispatch-status-pill"
-            >
-              {armed ? c.quickT.status_armed : c.quickT.status_standby}
-            </span>
-            {/* The fourth reading: where in the line this lands. Always
-                mounted, so it cannot move the row by appearing. */}
-            <DockLandingPill landing={landing} />
-          </span>
-
-          <button
-            type="button"
-            onClick={() => setExpanded(false)}
-            aria-label={t.monitor.grid_dock_collapse}
-            data-testid="quick-dispatch-dock-collapse"
-            className="flex-shrink-0 rounded-interactive p-0.5 text-foreground opacity-50 transition-colors hover:bg-secondary/60 hover:opacity-100"
-          >
-            <ChevronDown className="h-3.5 w-3.5" />
-          </button>
-        </div>
-
-        {/* 2 — CHIP RAIL: ALWAYS mounted at a fixed height, chips or empty. */}
-        <div
-          className="relative z-[1] mb-1 flex h-6 items-center gap-1 overflow-x-auto px-3"
-          data-testid="quick-dispatch-chips"
-        >
-          <QuickDispatchChips c={c} />
-        </div>
-
-        {/* 3 — THE DECK (reserved 92px): the skill-registry door and the char
-            budget down the left, the objective in the middle, the launch on the
-            right. The field grows inside this box; the box never grows. */}
-        <div className="relative z-[1] px-3" onKeyDownCapture={c.onComposerKeyDownCapture}>
-          <div
-            className={`flex h-[92px] items-stretch gap-2 rounded-card border p-2 transition-[border-color,box-shadow,background] ${
-              c.sending
-                ? 'border-status-info/55 bg-status-info/[0.06]'
-                : 'border-card-border bg-foreground/[0.03] focus-within:border-primary/55 focus-within:shadow-[0_0_0_1px_color-mix(in_srgb,var(--primary)_30%,transparent),inset_0_0_22px_color-mix(in_srgb,var(--primary)_7%,transparent)]'
-            }`}
-          >
-            <div className="flex flex-shrink-0 flex-col items-center justify-between">
-              <Tooltip content={c.quickT.skill_picker_open} placement="top">
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => setPickerOpen((v) => !v)}
-                  aria-label={c.quickT.skill_picker_open}
-                  aria-pressed={pickerOpen}
-                  aria-haspopup="dialog"
-                  data-testid="quick-dispatch-skill-picker-toggle"
-                  className={pickerOpen ? 'bg-primary/10 text-primary' : 'text-foreground'}
-                >
-                  <LayoutGrid className="h-4 w-4" aria-hidden />
-                </Button>
-              </Tooltip>
-              {/* The char budget, where the deck has room for it — the server
-                  bound is 1200 and the operator used to meet it only as an
-                  error after pressing send. */}
-              <span
-                className={`typo-code tabular-nums ${
-                  c.value.length > OBJECTIVE_MAX ? 'text-status-error' : 'text-foreground opacity-60'
-                }`}
-                data-testid="quick-dispatch-char-count"
-              >
-                {c.value.length}
-              </span>
-            </div>
-
-            <div className="flex min-w-0 flex-1 items-start">
-              <textarea
-                ref={fieldRef}
-                value={c.value}
-                onChange={(e) => c.setValue(e.target.value)}
-                onKeyDown={(e) => {
-                  // The capture handler above has already consumed Enter while a
-                  // typeahead token is open, so reaching here means the operator
-                  // is finishing a plain objective.
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    submit();
-                  }
-                }}
-                disabled={c.sending}
-                maxLength={OBJECTIVE_MAX}
-                rows={1}
-                placeholder={c.quickT.input_placeholder}
-                data-testid="quick-dispatch-input"
-                className="typo-body w-full resize-none border-0 bg-transparent p-0 text-foreground outline-none placeholder:text-foreground placeholder:opacity-40"
-                style={{ height: FIELD_MIN_PX }}
-              />
-            </div>
-
-            {/* The launch. A real `Button`, so the busy state is the shared
-                spinner + `aria-busy` rather than a hand-rolled one; the tall
-                block and the gradient are this dock's own. */}
-            <Button
-              variant="primary"
-              onClick={submit}
-              disabled={!c.canSend}
-              loading={c.sending}
-              aria-label={c.quickT.send}
-              data-testid="quick-dispatch-send"
-              className={`typo-label dock-launch-flare relative w-[84px] flex-shrink-0 flex-col justify-center gap-1 self-stretch overflow-hidden rounded-input border !px-0 ${
-                firing ? 'dock-launch-firing' : ''
-              } ${
-                c.canSend
-                  ? 'border-primary/60 bg-gradient-to-b from-accent to-btn-primary text-btn-primary-fg shadow-[0_0_0_1px_color-mix(in_srgb,var(--primary)_25%,transparent),0_6px_18px_color-mix(in_srgb,var(--primary)_22%,transparent)] hover:brightness-110'
-                  : 'border-card-border bg-card-bg text-muted'
-              }`}
-            >
-              {!c.sending && <ArrowUp className="h-[18px] w-[18px]" aria-hidden />}
-              <span>{c.quickT.send}</span>
-            </Button>
-          </div>
-        </div>
-
-        {/* 4 — INSTRUMENTS (reserved 34px): presets, the swap-slot meta line,
-            and the headless toggle. */}
-        <div className="relative z-[1] flex h-[34px] items-center gap-1.5 px-3">
-          <DockPresetSelect
-            presets={MODEL_PRESETS}
-            value={c.model}
-            onChange={c.setModel}
-            format={formatModel}
-            ariaLabel={c.quickT.model_chip_unset}
-            testId="quick-dispatch-model-chip"
-          />
-          <DockPresetSelect
-            presets={EFFORT_PRESETS}
-            value={c.effort}
-            onChange={c.setEffort}
-            format={formatEffort}
-            ariaLabel={c.quickT.effort_chip_unset}
-            testId="quick-dispatch-effort-chip"
-          />
-          {/* Run on another device: hidden unless p2p is in this build and a
-              device is paired. Opens upward, like the preset menus. */}
-          <RunOnSelect value={c.runOn} onChange={c.setRunOn} githubUrl={c.projectRemote} placement="up" />
-          <div className="min-w-0 flex-1 px-1">
-            <QuickDispatchMetaLine c={c} />
-          </div>
-          {/* The grant, armed before the launch. Left of headless, inside the
-              same `ml-auto` cluster, at the same 24px pill height. */}
-          <DockAthenaToggle
-            armed={athenaArmed}
-            onToggle={() => setAthenaArmed((v) => !v)}
-            disabled={c.sending}
-            remote={c.runOn !== null}
-          />
-          {/* Headless is a switch with a visible track now rather than a tinted
-              icon: it is the one control that changes where the WORK happens,
-              and an icon that only differs by tint read as decoration. State is
-              still carried by aria-pressed, and spelled out in the tooltip and
-              the meta line's caption. */}
-          <Tooltip content={c.headless ? c.quickT.headless_toggle_on : c.quickT.headless_toggle_off} placement="top">
-            <button
-              type="button"
-              onClick={c.toggleHeadless}
-              aria-label={c.quickT.headless_label}
-              aria-pressed={c.headless}
-              data-testid="quick-dispatch-headless-toggle"
-              className={`typo-label ml-auto flex h-6 flex-shrink-0 items-center gap-1.5 rounded-pill border py-0 pl-1 pr-2.5 transition-colors ${
-                c.headless
-                  ? 'border-brand-purple/50 bg-brand-purple/10 text-brand-purple'
-                  : `border-card-border bg-card-bg text-foreground opacity-80 hover:border-primary/45 hover:opacity-100 [[data-theme^='light']_&]:border-primary/35 [[data-theme^='light']_&]:bg-secondary/50`
-              }`}
-            >
-              <span
-                className={`relative h-[15px] w-[26px] flex-shrink-0 rounded-pill transition-colors ${
-                  c.headless ? 'bg-brand-purple/55' : 'bg-foreground/15'
-                }`}
-                aria-hidden
-              >
-                <span
-                  className={`absolute left-0.5 top-0.5 h-[11px] w-[11px] rounded-full transition-transform ${
-                    c.headless ? 'translate-x-[11px] bg-btn-primary-fg' : 'bg-muted-foreground'
-                  }`}
-                />
-              </span>
-              <Ghost className="h-3.5 w-3.5 flex-shrink-0" aria-hidden />
-            </button>
-          </Tooltip>
-        </div>
+      <div ref={c.cardRef} className={`${DOCK_COLUMN} dock-instrument-grid relative pb-2`}>
+        <DockPanels console={d} />
+        <Shell console={d} variant={variant} onVariantChange={setVariant} />
       </div>
     </div>
   );

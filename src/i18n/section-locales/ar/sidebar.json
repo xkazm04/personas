@@ -70,6 +70,7 @@
   "memory_graph": "الرسم البياني",
   "observability": "المراقبة",
   "messages": "التقارير",
+  "timeline": "الجدول الزمني",
   "mission_control": "مركز التحكم",
   "n8n_import": "استيراد n8n",
   "network": "الشبكة",
@@ -106,6 +107,5 @@
   "create_athena": "إنشاء أثينا",
   "features": "الميزات",
   "companions": "الرفاق",
-  "whitelist": "التحكم بالخوادم",
-  "timeline": "الجدول الزمني"
+  "whitelist": "التحكم بالخوادم"
 }

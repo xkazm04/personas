@@ -6669,6 +6669,10 @@
     "grid_column_workspace_open": "Abrir espacio de trabajo",
     "grid_column_workspace_rename": "Cambiar el nombre del grupo",
     "grid_dock_collapse": "Ocultar la consola de envío",
+    "grid_dock_variant_aria": "Diseño del muelle",
+    "grid_dock_variant_rail": "Riel",
+    "grid_dock_variant_console": "Consola",
+    "grid_dock_variant_ribbon": "Cinta",
     "grid_fleet_exited": "Esta sesión ha finalizado: su terminal ya no existe.",
     "grid_fleet_kill": "Terminar sesión",
     "terminal_asleep_label": "Por qué está dormida",
@@ -7197,6 +7201,14 @@
     "orch_never_served": "nunca atendido",
     "orch_refusal_budget": "Presupuesto mensual agotado",
     "orch_refusal_concurrency": "Máquina en su límite de personas",
+    "orch_refusal_headless": "Un App Master de terminal tiene este proyecto",
+    "orch_headless_running": "Headless - en ejecución",
+    "orch_headless_idle": "Headless - inactivo",
+    "orch_headless_stale": "Headless - obsoleto",
+    "orch_headless_hint": "El App Master de este proyecto se ejecuta desde una terminal (/appmaster). El master de la app se aparta mientras sus informes estén al día.",
+    "orch_headless_next_wake": "Próximo despertar:",
+    "orch_headless_no_wake": "sin anunciar",
+    "orch_headless_reported": "Último informe:",
     "orch_refusal_daily_cap": "Límite diario alcanzado",
     "orch_refusal_in_flight": "Aún ejecutando su última pasada",
     "orch_refusal_interval_floor": "Descansando hasta su intervalo",
@@ -17915,6 +17927,7 @@
     "memory_graph": "Grafo",
     "observability": "Observabilidad",
     "messages": "Informes",
+    "timeline": "Cronología",
     "mission_control": "Centro de mando",
     "n8n_import": "Importar n8n",
     "network": "Red",
@@ -17951,8 +17964,7 @@
     "create_athena": "Crear a Athena",
     "features": "Funciones",
     "companions": "Compañeros",
-    "whitelist": "Control de servidores",
-    "timeline": "Cronología"
+    "whitelist": "Control de servidores"
   },
   "status_tokens": {
     "automation": {

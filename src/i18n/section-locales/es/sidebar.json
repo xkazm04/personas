@@ -70,6 +70,7 @@
   "memory_graph": "Grafo",
   "observability": "Observabilidad",
   "messages": "Informes",
+  "timeline": "Cronología",
   "mission_control": "Centro de mando",
   "n8n_import": "Importar n8n",
   "network": "Red",
@@ -106,6 +107,5 @@
   "create_athena": "Crear a Athena",
   "features": "Funciones",
   "companions": "Compañeros",
-  "whitelist": "Control de servidores",
-  "timeline": "Cronología"
+  "whitelist": "Control de servidores"
 }

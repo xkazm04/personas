@@ -2155,6 +2155,8 @@
   "fr:monitor.conv_pause",
   "fr:monitor.conv_title",
   "fr:monitor.delib_agenda",
+  "fr:monitor.grid_dock_variant_console",
+  "fr:monitor.grid_dock_variant_rail",
   "fr:monitor.grid_rail_tab_messages",
   "fr:monitor.grid_simulation",
   "fr:monitor.layers_persona_count_one",

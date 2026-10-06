@@ -70,6 +70,7 @@
   "memory_graph": "图表",
   "observability": "可观测性",
   "messages": "报告",
+  "timeline": "时间线",
   "mission_control": "任务控制中心",
   "n8n_import": "n8n 导入",
   "network": "网络",
@@ -106,6 +107,5 @@
   "create_athena": "创建 Athena",
   "features": "功能",
   "companions": "伙伴",
-  "whitelist": "服务器控制",
-  "timeline": "时间线"
+  "whitelist": "服务器控制"
 }

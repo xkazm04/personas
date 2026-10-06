@@ -6669,6 +6669,10 @@
     "grid_column_workspace_open": "वर्कस्पेस खोलें",
     "grid_column_workspace_rename": "समूह का नाम बदलें",
     "grid_dock_collapse": "डिस्पैच कंसोल छिपाएं",
+    "grid_dock_variant_aria": "डॉक लेआउट",
+    "grid_dock_variant_rail": "रेल",
+    "grid_dock_variant_console": "कंसोल",
+    "grid_dock_variant_ribbon": "रिबन",
     "grid_fleet_exited": "यह सत्र समाप्त हो चुका है — इसका टर्मिनल अब नहीं है।",
     "grid_fleet_kill": "सत्र समाप्त करें",
     "terminal_asleep_label": "यह क्यों सो रहा है",
@@ -7197,6 +7201,14 @@
     "orch_never_served": "कभी सेवा नहीं दी",
     "orch_refusal_budget": "मासिक बजट खर्च हो गया",
     "orch_refusal_concurrency": "मशीन अपनी persona सीमा पर",
+    "orch_refusal_headless": "टर्मिनल का App Master इस प्रोजेक्ट को संभाल रहा है",
+    "orch_headless_running": "Headless - चल रहा है",
+    "orch_headless_idle": "Headless - निष्क्रिय",
+    "orch_headless_stale": "Headless - पुराना",
+    "orch_headless_hint": "इस प्रोजेक्ट का App Master टर्मिनल (/appmaster) से चल रहा है। जब तक इसकी रिपोर्ट ताज़ा हैं, ऐप के अंदर का master पीछे हट जाता है।",
+    "orch_headless_next_wake": "अगला जागरण:",
+    "orch_headless_no_wake": "घोषित नहीं",
+    "orch_headless_reported": "अंतिम रिपोर्ट:",
     "orch_refusal_daily_cap": "दैनिक सीमा पहुंच गई",
     "orch_refusal_in_flight": "अभी भी अपना आखिरी पास चला रहा है",
     "orch_refusal_interval_floor": "अपने अंतराल तक आराम कर रहा है",
@@ -17915,6 +17927,7 @@
     "memory_graph": "ग्राफ",
     "observability": "अवलोकनशीलता",
     "messages": "रिपोर्टें",
+    "timeline": "टाइमलाइन",
     "mission_control": "मिशन कंट्रोल",
     "n8n_import": "n8n आयात",
     "network": "नेटवर्क",
@@ -17951,8 +17964,7 @@
     "create_athena": "Athena बनाएं",
     "features": "फ़ीचर",
     "companions": "साथी",
-    "whitelist": "सर्वर नियंत्रण",
-    "timeline": "टाइमलाइन"
+    "whitelist": "सर्वर नियंत्रण"
   },
   "status_tokens": {
     "automation": {
