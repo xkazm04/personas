@@ -57,7 +57,7 @@ function SeatTip({ seat, ceiling, nowMs, s }: { seat: ContestSeat; ceiling: numb
   const L = s.ledger;
   const ran = seat.state !== 'queued' && seat.state !== 'idle';
   return (
-    <div className="contest-ledger space-y-1" data-type-density="compact">
+    <div className="contest-ledger space-y-1">
       <Seat spec={seat.spec} />
       <div className="flex justify-between gap-4">
         <span>{L.tip_state}</span>

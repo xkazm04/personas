@@ -7,11 +7,12 @@
    nearest utility classes is how a port loses what won. Every selector is
    scoped under .contest-ledger (the page root, and each portaled drawer's root).
 
-   Type stays on the token scale: the root opts into the compact density tier
-   (data-type-density="compact"), and every size below is a type step,
-   calc(var(--type-N) * var(--type-f)), never a literal. At the app's default
-   text scale the steps render 13.4 / 14.4 / 16.5 / 18.6 px where the winner
-   drew 13 / 14 / 16 / 18. Colours derive from the theme tokens, so a light theme
+   Type stays on the token scale at the app's STANDARD density (the compact tier
+   it once forced held the page below the app's floor with no way out), and every
+   size below is a type step, calc(var(--type-N) * var(--type-f)), never a
+   literal, so Appearance > text size moves it. Row heights and line heights
+   scale with --type-f too, so a larger setting grows the row instead of
+   clipping it. Colours derive from the theme tokens, so a light theme
    repaints the page with no second rule set. */
 
 .contest-ledger {
@@ -28,7 +29,7 @@
   --mu: var(--muted);
   --pri-soft: color-mix(in srgb, var(--primary) 14%, transparent);
   --scrim-ink: color-mix(in srgb, var(--background) 86%, transparent);
-  --row-h: 52px;
+  --row-h: calc(52px * var(--type-f) / 0.875);
   font-size: var(--cl-t1);
   color: var(--foreground);
 }
@@ -111,8 +112,8 @@
 .contest-ledger .c-phase { display: flex; align-items: center; gap: 9px; font-size: var(--cl-t0); color: var(--mf); white-space: nowrap; min-width: 0; }
 .contest-ledger .c-phase span { overflow: hidden; text-overflow: ellipsis; }
 .contest-ledger .c-title { position: relative; min-width: 0; }
-.contest-ledger .t1 { font-size: var(--cl-t1); font-weight: 500; color: var(--foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 20px; }
-.contest-ledger .t2 { font-size: var(--cl-t0); color: var(--mu); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 18px; display: flex; align-items: center; }
+.contest-ledger .t1 { font-size: var(--cl-t1); font-weight: 500; color: var(--foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; }
+.contest-ledger .t2 { font-size: var(--cl-t0); color: var(--mu); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.35; display: flex; align-items: center; }
 .contest-ledger .t2 .proj { color: var(--mf); }
 .contest-ledger .lr.child .c-title { padding-left: 26px; }
 .contest-ledger .lr.child .c-title::before { content: ''; position: absolute; left: 6px; top: calc(var(--row-h) / -2 + 6px); height: calc(var(--row-h) / 2 + 3px); width: 13px; border-left: 1.5px solid color-mix(in srgb, var(--primary) 50%, transparent); border-bottom: 1.5px solid color-mix(in srgb, var(--primary) 50%, transparent); border-bottom-left-radius: 7px; }
@@ -145,10 +146,10 @@
 
 /* verdict */
 .contest-ledger .c-verdict { min-width: 0; }
-.contest-ledger .v1 { display: flex; align-items: center; gap: 7px; font-size: var(--cl-t1); color: var(--foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 20px; }
+.contest-ledger .v1 { display: flex; align-items: center; gap: 7px; font-size: var(--cl-t1); color: var(--foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; }
 .contest-ledger .v1 .k { font-weight: 600; font-variant-numeric: tabular-nums; }
 .contest-ledger .v1 .ic { color: var(--t, var(--mf)); }
-.contest-ledger .v2 { font-size: var(--cl-t0); color: var(--mu); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 18px; display: flex; align-items: center; gap: 6px; }
+.contest-ledger .v2 { font-size: var(--cl-t0); color: var(--mu); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.35; display: flex; align-items: center; gap: 6px; }
 .contest-ledger .segbar { display: inline-flex; gap: 2px; margin-left: 4px; }
 .contest-ledger .segbar i { width: 12px; height: 5px; border-radius: 1.5px; background: color-mix(in srgb, var(--foreground) 14%, transparent); }
 .contest-ledger .c-cost { font-size: var(--cl-t0); color: var(--mf); font-variant-numeric: tabular-nums; }
@@ -246,7 +247,7 @@
 .contest-ledger .vcard .still .glp { top: 6px; left: 6px; border-radius: 10px; color: var(--mf); }
 .contest-ledger .vcard .still .nostill { position: absolute; inset: 0; display: grid; place-items: center; color: var(--mu); font-size: var(--cl-t0); font-weight: 600; }
 .contest-ledger .vcard .meta { padding: 6px 7px 7px; display: flex; flex-direction: column; gap: 1px; }
-.contest-ledger .vcard .m1 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: var(--cl-t0); line-height: 18px; overflow: hidden; color: var(--foreground); }
+.contest-ledger .vcard .m1 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: var(--cl-t0); line-height: 1.35; overflow: hidden; color: var(--foreground); }
 .contest-ledger .vcard .m1 .k { font-weight: 600; font-variant-numeric: tabular-nums; }
 .contest-ledger .vcard .m2 { font-size: var(--cl-t0); overflow: hidden; }
 .contest-ledger .vcard .m2 .seat { max-width: 100%; }
@@ -435,7 +436,7 @@
 /* ── Wide windows: more columns, bigger stills ───────────────── */
 @container ledger (min-width: 1500px) {
   .contest-ledger .lr, .contest-ledger .lcols, .contest-ledger .lghost { grid-template-columns: 124px minmax(0, 1fr) 176px 380px 270px 118px 72px; column-gap: 20px; }
-  .contest-ledger .lr { --row-h: 62px; }
+  .contest-ledger .lr { --row-h: calc(62px * var(--type-f) / 0.875); }
   .contest-ledger .c-wall { display: block; }
   .contest-ledger .sl-search { width: 300px; }
 }

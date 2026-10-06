@@ -39,7 +39,7 @@ export function StandingsDrawer({ contests, wide, onPick, onClose }: StandingsDr
 
   return (
     <BaseModal isOpen onClose={onClose} titleId={TITLE_ID} placement="right-drawer" portal panelClassName={drawerPanelClass(wide)}>
-      <div className={`contest-ledger sl-drawer${wide ? ' wide' : ''}`} data-type-density="compact" data-testid="ledger-standings">
+      <div className={`contest-ledger sl-drawer${wide ? ' wide' : ''}`} data-testid="ledger-standings">
         <div className="dr-h">
           <div className="hx">
             <h2 id={TITLE_ID}>{L.standings}</h2>

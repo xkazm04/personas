@@ -412,7 +412,7 @@ export default function LedgerShell() {
   const readinessProject = summary?.projectId ?? activeProjectId ?? null;
 
   return (
-    <div ref={rootRef} className={`contest-ledger sl${wide ? ' wide' : ''}`} data-type-density="compact" data-testid="contest-ledger">
+    <div ref={rootRef} className={`contest-ledger sl${wide ? ' wide' : ''}`} data-testid="contest-ledger">
       <ContentHeader
         icon={<Trophy className="w-5 h-5 text-primary" />}
         iconColor="primary"
