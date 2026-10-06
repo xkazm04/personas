@@ -15,6 +15,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { getCloudSyncStatus, setCloudSyncEnabled, cloudSyncNow } from '@/api/cloudSync';
 import type { CloudSyncStatus } from '@/lib/bindings/CloudSyncStatus';
 import type { TableSyncStatus } from '@/lib/bindings/TableSyncStatus';
+import PairedPhonesPanel from './PairedPhonesPanel';
 
 type ConnState = 'off' | 'active' | 'syncing';
 
@@ -219,6 +220,9 @@ export default function CloudSyncCard() {
               </span>
             </Tooltip>
           )}
+
+          {/* Paired phones: who may command this desktop from personas.so */}
+          <PairedPhonesPanel />
 
           {/* Per-table breakdown (collapsible) */}
           {tables.length > 0 && (
