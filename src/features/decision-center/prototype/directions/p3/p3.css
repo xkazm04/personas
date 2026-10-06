@@ -1,0 +1,217 @@
+/* P3 "The Desk" — layout and surface paint only. Type comes from typo-* classes on
+   the elements; every colour here is a token or a color-mix() over one. */
+
+.p3-root {
+  --p3-rule: color-mix(in srgb, var(--foreground) 10%, transparent);
+  --p3-rule-strong: color-mix(in srgb, var(--foreground) 18%, transparent);
+  --p3-sheet: color-mix(in srgb, var(--background) 92%, var(--foreground) 8%);
+  --p3-sheet-raised: color-mix(in srgb, var(--background) 86%, var(--foreground) 14%);
+}
+
+/* ---- strip ---------------------------------------------------------------- */
+
+.p3-chip {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1px;
+  min-width: 3.6rem;
+  padding: 5px 9px 7px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-input, 8px);
+  overflow: hidden;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out;
+}
+.p3-chip:hover { background: color-mix(in srgb, var(--foreground) 6%, transparent); }
+.p3-chip.is-open {
+  background: var(--p3-sheet-raised);
+  border-color: var(--p3-rule-strong);
+  border-bottom-color: transparent;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.p3-chip.is-zero { filter: saturate(0); }
+.p3-chip.is-failed {
+  border: 1px dashed color-mix(in srgb, var(--status-error) 55%, transparent);
+  background: color-mix(in srgb, var(--status-error) 7%, transparent);
+}
+.p3-chip.is-first { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--status-error) 45%, transparent); }
+
+.p3-chip__lamp {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 2px;
+  height: 3px;
+  border-radius: 2px;
+}
+.p3-chip__lamp.is-failed {
+  background: repeating-linear-gradient(-45deg, var(--status-error) 0 3px, transparent 3px 6px);
+}
+
+.p3-placeholder {
+  width: 440px;
+  flex: 0 0 440px;
+  height: 34px;
+  border: 1px dashed var(--p3-rule-strong);
+  border-radius: var(--radius-input, 8px);
+  background: color-mix(in srgb, var(--foreground) 3%, transparent);
+}
+
+/* ---- peek ----------------------------------------------------------------- */
+
+.p3-peek {
+  position: absolute;
+  top: calc(100% - 1px);
+  z-index: 40;
+  width: 460px;
+  background: var(--p3-sheet-raised);
+  border: 1px solid var(--p3-rule-strong);
+  border-radius: 0 var(--radius-card, 12px) var(--radius-card, 12px) var(--radius-card, 12px);
+  box-shadow: 0 18px 48px -12px color-mix(in srgb, var(--background) 30%, black 70%);
+  transform-origin: top left;
+}
+.p3-peek.is-right { right: 0; border-radius: var(--radius-card, 12px) 0 var(--radius-card, 12px) var(--radius-card, 12px); transform-origin: top right; }
+
+.p3-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 4px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 12px 8px 0;
+  border-radius: var(--radius-input, 8px);
+  cursor: pointer;
+}
+.p3-row:hover { background: color-mix(in srgb, var(--foreground) 5%, transparent); }
+.p3-row.is-focus { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+.p3-row.is-armed { background: color-mix(in srgb, var(--status-error) 12%, transparent); }
+.p3-row__tier { align-self: stretch; border-radius: 0 3px 3px 0; }
+
+.p3-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 1.3rem;
+  padding: 0 5px;
+  border: 1px solid var(--p3-rule-strong);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--background) 70%, var(--foreground) 6%);
+}
+
+/* ---- desk ----------------------------------------------------------------- */
+
+.p3-desk-panel { pointer-events: none; display: flex; align-items: center; justify-content: center; }
+.p3-desk {
+  pointer-events: auto;
+  display: flex;
+  width: min(1120px, 100%);
+  height: min(720px, calc(100vh - 64px));
+  background: var(--p3-sheet);
+  border: 1px solid var(--p3-rule-strong);
+  border-radius: var(--radius-modal, 16px);
+  overflow: hidden;
+  box-shadow: 0 40px 120px -24px color-mix(in srgb, var(--background) 20%, black 80%);
+}
+.p3-desk.is-reading { width: 100%; height: calc(100vh - 32px); }
+
+.p3-rail {
+  flex: 0 0 280px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--p3-rule);
+  background: color-mix(in srgb, var(--background) 60%, transparent);
+}
+.p3-desk.is-reading .p3-rail { flex-basis: 64px; }
+
+.p3-stage { position: relative; flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.p3-stage__body { position: relative; flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+
+.p3-ask {
+  border: 1px solid color-mix(in srgb, var(--status-warning) 40%, transparent);
+  background: color-mix(in srgb, var(--status-warning) 9%, transparent);
+  border-radius: var(--radius-card, 12px);
+}
+.p3-ask.is-calm {
+  border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+  background: color-mix(in srgb, var(--primary) 7%, transparent);
+}
+
+.p3-footer {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--p3-rule);
+  background: color-mix(in srgb, var(--background) 55%, var(--p3-sheet));
+}
+
+.p3-progress { position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--p3-rule); z-index: 2; }
+.p3-progress > span { display: block; height: 100%; background: var(--primary); transform-origin: left; }
+
+.p3-toc { flex: 0 0 232px; border-left: 1px solid var(--p3-rule); overflow-y: auto; }
+
+.p3-reader h1, .p3-reader h2, .p3-reader h3 { scroll-margin-top: var(--p3-chrome-offset, 72px); }
+
+.p3-meter { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; height: 8px; }
+.p3-meter > i { border-radius: 2px; }
+.p3-meter > i.is-off { background: var(--p3-rule); }
+
+.p3-bubble { border-radius: var(--radius-card, 12px); border: 1px solid var(--p3-rule); background: color-mix(in srgb, var(--background) 50%, var(--p3-sheet)); }
+.p3-bubble.is-you { background: color-mix(in srgb, var(--primary) 10%, transparent); border-color: color-mix(in srgb, var(--primary) 25%, transparent); }
+.p3-bubble.is-ask { border-color: color-mix(in srgb, var(--status-warning) 50%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-warning) 12%, transparent); }
+
+.p3-stamp {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.p3-stamp > span {
+  padding: 10px 22px;
+  border: 2px solid currentColor;
+  border-radius: var(--radius-card, 12px);
+  background: color-mix(in srgb, var(--background) 80%, transparent);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.p3-floor { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.p3-floor > div { height: 104px; border: 1px solid var(--p3-rule); border-radius: var(--radius-card, 12px); background: color-mix(in srgb, var(--foreground) 2.5%, transparent); }
+
+.p3-chip > span { display: flex; flex-direction: column; align-items: stretch; gap: 1px; width: 100%; }
+
+/* Width honesty: the strip shares its row with the 440 px fleet tally. Below
+   1300 px of strip the chips compact to icon + count (label on the tooltip) and
+   the queue head folds into the Triage button; above it, everything has words. */
+.p3-strip { container: p3strip / inline-size; }
+.p3-chip { min-width: 0; padding: 6px 7px 8px; }
+.p3-chip__label, .p3-wide, .p3-head-wrap { display: none; }
+@container p3strip (min-width: 1300px) {
+  .p3-chip { min-width: 3.6rem; padding: 5px 9px 7px; }
+  .p3-chip__label { display: block; }
+  .p3-wide { display: inline; }
+  .p3-head-wrap { display: flex; }
+}
+.p3-chip.is-first::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--status-error);
+}
+
+/* Light themes: the canvas is a soft grey and cards come forward as white, so
+   the desk and the peek take the card surface instead of a darkened canvas. */
+[data-theme^="light"] .p3-root {
+  --p3-sheet: var(--card-bg);
+  --p3-sheet-raised: var(--card-bg);
+}
+[data-theme^="light"] .p3-rail { background: color-mix(in srgb, var(--background) 70%, transparent); }

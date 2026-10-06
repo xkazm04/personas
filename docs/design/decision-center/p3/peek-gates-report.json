@@ -1,0 +1,134 @@
+{
+  "module": "decision-center/prototype",
+  "kit": "p3:peek:gates",
+  "label": "peek-gates",
+  "createdAt": "2026-10-06T12:56:19.709Z",
+  "browser": "147.0.7727.15",
+  "tape": {
+    "path": "synthetic",
+    "source": "synthetic",
+    "recordedAt": "2026-09-22T15:40:00.000Z",
+    "calls": 0,
+    "note": "Fixture roster, no IPC; ?kit=<p1|p2|p3>:<entry> picks the view."
+  },
+  "ok": true,
+  "unknownIpcCommands": [],
+  "shots": [
+    {
+      "file": "peek-gates-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {},
+      "stable": true,
+      "textLength": 498,
+      "textSample": "P1 P2 P3 strip peek modal gates proposals backlog incidents council reports chat ready Disabled reset roster 3 Gates 3 · most urgent first Open desk Do first Send the ACME follow-up sequence? Outreach",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "peek-gates-1920x1080-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {},
+      "stable": true,
+      "textLength": 623,
+      "textSample": "P1 P2 P3 strip peek modal gates proposals backlog incidents council reports chat ready Disabled reset roster 3 Gates Gates 3 · most urgent first Open desk Do first Send the ACME follow-up sequence? Ou",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "peek-gates-1280x800-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {},
+      "stable": true,
+      "textLength": 498,
+      "textSample": "P1 P2 P3 strip peek modal gates proposals backlog incidents council reports chat ready Disabled reset roster 3 Gates 3 · most urgent first Open desk Do first Send the ACME follow-up sequence? Outreach",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "peek-gates-1920x1080-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {},
+      "stable": true,
+      "textLength": 623,
+      "textSample": "P1 P2 P3 strip peek modal gates proposals backlog incidents council reports chat ready Disabled reset roster 3 Gates Gates 3 · most urgent first Open desk Do first Send the ACME follow-up sequence? Ou",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    }
+  ]
+}

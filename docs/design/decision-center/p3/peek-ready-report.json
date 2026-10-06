@@ -1,0 +1,134 @@
+{
+  "module": "decision-center/prototype",
+  "kit": "p3:peek:ready",
+  "label": "peek-ready",
+  "createdAt": "2026-10-06T12:56:49.918Z",
+  "browser": "147.0.7727.15",
+  "tape": {
+    "path": "synthetic",
+    "source": "synthetic",
+    "recordedAt": "2026-09-22T15:40:00.000Z",
+    "calls": 0,
+    "note": "Fixture roster, no IPC; ?kit=<p1|p2|p3>:<entry> picks the view."
+  },
+  "ok": true,
+  "unknownIpcCommands": [],
+  "shots": [
+    {
+      "file": "peek-ready-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {},
+      "stable": true,
+      "textLength": 444,
+      "textSample": "P1 P2 P3 strip peek modal gates proposals backlog incidents council reports chat ready Disabled reset roster 3 3 3 2 1 2 2 3 Ready 3 · accepted, not started Dispatch all Rate-limit LinkedIn calls per ",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "peek-ready-1920x1080-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {},
+      "stable": true,
+      "textLength": 569,
+      "textSample": "P1 P2 P3 strip peek modal gates proposals backlog incidents council reports chat ready Disabled reset roster 3 Gates 3 Proposals 3 Backlog 2 Incidents 1 Council 2 Reports 2 Chat 3 Ready Ready 3 · acce",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "peek-ready-1280x800-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {},
+      "stable": true,
+      "textLength": 444,
+      "textSample": "P1 P2 P3 strip peek modal gates proposals backlog incidents council reports chat ready Disabled reset roster 3 3 3 2 1 2 2 3 Ready 3 · accepted, not started Dispatch all Rate-limit LinkedIn calls per ",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "peek-ready-1920x1080-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {},
+      "stable": true,
+      "textLength": 569,
+      "textSample": "P1 P2 P3 strip peek modal gates proposals backlog incidents council reports chat ready Disabled reset roster 3 Gates 3 Proposals 3 Backlog 2 Incidents 1 Council 2 Reports 2 Chat 3 Ready Ready 3 · acce",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    }
+  ]
+}

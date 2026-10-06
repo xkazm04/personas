@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "module": "decision-center/prototype",
+  "source": "synthetic",
+  "recordedAt": "2026-09-22T15:40:00.000Z",
+  "note": "Fixture roster, no IPC; ?kit=<p1|p2|p3>:<entry> picks the view.",
+  "calls": []
+}
