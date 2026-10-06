@@ -43,7 +43,7 @@ interface SystemLoad {
 }
 
 /** Poll host metrics on a timer, smoothing into a stable load level. */
-function useSystemLoad(): SystemLoad {
+export function useSystemLoad(): SystemLoad {
   const visible = useDocumentVisibility();
   const cpuEma = useRef<number | null>(null);
   const memEma = useRef<number | null>(null);
