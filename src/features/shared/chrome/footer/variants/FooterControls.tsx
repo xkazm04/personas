@@ -8,7 +8,7 @@ import {
 import {
   useActiveTheme, useNotepadToggle, useOnboardingReplay, usePopover, useShortcutMode,
   useSidebarCollapse, useTourResume,
-} from './footerControls';
+} from './footerHooks';
 import { AccountPopover, ThemePopover, useAccount } from './FooterShared';
 
 // PROTOTYPE (footer variants): each footer control written ONCE against a

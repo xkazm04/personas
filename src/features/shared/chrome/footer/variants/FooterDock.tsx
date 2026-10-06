@@ -11,7 +11,7 @@ import {
 } from './FooterControls';
 import { Hosted, useLoadReadout } from './FooterShared';
 import { FooterCenter, type FooterModel } from './FooterFrame';
-import { useFooterHeight } from './footerControls';
+import { useFooterHeight } from './footerHooks';
 
 // VARIANT 2: "Status Dock".
 //

@@ -12,7 +12,7 @@ import {
   TourResumeFooterIcon,
 } from './lazyFooterIcons';
 import type { FooterModel } from './variants/FooterFrame';
-import { useFooterHeight } from './variants/footerControls';
+import { useFooterHeight } from './variants/footerHooks';
 import { FooterVariantSwitcher, useFooterVariant } from './variants/FooterVariantSwitcher';
 
 // PROTOTYPE (2026-10-06): three directional footer variants behind a DEV-only
