@@ -1,0 +1,111 @@
+/* CONCEPT - CORE SAMPLE.
+ * Colour and type come from app tokens only (doctrine 6c). The six states keep
+ * the atlas's `data-ink` vocabulary; what changes is that a lamina is a FULL
+ * WIDTH band rather than a mark on a line, so a run of the same state reads as
+ * banding, and the two ABSENT states are drawn as uncut rock.
+ *
+ * `--lam` is the lamina height. Everything geometric derives from it, so the
+ * axis and the cores stay aligned with nothing measured in script.
+ */
+
+.atlas-cut {
+  --lam: 3px;
+  --axis: 196px;
+  display: grid; grid-template-columns: var(--axis) minmax(0, 1fr); gap: 0 12px;
+  padding: 0 12px 4px var(--gutter);
+  align-items: start;
+}
+
+/* ---- the depth axis: the same 102 laminae, carrying names not ink ---- */
+.atlas-cut__axis { display: flex; flex-direction: column; padding-top: 2.4em; }
+.atlas-cut__depth {
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  height: var(--lam); min-width: 0; position: relative;
+}
+.atlas-cut__depth.is-tick::after {
+  content: ''; position: absolute; right: -12px; width: 6px; height: 1px; background: var(--rule);
+}
+.atlas-cut__depth.is-tick .atlas-cut__index { align-self: center; }
+.atlas-cut__index { color: var(--quiet); white-space: nowrap; line-height: 1; }
+.atlas-cut__depth.is-at {
+  height: calc(var(--lam) * 11);
+  flex-direction: column; align-items: flex-end; justify-content: center; gap: 0;
+}
+.atlas-cut__name.k-btn, .atlas-cut__name {
+  height: auto; min-width: 0; max-width: 100%; padding: 0; text-align: right;
+  background: transparent; border: 0; display: block;
+}
+.atlas-cut__name:hover { color: var(--primary); }
+.atlas-cut__depth.is-at .typo-body {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden; line-height: 1.3; text-align: right;
+}
+
+/* ---- the plot: one core per dimension, side by side ---- */
+.atlas-cut__plot { display: flex; align-items: stretch; gap: 3px; min-width: 0; }
+.atlas-core { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; }
+
+/* The head is the label rail: horizontal, at full type size, never rotated. */
+.atlas-core__head {
+  height: 2.4em; display: flex; align-items: flex-end; justify-content: center;
+  text-align: center; line-height: 1.15; padding: 0 2px 4px; cursor: help; min-width: 0;
+  overflow-wrap: anywhere;
+}
+.atlas-core.is-current .atlas-core__head { color: var(--primary); }
+
+/* ---- the core: uncut rock, with the verdicts banded into it ---- */
+.atlas-core__body {
+  display: flex; flex-direction: column; min-width: 0;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--band-alt) 0, var(--band-alt) 3px,
+    color-mix(in srgb, var(--rule) 55%, transparent) 3px,
+    color-mix(in srgb, var(--rule) 55%, transparent) 4px);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+.atlas-core.is-current .atlas-core__body { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 60%, transparent); }
+
+.atlas-core__lamina { display: block; height: var(--lam); cursor: crosshair; outline-offset: -2px; }
+/* ABSENCE has no ink at all: the rock behind it is the glyph, and `setup`
+ * keeps its own blue invitation as a hairline so it is not confused with
+ * `unknown`, which stays bare. */
+.atlas-core__lamina[data-ink='setup'] { box-shadow: inset 0 1px 0 color-mix(in srgb, var(--status-info) 45%, transparent); }
+.atlas-core__lamina[data-ink='bad'] { background: var(--status-error); }
+.atlas-core__lamina[data-ink='warn'] { background: color-mix(in srgb, var(--status-warning) 82%, transparent); }
+.atlas-core__lamina[data-ink='good'] { background: color-mix(in srgb, var(--status-success) 62%, transparent); }
+.atlas-core__lamina[data-ink='info'] { background: color-mix(in srgb, var(--status-neutral) 55%, transparent); }
+
+/* The cursor's depth blooms open across every core at once, so one project
+ * still reads as a complete slice and gets a real click target. */
+.atlas-core__lamina.is-depth {
+  height: calc(var(--lam) * 11);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--primary) 70%, transparent),
+              inset 0 -1px 0 color-mix(in srgb, var(--primary) 70%, transparent);
+}
+.atlas-core__lamina.is-depth[data-ink='setup'],
+.atlas-core__lamina.is-depth[data-ink='unknown'] {
+  background: color-mix(in srgb, var(--primary) 7%, transparent);
+}
+.atlas-core__lamina.is-here {
+  box-shadow: inset 0 0 0 2px var(--primary), 0 0 10px var(--glow);
+  position: relative; z-index: 1;
+}
+.atlas-core__lamina:hover { box-shadow: inset 0 0 0 1px var(--primary); }
+.atlas-core__lamina:focus-visible { outline: 2px solid var(--primary); }
+
+.atlas-core__foot {
+  padding-top: 5px; text-align: center; white-space: nowrap; line-height: 1;
+}
+.atlas-core.is-current .atlas-core__foot { color: var(--primary); }
+
+/* ---- narrow surface (the 1280 window's ~950px column) ---- */
+@container kit (max-width: 1100px) {
+  .atlas-cut { --axis: 132px; gap: 0 8px; }
+  .atlas-cut__plot { gap: 2px; }
+  .atlas-core__head { height: 3.4em; }
+  .atlas-cut__axis { padding-top: 3.4em; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .atlas-core__lamina, .atlas-cut__depth { transition: height 140ms ease-out; }
+}

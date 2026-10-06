@@ -38,6 +38,8 @@ export const ATLAS_WORDS = {
   measuredOf: (k: number, n: number) => `${k}/${n}`,
   measuredLong: (k: number, n: number) => `${k} of ${n} measured`,
   nothingMeasured: 'Nothing measured here yet.',
+  cut: 'Portfolio core sample',
+  depthOf: (i: number, n: number) => `${i} of ${n}`,
   noMatch: 'No projects match',
   noMatchHint: 'Try a name or a repository path.',
   clearSearch: 'Clear search',

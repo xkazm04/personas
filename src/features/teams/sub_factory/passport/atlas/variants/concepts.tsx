@@ -16,16 +16,19 @@ import type { ReactElement } from 'react';
 import type { AtlasFigureProps } from '../atlasFigure';
 import { MatrixFigure } from './matrix/MatrixFigure';
 import { StampSheetFigure } from './stampsheet/StampSheetFigure';
+import { CoreSampleFigure } from './coresample/CoreSampleFigure';
 
-export type AtlasConcept = 'matrix' | 'stampsheet';
+export type AtlasConcept = 'matrix' | 'stampsheet' | 'coresample';
 
 export const CONCEPT_FIGURES: Record<AtlasConcept, (p: AtlasFigureProps) => ReactElement> = {
   matrix: MatrixFigure,
   stampsheet: StampSheetFigure,
+  coresample: CoreSampleFigure,
 };
 
 /** Named for the concept, never for a finish. */
 export const CONCEPT_OPTIONS: ReadonlyArray<{ v: AtlasConcept; label: string }> = [
   { v: 'matrix', label: 'Matrix' },
   { v: 'stampsheet', label: 'Stamp sheet' },
+  { v: 'coresample', label: 'Core sample' },
 ];
