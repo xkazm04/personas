@@ -1,7 +1,9 @@
 # Headless App Master - the app-closed chair
 
-> **Status:** v0.1.0, built 2026-10-05 (WP0 `4b41e833d`, then three packages). Not yet run
-> against the live app; see Known gaps.
+> **Status:** v0.3.0, 2026-10-07 (v0.1.0 built 2026-10-05: WP0 `4b41e833d`, then three
+> packages). v0.3.0 adds, for the ten-master day: `GLOBAL_CAP` 8, the durable admission queue,
+> multi-repo runs with repo lanes, the plan wake, the council lane, the UX gate, recipes in the
+> context, Opus `claude-opus-5-5`. Not yet run against the live app; see Known gaps.
 > **Related:** [`.claude/skills/appmaster/SKILL.md`](../../.claude/skills/appmaster/SKILL.md)
 > (the Director's procedure), [`roles/app-master.md`](../../.claude/skills/appmaster/roles/app-master.md)
 > (what the master reads), [`app-master-e2e.md`](app-master-e2e.md) (the in-app role's
@@ -16,9 +18,10 @@ The App Master is a runtime role the app owns: its tick is a `ReactiveSubscripti
 the running process, its decision prompt is `render_decision_prompt`
 (`src-tauri/src/engine/subscription/attention_decide.rs`), its builders are fleet sessions,
 and every write goes through the app's doors. While Personas itself is under active
-development the app restarts often, and a restart kills its workers. `/appmaster` keeps three
-projects (pof, ascent, kp) moving without the app: same role, same decision contract, but the
-clock is a Claude Code session and the record is a file journal.
+development the app restarts often, and a restart kills its workers. `/appmaster` keeps its
+managed projects moving without the app (`DEFAULT_MANAGED` pof, ascent, kp, plus every brief
+marked `"headless": true`; ten on 2026-10-07): same role, same decision contract, but the clock
+is a Claude Code session and the record is a file journal.
 
 ## What it is
 
@@ -34,16 +37,20 @@ clock is a Claude Code session and the record is a file journal.
      v                                |
   master subagent (Opus, read-only) --+
      |
-     |  decide -> run ids; dispatch
-     v
-  builder (Sonnet or Opus, `claude -p`, background; up to two per project on disjoint paths)
-     in ~/.personas/headless-masters/worktrees/<p>/<run8>
+     |  decide -> run ids; dispatch --refused for a slot--> admission queue (_queue.jsonl)
+     v                                                      ^ promote (in order, after each settle)
+  builder (Sonnet or Opus, `claude -p`, background; up to two per project, eight in all,
+     on disjoint paths per repo root; a reviewer on a council charter writes no code)
+     in ~/.personas/headless-masters/worktrees/<p>/<run8>, cut from the project repo
+     or from a second repo the brief names (Personas, the knowledge registry)
      |  exited (seen by the background `await`: a pid check every few seconds)
      v
-  settle: verify claim -> merge gate --ff-only--> project checkout (pof/ascent: master, kp: main)
+  settle: verify claim -> merge gate --ff-only--> the target repo's checkout (its base branch)
                                  \--held--> ask
-  journal: .claude/master/<slug>/headless/   (wakes, runs, asks, channel, outbox)
-  outbox --replay, only when the app is up--> app doors (idea, task, ask, channel)
+          a review: the council's run dir -> copied to the journal -> `reviewed`
+  journal: .claude/master/<slug>/headless/   (wakes, runs, asks, channel, outbox, council/)
+  outbox --replay, only when the app is up--> app doors (idea, task, ask, channel, milestones,
+                                               goals, council ingest, tier, report + approval)
 ```
 
 The master never spawns anything: it returns one JSON object and the Director acts on it.
@@ -65,9 +72,11 @@ values that could drift. The subcommand table is `appmaster.mjs` (`COMMANDS`).
   `charterSlug` here because there is no persona-responsibility id without the app.
 - **Run states** (`RUN_STATES`): `planned` (minted by `decide` before any effect) ->
   `running` (`dispatch`) -> `exited` (`await` or `watch` saw the process gone) -> `verifying` (`settle`)
-  -> `merged` | `held` | `failed`; any non-merged state may go to `released`. Only
-  `lib/worker.mjs` writes planned/running/exited; only `lib/merge.mjs` writes the rest.
-  `LIVE_RUN_STATES` are the ones that hold a project's slot.
+  -> `merged` | `held` | `failed`, or `reviewed` for a council review run; any non-merged,
+  non-reviewed state may go to `released`. Only `lib/worker.mjs` writes planned/running/exited;
+  only `lib/merge.mjs` writes the rest. `LIVE_RUN_STATES` are the ones that hold a project's
+  slot; `SETTLED_STATES` are the ones settle never moves. A `planned` run may also be QUEUED
+  (an entry in `_queue.jsonl`): still `planned`, but a promise the loop keeps.
 - **Outbox** (`OUTBOX_KINDS`, `OUTBOX_STATES`): id = `<kind>:<sha1(canonical payload)>`, so
   the same write queues once. Replay doors (the authority is the header of `lib/outbox.mjs`):
   `idea-verdict` -> `dev_tools_update_idea` (`commands/infrastructure/dev_tools.rs:491`);
@@ -79,9 +88,17 @@ values that could drift. The subcommand table is `appmaster.mjs` (`COMMANDS`).
   marks them `skipped` with the reason: an ask RAISE (`persona_manual_reviews` has no create
   command; the in-app raise needs a `persona_executions` row as its anchor), and the master's
   own `say` (the channel door authors every message as the operator). Those stay in the
-  journal and the terminal. Replay reads the database before and after each post.
+  journal and the terminal. Replay reads the database before and after each post. Four kinds
+  added on 2026-10-07 replay through routes built the same night: `plan` (POST
+  `/dev-tools/milestones` -> `{milestoneId}`, then POST `/dev-tools/goals` with that
+  `milestoneId` -> `{goalId}`; every created id is recorded on the entry as `created` and never
+  posted again), `council` (POST `/dev-tools/council/ingest {projectId, runDir}`), `tier`
+  (GET `/dev-tools/use-cases/{projectId}` to resolve the id by slug, then POST
+  `/dev-tools/use-cases/{id}/tier`), `report` (POST `/dev-tools/reports`: the council's report,
+  its screenshots, an Approval). A 404 from any of them leaves the entry `queued` with the
+  evidence `route missing (404)`.
 - **Caps and brakes**: `GLOBAL_CAP` builders across projects, `PER_PROJECT_CAP` per project
-  (two only on disjoint declared paths),
+  (two only on disjoint declared paths), `REPO_LANES` live runs per shared repo,
   `MEM` (free GB: a dispatch needs a floor plus a reserve per running builder; a gate run needs more) refuses a dispatch, `QUIET_MIN` and `TIMEOUT_MIN` flag (never kill), the
   Director's sleep is clamped to `SLEEP_MIN_SEC`..`SLEEP_MAX_SEC`. Models: `MODELS` (Opus
   decides, Sonnet builds; `builderByCharter` and the brief's `models.byCharter` override; a
@@ -99,7 +116,9 @@ values that could drift. The subcommand table is `appmaster.mjs` (`COMMANDS`).
     asks.jsonl  channel.jsonl  outbox.jsonl
     context/<wakeId>.md                the rendered wake context the master read
     runs/<runId>/run.json              the Run record; plus the builder's stream and result.json
+    council/<YYYY-MM-DD>-<feature>-r<n>/   durable copies of the council run dirs reviews produced
 .claude/master/_headless-limit.json    global usage-limit mark {limitedAt, reason, resetsAt}
+.claude/master/_queue.jsonl            global admission queue (latest line per runId wins) + _queue.lock
 ~/.personas/headless-masters/worktrees/<project>/<runId8>   branch autopilot/<charter>-<runId8>
 ```
 
@@ -111,7 +130,9 @@ Tests redirect the roots with `APPMASTER_STATE_ROOT` and `APPMASTER_WORKTREE_ROO
 The operator granted rung 3 (merge locally, no push) for this skill, against the recommended
 branch-only rung, and a gate was chosen to carry the risk. `settle` treats the builder's
 `result.json` as a claim and checks it (`lib/merge.mjs` `cmdSettle`); `mergeGate` merges only
-if all eight hold:
+if all eight hold, each measured in the run's TARGET repo (`repoOf(run)`: the project's own
+checkout, or the second repo its dispatch named), and a council review never reaches it (see
+"The council lane"):
 
 1. the branch has at least one commit beyond the base it was cut from (none = `failed`);
 2. the diff touches no path-glob in the brief's `boundaries` (a boundary written as prose is
@@ -157,6 +178,12 @@ project checkout: all three carry foreign uncommitted work, which is why conditi
 | App starts mid-run | The app's stale sweep (`STALE_AFTER_SECS`, `src-tauri/src/commands/fleet/stale.rs:65`, 6 min) marks fleet sessions stale, but these builders write no `fleet_sessions` rows, so it cannot touch them. Replay the outbox only after `--dry-run`. |
 | Merge held | Branch kept, ask raised and queued; the operator decides. |
 | Invalid decision | `decide` refuses with the errors; the Director sends them back to the same master once, then parks the project for the wake and reports it. |
+| No slot for a dispatch (caps, lane, paths, memory) | `dispatch` exits 2 with `queued: true`; the run waits in `_queue.jsonl` and the next `promote` (after any settle, or by hand) starts it in order. Never dropped silently: only `promote`, `queue drop` or `release` take it out. |
+| Two awaits promote at once | One machine-wide queue lock (`_queue.lock`, pid + age; a dead or stale holder is taken over) serialises dispatch and promote; a promote that cannot take it in `QUEUE_LOCK.waitMs` reports `queue busy` and the Director runs `promote` again. |
+| A route the outbox needs is not built yet | The door answers 404: the entry stays `queued` with `route missing (404)`; a plan keeps the ids it already created. |
+| A reviewer commits, or leaves no council result | Held with review options (`Discard the review`, `Settle again`); nothing reaches the app. |
+| A feature's council does not converge | A mode's round 4 is refused at `decide` (stalled); the master asks the operator instead. |
+| The app DB cannot be read at decide | Idea and feature checks are skipped (never a block); the UX gate falls back to the count its wake recorded, and refuses `ux-proposal` when it has none. |
 
 ## Two builders per project
 
@@ -272,6 +299,109 @@ headless chair holds the project.
 (`/master onboard`'s brief post) calls `dispatch_channel_followup` and WOULD start an in-app
 run, which the v1 door does not stop.
 
+## v0.3.0: ten masters, one queue (2026-10-07)
+
+Ten App Masters run from this skill on 2026-10-07 (pof, ascent, kp, gravitone-gcloud,
+personas-web; firetv, garden-vr, mage-arena-vr, paypal, devsecops). The operator watches three
+things: the masters' design and recipe use across web, TV and VR; the council (feedback
+quality, rework until it passes, a final report waiting on a human gate); and the queue and
+loops (eight builders at most, a queue whose order is visible after every loop cycle).
+
+### The admission queue
+
+The admission-queue doctrine: later is a promise, and a held request is owed an execution or
+an explicit refusal. `dispatch` refused for `global cap`, `project cap`, `repo lane`,
+`paths overlap` or `memory` (`QUEUE_REASONS`) appends the planned run to
+`.claude/master/_queue.jsonl` as `{runId, slug, charterSlug, repo, model, decidedAt, enqueuedAt,
+reason, state, position?}` and still exits 2, with `queued: true` and the position. A `usage
+limit` is not a slot and never queues. Order: entries pinned by `queue move` (a `position`) first,
+then FIFO by `decidedAt`. `promote` (`lib/promote.mjs`) walks that order under the queue lock,
+dispatches every run that fits, skips one that does not (a later one may), stops on `global cap`,
+`memory` or `usage limit`, and accounts for every queued run in `{promoted, stillQueued,
+refusals, awaitCommands}`. `await` promotes after each settle, so a freed slot refills at once;
+the Director starts each new `awaitCommand`. `queue drop` is the explicit refusal: it releases
+the run with the reason. A queued run is in flight for `decide`, listed in the master's context
+with its position, and the status digest ends with the queue table.
+
+`dispatch` now checks cheapest first (limit, state, project cap, repo lane, paths, global cap,
+then the 5-sample memory reading), so a refusal names the binding constraint and a promote
+pass samples memory only for a run that fits everything else.
+
+### Multi-repo runs and repo lanes
+
+A brief may name `repos: [{key, root, baseBranch, lane?, gates?}]`; `self` is the project's own
+checkout. A dispatch's `repo` (validated at `decide`) is resolved once into `run.json` as
+`repo`, `repoRoot`, `repoBase`, and every git step after that uses it (`contract.mjs` `repoOf`):
+the worktree, the gates (`gates` in the entry, else that repo's manifest / package.json; never the
+project's own), the rebase, the ff-merge into that repo's base, boundaries and the dirty
+overlap. Heartbeat and outbox stay keyed by the project. Two rules hold across ALL projects,
+keyed by the target repo ROOT: declared paths stay disjoint, and `REPO_LANES` caps the live runs
+one shared repo carries (the Personas repo 1, the knowledge registry 1; a brief's `lane` can
+only tighten a cap, never loosen it). A run in the Personas repo gets
+`CARGO_TARGET_DIR=<personas>\src-tauri\target` in its builder and gate env: one Rust target.
+`gates` in a repos entry exists because the registry has neither a manifest nor a
+package.json: without it every registry run would be held "no verifiable gate"; its own gate is
+`node scripts/gate.mjs --all`.
+
+### The plan wake
+
+When a project has no plan in its journal AND `dev_milestones` holds nothing for it (an
+unreadable table does not count as empty), its context opens with `PLAN WAKE`, the wake line
+carries `planWake: true`, and `decide` requires `plan: {milestones: [{name, goal, targetDate?,
+goals: [{title, measure, description?}]}]}` (1..5 milestones of 1..5 goals, strings bounded by
+`PLAN`, names and titles unique) and refuses one on any other wake. ONE outbox entry `plan`
+carries it; replay posts milestones then goals (the measure travels in the goal's
+description: the goals door has no measure field), records each id in `created`, adopts a row
+already there (a milestone by name, a goal by title linked to that milestone) instead of
+posting it again, and reads every id back. Later wakes show `YOUR PLAN` with each milestone's
+and goal's state in the app; a project whose milestones exist in the app sees those instead.
+
+### The council lane
+
+`council-lite-review` and `council-review` are review charters (`REVIEW_CHARTERS`). Their
+builder role, `roles/council-reviewer.md`, runs `/council --lite <feature>` or `/council
+<feature>` in a worktree of the project repo and names the run directory the council wrote; it
+writes no code. A review dispatch carries `featureSlug` (a `dev_use_cases` slug, checked when
+the DB is readable), runs in `self` only, needs no paths and collides with no builder. One
+council per feature at a time; a mode's round 4 is refused at `decide` (the council itself
+refuses it as stalled). Dispatch seeds the worktree with the feature's earlier rounds of the
+same mode (the journal's copies; a full council also takes the checkout's interactive rounds)
+and the checkout's `state.json`, so the council counts its round and opens with the last human
+rejection; what was there is recorded as `councilSeeded` and never taken for this run's output.
+Settle (`settleReview`): a commit holds it; so does no run directory of its own, or a
+`result.json` that is missing, unparseable or carries an unknown outcome. Otherwise the run
+directory is copied to `.claude/master/<slug>/headless/council/`, outbox `council` is queued,
+the outcome is recorded on the run, the worktree is removed and the run ends `reviewed`. A FULL
+council `ready` also queues `tier` (`major`) and `report` (`report.md` bounded, screenshots and
+evidence files as attachments, an Approval with severity `info`). The context's COUNCIL
+section lists each feature's state from the journal and the DB (none, lite- or full- ready /
+fail / incomplete, stalled, approved, rejected), its must-address lines, the rounds per mode and
+what is in flight. The rule the master follows: every feature passes council-lite, reworked
+(a delivery carrying the must-address) until lite-ready; major features then get the full
+council; a full ready goes to the operator. The council never approves.
+
+### The UX gate
+
+pof's brief may list `ux-proposal`. Its context shows `uxPending`, the project's pending
+`dev_ideas` titled `[UX]...`, and `decide` refuses a `ux-proposal` dispatch while it exceeds
+`UX.pendingMax` (10), counting the DB as it is at decide time and falling back to the count the
+wake recorded. A proposal is an idea filed through the ideas door plus a prototype merged as a
+`/layout` lab variant.
+
+### Recipes in the context
+
+Each charter quotes its v3 recipe's `description.need` and `description.coreAction` from
+`recipe_definitions` (matched by `prompt_template.$.slug`, the newest row winning), at every
+budget level. A slug with no row says so; `council-lite-review` and `ux-proposal` carry a
+built-in purpose (`BUILTIN_CHARTERS`). `council-review` turned out to have a recipe row in the
+real DB, so it quotes that. `MAX_CONTEXT_CHARS` is 20000 (12000 before): measured that day at
+the fullest budget level, kp 19446, ascent 16782, pof 12602 characters.
+
+### Models
+
+Opus is `claude-opus-5-5` (one `claude -p --model claude-opus-5-5 "say ok"` answered on
+2026-10-07); the retired `claude-opus-5` is accepted as an alias and resolves to it.
+
 ## Relationship to /master and the app
 
 `/master` is the chair for the in-app master and needs the app running for every write;
@@ -300,15 +430,25 @@ own gate, independent of the app's mandate.
   before any recursive delete, and `ln -s` under MSYS makes a copy, not a link.
 - `Discard the branch` releases the run but `release` keeps the branch and worktree; deleting
   them is left to the operator.
-- `settle --retry` is not yet in the usage header of `appmaster.mjs`.
 - The state door holds the in-app tick only; channel replies and manual wakes are not
   stopped (see "The state door").
+- The `plan`, `council`, `tier` and `report` doors follow the 2026-10-07 brief; none of those
+  routes answered when this was written (they replay as `route missing (404)` until they do).
+- `/council --lite` is not in the council skill linked on 2026-10-07 (v0.3.1); a reviewer told
+  to run it stops `blocked` rather than run a full council. Lite and full rounds of one feature
+  share the council's on-disk round counter; this skill counts and seeds rounds per mode.
+- A `ux-proposal` builder needs the app up to file its idea through the ideas door; with the
+  app down it lists the idea in its result instead.
+- Review runs, the queue and multi-repo merges are verified by tests against temp repos, a
+  fixture DB and a fake bridge only; no live run yet.
 
 ## Replay checklist (the day the app is back)
 
 1. Start the app with the test-automation server (`node scripts/e2e/sim-app.mjs up`).
 2. `/appmaster end` first if a loop is running; do not run both chairs at once.
-3. `AM outbox list` for each project; `AM outbox replay --dry-run`; read every entry.
+3. `AM outbox list` for each project; `AM outbox replay --dry-run`; read every entry. A
+   `report` entry carries an Approval: it is the operator's gate, replay it only when he is
+   ready to answer it.
    An operator `say` replays as a channel message and starts a follow-up run of the in-app
    master persona; drop or accept that before replaying.
 4. `AM outbox replay`; confirm each entry reads `replayed` (or `skipped` with a reason you

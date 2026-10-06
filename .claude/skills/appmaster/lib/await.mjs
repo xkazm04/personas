@@ -2,8 +2,10 @@
 // run_in_background right after a dispatch, it BLOCKS until the builder's pid is gone (a cheap
 // process.kill(pid, 0) every AWAIT.pollSec, no LLM), then does exactly what `watch` does for that
 // run (running -> exited, the limit mark) and then exactly what `settle` does (the same code path,
-// so the one machine-wide gate slot, the memory wait and every refusal are settle's own). It prints
-// ONE document: the settled run plus waitedSec. The CLI posts the state-door heartbeat after it.
+// so the one machine-wide gate slot, the memory wait and every refusal are settle's own), then a
+// `promote` pass (the settled run freed its slot: the admission queue's next run that fits starts).
+// It prints ONE document: the settled run plus waitedSec and `promoted` (with each new run's
+// awaitCommand for the Director). The CLI posts the state-door heartbeat after it.
 //
 // Safe several at once: settling takes the gate slot (lib/memory.mjs), so two awaits never run gates
 // together. One await per run: runs/<id>/await.lock; a second await on the same run is refused,

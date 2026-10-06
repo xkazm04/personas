@@ -1,7 +1,7 @@
 ---
 name: appmaster
-description: The headless App Master - one App Master per project (pof, ascent, kp) run from this terminal while the Personas app is closed or under development. This session is the clock; each wake renders a context document from a read-only snapshot of the app database plus a local file journal, one Opus subagent per due project returns ONE decision JSON (dispatch up to two builders on disjoint paths, each Sonnet or Opus, defer the rest, up to 3 asks, idea verdicts, a coverage note, the next wake), this session dispatches each background builder into its own worktree, settles it the moment it exits (`await`), verifies what came back, and fast-forward merges only through the gate (project gates green, no touched file dirty in the checkout). Every write the app owns is queued in an outbox and replayed through the app's own doors when it is up; the app database is never written. Invoke with `/appmaster` (status), `/appmaster <project>` (boot), `/appmaster onboard <project>`, `/appmaster run` (the loop), `/appmaster say|asks|answer|outbox|release|limit|end`.
-version: 0.1.0
+description: The headless App Master - one App Master per managed project (pof, ascent, kp plus every brief marked headless) run from this terminal while the Personas app is closed or under development. This session is the clock; each wake renders a context document from a read-only snapshot of the app database plus a local file journal (with the project's plan, its charters' recipes, its council state and the admission queue), one Opus subagent per due project returns ONE decision JSON (dispatch up to two builders on disjoint paths, each Sonnet or Opus, in the project's repo or a second repo its brief names; council reviews of features; a plan on a project's first wake; defer the rest, up to 3 asks, idea verdicts, a coverage note, the next wake), this session dispatches each background builder into its own worktree (a refused dispatch waits in a durable queue, promoted in order when a slot frees), settles it the moment it exits (`await`), verifies what came back, and fast-forward merges only through the gate (project gates green, no touched file dirty in the checkout); a council review settles `reviewed` and a full `ready` goes to the operator as a Report with an Approval. Every write the app owns is queued in an outbox and replayed through the app's own doors when it is up; the app database is never written. Invoke with `/appmaster` (status), `/appmaster <project>` (boot), `/appmaster onboard <project>`, `/appmaster run` (the loop), `/appmaster say|asks|answer|outbox|queue|release|limit|end`.
+version: 0.3.0
 ---
 
 # /appmaster - the headless App Master
@@ -11,19 +11,23 @@ version: 0.1.0
 > this session as the clock and a file journal as the record. Use `/master` when the app is
 > running (it watches the in-app master and writes through the app's doors); use
 > `/appmaster` when the app is closed, mid-restart, or under active development and you still
-> want pof, ascent and kp to move. Never run both for the same project at once: two masters
+> want the managed projects to move. Never run both for the same project at once: two masters
 > would decide over one backlog. Design and failure modes:
 > `docs/architecture/headless-app-master.md`.
 
 ## Topology
 
 ```
-Director (this session)    the clock: status -> context -> decide -> dispatch -> await (watch + settle)
-  master subagent (Opus)   one per due project, read-only, returns ONE decision JSON
-  builder (Sonnet|Opus)    up to PER_PROJECT_CAP per project on disjoint declared paths,
-                           background `claude -p`, each in its own worktree
-  await                    one background exit watcher per run; settles it when its pid is gone
-  merge gate               verifies the claim, rebases onto a moved base, then ff-merges or holds
+Director (this session)    the clock: status -> context -> decide -> dispatch -> await (watch + settle + promote)
+  master subagent (Opus)   one per due project, read-only, returns ONE decision JSON (+ a plan on a PLAN WAKE)
+  builder (Sonnet|Opus)    up to PER_PROJECT_CAP per project, GLOBAL_CAP in all, on disjoint declared paths,
+                           background `claude -p`, each in its own worktree of the project repo
+                           or of a second repo the brief names (repo lanes cap shared repos)
+  reviewer                 a builder on a council charter: runs /council on one feature, writes no code
+  admission queue          a dispatch refused for a slot waits in _queue.jsonl; promote starts it in order
+  await                    one background exit watcher per run; settles it when its pid is gone, then promotes
+  merge gate               verifies the claim, rebases onto a moved base, then ff-merges or holds;
+                           a review settles `reviewed` from the council's own run directory instead
   journal + outbox         files under .claude/master/<slug>/headless/, replayed later
   app DB                   read-only, mode=ro; never written by this skill
 ```
@@ -32,21 +36,25 @@ Director (this session)    the clock: status -> context -> decide -> dispatch ->
 
 - **Journal** (local, gitignored by `.claude/*`): `.claude/master/<slug>/headless/` holds
   `wakes.jsonl`, `asks.jsonl`, `channel.jsonl`, `outbox.jsonl`, `context/<wakeId>.md` and
-  `runs/<runId>/` (`run.json`, the builder's stream and its `result.json`). The brief is the
-  shared `/master` file `.claude/master/<slug>/brief.json`. The usage-limit mark is global:
-  `.claude/master/_headless-limit.json`. JSONL files are append-only; the latest line per id wins.
+  `runs/<runId>/` (`run.json`, the builder's stream and its `result.json`), and `council/<run dir>/`
+  (the durable copy of each council run directory a review produced). The brief is the
+  shared `/master` file `.claude/master/<slug>/brief.json`. Global files: the usage-limit mark
+  `.claude/master/_headless-limit.json` and the admission queue `.claude/master/_queue.jsonl`
+  (with its lock `_queue.lock`). JSONL files are append-only; the latest line per id wins.
 - **Worktrees**: `~/.personas/headless-masters/worktrees/<project>/<runId8>`, branch
   `autopilot/<charter>-<runId8>`, cut from the base branch tip. Outside every repo, so a
   recursive delete can never reach a checkout.
 - **Numbers** live once in `lib/contract.mjs` (caps, the `MEM` free-memory numbers, quiet and timeout flags,
-  wake bounds, the ScheduleWakeup clamp, the models). Quote them from there, not from memory.
+  wake bounds, the ScheduleWakeup clamp, the models, `REPO_LANES`, `PLAN`, `COUNCIL`, `UX`, the
+  queue reasons). Quote them from there, not from memory. On 2026-10-07: `GLOBAL_CAP` 8,
+  `PER_PROJECT_CAP` 2, `MAX_DISPATCH` 2, Opus `claude-opus-5-5`.
 - **Two builders per project.** `PER_PROJECT_CAP` builders may run in one project and
   `GLOBAL_CAP` in all, and one decision may dispatch `MAX_DISPATCH`, but two only on disjoint
   declared `paths` (`lib/paths.mjs`, conservative: a glob counts as its whole directory, and no
   paths means the whole repo). `decide` refuses two dispatches without disjoint paths, one that
-  names a charter or idea an earlier wake's started run still carries, or an unknown `model`;
-  `dispatch` refuses `paths overlap` against any live run of the project (a never-started
-  `planned` run excepted). Each dispatch may set `model` (`sonnet` / `opus` or the full ids in
+  names a charter or idea an earlier wake's started (or queued) run still carries, or an unknown `model`;
+  `dispatch` refuses `paths overlap` against any live run targeting the same repo root, in ANY
+  project (a never-started `planned` run excepted). Each dispatch may set `model` (`sonnet` / `opus` or the full ids in
   `MODELS`); it overrides the charter default, but a model the brief pins wins (a warning in
   `decide`'s result says so). `run.json` keeps `paths`, `model` and `modelSource`. The
   free-memory brake (`MEM`) still decides whether the machine can carry another builder.
@@ -64,6 +72,38 @@ Director (this session)    the clock: status -> context -> decide -> dispatch ->
   dispatched or listed by `status`. `pof` is `C:\Users\kazda\kiro\pof` (base `master`), `ascent`
   `C:\Users\kazda\kiro\ascent` (`master`), `kp` `C:\Users\kazda\kiro\kp` (base **`main`**;
   "CandiDate" in `dev_projects`). A project is addressed by its slug, the root's last path segment.
+- **Repos and lanes.** A brief may name `repos: [{key, root, baseBranch, lane?, gates?}]`; the
+  project's own checkout is the implicit key `self`. A dispatch's `repo` picks one (default
+  `self`; `decide` refuses an unknown key) and `run.json` records `repo`, `repoRoot`, `repoBase`:
+  the worktree is cut from that repo's base, its gates run (`gates` in the entry, else that
+  repo's manifest / package.json; the project's own `gates` never apply there), the rebase and
+  the ff-merge land in its base branch, and boundaries and the dirty overlap are checked in ITS
+  checkout. Heartbeat and outbox stay keyed by the project. Paths stay disjoint per repo ROOT
+  across all projects, and `REPO_LANES` caps live runs per shared repo (the Personas repo 1,
+  the knowledge registry 1; a brief's `lane` may only tighten one): a dispatch past it is
+  refused `repo lane` and queued. A run in the Personas repo gets
+  `CARGO_TARGET_DIR=<personas>\src-tauri\target` in its builder and gate env (one Rust target).
+  The registry has no manifest or package.json, so a brief that targets it names its gate
+  (`"gates": {"test": "node scripts/gate.mjs --all"}`), or every run there is held.
+- **The plan wake.** A project with no plan in its journal AND no `dev_milestones` row in the
+  app (an unreadable table never counts as empty) gets a context that OPENS with `PLAN WAKE`; its
+  wake line carries `planWake: true`, and `decide` then requires `plan` (1-5 milestones of 1-5
+  goals, bounded; `PLAN`) and refuses one on any other wake. It queues ONE outbox entry `plan`;
+  replay posts the milestones, then their goals, records every id it creates and never posts one
+  twice. Later wakes show `YOUR PLAN` with its progress in the app.
+- **The council lane.** Charters `council-lite-review` and `council-review` are REVIEW runs: the
+  builder role is `roles/council-reviewer.md` (`/council --lite <feature>` or `/council <feature>`
+  in a worktree of the project repo, no code). A review dispatch carries `featureSlug`, needs no
+  paths and collides with no builder; one council per feature at a time; a mode's round 4 is
+  refused (stalled). Dispatch seeds the worktree with the feature's earlier rounds and the
+  checkout's `state.json`. Settle: a commit -> held; no run directory of its own or no parseable
+  `result.json` -> held; else the run directory is copied to `council/`, outbox `council` is
+  queued, the run ends `reviewed`; a FULL `ready` also queues `tier` (major) and `report` (the
+  report plus an Approval: the human gate). The COUNCIL section of the context shows each
+  feature's state, must-address and rounds. The council never approves; only the operator does.
+- **The UX gate.** pof's brief may list `ux-proposal`. Its context shows `uxPending` (pending
+  `[UX]` ideas), and `decide` REFUSES a `ux-proposal` dispatch while it is above `UX.pendingMax`
+  (10), naming the count.
 
 ## The instrument
 
@@ -77,8 +117,10 @@ status   [--project p] [--text]
 context  --project p
 decide   --project p --wake <wakeId> --file <decision.json>
 dispatch --run <runId>
+queue    list | move --run <id> --to <n> | drop --run <id> --reason <text>
+promote
 watch    [--project p]
-settle   --run <runId>
+settle   --run <runId> [--retry]
 await    --run <runId> | --project p [--timeout-min N]
 release  --run <runId> --reason <text> [--kill]
 say      --project p --file <msg.md>
@@ -86,23 +128,25 @@ asks     [--project p]
 answer   --ask <askId> --choice <label> --notes <text>
 outbox   list|replay [--dry-run] [--project p]
 limit    set|clear|show [--reason <text>] [--resets <iso>]
-onboard  --project p --brief <brief.json>
+onboard  --project p --brief <brief.json> [--force]
+heartbeat [--project p] [--state running|idle|ended]
 ```
 
 `--run` takes the full run id or its 8-character short form. `settle` also takes `--retry`,
 which re-settles a `held` run (otherwise a held run is returned as it is). `await` is the exit
 watcher: it blocks until the run's builder pid is gone (a cheap pid check every `AWAIT.pollSec`
 seconds, no LLM), then does what `watch` does for that run, then settles it through `settle`'s
-own code path (same gate slot, memory wait and refusals), and prints the settled run plus
-`waitedSec` (the wait for the exit). Below, `AM` stands for
+own code path (same gate slot, memory wait and refusals), then runs a `promote` pass, and
+prints the settled run plus `waitedSec` (the wait for the exit) and `promoted` (what the freed
+slot started, with each new run's `awaitCommand`). Below, `AM` stands for
 `node .claude/skills/appmaster/appmaster.mjs`.
 
 ## `/appmaster` (status)
 
 1. `AM status --text`.
 2. One paragraph from that evidence only: per project, what it last decided and when its next
-   wake is due, what is running or held, open asks, outbox depth; the brakes (memory, limit).
-   A number the output did not show is left out, not estimated.
+   wake is due, what is running, queued or held, open asks, outbox depth; the brakes (memory,
+   limit); the queue in its order. A number the output did not show is left out, not estimated.
 
 ## `/appmaster <project>` (boot)
 
@@ -162,7 +206,8 @@ up, through `/master onboard`; until then pof's context shows no goals and that 
 Every step is the Director's. `ScheduleWakeup`, `AskUserQuestion`, `Agent` and `SendMessage`
 are used here, in this session, and never inside a master subagent.
 
-1. **Status.** `AM status`. Note each project's `due`, running and held runs, open asks.
+1. **Status.** `AM status`. Note each project's `due`, running, queued and held runs, open asks,
+   and the `queue` (its order is the promotion order).
 2. **Brakes.** `status` reports free memory and the usage-limit mark. The memory brake is
    FREE GB (a dispatch needs `MEM.dispatchMinFreeGb` plus `MEM.perBuilderReserveGb` per builder
    already running), not a used percentage, so another tool's big process cannot hold the loop
@@ -179,6 +224,9 @@ are used here, in this session, and never inside a master subagent.
    > then the context document at <path>. Return ONLY the decision JSON for wake <wakeId>.
    > You may Read, Grep and run read-only git/Bash for evidence. You must not edit or create
    > files, spawn builders or subagents, run appmaster.mjs, or write the journal.
+
+   A context that opens with `PLAN WAKE` asks its master for a `plan` as well (the role says
+   how); `context` reports `planWake: true` for it. Nothing else changes for the Director.
 5. **Decide.** Save each reply verbatim to `<scratchpad>/decision-<slug>-<wakeId8>.json`,
    then `AM decide --project <p> --wake <wakeId> --file <that file>`. `wake already decided`
    or `unknown wake` means a stale or mistyped id: report it, do not retry. On
@@ -192,9 +240,14 @@ are used here, in this session, and never inside a master subagent.
    later `promote` starts it; do not retry it by hand. Any other refusal (`usage limit`, `run not
    planned`) is reported and left for the next wake. On success, start the `awaitCommand` that `dispatch`
    printed (`AM await --run <runId>`) with `run_in_background`, at once. That background task's
-   notification is the PRIMARY wake: when it arrives, read its JSON (the settled run plus
-   `waitedSec`) and go to step 8. Several awaits run side by side safely: settling takes the one
+   notification is the PRIMARY wake: when it arrives, read its JSON (the settled run,
+   `waitedSec` and `promoted`) and go to step 8. Several awaits run side by side safely: settling takes the one
    machine-wide gate slot, so their gates still run one at a time.
+   - **After every await notification, inspect `promoted`.** The await ran a `promote` pass when
+     its run settled: `promoted.awaitCommands` lists every queued run the freed slot started.
+     Start each of those `awaitCommand`s with `run_in_background` at once, exactly as after a
+     dispatch. `promoted.refusals` says why the rest still wait; `promoted.error` (e.g. `queue
+     busy`) means run `AM promote` yourself.
    - **One await per run.** `await` locks the run (`runs/<id>/await.lock`); a second await on it
      is refused `already awaited`, and so is a `settle` (`awaited`) while another process
      awaits it. Never start `await` and `settle` on the same run: the await settles it.
@@ -209,9 +262,15 @@ are used here, in this session, and never inside a master subagent.
    `quiet` / `timedOut` (reported, never acted on; see `release`). For an `exited` run with no
    await running, start `AM await --run <runId>` in the background rather than `settle`
    (same result, and it holds the run's lock); `settle` by hand only for `--retry` of a held
-   run. A settle ends `merged`, `held` (with an ask), `failed` (no commits) or `released` (the
-   builder hit the usage limit). A `limitHit` row means the mark is now set: stop after this
-   wake.
+   run. A settle ends `merged`, `held` (with an ask), `failed` (no commits), `released` (the
+   builder hit the usage limit) or, for a council review, `reviewed`. A `limitHit` row means the
+   mark is now set: stop after this wake.
+   Then `AM promote` once per wake, and after any `release` or `queue drop` (a slot freed
+   without an await): it starts every queued run that now fits and prints `{promoted,
+   stillQueued, refusals, awaitCommands}`; start each `awaitCommand` in the background. A
+   refusal there is information (the run keeps its place), not an error. The operator reorders
+   with `AM queue move --run <id> --to <n>` and refuses with `AM queue drop --run <id> --reason
+   "<why>"`; the Director never drops a queued run on its own judgment.
 8. **Asks.** `AM asks`. An ask is the operator's when its kind matches the brief's `askFor`
    (scope change -> `scope`, spending -> `spend`, money or data path risk -> `risk`, two goals
    in conflict -> `goal-conflict`, a recipe failing -> `recipe-failing`) and always when it is
@@ -229,7 +288,8 @@ are used here, in this session, and never inside a master subagent.
    council REVIEW offers `Discard the review` -> `AM release --run <runId> --reason "operator
    discarded the review"`, and `Settle again` -> `AM settle --run <runId> --retry` once what held
    it (a commit, a missing or unreadable council `result.json`) is fixed.
-9. **Digest.** Print it (format below).
+9. **Digest.** Print it (format below). It ends with the queue table, every wake, so the
+   order the queue will promote in is visible after each loop cycle.
 10. **Sleep.** `ScheduleWakeup` at the earliest `nextWakeAt` over the managed projects,
     clamped to 60..3600 s. While builders run, the await notifications wake you, so the
     `ScheduleWakeup` is only a FALLBACK heartbeat: long, 1200 s or more (it never needs to be
@@ -242,19 +302,26 @@ Then run `end`.
 ### Digest format (terminal only)
 
 Short sentences; lead with what moved. Start from `AM status --text`, whose renderer IS the
-base format: one machine line, then one block per project (decided, merged, running with model
-and last-output age, held with reason, the note, the master's say, asks open, outbox depth); a
-project where nothing moved collapses to one line.
+base format: one machine line, then one block per project (decided, merged, reviewed, running
+with model and last-output age, queued with position, held with reason, the note, the master's
+say, asks open, outbox depth); a project where nothing moved collapses to one line; the queue
+table closes it.
 
 ```
-Machine: 31.2 GB free; no usage limit; builders running 2 of 8.
+Machine: 31.2 GB free; no usage limit; builders running 8 of 8.
 ascent - decided 14:15, dispatched accepted-idea-delivery; next wake 14:40.
+  Reviewed 7f30aa12 org-journey: lite council fail.
   Running 9a41c7e2 accepted-idea-delivery (claude-sonnet-5-5), last output 3 min ago; paths src/app/org/.
   Running 5b20d4c1 codebase-security-scan (claude-opus-5-5), last output 1 min ago; paths src/lib/auth/.
+  Queued 3c11d0e9 council-lite-review at position 1, waiting on global cap.
   Held 2c7e01bb codebase-security-scan: uncommitted changes in the checkout overlap the branch: ...
   Note: Dispatched delivery of 4c2e81aa/7d90b3f1. Next wake: settle, then KPI readings.
   1 ask(s) open; 4 outbox entries queued.
 kp - quiet, next wake 16:05.
+Queue: 2 waiting, in promotion order (FIFO by decision; `queue move` pins).
+  #  project       charter              model              repo      waited  waits on
+  1  ascent        council-lite-review  claude-sonnet-5-5  self      6 min   global cap
+  2  mage-arena-vr knowledge-forge      claude-opus-5-5    registry  2 min   repo lane
 ```
 
 Then add what this wake did that status cannot show: `QUIET` / `TIMEOUT` flags from `watch`,
@@ -294,13 +361,22 @@ until `promote` starts it or `queue drop` refuses it explicitly. Semantics, exac
 ## `outbox`
 
 The outbox is the list of writes the app owns (idea verdicts, a finished task with its SHA,
-ask answers, the operator's says) that this skill could not make because it never writes the
-app database. Each entry is idempotent (its id is a hash of kind and payload) and is replayed
-through the app's own doors when the app is up; replay checks the database before and after
-each post. `AM outbox list [--project p]` shows the queue; `AM outbox replay --dry-run` shows
-what would be posted (without the app); `AM outbox replay` posts, and refuses with
-`app is not running` otherwise. Ask raises and the master's own says have no door and replay
-as `skipped`: those live in the journal and the digest only.
+ask answers, the operator's says, a plan's milestones and goals, a council run to ingest, a
+feature's tier, a council report with its Approval) that this skill could not make because it
+never writes the app database. Each entry is idempotent (its id is a hash of kind and payload)
+and is replayed through the app's own doors when the app is up; replay checks the database
+before and after each post. `AM outbox list [--project p]` shows the queue; `AM outbox replay
+--dry-run` shows what would be posted (without the app); `AM outbox replay` posts, and refuses
+with `app is not running` otherwise. Ask raises and the master's own says have no door and
+replay as `skipped`: those live in the journal and the digest only.
+
+The kinds added on 2026-10-07 use routes a sibling builds the same night: `plan` (POST
+`/dev-tools/milestones`, then `/dev-tools/goals`), `council` (POST `/dev-tools/council/ingest`),
+`tier` (GET `/dev-tools/use-cases/{projectId}`, POST `/dev-tools/use-cases/{id}/tier`), `report`
+(POST `/dev-tools/reports`). Until a route answers, a 404 leaves the entry `queued` with the
+evidence `route missing (404)` and the next replay tries again. A `plan` records every id it
+creates on the entry (`created`) and never posts one twice, so a replay that failed halfway
+resumes where it stopped.
 
 ## `release`
 
@@ -332,7 +408,7 @@ No vault note (the operator's choice). In order:
 ## The state door (what the app sees)
 
 The app cannot see this chair unless it is told. After `decide`, `dispatch`, `watch`, `settle`,
-`await` and `release` succeed (and after an `await` refusal, whose wait may have moved a run), `appmaster.mjs` posts the project's state through the dev-tools bridge
+`await`, `release`, `promote` and `queue` succeed (and after an `await` refusal, whose wait may have moved a run), `appmaster.mjs` posts the project's state through the dev-tools bridge
 (`POST /dev-tools/app-master/{project_id}/heartbeat`, `lib/heartbeat.mjs`): `running` while a
 run is running, exited or verifying, else `idle`, with the latest wake note and next wake.
 While that beat is fresh the app shows the master as run from a terminal and its in-app tick
@@ -353,16 +429,31 @@ hand. Design: `docs/architecture/headless-app-master.md`, "The state door".
 - Free memory before every dispatch and every gate run (`dispatch` refuses; `settle` waits then refuses; do not work around either). Never kill a process to make room: name who is using it and tell the operator.
 - Builders run `--dangerously-skip-permissions` in their worktree. The risk, named once: that
   confines the working directory, it is not a sandbox; a builder could still write elsewhere.
-- pof, ascent and kp all carry uncommitted foreign work in their checkouts. The merge gate
-  exists because of it: never stash, checkout, reset or `git add -A` in a project checkout.
+- pof, ascent and kp all carry uncommitted foreign work in their checkouts, and so do the
+  Personas repo and the knowledge registry that other masters target. The merge gate exists
+  because of it: never stash, checkout, reset or `git add -A` in any checkout.
+- One Personas cargo target: a run in the Personas repo gets `CARGO_TARGET_DIR` set to it;
+  never start a second Rust build tree.
+- The council never approves, and neither does the Director: `approved` and `rejected` are the
+  operator's, through the Approval a full `ready` queues. A reviewer writes no code.
+- A queued run is a promise: it leaves the queue only by `promote`, by the operator's
+  `queue drop`, or by a `release`; never by silence.
 - Bring the operator CEO-level decisions only (scope, money, risk, goal conflicts, a held
-  merge); restarts, re-dispatches and cursor bumps are the Director's.
+  merge, a stalled council); restarts, re-dispatches, promotes and cursor bumps are the Director's.
 - The app database is read-only. When the app comes up, post nothing by hand: run
   `outbox replay --dry-run` first, read it, then `outbox replay`.
 
 ## Known gaps
 
 - Outbox replay against the live app is unverified until the app runs (tests use a fake bridge).
+  The `plan`, `council`, `tier` and `report` routes did not exist when this was written: their
+  request bodies follow the brief of 2026-10-07, not a route that answered.
+- `/council --lite` is unverified: the council skill linked on 2026-10-07 (v0.3.1) documents no
+  `--lite` flag. The reviewer is told to stop `blocked` rather than fall back to a full council.
+  A lite and a full council of one feature share the council's own round counter on disk; this
+  skill counts rounds per mode and seeds only the same mode's earlier rounds into a worktree.
+- A `ux-proposal` builder files its `[UX]` idea through the ideas door, which needs the app
+  running; with the app down it lists the idea in its result's `questions` instead.
 - pof has no goals until it is onboarded here and then through `/master onboard`.
 - Nested subagents are unverified and not needed: masters return JSON, the Director spawns.
 - The in-app master and this one share no lock beyond the state door: a fresh beat holds the
