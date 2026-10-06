@@ -29,8 +29,23 @@
 // vocabulary `kpiNextMove` already prints, so the gate names an action.
 //
 // Pure: no React, no store, no i18n.
+import type { DevKpi } from '@/lib/bindings/DevKpi';
+
 import { kpiTrack } from '../../kpiMath';
-import { isStale, verdictGap, type Estate, type VerdictGap } from '../../estate/kpiEstate';
+import { isStale, verdictGap, type Estate, type EstateProject, type VerdictGap } from '../../estate/kpiEstate';
+
+/**
+ * One addressable place the loss can be attributed to. The bench is drawn the
+ * same way at both altitudes - projects at the portfolio, groups inside one
+ * project - so the derivation takes PLACES rather than projects and the
+ * surface decides which level it is reading.
+ */
+export interface AssayPlace {
+  /** What `onFocus`/`descend` will be given for this place. */
+  id: string;
+  label: string;
+  kpis: DevKpi[];
+}
 
 /** A missing prerequisite, and how many KPIs in a lane are missing it. */
 export interface AssayGap {
@@ -38,9 +53,10 @@ export interface AssayGap {
   count: number;
 }
 
-/** One project's contribution to a lane's stalled population. */
+/** One place's contribution to a lane's stalled population. */
 export interface AssayShare {
-  projectId: string;
+  /** The place's id, as `AssayPlace.id` gave it. */
+  id: string;
   label: string;
   /** Stalled here: declared but not yet carrying a verdict. */
   count: number;
@@ -92,19 +108,33 @@ function emptyLane(kind: string): AssayLane {
   };
 }
 
+/** The id a group with no `context_group_id` is addressed by - the same key
+ *  `kpiOverviewModel` uses, so a focus built from it resolves. */
+export const UNGROUPED_PLACE = 'ungrouped';
+
+/** Portfolio altitude: one place per project. */
+export function assayPlaces(estate: Estate): AssayPlace[] {
+  return estate.projects.map((p) => ({ id: p.projectId, label: p.label, kpis: p.kpis }));
+}
+
+/** Project altitude: one place per context group inside it. */
+export function assayGroupPlaces(project: EstateProject): AssayPlace[] {
+  return project.groups.map((g) => ({ id: g.groupId ?? UNGROUPED_PLACE, label: g.label, kpis: g.kpis }));
+}
+
 /**
- * The bench, built over the estate every variant already receives. Nothing is
- * re-fetched, nothing is dropped and nothing is capped: a lane with one KPI in
- * it is still a lane, because a mechanism nobody uses is itself a reading of
- * the estate.
+ * The bench, built over places whose KPIs the estate already grouped. Nothing
+ * is re-fetched, nothing is dropped and nothing is capped: a lane with one KPI
+ * in it is still a lane, because a mechanism nobody uses is itself a reading
+ * of the estate.
  */
-export function buildAssay(estate: Estate): Assay {
+export function buildAssay(places: AssayPlace[], now: number): Assay {
   const lanes = new Map<string, AssayLane>();
   const gaps = new Map<string, Map<string, number>>();
   const shares = new Map<string, Map<string, AssayShare>>();
 
-  for (const project of estate.projects) {
-    for (const kpi of project.kpis) {
+  for (const place of places) {
+    for (const kpi of place.kpis) {
       const kind = kpi.measure_kind || 'manual';
       let lane = lanes.get(kind);
       if (!lane) { lane = emptyLane(kind); lanes.set(kind, lane); }
@@ -118,7 +148,7 @@ export function buildAssay(estate: Estate): Assay {
         // outlived its cadence is stale whether or not anything can judge it,
         // and counting it only among verdicts would hide every stale reading
         // in the unjudged population (which is where most of them are).
-        if (isStale(kpi, estate.now)) lane.stale += 1;
+        if (isStale(kpi, now)) lane.stale += 1;
       }
       if (gap == null) {
         lane.verdict += 1;
@@ -129,7 +159,7 @@ export function buildAssay(estate: Estate): Assay {
         if (gap === 'reading') lane.dark += 1;
         else lane.unjudged += 1;
         bump(gaps, kind, gap);
-        share(shares, kind, project.projectId, project.label, gap === 'reading');
+        share(shares, kind, place.id, place.label, gap === 'reading');
       }
     }
   }
@@ -160,14 +190,14 @@ function bump(into: Map<string, Map<string, number>>, kind: string, gap: string)
 function share(
   into: Map<string, Map<string, AssayShare>>,
   kind: string,
-  projectId: string,
+  id: string,
   label: string,
   dark: boolean,
 ): void {
   let inner = into.get(kind);
   if (!inner) { inner = new Map(); into.set(kind, inner); }
-  let row = inner.get(projectId);
-  if (!row) { row = { projectId, label, count: 0, dark: 0 }; inner.set(projectId, row); }
+  let row = inner.get(id);
+  if (!row) { row = { id, label, count: 0, dark: 0 }; inner.set(id, row); }
   row.count += 1;
   if (dark) row.dark += 1;
 }

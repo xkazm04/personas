@@ -6,7 +6,7 @@ import type { DevKpi } from '@/lib/bindings/DevKpi';
 
 import { buildEstate } from '../estate/kpiEstate';
 import type { KpiProjectRollup } from '../kpiOverviewModel';
-import { buildAssay } from '../variants/assay/Assay.model';
+import { assayGroupPlaces, assayPlaces, buildAssay, UNGROUPED_PLACE } from '../variants/assay/Assay.model';
 
 const DAY = 86_400_000;
 const NOW = Date.parse('2026-10-06T12:00:00Z');
@@ -30,6 +30,15 @@ function kpi(over: Partial<DevKpi> = {}): DevKpi {
   } as DevKpi;
 }
 
+/** One cell of a project rollup. */
+function cell(groupId: string | null, label: string, kpis: DevKpi[]) {
+  return {
+    key: `p:${groupId ?? 'ungrouped'}`, projectId: 'p', groupId, label, domain: null, color: null,
+    total: kpis.length, measured: 0, met: 0, onTrack: 0, offTrack: 0, unpaced: 0,
+    coverage: 0, offTrackShare: null, band: 'unmeasured' as const, kpis,
+  };
+}
+
 /** One project, one group, whatever KPIs the case needs. */
 function estateOf(kpis: DevKpi[], label = 'alpha', projectId = 'p') {
   const rollup: KpiProjectRollup = {
@@ -44,9 +53,14 @@ function estateOf(kpis: DevKpi[], label = 'alpha', projectId = 'p') {
   return buildEstate([rollup], NOW);
 }
 
+/** The bench at portfolio altitude, which is what most cases read. */
+function bench(estate: ReturnType<typeof buildEstate>) {
+  return buildAssay(assayPlaces(estate), NOW);
+}
+
 describe('buildAssay — lanes', () => {
   it('splits the estate by measure_kind and orders lanes by declared size', () => {
-    const assay = buildAssay(estateOf([
+    const assay = bench(estateOf([
       kpi({ id: 'a', measure_kind: 'manual' }),
       kpi({ id: 'b', measure_kind: 'manual' }),
       kpi({ id: 'c', measure_kind: 'manual' }),
@@ -61,12 +75,12 @@ describe('buildAssay — lanes', () => {
   });
 
   it('treats a blank measure_kind as manual rather than opening a nameless lane', () => {
-    const assay = buildAssay(estateOf([kpi({ measure_kind: '' })]));
+    const assay = bench(estateOf([kpi({ measure_kind: '' })]));
     expect(assay.lanes.map((l) => l.kind)).toEqual(['manual']);
   });
 
   it('keeps a one-KPI lane: a mechanism nobody uses is itself a reading', () => {
-    const assay = buildAssay(estateOf([
+    const assay = bench(estateOf([
       kpi({ id: 'a', measure_kind: 'manual' }),
       kpi({ id: 'z', measure_kind: 'derived', current_value: 50 }),
     ]));
@@ -76,7 +90,7 @@ describe('buildAssay — lanes', () => {
 
 describe('buildAssay — the two gates', () => {
   it('loses the never-read at the first gate and the unjudgeable at the second', () => {
-    const [lane] = buildAssay(estateOf([
+    const [lane] = bench(estateOf([
       kpi({ id: 'dark' }),
       kpi({ id: 'notarget', current_value: 40, target_value: null }),
       kpi({ id: 'nobase', current_value: 40, baseline_value: null }),
@@ -92,7 +106,7 @@ describe('buildAssay — the two gates', () => {
   });
 
   it('yield is observed over declared, never verdict over declared', () => {
-    const [lane] = buildAssay(estateOf([
+    const [lane] = bench(estateOf([
       kpi({ id: 'a', current_value: 10, target_value: null }),
       kpi({ id: 'b' }),
       kpi({ id: 'c' }),
@@ -104,7 +118,7 @@ describe('buildAssay — the two gates', () => {
   });
 
   it('names what the lost population is missing, commonest ordering preserved', () => {
-    const [lane] = buildAssay(estateOf([
+    const [lane] = bench(estateOf([
       kpi({ id: 'a' }),
       kpi({ id: 'b' }),
       kpi({ id: 'c', current_value: 1, target_value: null }),
@@ -118,7 +132,7 @@ describe('buildAssay — the two gates', () => {
   });
 
   it('counts stale among the OBSERVED, so an unjudgeable reading can still be stale', () => {
-    const [lane] = buildAssay(estateOf([
+    const [lane] = bench(estateOf([
       kpi({ id: 'old', current_value: 10, last_measured_at: iso(NOW - 40 * DAY) }),
       kpi({ id: 'dark' }),
     ])).lanes;
@@ -127,7 +141,7 @@ describe('buildAssay — the two gates', () => {
   });
 
   it('an estate with no KPIs produces no lanes and no NaN yield', () => {
-    const assay = buildAssay(buildEstate([], NOW));
+    const assay = bench(buildEstate([], NOW));
     expect(assay.lanes).toEqual([]);
     expect(assay.declared).toBe(0);
     expect(assay.widest).toBe(0);
@@ -138,7 +152,7 @@ describe('buildAssay — who owns the loss', () => {
   it('attributes the stalled population to projects, largest first', () => {
     const big = estateOf([kpi({ id: 'a' }), kpi({ id: 'b' }), kpi({ id: 'c' })], 'big', 'p1');
     const small = estateOf([kpi({ id: 'd' })], 'small', 'p2');
-    const assay = buildAssay({
+    const assay = bench({
       ...big,
       projects: [...big.projects, ...small.projects],
       kpis: [...big.kpis, ...small.kpis],
@@ -150,10 +164,26 @@ describe('buildAssay — who owns the loss', () => {
   });
 
   it('separates a project stalled for want of a reading from one stalled for want of a target', () => {
-    const assay = buildAssay(estateOf([
+    const assay = bench(estateOf([
       kpi({ id: 'a' }),
       kpi({ id: 'b', current_value: 7, target_value: null }),
     ]));
-    expect(assay.lanes[0]!.stalled[0]).toEqual({ projectId: 'p', label: 'alpha', count: 2, dark: 1 });
+    expect(assay.lanes[0]!.stalled[0]).toEqual({ id: 'p', label: 'alpha', count: 2, dark: 1 });
+  });
+
+  it('reads the same shape one altitude down, with groups as the places', () => {
+    const estate = buildEstate([{
+      projectId: 'p', label: 'alpha', groupsUnknown: false, total: 2, measured: 0, met: 0,
+      onTrack: 0, offTrack: 0, unpaced: 0, coverage: 0, offTrackShare: null, band: 'unmeasured',
+      groups: [
+        cell('g1', 'first', [kpi({ id: 'a' })]),
+        cell(null, 'Ungrouped', [kpi({ id: 'b', context_group_id: null })]),
+      ],
+    }], NOW);
+    const places = assayGroupPlaces(estate.projects[0]!);
+    expect(places.map((p) => p.id).sort()).toEqual(['g1', UNGROUPED_PLACE]);
+    const lane = buildAssay(places, NOW).lanes[0]!;
+    expect(lane.declared).toBe(2);
+    expect(lane.stalled.map((s) => s.count)).toEqual([1, 1]);
   });
 });
