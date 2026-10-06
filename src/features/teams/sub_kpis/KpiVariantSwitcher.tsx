@@ -3,24 +3,10 @@ import type { ReactNode } from 'react';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import {
-  KPI_PROTOTYPE_LABELS,
-  KPI_SHIPPED_VARIANTS,
-  KPI_VARIANTS,
-  type KpiVariant,
-} from './kpiVariant';
+import { KPI_VARIANTS, type KpiVariant } from './kpiVariant';
 
 /** Shared by the switcher (tabs) and the dispatcher (the one tabpanel). */
 export const KPI_VARIANT_TAB_PREFIX = 'kpi-variant';
-
-/** A shipped variant's label is translated; a prototype under review carries
- *  its concept name untranslated, which is why the lookup is a function and
- *  not an index into `variant_labels` (whose type only knows the three). */
-function labelOf(id: KpiVariant, shipped: Record<'map' | 'ledger' | 'river', string>): string {
-  return (KPI_SHIPPED_VARIANTS as readonly string[]).includes(id)
-    ? shipped[id as 'map' | 'ledger' | 'river']
-    : (KPI_PROTOTYPE_LABELS[id] ?? id);
-}
 
 /** The three-way pill above every KPI overview renderer, and the ONE tabpanel
  *  it selects (`children`) — strip and panel live together so the tablist's
@@ -42,7 +28,7 @@ export function KpiVariantSwitcher({
       <SegmentedTabs<KpiVariant>
         tabs={KPI_VARIANTS.map((id) => ({
           id,
-          label: labelOf(id, o.variant_labels),
+          label: o.variant_labels[id],
           testId: `kpi-variant-${id}`,
         }))}
         activeTab={variant}

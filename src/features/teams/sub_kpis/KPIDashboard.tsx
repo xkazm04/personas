@@ -3,7 +3,8 @@
 // river. Every variant reads the same overview model and opens the same
 // in-place Project › Group layer. The other three prototypes (classic, grid,
 // treemap) were deleted on 2026-09-21 after the /contest consolidation round
-// (.contest/Contest/contests/kpi-descent.md).
+// (.contest/Contest/contests/kpi-descent.md), and three more (assay, almanac,
+// console) on 2026-10-06 at the end of a prototype round the owner closed.
 import { Suspense, useState } from 'react';
 
 import { useTranslation } from '@/i18n/useTranslation';
@@ -29,21 +30,12 @@ export interface KpiVariantProps {
 const StrategicMap = lazyRetry(() => import('./variants/StrategicMap'));
 const AttentionLedger = lazyRetry(() => import('./variants/AttentionLedger'));
 const StateRiver = lazyRetry(() => import('./variants/StateRiver'));
-// Prototype round 4 (dev builds only — see `kpiVariant.ts`). Lazy like the
-// shipped three, so a production bundle that can never select them still
-// never loads them.
-const Assay = lazyRetry(() => import('./variants/Assay'));
-const Almanac = lazyRetry(() => import('./variants/Almanac'));
-const Console = lazyRetry(() => import('./variants/Console'));
 const KpiGroupLayer = lazyRetry(() => import('./layer/KpiGroupLayer'));
 
 const VARIANT_COMPONENT: Record<KpiVariant, React.ComponentType<KpiVariantProps>> = {
   map: StrategicMap,
   ledger: AttentionLedger,
   river: StateRiver,
-  assay: Assay,
-  almanac: Almanac,
-  console: Console,
 };
 
 export function KPIDashboard({
