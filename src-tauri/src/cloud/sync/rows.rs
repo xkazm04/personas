@@ -223,7 +223,9 @@ pub struct SyncedEventRow {
 pub struct SyncedReviewRow {
     pub id: String,
     pub device_id: Option<String>,
-    pub execution_id: String,
+    /// NULL for a review raised outside any run (migration e60). Read as an
+    /// `Option`: a `String` here would fail the whole batch on one such row.
+    pub execution_id: Option<String>,
     pub persona_id: String,
     pub title: String,
     pub description: Option<String>,

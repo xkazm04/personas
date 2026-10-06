@@ -520,7 +520,8 @@ export function enrichWithPersona<T extends { persona_id: string }>(
 export interface ManualReviewItem extends WithPersonaInfo {
   id: string;
   persona_id: string;
-  execution_id: string;
+  /** `null` for a review raised outside any run (the headless App Master's report approval). */
+  execution_id: string | null;
   review_type: string;
   content: string;
   severity: string;

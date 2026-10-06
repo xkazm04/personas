@@ -41,7 +41,8 @@ export type UnifiedInboxItem =
   | (BaseInboxItem & {
       kind: 'approval';
       data: {
-        executionId: string;
+        /** `null` for a review raised outside any run. */
+        executionId: string | null;
         reviewType: string;
         /** JSON-encoded context blob; renderer is responsible for parsing. */
         contextData: string | null;

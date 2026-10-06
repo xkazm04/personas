@@ -524,7 +524,8 @@ export interface ReviewDispatchBlockedPayload {
 /** Manual review resolved (commands/design/reviews.rs ManualReviewResolvedEvent). */
 export interface ManualReviewResolvedPayload {
   review_id: string;
-  execution_id: string;
+  /** `null` for a review raised outside any run (the headless App Master's report approval). */
+  execution_id: string | null;
   persona_id: string;
   status: string;
   /** What the resolution taught the fleet (Phase 2 — visible learning). Null

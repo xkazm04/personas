@@ -2107,3 +2107,153 @@ fn drop_auto_pr_columns_keeps_every_project_row() -> Result<(), Box<dyn std::err
     );
     Ok(())
 }
+
+// ── e60: a manual review may exist with no run ─────────────────────────────
+
+/// An install created before e60 carries `execution_id TEXT NOT NULL`. The
+/// rebuild must drop exactly that NOT NULL and nothing else: every row and its
+/// review thread survive (foreign keys are off for the swap, so dropping the
+/// old table does not cascade into `review_messages`), the FK and its CASCADE
+/// stay, the indexes are replayed, and a replay is a no-op.
+#[test]
+fn review_execution_id_becomes_optional_without_losing_rows_or_threads() {
+    let pool = crate::init_test_db().unwrap();
+    let persona_id = crate::repos::test_fixtures::create_test_persona_id(&pool, "Reviewer", "sp");
+    let exec =
+        crate::repos::execution::executions::create(&pool, &persona_id, None, None, None, None)
+            .unwrap();
+    let conn = pool.get().unwrap();
+
+    // The pre-e60 shape, exactly as a live install holds it (the three
+    // trailing columns were added by later ALTERs).
+    conn.execute_batch(
+        "DROP TABLE persona_manual_reviews;
+         CREATE TABLE persona_manual_reviews (
+            id                TEXT PRIMARY KEY,
+            execution_id      TEXT NOT NULL REFERENCES persona_executions(id) ON DELETE CASCADE,
+            persona_id        TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+            title             TEXT NOT NULL,
+            description       TEXT,
+            severity          TEXT NOT NULL DEFAULT 'info',
+            context_data      TEXT,
+            suggested_actions TEXT,
+            status            TEXT NOT NULL DEFAULT 'pending',
+            reviewer_notes    TEXT,
+            resolved_at       TEXT,
+            created_at        TEXT NOT NULL,
+            updated_at        TEXT NOT NULL
+         , use_case_id TEXT, assignment_id TEXT, step_id TEXT);
+         CREATE INDEX idx_pmr_execution ON persona_manual_reviews(execution_id);",
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO persona_manual_reviews
+            (id, execution_id, persona_id, title, created_at, updated_at, use_case_id)
+         VALUES ('r1', ?1, ?2, 'kept', datetime('now'), datetime('now'), 'uc-1')",
+        rusqlite::params![exec.id, persona_id],
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO review_messages (id, review_id, role, content, created_at)
+         VALUES ('m1', 'r1', 'user', 'a thread line', datetime('now'))",
+        [],
+    )
+    .unwrap();
+    assert!(conn
+        .execute(
+            "INSERT INTO persona_manual_reviews (id, execution_id, persona_id, title, created_at, updated_at)
+             VALUES ('r-null', NULL, ?1, 'no run', datetime('now'), datetime('now'))",
+            [&persona_id],
+        )
+        .is_err(), "the legacy shape refuses a NULL - otherwise this test proves nothing");
+
+    run_incremental(&conn).unwrap();
+
+    let notnull: i64 = conn
+        .query_row(
+            "SELECT \"notnull\" FROM pragma_table_info('persona_manual_reviews') WHERE name = 'execution_id'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(notnull, 0, "execution_id is nullable after e60");
+    let (exec_id, uc): (Option<String>, Option<String>) = conn
+        .query_row(
+            "SELECT execution_id, use_case_id FROM persona_manual_reviews WHERE id = 'r1'",
+            [],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!(exec_id.as_deref(), Some(exec.id.as_str()));
+    assert_eq!(uc.as_deref(), Some("uc-1"), "a later column rode the copy");
+    let thread: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM review_messages WHERE review_id = 'r1'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(
+        thread, 1,
+        "the review's thread was not cascaded away by the swap"
+    );
+    assert!(
+        has_index(&conn, "idx_pmr_execution").unwrap(),
+        "indexes are replayed"
+    );
+
+    // NULL is now storable; a run that does not exist still is not.
+    conn.execute(
+        "INSERT INTO persona_manual_reviews (id, execution_id, persona_id, title, created_at, updated_at)
+         VALUES ('r-null', NULL, ?1, 'no run', datetime('now'), datetime('now'))",
+        [&persona_id],
+    )
+    .expect("a review raised outside any run is storable");
+    assert!(conn
+        .execute(
+            "INSERT INTO persona_manual_reviews (id, execution_id, persona_id, title, created_at, updated_at)
+             VALUES ('r-ghost', 'no-such-run', ?1, 'ghost', datetime('now'), datetime('now'))",
+            [&persona_id],
+        )
+        .is_err(), "the FK onto persona_executions still binds a named run");
+
+    // The CASCADE stays: the review that names a run dies with it.
+    conn.execute("DELETE FROM persona_executions WHERE id = ?1", [&exec.id])
+        .unwrap();
+    let left: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM persona_manual_reviews WHERE id = 'r1'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(left, 0, "ON DELETE CASCADE survived the rebuild");
+
+    // Idempotent: a replay leaves the DDL byte for byte.
+    let ddl = |conn: &Connection| -> String {
+        conn.query_row(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='persona_manual_reviews'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap()
+    };
+    let once = ddl(&conn);
+    run_incremental(&conn).unwrap();
+    assert_eq!(ddl(&conn), once);
+}
+
+/// A fresh install never carries the NOT NULL, so e60 has nothing to do there.
+#[test]
+fn a_fresh_schema_has_an_optional_review_execution_id() {
+    let pool = crate::init_test_db().unwrap();
+    let conn = pool.get().unwrap();
+    let notnull: i64 = conn
+        .query_row(
+            "SELECT \"notnull\" FROM pragma_table_info('persona_manual_reviews') WHERE name = 'execution_id'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(notnull, 0);
+}

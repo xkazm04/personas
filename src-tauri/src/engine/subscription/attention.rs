@@ -12619,7 +12619,11 @@ mod attention_tests {
         let rows = pending_reviews(&pool, "p1");
         assert_eq!(rows.len(), 1);
         let row = &rows[0];
-        assert_eq!(row.execution_id, exec.id, "anchored to a real run");
+        assert_eq!(
+            row.execution_id,
+            Some(exec.id.clone()),
+            "anchored to a real run"
+        );
         assert_eq!(
             row.title,
             "App Master Ascent: 27 ideas are waiting on your triage"

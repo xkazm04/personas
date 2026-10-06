@@ -86,6 +86,7 @@ mod e56_claude_login_profiles;
 mod e57_athena_session_flag;
 mod e58_queue_lanes_and_bounds;
 mod e59_dev_servers;
+mod e60_review_execution_optional;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -168,6 +169,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e57_athena_session_flag::run(conn)?;
     e58_queue_lanes_and_bounds::run(conn)?;
     e59_dev_servers::run(conn)?;
+    e60_review_execution_optional::run(conn)?;
 
     Ok(())
 }

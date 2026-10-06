@@ -81,6 +81,54 @@ pub fn create(
     })
 }
 
+/// A review raised OUTSIDE any run: no execution to hang it off, so none is
+/// invented. The only caller today is the headless App Master's report door
+/// (`POST /dev-tools/reports`), whose persona runs from a terminal and may never
+/// have executed inside the app.
+///
+/// The doors that raise reviews FOR a persona's work (the attention asks, the
+/// App master probation, the Director) still anchor to its latest execution and
+/// keep using [`create`]; a NULL here means "no run raised this", never "we
+/// lost the run".
+#[derive(Debug, Clone, Copy)]
+pub struct UnanchoredReviewInput<'a> {
+    pub persona_id: &'a str,
+    pub title: &'a str,
+    pub description: Option<&'a str>,
+    pub severity: &'a str,
+    pub context_data: Option<&'a str>,
+}
+
+/// Insert a pending review with `execution_id` NULL. See
+/// [`UnanchoredReviewInput`].
+pub fn create_unanchored(
+    pool: &DbPool,
+    input: UnanchoredReviewInput<'_>,
+) -> Result<PersonaManualReview, AppError> {
+    timed_query!("manual_reviews", "manual_reviews::create_unanchored", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO persona_manual_reviews
+             (id, execution_id, persona_id, title, description, severity, status,
+              context_data, created_at, updated_at)
+             VALUES (?1, NULL, ?2, ?3, ?4, ?5, 'pending', ?6, ?7, ?7)",
+            params![
+                id,
+                input.persona_id,
+                input.title,
+                input.description,
+                input.severity,
+                input.context_data,
+                now,
+            ],
+        )?;
+        drop(conn);
+        get_by_id(pool, &id)
+    })
+}
+
 /// Resolve the team step `(assignment_id, step_id)` an execution belongs to, if
 /// any (Phase 1 resume loop). Returns `None` for standalone (non-team) runs.
 pub fn get_team_step_by_execution(
@@ -453,7 +501,7 @@ pub fn update_status(
                             title: learned_title.clone(),
                             content,
                             category: Some("learned".to_string()),
-                            source_execution_id: Some(current.execution_id.clone()),
+                            source_execution_id: current.execution_id.clone(),
                             // MEMORY CONTRACT (4): importance is 1..=5. Approved
                             // director coaching is a deliberate, user-endorsed
                             // signal, so pin it at the top of the band.
@@ -494,7 +542,7 @@ pub fn update_status(
                         title: learned_title.clone(),
                         content,
                         category: Some("learned".to_string()),
-                        source_execution_id: Some(current.execution_id.clone()),
+                        source_execution_id: current.execution_id.clone(),
                         importance: Some(5),
                         tags: Some(Json(vec!["human-review".to_string(), verdict.to_string()])),
                         use_case_id: current.use_case_id.clone(),
@@ -561,7 +609,8 @@ pub fn append_reviewer_note(pool: &DbPool, id: &str, note: &str) -> Result<bool,
 /// only).
 pub struct StaleReviewResolution {
     pub id: String,
-    pub execution_id: String,
+    /// `None` for a review raised outside any run (e60).
+    pub execution_id: Option<String>,
     pub persona_id: String,
     pub use_case_id: Option<String>,
     pub created_at: String,
@@ -925,7 +974,7 @@ mod tests {
         assert_eq!(review.severity, "warning");
         assert_eq!(review.title, "Check output quality");
         assert_eq!(review.persona_id, persona_id);
-        assert_eq!(review.execution_id, execution_id);
+        assert_eq!(review.execution_id, Some(execution_id.clone()));
 
         // Get by id
         let fetched = get_by_id(&pool, &review.id).unwrap();
@@ -1311,5 +1360,63 @@ mod tests {
         let n = delete_all(&pool).unwrap();
         assert_eq!(n, 2);
         assert_eq!(get_pending_count(&pool, None).unwrap(), 0);
+    }
+
+    /// A review raised outside any run (e60) round-trips through every reader
+    /// that used to assume a run: the typed read, the lists, the learning loop
+    /// on resolution and the stale-review sweep.
+    #[test]
+    fn an_unanchored_review_reads_resolves_and_ages_out_with_no_run() {
+        let pool = init_test_db().unwrap();
+        let (persona_id, _execution_id) = setup_persona_and_execution(&pool);
+        let review = create_unanchored(
+            &pool,
+            UnanchoredReviewInput {
+                persona_id: &persona_id,
+                title: "Ship the report?",
+                description: Some("screenshots attached"),
+                severity: "high",
+                context_data: Some(r#"{"reportId":"rep-1"}"#),
+            },
+        )
+        .unwrap();
+        assert_eq!(review.execution_id, None);
+        assert_eq!(review.severity, "high");
+        assert_eq!(review.status, ManualReviewStatus::Pending);
+        assert_eq!(
+            review.context_data.as_deref(),
+            Some(r#"{"reportId":"rep-1"}"#)
+        );
+        assert_eq!(get_by_persona(&pool, &persona_id, None).unwrap().len(), 1);
+        assert_eq!(get_all(&pool, Some("pending")).unwrap().len(), 1);
+
+        // Resolution writes the learned memory with no source run.
+        update_status(&pool, &review.id, ManualReviewStatus::Approved, None).unwrap();
+        assert_eq!(
+            get_by_id(&pool, &review.id).unwrap().status,
+            ManualReviewStatus::Approved
+        );
+
+        // A second one ages out through the sweep, which used to read
+        // `execution_id` as a String and would have failed the whole batch.
+        let stale = create_unanchored(
+            &pool,
+            UnanchoredReviewInput {
+                persona_id: &persona_id,
+                title: "Nobody answered",
+                description: None,
+                severity: "info",
+                context_data: None,
+            },
+        )
+        .unwrap();
+        let resolved = gc_stale_pending(
+            &pool,
+            &(chrono::Utc::now() + chrono::Duration::days(1)).to_rfc3339(),
+        )
+        .unwrap();
+        assert_eq!(resolved.len(), 1);
+        assert_eq!(resolved[0].id, stale.id);
+        assert_eq!(resolved[0].execution_id, None);
     }
 }

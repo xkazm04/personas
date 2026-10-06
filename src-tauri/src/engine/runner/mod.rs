@@ -4244,7 +4244,7 @@ mod prior_feedback_tests {
     fn review(title: &str, status: ManualReviewStatus, notes: Option<&str>) -> PersonaManualReview {
         PersonaManualReview {
             id: format!("rev-{title}"),
-            execution_id: "exec-1".into(),
+            execution_id: Some("exec-1".into()),
             persona_id: "p1".into(),
             title: title.into(),
             description: Some(format!("about {title}")),

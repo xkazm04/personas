@@ -1191,9 +1191,19 @@ pub(crate) fn gc_stale_manual_reviews_inner(
     let resolved = manual_repo::gc_stale_pending(pool, cutoff_iso)?;
     let count = resolved.len() as u32;
     for row in &resolved {
+        // `policy_events` is an execution's audit trail. A review raised
+        // outside any run (e60) has no execution to file the line under, so
+        // its aging-out is recorded on the review alone (the reviewer note).
+        let Some(execution_id) = row.execution_id.as_deref() else {
+            tracing::debug!(
+                review_id = %row.id,
+                "Stale-review GC: no execution behind this review; no policy_events row"
+            );
+            continue;
+        };
         if let Err(e) = crate::db::repos::execution::policy_events::insert(
             pool,
-            &row.execution_id,
+            execution_id,
             &row.persona_id,
             row.use_case_id.as_deref(),
             "review",
@@ -1217,7 +1227,8 @@ pub(crate) fn gc_stale_manual_reviews_inner(
 #[derive(Clone, Serialize)]
 struct ManualReviewResolvedEvent {
     review_id: String,
-    execution_id: String,
+    /// `None` for a review raised outside any run (e60).
+    execution_id: Option<String>,
     persona_id: String,
     status: String,
     /// What the resolution taught the fleet (Phase 2 — visible learning).
@@ -2072,7 +2083,7 @@ pub async fn dispatch_review_action(
                         source_id: review.id.clone(),
                         persona_id: Some(review.persona_id.clone()),
                         persona_name: persona_name.clone(),
-                        execution_id: Some(review.execution_id.clone()),
+                        execution_id: review.execution_id.clone(),
                         severity: "high".to_string(),
                         kind: kind.to_string(),
                         title: format!("Couldn't carry out approved action: {}", review.title),

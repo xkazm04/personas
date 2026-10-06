@@ -244,7 +244,7 @@ pub fn set_reviews(target: usize, rand: &mut impl FnMut() -> u64) {
         let seq = sources().seq.fetch_add(1, Ordering::Relaxed);
         rows.push(PersonaManualReview {
             id: format!("{SYNTH_REVIEW_PREFIX}{seq:08}"),
-            execution_id: format!("loadgen-exec-{seq:08}"),
+            execution_id: Some(format!("loadgen-exec-{seq:08}")),
             persona_id: personas
                 .get((r as usize) % personas.len().max(1))
                 .cloned()
