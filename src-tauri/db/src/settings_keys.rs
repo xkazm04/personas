@@ -1095,6 +1095,15 @@ pub const CLOUD_SYNC_LAST_AT: &str = "cloud_sync_last_at";
 /// Surfaced in the Settings sync panel. Value: a non-negative integer string.
 pub const CLOUD_SYNC_TOTAL_ROWS: &str = "cloud_sync_total_rows";
 
+/// The operator-set name this desktop sends in its cloud heartbeat
+/// (`synced_devices.name`), so a phone can say "Open Personas on *Studio PC*".
+/// Value: free text, at most [`CLOUD_SYNC_DEVICE_NAME_MAX`] characters; absent
+/// means "use the platform label". The hostname is never sent silently.
+pub const CLOUD_SYNC_DEVICE_NAME: &str = "cloud_sync_device_name";
+
+/// Upper bound for [`CLOUD_SYNC_DEVICE_NAME`], in characters.
+pub const CLOUD_SYNC_DEVICE_NAME_MAX: usize = 64;
+
 /// Paired phones ("controllers") of the mobile command plane: a JSON array of
 /// `{controllerId, name, publicKey, createdAt, revoked, revokedAt}`. Public
 /// keys and metadata only, NEVER a secret. Owned by `cloud::trust`.
@@ -1502,6 +1511,7 @@ const ALLOWED_KEYS: &[&str] = &[
     CLOUD_SYNC_DEVICE_ID,
     CLOUD_SYNC_LAST_AT,
     CLOUD_SYNC_TOTAL_ROWS,
+    CLOUD_SYNC_DEVICE_NAME,
     CLOUD_CONTROLLERS,
     APPEARANCE_PREFERENCES,
     APP_LANGUAGE,
@@ -1640,6 +1650,16 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         return match serde_json::from_str::<Vec<serde_json::Value>>(value) {
             Ok(_) => Ok(()),
             Err(e) => Err(format!("value for '{key}' must be a JSON array: {e}")),
+        };
+    }
+    if key == CLOUD_SYNC_DEVICE_NAME {
+        let n = value.trim().chars().count();
+        return if n == 0 || n > CLOUD_SYNC_DEVICE_NAME_MAX {
+            Err(format!(
+                "value for '{key}' must be 1-{CLOUD_SYNC_DEVICE_NAME_MAX} characters"
+            ))
+        } else {
+            Ok(())
         };
     }
     match key {
@@ -2318,9 +2338,9 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | OBSIDIAN_BRAIN_SAVED_VAULTS
         | DEV_TOOLS_CROSS_PROJECT_METADATA => "integrations",
         // Cloud sync (user-facing toggle only; bookkeeping excluded above).
-        // The paired-phone trust list changes by user acts (pair, revoke), so
-        // it is audited beside the toggle.
-        CLOUD_SYNC_ENABLED | CLOUD_CONTROLLERS => "sync",
+        // The paired-phone trust list and the heartbeat name are user acts
+        // (pair, revoke, rename), so they are audited beside the toggle.
+        CLOUD_SYNC_ENABLED | CLOUD_CONTROLLERS | CLOUD_SYNC_DEVICE_NAME => "sync",
         // UI / onboarding state.
         ONBOARDING_QUEST_STATE => "config",
         // Any registered-but-uncategorized key → generic bucket (still audited).

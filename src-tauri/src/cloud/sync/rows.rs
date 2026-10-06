@@ -324,10 +324,13 @@ pub struct SyncedTriggerRow {
 // Device heartbeat row
 // ---------------------------------------------------------------------------
 
-pub fn device_row(device_id: &str) -> SyncedDeviceRow {
+/// The heartbeat row. `name` is the operator-set device name, falling back to
+/// the platform label (PHASE2-SPEC 4.1, M1) - so a phone can say which
+/// computer to open, without the hostname ever being sent.
+pub fn device_row(device_id: &str, name: Option<String>) -> SyncedDeviceRow {
     SyncedDeviceRow {
         device_id: device_id.to_string(),
-        name: None,
+        name: Some(name.unwrap_or_else(|| super::cursor::platform_label().to_string())),
         platform: Some(std::env::consts::OS.to_string()),
         app_version: Some(env!("CARGO_PKG_VERSION").to_string()),
         last_seen_at: Some(chrono::Utc::now().to_rfc3339()),
@@ -1084,6 +1087,35 @@ pub fn fetch_tombstones(pool: &DbPool, cursor_prev: &str) -> Result<Vec<Tombston
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// M1: the heartbeat names the device - the operator's name, else the
+    /// platform label - and never the hostname.
+    #[test]
+    fn heartbeat_sends_the_chosen_name_or_the_platform_label() {
+        assert_eq!(
+            device_row("d", Some("Studio PC".into())).name.as_deref(),
+            Some("Studio PC")
+        );
+        let fallback = device_row("d", None).name.expect("a name");
+        assert_eq!(fallback, super::super::cursor::platform_label());
+        if let Ok(host) = std::env::var("COMPUTERNAME").or_else(|_| std::env::var("HOSTNAME")) {
+            assert_ne!(fallback, host, "the hostname is never sent silently");
+        }
+    }
+
+    #[test]
+    fn device_name_setting_round_trips_and_clears() {
+        let pool = crate::db::init_test_db().expect("db");
+        assert_eq!(super::super::cursor::get_device_name(&pool), None);
+        super::super::cursor::set_device_name(&pool, Some("  Studio PC  ")).expect("set");
+        assert_eq!(
+            super::super::cursor::get_device_name(&pool).as_deref(),
+            Some("Studio PC")
+        );
+        assert!(super::super::cursor::set_device_name(&pool, Some(&"x".repeat(65))).is_err());
+        super::super::cursor::set_device_name(&pool, Some("   ")).expect("clear");
+        assert_eq!(super::super::cursor::get_device_name(&pool), None);
+    }
 
     fn keys(v: &serde_json::Value) -> Vec<String> {
         v.as_object()

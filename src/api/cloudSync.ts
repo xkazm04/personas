@@ -16,6 +16,11 @@ export const setCloudSyncEnabled = (enabled: boolean) =>
  *  status after the pass so the UI can render the result in one round-trip. */
 export const cloudSyncNow = () => invokeWithTimeout<CloudSyncStatus>('cloud_sync_now');
 
+/** Name this desktop in the cloud heartbeat (what the phone shows); null clears
+ *  it back to the operating system's name. Returns the fresh status. */
+export const setCloudSyncDeviceName = (name: string | null) =>
+  invokeWithTimeout<CloudSyncStatus>('cloud_sync_set_device_name', { name });
+
 // -- Paired phones (mobile command plane) ------------------------------------
 
 

@@ -14,6 +14,11 @@ syncing: boolean,
  */
 deviceId: string | null, 
 /**
+ * The operator-set name the heartbeat sends, or null for the platform
+ * label.
+ */
+deviceName: string | null, 
+/**
  * RFC3339 time of the last fully-successful pass.
  */
 lastSyncAt: string | null, 

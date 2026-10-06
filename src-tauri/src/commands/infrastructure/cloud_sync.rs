@@ -46,6 +46,20 @@ pub async fn cloud_sync_now(
     Ok(sync::status(&state.db).await)
 }
 
+/// Name this desktop in the cloud heartbeat (`synced_devices.name`), or clear
+/// the name (`null` / blank) to send the platform label. Wakes the sync loop so
+/// the phone sees it within one pass. Enforced by its `PRIVILEGED_COMMANDS`
+/// entry (an async `#[requires(privileged)]` cannot fail; see below).
+#[tauri::command]
+pub async fn cloud_sync_set_device_name(
+    state: State<'_, Arc<AppState>>,
+    name: Option<String>,
+) -> Result<sync::CloudSyncStatus, AppError> {
+    sync::cursor::set_device_name(&state.db, name.as_deref())?;
+    sync::notify_dirty();
+    Ok(sync::status(&state.db).await)
+}
+
 // ── paired phones (mobile command plane, PHASE2-SPEC 3.2-3.4) ───────────
 
 /// A started pairing, returned once to the Settings dialog. The secret lives

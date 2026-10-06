@@ -127,6 +127,9 @@ pub struct CloudSyncStatus {
     pub syncing: bool,
     /// This device's stable sync id, or null before the first pass.
     pub device_id: Option<String>,
+    /// The operator-set name the heartbeat sends, or null for the platform
+    /// label.
+    pub device_name: Option<String>,
     /// RFC3339 time of the last fully-successful pass.
     pub last_sync_at: Option<String>,
     /// First error from the most recent pass (null when the last pass was clean).
@@ -200,6 +203,7 @@ pub async fn status(pool: &DbPool) -> CloudSyncStatus {
         enabled: cursor::is_enabled(pool),
         syncing: rt.syncing,
         device_id: cursor::peek_device_id(pool),
+        device_name: cursor::get_device_name(pool),
         last_sync_at: cursor::get_last_at(pool),
         last_error: rt.last_error,
         rows_synced_last: rt.rows_synced_last,
@@ -323,7 +327,7 @@ async fn collect_pass(pool: &DbPool, client: &SyncClient, device_id: &str) -> Sy
     let mut tables: Vec<LastTable> = Vec::with_capacity(SYNC_TABLES.len() + 1);
 
     // Device heartbeat (own outcome, kept out of the displayed grid).
-    let dev = rows::device_row(device_id);
+    let dev = rows::device_row(device_id, cursor::get_device_name(pool));
     let heartbeat = match client
         .upsert("synced_devices", std::slice::from_ref(&dev))
         .await

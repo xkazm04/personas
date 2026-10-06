@@ -144,6 +144,7 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     // remote commands run without a click, so reading and revoking it are
     // privileged like the sync toggle beside them.
     "cloud_pair_controller_cancel",
+    "cloud_sync_set_device_name",
     "cloud_controllers_list",
     "cloud_controller_revoke",
     "discover_connector_resources",

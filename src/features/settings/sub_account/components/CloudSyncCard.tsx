@@ -16,6 +16,7 @@ import { getCloudSyncStatus, setCloudSyncEnabled, cloudSyncNow } from '@/api/clo
 import type { CloudSyncStatus } from '@/lib/bindings/CloudSyncStatus';
 import type { TableSyncStatus } from '@/lib/bindings/TableSyncStatus';
 import PairedPhonesPanel from './PairedPhonesPanel';
+import DeviceNameField from './DeviceNameField';
 
 type ConnState = 'off' | 'active' | 'syncing';
 
@@ -220,6 +221,9 @@ export default function CloudSyncCard() {
               </span>
             </Tooltip>
           )}
+
+          {/* The name a phone shows for this desktop (heartbeat) */}
+          <DeviceNameField key={status?.deviceName ?? ''} current={status?.deviceName ?? null} onSaved={setStatus} />
 
           {/* Paired phones: who may command this desktop from personas.so */}
           <PairedPhonesPanel />

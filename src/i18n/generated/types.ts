@@ -12699,6 +12699,12 @@ export type Translations = {
       cloud_phones_revoke_all_title: string;
       cloud_phones_revoke_all_body: string;
       cloud_phones_revoke_failed: string;
+      cloud_sync_device_name_label: string;
+      cloud_sync_device_name_hint: string;
+      cloud_sync_device_name_placeholder: string;
+      cloud_sync_device_name_save: string;
+      cloud_sync_device_name_saved: string;
+      cloud_sync_device_name_failed: string;
       cloud_sync_tables_title: string;
       cloud_sync_show_details: string;
       cloud_sync_hide_details: string;
