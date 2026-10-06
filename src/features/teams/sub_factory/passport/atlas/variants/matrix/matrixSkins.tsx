@@ -69,6 +69,7 @@ export const MATRIX_SKINS: Record<AtlasSkin, MatrixSkin> = {
     countDraw: (below, total) => (
       <UnitStrip
         size="s"
+        rows={2}
         label={W.below(below)}
         segments={[
           { n: below, tone: 'error', glyph: 'solid' },

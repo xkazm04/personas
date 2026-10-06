@@ -86,3 +86,161 @@
  * in `@layer base`, which a parent `color` cannot outrank. Half of the current
  * column's head therefore stayed muted while the other half lit. */
 .atlas-portfolio[data-skin] .atlas-matrix__dim.is-current .atlas-matrix__dim-count { color: var(--primary); }
+
+/* The shared header rule above is a `> *` selector and therefore outranks the
+   base `.atlas-matrix__dim.is-current { border-bottom-color: var(--primary) }`.
+   Re-assert it here rather than weakening the rule that fixed the broken
+   boundary: the current column must keep its lit edge in every look. */
+.atlas-portfolio[data-skin] .atlas-matrix__dim.is-current { border-bottom-color: var(--primary); }
+
+/* ===== PLATE ==============================================================
+ * THESIS: the grid is DRAWN - a hairline per column, one unbroken header rule,
+ * and the crosshair split into three registers the eye can name.
+ *
+ * The baseline stripes every other row (`:nth-child(even)` to `--band-alt`),
+ * which the owner has twice called terrible, and in a MATRIX the stripe is
+ * worse than merely ugly: it draws the horizontal while the reader is hunting
+ * the vertical. Plate removes it and spends that contrast on real rules.
+ *
+ * The baseline's other structural failure is that its three crosshair signals
+ * are the same hue within four percentage points of each other - current
+ * column 5% primary, hovered cell 6%, selected row 9% - so the cell under the
+ * cursor, in the selected row, in the current column is indistinguishable from
+ * any hovered cell anywhere. Plate gives each register a different KIND of
+ * mark: the row keeps a band, the column gets a pair of primary edges, and the
+ * roving cell gets a ring that survives losing DOM focus. */
+.atlas-portfolio[data-skin='plate'] .atlas-matrix__row:nth-child(even) { --band: transparent; }
+.atlas-portfolio[data-skin='plate'] .atlas-matrix__row > * {
+  border-bottom: 1px solid color-mix(in srgb, var(--rule) 55%, transparent);
+}
+/* One hairline on the leading edge of every column, and a heavier one where
+   the identity block (name plus the two scores) meets the dimensions. */
+.atlas-portfolio[data-skin='plate'] .atlas-matrix__cell,
+.atlas-portfolio[data-skin='plate'] .atlas-matrix__dim { box-shadow: inset 1px 0 0 var(--rule); }
+.atlas-portfolio[data-skin='plate'] .atlas-matrix__head > :nth-child(4),
+.atlas-portfolio[data-skin='plate'] .atlas-matrix__row > :nth-child(4) { box-shadow: inset 2px 0 0 var(--rule); }
+/* Register 2: the column, as two primary edges rather than a fourth tint. */
+.atlas-portfolio[data-skin='plate'] .atlas-matrix__cell.is-column,
+.atlas-portfolio[data-skin='plate'] .atlas-matrix__dim.is-current {
+  background: color-mix(in srgb, var(--primary) 4%, var(--band));
+  box-shadow: inset 1px 0 0 var(--primary), inset -1px 0 0 var(--primary);
+}
+/* Register 3: the roving cell. The baseline marks it ONLY with
+   `:focus-visible`, so after the drawer closes the keyboard position can be
+   invisible while the arrows still move it. */
+.atlas-portfolio[data-skin='plate'] .atlas-matrix__row.is-selected .atlas-matrix__cell.is-column {
+  box-shadow: inset 0 0 0 2px var(--primary);
+}
+.atlas-portfolio[data-skin='plate'] .atlas-matrix__cell:hover { background: var(--band-hover); }
+.atlas-portfolio[data-skin='plate'] .atlas-matrix__score { color: var(--foreground); }
+
+/* ===== GAZETTE ============================================================
+ * THESIS: no fill anywhere - a 40px reading line, a tracked eyebrow over every
+ * column, and rhythm plus rule carrying each separation on their own.
+ *
+ * `typo-eyebrow` is the app's canonical section head, and a column head is the
+ * head of its column. The baseline wears `typo-label`, which is right for a
+ * table (UnifiedTable's heads are `typo-label text-foreground`) but leaves the
+ * axis name, the two score names and the twelve dimension names at one voice,
+ * one size and one weight, separated by `k-quiet` colour alone. The eyebrow's
+ * tracking and 700 give the head its own register, and that is what lets every
+ * band go away: with the heads loud, the body does not need a stripe to say
+ * where the table begins.
+ *
+ * Gate 3b, one emphasis per row: the project name is it, and the selected line
+ * is a lit rule plus the spine rather than a wash. */
+.atlas-portfolio[data-skin='gazette'] .atlas-matrix { --name: 256px; --score: 56px; }
+.atlas-portfolio[data-skin='gazette'] .atlas-matrix__head,
+.atlas-portfolio[data-skin='gazette'] .atlas-matrix__row {
+  grid-template-columns: var(--name) var(--score) var(--score) repeat(var(--cols), minmax(64px, 1fr));
+}
+.atlas-portfolio[data-skin='gazette'] .atlas-matrix__head { min-height: 64px; }
+.atlas-portfolio[data-skin='gazette'] .atlas-matrix__row { height: 40px; }
+.atlas-portfolio[data-skin='gazette'] .atlas-matrix__row:nth-child(even),
+.atlas-portfolio[data-skin='gazette'] .atlas-matrix__row:hover,
+.atlas-portfolio[data-skin='gazette'] .atlas-matrix__row.is-selected { --band: transparent; }
+.atlas-portfolio[data-skin='gazette'] .atlas-matrix__row > * {
+  border-bottom: 1px solid color-mix(in srgb, var(--rule) 70%, transparent);
+}
+.atlas-portfolio[data-skin='gazette'] .atlas-matrix__row:hover > * { border-bottom-color: var(--quiet); }
+.atlas-portfolio[data-skin='gazette'] .atlas-matrix__row.is-selected > * {
+  border-bottom-color: var(--primary); box-shadow: inset 0 1px 0 var(--primary);
+}
+/* The eyebrow carries the head on its own line-height; the count below it is a
+   bare numeral, and only a non-zero one is drawn, so a healthy column is
+   silent instead of saying "0 below" twelve times across the head. */
+.atlas-portfolio[data-skin='gazette'] .atlas-matrix__dim { gap: 4px; }
+.atlas-portfolio[data-skin='gazette'] .atlas-matrix__dim-count {
+  color: var(--status-error); font-variant-numeric: tabular-nums lining-nums;
+}
+.atlas-portfolio[data-skin='gazette'] .atlas-matrix__dim.is-current .atlas-matrix__dim-count { color: var(--primary); }
+/* A 12px mark on a 40px line: with no band behind it the mark is the only
+   thing holding the column, so it is drawn a step larger and given a backing
+   ring that keeps it legible where it crosses a row rule. */
+.atlas-portfolio[data-skin='gazette'] .atlas-matrix__cell .atlas-ink .k-dot {
+  width: 12px; height: 12px; box-shadow: inset 0 0 0 1.5px var(--tone), 0 0 0 2px var(--background);
+}
+.atlas-portfolio[data-skin='gazette'] .atlas-matrix__cell .atlas-ink[data-ink='bad'] .k-dot {
+  box-shadow: 0 0 0 2px var(--background);
+}
+.atlas-portfolio[data-skin='gazette'] .atlas-matrix__cell .atlas-ink[data-ink='info'] .k-dot {
+  height: 3px; box-shadow: 0 0 0 2px var(--background);
+}
+.atlas-portfolio[data-skin='gazette'] .atlas-matrix__cell.is-column {
+  background: color-mix(in srgb, var(--primary) 6%, transparent);
+}
+.atlas-portfolio[data-skin='gazette'] .atlas-matrix__row.is-selected .atlas-matrix__cell.is-column {
+  box-shadow: inset 0 0 0 2px var(--primary);
+}
+
+/* ===== CHART ==============================================================
+ * THESIS: the cell is a plot area - every column carries a baseline the mark
+ * sits on, and the head's failure count becomes the countable bar it already
+ * was in prose.
+ *
+ * "3 below" under a column head is a number the reader must convert into a
+ * proportion before it means anything. The kit's UnitStrip draws that same
+ * count as N error units over the remaining empty ones, so the head answers
+ * "how much of this column is failing" at a glance and still answers "exactly
+ * how many" to anyone who counts. Same information, drawn.
+ *
+ * The centre tick is the other half of the thesis: in the baseline an
+ * `unknown` cell (a dashed ring on a transparent band) is nearly a hole in the
+ * grid, and a run of them breaks the column's vertical read. A tick per cell
+ * makes every position a plotted point whether or not it has a value. */
+.atlas-portfolio[data-skin='chart'] .atlas-matrix { --name: 240px; }
+.atlas-portfolio[data-skin='chart'] .atlas-matrix__head { min-height: 64px; }
+.atlas-portfolio[data-skin='chart'] .atlas-matrix__row:nth-child(even) { --band: transparent; }
+.atlas-portfolio[data-skin='chart'] .atlas-matrix__cell { position: relative; }
+.atlas-portfolio[data-skin='chart'] .atlas-matrix__cell::before {
+  content: ''; position: absolute; left: calc(50% - 0.5px); top: 0; bottom: 0; width: 1px;
+  background: color-mix(in srgb, var(--rule) 70%, transparent); pointer-events: none;
+}
+.atlas-portfolio[data-skin='chart'] .atlas-matrix__cell .atlas-ink { position: relative; }
+/* The current column is a wash between two lit guides. */
+.atlas-portfolio[data-skin='chart'] .atlas-matrix__cell.is-column,
+.atlas-portfolio[data-skin='chart'] .atlas-matrix__dim.is-current {
+  background: color-mix(in srgb, var(--primary) 8%, var(--band));
+}
+.atlas-portfolio[data-skin='chart'] .atlas-matrix__cell.is-column::before { background: var(--primary); }
+.atlas-portfolio[data-skin='chart'] .atlas-matrix__row.is-selected .atlas-matrix__cell.is-column {
+  box-shadow: inset 0 0 0 2px var(--primary);
+}
+/* A healthy grid is quiet: `good` recedes to a half-strength ring so the only
+   loud ink in the plot is a failure. */
+.atlas-portfolio[data-skin='chart'] .atlas-matrix__cell .atlas-ink[data-ink='good'] .k-dot {
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--tone) 55%, transparent);
+}
+/* The head's strip: two rows of narrow units, so a twenty-project portfolio
+   still fits inside the column it describes. */
+.atlas-portfolio[data-skin='chart'] .atlas-matrix__dim .k-units {
+  --uw: 3px; --uh: 4px; --ug: 1px; max-width: 100%;
+}
+/* The three numeric columns read against a hairline instead of against air,
+   and the two headline scores stop being quieter than the gaps count. */
+.atlas-portfolio[data-skin='chart'] .atlas-matrix__gaps { width: 32px; }
+.atlas-portfolio[data-skin='chart'] .atlas-matrix__score {
+  box-shadow: inset 1px 0 0 var(--rule); color: var(--foreground);
+}
+.atlas-portfolio[data-skin='chart'] .atlas-matrix__head > :nth-child(2),
+.atlas-portfolio[data-skin='chart'] .atlas-matrix__head > :nth-child(3) { box-shadow: inset 1px 0 0 var(--rule); }
