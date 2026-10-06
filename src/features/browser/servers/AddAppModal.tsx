@@ -11,7 +11,6 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Search, Sparkles } from 'lucide-react';
-import { useShallow } from 'zustand/react/shallow';
 
 import { useContextScanBackground } from '@/features/plugins/dev-tools/hooks/useContextScanBackground';
 import { ProjectModal } from '@/features/plugins/dev-tools/sub_projects/ProjectModal';
@@ -34,7 +33,13 @@ import { useAddAppActions } from './useAddAppActions';
 export default function AddAppModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { t } = useTranslation();
   const s = t.browser.servers;
-  const projects = useSystemStore(useShallow((st) => st.projects));
+  // No `useShallow` here. It wrapped a bare property access, so it constructed
+  // nothing and the shallow compare could only ever be a workaround for
+  // writer-side identity churn - and `projects` is refetched over IPC, so every
+  // element is a fresh object and the compare can never match anyway
+  // (`shallow-wrapped-property-selector`). A plain reference selector is what
+  // zustand wants for a stored array.
+  const projects = useSystemStore((st) => st.projects);
   const fetchProjects = useSystemStore((st) => st.fetchProjects);
   const { workspaces } = useWorkspaces();
   const { byProject } = useDevServers();
