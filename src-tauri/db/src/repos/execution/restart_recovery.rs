@@ -299,16 +299,22 @@ pub fn reconcile_after_exit(
 /// error message is deliberately left alone (a row that resumes and succeeds
 /// should carry no explanation of a failure that never happened).
 fn mark_resume_pending(conn: &rusqlite::Connection, id: &str) -> Result<bool, AppError> {
-    let mut stmt = conn.prepare_cached(
-        "UPDATE persona_executions SET
+    timed_query!(
+        "persona_executions",
+        "persona_executions::mark_resume_pending",
+        {
+            let mut stmt = conn.prepare_cached(
+                "UPDATE persona_executions SET
             status = 'queued',
             recovery_state = ?2,
             restart_count = restart_count + 1,
             claimed_by_instance = NULL,
             claim_expires_at = NULL
          WHERE id = ?1 AND status = 'running'",
-    )?;
-    Ok(stmt.execute(params![id, RECOVERY_RESUME_PENDING])? > 0)
+            )?;
+            Ok(stmt.execute(params![id, RECOVERY_RESUME_PENDING])? > 0)
+        }
+    )
 }
 
 /// `incomplete`, not `failed`: neither a success nor a failure anyone
