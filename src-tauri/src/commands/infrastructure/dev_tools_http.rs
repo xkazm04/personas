@@ -96,6 +96,16 @@
 //!   POST /goals/{goal_id}/items/{item_id}   → { done } — tick a checklist item and recompute progress; a
 //!                                             verification gate is refused (its test closes it)
 //!
+//! Headless App Master doors (`headless_doors`) — the app-owned writes an
+//! `/appmaster` outbox replays. JSON is camelCase; an absent optional key means
+//! "not set". 400 = malformed, 404 = an id or name resolves to nothing, 409 =
+//! things exist but do not belong together:
+//!   POST /milestones                        → { projectId, name, goal?, description?, targetDate? } → { milestoneId }
+//!   POST /goals                             → { projectId, title, description?, targetDate?, parentGoalId?,
+//!                                               milestoneId? } → { goalId }. With `milestoneId` the goal is
+//!                                             also bound into that milestone (`goal`, bucket `core`); a
+//!                                             milestone of another project is a 409 and writes nothing.
+//!
 //! The last four exist for the `project-populate` skill, which conducts the
 //! app's own scan lanes from a terminal: it gates each lane on freshness, then
 //! walks the KPI proposals through the operator in waves. Everything it writes
@@ -120,6 +130,7 @@ use crate::commands::infrastructure::context_generation::{
     confine_to_project_root, launch_context_scan, list_scans_json, scan_status_json,
 };
 use crate::commands::infrastructure::context_map_export::write_context_map_artifacts;
+use crate::commands::infrastructure::headless_doors;
 use crate::commands::infrastructure::headless_master;
 use crate::commands::infrastructure::kpi_scan::{
     kpi_scan_prompt, kpi_scan_status_json, launch_kpi_scan,
@@ -196,6 +207,9 @@ pub fn router(app: AppHandle) -> Router {
         .route("/goals/{project_id}", get(list_goals_route))
         .route("/goals/{goal_id}/amend", post(amend_goal_route))
         .route("/goals/{goal_id}/items/{item_id}", post(goal_item_route))
+        // Headless App Master doors (see the module header).
+        .route("/milestones", post(create_milestone_route))
+        .route("/goals", post(create_goal_route))
         .with_state(DevToolsHttp { app })
 }
 
@@ -1804,6 +1818,67 @@ async fn measure_kpi_route(
     let pool = db(&s)?;
     writeback("measure kpi", move || {
         app_master_writeback::record_kpi_reading(&pool, &kpi_id, &b)
+    })
+    .await
+}
+
+// ============================================================================
+// Headless App Master doors — the writes an `/appmaster` outbox replays
+// ============================================================================
+//
+// Same blocking shape as the write-back routes above, with one more status:
+// `headless_doors::DoorError` carries a 409 the shared `status_for` cannot
+// express (a milestone of another project, an ambiguous workspace name).
+
+/// The status a [`headless_doors::DoorError`] deserves.
+fn door_status(e: headless_doors::DoorError) -> (StatusCode, String) {
+    use headless_doors::DoorError as D;
+    let code = match &e {
+        D::BadRequest(_) => StatusCode::BAD_REQUEST,
+        D::NotFound(_) => StatusCode::NOT_FOUND,
+        D::Conflict(_) => StatusCode::CONFLICT,
+        D::Unprocessable(_) => StatusCode::UNPROCESSABLE_ENTITY,
+        D::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
+    };
+    (code, e.message().to_string())
+}
+
+/// Run one blocking door and map both failure shapes.
+async fn door<T, F>(op_name: &'static str, f: F) -> Result<Json<T>, (StatusCode, String)>
+where
+    T: Send + 'static,
+    F: FnOnce() -> Result<T, headless_doors::DoorError> + Send + 'static,
+{
+    tokio::task::spawn_blocking(f)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("{op_name}: task failed: {e}"),
+            )
+        })?
+        .map(Json)
+        .map_err(door_status)
+}
+
+async fn create_milestone_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<headless_doors::CreateMilestoneInput>,
+) -> Result<Json<headless_doors::MilestoneCreated>, (StatusCode, String)> {
+    let pool = db(&s)?;
+    door("create milestone", move || {
+        headless_doors::create_milestone(&pool, &b)
+    })
+    .await
+}
+
+async fn create_goal_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<headless_doors::CreateGoalInput>,
+) -> Result<Json<headless_doors::GoalCreated>, (StatusCode, String)> {
+    let pool = db(&s)?;
+    door("create goal", move || {
+        headless_doors::create_goal(&pool, &b)
     })
     .await
 }
