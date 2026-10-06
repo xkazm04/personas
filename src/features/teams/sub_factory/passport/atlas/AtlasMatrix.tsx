@@ -60,18 +60,18 @@ export function AtlasMatrix({ projects, rows, names, at, onMove, onOpenCell, onO
       data-testid="atlas-matrix"
     >
       <div className="atlas-matrix__head" role="row">
-        <span role="columnheader" className="atlas-matrix__name-head typo-label k-regular">
+        <span role="columnheader" className="atlas-matrix__name-head typo-label">
           {W.repository} <span className="k-quiet">{projects.length}</span>
           <span className="atlas-matrix__gaps-head k-quiet">{W.gaps}</span>
         </span>
-        <span role="columnheader" className="atlas-matrix__score-head typo-label k-regular k-quiet">{W.auto}</span>
-        <span role="columnheader" className="atlas-matrix__score-head typo-label k-regular k-quiet">{W.prod}</span>
+        <span role="columnheader" className="atlas-matrix__score-head typo-label k-quiet">{W.auto}</span>
+        <span role="columnheader" className="atlas-matrix__score-head typo-label k-quiet">{W.prod}</span>
         {rows.map((r, di) => (
-          <span key={r.key} role="columnheader" className={`atlas-matrix__dim typo-label k-regular${di === at.di ? ' is-current' : ''}`}>
+          <span key={r.key} role="columnheader" className={`atlas-matrix__dim typo-label${di === at.di ? ' is-current' : ''}`}>
             <Hint content={r.info} placement="bottom">
               <span className="atlas-matrix__dim-label">{SHORT_LABEL[r.key] ?? r.label}</span>
             </Hint>
-            <span className="atlas-matrix__dim-count k-quiet">{W.below(projects.filter((p) => inkOf(p, r) === 'bad').length)}</span>
+            <span className="atlas-matrix__dim-count typo-caption">{W.below(projects.filter((p) => inkOf(p, r) === 'bad').length)}</span>
           </span>
         ))}
       </div>
@@ -84,13 +84,13 @@ export function AtlasMatrix({ projects, rows, names, at, onMove, onOpenCell, onO
             <span role="rowheader" className="atlas-matrix__project">
               <InkDot ink={worst} />
               <Button variant="ghost" size="sm" className="atlas-matrix__name" onClick={() => onOpenProject(p.identity.slug)} data-testid={`atlas-open-${p.identity.slug}`}>
-                <span className="k-ellipsis">{nm?.name ?? p.identity.name}</span>
+                <span className="k-ellipsis k-strong">{nm?.name ?? p.identity.name}</span>
                 {nm?.qualifier && <span className="k-quiet k-regular">{nm.qualifier}</span>}
               </Button>
-              <span className="atlas-matrix__gaps typo-data k-regular k-quiet">{p.repoUnreadable ? '?' : countInk(p, 'bad')}</span>
+              <span className="atlas-matrix__gaps typo-caption tabular-nums">{p.repoUnreadable ? '?' : countInk(p, 'bad')}</span>
             </span>
-            <span role="gridcell" className="atlas-matrix__score typo-data k-regular">{p.repoUnreadable ? '-' : p.automationReadiness.score}</span>
-            <span role="gridcell" className="atlas-matrix__score typo-data k-regular">{p.repoUnreadable ? '-' : p.productionReadiness.score}</span>
+            <span role="gridcell" className="atlas-matrix__score typo-caption tabular-nums">{p.repoUnreadable ? '-' : p.automationReadiness.score}</span>
+            <span role="gridcell" className="atlas-matrix__score typo-caption tabular-nums">{p.repoUnreadable ? '-' : p.productionReadiness.score}</span>
             {rows.map((r, di) => {
               const ink = inkOf(p, r);
               const here = pi === at.pi && di === at.di;

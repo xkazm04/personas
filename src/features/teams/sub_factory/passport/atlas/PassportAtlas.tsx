@@ -89,8 +89,22 @@ export function PassportAtlas({ passports, onOpen, rescanningProject, onRescanPr
     return () => window.removeEventListener('keydown', onKey);
   });
 
+  // The Atlas sits at the app's REAL type tier, not one step down.
+  //
+  // It was `KitHost compact`, i.e. `data-type-density="compact"`, measured at
+  // 11.1-12.5% smaller per token than the same token outside the kit
+  // (`scripts/style/kit-type-probe/`). Doctrine 6c reserves that tier for dense
+  // tool lists, and this host wraps BOTH atlas layers: the portfolio (a
+  // diagnostic) and the passport, whose own header calls it "a document with
+  // room". Both are the cases the doctrine names.
+  //
+  // It also put the Atlas on a different ladder from the page it hangs under:
+  // ProjectsLayer's head dropped `compact` for exactly this reason, so the head
+  // and the body of one column were reading two sizes apart. Density that the
+  // matrix genuinely wants is a ROW HEIGHT question and lives in atlas.css; it
+  // is not a reason to shrink the type of the passport document beside it.
   return (
-    <KitHost compact testId="passport-atlas">
+    <KitHost testId="passport-atlas">
       <Surface dense>
         {project ? (
           <AtlasPassport

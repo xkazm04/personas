@@ -49,7 +49,10 @@
 .atlas-matrix__project { display: flex; align-items: center; gap: 8px; padding: 0 10px 0 16px; }
 .atlas-matrix__name.k-btn, .atlas-matrix__name {
   height: 100%; min-width: 0; flex: 1; justify-content: flex-start; gap: 6px; padding: 0 4px;
-  background: transparent; border: 0; font-weight: 600; white-space: nowrap;
+  /* Weight is the kit's (.k-strong on the name span), not repainted here: a
+     feature stylesheet that pins a font-weight owns a type decision the token
+     ladder already makes. */
+  background: transparent; border: 0; white-space: nowrap;
 }
 .atlas-matrix__name:hover { color: var(--primary); }
 .atlas-matrix__gaps { width: 22px; text-align: right; flex: none; }
@@ -60,7 +63,8 @@
 .atlas-matrix__cell:focus-visible { outline: 2px solid var(--primary); }
 
 .atlas-readout { display: flex; align-items: center; gap: 10px; min-height: 36px; background: var(--band-alt); padding-right: 12px; }
-.atlas-readout strong { font-weight: 600; white-space: nowrap; }
+/* Weight comes from .k-strong on the element; this rule is layout only. */
+.atlas-readout strong { white-space: nowrap; }
 .atlas-readout__keys { margin-left: auto; white-space: nowrap; }
 
 /* ---- one dimension (drawer and passport) ---- */

@@ -57,7 +57,7 @@ export function AtlasPortfolio({ all, projects, rows, sharedSetup, names, view, 
 
       {projects.length === 0 ? (
         <div className="atlas-empty typo-body">
-          <strong>{W.noMatch}</strong> <span className="k-quiet">{W.noMatchHint}</span>
+          <strong className="k-strong">{W.noMatch}</strong> <span className="k-quiet">{W.noMatchHint}</span>
           <KitButton onClick={() => onView({ query: '' })}>{W.clearSearch}</KitButton>
         </div>
       ) : (
@@ -68,7 +68,7 @@ export function AtlasPortfolio({ all, projects, rows, sharedSetup, names, view, 
         {current && row ? (
           <>
             <InkDot ink={inkOf(current, row)} />
-            <strong>{names.get(current.identity.slug)?.name ?? current.identity.name}</strong>
+            <strong className="k-strong">{names.get(current.identity.slug)?.name ?? current.identity.name}</strong>
             <span className="k-quiet">/</span>
             <span>{row.label}</span>
             <span className="k-quiet k-ellipsis">{inkOf(current, row) === 'unknown' ? INK_MARK.unknown.label : valueText(row.get(current))}</span>

@@ -63,7 +63,7 @@ export function AtlasPassport({ p, name, qualifier, doors, actions, onBack, onSt
       >
         {unknown && (
           <div className="atlas-notice typo-body" role="note">
-            <strong>{W.unreadable}</strong> {W.unreadableNote}
+            <strong className="k-strong">{W.unreadable}</strong> {W.unreadableNote}
           </div>
         )}
         <div className="atlas-actions-row">{actions}</div>
