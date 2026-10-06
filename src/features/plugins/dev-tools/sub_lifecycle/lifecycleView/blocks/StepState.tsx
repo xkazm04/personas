@@ -17,7 +17,7 @@ import { bindingKindLabel, bindingStateLabel, stepGlyph, stepLabel } from '../..
 import { STATE_CHIP, STATE_SHAPE, STATE_TEXT } from '../../journey/journeyStyles';
 import { useLifecycleViewModel } from '../context';
 
-export function StepState({ dense = false }: { dense?: boolean }) {
+export function StepState() {
   const { dl, tx, selected } = useLifecycleViewModel();
   const label = selected ? stepLabel(dl, selected.id, selected.label) : null;
 
@@ -51,7 +51,7 @@ export function StepState({ dense = false }: { dense?: boolean }) {
         </span>
       </header>
 
-      <div className={dense ? 'space-y-3' : 'grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-x-6 gap-y-3 items-start'}>
+      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-x-6 gap-y-3 items-start">
         <section className="min-w-0 space-y-1">
           <h4 className="typo-card-label text-foreground">{dl.lc_detail_rule}</h4>
           <p className="typo-body text-foreground leading-relaxed">{selected.rule}</p>

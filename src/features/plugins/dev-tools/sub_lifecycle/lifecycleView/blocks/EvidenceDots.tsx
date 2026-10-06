@@ -1,6 +1,6 @@
-// The up-to-eight outcome dots drawn under a step, newest LAST. Lifted out of
-// the retired `journey/JourneyTrack` unchanged so all three timeline shapes
-// (rail, stepper, strip) draw the same recent history.
+// The up-to-eight outcome dots drawn under a step in the rail, newest LAST.
+// Lifted out of the retired `journey/JourneyTrack`; its own file because the
+// dot row is the rail node's third line and every visual variant draws it.
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { outcomeLabel } from '../../journey/journeyLabels';

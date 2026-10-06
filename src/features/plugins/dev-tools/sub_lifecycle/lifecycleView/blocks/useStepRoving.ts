@@ -1,4 +1,4 @@
-// One tab stop per timeline shape, arrows walking the journey. Selection moves
+// One tab stop for the whole rail, arrows walking the journey. Selection moves
 // WITH focus, which is the behaviour that makes the inline state region worth
 // having: holding an arrow key reads the whole practice without a modal opening
 // and closing eleven times.

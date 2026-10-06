@@ -1,15 +1,15 @@
 // The binding-state legend: shape plus colour per state, and the one sentence
-// that explains the evidence dots. Its own file because two of the three
-// layouts put it somewhere different and the third hides it.
+// that explains the evidence dots. Its own file because the legend is the key
+// to the rail's encoding and each visual variant renders that key differently.
 import { bindingStateLabel } from '../../journey/journeyLabels';
 import { LEGEND_STATES, STATE_CHIP } from '../../journey/journeyStyles';
 import { useLifecycleViewModel } from '../context';
 
-export function StateLegend({ align = 'center' }: { align?: 'center' | 'start' }) {
+export function StateLegend() {
   const { dl } = useLifecycleViewModel();
   return (
     <div
-      className={`flex flex-wrap items-center gap-x-4 gap-y-2 ${align === 'center' ? 'justify-center' : ''}`}
+      className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2"
       data-testid="lc-legend"
     >
       {LEGEND_STATES.map((s) => (

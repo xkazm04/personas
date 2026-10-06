@@ -4,9 +4,9 @@
  * state in a reserved region directly beneath it. Nothing moves when you pick a
  * node; the page reads top-down, journey then state then evidence.
  *
- * This is the variant to compare the other two against: the rail, the legend
- * and the weakest-step line are the surface as it shipped. The one change is
- * that a node no longer opens a drawer.
+ * The arrangement the owner kept. The rail, the legend and the weakest-step
+ * line are the surface as it shipped; the one change from the original is that
+ * a node no longer opens a drawer.
  */
 import { JourneyGhost } from '../../journey/JourneyGhost';
 import { useLifecycleViewModel } from '../context';
