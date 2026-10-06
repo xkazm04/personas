@@ -21,6 +21,10 @@ import { Button } from '@/features/shared/components/buttons';
 import { DECISION_CHIPS, type DecisionItem, type HubChip } from '../model/decisionModel';
 import type { DirectionId, HubInitial, PrototypeDirection, PrototypeVerdict } from './directionContract';
 import { FIXTURE_ITEMS, FIXTURE_READY, fixtureCounts } from './fixtures';
+import { compareDecision } from '../model/decisionOrder';
+
+/** The contract hands directions a roster in `compareDecision` order. */
+const SORTED_FIXTURES = [...FIXTURE_ITEMS].sort(compareDecision);
 
 const DIRECTIONS: Record<DirectionId, () => Promise<{ default: PrototypeDirection }>> = {
   p1: () => import('./directions/p1'),
@@ -72,7 +76,7 @@ export default function DecisionPrototypeLab() {
   const initial = useMemo(readKit, []);
   const [direction, setDirection] = useState<DirectionId>(initial.direction);
   const [entry, setEntry] = useState<Entry>(initial.entry);
-  const [items, setItems] = useState<DecisionItem[]>(FIXTURE_ITEMS);
+  const [items, setItems] = useState<DecisionItem[]>(SORTED_FIXTURES);
   const [ready, setReady] = useState<DecisionItem[]>(FIXTURE_READY);
   const [failChip, setFailChip] = useState(false);
   const [run, setRun] = useState(0);
@@ -95,7 +99,7 @@ export default function DecisionPrototypeLab() {
   };
 
   const reset = () => {
-    setItems(FIXTURE_ITEMS);
+    setItems(SORTED_FIXTURES);
     setReady(FIXTURE_READY);
     setRun((r) => r + 1);
   };

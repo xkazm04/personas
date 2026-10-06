@@ -153,6 +153,7 @@ export const FIXTURE_ITEMS: DecisionItem[] = [
     ],
     verdictLabels: SPINE,
     severity: 'high',
+    payload: { assignmentId: 'asg-growth-4', executionId: 'exec-81' },
   },
   {
     id: 'incident:i1',

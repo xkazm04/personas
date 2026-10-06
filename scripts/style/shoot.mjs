@@ -120,7 +120,12 @@ async function shootOne(browser, baseUrl, { moduleId, theme, size, tape, settle,
   const context = await browser.newContext({ viewport: size, deviceScaleFactor: 1, locale: 'en-US', timezoneId: tz });
   const page = await context.newPage();
   const consoleErrors = [];
-  page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text().slice(0, 2000)); });
+  // A script-free sandboxed srcdoc frame (HtmlDocumentFrame) refuses the
+  // harness's OWN init script, which Playwright injects into every frame. That
+  // refusal is the sandbox working, not the page failing; anything else in an
+  // about:srcdoc frame still counts.
+  const harnessNoise = (text) => /^Blocked script execution in 'about:srcdoc'/.test(text);
+  page.on('console', (m) => { if (m.type() === 'error' && !harnessNoise(m.text())) consoleErrors.push(m.text().slice(0, 2000)); });
   page.on('pageerror', (e) => consoleErrors.push(`pageerror: ${String(e?.message ?? e).slice(0, 2000)}`));
   await page.clock.setFixedTime(new Date(tape.recordedAt));
   await page.addInitScript((t) => { window.__PAGE_HARNESS_TAPE__ = t; }, tape);
