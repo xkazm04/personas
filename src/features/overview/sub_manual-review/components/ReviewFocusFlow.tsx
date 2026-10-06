@@ -15,6 +15,7 @@ import { IllustrationEmptyState } from '@/features/overview/shared/emptyStatePro
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { ContextDataPreview } from './ReviewListItem';
+import { ReviewReportLink } from './ReviewReportLink';
 import { parseSuggestedActions, stripPersonaPrefix } from '../libs/reviewHelpers';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import {
@@ -506,6 +507,9 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
 
                   {/* Title */}
                   <h2 className="typo-heading-lg text-foreground">{stripPersonaPrefix(current!.title, current!.persona_name)}</h2>
+
+                  {/* Approval raised for a report: the report holds the evidence. */}
+                  <ReviewReportLink contextData={contextData} />
 
                   {/* Description */}
                   {current!.description && (

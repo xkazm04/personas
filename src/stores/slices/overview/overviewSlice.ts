@@ -106,9 +106,17 @@ export interface OverviewSlice {
    *  `pendingExecutionFocus` above keeps. */
   pendingTimelineScope: { teamId: string; personaId: string } | null;
 
+  /** Cross-component focus signal for opening one report's detail modal on
+   *  Overview > Reports. An Approvals row linked to a report (`context_data.reportId`)
+   *  parks the id here and routes to the Reports tab; `ReportList` consumes it
+   *  (`usePendingReportFocus`) and clears it. Transient, never persisted - the
+   *  same contract `pendingExecutionFocus` above keeps. */
+  pendingReportFocus: string | null;
+
   // Actions
   setOverviewTab: (tab: OverviewTab) => void;
   setPendingExecutionFocus: (executionId: string | null) => void;
+  setPendingReportFocus: (reportId: string | null) => void;
   setPendingTimelineScope: (scope: { teamId: string; personaId: string } | null) => void;
   setPipelineError: (source: string, error: string | null) => void;
   /** Apply a whole wave of pipeline fetch outcomes in a single store write —
@@ -261,6 +269,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   pipelineFetchedAt: {},
   pendingExecutionFocus: null,
   pendingTimelineScope: null,
+  pendingReportFocus: null,
 
   // Note: do NOT wrap this in startTransition. Sidebar nav clicks must be
   // a synchronous, deterministic state update — the OverviewPage uses
@@ -269,6 +278,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   // the content never swaps even though the sidebar highlight updated.
   setOverviewTab: (tab) => set({ overviewTab: tab }),
   setPendingExecutionFocus: (executionId) => set({ pendingExecutionFocus: executionId }),
+  setPendingReportFocus: (reportId) => set({ pendingReportFocus: reportId }),
   setPendingTimelineScope: (scope) => set({ pendingTimelineScope: scope }),
   setPipelineError: (source, error) => set((prev) => {
     const next = { ...prev.pipelineErrors };
