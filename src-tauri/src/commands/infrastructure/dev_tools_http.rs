@@ -96,6 +96,12 @@
 //!   POST /goals/{goal_id}/items/{item_id}   → { done } — tick a checklist item and recompute progress; a
 //!                                             verification gate is refused (its test closes it)
 //!
+//! The last four exist for the `project-populate` skill, which conducts the
+//! app's own scan lanes from a terminal: it gates each lane on freshness, then
+//! walks the KPI proposals through the operator in waves. Everything it writes
+//! lands through the same repo functions the UI uses, so a triaged proposal is
+//! indistinguishable from one accepted on the Factory Overview cards.
+//!
 //! Headless App Master doors (`headless_doors`) — the app-owned writes an
 //! `/appmaster` outbox replays. JSON is camelCase; an absent optional key means
 //! "not set". 400 = malformed, 404 = an id or name resolves to nothing, 409 =
@@ -105,12 +111,10 @@
 //!                                               milestoneId? } → { goalId }. With `milestoneId` the goal is
 //!                                             also bound into that milestone (`goal`, bucket `core`); a
 //!                                             milestone of another project is a 409 and writes nothing.
-//!
-//! The last four exist for the `project-populate` skill, which conducts the
-//! app's own scan lanes from a terminal: it gates each lane on freshness, then
-//! walks the KPI proposals through the operator in waves. Everything it writes
-//! lands through the same repo functions the UI uses, so a triaged proposal is
-//! indistinguishable from one accepted on the Factory Overview cards.
+//!   POST /projects/{project_id}/workspace   → { workspaceId? | workspaceName? } → { workspaceId } (null when
+//!                                             cleared). Exactly one key assigns, neither clears; a name must
+//!                                             match an existing workspace exactly (404, never created; 409
+//!                                             when two share it). A blank value is a 400, not a clear.
 
 use std::sync::Arc;
 
@@ -210,6 +214,10 @@ pub fn router(app: AppHandle) -> Router {
         // Headless App Master doors (see the module header).
         .route("/milestones", post(create_milestone_route))
         .route("/goals", post(create_goal_route))
+        .route(
+            "/projects/{project_id}/workspace",
+            post(assign_workspace_route),
+        )
         .with_state(DevToolsHttp { app })
 }
 
@@ -1879,6 +1887,18 @@ async fn create_goal_route(
     let pool = db(&s)?;
     door("create goal", move || {
         headless_doors::create_goal(&pool, &b)
+    })
+    .await
+}
+
+async fn assign_workspace_route(
+    State(s): State<DevToolsHttp>,
+    Path(project_id): Path<String>,
+    Json(b): Json<headless_doors::AssignWorkspaceInput>,
+) -> Result<Json<headless_doors::WorkspaceAssigned>, (StatusCode, String)> {
+    let pool = db(&s)?;
+    door("assign workspace", move || {
+        headless_doors::assign_workspace(&pool, &project_id, &b)
     })
     .await
 }

@@ -22,6 +22,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::db::repos::dev_tools as repo;
+use crate::db::repos::dev_workspaces as ws_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -217,6 +218,87 @@ pub fn create_goal(pool: &DbPool, input: &CreateGoalInput) -> Result<GoalCreated
     Ok(GoalCreated { goal_id: goal.id })
 }
 
+// ============================================================================
+// POST /dev-tools/projects/{projectId}/workspace
+// ============================================================================
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AssignWorkspaceInput {
+    #[serde(default)]
+    pub workspace_id: Option<String>,
+    /// An EXISTING workspace's exact name. This door never creates one.
+    #[serde(default)]
+    pub workspace_name: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkspaceAssigned {
+    /// `null` when the call cleared the project's workspace.
+    pub workspace_id: Option<String>,
+}
+
+/// `dev_tools_workspace_assign_project`'s path, with the workspace named by id
+/// OR by exact name, or by neither to clear it.
+///
+/// A blank value is refused rather than read as "neither": clearing is a
+/// deliberate act, and a template that rendered an empty name must not move
+/// the project out of its workspace.
+pub fn assign_workspace(
+    pool: &DbPool,
+    project_id: &str,
+    input: &AssignWorkspaceInput,
+) -> Result<WorkspaceAssigned, DoorError> {
+    require_project(pool, project_id)?;
+    for (field, value) in [
+        ("workspaceId", input.workspace_id.as_deref()),
+        ("workspaceName", input.workspace_name.as_deref()),
+    ] {
+        if value.is_some_and(|v| v.trim().is_empty()) {
+            return Err(DoorError::BadRequest(format!(
+                "`{field}` is blank; omit both keys to clear the workspace"
+            )));
+        }
+    }
+    let workspace_id = match (
+        input.workspace_id.as_deref(),
+        input.workspace_name.as_deref(),
+    ) {
+        (Some(_), Some(_)) => {
+            return Err(DoorError::BadRequest(
+                "send `workspaceId` or `workspaceName`, not both".into(),
+            ))
+        }
+        (Some(id), None) => Some(ws_repo::get_workspace_by_id(pool, id.trim())?.id),
+        (None, Some(name)) => {
+            let matches: Vec<_> = ws_repo::list_workspaces(pool)?
+                .into_iter()
+                .filter(|w| w.name == name)
+                .collect();
+            match matches.as_slice() {
+                [only] => Some(only.id.clone()),
+                [] => {
+                    return Err(DoorError::NotFound(format!(
+                        "no workspace is named exactly `{name}` (this door never creates one)"
+                    )))
+                }
+                _ => {
+                    return Err(DoorError::Conflict(format!(
+                        "{} workspaces are named `{name}`; send `workspaceId`",
+                        matches.len()
+                    )))
+                }
+            }
+        }
+        (None, None) => None,
+    };
+    let project = ws_repo::assign_project(pool, project_id, workspace_id.as_deref())?;
+    Ok(WorkspaceAssigned {
+        workspace_id: project.workspace_id,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -404,5 +486,126 @@ mod tests {
         })
         .unwrap();
         assert_eq!(out, serde_json::json!({ "milestoneId": "m" }));
+    }
+
+    fn workspace(pool: &DbPool, name: &str) -> String {
+        ws_repo::create_workspace(pool, name, None, None, false)
+            .unwrap()
+            .id
+    }
+
+    fn assign(id: Option<&str>, name: Option<&str>) -> AssignWorkspaceInput {
+        AssignWorkspaceInput {
+            workspace_id: id.map(str::to_string),
+            workspace_name: name.map(str::to_string),
+        }
+    }
+
+    fn workspace_of(pool: &DbPool, project_id: &str) -> Option<String> {
+        repo::get_project_by_id(pool, project_id)
+            .unwrap()
+            .workspace_id
+    }
+
+    #[test]
+    fn a_workspace_is_assigned_by_id_by_exact_name_and_cleared_by_neither() {
+        let pool = init_test_db().unwrap();
+        let p = project(&pool, "ascent");
+        let core = workspace(&pool, "Core");
+        let hack = workspace(&pool, "Hackathon");
+
+        let out = assign_workspace(&pool, &p, &assign(Some(&core), None)).unwrap();
+        assert_eq!(out.workspace_id.as_deref(), Some(core.as_str()));
+        assert_eq!(workspace_of(&pool, &p).as_deref(), Some(core.as_str()));
+
+        let out = assign_workspace(&pool, &p, &assign(None, Some("Hackathon"))).unwrap();
+        assert_eq!(out.workspace_id.as_deref(), Some(hack.as_str()));
+
+        let out = assign_workspace(&pool, &p, &assign(None, None)).unwrap();
+        assert_eq!(out.workspace_id, None);
+        assert_eq!(workspace_of(&pool, &p), None);
+        assert_eq!(
+            serde_json::to_value(&out).unwrap(),
+            serde_json::json!({ "workspaceId": null }),
+            "a cleared assignment answers an explicit null"
+        );
+    }
+
+    #[test]
+    fn a_workspace_name_resolves_exactly_and_is_never_created() {
+        let pool = init_test_db().unwrap();
+        let p = project(&pool, "ascent");
+        workspace(&pool, "Core");
+        let before = ws_repo::list_workspaces(&pool).unwrap().len();
+
+        // Exact: case and surrounding text both matter.
+        for name in ["core", "Core ", "Cor"] {
+            assert!(
+                matches!(
+                    assign_workspace(&pool, &p, &assign(None, Some(name))),
+                    Err(DoorError::NotFound(_))
+                ),
+                "{name:?} must not resolve"
+            );
+        }
+        assert_eq!(ws_repo::list_workspaces(&pool).unwrap().len(), before);
+        assert_eq!(workspace_of(&pool, &p), None);
+    }
+
+    #[test]
+    fn a_workspace_refuses_both_keys_blank_values_and_unknown_ids() {
+        let pool = init_test_db().unwrap();
+        let p = project(&pool, "ascent");
+        let core = workspace(&pool, "Core");
+        assign_workspace(&pool, &p, &assign(Some(&core), None)).unwrap();
+
+        assert!(matches!(
+            assign_workspace(&pool, &p, &assign(Some(&core), Some("Core"))),
+            Err(DoorError::BadRequest(_))
+        ));
+        assert!(matches!(
+            assign_workspace(&pool, &p, &assign(None, Some("  "))),
+            Err(DoorError::BadRequest(_))
+        ));
+        assert!(matches!(
+            assign_workspace(&pool, &p, &assign(Some(""), None)),
+            Err(DoorError::BadRequest(_))
+        ));
+        assert!(matches!(
+            assign_workspace(&pool, &p, &assign(Some("no-such-ws"), None)),
+            Err(DoorError::NotFound(_))
+        ));
+        assert!(matches!(
+            assign_workspace(&pool, "no-such-project", &assign(Some(&core), None)),
+            Err(DoorError::NotFound(_))
+        ));
+        assert_eq!(
+            workspace_of(&pool, &p).as_deref(),
+            Some(core.as_str()),
+            "no refusal moved the project"
+        );
+    }
+
+    #[test]
+    fn two_workspaces_with_one_name_are_a_conflict() {
+        let pool = init_test_db().unwrap();
+        let p = project(&pool, "ascent");
+        workspace(&pool, "Core");
+        // A second row with the same name. Inserted directly: the point is a
+        // store that already holds the ambiguity, however it got there.
+        pool.get()
+            .unwrap()
+            .execute(
+                "INSERT INTO dev_workspaces (id, name, adopt_default_skills, created_at, updated_at)
+                 VALUES ('ws-dup', 'Core', 0, datetime('now'), datetime('now'))",
+                [],
+            )
+            .unwrap();
+        assert!(matches!(
+            assign_workspace(&pool, &p, &assign(None, Some("Core"))),
+            Err(DoorError::Conflict(_))
+        ));
+        let body: AssignWorkspaceInput = serde_json::from_str("{}").unwrap();
+        assert!(body.workspace_id.is_none() && body.workspace_name.is_none());
     }
 }
