@@ -19,7 +19,7 @@ import {
   type PromoteRedirect,
 } from "@/features/agents/components/matrix/promoteReceipt";
 import { PromoteReceiptCard } from "@/features/agents/components/matrix/PromoteReceiptCard";
-import { ContactSheetCinemaLayout } from "@/features/agents/sub_glyph/contactSheet/cinema/ContactSheetCinemaLayout";
+import { BuildLayoutSwitcher } from "@/features/agents/sub_glyph/contactSheet/BuildLayoutSwitcher";
 import type { GlyphFullLayoutProps } from "@/features/agents/sub_glyph/glyphLayoutTypes";
 import type { PersonaCoreLaunchSnapshot } from "@/features/agents/sub_glyph/personaCore";
 import { useUseCaseChronology } from "@/features/templates/sub_generated/adoption/chronology/useUseCaseChronology";
@@ -865,7 +865,7 @@ export function UnifiedBuildEntry() {
           launchError,
           onDismissLaunchError: () => setLaunchError(null),
         };
-        return <ContactSheetCinemaLayout {...layoutProps} />;
+        return <BuildLayoutSwitcher {...layoutProps} />;
       })()}
 
       <PromoteReceiptCard

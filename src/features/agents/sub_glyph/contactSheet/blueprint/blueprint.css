@@ -1,0 +1,34 @@
+/* The blueprint kit's ink, on the Cinema stage (spark onboarding-blueprint,
+   prototype round). Studio's drafting sheet draws on cyanotype paper; the
+   persona build keeps the Cinema theme (the app background, the crowned
+   accent) and borrows only the line language. So the ink here derives from
+   --cinema-accent and --foreground, under the SAME variable names Studio's
+   DraftingPen and .drafting-hatch / .drafting-nib read (--ink, --ink-strong,
+   --ink-dim, --ink-faint), which lets those pieces be reused unchanged. */
+
+.bp-root {
+  --bp-accent: var(--cinema-accent, var(--primary));
+  --ink: color-mix(in srgb, var(--bp-accent) 62%, var(--foreground));
+  --ink-strong: color-mix(in srgb, var(--bp-accent) 35%, var(--foreground));
+  --ink-dim: color-mix(in srgb, var(--ink) 46%, transparent);
+  --ink-faint: color-mix(in srgb, var(--ink) 20%, transparent);
+  --grid-fine: color-mix(in srgb, var(--foreground) 4%, transparent);
+  --grid-major: color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+
+[data-theme^="light"] .bp-root {
+  --ink: color-mix(in srgb, var(--bp-accent) 70%, var(--foreground));
+  --ink-strong: color-mix(in srgb, var(--bp-accent) 45%, var(--foreground));
+  --ink-dim: color-mix(in srgb, var(--ink) 55%, transparent);
+  --ink-faint: color-mix(in srgb, var(--ink) 24%, transparent);
+}
+
+/* Construction grid: faint, under everything, never a paper colour. */
+.bp-grid {
+  background-image:
+    linear-gradient(var(--grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
+    linear-gradient(var(--grid-fine) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-fine) 1px, transparent 1px);
+  background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+}
