@@ -44,7 +44,7 @@ describe('dock frame view switch', () => {
     expect(screen.queryByTestId('studio-plan-button')).toBeNull();
   });
 
-  it('every control sits on the toolbar; the input row is the field and Send alone', () => {
+  it('the tools sit on the toolbar; the input row is the chevron, the field and Send', () => {
     seed();
     render(<StudioChatInput goals={{ open: true, onToggle: () => {} }} view={{ showing: 'app', appReady: true, onChange: () => {} }} />);
     const toolbar = screen.getByTestId('studio-dock-toolbar');
@@ -54,8 +54,12 @@ describe('dock frame view switch', () => {
     const field = screen.getByTestId('studio-chat-input');
     const row = field.parentElement!;
     expect(row.contains(toolbar)).toBe(false);
-    // One button in the input row: Send.
-    expect(row.querySelectorAll('button')).toHaveLength(1);
+    // Two buttons in the input row: the conversation chevron before the
+    // field, Send right after it.
+    const buttons = row.querySelectorAll('button');
+    expect(buttons).toHaveLength(2);
+    expect(buttons[0]!.getAttribute('aria-expanded')).toBe('false');
+    expect(field.nextElementSibling).toBe(buttons[1]);
   });
 
   it('the goals button reports the rail state and toggles it', () => {

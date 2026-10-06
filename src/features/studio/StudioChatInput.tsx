@@ -28,8 +28,8 @@ import { classifyMidTurnIntent } from '@/features/companions/athena/midTurnInten
 import { isStopOnly } from './studioSeed';
 
 // The Studio dock — a thin toolbar over the input row, docked bottom-center
-// over the frame. Every control lives on the toolbar so the input row is the
-// field and Send alone. Guide draws the latest message, the question and the
+// over the frame. The tools live on the toolbar so the input row is only the
+// conversation chevron, the field and Send. Guide draws the latest message, the question and the
 // next moves itself; the chevron expands the full conversation above. A note
 // typed while Athena works is queued for her next step instead of refused. The
 // goals button shows or hides the goals rail beside the frame.
@@ -206,32 +206,18 @@ export default function StudioChatInput({
             {queueFull ? tx(guideStrings(t).notes_full, { max: QUEUED_NOTES_MAX }) : null}
           </p>
 
-          {/* Toolbar — every control on one thin row above the field, so the
-              field takes the whole input row and Send sits right beside it.
-              Left: what you look at (conversation, frame, goals); right: what
-              the next step gets (a reference, settings) and stop / autonomous. */}
+          {/* Toolbar — the tools on one thin row above the field, so the input
+              row is the conversation chevron, the field and Send. Left: what
+              you look at (frame, goals); right: what the next step gets (a
+              reference, settings) and stop / autonomous. */}
           <div
             data-testid="studio-dock-toolbar"
             className="pointer-events-auto flex h-9 items-center gap-0.5 rounded-full border border-border bg-background/85 px-1 shadow-elevation-2 backdrop-blur"
           >
-            <button
-              type="button"
-              onClick={() => setChatOpen((v) => !v)}
-              aria-label={chatOpen ? t.studio.collapse_conversation : t.studio.expand_conversation}
-              aria-expanded={chatOpen}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-primary"
-            >
-              {chatOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-            </button>
-            {view && (
-              <>
-                <ToolbarDivider />
-                <FrameViewSwitch view={view} />
-              </>
-            )}
+            {view && <FrameViewSwitch view={view} />}
             {goals && (
               <>
-                <ToolbarDivider />
+                {view && <ToolbarDivider />}
                 <button
                   type="button"
                   onClick={goals.onToggle}
@@ -302,7 +288,7 @@ export default function StudioChatInput({
             )}
           </div>
 
-          {/* Input row: the field and Send, nothing between them. */}
+          {/* Input row: the conversation chevron, the field, and Send right beside it. */}
           <ChatInputBar
             value={input}
             onChange={setInput}
@@ -319,6 +305,17 @@ export default function StudioChatInput({
             boxShadow={stateShadow}
             inputTestId="studio-chat-input"
             sendLabel={t.common.send}
+            leading={
+              <button
+                type="button"
+                onClick={() => setChatOpen((v) => !v)}
+                aria-label={chatOpen ? t.studio.collapse_conversation : t.studio.expand_conversation}
+                aria-expanded={chatOpen}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-primary"
+              >
+                {chatOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+              </button>
+            }
           />
         </div>
       </div>

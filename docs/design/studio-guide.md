@@ -107,8 +107,8 @@ Kept on purpose: the owner preferred the plan drawer's look to the goals rail's,
 wears it - icon header with the count, a 2 px progress line, `StudioChecklistStepper` as the
 timeline, `PlanGlyph` as the no-plan state - while keeping the rail's own behaviour (draft goals
 from the sketch, ghost rows while she plans, add a goal on G). The dock's goals button shows or
-hides the rail (`useStudioHistory.goalsOpen`, kept per machine); its Plan | App icons pin the frame the way B does. Every dock control sits on
-one thin toolbar above the input row (the row is the field and Send alone). Plan over a running
+hides the rail (`useStudioHistory.goalsOpen`, kept per machine); its Plan | App icons pin the frame the way B does. The dock's tools sit on
+one thin toolbar above the input row (the row is the conversation chevron, the field and Send). Plan over a running
 app replays the onboarding drawing in its order at 700 ms a step, with no live proof (a proof
 turns the home page into a flat legend over a screenshot); the preview iframes stay mounted under
 the sheet, hidden and inert (`StudioPreviewFrames hidden`), because drawn after it a visible
