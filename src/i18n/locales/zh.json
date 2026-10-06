@@ -16114,7 +16114,7 @@
       "cloud_sync_notes_label": "同步笔记",
       "cloud_sync_notes_hint": "在手机上显示笔记中的目标。笔记文本会离开这台电脑，任何看起来像密钥或令牌的内容都会被遮盖。关闭后会删除已同步的笔记。",
       "cloud_sync_chats_label": "同步聊天",
-      "cloud_sync_chats_hint": "在手机上显示你与 Athena 的对话，并可从手机给她发消息。回复可能会引用你的智能体读到的内容，因此默认关闭。关闭后会删除已同步的聊天。",
+      "cloud_sync_chats_hint": "在手机上显示你与 Athena 和你的智能体的对话，并可从手机给他们发消息。回复可能会引用你的智能体读到的内容，因此默认关闭。关闭后会删除已同步的聊天。",
       "cloud_sync_class_failed": "无法更改同步内容，请重试。",
       "cloud_sync_enable_failed": "无法更新同步设置",
       "cloud_sync_error": "上次同步失败：{error}",

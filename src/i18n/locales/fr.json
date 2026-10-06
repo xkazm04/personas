@@ -16114,7 +16114,7 @@
       "cloud_sync_notes_label": "Synchroniser les notes",
       "cloud_sync_notes_hint": "Affiche vos objectifs des Notes sur votre téléphone. Le texte des notes quitte cet ordinateur, et tout ce qui ressemble à une clé ou à un jeton est masqué. Le désactiver supprime les notes synchronisées.",
       "cloud_sync_chats_label": "Synchroniser les discussions",
-      "cloud_sync_chats_hint": "Affiche vos conversations avec Athena sur votre téléphone et permet de lui écrire depuis celui-ci. Les réponses peuvent citer ce que vos agents ont lu, c’est pourquoi l’option est désactivée au départ. La désactiver supprime les discussions synchronisées.",
+      "cloud_sync_chats_hint": "Affiche vos conversations avec Athena et avec vos agents sur votre téléphone et permet de leur écrire depuis celui-ci. Les réponses peuvent citer ce que vos agents ont lu, c’est pourquoi l’option est désactivée au départ. La désactiver supprime les discussions synchronisées.",
       "cloud_sync_class_failed": "Impossible de modifier ce qui est synchronisé. Réessayez.",
       "cloud_sync_enable_failed": "Impossible de mettre à jour le paramètre de synchronisation",
       "cloud_sync_error": "Échec de la dernière synchronisation : {error}",

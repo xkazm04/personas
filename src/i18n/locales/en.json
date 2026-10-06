@@ -12702,7 +12702,7 @@
       "cloud_sync_notes_label": "Sync notes",
       "cloud_sync_notes_hint": "Show your Notes goals on your phone. Note text leaves this computer, with anything that looks like a key or token masked. Turning it off deletes the synced notes.",
       "cloud_sync_chats_label": "Sync chats",
-      "cloud_sync_chats_hint": "Show your conversations with Athena on your phone and message her from it. Replies can quote what your agents read, so this starts off. Turning it off deletes the synced chats.",
+      "cloud_sync_chats_hint": "Show your conversations with Athena and your agents on your phone and message them from it. Replies can quote what your agents read, so this starts off. Turning it off deletes the synced chats.",
       "cloud_sync_class_failed": "Couldn't change what syncs. Try again.",
       "cloud_sync_tables_title": "Synced data",
       "cloud_sync_show_details": "Show breakdown",

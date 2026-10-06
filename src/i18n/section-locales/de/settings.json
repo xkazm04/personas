@@ -35,7 +35,7 @@
     "cloud_sync_notes_label": "Notizen synchronisieren",
     "cloud_sync_notes_hint": "Zeigt Ihre Ziele aus den Notizen auf Ihrem Telefon. Der Notiztext verlässt diesen Computer; alles, was wie ein Schlüssel oder Token aussieht, wird maskiert. Beim Ausschalten werden die synchronisierten Notizen gelöscht.",
     "cloud_sync_chats_label": "Chats synchronisieren",
-    "cloud_sync_chats_hint": "Zeigt Ihre Unterhaltungen mit Athena auf Ihrem Telefon, und Sie können ihr von dort schreiben. Antworten können zitieren, was Ihre Agenten gelesen haben, deshalb ist dies anfangs aus. Beim Ausschalten werden die synchronisierten Chats gelöscht.",
+    "cloud_sync_chats_hint": "Zeigt Ihre Unterhaltungen mit Athena und Ihren Agenten auf Ihrem Telefon, und Sie können ihnen von dort schreiben. Antworten können zitieren, was Ihre Agenten gelesen haben, deshalb ist dies anfangs aus. Beim Ausschalten werden die synchronisierten Chats gelöscht.",
     "cloud_sync_class_failed": "Die Synchronisierungsauswahl konnte nicht geändert werden. Versuchen Sie es erneut.",
     "cloud_sync_enable_failed": "Synchronisierungseinstellung konnte nicht aktualisiert werden",
     "cloud_sync_error": "Letzte Synchronisierung fehlgeschlagen: {error}",

@@ -35,7 +35,7 @@
     "cloud_sync_notes_label": "Đồng bộ ghi chú",
     "cloud_sync_notes_hint": "Hiển thị các mục tiêu trong Ghi chú trên điện thoại của bạn. Nội dung ghi chú sẽ rời khỏi máy tính này, mọi thứ trông giống khóa hoặc token đều được che đi. Tắt tùy chọn này sẽ xóa các ghi chú đã đồng bộ.",
     "cloud_sync_chats_label": "Đồng bộ trò chuyện",
-    "cloud_sync_chats_hint": "Hiển thị các cuộc trò chuyện của bạn với Athena trên điện thoại và nhắn tin cho cô ấy từ đó. Câu trả lời có thể trích dẫn những gì các tác tử của bạn đã đọc, nên tùy chọn này mặc định tắt. Tắt tùy chọn này sẽ xóa các cuộc trò chuyện đã đồng bộ.",
+    "cloud_sync_chats_hint": "Hiển thị các cuộc trò chuyện của bạn với Athena và các tác tử của bạn trên điện thoại và nhắn tin cho họ từ đó. Câu trả lời có thể trích dẫn những gì các tác tử của bạn đã đọc, nên tùy chọn này mặc định tắt. Tắt tùy chọn này sẽ xóa các cuộc trò chuyện đã đồng bộ.",
     "cloud_sync_class_failed": "Không thể thay đổi nội dung được đồng bộ. Hãy thử lại.",
     "cloud_sync_enable_failed": "Không thể cập nhật cài đặt đồng bộ",
     "cloud_sync_error": "Đồng bộ lần cuối thất bại: {error}",

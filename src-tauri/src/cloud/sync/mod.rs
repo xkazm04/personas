@@ -18,6 +18,7 @@ pub(crate) mod athena_chat;
 pub mod client;
 pub(crate) mod cursor;
 pub(crate) mod notes;
+pub(crate) mod persona_chat;
 mod redact;
 mod rows;
 
@@ -104,6 +105,24 @@ const SYNC_TABLES: &[(&str, &str, bool, bool)] = &[
         "synced_chat_messages",
         athena_chat::MESSAGES_CURSOR,
         true,
+        false,
+    ),
+    // The sixteenth and seventeenth: persona chats, into the SAME two tables
+    // (thread_kind = 'persona'), behind the same "Sync chats" opt-in. Real
+    // cursors this time (sessions on updated_at, messages on created_at, 90
+    // days back on the first push), read by `persona_chat` itself because it
+    // compares them with julianday. The status grid folds them into the two
+    // rows above (see `grid`).
+    (
+        "synced_chat_sessions",
+        persona_chat::SESSIONS_CURSOR,
+        false,
+        false,
+    ),
+    (
+        "synced_chat_messages",
+        persona_chat::MESSAGES_CURSOR,
+        false,
         false,
     ),
 ];
@@ -255,8 +274,8 @@ async fn until(due: Option<Instant>) {
 pub enum SyncDataClass {
     /// Notepad notes -> `synced_notes`.
     Notes,
-    /// Athena's conversations -> `synced_chat_*` (and a paired phone's
-    /// `chat_send` to Athena).
+    /// Athena's conversations and persona chats -> `synced_chat_*` (and a
+    /// paired phone's `chat_send`, to Athena or to a persona).
     Chats,
 }
 
@@ -298,20 +317,7 @@ pub fn set_enabled(pool: &DbPool, enabled: bool) -> Result<(), AppError> {
 /// (syncing flag, per-table rows/errors).
 pub async fn status(pool: &DbPool) -> CloudSyncStatus {
     let rt = RUNTIME.lock().await.clone();
-    let by_remote = |remote: &str| rt.tables.iter().find(|t| t.remote == remote);
-
-    let tables = SYNC_TABLES
-        .iter()
-        .map(|(remote, cursor_key, _, _)| {
-            let last = by_remote(remote);
-            TableSyncStatus {
-                table: (*remote).to_string(),
-                rows_last: last.map(|t| t.rows).unwrap_or(0),
-                last_synced_at: cursor::peek_cursor(pool, cursor_key),
-                error: last.and_then(|t| t.error.clone()),
-            }
-        })
-        .collect();
+    let tables = grid(&rt.tables, |key| cursor::peek_cursor(pool, key));
 
     CloudSyncStatus {
         enabled: cursor::is_enabled(pool),
@@ -325,6 +331,42 @@ pub async fn status(pool: &DbPool) -> CloudSyncStatus {
         tables,
         sync_notes: notes::notes_enabled(pool),
         sync_chats: athena_chat::chats_enabled(pool),
+    }
+}
+
+/// The status grid: ONE row per remote table, in `SYNC_TABLES` order. Two
+/// writers share `synced_chat_sessions` and `synced_chat_messages` (Athena's
+/// threads and persona chats), so their pass results are summed, the first
+/// error is shown, and "last synced" is the newer of their watermarks.
+fn grid(last: &[LastTable], peek: impl Fn(&str) -> Option<String>) -> Vec<TableSyncStatus> {
+    let mut out: Vec<TableSyncStatus> = Vec::new();
+    for (remote, cursor_key, _, _) in SYNC_TABLES {
+        let watermark = peek(cursor_key);
+        if let Some(row) = out.iter_mut().find(|r| r.table == *remote) {
+            row.last_synced_at = newer(row.last_synced_at.take(), watermark);
+            continue;
+        }
+        let mine = || last.iter().filter(|t| t.remote == *remote);
+        out.push(TableSyncStatus {
+            table: (*remote).to_string(),
+            rows_last: mine().map(|t| t.rows).sum(),
+            last_synced_at: watermark,
+            error: mine().find_map(|t| t.error.clone()),
+        });
+    }
+    out
+}
+
+/// The later of two watermarks, compared as times (they are written in more
+/// than one format), keeping the text of the winner.
+fn newer(a: Option<String>, b: Option<String>) -> Option<String> {
+    match (a, b) {
+        (Some(a), Some(b)) => {
+            let at = chrono::DateTime::parse_from_rfc3339(&notes::to_timestamptz(&a)).ok();
+            let bt = chrono::DateTime::parse_from_rfc3339(&notes::to_timestamptz(&b)).ok();
+            Some(if bt > at { b } else { a })
+        }
+        (a, b) => a.or(b),
     }
 }
 
@@ -499,6 +541,8 @@ async fn collect_pass(
     // fault-isolated like a table. Off with rows in the cloud = purge.
     tables.push(sync_notes(pool, client, device_id).await);
     tables.extend(sync_athena_chat(pool, user_db, client, device_id).await);
+    // Persona chats (15, 16): the same two tables, thread_kind = 'persona'.
+    tables.extend(sync_persona_chat(pool, client, device_id).await);
 
     // Delete propagation (v2): mirror local persona deletions into the cloud.
     // Kept out of the displayed grid (it has no upsert cursor of its own row),
@@ -723,8 +767,46 @@ async fn sync_athena_chat(
     }
 }
 
+/// Sync the persona chats: two status rows (sessions, messages) from one
+/// pass, with the session deletions processed in it. See `persona_chat`.
+async fn sync_persona_chat(pool: &DbPool, client: &SyncClient, device_id: &str) -> [LastTable; 2] {
+    let (sessions_remote, _, _, _) = SYNC_TABLES[15];
+    let (messages_remote, _, _, _) = SYNC_TABLES[16];
+    let cloud = persona_chat::PostgrestPersonaChat {
+        client,
+        device_id: device_id.to_string(),
+    };
+    let (sessions, messages, error) = match persona_chat::run_pass(pool, &cloud, device_id).await {
+        Ok(report) => {
+            if report.more {
+                // A full page: drain the rest promptly.
+                notify_dirty();
+            }
+            (report.sessions, report.messages, None)
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "cloud sync: persona chat failed (isolated)");
+            (0, 0, Some(e.to_string()))
+        }
+    };
+    [
+        LastTable {
+            remote: sessions_remote.to_string(),
+            rows: sessions,
+            error: error.clone(),
+        },
+        LastTable {
+            remote: messages_remote.to_string(),
+            rows: messages,
+            error,
+        },
+    ]
+}
+
 /// Synced child tables keyed by `persona_id` (mirror of the local
-/// `ON DELETE CASCADE` from `personas`).
+/// `ON DELETE CASCADE` from `personas`). The chat tables also hold Athena's
+/// rows, under the sentinel `persona_id = 'athena'`, which no persona id (a
+/// UUID) can equal, so a persona's delete never reaches them.
 const PERSONA_SCOPED_TABLES: &[&str] = &[
     "synced_executions",
     "synced_manual_reviews",
@@ -733,6 +815,9 @@ const PERSONA_SCOPED_TABLES: &[&str] = &[
     "synced_tool_usage",
     "synced_memories",
     "synced_knowledge_patterns",
+    // Messages before sessions, as everywhere else in the chat projection.
+    "synced_chat_messages",
+    "synced_chat_sessions",
 ];
 
 /// Delete every cloud row belonging to a deleted persona, mirroring the local
@@ -953,7 +1038,7 @@ mod tests {
     fn sync_tables_cover_all_phase1_tables() {
         // The grid + dispatch are driven off this list; guard its length so a
         // table added to collect_pass without a SYNC_TABLES entry fails CI.
-        assert_eq!(SYNC_TABLES.len(), 15);
+        assert_eq!(SYNC_TABLES.len(), 17);
         // cursor keys must be unique (they key app_settings rows).
         let mut keys: Vec<&str> = SYNC_TABLES.iter().map(|(_, c, _, _)| *c).collect();
         keys.sort_unstable();
@@ -986,16 +1071,87 @@ mod tests {
         );
     }
 
-    /// `sync_notes` and `sync_athena_chat` read their tuples by INDEX, like
-    /// the queue: pin them.
+    /// `sync_notes`, `sync_athena_chat` and `sync_persona_chat` read their
+    /// tuples by INDEX, like the queue: pin them.
     #[test]
-    fn notes_and_chat_are_the_last_three_entries() {
+    fn notes_and_chat_are_the_last_five_entries() {
         assert_eq!(SYNC_TABLES[12].0, "synced_notes");
         assert_eq!(SYNC_TABLES[13].0, "synced_chat_sessions");
         assert_eq!(SYNC_TABLES[14].0, "synced_chat_messages");
-        for (_, _, full_backfill, resync) in &SYNC_TABLES[12..] {
+        for (_, _, full_backfill, resync) in &SYNC_TABLES[12..15] {
             assert!(*full_backfill && !*resync, "their flags are inert");
         }
+        assert_eq!(
+            SYNC_TABLES[15],
+            (
+                "synced_chat_sessions",
+                "persona_chat_sessions",
+                false,
+                false
+            ),
+            "persona sessions: a real cursor, 90 days back, no resync"
+        );
+        assert_eq!(
+            SYNC_TABLES[16],
+            (
+                "synced_chat_messages",
+                "persona_chat_messages",
+                false,
+                false
+            ),
+            "persona messages: append-only, no resync"
+        );
+    }
+
+    /// One grid row per remote table: the two writers of the chat tables are
+    /// folded - rows summed, first error shown, newer watermark kept.
+    #[test]
+    fn the_grid_folds_the_two_chat_writers_into_one_row_per_table() {
+        let t = |remote: &str, rows: u64, error: Option<&str>| LastTable {
+            remote: remote.into(),
+            rows,
+            error: error.map(str::to_string),
+        };
+        let last = vec![
+            t("synced_chat_sessions", 2, None),
+            t("synced_chat_messages", 5, None),
+            t("synced_chat_sessions", 1, Some("persona boom")),
+            t("synced_chat_messages", 3, None),
+        ];
+        let rows = grid(&last, |key| match key {
+            k if k == athena_chat::SESSIONS_CURSOR => Some("2026-10-06T10:00:00+00:00".into()),
+            k if k == persona_chat::SESSIONS_CURSOR => Some("2026-10-06 11:00:00".into()),
+            k if k == persona_chat::MESSAGES_CURSOR => Some("2026-10-06T09:00:00Z".into()),
+            _ => None,
+        });
+        assert_eq!(rows.len(), 15, "one row per remote table");
+        let sessions = rows
+            .iter()
+            .find(|r| r.table == "synced_chat_sessions")
+            .expect("sessions row");
+        assert_eq!(sessions.rows_last, 3);
+        assert_eq!(sessions.error.as_deref(), Some("persona boom"));
+        assert_eq!(
+            sessions.last_synced_at.as_deref(),
+            Some("2026-10-06 11:00:00")
+        );
+        let messages = rows
+            .iter()
+            .find(|r| r.table == "synced_chat_messages")
+            .expect("messages row");
+        assert_eq!(messages.rows_last, 8);
+        assert_eq!(
+            messages.last_synced_at.as_deref(),
+            Some("2026-10-06T09:00:00Z")
+        );
+    }
+
+    /// A persona delete sweeps its chat rows too, messages before sessions.
+    #[test]
+    fn a_persona_delete_reaches_its_chats() {
+        let at = |name: &str| PERSONA_SCOPED_TABLES.iter().position(|t| *t == name);
+        let (m, s) = (at("synced_chat_messages"), at("synced_chat_sessions"));
+        assert!(m.is_some() && s.is_some() && m < s, "{m:?} {s:?}");
     }
 
     /// The notes debounce is trailing: each edit pushes the wake out by 10 s,
