@@ -12605,6 +12605,9 @@ export type Translations = {
     prompt_label: string;
     no_prompt: string;
     from_dashboard: string;
+    applied_paused: string;
+    applied_resumed: string;
+    applied_cancelled: string;
     later: string;
   };
   settings: {
@@ -12674,6 +12677,28 @@ export type Translations = {
       cloud_sync_state_syncing: string;
       cloud_sync_total: string;
       cloud_sync_device: string;
+      cloud_phones_title: string;
+      cloud_phones_description: string;
+      cloud_phones_pair: string;
+      cloud_phones_scan: string;
+      cloud_phones_qr_alt: string;
+      cloud_phones_waiting: string;
+      cloud_phones_cancel: string;
+      cloud_phones_expired: string;
+      cloud_phones_refused: string;
+      cloud_phones_paired_toast: string;
+      cloud_phones_pair_failed: string;
+      cloud_phones_limit: string;
+      cloud_phones_none: string;
+      cloud_phones_paired_on: string;
+      cloud_phones_revoked: string;
+      cloud_phones_revoke: string;
+      cloud_phones_revoke_all: string;
+      cloud_phones_revoke_title: string;
+      cloud_phones_revoke_body: string;
+      cloud_phones_revoke_all_title: string;
+      cloud_phones_revoke_all_body: string;
+      cloud_phones_revoke_failed: string;
       cloud_sync_tables_title: string;
       cloud_sync_show_details: string;
       cloud_sync_hide_details: string;

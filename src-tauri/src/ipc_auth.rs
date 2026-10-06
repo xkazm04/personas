@@ -140,6 +140,12 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "set_use_case_generation_settings",
     "rename_event_listeners",
     "cloud_sync_set_enabled",
+    // Paired phones of the mobile command plane: the trust list decides which
+    // remote commands run without a click, so reading and revoking it are
+    // privileged like the sync toggle beside them.
+    "cloud_pair_controller_cancel",
+    "cloud_controllers_list",
+    "cloud_controller_revoke",
     "discover_connector_resources",
     "execute_persona",
     // Credentials -- Write/Delete CRUD (reads are public)
@@ -747,6 +753,8 @@ pub const CLOUD_COMMANDS: &[&str] = &[
     "cloud_sync_persona",
     "cloud_adopt_deployment",
     "cloud_sync_now",
+    "cloud_pair_controller_start",
+    "cloud_pair_controller_poll",
     "cloud_connect",
     "cloud_reconnect_from_keyring",
     "cloud_disconnect",

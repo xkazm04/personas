@@ -1095,6 +1095,16 @@ pub const CLOUD_SYNC_LAST_AT: &str = "cloud_sync_last_at";
 /// Surfaced in the Settings sync panel. Value: a non-negative integer string.
 pub const CLOUD_SYNC_TOTAL_ROWS: &str = "cloud_sync_total_rows";
 
+/// Paired phones ("controllers") of the mobile command plane: a JSON array of
+/// `{controllerId, name, publicKey, createdAt, revoked, revokedAt}`. Public
+/// keys and metadata only, NEVER a secret. Owned by `cloud::trust`.
+///
+/// **Operator-only** ([`is_operator_only`]): it decides which remote commands
+/// run WITHOUT a click at this desk (PHASE2-SPEC D1), so no generic writer -
+/// the settings IPC, an import, the management API - may widen it. Written
+/// only by `cloud::trust` through `settings::set_operator_only`.
+pub const CLOUD_CONTROLLERS: &str = "cloud_controllers";
+
 /// Per-table incremental sync watermark. Full key: `cloud_sync_cursor:<table>`
 /// (e.g. `cloud_sync_cursor:executions`), value: RFC3339 timestamp.
 pub const CLOUD_SYNC_CURSOR_PREFIX: &str = "cloud_sync_cursor:";
@@ -1336,7 +1346,11 @@ pub const KP_GIG_PERSONA_POLICY: &str = "kp.gig_persona_policy";
 /// Keys the generic settings writers refuse. They carry a security boundary
 /// the operator alone may move, so they are written only through
 /// `repos::core::settings::set_operator_only`.
-const OPERATOR_ONLY_KEYS: &[&str] = &[MANAGEMENT_HTTP_PROJECT_ROOTS, KP_GIG_PERSONA_POLICY];
+const OPERATOR_ONLY_KEYS: &[&str] = &[
+    MANAGEMENT_HTTP_PROJECT_ROOTS,
+    KP_GIG_PERSONA_POLICY,
+    CLOUD_CONTROLLERS,
+];
 
 /// Whether `key` may be written only through the operator path.
 pub fn is_operator_only(key: &str) -> bool {
@@ -1488,6 +1502,7 @@ const ALLOWED_KEYS: &[&str] = &[
     CLOUD_SYNC_DEVICE_ID,
     CLOUD_SYNC_LAST_AT,
     CLOUD_SYNC_TOTAL_ROWS,
+    CLOUD_CONTROLLERS,
     APPEARANCE_PREFERENCES,
     APP_LANGUAGE,
     CHAIN_MAX_COST_USD,
@@ -1617,6 +1632,15 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
     // would silently switch auto-rotate off.
     if key == CLAUDE_ACCOUNTS_AUTO_ROTATE || key == CLAUDE_ACCOUNTS_LAST_ROTATION {
         return validate_json_wellformed(key, value);
+    }
+    // The paired-phone trust list. Its struct lives in app_lib
+    // (`cloud::trust::Controller`), so the shape checked here is "a JSON
+    // array"; a list that fails to parse is read as EMPTY (trust nobody).
+    if key == CLOUD_CONTROLLERS {
+        return match serde_json::from_str::<Vec<serde_json::Value>>(value) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("value for '{key}' must be a JSON array: {e}")),
+        };
     }
     match key {
         // A JSON array of persona ids. Refused at write time rather than
@@ -2294,7 +2318,9 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | OBSIDIAN_BRAIN_SAVED_VAULTS
         | DEV_TOOLS_CROSS_PROJECT_METADATA => "integrations",
         // Cloud sync (user-facing toggle only; bookkeeping excluded above).
-        CLOUD_SYNC_ENABLED => "sync",
+        // The paired-phone trust list changes by user acts (pair, revoke), so
+        // it is audited beside the toggle.
+        CLOUD_SYNC_ENABLED | CLOUD_CONTROLLERS => "sync",
         // UI / onboarding state.
         ONBOARDING_QUEST_STATE => "config",
         // Any registered-but-uncategorized key → generic bucket (still audited).

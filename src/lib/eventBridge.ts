@@ -918,6 +918,33 @@ const registry: EventRegistration[] = [
     },
   },
 
+  // -- A paired phone's command ran here (mobile command plane) -------------
+  //
+  // Pause / resume / cancel from a paired phone run with no prompt on this
+  // desktop. The persona list learns of an `enabled` flip only through this
+  // event (the CDC summary refresh does not carry `enabled`), so refetch, and
+  // tell the operator what their phone did.
+  {
+    event: EventName.REMOTE_COMMAND_APPLIED,
+    setup: async () => {
+      const unlisten = await typedListen(EventName.REMOTE_COMMAND_APPLIED, (payload) => {
+        void useAgentStore.getState().fetchPersonas();
+        if (!payload.changed) return;
+        const s = getActiveTranslations().remote_approval;
+        const template =
+          payload.commandType === "pause_persona"
+            ? s.applied_paused
+            : payload.commandType === "resume_persona"
+              ? s.applied_resumed
+              : s.applied_cancelled;
+        useToastStore
+          .getState()
+          .addToast(interpolate(template, { name: payload.personaName ?? payload.personaId }), "success");
+      });
+      return [unlisten];
+    },
+  },
+
   // -- Ship-table write landed (CDC push) -----------------------------------
   //
   // The Ship planner is watched while background agents and Athena change goals

@@ -318,6 +318,9 @@ export const EventName = {
   // Persona health (push-based summary refresh signal from backend)
   PERSONA_HEALTH_CHANGED: 'persona-health-changed',
 
+  // A paired phone's command (pause / resume / cancel) ran here with no prompt
+  REMOTE_COMMAND_APPLIED: 'remote-command-applied',
+
   // SLA reliability breach (published to the persona-event bus on the
   // execution-completion path; one enter-event + one recovery per episode)
   SLA_BREACH_OPENED: 'sla.breach.opened',
@@ -1229,6 +1232,9 @@ export interface EventPayloadMap {
   [EventName.PERSONA_HEALTH_CHANGED]: {
     persona_id: string;
   };
+
+  // Paired-phone command applied locally (Rust RemoteCommandApplied, camelCase)
+  [EventName.REMOTE_COMMAND_APPLIED]: import('./bindings/RemoteCommandApplied').RemoteCommandApplied;
 
   // SLA reliability breach (payload shape mirrors Rust SlaBreachEventPayload,
   // camelCase). Emitted on the persona-event bus, so consumers receive it inside

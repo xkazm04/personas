@@ -2802,8 +2802,8 @@
         }
       ],
       "baseline": {
-        "files": 11,
-        "matches": 13
+        "files": 10,
+        "matches": 12
       },
       "floor": 900
     },
@@ -4508,8 +4508,8 @@
         }
       ],
       "baseline": {
-        "files": 21,
-        "matches": 126
+        "files": 20,
+        "matches": 124
       },
       "floor": 900
     },
@@ -4790,8 +4790,8 @@
         "note": "COMPLEMENTARY TO untyped-lifecycle-transition (multi-step-orchestration), not overlapping: measured at SITE level against the FINAL pattern over all 87 registered src-tauri/.rs rules, overlap with that rule is 0 lines. It counts the 152 places the convention is exercised; this counts the 15 places it can be abolished. THIS RULE CAN REACH ZERO - every site is a mechanical signature change. Delete it at 1 rather than baselining at 0 (the census cannot express must-be-zero)."
       },
       "baseline": {
-        "files": 11,
-        "matches": 12
+        "files": 10,
+        "matches": 11
       },
       "floor": 900
     },

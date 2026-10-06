@@ -23,8 +23,9 @@ use personas_core::types::ExecutionState;
 use personas_core::utils::sanitization::sanitize_secrets;
 use personas_macros::requires;
 
-/// Verify that the execution belongs to the expected persona.
-fn verify_execution_owner(
+/// Verify that the execution belongs to the expected persona. Also the owner
+/// rule of the remote `cancel_execution` verb (`cloud::remote_commands`).
+pub(crate) fn verify_execution_owner(
     exec: &PersonaExecution,
     caller_persona_id: &str,
 ) -> Result<(), AppError> {

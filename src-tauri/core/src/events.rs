@@ -360,6 +360,11 @@ event_names! {
     // Persona health (push-based summary refresh signal)
     PERSONA_HEALTH_CHANGED     => "persona-health-changed",
 
+    // A paired phone's command changed local state with no prompt here
+    // (cloud::remote_commands, PHASE2-SPEC D1): refetch personas + tell the
+    // operator what their phone did.
+    REMOTE_COMMAND_APPLIED     => "remote-command-applied",
+
     // SLA reliability breach (published to the persona-event BUS by
     // `engine::sla_breach` on the execution-completion path; zero-config
     // thresholds, one enter-event + one recovery per episode).
