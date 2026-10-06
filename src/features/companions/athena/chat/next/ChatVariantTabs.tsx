@@ -1,10 +1,18 @@
 /**
- * ChatVariantTabs — the throwaway /prototype switcher for the Athena chat.
+ * ChatVariantTabs — the Athena chat's variant switcher.
  *
- * TODO(prototype, 2026-09-22): consolidate the Athena chat switcher. The owner
- * picks a winner (or a fusion) from these variants; the winner becomes the only
- * render and this file, the store below and the losing variants are deleted in
- * the same commit.
+ * FILAMENT WON the `athena-chrome` contest (owner, 2026-10-06) and is the
+ * DEFAULT now. It had been reachable on master since `657b361397` - the tab was
+ * here, the files were here, `ChatVariantHost` dispatched to it - but the store
+ * below opened on `spread` and holds no persistence, so every launch and every
+ * reload put Spread on screen. A winner you have to go and click, every time,
+ * is not a winner the app ships.
+ *
+ * `current` and `spread` stay selectable at the owner's instruction: he is
+ * setting up a separate project to fuse them with Filament, and deleting them
+ * now would delete the inputs to that fusion. This is the one case where
+ * keeping the losing variants alive is the explicit ask rather than the usual
+ * rot - so it is recorded here, not assumed.
  */
 
 import type { ReactNode } from 'react';
@@ -14,14 +22,21 @@ import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs
 export type ChatVariant = 'current' | 'spread' | 'filament';
 
 export const useChatVariantStore = create<{ variant: ChatVariant; set: (v: ChatVariant) => void }>((set) => ({
-  variant: 'spread',
+  // The winner, so it is what the app opens on. Deliberately NOT persisted to
+  // Web Storage: the default is now the thing you want, which is what made the
+  // missing persistence a problem in the first place, and a storage site here
+  // would be one the golden path then has to route somewhere
+  // (`raw-web-storage`).
+  variant: 'filament',
   set: (variant) => set({ variant }),
 }));
 
+// Winner first: the strip reads left-to-right as what ships, then the two kept
+// for the fusion project.
 const TABS: { id: ChatVariant; label: string; testId: string }[] = [
+  { id: 'filament', label: 'Filament', testId: 'chat-variant-filament' },
   { id: 'current', label: 'Current', testId: 'chat-variant-current' },
   { id: 'spread', label: 'Halo · Spread', testId: 'chat-variant-spread' },
-  { id: 'filament', label: 'Filament', testId: 'chat-variant-filament' },
 ];
 
 export function ChatVariantTabs({ lifted }: { lifted: boolean }) {

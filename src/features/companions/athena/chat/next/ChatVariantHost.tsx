@@ -1,11 +1,16 @@
 /**
- * ChatVariantHost — renders the chat prototype picked in the switcher. Spread
- * fills `VariantFrame`'s slots (`frame/slots.ts`); Filament owns its own layer
- * (`frame/variants/filament/FilamentFrame.tsx`) because its pieces sit on the
- * window's bezel rather than inside VariantFrame's inset grid. Owner kept
- * Spread and Current on 2026-09-23 and picked the Oracle card body on
- * 2026-09-24; Filament is the 2026-10-03 contest winner being ported.
- * TODO(prototype, 2026-09-22): consolidate the Athena chat switcher.
+ * ChatVariantHost — renders the chat variant picked in the switcher.
+ *
+ * Filament owns its own layer (`frame/variants/filament/FilamentFrame.tsx`)
+ * because its pieces sit on the window's bezel rather than inside
+ * `VariantFrame`'s inset grid; Spread fills `VariantFrame`'s slots
+ * (`frame/slots.ts`).
+ *
+ * FILAMENT IS THE DEFAULT as of 2026-10-06 - the owner confirmed it as the
+ * `athena-chrome` winner. Current and Spread stay selectable because he is
+ * setting up a separate fusion project and they are its inputs, so the usual
+ * "the winner becomes the only render and the losers are deleted" rule is
+ * explicitly suspended here rather than forgotten.
  */
 
 import type { AthenaChatEngine } from '../athenaChatEngine';
