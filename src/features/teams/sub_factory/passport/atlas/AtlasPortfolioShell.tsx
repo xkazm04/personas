@@ -16,7 +16,7 @@ import { ATLAS_WORDS as W, INK_MARK, LEGEND_ORDER, LENSES, SORTS } from './atlas
 
 export interface PortfolioView { lens: AtlasLens; sort: AtlasSort; query: string; unfold: boolean; at: AtlasCoord }
 
-export function AtlasPortfolioShell({ all, projects, rows, sharedSetup, names, view, onView, figure, extraControls }: {
+export function AtlasPortfolioShell({ all, projects, rows, sharedSetup, names, view, onView, figure, keys, extraControls }: {
   all: AppPassport[];
   projects: AppPassport[];
   rows: AtlasRow[];
@@ -26,6 +26,8 @@ export function AtlasPortfolioShell({ all, projects, rows, sharedSetup, names, v
   onView: (patch: Partial<PortfolioView>) => void;
   /** The chosen figure, already wired to the model. Null when nothing matched. */
   figure: ReactNode;
+  /** The figure's own keyboard summary: only the matrix is a roving grid. */
+  keys?: string;
   /** Dev-only variant picker; absent in a production build. */
   extraControls?: ReactNode;
 }) {
@@ -79,7 +81,7 @@ export function AtlasPortfolioShell({ all, projects, rows, sharedSetup, names, v
             <span className="k-quiet k-ellipsis">{inkOf(current, row) === 'unknown' ? INK_MARK.unknown.label : valueText(row.get(current))}</span>
           </>
         ) : null}
-        <span className="atlas-readout__keys k-quiet">{W.keysPortfolio}</span>
+        <span className="atlas-readout__keys k-quiet">{keys ?? W.keysPortfolio}</span>
       </div>
     </div>
   );

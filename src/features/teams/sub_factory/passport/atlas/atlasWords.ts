@@ -36,6 +36,22 @@ export const ATLAS_WORDS = {
   noMatchHint: 'Try a name or a repository path.',
   clearSearch: 'Clear search',
   keysPortfolio: '↑ ↓ projects · ← → dimensions · Enter details · P passport · / find',
+  keysLedger: 'A row is a dimension · a name opens that cell · / find',
+  keysDossier: 'A card opens its passport · a named gap opens that cell · / find',
+  figure: 'Figure',
+  below2: 'Below',
+  attention: 'Attention',
+  healthy: 'Healthy',
+  unverified: 'Unverified',
+  dimension: 'Dimension',
+  projectsBelow: 'Projects below readiness',
+  noneBelow: 'None',
+  more: (n: number) => `+${n}`,
+  gapsOf: (n: number) => `${n} gaps`,
+  allClear: 'No dimension is below readiness.',
+  scoresOf: (auto: number | string, prod: number | string) => `Auto ${auto} · Prod ${prod}`,
+  dossierLabel: 'Projects',
+  ledgerLabel: 'Dimensions across the portfolio',
   keysPassport: '[ ] previous / next project · Esc portfolio',
   openPassport: 'Open passport',
   close: 'Close',
@@ -61,6 +77,13 @@ export const ATLAS_WORDS = {
   notConfigured: 'Not configured',
   openWorkspace: 'Open workspace',
 } as const;
+
+/** The portfolio FIGURE the owner is comparing (dev-only switcher). */
+export const FIGURES: ReadonlyArray<{ v: 'matrix' | 'ledger' | 'dossier'; label: string }> = [
+  { v: 'matrix', label: 'Matrix' },
+  { v: 'ledger', label: 'Ledger' },
+  { v: 'dossier', label: 'Dossier' },
+];
 
 export const LENSES: ReadonlyArray<{ v: AtlasLens; label: string }> = [
   { v: 'readiness', label: 'Readiness' },

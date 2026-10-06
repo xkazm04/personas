@@ -122,3 +122,31 @@
   .atlas-dim { grid-template-columns: minmax(0, 1fr) auto; }
   .atlas-dim__value { grid-column: 1 / -1; grid-row: 2; }
 }
+
+/* ---- bench figures (/prototype 2026-10-06) ----------------------------------
+ * Two alternative readings of the same model. Both are FIGURES composed into
+ * the portfolio shell (doctrine 6c), so layout is free here while type and
+ * colour stay on the app's tokens. */
+
+/* Ledger: the dimension is the row, the states are columns. The table is
+ * windowed, so the figure gives it a bounded height to scroll inside - the
+ * only height in this stylesheet, and it is a cap, not a layout dimension. */
+.atlas-ledger {
+  display: flex; flex-direction: column; min-height: 0;
+  height: clamp(320px, 56vh, 680px);
+  padding: 0 12px 0 var(--gutter);
+}
+.atlas-ledger__dim { cursor: help; }
+.atlas-ledger__num { display: inline-flex; align-items: center; gap: 6px; }
+.atlas-ledger__who { display: flex; align-items: center; gap: 4px; min-width: 0; flex-wrap: nowrap; overflow: hidden; }
+.atlas-ledger__who-btn { max-width: 11ch; min-width: 0; padding: 0 6px; height: 22px; background: var(--band-alt); }
+.atlas-ledger__who-btn:hover { color: var(--primary); background: var(--band-sel); }
+
+/* Dossier: the project is the unit, its gaps are named. */
+.atlas-dossier { padding: 0 12px 0 var(--gutter); }
+.atlas-dossier__meta { display: inline-flex; align-items: center; gap: 8px; }
+.atlas-dossier__note { margin: 0; display: flex; align-items: center; gap: 8px; color: var(--quiet); }
+.atlas-dossier__gaps { display: flex; flex-wrap: wrap; gap: 4px 6px; }
+.atlas-dossier__gap { height: 24px; padding: 0 8px; gap: 6px; background: var(--band-alt); max-width: 100%; min-width: 0; }
+.atlas-dossier__gap:hover { color: var(--primary); background: var(--band-sel); }
+.atlas-dossier__gap-more { display: inline-flex; align-items: center; }
