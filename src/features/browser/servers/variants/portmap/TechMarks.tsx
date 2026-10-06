@@ -6,7 +6,7 @@
 import { useMemo } from 'react';
 
 import { TechIconStrip } from '@/features/plugins/dev-tools/sub_workspaces/centerShared';
-import { resolveTechIcon } from '@/features/teams/sub_factory/passport/techIcons';
+import { resolveTechIcon } from '@/features/shared/components/display/techIcons';
 import type { DevServerView } from '@/lib/bindings/DevServerView';
 
 import { techTokens } from '../../serverModel';

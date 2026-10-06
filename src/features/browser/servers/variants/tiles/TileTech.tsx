@@ -7,7 +7,7 @@
 import { useMemo } from 'react';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { resolveTechIcon } from '@/features/teams/sub_factory/passport/techIcons';
+import { resolveTechIcon } from '@/features/shared/components/display/techIcons';
 
 const MAX = 5;
 

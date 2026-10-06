@@ -6,7 +6,7 @@ import { Power } from 'lucide-react';
 
 import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { resolveTechIcon } from '@/features/teams/sub_factory/passport/techIcons';
+import { resolveTechIcon } from '@/features/shared/components/display/techIcons';
 import type { DevServerState } from '@/lib/bindings/DevServerState';
 
 import { SERVER_TONE } from '../../serverTone';

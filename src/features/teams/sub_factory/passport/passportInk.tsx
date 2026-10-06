@@ -6,7 +6,7 @@
 // bench keeps its own copies until it is consolidated.
 import type { LucideIcon } from 'lucide-react';
 
-import { resolveTechIcon } from './techIcons';
+import { resolveTechIcon } from '@/features/shared/components/display/techIcons';
 import type { CellValue } from './passportRows';
 
 export const INK = {

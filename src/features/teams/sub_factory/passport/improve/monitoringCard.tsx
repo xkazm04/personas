@@ -27,7 +27,7 @@ import { getConnectorMeta, ThemedConnectorIcon } from '@/lib/connectors/connecto
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { resolveTechIcon } from '../techIcons';
+import { resolveTechIcon } from '@/features/shared/components/display/techIcons';
 import { STATE_INK, type MonitoringState } from './monitoringModel';
 import type { MonitoringRow } from './monitoringTypes';
 

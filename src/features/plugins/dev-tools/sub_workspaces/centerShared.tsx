@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, X } from 'lucide-react';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { resolveTechIcon } from '@/features/teams/sub_factory/passport/techIcons';
+import { resolveTechIcon } from '@/features/shared/components/display/techIcons';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { codeProjectsOnly } from '@/lib/devProjectKind';
 import { useSystemStore } from '@/stores/systemStore';

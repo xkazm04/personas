@@ -19,6 +19,7 @@ import { ProjectSwitchCell } from './projectSwitch/ProjectSwitchCell';
 import { AttentionCell, PulseCell } from './ProjectPulseCells';
 import type { ProjectPulse } from './useProjectPulse';
 import { MembersCell, RowActionsCell, RowSelectCell, SelectAllHeader } from './projectTableCells';
+import { TechStackCell } from './TechStackCell';
 
 export interface ProjectColumnsDeps {
   t: Translations;
@@ -90,9 +91,7 @@ export function buildProjectColumns(d: ProjectColumnsDeps): TableColumn<Project>
       key: 'tech',
       label: t.plugins.dev_tools.col_tech_stack,
       width: 'minmax(100px, 0.9fr)',
-      render: (project) => (
-        <span className="typo-caption truncate block">{project.techStack.join(', ')}</span>
-      ),
+      render: (project) => <TechStackCell tokens={project.techStack} />,
     },
     {
       key: 'attention',

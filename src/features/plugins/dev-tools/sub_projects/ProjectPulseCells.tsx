@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, HelpCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2, CircleDashed, HelpCircle } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -16,8 +16,6 @@ import type { ProjectPulse } from './useProjectPulse';
  * inside a table cell would be a cross-surface jump this context does not own.
  * -------------------------------------------------------------------------- */
 
-const DASH = '—';
-
 /** Findings still waiting for triage. Null = never measured. */
 export function AttentionCell({ pulse }: { pulse: ProjectPulse | undefined }) {
   const { t, tx } = useTranslation();
@@ -31,8 +29,10 @@ export function AttentionCell({ pulse }: { pulse: ProjectPulse | undefined }) {
           data-testid="project-attention-unknown"
           aria-label={k.attention_unwatched}
         >
+          {/* The icon alone. An em dash beside it restated "nothing measured"
+              a second time, in a 96px column, and the Tooltip plus aria-label
+              already carry the meaning for anyone who needs the words. */}
           <HelpCircle className="w-3.5 h-3.5" />
-          {DASH}
         </span>
       </Tooltip>
     );
@@ -86,7 +86,12 @@ export function PulseCell({ pulse }: { pulse: ProjectPulse | undefined }) {
           data-testid="project-pulse-never"
           aria-label={k.pulse_never_hint}
         >
-          {k.pulse_never}
+          {/* A mark, not a sentence. Every unscanned row printed "Never
+              scanned" in full, which is the longest string in the narrowest
+              column and reads as an error rather than an absence. The dashed
+              ring says "nothing here yet"; the words stay in the tooltip and
+              the aria-label, so nothing is lost to a screen reader. */}
+          <CircleDashed className="w-3.5 h-3.5" aria-hidden />
         </span>
       </Tooltip>
     );

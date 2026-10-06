@@ -1,13 +1,27 @@
-// Official brand marks for the tech stack + tooling shown in the passport matrix.
-// Paths are the canonical simple-icons (https://simpleicons.org, CC0) 24×24
-// glyphs, inlined so there's no runtime dependency. Theme handling: brands whose
-// official colour is near-black (GitHub, Rust, OpenAI, Next, Vercel) render with
-// `currentColor` (`color` omitted) so they stay visible in BOTH dark and light
-// themes; the rest use a brand colour tuned to read on either background.
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { Chip } from './passportWidgets';
+// Official brand marks for tech stacks and tooling, and the resolver that turns
+// a free-text label into one.
+//
+// Paths are the canonical simple-icons (https://simpleicons.org, CC0) 24x24
+// glyphs, inlined so there is no runtime dependency. Theme handling: brands
+// whose official colour is near-black (GitHub, Rust, OpenAI, Next, Vercel)
+// render with `currentColor` (`color` omitted) so they stay visible in BOTH
+// dark and light themes; the rest use a brand colour tuned to read on either
+// background.
+//
+// PROMOTED to shared 2026-10-06. This lived at
+// `features/teams/sub_factory/passport/techIcons.tsx` while nine call sites in
+// five feature areas imported it across the tree - browser/servers (four
+// variants), dev-tools workspaces, the Factory's own passport, and now the
+// Manage table. It was a shared primitive filed under one feature. The dead
+// `TechBadge` went with the move: it had no call sites, and its chip fallback
+// was the only thing tying this module to the Factory.
+//
+// @catalog techIcons - resolve a free-text stack label ("React 19",
+// "Next.js/TypeScript", "postgres") to an official CC0 brand glyph plus the
+// residual detail, with `TechGlyph` to draw it. Returns null when nothing
+// matches, so callers keep their own text fallback.
 
-interface BrandIcon { title: string; path: string; color?: string }
+export interface BrandIcon { title: string; path: string; color?: string }
 
 const ICONS: Record<string, BrandIcon> = {
   typescript: { title: 'TypeScript', color: '#3178C6', path: 'M1.125 0C.502 0 0 .502 0 1.125v21.75C0 23.498.502 24 1.125 24h21.75c.623 0 1.125-.502 1.125-1.125V1.125C24 .502 23.498 0 22.875 0zm17.363 9.75c.612 0 1.154.037 1.627.111a6.38 6.38 0 0 1 1.306.34v2.458a3.95 3.95 0 0 0-.643-.361 5.093 5.093 0 0 0-.717-.26 5.453 5.453 0 0 0-1.426-.2c-.3 0-.573.028-.819.086a2.1 2.1 0 0 0-.623.242c-.17.104-.3.229-.393.374a.888.888 0 0 0-.14.49c0 .196.053.373.156.529.104.156.252.304.443.444s.423.276.696.41c.273.135.582.274.926.416.47.197.892.407 1.266.628.374.222.695.473.963.753.268.279.472.598.614.957.142.359.214.776.214 1.253 0 .657-.125 1.21-.373 1.656a3.033 3.033 0 0 1-1.012 1.085 4.38 4.38 0 0 1-1.487.596c-.566.12-1.163.18-1.79.18a9.916 9.916 0 0 1-1.84-.164 5.544 5.544 0 0 1-1.512-.493v-2.63a5.033 5.033 0 0 0 3.237 1.2c.333 0 .624-.03.872-.09.249-.06.456-.144.623-.25.166-.108.29-.234.373-.38a1.023 1.023 0 0 0-.074-1.089 2.12 2.12 0 0 0-.537-.5 5.597 5.597 0 0 0-.807-.444 27.72 27.72 0 0 0-1.007-.436c-.918-.383-1.602-.852-2.053-1.405-.45-.553-.676-1.222-.676-2.005 0-.614.123-1.141.369-1.582.246-.441.58-.804 1.004-1.089a4.494 4.494 0 0 1 1.47-.629 7.536 7.536 0 0 1 1.77-.201zm-15.113.188h9.563v2.166H9.506v9.646H6.789v-9.646H3.375z' },
@@ -133,28 +147,10 @@ export function resolveTechIcon(label: string): { icon: BrandIcon; residual: str
   return { icon: ICONS[ALIASES[matched]!]!, residual };
 }
 
-function TechGlyph({ icon, size = 14 }: { icon: BrandIcon; size?: number }) {
+export function TechGlyph({ icon, size = 14 }: { icon: BrandIcon; size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill={icon.color ?? 'currentColor'} aria-hidden className="flex-shrink-0">
       <path d={icon.path} />
     </svg>
-  );
-}
-
-/**
- * Render a stack/tooling value as its official icon (with the name as a tooltip
- * and any residual detail beside it), falling back to a text chip when no brand
- * icon matches. This is what "cut text, more visual" looks like in the rows.
- */
-export function TechBadge({ label }: { label: string }) {
-  const match = resolveTechIcon(label);
-  if (!match) return <Chip label={label} tone="accent" />;
-  return (
-    <Tooltip content={label}>
-      <span className="inline-flex items-center gap-1 rounded-input bg-secondary/40 border border-primary/8 px-1.5 py-0.5 cursor-default">
-        <TechGlyph icon={match.icon} />
-        {match.residual && <span className="typo-caption text-foreground/70">{match.residual}</span>}
-      </span>
-    </Tooltip>
   );
 }

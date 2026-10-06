@@ -13,7 +13,7 @@ import { AUTOMATION_LABEL, PROD_BAND_LABEL, type AppPassport } from './passportM
 import { INK, scoreInk } from './passportInk';
 import { CoverRoadmap, type CoverRoadmapVM } from './CoverRoadmap';
 import { trendDelta } from './passportHistory';
-import { resolveTechIcon } from './techIcons';
+import { resolveTechIcon } from '@/features/shared/components/display/techIcons';
 import { BlockersBadge } from './passportWidgets';
 import { WarningBadge, type WarningItem } from './WarningBadge';
 import { COPY } from './wallConfig';

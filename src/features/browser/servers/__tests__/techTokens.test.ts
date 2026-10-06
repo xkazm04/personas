@@ -3,7 +3,7 @@
 // for a real stack. The tape is the fixture the screenshots are shot on.
 import { describe, expect, it } from 'vitest';
 
-import { resolveTechIcon } from '@/features/teams/sub_factory/passport/techIcons';
+import { resolveTechIcon } from '@/features/shared/components/display/techIcons';
 
 import { techTokens } from '../serverModel';
 // @ts-expect-error -- plain .mjs fixture module, no declaration file

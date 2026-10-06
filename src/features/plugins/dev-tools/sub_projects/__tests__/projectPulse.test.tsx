@@ -60,11 +60,16 @@ describe('AttentionCell', () => {
     expect(screen.getByTestId('project-attention-clear')).toHaveTextContent('0');
   });
 
-  it('paints an em dash, never a zero, for a never-scanned project', () => {
+  it('paints a mark with no number at all for a never-scanned project', () => {
     render(<AttentionCell pulse={undefined} />);
     const cell = screen.getByTestId('project-attention-unknown');
-    expect(cell).toHaveTextContent('—');
+    // 2026-10-06: the em dash went. The invariant it was protecting is NOT the
+    // dash - it is that an unmeasured project never renders a number, and never
+    // renders as the measured-clean cell. Both are still asserted; the glyph
+    // carries "unwatched" and the accessible name carries the words.
+    expect(cell.textContent?.trim()).toBe('');
     expect(cell.textContent).not.toContain('0');
+    expect(cell).toHaveAccessibleName();
     expect(screen.queryByTestId('project-attention-clear')).toBeNull();
   });
 
@@ -81,8 +86,14 @@ describe('PulseCell', () => {
     expect(screen.queryByTestId('project-pulse-never')).toBeNull();
   });
 
-  it('says never scanned rather than showing a fresh-looking blank', () => {
+  it('marks never-scanned rather than showing a fresh-looking blank', () => {
     render(<PulseCell pulse={undefined} />);
-    expect(screen.getByTestId('project-pulse-never')).toBeTruthy();
+    const cell = screen.getByTestId('project-pulse-never');
+    expect(cell).toBeTruthy();
+    // The words moved into the tooltip and the accessible name (2026-10-06);
+    // what must never happen is this cell looking like a scanned one, so the
+    // relative-time cell has to be absent and the name has to be present.
+    expect(screen.queryByTestId('project-pulse-at')).toBeNull();
+    expect(cell).toHaveAccessibleName();
   });
 });
