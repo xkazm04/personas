@@ -30,7 +30,7 @@
  * person, so the item stays gone, the sources re-read, and the conflict is
  * still rethrown (`isDecisionConflict` tells the caller which toast to raise).
  */
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { TriageDecision } from '@/features/agents/quick-answer/triage/triageTypes';
 import {
@@ -50,7 +50,6 @@ import {
 } from '@/lib/decisions/rowWrites';
 import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
-import { useSystemStore } from '@/stores/systemStore';
 
 import {
   DECISION_CHIPS,
@@ -61,7 +60,7 @@ import {
   type HubChip,
 } from './model/decisionModel';
 import { compareDecision } from './model/decisionOrder';
-import { buildChipCounts, decisionTotal } from './roster/chipCounts';
+import { decisionTotal } from './roster/chipCounts';
 import {
   approvalToDecision,
   councilToDecision,
@@ -74,12 +73,8 @@ import {
   routeDecisionItem,
   type DecisionPorts,
 } from './roster/decisionDispatch';
-import {
-  getPendingCountsStatus,
-  refreshDecisionCounts,
-  subscribePendingCountsStatus,
-} from './roster/pendingCountsSource';
 import { useChatThreads } from './roster/useChatThreads';
+import { useDecisionCountsCore } from './roster/useDecisionCounts';
 import { useDecisionCopy } from './roster/useDecisionCopy';
 import { useDecisionSources } from './roster/useDecisionSources';
 import { ALL_TARGETS, useRosterRefresh, type RefreshTarget } from './roster/useRosterRefresh';
@@ -178,41 +173,15 @@ export function useDecisionRoster(options: DecisionRosterOptions = {}): Decision
 
   /* -- counts ------------------------------------------------------------- */
 
-  const pending = useSystemStore((s) => s.pendingCounts);
-  const countsStatus = useSyncExternalStore(subscribePendingCountsStatus, getPendingCountsStatus);
-  const undispatched = useSystemStore((s) => s.undispatchedIdeas);
-  const refreshUndispatched = useSystemStore((s) => s.refreshUndispatchedIdeas);
-  const [readySettled, setReadySettled] = useState(false);
-  // The title-bar tray's own definition: a halted CLI's questions live in
-  // `buildSessions` state and have no row anywhere to count.
-  const questionCount = useAgentStore((s) => {
-    let n = 0;
-    for (const sess of Object.values(s.buildSessions)) {
-      if (sess.phase === 'awaiting_input') n += sess.pendingQuestions.length;
-    }
-    return n;
-  });
-
-  const counts = useMemo(
-    () =>
-      buildChipCounts({
-        pending,
-        pendingFailed: countsStatus.failed,
-        questions: questionCount,
-        chat: { n: chat.count, failed: chat.failed },
-        // The slice keeps `null` until a read lands and swallows failures, so
-        // "settled and still null" is the only failure it lets anyone see.
-        ready: { n: undispatched?.length ?? null, failed: readySettled && undispatched === null },
-      }),
-    [pending, countsStatus.failed, questionCount, chat.count, chat.failed, undispatched, readySettled],
-  );
+  // The one assembly of the chip numbers, shared with the counts-only reader
+  // (`useDecisionCounts`) so a badge and the strip cannot disagree.
+  const {
+    counts,
+    loading: countsLoading,
+    refreshCounts,
+  } = useDecisionCountsCore({ n: chat.count, failed: chat.failed }, enabled);
 
   /* -- refresh ------------------------------------------------------------ */
-
-  const refreshCounts = useCallback(() => {
-    void refreshDecisionCounts();
-    void refreshUndispatched().finally(() => setReadySettled(true));
-  }, [refreshUndispatched]);
 
   const { revalidate } = triage;
   const refreshItems = useCallback(
@@ -326,7 +295,7 @@ export function useDecisionRoster(options: DecisionRosterOptions = {}): Decision
   ]);
 
   const loading =
-    (enabled && !countsStatus.settled && pending === null) ||
+    countsLoading ||
     (triageActive && triage.loading) ||
     sources.approvals.loading ||
     sources.incidents.loading ||

@@ -1,17 +1,15 @@
-import { lazy, Suspense, useEffect, useMemo } from 'react';
+import { lazy, Suspense, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { useAgentStore } from '@/stores/agentStore';
 import { useCommandPaletteStore } from '@/stores/commandPaletteStore';
-import { POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
-import { getPollingCoordinator } from '@/lib/polling/pollingCoordinator';
 import { FullScreenOverlay } from '@/features/shared/components/layout/FullScreenOverlay';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { CircuitBreakerIndicator } from '@/features/agents/sub_executions/components/CircuitBreakerIndicator';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useConnectorAttention, useConnectorAttentionWatcher } from '@/features/vault/sub_credentials/components/card/attention/useConnectorAttention';
+import { useDecisionCounts } from '@/features/decision-center/roster/useDecisionCounts';
 
 // Lazy so the always-mounted tray doesn't pull this full-size surface into the
 // main bundle — it loads only when summoned.
@@ -72,36 +70,22 @@ export function useTitleBarTray() {
   const running = useOverviewStore((s) =>
     Object.values(s.activeProcesses).some((p) => p.status === 'running'),
   );
-  const questionCount = useAgentStore((s) => {
-    let n = 0;
-    for (const sess of Object.values(s.buildSessions)) {
-      if (sess.phase === 'awaiting_input') n += sess.pendingQuestions.length;
-    }
-    return n;
-  });
   const headerOverlay = useSystemStore((s) => s.headerOverlay);
   const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
   const openPalette = useCommandPaletteStore((s) => s.openPalette);
-  const pendingTotal = useSystemStore((s) => s.pendingCounts?.total ?? 0);
-  const refreshPendingCounts = useSystemStore((s) => s.refreshPendingCounts);
+  const setMonitorInitialView = useSystemStore((s) => s.setMonitorInitialView);
   /**
-   * The badge's own poll, on the shared coordinator's 30s bucket.
+   * The decision badge reads the Decision Center's roster counts — the seven
+   * decision chips, the same number the Activity strip shows — and nothing
+   * else. Counts only: no item source, no triage machinery, no review list.
    *
-   * Two things this fixes. The tray never fetched anything: the review badge
-   * was only ever fresh because the SIDEBAR happened to poll
-   * `pendingReviewCount` on its own ticker, so a window with the sidebar
-   * collapsed showed a number that stopped moving. And the count it did read
-   * came from a raw `setInterval` living beside it, which ticked on its own
-   * offset and made SQLite warm its cache a second time for a badge.
+   * It also owns their freshness: `useDecisionCounts` registers the roster's
+   * 30 s counts ticker on the shared coordinator (one `dev_tools_pending_counts`
+   * read in flight app-wide however many readers are mounted) and re-reads on
+   * the roster's push events. The tray's own `titleBarPendingCounts` ticker,
+   * which read the same command through a second path, is gone with it.
    */
-  useEffect(() => {
-    const { dispose } = getPollingCoordinator().register(
-      'titleBarPendingCounts',
-      refreshPendingCounts,
-      { interval: POLLING_CONFIG.dashboardRefresh.interval },
-    );
-    return dispose;
-  }, [refreshPendingCounts]);
+  const decisions = useDecisionCounts();
 
   const todayScheduleCount = useMemo(() => {
     const now = new Date();
@@ -115,23 +99,14 @@ export function useTitleBarTray() {
   }, [cronAgents]);
 
   /**
-   * Everything the deck behind this capsule will actually deal.
-   *
-   * `pendingTotal` is the backend's sum over the SIX DB-backed queues — and it
-   * already includes manual reviews, so `pendingReviewCount` must NOT be added
-   * on top of it. This used to read `questionCount + pendingReviewCount`: two
-   * of seven queues, so a reviewer with 26 pending ideas and nothing else saw
-   * `0`. A confidently wrong number is worse than an absent one.
-   *
-   * Build questions are the one term added client-side, and that is not an
-   * oversight to be tidied away into the Rust query: a halted CLI awaiting
-   * input lives in `buildSessions` state and has no row anywhere to count.
+   * Every decision waiting on a person, across the seven chips. Build questions
+   * and chat are inside it (the roster adds them client-side); `ready` is not
+   * a decision and is not.
    */
-  const quickCount = pendingTotal + questionCount;
+  const quickCount = decisions.total;
   const monitorAttention = unreadReportCount + draftReadyCount;
 
   const notificationsOpen = headerOverlay === 'notifications';
-  const reviewOpen = headerOverlay === 'quick-answer';
   const monitorOpen = headerOverlay === 'monitor';
   const isScheduleActive = headerOverlay === 'schedules';
 
@@ -146,31 +121,45 @@ export function useTitleBarTray() {
   // Schedules now opens as a full-screen overlay (Persona-Monitor pattern), not a
   // sidebar navigation — so summoning it doesn't lose your place in the app.
   const toggleSchedules = () => setHeaderOverlay(isScheduleActive ? 'none' : 'schedules');
-  const toggleReview = () => setHeaderOverlay(reviewOpen ? 'none' : 'quick-answer');
+  /**
+   * The badge opens the Decision Center's home: the Monitor on its Activity
+   * view, whose CommandBar strip is the hub. It no longer opens the Quick
+   * Answer deck — the deck stays mounted below for anything that still sets
+   * `headerOverlay = 'quick-answer'`, but the dock was its only entry point.
+   * Not a toggle: pressed while the Monitor shows another view, it brings
+   * Activity forward rather than closing the Monitor.
+   */
+  const openDecisions = () => {
+    setMonitorInitialView('fleet');
+    if (!monitorOpen) setHeaderOverlay('monitor');
+  };
   const toggleMonitor = () => setHeaderOverlay(monitorOpen ? 'none' : 'monitor');
   const openSearch = () => openPalette('settings');
 
   return {
     todayScheduleCount,
     quickCount,
+    decisionCounts: decisions.counts,
     monitorAttention,
     unreadCount,
     running,
     notificationsOpen,
-    reviewOpen,
     monitorOpen,
     isScheduleActive,
     toggleNotifications,
     toggleSchedules,
-    toggleReview,
+    openDecisions,
     toggleMonitor,
     openSearch,
   };
 }
 
 /**
- * Mounts the Persona Monitor + Quick Answer popover for the dock's review and
- * monitor capsules, plus the provider circuit-breaker indicator.
+ * Mounts the Persona Monitor (the dock's decision and monitor capsules both
+ * open it) and the Quick Answer popover, plus the provider circuit-breaker
+ * indicator. The popover has no dock entry any more — the decision badge opens
+ * the Monitor's Activity hub — and stays mounted only until the Decision
+ * Center's shared modal retires it.
  *
  * The breaker indicator had ZERO importers repo-wide until 2026-09-02, so a
  * tripped provider reached no pixel and the user saw only a wall of

@@ -10,10 +10,21 @@
  * Registers a single ticker on the shared PollingCoordinator's 30s bucket
  * so sidebar refreshes align with other dashboard pollers and SQLite serves
  * them from the same warm cache.
+ *
+ * The DECISION counts (pending reviews, unread reports, open incidents) are not
+ * read here any more. They come from the Decision Center roster's one
+ * `dev_tools_pending_counts` read (`systemStore.pendingCounts`), which the
+ * title-bar badge keeps fresh on the same 30 s bucket, and the attention
+ * registry derives them from it — so the sidebar, the badge and the hub strip
+ * read one answer. This ticker used to issue `get_pending_review_count` and
+ * `get_unread_report_count` of its own: the same SQL as two of the roster's
+ * counts, read at a different moment.
  */
 
 import { useEffect, useCallback, useState } from "react";
 import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
+import type { PendingCounts } from "@/lib/bindings/PendingCounts";
 import { POLLING_CONFIG } from "@/hooks/utility/timing/usePolling";
 import { useAttention } from "@/hooks/useAttention";
 import { getPollingCoordinator } from "@/lib/polling/pollingCoordinator";
@@ -26,6 +37,26 @@ interface BadgeCounts {
   unreadReportCount: number;
   pendingEventCount: number;
   directorAttentionCount: number;
+  /** Non-terminal incidents — the roster's incidents chip. */
+  openIncidentCount: number;
+}
+
+/**
+ * Keep the overview store's two legacy count fields on the roster's read.
+ *
+ * Nothing polls them any more, and two readers still read them directly (the
+ * Home "since you left" briefing, the title bar's monitor badge). Mirroring
+ * the one read into them keeps those readers moving with the sidebar instead
+ * of freezing at whatever the last per-field read said.
+ */
+function mirrorDecisionCounts(
+  pending: PendingCounts | null,
+  overview: { getState: () => { pendingReviewCount: number; unreadReportCount: number }; setState: (p: { pendingReviewCount: number; unreadReportCount: number }) => void },
+): void {
+  if (!pending) return;
+  const o = overview.getState();
+  if (o.pendingReviewCount === pending.manualReviews && o.unreadReportCount === pending.unreadReports) return;
+  overview.setState({ pendingReviewCount: pending.manualReviews, unreadReportCount: pending.unreadReports });
 }
 
 export function useBadgeCounts(): BadgeCounts {
@@ -39,17 +70,28 @@ export function useBadgeCounts(): BadgeCounts {
   const fetchAll = useCallback(async () => {
     const { useOverviewStore } = await import("@/stores/overviewStore");
     const state = useOverviewStore.getState();
-    // Stagger fetches across frames to avoid a burst of simultaneous
-    // set() calls that cause cascading React re-renders in one frame.
-    await state.fetchPendingReviewCount();
-    state.fetchUnreadReportCount().catch(silentCatch('hooks/sidebar/useBadgeCounts:fetchUnreadReportCount'));
-    await new Promise(r => setTimeout(r, 0)); // yield to browser
     state.fetchRecentEvents().catch(silentCatch('hooks/sidebar/useBadgeCounts:fetchRecentEvents'));
     fetchBudgetSpend().catch(silentCatch('hooks/sidebar/useBadgeCounts:fetchBudgetSpend'));
     getDirectorPortfolio()
       .then((p) => setDirectorAttentionCount(flaggedAgentCount(p.roster, Date.now())))
       .catch(silentCatch('hooks/sidebar/useBadgeCounts:getDirectorPortfolio'));
   }, [fetchBudgetSpend]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let unsubscribe: (() => void) | null = null;
+    void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
+      if (cancelled) return;
+      mirrorDecisionCounts(useSystemStore.getState().pendingCounts, useOverviewStore);
+      unsubscribe = useSystemStore.subscribe((s, prev) => {
+        if (s.pendingCounts !== prev.pendingCounts) mirrorDecisionCounts(s.pendingCounts, useOverviewStore);
+      });
+    });
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,5 +114,6 @@ export function useBadgeCounts(): BadgeCounts {
     unreadReportCount: counts.unread_reports,
     pendingEventCount: counts.pending_events,
     directorAttentionCount,
+    openIncidentCount: counts.open_incidents,
   };
 }
