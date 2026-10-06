@@ -18,7 +18,9 @@
 .atlas-portfolio .k-search { flex: 1 1 180px; min-width: 140px; max-width: 260px; }
 .atlas-legend { display: flex; flex-wrap: wrap; gap: 4px 18px; color: var(--quiet); }
 .atlas-legend__item { display: inline-flex; align-items: center; gap: 6px; }
-.atlas-empty { display: flex; align-items: center; gap: 12px; min-height: 64px; }
+/* The filtered-to-zero state is the shared ScenarioEmptyState (NoResults); it
+   brings its own interior, so the atlas only gives it room. */
+.atlas-empty { padding-block: 8px; }
 
 /* ---- the matrix (proposed kit part: SpineMatrix) ---- */
 .atlas-matrix { --name: 248px; --score: 44px; overflow-x: auto; scrollbar-width: thin; }

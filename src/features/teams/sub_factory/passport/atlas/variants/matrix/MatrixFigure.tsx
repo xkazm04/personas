@@ -1,3 +1,8 @@
+// THESIS — the portfolio is ONE figure: a project is a reading line, a
+// dimension is a column, a state is a mark, and the eye finds a cluster of bad
+// marks without reading a word. The shipped baseline (contest winner,
+// 2026-09-25) and the default.
+//
 // Passport Atlas — the portfolio matrix (the proposed kit part SpineMatrix):
 // one project per reading line, one dimension per column, a state mark per
 // cell. A roving coordinate moves with the arrows; a cell opens the drawer,
@@ -6,22 +11,12 @@
 import { useEffect, useRef, type KeyboardEvent } from 'react';
 import { Button } from '@/features/shared/components/buttons';
 import { Hint } from '@/features/shared/components/kit';
-import type { AppPassport } from '../passportModel';
-import { countInk, inkOf, type AtlasRow } from './atlasModel';
-import { InkDot } from './AtlasParts';
-import { ATLAS_WORDS as W, INK_MARK, SHORT_LABEL } from './atlasWords';
+import { countInk, inkOf } from '../../atlasModel';
+import { InkDot } from '../../AtlasParts';
+import { ATLAS_WORDS as W, INK_MARK, SHORT_LABEL } from '../../atlasWords';
+import type { AtlasFigureProps } from '../../atlasFigure';
 
-export interface AtlasCoord { pi: number; di: number }
-
-export function AtlasMatrix({ projects, rows, names, at, onMove, onOpenCell, onOpenProject }: {
-  projects: AppPassport[];
-  rows: AtlasRow[];
-  names: Map<string, { name: string; qualifier: string | null }>;
-  at: AtlasCoord;
-  onMove: (c: AtlasCoord) => void;
-  onOpenCell: (c: AtlasCoord) => void;
-  onOpenProject: (slug: string) => void;
-}) {
+export function MatrixFigure({ projects, rows, names, at, onMove, onOpenCell, onOpenProject }: AtlasFigureProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const focusWithin = useRef(false);
 
