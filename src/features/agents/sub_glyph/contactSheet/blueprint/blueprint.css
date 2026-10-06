@@ -14,6 +14,8 @@
   --ink-faint: color-mix(in srgb, var(--ink) 20%, transparent);
   --grid-fine: color-mix(in srgb, var(--foreground) 4%, transparent);
   --grid-major: color-mix(in srgb, var(--foreground) 8%, transparent);
+  /* The pen's callout chip sits on paper; on the Cinema stage that is the app background. */
+  --paper: var(--background);
 }
 
 [data-theme^="light"] .bp-root {
