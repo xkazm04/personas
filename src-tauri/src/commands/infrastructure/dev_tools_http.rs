@@ -115,6 +115,14 @@
 //!                                             cleared). Exactly one key assigns, neither clears; a name must
 //!                                             match an existing workspace exactly (404, never created; 409
 //!                                             when two share it). A blank value is a 400, not a clear.
+//!   POST /reports                           → { projectId, personaId?, title, content, attachments?: [{ path,
+//!                                               caption? }], approval?: { title, description?, severity? } }
+//!                                             → { reportId, reviewId? } (`headless_report`). Files under the
+//!                                             ~/.personas tree or a registered project root, at most 12 and
+//!                                             8 MB each, image/video/pdf/markdown, COPIED to `<app data
+//!                                             dir>/reports/<reportId>/NN-<name>`. `personaId` defaults to the
+//!                                             project's App Master (409 when it has none). Deciding the
+//!                                             approval deletes the copies and flips `attachmentsCleaned`.
 
 use std::sync::Arc;
 
@@ -136,6 +144,7 @@ use crate::commands::infrastructure::context_generation::{
 use crate::commands::infrastructure::context_map_export::write_context_map_artifacts;
 use crate::commands::infrastructure::headless_doors;
 use crate::commands::infrastructure::headless_master;
+use crate::commands::infrastructure::headless_report;
 use crate::commands::infrastructure::kpi_scan::{
     kpi_scan_prompt, kpi_scan_status_json, launch_kpi_scan,
 };
@@ -218,6 +227,7 @@ pub fn router(app: AppHandle) -> Router {
             "/projects/{project_id}/workspace",
             post(assign_workspace_route),
         )
+        .route("/reports", post(post_report_route))
         .with_state(DevToolsHttp { app })
 }
 
@@ -1901,6 +1911,42 @@ async fn assign_workspace_route(
         headless_doors::assign_workspace(&pool, &project_id, &b)
     })
     .await
+}
+
+/// The copies go under Tauri's `app_data_dir` (where the database lives), the
+/// tree the asset protocol already serves to the Reports UI; attachments are
+/// read from the `~/.personas` tree or a registered project root.
+async fn post_report_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<headless_report::PostReportInput>,
+) -> Result<Json<headless_report::ReportPosted>, (StatusCode, String)> {
+    use tauri::Emitter;
+    let pool = db(&s)?;
+    let app_data_dir = s.app.path().app_data_dir().map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("post report: app data directory unavailable: {e}"),
+        )
+    })?;
+    let roots = headless_report::ReportRoots {
+        app_data_dir,
+        personas_home: dirs::home_dir().map(|h| h.join(".personas")),
+    };
+    let posted = door("post report", move || {
+        headless_report::post_report(&pool, &b, &roots)
+    })
+    .await?;
+    // An open Reports list hears about it the way it hears about a run's
+    // report; a replay that found the report already there emits nothing.
+    if let Some(row) = posted.0.created.as_ref() {
+        if let Err(e) = s
+            .app
+            .emit(personas_core::events::event_name::REPORT_CREATED, row)
+        {
+            tracing::warn!(report_id = %row.id, error = %e, "post report: report-created emit failed");
+        }
+    }
+    Ok(posted)
 }
 
 /// `Some((scan_id, reason))` when the project's most recent **context** scan

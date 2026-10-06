@@ -314,7 +314,98 @@ pub fn get_by_execution(
     })
 }
 
+/// The report a review's `context_data` points at (`{"reportId": "<id>"}`),
+/// written by the headless App Master's report door. Free-text or foreign
+/// context answers `None`: most reviews carry no such key.
+pub fn linked_report_id(context_data: Option<&str>) -> Option<String> {
+    let value: serde_json::Value = serde_json::from_str(context_data?).ok()?;
+    value
+        .get("reportId")?
+        .as_str()
+        .map(str::trim)
+        .filter(|id| !id.is_empty())
+        .map(str::to_string)
+}
+
+/// The newest review linked to a report, if any. Lets a replayed report post
+/// find the approval its first attempt raised instead of raising a second.
+pub fn find_by_report_id(
+    pool: &DbPool,
+    report_id: &str,
+) -> Result<Option<PersonaManualReview>, AppError> {
+    timed_query!("manual_reviews", "manual_reviews::find_by_report_id", {
+        let conn = pool.get()?;
+        // A coarse LIKE narrows the scan; the exact match is made on the
+        // parsed JSON, so a context that merely MENTIONS the id never counts
+        // and malformed JSON elsewhere in the table cannot fail the query.
+        let mut stmt = conn.prepare(
+            "SELECT * FROM persona_manual_reviews
+             WHERE context_data LIKE '%reportId%'
+             ORDER BY created_at DESC",
+        )?;
+        let rows = stmt.query_map([], row_to_review)?;
+        Ok(collect_rows(rows, "manual_reviews::find_by_report_id")
+            .into_iter()
+            .find(|r| linked_report_id(r.context_data.as_deref()).as_deref() == Some(report_id)))
+    })
+}
+
+/// A decided review releases the attachment copies of the report it was
+/// raised for (`reports::release_headless_attachments`). Best-effort and
+/// logged: the decision is the durable fact, and nothing here may fail it.
+fn release_linked_report(pool: &DbPool, review_id: &str) {
+    let review = match get_by_id(pool, review_id) {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!(review_id, error = %e,
+                "review decided: could not re-read it to release a linked report");
+            return;
+        }
+    };
+    let Some(report_id) = linked_report_id(review.context_data.as_deref()) else {
+        return;
+    };
+    match crate::repos::communication::reports::release_headless_attachments(pool, &report_id) {
+        Ok(crate::repos::communication::reports::AttachmentRelease::Released { removed }) => {
+            tracing::info!(review_id, report_id = %report_id, removed = ?removed,
+                "review decided: released the report's attachment copies");
+        }
+        Ok(crate::repos::communication::reports::AttachmentRelease::Refused(why)) => {
+            tracing::warn!(review_id, report_id = %report_id, why = %why,
+                "review decided: the report's attachments were NOT released");
+        }
+        Ok(crate::repos::communication::reports::AttachmentRelease::Untouched) => {}
+        Err(e) => {
+            tracing::warn!(review_id, report_id = %report_id, error = %e,
+                "review decided: releasing the report's attachments failed");
+        }
+    }
+}
+
+/// Resolve a review — the chokepoint every resolution path shares (the review
+/// commands, Athena's approvals, auto-triage, the probation and ask doors).
+///
+/// After the status flip lands, a review that was raised for a headless App
+/// Master report releases that report's attachment copies. That lives HERE
+/// rather than in any one caller for the same reason the learning loop does:
+/// a decision taken anywhere must have the same consequences.
 pub fn update_status(
+    pool: &DbPool,
+    id: &str,
+    status: ManualReviewStatus,
+    reviewer_notes: Option<String>,
+) -> Result<Option<LearnedMemoryRef>, AppError> {
+    let learned = flip_status(pool, id, status, reviewer_notes)?;
+    if status != ManualReviewStatus::Pending {
+        release_linked_report(pool, id);
+    }
+    Ok(learned)
+}
+
+/// The body of [`update_status`]: the compare-and-swap flip and the learning
+/// loop. Returns with every pooled connection it took released, so the
+/// attachment release that follows checks out its own.
+fn flip_status(
     pool: &DbPool,
     id: &str,
     status: ManualReviewStatus,
@@ -706,11 +797,17 @@ pub fn gc_stale_pending(
         )?;
 
         tx.commit()?;
+        drop(conn);
         tracing::info!(
             count = resolved.len(),
             cutoff = %cutoff_iso,
             "Auto-resolved stale pending reviews"
         );
+        // Aged out is resolved too: an approval nobody answered must not
+        // keep its report's attachment copies forever.
+        for r in &resolved {
+            release_linked_report(pool, &r.id);
+        }
         Ok(resolved)
     })
 }
@@ -1418,5 +1515,43 @@ mod tests {
         assert_eq!(resolved.len(), 1);
         assert_eq!(resolved[0].id, stale.id);
         assert_eq!(resolved[0].execution_id, None);
+    }
+    #[test]
+    fn a_linked_report_id_is_read_only_from_json_that_names_one() {
+        assert_eq!(
+            linked_report_id(Some(r#"{"reportId":"rep-1","other":2}"#)).as_deref(),
+            Some("rep-1")
+        );
+        assert_eq!(
+            linked_report_id(Some("free text mentioning reportId")),
+            None
+        );
+        assert_eq!(linked_report_id(Some(r#"{"source":"director"}"#)), None);
+        assert_eq!(linked_report_id(Some(r#"{"reportId":"  "}"#)), None);
+        assert_eq!(linked_report_id(Some(r#"{"reportId":7}"#)), None);
+        assert_eq!(linked_report_id(None), None);
+    }
+
+    #[test]
+    fn a_review_is_found_by_the_report_it_links_to() {
+        let pool = init_test_db().unwrap();
+        let (persona_id, execution_id) = setup_persona_and_execution(&pool);
+        create_pending_review(&pool, &persona_id, &execution_id);
+        let linked = create_unanchored(
+            &pool,
+            UnanchoredReviewInput {
+                persona_id: &persona_id,
+                title: "Ship?",
+                description: None,
+                severity: "info",
+                context_data: Some(r#"{"reportId":"rep-9"}"#),
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            find_by_report_id(&pool, "rep-9").unwrap().map(|r| r.id),
+            Some(linked.id)
+        );
+        assert!(find_by_report_id(&pool, "rep-1").unwrap().is_none());
     }
 }
