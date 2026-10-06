@@ -19,6 +19,7 @@
  * The display names are dev chrome and are deliberately not i18n keys: the
  * control does not ship, and the locale files are contested by other sessions.
  */
+import { Charter } from './charter/Charter';
 import { Crosscheck } from './crosscheck/Crosscheck';
 import { RailBelow } from './railBelow/RailBelow';
 
@@ -32,6 +33,7 @@ export interface LifecycleConcept {
 export const CONCEPTS: readonly LifecycleConcept[] = [
   { id: 'railBelow', name: 'Rail Below', View: RailBelow },
   { id: 'crosscheck', name: 'Crosscheck', View: Crosscheck },
+  { id: 'charter', name: 'Charter', View: Charter },
 ];
 
 export const DEFAULT_CONCEPT_ID = 'railBelow';

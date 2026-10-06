@@ -71,12 +71,17 @@ describe.each(CONCEPTS.map((c) => [c.id, c] as const))('concept %s', (id, concep
     expect(screen.getByTestId('lc-node-tests').getAttribute('data-state')).toBe('advisory');
   });
 
-  it('selects a step by click and shows that step evidence', async () => {
-    await mount();
+  // The ASSERTION is the information, not the block that carries it: a concept
+  // may put the rule in a detail panel (railBelow, crosscheck) or render the
+  // whole charter inline, and both satisfy "the selected step's rule and its
+  // evidence are on screen". Pinning `lc-step-state` would have made the test a
+  // test of one container.
+  it('selects a step by click and shows that step rule and evidence', async () => {
+    const view = await mount();
     fireEvent.click(screen.getByTestId('lc-node-gate'));
     expect(screen.getByTestId('lc-node-gate').getAttribute('aria-pressed')).toBe('true');
-    const state = await screen.findByTestId('lc-step-state');
-    expect(state.textContent).toContain('Rule for gate.');
+    await screen.findByTestId('lc-state-region');
+    expect(view.textContent).toContain('Rule for gate.');
     expect(screen.getAllByText('Skipped').length).toBeGreaterThan(0);
   });
 
