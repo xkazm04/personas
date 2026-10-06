@@ -108,9 +108,6 @@ vi.mock('@/lib/polling/pollingCoordinator', () => ({
 // The tray mounts these lazily-summoned surfaces; none is under test and they
 // drag in half the app's feature tree.
 vi.mock('@/features/fleet/monitor', () => ({ PersonaMonitor: () => null }));
-vi.mock('@/features/agents/quick-answer/QuickAnswerPopover', () => ({
-  QuickAnswerPopover: () => null,
-}));
 
 // The tray also mounts the circuit-breaker indicator (its only mount in the
 // app). It is covered by its own test — `circuitBreakerMount.test.tsx` — and
@@ -149,6 +146,7 @@ vi.mock('@/i18n/useTranslation', () => ({
         titlebar_attention: '{count} need you',
         titlebar_tooltip: '{count} need you',
       },
+      overview: { dc_badge_triage_all_hint: 'Shift+click to triage everything here' },
     },
     tx: (template: string, vars: Record<string, unknown>) =>
       template.replace(/\{(\w+)\}/g, (_m, key: string) => String(vars[key] ?? '')),
@@ -156,6 +154,7 @@ vi.mock('@/i18n/useTranslation', () => ({
 }));
 
 import TitleBarDock from '../TitleBarDock';
+import { closeDecisionDeck, useDecisionDeckStore } from '@/features/decision-center/deck/deckStore';
 import { TitleBarDecisionTooltip } from '../TitleBarDecisionTooltip';
 
 // --- helpers ---------------------------------------------------------------
@@ -246,14 +245,13 @@ describe('the decision badge is the roster total', () => {
 });
 
 describe('pressing the badge opens the Decision Center hub', () => {
-  it('opens the Monitor on its Activity view, not the Quick Answer deck', () => {
+  it('opens the Monitor on its Activity view', () => {
     render(<TitleBarDock />);
 
     fireEvent.click(screen.getByTestId('titlebar-human-review'));
 
     expect(setMonitorInitialView).toHaveBeenCalledWith('fleet');
     expect(setHeaderOverlay).toHaveBeenCalledWith('monitor');
-    expect(setHeaderOverlay).not.toHaveBeenCalledWith('quick-answer');
   });
 
   it('brings Activity forward without closing a Monitor already open', () => {
@@ -346,5 +344,30 @@ describe('the badge does not run a counts poll of its own', () => {
     // second path. The counts reader (mocked here) registers the roster's
     // coordinated ticker instead; the tray itself registers nothing.
     expect(registerTicker).not.toHaveBeenCalled();
+  });
+});
+
+describe('Shift+click on the badge triages everything in the Decision Deck', () => {
+  afterEach(() => closeDecisionDeck());
+
+  it('opens the deck on every chip, grown out of the badge, and leaves the Monitor alone', () => {
+    render(<TitleBarDock />);
+
+    fireEvent.click(screen.getByTestId('titlebar-human-review'), { shiftKey: true });
+
+    const req = useDecisionDeckStore.getState().request;
+    expect(req?.scope).toEqual({ kind: 'all' });
+    expect(req?.origin).not.toBeUndefined();
+    expect(setHeaderOverlay).not.toHaveBeenCalled();
+    expect(setMonitorInitialView).not.toHaveBeenCalled();
+  });
+
+  it('a plain click still opens the hub and no deck', () => {
+    render(<TitleBarDock />);
+
+    fireEvent.click(screen.getByTestId('titlebar-human-review'));
+
+    expect(useDecisionDeckStore.getState().request).toBeNull();
+    expect(setHeaderOverlay).toHaveBeenCalledWith('monitor');
   });
 });

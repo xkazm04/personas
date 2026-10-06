@@ -23,7 +23,7 @@ import * as devApi from '@/api/devTools/devTools';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { AthenaVerdictCard } from './AthenaVerdictCard';
@@ -44,6 +44,7 @@ import {
 } from './backlogModel';
 import type { BacklogQueue, BacklogStatus } from './useBacklogQueue';
 import { arriveAtDevTools } from '@/features/plugins/pluginArrival';
+import { ideaDecisionId, openChipDeck, useReloadOnDeckClose } from '../../libs/decisionDeckDoors';
 
 const STATUSES: BacklogStatus[] = ['pending', 'accepted', 'rejected', 'archived'];
 /** Mirrors `backlog_triage::MAX_BATCH_IDEAS` — the backend rejects more, so the
@@ -79,6 +80,14 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
   // verdict changes a row's status, and "next" would stop meaning next.
   const [queueIds, setQueueIds] = useState<string[]>([]);
   const [queueIdx, setQueueIdx] = useState(0);
+  // The element the last click inside the table landed on — the rect the
+  // Decision Deck grows out of. The shared table hands `onRowClick` a row,
+  // never an element, so the click is captured on the way down.
+  const lastClickRef = useRef<Element | null>(null);
+
+  // A pending idea is decided in the global deck, which writes through the
+  // roster's doors; re-read the backlog when it closes.
+  useReloadOnDeckClose(queue.reload);
 
   const statusLabel: Record<BacklogStatus, string> = {
     pending: r.backlog_status_pending,
@@ -136,14 +145,20 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
   const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
 
   // Bulk verdicts run SEQUENTIALLY: each call mutates the shared triage slice,
-  // and firing them in parallel would race the counts into nonsense.
+  // and firing them in parallel would race the counts into nonsense. A failed
+  // verdict rejects (the queue toasts why) and the batch carries on — one lost
+  // write must not silently abandon the rest of the selection.
   const bulkDecide = useCallback(
     (verdict: 'accept' | 'reject') => {
       const ids = [...selectedIds];
       setSelectedIds(new Set());
       void (async () => {
         for (const id of ids) {
-          await (verdict === 'accept' ? queue.accept(id) : queue.reject(id));
+          try {
+            await (verdict === 'accept' ? queue.accept(id) : queue.reject(id));
+          } catch (err) {
+            silentCatch('BacklogPanel:bulkDecide')(err);
+          }
         }
       })();
     },
@@ -212,7 +227,15 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
     setQueueIdx(0);
   }
 
+  // A PENDING idea is a decision, and decisions are made in the Decision Deck
+  // (backlog chip, this idea on top). The detail modal stays for decided ideas
+  // — the history view's reading surface.
   const openDetail = useCallback((row: BacklogIdea, ordered: BacklogIdea[]) => {
+    if (row.status === 'pending') {
+      const hit = lastClickRef.current;
+      openChipDeck('backlog', ideaDecisionId(row.id), hit?.closest('.row-hover-lift') ?? hit);
+      return;
+    }
     const ids = ordered.map((i) => i.id);
     const at = ids.indexOf(row.id);
     setQueueIds(ids.length > 0 ? ids : [row.id]);
@@ -377,7 +400,10 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
           sweep skipped one - the project id is what lets it tell whose sweep. */}
       <SensorScoreboard projectId={activeProjectId} />
 
-      <div className={view === 'table' ? 'flex-1' : 'flex-1 min-h-0'}>
+      <div
+        className={view === 'table' ? 'flex-1' : 'flex-1 min-h-0'}
+        onClickCapture={(e) => { lastClickRef.current = e.target as Element; }}
+      >
         {queue.loading && queue.rows.length === 0 ? (
           <BacklogGhostRows />
         ) : view === 'focus' ? (
@@ -392,6 +418,7 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
                 onAccept={queue.accept}
                 onReject={queue.reject}
                 onDelete={queue.remove}
+                onOpenDeck={(id, el) => openChipDeck('backlog', ideaDecisionId(id), el)}
               />
             </div>
           </div>

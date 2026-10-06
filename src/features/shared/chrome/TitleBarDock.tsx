@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { Bell, CalendarClock, ClipboardCheck, Search } from 'lucide-react';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
@@ -54,7 +54,11 @@ export default function TitleBarDock() {
           return true;
         case 'r':
           e.preventDefault();
-          tray.openDecisions();
+          // Shift+R: triage everything in the Decision Deck, skipping the hub.
+          tray.openDecisions({
+            triageAll: e.shiftKey,
+            origin: document.querySelector('[data-testid="titlebar-human-review"]'),
+          });
           return true;
         case 'm':
           e.preventDefault();
@@ -97,18 +101,27 @@ export default function TitleBarDock() {
     </DockAction>
   );
   // The Decision Center badge: the roster total, opening Monitor > Activity
-  // (the hub). The tooltip reads the total back as its seven chips.
+  // (the hub); Shift+click opens the Decision Deck on everything instead. The
+  // tooltip reads the total back as its seven chips and names the shortcut —
+  // it stays inert (a tooltip is never something to click inside).
   const decisionLabel = tray.quickCount > 0
     ? tx(t.monitor.dc_consumers_badge_attention, { count: tray.quickCount })
     : t.monitor.dc_consumers_badge;
   const review = (
     <DockAction
       {...common}
-      onClick={tray.openDecisions}
+      onClick={(e) => tray.openDecisions({ triageAll: e.shiftKey, origin: e.currentTarget })}
       count={tray.quickCount}
       countClass="text-status-warning"
       label={decisionLabel}
-      title={<TitleBarDecisionTooltip heading={decisionLabel} counts={tray.decisionCounts} />}
+      title={
+        <>
+          <TitleBarDecisionTooltip heading={decisionLabel} counts={tray.decisionCounts} />
+          <span className="mt-1 block typo-caption" data-testid="titlebar-triage-all-hint">
+            {t.overview.dc_badge_triage_all_hint}
+          </span>
+        </>
+      }
       testId="titlebar-human-review"
       hintKey="R"
     >
@@ -177,7 +190,7 @@ function DockDivider() {
 
 interface DockActionProps {
   children: ReactNode;
-  onClick: () => void;
+  onClick: (e: MouseEvent<HTMLButtonElement>) => void;
   label: string;
   title: ReactNode;
   testId: string;

@@ -10,19 +10,27 @@
 // Keyboard resolution (see BacklogDetailModal for the other half): the deck
 // keeps ←/A reject and →/Z accept, because here the arrows ARE the verdict.
 // The modal, a reading surface, walks the queue with ←/→ and decides on A/R.
+//
+// Decision-center wave 3: Enter (or the layers button) opens the top card in
+// the global Decision Deck — the full case, the same key grammar as every other
+// decision — on the backlog chip with this idea on top. The swipe stays as the
+// fast lane; a swipe whose write fails now keeps the card (the queue rejects
+// and toasts) instead of looking decided.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Hammer, ScanSearch, ThumbsDown, ThumbsUp, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Hammer, Layers, ScanSearch, ThumbsDown, ThumbsUp, Trash2 } from 'lucide-react';
 
 import * as devApi from '@/api/devTools/devTools';
 import { ROUTE_DECISION_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { TriageCounts } from '@/lib/bindings/TriageCounts';
 
 import { SwipeCard } from './SwipeCard';
 import type { BacklogIdea } from './backlogModel';
+import { useDecisionDeckOpen } from '../../libs/decisionDeckDoors';
 
 /** How many cards are rendered at once — one live, two for depth. */
 const STACK_DEPTH = 3;
@@ -37,6 +45,7 @@ export function BacklogFocusDeck({
   onAccept,
   onReject,
   onDelete,
+  onOpenDeck,
 }: {
   /** Pending rows, already filtered and ordered exactly as the table shows them. */
   rows: BacklogIdea[];
@@ -46,10 +55,13 @@ export function BacklogFocusDeck({
   onAccept: (id: string) => Promise<void>;
   onReject: (id: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  /** Open this idea in the Decision Deck; `el` is the rect it grows out of. */
+  onOpenDeck?: (id: string, el: Element | null) => void;
 }) {
   const { t, tx } = useTranslation();
   const r = t.overview.review;
   const addToast = useToastStore((s) => s.addToast);
+  const deckOpen = useDecisionDeckOpen();
 
   // Always act on the LATEST top card. A ref (rather than a dep) keeps the
   // keydown listener stable, so a rapid double-tap can't be swallowed by an
@@ -60,8 +72,17 @@ export function BacklogFocusDeck({
   const swipe = useCallback((direction: 'left' | 'right') => {
     const idea = pendingRef.current[0];
     if (!idea) return;
-    void (direction === 'right' ? onAccept(idea.id) : onReject(idea.id));
+    // The queue toasts a failed verdict and rejects; the card simply stays.
+    (direction === 'right' ? onAccept(idea.id) : onReject(idea.id))
+      .catch(silentCatch('BacklogFocusDeck:swipe'));
   }, [onAccept, onReject]);
+
+  const stackRef = useRef<HTMLDivElement>(null);
+  const openTop = useCallback(() => {
+    const idea = pendingRef.current[0];
+    if (!idea || !onOpenDeck) return;
+    onOpenDeck(idea.id, stackRef.current);
+  }, [onOpenDeck]);
 
   const removeTop = useCallback(() => {
     const idea = pendingRef.current[0];
@@ -77,10 +98,12 @@ export function BacklogFocusDeck({
     try {
       await devApi.createTask(idea.title, idea.projectId ?? undefined, idea.description, idea.id);
       addToast(r.backlog_build_queued, 'success');
-      await onAccept(idea.id);
     } catch (err) {
       toastCatch('BacklogFocusDeck:buildNow')(err);
+      return;
     }
+    // The queue toasts its own failure; the card stays on top.
+    await onAccept(idea.id).catch(silentCatch('BacklogFocusDeck:buildNow:accept'));
   }, [addToast, r.backlog_build_queued, onAccept]);
 
   // Stable handler: ←/A reject, →/Z accept. Ignored inside text fields and
@@ -101,6 +124,13 @@ export function BacklogFocusDeck({
         return false;
       }
 
+      if (e.key === 'Enter' && onOpenDeck) {
+        // A focused control keeps its own Enter (the verdict buttons below).
+        if (!pendingRef.current[0] || el?.closest('button, a, [role="button"]')) return false;
+        e.preventDefault();
+        openTop();
+        return true;
+      }
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
         e.preventDefault();
         swipe('left');
@@ -113,7 +143,8 @@ export function BacklogFocusDeck({
       }
       return false;
     },
-    { priority: ROUTE_DECISION_PRIORITY },
+    // Off while the Decision Deck is up: its keys are its own.
+    { priority: ROUTE_DECISION_PRIORITY, enabled: !deckOpen },
   );
 
   // End-of-session summary. Snapshot the decided counts the first time real
@@ -167,7 +198,7 @@ export function BacklogFocusDeck({
         </div>
       ) : (
         <>
-          <div className="relative w-full max-w-lg" style={{ height: 420 }}>
+          <div ref={stackRef} className="relative w-full max-w-lg" style={{ height: 420 }}>
             <AnimatePresence>
               {stack.map((idea, i) => (
                 <SwipeCard
@@ -221,6 +252,22 @@ export function BacklogFocusDeck({
             >
               <Hammer className="w-4 h-4 text-amber-400" />
             </motion.button>
+
+            {onOpenDeck && (
+              <Tooltip content={t.overview.dc_open_in_deck_hint} placement="top">
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={openTop}
+                  className="w-10 h-10 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center hover:bg-primary/15 transition-colors"
+                  aria-label={t.overview.dc_open_in_deck}
+                  data-testid="backlog-focus-open-deck"
+                >
+                  <Layers className="w-4 h-4 text-primary" />
+                </motion.button>
+              </Tooltip>
+            )}
 
             <motion.button
               type="button"

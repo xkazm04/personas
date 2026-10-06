@@ -47,6 +47,8 @@ import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCo
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { createLogger } from "@/lib/log";
+import { useReloadOnDeckClose } from '@/features/overview/sub_manual-review/libs/decisionDeckDoors';
+import { openReportDoor } from '../libs/reportDeckDoor';
 
 const logger = createLogger("message-list");
 
@@ -153,10 +155,19 @@ export default function ReportList() {
     finally { setIsRefreshing(false); }
   };
 
-  const handleRowClick = useCallback((msg: PersonaReport) => {
-    setSelectedMsg(msg);
-    if (!msg.is_read) markReportAsRead(msg.id);
-  }, [markReportAsRead]);
+  // History view rule: an unread report opens the Decision Deck, a read one the
+  // detail modal (`openReportDoor`).
+  const handleRowClick = useCallback((msg: PersonaReport, el?: Element | null) => {
+    openReportDoor(msg, setSelectedMsg, el);
+  }, []);
+
+  // The deck marks reports read through the roster's door, not this store:
+  // re-read the page and the unread badge when it closes.
+  const reloadAfterDeck = useCallback(() => {
+    void fetchReports(true);
+    fetchUnreadMessageCountRef.current();
+  }, [fetchReports]);
+  useReloadOnDeckClose(reloadAfterDeck);
 
   const handleSeedMessage = useCallback(async () => {
     try { await seedMockMessage(); await fetchReports(true); }
@@ -364,8 +375,8 @@ export default function ReportList() {
                         ? 'border-l-blue-400/70'
                         : 'border-l-transparent';
                     return (
-                      <RevealItem key={message.id} revealId={message.id} order={virtualRow.index - reveal.newSince} hasEntered={msgEnter.hasEntered} markEntered={msgEnter.markEntered} role="row" tabIndex={0} data-testid={`message-row-${message.id}`} onClick={() => handleRowClick(message)}
-                        onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleRowClick(message); } }}
+                      <RevealItem key={message.id} revealId={message.id} order={virtualRow.index - reveal.newSince} hasEntered={msgEnter.hasEntered} markEntered={msgEnter.markEntered} role="row" tabIndex={0} data-testid={`message-row-${message.id}`} onClick={(event) => handleRowClick(message, event.currentTarget)}
+                        onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleRowClick(message, event.currentTarget); } }}
                         style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px`, gridTemplateColumns: msgGridTemplate }}
                         className={`grid items-center border-l-2 ${rowAccent} hover:bg-primary/[0.08] cursor-pointer transition-colors border-b ${ROW_SEPARATOR} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 ${virtualRow.index % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
                       >

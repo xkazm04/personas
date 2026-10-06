@@ -1,11 +1,17 @@
 // The gate, wired: it decides which sentence the gate carries, hands the
 // write to the one door, and says out loud when the council moved under it.
 //
+// It also offers the second door (decision-center wave 3): "Open in Decision
+// Center" hands the same subject to the global Decision Deck as a `single`
+// item, built by the roster's own `councilToDecision` from the detail ON
+// SCREEN — so the deck quotes the same digest this gate would. The in-page
+// gate keeps working; when the deck closes the page re-reads.
+//
 // The digest it hands back is the digest of the round ON SCREEN - taken from
 // the detail the table is rendering, never from a later read - so the
 // backend's compare-and-swap is answering the question the person actually
 // asked.
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { CouncilRunDetail } from '@/lib/bindings/CouncilRunDetail';
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
@@ -13,6 +19,13 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { decideCouncilRow, isDecisionConflict } from '@/lib/decisions/rowWrites';
 import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
+import {
+  deckOriginOf,
+  openDecisionDeck,
+  useDecisionDeckStore,
+} from '@/features/decision-center/deck/deckStore';
+import { councilToDecision } from '@/features/decision-center/roster/decisionAdapters';
+import { useDecisionCopy } from '@/features/decision-center/roster/useDecisionCopy';
 
 import { useCouncilStore } from '../councilStore';
 import { gateOf } from '../table/councilCopy';
@@ -40,6 +53,7 @@ export function CouncilGateBay({
   const refreshCouncils = useCouncilStore((s) => s.refreshCouncils);
   const addToast = useToastStore((s) => s.addToast);
   const [moved, setMoved] = useState(false);
+  const decisionCopy = useDecisionCopy();
 
   const gate = gateOf(subject, rubric, percent);
   // A round the council has already superseded cannot be decided even when
@@ -87,6 +101,30 @@ export function CouncilGateBay({
     [addToast, detail, fixtureOn, g, onReload, recordFixtureDecision, refreshCouncils, subject.id],
   );
 
+  // The deck door. Only for a live gate with a run on screen: the fixture has
+  // no backend, and without the detail there is no digest to decide against.
+  const deckOpen = useDecisionDeckStore((s) => s.request !== null);
+  const openedDeck = useRef(false);
+  const openInDeck = useCallback(
+    (origin: HTMLElement) => {
+      if (!detail) return;
+      openedDeck.current = true;
+      openDecisionDeck({
+        scope: { kind: 'single', item: councilToDecision(subject, detail, decisionCopy) },
+        origin: deckOriginOf(origin),
+      });
+    },
+    [decisionCopy, detail, subject],
+  );
+  useEffect(() => {
+    if (deckOpen || !openedDeck.current) return;
+    openedDeck.current = false;
+    // Whatever happened in the deck (decided, moved, closed untouched), the
+    // bench and this round re-read so the gate shows the standing truth.
+    onReload();
+    void refreshCouncils();
+  }, [deckOpen, onReload, refreshCouncils]);
+
   const why = moved
     ? g.moved
     : stale
@@ -103,6 +141,7 @@ export function CouncilGateBay({
       onDecide={onDecide}
       focusNonce={focusNonce}
       fixture={fixtureOn}
+      onOpenDeck={!fixtureOn && detail ? openInDeck : undefined}
     />
   );
 }

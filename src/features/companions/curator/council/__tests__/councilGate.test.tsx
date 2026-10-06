@@ -121,3 +121,18 @@ describe('the uncalibrated sentence', () => {
     expect(label.split(/\s+/).length).toBeLessThanOrEqual(2);
   });
 });
+
+describe('the Decision Center door (decision-center wave 3)', () => {
+  it('offers "Open in Decision Center" on an open gate and hands it the button', () => {
+    const onOpenDeck = vi.fn();
+    renderGate({ onOpenDeck });
+    const door = screen.getByTestId('council-gate-open-deck');
+    fireEvent.click(door);
+    expect(onOpenDeck).toHaveBeenCalledWith(door);
+  });
+
+  it('offers no door without a handler (fixture, or no run detail)', () => {
+    renderGate();
+    expect(screen.queryByTestId('council-gate-open-deck')).toBeNull();
+  });
+});

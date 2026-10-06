@@ -12,7 +12,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useSystemStore } from '@/stores/systemStore';
-import { silentCatch } from '@/lib/silentCatch';
+import { useToastStore } from '@/stores/toastStore';
+import { isDecisionConflict } from '@/lib/decisions/rowWrites';
+import { toastCatch } from '@/lib/silentCatch';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { TriageCounts } from '@/lib/bindings/TriageCounts';
 
 import { toBacklogIdea, type BacklogIdea } from './backlogModel';
@@ -35,6 +38,10 @@ export interface BacklogQueue {
   reload: () => void;
   /** Id of the idea whose verdict is in flight, or null. */
   actingId: string | null;
+  /**
+   * Verdicts REJECT on a failed write (after toasting why), so a caller that
+   * advances on success cannot advance past a verdict that never landed.
+   */
   accept: (id: string) => Promise<void>;
   reject: (id: string, reason?: string) => Promise<void>;
   remove: (id: string) => Promise<void>;
@@ -65,6 +72,8 @@ export function useBacklogQueue(initialStatus: BacklogStatus = 'pending'): Backl
     deleteTriageIdea: s.deleteTriageIdea,
   })));
   const projects = useSystemStore((s) => s.projects);
+  const { t } = useTranslation();
+  const decidedElsewhere = t.overview.dc_decided_elsewhere;
 
   const [status, setStatus] = useState<BacklogStatus>(initialStatus);
   const [actingId, setActingId] = useState<string | null>(null);
@@ -101,14 +110,32 @@ export function useBacklogQueue(initialStatus: BacklogStatus = 'pending'): Backl
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [rows]);
 
+  // The verdict door. The slice already writes through `rowWrites`
+  // (`decideIdeaRow`, compare-and-swap on the status the row showed) and
+  // rethrows; this used to end in `silentCatch`, so every caller saw a
+  // RESOLVED promise for a write that failed — the detail modal then stepped to
+  // the next idea as if the verdict had landed. Now: say why, then reject.
+  // A lost compare-and-swap is not a failed write — the idea IS decided, just
+  // not by this person — so it reads as "decided elsewhere" and the page
+  // re-reads to show the verdict that won.
   const act = useCallback(
     async (id: string, run: () => Promise<void>) => {
       setActingId(id);
-      try { await run(); }
-      catch (err) { silentCatch('useBacklogQueue:act')(err); }
-      finally { setActingId(null); }
+      try {
+        await run();
+      } catch (err) {
+        if (isDecisionConflict(err)) {
+          useToastStore.getState().addToast(decidedElsewhere, 'warning');
+          reload();
+        } else {
+          toastCatch('useBacklogQueue:act')(err);
+        }
+        throw err;
+      } finally {
+        setActingId(null);
+      }
     },
-    [],
+    [decidedElsewhere, reload],
   );
 
   const accept = useCallback((id: string) => act(id, () => acceptIdea(id)), [act, acceptIdea]);

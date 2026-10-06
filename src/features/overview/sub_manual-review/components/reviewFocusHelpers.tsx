@@ -14,7 +14,7 @@ export interface TriageReview {
    * Present on every row the queue actually renders — `ManualReviewList` casts
    * enriched `ManualReviewItem`s (which carry `persona_id`) to this type. Typed
    * optional because the field was absent from this interface until the queue
-   * needed it to resolve a persona's workspace (`libs/workspaceTint.ts`).
+   * needed it to resolve a persona's workspace (the retired workspace tint).
    */
   persona_id?: string;
   persona_name?: string;

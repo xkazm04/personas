@@ -142,7 +142,7 @@
     "fill": {}
   },
   "overview/sub_manual-review": {
-    "title": "Overview / Approvals (opens on the pending focus flow)",
+    "title": "Overview / Approvals (opens on the pending list; rows open the Decision Deck)",
     "record": [
       {
         "method": "navigate",

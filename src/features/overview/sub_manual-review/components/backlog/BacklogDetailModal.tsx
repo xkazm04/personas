@@ -1,5 +1,10 @@
 // The Backlog's review surface — the state machine around BacklogDetailLedger.
 //
+// Since decision-center wave 3 it opens only for a DECIDED idea (accepted,
+// rejected, archived): a pending one opens the global Decision Deck instead
+// (`BacklogPanel.openDetail`). The verdict paths below stay correct for the
+// day a pending idea reaches it again — a failed write keeps the card.
+//
 // It owns the three verdicts (accept / reject / build now), the busy gate, the
 // queue stepper and the keyboard map. Layout owns none of that, so a
 // presentation change can never alter what a decision does.
@@ -12,7 +17,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { BaseModal } from '@/lib/ui/BaseModal';
 import * as devApi from '@/api/devTools/devTools';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -52,7 +57,14 @@ export function BacklogDetailModal({
   const decide = useCallback(
     async (verdict: 'accept' | 'reject') => {
       if (inFlight || !pending) return;
-      await (verdict === 'accept' ? onAccept(idea.id) : onReject(idea.id));
+      try {
+        await (verdict === 'accept' ? onAccept(idea.id) : onReject(idea.id));
+      } catch (err) {
+        // The queue already toasted why. Stay on this card: stepping on would
+        // read as a verdict that landed (the bug this replaced).
+        silentCatch('BacklogDetailModal:decide')(err);
+        return;
+      }
       if (nav) nav.onStep(1);
       else onClose();
     },
@@ -72,14 +84,22 @@ export function BacklogDetailModal({
         idea.id,
       );
       addToast(r.backlog_build_queued, 'success');
-      await onAccept(idea.id);
-      if (nav) nav.onStep(1);
-      else onClose();
     } catch (err) {
       toastCatch('BacklogDetailModal:buildNow')(err);
-    } finally {
       setBuilding(false);
+      return;
     }
+    try {
+      // The queue toasts its own failure; only the advance is ours to hold.
+      await onAccept(idea.id);
+    } catch (err) {
+      silentCatch('BacklogDetailModal:buildNow:accept')(err);
+      setBuilding(false);
+      return;
+    }
+    setBuilding(false);
+    if (nav) nav.onStep(1);
+    else onClose();
   }, [inFlight, pending, idea, addToast, r.backlog_build_queued, onAccept, nav, onClose]);
 
   // ←/→ walk the queue, A/R decide. Ignored while a write is in flight (so a

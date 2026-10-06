@@ -10,21 +10,17 @@ import { CircuitBreakerIndicator } from '@/features/agents/sub_executions/compon
 import { useTranslation } from '@/i18n/useTranslation';
 import { useConnectorAttention, useConnectorAttentionWatcher } from '@/features/vault/sub_credentials/components/card/attention/useConnectorAttention';
 import { useDecisionCounts } from '@/features/decision-center/roster/useDecisionCounts';
+import { deckOriginOf, openDecisionDeck } from '@/features/decision-center/deck/deckStore';
 
 // Lazy so the always-mounted tray doesn't pull this full-size surface into the
 // main bundle — it loads only when summoned.
 const SchedulesOverlay = lazy(() => import('@/features/schedules/components/SchedulesOverlay'));
-// And the two heaviest surfaces of all: the Persona Monitor drags the whole
-// fleet feature tree (channel grid, triage columns, drawer, grid view) and the
-// Quick Answer deck pulls the unified 7-queue triage machinery. Both were
-// static imports here, which put them in the main bundle for every window that
-// never opens them.
+// And the heaviest surface of all: the Persona Monitor drags the whole fleet
+// feature tree (channel grid, triage columns, drawer, grid view). It was a
+// static import here, which put it in the main bundle for every window that
+// never opens it.
 const PersonaMonitor = lazy(() =>
   import('@/features/fleet/monitor').then((m) => ({ default: m.PersonaMonitor })),
-);
-const QuickAnswerPopover = lazy(() =>
-  import('@/features/agents/quick-answer/QuickAnswerPopover')
-    .then((m) => ({ default: m.QuickAnswerPopover })),
 );
 
 /**
@@ -123,13 +119,20 @@ export function useTitleBarTray() {
   const toggleSchedules = () => setHeaderOverlay(isScheduleActive ? 'none' : 'schedules');
   /**
    * The badge opens the Decision Center's home: the Monitor on its Activity
-   * view, whose CommandBar strip is the hub. It no longer opens the Quick
-   * Answer deck — the deck stays mounted below for anything that still sets
-   * `headerOverlay = 'quick-answer'`, but the dock was its only entry point.
-   * Not a toggle: pressed while the Monitor shows another view, it brings
-   * Activity forward rather than closing the Monitor.
+   * view, whose CommandBar strip is the hub. Not a toggle: pressed while the
+   * Monitor shows another view, it brings Activity forward rather than
+   * closing the Monitor.
+   *
+   * `triageAll` (Shift+click, or Shift+R in keyboard-nav mode) skips the hub
+   * and opens the Decision Deck straight on every chip's queue, most urgent
+   * card first — the same "Triage all" the Activity strip offers. The deck is
+   * global, so it opens over whatever is on screen; nothing else moves.
    */
-  const openDecisions = () => {
+  const openDecisions = (opts: { triageAll?: boolean; origin?: Element | null } = {}) => {
+    if (opts.triageAll) {
+      openDecisionDeck({ scope: { kind: 'all' }, origin: deckOriginOf(opts.origin) });
+      return;
+    }
     setMonitorInitialView('fleet');
     if (!monitorOpen) setHeaderOverlay('monitor');
   };
@@ -156,10 +159,8 @@ export function useTitleBarTray() {
 
 /**
  * Mounts the Persona Monitor (the dock's decision and monitor capsules both
- * open it) and the Quick Answer popover, plus the provider circuit-breaker
- * indicator. The popover has no dock entry any more — the decision badge opens
- * the Monitor's Activity hub — and stays mounted only until the Decision
- * Center's shared modal retires it.
+ * open it) and the Schedules overlay, plus the provider circuit-breaker
+ * indicator.
  *
  * The breaker indicator had ZERO importers repo-wide until 2026-09-02, so a
  * tripped provider reached no pixel and the user saw only a wall of
@@ -207,15 +208,6 @@ export function TrayOverlays() {
           fallback={<OverlayChunkFallback topClass="top-[var(--titlebar-height,40px)]" />}
         >
           <PersonaMonitor onClose={() => setHeaderOverlay('none')} />
-        </Suspense>
-      )}
-      {headerOverlay === 'quick-answer' && (
-        // top-12 mirrors the triage deck's own shell (TriageDeckVariant).
-        <Suspense key="quick-answer" fallback={<OverlayChunkFallback topClass="top-12" />}>
-          <QuickAnswerPopover
-            onClose={() => setHeaderOverlay('none')}
-            onOpenMonitor={() => setHeaderOverlay('monitor')}
-          />
         </Suspense>
       )}
       {headerOverlay === 'schedules' && (

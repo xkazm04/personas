@@ -30,6 +30,11 @@ import { IncidentsLedgerDossier } from './ledger/IncidentsLedgerDossier';
 import { AutonomousLogPanel } from './autonomous/AutonomousLogPanel';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 import { isNarrowedFilters } from '../libs/incidentFilterDefaults';
+import {
+  useDecisionDeckOpen,
+  useReloadOnDeckClose,
+} from '@/features/overview/sub_manual-review/libs/decisionDeckDoors';
+import { openIncidentDoor } from '../libs/incidentDeckDoor';
 
 export default function IncidentsInbox() {
   const { t, tx } = useTranslation();
@@ -61,7 +66,15 @@ export default function IncidentsInbox() {
   }, [refresh]);
   const actions = useIncidentActions({ onAfterChange });
 
-  const openDetail = useCallback((incident: AuditIncident) => setDetailIncident(incident), []);
+  // History view rule: an open incident opens the Decision Deck, a closed one
+  // the detail modal (`openIncidentDoor`, shared by every door into a row).
+  const openDetail = useCallback(
+    (incident: AuditIncident) => { openIncidentDoor(incident, setDetailIncident); },
+    [],
+  );
+  const deckOpen = useDecisionDeckOpen();
+  // The deck writes through the roster's doors; the ledger re-reads on close.
+  useReloadOnDeckClose(refresh);
   useIncidentDeepLinkOpen(incidents, openDetail);
 
   // The ledger reports the rows it is actually showing (its current page, in
@@ -74,7 +87,7 @@ export default function IncidentsInbox() {
     rows: pageRows,
     focusedId,
     setFocusedId,
-    enabled: detailIncident === null && !showAutonomous,
+    enabled: detailIncident === null && !showAutonomous && !deckOpen,
     onOpenDetail: openDetail,
     acknowledge,
     resolve,

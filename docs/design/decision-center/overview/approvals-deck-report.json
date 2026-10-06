@@ -1,0 +1,190 @@
+{
+  "module": "overview/sub_manual-review/deck",
+  "kit": null,
+  "label": "approvals-deck",
+  "createdAt": "2026-10-06T15:27:42.402Z",
+  "browser": "147.0.7727.15",
+  "tape": {
+    "path": "synthetic",
+    "source": "synthetic",
+    "recordedAt": "2026-09-22T15:40:00.000Z",
+    "calls": 14,
+    "note": "Synthetic: the Approvals tape, with the Decision Deck opened by the pending view Decide N button on the gates chip."
+  },
+  "ok": true,
+  "unknownIpcCommands": [],
+  "shots": [
+    {
+      "file": "approvals-deck-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_persona_summaries": 1,
+        "dev_tools_triage_ideas": 4,
+        "get_manual_review_counts": 1,
+        "list_manual_reviews_page": 2,
+        "policy_tuning_list": 2,
+        "evolution_list_promotion_proposals": 1,
+        "dev_tools_list_pending_acceptance": 1,
+        "companion_list_pending_approvals": 1,
+        "dev_tools_pending_counts": 1,
+        "dev_tools_undispatched_ideas": 1
+      },
+      "stable": true,
+      "textLength": 1137,
+      "textSample": "MANUAL REVIEWS 22 reviews · 8 pending Clear stale Mock Review Manual Review 8 Backlog All(22) Pending(8) Approved(9) Rejected(4) All Personas Select all Inbox Triage Delete 1,284 archived threads from",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "approvals-deck-1920x1080-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_persona_summaries": 1,
+        "dev_tools_triage_ideas": 4,
+        "get_manual_review_counts": 1,
+        "list_manual_reviews_page": 2,
+        "policy_tuning_list": 2,
+        "evolution_list_promotion_proposals": 1,
+        "dev_tools_list_pending_acceptance": 1,
+        "companion_list_pending_approvals": 1,
+        "dev_tools_pending_counts": 1,
+        "dev_tools_undispatched_ideas": 1
+      },
+      "stable": true,
+      "textLength": 1137,
+      "textSample": "MANUAL REVIEWS 22 reviews · 8 pending Clear stale Mock Review Manual Review 8 Backlog All(22) Pending(8) Approved(9) Rejected(4) All Personas Select all Inbox Triage Delete 1,284 archived threads from",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "approvals-deck-1280x800-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_persona_summaries": 1,
+        "dev_tools_triage_ideas": 4,
+        "get_manual_review_counts": 1,
+        "list_manual_reviews_page": 2,
+        "policy_tuning_list": 2,
+        "evolution_list_promotion_proposals": 1,
+        "dev_tools_list_pending_acceptance": 1,
+        "companion_list_pending_approvals": 1,
+        "dev_tools_pending_counts": 1,
+        "dev_tools_undispatched_ideas": 1
+      },
+      "stable": true,
+      "textLength": 1137,
+      "textSample": "MANUAL REVIEWS 22 reviews · 8 pending Clear stale Mock Review Manual Review 8 Backlog All(22) Pending(8) Approved(9) Rejected(4) All Personas Select all Inbox Triage Delete 1,284 archived threads from",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "approvals-deck-1920x1080-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_persona_summaries": 1,
+        "dev_tools_triage_ideas": 4,
+        "get_manual_review_counts": 1,
+        "list_manual_reviews_page": 2,
+        "policy_tuning_list": 2,
+        "evolution_list_promotion_proposals": 1,
+        "dev_tools_list_pending_acceptance": 1,
+        "companion_list_pending_approvals": 1,
+        "dev_tools_pending_counts": 1,
+        "dev_tools_undispatched_ideas": 1
+      },
+      "stable": true,
+      "textLength": 1137,
+      "textSample": "MANUAL REVIEWS 22 reviews · 8 pending Clear stale Mock Review Manual Review 8 Backlog All(22) Pending(8) Approved(9) Rejected(4) All Personas Select all Inbox Triage Delete 1,284 archived threads from",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    }
+  ]
+}

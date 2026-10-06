@@ -1,0 +1,216 @@
+{
+  "module": "overview/sub_incidents/deck",
+  "kit": null,
+  "label": "incidents-deck",
+  "createdAt": "2026-10-06T15:28:55.961Z",
+  "browser": "147.0.7727.15",
+  "tape": {
+    "path": "synthetic",
+    "source": "synthetic",
+    "recordedAt": "2026-09-22T15:40:00.000Z",
+    "calls": 11,
+    "note": "Synthetic: the Incidents tape, with the Decision Deck opened by clicking the first open incident row."
+  },
+  "ok": true,
+  "unknownIpcCommands": [
+    "list_manual_reviews_page"
+  ],
+  "shots": [
+    {
+      "file": "incidents-deck-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "list_manual_reviews_page",
+          "args": {
+            "cursor": null,
+            "limit": 100,
+            "personaId": null,
+            "status": "pending"
+          },
+          "answered": []
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "get_persona_summaries": 1,
+        "list_audit_incidents": 2,
+        "get_audit_incidents_summary": 1,
+        "list_autonomously_handled_incidents": 1,
+        "list_manual_reviews_page": 1,
+        "dev_tools_pending_counts": 1,
+        "dev_tools_undispatched_ideas": 1
+      },
+      "stable": true,
+      "textLength": 2682,
+      "textSample": "INCIDENTS Cross-source inbox for alerts and errors Refresh Clear all Open 60 Critical 20 Needs attention now Acked 20 Resolved 10 Autonomous 6 Severity Source All time SOURCE INCIDENT SEVERITY AGENT A",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "incidents-deck-1920x1080-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "list_manual_reviews_page",
+          "args": {
+            "cursor": null,
+            "limit": 100,
+            "personaId": null,
+            "status": "pending"
+          },
+          "answered": []
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "get_persona_summaries": 1,
+        "list_audit_incidents": 2,
+        "get_audit_incidents_summary": 1,
+        "list_autonomously_handled_incidents": 1,
+        "list_manual_reviews_page": 1,
+        "dev_tools_pending_counts": 1,
+        "dev_tools_undispatched_ideas": 1
+      },
+      "stable": true,
+      "textLength": 2682,
+      "textSample": "INCIDENTS Cross-source inbox for alerts and errors Refresh Clear all Open 60 Critical 20 Needs attention now Acked 20 Resolved 10 Autonomous 6 Severity Source All time SOURCE INCIDENT SEVERITY AGENT A",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "incidents-deck-1280x800-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "list_manual_reviews_page",
+          "args": {
+            "cursor": null,
+            "limit": 100,
+            "personaId": null,
+            "status": "pending"
+          },
+          "answered": []
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "get_persona_summaries": 1,
+        "list_audit_incidents": 2,
+        "get_audit_incidents_summary": 1,
+        "list_autonomously_handled_incidents": 1,
+        "list_manual_reviews_page": 1,
+        "dev_tools_pending_counts": 1,
+        "dev_tools_undispatched_ideas": 1
+      },
+      "stable": true,
+      "textLength": 2682,
+      "textSample": "INCIDENTS Cross-source inbox for alerts and errors Refresh Clear all Open 60 Critical 20 Needs attention now Acked 20 Resolved 10 Autonomous 6 Severity Source All time SOURCE INCIDENT SEVERITY AGENT A",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "incidents-deck-1920x1080-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "list_manual_reviews_page",
+          "args": {
+            "cursor": null,
+            "limit": 100,
+            "personaId": null,
+            "status": "pending"
+          },
+          "answered": []
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "get_persona_summaries": 1,
+        "list_audit_incidents": 2,
+        "get_audit_incidents_summary": 1,
+        "list_autonomously_handled_incidents": 1,
+        "list_manual_reviews_page": 1,
+        "dev_tools_pending_counts": 1,
+        "dev_tools_undispatched_ideas": 1
+      },
+      "stable": true,
+      "textLength": 2682,
+      "textSample": "INCIDENTS Cross-source inbox for alerts and errors Refresh Clear all Open 60 Critical 20 Needs attention now Acked 20 Resolved 10 Autonomous 6 Severity Source All time SOURCE INCIDENT SEVERITY AGENT A",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    }
+  ]
+}
