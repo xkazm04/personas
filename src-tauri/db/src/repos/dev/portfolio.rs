@@ -225,54 +225,59 @@ fn council_subject_is_decidable(state: &str, tier: Option<&str>, kind: &str) -> 
 /// none of which a count needs.
 fn count_council_decidable(pool: &DbPool) -> Result<u32, AppError> {
     use super::council;
+    timed_query!(
+        "dev_council_subjects",
+        "pending_counts::council_decidable",
+        {
+            let subjects: Vec<(String, String, Option<String>, String)> = {
+                let conn = pool.get()?;
+                let mut stmt =
+                    conn.prepare("SELECT id, kind, use_case_id, drift FROM dev_council_subjects")?;
+                let rows = stmt.query_map([], |r| {
+                    Ok((
+                        r.get::<_, String>("id")?,
+                        r.get::<_, String>("kind")?,
+                        r.get::<_, Option<String>>("use_case_id")?,
+                        r.get::<_, String>("drift")?,
+                    ))
+                })?;
+                rows.collect::<Result<Vec<_>, _>>()?
+            };
 
-    let subjects: Vec<(String, String, Option<String>, String)> = {
-        let conn = pool.get()?;
-        let mut stmt =
-            conn.prepare("SELECT id, kind, use_case_id, drift FROM dev_council_subjects")?;
-        let rows = stmt.query_map([], |r| {
-            Ok((
-                r.get::<_, String>("id")?,
-                r.get::<_, String>("kind")?,
-                r.get::<_, Option<String>>("use_case_id")?,
-                r.get::<_, String>("drift")?,
-            ))
-        })?;
-        rows.collect::<Result<Vec<_>, _>>()?
-    };
-
-    let mut decidable = 0u32;
-    for (id, kind, use_case_id, drift) in subjects {
-        let Some(run) = council::latest_run(pool, &id)? else {
-            continue; // never councilled: state `none`, nobody to ask
-        };
-        let decision = council::standing_decision(pool, &id)?;
-        // Same lookup as the council store's private `use_case_tier`: `None`
-        // for an architecture subject (no feature, no tier) or a missing row.
-        let tier: Option<String> = match use_case_id.as_deref() {
-            Some(uc) => pool
-                .get()?
-                .query_row(
-                    "SELECT tier FROM dev_use_cases WHERE id = ?1",
-                    params![uc],
-                    |r| r.get::<_, String>("tier"),
-                )
-                .ok(),
-            None => None,
-        };
-        let state = council::derive_council_state(&council::CouncilStateInputs {
-            latest_outcome: Some(run.outcome.as_str()),
-            latest_run_id: Some(run.id.as_str()),
-            decision: decision.as_ref().map(|d| d.decision.as_str()),
-            decision_run_id: decision.as_ref().map(|d| d.run_id.as_str()),
-            tier: tier.as_deref(),
-            drift: &drift,
-        });
-        if council_subject_is_decidable(&state, tier.as_deref(), &kind) {
-            decidable += 1;
+            let mut decidable = 0u32;
+            for (id, kind, use_case_id, drift) in subjects {
+                let Some(run) = council::latest_run(pool, &id)? else {
+                    continue; // never councilled: state `none`, nobody to ask
+                };
+                let decision = council::standing_decision(pool, &id)?;
+                // Same lookup as the council store's private `use_case_tier`: `None`
+                // for an architecture subject (no feature, no tier) or a missing row.
+                let tier: Option<String> = match use_case_id.as_deref() {
+                    Some(uc) => pool
+                        .get()?
+                        .query_row(
+                            "SELECT tier FROM dev_use_cases WHERE id = ?1",
+                            params![uc],
+                            |r| r.get::<_, String>("tier"),
+                        )
+                        .ok(),
+                    None => None,
+                };
+                let state = council::derive_council_state(&council::CouncilStateInputs {
+                    latest_outcome: Some(run.outcome.as_str()),
+                    latest_run_id: Some(run.id.as_str()),
+                    decision: decision.as_ref().map(|d| d.decision.as_str()),
+                    decision_run_id: decision.as_ref().map(|d| d.run_id.as_str()),
+                    tier: tier.as_deref(),
+                    drift: &drift,
+                });
+                if council_subject_is_decidable(&state, tier.as_deref(), &kind) {
+                    decidable += 1;
+                }
+            }
+            Ok(decidable)
         }
-    }
-    Ok(decidable)
+    )
 }
 
 /// See {@link PendingCounts}. One pooled connection for the SQL counts; the

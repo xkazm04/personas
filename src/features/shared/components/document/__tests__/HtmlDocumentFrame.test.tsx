@@ -12,7 +12,7 @@ describe('HtmlDocumentFrame', () => {
     render(
       <HtmlDocumentFrame
         title="Doc"
-        html={'<style>h1{color:teal}</style><h1>T</h1><script>alert(1)</script><img src="x" onerror="alert(1)"><img src="https://evil.example/a.png">'}
+        html={'<style>h2{color:teal}</style><h2>T</h2><script>alert(1)</script><img src="x" onerror="alert(1)"><img src="https://evil.example/a.png">'}
       />,
     );
     await waitFor(() => expect(screen.getByTitle('Doc')).toBeTruthy());
@@ -22,7 +22,7 @@ describe('HtmlDocumentFrame', () => {
     expect(sandbox).toBe('allow-same-origin');
     const doc = el.getAttribute('srcdoc') ?? '';
     expect(doc).not.toMatch(/<script|onerror|evil\.example/i);
-    expect(doc).toContain('h1{color:teal}');
+    expect(doc).toContain('h2{color:teal}');
     expect(doc).toContain('data-pa-theme');
   });
 

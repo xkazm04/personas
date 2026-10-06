@@ -9,7 +9,8 @@ export interface PriorityStyle {
   color: string;
   bgColor: string;
   borderColor: string;
-  label: string;
+  /** English fallback name; absent where every render site passes a translated one. */
+  label?: string;
   /** Optional leading glyph. Low gets a down-chevron so the recessive tier is
    *  scannable by shape, not color alone (also helps color-vision-deficient users). */
   icon?: typeof ChevronDown | typeof AlertTriangle;
@@ -20,7 +21,9 @@ export interface PriorityStyle {
 export const priorityConfig: Record<string, PriorityStyle> = {
   // The engine writes `critical` (engine/execution.rs) and this map had no
   // entry for it, so a critical report rendered as Normal.
-  critical: { color: 'text-status-error', bgColor: 'bg-status-error/15', borderColor: 'border-status-error/50', label: 'Critical', icon: AlertTriangle },
+  // No English label: every render site passes the translated tier name
+  // (`overview.reader_priority_critical`).
+  critical: { color: 'text-status-error', bgColor: 'bg-status-error/15', borderColor: 'border-status-error/50', icon: AlertTriangle },
   high: { color: 'text-red-400', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30', label: 'High' },
   normal: { color: 'text-foreground/90', bgColor: 'bg-secondary/40', borderColor: 'border-primary/20', label: 'Normal' },
   low: { color: 'text-muted-foreground/70', bgColor: 'bg-transparent', borderColor: 'border-muted-foreground/25', label: 'Low', icon: ChevronDown, chipClass: 'border-dashed' },

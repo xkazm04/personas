@@ -25,7 +25,7 @@ export function PriorityChip({ priority, size = 'md', label }: PriorityChipProps
       className={`inline-flex items-center gap-0.5 border ${sizing} ${priority.bgColor} ${priority.color} ${priority.borderColor} ${priority.chipClass ?? ''}`}
     >
       {Icon && <Icon className="w-3 h-3 -ml-0.5" aria-hidden="true" />}
-      {label ?? priority.label}
+      {label ?? priority.label ?? ''}
     </span>
   );
 }
