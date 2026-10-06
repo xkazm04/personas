@@ -216,11 +216,14 @@ persona with a completed build stays `active`.
 The **Describe** path (the intent build above) runs a live LLM **build
 session**. `start_build_session` spawns a long-lived backend task that drives
 the persona spec to completion; the surface is `UnifiedBuildEntry`, rendered as
-**Sheet · Cinema** (`ContactSheetCinemaLayout`, `sub_glyph/contactSheet/cinema/`)
-— the one build layout. The earlier Cinema and Dialogue+Cinema layouts (and the
-`GlyphFullLayout` compose step they shared) plus the layout switcher were
-**removed 2026-09-23**; their capability review, Simulate, test report and
-recipe starters live on inside the sheet. The session resolves the persona through the **v3 capability
+the **Schematic Dial** (`SchematicDialLayout`, `sub_glyph/contactSheet/dial/`)
+— the one build layout: the eight dimensions as sectors of a drafted dial, each
+in its own colour, around a hub that carries the act (casting, questions, draft,
+verdict, premiere). Clicking a sector, or a clarifying question, explodes that
+sector into a nested layer beside its controls or the question. It reuses the
+Sheet · Cinema state and panels (`sub_glyph/contactSheet/cinema/`); the Cinema
+layout itself and its prototype switcher were **removed 2026-10-06**, as were the
+earlier Cinema and Dialogue+Cinema layouts on 2026-09-23. The session resolves the persona through the **v3 capability
 chronology** — `behavior_core → capability_enumeration → per-capability
 resolution → agent_ir` — asking **clarifying questions** when a gated dimension
 needs your input. (The legacy "8 dimensions / 3×3 matrix" is now only a

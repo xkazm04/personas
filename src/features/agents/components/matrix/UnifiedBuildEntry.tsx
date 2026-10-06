@@ -19,7 +19,7 @@ import {
   type PromoteRedirect,
 } from "@/features/agents/components/matrix/promoteReceipt";
 import { PromoteReceiptCard } from "@/features/agents/components/matrix/PromoteReceiptCard";
-import { BuildLayoutSwitcher } from "@/features/agents/sub_glyph/contactSheet/BuildLayoutSwitcher";
+import { SchematicDialLayout } from "@/features/agents/sub_glyph/contactSheet/dial/SchematicDialLayout";
 import type { GlyphFullLayoutProps } from "@/features/agents/sub_glyph/glyphLayoutTypes";
 import type { PersonaCoreLaunchSnapshot } from "@/features/agents/sub_glyph/personaCore";
 import { useUseCaseChronology } from "@/features/templates/sub_generated/adoption/chronology/useUseCaseChronology";
@@ -865,7 +865,7 @@ export function UnifiedBuildEntry() {
           launchError,
           onDismissLaunchError: () => setLaunchError(null),
         };
-        return <BuildLayoutSwitcher {...layoutProps} />;
+        return <SchematicDialLayout {...layoutProps} />;
       })()}
 
       <PromoteReceiptCard

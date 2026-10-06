@@ -79,6 +79,7 @@ export function DialQuestion({ qs, index, color, draftOf, onDraft, onPick, onNex
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.18, duration: 0.3 }}
             className="m-0 typo-heading-lg text-foreground leading-snug"
+            style={{ fontSize: "calc(var(--type-4) * var(--type-f) - 3px)" }}
           >
             {question.question}
           </motion.h2>

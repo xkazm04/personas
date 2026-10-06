@@ -5,9 +5,9 @@
 // twin (src/features/onboarding/anchors/tourAnchorManifest.json) is used by
 // the frontend; both are generated from the same scan so they never drift.
 
-/// Every statically-declared `data-testid` in src/ (2156).
+/// Every statically-declared `data-testid` in src/ (2164).
 pub const TOUR_TESTIDS: &[&str] = &[
-    "ContactSheetCinemaLayout",
+    "SchematicDialLayout",
     "active-chain-row",
     "active-chains-badge",
     "activity-attention-unavailable",
@@ -595,6 +595,14 @@ pub const TOUR_TESTIDS: &[&str] = &[
     "device-link-page",
     "devices-p2p-unavailable",
     "devtools-l2-waiting-badge",
+    "dial-exploded",
+    "dial-exploded-controls",
+    "dial-exploded-fan",
+    "dial-figure",
+    "dial-grid",
+    "dial-hub",
+    "dial-question",
+    "dial-question-layer",
     "dimension-radial",
     "direction-guided",
     "director-batch-outcome",
@@ -1463,6 +1471,7 @@ pub const TOUR_TESTIDS: &[&str] = &[
     "promote-receipt-needs-setup",
     "promote-receipt-retry",
     "promotion-success",
+    "question-reason",
     "quick-answer-review-stepper",
     "quick-dispatch-athena-toggle",
     "quick-dispatch-char-count",
@@ -1828,6 +1837,8 @@ pub const TOUR_TESTIDS: &[&str] = &[
     "studio-cable-pause-toggle",
     "studio-chat-bubble",
     "studio-decision-option",
+    "studio-dock-toolbar",
+    "studio-goals-rail",
     "studio-live-cable",
     "studio-messages-toggle",
     "studio-orb-pointer",
@@ -1835,9 +1846,6 @@ pub const TOUR_TESTIDS: &[&str] = &[
     "studio-pick-composer",
     "studio-pick-input",
     "studio-plan-button",
-    "studio-plan-drawer",
-    "studio-preview-url",
-    "studio-quick-action",
     "studio-settings",
     "studio-settings-panel",
     "studio-stop",
@@ -2257,6 +2265,8 @@ pub const TOUR_TESTID_DYNAMIC_PREFIXES: &[&str] = &[
     "dev-ledger-row-",
     "dev-ledger-up-",
     "devtools-project-option-",
+    "dial-readout-",
+    "dial-sector-",
     "direction-",
     "discord-poll-inbound-",
     "dispatch-method-",

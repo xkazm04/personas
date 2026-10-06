@@ -2,7 +2,7 @@
  *  rim, leaders), the sweep arm, the casting orbit, the hub, the readout
  *  columns and the corner furniture, all in one stage-sized coordinate space.
  *
- *  Memoised like Cinema's SheetPrint: while a layer is open the print sleeps
+ *  Memoised: while a layer is open the print sleeps
  *  (`frozen`) and React keeps its last awake render, so the clock ticking in
  *  the hub never walks the figure under a camera move. */
 import { memo } from "react";
