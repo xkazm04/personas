@@ -6,7 +6,8 @@ import type { DevKpi } from '@/lib/bindings/DevKpi';
 
 import { buildEstate } from '../estate/kpiEstate';
 import type { KpiProjectRollup } from '../kpiOverviewModel';
-import { assayGroupPlaces, assayPlaces, buildAssay, UNGROUPED_PLACE } from '../variants/assay/Assay.model';
+import { buildAssay } from '../variants/assay/Assay.model';
+import { groupPlaces, projectPlaces, UNGROUPED_PLACE } from '../variants/kpiPlaces';
 
 const DAY = 86_400_000;
 const NOW = Date.parse('2026-10-06T12:00:00Z');
@@ -55,7 +56,7 @@ function estateOf(kpis: DevKpi[], label = 'alpha', projectId = 'p') {
 
 /** The bench at portfolio altitude, which is what most cases read. */
 function bench(estate: ReturnType<typeof buildEstate>) {
-  return buildAssay(assayPlaces(estate), NOW);
+  return buildAssay(projectPlaces(estate), NOW);
 }
 
 describe('buildAssay — lanes', () => {
@@ -180,7 +181,7 @@ describe('buildAssay — who owns the loss', () => {
         cell(null, 'Ungrouped', [kpi({ id: 'b', context_group_id: null })]),
       ],
     }], NOW);
-    const places = assayGroupPlaces(estate.projects[0]!);
+    const places = groupPlaces(estate.projects[0]!);
     expect(places.map((p) => p.id).sort()).toEqual(['g1', UNGROUPED_PLACE]);
     const lane = buildAssay(places, NOW).lanes[0]!;
     expect(lane.declared).toBe(2);

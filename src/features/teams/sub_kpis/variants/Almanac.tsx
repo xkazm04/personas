@@ -28,8 +28,8 @@ import { buildEstate } from '../estate/kpiEstate';
 import { EstateHeadline } from '../estate/EstateHeadline';
 import { useKpiAltitude } from '../estate/useKpiAltitude';
 import { UNGROUPED_KEY } from '../kpiOverviewModel';
-import { assayGroupPlaces, assayPlaces, UNGROUPED_PLACE } from './assay/Assay.model';
 import { buildAlmanac } from './almanac/Almanac.model';
+import { groupPlaces, projectPlaces, UNGROUPED_PLACE } from './kpiPlaces';
 import { AlmanacBandRow, BAND_HEIGHT } from './almanac/AlmanacBand';
 import { AlmanacLegend, AlmanacScale } from './almanac/AlmanacScale';
 
@@ -40,7 +40,7 @@ export default function Almanac({ overview, loading, onFocus }: KpiVariantProps)
   const project = altitude.project;
 
   const almanac = useMemo(
-    () => buildAlmanac(project ? assayGroupPlaces(project) : assayPlaces(estate), estate.now),
+    () => buildAlmanac(project ? groupPlaces(project) : projectPlaces(estate), estate.now),
     [project, estate],
   );
 

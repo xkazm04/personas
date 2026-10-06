@@ -31,7 +31,8 @@ import { buildEstate } from '../estate/kpiEstate';
 import { EstateHeadline } from '../estate/EstateHeadline';
 import { useKpiAltitude } from '../estate/useKpiAltitude';
 import { UNGROUPED_KEY } from '../kpiOverviewModel';
-import { assayGroupPlaces, assayPlaces, buildAssay, UNGROUPED_PLACE } from './assay/Assay.model';
+import { buildAssay } from './assay/Assay.model';
+import { groupPlaces, projectPlaces, UNGROUPED_PLACE } from './kpiPlaces';
 import { AssayLaneRow } from './assay/AssayLane';
 import { FLUME_HEIGHT } from './assay/AssayFlume';
 
@@ -46,7 +47,7 @@ export default function Assay({ overview, loading, onFocus }: KpiVariantProps) {
   // project: the places are its groups, and pressing one hands the group
   // layer the same focus the map and the books hand it.
   const assay = useMemo(
-    () => buildAssay(project ? assayGroupPlaces(project) : assayPlaces(estate), estate.now),
+    () => buildAssay(project ? groupPlaces(project) : projectPlaces(estate), estate.now),
     [project, estate],
   );
 

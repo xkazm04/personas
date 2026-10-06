@@ -20,6 +20,7 @@ import type { DevKpi } from '@/lib/bindings/DevKpi';
 
 import { kpiTrack } from '../../kpiMath';
 import { freshDays, lastReadAt, type KpiTally } from '../../estate/kpiEstate';
+import type { KpiPlace } from '../kpiPlaces';
 
 const DAY_MS = 86_400_000;
 
@@ -82,7 +83,7 @@ export interface AlmanacMark {
 }
 
 export interface AlmanacRow {
-  /** `AssayPlace`-shaped: a project at the portfolio, a group inside one. */
+  /** `KpiPlace`-shaped: a project at the portfolio, a group inside one. */
   id: string;
   label: string;
   total: number;
@@ -125,7 +126,7 @@ function record(into: Record<DueState, AlmanacMark>, due: Due): void {
 }
 
 /** The almanac over places whose KPIs the estate already grouped. */
-export function buildAlmanac(places: { id: string; label: string; kpis: DevKpi[] }[], now: number): Almanac {
+export function buildAlmanac(places: KpiPlace[], now: number): Almanac {
   const totals = emptyMarks();
   const rows: AlmanacRow[] = places.map((place) => {
     const marks = emptyMarks();

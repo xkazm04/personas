@@ -29,23 +29,9 @@
 // vocabulary `kpiNextMove` already prints, so the gate names an action.
 //
 // Pure: no React, no store, no i18n.
-import type { DevKpi } from '@/lib/bindings/DevKpi';
-
 import { kpiTrack } from '../../kpiMath';
-import { isStale, verdictGap, type Estate, type EstateProject, type VerdictGap } from '../../estate/kpiEstate';
-
-/**
- * One addressable place the loss can be attributed to. The bench is drawn the
- * same way at both altitudes - projects at the portfolio, groups inside one
- * project - so the derivation takes PLACES rather than projects and the
- * surface decides which level it is reading.
- */
-export interface AssayPlace {
-  /** What `onFocus`/`descend` will be given for this place. */
-  id: string;
-  label: string;
-  kpis: DevKpi[];
-}
+import { isStale, verdictGap, type VerdictGap } from '../../estate/kpiEstate';
+import type { KpiPlace } from '../kpiPlaces';
 
 /** A missing prerequisite, and how many KPIs in a lane are missing it. */
 export interface AssayGap {
@@ -55,7 +41,7 @@ export interface AssayGap {
 
 /** One place's contribution to a lane's stalled population. */
 export interface AssayShare {
-  /** The place's id, as `AssayPlace.id` gave it. */
+  /** The place's id, as `KpiPlace.id` gave it. */
   id: string;
   label: string;
   /** Stalled here: declared but not yet carrying a verdict. */
@@ -108,27 +94,13 @@ function emptyLane(kind: string): AssayLane {
   };
 }
 
-/** The id a group with no `context_group_id` is addressed by - the same key
- *  `kpiOverviewModel` uses, so a focus built from it resolves. */
-export const UNGROUPED_PLACE = 'ungrouped';
-
-/** Portfolio altitude: one place per project. */
-export function assayPlaces(estate: Estate): AssayPlace[] {
-  return estate.projects.map((p) => ({ id: p.projectId, label: p.label, kpis: p.kpis }));
-}
-
-/** Project altitude: one place per context group inside it. */
-export function assayGroupPlaces(project: EstateProject): AssayPlace[] {
-  return project.groups.map((g) => ({ id: g.groupId ?? UNGROUPED_PLACE, label: g.label, kpis: g.kpis }));
-}
-
 /**
  * The bench, built over places whose KPIs the estate already grouped. Nothing
  * is re-fetched, nothing is dropped and nothing is capped: a lane with one KPI
  * in it is still a lane, because a mechanism nobody uses is itself a reading
  * of the estate.
  */
-export function buildAssay(places: AssayPlace[], now: number): Assay {
+export function buildAssay(places: KpiPlace[], now: number): Assay {
   const lanes = new Map<string, AssayLane>();
   const gaps = new Map<string, Map<string, number>>();
   const shares = new Map<string, Map<string, AssayShare>>();
