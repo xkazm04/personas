@@ -17,53 +17,17 @@
 // a rejected finding is never re-raised). Purely informational findings (no
 // actionable `kind`) stay in the triage backlog and are not shown here.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Check, Cog, Target, Archive, X, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 import { listIdeas } from '@/api/devTools/devTools';
 import { decideIdeaRow } from '@/lib/decisions/rowWrites';
-import type { DevIdea } from '@/lib/bindings/DevIdea';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
-
-type ActionKind = 'adopt_measure_config' | 'adjust_target' | 'retire';
-const ACTION_KINDS: ActionKind[] = ['adopt_measure_config', 'adjust_target', 'retire'];
-
-interface Suggestion {
-  ideaId: string;
-  kind: ActionKind;
-  kpiId: string;
-  rationale: string | null;
-  citations: string[];
-  /** kind-specific payload — {cmd,parse} | {target_value,target_date} | {} */
-  payload: Record<string, unknown>;
-}
-
-/** Parse a kpi_sim finding into an actionable suggestion, or null when it is
- *  a purely informational finding (no actionable kind / no kpi). */
-function parseSuggestion(idea: DevIdea): Suggestion | null {
-  if (!idea.evidence) return null;
-  let ev: Record<string, unknown>;
-  try {
-    ev = JSON.parse(idea.evidence) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-  const kind = ev.kind;
-  const kpiId = ev.kpi_id;
-  if (typeof kind !== 'string' || !ACTION_KINDS.includes(kind as ActionKind)) return null;
-  if (typeof kpiId !== 'string' || !kpiId) return null;
-  return {
-    ideaId: idea.id,
-    kind: kind as ActionKind,
-    kpiId,
-    rationale: idea.description ?? null,
-    citations: Array.isArray(ev.citations) ? (ev.citations as unknown[]).filter((c): c is string => typeof c === 'string') : [],
-    payload: (ev.payload && typeof ev.payload === 'object' ? ev.payload : {}) as Record<string, unknown>,
-  };
-}
+import { parseSuggestion, type Suggestion } from './kpiSimModel';
+import { SuggestionRow, suggestionHeadline } from './KpiSuggestionRow';
+import { KpiSuggestionDetail } from './KpiSuggestionDetail';
 
 export function KpiSimSuggestions({ projectId, onApplied }: {
   projectId: string;
@@ -76,6 +40,9 @@ export function KpiSimSuggestions({ projectId, onApplied }: {
   const updateKpi = useSystemStore((s) => s.updateKpi);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // Which suggestion's full rationale is open. The row shows a teaser; the
+  // markdown body belongs in the shared modal, not in a ledger line.
+  const [openId, setOpenId] = useState<string | null>(null);
 
   const kpiName = useMemo(() => {
     const m = new Map(kpis.map((k) => [k.id, k]));
@@ -138,6 +105,11 @@ export function KpiSimSuggestions({ projectId, onApplied }: {
     }
   };
 
+  const open = suggestions.find((x) => x.ideaId === openId) ?? null;
+  const openHeadline = open
+    ? suggestionHeadline(open, kpiName(open.kpiId)?.name ?? '—', kpiName(open.kpiId)?.unit ?? '', t, tx)
+    : { label: '', detail: '' };
+
   if (suggestions.length === 0) return null;
 
   return (
@@ -159,84 +131,21 @@ export function KpiSimSuggestions({ projectId, onApplied }: {
             busy={busyId === s.ideaId}
             onApply={() => apply(s)}
             onDismiss={() => dismiss(s)}
+            onOpen={() => setOpenId(s.ideaId)}
           />
         ))}
       </ul>
+      {open && (
+        <KpiSuggestionDetail
+          s={open}
+          title={openHeadline.label}
+          detail={openHeadline.detail}
+          busy={busyId === open.ideaId}
+          onApply={() => { setOpenId(null); void apply(open); }}
+          onDismiss={() => { setOpenId(null); void dismiss(open); }}
+          onClose={() => setOpenId(null)}
+        />
+      )}
     </div>
-  );
-}
-
-const KIND_ICON: Record<ActionKind, typeof Cog> = {
-  adopt_measure_config: Cog,
-  adjust_target: Target,
-  retire: Archive,
-};
-
-function SuggestionRow({ s, kpiName, unit, busy, onApply, onDismiss }: {
-  s: Suggestion;
-  kpiName: string;
-  unit: string;
-  busy: boolean;
-  onApply: () => void;
-  onDismiss: () => void;
-}) {
-  const { t, tx } = useTranslation();
-  const Icon = KIND_ICON[s.kind];
-
-  const headline = (() => {
-    if (s.kind === 'adopt_measure_config') {
-      const cmd = typeof s.payload.cmd === 'string' ? s.payload.cmd : '';
-      return { label: tx(t.kpis.suggest_adopt, { name: kpiName }), detail: cmd };
-    }
-    if (s.kind === 'adjust_target') {
-      const tv = typeof s.payload.target_value === 'number' ? s.payload.target_value : null;
-      return {
-        label: tx(t.kpis.suggest_adjust, { name: kpiName }),
-        detail: tv != null ? `→ ${tv} ${unit}` : '',
-      };
-    }
-    return { label: tx(t.kpis.suggest_retire, { name: kpiName }), detail: '' };
-  })();
-
-  return (
-    <li className="flex items-start gap-3 py-2.5">
-      <Icon className="w-3.5 h-3.5 mt-1 text-violet-300 shrink-0" aria-hidden />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="typo-data">{headline.label}</span>
-          {headline.detail && <span className="typo-code truncate">{headline.detail}</span>}
-          {s.citations.length > 0 && (
-            <Tooltip content={s.citations.join('\n')} placement="top">
-              <span className="typo-caption text-violet-300/90 cursor-help">
-                {tx(t.kpis.suggest_sources, { count: s.citations.length })}
-              </span>
-            </Tooltip>
-          )}
-        </div>
-        {s.rationale && <p className="mt-0.5 typo-caption">{s.rationale}</p>}
-      </div>
-      <div className="flex w-[7.5rem] shrink-0 items-center justify-end gap-1">
-        <button
-          type="button"
-          onClick={onApply}
-          disabled={busy}
-          className="inline-flex items-center gap-1 typo-caption rounded-interactive border border-violet-400/40 bg-violet-500/15 text-violet-200 px-2 py-0.5 hover:bg-violet-500/25 disabled:opacity-50 transition-colors focus-ring"
-          data-testid={`kpi-suggest-apply-${s.kind}`}
-        >
-          <Check className="w-3 h-3" aria-hidden />
-          {t.kpis.suggest_apply}
-        </button>
-        <button
-          type="button"
-          onClick={onDismiss}
-          disabled={busy}
-          aria-label={t.kpis.suggest_dismiss}
-          title={t.kpis.suggest_dismiss}
-          className="p-1 rounded-interactive text-foreground hover:bg-primary/10 disabled:opacity-50 transition-colors focus-ring"
-        >
-          <X className="w-3.5 h-3.5" aria-hidden />
-        </button>
-      </div>
-    </li>
   );
 }
