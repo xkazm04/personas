@@ -6,15 +6,16 @@
 // worth keeping on its own terms: it is what lets the figure be tested and
 // read without the shell, and it survived two prototype rounds that did not.
 //
-// The matrix is the only figure. Three benched concepts (a stamp sheet, a core
-// sample, a cohort banding) were built here on 2026-10-06 and deleted the same
-// day at the owner's instruction, along with the skin layer that preceded
-// them. What stays from that work is the parts that stand without a bench:
-// `useRovingFigure` (one keyboard model instead of a copy per drawing) and the
-// figure contract itself.
+// The matrix is the only figure, drawn as the Instrument (favicon tiles, score
+// dials, a rung meter per cell): the owner's pick of the /prototype round of
+// 2026-10-06, which replaced the dot matrix. Three benched concepts (a stamp
+// sheet, a core sample, a cohort banding) were built and deleted earlier that
+// day, along with the skin layer that preceded them. What stays from that work
+// is the parts that stand without a bench: `useRovingFigure` (one keyboard
+// model instead of a copy per drawing) and the figure contract itself.
 import { AtlasPortfolioShell, type PortfolioView } from './AtlasPortfolioShell';
 import type { AtlasCoord, AtlasFigureProps, AtlasNames } from './atlasFigure';
-import { MatrixFigure } from './variants/matrix/MatrixFigure';
+import { InstrumentFigure } from './variants/instrument/InstrumentFigure';
 import type { AppPassport } from '../passportModel';
 import type { AtlasRow } from './atlasModel';
 
@@ -46,7 +47,7 @@ export function AtlasPortfolio({ all, projects, rows, sharedSetup, names, view, 
       names={names}
       view={view}
       onView={onView}
-      figure={<MatrixFigure {...figure} />}
+      figure={<InstrumentFigure {...figure} />}
     />
   );
 }

@@ -1,23 +1,16 @@
-// /prototype ProjectsLayer (2026-10-06) - what the three variants share.
-//
-// Every variant keeps the Atlas exactly as it is organised (head, stat strip,
-// lens / search / sort toolbar, legend, one project per line x one dimension
-// per column, readout, drawer, passport). What they redesign is the components
-// inside the matrix, so the pieces here are the data each of them encodes:
+// Passport Atlas, Instrument figure - the data each line and cell encodes.
 //
 // - `nameParts`: 74 of 102 projects are named `Gig · <discipline> · <brief>`
-//   (cut at 86 characters by the importer). In a 248px nowrap cell only the
-//   word "Gig" survived. Split, the discipline becomes a kicker and the brief
+//   (cut at 86 characters by the importer). In a nowrap name cell only the word
+//   "Gig" survived. Split, the discipline becomes a kicker and the brief
 //   becomes the name, wrapped over two lines.
-// - `meterOf`: the rung a value stands on (reached / steps), so a cell can
-//   draw HOW FAR a dimension got rather than only which of six states it is in.
-// - `shortValue`: the value itself in a few characters, for cells that print it.
-import { createContext } from 'react';
-import type { AppPassport } from './passport/passportModel';
-import { AUTOMATION_SCALE, PROD_BAND_SCALE } from './passport/passportModel';
-import type { CellValue } from './passport/passportRows';
-import { countInk, type AtlasInk } from './passport/atlas/atlasModel';
-import type { AtlasNames } from './passport/atlas/atlasFigure';
+// - `meterOf`: the rung a value stands on (reached / steps), so a cell draws
+//   HOW FAR a dimension got rather than only which of six states it is in.
+// - `setCount`: what a set with no ladder prints in place of a meter.
+import { AUTOMATION_SCALE, PROD_BAND_SCALE, type AppPassport } from '../../../passportModel';
+import type { CellValue } from '../../../passportRows';
+import { countInk, type AtlasInk } from '../../atlasModel';
+import type { AtlasNames } from '../../atlasFigure';
 
 export interface NameParts {
   /** The line above the name: a gig's discipline, a repo's owner, or null. */
@@ -50,7 +43,7 @@ export function nameParts(p: AppPassport, names: AtlasNames): NameParts {
   return { kicker: null, title: raw, qualifier, cut: false };
 }
 
-/** The project's worst state, the same rule the baseline matrix uses. */
+/** The project's worst state: unknown, then any failing, then any attention. */
 export function worstInk(p: AppPassport): AtlasInk {
   if (p.repoUnreadable) return 'unknown';
   if (countInk(p, 'bad')) return 'bad';
@@ -81,39 +74,14 @@ export function meterOf(v: CellValue): { reached: number; steps: number } | null
   }
 }
 
-/** The value in a few characters, for a cell that prints it. */
-export function shortValue(v: CellValue): string {
-  switch (v.kind) {
-    case 'level': return v.level;
-    case 'band': return `${v.score}`;
-    case 'ordinal': return v.label;
-    case 'present': return v.label ?? '-';
-    case 'chips': { const [first] = v.items; return first === undefined ? '-' : v.items.length === 1 ? first : `${first} +${v.items.length - 1}`; }
-    case 'pips': return `${v.items.filter((i) => i.on).length}/${v.items.length}`;
-    case 'bool': return v.on ? 'On' : 'Off';
-    case 'counts': { const n = v.items.reduce((s, i) => s + i.count, 0); return n === 0 ? '-' : `${n}`; }
-    case 'env': return `${v.slots.filter((s) => s.label).length}/${v.slots.length}`;
-    case 'cost': return v.state === 'known' ? `${v.currency ?? ''}${Math.round(v.total ?? 0)}`.trim() : '-';
-  }
+/** What a ladderless value (a set) prints instead of a meter: how many it holds. */
+export function setCount(v: CellValue): string {
+  if (v.kind === 'chips') return v.items.length ? String(v.items.length) : '-';
+  if (v.kind === 'counts') { const n = v.items.reduce((s, i) => s + i.count, 0); return n === 0 ? '-' : `${n}`; }
+  return '-';
 }
 
 /** Entrance delay for line `pi`: the first screenful cascades, the rest arrive at once. */
 export function lineDelay(pi: number, step = 0.022, cap = 18): number {
   return Math.min(pi, cap) * step;
 }
-
-/** slug -> favicon data URL, probed by ProjectsLayer. The figure contract has
- *  no slot for it, so the variants read it from here. */
-export const VariantFavicons = createContext<Map<string, string>>(new Map());
-
-/** The words the variants add, in one list (the Factory's convention, see useFactoryWords). */
-export const VARIANT_WORDS = {
-  switcherLabel: 'ProjectsLayer prototype',
-  cut: 'name cut by the importer',
-  blockers: (n: number) => `${n} blocker${n === 1 ? '' : 's'}`,
-  noBlockers: 'no blockers',
-  unreadable: 'repo unreadable',
-  provisional: 'not measured yet',
-  auto: 'Auto',
-  prod: 'Prod',
-} as const;
