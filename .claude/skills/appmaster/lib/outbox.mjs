@@ -140,8 +140,17 @@ async function say(e, { db, doors, dryRun }) {
   return after ? res('replayed', `db: channel message ${id8(after.id)}`) : res('failed', 'post-check: the message is not in the channel after the door answered');
 }
 
-/** A door that answered 404: the route is not built yet (or not in this build). Not a failure of the entry. */
-export const is404 = (err) => err?.status === 404 || /->\s*404\b/.test(String(err?.message ?? err ?? ''));
+/**
+ * A door whose ROUTE is missing (not built yet, or not in this build): an unrouted path answers axum's
+ * EMPTY 404. Not a failure of the entry: it stays queued. A handler's own 404 carries a reason in its
+ * body ("No project registered with id ...", measured on the 2026-10-07 milestones/goals doors) and is
+ * a real failure the operator must see. Without a body to look at (a test door), any 404 counts.
+ */
+export const is404 = (err) => {
+  const status = err?.status ?? (/->\s*404\b/.test(String(err?.message ?? err ?? '')) ? 404 : null);
+  if (status !== 404) return false;
+  return typeof err?.body === 'string' ? !err.body.trim() : true;
+};
 const firstLine = (err) => String(err?.message || err).split('\n')[0].slice(0, 240);
 
 /** The goal's text for the app: its description, then its measure (the goals door has no measure field). */

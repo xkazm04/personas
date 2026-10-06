@@ -373,8 +373,11 @@ replay as `skipped`: those live in the journal and the digest only.
 The kinds added on 2026-10-07 use routes a sibling builds the same night: `plan` (POST
 `/dev-tools/milestones`, then `/dev-tools/goals`), `council` (POST `/dev-tools/council/ingest`),
 `tier` (GET `/dev-tools/use-cases/{projectId}`, POST `/dev-tools/use-cases/{id}/tier`), `report`
-(POST `/dev-tools/reports`). Until a route answers, a 404 leaves the entry `queued` with the
-evidence `route missing (404)` and the next replay tries again. A `plan` records every id it
+(POST `/dev-tools/reports`). Until a route answers, an UNROUTED 404 (axum's empty body) leaves
+the entry `queued` with the evidence `route missing (404)` and the next replay tries again; a
+handler's own 404 ("No project registered ...") is a `failed` entry with that reason. The
+milestones and goals routes are on master since `0fe21a3e29` (this contract, verified against
+it); council ingest, tier and reports were not yet when this was written. A `plan` records every id it
 creates on the entry (`created`) and never posts one twice, so a replay that failed halfway
 resumes where it stopped.
 
@@ -446,8 +449,9 @@ hand. Design: `docs/architecture/headless-app-master.md`, "The state door".
 ## Known gaps
 
 - Outbox replay against the live app is unverified until the app runs (tests use a fake bridge).
-  The `plan`, `council`, `tier` and `report` routes did not exist when this was written: their
-  request bodies follow the brief of 2026-10-07, not a route that answered.
+  The `plan` routes (POST `/dev-tools/milestones`, `/dev-tools/goals`) landed on master in
+  `0fe21a3e29` with this exact contract; the `council`, `tier` and `report` routes did not exist
+  yet: their request bodies follow the brief of 2026-10-07, not a route that answered.
 - `/council --lite` is unverified: the council skill linked on 2026-10-07 (v0.3.1) documents no
   `--lite` flag. The reviewer is told to stop `blocked` rather than fall back to a full council.
   A lite and a full council of one feature share the council's own round counter on disk; this

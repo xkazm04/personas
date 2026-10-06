@@ -95,8 +95,9 @@ values that could drift. The subcommand table is `appmaster.mjs` (`COMMANDS`).
   posted again), `council` (POST `/dev-tools/council/ingest {projectId, runDir}`), `tier`
   (GET `/dev-tools/use-cases/{projectId}` to resolve the id by slug, then POST
   `/dev-tools/use-cases/{id}/tier`), `report` (POST `/dev-tools/reports`: the council's report,
-  its screenshots, an Approval). A 404 from any of them leaves the entry `queued` with the
-  evidence `route missing (404)`.
+  its screenshots, an Approval). An UNROUTED 404 (axum's empty body) from any of them leaves the
+  entry `queued` with the evidence `route missing (404)`; a handler's own 404 carries a reason
+  ("No project registered with id ...") and fails the entry with it.
 - **Caps and brakes**: `GLOBAL_CAP` builders across projects, `PER_PROJECT_CAP` per project
   (two only on disjoint declared paths), `REPO_LANES` live runs per shared repo,
   `MEM` (free GB: a dispatch needs a floor plus a reserve per running builder; a gate run needs more) refuses a dispatch, `QUIET_MIN` and `TIMEOUT_MIN` flag (never kill), the
@@ -432,8 +433,11 @@ own gate, independent of the app's mandate.
   them is left to the operator.
 - The state door holds the in-app tick only; channel replies and manual wakes are not
   stopped (see "The state door").
-- The `plan`, `council`, `tier` and `report` doors follow the 2026-10-07 brief; none of those
-  routes answered when this was written (they replay as `route missing (404)` until they do).
+- The `plan` doors (POST `/dev-tools/milestones`, `/dev-tools/goals`) are on master since
+  `0fe21a3e29`, and the replay was checked against that contract (bodies, `{milestoneId}` /
+  `{goalId}`, the goal bound through `dev_milestone_items`). The `council`, `tier` and `report`
+  doors follow the 2026-10-07 brief; those routes did not answer yet (they replay as `route
+  missing (404)` until they do).
 - `/council --lite` is not in the council skill linked on 2026-10-07 (v0.3.1); a reviewer told
   to run it stops `blocked` rather than run a full council. Lite and full rounds of one feature
   share the council's on-disk round counter; this skill counts and seeds rounds per mode.

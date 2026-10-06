@@ -56,7 +56,10 @@ export async function devTools(route, body, { timeoutMs } = {}) {
   let json; try { json = JSON.parse(text); } catch { json = { raw: text }; }
   if (!res.ok) {
     const err = new Error(`${route} -> ${res.status}: ${text.slice(0, 400)}`);
-    err.status = res.status;   // a 404 is "the route is not built yet": the outbox keeps the entry queued
+    // status + body let the outbox tell an UNROUTED path (axum's empty 404: the route is not built
+    // yet, keep the entry queued) from a handler's own 404 ("No project registered ...": a failure)
+    err.status = res.status;
+    err.body = text;
     throw err;
   }
   return json;

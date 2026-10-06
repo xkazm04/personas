@@ -161,6 +161,19 @@ test('replay: while the routes answer 404 the entry stays queued with "route mis
   } finally { db.close(); }
 });
 
+test('only an UNROUTED 404 (empty body) is "route missing"; a handler 404 with a reason is a failure', async () => {
+  assert.equal(O.is404(Object.assign(new Error('/milestones -> 404: '), { status: 404, body: '' })), true, 'axum: no such route');
+  assert.equal(O.is404(Object.assign(new Error('/milestones -> 404: No project registered with id x'), { status: 404, body: 'No project registered with id x' })), false);
+  assert.equal(O.is404(Object.assign(new Error('/goals -> 409: conflict'), { status: 409, body: 'conflict' })), false);
+  const db = ro();
+  try {
+    const unknownProject = { async devTools(route) { throw Object.assign(new Error(`${route} -> 404: No project registered with id p-x`), { status: 404, body: 'No project registered with id p-x' }); } };
+    const r = await O.replayEntry(planEntry(planOf(1), 'p-x'), { doors: unknownProject, db });
+    assert.equal(r.state, 'failed');
+    assert.match(r.evidence, /door error on milestone 1: \/milestones -> 404: No project registered/);
+  } finally { db.close(); }
+});
+
 test('replay posts milestones then goals, records every id, and a second replay posts nothing', async () => {
   const db = ro();
   try {
