@@ -89,8 +89,10 @@ test('an already-exited run settles immediately: merged, waitedSec ~0, lock rele
 });
 
 test('a pid that exits mid-wait: await blocks, sees it gone, moves it to exited, then settles', async () => {
-  const child = sleeper(1500);
-  const { root, run, tip } = scenario('midwait', { state: 'running', pid: child.pid, endedAt: undefined });
+  const made = scenario('midwait');   // git setup first: the fake builder's clock starts after it
+  const { root, tip } = made;
+  const child = sleeper(1800);
+  const run = S.updateRun(made.run, { state: 'running', pid: child.pid });
   const pending = A.cmdAwait({ flags: { run: run.runId } });
   await new Promise((r) => setTimeout(r, 300));
   assert.equal(S.loadRun('midwait', run.runId).state, 'running', 'nothing happens while the builder lives');
