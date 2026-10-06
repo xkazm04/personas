@@ -14,8 +14,9 @@
 // editor (drag, ↑/↓, "order by need") is gone — order editing is being
 // replaced by the board queue.
 //
-// Wiring: nothing opens this yet; the board header gets its button in a later
-// package. It is exported from `./index.ts` for that.
+// Wiring: opened from the Activity board's Autopilot plate
+// (`prototype/entry-e/SupplyDeck.tsx`, lazily through `activityLazy.ts`). It is
+// also exported from `./index.ts`.
 
 import { Bot, ListOrdered } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
