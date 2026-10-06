@@ -1,10 +1,11 @@
 /**
- * Level 1 — the strip, as it will sit in the Activity CommandBar: seven
- * decision chips in strip order, a divider, the Ready chip, "Triage all", and
- * a 440 px stand-in for the bar's existing fleet tally + layout switch.
+ * Level 1 — the glass strip, as it will sit in the Activity CommandBar: seven
+ * decision chips in strip order set into one recessed glass rail, a hairline,
+ * the Ready chip, "Triage all", and a 440 px stand-in for the bar's existing
+ * fleet tally + layout switch.
  *
  * Width honesty: the strip measures itself and drops chip labels to tooltips
- * (icon + lamp + count) when labels would not fit beside the stand-in, so the
+ * (glyph + lamp + count) when labels would not fit beside the stand-in, so the
  * row never wraps at a 1280 px window.
  */
 import { useLayoutEffect, useRef, useState, type MutableRefObject } from 'react';
@@ -13,7 +14,6 @@ import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { DECISION_CHIPS, chipOf, type ChipCount, type DecisionItem, type HubChip } from '../../../model/decisionModel';
 import { StripChip } from './StripChip';
-
 
 export function Strip({ counts, items, openChip, chipRefs, onChip, onTriageAll }: {
   counts: Record<HubChip, ChipCount>;
@@ -64,14 +64,10 @@ export function Strip({ counts, items, openChip, chipRefs, onChip, onTriageAll }
   );
 
   return (
-    <div
-      ref={rowRef}
-      className="flex min-h-[52px] flex-nowrap items-center gap-2 overflow-hidden border-b border-border px-3 py-2"
-      data-testid="p2-strip"
-    >
-      <div className={`flex flex-nowrap items-center ${compact ? 'gap-0.5' : 'gap-1'}`} role="group" aria-label="Decisions">
+    <div ref={rowRef} className="r2a-strip-row" data-testid="r2a-strip">
+      <div className="r2a-strip r2a-well" role="group" aria-label="Decisions">
         {DECISION_CHIPS.map(chip)}
-        <span className={`h-6 w-px bg-primary/15 ${compact ? 'mx-1' : 'mx-1.5'}`} aria-hidden />
+        <span className="r2a-strip__sep" aria-hidden />
         {chip('ready')}
       </div>
       <Tooltip content={first ? `Walk all ${total} in order — starts with “${first.title}”` : 'Nothing waiting'} placement="bottom">
@@ -82,16 +78,14 @@ export function Strip({ counts, items, openChip, chipRefs, onChip, onTriageAll }
           onClick={onTriageAll}
           disabled={total === 0}
           icon={<Layers className="h-4 w-4" aria-hidden />}
-          data-testid="p2-triage-all"
-          className={`whitespace-nowrap ${compact ? 'px-2!' : ''}`}
+          data-testid="r2a-triage-all"
+          className="r2a-cta r2a-btn"
         >
-          {compact ? `All ${total}` : `Triage all ${total}`}
+          {compact ? 'All' : 'Triage all'}
+          <span className="r2a-cta__n typo-heading tabular-nums">{total}</span>
         </Button>
       </Tooltip>
-      <div
-        className="ml-auto flex h-8 w-[440px] flex-shrink-0 items-center justify-center rounded-input border border-dashed border-primary/15 typo-caption"
-        aria-hidden
-      >
+      <div className="r2a-standin typo-caption" aria-hidden>
         fleet tally · layout switch · simulation toggle (440 px)
       </div>
     </div>

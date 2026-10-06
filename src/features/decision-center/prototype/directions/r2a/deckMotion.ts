@@ -1,5 +1,5 @@
 /**
- * P2 motion — the deck's whole vocabulary of movement, grown from the
+ * R2-A motion (P2's, retuned) — the deck's whole vocabulary of movement, grown from the
  * TriageFocus lineage (`triageFocusMotion.ts`: the 300 px card slide and its
  * 300/30 spring are reused verbatim for walking, so a reviewer who knows the
  * old deck already knows this one).
@@ -24,16 +24,17 @@ const EASE_OUT = [0.22, 1, 0.36, 1] as const;
 export interface Custom { dir: 1 | -1; leave: Leave }
 
 const LEAVE_TO: Record<Exclude<Leave, 'walk'>, TargetAndTransition> = {
-  accept: { x: 240, y: -70, rotate: 7, scale: 0.92, opacity: 0 },
-  reject: { x: -60, y: 200, rotate: -9, scale: 0.9, opacity: 0 },
+  accept: { x: 260, y: -90, rotate: 4, scale: 0.94, opacity: 0 },
+  reject: { x: -220, y: 150, rotate: -4, scale: 0.94, opacity: 0 },
   done: { y: -140, scale: 0.95, opacity: 0 },
-  skip: { y: 40, scale: 0.88, opacity: 0 },
+  // Slides UNDER the stack: back, down, smaller — and behind the card rising in its place.
+  skip: { y: 34, scale: 0.9, opacity: 0, zIndex: 0 },
 };
 
 export const CARD_MOTION = {
   enter: ({ dir, leave }: Custom) =>
-    leave === 'walk' ? CARD_VARIANTS.enter(dir) : { y: 26, scale: 0.95, opacity: 0 },
-  center: { x: 0, y: 0, rotate: 0, scale: 1, opacity: 1 },
+    leave === 'walk' ? CARD_VARIANTS.enter(dir) : { y: 22, scale: 0.965, opacity: 0, zIndex: 1 },
+  center: { x: 0, y: 0, rotate: 0, scale: 1, opacity: 1, zIndex: 1 },
   exit: ({ dir, leave }: Custom) => (leave === 'walk' ? CARD_VARIANTS.exit(dir) : LEAVE_TO[leave]),
 };
 
@@ -67,7 +68,9 @@ export function originMotion(origin: OriginBox | null, still: boolean) {
     initial: from,
     animate: {
       opacity: 1, x: 0, y: 0, scale: 1,
-      transition: { duration: sec(still ? MOTION.duration.fast : MOTION.duration.normal), ease: EASE_OUT, delay: still ? 0 : 0.08 },
+      transition: still
+        ? { duration: sec(MOTION.duration.fast), ease: EASE_OUT }
+        : { type: 'spring' as const, stiffness: 300, damping: 30, opacity: { duration: sec(MOTION.duration.fast) } },
     },
     exit: { ...from, transition: { duration: sec(MOTION.duration.fast), ease: 'easeIn' as const } },
   };

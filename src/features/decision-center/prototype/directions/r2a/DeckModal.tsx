@@ -22,7 +22,7 @@ import { useDeck, type DeckScope } from './useDeck';
 import { useDeckActions } from './useDeckActions';
 import { useDeckKeys } from './useDeckKeys';
 
-const TITLE_ID = 'p2-deck-title';
+const TITLE_ID = 'r2a-deck-title';
 
 /** One opening of the deck. `key` changes per opening so state starts fresh. */
 export interface DeckSession {
@@ -85,6 +85,7 @@ function DeckSessionView({ scope, scopeLabel, startId, origin, items, ready, onD
   const [rating, setRating] = useState<number | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [missing, setMissing] = useState(false);
+  const [keysOpen, setKeysOpen] = useState(false);
   const item = deck.item;
 
   useEffect(() => {
@@ -94,9 +95,10 @@ function DeckSessionView({ scope, scopeLabel, startId, origin, items, ready, onD
   }, [item?.id]);
 
   const act = useDeckActions(deck, { rating, answers, onIncomplete: () => setMissing(true) });
-  useDeckKeys(deck, act, { enabled: !!item, onRate: setRating });
+  useDeckKeys(deck, act, { enabled: !!item, onRate: setRating, onKeys: () => setKeysOpen((o) => !o) });
   useEffect(() => {
     escapeGuard.current = () => {
+      if (keysOpen) { setKeysOpen(false); return true; }
       if (deck.prompt) { deck.setPrompt(null); return true; }
       if (deck.armed) { deck.setArmed(null); return true; }
       return false;
@@ -108,13 +110,15 @@ function DeckSessionView({ scope, scopeLabel, startId, origin, items, ready, onD
   const morph = originMotion(origin, still);
 
   return (
-    <motion.div initial={morph.initial} animate={morph.animate} exit={morph.exit} className={`relative w-full ${wide ? '' : 'max-w-[min(1120px,92vw)]'}`} data-testid="p2-deck">
+    <motion.div initial={morph.initial} animate={morph.animate} exit={morph.exit} className={`r2a relative w-full ${wide ? '' : 'max-w-[min(1040px,92vw)]'}`} data-testid="r2a-deck">
+        <div className="r2a-vignette" aria-hidden />
         <DeckTray
           scopeLabel={scopeLabel}
           queue={deck.queue}
           index={deck.index}
-          type={item ? modalTypeOf(item.kind) : 'approval'}
-          isCouncil={item?.kind === 'council'}
+          item={item}
+          keysOpen={keysOpen}
+          onKeys={() => setKeysOpen((o) => !o)}
           onWalk={deck.walk}
           onClose={onBack}
           tall={wide}

@@ -1,8 +1,9 @@
 /**
- * P2 "Deck & Ledger" — the static vocabulary every part reads: what a chip and
- * a kind are called and drawn as, which tier an item sits in, what saying yes
- * does, and what an item costs to clear. Prototype data (English literals are
- * allowed in this dev-only folder), React-free.
+ * R2-A "Obsidian Glass" — the static vocabulary every part reads: what a chip
+ * and a kind are called and drawn as, which tier an item sits in, what saying
+ * yes does, what an item costs to clear, and which ledger facts are universal
+ * enough to be an icon. Prototype data (English literals are allowed in this
+ * dev-only folder), React-free.
  *
  * `tierOf` is a LOCAL stand-in for `decisionTier` (still a WP0 stub that
  * throws). It follows the tier law written in `decisionModel.ts` so the
@@ -10,16 +11,26 @@
  */
 import type { LucideIcon } from 'lucide-react';
 import {
-  BookOpenText,
+  Clock,
+  Dna,
   FileText,
+  Flag,
+  Folder,
+  Gauge,
+  History,
+  Landmark,
   Lightbulb,
+  MessageCircleQuestion,
   MessagesSquare,
+  Repeat2,
   Rocket,
+  Route,
   ShieldCheck,
   Siren,
   Sparkles,
+  User,
 } from 'lucide-react';
-import type { TriageTone } from '@/features/agents/quick-answer/triage/triageTypes';
+import type { TriageTag, TriageTone } from '@/features/agents/quick-answer/triage/triageTypes';
 import type { DecisionItem, DecisionKind, DecisionTier, HubChip } from '../../../model/decisionModel';
 import { modalTypeOf } from '../../../model/decisionModel';
 
@@ -28,7 +39,7 @@ export const CHIP_META: Record<HubChip, { label: string; icon: LucideIcon; hint:
   proposals: { label: 'Proposals', icon: Sparkles, hint: 'Policy, promotion and goal sign-offs' },
   backlog: { label: 'Backlog', icon: Lightbulb, hint: 'Scanner ideas waiting for a verdict' },
   incidents: { label: 'Incidents', icon: Siren, hint: 'Failures and alerts' },
-  council: { label: 'Council', icon: BookOpenText, hint: 'Council verdicts to approve or send back' },
+  council: { label: 'Council', icon: Landmark, hint: 'Council verdicts to approve or send back' },
   reports: { label: 'Reports', icon: FileText, hint: 'Unread reports' },
   chat: { label: 'Chat', icon: MessagesSquare, hint: 'Threads waiting for your reply' },
   ready: { label: 'Ready', icon: Rocket, hint: 'Accepted ideas ready to dispatch' },
@@ -37,7 +48,7 @@ export const CHIP_META: Record<HubChip, { label: string; icon: LucideIcon; hint:
 export const KIND_LABEL: Record<DecisionKind, string> = {
   review: 'Review',
   question: 'Question',
-  approval: 'Companion approval',
+  approval: 'Athena approval',
   policy: 'Policy',
   evolution: 'Promotion',
   goal: 'Goal sign-off',
@@ -46,6 +57,21 @@ export const KIND_LABEL: Record<DecisionKind, string> = {
   council: 'Council verdict',
   report: 'Report',
   message: 'Message',
+};
+
+/** The kind's own glyph, for the card's tile (the chip icon is the family's). */
+export const KIND_ICON: Record<DecisionKind, LucideIcon> = {
+  review: ShieldCheck,
+  question: MessageCircleQuestion,
+  approval: Sparkles,
+  policy: Route,
+  evolution: Dna,
+  goal: Flag,
+  idea: Lightbulb,
+  incident: Siren,
+  council: Landmark,
+  report: FileText,
+  message: MessagesSquare,
 };
 
 export function tierOf(item: DecisionItem): DecisionTier {
@@ -62,7 +88,14 @@ export const TIER_META: Record<DecisionTier, { label: string; tone: TriageTone }
   3: { label: 'Read / reply', tone: 'neutral' },
 };
 
-/** Tier stripe fill — the peek's left edge and the card's spine. */
+/** What the tier lamp's tooltip says. */
+export const TIER_TIP: Record<DecisionTier, string> = {
+  1: 'Blocking — work is held until you answer',
+  2: 'Waiting for your verdict',
+  3: 'Read or reply when you can',
+};
+
+/** Tier stripe fill — the peek's left edge and the tray pips. */
 export const TIER_FILL: Record<DecisionTier, string> = {
   1: 'bg-status-error',
   2: 'bg-primary',
@@ -109,7 +142,26 @@ export function costOf(item: DecisionItem): string {
   return '1 key';
 }
 
-/** Lamp tone -> dot fill (strip lamps, peek markers). */
+/**
+ * Ledger facts universal enough to be an ICON + value (label in a tooltip).
+ * Anything else is item-specific and keeps its words.
+ */
+export const FACT_ICON: Record<string, LucideIcon> = {
+  waiting: Clock,
+  cost: Gauge,
+  project: Folder,
+  count: Repeat2,
+  first: History,
+  persona: User,
+};
+
+/** At most two tags, none that repeats the source, the severity lamp or the tier. */
+export function tagsOf(item: DecisionItem): TriageTag[] {
+  const said = new Set([item.source.label, item.source.sublabel ?? ''].map((s) => s.toLowerCase()));
+  return item.tags.filter((t) => t.id !== 'sev' && !said.has(t.label.toLowerCase())).slice(0, 2);
+}
+
+/** Lamp tone -> dot fill (peek markers). */
 export const LAMP_FILL: Record<TriageTone, string> = {
   neutral: 'bg-muted-foreground',
   accent: 'bg-primary',

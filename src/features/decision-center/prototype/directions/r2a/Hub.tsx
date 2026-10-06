@@ -1,8 +1,8 @@
 /**
- * P2 hub — strip -> peek -> deck, and the Esc ladder back down
+ * R2-A hub — strip -> peek -> deck, and the Esc ladder back down
  * (deck -> the peek it came from -> strip).
  */
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { chipOf, modalTypeOf, type DecisionItem, type HubChip } from '../../../model/decisionModel';
 import type { HubProps } from '../../directionContract';
@@ -22,20 +22,32 @@ function scopeLabel(scope: DeckScope): string {
   return CHIP_META[scope.chip].label;
 }
 
+function kit(): string {
+  if (typeof window === 'undefined') return '';
+  return new URLSearchParams(window.location.search).get('kit') ?? '';
+}
+
 /** Harness-only deep link: `?kit=r2a:modal:<type>:<sourceId>` opens that card (the Lab only knows `modal:<type>`). */
 function kitItem(): string | null {
-  if (typeof window === 'undefined') return null;
-  const m = /^r2a:modal:\w+:(\w+)$/.exec(new URLSearchParams(window.location.search).get('kit') ?? '');
+  const m = /^r2a:modal:\w+:(\w+)$/.exec(kit());
   return m ? m[1]! : null;
 }
 
-export function Hub({ items, counts, ready, initial, onDecide }: HubProps) {
+/** Harness-only: `?kit=r2a:strip-states` — council's source failed and Ready is at zero, in one shot. */
+const STATES_KIT = 'r2a:strip-states';
+
+export function Hub({ items, counts: liveCounts, ready: liveReady, initial, onDecide }: HubProps) {
   const chipRefs = useRef<Partial<Record<HubChip | 'all', HTMLButtonElement | null>>>({});
   const anchor = useRef<HTMLElement | null>(null);
   const [peek, setPeek] = useState<{ chip: HubChip } | null>(null);
   const [session, setSession] = useState<DeckSession | null>(null);
   const back = useRef<HubChip | null>(null);
   const opened = useRef(0);
+  const states = useMemo(() => kit() === STATES_KIT, []);
+  const ready = states ? [] : liveReady;
+  const counts = useMemo(() => (states
+    ? { ...liveCounts, council: { n: 0, lamp: 'danger' as const, failed: true }, ready: { n: 0, lamp: 'neutral' as const, failed: false } }
+    : liveCounts), [states, liveCounts]);
 
   const openPeek = useCallback((chip: HubChip, toggle = true) => {
     anchor.current = chipRefs.current[chip] ?? null;
@@ -74,7 +86,7 @@ export function Hub({ items, counts, ready, initial, onDecide }: HubProps) {
   const verdict = (item: DecisionItem, v: PeekVerdict) => onDecide({ item, verdict: v });
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col bg-background" data-testid="p2-hub">
+    <div className="r2a relative flex h-full min-h-0 flex-col bg-background" data-testid="r2a-hub">
       <div className="relative z-20">
         <Strip
           counts={counts}

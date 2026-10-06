@@ -1,17 +1,22 @@
 /**
- * One card on the deck: head, body, ledger rail — the same three parts for
- * all four modal types; only the body and the rail's type section differ.
- * The card is the unit that slides when walking and leaves on a verdict
- * (`CARD_MOTION`), and it wears the verdict stamp for the beat before it goes.
+ * One card on the deck: head, body, ledger well — the same three parts for
+ * all four modal types; only the body and the well's type section differ.
+ * The well runs the card's full height beside head + body, so the ledger is
+ * never the cramped column while the argument column sits half empty.
+ * The card is a frosted glass object lit by its kind's tone; it is the unit
+ * that slides when walking and leaves on a verdict (`CARD_MOTION`), and it
+ * wears the verdict stamp for the beat before it goes.
  */
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
-import { modalTypeOf, type DecisionItem } from '../../../model/decisionModel';
-import { CARD_MOTION, CARD_TRANSITION, STAMP_MOTION, STILL_CARD, STILL_TRANSITION, type Leave } from './deckMotion';
+import { chipOf, modalTypeOf, type DecisionItem } from '../../../model/decisionModel';
+import { CARD_MOTION, CARD_TRANSITION, STILL_CARD, STILL_TRANSITION } from './deckMotion';
 import { CardHeader } from './CardHeader';
 import { ChatThread } from './ChatThread';
 import { DeckDock } from './DeckDock';
+import { DeckStamp, stampLabel } from './DeckStamp';
 import { LedgerRail } from './LedgerRail';
 import { ProseBody } from './ProseBody';
 import { QuestionFields } from './QuestionFields';
@@ -21,26 +26,28 @@ import type { DeckActions } from './useDeckActions';
 import type { DeckController } from './useDeck';
 import { useReader } from './useReader';
 
-const STAMP_TONE: Record<Exclude<Leave, 'walk'>, string> = {
-  accept: 'border-status-success text-status-success',
-  reject: 'border-status-error text-status-error',
-  done: 'border-primary text-primary',
-  skip: 'border-muted-foreground text-muted-foreground',
-};
-
-function stampLabel(item: DecisionItem, leave: Exclude<Leave, 'walk'>): string {
-  if (leave === 'done') return modalTypeOf(item.kind) === 'chat' ? 'Done ✓' : 'Read ✓';
-  if (leave === 'skip') return item.verdictLabels.skip;
-  if (leave === 'accept' && modalTypeOf(item.kind) === 'chat') return 'Sent ✓';
-  return leave === 'accept' ? `${item.verdictLabels.accept} ✓` : `${item.verdictLabels.reject} ✕`;
-}
-
 export interface CardState {
   rating: number | null;
   setRating: (n: number) => void;
   answers: Record<string, string>;
   setAnswer: (key: string, value: string) => void;
   missing: boolean;
+}
+
+function Participants({ item }: { item: DecisionItem }) {
+  const names = [...new Set(item.thread?.messages.map((m) => m.name) ?? [])];
+  return (
+    <div className="flex flex-col gap-2 pt-4">
+      <span className="typo-label">In this thread</span>
+      <span className="flex items-center pl-1">
+        {names.map((n) => (
+          <Tooltip key={n} content={n}>
+            <span className="r2a-avatar r2a-avatar--stack h-8 w-8 typo-label" tabIndex={0} aria-label={n}>{([...n][0] ?? '?').toUpperCase()}</span>
+          </Tooltip>
+        ))}
+      </span>
+    </div>
+  );
 }
 
 export function DeckCard({ item, deck, act, state, titleId }: {
@@ -54,7 +61,7 @@ export function DeckCard({ item, deck, act, state, titleId }: {
   const type = modalTypeOf(item.kind);
   const isMd = item.document?.format === 'markdown';
   const mdSource = isMd ? item.document!.content : '';
-  const doc = useMemo(() => prepareDocument(mdSource, `p2-${item.sourceId}`), [mdSource, item.sourceId]);
+  const doc = useMemo(() => prepareDocument(mdSource, `r2a-${item.sourceId}`), [mdSource, item.sourceId]);
   const reader = useReader(doc.headings, item.id);
   const stamp = deck.stamp && deck.stamp !== 'walk' ? deck.stamp : null;
 
@@ -70,14 +77,7 @@ export function DeckCard({ item, deck, act, state, titleId }: {
 
   const extra = type === 'report'
     ? <ReaderContents doc={doc} reader={reader} isHtml={!isMd} />
-    : type === 'chat'
-      ? (
-        <div className="flex flex-col gap-1 pt-4">
-          <span className="typo-label">In this thread</span>
-          <span className="typo-body text-foreground">{[...new Set(item.thread?.messages.map((m) => m.name) ?? [])].join(', ')}</span>
-        </div>
-      )
-      : null;
+    : type === 'chat' ? <Participants item={item} /> : null;
 
   return (
     <motion.article
@@ -87,13 +87,16 @@ export function DeckCard({ item, deck, act, state, titleId }: {
       animate="center"
       exit="exit"
       transition={still ? STILL_TRANSITION : CARD_TRANSITION}
-      className="absolute inset-0 flex flex-col overflow-hidden rounded-modal border border-primary/15 bg-background shadow-elevation-4"
-      data-testid="p2-card"
+      className="r2a-card r2a-hairline"
+      data-r2a-kind={chipOf(item.kind)}
+      data-testid="r2a-card"
       data-item={item.id}
     >
-      <CardHeader item={item} titleId={titleId} />
-      <div className="flex min-h-0 flex-1">
-        <div className="flex min-w-0 flex-1 flex-col">{body}</div>
+      <div className="flex min-h-0 flex-1 gap-1 p-2">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <CardHeader item={item} titleId={titleId} />
+          {body}
+        </div>
         <LedgerRail
           item={item}
           extra={extra}
@@ -102,17 +105,7 @@ export function DeckCard({ item, deck, act, state, titleId }: {
       </div>
       {/* The live region is born empty and stays mounted; only its text follows the stamp. */}
       <span className="sr-only" aria-live="polite">{stamp ? stampLabel(item, stamp) : ''}</span>
-      {stamp && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden>
-          <motion.span
-            initial={still ? { opacity: 0 } : STAMP_MOTION.initial}
-            animate={still ? { opacity: 1 } : STAMP_MOTION.animate}
-            className={`rounded-card border-4 bg-background/80 px-6 py-2 typo-hero uppercase ${STAMP_TONE[stamp]}`}
-          >
-            {stampLabel(item, stamp)}
-          </motion.span>
-        </div>
-      )}
+      {stamp && <DeckStamp item={item} leave={stamp} />}
     </motion.article>
   );
 }

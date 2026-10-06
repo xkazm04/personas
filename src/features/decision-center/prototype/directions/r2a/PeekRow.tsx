@@ -1,16 +1,16 @@
 /**
- * One peek row: tier stripe, kind icon, title, then source · age · cost. The
- * focused row shows its one-key verdicts; the first row of the roster is
- * flagged NEXT. Ready rows carry their own Dispatch button.
+ * One peek row: a glowing tier stripe, the kind glyph in its tone, the title
+ * (two lines, never cut to one), then source · age · cost as icon + value.
+ * The focused row carries its one-key verdicts as inset keys; the roster's
+ * first item is marked "Next". Ready rows carry their own Dispatch button.
  */
 import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
-import { Rocket } from 'lucide-react';
+import { Check, Clock, CornerDownLeft, Gauge, Rocket, X } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import { Kbd } from '@/features/shared/triage/triageFocusBridge';
 import { chipOf, modalTypeOf, type DecisionItem } from '../../../model/decisionModel';
-import { CHIP_META, TIER_FILL, TIER_META, costOf, tierOf } from './deckMeta';
+import { KIND_ICON, costOf, tierOf } from './deckMeta';
 
 /** Exit reads the presence `custom` (the verdict's direction), not stale props. */
 const ROW_LEAVE = { leave: (dir: number) => ({ opacity: 0, x: dir * 140, transition: { duration: 0.2 } }) };
@@ -27,12 +27,26 @@ export interface PeekRowProps {
   onDispatch: () => void;
 }
 
+function RowKeys({ reads }: { reads: boolean }) {
+  return (
+    <span className="typo-code r2a-rowkeys" aria-hidden>
+      {reads
+        ? <span className="typo-code r2a-rowkey"><Check className="h-3 w-3" />D</span>
+        : <>
+          <span className="typo-code r2a-rowkey r2a-say" data-r2a-say="success"><Check className="h-3 w-3" />A</span>
+          <span className="typo-code r2a-rowkey r2a-say" data-r2a-say="danger"><X className="h-3 w-3" />R</span>
+        </>}
+      <span className="typo-code r2a-rowkey"><CornerDownLeft className="h-3 w-3" /></span>
+    </span>
+  );
+}
+
 export const PeekRow = forwardRef<HTMLDivElement, PeekRowProps>(function PeekRow(
   { item, index, focused, isNext, isReady, leaveDir, onFocus, onOpen, onDispatch },
   ref,
 ) {
   const tier = tierOf(item);
-  const Icon = CHIP_META[isReady ? 'ready' : chipOf(item.kind)].icon;
+  const Icon = isReady ? Rocket : KIND_ICON[item.kind];
   const type = modalTypeOf(item.kind);
   const reads = type === 'report' || type === 'chat';
   return (
@@ -44,44 +58,46 @@ export const PeekRow = forwardRef<HTMLDivElement, PeekRowProps>(function PeekRow
       animate={{ opacity: 1, y: 0, transition: { delay: index * 0.035, duration: 0.18 } }}
       variants={ROW_LEAVE}
       exit="leave"
-      className={`group relative flex items-stretch gap-3 rounded-card border pl-0 pr-2 transition-colors ${
-        focused ? 'border-primary/40 bg-primary/10' : 'border-transparent hover:bg-secondary/40'}`}
+      className="r2a-row group"
+      data-focused={focused}
+      data-r2a-tier={isReady ? '3' : String(tier)}
+      data-r2a-kind={isReady ? 'ready' : chipOf(item.kind)}
       onMouseEnter={onFocus}
-      data-testid={`p2-peek-row-${item.id}`}
+      data-testid={`r2a-peek-row-${item.id}`}
     >
-      <span className={`w-1 flex-shrink-0 rounded-pill ${isReady ? 'bg-status-success' : TIER_FILL[tier]}`} aria-hidden />
+      <span className="r2a-row__stripe" aria-hidden />
       <Button
         variant="ghost"
         size="sm"
         onClick={onOpen}
         aria-label={`Open: ${item.title}`}
-        className="min-w-0 flex-1 rounded-card px-0 py-2 text-left hover:bg-transparent [&>span]:flex [&>span]:min-w-0 [&>span]:flex-1 [&>span]:items-start [&>span]:gap-2.5"
+        className="r2a-row__open"
       >
-        <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" aria-hidden />
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="typo-body truncate text-foreground">{item.title}</span>
-          <span className="flex min-w-0 items-center gap-1.5 typo-caption">
-            {tier === 1 && !isReady && <span className="flex-shrink-0 text-status-error">{TIER_META[1].label} ·</span>}
-            <span className="min-w-[3rem] truncate">{item.source.label}</span>
-            <span aria-hidden>·</span>
-            <RelativeTime timestamp={item.createdAt} className="typo-caption flex-shrink-0" />
-            <span aria-hidden>·</span>
-            <span className="flex-shrink-0 text-foreground">{isReady ? 'accepted' : costOf(item)}</span>
+        <Icon className="r2a-tone mt-0.5 h-4 w-4 flex-shrink-0" aria-hidden />
+        <span className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="typo-body line-clamp-2 text-foreground">{item.title}</span>
+          <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 typo-caption">
+            <span className="whitespace-nowrap">{item.source.label}</span>
+            <span className="inline-flex items-center gap-1 whitespace-nowrap">
+              <Clock className="h-3.5 w-3.5" aria-hidden />
+              <RelativeTime timestamp={item.createdAt} className="typo-caption" />
+            </span>
+            <span className="inline-flex items-center gap-1 whitespace-nowrap text-foreground">
+              <Gauge className="h-3.5 w-3.5" aria-hidden />
+              {isReady ? 'accepted' : costOf(item)}
+            </span>
           </span>
         </span>
       </Button>
-      <div className="flex flex-shrink-0 items-center gap-1.5">
+      <div className="flex flex-shrink-0 items-center gap-1.5 self-center">
         {isReady ? (
-          <Button variant="accent" tone="success" size="xs" onClick={onDispatch} icon={<Rocket className="h-3.5 w-3.5" aria-hidden />}>
+          <Button variant="accent" tone="success" size="xs" onClick={onDispatch} icon={<Rocket className="h-3.5 w-3.5" aria-hidden />} className="r2a-btn">
             Dispatch
           </Button>
         ) : focused ? (
-          <span className="flex items-center gap-1 typo-caption">
-            {reads ? <Kbd>D</Kbd> : <><Kbd>A</Kbd><Kbd>R</Kbd></>}
-            <Kbd>↵</Kbd>
-          </span>
+          <RowKeys reads={reads} />
         ) : isNext ? (
-          <span className="rounded-pill bg-primary/15 px-2 py-0.5 typo-caption text-primary">next</span>
+          <span className="r2a-tag r2a-say typo-eyebrow" data-r2a-say={tier === 1 ? 'danger' : 'accent'}>Next</span>
         ) : null}
       </div>
     </motion.div>

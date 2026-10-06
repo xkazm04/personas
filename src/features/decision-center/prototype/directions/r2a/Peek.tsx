@@ -1,19 +1,19 @@
 /**
- * Level 2 — the peek: an anchored drop under its chip listing that chip's
- * items in roster order. Light to open, light to dismiss (Esc, click outside,
- * the chip again). ↑/↓ move, Enter opens the deck on the focused row, A / R /
- * D decide it in place and the row slides out toward its verdict.
+ * Level 2 — the peek: a frosted drop under its chip listing that chip's items
+ * in roster order. Light to open, light to dismiss (Esc, click outside, the
+ * chip again). ↑/↓ move, Enter opens the deck on the focused row, A / R / D
+ * decide it in place and the row slides out toward its verdict.
  */
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, Rocket } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
-import { Kbd } from '@/features/shared/triage/triageFocusBridge';
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { modalTypeOf, type DecisionItem, type HubChip } from '../../../model/decisionModel';
 import { CHIP_META } from './deckMeta';
+import { Key } from './Key';
 import { PEEK_PRIORITY, isTypingTarget, plain } from './keys';
 import { PeekRow } from './PeekRow';
 
@@ -90,25 +90,26 @@ export function Peek({ chip, rows, failed, nextId, active, anchor, onOpen, onVer
       ref={panel}
       role="region"
       aria-label={`${meta.label} — ${rows.length} waiting`}
-      initial={still ? { opacity: 0 } : { opacity: 0, y: -8, scaleY: 0.94 }}
-      animate={{ opacity: 1, y: 0, scaleY: 1 }}
-      exit={still ? { opacity: 0 } : { opacity: 0, y: -6, scaleY: 0.96 }}
+      initial={still ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={still ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }}
       transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
       style={{ left, transformOrigin: 'top left' }}
-      className="absolute top-full z-30 mt-1.5 flex w-[480px] max-w-[calc(100%-16px)] flex-col rounded-card border border-primary/20 bg-background shadow-elevation-3"
-      data-testid="p2-peek"
+      className="r2a-pop r2a-glass r2a-hairline"
+      data-r2a-kind={chip}
+      data-testid="r2a-peek"
     >
-      <header className="flex items-center gap-2 border-b border-primary/10 px-4 py-2.5">
-        <meta.icon className="h-4 w-4 text-primary" aria-hidden />
+      <header className="r2a-pop__head">
+        <span className="r2a-tile h-8 w-8"><meta.icon className="h-4 w-4" aria-hidden /></span>
         <span className="typo-heading text-foreground">{meta.label}</span>
-        <span className="typo-caption">{rows.length} waiting</span>
+        <span className="typo-caption"><span className="typo-heading tabular-nums text-foreground">{rows.length}</span> waiting</span>
         <span className="ml-auto flex items-center gap-1.5">
           {isReady ? (
-            <Button variant="accent" tone="success" size="xs" onClick={onDispatchAll} disabled={rows.length === 0} icon={<Rocket className="h-3.5 w-3.5" aria-hidden />}>
+            <Button variant="accent" tone="success" size="xs" onClick={onDispatchAll} disabled={rows.length === 0} icon={<Rocket className="h-3.5 w-3.5" aria-hidden />} className="r2a-btn">
               Dispatch all
             </Button>
           ) : rows.length > 0 && (
-            <Button variant="ghost" size="xs" className="whitespace-nowrap" onClick={() => onOpen(rows[f]!, rowEls.current[rows[f]!.id] ?? null)} iconRight={<ArrowRight className="h-3.5 w-3.5" aria-hidden />}>
+            <Button variant="ghost" size="xs" className="r2a-btn whitespace-nowrap" onClick={() => onOpen(rows[f]!, rowEls.current[rows[f]!.id] ?? null)} iconRight={<ArrowRight className="h-3.5 w-3.5" aria-hidden />}>
               Open deck
             </Button>
           )}
@@ -135,15 +136,9 @@ export function Peek({ chip, rows, failed, nextId, active, anchor, onOpen, onVer
         {failed && <p className="px-3 py-2 typo-body text-status-error">This source did not answer — the list may be incomplete.</p>}
         {rows.length === 0 && !failed && <p className="px-3 py-6 text-center typo-caption">All clear here.</p>}
       </div>
-      <footer className="flex items-center gap-1.5 border-t border-primary/10 px-4 py-2 typo-caption">
-        <Kbd>↑</Kbd><Kbd>↓</Kbd> move <Kbd>↵</Kbd> open
-        {isReady ? <><Kbd>A</Kbd> dispatch</> : (
-          <>
-            {rows.some((r) => !reads(r)) && <><Kbd>A</Kbd> approve <Kbd>R</Kbd> reject</>}
-            {rows.some(reads) && <><Kbd>D</Kbd> done</>}
-          </>
-        )}
-        <span className="ml-auto flex items-center gap-1.5"><Kbd>Esc</Kbd> close</span>
+      <footer className="r2a-pop__foot typo-caption">
+        <Key>↑↓</Key> move
+        <span className="ml-auto flex items-center gap-1.5"><Key>Esc</Key> close</span>
       </footer>
     </motion.div>
   );

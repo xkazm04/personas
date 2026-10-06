@@ -10,7 +10,7 @@
 import { useState } from 'react';
 import type { TriageReasonPrompt } from '@/features/agents/quick-answer/triage/triageTypes';
 import { Button } from '@/features/shared/components/buttons';
-import { Kbd } from '@/features/shared/triage/triageFocusBridge';
+import { Key } from './Key';
 
 export function ReasonPrompt({ prompt, min, onSubmit, onCancel }: {
   prompt: TriageReasonPrompt;
@@ -26,17 +26,17 @@ export function ReasonPrompt({ prompt, min, onSubmit, onCancel }: {
   };
 
   return (
-    <div className="flex flex-col gap-2" data-testid="p2-reason">
+    <div className="flex flex-col gap-2" data-testid="r2a-reason">
       <span className="typo-heading text-foreground">{prompt.title}</span>
       {prompt.options.map((o, i) => (
-        <Button key={o.id} variant="secondary" size="sm" block onClick={() => onSubmit(o.value)} className="justify-start! [&>span]:flex [&>span]:w-full [&>span]:items-center [&>span]:gap-2">
-          <Kbd>{i + 1}</Kbd>
-          <span className="truncate">{o.label}</span>
+        <Button key={o.id} variant="ghost" size="md" block onClick={() => onSubmit(o.value)} className="r2a-verdict r2a-btn" data-look="plain">
+          <span className="min-w-0 flex-1 text-left typo-body">{o.label}</span>
+          <Key>{String(i + 1)}</Key>
         </Button>
       ))}
       {prompt.freeText && (
         <textarea
-          id="p2-reason-text"
+          id="r2a-reason-text"
           rows={2}
           autoFocus={prompt.options.length === 0}
           value={text}
@@ -47,7 +47,7 @@ export function ReasonPrompt({ prompt, min, onSubmit, onCancel }: {
           }}
           placeholder={prompt.placeholder ?? 'Or write a reason…'}
           aria-label={prompt.title}
-          className="w-full resize-none rounded-input border border-primary/20 bg-background px-2.5 py-1.5 typo-body text-foreground focus:border-primary/50 focus:outline-none"
+          className="r2a-input w-full resize-none rounded-input px-2.5 py-1.5 typo-body text-foreground"
         />
       )}
       {min > 0 && (
@@ -56,8 +56,8 @@ export function ReasonPrompt({ prompt, min, onSubmit, onCancel }: {
         </span>
       )}
       <div className="flex items-center gap-1.5 typo-caption">
-        {min === 0 && <><Kbd>↵</Kbd> {prompt.skipLabel.toLowerCase()}</>}
-        <span className="ml-auto flex items-center gap-1.5"><Kbd>Esc</Kbd> cancel</span>
+        {min === 0 && <><Key>↵</Key> {prompt.skipLabel.toLowerCase()}</>}
+        <span className="ml-auto flex items-center gap-1.5"><Key>Esc</Key> cancel</span>
       </div>
     </div>
   );
