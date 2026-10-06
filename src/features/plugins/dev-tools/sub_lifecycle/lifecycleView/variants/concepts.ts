@@ -21,6 +21,7 @@
  */
 import { Charter } from './charter/Charter';
 import { Crosscheck } from './crosscheck/Crosscheck';
+import { Dial } from './dial/Dial';
 import { RailBelow } from './railBelow/RailBelow';
 
 export interface LifecycleConcept {
@@ -34,6 +35,7 @@ export const CONCEPTS: readonly LifecycleConcept[] = [
   { id: 'railBelow', name: 'Rail Below', View: RailBelow },
   { id: 'crosscheck', name: 'Crosscheck', View: Crosscheck },
   { id: 'charter', name: 'Charter', View: Charter },
+  { id: 'dial', name: 'Dial', View: Dial },
 ];
 
 export const DEFAULT_CONCEPT_ID = 'railBelow';
