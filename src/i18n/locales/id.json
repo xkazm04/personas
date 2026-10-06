@@ -5595,7 +5595,7 @@
     "col_baseline": "Terukur",
     "col_kpi": "KPI",
     "col_project": "Proyek",
-    "col_target": "Target saran",
+    "col_target": "Disarankan",
     "connect_cta": "Hubungkan {service}",
     "connect_tooltip": "KPI ini membutuhkan konektor {service} agar dapat diukur. Buka katalog kredensial untuk mengaturnya.",
     "connect_wizard_title": "Hubungkan sumber langsung",

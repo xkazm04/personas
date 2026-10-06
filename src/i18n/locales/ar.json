@@ -5595,7 +5595,7 @@
     "col_baseline": "مقيس",
     "col_kpi": "KPI",
     "col_project": "المشروع",
-    "col_target": "الهدف المقترح",
+    "col_target": "مقترح",
     "connect_cta": "ربط {service}",
     "connect_tooltip": "يحتاج هذا المؤشر إلى موصّل {service} ليكون قابلاً للقياس. افتح كتالوج البيانات الاعتمادية لإعداده.",
     "connect_wizard_title": "ربط مصدر مباشر",

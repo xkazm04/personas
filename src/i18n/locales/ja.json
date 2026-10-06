@@ -5595,7 +5595,7 @@
     "col_baseline": "測定値",
     "col_kpi": "KPI",
     "col_project": "プロジェクト",
-    "col_target": "推奨目標",
+    "col_target": "提案値",
     "connect_cta": "{service} を接続",
     "connect_tooltip": "この KPI を測定するには {service} コネクターが必要です。クレデンシャルカタログで設定してください。",
     "connect_wizard_title": "ライブソースを接続",

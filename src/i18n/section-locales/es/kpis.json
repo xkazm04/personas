@@ -42,7 +42,7 @@
   "col_baseline": "Medido",
   "col_kpi": "KPI",
   "col_project": "Proyecto",
-  "col_target": "Objetivo sugerido",
+  "col_target": "Sugerido",
   "connect_cta": "Conectar {service}",
   "connect_tooltip": "Este KPI necesita el conector de {service} para poder medirse. Abre el catálogo de credenciales para configurarlo.",
   "connect_wizard_title": "Conectar una fuente en vivo",

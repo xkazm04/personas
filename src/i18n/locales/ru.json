@@ -5595,7 +5595,7 @@
     "col_baseline": "Измерено",
     "col_kpi": "KPI",
     "col_project": "Проект",
-    "col_target": "Предлагаемая цель",
+    "col_target": "Предложено",
     "connect_cta": "Подключить {service}",
     "connect_tooltip": "Этому KPI нужен коннектор {service} для измерения. Откройте каталог учётных данных для настройки.",
     "connect_wizard_title": "Подключить живой источник",

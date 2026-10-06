@@ -5595,7 +5595,7 @@
     "col_baseline": "Đã đo",
     "col_kpi": "KPI",
     "col_project": "Dự án",
-    "col_target": "Mục tiêu gợi ý",
+    "col_target": "Đề xuất",
     "connect_cta": "Kết nối {service}",
     "connect_tooltip": "KPI này cần connector {service} để có thể đo được. Mở danh mục thông tin xác thực để thiết lập.",
     "connect_wizard_title": "Kết nối nguồn trực tiếp",

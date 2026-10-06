@@ -5595,7 +5595,7 @@
     "col_baseline": "मापा गया",
     "col_kpi": "KPI",
     "col_project": "प्रोजेक्ट",
-    "col_target": "सुझाया गया लक्ष्य",
+    "col_target": "प्रस्तावित",
     "connect_cta": "{service} कनेक्ट करें",
     "connect_tooltip": "इस KPI को मापने योग्य बनाने के लिए {service} कनेक्टर आवश्यक है। सेट करने के लिए क्रेडेंशियल कैटलॉग खोलें।",
     "connect_wizard_title": "लाइव स्रोत कनेक्ट करें",

@@ -5595,7 +5595,7 @@
     "col_baseline": "Gemessen",
     "col_kpi": "KPI",
     "col_project": "Projekt",
-    "col_target": "Vorgeschlagenes Ziel",
+    "col_target": "Vorschlag",
     "connect_cta": "{service} verbinden",
     "connect_tooltip": "Dieser KPI benötigt den {service}-Connector, um messbar zu sein. Öffne den Credential-Katalog, um ihn einzurichten.",
     "connect_wizard_title": "Live-Quelle verbinden",

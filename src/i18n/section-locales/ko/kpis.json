@@ -42,7 +42,7 @@
   "col_baseline": "측정됨",
   "col_kpi": "KPI",
   "col_project": "프로젝트",
-  "col_target": "제안 목표",
+  "col_target": "제안값",
   "connect_cta": "{service} 연결",
   "connect_tooltip": "이 KPI를 측정하려면 {service} 커넥터가 필요합니다. 자격증명 카탈로그를 열어 설정하세요.",
   "connect_wizard_title": "라이브 소스 연결",

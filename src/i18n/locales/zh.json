@@ -5595,7 +5595,7 @@
     "col_baseline": "已测量",
     "col_kpi": "KPI",
     "col_project": "项目",
-    "col_target": "建议目标",
+    "col_target": "建议值",
     "connect_cta": "连接 {service}",
     "connect_tooltip": "此 KPI 需要 {service} 连接器才能测量。请打开凭据目录进行设置。",
     "connect_wizard_title": "连接实时数据源",

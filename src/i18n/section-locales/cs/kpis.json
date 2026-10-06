@@ -42,7 +42,7 @@
   "col_baseline": "Naměřeno",
   "col_kpi": "KPI",
   "col_project": "Projekt",
-  "col_target": "Navrhovaný cíl",
+  "col_target": "Návrh",
   "connect_cta": "Připojit {service}",
   "connect_tooltip": "Toto KPI potřebuje konektor {service} k měření. Otevřete katalog přihlašovacích údajů a nastavte ho.",
   "connect_wizard_title": "Připojit živý zdroj",

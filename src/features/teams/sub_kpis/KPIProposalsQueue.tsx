@@ -61,7 +61,23 @@ export function KPIProposalsQueue({ onRefresh }: { onRefresh: () => void }) {
       updateKpi(kpi.id, { status: 'active' }).catch(toastCatch('kpi accept', t.kpis.accept_failed));
     const quickReject = (kpi: DevKpi) =>
       updateKpi(kpi.id, { status: 'archived' }).catch(toastCatch('kpi reject', t.kpis.reject_failed));
-    const cols: TableColumn<DevKpi>[] = [
+    // PROJECT FIRST (2026-10-06, owner's note). The queue is read across
+    // projects far more often than inside one, and the project is the thing you
+    // group by with your eye before you read a single KPI name. It used to sit
+    // third, after the name and before the measures.
+    const cols: TableColumn<DevKpi>[] = [];
+    // A single-project scope makes this column say the same thing on every row.
+    if (scope.kind !== 'project') {
+      cols.push({
+        key: 'project',
+        label: t.kpis.col_project,
+        width: 'minmax(140px, 1fr)',
+        sortable: true,
+        sortFn: (a, b) => projectName(a.project_id).localeCompare(projectName(b.project_id)),
+        render: (kpi) => <span className="typo-body text-foreground truncate block">{projectName(kpi.project_id)}</span>,
+      });
+    }
+    cols.push(
       {
         key: 'name',
         label: t.kpis.col_kpi,
@@ -94,19 +110,6 @@ export function KPIProposalsQueue({ onRefresh }: { onRefresh: () => void }) {
           );
         },
       },
-    ];
-    // A single-project scope makes the project column say the same thing on every row.
-    if (scope.kind !== 'project') {
-      cols.push({
-        key: 'project',
-        label: t.kpis.col_project,
-        width: 'minmax(140px, 1fr)',
-        sortable: true,
-        sortFn: (a, b) => projectName(a.project_id).localeCompare(projectName(b.project_id)),
-        render: (kpi) => <span className="typo-body text-foreground truncate block">{projectName(kpi.project_id)}</span>,
-      });
-    }
-    cols.push(
       {
         key: 'baseline',
         label: t.kpis.col_baseline,

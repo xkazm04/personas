@@ -5595,7 +5595,7 @@
     "col_baseline": "পরিমাপ করা",
     "col_kpi": "KPI",
     "col_project": "প্রজেক্ট",
-    "col_target": "পরামর্শকৃত লক্ষ্য",
+    "col_target": "প্রস্তাবিত",
     "connect_cta": "{service} সংযুক্ত করুন",
     "connect_tooltip": "এই KPI পরিমাপযোগ্য হতে {service} কানেক্টর প্রয়োজন। সেটআপ করতে ক্রেডেনশিয়াল ক্যাটালগ খুলুন।",
     "connect_wizard_title": "লাইভ সোর্স সংযুক্ত করুন",
