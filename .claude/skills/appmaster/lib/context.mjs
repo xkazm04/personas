@@ -20,6 +20,7 @@ import {
 } from './dbread.mjs';
 import { brakes, parseTs, ageText, lastDecided, isDue } from './brakes.mjs';
 import { queueTable } from './queue.mjs';
+import { briefRepos, laneFor } from './repos.mjs';
 
 export { parseTs, ageText, lastDecided, isDue };
 
@@ -86,6 +87,11 @@ export function renderAt(input, C) {
   if (kg.length) { L.push('- key goals, in priority order:'); kg.slice(0, 5).forEach((g, i) => L.push(`  ${i + 1}. ${clip(g.title, C.title)}${g.measure ? ` (measured by: ${clip(g.measure, C.brief / 2)})` : ''}`)); L.push(...more(kg.length, 5, '  ')); }
   if (brief.boundaries?.length) { L.push('- boundaries (no builder may cross these):'); brief.boundaries.forEach((b) => L.push(`  - ${clip(b, C.brief / 2)}`)); }
   if (brief.reportStyle || brief.tone) L.push(`- report style: ${clip(brief.reportStyle || brief.tone, 160)}`);
+  const repos = input.repos ?? [];
+  if (repos.length) {
+    L.push('- repos besides this project\'s own (`self`) that a dispatch may target with `repo`:');
+    for (const r of repos) L.push(`  - ${r.key}: ${r.root} (base ${r.baseBranch}${r.lane != null ? `; at most ${r.lane} live run(s) there across ALL projects` : ''})`);
+  }
   L.push(`- repo docs by path (read before writing a builder brief; not inlined): ${docs.length ? docs.join(' ; ') : 'none at the root'}`);
 
   // RIGHT NOW
@@ -105,6 +111,7 @@ export function renderAt(input, C) {
   L.push('- COVERAGE: the coverage and last-run lines and your last note are your memory. Do not re-run what you just ran; do not starve what you keep deferring.');
   const slots = freeSlots(machine.running);
   L.push(`- CAPACITY: dispatch AT MOST ${MAX_DISPATCH} charters (${PER_PROJECT_CAP} builders per project, ${GLOBAL_CAP} in all; running now: ${machine.running?.project ?? 0} here, ${machine.running?.global ?? 0} in all; free slots: ${slots.project} here, ${slots.global} in all). Two at once ONLY when each is independent of the other and their \`paths\` are disjoint from each other AND from every run in flight below. Every dispatch declares \`paths\`: the repo-relative prefixes or globs its builder will touch (none = the whole repo, which leaves no room for a second builder). An overlap is refused. None is a legitimate answer.`);
+  if (repos.length) L.push(`- REPOS: \`repo\` (omit for self, or one of: ${repos.map((r) => r.key).join(', ')}) picks the repo a builder works and merges in. In a shared repo, paths must be disjoint from every OTHER project's runs there too, and its lane caps live runs across all projects; a dispatch that does not fit is queued, not lost.`);
   L.push('- MODEL: per dispatch, `model` "opus" for discovery (security scan, architecture review, KPI or measure design), "sonnet" for fixing a shape already chosen, delivering a well-specified idea, or a mechanical sweep; omit it for the charter default. A model the brief pins wins.');
   L.push(`- MACHINE: a dispatch is refused while FREE memory is under ${MEM.dispatchMinFreeGb} GB (+${MEM.perBuilderReserveGb} GB per builder already running) and while a usage-limit mark stands. A tripped memory brake clears by itself within minutes: dispatch nothing this wake and choose a SHORT next wake (10 to 20 min); a usage limit needs a long one.`);
   L.push('- IN FLIGHT: running, exited and verifying runs are not finished; planned is minted, not started. A QUEUED run (a dispatch refused for a slot, held and started in order when one frees) is a promise the loop keeps. Never re-dispatch a live or queued charter, or an idea an in-flight or queued task carries.');
@@ -207,7 +214,7 @@ export function renderAt(input, C) {
     L.push('  headless runs in flight (a new dispatch must not overlap their paths):');
     for (const r of live) {
       const q = queuedAt.get(r.runId);
-      L.push(`    - ${shortId(r.runId)} ${r.charterSlug} ${r.state}${q ? `, QUEUED at position ${q.position} of ${qd.total} (waiting ${q.waitedMin ?? '?'} min on ${q.reason})` : ''}${r.model ? ` (${r.model})` : ''}${r.branch ? ` on ${r.branch}` : ''} (created ${stampAgeShort(r.createdAt, nowMs)}); paths: ${clip(pathsText(r.paths), 200)}`);
+      L.push(`    - ${shortId(r.runId)} ${r.charterSlug} ${r.state}${q ? `, QUEUED at position ${q.position} of ${qd.total} (waiting ${q.waitedMin ?? '?'} min on ${q.reason})` : ''}${r.model ? ` (${r.model})` : ''}${r.repo && r.repo !== 'self' ? ` in repo ${r.repo}` : ''}${r.branch ? ` on ${r.branch}` : ''} (created ${stampAgeShort(r.createdAt, nowMs)}); paths: ${clip(pathsText(r.paths), 200)}`);
     }
   }
   if (recent.length) { L.push('  recent headless runs:'); for (const r of recent) L.push(`    - ${shortId(r.runId)} ${r.charterSlug} ${r.state}${r.mergedSha ? ` ${String(r.mergedSha).slice(0, 8)}` : ''}${r.heldReason ? `: ${clip(r.heldReason, 140)}` : ''}`); }
@@ -235,7 +242,7 @@ export function renderAt(input, C) {
   // OUTPUT CONTRACT (schema/decision.schema.json)
   head('ANSWER WITH ONE JSON OBJECT AND NOTHING ELSE - no prose before or after, no code fence:');
   L.push(`{"wakeId":"${wakeId}","dispatch":[{"charterSlug":"<slug>","reason":"<why this one now>","brief":"<the builder's whole task>","ideaIds":["<accepted idea id>"],"model":"sonnet|opus","paths":["<repo-relative path prefix or glob it will touch>"]}],"defer":[{"charterSlug":"<slug>","reason":"<why it waits>"}],"asks":[{"kind":"<kind>","question":"<the decision you need>","context":"<why the loop needs it>","options":[{"label":"<a choice>","action":"<what you do if chosen>"}]}],"ideaVerdicts":[{"ideaId":"<pending idea id>","status":"accepted|rejected","reason":"<why>"}],"say":"<message to the operator>|null","note":"<coverage note for your next wake>","nextWakeMinutes":<${WAKE_MIN}-${WAKE_MAX}>}`);
-  L.push(`Every key is always present ([] when empty, say null when silent). wakeId is exactly "${wakeId}"; every charter slug exactly once across dispatch and defer, no other slug; dispatch at most ${MAX_DISPATCH}, and with two each carries non-empty disjoint paths and no idea in both; model optional; asks at most ${MAX_ASKS}, 2-4 options each, kind one of ${ASK_KINDS.join(', ')}; nextWakeMinutes an integer; every ideaId copied from this document.`);
+  L.push(`Every key is always present ([] when empty, say null when silent). wakeId is exactly "${wakeId}"; every charter slug exactly once across dispatch and defer, no other slug; dispatch at most ${MAX_DISPATCH}, and with two each carries non-empty disjoint paths and no idea in both; model optional${repos.length ? `; repo optional (self, ${repos.map((r) => r.key).join(', ')})` : ''}; asks at most ${MAX_ASKS}, 2-4 options each, kind one of ${ASK_KINDS.join(', ')}; nextWakeMinutes an integer; every ideaId copied from this document.`);
   L.push(`Charter slugs: ${charters.map((c) => c.slug).join(', ') || '(none)'}`);
   return L.join('\n') + '\n';
 }
@@ -299,6 +306,7 @@ export function gatherContext(ref) {
     };
     const table = queueTable(nowMs);
     input.queue = { mine: table.filter((q) => q.slug === project.slug), total: table.length };
+    input.repos = briefRepos(brief).map((r) => ({ key: r.key, root: r.root, baseBranch: r.baseBranch, lane: laneFor(r.root) }));
     input.due = isDue(wakes, nowMs);
   } finally { d.close(); }
   return input;

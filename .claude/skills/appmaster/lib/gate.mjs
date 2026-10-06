@@ -5,7 +5,7 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { ENV_STRIP } from './contract.mjs';
+import { ENV_STRIP, SELF_REPO, repoOf } from './contract.mjs';
 
 export const GATE_NAMES = ['typecheck', 'lint', 'test'];
 export const GATE_TIMEOUT_MS = 15 * 60 * 1000;
@@ -52,13 +52,25 @@ export function resolveGates(root, brief = {}) {
   return gates;
 }
 
+/**
+ * The gates of the repo a run targets. The project's own repo: resolveGates(root, brief) as always.
+ * A second repo: the brief's `repos[].gates` for that key, else that repo's manifest / package.json.
+ * The project brief's own `gates` never apply to another repo (pof's typecheck is not the registry's).
+ */
+export function resolveRunGates(run, brief = {}) {
+  const r = repoOf(run);
+  if (r.key === SELF_REPO) return resolveGates(r.root, brief);
+  const entry = (Array.isArray(brief?.repos) ? brief.repos : []).find((x) => x?.key === r.key);
+  return resolveGates(r.root, entry?.gates && typeof entry.gates === 'object' ? { gates: entry.gates } : {});
+}
+
 const tail = (text, n = TAIL_LINES) => String(text || '').replace(/\s+$/, '').split(/\r?\n/).slice(-n).join('\n');
 
-function gateEnv() {
+function gateEnv(extra = {}) {
   const env = { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0' };
   const strip = new Set(ENV_STRIP.map((k) => k.toUpperCase()));
   for (const k of Object.keys(env)) if (strip.has(k.toUpperCase())) delete env[k];
-  return env;
+  return { ...env, ...extra };
 }
 
 /**
@@ -115,9 +127,9 @@ export function failuresAreInherited(branch, base) {
   return branch.every((f) => b.has(f));
 }
 
-/** Run one shell command in cwd: cmd /d /s /c on Windows (UTF-8 code page), sh -c elsewhere. */
-export function runShell(command, cwd, timeoutMs = GATE_TIMEOUT_MS) {
-  const opts = { cwd, encoding: 'utf8', timeout: timeoutMs, windowsHide: true, maxBuffer: 256 * 2 ** 20, stdio: ['ignore', 'pipe', 'pipe'], env: gateEnv() };
+/** Run one shell command in cwd: cmd /d /s /c on Windows (UTF-8 code page), sh -c elsewhere. `env` adds to the scrubbed env. */
+export function runShell(command, cwd, timeoutMs = GATE_TIMEOUT_MS, env = {}) {
+  const opts = { cwd, encoding: 'utf8', timeout: timeoutMs, windowsHide: true, maxBuffer: 256 * 2 ** 20, stdio: ['ignore', 'pipe', 'pipe'], env: gateEnv(env) };
   const r = process.platform === 'win32'
     ? spawnSync(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', `"chcp 65001 >nul & ${command}"`], { ...opts, windowsVerbatimArguments: true })
     : spawnSync('/bin/sh', ['-c', command], opts);
@@ -131,13 +143,13 @@ export function runShell(command, cwd, timeoutMs = GATE_TIMEOUT_MS) {
  * (worktree, gates, {timeoutMs}) => {typecheck?:{ok,exit,tail,skipped?},lint?:...,test?:...}
  * Sequential, cwd = the worktree. A gate with no command is {skipped:true, reason:'no command'}.
  */
-export function runGates(worktree, gates = {}, { timeoutMs = GATE_TIMEOUT_MS, only } = {}) {
+export function runGates(worktree, gates = {}, { timeoutMs = GATE_TIMEOUT_MS, only, env = {} } = {}) {
   const out = {};
   for (const g of only || GATE_NAMES) {
     const command = gates[g];
     if (!command) { out[g] = { ok: false, skipped: true, reason: 'no command' }; continue; }
     const started = Date.now();
-    out[g] = { command, ...runShell(command, worktree, timeoutMs), ms: Date.now() - started };
+    out[g] = { command, ...runShell(command, worktree, timeoutMs, env), ms: Date.now() - started };
   }
   return out;
 }

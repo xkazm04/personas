@@ -25,7 +25,7 @@ export function projectStatus(slug, nowMs = Date.now()) {
   return {
     slug, name, nextWakeAt: next, due: isDue(wakes, nowMs),
     running: runs.filter((r) => LIVE_RUN_STATES.includes(r.state)).map((r) => ({
-      runId8: shortId(r.runId), charter: r.charterSlug, model: r.model, paths: r.paths ?? [], state: r.state, streamAgeMin: streamAgeMin(slug, r.runId, nowMs),
+      runId8: shortId(r.runId), charter: r.charterSlug, model: r.model, paths: r.paths ?? [], repo: r.repo ?? 'self', state: r.state, streamAgeMin: streamAgeMin(slug, r.runId, nowMs),
     })),
     held: runs.filter((r) => r.state === 'held').map((r) => ({ runId8: shortId(r.runId), charter: r.charterSlug, branch: r.branch ?? null, heldReason: r.heldReason ?? null })),
     merged: runs.filter((r) => r.state === 'merged' && last && String(r.endedAt ?? r.createdAt) >= String(last.at))
@@ -62,7 +62,7 @@ export function renderDigest(status, nowMs = Date.now()) {
     L.push(`${p.slug} - ${p.lastDecisionAt ? `decided ${hhmm(p.lastDecisionAt, nowMs)}` : 'no decision yet'}${p.lastDispatch.length ? `, dispatched ${p.lastDispatch.join(', ')}` : ''}; ${next}.`);
     for (const m of p.merged) L.push(`  Merged ${m.runId8} ${m.charter}${m.mergedSha ? ` at ${String(m.mergedSha).slice(0, 8)}` : ''}.`);
     // a planned run in the queue is a promise, not running: the queue block below shows it
-    for (const r of p.running.filter((x) => !queued.some((q) => q.runId8 === x.runId8))) L.push(`  ${r.state === 'running' ? 'Running' : `Run ${r.state}:`} ${r.runId8} ${r.charter} (${r.model ?? 'model ?'})${r.streamAgeMin != null ? `, last output ${r.streamAgeMin} min ago` : ''}${r.paths?.length ? `; paths ${clip(r.paths.join(', '), 80)}` : ''}.`);
+    for (const r of p.running.filter((x) => !queued.some((q) => q.runId8 === x.runId8))) L.push(`  ${r.state === 'running' ? 'Running' : `Run ${r.state}:`} ${r.runId8} ${r.charter} (${r.model ?? 'model ?'})${r.repo && r.repo !== 'self' ? ` in repo ${r.repo}` : ''}${r.streamAgeMin != null ? `, last output ${r.streamAgeMin} min ago` : ''}${r.paths?.length ? `; paths ${clip(r.paths.join(', '), 80)}` : ''}.`);
     for (const q of queued) L.push(`  Queued ${q.runId8} ${q.charter} at position ${q.position}, waiting on ${q.reason}.`);
     for (const h of p.held) L.push(`  Held ${h.runId8} ${h.charter}${h.heldReason ? `: ${clip(h.heldReason, 140)}` : ''}.`);
     if (p.lastNote) L.push(`  Note: ${clip(p.lastNote, 200)}`);

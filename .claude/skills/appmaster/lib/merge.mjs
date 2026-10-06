@@ -6,13 +6,13 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { nowIso, readJson, shortId, Refusal } from './contract.mjs';
+import { nowIso, readJson, shortId, Refusal, SELF_REPO, repoOf, repoEnv } from './contract.mjs';
 import { loadBrief, updateRun, raiseAsk, queueOutbox, openAsks, updateAsk } from './store.mjs';
 import { readLimit } from './limits.mjs';
 import { requireRun, pidAlive, runFile, markLimitFromRun, awaitHolder } from './worker.mjs';
 import { git, gitTry, revParse, isAncestor, removeWorktree, withBaseWorktree } from './worktree.mjs';
 import { acquireGateSlot } from './memory.mjs';
-import { resolveGates, runGates, gatesVerdict, splitBoundaries, boundaryHits, failuresAreInherited, testFilesIn, narrowCommand, GATE_TIMEOUT_MS } from './gate.mjs';
+import { resolveRunGates, runGates, gatesVerdict, splitBoundaries, boundaryHits, failuresAreInherited, testFilesIn, narrowCommand, GATE_TIMEOUT_MS } from './gate.mjs';
 
 const lines = (s) => String(s || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
 const keyOf = (p) => (process.platform === 'win32' ? p.toLowerCase() : p);
@@ -77,7 +77,9 @@ export function closeHeldAsks(run, sha) {
 
 function hold(run, reason, verdict) {
   const id8 = shortId(run.runId);
-  const question = `Run ${id8} (${run.charterSlug}) in ${run.slug} is held and was not merged: ${reason}. What should happen to branch ${run.branch}?`;
+  const target = repoOf(run);
+  const where = target.key === SELF_REPO ? run.slug : `${run.slug} (its ${target.key} repo, ${target.root})`;
+  const question = `Run ${id8} (${run.charterSlug}) in ${where} is held and was not merged: ${reason}. What should happen to branch ${run.branch}?`;
   const context = [
     `Task: ${String(run.brief || '').split('\n')[0].slice(0, 200)}`,
     `Branch ${run.branch} (${verdict?.commits?.length ?? 0} commit(s) on top of ${String(run.baseSha || '').slice(0, 10)}), worktree ${run.worktree}.`,
@@ -116,7 +118,7 @@ const IN_PROGRESS = ['MERGE_HEAD', 'rebase-merge', 'rebase-apply', 'CHERRY_PICK_
  * on entry (settle checks it before calling).
  */
 export function rebaseOntoBase(run) {
-  const { root, baseBranch } = run.project;
+  const { root, baseBranch } = repoOf(run);
   const branchRef = `refs/heads/${run.branch}`;
   const onto = revParse(root, `refs/heads/${baseBranch}`);
   if (isAncestor(root, onto, branchRef)) return { ok: true, rebased: false, onto };
@@ -153,12 +155,13 @@ export function rebaseOntoBase(run) {
  * worktree is the committed tip again for a retry, a rebase and the merge.
  */
 export function evaluateGates(run, gates, { timeoutMs = GATE_TIMEOUT_MS } = {}) {
-  const results = runGates(run.worktree, gates, { timeoutMs });
+  const env = repoEnv(repoOf(run).root);   // the Personas repo's gates share its one cargo target
+  const results = runGates(run.worktree, gates, { timeoutMs, env });
   for (const g of Object.keys(results)) {
     const r = results[g];
     if (r.skipped || r.ok || r.timedOut || !r.failures?.length || !run.baseSha) continue;
     try {
-      const base = withBaseWorktree(run, (dir) => runGates(dir, gates, { timeoutMs, only: [g] })[g]);
+      const base = withBaseWorktree(run, (dir) => runGates(dir, gates, { timeoutMs, only: [g], env })[g]);
       r.base = { ok: base.ok, exit: base.exit, failures: base.failures?.length ?? 0, failureList: (base.failures || []).slice(0, 100) };
       if (!base.ok && failuresAreInherited(r.failures, base.failures)) r.inherited = true;
     } catch (e) { r.base = { error: String(e.message || e).split('\n')[0] }; }
@@ -167,7 +170,7 @@ export function evaluateGates(run, gates, { timeoutMs = GATE_TIMEOUT_MS } = {}) 
       const fresh = (r.failures || []).filter((f) => !baseSet.has(f));
       const files = testFilesIn(fresh).slice(0, 12);
       if (files.length && g === 'test') {
-        const again = runGates(run.worktree, { [g]: narrowCommand(gates[g], files) }, { timeoutMs, only: [g] })[g];
+        const again = runGates(run.worktree, { [g]: narrowCommand(gates[g], files) }, { timeoutMs, only: [g], env })[g];
         r.rerun = { files, ok: again.ok, exit: again.exit };
         if (again.ok) { r.flaky = files; r.inherited = true; }
       }
@@ -201,7 +204,7 @@ function gateFailure(results, when = '') {
  * `verdict` with what it measured. `rebasedOnto` tells settle to record the branch's new base.
  */
 export function mergeGate(run, verdict = {}, { gates, timeoutMs = GATE_TIMEOUT_MS } = {}) {
-  const { root, baseBranch } = run.project;
+  const { root, baseBranch } = repoOf(run);   // the target repo's checkout: a second repo merges into ITS base
   const branchRef = `refs/heads/${run.branch}`;
 
   const head = gitTry(root, ['rev-parse', '--abbrev-ref', 'HEAD']);
@@ -227,7 +230,7 @@ export function mergeGate(run, verdict = {}, { gates, timeoutMs = GATE_TIMEOUT_M
     if (rb.rebased) {
       rebased = true; rebasedOnto = rb.onto; baseNow = rb.onto;
       verdict.rebasedOnto = rb.onto;
-      const g = gates || resolveGates(root, loadBrief(run.slug) || {});
+      const g = gates || resolveRunGates(run, loadBrief(run.slug) || {});
       const ev = evaluateGates({ ...run, baseSha: rb.onto }, g, { timeoutMs });
       verdict.gatesAfterRebase = ev.results;
       if (ev.sideEffects.length) verdict.gateSideEffectsAfterRebase = ev.sideEffects;
@@ -288,7 +291,7 @@ function settleCore({ flags = {} } = {}, slot) {
     : markLimitFromRun(run) || (standing?.runId === run.runId ? standing : null);
   if (mark) return updateRun(run, { state: 'released', heldReason: `usage limit: ${mark.reason}`, settledAt: nowIso() });
 
-  const { root } = run.project;
+  const { root } = repoOf(run);
   const brief = loadBrief(run.slug) || {};
   const branchRef = `refs/heads/${run.branch}`;
   const verdict = { commits: [], files: [], gates: {}, boundaryHits: [], dirtyOverlap: [] };
@@ -343,8 +346,8 @@ function settleCore({ flags = {} } = {}, slot) {
     if (!verdict.commits.length) return hold(run, `rebasing onto the moved base ${rb.onto.slice(0, 10)} left no commits: every change of the branch is already in the base`, verdict);
   }
 
-  // 2b. run them
-  const gates = resolveGates(root, brief);
+  // 2b. run them (the target repo's gates: a second repo has its own)
+  const gates = resolveRunGates(run, brief);
   const timeoutMs = Number(process.env.APPMASTER_GATE_TIMEOUT_MS) || GATE_TIMEOUT_MS;
   const ev = evaluateGates(run, gates, { timeoutMs });
   verdict.gates = ev.results;
@@ -360,8 +363,9 @@ function settleCore({ flags = {} } = {}, slot) {
 
   // queue BEFORE recording merged: the entry is idempotent, and a crash in between leaves a
   // `verifying` run whose re-settle finds the branch already in base and queues the same id again
+  const repoKey = repoOf(run).key;
   queueOutbox(run.slug, run.project.id, 'task-complete',
-    { ideaIds: run.ideaIds || [], sha: mg.sha, title: taskTitle(run), runId: run.runId, branch: run.branch }, { runId: run.runId });
+    { ideaIds: run.ideaIds || [], sha: mg.sha, title: taskTitle(run), runId: run.runId, branch: run.branch, ...(repoKey !== SELF_REPO ? { repo: repoKey } : {}) }, { runId: run.runId });
   closeHeldAsks(run, mg.sha);
   run = updateRun(run, { state: 'merged', mergedSha: mg.sha, verdict, endedAt: run.endedAt || nowIso(), settledAt: nowIso() });
   let cleanup;

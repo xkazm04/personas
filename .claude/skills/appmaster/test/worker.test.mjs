@@ -268,9 +268,10 @@ test('dispatch brakes: limit mark, memory, not planned, project cap, global cap 
   S.updateRun(busy, { state: 'released' }); S.updateRun(busy2, { state: 'released' });
   S.updateRun(nested, { state: 'released' });
 
+  // each filler project has its OWN checkout: runs of one root are kept path-disjoint across projects
   for (const s of Array.from({ length: C.GLOBAL_CAP }, (_, i) => `p${i + 1}`)) {
     S.saveBrief(s, { headless: true, charters: [] });
-    S.saveRun({ ...S.newRun({ ...project, slug: s, id: s }, { wakeId: 'w', charterSlug: 'c', reason: 'r', brief: 'b', model: 'm' }), state: 'running', pid: 999999 });
+    S.saveRun({ ...S.newRun({ ...project, slug: s, id: s, root: path.join(tmp, 'elsewhere', s) }, { wakeId: 'w', charterSlug: 'c', reason: 'r', brief: 'b', model: 'm' }), state: 'running', pid: 999999 });
   }
   e = refusal(() => W.cmdDispatch({ flags: { run: run.runId } }));
   assert.equal(e.reason, 'global cap');

@@ -51,6 +51,34 @@ export const shortId = (runId) => String(runId).replace(/-/g, '').slice(0, 8);
 /** The repo key of a project's own checkout (a dispatch with no `repo` targets it). */
 export const SELF_REPO = 'self';
 
+/** A checkout root as a comparable key (resolved, no trailing separator, case-folded on Windows). */
+export const normRoot = (p) => {
+  const r = path.resolve(String(p ?? '')).replace(/[\\/]+$/, '');
+  return process.platform === 'win32' ? r.toLowerCase() : r;
+};
+/**
+ * Two repos several masters write into (lib/repos.mjs): personas-web also changes the Personas
+ * desktop, and the game masters forge into the knowledge registry. Overridable for tests.
+ */
+export const PERSONAS_ROOT = process.env.APPMASTER_PERSONAS_ROOT || 'C:\\Users\\kazda\\kiro\\personas';
+export const AI_REGISTRY_ROOT = process.env.APPMASTER_REGISTRY_ROOT || 'C:\\Users\\kazda\\kiro\\ai-registry';
+/**
+ * Repo lanes: the most live runs (running, exited, verifying, or planned with a worktree) that may
+ * target one repo root at once, across ALL projects. A brief's `repos[].lane` may only tighten one.
+ * Exceeding it refuses `repo lane` (a queue reason).
+ */
+export const REPO_LANES = { [normRoot(PERSONAS_ROOT)]: 1, [normRoot(AI_REGISTRY_ROOT)]: 1 };
+/** Operator rule: ONE Personas cargo target; a run targeting that repo never starts a second Rust tree. */
+export const PERSONAS_CARGO_TARGET = path.join(PERSONAS_ROOT, 'src-tauri', 'target');
+/** The repo a run targets: what run.json recorded at decide, else (older runs) the project's own checkout. */
+export const repoOf = (run) => ({
+  key: run?.repo ?? SELF_REPO,
+  root: run?.repoRoot ?? run?.project?.root,
+  baseBranch: run?.repoBase ?? run?.project?.baseBranch,
+});
+/** Env a builder and its gates get for the repo they work in. */
+export const repoEnv = (root) => (root && normRoot(root) === normRoot(PERSONAS_ROOT) ? { CARGO_TARGET_DIR: PERSONAS_CARGO_TARGET } : {});
+
 /** Projects this skill manages by default; any other brief.json opts in with `"headless": true`. */
 export const DEFAULT_MANAGED = ['pof', 'ascent', 'kp'];
 
@@ -158,6 +186,9 @@ export const claudeBin = () => process.env.APPMASTER_CLAUDE_BIN || 'claude';
  * @typedef {Object} Brief             .claude/master/<slug>/brief.json, /master's schema; this skill only READS it
  * @property {Array<{slug:string,priority:number|null}>} charters
  * @property {boolean} [headless]     opt a project outside DEFAULT_MANAGED into this skill
+ * @property {Array<{key:string,root:string,baseBranch:string,lane?:number,gates?:Object}>} [repos]
+ *   repos this project's master may also target; the project's own checkout is the implicit key `self`.
+ *   `gates` names that repo's gate commands (a repo without a manifest or package.json has none).
  * @property {string[]} [boundaries]   path globs (no whitespace, enforced) or prose rules (passed to the builder only)
  * @property {{typecheck?:string,lint?:string,test?:string}} [gates]  shell commands; else .ai/manifest.yaml capabilities
  * @property {{master?:string,builder?:string,byCharter?:Record<string,string>}} [models]
@@ -169,7 +200,7 @@ export const claudeBin = () => process.env.APPMASTER_CLAUDE_BIN || 'claude';
  * @typedef {Object} Decision          the master's whole answer to one wake (schema/decision.schema.json)
  * ABSENT-VALUE CONVENTION: every array is present (empty []), `say` is null when silent. Never omitted.
  * @property {string} wakeId
- * @property {Array<{charterSlug:string,reason:string,brief:string,ideaIds:string[],model?:string|null,paths?:string[]}>} dispatch
+ * @property {Array<{charterSlug:string,reason:string,brief:string,ideaIds:string[],model?:string|null,paths?:string[],repo?:string}>} dispatch
  *   `model` (BUILDER_MODEL_CHOICES) overrides the charter's default unless the brief pins one;
  *   `paths` (repo-relative path prefixes / globs the builder will touch) is REQUIRED on every entry
  *   when there are two, and the two must be disjoint (lib/paths.mjs)
@@ -208,6 +239,9 @@ export const claudeBin = () => process.env.APPMASTER_CLAUDE_BIN || 'claude';
  * @property {string} model
  * @property {'brief'|'decision'|'contract'} [modelSource]   who chose the model (the brief, the master, the defaults)
  * @property {string[]} [paths]        what the builder declared it will touch; [] / absent = the whole repo
+ * @property {string} [repo]           the target repo key (SELF_REPO or a brief.repos key); absent = self
+ * @property {string} [repoRoot]       the target repo's checkout (worktree, gates, merge, dirty checks)
+ * @property {string} [repoBase]       the branch the run is cut from and merges into
  * @property {string} [branch]         autopilot/<charter>-<shortId>
  * @property {string} [worktree]
  * @property {string} [baseSha]        the base the branch sits on: the tip when the worktree was cut, moved by a rebase

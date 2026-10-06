@@ -15,6 +15,7 @@ import { listRuns, loadAsks, loadBrief, loadWake, newRun, queueOutbox, raiseAsk,
 import { briefCharters, resolveManaged, openDb, q } from './dbread.mjs';
 import { brakes } from './brakes.mjs';
 import { queueTable } from './queue.mjs';
+import { repoKeys, resolveRepo, targetRootKey } from './repos.mjs';
 
 const STARTED_STATES = LIVE_RUN_STATES.filter((s) => s !== 'planned');
 const TOP_KEYS =['wakeId', 'dispatch', 'defer', 'asks', 'ideaVerdicts', 'say', 'note', 'nextWakeMinutes'];
@@ -79,7 +80,10 @@ export function validateDecision(decision, { slug, wakeId, brief } = {}) {
   dispatch.forEach((x, i) => {
     const w = `dispatch[${i}]`;
     if (!isObj(x)) { errors.push(`${w} must be an object`); return; }
-    checkKeys(x, ['charterSlug', 'reason', 'brief', 'ideaIds', 'model', 'paths'], w, errors);
+    checkKeys(x, ['charterSlug', 'reason', 'brief', 'ideaIds', 'model', 'paths', 'repo'], w, errors);
+    if (x.repo !== undefined && x.repo !== null && !(typeof x.repo === 'string' && repoKeys(brief).includes(x.repo))) {
+      errors.push(`${w}.repo ${JSON.stringify(x.repo)} is not a repo of this project (one of: ${repoKeys(brief).join(', ')}; omit it for self)`);
+    }
     for (const k of ['charterSlug', 'reason', 'brief']) if (!nonEmpty(x[k])) errors.push(`${w}.${k} must be a non-empty string`);
     if (!Array.isArray(x.ideaIds)) errors.push(`${w}.ideaIds must be an array (use [] when none)`);
     else x.ideaIds.forEach((id, j) => {
@@ -98,11 +102,13 @@ export function validateDecision(decision, { slug, wakeId, brief } = {}) {
       x.paths.forEach((p, j) => { const e = specError(p); if (e) errors.push(`${w}.paths[${j}] ${JSON.stringify(p)} ${e}`); });
     }
   });
-  // two builders at once only on disjoint paths (conservative: an unprovable pair overlaps)
+  // two builders at once only on disjoint paths (conservative: an unprovable pair overlaps); two that
+  // target different repos cannot collide (each repo's own runs are checked at dispatch)
   for (let i = 0; i < dispatch.length; i++) {
     for (let j = i + 1; j < dispatch.length; j++) {
       const a = dispatch[i], b = dispatch[j];
       if (!isObj(a) || !isObj(b) || !Array.isArray(a.paths) || !Array.isArray(b.paths) || !a.paths.length || !b.paths.length) continue;
+      if (targetRootKey(brief, a.repo) !== targetRootKey(brief, b.repo)) continue;
       const pairs = overlappingPairs(a.paths, b.paths);
       if (pairs.length) errors.push(`dispatch[${i}] and dispatch[${j}] have overlapping paths (${pairs.slice(0, 4).map(([x, y]) => `${x} ~ ${y}`).join('; ')}); two builders in one wake need disjoint paths, or dispatch one and defer the other`);
     }
@@ -278,6 +284,7 @@ export async function cmdDecide({ flags = {} } = {}) {
     return newRun(project, {
       wakeId: wake.wakeId, charterSlug: x.charterSlug, reason: x.reason, brief: x.brief,
       ideaIds: x.ideaIds, model: chosen.model, modelSource: chosen.source, paths: Array.isArray(x.paths) ? x.paths : [],
+      ...resolveRepo(project, brief, x.repo ?? undefined),   // validated above: never null here
     });
   });
 

@@ -6,7 +6,7 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { WORKTREE_ROOT, shortId, slugify } from './contract.mjs';
+import { WORKTREE_ROOT, shortId, slugify, repoOf } from './contract.mjs';
 
 // ---------------------------------------------------------------- git
 
@@ -75,11 +75,12 @@ export function unlinkJunction(link) {
 
 /**
  * (run: Run, brief: Brief) => {worktree, branch, baseSha, nodeModules}
- * Cut from the LOCAL base branch tip. Idempotent: a run whose worktree already exists on its
- * branch (a dispatch that crashed after this step) gets the same worktree back.
+ * Cut from the LOCAL base branch tip of the repo the run targets (repoOf: the project's own checkout,
+ * or a second repo its brief names). Idempotent: a run whose worktree already exists on its branch
+ * (a dispatch that crashed after this step) gets the same worktree back.
  */
 export function createWorktree(run, _brief = {}) {
-  const { root, baseBranch } = run.project;
+  const { root, baseBranch } = repoOf(run);
   const branch = run.branch || branchFor(run);
   const worktree = run.worktree || worktreePathFor(run);
   if (!isUnder(worktree, WORKTREE_ROOT)) throw new Error(`worktree ${worktree} is not under ${WORKTREE_ROOT}`);
@@ -108,7 +109,7 @@ export function createWorktree(run, _brief = {}) {
  * `git worktree remove --force`, then deletes the branch only when its tip is merged into base.
  */
 export function removeWorktree(run) {
-  const { root, baseBranch } = run.project;
+  const { root, baseBranch } = repoOf(run);
   const out = { removed: false, branchDeleted: false, junction: false };
   const worktree = run.worktree;
   if (worktree) {
@@ -140,7 +141,7 @@ export function removeWorktree(run) {
  * for measuring what a gate says about the BASE. Always removed afterwards, junction first.
  */
 export function withBaseWorktree(run, fn) {
-  const { root } = run.project;
+  const { root } = repoOf(run);
   const dir = path.join(WORKTREE_ROOT, run.slug, `base-${shortId(run.runId)}`);
   if (!isUnder(dir, WORKTREE_ROOT)) throw new Error(`base worktree ${dir} is not under ${WORKTREE_ROOT}`);
   fs.mkdirSync(path.dirname(dir), { recursive: true });

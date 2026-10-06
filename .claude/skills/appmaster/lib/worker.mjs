@@ -10,15 +10,16 @@ import path from 'node:path';
 import {
   SKILL_DIR, runDir, shortId, nowIso, mintId, claudeBin, Refusal,
   ENV_STRIP, ENV_SET, RUN_LABEL_PREFIX, GLOBAL_CAP, PER_PROJECT_CAP,
-  QUIET_MIN, TIMEOUT_MIN, LIVE_RUN_STATES, QUEUE_REASONS,
+  QUIET_MIN, TIMEOUT_MIN, LIVE_RUN_STATES, QUEUE_REASONS, SELF_REPO, normRoot, repoOf, repoEnv,
 } from './contract.mjs';
 import { loadBrief, listRuns, listSlugs, findRun, updateRun } from './store.mjs';
 import { readLimit, setLimit, detectLimit, limitSurface, limitSnippet } from './limits.mjs';
 import { createWorktree, removeWorktree } from './worktree.mjs';
 import { memoryState } from './memory.mjs';
-import { resolveGates, splitBoundaries, GATE_NAMES } from './gate.mjs';
+import { resolveRunGates, splitBoundaries, GATE_NAMES } from './gate.mjs';
 import { overlappingPairs } from './paths.mjs';
 import { enqueue, markQueue, queuedEntry, withQueueLock } from './queue.mjs';
+import { laneFor, runsHoldingRepos } from './repos.mjs';
 
 // ---------------------------------------------------------------- small helpers
 
@@ -84,12 +85,15 @@ export function requireRun(id) {
   return run;
 }
 
-/** The child env: process.env minus ENV_STRIP (case-insensitive), plus ENV_SET and the run label. */
-export function workerEnv(slug) {
+/**
+ * The child env: process.env minus ENV_STRIP (case-insensitive), plus ENV_SET, the run label, and what
+ * the target repo needs (a run in the Personas repo shares its one CARGO_TARGET_DIR: repoEnv).
+ */
+export function workerEnv(slug, run = null) {
   const env = { ...process.env };
   const strip = new Set(ENV_STRIP.map((k) => k.toUpperCase()));
   for (const k of Object.keys(env)) if (strip.has(k.toUpperCase())) delete env[k];
-  return { ...env, ...ENV_SET, PERSONAS_RUN_LABEL: RUN_LABEL_PREFIX + slug };
+  return { ...env, ...ENV_SET, PERSONAS_RUN_LABEL: RUN_LABEL_PREFIX + slug, ...(run ? repoEnv(repoOf(run).root) : {}) };
 }
 
 /** If the run's output carries a limit banner and no mark stands for it yet, write the mark. */
@@ -120,16 +124,22 @@ export function renderBuilderPrompt(run, brief = {}, gates = {}) {
     ...(askFor.length ? [`Stop and report blocked (with the question) instead of deciding it yourself when the task needs: ${askFor.join('; ')}`] : []),
   ];
   const p = run.project || {};
+  const target = repoOf(run);
+  const env = repoEnv(target.root);
+  if (env.CARGO_TARGET_DIR) ruleLines.push(`CARGO_TARGET_DIR is set to the one Personas cargo target (${env.CARGO_TARGET_DIR}); never override it or start a second Rust build tree.`);
   const values = {
     project: p.name && p.name !== p.slug ? `${p.name} (${p.slug})` : p.slug,
-    root: p.root,
+    root: target.root,
+    repo: target.key === SELF_REPO
+      ? 'the project\'s own repo'
+      : `\`${target.key}\`, a second repo this project's master works in (base \`${target.baseBranch}\`); the project's own checkout is \`${p.root}\` and is not yours either`,
     charter: run.charterSlug,
     reason: run.reason,
     task: run.brief,
     ideaIds: Array.isArray(run.ideaIds) ? (run.ideaIds.length ? run.ideaIds.join(', ') : '(none)') : undefined,
     worktree: run.worktree,
     branch: run.branch,
-    baseBranch: p.baseBranch,
+    baseBranch: target.baseBranch,
     boundaries: listOrNone(globs.map((g) => `\`${g}\``), '(no path boundaries declared)'),
     gates: GATE_NAMES.map((g) => (gates[g] ? `- ${g}: \`${gates[g]}\`` : `- ${g}: no command configured (skipped; not a pass)`)).join('\n'),
     runDir: runDir(run.slug, run.runId),
@@ -166,7 +176,7 @@ export function spawnWorker(run, promptText) {
   let child;
   try {
     child = spawn(cmd, argv, {
-      cwd: run.worktree, env: workerEnv(run.slug), detached: true, windowsHide: true,
+      cwd: run.worktree, env: workerEnv(run.slug, run), detached: true, windowsHide: true,
       stdio: ['pipe', out, err],
     });
   } finally {
@@ -230,20 +240,29 @@ export function dispatchCore({ flags = {} } = {}) {
   if (run.state !== 'planned') throw new Refusal('run not planned', { runId: run.runId, state: run.state });
   const mine = listRuns(run.slug, { states: ['running'] }).filter((r) => r.runId !== run.runId);
   if (mine.length >= PER_PROJECT_CAP) throw new Refusal('project cap', { cap: PER_PROJECT_CAP, running: mine.map((r) => shortId(r.runId)) });
-  // Two builders in one project only on disjoint paths, checked against every live run (an exited or
-  // verifying one still owns its files until it merges). No declared paths = the whole repo.
-  // A `planned` run counts once it has a worktree (a dispatch that crashed after the spawn may have
-  // a live builder); a never-started one has touched nothing, and whichever of the two is dispatched
-  // second is checked against the first, so skipping it loses no safety and a refused, never-retried
-  // planned run cannot jam the project.
-  const clashes = listRuns(run.slug, { states: LIVE_RUN_STATES })
-    .filter((r) => r.runId !== run.runId && (r.state !== 'planned' || r.worktree))
-    .map((r) => ({ runId8: shortId(r.runId), state: r.state, charter: r.charterSlug, paths: r.paths ?? [], pairs: overlappingPairs(run.paths, r.paths) }))
+  // Everything that holds the run's TARGET repo, in EVERY project (two projects writing one repo must
+  // not collide): running, exited, verifying (they still own their files until they merge), and a
+  // planned run once it has a worktree (a dispatch that crashed after the spawn may have a live
+  // builder). A never-started one has touched nothing, and whichever of two is dispatched second is
+  // checked against the first, so skipping it loses no safety and a queued planned run cannot jam it.
+  const target = repoOf(run);
+  const holding = runsHoldingRepos(run.runId, [run.slug]).filter((r) => normRoot(repoOf(r).root) === normRoot(target.root));
+  const lane = laneFor(target.root);
+  if (lane != null && holding.length >= lane) {
+    throw new Refusal('repo lane', {
+      runId: run.runId, repo: target.key, root: target.root, lane,
+      holding: holding.map((r) => `${r.slug}:${shortId(r.runId)} (${r.state})`),
+      hint: `at most ${lane} live run(s) may target this repo across all projects`,
+    });
+  }
+  // Disjoint declared paths in that repo. No declared paths = the whole repo.
+  const clashes = holding
+    .map((r) => ({ runId8: shortId(r.runId), slug: r.slug, state: r.state, charter: r.charterSlug, paths: r.paths ?? [], pairs: overlappingPairs(run.paths, r.paths) }))
     .filter((c) => c.pairs.length);
   if (clashes.length) {
     throw new Refusal('paths overlap', {
-      runId: run.runId, paths: run.paths ?? [],
-      with: clashes.map((c) => ({ runId8: c.runId8, state: c.state, charter: c.charter, paths: c.paths, overlaps: c.pairs.slice(0, 6) })),
+      runId: run.runId, paths: run.paths ?? [], repo: target.key,
+      with: clashes.map((c) => ({ runId8: c.runId8, slug: c.slug, state: c.state, charter: c.charter, paths: c.paths, overlaps: c.pairs.slice(0, 6) })),
       hint: 'a run with no declared paths covers the whole repo; dispatch this after the other run settles',
     });
   }
@@ -257,7 +276,7 @@ export function dispatchCore({ flags = {} } = {}) {
   const wt = createWorktree(run, brief);
   // the worktree is an effect: record it on the still-planned run before anything else can fail
   run = updateRun(run, { branch: wt.branch, worktree: wt.worktree, baseSha: wt.baseSha, nodeModules: wt.nodeModules });
-  const gates = resolveGates(run.project.root, brief);
+  const gates = resolveRunGates(run, brief);
   const prompt = renderBuilderPrompt(run, brief, gates);
   fs.writeFileSync(runFile(run, 'brief.md'), prompt);
   const { pid, sessionId } = spawnWorker(run, prompt);
