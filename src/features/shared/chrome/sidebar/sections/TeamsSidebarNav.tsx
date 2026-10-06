@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Target, LayoutDashboard, ChartNoAxesGantt, Gauge, Inbox, Factory, FolderKanban, GitBranch, Trophy, Network, Layers, Server, Globe, PenTool } from 'lucide-react';
+import { LayoutDashboard, ChartNoAxesGantt, Inbox, Factory, FolderKanban, GitBranch, Trophy, Network, Layers, Server, Globe, PenTool } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
@@ -222,21 +222,20 @@ export function TeamsSidebarNav() {
 
       {/* Goals hub — view submenu (board/timeline) underneath */}
       <div className="mt-3 pt-3 border-t border-primary/10 space-y-0.5">
+        {/* Group caption, same shape as Development / Browser below. It stays
+            a button so the hub remains reachable by its test id and tour anchor. */}
         <button
           type="button"
           data-testid="teams-goals-nav"
           onClick={() => go('goals')}
           aria-current={teamsTab === 'goals' ? 'page' : undefined}
-          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
-            teamsTab === 'goals'
-              ? 'bg-primary/10 text-foreground'
-              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground'
+          className={`w-full flex items-center gap-2 px-3 pb-1 typo-caption uppercase tracking-wider transition-colors ${
+            teamsTab === 'goals' ? 'text-foreground' : 'text-foreground/50 hover:text-foreground'
           }`}
         >
-          <Target className="w-4 h-4 flex-shrink-0" />
-          {t.sidebar.goals}
+          <span className="truncate">{t.sidebar.goals}</span>
           {activeGoalCount > 0 && (
-            <span className="ml-auto typo-caption text-foreground font-mono">{activeGoalCount}</span>
+            <span className="ml-auto typo-caption font-mono">{activeGoalCount}</span>
           )}
         </button>
         {/* View submenu — always expanded; clicking a view also navigates into
@@ -269,21 +268,20 @@ export function TeamsSidebarNav() {
       {/* KPIs — the outcome layer above goals; view submenu (Dashboard / By
           context / Proposals) nested underneath, mirroring Goals. */}
       <div className="mt-3 pt-3 border-t border-primary/10 space-y-0.5">
+        {/* Group caption, same shape as Development / Browser below. It stays
+            a button so the hub remains reachable by its test id and tour anchor. */}
         <button
           type="button"
           data-testid="teams-kpis-nav"
           onClick={() => go('kpis')}
           aria-current={teamsTab === 'kpis' ? 'page' : undefined}
-          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
-            teamsTab === 'kpis'
-              ? 'bg-primary/10 text-foreground'
-              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground'
+          className={`w-full flex items-center gap-2 px-3 pb-1 typo-caption uppercase tracking-wider transition-colors ${
+            teamsTab === 'kpis' ? 'text-foreground' : 'text-foreground/50 hover:text-foreground'
           }`}
         >
-          <Gauge className="w-4 h-4 flex-shrink-0" />
-          {t.sidebar.kpis}
+          <span className="truncate">{t.sidebar.kpis}</span>
           {kpiProposalCount > 0 && (
-            <span className="ml-auto typo-caption text-foreground font-mono">{kpiProposalCount}</span>
+            <span className="ml-auto typo-caption font-mono">{kpiProposalCount}</span>
           )}
         </button>
         <div className="ml-3 pl-2 border-l border-primary/10 space-y-0.5">
