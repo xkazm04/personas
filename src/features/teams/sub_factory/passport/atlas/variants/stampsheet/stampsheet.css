@@ -1,0 +1,131 @@
+/* CONCEPT - STAMP SHEET.
+ * Colour and type come from app tokens only (doctrine 6c: free inside the
+ * frame is not lawless). The six states keep the atlas's `data-ink`
+ * vocabulary, so a state reads the same here as in the matrix, the drawer and
+ * the passport - what changes is that a stamp's cells are laid in a block
+ * rather than along a line, and that the two ABSENT states are drawn as paper
+ * rather than as ink.
+ */
+
+.atlas-sheet { display: flex; flex-direction: column; gap: 12px; padding-left: var(--gutter); }
+
+/* ---- the sheet: 102 stamps, no scroll band, no stripes ---- */
+.atlas-sheet__grid {
+  display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(164px, 1fr));
+  padding-right: 12px;
+}
+
+/* ---- the stamp: the project's own passport, in miniature ---- */
+.atlas-stamp {
+  display: flex; flex-direction: column; gap: 6px; min-width: 0;
+  padding: 8px 10px 9px;
+  background: var(--band-alt);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-card, 8px);
+}
+.atlas-stamp__id { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.atlas-stamp__lead { line-height: 1.3; }
+.atlas-stamp__name.k-btn, .atlas-stamp__name {
+  display: block; width: 100%; min-width: 0; height: auto; padding: 0; text-align: left;
+  background: transparent; border: 0; white-space: normal;
+}
+.atlas-stamp__name:hover { color: var(--primary); }
+.atlas-stamp__qualifier { display: block; }
+
+/* ---- the plate the mosaic sits on: the paper absence shows through ---- */
+.atlas-stamp__plate {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 8px;
+  margin-top: auto; padding-top: 6px; border-top: 1px solid var(--rule);
+}
+.atlas-stamp__mosaic {
+  display: grid; gap: 2px; flex: none;
+  grid-template-columns: repeat(var(--mosaic), var(--cell, 11px));
+}
+.atlas-stamp__measured { text-align: right; white-space: nowrap; }
+
+/* ---- one cell: a square of the plate, inked or left as paper ---- */
+.atlas-stamp__cell {
+  position: relative; width: var(--cell, 11px); height: var(--cell, 11px);
+  border-radius: 1px; cursor: pointer; outline-offset: 1px;
+}
+.atlas-stamp__cell::before { content: ''; position: absolute; inset: 0; border-radius: 1px; }
+.atlas-stamp__cell[data-ink='bad']::before { background: var(--status-error); }
+.atlas-stamp__cell[data-ink='warn']::before {
+  background: linear-gradient(to top, var(--status-warning) 50%, transparent 50%);
+  box-shadow: inset 0 0 0 1px var(--status-warning);
+}
+.atlas-stamp__cell[data-ink='good']::before { border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--status-success); }
+.atlas-stamp__cell[data-ink='info']::before { inset: 30%; border-radius: 50%; background: var(--status-neutral); }
+
+/* ABSENCE, drawn as paper with its own glyph: a hairline void, inset so the
+ * plate reads through it. The matrix drew these two as dots the same size as a
+ * verdict, and absence is the dominant state in this portfolio. */
+.atlas-stamp__cell[data-ink='setup']::before {
+  inset: 22%; border-radius: 1px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--status-info) 60%, transparent);
+}
+.atlas-stamp__cell[data-ink='unknown']::before {
+  inset: 22%; border-radius: 1px;
+  outline: 1px dashed color-mix(in srgb, var(--status-neutral) 70%, transparent);
+  outline-offset: -1px;
+}
+
+/* The dimension cursor lights the SAME stroke in all 102 glyphs at once: a
+ * column read without a column. */
+.atlas-stamp__cell.is-column { background: color-mix(in srgb, var(--primary) 14%, transparent); }
+.atlas-stamp__cell:hover { background: color-mix(in srgb, var(--primary) 20%, transparent); }
+.atlas-stamp__cell.is-here {
+  background: color-mix(in srgb, var(--primary) 26%, transparent);
+  box-shadow: 0 0 0 1.5px var(--primary), 0 0 8px var(--glow);
+}
+.atlas-stamp__cell:focus-visible { outline: 2px solid var(--primary); }
+
+.atlas-stamp.is-live {
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--rule));
+  box-shadow: 0 0 10px var(--glow);
+}
+
+/* ---- the loupe: the same stamp at `l`, pinned over the sheet ---- */
+.atlas-sheet__loupe { position: sticky; top: 0; z-index: 2; }
+.atlas-stamp[data-size='l'] {
+  --cell: 20px;
+  display: grid; gap: 4px 20px; align-items: start;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 12px 14px;
+  background: var(--background);
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--rule));
+  box-shadow: 0 0 14px var(--glow);
+}
+.atlas-stamp[data-size='l'] .atlas-stamp__plate {
+  grid-column: 1; grid-row: 2; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 0;
+}
+.atlas-stamp[data-size='l'] .atlas-stamp__measured { text-align: left; }
+
+/* The rail: names and values of what is actually KNOWN, at full type size in
+ * normal flow (the drawing itself carries no type). */
+.atlas-stamp__rail {
+  grid-column: 2; grid-row: 1 / span 2; margin: 0; padding: 0; list-style: none;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 2px 20px;
+  min-width: 0; max-width: 64ch;
+}
+.atlas-stamp__fact {
+  display: grid; grid-template-columns: minmax(0, 9em) minmax(0, 1fr);
+  gap: 10px; align-items: baseline; min-width: 0;
+}
+.atlas-stamp__fact-k { cursor: help; }
+.atlas-stamp__fact-k[data-ink='bad'] { color: var(--status-error); }
+.atlas-stamp__fact-k[data-ink='warn'] { color: var(--status-warning); }
+.atlas-stamp__fact.is-here { background: var(--band-sel); }
+.atlas-stamp__fact-v { min-width: 0; }
+
+/* ---- narrow surface (the 1280 window's ~950px column) ---- */
+@container kit (max-width: 1100px) {
+  .atlas-sheet__grid { grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); gap: 8px; }
+  .atlas-stamp[data-size='l'] { grid-template-columns: minmax(0, 1fr); }
+  .atlas-stamp__rail { grid-column: 1; grid-row: 3; max-width: none; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .atlas-stamp, .atlas-stamp__cell { transition: box-shadow 120ms ease-out, border-color 120ms ease-out; }
+}

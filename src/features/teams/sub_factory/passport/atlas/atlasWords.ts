@@ -32,6 +32,12 @@ export const ATLAS_WORDS = {
   auto: 'Auto',
   prod: 'Prod',
   below: (n: number) => `${n} below`,
+  // The figure picker (dev-only) and the words the three benched concepts add.
+  figure: 'Figure',
+  sheet: 'Portfolio stamp sheet',
+  measuredOf: (k: number, n: number) => `${k}/${n}`,
+  measuredLong: (k: number, n: number) => `${k} of ${n} measured`,
+  nothingMeasured: 'Nothing measured here yet.',
   noMatch: 'No projects match',
   noMatchHint: 'Try a name or a repository path.',
   clearSearch: 'Clear search',

@@ -9,52 +9,32 @@
 // a project's name opens its passport. Fixed row bands on the 8px grid, the
 // spine glows on the selected line, headings stay horizontal.
 //
-// The semantics - `role="grid"`, the aria counts, the roving `tabIndex`, the
-// key map and every `data-testid` - live here and nowhere else.
-import { useEffect, useRef, type KeyboardEvent } from 'react';
+// The key map is `useRovingFigure`, shared by every concept on the bench so
+// the operator's keyboard does not depend on which drawing he is looking at.
+// Everything else below - `role="grid"`, the aria counts, the bands, the spine
+// and every `data-testid` - is this figure's own and is unchanged.
 import { Button } from '@/features/shared/components/buttons';
 import { Hint } from '@/features/shared/components/kit';
 import { countInk, inkOf } from '../../atlasModel';
 import { InkDot } from '../../AtlasParts';
 import { ATLAS_WORDS as W, INK_MARK, SHORT_LABEL } from '../../atlasWords';
 import type { AtlasFigureProps } from '../../atlasFigure';
+import { useRovingFigure } from '../useRovingFigure';
 
 export function MatrixFigure({ projects, rows, names, at, onMove, onOpenCell, onOpenProject }: AtlasFigureProps) {
-  const gridRef = useRef<HTMLDivElement>(null);
-  const focusWithin = useRef(false);
-
-  // Keep DOM focus on the roving cell while the grid owns focus.
-  useEffect(() => {
-    if (!focusWithin.current) return;
-    gridRef.current?.querySelector<HTMLElement>(`[data-cell="${at.pi}:${at.di}"]`)?.focus();
-  }, [at]);
-
-  const onKey = (e: KeyboardEvent) => {
-    const last = { pi: projects.length - 1, di: rows.length - 1 };
-    const move = (pi: number, di: number) => { e.preventDefault(); onMove({ pi: Math.max(0, Math.min(last.pi, pi)), di: Math.max(0, Math.min(last.di, di)) }); };
-    switch (e.key) {
-      case 'ArrowDown': return move(at.pi + 1, at.di);
-      case 'ArrowUp': return move(at.pi - 1, at.di);
-      case 'ArrowRight': return move(at.pi, at.di + 1);
-      case 'ArrowLeft': return move(at.pi, at.di - 1);
-      case 'Home': return move(at.pi, 0);
-      case 'End': return move(at.pi, last.di);
-      case 'Enter': case ' ': e.preventDefault(); return onOpenCell(at);
-      case 'p': case 'P': { const p = projects[at.pi]; if (p) { e.preventDefault(); onOpenProject(p.identity.slug); } return; }
-    }
-  };
+  const roving = useRovingFigure({ projects, dims: rows.length, at, onMove, onOpenCell, onOpenProject });
 
   return (
     <div
-      ref={gridRef}
+      ref={roving.ref}
       className="atlas-matrix"
       role="grid"
       aria-rowcount={projects.length + 1}
       aria-colcount={rows.length + 3}
       style={{ ['--cols' as string]: rows.length }}
-      onKeyDown={onKey}
-      onFocus={() => { focusWithin.current = true; }}
-      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) focusWithin.current = false; }}
+      onKeyDown={roving.onKeyDown}
+      onFocus={roving.onFocus}
+      onBlur={roving.onBlur}
       data-testid="atlas-matrix"
     >
       <div className="atlas-matrix__head" role="row">
