@@ -6431,6 +6431,20 @@
           "changedAt": "2026-09-25",
           "confidence": "probable",
           "state": "unknown"
+        },
+        {
+          "subject": "import-normalization",
+          "bundle": "software-engineering",
+          "score": 0,
+          "why": [],
+          "confidence": "strong",
+          "state": "unknown",
+          "source": "conform",
+          "grounding": "precondition",
+          "evidence": "added by /conform 2026-10-06: the matcher scored this at zero; src-tauri/src/commands/design/n8n_transform/confirmation.rs:46 create_persona_atomically is the commit door of the foreign-workflow import and platform_definitions.rs:38 the Rust node_type_map twin, so the golden path precondition holds for the n8n_transform/ subtree only",
+          "digest": "sha256-b2:4981ff0ea8a59c1b",
+          "revision": 1,
+          "changedAt": "2026-09-05"
         }
       ],
       "governance": "governed"
@@ -9702,7 +9716,11 @@
           "revision": 15,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/terminal/TerminalBody.tsx:195 is the context's only parse site and it reads an app-authored [SUMMARY] run-metadata record (written at src/features/agents/sub_executions/libs/useRunnerExecution.ts:84, shape-guarded at src/lib/utils/terminalColors.ts:93), never a model's settled text; the rest are display primitives with no model call, so the subject's precondition (a generative model as the serializer of a machine artifact) does not hold.",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:d51aec71411ccb2b",
+          "evaluatedRevision": 15
         },
         {
           "subject": "eval-harness",
@@ -9766,7 +9784,11 @@
           "revision": 7,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/terminal/TerminalBody.tsx:17 renders a virtualized string[] of classified log lines with terminal styling only; no file in this context imports @xterm or writes to a PTY (grepped), so there is no interactive pseudo-terminal session to attach, park, render or drive - the subject's precondition does not hold (streaming-output governs these line panels)",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:c3ef11aba4a471f5",
+          "evaluatedRevision": 7
         },
         {
           "subject": "app-shell",
@@ -10912,7 +10934,11 @@
           "revision": 7,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_executions/replay/ReplayTerminalPanel.tsx:144 pages a finished execution's stored stdout via get_execution_log_lines and :127 shows lines up to the scrub position; no live child, PTY or emulator exists anywhere in the replay sandbox (grepped @xterm/writeInput: none), so attach/detach, renderer budgets and keystroke injection have nothing to govern",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:c3ef11aba4a471f5",
+          "evaluatedRevision": 7
         },
         {
           "subject": "webhook-ingestion",
@@ -11593,7 +11619,11 @@
           "revision": 7,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "attach-detach-lifecycle: src/features/plugins/fleet/FleetTerminalOverlay.tsx:249 mounts a live pane only for awaiting_input or the focused tile, with a keep-alive hold capped by renderer headroom at src/features/plugins/fleet/FleetTerminalOverlay.tsx:93 (MAX_WEBGL - wanted), and src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:84 gcTerminals reaps the dead rung by session id; renderer-economics: src/features/plugins/fleet/FleetOverlayTile.tsx:123 every other tile is a status block (src/features/plugins/fleet/FleetTileStatusBlock.tsx:13 no xterm, no subscription, no ring poll) - the preview is not a terminal - and src/features/plugins/fleet/FleetTerminalOverlay.tsx:207 defers xterm/WebGL mount past the first frame; two lanes: src/features/plugins/fleet/FleetOverlayTile.tsx:51 headless sessions never mount an emulator; multiplexer-state: src/features/plugins/fleet/FleetOverlayTile.tsx:58 focus routes to the session-keyed terminal and src/features/plugins/fleet/useFleetHotkeys.ts:26 never steals keys typed into xterm; keystroke-injection: src/features/plugins/fleet/useFleetOverlayActions.ts:148 skill-apply goes through the one fleet_write_input door that splits paste from Enter; occupant-state-detection: src/features/plugins/fleet/fleetAttention.ts:103 reads the hook-driven awaiting_input state, not the screen. pty-management, bounded-replay-buffers, multi-client-fan-out and the four injected-tier techniques live in the manager/backend contexts, not this UI",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:c3ef11aba4a471f5",
+          "evaluatedRevision": 7
         },
         {
           "subject": "native-shell-integration",
@@ -11676,8 +11706,8 @@
           "changedAt": "2026-09-04",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:136 still joins the operator's text and a carriage return into one payload written to each PTY as a single chunk (:156), so a program with bracketed paste enabled can buffer the broadcast unsubmitted, while the manager's own paste path (fleetTerminalManager.ts:635) keeps typed and pasted input apart - two authorities for how input reaches a session",
-          "evaluatedAt": "2026-09-23",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:136 sends a multi-line broadcast with 'press Enter' unticked as raw text, and src-tauri/src/commands/fleet/commands.rs:199 routes only newline-TERMINATED payloads through write_text_line's frame_paste (src-tauri/src/commands/fleet/registry.rs:1566), so that path reaches the PTY unframed and each internal newline submits a partial prompt - paste and press are inferred from payload shape at the IPC door instead of being separate verbs (keystroke-injection). Re-judged 2026-10-06: the earlier claim that the Enter path sits unsubmitted no longer holds (src-tauri/src/commands/fleet/commands.rs:199-200 splits text from Enter and confirms the submit), and the reference application's other two deviations are fixed (src/features/plugins/fleet/fleetTerminalManager.ts:644 skips no-op resizes; src/features/plugins/fleet/FleetTerminalPane.tsx:27 takes a live prop)",
+          "evaluatedAt": "2026-10-06",
           "evaluatedAgainst": "sha256-b2:c3ef11aba4a471f5",
           "evaluatedRevision": 7,
           "revisionsBehind": 0
@@ -16979,6 +17009,20 @@
           "changedAt": "2026-09-03",
           "confidence": "probable",
           "state": "unknown"
+        },
+        {
+          "subject": "import-normalization",
+          "bundle": "software-engineering",
+          "score": 0,
+          "why": [],
+          "confidence": "strong",
+          "state": "unknown",
+          "source": "conform",
+          "grounding": "precondition",
+          "evidence": "added by /conform 2026-10-06: the matcher scored this at zero; src/features/templates/sub_n8n/hooks/useWorkflowImport.ts:57 runs parseWorkflowFile over a foreign workflow export (multi-platform via workflowDetector), so the golden path precondition holds and no when-not-to-build exclusion applies",
+          "digest": "sha256-b2:4981ff0ea8a59c1b",
+          "revision": 1,
+          "changedAt": "2026-09-05"
         }
       ],
       "governance": "governed"
@@ -22972,7 +23016,11 @@
           "revision": 15,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx:54 is a layout shell over a project picker with no model call; the Prompt Competitions code (qualityScore.ts, scoring, leaderboard) that earned this match was demolished in 4f0369a827 and 18 of the context's 20 paths no longer exist, so no model output is extracted here.",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:d51aec71411ccb2b",
+          "evaluatedRevision": 15
         },
         {
           "subject": "translation-pipeline-topology",
@@ -25047,7 +25095,11 @@
           "revision": 15,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_channels/ReplyOutbox.tsx:147 requests a reply draft whose producer returns trimmed prose (src-tauri/src/commands/infrastructure/twin.rs:1114) into an editable approve-before-send box; the turn's product is text for human eyes, the golden path's own exclusion, and no machine artifact is extracted in this context.",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:d51aec71411ccb2b",
+          "evaluatedRevision": 15
         },
         {
           "subject": "sidecar-provisioning",
@@ -25970,7 +26022,11 @@
           "revision": 17,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/models/build_session.rs:502 PersistedBuildSession::from_session decodes the session JSON payload columns outside the seam with unwrap_or_default()/.ok() (also :506) instead of the propagating Json<T> FromSql at src-tauri/core/src/models/json_column.rs:91, so a corrupt pending_question/agent_ir/resolved_cells comes back to the UI as absent - a single-record read reporting corruption as not-there (row-mapping); layering holds: core has no internal crate deps (src-tauri/core/Cargo.toml:39)",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:7bc5f1ebaf276655",
+          "evaluatedRevision": 17
         }
       ],
       "governance": "governed"
@@ -28612,7 +28668,11 @@
           "revision": 17,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "precondition unmet: these Zustand slices own no store, query language or row decoding - persistence is reached only through typed IPC wrappers (src/stores/slices/system/devToolsTaskSlice.ts:5 imports @/api/devTools/devTools) and the data layer lives in the Rust db crate; the match is lexical on stores",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:7bc5f1ebaf276655",
+          "evaluatedRevision": 17
         },
         {
           "subject": "codebase-scanning",
@@ -32008,7 +32068,11 @@
           "revision": 15,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_presets/usePresetAdoption.ts:150 calls adopt_team_preset, a synchronous deterministic instantiation of catalog presets (src-tauri/src/commands/design/team_presets.rs:98, no model call in engine/team_preset_adopter.rs); the LLM-derived n8n draft editor that earned the match was deleted in 14dd786e50, so the subject's precondition does not hold in the surviving paths.",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:d51aec71411ccb2b",
+          "evaluatedRevision": 15
         },
         {
           "subject": "generated-workflow-candidates",
@@ -35521,7 +35585,11 @@
           "revision": 17,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:42 hand-escapes a Redis key and interpolates it into a TYPE command string (:43) - a value spliced into command text plus a second copy of the quoting grammar whose authority is src-tauri/src/engine/db_query.rs:1760 split_redis_command; the never-optional bind-and-one-escaper rule, missed by the introspection consolidation that introspectionQueries.ts:4 claims is the single injection-defense implementation",
+          "evaluatedAt": "2026-10-06",
+          "evaluatedAgainst": "sha256-b2:7bc5f1ebaf276655",
+          "evaluatedRevision": 17
         },
         {
           "subject": "quality-gates",
