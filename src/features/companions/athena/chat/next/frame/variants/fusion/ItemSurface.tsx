@@ -26,9 +26,10 @@ import {
   useMcpModel,
   type CardModel,
 } from '../c/bodies/model';
-import { AnswerCards, useFlight } from './AnswerCards';
+import { useFlight } from './AnswerCards';
+import { DECISION_SURFACES } from './decision/registry';
+import { useDecisionStyle } from './decision/style';
 import type { QueueNav } from './DecisionStage';
-import { QuestionBlock } from './QuestionBlock';
 import { useAnswerKeys } from './useAnswerKeys';
 
 function View({ model, item, nav }: { model: CardModel; item: WorkItem; nav: QueueNav }) {
@@ -39,10 +40,11 @@ function View({ model, item, nav }: { model: CardModel; item: WorkItem; nav: Que
   useEffect(() => {
     if (spoken) announce(spoken);
   }, [spoken, announce]);
+  const { Question, Answers } = DECISION_SURFACES[useDecisionStyle((s) => s.style)];
   return (
     <>
-      <QuestionBlock model={model} item={item} nav={nav} />
-      <AnswerCards model={model} herOwn={item.kind === 'decision'} />
+      <Question model={model} item={item} nav={nav} />
+      <Answers model={model} herOwn={item.kind === 'decision'} />
     </>
   );
 }
@@ -91,9 +93,14 @@ export function ItemSurface({ item, nav, onSend }: { item: WorkItem; nav: QueueN
     if (item.kind === 'approval') return <ApprovalItem item={item} nav={nav} />;
     return <McpItem item={item} nav={nav} />;
   }
+  return <NativeItem item={item} nav={nav} onSend={onSend} />;
+}
+
+function NativeItem({ item, nav, onSend }: { item: WorkItem; nav: QueueNav; onSend: (text: string) => void }) {
+  const { Question } = DECISION_SURFACES[useDecisionStyle((s) => s.style)];
   return (
     <>
-      <QuestionBlock model={null} item={item} nav={nav} />
+      <Question model={null} item={item} nav={nav} />
       <NativeCard item={item} onSend={onSend} />
     </>
   );

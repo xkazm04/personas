@@ -24,6 +24,7 @@
  *    fetches the transcript, approvals, nudges and durable cards from the tape;
  *  - for `streaming`, a turn is in flight (the bridge's `forceCompanionStreaming`).
  */
+import { useDecisionStyle, type DecisionStyle } from '@/features/companions/athena/chat/next/frame/variants/fusion/decision/style';
 import type { ComponentType, ReactNode } from 'react';
 import type { HarnessModule } from './registry';
 import { ACTIVITY_MODULES } from './activitySurfaces';
@@ -85,6 +86,9 @@ async function prepareChat(): Promise<void> {
       import('@/features/companions/athena/chat/next/useLayer'),
     ]);
 
+  // Round 6: which decision surface Fusion's stage renders (now | v1 | v2 | v3).
+  const decision = params.get('decision');
+  if (decision) useDecisionStyle.getState().set(decision as DecisionStyle);
   const variant = params.get('variant');
   if (variant) {
     if (!(VARIANTS as readonly string[]).includes(variant)) throw new Error(`unknown variant "${variant}" (have: ${VARIANTS.join(', ')})`);

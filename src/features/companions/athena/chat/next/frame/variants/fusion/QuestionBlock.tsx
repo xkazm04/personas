@@ -21,7 +21,7 @@ import { NEXT_COPY as N } from '../../../nextCopy';
 import { KIND_VAR } from '../../../tones';
 import type { WorkItem } from '../../../useWorkforce';
 import type { CardModel } from '../c/bodies/model';
-import { KIND_GLYPH } from '../filament/filamentArt';
+import { KIND_GLYPH } from './kindGlyph';
 import { AthenaSeal } from './AthenaSeal';
 import { FUSION_COPY as F } from './copy';
 import type { QueueNav } from './DecisionStage';

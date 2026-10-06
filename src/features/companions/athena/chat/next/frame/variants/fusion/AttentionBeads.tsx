@@ -17,7 +17,7 @@ import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { NEXT_COPY as N } from '../../../nextCopy';
 import { KIND_VAR } from '../../../tones';
 import type { WorkItem } from '../../../useWorkforce';
-import { KIND_GLYPH } from '../filament/filamentArt';
+import { KIND_GLYPH } from './kindGlyph';
 import { FUSION_COPY as F } from './copy';
 
 const SHOWN = 5;

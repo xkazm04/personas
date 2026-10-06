@@ -21,6 +21,7 @@ import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { FULLSCREEN_LAYER_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import type { WorkItem } from '../../../useWorkforce';
 import { FUSION_COPY as F } from './copy';
+import { DecisionStyleTabs } from './decision/StyleTabs';
 import { ItemSurface } from './ItemSurface';
 import { EASE, isTyping } from './text';
 
@@ -117,6 +118,7 @@ export function DecisionStage({
         data-testid="companion-fusion-decision"
         exit={shouldAnimate ? { opacity: 0, x: 90, scale: 0.94, transition: { duration: 0.3, ease: EASE } } : { opacity: 0, transition: { duration: 0 } }}
       >
+        <DecisionStyleTabs />
         <AnimatePresence mode="wait" initial={false}>
           {active && nav ? (
             <motion.div
