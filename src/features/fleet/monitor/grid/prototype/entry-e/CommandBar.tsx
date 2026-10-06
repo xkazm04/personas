@@ -31,7 +31,6 @@ import { BOARD_VARIANTS, type BoardVariant } from '../../board/queue/boardVarian
 import { PERSONA_LAMP } from './tone';
 import { Lamp } from './parts';
 import type { PanelFilter } from './boardFilter';
-import { DecisionLabLauncher } from '@/features/decision-center/prototype/DecisionLabLauncher';
 import { DecisionHub } from '@/features/decision-center/hub/DecisionHub';
 import type { FeedTeam } from '../../../channels/types';
 
@@ -129,7 +128,6 @@ export function CommandBar({
           tabs={BOARD_VARIANTS.map((id) => ({ id, label: layoutLabel[id], testId: `fleet-board-variant-${id}` }))}
         />
         <SimulationToggle />
-        <DecisionLabLauncher />
       </div>
     </div>
   );

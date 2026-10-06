@@ -35,7 +35,6 @@ import { INBOX_MODULES } from './inboxSurfaces';
 import { MONITOR_BOARD_MODULES } from './monitorBoardSurfaces';
 import { MONITOR_RAIL_MODULES } from './monitorRailSurfaces';
 import { MONITOR_ACTIVITY_MODULES } from './monitorActivitySurfaces';
-import { DECISION_CENTER_MODULES } from './decisionCenterSurfaces';
 
 type Wrap = (children: ReactNode) => ReactNode;
 
@@ -83,7 +82,6 @@ export const MODULES: Record<string, HarnessModule> = {
   ...MONITOR_BOARD_MODULES,
   ...MONITOR_RAIL_MODULES,
   ...MONITOR_ACTIVITY_MODULES,
-  ...DECISION_CENTER_MODULES,
   ...TONE_MODULES,
   ...TRIAGE_MODULES,
   ...DATAGRID_MODULES,

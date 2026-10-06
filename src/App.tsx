@@ -139,6 +139,7 @@ const ExecutionMiniPlayer = lazyRetry(() => import("@/features/agents/executionP
 const HealingToast = lazyRetry(() => import("@/features/overview/components/feedback/HealingToast").then(m => ({ default: m.HealingToast })));
 const SpendAlertWatcher = lazyRetry(() => import("@/features/overview/components/feedback/SpendAlertWatcher").then(m => ({ default: m.SpendAlertWatcher })));
 const AlertToastContainer = lazyRetry(() => import("@/features/overview/sub_observability/components/AlertToastContainer").then(m => ({ default: m.AlertToastContainer })));
+const DecisionDeckHost = lazyRetry(() => import("@/features/decision-center/deck/DecisionDeckHost"));
 const NotificationCenter = lazyRetry(() => import("@/features/shared/chrome/notifications/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
 const ShareLinkHandler = lazyRetry(() => import("@/features/settings/sub_network/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
 const AthenaChatPanel = lazyRetry(() => import("@/features/companions/athena/chat/AthenaChatPanel"));
@@ -439,6 +440,7 @@ export default function App() {
                   <OverlayIsland name="execution-mini-player"><ExecutionMiniPlayer /></OverlayIsland>
                   <OverlayIsland name="command-palette"><CommandPalette /></OverlayIsland>
                   <OverlayIsland name="notification-center"><NotificationCenter /></OverlayIsland>
+                  <OverlayIsland name="decision-deck"><DecisionDeckHost /></OverlayIsland>
                   <OverlayIsland name="share-link"><ShareLinkHandler /></OverlayIsland>
                   {/* Athena's three overlays live and die with her switch.
                       Gated as a GROUP rather than each on its own: they are one
