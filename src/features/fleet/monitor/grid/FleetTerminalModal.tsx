@@ -28,6 +28,7 @@ import { FleetTerminalPane } from '@/features/plugins/fleet/FleetTerminalPane';
 import { killSession, removeSession, wakeSession } from '@/api/fleet/fleet';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { ConfirmDestructiveModal, useConfirmDestructive } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { sessionLabel, sessionStateMeta } from './fleetSessionModel';
@@ -66,7 +67,7 @@ export function FleetTerminalModal({
   useEffect(() => { if (liveRow) setLastRow(liveRow); }, [liveRow]);
   const row = liveRow ?? (session && session.id === currentId ? session : lastRow);
 
-  const kill = useCallback(async () => {
+  const doKill = useCallback(async () => {
     if (!row || killing) return;
     setKilling(true);
     try {
@@ -86,6 +87,23 @@ export function FleetTerminalModal({
       setKilling(false);
     }
   }, [row, killing, onClose]);
+
+  // Killing a live session ends a running process, and killing a SLEEPING one
+  // drops its tombstone from the registry - neither comes back. The door was
+  // reachable in one click with no confirmation anywhere in the file
+  // (`unconsented-irreversible-door`), which is the condition that rule exists
+  // for. The copy reuses the keys the remote-kill path already ships; the
+  // session's project label fills the slot the remote flow fills with a device.
+  const { modal: killModal, confirm: askKill } = useConfirmDestructive();
+  const kill = useCallback(() => {
+    if (!row || killing) return;
+    askKill({
+      title: tx(t.monitor.remote_kill_confirm_title, { device: row.projectLabel || row.id }),
+      message: tx(t.monitor.remote_kill_confirm_body, { device: row.projectLabel || row.id }),
+      confirmLabel: t.monitor.remote_kill,
+      onConfirm: doKill,
+    });
+  }, [row, killing, askKill, doKill, t, tx]);
 
   const wake = useCallback(async () => {
     if (!row) return;
@@ -180,6 +198,9 @@ export function FleetTerminalModal({
           <NoTerminalPanel text={exited ? t.monitor.grid_fleet_exited : headless ? f.headless_no_terminal : f.state_queued} />
         )}
       </div>
+      {/* The consent door for `kill`. Inside the shell so it stacks above this
+          modal rather than behind it. */}
+      <ConfirmDestructiveModal {...killModal} />
     </ModalShell>
   );
 }
