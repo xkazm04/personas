@@ -5,7 +5,9 @@
  * as its share), its count beneath. A corner badge carries the urgent state
  * as a SHAPE too: a raised hand when something in it waits on you, a stop
  * sign when something is stuck. Pressing it (click, Enter, Space) unfolds the
- * category's panel beside the rail.
+ * category's panel beside the rail. When the rail reads out loud (hover or
+ * keyboard focus anywhere on it) the circle grows in place and its name and
+ * its count by state stand beside it; that label replaces the old tooltip.
  *
  * TODO(prototype, 2026-10-07): athena chat fusion - consolidate after the owner picks.
  */
@@ -13,7 +15,6 @@
 import { forwardRef } from 'react';
 import { Hand, OctagonAlert } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { FUSION_COPY as F } from './copy';
 import { STATE_INK, STATE_ORDER, type ManagedCategory } from './useManaged';
 
@@ -57,6 +58,12 @@ export function describe(c: ManagedCategory): string {
   return F.categoryNamed(c.label, c.items.length, parts.join(', '));
 }
 
+/** "1 waits · 1 stuck · 2 working": the ring's arcs, in words, for the rail's label. */
+export function countsLine(c: ManagedCategory): string {
+  const parts = STATE_ORDER.filter((s) => c.counts[s] > 0).map((s) => `${c.counts[s]} ${F.stateShort[s]}`);
+  return parts.length ? parts.join(' · ') : F.catQuiet;
+}
+
 export const CategoryCircle = forwardRef<
   HTMLButtonElement,
   { category: ManagedCategory; open: boolean; onToggle: () => void; onKeyToggle: () => void }
@@ -64,40 +71,39 @@ export const CategoryCircle = forwardRef<
     const Icon = c.icon;
     const quiet = c.items.length === 0;
     return (
-      // Re-keyed on open so a tooltip shown by the hover that opened the panel
-      // goes away instead of sitting on the panel's head; while open it waits
-      // out any further hover (the panel says it all).
-      <Tooltip key={open ? 'open' : 'closed'} content={describe(c)} placement="top" delay={open ? 60_000 : undefined}>
-        <Button
-          ref={ref}
-          variant="ghost"
-          className={`fu-cat${quiet ? ' is-quiet' : ''}${open ? ' is-open' : ''}`}
-          style={{ ['--ink' as string]: c.ink }}
-          // A keyboard press (detail 0) hands the panel focus; a click leaves it on the circle.
-          onClick={(e) => (e.detail === 0 ? onKeyToggle() : onToggle())}
-          aria-expanded={open}
-          aria-label={describe(c)}
-          data-testid={`companion-fusion-cat-${c.key}`}
-        >
-          <span className="fu-cat-dial">
-            <svg className="fu-cat-ring" width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden>
-              <Arcs counts={c.counts} />
-            </svg>
-            <span className="fu-cat-core" aria-hidden>
-              <Icon />
-            </span>
-            {c.counts.waiting > 0 ? (
-              <span className="fu-cat-badge is-waiting" aria-hidden>
-                <Hand />
-              </span>
-            ) : c.counts.stuck > 0 ? (
-              <span className="fu-cat-badge is-stuck" aria-hidden>
-                <OctagonAlert />
-              </span>
-            ) : null}
-            <span className="typo-caption fu-cat-n">{c.items.length}</span>
+      <Button
+        ref={ref}
+        variant="ghost"
+        className={`fu-cat${quiet ? ' is-quiet' : ''}${open ? ' is-open' : ''}`}
+        style={{ ['--ink' as string]: c.ink }}
+        // A keyboard press (detail 0) hands the panel focus; a click leaves it on the circle.
+        onClick={(e) => (e.detail === 0 ? onKeyToggle() : onToggle())}
+        aria-expanded={open}
+        aria-label={describe(c)}
+        data-testid={`companion-fusion-cat-${c.key}`}
+      >
+        <span className="fu-cat-dial">
+          <svg className="fu-cat-ring" width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden>
+            <Arcs counts={c.counts} />
+          </svg>
+          <span className="fu-cat-core" aria-hidden>
+            <Icon />
           </span>
-        </Button>
-      </Tooltip>
+          {c.counts.waiting > 0 ? (
+            <span className="fu-cat-badge is-waiting" aria-hidden>
+              <Hand />
+            </span>
+          ) : c.counts.stuck > 0 ? (
+            <span className="fu-cat-badge is-stuck" aria-hidden>
+              <OctagonAlert />
+            </span>
+          ) : null}
+          <span className="typo-caption fu-cat-n">{c.items.length}</span>
+        </span>
+        <span className="fu-tag is-two" aria-hidden>
+          <span className="typo-label fu-tag-main">{c.label}</span>
+          <span className="typo-label fu-tag-meta">{countsLine(c)}</span>
+        </span>
+      </Button>
     );
 });

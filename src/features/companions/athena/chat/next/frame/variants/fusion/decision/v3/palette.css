@@ -1,0 +1,196 @@
+/*
+ * Fusion · decision v3 ("Command palette"). The materials are the command
+ * palette's (`shared/chrome/CommandPalette.tsx` + `CommandPaletteResults.tsx`):
+ * the `glass-md` panel with its primary hairline, the head row over a 10%
+ * primary rule, the selected row's 2px leading edge in the row's kind colour
+ * on a secondary wash, the trailing arrow, the key-cap legend in the foot.
+ * The key cap is the notepad desk's `Keycap` (rounded, primary 20% rule,
+ * secondary 50% fill). Layout is free here; type and colour stay tokens.
+ *
+ * TODO(prototype, 2026-10-07): athena decision surface round 6 - keep the owner's pick, delete the rest.
+ */
+
+.fusion .fd3-q,
+.fusion .fd3-answers { width: min(820px, 100%); align-self: center; }
+@media (min-width: 1700px) {
+  .fusion .fd3-q,
+  .fusion .fd3-answers { width: min(900px, 100%); }
+}
+
+/* The palette's glass, a step denser so it reads over a busy table. */
+.fusion .fd3-surface {
+  --fd3-bg: color-mix(in srgb, var(--background) 90%, transparent);
+  --fd3-rule: color-mix(in srgb, var(--primary) 10%, transparent);
+  background: var(--fd3-bg);
+}
+[data-theme^="light"] .fusion .fd3-surface {
+  --fd3-bg: color-mix(in srgb, var(--background) 96%, transparent);
+  --fd3-rule: color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+/* The Button's label span steps aside so the control's own flex reaches the parts. */
+.fusion :is(.fd3-row, .fd3-keybtn, .fd3-door.is-ask) > span:not(.fu-seal) { display: contents; }
+.fusion .fd3-send > span { display: inline-flex; align-items: center; gap: 8px; }
+
+/* ── key caps ─────────────────────────────────────────────────────────── */
+.fusion .fd3-key {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  min-width: 22px; height: 22px; padding: 0 6px; border-radius: var(--radius-interactive);
+  border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
+  background: color-mix(in srgb, var(--secondary) 50%, transparent);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--foreground) 10%, transparent);
+  color: var(--foreground); line-height: 1; white-space: nowrap;
+}
+.fusion .fd3-key.is-lg {
+  min-width: 32px; height: 32px; color: var(--t);
+  border-color: color-mix(in srgb, var(--t) 38%, transparent);
+  background: color-mix(in srgb, var(--t) 9%, transparent);
+}
+.fusion .fd3-send .fd3-key { min-width: 20px; height: 20px; color: inherit; background: transparent; border-color: color-mix(in srgb, currentColor 45%, transparent); box-shadow: none; }
+
+/* ── the question: the palette's input row, then the question ──────────── */
+.fusion .fd3-q { position: relative; display: flex; flex-direction: column; overflow: hidden; }
+.fusion .fd3-q-head { display: flex; align-items: center; gap: 10px; padding: 9px 10px 9px 12px; border-bottom: 1px solid var(--fd3-rule); }
+.fusion .fd3-q.is-strip .fd3-q-head { border-bottom: 0; }
+.fusion .fd3-kind {
+  flex: none; display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: var(--radius-interactive);
+  color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 32%, transparent);
+}
+.fusion .fd3-kind svg { width: 16px; height: 16px; }
+.fusion .fd3-trail { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; color: var(--muted-foreground); }
+.fusion .fd3-trail .k-crumb.is-current { color: var(--c); }
+.fusion .fd3-strip-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fusion .fd3-since { white-space: nowrap; }
+.fusion .fd3-queue { display: flex; align-items: center; gap: 2px; white-space: nowrap; }
+.fusion .fd3-keybtn { gap: 6px; padding: 3px 4px; color: var(--foreground); }
+
+.fusion .fd3-q-body { display: flex; flex-direction: column; gap: 4px; padding: 12px 20px 12px 54px; }
+.fusion .fd3-q-text { margin: 0; text-wrap: balance; overflow-wrap: anywhere; max-width: 52ch; }
+.fusion .fd3-q-text code, .fusion .fd3-row code { background: color-mix(in srgb, var(--foreground) 8%, transparent); border-radius: var(--radius-interactive); padding: 0 4px; }
+.fusion .fd3-ctx { margin: 0; max-width: 92ch; overflow-wrap: anywhere; }
+
+.fusion .fd3-details summary { display: inline-flex; align-items: center; gap: 6px; width: fit-content; cursor: pointer; list-style: none; border-radius: var(--radius-interactive); }
+.fusion .fd3-details summary::-webkit-details-marker { display: none; }
+.fusion .fd3-chev { width: 14px; height: 14px; transition: transform var(--duration-fast); }
+.fusion .fd3-details[open] .fd3-chev { transform: rotate(90deg); }
+.fusion .fd3-details pre {
+  margin: 6px 0 0; padding: 10px 12px; max-height: 160px; overflow: auto; white-space: pre-wrap; color: var(--foreground);
+  border-radius: var(--radius-input); border: 1px solid var(--fd3-rule); background: color-mix(in srgb, var(--secondary) 45%, transparent);
+}
+.fusion .fd3-verdict {
+  display: flex; align-items: flex-start; gap: 10px; margin: 4px 0 0; padding: 10px 12px; border-radius: var(--radius-input);
+  border: 1px solid color-mix(in srgb, var(--status-warning) 28%, transparent); background: color-mix(in srgb, var(--status-warning) 7%, transparent);
+}
+.fusion .fd3-verdict-g { width: 20px; height: 20px; flex: none; color: var(--status-warning); }
+
+/* The palette's foot: a legend of key caps, here every one of them live. */
+.fusion .fd3-foot {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; min-height: 44px; padding: 4px 10px 4px 12px;
+  border-top: 1px solid var(--fd3-rule); background: color-mix(in srgb, var(--secondary) 22%, transparent);
+}
+.fusion .fd3-foot-rule { width: 1px; height: 18px; background: color-mix(in srgb, var(--foreground) 12%, transparent); }
+.fusion .fd3-legend { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.fusion .fd3-legend .fd3-key:last-of-type { margin-right: 2px; }
+.fusion .fd3-door { display: inline-flex; align-items: center; gap: 8px; }
+.fusion .fd3-door.is-ask {
+  height: 34px; padding: 0 6px 0 4px; border-radius: var(--radius-pill); color: var(--foreground);
+  background: color-mix(in srgb, var(--primary) 9%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 40%, transparent);
+}
+.fusion .fd3-door.is-ask:hover, .fusion .fd3-door.is-ask:focus-visible { background: color-mix(in srgb, var(--primary) 16%, transparent); }
+.fusion .fd3-door.is-weighing.is-moving .fu-seal { animation: fd3-breathe 1.8s ease-in-out infinite; }
+@keyframes fd3-breathe {
+  50% { box-shadow: 0 0 0 1.5px var(--primary), 0 0 22px color-mix(in srgb, var(--primary) 70%, transparent); }
+}
+
+/* ── the answers: palette rows, each a card of its own ─────────────────── */
+.fusion .fd3-answers { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; container-type: inline-size; }
+.fusion .fd3-slot { min-width: 0; will-change: transform; }
+.fusion .fd3-row {
+  position: relative; display: flex; flex-wrap: wrap; align-items: center; column-gap: 14px; row-gap: 0; overflow: hidden;
+  width: 100%; min-height: 54px; padding: 9px 12px 9px 10px; text-align: left; white-space: normal;
+  color: var(--foreground); box-shadow: var(--shadow-elevation-2);
+  transition: background-color var(--duration-fast), border-color var(--duration-fast), box-shadow var(--duration-fast), opacity var(--duration-normal);
+}
+
+/* The palette's selected-row edge, in the row's tone. */
+.fusion .fd3-row::before {
+  content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: var(--radius-pill);
+  background: var(--t); opacity: 0; transition: opacity var(--duration-fast);
+}
+.fusion .fd3-row:hover { background: color-mix(in srgb, var(--foreground) 4%, var(--fd3-bg)); }
+.fusion .fd3-row:focus, .fusion .fd3-row:focus-visible {
+  outline: none; background: color-mix(in srgb, var(--t) 9%, var(--fd3-bg));
+  border-color: color-mix(in srgb, var(--t) 50%, transparent); box-shadow: var(--shadow-elevation-3);
+}
+.fusion .fd3-row:focus::before, .fusion .fd3-row:focus .fd3-arrow { opacity: 1; }
+.fusion .fd3-lead { flex: none; display: inline-grid; place-items: center; width: 32px; }
+.fusion .fd3-check { width: 22px; height: 22px; color: var(--t); }
+.fusion .fd3-main { flex: 1 1 0; min-width: 0; display: grid; grid-template-columns: minmax(0, 30cqi) minmax(0, 1fr); align-items: center; gap: 2px 20px; }
+.fusion .fd3-label { display: block; min-width: 0; overflow-wrap: anywhere; }
+.fusion .fd3-conseq { display: flex; align-items: flex-start; gap: 6px; min-width: 0; overflow-wrap: anywhere; }
+.fusion .fd3-conseq-g { width: 14px; height: 14px; flex: none; margin-top: 0.3em; color: var(--status-error); }
+.fusion .fd3-end { flex: none; display: inline-flex; align-items: center; justify-content: flex-end; gap: 10px; min-width: 28px; }
+.fusion .fd3-arrow { width: 16px; height: 16px; color: var(--t); opacity: 0; transition: opacity var(--duration-fast); }
+@container (max-width: 560px) {
+  .fusion .fd3-main { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Her pick: her edge, her wash, her chip, her reason opening under it. */
+.fusion .fd3-row:is(.is-pick, .is-safe) {
+  background: linear-gradient(100deg, color-mix(in srgb, var(--t) 15%, var(--fd3-bg)), var(--fd3-bg) 60%);
+  border-color: color-mix(in srgb, var(--t) 60%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--t) 22%, transparent), 0 0 30px color-mix(in srgb, var(--t) 18%, transparent), var(--shadow-elevation-3);
+}
+.fusion .fd3-row:is(.is-pick, .is-safe, .is-taken)::before { opacity: 1; top: 0; bottom: 0; border-radius: 0; }
+.fusion .fd3-chip {
+  display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; white-space: nowrap;
+  border-radius: var(--radius-pill); color: var(--t);
+  border: 1px solid color-mix(in srgb, var(--t) 32%, transparent); background: color-mix(in srgb, var(--t) 10%, transparent);
+}
+.fusion .fd3-chip.is-safe { padding-left: 7px; }
+.fusion .fd3-chip svg { width: 14px; height: 14px; }
+.fusion .fd3-why { flex: 1 0 100%; display: block; overflow: hidden; }
+.fusion .fd3-why-in {
+  display: flex; align-items: flex-start; gap: 10px; margin: 8px 0 1px 46px; padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--t) 26%, transparent);
+}
+.fusion .fd3-why-g { width: 22px; height: 22px; flex: none; color: var(--t); }
+
+/* The picked row confirms; the rest step back while the stage moves on. */
+.fusion .fd3-row.is-taken { background: color-mix(in srgb, var(--t) 18%, var(--fd3-bg)); border-color: var(--t); opacity: 1; }
+.fusion .fd3-row.is-dimmed { opacity: 0.45; }
+
+/* The typed answer: the palette's input row, on a card of its own. */
+.fusion .fd3-field {
+  display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 10px 10px; box-shadow: var(--shadow-elevation-2);
+  transition: border-color var(--duration-fast);
+}
+.fusion .fd3-field:focus-within { border-color: color-mix(in srgb, var(--primary) 45%, transparent); }
+.fusion .fd3-field-head { display: flex; align-items: center; gap: 14px; }
+.fusion .fd3-field-g { width: 16px; height: 16px; margin-inline: 8px; color: var(--primary); }
+.fusion .fd3-input { margin-left: 46px; width: calc(100% - 46px); resize: vertical; }
+.fusion .fd3-field-foot { display: flex; align-items: center; gap: 10px; margin-left: 46px; }
+
+/* ── reduced motion: still and complete ────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .fusion .fd3-door.is-weighing .fu-seal { animation: none; }
+  .fusion .fd3-surface { backdrop-filter: none; --fd3-bg: color-mix(in srgb, var(--background) 97%, transparent); }
+  .fusion :is(.fd3-row, .fd3-row::before, .fd3-arrow, .fd3-chev) { transition: none; }
+}
+:root[data-motion='reduce'] .fusion .fd3-door .fu-seal { animation: none; }
+/* Without the blur the glass needs its density back, or the table reads through it. */
+:root[data-motion='reduce'] .fusion .fd3-surface { --fd3-bg: color-mix(in srgb, var(--background) 97%, transparent); }
+
+/* The strip (the product's own card is the body): as wide as that card, one line. */
+.fusion .fd3-q.is-strip { width: min(900px, 100%); }
+.fusion .fd3-trail .k-crumbs { flex: none; white-space: nowrap; }
+
+/* Many answers (5+): the palette's own density. One line per row, the
+ * consequence truncated like a palette description and unfolded on the
+ * highlighted row, so 1280x800 holds the whole list. */
+.fusion .fd3-answers.is-many { gap: 4px; }
+.fusion .fd3-answers.is-many .fd3-row { min-height: 46px; padding-block: 5px; }
+.fusion .fd3-answers.is-many .fd3-key.is-lg { min-width: 28px; height: 28px; }
+.fusion .fd3-answers.is-many .fd3-conseq { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fusion .fd3-answers.is-many .fd3-conseq-g { display: inline-block; vertical-align: -2px; margin: 0 6px 0 0; }
+.fusion .fd3-answers.is-many .fd3-row:is(:focus, .is-pick, .is-safe) .fd3-conseq { white-space: normal; }

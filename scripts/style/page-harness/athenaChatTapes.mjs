@@ -22,7 +22,7 @@
 //   athena/chat/decision   waiting, opened on the work layer focused on the decision.
 //   athena/chat/empty      a fresh conversation: nothing running, nothing waiting.
 //
-// The variant (current | spread | filament | r5a | r5b | r5c) is a URL param,
+// The variant (fusion | current) is a URL param,
 // not a module id: `shoot.mjs --query variant=r5a`.
 
 export function athenaChatTapes({ RECORDED_AT }) {

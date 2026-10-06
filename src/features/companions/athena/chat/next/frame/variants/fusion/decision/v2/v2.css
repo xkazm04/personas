@@ -1,0 +1,214 @@
+/*
+ * Fusion · decision v2 ("Overview tiles"). The chrome is the kit's: every
+ * tile is a `.k-dtile` band inside a `.k-host` (the stepped surface, a 2px
+ * rail on the left, a right-only radius), lit the way Mission Control's
+ * annunciator lights a tile (an ink wash from the rail, a faint ink edge);
+ * the icon tile is the page header's (`ContentHeader`: a tinted square with a
+ * 25% edge); the key cap is the annunciator's. Layout is free here; type
+ * stays typo-* on the elements and colour stays var()/color-mix() over tokens.
+ * Unlayered, like fusion.css, so a shared Button used as a tile takes this
+ * file's shape.
+ *
+ * TODO(prototype, 2026-10-07): athena decision surface round 6 - consolidate after the owner picks.
+ */
+
+.fusion .d2-q,
+.fusion .d2-ans { --t: var(--primary); --ink: var(--t); }
+
+/* The shared Button wraps its label in one span; on a laid-out tile it steps aside. */
+.fusion :is(.d2-ans, .d2-ask, .d2-pip) > span:not([class^='d2-']) { display: contents; }
+
+/* ── shared parts: icon tile, key cap, chips ───────────────────────────── */
+.fusion .d2-icon {
+  --ic: var(--ink);
+  display: inline-grid; place-items: center; flex: none; width: 2.25rem; height: 2.25rem;
+  border-radius: var(--radius-input); color: var(--ic);
+  background: linear-gradient(140deg, color-mix(in srgb, var(--ic) 22%, transparent), color-mix(in srgb, var(--ic) 9%, transparent));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ic) 28%, transparent);
+}
+.fusion .d2-icon svg { width: 1.1rem; height: 1.1rem; }
+.fusion .d2-icon.is-lg { width: 2.75rem; height: 2.75rem; border-radius: var(--radius-card); }
+.fusion .d2-icon.is-lg svg { width: 1.35rem; height: 1.35rem; }
+.fusion .d2-key {
+  display: inline-grid; place-items: center; flex: none; min-width: 1.6rem; height: 1.6rem; padding: 0 0.4rem;
+  border-radius: var(--radius-interactive); border: 1px solid color-mix(in srgb, var(--foreground) 22%, transparent);
+  color: var(--foreground); background: color-mix(in srgb, var(--foreground) 5%, transparent); white-space: nowrap;
+}
+.fusion .d2-keys { display: inline-flex; gap: 3px; }
+.fusion .d2-keybtn > span { display: inline-flex; align-items: center; gap: 8px; }
+.fusion .d2-quiet { color: var(--quiet); }
+.fusion .d2-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.fusion .d2-chip { gap: 7px; background: color-mix(in srgb, var(--background) 40%, transparent); }
+.fusion .d2-chip svg { width: 15px; height: 15px; flex: none; color: var(--quiet); }
+.fusion .d2-chip.is-low { border-color: color-mix(in srgb, var(--status-success) 45%, transparent); }
+.fusion .d2-chip.is-low svg { color: var(--status-success); }
+.fusion .d2-chip.is-elevated { border-color: color-mix(in srgb, var(--status-warning) 50%, transparent); }
+.fusion .d2-chip.is-elevated svg { color: var(--status-warning); }
+
+/* ── the hero tile ─────────────────────────────────────────────────────── */
+.fusion .d2-q.k-dtile {
+  --spine-c: var(--c); --ink: var(--c);
+  display: flex; flex-direction: column; gap: 12px; padding: 16px 20px 12px 24px; isolation: isolate;
+  background:
+    radial-gradient(80% 140% at 0% 0%, color-mix(in srgb, var(--c) 10%, transparent), transparent 60%),
+    linear-gradient(to right, color-mix(in srgb, var(--primary) 6%, var(--band-alt)), var(--band-alt) 55%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 22%, transparent), var(--shadow-elevation-4);
+}
+.fusion .d2-q.k-dtile::before { width: 3px; box-shadow: 0 0 12px color-mix(in srgb, var(--c) 55%, transparent); }
+.fusion .d2-q.k-dtile > .k-mark { top: 38px; left: -4px; }
+.fusion .d2-q-head {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto auto;
+  column-gap: 14px; row-gap: 2px; align-items: center;
+}
+.fusion .d2-q-head > .d2-icon { grid-column: 1; grid-row: 1 / span 2; align-self: start; margin-top: 2px; }
+.fusion .d2-q-head > .d2-caption { grid-column: 2; grid-row: 1; }
+.fusion .d2-q-head > .d2-queue { grid-column: 3; grid-row: 1; }
+.fusion .d2-caption {
+  display: flex; align-items: center; gap: 8px; margin: 0; min-width: 0;
+  font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.13em; overflow-wrap: anywhere;
+}
+.fusion .d2-asker-g { width: 18px; height: 18px; flex: none; color: var(--c); }
+.fusion .d2-q-title { grid-column: 2 / -1; grid-row: 2; margin: 0; text-wrap: balance; overflow-wrap: anywhere; }
+.fusion .d2-q-title code, .fusion .d2-lede code { background: color-mix(in srgb, var(--foreground) 8%, transparent); border-radius: var(--radius-interactive); padding: 0 4px; }
+.fusion .d2-lede { margin: 0; max-width: 96ch; overflow-wrap: anywhere; }
+.fusion .d2-q-foot {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 2px; padding-top: 10px;
+  box-shadow: inset 0 1px 0 var(--rule);
+}
+.fusion .d2-q.is-strip { gap: 8px; padding-block: 12px 10px; }
+.fusion .d2-q-title.is-strip { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* The queue: small icon tiles, the current one lit in its kind's ink. */
+.fusion .d2-queue { display: flex; align-items: center; gap: 10px; justify-self: end; }
+.fusion .d2-pips { display: flex; align-items: center; gap: 2px; }
+.fusion .d2-pip {
+  width: 24px; height: 24px; padding: 0; justify-content: center; border-radius: var(--radius-interactive);
+  color: var(--quiet); background: transparent; box-shadow: inset 0 0 0 1px var(--rule);
+}
+.fusion .d2-pip svg { width: 13px; height: 13px; }
+.fusion .d2-pip[aria-current='true'] {
+  color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 55%, transparent);
+}
+.fusion .d2-of { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+
+/* Her door and her word on the foot. */
+.fusion .d2-ask {
+  height: 40px; gap: 10px; padding: 0 8px 0 5px; border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 14%, transparent), color-mix(in srgb, var(--brand-purple) 10%, transparent));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 45%, transparent);
+  transition: background-color var(--duration-fast), box-shadow var(--duration-fast);
+}
+.fusion .d2-ask:hover, .fusion .d2-ask:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--primary), 0 0 18px color-mix(in srgb, var(--primary) 30%, transparent);
+}
+.fusion .d2-verdict { display: flex; align-items: flex-start; gap: 10px; margin: 0; min-width: 0; flex: 1 1 22rem; }
+.fusion .d2-verdict-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+/* Details: the parameters as the kit's key-value grid. */
+.fusion .d2-details { margin: 0; }
+.fusion .d2-summary { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; border-radius: var(--radius-interactive); padding: 2px 6px 2px 2px; }
+.fusion .d2-summary::-webkit-details-marker { display: none; }
+.fusion .d2-chev { width: 15px; height: 15px; color: var(--quiet); transition: transform var(--duration-fast); }
+.fusion .d2-details[open] .d2-chev { transform: rotate(90deg); }
+.fusion .d2-details .k-kv { padding: 8px 0 2px 22px; }
+.fusion .d2-code { margin: 6px 0 0; padding: 10px 12px; max-height: 180px; overflow: auto; border-radius: var(--radius-input); background: color-mix(in srgb, var(--foreground) 5%, transparent); color: var(--foreground); white-space: pre-wrap; }
+
+/* ── the answer tiles ──────────────────────────────────────────────────── */
+.fusion .d2-answers { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(var(--n, 2), minmax(0, 1fr)); gap: 12px; }
+.fusion .d2-slot { min-width: 0; will-change: transform; }
+.fusion .d2-slot.is-wide { grid-column: 1 / -1; }
+.fusion .d2-slot.is-lit { grid-column: span 2; }
+
+/* The tile's art: what the choice does, drawn large and faint in its corner (a figure, not chrome). */
+.fusion .d2-art {
+  position: absolute; z-index: -1; right: -10px; bottom: -14px; width: 92px; height: 92px; pointer-events: none;
+  color: color-mix(in srgb, var(--ink) 11%, transparent); stroke-width: 1.4;
+}
+.fusion .d2-art-clip { position: absolute; inset: 0; z-index: -1; overflow: hidden; border-radius: inherit; pointer-events: none; }
+.fusion .d2-art.is-hero { right: 14px; bottom: -22px; width: 132px; height: 132px; color: color-mix(in srgb, var(--c) 8%, transparent); }
+.fusion .d2-ans.k-dtile {
+  --spine-c: color-mix(in srgb, var(--t) 75%, transparent); --card-band: var(--band-alt);
+  display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 8px;
+  width: 100%; height: 100%; min-height: 7.5rem; padding: 14px 16px 16px 20px; text-align: left; white-space: normal; overflow: hidden; isolation: isolate;
+  color: var(--foreground);
+  background: linear-gradient(to right, color-mix(in srgb, var(--t) 8%, var(--card-band)), var(--card-band) 60%);
+  box-shadow: inset 0 0 0 1px var(--rule), var(--shadow-elevation-3);
+  transition: box-shadow var(--duration-fast), background-color var(--duration-fast);
+}
+.fusion .d2-ans.k-dtile:hover, .fusion .d2-ans.k-dtile:focus-visible {
+  --card-band: var(--band-hover); outline: none;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--t) 55%, transparent), var(--shadow-elevation-4);
+}
+.fusion .d2-ans.k-dtile:focus-visible { box-shadow: inset 0 0 0 2px var(--focus-ring-color), var(--shadow-elevation-4); }
+.fusion .d2-ans-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.fusion .d2-effect { display: inline-flex; align-items: center; gap: 8px; min-width: 0; color: var(--t); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fusion .d2-lamp { width: 0.6rem; height: 0.6rem; flex: none; border-radius: var(--radius-pill); background: var(--t); box-shadow: 0 0 0 3px color-mix(in srgb, var(--t) 18%, transparent); }
+.fusion .d2-key.is-corner { margin-left: auto; }
+.fusion .d2-ans-title { overflow-wrap: anywhere; margin-top: 2px; }
+.fusion .d2-ans-hint { overflow-wrap: anywhere; }
+/* Four or more: two columns of row-shaped tiles (icon, choice over consequence, key), her pick across both. */
+.fusion .d2-answers.is-many { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; }
+.fusion .d2-answers.is-many .d2-slot.is-lit { grid-column: 1 / -1; }
+.fusion .d2-answers.is-many .d2-ans.k-dtile {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 12px; row-gap: 2px; align-items: center;
+  min-height: 0; padding: 8px 12px 8px 16px;
+}
+.fusion .d2-answers.is-many .d2-icon { width: 2rem; height: 2rem; }
+.fusion .d2-answers.is-many .d2-ans-head { display: contents; }
+.fusion .d2-answers.is-many .d2-icon { grid-column: 1; grid-row: 1 / span 2; }
+.fusion .d2-answers.is-many .d2-effect, .fusion .d2-answers.is-many .d2-art { display: none; }
+.fusion .d2-answers.is-many .d2-key.is-corner { grid-column: 3; grid-row: 1 / span 2; }
+.fusion .d2-answers.is-many .d2-ans-title { grid-column: 2; grid-row: 1; margin: 0; }
+.fusion .d2-answers.is-many .d2-ans-hint { grid-column: 2; grid-row: 2; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.fusion .d2-answers.is-many .d2-her { grid-column: 1 / -1; grid-row: 3; flex-direction: row; align-items: center; gap: 10px; margin-top: 6px; padding-top: 6px; }
+.fusion .d2-answers.is-many .d2-her-head { display: contents; }
+.fusion .d2-answers.is-many .d2-her-head > .d2-key { order: 2; margin-left: 0; }
+.fusion .d2-answers.is-many .d2-her > .typo-body { flex: 1; min-width: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.fusion .d2-answers.is-many .d2-her-label { flex: none; }
+
+/* The tile a press or a key took: its edge and its key cap in its ink. */
+.fusion .d2-ans.k-dtile.is-chosen { box-shadow: inset 0 0 0 2px var(--t), 0 0 26px color-mix(in srgb, var(--t) 35%, transparent), var(--shadow-elevation-4); }
+.fusion .d2-ans.is-chosen .d2-key.is-corner { background: var(--t); border-color: var(--t); color: var(--background); }
+
+/* Her pick: Athena's brand on the tile - rail from the accent into the AI violet, a lit edge, her seal row. */
+.fusion .d2-ans.k-dtile.is-pick {
+  --card-band: var(--band-sel);
+  background:
+    radial-gradient(90% 120% at 100% 0%, color-mix(in srgb, var(--brand-purple) 16%, transparent), transparent 62%),
+    linear-gradient(to right, color-mix(in srgb, var(--primary) 14%, var(--band-alt)), var(--band-alt) 60%);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--primary) 70%, transparent), 0 0 30px color-mix(in srgb, var(--primary) 26%, transparent), var(--shadow-elevation-4);
+}
+.fusion .d2-ans.k-dtile.is-pick::before { width: 3px; background: linear-gradient(to bottom, var(--primary), var(--brand-purple)); box-shadow: 0 0 14px var(--glow); }
+.fusion .d2-ans.k-dtile.is-pick::after {
+  content: ''; position: absolute; left: 20px; right: 18px; top: 0; height: 2px; border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, transparent, var(--primary), var(--brand-purple), transparent);
+}
+.fusion .d2-her {
+  display: flex; flex-direction: column; gap: 6px; margin-top: auto; padding-top: 10px;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--primary) 30%, transparent);
+}
+.fusion .d2-her-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.fusion .d2-her-head > .d2-key { margin-left: auto; }
+.fusion .d2-her-label {
+  background: linear-gradient(90deg, var(--primary), color-mix(in srgb, var(--brand-purple) 70%, var(--foreground)));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.fusion .d2-ans.k-dtile.is-safe {
+  --spine-c: var(--status-success);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--status-success) 65%, transparent), var(--shadow-elevation-4);
+}
+.fusion .d2-ans.is-safe .d2-her { box-shadow: inset 0 1px 0 color-mix(in srgb, var(--status-success) 30%, transparent); }
+.fusion .d2-her-shield { width: 24px; height: 24px; flex: none; color: var(--status-success); }
+
+/* A typed answer: the same band, a field, its real keys. */
+.fusion .d2-ans.k-dtile.is-field { --t: var(--status-warning); cursor: default; min-height: 0; gap: 10px; }
+.fusion .d2-field-keys { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; white-space: nowrap; }
+.fusion .d2-input { width: 100%; resize: vertical; }
+.fusion .d2-field-foot { display: flex; justify-content: flex-end; }
+
+[data-theme^="light"] .fusion .d2-chip { background: color-mix(in srgb, var(--background) 70%, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .fusion .d2-ans.k-dtile, .fusion .d2-ask, .fusion .d2-chev { transition: none; }
+}

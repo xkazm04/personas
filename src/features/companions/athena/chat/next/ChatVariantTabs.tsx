@@ -1,19 +1,14 @@
 /**
  * ChatVariantTabs — the Athena chat's variant switcher.
  *
- * FUSION IS THE DEFAULT as of 2026-10-07: the owner reviewed round 5's six
- * variants, liked none of them whole, and named the piece of each he wanted
- * kept - Spread's keyboard decision, Filament's slim rail and toolset,
- * Current's content rendering and managed overview, R5 · A's island, R5 · C's
- * margin count. Fusion is that fusion (`frame/variants/fusion/`), so it is
- * what the app opens on and the first tab.
+ * FUSION IS THE DEFAULT (2026-10-07): the owner's fusion of round 5's six
+ * variants (`frame/variants/fusion/`). Current - the classic panel - stays
+ * selectable beside it. Halo · Spread and R5 · A / B / C were deleted on
+ * 2026-10-07 after Fusion took their parts, and Filament (the `athena-chrome`
+ * contest winner) the same day, after round 6 folded its rail into Fusion's.
  *
- * Filament (the `athena-chrome` contest winner, 2026-10-06) and Current stay
- * selectable beside it. Halo · Spread and R5 · A / B / C were deleted the same
- * day at the owner's instruction, once Fusion had taken the parts he wanted
- * from them. The store below holds no persistence, so a default is
- * only a default if it is written here - every launch and every reload opens
- * on it.
+ * The store below holds no persistence, so a default is only a default if it
+ * is written here - every launch and every reload opens on it.
  */
 
 import type { ReactNode } from 'react';
@@ -21,7 +16,7 @@ import { create } from 'zustand';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 
 // TODO(prototype, 2026-10-07): athena chat - consolidate Fusion / Filament / Current once the owner settles.
-export type ChatVariant = 'fusion' | 'current' | 'filament';
+export type ChatVariant = 'fusion' | 'current';
 
 export const useChatVariantStore = create<{ variant: ChatVariant; set: (v: ChatVariant) => void }>((set) => ({
   // The owner's fusion, so it is what the app opens on. Deliberately NOT persisted to
@@ -37,7 +32,6 @@ export const useChatVariantStore = create<{ variant: ChatVariant; set: (v: ChatV
 // selectable beside it.
 const TABS: { id: ChatVariant; label: string; testId: string }[] = [
   { id: 'fusion', label: 'Fusion', testId: 'chat-variant-fusion' },
-  { id: 'filament', label: 'Filament', testId: 'chat-variant-filament' },
   { id: 'current', label: 'Current', testId: 'chat-variant-current' },
 ];
 

@@ -4,7 +4,7 @@
  *
  * Module ids are scenarios: `athena/chat/{idle,streaming,waiting,decision,empty}`.
  * Everything else is a URL param, so one tape serves every variant:
- *   variant=fusion|current|filament   which chat the switcher shows (default: the store's, fusion)
+ *   variant=fusion|current   which chat the switcher shows (default: the store's, fusion)
  *   bg=executions|none                            the route behind the chat (default: Overview > Executions)
  * `shoot.mjs --query "variant=fusion&bg=none"` passes them; `--reduced-motion`
  * forces both reduced-motion signals (see main.tsx).
@@ -24,6 +24,7 @@
  *    fetches the transcript, approvals, nudges and durable cards from the tape;
  *  - for `streaming`, a turn is in flight (the bridge's `forceCompanionStreaming`).
  */
+import { useDecisionStyle, type DecisionStyle } from '@/features/companions/athena/chat/next/frame/variants/fusion/decision/style';
 import type { ComponentType, ReactNode } from 'react';
 import type { HarnessModule } from './registry';
 import { ACTIVITY_MODULES } from './activitySurfaces';
@@ -49,7 +50,7 @@ interface Seed {
   layer: null | { kind: 'work'; focus: string | null; project: string | null };
 }
 
-const VARIANTS = ['fusion', 'current', 'filament'] as const;
+const VARIANTS = ['fusion', 'current'] as const;
 const BACKGROUND = ACTIVITY_MODULES['overview/sub_activity']!;
 
 const params = new URLSearchParams(window.location.search);
@@ -85,6 +86,9 @@ async function prepareChat(): Promise<void> {
       import('@/features/companions/athena/chat/next/useLayer'),
     ]);
 
+  // Round 6: which decision surface Fusion's stage renders (now | v1 | v2 | v3).
+  const decision = params.get('decision');
+  if (decision) useDecisionStyle.getState().set(decision as DecisionStyle);
   const variant = params.get('variant');
   if (variant) {
     if (!(VARIANTS as readonly string[]).includes(variant)) throw new Error(`unknown variant "${variant}" (have: ${VARIANTS.join(', ')})`);
