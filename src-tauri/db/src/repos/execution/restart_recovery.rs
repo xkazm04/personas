@@ -154,9 +154,9 @@ pub struct RestartSweep {
 }
 
 impl RestartSweep {
-    /// Rows classified. Zero when a clean shutdown suppressed the sweep — the
-    /// caller (`boot::recovery`) never calls in at all in that case, so an
-    /// empty sweep here always means "nothing was mid-run".
+    /// Rows classified. The sweep runs on every start (see
+    /// [`reconcile_after_exit`]), so an empty sweep always means "nothing was
+    /// mid-run".
     pub fn total(&self) -> usize {
         self.resume_pending.len() + self.unproven.len() + self.suspended.len()
     }
@@ -250,6 +250,48 @@ pub fn classify_running_rows(pool: &DbPool) -> Result<RestartSweep, AppError> {
             Ok(sweep)
         }
     )
+}
+
+/// What the boot reconciliation found: the sweep, and whether the previous
+/// exit recorded itself as graceful.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct BootReconciliation {
+    /// The clean-shutdown marker was present (and has now been consumed).
+    pub previous_exit_clean: bool,
+    pub sweep: RestartSweep,
+}
+
+/// The boot entry point: consume the clean-shutdown marker, then classify —
+/// **on every start, clean or not.**
+///
+/// The marker used to gate this sweep: a graceful previous exit skipped it as
+/// "no run was interrupted". That premise was never checked, and it does not
+/// hold: the exit path (`RunEvent::Exit` in `lib.rs`) drains preview servers
+/// and warm CLI sessions, not persona executions, so a run in flight when the
+/// user quits is left `running` exactly as a crash would leave it. Behind the
+/// gate, that row skipped the classifier and waited for the live zombie sweep
+/// — `incomplete` with no `recovery_state`, so never resumed even when the
+/// restart was seconds later, and absent from
+/// [`list_unresolved_recoveries`]. A crash got the better recovery than a
+/// quit.
+///
+/// Registry technique `durable-agent-operations/close-is-a-controlled-crash`:
+/// a graceful path that leaves different state than a crash is a second
+/// recovery path, and the one that runs every day is the one nobody tests.
+/// This sweep is keyed on durable state (`status = 'running'`), so a quit that
+/// really drained produces zero rows here and the marker has nothing to
+/// suppress; a quit that did not drain is the crash case and must be treated
+/// as one. The marker stays a recorded fact for the log line, never a gate.
+pub fn reconcile_after_exit(
+    pool: &DbPool,
+    app_data_dir: &std::path::Path,
+) -> Result<BootReconciliation, AppError> {
+    let previous_exit_clean = personas_core::shutdown_marker::take_clean_shutdown(app_data_dir);
+    let sweep = classify_running_rows(pool)?;
+    Ok(BootReconciliation {
+        previous_exit_clean,
+        sweep,
+    })
 }
 
 /// Back to the durable queue, with the mark and the incremented count riding
@@ -969,5 +1011,128 @@ mod tests {
             assert_eq!(status_of(&pool, id), "queued");
             assert_eq!(recovery_of(&pool, id), (None, 0));
         }
+    }
+
+    // ---------------------------------------------------------------------
+    // Close is a controlled crash: the marker is a fact, not a gate
+    // ---------------------------------------------------------------------
+
+    /// A per-test app-data dir for the clean-shutdown marker (this crate has
+    /// no `tempfile` dev-dependency).
+    fn marker_dir(tag: &str) -> Result<std::path::PathBuf, AppError> {
+        let dir = std::env::temp_dir().join(format!(
+            "personas_restart_marker_{}_{}_{}",
+            tag,
+            std::process::id(),
+            chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default()
+        ));
+        std::fs::create_dir_all(&dir)?;
+        Ok(dir)
+    }
+
+    /// The paired proof, one fixture through both arms. The user quits while
+    /// a run is in flight: `RunEvent::Exit` writes the marker but does not
+    /// drain persona executions, so the row is still `running` — exactly what
+    /// a crash leaves.
+    ///
+    /// Arm A is the retired gate, inlined: a present marker skipped the
+    /// classifier. The row stays `running` (the live zombie sweep later makes
+    /// it `incomplete` with no `recovery_state`) and the unresolved-recovery
+    /// surface never sees it. Arm B is [`reconcile_after_exit`]: the row gets
+    /// the crash path's recovery, one re-admission with its mark.
+    #[test]
+    fn a_graceful_exit_with_a_run_in_flight_is_the_crash_case() -> Result<(), AppError> {
+        // Arm A — the gate as it stood.
+        let pool_a = init_test_db()?;
+        let persona_a = make_persona(&pool_a, "Quit Mid-Run A");
+        let in_flight_a = insert_rows(&pool_a, &persona_a, "a", 1, "running", Some(60), None);
+        let dir_a = marker_dir("arm_a")?;
+        personas_core::shutdown_marker::record_clean_shutdown(&dir_a);
+        if !personas_core::shutdown_marker::take_clean_shutdown(&dir_a) {
+            classify_running_rows(&pool_a)?;
+        }
+        assert_eq!(
+            status_of(&pool_a, &in_flight_a[0]),
+            "running",
+            "arm A: the gate leaves the quit's in-flight row for the zombie sweep"
+        );
+        assert!(
+            list_unresolved_recoveries(&pool_a)?.is_empty(),
+            "arm A: and nothing reaches the surface a person reads"
+        );
+
+        // Arm B — the marker is consumed, the sweep runs anyway.
+        let pool_b = init_test_db()?;
+        let persona_b = make_persona(&pool_b, "Quit Mid-Run B");
+        let in_flight_b = insert_rows(&pool_b, &persona_b, "b", 1, "running", Some(60), None);
+        let dir_b = marker_dir("arm_b")?;
+        personas_core::shutdown_marker::record_clean_shutdown(&dir_b);
+        let seen = reconcile_after_exit(&pool_b, &dir_b)?;
+        assert!(
+            seen.previous_exit_clean,
+            "the graceful exit is still recorded"
+        );
+        assert_eq!(seen.sweep.resume_pending, in_flight_b);
+        assert_eq!(status_of(&pool_b, &in_flight_b[0]), "queued");
+        assert_eq!(
+            recovery_of(&pool_b, &in_flight_b[0]),
+            (Some(RECOVERY_RESUME_PENDING.to_string()), 1),
+            "arm B: the quit gets exactly the recovery a crash would have"
+        );
+
+        let _ = std::fs::remove_dir_all(&dir_a);
+        let _ = std::fs::remove_dir_all(&dir_b);
+        Ok(())
+    }
+
+    /// The floor: the reason the marker was introduced must still hold. A
+    /// graceful exit that DID drain leaves nothing `running`, so running the
+    /// sweep anyway classifies nothing and touches no row — no restart class is
+    /// manufactured by a deliberate quit.
+    #[test]
+    fn a_graceful_exit_that_drained_changes_nothing() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let persona_id = make_persona(&pool, "Quit Drained");
+        let done = insert_rows(&pool, &persona_id, "done", 3, "completed", Some(900), None);
+        let waiting = insert_rows(&pool, &persona_id, "wait", 2, "queued", None, None);
+        let dir = marker_dir("drained")?;
+        personas_core::shutdown_marker::record_clean_shutdown(&dir);
+
+        let seen = reconcile_after_exit(&pool, &dir)?;
+        assert!(seen.previous_exit_clean);
+        assert_eq!(
+            seen.sweep.total(),
+            0,
+            "a drained quit leaves nothing to classify"
+        );
+        for id in &done {
+            assert_eq!(status_of(&pool, id), "completed");
+            assert_eq!(recovery_of(&pool, id), (None, 0));
+        }
+        for id in &waiting {
+            assert_eq!(status_of(&pool, id), "queued");
+            assert_eq!(recovery_of(&pool, id), (None, 0));
+        }
+        assert!(list_unresolved_recoveries(&pool)?.is_empty());
+
+        // Consumed: the next start, with no new exit, reads as unclean.
+        assert!(!reconcile_after_exit(&pool, &dir)?.previous_exit_clean);
+        let _ = std::fs::remove_dir_all(&dir);
+        Ok(())
+    }
+
+    /// The crash path is unchanged: no marker, same classification.
+    #[test]
+    fn a_crash_is_classified_as_before() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let persona_id = make_persona(&pool, "Crashed Mid-Run");
+        let in_flight = insert_rows(&pool, &persona_id, "c", 1, "running", Some(60), None);
+        let dir = marker_dir("crash")?;
+
+        let seen = reconcile_after_exit(&pool, &dir)?;
+        assert!(!seen.previous_exit_clean);
+        assert_eq!(seen.sweep.resume_pending, in_flight);
+        let _ = std::fs::remove_dir_all(&dir);
+        Ok(())
     }
 }
