@@ -691,6 +691,57 @@ fn test_prompt_contains_protocols() {
     assert!(prompt.contains("### Outcome Assessment Protocol"));
 }
 
+/// The HTML report option is taught CONDITIONALLY and with the renderer's
+/// real rules: markdown stays the default, and every constraint the sandboxed
+/// frame enforces (no scripts, no external URLs, data-URI images) plus the
+/// size bound is stated where the model reads.
+#[test]
+fn user_message_protocol_teaches_html_reports_conditionally() {
+    let persona = test_persona();
+    let prompt = assemble_prompt(
+        &persona,
+        &[],
+        None,
+        None,
+        None,
+        None,
+        #[cfg(feature = "desktop")]
+        None,
+    );
+
+    let start = prompt.find("### User Message Protocol").unwrap();
+    let end = prompt.find("### Persona Action Protocol").unwrap();
+    let section = &prompt[start..end];
+
+    assert!(
+        section.contains(r#"or "html""#),
+        "html listed as a content_type"
+    );
+    assert!(section.contains("**HTML document**"));
+    assert!(section.contains("Markdown is the default"));
+    assert!(section.contains("you MAY set `content_type` to \"html\""));
+    for rule in [
+        "self-contained HTML document",
+        "inline `<style>` only",
+        "no scripts",
+        "no external URLs",
+        "`data:` URIs",
+        "under 30 KB",
+    ] {
+        assert!(section.contains(rule), "missing rule: {rule}");
+    }
+    // It rides in every run prompt: keep it a paragraph, not a manual.
+    let html_para = section
+        .split("\n\n")
+        .find(|p| p.starts_with("**HTML document**"))
+        .unwrap();
+    assert!(
+        html_para.chars().count() < 420,
+        "HTML guidance grew to {} chars",
+        html_para.chars().count()
+    );
+}
+
 #[test]
 fn test_prompt_ends_with_execute_now() {
     let persona = test_persona();

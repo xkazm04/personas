@@ -273,11 +273,58 @@ pub const CHAT_NOTE_MAX_CHARS: usize = 400;
 /// force it into the report store.
 const REPORT_CONTENT_TYPES: &[&str] = &["markdown", "code", "alert", "budget_alert", "error"];
 
+/// The `content_type` of a self-contained HTML document report. Stored as-is:
+/// the renderer is the ONE sanitizer (`sanitizeHtmlDocument`, inside a
+/// sandboxed frame), so the backend never rewrites the markup.
+pub const HTML_CONTENT_TYPE: &str = "html";
+
+/// Largest HTML report body stored, in bytes.
+///
+/// Equal to the persona runner's per-line stdout cap (`MAX_LINE_BYTES`,
+/// 64 KiB): the protocol line carrying the document rides inside one
+/// stream-json envelope, so on the stdout door a bigger document is already
+/// clipped before it parses. The cap holds every door to the same bound, and
+/// an oversized document is REFUSED with a visible report — never cut. A cut
+/// HTML document is a broken one (unclosed tags, half a `<style>`), and a
+/// silent cut would look like a finished report.
+pub const HTML_REPORT_MAX_BYTES: usize = 64 * 1024;
+
+fn is_html_content_type(content_type: Option<&str>) -> bool {
+    content_type.is_some_and(|ct| ct.trim().eq_ignore_ascii_case(HTML_CONTENT_TYPE))
+}
+
+/// The body and `content_type` a report row is written with.
+///
+/// Everything but HTML passes through untouched. HTML is normalized to the
+/// exact `"html"` the renderer matches on (a model writing `"HTML"` must not
+/// get its markup shown as text), and an HTML body over
+/// [`HTML_REPORT_MAX_BYTES`] is replaced by a markdown refusal that names
+/// both sizes. Pure, so the rule is unit-testable without a pool.
+pub fn shape_report_body(content: &str, content_type: Option<&str>) -> (String, Option<String>) {
+    if !is_html_content_type(content_type) {
+        return (content.to_string(), content_type.map(str::to_string));
+    }
+    if content.len() <= HTML_REPORT_MAX_BYTES {
+        return (content.to_string(), Some(HTML_CONTENT_TYPE.to_string()));
+    }
+    let refusal = format!(
+        "This HTML report was not stored: it is {} KB, over the {} KB limit for an HTML \
+         report. A shortened document would be a broken one, so nothing was cut. Ask for \
+         a shorter document or a markdown report.",
+        content.len().div_ceil(1024),
+        HTML_REPORT_MAX_BYTES / 1024
+    );
+    (refusal, Some("markdown".to_string()))
+}
+
 /// Classify one `user_message` block into its lane.
 ///
 /// Pure — no DB, no clock, no IO — so the whole rule set is unit-testable
 /// without a pool or an emitter. Rules, in precedence order:
 ///
+/// 0. `content_type: "html"` → report, unconditionally — ahead of even the
+///    `channel` override. An HTML document is a rendered artifact; the chat
+///    lane renders text, so a chat bubble would show raw markup.
 /// 1. An explicit `channel` override wins outright (`"message"`/`"chat"` →
 ///    [`MessageLane::Chat`], `"report"` → [`MessageLane::Report`]). Any other
 ///    value is ignored rather than trusted — an unknown lane name falls
@@ -298,6 +345,10 @@ pub fn classify_user_message(
     content_type: Option<&str>,
     channel: Option<&str>,
 ) -> MessageLane {
+    // 0. An HTML document is always an artifact.
+    if is_html_content_type(content_type) {
+        return MessageLane::Report;
+    }
     // 1. Explicit override.
     if let Some(lane) = channel.map(str::trim).filter(|c| !c.is_empty()) {
         match lane.to_ascii_lowercase().as_str() {
@@ -672,14 +723,24 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             }
 
             let use_case_id_owned = ctx.use_case_id.map(|s| s.to_string());
+            let (report_content, report_content_type) =
+                shape_report_body(content, content_type.as_deref());
+            if is_html_content_type(content_type.as_deref())
+                && report_content_type.as_deref() != Some(HTML_CONTENT_TYPE)
+            {
+                ctx.logger.log(&format!(
+                    "[MESSAGE] HTML report refused: {} bytes > {HTML_REPORT_MAX_BYTES} byte cap",
+                    content.len()
+                ));
+            }
             match msg_repo::create(
                 ctx.pool,
                 CreateReportInput {
                     persona_id: ctx.persona_id.to_string(),
                     execution_id: Some(ctx.execution_id.to_string()),
                     title: title.clone(),
-                    content: content.clone(),
-                    content_type: content_type.clone(),
+                    content: report_content,
+                    content_type: report_content_type,
                     priority: priority.clone(),
                     metadata: None,
                     thread_id: None,
@@ -2528,6 +2589,83 @@ mod tests {
         );
     }
 
+    /// An HTML document is a report whatever else it carries: untitled, a few
+    /// characters long, any casing, and even against `channel: "message"` —
+    /// the chat lane renders text, so it would show the raw markup.
+    #[test]
+    fn classify_html_is_always_a_report() {
+        let tiny = "<p>ok</p>";
+        for ct in ["html", "HTML", " Html "] {
+            assert_eq!(
+                classify_user_message(None, tiny, Some(ct), None),
+                MessageLane::Report,
+                "content_type {ct:?} must be a report"
+            );
+        }
+        assert_eq!(
+            classify_user_message(None, tiny, Some("html"), Some("message")),
+            MessageLane::Report,
+            "html beats the chat override"
+        );
+        let long = format!("<html><body>{}</body></html>", "x".repeat(5_000));
+        assert_eq!(
+            classify_user_message(Some("Scorecard"), &long, Some("html"), None),
+            MessageLane::Report
+        );
+        // Unknown content types keep the old behaviour: they neither promote
+        // nor demote — the remaining rules decide.
+        assert_eq!(
+            classify_user_message(None, tiny, Some("htm"), None),
+            MessageLane::Chat
+        );
+        assert_eq!(
+            classify_user_message(None, tiny, Some("htm"), Some("report")),
+            MessageLane::Report
+        );
+    }
+
+    /// Non-HTML bodies pass through untouched; HTML is normalized to the exact
+    /// `"html"` the renderer matches; an oversized HTML body is refused with a
+    /// visible markdown note — never cut.
+    #[test]
+    fn shape_report_body_normalizes_and_refuses_oversized_html() {
+        assert_eq!(
+            shape_report_body("## hi", Some("MarkDown")),
+            ("## hi".to_string(), Some("MarkDown".to_string())),
+            "non-html content types are not rewritten"
+        );
+        assert_eq!(
+            shape_report_body("plain", None),
+            ("plain".to_string(), None)
+        );
+
+        let doc = "<!doctype html><html><body><h1>Scorecard</h1></body></html>";
+        assert_eq!(
+            shape_report_body(doc, Some(" HTML ")),
+            (doc.to_string(), Some("html".to_string()))
+        );
+
+        let at_cap = "a".repeat(HTML_REPORT_MAX_BYTES);
+        assert_eq!(
+            shape_report_body(&at_cap, Some("html")).1.as_deref(),
+            Some("html"),
+            "exactly at the cap is stored"
+        );
+
+        let over = "a".repeat(HTML_REPORT_MAX_BYTES + 1);
+        let (body, ct) = shape_report_body(&over, Some("html"));
+        assert_eq!(ct.as_deref(), Some("markdown"));
+        assert!(
+            body.starts_with("This HTML report was not stored"),
+            "{body}"
+        );
+        assert!(body.contains("65 KB") && body.contains("64 KB"), "{body}");
+        assert!(
+            !body.contains("aaaa"),
+            "no fragment of the document survives"
+        );
+    }
+
     // ------------------------------------------------------------------------
     // The two writes, against a real (temp-file) database
     // ------------------------------------------------------------------------
@@ -3440,6 +3578,37 @@ mod tests {
         assert_eq!(chat_rows(&pool2, &persona2), 0);
     }
 
+    /// An untitled one-line HTML document still lands as a report, stored
+    /// verbatim (no backend sanitizing) under the exact `html` content type.
+    #[test]
+    fn html_message_writes_report_verbatim() {
+        let doc = "<html><head><style>h1{color:red}</style></head><body><h1>Hi</h1></body></html>";
+        let (pool, persona_id, events) = dispatch_one(
+            ProtocolMessage::UserMessage {
+                title: None,
+                content: doc.to_string(),
+                content_type: Some("HTML".into()),
+                priority: None,
+                channel: Some("message".into()),
+            },
+            None,
+        );
+        assert_eq!(reports(&pool, &persona_id), 1, "one report");
+        assert_eq!(chat_rows(&pool, &persona_id), 0, "no chat row");
+        assert!(events.iter().any(|e| e == event_name::REPORT_CREATED));
+        let (content, ct): (String, String) = pool
+            .get()
+            .unwrap()
+            .query_row(
+                "SELECT content, content_type FROM persona_reports WHERE persona_id = ?1",
+                rusqlite::params![persona_id],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(ct, "html");
+        assert_eq!(content, doc);
+    }
+
     /// A persona-channel follow-up already writes the reply row when the run
     /// finishes — dispatch must not post a second copy of the same note.
     #[test]
@@ -3489,3 +3658,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "dispatch_html_probe.rs"]
+mod html_live_probe;
