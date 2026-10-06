@@ -43,6 +43,18 @@ import {
 import { policyTuningApply, policyTuningDecline } from '@/api/system/policyTuning';
 import { resolvePromotionProposal } from '@/api/agents/evolution';
 import { decideCouncil, type CouncilDecisionKind } from '@/api/devTools/council';
+import {
+  acknowledgeAuditIncident,
+  dismissAuditIncident,
+  resolveAuditIncident,
+  setIncidentInProgress,
+} from '@/api/overview/incidents';
+import { markReportRead } from '@/api/overview/reports';
+import {
+  companionApproveAction,
+  companionRejectAction,
+  type ApprovalOutcome,
+} from '@/api/companion';
 import { extractMessage } from '@/lib/silentCatch';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { DevIdea } from '@/lib/bindings/DevIdea';
@@ -90,6 +102,11 @@ const CONFLICT_PATTERNS: readonly RegExp[] = [
   //    message covers both, because to the person at the gate they are the
   //    same fact: the round on screen is not the round that stands.
   /\bcouncil moved since you looked\b/i,
+  // 5. **Companion approvals** — `approval_lifecycle::load_pending` claims the
+  //    row and refuses one that is no longer pending ("approval `<id>` is
+  //    `approved`, not pending"). Athena's Night Shift and the orb resolve the
+  //    same rows unattended, so losing this claim is routine, not exotic.
+  /\bapproval `[^`]+` is `[^`]+`, not pending\b/i,
 ];
 
 /**
@@ -406,4 +423,120 @@ export async function decideCouncilRow(
     throw new Error('A rejection needs a written reason');
   }
   return decideCouncil(subjectId, runId, verdict, sawDigest, reason);
+}
+
+// ---------------------------------------------------------------------------
+// Audit incidents
+// ---------------------------------------------------------------------------
+
+/** What a person can do to an incident from a queue. */
+export type IncidentAct = 'resolve' | 'dismiss' | 'acknowledge' | 'start';
+
+/** The status each act leaves on the row — what a `false` says already stands. */
+const INCIDENT_TARGET: Record<IncidentAct, string> = {
+  resolve: 'resolved',
+  dismiss: 'dismissed',
+  acknowledge: 'acknowledged',
+  start: 'in_progress',
+};
+
+/**
+ * Move an incident through its lifecycle — the ONE door for the four acts a
+ * queue offers on an incident row.
+ *
+ * The incident commands answer `bool`, and `false` is not success:
+ * `audit_incidents::apply_transition` returns `Ok(false)` when the row is
+ * ALREADY in the target state — someone (a bulk resolve, the incident inbox,
+ * the continuation loop) got there first. A door that resolved on it would
+ * report a verdict this person never landed, so it rejects with the shared
+ * conflict wording instead, and {@link isDecisionConflict} recognises it.
+ *
+ * No expectation is sent: none of the four commands takes one. An invalid
+ * transition (the backend's own guard) rejects as an ordinary failure.
+ */
+export async function resolveIncidentRow(
+  id: string,
+  act: IncidentAct,
+  note?: string,
+): Promise<void> {
+  const trimmed = note?.trim() || undefined;
+  let changed: boolean;
+  switch (act) {
+    case 'resolve':
+      changed = await resolveAuditIncident(id, trimmed);
+      break;
+    case 'dismiss':
+      changed = await dismissAuditIncident(id, trimmed);
+      break;
+    case 'acknowledge':
+      changed = await acknowledgeAuditIncident(id);
+      break;
+    case 'start':
+      changed = await setIncidentInProgress(id);
+      break;
+  }
+  if (!changed) {
+    throw new Error(
+      `Incident ${id} was already decided as '${INCIDENT_TARGET[act]}' by a concurrent action`,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Persona reports
+// ---------------------------------------------------------------------------
+
+/**
+ * Mark a report read — the ONE door for "I have read this" on a report row.
+ *
+ * Idempotent on the backend (marking a read report read again is a no-op), so
+ * there is no conflict to report: two people reading the same report is not a
+ * race anybody loses. A failed write still rejects, so an optimistic surface
+ * puts the report back.
+ */
+export async function markReportReadRow(id: string): Promise<void> {
+  await markReportRead(id);
+}
+
+// ---------------------------------------------------------------------------
+// Companion approvals
+// ---------------------------------------------------------------------------
+
+/**
+ * Raised when an approval WAS recorded but the action it authorised failed.
+ *
+ * Not a failed write and not a conflict: the row is `approved_failed`, which is
+ * terminal — it will not come back to any queue. A caller must therefore keep
+ * the item resolved (putting it back would re-offer a decision that can never
+ * land again) while still telling the person the act did not do its job.
+ */
+export class ApprovalActionFailedError extends Error {
+  readonly outcome: ApprovalOutcome;
+  constructor(outcome: ApprovalOutcome) {
+    super(outcome.message || `Approval ${outcome.id} was recorded but its action failed`);
+    this.name = 'ApprovalActionFailedError';
+    this.outcome = outcome;
+  }
+}
+
+/**
+ * Decide an Athena companion approval — the ONE door for approve/reject on an
+ * approval row.
+ *
+ * The backend claims the row before acting (`approval_lifecycle::claim_pending`)
+ * and refuses one that is no longer pending, which is the conflict pattern
+ * above. An `approved_failed` outcome rejects with
+ * {@link ApprovalActionFailedError}; a clean outcome resolves with the
+ * `ApprovalOutcome`, whose `clientAction` the caller still owes the screen.
+ */
+export async function decideCompanionApprovalRow(
+  id: string,
+  approve: boolean,
+  reason?: string,
+): Promise<ApprovalOutcome> {
+  const outcome = approve
+    ? await companionApproveAction(id)
+    : await companionRejectAction(id, reason?.trim() || undefined);
+  if (outcome.status === 'approved_failed') throw new ApprovalActionFailedError(outcome);
+  return outcome;
 }

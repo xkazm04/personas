@@ -26,6 +26,13 @@ const mockRejectIdea = vi.fn();
 const mockPolicyApply = vi.fn();
 const mockPolicyDecline = vi.fn();
 const mockResolvePromotion = vi.fn();
+const mockResolveIncident = vi.fn();
+const mockDismissIncident = vi.fn();
+const mockAckIncident = vi.fn();
+const mockStartIncident = vi.fn();
+const mockMarkReportRead = vi.fn();
+const mockApproveAction = vi.fn();
+const mockRejectAction = vi.fn();
 
 vi.mock('@/api/overview/reviews', () => ({
   updateManualReviewStatus: (...a: unknown[]) => mockUpdateStatus(...a),
@@ -46,7 +53,25 @@ vi.mock('@/api/agents/evolution', () => ({
   resolvePromotionProposal: (...a: unknown[]) => mockResolvePromotion(...a),
 }));
 
+vi.mock('@/api/overview/incidents', () => ({
+  resolveAuditIncident: (...a: unknown[]) => mockResolveIncident(...a),
+  dismissAuditIncident: (...a: unknown[]) => mockDismissIncident(...a),
+  acknowledgeAuditIncident: (...a: unknown[]) => mockAckIncident(...a),
+  setIncidentInProgress: (...a: unknown[]) => mockStartIncident(...a),
+}));
+vi.mock('@/api/overview/reports', () => ({
+  markReportRead: (...a: unknown[]) => mockMarkReportRead(...a),
+}));
+vi.mock('@/api/companion', () => ({
+  companionApproveAction: (...a: unknown[]) => mockApproveAction(...a),
+  companionRejectAction: (...a: unknown[]) => mockRejectAction(...a),
+}));
+
 import {
+  ApprovalActionFailedError,
+  decideCompanionApprovalRow,
+  markReportReadRow,
+  resolveIncidentRow,
   decideEvolutionProposalRow,
   decideIdeaRow,
   decidePolicyProposalRow,
@@ -234,5 +259,92 @@ describe('isDecisionConflict — the wording contract with Rust', () => {
     expect(isDecisionConflict(new Error('database is locked'))).toBe(false);
     expect(isDecisionConflict(new Error('Validation: title cannot be empty'))).toBe(false);
     expect(isDecisionConflict(null)).toBe(false);
+  });
+});
+
+/** The value a promise rejected with; fails the test if it resolved. */
+async function rejectionOf(promise: Promise<unknown>): Promise<unknown> {
+  try {
+    await promise;
+  } catch (err) {
+    return err;
+  }
+  throw new Error('expected the promise to reject');
+}
+
+describe('incident door — a `false` is a verdict somebody else landed, not success', () => {
+  it('routes each act to its command, trimming the note', async () => {
+    mockResolveIncident.mockResolvedValue(true);
+    mockDismissIncident.mockResolvedValue(true);
+    mockAckIncident.mockResolvedValue(true);
+    mockStartIncident.mockResolvedValue(true);
+
+    await resolveIncidentRow('inc-1', 'resolve', '  fixed the key  ');
+    expect(mockResolveIncident).toHaveBeenCalledWith('inc-1', 'fixed the key');
+    await resolveIncidentRow('inc-1', 'dismiss', '   ');
+    expect(mockDismissIncident).toHaveBeenCalledWith('inc-1', undefined);
+    await resolveIncidentRow('inc-1', 'acknowledge');
+    expect(mockAckIncident).toHaveBeenCalledWith('inc-1');
+    await resolveIncidentRow('inc-1', 'start');
+    expect(mockStartIncident).toHaveBeenCalledWith('inc-1');
+  });
+
+  it('REJECTS when the command answers false, and the rejection reads as a conflict', async () => {
+    // `apply_transition` returns Ok(false) when the row is ALREADY in the
+    // target state: someone resolved it first. Resolving here would report a
+    // verdict this person never landed.
+    mockResolveIncident.mockResolvedValueOnce(false);
+    const err = await rejectionOf(resolveIncidentRow('inc-2', 'resolve'));
+    expect(err).toBeInstanceOf(Error);
+    expect(isDecisionConflict(err)).toBe(true);
+
+    mockStartIncident.mockResolvedValueOnce(false);
+    await expect(resolveIncidentRow('inc-2', 'start')).rejects.toThrow(/in_progress/);
+  });
+
+  it('REJECTS on a failed write, as an ordinary failure', async () => {
+    mockDismissIncident.mockRejectedValueOnce(new Error('Invalid status transition: resolved → dismissed'));
+    const err = await rejectionOf(resolveIncidentRow('inc-3', 'dismiss'));
+    expect(isDecisionConflict(err)).toBe(false);
+  });
+});
+
+describe('report door', () => {
+  it('marks read, and rejects when the write fails', async () => {
+    mockMarkReportRead.mockResolvedValueOnce(undefined);
+    await markReportReadRow('rep-1');
+    expect(mockMarkReportRead).toHaveBeenCalledWith('rep-1');
+
+    mockMarkReportRead.mockRejectedValueOnce(new Error('PersonaReport rep-2 not found'));
+    await expect(markReportReadRow('rep-2')).rejects.toThrow('not found');
+  });
+});
+
+describe('companion approval door', () => {
+  it('approves and rejects through the companion commands', async () => {
+    mockApproveAction.mockResolvedValueOnce({ id: 'ap-1', status: 'approved', message: 'ok' });
+    await expect(decideCompanionApprovalRow('ap-1', true)).resolves.toMatchObject({ status: 'approved' });
+
+    mockRejectAction.mockResolvedValueOnce({ id: 'ap-1', status: 'rejected', message: '' });
+    await decideCompanionApprovalRow('ap-1', false, '  not now  ');
+    expect(mockRejectAction).toHaveBeenCalledWith('ap-1', 'not now');
+  });
+
+  it('rejects with ApprovalActionFailedError when the approved action failed', async () => {
+    mockApproveAction.mockResolvedValueOnce({
+      id: 'ap-2',
+      status: 'approved_failed',
+      message: 'Execution failed: no such persona',
+    });
+    const err = await rejectionOf(decideCompanionApprovalRow('ap-2', true));
+    expect(err).toBeInstanceOf(ApprovalActionFailedError);
+    expect((err as ApprovalActionFailedError).outcome.status).toBe('approved_failed');
+  });
+
+  it('recognises the lost claim as a conflict', () => {
+    // `approval_lifecycle::load_pending`, verbatim.
+    expect(
+      isDecisionConflict(new Error('approval `ap-3` is `approved`, not pending')),
+    ).toBe(true);
   });
 });
