@@ -23,6 +23,10 @@
  * of the severity the model had already computed. It reads one type step up and
  * carries the weakest step's own status ink.
  */
+import { useState } from 'react';
+
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+
 import { JourneyGhost } from '../journey/JourneyGhost';
 import { STATE_TEXT } from '../journey/journeyStyles';
 import { useLifecycleViewModel } from './context';
@@ -31,8 +35,11 @@ import { LifecycleActions } from './blocks/LifecycleActions';
 import { StateLegend } from './blocks/StateLegend';
 import { StepRail } from './blocks/StepRail';
 import { StepState } from './blocks/StepState';
+import { RailBelowVariant1 } from './RailBelowVariant1';
+import { RailBelowVariant2 } from './RailBelowVariant2';
+import { RailBelowVariant3 } from './RailBelowVariant3';
 
-export function RailBelow() {
+function RailBelowBaseline() {
   const { headline, headlineState, order, loading } = useLifecycleViewModel();
   const ink = headlineState ? STATE_TEXT[headlineState] : 'text-foreground';
 
@@ -53,6 +60,44 @@ export function RailBelow() {
         <div className="h-[17rem]">
           <EvidenceLedger />
         </div>
+      </div>
+    </div>
+  );
+}
+
+// TODO(prototype, 2026-10-06): consolidate RailBelow switcher
+// Throwaway prototype switcher: the same arrangement and data in four component
+// languages, baseline by default. Session state only; the operator picks one and
+// the switcher, the losers and `variantShared`/`VariantLedger` go with it.
+type RailVariant = 'baseline' | 'instrument' | 'editorial' | 'tactile';
+
+const RAIL_VARIANTS: { id: RailVariant; label: string }[] = [
+  { id: 'baseline', label: 'Baseline' },
+  { id: 'instrument', label: '1 Instrument' },
+  { id: 'editorial', label: '2 Editorial' },
+  { id: 'tactile', label: '3 Tactile' },
+];
+
+export function RailBelow() {
+  const [variant, setVariant] = useState<RailVariant>('baseline');
+  return (
+    <div className="space-y-4">
+      <div className="mx-auto w-fit">
+        <SegmentedTabs
+          tabs={RAIL_VARIANTS}
+          activeTab={variant}
+          onTabChange={setVariant}
+          ariaLabel="RailBelow prototype variant"
+          idPrefix="lc-proto"
+          fullWidth={false}
+          size="sm"
+        />
+      </div>
+      <div role="tabpanel" id={`lc-proto-panel-${variant}`} aria-labelledby={`lc-proto-tab-${variant}`}>
+        {variant === 'baseline' && <RailBelowBaseline />}
+        {variant === 'instrument' && <RailBelowVariant1 />}
+        {variant === 'editorial' && <RailBelowVariant2 />}
+        {variant === 'tactile' && <RailBelowVariant3 />}
       </div>
     </div>
   );
