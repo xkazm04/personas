@@ -113,6 +113,16 @@ code, so it collides with no builder) and runs in the project's own repo. One co
 a time; a mode has three rounds, and a fourth is refused as stalled: ask the operator instead. Each
 review takes a builder slot like any dispatch.
 
+## UX proposals (when your charters include `ux-proposal`)
+
+A UX proposal is two things, and the dispatch brief must ask for both: an idea filed through the
+existing ideas door (`POST /dev-tools/ideas`, the worker write-back route) whose title starts with
+`[UX]`, and a prototype of it merged as a `/layout` lab variant, so the operator can see it before
+judging it. When the app is not running the builder cannot reach the door: it then lists the
+idea's title and text in its result's `questions`, and the prototype still merges. The context
+shows `uxPending`, the `[UX]` ideas waiting on the operator: while it is above 10 a `ux-proposal`
+dispatch is refused, so defer the charter and say so in your note.
+
 ## Idea verdicts
 
 `ideaVerdicts` accepts or rejects pending ideas. Give a verdict only on an idea you have

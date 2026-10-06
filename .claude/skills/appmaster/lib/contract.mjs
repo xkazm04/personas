@@ -149,6 +149,12 @@ export const COUNCIL = {
   attachmentsMax: 20,
 };
 export const FEATURE_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+/**
+ * The UX gate (pof, via its brief). A `ux-proposal` run files a `[UX]` idea and merges a prototype;
+ * decide REFUSES one while more than `pendingMax` of the project's pending ideas carry the prefix
+ * (machine-enforced: the operator reviews the pile before more is added to it).
+ */
+export const UX = { charter: 'ux-proposal', titlePrefix: '[UX]', pendingMax: 10 };
 export const QUEUE_REASONS = ['global cap', 'project cap', 'repo lane', 'paths overlap', 'memory'];
 export const QUEUE_STATES = ['queued', 'promoted', 'dropped'];
 export const QUEUE_LOCK = { waitMs: 30000, pollMs: 100, staleMin: 10 };

@@ -10,7 +10,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  ASK_KINDS, COUNCIL, GLOBAL_CAP, MAX_ASKS, MAX_DISPATCH, MEM, PER_PROJECT_CAP, PLAN, REVIEW_CHARTERS, WAKE_MAX, WAKE_MIN,
+  ASK_KINDS, COUNCIL, GLOBAL_CAP, MAX_ASKS, MAX_DISPATCH, MEM, PER_PROJECT_CAP, PLAN, REVIEW_CHARTERS, UX, WAKE_MAX, WAKE_MIN,
   LIVE_RUN_STATES, contextDir, briefPath, mintId, nowIso, shortId,
 } from './contract.mjs';
 import { councilJournal, councilEvents, featureState } from './council.mjs';
@@ -18,6 +18,7 @@ import { loadBrief, loadWakes, saveWake, openAsks, loadAsks, loadChannel, listRu
 import {
   openDb, resolveProject, masterPersona, chartersFor, projectSnapshot, pendingReviews,
   operatorChannelSince, repoDocs, milestonesOf, planProgress, briefCharters, useCasesOf, councilRunsOf, councilDecisionsOf,
+  uxPendingOf,
 } from './dbread.mjs';
 import { brakes, parseTs, ageText, lastDecided, isDue } from './brakes.mjs';
 import { queueTable } from './queue.mjs';
@@ -222,6 +223,12 @@ export function renderAt(input, C) {
     for (const i of pend) L.push(`    - ${i.id}: ${clip(i.title, C.title)} (${i.effort ?? '-'}/${i.impact ?? '-'}/${i.risk ?? '-'})`);
   }
   if (s.unratedCount) L.push('  Unrated pending ideas are never auto-accepted; a builder that touches one re-files it with effort, impact and risk (1-5).');
+  if (input.ux) {
+    const n = input.ux.count;
+    L.push(n == null
+      ? `  uxPending (pending ${UX.titlePrefix} ideas): not read (${clip(input.ux.error, 100)}); ${UX.charter} cannot be checked, so defer it this wake`
+      : `  uxPending (pending ${UX.titlePrefix} ideas awaiting the operator): ${n}; ${UX.charter} is ${n > UX.pendingMax ? `REFUSED until the operator reviews them down to ${UX.pendingMax}` : `allowed while there are at most ${UX.pendingMax}`}`);
+  }
   const k = s.kpis ?? {};
   const kn = (k.unmeasuredNames ?? []).slice(0, C.kpiNames);
   L.push(`  KPIs: ${k.active ?? 0} active, ${k.unmeasured ?? 0} never measured${kn.length ? `, e.g. ${kn.map((n) => clip(n, 60)).join('; ')}` : ''}`);
@@ -407,6 +414,8 @@ export function gatherContext(ref) {
       journal: planRec ? { ...planRec, entry: entry ? { state: entry.state, evidence: entry.evidence ?? null, created: entry.created ?? null } : null, progress: entry?.created ? planProgress(d, entry.created) : null } : null,
       app,
     };
+    // the UX gate: only for a project whose brief holds the ux-proposal charter (pof)
+    if (briefCharters(brief).some((c) => c.slug === UX.charter)) input.ux = uxPendingOf(d, project.id);
     // COUNCIL: only for a project whose brief holds a council charter (else nothing could act on it)
     if (briefCharters(brief).some((c) => REVIEW_CHARTERS[c.slug])) {
       const uc = useCasesOf(d, project.id);
@@ -438,7 +447,11 @@ export async function cmdContext({ flags = {} } = {}) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, text);
   // the wake remembers what it asked for: decide requires a plan on a plan wake and refuses one elsewhere
-  saveWake(project.slug, { wakeId: input.wakeId, slug: project.slug, at: input.now, contextPath: file, status: 'context', project, due: input.due, chars: text.length, planWake: input.plan?.wake === true });
+  saveWake(project.slug, {
+    wakeId: input.wakeId, slug: project.slug, at: input.now, contextPath: file, status: 'context', project, due: input.due, chars: text.length,
+    planWake: input.plan?.wake === true,
+    ...(input.ux ? { uxPending: input.ux.count } : {}),   // decide's fallback when the DB cannot be read then
+  });
   const m = input.machine;
   return {
     wakeId: input.wakeId, path: file, slug: project.slug, due: input.due, chars: text.length, planWake: input.plan?.wake === true,

@@ -14,7 +14,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
-import { DB_PATH, REPO_ROOT, slugOf, slugify } from './contract.mjs';
+import { DB_PATH, REPO_ROOT, UX, slugOf, slugify } from './contract.mjs';
 import { listSlugs, loadWakes } from './store.mjs';
 
 export const TEMPLATE_DIR = path.join(REPO_ROOT, 'scripts', 'templates', '_app_master');
@@ -288,6 +288,18 @@ export function planProgress(d, created) {
     milestones: mIds.length ? byId(q(d, `select id, status from dev_milestones where id in (${marks(mIds.length)})`, mIds)) : {},
     goals: gIds.length ? byId(q(d, `select id, status, progress from dev_goals where id in (${marks(gIds.length)})`, gIds)) : {},
   };
+}
+
+/**
+ * (db, projectId) => {count, error}   pending ideas of the project whose title starts with UX.titlePrefix
+ * (leading whitespace ignored). `count` is null when the read fails: an unknown is never a zero.
+ */
+export function uxPendingOf(d, projectId) {
+  try {
+    const r = d.prepare(`select count(*) n from dev_ideas where project_id = ? and status = 'pending' and substr(ltrim(title), 1, ?) = ?`)
+      .get(projectId, UX.titlePrefix.length, UX.titlePrefix);
+    return { count: Number(r?.n ?? 0), error: null };
+  } catch (e) { return { count: null, error: String(e.message || e).split('\n')[0] }; }
 }
 
 /** Rows of a read that may hit a table an older DB lacks: {rows, error} instead of a silent []. */

@@ -8,12 +8,12 @@
 import fs from 'node:fs';
 import {
   ASK_KINDS, BUILDER_MODEL_CHOICES, COUNCIL, FEATURE_SLUG_RE, LIVE_RUN_STATES, MAX_ASKS, MAX_DISPATCH, MODELS, PLAN, REVIEW_CHARTERS,
-  SELF_REPO, VERDICT_STATUSES, WAKE_MAX, WAKE_MIN, Refusal, canonical, isReviewRun, nowIso, resolveModel, shortId,
+  SELF_REPO, UX, VERDICT_STATUSES, WAKE_MAX, WAKE_MIN, Refusal, canonical, isReviewRun, nowIso, resolveModel, shortId,
 } from './contract.mjs';
 import { councilEvents, councilJournal, roundsUsed } from './council.mjs';
 import { specError, overlappingPairs } from './paths.mjs';
 import { listRuns, loadAsks, loadBrief, loadWake, newRun, queueOutbox, raiseAsk, saveWake } from './store.mjs';
-import { briefCharters, resolveManaged, openDb, q, useCasesOf, councilRunsOf } from './dbread.mjs';
+import { briefCharters, resolveManaged, openDb, q, useCasesOf, councilRunsOf, uxPendingOf } from './dbread.mjs';
 import { brakes } from './brakes.mjs';
 import { queueTable } from './queue.mjs';
 import { repoKeys, resolveRepo, targetRootKey } from './repos.mjs';
@@ -316,6 +316,18 @@ export function councilFacts(projectId, decision) {
   } finally { try { d.close(); } catch { /* already closed */ } }
 }
 
+/**
+ * The UX gate's count now: pending `[UX]` ideas of the project (read-only), else the count the wake's
+ * context recorded, else null (nothing to check against: decide then refuses the ux-proposal).
+ */
+export function uxPendingFor(projectId, wake) {
+  let d; try { d = openDb(); } catch { d = null; }
+  if (d) {
+    try { const r = uxPendingOf(d, projectId); if (r.count != null) return { count: r.count, source: 'db' }; } finally { try { d.close(); } catch { /* already closed */ } }
+  }
+  return Number.isInteger(wake?.uxPending) ? { count: wake.uxPending, source: 'wake' } : { count: null, source: null };
+}
+
 /** (args) => {wakeId, runIds:string[], outbox:string[], asks:string[], nextWakeAt}   // mints runIds BEFORE writing; Refusal on invalid */
 export async function cmdDecide({ flags = {} } = {}) {
   if (!flags.wake || flags.wake === true) throw new Error('--wake <wakeId> is required');
@@ -375,6 +387,13 @@ export async function cmdDecide({ flags = {} } = {}) {
     const used = roundsUsed(councilEvents(x.featureSlug, journal, facts.dbRuns))[mode];
     if (used >= COUNCIL.maxRounds) clash.push(`dispatch[${i}]: feature ${x.featureSlug} has used ${used} ${mode} council round(s); round ${used + 1} is refused (stalled): raise it with the operator instead`);
   });
+  // The UX gate, machine-enforced: no new UX proposal while more than UX.pendingMax await the operator.
+  const uxAt = decision.dispatch.findIndex((x) => x.charterSlug === UX.charter);
+  if (uxAt >= 0) {
+    const ux = uxPendingFor(project.id, wake);
+    if (ux.count == null) clash.push(`dispatch[${uxAt}]: ${UX.charter} cannot be checked against the UX gate (the app DB is unreadable and this wake recorded no uxPending); defer it`);
+    else if (ux.count > UX.pendingMax) clash.push(`dispatch[${uxAt}]: ${UX.charter} is refused while ${ux.count} ${UX.titlePrefix} ideas are pending review (more than ${UX.pendingMax}); defer it until the operator reviews them`);
+  }
   if (clash.length) throw new Refusal('invalid decision', { errors: clash });
 
   // (1) identity before effect: one planned run per dispatch. A re-submission after a crash
