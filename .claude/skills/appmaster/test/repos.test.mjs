@@ -219,5 +219,5 @@ test('cleanup', () => {
       try { if (fs.lstatSync(link).isSymbolicLink()) fs.unlinkSync(link); } catch { /* none */ }
     }
   }
-  fs.rmSync(tmp, { recursive: true, force: true });
+  fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });   // a shim may hold a handle briefly (EPERM)
 });

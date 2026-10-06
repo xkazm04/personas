@@ -381,5 +381,5 @@ test('cleanup', () => {
     }
   }
   assert.ok(fs.existsSync(path.join(root, 'node_modules', 'marker.txt')));
-  fs.rmSync(tmp, { recursive: true, force: true });
+  fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });   // a killed shim may hold a handle briefly (EPERM)
 });

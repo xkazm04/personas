@@ -323,5 +323,5 @@ test('cleanup', () => {
     }
   }
   app.close();
-  fs.rmSync(env.tmp, { recursive: true, force: true });
+  fs.rmSync(env.tmp, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });   // a shim may hold a handle briefly (EPERM)
 });

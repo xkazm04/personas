@@ -223,5 +223,6 @@ test('cleanup', () => {
       try { if (fs.lstatSync(link).isSymbolicLink()) fs.unlinkSync(link); } catch { /* none */ }
     }
   }
-  fs.rmSync(tmp, { recursive: true, force: true });
+  // a killed sleeper may still hold a handle for a moment on Windows (EPERM): retry, don't fail
+  fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 });
