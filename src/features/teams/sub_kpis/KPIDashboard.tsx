@@ -34,6 +34,7 @@ const StateRiver = lazyRetry(() => import('./variants/StateRiver'));
 // never loads them.
 const Assay = lazyRetry(() => import('./variants/Assay'));
 const Almanac = lazyRetry(() => import('./variants/Almanac'));
+const Console = lazyRetry(() => import('./variants/Console'));
 const KpiGroupLayer = lazyRetry(() => import('./layer/KpiGroupLayer'));
 
 const VARIANT_COMPONENT: Record<KpiVariant, React.ComponentType<KpiVariantProps>> = {
@@ -42,10 +43,7 @@ const VARIANT_COMPONENT: Record<KpiVariant, React.ComponentType<KpiVariantProps>
   river: StateRiver,
   assay: Assay,
   almanac: Almanac,
-  // `console` is declared in `KpiVariant` and lands in its own commit; until
-  // then it is not in `KPI_PROTOTYPE_VARIANTS`, so neither the strip nor a
-  // persisted value can select it.
-  console: Assay,
+  console: Console,
 };
 
 export function KPIDashboard({
