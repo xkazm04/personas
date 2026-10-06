@@ -1,4 +1,4 @@
-// ANNUNCIATOR - contest entry E for the Activity surface.
+// ANNUNCIATOR - the Activity surface.
 //
 // The whole surface is one control-room panel. Every fact is a LAMP behind a
 // glass window, and a lamp is lit only when its thing is doing something or
@@ -21,47 +21,63 @@
 // into the list, instead of holding a column open all session). The baseline
 // grid and the Plate layers are gone; `prototype/` keeps its name until the
 // files are moved, which is a rename pass and not a design one.
+//
+// THE COLD OPEN IS CHOREOGRAPHED (WP2). This file is now a light SHELL with
+// three holes in it, and the holes are the surface's whole weight: the board
+// panel, the desk (`DeskSlot`, which carries `useRailSurface`) and the usage
+// plates (`UsageSlot`, which carries `useUsageFeed`). All three are behind
+// `lazyRetry` in `activityLazy`, preloaded on the shell's first commit, and
+// admitted one beat at a time by `useActivityEntrance` — chrome, tiles, rail,
+// usage. The frame is complete before any of them arrive (`SlotGhosts`), so
+// nothing reflows and no Suspense fallback is ever distinguishable from what
+// was already on screen.
+//
+// THREE MECHANISMS, THREE JOBS, DELIBERATELY NOT MERGED:
+//   `useStagedMount` — when a heavy subtree MOUNTS (rAF, inside the panels).
+//   `useActivityEntrance` — when a REGION is admitted (the four coarse beats).
+//   `useProgressiveReveal` + `RevealItem` — when an ITEM inside a region
+//     enters (the dock's three figures, the usage column's provider plates).
 
-import { memo, useCallback, useState } from 'react';
+import { memo, Suspense, useCallback, useEffect, useState } from 'react';
 import type { PersonaCardModel } from '../../../monitorModel';
-import { OrchestrationPanel } from '../../orchestration';
-import { SessionModals } from '../../board/SessionModals';
 import { FINAL_STAGE } from '../../useStagedMount';
-import { useRailWidth } from '../../rail/useRailWidth';
+import { BEAT, useActivityEntrance } from '../../useActivityEntrance';
 import { useActivitySurface, type ActivitySurfaceProps } from '../useActivitySurface';
-import { useUsageFeed } from '../useUsageFeed';
-import { useRailSurface } from '../useRailSurface';
 import { useCapSetting, useQueueConfirm } from '../shared';
 import { CommandBar, CommandFloor } from './CommandBar';
 import { SessionMenuProvider } from './SessionMenu';
 import { PersonaMenuProvider } from './PersonaMenu';
-import { QuickChatComposer } from './QuickChatComposer';
 import { usePanelFilter } from './boardFilter';
 import { useWorkspaceScope } from './workspaceScope';
 import { WorkspaceSheet, WorkspaceTabs } from './WorkspaceTabs';
 import { SupplyDeck } from './SupplyDeck';
-import { ClassicPanel } from './ClassicPanel';
-import { LanesPanel } from './LanesPanel';
-import { DecisionDock, type DockTab } from './DecisionDock';
+import { BayGhosts } from './Ghosts';
+import { DeskGhost, UsageGhost } from './SlotGhosts';
+import {
+  LazyClassicPanel,
+  LazyDeskSlot,
+  LazyLanesPanel,
+  LazyOrchestrationPanel,
+  LazyQuickChatComposer,
+  LazySessionModals,
+  LazyUsageSlot,
+  preloadActivityPanels,
+} from './activityLazy';
 import './entryE.css';
+
+/** Stable empty default — a fresh `[]` per render would re-run the desk's feeds. */
+const EMPTY_FEED_TEAMS: NonNullable<ActivitySurfaceProps['feedTeams']> = [];
 
 function ActivityEntryEImpl(props: ActivitySurfaceProps) {
   const surface = useActivitySurface(props);
-  const usage = useUsageFeed(surface.simulating);
-  const width = useRailWidth();
-  const [dockOpen, setDockOpen] = useState(false);
+  const entrance = useActivityEntrance();
+  // The three choreographed chunks start fetching on the shell's first commit,
+  // so the beat that admits one is almost never the thing that waits for it.
+  useEffect(preloadActivityPanels, []);
   // The quick-chat seam the persona menu exposes. The composer is anchored to
   // the persona's own line, so the board it was opened from stays readable.
   const [quickChat, setQuickChat] = useState<PersonaCardModel | null>(null);
   const closeQuickChat = useCallback(() => setQuickChat(null), []);
-  const rail = useRailSurface({
-    feedTeams: props.feedTeams ?? [],
-    onOpenSpeaker: props.onOpenSpeaker,
-    filter: surface.scope,
-    simulated: surface.simulatedRail,
-    // The desk is shut: nothing renders a row, so no feed builds one.
-    rowsEnabled: dockOpen,
-  });
   const capSetting = useCapSetting(surface.simulating);
   const confirm = useQueueConfirm(surface.queueActions);
   const cap = surface.queueModel.cap > 0 ? surface.queueModel.cap : capSetting.cap;
@@ -69,14 +85,19 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
   const onLayout = useCallback((v: typeof layout) => setLayout(v), [setLayout]);
   const filter = usePanelFilter(surface);
   const workspaces = useWorkspaceScope(surface);
-  const toggleDock = useCallback(() => setDockOpen((v) => !v), []);
-  const { setTab } = rail;
-  const openDockTab = useCallback((tab: DockTab) => { setTab(tab); setDockOpen(true); }, [setTab]);
+  const ready = surface.stage >= FINAL_STAGE;
+
+  const board = layout === 'classic' ? (
+    <LazyClassicPanel surface={surface} filter={filter} workspaces={workspaces} selectedPersonaId={props.selectedPersonaId} onOpenRemote={props.onOpenRemote} onClearFilter={surface.clearFilter} />
+  ) : (
+    <LazyLanesPanel surface={surface} filter={filter} workspaces={workspaces} cap={cap} onStart={confirm.askStart} onCancel={confirm.askCancel} />
+  );
 
   return (
     <div
       className="ae-root flex h-full min-h-0 flex-col overflow-hidden rounded-card border border-border"
       data-testid="activity-entry-e"
+      data-beat={entrance.beat}
     >
       <CommandBar
         filter={filter}
@@ -94,47 +115,61 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
           cap={{ ...capSetting, cap }}
           running={surface.sessionsInFlight}
           overAdmitted={surface.overAdmitted}
-          usage={usage}
           onOpenOrchestration={surface.openOrchestration}
+          usageSlot={entrance.beat >= BEAT.usage ? (
+            <Suspense fallback={<UsageGhost />}>
+              <LazyUsageSlot simulating={surface.simulating} warm={entrance.warm} />
+            </Suspense>
+          ) : <UsageGhost />}
         />
 
         <WorkspaceSheet scope={workspaces} className="flex min-h-0 min-w-0 flex-1 flex-col">
           <CommandFloor layout={layout} className="flex min-h-0 min-w-0 flex-1 flex-col">
             <SessionMenuProvider onOpenTerminal={surface.setTerminal} onOpenRecap={surface.setRecap}>
               <PersonaMenuProvider onQuickChat={setQuickChat}>
-                {layout === 'classic' ? (
-                  <ClassicPanel surface={surface} filter={filter} workspaces={workspaces} selectedPersonaId={props.selectedPersonaId} onOpenRemote={props.onOpenRemote} onClearFilter={surface.clearFilter} />
-                ) : (
-                  <LanesPanel surface={surface} filter={filter} workspaces={workspaces} cap={cap} onStart={confirm.askStart} onCancel={confirm.askCancel} />
-                )}
+                {entrance.beat >= BEAT.tiles ? (
+                  <Suspense fallback={<BayGhosts />}>{board}</Suspense>
+                ) : <BayGhosts />}
               </PersonaMenuProvider>
             </SessionMenuProvider>
           </CommandFloor>
         </WorkspaceSheet>
 
-        <DecisionDock
-          rail={rail}
-          width={width}
-          open={dockOpen}
-          onToggle={toggleDock}
-          onOpenTab={openDockTab}
-          scope={surface.scope}
-          onClearScope={surface.clearScope}
-          ready={surface.stage >= FINAL_STAGE}
-          reducedMotion={surface.reducedMotion}
-        />
+        {entrance.beat >= BEAT.rail ? (
+          <Suspense fallback={<DeskGhost />}>
+            <LazyDeskSlot
+              feedTeams={props.feedTeams ?? EMPTY_FEED_TEAMS}
+              onOpenSpeaker={props.onOpenSpeaker}
+              scope={surface.scope}
+              onClearScope={surface.clearScope}
+              simulatedRail={surface.simulatedRail}
+              ready={ready}
+              reducedMotion={surface.reducedMotion}
+            />
+          </Suspense>
+        ) : <DeskGhost />}
       </div>
 
-      <SessionModals
-        terminal={surface.terminal}
-        recap={surface.recap}
-        onCloseTerminal={surface.closeTerminal}
-        onCloseRecap={surface.closeRecap}
-      />
-      <OrchestrationPanel open={surface.orchestrationOpen} onClose={surface.closeOrchestration} />
-      {rail.modals}
-      {usage.dialog}
-      <QuickChatComposer card={quickChat} onClose={closeQuickChat} />
+      {(surface.terminal || surface.recap) && (
+        <Suspense fallback={null}>
+          <LazySessionModals
+            terminal={surface.terminal}
+            recap={surface.recap}
+            onCloseTerminal={surface.closeTerminal}
+            onCloseRecap={surface.closeRecap}
+          />
+        </Suspense>
+      )}
+      {surface.orchestrationOpen && (
+        <Suspense fallback={null}>
+          <LazyOrchestrationPanel open onClose={surface.closeOrchestration} />
+        </Suspense>
+      )}
+      {quickChat && (
+        <Suspense fallback={null}>
+          <LazyQuickChatComposer card={quickChat} onClose={closeQuickChat} />
+        </Suspense>
+      )}
       {confirm.dialog}
     </div>
   );

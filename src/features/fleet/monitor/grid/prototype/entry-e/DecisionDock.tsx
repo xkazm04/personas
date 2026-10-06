@@ -19,6 +19,8 @@ import { useCallback } from 'react';
 import { AlertCircle, Inbox, MessagesSquare, PanelRightClose, PanelRightOpen, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Button } from '@/features/shared/components/buttons';
@@ -34,14 +36,20 @@ import type { RailSurface } from '../useRailSurface';
 import { InboxRow, inboxRowHeight } from './InboxRow';
 import { ReviewRow, reviewRowHeight } from './ReviewRow';
 import { Kbd, Lamp } from './parts';
+import { DESK_REST_WIDTH } from './SlotGhosts';
 import type { Tone } from './tone';
 
 /** The desk's tab, named for its consumers so they need not reach into the
  *  rail's own chrome module for the type. */
 export type DockTab = RailTab;
 
-/** Shut, the desk is exactly as wide as three figures need. */
-const REST_WIDTH = 108;
+/**
+ * The surface's identity for the entrance system. CONSTANT on purpose — a key
+ * that encoded the three counts would replay the figures' entrance every time
+ * a review landed. The module-scoped seen-set behind it is what makes a return
+ * to the desk silent.
+ */
+const DESK_SURFACE = 'activity-desk';
 
 /** Each feed's lamp: a decision waiting is amber, a dispatch is the theme
  *  colour, an unread report is information. Dark when the feed is empty. */
@@ -79,11 +87,17 @@ export function DecisionDock({
 
   const EmptyIcon = tab === 'messages' ? MessagesSquare : tab === 'dispatch' ? Inbox : AlertCircle;
 
+  // The three resting figures are TILES, so their entrance is the app's own:
+  // `RevealItem` staggered by position, remembered per-id by `useRevealTracker`
+  // in a module-scoped set. Cold open: they build up left to right. Return: no
+  // animation at all, because every id has already played.
+  const enter = useRevealTracker(DESK_SURFACE, DESK_SURFACE);
+
   return (
     <div className="flex min-h-0 flex-shrink-0">
       {open && <RailResizeHandle rail={width} />}
       <motion.div
-        animate={{ width: open ? width.width : REST_WIDTH }}
+        animate={{ width: open ? width.width : DESK_REST_WIDTH }}
         initial={false}
         transition={reducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 400, damping: 32 }}
         className={`flex min-h-0 min-w-0 flex-col ${open ? '' : 'border-l border-border'}`}
@@ -184,11 +198,12 @@ export function DecisionDock({
           </>
         ) : (
           <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto p-1.5" role="group" aria-label={m.grid_rail_tabs_aria}>
-            {rail.tabs.map((spec) => {
+            {rail.tabs.map((spec, i) => {
               const Icon = spec.icon;
               const tone = TAB_TONE[spec.id];
               return (
-                <Tooltip key={spec.id} content={`${spec.label}: ${spec.count}`} placement="left">
+                <RevealItem key={spec.id} revealId={spec.id} order={i} {...enter}>
+                <Tooltip content={`${spec.label}: ${spec.count}`} placement="left">
                   <Button
                     variant="ghost"
                     onClick={() => onOpenTab(spec.id)}
@@ -205,6 +220,7 @@ export function DecisionDock({
                     </span>
                   </Button>
                 </Tooltip>
+                </RevealItem>
               );
             })}
             {scope && (

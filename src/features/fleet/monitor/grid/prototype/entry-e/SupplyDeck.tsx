@@ -21,11 +21,10 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { autopilotPhrase } from '../../board/AutopilotSwitch';
 import { useAutopilotStatus } from '../../board/useAutopilotStatus';
 import { autopilotReadout, autopilotTone } from '../../board/autopilotReadout';
+import type { ReactNode } from 'react';
 import type { useCapSetting } from '../shared';
-import type { UsageFeed } from '../useUsageFeed';
 import { AutopilotTip } from './AutopilotTip';
 import { Engraved, Lamp } from './parts';
-import { PlanPlates } from './PlanPlates';
 import type { Tone } from './tone';
 
 const AUTOPILOT_TONE: Record<ReturnType<typeof autopilotTone>, Tone> = {
@@ -141,19 +140,21 @@ function AutopilotPlate({ onOpenOrchestration }: { onOpenOrchestration: () => vo
 }
 
 export function SupplyDeck({
-  cap, running, overAdmitted, usage, onOpenOrchestration,
+  cap, running, overAdmitted, usageSlot, onOpenOrchestration,
 }: {
   cap: ReturnType<typeof useCapSetting>;
   running: number;
   overAdmitted: number;
-  usage: UsageFeed;
+  /** The usage plates, passed in: they are a lazy slot admitted by the last
+   *  beat of the entrance, and `useUsageFeed` lives behind that boundary. */
+  usageSlot: ReactNode;
   onOpenOrchestration: () => void;
 }) {
   return (
     <aside className="flex w-[264px] flex-shrink-0 flex-col gap-2 overflow-y-auto border-r border-border p-2.5" data-testid="entry-e-supply">
       <CapRack cap={cap} running={running} overAdmitted={overAdmitted} />
       <AutopilotPlate onOpenOrchestration={onOpenOrchestration} />
-      <PlanPlates usage={usage} />
+      {usageSlot}
     </aside>
   );
 }
