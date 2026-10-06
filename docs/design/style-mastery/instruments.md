@@ -43,6 +43,12 @@ from the tape, args mismatches, text length, page dimensions, and the browser bu
   `--pair` refuses shots taken with different builds (`--allow-browser-drift` overrides).
 - Options: `--sizes`, `--themes`, `--settle <ms>`, `--tz`, `--strict-ipc`, `--serve` (keep the harness up
   on :1432 for a browser). Each run uses its own Vite dep cache, so it never disturbs the dev server.
+- `--query "k=v&k2=v2"` appends module params to the harness URL. `--reduced-motion` emulates
+  `prefers-reduced-motion: reduce` AND sets the in-app toggle (`?motion=reduce` -> `<html data-motion="reduce">`);
+  the harness root wraps a `<MotionConfig reducedMotion="user">` as App.tsx does. `--steps
+  "click=<css>;press=<key>;wait=<ms>"` drives the page after mount and before the settle (a failed step fails the shot).
+- `--serve --module <id> [--query ...]` writes the synthetic tape to `tmp/style-tapes/synthetic/` and prints a
+  ready URL. A served page watches the tree and hot-reloads; its clock is NOT frozen (relative times drift).
 
 ### Tapes
 
@@ -70,6 +76,18 @@ the console error fails the shot.
 3. Record a tape, or add a synthetic builder. Shoot, read the report, open the PNGs.
 
 Registered: `overview/sub_events` (calibration) and `home/sub_releases` (module 1).
+
+### The Athena chat overlay (`athena/chat/<scenario>`)
+
+`AthenaChatPanel`, open, over Overview > Executions (`page-harness/athenaChatSurfaces.tsx`, data in
+`athenaChatTapes.mjs`). Scenarios: `idle`, `streaming`, `waiting`, `decision` (waiting, opened on the work
+layer focused on the decision through `setInitialLayerView` in `chat/next/useLayer.ts`), `empty`. Params:
+`variant=current|spread|filament|r5a|r5b|r5c` (default: the store's, `filament`) and `bg=executions|none`.
+
+```bash
+node scripts/style/shoot.mjs --module athena/chat/decision --tape synthetic --query "variant=r5a"   --sizes 1280x800,1920x1080 --themes dark-midnight --out tmp/style-shots/r5a --label decision-r5a
+node scripts/style/shoot.mjs --serve --module athena/chat/waiting --query "variant=filament" --port 1440
+```
 
 ## What each gate uses
 

@@ -19,7 +19,10 @@ import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 
-export type ChatVariant = 'current' | 'spread' | 'filament';
+// TODO(prototype, 2026-10-07): athena chat round 5 - consolidate after the owner picks.
+// `r5a` / `r5b` / `r5c` are round 5's three variant slots
+// (`frame/variants/r5{a,b,c}/index.tsx`, dispatched by `ChatVariantHost`).
+export type ChatVariant = 'current' | 'spread' | 'filament' | 'r5a' | 'r5b' | 'r5c';
 
 export const useChatVariantStore = create<{ variant: ChatVariant; set: (v: ChatVariant) => void }>((set) => ({
   // The winner, so it is what the app opens on. Deliberately NOT persisted to
@@ -37,6 +40,9 @@ const TABS: { id: ChatVariant; label: string; testId: string }[] = [
   { id: 'filament', label: 'Filament', testId: 'chat-variant-filament' },
   { id: 'current', label: 'Current', testId: 'chat-variant-current' },
   { id: 'spread', label: 'Halo · Spread', testId: 'chat-variant-spread' },
+  { id: 'r5a', label: 'R5 · A', testId: 'chat-variant-r5a' },
+  { id: 'r5b', label: 'R5 · B', testId: 'chat-variant-r5b' },
+  { id: 'r5c', label: 'R5 · C', testId: 'chat-variant-r5c' },
 ];
 
 export function ChatVariantTabs({ lifted }: { lifted: boolean }) {

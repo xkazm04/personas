@@ -16,8 +16,22 @@ export type LayerView =
   /** Layered voice: a report opened from a ref link or its one-line card. */
   | { kind: 'report'; id: string };
 
+/**
+ * The view a newly mounted layer opens on. The app never sets it, so every real
+ * mount opens on the conversation; the page harness
+ * (`scripts/style/page-harness/athenaChatSurfaces.tsx`) sets it before the chat
+ * mounts so a shot can open straight onto a work item, in any variant built on
+ * this hook.
+ *
+ * TODO(prototype, 2026-10-07): athena chat round 5 - consolidate after the owner picks.
+ */
+let initialView: LayerView = { kind: 'chat' };
+export function setInitialLayerView(next: LayerView): void {
+  initialView = next;
+}
+
 export function useLayer() {
-  const [view, setView] = useState<LayerView>({ kind: 'chat' });
+  const [view, setView] = useState<LayerView>(() => initialView);
   const back = useCallback(() => setView({ kind: 'chat' }), []);
   const openWork = useCallback(
     (focus: string | null = null, project: string | null = null) => setView({ kind: 'work', focus, project }),
